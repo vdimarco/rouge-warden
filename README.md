@@ -1,3 +1,9 @@
+# Get Plunger'd: Cottage Brawl
+
+A fast top-down roguelite for the crew, in the style of Enter the Gungeon. Pick your guy, grab a plunger, and fight across the cottage: the dock, the cabin, the trail, and the beach, six areas a day, then the Porcelain King in the outhouse. The cottage (the director, powered by Jev) builds every area, picks your rewards and wildlife, and remembers how you play.
+
+Rename the crew in the FRIENDS list near the top of the game script in public/index.html.
+
 # Warden
 
 An endless isometric roguelite where the dungeon watches you back. The Warden is an AI director. It designs every room zone by zone and picks your rewards, doors, and foes. On the live site, [Jev](https://jevapi.dev/) makes those choices through Vercel AI Gateway.
