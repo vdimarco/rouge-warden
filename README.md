@@ -37,7 +37,8 @@ Each layer is a route of rooms that zigzag down to the well, joined by wide slop
 
 | Path | What it does |
 | --- | --- |
-| `public/index.html` | The whole game, with its images inside the file |
+| `public/index.html` | The page for Get Plunger'd |
+| `public/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Wardenfall: the falling-sand simulation, the wand, and the Warden's questions, in one file with no libraries |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
