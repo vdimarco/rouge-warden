@@ -43,7 +43,7 @@ body { position: fixed; inset: 0; -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-#stage { position: fixed; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+#stage { position: fixed; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><g fill='none' stroke-linecap='round'><circle cx='20' cy='20' r='11' stroke='%23000' stroke-opacity='.85' stroke-width='5'/><path d='M20 2v9M20 29v9M2 20h9M29 20h9' stroke='%23000' stroke-opacity='.85' stroke-width='5'/><circle cx='20' cy='20' r='11' stroke='%23ffe28a' stroke-width='2'/><path d='M20 2v9M20 29v9M2 20h9M29 20h9' stroke='%23ffe28a' stroke-width='2'/><circle cx='20' cy='20' r='2' fill='%23ffe28a' stroke='%23000' stroke-width='1.2'/></g></svg>") 20 20, crosshair; }
 #stage canvas { position: absolute; left: 0; top: 0; display: block; }
 #world { image-rendering: pixelated; image-rendering: crisp-edges; }
 
@@ -98,6 +98,7 @@ button { font: inherit; color: inherit; }
 /* decisions from the Warden, as they happen */
 .toasts { position: fixed; z-index: 20; right: calc(var(--sar) + 12px); top: calc(var(--hudH, 70px) + 6px); width: min(330px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .toast { pointer-events: auto; text-align: left; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--iris); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); animation: toastIn 0.25s ease-out; transition: opacity 0.4s, transform 0.4s; width: 100%; }
+.toast:not(:hover):not(:focus-visible) { opacity: 0.72; }
 .toast.out { opacity: 0; transform: translateX(20px); }
 .toast .th { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
 .toast .th small { margin-left: auto; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
@@ -282,7 +283,8 @@ a { color: var(--accent); }
     <p class="sub">The Warden melted its halls. Now every grain falls.</p>
     <p>You carry the lantern down a well of sand, stone, and liquid. Every pixel moves. Fire spreads, water flows, acid eats rock, and oil waits for a spark. Find the glowing well at the bottom of each layer to rest at the landing and change your wand.</p>
     <p>The Warden pours each layer. It picks the stone, the liquids, the gold, and the foes, and it watches you while you fall. When it sees fit, it rains water, drips lava, or opens a rift. Its decisions pop up as it makes them. Tap the eye to see why.</p>
-    <p class="keys">Move with A and D. Jump with W or Space, and hold it in the air to float on your lantern. Aim with the mouse and hold the left button to cast. With keys only, cast with J toward where you move, and hold S to aim down. Q shows or hides the map. M turns sound on or off.</p>
+    <p class="keys">Move with A and D. Jump with W, Space, or the right mouse button, and hold it to float on your lantern. Aim with the mouse and hold the left button to cast. S drops you faster. With keys only, cast with J toward where you move, and hold S to aim down. Q shows or hides the map. M turns sound on or off.</p>
+    <p class="keys">With a gamepad, the left stick moves, A jumps and floats, the right stick aims, and RT casts. Back shows the map.</p>
     <p class="keys">Lost? The gold arrow by your lantern points down the route to the well. The map shows what your lantern has lit, and the well always glows on it.</p>
     <p class="keys">On a phone, drag on the left half of the screen to move. Push up to jump and float. Drag on the right half to aim and cast, or tap to cast at a spot.</p>
     <div class="starts"><button class="btn" id="startBtn">Enter the well</button></div>
@@ -1967,17 +1969,21 @@ function updatePlayer(dt) {
   if (!p || run.over) return;
   const c = envTick(p, dt, true);
   const inLiquid = c.frac > 0.25;
-  const accel = p.ground ? 0.34 : 0.2;
+  const accel = p.ground ? 0.34 : 0.27;
   p.vx += inp.x * accel;
   p.vx *= p.ground ? 0.78 : inLiquid ? 0.86 : 0.93;
   p.vx = clamp(p.vx, -1.9, 1.9);
   if (inp.x) p.face = inp.x > 0 ? 1 : -1;
   p.vy += inLiquid ? 0.05 : 0.15;
-  if (inp.jumpEdge && p.ground) { p.vy = -3.3; }
+  // a short grace after leaving a ledge, and a jump pressed just before landing still counts
+  p.coyote = p.ground ? 0.1 : Math.max(0, (p.coyote || 0) - dt);
+  p.jumpBuf = inp.jumpEdge ? 0.12 : Math.max(0, (p.jumpBuf || 0) - dt);
+  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; }
   else if (inp.up && !p.ground && p.lift > 0 && p.vy > -2.1) {
     p.vy -= 0.34;
     p.lift = Math.max(0, p.lift - dt / run.liftMax);
   }
+  if (inp.down && !p.ground && !inp.keyAim) p.vy += inLiquid ? 0.1 : 0.12;
   if (inLiquid) { p.vy *= 0.9; if (inp.up) p.vy -= 0.12; }
   if (p.ground) p.lift = Math.min(1, p.lift + dt / 0.6);
   p.vy = clamp(p.vy, -3.2, 4);
@@ -2365,9 +2371,15 @@ const Render = (() => {
           px(cx0 + ux * 2 + uy * 2 - ox, cy0 + uy * 2 - ux * 2 - oy, col);
         }
       }
-      // aim mark
-      const a = aimAngle();
-      px(p.x + 2 + Math.cos(a) * 14 - ox, p.y + 4 + Math.sin(a) * 14 - oy, World.abgr(0xe4dccb));
+      // aim: a dotted line from the wand, and a reticle when you aim without the mouse
+      const a = aimAngle(), ca = Math.cos(a), sa = Math.sin(a), ax = p.x + 2, ay = p.y + 4;
+      const dotC = World.abgr(0xffe28a), dark = 0xff000000;
+      for (let d = 6; d <= 24; d += 3) px(ax + ca * d - ox, ay + sa * d - oy, dotC);
+      if (Game.input.sx == null || Game.input.keyAim || Game.input.touchAim != null || Game.input.pad) {
+        const rx = ax + ca * 30 - ox, ry = ay + sa * 30 - oy;
+        for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry - 1, dark); px(rx + k, ry + 1, dark); px(rx - 1, ry + k, dark); px(rx + 1, ry + k, dark); }
+        for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry, dotC); px(rx, ry + k, dotC); }
+      }
     }
     // spells
     for (const s of Game.shots) {
@@ -2462,13 +2474,40 @@ const Input = (() => {
   const keys = new Set();
   function sync() {
     inp.x = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
-    inp.up = keys.has("w") || keys.has(" ") || keys.has("arrowup") || moveUp;
-    inp.down = keys.has("s") || keys.has("arrowdown");
+    inp.up = keys.has("w") || keys.has(" ") || keys.has("arrowup") || moveUp || rightDown || padUp;
+    inp.down = keys.has("s") || keys.has("arrowdown") || padDown;
     if (touchMoveX != null) inp.x = touchMoveX;
-    inp.cast = mouseDown || keys.has("j") || touchCast;
+    if (padX) inp.x = padX;
+    inp.cast = mouseDown || keys.has("j") || touchCast || padCast;
     inp.keyAim = keys.has("j") && !mouseDown;
   }
-  let mouseDown = false, moveUp = false, touchMoveX = null, touchCast = false;
+  let mouseDown = false, rightDown = false, moveUp = false, touchMoveX = null, touchCast = false;
+  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false;
+  // a gamepad: left stick or d-pad moves, A or LB jumps and floats, right stick aims, RT or RB casts
+  function pollPad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let gp = null;
+    for (const g of pads) if (g && g.connected) { gp = g; break; }
+    if (!gp) { if (inp.pad) { inp.pad = false; padX = 0; padUp = padDown = padCast = false; sync(); } return; }
+    const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.4));
+    const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0, rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
+    padX = Math.abs(lx) > 0.25 ? clamp(lx * 1.3, -1, 1) : b(14) ? -1 : b(15) ? 1 : 0;
+    const jump = b(0) || b(4);
+    if (jump && !padJump && Game.state === "play") inp.jumpEdge = true;
+    padJump = jump;
+    padUp = jump || b(12);
+    padDown = ly > 0.6 || b(13);
+    const aiming = Math.hypot(rx, ry) > 0.3;
+    if (aiming) { inp.touchAim = Math.atan2(ry, rx); inp.pad = true; }
+    else if (inp.pad && Math.abs(lx) > 0.25) inp.touchAim = Math.atan2(Math.abs(ly) > 0.4 ? ly : 0, lx);
+    padCast = b(7) || b(5) || (aiming && Math.hypot(rx, ry) > 0.85);
+    if (padCast || padX || jump) inp.pad = true;
+    if (b(9) && !pollPad.menu && Game.state === "play") UI.sheet(true, "stats");
+    pollPad.menu = b(9);
+    if (b(8) && !pollPad.map) Minimap.toggle();
+    pollPad.map = b(8);
+    sync();
+  }
   addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input, textarea")) return;
     const k = e.key.toLowerCase();
@@ -2484,12 +2523,16 @@ const Input = (() => {
     if (k === "escape" || k === "tab") { e.preventDefault(); UI.sheet(true, "stats"); }
   });
   addEventListener("keyup", (e) => { keys.delete(e.key.toLowerCase()); sync(); });
-  addEventListener("blur", () => { keys.clear(); mouseDown = false; sync(); });
+  addEventListener("blur", () => { keys.clear(); mouseDown = false; rightDown = false; sync(); });
   const stage = $("#stage");
   stage.addEventListener("contextmenu", (e) => e.preventDefault());
-  stage.addEventListener("mousemove", (e) => { inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; });
-  stage.addEventListener("mousedown", (e) => { SFX.init(); inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; mouseDown = true; sync(); });
-  addEventListener("mouseup", () => { mouseDown = false; sync(); });
+  stage.addEventListener("mousemove", (e) => { inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false; });
+  stage.addEventListener("mousedown", (e) => {
+    SFX.init(); inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false;
+    if (e.button === 2) { if (!rightDown) inp.jumpEdge = true; rightDown = true; } else mouseDown = true;
+    sync();
+  });
+  addEventListener("mouseup", (e) => { if (e.button === 2) rightDown = false; else mouseDown = false; sync(); });
 
   // touch: left half moves, right half aims and casts
   const touches = new Map();
@@ -2549,7 +2592,7 @@ const Input = (() => {
   };
   stage.addEventListener("touchend", end);
   stage.addEventListener("touchcancel", end);
-  return { clear() { keys.clear(); mouseDown = false; touchCast = false; touchMoveX = null; moveUp = false; sync(); } };
+  return { pollPad, clear() { keys.clear(); mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; sync(); } };
 })();
 
 /* ------------------------------------------------------------------ the page around the game */
@@ -2977,7 +3020,7 @@ async function enterDepth(first) {
   UI.hideBanner();
   UI.voice(plan.line);
   Game.state = "play";
-  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Left thumb moves. Push up to float. Right thumb aims and casts." : "A and D move. Hold W to float. Aim and hold the mouse to cast.", 5000);
+  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Left thumb moves. Push up to float. Right thumb aims and casts." : "A and D move. Hold W or the right button to float. Hold the left button to cast.", 5000);
 }
 
 let reaching = false;
@@ -3046,6 +3089,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastT) / 1000);
   lastT = now;
+  Input.pollPad();
   if (!Game.paused && !document.hidden) {
     acc += dt;
     let steps = 0;
@@ -3058,7 +3102,8 @@ function frame(now) {
   }
   const p = Game.player;
   if (p) {
-    const tx = p.x + 2, ty = p.y + 5 + 18 + clamp(p.vy * 8, -8, 24);
+    const aimA = aimAngle(), lead = Game.input.cast || Game.input.sx != null ? 14 : 0;
+    const tx = p.x + 2 + Math.cos(aimA) * lead, ty = p.y + 5 + 18 + clamp(p.vy * 8, -8, 24) + Math.sin(aimA) * lead * 0.6;
     Game.cam.x += (tx - Game.cam.x) * 0.12;
     Game.cam.y += (ty - Game.cam.y) * 0.12;
     Game.cam.x = clamp(Game.cam.x, Render.vw / 2, W - Render.vw / 2);
