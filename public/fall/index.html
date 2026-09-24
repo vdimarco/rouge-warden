@@ -73,7 +73,8 @@ button { font: inherit; color: inherit; }
 .icon .lbl { font-family: var(--fell); font-size: 13px; letter-spacing: 0.02em; }
 .sr, .icon .lbl.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .eyebtn.busy .eye::after { animation: pulse 0.8s ease-out infinite; }
-@media (max-width: 700px) { .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
+@media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #fastText { display: none; }
+  .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
 @media (max-width: 380px) { .bar { width: 48px; } }
 .ticker { position: fixed; z-index: 9; top: calc(var(--hudH, 50px) + 4px); right: calc(var(--sar) + 10px); max-width: min(380px, calc(100vw - 20px)); font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; background: rgba(18, 22, 31, 0.72); border: 0; border-left: 2px solid var(--iris); border-radius: 4px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity 0.5s; }
 .ticker.fade { opacity: 0; pointer-events: none; }
@@ -96,8 +97,13 @@ button { font: inherit; color: inherit; }
 .swapbtn[hidden] { display: none; }
 .digbtn { display: none; position: fixed; z-index: 10; right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 64px); width: 58px; height: 58px; border-radius: 50%; border: 2px solid rgba(228, 220, 203, 0.35); background: rgba(18, 22, 31, 0.72); color: var(--ink); font-weight: 800; }
 .digbtn[aria-pressed="true"] { background: rgba(201, 178, 122, 0.85); color: #1b1608; border-color: #e6c35c; }
-@media (pointer: coarse) { .digbtn { display: block; } }
-body.menu .digbtn { visibility: hidden; }
+.tbtn { display: none; position: fixed; z-index: 10; border-radius: 50%; border: 2px solid rgba(228, 220, 203, 0.35); background: rgba(18, 22, 31, 0.72); color: var(--ink); font-weight: 800; touch-action: none; }
+.tbtn.atk { right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 64px); width: 68px; height: 68px; border-color: rgba(255, 207, 74, 0.6); }
+.tbtn.roll { right: calc(var(--sar) + 88px); bottom: calc(var(--sab) + 40px); width: 54px; height: 54px; }
+.tbtn.flask { right: calc(var(--sar) + 88px); bottom: calc(var(--sab) + 104px); width: 46px; height: 46px; font-size: 18px; }
+.tbtn.flask b { position: absolute; right: -4px; bottom: -4px; font-size: 11px; background: var(--accent); color: #1b1608; border-radius: 8px; padding: 0 4px; }
+@media (pointer: coarse) { .digbtn, .tbtn { display: block; } .digbtn { bottom: calc(var(--sab) + 140px); width: 56px; height: 56px; font-size: 11.5px; padding: 0; } }
+body.menu .digbtn, body.menu .tbtn { visibility: hidden; }
 body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
 .mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
@@ -177,8 +183,8 @@ a { color: var(--accent); }
 .sh-head .rest { margin: 0; font-size: 14.5px; }
 .sh-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
 @media (min-width: 900px) and (min-height: 520px) {
-  .shrine-grid { grid-template-columns: 1.15fr 1fr; grid-template-areas: "head head" "offers wands" "shop wands" "shop foot"; }
-  .sh-head { grid-area: head; } .sh-offers { grid-area: offers; } .sh-shop { grid-area: shop; } .sh-wands { grid-area: wands; } .sh-foot { grid-area: foot; align-self: end; }
+  .shrine-grid { grid-template-columns: 1.15fr 1fr; grid-template-areas: "head head" "offers wands" "shop wands" "shop tab" "shop foot"; }
+  .sh-head { grid-area: head; } .sh-offers { grid-area: offers; } .sh-shop { grid-area: shop; } .sh-wands { grid-area: wands; } .sh-tab { grid-area: tab; } .sh-foot { grid-area: foot; align-self: end; }
 }
 .card .desc { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .shrine .card { padding: 8px 10px; }
@@ -217,6 +223,26 @@ a { color: var(--accent); }
 .wandstats { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 14.5px; margin: 10px 0 0; }
 .wandstats dt { color: var(--muted); }
 .wandstats dd { margin: 0; font-variant-numeric: tabular-nums; }
+.scrollpick { z-index: 35; }
+.scrollpick .card-inner { max-width: 640px; }
+.card.big b { font-family: var(--fell); font-weight: 400; font-size: 22px; }
+.tab-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tab-cards .card { padding: 6px 9px; }
+.tab-cards .card b { font-size: 14.5px; }
+.tab-cards .card .desc { font-size: 12.5px; -webkit-line-clamp: 3; }
+.pill { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill .cap { width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #ffcf4a 0 35%, #e0402a 40%); display: inline-block; margin-right: 3px; }
+.pill .curse { color: #c07aff; font-weight: 800; }
+.pill .fast { color: var(--accent); }
+.pill .fast.gone { color: var(--muted); text-decoration: line-through; }
+.starts .weapons { display: flex; gap: 6px; flex-wrap: wrap; }
+.wpick { background: #141924; border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 700; font-size: 13px; }
+.wpick[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.wpick:disabled { opacity: 0.4; cursor: default; }
+.wslot.melee { opacity: 1; border-color: rgba(224, 64, 42, 0.6); }
+.wslot .pips { display: flex; gap: 3px; }
+.wslot .pips i { width: 9px; height: 4px; border-radius: 2px; background: rgba(228, 220, 203, 0.2); }
+.wslot .pips i.on { background: var(--accent); }
 .end-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 6px 0 16px; font-size: 16px; }
 .end-stats dt { color: #9ea4b0; }
 .end-stats dd { margin: 0; }
@@ -300,6 +326,7 @@ a { color: var(--accent); }
 <header class="hud" id="hud">
   <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, pressure, lift, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
   <button class="depth" id="depthText" type="button">Depth 1</button>
+  <span class="pill" id="runPill" aria-label="Caps, hot dogs, and the fast drain timer"><span><span class="cap"></span><b id="capsText">0</b></span><span id="flaskText">🌭 2</span><span class="fast" id="fastText"></span><span class="curse" id="curseText" hidden></span></span>
   <span class="spacer"></span>
   <button class="icon eyebtn" id="hudEye" type="button" aria-label="The Cottage's mood and decisions"><span class="eye" aria-hidden="true"></span><span class="lbl" id="hudMood">Watching</span></button>
   <button class="icon" id="mapBtn" type="button" aria-pressed="true" aria-label="Map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
@@ -309,7 +336,10 @@ a { color: var(--accent); }
 <button class="ticker fade" id="ticker" type="button" hidden></button>
 <nav class="hotbar" id="hotbar" aria-label="Your guns"></nav>
 <button class="swapbtn" id="swapBtn" type="button" hidden>Swap guns</button>
-<button class="digbtn" id="digBtn" type="button" aria-pressed="false">Dig</button>
+<button class="digbtn" id="digBtn" type="button" aria-pressed="false">Shovel</button>
+<button class="tbtn atk" id="atkBtn" type="button">Hit</button>
+<button class="tbtn roll" id="rollBtn" type="button">Roll</button>
+<button class="tbtn flask" id="flaskBtn" type="button" aria-label="Eat a hot dog">🌭<b id="flaskN">2</b></button>
 
 <canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the drain."></canvas>
 <div class="bossbar" id="bossbar" hidden><span id="bossName">The Porcelain King</span><div><i id="bossFill"></i></div></div>
@@ -326,18 +356,18 @@ a { color: var(--accent); }
     <p class="sub">The outhouse backed up. Now the ground under the cottage moves.</p>
     <p>Pick a friend and go down with a plunger. Every pixel falls, flows, or burns. Reach the drain at the bottom of each layer. The Cottage pours each layer and watches you fall. Tap the cottage to see its choices.</p>
     <div class="roster" id="roster" role="group" aria-label="Pick your friend"></div>
+    <div class="starts"><span class="keys">Start with:</span><span class="weapons" id="startWeapons"></span><span class="keys" id="tabNote"></span></div>
     <dl class="controls">
-      <dt>Move</dt><dd>A and D</dd>
-      <dt>Jump, hover</dt><dd>W, Space, or right mouse</dd>
-      <dt>Shoot</dt><dd>Hold left mouse</dd>
-      <dt>Guns</dt><dd>1, 2, 3, or the wheel</dd>
-      <dt>Plunge (dig)</dt><dd>Hold F or Shift</dd>
-      <dt>Take a gun</dt><dd>E</dd>
-      <dt>Map, sound</dt><dd>Q, M</dd>
-      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and shoots. Tap Dig to dig instead.</dd>
-      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to shoot, LT to dig, Y for guns</dd>
+      <dt>Move, jump</dt><dd>A and D, W or Space. Hold jump to hover.</dd>
+      <dt>Hit</dt><dd>Left mouse or J. Keep hitting for a combo. In the air, hold S and hit to pound the ground.</dd>
+      <dt>Roll</dt><dd>Shift or L. Nothing can hit you while you roll.</dd>
+      <dt>Shoot</dt><dd>Right mouse or K. 1, 2, 3, or the wheel change guns.</dd>
+      <dt>Dig</dt><dd>Hold F. The shovel tunnels where you aim.</dd>
+      <dt>Hot dog, take</dt><dd>R eats a hot dog. E takes or opens. Q map, M sound.</dd>
+      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves. Tap the right side or Hit to swing, drag it to shoot. Pull down on the stick and hit in the air to pound.</dd>
+      <dt class="pad">Gamepad</dt><dd class="pad">A jump, X hit, B roll, RT shoot, LT dig, Y hot dog, LB guns</dd>
     </dl>
-    <p class="keys">The gold arrow next to you points the way down.</p>
+    <p class="keys">Critters drop caps. Spend them at the snack bar's tab on things that stay, or lose them when you go down. The gold arrow points the way.</p>
     <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <a class="keys" href="/">Back to the cottage</a></div>
   </div>
 </div>
@@ -351,6 +381,7 @@ a { color: var(--accent); }
     </header>
     <section class="sh-offers"><h3>The Cottage offers these. Take one.</h3><div class="cards" id="offers"></div></section>
     <section class="sh-shop"><h3>For gold. You have <span id="shrineGold">0</span>.</h3><div class="cards two" id="shop"></div></section>
+    <section class="sh-tab"><h3>The tab: caps buy things that stay. You have <span id="tabCaps">0</span>.</h3><div class="tab-cards" id="tabCards"></div></section>
     <section class="sh-wands">
       <h3>Your guns</h3>
       <p class="keys small">Each gun fires its shots left to right, then reloads. Tap a shot, then a slot to move it.</p>
@@ -359,6 +390,14 @@ a { color: var(--accent); }
       <div class="slots" id="bagSlots"></div>
     </section>
     <footer class="sh-foot"><button class="btn" id="descendBtn">Keep going down</button></footer>
+  </div>
+</div>
+
+<div class="overlay scrollpick" id="scrollPick" hidden>
+  <div class="card-inner">
+    <h2>A scroll of power</h2>
+    <p>Pick one. Every scroll also adds 8 max health.</p>
+    <div class="cards" id="scrollCards"></div>
   </div>
 </div>
 
@@ -391,6 +430,7 @@ a { color: var(--accent); }
         <h3>What things do</h3>
         <p>Fire spreads through wood, moss, oil, and swamp gas. Water puts it out, and it turns lava to stone. Acid eats earth and rock, but glass holds it. Lightning in water shocks all that touch the water. Gold falls like sand. Walk into it to pick it up.</p>
         <p>Your leaf blower lets you hover. It refills when you stand on solid ground.</p>
+        <p>Critters drop caps. Spend them at the snack bar's tab on things that stay between runs. Caps you still carry when you go down are lost. Reach the drain before the timer runs out for a bonus. A cursed cooler holds rich loot, but any hit takes you down until you beat 10 critters.</p>
       </section>
       <section class="tab" data-tab="warden" hidden>
         <h3>Mood</h3>
@@ -422,7 +462,7 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 
 const K = { EMPTY: 0, SOLID: 1, POWDER: 2, LIQUID: 3, GAS: 4, FIRE: 5 };
 const EMPTY = 0, BEDROCK = 1, ROCK = 2, EARTH = 3, SAND = 4, BONE = 5, WOOD = 6, MOSS = 7, GLASS = 8, OBSIDIAN = 9, GOLD = 10, ASH = 11,
-  WATER = 12, OIL = 13, LAVA = 14, ACID = 15, SLUDGE = 16, BLOOD = 17, FIRE = 18, EMBER = 19, SMOKE = 20, STEAM = 21, MIASMA = 22, SEAL = 23;
+  WATER = 12, OIL = 13, LAVA = 14, ACID = 15, SLUDGE = 16, BLOOD = 17, FIRE = 18, EMBER = 19, SMOKE = 20, STEAM = 21, MIASMA = 22, SEAL = 23, METAL = 24, RUBBER = 25, PORCELAIN = 26;
 const MATS = [];
 function defMat(id, o) { MATS[id] = Object.assign({ kind: K.SOLID, dens: 0, hard: 0, flam: 0, burn: 0, glow: 0, flow: 0, cols: [0x000000] }, o); }
 defMat(EMPTY, { name: "air", kind: K.EMPTY });
@@ -449,6 +489,10 @@ defMat(SMOKE, { name: "smoke", kind: K.GAS, cols: [0x3a3a40, 0x444450, 0x333338,
 defMat(STEAM, { name: "steam", kind: K.GAS, cols: [0x9aa8b8, 0xa8b4c2, 0x8c9aaa, 0xb4c0cc] });
 defMat(MIASMA, { name: "swamp gas", kind: K.GAS, flam: 0.9, cols: [0x5a6a3a, 0x64743f, 0x526234, 0x6e7e46] });
 defMat(SEAL, { name: "screen door", hard: 99, glow: 0.3, cols: [0x7a8a80, 0x9aaaa0, 0x5e6e64, 0xb0c0b4] });
+// junk buried under the cottage, and the pipes and tanks
+defMat(METAL, { name: "metal", hard: 3, cols: [0x6a6e74, 0x7a5a44, 0x80868c, 0x5a5048] });
+defMat(RUBBER, { name: "rubber", hard: 1, flam: 0.03, burn: 255, cols: [0x1c1c20, 0x24242a, 0x18181c, 0x2c2c32] });
+defMat(PORCELAIN, { name: "porcelain", hard: 3, cols: [0xe8ecef, 0xdfe6ea, 0xf4f6f8, 0xc8d2da] });
 const NMAT = MATS.length;
 const KIND = new Uint8Array(NMAT), DENS = new Float32Array(NMAT), HARD = new Uint8Array(NMAT), FLAM = new Float32Array(NMAT), GLOW = new Float32Array(NMAT), FLOW = new Uint8Array(NMAT);
 for (let m = 0; m < NMAT; m++) { const d = MATS[m]; KIND[m] = d.kind; DENS[m] = d.dens; HARD[m] = d.hard; FLAM[m] = d.flam; GLOW[m] = d.glow; FLOW[m] = d.flow; }
@@ -472,6 +516,74 @@ const THEME_DESC = {
   cistern: "The septic tank: wet teal stone. Water gathers in every hollow.",
   garden: "The crawlspace: tree roots and moss under the floorboards. Both burn.",
   forge: "Under the sauna: red stone and obsidian. Lava pools deep. Feels dangerous.",
+};
+
+// junk buried under the cottage: w wood, m metal, r rubber, p porcelain, g glass, b bone; dots keep the ground
+const JUNK = [
+  { name: "canoe", rows: ["ww..............ww", ".wwwwwwwwwwwwwwww.", "..wwwwwwwwwwwwww..", "....wwwwwwwwww...."] },
+  { name: "tire", rows: ["..rrr..", ".rrrrr.", "rr...rr", "rr...rr", "rr...rr", ".rrrrr.", "..rrr.."] },
+  { name: "toilet", rows: ["pppp...", "pppp...", "ppppppp", ".ppppp.", "..ppp..", "..ppp..", ".ppppp."] },
+  { name: "fridge", rows: ["mmmmmm", "m....m", "mmmmmm", "m....m", "m...mm", "m....m", "m....m", "mmmmmm"] },
+  { name: "wheel", rows: ["..mmm..", ".m.m.m.", "m..m..m", "mmmmmmm", "m..m..m", ".m.m.m.", "..mmm.."] },
+  { name: "bottles", rows: [".g..g.", ".g..g.", "gg.ggg", "gg.ggg", "gg.ggg"] },
+  { name: "boot", rows: ["rr...", "rr...", "rr...", "rrrrr", "rrrrr"] },
+  { name: "chair", rows: ["m....", "m....", "m....", "mmmmm", "m...m", "m...m"] },
+  { name: "fish", rows: ["b..b.b.b.b..", ".bbbbbbbbbbb", "b..b.b.b.b.."] },
+  { name: "sign", rows: ["wwwwwwww", "wwwwwwww", "...w....", "...w...."] },
+];
+const JUNK_MAT = { w: WOOD, m: METAL, r: RUBBER, p: PORCELAIN, g: GLASS, b: BONE };
+
+// melee: your main weapon. Each swing of a combo has its own damage, and each weapon crits in its own way.
+// reach: how far in front of you it hits, in world pixels. t: wind-up, active, recover time of one swing, in seconds.
+const MELEE = {
+  plunger: { name: "Plunger", combo: [7, 7, 15], reach: 10, t: [0.05, 0.08, 0.1], knock: 1.2, stun: 0.15, lunge: 0.7, crit: "third", color: "#e0402a",
+    desc: "A quick three-hit combo. The third hit always crits." },
+  paddle: { name: "Canoe Paddle", combo: [16, 26], reach: 14, t: [0.12, 0.1, 0.18], knock: 3, stun: 0.6, lunge: 0.4, crit: "stunned", color: "#c8955a",
+    desc: "Slow and wide. It knocks critters flat, and crits on critters that are already stunned." },
+  hockey: { name: "Hockey Stick", combo: [5, 5, 6, 11], reach: 12, t: [0.03, 0.07, 0.07], knock: 0.8, stun: 0.1, lunge: 0.9, crit: "burning", color: "#2a2a2e",
+    desc: "A fast four-hit combo. Crits on critters that are burning or poisoned." },
+  rod: { name: "Fishing Rod", combo: [9, 13], reach: 22, t: [0.08, 0.1, 0.12], knock: 1, stun: 0.2, lunge: 0.2, crit: "tip", color: "#6a8aa8",
+    desc: "The longest reach. Crits with the far end of the line." },
+  pan: { name: "Frying Pan", combo: [20], reach: 10, t: [0.1, 0.09, 0.16], knock: 2.4, stun: 0.9, lunge: 0.5, crit: "airborne", color: "#303034",
+    desc: "One heavy clang that stuns. Crits on critters in the air." },
+};
+const CRIT_TEXT = { third: "crits on the last hit of the combo", stunned: "crits on stunned critters", burning: "crits on burning or poisoned critters", tip: "crits with the tip", airborne: "crits on critters in the air" };
+
+// what caps buy at the snack bar's tab. These stay between runs.
+const UNLOCKS = {
+  paddle: { name: "Canoe Paddle", cost: 25, desc: "Adds the Canoe Paddle to the loot, and you can start with it." },
+  hotdog1: { name: "Extra hot dog", cost: 40, desc: "Start every run with 3 hot dogs." },
+  purse: { name: "Pocket money", cost: 30, desc: "Start every run with 60 gold." },
+  hockey: { name: "Hockey Stick", cost: 35, desc: "Adds the Hockey Stick to the loot, and you can start with it." },
+  spade: { name: "Steel Spade", cost: 70, desc: "Start every run with the Steel Spade." },
+  rod: { name: "Fishing Rod", cost: 45, desc: "Adds the Fishing Rod to the loot, and you can start with it." },
+  scroll: { name: "A scroll to start", cost: 90, desc: "Start every run with one scroll of power." },
+  pan: { name: "Frying Pan", cost: 60, desc: "Adds the Frying Pan to the loot, and you can start with it." },
+  hotdog2: { name: "Another hot dog", cost: 120, needs: "hotdog1", desc: "Start every run with 4 hot dogs." },
+  second: { name: "Second wind", cost: 160, desc: "Once per run, when you would go down, you get up with 30% health." },
+};
+const meleeUnlocked = (id) => id === "plunger" || !!(Memory.data && Memory.data.meta.unlocked[id]);
+// scrolls of power: pick one stat to raise. Every scroll also adds 8 max health.
+const SCROLLS = {
+  muscle: { name: "Muscle", color: "#e0402a", desc: "Your melee hits 15% harder.", apply: (r) => { r.muscle *= 1.15; } },
+  aim: { name: "Aim", color: "#9a7af0", desc: "Your gun hits 15% harder.", apply: (r) => { r.aim *= 1.15; } },
+  grit: { name: "Grit", color: "#6adf7a", desc: "20 more max health.", apply: (r) => { r.maxHp += 20; r.hp += 20; } },
+};
+
+// relics: things lost down the hole, from the cottage upstairs. Each one changes the run.
+const RELICS = {
+  hotsauce: { name: "Hot Sauce", desc: "Every hit does 20% more damage.", color: 0xe0402a, apply: (r) => { r.dmgMult *= 1.2; } },
+  energy: { name: "Energy Drink", desc: "Your gun fires 20% faster, and you swing 15% faster.", color: 0x6adf7a, apply: (r) => { r.rateMult *= 0.8; r.swingMult *= 0.85; } },
+  bugspray: { name: "Bug Spray", desc: "25 more max health, and it heals you.", color: 0x9cd0ff, apply: (r) => { r.maxHp += 25; r.hp += 25; } },
+  loonie: { name: "Lucky Loonie", desc: "10% more crits, and critters drop more caps.", color: 0xe6c35c, apply: (r) => { r.crit += 0.1; r.capMult *= 1.4; } },
+  sunscreen: { name: "Sunscreen", desc: "Fire and lava hurt you half as much.", color: 0xfff0a0, apply: (r) => { r.fireResist *= 0.5; } },
+  flipflops: { name: "Flip Flops", desc: "You move 10% faster and roll farther.", color: 0xff8ad8, apply: (r) => { r.speedMult *= 1.1; r.rollMult *= 1.2; } },
+  snorkel: { name: "Snorkel", desc: "You swim fast, and water heals burns at once.", color: 0x5ab0ff, apply: (r) => { r.swim = true; } },
+  gloves: { name: "Work Gloves", desc: "Your shovel digs 35% faster.", color: 0xc8a060, apply: (r) => { r.digMult *= 1.35; } },
+  keys: { name: "Car Keys", desc: "Someone lost these. The reward: 80 gold now.", color: 0xd0d8e0, apply: (r) => { r.gold += 80; } },
+  remote: { name: "TV Remote", desc: "Your leaf blower keeps you up 40% longer.", color: 0x404850, apply: (r) => { r.liftMax *= 1.4; } },
+  goldplunger: { name: "Golden Plunger", desc: "Your shots curve toward critters, and melee crits heal you a little.", color: 0xffcf4a, apply: (r) => { r.homing += 0.05; r.critHeal += 2; } },
+  sunglasses: { name: "Lost Sunglasses", desc: "Shades wants them back. Your headlamp reaches 30% farther, and you take 10% less damage.", color: 0x202028, apply: (r) => { r.light *= 1.3; r.armor *= 0.9; } },
 };
 
 const SPELLS = {
@@ -512,6 +624,8 @@ const UPGRADES = {
   delay: { name: "Hair trigger", desc: "The gun waits 25% less between shots.", apply: (r) => { r.wand.castDelay *= 0.75; } },
   lift: { name: "Gas for the blower", desc: "Your leaf blower keeps you up 40% longer.", apply: (r) => { r.liftMax *= 1.4; } },
   vigor: { name: "Hot dog", desc: "Your max health goes up by 25. You heal 25 now.", apply: (r) => { r.maxHp += 25; r.hp += 25; } },
+  scroll: { name: "Scroll of power", desc: "Raise one stat: Muscle for melee, Aim for your gun, or Grit for health. It also adds 8 max health.", apply: () => UI.chooseScroll() },
+  shovel: { name: "Better shovel", desc: "Your shovel goes up a grade: garden shovel, then steel spade, then power auger. Each grade reaches farther and digs rock faster.", apply: (r) => { r.shovel = Math.min(3, r.shovel + 1); } },
   newwand: { name: "A new gun", desc: "A gun from the boathouse, with its own stats and shots. You can carry 3.", apply: (r) => giveWand(r, makeWand(Math.min(3, r.depth))) },
 };
 
@@ -598,6 +712,7 @@ const LINES = {
   boss_intro: ["Something big is waiting at the bottom.", "Enough layers. Meet the reason the toilet won't flush.", "The clog is down there. It has a name."],
   gauntlet_start: ["Nobody walks through my rooms for free.", "Stay a while.", "The screen door is shut. Earn it open.", "You ran past the last ones. Not these."],
   gauntlet_clear: ["Fine. Go on.", "The screen door opens. They didn't make it.", "That will do. For now."],
+  relic: ["{relic}. I wondered where that went.", "Oh, the {relic}. Somebody will want that back.", "You found the {relic}. Keep digging.", "The {relic}. I buried it for a reason."],
   hand_dead: ["You cleared the clog. I'll find another.", "Fine. The drain is open. Go deeper."],
   death: [
     "The {killer} did it. I only held the screen door.",
@@ -617,7 +732,7 @@ const MOOD_DESC = {
   tempting: "Tempting: offer reward with risk. Gold beside oil and lava, strong shots with a price.",
   testing: "Testing: counter the player's gun. Hazards and critters that resist their main tag.",
 };
-const COTTAGE_BRIEF = "The Cottage is the stubborn old spirit of a lakeside cottage in Get Plunger'd, a game about a group of friends up for the weekend. In this spin-off, Down the Drain, the outhouse backed up and the ground under the cottage turned into a falling-sand well where every pixel is simulated. Sand and gold fall, water and oil flow, fire spreads through wood, moss, oil, and swamp gas, acid (drain cleaner) eats stone, water turns lava to obsidian, and lightning shocks everything in water. One of the friends goes down with a leaf blower that lets them hover, a headlamp, a plunger to dig, and a gun loaded with shots (the state calls the gun a wand and its shots spells). They descend layer by layer to the drain at the bottom, rest at a snack bar, and change their gun. Every fourth layer ends at a boss: the Porcelain King, Gabe the Mountain Man, Christian the Mystic, or Ryu. The critters are raccoons, hornets, seagulls, bats, skunks, moose, and geese. The Cottage pours each layer and watches the player fall. It wants every run to feel close: hard enough to fear, fair enough to survive. Its voice is dry, teasing cottage humor. Moods: generous helps, tempting offers reward with risk, testing counters the player's gun.";
+const COTTAGE_BRIEF = "The Cottage is the stubborn old spirit of a lakeside cottage in Get Plunger'd, a game about a group of friends up for the weekend. In this spin-off, Down the Drain, the outhouse backed up and the ground under the cottage turned into a falling-sand world where every pixel is simulated: sand and gold fall, water and oil flow, fire spreads through wood, moss, oil, and swamp gas, acid (drain cleaner) eats stone, water turns lava to obsidian, and lightning shocks everything in water. It plays like a fast action roguelite. One of the friends goes down with a melee weapon (plunger, canoe paddle, hockey stick, fishing rod, or frying pan) that swings in combos and crits in its own way, a gun loaded with shots (the state calls the gun a wand and its shots spells), a dodge roll that dodges every hit, a ground pound, a leaf blower to hover, and a shovel that tunnels through dirt. Critters (raccoons, hornets, seagulls, bats, skunks, moose, geese) drop caps; caps buy permanent unlocks at the snack bar between layers and are lost when the player goes down. Scrolls of power raise melee, gun, or health. Relics are buried in the walls. Some coolers are cursed: rich loot, but any hit is fatal until 10 critters are beaten. Each layer ends at two drains: the player picks where the next layer goes, and one drain is richer and harder. Every fourth layer ends at a boss: the Porcelain King, Gabe the Mountain Man, Christian the Mystic, or Ryu. The Cottage pours each layer and watches the player fall. It wants every run to feel close: hard enough to fear, fair enough to survive, and fast enough to be fun. Its voice is dry, teasing cottage humor. Moods: generous helps, tempting offers reward with risk, testing counters the player's build.";
 
 /* ------------------------------------------------------------------ the crew and the critters, from Get Plunger'd */
 
@@ -896,7 +1011,8 @@ const Memory = {
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.key)); } catch (e) { d = null; }
-    this.data = Object.assign({ runs: 0, deepest: 0, hands: 0, tagCasts: {}, deathsBy: {}, lastDeath: null, gold: 0, crew: null }, d || {});
+    this.data = Object.assign({ runs: 0, deepest: 0, hands: 0, tagCasts: {}, deathsBy: {}, lastDeath: null, gold: 0, crew: null, meta: { unlocked: {}, spent: 0 }, startMelee: "plunger" }, d || {});
+    if (!this.data.meta || !this.data.meta.unlocked) this.data.meta = { unlocked: {}, spent: 0 };
     // runs of the main game upstairs, and the friend picked there
     let halls = 0, friend = 0;
     try { const h = JSON.parse(localStorage.getItem("plungerd.meta.v1")); halls = (h && h.runs) || 0; friend = (h && h.friend) || 0; } catch (e) { halls = 0; }
@@ -959,7 +1075,15 @@ function giveWand(r, w) {
 }
 function newRun() {
   const crew = clamp(Memory.data ? Memory.data.crew || 0 : 0, 0, CREW.length - 1);
-  const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  const U = (Memory.data && Memory.data.meta.unlocked) || {};
+  r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0);
+  if (U.spade) r.shovel = 2;
+  if (U.purse) r.gold = 60;
+  r.secondWind = !!U.second;
+  r.startScroll = !!U.scroll;
+  const sm = Memory.data && Memory.data.startMelee;
+  if (sm && MELEE[sm] && meleeUnlocked(sm)) r.melee = sm;
   CREW[crew].apply(r);
   return r;
 }
@@ -994,6 +1118,13 @@ function directorState(r) {
     last_theme: r.lastTheme,
     recent_lines: r.recentLines.slice(-4),
     crew: CREW[r.crew].name,
+    melee: r.melee,
+    melee_crit: MELEE[r.melee].crit,
+    caps: r.caps,
+    scrolls: r.scrolls,
+    relics: r.relics.slice(),
+    cursed: r.curse > 0,
+    shovel: r.shovel,
     memory: { runs: m.runs, deepest: m.deepest, bosses_beaten: m.hands, fav_tag: Memory.favTag(), last_death: m.lastDeath, top_killer: Memory.topKiller(), cottage_runs: Memory.halls },
   };
 }
@@ -1216,6 +1347,25 @@ const Cottage = (() => {
       },
     };
   }
+  function treasureQuestion(st) {
+    return {
+      id: "treasure",
+      prompt: "How many relics does the Cottage bury in the walls of the next layer? A relic is something lost down the hole, like hot sauce or car keys, and each one makes the run stronger. The player must dig to reach it. Generous: three. Testing: one. Tempting: two, near danger.",
+      options: [{ value: "one", label: "one", desc: "One relic." }, { value: "two", label: "two", desc: "Two relics." }, { value: "three", label: "three", desc: "Three relics. A rich layer." }],
+      score: (v) => ({ generous: { one: 0, two: 0.6, three: 1 }, tempting: { one: 0.2, two: 1, three: 0.4 }, testing: { one: 1, two: 0.5, three: -0.3 } }[st.mood] || { one: 0.3, two: 0.6, three: 0.2 })[v],
+    };
+  }
+  function propsQuestion(st) {
+    return {
+      id: "props",
+      prompt: "Which props should fill the rooms of the next layer? Pipes leak water or sewage when shot or dug, which puts out fire. Propane tanks explode when shot or heated, which hurts everything near. Hornet nests keep sending hornets until they are broken. Testing: nests. Tempting: tanks near a fire gun. Generous: pipes.",
+      options: [{ value: "pipes", label: "pipes", desc: "Mostly pipes. Water to put out fires." }, { value: "tanks", label: "tanks", desc: "Mostly propane tanks. Big blasts." }, { value: "nests", label: "nests", desc: "Mostly hornet nests. Constant pressure." }, { value: "mixed", label: "mixed", desc: "Some of each." }],
+      score: (v) => {
+        const fire = st.focus_tag === "fire";
+        return { pipes: 0.3 + (st.mood === "generous" ? 0.7 : 0) + (st.burning ? 0.5 : 0), tanks: 0.2 + (st.mood === "tempting" ? 0.6 : 0) + (fire ? 0.4 : 0), nests: 0.1 + (st.mood === "testing" ? 0.8 : 0) + 0.1 * st.depth, mixed: 0.6 }[v];
+      },
+    };
+  }
   function goldQuestion(st) {
     return {
       id: "gold",
@@ -1278,7 +1428,8 @@ const Cottage = (() => {
       .replace("{killer}", ctx.killer ? causeName(ctx.killer) : "")
       .replace("{depth}", String(ctx.depth || r.depth))
       .replace("{runs}", String(ctx.runs || 1))
-      .replace("{halls}", String(Memory.halls));
+      .replace("{halls}", String(Memory.halls))
+      .replace("{relic}", ctx.relic || "thing");
   }
   const lineCtx = (st, r, extra) => Object.assign({ tag: st.focus_tag, killer: st.memory.last_death, depth: r.depth, runs: st.memory.runs }, extra || {});
 
@@ -1296,7 +1447,7 @@ const Cottage = (() => {
     const boss = isBossDepth(r.depth);
     const qs = [themeQuestion(st)];
     for (let b = 1; b <= 6; b++) qs.push(fillQuestion(b, st), pocketQuestion(b, st), formQuestion(b, st));
-    qs.push(goldQuestion(st), pressureQuestion(st), featureQuestion(1, st), featureQuestion(2, st), gauntletQuestion(st));
+    qs.push(goldQuestion(st), pressureQuestion(st), featureQuestion(1, st), featureQuestion(2, st), gauntletQuestion(st), treasureQuestion(st), propsQuestion(st));
     const kinds = unlocked(r.depth);
     for (let i = 1; i <= 10; i++) qs.push(foeQuestion(i, kinds, st));
     const ctx = lineCtx(st, r);
@@ -1314,15 +1465,22 @@ const Cottage = (() => {
     if (st.hp_frac < 0.35 && lava) bands.forEach((b, i) => { if (i < 2 && b.pocket === "lava") { notes.push("The player is badly hurt. The code took the lava out of stratum " + (i + 1) + "."); b.pocket = "none"; } });
     if (bands.some((b) => b.pocket === "lava" || b.pocket === "acid")) notes.push("Lava and acid pool only in side rooms. The code keeps them off the route.");
     if (boss) notes.push("This is a boss layer. The code hollowed out the lower strata as its cavern.");
-    const theme = A.theme.pick;
+    let theme = A.theme.pick;
+    // the player picked a drain on the last layer: that choice decides the look
+    if (r.nextTheme && THEMES[r.nextTheme]) {
+      if (theme !== r.nextTheme) notes.push("The player took the drain to " + THEMES[r.nextTheme].name.toLowerCase() + ". The code used that look in place of " + THEMES[theme].name.toLowerCase() + ".");
+      theme = r.nextTheme;
+    }
     r.lastTheme = theme;
+    // the two drains at the bottom of this layer lead to the next two looks the Cottage likes best
+    const nextThemes = A.theme.probs.map((x) => x.value).filter((v) => v !== theme).slice(0, 2);
     const features = [A.feature_1.pick, A.feature_2.pick];
     if (features[1] === features[0] && features[0] !== "none") {
       const alt = A.feature_2.probs.find((x) => x.value !== features[0]);
       notes.push("Both set pieces were " + features[0] + ". The code made the second one " + alt.value + ".");
       features[1] = alt.value;
     }
-    const mult = { low: 0.75, mid: 1, high: 1.3 }[A.pressure.pick];
+    const mult = { low: 0.75, mid: 1, high: 1.3 }[A.pressure.pick] * (r.nextRich ? 1.2 : 1);
     const count = Math.round((boss ? 5 : 9 + 3 * Math.min(6, r.depth)) * mult);
     const slots = [];
     for (let i = 1; i <= 10; i++) slots.push(A["foe_" + i].pick);
@@ -1337,7 +1495,14 @@ const Cottage = (() => {
     UI.ledger();
     let gauntlets = { one: 1, two: 2, three: 3 }[A.gauntlets.pick];
     if (r.depth === 1 && gauntlets > 2) { gauntlets = 2; notes.push("Three sealed rooms on the first layer. The code made it two."); }
-    return { mood, theme, bands, features, gauntlets, gold: A.gold.pick, pressure: A.pressure.pick, foes, line, boss, seed: (rnd() * 1e9) | 0 };
+    let treasure = { one: 1, two: 2, three: 3 }[A.treasure.pick], gold = A.gold.pick, pressure = A.pressure.pick;
+    // the rich drain: more relics and gold below, and more critters and sealed rooms too
+    if (r.nextRich) {
+      treasure = Math.min(3, treasure + 1); gold = "rich"; pressure = "high"; gauntlets = Math.min(3, gauntlets + 1);
+      notes.push("The player took the rich drain. The code added a relic, rich gold, more critters, and a sealed room.");
+    }
+    r.nextTheme = null; r.nextRich = false;
+    return { depth: r.depth, treasure, nextThemes, props: A.props.pick, mood, theme, bands, features, gauntlets, gold, pressure, foes, line, boss, seed: (rnd() * 1e9) | 0 };
   }
 
   /* watching the fall */
@@ -1450,7 +1615,8 @@ const Cottage = (() => {
     };
   }
   function shopQuestion(i, pool, st, r) {
-    const opts = pool.map((id) => ({ value: "spell:" + id, label: SPELLS[id].name, desc: spellDesc(id) }))
+    const melee = Object.keys(MELEE).filter((id) => id !== r.melee && meleeUnlocked(id)).map((id) => ({ value: "melee:" + id, label: MELEE[id].name, desc: MELEE[id].name + " (melee weapon, replaces the one held): " + MELEE[id].desc }));
+    const opts = pool.map((id) => ({ value: "spell:" + id, label: SPELLS[id].name, desc: spellDesc(id) })).concat(melee)
       .concat(Object.keys(UPGRADES).map((k) => ({ value: "up:" + k, label: UPGRADES[k].name, desc: UPGRADES[k].name + ": " + UPGRADES[k].desc })));
     return {
       id: "shop_" + i,
@@ -1458,6 +1624,7 @@ const Cottage = (() => {
       options: opts,
       score: (v) => {
         if (v.startsWith("spell:")) return spellScore(v.slice(6), st, r) - 0.4;
+        if (v.startsWith("melee:")) return 0.3 + (st.mood === "tempting" ? 0.5 : 0) + (st.mood === "testing" ? 0.3 : 0);
         const k = v.slice(3);
         let l = 0.5;
         if (k === "vigor") l += 1.2 * (1 - st.hp_frac) + (st.mood === "generous" ? 0.3 : 0);
@@ -1465,6 +1632,8 @@ const Cottage = (() => {
         if (k === "newwand") l += r.wands.length < 3 ? 0.9 : -0.6;
         if (k === "slot" && r.bag.length) l += 0.5;
         if (k === "lift") l += 0.1;
+        if (k === "shovel") l += r.shovel >= 3 ? -9 : 0.5 + (st.can_dig ? 0 : 0.8);
+        if (k === "scroll") l += 0.4 + (st.mood === "generous" ? 0.4 : 0);
         return l;
       },
     };
@@ -1506,7 +1675,7 @@ const Cottage = (() => {
     for (let i = 1; i <= 2; i++) {
       const a = E.answers["shop_" + i];
       let v = a.pick;
-      const dup = (x) => shop.includes(x) || (x.startsWith("spell:") && offers.includes(x.slice(6)));
+      const dup = (x) => shop.includes(x) || (x.startsWith("spell:") && offers.includes(x.slice(6))) || (x === "up:shovel" && r.shovel >= 3);
       if (dup(v)) {
         const alt = a.probs.find((x) => !dup(x.value));
         notes.push("Shop item " + i + " was already on offer. The code took the next best.");
@@ -1514,7 +1683,7 @@ const Cottage = (() => {
       }
       shop.push(v);
     }
-    const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : v === "up:newwand" ? 80 + 25 * r.depth : 50 + 18 * r.depth);
+    const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : v.startsWith("melee:") ? 70 + 15 * r.depth : v === "up:newwand" ? 80 + 25 * r.depth : v === "up:scroll" ? 90 + 20 * r.depth : 50 + 18 * r.depth);
     UI.ledger();
     return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
   }
@@ -1593,6 +1762,11 @@ const SFX = (() => {
     zap() { if (!gate("zap", 50)) return; noise({ dur: 0.18, vol: 0.2, f: 5000, f2: 1200, q: 3 }); tone({ type: "square", f: 1600, f2: 400, dur: 0.12, vol: 0.05 }); },
     splash() { if (!gate("splash", 90)) return; noise({ dur: 0.25, vol: 0.14, f: 1400, f2: 500, q: 0.8 }); },
     sizzle() { if (!gate("sizzle", 200)) return; noise({ dur: 0.35, vol: 0.08, f: 6000, f2: 3000, q: 1.5 }); },
+    swing(big) { if (!gate("swing", 60)) return; noise({ dur: big ? 0.14 : 0.09, vol: big ? 0.16 : 0.1, f: big ? 1800 : 2600, f2: 600, q: 0.7 }); },
+    crit() { if (!gate("crit", 50)) return; tone({ type: "square", f: 880, f2: 1320, dur: 0.07, vol: 0.07 }); noise({ dur: 0.1, vol: 0.28, f: 900, f2: 200, type: "lowpass" }); },
+    roll() { if (!gate("roll", 100)) return; noise({ dur: 0.18, vol: 0.08, f: 700, f2: 1400, q: 0.6 }); },
+    eat() { [523, 659, 784].forEach((f, i) => tone({ type: "triangle", f, dur: 0.12, vol: 0.07, at: i * 0.06 })); },
+    cap() { if (!gate("cap", 45)) return; tone({ type: "square", f: 1980 + rnd() * 300, dur: 0.05, vol: 0.035 }); },
     coin() { if (!gate("coin", 55)) return; tone({ type: "triangle", f: 1320, dur: 0.07, vol: 0.06 }); tone({ type: "triangle", f: 1760, dur: 0.1, vol: 0.05, at: 0.05 }); },
     hurt() { if (!gate("hurt", 120)) return; tone({ type: "square", f: 200, f2: 70, dur: 0.22, vol: 0.12 }); noise({ dur: 0.16, vol: 0.22, f: 800, type: "lowpass" }); },
     rumble() { noise({ dur: 1.1, vol: 0.28, f: 160, f2: 60, type: "lowpass" }); tone({ type: "triangle", f: 55, f2: 45, dur: 1, vol: 0.12 }); },
@@ -1609,6 +1783,10 @@ const World = (() => {
   const N = W * H;
   const mat = new Uint8Array(N), life = new Uint8Array(N), shade = new Uint8Array(N), clk = new Uint8Array(N);
   let bg = new Uint32Array(N);
+  // the back wall: a pattern index per pixel, sampled with parallax, and how shut in each open pixel is
+  const far = new Uint8Array(N), ao = new Uint8Array(N), sky = new Uint8Array(W * 44);
+  const BGPAL = new Uint32Array(8 * 4), SKYPAL = new Uint32Array(10);
+  let hasSky = false;
   let cur = new Uint8Array(CW * CH), next = new Uint8Array(CW * CH);
   let tick = 1;
   const NB = [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1];
@@ -1864,6 +2042,12 @@ const World = (() => {
     applyTheme(THEMES[plan.theme]);
     mat.fill(EMPTY); life.fill(0); clk.fill(0);
     const bgA = theme.bg[0], bgB = theme.bg[1];
+    // 8 tones of the back wall, from its seams to its lit faces, each at 4 levels of shade
+    const warm = { crypt: 0x6a5a48, cistern: 0x3a6a70, garden: 0x4a5a30, forge: 0x7a3a24 }[plan.theme] || 0x505050;
+    const tones = [dim(bgA, 0.45), dim(bgA, 0.7), bgA, bgB, lift(bgB, 1.12, 4), lift(bgB, 1.25, 8), mix(bgB, warm, 0.35), mix(bgB, warm, 0.6)];
+    for (let a = 0; a < 4; a++) for (let t = 0; t < 8; t++) BGPAL[a * 8 + t] = abgr(dim(tones[t], [0.95, 0.78, 0.6, 0.45][a]));
+    hasSky = plan.depth === 1;
+    [0x0a1026, 0x101a3a, 0x18264e, 0x223360, 0xfff4d0, 0x0c1a12, 0x14261a, 0xcfd8ff, 0x3a2616, 0x4e3420].forEach((c, k) => { SKYPAL[k] = abgr(c); });
     const goldT = plan.gold === "rich" ? 0.8 : 0.88;
     const arenaTop = plan.boss ? H - 330 : H;
     const floorY = Math.min(arenaTop, H - BOT);
@@ -1872,14 +2056,7 @@ const World = (() => {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x;
       shade[i] = (hash2(x, y, s + 5) * 4) | 0;
-      const bn = vnoise(x / 7, y / 7, s + 40) * 0.6 + vnoise(x / 2, y / 2, s + 41) * 0.4;
-      let tone = bn > 0.62 ? bgB : bn < 0.3 ? dim(bgA, 0.6) : bgA;
-      // a faint pattern on the back wall for each look
-      if (plan.theme === "crypt" && (y % 7 === 0 || (x + (((y / 7) | 0) % 2) * 6) % 12 === 0)) tone = dim(tone, 0.7);
-      else if (plan.theme === "forge" && (x % 16 === 0 || y % 16 === 0 || (x + y) % 32 === 0)) tone = dim(tone, 0.72);
-      else if (plan.theme === "cistern" && (x % 24 < 2 || (y % 30 === 0 && x % 24 > 3))) tone = dim(tone, 0.75);
-      else if (plan.theme === "garden" && Math.abs(vnoise(x / 3, y / 40, s + 44) - 0.5) < 0.035) tone = dim(tone, 0.68);
-      bg[i] = abgr(dim(tone, 0.7));
+      far[i] = farPattern(plan.theme, x, y, s);
       if (x < 2 || x >= W - 2 || y < 2 || y >= H - 2) { mat[i] = BEDROCK; continue; }
       if (y < TOP) continue;
       if (y >= H - BOT) { mat[i] = y > H - 14 ? OBSIDIAN : ROCK; continue; }
@@ -1897,6 +2074,19 @@ const World = (() => {
       if (plan.theme === "garden" && m === EARTH && Math.abs(vnoise(x / 3, y / 24, s + 53) - 0.5) < 0.04) m = WOOD;
       if (m !== ROCK && m !== OBSIDIAN && vnoise(x / 5, y / 5, s + 99) > goldT) m = GOLD;
       mat[i] = m;
+    }
+
+    // 1b. junk buried in the ground: canoes, tires, old toilets, fridges, bottles, and bones
+    const junkN = 14 + Math.min(10, plan.depth * 2);
+    for (let k = 0; k < junkN; k++) {
+      const J = JUNK[(R() * JUNK.length) | 0], flip = R() < 0.5;
+      const jx = 8 + ((R() * (W - 40)) | 0), jy = TOP + 12 + ((R() * (floorY - TOP - 40)) | 0);
+      for (let r = 0; r < J.rows.length; r++) for (let c = 0; c < J.rows[r].length; c++) {
+        const ch = J.rows[r][flip ? J.rows[r].length - 1 - c : c], m = JUNK_MAT[ch];
+        if (!m) continue;
+        const i = (jy + r) * W + jx + c;
+        if (mat[i] !== BEDROCK && jy + r < floorY) mat[i] = m;
+      }
     }
 
     // 2. small hollows for texture and side trips
@@ -1933,6 +2123,7 @@ const World = (() => {
     const walk = (x, y) => { seg(inX, inY, x, y); };
     const enter = rooms[0];
     for (let k = 0; k < 10; k++) carve(W / 2, TOP - 4 + k, 12 - k * 0.5);
+    buildTop(plan, s);
     tunnel(W / 2, TOP - 6, enter.x, enter.y - enter.rh * 0.5, 7, s, path);
     inX = enter.x; inY = enter.y + enter.rh * 0.6 - 5;
     for (let k = 0; k + 1 < rooms.length; k++) {
@@ -1955,8 +2146,15 @@ const World = (() => {
         for (let x = lx; x < lx + lw && x < W - 2; x++) for (let yy = ly; yy < ly + 4; yy++) mat[yy * W + x] = ROCK;
       }
     } else { walk(last.x, last.y + last.rh * 0.2); tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s, path); seg(exitX, H - BOT + 4, exitX, H - 22); }
-    for (let yy = H - BOT - 6; yy < H - 14; yy++) for (let x = exitX - 26; x <= exitX + 26; x++) {
-      const dx = (x - exitX) / 26, dy = (yy - (H - 22)) / 26;
+    // a second drain on the far side: you choose where the next layer goes
+    const exits = [exitX];
+    if (!plan.boss) {
+      const x2 = clamp(exitX > W / 2 ? exitX - 120 : exitX + 120, 34, W - 34);
+      tunnel(last.x, last.y, x2, H - BOT + 4, 6, s);
+      exits.push(x2);
+    }
+    for (const ex of exits) for (let yy = H - BOT - 6; yy < H - 14; yy++) for (let x = ex - 26; x <= ex + 26; x++) {
+      const dx = (x - ex) / 26, dy = (yy - (H - 22)) / 26;
       if (dx * dx + dy * dy < 1 && inb(x, yy) && mat[yy * W + x] !== BEDROCK) mat[yy * W + x] = EMPTY;
     }
 
@@ -2028,6 +2226,46 @@ const World = (() => {
         if (cy > 0 && r.y - cy < 40) lamps.push({ x: x | 0, top: cy + 1, y: cy + 4 + ((R() * 6) | 0), lit: true });
       }
     }
+    // pipes along the ceilings, propane tanks on the floors, and hornet nests under the ceilings
+    const pipes = [], props = [];
+    const mixP = { pipes: [4, 1, 1], tanks: [1, 4, 1], nests: [1, 1, 4], mixed: [2, 2, 2] }[plan.props] || [2, 2, 2];
+    const wantPipes = mixP[0] + (plan.theme === "cistern" ? 1 : 0), wantTanks = mixP[1], wantNests = mixP[2] + (plan.depth > 2 ? 1 : 0);
+    const shuffled = rooms.slice(1).sort(() => R() - 0.5);
+    for (const r of shuffled) {
+      if (pipes.length >= wantPipes) break;
+      const cy = ceilAt(r.x, r.y - 2);
+      if (cy < TOP + 8 || r.y - cy > 30) continue;
+      const py = cy + 3, x1 = Math.max(4, (r.x - r.rw - 10) | 0), x2 = Math.min(W - 5, (r.x + r.rw + 10) | 0);
+      for (let x = x1; x <= x2; x++) for (let q = 0; q < 2; q++) force(x, py + q, METAL);
+      for (let x = x1 + 6; x < x2; x += 12) { let yy = py - 1; while (yy > py - 6 && mat[yy * W + x] === EMPTY) mat[yy-- * W + x] = METAL; }
+      pipes.push({ x1, x2, y: py, m: plan.theme === "cistern" || R() < 0.3 ? SLUDGE : WATER, holes: new Set() });
+    }
+    for (const r of shuffled.slice().reverse()) {
+      if (props.filter((p) => p.kind === "tank").length >= wantTanks) break;
+      const fy = floorOf(r), tx = (r.x + (R() - 0.5) * r.rw) | 0;
+      if (mat[fy * W + tx] === EMPTY || mat[(fy - 8) * W + tx] !== EMPTY) continue;
+      for (let yy = fy - 7; yy < fy; yy++) for (let q = -2; q <= 2; q++) force(tx + q, yy, METAL);
+      props.push({ kind: "tank", x: tx, y: fy, hp: 12 });
+    }
+    for (const r of rooms.concat(sides).sort(() => R() - 0.5)) {
+      if (props.filter((p) => p.kind === "nest").length >= wantNests) break;
+      if (r === rooms[0]) continue;
+      const nx = r.x + (R() - 0.5) * r.rw, cy = ceilAt(nx, r.y - 2);
+      if (cy < 0 || r.y - cy > 30) continue;
+      props.push({ kind: "nest", x: nx | 0, y: cy + 1, hp: 16, t: R() * 3, kids: 0 });
+    }
+    // relics: things lost down the hole, packed in the walls near the route. A small pocket holds each one.
+    const relics = [];
+    const solidBox = (cx, cy, r) => { for (let yy = cy - r; yy <= cy + r; yy++) for (let xx = cx - r; xx <= cx + r; xx++) { const m = mat[yy * W + xx]; if (!inb(xx, yy) || m === BEDROCK || !(KIND[m] === K.SOLID || KIND[m] === K.POWDER)) return false; } return true; };
+    for (let tries = 0; tries < 600 && relics.length < (plan.treasure || 1); tries++) {
+      const r = rooms[1 + ((R() * (rooms.length - 1)) | 0)] || rooms[0];
+      const a = R() * Math.PI * 2, d = 28 + R() * 30, rx = (r.x + Math.cos(a) * d) | 0, ry = (r.y + Math.sin(a) * d * 0.7) | 0;
+      if (rx < 10 || rx > W - 10 || ry < TOP + 10 || ry > floorY - 10 || !solidBox(rx, ry, 5)) continue;
+      if (relics.some((q) => Math.abs(q.x - rx) + Math.abs(q.y - ry) < 60)) continue;
+      for (let yy = ry - 1; yy <= ry + 1; yy++) for (let xx = rx - 1; xx <= rx + 1; xx++) mat[yy * W + xx] = EMPTY;
+      relics.push({ x: rx, y: ry, taken: false });
+    }
+
     // the Cottage's set pieces for this layer
     const used = new Set();
     const pickMain = () => { const c = rooms.filter((r, k) => k > 0 && !used.has(r) && r.kind !== "bridge"); const r = c[(R() * c.length) | 0]; if (r) used.add(r); return r; };
@@ -2086,7 +2324,7 @@ const World = (() => {
       const x = 6 + ((R() * (W - 12)) | 0), y = TOP + 10 + ((R() * (floorY - TOP - 20)) | 0), i = y * W + x;
       if (mat[i] !== EMPTY || mat[i - W] !== EMPTY || KIND[mat[i + W]] !== K.SOLID) continue;
       if (glows.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) < 24)) continue;
-      glows.push({ x, y, c: glowColor, h: 1 + ((R() * 2) | 0) });
+      glows.push({ x, y, c: glowColor, h: 1 + ((R() * 2) | 0), kind: { crypt: "candle", cistern: "crystal", garden: "mushroom", forge: "coal" }[plan.theme] });
     }
     // a few side rooms hold a chest in place of loose gold
     for (const r of sides) if (!LIQ[r.band.pocket] && R() < 0.35) { chests.push({ x: r.x | 0, y: floorOf(r), open: false }); r.chest = true; }
@@ -2130,9 +2368,85 @@ const World = (() => {
     // moss grows on floors in the overgrown hall
     if (plan.theme === "garden") for (let i = W; i < N - W; i++) if ((mat[i] === EARTH || mat[i] === WOOD) && mat[i - W] === EMPTY && rnd() < 0.7) mat[i] = MOSS;
     for (let x = 0; x < W; x++) for (let yy = 0; yy < H; yy++) if (x < 2 || x >= W - 2 || yy < 2 || yy >= H - 2) mat[yy * W + x] = BEDROCK;
+    shadeWall();
     next.fill(1);
     const route = [{ x: W / 2, y: TOP }].concat(rooms.map((r) => ({ x: r.x, y: r.y }))).concat(plan.boss ? [{ x: last.x, y: arenaTop + 20 }] : []).concat([{ x: exitX, y: H - 20 }]);
-    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, sides, path, lamps, chests, glows, pieces: notes };
+    return { exitX, exitY: H - 17, exits: exits.map((x) => ({ x, y: H - 17 })), spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, sides, path, lamps, chests, glows, pipes, props, relics, pieces: notes };
+  }
+  const mix = (a, b, t) => (Math.round(((a >> 16) & 255) * (1 - t) + ((b >> 16) & 255) * t) << 16) | (Math.round(((a >> 8) & 255) * (1 - t) + ((b >> 8) & 255) * t) << 8) | Math.round((a & 255) * (1 - t) + (b & 255) * t);
+  // the back wall for each look, as tone indexes 0 (seams) to 7 (warm highlights)
+  function farPattern(theme, x, y, s) {
+    const n = vnoise(x / 6, y / 6, s + 40) * 0.7 + vnoise(x / 2, y / 2, s + 41) * 0.3;
+    let t = n > 0.66 ? 3 : n < 0.32 ? 1 : 2;
+    if (theme === "crypt") {
+      // fieldstone foundation: rows of blocks with dark mortar, and a shelf of jars now and then
+      const row = Math.floor(y / 7), bx = (x + (row % 2) * 6) % 13;
+      if (y % 7 === 0 || bx === 0) return 0;
+      t = 2 + ((hash2(Math.floor((x + (row % 2) * 6) / 13), row, s) * 3) | 0);
+      if (y % 7 === 1 || bx === 1) t = Math.min(5, t + 1);
+      if (y % 84 === 40 && x % 40 < 22) return 6;
+      if (y % 84 > 34 && y % 84 < 40 && x % 40 > 3 && x % 40 < 20 && (x % 5) < 3) return 7;
+    } else if (theme === "cistern") {
+      // concrete panels, with old pipes running along the far wall
+      if (x % 28 === 0 || y % 34 === 0) return 0;
+      if (y % 60 === 20 || y % 60 === 21 || y % 60 === 22) return y % 60 === 20 ? 5 : 4;
+      if (x % 90 === 45 || x % 90 === 46) return 4;
+      if (vnoise(x / 3, y / 12, s + 45) > 0.8) t = 6;
+    } else if (theme === "garden") {
+      // the crawlspace: floor joists overhead, posts, and roots through the dirt
+      if (y % 50 < 6 && y % 50 > 0) return y % 50 === 1 ? 5 : 4;
+      if (x % 38 < 4) return x % 38 === 0 ? 1 : 4;
+      if (Math.abs(vnoise(x / 3, y / 30, s + 44) - 0.5) < 0.03) return 0;
+      if (vnoise(x / 2, y / 2, s + 46) > 0.86) t = 6;
+    } else if (theme === "forge") {
+      // cedar planks of the sauna above, warm, with dark gaps
+      if (y % 6 === 0) return 0;
+      const plank = Math.floor(y / 6), joint = (x + plank * 17) % 31;
+      if (joint === 0) return 1;
+      t = 3 + ((hash2(plank, Math.floor((x + plank * 17) / 31), s) * 3) | 0);
+      if (vnoise(x / 8, y / 3, s + 47) > 0.72) t = 7;
+    }
+    return t;
+  }
+  // the top of the layer: the outhouse under the night sky on the first layer, a drain pipe's mouth below that
+  function buildTop(plan, s) {
+    const cx = W / 2;
+    const put = (x, y, m) => { x |= 0; y |= 0; if (inb(x, y) && x > 1 && x < W - 2 && y > 1) mat[y * W + x] = m; };
+    if (plan.depth === 1) {
+      for (let y = 2; y < 44; y++) for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        let t = y < 14 ? 0 : y < 24 ? 1 : y < 34 ? 2 : 3;
+        if (hash2(x, y, s + 90) > 0.985 && y < 28) t = 4;
+        const tree = 30 - 9 * Math.abs(Math.sin(x / 11 + vnoise(x / 9, 0, s + 91) * 2)) - vnoise(x / 4, 1, s + 92) * 5;
+        if (y > tree) t = y > tree + 3 ? 5 : 6;
+        if (Math.hypot(x - 200, y - 11) < 5) t = 7;
+        // the back wall of the outhouse: dark planks
+        if (Math.abs(x - W / 2) < 9 && y > 8 && y < 31) t = (x - W / 2 + 9) % 4 === 0 ? 8 : 9;
+        sky[i] = t;
+      }
+      // the ground, with a hole under the outhouse
+      for (let y = 31; y < 44; y++) for (let x = 2; x < W - 2; x++) if (Math.abs(x - cx) > 4) put(x, y, y === 31 ? MOSS : EARTH);
+      // the outhouse: plank walls, a roof, a seat over the hole, and a moon on the door
+      for (let y = 9; y < 31; y++) for (const x of [cx - 10, cx - 9, cx + 9, cx + 10]) put(x, y, WOOD);
+      for (let k = 0; k < 7; k++) for (let x = cx - 12 + k; x <= cx + 12 - k; x++) put(x, 8 - k, k === 0 ? WOOD : RUBBER);
+      for (let x = cx - 8; x <= cx + 8; x++) if (Math.abs(x - cx) > 3) { put(x, 30, WOOD); if (Math.abs(x - cx) < 7) { put(x, 27, PORCELAIN); put(x, 28, PORCELAIN); put(x, 29, PORCELAIN); } }
+      for (const [dx, dy] of [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2]]) mat[(14 + dy) * W + cx + 9 + dx] = EMPTY;
+    } else {
+      // the pipe you came down from the last layer
+      for (let y = 2; y < 42; y++) for (const q of [-8, -7, 7, 8]) put(cx + q + (y > 34 ? Math.sign(q) * (y - 34) * 0.6 : 0), y, METAL);
+    }
+  }
+  // how shut in each open pixel is, from the solid ground around it, for the back wall's shading
+  function shadeWall() {
+    const I = new Int32Array((W + 1) * (H + 1));
+    for (let y = 0; y < H; y++) { let run = 0; for (let x = 0; x < W; x++) { const m = mat[y * W + x]; run += KIND[m] === K.SOLID || KIND[m] === K.POWDER ? 1 : 0; I[(y + 1) * (W + 1) + x + 1] = I[y * (W + 1) + x + 1] + run; } }
+    const R2 = 5;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const x0 = Math.max(0, x - R2), x1 = Math.min(W, x + R2 + 1), y0 = Math.max(0, y - R2), y1 = Math.min(H, y + R2 + 1);
+      const c = I[y1 * (W + 1) + x1] - I[y0 * (W + 1) + x1] - I[y1 * (W + 1) + x0] + I[y0 * (W + 1) + x0];
+      const f = c / ((x1 - x0) * (y1 - y0));
+      ao[y * W + x] = f < 0.18 ? 0 : f < 0.36 ? 1 : f < 0.55 ? 2 : 3;
+    }
   }
   // a room: an ellipse with a rough wall and a flat floor
   function carveRoom(r, s) {
@@ -2183,7 +2497,7 @@ const World = (() => {
     }
   }
 
-  return { mat, life, shade, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
+  return { mat, life, shade, far, ao, sky, BGPAL, SKYPAL, get hasSky() { return hasSky; }, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
 })();
 
 /* ------------------------------------------------------------------ bodies: the player, foes, spells */
@@ -2236,28 +2550,49 @@ function pushPowder(e, s) {
   return true;
 }
 // the lantern digs: soft ground goes fast, rock and glass slowly, bedrock never
+/* the shovel: it digs a tunnel your size along your aim, and carries you through it */
+const SHOVELS = [
+  null,
+  { name: "Garden Shovel", rock: 0.12, len: 13, blade: "#a8b0b8", desc: "Soft ground goes fast. Rock takes a while." },
+  { name: "Steel Spade", rock: 0.35, len: 16, blade: "#e4ecf4", desc: "Longer reach, and rock goes three times faster." },
+  { name: "Power Auger", rock: 0.9, len: 19, blade: "#ff8a30", desc: "It chews through rock, metal, and porcelain like dirt." },
+];
 function dig(p, a) {
-  let n = 0;
-  // a hole a little taller than you; the floor stays unless you aim down
-  const keepFloor = Math.sin(a) < 0.45, feet = Math.floor(p.y + p.h);
-  for (const reach of [5, 9]) {
-    const cx = p.x + 2 + Math.cos(a) * reach, cy = p.y + 4 + Math.sin(a) * reach, r = 6;
+  const S = SHOVELS[run.shovel] || SHOVELS[1];
+  const ca = Math.cos(a), sa = Math.sin(a);
+  // the floor stays unless you aim down
+  const keepFloor = sa < 0.45, feet = Math.floor(p.y + p.h);
+  const ox = p.x + p.w / 2, oy = p.y + p.h / 2 - 1, r = 6;
+  let n = 0, col = 0;
+  const budget = 150 * run.digMult;
+  for (let d = 2; d <= S.len && n < budget; d += 2) {
+    const cx = ox + ca * d, cy = oy + sa * d;
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (dx * dx + dy * dy > r * r) continue;
-      const x = (cx + dx) | 0, y = (cy + dy) | 0, m = World.at(x, y);
-      if (keepFloor && y >= feet) continue;
-      if (m === EMPTY || m === BEDROCK || m === SEAL || !World.inb(x, y)) continue;
+      const x = (cx + dx) | 0, y = (cy + dy) | 0;
+      if ((keepFloor && y >= feet) || !World.inb(x, y)) continue;
+      const i = y * W + x, m = World.mat[i];
+      if (m === EMPTY || m === BEDROCK || m === SEAL) continue;
       const k = KIND[m];
       if (k !== K.SOLID && k !== K.POWDER) continue;
-      if (HARD[m] > 2 && m !== GOLD && rnd() > 0.16 * run.digMult) continue;
-      const i = y * W + x;
-      if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); }
-      else World.set(i, rnd() < 0.12 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
-      if (++n > 44 * run.digMult) break;
+      if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); n++; continue; }
+      if (HARD[m] > 2 && rnd() > S.rock * run.digMult) continue;
+      World.set(i, rnd() < 0.06 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
+      if (!col || rnd() < 0.1) col = MATS[m].cols[0];
+      n++;
     }
   }
-  if (n) { SFX.dig(); if (rnd() < 0.5) addFx(p.x + 2 + Math.cos(a) * 8, p.y + 5 + Math.sin(a) * 8, 0xc9b27a, 1); }
-  Game.digging = { x: p.x + 2 + Math.cos(a) * 8, y: p.y + 5 + Math.sin(a) * 8, t: 0.1 };
+  const tipX = ox + ca * S.len * 0.7, tipY = oy + sa * S.len * 0.7;
+  if (n) {
+    SFX.dig();
+    // dirt flies back over your shoulder
+    if (rnd() < 0.7) for (let k = 0; k < 2; k++) Game.fx.push({ x: tipX, y: tipY, vx: -ca * (0.6 + rnd()) + (rnd() - 0.5), vy: -1.2 - rnd() * 1.2, t: 0.35 + rnd() * 0.3, c: World.abgr(col) });
+    // tunneling: the shovel pulls you along the way it digs
+    p.vx += ca * 0.2;
+    if (sa < -0.4 && p.vy > -1.4) p.vy -= 0.28;
+  }
+  Game.digging = { x: tipX, y: tipY, t: 0.12, a };
+  Game.digSwing = (Game.digSwing || 0) + 0.45;
 }
 // sand can pour into a body: push it up, or clear the grains it sits in
 function unstick(e) {
@@ -2289,14 +2624,14 @@ function bodyEnv(e) {
 }
 
 const Game = {
-  player: null, foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [], nums: [], pickups: [], lamps: [], chests: [],
+  player: null, caps: [], foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [], nums: [], pickups: [], lamps: [], chests: [],
   state: "intro", level: null, cam: { x: 0, y: 0, shake: 0 }, paused: false,
   watchT: 0, watchBusy: false, handT: 0, handBusy: false, idleT: 0, bestY: 0, levelT: 0, lastPour: null,
   input: { x: 0, up: false, down: false, cast: false, sx: null, sy: null, touchAim: null, keyAim: false, jumpEdge: false },
 };
 
 function makePlayer(x, y) {
-  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0 };
+  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0, atk: null, combo: 0, comboT: 0, roll: 0, rollCd: 0, pound: false, ghosts: [] };
 }
 function makeFoe(kind, x, y, elite) {
   const d = FOES[kind];
@@ -2308,14 +2643,21 @@ function hurtPlayer(dmg, cause, raw) {
   const p = Game.player;
   if (!p || run.over || dmg <= 0) return;
   if (!raw) {
-    if (p.hurtT > 0) return;
+    if (p.hurtT > 0 || p.roll > 0 || p.pound) return;
     if (p.aegisT > 0) { p.aegisT = 0; p.hurtT = 0.6; addFx(p.x + 2, p.y + 5, 0xb39ddb, 14); SFX.zap(); return; }
     p.hurtT = 0.35;
   }
+  dmg *= run.armor;
+  if (run.curse > 0 && !raw) dmg = run.hp + 1;
   run.hp -= dmg;
   run.lastHitBy = cause;
   p.flash = 0.15;
   if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); }
+  if (run.hp <= 0 && run.secondWind) {
+    run.secondWind = false; run.hp = Math.round(run.maxHp * 0.3); run.curse = 0; p.hurtT = 1.2;
+    Game.flashes.push({ x: p.x + 2, y: p.y + 5, r: 30, t: 0.5 }); SFX.well();
+    UI.hint("Second wind. You get back up.", 2500);
+  }
   if (run.hp <= 0) { run.hp = 0; die(cause); }
   else if (run.hp / run.maxHp < 0.3 && !run.lowBarked) { run.lowBarked = true; Cottage.bark("low_hp", run).then((l) => UI.voice(l)); }
 }
@@ -2336,10 +2678,12 @@ function hurtFoe(f, dmg, src) {
 function killFoe(f) {
   f.dead = true;
   run.kills++;
+  if (run.curse > 0 && --run.curse === 0) { UI.hint("The curse lifts.", 2200); SFX.well(); }
   SFX.kill();
   const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
   if (f.d.bleed) World.spill(cx, cy, f.d.bleed, f.d.ai === "brute" ? 30 : 10, 5);
   World.spill(cx, cy - 2, GOLD, f.d.gold, 4);
+  dropCaps(cx, cy - 2, f.d.boss ? 30 : (f.elite ? 3 : 1) * Math.max(1, Math.min(3, f.d.tier)));
   addFx(cx, cy, f.d.pal[Object.keys(f.d.pal)[0]], 16);
   if (f.d.ai === "bomb") { blast(cx, cy, 9, 2, 20, "blast", f); }
   if (f.d.ai === "hand") handDown();
@@ -2351,6 +2695,7 @@ function blast(x, y, r, power, dmg, cause, owner) {
   World.explode(x, y, r, power);
   for (const l of Game.lamps) if (Math.hypot(l.x - x, l.y - y) < r + 3) breakLamp(l);
   for (const c of Game.chests) if (Math.hypot(c.x - x, c.y - y) < r + 3) openChest(c);
+  for (const t of Game.props || []) if (!t.dead && Math.hypot(t.x - x, t.y - 4 - y) < r + 4) { if (t.kind === "tank") explodeTank(t); else hitNest(t, 99); }
   Game.flashes.push({ x, y, r: r * 3, t: 0.25 });
   SFX.boom(r > 10);
   Game.cam.shake = Math.min(10, Game.cam.shake + r * 0.5);
@@ -2391,7 +2736,7 @@ function castWand(ang) {
   for (let k = w.cursor; k < w.spells.length; k++) if (w.spells[w.order ? w.order[k] : k]) { rest = true; break; }
   if (wrapped || !rest) { w.cursor = 0; w.rechargeT = w.recharge; }
   // read the drawn spells: modifiers change what follows, a payload makes the next shot carry the spell after it
-  const mods = { speed: w.speed, dmg: run.dmgMult * (rnd() < run.crit ? 2 : 1), delay: 0, dig: 0, leech: 0, homing: 0, copies: 1, spread: w.spread };
+  const mods = { speed: w.speed, dmg: run.dmgMult * run.aim * (rnd() < run.crit ? 2 : 1), delay: 0, dig: 0, leech: 0, homing: run.homing, copies: 1, spread: w.spread };
   if (w.always && SPELLS[w.always].kind === "mod") SPELLS[w.always].mod(mods);
   const casts = [];
   let carrier = null, wantCarrier = 0;
@@ -2407,7 +2752,7 @@ function castWand(ang) {
   if (w.always && SPELLS[w.always].kind !== "mod") casts.push({ id: w.always, mods: { ...mods, copies: 1 } });
   if (!casts.length) { w.cdT = 0.2; SFX.fizzle(); return; }
   for (const c of casts) fireSpell(c.id, ang, c.mods, null, c.payload || null);
-  w.cdT = Math.max(0.04, w.castDelay + mods.delay);
+  w.cdT = Math.max(0.04, w.castDelay * run.rateMult + mods.delay);
   run.casts++;
   // a flash at the wand tip, and heavy spells push you back
   const tipX = p.x + 2 + Math.cos(ang) * 6, tipY = p.y + 4 + Math.sin(ang) * 6;
@@ -2564,6 +2909,7 @@ function updateShots(dt) {
         s.digN--;
         SFX.dig();
       } else if (blocks(m)) {
+        if (m === METAL && s.owner === "player" && s.dmg >= 3 && pipeAt(nx | 0, ny | 0)) World.set(i, EMPTY);
         if (s.bounce > 0) {
           s.bounce--;
           if (blocks(World.at(nx, s.y))) s.vx = -s.vx;
@@ -2607,6 +2953,11 @@ function updateShots(dt) {
     if (s.owner === "player") {
       for (const l of Game.lamps) if (l.lit && Math.abs(l.x - s.x) < 3 && Math.abs(l.y - s.y) < 3) breakLamp(l);
       for (const c of Game.chests) if (!c.open && Math.abs(c.x - s.x) < 5 && s.y > c.y - 6 && s.y < c.y + 1) openChest(c);
+      for (const t of Game.props || []) {
+        if (t.dead || s.propHit === t) continue;
+        if (t.kind === "tank" && Math.abs(t.x - s.x) < 4 && s.y > t.y - 9 && s.y < t.y + 1) { s.propHit = t; t.hp -= s.dmg; if (t.hp <= 0) explodeTank(t); }
+        else if (t.kind === "nest" && Math.abs(t.x - s.x) < 5 && s.y > t.y && s.y < t.y + 12) { s.propHit = t; hitNest(t, s.dmg); }
+      }
     }
     s.trail.push(s.x, s.y);
     if (s.trail.length > 8) s.trail.splice(0, 2);
@@ -2633,14 +2984,14 @@ function chainFrom(f, s) {
 function envTick(e, dt, isPlayer) {
   const c = bodyEnv(e);
   const immuneFire = !isPlayer && e.d.fireImmune;
-  if (c.lava && !immuneFire) { e.burn = 3; isPlayer ? hurtPlayer(35 * dt, "lava", true) : hurtFoe(e, 35 * dt); }
+  if (c.lava && !immuneFire) { e.burn = 3; isPlayer ? hurtPlayer(35 * dt * run.fireResist, "lava", true) : hurtFoe(e, 35 * dt); }
   if (c.fire && !immuneFire) e.burn = Math.max(e.burn, 2.5);
   if (c.water) e.burn = 0;
   if (c.acid) isPlayer ? hurtPlayer(22 * dt, "acid", true) : hurtFoe(e, 22 * dt);
   if (c.sludge && (isPlayer || !e.d.poisonImmune)) e.poison = Math.min(8, e.poison + dt * 3);
   if (e.burn > 0) {
     e.burn -= dt;
-    isPlayer ? hurtPlayer(6 * dt, "fire", true) : hurtFoe(e, 6 * dt);
+    isPlayer ? hurtPlayer(6 * dt * run.fireResist, "fire", true) : hurtFoe(e, 6 * dt);
     if (rnd() < 0.25) World.place(e.x + rnd() * e.w, e.y + rnd() * e.h, FIRE, 8 + rnd() * 10, true);
   }
   if (e.poison > 0) { e.poison = Math.max(0, e.poison - dt * 0.8); isPlayer ? hurtPlayer(1.6 * e.poison * dt, "sludge", true) : hurtFoe(e, 2 * e.poison * dt); }
@@ -2651,6 +3002,134 @@ function envTick(e, dt, isPlayer) {
   return c;
 }
 
+/* melee, the dodge roll, and the ground pound */
+
+// the hot dog: a few heals per layer, refilled at the snack bar
+function drinkFlask(p) {
+  if (run.flasks <= 0) { UI.hint("No hot dogs left. The snack bar refills them.", 1800); return; }
+  if (run.hp >= run.maxHp) { UI.hint("You are not hungry.", 1200); return; }
+  run.flasks--;
+  const heal = Math.round(run.maxHp * 0.45);
+  run.hp = Math.min(run.maxHp, run.hp + heal);
+  p.burn = 0; p.poison = 0;
+  Game.nums.push({ x: p.x + 2, y: p.y - 4, v: "+" + heal, t: 1, big: true });
+  addFx(p.x + 2, p.y + 4, 0x9cff6a, 14);
+  SFX.eat();
+  UI.hud(true);
+}
+function attackDir(p) {
+  const inp = Game.input;
+  if (inp.x) return Math.sign(inp.x);
+  if (inp.sx != null && inp.touchAim == null && !inp.pad) { const w = Render.toWorld(inp.sx, inp.sy); return w.x >= p.x + p.w / 2 ? 1 : -1; }
+  if (inp.touchAim != null) return Math.cos(inp.touchAim) >= 0 ? 1 : -1;
+  return p.face;
+}
+function startSwing(p) {
+  const M = MELEE[run.melee];
+  if (p.atk) { p.queued = true; return; }
+  if (p.comboT <= 0) p.combo = 0;
+  const fd = attackDir(p);
+  p.face = fd;
+  p.atk = { k: p.combo % M.combo.length, t: 0, fd, hit: new Set(), dur: (M.t[0] + M.t[1] + M.t[2]) * run.swingMult };
+  p.vx += fd * M.lunge;
+  SFX.swing(p.atk.k === M.combo.length - 1);
+}
+function critFor(M, f, k, p, fd) {
+  if (rnd() < run.crit) return true;
+  if (M.crit === "third") return k === M.combo.length - 1;
+  if (M.crit === "stunned") return f.stun > 0;
+  if (M.crit === "burning") return f.burn > 0 || f.poison > 0;
+  if (M.crit === "tip") return Math.abs(f.x + f.w / 2 - (p.x + p.w / 2)) > M.reach * 0.6;
+  if (M.crit === "airborne") return !f.ground || f.d.ai === "fly" || f.d.ai === "dash";
+  return false;
+}
+function meleeHits(p, a, M) {
+  const fd = a.fd, cx = p.x + p.w / 2;
+  const x0 = fd > 0 ? cx - 1 : cx - M.reach, x1 = fd > 0 ? cx + M.reach : cx + 1;
+  const y0 = run.melee === "rod" ? p.y : p.y - 4, y1 = run.melee === "rod" ? p.y + 8 : p.y + p.h + 2;
+  const box = (x, y, w, h) => x < x1 && x + w > x0 && y < y1 && y + h > y0;
+  for (const f of Game.foes) {
+    if (f.dead || a.hit.has(f) || !box(f.x, f.y, f.w, f.h)) continue;
+    a.hit.add(f);
+    const crit = critFor(M, f, a.k, p, fd);
+    const dmg = Math.round(M.combo[a.k] * run.dmgMult * run.muscle * (crit ? 2 : 1) * (1 + 0.08 * (run.depth - 1)));
+    hurtFoe(f, dmg, null);
+    if (crit) { Game.nums.push({ x: f.x + f.w / 2, y: f.y - 6, v: "!", t: 0.5, big: true }); if (run.critHeal) run.hp = Math.min(run.maxHp, run.hp + run.critHeal); }
+    if (f.d.ai !== "hand") { f.vx += fd * M.knock * (f.d.w > 8 ? 0.4 : 1); f.vy -= 0.9; f.stun = Math.max(f.stun || 0, M.stun + (crit ? 0.15 : 0)); }
+    else f.stun = Math.max(f.stun || 0, 0.05);
+    Game.hitStop = Math.max(Game.hitStop || 0, crit ? 0.085 : 0.045);
+    Game.cam.shake = Math.min(6, Game.cam.shake + (crit ? 3 : 1.4));
+    addFx(f.x + f.w / 2, f.y + f.h / 2, crit ? 0xffcf4a : 0xffffff, crit ? 10 : 5);
+    if (crit) SFX.crit(); else SFX.hit();
+  }
+  // a swing knocks critters' spit out of the air
+  for (const s of Game.shots) if (s.owner === "foe" && !s.parried && s.x > x0 && s.x < x1 && s.y > y0 && s.y < y1) { s.parried = true; s.life = 0; addFx(s.x, s.y, 0xffffff, 6); SFX.zap(); }
+  for (const t of Game.props || []) {
+    if (t.dead || a.hit.has(t)) continue;
+    if (t.kind === "nest" && box(t.x - 5, t.y, 10, 12)) { a.hit.add(t); hitNest(t, M.combo[a.k] * run.muscle); }
+    else if (t.kind === "tank" && box(t.x - 3, t.y - 8, 6, 8)) { a.hit.add(t); t.hp -= M.combo[a.k]; if (t.hp <= 0) explodeTank(t); }
+  }
+  for (const l of Game.lamps) if (l.lit && l.x > x0 && l.x < x1 && l.y > y0 - 6 && l.y < y1) breakLamp(l);
+  for (const c of Game.chests) if (!c.open && c.x > x0 && c.x < x1 && c.y > y0 && c.y < y1 + 4) openChest(c);
+}
+function poundLand(p) {
+  p.pound = false;
+  const cx = p.x + p.w / 2, cy = p.y + p.h;
+  for (const f of Game.foes) {
+    if (f.dead) continue;
+    const d = Math.hypot(f.x + f.w / 2 - cx, f.y + f.h / 2 - cy);
+    if (d > 18) continue;
+    hurtFoe(f, Math.round(18 * run.dmgMult * run.muscle * (1 + 0.08 * (run.depth - 1))), null);
+    if (f.d.ai !== "hand") { f.stun = Math.max(f.stun || 0, 1); f.vy = -2.2; f.vx += Math.sign(f.x + f.w / 2 - cx) * 1.2; }
+  }
+  for (const t of Game.props || []) if (!t.dead && Math.hypot(t.x - cx, t.y - cy) < 18) { if (t.kind === "tank") explodeTank(t); else hitNest(t, 20); }
+  for (const c of Game.chests) if (!c.open && Math.hypot(c.x - cx, c.y - cy) < 14) openChest(c);
+  // loose sand and gold jump out of the floor
+  for (let k = 0; k < 14; k++) Game.fx.push({ x: cx + (rnd() - 0.5) * 14, y: cy, vx: (rnd() - 0.5) * 2.4, vy: -1 - rnd() * 1.8, t: 0.4 + rnd() * 0.3, c: World.abgr(0xc9b27a) });
+  Game.hitStop = Math.max(Game.hitStop || 0, 0.07);
+  Game.cam.shake = Math.min(8, Game.cam.shake + 5);
+  p.hurtT = Math.max(p.hurtT, 0.25);
+  SFX.boom(false);
+}
+function updateCombat(p, dt) {
+  const inp = Game.input, M = MELEE[run.melee];
+  p.rollCd = Math.max(0, p.rollCd - dt);
+  p.comboT = Math.max(0, p.comboT - dt);
+  for (const g of p.ghosts) g.t -= dt;
+  p.ghosts = p.ghosts.filter((g) => g.t > 0);
+  // roll: fast, and nothing can hit you while you roll. It cancels a swing.
+  if (inp.rollEdge && p.rollCd <= 0 && !p.pound) {
+    p.roll = 0.28; p.rollDir = inp.x ? Math.sign(inp.x) : p.face; p.rollCd = 0.5; p.atk = null; p.queued = false; p.face = p.rollDir;
+    SFX.roll();
+  }
+  inp.rollEdge = false;
+  if (p.roll > 0) {
+    p.roll -= dt;
+    p.vx = p.rollDir * 3.2 * run.rollMult;
+    if ((World.tick & 1) === 0) p.ghosts.push({ x: p.x, y: p.y, t: 0.18, face: p.face });
+  }
+  // ground pound: attack in the air while holding down
+  if (inp.attackEdge && !p.ground && inp.down && !p.pound && p.roll <= 0) { p.pound = true; p.atk = null; p.vx *= 0.3; SFX.swing(true); }
+  if (p.pound) {
+    p.vy = 4;
+    if ((World.tick & 1) === 0) p.ghosts.push({ x: p.x, y: p.y, t: 0.12, face: p.face });
+    if (p.ground || bodyEnv(p).frac > 0.3) poundLand(p);
+  } else if (p.roll <= 0 && (inp.attackEdge || (inp.attack && !p.atk))) startSwing(p);
+  inp.attackEdge = false;
+  const a = p.atk;
+  if (a) {
+    a.t += dt;
+    const s = run.swingMult, w0 = M.t[0] * s, w1 = w0 + M.t[1] * s;
+    if (a.t >= w0 && a.t <= w1 + dt) meleeHits(p, a, M);
+    if (a.t >= a.dur) {
+      p.atk = null;
+      p.combo = a.k + 1 >= M.combo.length ? 0 : a.k + 1;
+      p.comboT = 0.45;
+      if (p.queued) { p.queued = false; startSwing(p); }
+    }
+  }
+}
+
 /* the player */
 
 function updatePlayer(dt) {
@@ -2659,15 +3138,15 @@ function updatePlayer(dt) {
   const c = envTick(p, dt, true);
   const inLiquid = c.frac > 0.25;
   const accel = p.ground ? 0.34 : 0.27;
-  p.vx += inp.x * accel * run.speedMult;
-  p.vx *= p.ground ? 0.78 : inLiquid ? 0.86 : 0.93;
+  p.vx += inp.x * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
+  p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
   p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
   if (inp.x) p.face = inp.x > 0 ? 1 : -1;
   p.vy += inLiquid ? 0.05 : 0.15;
   // a short grace after leaving a ledge, and a jump pressed just before landing still counts
   p.coyote = p.ground ? 0.1 : Math.max(0, (p.coyote || 0) - dt);
   p.jumpBuf = inp.jumpEdge ? 0.12 : Math.max(0, (p.jumpBuf || 0) - dt);
-  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; }
+  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; p.roll = Math.min(p.roll, 0.05); }
   else if (inp.up && !p.ground && p.lift > 0 && p.vy > -2.1) {
     p.vy -= 0.34;
     p.lift = Math.max(0, p.lift - dt / run.liftMax);
@@ -2688,25 +3167,38 @@ function updatePlayer(dt) {
     w.cdT = Math.max(0, w.cdT - dt);
     w.rechargeT = Math.max(0, w.rechargeT - dt);
   }
-  if (inp.dig) { dig(p, aimAngle()); p.vx *= 0.85; }
-  else if (inp.cast) castWand(aimAngle());
+  if (inp.dig && p.roll <= 0 && !p.atk) dig(p, aimAngle());
+  else if (inp.cast && p.roll <= 0) castWand(aimAngle());
+  updateCombat(p, dt);
+  if (inp.flaskEdge) { inp.flaskEdge = false; drinkFlask(p); }
   if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Tap Dig, then drag your right thumb where you want to plunge." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
   // wands lying in the caves
-  Game.nearPickup = null;
+  Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
     if (Math.hypot(pk.x - (p.x + 2), pk.y - (p.y + 6)) > 9) continue;
-    if (run.wands.length < 3 && !pk.dropped) takePickup(pk);
+    if (pk.scroll) takePickup(pk);
+    else if (pk.wand && run.wands.length < 3 && !pk.dropped) takePickup(pk);
     else Game.nearPickup = pk;
     break;
   }
-  if (inp.swapEdge && Game.nearPickup) takePickup(Game.nearPickup);
-  for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) openChest(c);
+  for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) { if (c.cursed) Game.nearCursed = c; else openChest(c); }
+  if (inp.swapEdge) { if (Game.nearPickup) takePickup(Game.nearPickup); else if (Game.nearCursed) openChest(Game.nearCursed, true); }
   inp.swapEdge = false;
   // progress, for the Cottage's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
   // the well
   const L = Game.level;
-  if (L && Math.hypot(p.x + p.w / 2 - L.exitX, p.y + p.h - L.exitY) < 10 && (!L.boss || L.handDead)) reachWell();
+  const ex = L && L.exits.find((e) => Math.hypot(p.x + p.w / 2 - e.x, p.y + p.h - e.y) < 10);
+  if (ex) {
+    if (drainOpen(L)) { run.nextTheme = ex.theme; run.nextRich = ex.rich; reachWell(); }
+    else if (!Game.clogHinted) { Game.clogHinted = true; UI.hint(L.boss ? "The drain is clogged. Beat the boss." : "The drain is clogged. Clear the last room above it first.", 3000); }
+  }
+}
+// the drain opens when the boss is beaten, or the last sealed room is cleared, so you cannot dig around the fights
+function drainOpen(L) {
+  if (L.boss) return L.handDead;
+  const g = Game.gauntlets && Game.gauntlets[0];
+  return !g || g.state === "done";
 }
 // the next point on the route below the player, or the well
 function routeTarget(p) {
@@ -2723,14 +3215,32 @@ function routeTarget(p) {
   return best + 10 < path.length ? path[best + 10] : { x: L.exitX, y: L.exitY - 4 };
 }
 // a chest bursts with gold, and may hold a spell or a wand
-function openChest(c) {
-  if (c.open) return;
+function openChest(c, force) {
+  if (c.open || (c.cursed && !force)) return;
   c.open = true;
+  if (c.cursed) {
+    // a cursed cooler: rich loot, and any hit kills you until you take down 10 critters
+    run.curse = 10;
+    World.spill(c.x, c.y - 4, GOLD, 90 + 20 * run.depth, 6);
+    dropCaps(c.x, c.y - 4, 14);
+    const pool = Object.keys(MELEE).filter((id) => id !== run.melee && meleeUnlocked(id));
+    if (pool.length) Game.pickups.push({ x: c.x - 5, y: c.y - 5, melee: pool[(rnd() * pool.length) | 0], bob: 0 });
+    else Game.pickups.push({ x: c.x - 5, y: c.y - 5, wand: makeWand(clamp(run.depth + 1, 1, 3)), bob: 0 });
+    Game.pickups.push({ x: c.x + 5, y: c.y - 5, scroll: true, bob: 2 });
+    SFX.roar();
+    Game.flashes.push({ x: c.x, y: c.y - 3, r: 20, t: 0.4 });
+    UI.hint("Cursed! Any hit takes you down until you beat 10 critters.", 3600);
+    UI.hud(true);
+    return;
+  }
   World.spill(c.x, c.y - 4, GOLD, (c.rich ? 70 : 30) + 12 * run.depth, 5);
   SFX.well();
   addFx(c.x, c.y - 3, 0xe6c35c, 14);
   const roll = rnd();
-  if (roll < (c.rich ? 0.35 : 0.15)) {
+  if (run.shovel < 3 && rnd() < 0.12) {
+    run.shovel++;
+    UI.hint("The cooler held a " + SHOVELS[run.shovel].name + ". " + SHOVELS[run.shovel].desc, 3600);
+  } else if (roll < (c.rich ? 0.35 : 0.15)) {
     Game.pickups.push({ x: c.x, y: c.y - 5, wand: makeWand(clamp(run.depth, 1, 3)), bob: 0 });
     UI.hint("The cooler held a gun.", 3000);
   } else if (roll < 0.6) {
@@ -2759,6 +3269,11 @@ function updateGauntlets(dt) {
     if (g.state === "idle") {
       const nx = (p.x + 2 - r.x) / r.rw, ny = (p.y + 5 - r.y) / r.rh;
       if (nx * nx + ny * ny < 0.55) startGauntlet(g);
+      else if (g === Game.gauntlets[0] && Game.level && !Game.level.boss) {
+        // you dug around the last room: the fight comes to you at the drains
+        const e = Game.level.exits.find((q) => Math.abs(q.x - (p.x + 2)) < 34 && p.y > q.y - 40);
+        if (e) { g.r = { x: e.x, y: e.y - 12, rw: 30, rh: 16 }; startGauntlet(g); UI.hint("You skipped the last room, so it came to you.", 2600); }
+      }
     } else if (g.state === "active") {
       g.foes = g.foes.filter((f) => !f.dead);
       if (g.foes.length || g.spawning) continue;
@@ -2825,13 +3340,25 @@ function endGauntlet(g) {
   g.seal = [];
   World.spill(g.r.x, g.r.y, GOLD, 20 + 10 * run.depth, 5);
   SFX.well();
-  UI.hint("The screen doors open.", 2000);
+  UI.hint(g === Game.gauntlets[0] ? "The screen doors open, and the drain below unclogs." : "The screen doors open.", 2600);
+  dropCaps(g.r.x, g.r.y, 4 + run.depth);
   Cottage.bark("gauntlet_clear", run).then((l) => UI.voice(l));
 }
 function takePickup(pk) {
   const i = Game.pickups.indexOf(pk);
   if (i < 0) return;
   Game.pickups.splice(i, 1);
+  if (pk.scroll) { SFX.well(); UI.chooseScroll(); return; }
+  if (pk.melee) {
+    const old = run.melee;
+    run.melee = pk.melee;
+    Game.player.atk = null; Game.player.combo = 0;
+    Game.pickups.push({ x: pk.x, y: pk.y, melee: old, bob: 0, dropped: true });
+    UI.hint("You took the " + MELEE[pk.melee].name + ". It " + CRIT_TEXT[MELEE[pk.melee].crit] + ".", 3200);
+    SFX.coin();
+    UI.hud(true);
+    return;
+  }
   if (run.wands.length < 3) {
     run.wands.push(pk.wand);
     selectWand(run.wands.length - 1);
@@ -2880,6 +3407,12 @@ function updateFoes(dt) {
     if (f.d.ai !== "hand") envTick(f, dt, false);
     if (f.dead) continue;
     const d = f.d;
+    // a stunned critter only slides and falls, and does not hurt you
+    if (f.stun > 0) {
+      f.stun -= dt;
+      if (d.ai !== "hand") { f.vy = clamp(f.vy + (d.ai === "fly" || d.ai === "dash" ? 0.04 : 0.15), -3, 4); f.vx *= 0.88; moveBody(f, f.vx, f.vy); unstick(f); }
+      continue;
+    }
     const dir = Math.sign(dx) || 1;
     f.face = dir;
     if (d.ai === "dash") {
@@ -2909,10 +3442,19 @@ function updateFoes(dt) {
     } else {
       let want = dir;
       if (d.ai === "spit" && dist < 50) want = -dir;
-      if (d.ai === "spit" && dist < 110 && f.cd <= 0) {
+      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35; }
+      if (f.windT > 0) { f.windT -= dt; f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0); want = 0; }
+      if (d.ai === "spit" && f.windT < 0) {
+        f.windT = 0;
         f.cd = 2.2 + rnd();
         const a = Math.atan2(dy - Math.abs(dx) * 0.35, dx);
         Game.shots.push({ id: "spit", S: { color: 0x9cff4a }, x: f.x + 2, y: f.y + 1, vx: Math.cos(a) * 2.8, vy: Math.sin(a) * 2.8, life: 110, grav: 0.07, dmg: 8, owner: "foe", from: f.kind, trail: [], hit: new Set() });
+      }
+      // the moose lowers its head, then charges
+      if (d.ai === "brute") {
+        if (f.charge > 0) { f.charge -= dt; want = f.chargeDir * 3.2; if (f.charge <= 0) f.cd = 2 + rnd(); }
+        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45; f.chargeDir = dir; }
+        if (f.windT < 0) { f.windT = 0; f.charge = 0.55; SFX.zap(); }
       }
       if (d.ai === "bomb") {
         if (dist < 14 && !f.fuse) f.fuse = 0.6;
@@ -2921,7 +3463,8 @@ function updateFoes(dt) {
       const inLiq = bodyEnv(f).frac > 0.3;
       f.vx += want * d.speed * (f.ground ? 0.25 : 0.1);
       f.vx *= f.ground ? 0.8 : 0.95;
-      f.vx = clamp(f.vx, -d.speed * 2, d.speed * 2);
+      const top = f.charge > 0 ? 2.4 : d.speed * 2;
+      f.vx = clamp(f.vx, -top, top);
       f.vy += inLiq ? 0.04 : 0.15;
       if (inLiq) f.vy *= 0.9;
       f.jumpCd -= dt;
@@ -2929,7 +3472,7 @@ function updateFoes(dt) {
       f.vy = clamp(f.vy, -3, 4);
       const r = moveBody(f, f.vx, f.vy);
       if (r.hitX && f.ground && f.jumpCd <= 0) { f.vy = -2.6; f.jumpCd = 0.8; }
-      if (d.ai === "brute" && r.hitX && f.cd <= 0) {
+      if (d.ai === "brute" && r.hitX && f.cd <= 0 && !f.charge) {
         f.cd = 0.4;
         const bx = dir > 0 ? f.x + f.w + 1 : f.x - 2;
         for (let yy = 0; yy < f.h; yy++) for (let xx = 0; xx < 2; xx++) {
@@ -3021,6 +3564,128 @@ function updateEmitters() {
   Game.emitters = Game.emitters.filter((e) => e.ticks > 0);
 }
 
+/* pipes leak where they break, propane tanks blow, hornet nests send hornets */
+/* caps: bottle caps drop from critters and fly to you. Bank them at the snack bar, or lose them when you die. */
+function dropCaps(x, y, n) {
+  n = Math.max(1, Math.round(n * run.capMult));
+  for (let k = 0; k < n; k++) Game.caps.push({ x, y, vx: (rnd() - 0.5) * 2.2, vy: -1 - rnd() * 1.6, t: 0 });
+}
+function updateCaps(dt) {
+  const p = Game.player;
+  for (const c of Game.caps) {
+    c.t += dt;
+    const dx = p ? p.x + p.w / 2 - c.x : 0, dy = p ? p.y + p.h / 2 - c.y : 0, d = Math.hypot(dx, dy);
+    if (p && !run.over && c.t > 0.45 && d < 70) { c.vx += (dx / d) * 0.35; c.vy += (dy / d) * 0.35; c.vx *= 0.9; c.vy *= 0.9; c.x += c.vx; c.y += c.vy; }
+    else {
+      c.vy = Math.min(3, c.vy + 0.12); c.vx *= 0.98;
+      if (!blocks(World.at(c.x + c.vx, c.y))) c.x += c.vx; else c.vx *= -0.4;
+      if (!blocks(World.at(c.x, c.y + c.vy))) c.y += c.vy; else { c.vy = 0; c.vx *= 0.8; }
+    }
+    if (p && !run.over && d < 5) { c.gone = true; run.caps++; SFX.cap(); }
+    if (c.t > 25) c.gone = true;
+  }
+  Game.caps = Game.caps.filter((c) => !c.gone);
+}
+function pipeAt(x, y) { return (Game.pipes || []).find((q) => y >= q.y && y <= q.y + 1 && x >= q.x1 && x <= q.x2); }
+function explodeTank(t) {
+  if (t.dead) return;
+  t.dead = true;
+  for (let yy = t.y - 8; yy < t.y; yy++) for (let q = -3; q <= 3; q++) if (World.at(t.x + q, yy) === METAL) World.set(yy * W + t.x + q, EMPTY);
+  blast(t.x, t.y - 4, 15, 4, 45, "blast", null);
+  World.spill(t.x, t.y - 6, FIRE, 30, 9);
+  Game.cam.shake = Math.min(8, Game.cam.shake + 6);
+}
+function hitNest(n, dmg) {
+  if (n.dead) return;
+  n.hp -= dmg; n.wob = 0.3;
+  if (n.hp > 0) return;
+  n.dead = true;
+  SFX.kill();
+  addFx(n.x, n.y + 6, 0xf2c230, 16);
+  World.spill(n.x, n.y + 6, GOLD, 10 + 3 * run.depth, 4);
+  for (let k = 0; k < 2; k++) spawnFoe("hornet", n.x - 4 + k * 8, n.y + 8);
+  dropCaps(n.x, n.y + 6, 2);
+}
+function updateProps(dt) {
+  const p = Game.player, tick = World.tick;
+  // pipes: every break in the metal lets its water out, a few times per pipe
+  if ((tick & 15) === 0) for (const q of Game.pipes || []) {
+    if (q.holes.size >= 4) continue;
+    for (let x = q.x1; x <= q.x2; x++) {
+      if (World.at(x, q.y + 1) === METAL || q.holes.has(x >> 2)) continue;
+      q.holes.add(x >> 2);
+      Game.emitters.push({ x, y: q.y + 1, w: 1.5, m: q.m, rate: 2, ticks: 420, tele: 0 });
+      SFX.splash();
+      break;
+    }
+  }
+  for (const t of Game.props || []) {
+    if (t.dead) continue;
+    if (t.kind === "tank") {
+      if ((tick & 7) !== 0) continue;
+      let metal = 0, hot = 0;
+      for (let yy = t.y - 9; yy <= t.y; yy++) for (let q = -3; q <= 3; q++) { const m = World.at(t.x + q, yy); if (m === METAL) metal++; else if (m === FIRE || m === EMBER || m === LAVA) hot++; }
+      if (hot) t.heat = (t.heat || 0) + hot;
+      if (metal < 22 || t.heat > 14) explodeTank(t);
+    } else if (t.kind === "nest") {
+      t.wob = Math.max(0, (t.wob || 0) - dt);
+      if (!p || run.over) continue;
+      const d = Math.hypot(p.x + 2 - t.x, p.y + 5 - t.y);
+      t.t -= dt;
+      if (d < 80 && t.t <= 0 && Game.foes.filter((f) => f.nest === t && !f.dead).length < 3) {
+        const f = spawnFoe("hornet", t.x - 2, t.y + 10); f.nest = t; t.t = 3.2; t.wob = 0.3;
+      }
+      // fire burns a nest down
+      if ((tick & 7) === 0 && [World.at(t.x, t.y + 4), World.at(t.x - 2, t.y + 8), World.at(t.x + 2, t.y + 8)].some((m) => m === FIRE || m === LAVA)) hitNest(t, 6);
+    }
+  }
+  // relics: dig down to one and walk into its pocket
+  if (p && !run.over) for (const rl of Game.relics || []) {
+    if (rl.taken) continue;
+    if (Math.abs(p.x + p.w / 2 - rl.x) < 5 && Math.abs(p.y + p.h / 2 - rl.y) < 7) takeRelic(rl);
+  }
+}
+function takeRelic(rl) {
+  rl.taken = true;
+  const pool = Object.keys(RELICS).filter((k) => !run.relics.includes(k));
+  const id = pool.length ? pool[(rnd() * pool.length) | 0] : "keys";
+  const R = RELICS[id];
+  run.relics.push(id);
+  R.apply(run);
+  SFX.well();
+  addFx(rl.x, rl.y, R.color, 24);
+  Game.flashes.push({ x: rl.x, y: rl.y, r: 16, t: 0.35 });
+  UI.hint("Found: " + R.name + ". " + R.desc, 4200);
+  Cottage.bark("relic", run, { relic: R.name }).then((l) => l && UI.voice(l));
+  UI.hud(true);
+}
+// dust, drips, fireflies, and embers in the air near you
+function updateAmbient(dt) {
+  const A = Game.ambient || (Game.ambient = []);
+  const theme = Game.level && Game.level.theme, cam = Game.cam;
+  if (!theme) return;
+  const kind = { crypt: "dust", cistern: "drip", garden: "fly", forge: "ember" }[theme];
+  const vw = Render.vw, vh = Render.vh;
+  for (let t = 0; t < 3 && A.length < 46; t++) {
+    const x = cam.x + (rnd() - 0.5) * vw, y = cam.y + (rnd() - 0.5) * vh;
+    if (World.at(x, y) !== EMPTY) continue;
+    if (kind === "drip") { let yy = y | 0; for (let k = 0; k < 40 && World.at(x, yy - 1) === EMPTY; k++) yy--; if (World.at(x, yy - 1) === EMPTY || rnd() < 0.7) continue; A.push({ k: kind, x, y: yy, vx: 0, vy: 0, t: 6, hang: 0.6 + rnd() }); }
+    else A.push({ k: kind, x, y, vx: (rnd() - 0.5) * 0.2, vy: kind === "ember" ? -0.2 - rnd() * 0.3 : (rnd() - 0.5) * 0.1, t: 3 + rnd() * 4, ph: rnd() * 6 });
+  }
+  for (const a of A) {
+    a.t -= dt;
+    if (a.k === "drip") { if (a.hang > 0) { a.hang -= dt; continue; } a.vy = Math.min(3, a.vy + 0.12); }
+    else if (a.k === "fly") { a.vx += (rnd() - 0.5) * 0.05; a.vy += (rnd() - 0.5) * 0.05; a.vx *= 0.97; a.vy *= 0.97; }
+    else if (a.k === "ember") { a.vx += (rnd() - 0.5) * 0.04; }
+    else { a.vx += (rnd() - 0.5) * 0.01; a.vy += (rnd() - 0.5) * 0.01 + 0.0015; }
+    a.x += a.vx; a.y += a.vy; a.ph = (a.ph || 0) + dt * 4;
+    const m = World.at(a.x, a.y);
+    if (m !== EMPTY && KIND[m] !== K.GAS) { if (a.k === "drip" && KIND[m] === K.LIQUID) addFx(a.x, a.y - 1, 0x9fd8ff, 2); a.t = 0; }
+    if (Math.abs(a.x - cam.x) > vw || Math.abs(a.y - cam.y) > vh) a.t = 0;
+  }
+  Game.ambient = A.filter((a) => a.t > 0);
+}
+
 function envState() {
   const p = Game.player;
   const c = bodyEnv(p);
@@ -3101,10 +3766,23 @@ async function cottageWatch() {
 /* ------------------------------------------------------------------ drawing */
 
 // a 3 by 5 pixel font for damage numbers
-const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111" };
+const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111", "!": "010010010000010", "+": "000010111010000" };
 const Render = (() => {
   const wc = $("#world"), dc = $("#dark"), ac = $("#actors");
   const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actx = ac.getContext("2d");
+  // colored light: one soft stamp per color, added on top of the darkness
+  const tints = new Map();
+  function tint(hex) {
+    let c = tints.get(hex);
+    if (c) return c;
+    c = document.createElement("canvas"); c.width = c.height = 64;
+    const x = c.getContext("2d"), r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
+    const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(" + r + "," + g + "," + b + ",1)"); gr.addColorStop(0.4, "rgba(" + r + "," + g + "," + b + ",0.35)"); gr.addColorStop(1, "rgba(" + r + "," + g + "," + b + ",0)");
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+    tints.set(hex, c);
+    return c;
+  }
   let vw = 0, vh = 0, scale = 3, img = null, buf = null, adpr = 1;
   const stamp = document.createElement("canvas");
   stamp.width = stamp.height = 64;
@@ -3114,7 +3792,7 @@ const Render = (() => {
     g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(0.45, "rgba(0,0,0,0.75)"); g.addColorStop(1, "rgba(0,0,0,0)");
     s.fillStyle = g; s.fillRect(0, 0, 64, 64);
   }
-  const glowGrid = new Float32Array(4096);
+  const glowGrid = new Float32Array(4096), glowMat = new Uint8Array(4096);
 
   function resize() {
     const sw = innerWidth, sh = innerHeight;
@@ -3148,6 +3826,7 @@ const Render = (() => {
   const P_PAL = { c: 0x3a4a6a, f: 0x1a1a22, e: 0xe6c35c, d: 0x2a2420 };
   const CHEST = ["bbbbbbb", "bgggggb", "bbbybbb", "bbbbbbb"], CHEST_OPEN = ["b.....b", "bgggggb", "bbbbbbb"];
   const CHEST_PAL = { b: 0xc0392b, g: 0xf2efe8, y: 0xffcf4a }; // a red cooler
+  const CURSED_PAL = { b: 0x4a2a6a, g: 0x8a5ad0, y: 0xe0e0ff }; // a cursed one
   const PIPE_ROWS = ["mmmmmmm", ".mmmmm.", "..mim..", "...i..."]; // a drain pipe opens before the Cottage pours
 
   function px(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < vw && y < vh) buf[y * vw + x] = c; }
@@ -3157,17 +3836,53 @@ const Render = (() => {
   }
 
   // one picture, flipped to face its way, with its feet (or its middle, for flyers) at a world point
-  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key) {
+  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost) {
     const k = scale * adpr, w = dw * k, h = dw * (sh / sw) * k;
     const x = wx * k, y = wy * k;
     actx.save();
     actx.translate(x, y);
     if (flip) actx.scale(-1, 1);
-    const top = mid ? -h / 2 : -h;
-    actx.drawImage(src, sx, sy, sw, sh, -w / 2, top, w, h);
-    if (flash) actx.drawImage(Art.white(key, src, sx, sy, sw, sh), -w / 2, top, w, h);
+    let top = mid ? -h / 2 : -h;
+    if (rot) { actx.translate(0, top + h / 2); actx.rotate(rot); top = -h / 2; }
+    if (ghost) { actx.globalAlpha = ghost; actx.drawImage(Art.white(key, src, sx, sy, sw, sh), -w / 2, top, w, h); }
+    else {
+      actx.drawImage(src, sx, sy, sw, sh, -w / 2, top, w, h);
+      if (flash) actx.drawImage(Art.white(key, src, sx, sy, sw, sh), -w / 2, top, w, h);
+    }
     actx.restore();
     return mid ? wy - dw * (sh / sw) / 2 : wy - dw * (sh / sw);
+  }
+  // the melee weapon along the +x axis, len world pixels long
+  function weaponShape(id, len, k) {
+    const L = len * k, line = (x0, y0, x1, y1, col, wd) => { actx.strokeStyle = col; actx.lineWidth = wd * k; actx.beginPath(); actx.moveTo(x0 * k, y0 * k); actx.lineTo(x1 * k, y1 * k); actx.stroke(); };
+    actx.lineCap = "round";
+    if (id === "plunger") { line(0, 0, len - 2, 0, "#1a120a", 1.1); line(0, 0, len - 2, 0, "#c8955a", 0.6); actx.fillStyle = "#e0402a"; actx.beginPath(); actx.ellipse(L - 1 * k, 0, 1.6 * k, 2.6 * k, 0, -Math.PI / 2, Math.PI / 2); actx.fill(); }
+    else if (id === "paddle") { line(0, 0, len * 0.6, 0, "#6e4a2c", 0.8); actx.fillStyle = "#c8955a"; actx.strokeStyle = "#3a2616"; actx.lineWidth = 0.3 * k; actx.beginPath(); actx.ellipse(L * 0.8, 0, L * 0.22, 1.7 * k, 0, 0, Math.PI * 2); actx.fill(); actx.stroke(); }
+    else if (id === "hockey") { line(0, 0, len - 1, 0, "#2a2a2e", 0.8); line(len - 1, 0, len + 1, 2.4, "#2a2a2e", 1.2); line(len * 0.3, 0, len * 0.45, 0, "#e8e2d6", 0.9); }
+    else if (id === "rod") { line(0, 0, len * 0.55, 0, "#6a8aa8", 0.5); actx.strokeStyle = "rgba(230,240,255,0.8)"; actx.lineWidth = 0.2 * k; actx.beginPath(); actx.moveTo(L * 0.55, 0); actx.quadraticCurveTo(L * 0.8, 3 * k, L, 0); actx.stroke(); actx.fillStyle = "#e0402a"; actx.beginPath(); actx.arc(L, 0, 0.9 * k, 0, Math.PI * 2); actx.fill(); }
+    else { line(0, 0, len * 0.45, 0, "#1a1a1e", 0.9); actx.fillStyle = "#303034"; actx.strokeStyle = "#8a9096"; actx.lineWidth = 0.35 * k; actx.beginPath(); actx.arc(L * 0.45 + 3 * k, 0, 3 * k, 0, Math.PI * 2); actx.fill(); actx.stroke(); }
+  }
+  function drawSwing(p, ox, oy, k) {
+    const M = MELEE[run.melee], cx = (p.x + p.w / 2 - ox) * k, cy = (p.y + p.h / 2 - 1 - oy) * k;
+    const len = Math.min(M.reach * 0.75, 12);
+    actx.save();
+    actx.translate(cx, cy);
+    if (p.pound) { actx.rotate(Math.PI / 2); weaponShape(run.melee, len, k); actx.restore(); return; }
+    const a = p.atk, s = run.swingMult, w0 = M.t[0] * s, w1 = w0 + M.t[1] * s;
+    actx.scale(a.fd, 1);
+    // raised during the wind-up, then a fast arc, then it rests low
+    const alt = a.k % 2 === 1;
+    const from = alt ? 1.1 : -2, to = alt ? -1.4 : 0.9;
+    const u = a.t < w0 ? 0 : a.t < w1 ? (a.t - w0) / (w1 - w0) : 1;
+    const ang = from + (to - from) * (1 - (1 - u) * (1 - u));
+    if (u > 0 && u < 1 || (a.t >= w1 && a.t < w1 + 0.06)) {
+      actx.strokeStyle = a.k === M.combo.length - 1 ? "rgba(255,207,74,0.6)" : "rgba(255,255,255,0.45)";
+      actx.lineWidth = 2.2 * k; actx.lineCap = "round";
+      actx.beginPath(); actx.arc(0, 0, M.reach * 0.8 * k, Math.min(from, ang), Math.max(from, ang)); actx.stroke();
+    }
+    actx.rotate(ang);
+    weaponShape(run.melee, len, k);
+    actx.restore();
   }
   function drawActors(ox, oy) {
     actx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3175,6 +3890,38 @@ const Render = (() => {
     actx.imageSmoothingEnabled = true;
     actx.imageSmoothingQuality = "high";
     const k = scale * adpr;
+    // melee weapons lying on the ground
+    for (const pk of Game.pickups) {
+      if (!pk.melee) continue;
+      actx.save();
+      actx.translate((pk.x - ox) * k, (pk.y + Math.sin(pk.bob) * 1.5 - oy) * k);
+      actx.rotate(-0.8);
+      actx.translate(-5 * k, 0);
+      weaponShape(pk.melee, 9, k);
+      actx.restore();
+    }
+    // the drains are labeled with where they lead
+    const L = Game.level;
+    if (L && L.exits && L.exits.length > 1) {
+      actx.textAlign = "center";
+      for (const e of L.exits) {
+        if (!THEMES[e.theme]) continue;
+        const tx = (e.x - ox) * k, ty = (e.y - 16 - oy) * k;
+        if (ty < -40 || ty > ac.height + 40) continue;
+        actx.font = "700 " + Math.round(11 * adpr) + "px Alegreya Sans, sans-serif";
+        actx.lineWidth = 3 * adpr; actx.strokeStyle = "rgba(0,0,0,0.85)"; actx.fillStyle = e.rich ? "#ffb070" : "#ffcf4a";
+        const t1 = "To " + THEMES[e.theme].name.toLowerCase();
+        actx.strokeText(t1, tx, ty); actx.fillText(t1, tx, ty);
+        if (e.rich) { const t2 = "richer, harder"; actx.font = "700 " + Math.round(9.5 * adpr) + "px Alegreya Sans, sans-serif"; actx.strokeText(t2, tx, ty + 12 * adpr); actx.fillText(t2, tx, ty + 12 * adpr); }
+      }
+    }
+    // hornet nests hang from the ceilings and shake when hit
+    const nest = Art.get("c_nest");
+    if (nest) for (const n of Game.props || []) {
+      if (n.dead || n.kind !== "nest") continue;
+      const fr = nest.frames[0], wob = n.wob > 0 ? Math.sin(n.wob * 60) * 0.8 : 0;
+      actor(fr, 0, 0, fr.width, fr.height, n.x - ox + wob, n.y + 12 - oy, 10, false, n.wob > 0.2, false, "nest");
+    }
     for (const f of Game.foes) {
       const d = f.d, a = Art.get(d.art) || Art.get("c_king");
       const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
@@ -3193,9 +3940,29 @@ const Render = (() => {
       }
     }
     const p = Game.player, c = Art.get("crew" + run.crew);
-    if (p && !run.over && c && !(p.hurtT > 0 && ((p.hurtT * 20) | 0) % 2 === 0)) {
+    if (p && !run.over && c) {
       const dw = 14 * c.fw / c.fh;
-      actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, "crew" + run.crew);
+      // afterimages from rolls and pounds
+      for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, "crew" + run.crew, 0, g.t * 2.2);
+      const rot = p.roll > 0 ? (1 - p.roll / 0.28) * Math.PI * 2 * p.rollDir : 0;
+      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, "crew" + run.crew, rot);
+      if (p.atk || p.pound) drawSwing(p, ox, oy, k);
+    }
+    // the shovel, swinging along your aim while you dig
+    const D = Game.digging;
+    if (p && !run.over && D && D.t > 0) {
+      const S = SHOVELS[run.shovel] || SHOVELS[1], a = D.a + Math.sin(Game.digSwing || 0) * 0.35;
+      const hx = (p.x + p.w / 2 - ox) * k, hy = (p.y + p.h / 2 - oy) * k, len = (S.len * 0.55) * k;
+      actx.save();
+      actx.translate(hx, hy); actx.rotate(a);
+      actx.lineCap = "round";
+      actx.strokeStyle = "#1a120a"; actx.lineWidth = 0.9 * k; actx.beginPath(); actx.moveTo(-1 * k, 0); actx.lineTo(len, 0); actx.stroke();
+      actx.strokeStyle = run.shovel === 3 ? "#3a3f44" : "#b07a4a"; actx.lineWidth = 0.55 * k; actx.beginPath(); actx.moveTo(-1 * k, 0); actx.lineTo(len, 0); actx.stroke();
+      actx.fillStyle = S.blade; actx.strokeStyle = "#1a120a"; actx.lineWidth = 0.25 * k;
+      actx.beginPath();
+      if (run.shovel === 3) { actx.moveTo(len, -1.4 * k); actx.lineTo(len + 5 * k, 0); actx.lineTo(len, 1.4 * k); actx.closePath(); actx.fill(); actx.stroke(); actx.strokeStyle = "#7a3a10"; for (let q = 0; q < 3; q++) { actx.beginPath(); actx.moveTo(len + q * 1.4 * k, -1 * k); actx.lineTo(len + (q + 0.8) * 1.4 * k, 1 * k); actx.stroke(); } }
+      else { actx.moveTo(len, -1.8 * k); actx.lineTo(len + 3 * k, -1.8 * k); actx.quadraticCurveTo(len + 5 * k, 0, len + 3 * k, 1.8 * k); actx.lineTo(len, 1.8 * k); actx.closePath(); actx.fill(); actx.stroke(); }
+      actx.restore();
     }
   }
 
@@ -3204,7 +3971,10 @@ const Render = (() => {
     const cam = Game.cam, p = Game.player;
     const shake = reduceMotion ? 0 : cam.shake;
     const ox = Math.round(cam.x - vw / 2 + (rnd() - 0.5) * shake), oy = Math.round(cam.y - vh / 2 + (rnd() - 0.5) * shake);
-    const mat = World.mat, life = World.life, shade = World.shade, PAL = World.PAL, RIM = World.RIM, FP = World.FIRE_PAL, bg = World.bg;
+    const mat = World.mat, life = World.life, shade = World.shade, PAL = World.PAL, RIM = World.RIM, FP = World.FIRE_PAL;
+    const far = World.far, ao = World.ao, sky = World.sky, BGPAL = World.BGPAL, SKYPAL = World.SKYPAL, hasSky = World.hasSky;
+    // the back wall moves slower than the ground in front of it
+    const pox = (ox * 0.4) | 0, poy = (oy * 0.4) | 0;
     const tk = World.tick;
     const gw = Math.ceil(vw / 8) + 1, gh = Math.ceil(vh / 8) + 1;
     glowGrid.fill(0, 0, gw * gh);
@@ -3212,32 +3982,41 @@ const Render = (() => {
       const wy = y + oy, row = y * vw;
       if (wy < 0 || wy >= H) { buf.fill(0xff050608, row, row + vw); continue; }
       const gr = (y >> 3) * gw;
+      const frow = ((((wy - poy) % H) + H) % H) * W, skyRow = hasSky && wy < 44;
       for (let x = 0; x < vw; x++) {
         const wx = x + ox;
         if (wx < 0 || wx >= W) { buf[row + x] = 0xff050608; continue; }
         const i = wy * W + wx, m = mat[i];
-        if (m === EMPTY) { buf[row + x] = bg[i]; continue; }
+        if (m === EMPTY) {
+          if (skyRow) buf[row + x] = SKYPAL[sky[i]];
+          else { let fx = wx - pox; if (fx < 0) fx += W; else if (fx >= W) fx -= W; buf[row + x] = BGPAL[ao[i] * 8 + far[frow + fx]]; }
+          continue;
+        }
         let c;
         if (m === FIRE) c = FP[(8 - ((life[i] >> 2) & 7) + shade[i]) & 7];
         else if (m === LAVA) c = PAL[LAVA * 4 + ((shade[i] + (tk >> 3) + (wx >> 3)) & 3)];
         else if (m === EMBER) c = FP[(shade[i] + (tk >> 2) + i) % 3 + 3];
         else if (wy > 0 && mat[i - W] === EMPTY && KIND[m] <= K.POWDER) c = RIM[m * 4 + shade[i]];
+        else if (KIND[m] === K.LIQUID && wy > 0 && mat[i - W] === EMPTY) c = ((wx * 7 + (tk >> 1)) & 63) === 0 ? 0xffffffff : RIM[m * 4 + ((shade[i] + (tk >> 3) + (wx >> 2)) & 3)];
         else c = PAL[m * 4 + shade[i]];
         buf[row + x] = c;
         const g = GLOW[m];
-        if (g) glowGrid[gr + (x >> 3)] += g;
+        if (g) { glowGrid[gr + (x >> 3)] += g; glowMat[gr + (x >> 3)] = m; }
       }
     }
-    // the well at the bottom
+    // the drains at the bottom: a swirling grate, gold when open
     const L = Game.level;
     if (L) {
-      const open = !L.boss || L.handDead;
-      const col = World.abgr(open ? 0xe6c35c : 0x5a4a6a);
-      for (let a = 0; a < 40; a++) {
-        const t = a / 40 * Math.PI * 2 + tk * 0.03;
-        px(L.exitX + Math.cos(t) * 9 - ox, L.exitY - 4 + Math.sin(t) * 5 - oy, col);
+      const open = drainOpen(L);
+      for (const e of L.exits || [{ x: L.exitX, y: L.exitY }]) {
+        const col = World.abgr(open ? (e.rich ? 0xff8a3a : 0xe6c35c) : 0x5a4a6a), dark = World.abgr(0x0a0c10);
+        for (let q = -8; q <= 8; q++) for (let r = -3; r <= 3; r++) if ((q * q) / 64 + (r * r) / 9 < 1) px(e.x + q - ox, e.y - 4 + r - oy, (q + 20) % 3 === 0 ? col : dark);
+        for (let a = 0; a < 40; a++) {
+          const t = a / 40 * Math.PI * 2 + tk * 0.03 * (e.rich ? -1.5 : 1);
+          px(e.x + Math.cos(t) * 9 - ox, e.y - 4 + Math.sin(t) * 5 - oy, col);
+        }
+        if (open) for (let k = 0; k < 3; k++) px(e.x + (rnd() - 0.5) * 14 - ox, e.y - 4 - rnd() * 18 - oy, World.abgr(e.rich ? 0xffb070 : 0xfff0a0));
       }
-      if (open) for (let k = 0; k < 3; k++) px(L.exitX + (rnd() - 0.5) * 14 - ox, L.exitY - 4 - rnd() * 18 - oy, World.abgr(0xfff0a0));
     }
     // a drain pipe shows where the Cottage will pour
     const iris = World.abgr(Game.moodColor || 0xe6c35c), pipeC = World.abgr(0x8a9096);
@@ -3301,13 +4080,53 @@ const Render = (() => {
     }
     for (const g of Game.glows || []) {
       if (World.mat[g.y * W + g.x] !== EMPTY) continue;
-      const c = World.abgr(g.c);
-      for (let k = 0; k < g.h; k++) px(g.x - ox, g.y - k - oy, c);
-      if ((tk + g.x) % 40 < 20) px(g.x - ox, g.y - g.h - oy, 0xffffffff);
+      const c = World.abgr(g.c), gx = g.x - ox, gy = g.y - oy, pale = World.abgr(0xe8e0c8);
+      if (g.kind === "candle") { for (let k = 0; k <= g.h; k++) px(gx, gy - k, pale); px(gx, gy - g.h - 1, ((tk + g.x) >> 2) & 1 ? c : 0xffffffff); }
+      else if (g.kind === "crystal") { px(gx, gy, c); px(gx - 1, gy, c); px(gx + 1, gy, c); px(gx, gy - 1, c); px(gx, gy - 2, 0xffffffff); px(gx + 2, gy, c); px(gx + 2, gy - 1, c); }
+      else if (g.kind === "mushroom") { for (let k = 0; k < g.h; k++) px(gx, gy - k, pale); px(gx - 1, gy - g.h, c); px(gx, gy - g.h, c); px(gx + 1, gy - g.h, c); px(gx, gy - g.h - 1, c); if ((tk + g.x) % 50 < 25) px(gx + 1, gy - g.h - 1, 0xffffffff); }
+      else { px(gx, gy, c); px(gx + 1, gy, FP[(tk >> 2) & 3]); px(gx, gy - 1, FP[((tk >> 2) + 2) & 7]); }
     }
-    for (const c of Game.chests) sprite(c.open ? CHEST_OPEN : CHEST, palOf(CHEST_PAL), c.x - 3 - ox, c.y - (c.open ? 3 : 4) - oy, false, false, 0, 0);
+    // propane tanks: a red band and a valve on the metal
+    for (const t of Game.props || []) {
+      if (t.dead || t.kind !== "tank") continue;
+      const red = World.abgr(t.heat > 4 && (tk >> 2) & 1 ? 0xffe070 : 0xc0392b);
+      for (let q = -2; q <= 2; q++) if (World.at(t.x + q, t.y - 4) === METAL) px(t.x + q - ox, t.y - 4 - oy, red);
+      if (World.at(t.x, t.y - 7) === METAL) { px(t.x - ox, t.y - 8 - oy, World.abgr(0xc9a23a)); px(t.x - ox, t.y - 9 - oy, World.abgr(0x8a9096)); }
+    }
+    // relics glint through the dirt
+    for (const rl of Game.relics || []) {
+      if (rl.taken) continue;
+      const ph = (tk + rl.x * 3) % 60, gc = World.abgr(0xffcf4a);
+      px(rl.x - ox, rl.y - oy, ph < 30 ? 0xffffffff : gc);
+      if (ph < 12) { px(rl.x - 1 - ox, rl.y - oy, gc); px(rl.x + 1 - ox, rl.y - oy, gc); px(rl.x - ox, rl.y - 1 - oy, gc); px(rl.x - ox, rl.y + 1 - oy, gc); }
+    }
+    // dust, drips, fireflies, and embers
+    for (const a of Game.ambient || []) {
+      let c;
+      if (a.k === "dust") c = World.abgr(0x6a6458);
+      else if (a.k === "drip") c = World.abgr(0x9fd8ff);
+      else if (a.k === "fly") { if (Math.sin(a.ph) < -0.2) continue; c = World.abgr(0xd8ff6a); }
+      else c = FP[((tk >> 2) + (a.x | 0)) & 3];
+      px(a.x - ox, a.y - oy, c);
+    }
+    // bottle caps
+    const capC = World.abgr(0xe0402a), capR = World.abgr(0xffcf4a);
+    for (const c of Game.caps) { px(c.x - ox, c.y - oy, ((tk + (c.x | 0)) >> 3) & 1 ? 0xffffffff : capR); px(c.x + 1 - ox, c.y - oy, capC); px(c.x - ox, c.y + 1 - oy, capC); px(c.x + 1 - ox, c.y + 1 - oy, capR); }
+    for (const c of Game.chests) {
+      sprite(c.open ? CHEST_OPEN : CHEST, palOf(c.cursed ? CURSED_PAL : CHEST_PAL), c.x - 3 - ox, c.y - (c.open ? 3 : 4) - oy, false, false, 0, 0);
+      if (c.cursed && !c.open) for (let k = 0; k < 2; k++) px(c.x + (rnd() - 0.5) * 9 - ox, c.y - 4 - rnd() * 8 - oy, World.abgr(0xc07aff));
+    }
     // wands lying in the caves
     for (const pk of Game.pickups) {
+      if (pk.scroll) {
+        // a rolled scroll with a red seal
+        const sx = pk.x - ox, sy = pk.y + Math.sin(pk.bob) * 1.5 - oy, paper = World.abgr(0xf2e6c8), edge = World.abgr(0xc8b48a), seal = World.abgr(0xe0402a);
+        for (let q = -3; q <= 3; q++) { px(sx + q, sy - 1, paper); px(sx + q, sy, paper); px(sx + q, sy + 1, edge); }
+        px(sx - 4, sy, edge); px(sx + 4, sy, edge); px(sx, sy, seal); px(sx, sy + 1, seal);
+        if ((tk >> 3) & 1) px(sx + 2, sy - 3, 0xffffffff);
+        continue;
+      }
+      if (!pk.wand) continue;
       const wx = pk.x - ox, wy = pk.y + Math.sin(pk.bob) * 1.5 - oy, c = World.abgr(pk.wand.color), tip = World.abgr(0xfff0a0);
       for (let k = 0; k < 6; k++) px(wx - 3 + k, wy + 2 - k * 0.6, c);
       px(wx + 3, wy - 2, tip); px(wx + 4, wy - 2, tip); px(wx + 3, wy - 3, tip);
@@ -3323,6 +4142,7 @@ const Render = (() => {
       let x0 = Math.round(n.x - ox - str.length * 2), y0 = Math.round(n.y - oy);
       for (const ch of str) {
         const g = DIGITS[ch];
+        if (!g) { x0 += 4; continue; }
         for (let r = 0; r < 5; r++) for (let q = 0; q < 3; q++) if (g[r * 3 + q] === "1") { px(x0 + q + 1, y0 + r + 1, 0xff000000); px(x0 + q, y0 + r, c); }
         x0 += 4;
       }
@@ -3340,9 +4160,13 @@ const Render = (() => {
     const light = (x, y, r, a) => { dctx.globalAlpha = Math.min(1, a); dctx.drawImage(stamp, (x - ox - r) / 2, (y - oy - r) / 2, r, r); };
     if (p && !run.over) {
       const fl = reduceMotion ? 1 : 0.94 + Math.sin(performance.now() / 90) * 0.03 + rnd() * 0.03;
-      light(p.x + 2, p.y + 5, 75 * fl, 1);
+      light(p.x + 2, p.y + 5, 75 * fl * run.light, 1);
       light(p.x + 2, p.y + 5, 34, 1);
     }
+    // moonlight over the outhouse on the first layer
+    if (World.hasSky && oy < 70) for (let x = 16; x < W; x += 36) light(x, 16, 110, 0.95);
+    for (const rl of Game.relics || []) if (!rl.taken) light(rl.x, rl.y, 16, 0.5);
+    for (const a of Game.ambient || []) if (a.k === "fly" || a.k === "ember") light(a.x, a.y, 10, 0.5);
     for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
       const g = glowGrid[gy * gw + gx];
       if (g < 1.5) continue;
@@ -3357,8 +4181,30 @@ const Render = (() => {
     for (const fl of Game.flashes) light(fl.x, fl.y, fl.r * 2, fl.t * 4);
     for (const e of Game.emitters) if (e.tele > 0 && !e.follow) light(e.x, e.y, 40, 0.8);
     for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand" || f.elite) light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
-    if (L) light(L.exitX, L.exitY - 4, 70, (!L.boss || L.handDead) ? 0.9 : 0.4);
+    if (L) for (const e of L.exits || []) light(e.x, e.y - 4, 70, drainOpen(L) ? 0.9 : 0.4);
+    for (const c of Game.chests) if (c.cursed && !c.open) light(c.x, c.y - 2, 30, 0.6);
     dctx.globalAlpha = 1;
+
+    // colored glow, added onto the darkness: lamps, lava, candles, fireflies, relics
+    dctx.globalCompositeOperation = "lighter";
+    const glow = (x, y, r, hex, a) => { dctx.globalAlpha = Math.min(1, a * 0.8); dctx.drawImage(tint(hex), (x - ox - r) / 2, (y - oy - r) / 2, r, r); };
+    for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+      const g = glowGrid[gy * gw + gx];
+      if (g < 1.5) continue;
+      const m = glowMat[gy * gw + gx];
+      glow(ox + gx * 8 + 4, oy + gy * 8 + 4, 20 + Math.sqrt(g) * 8, m === FIRE || m === EMBER || m === LAVA ? 0xff6a1a : MATS[m].cols[1], 0.05 + g / 90);
+    }
+    for (const l of Game.lamps) if (l.lit) glow(l.x, l.y, 70, 0xffa040, 0.3);
+    for (const g of Game.glows || []) if (Math.abs(g.y - (oy + vh / 2)) < vh) glow(g.x, g.y - 1, 30, g.c, 0.35);
+    for (const s of Game.shots) if (s.S.burn || s.S.shock || s.S.color) glow(s.x, s.y, s.S.burn || s.S.shock ? 34 : 16, s.S.color || 0xffffff, 0.3);
+    for (const a of Game.ambient || []) if (a.k === "fly" || a.k === "ember") glow(a.x, a.y, 14, a.k === "fly" ? 0xc8ff5a : 0xff7a2a, 0.4);
+    for (const rl of Game.relics || []) if (!rl.taken) glow(rl.x, rl.y, 22, 0xffcf4a, 0.3 + 0.2 * Math.sin(tk * 0.1 + rl.x));
+    if (L) for (const e of L.exits || []) glow(e.x, e.y - 4, 60, e.rich ? 0xff8a3a : 0xffcf4a, 0.25);
+    for (const c of Game.chests) if (c.cursed && !c.open) glow(c.x, c.y - 3, 36, 0xa05aff, 0.45);
+    for (const pk of Game.pickups) if (pk.scroll || pk.melee) glow(pk.x, pk.y, 26, pk.scroll ? 0xfff0c0 : 0xff8a6a, 0.35);
+    if (World.hasSky && oy < 70) glow(200, 11, 60, 0xc8d8ff, 0.35);
+    dctx.globalAlpha = 1;
+    dctx.globalCompositeOperation = "source-over";
   }
 
   const toWorld = (sx, sy) => ({ x: Game.cam.x - vw / 2 + sx / scale, y: Game.cam.y - vh / 2 + sy / scale });
@@ -3396,7 +4242,7 @@ const Minimap = (() => {
     }
     const dot = (wx, wy, c, r) => { const x0 = (wx >> 2), y0 = (wy >> 2); for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = x0 + dx, y = y0 + dy; if (x >= 0 && y >= 0 && x < MW && y < MH) b32[y * MW + x] = c; } };
     const L = Game.level;
-    if (((World.tick >> 4) & 1) || !(!L.boss || L.handDead)) dot(L.exitX, L.exitY - 4, WELL, 1);
+    if (((World.tick >> 4) & 1) || !drainOpen(L)) for (const e of L.exits || []) dot(e.x, e.y - 4, WELL, 1);
     for (const f of Game.foes) if (f.d.ai === "hand" && f.awake) dot(f.x + f.w / 2, f.y + f.h / 2, FOE, 1);
     const p = Game.player;
     if (p && !run.over) dot(p.x + 2, p.y + 5, ME, 1);
@@ -3414,17 +4260,18 @@ const Input = (() => {
   const keys = new Set();
   function sync() {
     inp.x = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
-    inp.up = keys.has("w") || keys.has(" ") || keys.has("arrowup") || moveUp || rightDown || padUp;
-    inp.down = keys.has("s") || keys.has("arrowdown") || padDown;
+    inp.up = keys.has("w") || keys.has(" ") || keys.has("arrowup") || moveUp || padUp;
+    inp.down = keys.has("s") || keys.has("arrowdown") || padDown || moveDown;
     if (touchMoveX != null) inp.x = touchMoveX;
     if (padX) inp.x = padX;
-    inp.dig = keys.has("f") || keys.has("shift") || padDig || (digMode && touchCast);
-    inp.cast = mouseDown || keys.has("j") || (touchCast && !digMode) || padCast;
-    inp.keyAim = keys.has("j") && !mouseDown;
+    inp.dig = keys.has("f") || padDig || (digMode && touchCast);
+    inp.attack = mouseDown || keys.has("j") || padAttack;
+    inp.cast = rightDown || keys.has("k") || (touchCast && !digMode) || padCast;
+    inp.keyAim = keys.has("k") && !rightDown;
   }
-  let mouseDown = false, rightDown = false, moveUp = false, touchMoveX = null, touchCast = false;
-  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false, padDig = false, digMode = false;
-  // a gamepad: left stick or d-pad moves, A or LB jumps and floats, right stick aims, RT or RB casts
+  let mouseDown = false, rightDown = false, moveUp = false, moveDown = false, touchMoveX = null, touchCast = false;
+  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false, padDig = false, padAttack = false, digMode = false;
+  // a gamepad: left stick moves, A jumps and hovers, X attacks, B rolls, right stick aims, RT or RB shoots, LT digs, Y eats a hot dog
   function pollPad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     let gp = null;
@@ -3433,41 +4280,50 @@ const Input = (() => {
     const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.4));
     const lx = gp.axes[0] || 0, ly = gp.axes[1] || 0, rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
     padX = Math.abs(lx) > 0.25 ? clamp(lx * 1.3, -1, 1) : b(14) ? -1 : b(15) ? 1 : 0;
-    const jump = b(0) || b(4);
+    const jump = b(0);
     if (jump && !padJump && Game.state === "play") inp.jumpEdge = true;
     padJump = jump;
-    padUp = jump || b(12);
+    padUp = jump;
+    if (b(2) && !padAttack && Game.state === "play") inp.attackEdge = true;
+    padAttack = b(2);
+    if (b(1) && !pollPad.roll && Game.state === "play") inp.rollEdge = true;
+    pollPad.roll = b(1);
     padDown = ly > 0.6 || b(13);
     const aiming = Math.hypot(rx, ry) > 0.3;
     if (aiming) { inp.touchAim = Math.atan2(ry, rx); inp.pad = true; }
     else if (inp.pad && Math.abs(lx) > 0.25) inp.touchAim = Math.atan2(Math.abs(ly) > 0.4 ? ly : 0, lx);
     padCast = b(7) || b(5) || (aiming && Math.hypot(rx, ry) > 0.85);
     padDig = b(6);
-    if (padCast || padX || jump) inp.pad = true;
+    if (padCast || padX || jump || padAttack) inp.pad = true;
     if (b(9) && !pollPad.menu && Game.state === "play") UI.sheet(true, "stats");
     pollPad.menu = b(9);
     if (b(8) && !pollPad.map) Minimap.toggle();
     pollPad.map = b(8);
-    if (b(3) && !pollPad.next && Game.state === "play" && run.wands.length > 1) selectWand((run.wi + 1) % run.wands.length);
-    pollPad.next = b(3);
-    if (b(2) && !pollPad.swap) inp.swapEdge = true;
-    pollPad.swap = b(2);
+    if (b(4) && !pollPad.next && Game.state === "play" && run.wands.length > 1) selectWand((run.wi + 1) % run.wands.length);
+    pollPad.next = b(4);
+    if (b(3) && !pollPad.flask && Game.state === "play") inp.flaskEdge = true;
+    pollPad.flask = b(3);
+    if (b(12) && !pollPad.swap) inp.swapEdge = true;
+    pollPad.swap = b(12);
     sync();
   }
   addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input, textarea")) return;
     const k = e.key.toLowerCase();
     if (Game.state !== "play") return;
-    if (["w", "a", "s", "d", " ", "j", "f", "shift", "arrowleft", "arrowright", "arrowup", "arrowdown"].includes(k)) {
+    if (["w", "a", "s", "d", " ", "j", "k", "l", "f", "shift", "arrowleft", "arrowright", "arrowup", "arrowdown"].includes(k)) {
       e.preventDefault();
       if ((k === "w" || k === " " || k === "arrowup") && !keys.has(k)) inp.jumpEdge = true;
+      if (k === "j" && !keys.has(k)) inp.attackEdge = true;
+      if ((k === "shift" || k === "l") && !keys.has(k)) inp.rollEdge = true;
       keys.add(k);
       sync();
     }
+    if (k === "r" && !e.repeat) inp.flaskEdge = true;
     if (k === "m") UI.sound(SFX.toggle());
     if (k === "q" || k === "tab") { e.preventDefault(); Minimap.toggle(); }
     if (k === "1" || k === "2" || k === "3") selectWand(Number(k) - 1);
-    if (k === "e" || k === "f") Game.input.swapEdge = true;
+    if (k === "e") Game.input.swapEdge = true;
     if (k === "escape") { e.preventDefault(); UI.sheet(true, "stats"); }
   });
   addEventListener("keyup", (e) => { keys.delete(e.key.toLowerCase()); sync(); });
@@ -3485,7 +4341,8 @@ const Input = (() => {
   stage.addEventListener("mousemove", (e) => { inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false; });
   stage.addEventListener("mousedown", (e) => {
     SFX.init(); inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false;
-    if (e.button === 2) { if (!rightDown) inp.jumpEdge = true; rightDown = true; } else mouseDown = true;
+    if (e.button === 2) rightDown = true;
+    else { if (!mouseDown) inp.attackEdge = true; mouseDown = true; }
     sync();
   });
   addEventListener("mouseup", (e) => { if (e.button === 2) rightDown = false; else mouseDown = false; sync(); });
@@ -3519,6 +4376,7 @@ const Input = (() => {
         const up = dy < -R * 0.45;
         if (up && !moveUp) inp.jumpEdge = true;
         moveUp = up;
+        moveDown = dy > R * 0.5;
         joy($("#joyMove"), true, s.x0, s.y0, dx, dy);
       } else {
         if (d > 12) { inp.touchAim = Math.atan2(dy, dx); touchCast = true; }
@@ -3532,15 +4390,15 @@ const Input = (() => {
       const s = touches.get(t.identifier);
       if (!s) continue;
       touches.delete(t.identifier);
-      if (s.side === "move") { touchMoveX = null; moveUp = false; joy($("#joyMove"), false); }
+      if (s.side === "move") { touchMoveX = null; moveUp = false; moveDown = false; joy($("#joyMove"), false); }
       else {
         joy($("#joyAim"), false);
         touchCast = false;
         if (!s.moved && performance.now() - s.t0 < 300 && Game.player) {
-          // a tap casts once at the spot
+          // a tap swings your weapon toward the spot
           const w = Render.toWorld(t.clientX, t.clientY), p = Game.player;
           inp.touchAim = Math.atan2(w.y - (p.y + 4), w.x - (p.x + 2));
-          castWand(inp.touchAim);
+          inp.attackEdge = true;
         }
       }
     }
@@ -3550,7 +4408,11 @@ const Input = (() => {
   stage.addEventListener("touchcancel", end);
   const digBtn = $("#digBtn");
   digBtn.onclick = () => { digMode = !digMode; digBtn.setAttribute("aria-pressed", String(digMode)); sync(); };
-  return { pollPad, clear() { keys.clear(); mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; sync(); } };
+  const tapBtn = (id, fn) => { const b = $(id); b.addEventListener("touchstart", (e) => { e.preventDefault(); e.stopPropagation(); fn(); }, { passive: false }); b.onclick = fn; };
+  tapBtn("#rollBtn", () => { inp.rollEdge = true; });
+  tapBtn("#atkBtn", () => { inp.attackEdge = true; });
+  tapBtn("#flaskBtn", () => { inp.flaskEdge = true; });
+  return { pollPad, clear() { keys.clear(); mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; moveDown = false; padAttack = false; inp.attackEdge = inp.rollEdge = inp.flaskEdge = false; sync(); } };
 })();
 
 /* ------------------------------------------------------------------ the page around the game */
@@ -3569,12 +4431,28 @@ const UI = (() => {
     set("goldText", "text", run.gold + "g");
     const down = p && Game.level ? Math.round(clamp(p.y / (Game.level.exitY - 10), 0, 1) * 100) : 0;
     set("depthText", "text", "Depth " + run.depth + (p ? " · " + down + "%" : ""));
+    set("capsText", "text", String(run.caps));
+    set("flaskText", "text", "🌭 " + run.flasks);
+    set("flaskN", "text", String(run.flasks));
+    const left = Math.ceil((Game.fastT || 0) - Game.levelT);
+    set("fastText", "text", left > 0 ? "⏱ " + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") : "⏱ 0:00");
+    $("#fastText").classList.toggle("gone", left <= 0);
+    if ($("#curseText").hidden === run.curse > 0) $("#curseText").hidden = !(run.curse > 0);
+    if (run.curse > 0) set("curseText", "text", "☠ " + run.curse);
     // the hotbar: one card per wand, with its spells and the next one to cast
-    const key = run.wi + "|" + run.wands.map((x) => x.name + ":" + x.spells.join(",") + ":" + x.cursor).join("/");
+    const cp = p ? (p.atk ? p.atk.k + 1 : p.comboT > 0 ? p.combo : 0) : 0;
+    const key = run.melee + cp + "|" + run.wi + "|" + run.wands.map((x) => x.name + ":" + x.spells.join(",") + ":" + x.cursor).join("/");
     const bar = $("#hotbar");
     if (key !== wandKey || force) {
       wandKey = key;
       bar.innerHTML = "";
+      const M = MELEE[run.melee], mc = document.createElement("div");
+      mc.className = "wslot melee";
+      mc.title = M.name + ": " + M.desc;
+      mc.innerHTML = "<span class='wh'><b>⚔</b><span class='wname'></span></span><span class='pips'></span>";
+      mc.querySelector(".wname").textContent = M.name;
+      for (let q = 0; q < M.combo.length; q++) { const i = document.createElement("i"); if (q < cp) i.className = "on"; mc.querySelector(".pips").appendChild(i); }
+      bar.appendChild(mc);
       run.wands.forEach((wd, wi) => {
         const b = document.createElement("button");
         b.type = "button";
@@ -3599,14 +4477,16 @@ const UI = (() => {
     bar.hidden = Game.state !== "play" && Game.state !== "loading";
     const slots = bar.children;
     run.wands.forEach((wd, wi) => {
-      const el = slots[wi];
+      const el = slots[wi + 1];
       if (!el) return;
       el.children[2].firstChild.style.width = ((wd.mana / wd.manaMax) * 100).toFixed(0) + "%";
       el.children[3].firstChild.style.width = (wd.rechargeT > 0 ? (1 - wd.rechargeT / wd.recharge) * 100 : 100).toFixed(0) + "%";
     });
     const sw = $("#swapBtn"), near = Game.nearPickup && Game.state === "play";
     if (sw.hidden === !!near) sw.hidden = !near;
-    if (near) set("swapBtn", "text", "Swap for " + Game.nearPickup.wand.name + " (E)");
+    const pk = Game.nearPickup;
+    if (near) set("swapBtn", "text", pk.melee ? "Swap for the " + MELEE[pk.melee].name + " (E)" : "Swap for " + pk.wand.name + " (E)");
+    else if (Game.nearCursed && Game.state === "play") { sw.hidden = false; set("swapBtn", "text", "Open the cursed cooler (E)"); }
     const hand = Game.foes.find((f) => f.d.ai === "hand" && f.awake);
     if ($("#bossbar").hidden === !!hand) $("#bossbar").hidden = !hand;
     if (hand) set("bossName", "text", hand.d.name);
@@ -3677,6 +4557,8 @@ const UI = (() => {
     one("gold", "Gold");
     one("pressure", "Critters");
     one("gauntlets", "Sealed rooms");
+    one("treasure", "Relics");
+    one("props", "Props");
     one("act", "Act");
     one("where", "Where");
     one("pour", "Pours");
@@ -3790,6 +4672,8 @@ const UI = (() => {
       ["Friend", CREW[run.crew].name + " (" + CREW[run.crew].perk.toLowerCase() + ")"],
       ["Health", Math.ceil(run.hp) + " / " + run.maxHp],
       ["Blower lift", run.liftMax.toFixed(1) + " s"],
+      ["Shovel", SHOVELS[run.shovel].name],
+      ["Relics", run.relics.length ? run.relics.map((k) => RELICS[k].name).join(", ") : "none yet"],
       ["Gold", String(run.gold)],
       ["Depth", String(run.depth)],
       ["Kills", String(run.kills)],
@@ -3861,7 +4745,7 @@ const UI = (() => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "card";
-    b.style.setProperty("--tag", opts.tag ? "var(" + TAG[opts.tag].css + ")" : "var(--accent)");
+    b.style.setProperty("--tag", opts.color || (opts.tag ? "var(" + TAG[opts.tag].css + ")" : "var(--accent)"));
     b.innerHTML = "<b></b><span class='desc'></span>" + (opts.price ? "<span class='price'></span>" : "") + "<span class='meta'><span class='tn'></span><em></em></span>";
     b.querySelector("b").textContent = opts.name;
     b.querySelector(".desc").textContent = opts.desc;
@@ -3869,6 +4753,32 @@ const UI = (() => {
     b.querySelector(".tn").textContent = opts.tagName || "";
     b.querySelector("em").textContent = opts.cost || "";
     return b;
+  }
+  // a scroll of power: the game waits while you pick a stat
+  function chooseScroll() {
+    return new Promise((resolve) => {
+      const box = $("#scrollCards");
+      box.innerHTML = "";
+      const was = Game.paused;
+      Game.paused = true;
+      Input.clear();
+      for (const k of Object.keys(SCROLLS)) {
+        const S = SCROLLS[k];
+        const b = card({ name: S.name, desc: S.desc, color: S.color, tagName: "Scroll" });
+        b.classList.add("big");
+        b.onclick = () => {
+          S.apply(run); run.maxHp += 8; run.hp += 8; run.scrolls++;
+          $("#scrollPick").hidden = true;
+          Game.paused = was;
+          SFX.well(); fit(); hud(true);
+          resolve(k);
+        };
+        box.appendChild(b);
+      }
+      $("#scrollPick").hidden = false;
+      fit();
+      box.firstChild.focus({ preventScroll: true });
+    });
   }
   function landing(L) {
     return new Promise((resolve) => {
@@ -3896,16 +4806,20 @@ const UI = (() => {
       shop.innerHTML = "";
       const shopBtns = [];
       L.shop.forEach((it) => {
-        const isSpell = it.v.startsWith("spell:");
-        const id = it.v.slice(isSpell ? 6 : 3);
-        const b = isSpell
+        const isSpell = it.v.startsWith("spell:"), isMelee = it.v.startsWith("melee:");
+        const id = it.v.slice(isSpell ? 6 : isMelee ? 6 : 3);
+        const b = isMelee
+          ? card({ name: MELEE[id].name, desc: MELEE[id].desc + " It replaces your " + MELEE[run.melee].name + ".", color: MELEE[id].color, tagName: "Melee", cost: it.price + " gold" })
+          : isSpell
           ? card({ name: SPELLS[id].name, desc: SPELLS[id].desc, price: SPELLS[id].price, tag: SPELLS[id].tag, tagName: TAG[SPELLS[id].tag].name, cost: it.price + " gold" })
           : card({ name: UPGRADES[id].name, desc: UPGRADES[id].desc + (id === "newwand" && run.wands.length >= 3 ? " Your hands are full, so it replaces gun " + (run.wi + 1) + " and its shots go to the bag." : ""), tagName: id === "newwand" ? "Gun" : "Upgrade", cost: it.price + " gold" });
         b.onclick = () => {
           if (run.gold < it.price || it.sold) return;
           run.gold -= it.price;
           it.sold = true;
-          if (isSpell) run.bag.push(id); else UPGRADES[id].apply(run);
+          if (isSpell) run.bag.push(id);
+          else if (isMelee) { run.melee = id; hud(true); }
+          else UPGRADES[id].apply(run);
           b.classList.add("taken");
           b.querySelector("em").textContent = "Bought";
           SFX.coin();
@@ -3916,6 +4830,32 @@ const UI = (() => {
         shop.appendChild(b);
       });
       const refreshShop = () => { $("#shrineGold").textContent = run.gold; for (const [b, it] of shopBtns) b.disabled = it.sold ? false : run.gold < it.price; };
+      // the tab: spend caps on unlocks that stay. Show the next four you can afford to aim for.
+      const tab = $("#tabCards");
+      const renderTab = () => {
+        tab.innerHTML = "";
+        $("#tabCaps").textContent = run.caps;
+        const U = Memory.data.meta.unlocked;
+        const open = Object.keys(UNLOCKS).filter((k) => !U[k] && (!UNLOCKS[k].needs || U[UNLOCKS[k].needs])).slice(0, 4);
+        if (!open.length) { tab.innerHTML = "<p class='empty'>You have bought everything on the tab.</p>"; return; }
+        for (const k of open) {
+          const u = UNLOCKS[k];
+          const b = card({ name: u.name, desc: u.desc, color: "#e0402a", tagName: "Stays", cost: u.cost + " caps" });
+          b.disabled = run.caps < u.cost;
+          b.onclick = () => {
+            if (run.caps < u.cost) return;
+            run.caps -= u.cost;
+            Memory.data.meta.unlocked[k] = true;
+            Memory.data.meta.spent = (Memory.data.meta.spent || 0) + u.cost;
+            Memory.save();
+            if (k === "hotdog1" || k === "hotdog2") { run.flaskMax++; run.flasks++; }
+            SFX.well();
+            renderTab();
+          };
+          tab.appendChild(b);
+        }
+      };
+      renderTab();
       refreshShop();
       let sel = null;
       const arrOf = (where) => (where === "bag" ? run.bag : run.wands[+where.slice(1)].spells);
@@ -3981,7 +4921,7 @@ const UI = (() => {
     document.documentElement.style.setProperty("--hudH", Math.round(hudEl.bottom - 8) + "px");
   }
 
-  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, end, insets, fit };
+  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, end, insets, fit };
 })();
 
 /* ------------------------------------------------------------------ flow */
@@ -3993,17 +4933,21 @@ async function enterDepth(first) {
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
   const plan = await Cottage.level(run, first);
   const geo = World.generate(plan);
+  // label the drains: the first leads to the Cottage's favorite next look, the second is richer and harder
+  geo.exits.forEach((e, k) => { e.theme = (plan.nextThemes || [])[k] || plan.theme; e.rich = k === 1; });
   Game.level = { theme: plan.theme, boss: plan.boss, handDead: false, ...geo };
   Game.cam.x = geo.spawnX; Game.cam.y = geo.spawnY + 40;
   // let the pour settle while the banner shows
   for (let k = 0; k < 14; k++) { for (let s = 0; s < 14; s++) World.step(); await nextFrame(); }
-  World.clearArea(geo.spawnX, geo.spawnY, 14, 12, false);
-  World.clearArea(geo.exitX, geo.exitY - 8, 18, 10, true);
+  World.clearArea(geo.spawnX, geo.spawnY, 14, 12, true);
+  for (const e of geo.exits) World.clearArea(e.x, e.y - 8, 18, 10, true);
+
   const p = makePlayer(geo.spawnX - 2, geo.spawnY - 4);
   p.soft = true;
   Game.lamps = geo.lamps;
   Game.glows = geo.glows;
   Game.chests = geo.chests;
+  Game.pipes = geo.pipes; Game.props = geo.props; Game.relics = geo.relics; Game.ambient = []; Game.caps = [];
   Game.player = p;
   // most foes wait in the rooms you must cross; the rest in hollows off the route
   const placed = [];
@@ -4042,12 +4986,23 @@ async function enterDepth(first) {
       Game.pickups.push({ x: r.x, y: py - 3, wand: makeWand(clamp(run.depth - 1 + (rnd() < 0.3 ? 1 : 0), 1, 3)), bob: rnd() * 6 });
     }
   }
+  if (first && run.startScroll) { run.startScroll = false; setTimeout(() => UI.chooseScroll(), 600); }
   if (plan.boss) {
     const hand = makeFoe(bossFor(run.depth), W / 2 - 9, geo.arenaTop + 20);
     hand.hp = hand.maxHp = 420 + 160 * (run.depth / 4 - 1);
     Game.foes.push(hand);
   }
-  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false;
+  // a scroll of power waits somewhere on every layer
+  {
+    const spots = geo.sides.concat(geo.rooms.slice(2));
+    const r = spots[(rnd() * spots.length) | 0];
+    if (r) { let py = (r.y + r.rh * 0.6 - 4) | 0; for (let k = 0; k < 20 && !blocks(World.at(r.x + 6, py + 1)); k++) py++; Game.pickups.push({ x: r.x + 6, y: py - 3, scroll: true, bob: rnd() * 6 }); }
+  }
+  // from the second layer on, some coolers are cursed
+  if (run.depth >= 2 && rnd() < 0.55) { const c = geo.chests.filter((q) => !q.rich); if (c.length) c[(rnd() * c.length) | 0].cursed = true; }
+  // reach the drain fast for a bonus
+  Game.fastT = 110 + 20 * run.depth;
+  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false;
   Minimap.reset();
   Minimap.reveal(p);
   Game.watchT = 12 + rnd() * 6;
@@ -4056,7 +5011,7 @@ async function enterDepth(first) {
   UI.hideBanner();
   UI.voice(plan.line);
   Game.state = "play";
-  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Left thumb moves. Push up to hover. Right thumb aims and shoots." : "A and D move. Hold W or the right button to hover. Hold the left button to shoot.", 5000);
+  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Tap Hit to swing. Roll through attacks. Drag the right side to shoot." : "Left click hits, right click shoots, Shift rolls, F digs.", 5000);
 }
 
 let reaching = false;
@@ -4068,6 +5023,10 @@ async function reachWell() {
   SFX.well();
   Memory.data.deepest = Math.max(Memory.data.deepest, run.depth);
   Memory.save();
+  // the fast drain bonus
+  run.fast = Game.levelT < Game.fastT;
+  if (run.fast) { const c = 8 + 3 * run.depth; run.caps += c; run.gold += 40 + 10 * run.depth; run.fastCount = (run.fastCount || 0) + 1; UI.hint("Fast drain! " + c + " caps and " + (40 + 10 * run.depth) + " gold.", 2600); }
+  run.flasks = run.flaskMax;
   UI.banner("The snack bar", "The Cottage stocks the snack bar", true);
   const L = await Cottage.landing(run);
   const missing = run.maxHp - run.hp;
@@ -4098,6 +5057,10 @@ async function die(cause) {
   await wait(1200);
   UI.end("Flushed at depth " + run.depth, line, [
     ["Friend", CREW[run.crew].name],
+    ["Weapon", MELEE[run.melee].name],
+    ["Caps dropped", String(run.caps) + (run.caps ? " (spend them at the tab next time)" : "")],
+    ["Relics", String(run.relics.length)],
+    ["Scrolls", String(run.scrolls)],
     ["Killed by", causeName(cause)],
     ["Depth", String(run.depth)],
     ["Critters killed", String(run.kills)],
@@ -4127,7 +5090,8 @@ function frame(now) {
   const dt = Math.min(0.1, (now - lastT) / 1000);
   lastT = now;
   Input.pollPad();
-  if (!Game.paused && !document.hidden) {
+  if (Game.hitStop > 0) { Game.hitStop -= dt; acc = 0; }
+  else if (!Game.paused && !document.hidden) {
     acc += dt;
     let steps = 0;
     while (acc >= 1 / 60 && steps < 3) {
@@ -4160,6 +5124,7 @@ function tickGame(dt) {
     Game.levelT += dt;
     updatePlayer(dt);
     updateGauntlets(dt);
+    updateProps(dt);
     if ((World.tick & 3) === 0 && Game.player) Minimap.reveal(Game.player);
     updateFoes(dt);
     Game.watchT -= dt;
@@ -4168,7 +5133,9 @@ function tickGame(dt) {
   if (Game.state === "play" || Game.state === "dead") {
     updateShots(dt);
     updateEmitters();
+    updateCaps(dt);
   }
+  updateAmbient(dt);
   for (const f of Game.fx) { if (!f.rift) { f.x += f.vx; f.y += f.vy; f.vy += 0.1; } f.t -= dt; }
   for (const n of Game.nums) { n.y -= 0.35; n.t -= dt; }
   if (Game.digging) Game.digging.t -= dt;
@@ -4205,6 +5172,22 @@ function renderRoster() {
     b.onclick = () => { Memory.data.crew = i; Memory.save(); renderRoster(); };
     box.appendChild(b);
   });
+  // the starting weapon: the plunger, and whatever caps have unlocked
+  const wb = $("#startWeapons");
+  wb.innerHTML = "";
+  for (const id of Object.keys(MELEE)) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "wpick";
+    const ok = meleeUnlocked(id);
+    b.disabled = !ok;
+    b.textContent = MELEE[id].name;
+    b.title = ok ? MELEE[id].desc : "Unlock it with caps at the snack bar's tab.";
+    b.setAttribute("aria-pressed", String((Memory.data.startMelee || "plunger") === id));
+    b.onclick = () => { Memory.data.startMelee = id; Memory.save(); renderRoster(); };
+    wb.appendChild(b);
+  }
+  const n = Object.keys(Memory.data.meta.unlocked).length;
+  $("#tabNote").textContent = n ? n + " of " + Object.keys(UNLOCKS).length + " unlocks bought" : "Bank caps at the snack bar to unlock more.";
 }
 renderRoster();
 $("#startBtn").onclick = startRun;

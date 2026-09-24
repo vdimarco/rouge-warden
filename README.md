@@ -18,32 +18,72 @@ Deploy to Vercel, or open `public/index.html` in a browser. Opened locally, a bu
 
 ## Down the Drain
 
-Down the Drain is a spin-off at `/fall/`. It plays like Noita, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water.
+Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
 
-Pick one of the five friends on the title screen. Each one has a perk: Tank Top hits 20% harder, Fifty-One has 25 more health, Shades has a 12% crit chance, New Balance digs 40% faster, and Red Jersey moves 12% faster. The game starts on the friend you last picked in Get Plunger'd.
+### The loop
 
-You carry up to three guns. Each gun fires its shots from left to right, then reloads. Each gun has its own slots, pressure, fire rate, and spread. Some guns shuffle their shots, and some fire a shot of their own every time. Shots include the Plunger Shot, Nail, Sparkler, Roman Candle, Propane Tank, Drain Cleaner, Frisbee, Bug Zapper, Water Balloon, and Bottle Rocket. Modifiers change the next shot: Binoculars make it home in on critters, TP Spread fires it three times, and Care Package makes a shot carry the next shot and fire it where it lands. You find guns in side rooms and buy them at the snack bar.
+- **Pick a friend and a weapon.** Each of the five friends has a perk. You start with the Plunger, or with any weapon you have unlocked.
+- **Fight your way down.** Each layer is a route of rooms down to the drains. Some rooms slam shut with screen doors until two waves of critters are dead. The drains stay clogged until the last of those rooms is clear. If you dig around it, the fight comes to you at the drains.
+- **Collect caps.** Critters, nests, and sealed rooms drop bottle caps. At the snack bar between layers, spend caps at the tab on unlocks that stay between runs: new weapons, more hot dogs, a better starting shovel, pocket money, a starting scroll, and a second wind. Caps you still carry when you go down are lost.
+- **Choose your drain.** Each layer ends at two drains. Each one is labeled with the look of the next layer, and one is richer and harder: more relics and gold, but more critters and one more sealed room.
+- **Go fast.** Reach the drain before the timer runs out for bonus caps and gold.
+- **Take risks.** From the second layer on, a cooler can be cursed. It holds a weapon, a scroll, and a pile of gold, but any hit takes you down until you beat 10 critters.
+- **Grow the build.** Scrolls of power raise Muscle (melee), Aim (gun), or Grit (health). Relics dug out of the walls change the run: Hot Sauce, Energy Drink, Bug Spray, Lucky Loonie, Sunscreen, Flip Flops, Snorkel, Work Gloves, Car Keys, TV Remote, the Golden Plunger, and Lost Sunglasses.
+- **Beat the bosses.** Every fourth layer ends at a boss: the Porcelain King, then Gabe the Mountain Man, Christian the Mystic, and Ryu.
 
-The critters are raccoons, hornets, seagulls, bats, skunks, moose, and geese. They use the same drawings as the main game. Every fourth layer ends at a boss: the Porcelain King, then Gabe the Mountain Man, Christian the Mystic, and Ryu.
+### Combat
 
-The Cottage runs the environment through the same `/api/warden` function, with Jev:
+Your melee weapon swings in combos, and each weapon crits in its own way:
 
-- **Each layer.** One call asks 35 questions: the look (the cellar, the septic tank, the crawlspace, or under the sauna), then the fill, liquid, and cave shape of six strata, then the gold, the critter count, two set pieces, the sealed rooms, ten critter slots, and a voice line.
-- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your gun. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, critters, or quench. It also picks where. A drain pipe opens on the ceiling before anything pours.
+| Weapon | Combo | Crits |
+| --- | --- | --- |
+| Plunger | 3 quick hits | On the last hit |
+| Canoe Paddle | 2 slow, wide hits that knock critters flat | On stunned critters |
+| Hockey Stick | 4 fast hits | On burning or poisoned critters |
+| Fishing Rod | 2 hits with the longest reach | With the tip |
+| Frying Pan | 1 heavy clang that stuns | On critters in the air |
+
+A swing knocks critter spit out of the air. The dodge roll dodges every hit and passes through critters. In the air, hold down and hit to pound the ground, which stuns everything near where you land. Hits pause the game for a moment, so they land hard. Seagulls flash before they spit, geese before they dash, and moose lower their heads before they charge. Hot dogs heal almost half your health, and the snack bar refills them.
+
+Your gun is the second weapon. Each gun fires its shots from left to right, then reloads, and each gun has its own slots, pressure, fire rate, and spread. You carry up to three.
+
+### Digging and the world
+
+Hold F to dig with your shovel. It tunnels a hole your size along your aim and carries you through it. The garden shovel is slow on rock, the steel spade is three times faster, and the power auger chews through rock, metal, and porcelain. Better shovels come from the snack bar and from coolers.
+
+The ground holds junk from the cottage: canoes, tires, old toilets, fridges, bike wheels, bottles, boots, lawn chairs, fish bones, and signs. Relics glint through the dirt. Water pipes run along the ceilings and leak where you shoot or dig them, and the water puts out fires. Propane tanks explode when shot or heated. Hornet nests hang from ceilings and send hornets until you break them.
+
+The first layer starts inside the outhouse under the night sky, and you drop through the seat. Each look has its own back wall, drawn with depth: fieldstone in the cellar, concrete and pipes in the septic tank, floor joists and roots in the crawlspace, and cedar planks under the sauna. Lamps, lava, and candles glow in color. Dust, drips, fireflies, and embers drift in the air.
+
+### The Cottage and Jev
+
+The Cottage runs the world through the same `/api/warden` function, with Jev:
+
+- **Each layer.** One call asks 37 questions: the look, the fill, liquid, and cave shape of six strata, the gold, the critter count, two set pieces, the sealed rooms, how many relics to bury, which props to use (pipes, tanks, nests, or a mix), ten critter slots, and a voice line. The two drains lead to the two next looks that Jev likes best.
+- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your build. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, critters, or quench. It also picks where.
 - **The boss.** Jev picks what the Cottage pours into the boss fight.
-- **The snack bar.** Between layers, Jev stocks three free shots and two items for gold, and it decides how much you heal.
+- **The snack bar.** Jev stocks three free shots and two items for gold, which can be a new melee weapon, a scroll, or a better shovel. It also decides how much you heal.
 
-The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging shot when your gun cannot dig. Every override shows in the Cottage tab.
+The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it applies your drain choice. Every override shows in the Cottage tab.
 
-Controls: A and D move. W, Space, or the right mouse button jumps, and holding it hovers you on your leaf blower. Aim with the mouse and hold the left button to shoot. 1, 2, 3, or the mouse wheel changes guns, E takes a gun from the ground, and F or Shift digs with your plunger. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and hovers, the right stick aims, RT shoots, LT digs, Y changes guns, and X takes a gun. On a phone, the left thumb moves, the right thumb aims and shoots, the Dig button turns the right thumb into a digger, and you tap a gun in the bar to hold it.
+### Controls
 
-The game fits the screen on desktop and phone, and nothing scrolls. The Cottage's decisions show as one line under the cottage icon. Tap the line or the icon for the full record.
+| Action | Keyboard and mouse | Gamepad |
+| --- | --- | --- |
+| Move, jump, hover | A and D, W or Space (hold to hover) | Left stick, A |
+| Hit | Left mouse or J | X |
+| Ground pound | S and hit, in the air | Down and X, in the air |
+| Roll | Shift or L | B |
+| Shoot | Right mouse or K | RT or RB |
+| Change guns | 1, 2, 3, or the wheel | LB |
+| Dig | Hold F | LT |
+| Hot dog | R | Y |
+| Take or open | E | D-pad up |
+| Map, sound | Q, M | Back |
 
-Each layer is a route of rooms that zigzag down to the drain, joined by wide sloped tunnels, with side rooms for gold and liquids. Lamps hang on chains and break into burning oil when shot. Coolers hold gold, and sometimes a shot or a gun. Jev picks two set pieces for each layer: falls from a hidden reservoir, an ossuary, a great root, a sealed vault you must dig into, or a cellar of oil drums.
+On a phone, the left thumb moves, and pulling down on the stick while you hit in the air pounds the ground. Tap the right side or the Hit button to swing, and drag the right side to aim and shoot. Buttons roll, eat a hot dog, and switch the right thumb to the shovel.
 
-You cannot run past the critters. Most of them wait in the rooms on the route. Some rooms slam shut with screen doors when you enter, and they stay shut until two waves of critters are dead. The last room before the drain always shuts, and Jev picks how many others do.
-
-The crew and boss pictures are in `public/fall/art/`. They come from the images in `public/app.js`.
+The game fits the screen on desktop and phone, and nothing scrolls.
 
 ## Files
 
