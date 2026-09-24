@@ -29,11 +29,15 @@ Jev runs the environment through the same `/api/warden` function:
 
 The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging spell when your wand cannot dig. Every override shows in the Warden tab.
 
-Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. 1, 2, 3, or the mouse wheel changes wands, and E takes a wand from the ground. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, RT casts, Y changes wands, and X takes a wand. On a phone, the left thumb moves, the right thumb aims and casts, and you tap a wand in the bar to hold it.
+Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. 1, 2, 3, or the mouse wheel changes wands, E takes a wand from the ground, and F or Shift digs. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, RT casts, LT digs, Y changes wands, and X takes a wand. On a phone, the left thumb moves, the right thumb aims and casts, the Dig button turns the right thumb into a digger, and you tap a wand in the bar to hold it.
 
 The game fits the screen on desktop and phone, and nothing scrolls. The Warden's decisions show as one line under the eye. Tap the line or the eye for the full record.
 
-Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
+Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Rooms come in kinds: halls, pillared halls, shafts with ledges, domes, and chasms with a wooden bridge. Lamps hang on chains and break into burning oil when shot. Chests hold gold, and sometimes a spell or a wand. Jev picks two set pieces for each layer: falls from a hidden reservoir, an ossuary, a great root, a sealed vault you must dig into, or a cellar of oil casks.
+
+You cannot run past the foes. Most of them wait in the rooms on the route. Some rooms seal with Warden glass when you enter, and they stay shut until two waves of foes are dead. The last room before the well always seals, and Jev picks how many others do. The Shade hangs back and dashes at you, and elites wear a gold mark.
+
+Hold F or Shift to dig with your lantern: soft ground goes fast, rock slowly, and Warden glass not at all. You also wade through loose sand, so a sandfall never traps you. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
 
 ## Files
 
