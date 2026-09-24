@@ -69,6 +69,8 @@ button { font: inherit; color: inherit; }
 .cab { --c1: #d2332a; --c2: #ffcf4a; --glow: rgba(255, 90, 60, 0.55); position: relative; width: var(--w); height: var(--h); flex: none; display: flex; flex-direction: column; align-items: center;
   transition: transform 0.35s, filter 0.35s; filter: brightness(0.62) saturate(0.8); transform: scale(0.94); transform-origin: 50% 100%; }
 .cab.on { filter: none; transform: none; }
+.cab:not(.broken) { cursor: pointer; }
+.cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
@@ -235,7 +237,7 @@ button { font: inherit; color: inherit; }
   <footer class="tray">
     <div class="purse"><span class="label">TOKENS</span><div class="stack" id="stack" aria-label="Your tokens. Drag one into a coin slot."></div><span class="count" id="count">0</span></div>
     <button class="change" id="changeBtn" type="button">CHANGE<br>MACHINE</button>
-    <p class="help"><span class="keys"><b>◀ ▶</b> pick a machine · <b>5</b> drops a token · <b>1</b> or <b>Enter</b> starts<br></span>Drag a token into a slot, or tap the slot.</p>
+    <p class="help"><span class="keys"><b>◀ ▶</b> pick a machine · <b>5</b> drops a token · <b>1</b> or <b>Enter</b> plays<br></span>Click a machine to play it, or drop a token in by hand.</p>
   </footer>
 </div>
 <div class="tools"><button type="button" id="soundBtn" aria-label="Sound off" aria-pressed="false">🔇</button></div>
@@ -377,7 +379,7 @@ function showCredit(c) {
   $(".press", osd).textContent = n > 0 ? "PRESS START" : "INSERT COIN";
 }
 // a token lands in a machine
-function insert(c, slot, from) {
+function insert(c, slot, from, then) {
   pick(cabs.indexOf(c), true);
   if (tokens <= 0) { SFX.reject(); toast("NO TOKENS. TRY THE CHANGE MACHINE."); return; }
   const done = () => {
@@ -391,6 +393,7 @@ function insert(c, slot, from) {
     SFX.coin();
     credits[c.dataset.game] = (credits[c.dataset.game] || 0) + 1;
     showCredit(c);
+    if (then) then();
   };
   if (reduceMotion) { done(); return; }
   // the token flies from your stack (or where you let go of it) into the slot, then drops in
@@ -406,6 +409,13 @@ function insert(c, slot, from) {
     { transform: "translate(" + dx + "px," + dy + "px) rotateY(80deg) scaleX(0.15) scaleY(0.7)" },
   ], { duration: 420, easing: "cubic-bezier(.4,0,.6,1)" }).onfinish = () => { t.remove(); done(); };
 }
+// click anywhere on a machine to play it: a token goes in if you need one, then it starts
+function play(c) {
+  if (c.dataset.game === "broken") { start(c); return; }
+  if (credits[c.dataset.game] > 0) { start(c); return; }
+  if (tokens <= 0) { credits[c.dataset.game] = 1; showCredit(c); toast("FREE PLAY"); start(c); return; }
+  insert(c, $(".slot", c), null, () => setTimeout(() => start(c), 250));
+}
 function start(c) {
   pick(cabs.indexOf(c), true);
   if (c.dataset.game === "broken") { SFX.reject(); toast("OUT OF ORDER. PLUNGER'D 3 IS COMING SOON."); return; }
@@ -418,6 +428,8 @@ function start(c) {
 $$(".cab").forEach((c) => {
   $$(".slot", c).forEach((s) => { s.onclick = () => insert(c, s); });
   $(".start", c).onclick = () => start(c);
+  // the rest of the machine plays it; the slots and Start keep their own jobs
+  c.addEventListener("click", (e) => { if (e.target.closest(".slot, .start")) return; play(c); });
 });
 
 // power on: the screen grows to fill the window, a CRT line sweeps, then the game loads
@@ -484,7 +496,7 @@ addEventListener("keydown", (e) => {
   if (k === "ArrowLeft" || k === "a") { pick(sel - 1); e.preventDefault(); }
   else if (k === "ArrowRight" || k === "d") { pick(sel + 1); e.preventDefault(); }
   else if (k === "5" || k === "c") { const c = cabs[sel]; insert(c, $(".slot", c)); }
-  else if (k === "1" || (k === "Enter" && !(document.activeElement && document.activeElement.closest("button")))) start(cabs[sel]);
+  else if (k === "1" || (k === "Enter" && !(document.activeElement && document.activeElement.closest("button")))) play(cabs[sel]);
 });
 
 /* ---------------- attract mode ---------------- */
