@@ -94,6 +94,10 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px), (max-height: 500px) { .wslot .wname { display: none; } .wslot .sp span { width: 11px; height: 11px; font-size: 0; border-width: 1.5px; } .wslot { padding: 3px 5px 4px; } }
 .swapbtn { position: fixed; z-index: 12; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 74px); background: var(--accent); color: #1b1608; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; }
 .swapbtn[hidden] { display: none; }
+.digbtn { display: none; position: fixed; z-index: 10; right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 64px); width: 58px; height: 58px; border-radius: 50%; border: 2px solid rgba(228, 220, 203, 0.35); background: rgba(18, 22, 31, 0.72); color: var(--ink); font-weight: 800; }
+.digbtn[aria-pressed="true"] { background: rgba(201, 178, 122, 0.85); color: #1b1608; border-color: #e6c35c; }
+@media (pointer: coarse) { .digbtn { display: block; } }
+body.menu .digbtn { visibility: hidden; }
 body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
 .mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
@@ -296,6 +300,7 @@ a { color: var(--accent); }
 <button class="ticker fade" id="ticker" type="button" hidden></button>
 <nav class="hotbar" id="hotbar" aria-label="Your wands"></nav>
 <button class="swapbtn" id="swapBtn" type="button" hidden>Swap wands</button>
+<button class="digbtn" id="digBtn" type="button" aria-pressed="false">Dig</button>
 
 <canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the well."></canvas>
 <div class="bossbar" id="bossbar" hidden><span>The Warden's Hand</span><div><i id="bossFill"></i></div></div>
@@ -316,10 +321,11 @@ a { color: var(--accent); }
       <dt>Jump, float</dt><dd>W, Space, or right mouse</dd>
       <dt>Cast</dt><dd>Hold left mouse</dd>
       <dt>Wands</dt><dd>1, 2, 3, or the wheel</dd>
+      <dt>Dig</dt><dd>Hold F or Shift</dd>
       <dt>Take a wand</dt><dd>E</dd>
       <dt>Map, sound</dt><dd>Q, M</dd>
-      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and casts</dd>
-      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to cast, Y for wands</dd>
+      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and casts. Tap Dig to dig instead.</dd>
+      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to cast, LT to dig, Y for wands</dd>
     </dl>
     <p class="keys">The gold arrow by your lantern points the way down.</p>
     <div class="starts"><button class="btn" id="startBtn">Enter the well</button></div>
@@ -406,7 +412,7 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 
 const K = { EMPTY: 0, SOLID: 1, POWDER: 2, LIQUID: 3, GAS: 4, FIRE: 5 };
 const EMPTY = 0, BEDROCK = 1, ROCK = 2, EARTH = 3, SAND = 4, BONE = 5, WOOD = 6, MOSS = 7, GLASS = 8, OBSIDIAN = 9, GOLD = 10, ASH = 11,
-  WATER = 12, OIL = 13, LAVA = 14, ACID = 15, SLUDGE = 16, BLOOD = 17, FIRE = 18, EMBER = 19, SMOKE = 20, STEAM = 21, MIASMA = 22;
+  WATER = 12, OIL = 13, LAVA = 14, ACID = 15, SLUDGE = 16, BLOOD = 17, FIRE = 18, EMBER = 19, SMOKE = 20, STEAM = 21, MIASMA = 22, SEAL = 23;
 const MATS = [];
 function defMat(id, o) { MATS[id] = Object.assign({ kind: K.SOLID, dens: 0, hard: 0, flam: 0, burn: 0, glow: 0, flow: 0, cols: [0x000000] }, o); }
 defMat(EMPTY, { name: "air", kind: K.EMPTY });
@@ -432,6 +438,7 @@ defMat(EMBER, { name: "ember", hard: 1, glow: 0.8, cols: [0xff7a30, 0xe0501a, 0x
 defMat(SMOKE, { name: "smoke", kind: K.GAS, cols: [0x3a3a40, 0x444450, 0x333338, 0x4c4c56] });
 defMat(STEAM, { name: "steam", kind: K.GAS, cols: [0x9aa8b8, 0xa8b4c2, 0x8c9aaa, 0xb4c0cc] });
 defMat(MIASMA, { name: "miasma", kind: K.GAS, flam: 0.9, cols: [0x5a6a3a, 0x64743f, 0x526234, 0x6e7e46] });
+defMat(SEAL, { name: "Warden glass", hard: 99, glow: 0.35, cols: [0x7a5ad0, 0x8a6ae0, 0x6a4ac0, 0x9a7af0] });
 const NMAT = MATS.length;
 const KIND = new Uint8Array(NMAT), DENS = new Float32Array(NMAT), HARD = new Uint8Array(NMAT), FLAM = new Float32Array(NMAT), GLOW = new Float32Array(NMAT), FLOW = new Uint8Array(NMAT);
 for (let m = 0; m < NMAT; m++) { const d = MATS[m]; KIND[m] = d.kind; DENS[m] = d.dens; HARD[m] = d.hard; FLAM[m] = d.flam; GLOW[m] = d.glow; FLOW[m] = d.flow; }
@@ -511,6 +518,8 @@ const FOES = {
     sprite: ["..f..", ".rrr.", "rrerr", "rrrrr", ".r.r."], pal: { f: 0xffe070, r: 0xe05a4a, e: 0x200a08 } },
   brute: { name: "Brute", hp: 60, w: 8, h: 10, speed: 0.26, touch: 16, ai: "brute", gold: 12, tier: 3, cost: 3, bleed: BLOOD, counters: ["storm", "swift"],
     sprite: [".bbbbbb.", "bbbbbbbb", "bbebbebb", "bbbbbbbb", "bbbbbbbb", "bbbbbbbb", "bbbbbbbb", ".bbbbbb.", ".bb..bb.", ".bb..bb."], pal: { b: 0x8a6f5c, e: 0xffd070 } },
+  shade: { name: "Shade", hp: 22, w: 5, h: 6, speed: 0.8, touch: 12, ai: "dash", gold: 6, tier: 2, cost: 2, bleed: 0, poisonImmune: true, counters: ["blade", "storm"],
+    sprite: [".sss.", "sesse", "sssss", "sssss", "s.s.s", ".s.s."], pal: { s: 0x2a2440, e: 0xd0485f } },
   hand: { name: "Warden's Hand", hp: 420, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 80, tier: 9, cost: 0, bleed: 0, fireImmune: true, poisonImmune: true, counters: [],
     sprite: [
       "..f..f..f.........", ".ff.ff.ff.........", ".ff.ff.ff..f......", ".ff.ff.ff.ff......", ".ffffffffff.......", ".ffffffffff...tt..",
@@ -525,6 +534,7 @@ const FOE_DESC = {
   wisp: "Wisp: flies, and ignores fire and poison. Counters fire and poison builds.",
   bomber: "Bomber: runs at the player and explodes, which digs a crater. Counters blood and ward builds.",
   brute: "Brute: big and tough. Digs through earth to reach the player. Counters storm and swift builds.",
+  shade: "Shade: flies, hangs back, then dashes through the player. Hard to hit. Counters slow blade and storm builds.",
 };
 const CAUSE_NAME = { lava: "lava", acid: "acid", fire: "fire", sludge: "sludge", blast: "blast", blood: "blood price", shock: "lightning", hand: "hand" };
 const causeName = (k) => (FOES[k] ? FOES[k].name.replace("Warden's ", "").toLowerCase() : CAUSE_NAME[k] || String(k || "dark"));
@@ -582,6 +592,8 @@ const LINES = {
   shrine_testing: ["Choose well. I already chose the next layer.", "Your wand is predictable. Fix that."],
   low_hp: ["You are leaking.", "Careful. I have not finished with you.", "That one hurt. I felt it from here."],
   boss_intro: ["My hand waits at the bottom. It likes to pour.", "Enough layers. Meet my hand.", "Down here is my hand. It has new tricks."],
+  gauntlet_start: ["No one walks through my rooms for free.", "Stay a while.", "The door is shut. Earn it open.", "You ran past the last ones. Not these."],
+  gauntlet_clear: ["Fine. Go on.", "The seal breaks. So did they.", "That will do. For now."],
   hand_dead: ["You broke my hand. I will pour another.", "Fine. The well is open. Go deeper."],
   death: [
     "The {killer} did it. I only mixed it.",
@@ -893,6 +905,38 @@ const Warden = (() => {
       score: (k) => (k === "open" ? 0.4 + (st.mood === "generous" ? 0.5 : 0) : k === "tunnels" ? 0.45 : 0.1 + (st.mood === "testing" ? 0.5 : 0) + (st.can_dig ? 0.2 : -0.6)),
     };
   }
+  const FEATURES = {
+    falls: "Falls: a hidden reservoir pours through a crack in a ceiling. Water, or lava in the ember forge.",
+    ossuary: "Ossuary: a side room of bone pillars with a chest.",
+    root: "Great root: a giant root hangs into a room, with mossy ledges. It burns.",
+    vault: "Vault: a sealed room full of gold and a rich chest. The player must dig in to find it.",
+    casks: "Casks: a cellar of wooden casks full of oil. A fire trap, or a tool.",
+    none: "Nothing special.",
+  };
+  function featureQuestion(i, st) {
+    return {
+      id: "feature_" + i,
+      prompt: "Choose set piece " + i + " of 2 for the next layer. Generous: a vault or an ossuary to reward the player. Tempting: casks of oil near a fire wand, or a vault. Testing: falls, or casks against a fire wand. Pick two different set pieces.",
+      options: Object.keys(FEATURES).map((k) => ({ value: k, label: k, desc: FEATURES[k] })),
+      score: (k) => {
+        const fire = st.focus_tag === "fire", gen = st.mood === "generous", temp = st.mood === "tempting", test = st.mood === "testing";
+        return { falls: 0.5 + (test ? 0.5 : 0), ossuary: 0.4 + (gen ? 0.5 : 0), root: 0.4 + (fire && temp ? 0.6 : 0), vault: 0.3 + (gen ? 0.7 : 0) + (temp ? 0.4 : 0), casks: 0.2 + (fire ? 0.6 : 0) + (temp ? 0.3 : 0), none: 0 }[k];
+      },
+    };
+  }
+  function gauntletQuestion(st) {
+    return {
+      id: "gauntlets",
+      prompt: "How many rooms on the route seal shut when the player enters, and hold them until two waves of foes are dead? The last room before the well always seals. Generous and hurt: one. Testing, healthy, or deep: three.",
+      options: [{ value: "one", label: "one", desc: "One: only the last room before the well." }, { value: "two", label: "two", desc: "Two sealed rooms." }, { value: "three", label: "three", desc: "Three sealed rooms. A hard layer." }],
+      score: (v) => {
+        const hurt = 1 - st.hp_frac;
+        if (v === "one") return (st.mood === "generous" ? 0.9 : 0.1) + 1.2 * hurt;
+        if (v === "two") return 0.8 + (st.mood === "tempting" ? 0.3 : 0);
+        return -0.2 + (st.mood === "testing" ? 0.9 : 0) + 0.15 * st.depth - hurt;
+      },
+    };
+  }
   function goldQuestion(st) {
     return {
       id: "gold",
@@ -973,7 +1017,7 @@ const Warden = (() => {
     const boss = isBossDepth(r.depth);
     const qs = [themeQuestion(st)];
     for (let b = 1; b <= 6; b++) qs.push(fillQuestion(b, st), pocketQuestion(b, st), formQuestion(b, st));
-    qs.push(goldQuestion(st), pressureQuestion(st));
+    qs.push(goldQuestion(st), pressureQuestion(st), featureQuestion(1, st), featureQuestion(2, st), gauntletQuestion(st));
     const kinds = unlocked(r.depth);
     for (let i = 1; i <= 10; i++) qs.push(foeQuestion(i, kinds, st));
     const ctx = lineCtx(st, r);
@@ -993,6 +1037,12 @@ const Warden = (() => {
     if (boss) notes.push("This is the hand's layer. The code hollowed out the lower strata as its cavern.");
     const theme = A.theme.pick;
     r.lastTheme = theme;
+    const features = [A.feature_1.pick, A.feature_2.pick];
+    if (features[1] === features[0] && features[0] !== "none") {
+      const alt = A.feature_2.probs.find((x) => x.value !== features[0]);
+      notes.push("Both set pieces were " + features[0] + ". The code made the second one " + alt.value + ".");
+      features[1] = alt.value;
+    }
     const mult = { low: 0.75, mid: 1, high: 1.3 }[A.pressure.pick];
     const count = Math.round((boss ? 5 : 9 + 3 * Math.min(6, r.depth)) * mult);
     const slots = [];
@@ -1006,7 +1056,9 @@ const Warden = (() => {
     }
     const line = fillLine(A.line.pick, ctx, r);
     UI.ledger();
-    return { mood, theme, bands, gold: A.gold.pick, pressure: A.pressure.pick, foes, line, boss, seed: (rnd() * 1e9) | 0 };
+    let gauntlets = { one: 1, two: 2, three: 3 }[A.gauntlets.pick];
+    if (r.depth === 1 && gauntlets > 2) { gauntlets = 2; notes.push("Three sealed rooms on the first layer. The code made it two."); }
+    return { mood, theme, bands, features, gauntlets, gold: A.gold.pick, pressure: A.pressure.pick, foes, line, boss, seed: (rnd() * 1e9) | 0 };
   }
 
   /* watching the fall */
@@ -1363,7 +1415,7 @@ const World = (() => {
     } else if (m === ACID) {
       keep(i);
       const j = i + NB[(rnd() * 8) | 0], mj = mat[j];
-      if ((KIND[mj] === K.SOLID || KIND[mj] === K.POWDER) && mj !== GLASS && mj !== BEDROCK && mj !== GOLD && rnd() < 0.12 / (1 + HARD[mj])) {
+      if ((KIND[mj] === K.SOLID || KIND[mj] === K.POWDER) && mj !== GLASS && mj !== BEDROCK && mj !== GOLD && mj !== SEAL && rnd() < 0.12 / (1 + HARD[mj])) {
         set(j, rnd() < 0.25 ? SMOKE : EMPTY, lifeFor(SMOKE));
         if (rnd() < 0.3) { set(i, EMPTY); return; }
       }
@@ -1542,7 +1594,13 @@ const World = (() => {
       const i = y * W + x;
       shade[i] = (hash2(x, y, s + 5) * 4) | 0;
       const bn = vnoise(x / 7, y / 7, s + 40) * 0.6 + vnoise(x / 2, y / 2, s + 41) * 0.4;
-      bg[i] = abgr(dim(bn > 0.62 ? bgB : bn < 0.3 ? dim(bgA, 0.6) : bgA, 0.7));
+      let tone = bn > 0.62 ? bgB : bn < 0.3 ? dim(bgA, 0.6) : bgA;
+      // a faint pattern on the back wall for each look
+      if (plan.theme === "crypt" && (y % 7 === 0 || (x + (((y / 7) | 0) % 2) * 6) % 12 === 0)) tone = dim(tone, 0.7);
+      else if (plan.theme === "forge" && (x % 16 === 0 || y % 16 === 0 || (x + y) % 32 === 0)) tone = dim(tone, 0.72);
+      else if (plan.theme === "cistern" && (x % 24 < 2 || (y % 30 === 0 && x % 24 > 3))) tone = dim(tone, 0.75);
+      else if (plan.theme === "garden" && Math.abs(vnoise(x / 3, y / 40, s + 44) - 0.5) < 0.035) tone = dim(tone, 0.68);
+      bg[i] = abgr(dim(tone, 0.7));
       if (x < 2 || x >= W - 2 || y < 2 || y >= H - 2) { mat[i] = BEDROCK; continue; }
       if (y < TOP) continue;
       if (y >= H - BOT) { mat[i] = y > H - 14 ? OBSIDIAN : ROCK; continue; }
@@ -1575,11 +1633,16 @@ const World = (() => {
     for (let k = 0; k < 14; k++) {
       const band = plan.bands[bandIdx(y)];
       const [bw, bh] = ROOM[band.form];
-      const rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3);
+      // each room has a kind, so the layer does not repeat itself
+      const kinds = k === 0 ? ["hall"] : band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
+      const kind = kinds[(R() * kinds.length) | 0];
+      let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3);
+      if (kind === "shaft") { rw *= 0.62; rh *= 1.55; }
+      if (kind === "bridge") rw = Math.max(rw, 30);
       if (y + rh * 0.6 > floorY - 30) break;
       const mid = R() < 0.25;
       const x = mid ? W / 2 + (R() - 0.5) * 40 : side ? W - 18 - rw - R() * 36 : 18 + rw + R() * 36;
-      rooms.push({ x, y, rw, rh, band, main: true });
+      rooms.push({ x, y, rw, rh, band, main: true, kind });
       if (!mid) side ^= 1;
       y += rh * 0.6 + 30 + R() * 16 + ROOM[plan.bands[bandIdx(y + 50)].form][1];
     }
@@ -1632,6 +1695,123 @@ const World = (() => {
       sides.push(sr);
     }
 
+    // 4b. dress the rooms, and build the Warden's set pieces
+    const lamps = [], chests = [], notes = [];
+    const floorOf = (r) => (r.y + r.rh * 0.6) | 0;
+    const put = (x, y, m) => { x |= 0; y |= 0; if (x > 2 && y > 2 && x < W - 3 && y < H - 3 && mat[y * W + x] === EMPTY) { mat[y * W + x] = m; life[y * W + x] = 0; } };
+    const force = (x, y, m) => { x |= 0; y |= 0; if (x > 2 && y > 2 && x < W - 3 && y < H - 3 && mat[y * W + x] !== BEDROCK) { mat[y * W + x] = m; life[y * W + x] = 0; } };
+    const ceilAt = (x, y) => { let yy = y | 0; for (let k = 0; k < 60 && yy > 3; k++, yy--) if (mat[yy * W + (x | 0)] !== EMPTY) return yy; return -1; };
+    const stone = plan.theme === "forge" ? OBSIDIAN : plan.theme === "crypt" ? BONE : ROCK;
+    for (const r of rooms.concat(sides)) {
+      const fy = floorOf(r);
+      // spikes hang from the ceiling and rise from the floor
+      const spikes = r.kind === "dome" ? 7 : 3;
+      for (let k = 0; k < spikes; k++) {
+        const x = r.x + (R() - 0.5) * r.rw * 1.5, cy = ceilAt(x, r.y - 2);
+        if (cy < 0) continue;
+        const len = 3 + ((R() * (r.kind === "dome" ? 9 : 5)) | 0), vine = plan.theme === "garden";
+        for (let d = 1; d <= len; d++) { const wd = vine ? 0 : Math.max(0, Math.round((1 - d / len) * 1.6)); for (let q = -wd; q <= wd; q++) put(x + q + (vine ? Math.sin(d * 0.6) : 0), cy + d, vine ? (d === len ? MOSS : WOOD) : stone); }
+      }
+      for (let k = 0; k < 2; k++) {
+        const x = r.x + (R() - 0.5) * r.rw * 1.2, h = 2 + ((R() * 3) | 0);
+        for (let d = 1; d <= h; d++) { const wd = d < h ? 1 : 0; for (let q = -wd; q <= wd; q++) put(x + q, fy - d + 1, stone); }
+      }
+      if (r.kind === "pillars") {
+        const n = 2 + ((R() * 2) | 0);
+        for (let k = 0; k < n; k++) {
+          const x = r.x - r.rw * 0.6 + (k + 0.5) * (r.rw * 1.2 / n), h = r.rh * (0.55 + R() * 0.25);
+          for (let d = 0; d < h; d++) for (let q = -1; q <= 1; q++) put(x + q, fy - d, stone);
+          for (let q = -2; q <= 2; q++) put(x + q, fy - h, stone);
+        }
+      } else if (r.kind === "shaft") {
+        let left = R() < 0.5;
+        for (let yy = r.y - r.rh * 0.6; yy < fy - 8; yy += 11) {
+          const len = 9 + ((R() * 6) | 0);
+          for (let q = 0; q < len; q++) { const x = left ? r.x - r.rw + q : r.x + r.rw - q; put(x, yy, WOOD); put(x, yy + 1, WOOD); }
+          left = !left;
+        }
+      } else if (r.kind === "bridge") {
+        // a chasm under the floor with a wooden bridge across it, and gold at the bottom for those who dig
+        const pw = r.rw * 0.55, depth = 18;
+        for (let yy = fy; yy < fy + depth; yy++) for (let x = r.x - pw; x <= r.x + pw; x++) {
+          const nx = (x - r.x) / pw, ny = (yy - fy) / depth;
+          if (nx * nx + ny * ny < 1) force(x, yy, EMPTY);
+        }
+        for (let x = r.x - pw - 3; x <= r.x + pw + 3; x++) { force(x, fy - 1, WOOD); if ((x | 0) % 3) force(x, fy - 2, EMPTY); }
+        for (const ex of [r.x - pw - 3, r.x + pw + 3]) for (let d = 2; d < 6; d++) force(ex, fy - d, WOOD);
+        const m = LIQ[r.band.pocket];
+        if (m && m !== MIASMA) { for (let yy = fy + depth - 6; yy < fy + depth; yy++) for (let x = r.x - pw; x <= r.x + pw; x++) put(x, yy, m); }
+        else for (let k = 0; k < 40; k++) put(r.x + (R() - 0.5) * pw, fy + depth - 2 - R() * 3, GOLD);
+      }
+      // a lamp hangs on a chain in most rooms
+      if (r.main && R() < 0.75) {
+        const x = r.x + (R() - 0.5) * r.rw * 0.8, cy = ceilAt(x, r.y - 2);
+        if (cy > 0 && r.y - cy < 40) lamps.push({ x: x | 0, top: cy + 1, y: cy + 4 + ((R() * 6) | 0), lit: true });
+      }
+    }
+    // the Warden's set pieces for this layer
+    const used = new Set();
+    const pickMain = () => { const c = rooms.filter((r, k) => k > 0 && !used.has(r) && r.kind !== "bridge"); const r = c[(R() * c.length) | 0]; if (r) used.add(r); return r; };
+    for (const f of plan.features || []) {
+      if (f === "falls") {
+        const r = pickMain(); if (!r) continue;
+        const k = rooms.indexOf(r), nx2 = k + 1 < rooms.length ? rooms[k + 1].x : exitX, away = -(Math.sign(nx2 - r.x) || 1);
+        const fx = (r.x + away * r.rw * 0.4) | 0, cy = ceilAt(fx, r.y - 2);
+        if (cy < TOP + 16) continue;
+        const m = plan.theme === "forge" ? LAVA : r.band.pocket === "acid" ? ACID : WATER;
+        // a hidden reservoir above the ceiling, and a crack for it to pour through
+        for (let yy = cy - 14; yy < cy - 5; yy++) for (let x = fx - 8; x <= fx + 8; x++) { const nx = (x - fx) / 8, ny = (yy - (cy - 9.5)) / 4.5; if (nx * nx + ny * ny < 1) force(x, yy, m); }
+        for (let yy = cy - 6; yy <= cy; yy++) force(fx, yy, EMPTY);
+        r.fallsBasin = m;
+        notes.push("falls of " + MATS[m].name);
+      } else if (f === "root") {
+        const r = pickMain(); if (!r) continue;
+        const tx = r.x + (R() - 0.5) * r.rw * 0.5, cy = ceilAt(tx, r.y - 2), bottom = r.y + r.rh * 0.1;
+        if (cy < 0) continue;
+        for (let yy = cy; yy < bottom; yy++) for (let q = -2; q <= 2; q++) put(tx + q + Math.sin(yy / 6) * 2, yy, WOOD);
+        for (const [dy, dir] of [[0.35, -1], [0.65, 1], [0.85, -1]]) {
+          const by = cy + (bottom - cy) * dy, len = 10 + ((R() * 6) | 0);
+          for (let q = 0; q < len; q++) { put(tx + dir * (3 + q), by + q * 0.15, WOOD); put(tx + dir * (3 + q), by - 1 + q * 0.15, MOSS); }
+        }
+        notes.push("a great root");
+      } else if (f === "ossuary" || f === "vault") {
+        // a room of its own: the vault is sealed and must be dug into, the ossuary opens off the route
+        const r = pickMain(); if (!r) continue;
+        const left = r.x > W / 2, rw = f === "vault" ? 10 : 14, rh = f === "vault" ? 7 : 10;
+        const x = left ? r.x - r.rw - 6 - rw : r.x + r.rw + 6 + rw;
+        if (x - rw < 6 || x + rw > W - 6) continue;
+        const vr = { x, y: r.y + r.rh * 0.1, rw, rh, band: r.band, main: false };
+        carveRoom(vr, s);
+        if (f === "ossuary") {
+          tunnel(r.x + (left ? -1 : 1) * r.rw * 0.6, r.y - r.rh * 0.1, vr.x + (left ? 1 : -1) * vr.rw * 0.5, vr.y - vr.rh * 0.4, 5, s);
+          for (let bx = vr.x - vr.rw + 3; bx < vr.x + vr.rw - 3; bx += 5) { const h = 3 + R() * vr.rh * 0.7; for (let d = 0; d < h; d++) { put(bx, floorOf(vr) - d, BONE); if (d > h - 2) { put(bx - 1, floorOf(vr) - d, BONE); put(bx + 1, floorOf(vr) - d, BONE); } } }
+        }
+        chests.push({ x: vr.x | 0, y: floorOf(vr), open: false, rich: f === "vault" });
+        for (let k = 0; k < (f === "vault" ? 60 : 20); k++) put(vr.x + (R() - 0.5) * vr.rw * 1.4, floorOf(vr) - R() * 3, GOLD);
+        notes.push(f === "vault" ? "a sealed vault" : "an ossuary");
+      } else if (f === "casks") {
+        const r = pickMain(); if (!r) continue;
+        const fy = floorOf(r), n = 3 + ((R() * 3) | 0);
+        let cx = r.x - (n * 6) / 2;
+        for (let k = 0; k < n; k++, cx += 6) {
+          const top = fy - 6 - (k % 2 === 1 && R() < 0.5 ? 6 : 0);
+          for (let yy = top; yy < top + 6; yy++) for (let q = 0; q < 5; q++) { const edge = q === 0 || q === 4 || yy === top || yy === top + 5; put(cx + q, yy, edge ? WOOD : OIL); }
+        }
+        notes.push("a cellar of oil casks");
+      }
+    }
+    // small lights on cave floors: candles, crystals, mushrooms, or embers, by look
+    const glows = [];
+    const glowColor = { crypt: 0xffd070, cistern: 0x7fd8ff, garden: 0x9cff6a, forge: 0xff8a3a }[plan.theme];
+    for (let tries = 0; tries < 900 && glows.length < 26; tries++) {
+      const x = 6 + ((R() * (W - 12)) | 0), y = TOP + 10 + ((R() * (floorY - TOP - 20)) | 0), i = y * W + x;
+      if (mat[i] !== EMPTY || mat[i - W] !== EMPTY || KIND[mat[i + W]] !== K.SOLID) continue;
+      if (glows.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) < 24)) continue;
+      glows.push({ x, y, c: glowColor, h: 1 + ((R() * 2) | 0) });
+    }
+    // a few side rooms hold a chest in place of loose gold
+    for (const r of sides) if (!LIQ[r.band.pocket] && R() < 0.35) { chests.push({ x: r.x | 0, y: floorOf(r), open: false }); r.chest = true; }
+
     // 5. sand keeps a crust of earth, so rooms do not fill in on their own
     for (let yy = TOP; yy < floorY; yy++) for (let x = 3; x < W - 3; x++) {
       const i = yy * W + x;
@@ -1646,9 +1826,9 @@ const World = (() => {
 
     // 6. liquids: shallow pools on the route, deep ones in side rooms. Lava and acid stay off the route.
     // route rooms hold their liquid in a basin cut below the floor, so it does not drain down the route
-    const basin = (r, m) => {
+    const basin = (r, m, bd = 7) => {
       const k = rooms.indexOf(r), nx2 = k + 1 < rooms.length ? rooms[k + 1].x : exitX, away = -(Math.sign(nx2 - r.x) || 1);
-      const bx = r.x + away * r.rw * 0.4, top = r.y + r.rh * 0.6 - 1, bw = r.rw * 0.33, bd = 7;
+      const bx = r.x + away * r.rw * 0.4, top = r.y + r.rh * 0.6 - 1, bw = r.rw * 0.33;
       for (let yy = top; yy < top + bd; yy++) for (let x = bx - bw; x <= bx + bw; x++) {
         const nx = (x - bx) / bw, ny = (yy - top) / bd;
         if (nx * nx + ny * ny < 1 && inb(x, yy) && mat[(yy | 0) * W + (x | 0)] !== BEDROCK) { mat[(yy | 0) * W + (x | 0)] = m; life[(yy | 0) * W + (x | 0)] = 0; }
@@ -1656,6 +1836,8 @@ const World = (() => {
     };
     for (const r of rooms) {
       const m = LIQ[r.band.pocket];
+      if (r.fallsBasin) { basin(r, EMPTY, 12); continue; }
+      if (r.kind === "bridge") continue;
       if (m === MIASMA) fillRoom(r, m, -0.9, -0.5);
       else if (m === WATER || m === OIL || m === SLUDGE) basin(r, m);
     }
@@ -1663,7 +1845,7 @@ const World = (() => {
       const p = r.band.pocket, m = LIQ[p];
       if (m === MIASMA) fillRoom(r, m, -1, 0.2);
       else if (m) fillRoom(r, m, 0.1, 0.62);
-      else if (R() < 0.7) for (let k = 0; k < 40 + (plan.gold === "rich" ? 50 : 0); k++) { const gx = (r.x + (R() - 0.5) * r.rw) | 0, gy = (r.y + r.rh * 0.3 - R() * 6) | 0; if (mat[gy * W + gx] === EMPTY) mat[gy * W + gx] = GOLD; }
+      else if (!r.chest && R() < 0.7) for (let k = 0; k < 40 + (plan.gold === "rich" ? 50 : 0); k++) { const gx = (r.x + (R() - 0.5) * r.rw) | 0, gy = (r.y + r.rh * 0.3 - R() * 6) | 0; if (mat[gy * W + gx] === EMPTY) mat[gy * W + gx] = GOLD; }
     }
     if (plan.theme === "cistern") for (const r of rooms) if (!LIQ[r.band.pocket] && R() < 0.5) basin(r, WATER);
     // moss grows on floors in the overgrown hall
@@ -1671,7 +1853,7 @@ const World = (() => {
     for (let x = 0; x < W; x++) for (let yy = 0; yy < H; yy++) if (x < 2 || x >= W - 2 || yy < 2 || yy >= H - 2) mat[yy * W + x] = BEDROCK;
     next.fill(1);
     const route = [{ x: W / 2, y: TOP }].concat(rooms.map((r) => ({ x: r.x, y: r.y }))).concat(plan.boss ? [{ x: last.x, y: arenaTop + 20 }] : []).concat([{ x: exitX, y: H - 20 }]);
-    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, sides, path };
+    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, sides, path, lamps, chests, glows, pieces: notes };
   }
   // a room: an ellipse with a rough wall and a flat floor
   function carveRoom(r, s) {
@@ -1741,6 +1923,7 @@ function moveBody(e, dx, dy) {
     else {
       let ok = false;
       if (e.climb && (e.ground || e.ledge)) for (let up = 1; up <= e.climb + (e.ground ? 0 : 2); up++) if (!boxHits(e.x + s, e.y - up, e.w, e.h)) { e.x += s; e.y -= up; ok = true; break; }
+      if (!ok && e.soft && pushPowder(e, s)) { e.x += s; e.vx *= 0.9; ok = true; }
       if (!ok) { hitX = true; e.vx = 0; break; }
     }
     rem -= s;
@@ -1755,6 +1938,47 @@ function moveBody(e, dx, dy) {
   }
   if (!e.ground && e.vy >= 0 && boxHits(e.x, e.y + 1, e.w, e.h)) e.ground = true;
   return { hitX, hitY };
+}
+// the player wades through loose sand, ash, and gold: the grains in front are pushed up and over
+function pushPowder(e, s) {
+  const x = Math.floor(e.x + s) + (s > 0 ? e.w - 1 : 0), y0 = Math.floor(e.y);
+  for (let y = y0; y < y0 + e.h; y++) { const m = World.at(x, y); if (KIND[m] === K.SOLID) return false; }
+  for (let y = y0; y < y0 + e.h; y++) {
+    const m = World.at(x, y);
+    if (KIND[m] !== K.POWDER) continue;
+    const i = y * W + x;
+    if (m === GOLD && e === Game.player) { World.set(i, EMPTY); run.gold++; continue; }
+    // the grain goes behind the body, so it does not fall back in front
+    let placed = false;
+    const bx = s > 0 ? Math.floor(e.x) - 1 : Math.floor(e.x) + e.w;
+    for (let yy = y; yy >= y0 - 3 && !placed; yy--) if (World.at(bx, yy) === EMPTY) { World.set(yy * W + bx, m); placed = true; }
+    World.set(i, EMPTY);
+  }
+  return true;
+}
+// the lantern digs: soft ground goes fast, rock and glass slowly, bedrock never
+function dig(p, a) {
+  let n = 0;
+  // a hole a little taller than you; the floor stays unless you aim down
+  const keepFloor = Math.sin(a) < 0.45, feet = Math.floor(p.y + p.h);
+  for (const reach of [5, 9]) {
+    const cx = p.x + 2 + Math.cos(a) * reach, cy = p.y + 4 + Math.sin(a) * reach, r = 6;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      const x = (cx + dx) | 0, y = (cy + dy) | 0, m = World.at(x, y);
+      if (keepFloor && y >= feet) continue;
+      if (m === EMPTY || m === BEDROCK || m === SEAL || !World.inb(x, y)) continue;
+      const k = KIND[m];
+      if (k !== K.SOLID && k !== K.POWDER) continue;
+      if (HARD[m] > 2 && m !== GOLD && rnd() > 0.16) continue;
+      const i = y * W + x;
+      if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); }
+      else World.set(i, rnd() < 0.12 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
+      if (++n > 44) break;
+    }
+  }
+  if (n) { SFX.dig(); if (rnd() < 0.5) addFx(p.x + 2 + Math.cos(a) * 8, p.y + 5 + Math.sin(a) * 8, 0xc9b27a, 1); }
+  Game.digging = { x: p.x + 2 + Math.cos(a) * 8, y: p.y + 5 + Math.sin(a) * 8, t: 0.1 };
 }
 // sand can pour into a body: push it up, or clear the grains it sits in
 function unstick(e) {
@@ -1786,7 +2010,7 @@ function bodyEnv(e) {
 }
 
 const Game = {
-  player: null, foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [], nums: [], pickups: [],
+  player: null, foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [], nums: [], pickups: [], lamps: [], chests: [],
   state: "intro", level: null, cam: { x: 0, y: 0, shake: 0 }, paused: false,
   watchT: 0, watchBusy: false, handT: 0, handBusy: false, idleT: 0, bestY: 0, levelT: 0, lastPour: null,
   input: { x: 0, up: false, down: false, cast: false, sx: null, sy: null, touchAim: null, keyAim: false, jumpEdge: false },
@@ -1795,10 +2019,10 @@ const Game = {
 function makePlayer(x, y) {
   return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0 };
 }
-function makeFoe(kind, x, y) {
+function makeFoe(kind, x, y, elite) {
   const d = FOES[kind];
-  const hp = Math.round(d.hp * (1 + 0.18 * (run.depth - 1)));
-  return { kind, d, x, y, w: d.w, h: d.h, vx: 0, vy: 0, ground: false, climb: d.ai === "fly" || d.ai === "hand" ? 0 : 2, hp, maxHp: hp, face: 1, burn: 0, poison: 0, flash: 0, cd: 1 + rnd() * 2, jumpCd: 0, fuse: 0, awake: false, t: rnd() * 10, dead: false, state: "idle" };
+  const hp = Math.round(d.hp * (1 + 0.22 * (run.depth - 1)) * (elite ? 2.4 : 1));
+  return { kind, d, elite: !!elite, x, y, w: d.w, h: d.h, vx: 0, vy: 0, ground: false, climb: d.ai === "fly" || d.ai === "hand" ? 0 : 2, hp, maxHp: hp, face: 1, burn: 0, poison: 0, flash: 0, cd: 1 + rnd() * 2, jumpCd: 0, fuse: 0, awake: false, t: rnd() * 10, dead: false, state: "idle" };
 }
 
 function hurtPlayer(dmg, cause, raw) {
@@ -1846,6 +2070,8 @@ function addFx(x, y, color, n) {
 }
 function blast(x, y, r, power, dmg, cause, owner) {
   World.explode(x, y, r, power);
+  for (const l of Game.lamps) if (Math.hypot(l.x - x, l.y - y) < r + 3) breakLamp(l);
+  for (const c of Game.chests) if (Math.hypot(c.x - x, c.y - y) < r + 3) openChest(c);
   Game.flashes.push({ x, y, r: r * 3, t: 0.25 });
   SFX.boom(r > 10);
   Game.cam.shake = Math.min(10, Game.cam.shake + r * 0.5);
@@ -2032,7 +2258,7 @@ function updateShots(dt) {
       if ((s.life & 1) === 0) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
         if (dx * dx + dy * dy > r * r) continue;
         const x = (s.x + dx) | 0, y = (s.y + dy) | 0, m = World.at(x, y);
-        if (m !== EMPTY && m !== BEDROCK && m !== GOLD && World.inb(x, y)) World.set(y * W + x, EMPTY);
+        if (m !== EMPTY && m !== BEDROCK && m !== GOLD && m !== SEAL && World.inb(x, y)) World.set(y * W + x, EMPTY);
       }
       for (const f of Game.foes) {
         if (f.dead) continue;
@@ -2054,7 +2280,7 @@ function updateShots(dt) {
       const nx = s.x + s.vx / n, ny = s.y + s.vy / n;
       const i = (ny | 0) * W + (nx | 0);
       const m = World.at(nx, ny);
-      if (s.dig && s.digN > 0 && (KIND[m] === K.SOLID || KIND[m] === K.POWDER) && m !== BEDROCK && m !== GOLD && HARD[m] <= s.dig) {
+      if (s.dig && s.digN > 0 && (KIND[m] === K.SOLID || KIND[m] === K.POWDER) && m !== BEDROCK && m !== GOLD && m !== SEAL && HARD[m] <= s.dig) {
         World.set(i, rnd() < 0.2 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
         s.digN--;
         SFX.dig();
@@ -2098,6 +2324,10 @@ function updateShots(dt) {
         const p = Game.player;
         if (p && nx >= p.x && nx <= p.x + p.w && ny >= p.y && ny <= p.y + p.h) { hurtPlayer(s.dmg, s.from); impact(s, nx, ny); dead = true; }
       }
+    }
+    if (s.owner === "player") {
+      for (const l of Game.lamps) if (l.lit && Math.abs(l.x - s.x) < 3 && Math.abs(l.y - s.y) < 3) breakLamp(l);
+      for (const c of Game.chests) if (!c.open && Math.abs(c.x - s.x) < 5 && s.y > c.y - 6 && s.y < c.y + 1) openChest(c);
     }
     s.trail.push(s.x, s.y);
     if (s.trail.length > 8) s.trail.splice(0, 2);
@@ -2179,7 +2409,9 @@ function updatePlayer(dt) {
     w.cdT = Math.max(0, w.cdT - dt);
     w.rechargeT = Math.max(0, w.rechargeT - dt);
   }
-  if (inp.cast) castWand(aimAngle());
+  if (inp.dig) { dig(p, aimAngle()); p.vx *= 0.85; }
+  else if (inp.cast) castWand(aimAngle());
+  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Tap Dig, then drag your right thumb where you want to dig." : "Stuck? Hold F or Shift to dig toward the cursor.", 4500); }
   // wands lying in the caves
   Game.nearPickup = null;
   for (const pk of Game.pickups) {
@@ -2189,6 +2421,7 @@ function updatePlayer(dt) {
     break;
   }
   if (inp.swapEdge && Game.nearPickup) takePickup(Game.nearPickup);
+  for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) openChest(c);
   inp.swapEdge = false;
   // progress, for the Warden's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
@@ -2209,6 +2442,112 @@ function routeTarget(p) {
   if (bd > 50 * 50) for (let i = 0; i < path.length; i++) { const d = (path[i].x - cx) ** 2 + (path[i].y - cy) ** 2; if (d < bd) { bd = d; best = i; } }
   L.pathI = best;
   return best + 10 < path.length ? path[best + 10] : { x: L.exitX, y: L.exitY - 4 };
+}
+// a chest bursts with gold, and may hold a spell or a wand
+function openChest(c) {
+  if (c.open) return;
+  c.open = true;
+  World.spill(c.x, c.y - 4, GOLD, (c.rich ? 70 : 30) + 12 * run.depth, 5);
+  SFX.well();
+  addFx(c.x, c.y - 3, 0xe6c35c, 14);
+  const roll = rnd();
+  if (roll < (c.rich ? 0.35 : 0.15)) {
+    Game.pickups.push({ x: c.x, y: c.y - 5, wand: makeWand(clamp(run.depth, 1, 3)), bob: 0 });
+    UI.hint("The chest held a wand.", 3000);
+  } else if (roll < 0.6) {
+    const pool = Object.keys(SPELLS).filter((id) => SPELLS[id].tier <= Math.min(3, run.depth + 1));
+    const id = pool[(rnd() * pool.length) | 0];
+    const slot = run.wand.spells.indexOf(null);
+    if (slot >= 0) { run.wand.spells[slot] = id; UI.hint("The chest held " + SPELLS[id].name + ". It is in your wand.", 3200); }
+    else { run.bag.push(id); UI.hint("The chest held " + SPELLS[id].name + ". It is in your bag. Set it at the landing.", 3600); }
+    UI.hud(true);
+  }
+}
+// a lamp that is shot or blasted falls and spills burning oil
+function breakLamp(l) {
+  if (!l.lit) return;
+  l.lit = false;
+  World.spill(l.x, l.y + 1, OIL, 8, 2);
+  World.spill(l.x, l.y, FIRE, 6, 2);
+  SFX.sizzle();
+}
+// a sealed room: Warden glass shuts every way out until two waves of foes are dead
+function updateGauntlets(dt) {
+  const p = Game.player;
+  if (!p || !Game.gauntlets) return;
+  for (const g of Game.gauntlets) {
+    const r = g.r;
+    if (g.state === "idle") {
+      const nx = (p.x + 2 - r.x) / r.rw, ny = (p.y + 5 - r.y) / r.rh;
+      if (nx * nx + ny * ny < 0.55) startGauntlet(g);
+    } else if (g.state === "active") {
+      g.foes = g.foes.filter((f) => !f.dead);
+      if (g.foes.length || g.spawning) continue;
+      g.wait -= dt;
+      if (g.wait > 0) continue;
+      if (g.wave < g.waves) spawnWave(g);
+      else endGauntlet(g);
+    }
+  }
+}
+function startGauntlet(g) {
+  const r = g.r, p = Game.player;
+  g.state = "active";
+  // fill every opening in a ring around the room with Warden glass
+  for (let a = 0; a < Math.PI * 2; a += 0.012) for (let k = 1.0; k <= 1.45; k += 0.06) {
+    const x = (r.x + Math.cos(a) * r.rw * k) | 0, y = (r.y + Math.sin(a) * r.rh * k) | 0;
+    if (!World.inb(x, y) || y > r.y + r.rh * 0.6 + 2) continue;
+    if (x >= p.x - 1 && x <= p.x + p.w + 1 && y >= p.y - 1 && y <= p.y + p.h + 1) continue;
+    const i = y * W + x, m = World.mat[i];
+    if (m === EMPTY || KIND[m] === K.GAS || KIND[m] === K.FIRE || KIND[m] === K.LIQUID) { World.set(i, SEAL); g.seal.push(i); }
+  }
+  SFX.rumble();
+  Game.cam.shake = 5;
+  UI.hint("Sealed in. Two waves.", 2200);
+  Warden.bark("gauntlet_start", run).then((l) => UI.voice(l));
+  g.wait = 0.6;
+}
+function spawnWave(g) {
+  const r = g.r, p = Game.player, plan = Game.gauntletPlan;
+  g.wave++;
+  const extra = { low: -1, mid: 0, high: 2 }[plan.pressure] || 0;
+  const n = clamp(3 + Math.min(4, run.depth) + extra + (g.wave - 1), 3, 10);
+  const kinds = unlockedFor(run.depth);
+  g.spawning = true;
+  const spots = [];
+  for (let k = 0; k < n; k++) {
+    let x = r.x, y = r.y;
+    for (let t = 0; t < 30; t++) {
+      x = r.x + (rnd() - 0.5) * r.rw * 1.5; y = r.y - r.rh * 0.3 + (rnd() - 0.5) * r.rh * 0.8;
+      if (Math.hypot(x - p.x, y - p.y) > 26 && !boxHits(x, y, 6, 6)) break;
+    }
+    spots.push([x, y]);
+    Game.fx.push({ x, y, vx: 0, vy: 0, t: 0.9, c: World.abgr(0x9a7af0), rift: true });
+  }
+  SFX.rumble();
+  setTimeout(() => {
+    if (Game.state !== "play" || g.state !== "active") { g.spawning = false; return; }
+    spots.forEach(([x, y], k) => {
+      const pick = rnd() < 0.7 && plan.kinds && plan.kinds.length ? plan.kinds[(rnd() * plan.kinds.length) | 0] : kinds[(rnd() * kinds.length) | 0];
+      const elite = k === 0 && (g.wave === 2 || run.depth >= 3);
+      const f = makeFoe(FOES[pick] ? pick : "grub", x, y, elite);
+      f.awake = true;
+      for (let up = 0; up < 20 && boxHits(f.x, f.y, f.w, f.h); up++) f.y -= 1;
+      Game.foes.push(f);
+      g.foes.push(f);
+    });
+    g.spawning = false;
+    g.wait = 1.1;
+  }, 900);
+}
+function endGauntlet(g) {
+  g.state = "done";
+  for (const i of g.seal) if (World.mat[i] === SEAL) World.set(i, EMPTY);
+  g.seal = [];
+  World.spill(g.r.x, g.r.y, GOLD, 20 + 10 * run.depth, 5);
+  SFX.well();
+  UI.hint("The seal breaks.", 2000);
+  Warden.bark("gauntlet_clear", run).then((l) => UI.voice(l));
 }
 function takePickup(pk) {
   const i = Game.pickups.indexOf(pk);
@@ -2254,8 +2593,8 @@ function updateFoes(dt) {
   for (const f of Game.foes) {
     if (f.dead) continue;
     const dx = p.x - f.x, dy = p.y - f.y, dist = Math.hypot(dx, dy);
-    if (!f.awake) { f.awake = dist < (f.d.ai === "hand" ? 140 : 90); if (!f.awake) continue; }
-    if (dist > 220 && f.d.ai !== "hand") continue;
+    if (!f.awake) { f.awake = dist < (f.d.ai === "hand" ? 140 : 125); if (!f.awake) continue; }
+    if (dist > 260 && f.d.ai !== "hand") continue;
     f.t += dt;
     f.flash = Math.max(0, f.flash - dt);
     f.cd -= dt;
@@ -2264,7 +2603,22 @@ function updateFoes(dt) {
     const d = f.d;
     const dir = Math.sign(dx) || 1;
     f.face = dir;
-    if (d.ai === "fly") {
+    if (d.ai === "dash") {
+      // hang back, flash, then dash through the player
+      if (f.state === "dash") {
+        f.dashT -= dt;
+        moveBody(f, f.vx, f.vy);
+        if (f.dashT <= 0) { f.state = "hover"; f.cd = 1.4 + rnd() * 1.2; }
+      } else if (f.state === "wind") {
+        f.dashT -= dt; f.flash = 0.05;
+        if (f.dashT <= 0) { const a = Math.atan2(dy + 4, dx); f.vx = Math.cos(a) * 4.2; f.vy = Math.sin(a) * 4.2; f.state = "dash"; f.dashT = 0.38; SFX.zap(); }
+      } else {
+        const want = Math.atan2(dy - 14, dx), hold = dist > 34 ? 1 : -1;
+        f.vx = f.vx * 0.9 + Math.cos(want) * 0.12 * hold * (f.elite ? 1.3 : 1); f.vy = f.vy * 0.9 + Math.sin(want) * 0.12 * hold;
+        moveBody(f, f.vx * 1.6, f.vy * 1.6);
+        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35; }
+      }
+    } else if (d.ai === "fly") {
       const a = Math.atan2(dy + Math.sin(f.t * 3) * 6, dx);
       f.vx += Math.cos(a) * 0.08; f.vy += Math.sin(a) * 0.08;
       f.vx *= 0.95; f.vy *= 0.95;
@@ -2308,7 +2662,7 @@ function updateFoes(dt) {
     }
     // touch damage
     if (d.touch && p.x < f.x + f.w && p.x + p.w > f.x && p.y < f.y + f.h && p.y + p.h > f.y) {
-      hurtPlayer(d.touch, f.kind);
+      hurtPlayer(Math.round(d.touch * (f.elite ? 1.5 : 1) * (1 + 0.1 * (run.depth - 1))), f.kind);
       if (d.ai === "fly" && !f.d.fireImmune) p.burn = 2;
     }
   }
@@ -2508,6 +2862,8 @@ const Render = (() => {
   const palOf = (pal) => { let p = palCache.get(pal); if (!p) { p = {}; for (const k in pal) p[k] = World.abgr(pal[k]); palCache.set(pal, p); } return p; };
   const P_ROWS = ["..cc.", ".cccc", ".cfe.", ".cccc", "ccccc", "ccccc", "ccccc", ".ccc.", ".c.c.", ".d.d."];
   const P_PAL = { c: 0x3a4a6a, f: 0x1a1a22, e: 0xe6c35c, d: 0x2a2420 };
+  const CHEST = ["bbbbbbb", "bgggggb", "bbbybbb", "bbbbbbb"], CHEST_OPEN = ["b.....b", "bgggggb", "bbbbbbb"];
+  const CHEST_PAL = { b: 0x6a4428, g: 0xe6c35c, y: 0xfff0a0 };
   const EYE_ROWS = ["..www..", ".wwiww.", "wwiiiww", ".wwiww.", "..www.."];
 
   function px(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < vw && y < vh) buf[y * vw + x] = c; }
@@ -2566,6 +2922,7 @@ const Render = (() => {
     for (const f of Game.foes) {
       const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
       sprite(f.d.sprite, palOf(f.d.pal), f.x - ox, f.y - oy, f.face < 0, fl, 0, 0);
+      if (f.elite) { const gc = World.abgr(0xe6c35c); px(f.x + f.w / 2 - ox, f.y - 2 - oy, gc); px(f.x + f.w / 2 - 1 - ox, f.y - 3 - oy, gc); px(f.x + f.w / 2 + 1 - ox, f.y - 3 - oy, gc); }
       if (f.d.ai === "hand" && f.state === "slam") for (let k = 0; k < 4; k++) px(f.x + rnd() * f.w - ox, f.y + f.h + rnd() * 4 - oy, iris);
     }
     // the player
@@ -2615,6 +2972,21 @@ const Render = (() => {
       line(b.x1 - ox, b.y1 - oy, b.x2 - ox, b.y2 - oy, World.abgr(0xeef4ff));
       if (b.wide) { line(b.x1 - ox, b.y1 - oy, b.x2 - ox, b.y2 - oy, World.abgr(0x9fc4ff)); line(b.x1 - ox, b.y1 - oy + 1, b.x2 - ox, b.y2 - oy + 1, 0xffffffff); }
     }
+    // lamps on chains, and chests
+    const chainC = World.abgr(0x4a4a52), lampC = World.abgr(0x2a2a30), flame = World.abgr((tk >> 2) & 1 ? 0xffd070 : 0xffb040);
+    for (const l of Game.lamps) {
+      for (let yy = l.top; yy < l.y - 1; yy++) px(l.x - ox, yy - oy, chainC);
+      px(l.x - 1 - ox, l.y - 1 - oy, lampC); px(l.x + 1 - ox, l.y - 1 - oy, lampC); px(l.x - ox, l.y - 1 - oy, lampC);
+      px(l.x - 1 - ox, l.y - oy, lampC); px(l.x + 1 - ox, l.y - oy, lampC); px(l.x - ox, l.y - oy, l.lit ? flame : lampC);
+      px(l.x - 1 - ox, l.y + 1 - oy, lampC); px(l.x + 1 - ox, l.y + 1 - oy, lampC); px(l.x - ox, l.y + 1 - oy, lampC);
+    }
+    for (const g of Game.glows || []) {
+      if (World.mat[g.y * W + g.x] !== EMPTY) continue;
+      const c = World.abgr(g.c);
+      for (let k = 0; k < g.h; k++) px(g.x - ox, g.y - k - oy, c);
+      if ((tk + g.x) % 40 < 20) px(g.x - ox, g.y - g.h - oy, 0xffffffff);
+    }
+    for (const c of Game.chests) sprite(c.open ? CHEST_OPEN : CHEST, palOf(CHEST_PAL), c.x - 3 - ox, c.y - (c.open ? 3 : 4) - oy, false, false, 0, 0);
     // wands lying in the caves
     for (const pk of Game.pickups) {
       const wx = pk.x - ox, wy = pk.y + Math.sin(pk.bob) * 1.5 - oy, c = World.abgr(pk.wand.color), tip = World.abgr(0xfff0a0);
@@ -2658,9 +3030,13 @@ const Render = (() => {
     }
     for (const s of Game.shots) light(s.x, s.y, s.S.burn || s.S.shock ? 40 : s.S.hole ? 50 : 22, 0.7);
     for (const pk of Game.pickups) light(pk.x, pk.y, 34, 0.7);
+    if (Game.digging && Game.digging.t > 0) light(Game.digging.x, Game.digging.y, 26, 0.8);
+    for (const l of Game.lamps) if (l.lit) light(l.x, l.y, 46, 0.85);
+    for (const g of Game.glows || []) if (Math.abs(g.y - (oy + vh / 2)) < vh) light(g.x, g.y, 20, 0.55);
+    for (const c of Game.chests) if (!c.open) light(c.x, c.y - 2, 24, 0.5);
     for (const fl of Game.flashes) light(fl.x, fl.y, fl.r * 2, fl.t * 4);
     for (const e of Game.emitters) if (e.tele > 0 && !e.follow) light(e.x, e.y, 40, 0.8);
-    for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand") light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
+    for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand" || f.elite) light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
     if (L) light(L.exitX, L.exitY - 4, 70, (!L.boss || L.handDead) ? 0.9 : 0.4);
     dctx.globalAlpha = 1;
   }
@@ -2722,11 +3098,12 @@ const Input = (() => {
     inp.down = keys.has("s") || keys.has("arrowdown") || padDown;
     if (touchMoveX != null) inp.x = touchMoveX;
     if (padX) inp.x = padX;
-    inp.cast = mouseDown || keys.has("j") || touchCast || padCast;
+    inp.dig = keys.has("f") || keys.has("shift") || padDig || (digMode && touchCast);
+    inp.cast = mouseDown || keys.has("j") || (touchCast && !digMode) || padCast;
     inp.keyAim = keys.has("j") && !mouseDown;
   }
   let mouseDown = false, rightDown = false, moveUp = false, touchMoveX = null, touchCast = false;
-  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false;
+  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false, padDig = false, digMode = false;
   // a gamepad: left stick or d-pad moves, A or LB jumps and floats, right stick aims, RT or RB casts
   function pollPad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -2745,6 +3122,7 @@ const Input = (() => {
     if (aiming) { inp.touchAim = Math.atan2(ry, rx); inp.pad = true; }
     else if (inp.pad && Math.abs(lx) > 0.25) inp.touchAim = Math.atan2(Math.abs(ly) > 0.4 ? ly : 0, lx);
     padCast = b(7) || b(5) || (aiming && Math.hypot(rx, ry) > 0.85);
+    padDig = b(6);
     if (padCast || padX || jump) inp.pad = true;
     if (b(9) && !pollPad.menu && Game.state === "play") UI.sheet(true, "stats");
     pollPad.menu = b(9);
@@ -2760,7 +3138,7 @@ const Input = (() => {
     if (e.target.closest && e.target.closest("input, textarea")) return;
     const k = e.key.toLowerCase();
     if (Game.state !== "play") return;
-    if (["w", "a", "s", "d", " ", "j", "arrowleft", "arrowright", "arrowup", "arrowdown"].includes(k)) {
+    if (["w", "a", "s", "d", " ", "j", "f", "shift", "arrowleft", "arrowright", "arrowup", "arrowdown"].includes(k)) {
       e.preventDefault();
       if ((k === "w" || k === " " || k === "arrowup") && !keys.has(k)) inp.jumpEdge = true;
       keys.add(k);
@@ -2850,6 +3228,8 @@ const Input = (() => {
   };
   stage.addEventListener("touchend", end);
   stage.addEventListener("touchcancel", end);
+  const digBtn = $("#digBtn");
+  digBtn.onclick = () => { digMode = !digMode; digBtn.setAttribute("aria-pressed", String(digMode)); sync(); };
   return { pollPad, clear() { keys.clear(); mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; sync(); } };
 })();
 
@@ -2972,8 +3352,10 @@ const UI = (() => {
     if (qs.some((q) => q.startsWith("pocket_"))) rows.push(["Pours: " + (pockets.length ? [...new Set(pockets)].join(", ") : "dry"), null]);
     const fills = qs.filter((q) => q.startsWith("fill_")).map((q) => e.answers[q].pick);
     if (fills.length) rows.push(["Strata: " + fills.join(", "), null]);
+    if (qs.includes("feature_1")) rows.push(["Set pieces: " + [e.answers.feature_1.pick, e.answers.feature_2.pick].filter((v) => v !== "none").join(", "), null]);
     one("gold", "Gold");
     one("pressure", "Foes");
+    one("gauntlets", "Sealed rooms");
     one("act", "Act");
     one("where", "Where");
     one("pour", "Pours");
@@ -3285,7 +3667,7 @@ const UI = (() => {
 async function enterDepth(first) {
   Game.state = "loading";
   Input.clear();
-  Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = [];
+  Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? "The Warden's hand waits below" : "The Warden pours the next layer", true);
   const plan = await Warden.level(run, first);
   const geo = World.generate(plan);
@@ -3296,13 +3678,20 @@ async function enterDepth(first) {
   World.clearArea(geo.spawnX, geo.spawnY, 14, 12, false);
   World.clearArea(geo.exitX, geo.exitY - 8, 18, 10, true);
   const p = makePlayer(geo.spawnX - 2, geo.spawnY - 4);
+  p.soft = true;
+  Game.lamps = geo.lamps;
+  Game.glows = geo.glows;
+  Game.chests = geo.chests;
   Game.player = p;
-  // foes wait in hollows, away from the start
+  // most foes wait in the rooms you must cross; the rest in hollows off the route
   const placed = [];
+  const routeRooms = geo.rooms.slice(1);
   for (const kind of plan.foes) {
     const d = FOES[kind];
+    const onRoute = routeRooms.length && rnd() < 0.65, rr = onRoute ? routeRooms[(rnd() * routeRooms.length) | 0] : null;
     for (let tries = 0; tries < 400; tries++) {
-      const x = 6 + rnd() * (W - 16), y = 110 + rnd() * (Math.min(geo.arenaTop, H - 60) - 110);
+      const x = rr && tries < 200 ? rr.x + (rnd() - 0.5) * rr.rw * 1.4 : 6 + rnd() * (W - 16);
+      const y = rr && tries < 200 ? rr.y - rr.rh * 0.6 + rnd() * rr.rh * 1.1 : 110 + rnd() * (Math.min(geo.arenaTop, H - 60) - 110);
       if (boxHits(x, y, d.w, d.h)) continue;
       if (d.ai !== "fly" && !boxHits(x, y + 1, d.w, d.h)) continue;
       if (placed.some((q) => Math.hypot(q.x - x, q.y - y) < 22)) continue;
@@ -3312,6 +3701,15 @@ async function enterDepth(first) {
     }
   }
   Game.foes = placed;
+  // sealed rooms: the last room before the well, and more as the Warden chose
+  Game.gauntlets = [];
+  if (!plan.boss && geo.rooms.length > 2) {
+    const picks = [geo.rooms[geo.rooms.length - 1]];
+    const pool = geo.rooms.slice(2, -1).sort(() => rnd() - 0.5);
+    while (picks.length < (plan.gauntlets || 1) && pool.length) picks.push(pool.pop());
+    for (const r of picks) Game.gauntlets.push({ r, state: "idle", wave: 0, waves: 2, foes: [], seal: [], wait: 0 });
+  }
+  Game.gauntletPlan = { kinds: plan.foes, pressure: plan.pressure };
   // a wand waits in a side room on most layers
   if (rnd() < 0.75) {
     const spots = (geo.sides && geo.sides.length ? geo.sides : geo.rooms.slice(1));
@@ -3327,7 +3725,7 @@ async function enterDepth(first) {
     hand.hp = hand.maxHp = 420 + 160 * (run.depth / 4 - 1);
     Game.foes.push(hand);
   }
-  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0;
+  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false;
   Minimap.reset();
   Minimap.reveal(p);
   Game.watchT = 12 + rnd() * 6;
@@ -3438,6 +3836,7 @@ function tickGame(dt) {
   if (Game.state === "play") {
     Game.levelT += dt;
     updatePlayer(dt);
+    updateGauntlets(dt);
     if ((World.tick & 3) === 0 && Game.player) Minimap.reveal(Game.player);
     updateFoes(dt);
     Game.watchT -= dt;
@@ -3449,6 +3848,7 @@ function tickGame(dt) {
   }
   for (const f of Game.fx) { if (!f.rift) { f.x += f.vx; f.y += f.vy; f.vy += 0.1; } f.t -= dt; }
   for (const n of Game.nums) { n.y -= 0.35; n.t -= dt; }
+  if (Game.digging) Game.digging.t -= dt;
   Game.nums = Game.nums.filter((n) => n.t > 0);
   for (const pk of Game.pickups) pk.bob += dt * 3;
   Game.fx = Game.fx.filter((f) => f.t > 0);
