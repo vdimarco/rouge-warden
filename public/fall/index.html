@@ -38,7 +38,7 @@ body[data-mood="generous"] { --iris: #e6c35c; }
 body[data-mood="tempting"] { --iris: #d0485f; }
 body[data-mood="testing"] { --iris: #7fa8ff; }
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.4; overflow: hidden; overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.4; overflow: hidden; overscroll-behavior: none; }
 body { position: fixed; inset: 0; -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -54,39 +54,48 @@ button { font: inherit; color: inherit; }
 .eye.big::after { width: 13px; height: 13px; }
 
 /* HUD */
-.hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: calc(var(--sat) + 10px) calc(var(--sar) + 12px) 14px calc(var(--sal) + 12px); background: linear-gradient(rgba(7, 9, 13, 0.85), rgba(7, 9, 13, 0)); pointer-events: none; }
+.hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: flex-start; gap: 6px; padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px); pointer-events: none; }
 .hud > * { pointer-events: auto; }
-.hbtn { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 15px; cursor: pointer; }
-.hbtn:hover { border-color: rgba(230, 195, 92, 0.55); }
+.hbtn { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font-size: 14px; cursor: pointer; }
+.hbtn:hover, .icon:hover, .depth:hover { border-color: rgba(230, 195, 92, 0.55); }
 .bars { display: grid; gap: 3px; }
-.bar { width: 120px; height: 7px; border-radius: 4px; background: rgba(228, 220, 203, 0.15); overflow: hidden; }
+.bar { width: 104px; height: 6px; border-radius: 3px; background: rgba(228, 220, 203, 0.15); overflow: hidden; }
 .bar i { display: block; height: 100%; width: 100%; transition: width 0.12s; }
 #hpFill { background: var(--blood); }
 #manaFill { background: var(--mana); }
 #liftFill { background: var(--accent); }
-#hpText { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3ch; }
-#hudMood { font-family: var(--fell); font-size: 18px; line-height: 1; }
-#goldText { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); }
-#depthText { color: var(--muted); font-size: 14px; flex: 1 1 140px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: none; border: 0; text-align: left; padding: 4px 2px; cursor: pointer; }
-.wandbar { display: flex; gap: 3px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; cursor: pointer; }
-.wandbar .ws { width: 24px; height: 24px; border-radius: 4px; border: 1.5px solid var(--tag, #3a4152); background: rgba(228, 220, 203, 0.05); font-size: 11px; font-weight: 800; display: grid; place-items: center; color: var(--tag, var(--muted)); position: relative; }
-.wandbar .ws.cur { box-shadow: 0 0 0 2px var(--accent); }
-.wandbar .rc { width: 44px; height: 5px; border-radius: 3px; background: rgba(228, 220, 203, 0.12); overflow: hidden; margin-left: 4px; }
-.wandbar .rc i { display: block; height: 100%; width: 0; background: var(--accent); }
-.tool { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; cursor: pointer; }
-@media (max-width: 760px), (max-height: 500px) {
-  .tool .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .tool { padding: 6px 8px; }
-}
-@media (max-width: 760px) {
-  .bar { width: 72px; }
-  #depthText { order: 10; flex-basis: 100%; padding: 0 2px; font-size: 13px; }
-  .hbtn { padding: 5px 8px; font-size: 14px; }
-  .wandbar .ws { width: 20px; height: 20px; font-size: 10px; }
-}
-@media (max-width: 420px) { .bar { width: 52px; } #hudMood { display: none; } .hud { gap: 6px; } .wandbar .rc { display: none; } }
-
-.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 12px); top: calc(var(--hudH, 70px) + 8px); height: min(300px, 42vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.92; }
+.nums { display: grid; line-height: 1.15; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; min-width: 3ch; }
+.nums .gold { color: var(--accent); font-weight: 700; }
+.depth { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.spacer { flex: 1; }
+.icon { height: 34px; min-width: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; cursor: pointer; }
+.icon[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
+.icon .lbl { font-family: var(--fell); font-size: 16px; }
+.sr, .icon .lbl.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.eyebtn.busy .eye::after { animation: pulse 0.8s ease-out infinite; }
+@media (max-width: 700px) { .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
+@media (max-width: 380px) { .bar { width: 48px; } }
+.ticker { position: fixed; z-index: 9; top: calc(var(--hudH, 50px) + 4px); right: calc(var(--sar) + 10px); max-width: min(380px, calc(100vw - 20px)); font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; background: rgba(18, 22, 31, 0.72); border: 0; border-left: 2px solid var(--iris); border-radius: 4px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity 0.5s; }
+.ticker.fade { opacity: 0; pointer-events: none; }
+.ticker[hidden] { display: none; }
+.hotbar { position: fixed; z-index: 10; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 8px); display: flex; gap: 6px; max-width: calc(100vw - 16px); }
+.hotbar[hidden] { display: none; }
+.wslot { display: flex; flex-direction: column; gap: 3px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px 5px; cursor: pointer; text-align: left; opacity: 0.72; }
+.wslot.on { opacity: 1; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.wslot .wh { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.wslot .wh b { color: var(--ink); }
+.wslot .wh i { width: 12px; height: 4px; border-radius: 2px; background: var(--wc); flex: none; }
+.wslot .sp { display: flex; gap: 2px; }
+.wslot .sp span { width: 17px; height: 17px; border-radius: 3px; border: 1.5px solid var(--tag, #3a4152); font-size: 9px; font-weight: 800; display: grid; place-items: center; color: var(--tag, var(--muted)); }
+.wslot .sp span.cur { box-shadow: 0 0 0 1.5px var(--accent); }
+.wslot .mb { height: 3px; border-radius: 2px; background: rgba(228, 220, 203, 0.12); overflow: hidden; }
+.wslot .mb i { display: block; height: 100%; width: 100%; background: var(--mana); }
+.wslot .mb.rc i { background: var(--accent); }
+@media (max-width: 640px), (max-height: 500px) { .wslot .wname { display: none; } .wslot .sp span { width: 11px; height: 11px; font-size: 0; border-width: 1.5px; } .wslot { padding: 3px 5px 4px; } }
+.swapbtn { position: fixed; z-index: 12; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 74px); background: var(--accent); color: #1b1608; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; }
+.swapbtn[hidden] { display: none; }
+body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
+.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
 .tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
@@ -96,34 +105,12 @@ button { font: inherit; color: inherit; }
 .bossbar i { display: block; height: 100%; width: 100%; background: var(--accent); }
 
 /* decisions from the Warden, as they happen */
-.toasts { position: fixed; z-index: 20; right: calc(var(--sar) + 12px); top: calc(var(--hudH, 70px) + 6px); width: min(330px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.toast { pointer-events: auto; text-align: left; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--iris); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); animation: toastIn 0.25s ease-out; transition: opacity 0.4s, transform 0.4s; width: 100%; }
-.toast:not(:hover):not(:focus-visible) { opacity: 0.72; }
-.toast.out { opacity: 0; transform: translateX(20px); }
-.toast .th { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
-.toast .th small { margin-left: auto; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-.toast ul { list-style: none; margin: 5px 0 0; padding: 0; }
-.toast li { display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 6px; align-items: center; margin-top: 3px; }
-.toast li span { position: relative; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 1px 6px; border-radius: 3px; background: rgba(228, 220, 203, 0.07); isolation: isolate; }
-.toast li span i { position: absolute; inset: 0 auto 0 0; background: rgba(230, 195, 92, 0.22); z-index: -1; }
-.toast li em { font-style: normal; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
-.toast .wait { color: var(--muted); margin-top: 4px; }
-@media (max-height: 500px) { .toasts { width: 250px; } .toast { font-size: 12.5px; padding: 6px 8px; } .toast:nth-child(n + 2) { display: none; } }
-@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } }
-@media (orientation: portrait) and (max-width: 720px) {
-  .toasts { left: calc(var(--sal) + 10px); right: calc(var(--sar) + 10px); width: auto; }
-  .toast:nth-child(n + 2) { display: none; }
-  .toast ul li:nth-child(n + 3) { display: none; }
-}
-
 /* the Warden's voice as a subtitle */
-.voice { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 14px); width: min(720px, calc(100vw - 24px)); display: flex; align-items: flex-start; gap: 12px; padding: 9px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; pointer-events: none; transition: opacity 0.6s; }
-.voice.quiet { opacity: 0.35; }
-.voice .eye { margin-top: 5px; }
-.voice p { margin: 0; font-family: var(--fell); font-style: italic; font-size: 19px; line-height: 1.3; }
-.voice.speak .eye::after { animation: pulse 0.6s ease-out; }
-@keyframes pulse { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
-@media (pointer: coarse) { .voice p { font-size: 16px; } .voice { bottom: calc(var(--sab) + 8px); padding: 6px 10px; } }
+.voice { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 70px); width: min(720px, calc(100vw - 24px)); text-align: center; pointer-events: none; transition: opacity 0.8s; }
+.voice.quiet { opacity: 0; }
+.voice .eye { display: none; }
+.voice p { margin: 0; font-family: var(--fell); font-style: italic; font-size: 19px; line-height: 1.25; text-shadow: 0 1px 3px #000, 0 0 12px #000, 0 0 2px #000; }
+@media (pointer: coarse), (max-height: 500px) { .voice p { font-size: 15.5px; } .voice { bottom: calc(var(--sab) + 58px); } }
 
 /* touch sticks */
 .joy { position: fixed; z-index: 8; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(228, 220, 203, 0.35); pointer-events: none; }
@@ -131,7 +118,7 @@ button { font: inherit; color: inherit; }
 .joy i { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(228, 220, 203, 0.35); }
 .joy.aim { border-color: rgba(230, 195, 92, 0.5); }
 .joy.aim i { background: rgba(230, 195, 92, 0.45); }
-.hint { position: fixed; z-index: 11; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 90px); padding: 8px 14px; border-radius: 999px; background: rgba(230, 195, 92, 0.92); color: #1b1608; font-weight: 800; font-size: 15px; max-width: calc(100vw - 24px); text-align: center; pointer-events: none; transition: opacity 0.5s; }
+.hint { position: fixed; z-index: 11; left: 50%; transform: translateX(-50%); top: calc(var(--hudH, 50px) + 34px); padding: 6px 12px; border-radius: 999px; background: rgba(230, 195, 92, 0.9); color: #1b1608; font-weight: 800; font-size: 14px; max-width: calc(100vw - 24px); text-align: center; pointer-events: none; transition: opacity 0.5s; }
 .hint[hidden] { display: none; }
 .hint.fade { opacity: 0; }
 
@@ -143,7 +130,7 @@ button { font: inherit; color: inherit; }
 @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 
 /* overlays */
-.overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow-y: auto; padding: calc(var(--sat) + 24px) calc(var(--sar) + 16px) calc(var(--sab) + 24px) calc(var(--sal) + 16px); background: rgba(7, 9, 13, 0.9); }
+.overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow: hidden; padding: calc(var(--sat) + 16px) calc(var(--sar) + 14px) calc(var(--sab) + 16px) calc(var(--sal) + 14px); background: rgba(7, 9, 13, 0.95); }
 .overlay[hidden] { display: none; }
 .card-inner { max-width: 620px; width: 100%; }
 .overlay h2 { font-family: var(--fell); font-weight: 400; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 0 0 12px; }
@@ -161,14 +148,44 @@ button { font: inherit; color: inherit; }
 .starts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 a { color: var(--accent); }
 
-.shrine .card-inner { max-width: 900px; }
+.shrine .card-inner { max-width: 1100px; }
+.card-inner { transform-origin: top center; display: flow-root; min-width: 0; }
+.shrine-grid > * { min-width: 0; }
+.slots { min-width: 0; }
+.intro p { font-size: 15.5px; }
+.controls { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 4px 0 12px; font-size: 14.5px; }
+.controls dt { color: var(--accent); font-weight: 700; }
+.controls dd { margin: 0; color: #c9c1b0; }
+.controls .touch { display: none; }
+@media (pointer: coarse) { .controls .touch { display: block; } .controls .pad { display: none; } }
+.shrine-grid { display: grid; gap: 4px 22px; grid-template-columns: 1fr; }
+.shrine-grid h3 { margin: 8px 0 6px; font-size: 15.5px; }
+.sh-head .draft-line { margin: 2px 0 2px; font-size: 17px; }
+.sh-head .rest { margin: 0; font-size: 14.5px; }
+.sh-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
+@media (min-width: 900px) and (min-height: 520px) {
+  .shrine-grid { grid-template-columns: 1.15fr 1fr; grid-template-areas: "head head" "offers wands" "shop wands" "shop foot"; }
+  .sh-head { grid-area: head; } .sh-offers { grid-area: offers; } .sh-shop { grid-area: shop; } .sh-wands { grid-area: wands; } .sh-foot { grid-area: foot; align-self: end; }
+}
+.card .desc { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.shrine .card { padding: 8px 10px; }
+.shrine .card b { font-size: 16px; }
+.shrine .card .desc { font-size: 13.5px; }
+.shrine .card .price, .shrine .card .meta { font-size: 13px; }
+.wrow { margin-bottom: 8px; }
+.wrow-h { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+.wrow-h b { color: var(--ink); }
+.wrow-h i { display: inline-block; width: 12px; height: 4px; border-radius: 2px; background: var(--wc); margin: 0 6px 2px 0; }
+.shrine .slot { width: 76px; min-height: 36px; font-size: 12px; padding: 3px 5px; }
+.shrine .slot small { font-size: 11px; }
+.keys.small { font-size: 13px; margin: 0 0 6px; }
 .draft-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .draft-head h2 { margin: 0; font-size: clamp(24px, 3.4vw, 34px); }
 .draft-line { font-family: var(--fell); font-style: italic; font-size: 19px; color: #d8cfbd; margin: 6px 0 10px; }
 .rest { color: var(--ink) !important; }
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 640px) { .cards, .cards.two { grid-template-columns: 1fr; gap: 8px; } }
+@media (max-width: 640px) { .shrine .card .desc { -webkit-line-clamp: 5; font-size: 12.5px; } .shrine .card b { font-size: 14px; } .shrine .card { padding: 6px 7px; } .cards { gap: 6px; } }
 .card { text-align: left; background: #1a2030; border: 1px solid #323b4e; border-left: 5px solid var(--tag); border-radius: 6px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
 .card:hover:not(:disabled), .card:focus-visible { background: #222a3d; border-color: #4a5569; border-left-color: var(--tag); }
 .card:disabled { opacity: 0.45; cursor: default; }
@@ -187,7 +204,6 @@ a { color: var(--accent); }
 .wandstats { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 14.5px; margin: 10px 0 0; }
 .wandstats dt { color: var(--muted); }
 .wandstats dd { margin: 0; font-variant-numeric: tabular-nums; }
-.shrine-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; position: sticky; bottom: 0; padding: 10px 0 0; background: linear-gradient(rgba(7, 9, 13, 0), rgba(7, 9, 13, 0.95) 40%); }
 .end-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 6px 0 16px; font-size: 16px; }
 .end-stats dt { color: #9ea4b0; }
 .end-stats dd { margin: 0; }
@@ -206,7 +222,19 @@ a { color: var(--accent); }
 .tabs button { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; color: var(--muted); font-weight: 700; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--line); background: rgba(228, 220, 203, 0.06); }
 .close { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-.sheet-body { overflow-y: auto; flex: 1; padding-right: 2px; }
+.sheet-body { overflow: hidden; flex: 1; padding-right: 2px; position: relative; }
+.sheet .tab { transform-origin: top center; display: flow-root; }
+.sheet .tab[hidden] { display: none; }
+.entry { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; background: rgba(228, 220, 203, 0.03); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 14px; cursor: pointer; }
+.entry span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.entry.note-on { border-left: 3px solid var(--blood); }
+.pager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; font-size: 13.5px; color: var(--muted); }
+.qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 12.5px; margin-top: 6px; }
+.qgrid div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qgrid em { font-style: normal; color: var(--muted); }
+.wandcard { border-left: 3px solid var(--wc); padding: 2px 0 2px 8px; margin-bottom: 8px; }
+.wandcard b { font-size: 15px; }
+.wandcard p { margin: 2px 0; font-size: 13px; }
 .tab[hidden] { display: none; }
 .sheet h3 { font-size: 17px; font-weight: 800; margin: 16px 0 8px; }
 .sheet h3:first-child { margin-top: 2px; }
@@ -257,19 +285,20 @@ a { color: var(--accent); }
 <div id="stage"><canvas id="world"></canvas><canvas id="dark"></canvas></div>
 
 <header class="hud" id="hud">
-  <button class="hbtn" id="hudHp" type="button" aria-label="Health, mana, and lift. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span id="hpText">100</span></button>
-  <button class="hbtn" id="hudEye" type="button" aria-label="The Warden's mood and decisions"><span class="eye" aria-hidden="true"></span><span id="hudMood">Watching</span></button>
-  <button class="wandbar" id="wandBar" type="button" aria-label="Your wand. Open your stats."></button>
-  <span class="hbtn" id="hudGold" aria-label="Gold"><span id="goldText">0</span></span>
-  <button id="depthText" type="button">Depth 1</button>
-  <button class="tool" id="mapBtn" type="button" aria-pressed="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="lbl">Map</span></button>
-  <button class="tool" id="soundBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span class="lbl">Sound on</span></button>
-  <button class="tool" id="fsBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="lbl">Full screen</span></button>
+  <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, mana, lift, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
+  <button class="depth" id="depthText" type="button">Depth 1</button>
+  <span class="spacer"></span>
+  <button class="icon eyebtn" id="hudEye" type="button" aria-label="The Warden's mood and decisions"><span class="eye" aria-hidden="true"></span><span class="lbl" id="hudMood">Watching</span></button>
+  <button class="icon" id="mapBtn" type="button" aria-pressed="true" aria-label="Map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+  <button class="icon" id="soundBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span class="lbl sr">Sound on</span></button>
+  <button class="icon" id="fsBtn" type="button" aria-label="Full screen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
+<button class="ticker fade" id="ticker" type="button" hidden></button>
+<nav class="hotbar" id="hotbar" aria-label="Your wands"></nav>
+<button class="swapbtn" id="swapBtn" type="button" hidden>Swap wands</button>
 
 <canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the well."></canvas>
 <div class="bossbar" id="bossbar" hidden><span>The Warden's Hand</span><div><i id="bossFill"></i></div></div>
-<div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="joy" id="joyMove" hidden><i></i></div>
 <div class="joy aim" id="joyAim" hidden><i></i></div>
 
@@ -278,36 +307,42 @@ a { color: var(--accent); }
 <div class="banner" id="banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 
 <div class="overlay" id="intro">
-  <div class="card-inner">
+  <div class="card-inner intro">
     <div class="brand"><span class="eye big" aria-hidden="true"></span><h1>Wardenfall</h1></div>
     <p class="sub">The Warden melted its halls. Now every grain falls.</p>
-    <p>You carry the lantern down a well of sand, stone, and liquid. Every pixel moves. Fire spreads, water flows, acid eats rock, and oil waits for a spark. Find the glowing well at the bottom of each layer to rest at the landing and change your wand.</p>
-    <p>The Warden pours each layer. It picks the stone, the liquids, the gold, and the foes, and it watches you while you fall. When it sees fit, it rains water, drips lava, or opens a rift. Its decisions pop up as it makes them. Tap the eye to see why.</p>
-    <p class="keys">Move with A and D. Jump with W, Space, or the right mouse button, and hold it to float on your lantern. Aim with the mouse and hold the left button to cast. S drops you faster. With keys only, cast with J toward where you move, and hold S to aim down. Q shows or hides the map. M turns sound on or off.</p>
-    <p class="keys">With a gamepad, the left stick moves, A jumps and floats, the right stick aims, and RT casts. Back shows the map.</p>
-    <p class="keys">Lost? The gold arrow by your lantern points down the route to the well. The map shows what your lantern has lit, and the well always glows on it.</p>
-    <p class="keys">On a phone, drag on the left half of the screen to move. Push up to jump and float. Drag on the right half to aim and cast, or tap to cast at a spot.</p>
+    <p>Carry the lantern down a well where every pixel moves. Fire spreads, water flows, acid eats rock. Reach the glowing well at the bottom of each layer. The Warden pours each layer and watches you fall. Tap the eye to see its choices.</p>
+    <dl class="controls">
+      <dt>Move</dt><dd>A and D</dd>
+      <dt>Jump, float</dt><dd>W, Space, or right mouse</dd>
+      <dt>Cast</dt><dd>Hold left mouse</dd>
+      <dt>Wands</dt><dd>1, 2, 3, or the wheel</dd>
+      <dt>Take a wand</dt><dd>E</dd>
+      <dt>Map, sound</dt><dd>Q, M</dd>
+      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and casts</dd>
+      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to cast, Y for wands</dd>
+    </dl>
+    <p class="keys">The gold arrow by your lantern points the way down.</p>
     <div class="starts"><button class="btn" id="startBtn">Enter the well</button></div>
   </div>
 </div>
 
 <div class="overlay shrine" id="shrine" hidden>
-  <div class="card-inner">
-    <div class="draft-head"><span class="eye" aria-hidden="true"></span><h2 id="shrineTitle">The landing</h2></div>
-    <p class="draft-line" id="shrineLine"></p>
-    <p class="rest" id="shrineRest"></p>
-    <h3>The Warden offers these. Take one.</h3>
-    <div class="cards" id="offers"></div>
-    <h3>For gold. You have <span id="shrineGold">0</span>.</h3>
-    <div class="cards two" id="shop"></div>
-    <h3>Your wand</h3>
-    <p class="keys">The wand casts its spells from left to right, then recharges. Modifiers change the next spell. Tap a spell, then tap a slot to move it there.</p>
-    <div class="slot-label">Wand</div>
-    <div class="slots" id="wandSlots"></div>
-    <div class="slot-label">Bag</div>
-    <div class="slots" id="bagSlots"></div>
-    <dl class="wandstats" id="wandStats"></dl>
-    <div class="shrine-foot"><button class="btn" id="descendBtn">Descend</button></div>
+  <div class="card-inner shrine-grid">
+    <header class="sh-head">
+      <div class="draft-head"><span class="eye" aria-hidden="true"></span><h2 id="shrineTitle">The landing</h2></div>
+      <p class="draft-line" id="shrineLine"></p>
+      <p class="rest" id="shrineRest"></p>
+    </header>
+    <section class="sh-offers"><h3>The Warden offers these. Take one.</h3><div class="cards" id="offers"></div></section>
+    <section class="sh-shop"><h3>For gold. You have <span id="shrineGold">0</span>.</h3><div class="cards two" id="shop"></div></section>
+    <section class="sh-wands">
+      <h3>Your wands</h3>
+      <p class="keys small">Each wand casts left to right, then recharges. Tap a spell, then a slot to move it.</p>
+      <div id="wandEdit"></div>
+      <div class="slot-label">Bag</div>
+      <div class="slots" id="bagSlots"></div>
+    </section>
+    <footer class="sh-foot"><button class="btn" id="descendBtn">Descend</button></footer>
   </div>
 </div>
 
@@ -441,9 +476,16 @@ const SPELLS = {
   twin: { name: "Twin Cast", tag: "swift", tier: 1, mana: 4, kind: "mod", color: 0x4fb3a6, desc: "Modifier. The wand casts the next 2 spells at once.", mod: (m) => { m.draw += 1; } },
   honed: { name: "Honed Edge", tag: "blade", tier: 1, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next spell deals 60% more damage and digs harder.", mod: (m) => { m.dmg *= 1.6; m.dig += 1; } },
   leech: { name: "Leech", tag: "blood", tier: 2, mana: 6, kind: "mod", color: 0xd0485f, desc: "Modifier. You heal 25% of the damage the next spell deals.", mod: (m) => { m.leech += 0.25; } },
+  lightning: { name: "Lightning", tag: "storm", tier: 2, mana: 28, kind: "beam", dmg: 22, range: 150, color: 0xeef4ff, desc: "A bolt that strikes at once, through every foe in a line. 22 damage. It shocks the water it hits." },
+  blackhole: { name: "Black Hole", tag: "blade", tier: 3, mana: 60, kind: "proj", dmg: 4, speed: 1.1, life: 150, hole: 5, color: 0x8a5ad0, desc: "A slow orb that swallows stone, earth, and foes near it. It even eats rock." },
+  chainsaw: { name: "Chainsaw", tag: "blade", tier: 1, mana: 1, kind: "proj", dmg: 4, speed: 5, life: 6, dig: 3, digN: 30, pierce: 9, delay: -0.16, color: 0xffe28a, desc: "A short burst of teeth with no wait after it. It chews through earth, wood, and bone." },
+  missile: { name: "Magic Missile", tag: "fire", tier: 2, mana: 40, kind: "proj", dmg: 26, speed: 2.2, accel: 0.14, maxSpeed: 7, life: 110, blast: [9, 3], recoil: 1.2, color: 0xff9a50, desc: "A missile that speeds up as it flies, then explodes. 26 damage.", price: "The blast hurts you too." },
+  seeker: { name: "Seeker", tag: "storm", tier: 1, mana: 6, kind: "mod", color: 0x7fa8ff, desc: "Modifier. The next spell turns toward the nearest foe.", mod: (m) => { m.homing += 0.09; } },
+  scatter: { name: "Scatter", tag: "blade", tier: 2, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next spell fires 3 times in a fan. Each shot deals 70% damage.", mod: (m) => { m.copies += 2; m.dmg *= 0.7; } },
+  payload: { name: "Payload", tag: "fire", tier: 2, mana: 10, kind: "mod", color: 0xe0703a, desc: "Modifier. The next shot carries the spell after it, and casts it where the shot lands. Try it with Blink.", mod: () => {} },
 };
-const SPELL_ABBR = { spark: "Sp", chisel: "Ch", ember: "Em", fireball: "Fb", bomb: "Bo", acid: "Ac", spray: "Tx", chain: "Cs", razor: "Rz", blood_bolt: "Bb", deluge: "De", glass: "Gl", aegis: "Ae", blink: "Bl", quicken: "Qu", twin: "Tw", honed: "Ho", leech: "Le" };
-const DIGGERS = ["chisel", "fireball", "bomb", "acid"];
+const SPELL_ABBR = { lightning: "Lt", blackhole: "Bh", chainsaw: "Cw", missile: "Mm", seeker: "Se", scatter: "Sc", payload: "Pl", spark: "Sp", chisel: "Ch", ember: "Em", fireball: "Fb", bomb: "Bo", acid: "Ac", spray: "Tx", chain: "Cs", razor: "Rz", blood_bolt: "Bb", deluge: "De", glass: "Gl", aegis: "Ae", blink: "Bl", quicken: "Qu", twin: "Tw", honed: "Ho", leech: "Le" };
+const DIGGERS = ["chisel", "fireball", "bomb", "acid", "chainsaw", "blackhole", "missile"];
 
 const UPGRADES = {
   slot: { name: "Wider wand", desc: "Your wand gets 1 more slot.", apply: (r) => { r.wand.slots = Math.min(10, r.wand.slots + 1); r.wand.spells.push(null); } },
@@ -453,6 +495,7 @@ const UPGRADES = {
   delay: { name: "Light grip", desc: "The wand waits 25% less between casts.", apply: (r) => { r.wand.castDelay *= 0.75; } },
   lift: { name: "Brighter lantern", desc: "Your lantern keeps you up 40% longer.", apply: (r) => { r.liftMax *= 1.4; } },
   vigor: { name: "Vigor", desc: "Your max health goes up by 25. You heal 25 now.", apply: (r) => { r.maxHp += 25; r.hp += 25; } },
+  newwand: { name: "A new wand", desc: "A wand from the Warden's rack, with its own stats and spells. You can carry 3.", apply: (r) => giveWand(r, makeWand(Math.min(3, r.depth))) },
 };
 
 const FOES = {
@@ -587,18 +630,55 @@ function topKey(obj) {
 
 /* ------------------------------------------------------------------ run */
 
-function newWand() {
-  return { slots: 4, spells: ["spark", "spark", "chisel", null], manaMax: 110, mana: 110, regen: 38, castDelay: 0.17, recharge: 0.5, cursor: 0, cdT: 0, rechargeT: 0 };
+// Every wand has its own stats. Some shuffle their spells, and some cast a spell of their own each time.
+const WAND_NOUNS = ["Rod", "Wand", "Staff", "Branch", "Spike", "Bone"];
+const WAND_COLORS = [0xb07a4a, 0x8a9ab8, 0x6aa06a, 0xc0604a, 0x9a7ac0, 0xd0b060, 0x4fb3a6];
+function makeWand(tier, starter) {
+  const base = { cursor: 0, cdT: 0, rechargeT: 0, order: null };
+  if (starter) return { ...base, name: "Lantern Rod", slots: 4, spells: ["spark", "spark", "chisel", null], manaMax: 110, mana: 110, regen: 38, castDelay: 0.17, recharge: 0.5, spread: 0.02, speed: 1, shuffle: false, always: null, color: 0xb07a4a };
+  const pick = (a) => a[(rnd() * a.length) | 0];
+  const slots = clamp(3 + ((rnd() * 3) | 0) + tier, 3, 9);
+  const castDelay = Math.max(0.04, +(0.07 + rnd() * 0.24 - 0.02 * tier).toFixed(2));
+  const recharge = Math.max(0.1, +(0.2 + rnd() * 0.75 - 0.05 * tier).toFixed(2));
+  const manaMax = 70 + tier * 45 + Math.round(rnd() * 90);
+  const regen = 24 + tier * 14 + Math.round(rnd() * 34);
+  const spread = rnd() < 0.4 ? 0.02 : +(0.06 + rnd() * 0.22).toFixed(2);
+  const speed = +(0.8 + rnd() * 0.6).toFixed(2);
+  const shuffle = rnd() < 0.3;
+  const alwaysPool = ["spark", "ember", "razor", "seeker", "honed", "quicken", "chainsaw"].filter((id) => SPELLS[id].tier <= Math.max(1, tier));
+  const always = rnd() < 0.15 + 0.1 * tier ? pick(alwaysPool) : null;
+  const shots = Object.keys(SPELLS).filter((id) => SPELLS[id].kind !== "mod" && SPELLS[id].tier <= Math.max(1, tier) && id !== "aegis" && id !== "glass");
+  const mods = Object.keys(SPELLS).filter((id) => SPELLS[id].kind === "mod" && SPELLS[id].tier <= Math.max(1, tier));
+  const spells = new Array(slots).fill(null);
+  const n = Math.min(slots, 1 + ((rnd() * 2) | 0) + Math.min(2, tier));
+  for (let k = 0; k < n; k++) spells[k] = k < n - 1 && rnd() < 0.3 ? pick(mods) : pick(shots);
+  const adj = always ? "Humming" : shuffle ? "Wild" : castDelay < 0.1 ? "Quick" : manaMax > 220 ? "Deep" : spread <= 0.02 ? "Steady" : recharge < 0.3 ? "Restless" : "Old";
+  return { ...base, name: adj + " " + pick(WAND_NOUNS), slots, spells, manaMax, mana: manaMax, regen, castDelay, recharge, spread, speed, shuffle, always, color: pick(WAND_COLORS) };
+}
+function wandLines(w) {
+  const out = [w.slots + " slots", w.manaMax + " mana, +" + Math.round(w.regen) + "/s", "cast " + w.castDelay.toFixed(2) + " s", "recharge " + w.recharge.toFixed(2) + " s"];
+  if (w.spread > 0.05) out.push("spread " + Math.round(w.spread * 57) + "°");
+  if (w.speed !== 1) out.push("speed x" + w.speed);
+  if (w.shuffle) out.push("shuffles its spells");
+  if (w.always) out.push("always casts " + SPELLS[w.always].name);
+  return out;
+}
+// take a wand: a free hand holds it, or it replaces the one in use and that wand's spells go to the bag
+function giveWand(r, w) {
+  if (r.wands.length < 3) { r.wands.push(w); return r.wands.length - 1; }
+  for (const id of r.wands[r.wi].spells) if (id) r.bag.push(id);
+  r.wands[r.wi] = w;
+  return r.wi;
 }
 function newRun() {
-  return { depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wand: newWand(), bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  return { depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
 }
 let run = newRun();
 const isBossDepth = (d) => d % 4 === 0;
 
 function wandTags(r) {
   const c = {};
-  for (const id of r.wand.spells.concat(r.bag)) if (id) { const t = SPELLS[id].tag; c[t] = (c[t] || 0) + 1; }
+  for (const id of r.wands.flatMap((w) => w.spells).concat(r.bag)) if (id) { const t = SPELLS[id].tag; c[t] = (c[t] || 0) + 1; }
   return c;
 }
 function directorState(r) {
@@ -614,8 +694,9 @@ function directorState(r) {
     hp_frac: +(r.hp / r.maxHp).toFixed(2),
     gold: r.gold,
     wand: r.wand.spells.filter(Boolean),
+    other_wands: r.wands.filter((w) => w !== r.wand).map((w) => w.spells.filter(Boolean)),
     bag: r.bag.slice(),
-    can_dig: r.wand.spells.some((s) => DIGGERS.includes(s)),
+    can_dig: r.wands.some((w) => w.spells.some((s) => DIGGERS.includes(s)) || DIGGERS.includes(w.always)),
     tag_counts: counts,
     focus_tag: focus,
     focus_share: focus ? +(counts[focus] / total).toFixed(2) : 0,
@@ -1020,7 +1101,7 @@ const Warden = (() => {
     const S = SPELLS[id];
     const n = Math.max(1, Object.values(st.tag_counts).reduce((a, b) => a + b, 0));
     const share = (st.tag_counts[S.tag] || 0) / n;
-    const owned = r.wand.spells.concat(r.bag).filter((x) => x === id).length;
+    const owned = r.wands.flatMap((w) => w.spells).concat(r.bag).filter((x) => x === id).length;
     let l = 0.3 * S.tier - 0.5 * owned;
     if (!st.can_dig && DIGGERS.includes(id)) l += 1.2;
     if (st.mood === "generous") l += 1.5 * share + (S.tag === "ward" && st.hp_frac < 0.6 ? 0.7 : 0);
@@ -1050,6 +1131,7 @@ const Warden = (() => {
         let l = 0.5;
         if (k === "vigor") l += 1.2 * (1 - st.hp_frac) + (st.mood === "generous" ? 0.3 : 0);
         if (k === "slot" && r.wand.slots >= 8) l -= 2;
+        if (k === "newwand") l += r.wands.length < 3 ? 0.9 : -0.6;
         if (k === "slot" && r.bag.length) l += 0.5;
         if (k === "lift") l += 0.1;
         return l;
@@ -1101,7 +1183,7 @@ const Warden = (() => {
       }
       shop.push(v);
     }
-    const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : 50 + 18 * r.depth);
+    const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : v === "up:newwand" ? 80 + 25 * r.depth : 50 + 18 * r.depth);
     UI.ledger();
     return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
   }
@@ -1589,7 +1671,7 @@ const World = (() => {
     for (let x = 0; x < W; x++) for (let yy = 0; yy < H; yy++) if (x < 2 || x >= W - 2 || yy < 2 || yy >= H - 2) mat[yy * W + x] = BEDROCK;
     next.fill(1);
     const route = [{ x: W / 2, y: TOP }].concat(rooms.map((r) => ({ x: r.x, y: r.y }))).concat(plan.boss ? [{ x: last.x, y: arenaTop + 20 }] : []).concat([{ x: exitX, y: H - 20 }]);
-    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, path };
+    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, sides, path };
   }
   // a room: an ellipse with a rough wall and a flat floor
   function carveRoom(r, s) {
@@ -1704,7 +1786,7 @@ function bodyEnv(e) {
 }
 
 const Game = {
-  player: null, foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [],
+  player: null, foes: [], shots: [], fx: [], emitters: [], bolts: [], flashes: [], nums: [], pickups: [],
   state: "intro", level: null, cam: { x: 0, y: 0, shake: 0 }, paused: false,
   watchT: 0, watchBusy: false, handT: 0, handBusy: false, idleT: 0, bestY: 0, levelT: 0, lastPour: null,
   input: { x: 0, up: false, down: false, cast: false, sx: null, sy: null, touchAim: null, keyAim: false, jumpEdge: false },
@@ -1737,6 +1819,9 @@ function hurtPlayer(dmg, cause, raw) {
 function hurtFoe(f, dmg, src) {
   if (f.dead || dmg <= 0) return 0;
   f.hp -= dmg;
+  // small damage over time adds up before it shows
+  f.numAcc = (f.numAcc || 0) + dmg;
+  if (f.numAcc >= 3 || f.hp <= 0) { Game.nums.push({ x: f.x + f.w / 2 + (rnd() - 0.5) * 4, y: f.y - 2, v: Math.round(f.numAcc), t: 0.8, big: dmg >= 20 }); f.numAcc = 0; }
   f.flash = 0.12;
   f.awake = true;
   if (src && src.leech) run.hp = Math.min(run.maxHp, run.hp + dmg * src.leech);
@@ -1780,63 +1865,122 @@ function blast(x, y, r, power, dmg, cause, owner) {
 function castWand(ang) {
   const w = run.wand, p = Game.player;
   if (w.cdT > 0 || w.rechargeT > 0 || !p || Game.state !== "play") return;
-  const mods = { speed: 1, dmg: 1, delay: 0, draw: 1, dig: 0, leech: 0 };
-  const casts = [];
-  let guard = 0, wrapped = false;
-  while (casts.length < mods.draw && guard++ < 24) {
-    if (w.cursor >= w.spells.length) { w.cursor = 0; wrapped = true; break; }
-    const id = w.spells[w.cursor++];
+  // a shuffling wand deals its spells in a new order each round
+  if (w.cursor === 0) w.order = w.shuffle ? w.spells.map((_, i) => i).sort(() => rnd() - 0.5) : null;
+  const drawn = [];
+  let need = 1, got = 0, guard = 0, wrapped = false;
+  while (got < need && guard++ < 30) {
+    if (w.cursor >= w.spells.length) { wrapped = true; break; }
+    const id = w.spells[w.order ? w.order[w.cursor] : w.cursor];
+    w.cursor++;
     if (!id) continue;
     const S = SPELLS[id];
     if (S.hp) { if (run.hp <= S.hp + 1) continue; hurtPlayer(S.hp, "blood", true); }
     else if (w.mana < S.mana) continue;
     else w.mana -= S.mana;
-    if (S.kind === "mod") { S.mod(mods); continue; }
-    casts.push(id);
+    drawn.push(id);
+    if (S.kind === "mod") { if (id === "twin" || id === "payload") need++; }
+    else got++;
   }
-  if (!w.spells.slice(w.cursor).some(Boolean)) wrapped = true;
-  if (wrapped) { w.cursor = 0; w.rechargeT = w.recharge; }
+  let rest = false;
+  for (let k = w.cursor; k < w.spells.length; k++) if (w.spells[w.order ? w.order[k] : k]) { rest = true; break; }
+  if (wrapped || !rest) { w.cursor = 0; w.rechargeT = w.recharge; }
+  // read the drawn spells: modifiers change what follows, a payload makes the next shot carry the spell after it
+  const mods = { speed: w.speed, dmg: 1, delay: 0, dig: 0, leech: 0, homing: 0, copies: 1, spread: w.spread };
+  if (w.always && SPELLS[w.always].kind === "mod") SPELLS[w.always].mod(mods);
+  const casts = [];
+  let carrier = null, wantCarrier = 0;
+  for (const id of drawn) {
+    const S = SPELLS[id];
+    if (S.kind === "mod") { if (id === "payload") wantCarrier++; else S.mod(mods); continue; }
+    if (S.delay) mods.delay += S.delay;
+    const c = { id, mods: { ...mods } };
+    if (carrier) { carrier.payload = c; carrier = null; continue; }
+    casts.push(c);
+    if (wantCarrier > 0 && (S.kind === "proj" || S.kind === "beam")) { wantCarrier--; carrier = c; }
+  }
+  if (w.always && SPELLS[w.always].kind !== "mod") casts.push({ id: w.always, mods: { ...mods, copies: 1 } });
   if (!casts.length) { w.cdT = 0.2; SFX.fizzle(); return; }
-  for (const id of casts) fireSpell(id, ang, mods);
-  w.cdT = Math.max(0.05, w.castDelay + mods.delay);
+  for (const c of casts) fireSpell(c.id, ang, c.mods, null, c.payload || null);
+  w.cdT = Math.max(0.04, w.castDelay + mods.delay);
   run.casts++;
-  const t = SPELLS[casts[0]].tag;
+  // a flash at the wand tip, and heavy spells push you back
+  const tipX = p.x + 2 + Math.cos(ang) * 6, tipY = p.y + 4 + Math.sin(ang) * 6;
+  Game.flashes.push({ x: tipX, y: tipY, r: 14, t: 0.07 });
+  addFx(tipX, tipY, SPELLS[casts[0].id].color, 3);
+  const recoil = casts.reduce((a, c) => a + (SPELLS[c.id].recoil || 0), 0);
+  if (recoil) { p.vx -= Math.cos(ang) * recoil; p.vy -= Math.sin(ang) * recoil * 0.8; Game.cam.shake = Math.min(8, Game.cam.shake + recoil * 2); }
+  const t = SPELLS[casts[0].id].tag;
   Memory.data.tagCasts[t] = (Memory.data.tagCasts[t] || 0) + 1;
   SFX.cast(t);
 }
-function fireSpell(id, ang, mods) {
+function fireSpell(id, ang, mods, origin, payload) {
   const S = SPELLS[id], p = Game.player;
-  const cx = p.x + p.w / 2, cy = p.y + 4;
+  const cx = origin ? origin.x : p.x + p.w / 2, cy = origin ? origin.y : p.y + 4;
+  const jitter = () => (rnd() - 0.5) * 2 * (mods.spread || 0);
   if (S.kind === "proj") {
-    const n = S.count || 1;
+    const n = (S.count || 1) * (mods.copies || 1);
+    const fan = (mods.copies || 1) > 1 ? 0.22 : S.spread || 0.15;
     for (let k = 0; k < n; k++) {
-      const a = ang + (n > 1 ? (k - (n - 1) / 2) * (S.spread || 0.15) : 0) + (rnd() - 0.5) * 0.04;
+      const a = ang + (n > 1 ? (k - (n - 1) / 2) * fan : 0) + jitter();
       const sp = S.speed * mods.speed;
       Game.shots.push({
-        id, S, x: cx + Math.cos(a) * 3, y: cy + Math.sin(a) * 3, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: S.life, grav: S.grav || 0,
+        id, S, x: cx + Math.cos(a) * (origin ? 0 : 3), y: cy + Math.sin(a) * (origin ? 0 : 3), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: S.life, grav: S.grav || 0,
         dmg: S.dmg * mods.dmg, dig: S.dig ? S.dig + mods.dig : mods.dig ? 1 + mods.dig : 0, digN: S.digN || (mods.dig ? 20 : 0), pierce: S.pierce || 0, bounce: S.bounce || 0,
-        leech: mods.leech, owner: "player", hit: new Set(), trail: [], fuse: S.fuse ? 90 : 0,
+        leech: mods.leech, homing: mods.homing || 0, owner: "player", hit: new Set(), trail: [], fuse: S.fuse ? 90 : 0, payload: k === 0 ? payload : null,
       });
     }
+  } else if (S.kind === "beam") {
+    beam(cx, cy, ang + jitter(), S, mods, payload);
   } else if (S.kind === "wall") {
-    const r = 12;
-    for (let a = -0.9; a <= 0.9; a += 0.03) for (let t = 0; t < 3; t++) {
+    const r = origin ? 6 : 12, arc = origin ? Math.PI : 0.9;
+    for (let a = -arc; a <= arc; a += 0.03) for (let t = 0; t < 3; t++) {
       const x = cx + Math.cos(ang + a) * (r + t), y = cy + Math.sin(ang + a) * (r + t);
       World.place(x, y, GLASS, 0, true);
     }
   } else if (S.kind === "aegis") {
     p.aegisT = 8;
-    addFx(cx, cy, S.color, 10);
+    addFx(p.x + 2, p.y + 5, S.color, 10);
   } else if (S.kind === "blink") {
     let bx = p.x, by = p.y;
-    for (let d = 2; d <= 45; d += 1) {
+    if (origin) {
+      // carried by a payload: land where the shot landed
+      for (let d = 0; d <= 8; d++) for (let k = 0; k < 8; k++) { const nx = origin.x - 2 + Math.cos(k * 0.785) * d, ny = origin.y - 5 + Math.sin(k * 0.785) * d; if (!boxHits(nx, ny, p.w, p.h)) { bx = nx; by = ny; d = 99; break; } }
+    } else for (let d = 2; d <= 45; d += 1) {
       const nx = p.x + Math.cos(ang) * d, ny = p.y + Math.sin(ang) * d;
       if (!boxHits(nx, ny, p.w, p.h)) { bx = nx; by = ny; }
     }
-    addFx(cx, cy, S.color, 10);
+    addFx(p.x + 2, p.y + 5, S.color, 10);
     p.x = bx; p.y = by; p.vy = Math.min(p.vy, 0);
     addFx(p.x + 2, p.y + 5, S.color, 10);
   }
+}
+// lightning: strikes at once along a line, through foes, until it meets solid ground or water
+function beam(x0, y0, a, S, mods, payload) {
+  const dx = Math.cos(a), dy = Math.sin(a);
+  let x = x0, y = y0, endX = x0 + dx * S.range, endY = y0 + dy * S.range;
+  const hit = new Set();
+  for (let d = 2; d <= S.range; d++) {
+    x = x0 + dx * d; y = y0 + dy * d;
+    const m = World.at(x, y);
+    for (const f of Game.foes) if (!f.dead && !hit.has(f) && x >= f.x - 1 && x <= f.x + f.w + 1 && y >= f.y - 1 && y <= f.y + f.h + 1) { hit.add(f); hurtFoe(f, Math.round(S.dmg * mods.dmg), { leech: mods.leech }); f.vx += dx; }
+    if (m === WATER || m === BLOOD || m === SLUDGE) { shock(x, y, 60, { leech: mods.leech }); endX = x; endY = y; break; }
+    if (blocks(m)) { World.explode(x, y, 2, 1); endX = x; endY = y; break; }
+  }
+  Game.bolts.push({ x1: x0, y1: y0, x2: endX, y2: endY, t: 0.18, wide: true });
+  Game.flashes.push({ x: endX, y: endY, r: 20, t: 0.15, cold: true });
+  Game.cam.shake = Math.min(6, Game.cam.shake + 1.5);
+  SFX.zap();
+  if (payload) fireSpell(payload.id, a + Math.PI + (rnd() - 0.5) * 1.2, payload.mods, { x: endX - dx * 3, y: endY - dy * 3 }, payload.payload || null);
+}
+// a shot that carried a spell casts it where it lands
+function releasePayload(s, x, y) {
+  if (!s.payload) return;
+  const pl = s.payload;
+  s.payload = null;
+  const v = Math.hypot(s.vx, s.vy) || 1;
+  const a = s.hitFoe ? Math.atan2(s.vy, s.vx) : Math.atan2(-s.vy, -s.vx) + (rnd() - 0.5) * 1.2;
+  fireSpell(pl.id, a, pl.mods, { x: x - (s.vx / v) * 2, y: y - (s.vy / v) * 2 }, pl.payload || null);
 }
 
 function shock(x, y, r, src) {
@@ -1859,6 +2003,7 @@ function impact(s, x, y) {
   if (S.spill) { World.spill(x, y, S.spill[0], S.spill[1], S.spill[1] > 20 ? 6 : 2); if (S.spill[0] === WATER) SFX.splash(); }
   if (S.bleed) World.spill(x, y, BLOOD, 4, 2);
   addFx(x, y, S.color, 5);
+  releasePayload(s, x, y);
 }
 
 function updateShots(dt) {
@@ -1868,8 +2013,42 @@ function updateShots(dt) {
     let dead = false;
     s.vy += s.grav;
     s.life--;
+    if (s.S.accel) { const v = Math.hypot(s.vx, s.vy); if (v < s.S.maxSpeed) { const k = (v + s.S.accel) / v; s.vx *= k; s.vy *= k; } }
+    if (s.homing && s.owner === "player") {
+      if (!s.target || s.target.dead || (s.life & 7) === 0) {
+        s.target = null; let bd = 90;
+        for (const f of Game.foes) { if (f.dead) continue; const d = Math.hypot(f.x + f.w / 2 - s.x, f.y + f.h / 2 - s.y); if (d < bd) { bd = d; s.target = f; } }
+      }
+      if (s.target) {
+        const want = Math.atan2(s.target.y + s.target.h / 2 - s.y, s.target.x + s.target.w / 2 - s.x), cur = Math.atan2(s.vy, s.vx), v = Math.hypot(s.vx, s.vy);
+        let d = want - cur; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+        const na = cur + clamp(d, -s.homing, s.homing);
+        s.vx = Math.cos(na) * v; s.vy = Math.sin(na) * v;
+      }
+    }
+    if (s.S.hole) {
+      // a black hole eats what is near it and pulls foes in
+      const r = s.S.hole;
+      if ((s.life & 1) === 0) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (dx * dx + dy * dy > r * r) continue;
+        const x = (s.x + dx) | 0, y = (s.y + dy) | 0, m = World.at(x, y);
+        if (m !== EMPTY && m !== BEDROCK && m !== GOLD && World.inb(x, y)) World.set(y * W + x, EMPTY);
+      }
+      for (const f of Game.foes) {
+        if (f.dead) continue;
+        const dx = s.x - (f.x + f.w / 2), dy = s.y - (f.y + f.h / 2), d = Math.hypot(dx, dy);
+        if (d < 30) { f.vx += (dx / (d || 1)) * 0.25; f.vy += (dy / (d || 1)) * 0.25; }
+        if (d < r + 3 && (s.life % 10) === 0) hurtFoe(f, s.dmg, s);
+      }
+      if (s.life <= 0) { releasePayload(s, s.x, s.y); dead = true; }
+      s.x += s.vx; s.y += s.vy;
+      s.trail.push(s.x, s.y);
+      if (s.trail.length > 8) s.trail.splice(0, 2);
+      if (dead) shots.splice(si, 1);
+      continue;
+    }
     if (s.fuse) { s.fuse--; if (s.fuse <= 0) { impact(s, s.x, s.y); dead = true; } }
-    if (s.life <= 0 && !dead) { if (s.S.blast || s.S.spill) impact(s, s.x, s.y); dead = true; }
+    if (s.life <= 0 && !dead) { if (s.S.blast || s.S.spill) impact(s, s.x, s.y); else releasePayload(s, s.x, s.y); dead = true; }
     const n = Math.max(1, Math.ceil(Math.max(Math.abs(s.vx), Math.abs(s.vy))));
     for (let k = 0; k < n && !dead; k++) {
       const nx = s.x + s.vx / n, ny = s.y + s.vy / n;
@@ -1909,6 +2088,7 @@ function updateShots(dt) {
             hurtFoe(f, Math.round(s.dmg), s);
             if (s.S.chain) chainFrom(f, s);
             if (s.pierce > 0) { s.pierce--; continue; }
+            s.hitFoe = true;
             impact(s, nx, ny);
             dead = true;
             break;
@@ -1993,12 +2173,23 @@ function updatePlayer(dt) {
   p.hurtT = Math.max(0, p.hurtT - dt);
   p.aegisT = Math.max(0, p.aegisT - dt);
   p.flash = Math.max(0, p.flash - dt);
-  // the wand
-  const w = run.wand;
-  w.mana = Math.min(w.manaMax, w.mana + w.regen * dt);
-  w.cdT = Math.max(0, w.cdT - dt);
-  w.rechargeT = Math.max(0, w.rechargeT - dt);
+  // wands refill and recharge in your belt too
+  for (const w of run.wands) {
+    w.mana = Math.min(w.manaMax, w.mana + w.regen * dt);
+    w.cdT = Math.max(0, w.cdT - dt);
+    w.rechargeT = Math.max(0, w.rechargeT - dt);
+  }
   if (inp.cast) castWand(aimAngle());
+  // wands lying in the caves
+  Game.nearPickup = null;
+  for (const pk of Game.pickups) {
+    if (Math.hypot(pk.x - (p.x + 2), pk.y - (p.y + 6)) > 9) continue;
+    if (run.wands.length < 3 && !pk.dropped) takePickup(pk);
+    else Game.nearPickup = pk;
+    break;
+  }
+  if (inp.swapEdge && Game.nearPickup) takePickup(Game.nearPickup);
+  inp.swapEdge = false;
   // progress, for the Warden's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
   // the well
@@ -2018,6 +2209,30 @@ function routeTarget(p) {
   if (bd > 50 * 50) for (let i = 0; i < path.length; i++) { const d = (path[i].x - cx) ** 2 + (path[i].y - cy) ** 2; if (d < bd) { bd = d; best = i; } }
   L.pathI = best;
   return best + 10 < path.length ? path[best + 10] : { x: L.exitX, y: L.exitY - 4 };
+}
+function takePickup(pk) {
+  const i = Game.pickups.indexOf(pk);
+  if (i < 0) return;
+  Game.pickups.splice(i, 1);
+  if (run.wands.length < 3) {
+    run.wands.push(pk.wand);
+    selectWand(run.wands.length - 1);
+    UI.hint("You found a " + pk.wand.name + ". Press " + run.wands.length + " to hold it.", 3500);
+  } else {
+    // trade the wand in your hand for this one, spells and all
+    const old = run.wands[run.wi];
+    run.wands[run.wi] = pk.wand;
+    Game.pickups.push({ x: pk.x, y: pk.y, wand: old, bob: 0, dropped: true });
+    UI.hint("You took the " + pk.wand.name + " and left the " + old.name + ".", 3000);
+  }
+  SFX.coin();
+  UI.hud(true);
+}
+function selectWand(i) {
+  if (i < 0 || i >= run.wands.length || i === run.wi) return;
+  run.wi = i;
+  run.wand.cdT = Math.max(run.wand.cdT, 0.12);
+  UI.hud(true);
 }
 function aimAngle() {
   const p = Game.player, inp = Game.input;
@@ -2251,6 +2466,8 @@ async function wardenWatch() {
 
 /* ------------------------------------------------------------------ drawing */
 
+// a 3 by 5 pixel font for damage numbers
+const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111" };
 const Render = (() => {
   const wc = $("#world"), dc = $("#dark");
   const wctx = wc.getContext("2d"), dctx = dc.getContext("2d");
@@ -2385,13 +2602,39 @@ const Render = (() => {
     for (const s of Game.shots) {
       const c = World.abgr(s.S.color || 0xffffff);
       for (let k = 0; k < s.trail.length; k += 2) px(s.trail[k] - ox, s.trail[k + 1] - oy, c);
+      if (s.S.hole) {
+        for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2 + tk * 0.2; px(s.x + Math.cos(a) * 4 - ox, s.y + Math.sin(a) * 4 - oy, c); }
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) px(s.x + dx - ox, s.y + dy - oy, 0xff000000);
+        continue;
+      }
       px(s.x - ox, s.y - oy, 0xffffffff);
-      if (s.id === "bomb" || s.id === "razor") { px(s.x + 1 - ox, s.y - oy, c); px(s.x - ox, s.y + 1 - oy, c); px(s.x + 1 - ox, s.y + 1 - oy, c); }
+      px(s.x + 1 - ox, s.y - oy, c); px(s.x - ox, s.y + 1 - oy, c); px(s.x - 1 - ox, s.y - oy, c); px(s.x - ox, s.y - 1 - oy, c);
+      if (s.id === "bomb" || s.id === "razor" || s.id === "missile") { px(s.x + 1 - ox, s.y + 1 - oy, c); px(s.x - 1 - ox, s.y - 1 - oy, c); }
     }
-    for (const b of Game.bolts) line(b.x1 - ox, b.y1 - oy, b.x2 - ox, b.y2 - oy, World.abgr(0xeef4ff));
+    for (const b of Game.bolts) {
+      line(b.x1 - ox, b.y1 - oy, b.x2 - ox, b.y2 - oy, World.abgr(0xeef4ff));
+      if (b.wide) { line(b.x1 - ox, b.y1 - oy, b.x2 - ox, b.y2 - oy, World.abgr(0x9fc4ff)); line(b.x1 - ox, b.y1 - oy + 1, b.x2 - ox, b.y2 - oy + 1, 0xffffffff); }
+    }
+    // wands lying in the caves
+    for (const pk of Game.pickups) {
+      const wx = pk.x - ox, wy = pk.y + Math.sin(pk.bob) * 1.5 - oy, c = World.abgr(pk.wand.color), tip = World.abgr(0xfff0a0);
+      for (let k = 0; k < 6; k++) px(wx - 3 + k, wy + 2 - k * 0.6, c);
+      px(wx + 3, wy - 2, tip); px(wx + 4, wy - 2, tip); px(wx + 3, wy - 3, tip);
+      if ((tk >> 3) & 1) px(wx + 4, wy - 4, 0xffffffff);
+    }
     for (const f of Game.fx) {
       if (f.rift) { for (let k = 0; k < 6; k++) px(f.x + (rnd() - 0.5) * 8 - ox, f.y + (rnd() - 0.5) * 10 - oy, f.c); continue; }
       px(f.x - ox, f.y - oy, f.c);
+    }
+    // damage numbers
+    for (const n of Game.nums) {
+      const str = String(n.v), c = n.big ? World.abgr(0xffd070) : 0xffffffff;
+      let x0 = Math.round(n.x - ox - str.length * 2), y0 = Math.round(n.y - oy);
+      for (const ch of str) {
+        const g = DIGITS[ch];
+        for (let r = 0; r < 5; r++) for (let q = 0; q < 3; q++) if (g[r * 3 + q] === "1") { px(x0 + q + 1, y0 + r + 1, 0xff000000); px(x0 + q, y0 + r, c); }
+        x0 += 4;
+      }
     }
     wctx.putImageData(img, 0, 0);
 
@@ -2413,7 +2656,8 @@ const Render = (() => {
       if (g < 1.5) continue;
       light(ox + gx * 8 + 4, oy + gy * 8 + 4, 18 + Math.sqrt(g) * 7, 0.25 + g / 40);
     }
-    for (const s of Game.shots) light(s.x, s.y, s.S.burn || s.S.shock ? 40 : 22, 0.7);
+    for (const s of Game.shots) light(s.x, s.y, s.S.burn || s.S.shock ? 40 : s.S.hole ? 50 : 22, 0.7);
+    for (const pk of Game.pickups) light(pk.x, pk.y, 34, 0.7);
     for (const fl of Game.flashes) light(fl.x, fl.y, fl.r * 2, fl.t * 4);
     for (const e of Game.emitters) if (e.tele > 0 && !e.follow) light(e.x, e.y, 40, 0.8);
     for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand") light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
@@ -2506,6 +2750,10 @@ const Input = (() => {
     pollPad.menu = b(9);
     if (b(8) && !pollPad.map) Minimap.toggle();
     pollPad.map = b(8);
+    if (b(3) && !pollPad.next && Game.state === "play" && run.wands.length > 1) selectWand((run.wi + 1) % run.wands.length);
+    pollPad.next = b(3);
+    if (b(2) && !pollPad.swap) inp.swapEdge = true;
+    pollPad.swap = b(2);
     sync();
   }
   addEventListener("keydown", (e) => {
@@ -2519,13 +2767,23 @@ const Input = (() => {
       sync();
     }
     if (k === "m") UI.sound(SFX.toggle());
-    if (k === "q") Minimap.toggle();
-    if (k === "escape" || k === "tab") { e.preventDefault(); UI.sheet(true, "stats"); }
+    if (k === "q" || k === "tab") { e.preventDefault(); Minimap.toggle(); }
+    if (k === "1" || k === "2" || k === "3") selectWand(Number(k) - 1);
+    if (k === "e" || k === "f") Game.input.swapEdge = true;
+    if (k === "escape") { e.preventDefault(); UI.sheet(true, "stats"); }
   });
   addEventListener("keyup", (e) => { keys.delete(e.key.toLowerCase()); sync(); });
   addEventListener("blur", () => { keys.clear(); mouseDown = false; rightDown = false; sync(); });
   const stage = $("#stage");
   stage.addEventListener("contextmenu", (e) => e.preventDefault());
+  let wheelT = 0;
+  stage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const now = performance.now();
+    if (now - wheelT < 120 || run.wands.length < 2) return;
+    wheelT = now;
+    selectWand((run.wi + (e.deltaY > 0 ? 1 : run.wands.length - 1)) % run.wands.length);
+  }, { passive: false });
   stage.addEventListener("mousemove", (e) => { inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false; });
   stage.addEventListener("mousedown", (e) => {
     SFX.init(); inp.sx = e.clientX; inp.sy = e.clientY; inp.touchAim = null; inp.pad = false;
@@ -2602,34 +2860,53 @@ const UI = (() => {
   const set = (id, prop, v) => { if (last[id + prop] !== v) { last[id + prop] = v; const el = $("#" + id); if (prop === "text") el.textContent = v; else el.style.setProperty(prop, v); } };
   let wandKey = "";
 
-  function hud() {
+  function hud(force) {
     const p = Game.player, w = run.wand;
     set("hpText", "text", String(Math.ceil(run.hp)));
     set("hpFill", "width", Math.max(0, (run.hp / run.maxHp) * 100).toFixed(1) + "%");
     set("manaFill", "width", ((w.mana / w.manaMax) * 100).toFixed(1) + "%");
     set("liftFill", "width", ((p ? p.lift : 1) * 100).toFixed(1) + "%");
-    set("goldText", "text", String(run.gold));
+    set("goldText", "text", run.gold + "g");
     const down = p && Game.level ? Math.round(clamp(p.y / (Game.level.exitY - 10), 0, 1) * 100) : 0;
-    set("depthText", "text", "Depth " + run.depth + (Game.level ? ", " + THEMES[Game.level.theme].name.toLowerCase() : "") + (Game.level && Game.level.boss ? ", the hand's cavern" : "") + (p ? ", " + down + "% down" : ""));
-    const key = w.spells.join(",") + "|" + w.cursor;
-    if (key !== wandKey) {
+    set("depthText", "text", "Depth " + run.depth + (p ? " · " + down + "%" : ""));
+    // the hotbar: one card per wand, with its spells and the next one to cast
+    const key = run.wi + "|" + run.wands.map((x) => x.name + ":" + x.spells.join(",") + ":" + x.cursor).join("/");
+    const bar = $("#hotbar");
+    if (key !== wandKey || force) {
       wandKey = key;
-      const bar = $("#wandBar");
       bar.innerHTML = "";
-      w.spells.forEach((id, i) => {
-        const s = document.createElement("span");
-        s.className = "ws" + (i === w.cursor ? " cur" : "");
-        if (id) { s.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); s.textContent = SPELL_ABBR[id]; s.title = SPELLS[id].name; }
-        bar.appendChild(s);
+      run.wands.forEach((wd, wi) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "wslot" + (wi === run.wi ? " on" : "");
+        b.style.setProperty("--wc", "#" + wd.color.toString(16).padStart(6, "0"));
+        b.title = wd.name + ": " + wandLines(wd).join(", ");
+        b.innerHTML = "<span class='wh'><b></b><i></i><span class='wname'></span></span><span class='sp'></span><span class='mb'><i></i></span><span class='mb rc'><i></i></span>";
+        b.querySelector("b").textContent = wi + 1;
+        b.querySelector(".wname").textContent = wd.name;
+        const sp = b.querySelector(".sp");
+        const cur = wd.order ? wd.order[wd.cursor] : wd.cursor;
+        wd.spells.forEach((id, i) => {
+          const c = document.createElement("span");
+          if (id) { c.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); c.textContent = SPELL_ABBR[id]; }
+          if (i === cur && wi === run.wi) c.className = "cur";
+          sp.appendChild(c);
+        });
+        b.onclick = () => selectWand(wi);
+        bar.appendChild(b);
       });
-      const rc = document.createElement("span");
-      rc.className = "rc";
-      rc.innerHTML = "<i id='rcFill'></i>";
-      bar.appendChild(rc);
-      last["rcFill--"] = null;
     }
-    const rf = $("#rcFill");
-    if (rf) rf.style.width = (w.rechargeT > 0 ? (1 - w.rechargeT / w.recharge) * 100 : 100).toFixed(0) + "%";
+    bar.hidden = Game.state !== "play" && Game.state !== "loading";
+    const slots = bar.children;
+    run.wands.forEach((wd, wi) => {
+      const el = slots[wi];
+      if (!el) return;
+      el.children[2].firstChild.style.width = ((wd.mana / wd.manaMax) * 100).toFixed(0) + "%";
+      el.children[3].firstChild.style.width = (wd.rechargeT > 0 ? (1 - wd.rechargeT / wd.recharge) * 100 : 100).toFixed(0) + "%";
+    });
+    const sw = $("#swapBtn"), near = Game.nearPickup && Game.state === "play";
+    if (sw.hidden === !!near) sw.hidden = !near;
+    if (near) set("swapBtn", "text", "Swap for " + Game.nearPickup.wand.name + " (E)");
     const hand = Game.foes.find((f) => f.d.ai === "hand" && f.awake);
     if ($("#bossbar").hidden === !!hand) $("#bossbar").hidden = !hand;
     if (hand) set("bossFill", "width", Math.max(0, (hand.hp / hand.maxHp) * 100).toFixed(1) + "%");
@@ -2650,7 +2927,7 @@ const UI = (() => {
     $("#voiceText").textContent = text;
     v.classList.remove("speak", "quiet"); void v.offsetWidth; v.classList.add("speak");
     clearTimeout(voiceT);
-    voiceT = setTimeout(() => v.classList.add("quiet"), 6000);
+    voiceT = setTimeout(() => v.classList.add("quiet"), 3500 + text.length * 40);
   }
   function banner(title, sub, busy) {
     $("#bannerTitle").textContent = title;
@@ -2678,17 +2955,12 @@ const UI = (() => {
 
   /* decisions pop up as the Warden makes them */
   const TASK_TITLE = { "warden.mood": "Choosing a mood", "warden.level": "Pouring the layer", "warden.watch": "Watching you fall", "warden.hand": "The hand chooses", "warden.landing": "Stocking the landing" };
+  // the Warden's decisions show as one quiet line under the eye; the full record lives in the Warden tab
+  let tickT = 0, tickEntry = null;
   function toastStart(task) {
     if (!TASK_TITLE[task]) return null;
-    const box = $("#toasts");
-    const t = document.createElement("button");
-    t.type = "button";
-    t.className = "toast";
-    t.innerHTML = "<div class='th'><span class='eye' aria-hidden='true'></span><span class='tt'></span><small></small></div><div class='wait'><span class='dots'>The Warden is deciding</span></div>";
-    t.querySelector(".tt").textContent = TASK_TITLE[task];
-    box.prepend(t);
-    while (box.children.length > 4) box.lastChild.remove();
-    return t;
+    $("#hudEye").classList.add("busy");
+    return task;
   }
   const pickOf = (e, id) => { const a = e.answers[id]; return a.probs.find((x) => x.value === a.pick) || { label: a.pick, p: 0 }; };
   function summarize(e) {
@@ -2713,85 +2985,106 @@ const UI = (() => {
   }
   function toastDone(t, e) {
     if (!t) return;
-    const w = t.querySelector(".wait");
-    if (w) w.remove();
-    t.querySelector("small").textContent = (e.source === "Jev" ? "Jev" : e.source.startsWith("Jev") ? "Jev, part" : "stand-in") + ", " + e.ms + " ms";
-    const ul = document.createElement("ul");
-    // notes are added after ask() returns, so fill the list on the next tick
+    $("#hudEye").classList.remove("busy");
     setTimeout(() => {
-      for (const [label, p] of summarize(e)) {
-        const li = document.createElement("li");
-        const s = document.createElement("span");
-        s.textContent = label;
-        s.title = label;
-        if (p != null) { const bar = document.createElement("i"); bar.style.width = Math.round(p * 100) + "%"; s.prepend(bar); }
-        const em = document.createElement("em");
-        em.textContent = p != null ? Math.round(p * 100) + "%" : "";
-        li.append(s, em);
-        ul.appendChild(li);
-      }
+      const rows = summarize(e).map((r) => r[0]);
+      if (!rows.length) return;
+      const tk = $("#ticker");
+      tk.textContent = "Warden, " + TASK_TITLE[e.task].toLowerCase() + ": " + rows.slice(0, 3).join(" · ") + (e.source === "Jev" ? "" : " (stand-in)");
+      tk.hidden = false;
+      tk.classList.remove("fade");
+      tickEntry = e.id;
+      clearTimeout(tickT);
+      tickT = setTimeout(() => tk.classList.add("fade"), 3200);
     }, 0);
-    t.appendChild(ul);
-    t.setAttribute("aria-label", TASK_TITLE[e.task] + ". Open the details.");
-    t.onclick = () => openEntry(e.id);
-    setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 450); }, e.task === "warden.watch" ? 3600 : 5200);
   }
+  $("#ticker").onclick = () => { if (tickEntry) openEntry(tickEntry); };
 
+  let ledgerPage = 0;
   function ledger() {
     const box = $("#ledger");
     if ($("#sheet").hidden) return;
     box.innerHTML = "";
     if (!Warden.ledger.length) { box.innerHTML = "<p class='empty'>No calls yet.</p>"; return; }
-    for (const e of Warden.ledger) {
-      const d = document.createElement("details");
-      d.dataset.id = e.id;
-      if (e.id === openId) { d.open = true; d.className = "hit"; }
-      const sum = document.createElement("summary");
-      const b = document.createElement("b"); b.textContent = TASK_TITLE[e.task] || e.task.replace("warden.", "Line: ");
-      const sp = document.createElement("span"); sp.textContent = e.source + ", " + e.ms + " ms, $" + e.cost.toFixed(5);
-      sum.append(b, sp);
-      d.appendChild(sum);
-      const body = document.createElement("div");
-      body.className = "body";
-      for (const id of e.questions) {
-        const a = e.answers[id];
-        const q = document.createElement("div"); q.className = "q";
-        const head = document.createElement("div"); head.className = "q-head";
-        const hl = document.createElement("span"); hl.textContent = id;
-        const hr = document.createElement("em"); hr.textContent = "picked " + (a.probs.find((x) => x.value === a.pick) || { label: a.pick }).label;
-        head.append(hl, hr);
-        q.appendChild(head);
-        for (const o of a.probs.slice(0, 5)) {
-          const row = document.createElement("div"); row.className = "opt" + (o.value === a.pick ? " pick" : "");
-          const bar = document.createElement("div"); bar.className = "obar";
-          const fill = document.createElement("i"); fill.style.width = Math.round(o.p * 100) + "%";
-          const lab = document.createElement("span"); lab.textContent = o.label;
-          bar.append(fill, lab);
-          const pct = document.createElement("small"); pct.textContent = Math.round(o.p * 100) + "%";
-          row.append(bar, pct);
-          q.appendChild(row);
-        }
-        body.appendChild(q);
-      }
-      for (const n of e.notes) { const nd = document.createElement("div"); nd.className = "note"; nd.textContent = n; body.appendChild(nd); }
-      if (e.error) { const nd = document.createElement("div"); nd.className = "note"; nd.textContent = "Jev error: " + e.error; body.appendChild(nd); }
-      const st = document.createElement("details"); st.className = "state";
-      const ss = document.createElement("summary"); ss.textContent = "State sent";
-      const pre = document.createElement("pre"); pre.textContent = JSON.stringify(e.state, null, 1);
-      st.append(ss, pre);
-      body.appendChild(st);
-      d.appendChild(body);
-      box.appendChild(d);
+    const open = openId != null && Warden.ledger.find((x) => x.id === openId);
+    if (open) { entryView(box, open); return; }
+    const per = 6, pages = Math.ceil(Warden.ledger.length / per);
+    ledgerPage = clamp(ledgerPage, 0, pages - 1);
+    for (const e of Warden.ledger.slice(ledgerPage * per, ledgerPage * per + per)) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "entry" + (e.notes.length ? " note-on" : "");
+      const t = document.createElement("b"); t.textContent = TASK_TITLE[e.task] || e.task.replace("warden.", "Line: ");
+      const m = document.createElement("span"); m.textContent = (e.source === "Jev" ? "Jev" : e.source.startsWith("Jev") ? "Jev, part" : "stand-in") + ", " + e.ms + " ms";
+      b.append(t, m);
+      b.onclick = () => { openId = e.id; ledger(); fit(); };
+      box.appendChild(b);
     }
+    if (pages > 1) {
+      const nav = document.createElement("div");
+      nav.className = "pager";
+      const newer = document.createElement("button"); newer.className = "btn quiet small"; newer.textContent = "Newer"; newer.disabled = ledgerPage === 0;
+      const older = document.createElement("button"); older.className = "btn quiet small"; older.textContent = "Older"; older.disabled = ledgerPage >= pages - 1;
+      const where = document.createElement("span"); where.textContent = "Page " + (ledgerPage + 1) + " of " + pages;
+      newer.onclick = () => { ledgerPage--; ledger(); fit(); };
+      older.onclick = () => { ledgerPage++; ledger(); fit(); };
+      nav.append(newer, where, older);
+      box.appendChild(nav);
+    }
+  }
+  function entryView(box, e) {
+    const back = document.createElement("button");
+    back.className = "btn quiet small";
+    back.textContent = "All decisions";
+    back.onclick = () => { openId = null; ledger(); fit(); };
+    const h = document.createElement("h3"); h.textContent = TASK_TITLE[e.task] || e.task.replace("warden.", "Line: ");
+    const meta = document.createElement("p"); meta.textContent = e.source + ", " + e.ms + " ms, $" + e.cost.toFixed(5) + ". Hover a row for the odds of every option.";
+    const grid = document.createElement("div");
+    grid.className = "qgrid";
+    for (const id of e.questions) {
+      const a = e.answers[id];
+      const pick = a.probs.find((x) => x.value === a.pick) || { label: a.pick, p: 0 };
+      const d = document.createElement("div");
+      d.title = a.probs.slice(0, 6).map((o) => o.label + " " + Math.round(o.p * 100) + "%").join("\n");
+      d.innerHTML = "<em></em> <b></b> <em></em>";
+      d.children[0].textContent = id.replace(/_/g, " ");
+      d.children[1].textContent = String(pick.label).slice(0, 40);
+      d.children[2].textContent = Math.round(pick.p * 100) + "%";
+      grid.appendChild(d);
+    }
+    box.append(back, h, meta, grid);
+    for (const n of e.notes) { const nd = document.createElement("div"); nd.className = "note"; nd.textContent = n; box.appendChild(nd); }
+    if (e.error) { const nd = document.createElement("div"); nd.className = "note"; nd.textContent = "Jev error: " + e.error; box.appendChild(nd); }
+    const copy = document.createElement("button");
+    copy.className = "btn quiet small";
+    copy.style.marginTop = "8px";
+    copy.textContent = "Copy the state it was sent";
+    copy.onclick = () => { try { navigator.clipboard.writeText(JSON.stringify(e.state, null, 1)); copy.textContent = "Copied"; } catch (err) { copy.textContent = "Copy failed"; } };
+    box.appendChild(copy);
+  }
+
+  // Nothing scrolls. A panel that is still too tall for the screen shrinks to fit.
+  function fitBox(el, w, h, top) {
+    if (!el) return;
+    const k = Math.min(1, (h - 2) / el.scrollHeight, w / el.scrollWidth);
+    let v = "";
+    if (k < 0.999) v = (top ? "" : "translateY(" + Math.max(0, (h - el.scrollHeight * k) / 2).toFixed(1) + "px) ") + "scale(" + k.toFixed(3) + ")";
+    if (el.style.transform !== v) el.style.transform = v;
+    el.style.alignSelf = v && !top ? "start" : "";
+  }
+  function fit() {
+    // while a menu is open, the play HUD steps out of the way
+    document.body.classList.toggle("menu", !!document.querySelector(".overlay:not([hidden])") || !$("#sheet").hidden);
+    for (const o of document.querySelectorAll(".overlay:not([hidden])")) {
+      const cs = getComputedStyle(o);
+      fitBox(o.firstElementChild, o.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), o.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
+    }
+    if (!$("#sheet").hidden) { const body = $(".sheet-body"); fitBox(body.querySelector(".tab:not([hidden])"), body.clientWidth, body.clientHeight, true); }
   }
 
   function stats() {
-    const w = run.wand;
     const rows = [
       ["Health", Math.ceil(run.hp) + " / " + run.maxHp],
-      ["Mana", Math.round(w.mana) + " / " + w.manaMax + ", +" + Math.round(w.regen) + " a second"],
-      ["Cast delay", w.castDelay.toFixed(2) + " s"],
-      ["Recharge", w.recharge.toFixed(2) + " s"],
       ["Lantern lift", run.liftMax.toFixed(1) + " s"],
       ["Gold", String(run.gold)],
       ["Depth", String(run.depth)],
@@ -2806,15 +3099,17 @@ const UI = (() => {
     for (const t in counts) { const c = document.createElement("span"); c.className = "chip"; c.style.setProperty("--tag", "var(" + TAG[t].css + ")"); c.textContent = TAG[t].name + " " + counts[t]; chips.appendChild(c); }
     const list = $("#spellList");
     list.innerHTML = "";
-    w.spells.concat(run.bag).forEach((id, i) => {
-      if (!id) return;
+    run.wands.forEach((wd, wi) => {
       const li = document.createElement("li");
-      li.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")");
-      li.textContent = SPELLS[id].name + " ";
-      const sm = document.createElement("small"); sm.textContent = i < w.spells.length ? "slot " + (i + 1) : "in the bag";
-      li.appendChild(sm);
+      li.className = "wandcard";
+      li.style.setProperty("--wc", "#" + wd.color.toString(16).padStart(6, "0"));
+      const b = document.createElement("b"); b.textContent = (wi + 1) + ". " + wd.name + (wi === run.wi ? " (in hand)" : "");
+      const p1 = document.createElement("p"); p1.textContent = wandLines(wd).join(", ");
+      const p2 = document.createElement("p"); p2.textContent = wd.spells.map((id) => (id ? SPELLS[id].name : "empty")).join(" → ");
+      li.append(b, p1, p2);
       list.appendChild(li);
     });
+    if (run.bag.length) { const li = document.createElement("li"); li.className = "wandcard"; li.textContent = "Bag: " + run.bag.map((id) => SPELLS[id].name).join(", "); list.appendChild(li); }
   }
   function memory() {
     const m = Memory.data;
@@ -2842,6 +3137,7 @@ const UI = (() => {
       if (tab) selectTab(tab);
       if (el.hidden) { el.hidden = false; Game.paused = true; Input.clear(); }
       stats(); memory(); ledger();
+      fit();
       $("#sheetClose").focus({ preventScroll: true });
     } else if (!el.hidden) {
       el.hidden = true;
@@ -2852,8 +3148,8 @@ const UI = (() => {
   function openEntry(id) {
     openId = id;
     sheet(true, "warden");
-    const d = document.querySelector('#ledger details[data-id="' + id + '"]');
-    if (d) d.scrollIntoView({ block: "start" });
+    ledger();
+    fit();
   }
 
   /* the landing */
@@ -2900,7 +3196,7 @@ const UI = (() => {
         const id = it.v.slice(isSpell ? 6 : 3);
         const b = isSpell
           ? card({ name: SPELLS[id].name, desc: SPELLS[id].desc, price: SPELLS[id].price, tag: SPELLS[id].tag, tagName: TAG[SPELLS[id].tag].name, cost: it.price + " gold" })
-          : card({ name: UPGRADES[id].name, desc: UPGRADES[id].desc, tagName: "Upgrade", cost: it.price + " gold" });
+          : card({ name: UPGRADES[id].name, desc: UPGRADES[id].desc + (id === "newwand" && run.wands.length >= 3 ? " Your hands are full, so it replaces wand " + (run.wi + 1) + " and its spells go to the bag." : ""), tagName: id === "newwand" ? "Wand" : "Upgrade", cost: it.price + " gold" });
         b.onclick = () => {
           if (run.gold < it.price || it.sold) return;
           run.gold -= it.price;
@@ -2918,19 +3214,19 @@ const UI = (() => {
       const refreshShop = () => { $("#shrineGold").textContent = run.gold; for (const [b, it] of shopBtns) b.disabled = it.sold ? false : run.gold < it.price; };
       refreshShop();
       let sel = null;
+      const arrOf = (where) => (where === "bag" ? run.bag : run.wands[+where.slice(1)].spells);
       function renderWand() {
-        const w = run.wand;
         const mk = (where, i, id) => {
           const b = document.createElement("button");
           b.type = "button";
           b.className = "slot" + (id ? "" : " empty") + (sel && sel.where === where && sel.i === i ? " sel" : "");
-          if (id) { b.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); b.innerHTML = "<span></span><small></small>"; b.firstChild.textContent = SPELLS[id].name; b.lastChild.textContent = SPELLS[id].kind === "mod" ? "modifier" : SPELLS[id].hp ? SPELLS[id].hp + " health" : SPELLS[id].mana + " mana"; }
-          else b.textContent = where === "wand" ? "Empty" : "Drop here";
+          if (id) { b.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); b.innerHTML = "<span></span><small></small>"; b.firstChild.textContent = SPELLS[id].name; b.lastChild.textContent = SPELLS[id].kind === "mod" ? "modifier" : SPELLS[id].hp ? SPELLS[id].hp + " health" : SPELLS[id].mana + " mana"; b.title = SPELLS[id].desc; }
+          else b.textContent = where === "bag" ? "Drop here" : "Empty";
           b.onclick = () => {
             if (!sel) { if (id) sel = { where, i }; renderWand(); return; }
-            const a = sel.where === "wand" ? w.spells : run.bag, bArr = where === "wand" ? w.spells : run.bag;
+            const a = arrOf(sel.where), bArr = arrOf(where);
             const va = a[sel.i], vb = bArr[i];
-            if (where === "bag" && i === run.bag.length) { bArr.push(va); if (sel.where === "wand") a[sel.i] = null; else a.splice(sel.i, 1); }
+            if (where === "bag" && i === run.bag.length) { bArr.push(va); if (sel.where === "bag") a.splice(sel.i, 1); else a[sel.i] = null; }
             else { a[sel.i] = vb === undefined ? null : vb; bArr[i] = va; }
             run.bag = run.bag.filter(Boolean);
             sel = null;
@@ -2938,20 +3234,29 @@ const UI = (() => {
           };
           return b;
         };
-        const ws = $("#wandSlots"); ws.innerHTML = "";
-        w.spells.forEach((id, i) => ws.appendChild(mk("wand", i, id)));
+        const box = $("#wandEdit"); box.innerHTML = "";
+        run.wands.forEach((wd, wi) => {
+          const row = document.createElement("div"); row.className = "wrow";
+          const head = document.createElement("div"); head.className = "wrow-h";
+          head.style.setProperty("--wc", "#" + wd.color.toString(16).padStart(6, "0"));
+          head.innerHTML = "<i></i><b></b> <span></span>";
+          head.children[1].textContent = (wi + 1) + ". " + wd.name;
+          head.children[2].textContent = wandLines(wd).join(" · ");
+          head.title = wd.name + ": " + wandLines(wd).join(", ");
+          const slots = document.createElement("div"); slots.className = "slots";
+          wd.spells.forEach((id, i) => slots.appendChild(mk("w" + wi, i, id)));
+          row.append(head, slots);
+          box.appendChild(row);
+        });
         const bs = $("#bagSlots"); bs.innerHTML = "";
         run.bag.forEach((id, i) => bs.appendChild(mk("bag", i, id)));
         bs.appendChild(mk("bag", run.bag.length, null));
-        const dl = $("#wandStats"); dl.innerHTML = "";
-        for (const [k, v] of [["Slots", w.slots], ["Mana", w.manaMax + ", +" + Math.round(w.regen) + " a second"], ["Cast delay", w.castDelay.toFixed(2) + " s"], ["Recharge", w.recharge.toFixed(2) + " s"], ["Health", Math.ceil(run.hp) + " / " + run.maxHp]]) {
-          const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd);
-        }
+        fit();
       }
       renderWand();
-      $("#descendBtn").onclick = () => { $("#shrine").hidden = true; run.wand.cursor = 0; run.wand.mana = run.wand.manaMax; resolve(); };
+      $("#descendBtn").onclick = () => { $("#shrine").hidden = true; for (const wd of run.wands) { wd.cursor = 0; wd.mana = wd.manaMax; wd.rechargeT = 0; } resolve(); };
       $("#shrine").hidden = false;
-      $("#shrine").scrollTop = 0;
+      fit();
       offers.firstChild && offers.firstChild.focus({ preventScroll: true });
     });
   }
@@ -2963,6 +3268,7 @@ const UI = (() => {
     dl.innerHTML = "";
     for (const [k, v] of rows) { const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd); }
     $("#end").hidden = false;
+    fit();
     $("#againBtn").focus({ preventScroll: true });
   }
 
@@ -2971,7 +3277,7 @@ const UI = (() => {
     document.documentElement.style.setProperty("--hudH", Math.round(hudEl.bottom - 8) + "px");
   }
 
-  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, end, insets };
+  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, end, insets, fit };
 })();
 
 /* ------------------------------------------------------------------ flow */
@@ -2979,7 +3285,7 @@ const UI = (() => {
 async function enterDepth(first) {
   Game.state = "loading";
   Input.clear();
-  Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = [];
+  Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = [];
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? "The Warden's hand waits below" : "The Warden pours the next layer", true);
   const plan = await Warden.level(run, first);
   const geo = World.generate(plan);
@@ -3006,6 +3312,16 @@ async function enterDepth(first) {
     }
   }
   Game.foes = placed;
+  // a wand waits in a side room on most layers
+  if (rnd() < 0.75) {
+    const spots = (geo.sides && geo.sides.length ? geo.sides : geo.rooms.slice(1));
+    const r = spots[(rnd() * spots.length) | 0];
+    if (r) {
+      let py = (r.y + r.rh * 0.6 - 4) | 0;
+      for (let k = 0; k < 20 && !blocks(World.at(r.x, py + 1)); k++) py++;
+      Game.pickups.push({ x: r.x, y: py - 3, wand: makeWand(clamp(run.depth - 1 + (rnd() < 0.3 ? 1 : 0), 1, 3)), bob: rnd() * 6 });
+    }
+  }
   if (plan.boss) {
     const hand = makeFoe("hand", W / 2 - 9, geo.arenaTop + 20);
     hand.hp = hand.maxHp = 420 + 160 * (run.depth / 4 - 1);
@@ -3066,7 +3382,7 @@ async function die(cause) {
     ["Foes killed", String(run.kills)],
     ["Gold", String(run.gold)],
     ["Hands broken", String(run.hands)],
-    ["Wand", run.wand.spells.filter(Boolean).map((id) => SPELLS[id].name).join(", ") || "empty"],
+    ["Wands", run.wands.map((wd) => wd.name).join(", ")],
     ["Warden calls", String(run.calls)],
   ]);
 }
@@ -3114,6 +3430,7 @@ function frame(now) {
   if (Game.level || Game.state === "loading") Render.draw(dt);
   if (Game.state === "play" || Game.state === "loading") UI.hud();
   if ((++mapFrame & 7) === 0) Minimap.draw();
+  if ((mapFrame % 30) === 0) { UI.insets(); UI.fit(); }
 }
 function tickGame(dt) {
   if (Game.state === "loading" || Game.state === "intro") return;
@@ -3131,6 +3448,9 @@ function tickGame(dt) {
     updateEmitters();
   }
   for (const f of Game.fx) { if (!f.rift) { f.x += f.vx; f.y += f.vy; f.vy += 0.1; } f.t -= dt; }
+  for (const n of Game.nums) { n.y -= 0.35; n.t -= dt; }
+  Game.nums = Game.nums.filter((n) => n.t > 0);
+  for (const pk of Game.pickups) pk.bob += dt * 3;
   Game.fx = Game.fx.filter((f) => f.t > 0);
   for (const b of Game.bolts) b.t -= dt;
   Game.bolts = Game.bolts.filter((b) => b.t > 0);
@@ -3144,17 +3464,19 @@ Memory.load();
 Render.resize();
 UI.sound(SFX.isMuted());
 UI.insets();
-addEventListener("resize", () => { Render.resize(); UI.insets(); });
+addEventListener("resize", () => { Render.resize(); UI.insets(); UI.fit(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { UI.insets(); UI.fit(); });
+UI.fit();
 $("#startBtn").onclick = startRun;
 $("#againBtn").onclick = startRun;
 $("#hudHp").onclick = () => UI.sheet(true, "stats");
-$("#wandBar").onclick = () => UI.sheet(true, "stats");
+$("#swapBtn").onclick = () => { Game.input.swapEdge = true; };
 $("#hudEye").onclick = () => UI.sheet(true, "warden");
 $("#depthText").onclick = () => UI.sheet(true, "warden");
 $("#sheetClose").onclick = () => UI.sheet(false);
 $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") UI.sheet(false); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden) { e.stopPropagation(); UI.sheet(false); } }, true);
-document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); }; });
+document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); UI.fit(); }; });
 $("#forgetBtn").onclick = () => { Memory.reset(); UI.sheet(true, "memory"); };
 $("#soundBtn").onclick = () => UI.sound(SFX.toggle());
 $("#mapBtn").onclick = () => Minimap.toggle();

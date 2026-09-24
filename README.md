@@ -18,7 +18,7 @@ Deploy to Vercel, or open `public/index.html` in a browser. Opened locally, a bu
 
 ## Wardenfall
 
-Wardenfall is a spin-off of the Warden build in `legacy/`, at `/fall/`. It plays like Noita. The Warden melted its halls, and every pixel now moves. You carry the lantern down a well of sand, stone, and liquid. Sand and gold fall. Water, oil, lava, acid, sludge, and blood flow. Fire spreads through wood, moss, oil, and miasma. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water. You fight with a wand of spells that casts from left to right. Modifiers change the next spell.
+Wardenfall is a spin-off of the Warden build in `legacy/`, at `/fall/`. It plays like Noita. The Warden melted its halls, and every pixel now moves. You carry the lantern down a well of sand, stone, and liquid. Sand and gold fall. Water, oil, lava, acid, sludge, and blood flow. Fire spreads through wood, moss, oil, and miasma. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water. You carry up to three wands. Each wand casts its spells from left to right, then recharges, and each has its own slots, mana, cast speed, and spread. Some wands shuffle their spells, and some cast a spell of their own every time. You find wands in side rooms and buy them at the landing. Modifiers change the next spell: Seeker makes it home in on foes, Scatter fires it three times, and Payload makes a shot carry the next spell and cast it where it lands.
 
 Jev runs the environment through the same `/api/warden` function:
 
@@ -29,7 +29,9 @@ Jev runs the environment through the same `/api/warden` function:
 
 The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging spell when your wand cannot dig. Every override shows in the Warden tab.
 
-Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. S drops you faster. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, and RT casts. On a phone, the left thumb moves and the right thumb aims and casts.
+Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. 1, 2, 3, or the mouse wheel changes wands, and E takes a wand from the ground. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, RT casts, Y changes wands, and X takes a wand. On a phone, the left thumb moves, the right thumb aims and casts, and you tap a wand in the bar to hold it.
+
+The game fits the screen on desktop and phone, and nothing scrolls. The Warden's decisions show as one line under the eye. Tap the line or the eye for the full record.
 
 Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
 
@@ -40,7 +42,7 @@ Each layer is a route of rooms that zigzag down to the well, joined by wide slop
 | `public/index.html` | The page for Get Plunger'd |
 | `public/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
-| `public/fall/index.html` | Wardenfall: the falling-sand simulation, the wand, and the Warden's questions, in one file with no libraries |
+| `public/fall/index.html` | Wardenfall: the falling-sand simulation, the wands, and the Warden's questions, in one file with no libraries |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
