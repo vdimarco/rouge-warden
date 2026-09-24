@@ -61,7 +61,8 @@ button { font: inherit; color: inherit; }
 @keyframes flick { 0%, 100% { opacity: 1; } 71% { opacity: 0.25; text-shadow: none; } 72% { opacity: 1; } 74% { opacity: 0.3; text-shadow: none; } 75% { opacity: 1; } }
 
 /* the row of cabinets */
-.stage { position: relative; z-index: 2; display: grid; place-items: end center; min-height: 0; padding-bottom: 1vh; }
+.stage { position: relative; z-index: 2; display: grid; place-items: end center; min-height: 0; padding-bottom: 1vh; touch-action: none; }
+.row.drag { transition: none; }
 .row { display: flex; align-items: flex-end; gap: calc(var(--w) * 0.14); transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .nav { display: none; }
 
@@ -319,14 +320,48 @@ $("#changeBtn").onclick = () => {
 const cabs = $$(".cab");
 let sel = 1;
 const credits = {};
+const carousel = () => getComputedStyle($(".nav")).display !== "none";
+const rowX = (i) => $("#stage").clientWidth / 2 - (cabs[i].offsetLeft + cabs[i].offsetWidth / 2);
 function pick(i, quiet) {
   sel = (i + cabs.length) % cabs.length;
   cabs.forEach((c, k) => c.classList.toggle("on", k === sel));
   // on a phone the row slides so the chosen machine is centered
-  const row = $("#row"), c = cabs[sel];
-  if (getComputedStyle($(".nav")).display !== "none") row.style.transform = "translateX(" + ($("#stage").clientWidth / 2 - (c.offsetLeft + c.offsetWidth / 2)) + "px)";
-  else row.style.transform = "";
+  const row = $("#row");
+  row.style.transform = carousel() ? "translateX(" + rowX(sel) + "px)" : "";
   if (!quiet) SFX.tick();
+}
+// swipe left or right to change machines. The row follows your finger on a phone; a short tap still hits buttons.
+{
+  const stage = $("#stage"), row = $("#row");
+  let sw = null;
+  stage.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" || dragging || e.target.closest(".nav")) return;
+    sw = { id: e.pointerId, x0: e.clientX, y0: e.clientY, base: carousel() ? rowX(sel) : 0, moved: false };
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x0;
+    if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sw.y0)) { sw.moved = true; row.classList.add("drag"); }
+    // at the ends the row resists, like a rubber band
+    if (sw.moved && carousel()) { const edge = (sel === 0 && dx > 0) || (sel === cabs.length - 1 && dx < 0); row.style.transform = "translateX(" + (sw.base + (edge ? dx * 0.3 : dx)) + "px)"; }
+  });
+  const end = (e) => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x0, moved = sw.moved;
+    sw = null;
+    row.classList.remove("drag");
+    if (!moved) return;
+    stage.dataset.swiped = "1";
+    setTimeout(() => { delete stage.dataset.swiped; }, 0);
+    const far = Math.abs(dx) > Math.min(60, stage.clientWidth * 0.15);
+    if (far && dx < 0 && sel < cabs.length - 1) pick(sel + 1);
+    else if (far && dx > 0 && sel > 0) pick(sel - 1);
+    else pick(sel, true);
+  };
+  stage.addEventListener("pointerup", end);
+  stage.addEventListener("pointercancel", end);
+  // a swipe is not a tap: keep it from pressing the button under your finger
+  stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
 cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging) pick(k); }));
 $("#prevBtn").onclick = () => pick(sel - 1);
