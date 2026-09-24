@@ -31,6 +31,7 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 
 ### The loop
 
+- **Learn the moves.** Your first runs open with a card that shows how to fight and how the loop works.
 - **Pick a friend and a weapon.** Each of the five friends has a perk. You start with the Plunger, or with any weapon you have unlocked.
 - **Fight your way down.** Each layer is a route of rooms down to the drains. Some rooms slam shut with screen doors until two waves of critters are dead. The drains stay clogged until the last of those rooms is clear. If you dig around it, the fight comes to you at the drains.
 - **Collect caps.** Critters, nests, and sealed rooms drop bottle caps. At the snack bar between layers, spend caps at the tab on unlocks that stay between runs: new weapons, more hot dogs, a better starting shovel, pocket money, a starting scroll, and a second wind. Caps you still carry when you go down are lost.
@@ -58,7 +59,7 @@ Your gun is the second weapon. Each gun fires its shots from left to right, then
 
 ### Digging and the world
 
-Hold F to dig with your shovel. It tunnels a hole your size along your aim and carries you through it. The garden shovel is slow on rock, the steel spade is three times faster, and the power auger chews through rock, metal, and porcelain. Better shovels come from the snack bar and from coolers.
+Hold F and push a direction to dig with your shovel, or push nothing to dig toward the mouse. Each swing cuts a chunk of tunnel your size, and an outline shows where the next swing will cut. Soft ground breaks in one swing. Rock, metal, and porcelain crack over several swings. Digging tires you: the brown bar is your stamina, and it refills only when you stop. Digging is also loud. Critters nearby come for you, and if you keep at it, the ceiling caves in or critters dig their way to you. The garden shovel tires fast and takes six swings for rock. The steel spade and the power auger swing faster, cut farther, and tire you less. Better shovels come from the snack bar and from coolers.
 
 The ground holds junk from the cottage: canoes, tires, old toilets, fridges, bike wheels, bottles, boots, lawn chairs, fish bones, and signs. Relics glint through the dirt. Water pipes run along the ceilings and leak where you shoot or dig them, and the water puts out fires. Propane tanks explode when shot or heated. Hornet nests hang from ceilings and send hornets until you break them.
 

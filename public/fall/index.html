@@ -64,6 +64,8 @@ button { font: inherit; color: inherit; }
 #hpFill { background: var(--blood); }
 #manaFill { background: var(--mana); }
 #liftFill { background: var(--accent); }
+#stamFill { background: #c8955a; }
+#stamFill.low { background: #ff5a3a; }
 .nums { display: grid; line-height: 1.15; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; min-width: 3ch; }
 .nums .gold { color: var(--accent); font-weight: 700; }
 .depth { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
@@ -224,6 +226,16 @@ a { color: var(--accent); }
 .wandstats dt { color: var(--muted); }
 .wandstats dd { margin: 0; font-variant-numeric: tabular-nums; }
 .scrollpick { z-index: 35; }
+.howto .card-inner { max-width: 760px; }
+.moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 6px 0 4px; }
+.move { display: grid; grid-template-columns: 76px 1fr; gap: 8px; align-items: start; background: #141924; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 7px 9px; font-size: 14px; line-height: 1.35; color: #c9c1b0; }
+.move b { font-family: var(--fell); font-weight: 400; font-size: 14px; color: var(--accent); }
+.move em { font-style: normal; color: var(--ink); font-weight: 700; }
+.move .tp { display: none; }
+@media (pointer: coarse) { .move .kb { display: none; } .move .tp { display: inline; } }
+.loop { margin: 0 0 12px; padding-left: 18px; font-size: 14px; color: #c9c1b0; line-height: 1.45; }
+.loop b { color: var(--ink); }
+@media (max-width: 640px) { .moves { grid-template-columns: 1fr; } }
 .scrollpick .card-inner { max-width: 640px; }
 .card.big b { font-family: var(--fell); font-weight: 400; font-size: 22px; }
 .tab-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -324,7 +336,7 @@ a { color: var(--accent); }
 <div id="stage"><canvas id="world"></canvas><canvas id="actors"></canvas><canvas id="dark"></canvas></div>
 
 <header class="hud" id="hud">
-  <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, pressure, lift, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
+  <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, gun pressure, hover, digging stamina, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span><span class="bar"><i id="stamFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
   <button class="depth" id="depthText" type="button">Depth 1</button>
   <span class="pill" id="runPill" aria-label="Caps, hot dogs, and the fast drain timer"><span><span class="cap"></span><b id="capsText">0</b></span><span id="flaskText">🌭 2</span><span class="fast" id="fastText"></span><span class="curse" id="curseText" hidden></span></span>
   <span class="spacer"></span>
@@ -390,6 +402,29 @@ a { color: var(--accent); }
       <div class="slots" id="bagSlots"></div>
     </section>
     <footer class="sh-foot"><button class="btn" id="descendBtn">Keep going down</button></footer>
+  </div>
+</div>
+
+<div class="overlay howto" id="howto" hidden>
+  <div class="card-inner">
+    <h2>How to fight</h2>
+    <p class="sub">Fast, hard, and one life per run. Learn the moves, then go deeper.</p>
+    <div class="moves">
+      <div class="move"><b>HIT</b><span><span class="kb">Left click or J</span><span class="tp">Tap Hit</span>. Keep hitting for a combo. Your <em id="howtoWeapon">Plunger</em> <em id="howtoCrit">crits on the last hit</em>.</span></div>
+      <div class="move"><b>ROLL</b><span><span class="kb">Shift</span><span class="tp">Tap Roll</span>. Nothing can hit you while you roll. Roll through attacks. Watch for critters that flash before they strike.</span></div>
+      <div class="move"><b>POUND</b><span>In the air, <span class="kb">hold S and hit</span><span class="tp">pull the stick down and tap Hit</span>. It stuns everything where you land.</span></div>
+      <div class="move"><b>SHOOT</b><span><span class="kb">Right click or K</span><span class="tp">Drag the right side</span>. Your gun is the second weapon.</span></div>
+      <div class="move"><b>DIG</b><span><span class="kb">Hold F and push a direction</span><span class="tp">Hold Shovel and push the stick</span>. It tires you, and it is loud: dig too much and the ceiling caves in, or critters dig their way to you.</span></div>
+      <div class="move"><b>HOT DOG</b><span><span class="kb">R</span><span class="tp">Tap the hot dog</span> heals. You get a few per layer.</span></div>
+    </div>
+    <h3>The loop</h3>
+    <ul class="loop">
+      <li><b>Caps</b> drop from critters. Spend them at the snack bar's tab on unlocks that stay. Go down, and the caps you carry are lost.</li>
+      <li><b>Scrolls</b> raise Muscle, Aim, or Grit. <b>Relics</b> hide in the walls.</li>
+      <li><b>Cursed coolers</b> hold rich loot, but one hit takes you down until you beat 10 critters.</li>
+      <li>Each layer ends at <b>two drains</b>. One is richer and harder. Get there fast for a bonus.</li>
+    </ul>
+    <div class="starts"><button class="btn" id="howtoGo" type="button">Let's go</button></div>
   </div>
 </div>
 
@@ -1762,6 +1797,7 @@ const SFX = (() => {
     zap() { if (!gate("zap", 50)) return; noise({ dur: 0.18, vol: 0.2, f: 5000, f2: 1200, q: 3 }); tone({ type: "square", f: 1600, f2: 400, dur: 0.12, vol: 0.05 }); },
     splash() { if (!gate("splash", 90)) return; noise({ dur: 0.25, vol: 0.14, f: 1400, f2: 500, q: 0.8 }); },
     sizzle() { if (!gate("sizzle", 200)) return; noise({ dur: 0.35, vol: 0.08, f: 6000, f2: 3000, q: 1.5 }); },
+    clink() { if (!gate("clink", 90)) return; tone({ type: "square", f: 1500 + rnd() * 300, f2: 900, dur: 0.05, vol: 0.05 }); noise({ dur: 0.04, vol: 0.12, f: 3000, q: 1 }); },
     swing(big) { if (!gate("swing", 60)) return; noise({ dur: big ? 0.14 : 0.09, vol: big ? 0.16 : 0.1, f: big ? 1800 : 2600, f2: 600, q: 0.7 }); },
     crit() { if (!gate("crit", 50)) return; tone({ type: "square", f: 880, f2: 1320, dur: 0.07, vol: 0.07 }); noise({ dur: 0.1, vol: 0.28, f: 900, f2: 200, type: "lowpass" }); },
     roll() { if (!gate("roll", 100)) return; noise({ dur: 0.18, vol: 0.08, f: 700, f2: 1400, q: 0.6 }); },
@@ -2550,49 +2586,115 @@ function pushPowder(e, s) {
   return true;
 }
 // the lantern digs: soft ground goes fast, rock and glass slowly, bedrock never
-/* the shovel: it digs a tunnel your size along your aim, and carries you through it */
+/* the shovel: swing by swing, it cuts a tunnel your size the way you push. Hard ground cracks over a few swings. */
 const SHOVELS = [
   null,
-  { name: "Garden Shovel", rock: 0.12, len: 13, blade: "#a8b0b8", desc: "Soft ground goes fast. Rock takes a while." },
-  { name: "Steel Spade", rock: 0.35, len: 16, blade: "#e4ecf4", desc: "Longer reach, and rock goes three times faster." },
-  { name: "Power Auger", rock: 0.9, len: 19, blade: "#ff8a30", desc: "It chews through rock, metal, and porcelain like dirt." },
+  // every: seconds between swings. reach: how far a swing cuts. hits: swings for metal, glass, and porcelain; rock; obsidian
+  // cost: how much of your digging stamina one swing uses
+  { name: "Garden Shovel", every: 0.22, reach: 8, hits: [4, 6, 9], cost: 0.1, blade: "#a8b0b8", desc: "Soft ground goes in one swing. Rock takes six, and you tire fast." },
+  { name: "Steel Spade", every: 0.16, reach: 10, hits: [2, 3, 5], cost: 0.065, blade: "#e4ecf4", desc: "Faster swings, a longer cut, rock in three swings, and more stamina per dig." },
+  { name: "Power Auger", every: 0.1, reach: 12, hits: [1, 2, 2], cost: 0.05, blade: "#ff8a30", desc: "It chews through rock, metal, and porcelain, and tires you least." },
 ];
-function dig(p, a) {
-  const S = SHOVELS[run.shovel] || SHOVELS[1];
+// digging is loud. Critters near you come for you, and when it gets too loud the ground answers.
+function digNoise(p, n) {
+  Game.noise = Math.min(1.2, (Game.noise || 0) + n);
+  const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+  for (const f of Game.foes) if (!f.dead && Math.hypot(f.x - cx, f.y - cy) < 110) f.awake = true;
+  if (Game.noise < 1) return;
+  Game.noise = 0.25;
+  Game.cam.shake = Math.min(8, Game.cam.shake + 5);
+  SFX.rumble();
+  if (rnd() < 0.5) {
+    // a cave-in: sand pours from the ceiling right over you
+    let top = cy | 0;
+    for (let k = 0; k < 40 && !blocks(World.at(cx, top - 1)); k++) top--;
+    Game.emitters.push({ x: cx + p.face * 4, y: top, w: 10, m: SAND, rate: 5, ticks: 70, tele: 30 });
+    UI.hint("Too loud. The ceiling gives way!", 2000);
+  } else {
+    // critters burrow out of the walls around you
+    const kinds = unlockedFor(run.depth), n2 = 2 + Math.min(3, run.depth >> 1);
+    for (let k = 0; k < n2; k++) {
+      const a = rnd() * Math.PI * 2, x = cx + Math.cos(a) * 26, y = cy + Math.sin(a) * 18;
+      World.carve(x, y, 4);
+      const f = spawnFoe(kinds[(rnd() * kinds.length) | 0], x - 3, y - 3);
+      f.flash = 0.3;
+      addFx(x, y, 0x8a6a4a, 10);
+    }
+    UI.hint("Too loud. Something digs its way toward you!", 2000);
+  }
+  Cottage.bark("watch_foes", run).then((l) => l && UI.voice(l));
+}
+// the way you dig: the way you push, or toward the mouse if you push nothing
+function digAngle(p) {
+  const inp = Game.input;
+  const dy = inp.down ? 1 : inp.up && !p.ground ? -1 : inp.up && !inp.x ? -1 : 0;
+  if (inp.x || dy) return Math.atan2(dy, inp.x);
+  if (inp.sx != null || inp.touchAim != null) return aimAngle();
+  return p.face > 0 ? 0 : Math.PI;
+}
+// the cells one swing cuts: a capsule from your middle out along the angle, a little taller than you
+function digCells(p, a, S, fn) {
   const ca = Math.cos(a), sa = Math.sin(a);
-  // the floor stays unless you aim down
   const keepFloor = sa < 0.45, feet = Math.floor(p.y + p.h);
-  const ox = p.x + p.w / 2, oy = p.y + p.h / 2 - 1, r = 6;
-  let n = 0, col = 0;
-  const budget = 150 * run.digMult;
-  for (let d = 2; d <= S.len && n < budget; d += 2) {
+  const ox = p.x + p.w / 2, oy = p.y + p.h / 2 - 1, r = 6.5, seen = new Set();
+  for (let d = 2; d <= S.reach; d += 1.5) {
     const cx = ox + ca * d, cy = oy + sa * d;
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (dx * dx + dy * dy > r * r) continue;
       const x = (cx + dx) | 0, y = (cy + dy) | 0;
       if ((keepFloor && y >= feet) || !World.inb(x, y)) continue;
-      const i = y * W + x, m = World.mat[i];
-      if (m === EMPTY || m === BEDROCK || m === SEAL) continue;
-      const k = KIND[m];
-      if (k !== K.SOLID && k !== K.POWDER) continue;
-      if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); n++; continue; }
-      if (HARD[m] > 2 && rnd() > S.rock * run.digMult) continue;
-      World.set(i, rnd() < 0.06 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
-      if (!col || rnd() < 0.1) col = MATS[m].cols[0];
-      n++;
+      const i = y * W + x;
+      if (seen.has(i)) continue;
+      seen.add(i);
+      fn(i, x, y);
     }
   }
-  const tipX = ox + ca * S.len * 0.7, tipY = oy + sa * S.len * 0.7;
-  if (n) {
-    SFX.dig();
-    // dirt flies back over your shoulder
-    if (rnd() < 0.7) for (let k = 0; k < 2; k++) Game.fx.push({ x: tipX, y: tipY, vx: -ca * (0.6 + rnd()) + (rnd() - 0.5), vy: -1.2 - rnd() * 1.2, t: 0.35 + rnd() * 0.3, c: World.abgr(col) });
-    // tunneling: the shovel pulls you along the way it digs
-    p.vx += ca * 0.2;
-    if (sa < -0.4 && p.vy > -1.4) p.vy -= 0.28;
+}
+function dig(p, a) {
+  const S = SHOVELS[run.shovel] || SHOVELS[1];
+  const ca = Math.cos(a), sa = Math.sin(a);
+  Game.digging = { x: p.x + p.w / 2 + ca * S.reach * 0.7, y: p.y + p.h / 2 + sa * S.reach * 0.7, t: 0.15, a };
+  Game.digCd = (Game.digCd || 0) - 1 / 60;
+  if (Game.digCd > 0) return;
+  // digging tires you: a full bar is about a dozen swings, and it only refills when you stop
+  const cost = S.cost / run.digMult;
+  if (p.stam < cost) {
+    Game.digCd = 0.3;
+    if (!Game.tiredHinted || Game.levelT - Game.tiredHinted > 6) { Game.tiredHinted = Game.levelT; UI.hint("Your arms are tired. Stop digging for a moment.", 1600); }
+    SFX.clink();
+    return;
   }
-  Game.digging = { x: tipX, y: tipY, t: 0.12, a };
-  Game.digSwing = (Game.digSwing || 0) + 0.45;
+  p.stam -= cost;
+  p.stamT = 0.7;
+  Game.digCd = S.every / run.digMult;
+  Game.digSwing = (Game.digSwing || 0) + Math.PI;
+  const dmg = Game.digDmg;
+  let cut = 0, cracked = 0, col = 0;
+  digCells(p, a, S, (i, x, y) => {
+    const m = World.mat[i];
+    if (m === EMPTY || m === BEDROCK || m === SEAL) return;
+    const k = KIND[m];
+    if (k !== K.SOLID && k !== K.POWDER) return;
+    if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); cut++; return; }
+    // hard ground cracks a little each swing, then breaks
+    const need = HARD[m] <= 2 ? 1 : S.hits[HARD[m] >= 5 ? 2 : HARD[m] >= 4 ? 1 : 0];
+    if (need > 1 && ++dmg[i] < need) { cracked++; return; }
+    dmg[i] = 0;
+    World.set(i, rnd() < 0.05 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
+    if (!col || rnd() < 0.1) col = MATS[m].cols[0];
+    cut++;
+  });
+  const tx = Game.digging.x, ty = Game.digging.y;
+  if (cut || cracked) {
+    if (cut) SFX.dig(); else SFX.clink();
+    digNoise(p, cut ? 0.07 : 0.05);
+    Game.cam.shake = Math.min(3, Game.cam.shake + (cut ? 0.7 : 0.4));
+    // dirt flies back over your shoulder, and sparks fly off rock
+    for (let k = 0; k < (cut ? 5 : 3); k++) Game.fx.push({ x: tx, y: ty, vx: -ca * (0.5 + rnd()) + (rnd() - 0.5) * 1.2, vy: -1 - rnd() * 1.4, t: 0.3 + rnd() * 0.3, c: cut ? World.abgr(col) : World.abgr(0xfff0a0) });
+    // a small step into the hole you just cut, so digging sideways or up carries you along
+    if (cut && Math.abs(ca) > 0.6 && !Game.input.x) p.vx += ca * 0.9;
+    if (cut && sa < -0.6 && p.vy > -1.8) p.vy = -1.8;
+  }
 }
 // sand can pour into a body: push it up, or clear the grains it sits in
 function unstick(e) {
@@ -2631,7 +2733,7 @@ const Game = {
 };
 
 function makePlayer(x, y) {
-  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0, atk: null, combo: 0, comboT: 0, roll: 0, rollCd: 0, pound: false, ghosts: [] };
+  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0, atk: null, combo: 0, comboT: 0, roll: 0, rollCd: 0, pound: false, ghosts: [], stam: 1, stamT: 0 };
 }
 function makeFoe(kind, x, y, elite) {
   const d = FOES[kind];
@@ -3167,11 +3269,17 @@ function updatePlayer(dt) {
     w.cdT = Math.max(0, w.cdT - dt);
     w.rechargeT = Math.max(0, w.rechargeT - dt);
   }
-  if (inp.dig && p.roll <= 0 && !p.atk) dig(p, aimAngle());
-  else if (inp.cast && p.roll <= 0) castWand(aimAngle());
+  if (inp.dig && p.roll <= 0 && !p.atk) dig(p, digAngle(p));
+  else {
+    Game.digCd = Math.min(Game.digCd || 0, 0.05);
+    if (inp.cast && p.roll <= 0) castWand(aimAngle());
+  }
+  p.stamT = Math.max(0, (p.stamT || 0) - dt);
+  if (p.stamT <= 0) p.stam = Math.min(1, p.stam + dt * 0.28);
+  Game.noise = Math.max(0, (Game.noise || 0) - dt * 0.05);
   updateCombat(p, dt);
   if (inp.flaskEdge) { inp.flaskEdge = false; drinkFlask(p); }
-  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Tap Dig, then drag your right thumb where you want to plunge." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
+  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Hold Shovel and push the stick the way you want to dig." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
   // wands lying in the caves
   Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
@@ -3951,8 +4059,8 @@ const Render = (() => {
     // the shovel, swinging along your aim while you dig
     const D = Game.digging;
     if (p && !run.over && D && D.t > 0) {
-      const S = SHOVELS[run.shovel] || SHOVELS[1], a = D.a + Math.sin(Game.digSwing || 0) * 0.35;
-      const hx = (p.x + p.w / 2 - ox) * k, hy = (p.y + p.h / 2 - oy) * k, len = (S.len * 0.55) * k;
+      const S = SHOVELS[run.shovel] || SHOVELS[1], u = clamp(1 - (Game.digCd || 0) / (S.every / run.digMult), 0, 1), a = D.a - (u - 0.15) * 0.9 * (Math.cos(D.a) >= 0 ? 1 : -1);
+      const hx = (p.x + p.w / 2 - ox) * k, hy = (p.y + p.h / 2 - oy) * k, len = (S.reach * 0.8) * k;
       actx.save();
       actx.translate(hx, hy); actx.rotate(a);
       actx.lineCap = "round";
@@ -3975,6 +4083,7 @@ const Render = (() => {
     const far = World.far, ao = World.ao, sky = World.sky, BGPAL = World.BGPAL, SKYPAL = World.SKYPAL, hasSky = World.hasSky;
     // the back wall moves slower than the ground in front of it
     const pox = (ox * 0.4) | 0, poy = (oy * 0.4) | 0;
+    const dd = Game.digDmg;
     const tk = World.tick;
     const gw = Math.ceil(vw / 8) + 1, gh = Math.ceil(vh / 8) + 1;
     glowGrid.fill(0, 0, gw * gh);
@@ -3999,6 +4108,8 @@ const Render = (() => {
         else if (wy > 0 && mat[i - W] === EMPTY && KIND[m] <= K.POWDER) c = RIM[m * 4 + shade[i]];
         else if (KIND[m] === K.LIQUID && wy > 0 && mat[i - W] === EMPTY) c = ((wx * 7 + (tk >> 1)) & 63) === 0 ? 0xffffffff : RIM[m * 4 + ((shade[i] + (tk >> 3) + (wx >> 2)) & 3)];
         else c = PAL[m * 4 + shade[i]];
+        // ground the shovel has cracked shows dark seams
+        if (dd && dd[i] && (((wx * 7 + wy * 3) % 4) < dd[i] + 1)) c = ((c >> 1) & 0x7f7f7f) | 0xff000000;
         buf[row + x] = c;
         const g = GLOW[m];
         if (g) { glowGrid[gr + (x >> 3)] += g; glowMat[gr + (x >> 3)] = m; }
@@ -4051,6 +4162,17 @@ const Render = (() => {
         const rx = ax + ca * 30 - ox, ry = ay + sa * 30 - oy;
         for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry - 1, dark); px(rx + k, ry + 1, dark); px(rx - 1, ry + k, dark); px(rx + 1, ry + k, dark); }
         for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry, dotC); px(rx, ry + k, dotC); }
+      }
+    }
+    // where the next swing of the shovel will cut
+    if (p && !run.over && Game.input.dig && Game.state === "play") {
+      const S = SHOVELS[run.shovel] || SHOVELS[1], a = digAngle(p), ca = Math.cos(a), sa = Math.sin(a);
+      const ex = p.x + p.w / 2 + ca * S.reach, ey = p.y + p.h / 2 - 1 + sa * S.reach, oc = World.abgr(0xfff0c0);
+      for (let k = 0; k < 28; k++) {
+        const t = (k / 28) * Math.PI * 2;
+        if (Math.cos(t - a) < -0.2 || ((k + (tk >> 2)) & 1)) continue;
+        const x = ex + Math.cos(t) * 7, y = ey + Math.sin(t) * 7;
+        if (blocks(World.at(x, y))) px(x - ox, y - oy, oc);
       }
     }
     // spells
@@ -4192,7 +4314,7 @@ const Render = (() => {
       const g = glowGrid[gy * gw + gx];
       if (g < 1.5) continue;
       const m = glowMat[gy * gw + gx];
-      glow(ox + gx * 8 + 4, oy + gy * 8 + 4, 20 + Math.sqrt(g) * 8, m === FIRE || m === EMBER || m === LAVA ? 0xff6a1a : MATS[m].cols[1], 0.05 + g / 90);
+      glow(ox + gx * 8 + 4, oy + gy * 8 + 4, 20 + Math.sqrt(g) * 8, m === FIRE || m === EMBER || m === LAVA ? 0xff6a1a : MATS[m].cols[1], 0.035 + g / 130);
     }
     for (const l of Game.lamps) if (l.lit) glow(l.x, l.y, 70, 0xffa040, 0.3);
     for (const g of Game.glows || []) if (Math.abs(g.y - (oy + vh / 2)) < vh) glow(g.x, g.y - 1, 30, g.c, 0.35);
@@ -4264,13 +4386,13 @@ const Input = (() => {
     inp.down = keys.has("s") || keys.has("arrowdown") || padDown || moveDown;
     if (touchMoveX != null) inp.x = touchMoveX;
     if (padX) inp.x = padX;
-    inp.dig = keys.has("f") || padDig || (digMode && touchCast);
+    inp.dig = keys.has("f") || padDig || digHeld;
     inp.attack = mouseDown || keys.has("j") || padAttack;
-    inp.cast = rightDown || keys.has("k") || (touchCast && !digMode) || padCast;
+    inp.cast = rightDown || keys.has("k") || touchCast || padCast;
     inp.keyAim = keys.has("k") && !rightDown;
   }
   let mouseDown = false, rightDown = false, moveUp = false, moveDown = false, touchMoveX = null, touchCast = false;
-  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false, padDig = false, padAttack = false, digMode = false;
+  let padX = 0, padUp = false, padDown = false, padCast = false, padJump = false, padDig = false, padAttack = false, digHeld = false;
   // a gamepad: left stick moves, A jumps and hovers, X attacks, B rolls, right stick aims, RT or RB shoots, LT digs, Y eats a hot dog
   function pollPad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -4407,12 +4529,17 @@ const Input = (() => {
   stage.addEventListener("touchend", end);
   stage.addEventListener("touchcancel", end);
   const digBtn = $("#digBtn");
-  digBtn.onclick = () => { digMode = !digMode; digBtn.setAttribute("aria-pressed", String(digMode)); sync(); };
+  const hold = (on) => { digHeld = on; digBtn.setAttribute("aria-pressed", String(on)); sync(); };
+  digBtn.addEventListener("touchstart", (e) => { e.preventDefault(); e.stopPropagation(); hold(true); }, { passive: false });
+  digBtn.addEventListener("touchend", (e) => { e.preventDefault(); hold(false); });
+  digBtn.addEventListener("touchcancel", () => hold(false));
+  digBtn.addEventListener("mousedown", () => hold(true));
+  addEventListener("mouseup", () => { if (digHeld) hold(false); });
   const tapBtn = (id, fn) => { const b = $(id); b.addEventListener("touchstart", (e) => { e.preventDefault(); e.stopPropagation(); fn(); }, { passive: false }); b.onclick = fn; };
   tapBtn("#rollBtn", () => { inp.rollEdge = true; });
   tapBtn("#atkBtn", () => { inp.attackEdge = true; });
   tapBtn("#flaskBtn", () => { inp.flaskEdge = true; });
-  return { pollPad, clear() { keys.clear(); mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; moveDown = false; padAttack = false; inp.attackEdge = inp.rollEdge = inp.flaskEdge = false; sync(); } };
+  return { pollPad, clear() { keys.clear(); digHeld = false; mouseDown = false; rightDown = false; touchCast = false; touchMoveX = null; moveUp = false; moveDown = false; padAttack = false; inp.attackEdge = inp.rollEdge = inp.flaskEdge = false; sync(); } };
 })();
 
 /* ------------------------------------------------------------------ the page around the game */
@@ -4428,6 +4555,8 @@ const UI = (() => {
     set("hpFill", "width", Math.max(0, (run.hp / run.maxHp) * 100).toFixed(1) + "%");
     set("manaFill", "width", ((w.mana / w.manaMax) * 100).toFixed(1) + "%");
     set("liftFill", "width", ((p ? p.lift : 1) * 100).toFixed(1) + "%");
+    set("stamFill", "width", ((p ? p.stam : 1) * 100).toFixed(1) + "%");
+    $("#stamFill").classList.toggle("low", !!p && p.stam < 0.25);
     set("goldText", "text", run.gold + "g");
     const down = p && Game.level ? Math.round(clamp(p.y / (Game.level.exitY - 10), 0, 1) * 100) : 0;
     set("depthText", "text", "Depth " + run.depth + (p ? " · " + down + "%" : ""));
@@ -4754,6 +4883,17 @@ const UI = (() => {
     b.querySelector("em").textContent = opts.cost || "";
     return b;
   }
+  // how to fight: the moves and the loop, before your first runs
+  function howto() {
+    return new Promise((resolve) => {
+      $("#howtoWeapon").textContent = MELEE[run.melee].name;
+      $("#howtoCrit").textContent = CRIT_TEXT[MELEE[run.melee].crit];
+      $("#howto").hidden = false;
+      fit();
+      $("#howtoGo").focus({ preventScroll: true });
+      $("#howtoGo").onclick = () => { $("#howto").hidden = true; fit(); resolve(); };
+    });
+  }
   // a scroll of power: the game waits while you pick a stat
   function chooseScroll() {
     return new Promise((resolve) => {
@@ -4921,7 +5061,7 @@ const UI = (() => {
     document.documentElement.style.setProperty("--hudH", Math.round(hudEl.bottom - 8) + "px");
   }
 
-  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, end, insets, fit };
+  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, howto, end, insets, fit };
 })();
 
 /* ------------------------------------------------------------------ flow */
@@ -5002,7 +5142,7 @@ async function enterDepth(first) {
   if (run.depth >= 2 && rnd() < 0.55) { const c = geo.chests.filter((q) => !q.rich); if (c.length) c[(rnd() * c.length) | 0].cursed = true; }
   // reach the drain fast for a bonus
   Game.fastT = 110 + 20 * run.depth;
-  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false;
+  Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false; Game.digDmg = new Uint8Array(W * H); Game.noise = 0;
   Minimap.reset();
   Minimap.reveal(p);
   Game.watchT = 12 + rnd() * 6;
@@ -5079,6 +5219,7 @@ async function startRun() {
   Memory.save();
   run = newRun();
   reaching = false;
+  if (Memory.data.runs <= 3) await UI.howto();
   await enterDepth(true);
 }
 
