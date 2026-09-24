@@ -2,7 +2,7 @@
 
 A fast top-down roguelite for the crew, in the style of Enter the Gungeon. Pick your guy, grab a plunger, and fight across the cottage: the dock, the cabin, the trail, and the beach, six areas a day, then the Porcelain King in the outhouse. The cottage is the director. It builds every area, picks your rewards and wildlife, and remembers how you play. On the live site, [Jev](https://jevapi.dev/) makes those choices through Vercel AI Gateway.
 
-Rename the crew in the `FRIENDS` list near the top of the game script in `public/index.html`.
+Rename the crew in the `FRIENDS` list near the top of the game script in `public/app.js`.
 
 ## Play
 
