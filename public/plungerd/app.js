@@ -1368,7 +1368,12 @@ class Play extends Phaser.Scene {
       this.mouse.x = p.x; this.mouse.y = p.y; this.mouse.t = this.time.now;
       if (p.rightButtonDown()) this.wantRoll = true; else this.mouse.down = true;
     });
-    this.input.on("pointermove", (p) => { if (p.wasTouch) return; this.mouse.x = p.x; this.mouse.y = p.y; this.mouse.t = this.time.now; });
+    // the mouse is tracked across the whole window, so aim follows it past the edges of the game,
+    // and a button let go outside the window does not stay held down
+    const toGame = (e) => { const r = cv.getBoundingClientRect(); this.mouse.x = (e.clientX - r.left) * (this.scale.width / r.width); this.mouse.y = (e.clientY - r.top) * (this.scale.height / r.height); this.mouse.t = this.time.now; this.mouse.used = true; };
+    addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse") return; toGame(e); if (!(e.buttons & 1)) this.mouse.down = false; });
+    addEventListener("pointerup", (e) => { if (e.pointerType === "mouse" && e.button === 0) this.mouse.down = false; });
+    addEventListener("blur", () => { this.mouse.down = false; });
     const up = (p) => { if (p.wasTouch) return; if (!p.rightButtonDown()) this.mouse.down = false; };
     this.input.on("pointerup", up);
     this.input.on("pointerupoutside", up);
@@ -1435,7 +1440,7 @@ class Play extends Phaser.Scene {
   updateCamera(dt) {
     if (!this.player) return;
     const P = this.player, cam = this.cameras.main;
-    const sp = P.sprint || 0, vl = Math.hypot(P.vx, P.vy) || 1, manual = !Settings.oneHand && this.aim && (this.touch.aim || this.time.now - this.mouse.t < 1500);
+    const sp = P.sprint || 0, vl = Math.hypot(P.vx, P.vy) || 1, manual = !Settings.oneHand && this.aim && (this.touch.aim || (this.mouse.used && !this.touch.move));
     const lx = (manual ? this.aim.x * 30 : 0) + (P.vx / vl) * 46 * sp, ly = (manual ? this.aim.y * 30 : 0) + (P.vy / vl) * 46 * sp;
     const lk = 1 - Math.exp(-dt * 3);
     this.lead = this.lead || { x: 0, y: 0 }; this.lead.x += (lx - this.lead.x) * lk; this.lead.y += (ly - this.lead.y) * lk;
@@ -1836,7 +1841,7 @@ class Play extends Phaser.Scene {
       const na = cur + clamp(da * (1 - Math.exp(-dt * 14)), -9 * dt, 9 * dt); this.aim = { x: Math.cos(na), y: Math.sin(na) };
       this.aimOn = Math.abs(da) < 0.18;
     }
-    else if (this.time.now - this.mouse.t < 4000 && !this.touch.move) { const w = this.cameras.main.getWorldPoint(this.mouse.x, this.mouse.y), dx = w.x - P.x, dy = w.y - (P.y - 12), d = Math.hypot(dx, dy); if (d > 4) { this.aim = { x: dx / d, y: dy / d }; this.aimDist = d; } }
+    else if (this.mouse.used && !this.touch.move) { const w = this.cameras.main.getWorldPoint(this.mouse.x, this.mouse.y), dx = w.x - P.x, dy = w.y - (P.y - 12), d = Math.hypot(dx, dy); if (d > 4) { this.aim = { x: dx / d, y: dy / d }; this.aimDist = d; } }
     else if (mi.x || mi.y) { const d = Math.hypot(mi.x, mi.y); this.aim = { x: mi.x / d, y: mi.y / d }; }
     // roll
     if (this.wantRoll) {

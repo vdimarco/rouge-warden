@@ -2,14 +2,22 @@
 
 A fast top-down roguelite for the crew, in the style of Enter the Gungeon. Pick your guy, grab a plunger, and fight across the cottage: the dock, the cabin, the trail, and the beach, six areas a day, then the Porcelain King in the outhouse. The cottage is the director. It builds every area, picks your rewards and wildlife, and remembers how you play. On the live site, [Jev](https://jevapi.dev/) makes those choices through Vercel AI Gateway.
 
-Rename the crew in the `FRIENDS` list near the top of the game script in `public/app.js`.
+Rename the crew in the `FRIENDS` list near the top of the game script in `public/plungerd/app.js`.
+
+## The arcade
+
+The site opens on the Cottage Arcade, a room of old-school cabinets. Drag a token into a machine's coin slot, or tap the slot, then press its Start button. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/` and Down the Drain at `/fall/`. The third machine is out of order.
+
+- On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
+- You start with 3 tokens. The change machine gives you more.
+- Each screen shows your best run from that game, saved in your browser.
 
 ## Play
 
-Deploy to Vercel, or open `public/index.html` in a browser. Opened locally, a built-in stand-in answers for Jev.
+Deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - Move with WASD. Keep moving to break into a sprint.
-- Aim with the mouse and hold the left button to shoot.
+- Aim with the mouse and hold the left button to shoot. The aim keeps following the mouse, even after it leaves the window, and you can keep running with the keys.
 - Roll with Space or the right button. You can't be hit while you roll.
 - E blows the air horn and clears every bullet.
 - Q or 1 to 4 switches guns.
@@ -89,8 +97,10 @@ The game fits the screen on desktop and phone, and nothing scrolls.
 
 | Path | What it does |
 | --- | --- |
-| `public/index.html` | The page for Get Plunger'd |
-| `public/app.js` | The game script, with its images and sounds inside the file |
+| `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
+| `public/arcade/` | The art on the arcade screens |
+| `public/plungerd/index.html` | The page for Get Plunger'd |
+| `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
@@ -99,7 +109,7 @@ The game fits the screen on desktop and phone, and nothing scrolls.
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
 
-The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/index.html` before you run them.
+The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
 
 ## Jev and cost
 
