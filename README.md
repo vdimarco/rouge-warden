@@ -31,6 +31,8 @@ The code checks each pick and can overrule it. For example, it holds back lava w
 
 Controls: A and D move. W or Space jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. On a phone, the left thumb moves and the right thumb aims and casts.
 
+Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
+
 ## Files
 
 | Path | What it does |

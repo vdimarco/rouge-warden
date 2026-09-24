@@ -86,6 +86,9 @@ button { font: inherit; color: inherit; }
 }
 @media (max-width: 420px) { .bar { width: 52px; } #hudMood { display: none; } .hud { gap: 6px; } .wandbar .rc { display: none; } }
 
+.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 12px); top: calc(var(--hudH, 70px) + 8px); height: min(300px, 42vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.92; }
+.mini[hidden] { display: none; }
+.tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
 .bossbar[hidden] { display: none; }
 .bossbar span { font-family: var(--fell); font-size: 20px; text-shadow: 0 2px 8px #000; }
@@ -258,10 +261,12 @@ a { color: var(--accent); }
   <button class="wandbar" id="wandBar" type="button" aria-label="Your wand. Open your stats."></button>
   <span class="hbtn" id="hudGold" aria-label="Gold"><span id="goldText">0</span></span>
   <button id="depthText" type="button">Depth 1</button>
+  <button class="tool" id="mapBtn" type="button" aria-pressed="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="lbl">Map</span></button>
   <button class="tool" id="soundBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span class="lbl">Sound on</span></button>
   <button class="tool" id="fsBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="lbl">Full screen</span></button>
 </header>
 
+<canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the well."></canvas>
 <div class="bossbar" id="bossbar" hidden><span>The Warden's Hand</span><div><i id="bossFill"></i></div></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="joy" id="joyMove" hidden><i></i></div>
@@ -277,7 +282,8 @@ a { color: var(--accent); }
     <p class="sub">The Warden melted its halls. Now every grain falls.</p>
     <p>You carry the lantern down a well of sand, stone, and liquid. Every pixel moves. Fire spreads, water flows, acid eats rock, and oil waits for a spark. Find the glowing well at the bottom of each layer to rest at the landing and change your wand.</p>
     <p>The Warden pours each layer. It picks the stone, the liquids, the gold, and the foes, and it watches you while you fall. When it sees fit, it rains water, drips lava, or opens a rift. Its decisions pop up as it makes them. Tap the eye to see why.</p>
-    <p class="keys">Move with A and D. Jump with W or Space, and hold it in the air to float on your lantern. Aim with the mouse and hold the left button to cast. With keys only, cast with J toward where you move, and hold S to aim down. M turns sound on or off.</p>
+    <p class="keys">Move with A and D. Jump with W or Space, and hold it in the air to float on your lantern. Aim with the mouse and hold the left button to cast. With keys only, cast with J toward where you move, and hold S to aim down. Q shows or hides the map. M turns sound on or off.</p>
+    <p class="keys">Lost? The gold arrow by your lantern points down the route to the well. The map shows what your lantern has lit, and the well always glows on it.</p>
     <p class="keys">On a phone, drag on the left half of the screen to move. Push up to jump and float. Drag on the right half to aim and cast, or tap to cast at a spot.</p>
     <div class="starts"><button class="btn" id="startBtn">Enter the well</button></div>
   </div>
@@ -583,7 +589,7 @@ function newWand() {
   return { slots: 4, spells: ["spark", "spark", "chisel", null], manaMax: 110, mana: 110, regen: 38, castDelay: 0.17, recharge: 0.5, cursor: 0, cdT: 0, rechargeT: 0 };
 }
 function newRun() {
-  return { depth: 1, hp: 100, maxHp: 100, liftMax: 2.2, gold: 0, wand: newWand(), bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  return { depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wand: newWand(), bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
 }
 let run = newRun();
 const isBossDepth = (d) => d % 4 === 0;
@@ -756,9 +762,9 @@ const Warden = (() => {
     miasma: "Miasma: pockets of gas under the ceilings. It explodes into flame when lit.",
   };
   const FORMS = {
-    open: "Open: wide caves, easy to move through.",
-    tunnels: "Tunnels: narrow winding passages.",
-    dense: "Dense: mostly solid, with small hollows. The player must dig.",
+    open: "Open: big halls on the route and many hollows beside it. Easy to move through.",
+    tunnels: "Tunnels: middle-sized rooms and long passages between them.",
+    dense: "Dense: small rooms and few hollows. Side trips need digging.",
   };
 
   function fillQuestion(b, st) {
@@ -900,6 +906,7 @@ const Warden = (() => {
     bands.forEach((b, i) => { if (b.fill === "rock" && ++rock > 2) { notes.push("More than 2 strata of rock. The code made stratum " + (i + 1) + " earth."); b.fill = "earth"; } });
     if (!st.can_dig) bands.forEach((b, i) => { if (b.form === "dense" && b.fill === "rock") { notes.push("Stratum " + (i + 1) + " was dense rock, and the player cannot dig. The code opened it up."); b.form = "tunnels"; } });
     if (st.hp_frac < 0.35 && lava) bands.forEach((b, i) => { if (i < 2 && b.pocket === "lava") { notes.push("The player is badly hurt. The code took the lava out of stratum " + (i + 1) + "."); b.pocket = "none"; } });
+    if (bands.some((b) => b.pocket === "lava" || b.pocket === "acid")) notes.push("Lava and acid pool only in side rooms. The code keeps them off the route.");
     if (boss) notes.push("This is the hand's layer. The code hollowed out the lower strata as its cavern.");
     const theme = A.theme.pick;
     r.lastTheme = theme;
@@ -1431,13 +1438,22 @@ const World = (() => {
   const TOP = 44, BOT = 48;
   const bandOf = (y, x, s) => clamp(Math.floor((y + (vnoise(x / 22, y / 60, s + 3) - 0.5) * 22 - TOP) / ((H - TOP - BOT) / 6)), 0, 5);
 
+  const bandIdx = (y) => clamp(Math.floor((y - TOP) / ((H - TOP - BOT) / 6)), 0, 5);
+  const LIQ = { water: WATER, oil: OIL, lava: LAVA, acid: ACID, sludge: SLUDGE, miasma: MIASMA };
+  const ROOM = { open: [46, 24], tunnels: [36, 19], dense: [27, 15] };
+
   function generate(plan) {
     const s = plan.seed;
+    let rs = s >>> 0;
+    const R = () => { rs = (Math.imul(rs, 1664525) + 1013904223) >>> 0; return rs / 4294967296; };
     applyTheme(THEMES[plan.theme]);
     mat.fill(EMPTY); life.fill(0); clk.fill(0);
     const bgA = theme.bg[0], bgB = theme.bg[1];
     const goldT = plan.gold === "rich" ? 0.8 : 0.88;
     const arenaTop = plan.boss ? H - 330 : H;
+    const floorY = Math.min(arenaTop, H - BOT);
+
+    // 1. solid ground, stratum by stratum
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x;
       shade[i] = (hash2(x, y, s + 5) * 4) | 0;
@@ -1448,15 +1464,9 @@ const World = (() => {
       if (y >= H - BOT) { mat[i] = y > H - 14 ? OBSIDIAN : ROCK; continue; }
       if (y >= arenaTop) continue;
       const band = plan.bands[bandOf(y, x, s)];
-      const n = fbm(x / 34, y / 26, s + band.form.length);
-      let cave;
-      if (band.form === "open") cave = n > 0.5;
-      else if (band.form === "tunnels") cave = Math.abs(fbm(x / 38, y / 38, s + 11) - 0.5) < 0.04 || n > 0.68;
-      else cave = n > 0.66;
-      if (cave) continue;
       let m = EARTH;
       const v = vnoise(x / 9, y / 9, s + 21);
-      if (band.fill === "sand") m = v > 0.72 ? ROCK : SAND;
+      if (band.fill === "sand") m = v > 0.75 ? ROCK : v > 0.35 ? SAND : EARTH;
       else if (band.fill === "rock") m = v > 0.75 ? EARTH : ROCK;
       else if (band.fill === "bone") m = v > 0.55 ? BONE : EARTH;
       else if (band.fill === "roots") m = Math.abs(vnoise(x / 4, y / 30, s + 31) - 0.5) < 0.07 ? WOOD : v > 0.8 ? ROCK : EARTH;
@@ -1467,60 +1477,146 @@ const World = (() => {
       if (m !== ROCK && m !== OBSIDIAN && vnoise(x / 5, y / 5, s + 99) > goldT) m = GOLD;
       mat[i] = m;
     }
-    // a winding path from the top to the well, so every layer can be crossed
-    let px = W / 2;
-    const pathX = new Float32Array(H);
-    for (let y = 14; y < H - 20; y++) {
-      px += (vnoise(y / 40, 5, s) - 0.5) * 2.4;
-      px = clamp(px, 22, W - 22);
-      const r = 4 + 3 * vnoise(y / 16, 9, s);
-      carve(px, y, r);
-      pathX[y] = px;
+
+    // 2. small hollows for texture and side trips
+    for (let y = TOP + 20; y < floorY - 10; y++) for (let x = 6; x < W - 6; x++) {
+      const band = plan.bands[bandIdx(y)];
+      const t = band.form === "open" ? 0.69 : band.form === "tunnels" ? 0.72 : 0.76;
+      if (fbm(x / 26, y / 20, s + 71) > t) mat[y * W + x] = EMPTY;
     }
-    const exitX = Math.round(clamp(px, 34, W - 34));
-    for (let y = H - BOT - 6; y < H - 14; y++) for (let x = exitX - 26; x <= exitX + 26; x++) {
-      const dx = (x - exitX) / 26, dy = (y - (H - 22)) / 26;
-      if (dx * dx + dy * dy < 1 && inb(x, y) && mat[y * W + x] !== BEDROCK) mat[y * W + x] = EMPTY;
+
+    // 3. the route: rooms that zigzag down the layer, joined by wide sloped tunnels
+    const rooms = [];
+    let side = R() < 0.5 ? 0 : 1, y = TOP + 40;
+    for (let k = 0; k < 14; k++) {
+      const band = plan.bands[bandIdx(y)];
+      const [bw, bh] = ROOM[band.form];
+      const rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3);
+      if (y + rh * 0.6 > floorY - 30) break;
+      const mid = R() < 0.25;
+      const x = mid ? W / 2 + (R() - 0.5) * 40 : side ? W - 18 - rw - R() * 36 : 18 + rw + R() * 36;
+      rooms.push({ x, y, rw, rh, band, main: true });
+      if (!mid) side ^= 1;
+      y += rh * 0.6 + 30 + R() * 16 + ROOM[plan.bands[bandIdx(y + 50)].form][1];
     }
+    for (const r of rooms) carveRoom(r, s);
+    // the path the compass follows: tunnel center lines, and a walk across each room
+    const path = [];
+    const seg = (x1, y1, x2, y2) => { const n = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 3); for (let k = 0; k <= n; k++) path.push({ x: x1 + (x2 - x1) * k / n, y: y1 + (y2 - y1) * k / n }); };
+    let inX = W / 2, inY = TOP - 6;
+    const walk = (x, y) => { seg(inX, inY, x, y); };
+    const enter = rooms[0];
+    for (let k = 0; k < 10; k++) carve(W / 2, TOP - 4 + k, 12 - k * 0.5);
+    tunnel(W / 2, TOP - 6, enter.x, enter.y - enter.rh * 0.5, 7, s, path);
+    inX = enter.x; inY = enter.y + enter.rh * 0.6 - 5;
+    for (let k = 0; k + 1 < rooms.length; k++) {
+      const a = rooms[k], b = rooms[k + 1], dir = Math.sign(b.x - a.x) || 1;
+      const ox = a.x + dir * a.rw * 0.55, oy = a.y + a.rh * 0.2;
+      walk(ox, Math.min(oy, a.y + a.rh * 0.6 - 5));
+      tunnel(ox, oy, b.x - dir * b.rw * 0.35, b.y - b.rh * 0.5, 6.5, s, path);
+      inX = b.x - dir * b.rw * 0.35; inY = b.y + b.rh * 0.6 - 5;
+    }
+    const last = rooms[rooms.length - 1];
+    const exitX = Math.round(clamp(last.x + (R() - 0.5) * 60, 40, W - 40));
     if (plan.boss) {
-      // the hand's cavern: ledges of rock to stand on
+      // the hand's cavern: a sealed ceiling with one hole, and rock ledges to stand on
+      walk(last.x, last.y + last.rh * 0.2);
+      tunnel(last.x, last.y, last.x, arenaTop + 6, 7, s, path);
+      seg(last.x, arenaTop + 6, exitX, H - 22);
+      for (let x = 2; x < W - 2; x++) for (let yy = arenaTop - 5; yy < arenaTop; yy++) if (Math.abs(x - last.x) > 8) mat[yy * W + x] = ROCK;
       for (let k = 0; k < 7; k++) {
         const ly = arenaTop + 40 + k * 38, lx = 20 + ((hash2(k, 3, s) * (W - 70)) | 0), lw = 26 + ((hash2(k, 4, s) * 20) | 0);
-        for (let x = lx; x < lx + lw && x < W - 2; x++) for (let y = ly; y < ly + 4; y++) mat[y * W + x] = ROCK;
+        for (let x = lx; x < lx + lw && x < W - 2; x++) for (let yy = ly; yy < ly + 4; yy++) mat[yy * W + x] = ROCK;
       }
-      for (let x = 2; x < W - 2; x++) for (let y = arenaTop - 5; y < arenaTop; y++) if (Math.abs(x - pathX[y]) > 7) mat[y * W + x] = ROCK;
+    } else { walk(last.x, last.y + last.rh * 0.2); tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s, path); seg(exitX, H - BOT + 4, exitX, H - 22); }
+    for (let yy = H - BOT - 6; yy < H - 14; yy++) for (let x = exitX - 26; x <= exitX + 26; x++) {
+      const dx = (x - exitX) / 26, dy = (yy - (H - 22)) / 26;
+      if (dx * dx + dy * dy < 1 && inb(x, yy) && mat[yy * W + x] !== BEDROCK) mat[yy * W + x] = EMPTY;
     }
-    // moss grows on cave floors in the overgrown hall
+
+    // 4. side rooms off the route: gold, or the stratum's liquid
+    const sides = [];
+    for (const r of rooms) {
+      if (R() > 0.6) continue;
+      const rw = 13 + R() * 8, rh = 9 + R() * 4;
+      const left = r.x > W / 2;
+      const x = left ? clamp(r.x - r.rw - 22 - rw, 10 + rw, W - 10 - rw) : clamp(r.x + r.rw + 22 + rw, 10 + rw, W - 10 - rw);
+      if (Math.abs(x - r.x) < r.rw + rw) continue;
+      const sr = { x, y: r.y + (R() - 0.3) * 10, rw, rh, band: r.band, main: false };
+      carveRoom(sr, s);
+      tunnel(r.x + (left ? -1 : 1) * r.rw * 0.6, r.y - r.rh * 0.1, sr.x + (left ? 1 : -1) * sr.rw * 0.5, sr.y - sr.rh * 0.55, 5, s);
+      sides.push(sr);
+    }
+
+    // 5. sand keeps a crust of earth, so rooms do not fill in on their own
+    for (let yy = TOP; yy < floorY; yy++) for (let x = 3; x < W - 3; x++) {
+      const i = yy * W + x;
+      if (mat[i] !== SAND) continue;
+      for (let d = 1; d <= 3; d++) if (mat[i - d * W] === EMPTY || mat[i + d * W] === EMPTY || mat[i - d] === EMPTY || mat[i + d] === EMPTY) { mat[i] = EARTH; break; }
+    }
+    // gold in the walls of the route stays put until you dig it
+    for (let yy = TOP; yy < floorY; yy++) for (let x = 3; x < W - 3; x++) {
+      const i = yy * W + x;
+      if (mat[i] === GOLD && mat[i + W] === EMPTY) mat[i] = EARTH;
+    }
+
+    // 6. liquids: shallow pools on the route, deep ones in side rooms. Lava and acid stay off the route.
+    // route rooms hold their liquid in a basin cut below the floor, so it does not drain down the route
+    const basin = (r, m) => {
+      const k = rooms.indexOf(r), nx2 = k + 1 < rooms.length ? rooms[k + 1].x : exitX, away = -(Math.sign(nx2 - r.x) || 1);
+      const bx = r.x + away * r.rw * 0.4, top = r.y + r.rh * 0.6 - 1, bw = r.rw * 0.33, bd = 7;
+      for (let yy = top; yy < top + bd; yy++) for (let x = bx - bw; x <= bx + bw; x++) {
+        const nx = (x - bx) / bw, ny = (yy - top) / bd;
+        if (nx * nx + ny * ny < 1 && inb(x, yy) && mat[(yy | 0) * W + (x | 0)] !== BEDROCK) { mat[(yy | 0) * W + (x | 0)] = m; life[(yy | 0) * W + (x | 0)] = 0; }
+      }
+    };
+    for (const r of rooms) {
+      const m = LIQ[r.band.pocket];
+      if (m === MIASMA) fillRoom(r, m, -0.9, -0.5);
+      else if (m === WATER || m === OIL || m === SLUDGE) basin(r, m);
+    }
+    for (const r of sides) {
+      const p = r.band.pocket, m = LIQ[p];
+      if (m === MIASMA) fillRoom(r, m, -1, 0.2);
+      else if (m) fillRoom(r, m, 0.1, 0.62);
+      else if (R() < 0.7) for (let k = 0; k < 40 + (plan.gold === "rich" ? 50 : 0); k++) { const gx = (r.x + (R() - 0.5) * r.rw) | 0, gy = (r.y + r.rh * 0.3 - R() * 6) | 0; if (mat[gy * W + gx] === EMPTY) mat[gy * W + gx] = GOLD; }
+    }
+    if (plan.theme === "cistern") for (const r of rooms) if (!LIQ[r.band.pocket] && R() < 0.5) basin(r, WATER);
+    // moss grows on floors in the overgrown hall
     if (plan.theme === "garden") for (let i = W; i < N - W; i++) if ((mat[i] === EARTH || mat[i] === WOOD) && mat[i - W] === EMPTY && rnd() < 0.7) mat[i] = MOSS;
-    // liquids and gas in the caves
-    plan.bands.forEach((band, b) => {
-      if (band.pocket === "none") return;
-      const m = { water: WATER, oil: OIL, lava: LAVA, acid: ACID, sludge: SLUDGE, miasma: MIASMA }[band.pocket];
-      const y0 = TOP + (b * (H - TOP - BOT)) / 6, y1 = y0 + (H - TOP - BOT) / 6;
-      if (y0 >= arenaTop) return;
-      for (let k = 0; k < 5; k++) {
-        for (let tries = 0; tries < 60; tries++) {
-          const x = 8 + ((rnd() * (W - 16)) | 0), y = (y0 + rnd() * (y1 - y0)) | 0;
-          if (y < TOP + 20 || y >= Math.min(arenaTop, H - BOT) || mat[y * W + x] !== EMPTY) continue;
-          const r = 4 + rnd() * 5;
-          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-            if (dx * dx + dy * dy > r * r) continue;
-            const j = ((y + dy) | 0) * W + ((x + dx) | 0);
-            if (mat[j] === EMPTY) { mat[j] = m; life[j] = 0; }
-          }
-          break;
-        }
-      }
-    });
-    if (plan.theme === "cistern") {
-      for (let k = 0; k < 6; k++) {
-        const x = 10 + ((rnd() * (W - 20)) | 0), y = (TOP + 30 + rnd() * (Math.min(arenaTop, H - BOT) - TOP - 60)) | 0;
-        for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const j = (y + dy) * W + x + dx; if (mat[j] === EMPTY) mat[j] = WATER; }
-      }
-    }
-    for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if (x < 2 || x >= W - 2 || y < 2 || y >= H - 2) mat[y * W + x] = BEDROCK;
+    for (let x = 0; x < W; x++) for (let yy = 0; yy < H; yy++) if (x < 2 || x >= W - 2 || yy < 2 || yy >= H - 2) mat[yy * W + x] = BEDROCK;
     next.fill(1);
-    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop };
+    const route = [{ x: W / 2, y: TOP }].concat(rooms.map((r) => ({ x: r.x, y: r.y }))).concat(plan.boss ? [{ x: last.x, y: arenaTop + 20 }] : []).concat([{ x: exitX, y: H - 20 }]);
+    return { exitX, exitY: H - 17, spawnX: W / 2, spawnY: 22, arenaTop, route, rooms, path };
+  }
+  // a room: an ellipse with a rough wall and a flat floor
+  function carveRoom(r, s) {
+    for (let dy = -r.rh - 3; dy <= r.rh; dy++) for (let dx = -r.rw - 4; dx <= r.rw + 4; dx++) {
+      const x = (r.x + dx) | 0, y = (r.y + dy) | 0;
+      if (x < 3 || y < 3 || x >= W - 3 || y >= H - 3) continue;
+      if (dy > r.rh * 0.6 + (vnoise(x / 6, 3, s + 62) - 0.5) * 3) continue;
+      const nx = dx / r.rw, ny = dy / r.rh;
+      if (nx * nx + ny * ny + (vnoise(x / 7, y / 7, s + 61) - 0.5) * 0.5 < 1) { mat[y * W + x] = EMPTY; life[y * W + x] = 0; }
+    }
+  }
+  // a passage with a gentle wobble, wide enough to walk or fall through
+  function tunnel(x1, y1, x2, y2, r, s, path) {
+    const n = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) | 0;
+    for (let k = 0; k <= n; k++) {
+      const t = n ? k / n : 0;
+      const w = (vnoise(k / 18, 7, s + 63) - 0.5) * 10 * Math.sin(t * Math.PI);
+      const x = x1 + (x2 - x1) * t + w, y = y1 + (y2 - y1) * t;
+      carve(x, y, r + (vnoise(k / 9, 8, s + 64) - 0.5) * 2);
+      if (path && k % 3 === 0) path.push({ x, y: y + r * 0.5 });
+    }
+  }
+  // fill part of a room with a liquid or gas, between two heights given as fractions of its half height
+  function fillRoom(r, m, from, to) {
+    for (let y = (r.y + r.rh * from) | 0; y <= r.y + r.rh * to; y++) for (let x = (r.x - r.rw - 4) | 0; x <= r.x + r.rw + 4; x++) {
+      if (!inb(x, y)) continue;
+      const i = y * W + x;
+      if (mat[i] === EMPTY) { mat[i] = m; life[i] = 0; }
+    }
   }
   function carve(cx, cy, r) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -1560,7 +1656,7 @@ function moveBody(e, dx, dy) {
     if (!boxHits(e.x + s, e.y, e.w, e.h)) e.x += s;
     else {
       let ok = false;
-      if (e.climb && e.ground) for (let up = 1; up <= e.climb; up++) if (!boxHits(e.x + s, e.y - up, e.w, e.h)) { e.x += s; e.y -= up; ok = true; break; }
+      if (e.climb && (e.ground || e.ledge)) for (let up = 1; up <= e.climb + (e.ground ? 0 : 2); up++) if (!boxHits(e.x + s, e.y - up, e.w, e.h)) { e.x += s; e.y -= up; ok = true; break; }
       if (!ok) { hitX = true; e.vx = 0; break; }
     }
     rem -= s;
@@ -1613,7 +1709,7 @@ const Game = {
 };
 
 function makePlayer(x, y) {
-  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 2, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0 };
+  return { x, y, w: 5, h: 10, vx: 0, vy: 0, ground: false, climb: 3, ledge: true, face: 1, lift: 1, burn: 0, poison: 0, hurtT: 0, aegisT: 0, flash: 0, envT: 0 };
 }
 function makeFoe(kind, x, y) {
   const d = FOES[kind];
@@ -1874,16 +1970,16 @@ function updatePlayer(dt) {
   const accel = p.ground ? 0.34 : 0.2;
   p.vx += inp.x * accel;
   p.vx *= p.ground ? 0.78 : inLiquid ? 0.86 : 0.93;
-  p.vx = clamp(p.vx, -1.7, 1.7);
+  p.vx = clamp(p.vx, -1.9, 1.9);
   if (inp.x) p.face = inp.x > 0 ? 1 : -1;
   p.vy += inLiquid ? 0.05 : 0.15;
-  if (inp.jumpEdge && p.ground) { p.vy = -2.9; }
+  if (inp.jumpEdge && p.ground) { p.vy = -3.3; }
   else if (inp.up && !p.ground && p.lift > 0 && p.vy > -2.1) {
     p.vy -= 0.34;
     p.lift = Math.max(0, p.lift - dt / run.liftMax);
   }
   if (inLiquid) { p.vy *= 0.9; if (inp.up) p.vy -= 0.12; }
-  if (p.ground) p.lift = Math.min(1, p.lift + dt / 0.8);
+  if (p.ground) p.lift = Math.min(1, p.lift + dt / 0.6);
   p.vy = clamp(p.vy, -3.2, 4);
   inp.jumpEdge = false;
   moveBody(p, p.vx, p.vy);
@@ -1902,6 +1998,20 @@ function updatePlayer(dt) {
   // the well
   const L = Game.level;
   if (L && Math.hypot(p.x + p.w / 2 - L.exitX, p.y + p.h - L.exitY) < 10 && (!L.boss || L.handDead)) reachWell();
+}
+// the next point on the route below the player, or the well
+function routeTarget(p) {
+  const L = Game.level;
+  if (!L || !L.path || !L.path.length) return null;
+  if (L.boss && !L.handDead && p.y > L.arenaTop) return null;
+  // the nearest point on the path, searched near the last one, then a few steps ahead of it
+  const cx = p.x + 2, cy = p.y + 5, path = L.path;
+  let best = L.pathI || 0, bd = 1e9;
+  const from = Math.max(0, best - 40), to = Math.min(path.length, best + 60);
+  for (let i = from; i < to; i++) { const d = (path[i].x - cx) ** 2 + (path[i].y - cy) ** 2; if (d < bd) { bd = d; best = i; } }
+  if (bd > 50 * 50) for (let i = 0; i < path.length; i++) { const d = (path[i].x - cx) ** 2 + (path[i].y - cy) ** 2; if (d < bd) { bd = d; best = i; } }
+  L.pathI = best;
+  return best + 10 < path.length ? path[best + 10] : { x: L.exitX, y: L.exitY - 4 };
 }
 function aimAngle() {
   const p = Game.player, inp = Game.input;
@@ -2243,6 +2353,18 @@ const Render = (() => {
       px(lx - ox, p.y + 5 - oy, World.abgr(0xffd070));
       px(lx - ox, p.y + 6 - oy, World.abgr(0xffb040));
       if (p.aegisT > 0) for (let a = 0; a < 24; a++) { const t = a / 24 * Math.PI * 2; if ((a + (tk >> 2)) % 3) px(p.x + 2 + Math.cos(t) * 8 - ox, p.y + 5 + Math.sin(t) * 9 - oy, World.abgr(0xb39ddb)); }
+      // the lantern's compass points down the route toward the well
+      const tgt = routeTarget(p);
+      if (tgt) {
+        const dx = tgt.x - (p.x + 2), dy = tgt.y - (p.y + 5), d = Math.hypot(dx, dy);
+        if (d > 10) {
+          const ux = dx / d, uy = dy / d, cx0 = p.x + 2 + ux * 11, cy0 = p.y + 5 + uy * 11;
+          const col = World.abgr(((tk >> 4) & 1) ? 0xe6c35c : 0xfff0a0);
+          for (let k = 0; k < 4; k++) px(cx0 + ux * k - ox, cy0 + uy * k - oy, col);
+          px(cx0 + ux * 2 - uy * 2 - ox, cy0 + uy * 2 + ux * 2 - oy, col);
+          px(cx0 + ux * 2 + uy * 2 - ox, cy0 + uy * 2 - ux * 2 - oy, col);
+        }
+      }
       // aim mark
       const a = aimAngle();
       px(p.x + 2 + Math.cos(a) * 14 - ox, p.y + 4 + Math.sin(a) * 14 - oy, World.abgr(0xe4dccb));
@@ -2291,6 +2413,48 @@ const Render = (() => {
   return { resize, draw, toWorld, get vw() { return vw; }, get vh() { return vh; } };
 })();
 
+/* ------------------------------------------------------------------ the map */
+
+// A small map of the layer. You see what your lantern has lit. The well always shows.
+const Minimap = (() => {
+  const c = $("#mini"), ctx = c.getContext("2d");
+  const MW = W / 4, MH = H / 4;
+  c.width = MW; c.height = MH;
+  const seen = new Uint8Array(MW * MH);
+  const img = ctx.createImageData(MW, MH), b32 = new Uint32Array(img.data.buffer);
+  let on = !matchMedia("(pointer: coarse)").matches;
+  try { const v = localStorage.getItem("wardenfall.map"); if (v) on = v === "1"; } catch (e) { /* storage off */ }
+  const FOG = World.abgr(0x07090d), OPEN = World.abgr(0x2c3342), WALL = World.abgr(0x5a6272), ME = 0xffffffff, WELL = World.abgr(0xe6c35c), FOE = World.abgr(0xd0485f);
+  function reveal(p) {
+    const cx = (p.x + 2) >> 2, cy = (p.y + 5) >> 2, r = 12;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      const x = cx + dx, y = cy + dy;
+      if (x >= 0 && y >= 0 && x < MW && y < MH) seen[y * MW + x] = 1;
+    }
+  }
+  function draw() {
+    if (!on || !Game.level) return;
+    const mat = World.mat, PAL = World.PAL;
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+      const k = y * MW + x;
+      if (!seen[k]) { b32[k] = FOG; continue; }
+      const m = mat[(y * 4 + 2) * W + x * 4 + 2], kd = KIND[m];
+      b32[k] = m === EMPTY || kd === K.GAS || kd === K.FIRE ? OPEN : kd === K.LIQUID || m === GOLD ? PAL[m * 4] : WALL;
+    }
+    const dot = (wx, wy, c, r) => { const x0 = (wx >> 2), y0 = (wy >> 2); for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = x0 + dx, y = y0 + dy; if (x >= 0 && y >= 0 && x < MW && y < MH) b32[y * MW + x] = c; } };
+    const L = Game.level;
+    if (((World.tick >> 4) & 1) || !(!L.boss || L.handDead)) dot(L.exitX, L.exitY - 4, WELL, 1);
+    for (const f of Game.foes) if (f.d.ai === "hand" && f.awake) dot(f.x + f.w / 2, f.y + f.h / 2, FOE, 1);
+    const p = Game.player;
+    if (p && !run.over) dot(p.x + 2, p.y + 5, ME, 1);
+    ctx.putImageData(img, 0, 0);
+  }
+  function show() { c.hidden = !on || !Game.level; $("#mapBtn").setAttribute("aria-pressed", String(on)); }
+  function toggle() { on = !on; try { localStorage.setItem("wardenfall.map", on ? "1" : "0"); } catch (e) { /* storage off */ } show(); draw(); }
+  return { reset() { seen.fill(0); show(); }, reveal, draw, toggle, show };
+})();
+
 /* ------------------------------------------------------------------ input */
 
 const Input = (() => {
@@ -2316,6 +2480,7 @@ const Input = (() => {
       sync();
     }
     if (k === "m") UI.sound(SFX.toggle());
+    if (k === "q") Minimap.toggle();
     if (k === "escape" || k === "tab") { e.preventDefault(); UI.sheet(true, "stats"); }
   });
   addEventListener("keyup", (e) => { keys.delete(e.key.toLowerCase()); sync(); });
@@ -2401,7 +2566,8 @@ const UI = (() => {
     set("manaFill", "width", ((w.mana / w.manaMax) * 100).toFixed(1) + "%");
     set("liftFill", "width", ((p ? p.lift : 1) * 100).toFixed(1) + "%");
     set("goldText", "text", String(run.gold));
-    set("depthText", "text", "Depth " + run.depth + (Game.level ? ", " + THEMES[Game.level.theme].name.toLowerCase() : "") + (Game.level && Game.level.boss ? ", the hand's cavern" : ""));
+    const down = p && Game.level ? Math.round(clamp(p.y / (Game.level.exitY - 10), 0, 1) * 100) : 0;
+    set("depthText", "text", "Depth " + run.depth + (Game.level ? ", " + THEMES[Game.level.theme].name.toLowerCase() : "") + (Game.level && Game.level.boss ? ", the hand's cavern" : "") + (p ? ", " + down + "% down" : ""));
     const key = w.spells.join(",") + "|" + w.cursor;
     if (key !== wandKey) {
       wandKey = key;
@@ -2787,7 +2953,7 @@ async function enterDepth(first) {
   for (const kind of plan.foes) {
     const d = FOES[kind];
     for (let tries = 0; tries < 400; tries++) {
-      const x = 6 + rnd() * (W - 16), y = 90 + rnd() * (Math.min(geo.arenaTop, H - 60) - 90);
+      const x = 6 + rnd() * (W - 16), y = 110 + rnd() * (Math.min(geo.arenaTop, H - 60) - 110);
       if (boxHits(x, y, d.w, d.h)) continue;
       if (d.ai !== "fly" && !boxHits(x, y + 1, d.w, d.h)) continue;
       if (placed.some((q) => Math.hypot(q.x - x, q.y - y) < 22)) continue;
@@ -2803,6 +2969,8 @@ async function enterDepth(first) {
     Game.foes.push(hand);
   }
   Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0;
+  Minimap.reset();
+  Minimap.reveal(p);
   Game.watchT = 12 + rnd() * 6;
   Game.handT = 3;
   run.lowBarked = run.hp / run.maxHp < 0.3;
@@ -2873,7 +3041,7 @@ async function startRun() {
 
 /* the loop */
 
-let lastT = performance.now(), acc = 0;
+let lastT = performance.now(), acc = 0, mapFrame = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastT) / 1000);
@@ -2890,7 +3058,7 @@ function frame(now) {
   }
   const p = Game.player;
   if (p) {
-    const tx = p.x + 2, ty = p.y + 5 + 18;
+    const tx = p.x + 2, ty = p.y + 5 + 18 + clamp(p.vy * 8, -8, 24);
     Game.cam.x += (tx - Game.cam.x) * 0.12;
     Game.cam.y += (ty - Game.cam.y) * 0.12;
     Game.cam.x = clamp(Game.cam.x, Render.vw / 2, W - Render.vw / 2);
@@ -2900,6 +3068,7 @@ function frame(now) {
   Game.cam.shake *= 0.86;
   if (Game.level || Game.state === "loading") Render.draw(dt);
   if (Game.state === "play" || Game.state === "loading") UI.hud();
+  if ((++mapFrame & 7) === 0) Minimap.draw();
 }
 function tickGame(dt) {
   if (Game.state === "loading" || Game.state === "intro") return;
@@ -2907,6 +3076,7 @@ function tickGame(dt) {
   if (Game.state === "play") {
     Game.levelT += dt;
     updatePlayer(dt);
+    if ((World.tick & 3) === 0 && Game.player) Minimap.reveal(Game.player);
     updateFoes(dt);
     Game.watchT -= dt;
     if (Game.watchT <= 0 && !Game.watchBusy && Game.levelT > 6) { Game.watchT = 15 + rnd() * 8; wardenWatch(); }
@@ -2942,6 +3112,8 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidd
 document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); }; });
 $("#forgetBtn").onclick = () => { Memory.reset(); UI.sheet(true, "memory"); };
 $("#soundBtn").onclick = () => UI.sound(SFX.toggle());
+$("#mapBtn").onclick = () => Minimap.toggle();
+$("#mini").onclick = () => Minimap.toggle();
 $("#fsBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); };
 requestAnimationFrame(frame);
 </script>
