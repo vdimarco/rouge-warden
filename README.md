@@ -16,28 +16,34 @@ Deploy to Vercel, or open `public/index.html` in a browser. Opened locally, a bu
 - R reloads. Tap R again in the gold part of the bar to reload at once and heat up the next clip.
 - On a phone with "One hand" on, drag anywhere to move and you shoot the nearest critter on your own. Flick to roll, tap the air horn to clear bullets, and tap your gun to switch. With "One hand" off, the left thumb moves and the right thumb aims and shoots.
 
-## Wardenfall
+## Down the Drain
 
-Wardenfall is a spin-off of the Warden build in `legacy/`, at `/fall/`. It plays like Noita. The Warden melted its halls, and every pixel now moves. You carry the lantern down a well of sand, stone, and liquid. Sand and gold fall. Water, oil, lava, acid, sludge, and blood flow. Fire spreads through wood, moss, oil, and miasma. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water. You carry up to three wands. Each wand casts its spells from left to right, then recharges, and each has its own slots, mana, cast speed, and spread. Some wands shuffle their spells, and some cast a spell of their own every time. You find wands in side rooms and buy them at the landing. Modifiers change the next spell: Seeker makes it home in on foes, Scatter fires it three times, and Payload makes a shot carry the next spell and cast it where it lands.
+Down the Drain is a spin-off at `/fall/`. It plays like Noita, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water.
 
-Jev runs the environment through the same `/api/warden` function:
+Pick one of the five friends on the title screen. Each one has a perk: Tank Top hits 20% harder, Fifty-One has 25 more health, Shades has a 12% crit chance, New Balance digs 40% faster, and Red Jersey moves 12% faster. The game starts on the friend you last picked in Get Plunger'd.
 
-- **Each layer.** One call asks 32 questions: the look, then the fill, liquid, and cave shape of six strata, then the gold, the foe count, ten foe slots, and a voice line.
-- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your wand. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, foes, or quench. It also picks where. An eye opens on the ceiling before anything pours.
-- **The hand.** Every fourth layer ends in the hand's cavern. Jev picks what the hand pours from its palm.
-- **The landing.** Between layers, Jev stocks three free spells and two items for gold, and it decides how much you heal.
+You carry up to three guns. Each gun fires its shots from left to right, then reloads. Each gun has its own slots, pressure, fire rate, and spread. Some guns shuffle their shots, and some fire a shot of their own every time. Shots include the Plunger Shot, Nail, Sparkler, Roman Candle, Propane Tank, Drain Cleaner, Frisbee, Bug Zapper, Water Balloon, and Bottle Rocket. Modifiers change the next shot: Binoculars make it home in on critters, TP Spread fires it three times, and Care Package makes a shot carry the next shot and fire it where it lands. You find guns in side rooms and buy them at the snack bar.
 
-The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging spell when your wand cannot dig. Every override shows in the Warden tab.
+The critters are raccoons, hornets, seagulls, bats, skunks, moose, and geese. They use the same drawings as the main game. Every fourth layer ends at a boss: the Porcelain King, then Gabe the Mountain Man, Christian the Mystic, and Ryu.
 
-Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. 1, 2, 3, or the mouse wheel changes wands, E takes a wand from the ground, and F or Shift digs. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, RT casts, LT digs, Y changes wands, and X takes a wand. On a phone, the left thumb moves, the right thumb aims and casts, the Dig button turns the right thumb into a digger, and you tap a wand in the bar to hold it.
+The Cottage runs the environment through the same `/api/warden` function, with Jev:
 
-The game fits the screen on desktop and phone, and nothing scrolls. The Warden's decisions show as one line under the eye. Tap the line or the eye for the full record.
+- **Each layer.** One call asks 35 questions: the look (the cellar, the septic tank, the crawlspace, or under the sauna), then the fill, liquid, and cave shape of six strata, then the gold, the critter count, two set pieces, the sealed rooms, ten critter slots, and a voice line.
+- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your gun. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, critters, or quench. It also picks where. A drain pipe opens on the ceiling before anything pours.
+- **The boss.** Jev picks what the Cottage pours into the boss fight.
+- **The snack bar.** Between layers, Jev stocks three free shots and two items for gold, and it decides how much you heal.
 
-Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Rooms come in kinds: halls, pillared halls, shafts with ledges, domes, and chasms with a wooden bridge. Lamps hang on chains and break into burning oil when shot. Chests hold gold, and sometimes a spell or a wand. Jev picks two set pieces for each layer: falls from a hidden reservoir, an ossuary, a great root, a sealed vault you must dig into, or a cellar of oil casks.
+The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging shot when your gun cannot dig. Every override shows in the Cottage tab.
 
-You cannot run past the foes. Most of them wait in the rooms on the route. Some rooms seal with Warden glass when you enter, and they stay shut until two waves of foes are dead. The last room before the well always seals, and Jev picks how many others do. The Shade hangs back and dashes at you, and elites wear a gold mark.
+Controls: A and D move. W, Space, or the right mouse button jumps, and holding it hovers you on your leaf blower. Aim with the mouse and hold the left button to shoot. 1, 2, 3, or the mouse wheel changes guns, E takes a gun from the ground, and F or Shift digs with your plunger. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and hovers, the right stick aims, RT shoots, LT digs, Y changes guns, and X takes a gun. On a phone, the left thumb moves, the right thumb aims and shoots, the Dig button turns the right thumb into a digger, and you tap a gun in the bar to hold it.
 
-Hold F or Shift to dig with your lantern: soft ground goes fast, rock slowly, and Warden glass not at all. You also wade through loose sand, so a sandfall never traps you. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
+The game fits the screen on desktop and phone, and nothing scrolls. The Cottage's decisions show as one line under the cottage icon. Tap the line or the icon for the full record.
+
+Each layer is a route of rooms that zigzag down to the drain, joined by wide sloped tunnels, with side rooms for gold and liquids. Lamps hang on chains and break into burning oil when shot. Coolers hold gold, and sometimes a shot or a gun. Jev picks two set pieces for each layer: falls from a hidden reservoir, an ossuary, a great root, a sealed vault you must dig into, or a cellar of oil drums.
+
+You cannot run past the critters. Most of them wait in the rooms on the route. Some rooms slam shut with screen doors when you enter, and they stay shut until two waves of critters are dead. The last room before the drain always shuts, and Jev picks how many others do.
+
+The crew and boss pictures are in `public/fall/art/`. They come from the images in `public/app.js`.
 
 ## Files
 
@@ -46,7 +52,8 @@ Hold F or Shift to dig with your lantern: soft ground goes fast, rock slowly, an
 | `public/index.html` | The page for Get Plunger'd |
 | `public/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
-| `public/fall/index.html` | Wardenfall: the falling-sand simulation, the wands, and the Warden's questions, in one file with no libraries |
+| `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |

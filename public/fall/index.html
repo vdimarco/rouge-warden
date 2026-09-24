@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#07090d">
+<meta name="theme-color" content="#0b0f16">
+<meta name="description" content="Get Plunger'd: Down the Drain. The outhouse backed up. Take a plunger down through a falling-sand world under the cottage.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Wardenfall</title>
+<title>Down the Drain</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <style>
 :root {
   box-sizing: border-box;
@@ -24,11 +25,11 @@
   --panel: rgba(18, 22, 31, 0.86);
   --solid: #141924;
   --line: rgba(228, 220, 203, 0.16);
-  --accent: #e6c35c;
+  --accent: #ffcf4a;
   --eye-white: #e4dccb;
   --iris: #e6c35c;
   --mana: #6f97ef;
-  --fell: "IM Fell English", "Iowan Old Style", Georgia, serif;
+  --fell: "Bungee", "Arial Black", Impact, sans-serif;
   --sans: "Alegreya Sans", "Gill Sans", "Trebuchet MS", system-ui, sans-serif;
   --fire: #e0703a; --poison: #8fb83f; --storm: #7fa8ff; --blade: #d9cfb8; --swift: #4fb3a6; --ward: #b39ddb; --blood: #d0485f;
 }
@@ -48,10 +49,9 @@ button { font: inherit; color: inherit; }
 #world { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 /* the eye */
-.eye { width: 18px; height: 18px; border-radius: 75% 0; transform: rotate(45deg); background: var(--eye-white); border: 1.5px solid #10131a; display: grid; place-items: center; flex: none; }
-.eye::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle, #10131a 0 28%, var(--iris) 32% 100%); transition: background 0.4s; }
-.eye.big { width: 30px; height: 30px; border-width: 2px; }
-.eye.big::after { width: 13px; height: 13px; }
+.eye { position: relative; width: 20px; height: 18px; flex: none; background: #8a5e36; clip-path: polygon(50% 0, 100% 45%, 88% 45%, 88% 100%, 12% 100%, 12% 45%, 0 45%); }
+.eye::after { content: ""; position: absolute; left: 36%; top: 52%; width: 28%; height: 28%; border-radius: 1px; background: var(--iris); box-shadow: 0 0 6px var(--iris); transition: background 0.4s; }
+.eye.big { width: 34px; height: 31px; }
 
 /* HUD */
 .hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: flex-start; gap: 6px; padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px); pointer-events: none; }
@@ -70,7 +70,7 @@ button { font: inherit; color: inherit; }
 .spacer { flex: 1; }
 .icon { height: 34px; min-width: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; cursor: pointer; }
 .icon[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
-.icon .lbl { font-family: var(--fell); font-size: 16px; }
+.icon .lbl { font-family: var(--fell); font-size: 13px; letter-spacing: 0.02em; }
 .sr, .icon .lbl.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .eyebtn.busy .eye::after { animation: pulse 0.8s ease-out infinite; }
 @media (max-width: 700px) { .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
@@ -104,16 +104,15 @@ body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.me
 .tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
 .bossbar[hidden] { display: none; }
-.bossbar span { font-family: var(--fell); font-size: 20px; text-shadow: 0 2px 8px #000; }
+.bossbar span { font-family: var(--fell); font-size: 18px; text-shadow: 0 2px 8px #000; }
 .bossbar div { height: 10px; margin-top: 4px; border-radius: 5px; background: rgba(7, 9, 13, 0.9); border: 1px solid rgba(230, 195, 92, 0.6); overflow: hidden; }
 .bossbar i { display: block; height: 100%; width: 100%; background: var(--accent); }
 
-/* decisions from the Warden, as they happen */
-/* the Warden's voice as a subtitle */
+/* the Cottage's voice as a subtitle */
 .voice { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 70px); width: min(720px, calc(100vw - 24px)); text-align: center; pointer-events: none; transition: opacity 0.8s; }
 .voice.quiet { opacity: 0; }
 .voice .eye { display: none; }
-.voice p { margin: 0; font-family: var(--fell); font-style: italic; font-size: 19px; line-height: 1.25; text-shadow: 0 1px 3px #000, 0 0 12px #000, 0 0 2px #000; }
+.voice p { margin: 0; font-family: var(--sans); font-style: italic; font-weight: 700; font-size: 19px; line-height: 1.25; text-shadow: 0 1px 3px #000, 0 0 12px #000, 0 0 2px #000; }
 @media (pointer: coarse), (max-height: 500px) { .voice p { font-size: 15.5px; } .voice { bottom: calc(var(--sab) + 58px); } }
 
 /* touch sticks */
@@ -128,7 +127,7 @@ body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.me
 
 .banner { position: fixed; left: 0; right: 0; top: 34%; text-align: center; z-index: 11; pointer-events: none; padding: 0 16px; }
 .banner[hidden] { display: none; }
-.banner strong { display: block; font-family: var(--fell); font-weight: 400; font-size: clamp(28px, 5vw, 44px); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9); }
+.banner strong { display: block; font-family: var(--fell); font-weight: 400; font-size: clamp(26px, 4.4vw, 40px); color: var(--accent); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9); }
 .banner span { color: #c9c1b0; font-size: 16px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .dots::after { content: ""; animation: dots 1s steps(4) infinite; display: inline-block; width: 1.2em; text-align: left; }
 @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
@@ -137,16 +136,17 @@ body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.me
 .overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow: hidden; padding: calc(var(--sat) + 16px) calc(var(--sar) + 14px) calc(var(--sab) + 16px) calc(var(--sal) + 14px); background: rgba(7, 9, 13, 0.95); }
 .overlay[hidden] { display: none; }
 .card-inner { max-width: 620px; width: 100%; }
-.overlay h2 { font-family: var(--fell); font-weight: 400; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 0 0 12px; }
+.overlay h2 { font-family: var(--fell); font-weight: 400; font-size: clamp(26px, 4.4vw, 40px); line-height: 1.05; margin: 0 0 12px; }
 .overlay h3 { font-size: 17px; font-weight: 800; margin: 18px 0 8px; }
 .overlay p { margin: 0 0 12px; color: #c9c1b0; }
 .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
-.brand h1 { font-family: var(--fell); font-weight: 400; font-size: clamp(46px, 9vw, 72px); line-height: 1; margin: 0; }
-.sub { font-family: var(--fell); font-style: italic; font-size: 20px; color: #d8cfbd; margin: 0 0 16px; }
-.btn { background: var(--accent); color: #1b1608; border: 0; border-radius: 6px; padding: 12px 20px; font-weight: 800; cursor: pointer; }
-.btn:hover { background: #f0d27a; }
+.brand h1 { font-family: var(--fell); font-weight: 400; font-size: clamp(34px, 7vw, 58px); line-height: 1; margin: 0; color: var(--accent); text-shadow: 0 3px 0 #7a1a14; }
+.brand h1 small { display: block; font-size: 0.34em; color: var(--ink); text-shadow: none; letter-spacing: 0.08em; margin-bottom: 4px; }
+.sub { font-style: italic; font-weight: 700; font-size: 19px; color: #d8cfbd; margin: 0 0 12px; }
+.btn { background: var(--accent); color: #1b1608; border: 0; border-radius: 6px; padding: 12px 20px; font-weight: 800; cursor: pointer; box-shadow: 0 3px 0 #9a6a10; }
+.btn:hover { background: #ffe07a; }
 .btn:disabled { opacity: 0.45; cursor: default; }
-.btn.quiet { background: transparent; color: #c9c1b0; border: 1px solid #4a5263; font-weight: 500; padding: 8px 14px; }
+.btn.quiet { background: transparent; color: #c9c1b0; border: 1px solid #4a5263; font-weight: 500; padding: 8px 14px; box-shadow: none; }
 .btn.small { padding: 7px 12px; font-size: 14px; }
 .keys { font-size: 15px; color: #9ea4b0; }
 .starts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -157,6 +157,15 @@ a { color: var(--accent); }
 .shrine-grid > * { min-width: 0; }
 .slots { min-width: 0; }
 .intro p { font-size: 15.5px; }
+.intro .card-inner, .intro.card-inner { max-width: 760px; }
+.roster { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.friend { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 8px; border-radius: 10px; border: 2px solid var(--line); background: #141924; cursor: pointer; min-width: 0; }
+.friend img { height: 96px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5)); }
+.friend b { font-size: 14px; text-align: center; line-height: 1.1; }
+.friend small { font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.2; }
+.friend[aria-pressed="true"] { border-color: var(--accent); background: #2a2310; }
+.friend[aria-pressed="true"] small { color: var(--accent); }
+@media (max-width: 520px), (max-height: 560px) { .friend img { height: 60px; } .friend b { font-size: 12px; } .friend small { font-size: 10.5px; } .roster { gap: 5px; } }
 .controls { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 4px 0 12px; font-size: 14.5px; }
 .controls dt { color: var(--accent); font-weight: 700; }
 .controls dd { margin: 0; color: #c9c1b0; }
@@ -185,7 +194,7 @@ a { color: var(--accent); }
 .keys.small { font-size: 13px; margin: 0 0 6px; }
 .draft-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .draft-head h2 { margin: 0; font-size: clamp(24px, 3.4vw, 34px); }
-.draft-line { font-family: var(--fell); font-style: italic; font-size: 19px; color: #d8cfbd; margin: 6px 0 10px; }
+.draft-line { font-style: italic; font-weight: 700; font-size: 18px; color: #d8cfbd; margin: 6px 0 10px; }
 .rest { color: var(--ink) !important; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -244,7 +253,7 @@ a { color: var(--accent); }
 .sheet h3:first-child { margin-top: 2px; }
 .sheet p { margin: 0 0 8px; font-size: 14.5px; color: var(--muted); }
 .mood-row { display: flex; align-items: center; gap: 12px; }
-.mood-row strong { font-family: var(--fell); font-weight: 400; font-size: 26px; line-height: 1; }
+.mood-row strong { font-family: var(--fell); font-weight: 400; font-size: 22px; line-height: 1; }
 #moodText { margin: 8px 0 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .chip { font-size: 14px; padding: 1px 9px; border-radius: 999px; border: 1.5px solid var(--tag); }
@@ -286,87 +295,88 @@ a { color: var(--accent); }
 </style>
 </head>
 <body data-mood="none">
-<div id="stage"><canvas id="world"></canvas><canvas id="dark"></canvas></div>
+<div id="stage"><canvas id="world"></canvas><canvas id="actors"></canvas><canvas id="dark"></canvas></div>
 
 <header class="hud" id="hud">
-  <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, mana, lift, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
+  <button class="hbtn stat" id="hudHp" type="button" aria-label="Health, pressure, lift, and gold. Open your stats."><span class="bars" aria-hidden="true"><span class="bar"><i id="hpFill"></i></span><span class="bar"><i id="manaFill"></i></span><span class="bar"><i id="liftFill"></i></span></span><span class="nums"><b id="hpText">100</b><span class="gold" id="goldText">0</span></span></button>
   <button class="depth" id="depthText" type="button">Depth 1</button>
   <span class="spacer"></span>
-  <button class="icon eyebtn" id="hudEye" type="button" aria-label="The Warden's mood and decisions"><span class="eye" aria-hidden="true"></span><span class="lbl" id="hudMood">Watching</span></button>
+  <button class="icon eyebtn" id="hudEye" type="button" aria-label="The Cottage's mood and decisions"><span class="eye" aria-hidden="true"></span><span class="lbl" id="hudMood">Watching</span></button>
   <button class="icon" id="mapBtn" type="button" aria-pressed="true" aria-label="Map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
   <button class="icon" id="soundBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span class="lbl sr">Sound on</span></button>
   <button class="icon" id="fsBtn" type="button" aria-label="Full screen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
 <button class="ticker fade" id="ticker" type="button" hidden></button>
-<nav class="hotbar" id="hotbar" aria-label="Your wands"></nav>
-<button class="swapbtn" id="swapBtn" type="button" hidden>Swap wands</button>
+<nav class="hotbar" id="hotbar" aria-label="Your guns"></nav>
+<button class="swapbtn" id="swapBtn" type="button" hidden>Swap guns</button>
 <button class="digbtn" id="digBtn" type="button" aria-pressed="false">Dig</button>
 
-<canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the well."></canvas>
-<div class="bossbar" id="bossbar" hidden><span>The Warden's Hand</span><div><i id="bossFill"></i></div></div>
+<canvas class="mini" id="mini" hidden aria-label="Map of this layer. The gold mark is the drain."></canvas>
+<div class="bossbar" id="bossbar" hidden><span id="bossName">The Porcelain King</span><div><i id="bossFill"></i></div></div>
 <div class="joy" id="joyMove" hidden><i></i></div>
 <div class="joy aim" id="joyAim" hidden><i></i></div>
 
-<div class="voice" id="voice" aria-live="polite"><span class="eye" aria-hidden="true"></span><p id="voiceText">The Warden waits at the top of the well.</p></div>
+<div class="voice" id="voice" aria-live="polite"><span class="eye" aria-hidden="true"></span><p id="voiceText">The Cottage waits at the top of the hole.</p></div>
 <div class="hint" id="hint" hidden></div>
 <div class="banner" id="banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 
 <div class="overlay" id="intro">
   <div class="card-inner intro">
-    <div class="brand"><span class="eye big" aria-hidden="true"></span><h1>Wardenfall</h1></div>
-    <p class="sub">The Warden melted its halls. Now every grain falls.</p>
-    <p>Carry the lantern down a well where every pixel moves. Fire spreads, water flows, acid eats rock. Reach the glowing well at the bottom of each layer. The Warden pours each layer and watches you fall. Tap the eye to see its choices.</p>
+    <div class="brand"><span class="eye big" aria-hidden="true"></span><h1><small>GET PLUNGER'D</small>Down the Drain</h1></div>
+    <p class="sub">The outhouse backed up. Now the ground under the cottage moves.</p>
+    <p>Pick a friend and go down with a plunger. Every pixel falls, flows, or burns. Reach the drain at the bottom of each layer. The Cottage pours each layer and watches you fall. Tap the cottage to see its choices.</p>
+    <div class="roster" id="roster" role="group" aria-label="Pick your friend"></div>
     <dl class="controls">
       <dt>Move</dt><dd>A and D</dd>
-      <dt>Jump, float</dt><dd>W, Space, or right mouse</dd>
-      <dt>Cast</dt><dd>Hold left mouse</dd>
-      <dt>Wands</dt><dd>1, 2, 3, or the wheel</dd>
-      <dt>Dig</dt><dd>Hold F or Shift</dd>
-      <dt>Take a wand</dt><dd>E</dd>
+      <dt>Jump, hover</dt><dd>W, Space, or right mouse</dd>
+      <dt>Shoot</dt><dd>Hold left mouse</dd>
+      <dt>Guns</dt><dd>1, 2, 3, or the wheel</dd>
+      <dt>Plunge (dig)</dt><dd>Hold F or Shift</dd>
+      <dt>Take a gun</dt><dd>E</dd>
       <dt>Map, sound</dt><dd>Q, M</dd>
-      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and casts. Tap Dig to dig instead.</dd>
-      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to cast, LT to dig, Y for wands</dd>
+      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves, right thumb aims and shoots. Tap Dig to dig instead.</dd>
+      <dt class="pad">Gamepad</dt><dd class="pad">Sticks, A to jump, RT to shoot, LT to dig, Y for guns</dd>
     </dl>
-    <p class="keys">The gold arrow by your lantern points the way down.</p>
-    <div class="starts"><button class="btn" id="startBtn">Enter the well</button></div>
+    <p class="keys">The gold arrow next to you points the way down.</p>
+    <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <a class="keys" href="/">Back to the cottage</a></div>
   </div>
 </div>
 
 <div class="overlay shrine" id="shrine" hidden>
   <div class="card-inner shrine-grid">
     <header class="sh-head">
-      <div class="draft-head"><span class="eye" aria-hidden="true"></span><h2 id="shrineTitle">The landing</h2></div>
+      <div class="draft-head"><span class="eye" aria-hidden="true"></span><h2 id="shrineTitle">The snack bar</h2></div>
       <p class="draft-line" id="shrineLine"></p>
       <p class="rest" id="shrineRest"></p>
     </header>
-    <section class="sh-offers"><h3>The Warden offers these. Take one.</h3><div class="cards" id="offers"></div></section>
+    <section class="sh-offers"><h3>The Cottage offers these. Take one.</h3><div class="cards" id="offers"></div></section>
     <section class="sh-shop"><h3>For gold. You have <span id="shrineGold">0</span>.</h3><div class="cards two" id="shop"></div></section>
     <section class="sh-wands">
-      <h3>Your wands</h3>
-      <p class="keys small">Each wand casts left to right, then recharges. Tap a spell, then a slot to move it.</p>
+      <h3>Your guns</h3>
+      <p class="keys small">Each gun fires its shots left to right, then reloads. Tap a shot, then a slot to move it.</p>
       <div id="wandEdit"></div>
       <div class="slot-label">Bag</div>
       <div class="slots" id="bagSlots"></div>
     </section>
-    <footer class="sh-foot"><button class="btn" id="descendBtn">Descend</button></footer>
+    <footer class="sh-foot"><button class="btn" id="descendBtn">Keep going down</button></footer>
   </div>
 </div>
 
 <div class="overlay" id="end" hidden>
   <div class="card-inner">
-    <h2 id="endTitle">You fell</h2>
+    <h2 id="endTitle">Flushed</h2>
     <p class="draft-line" id="endLine"></p>
     <dl class="end-stats" id="endStats"></dl>
-    <button class="btn" id="againBtn">Fall again</button>
+    <button class="btn" id="againBtn">Go down again</button>
   </div>
 </div>
 
 <div class="sheet" id="sheet" hidden>
-  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Stats and the Warden">
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Stats and the Cottage">
     <div class="sheet-top">
       <div class="tabs" role="tablist">
         <button type="button" role="tab" data-tab="stats" aria-selected="true">Stats</button>
-        <button type="button" role="tab" data-tab="warden" aria-selected="false">The Warden</button>
+        <button type="button" role="tab" data-tab="warden" aria-selected="false">The Cottage</button>
         <button type="button" role="tab" data-tab="memory" aria-selected="false">Memory</button>
       </div>
       <button class="close" id="sheetClose" type="button">Close</button>
@@ -375,19 +385,19 @@ a { color: var(--accent); }
       <section class="tab" data-tab="stats">
         <h3>You</h3>
         <dl class="stats" id="statList"></dl>
-        <h3>Your wand</h3>
+        <h3>Your gun</h3>
         <div class="chips" id="chips"></div>
         <ul class="spelllist" id="spellList"></ul>
         <h3>What things do</h3>
-        <p>Fire spreads through wood, moss, oil, and miasma. Water puts it out, and it turns lava to stone. Acid eats earth and rock, but glass holds it. Lightning in water shocks all that touch the water. Gold falls like sand. Walk into it to pick it up.</p>
-        <p>Your lantern lets you float. It refills when you stand on solid ground.</p>
+        <p>Fire spreads through wood, moss, oil, and swamp gas. Water puts it out, and it turns lava to stone. Acid eats earth and rock, but glass holds it. Lightning in water shocks all that touch the water. Gold falls like sand. Walk into it to pick it up.</p>
+        <p>Your leaf blower lets you hover. It refills when you stand on solid ground.</p>
       </section>
       <section class="tab" data-tab="warden" hidden>
         <h3>Mood</h3>
         <div class="mood-row"><span class="eye big" aria-hidden="true"></span><strong id="moodName">Watching</strong></div>
-        <p id="moodText">The Warden picks a mood before each layer.</p>
+        <p id="moodText">The Cottage picks a mood before each layer.</p>
         <h3>Decisions</h3>
-        <p>One entry per call. Each shows the options the Warden weighed and what it picked. On the live site Jev answers through Vercel AI Gateway, and the game samples from its probabilities. The code checks each pick and can overrule it. If Jev can't be reached, a local stand-in answers with the same shape.</p>
+        <p>One entry per call. Each shows the options the Cottage weighed and what it picked. On the live site Jev answers through Vercel AI Gateway, and the game samples from its probabilities. The code checks each pick and can overrule it. If Jev can't be reached, a local stand-in answers with the same shape.</p>
         <div class="ledger" id="ledger"><p class="empty">No calls yet.</p></div>
       </section>
       <section class="tab" data-tab="memory" hidden>
@@ -431,14 +441,14 @@ defMat(WATER, { name: "water", kind: K.LIQUID, dens: 1, flow: 5, cols: [0x2f5f9a
 defMat(OIL, { name: "oil", kind: K.LIQUID, dens: 0.8, flow: 4, flam: 0.55, cols: [0x3a3020, 0x42361f, 0x33291b, 0x4a3d26] });
 defMat(LAVA, { name: "lava", kind: K.LIQUID, dens: 3, flow: 2, glow: 1, cols: [0xff6a1a, 0xff8a2a, 0xe8501a, 0xffb040] });
 defMat(ACID, { name: "acid", kind: K.LIQUID, dens: 1.2, flow: 4, glow: 0.35, cols: [0x8fe03a, 0x9cff4a, 0x7fd02e, 0xb0ff6a] });
-defMat(SLUDGE, { name: "sludge", kind: K.LIQUID, dens: 1.1, flow: 2, glow: 0.12, cols: [0x5c7a2a, 0x668a2e, 0x506c24, 0x729636] });
+defMat(SLUDGE, { name: "sewage", kind: K.LIQUID, dens: 1.1, flow: 2, glow: 0.12, cols: [0x5c7a2a, 0x668a2e, 0x506c24, 0x729636] });
 defMat(BLOOD, { name: "blood", kind: K.LIQUID, dens: 1.05, flow: 3, cols: [0x8a1a2a, 0x9a2030, 0x7a1624, 0xa82838] });
 defMat(FIRE, { name: "fire", kind: K.FIRE, glow: 1, cols: [0xffe070, 0xffb040, 0xff7a20, 0xe04a18] });
 defMat(EMBER, { name: "ember", hard: 1, glow: 0.8, cols: [0xff7a30, 0xe0501a, 0xffa040, 0xc03a12] });
 defMat(SMOKE, { name: "smoke", kind: K.GAS, cols: [0x3a3a40, 0x444450, 0x333338, 0x4c4c56] });
 defMat(STEAM, { name: "steam", kind: K.GAS, cols: [0x9aa8b8, 0xa8b4c2, 0x8c9aaa, 0xb4c0cc] });
-defMat(MIASMA, { name: "miasma", kind: K.GAS, flam: 0.9, cols: [0x5a6a3a, 0x64743f, 0x526234, 0x6e7e46] });
-defMat(SEAL, { name: "Warden glass", hard: 99, glow: 0.35, cols: [0x7a5ad0, 0x8a6ae0, 0x6a4ac0, 0x9a7af0] });
+defMat(MIASMA, { name: "swamp gas", kind: K.GAS, flam: 0.9, cols: [0x5a6a3a, 0x64743f, 0x526234, 0x6e7e46] });
+defMat(SEAL, { name: "screen door", hard: 99, glow: 0.3, cols: [0x7a8a80, 0x9aaaa0, 0x5e6e64, 0xb0c0b4] });
 const NMAT = MATS.length;
 const KIND = new Uint8Array(NMAT), DENS = new Float32Array(NMAT), HARD = new Uint8Array(NMAT), FLAM = new Float32Array(NMAT), GLOW = new Float32Array(NMAT), FLOW = new Uint8Array(NMAT);
 for (let m = 0; m < NMAT; m++) { const d = MATS[m]; KIND[m] = d.kind; DENS[m] = d.dens; HARD[m] = d.hard; FLAM[m] = d.flam; GLOW[m] = d.glow; FLOW[m] = d.flow; }
@@ -452,181 +462,446 @@ const TAG = {
 };
 
 const THEMES = {
-  crypt: { name: "Crypt", rock: [0x3c4150, 0x444a5b, 0x363a48, 0x4a5063], earth: [0x3e3a3a, 0x464140, 0x383434, 0x4e4847], bg: [0x121620, 0x161b27], dark: 0.9 },
-  cistern: { name: "Cistern", rock: [0x34474c, 0x3c5157, 0x2e3f44, 0x44595f], earth: [0x33403c, 0x3a4843, 0x2d3935, 0x42514b], bg: [0x0e1a1d, 0x122125], dark: 0.92 },
-  garden: { name: "Overgrown hall", rock: [0x3f4a3c, 0x475444, 0x384235, 0x505d4c], earth: [0x4a3c2a, 0x544430, 0x423525, 0x5c4b36], bg: [0x121a13, 0x162117], dark: 0.88 },
-  forge: { name: "Ember forge", rock: [0x4a3a36, 0x54423d, 0x42332f, 0x5e4a44], earth: [0x4a302a, 0x55372f, 0x422a25, 0x5e3d34], bg: [0x1c1210, 0x241613], dark: 0.86 },
+  crypt: { name: "The cellar", rock: [0x3c4150, 0x444a5b, 0x363a48, 0x4a5063], earth: [0x3e3a3a, 0x464140, 0x383434, 0x4e4847], bg: [0x121620, 0x161b27], dark: 0.9 },
+  cistern: { name: "The septic tank", rock: [0x34474c, 0x3c5157, 0x2e3f44, 0x44595f], earth: [0x33403c, 0x3a4843, 0x2d3935, 0x42514b], bg: [0x0e1a1d, 0x122125], dark: 0.92 },
+  garden: { name: "The crawlspace", rock: [0x3f4a3c, 0x475444, 0x384235, 0x505d4c], earth: [0x4a3c2a, 0x544430, 0x423525, 0x5c4b36], bg: [0x121a13, 0x162117], dark: 0.88 },
+  forge: { name: "Under the sauna", rock: [0x4a3a36, 0x54423d, 0x42332f, 0x5e4a44], earth: [0x4a302a, 0x55372f, 0x422a25, 0x5e3d34], bg: [0x1c1210, 0x241613], dark: 0.86 },
 };
 const THEME_DESC = {
-  crypt: "Crypt: blue stone and bone. A calm layer.",
-  cistern: "Cistern: wet teal stone. Water gathers in every hollow.",
-  garden: "Overgrown hall: roots and moss. Both burn.",
-  forge: "Ember forge: red stone and obsidian. Lava pools deep. Feels dangerous.",
+  crypt: "The cellar: old stone, fish bones, and jars. A calm layer.",
+  cistern: "The septic tank: wet teal stone. Water gathers in every hollow.",
+  garden: "The crawlspace: tree roots and moss under the floorboards. Both burn.",
+  forge: "Under the sauna: red stone and obsidian. Lava pools deep. Feels dangerous.",
 };
 
 const SPELLS = {
-  spark: { name: "Spark Bolt", tag: "storm", tier: 1, mana: 5, kind: "proj", dmg: 7, speed: 6.5, life: 70, color: 0xbcd4ff, desc: "A fast bolt of light. 7 damage." },
-  chisel: { name: "Chisel", tag: "blade", tier: 1, mana: 7, kind: "proj", dmg: 4, speed: 5, life: 22, dig: 2, digN: 70, color: 0xe8e0cc, desc: "A short bolt that digs through earth, sand, wood, and bone. It stops at rock." },
-  ember: { name: "Ember", tag: "fire", tier: 1, mana: 12, kind: "proj", dmg: 8, speed: 4.2, grav: 0.08, life: 120, burn: true, color: 0xff9040, desc: "A lobbed coal. 8 damage. It sets fire to what it hits." },
-  fireball: { name: "Fireball", tag: "fire", tier: 2, mana: 32, kind: "proj", dmg: 18, speed: 4, life: 120, blast: [7, 2], burn: true, color: 0xff6a20, desc: "Explodes where it lands. 18 damage in a blast that breaks earth and lights fires.", price: "Its blast hurts you too." },
-  bomb: { name: "Warden's Bomb", tag: "fire", tier: 3, mana: 70, kind: "proj", dmg: 45, speed: 3, grav: 0.1, life: 90, fuse: true, blast: [14, 4], color: 0x606060, desc: "A heavy bomb. After 1.5 seconds it blows a big hole, rock and all. 45 damage.", price: "It hurts you too." },
-  acid: { name: "Acid Glob", tag: "poison", tier: 1, mana: 18, kind: "proj", dmg: 6, speed: 4, grav: 0.1, life: 120, spill: [ACID, 26], color: 0x9cff4a, desc: "A glob that bursts into acid. Acid eats stone and flesh. Glass holds it." },
-  spray: { name: "Toxic Spray", tag: "poison", tier: 2, mana: 16, kind: "proj", dmg: 3, count: 5, spread: 0.3, speed: 3.6, grav: 0.06, life: 80, spill: [SLUDGE, 5], poison: 2, color: 0x8fb83f, desc: "Five drops of sludge. Each hit adds poison. Sludge pools and poisons what stands in it." },
-  chain: { name: "Chain Spark", tag: "storm", tier: 2, mana: 22, kind: "proj", dmg: 11, speed: 7, life: 60, chain: 2, shock: true, color: 0xeef4ff, desc: "Lightning that jumps to 2 more foes. In water it shocks all that touch the water.", price: "That can include you." },
-  razor: { name: "Razor Disc", tag: "blade", tier: 2, mana: 14, kind: "proj", dmg: 10, speed: 4.5, life: 160, bounce: 4, pierce: 3, color: 0xf2ead8, desc: "A disc that bounces off walls 4 times and goes through foes. 10 damage." },
-  blood_bolt: { name: "Blood Bolt", tag: "blood", tier: 1, mana: 0, hp: 4, kind: "proj", dmg: 22, speed: 6, life: 70, bleed: true, color: 0xe0506a, desc: "A strong bolt. 22 damage.", price: "It costs 4 health, not mana." },
-  deluge: { name: "Deluge", tag: "ward", tier: 1, mana: 20, kind: "proj", dmg: 0, speed: 4, grav: 0.08, life: 100, spill: [WATER, 70], color: 0x5f9fe0, desc: "A ball of water that bursts where it lands. Water puts out fire and cools lava to stone." },
-  glass: { name: "Glasswork", tag: "ward", tier: 2, mana: 30, kind: "wall", color: 0xbfe8f0, desc: "Raises a curved wall of glass where you aim. Acid cannot eat glass." },
-  aegis: { name: "Aegis", tag: "ward", tier: 2, mana: 40, kind: "aegis", color: 0xb39ddb, desc: "A ward that blocks the next hit. It lasts 8 seconds." },
-  blink: { name: "Blink", tag: "swift", tier: 2, mana: 30, kind: "blink", color: 0x4fb3a6, desc: "Moves you up to 45 pixels where you aim, if there is room." },
-  quicken: { name: "Quicken", tag: "swift", tier: 1, mana: 3, kind: "mod", color: 0x4fb3a6, desc: "Modifier. The next spell flies 40% faster, and the wand waits less after it.", mod: (m) => { m.speed *= 1.4; m.delay -= 0.08; } },
-  twin: { name: "Twin Cast", tag: "swift", tier: 1, mana: 4, kind: "mod", color: 0x4fb3a6, desc: "Modifier. The wand casts the next 2 spells at once.", mod: (m) => { m.draw += 1; } },
-  honed: { name: "Honed Edge", tag: "blade", tier: 1, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next spell deals 60% more damage and digs harder.", mod: (m) => { m.dmg *= 1.6; m.dig += 1; } },
-  leech: { name: "Leech", tag: "blood", tier: 2, mana: 6, kind: "mod", color: 0xd0485f, desc: "Modifier. You heal 25% of the damage the next spell deals.", mod: (m) => { m.leech += 0.25; } },
-  lightning: { name: "Lightning", tag: "storm", tier: 2, mana: 28, kind: "beam", dmg: 22, range: 150, color: 0xeef4ff, desc: "A bolt that strikes at once, through every foe in a line. 22 damage. It shocks the water it hits." },
-  blackhole: { name: "Black Hole", tag: "blade", tier: 3, mana: 60, kind: "proj", dmg: 4, speed: 1.1, life: 150, hole: 5, color: 0x8a5ad0, desc: "A slow orb that swallows stone, earth, and foes near it. It even eats rock." },
+  spark: { name: "Plunger Shot", tag: "storm", tier: 1, mana: 5, kind: "proj", dmg: 7, speed: 6.5, life: 70, color: 0xbcd4ff, desc: "A thrown plunger. Fast. 7 damage." },
+  chisel: { name: "Nail", tag: "blade", tier: 1, mana: 7, kind: "proj", dmg: 4, speed: 5, life: 22, dig: 2, digN: 70, color: 0xe8e0cc, desc: "A short nail that digs through earth, sand, wood, and bone. It stops at rock." },
+  ember: { name: "Sparkler", tag: "fire", tier: 1, mana: 12, kind: "proj", dmg: 8, speed: 4.2, grav: 0.08, life: 120, burn: true, color: 0xff9040, desc: "A lobbed sparkler. 8 damage. It sets fire to what it hits." },
+  fireball: { name: "Roman Candle", tag: "fire", tier: 2, mana: 32, kind: "proj", dmg: 18, speed: 4, life: 120, blast: [7, 2], burn: true, color: 0xff6a20, desc: "Explodes where it lands. 18 damage in a blast that breaks earth and lights fires.", price: "Its blast hurts you too." },
+  bomb: { name: "Propane Tank", tag: "fire", tier: 3, mana: 70, kind: "proj", dmg: 45, speed: 3, grav: 0.1, life: 90, fuse: true, blast: [14, 4], color: 0x606060, desc: "A heavy tank. After 1.5 seconds it blows a big hole, rock and all. 45 damage.", price: "It hurts you too." },
+  acid: { name: "Drain Cleaner", tag: "poison", tier: 1, mana: 18, kind: "proj", dmg: 6, speed: 4, grav: 0.1, life: 120, spill: [ACID, 26], color: 0x9cff4a, desc: "A glob that bursts into acid. Acid eats stone and critters. Glass holds it." },
+  spray: { name: "Skunk Spray", tag: "poison", tier: 2, mana: 16, kind: "proj", dmg: 3, count: 5, spread: 0.3, speed: 3.6, grav: 0.06, life: 80, spill: [SLUDGE, 5], poison: 2, color: 0x8fb83f, desc: "Five drops of sewage. Each hit adds poison. Sewage pools and poisons what stands in it." },
+  chain: { name: "Bug Zapper", tag: "storm", tier: 2, mana: 22, kind: "proj", dmg: 11, speed: 7, life: 60, chain: 2, shock: true, color: 0xeef4ff, desc: "Lightning that jumps to 2 more critters. In water it shocks all that touch the water.", price: "That can include you." },
+  razor: { name: "Frisbee", tag: "blade", tier: 2, mana: 14, kind: "proj", dmg: 10, speed: 4.5, life: 160, bounce: 4, pierce: 3, color: 0xf2ead8, desc: "A frisbee that bounces off walls 4 times and goes through critters. 10 damage." },
+  blood_bolt: { name: "Splinter", tag: "blood", tier: 1, mana: 0, hp: 4, kind: "proj", dmg: 22, speed: 6, life: 70, bleed: true, color: 0xe0506a, desc: "A strong shot. 22 damage.", price: "It costs 4 health, not pressure." },
+  deluge: { name: "Water Balloon", tag: "ward", tier: 1, mana: 20, kind: "proj", dmg: 0, speed: 4, grav: 0.08, life: 100, spill: [WATER, 70], color: 0x5f9fe0, desc: "A balloon of lake water that bursts where it lands. Water puts out fire and cools lava to stone." },
+  glass: { name: "Patio Door", tag: "ward", tier: 2, mana: 30, kind: "wall", color: 0xbfe8f0, desc: "Puts up a curved wall of glass where you aim. Acid cannot eat glass." },
+  aegis: { name: "Life Jacket", tag: "ward", tier: 2, mana: 40, kind: "aegis", color: 0xb39ddb, desc: "Blocks the next hit. It lasts 8 seconds." },
+  blink: { name: "Cannonball", tag: "swift", tier: 2, mana: 30, kind: "blink", color: 0x4fb3a6, desc: "Jumps you up to 45 pixels where you aim, if there is room." },
+  quicken: { name: "Energy Drink", tag: "swift", tier: 1, mana: 3, kind: "mod", color: 0x4fb3a6, desc: "Modifier. The next shot flies 40% faster, and the gun waits less after it.", mod: (m) => { m.speed *= 1.4; m.delay -= 0.08; } },
+  twin: { name: "Double Tap", tag: "swift", tier: 1, mana: 4, kind: "mod", color: 0x4fb3a6, desc: "Modifier. The gun fires the next 2 shots at once.", mod: (m) => { m.draw += 1; } },
+  honed: { name: "Hot Sauce", tag: "blade", tier: 1, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next shot deals 60% more damage and digs harder.", mod: (m) => { m.dmg *= 1.6; m.dig += 1; } },
+  leech: { name: "Mosquito Bite", tag: "blood", tier: 2, mana: 6, kind: "mod", color: 0xd0485f, desc: "Modifier. You heal 25% of the damage the next shot deals.", mod: (m) => { m.leech += 0.25; } },
+  lightning: { name: "Lightning", tag: "storm", tier: 2, mana: 28, kind: "beam", dmg: 22, range: 150, color: 0xeef4ff, desc: "A bolt that strikes at once, through every critter in a line. 22 damage. It shocks the water it hits." },
+  blackhole: { name: "Whirlpool", tag: "blade", tier: 3, mana: 60, kind: "proj", dmg: 4, speed: 1.1, life: 150, hole: 5, color: 0x8a5ad0, desc: "A slow whirlpool that swallows stone, earth, and critters near it. It even eats rock." },
   chainsaw: { name: "Chainsaw", tag: "blade", tier: 1, mana: 1, kind: "proj", dmg: 4, speed: 5, life: 6, dig: 3, digN: 30, pierce: 9, delay: -0.16, color: 0xffe28a, desc: "A short burst of teeth with no wait after it. It chews through earth, wood, and bone." },
-  missile: { name: "Magic Missile", tag: "fire", tier: 2, mana: 40, kind: "proj", dmg: 26, speed: 2.2, accel: 0.14, maxSpeed: 7, life: 110, blast: [9, 3], recoil: 1.2, color: 0xff9a50, desc: "A missile that speeds up as it flies, then explodes. 26 damage.", price: "The blast hurts you too." },
-  seeker: { name: "Seeker", tag: "storm", tier: 1, mana: 6, kind: "mod", color: 0x7fa8ff, desc: "Modifier. The next spell turns toward the nearest foe.", mod: (m) => { m.homing += 0.09; } },
-  scatter: { name: "Scatter", tag: "blade", tier: 2, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next spell fires 3 times in a fan. Each shot deals 70% damage.", mod: (m) => { m.copies += 2; m.dmg *= 0.7; } },
-  payload: { name: "Payload", tag: "fire", tier: 2, mana: 10, kind: "mod", color: 0xe0703a, desc: "Modifier. The next shot carries the spell after it, and casts it where the shot lands. Try it with Blink.", mod: () => {} },
+  missile: { name: "Bottle Rocket", tag: "fire", tier: 2, mana: 40, kind: "proj", dmg: 26, speed: 2.2, accel: 0.14, maxSpeed: 7, life: 110, blast: [9, 3], recoil: 1.2, color: 0xff9a50, desc: "A rocket that speeds up as it flies, then explodes. 26 damage.", price: "The blast hurts you too." },
+  seeker: { name: "Binoculars", tag: "storm", tier: 1, mana: 6, kind: "mod", color: 0x7fa8ff, desc: "Modifier. The next shot turns toward the nearest critter.", mod: (m) => { m.homing += 0.09; } },
+  scatter: { name: "TP Spread", tag: "blade", tier: 2, mana: 8, kind: "mod", color: 0xd9cfb8, desc: "Modifier. The next shot fires 3 times in a fan. Each shot deals 70% damage.", mod: (m) => { m.copies += 2; m.dmg *= 0.7; } },
+  payload: { name: "Care Package", tag: "fire", tier: 2, mana: 10, kind: "mod", color: 0xe0703a, desc: "Modifier. The next shot carries the shot after it, and fires it where it lands. Try it with Cannonball.", mod: () => {} },
 };
-const SPELL_ABBR = { lightning: "Lt", blackhole: "Bh", chainsaw: "Cw", missile: "Mm", seeker: "Se", scatter: "Sc", payload: "Pl", spark: "Sp", chisel: "Ch", ember: "Em", fireball: "Fb", bomb: "Bo", acid: "Ac", spray: "Tx", chain: "Cs", razor: "Rz", blood_bolt: "Bb", deluge: "De", glass: "Gl", aegis: "Ae", blink: "Bl", quicken: "Qu", twin: "Tw", honed: "Ho", leech: "Le" };
+const SPELL_ABBR = { lightning: "Lt", blackhole: "Wp", chainsaw: "Cw", missile: "Br", seeker: "Bi", scatter: "TP", payload: "Cp", spark: "Pl", chisel: "Na", ember: "Sl", fireball: "Rc", bomb: "Pr", acid: "Dc", spray: "Sk", chain: "Bz", razor: "Fr", blood_bolt: "Sn", deluge: "Wb", glass: "Pd", aegis: "Lj", blink: "Cb", quicken: "En", twin: "Dt", honed: "Hs", leech: "Mo" };
 const DIGGERS = ["chisel", "fireball", "bomb", "acid", "chainsaw", "blackhole", "missile"];
 
 const UPGRADES = {
-  slot: { name: "Wider wand", desc: "Your wand gets 1 more slot.", apply: (r) => { r.wand.slots = Math.min(10, r.wand.slots + 1); r.wand.spells.push(null); } },
-  mana: { name: "Deep well", desc: "Your wand holds 40 more mana.", apply: (r) => { r.wand.manaMax += 40; r.wand.mana += 40; } },
-  regen: { name: "Quick well", desc: "Your wand refills mana 30% faster.", apply: (r) => { r.wand.regen *= 1.3; } },
-  recharge: { name: "Short recharge", desc: "Your wand recharges 25% faster.", apply: (r) => { r.wand.recharge *= 0.75; } },
-  delay: { name: "Light grip", desc: "The wand waits 25% less between casts.", apply: (r) => { r.wand.castDelay *= 0.75; } },
-  lift: { name: "Brighter lantern", desc: "Your lantern keeps you up 40% longer.", apply: (r) => { r.liftMax *= 1.4; } },
-  vigor: { name: "Vigor", desc: "Your max health goes up by 25. You heal 25 now.", apply: (r) => { r.maxHp += 25; r.hp += 25; } },
-  newwand: { name: "A new wand", desc: "A wand from the Warden's rack, with its own stats and spells. You can carry 3.", apply: (r) => giveWand(r, makeWand(Math.min(3, r.depth))) },
+  slot: { name: "Bigger gun", desc: "Your gun gets 1 more slot.", apply: (r) => { r.wand.slots = Math.min(10, r.wand.slots + 1); r.wand.spells.push(null); } },
+  mana: { name: "Bigger tank", desc: "Your gun holds 40 more pressure.", apply: (r) => { r.wand.manaMax += 40; r.wand.mana += 40; } },
+  regen: { name: "Better pump", desc: "Your gun builds pressure 30% faster.", apply: (r) => { r.wand.regen *= 1.3; } },
+  recharge: { name: "Quick reload", desc: "Your gun reloads 25% faster.", apply: (r) => { r.wand.recharge *= 0.75; } },
+  delay: { name: "Hair trigger", desc: "The gun waits 25% less between shots.", apply: (r) => { r.wand.castDelay *= 0.75; } },
+  lift: { name: "Gas for the blower", desc: "Your leaf blower keeps you up 40% longer.", apply: (r) => { r.liftMax *= 1.4; } },
+  vigor: { name: "Hot dog", desc: "Your max health goes up by 25. You heal 25 now.", apply: (r) => { r.maxHp += 25; r.hp += 25; } },
+  newwand: { name: "A new gun", desc: "A gun from the boathouse, with its own stats and shots. You can carry 3.", apply: (r) => giveWand(r, makeWand(Math.min(3, r.depth))) },
 };
 
+// art: the critter drawing. aw: how wide it draws, in world pixels. The bosses share one fight; the art and the name change.
 const FOES = {
-  grub: { name: "Grub", hp: 20, w: 6, h: 4, speed: 0.32, touch: 8, ai: "walk", gold: 5, tier: 1, cost: 1, bleed: BLOOD, counters: [],
-    sprite: [".bbbb.", "bbbbbb", "bbbbbe", "b.b.b."], pal: { b: 0xb9a27a, e: 0x1a1410 } },
-  skitter: { name: "Skitter", hp: 8, w: 4, h: 3, speed: 0.9, touch: 5, ai: "hop", gold: 2, tier: 1, cost: 0.8, bleed: BLOOD, counters: ["blade"],
-    sprite: ["ssss", "sese", "s..s"], pal: { s: 0xd6c88a, e: 0x201a10 } },
-  spitter: { name: "Spitter", hp: 14, w: 5, h: 6, speed: 0.28, touch: 6, ai: "spit", gold: 5, tier: 1, cost: 1.5, bleed: ACID, counters: ["ward"],
-    sprite: [".ggg.", "ggegg", "ggggg", ".gmg.", ".ggg.", "g...g"], pal: { g: 0xc77f5a, e: 0x1a1010, m: 0x9cff4a } },
-  wisp: { name: "Wisp", hp: 14, w: 5, h: 5, speed: 0.7, touch: 6, ai: "fly", gold: 4, tier: 2, cost: 1.4, bleed: 0, fireImmune: true, poisonImmune: true, counters: ["fire", "poison"],
-    sprite: ["..w..", ".www.", "wwEww", ".www.", "..w.."], pal: { w: 0xbfe3ff, E: 0x3a5a8a } },
-  bomber: { name: "Bomber", hp: 10, w: 5, h: 5, speed: 0.75, touch: 0, ai: "bomb", gold: 3, tier: 2, cost: 1.4, bleed: 0, counters: ["blood", "ward"],
-    sprite: ["..f..", ".rrr.", "rrerr", "rrrrr", ".r.r."], pal: { f: 0xffe070, r: 0xe05a4a, e: 0x200a08 } },
-  brute: { name: "Brute", hp: 60, w: 8, h: 10, speed: 0.26, touch: 16, ai: "brute", gold: 12, tier: 3, cost: 3, bleed: BLOOD, counters: ["storm", "swift"],
-    sprite: [".bbbbbb.", "bbbbbbbb", "bbebbebb", "bbbbbbbb", "bbbbbbbb", "bbbbbbbb", "bbbbbbbb", ".bbbbbb.", ".bb..bb.", ".bb..bb."], pal: { b: 0x8a6f5c, e: 0xffd070 } },
-  shade: { name: "Shade", hp: 22, w: 5, h: 6, speed: 0.8, touch: 12, ai: "dash", gold: 6, tier: 2, cost: 2, bleed: 0, poisonImmune: true, counters: ["blade", "storm"],
-    sprite: [".sss.", "sesse", "sssss", "sssss", "s.s.s", ".s.s."], pal: { s: 0x2a2440, e: 0xd0485f } },
-  hand: { name: "Warden's Hand", hp: 420, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 80, tier: 9, cost: 0, bleed: 0, fireImmune: true, poisonImmune: true, counters: [],
-    sprite: [
-      "..f..f..f.........", ".ff.ff.ff.........", ".ff.ff.ff..f......", ".ff.ff.ff.ff......", ".ffffffffff.......", ".ffffffffff...tt..",
-      "hhhhhhhhhhhh.ttt..", "hhhhhwwwhhhhhttt..", "hhhhwwiwwhhhhtt...", "hhhhwwiwwhhhht....", "hhhhhwwwhhhhh.....", "hhhhhhhhhhhhh.....",
-      ".hhhhhhhhhhh......", "..hhhhhhhhh.......", "...ccccccc........", "...ccccccc........"],
-    pal: { f: 0x4a3a66, h: 0x3a2f4f, t: 0x4a3a66, w: 0xe4dccb, i: 0xe6c35c, c: 0x241c30 } },
+  raccoon: { name: "Raccoon", hp: 20, w: 8, h: 6, speed: 0.32, touch: 8, ai: "walk", gold: 5, tier: 1, cost: 1, bleed: BLOOD, counters: [], art: "c_raccoon", aw: 14, pal: { b: 0xa8a298 } },
+  hornet: { name: "Hornets", hp: 8, w: 5, h: 4, speed: 0.9, touch: 5, ai: "hop", gold: 2, tier: 1, cost: 0.8, bleed: 0, counters: ["blade"], art: "c_hornet", aw: 9, pal: { b: 0xf2c230 } },
+  gull: { name: "Seagull", hp: 14, w: 6, h: 7, speed: 0.28, touch: 6, ai: "spit", gold: 5, tier: 1, cost: 1.5, bleed: BLOOD, counters: ["ward"], art: "c_gull", aw: 12, pal: { b: 0xe8ecf0 } },
+  bat: { name: "Bat", hp: 14, w: 6, h: 5, speed: 0.7, touch: 6, ai: "fly", gold: 4, tier: 2, cost: 1.4, bleed: 0, fireImmune: true, poisonImmune: true, counters: ["fire", "poison"], art: "c_bat", aw: 13, pal: { b: 0x4a3a5a } },
+  skunk: { name: "Skunk", hp: 10, w: 7, h: 5, speed: 0.75, touch: 0, ai: "bomb", gold: 3, tier: 2, cost: 1.4, bleed: 0, counters: ["blood", "ward"], art: "c_skunk", aw: 12, pal: { b: 0xf2efe8 } },
+  moose: { name: "Moose", hp: 60, w: 10, h: 12, speed: 0.26, touch: 16, ai: "brute", gold: 12, tier: 3, cost: 3, bleed: BLOOD, counters: ["storm", "swift"], art: "c_moose", aw: 20, pal: { b: 0x6e4a30 } },
+  goose: { name: "Goose", hp: 22, w: 6, h: 8, speed: 0.8, touch: 12, ai: "dash", gold: 6, tier: 2, cost: 2, bleed: BLOOD, poisonImmune: true, counters: ["blade", "storm"], art: "c_goose", aw: 12, pal: { b: 0x8a7a66 } },
+  king: { name: "The Porcelain King", boss: true, hp: 420, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 80, tier: 9, cost: 0, bleed: 0, fireImmune: true, poisonImmune: true, counters: [], art: "c_king", aw: 30, pal: { b: 0xdfe6ea }, lines: ["Who clogged me?", "Bow to the throne.", "Flush. FLUSH."] },
+  gabe: { name: "Gabe, Mountain Man", boss: true, hp: 460, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 90, tier: 9, cost: 0, bleed: BLOOD, fireImmune: true, poisonImmune: true, counters: [], art: "gabe", aw: 26, pal: { b: 0xc8ff3a }, lines: ["You hear that? That's my buddy.", "These are MY mountains.", "Bears listen to me. You don't."] },
+  christian: { name: "Christian the Mystic", boss: true, hp: 440, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 90, tier: 9, cost: 0, bleed: BLOOD, fireImmune: true, poisonImmune: true, counters: [], art: "christian", aw: 32, pal: { b: 0xc07aff }, lines: ["Pick a card. Any card.", "Now you see me.", "The cards told me you'd lose."] },
+  ryu: { name: "Ryu", boss: true, hp: 480, w: 18, h: 16, speed: 0.5, touch: 18, ai: "hand", gold: 100, tier: 9, cost: 0, bleed: BLOOD, fireImmune: true, poisonImmune: true, counters: [], art: "ryu", aw: 26, pal: { b: 0xff5a3a }, lines: ["My turn.", "You call that a plunger?", "Down here, I make the rules."] },
 };
+const BOSSES = ["king", "gabe", "christian", "ryu"];
+const bossFor = (depth) => BOSSES[(Math.floor(depth / 4) - 1) % BOSSES.length];
 const FOE_DESC = {
-  grub: "Grub: slow crawler. Easy. Counters nothing.",
-  skitter: "Skitter: small, fast, and hops. Comes in numbers. Counters single-shot blade builds.",
-  spitter: "Spitter: keeps its distance and spits acid. Counters ward builds that stand still. Bleeds acid.",
-  wisp: "Wisp: flies, and ignores fire and poison. Counters fire and poison builds.",
-  bomber: "Bomber: runs at the player and explodes, which digs a crater. Counters blood and ward builds.",
-  brute: "Brute: big and tough. Digs through earth to reach the player. Counters storm and swift builds.",
-  shade: "Shade: flies, hangs back, then dashes through the player. Hard to hit. Counters slow blade and storm builds.",
+  raccoon: "Raccoon: slow and greedy. Easy. Counters nothing.",
+  hornet: "Hornets: small, fast, and hop at you. Come in numbers. Counter single-shot blade builds.",
+  gull: "Seagull: keeps its distance and spits acid. Counters ward builds that stand still. Bleeds acid.",
+  bat: "Bat: flies, and ignores fire and poison. Counters fire and poison builds.",
+  skunk: "Skunk: runs at the player and blows up, which digs a crater. Counters blood and ward builds.",
+  moose: "Moose: big and tough. Digs through earth to reach the player. Counters storm and swift builds.",
+  goose: "Goose: flies, hangs back, then charges through the player. Hard to hit. Counters slow blade and storm builds.",
 };
-const CAUSE_NAME = { lava: "lava", acid: "acid", fire: "fire", sludge: "sludge", blast: "blast", blood: "blood price", shock: "lightning", hand: "hand" };
-const causeName = (k) => (FOES[k] ? FOES[k].name.replace("Warden's ", "").toLowerCase() : CAUSE_NAME[k] || String(k || "dark"));
+const CAUSE_NAME = { lava: "lava", acid: "acid", fire: "fire", sludge: "sewage", blast: "blast", blood: "splinter", shock: "lightning", hand: "boss" };
+const causeName = (k) => (FOES[k] ? FOES[k].name.replace(/^The /, "").toLowerCase() : CAUSE_NAME[k] || String(k || "dark"));
 
 const LINES = {
   run_start_first: [
-    "You walked my halls. Now you fall through them.",
-    "I melted the floors. Everything here moves now. Even the walls.",
-    "Down is the only door here.",
+    "Somebody flushed something they shouldn't have. Grab a plunger.",
+    "The outhouse backed up into the ground. All of it moves now.",
+    "Down is the only way to fix a clog.",
   ],
   run_start_halls: [
-    "You walked my halls {halls} times. The halls are sand now.",
-    "I know you from the halls. Let us see how you swim.",
+    "You cleared my rooms {halls} times. Now clear what's under them.",
+    "I know you from upstairs. Let's see how you swim.",
   ],
   run_start: [
     "Back again. I poured it fresh.",
-    "Run {runs}. The sand remembers your shape.",
-    "I changed the recipe.",
-    "The well is deeper today. It always is.",
+    "Run {runs}. The sand remembers your shoes.",
+    "I changed the plumbing.",
+    "The drain is deeper today. It always is.",
   ],
   run_start_death: [
-    "Last time the {killer} had you. I kept some aside.",
-    "The {killer} asked about you. It is near the top.",
+    "Last time the {killer} got you. It told everyone.",
+    "The {killer} asked about you. It's near the top.",
   ],
   level_generous: [
-    "I left water where you will want it.",
+    "I left water where you'll want it.",
     "Soft ground this time. Dig.",
-    "There is gold in the walls. Take it.",
-    "An easy layer. Do not get used to it.",
+    "There's gold in the walls. Somebody's lost change.",
+    "An easy layer. Don't get used to it.",
   ],
   level_tempting: [
-    "Oil near the gold. Mind your sparks.",
+    "Oil near the gold. Mind the sparklers.",
     "The rich veins run deep. So does the lava.",
     "Something good down there. Something hot, too.",
     "Your {tag} will love this layer. For a while.",
   ],
   level_testing: [
-    "Your {tag} will not like what I poured.",
-    "I read your wand. The walls read it too.",
-    "This layer was made for you.",
-    "Depth {depth}. I am done being gentle.",
+    "Your {tag} won't like what I poured.",
+    "I read your gun. The walls read it too.",
+    "This layer was made for you. You're welcome.",
+    "Depth {depth}. I'm done being a good host.",
   ],
-  watch_rain: ["Rain. You looked warm.", "Let me wash that off.", "A little water. Mind the sparks."],
-  watch_oil: ["A little oil. Hold your fire.", "Slick, is it not? Careful with the flames."],
-  watch_lava: ["Look up.", "Something warm is coming through.", "The ceiling is getting hot."],
-  watch_acid: ["It eats stone. It eats you faster.", "A drip from above. Do not stand under it."],
-  watch_gas: ["Breathe out. Do not light anything.", "Smell that? Keep your fire to yourself."],
-  watch_sand: ["The ceiling is tired.", "Hold still. It is only sand."],
-  watch_gold: ["For your trouble.", "Gold. Do not ask why."],
-  watch_foes: ["Company.", "They heard you digging.", "I sent a few friends."],
+  watch_rain: ["Rain. You looked warm.", "Let me hose you off.", "A little lake water. Mind the sparks."],
+  watch_oil: ["A little oil. Hold your fire.", "Slick, eh? Careful with the sparklers."],
+  watch_lava: ["Look up.", "Something warm is coming through.", "The sauna's leaking again."],
+  watch_acid: ["Drain cleaner. It eats stone. It eats you faster.", "A drip from above. Don't stand under it."],
+  watch_gas: ["Smell that? That's the swamp. Don't light anything.", "Breathe out. Keep your fire to yourself."],
+  watch_sand: ["The ceiling is tired.", "Hold still. It's only sand."],
+  watch_gold: ["For your trouble.", "Gold. Don't ask where it came from."],
+  watch_foes: ["Company.", "They heard you digging.", "I sent a few of the locals."],
   watch_quench: ["Not yet. I want you further down.", "There. Cooler now."],
-  hand_pour: ["More.", "Hold still.", "My hand is full. Let me empty it."],
-  shrine_generous: ["Rest. The next layer is setting.", "Heal up. I want a proper fall."],
-  shrine_tempting: ["Spend your gold. It is mine anyway.", "Something strong. It costs, of course."],
-  shrine_testing: ["Choose well. I already chose the next layer.", "Your wand is predictable. Fix that."],
-  low_hp: ["You are leaking.", "Careful. I have not finished with you.", "That one hurt. I felt it from here."],
-  boss_intro: ["My hand waits at the bottom. It likes to pour.", "Enough layers. Meet my hand.", "Down here is my hand. It has new tricks."],
-  gauntlet_start: ["No one walks through my rooms for free.", "Stay a while.", "The door is shut. Earn it open.", "You ran past the last ones. Not these."],
-  gauntlet_clear: ["Fine. Go on.", "The seal breaks. So did they.", "That will do. For now."],
-  hand_dead: ["You broke my hand. I will pour another.", "Fine. The well is open. Go deeper."],
+  hand_pour: ["More.", "Hold still.", "Flush."],
+  shrine_generous: ["Rest. Eat something. The next layer is setting.", "Heal up. I want a proper fall."],
+  shrine_tempting: ["Spend your gold. It was mine anyway.", "Something strong. It costs, of course."],
+  shrine_testing: ["Choose carefully. I already chose the next layer.", "Your gun is predictable. Fix that."],
+  low_hp: ["You're leaking.", "Careful. I haven't finished with you.", "That one hurt. I felt it in the floorboards."],
+  boss_intro: ["Something big is waiting at the bottom.", "Enough layers. Meet the reason the toilet won't flush.", "The clog is down there. It has a name."],
+  gauntlet_start: ["Nobody walks through my rooms for free.", "Stay a while.", "The screen door is shut. Earn it open.", "You ran past the last ones. Not these."],
+  gauntlet_clear: ["Fine. Go on.", "The screen door opens. They didn't make it.", "That will do. For now."],
+  hand_dead: ["You cleared the clog. I'll find another.", "Fine. The drain is open. Go deeper."],
   death: [
-    "The {killer} did it. I only mixed it.",
+    "The {killer} did it. I only held the screen door.",
     "Depth {depth}. The sand will cover it.",
-    "I will keep your {tag} habit on file.",
-    "Rest now. I will stir the pot.",
+    "I'll write your {tag} habit in the guest book.",
+    "Lie down. The dock's still warm upstairs.",
   ],
 };
 
 const MOOD_TEXT = {
   generous: ["Generous", "It pours soft ground, water, and gold, and it helps when you are hurt."],
-  tempting: ["Tempting", "It hides gold near oil and lava, and it offers strong spells with a price."],
-  testing: ["Testing", "It pours what counters your wand, and it sends foes your spells handle badly."],
+  tempting: ["Tempting", "It hides gold near oil and lava, and it offers strong shots with a price."],
+  testing: ["Testing", "It pours what counters your gun, and it sends critters your shots handle badly."],
 };
 const MOOD_DESC = {
-  generous: "Generous: help the player. Soft ground, water, gold, fewer foes, fitting spells.",
-  tempting: "Tempting: offer reward with risk. Gold beside oil and lava, strong spells with a price.",
-  testing: "Testing: counter the player's wand. Hazards and foes that resist their main tag.",
+  generous: "Generous: help the player. Soft ground, water, gold, fewer critters, fitting shots.",
+  tempting: "Tempting: offer reward with risk. Gold beside oil and lava, strong shots with a price.",
+  testing: "Testing: counter the player's gun. Hazards and critters that resist their main tag.",
 };
-const WARDEN_BRIEF = "The Warden is the living mind of a falling-sand dungeon: a deep well where every pixel is simulated. Sand and gold fall, water and oil flow, fire spreads through wood, moss, oil, and gas, acid eats stone, water turns lava to obsidian, and lightning shocks everything in water. The player carries a lantern that lets them float, and a wand of spells. They descend layer by layer to a glowing well at the bottom, rest at a landing, and change their wand. Every fourth layer ends at the Warden's hand. The Warden pours each layer and watches the player fall. It wants every run to feel close: hard enough to fear, fair enough to survive. Moods: generous helps, tempting offers reward with risk, testing counters the player's wand.";
+const COTTAGE_BRIEF = "The Cottage is the stubborn old spirit of a lakeside cottage in Get Plunger'd, a game about a group of friends up for the weekend. In this spin-off, Down the Drain, the outhouse backed up and the ground under the cottage turned into a falling-sand well where every pixel is simulated. Sand and gold fall, water and oil flow, fire spreads through wood, moss, oil, and swamp gas, acid (drain cleaner) eats stone, water turns lava to obsidian, and lightning shocks everything in water. One of the friends goes down with a leaf blower that lets them hover, a headlamp, a plunger to dig, and a gun loaded with shots (the state calls the gun a wand and its shots spells). They descend layer by layer to the drain at the bottom, rest at a snack bar, and change their gun. Every fourth layer ends at a boss: the Porcelain King, Gabe the Mountain Man, Christian the Mystic, or Ryu. The critters are raccoons, hornets, seagulls, bats, skunks, moose, and geese. The Cottage pours each layer and watches the player fall. It wants every run to feel close: hard enough to fear, fair enough to survive. Its voice is dry, teasing cottage humor. Moods: generous helps, tempting offers reward with risk, testing counters the player's gun.";
+
+/* ------------------------------------------------------------------ the crew and the critters, from Get Plunger'd */
+
+// the crew: the same five friends as the main game, each with a perk
+const CREW = [
+  { name: "Tank Top", perk: "Hits 20% harder", apply: (r) => { r.dmgMult *= 1.2; } },
+  { name: "Fifty-One", perk: "25 more health", apply: (r) => { r.maxHp += 25; r.hp += 25; } },
+  { name: "Shades", perk: "12% crit chance", apply: (r) => { r.crit += 0.12; } },
+  { name: "New Balance", perk: "Digs 40% faster", apply: (r) => { r.digMult *= 1.4; } },
+  { name: "Red Jersey", perk: "Moves 12% faster", apply: (r) => { r.speedMult *= 1.12; } },
+];
+
+// Critters are drawn in code, the same way as in the main game: eight frames of walking and one attack frame.
+// The crew and the bosses are pictures in art/.
+const Art = (() => {
+  const out = {};
+  const base = /\/fall$/.test(location.pathname) ? location.pathname + "/art/" : "art/";
+  function critters() {
+    const O = "#140c06";
+    const ell = (c, x, y, rx, ry, rot) => { c.beginPath(); c.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), rot || 0, 0, Math.PI * 2); };
+    const fo = (c, fill, lw) => { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = O; c.stroke(); };
+    const lg = (c, x0, y0, x1, y1, a, b) => { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; };
+    const rg = (c, x, y, r, a, b) => { const g = c.createRadialGradient(x - r * 0.35, y - r * 0.45, r * 0.1, x, y, r); g.addColorStop(0, a); g.addColorStop(1, b); return g; };
+    const limb = (c, x, y, len, ang, w, col) => { c.save(); c.translate(x, y); c.rotate(ang); c.beginPath(); if (c.roundRect) c.roundRect(-w / 2, -w / 2, w, len + w / 2, w / 2); else c.rect(-w / 2, -w / 2, w, len + w / 2); fo(c, col, 1.3); c.restore(); return { x: x - Math.sin(ang) * len, y: y + Math.cos(ang) * len }; };
+    const leg2 = (c, x, y, l1, l2, a, bend, w, col) => { const k = limb(c, x, y, l1, a, w, col); limb(c, k.x, k.y, l2, a - bend, w * 0.85, col); };
+    const eye = (c, x, y, r, iris) => { ell(c, x, y, r, r * 1.05); fo(c, "#fffdf6", 1); ell(c, x + r * 0.25, y + r * 0.1, r * 0.55, r * 0.62); c.fillStyle = iris || "#1a1208"; c.fill(); ell(c, x + r * 0.05, y - r * 0.3, r * 0.22, r * 0.22); c.fillStyle = "#fff"; c.fill(); };
+    const shine = (c, x, y, rx, ry, rot) => { ell(c, x, y, rx, ry, rot); c.fillStyle = "rgba(255,255,255,0.28)"; c.fill(); };
+    const Q = 3; // drawn at 3x so critters stay sharp when the camera zooms in
+    const sheet = (key, w, h, draw) => {
+      const frames = [];
+      for (let f = 0; f < 9; f++) {
+        const cv = document.createElement("canvas"); cv.width = w * Q; cv.height = h * Q;
+        const c = cv.getContext("2d"); c.scale(Q, Q); c.lineJoin = "round"; c.lineCap = "round";
+        draw(c, f < 8 ? (f / 8) * Math.PI * 2 : 0, f === 8);
+        frames.push(cv);
+      }
+      out[key] = { w, h, frames };
+    };
+
+    sheet("c_raccoon", 62, 48, (c, p, act) => {
+      const s = Math.sin(p), by = 28 - Math.abs(Math.cos(p)) * 1.6;
+      ell(c, 30, 45, 20, 3); c.fillStyle = "rgba(0,0,0,0.0)"; c.fill();
+      // far legs
+      limb(c, 20, by + 4, 11, act ? 0.3 : -0.5 * s, 5, "#4a443c"); limb(c, 42, by + 4, 11, act ? -1.2 : 0.5 * s, 5, "#4a443c");
+      c.save(); if (act) { c.translate(18, 40); c.rotate(-0.35); c.translate(-18, -40); }
+      // tail with rings
+      for (let k = 5; k >= 0; k--) { const a = -2.4 + k * 0.18 + Math.sin(p + k * 0.5) * 0.12, x = 13 + Math.cos(a) * k * 2.4, y = by - 1 + Math.sin(a) * k * 2.2; ell(c, x - k * 0.6, y - k * 0.5, 4.6, 4, -0.5); fo(c, k % 2 ? "#2e2a26" : "#a8a298", 1.2); }
+      ell(c, 30, by, 17, 10); fo(c, lg(c, 0, by - 10, 0, by + 10, "#bdb7ac", "#6e685f"));
+      ell(c, 32, by + 5, 11, 4); c.fillStyle = "rgba(230,224,212,0.55)"; c.fill();
+      shine(c, 26, by - 6, 8, 2.5, -0.1);
+      // head
+      const hy = by - 7 + Math.sin(p * 2) * 0.6;
+      for (const ex of [41, 51]) { c.beginPath(); c.moveTo(ex - 4, hy - 5); c.lineTo(ex, hy - 13); c.lineTo(ex + 4, hy - 5); c.closePath(); fo(c, "#8a847a", 1.2); c.beginPath(); c.moveTo(ex - 2, hy - 6); c.lineTo(ex, hy - 10); c.lineTo(ex + 2, hy - 6); c.fillStyle = "#e8c8c0"; c.fill(); }
+      ell(c, 46, hy, 11, 9); fo(c, lg(c, 0, hy - 9, 0, hy + 9, "#d4cec4", "#8a847a"));
+      c.beginPath(); c.moveTo(36, hy - 1); c.quadraticCurveTo(46, hy - 7, 56, hy - 1); c.quadraticCurveTo(46, hy + 4, 36, hy - 1); c.fillStyle = "#1c1916"; c.fill();
+      eye(c, 42.5, hy - 1.5, 2.3, "#2a1a0a"); eye(c, 50.5, hy - 1.5, 2.3, "#2a1a0a");
+      ell(c, 55, hy + 4, 5, 3.4); fo(c, "#f4efe6", 1.1); ell(c, 58.5, hy + 3, 1.8, 1.4); c.fillStyle = "#111"; c.fill();
+      if (act) { c.beginPath(); c.arc(54, hy + 7, 2.2, 0, Math.PI); c.fillStyle = "#7a1a1a"; c.fill(); }
+      // near legs
+      limb(c, 22, by + 5, 11, act ? 0.2 : 0.5 * s, 5.5, "#5a544c"); limb(c, 40, by + 5, 11, act ? -1.5 : -0.5 * s, 5.5, "#5a544c");
+      c.restore();
+    });
+
+    sheet("c_hornet", 40, 36, (c, p, act) => {
+      const f = Math.sin(p * 2), y = 18 + Math.sin(p) * 1.2;
+      c.globalAlpha = 0.7;
+      for (const [dx, a] of [[0, -0.4 + f * 0.8], [3, -0.1 + f * 0.8]]) { ell(c, 20 + dx, y - 8, 9, 4, a); c.fillStyle = "rgba(230,242,255,0.85)"; c.fill(); c.strokeStyle = "rgba(120,140,160,0.9)"; c.lineWidth = 0.8; c.stroke(); }
+      c.globalAlpha = 1;
+      for (let k = 0; k < 3; k++) { c.strokeStyle = O; c.lineWidth = 1.2; c.beginPath(); c.moveTo(20 + k * 3, y + 3); c.lineTo(18 + k * 3 + Math.sin(p + k) * 1.5, y + 9); c.stroke(); }
+      c.save(); c.translate(16, y + 1); c.rotate(act ? 0.9 : 0.25 + Math.sin(p) * 0.08);
+      ell(c, -6, 0, 10, 7); c.save(); c.clip(); for (let x = -18; x < 6; x += 5) { c.fillStyle = (x / 5) % 2 ? "#f2c230" : "#241a08"; c.fillRect(x, -8, 5, 16); } c.restore();
+      ell(c, -6, 0, 10, 7); c.lineWidth = 1.5; c.strokeStyle = O; c.stroke(); shine(c, -7, -3.5, 5, 1.6);
+      c.beginPath(); c.moveTo(-15, 0); c.lineTo(-20, act ? 3 : 1); c.lineTo(-15, 2); c.fillStyle = "#111"; c.fill();
+      c.restore();
+      ell(c, 25, y - 1, 6, 5); fo(c, rg(c, 25, y - 1, 6, "#5a4a20", "#241a08"));
+      ell(c, 31, y - 3, 5, 4.6); fo(c, "#f2c230");
+      ell(c, 32.5, y - 4, 2.4, 2.8); c.fillStyle = "#c0302a"; c.fill(); ell(c, 32, y - 5, 0.8, 0.8); c.fillStyle = "#fff"; c.fill();
+      c.strokeStyle = O; c.lineWidth = 1; c.beginPath(); c.moveTo(31, y - 7); c.quadraticCurveTo(33, y - 12, 36, y - 12); c.moveTo(29, y - 7); c.quadraticCurveTo(30, y - 12, 32, y - 13); c.stroke();
+    });
+
+    sheet("c_gull", 50, 54, (c, p, act) => {
+      const s = Math.sin(p), tilt = s * 0.06;
+      c.strokeStyle = "#d8781a"; c.lineWidth = 2.6;
+      for (const [x, a] of [[21, 0.35 * s], [28, -0.35 * s]]) { c.beginPath(); c.moveTo(x, 36); const fx = x - Math.sin(a) * 13, fy = 36 + Math.cos(a) * 13; c.lineTo(fx, fy); c.stroke(); c.beginPath(); c.moveTo(fx - 3, fy); c.lineTo(fx + 4, fy); c.stroke(); }
+      c.save(); c.translate(25, 32); c.rotate(tilt); c.translate(-25, -32);
+      c.beginPath(); c.moveTo(8, 29); c.lineTo(2, 25); c.lineTo(4, 33); c.closePath(); fo(c, "#e8ecf0", 1.2);
+      ell(c, 24, 30, 16, 10.5); fo(c, lg(c, 0, 20, 0, 40, "#ffffff", "#c8d0d8"));
+      if (act) { for (const [a, x] of [[-1.1, 16], [-0.6, 22]]) { c.save(); c.translate(x, 26); c.rotate(a); c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(10, -6, 22, -2); c.lineTo(18, 3); c.quadraticCurveTo(9, 3, 0, 4); c.closePath(); fo(c, "#8e9aa6", 1.3); c.beginPath(); c.moveTo(22, -2); c.lineTo(14, -2); c.lineTo(18, 3); c.fillStyle = "#1c1e22"; c.fill(); c.restore(); } }
+      else { c.beginPath(); c.moveTo(11, 27); c.quadraticCurveTo(24, 19 + Math.sin(p * 2) * 1, 37, 29); c.quadraticCurveTo(24, 34, 11, 27); fo(c, lg(c, 0, 20, 0, 34, "#a8b4c0", "#707c88"), 1.3); c.beginPath(); c.moveTo(6, 29); c.lineTo(12, 27); c.lineTo(13, 32); c.closePath(); c.fillStyle = "#1c1e22"; c.fill(); }
+      shine(c, 26, 25, 7, 2.2);
+      const hx = 35, hy = 16 + Math.sin(p * 2) * 0.8;
+      ell(c, hx, hy, 8.5, 7.5); fo(c, lg(c, 0, hy - 8, 0, hy + 8, "#ffffff", "#dde2e8"));
+      c.beginPath(); c.moveTo(hx + 7, hy - 1); c.lineTo(hx + 16, hy + (act ? -3 : 1)); c.lineTo(hx + 7, hy + 2); c.closePath(); fo(c, "#f4c430", 1.1);
+      if (act) { c.beginPath(); c.moveTo(hx + 7, hy + 2); c.lineTo(hx + 15, hy + 6); c.lineTo(hx + 7, hy + 4); c.closePath(); fo(c, "#f4c430", 1.1); }
+      ell(c, hx + 12, hy + 1.5, 1.2, 1); c.fillStyle = "#e0402a"; c.fill();
+      eye(c, hx + 2, hy - 2, 2, "#3a2a10");
+      c.restore();
+    });
+
+    sheet("c_bat", 60, 42, (c, p, act) => {
+      const f = Math.sin(p), cx = 30, cy = 20 + f * 1.5;
+      for (const sgn of [-1, 1]) {
+        const tip = { x: cx + sgn * 27, y: cy - 10 - f * 12 }, mid = { x: cx + sgn * 16, y: cy - 12 - f * 9 };
+        c.beginPath(); c.moveTo(cx + sgn * 4, cy - 3); c.lineTo(mid.x, mid.y); c.lineTo(tip.x, tip.y);
+        c.quadraticCurveTo(cx + sgn * 24, cy + 2 - f * 4, cx + sgn * 21, cy + 4 - f * 3);
+        c.quadraticCurveTo(cx + sgn * 17, cy - 1 - f * 3, cx + sgn * 13, cy + 5 - f * 2);
+        c.quadraticCurveTo(cx + sgn * 9, cy + 1, cx + sgn * 5, cy + 5); c.closePath();
+        fo(c, lg(c, 0, cy - 20, 0, cy + 8, "#5a3e72", "#2a1a3a"), 1.4);
+        c.strokeStyle = "rgba(160,120,200,0.6)"; c.lineWidth = 0.8; c.beginPath(); c.moveTo(mid.x, mid.y); c.lineTo(cx + sgn * 21, cy + 4 - f * 3); c.moveTo(mid.x, mid.y); c.lineTo(cx + sgn * 13, cy + 5 - f * 2); c.stroke();
+      }
+      for (const sgn of [-1, 1]) { c.beginPath(); c.moveTo(cx + sgn * 2, cy - 7); c.lineTo(cx + sgn * 5, cy - 16); c.lineTo(cx + sgn * 6.5, cy - 6); c.closePath(); fo(c, "#4a3456", 1.1); }
+      ell(c, cx, cy, 7.5, 9); fo(c, rg(c, cx, cy, 9, "#7a5a6a", "#3a2632"));
+      shine(c, cx - 2.5, cy - 4, 3, 1.4);
+      for (const sgn of [-1, 1]) { ell(c, cx + sgn * 3, cy - 2, 1.8, 1.8); c.fillStyle = "#ff3a3a"; c.fill(); ell(c, cx + sgn * 3 - 0.4, cy - 2.6, 0.6, 0.6); c.fillStyle = "#fff"; c.fill(); }
+      if (act) { ell(c, cx, cy + 4, 3.2, 2.6); c.fillStyle = "#5a0a14"; c.fill(); }
+      c.fillStyle = "#fff"; c.beginPath(); c.moveTo(cx - 2.2, cy + 2.5); c.lineTo(cx - 1.4, cy + 5); c.lineTo(cx - 0.6, cy + 2.5); c.moveTo(cx + 0.6, cy + 2.5); c.lineTo(cx + 1.4, cy + 5); c.lineTo(cx + 2.2, cy + 2.5); c.fill();
+    });
+
+    sheet("c_skunk", 56, 44, (c, p, act) => {
+      const s = Math.sin(p), by = 30 - Math.abs(Math.cos(p)) * 1.2;
+      limb(c, 20, by + 3, 8, -0.5 * s, 4.5, "#161418"); limb(c, 37, by + 3, 8, 0.5 * s, 4.5, "#161418");
+      // tail: a big plume
+      const lift = act ? 1 : 0.45 + Math.sin(p) * 0.08;
+      c.save(); c.translate(14, by - 2); c.rotate(-0.6 - lift * 0.9);
+      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-4, -16 - lift * 6, 6, -24 - lift * 6); c.quadraticCurveTo(16, -26 - lift * 6, 14, -14); c.quadraticCurveTo(10, -6, 6, 2); c.closePath(); fo(c, "#1c1a1e", 1.5);
+      c.beginPath(); c.moveTo(3, -2); c.quadraticCurveTo(1, -14 - lift * 4, 7, -20 - lift * 5); c.quadraticCurveTo(10, -12, 6, 0); c.fillStyle = "#f2efe8"; c.fill();
+      c.restore();
+      ell(c, 29, by, 14, 8.5); fo(c, lg(c, 0, by - 9, 0, by + 9, "#2e2a32", "#121014"));
+      c.beginPath(); c.moveTo(16, by - 4); c.quadraticCurveTo(29, by - 11, 42, by - 5); c.lineTo(40, by - 2); c.quadraticCurveTo(29, by - 7, 18, by - 1); c.closePath(); c.fillStyle = "#f2efe8"; c.fill();
+      const hx = 44, hy = by - 4 + Math.sin(p * 2) * 0.6;
+      ell(c, hx, hy, 8, 6.5); fo(c, "#1e1c22", 1.4);
+      c.fillStyle = "#f2efe8"; c.fillRect(hx - 1, hy - 7, 2.4, 8);
+      ell(c, hx + 7, hy + 2, 2, 1.6); c.fillStyle = "#ff9a9a"; c.fill();
+      eye(c, hx + 2, hy - 1, 1.7, "#1a0a0a");
+      for (const ex of [hx - 3, hx + 1]) { c.beginPath(); c.arc(ex, hy - 6, 2, Math.PI, 0); fo(c, "#1e1c22", 1); }
+      limb(c, 22, by + 4, 8, 0.5 * s, 5, "#222026"); limb(c, 38, by + 4, 8, -0.5 * s, 5, "#222026");
+    });
+
+    sheet("c_turtle", 60, 48, (c, p, act) => {
+      const s = Math.sin(p), by = 30;
+      for (const [x, a, dk] of [[16, -0.6 * s, 1], [42, 0.6 * s, 1]]) { c.save(); c.translate(x, by + 5); c.rotate(a); ell(c, 0, 4, 4.5, 6); fo(c, dk ? "#3e4a24" : "#5e6a3a", 1.2); c.restore(); }
+      // head pokes out and pulls back
+      const out = act ? 9 : 3 + s * 1.5, hx = 48 + out, hy = by + 1;
+      ell(c, hx - 3, hy, 5, 3.6); fo(c, "#5e6a3a", 1.2);
+      ell(c, hx, hy - 0.5, 6.5, 5); fo(c, lg(c, 0, hy - 5, 0, hy + 5, "#7a8a4a", "#4e5a2e"));
+      if (act) { c.beginPath(); c.moveTo(hx + 1, hy + 1); c.lineTo(hx + 8, hy - 2); c.lineTo(hx + 8, hy + 4); c.closePath(); c.fillStyle = "#6a1414"; c.fill(); c.strokeStyle = O; c.lineWidth = 1; c.stroke(); }
+      else { c.strokeStyle = O; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + 1, hy + 1.5); c.lineTo(hx + 6, hy + 1); c.stroke(); }
+      eye(c, hx + 1.5, hy - 2.5, 1.7, "#6a4a0a");
+      // shell
+      c.beginPath(); c.moveTo(4, by + 6); c.quadraticCurveTo(6, by - 20, 29, by - 21); c.quadraticCurveTo(52, by - 20, 54, by + 6); c.closePath(); fo(c, lg(c, 0, by - 21, 0, by + 6, "#7a8a3e", "#2e3a18"), 1.8);
+      c.beginPath(); c.moveTo(3, by + 6); c.lineTo(55, by + 6); c.lineTo(52, by + 10); c.lineTo(6, by + 10); c.closePath(); fo(c, "#8a8a4a", 1.4);
+      c.strokeStyle = "rgba(20,24,8,0.75)"; c.lineWidth = 1.2;
+      for (const [x, y, r] of [[29, by - 11, 6.5], [17, by - 5, 5.5], [41, by - 5, 5.5], [23, by + 2, 4.5], [35, by + 2, 4.5]]) { c.beginPath(); for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2 + 0.52; c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.8); } c.closePath(); c.fillStyle = "rgba(160,170,90,0.25)"; c.fill(); c.stroke(); }
+      shine(c, 22, by - 14, 9, 2.6, -0.2);
+      for (const [x, a] of [[20, 0.6 * s], [38, -0.6 * s]]) { c.save(); c.translate(x, by + 7); c.rotate(a); ell(c, 0, 4, 5, 6); fo(c, "#5e6a3a", 1.2); c.restore(); }
+    });
+
+    sheet("c_goose", 56, 64, (c, p, act) => {
+      const s = Math.sin(p), by = 44;
+      c.strokeStyle = "#22201c"; c.lineWidth = 2.6;
+      for (const [x, a] of [[20, 0.35 * s], [27, -0.35 * s]]) { c.beginPath(); c.moveTo(x, by + 6); const fx = x - Math.sin(a) * 12, fy = by + 6 + Math.cos(a) * 12; c.lineTo(fx, fy); c.stroke(); c.beginPath(); c.moveTo(fx - 3, fy); c.lineTo(fx + 4, fy); c.stroke(); }
+      if (act) for (const [a, x] of [[-1.3, 14], [-0.8, 20]]) { c.save(); c.translate(x, by - 4); c.rotate(a); c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(12, -7, 24, -3); c.lineTo(20, 4); c.quadraticCurveTo(10, 4, 0, 4); c.closePath(); fo(c, "#5a4e40", 1.3); c.restore(); }
+      ell(c, 23, by, 18, 11.5); fo(c, lg(c, 0, by - 12, 0, by + 12, "#9a8a74", "#4e4436"));
+      ell(c, 11, by + 4, 7, 4.5); fo(c, "#f0ece2", 1.1);
+      if (!act) { c.beginPath(); c.moveTo(8, by - 2); c.quadraticCurveTo(22, by - 10, 37, by - 1); c.quadraticCurveTo(22, by + 4, 8, by - 2); fo(c, "#453c30", 1.2); }
+      shine(c, 24, by - 7, 9, 2.4);
+      // neck and head: an S curve that sways, or stretches out in a honk
+      const hx = act ? 50 : 40 + Math.sin(p) * 1.5, hy = act ? 30 : 12 + Math.abs(Math.cos(p)) * 1.5;
+      c.lineWidth = 7; c.strokeStyle = O; c.beginPath(); c.moveTo(33, by - 5); c.quadraticCurveTo(act ? 42 : 34, act ? by - 12 : by - 22, hx - 2, hy + 2); c.stroke();
+      c.lineWidth = 4.6; c.strokeStyle = "#1a1a1a"; c.stroke();
+      ell(c, hx, hy, 7, 5.6, act ? 0.3 : 0); fo(c, "#1a1a1a", 1.3);
+      ell(c, hx - 1.5, hy + 2.5, 3.6, 2.2, 0.4); c.fillStyle = "#f4f0e8"; c.fill();
+      c.beginPath(); c.moveTo(hx + 5, hy - 1.5); c.lineTo(hx + 12, hy + (act ? -3 : 0)); c.lineTo(hx + 5, hy + 1.5); c.closePath(); fo(c, "#2a2a2a", 1.1);
+      if (act) { c.beginPath(); c.moveTo(hx + 5, hy + 1.5); c.lineTo(hx + 11, hy + 5); c.lineTo(hx + 5, hy + 3); c.closePath(); fo(c, "#2a2a2a", 1.1); ell(c, hx + 7, hy + 2, 2, 1); c.fillStyle = "#e05a5a"; c.fill(); }
+      ell(c, hx + 2, hy - 2, 1.3, 1.3); c.fillStyle = "#ff5a3a"; c.fill();
+    });
+
+    sheet("c_nest", 48, 58, (c, p, act) => {
+      c.strokeStyle = "#3a3024"; c.lineWidth = 2; c.beginPath(); c.moveTo(24, 0); c.lineTo(24, 8); c.stroke();
+      const pulse = act ? 1.08 : 1 + Math.sin(p) * 0.015;
+      c.save(); c.translate(24, 31); c.scale(pulse, pulse); c.translate(-24, -31);
+      ell(c, 24, 31, 19, 23); fo(c, lg(c, 0, 8, 0, 54, "#c4b8a0", "#6a604e"), 1.8);
+      c.strokeStyle = "rgba(70,58,40,0.55)"; c.lineWidth = 1.4;
+      for (let y = 15; y < 52; y += 5) { const w = 18 * Math.sqrt(Math.max(0, 1 - ((y - 31) / 23) ** 2)); c.beginPath(); c.ellipse(24, y, w, 2.6, 0, 0.05, Math.PI - 0.05); c.stroke(); }
+      shine(c, 17, 20, 5, 8, 0.2);
+      ell(c, 24, 42, 4.6, 4); c.fillStyle = "#1c160e"; c.fill();
+      if (act) { ell(c, 24, 42, 7, 6); c.fillStyle = "rgba(242,194,48,0.35)"; c.fill(); }
+      c.restore();
+      for (let k = 0; k < 3; k++) { const a = p + (k * Math.PI * 2) / 3, x = 24 + Math.cos(a) * 22, y = 30 + Math.sin(a) * 9; ell(c, x, y, 2.8, 2); fo(c, "#f2c230", 0.8); c.fillStyle = "#241a08"; c.fillRect(x - 0.5, y - 2, 1, 4); ell(c, x, y - 2.5, 2.4, 1.2); c.fillStyle = "rgba(230,242,255,0.8)"; c.fill(); }
+    });
+
+    sheet("c_moose", 92, 88, (c, p, act) => {
+      const s = Math.sin(p), by = 46 - Math.abs(Math.cos(p)) * 1.5;
+      const dark = "#3a2618", mid = "#5a3c26";
+      leg2(c, 28, by + 8, 14, 15, act ? 0.3 : -0.45 * s, Math.max(0, s) * 0.7, 6, dark);
+      leg2(c, 60, by + 8, 14, 15, act ? -0.4 : 0.45 * s, Math.max(0, -s) * 0.7, 6, dark);
+      ell(c, 44, by, 27, 15.5); fo(c, lg(c, 0, by - 16, 0, by + 16, "#7a5638", "#3e2818"), 1.8);
+      c.beginPath(); c.moveTo(48, by - 15); c.quadraticCurveTo(58, by - 22, 66, by - 10); c.lineTo(62, by - 4); c.closePath(); fo(c, "#6a4a30", 1.4);
+      shine(c, 38, by - 9, 12, 3, -0.05);
+      // head lowers into a charge
+      const hx = act ? 78 : 74, hy = act ? by + 6 : by - 8 + Math.sin(p * 2) * 1.2, rot = act ? 0.55 : 0.25;
+      c.save(); c.translate(hx, hy); c.rotate(rot);
+      c.beginPath(); c.moveTo(-10, -6); c.quadraticCurveTo(0, -9, 8, -4); c.quadraticCurveTo(16, 0, 15, 8); c.quadraticCurveTo(8, 12, -2, 8); c.quadraticCurveTo(-10, 4, -10, -6); fo(c, lg(c, 0, -9, 0, 12, "#7a5a3c", "#4a3220"), 1.6);
+      ell(c, 12, 7, 2, 1.5); c.fillStyle = "#1a0e06"; c.fill();
+      ell(c, -1, 11, 3, 5); fo(c, "#4a3220", 1.1);
+      eye(c, 2, -2, 2, "#1a0e06");
+      for (const [sgn, ox] of [[-1, -6], [1, -1]]) {
+        c.save(); c.translate(ox, -7); c.scale(1, 1);
+        c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-8 + sgn * 2, -4, -14, -10);
+        for (let k = 0; k < 5; k++) c.lineTo(-14 + k * 4, -16 + (k % 2) * 5);
+        c.quadraticCurveTo(6, -8, 2, 1); c.closePath(); fo(c, lg(c, 0, -16, 0, 0, "#f0dcb0", "#b8a070"), 1.3);
+        c.restore();
+      }
+      c.restore();
+      leg2(c, 32, by + 9, 14, 15, act ? 0.1 : 0.45 * s, Math.max(0, -s) * 0.7, 6.5, mid);
+      leg2(c, 57, by + 9, 14, 15, act ? -0.6 : -0.45 * s, Math.max(0, s) * 0.7, 6.5, mid);
+    });
+
+    sheet("c_king", 132, 154, (c, p, act) => {
+      const por = (y0, y1) => lg(c, 0, y0, 0, y1, "#ffffff", "#aab6c0");
+      const bob = Math.sin(p) * 2;
+      // tank with an angry face
+      c.beginPath(); if (c.roundRect) c.roundRect(30, 30 + bob * 0.3, 72, 54, 10); else c.rect(30, 30, 72, 54); fo(c, por(30, 84), 3);
+      c.fillStyle = "#dfe6ea"; c.fillRect(26, 26 + bob * 0.3, 80, 10); c.strokeStyle = O; c.lineWidth = 2.4; c.strokeRect(26, 26 + bob * 0.3, 80, 10);
+      shine(c, 44, 44, 10, 4, -0.1);
+      for (const [x, sgn] of [[52, 1], [80, -1]]) { ell(c, x, 58 + bob * 0.3, 8, 6); fo(c, "#fff4c0", 2); ell(c, x + sgn * 1.5, 59 + bob * 0.3, 3.2, 4); c.fillStyle = act ? "#c0101a" : "#1a0a0a"; c.fill(); c.strokeStyle = O; c.lineWidth = 3.4; c.beginPath(); c.moveTo(x - 10 * sgn, 47 + bob * 0.3); c.lineTo(x + 7 * sgn, 52 + bob * 0.3); c.stroke(); }
+      c.fillStyle = "#d8dee4"; c.fillRect(58, 70, 16, 5); c.strokeStyle = O; c.lineWidth = 1.5; c.strokeRect(58, 70, 16, 5);
+      // crown
+      const cy = 26 + bob;
+      c.beginPath(); c.moveTo(46, cy); c.lineTo(50, cy - 20); c.lineTo(58, cy - 9); c.lineTo(66, cy - 24); c.lineTo(74, cy - 9); c.lineTo(82, cy - 20); c.lineTo(86, cy); c.closePath(); fo(c, lg(c, 0, cy - 24, 0, cy, "#ffe07a", "#b8861a"), 2);
+      for (const x of [50, 66, 82]) { ell(c, x, cy - (x === 66 ? 24 : 20), 2.6, 2.6); fo(c, x === 66 ? "#e0402a" : "#5ab0ff", 1); }
+      // bowl
+      c.beginPath(); c.moveTo(40, 100); c.quadraticCurveTo(44, 148, 66, 150); c.quadraticCurveTo(88, 148, 92, 100); c.closePath(); fo(c, por(96, 150), 3);
+      ell(c, 66, 100, 44, 19); fo(c, por(82, 118), 3);
+      ell(c, 66, 101, 33, 13); fo(c, rg(c, 66, 101, 33, "#8ad8ff", "#1a5a7a"), 2);
+      // the seat flaps like a mouth
+      const open = act ? 1 : 0.18 + Math.abs(Math.sin(p)) * 0.3;
+      c.save(); c.translate(66, 88); c.scale(1, 1 - open * 1.6);
+      ell(c, 0, 10, 42, 14); fo(c, por(0, 24), 2.4); ell(c, 0, 10, 30, 8); c.fillStyle = "#6a7a84"; c.fill();
+      c.restore();
+      if (open > 0.3) { c.fillStyle = "#fff"; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(66 + k * 8 - 3, 95); c.lineTo(66 + k * 8, 101); c.lineTo(66 + k * 8 + 3, 95); c.fill(); } }
+      if (act) for (let k = 0; k < 7; k++) { const a = -Math.PI / 2 + (k - 3) * 0.3; ell(c, 66 + Math.cos(a) * 30, 96 + Math.sin(a) * 26, 3, 5, a); c.fillStyle = "rgba(138,216,255,0.9)"; c.fill(); }
+    });
+
+  }
+  critters();
+  const load = (key, file, fw) => {
+    const im = new Image();
+    im.src = base + file;
+    im.decode().then(() => { out[key] = { img: im, fw: fw || im.width, fh: im.height }; }).catch(() => { /* drawn as pixels until it loads */ });
+  };
+  CREW.forEach((c, i) => load("crew" + i, "crew" + (i + 1) + ".webp"));
+  load("gabe", "gabe.webp", 273);
+  load("christian", "christian.webp", 349);
+  load("ryu", "ryu.webp", 270);
+  // a white copy of a frame, for the flash when something is hit
+  const whites = new Map();
+  function white(key, src, sx, sy, sw, sh) {
+    let c = whites.get(key);
+    if (c) return c;
+    c = document.createElement("canvas"); c.width = sw; c.height = sh;
+    const x = c.getContext("2d");
+    x.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
+    x.globalCompositeOperation = "source-in"; x.fillStyle = "#fff"; x.fillRect(0, 0, sw, sh);
+    whites.set(key, c);
+    return c;
+  }
+  return { get: (k) => out[k], white, base };
+})();
 
 /* ------------------------------------------------------------------ memory */
 
 const Memory = {
-  key: "wardenfall.memory.v1",
+  key: "plungerd.drain.v1",
   data: null,
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.key)); } catch (e) { d = null; }
-    this.data = Object.assign({ runs: 0, deepest: 0, hands: 0, tagCasts: {}, deathsBy: {}, lastDeath: null, gold: 0 }, d || {});
-    let halls = 0;
-    try { const h = JSON.parse(localStorage.getItem("warden.memory.v1")); halls = (h && h.runs) || 0; } catch (e) { halls = 0; }
+    this.data = Object.assign({ runs: 0, deepest: 0, hands: 0, tagCasts: {}, deathsBy: {}, lastDeath: null, gold: 0, crew: null }, d || {});
+    // runs of the main game upstairs, and the friend picked there
+    let halls = 0, friend = 0;
+    try { const h = JSON.parse(localStorage.getItem("plungerd.meta.v1")); halls = (h && h.runs) || 0; friend = (h && h.friend) || 0; } catch (e) { halls = 0; }
     this.halls = halls;
+    if (this.data.crew == null) this.data.crew = clamp(friend, 0, CREW.length - 1);
     return this.data;
   },
   save() { try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (e) { /* storage off */ } },
@@ -642,12 +917,12 @@ function topKey(obj) {
 
 /* ------------------------------------------------------------------ run */
 
-// Every wand has its own stats. Some shuffle their spells, and some cast a spell of their own each time.
-const WAND_NOUNS = ["Rod", "Wand", "Staff", "Branch", "Spike", "Bone"];
+// Every gun (a wand in the code) has its own stats. Some shuffle their shots, and some fire a shot of their own each time.
+const WAND_NOUNS = ["Soaker", "Blaster", "Launcher", "Squirter", "Cannon", "Pump"];
 const WAND_COLORS = [0xb07a4a, 0x8a9ab8, 0x6aa06a, 0xc0604a, 0x9a7ac0, 0xd0b060, 0x4fb3a6];
 function makeWand(tier, starter) {
   const base = { cursor: 0, cdT: 0, rechargeT: 0, order: null };
-  if (starter) return { ...base, name: "Lantern Rod", slots: 4, spells: ["spark", "spark", "chisel", null], manaMax: 110, mana: 110, regen: 38, castDelay: 0.17, recharge: 0.5, spread: 0.02, speed: 1, shuffle: false, always: null, color: 0xb07a4a };
+  if (starter) return { ...base, name: "Plunger Pistol", slots: 4, spells: ["spark", "spark", "chisel", null], manaMax: 110, mana: 110, regen: 38, castDelay: 0.17, recharge: 0.5, spread: 0.02, speed: 1, shuffle: false, always: null, color: 0xb07a4a };
   const pick = (a) => a[(rnd() * a.length) | 0];
   const slots = clamp(3 + ((rnd() * 3) | 0) + tier, 3, 9);
   const castDelay = Math.max(0.04, +(0.07 + rnd() * 0.24 - 0.02 * tier).toFixed(2));
@@ -664,18 +939,18 @@ function makeWand(tier, starter) {
   const spells = new Array(slots).fill(null);
   const n = Math.min(slots, 1 + ((rnd() * 2) | 0) + Math.min(2, tier));
   for (let k = 0; k < n; k++) spells[k] = k < n - 1 && rnd() < 0.3 ? pick(mods) : pick(shots);
-  const adj = always ? "Humming" : shuffle ? "Wild" : castDelay < 0.1 ? "Quick" : manaMax > 220 ? "Deep" : spread <= 0.02 ? "Steady" : recharge < 0.3 ? "Restless" : "Old";
+  const adj = always ? "Loaded" : shuffle ? "Janky" : castDelay < 0.1 ? "Twitchy" : manaMax > 220 ? "Big-Tank" : spread <= 0.02 ? "Dead-Eye" : recharge < 0.3 ? "Quick-Pump" : "Rusty";
   return { ...base, name: adj + " " + pick(WAND_NOUNS), slots, spells, manaMax, mana: manaMax, regen, castDelay, recharge, spread, speed, shuffle, always, color: pick(WAND_COLORS) };
 }
 function wandLines(w) {
-  const out = [w.slots + " slots", w.manaMax + " mana, +" + Math.round(w.regen) + "/s", "cast " + w.castDelay.toFixed(2) + " s", "recharge " + w.recharge.toFixed(2) + " s"];
+  const out = [w.slots + " slots", w.manaMax + " pressure, +" + Math.round(w.regen) + "/s", "fires every " + w.castDelay.toFixed(2) + " s", "reload " + w.recharge.toFixed(2) + " s"];
   if (w.spread > 0.05) out.push("spread " + Math.round(w.spread * 57) + "°");
   if (w.speed !== 1) out.push("speed x" + w.speed);
-  if (w.shuffle) out.push("shuffles its spells");
-  if (w.always) out.push("always casts " + SPELLS[w.always].name);
+  if (w.shuffle) out.push("shuffles its shots");
+  if (w.always) out.push("always fires " + SPELLS[w.always].name);
   return out;
 }
-// take a wand: a free hand holds it, or it replaces the one in use and that wand's spells go to the bag
+// take a gun: a free hand holds it, or it replaces the one in use and that gun's shots go to the bag
 function giveWand(r, w) {
   if (r.wands.length < 3) { r.wands.push(w); return r.wands.length - 1; }
   for (const id of r.wands[r.wi].spells) if (id) r.bag.push(id);
@@ -683,7 +958,10 @@ function giveWand(r, w) {
   return r.wi;
 }
 function newRun() {
-  return { depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  const crew = clamp(Memory.data ? Memory.data.crew || 0 : 0, 0, CREW.length - 1);
+  const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  CREW[crew].apply(r);
+  return r;
 }
 let run = newRun();
 const isBossDepth = (d) => d % 4 === 0;
@@ -715,13 +993,14 @@ function directorState(r) {
     mood: r.mood,
     last_theme: r.lastTheme,
     recent_lines: r.recentLines.slice(-4),
-    memory: { runs: m.runs, deepest: m.deepest, hands_broken: m.hands, fav_tag: Memory.favTag(), last_death: m.lastDeath, top_killer: Memory.topKiller(), halls_runs: Memory.halls },
+    crew: CREW[r.crew].name,
+    memory: { runs: m.runs, deepest: m.deepest, bosses_beaten: m.hands, fav_tag: Memory.favTag(), last_death: m.lastDeath, top_killer: Memory.topKiller(), cottage_runs: Memory.halls },
   };
 }
 
-/* ------------------------------------------------------------------ the Warden (Jev, or the stand-in) */
+/* ------------------------------------------------------------------ the Cottage (Jev, or the stand-in) */
 
-const Warden = (() => {
+const Cottage = (() => {
   // On the Vercel site, /api/warden forwards each call to Jev through Vercel AI Gateway.
   // Anywhere else (or with ?local=1), the local stand-in answers with the same shape.
   const JEV_ENDPOINT = /\.vercel\.app$/.test(location.hostname) && !/[?&]local=1/.test(location.search) ? "/api/warden" : null;
@@ -779,7 +1058,7 @@ const Warden = (() => {
   }
 
   async function ask(task, state, questions) {
-    const payload = { task, state: { brief: WARDEN_BRIEF, ...state }, questions: questions.map((q) => ({ id: q.id, prompt: q.prompt, options: q.options.map((o) => ({ value: o.value, label: o.label, desc: o.desc || o.label })) })) };
+    const payload = { task, state: { brief: COTTAGE_BRIEF, ...state }, questions: questions.map((q) => ({ id: q.id, prompt: q.prompt, options: q.options.map((o) => ({ value: o.value, label: o.label, desc: o.desc || o.label })) })) };
     const t0 = performance.now();
     const toast = UI.toastStart(task);
     let answers = null, source = "local stand-in", model = null, usage = null, error = null;
@@ -814,7 +1093,7 @@ const Warden = (() => {
   function moodQuestion(st) {
     return {
       id: "mood",
-      prompt: "Choose the Warden's mood for the next layer. Pick generous when the player is hurt (low hp_frac) or died recently. Pick tempting when the player has gold to spend or a wand that a risky layer could reward. Pick testing when the wand leans hard on one tag (high focus_share), when the player is healthy, or deep in the well.",
+      prompt: "Choose the Cottage's mood for the next layer. Pick generous when the player is hurt (low hp_frac) or died recently. Pick tempting when the player has gold to spend or a gun that a risky layer could reward. Pick testing when the gun leans hard on one tag (high focus_share), when the player is healthy, or deep in the drain.",
       options: ["generous", "tempting", "testing"].map((v) => ({ value: v, label: v, desc: MOOD_DESC[v] })),
       score: (v) => {
         if (v === "generous") return 0.3 + 1.8 * (1 - st.hp_frac) + (st.memory.last_death && st.depth === 1 ? 0.3 : 0);
@@ -827,7 +1106,7 @@ const Warden = (() => {
   function themeQuestion(st) {
     return {
       id: "theme",
-      prompt: "Choose the look of the next layer. Change it from last_theme so the well keeps shifting. The forge suits deep, dangerous layers. The crypt suits the first layer. A testing Warden may pick the cistern against a fire wand, or the overgrown hall to tempt a fire wand to burn its own path.",
+      prompt: "Choose the look of the next layer. Change it from last_theme so the ground keeps shifting. Under the sauna suits deep, dangerous layers. The cellar suits the first layer. A testing Cottage may pick the septic tank against a fire gun, or the crawlspace to tempt a fire gun to burn its own path.",
       options: Object.keys(THEMES).map((k) => ({ value: k, label: THEMES[k].name, desc: THEME_DESC[k] })),
       score: (k) => {
         let l = st.last_theme === k ? -2 : 0;
@@ -853,8 +1132,8 @@ const Warden = (() => {
     oil: "Oil: pools in the caves. Harmless until lit, then a firestorm.",
     lava: "Lava: pools in the caves. Burns the player badly. Dangerous.",
     acid: "Acid: pools in the caves and eats the stone under it. Dangerous.",
-    sludge: "Sludge: toxic pools that poison the player and give off miasma.",
-    miasma: "Miasma: pockets of gas under the ceilings. It explodes into flame when lit.",
+    sludge: "Sludge (sewage): toxic pools that poison the player and give off swamp gas.",
+    miasma: "Miasma (swamp gas): pockets of gas under the ceilings. It explodes into flame when lit.",
   };
   const FORMS = {
     open: "Open: big halls on the route and many hollows beside it. Easy to move through.",
@@ -865,7 +1144,7 @@ const Warden = (() => {
   function fillQuestion(b, st) {
     return {
       id: "fill_" + b,
-      prompt: "Choose what stratum " + b + " of 6 is made of. Stratum 1 is the top of the layer and 6 is the bottom. Generous: earth. Testing: sand that falls on the player, or rock if the player cannot dig (can_dig is false). Tempting: roots near a fire wand. Mix materials across strata.",
+      prompt: "Choose what stratum " + b + " of 6 is made of. Stratum 1 is the top of the layer and 6 is the bottom. Generous: earth. Testing: sand that falls on the player, or rock if the player cannot dig (can_dig is false). Tempting: roots near a fire gun. Mix materials across strata.",
       options: Object.keys(FILLS).map((k) => ({ value: k, label: k, desc: FILLS[k] })),
       score: (k) => {
         const fire = st.focus_tag === "fire";
@@ -880,7 +1159,7 @@ const Warden = (() => {
   function pocketQuestion(b, st) {
     return {
       id: "pocket_" + b,
-      prompt: "Choose what fills the caves in stratum " + b + " of 6. Generous: water or nothing. Tempting: oil near gold, miasma near a fire wand. Testing: pour what counters the player's main tag, like water against fire, or lava and acid deeper down. Keep the top stratum of the first layers gentle. Lava and acid get more likely with depth and lower strata.",
+      prompt: "Choose what fills the caves in stratum " + b + " of 6. Generous: water or nothing. Tempting: oil near gold, miasma near a fire gun. Testing: pour what counters the player's main tag, like water against fire, or lava and acid deeper down. Keep the top stratum of the first layers gentle. Lava and acid get more likely with depth and lower strata.",
       options: Object.keys(POCKETS).map((k) => ({ value: k, label: k, desc: POCKETS[k] })),
       score: (k) => {
         const fire = st.focus_tag === "fire", gen = st.mood === "generous", test = st.mood === "testing", temp = st.mood === "tempting";
@@ -906,17 +1185,17 @@ const Warden = (() => {
     };
   }
   const FEATURES = {
-    falls: "Falls: a hidden reservoir pours through a crack in a ceiling. Water, or lava in the ember forge.",
-    ossuary: "Ossuary: a side room of bone pillars with a chest.",
+    falls: "Falls: a hidden reservoir pours through a crack in a ceiling. Water, or lava under the sauna.",
+    ossuary: "Ossuary: a side room of old fish bones in pillars, with a chest.",
     root: "Great root: a giant root hangs into a room, with mossy ledges. It burns.",
     vault: "Vault: a sealed room full of gold and a rich chest. The player must dig in to find it.",
-    casks: "Casks: a cellar of wooden casks full of oil. A fire trap, or a tool.",
+    casks: "Casks: a cellar of old oil drums and kegs. A fire trap, or a tool.",
     none: "Nothing special.",
   };
   function featureQuestion(i, st) {
     return {
       id: "feature_" + i,
-      prompt: "Choose set piece " + i + " of 2 for the next layer. Generous: a vault or an ossuary to reward the player. Tempting: casks of oil near a fire wand, or a vault. Testing: falls, or casks against a fire wand. Pick two different set pieces.",
+      prompt: "Choose set piece " + i + " of 2 for the next layer. Generous: a vault or an ossuary to reward the player. Tempting: casks of oil near a fire gun, or a vault. Testing: falls, or casks against a fire gun. Pick two different set pieces.",
       options: Object.keys(FEATURES).map((k) => ({ value: k, label: k, desc: FEATURES[k] })),
       score: (k) => {
         const fire = st.focus_tag === "fire", gen = st.mood === "generous", temp = st.mood === "tempting", test = st.mood === "testing";
@@ -927,8 +1206,8 @@ const Warden = (() => {
   function gauntletQuestion(st) {
     return {
       id: "gauntlets",
-      prompt: "How many rooms on the route seal shut when the player enters, and hold them until two waves of foes are dead? The last room before the well always seals. Generous and hurt: one. Testing, healthy, or deep: three.",
-      options: [{ value: "one", label: "one", desc: "One: only the last room before the well." }, { value: "two", label: "two", desc: "Two sealed rooms." }, { value: "three", label: "three", desc: "Three sealed rooms. A hard layer." }],
+      prompt: "How many rooms on the route seal shut when the player enters, and hold them until two waves of critters are dead? The last room before the drain always seals. Generous and hurt: one. Testing, healthy, or deep: three.",
+      options: [{ value: "one", label: "one", desc: "One: only the last room before the drain." }, { value: "two", label: "two", desc: "Two sealed rooms." }, { value: "three", label: "three", desc: "Three sealed rooms. A hard layer." }],
       score: (v) => {
         const hurt = 1 - st.hp_frac;
         if (v === "one") return (st.mood === "generous" ? 0.9 : 0.1) + 1.2 * hurt;
@@ -940,7 +1219,7 @@ const Warden = (() => {
   function goldQuestion(st) {
     return {
       id: "gold",
-      prompt: "How much gold should the walls of the next layer hold? Generous and tempting Wardens pour more. Tempting hides it near danger.",
+      prompt: "How much gold should the walls of the next layer hold? A generous or tempting Cottage pours more. Tempting hides it near danger.",
       options: [{ value: "lean", label: "lean", desc: "Lean: a few thin veins." }, { value: "rich", label: "rich", desc: "Rich: thick veins of gold in the walls." }],
       score: (v) => (v === "rich" ? (st.mood === "generous" ? 1.1 : st.mood === "tempting" ? 0.9 : -0.2) : 0.4 + (st.mood === "testing" ? 0.5 : 0)),
     };
@@ -948,8 +1227,8 @@ const Warden = (() => {
   function pressureQuestion(st) {
     return {
       id: "pressure",
-      prompt: "How many foes should the next layer hold? Generous and hurt: low. Testing: high. Deeper layers can take more.",
-      options: [{ value: "low", label: "low", desc: "Low: fewer foes than usual." }, { value: "mid", label: "mid", desc: "Mid: the usual number of foes." }, { value: "high", label: "high", desc: "High: about a third more foes than usual." }],
+      prompt: "How many critters should the next layer hold? Generous and hurt: low. Testing: high. Deeper layers can take more.",
+      options: [{ value: "low", label: "low", desc: "Low: fewer critters than usual." }, { value: "mid", label: "mid", desc: "Mid: the usual number of critters." }, { value: "high", label: "high", desc: "High: about a third more critters than usual." }],
       score: (v) => {
         const hurt = st.hp_frac < 0.4 ? 0.8 : 0;
         const table = { generous: { low: 1.0 + hurt, mid: 0.5, high: -0.3 }, tempting: { low: 0.2 + hurt, mid: 1.0, high: 0.3 }, testing: { low: -0.2 + hurt * 0.5, mid: 0.5, high: 1.0 } };
@@ -960,7 +1239,7 @@ const Warden = (() => {
   function foeQuestion(i, kinds, st) {
     return {
       id: "foe_" + i,
-      prompt: "Choose foe " + i + " of 10 for the next layer. In a testing mood, pick foes that counter the player's strongest tags in tag_counts, and the foe that last killed the player. In a generous mood with low health, pick weaker foes. Mix ground, flying, and ranged foes.",
+      prompt: "Choose critter " + i + " of 10 for the next layer. In a testing mood, pick critters that counter the player's strongest tags in tag_counts, and the critter that last killed the player. In a generous mood with low health, pick weaker critters. Mix ground, flying, and ranged critters.",
       options: kinds.map((k) => ({ value: k, label: FOES[k].name, desc: FOE_DESC[k] })),
       score: (k) => {
         const d = FOES[k];
@@ -986,7 +1265,7 @@ const Warden = (() => {
     const pool = lineOptions(situation, st, ctx);
     return {
       id,
-      prompt: "Choose what the Warden says now (" + situation.replace(/_/g, " ") + "). Match the mood and the moment. Do not repeat a line from recent_lines.",
+      prompt: "Choose what the Cottage says now (" + situation.replace(/_/g, " ") + "). Match the mood and the moment. Do not repeat a line from recent_lines.",
       options: pool.map((t) => ({ value: t, label: t, desc: t })),
       score: (t) => (r.recentLines.includes(t) ? -2.5 : 0) + (t.includes("{killer}") ? 0.7 : 0) + (t.includes("{tag}") ? 0.4 : 0) + (t.includes("{halls}") ? 1 : 0),
     };
@@ -1003,13 +1282,13 @@ const Warden = (() => {
   }
   const lineCtx = (st, r, extra) => Object.assign({ tag: st.focus_tag, killer: st.memory.last_death, depth: r.depth, runs: st.memory.runs }, extra || {});
 
-  const unlocked = (depth) => Object.keys(FOES).filter((k) => k !== "hand" && FOES[k].tier <= Math.min(3, depth));
+  const unlocked = (depth) => Object.keys(FOES).filter((k) => !FOES[k].boss && FOES[k].tier <= Math.min(3, depth));
 
   /* the layer: the model suggests, the code decides */
 
   async function level(r, first) {
     let st = directorState(r);
-    const moodE = await ask("warden.mood", st, [moodQuestion(st)]);
+    const moodE = await ask("cottage.mood", st, [moodQuestion(st)]);
     const mood = moodE.answers.mood.pick;
     r.mood = mood;
     UI.mood(mood);
@@ -1022,7 +1301,7 @@ const Warden = (() => {
     for (let i = 1; i <= 10; i++) qs.push(foeQuestion(i, kinds, st));
     const ctx = lineCtx(st, r);
     qs.push(lineQuestion("line", first ? "run_start" : boss ? "boss_intro" : "level_" + mood, st, r, ctx));
-    const E = await ask("warden.level", st, qs);
+    const E = await ask("cottage.level", st, qs);
     const A = E.answers, notes = E.notes;
     const bands = [];
     for (let b = 1; b <= 6; b++) bands.push({ fill: A["fill_" + b].pick, pocket: A["pocket_" + b].pick, form: A["form_" + b].pick });
@@ -1034,7 +1313,7 @@ const Warden = (() => {
     if (!st.can_dig) bands.forEach((b, i) => { if (b.form === "dense" && b.fill === "rock") { notes.push("Stratum " + (i + 1) + " was dense rock, and the player cannot dig. The code opened it up."); b.form = "tunnels"; } });
     if (st.hp_frac < 0.35 && lava) bands.forEach((b, i) => { if (i < 2 && b.pocket === "lava") { notes.push("The player is badly hurt. The code took the lava out of stratum " + (i + 1) + "."); b.pocket = "none"; } });
     if (bands.some((b) => b.pocket === "lava" || b.pocket === "acid")) notes.push("Lava and acid pool only in side rooms. The code keeps them off the route.");
-    if (boss) notes.push("This is the hand's layer. The code hollowed out the lower strata as its cavern.");
+    if (boss) notes.push("This is a boss layer. The code hollowed out the lower strata as its cavern.");
     const theme = A.theme.pick;
     r.lastTheme = theme;
     const features = [A.feature_1.pick, A.feature_2.pick];
@@ -1051,7 +1330,7 @@ const Warden = (() => {
     let brutes = 0;
     for (let i = 0; i < count; i++) {
       let k = slots[i % slots.length];
-      if (k === "brute" && ++brutes > 2) { k = "grub"; if (brutes === 3) notes.push("More than 2 brutes. The code swapped the rest for grubs."); }
+      if (k === "moose" && ++brutes > 2) { k = "raccoon"; if (brutes === 3) notes.push("More than 2 moose. The code swapped the rest for raccoons."); }
       foes.push(k);
     }
     const line = fillLine(A.line.pick, ctx, r);
@@ -1069,10 +1348,10 @@ const Warden = (() => {
     oil: "Oil: pour oil above the player. Harmless until something burns.",
     lava: "Lava: drip lava through the ceiling near the player. Dangerous.",
     acid: "Acid: drip acid through the ceiling. It eats stone and the player.",
-    gas: "Gas: vent miasma from the ground near the player. Explodes when lit.",
+    gas: "Gas: vent swamp gas from the ground near the player. Explodes when lit.",
     sand: "Sand: drop a sandfall that can bury the player.",
     gold: "Gold: spill gold near the player. A gift.",
-    foes: "Foes: open a rift and send 3 foes.",
+    foes: "Critters: open a rift and send 3 critters.",
     quench: "Quench: turn fire and lava near the player to smoke and stone, and put the player out. A mercy.",
   };
   const WHERE = {
@@ -1086,7 +1365,7 @@ const Warden = (() => {
     const fire = st.focus_tag === "fire", hurt = 1 - st.hp_frac, gen = st.mood === "generous", test = st.mood === "testing", temp = st.mood === "tempting";
     const act = {
       id: "act",
-      prompt: "The Warden watches the player fall. Choose what it does now. Read burning, in_liquid, near (what lies within 40 pixels), foes_near, idle_s (seconds without progress), and hp_frac. Generous: quench fires, rain on a burning player, or spill gold. Tempting: oil near a fire wand, gas, gold. Testing: counter the wand, send foes when none are near, or drop sand on a player who stalls. Do not pour lava or acid on a player with low health. Often it only watches.",
+      prompt: "The Cottage watches the player fall. Choose what it does now. Read burning, in_liquid, near (what lies within 40 pixels), foes_near, idle_s (seconds without progress), and hp_frac. Generous: quench fires, rain on a burning player, or spill gold. Tempting: oil near a fire gun, gas, gold. Testing: counter the gun, send critters when none are near, or drop sand on a player who stalls. Do not pour lava or acid on a player with low health. Often it only watches.",
       options: Object.keys(ACTS).map((k) => ({ value: k, label: k, desc: ACTS[k] })),
       score: (k) => {
         switch (k) {
@@ -1105,18 +1384,18 @@ const Warden = (() => {
     };
     const where = {
       id: "where",
-      prompt: "Choose where the Warden acts, from the player's point of view.",
+      prompt: "Choose where the Cottage acts, from the player's point of view.",
       options: Object.keys(WHERE).map((k) => ({ value: k, label: k, desc: WHERE[k] })),
       score: (k) => (k === "above" ? 0.6 : k === "ahead" ? 0.4 + (test ? 0.3 : 0) : 0.1 + (st.idle_s > 15 ? 0.6 : 0)),
     };
-    const E = await ask("warden.watch", st, [act, where]);
+    const E = await ask("cottage.watch", st, [act, where]);
     let pick = E.answers.act.pick;
     const notes = E.notes;
     const was = pick;
-    if ((pick === "lava" || pick === "acid" || pick === "sand") && st.hp_frac < 0.3) { pick = "watch"; notes.push("The Warden wanted " + was + ". The player is too hurt, so the code held its hand."); }
-    else if (pick === r.lastAct && pick !== "watch" && pick !== "gold") { pick = "watch"; notes.push("The Warden picked " + was + " twice in a row. The code let the player breathe."); }
+    if ((pick === "lava" || pick === "acid" || pick === "sand") && st.hp_frac < 0.3) { pick = "watch"; notes.push("The Cottage wanted " + was + ". The player is too hurt, so the code held its hand."); }
+    else if (pick === r.lastAct && pick !== "watch" && pick !== "gold") { pick = "watch"; notes.push("The Cottage picked " + was + " twice in a row. The code let the player breathe."); }
     else if (pick === "quench" && !st.burning && st.near.fire + st.near.lava === 0) { pick = "watch"; notes.push("Nothing near the player to quench. The code let it watch."); }
-    else if (pick === "foes" && st.foes_near > 5) { pick = "watch"; notes.push("More than 5 foes already near. The code kept the rift shut."); }
+    else if (pick === "foes" && st.foes_near > 5) { pick = "watch"; notes.push("More than 5 critters already near. The code kept the rift shut."); }
     r.lastAct = pick;
     UI.ledger();
     return { act: pick, where: E.answers.where.pick };
@@ -1127,8 +1406,8 @@ const Warden = (() => {
     const hurt = 1 - st.hp_frac, fire = st.focus_tag === "fire";
     const q = {
       id: "pour",
-      prompt: "The Warden's hand fights the player in its cavern. Choose what it pours from its palm now. Counter the player's wand when testing. Hold back lava and acid when the player is badly hurt. Vary it: do not pour what it poured last (last_pour).",
-      options: ["lava", "acid", "oil", "sand", "water", "miasma", "foes"].map((k) => ({ value: k, label: k, desc: k === "foes" ? "Foes: drop 2 foes from the palm." : POCKETS[k] || FILLS[k] })),
+      prompt: "The boss fights the player in its cavern. Choose what the Cottage pours into the fight now. Counter the player's gun when testing. Hold back lava and acid when the player is badly hurt. Vary it: do not pour what it poured last (last_pour).",
+      options: ["lava", "acid", "oil", "sand", "water", "miasma", "foes"].map((k) => ({ value: k, label: k, desc: k === "foes" ? "Critters: drop 2 critters into the fight." : POCKETS[k] || FILLS[k] })),
       score: (k) => {
         let l = st.last_pour === k ? -1.5 : 0;
         if (k === "lava" || k === "acid") l += 0.5 + (st.mood === "testing" ? 0.4 : 0) - 2.5 * hurt;
@@ -1140,9 +1419,9 @@ const Warden = (() => {
         return l;
       },
     };
-    const E = await ask("warden.hand", st, [q]);
+    const E = await ask("cottage.hand", st, [q]);
     let pick = E.answers.pour.pick;
-    if ((pick === "lava" || pick === "acid") && st.hp_frac < 0.25) { E.notes.push("The hand wanted " + pick + ". The player is too hurt. The code gave it sand."); pick = "sand"; }
+    if ((pick === "lava" || pick === "acid") && st.hp_frac < 0.25) { E.notes.push("The Cottage wanted " + pick + ". The player is too hurt. The code gave it sand."); pick = "sand"; }
     UI.ledger();
     return pick;
   }
@@ -1165,7 +1444,7 @@ const Warden = (() => {
   function offerQuestion(i, pool, st, r) {
     return {
       id: "offer_" + i,
-      prompt: "Choose spell " + i + " of 3 that the Warden offers for free at the landing. The player keeps one. Generous: spells that fit the wand's main tag, and a digging spell if can_dig is false. Tempting: strong spells with a price. Testing: spells outside the player's habits. Offer different spells.",
+      prompt: "Choose shot " + i + " of 3 that the Cottage offers for free at the snack bar. The player keeps one. Generous: shots that fit the gun's main tag, and a digging shot if can_dig is false. Tempting: strong shots with a price. Testing: shots outside the player's habits. Offer different shots.",
       options: pool.map((id) => ({ value: id, label: SPELLS[id].name, desc: spellDesc(id) })),
       score: (id) => spellScore(id, st, r),
     };
@@ -1175,7 +1454,7 @@ const Warden = (() => {
       .concat(Object.keys(UPGRADES).map((k) => ({ value: "up:" + k, label: UPGRADES[k].name, desc: UPGRADES[k].name + ": " + UPGRADES[k].desc })));
     return {
       id: "shop_" + i,
-      prompt: "Choose item " + i + " of 2 the Warden sells for gold at the landing. Upgrades to the wand, the lantern, or health, or a spell. Tempting: things the player wants but can barely afford. Generous: health when hurt.",
+      prompt: "Choose item " + i + " of 2 the Cottage sells for gold at the snack bar. Upgrades to the gun, the leaf blower, or health, or a shot. Tempting: things the player wants but can barely afford. Generous: health when hurt.",
       options: opts,
       score: (v) => {
         if (v.startsWith("spell:")) return spellScore(v.slice(6), st, r) - 0.4;
@@ -1193,7 +1472,7 @@ const Warden = (() => {
 
   async function landing(r) {
     let st = directorState(r);
-    const moodE = await ask("warden.mood", st, [moodQuestion(st)]);
+    const moodE = await ask("cottage.mood", st, [moodQuestion(st)]);
     const mood = moodE.answers.mood.pick;
     r.mood = mood;
     UI.mood(mood);
@@ -1203,13 +1482,13 @@ const Warden = (() => {
     qs.push(shopQuestion(1, pool, st, r), shopQuestion(2, pool, st, r));
     qs.push({
       id: "rest",
-      prompt: "How much does the Warden let the player heal at the landing? Generous: full. Testing: half.",
+      prompt: "How much does the Cottage let the player heal at the snack bar? Generous: full. Testing: half.",
       options: [{ value: "full", label: "full", desc: "Full: heal to full health." }, { value: "half", label: "half", desc: "Half: heal half of the missing health." }],
       score: (v) => (v === "full" ? (mood === "generous" ? 1.2 : mood === "tempting" ? 0.4 : -0.2) + 1.2 * (1 - st.hp_frac) : 0.5 + (mood === "testing" ? 0.5 : 0)),
     });
     const ctx = lineCtx(st, r);
     qs.push(lineQuestion("line", "shrine_" + mood, st, r, ctx));
-    const E = await ask("warden.landing", st, qs);
+    const E = await ask("cottage.landing", st, qs);
     const notes = E.notes;
     const offers = [];
     for (let i = 1; i <= 3; i++) {
@@ -1222,7 +1501,7 @@ const Warden = (() => {
       }
       offers.push(id);
     }
-    if (!st.can_dig && !offers.some((id) => DIGGERS.includes(id))) { notes.push("The player cannot dig and no offer digs. The code made offer 3 a Chisel."); offers[2] = "chisel"; }
+    if (!st.can_dig && !offers.some((id) => DIGGERS.includes(id))) { notes.push("The player cannot dig and no offer digs. The code made offer 3 a Nail."); offers[2] = "chisel"; }
     const shop = [];
     for (let i = 1; i <= 2; i++) {
       const a = E.answers["shop_" + i];
@@ -1245,7 +1524,7 @@ const Warden = (() => {
     const ctx = lineCtx(st, r, extra);
     const q = lineQuestion("line", situation, st, r, ctx);
     if (!q.options.length) return "";
-    const E = await ask("warden.bark", st, [q]);
+    const E = await ask("cottage.bark", st, [q]);
     UI.ledger();
     return fillLine(E.answers.line.pick, ctx, r);
   }
@@ -1258,7 +1537,7 @@ const Warden = (() => {
 const SFX = (() => {
   let ctx = null, master = null, noiseBuf = null, muted = false;
   const VOL = 0.3, last = {};
-  try { muted = localStorage.getItem("wardenfall.muted") === "1"; } catch (e) { muted = false; }
+  try { muted = localStorage.getItem("plungerd.drain.muted") === "1"; } catch (e) { muted = false; }
   function init() {
     if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1303,7 +1582,7 @@ const SFX = (() => {
       init();
       muted = !muted;
       if (master) master.gain.value = muted ? 0 : VOL;
-      try { localStorage.setItem("wardenfall.muted", muted ? "1" : "0"); } catch (e) { /* storage off */ }
+      try { localStorage.setItem("plungerd.drain.muted", muted ? "1" : "0"); } catch (e) { /* storage off */ }
       return muted;
     },
     cast(tag) { if (!gate("cast", 45)) return; const f = { fire: 300, poison: 240, storm: 900, blade: 700, swift: 1100, ward: 520, blood: 200 }[tag] || 600; tone({ type: "sawtooth", f, f2: f * 2.2, dur: 0.09, vol: 0.045 }); noise({ dur: 0.05, vol: 0.06, f: 3000 }); },
@@ -1538,7 +1817,7 @@ const World = (() => {
     return placed;
   }
 
-  // count materials in a circle around a point, for the Warden's eyes
+  // count materials in a circle around a point, for the Cottage's eyes
   function survey(cx, cy, r) {
     const c = { fire: 0, water: 0, oil: 0, lava: 0, acid: 0, gas: 0, gold: 0, sand: 0 };
     for (let y = cy - r; y <= cy + r; y += 2) for (let x = cx - r; x <= cx + r; x += 2) {
@@ -1695,7 +1974,7 @@ const World = (() => {
       sides.push(sr);
     }
 
-    // 4b. dress the rooms, and build the Warden's set pieces
+    // 4b. dress the rooms, and build the Cottage's set pieces
     const lamps = [], chests = [], notes = [];
     const floorOf = (r) => (r.y + r.rh * 0.6) | 0;
     const put = (x, y, m) => { x |= 0; y |= 0; if (x > 2 && y > 2 && x < W - 3 && y < H - 3 && mat[y * W + x] === EMPTY) { mat[y * W + x] = m; life[y * W + x] = 0; } };
@@ -1749,7 +2028,7 @@ const World = (() => {
         if (cy > 0 && r.y - cy < 40) lamps.push({ x: x | 0, top: cy + 1, y: cy + 4 + ((R() * 6) | 0), lit: true });
       }
     }
-    // the Warden's set pieces for this layer
+    // the Cottage's set pieces for this layer
     const used = new Set();
     const pickMain = () => { const c = rooms.filter((r, k) => k > 0 && !used.has(r) && r.kind !== "bridge"); const r = c[(R() * c.length) | 0]; if (r) used.add(r); return r; };
     for (const f of plan.features || []) {
@@ -1970,11 +2249,11 @@ function dig(p, a) {
       if (m === EMPTY || m === BEDROCK || m === SEAL || !World.inb(x, y)) continue;
       const k = KIND[m];
       if (k !== K.SOLID && k !== K.POWDER) continue;
-      if (HARD[m] > 2 && m !== GOLD && rnd() > 0.16) continue;
+      if (HARD[m] > 2 && m !== GOLD && rnd() > 0.16 * run.digMult) continue;
       const i = y * W + x;
       if (m === GOLD) { run.gold++; SFX.coin(); World.set(i, EMPTY); }
       else World.set(i, rnd() < 0.12 ? SMOKE : EMPTY, World.lifeFor(SMOKE));
-      if (++n > 44) break;
+      if (++n > 44 * run.digMult) break;
     }
   }
   if (n) { SFX.dig(); if (rnd() < 0.5) addFx(p.x + 2 + Math.cos(a) * 8, p.y + 5 + Math.sin(a) * 8, 0xc9b27a, 1); }
@@ -2038,7 +2317,7 @@ function hurtPlayer(dmg, cause, raw) {
   p.flash = 0.15;
   if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); }
   if (run.hp <= 0) { run.hp = 0; die(cause); }
-  else if (run.hp / run.maxHp < 0.3 && !run.lowBarked) { run.lowBarked = true; Warden.bark("low_hp", run).then((l) => UI.voice(l)); }
+  else if (run.hp / run.maxHp < 0.3 && !run.lowBarked) { run.lowBarked = true; Cottage.bark("low_hp", run).then((l) => UI.voice(l)); }
 }
 function hurtFoe(f, dmg, src) {
   if (f.dead || dmg <= 0) return 0;
@@ -2112,7 +2391,7 @@ function castWand(ang) {
   for (let k = w.cursor; k < w.spells.length; k++) if (w.spells[w.order ? w.order[k] : k]) { rest = true; break; }
   if (wrapped || !rest) { w.cursor = 0; w.rechargeT = w.recharge; }
   // read the drawn spells: modifiers change what follows, a payload makes the next shot carry the spell after it
-  const mods = { speed: w.speed, dmg: 1, delay: 0, dig: 0, leech: 0, homing: 0, copies: 1, spread: w.spread };
+  const mods = { speed: w.speed, dmg: run.dmgMult * (rnd() < run.crit ? 2 : 1), delay: 0, dig: 0, leech: 0, homing: 0, copies: 1, spread: w.spread };
   if (w.always && SPELLS[w.always].kind === "mod") SPELLS[w.always].mod(mods);
   const casts = [];
   let carrier = null, wantCarrier = 0;
@@ -2380,9 +2659,9 @@ function updatePlayer(dt) {
   const c = envTick(p, dt, true);
   const inLiquid = c.frac > 0.25;
   const accel = p.ground ? 0.34 : 0.27;
-  p.vx += inp.x * accel;
+  p.vx += inp.x * accel * run.speedMult;
   p.vx *= p.ground ? 0.78 : inLiquid ? 0.86 : 0.93;
-  p.vx = clamp(p.vx, -1.9, 1.9);
+  p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
   if (inp.x) p.face = inp.x > 0 ? 1 : -1;
   p.vy += inLiquid ? 0.05 : 0.15;
   // a short grace after leaving a ledge, and a jump pressed just before landing still counts
@@ -2411,7 +2690,7 @@ function updatePlayer(dt) {
   }
   if (inp.dig) { dig(p, aimAngle()); p.vx *= 0.85; }
   else if (inp.cast) castWand(aimAngle());
-  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Tap Dig, then drag your right thumb where you want to dig." : "Stuck? Hold F or Shift to dig toward the cursor.", 4500); }
+  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Tap Dig, then drag your right thumb where you want to plunge." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
   // wands lying in the caves
   Game.nearPickup = null;
   for (const pk of Game.pickups) {
@@ -2423,7 +2702,7 @@ function updatePlayer(dt) {
   if (inp.swapEdge && Game.nearPickup) takePickup(Game.nearPickup);
   for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) openChest(c);
   inp.swapEdge = false;
-  // progress, for the Warden's sense of a stall
+  // progress, for the Cottage's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
   // the well
   const L = Game.level;
@@ -2453,13 +2732,13 @@ function openChest(c) {
   const roll = rnd();
   if (roll < (c.rich ? 0.35 : 0.15)) {
     Game.pickups.push({ x: c.x, y: c.y - 5, wand: makeWand(clamp(run.depth, 1, 3)), bob: 0 });
-    UI.hint("The chest held a wand.", 3000);
+    UI.hint("The cooler held a gun.", 3000);
   } else if (roll < 0.6) {
     const pool = Object.keys(SPELLS).filter((id) => SPELLS[id].tier <= Math.min(3, run.depth + 1));
     const id = pool[(rnd() * pool.length) | 0];
     const slot = run.wand.spells.indexOf(null);
-    if (slot >= 0) { run.wand.spells[slot] = id; UI.hint("The chest held " + SPELLS[id].name + ". It is in your wand.", 3200); }
-    else { run.bag.push(id); UI.hint("The chest held " + SPELLS[id].name + ". It is in your bag. Set it at the landing.", 3600); }
+    if (slot >= 0) { run.wand.spells[slot] = id; UI.hint("The cooler held " + SPELLS[id].name + ". It is in your gun.", 3200); }
+    else { run.bag.push(id); UI.hint("The cooler held " + SPELLS[id].name + ". It is in your bag. Set it at the snack bar.", 3600); }
     UI.hud(true);
   }
 }
@@ -2471,7 +2750,7 @@ function breakLamp(l) {
   World.spill(l.x, l.y, FIRE, 6, 2);
   SFX.sizzle();
 }
-// a sealed room: Warden glass shuts every way out until two waves of foes are dead
+// a sealed room: screen door shuts every way out until two waves of foes are dead
 function updateGauntlets(dt) {
   const p = Game.player;
   if (!p || !Game.gauntlets) return;
@@ -2493,7 +2772,7 @@ function updateGauntlets(dt) {
 function startGauntlet(g) {
   const r = g.r, p = Game.player;
   g.state = "active";
-  // fill every opening in a ring around the room with Warden glass
+  // fill every opening in a ring around the room with screen door
   for (let a = 0; a < Math.PI * 2; a += 0.012) for (let k = 1.0; k <= 1.45; k += 0.06) {
     const x = (r.x + Math.cos(a) * r.rw * k) | 0, y = (r.y + Math.sin(a) * r.rh * k) | 0;
     if (!World.inb(x, y) || y > r.y + r.rh * 0.6 + 2) continue;
@@ -2503,8 +2782,8 @@ function startGauntlet(g) {
   }
   SFX.rumble();
   Game.cam.shake = 5;
-  UI.hint("Sealed in. Two waves.", 2200);
-  Warden.bark("gauntlet_start", run).then((l) => UI.voice(l));
+  UI.hint("The screen doors slam. Two waves.", 2200);
+  Cottage.bark("gauntlet_start", run).then((l) => UI.voice(l));
   g.wait = 0.6;
 }
 function spawnWave(g) {
@@ -2530,7 +2809,7 @@ function spawnWave(g) {
     spots.forEach(([x, y], k) => {
       const pick = rnd() < 0.7 && plan.kinds && plan.kinds.length ? plan.kinds[(rnd() * plan.kinds.length) | 0] : kinds[(rnd() * kinds.length) | 0];
       const elite = k === 0 && (g.wave === 2 || run.depth >= 3);
-      const f = makeFoe(FOES[pick] ? pick : "grub", x, y, elite);
+      const f = makeFoe(FOES[pick] ? pick : "raccoon", x, y, elite);
       f.awake = true;
       for (let up = 0; up < 20 && boxHits(f.x, f.y, f.w, f.h); up++) f.y -= 1;
       Game.foes.push(f);
@@ -2546,8 +2825,8 @@ function endGauntlet(g) {
   g.seal = [];
   World.spill(g.r.x, g.r.y, GOLD, 20 + 10 * run.depth, 5);
   SFX.well();
-  UI.hint("The seal breaks.", 2000);
-  Warden.bark("gauntlet_clear", run).then((l) => UI.voice(l));
+  UI.hint("The screen doors open.", 2000);
+  Cottage.bark("gauntlet_clear", run).then((l) => UI.voice(l));
 }
 function takePickup(pk) {
   const i = Game.pickups.indexOf(pk);
@@ -2669,7 +2948,7 @@ function updateFoes(dt) {
   Game.foes = Game.foes.filter((f) => !f.dead);
 }
 
-/* the Warden's hand */
+/* the boss: it hovers, slams, and the Cottage pours into the fight */
 
 function updateHand(f, dt, dx, dy) {
   const p = Game.player;
@@ -2684,7 +2963,7 @@ function updateHand(f, dt, dx, dy) {
     f.vy = Math.min(5, f.vy + 0.35);
     const r = moveBody(f, 0, f.vy);
     if (r.hitY || f.y > H - 40) {
-      blast(f.x + f.w / 2, f.y + f.h, 11, 3, 24, "hand", f);
+      blast(f.x + f.w / 2, f.y + f.h, 11, 3, 24, f.kind, f);
       f.state = "rise"; f.cd = 1.2;
     }
   } else if (f.state === "rise") {
@@ -2695,7 +2974,7 @@ function updateHand(f, dt, dx, dy) {
   if (Game.handT <= 0 && !Game.handBusy) {
     Game.handBusy = true;
     Game.handT = 7 + rnd() * 3;
-    Warden.handPour(run, { ...envState(), last_pour: Game.lastPour }).then((pour) => {
+    Cottage.handPour(run, { ...envState(), last_pour: Game.lastPour }).then((pour) => {
       Game.handBusy = false;
       if (f.dead || run.over) return;
       Game.lastPour = pour;
@@ -2707,19 +2986,20 @@ function updateHand(f, dt, dx, dy) {
         Game.emitters.push({ x: px, y: py, w: 8, m, rate: 5, ticks: 140, tele: 50, follow: f });
       }
       SFX.rumble();
-      if (rnd() < 0.5) Warden.bark("hand_pour", run).then((l) => UI.voice(l));
+      if (f.d.lines && rnd() < 0.5) UI.voice(f.d.name.split(",")[0] + ": " + f.d.lines[(rnd() * f.d.lines.length) | 0]);
+      else if (rnd() < 0.5) Cottage.bark("hand_pour", run).then((l) => UI.voice(l));
     });
   }
 }
-const unlockedFor = (depth) => Object.keys(FOES).filter((k) => k !== "hand" && FOES[k].tier <= Math.min(3, depth));
+const unlockedFor = (depth) => Object.keys(FOES).filter((k) => !FOES[k].boss && FOES[k].tier <= Math.min(3, depth));
 function handDown() {
   Game.level.handDead = true;
   run.hands++;
   Memory.data.hands++;
   Memory.save();
   SFX.roar();
-  Warden.bark("hand_dead", run).then((l) => UI.voice(l));
-  UI.hint("The well is open.");
+  Cottage.bark("hand_dead", run).then((l) => UI.voice(l));
+  UI.hint("The drain is open.");
 }
 function spawnFoe(kind, x, y) {
   const f = makeFoe(kind, x, y);
@@ -2729,7 +3009,7 @@ function spawnFoe(kind, x, y) {
   return f;
 }
 
-/* emitters: the Warden pours from the ceiling */
+/* emitters: the Cottage pours from the ceiling */
 
 function updateEmitters() {
   for (const e of Game.emitters) {
@@ -2759,9 +3039,9 @@ function envState() {
   };
 }
 
-async function wardenWatch() {
+async function cottageWatch() {
   Game.watchBusy = true;
-  const res = await Warden.watch(run, envState());
+  const res = await Cottage.watch(run, envState());
   Game.watchBusy = false;
   if (Game.state !== "play" || run.over) return;
   const p = Game.player;
@@ -2814,7 +3094,7 @@ async function wardenWatch() {
     }
   }
   if (act !== "quench" && act !== "foes") SFX.rumble();
-  const line = await Warden.bark("watch_" + act, run);
+  const line = await Cottage.bark("watch_" + act, run);
   UI.voice(line);
 }
 
@@ -2823,9 +3103,9 @@ async function wardenWatch() {
 // a 3 by 5 pixel font for damage numbers
 const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111" };
 const Render = (() => {
-  const wc = $("#world"), dc = $("#dark");
-  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d");
-  let vw = 0, vh = 0, scale = 3, img = null, buf = null;
+  const wc = $("#world"), dc = $("#dark"), ac = $("#actors");
+  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actx = ac.getContext("2d");
+  let vw = 0, vh = 0, scale = 3, img = null, buf = null, adpr = 1;
   const stamp = document.createElement("canvas");
   stamp.width = stamp.height = 64;
   {
@@ -2844,6 +3124,10 @@ const Render = (() => {
     wc.style.width = vw * scale + "px"; wc.style.height = vh * scale + "px";
     dc.width = Math.ceil(vw / 2); dc.height = Math.ceil(vh / 2);
     dc.style.width = vw * scale + "px"; dc.style.height = vh * scale + "px";
+    // the crew and the critters draw sharp, on their own canvas above the pixels
+    adpr = Math.min(2, window.devicePixelRatio || 1);
+    ac.width = Math.round(vw * scale * adpr); ac.height = Math.round(vh * scale * adpr);
+    ac.style.width = vw * scale + "px"; ac.style.height = vh * scale + "px";
     img = wctx.createImageData(vw, vh);
     buf = new Uint32Array(img.data.buffer);
   }
@@ -2863,13 +3147,56 @@ const Render = (() => {
   const P_ROWS = ["..cc.", ".cccc", ".cfe.", ".cccc", "ccccc", "ccccc", "ccccc", ".ccc.", ".c.c.", ".d.d."];
   const P_PAL = { c: 0x3a4a6a, f: 0x1a1a22, e: 0xe6c35c, d: 0x2a2420 };
   const CHEST = ["bbbbbbb", "bgggggb", "bbbybbb", "bbbbbbb"], CHEST_OPEN = ["b.....b", "bgggggb", "bbbbbbb"];
-  const CHEST_PAL = { b: 0x6a4428, g: 0xe6c35c, y: 0xfff0a0 };
-  const EYE_ROWS = ["..www..", ".wwiww.", "wwiiiww", ".wwiww.", "..www.."];
+  const CHEST_PAL = { b: 0xc0392b, g: 0xf2efe8, y: 0xffcf4a }; // a red cooler
+  const PIPE_ROWS = ["mmmmmmm", ".mmmmm.", "..mim..", "...i..."]; // a drain pipe opens before the Cottage pours
 
   function px(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < vw && y < vh) buf[y * vw + x] = c; }
   function line(x1, y1, x2, y2, c) {
     const n = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) | 0;
     for (let k = 0; k <= n; k++) { const t = n ? k / n : 0; px(x1 + (x2 - x1) * t + (rnd() - 0.5) * 2, y1 + (y2 - y1) * t + (rnd() - 0.5) * 2, c); }
+  }
+
+  // one picture, flipped to face its way, with its feet (or its middle, for flyers) at a world point
+  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key) {
+    const k = scale * adpr, w = dw * k, h = dw * (sh / sw) * k;
+    const x = wx * k, y = wy * k;
+    actx.save();
+    actx.translate(x, y);
+    if (flip) actx.scale(-1, 1);
+    const top = mid ? -h / 2 : -h;
+    actx.drawImage(src, sx, sy, sw, sh, -w / 2, top, w, h);
+    if (flash) actx.drawImage(Art.white(key, src, sx, sy, sw, sh), -w / 2, top, w, h);
+    actx.restore();
+    return mid ? wy - dw * (sh / sw) / 2 : wy - dw * (sh / sw);
+  }
+  function drawActors(ox, oy) {
+    actx.setTransform(1, 0, 0, 1, 0, 0);
+    actx.clearRect(0, 0, ac.width, ac.height);
+    actx.imageSmoothingEnabled = true;
+    actx.imageSmoothingQuality = "high";
+    const k = scale * adpr;
+    for (const f of Game.foes) {
+      const d = f.d, a = Art.get(d.art) || Art.get("c_king");
+      const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
+      const moving = Math.abs(f.vx) + Math.abs(f.vy) > 0.05;
+      const act = f.fuse > 0 || f.state === "slam" || f.state === "dash" || (d.ai === "spit" && f.cd < 0.25);
+      const mid = d.ai === "fly" || d.ai === "dash" || d.ai === "hand" || (d.ai === "hop" && !f.ground);
+      const fr = act ? 8 : moving || mid ? ((f.t * 12) | 0) % 8 : 0;
+      const cx = f.x + f.w / 2 - ox, wy = mid ? f.y + f.h / 2 - oy : f.y + f.h + 1 - oy;
+      let top;
+      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, d.aw, f.face < 0, fl, mid, d.art + fr);
+      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, d.aw, f.face < 0, fl, mid, d.art + q); }
+      if (f.elite) {
+        const ex = cx * k, ey = (top - 2) * k, r = 1.6 * k;
+        actx.fillStyle = "#e6c35c"; actx.strokeStyle = "#1b1608"; actx.lineWidth = Math.max(1, k * 0.35);
+        actx.beginPath(); actx.moveTo(ex, ey - r); actx.lineTo(ex + r, ey); actx.lineTo(ex, ey + r); actx.lineTo(ex - r, ey); actx.closePath(); actx.fill(); actx.stroke();
+      }
+    }
+    const p = Game.player, c = Art.get("crew" + run.crew);
+    if (p && !run.over && c && !(p.hurtT > 0 && ((p.hurtT * 20) | 0) % 2 === 0)) {
+      const dw = 14 * c.fw / c.fh;
+      actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, "crew" + run.crew);
+    }
   }
 
   function draw(dt) {
@@ -2912,26 +3239,18 @@ const Render = (() => {
       }
       if (open) for (let k = 0; k < 3; k++) px(L.exitX + (rnd() - 0.5) * 14 - ox, L.exitY - 4 - rnd() * 18 - oy, World.abgr(0xfff0a0));
     }
-    // emitters show the Warden's eye before they pour
-    const iris = World.abgr(Game.moodColor || 0xe6c35c), white = World.abgr(0xe4dccb);
+    // a drain pipe shows where the Cottage will pour
+    const iris = World.abgr(Game.moodColor || 0xe6c35c), pipeC = World.abgr(0x8a9096);
     for (const e of Game.emitters) {
       if (e.follow) continue;
-      if (e.tele > 0 && (e.tele >> 3) % 2 === 0) sprite(EYE_ROWS, { w: white, i: iris }, e.x - ox, e.y + (e.floor ? -6 : 0) - oy, false, false, 3, 0);
+      if (e.tele > 0 && (e.tele >> 3) % 2 === 0) sprite(PIPE_ROWS, { m: pipeC, i: iris }, e.x - ox, e.y + (e.floor ? -6 : 0) - oy, false, false, 3, 0);
     }
-    // foes
-    for (const f of Game.foes) {
-      const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
-      sprite(f.d.sprite, palOf(f.d.pal), f.x - ox, f.y - oy, f.face < 0, fl, 0, 0);
-      if (f.elite) { const gc = World.abgr(0xe6c35c); px(f.x + f.w / 2 - ox, f.y - 2 - oy, gc); px(f.x + f.w / 2 - 1 - ox, f.y - 3 - oy, gc); px(f.x + f.w / 2 + 1 - ox, f.y - 3 - oy, gc); }
-      if (f.d.ai === "hand" && f.state === "slam") for (let k = 0; k < 4; k++) px(f.x + rnd() * f.w - ox, f.y + f.h + rnd() * 4 - oy, iris);
-    }
+    // critters draw on the actor canvas below; the slam dust stays in pixels
+    for (const f of Game.foes) if (f.d.ai === "hand" && f.state === "slam") for (let k = 0; k < 4; k++) px(f.x + rnd() * f.w - ox, f.y + f.h + rnd() * 4 - oy, iris);
     // the player
     if (p && !run.over) {
       const blink = p.hurtT > 0 && ((p.hurtT * 20) | 0) % 2 === 0;
-      if (!blink) sprite(P_ROWS, palOf(P_PAL), p.x - ox, p.y - oy, p.face < 0, p.flash > 0, 0, 0);
-      const lx = p.face > 0 ? p.x + 5 : p.x - 1;
-      px(lx - ox, p.y + 5 - oy, World.abgr(0xffd070));
-      px(lx - ox, p.y + 6 - oy, World.abgr(0xffb040));
+      if (!blink && !Art.get("crew" + run.crew)) sprite(P_ROWS, palOf(P_PAL), p.x - ox, p.y - oy, p.face < 0, p.flash > 0, 0, 0);
       if (p.aegisT > 0) for (let a = 0; a < 24; a++) { const t = a / 24 * Math.PI * 2; if ((a + (tk >> 2)) % 3) px(p.x + 2 + Math.cos(t) * 8 - ox, p.y + 5 + Math.sin(t) * 9 - oy, World.abgr(0xb39ddb)); }
       // the lantern's compass points down the route toward the well
       const tgt = routeTarget(p);
@@ -3009,6 +3328,7 @@ const Render = (() => {
       }
     }
     wctx.putImageData(img, 0, 0);
+    drawActors(ox, oy);
 
     // darkness, with holes where light falls
     const dw = dc.width, dh = dc.height;
@@ -3055,7 +3375,7 @@ const Minimap = (() => {
   const seen = new Uint8Array(MW * MH);
   const img = ctx.createImageData(MW, MH), b32 = new Uint32Array(img.data.buffer);
   let on = !matchMedia("(pointer: coarse)").matches;
-  try { const v = localStorage.getItem("wardenfall.map"); if (v) on = v === "1"; } catch (e) { /* storage off */ }
+  try { const v = localStorage.getItem("plungerd.drain.map"); if (v) on = v === "1"; } catch (e) { /* storage off */ }
   const FOG = World.abgr(0x07090d), OPEN = World.abgr(0x2c3342), WALL = World.abgr(0x5a6272), ME = 0xffffffff, WELL = World.abgr(0xe6c35c), FOE = World.abgr(0xd0485f);
   function reveal(p) {
     const cx = (p.x + 2) >> 2, cy = (p.y + 5) >> 2, r = 12;
@@ -3083,7 +3403,7 @@ const Minimap = (() => {
     ctx.putImageData(img, 0, 0);
   }
   function show() { c.hidden = !on || !Game.level; $("#mapBtn").setAttribute("aria-pressed", String(on)); }
-  function toggle() { on = !on; try { localStorage.setItem("wardenfall.map", on ? "1" : "0"); } catch (e) { /* storage off */ } show(); draw(); }
+  function toggle() { on = !on; try { localStorage.setItem("plungerd.drain.map", on ? "1" : "0"); } catch (e) { /* storage off */ } show(); draw(); }
   return { reset() { seen.fill(0); show(); }, reveal, draw, toggle, show };
 })();
 
@@ -3289,13 +3609,14 @@ const UI = (() => {
     if (near) set("swapBtn", "text", "Swap for " + Game.nearPickup.wand.name + " (E)");
     const hand = Game.foes.find((f) => f.d.ai === "hand" && f.awake);
     if ($("#bossbar").hidden === !!hand) $("#bossbar").hidden = !hand;
+    if (hand) set("bossName", "text", hand.d.name);
     if (hand) set("bossFill", "width", Math.max(0, (hand.hp / hand.maxHp) * 100).toFixed(1) + "%");
   }
 
   function mood(m) {
     document.body.dataset.mood = m || "none";
     Game.moodColor = { generous: 0xe6c35c, tempting: 0xd0485f, testing: 0x7fa8ff }[m] || 0xe6c35c;
-    const [name, text] = MOOD_TEXT[m] || ["Watching", "The Warden picks a mood before each layer."];
+    const [name, text] = MOOD_TEXT[m] || ["Watching", "The Cottage picks a mood before each layer."];
     $("#moodName").textContent = name;
     $("#hudMood").textContent = name;
     $("#moodText").textContent = text;
@@ -3333,9 +3654,9 @@ const UI = (() => {
     b.setAttribute("aria-pressed", String(!muted));
   }
 
-  /* decisions pop up as the Warden makes them */
-  const TASK_TITLE = { "warden.mood": "Choosing a mood", "warden.level": "Pouring the layer", "warden.watch": "Watching you fall", "warden.hand": "The hand chooses", "warden.landing": "Stocking the landing" };
-  // the Warden's decisions show as one quiet line under the eye; the full record lives in the Warden tab
+  /* decisions pop up as the Cottage makes them */
+  const TASK_TITLE = { "cottage.mood": "Choosing a mood", "cottage.level": "Pouring the layer", "cottage.watch": "Watching you fall", "cottage.hand": "Pouring into the boss fight", "cottage.landing": "Stocking the snack bar" };
+  // the Cottage's decisions show as one quiet line under the eye; the full record lives in the Cottage tab
   let tickT = 0, tickEntry = null;
   function toastStart(task) {
     if (!TASK_TITLE[task]) return null;
@@ -3354,7 +3675,7 @@ const UI = (() => {
     if (fills.length) rows.push(["Strata: " + fills.join(", "), null]);
     if (qs.includes("feature_1")) rows.push(["Set pieces: " + [e.answers.feature_1.pick, e.answers.feature_2.pick].filter((v) => v !== "none").join(", "), null]);
     one("gold", "Gold");
-    one("pressure", "Foes");
+    one("pressure", "Critters");
     one("gauntlets", "Sealed rooms");
     one("act", "Act");
     one("where", "Where");
@@ -3372,7 +3693,7 @@ const UI = (() => {
       const rows = summarize(e).map((r) => r[0]);
       if (!rows.length) return;
       const tk = $("#ticker");
-      tk.textContent = "Warden, " + TASK_TITLE[e.task].toLowerCase() + ": " + rows.slice(0, 3).join(" · ") + (e.source === "Jev" ? "" : " (stand-in)");
+      tk.textContent = "Cottage, " + TASK_TITLE[e.task].toLowerCase() + ": " + rows.slice(0, 3).join(" · ") + (e.source === "Jev" ? "" : " (stand-in)");
       tk.hidden = false;
       tk.classList.remove("fade");
       tickEntry = e.id;
@@ -3387,16 +3708,16 @@ const UI = (() => {
     const box = $("#ledger");
     if ($("#sheet").hidden) return;
     box.innerHTML = "";
-    if (!Warden.ledger.length) { box.innerHTML = "<p class='empty'>No calls yet.</p>"; return; }
-    const open = openId != null && Warden.ledger.find((x) => x.id === openId);
+    if (!Cottage.ledger.length) { box.innerHTML = "<p class='empty'>No calls yet.</p>"; return; }
+    const open = openId != null && Cottage.ledger.find((x) => x.id === openId);
     if (open) { entryView(box, open); return; }
-    const per = 6, pages = Math.ceil(Warden.ledger.length / per);
+    const per = 6, pages = Math.ceil(Cottage.ledger.length / per);
     ledgerPage = clamp(ledgerPage, 0, pages - 1);
-    for (const e of Warden.ledger.slice(ledgerPage * per, ledgerPage * per + per)) {
+    for (const e of Cottage.ledger.slice(ledgerPage * per, ledgerPage * per + per)) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "entry" + (e.notes.length ? " note-on" : "");
-      const t = document.createElement("b"); t.textContent = TASK_TITLE[e.task] || e.task.replace("warden.", "Line: ");
+      const t = document.createElement("b"); t.textContent = TASK_TITLE[e.task] || e.task.replace("cottage.", "Line: ");
       const m = document.createElement("span"); m.textContent = (e.source === "Jev" ? "Jev" : e.source.startsWith("Jev") ? "Jev, part" : "stand-in") + ", " + e.ms + " ms";
       b.append(t, m);
       b.onclick = () => { openId = e.id; ledger(); fit(); };
@@ -3419,7 +3740,7 @@ const UI = (() => {
     back.className = "btn quiet small";
     back.textContent = "All decisions";
     back.onclick = () => { openId = null; ledger(); fit(); };
-    const h = document.createElement("h3"); h.textContent = TASK_TITLE[e.task] || e.task.replace("warden.", "Line: ");
+    const h = document.createElement("h3"); h.textContent = TASK_TITLE[e.task] || e.task.replace("cottage.", "Line: ");
     const meta = document.createElement("p"); meta.textContent = e.source + ", " + e.ms + " ms, $" + e.cost.toFixed(5) + ". Hover a row for the odds of every option.";
     const grid = document.createElement("div");
     grid.className = "qgrid";
@@ -3466,8 +3787,9 @@ const UI = (() => {
 
   function stats() {
     const rows = [
+      ["Friend", CREW[run.crew].name + " (" + CREW[run.crew].perk.toLowerCase() + ")"],
       ["Health", Math.ceil(run.hp) + " / " + run.maxHp],
-      ["Lantern lift", run.liftMax.toFixed(1) + " s"],
+      ["Blower lift", run.liftMax.toFixed(1) + " s"],
       ["Gold", String(run.gold)],
       ["Depth", String(run.depth)],
       ["Kills", String(run.kills)],
@@ -3496,12 +3818,12 @@ const UI = (() => {
   function memory() {
     const m = Memory.data;
     const rows = [
-      ["Falls", m.runs],
+      ["Trips down", m.runs],
       ["Deepest", m.deepest ? "depth " + m.deepest : "not yet"],
-      ["Hands broken", m.hands],
+      ["Bosses beaten", m.hands],
       ["Favorite tag", Memory.favTag() ? TAG[Memory.favTag()].name : "None yet"],
       ["Kills you most", Memory.topKiller() ? causeName(Memory.topKiller()) : "Nothing yet"],
-      ["Runs through its halls", Memory.halls],
+      ["Runs upstairs, in Get Plunger'd", Memory.halls],
     ];
     const dl = $("#mem");
     dl.innerHTML = "";
@@ -3550,7 +3872,7 @@ const UI = (() => {
   }
   function landing(L) {
     return new Promise((resolve) => {
-      $("#shrineTitle").textContent = "The landing, under depth " + run.depth;
+      $("#shrineTitle").textContent = CREW[(run.crew + 1 + run.depth) % CREW.length === run.crew ? (run.crew + 2) % CREW.length : (run.crew + 1 + run.depth) % CREW.length].name.toUpperCase() + "'S SNACK BAR";
       $("#shrineLine").textContent = L.line;
       $("#shrineRest").textContent = L.restText;
       const offers = $("#offers");
@@ -3578,7 +3900,7 @@ const UI = (() => {
         const id = it.v.slice(isSpell ? 6 : 3);
         const b = isSpell
           ? card({ name: SPELLS[id].name, desc: SPELLS[id].desc, price: SPELLS[id].price, tag: SPELLS[id].tag, tagName: TAG[SPELLS[id].tag].name, cost: it.price + " gold" })
-          : card({ name: UPGRADES[id].name, desc: UPGRADES[id].desc + (id === "newwand" && run.wands.length >= 3 ? " Your hands are full, so it replaces wand " + (run.wi + 1) + " and its spells go to the bag." : ""), tagName: id === "newwand" ? "Wand" : "Upgrade", cost: it.price + " gold" });
+          : card({ name: UPGRADES[id].name, desc: UPGRADES[id].desc + (id === "newwand" && run.wands.length >= 3 ? " Your hands are full, so it replaces gun " + (run.wi + 1) + " and its shots go to the bag." : ""), tagName: id === "newwand" ? "Gun" : "Upgrade", cost: it.price + " gold" });
         b.onclick = () => {
           if (run.gold < it.price || it.sold) return;
           run.gold -= it.price;
@@ -3602,7 +3924,7 @@ const UI = (() => {
           const b = document.createElement("button");
           b.type = "button";
           b.className = "slot" + (id ? "" : " empty") + (sel && sel.where === where && sel.i === i ? " sel" : "");
-          if (id) { b.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); b.innerHTML = "<span></span><small></small>"; b.firstChild.textContent = SPELLS[id].name; b.lastChild.textContent = SPELLS[id].kind === "mod" ? "modifier" : SPELLS[id].hp ? SPELLS[id].hp + " health" : SPELLS[id].mana + " mana"; b.title = SPELLS[id].desc; }
+          if (id) { b.style.setProperty("--tag", "var(" + TAG[SPELLS[id].tag].css + ")"); b.innerHTML = "<span></span><small></small>"; b.firstChild.textContent = SPELLS[id].name; b.lastChild.textContent = SPELLS[id].kind === "mod" ? "modifier" : SPELLS[id].hp ? SPELLS[id].hp + " health" : SPELLS[id].mana + " pressure"; b.title = SPELLS[id].desc; }
           else b.textContent = where === "bag" ? "Drop here" : "Empty";
           b.onclick = () => {
             if (!sel) { if (id) sel = { where, i }; renderWand(); return; }
@@ -3668,8 +3990,8 @@ async function enterDepth(first) {
   Game.state = "loading";
   Input.clear();
   Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
-  UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? "The Warden's hand waits below" : "The Warden pours the next layer", true);
-  const plan = await Warden.level(run, first);
+  UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
+  const plan = await Cottage.level(run, first);
   const geo = World.generate(plan);
   Game.level = { theme: plan.theme, boss: plan.boss, handDead: false, ...geo };
   Game.cam.x = geo.spawnX; Game.cam.y = geo.spawnY + 40;
@@ -3701,7 +4023,7 @@ async function enterDepth(first) {
     }
   }
   Game.foes = placed;
-  // sealed rooms: the last room before the well, and more as the Warden chose
+  // sealed rooms: the last room before the drain, and more as the Cottage chose
   Game.gauntlets = [];
   if (!plan.boss && geo.rooms.length > 2) {
     const picks = [geo.rooms[geo.rooms.length - 1]];
@@ -3721,7 +4043,7 @@ async function enterDepth(first) {
     }
   }
   if (plan.boss) {
-    const hand = makeFoe("hand", W / 2 - 9, geo.arenaTop + 20);
+    const hand = makeFoe(bossFor(run.depth), W / 2 - 9, geo.arenaTop + 20);
     hand.hp = hand.maxHp = 420 + 160 * (run.depth / 4 - 1);
     Game.foes.push(hand);
   }
@@ -3734,7 +4056,7 @@ async function enterDepth(first) {
   UI.hideBanner();
   UI.voice(plan.line);
   Game.state = "play";
-  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Left thumb moves. Push up to float. Right thumb aims and casts." : "A and D move. Hold W or the right button to float. Hold the left button to cast.", 5000);
+  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Left thumb moves. Push up to hover. Right thumb aims and shoots." : "A and D move. Hold W or the right button to hover. Hold the left button to shoot.", 5000);
 }
 
 let reaching = false;
@@ -3746,12 +4068,12 @@ async function reachWell() {
   SFX.well();
   Memory.data.deepest = Math.max(Memory.data.deepest, run.depth);
   Memory.save();
-  UI.banner("The landing", "The Warden stocks the landing", true);
-  const L = await Warden.landing(run);
+  UI.banner("The snack bar", "The Cottage stocks the snack bar", true);
+  const L = await Cottage.landing(run);
   const missing = run.maxHp - run.hp;
   const heal = L.rest === "full" ? missing : Math.round(missing / 2);
   run.hp = Math.min(run.maxHp, run.hp + heal);
-  L.restText = heal > 0 ? "The Warden lets you rest. You heal " + Math.round(heal) + " health" + (L.rest === "full" ? ", to full." : ", half of what you lost.") : "You are already whole.";
+  L.restText = heal > 0 ? "You eat a hot dog. You heal " + Math.round(heal) + " health" + (L.rest === "full" ? ", to full." : ", half of what you lost.") : "You are already whole.";
   UI.hideBanner();
   await UI.landing(L);
   run.depth++;
@@ -3771,17 +4093,18 @@ async function die(cause) {
   Memory.save();
   const p = Game.player;
   if (p) { World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); addFx(p.x + 2, p.y + 5, 0xd0485f, 20); }
-  const line = await Warden.bark("death", run, { killer: cause });
+  const line = await Cottage.bark("death", run, { killer: cause });
   UI.voice(line);
   await wait(1200);
-  UI.end("You fell at depth " + run.depth, line, [
+  UI.end("Flushed at depth " + run.depth, line, [
+    ["Friend", CREW[run.crew].name],
     ["Killed by", causeName(cause)],
     ["Depth", String(run.depth)],
-    ["Foes killed", String(run.kills)],
+    ["Critters killed", String(run.kills)],
     ["Gold", String(run.gold)],
-    ["Hands broken", String(run.hands)],
-    ["Wands", run.wands.map((wd) => wd.name).join(", ")],
-    ["Warden calls", String(run.calls)],
+    ["Bosses beaten", String(run.hands)],
+    ["Guns", run.wands.map((wd) => wd.name).join(", ")],
+    ["Cottage calls", String(run.calls)],
   ]);
 }
 
@@ -3840,7 +4163,7 @@ function tickGame(dt) {
     if ((World.tick & 3) === 0 && Game.player) Minimap.reveal(Game.player);
     updateFoes(dt);
     Game.watchT -= dt;
-    if (Game.watchT <= 0 && !Game.watchBusy && Game.levelT > 6) { Game.watchT = 15 + rnd() * 8; wardenWatch(); }
+    if (Game.watchT <= 0 && !Game.watchBusy && Game.levelT > 6) { Game.watchT = 15 + rnd() * 8; cottageWatch(); }
   }
   if (Game.state === "play" || Game.state === "dead") {
     updateShots(dt);
@@ -3867,6 +4190,23 @@ UI.insets();
 addEventListener("resize", () => { Render.resize(); UI.insets(); UI.fit(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { UI.insets(); UI.fit(); });
 UI.fit();
+// the title screen: pick one of the crew
+function renderRoster() {
+  const box = $("#roster");
+  box.innerHTML = "";
+  CREW.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "friend";
+    b.setAttribute("aria-pressed", String(Memory.data.crew === i));
+    b.innerHTML = "<img alt=''><b></b><small></small>";
+    b.querySelector("img").src = Art.base + "crew" + (i + 1) + ".webp";
+    b.querySelector("b").textContent = c.name;
+    b.querySelector("small").textContent = c.perk;
+    b.onclick = () => { Memory.data.crew = i; Memory.save(); renderRoster(); };
+    box.appendChild(b);
+  });
+}
+renderRoster();
 $("#startBtn").onclick = startRun;
 $("#againBtn").onclick = startRun;
 $("#hudHp").onclick = () => UI.sheet(true, "stats");
