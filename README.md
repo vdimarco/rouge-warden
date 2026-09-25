@@ -6,7 +6,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/` and Down the Drain at `/fall/`. The third machine is out of order.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, and Breath of the Lake at `/wild/`.
 
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
@@ -123,6 +123,25 @@ On a phone, the left thumb moves, and pulling down on the stick while you hit in
 
 The game fits the screen on desktop and phone, and nothing scrolls.
 
+## Breath of the Lake
+
+Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The Legend of Zelda: Breath of the Wild, with a soft, hand-painted look like a Studio Ghibli film. The Porcelain King clogged Loon Lake. His sludge took Gabe, Christian, and Ryu, and gave them red eyes. You wake up at the cottage and go get them back.
+
+- **Go anywhere.** The valley is about 1.6 km across: the cottage on the south shore, the pine forest to the west, the meadows to the east, and the mountains to the north. A long dock runs from the cottage to Clog Island.
+- **Climb anything.** Walk into a cliff, a tower, or a building, and you grab on. Climbing uses stamina.
+- **Glide.** Jump, then jump again in the air to open a beach umbrella. A campfire under you pushes you up.
+- **Swim.** Swimming uses stamina too. Run out and you wash back up on shore, one heart short.
+- **Light the fire towers.** Four towers fill in the map. After that, you can travel to them from the map.
+- **Clear the outhouse trials.** Twelve outhouses glow blue. Win the fight inside the ring for a Golden Orb. Pray at the loon statue with four orbs for a new heart or more stamina.
+- **Find the Loonies.** Thirty are hidden: most under odd little rocks with flowers on top, and some up high.
+- **Fight.** Swing in a 3-hit combo, or hold and let go for a spin. Roll just as a hit lands and time slows down. Weapons from the coolers hit harder than the plunger, but they break.
+- **Eat and cook.** Pick up apples, blueberries, toadstools, and maple syrup. Cook three at a fire to make a stew that fills your hearts and adds a gold one.
+- **Free your friends.** Gabe throws boulders and sends shockwaves you must jump. Christian blinks around a stone circle and throws cards. Ryu dashes and throws fireballs. Each one gives you a heart and a power: Gabe's Grit blocks hits, Mystic Updraft (R) lifts you into the sky, and Ryu's Fury (F) strikes everything near you with lightning.
+- **Flush the King.** He hops, spits sludge, calls raccoons, and at half health tries to flush you in.
+- **Day and night.** A day lasts 10 minutes. At night the fireflies and the skeeters come out. At midnight the critters come back.
+
+It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. All the models, sounds, and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
+
 ## Files
 
 | Path | What it does |
@@ -133,7 +152,9 @@ The game fits the screen on desktop and phone, and nothing scrolls.
 | `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain, also used on the Breath of the Lake title screen |
+| `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
+| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `player.js`, `foes.js` (critters and bosses), `models.js`, `ui.js` (HUD and map), `audio.js`, and `main.js` |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
