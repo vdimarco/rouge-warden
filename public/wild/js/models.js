@@ -6,7 +6,8 @@ const cache = new Map();
 let gradient = null;
 export function gradientMap() {
   if (gradient) return gradient;
-  const steps = [70, 150, 215, 255];
+  // five soft bands of light: painted shade, not hard cartoon shadow
+  const steps = [105, 150, 198, 236, 255];
   const data = new Uint8Array(steps.length * 4);
   steps.forEach((v, i) => data.set([v, v, v, 255], i * 4));
   gradient = new THREE.DataTexture(data, steps.length, 1, THREE.RGBAFormat);
@@ -21,7 +22,7 @@ export function toon(color, extra = {}) {
   if (key !== null) cache.set(key, m);
   return m;
 }
-const OUTLINE = new THREE.MeshBasicMaterial({ color: 0x2a2018, side: THREE.BackSide });
+const OUTLINE = new THREE.MeshBasicMaterial({ color: 0x3a2a20, side: THREE.BackSide });
 
 function mesh(geo, mat, x = 0, y = 0, z = 0, outline = true, thick = 0.045) {
   const m = new THREE.Mesh(geo, typeof mat === "number" ? toon(mat) : mat);

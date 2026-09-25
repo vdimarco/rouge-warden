@@ -7,6 +7,7 @@ import { Foe, Boss, Hazards, FX, spawnPlan } from "./foes.js";
 import { UI } from "./ui.js";
 import * as A from "./audio.js";
 import { rng, clamp, lerp, smooth } from "./noise.js";
+import { Painter, QUALITY } from "./post.js";
 
 THREE.ColorManagement.enabled = false;
 const $ = (s) => document.querySelector(s);
@@ -16,24 +17,36 @@ const low = matchMedia("(pointer: coarse)").matches || Math.min(innerWidth, inne
 const touchUI = matchMedia("(pointer: coarse)").matches;
 
 /* ---------------- renderer and scene ---------------- */
-const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
+// Graphics quality: saved from the pause menu, or a guess from the device.
+const GFX_KEY = "plungerd.wild.gfx";
+let gfx = (() => { try { const v = localStorage.getItem(GFX_KEY); if (QUALITY[v]) return v; } catch (e) { /* storage off */ } return low ? "low" : "high"; })();
+let Q = QUALITY[gfx];
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 1.25 : 1.75));
+// dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
+let resScale = 1;
+const applyRatio = () => renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale));
+applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 $("#game").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 5000);
-scene.fog = new THREE.Fog(0xcfeaff, 220, 1300);
+scene.fog = new THREE.Fog(0xcfeaff, 140, 1150);
 const hemi = new THREE.HemisphereLight(0xdff0ff, 0x6a7a4a, 1.1);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
 sun.castShadow = true;
-sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
+sun.shadow.mapSize.set(Q.shadow, Q.shadow);
 Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 600 });
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
+const painter = new Painter(renderer, Q);
+const draw = () => painter.render(scene, camera, G.look);
+// If the graphics card resets, save and reload rather than show a frozen or black screen.
+renderer.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); G.contextLost = true; try { G.writeSave && G.writeSave(); } catch (err) { /* keep going */ } const l = $("#loading"); if (l) { l.hidden = false; l.textContent = "Repainting…"; } });
+renderer.domElement.addEventListener("webglcontextrestored", () => location.reload());
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
 
 /* ---------------- the game state ---------------- */
@@ -44,7 +57,8 @@ const G = {
   sfx: A.sfx, pad: false, clock: 0.3, night: false,
 };
 window.G = G;
-G.test = { get step() { return step; }, inp: null, keys: null };
+// hooks for the QA scripts in qa/wild
+G.test = { get step() { return step; }, get camera() { return updateCamera; }, get inBox() { return inBox; } };
 G.shake = (t) => { G.shakeT = Math.max(G.shakeT, t); };
 G.groundAt = (x, z, y) => {
   let h = G.world.height(x, z);
@@ -60,7 +74,34 @@ G.groundAt = (x, z, y) => {
 function blankSave(friend = 0) {
   return { v: 1, friend, maxHp: friend === 1 ? 16 : 12, staminaMax: friend === 3 ? 125 : 100, orbs: 0, prayers: 0, towers: [], shrines: [], seen: [], loonies: [], bosses: [], coolers: {}, weapons: [{ id: "plunger", dur: null }], cur: 0, food: { apple: 2, shroom: 0, berry: 0, syrup: 0, stew: 0 }, pos: null, clock: 0.3, day: 1, check: null, played: 0, deaths: 0, kills: 0, done: false, intro: false };
 }
-function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && s.v === 1 ? s : null; } catch (e) { return null; } }
+// A save from an older build, or one that got damaged, is repaired field by field instead of crashing the game.
+function loadSave() {
+  let s;
+  try { s = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; }
+  if (!s || typeof s !== "object" || s.v !== 1) return null;
+  const d = blankSave(Number.isInteger(s.friend) && s.friend >= 0 && s.friend < 5 ? s.friend : 0);
+  const num = (v, lo, hi, def) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def);
+  const arr = (v, ok) => (Array.isArray(v) ? [...new Set(v.filter(ok))] : []);
+  const out = { ...d };
+  out.intro = !!s.intro; out.done = !!s.done;
+  out.maxHp = num(s.maxHp, 12, 80, d.maxHp); out.staminaMax = num(s.staminaMax, 100, 400, d.staminaMax);
+  out.orbs = num(s.orbs, 0, 12, 0); out.prayers = num(s.prayers, 0, 3, 0);
+  out.day = num(s.day, 1, 1e6, 1); out.clock = num(s.clock, 0, 0.9999, 0.3);
+  out.played = num(s.played, 0, 1e9, 0); out.deaths = num(s.deaths, 0, 1e9, 0); out.kills = num(s.kills, 0, 1e9, 0);
+  out.towers = arr(s.towers, (t) => TOWERS.some((x) => x.id === t));
+  out.bosses = arr(s.bosses, (b) => BOSSES.some((x) => x.id === b));
+  out.shrines = arr(s.shrines, (i) => Number.isInteger(i) && i >= 0 && i < 12);
+  out.seen = arr(s.seen, (i) => Number.isInteger(i) && i >= 0 && i < 12);
+  out.loonies = arr(s.loonies, (i) => Number.isInteger(i) && i >= 0 && i < 40);
+  out.coolers = s.coolers && typeof s.coolers === "object" ? s.coolers : {};
+  const W = Array.isArray(s.weapons) ? s.weapons.filter((w) => w && WEAPONS[w.id] && w.id !== "plunger").slice(0, 4).map((w) => ({ id: w.id, dur: num(w.dur, 1, WEAPONS[w.id].dur, WEAPONS[w.id].dur) })) : [];
+  out.weapons = [{ id: "plunger", dur: null }, ...W];
+  out.cur = num(s.cur | 0, 0, out.weapons.length - 1, 0);
+  out.food = {}; for (const k of Object.keys(d.food)) out.food[k] = num(s.food && s.food[k], 0, 999, 0);
+  out.pos = Array.isArray(s.pos) && s.pos.length === 3 && s.pos.every(Number.isFinite) && Math.abs(s.pos[0]) < 770 && Math.abs(s.pos[2]) < 770 ? s.pos : null;
+  out.check = Array.isArray(s.check) && s.check.length === 2 && s.check.every(Number.isFinite) ? s.check : null;
+  return out;
+}
 G.writeSave = () => {
   if (!G.started) return;
   const S = G.save, P = G.player;
@@ -73,7 +114,7 @@ G.writeSave = () => {
 
 /* ---------------- boot: build the world behind a loading card ---------------- */
 setTimeout(() => {
-  G.world = new World(scene, { low });
+  G.world = new World(scene, { low, quality: Q });
   G.fx = new FX(G);
   G.hazards = new Hazards(G);
   G.ui = new UI(G);
@@ -111,6 +152,9 @@ function titleScreen() {
 }
 
 function start(save) {
+  // a double click on New game or Continue must not start two games
+  if (G.starting || G.started) return;
+  G.starting = true;
   G.save = save;
   if (save.friend !== pick && !save.intro) save.friend = pick;
   G.ui.hide("title");
@@ -216,7 +260,8 @@ G.onKill = (f) => { G.save.kills++; if (G.trial) { const t = G.trial; if (t.foes
 /* ---------------- items and secrets ---------------- */
 function buildItems() {
   const w = G.world, r = rng(321);
-  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5) return; const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
+  const blocked = (x, z, r) => { let hit = false; w.near(x, z, (c) => { if (Math.hypot(c.x - x, c.z - z) < c.r + r) hit = true; }); return hit; };
+  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5 || blocked(x, z, 0.6)) return; const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
   w.appleSpots.slice(0, 70).forEach(([x, z]) => add("apple", x, z));
   for (let k = 0; k < 400 && G.items.length < 190; k++) {
     const x = (r() - 0.5) * 1300, z = (r() - 0.5) * 1300, h = w.height(x, z);
@@ -236,14 +281,16 @@ function buildItems() {
   const floats = [];
   for (const t of w.towers) floats.push([t.x + 3, t.y + 1.2, t.z + 3]);
   const c = w.cottage; floats.push([c.x, w.cabin.position.y + 6.2, c.z]);
-  floats.push([ISLAND.x, ISLAND.top + 36, ISLAND.z - 36]);
+  floats.push([ISLAND.x, ISLAND.top + 35.2, w.castleZ - 10]);
   let peak = [0, -1, 0]; for (let k = 0; k < 3000; k++) { const x = -300 + r() * 500, z = -700 + r() * 250, h = w.height(x, z); if (h > peak[1]) peak = [x, h, z]; }
   floats.push([peak[0], peak[1] + 1.4, peak[2]]);
   for (const [x, z] of [[-620, -520], [640, -600], [0, 640]]) floats.push([x, w.height(x, z) + 1.4, z]);
   floats.push([w.cottage.x, 1.8, (w.shoreZ + ISLAND.z + ISLAND.r) / 2]);
   floats.slice(0, 10).forEach(([x, y, z]) => { const o = M.loonieMesh(); o.position.set(x, y, z); scene.add(o); G.loonies.push({ kind: "float", x, z, y, obj: o }); });
 }
-G.dropFood = (id, x, z) => { const y = G.groundAt(x, z, 999); const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
+G.dropFood = (id, x, z) => {
+  // never drop food into the lake
+  if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
 G.foodCount = () => { const f = G.inv.food; return { total: f.apple + f.shroom + f.berry + f.syrup, stew: f.stew }; };
 const HEAL = { apple: 2, berry: 2, shroom: 3, syrup: 8 };
 const FOOD_NAME = { apple: "Apple", berry: "Blueberries", shroom: "Toadstool", syrup: "Maple Syrup", stew: "Cottage Stew" };
@@ -357,7 +404,8 @@ function trialCleared() {
 async function pray() {
   const P = G.player;
   const c = await G.ui.choose("The Loon Statue", "Offer four Golden Orbs. What do you want?", ["A new heart", "More stamina", "Not yet"]);
-  if (c === 2) return;
+  if (c !== 0 && c !== 1) return;
+  if (G.save.orbs < 4) return;
   G.save.orbs -= 4; G.save.prayers++;
   if (c === 0) { P.maxHp += 4; P.hp = P.maxHp; G.ui.toast("One more heart!"); } else { P.staminaMax += 20; P.stamina = P.staminaMax; G.ui.toast("Your stamina wheel grew!"); }
   A.sfx("shrine"); G.writeSave();
@@ -452,6 +500,8 @@ async function ending() {
 G.die = async () => {
   const P = G.player;
   if (P.dead) return;
+  // close any open talk or menu first, so the game over card can never be stuck behind it
+  G.ui.closeAll();
   P.dead = true; G.save.deaths++;
   A.sfx("die"); A.setMood("day");
   G.ui.boss(null); G.activeBoss = null;
@@ -496,6 +546,7 @@ function openPause() {
   const S = G.save;
   $("#pstats").textContent = `${PERKS[S.friend].name} · Day ${S.day} · Towers ${S.towers.length}/4 · Trials ${S.shrines.length}/12 · Loonies ${S.loonies.length}/${G.loonies.length} · Blights ${Math.min(3, S.bosses.filter((b) => b !== "king").length)}/3`;
   $("#soundBtn").textContent = "Sound: " + (A.isOn() ? "on" : "off");
+  $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
   G.ui.open("pause");
 }
 G.resume = () => { G.paused = false; };
@@ -503,6 +554,8 @@ $("#resumeBtn").onclick = () => G.ui.close("pause");
 $("#pmapBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openMap(); };
 $("#phelpBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.open("help"); };
 $("#soundBtn").onclick = () => { $("#soundBtn").textContent = "Sound: " + (A.toggle() ? "on" : "off"); };
+const GFX_NAMES = { high: "High", medium: "Medium", low: "Low" };
+$("#gfxBtn").onclick = () => { const order = ["high", "medium", "low"]; G.setGraphics(order[(order.indexOf(gfx) + 1) % 3]); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx]; };
 $("#pauseBtn").onclick = () => openPause();
 
 /* ---------------- goals and clock ---------------- */
@@ -522,8 +575,8 @@ G.clockText = () => {
 /* ---------------- day and night ---------------- */
 const C = (h) => new THREE.Color(h);
 const SKY = {
-  day: { top: C(0x4a90e0), hor: C(0xcfeaff), sun: C(0xfff2d8), hemi: C(0xdff0ff), gnd: C(0x6a7a4a), si: 1.6, hi: 1.1 },
-  dusk: { top: C(0x5a6ab8), hor: C(0xffb888), sun: C(0xffa060), hemi: C(0xffd0b0), gnd: C(0x5a4a3a), si: 1.1, hi: 0.9 },
+  day: { top: C(0x3a82d6), hor: C(0xd6ecf6), sun: C(0xfff0d0), hemi: C(0xd2e6ff), gnd: C(0x7a8a50), si: 1.65, hi: 1.05 },
+  dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
   night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.35, hi: 0.55 },
 };
 const tmpC = new THREE.Color();
@@ -546,16 +599,23 @@ function lighting() {
   const night = smooth(-0.05, -0.3, elev);
   w.skyU.uNight.value = night;
   G.night = night > 0.5;
-  scene.fog.color.copy(hor);
+  // distant hills fade into a soft blue haze, like a painted backdrop
+  scene.fog.color.copy(hor).lerp(top, 0.18);
   sun.color.copy(mixSky(A1, B1, k, "sun"));
   sun.intensity = lerp(A1.si, B1.si, k);
   hemi.color.copy(mixSky(A1, B1, k, "hemi")); hemi.groundColor.copy(mixSky(A1, B1, k, "gnd"));
   hemi.intensity = lerp(A1.hi, B1.hi, k);
   const L = 0.35 + 0.65 * (1 - night) * (0.75 + 0.25 * smooth(-0.05, 0.4, elev));
-  for (const U of [w.waterU, w.grassU]) { U.uFog.value.copy(hor); U.uLight.value = L; }
-  w.waterU.uSky.value.copy(top).lerp(hor, 0.5); w.waterU.uSun.value.copy(sd);
+  const sunCol = mixSky(A1, B1, k, "sun");
+  for (const U of [w.waterU, w.grassU]) { U.uFog.value.copy(scene.fog.color); U.uFogNear.value = scene.fog.near; U.uFogFar.value = scene.fog.far; U.uLight.value = L; U.uSunCol.value.copy(sunCol); }
+  w.grassU.uSunDir.value.copy(lightDir);
+  w.waterU.uSky.value.copy(top).lerp(hor, 0.35); w.waterU.uHorizon.value.copy(hor); w.waterU.uSun.value.copy(sd);
   w.flowerMat.color.setScalar(L);
-  for (const c of w.clouds) c.material.color.copy(tmpC.set(0xffffff).lerp(hor, 0.3).multiplyScalar(0.4 + 0.6 * L));
+  // clouds catch the light: white by day, peach and pink at sunset, grey-blue at night
+  const dusk = 1 - Math.abs(smooth(-0.1, 0.35, elev) * 2 - 1);
+  const cloudCol = tmpC.set(0xffffff).lerp(sunCol, 0.35 + dusk * 0.4).multiplyScalar(0.38 + 0.62 * L);
+  for (const c of w.clouds) c.material.color.copy(cloudCol);
+  G.look = { time: G.time, night, sunDir: sd, sunCol };
   w.cabin.userData.windows.emissiveIntensity = night * 1.2;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
   sun.position.set(cx + lightDir.x * 200, (P ? P.y : 10) + Math.max(0.2, lightDir.y) * 200, cz + lightDir.z * 200);
@@ -713,6 +773,7 @@ function updateCamera(dt) {
   const sp = Math.hypot(P.vel.x, P.vel.z);
   if ((touchUI || G.pad) && c.idle > 1.2 && sp > 2 && P.state !== "climb") { const want = P.yaw + Math.PI; let d = Math.atan2(Math.sin(want - c.yaw), Math.cos(want - c.yaw)); c.yaw += d * Math.min(1, dt * 0.8); }
   const tgt = tv.set(P.x, P.y + (P.state === "swim" ? 1.0 : 1.7), P.z);
+  if (c.snap) { c.target.copy(tgt); c.cur = undefined; c.snap = false; }
   c.target.x = lerp(c.target.x, tgt.x, 1 - Math.exp(-dt * 14));
   c.target.z = lerp(c.target.z, tgt.z, 1 - Math.exp(-dt * 14));
   c.target.y = lerp(c.target.y, tgt.y, 1 - Math.exp(-dt * 7));
@@ -721,12 +782,21 @@ function updateCamera(dt) {
   c.cur = lerp(c.cur || want, want, 1 - Math.exp(-dt * 3));
   const cp = Math.cos(c.pitch);
   const dx = Math.sin(c.yaw) * cp, dy = Math.sin(c.pitch), dz = Math.cos(c.yaw) * cp;
+  // pull the camera in front of hills and buildings between it and the hero
   let d = c.cur;
-  for (let k = 1; k <= 12; k++) {
-    const s = (k / 12) * c.cur, px = c.target.x + dx * s, py = c.target.y + dy * s, pz = c.target.z + dz * s;
-    if (G.world.height(px, pz) + 0.7 > py || inBox(px, py, pz)) { d = Math.max(1.2, s - 0.6); break; }
+  const N = 28;
+  for (let k = 1; k <= N; k++) {
+    const s = (k / N) * c.cur, px = c.target.x + dx * s, py = c.target.y + dy * s, pz = c.target.z + dz * s;
+    if (G.world.height(px, pz) + 0.7 > py || inBox(px, py, pz)) { d = Math.max(0.35, s - (c.cur / N) - 0.35); break; }
   }
   c.pos.set(c.target.x + dx * d, c.target.y + dy * d, c.target.z + dz * d);
+  // a wall right behind the hero: lift the camera up and look down over their shoulder
+  if (d < 2.2 && (inBox(c.pos.x, c.pos.y, c.pos.z) || d < c.cur - 0.5)) {
+    const lift = (2.2 - d) * 1.4;
+    const up = tv.set(c.target.x + dx * 0.3, c.target.y + lift, c.target.z + dz * 0.3);
+    if (!inBox(up.x, up.y, up.z) && G.world.height(up.x, up.z) + 0.5 < up.y) c.pos.copy(up);
+    else c.pos.set(c.target.x, c.target.y + 0.4, c.target.z);
+  }
   c.pos.y = Math.max(c.pos.y, G.world.height(c.pos.x, c.pos.z) + 0.6, 0.5);
   camera.position.copy(c.pos);
   if (G.shakeT > 0) { G.shakeT -= dt; const s = G.shakeT * 0.6; camera.position.x += (Math.random() - 0.5) * s; camera.position.y += (Math.random() - 0.5) * s; }
@@ -749,13 +819,36 @@ function titleCamera(dt) {
 }
 
 /* ---------------- the loop ---------------- */
+// dynamic resolution: watch the frame time and trade sharpness for smoothness when needed
+let ftAvg = 16, ftLast = 0, ftHold = 0;
+function frameTime(now) {
+  const ft = now - (ftLast || now); ftLast = now;
+  if (ft <= 0 || ft > 250 || document.hidden) return;
+  ftAvg += (ft - ftAvg) * 0.05;
+  if ((ftHold -= ft) > 0) return;
+  if (ftAvg > 26 && resScale > 0.55) { resScale = Math.max(0.55, resScale * 0.88); applyRatio(); ftHold = 1500; }
+  else if (ftAvg < 14 && resScale < 1) { resScale = Math.min(1, resScale * 1.08); applyRatio(); ftHold = 2500; }
+}
+G.setGraphics = (name) => {
+  if (!QUALITY[name]) return;
+  gfx = name; Q = QUALITY[name]; resScale = 1;
+  try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ }
+  applyRatio();
+  painter.setQuality(Q);
+  sun.shadow.mapSize.set(Q.shadow, Q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  G.world.quality = Q; G.world.buildGrass(Q);
+};
+G.graphics = () => gfx;
 let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false;
 function loop(now) {
   requestAnimationFrame(loop);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.contextLost) return; // nothing can draw until the page reloads
+  G.frame = (G.frame || 0) + 1;
   if (!G.world) return;
   G.time += dt;
-  if (!G.started) { titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); renderer.render(scene, camera); return; }
+  frameTime(now);
+  if (!G.started) { titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); return; }
   readInput();
   const P = G.player;
   if (inp.pause && !G.ui.modal) openPause();
@@ -773,7 +866,7 @@ function loop(now) {
   G.ui.hud();
   G.ui.minimap();
   A.music(G.time);
-  renderer.render(scene, camera);
+  draw();
 }
 
 function step(dt) {

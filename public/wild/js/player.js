@@ -77,6 +77,8 @@ export class Player {
     this.climb = null;
     this.rig.glider.visible = false;
     this.roll = 0; this.attack = null;
+    // after a teleport the camera jumps too, so it never sweeps through hills or buildings
+    if (this.G.cam) this.G.cam.snap = true;
     void w;
   }
 
@@ -137,7 +139,36 @@ export class Player {
     else if (this.state === "glide") this.glide(dt, dir, inp, act);
     else if (this.state === "climb") this.climbing(dt, dir, inp, act);
     else if (this.state === "swim") this.swim(dt, dir, inp, act);
+    this.safety();
     this.animate(dt, dir);
+  }
+
+  // Safety nets, so a bug elsewhere can never leave you in a broken spot.
+  safety() {
+    const G = this.G, w = G.world, p = this.pos;
+    if (![p.x, p.y, p.z, this.vel.x, this.vel.y, this.vel.z, this.yaw].every(Number.isFinite)) {
+      this.vel.set(0, 0, 0); this.yaw = 0; this.place(this.lastSafe.x, this.lastSafe.z); return;
+    }
+    // an invisible wall at the edge of the world
+    const E = 770;
+    if (Math.abs(p.x) > E || Math.abs(p.z) > E) { p.x = Math.max(-E, Math.min(E, p.x)); p.z = Math.max(-E, Math.min(E, p.z)); this.vel.x *= -0.2; this.vel.z *= -0.2; }
+    // never under the ground
+    if (this.state !== "swim") {
+      const h = w.height(p.x, p.z);
+      if (p.y < h - 0.3) { p.y = h; if (this.state === "air" || this.state === "glide") { this.state = "ground"; this.vel.y = 0; this.rig.glider.visible = false; } }
+    } else if (p.y < -1.3) p.y = -1.15;
+    // never inside a building: push out through the nearest side
+    if (this.state !== "climb") for (const b of G.world.boxes) {
+      if (b.walk || p.y + 0.5 <= b.y0 + 0.3 || p.y + 0.5 >= b.top - 0.3) continue;
+      const c = Math.cos(b.rot), s = Math.sin(b.rot), lx = (p.x - b.x) * c - (p.z - b.z) * s, lz = (p.x - b.x) * s + (p.z - b.z) * c;
+      if (Math.abs(lx) >= b.hw || Math.abs(lz) >= b.hd) continue;
+      let px = lx, pz = lz;
+      if (b.hw - Math.abs(lx) < b.hd - Math.abs(lz)) px = Math.sign(lx || 1) * (b.hw + 0.5); else pz = Math.sign(lz || 1) * (b.hd + 0.5);
+      p.x = b.x + px * c + pz * s; p.z = b.z - px * s + pz * c;
+      p.y = Math.max(p.y, w.height(p.x, p.z));
+    }
+    this.stamina = Math.max(0, Math.min(this.staminaMax, this.stamina));
+    this.hp = Math.max(0, Math.min(this.maxHp, this.hp));
   }
 
   canMove(nx, nz) {
@@ -200,7 +231,12 @@ export class Player {
     const uphill = -(N.x * dir.x + N.z * dir.z);
     if (N.y < 0.72 && dir.mag > 0.3 && act && this.roll <= 0) {
       if (uphill > 0.25 && this.startClimb(null)) return;
-      if (uphill > 0) { res.x = this.pos.x; res.z = this.pos.z; }
+      // too steep to walk up and not facing it head-on: slide along the slope instead of stopping dead
+      if (uphill > 0) {
+        const ul = Math.hypot(N.x, N.z) || 1, ux = -N.x / ul, uz = -N.z / ul;
+        const mx = res.x - this.pos.x, mz = res.z - this.pos.z, into = mx * ux + mz * uz;
+        if (into > 0) { const r2 = this.canMove(this.pos.x + mx - ux * into, this.pos.z + mz - uz * into); res.x = r2.x; res.z = r2.z; }
+      }
     }
     if (res.box && res.box.climb && dir.mag > 0.4 && act && this.roll <= 0 && !this.attack) {
       const toBox = (res.box.x - this.pos.x) * dir.x + (res.box.z - this.pos.z) * dir.z;
@@ -258,7 +294,7 @@ export class Player {
     this.pos.y += this.vel.y * dt;
     const g = G.groundAt(this.pos.x, this.pos.z, this.pos.y + 0.5);
     G.world.normal(this.pos.x, this.pos.z, N);
-    if (N.y < 0.72 && this.pos.y - g < 0.6 && act && dir.mag > 0.3 && -(N.x * dir.x + N.z * dir.z) > 0.2 && this.startClimb(null)) return;
+    if (N.y < 0.72 && this.pos.y - g < 0.6 && act && dir.mag > 0.3 && -(N.x * dir.x + N.z * dir.z) > 0.2 && this.startClimb(null)) { this.pos.y = G.world.height(this.pos.x, this.pos.z); return; }
     if (this.pos.y <= g) {
       if (g < -1.2) { this.enterSwim(); return; }
       const vy = -this.vel.y;
@@ -349,14 +385,15 @@ export class Player {
         if (b.tower) G.reachedTowerTop(b.tower);
         return;
       }
-      const g = w.height(this.pos.x, this.pos.z);
+      // climbing down onto the ground, or onto a lower roof
+      const g = G.groundAt(this.pos.x, this.pos.z, this.pos.y + 0.2);
       if (this.pos.y <= g) { this.pos.y = g; this.state = "ground"; this.climb = null; }
     }
   }
 
   enterSwim() {
     this.state = "swim"; this.rig.glider.visible = false; this.climb = null; this.attack = null;
-    this.vel.y = 0; this.G.sfx("splash");
+    this.vel.y = 0; this.pos.y = -1.15; this.G.sfx("splash");
   }
   swim(dt, dir, inp, act) {
     const G = this.G;

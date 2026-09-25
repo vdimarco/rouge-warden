@@ -140,6 +140,10 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 - **Flush the King.** He hops, spits sludge, calls raccoons, and at half health tries to flush you in.
 - **Day and night.** A day lasts 10 minutes. At night the fireflies and the skeeters come out. At midnight the critters come back.
 
+**The look.** The game draws each frame, then paints over it in one pass so it looks like a frame from a Studio Ghibli film. A brush filter (Kuwahara) turns flat areas into soft strokes. Thin ink lines trace hills, trees, and people. Warm colour grading, a soft glow, haze around the sun, and paper grain finish it. In the world, gusts of wind roll across the grass, cloud shadows drift over the hills, far hills fade into blue haze, tall summer clouds stand on the horizon, and seed fluff floats in the light. A giant old tree stands on the hill behind the cottage.
+
+**Graphics settings.** The pause menu has High, Medium, and Low. Phones start on Low. The game also lowers its resolution on its own when frames get slow, and raises it again when there is room.
+
 It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. All the models, sounds, and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
 
 ## Files
@@ -154,7 +158,8 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain, also used on the Breath of the Lake title screen |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
-| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `player.js`, `foes.js` (critters and bosses), `models.js`, `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js`, `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
@@ -162,6 +167,21 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `legacy/warden-iso.html` | An older build, kept for reference |
 
 The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
+
+### Breath of the Lake tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from `qa/wild/`. Each one exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `level.mjs` | Every tower can be climbed from 8 sides with normal stamina. Outhouse doors, coolers, food, Loonies, boss arenas, and the crew are all in reachable places. The long dock reaches the island. |
+| `fuzz.mjs [runs] [steps]` | A bot mashes random buttons all over the map. After every step: no NaN, never under the ground or inside a building, never out of the world, hearts and stamina in range. |
+| `stress.mjs` | Runs, rolls, and jumps into every building from 12 sides. Climbs and lets go. Jumps and glides off every tower. Climbs 40 cliffs. Swims under the dock. Watches for the hero or the camera getting stuck or going inside things. |
+| `flows.mjs` | Damaged save files, double clicks on New game, dying during a conversation, menus on top of menus, travel during a boss fight, a whole day and night, window resizing, and a graphics reset. |
+| `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
+| `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
+
+Set `WILD_URL` to test another address.
 
 ## Jev and cost
 

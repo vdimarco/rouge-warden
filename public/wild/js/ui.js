@@ -102,6 +102,13 @@ export class UI {
   }
 
   // dialog: a list of [name, line]. Resolves when the last line is closed.
+  // close every open card and dialog; pending promises resolve so nothing waits forever
+  closeAll() {
+    if (this.dq) { const r = this.dq.res; this.dq = null; this.typing = null; document.querySelector("#dialog").hidden = true; r(); }
+    if (this.chRes) { const r = this.chRes; this.chRes = null; this.hide("choice"); r(-1); }
+    for (const id of ["map", "pause", "help"]) this.hide(id);
+    this.modal = null;
+  }
   say(lines) {
     return new Promise((res) => {
       this.dq = { lines: lines.slice(), res };
@@ -126,7 +133,9 @@ export class UI {
     return new Promise((res) => {
       $("#chTitle").textContent = title; $("#chText").textContent = text;
       const box = $("#chBtns"); box.innerHTML = "";
-      options.forEach((o, i) => { const b = document.createElement("button"); b.className = "btn" + (i ? " ghost" : ""); b.type = "button"; b.textContent = o; b.onclick = () => { this.hide("choice"); this.modal = null; res(i); }; box.appendChild(b); });
+      if (this.chRes) { const r = this.chRes; this.chRes = null; r(-1); }
+      this.chRes = res;
+      options.forEach((o, i) => { const b = document.createElement("button"); b.className = "btn" + (i ? " ghost" : ""); b.type = "button"; b.textContent = o; b.onclick = () => { if (this.chRes !== res) return; this.chRes = null; this.hide("choice"); this.modal = null; res(i); }; box.appendChild(b); });
       this.open("choice");
       box.firstChild.focus();
     });
