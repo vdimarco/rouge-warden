@@ -2,7 +2,7 @@
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
-import { scene, camera, post, draw, adapt } from './js/render.js';
+import { scene, camera, post, draw, adapt, toonRamp } from './js/render.js';
 import { Music } from './js/music.js';
 import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR } from './js/world.js';
 import { fx, updateFX, Trail, glowTex } from './js/fx.js';
@@ -50,17 +50,20 @@ const PATK = {
 // Gabe's clips; the cut ranges and hit times come from measuring each clip's strike peaks
 const GABE_CUTS = {
   jabs: ['punches', 0.2, 2.3], kick: ['kick', 0.9, 3.0], fly: ['flykick', 0.8, 4.2], counter: ['counter', 1.6, 5.9], grab: ['grab', 1.6, 4.7],
+  call: ['taunt', 1.6, 3.7],
 };
 const BEAR_CUTS = {
   sweep: ['sweep', 1.2, 4.9], chop: ['chop', 2.6, 6.2], smash: ['smash', 0.0, 1.87], slam: ['slam', 0.0, 2.9],
 };
 // Boss moves. hits: [t0, t1, shape]; shape is { reach, arc } or { aoe: [forward, radius] }.
 const GABE_ATK = {
-  jabs: { cut: 'jabs', from: 0.2, speed: 1.05, tell: 0.35, track: 1.0, limb: 'LeftHand', limb2: 'RightHand', hits: [[0.58, 0.76, { reach: 2.3, arc: 0.7 }], [1.18, 1.38, { reach: 2.4, arc: 0.7 }]], dmg: 13, pp: 16, bc: 12, lunges: [[0.4, 0.7, 2.8], [1.0, 1.3, 2.8]], snd: 'punch' },
-  kick: { cut: 'kick', from: 0.9, speed: 1.05, tell: 1.5, track: 1.9, limb: 'LeftFoot', hits: [[2.0, 2.3, { reach: 3.0, arc: 1.4 }]], dmg: 22, pp: 24, bc: 26, lunges: [[1.4, 2.1, 4]], snd: 'bossSwing' },
-  fly: { cut: 'fly', from: 0.8, speed: 1.1, tell: 1.4, track: 1.6, limb: 'RightFoot', hits: [[2.8, 3.06, { reach: 2.6, arc: 0.9 }]], dmg: 24, pp: 26, bc: 26, leap: [1.5, 2.8], knock: true, snd: 'bossSwing' },
-  counter: { cut: 'counter', from: 1.6, speed: 1.4, tell: 4.4, track: 4.9, limb: 'LeftHand', hits: [[5.0, 5.24, { reach: 2.6, arc: 0.8 }]], dmg: 20, pp: 24, bc: 20, dodge: [1.6, 3.4], lunges: [[4.7, 5.1, 4]], snd: 'punch' },
-  grab: { cut: 'grab', from: 1.6, speed: 1.0, tell: 1.9, track: 2.6, limb: 'RightHand', unblock: true, hits: [[2.72, 3.05, { reach: 2.4, arc: 0.8 }]], throwAt: 3.55, dmg: 30, lunges: [[2.4, 2.95, 6]], snd: 'bossSwing' },
+  jabs: { cut: 'jabs', from: 0.2, speed: 1.22, tell: 0.35, track: 1.0, limb: 'LeftHand', limb2: 'RightHand', hits: [[0.58, 0.76, { reach: 2.3, arc: 0.7 }], [1.18, 1.38, { reach: 2.4, arc: 0.7 }]], dmg: 13, pp: 16, bc: 12, lunges: [[0.4, 0.7, 2.8], [1.0, 1.3, 2.8]], snd: 'punch' },
+  kick: { cut: 'kick', from: 0.9, speed: 1.22, tell: 1.5, track: 1.9, limb: 'LeftFoot', hits: [[2.0, 2.3, { reach: 3.0, arc: 1.4 }]], dmg: 22, pp: 24, bc: 26, lunges: [[1.4, 2.1, 4]], snd: 'bossSwing' },
+  fly: { cut: 'fly', from: 0.8, speed: 1.28, tell: 1.4, track: 1.6, limb: 'RightFoot', hits: [[2.8, 3.06, { reach: 2.6, arc: 0.9 }]], dmg: 24, pp: 26, bc: 26, leap: [1.5, 2.8], knock: true, snd: 'bossSwing' },
+  counter: { cut: 'counter', from: 1.6, speed: 1.6, tell: 4.4, track: 4.9, limb: 'LeftHand', hits: [[5.0, 5.24, { reach: 2.6, arc: 0.8 }]], dmg: 20, pp: 24, bc: 20, dodge: [1.6, 3.4], lunges: [[4.7, 5.1, 4]], snd: 'punch' },
+  // the bear call: he pulls a PVC pipe, puts it to his mouth, and roars down it. Unblockable: roll through it.
+  call: { cut: 'call', from: 1.6, speed: 1.2, tell: 2.0, track: 2.3, limb: 'RightHand', unblock: true, pipe: [1.85, 3.4], blow: [2.3, 3.05], hits: [[2.38, 2.95, { reach: 8, arc: 0.42 }]], dmg: 16, snd: 'pipe' },
+  grab: { cut: 'grab', from: 1.6, speed: 1.15, tell: 1.9, track: 2.6, limb: 'RightHand', unblock: true, hits: [[2.72, 3.05, { reach: 2.4, arc: 0.8 }]], throwAt: 3.55, dmg: 30, lunges: [[2.4, 2.95, 6]], snd: 'bossSwing' },
 };
 const BEAR_ATK = {
   sweep: { cut: 'sweep', from: 1.2, speed: 1.0, tell: 1.8, track: 2.35, limb: 'RightHand', hits: [[2.45, 2.75, { reach: 4.6, arc: 1.6 }], [3.2, 3.5, { reach: 4.6, arc: 1.6 }]], dmg: 22, pp: 20, bc: 28, lunges: [[2.3, 2.75, 3.5], [3.05, 3.5, 3]], snd: 'bossSwing' },
@@ -518,8 +521,8 @@ function chooseAttack() {
   const d = flatDist(boss.pos, player.pos) - radius();
   const isBear = boss.form === 'bear', opts = [];
   if (!isBear) {
-    if (d > 7) opts.push(['fly', 3], ['kick', 0.6]);
-    else if (d > 3.5) opts.push(['kick', 2.5], ['fly', 1], ['jabs', 1]);
+    if (d > 7) opts.push(['fly', 3], ['kick', 0.6], ['call', 1.4]);
+    else if (d > 3.5) opts.push(['kick', 2.5], ['fly', 1], ['jabs', 1], ['call', 1.3]);
     else opts.push(['jabs', 3], ['kick', 1.5], ['grab', 1.2], ['counter', 0.6]);
   } else {
     if (d > 8) opts.push(['charge', 3], ['slam', 0.6]);
@@ -557,7 +560,7 @@ function updateBoss(dt) {
   const b = boss, p = player;
   let A = b.a;
   const toP = angleTo(b.pos, p.pos), dist = flatDist(b.pos, p.pos) - radius();
-  const turnRate = b.form === 'bear' ? 2.2 : 3.4;
+  const turnRate = b.form === 'bear' ? 2.2 : 4.2;
   b.t += dt; b.clipT = 0; b.nextHit = null; b.dodging = false;
   b.postureT += dt;
   if (b.state !== 'broken' && b.postureT > 1.4) b.posture = Math.max(0, b.posture - dt * 11 * (0.35 + 0.65 * b.hp / b.maxHp));
@@ -591,11 +594,11 @@ function updateBoss(dt) {
       b.cooldown -= dt;
       // Gabe reads your swing: sometimes he slips it and counters
       if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && Math.random() < dt * 1.6) { b.queue = []; startBossAttack('counter'); break; }
-      if (dist > 3.4) move = b.form === 'bear' ? (game.phase2 ? 3.4 : 3) : 3.6;
+      if (dist > 3.4) move = b.form === 'bear' ? (game.phase2 ? 3.4 : 3) : 4.4;
       else if (dist < 1.4) move = -1.2;
-      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = Math.random() < 0.5 ? -1 : 1; b.strafeT = rand(1, 2.2); } move = 0.9; moveDir = b.face + b.strafe * Math.PI / 2; }
-      if (Math.abs(move) > 1.5) A.play(b.form === 'bear' ? 'charge' : 'run', { speed: b.form === 'bear' ? 0.55 : 0.85, fade: 0.2 });
-      else A.play('idle', { fade: 0.25 });
+      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = Math.random() < 0.5 ? -1 : 1; b.strafeT = rand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
+      if (Math.abs(move) > 1.5) A.play(b.form === 'bear' ? 'charge' : 'run', { speed: b.form === 'bear' ? 0.55 : 1.15, fade: 0.14 });
+      else A.play('idle', { fade: 0.18, speed: b.form === 'bear' ? 1 : 1.3 });
       if (b.cooldown <= 0) { b.queue = chooseAttack(); startBossAttack(b.queue.shift()); }
       break;
     }
@@ -670,6 +673,58 @@ function updateBoss(dt) {
   if (limb) { const lp = limb.getWorldPosition(tmpA).clone(); const el = limb.parent.getWorldPosition(tmpB); b.trail.push(el.lerp(lp, 0.5), lp, striking ? 0.9 : 0); }
   else b.trail.push(tmpA.copy(b.pos).setY(1), tmpA, 0);
   grassUniforms.uPush.value[1].set(b.pos.x, b.pos.z, b.form === 'bear' ? 2.6 : 1.4, b.air > 0.5 ? 0 : 1.4);
+  updatePipe(dt);
+}
+
+/* ---------------- the bear call: PVC pipe and sound rings ---------------- */
+const pipe = (() => {
+  const g = new THREE.Group();
+  const white = new THREE.MeshToonMaterial({ color: 0xe4e2dc, gradientMap: toonRamp });
+  const dark = new THREE.MeshToonMaterial({ color: 0x8a8884, gradientMap: toonRamp });
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 16, 1, true), white); tube.position.y = 0.5; tube.castShadow = true;
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.092, 0.092, 0.1, 16), white); cap.position.y = 1.0;
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.035, 16), dark); band.position.y = 0.52;
+  const inner = new THREE.Mesh(new THREE.CircleGeometry(0.066, 16), new THREE.MeshBasicMaterial({ color: 0x050505 })); inner.position.y = 1.051; inner.rotation.x = -Math.PI / 2;
+  g.add(tube, cap, band, inner); g.visible = false; scene.add(g);
+  return g;
+})();
+const waves = [], waveGeo = new THREE.TorusGeometry(1, 0.05, 6, 36);
+let waveT = 0;
+const UP = new THREE.Vector3(0, 1, 0), ZF = new THREE.Vector3(0, 0, 1);
+function updatePipe(dt) {
+  const b = boss, s = b.state === 'attack' && b.atk && b.atk.spec;
+  const on = b.form === 'gabe' && s && s.pipe && b.clipT >= s.pipe[0] && b.clipT <= s.pipe[1];
+  if (s && s.pipe && on && !b.pvc) { b.pvc = true; Audio.play('pvc'); }
+  if (!on) b.pvc = false;
+  pipe.visible = !!on;
+  if (on) {
+    const head = gabe.bone('Head').getWorldPosition(tmpA), fwd = tmpB.set(Math.sin(b.face), 0, Math.cos(b.face));
+    const mouth = tmpC.copy(head).addScaledVector(fwd, 0.16); mouth.y += 0.1;
+    // held out and down to his right, so it reads against the sky from any side
+    const dir = new THREE.Vector3().copy(fwd).addScaledVector(tmpA.set(-fwd.z, 0, fwd.x), -0.38).setY(-0.42).normalize();
+    const grow = Math.min(1, (b.clipT - s.pipe[0]) / 0.22), len = 1.25 * grow;
+    pipe.position.copy(mouth); pipe.quaternion.setFromUnitVectors(UP, dir); pipe.scale.set(1, Math.max(0.01, len), 1);
+    // blow: neon rings fly out of the pipe along the cone
+    if (b.clipT >= s.blow[0] && b.clipT <= s.blow[1]) {
+      waveT -= dt;
+      if (waveT <= 0) {
+        waveT = 0.07;
+        const m = new THREE.Mesh(waveGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 1.7, 0.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+        m.position.copy(mouth).addScaledVector(dir, len); m.quaternion.setFromUnitVectors(ZF, dir);
+        m.userData = { v: dir.clone().setY(0).normalize().multiplyScalar(13), age: 0 };
+        scene.add(m); waves.push(m);
+        cam.shake = Math.max(cam.shake, 0.25);
+        if (Math.random() < 0.5) fx.dust(tmpA.copy(b.pos).addScaledVector(fwd, 2 + Math.random() * 4), 2, 0.8);
+      }
+    }
+  }
+  for (let i = waves.length - 1; i >= 0; i--) {
+    const w = waves[i], u = w.userData; u.age += dt;
+    w.position.addScaledVector(u.v, dt);
+    const r = 0.15 + u.age * 4.2; w.scale.set(r, r, 1);
+    w.material.opacity = Math.max(0, 1 - u.age / 0.6);
+    if (u.age > 0.6) { scene.remove(w); w.material.dispose(); waves.splice(i, 1); }
+  }
 }
 function updateCharge(dt, toP) {
   // the bear drops low, roars, then barrels at you: dodge it
@@ -707,6 +762,7 @@ function receive(a, idx) {
   const facing = Math.abs(angDiff(p.face, angleTo(p.pos, b.pos))) < 1.9;
   if (s.unblock) {
     if (s.charge) { hurtPlayer(s.dmg, true); p.pos.addScaledVector(tmpB.set(Math.sin(b.face), 0, Math.cos(b.face)), 2.4); return; }
+    if (s.pipe) { hurtPlayer(s.dmg, true); p.pos.addScaledVector(tmpB.set(Math.sin(b.face), 0, Math.cos(b.face)), 3); pop('BLOWN BACK', true); cam.shake = 0.9; return; }
     p.state = 'grabbed'; p.t = 0; b.state = 'grabHold'; b.t = 0; b.thrown = false; b.queue = [];
     ronin.play('hit', { speed: 0.5, fade: 0.1, restart: true });
     Audio.play('hurt'); cam.shake = 0.6;
@@ -866,9 +922,11 @@ function beginFight() {
   hud.el.classList.add('on'); hud.hint.style.opacity = 1;
   hud.card.className = ''; void hud.card.offsetWidth; hud.card.className = 'show';
   Audio.drumOn = !Music.playing;
+  Music.loud(true);
   if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } }
 }
 function showEnd(won) {
+  Music.loud(false);
   game.state = 'end'; endShownAt = performance.now();
   if (document.pointerLockElement) document.exitPointerLock();
   const t = Math.round(game.time - game.fightStart);
@@ -891,8 +949,8 @@ function showEnd(won) {
 $('end').addEventListener('click', () => { if (game.state === 'end' && performance.now() - endShownAt > 900) restart(); });
 function restart() { $('end').classList.remove('show'); game.parries = 0; beginFight(); }
 let pausedAt = 0;
-function pause() { if (game.state !== 'fight') return; game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
-function resume() { game.state = 'fight'; $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
+function pause() { if (game.state !== 'fight') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
+function resume() { game.state = 'fight'; Music.loud(true); $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
 $('pause').addEventListener('click', (e) => { if (e.target.closest('a') || performance.now() - pausedAt < 400) return; resume(); });
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
 loadClip(introVid, 'clips/intro.mp4', () => {});
@@ -953,6 +1011,6 @@ requestAnimationFrame(frame);
 window.__crimson = {
   step(sec, drawIt = true) { manual = true; const n = Math.round(sec * 60); for (let i = 0; i < n; i++) tick(1 / 60); if (drawIt) draw(performance.now() / 1000); },
   live() { manual = false; },
-  game, cam, input, startGame, beginFight, pickCrew,
+  game, cam, input, startGame, beginFight, pickCrew, bossAttack: (n) => startBossAttack(n),
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };
