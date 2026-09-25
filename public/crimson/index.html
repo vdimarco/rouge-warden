@@ -106,6 +106,9 @@ body.cine #card { top: 15vh; }
 
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+/* the screens do not scroll or zoom, so a finger that drifts a little still counts as a tap (pause scrolls up and down) */
+#title, #end, #intro { touch-action: none; }
+#pause { touch-action: pan-y; }
 #title { background: #000; cursor: pointer; }
 #title .hero { position: absolute; inset: 0; display: flex; overflow: hidden; background: #000; }
 #title .half { position: relative; flex: 1; overflow: hidden; }
