@@ -196,7 +196,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <h1>Breath of<br>the <em>Lake</em></h1>
     <p class="lead">The Porcelain King clogged Loon Lake. His sludge took three old friends of the cottage. Climb anything, glide under a beach umbrella, and flush him for good.</p>
     <div class="crew" id="crew"></div>
-    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button></div>
+    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button><button class="btn ghost" type="button" data-switch>Switch game</button></div>
     <p><a class="back" href="/">← Back to the arcade</a></p>
   </div>
 </div>
@@ -229,7 +229,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper">
     <h2>Paused</h2>
     <p id="pstats"></p>
-    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
+    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><button class="btn ghost" type="button" data-switch>Switch game</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
   </div>
 </div>
 
@@ -245,6 +245,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper"><h2 id="chTitle"></h2><p id="chText"></p><div class="btns" id="chBtns"></div></div>
 </div>
 
+<script src="/arcade/switch.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
