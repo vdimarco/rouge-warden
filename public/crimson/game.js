@@ -22,10 +22,25 @@ const GOD = new URLSearchParams(location.search).has('god');
 const NEON3 = new THREE.Color(0.72, 1.0, 0.1);
 
 /* ------------------------------------------------------------------ the crew */
+// Difficulty. Every knob that sets how hard the fight is lives here.
+const TUNE = {
+  bossDmg: 0.6,          // share of each hit's damage that lands on you
+  bossHp: 800,
+  postureGain: 1.35,     // how fast deflects and hits fill Gabe's posture bar
+  rest: [1.2, 2.0],      // Gabe's pause between attacks, seconds
+  restBear: [0.9, 1.6],
+  atkSpeed: 0.9,         // Gabe's attack playback speed
+  counterRate: 0.7,      // how often he slips a swing and counters
+  parryWin: 0.3,         // seconds before a blow lands that a tap still deflects
+  iframe: 0.46,          // the part of a roll that dodges everything
+  gourds: 5, heal: 50,
+  chargeSpeed: 9,
+  blockCost: 0.6,        // share of a blow's ki cost when you block it
+};
 const CREW = [
   { name: 'Tank Top', glyph: '力', perk: 'Hits 20% harder', apply: (s) => { s.dmg *= 1.2; } },
   { name: 'Fifty-One', glyph: '命', perk: '20% more life', apply: (s) => { s.maxHp = 120; } },
-  { name: 'Shades', glyph: '影', perk: 'Wider parry window', apply: (s) => { s.parryWin = 0.27; } },
+  { name: 'Shades', glyph: '影', perk: 'Wider parry window', apply: (s) => { s.parryWin = 0.38; } },
   { name: 'New Balance', glyph: '风', perk: 'Dodges cost less ki', apply: (s) => { s.dodgeCost *= 0.6; } },
   { name: 'Red Jersey', glyph: '速', perk: 'Moves 12% faster', apply: (s) => { s.speed *= 1.12; } },
 ];
@@ -123,11 +138,11 @@ loadAll().catch((e) => { console.error(e); pressEl.textContent = 'COULD NOT LOAD
 
 function makePlayer() {
   const f = CREW[crewPick];
-  const stats = { maxHp: 100, dmg: 1, speed: 4.6, parryWin: 0.2, dodgeCost: 22 };
+  const stats = { maxHp: 100, dmg: 1, speed: 4.6, parryWin: TUNE.parryWin, dodgeCost: 22 };
   f.apply(stats);
   player = {
     a: ronin, f, stats, pos: SPAWN_P.clone(), vel: new THREE.Vector3(), face: Math.atan2(FACE_DIR.x, FACE_DIR.z),
-    hp: stats.maxHp, st: 100, stDelay: 0, gourds: 3, state: 'move', t: 0, atk: null, combo: null, comboT: -9,
+    hp: stats.maxHp, st: 100, stDelay: 0, gourds: TUNE.gourds, state: 'move', t: 0, atk: null, combo: null, comboT: -9,
     hitDone: false, parryT: -9, parryPresses: [], iframe: false, speedNow: 0, dodgeDir: new THREE.Vector3(), healed: false,
     trail: player?.trail || new Trail(22, new THREE.Color(2.2, 2.2, 2.2), true),
   };
@@ -135,7 +150,7 @@ function makePlayer() {
 }
 function makeBoss() {
   boss = {
-    form: 'gabe', a: gabe, pos: SPAWN_B.clone(), face: Math.atan2(-FACE_DIR.x, -FACE_DIR.z), hp: 1000, maxHp: 1000, posture: 0, postureT: 0,
+    form: 'gabe', a: gabe, pos: SPAWN_B.clone(), face: Math.atan2(-FACE_DIR.x, -FACE_DIR.z), hp: TUNE.bossHp, maxHp: TUNE.bossHp, posture: 0, postureT: 0,
     state: 'wait', t: 0, atk: null, queue: [], cooldown: 1.2, last: '', lastLast: '', strafe: 1, strafeT: 0, speedNow: 0, flinch: 0,
     hitsDone: new Set(), leapFrom: new THREE.Vector3(), leapTo: new THREE.Vector3(), air: 0, rage: 0, glow: 0, told: false, impacted: false,
     trail: boss?.trail || new Trail(20, new THREE.Color(0.9, 1.4, 0.15), true), swapped: false, snd: new Set(),
@@ -433,7 +448,7 @@ function updatePlayer(dt) {
       break;
     }
     case 'dodge':
-      p.iframe = p.t > 0.03 && p.t < (p.f.name === 'New Balance' ? 0.44 : 0.38);
+      p.iframe = p.t > 0.02 && p.t < TUNE.iframe + (p.f.name === 'New Balance' ? 0.06 : 0);
       p.pos.addScaledVector(p.dodgeDir, (p.t < 0.4 ? 7.6 : 2.5) * dt);
       if (p.t >= 0.6 || (p.t >= DODGE_END && moving)) { p.state = 'move'; p.t = 0; p.iframe = false; p.vel.copy(p.dodgeDir).multiplyScalar(p.stats.speed * 0.8); }
       break;
@@ -442,7 +457,7 @@ function updatePlayer(dt) {
     case 'down': if (p.t > 1.1 && ronin.cur === 'down') ronin.play('idle', { fade: 0.5 }); if (p.t > 1.7) { p.state = 'move'; p.t = 0; } break;
     case 'heal':
       speed = want.length() * 1.2;
-      if (!p.healed && p.t > 0.8) { p.healed = true; p.hp = Math.min(p.stats.maxHp, p.hp + 40); pop('+ LIFE'); }
+      if (!p.healed && p.t > 0.8) { p.healed = true; p.hp = Math.min(p.stats.maxHp, p.hp + TUNE.heal); pop('+ LIFE'); }
       if (p.t > 1.3) { p.state = 'move'; p.t = 0; }
       break;
     case 'victory': ronin.play('idle', { speed: 0.6, fade: 0.6 }); break;
@@ -454,7 +469,7 @@ function updatePlayer(dt) {
     p.speedNow = Math.hypot(p.vel.x, p.vel.z);
   } else { p.vel.set(0, 0, 0); p.speedNow = 0; }
   p.stDelay -= dt;
-  if (p.stDelay <= 0) p.st = Math.min(100, p.st + (p.state === 'guard' ? 12 : 34) * dt);
+  if (p.stDelay <= 0) p.st = Math.min(100, p.st + (p.state === 'guard' ? 18 : 34) * dt);
   collide(p.pos, 0.4);
   if (p.state !== 'grabbed' && p.state !== 'dead') {
     const d = flatDist(p.pos, boss.pos), min = radius() + 0.55;
@@ -489,7 +504,7 @@ function playerHitCheck() {
   if (p.atk.name === 'deathblow') { deathblow(at); return; }
   const dmg = s.dmg * p.stats.dmg * (boss.state === 'recover' || boss.state === 'recoil' ? 1.25 : 1);
   boss.hp -= dmg;
-  boss.posture = Math.min(100, boss.posture + s.post * (boss.state === 'recoil' ? 1.6 : 1));
+  boss.posture = Math.min(100, boss.posture + s.post * TUNE.postureGain * (boss.state === 'recoil' ? 1.6 : 1));
   boss.postureT = 0; boss.flinch = 1;
   Audio.play('cut');
   game.hitstop = Math.max(game.hitstop, p.atk.name === 'heavy' ? 0.09 : 0.05);
@@ -546,7 +561,7 @@ function startBossAttack(name) {
   b.leapFrom.copy(b.pos);
   if (spec.unblock) { danger(); Audio.play('tell'); }
   if (spec.charge) { b.a.play('roar', { loop: false, speed: 1.6, fade: 0.15, at: 1.0, restart: true }); Audio.play('growl'); }
-  else b.a.play(spec.cut, { loop: false, speed: spec.speed * (game.phase2 ? 1.08 : 1), fade: 0.12, restart: true });
+  else b.a.play(spec.cut, { loop: false, speed: spec.speed * TUNE.atkSpeed * (game.phase2 ? 1.05 : 1), fade: 0.12, restart: true });
 }
 function bossTurn(target, rate, dt) { boss.face += clamp(angDiff(boss.face, target), -rate * dt, rate * dt); }
 function hitShapeHits(shape) {
@@ -594,7 +609,7 @@ function updateBoss(dt) {
       bossTurn(toP, turnRate, dt);
       b.cooldown -= dt;
       // Gabe reads your swing: sometimes he slips it and counters
-      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && Math.random() < dt * 1.6) { b.queue = []; startBossAttack('counter'); break; }
+      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && Math.random() < dt * TUNE.counterRate) { b.queue = []; startBossAttack('counter'); break; }
       if (dist > 3.4) move = b.form === 'bear' ? (game.phase2 ? 3.4 : 3) : 4.4;
       else if (dist < 1.4) move = -1.2;
       else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = Math.random() < 0.5 ? -1 : 1; b.strafeT = rand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
@@ -649,7 +664,7 @@ function updateBoss(dt) {
         hurtPlayer(GABE_ATK.grab.dmg, true);
         fx.dust(p.pos, 14, 1.4); Audio.play('slam'); cam.shake = 1;
       }
-      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = rand(0.8, 1.4); }
+      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = rand(...TUNE.rest); }
       break;
     }
     case 'recoil': if (b.t > 0.75) { b.state = 'idle'; b.t = 0; b.cooldown = rand(0.3, 0.8); } break;
@@ -734,7 +749,7 @@ function updateCharge(dt, toP) {
   if (!b.charged) { b.charged = true; bear.play('charge', { speed: 1.3, fade: 0.1 }); Audio.play('roar'); }
   const k = b.t - s.windup;
   b.face += clamp(angDiff(b.face, toP), -0.9 * dt, 0.9 * dt);
-  b.pos.x += Math.sin(b.face) * 11 * dt; b.pos.z += Math.cos(b.face) * 11 * dt;
+  b.pos.x += Math.sin(b.face) * TUNE.chargeSpeed * dt; b.pos.z += Math.cos(b.face) * TUNE.chargeSpeed * dt;
   if (Math.random() < 0.6) fx.dust(b.pos, 1, 0.6);
   b.nextHit = 0; b.clipT = 0;
   if (!b.hitsDone.has(0) && flatDist(b.pos, p.pos) < radius() + 0.8 && p.state !== 'dead') { b.hitsDone.add(0); receive(b.atk, 0); }
@@ -747,7 +762,7 @@ function updateCharge(dt, toP) {
 function endBossAttack(stagger) {
   const b = boss;
   if (b.queue.length && player.state !== 'dead') { startBossAttack(b.queue.shift()); return; }
-  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? rand(0.45, 1.1) : rand(0.8, 1.6)) + (stagger ? 0.6 : 0);
+  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? rand(...TUNE.restBear) : rand(...TUNE.rest)) + (stagger ? 0.6 : 0);
 }
 function beginTransform() {
   const b = boss;
@@ -775,7 +790,7 @@ function receive(a, idx) {
       game.parries++;
       p.state = 'deflect'; p.t = 0; p.st = Math.min(100, p.st + 6);
       ronin.play('defl', { loop: false, speed: 2.2, fade: 0.05, restart: true });
-      b.posture = Math.min(100, b.posture + s.pp); b.postureT = 0;
+      b.posture = Math.min(100, b.posture + s.pp * TUNE.postureGain); b.postureT = 0;
       Audio.play('clang');
       game.hitstop = 0.12; game.flash = 0.25; cam.punch = 1; cam.shake = Math.max(cam.shake, 0.5);
       const dir = tmpB.set(Math.sin(b.face), 0.3, Math.cos(b.face));
@@ -786,11 +801,11 @@ function receive(a, idx) {
       return;
     }
     Audio.play('block');
-    p.st -= s.bc; p.stDelay = 0.8;
+    p.st -= s.bc * TUNE.blockCost; p.stDelay = 0.6;
     fx.sparks(at, null, 12, 4, 3);
     p.pos.addScaledVector(tmpB.set(Math.sin(b.face), 0, Math.cos(b.face)), 0.45);
-    b.posture = Math.min(100, b.posture + s.pp * 0.25);
-    if (p.st <= 0) { p.st = 0; p.state = 'broken'; p.t = 0; ronin.play('hit', { loop: false, fade: 0.08, restart: true }); pop('GUARD BROKEN', true); hurtPlayer(s.dmg * 0.5, false, true); return; }
+    b.posture = Math.min(100, b.posture + s.pp * 0.25 * TUNE.postureGain);
+    if (p.st <= 0) { p.st = 0; p.state = 'broken'; p.t = 0; ronin.play('hit', { loop: false, fade: 0.08, restart: true }); pop('GUARD BROKEN', true); hurtPlayer(s.dmg * 0.3, false, true); return; }
     hurtPlayer(s.dmg * 0.15, false, true);
     return;
   }
@@ -799,6 +814,7 @@ function receive(a, idx) {
 function hurtPlayer(dmg, knock, chip) {
   const p = player;
   if (GOD) dmg = 0;
+  dmg *= TUNE.bossDmg;
   p.hp -= dmg;
   if (!chip) {
     Audio.play('hurt');
@@ -952,7 +968,7 @@ function restart() { $('end').classList.remove('show'); game.parries = 0; beginF
 let pausedAt = 0;
 function pause() { if (game.state !== 'fight') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
 function resume() { game.state = 'fight'; Music.loud(true); $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
-$('pause').addEventListener('click', (e) => { if (e.target.closest('a') || performance.now() - pausedAt < 400) return; resume(); });
+$('pause').addEventListener('click', (e) => { if (e.target.closest('a, [data-switch]') || performance.now() - pausedAt < 400) return; resume(); });
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
 loadClip(introVid, 'clips/intro.mp4', () => {});
 crewRow();

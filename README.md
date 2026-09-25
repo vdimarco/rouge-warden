@@ -133,7 +133,7 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 - **Gabe, the grizzly.** At about half life, Gabe cracks his knuckles, his track suit tears, and he turns into a standing grizzly twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
 - **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
 - **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
-- **Drink.** You carry three gourds. Each one heals 40 life, but you stand still to drink.
+- **Drink.** You carry five gourds. Each one heals 50 life, but you stand still to drink.
 
 | Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
