@@ -175,6 +175,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyM' && Music.enabled) { Music.toggle(); return; }
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
+  if (game.state === 'cutscene') { endCutscene(); return; }
   if (game.state === 'end') { if (performance.now() - endShownAt > 900) restart(); return; }
   if (game.state === 'paused') { if (e.code === 'Escape' || e.code === 'Enter') resume(); return; }
   if (game.state !== 'fight') return;
@@ -285,6 +286,7 @@ function pollPad() {
   if (b.some((x) => x) || pad.axes.some((a) => Math.abs(a) > 0.4)) input.usingPad = true;
   if (game.state === 'title') { if (edge(14)) pickCrew(crewPick - 1); if (edge(15)) pickCrew(crewPick + 1); if (edge(0) || edge(9)) startGame(); }
   else if (game.state === 'intro') { if (b.some((x, i) => x && !prev[i])) endIntro(); }
+  else if (game.state === 'cutscene') { if (b.some((x, i) => x && !prev[i])) endCutscene(); }
   else if (game.state === 'end') { if ((edge(0) || edge(9)) && performance.now() - endShownAt > 900) restart(); }
   else if (game.state === 'paused') { if (edge(9) || edge(0)) resume(); }
   else if (game.state === 'fight') {
@@ -410,7 +412,8 @@ function updatePlayer(dt) {
   input.move.set(mx, my); if (input.move.lengthSq() > 1) input.move.normalize();
   const [f, r] = camBasis();
   const want = new THREE.Vector3().addScaledVector(f, input.move.y).addScaledVector(r, input.move.x);
-  const busy = ['dead', 'grabbed', 'down', 'hit', 'broken', 'heal', 'victory'].includes(p.state) || (p.state === 'deflect' && p.t < 0.12) || (p.state === 'dodge' && p.t < DODGE_END);
+  if (boss.state === 'transform') want.set(0, 0, 0);
+  const busy = boss.state === 'transform' || ['dead', 'grabbed', 'down', 'hit', 'broken', 'heal', 'victory'].includes(p.state) || (p.state === 'deflect' && p.t < 0.12) || (p.state === 'dodge' && p.t < DODGE_END);
   const moving = input.move.lengthSq() > 0.04;
   if (!busy) tryAct();
   p.t += dt;
@@ -585,22 +588,41 @@ function updateBoss(dt) {
     case 'wait': bossTurn(toP, 2, dt); if (b.t > 0.8) { b.state = 'intro'; b.t = 0; A.play('taunt', { loop: false, fade: 0.2, restart: true }); Audio.play('growl'); } break;
     case 'intro': bossTurn(toP, 2, dt); if (b.t > 2.4) { b.state = 'idle'; b.t = 0; b.cooldown = 0.6; } break;
     case 'transform': {
+      // the change, as a cut scene: build-up in the engine, the film, then the bear's entrance in slow motion
       bossTurn(toP, 1.5, dt);
-      glowWant = 1.5;
-      if (b.t > 0.3 && b.t < 1.5) fx.ember(tmpA.set(b.pos.x + rand(-0.6, 0.6), ground(b.pos) + rand(0.3, 2.4), b.pos.z + rand(-0.6, 0.6)));
-      if (b.t > 1.4 && !b.swapped) {
-        b.swapped = true; b.form = 'bear';
-        gabe.visible = false; bear.visible = true; b.a = A = bear;
-        bear.play('roar', { loop: false, fade: 0, restart: true });
-        setBossName();
-        Audio.play('tear'); Audio.play('surge'); Audio.play('roar');
-        const c = tmpA.set(b.pos.x, ground(b.pos) + 1.8, b.pos.z);
-        game.flash = 0.7; game.hitstop = 0.12; cam.punch = 1.4; cam.shake = 1.4;
-        fx.flash(c, 5, 0.4); fx.neon(c, 70, 2); fx.ink(c, 30, 2.2, 1); fx.blast(b.pos, 1.6); fx.ring({ x: b.pos.x, z: b.pos.z, groundY: ground(b.pos) }, 10, 0.9); fx.dust(b.pos, 20, 2);
-        if (flatDist(b.pos, p.pos) < 6) p.pos.addScaledVector(tmpB.set(Math.sin(toP), 0, Math.cos(toP)), 2.2);
-        pop('GABE LETS THE BEAR OUT', true);
+      const g = ground(b.pos);
+      if (!b.swapped) {
+        glowWant = 1.2 + b.t * 1.4;
+        cam.shake = Math.max(cam.shake, 0.12 + b.t * 0.3);
+        for (let i = 0; i < 2; i++) {
+          const a = b.t * 5 + i * Math.PI + rand(-0.3, 0.3), r = Math.max(0.3, 1 - b.t * 0.3);
+          fx.ember(tmpA.set(b.pos.x + Math.sin(a) * r, g + rand(0.2, 2.6), b.pos.z + Math.cos(a) * r));
+        }
+        for (const [at, key, rr] of [[0.6, 'beat1', 4], [1.2, 'beat2', 6], [1.7, 'beat3', 8]]) if (b.t > at && !b[key]) {
+          b[key] = true; Audio.play('thud'); fx.ring({ x: b.pos.x, z: b.pos.z, groundY: g }, rr, 0.5); fx.dust(b.pos, 8, 1.2); cam.punch = Math.max(cam.punch, 0.35);
+        }
+        if (b.t > 2.0 && !b.cut) { b.cut = true; if (!playCutscene()) b.cutDone = true; }
+        if (b.cutDone) {
+          b.swapped = true; b.swapT = b.t; b.form = 'bear';
+          gabe.visible = false; bear.visible = true; b.a = A = bear;
+          bear.play('roar', { loop: false, fade: 0, restart: true });
+          setBossName();
+          Audio.play('tear'); Audio.play('surge'); Audio.play('roar');
+          const c = tmpA.set(b.pos.x, g + 1.8, b.pos.z);
+          game.flash = 1; game.hitstop = 0.2; game.slow = 0.35; game.slowT = 1.1; cam.punch = 1.6; cam.shake = 1.6;
+          fx.flash(c, 7, 0.5); fx.neon(c, 110, 2.4); fx.ink(c, 40, 2.4, 1.2); fx.blast(b.pos, 2); fx.ring({ x: b.pos.x, z: b.pos.z, groundY: g }, 10, 0.9); fx.dust(b.pos, 30, 2.4); fx.splat(b.pos, 4, g);
+          if (flatDist(b.pos, p.pos) < 7) p.pos.addScaledVector(tmpB.set(Math.sin(toP), 0, Math.cos(toP)), 2.6);
+          showCard('GABE', 'THE GRIZZLY OF SEDONA', '熊');
+        }
+      } else {
+        const k = b.t - b.swapT;
+        glowWant = 2.2;
+        for (const [at, key, rr] of [[0.25, 'ring2', 16], [0.55, 'ring3', 24]]) if (k > at && !b[key]) {
+          b[key] = true; fx.ring({ x: b.pos.x, z: b.pos.z, groundY: g }, rr, 1.0); cam.shake = Math.max(cam.shake, 0.9); fx.dust(b.pos, 14, 3);
+        }
+        if (k > 2.6 && document.body.classList.contains('cine')) { document.body.classList.remove('cine'); pop('GABE LETS THE BEAR OUT', true); }
+        if (k > 3.3) { b.state = 'idle'; b.t = 0; b.cooldown = 0.6; b.posture = 0; document.body.classList.remove('cine'); }
       }
-      if (b.t > 4.2) { b.state = 'idle'; b.t = 0; b.cooldown = 0.4; b.posture = 0; }
       break;
     }
     case 'idle': {
@@ -769,7 +791,32 @@ function beginTransform() {
   game.phase2 = true; b.state = 'transform'; b.t = 0; b.rage = 1; b.queue = []; b.atk = null; b.swapped = false;
   gabe.play('taunt', { loop: false, fade: 0.2, restart: true });
   Audio.play('growl');
+  document.body.classList.add('cine');
+  b.cineYaw = angleTo(b.pos, player.pos);
+  // the player stops where they are while the scene plays
+  if (!['dead', 'grabbed'].includes(player.state)) { player.state = 'move'; player.t = 0; player.vel.set(0, 0, 0); }
   pop('GABE CRACKS HIS KNUCKLES', true);
+}
+function showCard(title, sub, kanji) {
+  hud.card.innerHTML = `${kanji ? `<b>${kanji}</b>` : ''}<h2>${title}</h2><p>${sub}</p>`;
+  hud.card.className = ''; void hud.card.offsetWidth; hud.card.className = 'show';
+}
+// the film of Gabe turning into the bear; returns false when it cannot play, so the scene runs in the engine alone
+function playCutscene() {
+  if (!introVid.src || introVid.readyState < 2) return false;
+  game.state = 'cutscene';
+  $('intro').classList.remove('hidden');
+  Music.loud(false);
+  introVid.currentTime = 0; introVid.muted = false; introVid.volume = 1;
+  introVid.onended = endCutscene;
+  introVid.play().catch(() => { introVid.muted = true; introVid.play().catch(endCutscene); });
+  return true;
+}
+function endCutscene() {
+  if (game.state !== 'cutscene') return;
+  introVid.pause(); $('intro').classList.add('hidden');
+  game.state = 'fight'; boss.cutDone = true;
+  Music.loud(true);
 }
 function receive(a, idx) {
   const p = player, s = a.spec, b = boss;
@@ -851,6 +898,7 @@ function bossDies() {
 /* ------------------------------------------------------------------ camera */
 function updateCamera(rdt) {
   const p = player, b = boss, big = b.form === 'bear';
+  if (b.state === 'transform') { cineCamera(rdt); return; }
   const pivot = new THREE.Vector3(p.pos.x, ronin.root.position.y + 1.55, p.pos.z);
   if (cam.lock && b.state !== 'dead') {
     cam.yaw += angDiff(cam.yaw, angleTo(p.pos, b.pos)) * Math.min(1, rdt * 5);
@@ -875,6 +923,27 @@ function updateCamera(rdt) {
   camera.fov = damp(camera.fov, 52 - cam.punch * 9, 14, rdt);
   camera.updateProjectionMatrix();
   followLights(tmpC.copy(p.pos).lerp(b.pos, 0.5), cam.pos);
+}
+
+// the change: a low camera circles Gabe, then pulls back to take in the bear
+function cineCamera(rdt) {
+  const b = boss, g = ground(b.pos), after = b.swapped ? b.t - b.swapT : 0;
+  // before the change it starts over your shoulder; for the bear it swings well to the side, clear of you
+  const ang = b.cineYaw + (b.swapped ? 1.45 + after * 0.1 : -0.5 + b.t * 0.45);
+  const R = b.swapped ? 8 - Math.min(2.2, after * 1.1) : Math.max(3.2, 4.6 - b.t * 0.6);
+  const want = tmpA.set(b.pos.x + Math.sin(ang) * R, g + (b.swapped ? 1.0 : 0.7), b.pos.z + Math.cos(ang) * R);
+  want.y = Math.max(want.y, groundHeight(want.x, want.z) + 0.4);
+  cam.pos.lerp(want, 1 - Math.exp(-rdt * (b.swapped ? 6 : 3)));
+  cam.look.lerp(tmpB.set(b.pos.x, g + (b.swapped ? 2.5 : 1.6), b.pos.z), 1 - Math.exp(-rdt * 6));
+  cam.punch = Math.max(0, cam.punch - rdt * 2.6); cam.shake = Math.max(0, cam.shake - rdt * 2.4);
+  camera.position.copy(cam.pos);
+  if (cam.shake > 0) camera.position.add(tmpC.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).multiplyScalar(cam.shake * 0.07));
+  camera.lookAt(cam.look);
+  camera.fov = damp(camera.fov, 40 - cam.punch * 8, 8, rdt);
+  camera.updateProjectionMatrix();
+  followLights(b.pos, cam.pos);
+  // after the scene, the normal camera starts from its usual yaw behind the player
+  cam.yaw = angleTo(player.pos, b.pos);
 }
 
 /* ------------------------------------------------------------------ flow */
@@ -913,18 +982,14 @@ function titleKey(e) {
   startGame();
 }
 $('title').addEventListener('click', startGame);
-$('intro').addEventListener('click', () => endIntro());
+$('intro').addEventListener('click', () => { if (game.state === 'cutscene') endCutscene(); else endIntro(); });
 function startGame() {
   if (game.state !== 'title' || !game.ready) return;
   Audio.init(); Audio.play('start'); Music.start();
   $('title').classList.add('hidden');
-  if (introVid.src && introVid.readyState >= 2) {
-    game.state = 'intro';
-    $('intro').classList.remove('hidden');
-    introVid.currentTime = 0; introVid.muted = false;
-    introVid.play().catch(() => endIntro());
-    introVid.onended = () => endIntro();
-  } else endIntro(true);
+  // the film plays later, at the change; phones only allow its sound if it first plays during a tap like this one
+  if (introVid.src) { introVid.muted = false; introVid.volume = 0; introVid.play().then(() => { introVid.pause(); introVid.currentTime = 0; introVid.volume = 1; }, () => { introVid.volume = 1; }); }
+  endIntro(true);
 }
 function endIntro(force) {
   if (game.state !== 'intro' && !force) return;
@@ -937,7 +1002,7 @@ function beginFight() {
   cam.yaw = Math.atan2(FACE_DIR.x, FACE_DIR.z); cam.lock = true;
   cam.pos.copy(SPAWN_P).addScaledVector(FACE_DIR, -5).setY(3); cam.look.copy(SPAWN_B).setY(1.6);
   hud.el.classList.add('on'); hud.hint.style.opacity = 1;
-  hud.card.className = ''; void hud.card.offsetWidth; hud.card.className = 'show';
+  showCard('GABE', 'THE MOUNTAIN MAN OF SEDONA');
   Audio.drumOn = !Music.playing;
   Music.loud(true);
   if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } }
@@ -1001,7 +1066,7 @@ function tick(rdt) {
   let dt = rdt;
   if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
   if (game.slowT > 0) { game.slowT -= rdt; dt *= game.slow; }
-  if (game.state !== 'paused') {
+  if (game.state !== 'paused' && game.state !== 'cutscene') {
     game.time += dt;
     grassUniforms.uTime.value += dt;
     if (game.ready && (game.state === 'fight' || game.state === 'end')) { updatePlayer(dt); updateBoss(dt); updateCamera(rdt); updateHud(); }
