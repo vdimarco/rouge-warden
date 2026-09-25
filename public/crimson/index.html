@@ -133,10 +133,32 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 #pause table { margin: 0 auto; border-collapse: collapse; font-size: 13px; letter-spacing: 0.08em; text-align: left; }
 #pause td { padding: 6px 18px; border-bottom: 1px solid rgba(233,230,223,0.12); }
 #pause td:first-child { color: var(--muted); }
+#pause th { padding: 6px 18px; font-size: 10px; letter-spacing: 0.25em; color: var(--muted); font-weight: 500; }
 #pause video { display: none; width: min(46vw, 520px); margin: 0 auto 20px; border: 1px solid rgba(233,230,223,0.2); }
 #pause video.ready { display: block; }
 #pause a { color: var(--ink); }
 #pause p { margin-top: 24px; font-size: 12px; letter-spacing: 0.3em; color: var(--muted); }
+
+/* ---------- touch ---------- */
+#touch { position: absolute; inset: 0; display: none; touch-action: none; -webkit-touch-callout: none; }
+body.touch.fighting #touch { display: block; }
+body.touch #keys { display: none; }
+#touch button { position: absolute; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.45); background: rgba(0,0,0,0.45); color: var(--ink); font: 800 11px var(--serif); letter-spacing: 0.12em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
+#touch button.down { background: rgba(233,230,223,0.22); border-color: var(--ink); }
+#tCut { width: 84px; height: 84px; right: calc(20px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); font-size: 13px; }
+#tHeavy { width: 58px; height: 58px; right: calc(118px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); }
+#tGuard { width: 70px; height: 70px; right: calc(112px + env(safe-area-inset-right)); bottom: calc(94px + env(safe-area-inset-bottom)); }
+#tGuard.pulse { border-color: var(--red-hot); color: #fff; box-shadow: 0 0 18px rgba(198,255,26,0.8); }
+#tDodge { width: 62px; height: 62px; right: calc(30px + env(safe-area-inset-right)); bottom: calc(124px + env(safe-area-inset-bottom)); }
+#tGourd { width: 46px; height: 46px; right: calc(190px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); font-size: 9px; }
+#tLock { width: 46px; height: 46px; right: calc(38px + env(safe-area-inset-right)); bottom: calc(200px + env(safe-area-inset-bottom)); font-size: 9px; }
+#tPause { width: 38px; height: 38px; right: calc(10px + env(safe-area-inset-right)); top: calc(8px + env(safe-area-inset-top)); font-size: 13px; letter-spacing: 0; }
+#stickBase { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.35); background: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+#stickBase.on { opacity: 1; }
+#stickKnob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%; background: rgba(233,230,223,0.55); transform: translate(-50%, -50%); }
+body.touch #player { left: calc(16px + env(safe-area-inset-left)); bottom: auto; top: calc(4.5vh + 62px); width: min(42vw, 300px); }
+body.touch #hint { bottom: auto; top: calc(4.5vh + 140px); }
+body.touch #hint small { display: none; }
 
 @media (max-width: 720px) {
   #keys { display: none; }
@@ -161,7 +183,7 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
     <div class="row"><span class="label">KI</span><div class="bar" id="st"><i class="fill"></i></div></div>
     <div id="gourds"><b></b><b></b><b></b><span>GOURD</span></div>
   </div>
-  <div id="hint">Hold <kbd>LB</kbd> to parry<small>Keyboard: hold <kbd>Shift</kbd> or right mouse · parry just before the blade lands</small></div>
+  <div id="hint">Hold <kbd>Shift</kbd> to parry<small>Or hold right click · tap it as the blow lands to deflect · keep holding to block</small></div>
   <div id="keys">
     <b>WASD</b> move · <b>Mouse</b> look<br>
     <b>Left click / J</b> light · <b>K / Q</b> heavy<br>
@@ -175,6 +197,17 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
   <div id="card"><h2>GABE</h2><p>THE MOUNTAIN MAN OF SEDONA</p></div>
 </div>
 
+<div id="touch">
+  <div id="stickBase"><i id="stickKnob"></i></div>
+  <button type="button" id="tCut">CUT</button>
+  <button type="button" id="tHeavy">HEAVY</button>
+  <button type="button" id="tGuard">GUARD</button>
+  <button type="button" id="tDodge">DODGE</button>
+  <button type="button" id="tGourd">GOURD</button>
+  <button type="button" id="tLock">LOCK</button>
+  <button type="button" id="tPause" aria-label="Pause">II</button>
+</div>
+
 <div id="title" class="screen">
   <div class="bg"></div>
   <video id="titleVid" muted loop playsinline preload="auto"></video>
@@ -185,7 +218,7 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
     <p class="jp">赤 い 岩 の 山 で</p>
     <p class="pick">CHOOSE YOUR FRIEND · ◀ ▶</p>
     <p class="press">PRESS ANY KEY TO FIGHT</p>
-    <p class="req">Keyboard and mouse, or a gamepad. Sound on.</p>
+    <p class="req">Keyboard and mouse, or touch. Sound on.</p>
   </div>
 </div>
 
@@ -207,17 +240,18 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
   <div>
     <h2>PAUSED</h2>
     <table>
-      <tr><td>Move</td><td>WASD · left stick</td></tr>
-      <tr><td>Camera</td><td>Mouse · right stick</td></tr>
-      <tr><td>Light attack</td><td>Left click · J · RB</td></tr>
-      <tr><td>Heavy attack</td><td>K · Q · RT</td></tr>
-      <tr><td>Dodge</td><td>Space · A or B</td></tr>
-      <tr><td>Parry (hold)</td><td>Shift · Right click · LB</td></tr>
-      <tr><td>Drink gourd</td><td>R · X</td></tr>
-      <tr><td>Lock on</td><td>Tab · Middle click · R3</td></tr>
+      <tr><th></th><th>Keyboard</th><th>Touch</th></tr>
+      <tr><td>Move</td><td>WASD</td><td>Left thumb, drag</td></tr>
+      <tr><td>Camera</td><td>Mouse</td><td>Right thumb, drag</td></tr>
+      <tr><td>Light attack</td><td>Left click · J</td><td>CUT · tap the right side</td></tr>
+      <tr><td>Heavy attack</td><td>K · Q</td><td>HEAVY</td></tr>
+      <tr><td>Dodge</td><td>Space</td><td>DODGE</td></tr>
+      <tr><td>Parry (hold)</td><td>Shift · Right click</td><td>GUARD</td></tr>
+      <tr><td>Drink gourd</td><td>R</td><td>GOURD</td></tr>
+      <tr><td>Lock on</td><td>Tab · Middle click</td><td>LOCK</td></tr>
     </table>
     <p>Tap parry as the blow lands to deflect. Keep holding to block.<br>A glowing neon fist or claw is about to strike. A neon 危 means a grab or a charge: you cannot block it, so dodge.<br>Fill Gabe's posture bar, then strike the neon mark.</p>
-    <p>CLICK TO RESUME · <a href="/" id="toArcade">BACK TO THE ARCADE</a></p>
+    <p>CLICK OR TAP TO RESUME · <a href="/" id="toArcade">BACK TO THE ARCADE</a></p>
   </div>
 </div>
 

@@ -106,45 +106,17 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 
 ### Controls
 
-| Action | Keyboard and mouse | Gamepad |
+| Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
-| Move, jump, hover | A and D, W or Space (hold to hover) | Left stick, A |
-| Hit | Left mouse or J | X |
-| Ground pound | S and hit, in the air | Down and X, in the air |
-| Roll | Shift or L | B |
-| Shoot | Right mouse or K | RT or RB |
-| Change guns | 1, 2, 3, or the wheel | LB |
-| Dig | Hold F | LT |
-| Hot dog | R | Y |
-| Take or open | E | D-pad up |
-| Map, sound | Q, M | Back |
-
-On a phone, the left thumb moves, and pulling down on the stick while you hit in the air pounds the ground. Tap the right side or the Hit button to swing, and drag the right side to aim and shoot. Buttons roll, eat a hot dog, and switch the right thumb to the shovel.
-
-The game fits the screen on desktop and phone, and nothing scrolls.
-
-## Crimson Rouge
-
-Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
-
-- **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
-- **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab: he hauls you over his head and throws you, so dodge it.
-- **Gabe, the grizzly.** At about half life, Gabe cracks his knuckles, his track suit tears, and he turns into a standing grizzly twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
-- **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
-- **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
-- **Drink.** You carry three gourds. Each one heals 40 life, but you stand still to drink.
-
-| Action | Keyboard and mouse | Gamepad |
-| --- | --- | --- |
-| Move | WASD | Left stick |
-| Camera | Mouse | Right stick |
-| Light attack (3-hit combo) | Left click or J | RB |
-| Heavy attack | K or Q | RT or Y |
-| Dodge roll | Space | A or B |
-| Parry (hold to block) | Shift, F, or right click | LB |
-| Drink a gourd | R or E | X |
-| Lock on | Tab or middle click | R3 |
-| Pause | Esc or P | Start |
+| Move | WASD | Drag on the left half |
+| Camera | Mouse | Drag on the right half |
+| Light attack (3-hit combo) | Left click or J | CUT, or tap the right half |
+| Heavy attack | K or Q | HEAVY |
+| Dodge roll | Space | DODGE |
+| Parry (hold to block) | Shift, F, or right click | GUARD |
+| Drink a gourd | R or E | GOURD |
+| Lock on | Tab or middle click | LOCK |
+| Pause | Esc or P | II |
 
 ### How it is made
 

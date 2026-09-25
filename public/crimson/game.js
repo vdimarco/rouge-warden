@@ -72,7 +72,8 @@ const BEAR_ATK = {
 /* ------------------------------------------------------------------ state */
 const game = { state: 'loading', time: 0, phase2: false, hitstop: 0, slow: 1, slowT: 0, deaths: 0, parries: 0, fightStart: 0, flash: 0, hurt: 0, ready: false };
 Audio.phase2 = () => game.phase2;
-const input = { keys: {}, mouse: { l: false, r: false }, buf: { light: -9, heavy: -9, dodge: -9, heal: -9, parry: -9 }, move: new THREE.Vector2(), pad: null, padPrev: [], usingPad: false };
+const input = { keys: {}, mouse: { l: false, r: false }, buf: { light: -9, heavy: -9, dodge: -9, heal: -9, parry: -9 }, move: new THREE.Vector2(), pad: null, padPrev: [], usingPad: false,
+  touch: { on: false, guard: false, stick: new THREE.Vector2() } };
 const cam = { yaw: 0, pitch: 0.2, dist: 4.4, punch: 0, shake: 0, lock: true, look: new THREE.Vector3(), pos: new THREE.Vector3() };
 let player, boss, ronin, gabe, bear, katana;
 const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
@@ -112,7 +113,7 @@ async function loadAll() {
   }
   makePlayer(); makeBoss();
   game.ready = true; game.state = 'title';
-  pressEl.textContent = 'PRESS ANY KEY TO FIGHT';
+  titleText();
 }
 loadAll().catch((e) => { console.error(e); pressEl.textContent = 'COULD NOT LOAD THE MODELS'; });
 
@@ -150,7 +151,7 @@ const canvas = $('view');
 addEventListener('keydown', (e) => {
   if (e.code === 'Tab') e.preventDefault();
   if (e.repeat) return;
-  input.usingPad = false;
+  input.usingPad = false; setTouch(false);
   input.keys[e.code] = true;
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
@@ -186,6 +187,71 @@ document.addEventListener('pointerlockchange', () => {
   else if (hadLock && game.state === 'fight') pause();
 });
 function toggleLock() { cam.lock = !cam.lock; if (cam.lock) cam.yaw = angleTo(player.pos, boss.pos); }
+
+// touch: a thumb stick on the left half, look and tap-to-cut on the right half, and buttons
+function setTouch(on) {
+  if (input.touch.on === on) return;
+  input.touch.on = on; document.body.classList.toggle('touch', on);
+  if (!on) { input.touch.guard = false; input.touch.stick.set(0, 0); }
+  titleText();
+}
+function titleText() {
+  const t = input.touch.on;
+  if (game.ready) pressEl.textContent = t ? 'TAP TO FIGHT' : 'PRESS ANY KEY TO FIGHT';
+  document.querySelector('#title .pick').textContent = t ? 'CHOOSE YOUR FRIEND' : 'CHOOSE YOUR FRIEND · ◀ ▶';
+  document.querySelector('#intro .skip').textContent = t ? 'TAP TO SKIP' : 'ANY KEY TO SKIP';
+}
+addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') setTouch(true); }, true);
+if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) setTouch(true);
+{
+  const layer = $('touch'), knob = $('stickKnob'), base = $('stickBase'), R = 56;
+  const ptrs = new Map();
+  layer.addEventListener('pointerdown', (e) => {
+    if (game.state !== 'fight' || e.target.closest('button')) return;
+    e.preventDefault(); layer.setPointerCapture(e.pointerId);
+    const stick = e.clientX < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
+    ptrs.set(e.pointerId, { stick, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
+    if (stick) {
+      base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`; base.classList.add('on');
+      knob.style.transform = 'translate(-50%, -50%)';
+    }
+  });
+  layer.addEventListener('pointermove', (e) => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    p.moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
+    if (p.stick) {
+      let sx = e.clientX - p.x0, sy = e.clientY - p.y0; const l = Math.hypot(sx, sy);
+      if (l > R) { sx *= R / l; sy *= R / l; }
+      knob.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
+      input.touch.stick.set(sx / R, -sy / R);
+    } else if (game.state === 'fight') {
+      cam.yaw -= dx * 0.0065;
+      cam.pitch = clamp(cam.pitch + dy * 0.005, -0.3, 0.85);
+    }
+  });
+  const end = (e) => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    ptrs.delete(e.pointerId);
+    if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
+    else if (p.moved < 14 && performance.now() - p.t0 < 300 && game.state === 'fight') input.buf.light = game.time;
+  };
+  layer.addEventListener('pointerup', end); layer.addEventListener('pointercancel', end);
+  const acts = { tCut: 'light', tHeavy: 'heavy', tDodge: 'dodge', tGourd: 'heal' };
+  for (const b of layer.querySelectorAll('button')) {
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('down');
+      if (b.id === 'tPause') { pause(); return; }
+      if (game.state !== 'fight') return;
+      if (b.id === 'tGuard') { input.touch.guard = true; input.buf.parry = game.time; }
+      else if (b.id === 'tLock') toggleLock();
+      else input.buf[acts[b.id]] = game.time;
+    });
+    const up = () => { b.classList.remove('down'); if (b.id === 'tGuard') input.touch.guard = false; };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+}
 function pollPad() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   let pad = null; for (const p of pads) if (p && p.connected) { pad = p; break; }
@@ -217,7 +283,8 @@ const hud = {
 };
 function pop(text, hot) { hud.pop.textContent = text; hud.pop.className = ''; void hud.pop.offsetWidth; hud.pop.className = 'show' + (hot ? ' red' : ''); }
 function danger() { hud.danger.className = ''; void hud.danger.offsetWidth; hud.danger.className = 'show'; }
-let hintPad = null;
+let hintMode = '';
+const guardBtn = $('tGuard');
 function updateHud() {
   const f = Math.max(0, boss.hp / boss.maxHp);
   hud.bossFill.style.transform = `scaleX(${f})`; hud.bossGhost.style.transform = `scaleX(${f})`;
@@ -237,10 +304,15 @@ function updateHud() {
   hud.reticle.style.top = `${(-chest.y * 0.5 + 0.5) * innerHeight}px`;
   const soon = boss.state === 'attack' && boss.nextHit != null && !boss.atk.spec.unblock && boss.nextHit - boss.clipT < 0.45 && boss.nextHit - boss.clipT > -0.1;
   hud.hint.classList.toggle('pulse', !!soon);
-  if (hintPad !== input.usingPad) {
-    hintPad = input.usingPad;
-    hud.hint.innerHTML = hintPad ? 'Hold <kbd>LB</kbd> to parry<small>Tap it as the blow lands to deflect · keep holding to block</small>'
-      : 'Hold <kbd>LB</kbd> to parry<small>Keyboard: hold <kbd>Shift</kbd> or right mouse · tap as the blow lands to deflect</small>';
+  guardBtn.classList.toggle('pulse', !!soon);
+  const mode = input.touch.on ? 'touch' : input.usingPad ? 'pad' : 'key';
+  if (hintMode !== mode) {
+    hintMode = mode;
+    hud.hint.innerHTML = {
+      key: 'Hold <kbd>Shift</kbd> to parry<small>Or hold right click · tap it as the blow lands to deflect · keep holding to block</small>',
+      touch: 'Hold <kbd>GUARD</kbd> to parry<small>Tap it as the blow lands to deflect</small>',
+      pad: 'Hold <kbd>LB</kbd> to parry<small>Tap it as the blow lands to deflect · keep holding to block</small>',
+    }[mode];
   }
   hud.hurt.style.opacity = game.hurt.toFixed(2);
 }
@@ -302,13 +374,14 @@ function tryAct() {
 }
 function updatePlayer(dt) {
   const p = player;
-  const parryHeld = input.keys.ShiftLeft || input.keys.ShiftRight || input.keys.KeyF || input.mouse.r || (input.pad && input.pad.buttons[4]?.pressed);
+  const parryHeld = input.keys.ShiftLeft || input.keys.ShiftRight || input.keys.KeyF || input.mouse.r || input.touch.guard || (input.pad && input.pad.buttons[4]?.pressed);
   let mx = (input.keys.KeyD ? 1 : 0) - (input.keys.KeyA ? 1 : 0), my = (input.keys.KeyW ? 1 : 0) - (input.keys.KeyS ? 1 : 0);
   if (input.pad) {
     const ax = input.pad.axes;
     if (Math.hypot(ax[0], ax[1]) > 0.18) { mx = ax[0]; my = -ax[1]; }
     if (Math.hypot(ax[2], ax[3]) > 0.18) { cam.yaw -= ax[2] * 2.6 * dt; cam.pitch = clamp(cam.pitch + ax[3] * 1.6 * dt, -0.3, 0.85); if (cam.lock && Math.abs(ax[2]) > 0.95) cam.lock = false; }
   }
+  if (input.touch.stick.lengthSq() > 0.03) { mx = input.touch.stick.x; my = input.touch.stick.y; }
   input.move.set(mx, my); if (input.move.lengthSq() > 1) input.move.normalize();
   const [f, r] = camBasis();
   const want = new THREE.Vector3().addScaledVector(f, input.move.y).addScaledVector(r, input.move.x);
@@ -781,7 +854,7 @@ function showEnd(won) {
   $('endStats').textContent = won
     ? `${player.f.name} beat Gabe in ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} · ${game.parries} deflects · ${game.deaths} deaths`
     : `Gabe had ${Math.round(boss.hp / boss.maxHp * 100)}% life left${boss.form === 'bear' ? ', as a bear' : ''} · ${game.parries} deflects`;
-  document.querySelector('#end p').textContent = won ? 'PRESS ANY KEY TO FIGHT AGAIN' : 'PRESS ANY KEY TO RISE AGAIN';
+  document.querySelector('#end p').textContent = `${input.touch.on ? 'TAP' : 'PRESS ANY KEY'} TO ${won ? 'FIGHT AGAIN' : 'RISE AGAIN'}`;
   if (won) {
     try {
       const best = JSON.parse(localStorage.getItem('crimson.best.v1') || 'null');
@@ -793,9 +866,10 @@ function showEnd(won) {
 }
 $('end').addEventListener('click', () => { if (game.state === 'end' && performance.now() - endShownAt > 900) restart(); });
 function restart() { $('end').classList.remove('show'); game.parries = 0; beginFight(); }
-function pause() { if (game.state !== 'fight') return; game.state = 'paused'; $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
+let pausedAt = 0;
+function pause() { if (game.state !== 'fight') return; game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
 function resume() { game.state = 'fight'; $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
-$('pause').addEventListener('click', resume);
+$('pause').addEventListener('click', (e) => { if (e.target.closest('a') || performance.now() - pausedAt < 400) return; resume(); });
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
 loadClip(titleVid, 'clips/title.mp4', () => { titleVid.classList.add('ready'); titleVid.play().catch(() => {}); });
 loadClip(introVid, 'clips/intro.mp4', () => {});
@@ -806,9 +880,12 @@ let ambientT = 0, last = performance.now(), manual = false;
 function frame(now) {
   requestAnimationFrame(frame);
   const rdt = Math.min(0.05, (now - last) / 1000); last = now;
+  const fighting = game.state === 'fight';
+  if (fighting !== wasFighting) { wasFighting = fighting; document.body.classList.toggle('fighting', fighting); }
   if (manual) return;
   pollPad(); tick(rdt); draw(now / 1000);
 }
+let wasFighting = false;
 function tick(rdt) {
   let dt = rdt;
   if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
