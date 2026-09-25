@@ -8,7 +8,8 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
 
-- Every game opens on a painted title screen in one shared storybook style: a gold-edged logo, a slow breathing "press" prompt, and a hero select with painted hero cards in gold frames. Get Plunger'd and Down the Drain use painted hero cards made with Higgsfield. Crimson Rouge keeps its ink-wash art and gets gold-framed fighter tiles.
+- Down the Drain opens on a painted title screen in the same storybook style as Breath of the Lake: a painted cavern picture, a gold logo, "Press any button", a menu, and a hero select with painted hero cards in gold frames. Its own 8-bit theme plays from the first press.
+- The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
@@ -217,6 +218,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
+| `public/icons/`, `public/favicon.ico` | The arcade's browser and home-screen icons |
 | `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with three original songs: the arcade theme, the Breath of the Lake overture, and the Down the Drain theme |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
