@@ -6,7 +6,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, and Crimson Rouge at `/crimson/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
 
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
@@ -161,6 +161,33 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 
 The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `?god` to the URL to take no damage while you test.
 
+## Breath of the Lake
+
+Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The Legend of Zelda: Breath of the Wild, with a soft, hand-painted look like a Studio Ghibli film. The Porcelain King clogged Loon Lake. His sludge took Gabe, Christian, and Ryu, and gave them red eyes. You wake up at the cottage and go get them back.
+
+- **Go anywhere.** The valley is about 1.6 km across: the cottage on the south shore, the pine forest to the west, the meadows to the east, and the mountains to the north. A short dock at the cottage has a kayak tied to it. Paddle it out to Clog Island.
+- **Climb anything.** Walk into a cliff, a tower, or a building, and you grab on. Climbing uses stamina.
+- **Glide.** Jump, then jump again in the air to open a beach umbrella. A campfire under you pushes you up.
+- **Paddle.** Walk up to the kayak and press E to get in. Steer with the stick, and hold sprint to paddle hard. Press E near a dock or a beach to get out, or jump to slip into the water. When you go far away, the kayak drifts back to the cottage dock.
+- **Fish.** Rings on the water mean fish are rising. Stand on the shore, a dock, or sit in the kayak, and press E to cast. When the bobber dips, press Swing to hook the fish. Then hold Swing to lift your green zone and let go to drop it. Keep the fish inside the zone until the bar fills. You can catch Yellow Perch, Lake Trout, Walleye, and the rare Golden Loon Bass. Fish heal you and go in the stew pot. Each spot rests for a while after a catch.
+- **Swim.** Swimming uses stamina too. Run out and you wash back up on shore, one heart short.
+- **Light the fire towers.** Four towers fill in the map. After that, you can travel to them from the map.
+- **Clear the outhouse trials.** Twelve outhouses glow blue. Win the fight inside the ring for a Golden Orb. Pray at the loon statue with four orbs for a new heart or more stamina.
+- **Find the Loonies.** Thirty are hidden: most under odd little rocks with flowers on top, and some up high.
+- **Fight.** Swing in a 3-hit combo, or hold and let go for a spin. Roll just as a hit lands and time slows down. Weapons from the coolers hit harder than the plunger, but they break.
+- **Eat and cook.** Pick up apples, blueberries, toadstools, and maple syrup, or catch fish. Cook three at a fire to make a stew that fills your hearts and adds a gold one.
+- **Free your friends.** Gabe throws boulders and sends shockwaves you must jump. Christian blinks around a stone circle and throws cards. Ryu dashes and throws fireballs. Each one gives you a heart and a power: Gabe's Grit blocks hits, Mystic Updraft (R) lifts you into the sky, and Ryu's Fury (F) strikes everything near you with lightning.
+- **Flush the King.** He hops, spits sludge, calls raccoons, and at half health tries to flush you in.
+- **Day and night.** A day lasts 10 minutes. At night the fireflies and the skeeters come out. At midnight the critters come back.
+
+**The look.** The game draws each frame, then paints over it in one pass so it looks like a frame from a Studio Ghibli film. A brush filter (Kuwahara) turns flat areas into soft strokes. Thin ink lines trace hills, trees, and people. Warm colour grading, a soft glow, haze around the sun, and paper grain finish it. Far away, the brush gets broader and the hills fade into a clear painted blue, like the backgrounds of an animated film. The grass is dense and tall. Big waves of wind roll across whole fields. The grass parts around you and springs back slowly behind you, and the tips glow when the sun is behind them. The east meadows turn to golden pampas. People and animals ease from one pose to the next, so walking, turning, landing, and swinging blend smoothly. In the world, cloud shadows drift over the hills, far hills fade into blue haze, tall summer clouds stand on the horizon, and seed fluff floats in the light. A giant old tree stands on the hill behind the cottage.
+
+**Graphics settings.** The pause menu has High, Medium, and Low. Phones start on Low. The game also lowers its resolution on its own when frames get slow, and raises it again when there is room.
+
+**Painted assets.** The crew, the three bosses, the King, the critters, the kayak, the fish, the cabin, the outhouses, and the loon statue are 3D models made with [Higgsfield](https://higgsfield.ai/). Each one started as a painted concept picture, then became a textured model. The people have skeletons, and the game drives them with the same walk, climb, glide, swim, and swing poses as before. The ground uses painted grass, dirt, sand, and rock textures. A painted ring of far mountains stands behind the valley, and the loading screen and the arcade cabinet show a painted key art picture. If a model or texture does not load, the game uses its old shape-built version.
+
+It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. The sounds and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
+
 ## Files
 
 | Path | What it does |
@@ -177,6 +204,12 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
+| `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
+| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
+| `public/wild/tex/` | Painted ground textures, the mountain backdrop, and the key art |
+| `public/wild/art/` | Crew pictures for the title screen |
+| `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
@@ -184,6 +217,21 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 | `legacy/warden-iso.html` | An older build, kept for reference |
 
 The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
+
+### Breath of the Lake tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from `qa/wild/`. Each one exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `level.mjs` | Every tower can be climbed from 8 sides with normal stamina. Outhouse doors, coolers, food, Loonies, boss arenas, and the crew are all in reachable places. You can walk down the dock, paddle the kayak to the island, get out, and walk up. Every fishing spot is in deep water you can reach. |
+| `fuzz.mjs [runs] [steps]` | A bot mashes random buttons all over the map. After every step: no NaN, never under the ground or inside a building, never out of the world, hearts and stamina in range. |
+| `stress.mjs` | Runs, rolls, and jumps into every building from 12 sides. Climbs and lets go. Jumps and glides off every tower. Climbs 40 cliffs. Swims under the dock. Paddles the kayak all over the lake, hops out, and climbs back in. Fishes at every spot with random buttons. Watches for the hero or the camera getting stuck or going inside things. |
+| `flows.mjs` | Damaged save files, double clicks on New game, dying during a conversation, menus on top of menus, travel during a boss fight, catching a fish, moving or getting hit while fishing, travel from the kayak, a whole day and night, window resizing, and a graphics reset. |
+| `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
+| `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
+
+Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL` to a local `three.module.min.js` and `THREE_ADDONS` to a local copy of three's `examples/jsm` folder.
 
 ## Jev and cost
 

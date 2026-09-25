@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#cfe8f6">
+<title>Get Plunger'd: Breath of the Lake</title>
+<meta name="description" content="An open-world adventure at the cottage. Climb anything, glide under a beach umbrella, and flush the Porcelain King. Free in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://warden-alpha-wheat.vercel.app/wild/">
+<meta property="og:title" content="Get Plunger'd: Breath of the Lake">
+<meta property="og:description" content="Climb anything, glide under a beach umbrella, and flush the Porcelain King.">
+<meta property="og:image" content="https://warden-alpha-wheat.vercel.app/wild/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<style>
+:root {
+  --ink: #3a2a1a; --paper: #f6efd9; --paper2: #ece0bf; --line: #b89c6a; --accent: #e8a23a; --blue: #5ad8e8; --red: #e0453a; --green: #7ac84a;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
+  --title: "Cormorant Garamond", Georgia, serif; --body: "Alegreya Sans", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe8f6; color: var(--ink); font-family: var(--body); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; width: 100%; height: 100%; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.shadow { text-shadow: 0 1px 0 rgba(0,0,0,.6), 0 0 6px rgba(0,0,0,.45); }
+
+/* HUD */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; color: #fff; }
+.tl { position: absolute; top: calc(var(--sat) + 12px); left: calc(var(--sal) + 14px); display: flex; flex-direction: column; gap: 6px; }
+.hearts { display: flex; flex-wrap: wrap; gap: 2px; max-width: 280px; }
+.hearts svg { width: 26px; height: 24px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+.abil { display: flex; gap: 6px; }
+.abil .ab { position: relative; width: 38px; height: 38px; border-radius: 50%; background: rgba(20,30,40,.55); border: 2px solid rgba(255,255,255,.6); display: grid; place-items: center; font-size: 18px; pointer-events: auto; }
+.abil .ab i { position: absolute; inset: -2px; border-radius: 50%; background: conic-gradient(rgba(0,0,0,.6) var(--cd, 0%), transparent 0); }
+.abil .ab b { position: absolute; right: -4px; bottom: -4px; font-size: 10px; background: #222; border-radius: 6px; padding: 0 3px; }
+.tr { position: absolute; top: calc(var(--sat) + 12px); right: calc(var(--sar) + 14px); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+#mini { width: 150px; height: 150px; border-radius: 50%; border: 3px solid rgba(246,239,217,.9); box-shadow: 0 2px 10px rgba(0,0,0,.35); background: #8ab; pointer-events: auto; cursor: pointer; }
+.clock { font-weight: 800; font-size: 14px; }
+.goal { max-width: 260px; text-align: right; font-size: 14px; font-weight: 700; line-height: 1.25; }
+.goal small { display: block; font-weight: 400; opacity: .85; }
+.bl { position: absolute; left: calc(var(--sal) + 14px); bottom: calc(var(--sab) + 14px); display: flex; gap: 8px; align-items: flex-end; }
+.slot { pointer-events: auto; min-width: 64px; height: 64px; border-radius: 12px; background: rgba(20,30,40,.55); border: 2px solid rgba(255,255,255,.55); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; font-size: 12px; font-weight: 700; gap: 2px; }
+.slot .big { font-size: 22px; line-height: 1; }
+.slot .dur { width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
+.slot .dur i { display: block; height: 100%; background: var(--green); }
+#stamina { position: absolute; width: 46px; height: 46px; transform: translate(-50%, -50%); transition: opacity .4s; }
+#prompt { position: absolute; left: 50%; bottom: calc(var(--sab) + 110px); transform: translateX(-50%); background: rgba(20,30,40,.6); border-radius: 999px; padding: 6px 16px 6px 6px; font-weight: 800; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+#prompt kbd { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 50%; background: #fff; color: #222; font-family: var(--body); font-weight: 800; font-size: 14px; padding: 0 6px; }
+#banner { position: absolute; left: 0; right: 0; top: 18%; text-align: center; opacity: 0; transition: opacity .8s; }
+#banner.show { opacity: 1; }
+#banner h2 { margin: 0; font-family: var(--title); font-weight: 700; font-size: clamp(30px, 6vw, 58px); letter-spacing: .04em; }
+#banner p { margin: 4px 0 0; font-family: var(--title); font-style: italic; font-size: clamp(16px, 2.6vw, 24px); }
+#banner hr { width: min(420px, 70vw); border: 0; height: 1px; background: linear-gradient(90deg, transparent, #fff, transparent); margin: 6px auto; }
+#fishing { position: absolute; left: calc(var(--sal) + 14%); top: 44%; transform: translateY(-50%); display: flex; gap: 8px; align-items: flex-end; }
+#fishing small { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; text-align: center; font-weight: 800; font-size: 13px; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+#fishBar { position: relative; width: 38px; height: min(36vh, 240px); border-radius: 12px; background: linear-gradient(#3a7ab0, #1d4a70); border: 3px solid #f6efd9; box-shadow: 0 4px 16px rgba(0,0,0,.35); overflow: hidden; }
+#fishZone { position: absolute; left: 3px; right: 3px; bottom: 0; border-radius: 8px; background: rgba(160,230,120,.55); border: 2px solid rgba(220,255,200,.8); transition: background .1s; }
+#fishZone.on { background: rgba(170,255,120,.85); }
+#fishIcon { position: absolute; left: 50%; transform: translate(-50%, 50%); font-size: 22px; line-height: 1; }
+#fishProg { position: relative; width: 10px; height: min(36vh, 240px); border-radius: 6px; background: rgba(20,30,40,.55); border: 2px solid #f6efd9; overflow: hidden; }
+#fishProg i { position: absolute; left: 0; right: 0; bottom: 0; background: #ffd84a; }
+#toast { position: absolute; left: 50%; top: 38%; transform: translateX(-50%); font-weight: 800; font-size: 18px; opacity: 0; transition: opacity .3s; text-align: center; white-space: nowrap; }
+#toast.show { opacity: 1; }
+#flash { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 50%, rgba(220,30,20,.55)); opacity: 0; transition: opacity .35s; }
+#flash.on { opacity: 1; transition: none; }
+#bossbar { position: absolute; left: 50%; bottom: calc(var(--sab) + 26px); transform: translateX(-50%); width: min(560px, 76vw); text-align: center; }
+#bossbar span { font-family: var(--title); font-weight: 700; font-size: 20px; }
+#bossbar div { height: 12px; border-radius: 6px; background: rgba(0,0,0,.5); border: 2px solid rgba(255,255,255,.7); overflow: hidden; margin-top: 3px; }
+#bossbar i { display: block; height: 100%; background: linear-gradient(#ff8a7a, #c02a3a); transition: width .15s; }
+#slow { position: absolute; inset: 0; box-shadow: inset 0 0 120px rgba(90,200,255,.5); opacity: 0; transition: opacity .2s; }
+#slow.on { opacity: 1; }
+
+/* the dialog box */
+#dialog { position: fixed; z-index: 20; left: 50%; bottom: calc(var(--sab) + 26px); transform: translateX(-50%); width: min(680px, 92vw); background: rgba(24,20,16,.82); color: #fff; border-radius: 16px; padding: 14px 20px 16px; border: 1px solid rgba(255,255,255,.2); pointer-events: auto; }
+#dialog b { display: block; color: var(--accent); font-size: 15px; margin-bottom: 4px; }
+#dialog p { margin: 0; font-size: 19px; line-height: 1.4; min-height: 2.8em; }
+#dialog .more { position: absolute; right: 16px; bottom: 8px; font-size: 14px; animation: bob 0.8s infinite alternate; }
+@keyframes bob { to { transform: translateY(3px); } }
+
+/* paper panels: title, map, pause, choices */
+.screen { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; }
+.dim { background: rgba(30,24,16,.45); }
+.paper { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 0 10px 40px rgba(40,25,10,.35), inset 0 0 0 6px var(--paper2); padding: 22px 24px; max-width: min(760px, 94vw); max-height: 92dvh; overflow: auto; }
+.paper h2 { font-family: var(--title); font-size: 32px; margin: 0 0 6px; }
+.paper p { margin: 6px 0; line-height: 1.4; }
+.btn { border: 2px solid var(--ink); background: var(--accent); color: #2a1a08; border-radius: 12px; padding: 10px 18px; font-weight: 800; font-size: 17px; min-height: 46px; box-shadow: 0 3px 0 var(--ink); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.btn.ghost { background: transparent; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.keys { font-size: 14px; line-height: 1.6; columns: 2; column-gap: 24px; }
+.keys kbd { display: inline-block; min-width: 22px; text-align: center; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 4px; background: #fff; font-family: var(--body); font-weight: 800; font-size: 12px; }
+
+#title { place-items: end start; padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px); background: linear-gradient(90deg, rgba(246,239,217,.85), rgba(246,239,217,.35) 60%, transparent); overflow: auto; }
+#title .wrap { max-width: 640px; }
+#title .kicker { font-weight: 800; letter-spacing: .2em; font-size: 13px; color: #8a5a2a; }
+#title h1 { font-family: var(--title); font-weight: 700; font-size: clamp(40px, 8vw, 84px); line-height: .92; margin: 4px 0 8px; color: #2a3a2a; text-shadow: 0 2px 0 #fff; }
+#title h1 em { font-style: italic; color: #3a6a8a; }
+#title .lead { font-size: 18px; max-width: 520px; }
+.crew { display: flex; gap: 8px; margin: 14px 0 4px; flex-wrap: wrap; }
+.crew button { width: 100px; border: 2px solid var(--line); background: var(--paper); border-radius: 14px; padding: 6px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.crew button img { height: 96px; width: auto; }
+.crew button b { font-size: 14px; }
+.crew button small { font-size: 11px; opacity: .8; text-align: center; line-height: 1.2; }
+.crew button[aria-pressed="true"] { border-color: var(--ink); background: #ffe7b0; box-shadow: 0 3px 0 var(--ink); }
+.back { color: var(--ink); font-weight: 700; }
+#loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: end center; padding-bottom: calc(var(--sab) + 8vh); background: #cfe8f6 url("tex/keyart.jpg") center / cover no-repeat; font-family: var(--title); font-size: 26px; color: #2a3a2a; }
+#loading span { background: rgba(246,239,217,.9); border: 2px solid var(--line); border-radius: 14px; padding: 10px 22px; box-shadow: 0 6px 24px rgba(40,25,10,.3); }
+
+#map { z-index: 25; background: rgba(30,24,16,.55); }
+#map .paper { padding: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+#mapCv { width: min(70dvh, 88vw); height: min(70dvh, 88vw); border-radius: 10px; border: 2px solid var(--line); touch-action: none; }
+#map .row { display: flex; gap: 12px; align-items: center; font-weight: 700; flex-wrap: wrap; justify-content: center; }
+
+/* touch controls */
+#touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+#touch .stick { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid rgba(255,255,255,.6); background: rgba(20,30,40,.18); transform: translate(-50%, -50%); }
+#touch .stick i { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px; border-radius: 50%; background: rgba(255,255,255,.75); }
+.tbtns { position: absolute; right: calc(var(--sar) + 14px); bottom: calc(var(--sab) + 14px); width: 210px; height: 200px; pointer-events: none; }
+.tb { position: absolute; pointer-events: auto; border-radius: 50%; border: 2px solid rgba(255,255,255,.8); background: rgba(20,30,40,.45); color: #fff; font-weight: 800; font-size: 13px; display: grid; place-items: center; touch-action: none; }
+.tb.on { background: rgba(232,162,58,.8); }
+.tb.atk { width: 86px; height: 86px; right: 0; bottom: 0; font-size: 26px; }
+.tb.jmp { width: 66px; height: 66px; right: 96px; bottom: 6px; font-size: 22px; }
+.tb.rol { width: 58px; height: 58px; right: 8px; bottom: 98px; }
+.tb.act { width: 72px; height: 72px; right: 100px; bottom: 86px; background: rgba(232,162,58,.85); }
+.ttop { position: absolute; top: calc(var(--sat) + 172px); right: calc(var(--sar) + 14px); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+.ttop button { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.45); color: #fff; font-size: 18px; }
+.pausebtn { position: fixed; z-index: 7; top: calc(var(--sat) + 12px); left: 50%; transform: translateX(-50%); width: 44px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.4); color: #fff; font-weight: 800; }
+@media (max-width: 700px) {
+  #mini { width: 110px; height: 110px; }
+  .goal { max-width: 170px; font-size: 12px; }
+  .hearts svg { width: 20px; height: 19px; }
+  .hearts { max-width: 170px; }
+  .ttop { top: calc(var(--sat) + 96px); left: calc(var(--sal) + 14px); right: auto; flex-direction: row; }
+  .slot.wide { display: none; }
+  .slot { min-width: 52px; height: 52px; font-size: 10px; }
+  #title h1 { font-size: 44px; }
+  .crew button { width: 62px; } .crew button img { height: 64px; } .crew button small { display: none; }
+  .keys { columns: 1; }
+}
+@media (prefers-reduced-motion: reduce) { #dialog .more { animation: none; } }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="loading"><span id="loadText">Painting the valley…</span></div>
+
+<div id="hud" hidden>
+  <div class="tl">
+    <div class="hearts shadow" id="hearts"></div>
+    <div class="abil" id="abil"></div>
+  </div>
+  <div class="tr shadow">
+    <canvas id="mini" width="200" height="200" aria-label="Minimap. Tap to open the map."></canvas>
+    <div class="clock" id="clock"></div>
+    <div class="goal" id="goal"></div>
+  </div>
+  <div class="bl shadow">
+    <button class="slot" id="wslot" type="button" aria-label="Weapon. Tap to switch."><span class="big" id="wico">🪠</span><span id="wname">Plunger</span><span class="dur"><i id="wdur"></i></span></button>
+    <button class="slot" id="fslot" type="button" aria-label="Food. Tap to eat."><span class="big">🍎</span><span id="fcount">0</span></button>
+    <div class="slot wide"><span class="big">🪙</span><span id="lcount">0/30</span></div>
+    <div class="slot wide"><span class="big">✨</span><span id="ocount">0</span></div>
+  </div>
+  <svg id="stamina" viewBox="0 0 46 46"><circle cx="23" cy="23" r="18" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.35)" stroke-width="6"/><circle id="stamArc" cx="23" cy="23" r="18" fill="none" stroke="#7ac84a" stroke-width="6" stroke-linecap="round" transform="rotate(-90 23 23)" stroke-dasharray="113.1" stroke-dashoffset="0"/></svg>
+  <div id="prompt" hidden><kbd id="pkey">E</kbd><span id="ptext"></span></div>
+  <div id="banner"><hr><h2 id="btitle"></h2><p id="bsub"></p><hr></div>
+  <div id="toast" class="shadow"></div>
+  <div id="fishing" hidden><div id="fishBar"><i id="fishZone"></i><b id="fishIcon">🐟</b></div><div id="fishProg"><i id="fishFill"></i></div><small>Hold Swing<br>to reel</small></div>
+  <div id="bossbar" hidden><span id="bossName"></span><div><i id="bossFill"></i></div></div>
+  <div id="flash"></div>
+  <div id="slow"></div>
+</div>
+
+<div id="touch" hidden>
+  <div class="stick" id="stick" hidden><i></i></div>
+  <div class="tbtns">
+    <button class="tb atk" data-b="attack" type="button" aria-label="Attack">🪠</button>
+    <button class="tb jmp" data-b="jump" type="button" aria-label="Jump">⤒</button>
+    <button class="tb rol" data-b="roll" type="button" aria-label="Roll">↻</button>
+    <button class="tb act" data-b="interact" type="button" id="tact" hidden>USE</button>
+  </div>
+  <div class="ttop"><button type="button" data-b="map" aria-label="Map">🗺</button><button type="button" data-b="eat" aria-label="Eat">🍎</button><button type="button" data-b="lift" id="tlift" hidden aria-label="Mystic Updraft">🌪</button><button type="button" data-b="fury" id="tfury" hidden aria-label="Ryu's Fury">⚡</button></div>
+</div>
+<button class="pausebtn" id="pauseBtn" type="button" hidden aria-label="Pause">❚❚</button>
+
+<div id="dialog" hidden><b id="dname"></b><p id="dtext"></p><span class="more">▼</span></div>
+
+<div class="screen" id="title" hidden>
+  <div class="wrap">
+    <div class="kicker">GET PLUNGER'D</div>
+    <h1>Breath of<br>the <em>Lake</em></h1>
+    <p class="lead">The Porcelain King clogged Loon Lake. His sludge took three old friends of the cottage. Climb anything, glide under a beach umbrella, and flush him for good.</p>
+    <div class="crew" id="crew"></div>
+    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button></div>
+    <p><a class="back" href="/">← Back to the arcade</a></p>
+  </div>
+</div>
+
+<div class="screen dim" id="help" hidden>
+  <div class="paper">
+    <h2>Controls</h2>
+    <div class="keys">
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</div>
+      <div>Mouse: look (click the game to lock it)</div>
+      <div><kbd>Shift</kbd> sprint · swim fast</div>
+      <div><kbd>Space</kbd> jump · in the air, glide</div>
+      <div>Walk into a wall or cliff to climb</div>
+      <div>Left click or <kbd>J</kbd> attack</div>
+      <div>Hold attack, let go: spin attack</div>
+      <div>Right click or <kbd>K</kbd> roll · let go of a wall</div>
+      <div><kbd>E</kbd> talk · open · pray · cook</div>
+      <div><kbd>H</kbd> eat · <kbd>1</kbd>–<kbd>5</kbd> or <kbd>Q</kbd> weapons</div>
+      <div><kbd>R</kbd> Mystic Updraft · <kbd>F</kbd> Ryu's Fury</div>
+      <div><kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+      <div>A game pad works too</div>
+      <div>Phone: left thumb moves, right thumb looks. Push the stick all the way to sprint.</div>
+    </div>
+    <p>Roll just as a hit lands to slow time. Stamina runs out when you climb, glide, sprint, or swim. Rest on the ground to get it back.</p>
+    <div class="btns"><button class="btn" data-close type="button">Got it</button></div>
+  </div>
+</div>
+
+<div class="screen dim" id="pause" hidden>
+  <div class="paper">
+    <h2>Paused</h2>
+    <p id="pstats"></p>
+    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
+  </div>
+</div>
+
+<div class="screen" id="map" hidden>
+  <div class="paper">
+    <canvas id="mapCv" width="768" height="768"></canvas>
+    <div class="row" id="mapInfo">Tap a lit tower, a cleared outhouse, or the cottage to travel there.</div>
+    <div class="btns"><button class="btn" data-close type="button">Close</button></div>
+  </div>
+</div>
+
+<div class="screen dim" id="choice" hidden>
+  <div class="paper"><h2 id="chTitle"></h2><p id="chText"></p><div class="btns" id="chBtns"></div></div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

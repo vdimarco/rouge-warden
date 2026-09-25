@@ -73,6 +73,8 @@ button { font: inherit; color: inherit; }
 .cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
+.cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
+.cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -229,6 +231,16 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab wild" data-game="wild" data-url="/wild/" aria-label="Get Plunger'd: Breath of the Lake">
+        <div class="marquee"><div><b>BREATH OF THE LAKE</b><small>GET PLUNGER'D</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="arcade/wild.webp" alt="">
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
     </div>
@@ -506,6 +518,8 @@ addEventListener("keydown", (e) => {
   const gp = store.get("plungerd.meta.v1", null), dd = store.get("plungerd.drain.v1", null);
   $(".hi", cabs[0]).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
   const ds = store.get("plungerd.drain.scores.v1", null), top = Array.isArray(ds) && ds[0];
+  const wd = store.get("plungerd.wild.v1", null), wc = $(".cab.wild");
+  if (wc) $(".hi", wc).textContent = wd && wd.intro ? (wd.done ? "KING FLUSHED" : "BLIGHTS " + (wd.bosses || []).filter((b) => b !== "king").length + "/3") + " · LOONIES " + (wd.loonies || []).length + "/30" : "HI-SCORE: NONE YET";
   $(".hi", cabs[1]).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
 }
 // Get Plunger'd flips between its title and its bosses
