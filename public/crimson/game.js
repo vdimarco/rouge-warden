@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { scene, camera, post, draw, adapt, toonRamp } from './js/render.js';
 import { Music } from './js/music.js';
+import { rollCredits, preloadCreditsMusic } from './js/credits.js';
 import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR } from './js/world.js';
 import { fx, updateFX, Trail, glowTex } from './js/fx.js';
 import { Audio } from './js/audio.js';
@@ -176,7 +177,8 @@ addEventListener('keydown', (e) => {
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
   if (game.state === 'cutscene') { endCutscene(); return; }
-  if (game.state === 'end') { if (performance.now() - endShownAt > 900) restart(); return; }
+  if (game.state === 'end') { endNext(); return; }
+  if (game.state === 'credits') { creditsKey(e); return; }
   if (game.state === 'paused') { if (e.code === 'Escape' || e.code === 'Enter') resume(); return; }
   if (game.state !== 'fight') return;
   if (e.code === 'Escape' || e.code === 'KeyP') { pause(); return; }
@@ -232,23 +234,24 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
   const capture = (el, e) => { try { el.setPointerCapture(e.pointerId); } catch (err) { /* touch pointers are captured anyway */ } };
   let R = 56;
   const ptrs = new Map();
-  layer.addEventListener('pointerdown', (e) => {
-    if (game.state !== 'fight' || e.target.closest('button')) return;
-    e.preventDefault(); capture(layer, e);
-    const stick = e.clientX < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
-    ptrs.set(e.pointerId, { stick, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
+  // One set of handlers, fed by touch events on phones and by pointer events for a pen or mouse.
+  // Phones use raw touch events here because Safari can cancel a pointer mid-drag as a scroll or zoom,
+  // which dropped the thumb stick; blocking the touch events' default stops that.
+  const start = (id, x, y) => {
+    const stick = x < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
+    ptrs.set(id, { stick, x0: x, y0: y, x, y, moved: 0 });
     if (stick) {
       R = base.offsetWidth / 2 || 56;
-      base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`; base.classList.add('on');
+      base.style.left = `${x}px`; base.style.top = `${y}px`; base.classList.add('on');
       knob.style.transform = 'translate(-50%, -50%)';
     }
-  });
-  layer.addEventListener('pointermove', (e) => {
-    const p = ptrs.get(e.pointerId); if (!p) return;
-    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    p.moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
+  };
+  const move = (id, x, y) => {
+    const p = ptrs.get(id); if (!p) return;
+    const dx = x - p.x, dy = y - p.y; p.x = x; p.y = y;
+    p.moved = Math.max(p.moved, Math.hypot(x - p.x0, y - p.y0));
     if (p.stick) {
-      let sx = e.clientX - p.x0, sy = e.clientY - p.y0; const l = Math.hypot(sx, sy);
+      let sx = x - p.x0, sy = y - p.y0; const l = Math.hypot(sx, sy);
       if (l > R) { sx *= R / l; sy *= R / l; }
       knob.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
       const m = Math.hypot(sx, sy) / R, k = m < 0.12 ? 0 : Math.min(1, (m - 0.12) / 0.58) / (m || 1);
@@ -257,17 +260,37 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
       cam.yaw -= dx * 0.0065;
       cam.pitch = clamp(cam.pitch + dy * 0.005, -0.3, 0.85);
     }
-  });
-  const end = (e) => {
-    const p = ptrs.get(e.pointerId); if (!p) return;
-    ptrs.delete(e.pointerId);
-    if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
-    // a quick touch that barely moves is a tap: cut. It counts on either half, so a tap never goes unanswered.
-    // (Moves can be merged or skipped, so also measure where the finger lifts; a cancelled touch is no tap.)
-    const moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
-    if (e.type === 'pointerup' && moved < TAP_MOVE && game.state === 'fight') input.buf.light = game.time;
   };
-  layer.addEventListener('pointerup', end); layer.addEventListener('pointercancel', end);
+  const end = (id, x, y, lifted) => {
+    const p = ptrs.get(id); if (!p) return;
+    ptrs.delete(id);
+    if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
+    // a touch that barely moves is a tap: cut. It counts on either half, so a tap never goes unanswered.
+    // (Moves can be merged or skipped, so also measure where the finger lifts; a cancelled touch is no tap.)
+    const moved = Math.max(p.moved, Math.hypot(x - p.x0, y - p.y0));
+    if (lifted && moved < TAP_MOVE && game.state === 'fight') input.buf.light = game.time;
+  };
+  const onButton = (t) => t.target && t.target.closest && t.target.closest('button');
+  layer.addEventListener('touchstart', (e) => {
+    if (game.state !== 'fight') return;
+    let used = false;
+    for (const t of e.changedTouches) if (!onButton(t)) { start('t' + t.identifier, t.clientX, t.clientY); used = true; }
+    if (used && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  layer.addEventListener('touchmove', (e) => {
+    for (const t of e.changedTouches) move('t' + t.identifier, t.clientX, t.clientY);
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  layer.addEventListener('touchend', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, true); }, { passive: false });
+  layer.addEventListener('touchcancel', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, false); });
+  // pen and mouse (touch goes through the touch events above)
+  layer.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch' || game.state !== 'fight' || e.target.closest('button')) return;
+    e.preventDefault(); capture(layer, e); start(e.pointerId, e.clientX, e.clientY);
+  });
+  layer.addEventListener('pointermove', (e) => { if (e.pointerType !== 'touch') move(e.pointerId, e.clientX, e.clientY); });
+  layer.addEventListener('pointerup', (e) => { if (e.pointerType !== 'touch') end(e.pointerId, e.clientX, e.clientY, true); });
+  layer.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') end(e.pointerId, e.clientX, e.clientY, false); });
   const acts = { tCut: 'light', tHeavy: 'heavy', tDodge: 'dodge', tGourd: 'heal' };
   for (const b of layer.querySelectorAll('button')) {
     b.addEventListener('pointerdown', (e) => {
@@ -293,7 +316,8 @@ function pollPad() {
   if (game.state === 'title') { if (edge(14)) pickCrew(crewPick - 1); if (edge(15)) pickCrew(crewPick + 1); if (edge(0) || edge(9)) startGame(); }
   else if (game.state === 'intro') { if (b.some((x, i) => x && !prev[i])) endIntro(); }
   else if (game.state === 'cutscene') { if (b.some((x, i) => x && !prev[i])) endCutscene(); }
-  else if (game.state === 'end') { if ((edge(0) || edge(9)) && performance.now() - endShownAt > 900) restart(); }
+  else if (game.state === 'end') { if (edge(0) || edge(9)) endNext(); }
+  else if (game.state === 'credits') { if (edge(0) || edge(9)) { if (credits && credits.atEnd) again(); else if (credits) credits.skip(); } }
   else if (game.state === 'paused') { if (edge(9) || edge(0)) resume(); }
   else if (game.state === 'fight') {
     if (edge(5)) input.buf.light = game.time;
@@ -619,6 +643,7 @@ function updateBoss(dt) {
           fx.flash(c, 7, 0.5); fx.neon(c, 110, 2.4); fx.ink(c, 40, 2.4, 1.2); fx.blast(b.pos, 2); fx.ring({ x: b.pos.x, z: b.pos.z, groundY: g }, 10, 0.9); fx.dust(b.pos, 30, 2.4); fx.splat(b.pos, 4, g);
           if (flatDist(b.pos, p.pos) < 7) p.pos.addScaledVector(tmpB.set(Math.sin(toP), 0, Math.cos(toP)), 2.6);
           showCard('GABE', 'THE GRIZZLY OF SEDONA', '熊');
+          preloadCreditsMusic(); // the credits music, ready for the end
         }
       } else {
         const k = b.t - b.swapT;
@@ -905,6 +930,7 @@ function bossDies() {
 function updateCamera(rdt) {
   const p = player, b = boss, big = b.form === 'bear';
   if (b.state === 'transform') { cineCamera(rdt); return; }
+  if (game.state === 'credits') { creditsCamera(rdt); return; }
   const pivot = new THREE.Vector3(p.pos.x, ronin.root.position.y + 1.55, p.pos.z);
   if (cam.lock && b.state !== 'dead') {
     cam.yaw += angDiff(cam.yaw, angleTo(p.pos, b.pos)) * Math.min(1, rdt * 5);
@@ -929,6 +955,19 @@ function updateCamera(rdt) {
   camera.fov = damp(camera.fov, 52 - cam.punch * 9, 14, rdt);
   camera.updateProjectionMatrix();
   followLights(tmpC.copy(p.pos).lerp(b.pos, 0.5), cam.pos);
+}
+
+// behind the credits: a slow, high circle over the field where the bear fell
+function creditsCamera(rdt) {
+  const b = boss, c = tmpC.copy(player.pos).lerp(b.pos, 0.5), g = ground(c);
+  cam.creditsYaw = (cam.creditsYaw ?? angleTo(b.pos, player.pos)) + rdt * 0.06;
+  const want = tmpA.set(c.x + Math.sin(cam.creditsYaw) * 10, g + 3.4, c.z + Math.cos(cam.creditsYaw) * 10);
+  want.y = Math.max(want.y, groundHeight(want.x, want.z) + 1);
+  cam.pos.lerp(want, 1 - Math.exp(-rdt * 1.5));
+  cam.look.lerp(tmpB.set(c.x, g + 1, c.z), 1 - Math.exp(-rdt * 2));
+  camera.position.copy(cam.pos); camera.lookAt(cam.look);
+  camera.fov = damp(camera.fov, 46, 2, rdt); camera.updateProjectionMatrix();
+  followLights(c, cam.pos);
 }
 
 // the change: a low camera circles Gabe, then pulls back to take in the bear
@@ -1019,6 +1058,7 @@ function endIntro(force) {
   beginFight();
 }
 function beginFight() {
+  cam.creditsYaw = undefined;
   makePlayer(); makeBoss();
   game.state = 'fight'; game.phase2 = false; game.fightStart = game.time; game.hurt = 0;
   cam.yaw = Math.atan2(FACE_DIR.x, FACE_DIR.z); cam.lock = true;
@@ -1040,7 +1080,8 @@ function showEnd(won) {
   $('endStats').textContent = won
     ? `${player.f.name} beat Gabe in ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} · ${game.parries} deflects · ${game.deaths} deaths`
     : `Gabe had ${Math.round(boss.hp / boss.maxHp * 100)}% life left${boss.form === 'bear' ? ', as a bear' : ''} · ${game.parries} deflects`;
-  document.querySelector('#end p').textContent = `${input.touch.on ? 'TAP' : 'PRESS ANY KEY'} TO ${won ? 'FIGHT AGAIN' : 'RISE AGAIN'}`;
+  document.querySelector('#end p').textContent = `${input.touch.on ? 'TAP' : 'PRESS ANY KEY'} ${won ? 'FOR THE CREDITS' : 'TO RISE AGAIN'}`;
+  lastWin = won ? { time: t, parries: game.parries, deaths: game.deaths } : null;
   if (won) {
     try {
       const best = JSON.parse(localStorage.getItem('crimson.best.v1') || 'null');
@@ -1049,9 +1090,37 @@ function showEnd(won) {
   }
   $('end').classList.add('show');
   hud.el.classList.remove('on');
+  // a win rolls the credits after a moment
+  if (won) creditsTimer = setTimeout(startCredits, 4500);
 }
-onTap($('end'), () => { if (game.state === 'end' && performance.now() - endShownAt > 900) restart(); });
-function restart() { $('end').classList.remove('show'); game.parries = 0; beginFight(); }
+let lastWin = null, credits = null, creditsTimer = 0;
+// the end screen's tap or key: a win goes on to the credits, a death fights again
+function endNext() {
+  if (game.state !== 'end' || performance.now() - endShownAt < 900) return;
+  if (lastWin) startCredits(); else restart();
+}
+function startCredits() {
+  clearTimeout(creditsTimer);
+  if (game.state !== 'end' || !lastWin) return;
+  $('end').classList.remove('show');
+  game.state = 'credits';
+  Audio.drumOn = false;
+  Music.hush();
+  credits = rollCredits({ crew: CREW, pick: crewPick, stats: lastWin, touch: input.touch.on, onAgain: again });
+}
+function creditsKey(e) {
+  if (!credits) return;
+  if (!credits.atEnd) { if (['Escape', 'Space', 'Enter'].includes(e.code)) credits.skip(); return; }
+  if (e.code === 'Enter' || e.code === 'Space') again();
+}
+function again() {
+  if (credits) { credits.stop(); credits = null; }
+  Music.unhush();
+  restart();
+}
+onTap($('end'), endNext);
+onTap($('credits'), () => { if (credits && !credits.atEnd) credits.skip(); });
+function restart() { clearTimeout(creditsTimer); lastWin = null; $('end').classList.remove('show'); game.parries = 0; beginFight(); }
 let pausedAt = 0;
 function pause() { if (game.state !== 'fight') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
 function resume() { game.state = 'fight'; Music.loud(true); $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
@@ -1091,7 +1160,7 @@ function tick(rdt) {
   if (game.state !== 'paused' && game.state !== 'cutscene') {
     game.time += dt;
     grassUniforms.uTime.value += dt;
-    if (game.ready && (game.state === 'fight' || game.state === 'end')) { updatePlayer(dt); updateBoss(dt); updateCamera(rdt); updateHud(); }
+    if (game.ready && (game.state === 'fight' || game.state === 'end' || game.state === 'credits')) { updatePlayer(dt); updateBoss(dt); updateCamera(rdt); updateHud(); }
     else if (game.ready) {
       // behind the title: a slow orbit of the two of them
       const a = game.time * 0.05, c = SPAWN_P.clone().lerp(SPAWN_B, 0.5);
@@ -1118,6 +1187,6 @@ requestAnimationFrame(frame);
 window.__crimson = {
   step(sec, drawIt = true) { manual = true; const n = Math.round(sec * 60); for (let i = 0; i < n; i++) tick(1 / 60); if (drawIt) draw(performance.now() / 1000); },
   live() { manual = false; },
-  game, cam, input, startGame, beginFight, pickCrew, bossAttack: (n) => startBossAttack(n),
+  game, cam, input, startGame, beginFight, pickCrew, bossAttack: (n) => startBossAttack(n), win: () => bossDies(),
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };

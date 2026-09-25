@@ -9,7 +9,7 @@ try { wantOn = localStorage.getItem('crimson.music') !== 'off'; } catch (e) { /*
 
 // the player loads with the page, so on a phone its own play button is there to tap on the title screen
 // (phones only allow sound that a tap inside the player starts)
-let frame = null, ready = false, pending = false;
+let frame = null, ready = false, pending = false, hushed = false;
 // quiet on the title screen, loud in the fight
 const LOW = 22, HIGH = 80;
 let level = LOW, vol = LOW, rampT = 0;
@@ -52,6 +52,9 @@ export const Music = {
   get enabled() { return !!url; },
   get playing() { return playing; },
   load,
+  // the credits bring their own music: hold the song, then let it go on after
+  hush() { hushed = true; if (ready && playing) widget.pause(); },
+  unhush() { if (!hushed) return; hushed = false; if (ready && wantOn) widget.play(); },
   // true in the fight, false on the title, pause and end screens
   loud(on) { level = on ? HIGH : LOW; ramp(); },
   // call from a tap or key press; desktop browsers then allow the player to start
