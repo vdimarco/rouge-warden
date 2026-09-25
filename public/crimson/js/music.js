@@ -1,6 +1,6 @@
 // Background song through SoundCloud's own embed player (the Widget API).
-// The song is "Promises" by Nero, played from Nero's own SoundCloud page. Try another with ?song=<link>.
-export const SONG = 'https://soundcloud.com/nero/promises';
+// The song is Nero's "Promises" (Skrillex remix), from Skrillex's SoundCloud page. Try another with ?song=<link>.
+export const SONG = 'https://soundcloud.com/skrillex/nero-promises-skrillex';
 const TITLE = '';
 
 const url = new URLSearchParams(location.search).get('song') || SONG;

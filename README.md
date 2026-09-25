@@ -126,7 +126,7 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 - **Sedona.** The sky all the way round is one ink painting of the buttes and the moon, made from two generated halves. The desert floor, sandstone spires, boulders, junipers, and grass that leans away from the fighters are made in code.
 - **Title screen.** The fighter you pick fills the screen, and Gabe stands opposite on wide screens. The ink-wash portraits (the five crew members, Gabe, and the grizzly) were made on Higgsfield from the crew art.
 - **Clips.** The boss intro (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield.
-- **Music.** "Promises" by Nero plays through SoundCloud's own embed player, from Nero's SoundCloud page. Try another track with `?song=<SoundCloud link>`.
+- **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. Try another track with `?song=<SoundCloud link>`.
 - **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
 - **Sound.** Every sound is made in the browser with Web Audio.
 
