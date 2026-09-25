@@ -27,9 +27,15 @@ export async function open({ width = 640, height = 360, touch = false, clear = t
   return { browser, page, errors };
 }
 
+// The title waits for any button, then shows its menu.
+export async function openMenu(page) {
+  if (await page.evaluate(() => document.querySelector("#tmenu").hidden)) await page.click("#tpress");
+  await page.waitForSelector("#tmenu:not([hidden])");
+}
+
 // Start a new game, skip the intro, and stop the real-time loop so tests drive the game by hand.
 export async function newGame(page, { skipClick = false } = {}) {
-  if (!skipClick) await page.click("#newBtn");
+  if (!skipClick) { await openMenu(page); await page.click("#newBtn"); await page.click("#pickGo"); }
   await page.waitForFunction(() => window.G && G.started, null, { timeout: 60000 });
   await page.evaluate(async () => {
     for (let k = 0; k < 40 && !G.save.intro; k++) { for (let i = 0; i < 80 && G.ui.modal === "dialog"; i++) G.ui.advance(); await new Promise((r) => setTimeout(r, 200)); }
