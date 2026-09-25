@@ -142,27 +142,112 @@ setTimeout(async () => {
 
 /* ---------------- title ---------------- */
 let pick = 0;
+// The title screen: a painted vista, a gold logo, and "Press any button". Then a menu, and a hero select.
+const HERO_LINES = [
+  "Hits 20% harder. Swings first, asks later.",
+  "One extra heart. Built like the dock posts.",
+  "12% chance of a critical hit. Never takes the shades off.",
+  "25% more stamina. Climbs, glides, and swims the longest.",
+  "Runs 12% faster. First to the fire tower every time.",
+];
 function titleScreen() {
   const saved = loadSave();
   pick = saved ? saved.friend : 0;
   const box = $("#crew"); box.innerHTML = "";
+  let swiped = false;
+  const choose = (i, sound = true) => {
+    pick = (i + PERKS.length) % PERKS.length;
+    box.querySelectorAll("button").forEach((x, k) => x.setAttribute("aria-selected", String(k === pick)));
+    $("#heroName").textContent = PERKS[pick].name;
+    $("#heroPerk").textContent = HERO_LINES[pick] || PERKS[pick].perk;
+    if (sound) { A.init(); A.sfx("ui"); }
+  };
   PERKS.forEach((p, i) => {
-    const b = document.createElement("button"); b.type = "button";
-    b.innerHTML = `<img src="art/crew${i + 1}.webp" alt=""><b>${p.name}</b><small>${p.perk}</small>`;
-    b.setAttribute("aria-pressed", String(i === pick));
-    b.onclick = () => { pick = i; A.init(); A.sfx("ui"); box.querySelectorAll("button").forEach((x, k) => x.setAttribute("aria-pressed", String(k === i))); };
+    const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "option");
+    b.style.backgroundImage = `url(art/hero${i + 1}.webp)`;
+    b.setAttribute("aria-label", p.name + ". " + p.perk);
+    b.onclick = (e) => { if (e.detail > 1 || swiped) { swiped = false; return; } if (pick === i) begin(); else choose(i); };
     box.appendChild(b);
   });
+  choose(pick, false);
+  const main = $("#tmain"), pickEl = $("#tpick"), menu = $("#tmenu"), press = $("#tpress");
+  let stage = "press";
+  const menuItems = () => [...menu.querySelectorAll("button:not([hidden]), a")];
+  const focusMenu = (k) => { const items = menuItems(); items.forEach((x) => x.classList.remove("sel")); const el = items[(k + items.length) % items.length]; el.classList.add("sel"); el.focus({ preventScroll: true }); };
+  const showMenu = () => {
+    if (stage !== "press") return;
+    stage = "menu"; press.hidden = true; menu.hidden = false;
+    A.init(); A.sfx("ui"); window.Chip && Chip.play("lake");
+    focusMenu(0);
+  };
+  const showPick = () => { stage = "pick"; main.hidden = true; pickEl.hidden = false; choose(pick, false); $("#pickGo").focus({ preventScroll: true }); };
+  const backToMenu = () => { stage = "menu"; pickEl.hidden = true; main.hidden = false; focusMenu(0); };
+  function begin() {
+    if (G.starting || G.started) return;
+    A.sfx("ui");
+    start(blankSave(pick));
+  }
+  press.onclick = showMenu;
+  $("#title").addEventListener("pointerdown", (e) => { if (stage === "press" && !e.target.closest("a")) showMenu(); });
   $("#contBtn").hidden = !saved || !saved.intro;
   $("#contBtn").onclick = () => { A.init(); const s = loadSave(); start(s); };
   $("#newBtn").onclick = async () => {
     A.init();
     const s = loadSave();
-    if (s && s.intro) { G.ui.hide("title"); const ok = await G.ui.choose("New game", "This erases your saved game. Start over?", ["Start over", "Cancel"]); if (ok !== 0) { G.ui.show("title"); return; } }
-    start(blankSave(pick));
+    if (s && s.intro) { G.ui.hide("title"); const ok = await G.ui.choose("New game", "This erases your saved game. Start over?", ["Start over", "Cancel"]); G.ui.show("title"); if (ok !== 0) return; }
+    showPick();
   };
   $("#helpBtn").onclick = () => { G.ui.show("help"); };
+  $("#pickBack").onclick = backToMenu;
+  $("#pickPrev").onclick = () => choose(pick - 1);
+  $("#pickNext").onclick = () => choose(pick + 1);
+  // swipe between heroes on a phone
+  let sx = null;
+  box.addEventListener("pointerdown", (e) => { sx = e.clientX; });
+  box.addEventListener("pointerup", (e) => { if (sx != null && Math.abs(e.clientX - sx) > 40) { swiped = true; choose(pick + (e.clientX < sx ? 1 : -1)); setTimeout(() => (swiped = false), 400); } sx = null; });
+  $("#pickGo").onclick = begin;
+  // keyboard and game pad style navigation
+  addEventListener("keydown", (e) => {
+    if (G.started || G.starting || $("#title").hidden || !$("#help").hidden || G.ui.modal) return;
+    if (stage === "press") { if (!e.metaKey && !e.ctrlKey && e.key !== "Tab") { e.preventDefault(); showMenu(); } return; }
+    if (stage === "menu") {
+      const items = menuItems(), k = items.findIndex((x) => x.classList.contains("sel"));
+      if (e.key === "ArrowDown" || e.key === "s") { e.preventDefault(); focusMenu(k + 1); A.sfx("ui"); }
+      else if (e.key === "ArrowUp" || e.key === "w") { e.preventDefault(); focusMenu(k - 1); A.sfx("ui"); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); items[Math.max(0, k)].click(); }
+    } else if (stage === "pick") {
+      if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault(); choose(pick + 1); }
+      else if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault(); choose(pick - 1); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); begin(); }
+      else if (e.key === "Escape" || e.key === "Backspace") { e.preventDefault(); backToMenu(); }
+    }
+  });
   G.ui.show("title");
+  titleFX();
+}
+// floating petals and glints of light over the title painting
+function titleFX() {
+  const cv = $("#tfx"); if (!cv) return;
+  const x = cv.getContext("2d"), parts = [];
+  const fit = () => { cv.width = cv.clientWidth * Math.min(2, devicePixelRatio || 1); cv.height = cv.clientHeight * Math.min(2, devicePixelRatio || 1); };
+  fit(); addEventListener("resize", fit);
+  for (let k = 0; k < 46; k++) parts.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random(), v: 0.2 + Math.random() * 0.5, r: Math.random() * 6, kind: k % 3 === 0 ? "glint" : "petal" });
+  let last = performance.now();
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function loop(now) {
+    if (G.started || $("#title").hidden) return;
+    requestAnimationFrame(loop);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const W = cv.width, H = cv.height, sc = W / 1400;
+    x.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      if (!reduce) { p.x += dt * 0.02 * p.v + Math.sin(now / 1700 + p.r) * dt * 0.006; p.y += dt * 0.03 * p.v; p.r += dt * p.v; }
+      if (p.x > 1.05) p.x = -0.05; if (p.y > 1.05) { p.y = -0.05; p.x = Math.random(); }
+      const px = p.x * W, py = p.y * H;
+      if (p.kind === "glint") { const a = 0.35 + 0.35 * Math.sin(now / 500 + p.r * 3); x.fillStyle = `rgba(255,240,190,${a})`; x.beginPath(); x.arc(px, py, 2.2 * p.s * sc * 1.5, 0, 7); x.fill(); }
+      else { x.save(); x.translate(px, py); x.rotate(p.r); x.fillStyle = "rgba(255,238,228,.85)"; x.beginPath(); x.ellipse(0, 0, 5 * p.s * sc * 1.4, 2.4 * p.s * sc * 1.4, 0, 0, 7); x.fill(); x.restore(); }
+    }
+  })(last);
 }
 
 function start(save) {
@@ -172,6 +257,7 @@ function start(save) {
   G.save = save;
   if (save.friend !== pick && !save.intro) save.friend = pick;
   G.ui.hide("title");
+  if (window.Chip) Chip.stop(1.5);
   G.player = new Player(G, save.friend);
   const P = G.player;
   P.maxHp = save.maxHp; P.hp = save.maxHp; P.staminaMax = save.staminaMax; P.stamina = P.staminaMax;
@@ -571,7 +657,7 @@ G.resume = () => { G.paused = false; };
 $("#resumeBtn").onclick = () => G.ui.close("pause");
 $("#pmapBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openMap(); };
 $("#phelpBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.open("help"); };
-$("#soundBtn").onclick = () => { $("#soundBtn").textContent = "Sound: " + (A.toggle() ? "on" : "off"); };
+$("#soundBtn").onclick = () => { const on = A.toggle(); if (window.Chip) Chip.setOn(on); $("#soundBtn").textContent = "Sound: " + (on ? "on" : "off"); };
 const GFX_NAMES = { high: "High", medium: "Medium", low: "Low" };
 $("#gfxBtn").onclick = () => { const order = ["high", "medium", "low"]; G.setGraphics(order[(order.indexOf(gfx) + 1) % 3]); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx]; };
 $("#pauseBtn").onclick = () => openPause();

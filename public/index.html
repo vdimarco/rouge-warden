@@ -256,6 +256,7 @@ button { font: inherit; color: inherit; }
 <div class="tools"><button type="button" id="soundBtn" aria-label="Sound off" aria-pressed="false">🔇</button></div>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="/chip.js"></script>
 <script>
 "use strict";
 const $ = (s, el) => (el || document).querySelector(s);
@@ -300,8 +301,10 @@ addEventListener("pointerdown", () => SFX.init(), { once: true, capture: true })
 addEventListener("keydown", () => SFX.init(), { once: true, capture: true });
 const soundBtn = $("#soundBtn");
 const showSound = () => { soundBtn.textContent = SFX.on ? "🔊" : "🔇"; soundBtn.setAttribute("aria-label", SFX.on ? "Sound on" : "Sound off"); soundBtn.setAttribute("aria-pressed", String(SFX.on)); };
-soundBtn.onclick = () => { SFX.toggle(); showSound(); };
+soundBtn.onclick = () => { const on = SFX.toggle(); showSound(); if (window.Chip) { Chip.setOn(on); if (on) Chip.play("arcade"); } };
 showSound();
+// the arcade theme: starts with your first tap or key press, since browsers keep pages quiet until then
+if (window.Chip) Chip.play("arcade");
 
 let toastT = 0;
 function toast(text, ms) { const t = $("#toast"); t.textContent = text; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), ms || 1800); }
@@ -447,6 +450,7 @@ $$(".cab").forEach((c) => {
 
 // power on: the screen grows to fill the window, a CRT line sweeps, then the game loads
 function boot(c) {
+  if (window.Chip) Chip.stop(0.8);
   const url = c.dataset.url;
   if (reduceMotion) { location.href = url; return; }
   const scr = $(".screen", c), r = scr.getBoundingClientRect();

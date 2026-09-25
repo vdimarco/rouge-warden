@@ -14,7 +14,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <style>
 :root {
@@ -96,18 +96,52 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .keys { font-size: 14px; line-height: 1.6; columns: 2; column-gap: 24px; }
 .keys kbd { display: inline-block; min-width: 22px; text-align: center; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 4px; background: #fff; font-family: var(--body); font-weight: 800; font-size: 12px; }
 
-#title { place-items: end start; padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px); background: linear-gradient(90deg, rgba(246,239,217,.85), rgba(246,239,217,.35) 60%, transparent); overflow: auto; }
-#title .wrap { max-width: 640px; }
-#title .kicker { font-weight: 800; letter-spacing: .2em; font-size: 13px; color: #8a5a2a; }
-#title h1 { font-family: var(--title); font-weight: 700; font-size: clamp(40px, 8vw, 84px); line-height: .92; margin: 4px 0 8px; color: #2a3a2a; text-shadow: 0 2px 0 #fff; }
-#title h1 em { font-style: italic; color: #3a6a8a; }
-#title .lead { font-size: 18px; max-width: 520px; }
-.crew { display: flex; gap: 8px; margin: 14px 0 4px; flex-wrap: wrap; }
-.crew button { width: 100px; border: 2px solid var(--line); background: var(--paper); border-radius: 14px; padding: 6px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.crew button img { height: 96px; width: auto; }
-.crew button b { font-size: 14px; }
-.crew button small { font-size: 11px; opacity: .8; text-align: center; line-height: 1.2; }
-.crew button[aria-pressed="true"] { border-color: var(--ink); background: #ffe7b0; box-shadow: 0 3px 0 var(--ink); }
+#title { display: block; padding: 0; overflow: hidden; background: #0e1a24; color: #fff; }
+#title .tvista { position: absolute; inset: 0; overflow: hidden; }
+#title .tvista img { position: absolute; inset: -4%; width: 108%; height: 108%; object-fit: cover; object-position: 38% 50%; animation: kenburns 38s ease-in-out infinite alternate; }
+@keyframes kenburns { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.08) translate(-2.5%, -1.5%); } }
+#title .rays { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 55% at 57% 44%, rgba(255,236,170,.38), rgba(255,220,140,0) 60%), repeating-conic-gradient(from 0deg at 57% 44%, rgba(255,240,200,.07) 0deg 4deg, rgba(255,240,200,0) 4deg 11deg); mix-blend-mode: screen; animation: rays 14s linear infinite; }
+@keyframes rays { from { transform: rotate(0deg) scale(1.6); } to { transform: rotate(8deg) scale(1.6); } }
+#title canvas#tfx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#title .tvista::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,16,30,.25), rgba(8,16,30,0) 30%, rgba(8,16,30,0) 55%, rgba(8,14,20,.72)); }
+.tmain, .tpick { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(var(--sat) + 4vh) 16px calc(var(--sab) + 3vh); }
+.logo { text-align: center; margin-top: 1vh; filter: drop-shadow(0 6px 18px rgba(20,10,0,.55)); animation: rise 1.6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+.logo .kicker { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .35em; font-size: clamp(11px, 1.5vw, 15px); color: #ffe7a8; text-shadow: 0 1px 2px #3a2208; }
+.logo .kicker i { display: block; width: clamp(30px, 8vw, 90px); height: 2px; background: linear-gradient(90deg, rgba(255,231,168,0), #ffe7a8); }
+.logo .kicker i:last-child { transform: scaleX(-1); }
+.logo h1 { margin: 2px 0 0; font-family: "Cinzel", var(--title); font-weight: 900; line-height: .86; letter-spacing: .02em; display: flex; flex-direction: column; align-items: center; }
+.logo h1 span { font-size: clamp(46px, 9.5vw, 118px); background: linear-gradient(180deg, #fff6d8 0%, #ffd873 42%, #d8962e 58%, #fff0b8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1.5px #5a3208; paint-order: stroke fill; }
+.logo h1 small { font-family: var(--title); font-style: italic; font-weight: 700; font-size: clamp(20px, 3.4vw, 40px); color: #fff4d2; letter-spacing: .08em; margin: 2px 0 -2px; text-shadow: 0 2px 4px #3a2208; }
+.logo .crest { width: min(420px, 70vw); height: 18px; margin: 10px auto 0; background: radial-gradient(circle at 50% 50%, #ffe7a8 0 5px, transparent 6px), linear-gradient(90deg, transparent, #ffe7a8 20%, #ffe7a8 44%, transparent 44%, transparent 56%, #ffe7a8 56%, #ffe7a8 80%, transparent) center / 100% 2px no-repeat; }
+.press { margin-top: auto; margin-bottom: 8vh; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(14px, 2vw, 20px); color: #fff; text-shadow: 0 0 12px rgba(255,220,140,.9), 0 2px 3px #000; animation: breathe 2.4s ease-in-out infinite; cursor: pointer; }
+@keyframes breathe { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+.tmenu { margin-top: auto; margin-bottom: 5vh; display: flex; flex-direction: column; align-items: center; gap: 4px; animation: rise .6s both; }
+.tmenu button, .tmenu a { position: relative; min-width: 280px; padding: 9px 30px; border: 0; background: none; color: #fff4d8; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .14em; font-size: clamp(16px, 2.1vw, 22px); text-decoration: none; text-align: center; text-shadow: 0 2px 4px #000, 0 0 10px rgba(0,0,0,.6); cursor: pointer; }
+.tmenu button::before, .tmenu a::before { content: ""; position: absolute; inset: 2px 0; border-radius: 3px; background: linear-gradient(90deg, rgba(20,30,40,0), rgba(20,30,40,.55) 20%, rgba(20,30,40,.55) 80%, rgba(20,30,40,0)); z-index: -1; opacity: 0; transition: opacity .15s; }
+.tmenu button:hover::before, .tmenu button:focus-visible::before, .tmenu a:hover::before, .tmenu a:focus-visible::before, .tmenu .sel::before { opacity: 1; }
+.tmenu button:hover, .tmenu button:focus-visible, .tmenu a:hover, .tmenu a:focus-visible, .tmenu .sel { color: #ffd873; outline: none; }
+.tmenu .sel::after, .tmenu button:focus-visible::after { content: "◆"; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); color: #ffd873; font-size: 12px; animation: nudge .8s ease-in-out infinite alternate; }
+@keyframes nudge { to { left: 10px; } }
+.tfoot { max-width: 620px; text-align: center; font-family: var(--title); font-style: italic; font-weight: 600; font-size: clamp(14px, 1.7vw, 18px); color: rgba(255,244,216,.85); text-shadow: 0 1px 3px #000; margin: 0; }
+.tpick { background: radial-gradient(ellipse at 50% 40%, rgba(10,18,28,.35), rgba(6,10,16,.82)); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fadein .45s both; }
+@keyframes fadein { from { opacity: 0; } }
+.tpick h2 { font-family: "Cinzel", var(--title); font-weight: 900; letter-spacing: .12em; font-size: clamp(22px, 3.4vw, 40px); color: #ffe39a; text-shadow: 0 2px 6px #000; margin: 0 0 1.5vh; }
+.cardrow { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.arrow { flex: none; width: 44px; height: 64px; border: 0; background: none; color: #ffe39a; font-size: 28px; cursor: pointer; text-shadow: 0 2px 6px #000; animation: breathe 2.4s ease-in-out infinite; }
+.cards { display: flex; gap: clamp(8px, 1.4vw, 18px); align-items: center; justify-content: center; flex: 1; min-height: 0; width: 100%; max-width: 1200px; }
+.cards button { position: relative; flex: 0 1 auto; height: min(54vh, 25vw); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 10px; background: #1a2430 center / cover no-repeat; cursor: pointer; filter: saturate(.55) brightness(.62); transform: scale(.9); transition: transform .35s cubic-bezier(.2,.8,.2,1), filter .35s; box-shadow: 0 10px 30px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,231,168,.35); }
+.cards button::after { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,231,168,.45); border-radius: 7px; pointer-events: none; }
+.cards button[aria-selected="true"] { filter: none; transform: scale(1.04); z-index: 2; box-shadow: 0 0 0 3px #ffd873, 0 0 40px rgba(255,210,110,.55), 0 16px 40px rgba(0,0,0,.6); animation: glowpulse 2.4s ease-in-out infinite; }
+@keyframes glowpulse { 50% { box-shadow: 0 0 0 3px #ffe7a8, 0 0 60px rgba(255,210,110,.8), 0 16px 40px rgba(0,0,0,.6); } }
+.cards button:hover:not([aria-selected="true"]) { filter: saturate(.85) brightness(.85); transform: scale(.94); }
+.plate { margin-top: 2vh; min-width: min(560px, 92vw); padding: 10px 40px 12px; text-align: center; background: linear-gradient(90deg, rgba(40,26,10,0), rgba(40,26,10,.85) 15%, rgba(40,26,10,.85) 85%, rgba(40,26,10,0)); border-top: 1px solid rgba(255,231,168,.5); border-bottom: 1px solid rgba(255,231,168,.5); }
+.plate b { display: block; font-family: "Cinzel", var(--title); font-weight: 900; letter-spacing: .12em; font-size: clamp(20px, 2.8vw, 32px); color: #ffe39a; }
+.plate span { font-family: var(--title); font-style: italic; font-weight: 700; font-size: clamp(15px, 1.8vw, 20px); color: #fff4d8; }
+.pickbtns { display: flex; gap: 14px; margin-top: 2vh; }
+.pickbtns button { font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .12em; font-size: clamp(14px, 1.8vw, 18px); padding: 10px 26px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,231,168,.7); background: rgba(20,28,36,.7); color: #fff4d8; }
+.pickbtns .go { background: linear-gradient(180deg, #ffe39a, #d89a38); color: #3a2208; border-color: #fff0c0; box-shadow: 0 0 20px rgba(255,210,110,.5); }
+.pickbtns button:hover, .pickbtns button:focus-visible { outline: 2px solid #ffe7a8; outline-offset: 2px; }
 .back { color: var(--ink); font-weight: 700; }
 #loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: end center; padding-bottom: calc(var(--sab) + 8vh); background: #cfe8f6 url("tex/keyart.jpg") center / cover no-repeat; font-family: var(--title); font-size: 26px; color: #2a3a2a; }
 #loading span { background: rgba(246,239,217,.9); border: 2px solid var(--line); border-radius: 14px; padding: 10px 22px; box-shadow: 0 6px 24px rgba(40,25,10,.3); }
@@ -131,6 +165,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .ttop { position: absolute; top: calc(var(--sat) + 172px); right: calc(var(--sar) + 14px); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
 .ttop button { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.45); color: #fff; font-size: 18px; }
 .pausebtn { position: fixed; z-index: 7; top: calc(var(--sat) + 12px); left: 50%; transform: translateX(-50%); width: 44px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.4); color: #fff; font-weight: 800; }
+@media (max-aspect-ratio: 3/4) { #title .tvista img { object-position: 16% 50%; } }
 @media (max-width: 700px) {
   #mini { width: 118px; height: 118px; }
   .goal { max-width: 170px; font-size: 12px; }
@@ -139,11 +174,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .ttop { top: calc(var(--sat) + 96px); left: calc(var(--sal) + 14px); right: auto; flex-direction: row; }
   .slot.wide { display: none; }
   .slot { min-width: 52px; height: 52px; font-size: 10px; }
-  #title h1 { font-size: 44px; }
-  .crew button { width: 62px; } .crew button img { height: 64px; } .crew button small { display: none; }
+  .cards { flex: 1; }
+  .cards button { height: min(56vh, 110vw); display: none; }
+  .cards button[aria-selected="true"] { display: block; transform: none; }
+  .tmenu button, .tmenu a { min-width: 220px; padding: 7px 20px; }
   .keys { columns: 1; }
 }
-@media (prefers-reduced-motion: reduce) { #dialog .more { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #dialog .more, #title .tvista img, #title .rays, .press, .cards button[aria-selected="true"], .tmenu .sel::after { animation: none; } }
 </style>
 </head>
 <body>
@@ -191,14 +228,29 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <div id="dialog" hidden><b id="dname"></b><p id="dtext"></p><span class="more">▼</span></div>
 
 <div class="screen" id="title" hidden>
-  <div class="wrap">
-    <div class="kicker">GET PLUNGER'D</div>
-    <h1>Breath of<br>the <em>Lake</em></h1>
-    <p class="lead">The Porcelain King clogged Loon Lake. His sludge took three old friends of the cottage. Climb anything, glide under a beach umbrella, and flush him for good.</p>
-    <div class="crew" id="crew"></div>
-    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button><button class="btn ghost" type="button" data-switch>Switch game</button></div>
-    <p><a class="back" href="/">← Back to the arcade</a></p>
-  </div>
+  <div class="tvista" aria-hidden="true"><img src="tex/title.jpg" alt=""><i class="rays"></i><canvas id="tfx"></canvas></div>
+  <section class="tmain" id="tmain">
+    <div class="logo">
+      <div class="kicker"><i></i>GET PLUNGER'D<i></i></div>
+      <h1><span>Breath</span><small>of the</small><span>Lake</span></h1>
+      <div class="crest" aria-hidden="true"></div>
+    </div>
+    <p class="press" id="tpress">Press any button</p>
+    <nav class="tmenu" id="tmenu" hidden>
+      <button type="button" id="contBtn" hidden>Continue</button>
+      <button type="button" id="newBtn">New Journey</button>
+      <button type="button" id="helpBtn">Controls</button>
+      <button type="button" data-switch>Switch Game</button>
+      <a href="/">Back to the Arcade</a>
+    </nav>
+    <p class="tfoot">The Porcelain King clogged Loon Lake. His sludge took three old friends of the cottage.</p>
+  </section>
+  <section class="tpick" id="tpick" hidden>
+    <h2>Choose your hero</h2>
+    <div class="cardrow"><button type="button" class="arrow" id="pickPrev" aria-label="Previous hero">◀</button><div class="cards" id="crew" role="listbox" aria-label="Heroes"></div><button type="button" class="arrow" id="pickNext" aria-label="Next hero">▶</button></div>
+    <div class="plate"><b id="heroName"></b><span id="heroPerk"></span></div>
+    <div class="pickbtns"><button type="button" class="back" id="pickBack">Back</button><button type="button" class="go" id="pickGo">Begin the Journey</button></div>
+  </section>
 </div>
 
 <div class="screen dim" id="help" hidden>
@@ -246,6 +298,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 </div>
 
 <script src="/arcade/switch.js"></script>
+<script src="/chip.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

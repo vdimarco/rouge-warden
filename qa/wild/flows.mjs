@@ -1,6 +1,6 @@
 // The ways a game can get into a bad state outside the level itself: broken saves, double clicks,
 // dying in the middle of a conversation, menus on top of menus, travel in a boss fight, and a graphics reset.
-import { open, newGame } from "./lib.mjs";
+import { open, newGame, openMenu } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); };
@@ -11,7 +11,8 @@ for (const bad of ["{not json", JSON.stringify({ v: 1 }), JSON.stringify({ v: 1,
   await page.evaluate((b) => { localStorage.setItem("plungerd.wild.v1", b); }, bad);
   await page.reload(); await page.waitForSelector("#title:not([hidden])");
   const hasCont = await page.evaluate(() => !document.querySelector("#contBtn").hidden);
-  if (hasCont) { await page.click("#contBtn"); } else { await page.click("#newBtn"); }
+  await openMenu(page);
+  if (hasCont) { await page.click("#contBtn"); } else { await page.click("#newBtn"); await page.click("#pickGo"); }
   await page.waitForFunction(() => window.G && G.started, null, { timeout: 60000 }).catch(() => fails.push("save " + bad.slice(0, 30) + ": game did not start"));
   const st = await page.evaluate(() => ({ p: G.player.pos.toArray(), hp: G.player.hp, w: G.inv.weapons.length }));
   check(st.p.every(Number.isFinite) && Math.abs(st.p[0]) < 780, "save " + bad.slice(0, 30) + ": bad start position " + st.p);
@@ -21,7 +22,8 @@ for (const bad of ["{not json", JSON.stringify({ v: 1 }), JSON.stringify({ v: 1,
 
 const { browser, page, errors } = await open();
 // 2. double-clicking New game starts one game, not two
-await page.evaluate(() => { const b = document.querySelector("#newBtn"); b.click(); b.click(); });
+await openMenu(page); await page.click("#newBtn");
+await page.evaluate(() => { const b = document.querySelector("#pickGo"); b.click(); b.click(); });
 await page.waitForFunction(() => window.G && G.started, null, { timeout: 60000 });
 const heroes = await page.evaluate(() => G.scene.children.filter((o) => o === G.player.rig.root).length + G.scene.children.filter((o) => o.userData && o.userData.hero).length);
 check(heroes === 1, "double click made " + heroes + " heroes");
