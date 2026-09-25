@@ -117,13 +117,17 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 | Drink a gourd | R or E | GOURD |
 | Lock on | Tab or middle click | LOCK |
 | Pause | Esc or P | II |
+| Music on or off | M | ♪ on the title screen |
 
 ### How it is made
 
 - **Characters.** The ronin, Gabe, and the bear are textured 3D models with skeletons, made with Higgsfield (Meshy image-to-3D) from concept art. Every move is a motion-capture clip from the same library. The rigging service gives each clip a slightly different skeleton, so a build step moves each clip onto the detailed model: it copies every bone's world rotation change from the rest pose. The game cuts attacks out of the longer clips, and hit timings come from measuring when each fist, foot, or paw moves fastest.
 - **Look.** The models get cel shading and an ink outline. A post pass turns the frame to ink: it keeps only neon, crushes blacks, draws edges, adds grain and film scratches, and makes the neon bloom.
 - **Sedona.** The sky all the way round is one ink painting of the buttes and the moon, made from two generated halves. The desert floor, sandstone spires, boulders, junipers, and grass that leans away from the fighters are made in code.
-- **Clips.** The title loop (the ronin against Gabe mid-change) and the boss intro (Gabe turns into the bear, with sound) were made with Seedance on Higgsfield.
+- **Title screen.** The fighter you pick fills the screen, and Gabe stands opposite on wide screens. The ink-wash portraits (the five crew members, Gabe, and the grizzly) were made on Higgsfield from the crew art.
+- **Clips.** The boss intro (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield.
+- **Music.** "Promises" by Nero plays through SoundCloud's own embed player, from Nero's SoundCloud page. Try another track with `?song=<SoundCloud link>`.
+- **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
 - **Sound.** Every sound is made in the browser with Web Audio.
 
 The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `?god` to the URL to take no damage while you test.

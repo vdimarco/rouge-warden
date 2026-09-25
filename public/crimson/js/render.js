@@ -4,16 +4,20 @@ import * as THREE from 'three';
 
 export const NEON = new THREE.Color(0.72, 1.0, 0.1);
 
+// phones and tablets get a lighter setup; frame time then tunes the resolution on any device
+export const LITE = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 export const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('view'), antialias: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+const PR_MAX = Math.min(devicePixelRatio, LITE ? 1.25 : 1.5), PR_MIN = LITE ? 0.6 : 0.75;
+let pr = LITE ? Math.min(PR_MAX, 1) : PR_MAX;
+renderer.setPixelRatio(pr);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = LITE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
 export const scene = new THREE.Scene();
 export const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 3000);
 
-const sceneRT = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 });
+const sceneRT = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: LITE ? 2 : 4 });
 const halfA = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
 const halfB = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
 const quarterA = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
@@ -108,6 +112,18 @@ export function resize() {
 }
 addEventListener('resize', resize);
 resize();
+
+// keep the frame rate up: drop the render resolution when frames run long, raise it when there is room
+let slowT = 0, fastT = 0, avg = 16.7;
+export function adapt(ms) {
+  avg += (Math.min(ms, 100) - avg) * 0.1;
+  slowT = avg > 19 ? slowT + ms : 0;
+  fastT = avg < 13 ? fastT + ms : 0;
+  let next = pr;
+  if (slowT > 700 && pr > PR_MIN) { next = Math.max(PR_MIN, pr - 0.15); slowT = 0; }
+  else if (fastT > 4000 && pr < PR_MAX) { next = Math.min(PR_MAX, pr + 0.1); fastT = 0; }
+  if (next !== pr) { pr = next; renderer.setPixelRatio(pr); resize(); }
+}
 
 // blur src in place: horizontal into tmp, then vertical back into src
 function blurInPlace(src, tmp, k) {

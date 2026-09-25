@@ -2,7 +2,8 @@
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
-import { scene, camera, post, draw } from './js/render.js';
+import { scene, camera, post, draw, adapt } from './js/render.js';
+import { Music } from './js/music.js';
 import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR } from './js/world.js';
 import { fx, updateFX, Trail, glowTex } from './js/fx.js';
 import { Audio } from './js/audio.js';
@@ -153,6 +154,7 @@ addEventListener('keydown', (e) => {
   if (e.repeat) return;
   input.usingPad = false; setTouch(false);
   input.keys[e.code] = true;
+  if (e.code === 'KeyM' && Music.enabled) { Music.toggle(); return; }
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
   if (game.state === 'end') { if (performance.now() - endShownAt > 900) restart(); return; }
@@ -227,7 +229,8 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
       let sx = e.clientX - p.x0, sy = e.clientY - p.y0; const l = Math.hypot(sx, sy);
       if (l > R) { sx *= R / l; sy *= R / l; }
       knob.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
-      input.touch.stick.set(sx / R, -sy / R);
+      const m = Math.hypot(sx, sy) / R, k = m < 0.12 ? 0 : Math.min(1, (m - 0.12) / 0.58) / (m || 1);
+      input.touch.stick.set(sx / R * k, -sy / R * k);
     } else if (game.state === 'fight') {
       cam.yaw -= dx * 0.0065;
       cam.pitch = clamp(cam.pitch + dy * 0.005, -0.3, 0.85);
@@ -385,7 +388,7 @@ function updatePlayer(dt) {
     if (Math.hypot(ax[0], ax[1]) > 0.18) { mx = ax[0]; my = -ax[1]; }
     if (Math.hypot(ax[2], ax[3]) > 0.18) { cam.yaw -= ax[2] * 2.6 * dt; cam.pitch = clamp(cam.pitch + ax[3] * 1.6 * dt, -0.3, 0.85); if (cam.lock && Math.abs(ax[2]) > 0.95) cam.lock = false; }
   }
-  if (input.touch.stick.lengthSq() > 0.03) { mx = input.touch.stick.x; my = input.touch.stick.y; }
+  if (input.touch.stick.lengthSq() > 0.0001) { mx = input.touch.stick.x; my = input.touch.stick.y; }
   input.move.set(mx, my); if (input.move.lengthSq() > 1) input.move.normalize();
   const [f, r] = camBasis();
   const want = new THREE.Vector3().addScaledVector(f, input.move.y).addScaledVector(r, input.move.x);
@@ -398,7 +401,7 @@ function updatePlayer(dt) {
   switch (p.state) {
     case 'move': {
       speed = want.length() * p.stats.speed;
-      if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 22);
+      if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 16);
       else if (cam.lock && boss.state !== 'dead') p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
       if (moving || p.speedNow > 0.8) ronin.play('run', { speed: clamp(Math.max(p.speedNow, speed * 0.6) / 4.6, 0.7, 1.25), fade: 0.1 });
       else ronin.play('idle', { fade: 0.14 });
@@ -800,12 +803,15 @@ function updateCamera(rdt) {
 }
 
 /* ------------------------------------------------------------------ flow */
-const titleVid = $('titleVid'), introVid = $('introVid');
+const introVid = $('introVid');
 let endShownAt = 0;
 function crewRow() {
   const copy = document.querySelector('#title .copy');
   const row = document.createElement('div'); row.id = 'crew';
-  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}"><img src="art/crew/${i + 1}.webp" alt="" draggable="false"><span class="cap"><b>${c.name}</b><span>${c.perk}</span></span></button>`).join('');
+  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}">${c.name.toUpperCase()}</button>`).join('');
+  for (const [id, d] of [['prevCrew', -1], ['nextCrew', 1]]) $(id).addEventListener('click', (e) => { e.stopPropagation(); pickCrew(crewPick + d); });
+  // load every portrait up front so switching is instant
+  CREW.forEach((c, i) => { const im = new Image(); im.src = `art/crew/${i + 1}.webp`; });
   copy.insertBefore(row, copy.querySelector('.pick'));
   row.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); pickCrew(+b.dataset.i); });
   pickCrew(crewPick);
@@ -816,7 +822,14 @@ function pickCrew(i) {
   document.querySelectorAll('#crew button').forEach((b, k) => b.classList.toggle('on', k === crewPick));
   document.querySelector('#title .pick').dataset.perk = `${CREW[crewPick].name} · ${CREW[crewPick].perk}`;
   titleText();
-  const me = $('vsMe'); me.src = `art/crew/${crewPick + 1}.webp`; me.alt = CREW[crewPick].name;
+  // cross-fade the full-screen portrait
+  const src = `art/crew/${crewPick + 1}.webp`, a = $('heroA'), b = $('heroB');
+  const cur = a.classList.contains('on') ? a : b.classList.contains('on') ? b : null, next = cur === a ? b : a;
+  if (!cur || !cur.src.endsWith(src)) {
+    next.alt = CREW[crewPick].name;
+    const show = () => { next.classList.add('on'); if (cur) cur.classList.remove('on'); };
+    next.onload = show; next.src = src; if (next.complete && next.naturalWidth) show();
+  }
 }
 function titleKey(e) {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { pickCrew(crewPick - 1); return; }
@@ -828,8 +841,8 @@ $('title').addEventListener('click', startGame);
 $('intro').addEventListener('click', () => endIntro());
 function startGame() {
   if (game.state !== 'title' || !game.ready) return;
-  Audio.init(); Audio.play('start');
-  $('title').classList.add('hidden'); titleVid.pause();
+  Audio.init(); Audio.play('start'); Music.start();
+  $('title').classList.add('hidden');
   if (introVid.src && introVid.readyState >= 2) {
     game.state = 'intro';
     $('intro').classList.remove('hidden');
@@ -850,7 +863,7 @@ function beginFight() {
   cam.pos.copy(SPAWN_P).addScaledVector(FACE_DIR, -5).setY(3); cam.look.copy(SPAWN_B).setY(1.6);
   hud.el.classList.add('on'); hud.hint.style.opacity = 1;
   hud.card.className = ''; void hud.card.offsetWidth; hud.card.className = 'show';
-  Audio.drumOn = true;
+  Audio.drumOn = !Music.playing;
   if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } }
 }
 function showEnd(won) {
@@ -880,19 +893,26 @@ function pause() { if (game.state !== 'fight') return; game.state = 'paused'; pa
 function resume() { game.state = 'fight'; $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
 $('pause').addEventListener('click', (e) => { if (e.target.closest('a') || performance.now() - pausedAt < 400) return; resume(); });
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
-loadClip(titleVid, 'clips/title.mp4', () => { titleVid.classList.add('ready'); titleVid.play().catch(() => {}); });
 loadClip(introVid, 'clips/intro.mp4', () => {});
 crewRow();
-for (const v of document.querySelectorAll('#title .vs')) { if (v.complete && v.naturalWidth) v.classList.add('ready'); v.addEventListener('load', () => v.classList.add('ready')); }
+// the song starts on the first tap or key press anywhere (browsers block sound before that)
+if (Music.enabled) {
+  document.body.classList.add('hasSong');
+  const first = () => { Music.start(); removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true); };
+  addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
+  for (const b of document.querySelectorAll('.music')) b.addEventListener('click', (e) => { e.stopPropagation(); Music.toggle(); });
+}
+const gabeHero = $('heroGabe'); if (gabeHero.complete && gabeHero.naturalWidth) gabeHero.classList.add('on'); else gabeHero.onload = () => gabeHero.classList.add('on');
 
 /* ------------------------------------------------------------------ loop */
 let ambientT = 0, last = performance.now(), manual = false;
 function frame(now) {
   requestAnimationFrame(frame);
-  const rdt = Math.min(0.05, (now - last) / 1000); last = now;
+  const frameMs = now - last, rdt = Math.min(0.05, frameMs / 1000); last = now;
   const fighting = game.state === 'fight';
   if (fighting !== wasFighting) { wasFighting = fighting; document.body.classList.toggle('fighting', fighting); }
   if (manual) return;
+  adapt(frameMs);
   pollPad(); tick(rdt); draw(now / 1000);
 }
 let wasFighting = false;

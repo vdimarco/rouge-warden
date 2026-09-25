@@ -1,7 +1,7 @@
 // Sedona at night: an ink-painted sky all the way round, desert hills, sandstone mesas and
 // spires, junipers, boulders, and grass that leans away from the fighters.
 import * as THREE from 'three';
-import { scene, toonRamp } from './render.js';
+import { scene, toonRamp, LITE } from './render.js';
 
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -78,7 +78,7 @@ export function buildGround() {
   geo.computeVertexNormals();
   const tex = canvasTex(512, 512, (g, w, h) => {
     g.fillStyle = '#9a948c'; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 2600; i++) {
+    for (let i = 0; i < 2600 * g; i++) {
       const v = 90 + Math.random() * 90 | 0;
       g.fillStyle = `rgba(${v},${v - 4},${v - 8},${Math.random() * 0.35})`;
       const r = Math.random() * 10 + 0.5;
@@ -259,8 +259,9 @@ export function buildGrass() {
     const lx = rand(-0.2, 0.2), lz = rand(-0.2, 0.2), ph = rand(0, TAU), y = groundHeight(x, z);
     for (let k = 0; k < n; k++) list.push({ x: x + rand(-0.15, 0.15), y, z: z + rand(-0.15, 0.15), h: h * rand(0.6, 1), ph, rot: rand(0, Math.PI), w: 0.05, lx: lx + rand(-0.35, 0.35), lz: lz + rand(-0.35, 0.35), tone: rand(0.8, 1.3) });
   };
-  for (let i = 0; i < 1400; i++) { const r = Math.sqrt(Math.random()) * ARENA, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.2, 0.55), 4); }
-  for (let i = 0; i < 2600; i++) { const r = ARENA + Math.pow(Math.random(), 1.5) * 70, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.4, 1.1), 5); }
+  const g = LITE ? 0.55 : 1;
+  for (let i = 0; i < 1400 * g; i++) { const r = Math.sqrt(Math.random()) * ARENA, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.2, 0.55), 4); }
+  for (let i = 0; i < 2600 * g; i++) { const r = ARENA + Math.pow(Math.random(), 1.5) * 70, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.4, 1.1), 5); }
   const base = bladeGeo(), geo = new THREE.InstancedBufferGeometry();
   geo.index = base.index; geo.attributes.position = base.attributes.position;
   const n = list.length, off = new Float32Array(n * 3), prm = new Float32Array(n * 4), lean = new Float32Array(n * 2), tone = new Float32Array(n);
@@ -281,7 +282,7 @@ export function buildLights() {
   scene.add(new THREE.HemisphereLight(0x9aa2b0, 0x1a1816, 0.55));
   const moon = new THREE.DirectionalLight(0xe6ecf5, 2.0);
   moon.castShadow = true;
-  moon.shadow.mapSize.set(2048, 2048);
+  moon.shadow.mapSize.setScalar(LITE ? 1024 : 2048);
   Object.assign(moon.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 140 });
   moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.04;
   scene.add(moon, moon.target);
