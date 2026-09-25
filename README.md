@@ -40,7 +40,7 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 - **Go fast.** Reach the drain before the timer runs out for bonus caps and gold.
 - **Take risks.** From the second layer on, a cooler can be cursed. It holds a weapon, a scroll, and a pile of gold, but any hit takes you down until you beat 10 critters.
 - **Grow the build.** Scrolls of power raise Muscle (melee), Aim (gun), or Grit (health). Relics dug out of the walls change the run: Hot Sauce, Energy Drink, Bug Spray, Lucky Loonie, Sunscreen, Flip Flops, Snorkel, Work Gloves, Car Keys, TV Remote, the Golden Plunger, and Lost Sunglasses.
-- **Chase a rank.** Kills fill a streak meter from D (Damp) up to SS (Sasquatch), as in Devil May Cry. The meter drains when you stop killing, and a hit knocks it down a rank. A higher rank multiplies your caps and your score, up to ×2.5.
+- **Chase a rank.** Kills fill a streak meter from D (Damp) up to SS (Sasquatch), as in Devil May Cry. The meter drains fast when you stop killing, and faster at high ranks. A hit knocks you down a rank. Mix your moves: the same kind of kill again and again earns less each time, so crits, pounds, shots, and air hits climb fastest. A higher rank multiplies your caps and your score, up to ×2.5.
 - **Take a gift.** Each sealed room you clear brings a gift from a cottage animal, as in Hades. Pick one of three: Bear Paw, Sunburn, Loon Wake, Skeeter Bite, Moose Hide, Thunder Bay, Firefly Pop, Beaver Teeth, Campfire Story, or Chipmunk Cheeks. A gift you already have goes up a level, to level 3. Jev picks which three show up, to fit how you play.
 - **Grab the Golden Plunger.** Once a layer, after about ten kills, a Golden Plunger drops, like the power pellet in Pac-Man. For 8 seconds the critters glow blue, run from you, and cannot hurt you. Your hits deal triple damage, and each kill scores double the last: 200, 400, 800, 1600.
 - **Beat the high score.** Kills, sealed rooms, depth, bosses, and gold add to your score. A top-10 score asks for your initials, and the best score shows on the Down the Drain cabinet in the arcade.
@@ -106,6 +106,34 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 
 ### Controls
 
+| Action | Keyboard and mouse | Gamepad |
+| --- | --- | --- |
+| Move, jump, hover | A and D, W or Space (hold to hover) | Left stick, A |
+| Hit | Left mouse or J | X |
+| Ground pound | S and hit, in the air | Down and X, in the air |
+| Roll | Shift or L | B |
+| Shoot | Right mouse or K | RT or RB |
+| Change guns | 1, 2, 3, or the wheel | LB |
+| Dig | Hold F | LT |
+| Hot dog | R | Y |
+| Take or open | E | D-pad up |
+| Map, sound | Q, M | Back |
+
+On a phone, the left thumb moves, and pulling down on the stick while you hit in the air pounds the ground. Tap the right side or the Hit button to swing, and drag the right side to aim and shoot. Buttons roll, eat a hot dog, and switch the right thumb to the shovel.
+
+The game fits the screen on desktop and phone. Menus never shrink their text: a menu too tall for the screen flows into two columns, and on a narrow phone it scrolls inside the screen.
+
+## Crimson Rouge
+
+Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
+
+- **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
+- **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab: he hauls you over his head and throws you, so dodge it.
+- **Gabe, the grizzly.** At about half life, Gabe cracks his knuckles, his track suit tears, and he turns into a standing grizzly twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
+- **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
+- **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
+- **Drink.** You carry three gourds. Each one heals 40 life, but you stand still to drink.
+
 | Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
 | Move | WASD | Drag on the left half |
@@ -128,7 +156,7 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 - **Clips.** The boss intro (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield.
 - **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. Try another track with `?song=<SoundCloud link>`.
 - **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
-- **Sound.** Every sound is made in the browser with Web Audio.
+- **Sound.** Every sound effect is made in the browser with Web Audio.
 
 The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `?god` to the URL to take no damage while you test.
 

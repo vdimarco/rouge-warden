@@ -162,6 +162,15 @@ a { color: var(--accent); }
 
 .shrine .card-inner { max-width: 1100px; }
 .card-inner { transform-origin: top center; display: flow-root; min-width: 0; }
+/* too tall for the screen: two columns, then scroll; the text keeps its size */
+.card-inner.cols { max-width: min(1240px, 100%); column-count: 2; column-gap: 32px; }
+.card-inner.cols > * { break-inside: avoid; }
+.card-inner.cols > h2, .card-inner.cols > .brand { column-span: all; }
+.overlay.scrolls { overflow-y: auto; overscroll-behavior: contain; place-items: start center; }
+.sheet-body.scrolls { overflow-y: auto; overscroll-behavior: contain; }
+.card-inner.cols .clips { align-items: start; }
+.card-inner.cols .clip figcaption { flex-wrap: wrap; white-space: normal; row-gap: 0; }
+.card-inner.cols .clips .loopcard { grid-column: 1 / -1; }
 .shrine-grid > * { min-width: 0; }
 .slots { min-width: 0; }
 .intro p { font-size: 15.5px; }
@@ -277,6 +286,7 @@ a { color: var(--accent); }
 .bigscore span { color: #9ea4b0; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; }
 .bigscore b { font-family: var(--mono, monospace); font-size: 28px; color: #ffd84a; }
 .initials { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 0 0 8px; }
+.initials[hidden] { display: none; }
 .initials label { width: 100%; color: #f0c85a; font-weight: 700; }
 .initials input { width: 5.2ch; font: 700 24px var(--mono, monospace); text-transform: uppercase; text-align: center; letter-spacing: 4px; background: #0a0c10; color: #fff; border: 2px solid #f0c85a; border-radius: 6px; padding: 4px; }
 .board { margin: 0 auto; padding: 0; list-style: none; max-width: 300px; font: 14px var(--mono, monospace); counter-reset: b; }
@@ -1156,12 +1166,12 @@ const TIPS = {
 
 // Streak ranks, in the style of Devil May Cry: kills fill the meter, a hit knocks it down, and a higher rank pays more caps and score.
 const RANKS = [
-  { n: "D", at: 12, m: 1.1, name: "Damp" },
-  { n: "C", at: 35, m: 1.25, name: "Cozy" },
-  { n: "B", at: 65, m: 1.5, name: "Buzzed" },
-  { n: "A", at: 105, m: 1.75, name: "Awesome" },
-  { n: "S", at: 155, m: 2, name: "Stellar" },
-  { n: "SS", at: 220, m: 2.5, name: "Sasquatch" },
+  { n: "D", at: 15, m: 1.1, name: "Damp" },
+  { n: "C", at: 45, m: 1.25, name: "Cozy" },
+  { n: "B", at: 95, m: 1.5, name: "Buzzed" },
+  { n: "A", at: 165, m: 1.75, name: "Awesome" },
+  { n: "S", at: 255, m: 2, name: "Stellar" },
+  { n: "SS", at: 370, m: 2.5, name: "Sasquatch" },
 ];
 const rankOf = (style) => { let r = -1; for (let i = 0; i < RANKS.length; i++) if (style >= RANKS[i].at) r = i; return r; };
 // Boons, in the style of Hades: the cottage animals offer a gift after each sealed room. Each one stacks up to level 3.
@@ -1190,10 +1200,15 @@ function addScore(n, x, y) {
   if (x != null && n >= 100) Game.nums.push({ x, y: y - 10, v: n, t: 0.9, big: true, gold: true });
 }
 // the streak meter: kills add style, time drains it, a hit knocks it down
-function styleGain(n) {
+// how the last few kills landed; the same move over and over earns less, as in Devil May Cry
+function styleGain(n, how) {
   const was = rankOf(run.style);
-  run.style = Math.min(RANKS[RANKS.length - 1].at + 60, run.style + n);
-  run.styleT = 2.5 + boon("campfire");
+  const recent = (run.hows = (run.hows || []).concat(how).slice(-4));
+  const repeats = recent.filter((h) => h === how).length - 1;
+  n *= [1, 0.6, 0.35, 0.2][repeats];
+  if (repeats >= 2 && !run.styleHinted) { run.styleHinted = true; UI.hint("Mix it up: crits, pounds, shots, and air hits keep the streak climbing.", 3200); }
+  run.style = Math.min(RANKS[RANKS.length - 1].at + 80, run.style + n);
+  run.styleT = 1.6 + 0.8 * boon("campfire");
   const now = rankOf(run.style);
   if (now > was) { UI.rankUp(now); SFX.rank(now); }
   run.log.maxRank = Math.max(run.log.maxRank, now);
@@ -1205,7 +1220,7 @@ function styleHit() {
 }
 function updateStyle(dt) {
   run.styleT -= dt;
-  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (5 + 3 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
+  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (7 + 5 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
   const r = rankOf(run.style);
   run.streakMult = r < 0 ? 1 : RANKS[r].m;
   if (Game.frenzyT > 0) { Game.frenzyT -= dt; if (Game.frenzyT <= 0) { Game.frenzyChain = 0; UI.hint("The Golden Plunger fades.", 1600); } }
@@ -3091,7 +3106,9 @@ function killFoe(f) {
   addFx(cx, cy, f.d.pal[Object.keys(f.d.pal)[0]], 16);
   // the classic loops: streak, score, boons, and the Golden Plunger
   Game.layerKills++;
-  styleGain(f.d.boss ? 60 : (f.elite ? 22 : 10) + (f.stun > 0 ? 4 : 0) + (!f.ground ? 4 : 0));
+  const how = Game.how || "gun";
+  Game.how = null;
+  styleGain(f.d.boss ? 60 : (f.elite ? 18 : 8) + (f.stun > 0 ? 3 : 0) + (!f.ground ? 3 : 0), how === "melee" && !f.ground ? "air" : how);
   addScore(f.d.boss ? 5000 : 10 * Math.max(1, f.d.tier) * (f.elite ? 3 : 1));
   if (Game.frenzyT > 0) { const n = 200 * 2 ** Math.min(4, Game.frenzyChain++); addScore(n, cx, cy); SFX.chomp(Game.frenzyChain); }
   if (boon("skeeter")) run.hp = Math.min(run.maxHp, run.hp + 2 * boon("skeeter"));
@@ -3467,7 +3484,9 @@ function meleeHits(p, a, M) {
     const crit = critFor(M, f, a.k, p, fd);
     const dmg = Math.round(M.combo[a.k] * run.dmgMult * run.muscle * (crit ? 2 : 1) * (1 + 0.08 * (run.depth - 1)) * (1 + 0.2 * boon("bear")) * (Game.frenzyT > 0 ? 3 : 1));
     if (boon("sun") && !f.d.fireImmune) f.burn = Math.max(f.burn, 1 + boon("sun"));
+    Game.how = crit ? "crit" : "melee";
     hurtFoe(f, dmg, null);
+    Game.how = null;
     if (crit) { Game.nums.push({ x: f.x + f.w / 2, y: f.y - 6, v: "!", t: 0.5, big: true }); if (run.critHeal) run.hp = Math.min(run.maxHp, run.hp + run.critHeal); }
     if (f.d.ai !== "hand") { f.vx += fd * M.knock * (f.d.w > 8 ? 0.4 : 1); f.vy -= 0.9; f.stun = Math.max(f.stun || 0, M.stun + (crit ? 0.15 : 0)); }
     else f.stun = Math.max(f.stun || 0, 0.05);
@@ -3493,7 +3512,9 @@ function poundLand(p) {
     if (f.dead) continue;
     const d = Math.hypot(f.x + f.w / 2 - cx, f.y + f.h / 2 - cy);
     if (d > 18 * (1 + 0.3 * boon("thunder"))) continue;
+    Game.how = "pound";
     hurtFoe(f, Math.round(18 * run.dmgMult * run.muscle * (1 + 0.08 * (run.depth - 1)) * (1 + 0.5 * boon("thunder"))), null);
+    Game.how = null;
     if (f.d.ai !== "hand") { f.stun = Math.max(f.stun || 0, 1); f.vy = -2.2; f.vx += Math.sign(f.x + f.w / 2 - cx) * 1.2; }
   }
   for (const t of Game.props || []) if (!t.dead && Math.hypot(t.x - cx, t.y - cy) < 18) { if (t.kind === "tank") explodeTank(t); else hitNest(t, 20); }
@@ -3514,7 +3535,7 @@ function updateCombat(p, dt) {
   // roll: fast, and nothing can hit you while you roll. It cancels a swing.
   if (inp.rollEdge && p.rollCd <= 0 && !p.pound) {
     run.log.rolls++;
-    if (boon("loon")) { zap(p.x + p.w / 2, p.y + p.h / 2, 16, 7 * boon("loon"), 2.2); addFx(p.x + 2, p.y + 8, 0x6fb8ff, 10); }
+    if (boon("loon")) { Game.how = "roll"; zap(p.x + p.w / 2, p.y + p.h / 2, 16, 7 * boon("loon"), 2.2); Game.how = null; addFx(p.x + 2, p.y + 8, 0x6fb8ff, 10); }
     p.roll = 0.28; p.rollDir = inp.x ? Math.sign(inp.x) : p.face; p.rollCd = 0.5; p.atk = null; p.queued = false; p.face = p.rollDir;
     SFX.roll();
   }
@@ -5128,13 +5149,18 @@ const UI = (() => {
   }
 
   // Nothing scrolls. A panel that is still too tall for the screen shrinks to fit.
+  // a menu never shrinks its text to fit: if it is too tall, it flows into two columns,
+  // and if it still does not fit (or the screen is too narrow for two), it scrolls inside the screen
   function fitBox(el, w, h, top) {
     if (!el) return;
-    const k = Math.min(1, (h - 2) / el.scrollHeight, w / el.scrollWidth);
-    let v = "";
-    if (k < 0.999) v = (top ? "" : "translateY(" + Math.max(0, (h - el.scrollHeight * k) / 2).toFixed(1) + "px) ") + "scale(" + k.toFixed(3) + ")";
-    if (el.style.transform !== v) el.style.transform = v;
-    el.style.alignSelf = v && !top ? "start" : "";
+    const box = el.parentElement;
+    el.style.transform = "";
+    el.classList.remove("cols");
+    box.classList.remove("scrolls");
+    if (el.scrollHeight > h - 2 && w >= 700 && !top && !el.closest(".shrine")) el.classList.add("cols");
+    const over = el.scrollHeight > h - 2 || el.scrollWidth > w + 1;
+    box.classList.toggle("scrolls", over);
+    el.style.alignSelf = over && !top ? "start" : "";
   }
   function fit() {
     // while a menu is open, the play HUD steps out of the way
@@ -5458,8 +5484,12 @@ const UI = (() => {
       let last = "";
       try { last = localStorage.getItem("plungerd.drain.initials") || ""; } catch (e) { last = ""; }
       input.value = last;
+      let saved = false;
       form.onsubmit = (ev) => {
         ev.preventDefault();
+        // one entry per run, however many times Save is clicked
+        if (saved) return;
+        saved = true;
         const name = (input.value.toUpperCase().replace(/[^A-Z0-9]/g, "") + "AAA").slice(0, 3);
         try { localStorage.setItem("plungerd.drain.initials", name); } catch (e) { /* storage off */ }
         form.hidden = true;
