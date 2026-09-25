@@ -18,7 +18,7 @@
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=Bungee&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=Bungee&family=Cinzel:wght@800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
 <style>
 :root {
@@ -271,6 +271,32 @@ body.vignette:not(.menu)::after { content: ""; position: fixed; inset: 0; z-inde
   box-shadow: 0 0 0 2px rgba(255,207,74,0.35), 0 0 26px rgba(255,190,60,0.75), 0 8px 18px rgba(0,0,0,0.6); filter: none; }
 .ts-roster .friend[aria-pressed="true"] b { background: var(--accent); color: #2a1400; }
 .ts-roster .friend[aria-pressed="true"]::after { content: "✓"; position: absolute; top: -9px; right: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #2a1400; font: 900 14px/22px sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+
+/* The fighter picker, in the same storybook style as Breath of the Lake: tall painted hero cards,
+   a gold frame and glow on the chosen one, and the name on a plate. */
+.ts-pick { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: 0.22em; font-size: clamp(14px, 2.6vh, 22px); color: #ffe39a; text-shadow: 0 2px 6px #000, 0 0 14px rgba(255,200,90,0.55); }
+.ts-roster { align-items: center; gap: min(1.4vw, 12px); max-width: 980px; }
+.ts-roster .friend { flex: 0 1 auto; width: auto; height: min(30vh, 17vw, 260px); aspect-ratio: 2 / 3; padding: 0; border-radius: 10px; border: 0; justify-content: flex-end;
+  background: #1a2430 center / cover no-repeat; opacity: 1; filter: saturate(0.55) brightness(0.62); transform: scale(0.92);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(255,231,168,0.35); transition: transform 0.3s cubic-bezier(.2,.8,.2,1), filter 0.3s; overflow: hidden; }
+.ts-roster .friend:nth-child(1) { background-image: url(/wild/art/hero1.webp); }
+.ts-roster .friend:nth-child(2) { background-image: url(/wild/art/hero2.webp); }
+.ts-roster .friend:nth-child(3) { background-image: url(/wild/art/hero3.webp); }
+.ts-roster .friend:nth-child(4) { background-image: url(/wild/art/hero4.webp); }
+.ts-roster .friend:nth-child(5) { background-image: url(/wild/art/hero5.webp); }
+.ts-roster .friend img, .ts-roster .friend small { display: none; }
+.ts-roster .friend::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,231,168,0.45); border-radius: 7px; pointer-events: none; }
+.ts-roster .friend b { position: relative; margin: 0; padding: 5px 2px 6px; border-radius: 0; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: 0.08em; font-size: clamp(9px, 1.5vh, 13px); color: #fff4d8; background: linear-gradient(180deg, rgba(20,12,4,0), rgba(20,12,4,0.85) 40%); }
+.ts-roster .friend:hover { filter: saturate(0.85) brightness(0.85); transform: scale(0.96); opacity: 1; }
+.ts-roster .friend[aria-pressed="true"] { filter: none; transform: scale(1.05); background-color: #1a2430; background-size: cover; background-position: center; box-shadow: 0 0 0 3px #ffd873, 0 0 36px rgba(255,210,110,0.6), 0 14px 30px rgba(0,0,0,0.6); animation: tsglow 2.4s ease-in-out infinite; }
+@keyframes tsglow { 50% { box-shadow: 0 0 0 3px #ffe7a8, 0 0 54px rgba(255,210,110,0.85), 0 14px 30px rgba(0,0,0,0.6); } }
+.ts-roster .friend[aria-pressed="true"] b { background: linear-gradient(180deg, rgba(60,36,6,0), rgba(60,36,6,0.92) 40%); color: #ffe39a; }
+.ts-roster .friend[aria-pressed="true"]::after { display: none; }
+.ts-who { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: 0.1em; color: #ffe39a; text-shadow: 0 2px 6px #000, 0 0 16px rgba(255,190,80,0.5); padding: 6px 40px; background: linear-gradient(90deg, rgba(40,26,10,0), rgba(40,26,10,0.85) 15%, rgba(40,26,10,0.85) 85%, rgba(40,26,10,0)); border-top: 1px solid rgba(255,231,168,0.5); border-bottom: 1px solid rgba(255,231,168,0.5); }
+.intro-press { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: 0.3em; font-size: clamp(16px, 3.2vh, 26px); color: #fff; text-shadow: 0 0 14px rgba(255,220,140,0.95), 0 2px 3px #000; animation: tsbreathe 2.4s ease-in-out infinite; }
+@keyframes tsbreathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@media (orientation: portrait) { .ts-roster .friend { height: min(24vh, 30vw); } }
+@media (prefers-reduced-motion: reduce) { .ts-roster .friend[aria-pressed="true"], .intro-press { animation: none; } }
 </style>
 </head>
 <body class="menu">
