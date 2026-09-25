@@ -68,6 +68,24 @@ export const Audio = {
         this.noiseHit(t, 'bandpass', 500, 0.8, 0.35, 1.5, 200);
         break;
       }
+      case 'pipe': {
+        // a roar blown down a PVC pipe: a growling buzz, shaped by the tube's hollow resonances
+        const ctx = this.ctx, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), mix = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+        o.type = 'sawtooth'; o2.type = 'square';
+        o.frequency.setValueAtTime(82, t); o.frequency.linearRampToValueAtTime(96, t + 0.35); o.frequency.exponentialRampToValueAtTime(64, t + 1.3);
+        o2.frequency.setValueAtTime(41, t); o2.frequency.exponentialRampToValueAtTime(32, t + 1.3);
+        lfo.frequency.value = 17; lg.gain.value = 6; lfo.connect(lg); lg.connect(o.frequency);
+        o.connect(mix); o2.connect(mix);
+        for (const [fr, q, amp] of [[240, 9, 1], [720, 8, 0.7], [1200, 7, 0.35]]) {
+          const bp = ctx.createBiquadFilter(), bg = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = fr; bp.Q.value = q; bg.gain.value = amp;
+          mix.connect(bp); bp.connect(bg); bg.connect(g);
+        }
+        this.env(g, t, 0.06, 1.6, 1.3); g.connect(this.master);
+        [o, o2, lfo].forEach((x) => { x.start(t); x.stop(t + 1.5); });
+        this.noiseHit(t, 'bandpass', 700, 3, 0.25, 1.1, 300);
+        break;
+      }
+      case 'pvc': this.tone(t, 'triangle', 620, 380, 0.25, 0.12); this.tone(t + 0.05, 'triangle', 540, 300, 0.18, 0.1); break;
       case 'punch': this.noiseHit(t, 'bandpass', 1400, 1, 0.45, 0.12, 500); break;
       case 'thud': this.noiseHit(t, 'lowpass', 500, 1, 0.9, 0.12); this.tone(t, 'sine', 140, 50, 0.8, 0.16); break;
       case 'growl': {

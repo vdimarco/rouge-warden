@@ -10,11 +10,22 @@ try { wantOn = localStorage.getItem('crimson.music') !== 'off'; } catch (e) { /*
 // the player loads with the page, so on a phone its own play button is there to tap on the title screen
 // (phones only allow sound that a tap inside the player starts)
 let frame = null, ready = false, pending = false;
+// quiet on the title screen, loud in the fight
+const LOW = 22, HIGH = 80;
+let level = LOW, vol = LOW, rampT = 0;
+function ramp() {
+  clearInterval(rampT);
+  rampT = setInterval(() => {
+    vol += Math.sign(level - vol) * Math.min(Math.abs(level - vol), 4);
+    if (ready) widget.setVolume(vol);
+    if (vol === level) clearInterval(rampT);
+  }, 40);
+}
 function load() {
   if (!url || frame) return;
   const f = frame = document.createElement('iframe');
   f.id = 'song'; f.allow = 'autoplay; encrypted-media'; f.title = 'Background song';
-  f.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=true&buying=false&sharing=false&download=false&color=%23c6ff1a`;
+  f.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=true&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=true&buying=false&sharing=false&download=false&color=%23c6ff1a`;
   document.body.appendChild(f);
   const s = document.createElement('script');
   s.src = 'https://w.soundcloud.com/player/api.js';
@@ -23,8 +34,9 @@ function load() {
     const E = window.SC.Widget.Events;
     widget.bind(E.READY, () => {
       ready = true;
-      widget.setVolume(45);
-      if (wantOn) f.classList.add('show');
+      widget.setVolume(vol);
+      // try to play right away; browsers that need a tap or key first wait for start()
+      if (wantOn) { widget.play(); f.classList.add('show'); }
       document.body.classList.add('songBar');
       if (pending && wantOn) widget.play();
       widget.getCurrentSound((snd) => { if (snd) credit(snd.title, snd.user && snd.user.username, snd.permalink_url); });
@@ -40,6 +52,8 @@ export const Music = {
   get enabled() { return !!url; },
   get playing() { return playing; },
   load,
+  // true in the fight, false on the title, pause and end screens
+  loud(on) { level = on ? HIGH : LOW; ramp(); },
   // call from a tap or key press; desktop browsers then allow the player to start
   start() {
     if (!url || !wantOn) return;

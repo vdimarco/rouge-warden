@@ -128,7 +128,7 @@ The game fits the screen on desktop and phone. Menus never shrink their text: a 
 Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
 
 - **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
-- **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab: he hauls you over his head and throws you, so dodge it.
+- **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab (he hauls you over his head and throws you) or his bear call: he pulls out a PVC pipe and roars down it, and neon sound rings blow you off your feet. Dodge through both.
 - **Gabe, the grizzly.** At about half life, Gabe cracks his knuckles, his track suit tears, and he turns into a standing grizzly twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
 - **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
 - **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
@@ -154,7 +154,7 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 - **Sedona.** The sky all the way round is one ink painting of the buttes and the moon, made from two generated halves. The desert floor, sandstone spires, boulders, junipers, and grass that leans away from the fighters are made in code.
 - **Title screen.** The fighter you pick fills the screen, and Gabe stands opposite on wide screens. The ink-wash portraits (the five crew members, Gabe, and the grizzly) were made on Higgsfield from the crew art.
 - **Clips.** The boss intro (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield.
-- **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. Try another track with `?song=<SoundCloud link>`.
+- **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. It tries to start when the page loads, quiet on the title screen, and gets loud when the fight starts. Browsers that block sound until you tap or press a key start it then; on a phone, tap play on the small SoundCloud bar. Try another track with `?song=<SoundCloud link>`.
 - **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
 - **Sound.** Every sound effect is made in the browser with Web Audio.
 
