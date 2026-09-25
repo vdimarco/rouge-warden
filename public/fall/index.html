@@ -316,6 +316,7 @@ a { color: var(--accent); }
 .tabs { display: flex; gap: 4px; flex: 1; }
 .tabs button { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; color: var(--muted); font-weight: 700; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--line); background: rgba(228, 220, 203, 0.06); }
+.sheet-foot { display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 8px; }
 .close { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 .sheet-body { overflow: hidden; flex: 1; padding-right: 2px; position: relative; }
 .sheet .tab { transform-origin: top center; display: flow-root; }
@@ -426,7 +427,7 @@ a { color: var(--accent); }
         <p><i>⇊</i><b>Two drains</b>. One is richer and harder.</p>
       </div>
     </div>
-    <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <a class="keys" href="/">Back to the arcade</a></div>
+    <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <button class="btn quiet" type="button" data-switch>Switch game</button> <a class="keys" href="/">Back to the arcade</a></div>
   </div>
 </div>
 
@@ -482,7 +483,7 @@ a { color: var(--accent); }
       <p class="tip" id="reviewTip"></p>
     </div>
     <dl class="end-stats" id="endStats"></dl>
-    <button class="btn" id="againBtn">Go down again</button>
+    <div class="starts"><button class="btn" id="againBtn">Go down again</button> <button class="btn quiet" type="button" data-switch>Switch game</button></div>
   </div>
 </div>
 
@@ -526,9 +527,11 @@ a { color: var(--accent); }
         <button class="btn quiet" id="forgetBtn" type="button">Make it forget me</button>
       </section>
     </div>
+    <div class="sheet-foot"><button class="close" type="button" data-switch>Switch game</button></div>
   </div>
 </div>
 
+<script src="/arcade/switch.js"></script>
 <script>
 "use strict";
 const $ = (s) => document.querySelector(s);
@@ -5808,6 +5811,7 @@ function renderRoster() {
 }
 renderRoster();
 $("#startBtn").onclick = startRun;
+for (const b of document.querySelectorAll("[data-switch]")) b.onclick = () => GameSwitch.open("drain");
 $("#againBtn").onclick = startRun;
 $("#hudHp").onclick = () => UI.sheet(true, "stats");
 $("#swapBtn").onclick = () => { Game.input.swapEdge = true; };

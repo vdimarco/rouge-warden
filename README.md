@@ -11,6 +11,7 @@ The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywh
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
 - On a phone you see one machine at a time. Swipe left or right, or tap the arrows, to switch.
+- Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
 
 ## Play
@@ -165,7 +166,7 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 | Path | What it does |
 | --- | --- |
 | `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
-| `public/arcade/` | The art on the arcade screens |
+| `public/arcade/` | The art on the arcade screens, and `switch.js`, the game switcher every game's menu opens |
 | `public/plungerd/index.html` | The page for Get Plunger'd |
 | `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |

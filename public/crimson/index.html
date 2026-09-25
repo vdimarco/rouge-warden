@@ -164,6 +164,8 @@ body.hasSong .music { display: grid; } body.hasSong .songCredit { display: block
 #pause video { display: none; width: min(46vw, 520px); margin: 0 auto 20px; border: 1px solid rgba(233,230,223,0.2); }
 #pause video.ready { display: block; }
 #pause a { color: var(--ink); }
+#title .switch { position: relative; z-index: 2; margin-top: 12px; padding: 8px 18px; background: rgba(0,0,0,0.35); border: 1px solid rgba(233,230,223,0.45); color: var(--ink); font: inherit; font-size: 12px; letter-spacing: 0.3em; cursor: pointer; }
+#title .switch:hover { border-color: var(--ink); }
 #pause p { margin-top: 24px; font-size: 12px; letter-spacing: 0.3em; color: var(--muted); }
 
 /* ---------- touch ---------- */
@@ -258,6 +260,7 @@ body.touch #hint small { display: none; }
     <p class="pick">CHOOSE YOUR FRIEND · ◀ ▶</p>
     <p class="press">PRESS ANY KEY TO FIGHT</p>
     <p class="req">Keyboard and mouse, or touch. Sound on.</p>
+    <button type="button" class="switch" data-switch>SWITCH GAME</button>
     <p class="songCredit"></p>
   </div>
 </div>
@@ -294,10 +297,17 @@ body.touch #hint small { display: none; }
     </table>
     <p>Tap parry as the blow lands to deflect. Keep holding to block.<br>A glowing neon fist or claw is about to strike. A neon 危 means a grab or a charge: you cannot block it, so dodge.<br>Fill Gabe's posture bar, then strike the neon mark.</p>
     <p class="songCredit"></p>
-    <p>CLICK OR TAP TO RESUME · <a href="/" id="toArcade">BACK TO THE ARCADE</a></p>
+    <p>CLICK OR TAP TO RESUME · <a href="#" data-switch>SWITCH GAME</a> · <a href="/" id="toArcade">BACK TO THE ARCADE</a></p>
   </div>
 </div>
 
+<script src="/arcade/switch.js"></script>
+<script>
+// the switcher button must not start a fight or resume one
+for (const b of document.querySelectorAll("[data-switch]")) {
+  for (const ev of ["pointerdown", "mousedown", "click", "keydown"]) b.addEventListener(ev, (e) => { e.stopPropagation(); if (ev === "click") { e.preventDefault(); GameSwitch.open("crimson"); } });
+}
+</script>
 <script type="module" src="game.js"></script>
 </body>
 </html>
