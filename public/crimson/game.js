@@ -227,11 +227,14 @@ addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') setTouch
 if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) setTouch(true);
 {
   const layer = $('touch'), knob = $('stickKnob'), base = $('stickBase');
+  const TAP_MOVE = 30;
+  // capture can throw on touch (the pointer may already count as released); a throw must not lose the tap
+  const capture = (el, e) => { try { el.setPointerCapture(e.pointerId); } catch (err) { /* touch pointers are captured anyway */ } };
   let R = 56;
   const ptrs = new Map();
   layer.addEventListener('pointerdown', (e) => {
     if (game.state !== 'fight' || e.target.closest('button')) return;
-    e.preventDefault(); layer.setPointerCapture(e.pointerId);
+    e.preventDefault(); capture(layer, e);
     const stick = e.clientX < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
     ptrs.set(e.pointerId, { stick, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
     if (stick) {
@@ -259,13 +262,16 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
     const p = ptrs.get(e.pointerId); if (!p) return;
     ptrs.delete(e.pointerId);
     if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
-    else if (p.moved < 14 && performance.now() - p.t0 < 300 && game.state === 'fight') input.buf.light = game.time;
+    // a quick touch that barely moves is a tap: cut. It counts on either half, so a tap never goes unanswered.
+    // (Moves can be merged or skipped, so also measure where the finger lifts; a cancelled touch is no tap.)
+    const moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
+    if (e.type === 'pointerup' && moved < TAP_MOVE && game.state === 'fight') input.buf.light = game.time;
   };
   layer.addEventListener('pointerup', end); layer.addEventListener('pointercancel', end);
   const acts = { tCut: 'light', tHeavy: 'heavy', tDodge: 'dodge', tGourd: 'heal' };
   for (const b of layer.querySelectorAll('button')) {
     b.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('down');
+      e.preventDefault(); e.stopPropagation(); capture(b, e); b.classList.add('down');
       if (b.id === 'tPause') { pause(); return; }
       if (game.state !== 'fight') return;
       if (b.id === 'tGuard') { input.touch.guard = true; input.buf.parry = game.time; }
@@ -981,8 +987,24 @@ function titleKey(e) {
   if (/^Digit[1-5]$/.test(e.code)) { pickCrew(+e.code.slice(5) - 1); return; }
   startGame();
 }
-$('title').addEventListener('click', startGame);
-$('intro').addEventListener('click', () => { if (game.state === 'cutscene') endCutscene(); else endIntro(); });
+// Screens act when the finger lifts. A phone's synthetic click can come late or not at all when the finger
+// moves a little, so touch uses pointerup; the mouse still uses click. Buttons and links keep their own taps.
+let lastTouchTap = 0;
+function onTap(el, fn) {
+  let down = null;
+  el.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') down = { x: e.clientX, y: e.clientY }; });
+  el.addEventListener('pointerup', (e) => {
+    if (!down || e.pointerType === 'mouse') return;
+    const d = down; down = null;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 30) return; // a long press counts too
+    if (e.target.closest('button, a, iframe')) return;
+    lastTouchTap = performance.now(); fn(e);
+  });
+  el.addEventListener('pointercancel', () => { down = null; });
+  el.addEventListener('click', (e) => { if (performance.now() - lastTouchTap < 800) return; fn(e); });
+}
+onTap($('title'), startGame);
+onTap($('intro'), () => { if (game.state === 'cutscene') endCutscene(); else endIntro(); });
 function startGame() {
   if (game.state !== 'title' || !game.ready) return;
   Audio.init(); Audio.play('start'); Music.start();
@@ -1028,12 +1050,12 @@ function showEnd(won) {
   $('end').classList.add('show');
   hud.el.classList.remove('on');
 }
-$('end').addEventListener('click', () => { if (game.state === 'end' && performance.now() - endShownAt > 900) restart(); });
+onTap($('end'), () => { if (game.state === 'end' && performance.now() - endShownAt > 900) restart(); });
 function restart() { $('end').classList.remove('show'); game.parries = 0; beginFight(); }
 let pausedAt = 0;
 function pause() { if (game.state !== 'fight') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
 function resume() { game.state = 'fight'; Music.loud(true); $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
-$('pause').addEventListener('click', (e) => { if (e.target.closest('a, [data-switch]') || performance.now() - pausedAt < 400) return; resume(); });
+onTap($('pause'), (e) => { if (e.target.closest('a, [data-switch]') || performance.now() - pausedAt < 400) return; resume(); });
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
 loadClip(introVid, 'clips/intro.mp4', () => {});
 crewRow();
