@@ -95,6 +95,44 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 #card::before { content: ""; display: block; height: 1px; width: min(60vw, 700px); margin: 0 auto 18px; background: linear-gradient(90deg, transparent, var(--ink), transparent); }
 @keyframes card { 0% { opacity: 0; letter-spacing: 0.6em; } 15% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
 
+/* ---------- end credits ---------- */
+#credits { display: block; overflow: hidden; cursor: pointer; touch-action: none; background: linear-gradient(90deg, rgba(0,0,0,0.92), rgba(0,0,0,0.62) 28%, rgba(0,0,0,0.62) 72%, rgba(0,0,0,0.92)); }
+#credits .roll { position: absolute; left: 50%; top: 0; width: min(560px, calc(100vw - 32px)); transform: translate(-50%, 100vh); text-align: center; will-change: transform; }
+#credits .blk { margin: 0 0 14vh; }
+#credits h1 { margin: 0; font: 800 clamp(28px, 6.4vw, 64px) / 1 var(--serif); letter-spacing: 0.14em; color: #f1eee7; white-space: nowrap; }
+#credits h1 span { color: var(--red-hot); text-shadow: 0 0 24px rgba(198,255,26,0.5); }
+#credits .jp { margin: 12px 0 0; font-family: var(--brush); letter-spacing: 0.5em; color: var(--ink); opacity: 0.85; }
+#credits .result { margin: 7vh 0 0; font: 400 clamp(64px, 12vw, 120px) / 1 var(--grass); color: var(--red-hot); text-shadow: 0 0 40px rgba(198,255,26,0.6); }
+#credits .won { margin: 6px 0 0; font-weight: 800; letter-spacing: 0.5em; font-size: clamp(14px, 2vw, 20px); color: var(--ink); }
+#credits .stats { margin: 12px 0 0; font-size: 11px; letter-spacing: 0.22em; color: var(--muted); }
+#credits h3 { margin: 0 0 24px; font: 800 11px var(--serif); letter-spacing: 0.42em; color: var(--muted); }
+#credits .role { display: flex; align-items: center; gap: 18px; max-width: 360px; margin: 0 auto 20px; text-align: left; }
+#credits .role img { width: 78px; height: 78px; flex: none; border-radius: 50%; object-fit: cover; object-position: 50% 10%; border: 1px solid rgba(233,230,223,0.3); }
+#credits .role b, #credits .line b { display: block; font: 800 15px var(--serif); letter-spacing: 0.14em; color: var(--ink); }
+#credits .role small { display: block; margin-top: 5px; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); }
+#credits .crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; }
+#credits .crew figure { margin: 0; width: 76px; }
+#credits .crew img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: 50% 10%; border: 1px solid rgba(233,230,223,0.25); }
+#credits .crew figcaption { margin-top: 6px; font-size: 9px; letter-spacing: 0.14em; color: var(--ink); }
+#credits .line { margin: 0 0 20px; }
+#credits .line span { display: block; margin-bottom: 5px; font-size: 10px; letter-spacing: 0.32em; color: var(--muted); }
+#credits .line small { display: block; margin-top: 4px; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+#credits .note { margin: 5vh 0 0; font-size: 12px; letter-spacing: 0.1em; color: var(--muted); font-style: italic; }
+#credits .fin { margin: 0; padding-bottom: 8px; }
+#credits .thanks { margin: 0 0 18px; font: 800 clamp(18px, 3.4vw, 30px) / 1.3 var(--serif); letter-spacing: 0.3em; color: var(--red-hot); text-shadow: 0 0 18px rgba(198,255,26,0.45); }
+#credits .fin h2 { margin: 0; font: 800 clamp(11px, 1.6vw, 14px) var(--serif); letter-spacing: 0.34em; color: var(--ink); }
+#credits .games { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0 18px; }
+#credits .game { display: block; overflow: hidden; border: 1px solid rgba(233,230,223,0.2); border-radius: 4px; background: rgba(0,0,0,0.55); color: var(--ink); text-align: left; text-decoration: none; transition: border-color 0.2s, transform 0.2s; }
+#credits .game:hover, #credits .game:focus-visible { border-color: var(--c); transform: translateY(-2px); }
+#credits .game img { display: block; width: 100%; height: clamp(58px, 15vh, 120px); object-fit: cover; }
+#credits .game span { display: block; padding: 7px 10px 9px; }
+#credits .game b { display: block; font: 800 13px var(--serif); letter-spacing: 0.06em; color: var(--c); }
+#credits .game small { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); }
+#credits .again { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+#credits .again button, #credits .again a { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border: 1px solid rgba(233,230,223,0.3); border-radius: 3px; background: rgba(0,0,0,0.5); color: var(--ink); font: 800 12px var(--serif); letter-spacing: 0.22em; text-decoration: none; cursor: pointer; }
+#credits .again .main { border-color: var(--red-hot); color: #fff; box-shadow: 0 0 14px rgba(198,255,26,0.3); }
+#credits .skip { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); margin: 0; font-size: 10px; letter-spacing: 0.3em; color: var(--muted); }
+
 /* ---------- cut scene: letterbox bars, no HUD, no touch buttons ---------- */
 #bars::before, #bars::after { content: ""; position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 4; transition: height 0.7s ease; pointer-events: none; }
 #bars::before { top: 0; } #bars::after { bottom: 0; }
@@ -321,6 +359,11 @@ body.touch #hint small { display: none; }
     <div class="stats" id="endStats"></div>
     <p>PRESS ANY KEY TO RISE AGAIN</p>
   </div>
+</div>
+
+<div id="credits" class="screen hidden">
+  <div class="roll" id="roll"></div>
+  <p class="skip" id="creditsSkip">ANY KEY TO SKIP</p>
 </div>
 
 <div id="pause" class="screen hidden">

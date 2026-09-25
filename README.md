@@ -135,6 +135,7 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 - **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
 - **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
 - **Drink.** You carry five gourds. Each one heals 50 life, but you stand still to drink.
+- **The end.** Beat the bear and the credits roll over the battlefield to their own music: the cast with their portraits, how the game was made, and at the end the other cabinets of the Cottage Arcade, with FIGHT AGAIN and ARCADE. A tap or key skips to the end.
 
 | Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
@@ -159,6 +160,7 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 - **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. It tries to start when the page loads, quiet on the title screen, and gets loud when the fight starts. Browsers that block sound until you tap or press a key start it then; on a phone, tap play on the small SoundCloud bar. Try another track with `?song=<SoundCloud link>`.
 - **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
 - **Sound.** Every sound effect is made in the browser with Web Audio.
+- **Credits music.** An original score for taiko, shakuhachi, koto, strings and low choir in the Japanese in scale, written as Web Audio code (`makeScore` in `public/crimson/js/credits.js`). The game plays `public/crimson/audio/credits.mp3`, the same score rendered offline, and plays the code live if the file cannot load.
 
 The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `?god` to the URL to take no damage while you test.
 
@@ -209,6 +211,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/js/` | Crimson Rouge modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
 | `public/crimson/models/` | The ronin, Gabe, and the bear: textured, rigged, with their clips |
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
+| `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
