@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07050f">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd or Down the Drain. Free in your browser.">
+<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Drop a token into Get Plunger'd or Down the Drain. Free in your browser.">
+<meta property="og:description" content="Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -72,6 +72,7 @@ button { font: inherit; color: inherit; }
 .cab:not(.broken) { cursor: pointer; }
 .cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
+.cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -219,16 +220,16 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
-      <article class="cab broken" data-game="broken" aria-label="A machine that is out of order">
-        <div class="marquee"><div><b>PLUNGER'D 3</b><small>COMING SOON</small></div></div>
+      <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
+        <div class="marquee"><div><b>CRIMSON ROUGE</b><small>紅の月の下で</small></div></div>
         <div class="bezel"><div class="screen">
-          <canvas class="px" id="snow" width="80" height="66"></canvas>
-          <div class="osd"><p></p><p>NO SIGNAL</p><p></p></div>
+          <img src="crimson/art/clash.webp" alt="">
+          <img class="art2" src="crimson/art/boss.webp" alt="">
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into the broken machine"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into the broken machine"><i></i><span>25¢</span></button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
-        <div class="tape">OUT OF ORDER<small>SORRY, EH</small></div>
       </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
@@ -552,16 +553,11 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
   let last = 0;
   (function loop(now) { requestAnimationFrame(loop); if (document.hidden || now - last < 33) return; last = now; if (!reduceMotion || t < 120) step(); })(0);
 }
-// the broken machine shows snow
+// Crimson Rouge flips between the clash and the Crimson Paw
+setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
 {
-  const cv = $("#snow"), cx = cv.getContext("2d"), img = cx.createImageData(cv.width, cv.height), px = new Uint32Array(img.data.buffer);
-  let last = 0;
-  (function loop(now) {
-    requestAnimationFrame(loop);
-    if (document.hidden || now - last < 60) return; last = now;
-    for (let i = 0; i < px.length; i++) { const v = (Math.random() * 90) | 0; px[i] = (255 << 24) | (v << 16) | (v << 8) | v; }
-    cx.putImageData(img, 0, 0);
-  })(0);
+  const cr = store.get("crimson.best.v1", null);
+  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "THE PAW IS UNBEATEN";
 }
 
 drawTokens();

@@ -6,7 +6,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/` and Down the Drain at `/fall/`. The third machine is out of order.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, and Crimson Rouge at `/crimson/`.
 
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
@@ -123,6 +123,33 @@ On a phone, the left thumb moves, and pulling down on the stick while you hit in
 
 The game fits the screen on desktop and phone, and nothing scrolls.
 
+## Crimson Rouge
+
+Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew stands alone on a night battlefield of white pampas grass, broken stone lanterns, and black torii gates. The whole world is black-and-white ink wash. Only red has color: the low moon, the boss's fur and eyes, and the red flash on his blade when a strike comes.
+
+The boss is Akatsuki, The Crimson Paw: a giant armored red panda, twice your height, with a naginata.
+
+- **Pick a friend.** Each of the five friends fights as a ronin in a cap, shades, and a white hachimaki, with a plunger tucked in the obi. Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster.
+- **Deflect.** Press parry just as the blade lands. A clean deflect throws white-hot sparks, punches the camera in, and fills the boss's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
+- **Read the tells.** His eyes flare and his blade glints red before each strike. He sweeps, sweeps back, thrusts, slams the ground, and leaps across the field. A red 危 means a grab. You cannot block a grab, so dodge it.
+- **Break him.** When the posture bar fills, he drops to one knee. Strike the red mark for a deathblow that takes a fifth of his life.
+- **Survive the rage.** At half life he roars. He gets faster, chains his attacks into combos, and red petals start to fall.
+- **Drink.** You carry three gourds. Each one heals 40 life, but you stand still to drink.
+
+| Action | Keyboard and mouse | Gamepad |
+| --- | --- | --- |
+| Move | WASD | Left stick |
+| Camera | Mouse | Right stick |
+| Light attack (3-hit combo) | Left click or J | RB |
+| Heavy attack | K or Q | RT or Y |
+| Dodge roll | Space | A or B |
+| Parry (hold to block) | Shift, F, or right click | LB |
+| Drink a gourd | R or E | X |
+| Lock on | Tab or middle click | R3 |
+| Pause | Esc or P | Start |
+
+The game uses Three.js (in `public/crimson/lib/`) with no build step. A custom post pass turns the scene to ink: it keeps red, crushes blacks, draws outlines, and adds grain and film scratches. Every model and sound is made in code. The title art, the boss and ronin art, and the three clips (the title loop, the boss reveal, and the combat preview on the pause screen) were made with Higgsfield. Add `?god` to the URL to take no damage while you test.
+
 ## Files
 
 | Path | What it does |
@@ -133,6 +160,9 @@ The game fits the screen on desktop and phone, and nothing scrolls.
 | `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
+| `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rouge: the page, the HUD, and the whole game |
+| `public/crimson/art/`, `public/crimson/clips/` | The title art and the clips for Crimson Rouge |
+| `public/crimson/lib/three.module.min.js` | Three.js r170, used only by Crimson Rouge |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
