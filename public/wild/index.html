@@ -40,7 +40,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .abil .ab i { position: absolute; inset: -2px; border-radius: 50%; background: conic-gradient(rgba(0,0,0,.6) var(--cd, 0%), transparent 0); }
 .abil .ab b { position: absolute; right: -4px; bottom: -4px; font-size: 10px; background: #222; border-radius: 6px; padding: 0 3px; }
 .tr { position: absolute; top: calc(var(--sat) + 12px); right: calc(var(--sar) + 14px); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-#mini { width: 150px; height: 150px; border-radius: 50%; border: 3px solid rgba(246,239,217,.9); box-shadow: 0 2px 10px rgba(0,0,0,.35); background: #8ab; pointer-events: auto; cursor: pointer; }
+#mini { width: 160px; height: 160px; border-radius: 50%; filter: drop-shadow(0 3px 8px rgba(0,0,0,.4)); pointer-events: auto; cursor: pointer; }
 .clock { font-weight: 800; font-size: 14px; }
 .goal { max-width: 260px; text-align: right; font-size: 14px; font-weight: 700; line-height: 1.25; }
 .goal small { display: block; font-weight: 400; opacity: .85; }
@@ -114,7 +114,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 #map { z-index: 25; background: rgba(30,24,16,.55); }
 #map .paper { padding: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-#mapCv { width: min(70dvh, 88vw); height: min(70dvh, 88vw); border-radius: 10px; border: 2px solid var(--line); touch-action: none; }
+#mapCv { width: min(72dvh, 90vw); height: min(72dvh, 90vw); border-radius: 6px; box-shadow: 0 10px 40px rgba(20,12,4,.55); touch-action: none; }
 #map .row { display: flex; gap: 12px; align-items: center; font-weight: 700; flex-wrap: wrap; justify-content: center; }
 
 /* touch controls */
@@ -132,7 +132,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .ttop button { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.45); color: #fff; font-size: 18px; }
 .pausebtn { position: fixed; z-index: 7; top: calc(var(--sat) + 12px); left: 50%; transform: translateX(-50%); width: 44px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.4); color: #fff; font-weight: 800; }
 @media (max-width: 700px) {
-  #mini { width: 110px; height: 110px; }
+  #mini { width: 118px; height: 118px; }
   .goal { max-width: 170px; font-size: 12px; }
   .hearts svg { width: 20px; height: 19px; }
   .hearts { max-width: 170px; }
@@ -156,7 +156,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="abil" id="abil"></div>
   </div>
   <div class="tr shadow">
-    <canvas id="mini" width="200" height="200" aria-label="Minimap. Tap to open the map."></canvas>
+    <canvas id="mini" width="260" height="260" aria-label="Minimap. Tap to open the map."></canvas>
     <div class="clock" id="clock"></div>
     <div class="goal" id="goal"></div>
   </div>
@@ -196,7 +196,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <h1>Breath of<br>the <em>Lake</em></h1>
     <p class="lead">The Porcelain King clogged Loon Lake. His sludge took three old friends of the cottage. Climb anything, glide under a beach umbrella, and flush him for good.</p>
     <div class="crew" id="crew"></div>
-    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button></div>
+    <div class="btns"><button class="btn" id="contBtn" type="button" hidden>Continue</button><button class="btn" id="newBtn" type="button">New game</button><button class="btn ghost" id="helpBtn" type="button">Controls</button><button class="btn ghost" type="button" data-switch>Switch game</button></div>
     <p><a class="back" href="/">← Back to the arcade</a></p>
   </div>
 </div>
@@ -229,14 +229,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper">
     <h2>Paused</h2>
     <p id="pstats"></p>
-    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
+    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><button class="btn ghost" type="button" data-switch>Switch game</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
   </div>
 </div>
 
 <div class="screen" id="map" hidden>
   <div class="paper">
-    <canvas id="mapCv" width="768" height="768"></canvas>
-    <div class="row" id="mapInfo">Tap a lit tower, a cleared outhouse, or the cottage to travel there.</div>
+    <canvas id="mapCv" width="1024" height="1024"></canvas>
+    <div class="row" id="mapInfo">Tap a lit beacon, a cleared outhouse, or the cottage to travel there.</div>
     <div class="btns"><button class="btn" data-close type="button">Close</button></div>
   </div>
 </div>
@@ -245,6 +245,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper"><h2 id="chTitle"></h2><p id="chText"></p><div class="btns" id="chBtns"></div></div>
 </div>
 
+<script src="/arcade/switch.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -187,7 +187,7 @@ function start(save) {
   for (const b of G.bosses) if (save.bosses.includes(b.id)) { b.alive = false; b.rig.root.visible = false; }
   if (save.done) cleanLake(true);
   G.world.shrines.forEach((s) => { if (save.shrines.includes(s.id)) s.obj.userData.glow.color.set(0xffa040); });
-  G.world.towers.forEach((t) => { if (save.towers.includes(t.id)) t.obj.userData.screen.color.set(0x5ad8ff); });
+  G.world.towers.forEach((t) => { if (save.towers.includes(t.id)) t.obj.userData.light(); });
   const c = G.world.cottage;
   if (save.pos) P.place(save.pos[0], save.pos[2], save.pos[1]); else P.place(c.x + 2, c.z - 20);
   P.yaw = Math.PI;
@@ -212,7 +212,7 @@ async function intro() {
     [PERKS[other].name, "The Porcelain King clogged the lake. See that swirl over the island? That's him."],
     [PERKS[other].name, "Gabe, Christian and Ryu rowed out to plunge it. They came back with glowing red eyes."],
     [PERKS[other].name, "Now Gabe's up on the mountain, Christian's in the pines, and Ryu's out in the meadows. Nobody can get near them."],
-    [PERKS[other].name, "Climb the fire tower up the hill first. Walk right into it and grab on. From the top you can see everything."],
+    [PERKS[other].name, "Climb the lookout tower up the hill first. Walk right into it and grab on. Light the beacon at the top, and you can map everything you see from up there."],
   ]);
   G.cutscene = false;
   G.save.intro = true;
@@ -248,7 +248,7 @@ function buildNPCs() {
 function npcLine(n) {
   const S = G.save;
   if (S.done) return "You flushed him! Lake's clear. Meet us on the dock later.";
-  if (!S.towers.includes("south")) return "The fire tower's up the hill, west of here. Climb it first.";
+  if (!S.towers.includes("south")) return "The lookout tower's up the hill, west of here. Light the beacon on top and you can map the whole point.";
   if (S.bosses.length < 3) return `The swirl is still up there. ${3 - S.bosses.length} of our buddies still have red eyes.`;
   return "Everyone's back but the lake's still clogged. Take the kayak from the dock out to the island. Bring stew.";
 }
@@ -393,12 +393,16 @@ function activateTower(t) {
   const S = G.save;
   if (S.towers.includes(t.id)) return;
   S.towers.push(t.id); S.check = [t.x + 6, t.z + 6];
-  t.obj.userData.screen.color.set(0x5ad8ff);
-  A.sfx("tower"); G.shake(0.4);
+  t.obj.userData.light();
+  A.sfx("tower"); G.shake(0.3);
+  G.fx.puff(t.x, t.y + 2, t.z, 0xffb04a, 30);
   G.ui.renderMap();
-  G.ui.banner(t.name, "Map updated");
+  G.ui.banner(t.name, "From up here you can see for miles. You sketch it all into your map.", 4.5);
+  // after a moment to watch the beacon catch, the map opens and the clouds part around this lookout
+  setTimeout(() => { if (G.started && !G.ui.modal && !G.player.dead) { exitLock(); G.paused = true; G.ui.mapReveal(t); } }, 1400);
   G.writeSave();
-  if (t.id === "south") setTimeout(() => G.ui.say([["The Cottage", "Look around. Every place with a fire tower goes on your map."], ["The Cottage", "Outhouses glow blue. Step in and win the trial for a Golden Orb. Four orbs buy a new heart at the loon statue."], ["The Cottage", "Jump off and open the umbrella. You'll float a long way."]]), 1800);
+  const talk = (lines) => { const go = () => (G.ui.modal ? setTimeout(go, 500) : G.ui.say(lines)); setTimeout(go, 1800); };
+  if (t.id === "south") talk([["The Cottage", "See that? Every beacon you light, you can map the land around it. And you can travel back to any lit beacon from the map."], ["The Cottage", "Outhouses glow blue. Step in and win the trial for a Golden Orb. Four orbs buy a new heart at the loon statue."], ["The Cottage", "Jump off and open the umbrella. You'll float a long way."]]);
 }
 let trialFoes = [["raccoon", "raccoon", "raccoon"], ["raccoon", "goose", "goose", "raccoon"], ["raccoon", "raccoon", "bear"], ["bear", "raccoon", "raccoon", "goose"], ["bear", "bear"], ["moose"], ["raccoon", "raccoon", "raccoon", "raccoon", "bear"], ["moose", "raccoon", "raccoon"], ["bear", "bear", "raccoon"], ["moose", "bear"], ["moose", "goose", "goose", "goose"], ["moose", "moose"]];
 function startTrial(s) {
@@ -575,7 +579,7 @@ $("#pauseBtn").onclick = () => openPause();
 /* ---------------- goals and clock ---------------- */
 G.goal = () => {
   const S = G.save;
-  if (!S.towers.includes("south")) return "Climb the fire tower<small>at Cottage Point, up the hill</small>";
+  if (!S.towers.includes("south")) return "Light the beacon on the lookout tower<small>at Cottage Point, up the hill. From the top you can map the land.</small>";
   const left = 3 - S.bosses.filter((b) => b !== "king").length;
   if (left > 0) return `Free your friends from the sludge<small>${left} left: ${BOSSES.filter((b) => b.id !== "king" && !S.bosses.includes(b.id)).map((b) => b.name.split(",")[0].split(" the")[0]).join(", ")}</small>`;
   if (!S.done) return "Flush the Porcelain King<small>Paddle the kayak to Clog Island</small>";
@@ -767,7 +771,7 @@ function nearest() {
   const opts = [];
   const d2 = (x, z) => Math.hypot(P.x - x, P.z - z);
   for (const n of G.npcs) if (d2(n.x, n.z) < 3) opts.push({ d: d2(n.x, n.z), label: "Talk to " + n.name, go: () => { G.ui.say([[n.name, npcLine(n)], [n.name, n.tip]]); } });
-  for (const t of w.towers) if (!S.towers.includes(t.id) && d2(t.x, t.z) < 3 && P.y > t.y - 1) opts.push({ d: 0, label: "Light the tower", go: () => activateTower(t) });
+  for (const t of w.towers) if (!S.towers.includes(t.id) && d2(t.x, t.z) < 3.8 && P.y > t.y - 1) opts.push({ d: 0, label: "Light the beacon", go: () => activateTower(t) });
   for (const s of w.shrines) {
     const fx = s.x + Math.sin(s.rot) * 1.8, fz = s.z + Math.cos(s.rot) * 1.8;
     if (d2(fx, fz) < 2.6 && !S.shrines.includes(s.id) && !G.trial) opts.push({ d: d2(fx, fz), label: "Start the trial", go: () => startTrial(s) });
@@ -797,30 +801,42 @@ function updateCamera(dt) {
   const sp = Math.hypot(P.vel.x, P.vel.z);
   if ((touchUI || G.pad) && c.idle > 1.2 && sp > 2 && P.state !== "climb") { const want = P.yaw + Math.PI; let d = Math.atan2(Math.sin(want - c.yaw), Math.cos(want - c.yaw)); c.yaw += d * Math.min(1, dt * 0.8); }
   const tgt = tv.set(P.x, P.y + (P.state === "swim" ? 1.0 : P.state === "kayak" ? 1.25 : 1.7), P.z);
-  if (c.snap) { c.target.copy(tgt); c.cur = undefined; c.snap = false; }
+  if (c.snap) { c.target.copy(tgt); c.cur = undefined; c.dcol = undefined; c.lift = 0; c.snap = false; }
   c.target.x = lerp(c.target.x, tgt.x, 1 - Math.exp(-dt * 14));
   c.target.z = lerp(c.target.z, tgt.z, 1 - Math.exp(-dt * 14));
   c.target.y = lerp(c.target.y, tgt.y, 1 - Math.exp(-dt * 7));
   c.target.y = Math.max(c.target.y, G.world.height(c.target.x, c.target.z) + 0.5, P.y + 0.5);
   const want = c.dist * (P.state === "glide" ? 1.3 : G.activeBoss ? 1.35 : 1);
   c.cur = lerp(c.cur || want, want, 1 - Math.exp(-dt * 3));
-  const cp = Math.cos(c.pitch);
-  const dx = Math.sin(c.yaw) * cp, dy = Math.sin(c.pitch), dz = Math.cos(c.yaw) * cp;
-  // pull the camera in front of hills and buildings between it and the hero
-  let d = c.cur;
-  const N = 28;
-  for (let k = 1; k <= N; k++) {
-    const s = (k / N) * c.cur, px = c.target.x + dx * s, py = c.target.y + dy * s, pz = c.target.z + dz * s;
-    if (G.world.height(px, pz) + 0.7 > py || inBox(px, py, pz)) { d = Math.max(0.35, s - (c.cur / N) - 0.35); break; }
+  // How far the camera can sit along a direction before a hill or a building is in the way.
+  // Ground right next to where the camera ends up is not a blocker: the camera just rises above it.
+  const N = 30, MIN = 2.3;
+  const free = (pitch, maxd) => {
+    const cp = Math.cos(pitch), dx = Math.sin(c.yaw) * cp, dy = Math.sin(pitch), dz = Math.cos(c.yaw) * cp;
+    for (let k = 1; k <= N; k++) {
+      const s = (k / N) * maxd, px = c.target.x + dx * s, py = c.target.y + dy * s, pz = c.target.z + dz * s;
+      if (inBox(px, py, pz) || (s < maxd * 0.8 && G.world.height(px, pz) + 0.45 > py)) return Math.max(0, s - maxd / N - 0.3);
+    }
+    return maxd;
+  };
+  // too close? look for a higher angle over the shoulder instead of moving into the hero
+  let wantLift = 0;
+  if (free(c.pitch, c.cur) < MIN) {
+    wantLift = 1.35 - c.pitch;
+    for (let a = 0.15; c.pitch + a <= 1.35; a += 0.15) if (free(c.pitch + a, c.cur) >= MIN) { wantLift = a; break; }
   }
-  c.pos.set(c.target.x + dx * d, c.target.y + dy * d, c.target.z + dz * d);
-  // a wall right behind the hero: lift the camera up and look down over their shoulder
-  if (d < 2.2 && (inBox(c.pos.x, c.pos.y, c.pos.z) || d < c.cur - 0.5)) {
-    const lift = (2.2 - d) * 1.4;
-    const up = tv.set(c.target.x + dx * 0.3, c.target.y + lift, c.target.z + dz * 0.3);
-    if (!inBox(up.x, up.y, up.z) && G.world.height(up.x, up.z) + 0.5 < up.y) c.pos.copy(up);
-    else c.pos.set(c.target.x, c.target.y + 0.4, c.target.z);
-  }
+  c.lift = lerp(c.lift || 0, wantLift, 1 - Math.exp(-dt * (wantLift > (c.lift || 0) ? 7 : 1.6)));
+  const pitch = Math.min(1.4, c.pitch + c.lift);
+  const dHit = free(pitch, c.cur);
+  // move in fast when something blocks the view, and ease back out slowly, so the view never jitters
+  const prev = Number.isFinite(c.dcol) ? c.dcol : dHit;
+  c.dcol = dHit < prev ? dHit : lerp(prev, dHit, 1 - Math.exp(-dt * 2.2));
+  // never past the first thing in the way; if that is very close, the hero hides instead of the view going inside a wall
+  const d = Math.min(c.dcol, dHit);
+  const cp = Math.cos(pitch);
+  c.pos.set(c.target.x + Math.sin(c.yaw) * cp * d, c.target.y + Math.sin(pitch) * d, c.target.z + Math.cos(c.yaw) * cp * d);
+  // never show the inside of the hero
+  P.rig.root.userData.camHide = d < 1.5;
   c.pos.y = Math.max(c.pos.y, G.world.height(c.pos.x, c.pos.z) + 0.6, 0.5);
   camera.position.copy(c.pos);
   if (G.shakeT > 0) { G.shakeT -= dt; const s = G.shakeT * 0.6; camera.position.x += (Math.random() - 0.5) * s; camera.position.y += (Math.random() - 0.5) * s; }

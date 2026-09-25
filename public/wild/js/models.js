@@ -433,20 +433,125 @@ export function fireTower() {
   // a flag on the corner, so you can spot a tower from far away
   top.add(mesh(cyl(0.08, 0.08, 5), 0x7a5a3a, 3.8, 2.5, 3.8, false));
   const flag = mesh(box(1.8, 1, 0.05), 0xe8483a, 4.7, 4.4, 3.8, false); top.add(flag);
-  // the pedestal where you activate the tower
-  const ped = mesh(cyl(0.4, 0.5, 1.1, 8), 0x6a6a70, 0, 0.75, 0); top.add(ped);
-  const screen = new THREE.MeshBasicMaterial({ color: 0xff9a3a });
-  const s = new THREE.Mesh(box(0.7, 0.08, 0.5), screen); s.position.set(0, 1.33, 0); top.add(s);
-  g.userData.screen = screen;
+  // a little roof on four posts, so the deck reads as a lookout
+  for (const [x, z] of [[-3.5, -3.5], [3.5, -3.5], [-3.5, 3.5], [3.5, 3.5]]) top.add(mesh(cyl(0.14, 0.14, 4.2, 6), 0x7a5a3a, x, 2.1, z, false));
+  const roof = mesh(new THREE.ConeGeometry(6.2, 2.4, 4), 0x9a4a32, 0, 5.3, 0); roof.rotation.y = Math.PI / 4; top.add(roof);
+  // the signal beacon: an iron bowl of stacked wood on a stone plinth. Lit, it burns day and night.
+  top.add(mesh(cyl(0.7, 0.9, 0.8, 10), 0x8a8a84, 0, 0.6, 0));
+  const bowl = mesh(new THREE.SphereGeometry(1.0, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 0x3a3634, 0, 1.55, 0); bowl.material.side = THREE.DoubleSide; top.add(bowl);
+  for (let k = 0; k < 4; k++) { const l = mesh(cyl(0.08, 0.1, 1.2, 6), 0x6a4428, Math.cos(k * 1.57) * 0.2, 1.6, Math.sin(k * 1.57) * 0.2, false); l.rotation.set(0, -k * 1.57, 0); l.rotateZ(0.6); top.add(l); }
+  const beacon = campfire(true); beacon.scale.setScalar(1.25); beacon.position.y = 1.4; beacon.visible = false; top.add(beacon);
+  g.userData.beacon = beacon;
+  g.userData.light = () => { beacon.visible = true; };
   g.userData.H = H;
   return g;
 }
-export function campfire() {
+// A painted campfire: flat bands of deep red, orange, and a pale core, with tongues that lick upward,
+// embers that drift up, a thin wisp of smoke, and a warm pool of light on the ground.
+export const fireTime = { value: 0 };
+let fireMats = null;
+function fireMaterials() {
+  if (fireMats) return fireMats;
+  const noise = `
+    float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h2(i), h2(i+vec2(1,0)), f.x), mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y); }`;
+  // a billboard that turns to face the camera around the upright axis
+  const bill = `
+    uniform float uTime; attribute float aSeed; varying vec2 vUv; varying float vSeed;
+    void main(){
+      vUv = uv; vSeed = aSeed;
+      vec3 c = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+      vec3 right = normalize(vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]));
+      float sc = length(modelMatrix[0].xyz);
+      vec3 w = c + right * position.x * sc + vec3(0.0, position.y * sc, 0.0) + right * position.z * sc;
+      gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
+    }`;
+  const flame = new THREE.ShaderMaterial({
+    uniforms: { uTime: fireTime }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: bill,
+    fragmentShader: `uniform float uTime; varying vec2 vUv; varying float vSeed; ${noise}
+      void main(){
+        vec2 uv = vUv; float s = vSeed * 17.0;
+        float n = vn(vec2(uv.x * 3.0 + s, uv.y * 2.4 - uTime * 2.6)) * 0.65 + vn(vec2(uv.x * 7.0 - s, uv.y * 5.0 - uTime * 4.2)) * 0.35;
+        float x = (uv.x - 0.5) * 2.0 + (n - 0.5) * 0.9 * uv.y;
+        // a teardrop: round at the base, pointed at the top, with tongues cut by the noise
+        float w = (0.95 - 0.95 * pow(uv.y, 0.75)) * smoothstep(0.0, 0.12, uv.y) + 0.04;
+        float body = 1.0 - smoothstep(w * 0.8, w, abs(x));
+        body *= 1.0 - smoothstep(0.45 + n * 0.5, 0.6 + n * 0.5, uv.y);
+        float heat = body * (1.0 - abs(x) / max(w, 0.01)) * (1.15 - uv.y);
+        // flat painted bands with soft edges
+        vec3 col = vec3(0.78, 0.16, 0.06);
+        col = mix(col, vec3(1.0, 0.45, 0.08), smoothstep(0.16, 0.22, heat));
+        col = mix(col, vec3(1.0, 0.78, 0.25), smoothstep(0.42, 0.48, heat));
+        col = mix(col, vec3(1.0, 0.97, 0.78), smoothstep(0.68, 0.74, heat));
+        float a = smoothstep(0.02, 0.12, body);
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(col * 1.25, a);
+      }`,
+  });
+  const glow = new THREE.ShaderMaterial({
+    uniforms: { uTime: fireTime }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: `uniform float uTime; varying vec2 vUv;
+      void main(){ float d = length(vUv - 0.5) * 2.0; float f = 0.85 + 0.15 * sin(uTime * 11.0) * sin(uTime * 7.3);
+        gl_FragColor = vec4(vec3(1.0, 0.55, 0.2) * pow(max(0.0, 1.0 - d), 2.2) * 0.55 * f, 1.0); }`,
+  });
+  // embers and smoke share one set of points: each point knows which it is, and loops through its life
+  const specks = new THREE.ShaderMaterial({
+    uniforms: { uTime: fireTime }, transparent: true, depthWrite: false,
+    vertexShader: `uniform float uTime; attribute vec3 aP; varying float vLife; varying float vKind;
+      void main(){
+        float seed = aP.x, kind = aP.y, speed = aP.z;
+        float life = fract(uTime * speed + seed * 7.0);
+        vLife = life; vKind = kind;
+        vec3 p = kind < 0.5
+          ? vec3(sin(seed * 40.0 + life * 5.0) * 0.35 * life, 0.4 + life * 3.2, cos(seed * 33.0 + life * 4.0) * 0.35 * life)
+          : vec3(sin(seed * 20.0 + uTime * 0.4) * 0.6 * life + life * 0.8, 1.3 + life * 6.0, cos(seed * 11.0) * 0.5 * life);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        float size = kind < 0.5 ? 0.09 * (1.0 - life) : 0.9 + life * 2.2;
+        gl_PointSize = size * 420.0 / max(-mv.z, 0.5);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying float vLife; varying float vKind;
+      void main(){
+        float d = length(gl_PointCoord - 0.5) * 2.0;
+        if (vKind < 0.5) { if (d > 1.0) discard; gl_FragColor = vec4(mix(vec3(1.0, 0.85, 0.4), vec3(1.0, 0.35, 0.08), vLife), (1.0 - vLife) * (1.0 - d * d)); }
+        else { float a = (1.0 - smoothstep(0.2, 1.0, d)) * sin(vLife * 3.1416) * 0.09; gl_FragColor = vec4(vec3(0.72, 0.72, 0.76), a); }
+      }`,
+  });
+  fireMats = { flame, glow, specks };
+  return fireMats;
+}
+export function campfire(noRing = false) {
   const g = new THREE.Group();
-  for (let k = 0; k < 4; k++) { const l = mesh(cyl(0.12, 0.12, 1.3, 6), 0x5a3a24, 0, 0.12, 0, false); l.rotation.set(Math.PI / 2, k * Math.PI / 4, 0); g.add(l); }
-  for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; g.add(mesh(new THREE.DodecahedronGeometry(0.22), 0x8a8a8a, Math.cos(a) * 0.85, 0.1, Math.sin(a) * 0.85, false)); }
+  const M = fireMaterials();
+  // logs leaning together like a small tent, charred at the tips
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2 + 0.3;
+    const l = mesh(cyl(0.09, 0.12, 1.25, 7), 0x6a4428, Math.cos(a) * 0.32, 0.38, Math.sin(a) * 0.32, true, 0.02);
+    l.rotation.set(0, -a, 0); l.rotateZ(0.62); g.add(l);
+    const tip = mesh(sph(0.1, 7, 5), 0x2a1a14, Math.cos(a) * 0.08, 0.72, Math.sin(a) * 0.08, false); g.add(tip);
+  }
+  for (let k = 0; k < 2; k++) { const l = mesh(cyl(0.11, 0.11, 1.2, 7), 0x5a3a22, 0, 0.1, 0, true, 0.02); l.rotation.set(Math.PI / 2, k * 1.4 + 0.4, 0); g.add(l); }
+  // a ring of round river stones
+  if (!noRing) for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; const st = mesh(sph(0.2, 8, 6), k % 3 ? 0x9a968c : 0x86837a, Math.cos(a) * 0.95, 0.08, Math.sin(a) * 0.95, true, 0.02); st.scale.set(1.2, 0.7, 1); st.rotation.y = a; g.add(st); }
+  // glowing coals
+  g.add(mesh(sph(0.34, 10, 6), toon(0xff5a1a, { emissive: 0xff4a10, emissiveIntensity: 1.2 }), 0, 0.02, 0, false)).scale.y = 0.35;
+  // the flame: three painted layers at slightly different sizes and timings
   const flame = new THREE.Group(); g.add(flame);
-  for (const [c, s, y] of [[0xff7a1a, 0.5, 0.5], [0xffc83a, 0.32, 0.45], [0xfff0a0, 0.16, 0.4]]) { const f = new THREE.Mesh(new THREE.ConeGeometry(s, s * 2.6, 7), new THREE.MeshBasicMaterial({ color: c })); f.position.y = y + s * 0.8; flame.add(f); }
+  const quad = new THREE.PlaneGeometry(1.35, 2.1); quad.translate(0, 1.05, 0);
+  [[1.3, 0.1, 0.0], [1.05, 0.55, 0.14], [0.85, 0.83, -0.12]].forEach(([sc, seed, dx]) => {
+    const q = quad.clone(); q.setAttribute("aSeed", new THREE.Float32BufferAttribute(new Array(q.attributes.position.count).fill(seed), 1));
+    const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, dx);
+    const m = new THREE.Mesh(q, M.flame); m.scale.setScalar(sc); m.position.y = 0.15; m.frustumCulled = false; m.renderOrder = 3; flame.add(m);
+  });
+  // a warm pool of light on the ground
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(noRing ? 2 : 5, noRing ? 2 : 5), M.glow); pool.rotation.x = -Math.PI / 2; pool.position.y = 0.06; pool.renderOrder = 2; g.add(pool);
+  // embers and smoke
+  const n = 30, attr = new Float32Array(n * 3), pos = new Float32Array(n * 3);
+  for (let k = 0; k < n; k++) { const smoke = !noRing && k >= 26; attr.set([Math.random(), smoke ? 1 : 0, smoke ? 0.07 + Math.random() * 0.04 : 0.35 + Math.random() * 0.35], k * 3); }
+  const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pg.setAttribute("aP", new THREE.BufferAttribute(attr, 3));
+  const pts = new THREE.Points(pg, M.specks); pts.frustumCulled = false; pts.renderOrder = 4; g.add(pts);
   g.userData.flame = flame;
   return g;
 }

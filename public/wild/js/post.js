@@ -4,9 +4,9 @@
 import * as THREE from "three";
 
 export const QUALITY = {
-  low: { farR: 0, radius: 0, ratio: 0.85, glow: 0, samples: 0, grass: 32000, patch: 64, shadow: 1024 },
-  medium: { farR: 1, radius: 2, ratio: 1, glow: 1, samples: 0, grass: 120000, patch: 96, shadow: 2048 },
-  high: { farR: 2, radius: 3, ratio: 1.25, glow: 1, samples: 4, grass: 200000, patch: 118, shadow: 2048 },
+  low: { farR: 0, radius: 0, ratio: 0.85, glow: 0, samples: 0, grass: 50000, patch: 64, shadow: 1024 },
+  medium: { farR: 1, radius: 2, ratio: 1, glow: 1, samples: 0, grass: 190000, patch: 96, shadow: 2048 },
+  high: { farR: 2, radius: 3, ratio: 1.25, glow: 1, samples: 4, grass: 310000, patch: 118, shadow: 2048 },
 };
 
 export class Painter {
