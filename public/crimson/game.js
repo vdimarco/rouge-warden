@@ -232,23 +232,24 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
   const capture = (el, e) => { try { el.setPointerCapture(e.pointerId); } catch (err) { /* touch pointers are captured anyway */ } };
   let R = 56;
   const ptrs = new Map();
-  layer.addEventListener('pointerdown', (e) => {
-    if (game.state !== 'fight' || e.target.closest('button')) return;
-    e.preventDefault(); capture(layer, e);
-    const stick = e.clientX < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
-    ptrs.set(e.pointerId, { stick, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
+  // One set of handlers, fed by touch events on phones and by pointer events for a pen or mouse.
+  // Phones use raw touch events here because Safari can cancel a pointer mid-drag as a scroll or zoom,
+  // which dropped the thumb stick; blocking the touch events' default stops that.
+  const start = (id, x, y) => {
+    const stick = x < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
+    ptrs.set(id, { stick, x0: x, y0: y, x, y, moved: 0 });
     if (stick) {
       R = base.offsetWidth / 2 || 56;
-      base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`; base.classList.add('on');
+      base.style.left = `${x}px`; base.style.top = `${y}px`; base.classList.add('on');
       knob.style.transform = 'translate(-50%, -50%)';
     }
-  });
-  layer.addEventListener('pointermove', (e) => {
-    const p = ptrs.get(e.pointerId); if (!p) return;
-    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    p.moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
+  };
+  const move = (id, x, y) => {
+    const p = ptrs.get(id); if (!p) return;
+    const dx = x - p.x, dy = y - p.y; p.x = x; p.y = y;
+    p.moved = Math.max(p.moved, Math.hypot(x - p.x0, y - p.y0));
     if (p.stick) {
-      let sx = e.clientX - p.x0, sy = e.clientY - p.y0; const l = Math.hypot(sx, sy);
+      let sx = x - p.x0, sy = y - p.y0; const l = Math.hypot(sx, sy);
       if (l > R) { sx *= R / l; sy *= R / l; }
       knob.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
       const m = Math.hypot(sx, sy) / R, k = m < 0.12 ? 0 : Math.min(1, (m - 0.12) / 0.58) / (m || 1);
@@ -257,17 +258,37 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
       cam.yaw -= dx * 0.0065;
       cam.pitch = clamp(cam.pitch + dy * 0.005, -0.3, 0.85);
     }
-  });
-  const end = (e) => {
-    const p = ptrs.get(e.pointerId); if (!p) return;
-    ptrs.delete(e.pointerId);
-    if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
-    // a quick touch that barely moves is a tap: cut. It counts on either half, so a tap never goes unanswered.
-    // (Moves can be merged or skipped, so also measure where the finger lifts; a cancelled touch is no tap.)
-    const moved = Math.max(p.moved, Math.hypot(e.clientX - p.x0, e.clientY - p.y0));
-    if (e.type === 'pointerup' && moved < TAP_MOVE && game.state === 'fight') input.buf.light = game.time;
   };
-  layer.addEventListener('pointerup', end); layer.addEventListener('pointercancel', end);
+  const end = (id, x, y, lifted) => {
+    const p = ptrs.get(id); if (!p) return;
+    ptrs.delete(id);
+    if (p.stick) { input.touch.stick.set(0, 0); base.classList.remove('on'); }
+    // a touch that barely moves is a tap: cut. It counts on either half, so a tap never goes unanswered.
+    // (Moves can be merged or skipped, so also measure where the finger lifts; a cancelled touch is no tap.)
+    const moved = Math.max(p.moved, Math.hypot(x - p.x0, y - p.y0));
+    if (lifted && moved < TAP_MOVE && game.state === 'fight') input.buf.light = game.time;
+  };
+  const onButton = (t) => t.target && t.target.closest && t.target.closest('button');
+  layer.addEventListener('touchstart', (e) => {
+    if (game.state !== 'fight') return;
+    let used = false;
+    for (const t of e.changedTouches) if (!onButton(t)) { start('t' + t.identifier, t.clientX, t.clientY); used = true; }
+    if (used && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  layer.addEventListener('touchmove', (e) => {
+    for (const t of e.changedTouches) move('t' + t.identifier, t.clientX, t.clientY);
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  layer.addEventListener('touchend', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, true); }, { passive: false });
+  layer.addEventListener('touchcancel', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, false); });
+  // pen and mouse (touch goes through the touch events above)
+  layer.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch' || game.state !== 'fight' || e.target.closest('button')) return;
+    e.preventDefault(); capture(layer, e); start(e.pointerId, e.clientX, e.clientY);
+  });
+  layer.addEventListener('pointermove', (e) => { if (e.pointerType !== 'touch') move(e.pointerId, e.clientX, e.clientY); });
+  layer.addEventListener('pointerup', (e) => { if (e.pointerType !== 'touch') end(e.pointerId, e.clientX, e.clientY, true); });
+  layer.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') end(e.pointerId, e.clientX, e.clientY, false); });
   const acts = { tCut: 'light', tHeavy: 'heavy', tDodge: 'dodge', tGourd: 'heal' };
   for (const b of layer.querySelectorAll('button')) {
     b.addEventListener('pointerdown', (e) => {
