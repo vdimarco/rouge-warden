@@ -223,8 +223,8 @@ button { font: inherit; color: inherit; }
       <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
         <div class="marquee"><div><b>CRIMSON ROUGE</b><small>紅の月の下で</small></div></div>
         <div class="bezel"><div class="screen">
-          <img src="crimson/art/clash.webp" alt="">
-          <img class="art2" src="crimson/art/boss.webp" alt="">
+          <img src="crimson/art/keyart2.webp" alt="">
+          <img class="art2" src="crimson/art/bear.webp" alt="">
           <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
@@ -553,11 +553,11 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
   let last = 0;
   (function loop(now) { requestAnimationFrame(loop); if (document.hidden || now - last < 33) return; last = now; if (!reduceMotion || t < 120) step(); })(0);
 }
-// Crimson Rouge flips between the clash and the Crimson Paw
+// Crimson Rouge flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
 {
   const cr = store.get("crimson.best.v1", null);
-  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "THE PAW IS UNBEATEN";
+  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
 }
 
 drawTokens();
