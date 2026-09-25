@@ -2,57 +2,116 @@
 
 A fast top-down roguelite for the crew, in the style of Enter the Gungeon. Pick your guy, grab a plunger, and fight across the cottage: the dock, the cabin, the trail, and the beach, six areas a day, then the Porcelain King in the outhouse. The cottage is the director. It builds every area, picks your rewards and wildlife, and remembers how you play. On the live site, [Jev](https://jevapi.dev/) makes those choices through Vercel AI Gateway.
 
-Rename the crew in the `FRIENDS` list near the top of the game script in `public/app.js`.
+Rename the crew in the `FRIENDS` list near the top of the game script in `public/plungerd/app.js`.
+
+## The arcade
+
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/` and Down the Drain at `/fall/`. The third machine is out of order.
+
+- On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
+- You start with 3 tokens. The change machine gives you more.
+- On a phone you see one machine at a time. Swipe left or right, or tap the arrows, to switch.
+- Each screen shows your best run from that game, saved in your browser.
 
 ## Play
 
-Deploy to Vercel, or open `public/index.html` in a browser. Opened locally, a built-in stand-in answers for Jev.
+Deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - Move with WASD. Keep moving to break into a sprint.
-- Aim with the mouse and hold the left button to shoot.
+- Aim with the mouse and hold the left button to shoot. The aim keeps following the mouse, even after it leaves the window, and you can keep running with the keys.
 - Roll with Space or the right button. You can't be hit while you roll.
 - E blows the air horn and clears every bullet.
 - Q or 1 to 4 switches guns.
 - R reloads. Tap R again in the gold part of the bar to reload at once and heat up the next clip.
 - On a phone with "One hand" on, drag anywhere to move and you shoot the nearest critter on your own. Flick to roll, tap the air horn to clear bullets, and tap your gun to switch. With "One hand" off, the left thumb moves and the right thumb aims and shoots.
 
-## Wardenfall
+## Down the Drain
 
-Wardenfall is a spin-off of the Warden build in `legacy/`, at `/fall/`. It plays like Noita. The Warden melted its halls, and every pixel now moves. You carry the lantern down a well of sand, stone, and liquid. Sand and gold fall. Water, oil, lava, acid, sludge, and blood flow. Fire spreads through wood, moss, oil, and miasma. Water turns lava to obsidian, acid eats stone but not glass, and lightning shocks all that touch water. You carry up to three wands. Each wand casts its spells from left to right, then recharges, and each has its own slots, mana, cast speed, and spread. Some wands shuffle their spells, and some cast a spell of their own every time. You find wands in side rooms and buy them at the landing. Modifiers change the next spell: Seeker makes it home in on foes, Scatter fires it three times, and Payload makes a shot carry the next spell and cast it where it lands.
+Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
 
-Jev runs the environment through the same `/api/warden` function:
+### The loop
 
-- **Each layer.** One call asks 32 questions: the look, then the fill, liquid, and cave shape of six strata, then the gold, the foe count, ten foe slots, and a voice line.
-- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your wand. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, foes, or quench. It also picks where. An eye opens on the ceiling before anything pours.
-- **The hand.** Every fourth layer ends in the hand's cavern. Jev picks what the hand pours from its palm.
-- **The landing.** Between layers, Jev stocks three free spells and two items for gold, and it decides how much you heal.
+- **Learn the moves.** Your first runs open with a card that shows how to fight and how the loop works.
+- **Pick a friend and a weapon.** Each of the five friends has a perk. You start with the Plunger, or with any weapon you have unlocked.
+- **Fight your way down.** Each layer is a route of rooms down to the drains. Some rooms slam shut with screen doors until two waves of critters are dead. The drains stay clogged until the last of those rooms is clear. If you dig around it, the fight comes to you at the drains.
+- **Collect caps.** Critters, nests, and sealed rooms drop bottle caps. At the snack bar between layers, spend caps at the tab on unlocks that stay between runs: new weapons, more hot dogs, a better starting shovel, pocket money, a starting scroll, and a second wind. Caps you still carry when you go down are lost.
+- **Choose your drain.** Each layer ends at two drains. Each one is labeled with the look of the next layer, and one is richer and harder: more relics and gold, but more critters and one more sealed room.
+- **Go fast.** Reach the drain before the timer runs out for bonus caps and gold.
+- **Take risks.** From the second layer on, a cooler can be cursed. It holds a weapon, a scroll, and a pile of gold, but any hit takes you down until you beat 10 critters.
+- **Grow the build.** Scrolls of power raise Muscle (melee), Aim (gun), or Grit (health). Relics dug out of the walls change the run: Hot Sauce, Energy Drink, Bug Spray, Lucky Loonie, Sunscreen, Flip Flops, Snorkel, Work Gloves, Car Keys, TV Remote, the Golden Plunger, and Lost Sunglasses.
+- **Beat the bosses.** Every fourth layer ends at a boss: the Porcelain King, then Gabe the Mountain Man, Christian the Mystic, and Ryu.
 
-The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it adds a digging spell when your wand cannot dig. Every override shows in the Warden tab.
+### Combat
 
-Controls: A and D move. W, Space, or the right mouse button jumps, and holding it floats you on your lantern. Aim with the mouse and hold the left button to cast. 1, 2, 3, or the mouse wheel changes wands, E takes a wand from the ground, and F or Shift digs. S drops you faster, Q shows the map, and M turns sound on or off. With a gamepad, the left stick moves, A jumps and floats, the right stick aims, RT casts, LT digs, Y changes wands, and X takes a wand. On a phone, the left thumb moves, the right thumb aims and casts, the Dig button turns the right thumb into a digger, and you tap a wand in the bar to hold it.
+Your melee weapon swings in combos, and each weapon crits in its own way:
 
-The game fits the screen on desktop and phone, and nothing scrolls. The Warden's decisions show as one line under the eye. Tap the line or the eye for the full record.
+| Weapon | Combo | Crits |
+| --- | --- | --- |
+| Plunger | 3 quick hits | On the last hit |
+| Canoe Paddle | 2 slow, wide hits that knock critters flat | On stunned critters |
+| Hockey Stick | 4 fast hits | On burning or poisoned critters |
+| Fishing Rod | 2 hits with the longest reach | With the tip |
+| Frying Pan | 1 heavy clang that stuns | On critters in the air |
 
-Each layer is a route of rooms that zigzag down to the well, joined by wide sloped tunnels, with side rooms for gold and liquids. Rooms come in kinds: halls, pillared halls, shafts with ledges, domes, and chasms with a wooden bridge. Lamps hang on chains and break into burning oil when shot. Chests hold gold, and sometimes a spell or a wand. Jev picks two set pieces for each layer: falls from a hidden reservoir, an ossuary, a great root, a sealed vault you must dig into, or a cellar of oil casks.
+A swing knocks critter spit out of the air. The dodge roll dodges every hit and passes through critters. In the air, hold down and hit to pound the ground, which stuns everything near where you land. Hits pause the game for a moment, so they land hard. Seagulls flash before they spit, geese before they dash, and moose lower their heads before they charge. Hot dogs heal almost half your health, and the snack bar refills them.
 
-You cannot run past the foes. Most of them wait in the rooms on the route. Some rooms seal with Warden glass when you enter, and they stay shut until two waves of foes are dead. The last room before the well always seals, and Jev picks how many others do. The Shade hangs back and dashes at you, and elites wear a gold mark.
+Your gun is the second weapon. Each gun fires its shots from left to right, then reloads, and each gun has its own slots, pressure, fire rate, and spread. You carry up to three.
 
-Hold F or Shift to dig with your lantern: soft ground goes fast, rock slowly, and Warden glass not at all. You also wade through loose sand, so a sandfall never traps you. Lava and acid pool only in side rooms. A gold arrow by your lantern points along the route, and the map (Q, or the Map button) shows what your lantern has lit. The well always shows on the map.
+### Digging and the world
+
+Hold F and push a direction to dig with your shovel, or push nothing to dig toward the mouse. Each swing cuts a chunk of tunnel your size, and an outline shows where the next swing will cut. Soft ground breaks in one swing. Rock, metal, and porcelain crack over several swings. Digging tires you: the brown bar is your stamina, and it refills only when you stop. Digging is also loud. Critters nearby come for you, and if you keep at it, the ceiling caves in or critters dig their way to you. The garden shovel tires fast and takes six swings for rock. The steel spade and the power auger swing faster, cut farther, and tire you less. Better shovels come from the snack bar and from coolers.
+
+The ground holds junk from the cottage: canoes, tires, old toilets, fridges, bike wheels, bottles, boots, lawn chairs, fish bones, and signs. Relics glint through the dirt. Water pipes run along the ceilings and leak where you shoot or dig them, and the water puts out fires. Propane tanks explode when shot or heated. Hornet nests hang from ceilings and send hornets until you break them.
+
+The first layer starts inside the outhouse under the night sky, and you drop through the seat. Each look has its own back wall, drawn with depth: fieldstone in the cellar, concrete and pipes in the septic tank, floor joists and roots in the crawlspace, and cedar planks under the sauna. Lamps, lava, and candles glow in color. Dust, drips, fireflies, and embers drift in the air.
+
+### The Cottage and Jev
+
+The Cottage runs the world through the same `/api/warden` function, with Jev:
+
+- **Each layer.** One call asks 37 questions: the look, the fill, liquid, and cave shape of six strata, the gold, the critter count, two set pieces, the sealed rooms, how many relics to bury, which props to use (pipes, tanks, nests, or a mix), ten critter slots, and a voice line. The two drains lead to the two next looks that Jev likes best.
+- **While you fall.** About every 20 seconds, Jev reads what is near you, whether you are burning or stalling, and your build. Then it picks an act: watch, rain, oil, lava, acid, gas, sand, gold, critters, or quench. It also picks where.
+- **The boss.** Jev picks what the Cottage pours into the boss fight.
+- **The snack bar.** Jev stocks three free shots and two items for gold, which can be a new melee weapon, a scroll, or a better shovel. It also decides how much you heal.
+
+The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it applies your drain choice. Every override shows in the Cottage tab.
+
+### Controls
+
+| Action | Keyboard and mouse | Gamepad |
+| --- | --- | --- |
+| Move, jump, hover | A and D, W or Space (hold to hover) | Left stick, A |
+| Hit | Left mouse or J | X |
+| Ground pound | S and hit, in the air | Down and X, in the air |
+| Roll | Shift or L | B |
+| Shoot | Right mouse or K | RT or RB |
+| Change guns | 1, 2, 3, or the wheel | LB |
+| Dig | Hold F | LT |
+| Hot dog | R | Y |
+| Take or open | E | D-pad up |
+| Map, sound | Q, M | Back |
+
+On a phone, the left thumb moves, and pulling down on the stick while you hit in the air pounds the ground. Tap the right side or the Hit button to swing, and drag the right side to aim and shoot. Buttons roll, eat a hot dog, and switch the right thumb to the shovel.
+
+The game fits the screen on desktop and phone, and nothing scrolls.
 
 ## Files
 
 | Path | What it does |
 | --- | --- |
-| `public/index.html` | The page for Get Plunger'd |
-| `public/app.js` | The game script, with its images and sounds inside the file |
+| `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
+| `public/arcade/` | The art on the arcade screens |
+| `public/plungerd/index.html` | The page for Get Plunger'd |
+| `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
-| `public/fall/index.html` | Wardenfall: the falling-sand simulation, the wands, and the Warden's questions, in one file with no libraries |
+| `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
 
-The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/index.html` before you run them.
+The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
 
 ## Jev and cost
 
