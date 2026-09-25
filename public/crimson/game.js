@@ -204,7 +204,8 @@ function titleText() {
 addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') setTouch(true); }, true);
 if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) setTouch(true);
 {
-  const layer = $('touch'), knob = $('stickKnob'), base = $('stickBase'), R = 56;
+  const layer = $('touch'), knob = $('stickKnob'), base = $('stickBase');
+  let R = 56;
   const ptrs = new Map();
   layer.addEventListener('pointerdown', (e) => {
     if (game.state !== 'fight' || e.target.closest('button')) return;
@@ -212,6 +213,7 @@ if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').ma
     const stick = e.clientX < innerWidth * 0.45 && ![...ptrs.values()].some((p) => p.stick);
     ptrs.set(e.pointerId, { stick, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
     if (stick) {
+      R = base.offsetWidth / 2 || 56;
       base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`; base.classList.add('on');
       knob.style.transform = 'translate(-50%, -50%)';
     }

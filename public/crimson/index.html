@@ -140,22 +140,26 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 #pause p { margin-top: 24px; font-size: 12px; letter-spacing: 0.3em; color: var(--muted); }
 
 /* ---------- touch ---------- */
-#touch { position: absolute; inset: 0; display: none; touch-action: none; -webkit-touch-callout: none; }
+#touch { --u: clamp(1.35px, calc(min(100vw, 100vh) / 270), 2px); position: absolute; inset: 0; display: none; touch-action: none; -webkit-touch-callout: none; }
 body.touch.fighting #touch { display: block; }
 body.touch #keys { display: none; }
-#touch button { position: absolute; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.45); background: rgba(0,0,0,0.45); color: var(--ink); font: 800 11px var(--serif); letter-spacing: 0.12em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
+#touch button { position: absolute; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.45); background: rgba(0,0,0,0.45); color: var(--ink); font: 800 calc(11 * var(--u)) var(--serif); letter-spacing: 0.12em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
 #touch button.down { background: rgba(233,230,223,0.22); border-color: var(--ink); }
-#tCut { width: 84px; height: 84px; right: calc(20px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); font-size: 13px; }
-#tHeavy { width: 58px; height: 58px; right: calc(118px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); }
-#tGuard { width: 70px; height: 70px; right: calc(112px + env(safe-area-inset-right)); bottom: calc(94px + env(safe-area-inset-bottom)); }
-#tGuard.pulse { border-color: var(--red-hot); color: #fff; box-shadow: 0 0 18px rgba(198,255,26,0.8); }
-#tDodge { width: 62px; height: 62px; right: calc(30px + env(safe-area-inset-right)); bottom: calc(124px + env(safe-area-inset-bottom)); }
-#tGourd { width: 46px; height: 46px; right: calc(190px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); font-size: 9px; }
-#tLock { width: 46px; height: 46px; right: calc(38px + env(safe-area-inset-right)); bottom: calc(200px + env(safe-area-inset-bottom)); font-size: 9px; }
-#tPause { width: 38px; height: 38px; right: calc(10px + env(safe-area-inset-right)); top: calc(8px + env(safe-area-inset-top)); font-size: 13px; letter-spacing: 0; }
-#stickBase { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.35); background: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+#tCut { width: calc(84 * var(--u)); height: calc(84 * var(--u)); right: calc(calc(20 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(26 * var(--u)) + env(safe-area-inset-bottom)); font-size: calc(13 * var(--u)); }
+#tHeavy { width: calc(58 * var(--u)); height: calc(58 * var(--u)); right: calc(calc(118 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(18 * var(--u)) + env(safe-area-inset-bottom)); }
+#tGuard { width: calc(70 * var(--u)); height: calc(70 * var(--u)); right: calc(calc(112 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(94 * var(--u)) + env(safe-area-inset-bottom)); }
+#tGuard.pulse { border-color: var(--red-hot); color: #fff; box-shadow: 0 0 calc(18 * var(--u)) rgba(198,255,26,0.8); }
+#tDodge { width: calc(62 * var(--u)); height: calc(62 * var(--u)); right: calc(calc(30 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(124 * var(--u)) + env(safe-area-inset-bottom)); }
+#tGourd { width: calc(46 * var(--u)); height: calc(46 * var(--u)); right: calc(calc(190 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(24 * var(--u)) + env(safe-area-inset-bottom)); font-size: calc(9 * var(--u)); }
+#tLock { width: calc(46 * var(--u)); height: calc(46 * var(--u)); right: calc(calc(196 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(104 * var(--u)) + env(safe-area-inset-bottom)); font-size: calc(9 * var(--u)); }
+#tPause { width: calc(38 * var(--u)); height: calc(38 * var(--u)); right: calc(calc(10 * var(--u)) + env(safe-area-inset-right)); top: calc(calc(8 * var(--u)) + env(safe-area-inset-top)); font-size: calc(13 * var(--u)); letter-spacing: 0; }
+#stickBase { position: absolute; width: calc(112 * var(--u)); height: calc(112 * var(--u)); margin: calc(-56 * var(--u)) 0 0 calc(-56 * var(--u)); border-radius: 50%; border: 1.5px solid rgba(233,230,223,0.35); background: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
 #stickBase.on { opacity: 1; }
-#stickKnob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%; background: rgba(233,230,223,0.55); transform: translate(-50%, -50%); }
+#stickKnob { position: absolute; left: 50%; top: 50%; width: calc(48 * var(--u)); height: calc(48 * var(--u)); border-radius: 50%; background: rgba(233,230,223,0.55); transform: translate(-50%, -50%); }
+@media (orientation: portrait) {
+  #tLock { right: calc(calc(40 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(200 * var(--u)) + env(safe-area-inset-bottom)); }
+  #tGourd { right: calc(calc(124 * var(--u)) + env(safe-area-inset-right)); bottom: calc(calc(180 * var(--u)) + env(safe-area-inset-bottom)); }
+}
 body.touch #player { left: calc(16px + env(safe-area-inset-left)); bottom: auto; top: calc(4.5vh + 62px); width: min(42vw, 300px); }
 body.touch #hint { bottom: auto; top: calc(4.5vh + 140px); }
 body.touch #hint small { display: none; }
