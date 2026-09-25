@@ -1,6 +1,7 @@
 // Everything in the world is built from simple shapes here: the crew, the critters, the bosses, and the buildings.
 // Toon materials give the flat, painted look. A dark shell behind each character draws its outline.
 import * as THREE from "three";
+import * as GLB from "./glb.js";
 
 const cache = new Map();
 let gradient = null;
@@ -47,15 +48,18 @@ const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 /* ---------------- the crew ---------------- */
 // Colors come from the crew art in /fall/art.
 export const LOOKS = [
-  { skin: 0xe0a882, shirt: 0xd22a2a, trim: 0xffffff, sleeves: false, shorts: 0x243a6a, shoes: 0xf2f2f2, shoe2: 0xc81e1e, hat: 0x1f2c4a, hatBack: false, beard: 0x6a4a30, glasses: 0x3a2a1a, hair: 0x5a4030 },
-  { skin: 0xd6a07a, shirt: 0x1d2c5e, trim: 0xc8283a, sleeves: true, shorts: 0x26262a, shoes: 0x2a3a78, shoe2: 0xffffff, hat: 0x2e8a3e, hatBack: true, beard: 0x3a2a1e, glasses: 0, hair: 0x3a2a1e, number: "51" },
-  { skin: 0x9a6848, shirt: 0x1c1c1e, trim: 0x2a2a2e, sleeves: true, shorts: 0x3a3a40, long: true, shoes: 0x151515, shoe2: 0xffffff, hat: 0x121214, hatBack: false, beard: 0x1a1210, glasses: 0x2a6ac8, hair: 0x1a1210 },
-  { skin: 0xe2b08a, shirt: 0x1c1c1e, trim: 0x2a2a2e, sleeves: true, shorts: 0x6a6a6e, shoes: 0x9a9aa2, shoe2: 0xffffff, hat: 0xe8e8ea, hatBack: true, beard: 0x3a2618, glasses: 0x6a4a2a, clear: true, hair: 0x3a2618 },
-  { skin: 0xe6b28e, shirt: 0xd8302a, trim: 0xffffff, sleeves: true, buttons: true, shorts: 0x1a1a1c, shoes: 0xf4f4f4, shoe2: 0xc8201e, hat: 0x141416, hatBack: true, beard: 0, glasses: 0x2a7ae0, hair: 0x2a1a10 },
+  { skin: 0xe0a882, shirt: 0xd22a2a, trim: 0xffffff, sleeves: false, shorts: 0x243a6a, shoes: 0xf2f2f2, shoe2: 0xc81e1e, hat: 0x1f2c4a, hatBack: false, beard: 0x6a4a30, glasses: 0x3a2a1a, hair: 0x5a4030, model: "crew1" },
+  { skin: 0xd6a07a, shirt: 0x1d2c5e, trim: 0xc8283a, sleeves: true, shorts: 0x26262a, shoes: 0x2a3a78, shoe2: 0xffffff, hat: 0x2e8a3e, hatBack: true, beard: 0x3a2a1e, glasses: 0, hair: 0x3a2a1e, number: "51", model: "crew2" },
+  { skin: 0x9a6848, shirt: 0x1c1c1e, trim: 0x2a2a2e, sleeves: true, shorts: 0x3a3a40, long: true, shoes: 0x151515, shoe2: 0xffffff, hat: 0x121214, hatBack: false, beard: 0x1a1210, glasses: 0x2a6ac8, hair: 0x1a1210, model: "crew3" },
+  { skin: 0xe2b08a, shirt: 0x1c1c1e, trim: 0x2a2a2e, sleeves: true, shorts: 0x6a6a6e, shoes: 0x9a9aa2, shoe2: 0xffffff, hat: 0xe8e8ea, hatBack: true, beard: 0x3a2618, glasses: 0x6a4a2a, clear: true, hair: 0x3a2618, model: "crew4" },
+  { skin: 0xe6b28e, shirt: 0xd8302a, trim: 0xffffff, sleeves: true, buttons: true, shorts: 0x1a1a1c, shoes: 0xf4f4f4, shoe2: 0xc8201e, hat: 0x141416, hatBack: true, beard: 0, glasses: 0x2a7ae0, hair: 0x2a1a10, model: "crew5" },
 ];
 
 // A person: legs, body, arms, and a big head. Returns the rig with joints the animation moves.
 export function person(look, scale = 1) {
+  // the painted 3D model, when it loaded
+  const glb = look.model && GLB.person(look.model, scale);
+  if (glb) { glb.look = look; return glb; }
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
@@ -145,6 +149,7 @@ function numberPlate(txt, color) {
 }
 
 // The glider: a striped beach umbrella.
+GLB.setUmbrellaMaker(() => umbrella());
 function umbrella() {
   const g = new THREE.Group();
   const geo = new THREE.ConeGeometry(1.6, 0.6, 16, 1, true).toNonIndexed();
@@ -203,6 +208,8 @@ function eyes(parent, y, z, sep, r = 0.05, glow = 0xff3a2a) {
   for (const s of [-1, 1]) parent.add(mesh(sph(r, 8, 6), toon(glow, { emissive: glow, emissiveIntensity: 0.9 }), s * sep, y, z, false));
 }
 export function critter(type) {
+  const glb = GLB.creature(type);
+  if (glb) return glb;
   const root = new THREE.Group();
   const body = new THREE.Group(); root.add(body);
   const legs = [];
@@ -277,7 +284,13 @@ export function critter(type) {
 
 /* ---------------- bosses ---------------- */
 export function boss(id) {
-  if (id === "king") return king();
+  if (id === "king") return GLB.creature("king") || king();
+  const glb = GLB.person(id, 2.1);
+  if (glb) {
+    if (id === "gabe") { const axe = new THREE.Group(); axe.add(mesh(cyl(0.05, 0.05, 1.4), 0x7a4a24, 0, 0.6, 0)); axe.add(mesh(box(0.08, 0.36, 0.44), 0x9aa0a8, 0, 1.2, 0.2)); axe.rotation.x = Math.PI / 2; glb.grip.add(axe); }
+    else { const w = weaponMesh("plunger"); w.rotation.x = Math.PI / 2; glb.grip.add(w); }
+    return glb;
+  }
   const looks = {
     gabe: { skin: 0xcfa088, shirt: 0xa8c040, trim: 0x8a2a2a, sleeves: true, shorts: 0x3a3a40, long: true, shoes: 0x2a2018, shoe2: 0x1a120c, hat: 0x141414, hatBack: false, beard: 0x9a9a9a, glasses: 0, hair: 0x8a8a8a },
     christian: { skin: 0xb07a52, shirt: 0x151515, trim: 0x151515, sleeves: true, shorts: 0x1e2e4a, shoes: 0x2a2a2a, shoe2: 0x111111, hat: 0x0e0a08, hatBack: false, beard: 0x1a120c, glasses: 0, hair: 0x0e0a08, curly: true },
@@ -357,6 +370,13 @@ function logWall(g, len, h, x, z, rot, col = 0x9a6a3e) {
   return w;
 }
 export function cabin() {
+  const glb = GLB.building("cabin");
+  if (glb) {
+    // a warm lamp inside, for the windows at night
+    const lamp = new THREE.PointLight(0xffb060, 0, 22, 1.5); lamp.position.set(0, 2.2, 0); glb.add(lamp);
+    glb.userData.lamp = lamp; glb.userData.windows = toon(0xffd07a, { emissive: 0xffa040 });
+    return glb;
+  }
   const g = new THREE.Group();
   const W = 10, D = 8, H = 3.6;
   logWall(g, W, H, 0, D / 2, 0); logWall(g, W, H, 0, -D / 2, 0); logWall(g, D, H, W / 2, 0, Math.PI / 2); logWall(g, D, H, -W / 2, 0, Math.PI / 2);
@@ -380,16 +400,19 @@ export function cabin() {
   return g;
 }
 export function outhouse(shrine) {
-  const g = new THREE.Group();
-  const boards = toon(0xb04a32);
-  g.add(mesh(box(2, 3, 2), boards, 0, 1.5, 0, false));
-  const roof = mesh(box(2.6, 0.2, 2.8), 0x4a3a2a, 0, 3.2, 0); roof.rotation.x = -0.18; g.add(roof);
-  g.add(mesh(box(1.3, 2.4, 0.1), 0x8a3a24, 0, 1.3, 1.02, false));
-  const moon = mesh(new THREE.TorusGeometry(0.16, 0.06, 6, 12, Math.PI * 1.3), 0x1a0a06, 0, 2.1, 1.08, false); moon.rotation.z = 0.8; g.add(moon);
+  const g = GLB.building("outhouse", 0.02) || new THREE.Group();
+  if (!g.userData.size) {
+    const boards = toon(0xb04a32);
+    g.add(mesh(box(2, 3, 2), boards, 0, 1.5, 0, false));
+    const roof = mesh(box(2.6, 0.2, 2.8), 0x4a3a2a, 0, 3.2, 0); roof.rotation.x = -0.18; g.add(roof);
+    g.add(mesh(box(1.3, 2.4, 0.1), 0x8a3a24, 0, 1.3, 1.02, false));
+    const moon = mesh(new THREE.TorusGeometry(0.16, 0.06, 6, 12, Math.PI * 1.3), 0x1a0a06, 0, 2.1, 1.08, false); moon.rotation.z = 0.8; g.add(moon);
+  }
+  const front = g.userData.size ? g.userData.size.z / 2 + 0.04 : 1.06, wide = g.userData.size ? g.userData.size.x : 2.1;
   if (shrine) {
     const glow = new THREE.MeshBasicMaterial({ color: 0x5ef0ff });
     g.userData.glow = glow;
-    for (const [w, h, x, y] of [[2.1, 0.08, 0, 0.05], [2.1, 0.08, 0, 2.95], [0.08, 2.9, -1.02, 1.5], [0.08, 2.9, 1.02, 1.5]]) put(g, new THREE.Mesh(box(w, h, 0.06), glow)).position.set(x, y, 1.06);
+    for (const [w, h, x, y] of [[wide, 0.08, 0, 0.05], [wide, 0.08, 0, 2.95], [0.08, 2.9, -wide / 2, 1.5], [0.08, 2.9, wide / 2, 1.5]]) put(g, new THREE.Mesh(box(w, h, 0.06), glow)).position.set(x, y, front);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.08, 8, 28), glow); ring.position.y = 5; ring.rotation.x = Math.PI / 2; g.add(ring); g.userData.ring = ring;
   }
   return g;
@@ -437,6 +460,11 @@ export function cooler() {
   return g;
 }
 export function loonStatue() {
+  const glb = GLB.building("statue");
+  if (glb) {
+    const orb = new THREE.Mesh(sph(0.35), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.85 })); orb.position.set(0, glb.userData.size.y + 0.7, 0); glb.add(orb); glb.userData.orb = orb;
+    return glb;
+  }
   const g = new THREE.Group();
   const stone = 0xaeb0a8;
   g.add(mesh(cyl(1.6, 1.9, 1.2, 10), 0x8a8c86, 0, 0.6, 0));

@@ -45,6 +45,47 @@ export function paint(mat, { strokes = 1, scale = 1, shadow = 1 } = {}) {
   return mat;
 }
 
+// Painted ground textures (made with Higgsfield) laid over the vertex colours. Each texture only adds its
+// brushwork: it is divided by its own average colour, so the hue still comes from groundColor().
+function meanColor(t) {
+  const c = document.createElement("canvas"); c.width = c.height = 1;
+  const x = c.getContext("2d"); x.drawImage(t.image, 0, 0, 1, 1);
+  const d = x.getImageData(0, 0, 1, 1).data;
+  return new THREE.Vector3(Math.max(d[0], 8) / 255, Math.max(d[1], 8) / 255, Math.max(d[2], 8) / 255);
+}
+export function splat(mat, tex) {
+  if (!tex.grass || !tex.rock || !tex.sand || !tex.dirt) return mat;
+  const prev = mat.onBeforeCompile, U = {};
+  for (const k of ["grass", "rock", "sand", "dirt"]) { U["t_" + k] = { value: tex[k] }; U["m_" + k] = { value: meanColor(tex[k]) }; }
+  mat.onBeforeCompile = (sh, r) => {
+    prev(sh, r);
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = "varying vec3 vWN;\n" + sh.vertexShader.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n vWN = normalize(mat3(modelMatrix) * objectNormal);");
+    sh.fragmentShader = "uniform sampler2D t_grass, t_rock, t_sand, t_dirt; uniform vec3 m_grass, m_rock, m_sand, m_dirt; varying vec3 vWN;\n" + sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
+      {
+        vec3 n = normalize(vWN);
+        vec2 uv = vWP.xz / 11.0;
+        vec3 g = texture2D(t_grass, uv).rgb / m_grass;
+        vec3 g2 = texture2D(t_grass, uv * 0.23 + 0.37).rgb / m_grass;
+        vec3 dt = texture2D(t_dirt, uv * 1.3).rgb / m_dirt;
+        vec3 sa = texture2D(t_sand, uv * 1.2).rgb / m_sand;
+        vec3 bw = abs(n); bw /= (bw.x + bw.y + bw.z);
+        vec3 rk = (texture2D(t_rock, vWP.zy / 16.0).rgb * bw.x + texture2D(t_rock, vWP.xz / 16.0).rgb * bw.y + texture2D(t_rock, vWP.xy / 16.0).rgb * bw.z) / m_rock;
+        float wr = smoothstep(0.86, 0.7, n.y), ws = smoothstep(2.6, 1.3, vWP.y) * (1.0 - wr);
+        float wd = smoothstep(0.35, 0.8, vnoise(vWP.xz * 0.02)) * 0.35 * (1.0 - wr - ws);
+        vec3 detail = mix(g, g2, 0.35);
+        detail = mix(detail, dt, wd);
+        detail = mix(detail, sa, ws);
+        detail = mix(detail, rk, wr);
+        float fade = 1.0 - smoothstep(95.0, 115.0, vWP.y);
+        diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.8 * fade);
+      }`);
+  };
+  const key = mat.customProgramCacheKey;
+  mat.customProgramCacheKey = () => key() + "_splat";
+  return mat;
+}
+
 export const LAKE = { x: 0, z: -40, r: 250 };
 export const ISLAND = { x: 0, z: -70, r: 50, top: 18 };
 
@@ -72,6 +113,7 @@ export class World {
     this.seed = 1729;
     this.low = !!opts.low;
     this.quality = opts.quality || { grass: this.low ? 32000 : 90000, patch: this.low ? 64 : 96 };
+    this.tex = opts.tex || {};
     this.n = simplex(this.seed);
     this.n2 = simplex(this.seed + 7);
     this.n3 = simplex(this.seed + 13);
@@ -84,6 +126,7 @@ export class World {
     this.buildMask();
     this.buildWater();
     this.buildSky();
+    this.buildBackdrop();
     this.buildClouds();
     this.buildGrass();
     this.buildTrees();
@@ -263,7 +306,7 @@ export class World {
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.setIndex(idx);
     geo.computeVertexNormals();
-    const mat = paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2 });
+    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2 }), this.tex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -381,6 +424,40 @@ export class World {
     this.sky.renderOrder = -1;
     this.sky.frustumCulled = false;
     this.scene.add(this.sky);
+  }
+  // A painted ring of far mountains and forest, cut from a Higgsfield panorama. Bright pixels (sky, clouds,
+  // valley mist) turn clear, so the live sky shows through and the mountains sit in the haze.
+  buildBackdrop() {
+    const t = this.tex.backdrop;
+    if (!t || !t.image || !t.image.width) return;
+    const img = t.image, W = 2048, y0 = Math.round(img.height * 0.47), hh = Math.round(img.height * 0.35), H = Math.round((W * hh) / img.width);
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const x = cv.getContext("2d");
+    x.drawImage(img, 0, y0, img.width, hh, 0, 0, W, H);
+    const d = x.getImageData(0, 0, W, H), p = d.data;
+    for (let k = 0; k < p.length; k += 4) {
+      const l = 0.3 * p[k] + 0.59 * p[k + 1] + 0.11 * p[k + 2], row = Math.floor(k / 4 / W) / H;
+      let a = Math.min(1, Math.max(0, (205 - l) / 45));
+      a *= Math.min(1, Math.max(0, (0.97 - row) / 0.25));
+      p[k + 3] = a * 255;
+    }
+    x.putImageData(d, 0, 0);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = THREE.MirroredRepeatWrapping; tex.repeat.set(4, 1);
+    t.dispose();
+    const R = 2600, tile = (2 * Math.PI * R) / 4, height = (tile * H) / W;
+    this.backU = { uTint: { value: new THREE.Color(0xcfe6f5) }, uNight: { value: 0 }, uLight: { value: 1 } };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { map: { value: tex }, ...this.backU }, transparent: true, depthWrite: false, fog: false, side: THREE.BackSide,
+      vertexShader: "varying vec2 vUv; void main(){ vUv = vec2(uv.x * 4.0, uv.y); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: `uniform sampler2D map; uniform vec3 uTint; uniform float uNight, uLight; varying vec2 vUv;
+        void main(){ vec4 c = texture2D(map, vUv); vec3 col = mix(c.rgb, uTint, 0.28) * uLight; col = mix(col, uTint * 0.5, uNight * 0.4); gl_FragColor = vec4(col, c.a); }`,
+    });
+    this.backdrop = new THREE.Mesh(new THREE.CylinderGeometry(R, R, height, 96, 1, true), mat);
+    this.backdrop.position.y = height / 2 - 70;
+    this.backdrop.renderOrder = -1;
+    this.backdrop.frustumCulled = false;
+    this.scene.add(this.backdrop);
   }
   // Big, soft cumulus, painted on canvases: warm white tops, cool blue-grey bellies, a flat base.
   cloudTexture(r, tall) {
@@ -654,7 +731,10 @@ export class World {
     const c = this.cottage;
     // the cottage, facing the lake
     this.cabin = this.place(M.cabin(), c.x, c.z, Math.PI);
-    this.addBox({ x: c.x, z: c.z, hw: 5.3, hd: 4.3, rot: Math.PI, y0: this.cabin.position.y, top: this.cabin.position.y + 5.2, climb: true });
+    // the painted cabin is taller than the shape-built one; you climb onto the roof ridge
+    const csz = this.cabin.userData.size;
+    this.cabinTop = this.cabin.position.y + (csz ? Math.min(8, csz.y * 0.7) : 5.2);
+    this.addBox({ x: c.x, z: c.z, hw: 5.3, hd: 4.3, rot: Math.PI, y0: this.cabin.position.y, top: this.cabinTop, climb: true });
     this.addBox({ x: c.x, z: c.z - 5.3, hw: 5, hd: 1.2, rot: Math.PI, y0: this.cabin.position.y - 1, top: this.cabin.position.y + 0.4, walk: true });
     this.place(M.outhouse(false), c.x + 16, c.z + 6, Math.PI * 0.8);
     this.addBox({ x: c.x + 16, z: c.z + 6, hw: 1.1, hd: 1.1, rot: Math.PI * 0.8, y0: this.height(c.x + 16, c.z + 6), top: this.height(c.x + 16, c.z + 6) + 3.2, climb: true });
@@ -744,6 +824,7 @@ export class World {
     this.grassU.uPlayer.value.set(player.x, player.y, player.z);
     this.skyU.uTime.value = t;
     this.sky.position.copy(cam.position);
+    if (this.backdrop) { this.backdrop.position.x = cam.position.x; this.backdrop.position.z = cam.position.z; }
     for (const c of this.clouds) { if (c.userData.far) continue; c.position.x += dt * 3; c.position.z += dt * 1.7; if (c.position.x > 1600) c.position.x -= 3200; if (c.position.z > 1600) c.position.z -= 3200; }
     // the fluff drifts with the wind and wraps around you
     if (this.motes) {

@@ -144,7 +144,9 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 
 **Graphics settings.** The pause menu has High, Medium, and Low. Phones start on Low. The game also lowers its resolution on its own when frames get slow, and raises it again when there is room.
 
-It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. All the models, sounds, and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
+**Painted assets.** The crew, the three bosses, the King, the critters, the cabin, the outhouses, and the loon statue are 3D models made with [Higgsfield](https://higgsfield.ai/). Each one started as a painted concept picture, then became a textured model. The people have skeletons, and the game drives them with the same walk, climb, glide, swim, and swing poses as before. The ground uses painted grass, dirt, sand, and rock textures. A painted ring of far mountains stands behind the valley, and the loading screen and the arcade cabinet show a painted key art picture. If a model or texture does not load, the game uses its old shape-built version.
+
+It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. The sounds and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
 
 ## Files
 
@@ -156,9 +158,12 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain, also used on the Breath of the Lake title screen |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
-| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js`, `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
+| `public/wild/tex/` | Painted ground textures, the mountain backdrop, and the key art |
+| `public/wild/art/` | Crew pictures for the title screen |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
@@ -181,7 +186,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
 | `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
 
-Set `WILD_URL` to test another address.
+Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL` to a local `three.module.min.js` and `THREE_ADDONS` to a local copy of three's `examples/jsm` folder.
 
 ## Jev and cost
 

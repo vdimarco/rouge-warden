@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { World, TOWERS, BOSSES, ISLAND, SIZE } from "./world.js";
 import * as M from "./models.js";
+import * as GLB from "./glb.js";
 import { Player, WEAPONS, PERKS } from "./player.js";
 import { Foe, Boss, Hazards, FX, spawnPlan } from "./foes.js";
 import { UI } from "./ui.js";
@@ -113,8 +114,18 @@ G.writeSave = () => {
 };
 
 /* ---------------- boot: build the world behind a loading card ---------------- */
-setTimeout(() => {
-  G.world = new World(scene, { low, quality: Q });
+// painted textures made with Higgsfield; any that fail to load fall back to plain colours
+function loadTextures() {
+  const L = new THREE.TextureLoader(), out = {};
+  const one = (k, f) => Promise.race([L.loadAsync("tex/" + f), new Promise((r) => setTimeout(r, 30000))])
+    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = low ? 2 : 8; out[k] = t; })
+    .catch(() => {});
+  return Promise.all([one("grass", "grass.jpg"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg")]).then(() => out);
+}
+setTimeout(async () => {
+  const lt = $("#loadText");
+  const [tex] = await Promise.all([loadTextures(), GLB.loadModels(M.gradientMap(), (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
+  G.world = new World(scene, { low, quality: Q, tex });
   G.fx = new FX(G);
   G.hazards = new Hazards(G);
   G.ui = new UI(G);
@@ -134,7 +145,7 @@ function titleScreen() {
   const box = $("#crew"); box.innerHTML = "";
   PERKS.forEach((p, i) => {
     const b = document.createElement("button"); b.type = "button";
-    b.innerHTML = `<img src="/fall/art/crew${i + 1}.webp" alt=""><b>${p.name}</b><small>${p.perk}</small>`;
+    b.innerHTML = `<img src="art/crew${i + 1}.webp" alt=""><b>${p.name}</b><small>${p.perk}</small>`;
     b.setAttribute("aria-pressed", String(i === pick));
     b.onclick = () => { pick = i; A.init(); A.sfx("ui"); box.querySelectorAll("button").forEach((x, k) => x.setAttribute("aria-pressed", String(k === i))); };
     box.appendChild(b);
@@ -280,7 +291,7 @@ function buildItems() {
   spots.forEach(([x, z]) => { const o = M.secretRock(); o.position.set(x, w.height(x, z), z); o.rotation.y = r() * 6; scene.add(o); w.addCircle(x, z, 0.9, "secret"); G.loonies.push({ kind: "rock", x, z, y: o.position.y, obj: o }); });
   const floats = [];
   for (const t of w.towers) floats.push([t.x + 3, t.y + 1.2, t.z + 3]);
-  const c = w.cottage; floats.push([c.x, w.cabin.position.y + 6.2, c.z]);
+  const c = w.cottage; floats.push([c.x, w.cabinTop + 1.1, c.z]);
   floats.push([ISLAND.x, ISLAND.top + 35.2, w.castleZ - 10]);
   let peak = [0, -1, 0]; for (let k = 0; k < 3000; k++) { const x = -300 + r() * 500, z = -700 + r() * 250, h = w.height(x, z); if (h > peak[1]) peak = [x, h, z]; }
   floats.push([peak[0], peak[1] + 1.4, peak[2]]);
@@ -598,6 +609,7 @@ function lighting() {
   w.skyU.uSunCol.value.copy(mixSky(A1, B1, k, "sun"));
   const night = smooth(-0.05, -0.3, elev);
   w.skyU.uNight.value = night;
+  if (w.backU) { w.backU.uTint.value.copy(hor).lerp(top, 0.18); w.backU.uNight.value = night; w.backU.uLight.value = 0.45 + 0.55 * (1 - night); }
   G.night = night > 0.5;
   // distant hills fade into a soft blue haze, like a painted backdrop
   scene.fog.color.copy(hor).lerp(top, 0.18);
@@ -617,6 +629,7 @@ function lighting() {
   for (const c of w.clouds) c.material.color.copy(cloudCol);
   G.look = { time: G.time, night, sunDir: sd, sunCol };
   w.cabin.userData.windows.emissiveIntensity = night * 1.2;
+  if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 40;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
   sun.position.set(cx + lightDir.x * 200, (P ? P.y : 10) + Math.max(0.2, lightDir.y) * 200, cz + lightDir.z * 200);
   sun.target.position.set(cx, P ? P.y : 10, cz);
@@ -939,6 +952,7 @@ function step(dt) {
     n.rig.root.rotation.y += Math.atan2(Math.sin(want - n.rig.root.rotation.y), Math.cos(want - n.rig.root.rotation.y)) * Math.min(1, dt * 4);
     n.rig.body.position.y = Math.sin(G.time * 2 + n.i) * 0.02;
     n.rig.arms[0].rotation.z = -0.18 + Math.sin(G.time * 1.3 + n.i) * 0.05;
+    if (n.rig.apply) n.rig.apply();
   }
   G.world.statueObj.userData.orb.visible = S.orbs >= 4;
   // skeeters come out at night near the water

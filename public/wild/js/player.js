@@ -467,6 +467,8 @@ export class Player {
     }
     // blink while hurt
     r.root.visible = !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
+    // painted 3D models: turn the pose into bone rotations
+    if (r.apply) r.apply();
   }
 }
 

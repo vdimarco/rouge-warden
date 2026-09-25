@@ -129,6 +129,8 @@ export class Foe {
     r.body.rotation.x = this.state === "windup" ? -0.35 : this.state === "strike" ? 0.3 : 0;
     if (r.root.userData.wings) r.root.userData.wings.forEach((w, i) => (w.rotation.z = Math.sin(G.time * (this.type === "skeeter" ? 60 : 8)) * 0.6 * (i ? 1 : -1) * (this.type === "goose" && this.state !== "chase" && this.state !== "strike" ? 0.1 : 1)));
     if (r.root.userData.tail) r.root.userData.tail.rotation.y = Math.sin(G.time * 4 + this.phase) * 0.3;
+    // painted models are one piece: they waddle, bob, and lean instead of moving each leg
+    if (r.glb) { const m = Math.min(1, Math.abs(speed) * 0.2); r.body.rotation.z = Math.sin(this.phase) * 0.09 * m; r.body.position.y += Math.abs(Math.sin(this.phase)) * 0.05 * m; }
     if (r.head && this.type === "goose") r.head.rotation.x = this.state === "chase" || this.state === "strike" ? 0.9 : Math.sin(G.time + this.phase) * 0.2;
     tint(r.root, this.flash > 0);
   }
@@ -294,6 +296,7 @@ export class Boss {
       r.body.scale.y = this.state === "hop" && this.vy > 0 ? 1.08 : this.state === "land" ? 0.9 : 1;
     }
     r.root.visible = this.state !== "vanish" || Math.floor(t * 20) % 2 === 0;
+    if (r.apply) r.apply();
     tint(r.root, this.flash > 0);
   }
 
@@ -345,7 +348,7 @@ export class Boss {
     // stay close too long and he blinks away
     this.close = d < 4 ? (this.close || 0) + dt : 0;
     if (this.close > 1.6 && this.state === "idle") { this.close = 0; this.state = "vanish"; this.t = 0.3; }
-    for (const c of this.clones) if (c.alive) { c.yaw = turnTo(c.yaw, Math.atan2(P.x - c.pos.x, P.z - c.pos.z), dt * 6); c.rig.root.position.copy(c.pos); c.rig.root.rotation.y = c.yaw; }
+    for (const c of this.clones) if (c.alive) { c.yaw = turnTo(c.yaw, Math.atan2(P.x - c.pos.x, P.z - c.pos.z), dt * 6); c.rig.root.position.copy(c.pos); c.rig.root.rotation.y = c.yaw; if (c.rig.apply) c.rig.apply(); }
   }
   makeClones() {
     const G = this.G;

@@ -1,6 +1,6 @@
 // Shared setup for the Breath of the Lake QA scripts.
 // Serve public/ first, for example: cd public && python3 -m http.server 8765
-// Set WILD_URL to change the address, and THREE_LOCAL to a local three.module.min.js if the CDN is blocked.
+// Set WILD_URL to change the address, and THREE_LOCAL to a local three.module.min.js and THREE_ADDONS to a local examples/jsm folder if the CDN is blocked.
 import { createRequire } from "module";
 // Uses the playwright package from this project or from NODE_PATH.
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -11,10 +11,15 @@ export async function open({ width = 640, height = 360, touch = false, clear = t
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
   const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true } : { viewport: { width, height }, ignoreHTTPSErrors: true });
   const page = await ctx.newPage();
+  // software rendering is slow, and the page now loads its 3D models before the title screen
+  page.setDefaultTimeout(240000);
+  page.setDefaultNavigationTimeout(240000);
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message + "\n" + (e.stack || "").split("\n").slice(0, 4).join("\n")));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
   if (process.env.THREE_LOCAL) await page.route("**/three.module.min.js", (r) => r.fulfill({ path: process.env.THREE_LOCAL, contentType: "application/javascript" }));
+  // THREE_ADDONS: a local copy of three's examples/jsm folder (GLTFLoader and SkeletonUtils are used)
+  if (process.env.THREE_ADDONS) await page.route("**/examples/jsm/**", (r) => r.fulfill({ path: process.env.THREE_ADDONS + r.request().url().split("/examples/jsm")[1], contentType: "application/javascript" }));
   await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
   if (clear) await page.addInitScript(() => { if (!sessionStorage.getItem("qa-kept")) { localStorage.clear(); sessionStorage.setItem("qa-kept", "1"); } });
   await page.goto(URL);
