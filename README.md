@@ -11,7 +11,7 @@ The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywh
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
 - On a phone you see one machine at a time. Swipe left or right, or tap the arrows, to switch.
-- Each screen shows your best run from that game, saved in your browser.
+- Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
 
 ## Play
 
@@ -40,6 +40,10 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 - **Go fast.** Reach the drain before the timer runs out for bonus caps and gold.
 - **Take risks.** From the second layer on, a cooler can be cursed. It holds a weapon, a scroll, and a pile of gold, but any hit takes you down until you beat 10 critters.
 - **Grow the build.** Scrolls of power raise Muscle (melee), Aim (gun), or Grit (health). Relics dug out of the walls change the run: Hot Sauce, Energy Drink, Bug Spray, Lucky Loonie, Sunscreen, Flip Flops, Snorkel, Work Gloves, Car Keys, TV Remote, the Golden Plunger, and Lost Sunglasses.
+- **Chase a rank.** Kills fill a streak meter from D (Damp) up to SS (Sasquatch), as in Devil May Cry. The meter drains when you stop killing, and a hit knocks it down a rank. A higher rank multiplies your caps and your score, up to ×2.5.
+- **Take a gift.** Each sealed room you clear brings a gift from a cottage animal, as in Hades. Pick one of three: Bear Paw, Sunburn, Loon Wake, Skeeter Bite, Moose Hide, Thunder Bay, Firefly Pop, Beaver Teeth, Campfire Story, or Chipmunk Cheeks. A gift you already have goes up a level, to level 3. Jev picks which three show up, to fit how you play.
+- **Grab the Golden Plunger.** Once a layer, after about ten kills, a Golden Plunger drops, like the power pellet in Pac-Man. For 8 seconds the critters glow blue, run from you, and cannot hurt you. Your hits deal triple damage, and each kill scores double the last: 200, 400, 800, 1600.
+- **Beat the high score.** Kills, sealed rooms, depth, bosses, and gold add to your score. A top-10 score asks for your initials, and the best score shows on the Down the Drain cabinet in the arcade.
 - **Beat the bosses.** Every fourth layer ends at a boss: the Porcelain King, then Gabe the Mountain Man, Christian the Mystic, and Ryu.
 
 ### Combat
@@ -75,7 +79,30 @@ The Cottage runs the world through the same `/api/warden` function, with Jev:
 - **The boss.** Jev picks what the Cottage pours into the boss fight.
 - **The snack bar.** Jev stocks three free shots and two items for gold, which can be a new melee weapon, a scroll, or a better shovel. It also decides how much you heal.
 
+- **Gifts.** After a sealed room, Jev picks the three gifts on offer.
+- **After a death.** Jev reviews the run and retunes the game. See the next section.
+
 The code checks each pick and can overrule it. For example, it holds back lava when you are badly hurt, and it applies your drain choice. Every override shows in the Cottage tab.
+
+### The game tunes itself
+
+When you die, the Cottage reads a log of the run: who hurt you and how much, whether you lost half your health in 3 seconds, how often you rolled, whether you died with hot dogs left, cave-ins, time alive, and depth. It sends this to Jev in one call (`cottage.tune`), which judges the run as rough, fair, or breezy and moves nine dials one step each:
+
+| Dial | Range | What it changes |
+| --- | --- | --- |
+| Critter damage | -40% to +50% | How hard every critter hits |
+| Critter toughness | -30% to +50% | Critter health |
+| Attack warnings | -20% to +80% | How long critters flash before they attack |
+| Critter count | -30% to +40% | How many critters each layer holds |
+| Hot dogs | +0 to +2 | Extra hot dogs each run |
+| Hot dog heal | 35% to 70% | How much one hot dog heals |
+| Shovel effort | -30% to +30% | How fast digging tires you |
+| Cap drops | -20% to +100% | How many caps critters drop |
+| First-layer ease | 0% to 100% | Fewer critters and sealed rooms on the first two layers |
+
+Jev can also soften one critter that hit too hard, and it picks one tip for the next run. The code keeps at most three dial moves, drops moves that go against the verdict, and always makes at least one fix after a rough run. A breezy run pushes the dials back up. The death screen lists every change and the tip. The Memory tab shows the current dials, and a button there resets them. The tuning stays in your browser.
+
+Between layers, the snack bar also asks Jev for a flow check. If you lost most of your health on that layer, the next one runs calmer. If you barely got touched, it runs hotter.
 
 ### Controls
 

@@ -261,6 +261,37 @@ a { color: var(--accent); }
 .end-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 6px 0 16px; font-size: 16px; }
 .end-stats dt { color: #9ea4b0; }
 .end-stats dd { margin: 0; }
+.rank { position: fixed; z-index: 9; right: calc(var(--sar) + 12px); top: calc(var(--hudH, 50px) + 34px); display: grid; justify-items: end; gap: 1px; pointer-events: none; text-shadow: 0 2px 6px #000; }
+.rank .score { font-family: var(--mono, monospace); font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.rank .rl { font-family: var(--fell); font-size: 44px; line-height: 1; color: var(--rc, #f0c85a); font-style: italic; min-height: 0; }
+.rank .rn { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--rc, #f0c85a); }
+.rank .rbar { width: 72px; height: 4px; background: rgba(7, 9, 13, 0.7); border-radius: 2px; overflow: hidden; }
+.rank .rbar i { display: block; height: 100%; width: 0; background: var(--rc, #f0c85a); }
+.rank.empty .rl, .rank.empty .rn, .rank.empty .rbar { visibility: hidden; }
+.rank.pop .rl { animation: rankpop 0.35s ease-out; }
+@keyframes rankpop { 0% { transform: scale(1.9) rotate(-8deg); } 100% { transform: scale(1); } }
+.rank.frenzy .score { color: #ffd84a; }
+@media (max-width: 600px) { .rank { top: calc(var(--hudH, 50px) + 40px); } .rank .rl { font-size: 28px; } .rank .score { font-size: 13px; } .rank .rn { font-size: 9px; letter-spacing: 1px; } .rank .rbar { width: 52px; } }
+.hiscore { margin: 4px 0 10px; }
+.bigscore { margin: 0 0 6px; font-size: 16px; }
+.bigscore span { color: #9ea4b0; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; }
+.bigscore b { font-family: var(--mono, monospace); font-size: 28px; color: #ffd84a; }
+.initials { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 0 0 8px; }
+.initials label { width: 100%; color: #f0c85a; font-weight: 700; }
+.initials input { width: 5.2ch; font: 700 24px var(--mono, monospace); text-transform: uppercase; text-align: center; letter-spacing: 4px; background: #0a0c10; color: #fff; border: 2px solid #f0c85a; border-radius: 6px; padding: 4px; }
+.board { margin: 0 auto; padding: 0; list-style: none; max-width: 300px; font: 14px var(--mono, monospace); counter-reset: b; }
+.board li { display: grid; grid-template-columns: 2.2em 3.6em 1fr auto; gap: 6px; padding: 1px 0; color: #c9ced8; counter-increment: b; }
+.board li::before { content: counter(b) "."; color: #6f7686; text-align: right; }
+.board li.me { color: #ffd84a; }
+.board li .sc { text-align: right; }
+.review { text-align: left; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid #3a4150; border-radius: 8px; background: #151a22; }
+.review h3 { margin: 0 0 6px; font-size: 15px; color: #f0c85a; }
+.review ul { margin: 0; padding: 0; list-style: none; font-size: 15px; }
+.review li { padding: 2px 0; }
+.review li.easy::before { content: "▼ "; color: #6fd08c; }
+.review li.hard::before { content: "▲ "; color: #e86a5c; }
+.review .tip { margin: 8px 0 0; font-size: 14px; color: #c9ced8; }
+.review .tip::before { content: "Tip: "; color: #f0c85a; font-weight: 700; }
 
 /* the popup sheet */
 .sheet { position: fixed; inset: 0; z-index: 40; background: rgba(4, 5, 9, 0.55); }
@@ -349,6 +380,7 @@ a { color: var(--accent); }
   <button class="icon" id="fsBtn" type="button" aria-label="Full screen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
 <button class="ticker fade" id="ticker" type="button" hidden></button>
+<div class="rank" id="rank" aria-label="Score and streak rank"><span class="score" id="scoreText">0</span><span class="rl" id="rankLetter"></span><span class="rn" id="rankName"></span><span class="rbar"><i id="rankFill"></i></span></div>
 <nav class="hotbar" id="hotbar" aria-label="Your guns"></nav>
 <button class="swapbtn" id="swapBtn" type="button" hidden>Swap guns</button>
 <button class="digbtn" id="digBtn" type="button" aria-pressed="false">Shovel</button>
@@ -417,10 +449,28 @@ a { color: var(--accent); }
   </div>
 </div>
 
+<div class="overlay scrollpick" id="boonPick" hidden>
+  <div class="card-inner">
+    <h2>A gift from the cottage</h2>
+    <p>The room is clear. Pick one gift for this run. A gift you already have goes up a level.</p>
+    <div class="cards" id="boonCards"></div>
+  </div>
+</div>
+
 <div class="overlay" id="end" hidden>
   <div class="card-inner">
     <h2 id="endTitle">Flushed</h2>
     <p class="draft-line" id="endLine"></p>
+    <div class="hiscore" id="hiscore">
+      <p class="bigscore"><span>Score</span> <b id="endScore">0</b></p>
+      <form class="initials" id="initials" hidden><label for="initialsIn">New high score! Enter your initials</label><input id="initialsIn" maxlength="3" autocomplete="off" spellcheck="false" placeholder="AAA"><button class="btn" type="submit">Save</button></form>
+      <ol class="board" id="board"></ol>
+    </div>
+    <div class="review" id="review" hidden>
+      <h3 id="reviewHead">The Cottage retuned the game</h3>
+      <ul id="reviewList"></ul>
+      <p class="tip" id="reviewTip"></p>
+    </div>
     <dl class="end-stats" id="endStats"></dl>
     <button class="btn" id="againBtn">Go down again</button>
   </div>
@@ -459,6 +509,10 @@ a { color: var(--accent); }
       <section class="tab" data-tab="memory" hidden>
         <h3>What it remembers</h3>
         <dl class="mem" id="mem"></dl>
+        <h3>How the game is tuned</h3>
+        <p>After each death, the Cottage reads how the run went and moves a few dials for the next run. Rough runs ease the game. Breezy runs push it harder.</p>
+        <dl class="mem" id="tuneList"></dl>
+        <button class="btn quiet" id="untuneBtn" type="button">Reset the tuning</button>
         <button class="btn quiet" id="forgetBtn" type="button">Make it forget me</button>
       </section>
     </div>
@@ -1041,6 +1095,132 @@ const Memory = {
   favTag() { return topKey(this.data.tagCasts); },
   topKiller() { return topKey(this.data.deathsBy); },
 };
+/* ------------------------------------------------------------------ tuning: the game retunes itself after each run */
+
+// Each dial has safe bounds and a step. After a death, the Cottage (Jev) reads how the run went and moves a few dials.
+const pctOf = (v) => (v >= 1 ? "+" : "") + Math.round((v - 1) * 100) + "%";
+const DIALS = {
+  foeDmg: { name: "Critter damage", lo: 0.6, hi: 1.5, step: 0.1, def: 1, fmt: pctOf, desc: "how hard every critter hits" },
+  foeHp: { name: "Critter toughness", lo: 0.7, hi: 1.5, step: 0.1, def: 1, fmt: pctOf, desc: "how much health critters have" },
+  windup: { name: "Attack warnings", lo: 0.8, hi: 1.8, step: 0.15, def: 1, fmt: pctOf, desc: "how long critters flash before they attack; longer is easier to dodge" },
+  pressure: { name: "Critter count", lo: 0.7, hi: 1.4, step: 0.1, def: 1, fmt: pctOf, desc: "how many critters each layer holds" },
+  hotdogs: { name: "Hot dogs", lo: 0, hi: 2, step: 1, def: 0, fmt: (v) => "+" + v, desc: "extra hot dogs you carry" },
+  heal: { name: "Hot dog heal", lo: 0.35, hi: 0.7, step: 0.05, def: 0.45, fmt: (v) => Math.round(v * 100) + "% of health", desc: "how much health one hot dog heals" },
+  stamina: { name: "Shovel effort", lo: 0.7, hi: 1.3, step: 0.1, def: 1, fmt: pctOf, desc: "how fast digging tires you" },
+  caps: { name: "Cap drops", lo: 0.8, hi: 2, step: 0.2, def: 1, fmt: pctOf, desc: "how many caps critters drop" },
+  ease: { name: "First-layer ease", lo: 0, hi: 1, step: 0.25, def: 0, fmt: (v) => Math.round(v * 100) + "%", desc: "how gentle the first two layers are: fewer critters and sealed rooms" },
+};
+const Tune = {
+  key: "plungerd.drain.tune.v1",
+  data: null,
+  load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(this.key)); } catch (e) { d = null; }
+    this.data = Object.assign({ dials: {}, kind: {}, history: [] }, d || {});
+  },
+  save() { try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (e) { /* storage off */ } },
+  reset() { this.data = { dials: {}, kind: {}, history: [] }; this.save(); },
+  get(k) { const v = this.data && this.data.dials[k]; return v == null ? DIALS[k].def : v; },
+  kind(k) { const v = this.data && this.data.kind[k]; return v == null ? 1 : v; },
+  // move one dial a step or two, inside its bounds; returns the change, or null
+  move(k, dir) {
+    const D = DIALS[k], was = this.get(k), to = +clamp(was + dir * D.step, D.lo, D.hi).toFixed(3);
+    if (to === was) return null;
+    this.data.dials[k] = to;
+    return { k, name: D.name, from: D.fmt(was), to: D.fmt(to), dir };
+  },
+  moveKind(kind, dir) {
+    const was = this.kind(kind), to = +clamp(was + dir * 0.15, 0.55, 1.5).toFixed(3);
+    if (to === was) return null;
+    this.data.kind[kind] = to;
+    return { k: "kind:" + kind, name: FOES[kind].name + " damage", from: pctOf(was), to: pctOf(to), dir };
+  },
+};
+Tune.load();
+// tips the Cottage can leave on the death screen, with when they fit
+const TIPS = {
+  roll: { text: "Roll through attacks. Nothing can hit you mid-roll. Watch for the flash, then roll.", when: (R) => R.rolls < 3 },
+  hotdog: { text: "You went down with hot dogs left. Eat one (R) when your health gets low.", when: (R) => R.hotdogsLeft > 0 },
+  pound: { text: "Crowded? Jump and pound the ground. It stuns everything where you land.", when: (R) => R.hits > 8 },
+  moose: { text: "The moose lowers its head before it charges. Roll through it, then hit it from behind.", when: (R) => R.killer === "moose" },
+  gull: { text: "Seagulls flash before they spit. Swing at the spit to knock it out of the air.", when: (R) => R.killer === "gull" },
+  skunk: { text: "Skunks blow up when they reach you. Hit them from range or roll away when they flash.", when: (R) => R.killer === "skunk" },
+  goose: { text: "Geese hang back, then charge. Roll the moment one flashes.", when: (R) => R.killer === "goose" },
+  hornet: { text: "Hornets come in swarms. The pound or a Frisbee clears them fast.", when: (R) => R.killer === "hornet" },
+  lava: { text: "Lava and fire burn through health fast. A Water Balloon or a leaking pipe puts them out.", when: (R) => R.killer === "lava" || R.killer === "fire" },
+  dig: { text: "Digging is loud. Stop before your stamina runs out, or the ceiling answers.", when: (R) => R.caveIns > 0 || R.killer === "sand" },
+  cursed: { text: "A cursed cooler means one hit takes you down. Clear 10 critters with care before you take risks.", when: (R) => R.cursedDeath },
+  streak: { text: "Keep the kill streak going for more caps, and do not get hit to keep it.", when: () => true },
+};
+/* ------------------------------------------------------------------ classic loops: streak ranks, score, boons, frenzy */
+
+// Streak ranks, in the style of Devil May Cry: kills fill the meter, a hit knocks it down, and a higher rank pays more caps and score.
+const RANKS = [
+  { n: "D", at: 12, m: 1.1, name: "Damp" },
+  { n: "C", at: 35, m: 1.25, name: "Cozy" },
+  { n: "B", at: 65, m: 1.5, name: "Buzzed" },
+  { n: "A", at: 105, m: 1.75, name: "Awesome" },
+  { n: "S", at: 155, m: 2, name: "Stellar" },
+  { n: "SS", at: 220, m: 2.5, name: "Sasquatch" },
+];
+const rankOf = (style) => { let r = -1; for (let i = 0; i < RANKS.length; i++) if (style >= RANKS[i].at) r = i; return r; };
+// Boons, in the style of Hades: the cottage animals offer a gift after each sealed room. Each one stacks up to level 3.
+const BOONS = {
+  bear: { name: "Bear Paw", patron: "Bear", color: "#c9864a", desc: (l) => "Melee hits deal " + 20 * l + "% more damage." },
+  sun: { name: "Sunburn", patron: "Sun", color: "#ffb03a", desc: (l) => "Melee hits set critters on fire for " + (1 + l) + " seconds." },
+  loon: { name: "Loon Wake", patron: "Loon", color: "#6fb8ff", desc: (l) => "Your roll sends out a wave that hits critters for " + 7 * l + " and shoves them away." },
+  skeeter: { name: "Skeeter Bite", patron: "Mosquito", color: "#d0485f", desc: (l) => "Every kill heals " + 2 * l + " health." },
+  moose: { name: "Moose Hide", patron: "Moose", color: "#9a7a5a", desc: (l) => "You take " + 12 * l + "% less damage." },
+  thunder: { name: "Thunder Bay", patron: "Storm", color: "#b7a4ff", desc: (l) => "The ground pound hits " + 30 * l + "% wider and " + 50 * l + "% harder." },
+  firefly: { name: "Firefly Pop", patron: "Firefly", color: "#c8ff5a", desc: (l) => 25 * l + "% of kills pop in a spark that hits every critter near them." },
+  beaver: { name: "Beaver Teeth", patron: "Beaver", color: "#b0804a", desc: (l) => "Digging tires you " + 20 * l + "% less." },
+  campfire: { name: "Campfire Story", patron: "Campfire", color: "#ff7a2a", desc: (l) => "Your streak drains " + 30 * l + "% slower and waits " + l + " more seconds." },
+  chipmunk: { name: "Chipmunk Cheeks", patron: "Chipmunk", color: "#e0b060", desc: (l) => "Critters drop " + 30 * l + "% more caps." },
+};
+const boon = (k) => (run && run.boons && run.boons[k]) || 0;
+const Scores = {
+  key: "plungerd.drain.scores.v1",
+  list() { try { const v = JSON.parse(localStorage.getItem(this.key)); return Array.isArray(v) ? v : []; } catch (e) { return []; } },
+  qualifies(score) { const l = this.list(); return score > 0 && (l.length < 10 || score > l[l.length - 1].score); },
+  add(entry) { const l = this.list(); l.push(entry); l.sort((a, b) => b.score - a.score); try { localStorage.setItem(this.key, JSON.stringify(l.slice(0, 10))); } catch (e) { /* storage off */ } return l.indexOf(entry); },
+};
+function addScore(n, x, y) {
+  n = Math.round(n * (run.streakMult || 1));
+  run.score += n;
+  if (x != null && n >= 100) Game.nums.push({ x, y: y - 10, v: n, t: 0.9, big: true, gold: true });
+}
+// the streak meter: kills add style, time drains it, a hit knocks it down
+function styleGain(n) {
+  const was = rankOf(run.style);
+  run.style = Math.min(RANKS[RANKS.length - 1].at + 60, run.style + n);
+  run.styleT = 2.5 + boon("campfire");
+  const now = rankOf(run.style);
+  if (now > was) { UI.rankUp(now); SFX.rank(now); }
+  run.log.maxRank = Math.max(run.log.maxRank, now);
+}
+function styleHit() {
+  const r = rankOf(run.style);
+  run.style = r <= 0 ? 0 : RANKS[r - 1].at - 1;
+  run.styleT = 0;
+}
+function updateStyle(dt) {
+  run.styleT -= dt;
+  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (5 + 3 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
+  const r = rankOf(run.style);
+  run.streakMult = r < 0 ? 1 : RANKS[r].m;
+  if (Game.frenzyT > 0) { Game.frenzyT -= dt; if (Game.frenzyT <= 0) { Game.frenzyChain = 0; UI.hint("The Golden Plunger fades.", 1600); } }
+}
+// a spark that hits every critter near a point (Firefly Pop, Loon Wake)
+function zap(x, y, r, dmg, shove) {
+  for (const f of Game.foes) {
+    if (f.dead) continue;
+    const dx = f.x + f.w / 2 - x, dy = f.y + f.h / 2 - y, d = Math.hypot(dx, dy);
+    if (d > r) continue;
+    hurtFoe(f, dmg, null);
+    if (shove && f.d.ai !== "hand") { f.vx += (dx / (d || 1)) * shove; f.vy -= 1; f.stun = Math.max(f.stun || 0, 0.3); }
+  }
+  Game.flashes.push({ x, y, r: r * 2, t: 0.18 });
+}
 function topKey(obj) {
   let best = null, n = 0;
   for (const k in obj) if (obj[k] > n) { n = obj[k]; best = k; }
@@ -1091,9 +1271,10 @@ function giveWand(r, w) {
 }
 function newRun() {
   const crew = clamp(Memory.data ? Memory.data.crew || 0 : 0, 0, CREW.length - 1);
-  const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
+  const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], flow: 1, score: 0, style: 0, styleT: 0, streakMult: 1, boons: {}, log: { maxRank: -1,  dmgBy: {}, hitsBy: {}, hits: 0, rolls: 0, flasks: 0, t0: 0, lowHp: 1, bursts: 0, recent: [], digSwings: 0, caveIns: 0 }, melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
   const U = (Memory.data && Memory.data.meta.unlocked) || {};
-  r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0);
+  r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0) + Tune.get("hotdogs");
+  r.log.t0 = performance.now();
   if (U.spade) r.shovel = 2;
   if (U.purse) r.gold = 60;
   r.secondWind = !!U.second;
@@ -1497,7 +1678,9 @@ const Cottage = (() => {
       features[1] = alt.value;
     }
     const mult = { low: 0.75, mid: 1, high: 1.3 }[A.pressure.pick] * (r.nextRich ? 1.2 : 1);
-    const count = Math.round((boss ? 5 : 9 + 3 * Math.min(6, r.depth)) * mult);
+    // the tuned dials: how many critters, and how gentle the first two layers are
+    const ease = r.depth <= 2 ? 1 - 0.35 * Tune.get("ease") : 1;
+    const count = Math.round((boss ? 5 : 9 + 3 * Math.min(6, r.depth)) * mult * Tune.get("pressure") * r.flow * ease);
     const slots = [];
     for (let i = 1; i <= 10; i++) slots.push(A["foe_" + i].pick);
     const foes = [];
@@ -1517,6 +1700,7 @@ const Cottage = (() => {
       treasure = Math.min(3, treasure + 1); gold = "rich"; pressure = "high"; gauntlets = Math.min(3, gauntlets + 1);
       notes.push("The player took the rich drain. The code added a relic, rich gold, more critters, and a sealed room.");
     }
+    if (r.depth <= 2 && Tune.get("ease") >= 0.5 && gauntlets > 1) { gauntlets = 1; notes.push("The first layers are eased after hard runs. The code made it one sealed room."); }
     r.nextTheme = null; r.nextRich = false;
     return { depth: r.depth, treasure, nextThemes, props: A.props.pick, mood, theme, bands, features, gauntlets, gold, pressure, foes, line, boss, seed: (rnd() * 1e9) | 0 };
   }
@@ -1671,10 +1855,23 @@ const Cottage = (() => {
       options: [{ value: "full", label: "full", desc: "Full: heal to full health." }, { value: "half", label: "half", desc: "Half: heal half of the missing health." }],
       score: (v) => (v === "full" ? (mood === "generous" ? 1.2 : mood === "tempting" ? 0.4 : -0.2) + 1.2 * (1 - st.hp_frac) : 0.5 + (mood === "testing" ? 0.5 : 0)),
     });
+    // flow: did that layer feel too hot, too cold, or right? The answer scales critter count and damage on the next layer.
+    const lost = (r.log.layerDmg || 0) / r.maxHp;
+    qs.push({
+      id: "flow",
+      prompt: "Keep the player in the flow: hard enough to keep them sharp, never so hard it feels unfair. layer_damage is how much of their health they lost on the last layer (1 = all of it). Pick calmer when they lost most of it, hotter when they barely got touched, steady otherwise.",
+      options: [{ value: "calmer", label: "calmer", desc: "Calmer: fewer critters, and they hit softer, on the next layer." }, { value: "steady", label: "steady", desc: "Steady: no change." }, { value: "hotter", label: "hotter", desc: "Hotter: more critters, and they hit harder, on the next layer." }],
+      score: (v) => (v === "calmer" ? 2.2 * (lost - 0.55) : v === "hotter" ? 2.2 * (0.25 - lost) : 0.3),
+    });
+    st.layer_damage = +lost.toFixed(2);
     const ctx = lineCtx(st, r);
     qs.push(lineQuestion("line", "shrine_" + mood, st, r, ctx));
     const E = await ask("cottage.landing", st, qs);
     const notes = E.notes;
+    const flowPick = E.answers.flow.pick;
+    r.flow = clamp(r.flow * { calmer: 0.88, steady: 1, hotter: 1.1 }[flowPick], 0.75, 1.3);
+    if (flowPick !== "steady") notes.push("The flow check said " + flowPick + ". The next layer runs at " + Math.round(r.flow * 100) + "%.");
+    r.log.layerDmg = 0;
     const offers = [];
     for (let i = 1; i <= 3; i++) {
       const a = E.answers["offer_" + i];
@@ -1714,7 +1911,114 @@ const Cottage = (() => {
     return fillLine(E.answers.line.pick, ctx, r);
   }
 
-  return { level, watch, handPour, landing, bark, ledger };
+  /* the death review: Jev reads how the run went and retunes the game for the next one */
+  const EASIER = { foeDmg: -1, foeHp: -1, windup: 1, pressure: -1, hotdogs: 1, heal: 1, stamina: -1, caps: 1, ease: 1 };
+  async function tune(r, cause, prevKiller) {
+    const L = r.log, secs = Math.round((performance.now() - L.t0) / 1000);
+    const top = Object.entries(L.dmgBy).sort((a, b) => b[1] - a[1]);
+    const R = {
+      killer: cause, depth: r.depth, secs, rolls: L.rolls, hits: L.hits, bursts: L.bursts, flasks: L.flasks, hotdogsLeft: r.flasks,
+      caveIns: L.caveIns, digSwings: L.digSwings, kills: r.kills, sameKiller: cause === prevKiller, cursedDeath: r.curse > 0,
+      deepest: Memory.data.deepest, top_damage: top.slice(0, 4).map(([k, v]) => causeName(k) + " " + Math.round(v)).join(", "),
+    };
+    // rough: an unfair or early death. breezy: a long, deep run.
+    const rough = (r.depth <= 1 && secs < 150 ? 1.2 : 0) + (L.bursts ? 0.6 : 0) + (R.sameKiller ? 0.5 : 0) + (L.rolls < 3 ? 0.4 : 0) + (r.depth <= 2 ? 0.4 : 0);
+    const breezy = (r.depth >= 5 ? 0.8 : 0) + (r.depth > R.deepest ? 0.6 : 0) + (secs > 600 ? 0.4 : 0) + (r.kills > 40 ? 0.3 : 0);
+    const st = { ...R, max_hp: r.maxHp, dials: Object.fromEntries(Object.keys(DIALS).map((k) => [k, Tune.get(k)])), recent_verdicts: Tune.data.history.slice(0, 3).map((h) => h.verdict) };
+    const qs = [{
+      id: "verdict",
+      prompt: "The player just died. Judge the run. Rough: they died early, lost half their health in a burst, died to the same thing as last time, or never rolled. Breezy: they went deep and lasted long. Fair: anything else. A good game feels hard but fair.",
+      options: [{ value: "rough", label: "rough", desc: "Rough: the run felt unfair or too hard. Ease the game." }, { value: "fair", label: "fair", desc: "Fair: hard but fair. Change little." }, { value: "breezy", label: "breezy", desc: "Breezy: too easy. Push harder." }],
+      score: (v) => (v === "rough" ? rough - 0.5 : v === "breezy" ? breezy - 0.5 : 0.4),
+    }];
+    const why = {
+      foeDmg: L.bursts * 0.7 + (r.depth <= 1 ? 0.3 : 0),
+      foeHp: r.depth <= 1 && secs > 120 ? 0.4 : 0,
+      windup: (L.rolls < 3 ? 0.4 : 0) + L.bursts * 0.4,
+      pressure: L.bursts * 0.5 + (r.depth <= 1 ? 0.3 : 0),
+      hotdogs: r.flasks === 0 ? 0.6 : -0.6,
+      heal: r.flasks === 0 && L.flasks > 0 ? 0.5 : -0.2,
+      stamina: L.caveIns * 0.4 + (cause === "sand" ? 0.8 : 0),
+      caps: r.depth <= 2 ? 0.3 : 0,
+      ease: r.depth <= 1 ? 0.9 : r.depth <= 2 ? 0.3 : -0.4,
+    };
+    for (const k of Object.keys(DIALS)) {
+      const D = DIALS[k];
+      qs.push({
+        id: "dial_" + k,
+        prompt: "Dial: " + D.name + " (" + D.desc + "). It is now " + D.fmt(Tune.get(k)) + ". Move it easier, keep it, or make it harder, based on what went wrong in the run. Change only the dials that fit what happened.",
+        options: ["easier", "keep", "harder"].map((v) => ({ value: v, label: v, desc: v[0].toUpperCase() + v.slice(1) + ": " + (v === "keep" ? "leave it." : "one step " + v + ".") })),
+        score: (v) => (v === "keep" ? 0.9 : v === "easier" ? rough * 0.5 + why[k] - 0.6 : breezy * 0.7 - why[k] * 0.5 - 0.5),
+      });
+    }
+    const hurtBy = top.filter(([k]) => FOES[k]).slice(0, 4).map(([k]) => k);
+    if (hurtBy.length) qs.push({
+      id: "killer",
+      prompt: "Which critter hit the player too hard for this stage of the game? Its damage drops a step. Pick none if the damage felt fair.",
+      options: hurtBy.map((k) => ({ value: k, label: FOES[k].name, desc: FOES[k].name + ": dealt " + Math.round(L.dmgBy[k]) + " damage." })).concat([{ value: "none", label: "none", desc: "None: the damage was fair." }]),
+      score: (v) => (v === "none" ? 0.3 + breezy : (v === cause ? 0.8 : 0.1) + (R.sameKiller && v === cause ? 0.6 : 0) + L.dmgBy[v] / r.maxHp * 0.4),
+    });
+    const tips = Object.keys(TIPS).filter((k) => TIPS[k].when(R));
+    qs.push({
+      id: "tip",
+      prompt: "Give the player one tip for the next run. Pick the one that would have saved them.",
+      options: tips.map((k) => ({ value: k, label: k, desc: TIPS[k].text })),
+      score: (v) => (v === "streak" ? -0.5 : v === "roll" ? 0.6 : v === cause || (v === "lava" && cause === "fire") ? 1.2 : 0.4),
+    });
+    const E = await ask("cottage.tune", st, qs);
+    const notes = E.notes, verdict = E.answers.verdict.pick;
+    // the code keeps the moves that agree with the verdict, and at most three of them
+    let picks = Object.keys(DIALS).map((k) => ({ k, a: E.answers["dial_" + k] })).filter((x) => x.a.pick !== "keep").map((x) => ({ k: x.k, pick: x.a.pick, p: (x.a.probs.find((q) => q.value === x.a.pick) || { p: 0 }).p }));
+    const against = verdict === "rough" ? "harder" : verdict === "breezy" ? "easier" : null;
+    if (against && picks.some((x) => x.pick === against)) { notes.push("The run was " + verdict + ", so the code dropped the dials Jev moved " + against + "."); picks = picks.filter((x) => x.pick !== against); }
+    // a rough run always gets at least one fix
+    if (verdict === "rough" && !picks.length) {
+      const k = Object.keys(why).sort((a, b) => why[b] - why[a])[0];
+      picks.push({ k, pick: "easier", p: 0 });
+      notes.push("The run was rough, but Jev kept every dial. The code eased " + DIALS[k].name.toLowerCase() + ".");
+    }
+    picks.sort((a, b) => b.p - a.p);
+    if (picks.length > 3) { notes.push("Jev moved " + picks.length + " dials. The code kept the 3 it was surest of."); picks = picks.slice(0, 3); }
+    const changes = [];
+    for (const x of picks) {
+      const c = Tune.move(x.k, EASIER[x.k] * (x.pick === "easier" ? 1 : -1));
+      if (c) changes.push({ ...c, easier: x.pick === "easier" });
+    }
+    const kp = E.answers.killer && E.answers.killer.pick;
+    if (kp && kp !== "none" && verdict !== "breezy") { const c = Tune.moveKind(kp, -1); if (c) changes.push({ ...c, easier: true }); }
+    // a breezy run toughens the critters that got eased before
+    if (verdict === "breezy") for (const k of Object.keys(Tune.data.kind)) { const c = Tune.moveKind(k, 1); if (c) { changes.push({ ...c, easier: false }); break; } }
+    const tip = TIPS[E.answers.tip.pick].text;
+    Tune.data.history.unshift({ at: Date.now(), verdict, depth: r.depth, killer: cause, changes: changes.map((c) => c.name + " " + c.from + " → " + c.to) });
+    Tune.data.history = Tune.data.history.slice(0, 12);
+    Tune.save();
+    UI.ledger();
+    return { verdict, changes, tip, source: E.source };
+  }
+
+  /* the boons after a sealed room: Jev picks which three cottage animals offer a gift */
+  async function boons(r) {
+    const st = { ...directorState(r), boons: r.boons, melee: r.melee, rolls: r.log.rolls, dig_swings: r.log.digSwings };
+    const qs = [1, 2, 3].map((i) => ({
+      id: "boon_" + i,
+      prompt: "The player cleared a sealed room. Choose gift " + i + " of 3 from the cottage animals. Make the three gifts different. Fit the build: a player who rolls a lot likes Loon Wake, a player who digs likes Beaver Teeth, a hurt player likes Skeeter Bite or Moose Hide. Offering a gift they own raises its level.",
+      options: Object.keys(BOONS).filter((k) => (r.boons[k] || 0) < 3).map((k) => ({ value: k, label: BOONS[k].name, desc: BOONS[k].name + " (" + BOONS[k].patron + "): " + BOONS[k].desc((r.boons[k] || 0) + 1) })),
+      score: (k) => rnd() * 1.2 + (r.boons[k] ? 0.4 : 0) + (k === "skeeter" || k === "moose" ? 1 - r.hp / r.maxHp : 0) + (k === "loon" && r.log.rolls > 10 ? 0.5 : 0) + (k === "beaver" && r.log.digSwings > 30 ? 0.5 : 0),
+    }));
+    if (qs[0].options.length < 2) return qs[0].options.map((o) => o.value);
+    const E = await ask("cottage.boon", st, qs);
+    const ids = [];
+    for (let i = 1; i <= 3; i++) {
+      const a = E.answers["boon_" + i];
+      let k = a.pick;
+      if (ids.includes(k)) { const alt = a.probs.find((x) => !ids.includes(x.value)); if (!alt) continue; E.notes.push("Gift " + i + " repeated " + BOONS[k].name + ". The code took " + BOONS[alt.value].name + "."); k = alt.value; }
+      ids.push(k);
+    }
+    UI.ledger();
+    return ids;
+  }
+
+  return { level, watch, handPour, landing, bark, tune, boons, ledger };
 })();
 
 /* ------------------------------------------------------------------ sound (made in the browser, no files) */
@@ -1781,6 +2085,9 @@ const SFX = (() => {
     clink() { if (!gate("clink", 90)) return; tone({ type: "square", f: 1500 + rnd() * 300, f2: 900, dur: 0.05, vol: 0.05 }); noise({ dur: 0.04, vol: 0.12, f: 3000, q: 1 }); },
     swing(big) { if (!gate("swing", 60)) return; noise({ dur: big ? 0.14 : 0.09, vol: big ? 0.16 : 0.1, f: big ? 1800 : 2600, f2: 600, q: 0.7 }); },
     crit() { if (!gate("crit", 50)) return; tone({ type: "square", f: 880, f2: 1320, dur: 0.07, vol: 0.07 }); noise({ dur: 0.1, vol: 0.28, f: 900, f2: 200, type: "lowpass" }); },
+    rank(i) { tone({ type: "square", f: 440 * 2 ** (i / 4), f2: 880 * 2 ** (i / 4), dur: 0.12, vol: 0.07 }); tone({ type: "square", f: 660 * 2 ** (i / 4), dur: 0.1, vol: 0.05, at: 0.08 }); },
+    chomp(n) { tone({ type: "square", f: 300 + 120 * n, f2: 900 + 160 * n, dur: 0.09, vol: 0.08 }); },
+    frenzy() { for (let k = 0; k < 6; k++) tone({ type: "square", f: 330 * 2 ** (k / 6), f2: 500 * 2 ** (k / 6), dur: 0.07, vol: 0.06, at: k * 0.06 }); },
     roll() { if (!gate("roll", 100)) return; noise({ dur: 0.18, vol: 0.08, f: 700, f2: 1400, q: 0.6 }); },
     eat() { [523, 659, 784].forEach((f, i) => tone({ type: "triangle", f, dur: 0.12, vol: 0.07, at: i * 0.06 })); },
     cap() { if (!gate("cap", 45)) return; tone({ type: "square", f: 1980 + rnd() * 300, dur: 0.05, vol: 0.035 }); },
@@ -2583,6 +2890,7 @@ function digNoise(p, n) {
   for (const f of Game.foes) if (!f.dead && Math.hypot(f.x - cx, f.y - cy) < 110) f.awake = true;
   if (Game.noise < 1) return;
   Game.noise = 0.25;
+  run.log.caveIns++;
   Game.cam.shake = Math.min(8, Game.cam.shake + 5);
   SFX.rumble();
   if (rnd() < 0.5) {
@@ -2638,7 +2946,7 @@ function dig(p, a) {
   Game.digCd = (Game.digCd || 0) - 1 / 60;
   if (Game.digCd > 0) return;
   // digging tires you: a full bar is about a dozen swings, and it only refills when you stop
-  const cost = S.cost / run.digMult;
+  const cost = S.cost / run.digMult * Tune.get("stamina") * (1 - 0.2 * boon("beaver"));
   if (p.stam < cost) {
     Game.digCd = 0.3;
     if (!Game.tiredHinted || Game.levelT - Game.tiredHinted > 6) { Game.tiredHinted = Game.levelT; UI.hint("Your arms are tired. Stop digging for a moment.", 1600); }
@@ -2647,6 +2955,7 @@ function dig(p, a) {
   }
   p.stam -= cost;
   p.stamT = 0.7;
+  run.log.digSwings++;
   Game.digCd = S.every / run.digMult;
   Game.digSwing = (Game.digSwing || 0) + Math.PI;
   const dmg = Game.digDmg;
@@ -2718,7 +3027,7 @@ function makePlayer(x, y) {
 }
 function makeFoe(kind, x, y, elite) {
   const d = FOES[kind];
-  const hp = Math.round(d.hp * (1 + 0.22 * (run.depth - 1)) * (elite ? 2.4 : 1));
+  const hp = Math.round(d.hp * (1 + 0.22 * (run.depth - 1)) * (elite ? 2.4 : 1) * Tune.get("foeHp"));
   return { kind, d, elite: !!elite, x, y, w: d.w, h: d.h, vx: 0, vy: 0, ground: false, climb: d.ai === "fly" || d.ai === "hand" ? 0 : 2, hp, maxHp: hp, face: 1, burn: 0, poison: 0, flash: 0, cd: 1 + rnd() * 2, jumpCd: 0, fuse: 0, awake: false, t: rnd() * 10, dead: false, state: "idle" };
 }
 
@@ -2730,8 +3039,20 @@ function hurtPlayer(dmg, cause, raw) {
     if (p.aegisT > 0) { p.aegisT = 0; p.hurtT = 0.6; addFx(p.x + 2, p.y + 5, 0xb39ddb, 14); SFX.zap(); return; }
     p.hurtT = 0.35;
   }
-  dmg *= run.armor;
+  if (Game.frenzyT > 0 && FOES[cause]) return;
+  dmg *= run.armor * (1 - 0.12 * boon("moose"));
+  if (FOES[cause]) dmg *= Tune.get("foeDmg") * Tune.kind(cause) * run.flow;
+  if (!raw) styleHit();
   if (run.curse > 0 && !raw) dmg = run.hp + 1;
+  // the log the Cottage reads after a death
+  const L = run.log, now = performance.now();
+  L.dmgBy[cause] = (L.dmgBy[cause] || 0) + dmg;
+  if (!raw) { L.hitsBy[cause] = (L.hitsBy[cause] || 0) + 1; L.hits++; }
+  L.recent.push([now, dmg]); L.recent = L.recent.filter((q) => now - q[0] < 3000);
+  if (L.recent.reduce((a, q) => a + q[1], 0) > run.maxHp * 0.5 && !L.burstNow) { L.bursts++; L.burstNow = true; }
+  if (L.recent.length <= 1) L.burstNow = false;
+  L.layerDmg = (L.layerDmg || 0) + dmg;
+  L.lowHp = Math.min(L.lowHp, Math.max(0, (run.hp - dmg) / run.maxHp));
   run.hp -= dmg;
   run.lastHitBy = cause;
   p.flash = 0.15;
@@ -2768,6 +3089,14 @@ function killFoe(f) {
   World.spill(cx, cy - 2, GOLD, f.d.gold, 4);
   dropCaps(cx, cy - 2, f.d.boss ? 30 : (f.elite ? 3 : 1) * Math.max(1, Math.min(3, f.d.tier)));
   addFx(cx, cy, f.d.pal[Object.keys(f.d.pal)[0]], 16);
+  // the classic loops: streak, score, boons, and the Golden Plunger
+  Game.layerKills++;
+  styleGain(f.d.boss ? 60 : (f.elite ? 22 : 10) + (f.stun > 0 ? 4 : 0) + (!f.ground ? 4 : 0));
+  addScore(f.d.boss ? 5000 : 10 * Math.max(1, f.d.tier) * (f.elite ? 3 : 1));
+  if (Game.frenzyT > 0) { const n = 200 * 2 ** Math.min(4, Game.frenzyChain++); addScore(n, cx, cy); SFX.chomp(Game.frenzyChain); }
+  if (boon("skeeter")) run.hp = Math.min(run.maxHp, run.hp + 2 * boon("skeeter"));
+  if (boon("firefly") && rnd() < 0.25 * boon("firefly")) { zap(cx, cy, 16, 8 + 4 * run.depth, 1.5); addFx(cx, cy, 0xc8ff5a, 12); SFX.zap(); }
+  if (!Game.goldenDropped && !f.d.boss && (Game.layerKills >= 10 || (f.elite && Game.layerKills >= 4))) { Game.goldenDropped = true; Game.pickups.push({ x: cx, y: cy - 4, golden: true, bob: 0 }); UI.hint("A Golden Plunger! Grab it and the critters run from you.", 3000); }
   if (f.d.ai === "bomb") { blast(cx, cy, 9, 2, 20, "blast", f); }
   if (f.d.ai === "hand") handDown();
 }
@@ -3092,7 +3421,8 @@ function drinkFlask(p) {
   if (run.flasks <= 0) { UI.hint("No hot dogs left. The snack bar refills them.", 1800); return; }
   if (run.hp >= run.maxHp) { UI.hint("You are not hungry.", 1200); return; }
   run.flasks--;
-  const heal = Math.round(run.maxHp * 0.45);
+  const heal = Math.round(run.maxHp * Tune.get("heal"));
+  run.log.flasks++;
   run.hp = Math.min(run.maxHp, run.hp + heal);
   p.burn = 0; p.poison = 0;
   Game.nums.push({ x: p.x + 2, y: p.y - 4, v: "+" + heal, t: 1, big: true });
@@ -3135,7 +3465,8 @@ function meleeHits(p, a, M) {
     if (f.dead || a.hit.has(f) || !box(f.x, f.y, f.w, f.h)) continue;
     a.hit.add(f);
     const crit = critFor(M, f, a.k, p, fd);
-    const dmg = Math.round(M.combo[a.k] * run.dmgMult * run.muscle * (crit ? 2 : 1) * (1 + 0.08 * (run.depth - 1)));
+    const dmg = Math.round(M.combo[a.k] * run.dmgMult * run.muscle * (crit ? 2 : 1) * (1 + 0.08 * (run.depth - 1)) * (1 + 0.2 * boon("bear")) * (Game.frenzyT > 0 ? 3 : 1));
+    if (boon("sun") && !f.d.fireImmune) f.burn = Math.max(f.burn, 1 + boon("sun"));
     hurtFoe(f, dmg, null);
     if (crit) { Game.nums.push({ x: f.x + f.w / 2, y: f.y - 6, v: "!", t: 0.5, big: true }); if (run.critHeal) run.hp = Math.min(run.maxHp, run.hp + run.critHeal); }
     if (f.d.ai !== "hand") { f.vx += fd * M.knock * (f.d.w > 8 ? 0.4 : 1); f.vy -= 0.9; f.stun = Math.max(f.stun || 0, M.stun + (crit ? 0.15 : 0)); }
@@ -3161,8 +3492,8 @@ function poundLand(p) {
   for (const f of Game.foes) {
     if (f.dead) continue;
     const d = Math.hypot(f.x + f.w / 2 - cx, f.y + f.h / 2 - cy);
-    if (d > 18) continue;
-    hurtFoe(f, Math.round(18 * run.dmgMult * run.muscle * (1 + 0.08 * (run.depth - 1))), null);
+    if (d > 18 * (1 + 0.3 * boon("thunder"))) continue;
+    hurtFoe(f, Math.round(18 * run.dmgMult * run.muscle * (1 + 0.08 * (run.depth - 1)) * (1 + 0.5 * boon("thunder"))), null);
     if (f.d.ai !== "hand") { f.stun = Math.max(f.stun || 0, 1); f.vy = -2.2; f.vx += Math.sign(f.x + f.w / 2 - cx) * 1.2; }
   }
   for (const t of Game.props || []) if (!t.dead && Math.hypot(t.x - cx, t.y - cy) < 18) { if (t.kind === "tank") explodeTank(t); else hitNest(t, 20); }
@@ -3182,6 +3513,8 @@ function updateCombat(p, dt) {
   p.ghosts = p.ghosts.filter((g) => g.t > 0);
   // roll: fast, and nothing can hit you while you roll. It cancels a swing.
   if (inp.rollEdge && p.rollCd <= 0 && !p.pound) {
+    run.log.rolls++;
+    if (boon("loon")) { zap(p.x + p.w / 2, p.y + p.h / 2, 16, 7 * boon("loon"), 2.2); addFx(p.x + 2, p.y + 8, 0x6fb8ff, 10); }
     p.roll = 0.28; p.rollDir = inp.x ? Math.sign(inp.x) : p.face; p.rollCd = 0.5; p.atk = null; p.queued = false; p.face = p.rollDir;
     SFX.roll();
   }
@@ -3265,7 +3598,7 @@ function updatePlayer(dt) {
   Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
     if (Math.hypot(pk.x - (p.x + 2), pk.y - (p.y + 6)) > 9) continue;
-    if (pk.scroll) takePickup(pk);
+    if (pk.scroll || pk.golden) takePickup(pk);
     else if (pk.wand && run.wands.length < 3 && !pk.dropped) takePickup(pk);
     else Game.nearPickup = pk;
     break;
@@ -3431,13 +3764,23 @@ function endGauntlet(g) {
   SFX.well();
   UI.hint(g === Game.gauntlets[0] ? "The screen doors open, and the drain below unclogs." : "The screen doors open.", 2600);
   dropCaps(g.r.x, g.r.y, 4 + run.depth);
+  addScore(250 * run.depth, g.r.x, g.r.y);
   Cottage.bark("gauntlet_clear", run).then((l) => UI.voice(l));
+  Cottage.boons(run).then((ids) => { if (!run.over && Game.state === "play") UI.chooseBoon(ids); });
 }
 function takePickup(pk) {
   const i = Game.pickups.indexOf(pk);
   if (i < 0) return;
   Game.pickups.splice(i, 1);
   if (pk.scroll) { SFX.well(); UI.chooseScroll(); return; }
+  if (pk.golden) {
+    // Pac-Man's power pellet: for a few seconds the critters flee, cannot hurt you, and each kill scores double the last
+    Game.frenzyT = 8; Game.frenzyChain = 0;
+    UI.banner("GOLDEN PLUNGER", "Chase them down. Each kill scores double.");
+    setTimeout(() => UI.hideBanner(), 1400);
+    SFX.frenzy();
+    return;
+  }
   if (pk.melee) {
     const old = run.melee;
     run.melee = pk.melee;
@@ -3504,6 +3847,16 @@ function updateFoes(dt) {
     }
     const dir = Math.sign(dx) || 1;
     f.face = dir;
+    // the Golden Plunger: critters turn tail and run
+    if (Game.frenzyT > 0 && d.ai !== "hand" && !d.boss) {
+      f.face = -dir; f.windT = 0; f.fuse = 0; f.state = "idle";
+      const flyer = d.ai === "fly" || d.ai === "dash";
+      f.vx = f.vx * 0.85 - dir * 0.12 * (d.speed || 1);
+      f.vy = flyer ? f.vy * 0.85 - Math.sign(dy) * 0.08 : clamp(f.vy + 0.15, -3, 4);
+      if (!flyer && f.ground && rnd() < 0.03) f.vy = -2.2;
+      moveBody(f, f.vx, f.vy); unstick(f);
+      continue;
+    }
     if (d.ai === "dash") {
       // hang back, flash, then dash through the player
       if (f.state === "dash") {
@@ -3517,7 +3870,7 @@ function updateFoes(dt) {
         const want = Math.atan2(dy - 14, dx), hold = dist > 34 ? 1 : -1;
         f.vx = f.vx * 0.9 + Math.cos(want) * 0.12 * hold * (f.elite ? 1.3 : 1); f.vy = f.vy * 0.9 + Math.sin(want) * 0.12 * hold;
         moveBody(f, f.vx * 1.6, f.vy * 1.6);
-        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35; }
+        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35 * Tune.get("windup"); }
       }
     } else if (d.ai === "fly") {
       const a = Math.atan2(dy + Math.sin(f.t * 3) * 6, dx);
@@ -3531,7 +3884,7 @@ function updateFoes(dt) {
     } else {
       let want = dir;
       if (d.ai === "spit" && dist < 50) want = -dir;
-      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35; }
+      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35 * Tune.get("windup"); }
       if (f.windT > 0) { f.windT -= dt; f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0); want = 0; }
       if (d.ai === "spit" && f.windT < 0) {
         f.windT = 0;
@@ -3542,11 +3895,11 @@ function updateFoes(dt) {
       // the moose lowers its head, then charges
       if (d.ai === "brute") {
         if (f.charge > 0) { f.charge -= dt; want = f.chargeDir * 3.2; if (f.charge <= 0) f.cd = 2 + rnd(); }
-        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45; f.chargeDir = dir; }
+        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45 * Tune.get("windup"); f.chargeDir = dir; }
         if (f.windT < 0) { f.windT = 0; f.charge = 0.55; SFX.zap(); }
       }
       if (d.ai === "bomb") {
-        if (dist < 14 && !f.fuse) f.fuse = 0.6;
+        if (dist < 14 && !f.fuse) f.fuse = 0.6 * Tune.get("windup");
         if (f.fuse) { f.fuse -= dt; want = 0; if (f.fuse <= 0) { f.fuse = 0; f.hp = 0; killFoe(f); continue; } }
       }
       const inLiq = bodyEnv(f).frac > 0.3;
@@ -3656,7 +4009,7 @@ function updateEmitters() {
 /* pipes leak where they break, propane tanks blow, hornet nests send hornets */
 /* caps: bottle caps drop from critters and fly to you. Bank them at the snack bar, or lose them when you die. */
 function dropCaps(x, y, n) {
-  n = Math.max(1, Math.round(n * run.capMult));
+  n = Math.max(1, Math.round(n * run.capMult * Tune.get("caps") * (run.streakMult || 1) * (1 + 0.3 * boon("chipmunk"))));
   for (let k = 0; k < n; k++) Game.caps.push({ x, y, vx: (rnd() - 0.5) * 2.2, vy: -1 - rnd() * 1.6, t: 0 });
 }
 function updateCaps(dt) {
@@ -4224,6 +4577,15 @@ const Render = (() => {
     }
     // wands lying in the caves
     for (const pk of Game.pickups) {
+      if (pk.golden) {
+        // the Golden Plunger: a gold cup on a gold handle, blinking
+        const gx = pk.x - ox, gy = pk.y + Math.sin(pk.bob * 1.5) * 2 - oy, g1 = World.abgr(0xffd84a), g2 = World.abgr(0xc8961a);
+        for (let q = 0; q < 6; q++) px(gx, gy - q, g2);
+        for (let q = -2; q <= 2; q++) { px(gx + q, gy + 1, g1); px(gx + q, gy + 2, Math.abs(q) === 2 ? g2 : g1); }
+        px(gx - 3, gy + 2, g2); px(gx + 3, gy + 2, g2);
+        if ((tk >> 2) & 1) { px(gx + 2, gy - 5, 0xffffffff); px(gx - 3, gy - 2, 0xffffffff); }
+        continue;
+      }
       if (pk.scroll) {
         // a rolled scroll with a red seal
         const sx = pk.x - ox, sy = pk.y + Math.sin(pk.bob) * 1.5 - oy, paper = World.abgr(0xf2e6c8), edge = World.abgr(0xc8b48a), seal = World.abgr(0xe0402a);
@@ -4307,6 +4669,9 @@ const Render = (() => {
     for (const rl of Game.relics || []) if (!rl.taken) glow(rl.x, rl.y, 22, 0xffcf4a, 0.3 + 0.2 * Math.sin(tk * 0.1 + rl.x));
     if (L) for (const e of L.exits || []) glow(e.x, e.y - 4, 60, e.rich ? 0xff8a3a : 0xffcf4a, 0.25);
     for (const c of Game.chests) if (c.cursed && !c.open) glow(c.x, c.y - 3, 36, 0xa05aff, 0.45);
+    for (const pk of Game.pickups) if (pk.golden) glow(pk.x, pk.y, 40, 0xffd84a, 0.6 + 0.2 * Math.sin(tk * 0.2));
+    // frightened critters glow blue, and blink white as the Golden Plunger runs out
+    if (Game.frenzyT > 0) for (const f of Game.foes) if (!f.dead && !f.d.boss && f.d.ai !== "hand") glow(f.x + f.w / 2, f.y + f.h / 2, 26, Game.frenzyT < 2 && (tk >> 3) & 1 ? 0xffffff : 0x3a6aff, 0.7);
     for (const pk of Game.pickups) if (pk.scroll || pk.melee) glow(pk.x, pk.y, 26, pk.scroll ? 0xfff0c0 : 0xff8a6a, 0.35);
     if (World.hasSky && oy < 70) glow(200, 11, 60, 0xc8d8ff, 0.35);
     dctx.globalAlpha = 1;
@@ -4545,6 +4910,7 @@ const UI = (() => {
     const down = p && Game.level ? Math.round(clamp(p.y / (Game.level.exitY - 10), 0, 1) * 100) : 0;
     set("depthText", "text", "Depth " + run.depth + (p ? " · " + down + "%" : ""));
     set("capsText", "text", String(run.caps));
+    rankHud();
     set("flaskText", "text", "🌭 " + run.flasks);
     set("flaskN", "text", String(run.flasks));
     const left = Math.ceil((Game.fastT || 0) - Game.levelT);
@@ -4648,7 +5014,7 @@ const UI = (() => {
   }
 
   /* decisions pop up as the Cottage makes them */
-  const TASK_TITLE = { "cottage.mood": "Choosing a mood", "cottage.level": "Pouring the layer", "cottage.watch": "Watching you fall", "cottage.hand": "Pouring into the boss fight", "cottage.landing": "Stocking the snack bar" };
+  const TASK_TITLE = { "cottage.mood": "Choosing a mood", "cottage.level": "Pouring the layer", "cottage.watch": "Watching you fall", "cottage.hand": "Pouring into the boss fight", "cottage.landing": "Stocking the snack bar", "cottage.tune": "Retuning the game", "cottage.boon": "Choosing gifts" };
   // the Cottage's decisions show as one quiet line under the eye; the full record lives in the Cottage tab
   let tickT = 0, tickEntry = null;
   function toastStart(task) {
@@ -4825,6 +5191,13 @@ const UI = (() => {
     const dl = $("#mem");
     dl.innerHTML = "";
     for (const [k, v] of rows) { const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd); }
+    const tl = $("#tuneList");
+    tl.innerHTML = "";
+    const trows = Object.keys(DIALS).map((k) => [DIALS[k].name, DIALS[k].fmt(Tune.get(k))]);
+    for (const [k, v] of Object.entries(Tune.data.kind)) if (FOES[k]) trows.push([FOES[k].name + " damage", pctOf(v)]);
+    const h = Tune.data.history[0];
+    trows.push(["Last review", h ? h.verdict + " run at depth " + h.depth + (h.changes.length ? ": " + h.changes.join("; ") : ": no change") : "none yet"]);
+    for (const [k, v] of trows) { const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; tl.append(dt, dd); }
   }
 
   let openId = null;
@@ -5018,6 +5391,97 @@ const UI = (() => {
     });
   }
 
+  // the streak rank and the score, top right
+  const RANK_COL = ["#9ea4b0", "#6fd08c", "#6fb8ff", "#f0c85a", "#ff8a3a", "#ff4a7a"];
+  function rankHud() {
+    const r = rankOf(run.style), box = $("#rank");
+    set("scoreText", "text", run.score.toLocaleString());
+    box.classList.toggle("empty", r < 0);
+    box.classList.toggle("frenzy", Game.frenzyT > 0);
+    if (r >= 0) {
+      set("rankLetter", "text", RANKS[r].n);
+      set("rankName", "text", RANKS[r].name + " ×" + RANKS[r].m);
+      const next = RANKS[r + 1] ? RANKS[r + 1].at : RANKS[r].at + 60;
+      set("rankFill", "width", clamp((run.style - RANKS[r].at) / (next - RANKS[r].at), 0, 1) * 100 + "%");
+      box.style.setProperty("--rc", RANK_COL[r]);
+    }
+  }
+  function rankUp(i) {
+    const box = $("#rank");
+    box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+    if (i >= 4) Game.cam.shake = Math.min(6, Game.cam.shake + 2);
+  }
+  // a gift from the cottage animals: the game waits while you pick
+  function chooseBoon(ids) {
+    if (!ids.length || !$("#scrollPick").hidden || !$("#boonPick").hidden) return;
+    const box = $("#boonCards");
+    box.innerHTML = "";
+    const was = Game.paused;
+    Game.paused = true;
+    Input.clear();
+    for (const k of ids) {
+      const B = BOONS[k], lv = (run.boons[k] || 0) + 1;
+      const b = card({ name: B.name + (lv > 1 ? " (level " + lv + ")" : ""), desc: B.desc(lv), color: B.color, tagName: "Gift of the " + B.patron });
+      b.classList.add("big");
+      b.onclick = () => {
+        run.boons[k] = lv;
+        $("#boonPick").hidden = true;
+        Game.paused = was;
+        SFX.well(); fit(); hud(true);
+        hint(B.name + (lv > 1 ? " is now level " + lv : "") + ".", 2000);
+      };
+      box.appendChild(b);
+    }
+    $("#boonPick").hidden = false;
+    fit();
+    box.firstChild.focus({ preventScroll: true });
+  }
+  // the arcade score: initials for a top-10 run, then the board
+  function scoreBoard(score, meta) {
+    set("endScore", "text", score.toLocaleString());
+    const form = $("#initials"), input = $("#initialsIn");
+    const draw = (mine) => {
+      const ol = $("#board");
+      ol.innerHTML = "";
+      Scores.list().slice(0, 5).forEach((e, i) => {
+        const li = document.createElement("li");
+        if (i === mine) li.className = "me";
+        li.innerHTML = "<b></b><span></span><span class='sc'></span>";
+        li.children[0].textContent = e.name;
+        li.children[1].textContent = "D" + e.depth;
+        li.children[2].textContent = e.score.toLocaleString();
+        ol.appendChild(li);
+      });
+    };
+    if (Scores.qualifies(score)) {
+      form.hidden = false;
+      let last = "";
+      try { last = localStorage.getItem("plungerd.drain.initials") || ""; } catch (e) { last = ""; }
+      input.value = last;
+      form.onsubmit = (ev) => {
+        ev.preventDefault();
+        const name = (input.value.toUpperCase().replace(/[^A-Z0-9]/g, "") + "AAA").slice(0, 3);
+        try { localStorage.setItem("plungerd.drain.initials", name); } catch (e) { /* storage off */ }
+        form.hidden = true;
+        draw(Scores.add({ name, score, ...meta, at: Date.now() }));
+        $("#againBtn").focus({ preventScroll: true });
+      };
+      setTimeout(() => { input.focus({ preventScroll: true }); input.select(); }, 60);
+    } else form.hidden = true;
+    draw(-1);
+  }
+
+  function review(R) {
+    const box = $("#review");
+    if (!R) { box.hidden = true; return; }
+    $("#reviewHead").textContent = R.changes.length ? "The Cottage retuned the game (" + R.verdict + " run)" : "The Cottage kept the game as it is (" + R.verdict + " run)";
+    const ul = $("#reviewList");
+    ul.innerHTML = "";
+    for (const c of R.changes) { const li = document.createElement("li"); li.className = c.easier ? "easy" : "hard"; li.textContent = c.name + ": " + c.from + " → " + c.to; ul.append(li); }
+    $("#reviewTip").textContent = R.tip;
+    box.hidden = false;
+  }
+
   function end(title, line, rows) {
     $("#endTitle").textContent = title;
     $("#endLine").textContent = line;
@@ -5026,7 +5490,7 @@ const UI = (() => {
     for (const [k, v] of rows) { const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd); }
     $("#end").hidden = false;
     fit();
-    $("#againBtn").focus({ preventScroll: true });
+    if ($("#initials").hidden) $("#againBtn").focus({ preventScroll: true });
   }
 
   function insets() {
@@ -5034,7 +5498,7 @@ const UI = (() => {
     document.documentElement.style.setProperty("--hudH", Math.round(hudEl.bottom - 8) + "px");
   }
 
-  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, end, insets, fit };
+  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, chooseBoon, rankUp, rankHud, scoreBoard, review, end, insets, fit };
 })();
 
 /* ------------------------------------------------------------------ flow */
@@ -5042,6 +5506,7 @@ const UI = (() => {
 async function enterDepth(first) {
   Game.state = "loading";
   Input.clear();
+  Game.frenzyT = 0; Game.frenzyChain = 0; Game.layerKills = 0; Game.goldenDropped = false;
   Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
   const plan = await Cottage.level(run, first);
@@ -5148,6 +5613,7 @@ async function reachWell() {
   L.restText = heal > 0 ? "You eat a hot dog. You heal " + Math.round(heal) + " health" + (L.rest === "full" ? ", to full." : ", half of what you lost.") : "You are already whole.";
   UI.hideBanner();
   await UI.landing(L);
+  addScore(500 * run.depth);
   run.depth++;
   reaching = false;
   await enterDepth(false);
@@ -5159,16 +5625,22 @@ async function die(cause) {
   Game.state = "dead";
   Input.clear();
   const m = Memory.data;
+  const prevKiller = m.lastDeath;
   m.lastDeath = cause;
   m.deathsBy[cause] = (m.deathsBy[cause] || 0) + 1;
   m.deepest = Math.max(m.deepest, run.depth);
   Memory.save();
   const p = Game.player;
   if (p) { World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); addFx(p.x + 2, p.y + 5, 0xd0485f, 20); }
-  const line = await Cottage.bark("death", run, { killer: cause });
+  const [line, review] = await Promise.all([Cottage.bark("death", run, { killer: cause }), Cottage.tune(run, cause, prevKiller)]);
   UI.voice(line);
   await wait(1200);
+  UI.review(review);
+  addScore(run.gold);
+  const R = RANKS[run.log.maxRank];
   UI.end("Flushed at depth " + run.depth, line, [
+    ["Best streak", R ? R.n + " (" + R.name + ")" : "none"],
+    ["Gifts", Object.keys(run.boons).map((k) => BOONS[k].name + (run.boons[k] > 1 ? " " + run.boons[k] : "")).join(", ") || "none"],
     ["Friend", CREW[run.crew].name],
     ["Weapon", MELEE[run.melee].name],
     ["Caps dropped", String(run.caps) + (run.caps ? " (spend them at the tab next time)" : "")],
@@ -5182,6 +5654,7 @@ async function die(cause) {
     ["Guns", run.wands.map((wd) => wd.name).join(", ")],
     ["Cottage calls", String(run.calls)],
   ]);
+  UI.scoreBoard(run.score, { depth: run.depth, crew: run.crew });
 }
 
 async function startRun() {
@@ -5240,6 +5713,7 @@ function tickGame(dt) {
     updateProps(dt);
     if ((World.tick & 3) === 0 && Game.player) Minimap.reveal(Game.player);
     updateFoes(dt);
+    updateStyle(dt);
     Game.watchT -= dt;
     if (Game.watchT <= 0 && !Game.watchBusy && Game.levelT > 6) { Game.watchT = 15 + rnd() * 8; cottageWatch(); }
   }
@@ -5314,6 +5788,7 @@ $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") UI.s
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden) { e.stopPropagation(); UI.sheet(false); } }, true);
 document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); UI.fit(); }; });
 $("#forgetBtn").onclick = () => { Memory.reset(); UI.sheet(true, "memory"); };
+$("#untuneBtn").onclick = () => { Tune.reset(); UI.sheet(true, "memory"); };
 $("#soundBtn").onclick = () => UI.sound(SFX.toggle());
 $("#mapBtn").onclick = () => Minimap.toggle();
 $("#mini").onclick = () => Minimap.toggle();

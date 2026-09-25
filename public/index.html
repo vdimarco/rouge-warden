@@ -504,7 +504,8 @@ addEventListener("keydown", (e) => {
 {
   const gp = store.get("plungerd.meta.v1", null), dd = store.get("plungerd.drain.v1", null);
   $(".hi", cabs[0]).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
-  $(".hi", cabs[1]).textContent = dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
+  const ds = store.get("plungerd.drain.scores.v1", null), top = Array.isArray(ds) && ds[0];
+  $(".hi", cabs[1]).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
 }
 // Get Plunger'd flips between its title and its bosses
 setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle("flip"); }, 3200);
