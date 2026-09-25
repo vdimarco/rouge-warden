@@ -38,13 +38,13 @@ try { const saved = +localStorage.getItem('crimson.crew'); if (saved >= 0 && sav
 const RONIN_CUTS = {
   l1: ['combo', 0.25, 1.12], l2: ['combo', 1.12, 1.9], l3: ['combo', 1.9, 3.0],
   hvy: ['heavy', 0.2, 2.05], db: ['thrust', 0.0, 1.9], guard: ['block', 1.0, 3.3], defl: ['parry', 0.2, 1.4],
-  rollc: ['roll', 0.25, 1.6], down: ['knock', 0.0, 1.4], sip: ['drink', 2.8, 5.6],
+  rollc: ['roll', 0.55, 1.87], down: ['knock', 0.0, 1.4], sip: ['drink', 2.8, 5.6],
 };
 const PATK = {
-  l1: { cut: 'l1', from: 0.25, speed: 1.5, hit: [0.64, 0.86], dmg: 20, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l2', cancel: 0.93, lunge: [0.5, 0.8, 3.2], snd: 'slash' },
-  l2: { cut: 'l2', from: 1.12, speed: 1.5, hit: [1.42, 1.62], dmg: 22, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l3', cancel: 1.68, lunge: [1.3, 1.55, 3.2], snd: 'slash' },
-  l3: { cut: 'l3', from: 1.9, speed: 1.4, hit: [2.16, 2.38], dmg: 30, post: 8, reach: 2.5, arc: 1.0, cost: 14, next: 'l1', cancel: 2.5, lunge: [2.0, 2.3, 4.2], snd: 'heavy' },
-  heavy: { cut: 'hvy', from: 0.2, speed: 1.25, hit: [1.08, 1.3], dmg: 55, post: 16, reach: 2.7, arc: 1.0, cost: 26, cancel: 1.75, lunge: [0.85, 1.25, 5], snd: 'heavy' },
+  l1: { cut: 'l1', from: 0.25, speed: 1.65, hit: [0.64, 0.86], dmg: 20, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l2', cancel: 0.93, lunge: [0.5, 0.8, 3.2], snd: 'slash' },
+  l2: { cut: 'l2', from: 1.12, speed: 1.65, hit: [1.42, 1.62], dmg: 22, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l3', cancel: 1.68, lunge: [1.3, 1.55, 3.2], snd: 'slash' },
+  l3: { cut: 'l3', from: 1.9, speed: 1.55, hit: [2.16, 2.38], dmg: 30, post: 8, reach: 2.5, arc: 1.0, cost: 14, next: 'l1', cancel: 2.5, lunge: [2.0, 2.3, 4.2], snd: 'heavy' },
+  heavy: { cut: 'hvy', from: 0.2, speed: 1.35, hit: [1.08, 1.3], dmg: 55, post: 16, reach: 2.7, arc: 1.0, cost: 26, cancel: 1.75, lunge: [0.85, 1.25, 5], snd: 'heavy' },
   deathblow: { cut: 'db', from: 0.0, speed: 1.0, hit: [0.68, 0.86], dmg: 0, post: 0, reach: 4.2, arc: 1.7, cost: 0, cancel: 1.7, lunge: [0.4, 0.78, 7], snd: 'heavy' },
 };
 // Gabe's clips; the cut ranges and hit times come from measuring each clip's strike peaks
@@ -335,7 +335,7 @@ function startPlayerAttack(name) {
   else if (input.move.lengthSq() > 0.01) { const [f, r] = camBasis(); p.face = Math.atan2(f.x * input.move.y + r.x * input.move.x, f.z * input.move.y + r.z * input.move.x); }
 }
 const clipTime = (spec) => spec.from + ronin.t;
-const DODGE_END = 0.44; // after this the roll can be cancelled into a move or an action
+const DODGE_END = 0.5; // after this the roll can be cancelled into a move or an action
 function tryAct() {
   const p = player, now = game.time, buf = input.buf, fresh = (k) => now - buf[k] < 0.32;
   const ct = p.state === 'attack' ? clipTime(p.atk.spec) : 0;
@@ -347,7 +347,7 @@ function tryAct() {
     if (dir.lengthSq() < 0.01) dir.set(-Math.sin(p.face), 0, -Math.cos(p.face));
     dir.normalize(); p.dodgeDir.copy(dir); p.face = Math.atan2(dir.x, dir.z);
     p.state = 'dodge'; p.t = 0; spend(p.stats.dodgeCost);
-    ronin.play('rollc', { loop: false, speed: 1.75, fade: 0.06, restart: true });
+    ronin.play('rollc', { loop: false, speed: 2.25, fade: 0.05, restart: true });
     Audio.play('dodge'); fx.dust(p.pos, 4, 0.6);
     return;
   }
@@ -403,8 +403,9 @@ function updatePlayer(dt) {
       speed = want.length() * p.stats.speed;
       if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 16);
       else if (cam.lock && boss.state !== 'dead') p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
-      if (moving || p.speedNow > 0.8) ronin.play('run', { speed: clamp(Math.max(p.speedNow, speed * 0.6) / 4.6, 0.7, 1.25), fade: 0.1 });
-      else ronin.play('idle', { fade: 0.14 });
+      const out = p.t < 0.2 ? 0.2 : 0.12; // a longer blend right after a roll or swing
+      if (moving || p.speedNow > 0.8) ronin.play('run', { speed: clamp(Math.max(p.speedNow, speed * 0.6) / 4.2, 0.8, 1.35), fade: out });
+      else ronin.play('idle', { fade: out + 0.04 });
       break;
     }
     case 'guard':
@@ -457,7 +458,8 @@ function updatePlayer(dt) {
   }
   const y = p.state === 'grabbed' ? ronin.root.position.y : ground(p.pos);
   ronin.root.position.set(p.pos.x, y, p.pos.z);
-  ronin.root.rotation.y = p.face;
+  p.yaw = p.yaw == null ? p.face : p.yaw + angDiff(p.yaw, p.face) * Math.min(1, dt * (p.state === 'dodge' ? 34 : 24));
+  ronin.root.rotation.y = p.yaw;
   ronin.update(dt);
   ronin.root.updateMatrixWorld(true);
   const ct = p.state === 'attack' ? clipTime(p.atk.spec) : 0;
@@ -898,6 +900,7 @@ crewRow();
 // the song starts on the first tap or key press anywhere (browsers block sound before that)
 if (Music.enabled) {
   document.body.classList.add('hasSong');
+  Music.load();
   const first = () => { Music.start(); removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true); };
   addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
   for (const b of document.querySelectorAll('.music')) b.addEventListener('click', (e) => { e.stopPropagation(); Music.toggle(); });

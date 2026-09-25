@@ -126,8 +126,10 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 #crew button { cursor: pointer; color: var(--muted); font: 800 clamp(10px, 1.1vw, 13px) var(--serif); letter-spacing: 0.14em; background: rgba(0,0,0,0.5); border: 1px solid rgba(233,230,223,0.2); padding: 7px 12px; transition: color 0.2s, border-color 0.2s, box-shadow 0.2s; }
 #crew button:hover { color: var(--ink); }
 #crew button.on { color: #fff; border-color: var(--red-hot); box-shadow: 0 0 14px rgba(198,255,26,0.4); }
-#song { position: fixed; z-index: 5; left: -400px; bottom: 0; width: 300px; height: 20px; border: 0; opacity: 0; pointer-events: none; }
-#song.show { left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); width: min(320px, calc(100vw - 24px)); opacity: 0.85; pointer-events: auto; }
+#song { position: fixed; z-index: 5; left: -600px; bottom: 0; width: 320px; height: 20px; border: 0; opacity: 0; pointer-events: none; }
+#song.show { left: max(12px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); opacity: 0.9; pointer-events: auto; }
+#songHint { display: none; position: fixed; z-index: 5; left: max(12px, env(safe-area-inset-left)); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 26px); font-size: 10px; letter-spacing: 0.25em; color: var(--red-hot); text-shadow: 0 1px 4px #000; pointer-events: none; }
+body.songBar:not(.songOn):not(.fighting) #songHint { display: block; }
 body.fighting #song.show { left: -400px; opacity: 0; pointer-events: none; }
 .music, .songCredit { display: none; }
 body.hasSong .music { display: grid; } body.hasSong .songCredit { display: block; }
@@ -236,6 +238,8 @@ body.touch #hint small { display: none; }
   <button type="button" id="tLock">LOCK</button>
   <button type="button" id="tPause" aria-label="Pause">II</button>
 </div>
+
+<p id="songHint">▶ TAP PLAY FOR MUSIC</p>
 
 <div id="title" class="screen">
   <div class="hero">
