@@ -121,7 +121,7 @@ Between layers, the snack bar also asks Jev for a flow check. If you lost most o
 
 On a phone, the left thumb moves, and pulling down on the stick while you hit in the air pounds the ground. Tap the right side or the Hit button to swing, and drag the right side to aim and shoot. Buttons roll, eat a hot dog, and switch the right thumb to the shovel.
 
-The game fits the screen on desktop and phone, and nothing scrolls.
+The game fits the screen on desktop and phone. Menus never shrink their text: a menu too tall for the screen flows into two columns, and on a narrow phone it scrolls inside the screen.
 
 ## Files
 

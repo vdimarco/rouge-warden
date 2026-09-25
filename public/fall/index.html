@@ -162,6 +162,15 @@ a { color: var(--accent); }
 
 .shrine .card-inner { max-width: 1100px; }
 .card-inner { transform-origin: top center; display: flow-root; min-width: 0; }
+/* too tall for the screen: two columns, then scroll; the text keeps its size */
+.card-inner.cols { max-width: min(1240px, 100%); column-count: 2; column-gap: 32px; }
+.card-inner.cols > * { break-inside: avoid; }
+.card-inner.cols > h2, .card-inner.cols > .brand { column-span: all; }
+.overlay.scrolls { overflow-y: auto; overscroll-behavior: contain; place-items: start center; }
+.sheet-body.scrolls { overflow-y: auto; overscroll-behavior: contain; }
+.card-inner.cols .clips { align-items: start; }
+.card-inner.cols .clip figcaption { flex-wrap: wrap; white-space: normal; row-gap: 0; }
+.card-inner.cols .clips .loopcard { grid-column: 1 / -1; }
 .shrine-grid > * { min-width: 0; }
 .slots { min-width: 0; }
 .intro p { font-size: 15.5px; }
@@ -277,6 +286,7 @@ a { color: var(--accent); }
 .bigscore span { color: #9ea4b0; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; }
 .bigscore b { font-family: var(--mono, monospace); font-size: 28px; color: #ffd84a; }
 .initials { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 0 0 8px; }
+.initials[hidden] { display: none; }
 .initials label { width: 100%; color: #f0c85a; font-weight: 700; }
 .initials input { width: 5.2ch; font: 700 24px var(--mono, monospace); text-transform: uppercase; text-align: center; letter-spacing: 4px; background: #0a0c10; color: #fff; border: 2px solid #f0c85a; border-radius: 6px; padding: 4px; }
 .board { margin: 0 auto; padding: 0; list-style: none; max-width: 300px; font: 14px var(--mono, monospace); counter-reset: b; }
@@ -5139,13 +5149,18 @@ const UI = (() => {
   }
 
   // Nothing scrolls. A panel that is still too tall for the screen shrinks to fit.
+  // a menu never shrinks its text to fit: if it is too tall, it flows into two columns,
+  // and if it still does not fit (or the screen is too narrow for two), it scrolls inside the screen
   function fitBox(el, w, h, top) {
     if (!el) return;
-    const k = Math.min(1, (h - 2) / el.scrollHeight, w / el.scrollWidth);
-    let v = "";
-    if (k < 0.999) v = (top ? "" : "translateY(" + Math.max(0, (h - el.scrollHeight * k) / 2).toFixed(1) + "px) ") + "scale(" + k.toFixed(3) + ")";
-    if (el.style.transform !== v) el.style.transform = v;
-    el.style.alignSelf = v && !top ? "start" : "";
+    const box = el.parentElement;
+    el.style.transform = "";
+    el.classList.remove("cols");
+    box.classList.remove("scrolls");
+    if (el.scrollHeight > h - 2 && w >= 700 && !top && !el.closest(".shrine")) el.classList.add("cols");
+    const over = el.scrollHeight > h - 2 || el.scrollWidth > w + 1;
+    box.classList.toggle("scrolls", over);
+    el.style.alignSelf = over && !top ? "start" : "";
   }
   function fit() {
     // while a menu is open, the play HUD steps out of the way
@@ -5469,8 +5484,12 @@ const UI = (() => {
       let last = "";
       try { last = localStorage.getItem("plungerd.drain.initials") || ""; } catch (e) { last = ""; }
       input.value = last;
+      let saved = false;
       form.onsubmit = (ev) => {
         ev.preventDefault();
+        // one entry per run, however many times Save is clicked
+        if (saved) return;
+        saved = true;
         const name = (input.value.toUpperCase().replace(/[^A-Z0-9]/g, "") + "AAA").slice(0, 3);
         try { localStorage.setItem("plungerd.drain.initials", name); } catch (e) { /* storage off */ }
         form.hidden = true;
