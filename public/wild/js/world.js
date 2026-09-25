@@ -325,10 +325,10 @@ export class World {
       const x = ((i + 0.5) / R) * SIZE - HALF, z = ((j + 0.5) / R) * SIZE - HALF;
       const h = this.height(x, z); this.normal(x, z, nrm);
       this.groundColor(x, z, h, nrm.y, c);
-      let d = smooth(1.8, 3.2, h) * smooth(0.74, 0.86, nrm.y) * smooth(100, 80, h);
+      let d = smooth(1.6, 2.8, h) * smooth(0.7, 0.82, nrm.y) * smooth(100, 80, h);
       d *= smooth(1.2, 3, this.pathDist(x, z));
       if (Math.hypot(x - ISLAND.x, z - ISLAND.z) < ISLAND.r + 4) d = 0;
-      d *= 0.55 + 0.45 * smooth(-0.4, 0.3, this.n3(x / 40, z / 40));
+      d *= 0.82 + 0.18 * smooth(-0.4, 0.3, this.n3(x / 40, z / 40));
       const k = (j * R + i) * 4;
       data[k] = c.r * 255; data[k + 1] = c.g * 255; data[k + 2] = c.b * 255; data[k + 3] = d * 255;
     }
@@ -336,6 +336,14 @@ export class World {
     this.maskTex = new THREE.DataTexture(data, R, R, THREE.RGBAFormat);
     this.maskTex.minFilter = this.maskTex.magFilter = THREE.LinearFilter;
     this.maskTex.needsUpdate = true;
+  }
+  clearMask(x, z, r) {
+    const R = this.maskR, ci = ((x + HALF) / SIZE) * R, cj = ((z + HALF) / SIZE) * R, rr = (r / SIZE) * R;
+    for (let j = Math.floor(cj - rr - 1); j <= Math.ceil(cj + rr + 1); j++) for (let i = Math.floor(ci - rr - 1); i <= Math.ceil(ci + rr + 1); i++) {
+      if (i < 0 || j < 0 || i >= R || j >= R) continue;
+      const f = Math.min(1, Math.max(0, (Math.hypot(i - ci, j - cj) - rr * 0.6) / (rr * 0.6)));
+      const k = (j * R + i) * 4 + 3; this.maskData[k] = Math.min(this.maskData[k], this.maskData[k] * f);
+    }
   }
   shadeMask(x, z, r, amt) {
     const R = this.maskR, ci = ((x + HALF) / SIZE) * R, cj = ((z + HALF) / SIZE) * R, rr = (r / SIZE) * R;
@@ -513,8 +521,8 @@ export class World {
     };
     this.trail = this.trail || { t: 0, k: 0, last: new THREE.Vector3(0, -999, 0) };
     this.grass = new THREE.Group();
-    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.1, tall: 1, seed: 5 }));
-    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.6), q.patch * 3, { width: 0.34, tall: 1.1, seed: 9, far: true }));
+    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5 }));
+    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true }));
     this.scene.add(this.grass);
   }
   grassLayer(count, P, o) {
@@ -856,6 +864,9 @@ export class World {
       const ch = this.place(M.cooler(), x + 4, z + 2, i);
       return { x, z, cooler: ch, i };
     });
+    // bare, trodden ground around every fire, so the grass never hides the flames
+    for (const f of this.fires) this.clearMask(f.x, f.z, 6);
+    this.maskTex.needsUpdate = true;
     // boss arenas
     const B = Object.fromEntries(BOSSES.map((b) => [b.id, b]));
     this.place(M.stoneCircle(), B.christian.x, B.christian.z);
@@ -925,7 +936,12 @@ export class World {
       }
       mp.needsUpdate = true;
     }
-    for (const f of this.fires) { const fl = f.obj.userData.flame; fl.scale.set(1 + Math.sin(t * 13 + f.x) * 0.1, 1 + Math.sin(t * 17 + f.z) * 0.2, 1); fl.rotation.y = t * 2; }
+    M.fireTime.value = t;
+    // the nearest fire lights up its surroundings, flickering
+    let nf = null, nd = 70;
+    for (const f of this.fires) { const fl = f.obj.userData.flame; fl.scale.set(1 + Math.sin(t * 9 + f.x) * 0.05, 1 + Math.sin(t * 13 + f.z) * 0.1, 1); const d = Math.hypot(f.x - cam.position.x, f.z - cam.position.z); if (d < nd) { nd = d; nf = f; } }
+    if (!this.fireLight) { this.fireLight = new THREE.PointLight(0xff9a4a, 0, 16, 1.6); this.scene.add(this.fireLight); }
+    if (nf) { this.fireLight.position.set(nf.x, nf.obj.position.y + 1.2, nf.z); this.fireLight.intensity = 26 * (0.85 + 0.15 * Math.sin(t * 11) * Math.sin(t * 7.3 + 1)); } else this.fireLight.intensity = 0;
     this.swirl.rotation.y = t * 0.12;
     for (const s of this.sludge) s.m.scale.y = 0.4 + Math.sin(t * 2 + s.x) * 0.06;
   }

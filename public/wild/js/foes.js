@@ -221,7 +221,7 @@ export class Hazards {
 export const BOSS_STATS = {
   gabe: { hp: 220, r: 1.6, lines: ["You hear that? That's my buddy.", "These are MY mountains.", "Bears listen to me. You don't."] },
   christian: { hp: 180, r: 1.4, lines: ["Pick a card. Any card.", "Now you see me.", "The cards told me you'd lose."] },
-  ryu: { hp: 200, r: 1.4, lines: ["My turn.", "You call that a plunger?", "Down here, I make the rules."] },
+  ryu: { hp: 160, r: 1.4, lines: ["My turn.", "You call that a plunger?", "Down here, I make the rules."] },
   king: { hp: 420, r: 4.5, lines: ["Who clogged me?", "Bow to the throne.", "Flush. FLUSH."] },
 };
 
@@ -256,7 +256,7 @@ export class Boss {
     if (this.hp <= 0) { this.hp = 0; this.alive = false; this.G.bossDown(this); }
     // after a few hits, get out of the way
     if (this.id === "christian" && this.hitsTaken % 4 === 0 && this.alive) { this.state = "vanish"; this.t = 0.5; }
-    if (this.id === "ryu" && this.hitsTaken % 4 === 0 && this.state === "idle") { this.state = "backstep"; this.t = 0.4; }
+    if (this.id === "ryu" && this.hitsTaken % 5 === 0 && this.state === "idle") { this.state = "backstep"; this.t = 0.5; }
   }
   update(dt) {
     const G = this.G, P = G.player;
@@ -273,6 +273,7 @@ export class Boss {
     const half = this.hp < this.maxHp / 2;
     const d = Math.hypot(P.x - this.pos.x, P.z - this.pos.z);
     const face = (k = 6) => { this.yaw = turnTo(this.yaw, Math.atan2(P.x - this.pos.x, P.z - this.pos.z), dt * k); };
+    this.moving = 0;
     this[this.id](dt, d, half, face);
     // keep inside the arena and on the ground
     const cx = this.pos.x - this.center.x, cz = this.pos.z - this.center.z, cd = Math.hypot(cx, cz), lim = this.def.r + 4;
@@ -281,7 +282,7 @@ export class Boss {
     if (this.id === "king" && this.state === "hop") { this.pos.y += this.vy * dt * G.foeTime; this.vy -= 30 * dt * G.foeTime; if (this.pos.y <= g && this.vy < 0) { this.pos.y = g; this.land(); } }
     else this.pos.y = g;
     // bump the player
-    if (d < this.r + 0.6 && this.state !== "vanish") P.hurt(2, this.pos.x, this.pos.z, 10);
+    if (d < this.r + 0.6 && this.state !== "vanish" && !(this.id === "ryu" && (this.state === "dash" || this.state === "tired"))) P.hurt(this.id === "ryu" ? 1 : 2, this.pos.x, this.pos.z, 10);
     this.draw(dt);
   }
   idleAnim(dt) { this.phase += dt; this.draw(dt); }
@@ -290,7 +291,7 @@ export class Boss {
     r.root.position.copy(this.pos); r.root.rotation.y = this.yaw;
     const t = this.G.time;
     if (r.legs.length) {
-      const moving = ["walk", "chase", "dash"].includes(this.state);
+      const moving = ["walk", "chase", "dash"].includes(this.state) || this.moving > 0.5;
       this.phase += dt * (moving ? 9 : 2);
       r.legs[0].rotation.x = moving ? Math.sin(this.phase) * 0.7 : 0; r.legs[1].rotation.x = moving ? -Math.sin(this.phase) * 0.7 : 0;
       r.arms[0].rotation.set(moving ? -Math.sin(this.phase) * 0.6 : Math.sin(t * 2) * 0.1, 0, -0.3);
@@ -305,6 +306,7 @@ export class Boss {
       r.body.scale.y = this.state === "hop" && this.vy > 0 ? 1.08 : this.state === "land" ? 0.9 : 1;
     }
     r.root.visible = this.state !== "vanish" || Math.floor(t * 20) % 2 === 0;
+    if (this.id === "ryu" && this.active && this.alive) this.ryuPose();
     if (r.apply) r.apply(dt, 12);
     tint(r.root, this.flash > 0);
   }
@@ -384,43 +386,84 @@ export class Boss {
     G.sfx("cards");
   }
   // Ryu: fast. Dashes in a straight line, throws a fireball, and fights up close with his own plunger.
+  // Ryu fights like a martial artist: he circles in a guard, and every attack has a clear wind-up and a
+  // recovery you can punish. Punches lunge forward smoothly, the dash is slower with a long warning and
+  // leaves him winded, and the fireball takes a moment to charge.
   ryu(dt, d, half, face) {
-    const G = this.G, P = G.player, H = G.hazards;
-    if (this.state === "intro") { face(); if (this.t <= 0) { this.state = "idle"; this.t = 0.8; } return; }
+    const G = this.G, P = G.player, H = G.hazards, ft = G.foeTime;
+    const toP = Math.atan2(P.x - this.pos.x, P.z - this.pos.z);
+    if (this.state === "intro") { face(); if (this.t <= 0) { this.state = "idle"; this.t = 1.2; } return; }
     if (this.state === "idle") {
-      face(8);
-      if (d > 9) this.stepToward(dt, 5); else if (d < 5) this.stepToward(dt, -3);
+      face(5);
+      // keep a fighting distance, and circle slowly to one side
+      this.circle = this.circle || (Math.random() < 0.5 ? 1 : -1);
+      const want = d > 8 ? 3.2 : d < 4.5 ? -2.4 : 0;
+      this.pos.x += (Math.sin(toP) * want + Math.cos(toP) * this.circle * 1.4) * dt * ft;
+      this.pos.z += (Math.cos(toP) * want - Math.sin(toP) * this.circle * 1.4) * dt * ft;
+      this.moving = Math.abs(want) + 1.4;
       if (this.t <= 0) {
         const roll = Math.random();
-        if (d < 6) { this.state = "combo"; this.t = 0; this.combo = 0; }
-        else if (roll < 0.5) { this.state = "aim"; this.t = half ? 0.4 : 0.6; this.dashDir = Math.atan2(P.x - this.pos.x, P.z - this.pos.z); this.telegraph(); }
-        else { this.state = "cast"; this.t = half ? 0.45 : 0.7; }
+        this.circle = -this.circle;
+        if (d < 5.5) { this.state = "windup"; this.t = half ? 0.4 : 0.5; this.combo = 0; }
+        else if (roll < 0.45) { this.state = "aim"; this.t = half ? 0.75 : 0.95; this.dashDir = toP; this.telegraph(); }
+        else { this.state = "cast"; this.t = half ? 0.7 : 0.9; }
       }
+    } else if (this.state === "windup") {
+      face(6);
+      if (this.t <= 0) { this.state = "strike"; this.t = 0.22; this.hitDone = false; G.sfx("swing"); }
+    } else if (this.state === "strike") {
+      // a smooth lunge, and one hit at the middle of it
+      this.pos.x += Math.sin(this.yaw) * 9 * dt * ft; this.pos.z += Math.cos(this.yaw) * 9 * dt * ft;
+      if (!this.hitDone && this.t < 0.12) { this.hitDone = true; if (d < 3.2) P.hurt(2, this.pos.x, this.pos.z, 6); }
+      if (this.t <= 0) { this.combo++; if (this.combo < 2 && d < 5) { this.state = "windup"; this.t = 0.32; } else { this.state = "recover"; this.t = 0.9; } }
+    } else if (this.state === "recover") {
+      if (this.t <= 0) { this.state = "idle"; this.t = half ? 1.1 : 1.5; }
     } else if (this.state === "aim") {
-      if (this.t <= 0) { G.scene.remove(this.line); this.state = "dash"; this.t = 0.45; this.yaw = this.dashDir; this.dashHit = false; G.sfx("dash"); }
+      face(2);
+      if (this.t <= 0) { G.scene.remove(this.line); this.state = "dash"; this.t = 0.5; this.yaw = this.dashDir; this.dashHit = false; G.sfx("dash"); }
     } else if (this.state === "dash") {
-      this.pos.x += Math.sin(this.dashDir) * 34 * dt * G.foeTime; this.pos.z += Math.cos(this.dashDir) * 34 * dt * G.foeTime;
-      if (!this.dashHit && d < 2.4) { this.dashHit = true; P.hurt(4, this.pos.x, this.pos.z, 12); }
-      if (this.t <= 0) { if (half && !this.again) { this.again = true; this.state = "aim"; this.t = 0.3; this.dashDir = Math.atan2(P.x - this.pos.x, P.z - this.pos.z); this.telegraph(); } else { this.again = false; this.state = "idle"; this.t = 1.2; } }
+      this.pos.x += Math.sin(this.dashDir) * 24 * dt * ft; this.pos.z += Math.cos(this.dashDir) * 24 * dt * ft;
+      if (!this.dashHit && d < 2.2) { this.dashHit = true; P.hurt(3, this.pos.x, this.pos.z, 11); }
+      if (this.t <= 0) { this.state = "tired"; this.t = half ? 1.1 : 1.5; }
+    } else if (this.state === "tired") {
+      // winded after the dash: your chance to hit back
+      if (this.t <= 0) { this.state = "idle"; this.t = 0.8; }
     } else if (this.state === "cast") {
-      face(10);
+      face(5);
       if (this.t <= 0) {
         const a = this.yaw;
-        const ball = new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 10), new THREE.MeshBasicMaterial({ color: 0x5ad8ff }));
-        H.shot({ pos: new THREE.Vector3(this.pos.x + Math.sin(a) * 2.5, this.pos.y + 2.4, this.pos.z + Math.cos(a) * 2.5), vel: new THREE.Vector3(Math.sin(a) * 15, 0, Math.cos(a) * 15), r: 1.1, dmg: 4, mesh: ball, color: 0x5ad8ff, life: 3 });
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), new THREE.MeshBasicMaterial({ color: 0x5ad8ff }));
+        H.shot({ pos: new THREE.Vector3(this.pos.x + Math.sin(a) * 2.2, this.pos.y + 1.6, this.pos.z + Math.cos(a) * 2.2), vel: new THREE.Vector3(Math.sin(a) * 12, 0, Math.cos(a) * 12), r: 0.9, dmg: 3, mesh: ball, color: 0x5ad8ff, life: 3 });
         G.sfx("hadoken"); if (Math.random() < 0.5) G.say(this, "HA-DOKEN!");
-        this.state = "idle"; this.t = half ? 0.9 : 1.4;
+        this.state = "release"; this.t = 0.5;
       }
-    } else if (this.state === "combo") {
-      face(10);
-      if (this.t <= 0) {
-        if (this.combo >= 3) { this.state = "idle"; this.t = 1.2; return; }
-        this.combo++; this.t = half ? 0.32 : 0.45; this.state = "combo";
-        this.stepToward(0.12, 20);
-        if (d < 4) P.hurt(2, this.pos.x, this.pos.z, 7);
-        G.sfx("swing");
-      }
-    } else if (this.state === "backstep") { this.stepToward(dt, -14); if (this.t <= 0) { this.state = "aim"; this.t = 0.4; this.dashDir = Math.atan2(P.x - this.pos.x, P.z - this.pos.z); this.telegraph(); } }
+    } else if (this.state === "release") {
+      if (this.t <= 0) { this.state = "idle"; this.t = half ? 1.1 : 1.5; }
+    } else if (this.state === "backstep") {
+      // a light hop back, not a slide
+      const u = 1 - Math.max(0, this.t) / 0.5;
+      this.pos.x -= Math.sin(toP) * 9 * dt * ft; this.pos.z -= Math.cos(toP) * 9 * dt * ft;
+      this.hop = Math.sin(u * Math.PI) * 0.7;
+      if (this.t <= 0) { this.hop = 0; this.state = "idle"; this.t = 0.6; }
+    }
+  }
+  // Ryu's stances, eased by the skeleton blend
+  ryuPose() {
+    const r = this.rig, [aL, aR] = r.arms, [lL, lR] = r.legs, t = this.G.time, st = this.state;
+    const u = this.t;
+    aL.rotation.set(-1.25, 0, -0.55); aR.rotation.set(-1.0, 0, 0.5);
+    r.torso.rotation.set(0.08, -0.25, 0); r.head.rotation.set(0, 0.2, 0);
+    r.body.rotation.set(0, 0, 0);
+    if (!this.moving) { lL.rotation.set(-0.35, 0, -0.18); lR.rotation.set(0.25, 0, 0.18); r.body.position.y = -0.1 + Math.sin(t * 5) * 0.03; }
+    if (st === "windup") { aR.rotation.set(0.5, 0, 0.6); r.torso.rotation.y = -0.7; r.torso.rotation.x = -0.05; }
+    else if (st === "strike") { aR.rotation.set(-1.6, 0, 0.05); aL.rotation.set(-0.3, 0, -0.4); r.torso.rotation.y = 0.5; r.torso.rotation.x = 0.2; }
+    else if (st === "recover") { aR.rotation.set(-1.1, 0, 0.3); r.torso.rotation.y = 0.1; }
+    else if (st === "aim") { r.body.rotation.x = 0.2; r.body.position.y = -0.25; lL.rotation.set(-0.8, 0, -0.2); lR.rotation.set(0.6, 0, 0.2); aL.rotation.set(0.4, 0, -0.4); aR.rotation.set(0.4, 0, 0.4); }
+    else if (st === "dash") { r.body.rotation.x = 0.55; aL.rotation.set(0.9, 0, -0.3); aR.rotation.set(0.9, 0, 0.3); lL.rotation.set(-1.1, 0, 0); lR.rotation.set(0.8, 0, 0); }
+    else if (st === "tired") { r.torso.rotation.x = 0.6; r.head.rotation.x = 0.2; aL.rotation.set(-0.6, 0, -0.1); aR.rotation.set(-0.6, 0, 0.1); lL.rotation.set(-0.4, 0, -0.1); lR.rotation.set(-0.4, 0, 0.1); r.body.position.y = -0.2 + Math.sin(t * 7) * 0.04; }
+    else if (st === "cast") { const c = 1 - Math.max(0, u) / 0.9; aL.rotation.set(-0.5 - c * 0.2, 0, 0.35); aR.rotation.set(-0.5 - c * 0.2, 0, -0.35); r.torso.rotation.y = -0.8 * c; r.torso.rotation.x = 0.1; r.body.position.y = -0.2 * c; }
+    else if (st === "release") { aL.rotation.set(-1.55, 0, 0.12); aR.rotation.set(-1.55, 0, -0.12); r.torso.rotation.y = 0.25; }
+    if (this.hop) r.body.position.y += this.hop;
   }
   telegraph() {
     const G = this.G;
@@ -472,6 +515,7 @@ export class Boss {
   stepToward(dt, sp) {
     const P = this.G.player, a = Math.atan2(P.x - this.pos.x, P.z - this.pos.z);
     this.pos.x += Math.sin(a) * sp * dt * this.G.foeTime; this.pos.z += Math.cos(a) * sp * dt * this.G.foeTime;
+    this.moving = sp;
   }
 }
 

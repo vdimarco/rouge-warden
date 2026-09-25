@@ -347,18 +347,22 @@ export class Player {
     const up = act ? inp.move.y : 0, side = act ? inp.move.x : 0;
     const moving = Math.hypot(up, side) > 0.15;
     if (moving) this.useStamina(dt * 6);
+    // climbing comes in pulls: the body moves most while a hand pulls down, and slows as the next hand reaches
+    this.climbPh = (this.climbPh || 0) + dt * (moving ? 6.2 : 0);
+    const pulse = 0.35 + 1.3 * Math.pow(Math.abs(Math.sin(this.climbPh)), 1.5);
     const letGo = () => { this.state = "air"; this.airT = 0.3; this.climb = null; };
     if (this.exhausted) { letGo(); this.vel.set(-Math.sin(this.yaw) * 2, 0, -Math.cos(this.yaw) * 2); return; }
     if (act && inp.roll) { letGo(); this.vel.set(-Math.sin(this.yaw) * 3, 0, -Math.cos(this.yaw) * 3); return; }
     // camera right, flattened onto the wall, decides which way "right" goes
     const cr = { x: Math.cos(G.cam.yaw), z: -Math.sin(G.cam.yaw) };
     const jumpBoost = act && inp.jump && this.useStamina(18) ? 2.4 : 0;
-    if (jumpBoost) G.sfx("jump");
+    if (jumpBoost) { G.sfx("jump"); this.lungeT = 0.35; }
+    this.climbSide = side; this.climbUp = up;
     if (c.terrain) {
       w.normal(this.pos.x, this.pos.z, N);
       let wx = -N.x, wz = -N.z; const wl = Math.hypot(wx, wz) || 1; wx /= wl; wz /= wl;
       let sx = wz, sz = -wx; if (sx * cr.x + sz * cr.z < 0) { sx = -sx; sz = -sz; }
-      const sp = 2.6 * (1 + jumpBoost);
+      const sp = 2.6 * (jumpBoost ? 1 + jumpBoost : pulse);
       const vy = up + jumpBoost;
       let nx = this.pos.x + (wx * vy + sx * side) * sp * dt, nz = this.pos.z + (wz * vy + sz * side) * sp * dt;
       const res = this.canMove(nx, nz);
@@ -366,7 +370,7 @@ export class Player {
       this.pos.y = w.height(this.pos.x, this.pos.z);
       this.yaw = Math.atan2(wx, wz);
       w.normal(this.pos.x, this.pos.z, N);
-      if (N.y > 0.76) { this.state = "ground"; this.climb = null; return; }
+      if (N.y > 0.76) { this.mantleFrom = this.pos.clone(); this.mantleFrom.y -= 0.5; this.mantleT = 0.3; this.state = "ground"; this.climb = null; return; }
       if (this.pos.y < -1.2) { this.enterSwim(); return; }
     } else {
       const b = c.box, co = Math.cos(b.rot), si = Math.sin(b.rot);
@@ -379,7 +383,7 @@ export class Player {
       // tangent in world space
       let tx = tside.x * co + tside.z * si, tz = -tside.x * si + tside.z * co;
       if (tx * cr.x + tz * cr.z < 0) { tx = -tx; tz = -tz; }
-      const sp = 3;
+      const sp = 3 * (jumpBoost ? 1 : pulse);
       this.pos.y += (up * sp + jumpBoost * 2.2) * dt * (jumpBoost ? 1.8 : 1);
       const wx = b.x + lx * co + lz * si, wz = b.z - lx * si + lz * co;
       this.pos.x = wx + tx * side * sp * dt; this.pos.z = wz + tz * side * sp * dt;
@@ -391,7 +395,8 @@ export class Player {
       const onx = nX * co + nZ * si, onz = -nX * si + nZ * co;
       this.yaw = Math.atan2(-onx, -onz);
       if (this.pos.y >= b.top - 0.15) {
-        // pull up onto the top
+        // pull up onto the top, with a short mantle so it reads as a climb and not a jump cut
+        this.mantleFrom = this.pos.clone(); this.mantleT = 0.42;
         this.pos.x -= onx * 1.4; this.pos.z -= onz * 1.4; this.pos.y = b.top;
         this.state = "ground"; this.climb = null; G.sfx("land");
         if (b.tower) G.reachedTowerTop(b.tower);
@@ -509,6 +514,8 @@ export class Player {
     if (this.lastState === "air" && this.state === "ground") this.landT = 0.22;
     this.lastState = this.state;
     this.landT = Math.max(0, (this.landT || 0) - dt);
+    this.lungeT = Math.max(0, (this.lungeT || 0) - dt);
+    this.mantleT = Math.max(0, (this.mantleT || 0) - dt);
     r.body.rotation.set(0, 0, 0); r.body.position.set(0, 0, 0);
     r.torso.rotation.set(0, 0, 0); r.head.rotation.set(0, 0, 0);
     aL.rotation.set(0, 0, -0.18); aR.rotation.set(0, 0, 0.18);
@@ -552,11 +559,26 @@ export class Player {
       r.glider.rotation.z = Math.sin(t * 1.3) * 0.08 - this.turnLean * 0.1;
       rate = 8;
     } else if (this.state === "climb") {
-      const m = Math.hypot(this.vel.x, this.vel.z) + 1;
-      const u = t * 5;
-      aL.rotation.x = -2.6 + Math.sin(u) * 0.4 * m * 0.3; aR.rotation.x = -2.6 - Math.sin(u) * 0.4 * m * 0.3;
-      lL.rotation.x = -0.5 + Math.sin(u) * 0.3; lR.rotation.x = -0.5 - Math.sin(u) * 0.3;
-      r.torso.rotation.x = -0.1;
+      // hand over hand: one arm reaches high while the other pulls down, and the opposite knee drives up
+      const moving = Math.hypot(this.climbUp || 0, this.climbSide || 0) > 0.15;
+      const q = moving ? Math.sin(this.climbPh || 0) : Math.sin(t * 1.4) * 0.12;
+      const dirUp = (this.climbUp || 0) < -0.15 ? -1 : 1;
+      aL.rotation.x = -2.35 - 0.62 * q * dirUp; aR.rotation.x = -2.35 + 0.62 * q * dirUp;
+      aL.rotation.z = -0.38 - Math.max(0, -(this.climbSide || 0)) * 0.5; aR.rotation.z = 0.38 + Math.max(0, this.climbSide || 0) * 0.5;
+      lL.rotation.x = -0.75 + 0.55 * q * dirUp; lR.rotation.x = -0.75 - 0.55 * q * dirUp;
+      lL.rotation.z = -0.22; lR.rotation.z = 0.22;
+      r.torso.rotation.x = 0.12; r.head.rotation.x = -0.35 + q * 0.05;
+      r.body.rotation.z = q * 0.07; r.body.position.x = q * 0.05;
+      r.body.position.y = moving ? Math.abs(q) * 0.06 : 0;
+      if (this.lungeT > 0) { aL.rotation.x = aR.rotation.x = -3.0; lL.rotation.x = lR.rotation.x = -0.2; r.head.rotation.x = -0.5; }
+      // on sloped rock, lean into the slope instead of standing upright with the feet in the ground
+      if (this.climb && this.climb.terrain) {
+        G.world.normal(this.pos.x, this.pos.z, N);
+        const steep = Math.acos(clamp(N.y, 0, 1));
+        r.body.rotation.x = (Math.PI / 2 - steep) * 0.8;
+        r.root.position.x += N.x * 0.25; r.root.position.y += 0.1; r.root.position.z += N.z * 0.25;
+      }
+      rate = 11;
     } else if (this.state === "swim") {
       r.body.rotation.x = 1.1; r.body.position.y = 0.5;
       aL.rotation.x = -2 + s * 1.2; aR.rotation.x = -2 - s * 1.2;
@@ -595,8 +617,17 @@ export class Player {
     } else if (this.charge > 0.1) {
       aR.rotation.set(-1.4, 0, 1.6); r.torso.rotation.y = -0.8;
     }
+    // mantle: the body rises over the edge, then swings forward onto the top
+    if (this.mantleT > 0 && this.mantleFrom && this.state === "ground") {
+      const u = 1 - this.mantleT / 0.42, up = Math.min(1, u * 1.8), fw = Math.max(0, (u - 0.35) / 0.65);
+      r.root.position.set(lerp(this.mantleFrom.x, this.pos.x, fw), lerp(this.mantleFrom.y, this.pos.y, up), lerp(this.mantleFrom.z, this.pos.z, fw));
+      aL.rotation.set(-0.7 + fw * 0.5, 0, -0.3); aR.rotation.set(-0.7 + fw * 0.5, 0, 0.3);
+      lL.rotation.x = -1.3 * (1 - fw); lR.rotation.x = -0.4 * (1 - fw);
+      r.torso.rotation.x = 0.5 * (1 - fw);
+      rate = 18;
+    }
     // blink while hurt
-    r.root.visible = !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
+    r.root.visible = !r.root.userData.camHide && !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
     // painted 3D models: turn the pose into bone rotations, easing between poses
     if (r.apply) r.apply(dt, rate);
   }
