@@ -23,7 +23,9 @@ const result = await page.evaluate(async () => {
       if (G.test.inBox(c.x, c.y, c.z) && !W.boxes.some((b) => b.walk && Math.abs(c.y - b.top) < 1)) note("camera-in-building", { label });
       // stuck: pushing a stick for 6 seconds without moving or climbing
       const pushing = Math.hypot(I.move.x, I.move.y) > 0.5 && !P.exhausted;
-      if (pushing && P.pos.distanceTo(lastP) < 0.02) still++; else still = 0;
+      if (pushing && P.state !== "kayak" && !P.fishing && P.pos.distanceTo(lastP) < 0.02) still++; else still = 0;
+      if (P.state === "kayak" && W.height(P.x, P.z) > -0.2) note("kayak-on-land", { label });
+      if (!P.fishing && P.weaponMesh && !P.weaponMesh.visible && P.state !== "kayak") note("weapon-hidden", { label });
       lastP.copy(P.pos);
       if (still > 180) { note("stuck", { label }); still = 0; }
       if (G.ui.modal) QA.closeModals();
@@ -77,13 +79,36 @@ const result = await page.evaluate(async () => {
     QA.clear(); await run(90, null, "cliff-after");
   }
   // 4. swim under the dock and out to the island, and into the island's cliffs
-  QA.closeModals(); P.place(W.cottage.x + 1, W.shoreZ - 40, -1.15); P.state = "swim"; P.stamina = P.staminaMax;
+  QA.closeModals(); P.place(W.cottage.x + 1, W.shoreZ - 8, -1.15); P.state = "swim"; P.stamina = P.staminaMax;
   G.cam.yaw = Math.PI / 2; QA.clear(); I.move.y = 1;
   await run(300, (i) => { I.move.x = Math.sin(i / 10); P.stamina = P.staminaMax; }, "swim-dock");
   // 5. the camera in tight spots: inside the cabin porch, under the dock, next to towers
   for (const [x, z] of [[W.cottage.x, W.cottage.z - 6], [W.towers[0].x + 4, W.towers[0].z + 4], [0, -40]]) {
     QA.closeModals(); P.place(x, z);
     for (let k = 0; k < 16; k++) { G.cam.yaw = (k / 16) * 6.28; G.cam.pitch = (k % 4) * 0.4 - 0.4; await run(8, null, "camera"); }
+  }
+  // 6b. paddle the kayak all over the lake: into both docks, the shore, and the island; hop out and climb back in
+  QA.closeModals(); const K = W.kayak; P.place(K.x - 1.5, K.z + 2); P.boardKayak();
+  if (P.state !== "kayak") note("kayak-no-board");
+  await run(3000, (i) => {
+    if (i % 90 === 0) { I.move.x = rnd() * 2 - 1; I.move.y = rnd() * 2 - 1; I.sprint = rnd() < 0.3; }
+    if (i % 700 === 699 && P.state === "kayak") I.jump = true;
+    if (P.state === "swim" && Math.hypot(P.x - K.x, P.z - K.z) < 3.4) I.interact = true;
+    if (P.state === "swim" && i % 700 > 100) { P.place(K.x - 1.5, K.z + 1.5, -1.15); P.state = "swim"; }
+  }, "kayak");
+  if (!Number.isFinite(K.x) || W.height(K.x, K.z) > -0.2) note("kayak-lost", { k: [K.x, K.z] });
+  QA.clear(); if (P.state === "kayak") P.leaveKayak();
+  // 6c. fish at every spot with random buttons; the rod always goes away and the plunger comes back
+  for (const f of W.fishSpots) {
+    QA.closeModals();
+    let spot = null;
+    for (let a = 0; a < 6.28 && !spot; a += 0.2) for (const r of [5, 8, 11, 14]) { const x = f.x + Math.cos(a) * r, z = f.z + Math.sin(a) * r; if (!spot && W.height(x, z) > 0.6 && W.normal(x, z).y > 0.75 && !QA.boxAt(x, W.height(x, z) + 1, z)) spot = [x, z]; }
+    if (!spot) continue;
+    P.place(spot[0], spot[1]); f.rest = 0; QA.clear();
+    G.fishing.start(f);
+    await run(360, (i) => { I.attackHeld = rnd() < 0.5; if (i % 40 === 0) I.attack = rnd() < 0.3; if (i === 300) I.move.x = 1; }, "fishing");
+    QA.clear(); await run(80, null, "fishing-after");
+    if (G.fishing.active || P.fishing) note("fishing-stuck", { spot: f.id });
   }
   // 6. critters and bosses stay sane
   let badFoes = 0;

@@ -57,6 +57,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #banner h2 { margin: 0; font-family: var(--title); font-weight: 700; font-size: clamp(30px, 6vw, 58px); letter-spacing: .04em; }
 #banner p { margin: 4px 0 0; font-family: var(--title); font-style: italic; font-size: clamp(16px, 2.6vw, 24px); }
 #banner hr { width: min(420px, 70vw); border: 0; height: 1px; background: linear-gradient(90deg, transparent, #fff, transparent); margin: 6px auto; }
+#fishing { position: absolute; left: calc(var(--sal) + 14%); top: 44%; transform: translateY(-50%); display: flex; gap: 8px; align-items: flex-end; }
+#fishing small { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; text-align: center; font-weight: 800; font-size: 13px; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+#fishBar { position: relative; width: 38px; height: min(36vh, 240px); border-radius: 12px; background: linear-gradient(#3a7ab0, #1d4a70); border: 3px solid #f6efd9; box-shadow: 0 4px 16px rgba(0,0,0,.35); overflow: hidden; }
+#fishZone { position: absolute; left: 3px; right: 3px; bottom: 0; border-radius: 8px; background: rgba(160,230,120,.55); border: 2px solid rgba(220,255,200,.8); transition: background .1s; }
+#fishZone.on { background: rgba(170,255,120,.85); }
+#fishIcon { position: absolute; left: 50%; transform: translate(-50%, 50%); font-size: 22px; line-height: 1; }
+#fishProg { position: relative; width: 10px; height: min(36vh, 240px); border-radius: 6px; background: rgba(20,30,40,.55); border: 2px solid #f6efd9; overflow: hidden; }
+#fishProg i { position: absolute; left: 0; right: 0; bottom: 0; background: #ffd84a; }
 #toast { position: absolute; left: 50%; top: 38%; transform: translateX(-50%); font-weight: 800; font-size: 18px; opacity: 0; transition: opacity .3s; text-align: center; white-space: nowrap; }
 #toast.show { opacity: 1; }
 #flash { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 50%, rgba(220,30,20,.55)); opacity: 0; transition: opacity .35s; }
@@ -162,6 +170,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div id="prompt" hidden><kbd id="pkey">E</kbd><span id="ptext"></span></div>
   <div id="banner"><hr><h2 id="btitle"></h2><p id="bsub"></p><hr></div>
   <div id="toast" class="shadow"></div>
+  <div id="fishing" hidden><div id="fishBar"><i id="fishZone"></i><b id="fishIcon">🐟</b></div><div id="fishProg"><i id="fishFill"></i></div><small>Hold Swing<br>to reel</small></div>
   <div id="bossbar" hidden><span id="bossName"></span><div><i id="bossFill"></i></div></div>
   <div id="flash"></div>
   <div id="slow"></div>

@@ -533,3 +533,48 @@ export function food(id) {
   else if (id === "heart") { const h = mesh(sph(0.3), toon(0xff4a5a, { emissive: 0x8a0a1a }), 0, 0.5, 0, true, 0.02); h.scale.set(1, 0.9, 0.5); g.add(h); }
   return g;
 }
+
+/* ---------------- the kayak, its paddle, the fishing rod, and a fish ---------------- */
+// The kayak points along +z. Its deck sits about 0.35 above the water line (y = 0).
+export function kayak() {
+  const g = GLB.building("kayak", 0.02);
+  if (g) { const k = new THREE.Group(); g.position.y = -0.18; k.add(g); return k; }
+  const k = new THREE.Group();
+  const hull = mesh(new THREE.SphereGeometry(1, 20, 10), 0xd8502a, 0, 0.05, 0);
+  hull.scale.set(0.42, 0.26, 2.4); k.add(hull);
+  const deck = mesh(new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xf2e6c8, 0, 0.08, 0, false);
+  deck.scale.set(0.4, 0.14, 2.3); k.add(deck);
+  const rim = mesh(new THREE.TorusGeometry(0.3, 0.05, 6, 16), 0x9a6a3a, 0, 0.2, -0.1, false);
+  rim.rotation.x = Math.PI / 2; rim.scale.set(1, 1.5, 1); k.add(rim);
+  return k;
+}
+export function paddle() {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.03, 0.03, 2.3, 6), 0xb07a3a, 0, 0, 0, true, 0.015));
+  for (const s of [-1, 1]) { const b = mesh(box(0.2, 0.46, 0.03), 0xc89a5a, 0, s * 1.2, 0, true, 0.015); b.rotation.y = s * 0.5; g.add(b); }
+  g.rotation.z = Math.PI / 2;
+  const h = new THREE.Group(); h.add(g); return h;
+}
+// the rod points along +z from the hand; userData.tip is where the line starts
+export function rod() {
+  const g = new THREE.Group();
+  const pole = mesh(cyl(0.012, 0.03, 2.4, 6), 0x7a4a24, 0, 1.1, 0, true, 0.012); g.add(pole);
+  g.add(mesh(cyl(0.05, 0.05, 0.12, 8), 0xb0b4b8, 0.05, 0.25, 0, false));
+  const tip = new THREE.Object3D(); tip.position.set(0, 2.3, 0); g.add(tip);
+  g.rotation.x = Math.PI / 2 - 0.5;
+  const h = new THREE.Group(); h.add(g); h.userData.tip = tip; return h;
+}
+export function bobber() {
+  const g = new THREE.Group();
+  g.add(mesh(sph(0.09, 10, 8), 0xe8402a, 0, 0.05, 0, false));
+  g.add(mesh(new THREE.SphereGeometry(0.09, 10, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 0xffffff, 0, 0.05, 0, false));
+  return g;
+}
+export function fish(color = 0x8a9a5a) {
+  const g = GLB.building("fish", 0.012);
+  if (g) { if (color !== 0x8a9a5a) g.traverse((o) => { if (o.isMesh && !o.userData.outline) { o.material = o.material.clone(); o.material.color.set(color).lerp(new THREE.Color(0xffffff), 0.4); } }); return g; }
+  const f = new THREE.Group();
+  const b = mesh(sph(0.2, 12, 8), color, 0, 0.2, 0); b.scale.set(0.45, 0.7, 1.8); f.add(b);
+  const t = mesh(new THREE.ConeGeometry(0.16, 0.25, 4), color, 0, 0.2, -0.42); t.rotation.x = -Math.PI / 2; t.scale.set(0.3, 1, 1.2); f.add(t);
+  return f;
+}

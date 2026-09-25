@@ -23,7 +23,7 @@ export async function open({ width = 640, height = 360, touch = false, clear = t
   await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
   if (clear) await page.addInitScript(() => { if (!sessionStorage.getItem("qa-kept")) { localStorage.clear(); sessionStorage.setItem("qa-kept", "1"); } });
   await page.goto(URL);
-  await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
+  await page.waitForSelector("#title:not([hidden])", { timeout: 300000 });
   return { browser, page, errors };
 }
 

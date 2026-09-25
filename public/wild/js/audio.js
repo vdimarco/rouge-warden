@@ -82,6 +82,12 @@ export function sfx(name) {
     case "fury": tone(80, 0.6, "sawtooth", 0.2, 600); noise(0.6, 0.35, 3000, 0.4); break;
     case "lift": noise(0.8, 0.3, 900, 0.3, "bandpass"); tone(300, 0.8, "sine", 0.1, 600); break;
     case "slowmo": tone(600, 0.6, "sine", 0.12, -400); break;
+    case "cast": noise(0.25, 0.12, 2400, 0.6, "highpass"); tone(900, 0.2, "sine", 0.04, -500); break;
+    case "plop": tone(420, 0.12, "sine", 0.1, -260); noise(0.12, 0.1, 900, 1, "lowpass"); break;
+    case "bite": tone(520, 0.08, "square", 0.08, 300); tone(700, 0.1, "square", 0.08, 300, 0.1); break;
+    case "reel": noise(0.06, 0.06, 3200, 3, "bandpass"); break;
+    case "catch": notes([523, 659, 784, 1047, 1319], "triangle", 0.12, 0.1, 0.5); break;
+    case "paddle": noise(0.3, 0.1, 700, 0.6, "lowpass"); break;
     case "boss": notes([110, 104, 98], "sawtooth", 0.12, 0.3, 0.6); break;
     case "victory": notes([392, 523, 659, 784, 659, 784, 1047], "triangle", 0.14, 0.16, 0.7); break;
     case "die": notes([392, 370, 349, 330], "triangle", 0.14, 0.3, 0.6); break;

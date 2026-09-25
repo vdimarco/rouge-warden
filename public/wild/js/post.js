@@ -4,9 +4,9 @@
 import * as THREE from "three";
 
 export const QUALITY = {
-  low: { radius: 0, ratio: 0.85, glow: 0, samples: 0, grass: 32000, patch: 64, shadow: 1024 },
-  medium: { radius: 2, ratio: 1, glow: 1, samples: 0, grass: 90000, patch: 96, shadow: 2048 },
-  high: { radius: 3, ratio: 1.25, glow: 1, samples: 4, grass: 150000, patch: 118, shadow: 2048 },
+  low: { farR: 0, radius: 0, ratio: 0.85, glow: 0, samples: 0, grass: 32000, patch: 64, shadow: 1024 },
+  medium: { farR: 1, radius: 2, ratio: 1, glow: 1, samples: 0, grass: 120000, patch: 96, shadow: 2048 },
+  high: { farR: 2, radius: 3, ratio: 1.25, glow: 1, samples: 4, grass: 200000, patch: 118, shadow: 2048 },
 };
 
 export class Painter {
@@ -17,7 +17,7 @@ export class Painter {
     this.target = null;
     this.uniforms = {
       tColor: { value: null }, tDepth: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
-      uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uGlow: { value: quality.glow },
+      uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uFarR: { value: quality.farR || 0 }, uHaze: { value: new THREE.Color(0.6, 0.75, 0.9) }, uGlow: { value: quality.glow },
       uTime: { value: 0 }, uSun: { value: new THREE.Vector2(-9, -9) }, uSunVis: { value: 0 }, uSunCol: { value: new THREE.Color(1, 0.92, 0.75) },
       uNight: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
     };
@@ -34,6 +34,7 @@ export class Painter {
   setQuality(q) {
     this.q = q;
     this.uniforms.uRadius.value = q.radius;
+    this.uniforms.uFarR.value = q.farR || 0;
     this.uniforms.uGlow.value = q.glow;
     this.dispose();
   }
@@ -59,6 +60,7 @@ export class Painter {
     if (look) {
       U.uTime.value = look.time;
       U.uNight.value = look.night;
+      if (look.haze) U.uHaze.value.copy(look.haze);
       // where the sun is on screen, and whether anything hides it
       const p = look.sunDir.clone().multiplyScalar(1000).add(camera.position).project(camera);
       const front = p.z < 1 && look.sunDir.y > -0.05;
@@ -71,8 +73,8 @@ export class Painter {
 }
 
 const FRAG = /* glsl */ `
-uniform sampler2D tColor, tDepth; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uGlow, uTime, uSunVis, uNight;
-uniform vec3 uSunCol, uInk; varying vec2 vUv;
+uniform sampler2D tColor, tDepth; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight;
+uniform vec3 uSunCol, uInk, uHaze; varying vec2 vUv;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -84,9 +86,9 @@ vec3 kuwahara(vec2 uv, float R) {
   vec3 m[4]; vec3 s[4];
   for (int k = 0; k < 4; k++) { m[k] = vec3(0.0); s[k] = vec3(0.0); }
   float n = 0.0;
-  for (int j = 0; j <= 3; j++) {
+  for (int j = 0; j <= 5; j++) {
     if (float(j) > R) break;
-    for (int i = 0; i <= 3; i++) {
+    for (int i = 0; i <= 5; i++) {
       if (float(i) > R) break;
       vec3 a = texture2D(tColor, uv + vec2(-i, -j) * px).rgb; m[0] += a; s[0] += a * a;
       vec3 b = texture2D(tColor, uv + vec2( i, -j) * px).rgb; m[1] += b; s[1] += b * b;
@@ -105,14 +107,27 @@ vec3 kuwahara(vec2 uv, float R) {
 }
 void main() {
   vec2 uv = vUv, px = 1.0 / uRes;
-  vec3 col = uRadius > 0.5 ? kuwahara(uv, uRadius) : texture2D(tColor, uv).rgb;
-  // ink lines where the depth jumps: silhouettes of hills, trees, people, and buildings
   float d0 = texture2D(tDepth, uv).r;
   float z0 = lin(d0);
+  // far away, the brush gets broader, so distant hills turn into soft painted shapes
+  float far = d0 < 1.0 ? smoothstep(70.0, 380.0, z0) : 0.0;
+  float R = uRadius + floor(uFarR * far + 0.5);
+  vec3 col = R > 0.5 ? kuwahara(uv, R) : texture2D(tColor, uv).rgb;
+  // aerial perspective: the farther away, the more it fades into a clear, cool blue
+  float haze = d0 < 1.0 ? (1.0 - exp(-max(z0 - 50.0, 0.0) / 520.0)) : 0.0;
+  vec3 hz = uHaze; hz = clamp(mix(vec3(dot(hz, vec3(0.299, 0.587, 0.114))), hz, 1.5) * 0.93, 0.0, 1.0);
+  col = mix(col, hz * (1.0 - uNight * 0.6), haze * 0.52);
+  col = mix(col, col * vec3(0.9, 0.98, 1.08), haze);
+  // ink lines where the depth jumps: silhouettes of hills, trees, people, and buildings
   float zl = lin(texture2D(tDepth, uv - vec2(px.x, 0.0)).r), zr = lin(texture2D(tDepth, uv + vec2(px.x, 0.0)).r);
   float zd = lin(texture2D(tDepth, uv - vec2(0.0, px.y)).r), zu = lin(texture2D(tDepth, uv + vec2(0.0, px.y)).r);
-  float lap = abs(zl + zr + zd + zu - 4.0 * z0) / max(z0, 0.001);
-  float ink = smoothstep(0.08, 0.35, lap) * (1.0 - smoothstep(40.0, 320.0, z0)) * (d0 < 1.0 ? 1.0 : 0.0);
+  // an outline is where the depth bends sharply compared with how fast it already changes.
+  // Long ground seen at a low angle changes fast but bends little, so it gets no line.
+  float gx = abs(zr - zl) * 0.5, gy = abs(zu - zd) * 0.5;
+  float sx = abs(zl + zr - 2.0 * z0), sy = abs(zd + zu - 2.0 * z0);
+  float bendR = max(sx / (gx + z0 * 0.004), sy / (gy + z0 * 0.004));
+  float size = max(sx, sy) / max(z0, 0.001);
+  float ink = smoothstep(1.0, 1.8, bendR) * smoothstep(0.02, 0.07, size) * (1.0 - smoothstep(40.0, 320.0, z0)) * (d0 < 1.0 ? 1.0 : 0.0);
   col = mix(col, col * uInk * 2.2, ink * 0.55);
   // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes
   if (uGlow > 0.5) {

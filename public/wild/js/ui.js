@@ -185,6 +185,9 @@ export class UI {
     for (const t of G.world.towers) { const on = G.save.towers.includes(t.id); out.push({ kind: "tower", on, x: t.x, z: t.z, travel: on, name: t.name + " Tower", tower: t }); }
     for (const s of G.world.shrines) { const seen = G.save.seen.includes(s.id) || G.save.towers.includes(G.world.towerOf(s.x, s.z)); if (!seen) continue; const done = G.save.shrines.includes(s.id); out.push({ kind: "shrine", on: done, x: s.x, z: s.z, travel: done, name: s.name, shrine: s }); }
     for (const b of G.bosses) out.push({ kind: "boss", on: !b.alive, x: b.center.x, z: b.center.z, name: b.def.name });
+    // fishing spots show once the nearest tower is lit; the kayak always shows
+    for (const f of G.world.fishSpots || []) if (G.save.towers.includes(G.world.towerOf(f.x, f.z))) out.push({ kind: "fish", on: f.rest <= 0, x: f.x, z: f.z, name: "Fishing spot" });
+    const K = G.world.kayak; if (K && !K.rider) out.push({ kind: "kayak", x: K.x, z: K.z, name: "Kayak" });
     return out;
   }
   drawIcon(x, m, px, py, s) {
@@ -193,6 +196,8 @@ export class UI {
     if (m.kind === "tower") { x.fillStyle = m.on ? "#ff9a3a" : "#8a8a8a"; x.beginPath(); x.moveTo(0, -s); x.lineTo(s * 0.6, s); x.lineTo(-s * 0.6, s); x.closePath(); x.fill(); x.stroke(); }
     else if (m.kind === "shrine") { x.fillStyle = m.on ? "#ff9a3a" : "#5ad8e8"; x.fillRect(-s * 0.55, -s * 0.7, s * 1.1, s * 1.4); x.strokeRect(-s * 0.55, -s * 0.7, s * 1.1, s * 1.4); x.fillStyle = "#3a2a1a"; x.beginPath(); x.arc(0, -s * 0.2, s * 0.22, 0.5, 5.2); x.fill(); }
     else if (m.kind === "boss") { x.fillStyle = m.on ? "#9a9a9a" : "#c0203a"; x.beginPath(); x.ellipse(0, 0, s, s * 0.6, 0, 0, 7); x.fill(); x.stroke(); x.fillStyle = m.on ? "#fff" : "#ffd84a"; x.beginPath(); x.arc(0, 0, s * 0.3, 0, 7); x.fill(); }
+    else if (m.kind === "fish") { x.globalAlpha = m.on ? 1 : 0.4; x.fillStyle = "#5ab8e8"; x.beginPath(); x.ellipse(-s * 0.1, 0, s * 0.6, s * 0.35, 0, 0, 7); x.fill(); x.stroke(); x.beginPath(); x.moveTo(s * 0.45, 0); x.lineTo(s * 0.85, -s * 0.35); x.lineTo(s * 0.85, s * 0.35); x.closePath(); x.fill(); x.stroke(); }
+    else if (m.kind === "kayak") { x.fillStyle = "#e0602a"; x.beginPath(); x.ellipse(0, 0, s * 0.3, s * 0.95, 0, 0, 7); x.fill(); x.stroke(); }
     else if (m.kind === "home") { x.fillStyle = "#e0453a"; x.beginPath(); x.moveTo(0, -s); x.lineTo(s, 0); x.lineTo(s * 0.7, 0); x.lineTo(s * 0.7, s * 0.8); x.lineTo(-s * 0.7, s * 0.8); x.lineTo(-s * 0.7, 0); x.lineTo(-s, 0); x.closePath(); x.fill(); x.stroke(); }
     x.restore();
   }

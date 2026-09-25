@@ -70,6 +70,8 @@ export class Player {
 
   place(x, z, y) {
     const w = this.G.world;
+    if (this.state === "kayak") this.leaveKayak();
+    if (this.fishing && this.G.fishing) this.G.fishing.end();
     this.pos.set(x, y ?? this.G.groundAt(x, z, 999), z);
     this.vel.set(0, 0, 0);
     this.state = this.pos.y < -1.2 ? "swim" : "ground";
@@ -103,7 +105,9 @@ export class Player {
     if (this.bonusHp > 0) { const b = Math.min(this.bonusHp, dmg); this.bonusHp -= b; dmg -= b; }
     this.hp -= dmg;
     this.invuln = 0.9;
+    if (this.fishing && G.fishing) G.fishing.end("The fish got away");
     const dx = this.pos.x - fx, dz = this.pos.z - fz, d = Math.hypot(dx, dz) || 1;
+    if (this.state === "kayak") knock = 0;
     this.vel.x = (dx / d) * knock; this.vel.z = (dz / d) * knock;
     if (this.state === "ground") { this.vel.y = 4; this.state = "air"; }
     if (this.state === "climb" || this.state === "glide") { this.state = "air"; this.climb = null; }
@@ -129,16 +133,23 @@ export class Player {
 
     // stamina comes back on the ground
     this.staminaIdle += dt;
-    if ((this.state === "ground" || this.state === "roll") && this.staminaIdle > 0.45) {
+    if ((this.state === "ground" || this.state === "roll" || this.state === "kayak") && this.staminaIdle > 0.45) {
       this.stamina = Math.min(this.staminaMax, this.stamina + dt * (this.exhausted ? 22 : 40));
       if (this.exhausted && this.stamina >= this.staminaMax) this.exhausted = false;
     }
     const act = !G.cutscene && !G.ui.modal;
+    // while fishing you stand (or sit) still
+    if (this.fishing) {
+      this.vel.set(0, 0, 0); this.kSpeed = 0;
+      if (this.state === "kayak") this.floatKayak(dt);
+      this.safety(); this.animate(dt, dir); return;
+    }
     if (this.state === "ground") this.ground(dt, dir, inp, act);
     else if (this.state === "air") this.air(dt, dir, inp, act);
     else if (this.state === "glide") this.glide(dt, dir, inp, act);
     else if (this.state === "climb") this.climbing(dt, dir, inp, act);
     else if (this.state === "swim") this.swim(dt, dir, inp, act);
+    else if (this.state === "kayak") this.paddle(dt, dir, inp, act);
     this.safety();
     this.animate(dt, dir);
   }
@@ -153,7 +164,8 @@ export class Player {
     const E = 770;
     if (Math.abs(p.x) > E || Math.abs(p.z) > E) { p.x = Math.max(-E, Math.min(E, p.x)); p.z = Math.max(-E, Math.min(E, p.z)); this.vel.x *= -0.2; this.vel.z *= -0.2; }
     // never under the ground
-    if (this.state !== "swim") {
+    if (this.state === "kayak") { if (p.y < -0.3 || p.y > 0.3) p.y = 0; }
+    else if (this.state !== "swim") {
       const h = w.height(p.x, p.z);
       if (p.y < h - 0.3) { p.y = h; if (this.state === "air" || this.state === "glide") { this.state = "ground"; this.vel.y = 0; this.rig.glider.visible = false; } }
     } else if (p.y < -1.3) p.y = -1.15;
@@ -391,6 +403,76 @@ export class Player {
     }
   }
 
+  /* ---------------- the kayak ---------------- */
+  boardKayak() {
+    const G = this.G, K = G.world.kayak;
+    this.state = "kayak"; K.rider = true; this.kSpeed = 0; this.stroke = 0;
+    this.pos.set(K.x, 0, K.z); this.yaw = K.yaw; this.vel.set(0, 0, 0);
+    this.attack = null; this.charge = 0; this.climb = null; this.roll = 0; this.rig.glider.visible = false;
+    if (!this.paddleMesh) { this.paddleMesh = M.paddle(); this.rig.root.add(this.paddleMesh); }
+    this.paddleMesh.visible = true; this.weaponMesh.visible = false;
+    G.sfx("paddle"); G.cam.snap = false;
+  }
+  // step out onto land, or with no spot given, slip into the water
+  leaveKayak(spot) {
+    const G = this.G, K = G.world.kayak;
+    K.rider = false; K.x = this.pos.x; K.z = this.pos.z; K.yaw = this.yaw;
+    if (this.paddleMesh) this.paddleMesh.visible = false;
+    this.weaponMesh.visible = true;
+    this.kSpeed = 0; this.vel.set(0, 0, 0);
+    if (spot) { this.pos.set(spot.x, spot.y, spot.z); this.state = "ground"; G.sfx("land"); }
+    else { this.state = "swim"; this.pos.y = -1.15; }
+  }
+  // somewhere dry within reach of the kayak: a dock first, then solid, gentle ground
+  landingSpot() {
+    const G = this.G, w = G.world, p = this.pos;
+    for (const b of w.boxes) {
+      if (!b.dock) continue;
+      const x = clamp(p.x, b.x - b.hw + 0.4, b.x + b.hw - 0.4), z = clamp(p.z, b.z - b.hd + 0.4, b.z + b.hd - 0.4);
+      if (Math.hypot(x - p.x, z - p.z) < 3.4) return { x, z, y: b.top };
+    }
+    let best = null, bd = 9;
+    for (let a = 0; a < 16; a++) for (const r of [1.5, 2.5, 3.5]) {
+      const x = p.x + Math.sin(a * 0.3927) * r, z = p.z + Math.cos(a * 0.3927) * r, h = w.height(x, z);
+      if (h < 0.35 || h > 2.5 || w.normal(x, z, N).y < 0.72 || r >= bd) continue;
+      const q = this.canMove(x, z);
+      if (Math.hypot(q.x - x, q.z - z) > 0.05) continue;
+      bd = r; best = { x, z, y: G.groundAt(x, z, h + 1) };
+    }
+    return best;
+  }
+  floatKayak() { this.pos.y = Math.sin(this.G.time * 1.7) * 0.05; }
+  paddle(dt, dir, inp, act) {
+    const G = this.G, w = G.world, K = w.kayak;
+    const steer = act && dir.mag > 0.1;
+    const head = Math.atan2(dir.x, dir.z);
+    if (steer) this.yaw = turn(this.yaw, head, dt * 1.9);
+    const face = steer ? Math.max(0, Math.cos(head - this.yaw)) : 0;
+    const fast = steer && inp.sprint && !this.exhausted;
+    if (fast) this.useStamina(dt * 9);
+    const want = steer ? (fast ? 11 : 7.5) * dir.mag * (0.25 + 0.75 * face) : 0;
+    this.kSpeed = lerp(this.kSpeed || 0, want, 1 - Math.exp(-dt * (want > this.kSpeed ? 1.1 : 0.6)));
+    const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
+    let nx = this.pos.x + fx * this.kSpeed * dt, nz = this.pos.z + fz * this.kSpeed * dt;
+    // the bow runs aground in shallow water
+    const lead = Math.sign(this.kSpeed || 1) * 2.3;
+    if (w.height(nx + fx * lead, nz + fz * lead) > -0.45 || w.height(nx, nz) > -0.45) {
+      if (Math.abs(this.kSpeed) > 3) G.sfx("thud");
+      this.kSpeed *= -0.15; nx = this.pos.x; nz = this.pos.z;
+    }
+    const res = this.canMove(nx, nz);
+    if (res.box && Math.abs(this.kSpeed) > 3) { G.sfx("thud"); this.kSpeed *= -0.2; }
+    this.pos.x = res.x; this.pos.z = res.z;
+    this.floatKayak();
+    this.vel.set(fx * this.kSpeed, 0, fz * this.kSpeed);
+    K.x = this.pos.x; K.z = this.pos.z; K.yaw = this.yaw;
+    const was = Math.sin(this.stroke || 0);
+    this.stroke = (this.stroke || 0) + dt * (steer ? 2.2 + Math.abs(this.kSpeed) * 0.35 : 0.4);
+    if (steer && Math.sign(Math.sin(this.stroke)) !== Math.sign(was)) G.sfx("paddle");
+    // jump to slip out into the water
+    if (act && inp.jump) { this.leaveKayak(); G.sfx("splash"); }
+  }
+
   enterSwim() {
     this.state = "swim"; this.rig.glider.visible = false; this.climb = null; this.attack = null;
     this.vel.y = 0; this.pos.y = -1.15; this.G.sfx("splash");
@@ -412,63 +494,111 @@ export class Player {
   }
 
   animate(dt, dir) {
-    const r = this.rig, G = this.G;
+    const r = this.rig, G = this.G, t = G.time;
     r.root.position.copy(this.pos);
     r.root.rotation.y = this.yaw;
     const sp = Math.hypot(this.vel.x, this.vel.z);
     this.phase += dt * (this.state === "swim" ? 5 : 3 + sp * 1.25);
     const s = Math.sin(this.phase), c = Math.cos(this.phase);
     const [lL, lR] = r.legs, [aL, aR] = r.arms;
+    // how fast we are turning, for a lean into the turn
+    const dyaw = Math.atan2(Math.sin(this.yaw - (this.lastYaw ?? this.yaw)), Math.cos(this.yaw - (this.lastYaw ?? this.yaw)));
+    this.lastYaw = this.yaw;
+    this.turnLean = lerp(this.turnLean || 0, clamp(dyaw / Math.max(dt, 1e-3), -4, 4), 1 - Math.exp(-dt * 6));
+    // a short squash after landing
+    if (this.lastState === "air" && this.state === "ground") this.landT = 0.22;
+    this.lastState = this.state;
+    this.landT = Math.max(0, (this.landT || 0) - dt);
     r.body.rotation.set(0, 0, 0); r.body.position.set(0, 0, 0);
     r.torso.rotation.set(0, 0, 0); r.head.rotation.set(0, 0, 0);
     aL.rotation.set(0, 0, -0.18); aR.rotation.set(0, 0, 0.18);
     lL.rotation.set(0, 0, 0); lR.rotation.set(0, 0, 0);
+    if (this.paddleMesh) this.paddleMesh.visible = this.state === "kayak" && !this.fishing;
+    let rate = 14;
     if (this.state === "ground") {
       if (this.roll > 0) {
-        const t = 1 - this.roll / 0.42;
-        r.body.rotation.x = t * Math.PI * 2; r.body.position.y = Math.sin(t * Math.PI) * 0.5 + 0.2;
+        const u = 1 - this.roll / 0.42;
+        r.body.rotation.x = u * Math.PI * 2; r.body.position.y = Math.sin(u * Math.PI) * 0.5 + 0.2;
         lL.rotation.x = lR.rotation.x = -1.2; aL.rotation.x = aR.rotation.x = -1.2;
+        rate = 30;
       } else {
-        const a = Math.min(1, sp / 6);
+        const a = Math.min(1, sp / 6), run = this.sprinting ? 1 : 0;
         lL.rotation.x = s * 0.9 * a; lR.rotation.x = -s * 0.9 * a;
-        aL.rotation.x = -s * 0.8 * a; aR.rotation.x = s * 0.8 * a;
-        r.body.position.y = Math.abs(c) * 0.08 * a + Math.sin(G.time * 2) * 0.01;
-        r.torso.rotation.x = a * (this.sprinting ? 0.35 : 0.12);
+        aL.rotation.x = -s * (0.7 + run * 0.3) * a; aR.rotation.x = s * (0.7 + run * 0.3) * a;
+        aL.rotation.z = -0.18 - a * 0.08; aR.rotation.z = 0.18 + a * 0.08;
+        // the shoulders turn against the hips, and the head stays steady
+        r.torso.rotation.y = -s * 0.14 * a; r.head.rotation.y = s * 0.1 * a;
+        r.body.position.y = Math.abs(c) * (0.07 + run * 0.05) * a;
+        r.torso.rotation.x = a * (this.sprinting ? 0.32 : 0.1) + Math.abs(c) * 0.04 * a;
+        r.body.rotation.z = -this.turnLean * 0.05 * a;
+        // standing still: slow breathing, a weight shift, and a look around now and then
+        const idle = 1 - a;
+        r.torso.rotation.x += Math.sin(t * 1.7) * 0.03 * idle;
+        r.body.rotation.z += Math.sin(t * 0.45) * 0.02 * idle;
+        aL.rotation.z -= Math.sin(t * 1.7) * 0.03 * idle; aR.rotation.z += Math.sin(t * 1.7) * 0.03 * idle;
+        r.head.rotation.y += Math.sin(t * 0.37) * Math.max(0, Math.sin(t * 0.13)) * 0.45 * idle;
+        r.head.rotation.x += Math.sin(t * 0.5 + 1) * 0.05 * idle;
+        if (this.landT > 0) { const q = this.landT / 0.22; r.body.position.y -= q * 0.18; lL.rotation.x = lR.rotation.x = -0.45 * q; r.torso.rotation.x += 0.3 * q; }
       }
     } else if (this.state === "air") {
-      lL.rotation.x = -0.6; lR.rotation.x = 0.3; aL.rotation.z = -1.2; aR.rotation.z = 1.2;
+      const up = clamp(this.vel.y / 9, -1, 1);
+      lL.rotation.x = -0.7 + up * 0.2; lR.rotation.x = 0.25 - up * 0.2; aL.rotation.z = -1.0 - up * 0.3; aR.rotation.z = 1.0 + up * 0.3;
+      aL.rotation.x = aR.rotation.x = -0.3 * up;
+      r.torso.rotation.x = -0.1 * up;
     } else if (this.state === "glide") {
       aL.rotation.z = -2.7; aR.rotation.z = 2.7; aL.rotation.x = aR.rotation.x = 0.2;
-      lL.rotation.x = Math.sin(G.time * 3) * 0.2 + 0.2; lR.rotation.x = -Math.sin(G.time * 3) * 0.2 + 0.2;
-      r.glider.rotation.z = Math.sin(G.time * 1.3) * 0.08;
+      lL.rotation.x = Math.sin(t * 3) * 0.2 + 0.2; lR.rotation.x = -Math.sin(t * 3) * 0.2 + 0.2;
+      r.body.rotation.z = -this.turnLean * 0.15;
+      r.glider.rotation.z = Math.sin(t * 1.3) * 0.08 - this.turnLean * 0.1;
+      rate = 8;
     } else if (this.state === "climb") {
       const m = Math.hypot(this.vel.x, this.vel.z) + 1;
-      const t = G.time * 5;
-      aL.rotation.x = -2.6 + Math.sin(t) * 0.4 * m * 0.3; aR.rotation.x = -2.6 - Math.sin(t) * 0.4 * m * 0.3;
-      lL.rotation.x = -0.5 + Math.sin(t) * 0.3; lR.rotation.x = -0.5 - Math.sin(t) * 0.3;
+      const u = t * 5;
+      aL.rotation.x = -2.6 + Math.sin(u) * 0.4 * m * 0.3; aR.rotation.x = -2.6 - Math.sin(u) * 0.4 * m * 0.3;
+      lL.rotation.x = -0.5 + Math.sin(u) * 0.3; lR.rotation.x = -0.5 - Math.sin(u) * 0.3;
       r.torso.rotation.x = -0.1;
     } else if (this.state === "swim") {
       r.body.rotation.x = 1.1; r.body.position.y = 0.5;
       aL.rotation.x = -2 + s * 1.2; aR.rotation.x = -2 - s * 1.2;
       lL.rotation.x = c * 0.5; lR.rotation.x = -c * 0.5;
+      rate = 10;
+    } else if (this.state === "kayak") {
+      // sit in the cockpit with the legs forward; the paddle dips on one side, then the other
+      const st = this.stroke || 0, ps = Math.sin(st), work = Math.min(1, Math.abs(this.kSpeed || 0) / 3 + 0.25);
+      r.body.position.y = -0.68;
+      lL.rotation.x = lR.rotation.x = -1.45; lL.rotation.z = -0.1; lR.rotation.z = 0.1;
+      aL.rotation.x = -1.15 + ps * 0.35 * work; aR.rotation.x = -1.15 - ps * 0.35 * work;
+      aL.rotation.z = -0.35; aR.rotation.z = 0.35;
+      r.torso.rotation.y = ps * 0.32 * work; r.torso.rotation.x = 0.12;
+      r.body.rotation.z = -this.turnLean * 0.05 + Math.sin(t * 1.3) * 0.02;
+      if (this.paddleMesh) { this.paddleMesh.position.set(0, 0.62, 0.42); this.paddleMesh.rotation.set(0, ps * 0.35 * work, ps * 0.5 * work); }
     }
-    if (this.attack) {
-      const t = this.attack.t, e = t < 0.35 ? t / 0.35 : 1 - (t - 0.35) / 0.65;
+    if (this.fishing && G.fishing && G.fishing.s) {
+      const f = G.fishing.s;
+      rate = 12;
+      if (f.phase === "cast") { const u = f.t; aR.rotation.x = u < 0.4 ? -1.2 - u * 4.5 : -3 + Math.min(1, (u - 0.4) * 4) * 2.1; r.torso.rotation.x = u < 0.4 ? -0.12 : 0.1; rate = 22; }
+      else if (f.phase === "wait") { aR.rotation.x = -0.9 + Math.sin(t * 1.2) * 0.04; aL.rotation.x = -0.6; aL.rotation.z = 0.2; }
+      else if (f.phase === "bite" || f.phase === "reel") { aR.rotation.x = -1.6 + Math.sin(t * 22) * 0.07; aL.rotation.x = -1.1 + Math.sin(t * 9) * 0.1; aL.rotation.z = 0.3; r.torso.rotation.x = -0.18; }
+      else if (f.phase === "caught") { aL.rotation.x = aR.rotation.x = -3.0; aL.rotation.z = 0.1; aR.rotation.z = -0.1; r.head.rotation.x = -0.25; }
+      if (this.state === "kayak") { lL.rotation.x = lR.rotation.x = -1.45; r.body.position.y = -0.68; }
+    } else if (this.attack) {
+      const u = this.attack.t, e = u < 0.35 ? u / 0.35 : 1 - (u - 0.35) / 0.65;
+      rate = 26;
       if (this.attack.spin) {
-        r.body.rotation.y = t * Math.PI * 2; aR.rotation.set(-1.5, 0, 1.4);
+        r.body.rotation.y = u * Math.PI * 2; aR.rotation.set(-1.5, 0, 1.4);
       } else {
         const n = this.attack.n;
-        if (n === 0) { aR.rotation.x = -2.6 + e * 3.4; aR.rotation.z = 0.4; }
+        if (n === 0) { aR.rotation.x = -2.6 + e * 3.4; aR.rotation.z = 0.4; r.torso.rotation.y = -0.3 + e * 0.5; }
         else if (n === 1) { aR.rotation.x = -1.4; aR.rotation.z = 1.8 - e * 3.4; r.torso.rotation.y = 0.6 - e * 1.2; }
-        else { aR.rotation.x = -3 + e * 4; r.torso.rotation.x = e * 0.4; r.body.position.y += Math.sin(t * Math.PI) * 0.4; }
+        else { aR.rotation.x = -3 + e * 4; r.torso.rotation.x = e * 0.4; r.body.position.y += Math.sin(u * Math.PI) * 0.4; }
       }
     } else if (this.charge > 0.1) {
       aR.rotation.set(-1.4, 0, 1.6); r.torso.rotation.y = -0.8;
     }
     // blink while hurt
     r.root.visible = !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
-    // painted 3D models: turn the pose into bone rotations
-    if (r.apply) r.apply();
+    // painted 3D models: turn the pose into bone rotations, easing between poses
+    if (r.apply) r.apply(dt, rate);
   }
 }
 

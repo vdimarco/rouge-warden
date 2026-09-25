@@ -10,6 +10,7 @@ export const FIT = {
   king: { height: 7, rot: -Math.PI / 2 },
   raccoon: { length: 1.25, rot: -Math.PI / 2 }, goose: { height: 1.25, rot: Math.PI },
   bear: { length: 2.9, rot: -Math.PI / 2 }, moose: { height: 4.1, rot: 0 },
+  kayak: { length: 4.8, rot: 0 }, fish: { length: 0.75, rot: 0 },
   cabin: { length: 13.5, rot: -Math.PI / 2 }, outhouse: { height: 3.25, rot: -Math.PI / 2 }, statue: { height: 4.2, rot: -Math.PI / 2 },
 };
 const GLB = {};
@@ -145,9 +146,13 @@ export function person(name, scale = 1) {
   const glider = umbrellaFrom();
   if (glider) { glider.visible = false; glider.position.set(0, 2.25, 0); root.add(glider); }
   addOutlines(model, 0.018);
-  const E = new THREE.Euler(), R = new THREE.Quaternion(), T = new THREE.Quaternion();
-  const set = (d, q) => { d.b.quaternion.copy(d.Pi).multiply(q).multiply(d.P).multiply(d.rest); };
-  function apply() {
+  const E = new THREE.Euler(), R = new THREE.Quaternion(), T = new THREE.Quaternion(), W = new THREE.Quaternion();
+  // Each bone eases toward its new pose instead of jumping there, so every change of pose blends.
+  // k = 1 snaps (used when there is no frame time, for example the first frame).
+  let k = 1;
+  const set = (d, q) => { W.copy(d.Pi).multiply(q).multiply(d.P).multiply(d.rest); if (k >= 1) d.b.quaternion.copy(W); else d.b.quaternion.slerp(W, k); };
+  function apply(dt, rate = 16) {
+    k = dt > 0 ? 1 - Math.exp(-dt * rate) : 1;
     for (let i = 0; i < 2; i++) {
       const side = i ? 1 : -1, a = arms[i].rotation;
       R.setFromEuler(E.set(a.x, a.y, a.z - side * 0.18)).multiply(down[i]);

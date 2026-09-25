@@ -499,31 +499,42 @@ export class World {
   }
 
   /* ---------------- grass ---------------- */
+  // Grass in the style of a samurai epic: dense, tall fields that roll in waves when the wind blows,
+  // part around you as you walk and spring back behind you, and glow at the tips when the sun is behind them.
+  // Two layers: fine blades close by, and wider clumps farther out so the fields reach the distance.
   buildGrass(q = this.quality) {
-    if (this.grass) { this.scene.remove(this.grass); this.grass.geometry.dispose(); this.grass.material.dispose(); }
-    const count = q.grass, P = q.patch;
-    // a blade: wide at the root, pointed at the tip, with a slight natural curve
-    const blade = new THREE.PlaneGeometry(0.12, 1, 1, 4); blade.translate(0, 0.5, 0);
-    const bp = blade.attributes.position;
-    for (let i = 0; i < bp.count; i++) { const y = bp.getY(i); bp.setX(i, bp.getX(i) * (1 - y * 0.92)); bp.setZ(i, y * y * 0.18); }
-    const geo = new THREE.InstancedBufferGeometry();
-    geo.index = blade.index; geo.setAttribute("position", bp); geo.setAttribute("uv", blade.attributes.uv);
-    const off = new Float32Array(count * 3), shp = new Float32Array(count * 2), r = rng(5);
-    for (let k = 0; k < count; k++) { off.set([(r() - 0.5) * P, (r() - 0.5) * P, r()], k * 3); shp.set([0.5 + r() * 0.8, r()], k * 2); }
-    geo.setAttribute("aOff", new THREE.InstancedBufferAttribute(off, 3));
-    geo.setAttribute("aShape", new THREE.InstancedBufferAttribute(shp, 2));
-    geo.instanceCount = count;
-    const u = this.grassU = {
-      uTime: SHARED.uTime, uWind: SHARED.uWind, uCenter: { value: new THREE.Vector2() }, uPatch: { value: P }, uSize: { value: SIZE },
+    if (this.grass) { this.scene.remove(this.grass); this.grass.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
+    const u = this.grassU = this.grassU || {
+      uTime: SHARED.uTime, uWind: SHARED.uWind, uCenter: { value: new THREE.Vector2() }, uSize: { value: SIZE },
       uHeight: { value: this.heightTex }, uMask: { value: this.maskTex }, uPlayer: { value: new THREE.Vector3() },
+      uTrail: { value: Array.from({ length: 10 }, () => new THREE.Vector4(0, -999, 0, 0)) },
       uFog: { value: new THREE.Color() }, uFogNear: { value: 200 }, uFogFar: { value: 1200 }, uLight: { value: 1 }, uSunCol: { value: new THREE.Color(1, 0.95, 0.8) },
       uSunDir: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
     };
+    this.trail = this.trail || { t: 0, k: 0, last: new THREE.Vector3(0, -999, 0) };
+    this.grass = new THREE.Group();
+    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.1, tall: 1, seed: 5 }));
+    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.6), q.patch * 3, { width: 0.34, tall: 1.1, seed: 9, far: true }));
+    this.scene.add(this.grass);
+  }
+  grassLayer(count, P, o) {
+    // a blade: wide at the root, pointed at the tip, curved, with enough joints to bend smoothly
+    const blade = new THREE.PlaneGeometry(o.width, 1, 1, 6); blade.translate(0, 0.5, 0);
+    const bp = blade.attributes.position;
+    for (let i = 0; i < bp.count; i++) { const y = bp.getY(i); bp.setX(i, bp.getX(i) * (1 - y * 0.94) * (1 + Math.sin(y * 3) * 0.15)); bp.setZ(i, y * y * 0.22); }
+    const geo = new THREE.InstancedBufferGeometry();
+    geo.index = blade.index; geo.setAttribute("position", bp); geo.setAttribute("uv", blade.attributes.uv);
+    const off = new Float32Array(count * 3), shp = new Float32Array(count * 2), r = rng(o.seed);
+    for (let k = 0; k < count; k++) { off.set([(r() - 0.5) * P, (r() - 0.5) * P, r()], k * 3); shp.set([0.55 + r() * 0.75, r()], k * 2); }
+    geo.setAttribute("aOff", new THREE.InstancedBufferAttribute(off, 3));
+    geo.setAttribute("aShape", new THREE.InstancedBufferAttribute(shp, 2));
+    geo.instanceCount = count;
+    const inner = o.far ? P * 0.1 : 0, outer0 = o.far ? P * 0.36 : P * 0.3, outer1 = P * 0.5;
     const mat = new THREE.ShaderMaterial({
-      uniforms: u, side: THREE.DoubleSide,
+      uniforms: { ...this.grassU, uPatch: { value: P } }, side: THREE.DoubleSide,
       vertexShader: `
-        uniform float uTime, uPatch, uSize; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir;
-        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust;
+        uniform float uTime, uPatch, uSize; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir; uniform vec4 uTrail[10];
+        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
         ${NOISE_GLSL}
         void main(){
           vec2 wp = uCenter + mod(aOff.xy - uCenter + uPatch*0.5, uPatch) - uPatch*0.5;
@@ -531,46 +542,72 @@ export class World {
           float h = texture2D(uHeight, uv).r;
           vec4 m = texture2D(uMask, uv);
           float dist = length(wp - uCenter);
-          float fade = 1.0 - smoothstep(uPatch*0.32, uPatch*0.5, dist);
+          // the near layer thins out where the far layer takes over, and the far layer fills in behind it
+          float fade = (1.0 - smoothstep(${outer0.toFixed(1)}, ${outer1.toFixed(1)}, dist)) * smoothstep(${inner.toFixed(1)}, ${(inner * 1.6 + 0.01).toFixed(1)}, dist);
           float keep = step(aOff.z, m.a);
-          // meadows grow in soft clumps, some taller than others
+          // fields: soft clumps, tall meadows away from paths, and golden pampas in the east
           float clump = vnoise(wp * 0.07);
-          float hs = aShape.x * keep * fade * (0.32 + 0.48*m.a) * (0.75 + 0.5*clump);
+          float field = smoothstep(0.35, 0.75, vnoise(wp * 0.012 + 3.0));
+          float gold = smoothstep(150.0, 330.0, wp.x) * smoothstep(0.3, 0.7, vnoise(wp * 0.02 + 11.0));
+          vGold = gold;
+          float hs = aShape.x * keep * fade * (0.35 + 0.5*m.a) * (0.7 + 0.5*clump) * (0.8 + 0.9*field + 0.5*gold) * ${o.tall.toFixed(2)};
           float t = position.y;
           float a = aOff.z * 43.0;
           vec3 p = vec3(position.x*cos(a) - position.z*sin(a), t*hs, position.x*sin(a) + position.z*cos(a));
-          // gentle sway, and big gusts that roll across the field
-          float sway = sin(uTime*1.7 + wp.x*0.13 + wp.y*0.07)*0.5 + sin(uTime*3.1 + wp.x*0.45)*0.15;
-          float gust = smoothstep(0.35, 1.0, sin(dot(wp, uWind)*0.045 - uTime*1.25 + vnoise(wp*0.02)*3.0)*0.5 + 0.5);
-          vec2 bend = uWind * (sway*0.3 + gust*0.85 + 0.12);
+          // wind: every blade leans with it, small flutters, and big waves that roll across whole fields
+          vec2 wd = normalize(uWind + vec2(vnoise(wp*0.004 + uTime*0.02) - 0.5, vnoise(wp*0.004 + 5.0) - 0.5) * 0.8);
+          float flutter = sin(uTime*4.3 + aOff.z*60.0 + wp.x*0.3) * 0.12;
+          float sway = sin(uTime*1.6 + dot(wp, wd)*0.11)*0.5 + sin(uTime*2.9 + wp.x*0.4 + wp.y*0.2)*0.18;
+          float wave = sin(dot(wp, wd)*0.06 - uTime*1.5 + vnoise(wp*0.015)*4.0)*0.5 + 0.5;
+          float gust = smoothstep(0.45, 1.0, wave) * (0.6 + 0.4*vnoise(wp*0.01 - wd*uTime*0.05));
+          vec2 bend = wd * (0.18 + sway*0.25 + gust*1.05) + vec2(-wd.y, wd.x) * flutter;
+          // the hero parts the grass, and a trail behind them springs back slowly
+          float near = step(abs(uPlayer.y - h), 2.5);
           vec2 push = wp - uPlayer.xz; float pd = length(push);
-          if (abs(uPlayer.y - h) < 2.0) bend += normalize(push + 0.0001) * max(0.0, 1.4 - pd) * 1.1;
-          p.xz += bend * t * t * hs;
-          p.y -= length(bend) * t * t * hs * 0.35;
+          vec2 part = normalize(push + 0.0001) * max(0.0, 1.5 - pd) * 1.6 * near;
+          for (int i = 0; i < 10; i++) {
+            vec4 tr = uTrail[i];
+            vec2 q = wp - tr.xz; float qd = length(q);
+            part += normalize(q + 0.0001) * max(0.0, 1.1 - qd) * 1.5 * tr.w * step(abs(tr.y - h), 2.5);
+          }
+          bend = bend * (1.0 - min(1.0, length(part)) * 0.6) + part;
+          // bend along an arc, so a blade keeps its length and never lies flat and stretched
+          float th = clamp(length(bend), 0.001, 1.25);
+          vec2 bd = normalize(bend + 0.0001);
+          float ang = th * t;
+          p.y = hs * sin(ang) / th;
+          p.xz += bd * hs * (1.0 - cos(ang)) / th;
           vec3 w = vec3(wp.x, h, wp.y) + p;
           vW = w; vT = t; vGust = gust * t;
-          // light each blade by the slope of the ground under it: sunny sides glow, shady sides turn blue-green
+          // light each blade by the slope under it; shady sides turn blue-green
           float e = 2.0 / uSize;
           float hl = texture2D(uHeight, uv - vec2(e, 0.0)).r, hr = texture2D(uHeight, uv + vec2(e, 0.0)).r;
           float hd = texture2D(uHeight, uv - vec2(0.0, e)).r, hu = texture2D(uHeight, uv + vec2(0.0, e)).r;
           vec3 gn = normalize(vec3(hl - hr, 4.0, hd - hu));
           float sun = clamp(dot(gn, normalize(uSunDir)) * 0.6 + 0.45, 0.25, 1.1);
-          vec3 base = m.rgb * mix(vec3(0.62, 0.78, 0.95), vec3(1.06, 1.02, 0.9), sun);
-          vCol = base * mix(0.5, 1.18, t) * (0.88 + aShape.y*0.24);
-          // patches of cooler and warmer green, so a field is never one flat colour
+          vec3 base = m.rgb * mix(vec3(0.6, 0.76, 0.95), vec3(1.06, 1.02, 0.9), sun);
+          // dark, cool roots and bright, warm tips
+          vec3 root = base * vec3(0.42, 0.5, 0.52), tip = base * vec3(1.22, 1.18, 0.86);
+          vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.88 + aShape.y*0.24);
           float hue = vnoise(wp * 0.018 + 7.0);
           vCol = mix(vCol, vCol * vec3(0.86, 1.0, 1.02), smoothstep(0.55, 0.8, hue) * 0.6);
-          // warm, dry tips in some patches, like late summer
           vCol = mix(vCol, vCol * vec3(1.18, 1.08, 0.72), smoothstep(0.62, 0.9, clump) * t * 0.6);
+          // pampas: straw stems and pale, feathery heads
+          vec3 straw = mix(vec3(0.62, 0.5, 0.28), vec3(1.0, 0.9, 0.62), t) * mix(0.8, 1.05, sun);
+          vCol = mix(vCol, straw, gold * 0.85);
+          // sun behind the grass: the tips light up
+          vec3 V = normalize(cameraPosition - w);
+          vBack = pow(max(dot(-V, normalize(uSunDir)), 0.0), 3.0) * t * t * step(0.0, uSunDir.y);
           gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
         }`,
       fragmentShader: `
-        uniform vec3 uFog, uSunCol; uniform float uFogNear, uFogFar, uLight, uTime; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust;
+        uniform vec3 uFog, uSunCol; uniform float uFogNear, uFogFar, uLight, uTime; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
         ${NOISE_GLSL}
         void main(){
           vec3 col = vCol;
-          // the silvery sheen when wind flattens the grass
-          col = mix(col, col * 1.25 + uSunCol * 0.12, vGust * 0.55);
+          // the silvery sheen that runs over a field as the wind flattens it
+          col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
+          col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
           col *= mix(1.0, 0.68, cloudShadow(vW.xz, uTime));
           col *= uLight;
           float d = length(cameraPosition - vW);
@@ -578,9 +615,10 @@ export class World {
           gl_FragColor = vec4(col, 1.0);
         }`,
     });
-    this.grass = new THREE.Mesh(geo, mat);
-    this.grass.frustumCulled = false;
-    this.scene.add(this.grass);
+    mat.uniforms.uTrail = this.grassU.uTrail;
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    return mesh;
   }
 
   /* ---------------- trees, rocks, flowers ---------------- */
@@ -727,6 +765,45 @@ export class World {
   /* ---------------- places ---------------- */
   addBox(b) { this.boxes.push(b); return b; }
   place(obj, x, z, rot = 0, y) { obj.position.set(x, y ?? this.height(x, z), z); obj.rotation.y = rot; this.scene.add(obj); return obj; }
+  // a wooden dock from z0 (on land) out to z1 (over the water), with posts and lanterns
+  dock(dx, z0, z1, lamps) {
+    const g = new THREE.Group();
+    const wood = M.toon(0xa8845a), post = M.toon(0x6a4a30);
+    const L = Math.abs(z0 - z1), zc = (z0 + z1) / 2;
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.3, L), wood); deck.position.set(dx, 1.05, zc); deck.receiveShadow = deck.castShadow = true; g.add(deck);
+    for (let z = Math.min(z0, z1); z <= Math.max(z0, z1); z += 1.1) { const p = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.06, 0.08), post); p.position.set(dx, 1.22, z); g.add(p); }
+    for (let z = Math.min(z0, z1); z <= Math.max(z0, z1) + 0.1; z += L / 2) for (const sd of [-1, 1]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 22, 6), post); p.position.set(dx + sd * 1.7, -9.5, z); g.add(p);
+      if (lamps) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.6, 5), post); l.position.set(dx + sd * 1.7, 1.8, z); g.add(l); }
+    }
+    // a mooring post and a coil of rope at the end
+    const end = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.4, 8), post); end.position.set(dx + 1.4, 1.6, z1 + Math.sign(z0 - z1) * 0.4); g.add(end);
+    this.scene.add(g);
+    return this.addBox({ x: dx, z: zc, hw: 1.6, hd: L / 2, rot: 0, y0: -20, top: 1.2, walk: true, dock: true });
+  }
+  // Fishing spots: rings on the water where fish rise. Some are near the shore, some on the way to the island.
+  buildFishSpots() {
+    const r = rng(this.seed + 31), spots = [];
+    const ok = (x, z) => this.height(x, z) < -1.6 && Math.hypot(x - ISLAND.x, z - ISLAND.z) > ISLAND.r + 6 && !spots.some((s) => Math.hypot(s.x - x, s.z - z) < 30);
+    // on the way across, beside the kayak's path
+    for (const t of [0.3, 0.55, 0.8]) { const x = this.cottage.x + (t === 0.55 ? -14 : 12), z = lerp(this.shoreZ - 16, ISLAND.z + ISLAND.r + 10, t); if (ok(x, z)) spots.push({ x, z }); }
+    // along the shore, close enough to cast from land
+    for (let k = 0; k < 400 && spots.length < 14; k++) {
+      const a = r() * Math.PI * 2, d = LAKE.r * (0.5 + r() * 0.6), x = LAKE.x + Math.cos(a) * d, z = LAKE.z + Math.sin(a) * d;
+      if (!ok(x, z)) continue;
+      let land = false;
+      for (let q = 0; q < 8 && !land; q++) { const b = (q / 8) * Math.PI * 2; if (this.height(x + Math.cos(b) * 9, z + Math.sin(b) * 9) > 0.6) land = true; }
+      if (land) spots.push({ x, z });
+    }
+    const ringGeo = new THREE.RingGeometry(0.8, 1, 32); ringGeo.rotateX(-Math.PI / 2);
+    this.fishSpots = spots.map((sp, i) => {
+      const g = new THREE.Group();
+      g.position.set(sp.x, 0.05, sp.z);
+      const rings = [0, 1, 2].map((k) => { const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false })); m.userData.o = k / 3; g.add(m); return m; });
+      this.scene.add(g);
+      return { id: i, x: sp.x, z: sp.z, obj: g, rings, rest: 0, jump: 2 + r() * 6 };
+    });
+  }
   buildPlaces() {
     const c = this.cottage;
     // the cottage, facing the lake
@@ -743,17 +820,19 @@ export class World {
     this.updraft.push({ x: c.x - 8, z: c.z - 14, r: 2.2 });
     this.statueObj = this.place(M.loonStatue(), this.statue.x, this.statue.z, Math.PI * 0.9);
     this.addCircle(this.statue.x, this.statue.z, 1.8, "statue");
-    // the long dock runs from the cottage all the way out to the island
-    const dx = c.x, z0 = this.shoreZ + 6, z1 = ISLAND.z + ISLAND.r - 6;
-    const planks = new THREE.Group();
-    const wood = M.toon(0xa8845a), post = M.toon(0x6a4a30);
-    const L = z0 - z1;
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.3, L), wood); deck.position.set(dx, 1.05, (z0 + z1) / 2); deck.receiveShadow = deck.castShadow = true; planks.add(deck);
-    for (let z = z1; z <= z0; z += 1.1) { const p = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.06, 0.08), post); p.position.set(dx, 1.22, z); planks.add(p); }
-    for (let z = z1; z <= z0; z += 9) for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 22, 6), post); p.position.set(dx + s * 1.7, -9.5, z); planks.add(p); const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.6, 5), post); lamp.position.set(dx + s * 1.7, 1.8, z); planks.add(lamp); }
-    this.scene.add(planks);
-    this.addBox({ x: dx, z: (z0 + z1) / 2, hw: 1.6, hd: L / 2, rot: 0, y0: -20, top: 1.2, walk: true });
-    const canoe = new THREE.Mesh(new THREE.CapsuleGeometry(0.6, 4, 4, 10), M.toon(0x2a8a4a)); canoe.scale.set(1, 0.5, 1); canoe.rotation.x = Math.PI / 2; canoe.position.set(dx + 5, 0.3, z0 - 4); this.scene.add(canoe);
+    // a short dock at the cottage, and a small landing on the island; a kayak carries you across the lake
+    const dx = c.x;
+    // each dock runs out until the water is deep enough to float the kayak beside it
+    const deep = (z, step) => { while (Math.min(this.height(dx, z), this.height(dx + 3, z), this.height(dx + 3, z + step * 3)) > -1.3 && Math.abs(z - this.shoreZ) < 60) z += step; return z; };
+    const endS = Math.min(this.shoreZ - 14, deep(this.shoreZ, -1) - 3);
+    const endI = Math.max(ISLAND.z + ISLAND.r + 6, deep(ISLAND.z + ISLAND.r - 6, 1) + 3);
+    this.docks = [this.dock(dx, this.shoreZ + 6, endS, true), this.dock(dx, ISLAND.z + ISLAND.r - 6, endI, false)];
+    const kh = { x: dx + 2.9, z: endS + 1.5, yaw: Math.PI };
+    const ko = M.kayak();
+    ko.position.set(kh.x, 0, kh.z); ko.rotation.y = kh.yaw;
+    this.scene.add(ko);
+    this.kayak = { obj: ko, x: kh.x, z: kh.z, yaw: kh.yaw, home: kh, rider: false };
+    this.buildFishSpots();
     // towers
     this.towers = TOWERS.map((t) => {
       const o = this.place(M.fireTower(), t.x, t.z, 0.4);
@@ -822,8 +901,18 @@ export class World {
     SHARED.uTime.value = t;
     this.grassU.uCenter.value.set(cam.position.x * 0.5 + player.x * 0.5, cam.position.z * 0.5 + player.z * 0.5);
     this.grassU.uPlayer.value.set(player.x, player.y, player.z);
+    // drop a trail point every few steps; each one fades over a few seconds, so the grass springs back
+    const tr = this.trail, T = this.grassU.uTrail.value;
+    for (const v of T) v.w = Math.max(0, v.w - dt * 0.28);
+    if (Math.hypot(player.x - tr.last.x, player.z - tr.last.z) > 0.9) { tr.last.set(player.x, player.y, player.z); tr.k = (tr.k + 1) % T.length; T[tr.k].set(player.x, player.y, player.z, 1); }
     this.skyU.uTime.value = t;
     this.sky.position.copy(cam.position);
+    if (this.fishSpots) for (const f of this.fishSpots) {
+      const near = Math.hypot(f.x - cam.position.x, f.z - cam.position.z) < 160;
+      f.obj.visible = near && f.rest <= 0;
+      if (!f.obj.visible) continue;
+      for (const m of f.rings) { const u = (t * 0.35 + m.userData.o) % 1; m.scale.setScalar(0.4 + u * 2.6); m.material.opacity = 0.45 * (1 - u); }
+    }
     if (this.backdrop) { this.backdrop.position.x = cam.position.x; this.backdrop.position.z = cam.position.z; }
     for (const c of this.clouds) { if (c.userData.far) continue; c.position.x += dt * 3; c.position.z += dt * 1.7; if (c.position.x > 1600) c.position.x -= 3200; if (c.position.z > 1600) c.position.z -= 3200; }
     // the fluff drifts with the wind and wraps around you

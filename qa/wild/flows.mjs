@@ -66,6 +66,28 @@ const r = await page.evaluate(async () => {
   // 7. praying with too few orbs does nothing
   G.save.orbs = 2; P.place(G.world.statue.x + 2, G.world.statue.z); G.inp.interact = true; G.test.step(1 / 30); G.inp.interact = false;
   out.push(["no prayer without 4 orbs", G.ui.modal !== "choice"]);
+  // 7b. fishing: a catch adds fish; moving reels the line in; a hit ends it; the kayak goes home when you travel
+  const W = G.world, f = W.fishSpots[0];
+  P.place(W.cottage.x, W.cottage.z - 20); QA.closeModals(); f.rest = 0;
+  const fish0 = G.inv.food.fish || 0;
+  G.fishing.start(f); G.fishing.s.wait = 0.1;
+  for (let i = 0; i < 60 && G.fishing.s.phase !== "bite"; i++) G.test.step(1 / 30);
+  G.inp.attack = true; G.test.step(1 / 30); G.inp.attack = false;
+  out.push(["hooked a fish (" + (G.fishing.s && G.fishing.s.phase) + ")", G.fishing.s && G.fishing.s.phase === "reel"]);
+  for (let i = 0; i < 1500 && G.fishing.s && G.fishing.s.phase === "reel"; i++) { const s = G.fishing.s; G.inp.attackHeld = s.z + s.zv * 0.25 < s.f; G.test.step(1 / 30); }
+  G.inp.attackHeld = false;
+  for (let i = 0; i < 90; i++) G.test.step(1 / 30);
+  out.push(["caught a fish (" + fish0 + " -> " + G.inv.food.fish + ")", (G.inv.food.fish || 0) > fish0 && !G.fishing.active && P.weaponMesh.visible]);
+  f.rest = 0; G.fishing.start(f); G.test.step(1 / 30); G.inp.move.x = 1; G.test.step(1 / 30); G.inp.move.x = 0;
+  out.push(["moving reels the line in", !G.fishing.active]);
+  f.rest = 0; G.fishing.start(f); P.invuln = 0; P.roll = 0; if (G.abilities.grit) G.abilities.grit.charges = 0; P.hurt(1, P.x + 1, P.z);
+  out.push(["a hit ends fishing", !G.fishing.active && !P.fishing]);
+  P.hp = P.maxHp;
+  const K = W.kayak; P.place(K.x - 1.5, K.z + 2); P.boardKayak(); for (let i = 0; i < 90; i++) { G.inp.move.y = 1; G.test.step(1 / 30); } G.inp.move.y = 0;
+  G.travel({ kind: "home", x: W.cottage.x, z: W.cottage.z }); for (let i = 0; i < 5; i++) G.test.step(1 / 30);
+  out.push(["travel from the kayak puts you on land (" + P.state + ")", P.state === "ground" && !K.rider]);
+  P.place(W.towers[0].x + 5, W.towers[0].z + 5); G.test.step(1 / 30);
+  out.push(["the kayak drifts home when you are far away", Math.hypot(K.x - K.home.x, K.z - K.home.z) < 0.01]);
   // 8. a whole day and night passes; critters come back; no leaks
   const n0 = G.scene.children.length;
   for (let i = 0; i < 600 * 30 + 30; i++) { G.test.step(1 / 30); if (G.ui.modal) QA.closeModals(); if (P.hp < 4) P.hp = P.maxHp; if (i % 2000 === 0) await wait(0); }

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { World, TOWERS, BOSSES, ISLAND, SIZE } from "./world.js";
 import * as M from "./models.js";
 import * as GLB from "./glb.js";
+import { Fishing } from "./fishing.js";
 import { Player, WEAPONS, PERKS } from "./player.js";
 import { Foe, Boss, Hazards, FX, spawnPlan } from "./foes.js";
 import { UI } from "./ui.js";
@@ -54,10 +55,11 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); ca
 const G = {
   scene, camera, renderer, time: 0, foeTime: 1, slowmo: 0, hitstop: 0, shakeT: 0, paused: false, cutscene: false, started: false,
   cam: { yaw: 0, pitch: 0.28, dist: 8, target: new THREE.Vector3(), pos: new THREE.Vector3(), idle: 0 },
-  foes: [], bosses: [], npcs: [], items: [], loonies: [], abilities: {}, inv: { weapons: [{ id: "plunger", dur: Infinity }], cur: 0, food: { apple: 0, shroom: 0, berry: 0, syrup: 0, stew: 0 } },
+  foes: [], bosses: [], npcs: [], items: [], loonies: [], abilities: {}, inv: { weapons: [{ id: "plunger", dur: Infinity }], cur: 0, food: { apple: 0, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 } },
   sfx: A.sfx, pad: false, clock: 0.3, night: false,
 };
 window.G = G;
+G.painter = painter;
 // hooks for the QA scripts in qa/wild
 G.test = { get step() { return step; }, get camera() { return updateCamera; }, get inBox() { return inBox; } };
 G.shake = (t) => { G.shakeT = Math.max(G.shakeT, t); };
@@ -73,7 +75,7 @@ G.groundAt = (x, z, y) => {
 };
 
 function blankSave(friend = 0) {
-  return { v: 1, friend, maxHp: friend === 1 ? 16 : 12, staminaMax: friend === 3 ? 125 : 100, orbs: 0, prayers: 0, towers: [], shrines: [], seen: [], loonies: [], bosses: [], coolers: {}, weapons: [{ id: "plunger", dur: null }], cur: 0, food: { apple: 2, shroom: 0, berry: 0, syrup: 0, stew: 0 }, pos: null, clock: 0.3, day: 1, check: null, played: 0, deaths: 0, kills: 0, done: false, intro: false };
+  return { v: 1, friend, maxHp: friend === 1 ? 16 : 12, staminaMax: friend === 3 ? 125 : 100, orbs: 0, prayers: 0, towers: [], shrines: [], seen: [], loonies: [], bosses: [], coolers: {}, weapons: [{ id: "plunger", dur: null }], cur: 0, food: { apple: 2, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 }, pos: null, clock: 0.3, day: 1, check: null, played: 0, deaths: 0, kills: 0, done: false, intro: false };
 }
 // A save from an older build, or one that got damaged, is repaired field by field instead of crashing the game.
 function loadSave() {
@@ -127,6 +129,7 @@ setTimeout(async () => {
   const [tex] = await Promise.all([loadTextures(), GLB.loadModels(M.gradientMap(), (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
   G.world = new World(scene, { low, quality: Q, tex });
   G.fx = new FX(G);
+  G.fishing = new Fishing(G);
   G.hazards = new Hazards(G);
   G.ui = new UI(G);
   G.save = loadSave() || blankSave();
@@ -174,7 +177,7 @@ function start(save) {
   P.maxHp = save.maxHp; P.hp = save.maxHp; P.staminaMax = save.staminaMax; P.stamina = P.staminaMax;
   G.inv.weapons = save.weapons.map((w) => ({ id: w.id, dur: w.dur == null ? Infinity : w.dur }));
   G.inv.cur = Math.min(save.cur, G.inv.weapons.length - 1);
-  G.inv.food = { apple: 0, shroom: 0, berry: 0, syrup: 0, stew: 0, ...save.food };
+  G.inv.food = { apple: 0, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0, ...save.food };
   P.setWeapon(G.inv.weapons[G.inv.cur].id);
   G.clock = save.clock;
   for (const id of save.bosses) grant(id, true);
@@ -224,7 +227,7 @@ const TIPS = [
   "Out of breath? Stand still on solid ground. Your wheel fills right back up.",
   "Coolers at the critter camps have paddles and hockey sticks. They hit harder than a plunger, but they break.",
   "Jump, then press jump again in the air. The umbrella opens. A campfire under you pushes you up.",
-  "Cook at a fire. Three things in the pot make a stew. Stew fills you right up, and then some.",
+  "Cook at a fire. Three things in the pot make a stew. Fish count too. Look for rings on the water and press E to cast.",
   "Roll the moment something swings at you. Time slows down. Get your licks in.",
 ];
 function buildNPCs() {
@@ -247,7 +250,7 @@ function npcLine(n) {
   if (S.done) return "You flushed him! Lake's clear. Meet us on the dock later.";
   if (!S.towers.includes("south")) return "The fire tower's up the hill, west of here. Climb it first.";
   if (S.bosses.length < 3) return `The swirl is still up there. ${3 - S.bosses.length} of our buddies still have red eyes.`;
-  return "Everyone's back but the lake's still clogged. Walk the long dock out to the island. Bring stew.";
+  return "Everyone's back but the lake's still clogged. Take the kayak from the dock out to the island. Bring stew.";
 }
 
 /* ---------------- critters ---------------- */
@@ -302,9 +305,9 @@ function buildItems() {
 G.dropFood = (id, x, z) => {
   // never drop food into the lake
   if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
-G.foodCount = () => { const f = G.inv.food; return { total: f.apple + f.shroom + f.berry + f.syrup, stew: f.stew }; };
-const HEAL = { apple: 2, berry: 2, shroom: 3, syrup: 8 };
-const FOOD_NAME = { apple: "Apple", berry: "Blueberries", shroom: "Toadstool", syrup: "Maple Syrup", stew: "Cottage Stew" };
+G.foodCount = () => { const f = G.inv.food; return { total: f.apple + f.shroom + f.berry + f.syrup + (f.fish || 0), stew: f.stew }; };
+const HEAL = { apple: 2, berry: 2, shroom: 3, fish: 4, syrup: 8 };
+const FOOD_NAME = { apple: "Apple", berry: "Blueberries", shroom: "Toadstool", syrup: "Maple Syrup", fish: "Fish", stew: "Cottage Stew" };
 G.eat = () => {
   const P = G.player, f = G.inv.food;
   if (!G.started || P.dead) return;
@@ -313,7 +316,7 @@ G.eat = () => {
   // eat the smallest thing that fills you; stew if you need a lot
   let pick = null;
   if (miss >= 8 && f.stew) pick = "stew";
-  if (!pick) for (const id of ["apple", "berry", "shroom", "syrup"].sort((a, b) => Math.abs(HEAL[a] - miss) - Math.abs(HEAL[b] - miss))) if (f[id] > 0) { pick = id; break; }
+  if (!pick) for (const id of ["apple", "berry", "shroom", "fish", "syrup"].sort((a, b) => Math.abs(HEAL[a] - miss) - Math.abs(HEAL[b] - miss))) if (f[id] > 0) { pick = id; break; }
   if (!pick && f.stew) pick = "stew";
   if (!pick) { G.ui.toast("No food. Find apples, berries, or toadstools."); return; }
   f[pick]--;
@@ -323,9 +326,9 @@ G.eat = () => {
 function cook() {
   const f = G.inv.food;
   let n = 0;
-  while (f.apple + f.shroom + f.berry + f.syrup >= 2) {
+  while (G.foodCount().total >= 2) {
     let used = 0;
-    for (const id of ["syrup", "shroom", "berry", "apple"]) while (f[id] > 0 && used < 3) { f[id]--; used++; }
+    for (const id of ["syrup", "fish", "shroom", "berry", "apple"]) while (f[id] > 0 && used < 3) { f[id]--; used++; }
     f.stew++; n++;
   }
   A.sfx("cook");
@@ -483,7 +486,7 @@ G.bossDown = async (b) => {
   const P = G.player; P.maxHp += 4; P.hp = P.maxHp;
   G.ui.toast("You got a Heart Container and " + { gabe: "Gabe's Grit", christian: "Mystic Updraft", ryu: "Ryu's Fury" }[b.id]);
   G.writeSave();
-  if (G.save.bosses.length === 3) setTimeout(() => G.ui.say([["The Cottage", "All three are free. The King is alone now."], ["The Cottage", "Walk the long dock from the cottage to Clog Island. End this."]]), 3000);
+  if (G.save.bosses.length === 3) setTimeout(() => G.ui.say([["The Cottage", "All three are free. The King is alone now."], ["The Cottage", "Take the kayak from the cottage dock to Clog Island. End this."]]), 3000);
 };
 function grant(id, quiet) {
   if (id === "gabe") G.abilities.grit = { charges: 3, cd: 0 };
@@ -575,7 +578,7 @@ G.goal = () => {
   if (!S.towers.includes("south")) return "Climb the fire tower<small>at Cottage Point, up the hill</small>";
   const left = 3 - S.bosses.filter((b) => b !== "king").length;
   if (left > 0) return `Free your friends from the sludge<small>${left} left: ${BOSSES.filter((b) => b.id !== "king" && !S.bosses.includes(b.id)).map((b) => b.name.split(",")[0].split(" the")[0]).join(", ")}</small>`;
-  if (!S.done) return "Flush the Porcelain King<small>Walk the long dock to Clog Island</small>";
+  if (!S.done) return "Flush the Porcelain King<small>Paddle the kayak to Clog Island</small>";
   return `Find every Loonie<small>${S.loonies.length} of ${G.loonies.length}</small>`;
 };
 G.clockText = () => {
@@ -627,7 +630,8 @@ function lighting() {
   const dusk = 1 - Math.abs(smooth(-0.1, 0.35, elev) * 2 - 1);
   const cloudCol = tmpC.set(0xffffff).lerp(sunCol, 0.35 + dusk * 0.4).multiplyScalar(0.38 + 0.62 * L);
   for (const c of w.clouds) c.material.color.copy(cloudCol);
-  G.look = { time: G.time, night, sunDir: sd, sunCol };
+  // the colour far hills fade into: a deeper blue than the fog, like the painted distances in an animated film
+  G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42) };
   w.cabin.userData.windows.emissiveIntensity = night * 1.2;
   if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 40;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
@@ -772,6 +776,13 @@ function nearest() {
   G.loonies.forEach((l, i) => { if (l.kind === "rock" && !S.loonies.includes(i) && d2(l.x, l.z) < 2.4) opts.push({ d: d2(l.x, l.z), label: "Lift the rock", go: () => liftRock(l, i) }); });
   for (const f of w.fires) if (d2(f.x, f.z) < 3.5 && G.foodCount().total >= 2) opts.push({ d: d2(f.x, f.z), label: "Cook", go: cook });
   if (d2(w.statue.x, w.statue.z) < 4 && S.orbs >= 4) opts.push({ d: 0, label: "Pray", go: pray });
+  // the kayak: get in from the dock, the shore, or the water; get out wherever there is dry land
+  const K = w.kayak;
+  if (K && P.state === "kayak") { const spot = P.landingSpot(); if (spot) opts.push({ d: 0.5, label: "Get out", go: () => P.leaveKayak(spot) }); }
+  else if (K && !K.rider && (P.state === "ground" || P.state === "swim") && d2(K.x, K.z) < 3.4) opts.push({ d: d2(K.x, K.z), label: "Get in the kayak", go: () => P.boardKayak() });
+  // fishing: rings on the water close enough to cast at
+  const spot = G.fishing && G.fishing.spotNear();
+  if (spot) opts.push({ d: 5, label: "Fish", go: () => G.fishing.start(spot) });
   opts.sort((a, b) => a.d - b.d);
   return opts[0];
 }
@@ -785,7 +796,7 @@ function updateCamera(dt) {
   // swing behind the hero when you are moving and not steering the camera (phones and pads)
   const sp = Math.hypot(P.vel.x, P.vel.z);
   if ((touchUI || G.pad) && c.idle > 1.2 && sp > 2 && P.state !== "climb") { const want = P.yaw + Math.PI; let d = Math.atan2(Math.sin(want - c.yaw), Math.cos(want - c.yaw)); c.yaw += d * Math.min(1, dt * 0.8); }
-  const tgt = tv.set(P.x, P.y + (P.state === "swim" ? 1.0 : 1.7), P.z);
+  const tgt = tv.set(P.x, P.y + (P.state === "swim" ? 1.0 : P.state === "kayak" ? 1.25 : 1.7), P.z);
   if (c.snap) { c.target.copy(tgt); c.cur = undefined; c.snap = false; }
   c.target.x = lerp(c.target.x, tgt.x, 1 - Math.exp(-dt * 14));
   c.target.z = lerp(c.target.z, tgt.z, 1 - Math.exp(-dt * 14));
@@ -900,10 +911,14 @@ function step(dt) {
   if (inp.slot >= 0 && inp.slot < G.inv.weapons.length) { G.inv.cur = inp.slot; P.setWeapon(G.inv.weapons[inp.slot].id); }
   abilities(dt);
   // interact before the hero moves, so E does not also swing
-  const opt = !P.dead && !G.ui.modal && P.state !== "climb" && P.state !== "glide" ? nearest() : null;
+  const fishing = G.fishing.active;
+  const opt = !fishing && !P.dead && !G.ui.modal && P.state !== "climb" && P.state !== "glide" ? nearest() : null;
   G.ui.prompt(opt && opt.label);
   if (opt && inp.interact) { opt.go(); inp.interact = false; }
+  if (fishing) { G.fishing.update(dt, inp); inp.attack = inp.interact = false; }
   P.update(dt, inp);
+  kayakStep(dt);
+  for (const f of G.world.fishSpots) f.rest = Math.max(0, f.rest - dt);
   const fdt = dt * G.foeTime;
   for (const f of G.foes) {
     const d = Math.hypot(f.x - P.x, f.z - P.z);
@@ -952,7 +967,7 @@ function step(dt) {
     n.rig.root.rotation.y += Math.atan2(Math.sin(want - n.rig.root.rotation.y), Math.cos(want - n.rig.root.rotation.y)) * Math.min(1, dt * 4);
     n.rig.body.position.y = Math.sin(G.time * 2 + n.i) * 0.02;
     n.rig.arms[0].rotation.z = -0.18 + Math.sin(G.time * 1.3 + n.i) * 0.05;
-    if (n.rig.apply) n.rig.apply();
+    if (n.rig.apply) n.rig.apply(dt, 8);
   }
   G.world.statueObj.userData.orb.visible = S.orbs >= 4;
   // skeeters come out at night near the water
@@ -976,10 +991,25 @@ function step(dt) {
   if (saveT > 10 && !G.activeBoss && !G.trial && !P.dead) { saveT = 0; G.writeSave(); }
 }
 
+// the kayak floats where you left it; it drifts home to the cottage dock once you are far away
+function kayakStep(dt) {
+  const K = G.world.kayak, P = G.player;
+  if (!K) return;
+  if (!K.rider && Math.hypot(K.x - P.x, K.z - P.z) > 150 && (K.x !== K.home.x || K.z !== K.home.z)) { K.x = K.home.x; K.z = K.home.z; K.yaw = K.home.yaw; }
+  const o = K.obj;
+  o.position.set(K.x, K.rider ? P.y : Math.sin(G.time * 1.5) * 0.05, K.z);
+  o.rotation.y = K.yaw;
+  o.rotation.z = K.rider ? -(P.turnLean || 0) * 0.04 + Math.sin(G.time * 1.3) * 0.02 : Math.sin(G.time * 1.1) * 0.03;
+  o.rotation.x = K.rider ? -Math.min(0.06, Math.abs(P.kSpeed || 0) * 0.006) : 0;
+  // a little wake behind the stern
+  if (K.rider && Math.abs(P.kSpeed || 0) > 2 && Math.random() < dt * 8) G.fx.puff(K.x - Math.sin(K.yaw) * 2.3, 0.05, K.z - Math.cos(K.yaw) * 2.3, 0xffffff, 2);
+  void dt;
+}
+
 function abilities(dt) {
   const Ab = G.abilities, P = G.player;
   if (Ab.grit) { if (Ab.grit.charges === 0) { Ab.grit.cd -= dt; if (Ab.grit.cd <= 0) { Ab.grit.charges = 3; Ab.grit.cd = 0; } } }
-  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb") { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
+  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb" && P.state !== "kayak" && !P.fishing) { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
   if (Ab.fury) {
     Ab.fury.cd = Math.max(0, Ab.fury.cd - dt);
     if (inp.fury && Ab.fury.cd <= 0 && !P.dead) {

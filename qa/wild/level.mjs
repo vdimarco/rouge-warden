@@ -64,12 +64,30 @@ const report = await page.evaluate(() => {
     if (steep > 3) fail(`boss ${b.id}: ${steep} steep spots in the arena`);
     if (wet) fail(`boss ${b.id}: ${wet} wet spots in the arena`);
   }
-  // 8. the long dock is walkable end to end
-  const c = W.cottage; P.place(c.x, W.shoreZ + 4); G.cam.yaw = 0; QA.clear(); I.move.y = 1;
-  let reached = false;
-  QA.step(2400, () => { if (!reached && P.z < -40 && P.state === "ground" && P.y > 5) reached = true; if (reached) I.move.y = 0; });
-  if (!reached) fail(`dock: walked to (${P.x.toFixed(0)}, ${P.z.toFixed(0)}) state ${P.state}`);
-  else out.notes.push("dock: walked to the island");
+  // 8. walk down the short dock, get in the kayak, paddle to the island, get out, and walk up
+  const c = W.cottage, K = W.kayak; P.place(c.x, W.shoreZ + 4); G.cam.yaw = 0; QA.clear(); I.move.y = 1;
+  QA.step(600, () => { if (P.z <= K.z + 0.3) I.move.y = 0; });
+  QA.clear(); I.interact = true; QA.step(1);
+  if (P.state !== "kayak") fail(`kayak: could not get in from the dock end (${P.x.toFixed(1)}, ${P.z.toFixed(1)}), ${Math.hypot(P.x - K.x, P.z - K.z).toFixed(1)} m away`);
+  else {
+    let landed = false, reached = false, k = 0;
+    QA.step(3600, () => {
+      k++;
+      if (!landed) { I.move.y = 1; if (P.state === "kayak" && P.z < -2 && k % 10 === 0) I.interact = true; if (P.state === "ground") landed = true; }
+      else { I.move.y = reached ? 0 : 1; if (P.state === "ground" && P.y > 5) reached = true; }
+    });
+    if (!landed) fail(`kayak: paddled to (${P.x.toFixed(0)}, ${P.z.toFixed(0)}) state ${P.state} but found nowhere to get out`);
+    else if (!reached) fail(`kayak: got out at the island but could not walk up, at (${P.x.toFixed(0)}, ${P.y.toFixed(1)}, ${P.z.toFixed(0)}) state ${P.state}`);
+    else out.notes.push("kayak: paddled to the island and walked up");
+  }
+  // 9. every fishing spot is in water deep enough, and you can reach it from land or the kayak
+  for (const f of W.fishSpots) {
+    if (W.height(f.x, f.z) > -1.5) fail(`fish spot ${f.id}: too shallow`);
+    let fromLand = false;
+    for (let a = 0; a < 6.28 && !fromLand; a += 0.2) for (const r of [4, 7, 10, 13]) { const x = f.x + Math.cos(a) * r, z = f.z + Math.sin(a) * r; if (G.groundAt(x, z, 99) > 0.5 && W.normal(x, z).y > 0.72) fromLand = true; }
+    if (!fromLand && W.height(f.x, f.z) > -0.6) fail(`fish spot ${f.id}: no way to reach`);
+  }
+  out.notes.push("fish spots: " + W.fishSpots.length);
   return out;
 });
 console.log(report.notes.join("\n"));
