@@ -8,7 +8,7 @@ const loader = new GLTFLoader();
 const FPS = 30;
 
 export class Actor {
-  constructor(gltf, { outline = 0.02, glow = 0, scale = 1, cuts = {} } = {}) {
+  constructor(gltf, { outline = 0.02, glow = 0, scale = 1, cuts = {}, smooth = [] } = {}) {
     this.root = new THREE.Group();
     this.model = gltf.scene;
     this.model.scale.multiplyScalar(scale);
@@ -17,6 +17,7 @@ export class Actor {
     this.mixer = new THREE.AnimationMixer(this.model);
     this.clips = {};
     for (const c of gltf.animations) this.clips[c.name] = c;
+    for (const name of smooth) if (this.clips[name]) smoothLoop(this.clips[name]);
     // sub-clips: name → [source clip, from, to] in seconds
     for (const [name, [src, from, to]] of Object.entries(cuts)) {
       const c = this.clips[src]; if (!c) { console.warn('missing clip', src); continue; }
@@ -25,31 +26,77 @@ export class Actor {
     }
     this.bones = {};
     this.model.traverse((o) => { if (o.isBone) this.bones[o.name] = o; });
-    this.action = null; this.cur = '';
+    this.action = null; this.cur = ''; this.weights = new Map(); this.fade = 0.12;
     scene.add(this.root);
   }
-  // play a clip; loop, speed, and fade time are optional
+  // play a clip; loop, speed, and fade time are optional.
+  // Blending is done here, not with three.js cross-fades: those restart the weights at 0 and 1 when a
+  // blend is cut short, which dips the body toward the rest pose. Here every clip moves from the
+  // weight it has now, and the weights always add up to one.
   play(name, { fade = 0.12, loop = true, speed = 1, at = 0, restart = false } = {}) {
     const clip = this.clips[name];
     if (!clip) { console.warn('no clip', name); return null; }
     const a = this.mixer.clipAction(clip);
     if (this.action === a && !restart) { a.timeScale = speed; a.paused = false; return a; }
-    a.reset();
+    const w = this.weights.get(a) || 0;
+    // a looping clip that is still blending out keeps its place in the cycle, so the legs do not snap
+    if (loop && !restart && w > 0.001) { a.enabled = true; a.paused = false; }
+    else { a.reset(); a.time = at; }
     a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
     a.clampWhenFinished = !loop;
-    a.timeScale = speed; a.time = at;
-    a.setEffectiveWeight(1);
-    if (this.action && this.action !== a) a.crossFadeFrom(this.action, fade, false);
+    a.timeScale = speed;
     a.play();
+    this.weights.set(a, fade > 0 && this.action ? w : 1);
+    if (!(fade > 0 && this.action)) for (const o of this.weights.keys()) if (o !== a) this.weights.set(o, 0);
+    this.fade = Math.max(0.001, fade);
     this.action = a; this.cur = name;
     return a;
   }
   get t() { return this.action ? this.action.time : 0; }
   get done() { return this.action ? this.action.time >= this.action.getClip().duration - 1e-3 : true; }
-  update(dt) { this.mixer.update(dt); }
+  update(dt) {
+    // move every clip's weight toward 1 for the current clip and 0 for the rest, then normalize
+    const step = dt / this.fade;
+    let total = 0;
+    for (const [a, w] of this.weights) {
+      const nw = a === this.action ? Math.min(1, w + step) : Math.max(0, w - step);
+      if (nw <= 0 && a !== this.action) { a.stop(); this.weights.delete(a); continue; }
+      this.weights.set(a, nw); total += nw;
+    }
+    if (!total && this.action) { this.weights.set(this.action, 1); total = 1; }
+    for (const [a, w] of this.weights) a.setEffectiveWeight(w / total);
+    this.mixer.update(dt);
+  }
   bone(name) { return this.bones[name]; }
   setGlow(k) { for (const m of this.glowMats) m.emissiveIntensity = k; }
   set visible(v) { this.root.visible = v; }
+}
+
+// Soften a looping clip's keys (two passes of a 1-2-1 filter that wraps around the loop), so a coarse
+// 30 fps cycle turns smoothly at 60 fps in place of jerking at each key. Used on locomotion only.
+function smoothLoop(clip) {
+  for (const t of clip.tracks) {
+    const size = t.getValueSize(), v = t.values, n = t.times.length - 1; // the last key repeats the first
+    if (n < 4) continue;
+    if (size === 4) for (let i = 1; i <= n; i++) { // keep neighbouring quaternions on the same side
+      const a = (i - 1) * 4, b = i * 4;
+      if (v[a] * v[b] + v[a + 1] * v[b + 1] + v[a + 2] * v[b + 2] + v[a + 3] * v[b + 3] < 0) for (let k = 0; k < 4; k++) v[b + k] = -v[b + k];
+    }
+    for (let pass = 0; pass < 2; pass++) {
+      const src = v.slice();
+      for (let i = 0; i < n; i++) {
+        const p = ((i - 1 + n) % n) * size, c = i * size, q = ((i + 1) % n) * size;
+        let sign = 1, sign2 = 1;
+        if (size === 4) {
+          sign = src[p] * src[c] + src[p + 1] * src[c + 1] + src[p + 2] * src[c + 2] + src[p + 3] * src[c + 3] < 0 ? -1 : 1;
+          sign2 = src[q] * src[c] + src[q + 1] * src[c + 1] + src[q + 2] * src[c + 2] + src[q + 3] * src[c + 3] < 0 ? -1 : 1;
+        }
+        for (let k = 0; k < size; k++) v[c + k] = 0.25 * sign * src[p + k] + 0.5 * src[c + k] + 0.25 * sign2 * src[q + k];
+        if (size === 4) { const l = Math.hypot(v[c], v[c + 1], v[c + 2], v[c + 3]) || 1; for (let k = 0; k < 4; k++) v[c + k] /= l; }
+      }
+      for (let k = 0; k < size; k++) v[n * size + k] = v[k];
+    }
+  }
 }
 
 export async function loadActor(url, opts) {
