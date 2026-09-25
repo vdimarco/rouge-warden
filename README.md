@@ -141,7 +141,7 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 | `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rouge: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
 | `public/crimson/js/` | Crimson Rouge modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
 | `public/crimson/models/` | The ronin, Gabe, and the bear: textured, rigged, with their clips |
-| `public/crimson/art/`, `public/crimson/clips/` | The title art and the clips for Crimson Rouge |
+| `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |

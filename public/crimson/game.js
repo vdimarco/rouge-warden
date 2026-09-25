@@ -40,10 +40,10 @@ const RONIN_CUTS = {
   rollc: ['roll', 0.25, 1.6], down: ['knock', 0.0, 1.4], sip: ['drink', 2.8, 5.6],
 };
 const PATK = {
-  l1: { cut: 'l1', from: 0.25, speed: 1.3, hit: [0.64, 0.86], dmg: 20, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l2', cancel: 0.98, lunge: [0.5, 0.8, 3.2], snd: 'slash' },
-  l2: { cut: 'l2', from: 1.12, speed: 1.3, hit: [1.42, 1.62], dmg: 22, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l3', cancel: 1.72, lunge: [1.3, 1.55, 3.2], snd: 'slash' },
-  l3: { cut: 'l3', from: 1.9, speed: 1.2, hit: [2.16, 2.38], dmg: 30, post: 8, reach: 2.5, arc: 1.0, cost: 14, next: 'l1', cancel: 2.7, lunge: [2.0, 2.3, 4.2], snd: 'heavy' },
-  heavy: { cut: 'hvy', from: 0.2, speed: 1.15, hit: [1.08, 1.3], dmg: 55, post: 16, reach: 2.7, arc: 1.0, cost: 26, cancel: 1.75, lunge: [0.85, 1.25, 5], snd: 'heavy' },
+  l1: { cut: 'l1', from: 0.25, speed: 1.5, hit: [0.64, 0.86], dmg: 20, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l2', cancel: 0.93, lunge: [0.5, 0.8, 3.2], snd: 'slash' },
+  l2: { cut: 'l2', from: 1.12, speed: 1.5, hit: [1.42, 1.62], dmg: 22, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l3', cancel: 1.68, lunge: [1.3, 1.55, 3.2], snd: 'slash' },
+  l3: { cut: 'l3', from: 1.9, speed: 1.4, hit: [2.16, 2.38], dmg: 30, post: 8, reach: 2.5, arc: 1.0, cost: 14, next: 'l1', cancel: 2.5, lunge: [2.0, 2.3, 4.2], snd: 'heavy' },
+  heavy: { cut: 'hvy', from: 0.2, speed: 1.25, hit: [1.08, 1.3], dmg: 55, post: 16, reach: 2.7, arc: 1.0, cost: 26, cancel: 1.75, lunge: [0.85, 1.25, 5], snd: 'heavy' },
   deathblow: { cut: 'db', from: 0.0, speed: 1.0, hit: [0.68, 0.86], dmg: 0, post: 0, reach: 4.2, arc: 1.7, cost: 0, cancel: 1.7, lunge: [0.4, 0.78, 7], snd: 'heavy' },
 };
 // Gabe's clips; the cut ranges and hit times come from measuring each clip's strike peaks
@@ -198,7 +198,8 @@ function setTouch(on) {
 function titleText() {
   const t = input.touch.on;
   if (game.ready) pressEl.textContent = t ? 'TAP TO FIGHT' : 'PRESS ANY KEY TO FIGHT';
-  document.querySelector('#title .pick').textContent = t ? 'CHOOSE YOUR FRIEND' : 'CHOOSE YOUR FRIEND · ◀ ▶';
+  const pick = document.querySelector('#title .pick');
+  pick.textContent = (pick.dataset.perk || 'CHOOSE YOUR FRIEND').toUpperCase() + (t ? '' : ' · ◀ ▶');
   document.querySelector('#intro .skip').textContent = t ? 'TAP TO SKIP' : 'ANY KEY TO SKIP';
 }
 addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') setTouch(true); }, true);
@@ -324,17 +325,18 @@ function camBasis() { return [new THREE.Vector3(Math.sin(cam.yaw), 0, Math.cos(c
 function spend(n) { player.st -= n; player.stDelay = 0.65; }
 function startPlayerAttack(name) {
   const p = player, spec = PATK[name];
-  p.state = 'attack'; p.t = 0; p.atk = { name, spec }; p.hitDone = false; p.sndDone = false;
+  p.state = 'attack'; p.t = 0; p.iframe = false; p.atk = { name, spec }; p.hitDone = false; p.sndDone = false;
   spend(spec.cost);
   ronin.play(spec.cut, { loop: false, speed: spec.speed, fade: 0.08, restart: true });
   if (cam.lock || boss.state === 'broken') p.face = angleTo(p.pos, boss.pos);
   else if (input.move.lengthSq() > 0.01) { const [f, r] = camBasis(); p.face = Math.atan2(f.x * input.move.y + r.x * input.move.x, f.z * input.move.y + r.z * input.move.x); }
 }
 const clipTime = (spec) => spec.from + ronin.t;
+const DODGE_END = 0.44; // after this the roll can be cancelled into a move or an action
 function tryAct() {
   const p = player, now = game.time, buf = input.buf, fresh = (k) => now - buf[k] < 0.32;
   const ct = p.state === 'attack' ? clipTime(p.atk.spec) : 0;
-  const canCancel = p.state === 'move' || p.state === 'guard' || (p.state === 'attack' && ct >= p.atk.spec.cancel);
+  const canCancel = p.state === 'move' || p.state === 'guard' || p.state === 'dodge' || (p.state === 'attack' && ct >= p.atk.spec.cancel);
   if (fresh('dodge') && (canCancel || (p.state === 'attack' && ct > p.atk.spec.hit[1] + 0.05)) && p.st > 4) {
     buf.dodge = -9;
     const [f, r] = camBasis();
@@ -346,7 +348,7 @@ function tryAct() {
     Audio.play('dodge'); fx.dust(p.pos, 4, 0.6);
     return;
   }
-  if (fresh('parry') && (p.state === 'move' || p.state === 'guard' || (p.state === 'attack' && (ct < p.atk.spec.hit[0] || ct > p.atk.spec.hit[1])))) {
+  if (fresh('parry') && (p.state === 'move' || p.state === 'guard' || p.state === 'dodge' || (p.state === 'attack' && (ct < p.atk.spec.hit[0] || ct > p.atk.spec.hit[1])))) {
     buf.parry = -9;
     p.parryPresses = p.parryPresses.filter((t) => now - t < 1.0); p.parryPresses.push(now);
     p.parryT = now; p.state = 'guard'; p.t = 0;
@@ -387,7 +389,8 @@ function updatePlayer(dt) {
   input.move.set(mx, my); if (input.move.lengthSq() > 1) input.move.normalize();
   const [f, r] = camBasis();
   const want = new THREE.Vector3().addScaledVector(f, input.move.y).addScaledVector(r, input.move.x);
-  const busy = ['dead', 'grabbed', 'down', 'hit', 'broken', 'heal', 'dodge', 'victory'].includes(p.state) || (p.state === 'deflect' && p.t < 0.12);
+  const busy = ['dead', 'grabbed', 'down', 'hit', 'broken', 'heal', 'victory'].includes(p.state) || (p.state === 'deflect' && p.t < 0.12) || (p.state === 'dodge' && p.t < DODGE_END);
+  const moving = input.move.lengthSq() > 0.04;
   if (!busy) tryAct();
   p.t += dt;
   let speed = 0;
@@ -395,10 +398,10 @@ function updatePlayer(dt) {
   switch (p.state) {
     case 'move': {
       speed = want.length() * p.stats.speed;
-      if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 12);
-      else if (cam.lock && boss.state !== 'dead') p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 6);
-      if (p.speedNow > 0.5) ronin.play('run', { speed: clamp(p.speedNow / 5, 0.55, 1.1), fade: 0.18 });
-      else ronin.play('idle', { fade: 0.22 });
+      if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 22);
+      else if (cam.lock && boss.state !== 'dead') p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
+      if (moving || p.speedNow > 0.8) ronin.play('run', { speed: clamp(Math.max(p.speedNow, speed * 0.6) / 4.6, 0.7, 1.25), fade: 0.1 });
+      else ronin.play('idle', { fade: 0.14 });
       break;
     }
     case 'guard':
@@ -418,13 +421,13 @@ function updatePlayer(dt) {
       if (ct < s.hit[0] && (cam.lock || p.atk.name === 'deathblow')) p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
       if (!p.sndDone && ct >= s.hit[0] - 0.06) { p.sndDone = true; Audio.play(s.snd); }
       if (!p.hitDone && ct >= s.hit[0] && ct <= s.hit[1]) playerHitCheck();
-      if (ronin.done) { p.state = 'move'; p.t = 0; p.comboT = game.time; }
+      if (ronin.done || (moving && ct > s.hit[1] + 0.12)) { p.state = 'move'; p.t = 0; p.comboT = game.time; }
       break;
     }
     case 'dodge':
       p.iframe = p.t > 0.03 && p.t < (p.f.name === 'New Balance' ? 0.44 : 0.38);
-      p.pos.addScaledVector(p.dodgeDir, (p.t < 0.45 ? 7.2 : 2) * dt);
-      if (p.t >= 0.62) { p.state = 'move'; p.t = 0; p.iframe = false; }
+      p.pos.addScaledVector(p.dodgeDir, (p.t < 0.4 ? 7.6 : 2.5) * dt);
+      if (p.t >= 0.6 || (p.t >= DODGE_END && moving)) { p.state = 'move'; p.t = 0; p.iframe = false; p.vel.copy(p.dodgeDir).multiplyScalar(p.stats.speed * 0.8); }
       break;
     case 'hit': if (p.t > 0.5) { p.state = 'move'; p.t = 0; } break;
     case 'broken': if (p.t > 1.1) { p.state = 'move'; p.t = 0; } break;
@@ -437,8 +440,8 @@ function updatePlayer(dt) {
     case 'victory': ronin.play('idle', { speed: 0.6, fade: 0.6 }); break;
   }
   if (p.state === 'move' || p.state === 'guard' || p.state === 'heal') {
-    const v = want.clone().multiplyScalar(speed);
-    p.vel.x = damp(p.vel.x, v.x, 12, dt); p.vel.z = damp(p.vel.z, v.z, 12, dt);
+    const v = want.clone().multiplyScalar(speed), k = v.lengthSq() > p.vel.x * p.vel.x + p.vel.z * p.vel.z ? 20 : 26;
+    p.vel.x = damp(p.vel.x, v.x, k, dt); p.vel.z = damp(p.vel.z, v.z, k, dt);
     p.pos.addScaledVector(p.vel, dt);
     p.speedNow = Math.hypot(p.vel.x, p.vel.z);
   } else { p.vel.set(0, 0, 0); p.speedNow = 0; }
@@ -802,7 +805,7 @@ let endShownAt = 0;
 function crewRow() {
   const copy = document.querySelector('#title .copy');
   const row = document.createElement('div'); row.id = 'crew';
-  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}"><b>${c.name}</b><span>${c.perk}</span></button>`).join('');
+  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}"><img src="art/crew/${i + 1}.webp" alt="" draggable="false"><span class="cap"><b>${c.name}</b><span>${c.perk}</span></span></button>`).join('');
   copy.insertBefore(row, copy.querySelector('.pick'));
   row.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); pickCrew(+b.dataset.i); });
   pickCrew(crewPick);
@@ -811,6 +814,9 @@ function pickCrew(i) {
   crewPick = (i + CREW.length) % CREW.length;
   try { localStorage.setItem('crimson.crew', crewPick); } catch (e) { /* storage blocked */ }
   document.querySelectorAll('#crew button').forEach((b, k) => b.classList.toggle('on', k === crewPick));
+  document.querySelector('#title .pick').dataset.perk = `${CREW[crewPick].name} · ${CREW[crewPick].perk}`;
+  titleText();
+  const me = $('vsMe'); me.src = `art/crew/${crewPick + 1}.webp`; me.alt = CREW[crewPick].name;
 }
 function titleKey(e) {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { pickCrew(crewPick - 1); return; }
@@ -852,6 +858,7 @@ function showEnd(won) {
   if (document.pointerLockElement) document.exitPointerLock();
   const t = Math.round(game.time - game.fightStart);
   $('endKanji').textContent = won ? '勝' : '死';
+  $('endWho').src = won ? `art/crew/${crewPick + 1}.webp` : boss.form === 'bear' ? 'art/grizzly.webp' : 'art/gabe.webp';
   $('endTitle').textContent = won ? 'THE BEAR SLEEPS' : 'DEATH';
   $('endStats').textContent = won
     ? `${player.f.name} beat Gabe in ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} · ${game.parries} deflects · ${game.deaths} deaths`
@@ -876,6 +883,7 @@ function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata
 loadClip(titleVid, 'clips/title.mp4', () => { titleVid.classList.add('ready'); titleVid.play().catch(() => {}); });
 loadClip(introVid, 'clips/intro.mp4', () => {});
 crewRow();
+for (const v of document.querySelectorAll('#title .vs')) { if (v.complete && v.naturalWidth) v.classList.add('ready'); v.addEventListener('load', () => v.classList.add('ready')); }
 
 /* ------------------------------------------------------------------ loop */
 let ambientT = 0, last = performance.now(), manual = false;
