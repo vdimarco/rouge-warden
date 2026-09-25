@@ -5811,7 +5811,6 @@ function renderRoster() {
 }
 renderRoster();
 $("#startBtn").onclick = startRun;
-for (const b of document.querySelectorAll("[data-switch]")) b.onclick = () => GameSwitch.open("drain");
 $("#againBtn").onclick = startRun;
 $("#hudHp").onclick = () => UI.sheet(true, "stats");
 $("#swapBtn").onclick = () => { Game.input.swapEdge = true; };
