@@ -130,10 +130,10 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 
 - **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
 - **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab (he hauls you over his head and throws you) or his bear call: he pulls out a PVC pipe and roars down it, and neon sound rings blow you off your feet. Dodge through both.
-- **Gabe, the grizzly.** At about half life, Gabe cracks his knuckles, his track suit tears, and he turns into a standing grizzly twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
+- **Gabe, the grizzly.** At about half life, a cut scene plays: black bars close in, a low camera circles Gabe as he glows and the ground shakes, the film of him turning into the bear plays (tap or press a key to skip), and the grizzly comes out roaring in slow motion with shockwave rings and a 熊 card. The grizzly stands twice your height. The bear rakes with a two-hit claw sweep, chops overhead, smashes with both paws, slams the ground, and charges. A neon 危 before a charge means dodge.
 - **Deflect.** Press parry just as a blow lands. A clean deflect throws white-hot sparks, punches the camera in, and fills Gabe's posture bar. Hold parry to block: a block costs ki, and an empty ki bar breaks your guard.
 - **Break him.** When the posture bar fills, Gabe staggers. Strike the neon mark for a deathblow that takes almost a fifth of his life.
-- **Drink.** You carry three gourds. Each one heals 40 life, but you stand still to drink.
+- **Drink.** You carry five gourds. Each one heals 50 life, but you stand still to drink.
 
 | Action | Keyboard and mouse | Touch |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 - **Look.** The models get cel shading and an ink outline. A post pass turns the frame to ink: it keeps only neon, crushes blacks, draws edges, adds grain and film scratches, and makes the neon bloom.
 - **Sedona.** The sky all the way round is one ink painting of the buttes and the moon, made from two generated halves. The desert floor, sandstone spires, boulders, junipers, and grass that leans away from the fighters are made in code.
 - **Title screen.** The fighter you pick fills the screen, and Gabe stands opposite on wide screens. The ink-wash portraits (the five crew members, Gabe, and the grizzly) were made on Higgsfield from the crew art.
-- **Clips.** The boss intro (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield.
+- **Clips.** The cut scene film (Gabe turns into the bear, with sound) was made with Seedance on Higgsfield. It plays at the change, not at the start of the fight.
 - **Music.** Nero's "Promises" (Skrillex remix) plays through SoundCloud's own embed player, from Skrillex's SoundCloud page. It tries to start when the page loads, quiet on the title screen, and gets loud when the fight starts. Browsers that block sound until you tap or press a key start it then; on a phone, tap play on the small SoundCloud bar. Try another track with `?song=<SoundCloud link>`.
 - **Phones.** Phones get a lighter setup (lower resolution, fewer grass blades, smaller shadows). On every device the game lowers the render resolution when frames run long, and raises it again when there is room.
 - **Sound.** Every sound effect is made in the browser with Web Audio.

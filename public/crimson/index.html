@@ -89,10 +89,20 @@ canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 /* the boss name card when the fight begins */
 #card { position: absolute; left: 0; right: 0; top: 60%; text-align: center; opacity: 0; pointer-events: none; }
 #card.show { animation: card 3.4s ease-out forwards; }
+#card b { display: block; margin-bottom: 4px; font: 400 clamp(60px, 11vw, 150px) / 1 var(--grass); color: var(--red-hot); text-shadow: 0 0 40px rgba(198,255,26,0.7), 0 4px 20px #000; }
 #card h2 { margin: 0; font-family: var(--serif); font-weight: 800; font-size: clamp(22px, 3.6vw, 48px); letter-spacing: 0.34em; color: var(--ink); text-shadow: 0 4px 24px #000; }
 #card p { margin: 10px 0 0; font-family: var(--brush); font-size: clamp(16px, 2vw, 26px); color: var(--red-hot); letter-spacing: 0.4em; text-shadow: 0 0 16px rgba(198,255,26,0.5); }
 #card::before { content: ""; display: block; height: 1px; width: min(60vw, 700px); margin: 0 auto 18px; background: linear-gradient(90deg, transparent, var(--ink), transparent); }
 @keyframes card { 0% { opacity: 0; letter-spacing: 0.6em; } 15% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- cut scene: letterbox bars, no HUD, no touch buttons ---------- */
+#bars::before, #bars::after { content: ""; position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 4; transition: height 0.7s ease; pointer-events: none; }
+#bars::before { top: 0; } #bars::after { bottom: 0; }
+body.cine #bars::before, body.cine #bars::after { height: 11vh; }
+body.cine #hud > :not(#card) { opacity: 0; transition: opacity 0.4s; }
+body.cine #touch { display: none !important; }
+body.cine #card { top: 15vh; }
+#hud > * { transition: opacity 0.6s; }
 
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
@@ -169,7 +179,10 @@ body.hasSong .music { display: grid; } body.hasSong .songCredit { display: block
 #end p { margin: 18px 0 0; font-size: 12px; letter-spacing: 0.3em; color: var(--muted); }
 #end .stats { margin-top: 22px; font-size: 12px; letter-spacing: 0.18em; color: var(--ink); opacity: 0.8; }
 
-#pause { background: rgba(0,0,0,0.8); cursor: pointer; }
+#pause { background: rgba(0,0,0,0.9); cursor: pointer; overflow-y: auto; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+#pause > div { margin: auto; max-width: 720px; }
+/* show only the controls for the device in use */
+body:not(.touch) #pause tr > :nth-child(3), body.touch #pause tr > :nth-child(2) { display: none; }
 #pause h2 { margin: 0 0 22px; letter-spacing: 0.5em; font-weight: 800; }
 #pause table { margin: 0 auto; border-collapse: collapse; font-size: 13px; letter-spacing: 0.08em; text-align: left; }
 #pause td { padding: 6px 18px; border-bottom: 1px solid rgba(233,230,223,0.12); }
@@ -178,8 +191,18 @@ body.hasSong .music { display: grid; } body.hasSong .songCredit { display: block
 #pause video { display: none; width: min(46vw, 520px); margin: 0 auto 20px; border: 1px solid rgba(233,230,223,0.2); }
 #pause video.ready { display: block; }
 #pause a { color: var(--ink); }
-#title .switch { position: relative; z-index: 2; margin-top: 12px; padding: 8px 18px; background: rgba(0,0,0,0.35); border: 1px solid rgba(233,230,223,0.45); color: var(--ink); font: inherit; font-size: 12px; letter-spacing: 0.3em; cursor: pointer; }
-#title .switch:hover { border-color: var(--ink); }
+/* top corner buttons: switch game (left) mirrors music (right) */
+.corner { position: absolute; z-index: 3; top: max(12px, env(safe-area-inset-top)); display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 11px; border: 1px solid rgba(233,230,223,0.28); border-radius: 20px; background: rgba(0,0,0,0.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: var(--ink); font: 800 11px var(--serif); letter-spacing: 0.22em; cursor: pointer; }
+.corner:hover, .corner:focus-visible { border-color: rgba(233,230,223,0.7); }
+.corner svg { width: 16px; height: 16px; }
+#title .switch { left: max(12px, env(safe-area-inset-left)); }
+@media (max-width: 420px) { #title .switch { padding: 0 11px; } #title .switch span { display: none; } }
+/* pause menu buttons */
+#pause .menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 22px 0 0; }
+#pause .menu button, #pause .menu a { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border: 1px solid rgba(233,230,223,0.3); border-radius: 3px; background: rgba(0,0,0,0.5); color: var(--ink); font: 800 12px var(--serif); letter-spacing: 0.22em; text-decoration: none; cursor: pointer; }
+#pause .menu button:hover, #pause .menu a:hover, #pause .menu :focus-visible { border-color: var(--ink); }
+#pause .menu .main { border-color: var(--red-hot); color: #fff; box-shadow: 0 0 14px rgba(198,255,26,0.3); }
+#pause .menu svg { width: 15px; height: 15px; }
 #pause p { margin-top: 24px; font-size: 12px; letter-spacing: 0.3em; color: var(--muted); }
 
 /* ---------- touch ---------- */
@@ -221,6 +244,7 @@ body.touch #hint small { display: none; }
 <body>
 <canvas id="view"></canvas>
 
+<div id="bars"></div>
 <div id="hud">
   <div id="boss">
     <p class="name">GABE, THE MOUNTAIN MAN<small>山男</small></p>
@@ -230,7 +254,7 @@ body.touch #hint small { display: none; }
   <div id="player">
     <div class="row"><span class="label">LIFE</span><div class="bar" id="hp"><i class="ghost"></i><i class="fill"></i></div></div>
     <div class="row"><span class="label">KI</span><div class="bar" id="st"><i class="fill"></i></div></div>
-    <div id="gourds"><b></b><b></b><b></b><span>GOURD</span></div>
+    <div id="gourds"><b></b><b></b><b></b><b></b><b></b><span>GOURD</span></div>
   </div>
   <div id="hint">Hold <kbd>Shift</kbd> to parry<small>Or hold right click · tap it as the blow lands to deflect · keep holding to block</small></div>
   <div id="keys">
@@ -266,6 +290,7 @@ body.touch #hint small { display: none; }
   </div>
   <div class="smoke"></div>
   <div class="shade"></div>
+  <button type="button" class="corner switch" data-switch aria-label="Switch game"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span>GAMES</span></button>
   <button type="button" class="music off" aria-label="Music on or off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" stroke="none"/><path class="w" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9.5l5 5M22 9.5l-5 5"/></svg></button>
   <button type="button" class="arrow l" id="prevCrew" aria-label="Previous fighter"><svg viewBox="0 0 22 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 4L5 22l12 18"/></svg></button>
   <button type="button" class="arrow r" id="nextCrew" aria-label="Next fighter"><svg viewBox="0 0 22 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4l12 18L5 40"/></svg></button>
@@ -276,7 +301,6 @@ body.touch #hint small { display: none; }
     <p class="pick">CHOOSE YOUR FRIEND · ◀ ▶</p>
     <p class="press">PRESS ANY KEY TO FIGHT</p>
     <p class="req">Keyboard and mouse, or touch. Sound on.</p>
-    <button type="button" class="switch" data-switch>SWITCH GAME</button>
     <p class="songCredit"></p>
   </div>
 </div>
@@ -311,9 +335,14 @@ body.touch #hint small { display: none; }
       <tr><td>Lock on</td><td>Tab · Middle click</td><td>LOCK</td></tr>
       <tr><td>Music on or off</td><td>M</td><td>♪ on the title screen</td></tr>
     </table>
-    <p>Tap parry as the blow lands to deflect. Keep holding to block.<br>A glowing neon fist or claw is about to strike. A neon 危 means a grab or a charge: you cannot block it, so dodge.<br>Fill Gabe's posture bar, then strike the neon mark.</p>
+    <p>Tap parry as the blow lands to deflect. Keep holding to block.<br>A glowing neon fist or claw is about to strike. A neon 危 means a grab, the bear call, or a charge: you cannot block it, so dodge.<br>Fill Gabe's posture bar, then strike the neon mark.</p>
     <p class="songCredit"></p>
-    <p>CLICK OR TAP TO RESUME · <a href="#" data-switch>SWITCH GAME</a> · <a href="/" id="toArcade">BACK TO THE ARCADE</a></p>
+    <div class="menu">
+      <button type="button" class="main" id="resumeBtn">▶ RESUME</button>
+      <button type="button" data-switch><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg> SWITCH GAME</button>
+      <a href="/" id="toArcade">◀ ARCADE</a>
+    </div>
+    <p>ESC OR A TAP ON THE BACKGROUND ALSO RESUMES</p>
   </div>
 </div>
 
