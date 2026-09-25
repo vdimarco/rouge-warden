@@ -165,7 +165,20 @@ a { color: var(--accent); }
 .shrine-grid > * { min-width: 0; }
 .slots { min-width: 0; }
 .intro p { font-size: 15.5px; }
-.intro .card-inner, .intro.card-inner { max-width: 760px; }
+.intro .card-inner, .intro.card-inner { max-width: 820px; }
+.clips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 12px; }
+.clip { margin: 0; border-radius: 8px; overflow: hidden; background: #141924; border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.clip video { width: 100%; aspect-ratio: 8 / 5; object-fit: cover; display: block; background: #0b0f16; }
+.clip figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 5px 8px 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.clip figcaption b { font-family: var(--fell); font-weight: 400; font-size: 13px; color: var(--accent); }
+.clip .tp { display: none; }
+@media (pointer: coarse) { .clip .kb { display: none; } .clip .tp { display: inline; } }
+.loopcard { justify-content: center; gap: 6px; padding: 8px 10px; }
+.loopcard p { position: relative; margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.3; color: #c9c1b0; }
+.loopcard p b { color: var(--ink); }
+.loopcard i { position: absolute; left: 0; top: 0; width: 14px; font-style: normal; text-align: center; }
+.loopcard i.cap { top: 3px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #ffcf4a 0 35%, #e0402a 40%); }
+@media (max-width: 560px) { .clips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .roster { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
 .friend { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 8px; border-radius: 10px; border: 2px solid var(--line); background: #141924; cursor: pointer; min-width: 0; }
 .friend img { height: 96px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5)); }
@@ -226,16 +239,6 @@ a { color: var(--accent); }
 .wandstats dt { color: var(--muted); }
 .wandstats dd { margin: 0; font-variant-numeric: tabular-nums; }
 .scrollpick { z-index: 35; }
-.howto .card-inner { max-width: 760px; }
-.moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 6px 0 4px; }
-.move { display: grid; grid-template-columns: 76px 1fr; gap: 8px; align-items: start; background: #141924; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 7px 9px; font-size: 14px; line-height: 1.35; color: #c9c1b0; }
-.move b { font-family: var(--fell); font-weight: 400; font-size: 14px; color: var(--accent); }
-.move em { font-style: normal; color: var(--ink); font-weight: 700; }
-.move .tp { display: none; }
-@media (pointer: coarse) { .move .kb { display: none; } .move .tp { display: inline; } }
-.loop { margin: 0 0 12px; padding-left: 18px; font-size: 14px; color: #c9c1b0; line-height: 1.45; }
-.loop b { color: var(--ink); }
-@media (max-width: 640px) { .moves { grid-template-columns: 1fr; } }
 .scrollpick .card-inner { max-width: 640px; }
 .card.big b { font-family: var(--fell); font-weight: 400; font-size: 22px; }
 .tab-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -366,20 +369,21 @@ a { color: var(--accent); }
   <div class="card-inner intro">
     <div class="brand"><span class="eye big" aria-hidden="true"></span><h1><small>GET PLUNGER'D</small>Down the Drain</h1></div>
     <p class="sub">The outhouse backed up. Now the ground under the cottage moves.</p>
-    <p>Pick a friend and go down with a plunger. Every pixel falls, flows, or burns. Reach the drain at the bottom of each layer. The Cottage pours each layer and watches you fall. Tap the cottage to see its choices.</p>
     <div class="roster" id="roster" role="group" aria-label="Pick your friend"></div>
     <div class="starts"><span class="keys">Start with:</span><span class="weapons" id="startWeapons"></span><span class="keys" id="tabNote"></span></div>
-    <dl class="controls">
-      <dt>Move, jump</dt><dd>A and D, W or Space. Hold jump to hover.</dd>
-      <dt>Hit</dt><dd>Left mouse or J. Keep hitting for a combo. In the air, hold S and hit to pound the ground.</dd>
-      <dt>Roll</dt><dd>Shift or L. Nothing can hit you while you roll.</dd>
-      <dt>Shoot</dt><dd>Right mouse or K. 1, 2, 3, or the wheel change guns.</dd>
-      <dt>Dig</dt><dd>Hold F. The shovel tunnels where you aim.</dd>
-      <dt>Hot dog, take</dt><dd>R eats a hot dog. E takes or opens. Q map, M sound.</dd>
-      <dt class="touch">Phone</dt><dd class="touch">Left thumb moves. Tap the right side or Hit to swing, drag it to shoot. Pull down on the stick and hit in the air to pound.</dd>
-      <dt class="pad">Gamepad</dt><dd class="pad">A jump, X hit, B roll, RT shoot, LT dig, Y hot dog, LB guns</dd>
-    </dl>
-    <p class="keys">Critters drop caps. Spend them at the snack bar's tab on things that stay, or lose them when you go down. The gold arrow points the way.</p>
+    <div class="clips">
+      <figure class="clip"><video src="clips/hit.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>HIT</b><span class="kb">Left click · J</span><span class="tp">Tap Hit</span></figcaption></figure>
+      <figure class="clip"><video src="clips/roll.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>ROLL</b><span class="kb">Shift</span><span class="tp">Tap Roll</span></figcaption></figure>
+      <figure class="clip"><video src="clips/pound.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>POUND</b><span class="kb">S + hit, in the air</span><span class="tp">Stick down + Hit</span></figcaption></figure>
+      <figure class="clip"><video src="clips/shoot.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>SHOOT</b><span class="kb">Right click · K</span><span class="tp">Drag right side</span></figcaption></figure>
+      <figure class="clip"><video src="clips/dig.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>DIG</b><span class="kb">Hold F + direction</span><span class="tp">Hold Shovel</span></figcaption></figure>
+      <div class="clip loopcard">
+        <p><i class="cap"></i><b>Caps</b> buy unlocks. Lose them if you go down.</p>
+        <p><i>📜</i><b>Scrolls</b> and <b>relics</b> grow your build.</p>
+        <p><i>☠</i><b>Cursed coolers</b>: rich loot, one-hit death.</p>
+        <p><i>⇊</i><b>Two drains</b>. One is richer and harder.</p>
+      </div>
+    </div>
     <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <a class="keys" href="/">Back to the arcade</a></div>
   </div>
 </div>
@@ -402,29 +406,6 @@ a { color: var(--accent); }
       <div class="slots" id="bagSlots"></div>
     </section>
     <footer class="sh-foot"><button class="btn" id="descendBtn">Keep going down</button></footer>
-  </div>
-</div>
-
-<div class="overlay howto" id="howto" hidden>
-  <div class="card-inner">
-    <h2>How to fight</h2>
-    <p class="sub">Fast, hard, and one life per run. Learn the moves, then go deeper.</p>
-    <div class="moves">
-      <div class="move"><b>HIT</b><span><span class="kb">Left click or J</span><span class="tp">Tap Hit</span>. Keep hitting for a combo. Your <em id="howtoWeapon">Plunger</em> <em id="howtoCrit">crits on the last hit</em>.</span></div>
-      <div class="move"><b>ROLL</b><span><span class="kb">Shift</span><span class="tp">Tap Roll</span>. Nothing can hit you while you roll. Roll through attacks. Watch for critters that flash before they strike.</span></div>
-      <div class="move"><b>POUND</b><span>In the air, <span class="kb">hold S and hit</span><span class="tp">pull the stick down and tap Hit</span>. It stuns everything where you land.</span></div>
-      <div class="move"><b>SHOOT</b><span><span class="kb">Right click or K</span><span class="tp">Drag the right side</span>. Your gun is the second weapon.</span></div>
-      <div class="move"><b>DIG</b><span><span class="kb">Hold F and push a direction</span><span class="tp">Hold Shovel and push the stick</span>. It tires you, and it is loud: dig too much and the ceiling caves in, or critters dig their way to you.</span></div>
-      <div class="move"><b>HOT DOG</b><span><span class="kb">R</span><span class="tp">Tap the hot dog</span> heals. You get a few per layer.</span></div>
-    </div>
-    <h3>The loop</h3>
-    <ul class="loop">
-      <li><b>Caps</b> drop from critters. Spend them at the snack bar's tab on unlocks that stay. Go down, and the caps you carry are lost.</li>
-      <li><b>Scrolls</b> raise Muscle, Aim, or Grit. <b>Relics</b> hide in the walls.</li>
-      <li><b>Cursed coolers</b> hold rich loot, but one hit takes you down until you beat 10 critters.</li>
-      <li>Each layer ends at <b>two drains</b>. One is richer and harder. Get there fast for a bonus.</li>
-    </ul>
-    <div class="starts"><button class="btn" id="howtoGo" type="button">Let's go</button></div>
   </div>
 </div>
 
@@ -2743,7 +2724,7 @@ function makeFoe(kind, x, y, elite) {
 
 function hurtPlayer(dmg, cause, raw) {
   const p = Game.player;
-  if (!p || run.over || dmg <= 0) return;
+  if (!p || run.over || dmg <= 0 || Game.clip) return;
   if (!raw) {
     if (p.hurtT > 0 || p.roll > 0 || p.pound) return;
     if (p.aegisT > 0) { p.aegisT = 0; p.hurtT = 0.6; addFx(p.x + 2, p.y + 5, 0xb39ddb, 14); SFX.zap(); return; }
@@ -4143,7 +4124,7 @@ const Render = (() => {
       if (!blink && !Art.get("crew" + run.crew)) sprite(P_ROWS, palOf(P_PAL), p.x - ox, p.y - oy, p.face < 0, p.flash > 0, 0, 0);
       if (p.aegisT > 0) for (let a = 0; a < 24; a++) { const t = a / 24 * Math.PI * 2; if ((a + (tk >> 2)) % 3) px(p.x + 2 + Math.cos(t) * 8 - ox, p.y + 5 + Math.sin(t) * 9 - oy, World.abgr(0xb39ddb)); }
       // the lantern's compass points down the route toward the well
-      const tgt = routeTarget(p);
+      const tgt = Game.clip ? null : routeTarget(p);
       if (tgt) {
         const dx = tgt.x - (p.x + 2), dy = tgt.y - (p.y + 5), d = Math.hypot(dx, dy);
         if (d > 10) {
@@ -4156,12 +4137,15 @@ const Render = (() => {
       }
       // aim: a dotted line from the wand, and a reticle when you aim without the mouse
       const a = aimAngle(), ca = Math.cos(a), sa = Math.sin(a), ax = p.x + 2, ay = p.y + 4;
+      // Game.clip hides the aim line and the compass, for recording the clips on the title screen
+      if (!Game.clip) {
       const dotC = World.abgr(0xffe28a), dark = 0xff000000;
       for (let d = 6; d <= 24; d += 3) px(ax + ca * d - ox, ay + sa * d - oy, dotC);
       if (Game.input.sx == null || Game.input.keyAim || Game.input.touchAim != null || Game.input.pad) {
         const rx = ax + ca * 30 - ox, ry = ay + sa * 30 - oy;
         for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry - 1, dark); px(rx + k, ry + 1, dark); px(rx - 1, ry + k, dark); px(rx + 1, ry + k, dark); }
         for (let k = -3; k <= 3; k++) { if (Math.abs(k) < 1) continue; px(rx + k, ry, dotC); px(rx, ry + k, dotC); }
+      }
       }
     }
     // where the next swing of the shovel will cut
@@ -4883,17 +4867,6 @@ const UI = (() => {
     b.querySelector("em").textContent = opts.cost || "";
     return b;
   }
-  // how to fight: the moves and the loop, before your first runs
-  function howto() {
-    return new Promise((resolve) => {
-      $("#howtoWeapon").textContent = MELEE[run.melee].name;
-      $("#howtoCrit").textContent = CRIT_TEXT[MELEE[run.melee].crit];
-      $("#howto").hidden = false;
-      fit();
-      $("#howtoGo").focus({ preventScroll: true });
-      $("#howtoGo").onclick = () => { $("#howto").hidden = true; fit(); resolve(); };
-    });
-  }
   // a scroll of power: the game waits while you pick a stat
   function chooseScroll() {
     return new Promise((resolve) => {
@@ -5061,7 +5034,7 @@ const UI = (() => {
     document.documentElement.style.setProperty("--hudH", Math.round(hudEl.bottom - 8) + "px");
   }
 
-  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, howto, end, insets, fit };
+  return { hud, mood, voice, banner, hideBanner, hint, sound, toastStart, toastDone, ledger, sheet, landing, chooseScroll, end, insets, fit };
 })();
 
 /* ------------------------------------------------------------------ flow */
@@ -5219,7 +5192,6 @@ async function startRun() {
   Memory.save();
   run = newRun();
   reaching = false;
-  if (Memory.data.runs <= 3) await UI.howto();
   await enterDepth(true);
 }
 

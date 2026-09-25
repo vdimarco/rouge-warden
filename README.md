@@ -17,6 +17,7 @@ The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywh
 
 Deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
+- The How to play card, and the How to play chip on the title screen, show a short clip of each move.
 - Move with WASD. Keep moving to break into a sprint.
 - Aim with the mouse and hold the left button to shoot. The aim keeps following the mouse, even after it leaves the window, and you can keep running with the keys.
 - Roll with Space or the right button. You can't be hit while you roll.
@@ -31,7 +32,7 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 
 ### The loop
 
-- **Learn the moves.** Your first runs open with a card that shows how to fight and how the loop works.
+- **Learn the moves.** The title screen plays short clips of each move: hit, roll, pound, shoot, and dig.
 - **Pick a friend and a weapon.** Each of the five friends has a perk. You start with the Plunger, or with any weapon you have unlocked.
 - **Fight your way down.** Each layer is a route of rooms down to the drains. Some rooms slam shut with screen doors until two waves of critters are dead. The drains stay clogged until the last of those rooms is clear. If you dig around it, the fight comes to you at the drains.
 - **Collect caps.** Critters, nests, and sealed rooms drop bottle caps. At the snack bar between layers, spend caps at the tab on unlocks that stay between runs: new weapons, more hot dogs, a better starting shovel, pocket money, a starting scroll, and a second wind. Caps you still carry when you go down are lost.
@@ -106,6 +107,7 @@ The game fits the screen on desktop and phone, and nothing scrolls.
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain |
+| `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |

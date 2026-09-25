@@ -3303,7 +3303,7 @@ const Game = {
     }, 1300);
   },
   // Before the first run: a short card on how to play. After it, a few hints during the first room.
-  teach() {
+  teach(fromTitle) {
     const touch = matchMedia("(pointer: coarse)").matches, one = Settings.oneHand;
     const rows = touch && one ? [
       ["👆", "MOVE", "Drag anywhere on the screen. Keep moving to sprint."],
@@ -3327,11 +3327,15 @@ const Game = {
       const next = () => { if (k >= hints.length || !run || run.roomsCleared > 0) { h.hidden = true; return; } h.textContent = hints[k++]; h.hidden = false; h.style.opacity = 1; setTimeout(() => { h.style.opacity = 0; setTimeout(next, 450); }, 3200); };
       next();
     };
-    if (Meta.data.taught) { if (Meta.data.runs <= 3) showHints(); return; }
+    if (Meta.data.taught && !fromTitle) { if (Meta.data.runs <= 3) showHints(); return; }
     const sc = this.scene;
-    $("#howtoRows").innerHTML = rows.map(([ic, t, d]) => "<div class='howto-row'><i>" + ic + "</i><div><b>" + t + "</b><span>" + d + "</span></div></div>").join("");
-    $("#howtoCard").hidden = false; sc.mode = "paused";
-    $("#howtoGo").onclick = () => { $("#howtoCard").hidden = true; sc.mode = "fight"; Meta.data.taught = 1; Meta.save(); showHints(); };
+    // each move shows a short clip of the game, in place of a wall of text
+    const clips = ["sprint", "shoot", "roll", "horn"];
+    $("#howtoRows").innerHTML = rows.map(([ic, t, d], i) => "<div class='howto-row'><video src='/plungerd/clips/" + clips[i] + ".webm' autoplay muted loop playsinline preload='auto' aria-hidden='true'></video><div><b>" + ic + " " + t + "</b><span>" + d + "</span></div></div>").join("");
+    $("#howtoCard").hidden = false;
+    if (!fromTitle) sc.mode = "paused";
+    $("#howtoGo").textContent = fromTitle ? "GOT IT" : "LET'S GO";
+    $("#howtoGo").onclick = () => { $("#howtoCard").hidden = true; $("#howtoRows").innerHTML = ""; if (fromTitle) return; sc.mode = "fight"; Meta.data.taught = 1; Meta.save(); showHints(); };
   },
   togglePause() {
     const sc = this.scene;
