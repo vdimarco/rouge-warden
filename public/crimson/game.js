@@ -90,8 +90,8 @@ const pressEl = document.querySelector('#title .press');
 pressEl.textContent = 'LOADING THE HILLS…';
 async function loadAll() {
   [ronin, gabe, bear] = await Promise.all([
-    loadActor('models/ronin.glb', { outline: 0.012, cuts: RONIN_CUTS }),
-    loadActor('models/gabe.glb', { outline: 0.016, glow: 0.35, scale: 1.2, cuts: GABE_CUTS }),
+    loadActor('models/ronin.glb', { outline: 0.012, cuts: RONIN_CUTS, smooth: ['run', 'idle'] }),
+    loadActor('models/gabe.glb', { outline: 0.016, glow: 0.35, scale: 1.2, cuts: GABE_CUTS, smooth: ['run', 'idle'] }),
     loadActor('models/bear.glb', { outline: 0.022, glow: 0.5, scale: 1.15, cuts: BEAR_CUTS }),
   ]);
   katana = makeKatana();
@@ -333,7 +333,7 @@ function startPlayerAttack(name) {
   const p = player, spec = PATK[name];
   p.state = 'attack'; p.t = 0; p.iframe = false; p.atk = { name, spec }; p.hitDone = false; p.sndDone = false;
   spend(spec.cost);
-  ronin.play(spec.cut, { loop: false, speed: spec.speed, fade: 0.08, restart: true });
+  ronin.play(spec.cut, { loop: false, speed: spec.speed, fade: 0.1, restart: true });
   if (cam.lock || boss.state === 'broken') p.face = angleTo(p.pos, boss.pos);
   else if (input.move.lengthSq() > 0.01) { const [f, r] = camBasis(); p.face = Math.atan2(f.x * input.move.y + r.x * input.move.x, f.z * input.move.y + r.z * input.move.x); }
 }
@@ -406,9 +406,9 @@ function updatePlayer(dt) {
       speed = want.length() * p.stats.speed;
       if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 16);
       else if (cam.lock && boss.state !== 'dead') p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
-      const out = p.t < 0.2 ? 0.2 : 0.12; // a longer blend right after a roll or swing
+      const out = p.t < 0.2 ? 0.24 : 0.18; // a longer blend right after a roll or swing
       if (moving || p.speedNow > 0.8) ronin.play('run', { speed: clamp(Math.max(p.speedNow, speed * 0.6) / 4.2, 0.8, 1.35), fade: out });
-      else ronin.play('idle', { fade: out + 0.04 });
+      else ronin.play('idle', { fade: out + 0.06 });
       break;
     }
     case 'guard':
@@ -422,8 +422,9 @@ function updatePlayer(dt) {
     case 'attack': {
       const s = p.atk.spec, ct = clipTime(s);
       if (ct >= s.lunge[0] && ct <= s.lunge[1]) {
-        const d = flatDist(p.pos, boss.pos) - radius();
-        if (d > 1.2) { p.pos.x += Math.sin(p.face) * s.lunge[2] * dt; p.pos.z += Math.cos(p.face) * s.lunge[2] * dt; }
+        // ease the step in and out, so the body glides forward in place of lurching
+        const d = flatDist(p.pos, boss.pos) - radius(), k = (ct - s.lunge[0]) / (s.lunge[1] - s.lunge[0]), ease = Math.sin(Math.PI * k) * 1.57;
+        if (d > 1.2) { p.pos.x += Math.sin(p.face) * s.lunge[2] * ease * dt; p.pos.z += Math.cos(p.face) * s.lunge[2] * ease * dt; }
       }
       if (ct < s.hit[0] && (cam.lock || p.atk.name === 'deathblow')) p.face += angDiff(p.face, toBoss) * Math.min(1, dt * 10);
       if (!p.sndDone && ct >= s.hit[0] - 0.06) { p.sndDone = true; Audio.play(s.snd); }
@@ -966,10 +967,13 @@ if (Music.enabled) {
 const gabeHero = $('heroGabe'); if (gabeHero.complete && gabeHero.naturalWidth) gabeHero.classList.add('on'); else gabeHero.onload = () => gabeHero.classList.add('on');
 
 /* ------------------------------------------------------------------ loop */
-let ambientT = 0, last = performance.now(), manual = false;
+let ambientT = 0, last = performance.now(), manual = false, smoothDt = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
-  const frameMs = now - last, rdt = Math.min(0.05, frameMs / 1000); last = now;
+  const frameMs = now - last; last = now;
+  // average the step over a few frames: uneven frame times (common on phones) otherwise read as stutter
+  smoothDt += (Math.min(0.05, frameMs / 1000) - smoothDt) * 0.3;
+  const rdt = Math.abs(frameMs / 1000 - smoothDt) > 0.03 ? Math.min(0.05, frameMs / 1000) : smoothDt;
   const fighting = game.state === 'fight';
   if (fighting !== wasFighting) { wasFighting = fighting; document.body.classList.toggle('fighting', fighting); }
   if (manual) return;

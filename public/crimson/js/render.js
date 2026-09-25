@@ -113,15 +113,17 @@ export function resize() {
 addEventListener('resize', resize);
 resize();
 
-// keep the frame rate up: drop the render resolution when frames run long, raise it when there is room
-let slowT = 0, fastT = 0, avg = 16.7;
+// keep the frame rate up: drop the render resolution when frames run long. Each change rebuilds the
+// render targets (a small hitch), so it drops quickly but only climbs back rarely, and never flip-flops.
+let slowT = 0, fastT = 0, avg = 16.7, lastDrop = -1e9, clock = 0;
 export function adapt(ms) {
-  avg += (Math.min(ms, 100) - avg) * 0.1;
-  slowT = avg > 19 ? slowT + ms : 0;
-  fastT = avg < 13 ? fastT + ms : 0;
+  clock += ms;
+  avg += (Math.min(ms, 100) - avg) * 0.05;
+  slowT = avg > 21 ? slowT + ms : 0;
+  fastT = avg < 12 ? fastT + ms : 0;
   let next = pr;
-  if (slowT > 700 && pr > PR_MIN) { next = Math.max(PR_MIN, pr - 0.15); slowT = 0; }
-  else if (fastT > 4000 && pr < PR_MAX) { next = Math.min(PR_MAX, pr + 0.1); fastT = 0; }
+  if (slowT > 1500 && pr > PR_MIN) { next = Math.max(PR_MIN, pr - 0.2); slowT = 0; lastDrop = clock; }
+  else if (fastT > 8000 && pr < PR_MAX && clock - lastDrop > 30000) { next = Math.min(PR_MAX, pr + 0.1); fastT = 0; }
   if (next !== pr) { pr = next; renderer.setPixelRatio(pr); resize(); }
 }
 
