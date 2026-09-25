@@ -23,11 +23,11 @@ const NEON3 = new THREE.Color(0.72, 1.0, 0.1);
 
 /* ------------------------------------------------------------------ the crew */
 const CREW = [
-  { name: 'Tank Top', perk: 'Hits 20% harder', apply: (s) => { s.dmg *= 1.2; } },
-  { name: 'Fifty-One', perk: '20% more life', apply: (s) => { s.maxHp = 120; } },
-  { name: 'Shades', perk: 'Wider parry window', apply: (s) => { s.parryWin = 0.27; } },
-  { name: 'New Balance', perk: 'Dodges cost less ki', apply: (s) => { s.dodgeCost *= 0.6; } },
-  { name: 'Red Jersey', perk: 'Moves 12% faster', apply: (s) => { s.speed *= 1.12; } },
+  { name: 'Tank Top', glyph: '力', perk: 'Hits 20% harder', apply: (s) => { s.dmg *= 1.2; } },
+  { name: 'Fifty-One', glyph: '命', perk: '20% more life', apply: (s) => { s.maxHp = 120; } },
+  { name: 'Shades', glyph: '影', perk: 'Wider parry window', apply: (s) => { s.parryWin = 0.27; } },
+  { name: 'New Balance', glyph: '风', perk: 'Dodges cost less ki', apply: (s) => { s.dodgeCost *= 0.6; } },
+  { name: 'Red Jersey', glyph: '速', perk: 'Moves 12% faster', apply: (s) => { s.speed *= 1.12; } },
 ];
 let crewPick = 2;
 try { const saved = +localStorage.getItem('crimson.crew'); if (saved >= 0 && saved < CREW.length) crewPick = saved; } catch (e) { /* storage blocked */ }
@@ -866,7 +866,7 @@ let endShownAt = 0;
 function crewRow() {
   const copy = document.querySelector('#title .copy');
   const row = document.createElement('div'); row.id = 'crew';
-  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}">${c.name.toUpperCase()}</button>`).join('');
+  row.innerHTML = CREW.map((c, i) => `<button type="button" data-i="${i}" aria-label="${c.name}"><i>${c.glyph}</i><b>${c.name.toUpperCase()}</b></button>`).join('');
   for (const [id, d] of [['prevCrew', -1], ['nextCrew', 1]]) $(id).addEventListener('click', (e) => { e.stopPropagation(); pickCrew(crewPick + d); });
   // load every portrait up front so switching is instant
   CREW.forEach((c, i) => { const im = new Image(); im.src = `art/crew/${i + 1}.webp`; });
