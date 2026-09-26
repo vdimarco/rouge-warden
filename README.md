@@ -47,7 +47,7 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 
 ### Graphics
 
-There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. Classic draws each material in four flat shades. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.
+There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. In Painted mode the crew, the critters, and the bosses are pixel-art sprites made on Higgsfield, with walk and attack frames. They draw at two pixels per world cell with a dark one-pixel outline, so they sit on the same grid as the ground. Classic draws each material in four flat shades and keeps the old character art. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.
 
 ### The loop
 
@@ -252,7 +252,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, and its hero cards |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, its hero cards, and the Painted-mode pixel sprites (`pxcrew*.webp` for the crew, `px_*.webp` walk, walk, and attack strips for the critters and bosses) |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
 | `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `loot.js` (the weapon pouch, thrown and dropped weapons, chests, and camp coolers), `quests.js` (the friendly critters and their side quests), `ui.js` (HUD and map), `audio.js`, and `main.js` |
