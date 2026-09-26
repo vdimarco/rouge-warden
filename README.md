@@ -194,7 +194,24 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 - **Light the beacons.** Four lookout towers stand on high ground, each with a beacon on top. Climb one and light its beacon, and you map the land you can see from up there: the map opens and the clouds part over that region. You can travel to any lit beacon from the map.
 - **Clear the outhouse trials.** Twelve outhouses glow blue. Win the fight inside the ring for a Golden Orb. Pray at the loon statue with four orbs for a new heart or more stamina.
 - **Find the Loonies.** Thirty are hidden: most under odd little rocks with flowers on top, and some up high.
-- **Fight.** Swing in a 3-hit combo, or hold and let go for a spin. Tap again during a swing and the next one follows as soon as the first lands. Each swing steps you in toward the target, and the third is a heavy overhead smash. Roll or jump to cut off the end of a swing. Every hit lands with a spark, a short freeze, and a flash on the target. Roll just as a hit lands and time slows down. Weapons from the coolers hit harder than the plunger, but they break.
+- **Fight.** Swing in a combo, or hold and let go for a spin. Tap again during a swing and the next one follows as soon as the first lands. Each swing steps you in toward the target, and the last swing of a combo is a heavy one. Roll or jump to cut off the end of a swing. Every hit lands with a spark, a short freeze, and a flash on the target. Roll just as a hit lands and time slows down.
+- **Weapons.** There are 14, in three kinds, and each kind swings its own way:
+  - One-handed weapons swing fast in a 3-hit combo: the Plunger, Maple Branch, Hockey Stick, Lacrosse Stick, Frying Pan (stuns), Marshmallow Torch (sets critters on fire), Frisbee, and Golden Plunger.
+  - Two-handed weapons are slow and heavy. They sweep wide and knock critters flying in a 2-hit combo: the Canoe Paddle, Curling Broom, and Antler Axe.
+  - Spears reach far. Two quick jabs, then a lunge: the Fishing Rod, Tent Pole, and Pitchfork.
+  - Some weapons are better than usual. A **Sturdy** one lasts 60% longer, a **Mighty** one hits 35% harder, and a **Keen** one lands more critical hits.
+  - Every weapon but the Plunger and the Frisbee wears out. A worn weapon blinks red, and its last hit, the one that breaks it, does double damage. Then the best weapon left comes to hand.
+  - Press T to **throw** the weapon you hold. It spins through the air and hits twice as hard, then lands on the ground for you to pick up. The Frisbee comes back to you.
+  - Your pouch holds the Plunger and four more. With a full pouch, pick up a weapon to swap it for your weakest one. Chip, by the loon statue, sews a bigger pouch for Loonies (up to eight weapons and the Plunger).
+  - Weapons turn up everywhere: branches under trees, gear at camp sites, and whatever critters drop when they go down. Bears and moose drop the big ones.
+- **Treasure chests.** Sixteen chests sit on hilltops and in quiet places, four in each lookout's land. A beam of gold light shows each one from far away. They hold the best weapons in the valley.
+- **Critter camps.** Each camp has a cooler of loot, locked until you beat every critter at that camp. It fills again each day.
+- **Side quests.** Critters wearing hats are friendly. A ! over a head means a job for you, and a ? means you can finish one. Open the quest log from the pause menu.
+  - **Pip's Frisbee:** Pip, a little goose by the cottage, threw a frisbee onto the cottage roof.
+  - **The Bandit Fort:** Rocco wants the Raccoon King off his throne at the camp south of the cottage. The King leaps at you (jump the ring when he lands) and calls his bandits for help.
+  - **Bruno's Supper:** Bruno the bear wants three fish.
+  - **The Glide Course:** Coach Gus wants you to jump off the Loonie Meadows lookout and glide through five rings in 40 seconds. After that, he tracks your best time.
+  - **The Moose Alpha:** Marge wants the huge moose in the east meadow taught some manners. He charges, then stomps: jump the shockwave, then hit him while he rests.
 - **Eat and cook.** Pick up apples, blueberries, toadstools, and maple syrup, or catch fish. Cook three at a fire to make a stew that fills your hearts and adds a gold one.
 - **Free your friends.** Gabe throws boulders and sends shockwaves you must jump. Christian blinks around a stone circle and throws cards. Ryu fights like a martial artist. He circles you, winds up each punch, charges a fireball, and warns you before he dashes. After a dash he is winded, which is your chance to hit back. Each one gives you a heart and a power: Gabe's Grit blocks hits, Mystic Updraft (R) lifts you into the sky, and Ryu's Fury (F) strikes everything near you with lightning.
 - **Flush the King.** A porcelain stair climbs from the island dock to the King's court, a round floor of cracked bathroom tiles ringed by copper pipes. Step onto it and a wall of sludge rises behind you, the sky turns purple, and the camera keeps him in view. He fights in three rounds:
@@ -238,7 +255,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, and its hero cards |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
-| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `ui.js` (HUD and map), `audio.js`, and `main.js` |
+| `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `loot.js` (the weapon pouch, thrown and dropped weapons, chests, and camp coolers), `quests.js` (the friendly critters and their side quests), `ui.js` (HUD and map), `audio.js`, and `main.js` |
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
@@ -264,6 +281,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `stress.mjs` | Runs, rolls, and jumps into every building from 12 sides. Climbs and lets go. Jumps and glides off every tower. Climbs 40 cliffs. Swims under the dock. Paddles the kayak all over the lake, hops out, and climbs back in. Fishes at every spot with random buttons. Watches for the hero or the camera getting stuck or going inside things. |
 | `flows.mjs` | Damaged save files, double clicks on New game, dying during a conversation, menus on top of menus, travel during a boss fight, catching a fish, moving or getting hit while fishing, travel from the kayak, a whole day and night, window resizing, and a graphics reset. |
 | `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
+| `adventure.mjs` | Every weapon and its combo, the modifiers, the double-damage last hit, throwing and picking up, the Frisbee coming back, a full pouch, the chests (four in each land), the camp cooler lock, all five side quests, Chip's bigger pouch, the two mini-bosses, and that a save with all of this loads again. |
 | `king.mjs` | A bot fights the whole Porcelain King fight with the normal controls. All three rounds happen, plunging works, the sludge wall keeps you on the court, and after the fight or a death everything is put back. |
 | `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
 

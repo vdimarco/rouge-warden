@@ -111,6 +111,13 @@ export function sfx(name) {
     case "shlorp": tone(420, 0.7, "sine", 0.25, -370); noise(0.6, 0.4, 500, 0.7, "lowpass"); for (let i = 0; i < 6; i++) tone(200 + i * 60, 0.08, "sine", 0.1, 150, 0.3 + i * 0.06); break;
     case "seal": noise(1.2, 0.25, 300, 0.8, "lowpass"); tone(55, 1.2, "sine", 0.25, 30); break;
     case "crack": noise(0.08, 0.3, 4000, 1, "highpass"); tone(900 + Math.random() * 600, 0.05, "square", 0.06, -400); break;
+    // loot and quests
+    case "chest": tone(140, 0.35, "sawtooth", 0.05, 90); noise(0.3, 0.08, 700, 5); notes([523, 659, 784, 1047, 1319], "triangle", 0.12, 0.07, 0.5); break;
+    case "get": notes([392, 494, 587, 784], "triangle", 0.14, 0.11, 0.35); tone(1175, 0.9, "sine", 0.08, 0, 0.44, musicGain); tone(1568, 0.9, "sine", 0.05, 0, 0.44, musicGain); break;
+    case "quest": notes([587, 740, 880], "triangle", 0.12, 0.09, 0.4); break;
+    case "ring": notes([1047, 1568], "sine", 0.12, 0.06, 0.35); noise(0.2, 0.08, 4000, 1, "highpass"); break;
+    case "unlock": tone(1400, 0.08, "square", 0.06, -300); notes([523, 784, 1047], "triangle", 0.12, 0.08, 0.4); break;
+    case "burn": noise(0.5, 0.18, 900, 0.4, "bandpass"); for (let i = 0; i < 5; i++) noise(0.04, 0.12, 3000, 2, "bandpass", 0.05 + i * 0.08); break;
     case "shatter": for (let i = 0; i < 8; i++) tone(1500 + Math.random() * 2500, 0.2, "triangle", 0.07, -300, i * 0.03); noise(0.8, 0.45, 2500, 0.5); tone(50, 0.8, "sine", 0.35, -20); break;
   }
 }

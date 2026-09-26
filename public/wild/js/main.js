@@ -4,7 +4,9 @@ import { World, TOWERS, BOSSES, ISLAND, SIZE } from "./world.js";
 import * as M from "./models.js";
 import * as GLB from "./glb.js";
 import { Fishing } from "./fishing.js";
-import { Player, WEAPONS, PERKS } from "./player.js";
+import { Player, WEAPONS, PERKS, MODS, COMBO, maxDur } from "./player.js";
+import { Loot } from "./loot.js";
+import { Quests, QUESTS } from "./quests.js";
 import { Foe, Boss, Hazards, FX, spawnPlan } from "./foes.js";
 import { UI } from "./ui.js";
 import * as A from "./audio.js";
@@ -55,7 +57,7 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); ca
 const G = {
   scene, camera, renderer, time: 0, foeTime: 1, slowmo: 0, hitstop: 0, shakeT: 0, paused: false, cutscene: false, started: false,
   cam: { yaw: 0, pitch: 0.28, dist: 8, target: new THREE.Vector3(), pos: new THREE.Vector3(), idle: 0 },
-  foes: [], bosses: [], npcs: [], items: [], loonies: [], abilities: {}, inv: { weapons: [{ id: "plunger", dur: Infinity }], cur: 0, food: { apple: 0, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 } },
+  foes: [], bosses: [], npcs: [], items: [], loonies: [], abilities: {}, inv: { weapons: [{ id: "plunger", dur: Infinity, mod: null }], cur: 0, food: { apple: 0, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 } },
   sfx: A.sfx, pad: false, clock: 0.3, night: false,
 };
 window.G = G;
@@ -77,7 +79,7 @@ G.groundAt = (x, z, y) => {
 };
 
 function blankSave(friend = 0) {
-  return { v: 1, friend, maxHp: friend === 1 ? 16 : 12, staminaMax: friend === 3 ? 125 : 100, orbs: 0, prayers: 0, towers: [], shrines: [], seen: [], loonies: [], bosses: [], coolers: {}, weapons: [{ id: "plunger", dur: null }], cur: 0, food: { apple: 2, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 }, pos: null, clock: 0.3, day: 1, check: null, played: 0, deaths: 0, kills: 0, done: false, intro: false };
+  return { v: 1, friend, maxHp: friend === 1 ? 16 : 12, staminaMax: friend === 3 ? 125 : 100, orbs: 0, prayers: 0, towers: [], shrines: [], seen: [], loonies: [], bosses: [], coolers: {}, chests: [], quests: {}, qd: {}, spent: 0, slots: 5, weapons: [{ id: "plunger", dur: null }], cur: 0, food: { apple: 2, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0 }, pos: null, clock: 0.3, day: 1, check: null, played: 0, deaths: 0, kills: 0, done: false, intro: false };
 }
 // A save from an older build, or one that got damaged, is repaired field by field instead of crashing the game.
 function loadSave() {
@@ -99,7 +101,14 @@ function loadSave() {
   out.seen = arr(s.seen, (i) => Number.isInteger(i) && i >= 0 && i < 12);
   out.loonies = arr(s.loonies, (i) => Number.isInteger(i) && i >= 0 && i < 40);
   out.coolers = s.coolers && typeof s.coolers === "object" ? s.coolers : {};
-  const W = Array.isArray(s.weapons) ? s.weapons.filter((w) => w && WEAPONS[w.id] && w.id !== "plunger").slice(0, 4).map((w) => ({ id: w.id, dur: num(w.dur, 1, WEAPONS[w.id].dur, WEAPONS[w.id].dur) })) : [];
+  out.chests = arr(s.chests, (i) => Number.isInteger(i) && i >= 0 && i < 64);
+  out.quests = {}; for (const q of Object.keys(QUESTS)) { const v = s.quests && s.quests[q]; if (v === 1 || v === 2) out.quests[q] = v; }
+  const qd = s.qd && typeof s.qd === "object" ? s.qd : {};
+  out.qd = {}; for (const k of ["frisbee", "fort", "alpha"]) if (qd[k] === 1) out.qd[k] = 1;
+  if (Number.isFinite(qd.ringBest) && qd.ringBest > 0) out.qd.ringBest = qd.ringBest;
+  out.spent = Math.round(num(s.spent, 0, out.loonies.length, 0));
+  out.slots = Math.round(num(s.slots, 5, 9, 5));
+  const W = Array.isArray(s.weapons) ? s.weapons.filter((w) => w && WEAPONS[w.id] && w.id !== "plunger").slice(0, out.slots - 1).map((w) => { const mod = MODS[w.mod] ? w.mod : null, top = maxDur(w.id, mod); return { id: w.id, mod, dur: WEAPONS[w.id].dur === Infinity ? null : num(w.dur, 1, top, top) }; }) : [];
   out.weapons = [{ id: "plunger", dur: null }, ...W];
   out.cur = num(s.cur | 0, 0, out.weapons.length - 1, 0);
   out.food = {}; for (const k of Object.keys(d.food)) out.food[k] = num(s.food && s.food[k], 0, 999, 0);
@@ -110,7 +119,7 @@ function loadSave() {
 G.writeSave = () => {
   if (!G.started) return;
   const S = G.save, P = G.player;
-  S.weapons = G.inv.weapons.map((w) => ({ id: w.id, dur: w.dur === Infinity ? null : w.dur }));
+  S.weapons = G.inv.weapons.map((w) => ({ id: w.id, mod: w.mod || null, dur: w.dur === Infinity ? null : w.dur }));
   S.cur = G.inv.cur; S.food = { ...G.inv.food };
   S.maxHp = P.maxHp; S.staminaMax = P.staminaMax; S.clock = G.clock;
   if (P.state === "ground" && !P.dead) S.pos = [P.x, P.y, P.z];
@@ -135,8 +144,12 @@ setTimeout(async () => {
   G.hazards = new Hazards(G);
   G.ui = new UI(G);
   G.save = loadSave() || blankSave();
+  G.loot = new Loot(G);
+  G.quests = new Quests(G);
   G.ui.paintMap();
   buildItems();
+  G.loot.buildChests(); G.loot.buildSpots();
+  G.quests.build();
   $("#loading").hidden = true;
   titleScreen();
   requestAnimationFrame(loop);
@@ -263,10 +276,12 @@ function start(save) {
   G.player = new Player(G, save.friend);
   const P = G.player;
   P.maxHp = save.maxHp; P.hp = save.maxHp; P.staminaMax = save.staminaMax; P.stamina = P.staminaMax;
-  G.inv.weapons = save.weapons.map((w) => ({ id: w.id, dur: w.dur == null ? Infinity : w.dur }));
+  G.inv.weapons = save.weapons.map((w) => ({ id: w.id, mod: w.mod || null, dur: w.dur == null ? Infinity : w.dur }));
   G.inv.cur = Math.min(save.cur, G.inv.weapons.length - 1);
   G.inv.food = { apple: 0, shroom: 0, berry: 0, syrup: 0, fish: 0, stew: 0, ...save.food };
-  P.setWeapon(G.inv.weapons[G.inv.cur].id);
+  const cw = G.inv.weapons[G.inv.cur]; P.setWeapon(cw.id, cw.mod);
+  G.loot.sync(save); G.loot.refill(true);
+  G.quests.sync();
   G.clock = save.clock;
   for (const id of save.bosses) grant(id, true);
   buildNPCs();
@@ -313,10 +328,12 @@ const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));
 /* ---------------- the crew at the cottage ---------------- */
 const TIPS = [
   "Out of breath? Stand still on solid ground. Your wheel fills right back up.",
-  "Coolers at the critter camps have paddles and hockey sticks. They hit harder than a plunger, but they break.",
+  "Every critter camp has a cooler full of loot. It stays locked until you beat every critter at that camp.",
   "Jump, then press jump again in the air. The umbrella opens. A campfire under you pushes you up.",
   "Cook at a fire. Three things in the pot make a stew. Fish count too. Look for rings on the water and press E to cast.",
   "Roll the moment something swings at you. Time slows down. Get your licks in.",
+  "About to break? Throw it! Press T. A thrown weapon hits twice as hard. A weapon's last hit does too.",
+  "See a beam of gold light on a hill? That's a treasure chest. Critters with hats are friendly. Talk to them.",
 ];
 function buildNPCs() {
   const c = G.world.cottage;
@@ -330,7 +347,7 @@ function buildNPCs() {
     rig.root.position.set(x, y, z); rig.root.rotation.y = yaw;
     scene.add(rig.root);
     G.world.addCircle(x, z, 0.5, "npc");
-    G.npcs.push({ i, name: PERKS[i].name, rig, x, z, y, yaw0: yaw, tip: TIPS[i] });
+    G.npcs.push({ i, name: PERKS[i].name, rig, x, z, y, yaw0: yaw, tip: TIPS[i], tips: [TIPS[i], TIPS[5 + (k % 2)]] });
   }
 }
 function npcLine(n) {
@@ -356,8 +373,16 @@ function respawnCritters() {
     p.foe = G.spawnFoe(p.type, p.x, p.z, p.home);
   }
   G.items.forEach((it) => { if (it.taken) { it.taken = false; it.obj.visible = true; } });
+  G.loot.refill();
 }
-G.onKill = (f) => { G.save.kills++; if (G.trial) { const t = G.trial; if (t.foes.every((x) => !x.alive)) trialCleared(); } };
+G.onKill = (f) => {
+  G.save.kills++;
+  if (G.trial) { const t = G.trial; if (t.foes.every((x) => !x.alive)) trialCleared(); }
+  G.quests.onKill(f);
+  // the last critter of a camp unlocks its cooler
+  const p = G.plan && G.plan.find((q) => q.foe === f);
+  if (p && p.camp != null && G.loot.campLeft(p.camp) === 0) G.loot.campCleared(p.camp);
+};
 
 /* ---------------- items and secrets ---------------- */
 function buildItems() {
@@ -427,15 +452,10 @@ function cook() {
 /* ---------------- weapons ---------------- */
 G.cycleWeapon = (d) => {
   const W = G.inv.weapons; if (W.length < 2) return;
-  G.inv.cur = (G.inv.cur + d + W.length) % W.length;
-  G.player.setWeapon(W[G.inv.cur].id); A.sfx("ui");
+  G.loot.equip((G.inv.cur + d + W.length) % W.length); A.sfx("ui");
 };
-function giveWeapon(id) {
-  const W = G.inv.weapons;
-  if (W.length >= 5) { let worst = 1; for (let k = 2; k < W.length; k++) if (WEAPONS[W[k].id].dmg < WEAPONS[W[worst].id].dmg) worst = k; G.ui.toast("Pouch full. Dropped your " + WEAPONS[W[worst].id].name); W.splice(worst, 1); }
-  W.push({ id, dur: WEAPONS[id].dur });
-  G.inv.cur = W.length - 1; G.player.setWeapon(id);
-}
+G.canThrow = () => G.loot.canThrow();
+G.throwWeapon = (P) => G.loot.throw(P);
 G.autoAim = (P, dir) => {
   let best = null, bd = 5.5;
   for (const f of targets()) {
@@ -451,19 +471,23 @@ function targets() {
   for (const b of G.bosses) { if (b.alive && b.active) out.push(b); for (const c of b.clones) if (c.alive) out.push(c); }
   return out;
 }
+G.targets = targets;
 G.meleeHit = (P, spin, n = 0) => {
   const W = P.weapon, slot = G.inv.weapons[G.inv.cur];
-  // the third swing of a combo is the heavy one
-  const fin = !spin && n === 2;
+  // the last swing of a combo is the heavy one; two-handed weapons hit heavy every time
+  const fin = !spin && n === (COMBO[W.kind] || 3) - 1, heavy = W.kind === "two";
+  // a weapon's last hit, the one that breaks it, hits twice as hard
+  const last = slot && slot.dur !== Infinity && slot.dur <= 1;
   let hits = 0, big = false;
   for (const f of targets()) {
     const dx = f.x - P.x, dz = f.z - P.z, d = Math.hypot(dx, dz), r = f.T ? f.T.r : 1;
     if (d > W.reach * (spin ? 1.2 : 1) + r) continue;
     if (Math.abs((f.pos ? f.pos.y : P.y) - P.y) > (f.T && f.T.h ? f.T.h + 1 : 3)) continue;
     if (!spin) { let a = Math.atan2(dx, dz) - P.yaw; a = Math.atan2(Math.sin(a), Math.cos(a)); if (Math.abs(a) > W.arc / 2 + 0.35 && d > r + 0.8) continue; }
-    const crit = G.slowmo > 0 || Math.random() < P.crit;
-    const dmg = W.dmg * P.dmgMult * (crit ? 2 : 1) * (spin ? 1.8 : fin ? 1.4 : 1);
-    const ok = f.hurt(dmg, P.x, P.z, W.knock * (fin ? 1.5 : 1), W.stun, { poise: fin ? 1.5 : spin ? 1.3 : 1 });
+    const crit = G.slowmo > 0 || Math.random() < P.crit + (W.crit || 0);
+    const dmg = W.dmg * P.dmgMult * (crit ? 2 : 1) * (spin ? 1.8 : fin ? 1.4 : 1) * (last ? 2 : 1);
+    const ok = f.hurt(dmg, P.x, P.z, W.knock * (fin ? 1.5 : 1), W.stun || last, { poise: fin || heavy ? 1.5 : spin ? 1.3 : 1 });
+    if (ok !== false && W.fire && f.burn) f.burn(3);
     // a spark where the weapon meets the target, on its surface and at chest height
     const dd = d || 1, hy = f.pos ? Math.min(f.pos.y + (f.T && f.T.h ? f.T.h * 0.45 : 1.2), P.y + 1.4) : P.y + 1.2;
     const sx = f.x - (dx / dd) * r * 0.8, sz = f.z - (dz / dd) * r * 0.8;
@@ -473,10 +497,10 @@ G.meleeHit = (P, spin, n = 0) => {
     hits++;
   }
   if (hits) {
-    A.sfx(G.slowmo > 0 ? "crit" : fin ? "smash" : "hit");
-    G.hitstop = spin ? 0.09 : fin ? 0.1 : big ? 0.065 : 0.055;
-    G.shake(fin || spin ? 0.22 : 0.12);
-    if (slot.dur !== Infinity) { slot.dur -= 1; if (slot.dur <= 0) { A.sfx("break"); G.ui.toast("Your " + W.name + " broke!"); G.inv.weapons.splice(G.inv.cur, 1); G.inv.cur = 0; P.setWeapon("plunger"); } }
+    A.sfx(G.slowmo > 0 ? "crit" : fin || heavy ? "smash" : "hit");
+    G.hitstop = spin ? 0.09 : fin ? 0.1 : heavy ? 0.085 : big ? 0.065 : 0.055;
+    G.shake(fin || spin || heavy ? 0.22 : 0.12);
+    G.loot.wear(1);
   }
   return hits;
 };
@@ -531,12 +555,14 @@ function openCooler(camp) {
   const S = G.save, lid = camp.cooler.userData.lid;
   S.coolers[camp.i] = S.day;
   lid.rotation.x = -1.8;
-  const pool = ["paddle", "stick", "rod", "pan", "paddle", "stick", "rod", "pan", "golden", "stick"];
-  const id = S.day > 1 && Math.random() < 0.5 ? pool[(Math.random() * 8) | 0] : pool[camp.i];
-  giveWeapon(id);
+  const pool = ["paddle", "stick", "rod", "pan", "broom", "lacrosse", "fork", "pan", "golden", "antler"];
+  const id = S.day > 1 && Math.random() < 0.5 ? pool[(Math.random() * 9) | 0] : pool[camp.i];
+  // later in the game the coolers hold better weapons
+  const mods = Object.keys(MODS), mod = Math.random() < 0.25 + S.bosses.length * 0.15 ? mods[(Math.random() * 3) | 0] : null;
+  G.loot.give(id, mod, camp.cooler.position.x, camp.cooler.position.z);
   const extra = ["apple", "berry", "shroom", "syrup"][camp.i % 4];
   G.inv.food[extra] += 2;
-  A.sfx("open"); G.ui.toast("Got a " + WEAPONS[id].name + " and 2 " + FOOD_NAME[extra]);
+  A.sfx("open"); G.ui.got(id, mod, { sub: "and 2 " + FOOD_NAME[extra] });
   G.writeSave();
 }
 function liftRock(l, idx) {
@@ -544,7 +570,7 @@ function liftRock(l, idx) {
   const o = l.obj;
   G.fx.puff(l.x, l.y + 1, l.z, 0xc8b89a, 12);
   o.children[0].visible = false;
-  const chip = M.critter("raccoon"); chip.root.scale.setScalar(0.45); chip.root.position.set(l.x, l.y, l.z); chip.root.traverse((m) => { if (m.isMesh && m.material.color && !m.userData.outline) { m.material = m.material.clone(); m.material.color.offsetHSL(0.06, 0.4, 0.1); } });
+  const chip = M.critter("raccoon"); chip.root.scale.setScalar(0.45); chip.root.position.set(l.x, l.y, l.z); M.tint(chip.root, 0xffd890); const band = M.hat("bandana", 0xf2c230); band.position.copy(M.headTop(chip.root)); chip.root.add(band);
   scene.add(chip.root);
   setTimeout(() => { scene.remove(chip.root); o.visible = false; }, 2200);
   foundLoonie();
@@ -637,7 +663,7 @@ function endPlunge() {
   const S = G.plunge, P = G.player;
   if (!S) return;
   G.plunge = null; P.cine = null;
-  if (P.weaponId !== S.wid && G.inv.weapons.some((w) => w.id === S.wid)) P.setWeapon(S.wid);
+  if (P.weaponId !== S.wid) G.loot.equip(G.inv.cur);
   // flung off the rim, away from the King
   const b = S.b, fx = Math.sin(b.yaw), fz = Math.cos(b.yaw);
   P.state = "air"; P.airT = 0; P.vel.set(fx * 9, 9, fz * 9); P.invuln = 1.2;
@@ -648,7 +674,7 @@ G.cancelPlunge = () => {
   const S = G.plunge, P = G.player;
   if (!S) return;
   G.plunge = null; P.cine = null;
-  if (P.weaponId !== S.wid && G.inv.weapons.some((w) => w.id === S.wid)) P.setWeapon(S.wid);
+  if (P.weaponId !== S.wid) G.loot.equip(G.inv.cur);
   if (S.b.alive) S.b.plungeEnd();
 };
 function grant(id, quiet) {
@@ -686,7 +712,7 @@ G.die = async () => {
   await G.ui.choose("You passed out", "The crew carried you back. You keep everything you found.", ["Get up"]);
   for (const b of G.bosses) if (b.alive && b.active) b.reset();
   if (G.trial) { G.trial.foes.forEach((f) => f.alive && f.die()); G.trial = null; }
-  G.hazards.clear();
+  G.hazards.clear(); G.loot.clearFlying();
   const c = G.save.check || [G.world.cottage.x - 4, G.world.cottage.z - 18];
   P.dead = false; P.hp = P.maxHp; P.bonusHp = 0; P.stamina = P.staminaMax; P.exhausted = false; P.invuln = 2;
   P.place(c[0], c[1]);
@@ -709,6 +735,7 @@ G.travel = (m) => {
   let x = m.x, z = m.z;
   if (m.kind === "tower") { x += 7; z += 7; } else if (m.kind === "shrine") { x += Math.sin(m.shrine.rot) * 4; z += Math.cos(m.shrine.rot) * 4; } else if (m.kind === "home") { x -= 4; z -= 18; }
   G.fx.puff(P.x, P.y + 1, P.z, 0x5ad8ff, 20);
+  G.loot.clearFlying();
   P.place(x, z);
   G.cam.target.set(P.x, P.y + 1.7, P.z);
   G.fx.puff(P.x, P.y + 1, P.z, 0x5ad8ff, 20);
@@ -721,7 +748,7 @@ function openPause() {
   exitLock();
   G.paused = true;
   const S = G.save;
-  $("#pstats").textContent = `${PERKS[S.friend].name} · Day ${S.day} · Towers ${S.towers.length}/4 · Trials ${S.shrines.length}/12 · Loonies ${S.loonies.length}/${G.loonies.length} · Blights ${Math.min(3, S.bosses.filter((b) => b !== "king").length)}/3`;
+  $("#pstats").textContent = `${PERKS[S.friend].name} · Day ${S.day} · Towers ${S.towers.length}/4 · Trials ${S.shrines.length}/12 · Chests ${S.chests.length}/${G.loot.chests.length} · Quests ${Object.values(S.quests).filter((v) => v === 2).length}/${Object.keys(QUESTS).length} · Loonies ${S.loonies.length}/${G.loonies.length} · Blights ${Math.min(3, S.bosses.filter((b) => b !== "king").length)}/3`;
   $("#soundBtn").textContent = "Sound: " + (A.isOn() ? "on" : "off");
   $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
   G.ui.open("pause");
@@ -730,6 +757,7 @@ G.resume = () => { G.paused = false; };
 $("#resumeBtn").onclick = () => G.ui.close("pause");
 $("#pmapBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openMap(); };
 $("#phelpBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.open("help"); };
+$("#pquestBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openQuests(); };
 $("#soundBtn").onclick = () => { const on = A.toggle(); if (window.Chip) Chip.setOn(on); $("#soundBtn").textContent = "Sound: " + (on ? "on" : "off"); };
 const GFX_NAMES = { high: "High", medium: "Medium", low: "Low" };
 $("#gfxBtn").onclick = () => { const order = ["high", "medium", "low"]; G.setGraphics(order[(order.indexOf(gfx) + 1) % 3]); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx]; };
@@ -830,7 +858,7 @@ addEventListener("keydown", (e) => {
   A.init();
   if (["Space", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(k)) e.preventDefault();
   if (G.ui && G.ui.modal === "dialog" && ["KeyE", "Space", "Enter", "KeyJ"].includes(k)) { G.ui.advance(); pressed.clear(); return; }
-  if (G.ui && G.ui.modal && k === "Escape") { const m = G.ui.modal; if (["map", "help", "pause"].includes(m)) G.ui.close(m); return; }
+  if (G.ui && G.ui.modal && k === "Escape") { const m = G.ui.modal; if (["map", "help", "pause", "quests"].includes(m)) G.ui.close(m); return; }
   if (!G.started) return;
   if (k === "Escape" || k === "KeyP") openPause();
   if (k === "KeyM") { if (G.ui.modal === "map") G.ui.close("map"); else G.openMap(); }
@@ -894,7 +922,7 @@ function pollPad() {
   if (!p) return null;
   const b = (i) => p.buttons[i] && p.buttons[i].pressed;
   const edge = (i) => b(i) && !padPrev[i];
-  const out = { lx: dz(p.axes[0]), ly: dz(p.axes[1]), rx: dz(p.axes[2]), ry: dz(p.axes[3]), jump: edge(0), sprint: b(1), attack: edge(2), attackHeld: b(2), interact: edge(3), roll: edge(4), eat: edge(5), lift: edge(6), fury: edge(7), map: edge(8), pause: edge(9), prev: edge(14), next: edge(15) };
+  const out = { lx: dz(p.axes[0]), ly: dz(p.axes[1]), rx: dz(p.axes[2]), ry: dz(p.axes[3]), jump: edge(0), sprint: b(1), attack: edge(2), attackHeld: b(2), interact: edge(3), roll: edge(4), eat: edge(5), lift: edge(6), fury: edge(7), map: edge(8), pause: edge(9), throw: edge(12), prev: edge(14), next: edge(15) };
   p.buttons.forEach((x, i) => (padPrev[i] = x.pressed));
   if (Object.values(out).some((v) => v === true || (typeof v === "number" && v !== 0))) G.pad = true;
   return out;
@@ -918,11 +946,12 @@ function readInput() {
   inp.eat = P("KeyH") || P("T_eat") || (pad && pad.eat);
   inp.lift = P("KeyR") || P("T_lift") || (pad && pad.lift);
   inp.fury = P("KeyF") || P("T_fury") || (pad && pad.fury);
+  inp.throw = P("KeyT") || P("T_throw") || (pad && pad.throw);
   inp.map = P("T_map") || (pad && pad.map);
   inp.pause = pad && pad.pause;
   inp.next = P("KeyQ") || P("Tab") || (pad && pad.next);
   inp.prev = pad && pad.prev;
-  inp.slot = ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5"].findIndex((k) => P(k));
+  inp.slot = ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"].findIndex((k) => P(k));
   let cx = mouseDX * 0.0028, cy = mouseDY * 0.0022;
   if (keys.has("ArrowLeft")) cx -= 0.035; if (keys.has("ArrowRight")) cx += 0.035;
   if (keys.has("ArrowUp")) cy -= 0.025; if (keys.has("ArrowDown")) cy += 0.025;
@@ -937,13 +966,21 @@ function nearest() {
   const P = G.player, w = G.world, S = G.save;
   const opts = [];
   const d2 = (x, z) => Math.hypot(P.x - x, P.z - z);
-  for (const n of G.npcs) if (d2(n.x, n.z) < 3) opts.push({ d: d2(n.x, n.z), label: "Talk to " + n.name, go: () => { G.ui.say([[n.name, npcLine(n)], [n.name, n.tip]]); } });
+  for (const n of G.npcs) if (d2(n.x, n.z) < 3) opts.push({ d: d2(n.x, n.z), label: "Talk to " + n.name, go: () => { n.talks = (n.talks || 0) + 1; G.ui.say([[n.name, npcLine(n)], [n.name, n.tips[n.talks % 2]]]); } });
   for (const t of w.towers) if (!S.towers.includes(t.id) && d2(t.x, t.z) < 3.8 && P.y > t.y - 1) opts.push({ d: 0, label: "Light the beacon", go: () => activateTower(t) });
   for (const s of w.shrines) {
     const fx = s.x + Math.sin(s.rot) * 1.8, fz = s.z + Math.cos(s.rot) * 1.8;
     if (d2(fx, fz) < 2.6 && !S.shrines.includes(s.id) && !G.trial) opts.push({ d: d2(fx, fz), label: "Start the trial", go: () => startTrial(s) });
   }
-  for (const c of w.camps) { const x = c.cooler.position.x, z = c.cooler.position.z; if (d2(x, z) < 2.4 && (S.coolers[c.i] == null || S.coolers[c.i] < S.day)) opts.push({ d: d2(x, z), label: "Open the cooler", go: () => openCooler(c) }); }
+  for (const c of w.camps) {
+    const x = c.cooler.position.x, z = c.cooler.position.z;
+    if (d2(x, z) > 2.4 || (S.coolers[c.i] != null && S.coolers[c.i] >= S.day)) continue;
+    const left = G.loot.campLeft(c.i);
+    if (left) opts.push({ d: d2(x, z), label: "Locked · " + left + " critter" + (left > 1 ? "s" : "") + " left", go: () => { A.sfx("block"); G.ui.toast("Beat every critter at this camp to open the cooler"); } });
+    else opts.push({ d: d2(x, z), label: "Open the cooler", go: () => openCooler(c) });
+  }
+  G.loot.options(opts, d2);
+  G.quests.options(opts, d2);
   G.loonies.forEach((l, i) => { if (l.kind === "rock" && !S.loonies.includes(i) && d2(l.x, l.z) < 2.4) opts.push({ d: d2(l.x, l.z), label: "Lift the rock", go: () => liftRock(l, i) }); });
   for (const f of w.fires) if (d2(f.x, f.z) < 3.5 && G.foodCount().total >= 2) opts.push({ d: d2(f.x, f.z), label: "Cook", go: cook });
   if (d2(w.statue.x, w.statue.z) < 4 && S.orbs >= 4) opts.push({ d: 0, label: "Pray", go: pray });
@@ -1103,7 +1140,7 @@ function step(dt) {
   if (inp.eat) G.eat();
   if (inp.next) G.cycleWeapon(1);
   if (inp.prev) G.cycleWeapon(-1);
-  if (inp.slot >= 0 && inp.slot < G.inv.weapons.length) { G.inv.cur = inp.slot; P.setWeapon(G.inv.weapons[inp.slot].id); }
+  if (inp.slot >= 0 && inp.slot < G.inv.weapons.length && !P.attack) G.loot.equip(inp.slot);
   abilities(dt);
   // interact before the hero moves, so E does not also swing
   const fishing = G.fishing.active;
@@ -1134,6 +1171,10 @@ function step(dt) {
   for (const b of G.bosses) if (b.alive || b.rig.root.visible) b.update(dt);
   if (G.activeBoss) { const b = G.activeBoss; G.ui.boss(b.def.name, b.hp / b.maxHp, b.poiseMax ? (b.exposed ? 1 : Math.min(1, b.poise / b.poiseMax())) : null, !!b.poiseMax); }
   G.hazards.update(dt);
+  G.loot.update(dt);
+  G.quests.update(dt);
+  // a mini-boss gets the boss bar while you fight it
+  if (!G.activeBoss) { const mb = G.quests.engaged(); if (mb) G.ui.boss(mb.T.name, mb.hp / mb.T.hp); else G.ui.boss(null); }
   G.fx.update(dt);
   // music follows the danger
   const fighting = G.foes.some((f) => f.alive && (f.state === "chase" || f.state === "windup" || f.state === "strike") && Math.hypot(f.x - P.x, f.z - P.z) < 40);

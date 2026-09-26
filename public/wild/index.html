@@ -49,6 +49,36 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .slot .big { font-size: 22px; line-height: 1; }
 .slot .dur { width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
 .slot .dur i { display: block; height: 100%; background: var(--green); }
+.slot.worn { animation: worn .5s infinite alternate; }
+@keyframes worn { to { border-color: #ff5a4a; box-shadow: 0 0 12px rgba(255,80,60,.8); } }
+.slot[data-mod="sturdy"] { border-color: #7ac8ff; } .slot[data-mod="mighty"] { border-color: #ff8a6a; } .slot[data-mod="keen"] { border-color: #ffd84a; }
+#wbar { position: absolute; left: calc(var(--sal) + 14px); bottom: calc(var(--sab) + 88px); display: flex; gap: 4px; opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
+#wbar.show { opacity: 1; transform: none; }
+#wbar i { position: relative; width: 40px; height: 40px; border-radius: 9px; background: rgba(20,30,40,.55); border: 2px solid rgba(255,255,255,.35); display: grid; place-items: center; font-style: normal; font-size: 19px; overflow: hidden; }
+#wbar i.cur { border-color: #fff; background: rgba(232,162,58,.55); }
+#wbar i.empty { border-style: dashed; background: rgba(20,30,40,.25); }
+#wbar i.sturdy { box-shadow: inset 0 0 0 2px #7ac8ff; } #wbar i.mighty { box-shadow: inset 0 0 0 2px #ff8a6a; } #wbar i.keen { box-shadow: inset 0 0 0 2px #ffd84a; }
+#wbar i b { position: absolute; left: 3px; top: 1px; font-size: 9px; opacity: .8; }
+#wbar i u { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--green); }
+.side { max-width: 260px; text-align: right; font-size: 13px; font-weight: 800; color: #ffe7a8; }
+#got { position: absolute; left: 50%; top: 22%; transform: translate(-50%, -12px) scale(.9); min-width: min(360px, 86vw); max-width: 92vw; padding: 12px 20px 14px 14px; display: flex; gap: 14px; align-items: center; border-radius: 16px; background: linear-gradient(180deg, rgba(40,28,14,.92), rgba(24,16,8,.92)); border: 2px solid #e0b460; box-shadow: 0 8px 30px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,220,140,.15); opacity: 0; transition: opacity .3s, transform .35s cubic-bezier(.2,1.4,.4,1); color: #fff; }
+#got.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+#got .ico { width: 58px; height: 58px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: radial-gradient(circle, rgba(255,230,160,.55), rgba(255,200,90,.1) 70%); animation: gotspin 3s linear infinite; }
+@keyframes gotspin { 50% { transform: scale(1.08); } }
+#got small { display: block; font-family: var(--title); font-style: italic; font-size: 15px; color: #f2d38a; }
+#got b { display: block; font-family: var(--title); font-size: 24px; line-height: 1.1; }
+#got span { display: block; font-size: 13px; opacity: .85; margin-top: 3px; }
+#got[data-mod="sturdy"] { border-color: #7ac8ff; } #got[data-mod="mighty"] { border-color: #ff8a6a; } #got[data-mod="keen"] { border-color: #ffd84a; }
+#fbars .fbar { position: absolute; width: 46px; height: 6px; margin-left: -23px; border-radius: 3px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.7); overflow: hidden; }
+#fbars .fbar i { display: block; height: 100%; background: linear-gradient(#ff8a7a, #c02a3a); }
+#qlist .q { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+#qlist .q > span { font-size: 26px; line-height: 1; }
+#qlist .q b { font-family: var(--title); font-size: 21px; }
+#qlist .q small { margin-left: 8px; opacity: .7; }
+#qlist .q p { margin: 2px 0 0; }
+#qlist .q.done { opacity: .6; }
+#qlist .q.done b::after { content: " ✓"; color: #3a8a4a; }
+#qlist .more { font-style: italic; opacity: .8; }
 #stamina { position: absolute; width: 46px; height: 46px; transform: translate(-50%, -50%); transition: opacity .4s; }
 #prompt { position: absolute; left: 50%; bottom: calc(var(--sab) + 110px); transform: translateX(-50%); background: rgba(20,30,40,.6); border-radius: 999px; padding: 6px 16px 6px 6px; font-weight: 800; font-size: 16px; display: flex; gap: 8px; align-items: center; }
 #prompt kbd { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 50%; background: #fff; color: #222; font-family: var(--body); font-weight: 800; font-size: 14px; padding: 0 6px; }
@@ -123,11 +153,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tmain, .tpick { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(var(--sat) + 4vh) 16px calc(var(--sab) + 3vh); }
 .logo { text-align: center; margin-top: 1vh; filter: drop-shadow(0 6px 18px rgba(20,10,0,.55)); animation: rise 1.6s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
-.logo .kicker { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .35em; font-size: clamp(11px, 1.5vw, 15px); color: #ffe7a8; text-shadow: 0 1px 2px #3a2208; }
+.logo .kicker { margin-bottom: .6em; display: flex; align-items: center; justify-content: center; gap: 12px; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .35em; font-size: clamp(11px, 1.5vw, 15px); color: #ffe7a8; text-shadow: 0 1px 2px #3a2208; }
 .logo .kicker i { display: block; width: clamp(30px, 8vw, 90px); height: 2px; background: linear-gradient(90deg, rgba(255,231,168,0), #ffe7a8); }
 .logo .kicker i:last-child { transform: scaleX(-1); }
 .logo h1 { margin: 2px 0 0; font-family: "Cinzel", var(--title); font-weight: 900; line-height: .86; letter-spacing: .02em; display: flex; flex-direction: column; align-items: center; }
-.logo h1 span { font-size: clamp(46px, 9.5vw, 118px); background: linear-gradient(180deg, #fff6d8 0%, #ffd873 42%, #d8962e 58%, #fff0b8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1.5px #5a3208; paint-order: stroke fill; }
+.logo h1 span { position: relative; font-size: clamp(46px, 9.5vw, 118px); padding: 0 .04em; color: #3a2008; -webkit-text-stroke: .075em #3a2008; text-shadow: 0 .045em 0 #24130a, 0 .1em .18em rgba(0,0,0,.45); }
+/* the gold is a copy on top of the dark outline, so the thin serifs stay whole */
+.logo h1 span::after { content: attr(data-t); position: absolute; inset: 0; padding: 0 .04em; -webkit-text-stroke: 0; text-shadow: none; background: linear-gradient(180deg, #fffaf0 0%, #ffe9b0 28%, #f3c566 52%, #d99a36 72%, #f6d98e 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .logo h1 small { font-family: var(--title); font-style: italic; font-weight: 700; font-size: clamp(20px, 3.4vw, 40px); color: #fff4d2; letter-spacing: .08em; margin: 2px 0 -2px; text-shadow: 0 2px 4px #3a2208; }
 .logo .crest { width: min(420px, 70vw); height: 18px; margin: 10px auto 0; background: radial-gradient(circle at 50% 50%, #ffe7a8 0 5px, transparent 6px), linear-gradient(90deg, transparent, #ffe7a8 20%, #ffe7a8 44%, transparent 44%, transparent 56%, #ffe7a8 56%, #ffe7a8 80%, transparent) center / 100% 2px no-repeat; }
 .press { margin-top: auto; margin-bottom: 8vh; font-family: "Cinzel", var(--title); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(14px, 2vw, 20px); color: #fff; text-shadow: 0 0 12px rgba(255,220,140,.9), 0 2px 3px #000; animation: breathe 2.4s ease-in-out infinite; cursor: pointer; }
@@ -178,6 +210,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.jmp { width: 66px; height: 66px; right: 96px; bottom: 6px; font-size: 22px; }
 .tb.rol { width: 58px; height: 58px; right: 8px; bottom: 98px; }
 .tb.act { width: 72px; height: 72px; right: 100px; bottom: 86px; background: rgba(232,162,58,.85); }
+.tb.thr { width: 48px; height: 48px; right: 12px; bottom: 166px; font-size: 18px; }
 .ttop { position: absolute; top: calc(var(--sat) + 172px); right: calc(var(--sar) + 14px); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
 .ttop button { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.45); color: #fff; font-size: 18px; }
 .pausebtn { position: fixed; z-index: 7; top: calc(var(--sat) + 12px); left: 50%; transform: translateX(-50%); width: 44px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,.7); background: rgba(20,30,40,.4); color: #fff; font-weight: 800; }
@@ -185,6 +218,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (max-width: 700px) {
   #mini { width: 118px; height: 118px; }
   .goal { max-width: 170px; font-size: 12px; }
+  .side { max-width: 170px; font-size: 11px; }
+  #wbar { bottom: calc(var(--sab) + 72px); }
+  #wbar i { width: 34px; height: 34px; font-size: 16px; }
+  #got { top: 16%; }
   .hearts svg { width: 20px; height: 19px; }
   .hearts { max-width: 170px; }
   .ttop { top: calc(var(--sat) + 96px); left: calc(var(--sal) + 14px); right: auto; flex-direction: row; }
@@ -212,7 +249,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <canvas id="mini" width="260" height="260" aria-label="Minimap. Tap to open the map."></canvas>
     <div class="clock" id="clock"></div>
     <div class="goal" id="goal"></div>
+    <div class="side" id="side" hidden></div>
   </div>
+  <div id="wbar" class="shadow"></div>
   <div class="bl shadow">
     <button class="slot" id="wslot" type="button" aria-label="Weapon. Tap to switch."><span class="big" id="wico">🪠</span><span id="wname">Plunger</span><span class="dur"><i id="wdur"></i></span></button>
     <button class="slot" id="fslot" type="button" aria-label="Food. Tap to eat."><span class="big">🍎</span><span id="fcount">0</span></button>
@@ -226,6 +265,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div id="fishing" hidden><div id="fishBar"><i id="fishZone"></i><b id="fishIcon">🐟</b></div><div id="fishProg"><i id="fishFill"></i></div><small>Hold Swing<br>to reel</small></div>
   <div id="bossbar" hidden><span id="bossName"></span><div class="hp"><b id="bossLag"></b><i id="bossFill"></i><em></em><em></em></div><div class="poise" hidden><i id="bossPoise"></i></div></div>
   <div id="pop"></div>
+  <div id="fbars"></div>
+  <div id="got"><div class="ico" id="gotIco"></div><div><small>You got</small><b id="gotName"></b><span id="gotLine"></span></div></div>
   <div id="flash"></div>
   <div id="slow"></div>
 </div>
@@ -237,6 +278,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <button class="tb jmp" data-b="jump" type="button" aria-label="Jump">⤒</button>
     <button class="tb rol" data-b="roll" type="button" aria-label="Roll">↻</button>
     <button class="tb act" data-b="interact" type="button" id="tact" hidden>USE</button>
+    <button class="tb thr" data-b="throw" type="button" id="tthrow" hidden aria-label="Throw your weapon">🎯</button>
   </div>
   <div class="ttop"><button type="button" data-b="map" aria-label="Map">🗺</button><button type="button" data-b="eat" aria-label="Eat">🍎</button><button type="button" data-b="lift" id="tlift" hidden aria-label="Mystic Updraft">🌪</button><button type="button" data-b="fury" id="tfury" hidden aria-label="Ryu's Fury">⚡</button></div>
 </div>
@@ -249,7 +291,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <section class="tmain" id="tmain">
     <div class="logo">
       <div class="kicker"><i></i>GET PLUNGER'D<i></i></div>
-      <h1><span>Breath</span><small>of the</small><span>Lake</span></h1>
+      <h1><span data-t="Breath">Breath</span><small>of the</small><span data-t="Lake">Lake</span></h1>
       <div class="crest" aria-hidden="true"></div>
     </div>
     <p class="press" id="tpress">Press any button</p>
@@ -283,7 +325,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <div>Hold attack, let go: spin attack</div>
       <div>Right click or <kbd>K</kbd> roll · let go of a wall</div>
       <div><kbd>E</kbd> talk · open · pray · cook</div>
-      <div><kbd>H</kbd> eat · <kbd>1</kbd>–<kbd>5</kbd> or <kbd>Q</kbd> weapons</div>
+      <div><kbd>H</kbd> eat · <kbd>1</kbd>–<kbd>9</kbd> or <kbd>Q</kbd> weapons</div>
+      <div><kbd>T</kbd> throw your weapon: it hits twice as hard</div>
       <div><kbd>R</kbd> Mystic Updraft · <kbd>F</kbd> Ryu's Fury</div>
       <div><kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
       <div>A game pad works too</div>
@@ -298,7 +341,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper">
     <h2>Paused</h2>
     <p id="pstats"></p>
-    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><button class="btn ghost" type="button" data-switch>Switch game</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
+    <div class="btns"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="pmapBtn" type="button">Map</button><button class="btn ghost" id="pquestBtn" type="button">Quests</button><button class="btn ghost" id="phelpBtn" type="button">Controls</button><button class="btn ghost" id="soundBtn" type="button">Sound: on</button><button class="btn ghost" id="gfxBtn" type="button">Graphics: High</button><button class="btn ghost" type="button" data-switch>Switch game</button><a class="btn ghost" href="/" style="text-decoration:none">Back to the arcade</a></div>
   </div>
 </div>
 
@@ -306,6 +349,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="paper">
     <canvas id="mapCv" width="1024" height="1024"></canvas>
     <div class="row" id="mapInfo">Tap a lit beacon, a cleared outhouse, or the cottage to travel there.</div>
+    <div class="btns"><button class="btn" data-close type="button">Close</button></div>
+  </div>
+</div>
+
+<div class="screen dim" id="quests" hidden>
+  <div class="paper">
+    <h2>Quests</h2>
+    <div id="qlist"></div>
     <div class="btns"><button class="btn" data-close type="button">Close</button></div>
   </div>
 </div>
