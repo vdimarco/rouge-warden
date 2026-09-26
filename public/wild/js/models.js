@@ -286,21 +286,21 @@ export function critter(type) {
 // elbows bend and pump against the legs, and the hips bob as each foot lands. sp is the speed in m/s.
 export function stridePose(r, ph, sp) {
   const m = Math.min(1, sp / 1.5), x = Math.min(1, Math.max(0, (sp - 2.5) / 3)), run = x * x * (3 - 2 * x), sn = Math.sin(ph);
-  const [lL, lR] = r.legs, [aL, aR] = r.arms, hip = (0.45 + 0.25 * run) * m, lean = 0.04 * Math.min(1, sp / 6) + 0.1 * run;
+  const [lL, lR] = r.legs, [aL, aR] = r.arms, hip = (0.38 + 0.14 * run) * m, lean = 0.03 * Math.min(1, sp / 6) + 0.06 * run;
   lL.rotation.set(-sn * hip - lean * 1.2, 0, 0); lR.rotation.set(sn * hip - lean * 1.2, 0, 0);
-  const arm = (0.35 + 0.4 * run) * m;
-  aL.rotation.set(sn * arm - 0.15 * run, 0, -0.16 - 0.06 * run); aR.rotation.set(-sn * arm * 0.8 - 0.15 * run, 0, 0.16 + 0.06 * run);
+  const arm = (0.3 + 0.18 * run) * m;
+  aL.rotation.set(sn * arm - 0.08 * run, 0, -0.14 - 0.04 * run); aR.rotation.set(-sn * arm * 0.55 - 0.05 * run, 0, 0.16 + 0.04 * run);
   if (r.knees) {
-    const lift = (0.55 + 0.95 * run) * m, stand = (0.12 + 0.18 * run) * m;
+    const lift = (0.45 + 0.5 * run) * m, stand = (0.1 + 0.08 * run) * m;
     r.knees[0].rotation.x = stand + lift * Math.pow(Math.max(0, Math.cos(ph - 0.35)), 1.3) + 0.001;
     r.knees[1].rotation.x = stand + lift * Math.pow(Math.max(0, Math.cos(ph + Math.PI - 0.35)), 1.3) + 0.001;
-    const el = 0.35 + 1.05 * run;
-    r.elbows[0].rotation.x = el + Math.max(0, -aL.rotation.x) * 0.3; r.elbows[1].rotation.x = el + Math.max(0, -aR.rotation.x) * 0.3;
+    const el = 0.3 + 0.55 * run;
+    r.elbows[0].rotation.x = el + Math.max(0, -aL.rotation.x) * 0.25; r.elbows[1].rotation.x = 0.3 + 0.3 * run;
   }
-  if (r.torso) r.torso.rotation.y = sn * (0.1 + 0.08 * run) * m;
-  if (r.head) r.head.rotation.y = -sn * (0.08 + 0.06 * run) * m;
+  if (r.torso) r.torso.rotation.y = sn * (0.06 + 0.03 * run) * m;
+  if (r.head) r.head.rotation.y = -sn * (0.05 + 0.02 * run) * m;
   r.body.rotation.x = lean;
-  r.body.position.y = (0.03 + 0.07 * run) * m * sn * sn - 0.05 * run;
+  r.body.position.y = (0.02 + 0.035 * run) * m * sn * sn - 0.03 * run;
 }
 // the stride cycle grows with speed, so feet neither skate nor flail
 export const strideRate = (sp) => (Math.PI * 2 * sp) / (1.4 + sp * 0.33);

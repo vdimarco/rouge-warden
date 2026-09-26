@@ -550,7 +550,8 @@ export class Player {
     lL.rotation.set(0, 0, 0); lR.rotation.set(0, 0, 0);
     const [kL, kR] = r.knees || [], [eL, eR] = r.elbows || [];
     if (kL) { kL.rotation.x = kR.rotation.x = 0; eL.rotation.x = eR.rotation.x = 0; }
-    this.carry = 0;
+    // keep the shoulder carry through a jump; anything else (a swing, a climb) takes the weapon off the shoulder
+    this.carry = this.state === "air" && !this.attack ? this.carry || 0 : 0;
     if (this.paddleMesh) this.paddleMesh.visible = this.state === "kayak" && !this.fishing;
     let rate = 14;
     if (this.state === "ground") {
@@ -565,31 +566,32 @@ export class Player {
         const m = Math.min(1, sp / 1.5), a = Math.min(1, sp / 6);
         const run = smooth01((sp - 2.5) / 3), dash = this.sprinting ? smooth01((sp - 7) / 3) : 0;
         const ph = this.phase, sn = Math.sin(ph), cs = Math.cos(ph);
-        const hip = (0.45 + 0.25 * run + 0.2 * dash) * m;
-        lL.rotation.x = -sn * hip - 0.05 * run; lR.rotation.x = sn * hip - 0.05 * run;
+        const hip = (0.38 + 0.14 * run + 0.1 * dash) * m;
+        lL.rotation.x = -sn * hip - 0.03 * run; lR.rotation.x = sn * hip - 0.03 * run;
         if (kL) {
           // knee: a little bend on the standing leg, a big one mid-swing
-          const lift = (0.55 + 0.95 * run + 0.4 * dash) * m, stand = 0.12 + 0.18 * run;
+          const lift = (0.45 + 0.5 * run + 0.2 * dash) * m, stand = 0.1 + 0.08 * run;
           kL.rotation.x = stand * m + lift * Math.pow(Math.max(0, Math.cos(ph - 0.35)), 1.3) + 0.001;
           kR.rotation.x = stand * m + lift * Math.pow(Math.max(0, Math.cos(ph + Math.PI - 0.35)), 1.3) + 0.001;
         }
-        const arm = (0.35 + 0.4 * run + 0.25 * dash) * m;
-        aL.rotation.x = sn * arm - 0.15 * run; aR.rotation.x = -sn * arm * 0.8 - 0.15 * run;
-        aL.rotation.z = -0.16 - 0.06 * run; aR.rotation.z = 0.16 + 0.06 * run;
+        // the weapon arm swings less than the free one, the way people carry something
+        const arm = (0.3 + 0.18 * run + 0.12 * dash) * m;
+        aL.rotation.x = sn * arm - 0.08 * run; aR.rotation.x = -sn * arm * 0.55 - 0.05 * run;
+        aL.rotation.z = -0.14 - 0.04 * run; aR.rotation.z = 0.16 + 0.04 * run;
         if (eL) {
-          const el = 0.35 + 1.05 * run + 0.15 * dash;
-          eL.rotation.x = el + Math.max(0, -aL.rotation.x) * 0.3; eR.rotation.x = el + Math.max(0, -aR.rotation.x) * 0.3;
+          const el = 0.3 + 0.55 * run + 0.15 * dash;
+          eL.rotation.x = el + Math.max(0, -aL.rotation.x) * 0.25; eR.rotation.x = 0.3 + 0.3 * run;
         }
         // shoulders turn against the hips; the head stays level and keeps looking ahead
-        r.torso.rotation.y = sn * (0.1 + 0.08 * run) * m; r.body.rotation.y = -sn * 0.06 * run * m;
+        r.torso.rotation.y = sn * (0.06 + 0.03 * run) * m; r.body.rotation.y = -sn * 0.03 * run * m;
         r.head.rotation.y = -r.torso.rotation.y * 0.8;
-        const lean = 0.04 * a + 0.1 * run + 0.12 * dash;
+        const lean = 0.03 * a + 0.06 * run + 0.08 * dash;
         r.body.rotation.x = lean; r.torso.rotation.x = 0.04 * run + 0.06 * dash; r.head.rotation.x = -lean * 0.7;
         // the lean tips the whole body; bring the legs forward again so the feet land under the hips
         lL.rotation.x -= lean * 1.2; lR.rotation.x -= lean * 1.2;
-        this.carry = run;
-        r.body.position.y = (0.03 + 0.07 * run) * m * sn * sn - 0.05 * run;
-        r.body.rotation.z = -this.turnLean * 0.05 * a + sn * 0.025 * m;
+        this.carry = m;
+        r.body.position.y = (0.02 + 0.035 * run) * m * sn * sn - 0.03 * run;
+        r.body.rotation.z = -this.turnLean * 0.05 * a + sn * 0.012 * m;
         // the stride is already smooth, so the bones follow it closely instead of lagging behind
         rate = 14 + 16 * m;
         // standing still: slow breathing, a weight shift, and a look around now and then
@@ -652,6 +654,7 @@ export class Player {
       if (this.paddleMesh) { this.paddleMesh.position.set(0, 0.62, 0.42); this.paddleMesh.rotation.set(0, ps * 0.35 * work, ps * 0.5 * work); }
     }
     if (this.fishing && G.fishing && G.fishing.s) {
+      this.carry = this.carryK = 0;
       const f = G.fishing.s;
       rate = 12;
       if (f.phase === "cast") { const u = f.t; aR.rotation.x = u < 0.4 ? -1.2 - u * 4.5 : -3 + Math.min(1, (u - 0.4) * 4) * 2.1; r.torso.rotation.x = u < 0.4 ? -0.12 : 0.1; rate = 22; }
@@ -660,6 +663,7 @@ export class Player {
       else if (f.phase === "caught") { aL.rotation.x = aR.rotation.x = -3.0; aL.rotation.z = 0.1; aR.rotation.z = -0.1; r.head.rotation.x = -0.25; }
       if (this.state === "kayak") { lL.rotation.x = lR.rotation.x = -1.45; r.body.position.y = -0.68; }
     } else if (this.attack) {
+      this.carry = this.carryK = 0;
       const a = this.attack, u = Math.min(1, a.t);
       // swings are fast: the bones follow the keyed pose closely, or the blow would land before the arm does
       rate = 65;
@@ -674,6 +678,7 @@ export class Player {
     }
     // the plunge: both hands on the handle, up high, then drive it down into the bowl
     if (this.cine === "plunge" && G.plunge) {
+      this.carry = this.carryK = 0;
       const p = G.plunge.pump, jump = G.plunge.t < 0.4;
       const k = jump ? 0 : p < 0.7 ? 1 - p / 0.7 : (p - 0.7) / 0.3;
       aR.rotation.set(-2.7 + k * 2.2, 0, 0.1); aL.rotation.set(-2.6 + k * 2.1, 0, -0.1);
@@ -695,9 +700,8 @@ export class Player {
     r.root.visible = !r.root.userData.camHide && !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
     // painted 3D models: turn the pose into bone rotations, easing between poses
     if (r.apply) r.apply(dt, rate);
-    // when running, the bent elbow would point the weapon at the sky: tip it forward, and cancel the arm
-    // swing so it stays at one steady angle instead of waving about
-    if (this.weaponMesh) { this.carryK = lerp(this.carryK || 0, this.carry, 1 - Math.exp(-dt * 10)); this.weaponMesh.rotation.x = Math.PI / 2 + this.carryK * (0.55 - this.rig.arms[1].rotation.x); }
+    // on the move the weapon rests on the shoulder; the arm swing is cancelled so it stays at one steady angle
+    if (this.weaponMesh) { this.carryK = lerp(this.carryK || 0, this.carry, 1 - Math.exp(-dt * 10)); this.weaponMesh.rotation.x = Math.PI / 2 + this.carryK * (-1.6 - this.rig.arms[1].rotation.x); this.weaponMesh.rotation.z = this.carryK * 0.7; }
     this.trailStep(dt);
   }
   // a ribbon of light behind the head of the weapon, while a swing is fast
