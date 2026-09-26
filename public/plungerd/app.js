@@ -43,6 +43,64 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const T = 24; // world units per tile
 
+/* ------------------------------------------------------------------ painted art */
+// The ground, walls, critters, props, guns, shots and effects were painted with GPT Image 2.5 on Higgsfield,
+// then cut, lined up and packed by script. Phones load the half-size (.sd) files. If a file fails to load,
+// the art drawn in code stays in its place.
+const PAINT = (() => {
+  const sd = matchMedia("(pointer: coarse)").matches || Math.min(screen.width, screen.height) < 600;
+  const k = sd ? 0.5 : 1;
+  const url = (name) => "/plungerd/art/" + name + (sd ? ".sd" : "") + ".webp";
+  return {
+    sd, k, url,
+    // critter sheets: 3 by 3 frames of w x h (8 walk frames, then the attack). px: sheet pixels per unit of FOES scale.
+    crit: { raccoon: [268, 200, 3.6], hornet: [162, 160, 3.6], gull: [298, 230, 3.6], bat: [270, 216, 3.375], skunk: [222, 208, 3.6], turtle: [250, 160, 3.825], goose: [342, 240, 3.6], nest: [232, 258, 3.825], moose: [376, 288, 3.12], bear: [314, 330, 5.2], king: [506, 462, 3.06], charlie: [372, 358, 2.952], gooselord: [618, 510, 7.92], titan: [564, 400, 8.84] },
+    everyday: ["raccoon", "hornet", "gull", "bat", "skunk", "turtle", "goose", "nest", "moose"],
+    // the big ones load with the stop they belong to
+    stageCrit: { highway: ["charlie"], forest: ["bear"], cabin: ["king"], dock: ["gooselord"], water: ["titan"] },
+    // Each stop: the ground, water, wall face and wall top, and its props. Sunken stops have water for walls,
+    // so the drop is shown on the water side, under the edge of the floor.
+    look: {
+      alley: { floor: "floor_alley", face: "face_alley", top: "top_alley", water: "floor_water", waterTint: 0x7a8aa0, bank: "face_alley", rocks: ["dumpster", "recycling", "box"], crates: ["bags", "cartons", "crate"], decals: ["d_manhole", "d_puddle", "d_grate", "d_puddle"], decalRate: 0.02 },
+      highway: { floor: "floor_highway", face: "face_highway", top: "top_highway", water: "floor_water", waterTint: 0x8aa0a8, bank: "face_highway", rocks: ["barrier", "barrier", "drum", "tires"], crates: ["cone", "sawhorse", "crate"], decals: ["d_oil", "d_pothole", "d_glass"], decalRate: 0.016 },
+      forest: { floor: "floor_forest", face: "face_forest", top: "top_forest", water: "floor_water", waterTint: 0x78a890, bank: "face_forest", rocks: ["pine", "pine", "boulder", "stump"], crates: ["bush", "logs", "crate"], decals: ["d_ferns", "d_mushrooms", "d_leaves"], decalRate: 0.03 },
+      cabin: { floor: "floor_cabin", face: "face_cabin", top: "top_cabin", water: null, bank: "floor_cabin", bankTint: 0x6a4a30, rocks: ["armchair", "stove", "shelf"], crates: ["crate", "basket", "cooler"], decals: [], rugs: ["d_rug_round", "d_rug", "d_blanket"], decalRate: 0 },
+      dock: { floor: "floor_dock", face: null, top: "floor_water", topTint: 0x6a8aa8, water: "floor_water", waterTint: 0xc8e0f0, sunken: true, bank: "face_dock", rocks: ["barrel", "chair", "cooler"], crates: ["crate", "rope", "ring"], decals: ["d_net", "d_towel", "d_puddle"], decalRate: 0.014 },
+      water: { floor: "floor_sand", face: null, top: "floor_water", topTint: 0x7aa0c8, water: "floor_water", sunken: true, bank: "floor_sand", bankTint: 0x9a8058, rocks: ["boulder", "driftwood", "buoy"], crates: ["crate", "cooler", "castle"], decals: ["d_shells", "d_weed"], waterDecals: ["d_lily"], decalRate: 0.02 },
+    },
+    // world units that one repeat of each texture covers
+    span: { floor: 8 * T, face: 4 * T, top: 8 * T, water: 8 * T },
+    // atlas frames at full size: name: [x, y, w, h]. Props are drawn at 5 pixels per world unit, shots at 6, effects at 3.5.
+    atlas: {
+      props_alley: { d_puddle: [4, 4, 220, 168], box: [232, 4, 120, 158], dumpster: [360, 4, 155, 154], recycling: [523, 4, 155, 154], bags: [686, 4, 150, 148], crate: [844, 4, 125, 141], cartons: [4, 180, 140, 135], d_manhole: [152, 180, 110, 109], d_grate: [270, 180, 100, 73] },
+      props_highway: { d_oil: [4, 4, 170, 175], drum: [182, 4, 110, 158], tires: [300, 4, 125, 151], sawhorse: [433, 4, 150, 143], barrier: [591, 4, 160, 140], crate: [759, 4, 125, 138], d_pothole: [4, 187, 140, 122], cone: [152, 187, 85, 116], d_glass: [245, 187, 110, 110] },
+      props_forest: { pine: [4, 4, 170, 259], boulder: [182, 4, 160, 138], d_ferns: [350, 4, 140, 135], crate: [498, 4, 125, 131], d_leaves: [631, 4, 140, 127], bush: [779, 4, 140, 126], stump: [4, 271, 140, 125], logs: [152, 271, 150, 125], d_mushrooms: [310, 271, 120, 122] },
+      props_cabin: { d_rug_round: [4, 4, 350, 348], d_blanket: [362, 4, 320, 306], d_rug: [4, 360, 400, 262], stove: [412, 360, 120, 212], shelf: [540, 360, 140, 186], armchair: [688, 360, 150, 159], crate: [846, 360, 125, 130], basket: [4, 630, 125, 123], cooler: [137, 630, 125, 115] },
+      props_dock: { d_towel: [4, 4, 150, 181], chair: [162, 4, 135, 162], d_net: [305, 4, 170, 160], barrel: [483, 4, 115, 154], crate: [606, 4, 125, 132], cooler: [739, 4, 140, 126], rope: [887, 4, 125, 117], d_puddle: [4, 193, 150, 113], ring: [162, 193, 115, 96] },
+      props_water: { buoy: [4, 4, 95, 168], driftwood: [107, 4, 150, 166], d_lily: [265, 4, 160, 157], castle: [433, 4, 140, 151], boulder: [581, 4, 160, 138], crate: [749, 4, 125, 136], d_weed: [882, 4, 130, 135], cooler: [4, 180, 125, 118], d_shells: [137, 180, 90, 83] },
+      items: { fx_boom: [4, 4, 315, 310], fx_stink: [327, 4, 245, 266], hatch: [580, 4, 200, 229], g_horn: [788, 4, 158, 200], g_sauce: [954, 4, 76, 200], fx_smoke: [1038, 4, 196, 179], fx_bolt: [1242, 4, 126, 175], chest_open: [1376, 4, 150, 172], g_balloon: [1534, 4, 170, 172], fx_poof: [1712, 4, 182, 169], chest: [4, 322, 150, 153], g_nailgun: [162, 322, 170, 144], fx_splash: [340, 322, 154, 141], g_zapper: [502, 322, 170, 134], g_hose: [680, 322, 170, 129], propane: [858, 322, 85, 124], g_rocket: [951, 322, 170, 124], pedestal: [1129, 322, 130, 120], g_golden: [1267, 322, 170, 120], g_potato: [1445, 322, 170, 115], g_pistol: [1623, 322, 170, 108], g_soaker: [1801, 322, 170, 107], fx_star: [4, 483, 105, 105], hornpk: [117, 483, 65, 100], g_frisbee: [190, 483, 170, 100], g_fish: [368, 483, 170, 100], fx_dust: [546, 483, 126, 96], s_b_fish: [680, 483, 160, 92], g_blower: [848, 483, 170, 89], ammo: [1026, 483, 85, 86], s_b_gold: [1119, 483, 138, 80], s_orb: [1265, 483, 108, 79], snack: [1381, 483, 90, 78], g_tp: [1479, 483, 170, 78], s_b_rocket: [1657, 483, 160, 77], fx_flash: [1825, 483, 119, 75], g_paddle: [4, 596, 170, 68], s_b_tp: [182, 596, 84, 66], s_bolt: [274, 596, 126, 64], s_bottle: [408, 596, 102, 64], s_b_disc: [518, 596, 114, 56], s_can: [640, 596, 90, 55], s_b_balloon: [738, 596, 90, 52], s_rock: [836, 596, 90, 52], s_b_potato: [934, 596, 96, 51], s_b_water: [1038, 596, 90, 50], s_card: [1136, 596, 84, 50], s_pinecone: [1228, 596, 78, 48], cap: [1314, 596, 50, 43], s_b_nail: [1372, 596, 90, 42] },
+    },
+    ppu: { prop: 5, g: 5, s: 6, fx: 3.5 }, // atlas pixels per world unit, at full size
+    // where each painted gun is held, as a fraction of its picture, and a turn for the ones painted at a slant
+    grip: { pistol: [0.18, 0.72], soaker: [0.3, 0.78], nailgun: [0.3, 0.85], tp: [0.22, 0.62], frisbee: [0.5, 0.5], balloon: [0.62, 0.85], hose: [0.62, 0.62], fish: [0.2, 0.8], potato: [0.18, 0.78], rocket: [0.2, 0.82], golden: [0.2, 0.75], zapper: [0.12, 0.88, 0.7], paddle: [0.1, 0.5, 0.2], blower: [0.3, 0.25] },
+    shotScale: { b_gold: 0.7 },
+  };
+})();
+// Ground and wall textures are plain images: each day paints a copy scaled to the map's resolution,
+// so the originals never sit in GPU memory.
+const Art = {
+  ready: {}, wait: {},
+  img(name) {
+    if (!name) return Promise.resolve(null);
+    return this.wait[name] || (this.wait[name] = new Promise((ok) => {
+      const im = new Image();
+      im.onload = () => { const done = () => { this.ready[name] = im; ok(im); }; if (im.decode) im.decode().then(done, done); else done(); };
+      im.onerror = () => ok(null);
+      im.src = PAINT.url(name);
+    }));
+  },
+};
+
 /* ------------------------------------------------------------------ the crew */
 // Rename the crew here.
 const FRIENDS = [
@@ -120,10 +178,10 @@ const FOES = {
   trashking: { name: "The Trash Panda", tex: "c_raccoon", scale: 2.3, hp: 1100, speed: 55, r: 28, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["shotgun", "burst", "summon", "leap", "shotgun", "spiral"], summon: ["raccoon", "skunk"], tint: 0x8ad8ff },
   moosebeast: { name: "Moose on the Loose", tex: "c_moose", scale: 1.7, hp: 1300, speed: 45, r: 30, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["charge", "charge", "burst", "summon", "charge", "shotgun"], summon: ["goose", "hornet"], tint: 0xffa060 },
   queen: { name: "The Hornet Queen", tex: "c_nest", scale: 2.2, hp: 1200, speed: 30, r: 28, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["spiral", "summon", "burst", "spiral", "summon", "shotgun"], summon: ["hornet", "hornet", "bat"], tint: 0xffd84a },
-  gooselord: { name: "The Goose Lord", tex: "c_goose", scale: 2.2, hp: 1400, speed: 60, r: 26, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["rush", "shotgun", "rush", "burst", "summon", "leap"], summon: ["goose", "gull"], tint: 0xff8a8a },
-  titan: { name: "The Snapping Titan", tex: "c_turtle", scale: 2.6, hp: 1600, speed: 35, r: 32, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["spin", "burst", "spiral", "spin", "summon", "shotgun"], summon: ["turtle", "gull"], tint: 0x8ad8ff },
+  gooselord: { name: "The Goose Lord", tex: "c_goose", paint: "gooselord", scale: 2.2, hp: 1400, speed: 60, r: 26, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["rush", "shotgun", "rush", "burst", "summon", "leap"], summon: ["goose", "gull"], tint: 0xff8a8a },
+  titan: { name: "The Snapping Titan", tex: "c_turtle", paint: "titan", scale: 2.6, hp: 1600, speed: 35, r: 32, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["spin", "burst", "spiral", "spin", "summon", "shotgun"], summon: ["turtle", "gull"], tint: 0x8ad8ff },
   gabe: { name: "Gabe, Mountain Man", tex: "b_gabe", scale: 0.9, hp: 1100, speed: 60, r: 26, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["bearcall", "rockslide", "leap", "shotgun", "rockslide", "burst"], summon: ["bear"], tint: 0xc8ff3a, lines: ["You hear that? That's my buddy.", "These are MY mountains.", "Bears listen to me. You don't."] },
-  bear: { name: "Black Bear", tex: "c_raccoon", scale: 1.3, hp: 120, speed: 62, r: 20, cost: 4, ai: "charger", tier: 9, heavy: true, bodyTint: 0x4a3222 },
+  bear: { name: "Black Bear", tex: "c_raccoon", paint: "bear", scale: 1.3, hp: 120, speed: 62, r: 20, cost: 4, ai: "charger", tier: 9, heavy: true, bodyTint: 0x4a3222 },
   christian: { name: "Christian the Mystic", tex: "b_christian", scale: 0.9, hp: 900, speed: 70, r: 24, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, patterns: ["teleport", "cards", "clones", "spiral", "teleport", "cards", "burst"], tint: 0xc07aff, lines: ["Pick a card. Any card.", "Now you see me.", "The cards told me you'd lose."] },
   mirage: { name: "Christian (a fake)", tex: "b_christian", scale: 0.75, hp: 40, speed: 40, r: 18, cost: 0, ai: "shooter", tier: 9, mirage: true },
   ryu: { name: "Ryu", tex: "b_ryu", scale: 0.95, hp: 700, speed: 75, r: 26, cost: 0, ai: "king", tier: 9, heavy: true, boss: true, duo: true, patterns: ["rush", "shotgun", "leap", "burst", "rush", "shotgun"], tint: 0xff5a3a, lines: ["Tag, Charlie! Get him!", "Charlie, bottle time!", "My turn."] },
@@ -168,6 +226,17 @@ const THEMES = {
   cabin: { name: "The cabin", floor: [0x93653a, 0x8a5e36, 0x9a6b3e, 0x865b34], line: 0x4e3218, wallTop: 0x24160c, wallFace: 0x6e4a2c, wallSeam: 0x3a2616, void: 0x0a0d14, water: 0x1a1410, waterHi: 0x5a4030, rock: 0x6e4a2c, accent: 0xffb060, planks: true, rugs: true, desc: "Warm wood floors, rugs, and cellar holes." },
   forest: { name: "The trail", floor: [0x44632f, 0x3e5a2e, 0x4a6a34, 0x395428], line: 0x22331a, wallTop: 0x10180c, wallFace: 0x3a2a1c, wallSeam: 0x1e150c, void: 0x07120c, water: 0x1a4a5a, waterHi: 0x5ab0c0, rock: 0x7a8088, accent: 0xffd870, grass: true, desc: "Grass, rocks, roots, and ponds." },
   beach: { name: "The beach", floor: [0xd1b074, 0xc9a86a, 0xd6b67c, 0xbfa062], line: 0x8a6e40, wallTop: 0x3a2a18, wallFace: 0x6a4c30, wallSeam: 0x2e2012, void: 0x123a58, water: 0x2a7aa8, waterHi: 0x9ae0f8, rock: 0x8a6440, accent: 0xff9a40, sand: true, desc: "Hot sand, driftwood, and the lake lapping in." },
+};
+
+// The light at each stop: amb is the colour the whole world is multiplied by, player is the light the
+// player carries [colour, radius, strength], lamp scales the wall and door lamps, clouds is how dark cloud shadows get.
+const MOOD = {
+  alley: { amb: 0x5e6a94, player: [0xffe6c0, 200, 0.8], lamp: 1, clouds: 0 }, // a rainy Friday night
+  highway: { amb: 0xb09c98, player: [0xfff0d0, 130, 0.4], lamp: 0.7, clouds: 0.22 }, // dusk on the 401
+  forest: { amb: 0xd6dcc4, player: [0xffffff, 110, 0.25], lamp: 0.45, clouds: 0.3 }, // under the pines
+  cabin: { amb: 0x9a7a66, player: [0xffe0b0, 150, 0.6], lamp: 1, clouds: 0 }, // lamplight at the cottage
+  dock: { amb: 0xf6c49c, player: [0xfff0d8, 110, 0.3], lamp: 0.6, clouds: 0.18 }, // sunset on the lake
+  water: { amb: 0xf2f6ff, player: [0xffffff, 100, 0.15], lamp: 0.3, clouds: 0.26 }, // bright day on the water
 };
 
 /* ------------------------------------------------------------------ the Cottage's voice */
@@ -723,9 +792,47 @@ const Settings = {
 class Play extends Phaser.Scene {
   constructor() { super("play"); }
 
-  preload() { FRIENDS.forEach((f, i) => this.load.image("f" + (i + 1), ART["sprite" + (i + 1)])); }
+  preload() {
+    FRIENDS.forEach((f, i) => this.load.image("f" + (i + 1), ART["sprite" + (i + 1)]));
+    this.load.on("loaderror", (f) => console.warn("art did not load:", f.key));
+    for (const k of PAINT.everyday) this.loadCrit(k);
+    this.load.image("items", PAINT.url("items"));
+    this.load.on("filecomplete", (key) => { if (PAINT.atlas[key]) this.addFrames(key); });
+  }
+  loadCrit(k) { const m = PAINT.crit[k], s = PAINT.k; this.load.spritesheet("p_" + k, PAINT.url("c_" + k), { frameWidth: Math.round(m[0] * s), frameHeight: Math.round(m[1] * s) }); }
+  // An atlas is one image and a table of frames. Phones load it at half size, so the table is halved.
+  addFrames(key) {
+    const tex = this.textures.get(key), s = PAINT.k;
+    if (!tex || tex.key === "__MISSING" || tex.has("_f")) return;
+    for (const [n, [x, y, w, h]] of Object.entries(PAINT.atlas[key])) tex.add(n, 0, Math.round(x * s), Math.round(y * s), Math.round(w * s), Math.round(h * s));
+    tex.add("_f", 0, 0, 0, 1, 1);
+  }
+  // A painted atlas frame, with the scale that shows it at its intended size. Null when the atlas has not loaded.
+  paint(atlas, name, kind) {
+    const tex = this.textures.exists(atlas) && this.textures.get(atlas);
+    if (!tex || !tex.has(name)) return null;
+    return { key: atlas, frame: name, s: 1 / (PAINT.ppu[kind || "prop"] * PAINT.k) };
+  }
+  // Load what a stop needs: its ground and wall images, its props, and its big critters. Never waits more than 8 seconds.
+  stageArt(theme) {
+    const L = PAINT.look[theme];
+    if (!L) return Promise.resolve();
+    const imgs = Promise.all([L.floor, L.face, L.top, L.water, L.bank].map((n) => Art.img(n)));
+    const sheets = new Promise((ok) => {
+      let n = 0;
+      for (const k of PAINT.stageCrit[theme] || []) if (!this.textures.exists("p_" + k)) { this.loadCrit(k); n++; }
+      const pk = "props_" + theme;
+      if (!this.textures.exists(pk)) { this.load.image(pk, PAINT.url(pk)); n++; }
+      if (!n) return ok();
+      this.load.once("complete", ok);
+      this.load.start();
+    });
+    return Promise.race([Promise.all([imgs, sheets]), wait(8000)]);
+  }
 
   create() {
+    this.addFrames("items");
+    this.stampImg = this.make.image({ key: "items", add: false }).setOrigin(0.5);
     this.makeCottageTextures();
     this.makeTextures();
     this.makeCritters();
@@ -741,6 +848,8 @@ class Play extends Phaser.Scene {
     this.objs = [];
     this.layoutCamera();
     this.setupLook();
+    this.setupLight();
+    this.stageArt(STAGES[0].theme); // the first stop loads while the title is up
     // a lost GPU context wipes painted textures; repaint when it comes back
     const r = this.game.renderer;
     if (r && r.on) r.on("restorewebgl", () => this.repaintChunks());
@@ -919,16 +1028,20 @@ class Play extends Phaser.Scene {
     const eye = (c, x, y, r, iris) => { ell(c, x, y, r, r * 1.05); fo(c, "#fffdf6", 1); ell(c, x + r * 0.25, y + r * 0.1, r * 0.55, r * 0.62); c.fillStyle = iris || "#1a1208"; c.fill(); ell(c, x + r * 0.05, y - r * 0.3, r * 0.22, r * 0.22); c.fillStyle = "#fff"; c.fill(); };
     const shine = (c, x, y, rx, ry, rot) => { ell(c, x, y, rx, ry, rot); c.fillStyle = "rgba(255,255,255,0.28)"; c.fill(); };
     const Q = 3; // drawn at 3x so critters stay sharp when the camera zooms in
+    // These drawings are the stand-ins for the painted sheets. Each is drawn only if a critter needs it.
+    this.critDraw = {};
     const sheet = (key, w, h, draw) => {
-      if (this.textures.exists(key)) return;
-      const t = this.textures.createCanvas(key, w * Q * 9, h * Q), c = t.getContext();
-      for (let f = 0; f < 9; f++) {
-        c.save(); c.translate(f * w * Q, 0); c.scale(Q, Q); c.lineJoin = "round"; c.lineCap = "round";
-        draw(c, f < 8 ? (f / 8) * Math.PI * 2 : 0, f === 8);
-        c.restore();
-      }
-      t.refresh();
-      for (let f = 0; f < 9; f++) t.add(f, 0, f * w * Q, 0, w * Q, h * Q);
+      this.critDraw[key] = () => {
+        if (this.textures.exists(key)) return;
+        const t = this.textures.createCanvas(key, w * Q * 9, h * Q), c = t.getContext();
+        for (let f = 0; f < 9; f++) {
+          c.save(); c.translate(f * w * Q, 0); c.scale(Q, Q); c.lineJoin = "round"; c.lineCap = "round";
+          draw(c, f < 8 ? (f / 8) * Math.PI * 2 : 0, f === 8);
+          c.restore();
+        }
+        t.refresh();
+        for (let f = 0; f < 9; f++) t.add(f, 0, f * w * Q, 0, w * Q, h * Q);
+      };
     };
 
     sheet("c_raccoon", 62, 48, (c, p, act) => {
@@ -1400,6 +1513,85 @@ class Play extends Phaser.Scene {
     return l > 1 ? { x: x / l, y: y / l } : { x, y };
   }
 
+  /* ---------------- light ---------------- */
+
+  // A low-resolution light map, multiplied over the world. Each stop has its own mood, and the player, lamps,
+  // muzzle flashes, blasts and bullets carry light. Bullets, sparks, text and the HUD sit above it.
+  setupLight() {
+    this.lightRT = this.add.renderTexture(0, 0, 64, 64).setOrigin(0).setDepth(49000).setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false);
+    this.lightImg = this.make.image({ key: "glow", add: false }).setBlendMode(Phaser.BlendModes.ADD);
+    this.ambImg = this.make.image({ key: "__WHITE", add: false }).setOrigin(0);
+    this.cloudTS = null;
+  }
+  // Soft cloud shadows: tileable noise, darker where the noise is high. Remade when the strength changes.
+  cloudTex(strength) {
+    if (this.cloudK === strength) return;
+    this.cloudK = strength;
+    const N = 128, t = this.textures.exists("clouds") ? this.textures.get("clouds") : this.textures.createCanvas("clouds", N, N), c = t.getContext(), img = c.createImageData(N, N);
+    const h = (i, j, o) => { let q = Math.imul(i + 11, 374761393) ^ Math.imul(j + 17, 668265263) ^ Math.imul(o, 1442695041); q = Math.imul(q ^ (q >>> 13), 1274126177); return ((q ^ (q >>> 16)) >>> 0) / 4294967296; };
+    const noise = (u, v, f, o) => { const X = Math.floor(u * f), Y = Math.floor(v * f), fx = u * f - X, fy = v * f - Y, g = (i, j) => h(((i % f) + f) % f, ((j % f) + f) % f, o), sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); return (g(X, Y) * (1 - sx) + g(X + 1, Y) * sx) * (1 - sy) + (g(X, Y + 1) * (1 - sx) + g(X + 1, Y + 1) * sx) * sy; };
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const u = x / N, v = y / N, n = noise(u, v, 2, 1) * 0.55 + noise(u, v, 4, 2) * 0.3 + noise(u, v, 8, 3) * 0.15;
+      const val = Math.round(255 * (1 - clamp((n - 0.5) * 3.2, 0, 1) * strength)), i = (y * N + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = val; img.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0); t.refresh();
+    if (this.cloudTS) this.cloudTS.destroy(); // a tile sprite can keep its own copy of the old pattern
+    this.cloudTS = this.make.tileSprite({ x: 0, y: 0, width: 64, height: 64, key: "clouds", add: false }).setOrigin(0).setBlendMode(Phaser.BlendModes.MULTIPLY).setTileScale(3);
+  }
+  setMood(theme) {
+    this.mood = MOOD[theme] || null;
+    if (this.mood && this.mood.clouds) this.cloudTex(this.mood.clouds);
+  }
+  updateLight(dt) {
+    const M = this.mood, rt = this.lightRT;
+    if (!rt) return;
+    if (!M || !this.player || this.mode === "menu") { rt.setVisible(false); return; }
+    const v = this.cameras.main.worldView, Q = 2; // world units per light texel
+    const w = Math.ceil(v.width / Q) + 4, h = Math.ceil(v.height / Q) + 4;
+    if (rt.width < w || rt.height < h) rt.resize(Math.max(w, rt.width), Math.max(h, rt.height));
+    const x0 = Math.floor(v.x / Q) * Q - Q, y0 = Math.floor(v.y / Q) * Q - Q;
+    rt.setVisible(true).setPosition(x0, y0).setScale(Q);
+    // everything goes in one batch onto a cleared texture: the ambient colour, then cloud shadows, then lights
+    rt.clear();
+    rt.beginDraw();
+    const A = this.ambImg;
+    A.setScale(rt.width / A.width, rt.height / A.height).setTint(M.amb);
+    rt.batchDraw(A, 0, 0);
+    if (M.clouds && this.cloudTS) {
+      const ts = this.cloudTS, sc = 3, drift = this.time.now * 0.006;
+      ts.setSize(rt.width, rt.height); ts.tilePositionX = (x0 / Q + drift) / sc; ts.tilePositionY = (y0 / Q + drift * 0.4) / sc;
+      rt.batchDraw(ts, 0, 0);
+    }
+    const L = this.lightImg;
+    const add = (x, y, r, col, a) => {
+      if (a <= 0.01 || x + r < v.x || x - r > v.right || y + r < v.y || y - r > v.bottom) return;
+      L.setPosition((x - x0) / Q, (y - y0) / Q).setScale(r / Q / 32).setTint(col).setAlpha(Math.min(1, a));
+      rt.batchDraw(L);
+    };
+    const P = this.player;
+    add(P.x, P.y - 20, M.player[1], M.player[0], M.player[2]);
+    for (const l of this.lamps || []) add(l.x, l.y, 130, l.c, 0.75 * M.lamp);
+    for (const dv of this.doorLights || []) if (dv.glow && dv.glow.active) add(dv.glow.x, dv.glow.y + 12, 80, dv.glow.tintTopLeft, 0.65 * M.lamp);
+    if (this.flashT > 0) { const hp = this.handPos(); add(hp.x + this.aim.x * 14, hp.y + this.aim.y * 14, 110, 0xffe0a0, (this.flashT / 0.06) * 0.8); this.flashT -= dt; }
+    const bm = this.boomAt; if (bm && bm.t > 0) { add(bm.x, bm.y, bm.r * 3, 0xffa050, bm.t / 0.3); bm.t -= dt; }
+    let n = 0;
+    for (const b of this.bullets) { if (++n > 30) break; add(b.x, b.y - 10, 34, 0xfff0c0, 0.45); }
+    n = 0;
+    for (const b of this.ebullets) { if (++n > 40) break; add(b.x, b.y - 10, 28, 0xff6a9a, 0.55); }
+    for (const e of this.enemies) if (e.elite && !e.dead) add(e.x, e.y - 12, 56, 0xffc030, 0.4);
+    if (this.hatch) add(this.hatch.x, this.hatch.y, 100, 0xffe0a0, 0.9);
+    if (this.chest && !this.chest.open) add(this.chest.x, this.chest.y - 10, 64, 0xffd070, 0.45);
+    for (const p of this.pickups) if (p.v.startsWith("gun:") || p.v.startsWith("item:") || p.v === "container") add(p.x, p.y - 10, 54, 0xffe0a0, 0.5);
+    for (const c of this.coals || []) add(c.x, c.y, 34, 0xff7a30, 0.5 * Math.min(1, c.t));
+    const hz = this.hz;
+    if (hz && hz.list) for (const o of hz.list) {
+      if (o.warn && o.warn.active) add(o.warn.x, o.warn.y, 120, 0xffe080, 0.9);
+      if (hz.kind === "cars" && o.img && o.img.visible) add(o.x + o.dir * 46, o.y, 90, 0xfff0c0, 0.85);
+    }
+    rt.endDraw();
+  }
+
   /* ---------------- camera ---------------- */
 
   setupLook() {
@@ -1461,15 +1653,19 @@ class Play extends Phaser.Scene {
   //   2. chunks just off screen are painted ahead, two per frame;
   //   3. chunks are dropped only when far away and long unseen, and only if many are held.
   // The paint resolution is fixed for the day, so zooming or a resolution change never throws chunks away.
-  chunkRes() { return this.chunkR || (this.chunkR = clamp((this.camZ || 1) * DPR, 1, 3)); }
+  // A whole number of pixels per tile, so painted tiles meet with no seams.
+  chunkRes() { return this.chunkR || (this.chunkR = Math.round(clamp((this.camZ || 1) * DPR, 1, 3) * T) / T); }
   bakeChunk(c) {
     const R = this.chunkRes(), key = "chunk" + (this.chunkSeq = (this.chunkSeq || 0) + 1);
-    const g = this.make.graphics({}, false);
-    c.draw(g);
-    g.setScale(R);
     const tex = this.textures.addDynamicTexture(key, Math.ceil(c.w * R), Math.ceil(c.h * R));
-    tex.draw(g, -c.x * R, -c.y * R);
-    g.destroy();
+    if (c.paint) c.paint(tex, R);
+    else {
+      const g = this.make.graphics({}, false);
+      c.draw(g);
+      g.setScale(R);
+      tex.draw(g, -c.x * R, -c.y * R);
+      g.destroy();
+    }
     c.key = key;
     c.img = this.add.image(c.x, c.y, key).setOrigin(0).setScale(1 / R).setDepth(0);
   }
@@ -1494,22 +1690,78 @@ class Play extends Phaser.Scene {
     for (const c of this.chunks || []) this.dropChunk(c);
     this.chunkR = 0; // the next day paints at the current resolution
     this.chunks = [];
+    this.lamps = []; this.doorLights = [];
     for (const o of this.objs) o.destroy();
     this.objs = [];
     for (const e of this.enemies || []) this.killView(e);
     for (const b of this.bullets || []) this.free(b.img);
     for (const b of this.ebullets || []) this.free(b.img);
     for (const p of this.pickups || []) this.dropPickup(p);
-    for (const [, pr] of this.props || []) if (pr.img) pr.img.destroy();
+    for (const [, pr] of this.props || []) { if (pr.img) pr.img.destroy(); if (pr.sh) pr.sh.destroy(); }
+    for (const c of this.clouds || []) if (c.img) c.img.destroy();
     this.clearHazards(); this.zaps = []; for (const w of this.saws || []) { w.img.destroy(); w.sh.destroy(); } this.saws = []; this.enemies = []; this.bullets = []; this.ebullets = []; this.pickups = []; this.clouds = []; this.coals = []; this.props = new Map(); this.telegraphs = [];
+  }
+
+  // This day's painted textures, scaled once to the map's resolution and cut into one frame per tile.
+  // Null when the stop's art has not loaded; the day is then drawn in code as before.
+  makeLook(theme) {
+    for (const k of this.lookKeys || []) if (this.textures.exists(k)) this.textures.remove(k);
+    this.lookKeys = [];
+    const L = PAINT.look[theme];
+    if (!L || !Art.ready[L.floor] || !Art.ready[L.top] || (L.face && !Art.ready[L.face])) return null;
+    const tp = Math.round(this.chunkRes() * T);
+    const make = (name, span, kind) => {
+      const im = name && Art.ready[name];
+      if (!im) return null;
+      const n = Math.round(span / T), px = n * tp, key = "lk_" + kind + "_" + name;
+      const cv = document.createElement("canvas"); cv.width = cv.height = px;
+      const c = cv.getContext("2d"); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
+      c.drawImage(im, 0, 0, px, px);
+      const tex = this.textures.addCanvas(key, cv);
+      this.lookKeys.push(key);
+      return { key, tex, n };
+    };
+    const grid = (o) => { if (o) for (let j = 0; j < o.n; j++) for (let i = 0; i < o.n; i++) o.tex.add(i + j * o.n, 0, i * tp, j * tp, tp, tp); return o; };
+    const look = { L, tp, floor: grid(make(L.floor, PAINT.span.floor, "floor")), top: grid(make(L.top, PAINT.span.top, "top")), water: grid(make(L.water, PAINT.span.water, "water")) };
+    // wall faces: a strip 0.65 of a tile tall, cut from three heights of the texture so rows of wall differ
+    look.faceH = Math.round(tp * 0.65);
+    look.face = make(L.face, PAINT.span.face, "face");
+    if (look.face) for (let b = 0; b < 3; b++) for (let i = 0; i < look.face.n; i++) look.face.tex.add("f" + i + "_" + b, 0, i * tp, Math.round(b * tp * 1.1), tp, look.faceH);
+    // the side of the floor where it drops into water or a hole
+    look.bankH = Math.round(tp * 0.3);
+    look.bank = make(L.bank, PAINT.span.face, "bank");
+    if (look.bank) for (let i = 0; i < look.bank.n; i++) look.bank.tex.add("b" + i, 0, i * tp, Math.round(tp * 0.8), tp, look.bankH);
+    look.fr = (o, i, j) => (i % o.n) + (j % o.n) * o.n;
+    return look;
   }
 
   keep(o) { this.objs.push(o); return o; }
   // Bullet sprites are reused, not remade, so rapid fire makes no garbage.
-  img(key, x, y) {
+  img(key, x, y, frame) {
     const p = (this.pool || (this.pool = [])).pop();
-    if (p && p.active) return p.setTexture(key).setPosition(x, y).setVisible(true).setAlpha(1).setRotation(0).setScale(1).clearTint().setBlendMode(0);
-    return this.add.image(x, y, key);
+    if (p && p.active) return p.setTexture(key, frame).setPosition(x, y).setVisible(true).setAlpha(1).setRotation(0).setScale(1).clearTint().setBlendMode(0);
+    return this.add.image(x, y, key, frame);
+  }
+  // The picture for a shot: painted when the atlas has loaded. s is the scale that shows it at its size.
+  shotPic(G) {
+    const P = G.tex !== "spark" && this.paint("items", "s_" + G.tex, "s");
+    return P ? { key: P.key, frame: P.frame, s: P.s * (PAINT.shotScale[G.tex] || 1) } : { key: G.tex, frame: undefined, s: G.texScale || 1 };
+  }
+  // A painted effect that grows and fades: muzzle flashes, blasts, puffs, splashes. Reuses a small pool.
+  fxPop(name, x, y, o) {
+    o = o || {};
+    const P = this.paint("items", "fx_" + name, "fx");
+    if (!P) return null;
+    const pool = this.fxPool || (this.fxPool = []);
+    let im = pool.find((q) => !q.visible);
+    if (!im) { if (pool.length >= 48) return null; im = this.add.image(0, 0, P.key, P.frame); pool.push(im); }
+    const size = P.s * (o.size || 1);
+    this.tweens.killTweensOf(im);
+    im.setTexture(P.key, P.frame).setPosition(x, y).setScale(size * (o.s0 === undefined ? 0.5 : o.s0)).setAlpha(o.a === undefined ? 1 : o.a).setRotation(o.rot || 0)
+      .setDepth(o.depth === undefined ? 60000 : o.depth).setBlendMode(o.add ? "ADD" : "NORMAL").setVisible(true).setFlipX(!!o.flip).clearTint();
+    if (o.tint) im.setTint(o.tint);
+    this.tweens.add({ targets: im, scale: size * (o.s1 === undefined ? 1 : o.s1), alpha: 0, duration: o.ms || 250, ease: o.ease || "Quad.easeOut", onComplete: () => im.setVisible(false) });
+    return im;
   }
   free(i) { if (!i || !i.active) return; i.setVisible(false); if ((this.pool || (this.pool = [])).length < 300) this.pool.push(i); else i.destroy(); }
 
@@ -1518,6 +1770,8 @@ class Play extends Phaser.Scene {
     this.map = map; this.plan = plan; this.theme = THEMES[plan.theme] || THEMES.dock;
     const th = this.theme, { t, rid, W, H, id } = map;
     this.cameras.main.setBackgroundColor(th.void);
+    // the painted look, when this stop's art has loaded
+    const look = (this.look = this.makeLook(plan.theme)), L = look && look.L;
     const g = this.keep(this.add.graphics().setDepth(0));
     const at = (i, j) => (i < 0 || j < 0 || i >= W || j >= H ? 0 : t[id(i, j)]);
     let seed = 1 + Math.floor(Math.random() * 1e6);
@@ -1608,34 +1862,169 @@ class Play extends Phaser.Scene {
         }
       }
     };
+    // ---- the painted look: every tile is a frame of a texture scaled to this map, so tiles meet with no seams ----
+    const wet = (c) => c === TILE.WATER || (L && L.sunken && c === TILE.WALL);
+    const hash = (i, j, s) => { let h = Math.imul(i + 7, 374761393) ^ Math.imul(j + 13, 668265263) ^ Math.imul(s + 1, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+    // how far each wall tile is from open ground, up to 3: near walls get the whole texture, far ones fade into the dark
+    const wallD = look ? new Uint8Array(W * H) : null;
+    if (look) {
+      let q = [];
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (t[id(i, j)] !== TILE.WALL) q.push(i, j);
+      for (let d = 1; d <= 3; d++) {
+        const nq = [];
+        for (let k = 0; k < q.length; k += 2) for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+          const a = q[k] + di, b = q[k + 1] + dj;
+          if (a < 0 || b < 0 || a >= W || b >= H) continue;
+          const n = id(a, b);
+          if (t[n] !== TILE.WALL || wallD[n]) continue;
+          wallD[n] = d; nq.push(a, b);
+        }
+        q = nq;
+      }
+    }
+    const atlas = "props_" + plan.theme;
+    const paintChunk = (dt, R, i0, j0, i1, j1) => {
+      const tp = look.tp, ox = i0 * T, oy = j0 * T, S = this.stampImg;
+      const px = (i) => (i - i0) * tp, py = (j) => (j - j0) * tp;
+      const gF = this.make.graphics({}, false), gW = this.make.graphics({}, false);
+      const stamp = (name, wx, wy, s, rot, alpha) => {
+        const P = this.paint(atlas, name);
+        if (!P) return;
+        S.setTexture(P.key, P.frame).setScale(P.s * s * R).setRotation(rot || 0).setAlpha(alpha === undefined ? 1 : alpha);
+        dt.batchDraw(S, (wx - ox) * R, (wy - oy) * R);
+      };
+      dt.beginDraw();
+      // 1. the ground, and water or holes
+      for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+        const c = at(i, j);
+        if (wet(c)) {
+          const d = c === TILE.WALL ? wallD[id(i, j)] : 0;
+          if (c === TILE.WALL && !d) continue; // open water far out is the background colour
+          if (look.water) dt.batchDrawFrame(look.water.key, look.fr(look.water, i, j), px(i), py(j), d ? [1, 1, 0.75, 0.4][d] : 1, d ? L.topTint || 0xffffff : L.waterTint || 0xffffff);
+          else gF.fillStyle(0x120c08, 1).fillRect(i * T, j * T, T, T); // a dark hole in the floor
+          continue;
+        }
+        if (c === TILE.WALL) continue;
+        dt.batchDrawFrame(look.floor.key, look.fr(look.floor, i, j), px(i), py(j));
+      }
+      // 2. rugs, and decals placed by tile, so one that crosses into the next chunk is drawn the same there
+      if (L.rugs) for (const r of map.rooms) {
+        if (r.type !== "fight" && r.type !== "start") continue;
+        const name = L.rugs[r.id % L.rugs.length], f = PAINT.atlas[atlas] && PAINT.atlas[atlas][name];
+        if (!f) continue;
+        const want = Math.min(r.w * T * 0.42, 150), s = want / (f[2] / PAINT.ppu.prop), hh = ((f[3] / f[2]) * want) / 2;
+        const cx = (r.x + r.w / 2) * T, cy = (r.y + r.h / 2) * T;
+        if (cx + want / 2 < ox || cx - want / 2 > ox + (i1 - i0) * T || cy + hh < oy || cy - hh > oy + (j1 - j0) * T) continue;
+        stamp(name, cx, cy, s, 0, 0.96);
+      }
+      if (L.decalRate) for (let j = j0 - 2; j < j1 + 2; j++) for (let i = i0 - 2; i < i1 + 2; i++) {
+        const c = at(i, j), inWater = c === TILE.WATER, list = inWater ? L.waterDecals : L.decals;
+        if (!list || !list.length || (c !== TILE.FLOOR && !inWater) || hash(i, j, 1) > L.decalRate * (inWater ? 3 : 1)) continue;
+        let clear = true;
+        for (let dj = -1; dj <= 1 && clear; dj++) for (let di = -1; di <= 1; di++) { const n = at(i + di, j + dj); if (n === TILE.WALL || (!inWater && n === TILE.WATER) || (inWater && n !== TILE.WATER)) { clear = false; break; } }
+        if (!clear) continue;
+        stamp(list[Math.floor(hash(i, j, 2) * list.length)], i * T + T / 2 + (hash(i, j, 3) - 0.5) * 10, j * T + T / 2 + (hash(i, j, 4) - 0.5) * 10, 0.8 + hash(i, j, 5) * 0.4, (hash(i, j, 6) - 0.5) * 1.2, 0.95);
+      }
+      // 3. big soft light and dark patches, so the repeat of the ground texture never lines up in rows
+      for (let j = j0 - 5; j < j1 + 5; j++) for (let i = i0 - 5; i < i1 + 5; i++) {
+        if (hash(i, j, 20) > 0.02) continue;
+        const cx = i * T + T / 2, cy = j * T + T / 2, rad = T * (1.5 + hash(i, j, 21) * 2.5), dark = hash(i, j, 22) < 0.7;
+        for (let k = 0; k < 5; k++) gF.fillStyle(dark ? 0x000000 : 0xffffff, dark ? 0.035 : 0.025).fillEllipse(cx, cy, rad * 2 * (1 - k * 0.18), rad * 1.4 * (1 - k * 0.18));
+      }
+      // soft shadows the walls throw on the ground, and the highway's lane paint
+      for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+        const c = at(i, j);
+        if (c === TILE.WALL || wet(c)) continue;
+        const x = i * T, y = j * T;
+        if (!L.sunken) {
+          if (at(i, j - 1) === TILE.WALL) for (let k = 0; k < 6; k++) gF.fillStyle(0x000000, [0.42, 0.3, 0.21, 0.14, 0.08, 0.04][k]).fillRect(x, y + k * 2, T, 2);
+          if (at(i - 1, j) === TILE.WALL) for (let k = 0; k < 4; k++) gF.fillStyle(0x000000, [0.28, 0.18, 0.1, 0.05][k]).fillRect(x + k * 1.5, y, 1.5, T);
+          if (at(i + 1, j) === TILE.WALL) for (let k = 0; k < 3; k++) gF.fillStyle(0x000000, [0.16, 0.09, 0.04][k]).fillRect(x + T - (k + 1) * 1.5, y, 1.5, T);
+        }
+        const rr = map.rooms[rid[id(i, j)]];
+        if (th.lanes && rr && rr.lanes) for (const l of rr.lanes) {
+          if (j === l || j === l + 1) gF.fillStyle(0x000000, 0.14).fillRect(x, y, T, T);
+          if (j === l - 1 && i % 2 === 0) gF.fillStyle(0xf2f2f2, 0.85).fillRect(x + 3, y + T - 3, 16, 2.5);
+          if (j === l + 2 && i % 2 === 0) gF.fillStyle(0xf2c230, 0.85).fillRect(x + 3, y + 1, 16, 2.5);
+        }
+      }
+      gF.setScale(R); dt.batchDraw(gF, -ox * R, -oy * R);
+      // 4. walls: a top, and a face where the wall looks down on the ground; on sunken stops, the drop into the water
+      for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+        const c = at(i, j), x = i * T, y = j * T, above = at(i, j - 1);
+        if (wet(c)) {
+          if (above === TILE.WALL || wet(above) || !look.bank) continue;
+          dt.batchDrawFrame(look.bank.key, "b" + (i % look.bank.n), px(i), py(j), 1, L.bankTint || 0xffffff);
+          const bh = look.bankH / R;
+          gW.fillStyle(0x000000, 0.45).fillRect(x, y + bh, T, 2).fillStyle(0x000000, 0.2).fillRect(x, y + bh + 2, T, 3);
+          if (look.water) gW.fillStyle(0xffffff, 0.35).fillRect(x, y + bh - 1, T, 1.2);
+          gW.fillStyle(0xffffff, 0.2).fillRect(x, y, T, 1);
+          continue;
+        }
+        if (c !== TILE.WALL) { // foam where the ground meets water beside and below it
+          if (look.water) for (const [di, dj, fx, fy, fw, fh] of [[-1, 0, 0, 0, 1.2, T], [1, 0, T - 1.2, 0, 1.2, T], [0, 1, 0, T - 1.2, T, 1.2]]) if (wet(at(i + di, j + dj))) gW.fillStyle(0xffffff, 0.3).fillRect(x + fx, y + fy, fw, fh);
+          continue;
+        }
+        const d = wallD[id(i, j)];
+        if (!d || L.sunken) continue;
+        dt.batchDrawFrame(look.top.key, look.fr(look.top, i, j), px(i), py(j), [1, 1, 0.62, 0.28][d], 0xc0c0c0);
+        if (at(i, j + 1) !== TILE.WALL && look.face) {
+          dt.batchDrawFrame(look.face.key, "f" + (i % look.face.n) + "_" + (j % 3), px(i), py(j) + tp - look.faceH);
+          const fy = y + T - look.faceH / R;
+          gW.fillStyle(0x000000, 0.35).fillRect(x, fy - 1.4, T, 1.4).fillStyle(0xffffff, 0.22).fillRect(x, fy, T, 1.4);
+          for (let k = 0; k < 4; k++) gW.fillStyle(0x000000, [0.1, 0.18, 0.28, 0.42][k]).fillRect(x, y + T - 4 + k, T, 1);
+        }
+        // a crisp edge where a wall top meets the ground beside or above it
+        if (d === 1) {
+          if (at(i - 1, j) !== TILE.WALL) gW.fillStyle(0x000000, 0.45).fillRect(x, y, 1.5, T).fillStyle(0xffffff, 0.12).fillRect(x + 1.5, y, 1, T);
+          if (at(i + 1, j) !== TILE.WALL) gW.fillStyle(0x000000, 0.45).fillRect(x + T - 1.5, y, 1.5, T).fillStyle(0xffffff, 0.12).fillRect(x + T - 2.5, y, 1, T);
+          if (above !== TILE.WALL) gW.fillStyle(0x000000, 0.45).fillRect(x, y, T, 1.5).fillStyle(0xffffff, 0.14).fillRect(x, y + 1.5, T, 1);
+        }
+      }
+      gW.setScale(R); dt.batchDraw(gW, -ox * R, -oy * R);
+      dt.endDraw();
+      gF.destroy(); gW.destroy();
+    };
     for (let cj = 0; cj * CS < H; cj++) for (let ci = 0; ci * CS < W; ci++) {
       const i0 = ci * CS, j0 = cj * CS, i1 = Math.min(W, i0 + CS), j1 = Math.min(H, j0 + CS);
       let used = false;
       for (let j = j0 - 1; j <= j1 && !used; j++) for (let i = i0 - 1; i <= i1; i++) if (at(i, j) !== TILE.WALL) { used = true; break; }
+      // sunken stops paint the water around the rooms too
+      if (!used && look && L.sunken) for (let j = j0; j < j1 && !used; j++) for (let i = i0; i < i1; i++) if (wallD[id(i, j)]) { used = true; break; }
       if (!used) continue;
       const cs = 1 + ci * 7919 + cj * 104729;
-      this.chunks.push({ x: i0 * T, y: j0 * T, w: (i1 - i0) * T, h: (j1 - j0) * T, draw: (cg) => { seed = cs; drawChunk(cg, i0, j0, i1, j1); }, img: null, key: null, seen: 0 });
+      this.chunks.push({ x: i0 * T, y: j0 * T, w: (i1 - i0) * T, h: (j1 - j0) * T, draw: (cg) => { seed = cs; drawChunk(cg, i0, j0, i1, j1); }, paint: look ? (dt, R) => paintChunk(dt, R, i0, j0, i1, j1) : null, img: null, key: null, seen: 0 });
     }
     // lamps along north walls
     for (const r of map.rooms) {
       for (let i = r.x + 2; i < r.x + r.w - 1; i += 5) {
         if (at(i, r.y - 1) !== TILE.WALL || at(i, r.y) !== TILE.FLOOR) continue;
         const x = i * T + T / 2, y = r.y * T - 6;
+        this.lamps.push({ x, y: y + 18, c: th.accent });
         this.keep(this.add.image(x, y - 4, "glow").setBlendMode("ADD").setTint(th.accent).setAlpha(0.35).setScale(0.8).setDepth(1));
         this.keep(this.add.image(x, y + 30, "glow").setBlendMode("ADD").setTint(th.accent).setAlpha(0.12).setScale(2.6, 1.4).setDepth(1));
         g.fillStyle(0x2a1a0a, 1).fillRect(x - 2, y - 6, 4, 8); g.fillStyle(0xffe0a0, 1).fillCircle(x, y - 7, 2.6);
       }
     }
-    // props with height get their own sprite so things walk behind them
+    // props with height get their own sprite so things walk behind them. Painted props get a soft shadow on the ground.
+    const prop = (list, i, j, salt) => (list && list.length ? this.paint(atlas, list[Math.floor(hash(i, j, salt) * list.length)]) : null);
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
       const c = at(i, j), x = i * T + T / 2, y = j * T + T;
-      if (c === TILE.ROCK) { const img = this.keep(this.add.image(x, y + 2, "rock_" + plan.theme).setOrigin(0.5, 1).setDepth(1000 + y)); if (img.width > 40) img.setScale(0.5); }
+      const P = look && (c === TILE.ROCK ? prop(L.rocks, i, j, 7) : c === TILE.CRATE ? prop(L.crates, i, j, 8) : c === TILE.PROPANE ? this.paint("items", "propane") : null);
+      if (c === TILE.ROCK) {
+        if (P) { const img = this.keep(this.add.image(x, y + 1, P.key, P.frame).setOrigin(0.5, 1).setScale(P.s).setDepth(1000 + y)); this.keep(this.add.image(x, y - 1, "shadow").setScale(img.displayWidth / 34, 0.9).setDepth(4)); }
+        else { const img = this.keep(this.add.image(x, y + 2, "rock_" + plan.theme).setOrigin(0.5, 1).setDepth(1000 + y)); if (img.width > 40) img.setScale(0.5); }
+      }
       if (c === TILE.CRATE || c === TILE.PROPANE) {
-        const ck = this.textures.exists("crate_" + plan.theme) ? "crate_" + plan.theme : "crate";
-        const img = this.add.image(x, y + 2, c === TILE.CRATE ? ck : "prop_propane").setOrigin(0.5, 1).setDepth(1000 + y);
-        if (c === TILE.CRATE && ck !== "crate") img.setScale(0.5);
-        if (c === TILE.PROPANE) img.setScale(0.275);
-        this.props.set(id(i, j), { i, j, kind: c, hp: c === TILE.CRATE ? 14 : 1, img, fuse: false });
+        let img, sh = null;
+        if (P) { img = this.add.image(x, y + 1, P.key, P.frame).setOrigin(0.5, 1).setScale(P.s).setDepth(1000 + y); sh = this.add.image(x, y - 1, "shadow").setScale(img.displayWidth / 34, 0.8).setDepth(4); }
+        else {
+          const ck = this.textures.exists("crate_" + plan.theme) ? "crate_" + plan.theme : "crate";
+          img = this.add.image(x, y + 2, c === TILE.CRATE ? ck : "prop_propane").setOrigin(0.5, 1).setDepth(1000 + y);
+          if (c === TILE.CRATE && ck !== "crate") img.setScale(0.5);
+          if (c === TILE.PROPANE) img.setScale(0.275);
+        }
+        this.props.set(id(i, j), { i, j, kind: c, hp: c === TILE.CRATE ? 14 : 1, img, sh, fuse: false });
       }
     }
     // gates in every doorway, open until a fight starts
@@ -1646,6 +2035,7 @@ class Play extends Phaser.Scene {
       r.fog = this.keep(this.add.rectangle((r.x - 1) * T, (r.y - 1) * T, (r.w + 2) * T, (r.h + 2) * T, th.void, 1).setOrigin(0).setDepth(50000).setVisible(!r.seen));
     }
     this.furnish();
+    this.setMood(plan.theme);
     this.flow = new Int16Array(W * H);
     this.flowT = 0;
     UI.minimap(this, true);
@@ -1680,6 +2070,7 @@ class Play extends Phaser.Scene {
       if (r.type === "boss" || r.type === "shop" || r.type === "chest") dv.sign = k(this.add.image(xc, Y0 - 32, "sign_" + r.type).setScale(0.5).setDepth(1004 + Y0));
     }
     this.tweens.add({ targets: dv.glow, alpha: { from: 0.35, to: 0.6 }, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.doorLights.push(dv);
   }
   // Swing a door shut or open, and set its lamp: red for a fight, green once the room is clear.
   setDoor(r, d, closed) {
@@ -1702,7 +2093,9 @@ class Play extends Phaser.Scene {
         this.keep(this.add.text(cx + 60, cy - 20 - 54.4 - 8, FRIENDS[k].name + ": " + pick(["Go get 'em.", "I'll guard the snacks.", "Don't die before dinner.", "Grab me a hot dog."]), { fontFamily: "Alegreya Sans", fontSize: "9px", fontStyle: "bold", color: "#1b1608", backgroundColor: "#f3ead3", padding: { x: 3, y: 2 } }).setOrigin(0.5, 1).setDepth(60000).setResolution(2));
       }
       if (r.type === "chest") {
-        const img = this.keep(this.add.image(cx, cy + 8, "chest").setOrigin(0.5, 1).setDepth(1000 + cy + 8));
+        const CP = this.paint("items", "chest");
+        const img = this.keep((CP ? this.add.image(cx, cy + 8, CP.key, CP.frame).setScale(CP.s) : this.add.image(cx, cy + 8, "chest")).setOrigin(0.5, 1).setDepth(1000 + cy + 8));
+        this.keep(this.add.image(cx, cy + 6, "shadow").setScale(1, 0.9).setDepth(4));
         this.chest = { x: cx, y: cy, img, open: false, loot: plan.chest, room: r };
       }
       if (r.type === "shop") {
@@ -1715,7 +2108,8 @@ class Play extends Phaser.Scene {
         const n = wares.length, gap = Math.min(3.2, (r.w - 3) / n);
         wares.forEach((w, i) => {
           const x = (r.x + r.w / 2 + (i - (n - 1) / 2) * gap) * T, y = cy + 10;
-          this.keep(this.add.image(x, y + 8, "pedestal").setOrigin(0.5, 1).setDepth(1000 + y));
+          const PP = this.paint("items", "pedestal");
+          this.keep((PP ? this.add.image(x, y + 8, PP.key, PP.frame).setScale(PP.s * 0.9) : this.add.image(x, y + 8, "pedestal")).setOrigin(0.5, 1).setDepth(1000 + y));
           const p = this.addPickup(w.v, x, y - 6, { price: w.price, shop: true });
           p.label = this.keep(this.add.text(x, y + 14, w.price + " caps", { fontFamily: "Alegreya Sans", fontSize: "11px", fontStyle: "bold", color: "#ffe07a", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 0).setDepth(60000).setResolution(2));
         });
@@ -1976,7 +2370,7 @@ class Play extends Phaser.Scene {
     if (G.mode === "blower") return this.blow(g, G);
     if (G.mode !== "boomer") g.clip--;
     const hand = this.handPos(), mx = hand.x + this.aim.x * 16, my = hand.y + this.aim.y * 16;
-    const base = Math.atan2(this.aim.y, this.aim.x), mult = s.dmg * gunLvlMult(g) * (P.hot ? 1.25 : 1) * power;
+    const base = Math.atan2(this.aim.y, this.aim.x), mult = s.dmg * gunLvlMult(g) * (P.hot ? 1.25 : 1) * power, pic = this.shotPic(G);
     if (G.mode === "zap") { this.zap(mx, my, base, G.dmg * mult, G.chains); }
     else for (let k = 0; k < G.pellets; k++) {
       const a = base + (G.pellets > 1 ? (k / (G.pellets - 1) - 0.5) * G.spread : (Math.random() - 0.5) * G.spread * 2);
@@ -1984,15 +2378,17 @@ class Play extends Phaser.Scene {
       const crit = Math.random() < s.crit;
       const b = { x: P.x + this.aim.x * 12, y: P.y + this.aim.y * 12, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: G.dmg * mult * (crit ? 2 : 1), crit, life: (G.life || 0.72) * s.shotSpeed,
         pierce: (G.pierce || 0) + s.pierce + (power >= 3.5 ? 3 : 0), bounce: G.mode === "boomer" ? 0 : s.bounce, homing: G.homing || 0, explode: G.explode || 0, hits: new Set(), h: 26,
-        img: this.img(G.tex, mx, my).setScale((G.texScale || 1) * (G.mode === "charge" ? 0.7 + power * 0.35 : 1)).setDepth(60000).setTint(crit ? 0xffe080 : P.hot ? 0xffb070 : 0xffffff) };
+        img: this.img(pic.key, mx, my, pic.frame).setScale(pic.s * (G.mode === "charge" ? 0.7 + power * 0.35 : 1)).setDepth(60000).setTint(crit ? 0xffe080 : P.hot ? 0xffb070 : 0xffffff), spin: G.tex === "b_tp" };
       if (G.mode === "lob") { const w = this.target ? Math.hypot(this.target.x - P.x, this.target.y - P.y) : this.aimDist || 190; b.life = clamp(w, 60, 260) / sp; b.T = b.life; b.lob = G.splash; b.pierce = 0; }
       if (G.mode === "boomer") { b.boomer = true; b.out = 0.42; b.pierce = 99; b.life = 3; }
-      if (G.mode === "hose") b.img.setAlpha(0.8).setScale(rnd(0.8, 1.4));
+      if (G.mode === "hose") b.img.setAlpha(0.8).setScale(pic.s * rnd(0.8, 1.4));
       this.bullets.push(b);
     }
     SFX.shoot();
     P.kick = 1;
     this.burst(G.mode === "hose" || G.tex === "b_water" ? "water" : "spark", 3, mx, my);
+    if (G.mode !== "hose" && G.tex !== "b_water" && G.tex !== "b_balloon") this.fxPop("flash", mx + this.aim.x * 6, my + this.aim.y * 6, { rot: base, s0: 0.7, s1: 1.1, ms: 70, add: true, size: 0.55 * (G.pellets > 1 ? 1.3 : 1), depth: 60001 });
+    this.flashT = 0.06; // the light layer glows for a moment
     if (g.clip <= 0 && G.mode !== "boomer") this.startReload();
     UI.gun();
   }
@@ -2060,6 +2456,7 @@ class Play extends Phaser.Scene {
       this.zaps.push({ x1: from.x, y1: from.y, x2: best.x, y2: best.y - 12, t: 0.12 });
       this.damageFoe(best, dmg * (n ? 0.7 : 1), null);
       this.burst("spark", 6, best.x, best.y - 12);
+      this.fxPop("bolt", best.x, best.y - 22, { s0: 0.5, s1: 0.8, ms: 130, add: true, size: 0.6, flip: Math.random() < 0.5 });
       from = { x: best.x, y: best.y - 12 }; reach = 120;
     }
     if (!hits.length) this.zaps.push({ x1: x, y1: y, x2: x + Math.cos(ang) * 120, y2: y + Math.sin(ang) * 120, t: 0.08 });
@@ -2178,7 +2575,8 @@ class Play extends Phaser.Scene {
       const n = 3 + Math.floor(r.w * r.h / 90) + loop;
       for (let k = 0; k < n; k++) {
         const p = this.spawnSpot(r);
-        this.hz.list.push({ x: p.x, y: p.y, ph: Math.random() * 3.2, img: this.add.image(p.x, p.y, "grate").setScale(0.5).setDepth(3) });
+        const GR = this.paint("props_alley", "d_grate");
+        this.hz.list.push({ x: p.x, y: p.y, ph: Math.random() * 3.2, img: (GR ? this.add.image(p.x, p.y, GR.key, GR.frame).setScale(GR.s * 1.2) : this.add.image(p.x, p.y, "grate").setScale(0.5)).setDepth(3) });
       }
     }
     if (hz === "currents") { const a = pick([0, Math.PI / 2, Math.PI, -Math.PI / 2]); this.hz.dir = { x: Math.cos(a), y: Math.sin(a) }; this.hz.flip = 5; }
@@ -2233,7 +2631,8 @@ class Play extends Phaser.Scene {
       if (h.t <= 0) {
         h.t = rnd(0.9, 1.6) / (1 + 0.2 * loop);
         const lead = 0.6, x = clamp(P.x + (P.vx || 0) * lead + rnd(-40, 40), (r.x + 1) * T, (r.x + r.w - 1) * T), y = clamp(P.y + (P.vy || 0) * lead + rnd(-40, 40), (r.y + 1) * T, (r.y + r.h - 1) * T);
-        h.list.push({ x, y, t: 0.9, sh: this.add.image(x, y, "shadow").setScale(0.2).setDepth(4).setAlpha(0.9), img: this.add.image(x, y - 220, "pinecone").setScale(0.5).setDepth(59000) });
+        const PC = this.paint("items", "s_pinecone", "s");
+        h.list.push({ x, y, t: 0.9, sh: this.add.image(x, y, "shadow").setScale(0.2).setDepth(4).setAlpha(0.9), img: (PC ? this.add.image(x, y - 220, PC.key, PC.frame).setScale(PC.s * 1.2).setRotation(-1.2) : this.add.image(x, y - 220, "pinecone").setScale(0.5)).setDepth(59000) });
       }
       for (const c of h.list) {
         if (c.gone) continue;
@@ -2373,6 +2772,7 @@ class Play extends Phaser.Scene {
     this.boss = null; this.tag = null;
     for (const o of this.enemies) if (!o.dead) { o.dead = true; this.burst("dust", 10, o.x, o.y); this.killView(o); } // the boss's helpers leave with it
     this.burst("gold", 60, e.x, e.y - 30); this.burst("water", 60, e.x, e.y - 30);
+    this.fxPop("boom", e.x, e.y - 30, { s0: 0.3, s1: 1.9, ms: 650 }); this.fxPop("poof", e.x, e.y - 40, { s0: 0.6, s1: 2.4, ms: 1100, a: 0.9 });
     this.shake(0.02, 600);
     for (let k = 0; k < 24; k++) { const a = Math.random() * Math.PI * 2, d = rnd(10, 70); this.addPickup("cap", e.x + Math.cos(a) * d, e.y + Math.sin(a) * d, { pop: true }); }
     this.addPickup("container", e.x, e.y + 20, { pop: true });
@@ -2380,13 +2780,22 @@ class Play extends Phaser.Scene {
     Music.play("explore");
     if (r) { r.cleared = true; this.fightRoom = null; this.lock(r, false); }
     const cx = r ? (r.x + r.w / 2) * T : e.x, cy = r ? (r.y + r.h / 2 + 2) * T : e.y + 40;
-    this.hatch = { x: cx, y: cy, img: this.keep(this.add.image(cx, cy, "hatch").setDepth(3).setAlpha(0)) };
+    const HP = this.paint("items", "hatch");
+    this.hatch = { x: cx, y: cy, img: this.keep((HP ? this.add.image(cx, cy, HP.key, HP.frame).setScale(HP.s) : this.add.image(cx, cy, "hatch")).setDepth(3).setAlpha(0)) };
     this.tweens.add({ targets: this.hatch.img, alpha: 1, duration: 600, delay: 900 });
     this.hatch.label = this.keep(this.add.text(cx, cy - 26, (run.day % STAGES.length === 0 ? "NEXT WEEKEND" : "ON TO " + stageOf(run.day + 1).name.toUpperCase()), { fontFamily: "Bungee", fontSize: "11px", color: "#ffcf4a", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5).setDepth(60000).setResolution(2).setAlpha(0));
     this.tweens.add({ targets: this.hatch.label, alpha: 1, duration: 600, delay: 900 });
     this.hatchReady = this.time.now + 1500;
   }
   /* ---------------- critters ---------------- */
+
+  // The painted sheet when it has loaded, or else the drawing made in code. q: sheet pixels per unit of FOES scale.
+  critLook(d) {
+    const pn = d.paint || d.tex.replace(/^[cb]_/, ""), pm = PAINT.crit[pn];
+    if (pm && this.textures.exists("p_" + pn)) return { key: "p_" + pn, q: pm[2] * PAINT.k, painted: true };
+    if (this.critDraw[d.tex]) this.critDraw[d.tex]();
+    return { key: d.tex, q: 3, painted: false };
+  }
 
   spawnFoe(kind, x, y, opt) {
     const d = FOES[kind], day = run.day;
@@ -2398,9 +2807,11 @@ class Play extends Phaser.Scene {
     const eliteP = d.boss || (opt && opt.child) ? 0 : Math.min(0.35, 0.07 + 0.05 * (day - 1));
     if (Math.random() < eliteP) { e.elite = true; e.hp *= 2; e.maxHp *= 2; e.r *= 1.15; e.eliteSpd = 1.2; }
     e.shadow = this.add.image(x, y, "shadow").setScale((d.r * 2.6) / 40).setDepth(4);
-    e.img = this.add.image(x, y, d.tex, 0).setOrigin(0.5, 1).setScale(d.scale / 3);
+    const look = this.critLook(d);
+    e.painted = look.painted;
+    e.img = this.add.image(x, y, look.key, 0).setOrigin(0.5, 1).setScale(d.scale / look.q);
     e.anim = Math.random() * 8;
-    e.baseScale = (d.scale / 3) * (e.elite ? 1.2 : 1);
+    e.baseScale = (d.scale / look.q) * (e.elite ? 1.2 : 1);
     if (e.elite) { e.aura = this.add.image(x, y, "glow").setTint(0xffc030).setBlendMode("ADD").setAlpha(0.45).setScale(d.r / 12).setDepth(3); }
     this.enemies.push(e);
     return e;
@@ -2640,7 +3051,7 @@ class Play extends Phaser.Scene {
     run.kills++; Meta.data.totalKills++;
     SFX.critter(e.kind, true);
     run.combo = (run.combo || 0) + 1; run.comboT = 2.6; if (run.combo >= 3) SFX.combo(run.combo); run.bestCombo = Math.max(run.bestCombo || 0, run.combo);
-    if (!quiet) { SFX.kill(); this.burst("fluff", 10, e.x, e.y - 14); }
+    if (!quiet) { SFX.kill(); this.burst("fluff", 10, e.x, e.y - 14); this.fxPop("poof", e.x, e.y - 14, { s0: 0.3, s1: 0.7 + e.r / 30, ms: 420 }); }
     if (e.kind === "nest") for (let k = 0; k < 3; k++) { const n = this.spawnFoe("hornet", e.x + (k - 1) * 14, e.y, { child: true }); n.spawnT = 0.05; }
     const mult = (1 + Math.min(2, Math.floor(run.combo / 4) * 0.5)) * (e.elite ? 2.5 : 1);
     if (e.aura) e.aura.destroy();
@@ -2691,6 +3102,7 @@ class Play extends Phaser.Scene {
         if (this.tileAtXY(nx, ny) === TILE.WALL || b.life <= 0) {
           b.gone = true; this.free(b.img);
           this.burst("water", 26, b.x, b.y - 6);
+          this.fxPop("splash", b.x, b.y - 12, { s0: 0.4, s1: b.lob / 32, ms: 340 });
           const ring = this.add.image(b.x, b.y, "ring").setDepth(3).setTint(0x5ab0ff).setScale(0.3);
           this.tweens.add({ targets: ring, scale: b.lob / 30, alpha: 0, duration: 260, onComplete: () => ring.destroy() });
           SFX.hit(false);
@@ -2720,6 +3132,7 @@ class Play extends Phaser.Scene {
           const sp = Math.hypot(b.vx, b.vy) || 1;
           this.damageFoe(e, b.dmg, { x: b.vx / sp, y: b.vy / sp }, b.crit);
           this.burst("spark", b.crit ? 8 : 3, b.x, b.y - 12);
+          this.fxPop("star", b.x, b.y - 12, { s0: 0.3, s1: 0.75, ms: 110, add: true, size: b.crit ? 0.8 : 0.5, rot: Math.random() * 6 });
           SFX.hit(b.crit);
           if (b.crit) this.floatText(e.x, e.y - 40, "CRIT", "#ffe07a");
           if (b.pierce > 0) b.pierce--; else { b.life = 0; break; }
@@ -2746,6 +3159,9 @@ class Play extends Phaser.Scene {
   }
   explode(x, y, r, dmg, hurtsPlayer) {
     this.burst("fire", 26, x, y - 8); this.burst("dust", 12, x, y);
+    this.fxPop("boom", x, y - 10, { s0: 0.3, s1: r / 45, ms: 380 });
+    this.fxPop("smoke", x + rnd(-8, 8), y - 18, { s0: 0.5, s1: r / 42, ms: 800, a: 0.75 });
+    this.boomAt = { x, y, t: 0.3, r }; // the light layer flares
     const ring = this.add.image(x, y, "ring").setDepth(60000).setTint(0xffa040).setScale(0.3);
     this.tweens.add({ targets: ring, scale: r / 30, alpha: 0, duration: 260, onComplete: () => ring.destroy() });
     SFX.boom(); this.shake(0.012, 180);
@@ -2778,6 +3194,7 @@ class Play extends Phaser.Scene {
     this.props.delete(m.id(p.i, p.j));
     this.burst("wood", 14, x, y - 6);
     p.img.destroy();
+    if (p.sh) p.sh.destroy();
     SFX.kill();
     if (p.kind === TILE.PROPANE) this.explode(x, y, 70, 40, true);
     else { const r = Math.random(); if (r < 0.04) this.addPickup("half", x, y, { pop: true }); else if (r < 0.45) this.addPickup("cap", x, y, { pop: true }); else if (r < 0.52) this.addPickup("ammo", x, y, { pop: true }); }
@@ -2790,9 +3207,11 @@ class Play extends Phaser.Scene {
     let key = { cap: "cap", half: "halfheart", heart: "heart", ammo: "ammo", horn: "hornpk", container: "heart" }[v];
     if (!key && v.startsWith("gun:")) key = "g_" + v.slice(4);
     if (!key && v.startsWith("item:")) key = this.textures.exists("i_" + v.slice(5)) ? "i_" + v.slice(5) : "chest_open";
-    const p = { v, x, y, price: o.price || 0, shop: !!o.shop, t: 0, img: this.add.image(x, y, key).setOrigin(0.5, 1).setDepth(1000 + y) };
+    // caps, ammo, air horns and guns have painted pictures; hearts keep their drawn shape so they read at a glance
+    const P = (v === "cap" || v === "ammo" || v === "horn") ? this.paint("items", key, "prop") : v.startsWith("gun:") ? this.paint("items", key, "g") : null;
+    const p = { v, x, y, price: o.price || 0, shop: !!o.shop, t: 0, img: (P ? this.add.image(x, y, P.key, P.frame).setScale(P.s * (v.startsWith("gun:") ? 0.7 : 1)) : this.add.image(x, y, key)).setOrigin(0.5, 1).setDepth(1000 + y) };
     if (v === "container") p.img.setScale(1.6).setTint(0xffd0e0);
-    if (v.startsWith("gun:")) { p.img.setScale(0.55); p.orb = this.add.image(x, y - 8, "glow").setTint(parseInt(RARITY[GUNS[v.slice(4)].rarity].color.slice(1), 16)).setScale(0.55).setBlendMode("ADD").setDepth(999 + y); }
+    if (v.startsWith("gun:")) { if (!P) p.img.setScale(0.55); p.orb = this.add.image(x, y - 8, "glow").setTint(parseInt(RARITY[GUNS[v.slice(4)].rarity].color.slice(1), 16)).setScale(0.55).setBlendMode("ADD").setDepth(999 + y); }
     if (v.startsWith("item:") && key !== "chest_open") { p.img.setScale(0.5); p.orb = this.add.image(x, y - 8, "glow").setTint(0xffcf4a).setScale(0.55).setBlendMode("ADD").setDepth(999 + y); p.bob = true; }
     else if (v.startsWith("item:")) { p.img.setVisible(false); p.orb = this.add.image(x, y - 8, "glow").setTint(0xffcf4a).setScale(0.5).setBlendMode("ADD").setDepth(1000 + y); p.tag = this.add.text(x, y - 8, "?", { fontFamily: "Bungee", fontSize: "14px", color: "#231800" }).setOrigin(0.5).setDepth(1001 + y).setResolution(2); }
     if (v.startsWith("gun:") || v.startsWith("item:") || v === "container") p.name = this.add.text(x, y - 30, v === "container" ? "Heart container" : Cottage.lootName(v), { fontFamily: "Alegreya Sans", fontSize: "11px", fontStyle: "bold", color: "#fff", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5).setDepth(60000).setResolution(2);
@@ -2824,7 +3243,7 @@ class Play extends Phaser.Scene {
     // walking to the chest and the hatch
     const C = this.chest;
     if (C && !C.open && Math.hypot(C.x - P.x, C.y - P.y) < 22) {
-      C.open = true; C.img.setTexture("chest_open"); SFX.chest(); this.burst("gold", 30, C.x, C.y - 10);
+      C.open = true; if (C.img.texture.key === "items") C.img.setFrame("chest_open"); else C.img.setTexture("chest_open"); SFX.chest(); this.burst("gold", 30, C.x, C.y - 10);
       const p = this.addPickup(C.loot, C.x, C.y - 30, {}); p.wait = 0.8;
       UI.voice(line("chest"), 2500);
     }
@@ -2918,6 +3337,7 @@ class Play extends Phaser.Scene {
     this.updateWeather();
     this.updateChunks(false);
     this.render(time, dt);
+    this.updateLight(dt);
     if ((this.frame = (this.frame || 0) + 1) % 6 === 0) { UI.gunFlush(); UI.minimap(this); UI.combo(); UI.boss(this.boss ? this.boss.hp / this.boss.maxHp : null); }
   }
 
@@ -2939,6 +3359,8 @@ class Play extends Phaser.Scene {
     }
     this.clouds = this.clouds.filter((c) => {
       c.t -= dt; c.tick -= dt;
+      if (c.img === undefined) { const SP = this.paint("items", "fx_stink", "fx"); c.img = SP ? this.add.image(c.x, c.y + 6, SP.key, SP.frame).setOrigin(0.5, 0.8).setDepth(1000 + c.y + 20) : null; c.s = SP ? SP.s * (c.r / 34) : 0; }
+      if (c.img) { c.img.setAlpha(Math.max(0, Math.min(1, (3 - c.t) / 0.3, c.t)) * 0.8).setScale(c.s * (1 + Math.sin(this.time.now * 0.006 + c.x) * 0.05)); if (c.t <= 0) c.img.destroy(); }
       if (Math.random() < 0.4) this.burst("stink", 1, c.x + rnd(-c.r, c.r) * 0.7, c.y + rnd(-c.r, c.r) * 0.5);
       if (c.tick <= 0 && Math.hypot(P.x - c.x, P.y - c.y) < c.r) { c.tick = 0.6; this.hurt("skunk", 1); }
       return c.t > 0;
@@ -3008,8 +3430,17 @@ class Play extends Phaser.Scene {
       P.gunAng += da * Math.min(1, dt * 24);
       let ang = P.gunAng;
       if (P.swingT > 0) { P.swingT -= dt; const k = 1 - P.swingT / 0.16, e = 1 - (1 - k) * (1 - k); ang += P.swingDir * (-1.5 + 3 * e) * (P.swingBig ? 1.15 : 1); }
-      if (v.gun.texture.key !== "g_" + this.gun().key) v.gun.setTexture("g_" + this.gun().key);
-      v.gun.setVisible(!rolling).setPosition(h.x - this.aim.x * kick, h.y - this.aim.y * kick - lift).setRotation(ang - (P.kick || 0) * 0.25 * (this.aim.x < 0 ? -1 : 1)).setFlipY(Math.cos(ang) < 0).setDepth(1000 + P.y + (this.aim.y < -0.35 ? -0.5 : 0.5)).setAlpha(alpha);
+      const gk = this.gun().key;
+      if (v.gun.gunKey !== gk) { // the painted gun, held at its grip, or the one drawn in code
+        v.gun.gunKey = gk;
+        const GP = this.paint("items", "g_" + gk, "g");
+        v.gun.grip = GP && PAINT.grip[gk];
+        if (v.gun.grip) v.gun.setTexture(GP.key, GP.frame).setScale(GP.s * 0.85);
+        else v.gun.setTexture("g_" + gk).setOrigin(10 / 44, 12 / 20).setScale(0.36);
+      }
+      const gflip = Math.cos(ang) < 0, gr = v.gun.grip, turn = gr && gr[2] ? (gflip ? -gr[2] : gr[2]) : 0;
+      if (gr) v.gun.setOrigin(gr[0], gflip ? 1 - gr[1] : gr[1]);
+      v.gun.setVisible(!rolling).setPosition(h.x - this.aim.x * kick, h.y - this.aim.y * kick - lift).setRotation(ang + turn - (P.kick || 0) * 0.25 * (this.aim.x < 0 ? -1 : 1)).setFlipY(gflip).setDepth(1000 + P.y + (this.aim.y < -0.35 ? -0.5 : 0.5)).setAlpha(alpha);
     }
     const u = this.uiG || (this.uiG = this.add.graphics().setDepth(65000));
     u.clear();
@@ -3064,13 +3495,13 @@ class Play extends Phaser.Scene {
       if (e.hidden) img.setAlpha(0.1); else if (e.d.mirage) img.setAlpha(0.55 + Math.sin(time * 0.01 + e.seed) * 0.15); else if (e.st === "bench") img.setAlpha(0.8);
       e.faceS = e.faceS === undefined ? e.face : e.faceS + (e.face - e.faceS) * Math.min(1, dt * 14);
       const fs = Math.sign(e.faceS || 1) * Math.max(0.2, Math.abs(e.faceS));
-      img.setPosition(e.x + jx, e.y + 2 - lift2).setScale(e.baseScale * lx * fs * (e.kind === "king" ? -1 : 1) * (e.st === "spin" ? 1 + Math.sin(time * 0.05) * 0.1 : 1), e.baseScale * ly).setRotation(rot).setDepth(1000 + e.y);
-      if (e.flash > 0) img.setTintFill(0xffffff); else if (e.st === "fuse" || e.st === "wind" || e.st === "honk") img.setTint(Math.floor(time / 70) % 2 ? 0xff9090 : 0xffffff); else if (e.stun > 0) img.setTint(0xb8b2a0); else if (e.d.bodyTint) img.setTint(e.d.bodyTint); else if (e.d.mirage) img.setTint(0xd0a0ff); else img.clearTint();
+      img.setPosition(e.x + jx, e.y + 2 - lift2).setScale(e.baseScale * lx * fs * (e.kind === "king" && !e.painted ? -1 : 1) * (e.st === "spin" ? 1 + Math.sin(time * 0.05) * 0.1 : 1), e.baseScale * ly).setRotation(rot).setDepth(1000 + e.y);
+      if (e.flash > 0) img.setTintFill(0xffffff); else if (e.st === "fuse" || e.st === "wind" || e.st === "honk") img.setTint(Math.floor(time / 70) % 2 ? 0xff9090 : 0xffffff); else if (e.stun > 0) img.setTint(0xb8b2a0); else if (e.d.bodyTint && !e.painted) img.setTint(e.d.bodyTint); else if (e.d.mirage) img.setTint(0xd0a0ff); else img.clearTint();
       e.shadow.setPosition(e.x, e.y + 1).setAlpha(lift2 > 20 ? 0.5 : 1);
       if (e.aura) e.aura.setPosition(e.x, e.y - 8).setAlpha(0.35 + Math.sin(time * 0.008) * 0.15);
       if (e.elite && e.flash <= 0 && e.stun <= 0 && e.st !== "fuse" && e.st !== "wind" && e.st !== "honk") img.setTint(0xffe0a0);
     }
-    for (const b of this.bullets) b.img.setPosition(b.x, b.y - (b.h || 12)).setRotation(Math.atan2(b.vy, b.vx) + (b.img.texture.key === "b_tp" || b.boomer ? time * 0.03 : 0));
+    for (const b of this.bullets) b.img.setPosition(b.x, b.y - (b.h || 12)).setRotation(Math.atan2(b.vy, b.vx) + (b.spin || b.boomer ? time * 0.03 : 0));
     for (const b of this.ebullets) { const sp = Math.hypot(b.vx, b.vy); b.img.setPosition(b.x, b.y - 10).setRotation(Math.atan2(b.vy, b.vx)).setScale((b.r / 5) * (1 + sp / 900), (b.r / 5) * (1 - sp / 2400)); }
     // telegraphed lines for the moose and the King's landing spot
     const g = this.fxG || (this.fxG = this.add.graphics().setDepth(3));
@@ -3091,8 +3522,17 @@ class Play extends Phaser.Scene {
 /* ------------------------------------------------------------------ screen overlay */
 const UI = (() => {
   let slotKey = "";
-  const icons = {};
-  const gunIcon = (sc, k) => icons[k] || (icons[k] = sc.textures.get("g_" + k).getSourceImage().toDataURL());
+  const icons = {}, gunPics = {};
+  // a gun's picture on a canvas: the painted one when the atlas has loaded, or the one drawn in code
+  const gunPic = (sc, k) => {
+    if (gunPics[k]) return gunPics[k];
+    const tx = sc.textures, f = tx.exists("items") && tx.get("items").has("g_" + k) ? tx.getFrame("items", "g_" + k) : null;
+    if (!f) return tx.get("g_" + k).getSourceImage();
+    const cv = document.createElement("canvas"); cv.width = f.cutWidth; cv.height = f.cutHeight;
+    cv.getContext("2d").drawImage(f.source.image, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, f.cutWidth, f.cutHeight);
+    return (gunPics[k] = cv);
+  };
+  const gunIcon = (sc, k) => icons[k] || (icons[k] = gunPic(sc, k).toDataURL());
   let heartImg = {}, popT = 0, voiceT = 0, toastT = 0, bannerT = 0, lastHud = "";
   function art(scene) {
     for (const k of ["heart", "halfheart"]) heartImg[k] = scene.textures.get(k).getSourceImage().toDataURL();
@@ -3123,7 +3563,7 @@ const UI = (() => {
     $("#gunAmmo").innerHTML = g.clip === Infinity ? (G.mode === "melee" ? "Melee" : "Never runs out") : reloading ? "<span class='reload'>Reloading</span>" : g.clip + " / " + sc.clipSize(g) + (g.ammo === Infinity ? "  ∞" : "  " + g.ammo);
     const cv = $("#gunIcon"), c = cv.getContext("2d");
     c.clearRect(0, 0, cv.width, cv.height);
-    const src = sc.textures.get("g_" + g.key).getSourceImage(), k = Math.min(cv.width / src.width, cv.height / src.height);
+    const src = gunPic(sc, g.key), k = Math.min(cv.width / src.width, cv.height / src.height);
     c.drawImage(src, (cv.width - src.width * k) / 2, (cv.height - src.height * k) / 2, src.width * k, src.height * k);
     $("#gunName").innerHTML = G.name + (g.lvl > 1 ? " <span style='color:var(--accent)'>Lv" + g.lvl + "</span>" : "") + " <span class='rar' style='color:" + RARITY[G.rarity].color + "'>" + RARITY[G.rarity].name + "</span>";
     // one button per gun you carry
@@ -3193,7 +3633,7 @@ const UI = (() => {
     const E = Cottage.ledger[0];
     $("#ledger").innerHTML = !E ? "<p class='keys'>Nothing planned yet.</p>" : "<p class='keys'>Answered by " + E.source + " in " + E.ms + " ms." + (E.error ? " Jev was not reachable (" + E.error + "), so the stand-in answered." : "") + "</p>" + E.questions.map((q) => { const a = E.answers[q.id]; return "<div class='q'><b>" + q.id.replace("_", " ") + "</b>: " + a.probs.slice(0, 3).map((p) => p.label + " " + Math.round(p.p * 100) + "%").join(", ") + "</div>"; }).join("");
   }
-  return { art, hud, gun, gunFlush, combo, boss, popup, banner, hideBanner, voice, toast, damage, joy, minimap, controls, pauseLists, reset() { lastHud = ""; slotKey = ""; } };
+  return { art, hud, gun, gunFlush, gunIcon, combo, boss, popup, banner, hideBanner, voice, toast, damage, joy, minimap, controls, pauseLists, reset() { lastHud = ""; slotKey = ""; } };
 })();
 
 /* ------------------------------------------------------------------ a run */
@@ -3204,7 +3644,7 @@ const Game = {
   pal(n) { return (this.friend + 1 + (n || 0) + (run ? run.day : 0)) % FRIENDS.length === this.friend ? (this.friend + 2) % FRIENDS.length : (this.friend + 1 + (n || 0) + (run ? run.day : 0)) % FRIENDS.length; },
   onReady(sc) {
     this.scene = sc; UI.art(sc); $("#startBtn").disabled = false;
-    $("#gearRow").innerHTML = LOADOUTS.map((L) => { const G = GUNS[L.key]; return "<button type='button' class='gear' aria-pressed='false'><img alt='' src='" + sc.textures.get("g_" + L.key).getSourceImage().toDataURL() + "'><em>" + L.tag + "</em><b>" + G.name + "</b><small>" + L.blurb + "</small></button>"; }).join("");
+    $("#gearRow").innerHTML = LOADOUTS.map((L) => { const G = GUNS[L.key]; return "<button type='button' class='gear' aria-pressed='false'><img alt='' src='" + UI.gunIcon(sc, L.key) + "'><em>" + L.tag + "</em><b>" + G.name + "</b><small>" + L.blurb + "</small></button>"; }).join("");
     document.querySelectorAll(".gear").forEach((b, i) => { b.onclick = () => this.pickGear(i); });
     this.pickGear(this.gear);
   },
@@ -3242,10 +3682,12 @@ const Game = {
     const st = stageOf(run.day);
     UI.banner(st.name.toUpperCase(), (loopOf(run.day) ? "Weekend " + (loopOf(run.day) + 1) + ". " : "") + "Day " + run.day + ". " + st.sub, 0);
     if (Game.pendingDPR) { Game.setDPR(Game.pendingDPR, true); Game.pendingDPR = 0; }
+    const art = sc.stageArt(st.theme); // the stop's painted art loads while the Cottage plans the day
     const L = layoutDay(run.day);
     const plan = await Cottage.planDay(run, L.rooms);
     L.rooms.filter((r) => r.type === "fight").forEach((r, i) => { r.flavor = plan.flavors[i] || "mixed"; });
     const map = carveDay(L, run.day);
+    await art;
     sc.buildDay(map, plan);
     sc.setWeather(plan.theme);
     const s = map.rooms[0];
@@ -3262,6 +3704,7 @@ const Game = {
     sc.mode = "fight";
     if (run.day === 1) this.teach();
     Music.play("explore");
+    setTimeout(() => { if (run) sc.stageArt(stageOf(run.day + 1).theme); }, 4000); // the next stop, in the background
   },
   async nextDay() {
     const sc = this.scene;
