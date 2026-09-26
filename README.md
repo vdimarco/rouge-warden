@@ -28,6 +28,17 @@ Deploy to Vercel, or serve `public/` from any static server and open it in a bro
 - R reloads. Tap R again in the gold part of the bar to reload at once and heat up the next clip.
 - On a phone with "One hand" on, drag anywhere to move and you shoot the nearest critter on your own. Flick to roll, tap the air horn to clear bullets, and tap your gun to switch. With "One hand" off, the left thumb moves and the right thumb aims and shoots.
 
+### The look
+
+The world of Get Plunger'd is painted. GPT Image 2.5 on Higgsfield painted the art, and scripts cut it, lined it up, and packed it. The files are in `public/plungerd/art/`.
+
+- Each stop has its own painted ground, wall faces, and wall tops. The ground tiles with no seams, and big soft patches hide the repeat. Walls throw soft shadows on the ground. On the dock and the lake, the water is the wall: you see the side of the dock, or the sand bank, where the ground drops into the water.
+- Every critter has a painted sheet with eight walk frames and an attack pose. The black bear, the Porcelain King, Baby Charlie, the Goose Lord, and the Snapping Titan have their own sheets.
+- Props, rugs, decals, guns, shots, pickups, chests, and effects are painted too. The effects are muzzle flashes, blasts, hit stars, puffs, splashes, lightning, and stink clouds.
+- A light map gives each stop a mood: a rainy night downtown, dusk on the 401, shade under the pines, lamplight at the cottage, sunset on the dock, and a bright day on the water. The player, lamps, doors, muzzle flashes, blasts, and bullets carry light. Outdoors, cloud shadows drift over the ground.
+- Phones load the half-size files (`.sd.webp`). The ground and wall images stay out of GPU memory: each day paints a copy scaled to the map. A stop's art loads while the Cottage plans the day, and the next stop's art loads in the background.
+- If a file does not load, the game draws that thing in code, as it did before.
+
 ## Down the Drain
 
 Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
@@ -204,7 +215,8 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
 | `public/arcade/` | The art on the arcade screens, and `switch.js`, the game switcher every game's menu opens |
 | `public/plungerd/index.html` | The page for Get Plunger'd |
-| `public/plungerd/app.js` | The game script, with its images and sounds inside the file |
+| `public/plungerd/app.js` | The game script. The crew, the boss sheets, and the cover art are inside the file |
+| `public/plungerd/art/` | The painted ground, walls, critters, props, guns, shots, and effects. Each file also comes at half size (`.sd.webp`) for phones |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
 | `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rouge: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
