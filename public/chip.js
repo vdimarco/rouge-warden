@@ -1,7 +1,7 @@
 // Chip: a tiny 8-bit music player made with Web Audio, like an old console sound chip.
 // Four voices: a lead pulse wave, a thin pulse for arpeggios, a triangle for the bass, and noise for drums.
-// Two original songs: "arcade" (an upbeat anthem for the Cottage Arcade) and "lake" (an epic overture
-// for the Breath of the Lake title screen). Usage: Chip.play("arcade"), Chip.stop(), Chip.setOn(bool).
+// Three original songs: "arcade" (an upbeat anthem for the Cottage Arcade), "lake" (an epic overture
+// for the Breath of the Lake title screen), and "drain" (a driving underground theme for Down the Drain). Usage: Chip.play("arcade"), Chip.stop(), Chip.setOn(bool).
 (function () {
   const NOTE = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11 };
   const midi = (n) => { const m = /^([A-G][#b]?)(-?\d)$/.exec(n); return m ? NOTE[m[1]] + (+m[2] + 1) * 12 : null; };
@@ -21,6 +21,18 @@
         "E5/2 G5/2 C6/2 D6/2 E6/4 D6/2 C6/2", "B5/4 G5/2 A5/2 B5/4 D6/4", "C6/2 A5/2 F5/4 A5/2 C6/2 F6/4", "E6/4 D6/4 B5/4 G5/4",
         "A5/6 C6/2 B5/4 A5/4", "F5/6 A5/2 G5/4 F5/4", "E5/2 F5/2 G5/4 C6/4 G5/4", "B5/6 A5/2 G5/4 D5/4",
         "A5/2 B5/2 C6/4 E6/4 C6/4", "F6/4 E6/2 D6/2 C6/4 A5/4", "B5/2 C6/2 D6/4 G6/4 D6/4", "G6/8 D6/4 B5/4",
+      ],
+    },
+    // Down the Drain: a driving underground theme in A minor, 132 beats a minute.
+    drain: {
+      bpm: 132, lead: 0.095, drums: "rock",
+      intro: { chords: "Am E", melody: ["A4/4 r/4 A4/2 C5/2 E5/4", "G#4/4 r/4 G#4/2 B4/2 E5/4"] },
+      chords: "Am F G Em Am F E E F G Am Am Dm Em F E",
+      melody: [
+        "A4/2 C5/2 E5/4 A5/4 G5/2 E5/2", "F5/4 E5/2 C5/2 A4/8", "G4/2 B4/2 D5/4 G5/4 F5/2 D5/2", "E5/12 B4/4",
+        "A5/2 A5/2 G5/2 A5/2 C6/4 A5/4", "C6/4 A5/2 F5/2 A5/8", "G#5/4 B5/4 E6/4 D6/2 B5/2", "G#5/8 E5/4 r/4",
+        "F5/2 A5/2 C6/4 F6/4 E6/2 C6/2", "D6/4 B5/2 G5/2 D6/4 G6/4", "E6/6 C6/2 A5/4 E5/4", "A5/2 B5/2 C6/2 D6/2 E6/8",
+        "F6/4 E6/2 D6/2 A5/8", "G5/4 E6/4 D6/2 B5/2 G5/4", "A5/4 C6/4 F6/4 E6/2 D6/2", "E6/8 G#5/4 B5/4",
       ],
     },
     // Breath of the Lake: a fanfare, then a broad adventure theme. D major, 104 beats a minute.

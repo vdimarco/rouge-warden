@@ -10,7 +10,7 @@
 <title>Down the Drain</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Cinzel:wght@800;900&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <style>
 :root {
   box-sizing: border-box;
@@ -375,6 +375,68 @@ a { color: var(--accent); }
   .dots::after, .voice.speak .eye::after, .toast, .sheet-card { animation: none; }
   .bar i, .eye::after, .toast { transition: none; }
 }
+
+/* The title and hero select, in the storybook style shared with Breath of the Lake */
+.attract { padding: 0; display: block; background: #07090d; }
+.attract .av { position: absolute; inset: 0; overflow: hidden; }
+.attract .av img { position: absolute; inset: -4%; width: 108%; height: 108%; object-fit: cover; object-position: 30% 50%; animation: dkb 40s ease-in-out infinite alternate; }
+@keyframes dkb { from { transform: scale(1); } to { transform: scale(1.08) translate(-2%, 1.5%); } }
+.attract .glow { position: absolute; inset: 0; background: radial-gradient(ellipse 40% 35% at 70% 85%, rgba(60,230,220,.28), transparent 70%), radial-gradient(ellipse 50% 40% at 60% 12%, rgba(255,190,110,.3), transparent 70%); mix-blend-mode: screen; animation: dglow 6s ease-in-out infinite alternate; }
+@keyframes dglow { to { opacity: .55; } }
+.attract canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.attract .av::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,10,20,.35), rgba(8,10,20,0) 32%, rgba(8,10,20,0) 55%, rgba(4,6,10,.8)); }
+.amain { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(var(--sat) + 4vh) 16px calc(var(--sab) + 3vh); }
+.alogo { text-align: center; filter: drop-shadow(0 6px 18px rgba(0,0,0,.6)); animation: arise 1.6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes arise { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+.akick { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: "Cinzel", Georgia, serif; font-weight: 800; letter-spacing: .35em; font-size: clamp(11px, 1.5vw, 15px); color: #ffe7a8; text-shadow: 0 1px 2px #000; }
+.akick i { display: block; width: clamp(30px, 8vw, 90px); height: 2px; background: linear-gradient(90deg, rgba(255,231,168,0), #ffe7a8); }
+.akick i:last-child { transform: scaleX(-1); }
+.alogo h1 { margin: 2px 0 0; font-family: "Cinzel", Georgia, serif; font-weight: 900; line-height: .9; display: flex; flex-direction: column; align-items: center; }
+.alogo h1 small { font-size: clamp(22px, 3.8vw, 44px); letter-spacing: .12em; color: #d8fbff; text-shadow: 0 0 14px rgba(60,230,220,.7), 0 2px 4px #000; }
+.alogo h1 span { font-size: clamp(56px, 11vw, 136px); letter-spacing: .04em; background: linear-gradient(180deg, #fff6d8 0%, #ffd873 42%, #d8962e 58%, #fff0b8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1.5px #3a2208; paint-order: stroke fill; }
+.acrest { width: min(420px, 70vw); height: 18px; margin: 10px auto 0; background: radial-gradient(circle at 50% 50%, #7ff5f0 0 5px, transparent 6px), linear-gradient(90deg, transparent, #ffe7a8 20%, #ffe7a8 44%, transparent 44%, transparent 56%, #ffe7a8 56%, #ffe7a8 80%, transparent) center / 100% 2px no-repeat; }
+.apress { margin-top: auto; margin-bottom: 8vh; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(14px, 2vw, 20px); color: #fff; text-shadow: 0 0 12px rgba(120,240,230,.9), 0 2px 3px #000; animation: abreathe 2.4s ease-in-out infinite; cursor: pointer; }
+@keyframes abreathe { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+.amenu { margin-top: auto; margin-bottom: 5vh; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.amenu button, .amenu a { position: relative; min-width: 280px; padding: 9px 30px; border: 0; background: none; color: #fff4d8; font-family: "Cinzel", Georgia, serif; font-weight: 800; letter-spacing: .14em; font-size: clamp(16px, 2.1vw, 22px); text-decoration: none; text-align: center; text-shadow: 0 2px 4px #000, 0 0 10px rgba(0,0,0,.6); cursor: pointer; }
+.amenu button::before, .amenu a::before { content: ""; position: absolute; inset: 2px 0; border-radius: 3px; background: linear-gradient(90deg, rgba(10,20,30,0), rgba(10,20,30,.6) 20%, rgba(10,20,30,.6) 80%, rgba(10,20,30,0)); z-index: -1; opacity: 0; transition: opacity .15s; }
+.amenu .sel::before, .amenu button:hover::before, .amenu a:hover::before { opacity: 1; }
+.amenu .sel, .amenu button:hover, .amenu a:hover { color: #ffd873; outline: none; }
+.amenu .sel::after { content: "◆"; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); color: #7ff5f0; font-size: 12px; animation: anudge .8s ease-in-out infinite alternate; }
+@keyframes anudge { to { left: 10px; } }
+.afoot { max-width: 620px; text-align: center; font-style: italic; font-weight: 700; font-size: clamp(14px, 1.7vw, 18px); color: rgba(255,244,216,.88); text-shadow: 0 1px 3px #000; margin: 0; }
+.pickscreen { background: linear-gradient(rgba(4,6,12,.72), rgba(4,6,12,.9)), url(art/title.jpg) center / cover; }
+.pickpanel, .howpanel { max-width: 1100px; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; background: none; border: 0; box-shadow: none; }
+.pickpanel.cols, .howpanel.cols { columns: auto; display: flex; }
+.pickhead { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .12em; font-size: clamp(22px, 3.4vw, 40px); color: #ffe39a; text-shadow: 0 2px 6px #000; margin: 0 0 1.5vh; }
+.pickpanel .roster { display: flex; justify-content: center; align-items: center; gap: clamp(8px, 1.4vw, 18px); width: 100%; margin: 0; }
+.pickpanel .friend { position: relative; flex: 0 1 auto; height: min(46vh, 22vw); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 10px; background: #1a2430 center / cover no-repeat; filter: saturate(.55) brightness(.6); transform: scale(.9); transition: transform .3s cubic-bezier(.2,.8,.2,1), filter .3s; box-shadow: 0 10px 28px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,231,168,.35); justify-content: flex-end; }
+.pickpanel .friend:nth-child(1) { background-image: url(art/hero1.webp); }
+.pickpanel .friend:nth-child(2) { background-image: url(art/hero2.webp); }
+.pickpanel .friend:nth-child(3) { background-image: url(art/hero3.webp); }
+.pickpanel .friend:nth-child(4) { background-image: url(art/hero4.webp); }
+.pickpanel .friend:nth-child(5) { background-image: url(art/hero5.webp); }
+.pickpanel .friend img, .pickpanel .friend small { display: none; }
+.pickpanel .friend::after { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,231,168,.45); border-radius: 7px; pointer-events: none; }
+.pickpanel .friend b { position: relative; width: 100%; padding: 6px 2px; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .06em; font-size: clamp(10px, 1.3vw, 14px); color: #fff4d8; background: linear-gradient(180deg, rgba(10,8,4,0), rgba(10,8,4,.85) 40%); border-radius: 0 0 10px 10px; }
+.pickpanel .friend:hover { filter: saturate(.85) brightness(.85); transform: scale(.94); }
+.pickpanel .friend[aria-pressed="true"] { filter: none; transform: scale(1.04); z-index: 2; background-color: #1a2430; box-shadow: 0 0 0 3px #ffd873, 0 0 40px rgba(120,240,230,.45), 0 16px 40px rgba(0,0,0,.6); animation: dpulse 2.4s ease-in-out infinite; }
+@keyframes dpulse { 50% { box-shadow: 0 0 0 3px #ffe7a8, 0 0 60px rgba(120,240,230,.7), 0 16px 40px rgba(0,0,0,.6); } }
+.heroplate { margin-top: 2vh; min-width: min(560px, 92vw); padding: 8px 40px 10px; background: linear-gradient(90deg, rgba(10,24,30,0), rgba(10,24,30,.88) 15%, rgba(10,24,30,.88) 85%, rgba(10,24,30,0)); border-top: 1px solid rgba(255,231,168,.5); border-bottom: 1px solid rgba(255,231,168,.5); }
+.heroplate b { display: block; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .12em; font-size: clamp(20px, 2.8vw, 30px); color: #ffe39a; }
+.heroplate span { font-style: italic; font-weight: 700; font-size: clamp(14px, 1.7vw, 18px); color: #d8fbff; }
+.pickpanel .wrow { justify-content: center; margin-top: 1.6vh; }
+.pbtns { justify-content: center; margin-top: 1.8vh; }
+.pbtns .btn { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .1em; }
+.howpanel .clips { width: 100%; }
+@media (max-width: 700px) {
+  .pickpanel .roster { flex: none; }
+  .pickpanel .friend { height: min(52vh, 110vw); display: none; }
+  .pickpanel .friend[aria-pressed="true"] { display: flex; transform: none; }
+  .amenu button, .amenu a { min-width: 220px; padding: 7px 20px; }
+}
+@media (max-aspect-ratio: 3/4) { .attract .av img { object-position: 12% 50%; } }
+@media (prefers-reduced-motion: reduce) { .attract .av img, .attract .glow, .apress, .amenu .sel::after, .pickpanel .friend[aria-pressed="true"] { animation: none; } }
 </style>
 </head>
 <body data-mood="none">
@@ -408,12 +470,38 @@ a { color: var(--accent); }
 <div class="hint" id="hint" hidden></div>
 <div class="banner" id="banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 
-<div class="overlay" id="intro">
-  <div class="card-inner intro">
-    <div class="brand"><span class="eye big" aria-hidden="true"></span><h1><small>GET PLUNGER'D</small>Down the Drain</h1></div>
-    <p class="sub">The outhouse backed up. Now the ground under the cottage moves.</p>
+<div class="overlay attract" id="attract">
+  <div class="av" aria-hidden="true"><img src="art/title.jpg" alt=""><i class="glow"></i><canvas id="attractFx"></canvas></div>
+  <div class="amain">
+    <div class="alogo">
+      <div class="akick"><i></i>GET PLUNGER'D<i></i></div>
+      <h1><small>Down the</small><span>Drain</span></h1>
+      <div class="acrest" aria-hidden="true"></div>
+    </div>
+    <p class="apress" id="attractPress">Press any button</p>
+    <nav class="amenu" id="attractMenu" hidden>
+      <button type="button" id="goDown">Go Down the Hole</button>
+      <button type="button" id="howBtn">How to Play</button>
+      <button type="button" data-switch>Switch Game</button>
+      <a href="/">Back to the Arcade</a>
+    </nav>
+    <p class="afoot">The outhouse backed up. Now the ground under the cottage moves.</p>
+  </div>
+</div>
+
+<div class="overlay pickscreen" id="intro" hidden>
+  <div class="card-inner pickpanel">
+    <h2 class="pickhead">Choose your hero</h2>
     <div class="roster" id="roster" role="group" aria-label="Pick your friend"></div>
-    <div class="starts"><span class="keys">Start with:</span><span class="weapons" id="startWeapons"></span><span class="keys" id="tabNote"></span></div>
+    <div class="heroplate"><b id="heroName"></b><span id="heroPerk"></span></div>
+    <div class="starts wrow"><span class="keys">Start with:</span><span class="weapons" id="startWeapons"></span><span class="keys" id="tabNote"></span></div>
+    <div class="starts pbtns"><button class="btn quiet" type="button" id="pickBack">Back</button><button class="btn" id="startBtn">Go down the hole</button></div>
+  </div>
+</div>
+
+<div class="overlay pickscreen" id="howto" hidden>
+  <div class="card-inner howpanel">
+    <h2 class="pickhead">How to play</h2>
     <div class="clips">
       <figure class="clip"><video src="clips/hit.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>HIT</b><span class="kb">Left click · J</span><span class="tp">Tap Hit</span></figcaption></figure>
       <figure class="clip"><video src="clips/roll.webm" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><figcaption><b>ROLL</b><span class="kb">Shift</span><span class="tp">Tap Roll</span></figcaption></figure>
@@ -427,7 +515,7 @@ a { color: var(--accent); }
         <p><i>⇊</i><b>Two drains</b>. One is richer and harder.</p>
       </div>
     </div>
-    <div class="starts"><button class="btn" id="startBtn">Go down the hole</button> <button class="btn quiet" type="button" data-switch>Switch game</button> <a class="keys" href="/">Back to the arcade</a></div>
+    <div class="starts pbtns"><button class="btn" type="button" id="howBack">Back</button></div>
   </div>
 </div>
 
@@ -532,6 +620,7 @@ a { color: var(--accent); }
 </div>
 
 <script src="/arcade/switch.js"></script>
+<script src="/chip.js"></script>
 <script>
 "use strict";
 const $ = (s) => document.querySelector(s);
@@ -5692,6 +5781,8 @@ async function die(cause) {
 
 async function startRun() {
   $("#intro").hidden = true;
+  $("#attract").hidden = true; $("#howto").hidden = true;
+  if (window.Chip) Chip.stop(1.2);
   $("#end").hidden = true;
   SFX.init();
   Memory.data.runs++;
@@ -5789,9 +5880,12 @@ function renderRoster() {
     b.querySelector("img").src = Art.base + "crew" + (i + 1) + ".webp";
     b.querySelector("b").textContent = c.name;
     b.querySelector("small").textContent = c.perk;
-    b.onclick = () => { Memory.data.crew = i; Memory.save(); renderRoster(); };
+    b.onclick = () => { if (Memory.data.crew === i) { startRun(); return; } Memory.data.crew = i; Memory.save(); renderRoster(); };
     box.appendChild(b);
   });
+  const cur = CREW[Memory.data.crew] || CREW[0];
+  $("#heroName").textContent = cur.name;
+  $("#heroPerk").textContent = cur.perk;
   // the starting weapon: the plunger, and whatever caps have unlocked
   const wb = $("#startWeapons");
   wb.innerHTML = "";
@@ -5811,6 +5905,55 @@ function renderRoster() {
 }
 renderRoster();
 $("#startBtn").onclick = startRun;
+// The title: "Press any button", then a menu; the hero select and How to play open from it.
+const Title = (() => {
+  let stage = "press";
+  const menu = $("#attractMenu"), items = () => [...menu.querySelectorAll("button, a")];
+  const sel = (k) => { const l = items(); l.forEach((x) => x.classList.remove("sel")); const el = l[(k + l.length) % l.length]; el.classList.add("sel"); el.focus({ preventScroll: true }); };
+  const show = (id) => { for (const o of ["attract", "intro", "howto"]) $("#" + o).hidden = o !== id; UI.fit(); };
+  function openMenu() { if (stage !== "press") return; stage = "menu"; $("#attractPress").hidden = true; menu.hidden = false; SFX.init(); if (window.Chip) Chip.play("drain"); sel(0); }
+  function pick() { stage = "pick"; show("intro"); $("#startBtn").focus({ preventScroll: true }); }
+  function how() { stage = "how"; show("howto"); $("#howBack").focus({ preventScroll: true }); }
+  function back() { stage = "menu"; show("attract"); sel(0); }
+  $("#attractPress").onclick = openMenu;
+  $("#attract").addEventListener("pointerdown", (e) => { if (stage === "press" && !e.target.closest("a")) openMenu(); });
+  $("#goDown").onclick = pick; $("#howBtn").onclick = how; $("#pickBack").onclick = back; $("#howBack").onclick = back;
+  addEventListener("keydown", (e) => {
+    if (Game.state !== "intro" || (!$("#sheet").hidden)) return;
+    if (stage === "press") { if (!e.metaKey && !e.ctrlKey && e.key !== "Tab") { e.preventDefault(); openMenu(); } return; }
+    if (stage === "menu") {
+      const l = items(), k = l.findIndex((x) => x.classList.contains("sel"));
+      if (e.key === "ArrowDown" || e.key === "s") { e.preventDefault(); sel(k + 1); }
+      else if (e.key === "ArrowUp" || e.key === "w") { e.preventDefault(); sel(k - 1); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); l[Math.max(0, k)].click(); }
+    } else if (stage === "pick") {
+      const n = CREW.length;
+      if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault(); Memory.data.crew = (Memory.data.crew + 1) % n; Memory.save(); renderRoster(); }
+      else if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault(); Memory.data.crew = (Memory.data.crew + n - 1) % n; Memory.save(); renderRoster(); }
+      else if (e.key === "Enter") { e.preventDefault(); startRun(); }
+      else if (e.key === "Escape" || e.key === "Backspace") { e.preventDefault(); back(); }
+    } else if (stage === "how" && (e.key === "Escape" || e.key === "Enter" || e.key === "Backspace")) { e.preventDefault(); back(); }
+  }, true);
+  // floating embers and drips of light over the painting
+  const cv = $("#attractFx"), x = cv.getContext("2d"), parts = [];
+  const fitc = () => { cv.width = cv.clientWidth; cv.height = cv.clientHeight; };
+  fitc(); addEventListener("resize", fitc);
+  for (let k = 0; k < 40; k++) parts.push({ x: Math.random(), y: Math.random(), v: 0.3 + Math.random() * 0.7, r: Math.random() * 6, teal: k % 3 === 0 });
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function loop(now) {
+    if ($("#attract").hidden) { requestAnimationFrame(loop); return; }
+    requestAnimationFrame(loop);
+    const W = cv.width, H = cv.height; x.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      if (!reduce) { p.y -= 0.0006 * p.v; p.x += Math.sin(now / 1500 + p.r) * 0.0003; }
+      if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); }
+      const a = 0.35 + 0.35 * Math.sin(now / 600 + p.r * 3);
+      x.fillStyle = p.teal ? `rgba(120,245,235,${a})` : `rgba(255,200,110,${a})`;
+      x.beginPath(); x.arc(p.x * W, p.y * H, 1.2 + p.v * 1.6, 0, 7); x.fill();
+    }
+  })(0);
+  return { back };
+})();
 $("#againBtn").onclick = startRun;
 $("#hudHp").onclick = () => UI.sheet(true, "stats");
 $("#swapBtn").onclick = () => { Game.input.swapEdge = true; };
@@ -5822,7 +5965,7 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidd
 document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); UI.fit(); }; });
 $("#forgetBtn").onclick = () => { Memory.reset(); UI.sheet(true, "memory"); };
 $("#untuneBtn").onclick = () => { Tune.reset(); UI.sheet(true, "memory"); };
-$("#soundBtn").onclick = () => UI.sound(SFX.toggle());
+$("#soundBtn").onclick = () => { const muted = SFX.toggle(); UI.sound(muted); if (window.Chip) Chip.setOn(!muted); };
 $("#mapBtn").onclick = () => Minimap.toggle();
 $("#mini").onclick = () => Minimap.toggle();
 $("#fsBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); };

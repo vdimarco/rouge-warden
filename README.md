@@ -8,6 +8,8 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
 
+- Down the Drain opens on a painted title screen in the same storybook style as Breath of the Lake: a painted cavern picture, a gold logo, "Press any button", a menu, and a hero select with painted hero cards in gold frames. Its own 8-bit theme plays from the first press.
+- The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
@@ -213,13 +215,14 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain, its painted title picture, and its hero cards |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
 | `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `ui.js` (HUD and map), `audio.js`, and `main.js` |
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
-| `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with two original songs: the arcade theme and the Breath of the Lake overture |
+| `public/icons/`, `public/favicon.ico` | The arcade's browser and home-screen icons |
+| `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with three original songs: the arcade theme, the Breath of the Lake overture, and the Down the Drain theme |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
