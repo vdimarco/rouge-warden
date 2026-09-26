@@ -89,14 +89,21 @@ await newGame(p2);
 const r2 = await p2.evaluate(() => {
   const P = G.player, C = G.world.court, b = G.bosses.find((x) => x.id === "king");
   P.place(C.x, C.z + C.r - 3); QA.step(30);
+  // travel away in the middle of a plunge: the plunge stops and never pulls you back
+  b.endMove(); b.stagger(3); P.place(b.x + Math.sin(b.yaw) * 6, b.z + Math.cos(b.yaw) * 6); G.inp.attack = true; QA.step(8);
+  const plunging = !!G.plunge;
+  G.travel({ kind: "home", x: G.world.cottage.x, z: G.world.cottage.z }); QA.step(1);
+  const away = Math.hypot(P.x - G.world.cottage.x, P.z - G.world.cottage.z) < 30 && !G.plunge && !P.cine;
+  P.place(C.x, C.z + C.r - 3); QA.step(30);
   b.hp = b.maxHp * 0.5; QA.step(200, () => { if (G.ui.modal) QA.closeModals(); });
   P.hp = 1; P.invuln = 0; P.roll = 0; P.hurt(9, P.x + 1, P.z);
   return new Promise((res) => setTimeout(() => {
     QA.closeModals(); G.test.step(1 / 30);
-    res({ hp: b.hp, max: b.maxHp, active: b.active, seal: C.sealOn, phase: b.phaseN, marks: G.hazards.marks.length, raccoons: G.foes.filter((f) => f.alive && f.boss === b).length, cine: P.cine || null });
+    res({ plunging, away, hp: b.hp, max: b.maxHp, active: b.active, seal: C.sealOn, phase: b.phaseN, marks: G.hazards.marks.length, raccoons: G.foes.filter((f) => f.alive && f.boss === b).length, cine: P.cine || null });
   }, 2200));
 });
 console.log(JSON.stringify(r2));
+check(r2.plunging && r2.away, "travel during a plunge did not stop it cleanly: " + JSON.stringify(r2));
 check(r2.hp === r2.max && !r2.active && !r2.seal && r2.phase === 1 && r2.marks === 0 && r2.raccoons === 0 && !r2.cine, "the King did not reset after a death: " + JSON.stringify(r2));
 check(errors.length + e2.length === 0, "errors: " + [...errors, ...e2].join(" | "));
 await browser.close(); await b2.close();

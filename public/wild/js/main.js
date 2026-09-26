@@ -643,6 +643,14 @@ function endPlunge() {
   P.state = "air"; P.airT = 0; P.vel.set(fx * 9, 9, fz * 9); P.invuln = 1.2;
   if (b.alive) b.plungeEnd();
 }
+// a teleport (travel, respawn) in the middle of a plunge stops it where it is, with no fling
+G.cancelPlunge = () => {
+  const S = G.plunge, P = G.player;
+  if (!S) return;
+  G.plunge = null; P.cine = null;
+  if (P.weaponId !== S.wid && G.inv.weapons.some((w) => w.id === S.wid)) P.setWeapon(S.wid);
+  if (S.b.alive) S.b.plungeEnd();
+};
 function grant(id, quiet) {
   if (id === "gabe") G.abilities.grit = { charges: 3, cd: 0 };
   if (id === "christian") G.abilities.lift = { cd: 0 };
