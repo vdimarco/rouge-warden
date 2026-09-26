@@ -3,14 +3,41 @@ import * as THREE from "three";
 import * as M from "./models.js";
 import { clamp, lerp } from "./noise.js";
 
+// Every weapon is one of three kinds. One-handed weapons swing fast in a 3-hit combo. Two-handed weapons are slow
+// and heavy, sweep wide, and knock critters flying in a 2-hit combo. Spears jab from far away and end with a lunge.
 export const WEAPONS = {
-  plunger: { name: "Plunger", dmg: 4, reach: 2.3, arc: 1.7, time: 0.3, dur: Infinity, knock: 5 },
-  paddle: { name: "Canoe Paddle", dmg: 9, reach: 2.9, arc: 2.5, time: 0.52, dur: 24, knock: 10 },
-  stick: { name: "Hockey Stick", dmg: 6, reach: 2.6, arc: 1.9, time: 0.24, dur: 30, knock: 6 },
-  rod: { name: "Fishing Rod", dmg: 5, reach: 3.6, arc: 1.2, time: 0.32, dur: 28, knock: 4 },
-  pan: { name: "Frying Pan", dmg: 12, reach: 2.1, arc: 1.7, time: 0.48, dur: 18, knock: 8, stun: true },
-  golden: { name: "Golden Plunger", dmg: 16, reach: 2.6, arc: 2.1, time: 0.28, dur: 50, knock: 9 },
+  plunger: { name: "Plunger", kind: "one", dmg: 4, reach: 2.3, arc: 1.7, time: 0.3, dur: Infinity, knock: 5 },
+  branch: { name: "Maple Branch", kind: "one", dmg: 3, reach: 2.3, arc: 1.7, time: 0.28, dur: 10, knock: 4 },
+  stick: { name: "Hockey Stick", kind: "one", dmg: 6, reach: 2.6, arc: 1.9, time: 0.24, dur: 30, knock: 6 },
+  lacrosse: { name: "Lacrosse Stick", kind: "one", dmg: 7, reach: 2.6, arc: 1.9, time: 0.26, dur: 26, knock: 6 },
+  pan: { name: "Frying Pan", kind: "one", dmg: 12, reach: 2.1, arc: 1.7, time: 0.48, dur: 18, knock: 8, stun: true },
+  torch: { name: "Marshmallow Torch", kind: "one", dmg: 5, reach: 2.4, arc: 1.8, time: 0.3, dur: 18, knock: 5, fire: true },
+  frisbee: { name: "Frisbee", kind: "one", dmg: 4, reach: 2.1, arc: 1.8, time: 0.26, dur: Infinity, knock: 4, boomerang: true },
+  golden: { name: "Golden Plunger", kind: "one", dmg: 16, reach: 2.6, arc: 2.1, time: 0.28, dur: 50, knock: 9 },
+  paddle: { name: "Canoe Paddle", kind: "two", dmg: 11, reach: 3.0, arc: 2.8, time: 0.55, dur: 24, knock: 12 },
+  broom: { name: "Curling Broom", kind: "two", dmg: 8, reach: 3.1, arc: 3.0, time: 0.5, dur: 32, knock: 16 },
+  antler: { name: "Antler Axe", kind: "two", dmg: 20, reach: 3.0, arc: 2.6, time: 0.62, dur: 30, knock: 14 },
+  rod: { name: "Fishing Rod", kind: "spear", dmg: 5, reach: 3.6, arc: 1.0, time: 0.3, dur: 28, knock: 4 },
+  pole: { name: "Tent Pole", kind: "spear", dmg: 6, reach: 3.5, arc: 0.9, time: 0.26, dur: 20, knock: 5 },
+  fork: { name: "Pitchfork", kind: "spear", dmg: 10, reach: 3.6, arc: 1.0, time: 0.32, dur: 30, knock: 7 },
 };
+// how many swings make a full combo, by kind
+export const COMBO = { one: 3, two: 2, spear: 3 };
+export const KIND_NAME = { one: "One-handed", two: "Two-handed", spear: "Spear" };
+// Some weapons you find are better than usual. A Sturdy one lasts longer, a Mighty one hits harder,
+// and a Keen one lands critical hits more often.
+export const MODS = {
+  sturdy: { name: "Sturdy", dur: 1.6, text: "Lasts longer" },
+  mighty: { name: "Mighty", dmg: 1.35, text: "Hits harder" },
+  keen: { name: "Keen", crit: 0.15, text: "More critical hits" },
+};
+// the stats of one weapon with its modifier
+export function weaponStats(id, mod) {
+  const W = WEAPONS[id], M = MODS[mod];
+  if (!M) return W;
+  return { ...W, name: M.name + " " + W.name, dmg: W.dmg * (M.dmg || 1), dur: W.dur * (M.dur || 1), crit: M.crit || 0, mod };
+}
+export const maxDur = (id, mod) => Math.round(weaponStats(id, mod).dur);
 export const PERKS = [
   { name: "Tank Top", perk: "Hits 20% harder" },
   { name: "Fifty-One", perk: "One extra heart" },
@@ -59,16 +86,17 @@ export class Player {
   get x() { return this.pos.x; } get y() { return this.pos.y; } get z() { return this.pos.z; }
   rigR() { return 0.45; }
 
-  setWeapon(id) {
+  setWeapon(id, mod) {
     if (this.weaponMesh) this.rig.grip.remove(this.weaponMesh);
     this.weaponMesh = M.weaponMesh(id);
+    this.wStats = weaponStats(id, mod);
     // how long the weapon is, for the swing trail
     this.tipY = new THREE.Box3().setFromObject(this.weaponMesh).max.y;
     this.weaponMesh.rotation.x = Math.PI / 2;
     this.rig.grip.add(this.weaponMesh);
     this.weaponId = id;
   }
-  get weapon() { return WEAPONS[this.weaponId]; }
+  get weapon() { return this.wStats || WEAPONS[this.weaponId]; }
 
   place(x, z, y) {
     const w = this.G.world;
@@ -294,8 +322,10 @@ export class Player {
       const a = this.attack;
       // in a flurry the swings come faster
       a.t += (dt * (G.slowmo > 0 ? 1.5 : 1)) / a.dur;
-      if (!a.hit && a.t > a.hitAt) { a.hit = true; G.meleeHit(this, a.spin, a.n); }
-      if (!a.spin && a.hit && a.t > (a.n === 2 ? 0.7 : 0.55) && this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, (a.n + 1) % 3); return; }
+      if (!a.hit && a.t > a.hitAt && !a.throw) { a.hit = true; G.meleeHit(this, a.spin, a.n); }
+      if (a.throw) { if (!a.hit && a.t > a.hitAt) { a.hit = true; G.throwWeapon(this); } if (a.t >= 1) this.attack = null; return; }
+      const len = COMBO[a.kind] || 3;
+      if (!a.spin && a.hit && a.t > (a.n === len - 1 ? 0.7 : 0.55) && this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, (a.n + 1) % len); return; }
       if (a.t >= 1) { this.attack = null; this.comboT = 0.3; this.lastN = a.n; }
       return;
     }
@@ -304,7 +334,15 @@ export class Player {
       if (this.useStamina(25)) { this.attack = { t: 0, spin: true, hit: false, n: 0, dur: 0.5, hitAt: 0.35, lunge: 0 }; G.sfx("spin"); }
       return;
     } else this.charge = 0;
-    if (this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, this.comboT > 0 ? ((this.lastN ?? -1) + 1) % 3 : 0); }
+    // throw the weapon you hold: it spins through the air and hits hard
+    if (inp.throw && G.canThrow && G.canThrow()) {
+      const t = G.autoAim(this, dir);
+      if (t) this.yaw = Math.atan2(t.x - this.pos.x, t.z - this.pos.z); else if (dir.mag > 0.2) this.yaw = Math.atan2(dir.x, dir.z);
+      this.attack = { t: 0, throw: true, hit: false, n: 0, dur: 0.34, hitAt: 0.45, lunge: 0, kind: "one" };
+      G.sfx("swing2");
+      return;
+    }
+    if (this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, this.comboT > 0 ? ((this.lastN ?? -1) + 1) % (COMBO[this.weapon.kind] || 3) : 0); }
   }
   swing(dir, n) {
     const G = this.G, W = this.weapon, t = G.autoAim(this, dir);
@@ -314,10 +352,12 @@ export class Player {
       // close the gap to the target, but never walk into it
       lunge = clamp(Math.hypot(t.x - this.pos.x, t.z - this.pos.z) - (t.T ? t.T.r : 1) - W.reach * 0.55, 0, 1.8);
     } else if (dir.mag > 0.2) this.yaw = Math.atan2(dir.x, dir.z);
-    const fin = n === 2;
+    const kind = W.kind || "one", fin = n === (COMBO[kind] || 3) - 1;
+    // spears lunge further on the last jab; two-handed weapons wind up longer
+    if (kind === "spear" && fin) lunge = Math.max(lunge, 1.2);
     this.combo = n;
-    this.attack = { t: 0, spin: false, hit: false, n, dur: W.time * (fin ? 1.35 : 1), hitAt: fin ? 0.45 : 0.36, lunge };
-    G.sfx(fin ? "swing2" : "swing");
+    this.attack = { t: 0, spin: false, hit: false, n, kind, dur: W.time * (fin ? 1.35 : 1), hitAt: kind === "two" ? (fin ? 0.5 : 0.44) : fin ? 0.45 : 0.36, lunge };
+    G.sfx(fin || kind === "two" ? "swing2" : "swing");
   }
 
   air(dt, dir, inp, act) {
@@ -667,12 +707,17 @@ export class Player {
       const a = this.attack, u = Math.min(1, a.t);
       // swings are fast: the bones follow the keyed pose closely, or the blow would land before the arm does
       rate = 65;
-      if (a.spin) {
+      if (a.throw) {
+        // wind back, then whip the arm forward
+        const k = u < 0.45 ? u / 0.45 : 1 - (u - 0.45) / 0.55;
+        aR.rotation.set(-2.7 * k + (u > 0.45 ? -0.6 : 0) * (1 - k), 0, 0.35); r.torso.rotation.y = u < 0.45 ? -0.5 * k : 0.4 * (1 - k); r.torso.rotation.x = u > 0.45 ? 0.2 : -0.1;
+        lL.rotation.x = -0.4; lR.rotation.x = 0.3;
+      } else if (a.spin) {
         const e = u * u * (3 - 2 * u);
         r.body.rotation.y = e * Math.PI * 2; aR.rotation.set(-1.5, 0, 1.4); aL.rotation.set(-0.4, 0, -1.2);
         r.torso.rotation.x = 0.15; lL.rotation.x = -0.4; lR.rotation.x = 0.3; r.body.position.y = -0.1;
         rate = 40;
-      } else swingPose(r, a.n, u, a.hitAt);
+      } else swingPose(r, a.n, u, a.hitAt, a.kind);
     } else if (this.charge > 0.1) {
       aR.rotation.set(-1.4, 0, 1.6); r.torso.rotation.y = -0.8;
     }
@@ -701,7 +746,21 @@ export class Player {
     // painted 3D models: turn the pose into bone rotations, easing between poses
     if (r.apply) r.apply(dt, rate);
     // on the move the weapon rests on the shoulder; the arm swing is cancelled so it stays at one steady angle
-    if (this.weaponMesh) { this.carryK = lerp(this.carryK || 0, this.carry, 1 - Math.exp(-dt * 10)); this.weaponMesh.rotation.x = Math.PI / 2 + this.carryK * (-1.6 - this.rig.arms[1].rotation.x); this.weaponMesh.rotation.z = this.carryK * 0.7; }
+    if (this.weaponMesh) {
+      this.carryK = lerp(this.carryK || 0, this.carry, 1 - Math.exp(-dt * 10));
+      this.weaponMesh.rotation.x = Math.PI / 2 + this.carryK * (-1.6 - this.rig.arms[1].rotation.x);
+      this.weaponMesh.rotation.z = this.carryK * 0.7;
+      // a spear jab keeps the point level and aimed ahead, whatever the arm does
+      const at = this.attack;
+      this.spearK = lerp(this.spearK || 0, at && at.kind === "spear" && !at.spin && !at.throw ? 1 : 0, 1 - Math.exp(-dt * 18));
+      if (this.spearK > 0.01) this.weaponMesh.rotation.x += this.spearK * (-0.05 - this.rig.arms[1].rotation.x);
+      // the marshmallow torch flickers and throws off sparks
+      const fl = this.weaponMesh.userData.flame;
+      if (fl) {
+        fl.scale.set(1 + Math.sin(this.G.time * 23) * 0.12, 1 + Math.sin(this.G.time * 17) * 0.25, 1);
+        if (Math.random() < dt * 6 && this.G.fx) { const p = fl.getWorldPosition(TB); this.G.fx.flare(p.x, p.y + 0.1, p.z, 0xff9a3a, 0.6, 0.3); }
+      }
+    }
     this.trailStep(dt);
   }
   // a ribbon of light behind the head of the weapon, while a swing is fast
@@ -727,9 +786,21 @@ const SWINGS = [
   // the finisher: both hands overhead, then a smash into the ground
   [[-3.0, 0.1, -2.7, -0.1, 0, -0.3, 0.14, -0.1, 0.1], [0.1, 0.05, -0.3, -0.2, 0, 0.5, -0.16, -0.7, 0.45], [0.3, 0.05, -0.1, -0.2, 0, 0.55, -0.18, -0.7, 0.45]],
 ];
+// two-handed: a wide sweep, then an overhead smash, both arms on the handle
+const SWINGS2 = [
+  [[-1.7, 1.4, -1.5, 0.9, -0.85, -0.1, 0.02, -0.45, 0.35], [-1.0, -0.9, -1.0, -1.2, 0.7, 0.2, -0.1, -0.55, 0.4], [-0.8, -1.3, -0.8, -1.5, 0.9, 0.22, -0.12, -0.55, 0.4]],
+  [[-3.0, 0.1, -2.9, -0.2, 0, -0.35, 0.16, -0.1, 0.1], [0.15, 0.05, 0.05, -0.1, 0, 0.6, -0.2, -0.75, 0.5], [0.3, 0.05, 0.2, -0.1, 0, 0.62, -0.22, -0.75, 0.5]],
+];
+// spears: two quick jabs, then a lunge
+const SWINGS3 = [
+  [[-0.9, 0.35, -0.7, -0.3, -0.35, 0.0, 0, -0.3, 0.25], [-1.55, 0.05, -0.9, -0.2, 0.25, 0.15, -0.03, -0.45, 0.35], [-1.5, 0.05, -0.9, -0.2, 0.25, 0.15, -0.03, -0.45, 0.35]],
+  [[-1.0, 0.45, -0.7, -0.3, -0.4, 0.0, 0, -0.3, 0.25], [-1.6, 0.0, -0.9, -0.2, 0.3, 0.18, -0.03, -0.45, 0.35], [-1.55, 0.0, -0.9, -0.2, 0.3, 0.18, -0.03, -0.45, 0.35]],
+  [[-0.7, 0.4, -0.6, -0.4, -0.5, -0.05, 0.02, -0.2, 0.2], [-1.6, 0.0, -1.0, -0.2, 0.35, 0.35, -0.16, -0.85, 0.6], [-1.55, 0.0, -1.0, -0.2, 0.35, 0.38, -0.18, -0.85, 0.6]],
+];
 const SP = new Array(9);
-function swingPose(r, n, u, hitAt) {
-  const [wind, hit, follow] = SWINGS[n], w = hitAt * 0.62, f = Math.min(0.9, hitAt + 0.22);
+function swingPose(r, n, u, hitAt, kind = "one") {
+  const T = kind === "two" ? SWINGS2 : kind === "spear" ? SWINGS3 : SWINGS;
+  const [wind, hit, follow] = T[Math.min(n, T.length - 1)], w = hitAt * 0.62, f = Math.min(0.9, hitAt + 0.22);
   let A, B, k;
   if (u < w) { A = GUARD; B = wind; k = u / w; k = 1 - (1 - k) * (1 - k); }
   else if (u < hitAt) { A = wind; B = hit; k = (u - w) / (hitAt - w); k = k * k; }

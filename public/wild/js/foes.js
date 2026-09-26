@@ -9,6 +9,9 @@ export const TYPES = {
   bear: { name: "Black Bear", hp: 44, speed: 2.8, run: 7, r: 1.3, dmg: 4, reach: 2.8, sight: 24, windup: 0.6, cd: 1.5, h: 2.4, drops: [["berry", 0.6], ["syrup", 0.2]] },
   moose: { name: "Moose", hp: 80, speed: 3, run: 15, r: 1.7, dmg: 6, reach: 3, sight: 30, windup: 0.9, cd: 2.2, h: 4, charge: true, drops: [["syrup", 0.8]] },
   skeeter: { name: "Skeeter", hp: 3, speed: 5, run: 8.5, r: 0.45, dmg: 1, reach: 1.3, sight: 16, windup: 0.25, cd: 0.9, h: 1.8, fly: true, drops: [] },
+  // mini-bosses for the side quests: a crowned raccoon who leaps and calls for help, and a huge moose who stomps
+  raccoonKing: { name: "The Raccoon King", model: "raccoon", scale: 2.1, tint: 0xffd49a, hat: "crown", hp: 150, speed: 3.6, run: 7.4, r: 1.4, dmg: 3, reach: 2.8, sight: 28, windup: 0.5, cd: 0.9, h: 2.6, mini: true, leap: true, drops: [["syrup", 1]] },
+  mooseAlpha: { name: "The Moose Alpha", model: "moose", scale: 1.5, tint: 0x8a7468, hp: 260, speed: 3.2, run: 17, r: 2.5, dmg: 6, reach: 3.6, sight: 36, windup: 0.8, cd: 1.6, h: 6, charge: true, stomp: true, mini: true, drops: [["syrup", 1]] },
 };
 
 const TMPV = new THREE.Vector3();
@@ -19,8 +22,13 @@ export class Foe {
     this.type = type;
     this.T = TYPES[type];
     this.hp = this.T.hp;
-    const m = M.critter(type);
+    const m = M.critter(this.T.model || type);
     this.rig = m;
+    this.size = this.T.scale || 1;
+    m.root.scale.setScalar(this.size);
+    // a mini-boss gets its own colours, so it never changes the look of the common critters
+    if (this.T.tint) M.tint(m.root, this.T.tint);
+    if (this.T.hat) { const h = M.hat(this.T.hat), top = M.headTop(m.root); h.position.copy(top); m.root.add(h); }
     G.scene.add(m.root);
     this.pos = new THREE.Vector3(x, G.groundAt(x, z, 999), z);
     this.home = home || { x, z };
@@ -40,18 +48,31 @@ export class Foe {
   hurt(dmg, fx, fz, knock, stun) {
     if (!this.alive) return;
     this.hp -= dmg;
+    this.hurtT = 5;
     this.flash = 0.15; this.squash = 0.22;
     const dx = this.pos.x - fx, dz = this.pos.z - fz, d = Math.hypot(dx, dz) || 1;
-    const k = knock / (this.type === "moose" ? 3 : this.type === "bear" ? 2 : 1);
+    const k = knock / (this.T.charge ? 3 : this.type === "bear" || this.T.mini ? 2 : 1);
     this.vel.x = (dx / d) * k; this.vel.z = (dz / d) * k;
     if (this.state === "idle" || this.state === "notice") this.alert();
-    if (this.state !== "strike" || this.type !== "moose") { this.state = "hurt"; this.t = stun ? 1.2 : 0.35; }
+    // a mini-boss shrugs off most hits and keeps coming; the rest flinch
+    if (this.T.mini) { if (stun && this.state !== "strike" && this.state !== "leap") { this.state = "hurt"; this.t = 0.5; } }
+    else if (this.state !== "strike" || !this.T.charge) { this.state = "hurt"; this.t = stun ? 1.2 : 0.35; }
+    // the Raccoon King calls his bandits twice
+    if (this.type === "raccoonKing" && this.hp > 0) for (const at of [0.6, 0.3]) if (this.hp / this.T.hp < at && !(this.calls || []).includes(at)) { (this.calls = this.calls || []).push(at); this.callHelp(); }
     if (this.hp <= 0) this.die();
+  }
+  // set on fire by a torch: it burns for a few seconds
+  burn(t) { if (!this.alive) return; if (!(this.burnT > 0)) this.G.sfx("burn"); this.burnT = Math.max(this.burnT || 0, t); }
+  callHelp() {
+    const G = this.G;
+    G.say(null, "Bandits! To me!"); G.sfx("honk");
+    for (const s of [-1, 1]) { const a = this.yaw + s * 1.9, x = this.pos.x + Math.sin(a) * 5, z = this.pos.z + Math.cos(a) * 5; if (G.groundAt(x, z, 999) < 0.5) continue; const f = G.spawnFoe("raccoon", x, z, this.home); f.minion = true; f.alert(); G.fx.puff(x, f.pos.y + 0.8, z, 0xc8b89a, 12); }
   }
   alert() { this.state = "notice"; this.t = 0.5; this.G.fx.bang(this.pos.x, this.pos.y + this.T.h + 0.8, this.pos.z); if (this.type === "goose") this.G.sfx("honk"); }
   die() {
-    this.alive = false; this.state = "dead"; this.t = 1.2;
+    this.alive = false; this.state = "dead"; this.t = 1.2; this.burnT = 0;
     this.G.sfx("pop");
+    if (this.G.loot && !this.minion) this.G.loot.dropFrom(this);
     for (const [id, p] of this.T.drops) if (Math.random() < p) { this.G.dropFood(id, this.pos.x + (Math.random() - 0.5) * 2, this.pos.z + (Math.random() - 0.5) * 2); break; }
     if (Math.random() < 0.08) this.G.dropFood("heart", this.pos.x, this.pos.z);
     this.G.onKill(this);
@@ -64,6 +85,13 @@ export class Foe {
     const d = this.dist();
     const face = (x, z, k = 8) => { this.yaw = turnTo(this.yaw, Math.atan2(x - this.pos.x, z - this.pos.z), dt * k); };
     let speed = 0;
+    this.hurtT = Math.max(0, (this.hurtT || 0) - dt);
+    // on fire: a little damage every half second, and flames
+    if (this.burnT > 0 && this.alive) {
+      this.burnT -= dt; this.burnTick = (this.burnTick || 0) - dt;
+      if (Math.random() < dt * 20) G.fx.flare(this.pos.x + (Math.random() - 0.5) * T.r, this.pos.y + Math.random() * T.h * this.size, this.pos.z + (Math.random() - 0.5) * T.r, Math.random() < 0.5 ? 0xff8a2a : 0xffd84a, 1 + T.r, 0.35);
+      if (this.burnTick <= 0) { this.burnTick = 0.5; this.hp -= 1.5; this.flash = 0.08; this.hurtT = 5; if (this.hp <= 0) { this.die(); return; } }
+    }
     switch (this.state) {
       case "idle": {
         if (this.t <= 0) { this.t = 2 + Math.random() * 4; const a = Math.random() * 6.28, r = Math.random() * 9; this.target = { x: this.home.x + Math.cos(a) * r, z: this.home.z + Math.sin(a) * r }; }
@@ -79,6 +107,7 @@ export class Foe {
         const leash = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
         if (leash > 55 || d > T.sight * 2.2 || P.dead) { this.state = "return"; break; }
         const want = T.charge ? 14 : T.reach + P.rigR();
+        if (T.leap && d > 7 && d < 16 && (this.leapCd = (this.leapCd || 0) - dt) <= 0) { this.leapCd = 4 + Math.random() * 2; this.state = "leap"; this.lt = 0; this.from = this.pos.clone(); this.to = { x: P.x, z: P.z }; G.hazards.mark(P.x, P.z, 3, 0xff5a2a, 0.75); G.sfx("whoosh"); break; }
         if (d < want && (!T.charge || d > 5)) { this.state = "windup"; this.t = T.windup; }
         else if (T.charge && d < 5) { this.state = "windup"; this.t = 0.5; }
         break;
@@ -95,14 +124,32 @@ export class Foe {
         if (this.t <= 0) { this.state = "recover"; this.t = T.cd; }
         break;
       }
-      case "recover": face(P.x, P.z, 3); speed = -T.speed * 0.3; if (this.t <= 0) this.state = d < T.sight * 1.5 ? "chase" : "return"; break;
+      case "recover":
+        face(P.x, P.z, 3); speed = -T.speed * 0.3;
+        // the Moose Alpha rears up and stomps after a charge: jump the shockwave
+        if (T.stomp && !this.stomped && this.t < T.cd - 0.5) { this.stomped = true; G.hazards.ring(this.pos.x, this.pos.z, { dmg: 3, max: 16, speed: 15, knock: 12, color: 0xc8a86a }); }
+        if (this.t <= 0) { this.stomped = false; this.state = d < T.sight * 1.5 ? "chase" : "return"; }
+        break;
+      case "leap": {
+        // a big jump onto where you stood; the landing sends out a ring you can jump over
+        this.lt += dt;
+        const u = Math.min(1, this.lt / 0.75);
+        this.pos.x = lerp(this.from.x, this.to.x, u); this.pos.z = lerp(this.from.z, this.to.z, u);
+        this.yaw = Math.atan2(this.to.x - this.from.x, this.to.z - this.from.z);
+        const g = G.groundAt(this.pos.x, this.pos.z, 999);
+        if (g < 0.2) { this.to = { x: this.pos.x, z: this.pos.z }; }
+        this.pos.y = g + Math.sin(u * Math.PI) * 6;
+        this.animate(dt, 0);
+        if (u >= 1) { this.pos.y = g; G.hazards.ring(this.pos.x, this.pos.z, { dmg: 2, max: 9, speed: 13, knock: 9 }); G.fx.dust(this.pos.x, g, this.pos.z, 16, 1.5); if (Math.hypot(P.x - this.pos.x, P.z - this.pos.z) < T.r + 1) P.hurt(T.dmg, this.pos.x, this.pos.z, 12); this.state = "recover"; this.t = 0.8; }
+        return;
+      }
       case "hurt": if (this.t <= 0) this.state = "chase"; break;
       case "return": face(this.home.x, this.home.z, 5); speed = T.run * 0.7; this.hp = Math.min(T.hp, this.hp + dt * 5); if (Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z) < 3) this.state = "idle"; break;
       case "dead": break;
     }
     if (this.state === "dead") {
       this.rig.root.rotation.z = lerp(this.rig.root.rotation.z, Math.PI / 2, dt * 6);
-      this.rig.root.scale.setScalar(Math.max(0.01, this.t / 1.2));
+      this.rig.root.scale.setScalar(Math.max(0.01, this.t / 1.2) * this.size);
       if (this.t <= 0) { this.rig.root.visible = false; this.gone = true; }
       return;
     }

@@ -57,6 +57,22 @@ const report = await page.evaluate(() => {
   });
   // 6. the crew at the cottage do not stand inside things
   for (const n of G.npcs) { if (QA.boxAt(n.x, n.y + 1, n.z)) fail(`npc ${n.name} inside a building`); }
+  // 6b. treasure chests: on dry, fairly flat land, not inside anything, and you can stand beside them
+  for (const ch of G.loot.chests) {
+    if (ch.y < 1.5) fail(`chest ${ch.i}: in water`);
+    if (W.normal(ch.x, ch.z).y < 0.85) fail(`chest ${ch.i}: on a slope`);
+    const s = solidNear(ch.x, ch.z, 0.6); if (s && s.kind !== "chest") fail(`chest ${ch.i}: blocked by a ${s.kind}`);
+    if (QA.boxAt(ch.x, ch.y + 0.5, ch.z)) fail(`chest ${ch.i}: inside a building`);
+  }
+  // 6c. the friendly critters stand on dry land, outside buildings, and apart from the cottage crew
+  for (const n of G.quests.npcs) {
+    if (n.y < 1) fail(`friend ${n.id}: in water`);
+    if (QA.boxAt(n.x, n.y + 1, n.z)) fail(`friend ${n.id}: inside a building`);
+    for (const m of G.npcs) if (Math.hypot(m.x - n.x, m.z - n.z) < 6) fail(`friend ${n.id}: too close to ${m.name}`);
+  }
+  // 6d. the glide rings float clear of the ground, and the frisbee sits on the cottage roof
+  for (const [k, r] of G.quests.rings.entries()) if (r.y - W.height(r.x, r.z) < 4) fail(`glide ring ${k}: only ${(r.y - W.height(r.x, r.z)).toFixed(1)} m above the ground`);
+  { const f = G.quests.frisbee; if (Math.abs(G.groundAt(f.x, f.z, f.y + 0.5) - f.y) > 0.3) fail("the frisbee does not sit on the roof"); }
   // 7. boss arenas are flat and dry
   for (const b of G.bosses) {
     let steep = 0, wet = 0;

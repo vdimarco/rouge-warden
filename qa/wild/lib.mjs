@@ -55,15 +55,15 @@ export async function frames(page, n = 3) {
 function installHelpers() {
   const I = G.inp, P = G.player, W = G.world;
   const QA = (window.QA = {});
-  QA.clear = () => { I.move.x = I.move.y = 0; I.jump = I.attack = I.attackHeld = I.roll = I.interact = I.sprint = I.eat = I.lift = I.fury = I.next = I.prev = false; I.slot = -1; I.look = { x: 0, y: 0 }; };
+  QA.clear = () => { I.move.x = I.move.y = 0; I.jump = I.attack = I.attackHeld = I.roll = I.interact = I.sprint = I.eat = I.lift = I.fury = I.next = I.prev = I.throw = false; I.slot = -1; I.look = { x: 0, y: 0 }; };
   QA.clear();
   QA.closeModals = () => {
     for (let i = 0; i < 80 && G.ui.modal === "dialog"; i++) G.ui.advance();
     const ch = document.querySelector("#choice"); if (!ch.hidden) ch.querySelector("button").click();
-    for (const id of ["map", "pause", "help"]) if (G.ui.modal === id) G.ui.close(id);
+    for (const id of ["map", "pause", "help", "quests"]) if (G.ui.modal === id) G.ui.close(id);
     G.paused = true;
   };
-  QA.step = (n = 1, each) => { for (let i = 0; i < n; i++) { if (each) each(i); G.test.step(1 / 30); I.jump = I.attack = I.roll = I.interact = I.eat = I.lift = I.fury = I.next = I.prev = false; I.slot = -1; } };
+  QA.step = (n = 1, each) => { for (let i = 0; i < n; i++) { if (each) each(i); G.test.step(1 / 30); I.jump = I.attack = I.roll = I.interact = I.eat = I.lift = I.fury = I.next = I.prev = I.throw = false; I.slot = -1; } };
   QA.boxAt = (x, y, z, shrink = 0.25) => {
     for (const b of W.boxes) {
       if (b.walk) continue;

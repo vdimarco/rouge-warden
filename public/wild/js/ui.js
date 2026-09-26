@@ -1,7 +1,8 @@
 // The HUD, the dialog box, the paper map, and the menus.
 import * as THREE from "three";
 import { SIZE, TOWERS, ISLAND } from "./world.js";
-import { WEAPONS } from "./player.js";
+import { weaponStats, maxDur } from "./player.js";
+import { WICO, Loot } from "./loot.js";
 
 const $ = (s) => document.querySelector(s);
 const HEART = (fill, gold) => {
@@ -13,7 +14,6 @@ const HEART = (fill, gold) => {
   const inner = f === 4 ? `<path d="${path}" fill="${col}"/>` : f === 0 ? "" : `<clipPath id="q${f}"><path d="${clip}"/></clipPath><path d="${path}" fill="${col}" clip-path="url(#q${f})"/>`;
   return `<svg viewBox="0 0 24 24"><path d="${path}" fill="rgba(0,0,0,.35)" stroke="#fff" stroke-width="1.6"/>${inner}</svg>`;
 };
-const WICO = { plunger: "🪠", paddle: "🛶", stick: "🏒", rod: "🎣", pan: "🍳", golden: "🏆" };
 
 const TMPC = new THREE.Color();
 export class UI {
@@ -34,7 +34,7 @@ export class UI {
   }
   show(id) { $("#" + id).hidden = false; }
   hide(id) { $("#" + id).hidden = true; }
-  close(id) { this.hide(id); if (this.modal === id) this.modal = null; if (id === "map" || id === "help" || id === "pause") this.G.resume(); }
+  close(id) { this.hide(id); if (this.modal === id) this.modal = null; if (id === "map" || id === "help" || id === "pause" || id === "quests") this.G.resume(); }
   open(id) { this.show(id); this.modal = id; }
 
   hud() {
@@ -48,8 +48,23 @@ export class UI {
       $("#hearts").innerHTML = h;
     }
     const w = G.inv.weapons[G.inv.cur];
-    const wk = w.id + w.dur;
-    if (wk !== this.last.w) { this.last.w = wk; $("#wico").textContent = WICO[w.id]; $("#wname").textContent = WEAPONS[w.id].name; $("#wdur").style.width = w.dur === Infinity ? "100%" : Math.max(0, (w.dur / WEAPONS[w.id].dur) * 100) + "%"; $("#wdur").style.background = w.dur !== Infinity && w.dur / WEAPONS[w.id].dur < 0.25 ? "#e0453a" : ""; }
+    const wk = w.id + w.mod + w.dur + "/" + G.inv.weapons.length + "/" + G.inv.cur + "/" + G.save.slots;
+    if (wk !== this.last.w) {
+      this.last.w = wk;
+      const st = weaponStats(w.id, w.mod), frac = w.dur === Infinity ? 1 : Math.max(0, w.dur / maxDur(w.id, w.mod));
+      $("#wico").textContent = WICO[w.id]; $("#wname").textContent = st.name;
+      $("#wdur").style.width = frac * 100 + "%"; $("#wdur").style.background = frac < 0.25 ? "#e0453a" : "";
+      // a weapon about to break blinks red
+      $("#wslot").classList.toggle("worn", w.dur !== Infinity && frac <= 0.2);
+      $("#wslot").dataset.mod = w.mod || "";
+      this.pouchBar();
+    }
+    if (this.pouchT > 0 && (this.pouchT -= 1 / 60) <= 0) $("#wbar").classList.remove("show");
+    const ct = !!G.canThrow();
+    if (ct !== this.last.throw) { this.last.throw = ct; $("#tthrow").hidden = !ct; }
+    const side = G.quests ? G.quests.hudLine() : "";
+    if (side !== this.last.side) { this.last.side = side; $("#side").textContent = side; $("#side").hidden = !side; }
+    this.foeBars();
     const f = G.foodCount();
     $("#fcount").textContent = f.total + (f.stew ? " · " + f.stew + "🍲" : "");
     $("#lcount").textContent = G.save.loonies.length + "/" + G.loonies.length;
@@ -79,6 +94,58 @@ export class UI {
     $("#clock").textContent = G.clockText();
     const goal = G.goal();
     if (goal !== this.last.goal) { this.last.goal = goal; $("#goal").innerHTML = goal; }
+  }
+  // the weapon pouch: a row of slots over the weapon button, shown for a moment whenever it changes
+  pouchShow() { this.pouchT = 2.6; $("#wbar").classList.add("show"); this.last.w = null; }
+  pouchBar() {
+    const G = this.G, W = G.inv.weapons, cap = G.save.slots || 5;
+    let h = "";
+    for (let k = 0; k < cap; k++) {
+      const w = W[k];
+      if (!w) { h += `<i class="empty"></i>`; continue; }
+      const frac = w.dur === Infinity ? 1 : Math.max(0, w.dur / maxDur(w.id, w.mod));
+      h += `<i class="${k === G.inv.cur ? "cur" : ""} ${w.mod || ""}" title="${weaponStats(w.id, w.mod).name}"><b>${k + 1}</b>${WICO[w.id]}<u style="width:${frac * 100}%;${frac < 0.25 ? "background:#e0453a" : ""}"></u></i>`;
+    }
+    $("#wbar").innerHTML = h;
+  }
+  // the item-get card: what you found, what it does
+  got(id, mod, o = {}) {
+    const el = $("#got");
+    const name = id ? weaponStats(id, mod).name : o.name;
+    $("#gotIco").textContent = id ? WICO[id] : o.icon;
+    $("#gotName").textContent = name + (o.sub ? " " + o.sub : "");
+    $("#gotLine").textContent = id ? Loot.describe(id, mod) : o.line || "";
+    el.dataset.mod = mod || "";
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+    this.G.sfx("get");
+    clearTimeout(this.gotT); this.gotT = setTimeout(() => el.classList.remove("show"), 3400);
+  }
+  // the quest log, from the pause menu
+  openQuests() {
+    const { list, left } = this.G.quests.log();
+    let h = list.length ? "" : `<p>No quests yet. Look for critters wearing hats, with a ! over their heads.</p>`;
+    for (const q of list) h += `<div class="q${q.done ? " done" : ""}"><span>${q.icon}</span><div><b>${q.name}</b><small>${q.who}</small><p>${q.step}</p></div></div>`;
+    if (left) h += `<p class="more">${left} more ${left > 1 ? "friends need" : "friend needs"} help somewhere in the valley.</p>`;
+    $("#qlist").innerHTML = h;
+    this.open("quests");
+  }
+  // small health bars over critters you have hit
+  foeBars() {
+    const G = this.G, P = G.player;
+    if (!this.bars) { this.bars = []; const box = $("#fbars"); for (let k = 0; k < 8; k++) { const d = document.createElement("div"); d.className = "fbar"; d.innerHTML = "<i></i>"; d.hidden = true; box.appendChild(d); this.bars.push(d); } }
+    const v = this.v || (this.v = new THREE.Vector3());
+    let n = 0;
+    for (const f of G.foes) {
+      if (n >= this.bars.length) break;
+      if (!f.alive || !(f.hurtT > 0) || f.T.mini) continue;
+      if (Math.hypot(f.x - P.x, f.z - P.z) > 40) continue;
+      v.set(f.x, f.pos.y + (f.T.h || 1.5) * (f.size || 1) + 0.5, f.z).project(G.camera);
+      if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) continue;
+      const b = this.bars[n++];
+      b.hidden = false; b.style.left = ((v.x + 1) / 2) * innerWidth + "px"; b.style.top = ((1 - v.y) / 2) * innerHeight + "px";
+      b.style.opacity = Math.min(1, f.hurtT); b.firstChild.style.width = Math.max(0, (f.hp / f.T.hp) * 100) + "%";
+    }
+    for (let k = n; k < this.bars.length; k++) this.bars[k].hidden = true;
   }
   prompt(text, key) {
     const p = $("#prompt");
@@ -125,7 +192,7 @@ export class UI {
   closeAll() {
     if (this.dq) { const r = this.dq.res; this.dq = null; this.typing = null; document.querySelector("#dialog").hidden = true; r(); }
     if (this.chRes) { const r = this.chRes; this.chRes = null; this.hide("choice"); r(-1); }
-    for (const id of ["map", "pause", "help"]) this.hide(id);
+    for (const id of ["map", "pause", "help", "quests"]) this.hide(id);
     this.modal = null;
   }
   say(lines) {
@@ -278,6 +345,10 @@ export class UI {
     // fishing spots show once the nearest tower is lit; the kayak always shows
     for (const f of G.world.fishSpots || []) if (G.save.towers.includes(G.world.towerOf(f.x, f.z))) out.push({ kind: "fish", on: f.rest <= 0, x: f.x, z: f.z, name: "Fishing spot" });
     const K = G.world.kayak; if (K && !K.rider) out.push({ kind: "kayak", x: K.x, z: K.z, name: "Kayak" });
+    // chests show once the land around them is mapped, or once you have seen them up close
+    const P = G.player;
+    for (const c of G.loot ? G.loot.chests : []) { if (!c.open && (G.save.towers.includes(G.world.towerOf(c.x, c.z)) || (P && Math.hypot(c.x - P.x, c.z - P.z) < 80))) out.push({ kind: "chest", x: c.x, z: c.z, name: "Treasure chest" }); }
+    if (G.quests && G.quests.npcs.length) G.quests.markers(out);
     return out;
   }
   // Map icons, drawn like little stamps: a soft shadow, a coloured badge, and a clear symbol.
@@ -308,6 +379,23 @@ export class UI {
     } else if (m.kind === "kayak") {
       x.fillStyle = "#e0602a"; x.beginPath(); x.ellipse(0, 0, s * 0.28, s * 0.95, 0, 0, 7); x.fill(); x.stroke();
       x.fillStyle = "#f2e6c8"; x.beginPath(); x.ellipse(0, 0, s * 0.12, s * 0.22, 0, 0, 7); x.fill();
+    } else if (m.kind === "chest") {
+      // a little chest with a gold band
+      x.fillStyle = "rgba(30,20,10,.3)"; x.fillRect(-s * 0.6 + 1, -s * 0.35 + 1.5, s * 1.2, s * 0.85);
+      x.fillStyle = "#a8642e"; x.fillRect(-s * 0.6, -s * 0.35, s * 1.2, s * 0.85); x.strokeRect(-s * 0.6, -s * 0.35, s * 1.2, s * 0.85);
+      x.fillStyle = "#8a4a1e"; x.beginPath(); x.ellipse(0, -s * 0.35, s * 0.6, s * 0.32, 0, Math.PI, 0); x.fill(); x.stroke();
+      x.fillStyle = "#f2c230"; x.fillRect(-s * 0.12, -s * 0.3, s * 0.24, s * 0.3);
+    } else if (m.kind === "npc") {
+      badge(m.on ? "#fff1b8" : "#e8e0d0");
+      x.fillStyle = "#6a5a4a"; x.beginPath(); x.arc(0, s * 0.1, s * 0.42, 0, 7); x.fill();
+      x.fillStyle = "#6a5a4a"; x.beginPath(); x.moveTo(-s * 0.4, -s * 0.05); x.lineTo(-s * 0.25, -s * 0.55); x.lineTo(-s * 0.05, -s * 0.2); x.moveTo(s * 0.4, -s * 0.05); x.lineTo(s * 0.25, -s * 0.55); x.lineTo(s * 0.05, -s * 0.2); x.fill();
+      if (m.mark) { x.fillStyle = m.mark === "?" ? "#2a8a4a" : "#e0602a"; x.font = "900 " + Math.round(s * 1.3) + "px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(m.mark, s * 0.9, -s * 0.9); }
+    } else if (m.kind === "quest") {
+      // a pulsing gold diamond
+      const f = 1 + Math.sin(time * 4) * 0.1;
+      x.fillStyle = "rgba(30,20,10,.3)"; x.beginPath(); x.moveTo(1, -s * f + 1.5); x.lineTo(s * 0.75 * f + 1, 1.5); x.lineTo(1, s * f + 1.5); x.lineTo(-s * 0.75 * f + 1, 1.5); x.closePath(); x.fill();
+      x.fillStyle = "#ffd84a"; x.beginPath(); x.moveTo(0, -s * f); x.lineTo(s * 0.75 * f, 0); x.lineTo(0, s * f); x.lineTo(-s * 0.75 * f, 0); x.closePath(); x.fill(); x.stroke();
+      x.fillStyle = "#3a2a1a"; x.fillRect(-s * 0.08, -s * 0.45, s * 0.16, s * 0.5); x.fillRect(-s * 0.08, s * 0.18, s * 0.16, s * 0.16);
     } else if (m.kind === "home") {
       badge("#fff1d8");
       x.fillStyle = "#c8442e"; x.beginPath(); x.moveTo(0, -s * 0.65); x.lineTo(s * 0.62, -s * 0.05); x.lineTo(-s * 0.62, -s * 0.05); x.closePath(); x.fill();
@@ -410,7 +498,7 @@ export class UI {
     let best = null, bd = 30;
     for (const h of this.hits || []) { const d = Math.hypot(h.px - mx, h.py - my); if (d < bd) { bd = d; best = h; } }
     if (!best) return;
-    if (!best.travel) { $("#mapInfo").textContent = best.name + (best.kind === "tower" ? ": climb it and light the beacon to map this land." : best.kind === "shrine" ? ": clear the trial to travel here." : ""); return; }
+    if (!best.travel) { $("#mapInfo").textContent = best.name + (best.kind === "tower" ? ": climb it and light the beacon to map this land." : best.kind === "shrine" ? ": clear the trial to travel here." : best.kind === "npc" ? (best.mark === "!" ? ": has a job for you." : best.mark === "?" ? ": go back and talk." : "") : best.kind === "chest" ? ": look for the beam of light." : ""); return; }
     this.hide("map");
     const go = await this.choose("Travel", "Travel to " + best.name + "?", ["Travel", "Cancel"]);
     if (go === 0) this.G.travel(best); else this.open("map");

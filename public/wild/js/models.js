@@ -199,7 +199,108 @@ export function weaponMesh(id) {
     const p = mesh(cyl(0.3, 0.26, 0.08, 18), 0x3a3a3e, 0, 0.7, 0, true, 0.02);
     p.rotation.x = Math.PI / 2;
     g.add(p);
+  } else if (id === "branch") {
+    // a crooked maple branch with a few red leaves still on it
+    const a = stick(0.7, 0x7a5230, 0.04);
+    const b = mesh(cyl(0.028, 0.036, 0.5), 0x7a5230, 0.06, 0.78, 0, true, 0.02); b.rotation.z = -0.25; g.add(b);
+    const tw = mesh(cyl(0.015, 0.02, 0.28), 0x7a5230, -0.08, 0.62, 0, false); tw.rotation.z = 0.8; g.add(tw);
+    for (const [x, y, z, c] of [[0.12, 1.02, 0, 0xd8402a], [-0.2, 0.72, 0.04, 0xe8782a], [0.02, 1.08, -0.06, 0xc8302a]]) { const l = mesh(sph(0.09, 6, 4), c, x, y, z, false); l.scale.set(1.3, 0.35, 1.1); g.add(l); }
+    void a;
+  } else if (id === "lacrosse") {
+    stick(1.0, 0xd8d8e0, 0.028);
+    g.add(mesh(cyl(0.034, 0.034, 0.25), 0x2a2a3a, 0, 0.05, 0, false));
+    const hoop = mesh(new THREE.TorusGeometry(0.15, 0.022, 6, 16), 0xf2f2f2, 0, 1.08, 0, true, 0.015); hoop.scale.set(1, 1.4, 1); g.add(hoop);
+    const net = new THREE.Mesh(new THREE.CircleGeometry(0.14, 12), new THREE.MeshBasicMaterial({ color: 0xe8e0c8, transparent: true, opacity: 0.55, side: THREE.DoubleSide })); net.position.set(0, 1.08, -0.01); net.scale.set(1, 1.4, 1); g.add(net);
+  } else if (id === "torch") {
+    // a long roasting stick, a toasted marshmallow, and the flame that toasted it
+    stick(1.1, 0x9a6a3a, 0.026);
+    g.add(mesh(cyl(0.07, 0.07, 0.12, 10), 0xf6ead8, 0, 1.02, 0, true, 0.015));
+    g.add(mesh(cyl(0.072, 0.072, 0.03, 10), 0xb0702a, 0, 1.08, 0, false));
+    const f = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 7), new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.9 })); f.position.y = 1.28; g.add(f);
+    const f2 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.2, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a })); f2.position.y = 1.22; g.add(f2);
+    g.userData.flame = f;
+  } else if (id === "frisbee") {
+    const d = mesh(cyl(0.3, 0.26, 0.05, 20), 0xff7a2a, 0, 0.22, 0, true, 0.015); d.rotation.x = Math.PI / 2; g.add(d);
+    const r = mesh(cyl(0.18, 0.18, 0.055, 16), 0xffd84a, 0, 0.22, 0.002, false); r.rotation.x = Math.PI / 2; g.add(r);
+  } else if (id === "broom") {
+    // a curling broom: a long yellow handle and a flat red brush head
+    stick(1.45, 0xf2c230, 0.03);
+    g.add(mesh(cyl(0.034, 0.034, 0.3), 0x2a2a2a, 0, 0.1, 0, false));
+    g.add(mesh(box(0.5, 0.12, 0.16), 0xc8302a, 0, 1.42, 0, true, 0.02));
+    g.add(mesh(box(0.46, 0.06, 0.14), 0x2a2a2a, 0, 1.5, 0, false));
+  } else if (id === "antler") {
+    // a heavy handle with a moose antler lashed to the end
+    stick(1.0, 0x6a4a2a, 0.045);
+    g.add(mesh(cyl(0.06, 0.06, 0.14), 0x9a7a4a, 0, 0.8, 0, false));
+    const palm = mesh(sph(0.3, 10, 8), 0xe0cc9a, 0.2, 0.98, 0, true, 0.02); palm.scale.set(1.2, 0.8, 0.22); palm.rotation.z = -0.35; g.add(palm);
+    for (let k = 0; k < 4; k++) { const t = mesh(new THREE.ConeGeometry(0.05, 0.26, 5), 0xe0cc9a, 0.22 + k * 0.1, 1.14 + k * 0.05 - (k > 2 ? 0.14 : 0), 0, false); t.rotation.z = -0.5 - k * 0.2; g.add(t); }
+  } else if (id === "pole") {
+    // a tent pole: shock-corded aluminium with a spike at the tip
+    stick(1.9, 0xb8c0c8, 0.02);
+    for (let k = 1; k < 4; k++) g.add(mesh(cyl(0.028, 0.028, 0.06, 8), 0x5a6a7a, 0, k * 0.46 - 0.1, 0, false));
+    g.add(mesh(new THREE.ConeGeometry(0.035, 0.18, 6), 0x5a6a7a, 0, 1.88, 0, false));
+  } else if (id === "fork") {
+    stick(1.7, 0x9a6a3a, 0.03);
+    g.add(mesh(box(0.36, 0.05, 0.05), 0x7a8088, 0, 1.6, 0, false));
+    for (const x of [-0.16, 0, 0.16]) g.add(mesh(new THREE.ConeGeometry(0.022, 0.42, 5), 0x9aa0a8, x, 1.83, 0, true, 0.01));
   }
+  return g;
+}
+
+/* ---------------- treasure chests and small props ---------------- */
+// A wooden chest with gold bands. The lid swings open on a hinge at the back.
+export function chest() {
+  const g = new THREE.Group();
+  const wood = 0x8a5a2e, band = toon(0xf2c230, { emissive: 0x3a2800 });
+  g.add(mesh(box(1.3, 0.7, 0.85), wood, 0, 0.35, 0));
+  for (const x of [-0.5, 0.5]) g.add(mesh(box(0.1, 0.72, 0.87), band, x, 0.36, 0, false));
+  const lid = new THREE.Group(); lid.position.set(0, 0.7, -0.42); g.add(lid);
+  const top = mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.3, 12, 1, false, 0, Math.PI), wood, 0, 0, 0.42); top.rotation.z = Math.PI / 2; top.scale.set(1, 1, 0.55); lid.add(top);
+  for (const x of [-0.5, 0.5]) { const b = mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.1, 12, 1, false, 0, Math.PI), band, x, 0, 0.42, false); b.rotation.z = Math.PI / 2; b.scale.set(1, 1, 0.56); lid.add(b); }
+  g.add(mesh(box(0.2, 0.22, 0.06), band, 0, 0.62, 0.45, false));
+  g.userData.lid = lid;
+  return g;
+}
+// Things friendly critters wear, so you can tell them from the ones that bite.
+export function hat(kind, col) {
+  const g = new THREE.Group();
+  if (kind === "bandana") { const b = mesh(sph(0.3, 10, 6), col || 0xd8302a, 0, 0.06, 0, false); b.scale.set(1.05, 0.45, 1.05); g.add(b); g.add(mesh(new THREE.ConeGeometry(0.08, 0.2, 4), col || 0xd8302a, 0, 0.02, -0.3, false)); }
+  else if (kind === "crown") { g.add(mesh(cyl(0.26, 0.24, 0.16, 10, 1), toon(0xf2c230, { emissive: 0x4a3000 }), 0, 0.08, 0, true, 0.02)); for (let k = 0; k < 5; k++) { const a = (k / 5) * 6.28; g.add(mesh(new THREE.ConeGeometry(0.06, 0.18, 4), toon(0xf2c230, { emissive: 0x4a3000 }), Math.sin(a) * 0.22, 0.24, Math.cos(a) * 0.22, false)); } }
+  else if (kind === "cap") { g.add(mesh(new THREE.SphereGeometry(0.26, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), col || 0x2a6ab8, 0, 0, 0, true, 0.02)); const v = mesh(cyl(0.2, 0.2, 0.03, 12), col || 0x2a6ab8, 0, 0.01, 0.2, false); v.scale.set(1, 1, 0.8); g.add(v); }
+  else if (kind === "whistle") { g.add(mesh(new THREE.TorusGeometry(0.2, 0.015, 4, 14), 0xd8302a, 0, 0, 0, false)); g.add(mesh(box(0.08, 0.06, 0.12), 0xc0c4c8, 0, -0.2, 0.05, false)); }
+  else if (kind === "scarf") { const s = mesh(new THREE.TorusGeometry(0.22, 0.07, 6, 14), col || 0x3a8a4a, 0, 0, 0, false); s.rotation.x = Math.PI / 2; g.add(s); g.add(mesh(box(0.1, 0.3, 0.05), col || 0x3a8a4a, 0.12, -0.15, 0.18, false)); }
+  else if (kind === "flower") { for (let k = 0; k < 5; k++) { const a = (k / 5) * 6.28; g.add(mesh(sph(0.07, 6, 4), 0xffffff, Math.cos(a) * 0.09, 0, Math.sin(a) * 0.09, false)); } g.add(mesh(sph(0.06, 6, 4), 0xffd84a, 0, 0.02, 0, false)); }
+  return g;
+}
+// The top of a creature's head, in the creature's own space: the highest point near the middle of the front part.
+// Painted models are one piece, so this is how a hat finds where to sit.
+export function headTop(root) {
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), v = new THREE.Vector3(), pts = [];
+  let z0 = Infinity, z1 = -Infinity;
+  root.traverse((o) => {
+    if (!o.isMesh || o.userData.outline || !o.geometry.attributes.position) return;
+    const p = o.geometry.attributes.position, step = Math.max(1, Math.floor(p.count / 4000));
+    for (let i = 0; i < p.count; i += step) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld).applyMatrix4(inv); pts.push(v.x, v.y, v.z); z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); }
+  });
+  const L = z1 - z0, cut = z0 + L * 0.6;
+  let best = null;
+  for (let i = 0; i < pts.length; i += 3) if (pts[i + 2] > cut && Math.abs(pts[i]) < L * 0.12 && (!best || pts[i + 1] > best.y)) best = new THREE.Vector3(pts[i], pts[i + 1], pts[i + 2]);
+  return best || new THREE.Vector3(0, 1, 0);
+}
+// Give one critter its own colour: each material is copied, then multiplied by the colour, so the others keep their look.
+export function tint(root, color) {
+  const c = new THREE.Color(color);
+  root.traverse((o) => { if (o.isMesh && !o.userData.outline && o.material.color) { o.material = o.material.clone(); o.material.color.multiply(c); } });
+}
+// a glowing hoop for Coach Gus's glide course
+export function hoop() {
+  const g = new THREE.Group();
+  const r = new THREE.Mesh(new THREE.TorusGeometry(3, 0.28, 8, 28), toon(0xffd84a, { emissive: 0xc88a10, emissiveIntensity: 0.7 }));
+  g.add(r);
+  const inner = new THREE.Mesh(new THREE.CircleGeometry(2.8, 28), new THREE.MeshBasicMaterial({ color: 0xfff4c0, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+  g.add(inner);
+  g.userData.ring = r; g.userData.inner = inner;
   return g;
 }
 
