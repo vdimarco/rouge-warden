@@ -90,10 +90,28 @@ export class UI {
   toast(msg, time = 2.2) { $("#toast").textContent = msg; $("#toast").classList.add("show"); this.toastT = time; }
   flash() { const f = $("#flash"); f.classList.add("on"); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove("on"))); }
   slow(on) { $("#slow").classList.toggle("on", on); }
-  boss(name, frac) { const b = $("#bossbar"); if (name == null) { b.hidden = true; return; } b.hidden = false; $("#bossName").textContent = name; $("#bossFill").style.width = Math.max(0, frac * 100) + "%"; }
+  // The boss bar: the red bar drops at once and a pale chunk follows it down, so every hit shows what it took.
+  // Bosses that can be staggered have a gold bar under it that fills as you hit them.
+  boss(name, frac, poise = null, marks = false) {
+    const b = $("#bossbar");
+    if (name == null) { if (!b.hidden) { b.hidden = true; $("#hud").classList.remove("fighting"); } this.bossLag = 1; this.bossKey = null; return; }
+    if (b.hidden) { b.hidden = false; $("#hud").classList.add("fighting"); }
+    if (this.bossKey !== name) { this.bossKey = name; $("#bossName").textContent = name; this.bossLag = frac; b.classList.toggle("marks", marks); }
+    this.bossFrac = Math.max(0, frac);
+    $("#bossFill").style.width = this.bossFrac * 100 + "%";
+    const pw = $("#bossPoise");
+    pw.parentElement.hidden = poise == null;
+    if (poise != null) { pw.style.width = poise * 100 + "%"; pw.parentElement.classList.toggle("full", poise >= 1); }
+  }
+  // a big word that pops up in the middle of the screen: Stagger! Plunge! Flurry!
+  pop(text, kind = "gold") {
+    const el = $("#pop");
+    el.textContent = text; el.className = ""; void el.offsetWidth; el.className = "go " + kind;
+  }
   tick(dt) {
     if (this.bannerT > 0 && (this.bannerT -= dt) <= 0) $("#banner").classList.remove("show");
     if (this.toastT > 0 && (this.toastT -= dt) <= 0) $("#toast").classList.remove("show");
+    if (this.bossKey && this.bossLag > this.bossFrac) { this.bossLag = Math.max(this.bossFrac, this.bossLag - dt * 0.3); $("#bossLag").style.width = this.bossLag * 100 + "%"; }
     if (this.typing) {
       this.typing.t += dt * 45;
       const n = Math.min(this.typing.text.length, Math.floor(this.typing.t));

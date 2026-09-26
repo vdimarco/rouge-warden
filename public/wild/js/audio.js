@@ -93,6 +93,25 @@ export function sfx(name) {
     case "die": notes([392, 370, 349, 330], "triangle", 0.14, 0.3, 0.6); break;
     case "talk": tone(500 + Math.random() * 300, 0.05, "square", 0.04); break;
     case "ui": tone(900, 0.05, "square", 0.05); break;
+    // combat
+    case "swing2": noise(0.22, 0.24, 600, 0.7, "bandpass"); tone(160, 0.2, "sine", 0.06, -60); break;
+    case "smash": tone(90, 0.3, "square", 0.18, -50); noise(0.2, 0.35, 900, 0.8, "lowpass"); noise(0.08, 0.2, 3000, 1); break;
+    case "clink": tone(1800, 0.12, "triangle", 0.1, -300); tone(2600, 0.08, "sine", 0.05, 0, 0.02); break;
+    // the King
+    case "glint": tone(2200, 0.25, "sine", 0.08, 800); tone(3300, 0.2, "sine", 0.04, 0, 0.05); break;
+    case "chomp": noise(0.12, 0.35, 2600, 0.8, "highpass"); tone(220, 0.15, "square", 0.14, -120); break;
+    case "creak": tone(140, 0.5, "sawtooth", 0.05, 90); noise(0.5, 0.06, 700, 6); break;
+    case "tp": for (let i = 0; i < 6; i++) noise(0.06, 0.12, 5000, 1, "highpass", i * 0.07); break;
+    case "gurgle": for (let i = 0; i < 5; i++) tone(180 + Math.random() * 160, 0.09, "sine", 0.12, 120, i * 0.08); break;
+    case "gargle": for (let i = 0; i < 9; i++) tone(120 + Math.random() * 120, 0.07, "sine", 0.1, 80, i * 0.07); noise(0.7, 0.08, 500, 3); break;
+    case "stagger": notes([988, 1319, 988, 1319], "triangle", 0.12, 0.09, 0.3); break;
+    case "roar": tone(70, 1.1, "sawtooth", 0.22, -30); tone(105, 1.0, "sawtooth", 0.12, -40); noise(1.0, 0.3, 400, 0.6, "lowpass"); break;
+    case "whoosh": noise(0.35, 0.25, 1200, 0.6, "bandpass"); tone(300, 0.3, "sine", 0.06, 500); break;
+    case "plunge": tone(260, 0.2, "sine", 0.22, -190); noise(0.18, 0.3, 700, 1.2, "lowpass"); break;
+    case "shlorp": tone(420, 0.7, "sine", 0.25, -370); noise(0.6, 0.4, 500, 0.7, "lowpass"); for (let i = 0; i < 6; i++) tone(200 + i * 60, 0.08, "sine", 0.1, 150, 0.3 + i * 0.06); break;
+    case "seal": noise(1.2, 0.25, 300, 0.8, "lowpass"); tone(55, 1.2, "sine", 0.25, 30); break;
+    case "crack": noise(0.08, 0.3, 4000, 1, "highpass"); tone(900 + Math.random() * 600, 0.05, "square", 0.06, -400); break;
+    case "shatter": for (let i = 0; i < 8; i++) tone(1500 + Math.random() * 2500, 0.2, "triangle", 0.07, -300, i * 0.03); noise(0.8, 0.45, 2500, 0.5); tone(50, 0.8, "sine", 0.35, -20); break;
   }
 }
 
@@ -103,13 +122,15 @@ export function setMood(m) { mood = m; }
 export function music(t) {
   if (!ctx || !on) return;
   const now = ctx.currentTime;
-  if (mood === "fight" || mood === "boss") {
+  if (mood === "fight" || mood.startsWith("boss")) {
     if (now >= nextNote) {
-      const step = mood === "boss" ? 0.18 : 0.22;
+      // each round of the King's fight plays a little faster
+      const step = mood === "boss3" ? 0.14 : mood === "boss2" ? 0.16 : mood === "boss" ? 0.18 : 0.22;
       nextNote = now + step; beat++;
       if (beat % 4 === 0) { tone(55, 0.25, "sine", 0.35, -20, 0, musicGain); noise(0.1, 0.15, 150, 1, "lowpass"); }
       if (beat % 4 === 2) noise(0.08, 0.1, 2400, 1, "bandpass");
-      const base = mood === "boss" ? 110 : 147;
+      const base = mood === "boss3" ? 123 : mood.startsWith("boss") ? 110 : 147;
+      if (mood === "boss3" && beat % 2 === 1) noise(0.05, 0.08, 6000, 1, "highpass");
       if (beat % 2 === 0) tone(base * Math.pow(2, [0, 3, 5, 7, 3, 10, 7, 5][(beat / 2) % 8] / 12), 0.2, "triangle", 0.06, 0, 0, musicGain);
     }
     return;

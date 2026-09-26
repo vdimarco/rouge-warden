@@ -19,7 +19,7 @@ export class Painter {
       tColor: { value: null }, tDepth: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
       uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uFarR: { value: quality.farR || 0 }, uHaze: { value: new THREE.Color(0.6, 0.75, 0.9) }, uGlow: { value: quality.glow },
       uTime: { value: 0 }, uSun: { value: new THREE.Vector2(-9, -9) }, uSunVis: { value: 0 }, uSunCol: { value: new THREE.Color(1, 0.92, 0.75) },
-      uNight: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
+      uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
     };
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
       uniforms: this.uniforms, depthTest: false, depthWrite: false,
@@ -60,6 +60,7 @@ export class Painter {
     if (look) {
       U.uTime.value = look.time;
       U.uNight.value = look.night;
+      U.uMood.value = look.mood || 0; U.uPunch.value = look.punch || 0;
       if (look.haze) U.uHaze.value.copy(look.haze);
       // where the sun is on screen, and whether anything hides it
       const p = look.sunDir.clone().multiplyScalar(1000).add(camera.position).project(camera);
@@ -73,7 +74,7 @@ export class Painter {
 }
 
 const FRAG = /* glsl */ `
-uniform sampler2D tColor, tDepth; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight;
+uniform sampler2D tColor, tDepth; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch;
 uniform vec3 uSunCol, uInk, uHaze; varying vec2 vUv;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
@@ -113,6 +114,8 @@ void main() {
   float far = d0 < 1.0 ? smoothstep(70.0, 380.0, z0) : 0.0;
   float R = uRadius + floor(uFarR * far + 0.5);
   vec3 col = R > 0.5 ? kuwahara(uv, R) : texture2D(tColor, uv).rgb;
+  // a big hit: the colours split for a moment, out from the middle of the screen
+  if (uPunch > 0.01) { vec2 o = (uv - 0.5) * uPunch * 0.012; col.r = mix(col.r, texture2D(tColor, uv + o).r, 0.8); col.b = mix(col.b, texture2D(tColor, uv - o).b, 0.8); }
   // aerial perspective: the farther away, the more it fades into a clear, cool blue
   float haze = d0 < 1.0 ? (1.0 - exp(-max(z0 - 50.0, 0.0) / 520.0)) : 0.0;
   vec3 hz = uHaze; hz = clamp(mix(vec3(dot(hz, vec3(0.299, 0.587, 0.114))), hz, 1.5) * 0.93, 0.0, 1.0);
@@ -153,6 +156,9 @@ void main() {
   float grain = vnoise(uv * uRes * 0.5) * 0.6 + vnoise(uv * uRes * 0.12) * 0.4;
   col *= 0.965 + 0.05 * grain;
   float v = length((uv - 0.5) * asp);
-  col *= mix(1.0, 0.8, smoothstep(0.45, 1.05, v));
+  col *= mix(1.0, 0.8 - uMood * 0.18, smoothstep(0.45 - uMood * 0.12, 1.05, v));
+  // the King's storm: a cool purple grade with less colour
+  col = mix(col, vec3(luma(col)) * vec3(0.92, 0.86, 1.08), uMood * 0.3);
+  col += vec3(1.0, 0.96, 0.9) * uPunch * 0.18;
   gl_FragColor = vec4(col, 1.0);
 }`;
