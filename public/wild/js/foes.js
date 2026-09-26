@@ -463,20 +463,28 @@ export class Boss {
     r.root.position.copy(this.pos); r.root.rotation.y = this.yaw;
     const t = this.G.time;
     if (r.legs.length) {
-      const moving = ["walk", "chase", "dash"].includes(this.state) || this.moving > 0.5;
-      this.phase += dt * (moving ? 9 : 2);
-      r.legs[0].rotation.x = moving ? Math.sin(this.phase) * 0.7 : 0; r.legs[1].rotation.x = moving ? -Math.sin(this.phase) * 0.7 : 0;
-      r.arms[0].rotation.set(moving ? -Math.sin(this.phase) * 0.6 : Math.sin(t * 2) * 0.1, 0, -0.3);
-      r.arms[1].rotation.set(0, 0, 0.3);
+      // how fast the boss really moves, for a stride that matches the ground
+      const sp = this.lastPos ? Math.min(14, Math.hypot(this.pos.x - this.lastPos.x, this.pos.z - this.lastPos.z) / Math.max(dt, 1e-3)) : 0;
+      (this.lastPos = this.lastPos || new THREE.Vector3()).copy(this.pos);
+      this.spd = lerp(this.spd || 0, sp, 1 - Math.exp(-dt * 8));
+      const moving = this.spd > 0.4;
+      if (r.knees) { r.knees[0].rotation.x = r.knees[1].rotation.x = 0; r.elbows[0].rotation.x = r.elbows[1].rotation.x = 0; }
+      r.body.rotation.x = 0;
+      if (moving) { this.phase += dt * M.strideRate(this.spd); M.stridePose(r, this.phase, this.spd); }
+      else {
+        r.legs[0].rotation.x = r.legs[1].rotation.x = 0;
+        r.arms[0].rotation.set(Math.sin(t * 2) * 0.1, 0, -0.3);
+        r.arms[1].rotation.set(0, 0, 0.3);
+      }
       if (this.state === "windup" || this.state === "raise") r.arms[1].rotation.set(-2.8, 0, 0.2);
       if (this.state === "slam" || this.state === "strike") r.arms[1].rotation.set(-0.3, 0, 0.2);
       if (this.state === "throw") r.arms[1].rotation.set(-2.2 + Math.max(0, this.t) * 4, 0, 0.2);
       if (this.state === "cast") { r.arms[0].rotation.set(-1.5, 0, -0.2); r.arms[1].rotation.set(-1.5, 0, 0.2); }
-      r.body.position.y = Math.sin(t * 2) * 0.04;
+      if (!moving) r.body.position.y = Math.sin(t * 2) * 0.04;
     }
     r.root.visible = this.state !== "vanish" || Math.floor(t * 20) % 2 === 0;
     if (this.id === "ryu" && this.active && this.alive) this.ryuPose();
-    if (r.apply) r.apply(dt, 12);
+    if (r.apply) r.apply(dt, this.spd > 0.4 ? 24 : 12);
     tint(r.root, this.flash > 0);
   }
 

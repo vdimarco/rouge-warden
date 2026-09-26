@@ -143,6 +143,8 @@ export function person(name, scale = 1) {
   // stand-in joints the animation code writes to
   const mk = (x = 0, y = 0, z = 0) => { const o = new THREE.Object3D(); o.rotation.set(x, y, z); return o; };
   const legs = [mk(), mk()], arms = [mk(0, 0, -0.18), mk(0, 0, 0.18)], torso = new THREE.Group(), head = new THREE.Group(), hips = new THREE.Group();
+  // optional knee and elbow bends; when one is set (not 0) it replaces the automatic bend below
+  const knees = [mk(), mk()], elbows = [mk(), mk()];
   const glider = umbrellaFrom();
   if (glider) { glider.visible = false; glider.position.set(0, 2.25, 0); root.add(glider); }
   addOutlines(model, 0.018);
@@ -158,18 +160,18 @@ export function person(name, scale = 1) {
       R.setFromEuler(E.set(a.x, a.y, a.z - side * 0.18)).multiply(down[i]);
       set(drive.arms[i], R);
       // elbows bend a little, and more when the arm swings back or reaches up
-      const bend = 0.25 + Math.max(0, a.x) * 0.5 + Math.max(0, -a.x - 1.8) * 0.3;
+      const bend = elbows[i].rotation.x || 0.25 + Math.max(0, a.x) * 0.5 + Math.max(0, -a.x - 1.8) * 0.3;
       set(drive.fore[i], T.setFromEuler(E.set(-bend, 0, 0)));
       const l = legs[i].rotation;
       set(drive.legs[i], R.setFromEuler(E.set(l.x, l.y, l.z)));
       // knees bend when the leg is behind, or tucked in the air
-      set(drive.knees[i], T.setFromEuler(E.set(Math.max(0, l.x) * 1.1 + Math.max(0, -l.x - 0.4) * 0.8, 0, 0)));
+      set(drive.knees[i], T.setFromEuler(E.set(knees[i].rotation.x || Math.max(0, l.x) * 1.1 + Math.max(0, -l.x - 0.4) * 0.8, 0, 0)));
     }
     set(drive.spine, R.setFromEuler(E.set(torso.rotation.x, torso.rotation.y, torso.rotation.z)));
     set(drive.head, R.setFromEuler(E.set(head.rotation.x, head.rotation.y, head.rotation.z)));
   }
   root.scale.setScalar(scale);
-  return { root, body, hips, torso, head, legs, arms, grip, glider, look: { model: name }, apply, glb: true };
+  return { root, body, hips, torso, head, legs, arms, knees, elbows, grip, glider, look: { model: name }, apply, glb: true };
 }
 let umbrellaMaker = null;
 export function setUmbrellaMaker(f) { umbrellaMaker = f; }

@@ -74,6 +74,7 @@ export class Player {
     const w = this.G.world;
     if (this.state === "kayak") this.leaveKayak();
     if (this.fishing && this.G.fishing) this.G.fishing.end();
+    if (this.G.cancelPlunge) this.G.cancelPlunge();
     this.pos.set(x, y ?? this.G.groundAt(x, z, 999), z);
     this.vel.set(0, 0, 0);
     this.state = this.pos.y < -1.2 ? "swim" : "ground";
@@ -529,7 +530,8 @@ export class Player {
     r.root.position.copy(this.pos);
     r.root.rotation.y = this.yaw;
     const sp = Math.hypot(this.vel.x, this.vel.z);
-    this.phase += dt * (this.state === "swim" ? 5 : 3 + sp * 1.25);
+    // on foot the cycle follows the ground: a longer stride the faster you go, so feet do not skate or flail
+    this.phase += dt * (this.state === "swim" ? 5 : this.state === "ground" ? (Math.PI * 2 * sp) / (1.4 + sp * 0.33) + 1.2 : 3 + sp * 1.25);
     const s = Math.sin(this.phase), c = Math.cos(this.phase);
     const [lL, lR] = r.legs, [aL, aR] = r.arms;
     // how fast we are turning, for a lean into the turn
@@ -546,6 +548,9 @@ export class Player {
     r.torso.rotation.set(0, 0, 0); r.head.rotation.set(0, 0, 0);
     aL.rotation.set(0, 0, -0.18); aR.rotation.set(0, 0, 0.18);
     lL.rotation.set(0, 0, 0); lR.rotation.set(0, 0, 0);
+    const [kL, kR] = r.knees || [], [eL, eR] = r.elbows || [];
+    if (kL) { kL.rotation.x = kR.rotation.x = 0; eL.rotation.x = eR.rotation.x = 0; }
+    this.carry = 0;
     if (this.paddleMesh) this.paddleMesh.visible = this.state === "kayak" && !this.fishing;
     let rate = 14;
     if (this.state === "ground") {
@@ -555,15 +560,38 @@ export class Player {
         lL.rotation.x = lR.rotation.x = -1.2; aL.rotation.x = aR.rotation.x = -1.2;
         rate = 30;
       } else {
-        const a = Math.min(1, sp / 6), run = this.sprinting ? 1 : 0;
-        lL.rotation.x = s * 0.9 * a; lR.rotation.x = -s * 0.9 * a;
-        aL.rotation.x = -s * (0.7 + run * 0.3) * a; aR.rotation.x = s * (0.7 + run * 0.3) * a;
-        aL.rotation.z = -0.18 - a * 0.08; aR.rotation.z = 0.18 + a * 0.08;
-        // the shoulders turn against the hips, and the head stays steady
-        r.torso.rotation.y = -s * 0.14 * a; r.head.rotation.y = s * 0.1 * a;
-        r.body.position.y = Math.abs(c) * (0.07 + run * 0.05) * a;
-        r.torso.rotation.x = a * (this.sprinting ? 0.32 : 0.1) + Math.abs(c) * 0.04 * a;
-        r.body.rotation.z = -this.turnLean * 0.05 * a;
+        // a proper stride: the knee lifts as each leg swings through, the elbows stay bent and pump against
+        // the legs, the hips drop as a foot takes the weight, and the whole body leans into speed
+        const m = Math.min(1, sp / 1.5), a = Math.min(1, sp / 6);
+        const run = smooth01((sp - 2.5) / 3), dash = this.sprinting ? smooth01((sp - 7) / 3) : 0;
+        const ph = this.phase, sn = Math.sin(ph), cs = Math.cos(ph);
+        const hip = (0.45 + 0.25 * run + 0.2 * dash) * m;
+        lL.rotation.x = -sn * hip - 0.05 * run; lR.rotation.x = sn * hip - 0.05 * run;
+        if (kL) {
+          // knee: a little bend on the standing leg, a big one mid-swing
+          const lift = (0.55 + 0.95 * run + 0.4 * dash) * m, stand = 0.12 + 0.18 * run;
+          kL.rotation.x = stand * m + lift * Math.pow(Math.max(0, Math.cos(ph - 0.35)), 1.3) + 0.001;
+          kR.rotation.x = stand * m + lift * Math.pow(Math.max(0, Math.cos(ph + Math.PI - 0.35)), 1.3) + 0.001;
+        }
+        const arm = (0.35 + 0.4 * run + 0.25 * dash) * m;
+        aL.rotation.x = sn * arm - 0.15 * run; aR.rotation.x = -sn * arm * 0.8 - 0.15 * run;
+        aL.rotation.z = -0.16 - 0.06 * run; aR.rotation.z = 0.16 + 0.06 * run;
+        if (eL) {
+          const el = 0.35 + 1.05 * run + 0.15 * dash;
+          eL.rotation.x = el + Math.max(0, -aL.rotation.x) * 0.3; eR.rotation.x = el + Math.max(0, -aR.rotation.x) * 0.3;
+        }
+        // shoulders turn against the hips; the head stays level and keeps looking ahead
+        r.torso.rotation.y = sn * (0.1 + 0.08 * run) * m; r.body.rotation.y = -sn * 0.06 * run * m;
+        r.head.rotation.y = -r.torso.rotation.y * 0.8;
+        const lean = 0.04 * a + 0.1 * run + 0.12 * dash;
+        r.body.rotation.x = lean; r.torso.rotation.x = 0.04 * run + 0.06 * dash; r.head.rotation.x = -lean * 0.7;
+        // the lean tips the whole body; bring the legs forward again so the feet land under the hips
+        lL.rotation.x -= lean * 1.2; lR.rotation.x -= lean * 1.2;
+        this.carry = run;
+        r.body.position.y = (0.03 + 0.07 * run) * m * sn * sn - 0.05 * run;
+        r.body.rotation.z = -this.turnLean * 0.05 * a + sn * 0.025 * m;
+        // the stride is already smooth, so the bones follow it closely instead of lagging behind
+        rate = 14 + 16 * m;
         // standing still: slow breathing, a weight shift, and a look around now and then
         const idle = 1 - a;
         r.torso.rotation.x += Math.sin(t * 1.7) * 0.03 * idle;
@@ -571,12 +599,14 @@ export class Player {
         aL.rotation.z -= Math.sin(t * 1.7) * 0.03 * idle; aR.rotation.z += Math.sin(t * 1.7) * 0.03 * idle;
         r.head.rotation.y += Math.sin(t * 0.37) * Math.max(0, Math.sin(t * 0.13)) * 0.45 * idle;
         r.head.rotation.x += Math.sin(t * 0.5 + 1) * 0.05 * idle;
-        if (this.landT > 0) { const q = this.landT / 0.22; r.body.position.y -= q * 0.18; lL.rotation.x = lR.rotation.x = -0.45 * q; r.torso.rotation.x += 0.3 * q; }
+        if (this.landT > 0) { const q = this.landT / 0.22; r.body.position.y -= q * 0.18; lL.rotation.x = lR.rotation.x = -0.45 * q; r.torso.rotation.x += 0.3 * q; if (kL) kL.rotation.x = kR.rotation.x = 0.2 + 0.8 * q; }
       }
     } else if (this.state === "air") {
       const up = clamp(this.vel.y / 9, -1, 1);
       lL.rotation.x = -0.7 + up * 0.2; lR.rotation.x = 0.25 - up * 0.2; aL.rotation.z = -1.0 - up * 0.3; aR.rotation.z = 1.0 + up * 0.3;
       aL.rotation.x = aR.rotation.x = -0.3 * up;
+      // knees tucked on the way up, reaching down for the ground on the way down
+      if (kL) { kL.rotation.x = 0.9 + up * 0.3; kR.rotation.x = 0.35 + up * 0.3; }
       r.torso.rotation.x = -0.1 * up;
     } else if (this.state === "glide") {
       aL.rotation.z = -2.7; aR.rotation.z = 2.7; aL.rotation.x = aR.rotation.x = 0.2;
@@ -665,6 +695,9 @@ export class Player {
     r.root.visible = !r.root.userData.camHide && !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
     // painted 3D models: turn the pose into bone rotations, easing between poses
     if (r.apply) r.apply(dt, rate);
+    // when running, the bent elbow would point the weapon at the sky: tip it forward, and cancel the arm
+    // swing so it stays at one steady angle instead of waving about
+    if (this.weaponMesh) { this.carryK = lerp(this.carryK || 0, this.carry, 1 - Math.exp(-dt * 10)); this.weaponMesh.rotation.x = Math.PI / 2 + this.carryK * (0.55 - this.rig.arms[1].rotation.x); }
     this.trailStep(dt);
   }
   // a ribbon of light behind the head of the weapon, while a swing is fast
@@ -751,6 +784,7 @@ class Trail {
     this.pa.needsUpdate = this.aa.needsUpdate = true;
   }
 }
+const smooth01 = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
 function turn(a, b, k) {
   let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
   if (d < -Math.PI) d += Math.PI * 2;
