@@ -84,9 +84,11 @@ const report = await page.evaluate(() => {
   {
     const S = W.stair; P.place(S.a.x, S.a.z + 4); P.stamina = P.staminaMax; QA.clear();
     let climbs = 0;
-    QA.step(400, () => { const dx = S.b.x - P.x, dz = S.b.z - P.z, l = Math.hypot(dx, dz) || 1, cy = G.cam.yaw; I.move.x = (dx * Math.cos(cy) - dz * Math.sin(cy)) / l; I.move.y = -(dx * Math.sin(cy) + dz * Math.cos(cy)) / l; if (l < 1.5) I.move.x = I.move.y = 0; if (P.state !== "ground") climbs++; });
-    QA.clear();
     const C = W.court;
+    let top = false;
+    // up the stair to its top, then on to the court
+    QA.step(500, () => { if (Math.hypot(S.b.x - P.x, S.b.z - P.z) < 2) top = true; const tx = top ? C.x : S.b.x, tz = top ? C.z : S.b.z, dx = tx - P.x, dz = tz - P.z, l = Math.hypot(dx, dz) || 1, cy = G.cam.yaw; I.move.x = (dx * Math.cos(cy) - dz * Math.sin(cy)) / l; I.move.y = -(dx * Math.sin(cy) + dz * Math.cos(cy)) / l; if (Math.hypot(C.x - P.x, C.z - P.z) < C.r + 1) I.move.x = I.move.y = 0; if (P.state !== "ground") climbs++; });
+    QA.clear();
     if (P.y < C.y - 0.5 || climbs > 5) fail(`stair: ended at y=${P.y.toFixed(1)} (court ${C.y.toFixed(1)}), ${climbs} steps off the ground`);
     else out.notes.push("stair: walked up to the court");
   }

@@ -88,7 +88,7 @@ export function splat(mat, tex) {
 
 export const LAKE = { x: 0, z: -40, r: 250 };
 // the stair cut into the island cliff, from the end of the island dock up to the King's court
-export const STAIR = { a: { x: 20, z: -25, y: 1.2 }, b: { x: 33, z: -52 } };
+export const STAIR = { a: { x: 20, z: -22, y: 0.9 }, b: { x: 33, z: -52 } };
 export const ISLAND = { x: 0, z: -70, r: 50, top: 18 };
 
 // Hand-placed landmarks. Pads flatten the ground under them.
@@ -220,10 +220,11 @@ export class World {
     const KC = BOSSES.find((b) => b.id === "king"), S = STAIR, ax = S.b.x - S.a.x, az = S.b.z - S.a.z, L2 = ax * ax + az * az, top = ISLAND.top;
     for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
       const x = i * CELL - HALF, z = j * CELL - HALF, t = ((x - S.a.x) * ax + (z - S.a.z) * az) / L2;
-      if (t < -0.05 || t > 1.05) continue;
+      // before the first step, a small landing beside the end of the dock
+      if (t < -0.3 || t > 1.05) continue;
       const tc = clamp(t, 0, 1), side = Math.hypot(x - (S.a.x + ax * tc), z - (S.a.z + az * tc));
-      if (side > 9.5 || Math.hypot(x - KC.x, z - KC.z) < KC.r + 5.5) continue;
-      const k = j * (N + 1) + i, w = smooth(9.5, 6, side);
+      if (side > 12 || Math.hypot(x - KC.x, z - KC.z) < KC.r + 2.5) continue;
+      const k = j * (N + 1) + i, w = smooth(12, 8, side);
       H[k] = lerp(H[k], lerp(S.a.y, top, tc), w);
     }
   }
