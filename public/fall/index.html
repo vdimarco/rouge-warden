@@ -10,7 +10,7 @@
 <title>Down the Drain</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Cinzel:wght@800;900&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Silkscreen:wght@400;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <style>
 :root {
   box-sizing: border-box;
@@ -78,6 +78,7 @@ button { font: inherit; color: inherit; }
 @media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #fastText { display: none; }
   .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
 @media (max-width: 380px) { .bar { width: 48px; } }
+@media (max-width: 520px) { .hud { gap: 4px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
 .ticker { position: fixed; z-index: 9; top: calc(var(--hudH, 50px) + 4px); right: calc(var(--sar) + 10px); max-width: min(380px, calc(100vw - 20px)); font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; background: rgba(18, 22, 31, 0.72); border: 0; border-left: 2px solid var(--iris); border-radius: 4px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity 0.5s; }
 .ticker.fade { opacity: 0; pointer-events: none; }
 .ticker[hidden] { display: none; }
@@ -376,67 +377,61 @@ a { color: var(--accent); }
   .bar i, .eye::after, .toast { transition: none; }
 }
 
-/* The title and hero select, in the storybook style shared with Breath of the Lake */
+/* The title and hero select: chunky pixel art, in the game's own look */
 .attract { padding: 0; display: block; background: #07090d; }
 .attract .av { position: absolute; inset: 0; overflow: hidden; }
-.attract .av img { position: absolute; inset: -4%; width: 108%; height: 108%; object-fit: cover; object-position: 30% 50%; animation: dkb 40s ease-in-out infinite alternate; }
-@keyframes dkb { from { transform: scale(1); } to { transform: scale(1.08) translate(-2%, 1.5%); } }
-.attract .glow { position: absolute; inset: 0; background: radial-gradient(ellipse 40% 35% at 70% 85%, rgba(60,230,220,.28), transparent 70%), radial-gradient(ellipse 50% 40% at 60% 12%, rgba(255,190,110,.3), transparent 70%); mix-blend-mode: screen; animation: dglow 6s ease-in-out infinite alternate; }
-@keyframes dglow { to { opacity: .55; } }
-.attract canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.attract .av::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,10,20,.35), rgba(8,10,20,0) 32%, rgba(8,10,20,0) 55%, rgba(4,6,10,.8)); }
-.amain { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(var(--sat) + 4vh) 16px calc(var(--sab) + 3vh); }
-.alogo { text-align: center; filter: drop-shadow(0 6px 18px rgba(0,0,0,.6)); animation: arise 1.6s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes arise { from { opacity: 0; transform: translateY(18px) scale(.97); } }
-.akick { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: "Cinzel", Georgia, serif; font-weight: 800; letter-spacing: .35em; font-size: clamp(11px, 1.5vw, 15px); color: #ffe7a8; text-shadow: 0 1px 2px #000; }
-.akick i { display: block; width: clamp(30px, 8vw, 90px); height: 2px; background: linear-gradient(90deg, rgba(255,231,168,0), #ffe7a8); }
-.akick i:last-child { transform: scaleX(-1); }
-.alogo h1 { margin: 2px 0 0; font-family: "Cinzel", Georgia, serif; font-weight: 900; line-height: .9; display: flex; flex-direction: column; align-items: center; }
-.alogo h1 small { font-size: clamp(22px, 3.8vw, 44px); letter-spacing: .12em; color: #d8fbff; text-shadow: 0 0 14px rgba(60,230,220,.7), 0 2px 4px #000; }
-.alogo h1 span { font-size: clamp(56px, 11vw, 136px); letter-spacing: .04em; background: linear-gradient(180deg, #fff6d8 0%, #ffd873 42%, #d8962e 58%, #fff0b8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1.5px #3a2208; paint-order: stroke fill; }
-.acrest { width: min(420px, 70vw); height: 18px; margin: 10px auto 0; background: radial-gradient(circle at 50% 50%, #7ff5f0 0 5px, transparent 6px), linear-gradient(90deg, transparent, #ffe7a8 20%, #ffe7a8 44%, transparent 44%, transparent 56%, #ffe7a8 56%, #ffe7a8 80%, transparent) center / 100% 2px no-repeat; }
-.apress { margin-top: auto; margin-bottom: 8vh; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(14px, 2vw, 20px); color: #fff; text-shadow: 0 0 12px rgba(120,240,230,.9), 0 2px 3px #000; animation: abreathe 2.4s ease-in-out infinite; cursor: pointer; }
-@keyframes abreathe { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
-.amenu { margin-top: auto; margin-bottom: 5vh; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.amenu button, .amenu a { position: relative; min-width: 280px; padding: 9px 30px; border: 0; background: none; color: #fff4d8; font-family: "Cinzel", Georgia, serif; font-weight: 800; letter-spacing: .14em; font-size: clamp(16px, 2.1vw, 22px); text-decoration: none; text-align: center; text-shadow: 0 2px 4px #000, 0 0 10px rgba(0,0,0,.6); cursor: pointer; }
-.amenu button::before, .amenu a::before { content: ""; position: absolute; inset: 2px 0; border-radius: 3px; background: linear-gradient(90deg, rgba(10,20,30,0), rgba(10,20,30,.6) 20%, rgba(10,20,30,.6) 80%, rgba(10,20,30,0)); z-index: -1; opacity: 0; transition: opacity .15s; }
-.amenu .sel::before, .amenu button:hover::before, .amenu a:hover::before { opacity: 1; }
-.amenu .sel, .amenu button:hover, .amenu a:hover { color: #ffd873; outline: none; }
-.amenu .sel::after { content: "◆"; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); color: #7ff5f0; font-size: 12px; animation: anudge .8s ease-in-out infinite alternate; }
-@keyframes anudge { to { left: 10px; } }
-.afoot { max-width: 620px; text-align: center; font-style: italic; font-weight: 700; font-size: clamp(14px, 1.7vw, 18px); color: rgba(255,244,216,.88); text-shadow: 0 1px 3px #000; margin: 0; }
-.pickscreen { background: linear-gradient(rgba(4,6,12,.72), rgba(4,6,12,.9)), url(art/title.jpg) center / cover; }
+.attract .av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; image-rendering: pixelated; }
+.attract canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; }
+.attract .av::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,8,18,.55), rgba(6,8,18,0) 38%, rgba(6,8,18,0) 60%, rgba(4,5,10,.7)); }
+.amain { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(var(--sat) + 3vh) 16px calc(var(--sab) + 3vh); }
+.alogo { text-align: center; animation: arise .5s steps(5) both; }
+@keyframes arise { from { opacity: 0; transform: translateY(-24px); } }
+.akick { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: "Silkscreen", monospace; font-weight: 700; letter-spacing: .12em; font-size: clamp(12px, 1.6vw, 17px); color: #fff0c0; text-shadow: 2px 2px 0 #0a0c14; }
+.akick i { display: block; width: clamp(18px, 5vw, 60px); height: 4px; background: repeating-linear-gradient(90deg, #ffcf4a 0 6px, transparent 6px 10px); box-shadow: 2px 2px 0 #0a0c14; }
+.alogo h1 { margin: 4px 0 0; font-weight: 400; line-height: .92; display: flex; flex-direction: column; align-items: center; }
+.alogo h1 small { font-family: "Silkscreen", monospace; font-weight: 700; font-size: clamp(22px, 3.8vw, 44px); letter-spacing: .06em; color: #8ff0e8; text-shadow: 3px 3px 0 #0a3a44, 6px 6px 0 #0a0c14; }
+.alogo h1 span { font-family: var(--fell); font-size: clamp(60px, 12vw, 150px); letter-spacing: .02em; color: #ffcf4a;
+  text-shadow: 0 3px 0 #e89a22, 0 6px 0 #c2621a, 0 9px 0 #7a1a14, 5px 13px 0 #0a0c14, -3px 0 0 #0a0c14, 3px 0 0 #0a0c14, 0 -3px 0 #0a0c14; }
+.attract .apress { margin-top: auto; margin-bottom: 9vh; padding: 8px 16px; font-family: "Silkscreen", monospace; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: clamp(15px, 2vw, 22px); color: #fff0c0; background: rgba(8,10,20,.72); box-shadow: 0 0 0 3px #0a0c14, 0 0 0 5px #ffcf4a, 5px 5px 0 5px #0a0c14; animation: abreathe 1.6s ease-in-out infinite; cursor: pointer; }
+@keyframes abreathe { 50% { color: #ffcf4a; } }
+.amenu { margin-top: auto; margin-bottom: 4vh; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px 8px; background: rgba(8,10,20,.84); box-shadow: 0 0 0 3px #0a0c14, 0 0 0 6px #ffcf4a, 0 0 0 9px #0a0c14, 8px 8px 0 9px rgba(0,0,0,.5); }
+.amenu button, .amenu a { position: relative; min-width: 300px; padding: 8px 20px 8px 40px; border: 0; background: none; color: #d8d2c0; font-family: "Silkscreen", monospace; font-weight: 700; letter-spacing: .06em; font-size: clamp(16px, 2vw, 21px); text-decoration: none; text-align: left; text-transform: uppercase; text-shadow: 2px 2px 0 #0a0c14; cursor: pointer; }
+.amenu .sel, .amenu button:hover, .amenu a:hover { color: #ffcf4a; background: rgba(255,207,74,.12); outline: none; }
+.amenu .sel::before { content: ""; position: absolute; left: 14px; top: 50%; width: 0; height: 0; margin-top: -7px; border: 7px solid transparent; border-left: 10px solid #ffcf4a; border-right: 0; filter: drop-shadow(2px 2px 0 #0a0c14); animation: anudge .5s steps(2) infinite alternate; }
+@keyframes anudge { to { transform: translateX(4px); } }
+.amenu[hidden], .apress[hidden] { display: none; }
+.attract .afoot { max-width: 620px; text-align: center; font-family: "Silkscreen", monospace; font-size: clamp(11px, 1.3vw, 14px); color: #fff0c0; text-shadow: 2px 2px 0 #0a0c14; margin: 0; }
+.pickscreen { background: linear-gradient(rgba(4,6,12,.78), rgba(4,6,12,.9)), url(art/title.webp) center / cover; }
 .pickpanel, .howpanel { max-width: 1100px; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; background: none; border: 0; box-shadow: none; }
 .pickpanel.cols, .howpanel.cols { columns: auto; display: flex; }
-.pickhead { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .12em; font-size: clamp(22px, 3.4vw, 40px); color: #ffe39a; text-shadow: 0 2px 6px #000; margin: 0 0 1.5vh; }
+.pickhead { font-family: var(--fell); font-weight: 400; letter-spacing: .02em; font-size: clamp(24px, 3.6vw, 42px); color: #ffcf4a; text-shadow: 0 3px 0 #c2621a, 0 6px 0 #7a1a14, 4px 9px 0 #0a0c14; margin: 0 0 3.5vh; }
 .pickpanel .roster { display: flex; justify-content: center; align-items: center; gap: clamp(8px, 1.4vw, 18px); width: 100%; margin: 0; }
-.pickpanel .friend { position: relative; flex: 0 1 auto; height: min(46vh, 22vw); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 10px; background: #1a2430 center / cover no-repeat; filter: saturate(.55) brightness(.6); transform: scale(.9); transition: transform .3s cubic-bezier(.2,.8,.2,1), filter .3s; box-shadow: 0 10px 28px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,231,168,.35); justify-content: flex-end; }
-.pickpanel .friend:nth-child(1) { background-image: url(art/hero1.webp); }
-.pickpanel .friend:nth-child(2) { background-image: url(art/hero2.webp); }
-.pickpanel .friend:nth-child(3) { background-image: url(art/hero3.webp); }
-.pickpanel .friend:nth-child(4) { background-image: url(art/hero4.webp); }
-.pickpanel .friend:nth-child(5) { background-image: url(art/hero5.webp); }
+.pickpanel .friend { position: relative; flex: 0 1 auto; height: min(46vh, 22vw); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 0; background: #141a24 center top / cover no-repeat; image-rendering: pixelated; filter: saturate(.5) brightness(.55); transition: transform .15s steps(3), filter .15s; box-shadow: 0 0 0 3px #0a0c14, 0 0 0 5px #5a4a3a, 6px 6px 0 5px rgba(0,0,0,.55); justify-content: flex-end; }
+.pickpanel .friend:nth-child(1) { background-image: url(art/card1.webp); }
+.pickpanel .friend:nth-child(2) { background-image: url(art/card2.webp); }
+.pickpanel .friend:nth-child(3) { background-image: url(art/card3.webp); }
+.pickpanel .friend:nth-child(4) { background-image: url(art/card4.webp); }
+.pickpanel .friend:nth-child(5) { background-image: url(art/card5.webp); }
 .pickpanel .friend img, .pickpanel .friend small { display: none; }
-.pickpanel .friend::after { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,231,168,.45); border-radius: 7px; pointer-events: none; }
-.pickpanel .friend b { position: relative; width: 100%; padding: 6px 2px; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .06em; font-size: clamp(10px, 1.3vw, 14px); color: #fff4d8; background: linear-gradient(180deg, rgba(10,8,4,0), rgba(10,8,4,.85) 40%); border-radius: 0 0 10px 10px; }
-.pickpanel .friend:hover { filter: saturate(.85) brightness(.85); transform: scale(.94); }
-.pickpanel .friend[aria-pressed="true"] { filter: none; transform: scale(1.04); z-index: 2; background-color: #1a2430; box-shadow: 0 0 0 3px #ffd873, 0 0 40px rgba(120,240,230,.45), 0 16px 40px rgba(0,0,0,.6); animation: dpulse 2.4s ease-in-out infinite; }
-@keyframes dpulse { 50% { box-shadow: 0 0 0 3px #ffe7a8, 0 0 60px rgba(120,240,230,.7), 0 16px 40px rgba(0,0,0,.6); } }
-.heroplate { margin-top: 2vh; min-width: min(560px, 92vw); padding: 8px 40px 10px; background: linear-gradient(90deg, rgba(10,24,30,0), rgba(10,24,30,.88) 15%, rgba(10,24,30,.88) 85%, rgba(10,24,30,0)); border-top: 1px solid rgba(255,231,168,.5); border-bottom: 1px solid rgba(255,231,168,.5); }
-.heroplate b { display: block; font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .12em; font-size: clamp(20px, 2.8vw, 30px); color: #ffe39a; }
-.heroplate span { font-style: italic; font-weight: 700; font-size: clamp(14px, 1.7vw, 18px); color: #d8fbff; }
-.pickpanel .wrow { justify-content: center; margin-top: 1.6vh; }
-.pbtns { justify-content: center; margin-top: 1.8vh; }
-.pbtns .btn { font-family: "Cinzel", Georgia, serif; font-weight: 900; letter-spacing: .1em; }
+.pickpanel .friend b { position: relative; width: 100%; padding: 5px 2px; font-family: "Silkscreen", monospace; font-weight: 700; letter-spacing: .04em; font-size: clamp(10px, 1.2vw, 14px); color: #fff0c0; text-shadow: 2px 2px 0 #0a0c14; background: rgba(8,10,20,.85); box-shadow: 0 -3px 0 #0a0c14; }
+.pickpanel .friend:hover { filter: saturate(.8) brightness(.8); }
+.pickpanel .friend[aria-pressed="true"] { filter: none; transform: translateY(-8px); z-index: 2; background-color: #141a24; box-shadow: 0 0 0 3px #0a0c14, 0 0 0 6px #ffcf4a, 0 0 0 9px #0a0c14, 8px 10px 0 9px rgba(0,0,0,.55); }
+.pickpanel .friend[aria-pressed="true"] b { color: #ffcf4a; }
+.heroplate { margin-top: 3vh; min-width: min(560px, 92vw); padding: 10px 24px 12px; background: rgba(8,10,20,.88); box-shadow: 0 0 0 3px #0a0c14, 0 0 0 5px #fff0c0, 0 0 0 8px #0a0c14, 6px 6px 0 8px rgba(0,0,0,.5); }
+.heroplate b { display: block; font-family: var(--fell); font-weight: 400; letter-spacing: .02em; font-size: clamp(20px, 2.8vw, 30px); color: #ffcf4a; text-shadow: 3px 3px 0 #7a1a14; }
+.heroplate span { font-family: "Silkscreen", monospace; font-size: clamp(12px, 1.5vw, 16px); color: #8ff0e8; text-shadow: 2px 2px 0 #0a0c14; }
+.pickpanel .wrow { justify-content: center; margin-top: 2vh; }
+.pbtns { justify-content: center; margin-top: 2vh; }
+.pickscreen .btn { font-family: "Silkscreen", monospace; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 0; box-shadow: 0 0 0 3px #0a0c14, 5px 5px 0 3px rgba(0,0,0,.5); }
 .howpanel .clips { width: 100%; }
 @media (max-width: 700px) {
   .pickpanel .roster { flex: none; }
-  .pickpanel .friend { height: min(52vh, 110vw); display: none; }
+  .pickpanel .friend { height: min(50vh, 100vw); display: none; }
   .pickpanel .friend[aria-pressed="true"] { display: flex; transform: none; }
-  .amenu button, .amenu a { min-width: 220px; padding: 7px 20px; }
+  .amenu button, .amenu a { min-width: 240px; padding: 7px 14px 7px 36px; }
 }
-@media (max-aspect-ratio: 3/4) { .attract .av img { object-position: 12% 50%; } }
-@media (prefers-reduced-motion: reduce) { .attract .av img, .attract .glow, .apress, .amenu .sel::after, .pickpanel .friend[aria-pressed="true"] { animation: none; } }
+@media (max-aspect-ratio: 3/4) { .attract .av img { object-position: 14% 50%; } }
+@media (prefers-reduced-motion: reduce) { .alogo, .apress, .amenu .sel::before { animation: none; } }
 </style>
 </head>
 <body data-mood="none">
@@ -449,6 +444,7 @@ a { color: var(--accent); }
   <span class="spacer"></span>
   <button class="icon eyebtn" id="hudEye" type="button" aria-label="The Cottage's mood and decisions"><span class="eye" aria-hidden="true"></span><span class="lbl" id="hudMood">Watching</span></button>
   <button class="icon" id="mapBtn" type="button" aria-pressed="true" aria-label="Map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+  <button class="icon" id="gfxBtn" type="button" aria-pressed="true" aria-label="Painted graphics. Switch to classic."><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M7.2 14.2c-2 0-3.6 1.5-3.6 3.5 0 1.3-.7 2.2-1.6 2.6 1 .7 2.4 1 3.6 1 2.6 0 4.4-1.8 4.4-4.2z"/></svg></button>
   <button class="icon" id="soundBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span class="lbl sr">Sound on</span></button>
   <button class="icon" id="fsBtn" type="button" aria-label="Full screen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
@@ -471,7 +467,7 @@ a { color: var(--accent); }
 <div class="banner" id="banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 
 <div class="overlay attract" id="attract">
-  <div class="av" aria-hidden="true"><img src="art/title.jpg" alt=""><i class="glow"></i><canvas id="attractFx"></canvas></div>
+  <div class="av" aria-hidden="true"><img src="art/title.webp" alt=""><canvas id="attractFx"></canvas></div>
   <div class="amain">
     <div class="alogo">
       <div class="akick"><i></i>GET PLUNGER'D<i></i></div>
@@ -482,6 +478,7 @@ a { color: var(--accent); }
     <nav class="amenu" id="attractMenu" hidden>
       <button type="button" id="goDown">Go Down the Hole</button>
       <button type="button" id="howBtn">How to Play</button>
+      <button type="button" id="gfxMenu">Graphics: Painted</button>
       <button type="button" data-switch>Switch Game</button>
       <a href="/">Back to the Arcade</a>
     </nav>
@@ -592,6 +589,8 @@ a { color: var(--accent); }
         <h3>Your gun</h3>
         <div class="chips" id="chips"></div>
         <ul class="spelllist" id="spellList"></ul>
+        <h3>Graphics</h3>
+        <button class="btn quiet" id="gfxSheet" type="button">Graphics: Painted</button>
         <h3>What things do</h3>
         <p>Fire spreads through wood, moss, oil, and swamp gas. Water puts it out, and it turns lava to stone. Acid eats earth and rock, but glass holds it. Lightning in water shocks all that touch the water. Gold falls like sand. Walk into it to pick it up.</p>
         <p>Your leaf blower lets you hover. It refills when you stand on solid ground.</p>
@@ -2210,6 +2209,97 @@ const SFX = (() => {
 /* ------------------------------------------------------------------ the world: every pixel simulated */
 
 const W = 256, H = 720, CS = 16, CW = W / CS, CH = H / CS;
+/* Painted graphics: pictures painted on Higgsfield, one texel for each world cell.
+   Classic keeps the flat four-shade palettes. The choice is saved in this browser. */
+const Paint = (() => {
+  const T = 64, B = 128, N = T * T, NB = B * B;
+  const base = /\/fall$/.test(location.pathname) ? location.pathname + "/tex/" : "tex/";
+  // the picture for each material; rock and earth change with the layer
+  const FIXED = { [BEDROCK]: "bedrock", [SAND]: "sand", [BONE]: "bone", [WOOD]: "wood", [MOSS]: "mossrock", [OBSIDIAN]: "obsidian", [GOLD]: "gold", [METAL]: "iron", [PORCELAIN]: "porcelain" };
+  const ROCKS = { crypt: "fieldstone", cistern: "fieldstone", garden: "mossrock", forge: "fieldstone" };
+  const EARTHS = { crypt: "earth", cistern: "silt", garden: "earth", forge: "earth" };
+  const px = {};
+  // TX is the face of a material, TR its lit top edge, TD its dark edge next to open air
+  const TX = new Uint32Array(NMAT * N), TR = new Uint32Array(NMAT * N), TD = new Uint32Array(NMAT * N);
+  const BG = new Uint32Array(4 * NB), HAS = new Uint8Array(NMAT);
+  let on = true, loaded = false, bgOk = false, key = "crypt", theme = null, pending = 0;
+  try { on = localStorage.getItem("drain.gfx") !== "classic"; } catch (e) {}
+
+  const pack = (r, g, b) => (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+  const cl = (v) => (v < 0 ? 0 : v > 255 ? 255 : v | 0);
+  const done = () => { if (--pending === 0) { loaded = true; if (theme) build(theme, key); } };
+  function load(name, size) {
+    pending++;
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const x = c.getContext("2d", { willReadFrequently: true });
+      x.drawImage(im, 0, 0, size, size);
+      px[name] = x.getImageData(0, 0, size, size).data;
+      done();
+    };
+    // a missing picture leaves that material classic
+    im.onerror = done;
+    im.src = base + name + ".png";
+  }
+  const mean = (cols) => { let r = 0, g = 0, b = 0; for (const c of cols) { r += (c >> 16) & 255; g += (c >> 8) & 255; b += c & 255; } return [r / cols.length, g / cols.length, b / cols.length]; };
+  // tint the picture so its average lands on the material's colours, and keep its detail.
+  // k: how far to pull toward those colours. sat: how much of the picture's own colour to keep.
+  function paintMat(m, name, cols, k, sat) {
+    const d = px[name];
+    if (!d) return;
+    let sr = 0, sg = 0, sb = 0;
+    for (let i = 0; i < N * 4; i += 4) { sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; }
+    sr /= N; sg /= N; sb /= N;
+    const [tr, tg, tb] = mean(cols);
+    const f = (t, s) => Math.max(0.25, Math.min(3, 1 + (t / Math.max(1, s) - 1) * k));
+    const fr = f(tr, sr), fg = f(tg, sg), fb = f(tb, sb), o = m * N, lt = Math.max(1, tr * 0.3 + tg * 0.59 + tb * 0.11);
+    for (let i = 0; i < N; i++) {
+      let r = d[i * 4] * fr, g = d[i * 4 + 1] * fg, b = d[i * 4 + 2] * fb;
+      // pull stray colours (berries, rust) back toward the material's hue
+      const l = (r * 0.3 + g * 0.59 + b * 0.11) / lt;
+      r = tr * l + (r - tr * l) * sat; g = tg * l + (g - tg * l) * sat; b = tb * l + (b - tb * l) * sat;
+      TX[o + i] = pack(cl(r), cl(g), cl(b));
+      TR[o + i] = pack(cl(r * 1.3 + 16), cl(g * 1.3 + 16), cl(b * 1.3 + 16));
+      TD[o + i] = pack(cl(r * 0.55), cl(g * 0.55), cl(b * 0.55));
+    }
+    HAS[m] = 1;
+  }
+  // the back wall: dark enough to stay behind the play, with 4 levels of shade like the classic wall
+  function paintBg(name, t) {
+    const d = px["bg_" + name];
+    if (!d) return false;
+    let s = 0;
+    for (let i = 0; i < NB * 4; i += 4) s += d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+    s /= NB;
+    const [r0, g0, b0] = mean(t.bg), want = Math.max(20, (r0 * 0.3 + g0 * 0.59 + b0 * 0.11) * 1.1), k = want / Math.max(1, s);
+    const lv = [0.95, 0.78, 0.6, 0.45];
+    for (let a = 0; a < 4; a++) for (let i = 0; i < NB; i++) {
+      const q = k * lv[a];
+      BG[a * NB + i] = pack(cl(d[i * 4] * q), cl(d[i * 4 + 1] * q), cl(d[i * 4 + 2] * q));
+    }
+    return true;
+  }
+  function build(t, k) {
+    theme = t; key = k;
+    if (!loaded) return;
+    HAS.fill(0);
+    for (const m in FIXED) paintMat(+m, FIXED[m], MATS[m].cols, 0.5, 0.85);
+    paintMat(ROCK, ROCKS[k] || "fieldstone", t.rock, 1, 0.6);
+    paintMat(EARTH, EARTHS[k] || "earth", t.earth, 1, 0.4);
+    bgOk = paintBg(k, t);
+  }
+  for (const n of new Set([...Object.values(FIXED), ...Object.values(ROCKS), ...Object.values(EARTHS)])) load(n, T);
+  for (const n of Object.keys(THEMES)) load("bg_" + n, B);
+  return {
+    TX, TR, TD, BG, HAS, build,
+    get on() { return on && loaded; },
+    get bg() { return on && loaded && bgOk; },
+    get wanted() { return on; },
+    set(v) { on = !!v; try { localStorage.setItem("drain.gfx", on ? "painted" : "classic"); } catch (e) {} },
+  };
+})();
+
 const World = (() => {
   const N = W * H;
   const mat = new Uint8Array(N), life = new Uint8Array(N), shade = new Uint8Array(N), clk = new Uint8Array(N);
@@ -2239,6 +2329,7 @@ const World = (() => {
       const cols = m === ROCK ? t.rock : m === EARTH ? t.earth : MATS[m].cols;
       for (let s = 0; s < 4; s++) { const c = cols[s % cols.length]; PAL[m * 4 + s] = abgr(c); RIM[m * 4 + s] = abgr(lift(c, 1.35, 18)); }
     }
+    Paint.build(t, Object.keys(THEMES).find((k) => THEMES[k] === t) || "crypt");
   }
   applyTheme(theme);
 
@@ -4528,6 +4619,7 @@ const Render = (() => {
     const ox = Math.round(cam.x - vw / 2 + (rnd() - 0.5) * shake), oy = Math.round(cam.y - vh / 2 + (rnd() - 0.5) * shake);
     const mat = World.mat, life = World.life, shade = World.shade, PAL = World.PAL, RIM = World.RIM, FP = World.FIRE_PAL;
     const far = World.far, ao = World.ao, sky = World.sky, BGPAL = World.BGPAL, SKYPAL = World.SKYPAL, hasSky = World.hasSky;
+    const painted = Paint.on, pbg = Paint.bg, TX = Paint.TX, TR = Paint.TR, TD = Paint.TD, HAS = Paint.HAS, PBG = Paint.BG;
     // the back wall moves slower than the ground in front of it
     const pox = (ox * 0.4) | 0, poy = (oy * 0.4) | 0;
     const dd = Game.digDmg;
@@ -4545,6 +4637,7 @@ const Render = (() => {
         const i = wy * W + wx, m = mat[i];
         if (m === EMPTY) {
           if (skyRow) buf[row + x] = SKYPAL[sky[i]];
+          else if (pbg) buf[row + x] = PBG[(ao[i] << 14) | (((wy - poy) & 127) << 7) | ((wx - pox) & 127)];
           else { let fx = wx - pox; if (fx < 0) fx += W; else if (fx >= W) fx -= W; buf[row + x] = BGPAL[ao[i] * 8 + far[frow + fx]]; }
           continue;
         }
@@ -4552,6 +4645,11 @@ const Render = (() => {
         if (m === FIRE) c = FP[(8 - ((life[i] >> 2) & 7) + shade[i]) & 7];
         else if (m === LAVA) c = PAL[LAVA * 4 + ((shade[i] + (tk >> 3) + (wx >> 3)) & 3)];
         else if (m === EMBER) c = FP[(shade[i] + (tk >> 2) + i) % 3 + 3];
+        else if (painted && HAS[m]) {
+          // the picture is pinned to the world, so digging cuts through it; loose grains each carry their own spot of it
+          const ti = (m << 12) | ((wy & 63) << 6) | ((KIND[m] === K.POWDER ? wx + shade[i] * 23 : wx) & 63);
+          c = mat[i - W] === EMPTY ? TR[ti] : mat[i + W] === EMPTY || mat[i - 1] === EMPTY || mat[i + 1] === EMPTY ? TD[ti] : TX[ti];
+        }
         else if (wy > 0 && mat[i - W] === EMPTY && KIND[m] <= K.POWDER) c = RIM[m * 4 + shade[i]];
         else if (KIND[m] === K.LIQUID && wy > 0 && mat[i - W] === EMPTY) c = ((wx * 7 + (tk >> 1)) & 63) === 0 ? 0xffffffff : RIM[m * 4 + ((shade[i] + (tk >> 3) + (wx >> 2)) & 3)];
         else c = PAL[m * 4 + shade[i]];
@@ -4905,6 +5003,7 @@ const Input = (() => {
     }
     if (k === "r" && !e.repeat) inp.flaskEdge = true;
     if (k === "m") UI.sound(SFX.toggle());
+    if (k === "g" && !e.repeat) $("#gfxBtn").click();
     if (k === "q" || k === "tab") { e.preventDefault(); Minimap.toggle(); }
     if (k === "1" || k === "2" || k === "3") selectWand(Number(k) - 1);
     if (k === "e") Game.input.swapEdge = true;
@@ -5258,6 +5357,8 @@ const UI = (() => {
     // while a menu is open, the play HUD steps out of the way
     document.body.classList.toggle("menu", !!document.querySelector(".overlay:not([hidden])") || !$("#sheet").hidden);
     for (const o of document.querySelectorAll(".overlay:not([hidden])")) {
+      // the title screen lays itself out; fitting it here made it jump every half second
+      if (o.classList.contains("attract")) continue;
       const cs = getComputedStyle(o);
       fitBox(o.firstElementChild, o.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), o.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
@@ -5943,13 +6044,15 @@ const Title = (() => {
   (function loop(now) {
     if ($("#attract").hidden) { requestAnimationFrame(loop); return; }
     requestAnimationFrame(loop);
-    const W = cv.width, H = cv.height; x.clearRect(0, 0, W, H);
+    const W = cv.width, H = cv.height, g = Math.max(3, Math.round(W / 420)); x.clearRect(0, 0, W, H);
     for (const p of parts) {
       if (!reduce) { p.y -= 0.0006 * p.v; p.x += Math.sin(now / 1500 + p.r) * 0.0003; }
       if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); }
       const a = 0.35 + 0.35 * Math.sin(now / 600 + p.r * 3);
       x.fillStyle = p.teal ? `rgba(120,245,235,${a})` : `rgba(255,200,110,${a})`;
-      x.beginPath(); x.arc(p.x * W, p.y * H, 1.2 + p.v * 1.6, 0, 7); x.fill();
+      // square sparks on a pixel grid, to match the art
+      const sz = p.v > 0.7 ? g * 2 : g;
+      x.fillRect(Math.round(p.x * W / g) * g, Math.round(p.y * H / g) * g, sz, sz);
     }
   })(0);
   return { back };
@@ -5965,9 +6068,23 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidd
 document.querySelectorAll(".tabs button").forEach((b) => { b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); document.querySelectorAll(".sheet .tab").forEach((s) => { s.hidden = s.dataset.tab !== b.dataset.tab; }); UI.ledger(); UI.fit(); }; });
 $("#forgetBtn").onclick = () => { Memory.reset(); UI.sheet(true, "memory"); };
 $("#untuneBtn").onclick = () => { Tune.reset(); UI.sheet(true, "memory"); };
+// painted or classic graphics, from the HUD, the title menu, or the G key
+function setGfx(v) {
+  Paint.set(v);
+  const b = $("#gfxBtn");
+  b.setAttribute("aria-pressed", String(v));
+  b.setAttribute("aria-label", v ? "Painted graphics. Switch to classic." : "Classic graphics. Switch to painted.");
+  b.title = v ? "Graphics: Painted" : "Graphics: Classic";
+  $("#gfxMenu").textContent = $("#gfxSheet").textContent = "Graphics: " + (v ? "Painted" : "Classic");
+}
+setGfx(Paint.wanted);
+$("#gfxBtn").onclick = () => { setGfx(!Paint.wanted); UI.hint(Paint.wanted ? "Painted graphics" : "Classic graphics", 1200); };
+$("#gfxMenu").onclick = $("#gfxSheet").onclick = () => setGfx(!Paint.wanted);
 $("#soundBtn").onclick = () => { const muted = SFX.toggle(); UI.sound(muted); if (window.Chip) Chip.setOn(!muted); };
 $("#mapBtn").onclick = () => Minimap.toggle();
 $("#mini").onclick = () => Minimap.toggle();
+// iPhone browsers cannot go full screen, so the button would do nothing there
+if (!document.documentElement.requestFullscreen) $("#fsBtn").style.display = "none";
 $("#fsBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); };
 requestAnimationFrame(frame);
 </script>

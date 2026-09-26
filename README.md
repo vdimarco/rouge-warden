@@ -8,7 +8,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
 
-- Down the Drain opens on a painted title screen in the same storybook style as Breath of the Lake: a painted cavern picture, a gold logo, "Press any button", a menu, and a hero select with painted hero cards in gold frames. Its own 8-bit theme plays from the first press.
+- Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
@@ -44,6 +44,10 @@ The world of Get Plunger'd is painted. GPT Image 2.5 on Higgsfield painted the a
 ## Down the Drain
 
 Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
+
+### Graphics
+
+There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. Classic draws each material in four flat shades. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.
 
 ### The loop
 
@@ -227,7 +231,8 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain, its painted title picture, and its hero cards |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, and its hero cards |
+| `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
 | `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `ui.js` (HUD and map), `audio.js`, and `main.js` |
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
