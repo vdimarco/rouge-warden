@@ -62,6 +62,8 @@ export class Player {
   setWeapon(id) {
     if (this.weaponMesh) this.rig.grip.remove(this.weaponMesh);
     this.weaponMesh = M.weaponMesh(id);
+    // how long the weapon is, for the swing trail
+    this.tipY = new THREE.Box3().setFromObject(this.weaponMesh).max.y;
     this.weaponMesh.rotation.x = Math.PI / 2;
     this.rig.grip.add(this.weaponMesh);
     this.weaponId = id;
@@ -122,6 +124,8 @@ export class Player {
     const G = this.G;
     if (this.dead) return;
     this.invuln = Math.max(0, this.invuln - dt);
+    // in a short scene (the plunge) the game moves the hero; only the pose runs here
+    if (this.cine) { this.animate(dt, { x: 0, z: 0, mag: 0 }); return; }
     const cy = G.cam.yaw;
     const fx = -Math.sin(cy), fz = -Math.cos(cy), rx = Math.cos(cy), rz = -Math.sin(cy);
     let mx = inp.move.x, my = inp.move.y;
@@ -234,6 +238,9 @@ export class Player {
       this.vel.x = lerp(this.vel.x, dir.x * speed, k);
       this.vel.z = lerp(this.vel.z, dir.z * speed, k);
       if (dir.mag > 0.1 && !this.attack) this.yaw = turn(this.yaw, Math.atan2(dir.x, dir.z), dt * 12);
+      // the step-in: a short lunge toward the target while the swing winds up
+      const a = this.attack;
+      if (a && a.lunge > 0 && a.t < a.hitAt) { const sp = a.lunge / (a.hitAt * a.dur); this.vel.x = Math.sin(this.yaw) * sp; this.vel.z = Math.cos(this.yaw) * sp; }
     }
     this.sprinting = act && inp.sprint && dir.mag > 0.2 && !this.exhausted;
     let nx = this.pos.x + this.vel.x * dt, nz = this.pos.z + this.vel.z * dt;
@@ -241,7 +248,9 @@ export class Player {
     // steep ground ahead: grab on and climb
     w.normal(res.x, res.z, N);
     const uphill = -(N.x * dir.x + N.z * dir.z);
-    if (N.y < 0.72 && dir.mag > 0.3 && act && this.roll <= 0) {
+    // on a dock or a roof the ground below does not count: only its own slope does
+    const onDeck = G.groundAt(res.x, res.z, this.pos.y) > w.height(res.x, res.z) + 0.3;
+    if (N.y < 0.72 && dir.mag > 0.3 && act && this.roll <= 0 && !onDeck) {
       if (uphill > 0.25 && this.startClimb(null)) return;
       // too steep to walk up and not facing it head-on: slide along the slope instead of stopping dead
       if (uphill > 0) {
@@ -257,40 +266,57 @@ export class Player {
     this.pos.x = res.x; this.pos.z = res.z;
     const g = G.groundAt(this.pos.x, this.pos.z, this.pos.y);
     // slide down very steep slopes
-    if (N.y < 0.62 && g <= this.pos.y + 0.1) { this.vel.x += N.x * 20 * dt; this.vel.z += N.z * 20 * dt; }
+    if (N.y < 0.62 && g <= this.pos.y + 0.1 && !onDeck) { this.vel.x += N.x * 20 * dt; this.vel.z += N.z * 20 * dt; }
     if (g < this.pos.y - 0.9) { this.state = "air"; this.airT = 0; this.vel.y = 0; return; }
     this.pos.y = g;
     if (g < -1.2) { this.enterSwim(); return; }
     this.safeT += dt;
     if (this.safeT > 1 && N.y > 0.8 && g > 0.5) { this.lastSafe.copy(this.pos); this.safeT = 0; }
     if (!act) return;
-    if (inp.jump && this.roll <= 0 && !this.attack) { this.vel.y = 9.5; this.state = "air"; this.airT = 0; G.sfx("jump"); return; }
-    if (inp.roll && this.roll <= 0 && !this.attack) { this.roll = 0.42; this.lastRoll = G.time; if (dir.mag > 0.1) this.yaw = Math.atan2(dir.x, dir.z); G.sfx("roll"); }
+    // a jump or roll pressed a moment early still happens; either one cuts off the end of a swing once it has landed
+    this.jumpBuf = Math.max(0, (this.jumpBuf || 0) - dt); this.rollBuf = Math.max(0, (this.rollBuf || 0) - dt);
+    if (inp.jump) this.jumpBuf = 0.2;
+    if (inp.roll) this.rollBuf = 0.25;
+    const free = !this.attack || (this.attack.hit && this.attack.t > 0.5 && !this.attack.spin);
+    if (this.jumpBuf > 0 && this.roll <= 0 && free) { this.attack = null; this.jumpBuf = 0; this.vel.y = 9.5; this.state = "air"; this.airT = 0; G.sfx("jump"); return; }
+    if (this.rollBuf > 0 && this.roll <= 0 && free) { this.attack = null; this.rollBuf = 0; this.roll = 0.42; this.lastRoll = G.time; if (dir.mag > 0.1) this.yaw = Math.atan2(dir.x, dir.z); G.sfx("roll"); }
     this.combat(dt, inp, dir);
   }
 
   combat(dt, inp, dir) {
-    const G = this.G, W = this.weapon;
+    const G = this.G;
     this.comboT -= dt;
+    // a press is remembered for a moment, so taps during a swing chain into the next one
+    this.atkBuf = Math.max(0, (this.atkBuf || 0) - dt);
+    if (inp.attack) this.atkBuf = 0.3;
     if (this.attack) {
       const a = this.attack;
-      a.t += dt / (a.spin ? 0.5 : W.time);
-      if (!a.hit && a.t > 0.35) { a.hit = true; G.meleeHit(this, a.spin); }
-      if (a.t >= 1) { this.attack = null; this.comboT = 0.35; }
+      // in a flurry the swings come faster
+      a.t += (dt * (G.slowmo > 0 ? 1.5 : 1)) / a.dur;
+      if (!a.hit && a.t > a.hitAt) { a.hit = true; G.meleeHit(this, a.spin, a.n); }
+      if (!a.spin && a.hit && a.t > (a.n === 2 ? 0.7 : 0.55) && this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, (a.n + 1) % 3); return; }
+      if (a.t >= 1) { this.attack = null; this.comboT = 0.3; this.lastN = a.n; }
       return;
     }
     if (inp.attackHeld && this.charge >= 0) this.charge += dt; else if (!inp.attackHeld && this.charge > 0.5 && !this.exhausted) {
       this.charge = 0;
-      if (this.useStamina(25)) { this.attack = { t: 0, spin: true, hit: false }; G.sfx("spin"); }
+      if (this.useStamina(25)) { this.attack = { t: 0, spin: true, hit: false, n: 0, dur: 0.5, hitAt: 0.35, lunge: 0 }; G.sfx("spin"); }
       return;
     } else this.charge = 0;
-    if (inp.attack) {
-      const t = G.autoAim(this, dir);
-      if (t) this.yaw = Math.atan2(t.x - this.pos.x, t.z - this.pos.z);
-      this.combo = this.comboT > 0 ? (this.combo + 1) % 3 : 0;
-      this.attack = { t: 0, spin: false, hit: false, n: this.combo };
-      G.sfx("swing");
-    }
+    if (this.atkBuf > 0) { this.atkBuf = 0; this.swing(dir, this.comboT > 0 ? ((this.lastN ?? -1) + 1) % 3 : 0); }
+  }
+  swing(dir, n) {
+    const G = this.G, W = this.weapon, t = G.autoAim(this, dir);
+    let lunge = dir.mag > 0.2 ? 0.5 : 0.25;
+    if (t) {
+      this.yaw = Math.atan2(t.x - this.pos.x, t.z - this.pos.z);
+      // close the gap to the target, but never walk into it
+      lunge = clamp(Math.hypot(t.x - this.pos.x, t.z - this.pos.z) - (t.T ? t.T.r : 1) - W.reach * 0.55, 0, 1.8);
+    } else if (dir.mag > 0.2) this.yaw = Math.atan2(dir.x, dir.z);
+    const fin = n === 2;
+    this.combo = n;
+    this.attack = { t: 0, spin: false, hit: false, n, dur: W.time * (fin ? 1.35 : 1), hitAt: fin ? 0.45 : 0.36, lunge };
+    G.sfx(fin ? "swing2" : "swing");
   }
 
   air(dt, dir, inp, act) {
@@ -604,18 +630,27 @@ export class Player {
       else if (f.phase === "caught") { aL.rotation.x = aR.rotation.x = -3.0; aL.rotation.z = 0.1; aR.rotation.z = -0.1; r.head.rotation.x = -0.25; }
       if (this.state === "kayak") { lL.rotation.x = lR.rotation.x = -1.45; r.body.position.y = -0.68; }
     } else if (this.attack) {
-      const u = this.attack.t, e = u < 0.35 ? u / 0.35 : 1 - (u - 0.35) / 0.65;
-      rate = 26;
-      if (this.attack.spin) {
-        r.body.rotation.y = u * Math.PI * 2; aR.rotation.set(-1.5, 0, 1.4);
-      } else {
-        const n = this.attack.n;
-        if (n === 0) { aR.rotation.x = -2.6 + e * 3.4; aR.rotation.z = 0.4; r.torso.rotation.y = -0.3 + e * 0.5; }
-        else if (n === 1) { aR.rotation.x = -1.4; aR.rotation.z = 1.8 - e * 3.4; r.torso.rotation.y = 0.6 - e * 1.2; }
-        else { aR.rotation.x = -3 + e * 4; r.torso.rotation.x = e * 0.4; r.body.position.y += Math.sin(u * Math.PI) * 0.4; }
-      }
+      const a = this.attack, u = Math.min(1, a.t);
+      // swings are fast: the bones follow the keyed pose closely, or the blow would land before the arm does
+      rate = 65;
+      if (a.spin) {
+        const e = u * u * (3 - 2 * u);
+        r.body.rotation.y = e * Math.PI * 2; aR.rotation.set(-1.5, 0, 1.4); aL.rotation.set(-0.4, 0, -1.2);
+        r.torso.rotation.x = 0.15; lL.rotation.x = -0.4; lR.rotation.x = 0.3; r.body.position.y = -0.1;
+        rate = 40;
+      } else swingPose(r, a.n, u, a.hitAt);
     } else if (this.charge > 0.1) {
       aR.rotation.set(-1.4, 0, 1.6); r.torso.rotation.y = -0.8;
+    }
+    // the plunge: both hands on the handle, up high, then drive it down into the bowl
+    if (this.cine === "plunge" && G.plunge) {
+      const p = G.plunge.pump, jump = G.plunge.t < 0.4;
+      const k = jump ? 0 : p < 0.7 ? 1 - p / 0.7 : (p - 0.7) / 0.3;
+      aR.rotation.set(-2.7 + k * 2.2, 0, 0.1); aL.rotation.set(-2.6 + k * 2.1, 0, -0.1);
+      r.torso.rotation.set(-0.2 + k * 0.6, 0, 0); r.head.rotation.set(0.2 * k, 0, 0);
+      r.body.rotation.set(0, 0, 0); r.body.position.set(0, -k * 0.3, 0);
+      lL.rotation.set(jump ? -1.2 : -0.5 * k, 0, 0); lR.rotation.set(jump ? -0.4 : 0.3 * k, 0, 0);
+      rate = 30;
     }
     // mantle: the body rises over the edge, then swings forward onto the top
     if (this.mantleT > 0 && this.mantleFrom && this.state === "ground") {
@@ -630,9 +665,92 @@ export class Player {
     r.root.visible = !r.root.userData.camHide && !(this.invuln > 0 && this.invuln < 0.9 && Math.floor(this.invuln * 20) % 2 === 0 && this.roll <= 0);
     // painted 3D models: turn the pose into bone rotations, easing between poses
     if (r.apply) r.apply(dt, rate);
+    this.trailStep(dt);
+  }
+  // a ribbon of light behind the head of the weapon, while a swing is fast
+  trailStep(dt) {
+    if (!this.trail) this.trail = new Trail(this.G.scene);
+    const a = this.attack;
+    if (a && this.weaponMesh && (a.spin || (a.t > a.hitAt * 0.55 && a.t < a.hitAt + 0.3))) {
+      this.weaponMesh.updateWorldMatrix(true, false);
+      this.trail.push(this.weaponMesh.localToWorld(TB.set(0, this.tipY * 0.45, 0)), this.weaponMesh.localToWorld(TT.set(0, this.tipY, 0)));
+    }
+    this.trail.update(dt);
   }
 }
 
+// Keyed swing poses: wind up, strike, follow through, and ease back to a guard.
+// Each pose: right arm x and z, left arm x and z, torso twist and lean, body height, left and right leg.
+const GUARD = [-0.7, 0.3, -0.5, -0.3, 0.1, 0.1, 0, -0.2, 0.2];
+const SWINGS = [
+  // a forehand slash, right to left
+  [[-2.3, 1.0, -0.6, -0.5, -0.6, -0.05, 0.02, -0.35, 0.25], [-0.6, -0.4, -0.3, -0.2, 0.45, 0.22, -0.06, -0.5, 0.35], [-0.3, -0.8, -0.2, -0.3, 0.65, 0.25, -0.08, -0.5, 0.35]],
+  // a backhand, left to right
+  [[-1.4, -1.3, -0.8, -0.2, 0.65, 0.05, 0, -0.3, 0.3], [-1.25, 1.2, -0.4, -0.6, -0.4, 0.15, -0.05, 0.35, -0.4], [-1.0, 1.7, -0.3, -0.7, -0.6, 0.15, -0.05, 0.35, -0.4]],
+  // the finisher: both hands overhead, then a smash into the ground
+  [[-3.0, 0.1, -2.7, -0.1, 0, -0.3, 0.14, -0.1, 0.1], [0.1, 0.05, -0.3, -0.2, 0, 0.5, -0.16, -0.7, 0.45], [0.3, 0.05, -0.1, -0.2, 0, 0.55, -0.18, -0.7, 0.45]],
+];
+const SP = new Array(9);
+function swingPose(r, n, u, hitAt) {
+  const [wind, hit, follow] = SWINGS[n], w = hitAt * 0.62, f = Math.min(0.9, hitAt + 0.22);
+  let A, B, k;
+  if (u < w) { A = GUARD; B = wind; k = u / w; k = 1 - (1 - k) * (1 - k); }
+  else if (u < hitAt) { A = wind; B = hit; k = (u - w) / (hitAt - w); k = k * k; }
+  else if (u < f) { A = hit; B = follow; k = (u - hitAt) / (f - hitAt); }
+  else { A = follow; B = GUARD; k = (u - f) / (1 - f); k = k * k * (3 - 2 * k); }
+  for (let i = 0; i < 9; i++) SP[i] = A[i] + (B[i] - A[i]) * k;
+  const [aL, aR] = r.arms, [lL, lR] = r.legs;
+  aR.rotation.set(SP[0], 0, SP[1]); aL.rotation.set(SP[2], 0, SP[3]);
+  r.torso.rotation.y = SP[4]; r.torso.rotation.x = SP[5]; r.body.position.y += SP[6];
+  lL.rotation.x = SP[7]; lR.rotation.x = SP[8];
+}
+// The swing trail: a ring of samples along the weapon, drawn as one ribbon that fades from head to tail.
+const TRAIL_N = 24, TRAIL_LIFE = 0.14, TB = new THREE.Vector3(), TT = new THREE.Vector3(), PB = new THREE.Vector3(), PT = new THREE.Vector3();
+class Trail {
+  constructor(scene) {
+    this.pos = new Float32Array(TRAIL_N * 6); this.al = new Float32Array(TRAIL_N * 2);
+    this.pts = Array.from({ length: TRAIL_N }, () => ({ b: new THREE.Vector3(), t: new THREE.Vector3(), age: 9 }));
+    this.n = 0;
+    const g = new THREE.BufferGeometry();
+    this.pa = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage); this.aa = new THREE.BufferAttribute(this.al, 1).setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute("position", this.pa); g.setAttribute("aA", this.aa);
+    const idx = []; for (let i = 0; i < TRAIL_N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } g.setIndex(idx);
+    this.mesh = new THREE.Mesh(g, new THREE.ShaderMaterial({
+      vertexShader: "attribute float aA; varying float vA; void main() { vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: "varying float vA; void main() { gl_FragColor = vec4(1.0, 0.96, 0.86, vA); }",
+      transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    }));
+    this.mesh.frustumCulled = false; this.mesh.visible = false; this.mesh.renderOrder = 3;
+    scene.add(this.mesh);
+  }
+  // add a sample, with two more in between so a fast swing still makes a smooth curve
+  push(b, t) {
+    const last = this.n ? this.pts[0] : null, steps = last && last.age < 0.05 ? 3 : 1;
+    if (last) { PB.copy(last.b); PT.copy(last.t); }
+    for (let s = 1; s <= steps; s++) {
+      const p = this.pts.pop(), k = s / steps;
+      this.pts.unshift(p);
+      if (steps > 1) { p.b.lerpVectors(PB, b, k); p.t.lerpVectors(PT, t, k); } else { p.b.copy(b); p.t.copy(t); }
+      p.age = 0;
+      this.n = Math.min(TRAIL_N, this.n + 1);
+    }
+  }
+  update(dt) {
+    let live = 0;
+    for (let i = 0; i < TRAIL_N; i++) { const p = this.pts[i]; p.age += dt; if (i < this.n && p.age < TRAIL_LIFE) live = i + 1; }
+    this.n = live;
+    this.mesh.visible = live > 1;
+    if (!this.mesh.visible) return;
+    for (let i = 0; i < TRAIL_N; i++) {
+      const p = this.pts[Math.min(i, live - 1)];
+      this.pos[i * 6] = p.b.x; this.pos[i * 6 + 1] = p.b.y; this.pos[i * 6 + 2] = p.b.z;
+      this.pos[i * 6 + 3] = p.t.x; this.pos[i * 6 + 4] = p.t.y; this.pos[i * 6 + 5] = p.t.z;
+      const a = i < live ? (1 - i / live) * (1 - p.age / TRAIL_LIFE) * 0.85 : 0;
+      this.al[i * 2] = a * 0.1; this.al[i * 2 + 1] = a;
+    }
+    this.pa.needsUpdate = this.aa.needsUpdate = true;
+  }
+}
 function turn(a, b, k) {
   let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
   if (d < -Math.PI) d += Math.PI * 2;

@@ -63,6 +63,8 @@ G.painter = painter;
 // hooks for the QA scripts in qa/wild
 G.test = { get step() { return step; }, get camera() { return updateCamera; }, get inBox() { return inBox; } };
 G.shake = (t) => { G.shakeT = Math.max(G.shakeT, t); };
+// a punch: a quick flash and a squeeze of colour on the screen, for the biggest hits
+G.punch = (k) => { G.punchT = Math.max(G.punchT || 0, k); };
 G.groundAt = (x, z, y) => {
   let h = G.world.height(x, z);
   for (const b of G.world.boxes) {
@@ -449,28 +451,39 @@ function targets() {
   for (const b of G.bosses) { if (b.alive && b.active) out.push(b); for (const c of b.clones) if (c.alive) out.push(c); }
   return out;
 }
-G.meleeHit = (P, spin) => {
+G.meleeHit = (P, spin, n = 0) => {
   const W = P.weapon, slot = G.inv.weapons[G.inv.cur];
-  let hits = 0;
+  // the third swing of a combo is the heavy one
+  const fin = !spin && n === 2;
+  let hits = 0, big = false;
   for (const f of targets()) {
     const dx = f.x - P.x, dz = f.z - P.z, d = Math.hypot(dx, dz), r = f.T ? f.T.r : 1;
     if (d > W.reach * (spin ? 1.2 : 1) + r) continue;
     if (Math.abs((f.pos ? f.pos.y : P.y) - P.y) > (f.T && f.T.h ? f.T.h + 1 : 3)) continue;
     if (!spin) { let a = Math.atan2(dx, dz) - P.yaw; a = Math.atan2(Math.sin(a), Math.cos(a)); if (Math.abs(a) > W.arc / 2 + 0.35 && d > r + 0.8) continue; }
     const crit = G.slowmo > 0 || Math.random() < P.crit;
-    const dmg = W.dmg * P.dmgMult * (crit ? 2 : 1) * (spin ? 1.8 : 1);
-    f.hurt(dmg, P.x, P.z, W.knock, W.stun);
-    G.fx.puff(f.x, (f.pos ? f.pos.y : P.y) + 1.2, f.z, crit ? 0xffd84a : 0xffffff, crit ? 10 : 5);
+    const dmg = W.dmg * P.dmgMult * (crit ? 2 : 1) * (spin ? 1.8 : fin ? 1.4 : 1);
+    const ok = f.hurt(dmg, P.x, P.z, W.knock * (fin ? 1.5 : 1), W.stun, { poise: fin ? 1.5 : spin ? 1.3 : 1 });
+    // a spark where the weapon meets the target, on its surface and at chest height
+    const dd = d || 1, hy = f.pos ? Math.min(f.pos.y + (f.T && f.T.h ? f.T.h * 0.45 : 1.2), P.y + 1.4) : P.y + 1.2;
+    const sx = f.x - (dx / dd) * r * 0.8, sz = f.z - (dz / dd) * r * 0.8;
+    if (ok === false) { G.fx.spark(sx, hy, sz, 0xb8c8ff, 3, 0.7); continue; }
+    G.fx.spark(sx, hy, sz, crit ? 0xffd84a : 0xfff4d0, crit ? 10 : 6, crit || fin ? 1.4 : 1);
+    if (f.def) big = true;
     hits++;
   }
   if (hits) {
-    A.sfx(G.slowmo > 0 ? "crit" : "hit"); G.hitstop = 0.06; G.shake(0.12);
+    A.sfx(G.slowmo > 0 ? "crit" : fin ? "smash" : "hit");
+    G.hitstop = spin ? 0.09 : fin ? 0.1 : big ? 0.065 : 0.055;
+    G.shake(fin || spin ? 0.22 : 0.12);
     if (slot.dur !== Infinity) { slot.dur -= 1; if (slot.dur <= 0) { A.sfx("break"); G.ui.toast("Your " + W.name + " broke!"); G.inv.weapons.splice(G.inv.cur, 1); G.inv.cur = 0; P.setWeapon("plunger"); } }
   }
+  return hits;
 };
 G.perfectDodge = () => {
   if (G.slowmo > 0) return;
-  G.slowmo = 2; A.sfx("slowmo"); G.ui.toast("Flurry! Hit back!");
+  G.slowmo = 2; A.sfx("slowmo"); G.ui.pop("Flurry!", "blue"); G.punch(0.35);
+  const P = G.player; G.fx.spark(P.x, P.y + 1, P.z, 0x9ae8ff, 12, 1.6);
 };
 
 /* ---------------- the big moments ---------------- */
@@ -550,9 +563,12 @@ G.bossIntro = (b) => {
   G.ui.boss(b.def.name, 1);
   G.activeBoss = b;
   G.say(b, b.S.lines[0]);
+  // the King's court seals shut behind you
+  if (b.def.seal) { G.world.setSeal(true); A.sfx("seal"); G.shake(0.4); }
 };
-G.bossLeft = (b) => { if (G.activeBoss === b) { G.activeBoss = null; G.ui.boss(null); } };
-G.say = (who, text) => { G.ui.toast("“" + text + "”", 2.4); };
+G.bossLeft = (b) => { if (G.activeBoss === b) { G.activeBoss = null; G.ui.boss(null); } if (b.def.seal) G.world.setSeal(false); if (G.plunge) { G.plunge = null; G.player.cine = null; } };
+G.say = (who, text) => { G.ui.toast("“" + text + "”", 2.4); if (who && who.id === "king") who.talk = 1.2; };
+G.kingPhase = (n) => { G.ui.pop(n === 2 ? "Round two" : "Final round", "red"); A.setMood("boss" + n); };
 const FREED = {
   gabe: ["Gabe", ["Ugh… my head. Was I yelling at bears again?", "That toilet got in my head. Thanks for knocking it out.", "Take my Grit. It'll block three hits for you. It comes back after a minute."]],
   christian: ["Christian", ["Whoa. Did I just throw a whole deck at you?", "The King made me see clones everywhere. Wild.", "Here's a real trick. Press R and the wind lifts you sky high. Open your umbrella up there."]],
@@ -560,13 +576,15 @@ const FREED = {
 };
 G.bossDown = async (b) => {
   G.ui.boss(null); G.activeBoss = null; A.setMood("day");
+  if (b.def.seal) G.world.setSeal(false);
+  if (G.plunge && G.plunge.b === b) endPlunge();
   G.slowmo = 1.5; A.sfx("victory"); G.shake(0.8);
   G.hazards.clear();
   for (const f of G.foes) if (f.boss === b && f.alive) f.die();
   b.clones.forEach((c) => c.hurt());
   G.fx.puff(b.x, b.pos.y + 3, b.z, 0x7a3a9a, 30);
   G.save.bosses.push(b.id); G.save.check = [b.center.x, b.center.z];
-  if (b.id === "king") { await wait(2.5); ending(); return; }
+  if (b.id === "king") { G.ui.pop("Flushed!", "gold"); await wait(3.4); ending(); return; }
   G.ui.banner(b.def.name, "Freed from the sludge", 3.5);
   await wait(2.5);
   b.rig.root.visible = false;
@@ -578,6 +596,53 @@ G.bossDown = async (b) => {
   G.writeSave();
   if (G.save.bosses.length === 3) setTimeout(() => G.ui.say([["The Cottage", "All three are free. The King is alone now."], ["The Cottage", "Take the kayak from the cottage dock to Clog Island. End this."]]), 3000);
 };
+/* ---------------- the plunge ---------------- */
+// When the King reels, run up and plunge him: you jump onto the rim of his bowl, pump four times,
+// and he spits you out.
+function plungeReady() {
+  const b = G.activeBoss, P = G.player;
+  if (!b || !b.exposed || !b.alive || G.plunge || P.dead || P.state !== "ground") return null;
+  return Math.hypot(P.x - b.x, P.z - b.z) < b.r + 3.2 ? b : null;
+}
+function startPlunge(b) {
+  const P = G.player;
+  G.plunge = { b, t: 0, pumps: 0, pump: 0, from: P.pos.clone(), wid: P.weaponId };
+  // whatever you carry, this is a job for a plunger
+  if (P.weaponId !== "plunger" && P.weaponId !== "golden") P.setWeapon("plunger");
+  b.endMove(); b.go("plunged", 99);
+  P.attack = null; P.roll = 0; P.charge = 0; P.cine = "plunge"; P.invuln = 3; P.vel.set(0, 0, 0);
+  A.sfx("whoosh"); G.ui.pop("Plunge!", "gold"); G.ui.prompt(null);
+}
+const PUMPS = [0.62, 1.0, 1.38, 1.8];
+function plungeStep(dt) {
+  const S = G.plunge, b = S.b, P = G.player;
+  S.t += dt;
+  const rim = b.local(0, 3.25, 2.1);
+  if (S.t < 0.4) { const u = S.t / 0.4; P.pos.set(lerp(S.from.x, rim.x, u), lerp(S.from.y, rim.y, u) + Math.sin(u * Math.PI) * 2.5, lerp(S.from.z, rim.z, u)); }
+  else P.pos.set(rim.x, rim.y, rim.z);
+  P.yaw = b.yaw + Math.PI; P.vel.set(0, 0, 0); P.invuln = Math.max(P.invuln, 1);
+  // how far into the next pump, for the pose: 0 with the plunger up, 1 when it hits
+  S.pump = S.pumps < 4 ? clamp(1 - (PUMPS[S.pumps] - S.t) / 0.38, 0, 1) : 1;
+  while (S.pumps < 4 && S.t >= PUMPS[S.pumps]) {
+    S.pumps++;
+    const last = S.pumps === 4;
+    A.sfx(last ? "shlorp" : "plunge");
+    G.hitstop = last ? 0.14 : 0.07; G.shake(last ? 0.7 : 0.3); G.punch(last ? 0.9 : 0.35);
+    b.plungeHit((last ? 14 : 10) * P.dmgMult, last);
+    if (!G.plunge) return; // he went down
+  }
+  if (S.t >= 2.25) endPlunge();
+}
+function endPlunge() {
+  const S = G.plunge, P = G.player;
+  if (!S) return;
+  G.plunge = null; P.cine = null;
+  if (P.weaponId !== S.wid && G.inv.weapons.some((w) => w.id === S.wid)) P.setWeapon(S.wid);
+  // flung off the rim, away from the King
+  const b = S.b, fx = Math.sin(b.yaw), fz = Math.cos(b.yaw);
+  P.state = "air"; P.airT = 0; P.vel.set(fx * 9, 9, fz * 9); P.invuln = 1.2;
+  if (b.alive) b.plungeEnd();
+}
 function grant(id, quiet) {
   if (id === "gabe") G.abilities.grit = { charges: 3, cd: 0 };
   if (id === "christian") G.abilities.lift = { cd: 0 };
@@ -683,6 +748,7 @@ const SKY = {
   dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
   night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.35, hi: 0.55 },
 };
+const STORM = { top: C(0x2a1638), hor: C(0x8a6a9a), sun: C(0xd8b8ff), hemi: C(0x9a80c0) };
 const tmpC = new THREE.Color();
 function mixSky(a, b, t, key) { return tmpC.copy(a[key]).lerp(b[key], t).clone(); }
 function lighting() {
@@ -695,6 +761,10 @@ function lighting() {
   else if (elev > -0.3) { A1 = SKY.night; B1 = SKY.dusk; k = (elev + 0.3) / 0.25; }
   else { A1 = SKY.night; B1 = SKY.night; k = 0; }
   const top = mixSky(A1, B1, k, "top"), hor = mixSky(A1, B1, k, "hor");
+  // the King's storm: while you fight him the sky turns purple and the light goes cold
+  const ldt = Math.min(0.1, Math.max(0, G.time - (G.lightT ?? G.time))); G.lightT = G.time;
+  const mood = (G.mood = lerp(G.mood || 0, G.activeBoss && G.activeBoss.def.seal ? 1 : 0, 1 - Math.exp(-ldt * 1.2)));
+  top.lerp(STORM.top, mood * 0.75); hor.lerp(STORM.hor, mood * 0.65);
   const w = G.world;
   w.skyU.uTop.value.copy(top); w.skyU.uHorizon.value.copy(hor);
   const lightDir = elev > -0.08 ? sd : sd.clone().negate();
@@ -707,9 +777,12 @@ function lighting() {
   // distant hills fade into a soft blue haze, like a painted backdrop
   scene.fog.color.copy(hor).lerp(top, 0.18);
   sun.color.copy(mixSky(A1, B1, k, "sun"));
-  sun.intensity = lerp(A1.si, B1.si, k);
+  sun.intensity = lerp(A1.si, B1.si, k) * (1 - mood * 0.4);
+  sun.color.lerp(STORM.sun, mood * 0.5);
+  scene.fog.near = lerp(140, 80, mood); scene.fog.far = lerp(1150, 700, mood);
   hemi.color.copy(mixSky(A1, B1, k, "hemi")); hemi.groundColor.copy(mixSky(A1, B1, k, "gnd"));
   hemi.intensity = lerp(A1.hi, B1.hi, k);
+  hemi.color.lerp(STORM.hemi, mood * 0.45);
   const L = 0.35 + 0.65 * (1 - night) * (0.75 + 0.25 * smooth(-0.05, 0.4, elev));
   const sunCol = mixSky(A1, B1, k, "sun");
   for (const U of [w.waterU, w.grassU]) { U.uFog.value.copy(scene.fog.color); U.uFogNear.value = scene.fog.near; U.uFogFar.value = scene.fog.far; U.uLight.value = L; U.uSunCol.value.copy(sunCol); }
@@ -721,7 +794,7 @@ function lighting() {
   const cloudCol = tmpC.set(0xffffff).lerp(sunCol, 0.35 + dusk * 0.4).multiplyScalar(0.38 + 0.62 * L);
   for (const c of w.clouds) c.material.color.copy(cloudCol);
   // the colour far hills fade into: a deeper blue than the fog, like the painted distances in an animated film
-  G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42) };
+  G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42), mood, punch: G.punchT || 0 };
   w.cabin.userData.windows.emissiveIntensity = night * 1.2;
   if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 40;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
@@ -887,12 +960,23 @@ function updateCamera(dt) {
   const sp = Math.hypot(P.vel.x, P.vel.z);
   if ((touchUI || G.pad) && c.idle > 1.2 && sp > 2 && P.state !== "climb") { const want = P.yaw + Math.PI; let d = Math.atan2(Math.sin(want - c.yaw), Math.cos(want - c.yaw)); c.yaw += d * Math.min(1, dt * 0.8); }
   const tgt = tv.set(P.x, P.y + (P.state === "swim" ? 1.0 : P.state === "kayak" ? 1.25 : 1.7), P.z);
+  // in a boss fight the camera keeps the boss in view: it swings round behind you, facing the boss,
+  // whenever you are not turning it yourself, and it aims a little toward the boss
+  const B = G.activeBoss && G.activeBoss.alive && !G.plunge ? G.activeBoss : null;
+  if (B) {
+    const bx = B.pos.x - P.x, bz = B.pos.z - P.z, bd = Math.hypot(bx, bz);
+    if (bd > 3 && c.idle > 0.4) { const w = Math.atan2(-bx, -bz), dd = Math.atan2(Math.sin(w - c.yaw), Math.cos(w - c.yaw)); c.yaw += dd * Math.min(1, dt * 2.4); }
+    const sh = Math.min(bd * 0.25, 5) / Math.max(bd, 0.01);
+    tgt.x += bx * sh; tgt.z += bz * sh; tgt.y += (B.hopY || 0) * 0.35 + (B.def.seal ? 1 : 0);
+  }
+  // during the plunge the camera circles the King
+  if (G.plunge) { const b = G.plunge.b; tgt.set(lerp(P.x, b.x, 0.4), P.y + 0.8, lerp(P.z, b.z, 0.4)); c.yaw += dt * 0.5; }
   if (c.snap) { c.target.copy(tgt); c.cur = undefined; c.dcol = undefined; c.lift = 0; c.snap = false; }
   c.target.x = lerp(c.target.x, tgt.x, 1 - Math.exp(-dt * 14));
   c.target.z = lerp(c.target.z, tgt.z, 1 - Math.exp(-dt * 14));
   c.target.y = lerp(c.target.y, tgt.y, 1 - Math.exp(-dt * 7));
   c.target.y = Math.max(c.target.y, G.world.height(c.target.x, c.target.z) + 0.5, P.y + 0.5);
-  const want = c.dist * (P.state === "glide" ? 1.3 : G.activeBoss ? 1.35 : 1);
+  const want = c.dist * (P.state === "glide" ? 1.3 : G.plunge ? 1.15 : G.activeBoss ? (G.activeBoss.def.seal ? 1.55 : 1.35) : 1);
   c.cur = lerp(c.cur || want, want, 1 - Math.exp(-dt * 3));
   // How far the camera can sit along a direction before a hill or a building is in the way.
   // Ground right next to where the camera ends up is not a blocker: the camera just rises above it.
@@ -973,6 +1057,7 @@ function loop(now) {
   G.frame = (G.frame || 0) + 1;
   if (!G.world) return;
   G.time += dt;
+  G.punchT = Math.max(0, (G.punchT || 0) - dt * 2.5);
   frameTime(now);
   if (!G.started) { titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); return; }
   readInput();
@@ -1017,8 +1102,18 @@ function step(dt) {
   const opt = !fishing && !P.dead && !G.ui.modal && P.state !== "climb" && P.state !== "glide" ? nearest() : null;
   G.ui.prompt(opt && opt.label);
   if (opt && inp.interact) { opt.go(); inp.interact = false; }
+  // the King is reeling: plunge him
+  if (G.plunge) plungeStep(dt);
+  else { const pb = plungeReady(); if (pb) { G.ui.prompt("Plunge!", G.pad ? "X" : "J"); if (inp.attack || inp.interact) { startPlunge(pb); inp.attack = inp.interact = false; } } }
+  if (G.hitstop > 0) return;
   if (fishing) { G.fishing.update(dt, inp); inp.attack = inp.interact = false; }
   P.update(dt, inp);
+  // the sludge wall around the King's court: no way out until the fight is over
+  const SB = G.activeBoss;
+  if (SB && SB.def.seal && !G.plunge) {
+    const C = G.world.court, dx = P.x - C.x, dz = P.z - C.z, dd = Math.hypot(dx, dz), R = C.r + 0.2;
+    if (dd > R) { P.pos.x = C.x + (dx / dd) * R; P.pos.z = C.z + (dz / dd) * R; const out = (P.vel.x * dx + P.vel.z * dz) / dd; if (out > 0) { P.vel.x -= (dx / dd) * out; P.vel.z -= (dz / dd) * out; } }
+  }
   kayakStep(dt);
   for (const f of G.world.fishSpots) f.rest = Math.max(0, f.rest - dt);
   const fdt = dt * G.foeTime;
@@ -1029,12 +1124,12 @@ function step(dt) {
   }
   for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].gone && !G.plan.some((p) => p.foe === G.foes[i])) { scene.remove(G.foes[i].rig.root); G.foes.splice(i, 1); }
   for (const b of G.bosses) if (b.alive || b.rig.root.visible) b.update(dt);
-  if (G.activeBoss) G.ui.boss(G.activeBoss.def.name, G.activeBoss.hp / G.activeBoss.maxHp);
+  if (G.activeBoss) { const b = G.activeBoss; G.ui.boss(b.def.name, b.hp / b.maxHp, b.poiseMax ? (b.exposed ? 1 : Math.min(1, b.poise / b.poiseMax())) : null, !!b.poiseMax); }
   G.hazards.update(dt);
   G.fx.update(dt);
   // music follows the danger
   const fighting = G.foes.some((f) => f.alive && (f.state === "chase" || f.state === "windup" || f.state === "strike") && Math.hypot(f.x - P.x, f.z - P.z) < 40);
-  A.setMood(G.activeBoss ? "boss" : fighting ? "fight" : G.night ? "night" : "day");
+  A.setMood(G.activeBoss ? (G.activeBoss.phaseN > 1 ? "boss" + G.activeBoss.phaseN : "boss") : fighting ? "fight" : G.night ? "night" : "day");
   // pickups
   for (const it of G.items) {
     if (it.taken) continue;
@@ -1086,7 +1181,7 @@ function step(dt) {
   if (regionT <= 0) {
     regionT = 0.6;
     const r = G.world.regionAt(P.x, P.z);
-    if (r !== G.region) { G.regionNext = G.regionNext === r ? r : r; G.regionCount = (G.regionNext === r ? (G.regionCount || 0) + 1 : 0); if (G.regionCount >= 3) { G.region = r; G.ui.banner(r, ""); G.regionCount = 0; } }
+    if (r !== G.region && !G.activeBoss) { G.regionNext = G.regionNext === r ? r : r; G.regionCount = (G.regionNext === r ? (G.regionCount || 0) + 1 : 0); if (G.regionCount >= 3) { G.region = r; G.ui.banner(r, ""); G.regionCount = 0; } }
     else G.regionCount = 0;
   }
   saveT += dt;

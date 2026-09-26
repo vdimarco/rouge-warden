@@ -80,6 +80,16 @@ const report = await page.evaluate(() => {
     else if (!reached) fail(`kayak: got out at the island but could not walk up, at (${P.x.toFixed(0)}, ${P.y.toFixed(1)}, ${P.z.toFixed(0)}) state ${P.state}`);
     else out.notes.push("kayak: paddled to the island and walked up");
   }
+  // 8b. the stair from the island dock walks straight up to the King's court, with no climbing
+  {
+    const S = W.stair; P.place(S.a.x, S.a.z + 4); P.stamina = P.staminaMax; QA.clear();
+    let climbs = 0;
+    QA.step(400, () => { const dx = S.b.x - P.x, dz = S.b.z - P.z, l = Math.hypot(dx, dz) || 1, cy = G.cam.yaw; I.move.x = (dx * Math.cos(cy) - dz * Math.sin(cy)) / l; I.move.y = -(dx * Math.sin(cy) + dz * Math.cos(cy)) / l; if (l < 1.5) I.move.x = I.move.y = 0; if (P.state !== "ground") climbs++; });
+    QA.clear();
+    const C = W.court;
+    if (P.y < C.y - 0.5 || climbs > 5) fail(`stair: ended at y=${P.y.toFixed(1)} (court ${C.y.toFixed(1)}), ${climbs} steps off the ground`);
+    else out.notes.push("stair: walked up to the court");
+  }
   // 9. every fishing spot is in water deep enough, and you can reach it from land or the kayak
   for (const f of W.fishSpots) {
     if (W.height(f.x, f.z) > -1.5) fail(`fish spot ${f.id}: too shallow`);

@@ -87,6 +87,8 @@ export function splat(mat, tex) {
 }
 
 export const LAKE = { x: 0, z: -40, r: 250 };
+// the stair cut into the island cliff, from the end of the island dock up to the King's court
+export const STAIR = { a: { x: 20, z: -25, y: 1.2 }, b: { x: 33, z: -52 } };
 export const ISLAND = { x: 0, z: -70, r: 50, top: 18 };
 
 // Hand-placed landmarks. Pads flatten the ground under them.
@@ -100,7 +102,7 @@ export const BOSSES = [
   { id: "gabe", name: "Gabe, Mountain Man", title: "Blight of the Mountain", x: -80, z: -500, r: 30 },
   { id: "christian", name: "Christian the Mystic", title: "Blight of the Pines", x: -540, z: 60, r: 28 },
   { id: "ryu", name: "Ryu", title: "Blight of the Meadow", x: 540, z: -60, r: 22 },
-  { id: "king", name: "The Porcelain King", title: "Calamity of the Lake", x: ISLAND.x, z: ISLAND.z + 8, r: 26 },
+  { id: "king", name: "The Porcelain King", title: "Calamity of the Lake", x: ISLAND.x, z: ISLAND.z + 12, r: 24, seal: true },
 ];
 export const SHRINES = [
   [180, 420], [-300, 250], [330, 400], [-560, 380], [-600, -220], [-300, -330], [20, -560], [330, -300], [600, 220], [520, -350], [-200, 520], [620, 520],
@@ -213,6 +215,17 @@ export class World {
       H[j * (N + 1) + i] = h;
     }
     this.pads = pads;
+    // cut a straight ramp into the island cliff for the stair; the flat part in the middle is wide,
+    // because the ground is made of 5 m triangles and they must all lie on the slope
+    const KC = BOSSES.find((b) => b.id === "king"), S = STAIR, ax = S.b.x - S.a.x, az = S.b.z - S.a.z, L2 = ax * ax + az * az, top = ISLAND.top;
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const x = i * CELL - HALF, z = j * CELL - HALF, t = ((x - S.a.x) * ax + (z - S.a.z) * az) / L2;
+      if (t < -0.05 || t > 1.05) continue;
+      const tc = clamp(t, 0, 1), side = Math.hypot(x - (S.a.x + ax * tc), z - (S.a.z + az * tc));
+      if (side > 9.5 || Math.hypot(x - KC.x, z - KC.z) < KC.r + 5.5) continue;
+      const k = j * (N + 1) + i, w = smooth(9.5, 6, side);
+      H[k] = lerp(H[k], lerp(S.a.y, top, tc), w);
+    }
   }
   rawGrid(x, z) { return this.raw(x, z); }
   // exact height of the terrain triangles
@@ -894,16 +907,110 @@ export class World {
     swirl.position.set(ISLAND.x, 170, ISLAND.z - 30);
     this.scene.add(swirl);
     this.swirl = swirl;
-    // sludge on the island
+    this.buildCourt(BOSSES.find((b) => b.id === "king"));
+    this.buildStair();
+    // sludge on the island, around the court but never on it
     this.sludge = [];
     const r = rng(77);
     const sm = M.toon(0x5a2a6a, { emissive: 0x3a0a4a, emissiveIntensity: 0.6 });
     for (let k = 0; k < 22; k++) {
       const a = Math.PI + r() * Math.PI, d = 20 + r() * 22, x = ISLAND.x + Math.cos(a) * d, z = ISLAND.z - 6 + Math.sin(a) * d * 0.8;
       const s = 1.2 + r() * 2;
+      if (Math.hypot(x - this.court.x, z - this.court.z) < this.court.r + 5 + s) continue;
       const m = new THREE.Mesh(new THREE.SphereGeometry(s, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), sm); m.scale.y = 0.4;
       m.position.set(x, this.height(x, z) - 0.1, z); this.scene.add(m);
       this.sludge.push({ x, z, r: s, m });
+    }
+  }
+
+  // The King's court on top of Clog Island: a round floor of cracked bathroom tiles with a gold rim,
+  // old copper pipes around it, and a wall of sludge that rises to seal you in while you fight.
+  buildCourt(def) {
+    const x = def.x, z = def.z, r = def.r, y = this.height(x, z), R = r + 1.5;
+    const C = (this.court = { x, z, r, y, pipes: [], sealOn: false, seal: null });
+    const tex = new THREE.CanvasTexture(courtCanvas(R, this.low ? 1024 : 2048));
+    tex.anisotropy = this.low ? 2 : 8;
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(R, 96).rotateX(-Math.PI / 2), M.toon(0xffffff, { map: tex }));
+    floor.position.set(x, y + 0.03, z); floor.receiveShadow = true;
+    this.scene.add(floor);
+    // a rounded porcelain lip with a gold stripe marks the edge
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(R - 0.1, 0.26, 8, 128).rotateX(Math.PI / 2), M.toon(0xf2efe8));
+    lip.position.set(x, y + 0.06, z); lip.castShadow = lip.receiveShadow = true; this.scene.add(lip);
+    const gold = new THREE.Mesh(new THREE.TorusGeometry(R - 0.1, 0.07, 6, 128).rotateX(Math.PI / 2), M.toon(0xe0b040, { emissive: 0x3a2400 }));
+    gold.position.set(x, y + 0.3, z); this.scene.add(gold);
+    // no grass through the tiles
+    for (let i = -R; i <= R; i += 1.8) for (let j = -R; j <= R; j += 1.8) if (Math.hypot(i, j) < R - 1) this.clearMask(x + i, z + j, 3);
+    this.maskTex.needsUpdate = true;
+    // pipes all around, except toward the castle and where the path comes up from the dock
+    const copper = M.toon(0xb8703e), dark = M.toon(0x5a3a24), sludge = M.toon(0x5a2a6a, { emissive: 0x3a0a4a, emissiveIntensity: 0.6 }), hole = new THREE.MeshBasicMaterial({ color: 0x140a10 });
+    const pipeGeo = new THREE.CylinderGeometry(0.55, 0.55, 1, 14), ringGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.3, 14), jointGeo = new THREE.SphereGeometry(0.62, 14, 10), holeGeo = new THREE.CircleGeometry(0.45, 14), dripGeo = new THREE.SphereGeometry(0.16, 8, 6), puddleGeo = new THREE.CircleGeometry(0.9, 16).rotateX(-Math.PI / 2);
+    const dockA = Math.atan2(STAIR.b.x - x, STAIR.b.z - z);
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2;
+      if (Math.cos(a) < -0.45 || Math.abs(Math.atan2(Math.sin(a - dockA), Math.cos(a - dockA))) < 0.4) continue;
+      const px = x + Math.sin(a) * (R + 3), pz = z + Math.cos(a) * (R + 3), h = 3.6 + (k % 3) * 1.3, g = new THREE.Group();
+      const up = new THREE.Mesh(pipeGeo, copper); up.scale.y = h; up.position.y = h / 2; g.add(up);
+      for (const yy of [0.15, h * 0.55]) { const c = new THREE.Mesh(ringGeo, dark); c.position.y = yy; g.add(c); }
+      const j = new THREE.Mesh(jointGeo, copper); j.position.y = h; g.add(j);
+      const out = new THREE.Mesh(pipeGeo, copper); out.scale.y = 1.8; out.rotation.x = Math.PI / 2; out.position.set(0, h, 0.9); g.add(out);
+      const lipR = new THREE.Mesh(ringGeo, dark); lipR.rotation.x = Math.PI / 2; lipR.position.set(0, h, 1.8); g.add(lipR);
+      const hl = new THREE.Mesh(holeGeo, hole); hl.position.set(0, h, 1.96); g.add(hl);
+      const drip = new THREE.Mesh(dripGeo, sludge); drip.position.set(0, h - 0.5, 1.85); g.add(drip);
+      const pud = new THREE.Mesh(puddleGeo, sludge); pud.position.set(0, 0.05, 1.85); g.add(pud);
+      // each pipe has its own materials, so it can fade out when the camera comes close behind it
+      const mats = [];
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.material = o.material.clone(); mats.push(o.material); } });
+      g.position.set(px, this.height(px, pz) - 0.2, pz); g.rotation.y = Math.atan2(x - px, z - pz);
+      this.scene.add(g);
+      this.addCircle(px, pz, 0.8, "pipe");
+      const m = new THREE.Vector3(0, h, 2.2); g.updateMatrixWorld(true); g.localToWorld(m);
+      C.pipes.push({ x: px, z: pz, h, mx: m.x, my: m.y, mz: m.z, drip, ph: k * 0.37, g, mats, fade: 1 });
+    }
+    // the sludge wall: hidden in the floor until the fight starts
+    const wall = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.6, r + 0.6, 5, 96, 1, true).translate(0, 2.5, 0), new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uAlpha: { value: 1 } }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: `uniform float uTime, uAlpha; varying vec2 vUv;
+      void main() {
+        float x = vUv.x * 160.0, y = vUv.y, col = floor(x), f = fract(x);
+        float sp = 0.25 + fract(sin(col * 12.9898) * 43758.5453) * 0.5;
+        float drip = smoothstep(0.42, 0.0, abs(f - 0.5)) * step(fract(y * 1.3 + uTime * sp + col * 0.37), 0.6);
+        float a = mix(0.22, 0.75, drip) * (0.35 + 0.65 * (1.0 - y)) * smoothstep(1.0, 0.75, y);
+        vec3 c = mix(vec3(0.32, 0.08, 0.42), vec3(0.8, 0.5, 1.0), drip * 0.55 + (1.0 - y) * 0.15);
+        gl_FragColor = vec4(c, a * uAlpha);
+      }`,
+    }));
+    wall.position.set(x, y, z); wall.scale.y = 0.001; wall.visible = false; wall.renderOrder = 4;
+    this.scene.add(wall);
+    C.seal = wall;
+  }
+  setSeal(on) { this.court.sealOn = on; }
+  // porcelain steps up the ramp from the island dock, with a gold edge on each one, all in one mesh
+  buildStair() {
+    const S = STAIR, dx = S.b.x - S.a.x, dz = S.b.z - S.a.z, L = Math.hypot(dx, dz), n = Math.round(L / 0.8), rot = Math.atan2(dx, dz);
+    this.stair = S;
+    const steps = [], edges = [], sd = L / n;
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n, x = S.a.x + dx * t, z = S.a.z + dz * t, y = this.height(x, z);
+      const st = new THREE.BoxGeometry(5, 1.4, sd + 0.02); st.rotateY(rot); st.translate(x, y - 0.55, z); steps.push(st);
+      const ed = new THREE.BoxGeometry(5.02, 0.08, 0.1); ed.translate(0, 0.16, -sd / 2 + 0.05); ed.rotateY(rot); ed.translate(x, y, z); edges.push(ed);
+    }
+    const a = new THREE.Mesh(mergeGeos(steps), M.toon(0xece6da)); a.receiveShadow = a.castShadow = true; this.scene.add(a);
+    this.scene.add(new THREE.Mesh(mergeGeos(edges), M.toon(0xd8a83a, { emissive: 0x2a1a00 })));
+    // no grass on the steps
+    for (let k = 0; k <= n; k += 3) this.clearMask(S.a.x + (dx * k) / n, S.a.z + (dz * k) / n, 4);
+    this.maskTex.needsUpdate = true;
+  }
+  updateCourt(dt, t, cam) {
+    const C = this.court, w = C.seal;
+    w.scale.y = lerp(w.scale.y, C.sealOn ? 1 : 0.001, 1 - Math.exp(-dt * (C.sealOn ? 3 : 2)));
+    w.visible = w.scale.y > 0.01;
+    w.material.uniforms.uTime.value = t;
+    // a drop of sludge falls from each pipe now and then
+    for (const p of C.pipes) {
+      const u = (t * 0.45 + p.ph) % 1; p.drip.position.y = p.h - 0.45 - u * u * (p.h - 0.5); p.drip.scale.setScalar(u < 0.1 ? u * 10 : 1);
+      const f = clamp((Math.hypot(cam.position.x - p.x, cam.position.z - p.z) - 3) / 6, 0.12, 1);
+      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
     }
   }
 
@@ -942,7 +1049,11 @@ export class World {
     for (const f of this.fires) { const fl = f.obj.userData.flame; fl.scale.set(1 + Math.sin(t * 9 + f.x) * 0.05, 1 + Math.sin(t * 13 + f.z) * 0.1, 1); const d = Math.hypot(f.x - cam.position.x, f.z - cam.position.z); if (d < nd) { nd = d; nf = f; } }
     if (!this.fireLight) { this.fireLight = new THREE.PointLight(0xff9a4a, 0, 16, 1.6); this.scene.add(this.fireLight); }
     if (nf) { this.fireLight.position.set(nf.x, nf.obj.position.y + 1.2, nf.z); this.fireLight.intensity = 26 * (0.85 + 0.15 * Math.sin(t * 11) * Math.sin(t * 7.3 + 1)); } else this.fireLight.intensity = 0;
-    this.swirl.rotation.y = t * 0.12;
+    // the swirl hangs lower and turns faster while the King is fighting
+    const sw = this.swirl; sw.userData.low = lerp(sw.userData.low || 0, this.court.sealOn ? 1 : 0, 1 - Math.exp(-dt * 0.8));
+    sw.userData.a = (sw.userData.a || 0) + dt * (0.12 + sw.userData.low * 0.5);
+    sw.rotation.y = sw.userData.a; sw.position.y = 170 - sw.userData.low * 70;
+    this.updateCourt(dt, t, cam);
     for (const s of this.sludge) s.m.scale.y = 0.4 + Math.sin(t * 2 + s.x) * 0.06;
   }
 }
@@ -983,4 +1094,49 @@ function flowerTexture() {
   for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; x.beginPath(); x.ellipse(32 + Math.cos(a) * 13, 32 + Math.sin(a) * 13, 11, 8, a, 0, 7); x.fill(); }
   x.fillStyle = "#ffcc33"; x.beginPath(); x.arc(32, 32, 8, 0, 7); x.fill();
   const t = new THREE.CanvasTexture(c); return t;
+}
+// The court floor, painted once: cream and sand tiles, a purple and gold border, the King's crest in the
+// middle, cracks, and old sludge stains. R is the floor radius in metres; S is the canvas size.
+function courtCanvas(R, S) {
+  const c = document.createElement("canvas"); c.width = c.height = S;
+  const x = c.getContext("2d"), px = S / (2 * R), r = rng(2024), mid = S / 2;
+  x.fillStyle = "#6a5a4a"; x.fillRect(0, 0, S, S);
+  // square tiles, each a slightly different white, with a soft gloss in one corner
+  const T = 1.6 * px, g = Math.max(2, px * 0.09);
+  for (let j = 0; j * T < S; j++) for (let i = 0; i * T < S; i++) {
+    const v = r() * 10 - 5, base = (i + j) % 2 ? [236, 230, 216] : [222, 210, 188];
+    x.fillStyle = `rgb(${base[0] + v},${base[1] + v},${base[2] + v})`;
+    x.fillRect(i * T + g / 2, j * T + g / 2, T - g, T - g);
+    const gl = x.createLinearGradient(i * T, j * T, i * T + T, j * T + T);
+    gl.addColorStop(0, "rgba(255,255,255,0.35)"); gl.addColorStop(0.45, "rgba(255,255,255,0)"); gl.addColorStop(1, "rgba(120,100,80,0.12)");
+    x.fillStyle = gl; x.fillRect(i * T + g / 2, j * T + g / 2, T - g, T - g);
+  }
+  const ring = (rad, w, col) => { x.strokeStyle = col; x.lineWidth = w * px; x.beginPath(); x.arc(mid, mid, rad * px, 0, Math.PI * 2); x.stroke(); };
+  // the border: dark purple tiles between two gold lines
+  ring(R - 1.1, 1.8, "#4a2a5a");
+  for (let k = 0; k < 90; k++) { const a = (k / 90) * Math.PI * 2; x.strokeStyle = "#2e1838"; x.lineWidth = g; x.beginPath(); x.moveTo(mid + Math.cos(a) * (R - 2) * px, mid + Math.sin(a) * (R - 2) * px); x.lineTo(mid + Math.cos(a) * (R - 0.2) * px, mid + Math.sin(a) * (R - 0.2) * px); x.stroke(); }
+  ring(R - 2.1, 0.22, "#d8a83a"); ring(R - 0.2, 0.22, "#d8a83a");
+  // the crest: a purple disc, gold rings, and a crown
+  x.fillStyle = "#4a2a5a"; x.beginPath(); x.arc(mid, mid, 4.6 * px, 0, Math.PI * 2); x.fill();
+  ring(4.6, 0.3, "#e0b040"); ring(3.9, 0.12, "#e0b040"); ring(7.5, 0.18, "#b88a3a");
+  x.fillStyle = "#e8b83a"; x.strokeStyle = "#7a5010"; x.lineWidth = px * 0.12;
+  const cw = 2.6 * px, ch = 1.8 * px;
+  x.beginPath(); x.moveTo(mid - cw, mid + ch * 0.6); x.lineTo(mid - cw, mid - ch * 0.4); x.lineTo(mid - cw * 0.5, mid + ch * 0.05); x.lineTo(mid, mid - ch * 0.9); x.lineTo(mid + cw * 0.5, mid + ch * 0.05); x.lineTo(mid + cw, mid - ch * 0.4); x.lineTo(mid + cw, mid + ch * 0.6); x.closePath(); x.fill(); x.stroke();
+  x.fillStyle = "#d8203a"; for (const k of [-1, 0, 1]) { x.beginPath(); x.arc(mid + k * cw * 0.5, mid + ch * 0.3, px * 0.22, 0, Math.PI * 2); x.fill(); }
+  // cracks
+  x.strokeStyle = "rgba(50,40,32,0.8)"; x.lineCap = "round";
+  for (let k = 0; k < 34; k++) {
+    let cx = mid + (r() - 0.5) * 1.7 * R * px, cy = mid + (r() - 0.5) * 1.7 * R * px, a = r() * 6.28;
+    x.lineWidth = Math.max(1, px * (0.05 + r() * 0.06)); x.beginPath(); x.moveTo(cx, cy);
+    for (let s = 0; s < 6; s++) { a += (r() - 0.5) * 1.4; cx += Math.cos(a) * px * (0.4 + r() * 0.7); cy += Math.sin(a) * px * (0.4 + r() * 0.7); x.lineTo(cx, cy); }
+    x.stroke();
+  }
+  // old sludge stains
+  for (let k = 0; k < 9; k++) {
+    const cx = mid + (r() - 0.5) * 1.5 * R * px, cy = mid + (r() - 0.5) * 1.5 * R * px, s = (1 + r() * 2.2) * px;
+    x.fillStyle = "rgba(90,42,106,0.45)"; x.beginPath();
+    for (let a = 0; a <= 6.3; a += 0.4) { const rr = s * (0.7 + r() * 0.5); x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+    x.fill();
+  }
+  return c;
 }
