@@ -2,24 +2,29 @@
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
-import { scene, camera, post, draw, adapt, toonRamp } from './js/render.js';
+import { scene, camera, post, draw, adapt, toonRamp, lastInfo } from './js/render.js';
 import { Music } from './js/music.js';
 import { rollCredits, preloadCreditsMusic } from './js/credits.js';
-import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR } from './js/world.js';
+import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR, skyLoaded } from './js/world.js';
 import { fx, updateFX, Trail, glowTex } from './js/fx.js';
 import { Audio } from './js/audio.js';
 import { loadActor, makeKatana } from './js/actors.js';
+import { rng, seed as seedRng } from './js/core/rng.js';
 
 const TAU = Math.PI * 2;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const damp = (a, b, rate, dt) => lerp(a, b, 1 - Math.exp(-rate * dt));
-const rand = (a, b) => a + Math.random() * (b - a);
+const rand = (a, b) => a + Math.random() * (b - a); // visuals only
+// Gabe's choices come from a seeded stream (?seed=N), so a replay with the same inputs plays the same fight
+const aiRand = rng('ai'), arand = (a, b) => a + aiRand() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 const angleTo = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
 const flatDist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-const GOD = new URLSearchParams(location.search).has('god');
+const Q = new URLSearchParams(location.search);
+const GOD = Q.has('god');
+const STILL = Q.get('qa') === 'still'; // the still-image test: no ambient dust, fixed resolution
 const NEON3 = new THREE.Color(0.72, 1.0, 0.1);
 
 /* ------------------------------------------------------------------ the crew */
@@ -90,7 +95,7 @@ const BEAR_ATK = {
 };
 
 /* ------------------------------------------------------------------ state */
-const game = { state: 'loading', time: 0, phase2: false, hitstop: 0, slow: 1, slowT: 0, deaths: 0, parries: 0, fightStart: 0, flash: 0, hurt: 0, ready: false };
+const game = { state: 'loading', time: 0, frame: 0, phase2: false, hitstop: 0, slow: 1, slowT: 0, deaths: 0, parries: 0, fightStart: 0, flash: 0, hurt: 0, ready: false };
 Audio.phase2 = () => game.phase2;
 const input = { keys: {}, mouse: { l: false, r: false }, buf: { light: -9, heavy: -9, dodge: -9, heal: -9, parry: -9 }, move: new THREE.Vector2(), pad: null, padPrev: [], usingPad: false,
   touch: { on: false, guard: false, stick: new THREE.Vector2() } };
@@ -579,11 +584,11 @@ function chooseAttack() {
     else opts.push(['sweep', 3], ['smash', 2.2], ['slam', 1.3], ['chop', 1.4]);
   }
   for (const o of opts) { if (o[0] === boss.last) o[1] *= 0.35; if (o[0] === boss.last && o[0] === boss.lastLast) o[1] = 0.01; }
-  let r = Math.random() * opts.reduce((a, o) => a + o[1], 0), pick = opts[0][0];
+  let r = aiRand() * opts.reduce((a, o) => a + o[1], 0), pick = opts[0][0];
   for (const o of opts) { r -= o[1]; if (r <= 0) { pick = o[0]; break; } }
   const q = [pick];
-  if (isBear) { if (pick === 'sweep' && Math.random() < 0.4) q.push('smash'); if (pick === 'chop' && Math.random() < 0.35) q.push('slam'); }
-  else if (pick === 'jabs' && Math.random() < 0.35) q.push('kick');
+  if (isBear) { if (pick === 'sweep' && aiRand() < 0.4) q.push('smash'); if (pick === 'chop' && aiRand() < 0.35) q.push('slam'); }
+  else if (pick === 'jabs' && aiRand() < 0.35) q.push('kick');
   boss.lastLast = boss.last; boss.last = pick;
   return q;
 }
@@ -662,10 +667,10 @@ function updateBoss(dt) {
       bossTurn(toP, turnRate, dt);
       b.cooldown -= dt;
       // Gabe reads your swing: sometimes he slips it and counters
-      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && Math.random() < dt * TUNE.counterRate) { b.queue = []; startBossAttack('counter'); break; }
+      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && aiRand() < dt * TUNE.counterRate) { b.queue = []; startBossAttack('counter'); break; }
       if (dist > 3.4) move = b.form === 'bear' ? (game.phase2 ? 3.4 : 3) : 4.4;
       else if (dist < 1.4) move = -1.2;
-      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = Math.random() < 0.5 ? -1 : 1; b.strafeT = rand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
+      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = aiRand() < 0.5 ? -1 : 1; b.strafeT = arand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
       if (Math.abs(move) > 1.5) A.play(b.form === 'bear' ? 'charge' : 'run', { speed: b.form === 'bear' ? 0.55 : 1.15, fade: 0.14 });
       else A.play('idle', { fade: 0.18, speed: b.form === 'bear' ? 1 : 1.3 });
       if (b.cooldown <= 0) { b.queue = chooseAttack(); startBossAttack(b.queue.shift()); }
@@ -717,10 +722,10 @@ function updateBoss(dt) {
         hurtPlayer(GABE_ATK.grab.dmg, true);
         fx.dust(p.pos, 14, 1.4); Audio.play('slam'); cam.shake = 1;
       }
-      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = rand(...TUNE.rest); }
+      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = arand(...TUNE.rest); }
       break;
     }
-    case 'recoil': if (b.t > 0.75) { b.state = 'idle'; b.t = 0; b.cooldown = rand(0.3, 0.8); } break;
+    case 'recoil': if (b.t > 0.75) { b.state = 'idle'; b.t = 0; b.cooldown = arand(0.3, 0.8); } break;
     case 'broken': if (b.t > 3.6) { b.state = 'recover'; b.t = 0; b.posture = 40; A.play('idle', { fade: 0.6 }); } break;
     case 'recover': if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cooldown = 0.5; } break;
     case 'dead': glowWant = Math.max(0, 1 - b.t * 0.4); break;
@@ -815,7 +820,7 @@ function updateCharge(dt, toP) {
 function endBossAttack(stagger) {
   const b = boss;
   if (b.queue.length && player.state !== 'dead') { startBossAttack(b.queue.shift()); return; }
-  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? rand(...TUNE.restBear) : rand(...TUNE.rest)) + (stagger ? 0.6 : 0);
+  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? arand(...TUNE.restBear) : arand(...TUNE.rest)) + (stagger ? 0.6 : 0);
 }
 function beginTransform() {
   const b = boss;
@@ -1142,18 +1147,28 @@ const gabeHero = $('heroGabe'); if (gabeHero.complete && gabeHero.naturalWidth) 
 let ambientT = 0, last = performance.now(), manual = false, smoothDt = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
-  const frameMs = now - last; last = now;
+  const frameMs = Math.max(0, now - last); last = now; // the first rAF time can come before the module's clock read
   // average the step over a few frames: uneven frame times (common on phones) otherwise read as stutter
   smoothDt += (Math.min(0.05, frameMs / 1000) - smoothDt) * 0.3;
   const rdt = Math.abs(frameMs / 1000 - smoothDt) > 0.03 ? Math.min(0.05, frameMs / 1000) : smoothDt;
   const fighting = game.state === 'fight';
   if (fighting !== wasFighting) { wasFighting = fighting; document.body.classList.toggle('fighting', fighting); }
   if (manual) return;
-  adapt(frameMs);
+  if (!STILL) adapt(frameMs);
   pollPad(); tick(rdt); draw(now / 1000);
 }
 let wasFighting = false;
+// behind the title: a slow orbit of the two of them
+function titleOrbit(dt) {
+  const a = game.time * 0.05, c = SPAWN_P.clone().lerp(SPAWN_B, 0.5);
+  camera.position.set(c.x + Math.sin(a) * 11, ground(c) + 2.4, c.z + Math.cos(a) * 11);
+  camera.lookAt(c.x, ground(c) + 1.6, c.z);
+  ronin.root.position.set(SPAWN_P.x, ground(SPAWN_P), SPAWN_P.z); ronin.root.rotation.y = Math.atan2(FACE_DIR.x, FACE_DIR.z); ronin.update(dt);
+  gabe.root.position.set(SPAWN_B.x, ground(SPAWN_B), SPAWN_B.z); gabe.root.rotation.y = Math.atan2(-FACE_DIR.x, -FACE_DIR.z); gabe.update(dt);
+  followLights(c, camera.position);
+}
 function tick(rdt) {
+  game.frame++;
   let dt = rdt;
   if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
   if (game.slowT > 0) { game.slowT -= rdt; dt *= game.slow; }
@@ -1161,18 +1176,10 @@ function tick(rdt) {
     game.time += dt;
     grassUniforms.uTime.value += dt;
     if (game.ready && (game.state === 'fight' || game.state === 'end' || game.state === 'credits')) { updatePlayer(dt); updateBoss(dt); updateCamera(rdt); updateHud(); }
-    else if (game.ready) {
-      // behind the title: a slow orbit of the two of them
-      const a = game.time * 0.05, c = SPAWN_P.clone().lerp(SPAWN_B, 0.5);
-      camera.position.set(c.x + Math.sin(a) * 11, ground(c) + 2.4, c.z + Math.cos(a) * 11);
-      camera.lookAt(c.x, ground(c) + 1.6, c.z);
-      ronin.root.position.set(SPAWN_P.x, ground(SPAWN_P), SPAWN_P.z); ronin.root.rotation.y = Math.atan2(FACE_DIR.x, FACE_DIR.z); ronin.update(dt);
-      gabe.root.position.set(SPAWN_B.x, ground(SPAWN_B), SPAWN_B.z); gabe.root.rotation.y = Math.atan2(-FACE_DIR.x, -FACE_DIR.z); gabe.update(dt);
-      followLights(c, camera.position);
-    }
+    else if (game.ready) titleOrbit(dt);
     updateFX(dt);
     ambientT -= dt;
-    if (ambientT <= 0) { ambientT = game.phase2 ? 0.08 : 0.22; fx.ambient(camera.position, game.phase2 && game.state === 'fight'); }
+    if (ambientT <= 0 && !STILL) { ambientT = game.phase2 ? 0.08 : 0.22; fx.ambient(camera.position, game.phase2 && game.state === 'fight'); }
   }
   game.flash = Math.max(0, game.flash - rdt * 2.5);
   game.hurt = Math.max(0, game.hurt - rdt * 1.4);
@@ -1187,6 +1194,22 @@ requestAnimationFrame(frame);
 window.__crimson = {
   step(sec, drawIt = true) { manual = true; const n = Math.round(sec * 60); for (let i = 0; i < n; i++) tick(1 / 60); if (drawIt) draw(performance.now() / 1000); },
   live() { manual = false; },
+  draw: (t) => draw(t),
+  // reseed every stream and restart the game clock, so a stepped run replays exactly
+  seed(n) { seedRng(n); game.time = 0; },
+  // one fixed picture of the arena for the golden image test: the title orbit at time t, with no actors
+  async still(t) {
+    manual = true;
+    while (!skyLoaded || !game.ready) await new Promise((r) => setTimeout(r, 50));
+    for (const a of [ronin, gabe, bear]) a.visible = false;
+    pipe.visible = false;
+    game.time = t; grassUniforms.uTime.value = t;
+    game.flash = 0; game.hurt = 0;
+    const u = post.m.uniforms; u.uFlash.value = 0; u.uHurt.value = 0; u.uGrey.value = 0; u.uNeonBoost.value = 1;
+    titleOrbit(0);
+    draw(5.0);
+  },
+  get frame() { return game.frame; }, get skyLoaded() { return skyLoaded; }, lastInfo,
   game, cam, input, startGame, beginFight, pickCrew, bossAttack: (n) => startBossAttack(n), win: () => bossDies(),
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };

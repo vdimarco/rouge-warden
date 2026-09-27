@@ -135,10 +135,13 @@ function blurInPlace(src, tmp, k) {
   blur.m.uniforms.tSrc.value = tmp.texture; blur.m.uniforms.uDir.value.set(0, k / h);
   renderer.setRenderTarget(src); renderer.render(blur.s, orthoCam);
 }
+// draw calls and triangles of the last scene pass (post passes not counted), for tests and perf checks
+export const lastInfo = { calls: 0, triangles: 0 };
 export function draw(time) {
   post.m.uniforms.uTime.value = time;
   renderer.setRenderTarget(sceneRT);
   renderer.render(scene, camera);
+  lastInfo.calls = renderer.info.render.calls; lastInfo.triangles = renderer.info.render.triangles;
   bright.m.uniforms.tSrc.value = sceneRT.texture;
   renderer.setRenderTarget(halfA); renderer.render(bright.s, orthoCam);
   blurInPlace(halfA, halfB, 1.0);

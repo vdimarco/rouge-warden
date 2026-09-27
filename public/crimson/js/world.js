@@ -2,9 +2,12 @@
 // spires, junipers, boulders, and grass that leans away from the fighters.
 import * as THREE from 'three';
 import { scene, toonRamp, LITE } from './render.js';
+import { mulberry32 } from './core/rng.js';
 
 const TAU = Math.PI * 2;
-const rand = (a, b) => a + Math.random() * (b - a);
+// one fixed seed, so the arena is laid out the same way on every load
+const R = mulberry32(0x5eed);
+const rand = (a, b) => a + R() * (b - a);
 export const ARENA = 22;
 export const FOG_COLOR = new THREE.Color(0.075, 0.075, 0.078);
 export const FOG_DENSITY = 0.017;
@@ -42,8 +45,10 @@ function canvasTex(w, h, fn, repeat) {
 const toon = (opts) => new THREE.MeshToonMaterial({ gradientMap: toonRamp, ...opts });
 
 /* ---------------- sky ---------------- */
+// true once the sky painting has loaded (the still-image test waits for it)
+export let skyLoaded = false;
 export function buildSky() {
-  const tex = new THREE.TextureLoader().load('art/sky.webp');
+  const tex = new THREE.TextureLoader().load('art/sky.webp', () => { skyLoaded = true; });
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping; tex.repeat.x = -1;
   const R = 1400, aspect = 3876 / 878, H = TAU * R / aspect;
@@ -79,13 +84,13 @@ export function buildGround() {
   const tex = canvasTex(512, 512, (g, w, h) => {
     g.fillStyle = '#9a948c'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 2600 * g; i++) {
-      const v = 90 + Math.random() * 90 | 0;
-      g.fillStyle = `rgba(${v},${v - 4},${v - 8},${Math.random() * 0.35})`;
-      const r = Math.random() * 10 + 0.5;
-      g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, r, r * rand(0.3, 1), Math.random() * 3, 0, TAU); g.fill();
+      const v = 90 + R() * 90 | 0;
+      g.fillStyle = `rgba(${v},${v - 4},${v - 8},${R() * 0.35})`;
+      const r = R() * 10 + 0.5;
+      g.beginPath(); g.ellipse(R() * w, R() * h, r, r * rand(0.3, 1), R() * 3, 0, TAU); g.fill();
     }
     g.strokeStyle = 'rgba(40,38,36,0.35)';
-    for (let i = 0; i < 70; i++) { g.lineWidth = Math.random() * 1.6; g.beginPath(); const x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); g.bezierCurveTo(x + rand(-30, 30), y + rand(-10, 10), x + rand(-40, 40), y + rand(-10, 10), x + rand(-60, 60), y + rand(-12, 12)); g.stroke(); }
+    for (let i = 0; i < 70; i++) { g.lineWidth = R() * 1.6; g.beginPath(); const x = R() * w, y = R() * h; g.moveTo(x, y); g.bezierCurveTo(x + rand(-30, 30), y + rand(-10, 10), x + rand(-40, 40), y + rand(-10, 10), x + rand(-60, 60), y + rand(-12, 12)); g.stroke(); }
   }, [140, 140]);
   const ground = new THREE.Mesh(geo, toon({ map: tex, vertexColors: true }));
   ground.receiveShadow = true;
@@ -96,14 +101,14 @@ export function buildGround() {
 /* ---------------- sandstone mesas and spires ---------------- */
 const strataTex = canvasTex(64, 512, (g, w, h) => {
   let y = 0;
-  while (y < h) { const t = rand(4, 26), v = 118 + Math.random() * 46 | 0; g.fillStyle = `rgb(${v},${v - 6},${v - 10})`; g.fillRect(0, y, w, t); y += t; }
+  while (y < h) { const t = rand(4, 26), v = 118 + R() * 46 | 0; g.fillStyle = `rgb(${v},${v - 6},${v - 10})`; g.fillRect(0, y, w, t); y += t; }
   g.fillStyle = 'rgba(20,20,20,0.5)';
-  for (let i = 0; i < 40; i++) g.fillRect(0, Math.random() * h, w, 1.5);
+  for (let i = 0; i < 40; i++) g.fillRect(0, R() * h, w, 1.5);
 });
 strataTex.wrapS = strataTex.wrapT = THREE.RepeatWrapping;
 function rockColumn(r0, r1, h, sides, rough) {
   const geo = new THREE.CylinderGeometry(r1, r0, h, sides, Math.max(3, Math.round(h / 3)), false);
-  const p = geo.attributes.position, seed = Math.random() * 100;
+  const p = geo.attributes.position, seed = R() * 100;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(x, z);
     const k = 1 + (fbm(a * 2 + seed, y * 0.08, 3) - 0.5) * rough + Math.sin(y * 0.9 + seed) * 0.04;
@@ -148,7 +153,7 @@ export function buildRocks() {
 /* ---------------- boulders ---------------- */
 export const colliders = [];
 function boulderGeo(r) {
-  const geo = new THREE.IcosahedronGeometry(r, 2), p = geo.attributes.position, seed = Math.random() * 50;
+  const geo = new THREE.IcosahedronGeometry(r, 2), p = geo.attributes.position, seed = R() * 50;
   for (let i = 0; i < p.count; i++) {
     const v = new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i)); const n = v.clone().normalize();
     const k = 1 + (fbm(n.x * 2 + seed, n.y * 2 + n.z * 2, 3) - 0.5) * 0.7;
@@ -201,7 +206,7 @@ export function buildJunipers() {
     const inst = new THREE.InstancedMesh(geo, mat, count);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3();
     for (let i = 0; i < count; i++) {
-      const a = rand(0, TAU), r = ARENA + 4 + Math.pow(Math.random(), 1.3) * 110;
+      const a = rand(0, TAU), r = ARENA + 4 + Math.pow(R(), 1.3) * 110;
       const x = Math.sin(a) * r, z = Math.cos(a) * r, k = rand(0.8, 1.8);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rand(0, TAU)); s.set(k, k * rand(0.8, 1.2), k);
       m.compose(new THREE.Vector3(x, groundHeight(x, z) - 0.2, z), q, s); inst.setMatrixAt(i, m);
@@ -260,8 +265,8 @@ export function buildGrass() {
     for (let k = 0; k < n; k++) list.push({ x: x + rand(-0.15, 0.15), y, z: z + rand(-0.15, 0.15), h: h * rand(0.6, 1), ph, rot: rand(0, Math.PI), w: 0.05, lx: lx + rand(-0.35, 0.35), lz: lz + rand(-0.35, 0.35), tone: rand(0.8, 1.3) });
   };
   const g = LITE ? 0.55 : 1;
-  for (let i = 0; i < 1400 * g; i++) { const r = Math.sqrt(Math.random()) * ARENA, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.2, 0.55), 4); }
-  for (let i = 0; i < 2600 * g; i++) { const r = ARENA + Math.pow(Math.random(), 1.5) * 70, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.4, 1.1), 5); }
+  for (let i = 0; i < 1400 * g; i++) { const r = Math.sqrt(R()) * ARENA, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.2, 0.55), 4); }
+  for (let i = 0; i < 2600 * g; i++) { const r = ARENA + Math.pow(R(), 1.5) * 70, a = rand(0, TAU); tuft(Math.sin(a) * r, Math.cos(a) * r, rand(0.4, 1.1), 5); }
   const base = bladeGeo(), geo = new THREE.InstancedBufferGeometry();
   geo.index = base.index; geo.attributes.position = base.attributes.position;
   const n = list.length, off = new Float32Array(n * 3), prm = new Float32Array(n * 4), lean = new Float32Array(n * 2), tone = new Float32Array(n);
