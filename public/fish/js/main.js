@@ -62,7 +62,7 @@ const G = {
   frame: 0, fps: 60, seed: 1, force: null,
   wide: false,
 };
-let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, gauge = null;
+let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, gauge = null, crankPad = null;
 
 /* ---------------- icons for the prompts and the help ---------------- */
 const PHONE = "<rect x='14' y='5' width='12' height='22' rx='2.5' fill='none' stroke='currentColor' stroke-width='2.4'/>";
@@ -346,14 +346,14 @@ function openBail(how) {
   if (G.bail === "open") return;
   G.bail = "open";
   G.openAt = now();
-  Sound.sfx("bailOpen"); Haptics.bail();
+  Sound.sfx("bailOpen"); Haptics.bail(true);
   if (G.phase === "cast" && G.step === "ready") G.step = "open";
   seen("bail");
 }
 function closeBail() {
   if (G.bail === "closed") return;
   G.bail = "closed";
-  Sound.sfx("bailClose"); Haptics.bail();
+  Sound.sfx("bailClose"); Haptics.bail(false);
   if (G.phase === "cast") {
     if (G.step === "open" || G.step === "pinned" || G.step === "loaded") { G.step = "ready"; G.pin = null; }
     else if (G.step === "landed") afterLanding();
@@ -929,8 +929,8 @@ function handleEvent(e) {
   const fx = e.x != null ? e.x : s && s.fish ? s.fish.x : s ? s.lure.x : 0;
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
-    case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
+    case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
+    case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
     case "hooked":
       if (e.junk) { Sound.sfx("junk"); toast("Snagged something heavy. Reel it in.", 2200); }
       else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
@@ -1087,10 +1087,12 @@ async function boot() {
   gauge = new Gauge($("#gaugeBox"));
   // iPhone: only a real finger on a switch control can tick. The reel face and the crank carry hidden switches
   Haptics.attachPad($("#reelBox"));
-  Haptics.attachCrank($("#crankBox"), { toLocal });
+  crankPad = Haptics.attachCrank($("#crankBox"), { toLocal });
   setDrag(1);
   window.FISH = { G, Motion, get world() { return world; }, get crank() { return crank; }, get sim() { return G.sim; }, get save() { return save; }, startMode, newCast, toTitle, release, openBail, closeBail, enterReel, relayout, toLocal, pinLine, unpinLine, get rises() { return rises; } };
   toTitle();
+  // the lake starts to sound with the first touch on the title (browsers keep audio off until then)
+  addEventListener("pointerup", () => { Sound.init(); if (G.phase === "title") Sound.setAmbience(true, G.hour); }, { once: true });
   requestAnimationFrame(frame);
 }
 boot();

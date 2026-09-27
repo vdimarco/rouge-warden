@@ -268,7 +268,7 @@ async function crankChecks(P, tag) {
     await P.touch("touchStart", [{ ...pt(0), id }]);
     let el = 0;
     while (el < secs) {
-      await sleep(14);
+      await sleep(4);
       el = (performance.now() - t0) / 1000;
       await P.touch("touchMove", [{ ...pt(TAU * rps * el), id }]);
     }
@@ -336,7 +336,10 @@ async function padChecks(P, tag) {
   await page.evaluate(() => { T.mode("reel"); T.clear(); T.pad.keys({}); });
   await sleep(80);
   const sz = await P.size("#padBox");
+  await swipe(P, "#padBox", sz.w / 2, sz.h * 0.04, 0, sz.h * 0.94, { n: 8, ms: 25, id: 29 });
+  await sleep(50);
   const th0 = await page.evaluate(() => T.pad.theta);
+  check(th0 === 10, `${tag}: a long drag down puts the rod at the bottom of its swing (${th0.toFixed(1)}°)`);
   const dpp = await page.evaluate(() => (T.REEL_UI.rodMax - T.REEL_UI.rodMin) / Math.max(120, document.querySelector("#padBox").clientHeight * 0.8));
   // a slow drag up 60 px: the rod goes up and stays there; no hook set
   await swipe(P, "#padBox", sz.w / 2, sz.h * 0.6, 0, -60, { n: 12, ms: 25, id: 30 });
@@ -349,15 +352,17 @@ async function padChecks(P, tag) {
   await sleep(50);
   const th2 = await page.evaluate(() => T.pad.theta);
   check(th2 >= 10 && th2 < th1 - 20, `${tag}: drag down lowers the rod (${th2.toFixed(1)}°), never below 10`);
-  // steer: a finger at the right edge steers right; it springs back after the lift
-  const rp = await P.at("#padBox", sz.w - 4, sz.h * 0.5);
+  // steer: a finger near the right edge steers right; it springs back after the lift
+  // (not the very edge: at 390 px wide the page's #crankBox overlaps the pad's right few pixels)
+  const rp = await P.at("#padBox", sz.w - 12, sz.h * 0.5);
   await P.touch("touchStart", [{ ...rp, id: 32 }]);
   await sleep(40);
   const sr = await page.evaluate(() => T.pad.steer);
+  if (!(sr > 0.9)) console.log("        (steer press landed on " + JSON.stringify(await page.evaluate((p) => { const e = document.elementFromPoint(p.x, p.y); return [p, e && (e.id || e.className || e.tagName), T.PT.slice(-2)]; }, rp)) + ")");
   await P.touch("touchEnd", []);
   await sleep(300);
   const s0 = await page.evaluate(() => T.pad.steer);
-  const lp = await P.at("#padBox", 4, sz.h * 0.5);
+  const lp = await P.at("#padBox", 12, sz.h * 0.5);
   await P.touch("touchStart", [{ ...lp, id: 33 }]);
   await sleep(40);
   const sl = await page.evaluate(() => T.pad.steer);

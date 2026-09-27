@@ -27,6 +27,7 @@ export const REEL_UI = {
   bailVertical: 1.4,   // ...and this many times more vertical than sideways
   crankWinMs: 100,     // crank speed = the angle the thumb swept over this window
   crankStaleMs: 35,    // no new sample for this long: the thumb has stopped, so the window slides on past it
+                       // (longer when the events come slower: a busy phone delivers touch moves once per frame)
   crankTau: 0.035,     // s, light smoothing on top of the window
   crankMinR: 0.12,     // of the crank size: nearer the hub than this, the angle is noise
   flingKeep: 0.55,     // a thumb that lets go while cranking fast leaves this much spin on the handle...
@@ -857,6 +858,7 @@ export class Crank extends Widget {
     this.bank = 0;     // wheel turns waiting to be played out
     this.key = false;
     this.snap = 0;     // radians the handle still has to swing to reach the thumb
+    this.gap = 16; this.step = 16;   // ms between move events as delivered, and between samples
     this.travel = 0; this.quarters = 0;
     this.lit = [0, 0, 0, 0];
     this.last = now();
@@ -894,6 +896,10 @@ export class Crank extends Widget {
   _move(e) {
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
+    // how often moves reach us; a pause (a still thumb) is not a cadence
+    const tn = now();
+    if (d.seen) { const g = tn - d.seen; if (g < 120) this.gap = lerp(this.gap, g, 0.25); }
+    d.seen = tn;
     const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
     for (const ev of evs && evs.length ? evs : [e]) this._sample(ev);
   }
@@ -908,6 +914,7 @@ export class Crank extends Widget {
     this.ang += da;
     this._travel(Math.abs(da) / TAU);
     const t = Math.max(e.timeStamp, d.lastT);
+    if (t - d.lastT < 120) this.step = lerp(this.step, t - d.lastT, 0.25);
     d.lastT = t;
     this.hist.push({ t, a: d.a });
     while (this.hist.length > 2 && this.hist[1].t < t - 400) this.hist.shift();
@@ -919,17 +926,19 @@ export class Crank extends Widget {
       // a fling leaves a little spin on the handle
       const last = this.hist[this.hist.length - 1];
       const v = this._thumbRate(e.timeStamp);
-      if (last && e.timeStamp - last.t < 60 && Math.abs(v) > 0.8) this.coast = v * T.flingKeep;
+      if (last && e.timeStamp - last.t < Math.max(60, this._stale()) && Math.abs(v) > 0.8) this.coast = v * T.flingKeep;
     }
     this.drag = null;
     this.hist = [];
   }
+  // how long without a sample before we call the thumb stopped
+  _stale() { return clamp(Math.max(1.6 * this.gap, 2 * this.step), T.crankStaleMs, 150); }
   // signed rev/s: the angle the thumb swept over the last window
   _thumbRate(t) {
     const h = this.hist;
     if (h.length < 2) return 0;
     const last = h[h.length - 1];
-    const tEnd = Math.max(last.t, t - T.crankStaleMs), t0 = tEnd - T.crankWinMs;
+    const tEnd = Math.max(last.t, t - this._stale()), t0 = tEnd - T.crankWinMs;
     let a0 = h[0].a;
     if (t0 > h[0].t) {
       for (let i = h.length - 1; i > 0; i--) {
@@ -967,7 +976,8 @@ export class Crank extends Widget {
       this.coast *= Math.exp(-dt * T.flingDecay);
       if (Math.abs(this.coast) < 0.06) this.coast = 0;
     }
-    this.v += (raw - this.v) * (1 - Math.exp(-dt / T.crankTau));
+    // a thumb that stops holds the handle: let go of the speed faster than we pick it up
+    this.v += (raw - this.v) * (1 - Math.exp(-dt / (raw < 0.01 ? T.crankTau * 0.55 : T.crankTau)));
     this.out = this.v < 0.03 ? 0 : Math.min(T.maxRps, this.v);
     if (free) { this.ang += free * TAU; this._travel(Math.abs(free)); }
     if (this.snap) {
@@ -1184,7 +1194,7 @@ export class RodPad extends Widget {
     }
     const ks = (k.right ? 1 : 0) - (k.left ? 1 : 0);
     if (ks) this._steer = ks;
-    else if (!this.drag) { this._steer *= Math.exp(-dt * 14); if (Math.abs(this._steer) < 0.01) this._steer = 0; }
+    else if (!this.drag) { this._steer *= Math.exp(-dt * 22); if (Math.abs(this._steer) < 0.02) this._steer = 0; }
   }
   draw(dt = 0.016) {
     this._update();
