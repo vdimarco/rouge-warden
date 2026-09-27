@@ -699,33 +699,58 @@ export class World {
     this.maskTex.needsUpdate = true;
     const trunkGeo = new THREE.CylinderGeometry(0.28, 0.42, 4, 7); trunkGeo.translate(0, 2, 0);
     const blob = [];
-    for (const [x, y, z, s] of [[0, 5.3, 0, 2.4], [1.9, 4.6, 0.8, 1.7], [-1.8, 4.8, -0.7, 1.8], [0.5, 4.2, -1.9, 1.6], [-0.6, 7.0, 0.4, 1.8], [0.3, 4.4, 1.9, 1.6], [1.4, 6.4, -1.0, 1.5], [-1.5, 6.2, 1.1, 1.4], [2.2, 5.6, -0.4, 1.3], [-2.3, 5.7, 0.2, 1.3], [0.0, 8.2, -0.4, 1.3], [0.9, 3.6, 1.0, 1.2]]) { const g = new THREE.IcosahedronGeometry(s, 2); g.translate(x, y, z); blob.push(g); }
-    const canopyGeo = mergeGeos(blob);
-    // light the canopy as one soft ball, not as many small ones: the trick painted trees use
-    spherize(canopyGeo, 0, 5.6, 0, 0.55);
-    shadeByHeight(canopyGeo, 3, 8.5);
-    const pineGeo = mergeGeos([[3.2, 4, 3.5], [2.6, 3.6, 5.8], [1.9, 3.2, 7.9], [1.1, 2.6, 9.8], [0.5, 1.8, 11.2]].map(([r0, h, y]) => { const g = new THREE.ConeGeometry(r0, h, 11); g.translate(0, y, 0); return g; }));
-    spherize(pineGeo, 0, 6, 0, 0.55);
-    shadeByHeight(pineGeo, 2, 11.5);
-    const mk = (geo, mat, list, colorFn, scaleY = 1) => {
-      const im = new THREE.InstancedMesh(geo, mat, list.length);
+    // the round canopy: a cluster of balls, lit as one soft ball. Far away the balls use far fewer faces.
+    const BLOBS = [[0, 5.3, 0, 2.4], [1.9, 4.6, 0.8, 1.7], [-1.8, 4.8, -0.7, 1.8], [0.5, 4.2, -1.9, 1.6], [-0.6, 7.0, 0.4, 1.8], [0.3, 4.4, 1.9, 1.6], [1.4, 6.4, -1.0, 1.5], [-1.5, 6.2, 1.1, 1.4], [2.2, 5.6, -0.4, 1.3], [-2.3, 5.7, 0.2, 1.3], [0.0, 8.2, -0.4, 1.3], [0.9, 3.6, 1.0, 1.2]];
+    const canopyOf = (detail) => {
+      const g = mergeGeos(BLOBS.map(([x, y, z, s]) => { const b = new THREE.IcosahedronGeometry(s, detail); b.translate(x, y, z); return b; }));
+      // light the canopy as one soft ball, not as many small ones: the trick painted trees use
+      spherize(g, 0, 5.6, 0, 0.55);
+      shadeByHeight(g, 3, 8.5);
+      return g;
+    };
+    const pineOf = (seg) => {
+      const g = mergeGeos([[3.2, 4, 3.5], [2.6, 3.6, 5.8], [1.9, 3.2, 7.9], [1.1, 2.6, 9.8], [0.5, 1.8, 11.2]].map(([r0, h, y]) => { const c = new THREE.ConeGeometry(r0, h, seg); c.translate(0, y, 0); return c; }));
+      spherize(g, 0, 6, 0, 0.55);
+      shadeByHeight(g, 2, 11.5);
+      return g;
+    };
+    const canopyGeo = canopyOf(2), canopyFar = canopyOf(this.low ? 0 : 1);
+    const pineGeo = pineOf(11), pineFar = pineOf(6);
+    // Trees are split into square tiles. The camera and the sun's shadow skip the tiles they cannot see.
+    // Each tile has a near version and a far version. The far version uses a simpler shape and casts no shadow.
+    this.treeTiles = this.treeTiles || [];
+    const TILE = 200;
+    const mk = (geo, farGeo, mat, list, colorFn, scaleY = 1) => {
+      const tiles = new Map();
+      for (const t of list) { const k = Math.floor((t[0] + HALF) / TILE) * 64 + Math.floor((t[2] + HALF) / TILE); if (!tiles.has(k)) tiles.set(k, []); tiles.get(k).push(t); }
       const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color();
-      list.forEach(([x, y, z, s, v], k) => {
-        q.setFromAxisAngle(UP, v * 6.28);
-        m4.compose(TV.set(x, y - 0.3, z), q, TV2.set(s, s * scaleY, s));
-        im.setMatrixAt(k, m4);
-        if (colorFn) im.setColorAt(k, colorFn(c, v, x, z));
-      });
-      im.castShadow = true; im.receiveShadow = true;
-      this.scene.add(im);
-      return im;
+      const build = (g, items, shadow) => {
+        const im = new THREE.InstancedMesh(g, mat, items.length);
+        items.forEach(([x, y, z, s, v], k) => {
+          q.setFromAxisAngle(UP, v * 6.28);
+          m4.compose(TV.set(x, y - 0.3, z), q, TV2.set(s, s * scaleY, s));
+          im.setMatrixAt(k, m4);
+          if (colorFn) im.setColorAt(k, colorFn(c, v, x, z));
+        });
+        im.computeBoundingSphere();
+        im.castShadow = shadow; im.receiveShadow = true;
+        im.matrixAutoUpdate = false; im.updateMatrix();
+        this.scene.add(im);
+        return im;
+      };
+      for (const items of tiles.values()) {
+        const near = build(geo, items, true), far = farGeo ? build(farGeo, items, false) : null;
+        const bs = near.boundingSphere;
+        near.visible = false; if (far) far.visible = true;
+        this.treeTiles.push({ near, far, x: bs.center.x, z: bs.center.z, r: bs.radius });
+      }
     };
     const canopyMat = this.swayMaterial(0xffffff); canopyMat.vertexColors = true;
     const pineMat = this.swayMaterial(0xffffff); pineMat.vertexColors = true;
-    mk(trunkGeo, M.toon(0x7a5238), round);
-    mk(trunkGeo, M.toon(0x6a4430), pine, null, 0.6);
-    mk(canopyGeo, canopyMat, round, (c, v, x) => c.setHSL(0.25 + v * 0.07 - smooth(200, 500, x) * 0.04, 0.46 + v * 0.1, 0.42 + v * 0.1));
-    mk(pineGeo, pineMat, pine, (c, v) => c.setHSL(0.35 + v * 0.05, 0.36, 0.33 + v * 0.07));
+    mk(trunkGeo, trunkGeo, M.toon(0x7a5238), round);
+    mk(trunkGeo, trunkGeo, M.toon(0x6a4430), pine, null, 0.6);
+    mk(canopyGeo, canopyFar, canopyMat, round, (c, v, x) => c.setHSL(0.25 + v * 0.07 - smooth(200, 500, x) * 0.04, 0.46 + v * 0.1, 0.42 + v * 0.1));
+    mk(pineGeo, pineFar, pineMat, pine, (c, v) => c.setHSL(0.35 + v * 0.05, 0.36, 0.33 + v * 0.07));
     this.treeCount = round.length + pine.length;
     this.bigTree(canopyGeo, canopyMat, trunkGeo);
     // apples under some round trees
@@ -1015,6 +1040,16 @@ export class World {
     }
   }
 
+  // Near tiles show full trees that cast shadows. Far tiles show simple trees. Tiles past the fog are hidden.
+  treeLod(p) {
+    const near = this.low ? 150 : 230, fogEnd = this.scene.fog ? this.scene.fog.far : 1e9;
+    for (const t of this.treeTiles || []) {
+      const d = Math.max(0, Math.hypot(t.x - p.x, t.z - p.z) - t.r);
+      const isNear = d < near, gone = d > fogEnd;
+      t.near.visible = isNear && !gone;
+      if (t.far) t.far.visible = !isNear && !gone;
+    }
+  }
   update(dt, t, cam, player) {
     this.time = t;
     SHARED.uTime.value = t;
@@ -1026,6 +1061,7 @@ export class World {
     if (Math.hypot(player.x - tr.last.x, player.z - tr.last.z) > 0.9) { tr.last.set(player.x, player.y, player.z); tr.k = (tr.k + 1) % T.length; T[tr.k].set(player.x, player.y, player.z, 1); }
     this.skyU.uTime.value = t;
     this.sky.position.copy(cam.position);
+    this.treeLod(cam.position);
     if (this.fishSpots) for (const f of this.fishSpots) {
       const near = Math.hypot(f.x - cam.position.x, f.z - cam.position.z) < 160;
       f.obj.visible = near && f.rest <= 0;
