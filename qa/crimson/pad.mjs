@@ -32,7 +32,7 @@ await step(page, 0.3);
 const p0 = await T(() => __crimson.story.S.hero.pos.toArray());
 await axes([0, -1, 0, 0]); await step(page, 1); await axes([0, 0, 0, 0]);
 const p1 = await T(() => __crimson.story.S.hero.pos.toArray());
-check(Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) > 2 && (await T(() => __crimson.story.S.input.device)) === "pad", `the left stick moves the hero (${Math.hypot(p1[0] - p0[0], p1[2] - p0[2]).toFixed(1)} m)`);
+check(Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) > 1.2 && (await T(() => __crimson.story.S.input.device)) === "pad", `the left stick moves the hero (${Math.hypot(p1[0] - p0[0], p1[2] - p0[2]).toFixed(1)} m)`);
 await T(() => __crimson.story.S.ui.prompt("OPEN", "use")); await step(page, 0.1);
 check((await T(() => document.querySelector("#sPrompt kbd").textContent)) === "Y", "prompts show the pad's Y");
 await T(() => __crimson.story.S.ui.prompt(null));

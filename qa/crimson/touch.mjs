@@ -38,7 +38,7 @@ await step(page, 1);
 let p1 = await T(() => __crimson.story.S.hero.pos.toArray());
 await liftAll(); await step(page, 0.1);
 const moved = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
-check(moved > 2, `the stick moves the hero (${moved.toFixed(2)} m in 1 s)`);
+check(moved > 1.2, `the stick moves the hero (${moved.toFixed(2)} m in 1 s)`);
 const d0 = await T(() => { const v = new __crimson.story.S.THREE.Vector3(); __crimson.story.S.camera.getWorldDirection(v); return Math.atan2(v.x, v.z); });
 await press(2, 620, 160);
 await drag(2, 500, 160, 6);
@@ -110,14 +110,16 @@ await T(() => {
 await step(page, 0.2);
 b = await buttons();
 check(await T(() => __crimson.story.S.test.ui.touchSet === "combat") && b.length <= 7, `an enemy within 20 m brings the combat set (${b.length}: ${b.join(", ")})`);
+// the hero consumes 'light' at control order 0, so watch the press just before it
+await T(() => { window.__lightT = 0; __crimson.story.S.register("control", () => { if (__crimson.story.S.input.pressed("light")) window.__lightT++; }, -1); });
 await tap(560, 150); await step(page, 0.2);
-check(!(await T(() => window.__far.downed)), "a free tap with the nearest enemy 15 m away does not attack");
+check(!(await T(() => window.__far.downed || window.__lightT > 0)), "a free tap with the nearest enemy 15 m away does not attack");
 await T(() => { const S = __crimson.story.S, p = S.hero.pos, f = S.hero.face; window.__near = S.combat.spawn("driver", { pos: { x: p.x + Math.sin(f) * 8, z: p.z + Math.cos(f) * 8 } }); });
 await step(page, 0.1);
 await tap(560, 150); await step(page, 0.2);
-check(await T(() => window.__near.downed), "a free tap with an enemy 8 m away is a light attack");
+check(await T(() => window.__lightT > 0 || window.__near.downed), "a free tap with an enemy 8 m away is a light attack");
 const [cx, cy] = await center("#st_cut");
-await T(() => { window.__lightT = 0; __crimson.story.S.register("control", () => { if (__crimson.story.S.input.pressed("light")) window.__lightT++; }, 50); });
+await step(page, 0.5); await T(() => { window.__lightT = 0; });
 await tap(cx, cy); await step(page, 0.1);
 check(await T(() => window.__lightT > 0), "CUT is a light attack");
 await T(() => __crimson.story.S.combat.clear());

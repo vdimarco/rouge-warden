@@ -16,7 +16,7 @@ export function init(S) {
   let chain = null, preload = null, failReq = null, passReq = false, failing = false, cp = null, last = null, roaming = false, cineCard = null, lastSave = null;
   const doneSet = new Set();
   const M = S.missions = {
-    chapter: null, timeScale: 1, active: null, auto: false,
+    chapter: null, timeScale: 1, active: null, auto: false, cairns: [],
     startChapter, start: (id, o = {}) => startChapter(chapterOf(id), { mission: id, step: o.step || 0 }),
     pass() { if (M.active) passReq = true; },
     fail(reason = 'The mission failed.') { if (M.active && !failing) failReq = reason; },

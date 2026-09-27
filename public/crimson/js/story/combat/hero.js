@@ -172,7 +172,9 @@ export function createHero(K) {
     if ((S.cine && S.cine.active) || H.scripted) { // a cine or a script moves the body: follow it
       H.pos.copy(H.actor.root.position); H.face = H.yaw = H.actor.root.rotation.y; S.focus.copy(H.pos); return;
     }
-    for (const k of Object.keys(buf)) if (In.pressed(k)) buf[k] = K.ct;
+    // the hero keeps its own 0.32 s buffer, so it consumes the press (S.input also buffers light, heavy,
+    // parry and dodge; an unconsumed press would refill this buffer every tick and queue a second attack)
+    for (const k of Object.keys(buf)) if (In.pressed(k)) { buf[k] = K.ct; In.consume(k); }
     const parryHeld = In.held('parry');
     const lockC = !S.lockControl;
     let m = lockC ? In.axis('move') : { x: 0, y: 0 };

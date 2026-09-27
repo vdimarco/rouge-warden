@@ -191,6 +191,7 @@ export function init(S) {
     menu,
     map: { open() { S.ui.toast('The map is not here yet.'); }, close() {} },
     board: { open() { S.ui.toast('The evidence board is not here yet.'); }, close() {} },
+    modalOpen: () => !!S.modal || menu.isOpen,
     advanceAll() { while (sayH) nextLine(); while (subsH) nextSubs(); if (cardH) finishCard(cardH, cardH.choices ? 0 : -1); },
   };
 

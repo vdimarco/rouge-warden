@@ -32,7 +32,8 @@ export function createFootcam(K) {
     const H = S.hero, lk = S.input.axis('look');
     const fight = K.fighting();
     // right stick flick: the next lock target
-    if (K.lock && Math.abs(lk.x) > 0.9) { if (!cam.rsHeld) { cam.rsHeld = true; K.tokens.lockCycle(lk.x > 0 ? 1 : -1); } }
+    // (not for the mouse: its look rate passes 0.9 on an ordinary move; the mouse flicks through onMouse)
+    if (K.lock && S.input.device !== 'key' && Math.abs(lk.x) > 0.9) { if (!cam.rsHeld) { cam.rsHeld = true; K.tokens.lockCycle(lk.x > 0 ? 1 : -1); } }
     else if (Math.abs(lk.x) < 0.4) cam.rsHeld = false;
     const lock = K.lock && !K.lock.downed && !K.lock.gone ? K.lock : null;
     if (!lock) { cam.yaw -= lk.x * 2.6 * rdt; cam.pitch = clamp(cam.pitch + lk.y * 1.6 * rdt, -0.3, 0.9); }

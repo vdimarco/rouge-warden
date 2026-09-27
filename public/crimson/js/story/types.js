@@ -308,10 +308,18 @@ export const PHASE_ORDER = Object.freeze({
  * @property {number} canteen @property {number} canteenMax @property {string} weapon  a WEAPON_IDS id
  * @property {(crewId:string)=>void} setBody @property {(x:number, z:number, yaw?:number, y?:number)=>void} place  y: the height hint for surface() (a room at -300) @property {(m:string)=>void} setMode
  * @property {boolean} down
+ * @property {number} hold01  0..1: how far a held E fills the ring of a hold option (S.interact.current.hold > 0); the UI's prompt draws it
+ * @property {string[]} weapons  the weapons carried; @property {Object<string,number>} uses  uses left per breakable weapon
+ * @property {object} stats  the crew perks of the body (speed, iframeBonus, ...) @property {string} body  the crew id of the body
+ * @property {()=>void} resetGround  after a teleport the hero does not slide back @property {(dir:object)=>boolean} dive  traffic asks for a roll clear
+ *   weapons, weapon, uses, canteen and canteenMax reset on 'start': apply the save after that. Set hp > 0 on retry; the hero stands up by himself.
  * @typedef {object} Fighter
  * @property {string} id @property {Actor} a @property {object} pos @property {number} face @property {number} hp @property {number} maxHp
  * @property {number} posture @property {string} state @property {string} team @property {object} def @property {string} group
  * @property {boolean} alert @property {boolean} tied @property {boolean} downed @property {number|null} nextHit
+ * @property {string} name @property {string} kanji  shown on the boss bar @property {boolean} boss @property {number} maxPosture
+ * @property {1|2} phase  2 after the vortex change; state 'broken' while the posture is broken
+ * @property {boolean} [noPhase2]  set after spawn to end a boss fight at half life with no change (F3's Rattler)
  * @typedef {object} Combat  S.combat
  * @property {Fighter|null} player @property {Fighter[]} enemies @property {boolean} active @property {Fighter|null} boss
  * @property {(o?:{arena?:object,legend?:boolean,music?:boolean})=>void} begin
@@ -322,7 +330,16 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(group?:string)=>void} clear @property {()=>void} end @property {(id:string)=>void} setWeapon
  * @property {(id:string, o?:{uses?:number})=>void} give @property {(d:number)=>void} lockCycle
  * @property {(evt:'down'|'takedown'|'tied'|'heroDown'|'bossPhase'|'finisher', fn:Function)=>(()=>void)} on
- * @typedef {{watch:(f:Fighter,cfg?:object)=>void, unwatch:(f:Fighter)=>void, level:()=>number, spotted:boolean, list:object[], on:(evt:'spotted',fn:Function)=>(()=>void), exposure:number}} Stealth  S.stealth
+ *   'bossPhase' {f, phase, cancel()}: cancel() (or f.noPhase2) ends the fight at half life instead of the change.
+ *   Also emitted (not contract): 'spawn', 'begin', 'end', 'hit', 'deflect', 'evaded', 'slipped', 'broken', 'danger',
+ *   'swing', 'weapon', 'lock', 'bearCall', 'bearCallHit', 'spotted', 'bossPhaseDone'.
+ * @property {(f:Fighter)=>void} tie  zip-tie a downed fighter now (a boss is tied by holding E for 1 s)
+ * @property {{unlocked:boolean, ready:boolean, cooldown:number, max:number}} bearCall  unlocked from S.flags.bearCall (MISSIONS sets it from SaveV1.abilities)
+ * @property {Fighter|null} lock  the lock-on target @property {object} parryHint  {t, unblock, from, soon} @property {object} stats
+ * A fight step: begin({legend, music, arena}), spawn the waves, wait until every enemy is downed; a boss then needs 'tied'.
+ * @typedef {{watch:(f:Fighter,cfg?:object)=>void, unwatch:(f:Fighter)=>void, level:()=>number, spotted:boolean, list:object[], on:(evt:'spotted',fn:Function)=>(()=>void), exposure:number, deepInk:boolean}} Stealth  S.stealth
+ * watch cfg: {flashlight, mirrors, vehicle, range, sharp}; with vehicle the watcher rides with it. deepInk halves every range.
+ * list items: {f, level 0..1, alert, screen:{x, y, on}}. The gang lookalike van rule reads S.flags.gangVan or v.gang.
  * Attack tokens stay at 2 on every tier (C2). Hitstop and slow motion set S.hitstop/S.slowT and scale only cdt.
  * fx.js (foundation, B12): every spawner reads pos.groundY (default 0 keeps the arena identical); clearFX().
  */
@@ -343,10 +360,16 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(cairnId:string)=>void} travel @property {(hhmm:string)=>void} wait @property {(on:boolean)=>void} autopilot
  * @property {string|null} chapter  the chapter now playing (B6)
  * @property {number} timeScale  the day clock's time-lapse factor, the only one (B6): nobody writes S.day.speed
+ * @property {string[]} cairns  the vortex cairn ids found (the map offers travel to them)
+ * markers() items: {id, x, z, y?, kind:'objective'|'giver'|'danger'|'van'|'waypoint'|'cairn', who?, label?, hidden?}
+ *   (the UI draws unknown kinds as objectives, and falls back to markers3d.list when the list is empty)
  * MISSIONS owns S.ready (B2) and reads S.content at run time. It keeps one root task (ROOT_PREFIX) alive while
  * the story plays: the chapter chain, or free roam.
  * @typedef {{play:(id:string, o?:{cast?:object})=>{done:boolean}, skip:()=>void, active:boolean}} Cine  S.cine
+ *   The UI owns skipping: holding skip for 0.8 s calls S.cine.skip() (a film skips on one press). Cine itself does not skip on a press.
  * @typedef {{open:(o?:object)=>void, close:()=>void, shoot:()=>object|null, active:boolean, gallery:object[], best:(slot:string)=>object|null, thumb:(id:string)=>string, reference:(placeId:string)=>object|null}} Photo  S.photo
+ *   MISSIONS (photo.js) opens and closes on pressed('camera'), reads 'shutter' and axis('zoom') (zoom *= exp(y * k * dt)),
+ *   and draws with S.ui.photoFrame(on, {zoom, score, min, subject, focus:{x,y,r}, note, countdown, flash:{score,text}}).
  * @typedef {{set:(slot:string, photoId:string)=>void, get:(slot:string)=>string|null, slots:Object<string,string|null>}} Evidence  S.evidence
  * @typedef {{get:()=>SaveV1, write:()=>boolean, clear:()=>void, has:()=>boolean, summary:()=>{chapter:number,title:string}, checkpoint:()=>object, restore:(cp:object)=>void}} Save  S.save
  *   write() writes nothing and returns false until a chapter runs (S.missions.chapter is set), so the boot's
@@ -386,12 +409,21 @@ export const PHASE_ORDER = Object.freeze({
  * @property {{open:()=>void, close:()=>void, isOpen:boolean}} menu  opening sets S.mode 'menu'; SAVE & QUIT calls S.exit()
  * @property {{open:()=>void, close:()=>void}} map @property {{open:()=>void, close:()=>void}} board
  * @property {()=>void} advanceAll  completes every open say, choose and card handle (B6)
+ * @property {()=>boolean} modalOpen  true while a dialogue, choice, card with choices, the map, the board or the menu is up
+ * prompt(label) shows a mission's own prompt until prompt(null); with none, the pill follows S.interact.current and
+ *   draws the hold ring from current.progress, else S.hero.hold01. key may be an action name ('use', 'exit').
+ * hint(text) fills {action} with the key of the device in use. The 熊 touch button reads S.combat.bearCall.unlocked.
  * @typedef {object} Input  S.input
  * @property {string} context @property {(c:string)=>void} setContext
  * @property {(a:string)=>boolean} pressed  true on the tick the action went down @property {(a:string)=>boolean} held
  * @property {(...actions:string[])=>void} consume  the actions are handled: pressed() is false for them for the
  *   rest of this tick (see PHASE_ORDER; E is both 'use' and 'exit', so consume both)
- * @property {(name:'move'|'look'|'steer')=>{x:number,y:number}} axis @property {'key'|'pad'|'touch'} device
+ * @property {(name:'move'|'look'|'steer'|'zoom')=>{x:number,y:number}} axis @property {'key'|'pad'|'touch'} device
+ *   move, steer: stick units (-1..1, y forward). look: a turn rate where 1 is a full stick (about 2.5 rad/s); the
+ *   mouse and a touch drag use the same units and can go past 1; y > 0 tilts the view down. Multiply by rate * dt.
+ *   zoom: y > 0 zooms in, a rate in stick units. light, heavy, parry and dodge stay pressed for 0.32 s of story
+ *   time until consumed, so a handler that acts on them (or keeps its own buffer) consumes them.
+ *   Extras: lock() and unlock() (the pointer lock), realTime, touch, mouse, consumeKeyActions().
  * @property {(e:KeyboardEvent, down:boolean)=>void} key  fed by the game.js seam @property {(pad:object)=>void} pad  fed each frame
  * @property {(actions:Object<string,boolean|object>)=>void} set  QA @property {()=>void} clear @property {()=>void} update  called by the director at the top of each tick
  */
@@ -656,19 +688,20 @@ export const CONTRACT = Object.freeze([
   // combat
   'hero.mode string', 'hero.pos object', 'hero.face number', 'hero.actor object?', 'hero.crouch boolean', 'hero.hp number', 'hero.maxHp number', 'hero.st number',
   'hero.canteen number', 'hero.canteenMax number', 'hero.weapon string', 'hero.down boolean', ...fns('hero', ['setBody', 'place', 'setMode']),
+  'hero.hold01 number', 'hero.weapons array', 'combat.tie function', 'combat.bearCall object', 'combat.bearCall.unlocked boolean', 'stealth.deepInk boolean',
   'combat.player object?', 'combat.enemies array', 'combat.active boolean', 'combat.boss object?',
   ...fns('combat', ['begin', 'spawn', 'clear', 'end', 'setWeapon', 'give', 'lockCycle', 'on']),
   ...fns('stealth', ['watch', 'unwatch', 'level', 'on']), 'stealth.spotted boolean', 'stealth.list array', 'stealth.exposure number',
   // missions
   ...fns('missions', ['startChapter', 'start', 'pass', 'fail', 'retry', 'quit', 'done', 'available', 'markers', 'travel', 'wait', 'autopilot']),
-  'missions.active object?', 'missions.chapter string?', 'missions.timeScale number',
+  'missions.active object?', 'missions.chapter string?', 'missions.timeScale number', 'missions.cairns array',
   ...fns('cine', ['play', 'skip']), 'cine.active boolean',
   ...fns('photo', ['open', 'close', 'shoot', 'best', 'thumb', 'reference']), 'photo.active boolean', 'photo.gallery array',
   ...fns('evidence', ['set', 'get']), 'evidence.slots object',
   ...fns('save', ['get', 'write', 'clear', 'has', 'summary', 'checkpoint', 'restore']),
   ...fns('markers3d', ['add', 'remove', 'clear']), 'markers3d.list array',
   // ui
-  ...fns('ui', ['objective', 'timer', 'meter', 'clearMeter', 'prompt', 'marker', 'unmark', 'subs', 'say', 'choose', 'card', 'boss', 'stamp', 'clockTag', 'evidence', 'seats', 'speed', 'damage', 'loading', 'fade', 'toast', 'hint', 'photoFrame', 'touchSet', 'advanceAll']),
+  ...fns('ui', ['modalOpen', 'objective', 'timer', 'meter', 'clearMeter', 'prompt', 'marker', 'unmark', 'subs', 'say', 'choose', 'card', 'boss', 'stamp', 'clockTag', 'evidence', 'seats', 'speed', 'damage', 'loading', 'fade', 'toast', 'hint', 'photoFrame', 'touchSet', 'advanceAll']),
   ...fns('ui.menu', ['open', 'close']), 'ui.menu.isOpen boolean', ...fns('ui.map', ['open', 'close']), ...fns('ui.board', ['open', 'close']),
   'input.context string', 'input.device string', ...fns('input', ['setContext', 'pressed', 'held', 'consume', 'axis', 'key', 'pad', 'set', 'clear', 'update']),
   // content

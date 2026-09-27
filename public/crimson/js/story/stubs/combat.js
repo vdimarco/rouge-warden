@@ -7,7 +7,7 @@ export function init(S) {
   const { THREE } = S;
   const pos = new THREE.Vector3();
   const H = S.hero = {
-    mode: 'foot', pos, face: 0, actor: null, body: null, crouch: false, hp: 100, maxHp: 100, st: 100, canteen: 5, canteenMax: 5, weapon: 'fists',
+    mode: 'foot', pos, face: 0, actor: null, body: null, crouch: false, hp: 100, maxHp: 100, st: 100, canteen: 5, canteenMax: 5, weapon: 'fists', hold01: 0, weapons: ['fists'],
     setBody(crewId) {
       if (!CREW_IDS.includes(crewId)) throw new Error(`S.hero.setBody: unknown crew id '${crewId}'`);
       if (H.body === crewId && H.actor) return;
@@ -79,10 +79,12 @@ export function init(S) {
     setWeapon(id) { if (!WEAPON_IDS.includes(id)) throw new Error(`S.combat.setWeapon: unknown weapon '${id}'`); H.weapon = id; },
     give(id) { if (WEAPON_IDS.includes(id)) H.weapon = id; },
     lockCycle() {},
+    tie(f) { if (f && f.downed && !f.tied) { f.tied = true; emit('tied', f); } },
+    bearCall: { unlocked: false, ready: false, cooldown: 0, max: 0 },
     on,
   };
   const watchers = [];
-  S.stealth = { list: watchers, spotted: false, exposure: 1, watch(f, cfg) { watchers.push({ f, cfg }); }, unwatch(f) { const i = watchers.findIndex((w) => w.f === f); if (i >= 0) watchers.splice(i, 1); }, level: () => 0, on: (evt, fn) => on(`stealth:${evt}`, fn) };
+  S.stealth = { list: watchers, spotted: false, exposure: 1, deepInk: false, watch(f, cfg) { watchers.push({ f, cfg }); }, unwatch(f) { const i = watchers.findIndex((w) => w.f === f); if (i >= 0) watchers.splice(i, 1); }, level: () => 0, on: (evt, fn) => on(`stealth:${evt}`, fn) };
 
   // the hero's body comes with the story; the story Gabe and every foe go with it
   S.bus.on('start', () => { if (!H.actor) H.setBody(CREW_IDS[S.ctx.crewPick] || 'shades'); H.setMode('foot'); H.hp = H.maxHp; camInit = false; });

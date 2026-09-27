@@ -150,7 +150,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     if (c === 'drive') return 'drive';
     return enemyWithin(COMBAT_R) ? 'combat' : 'explore';
   }
-  const hasBear = () => { const H = S.hero, f = S.flags || {}; return !!((H && H.abilities && H.abilities.bearCall) || f.bearCall || f.ability_bearCall || (S.combat && S.combat.abilities && S.combat.abilities.bearCall)); };
+  const hasBear = () => { const H = S.hero, f = S.flags || {}; return !!((H && H.abilities && H.abilities.bearCall) || f.bearCall || f.ability_bearCall || (S.combat && S.combat.bearCall && S.combat.bearCall.unlocked)); };
   const stealthy = () => !!((S.stealth && S.stealth.list && S.stealth.list.length) || (S.hero && S.hero.crouch));
   function wanted(set) {
     const on = new Set();

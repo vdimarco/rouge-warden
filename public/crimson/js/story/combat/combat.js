@@ -231,8 +231,7 @@ export function init(S) {
   S.register('hud', (cdt, rdt) => {
     stealth.hud();
     if (smearT > 0) { smearT = Math.max(0, smearT - rdt); if (S.look && S.look.base) S.look.base.smear = smearT / smearDur; }
-    const cur = S.interact.current;
-    if (H.mode === 'foot' && cur && cur.hold > 0 && S.mode === 'play' && !S.freeze && S.ui && S.ui.prompt) S.ui.prompt(cur.label, 'E', H.hold01);
+    // the prompt pill follows S.interact.current by itself and draws the hold ring from S.hero.hold01
   }, 10);
 
   /* ---------------- the session ---------------- */

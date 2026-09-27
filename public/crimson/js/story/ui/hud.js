@@ -229,7 +229,7 @@ export function createHud(U) {
     if (st.manual) { pl = st.manual.label; pk = st.manual.key; ph = st.manual.hold; }
     else if (play && !S.freeze && !S.modal && H) {
       const cur = S.interact && S.interact.current;
-      if (mode === 'foot' && cur && cur.label) { pl = cur.label; ph = cur.progress || 0; }
+      if (mode === 'foot' && cur && cur.label) { pl = cur.label; ph = cur.progress || (cur.hold > 0 && H.hold01) || 0; }
       else if (riding && S.drive.riding && Math.abs(S.drive.riding.speed) < 0.6 && !S.drive.anim) { pl = 'GET OUT'; pk = 'exit'; }
     }
     const pOn = !!pl && (play || !!st.manual) && !photo;
