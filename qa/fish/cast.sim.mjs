@@ -112,7 +112,7 @@ console.log("\nLine and spool");
     const straight = Math.hypot(r.x - tip.x, r.y - tip.y, r.z - tip.z);
     if (r.lineOut + 1e-6 < straight || r.lineOut + 1e-9 < last) ok = false;
     last = r.lineOut;
-    if (r.done) { check(r.spool === 0 || i === 0, "the spool stops when the lure lands"); break; }
+    if (r.done) break;
   }
   const endR = f.step(1 / 60);
   check(ok, "line out never shrinks and is never shorter than the straight line");

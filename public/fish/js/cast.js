@@ -20,6 +20,8 @@ export const CAST = {
   BACK_MIN_POWER: 0.3,   // no back cast at all still flicks the lure out a little
   HIGH_PITCH: 58,        // raw launch pitch above this is a "high" lob (released too early)
   LOW_PITCH: 18,         // below this is a "low" line drive (released too late)
+  SLAM_STEEP: 2.5,       // a release below the horizon drives the lure down this much more steeply...
+  SLAM_LOSS: 0.4,        // ...and loses up to this much speed as the line slaps the water
   G: 9.81,
   KQ: 0.0085,            // quadratic air drag (1/m), fitted to 26 m/s at 35° → 42 m in 3 s, and 14 m/s → 18 m
   KL: 0.13,              // linear drag (1/s): line peeling off the spool and through the guides
@@ -62,12 +64,15 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   const raw = th - C.PITCH_OFFSET;
   let pitch = raw;
   if (assist && pitch >= C.ASSIST_RANGE[0] && pitch <= C.ASSIST_RANGE[1]) pitch += C.ASSIST_PULL * (C.ASSIST_PITCH - pitch);
+  // a late release: the tip is already swinging down at the water, so the lure goes in hard and close
+  if (raw < 0) pitch = Math.max(-80, raw * C.SLAM_STEEP);
   const k = strokeFactor(thetaBack, th);
   let v0 = w < C.MIN_STROKE_SPEED ? C.V_MIN : C.V_MAX * (1 - Math.exp(-w / C.V_K)) * k;
+  if (raw < 0) v0 *= 1 - C.SLAM_LOSS * Math.min(1, -raw / 5);
   v0 = Math.max(C.V_MIN, v0);
   const power = clamp(v0 / C.V_MAX, 0, 1);
   let verdict;
-  if (pitch > 90) verdict = "behind";
+  if (pitch >= 90) verdict = "behind"; // straight up or past it: it comes down behind you
   else if (pitch < 0) verdict = "slam";
   else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
   else if (raw > C.HIGH_PITCH) verdict = "high";

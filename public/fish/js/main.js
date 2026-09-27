@@ -219,7 +219,9 @@ async function chooseInput(then) {
   if (save.input === "touch") { G.input = "touch"; then(); return; }
   if (save.input === "motion") {
     // a returning player: ask again inside this tap (iOS forgets between visits)
-    const st = await Motion.request();
+    const req = Motion.request();
+    lockPortrait();
+    const st = await req;
     if (st === "granted") { G.input = "motion"; then(); return; }
   }
   $("#setupNote").hidden = true;
@@ -231,7 +233,9 @@ let setupThen = null;
 $("#useMotion").addEventListener("click", async () => {
   Sound.init(); Haptics.unlock();
   Sound.sfx("ui");
-  const st = await Motion.request();
+  const req = Motion.request();
+  lockPortrait();
+  const st = await req;
   if (st === "granted") {
     G.input = "motion"; save.input = "motion"; persist();
     show(null);
@@ -251,6 +255,14 @@ $("#useTouch").addEventListener("click", () => {
   show(null);
   const f = setupThen; setupThen = null; if (f) f();
 });
+
+// Android: full screen with a portrait lock, so the browser never turns the page in the middle of a cast.
+// The reel still reads sideways: we turn #game ourselves. iPhone has neither API and skips this.
+function lockPortrait() {
+  const el = document.documentElement;
+  if (!touchDevice || !el.requestFullscreen || !screen.orientation || !screen.orientation.lock || document.fullscreenElement) return;
+  try { el.requestFullscreen({ navigationUI: "hide" }).then(() => screen.orientation.lock("portrait")).catch(() => {}); } catch (e) { /* not allowed here */ }
+}
 
 /* ---------------- wake lock: the screen must not sleep while you wait for a bite ---------------- */
 let wake = null;
