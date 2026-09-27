@@ -6,7 +6,8 @@
 //   off the road and never under surface() - 0.2.
 // - 200 seeded approaches at 28 m/s into boulders, buildings and bridge rails: no tunnelling (the van never
 //   ends on the far side, never deep inside), speed and position finite.
-// - 10 seats fill with seat(); only S0 and S1 show; damage 100 emits 'wrecked' once.
+// - 10 seats fill with seat(); only S0 and S1 show; damage 100 emits 'wrecked' once. Every kind, full: each
+//   seated head stays under the roof and inside the cabin, and the riders that show keep their feet on the floor.
 // - A person 20 m ahead at 20 m/s dives clear, or (when they cannot) the van stops: never closer than 0.8 m;
 //   the hero's hp is unchanged.
 // - A protected van takes 3 bumps at 2 m/s without failing and emits 'hitProtected' on a 7 m/s hit; with
@@ -253,6 +254,52 @@ await step(page, 0.3);
   await page.evaluate(() => __crimson.story.S.test.van.drive(0, 0, false, 0.01));
   check(res.n === 200 && res.nonfinite === 0, `200 seeded approaches at 28 m/s (rails ${res.kinds.rail}, boulders ${res.kinds.rock}, buildings ${res.kinds.building}; ${res.hits} hit something): speed and position stay finite`);
   check(res.far.length === 0 && res.deep === 0, `no tunnelling: the van never ends on the far side of a boulder, a building or a bridge rail, and never sinks into one${res.far.length ? ": " + res.far.slice(0, 5).join("; ") : ""}`);
+}
+
+/* ---------------- seated riders fit their vehicles */
+// Every kind with every seat filled (the crew and the gang, in their real bodies): each rider's head (the
+// skinned vertices on the Head bone) tops out under the roof and stays inside the cabin (info.cabin boxes, in
+// the chassis frame); the riders that show also keep their feet on the floor and inside the sides.
+{
+  await page.evaluate(() => { window.__seatLoad = __crimson.story.S.cast.preload(["tanktop", "fifty", "shades", "newbalance", "redjersey", "gang"]); });
+  const ld = await stepUntil(page, () => window.__seatLoad.done, { maxSec: 120, realMs: 200 });
+  const res = await page.evaluate(() => {
+    const S = __crimson.story.S, T = S.THREE, p = window.__road, ids = ["tanktop", "fifty", "shades", "newbalance", "redjersey", "gang"];
+    const out = { n: 0, bad: [], kinds: 0, placeholders: 0 }, q = new T.Vector3();
+    for (const kind of ["van", "whitevan", "jeep", "suv", "suv_fbi", "pickup", "sedan", "rv"]) {
+      const v = S.vehicles.spawn(kind, { pos: { x: p.x + 30, z: p.z + 30 }, yaw: 0 }), actors = [];
+      for (let i = 0; i < v.seats.length; i++) { const a = S.cast.spawn(ids[i % ids.length], { pos: { x: p.x + 36, z: p.z + 30 + i }, lod: false }); actors.push(a); S.drive.seat(a, v, i); }
+      window.__ticks(90);
+      const ch = v.view.chassis; ch.updateMatrixWorld(true);
+      const inv = ch.matrixWorld.clone().invert(), boxes = v.view.info.cabin || [];
+      actors.forEach((a, i) => {
+        a.root.updateMatrixWorld(true);
+        const head = [], all = [];
+        a.root.traverse((o) => {
+          if (!o.isSkinnedMesh) return;
+          o.skeleton.update();
+          const hb = o.skeleton.bones.findIndex((b) => /head$/i.test(b.name)), P = o.geometry.attributes.position, SI = o.geometry.attributes.skinIndex, SW = o.geometry.attributes.skinWeight;
+          for (let j = 0; j < P.count; j++) {
+            q.fromBufferAttribute(P, j); o.applyBoneTransform(j, q); q.applyMatrix4(o.matrixWorld).applyMatrix4(inv);
+            const pt = [q.x, q.y, q.z]; all.push(pt);
+            let w = 0; for (let c = 0; c < 4; c++) if (SI.getComponent(j, c) === hb) w += SW.getComponent(j, c);
+            if (w >= 0.5) head.push(pt);
+          }
+        });
+        out.n++;
+        if (!head.length) { out.placeholders++; out.bad.push(`${kind} S${i}: no body to measure`); return; }
+        const top = Math.max(...head.map((h) => h[1])), lo = Math.min(...all.map((h) => h[1]));
+        const feet = all.filter((h) => h[1] < lo + 0.25), fx = Math.max(...feet.map((h) => Math.abs(h[0])));
+        const inside = boxes.some((b) => top <= b.y - 0.03 && head.every((h) => Math.abs(h[0]) <= b.x && h[2] >= b.z0 && h[2] <= b.z1));
+        if (!inside) out.bad.push(`${kind} S${i}: head top ${top.toFixed(2)} (roof ${v.view.info.roofY}), x ${Math.max(...head.map((h) => Math.abs(h[0]))).toFixed(2)}, z ${Math.min(...head.map((h) => h[2])).toFixed(2)}..${Math.max(...head.map((h) => h[2])).toFixed(2)}`);
+        if (a.root.visible && !boxes.some((b) => lo >= b.y0 - 0.02 && fx <= b.x + 0.06)) out.bad.push(`${kind} S${i}: feet at ${lo.toFixed(2)}, out to x ${fx.toFixed(2)}`);
+      });
+      for (const a of actors) { S.drive.unseat(a); S.cast.despawn(a); }
+      S.vehicles.despawn(v); out.kinds++;
+    }
+    return out;
+  });
+  check(ld.ok && res.kinds === 8 && res.placeholders === 0 && res.bad.length === 0, `seated riders fit: ${res.n} riders in ${res.kinds} kinds, every head under the roof and inside the cabin, the shown riders' feet on the floor${res.bad.length ? ": " + res.bad.slice(0, 6).join("; ") : ""}`);
 }
 
 /* ---------------- ten seats, and the wreck */

@@ -11,6 +11,7 @@
 // steerRate: how fast the wheels turn (rad/s)
 // grip: the sideways grip by surface (m/s^2 of cornering before the tyres slide)
 // seats: seat count; shown: how many seats show their occupant (tinted glass hides the rest)
+// (the sedan shows none: its riders cannot sit low enough for their heads and feet to both stay inside)
 // gang: carries the neon marker lights by default (neon means danger)
 export const G = 9.81; // gravity on the ground (slopes)
 export const AIR_G = 18; // arcade gravity while airborne (design 4.1)
@@ -53,7 +54,7 @@ export const SPECS = Object.freeze({
   sedan: Object.freeze({
     label: 'sedan', mass: 1400, size: { w: 1.82, h: 1.45, l: 4.6 }, wheelbase: 2.7, track: 1.55, wheelR: 0.33, wheelW: 0.22,
     top: 36, offTop: 16, dirtTop: 22, accel: 4.8, brake: 10, reverse: 7, drag: 0.0035, roll: 0.12,
-    steer: 0.58, steerV: 11, steerRate: 2.6, grip: grip(8.4, 4.8, 4), seats: 5, shown: 2, gang: false,
+    steer: 0.58, steerV: 11, steerRate: 2.6, grip: grip(8.4, 4.8, 4), seats: 5, shown: 0, gang: false,
   }),
   rv: Object.freeze({
     label: 'RV', mass: 6000, size: { w: 2.5, h: 3.3, l: 9.0 }, wheelbase: 5.4, track: 2.05, wheelR: 0.48, wheelW: 0.32,
