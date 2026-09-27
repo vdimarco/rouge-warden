@@ -60,6 +60,19 @@ The layer is bigger, so each critter the Cottage picks comes twice, and the fast
 
 About half the rooms are cave shapes drawn on Higgsfield as black-and-white cross sections: a stalactite cathedral, a sinkhole, worm burrows, a lake basin that fills with the layer's liquid, an old mine, a root chamber, terraces, a crystal geode, stone arches over a pit, and a zigzag fissure. They are stored as small grids and stamped at a random size with rough edges. Short tunnels join the middle of each cave to every tunnel mouth, so the way through stays open. Tunnels bend on the way between rooms.
 
+### Fair play
+
+Research on what makes action games fun, and how this game was tuned against it, is in [docs/drain-fun.md](docs/drain-fun.md). In short:
+
+- A hit knocks you back and gives you 0.8 s of safety.
+- Every attack has a wind-up you can see and hear, and it glows through the dark.
+- Hazards make a sound and show red damage numbers.
+- Propane tanks hiss on a fuse before they blow.
+- The boss shudders before it slams, then stays down for a moment. It drops a scroll and a rich cooler when it dies.
+- Digging warns you before the ground answers.
+- A death keeps half your caps for the next run.
+- Once the drains open, arrows at the screen edge point to them.
+
 ### Movement and physics
 
 - Jumps: tap jump for a short hop, or hold it for the full jump. Falling pulls harder than rising, and the top of a jump hangs for a moment.
