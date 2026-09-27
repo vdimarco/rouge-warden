@@ -180,7 +180,7 @@ export class Line {
     const N = this.N, pts = this.pts;
     const len = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
     // a flying line is pulled nearly straight by the lure; a slack one bellies down to the water
-    const sag = flying ? len * 0.02 : len * (0.01 + clamp(slack, 0, 1) * 0.22);
+    const sag = flying ? len * 0.006 : len * (0.01 + clamp(slack, 0, 1) * 0.22);
     for (let i = 0; i < N; i++) {
       // in flight the belly hangs near the rod; the lure end is pulled straight
       const t = i / (N - 1), tt = flying ? t ** 0.55 : t;

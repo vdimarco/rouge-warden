@@ -208,6 +208,12 @@ export class Rises {
 
 /* ---------------- the lake around the lure ---------------- */
 
+// How main.js drives it, once per frame after the lure lands:
+//   const sim = new LakeSim({ lure: {x, z}, tip, lineOut: flight.lineOut, hour, ring: rises.near(x, z), rng: rng(seed) });
+//   sim.step(dt, { crank, tip: rodTip(theta, yaw, steer), theta, omega, steer, drag, hookset, lift });
+//   for (const e of sim.events.splice(0)) ...;  then draw from sim.state.
+// Pass the unbent tip from rodTip(): the rod's bend is already inside the line physics, and world.setRod can bend it
+// for the picture from state.bend. If a ring's fish is hooked, call rises.take(ring).
 export class LakeSim {
   // opts: { lure, tip, lineOut, hour, ring, rng, easy = true }
   // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none)
@@ -247,7 +253,13 @@ export class LakeSim {
     this.ap = this.plan ? { stage: "wait", t: this.plan.notice, interest: 0, nib: 0, nibbled: false, pauseT: 0, movedT: 9, pauseRolled: false, bored: 0 } : null;
   }
 
-  emit(type, extra) { const e = { type }; if (extra) Object.assign(e, extra); this.events.push(e); }
+  emit(type, extra) {
+    const e = { type };
+    if (extra) Object.assign(e, extra);
+    // the caller drains this every frame; if it forgets, keep only the latest
+    if (this.events.length > 200) this.events.splice(0, 100);
+    this.events.push(e);
+  }
 
   // pick what bites at this spot, if anything
   choose(o) {
@@ -320,7 +332,7 @@ export class LakeSim {
     S.dragN = REEL.DRAG_N[di];
     S.dragFrac = S.dragN / S.breakN;
     const from = this.tip;
-    const to = this.cleanTip(i.tip, null) || rodTip(theta, this.aimYaw() + 0, steer);
+    const to = this.cleanTip(i.tip, null) || rodTip(theta, this.aimYaw(), steer);
     const n = Math.max(1, Math.ceil(dt / REEL.STEP - 1e-9)), h = dt / n;
     const I = { crank, theta, omega: fin(i.omega, 0), steer, hookset: !!i.hookset, lift: !!i.lift, tip: { ...from } };
     for (let k = 1; k <= n; k++) {
@@ -503,7 +515,7 @@ export class LakeSim {
       vx: 0, vy: 0, vz: 0,
       goal: away, moveT: 0, moveLen: 0, shakeF: 7, shakePh: 0,
       jumpPh: null, risk: 0, riskW: 0, moveSlackT: 0, moveThrowRolled: false,
-      surged: false, surgeCool: 0, style: st, lastMove: "", jumpCool: 0, liftT: 0, againstT: 0,
+      surged: false, surgeCool: 0, style: st, lastMove: "", jumpCool: 0, liftT: 0,
       jolt: 0,
     };
     if (P.junk) {
@@ -602,10 +614,10 @@ export class LakeSim {
     const stretch = dist - S.lineOut;
     let ten = stretch > 0 ? k * stretch : 0;
     // head shakes and the kick of a run travel up a tight line as spikes; a high rod soaks most of them up
+    if (f.move === "shake") F.shakePh += h * F.shakeF;
     if (!junk && ten > 1.5 && !land) {
       const cush = R.SHAKE_SOFT + (1 - R.SHAKE_SOFT) * stiff;
       if (f.move === "shake") {
-        F.shakePh += h * F.shakeF;
         const pulse = Math.pow(Math.max(0, Math.sin(2 * Math.PI * F.shakePh)), 3);
         ten += R.SHAKE_N * (F.style.shake || 1) * Math.pow(P.kg, 0.7) * (0.3 + 0.7 * f.stamina) * pulse * cush;
       }
@@ -650,7 +662,6 @@ export class LakeSim {
     const lat = F.vx * sx + F.vz * sz; // + = moving to the angler's right
     let against = 0;
     if (I.steer !== 0) against = Math.abs(lat) > 0.25 ? clamp(-I.steer * Math.sign(lat), 0, 1) * Math.min(1, Math.abs(lat) / 0.8) : Math.abs(I.steer) * 0.5;
-    F.againstT = against;
 
     // turning: the fish turns to its goal, the line turns its head toward the pull
     const pullHead = headingOf(pxn, pzn);
@@ -764,6 +775,8 @@ export class LakeSim {
       const zn = this.zoneAt(f.x, f.z);
       if (cov.includes(zn) && r() < R.COVER_RATE * f.stamina * Math.min(1, out / F.top) * (1 - 0.9 * against) * h) return this.lose(zn === "rocks" ? "rocks" : "weeds", "snap", { reason: zn === "rocks" ? "rocks" : "weeds" });
     }
+    // nothing below changes what the fish does while it is in the middle of a leap
+    if (f.move === "jump" && F.jumpPh) return;
     // the muskie makes one big run when it sees the dock
     if (f.id === "muskie" && !F.surged && dd < R.MUSKIE_SURGE_R && S.phase === "fight") {
       F.surged = true;

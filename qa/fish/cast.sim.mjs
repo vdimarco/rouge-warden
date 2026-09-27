@@ -20,7 +20,7 @@ function cast(theta, omega, { back = theta + 60, yaw = 0, assist = true, feather
 
 // 1. the table
 const speeds = [150, 300, 500, 750, 1000, 1500];
-console.log("\nWhere the lure lands: distance from the angler (m) / flight time (s) / verdict. Full back cast, yaw 0, assist on.");
+console.log(`\nWhere the lure lands: distance from the angler (m) / flight time (s) / verdict. Full back cast, yaw 0, assist on, V_MAX ${CAST.V_MAX} m/s, V_K ${CAST.V_K} °/s.`);
 console.log("θ rel  clock        " + speeds.map((s) => (s + " °/s").padEnd(22)).join(""));
 for (let th = 20; th <= 140; th += 10) {
   let row = String(th).padStart(4) + "   " + clockOf(th).padEnd(12) + " ";

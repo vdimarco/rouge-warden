@@ -83,7 +83,7 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
 
 // what is under a point: the water (0), the dock deck, or the land
 function ground(x, z) {
-  if (onDock(x, z) && z > DOCK.z0 - 0.3) return { y: DOCK.deck, kind: "dock" };
+  if (onDock(x, z)) return { y: DOCK.deck, kind: "dock" };
   const h = height(x, z);
   if (h > 0) return { y: h, kind: h > CAST.TREE_MIN ? "trees" : "land" };
   return { y: 0, kind: "water" };

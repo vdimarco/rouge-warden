@@ -80,9 +80,10 @@ function fft(re, im) {
 function spectrum(x, sr, a, b, band) {
   const N = 2048, mag = new Float64Array(N / 2);
   let frames = 0;
-  for (let s = a; s + N <= b; s += N) {
-    const re = new Float64Array(N), im = new Float64Array(N);
-    for (let i = 0; i < N; i++) re[i] = x[s + i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / N));
+  // a sound shorter than one frame gets one zero-padded frame
+  for (let s = a; s < b && (s + N <= b || frames === 0); s += N) {
+    const re = new Float64Array(N), im = new Float64Array(N), m = Math.min(N, b - s);
+    for (let i = 0; i < m; i++) re[i] = x[s + i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / m));
     fft(re, im);
     for (let k = 0; k < N / 2; k++) mag[k] += Math.hypot(re[k], im[k]);
     frames++;
@@ -97,11 +98,13 @@ function rateOf(x, sr, a, b) {
   const D = Math.max(1, Math.round(sr / 4000)), fs = sr / D, env = [];
   for (let s = a; s + D <= b; s += D) { let m = 0; for (let i = 0; i < D; i++) m += Math.abs(x[s + i]); env.push(m / D); }
   const mean = env.reduce((p, v) => p + v, 0) / env.length, e = env.map((v) => v - mean);
-  const lo = Math.floor(fs / 400), hi = Math.min(Math.floor(fs / 3), e.length >> 1), r = [];
-  let best = 0;
-  for (let L = lo; L <= hi; L++) { let s = 0; for (let i = 0; i + L < e.length; i++) s += e[i] * e[i + L]; r[L] = s / (e.length - L); best = Math.max(best, r[L]); }
-  if (!(best > 0)) return 0;
-  for (let L = lo + 1; L < hi; L++) if (r[L] >= 0.85 * best && r[L] >= r[L - 1] && r[L] >= r[L + 1]) return fs / L;
+  const hi = Math.min(Math.floor(fs / 3), e.length >> 1), r = [];
+  for (let L = 0; L <= hi; L++) { let s = 0; for (let i = 0; i + L < e.length; i++) s += e[i] * e[i + L]; r[L] = s / (e.length - L); }
+  if (!(r[0] > 0)) return 0;
+  // the first clear peak after the first dip (lags shorter than 1/400 s are not a click rate)
+  let L = 1;
+  while (L < hi && (r[L] >= r[L - 1] || L < fs / 400)) L++;
+  for (; L < hi; L++) if (r[L] / r[0] > 0.2 && r[L] >= r[L - 1] && r[L] >= r[L + 1]) return fs / L;
   return 0;
 }
 // pitch track (autocorrelation, 300..2000 Hz), one value every hop seconds
@@ -142,7 +145,8 @@ window.analyse = async (name, seconds, opts = {}, want = {}) => {
     tailRms: rmsOf(x, Math.max(0, n - Math.floor(sr * 0.1)), n), ...spectrum(x, sr, a, b + 1, want.band) };
   if (want.segs) res.segs = want.segs.map(([s, e]) => {
     const i = Math.floor(s * sr), j = Math.min(n, Math.floor(e * sr));
-    return { s, e, rms: rmsOf(x, i, j), rate: rateOf(x, sr, i, j), ...spectrum(x, sr, i, j, want.band) };
+    let pk = 0; for (let k = i; k < j; k++) pk = Math.max(pk, Math.abs(x[k]));
+    return { s, e, rms: rmsOf(x, i, j), peak: pk, rate: rateOf(x, sr, i, j), ...spectrum(x, sr, i, j, want.band) };
   });
   if (want.pitch) res.pitch = pitchTrack(x, sr);
   if (want.wav) {
@@ -238,7 +242,7 @@ try {
     drag: { secs: 4.2, segs: [[0.4, 1.1], [1.4, 2.3], [2.6, 3.5], [3.9, 4.2]] },
     tension: { secs: 4, segs: [[0.5, 1.2], [2.6, 3.4], [3.8, 4]] },
   };
-  const segRow = (s) => `[${s.s}-${s.e}s rms ${s.rms.toFixed(3)} rate ${s.rate.toFixed(1)} Hz centroid ${Math.round(s.centroid)} Hz]`;
+  const segRow = (s) => `[${s.s}-${s.e}s rms ${s.rms.toFixed(3)} peak ${s.peak.toFixed(3)} rate ${s.rate.toFixed(1)} Hz centroid ${Math.round(s.centroid)} Hz]`;
   for (const [name, L] of Object.entries(LOOPS)) {
     const r = await page.evaluate(([n, s, w]) => analyse(n, s, {}, w), [name, L.secs, { segs: L.segs, wav: true }]);
     const raw = await page.evaluate(([n, s]) => analyse(n, s, { raw: true }), [name, L.secs]);
@@ -273,14 +277,14 @@ try {
 
   /* ---------- the lake at three hours ---------- */
   console.log("\nthe lake:");
-  const LAKE = [["dawn", { hour: 6.2, loonAt: 1.5 }], ["noon", { hour: 13 }], ["dusk", { hour: 20.4, loonAt: 3 }]];
+  const LAKE = [["dawn", { hour: 6.2, loonAt: 1.5 }], ["noon", { hour: 13, loonAt: 30 }], ["dusk", { hour: 20.4, loonAt: 3 }]];
   const lake = {};
   for (const [key, opts] of LAKE) {
-    const r = await page.evaluate(([o, w]) => analyse("ambience", 12, o, w), [opts, { band: [4200, 4900], segs: [[6, 12]], wav: true }]);
+    const r = await page.evaluate(([o, w]) => analyse("ambience", 12, o, w), [opts, { band: [4200, 4900], segs: [[7.5, 12]], wav: true }]);
     const raw = await page.evaluate(([o]) => analyse("ambience", 12, { ...o, raw: true }), [opts]);
     r.rawPeak = raw.peak; r.name = "lake " + key;
     lake[key] = r;
-    console.log("      " + row(r) + `  cricket band ${(r.band * 100).toFixed(1)}%`);
+    console.log("      " + row(r) + `  cricket band ${(r.band * 100).toFixed(1)}%  bed rms ${r.segs[0].rms.toFixed(3)}`);
     const why = [];
     if (r.bad) why.push("non-finite samples");
     if (r.rms < 0.004) why.push("silent");

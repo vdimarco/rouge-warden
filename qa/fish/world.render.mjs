@@ -121,8 +121,8 @@ const flight = () => {
 };
 const reel = () => {
   W.setHour(19.5); W.hideCatch(); W.setAim({ visible: false });
-  W.setRings([{ x: -9, z: -26, gold: false }, { x: 7, z: -30, gold: true }]);
-  const fish = { id: "pike", x: 3.5, y: -0.2, z: -15, heading: 2.2, len: 0.85, jump: 0.42, thrash: 0.8, near: 1 };
+  W.setRings([{ x: 11, z: -24, gold: false }, { x: -7, z: -36, gold: true }]);
+  const fish = { id: "pike", x: 3.5, y: -0.2, z: -15, heading: 1.3, len: 0.85, jump: 0.42, thrash: 0.8, near: 1 };
   W.setView({ mode: "reel", look: { x: 2, y: 0, z: -13 } });
   for (let i = 0; i < 90; i++) {
     W.setFish({ ...fish, jump: i < 80 ? 0 : 0.05 + (i - 80) * 0.04 });

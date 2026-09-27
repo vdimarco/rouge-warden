@@ -208,7 +208,7 @@ export function forest(x, z) {
   const e = bayE(x, z);
   let f = 0.55 + 0.45 * L.noise(x / 26 + 7, z / 26 - 3) + 0.2 * L.noise(x / 9, z / 9);
   if (Math.abs(x) < 18 && z > 14 && z < 70) f -= 1.2 * (1 - smooth(10, 18, Math.abs(x)));   // the cottage lawn
-  if (L.pointDist(x, z) < 0) f -= 0.8 * (1 - smooth(6, 26, Math.hypot(x - L.POINT.bx, z - L.POINT.bz))); // bare rock at the tip
+  if (L.pointDist(x, z) < 0) f -= 0.9 * (1 - smooth(3, 13, Math.hypot(x - L.POINT.bx, z - L.POINT.bz))); // bare rock at the tip
   if (L.islandDist(x, z) < 0) f = 0.9;
   if (e > 1.5) f = Math.max(f, 0.75);
   return clamp(f, 0, 1);
@@ -216,7 +216,7 @@ export function forest(x, z) {
 
 const PAL = {
   sand: hex("#d9c28c"), wet: hex("#a8956a"), bed1: hex("#b5a47a"), bed2: hex("#7c7a52"), bed3: hex("#3e4a36"), weed: hex("#46602f"),
-  grass: hex("#8fa650"), meadow: hex("#a8b45c"), forest: hex("#34502a"), far: hex("#3a5a34"), granite: hex("#b39c90"), graniteDk: hex("#7e726c"), lichen: hex("#a7a468"),
+  grass: hex("#8fa650"), meadow: hex("#a8b45c"), forest: hex("#34502a"), far: hex("#3a5a34"), granite: hex("#bcaea6"), graniteDk: hex("#7c7672"), lichen: hex("#a3a672"),
 };
 
 function groundColor(x, z, h, ny) {
@@ -229,7 +229,7 @@ function groundColor(x, z, h, ny) {
     if (L.pointDist(x, z) < 12 || L.islandDist(x, z) < 8) c = mix3(c, PAL.graniteDk, clamp(0.5 + n1, 0, 0.8));
     return mul3(c, 1 + 0.06 * n1);
   }
-  const e = bayE(x, z), rocky = L.pointDist(x, z) < 1.5 || (L.islandDist(x, z) < 0 && L.islandDist(x, z) > -4);
+  const e = bayE(x, z), rocky = L.pointDist(x, z) < 1.5 || (L.islandDist(x, z) < 0 && L.islandDist(x, z) > -3);
   if (h < 0.75) {
     let c = mix3(PAL.wet, PAL.sand, smooth(0.15, 0.6, h));
     if (rocky) c = mix3(PAL.granite, PAL.graniteDk, 0.5 + 0.5 * n2);
@@ -237,7 +237,14 @@ function groundColor(x, z, h, ny) {
   }
   let c = mix3(PAL.grass, PAL.meadow, clamp(0.5 + n1, 0, 1));
   c = mix3(c, PAL.forest, forest(x, z) * 0.9);
-  if (rocky) c = mix3(c, mix3(PAL.granite, PAL.lichen, clamp(0.3 + n1, 0, 1)), 0.75);
+  if (rocky) {
+    // Canadian Shield: pale pink-grey granite ledges, dark seams, lichen and grass in the hollows, forest behind
+    const seam = Math.abs(L.noise(x / 3.1 + 9, z / 1.3)) < 0.08 ? 0.55 : 0;
+    let r = mix3(PAL.granite, PAL.graniteDk, clamp(0.25 + 0.5 * n2, 0, 1) * 0.6 + seam);
+    r = mix3(r, PAL.lichen, clamp(n1 * 0.9, 0, 0.45));
+    r = mix3(r, PAL.grass, clamp(0.1 + L.noise(x / 5, z / 5) * 0.9, 0, 0.7));
+    c = mix3(r, c, clamp(forest(x, z) - 0.3, 0, 1) * 0.8);
+  }
   if (ny < 0.72) c = mix3(c, mix3(PAL.granite, PAL.graniteDk, 0.4 + 0.4 * n2), smooth(0.72, 0.5, ny) * 0.8);
   if (e > 1.5) {
     // far hills read as forest canopy: dark with lighter crowns
@@ -355,11 +362,21 @@ export function buildWater(low) {
         vec2 o = (p - vec2(5.0, -95.0)) / vec2(140.0, 115.0), v = d / vec2(140.0, 115.0);
         float a = dot(v, v), b = dot(o, v), c = dot(o, o) - 1.0;
         t = (-b + sqrt(max(b * b - a * c, 0.0))) / a;
-        float el = 16.0 / max(t, 1.0);
+        // the shore forest: a ragged line of pine tops
+        float az = atan(d.x, -d.y);
+        float tips = abs(fract(az * 28.0) - 0.5) * 2.0;
+        float el = (15.0 + 5.0 * vnoise(vec2(az * 11.0, 2.0)) - 5.0 * tips) / max(t, 1.0);
+        // Clog Island: a low hill under tall pines, by how far off its middle the ray passes
         vec2 oc = p - vec2(34.0, -128.0);
-        float bi = dot(oc, d), di = bi * bi - dot(oc, oc) + 225.0;
-        if (di > 0.0) { float ti = -bi - sqrt(di); if (ti > 0.0 && ti < t) { el = max(el, 21.0 / ti); t = ti; } }
-        return max(el, 0.07);
+        float bi = dot(oc, d), off2 = dot(oc, oc) - bi * bi, di = 225.0 - off2;
+        if (di > 0.0 && bi < 0.0) {
+          float ti = -bi - sqrt(di), k = sqrt(max(1.0 - off2 / 225.0, 0.0));
+          float lat = sqrt(max(off2, 0.0)) * sign(oc.x * d.y - oc.y * d.x);
+          float pine = 1.0 - abs(fract(lat * 0.2 + 0.3) - 0.5) * 2.0;
+          float hgt = 8.0 * k + 14.0 * pow(k, 0.35) * (0.45 + 0.55 * pine);
+          if (ti < t) { el = max(el, hgt / max(ti, 1.0)); t = ti; }
+        }
+        return max(el, 0.045);
       }
       void main() {
         vec2 p = vW.xz;
@@ -446,7 +463,8 @@ export function buildWater(low) {
         float rough = 1.0 - keep;
         float spec = pow(sd, mix(1400.0, 70.0, rough)) * mix(14.0, 1.2, rough);
         #if LOW == 0
-        spec += pow(sd, 40.0) * step(0.965, hash12(floor(p * 5.0) + floor(uTime * 7.0))) * 1.6 * s4;
+        vec2 gq = p * 5.0;
+        spec += pow(sd, 40.0) * step(0.96, hash12(floor(gq) + floor(uTime * 7.0))) * smoothstep(0.32, 0.08, length(fract(gq) - 0.5)) * 2.2 * s4;
         #endif
         spec *= uSunVis * (1.0 - shore);
         col += uSunCol * spec;
@@ -593,8 +611,8 @@ export function buildRocks() {
   const spots = L.ROCKS.map((k) => ({ x: k.x, z: k.z, r: k.r, top: k.top }));
   // granite on the point and the island shore, above the water
   const rr = L.rng(88);
-  for (let i = 0; spots.length < L.ROCKS.length + 40 && i < 3000; i++) {
-    const onIsland = rr() < 0.4;
+  for (let i = 0; spots.length < L.ROCKS.length + 60 && i < 4000; i++) {
+    const onIsland = rr() < 0.3;
     const x = onIsland ? L.ISLAND.x + (rr() - 0.5) * 40 : L.POINT.bx - 4 + rr() * 60, z = onIsland ? L.ISLAND.z + (rr() - 0.5) * 40 : L.POINT.bz - 14 + rr() * 26;
     const d = onIsland ? L.islandDist(x, z) : L.pointDist(x, z), h = L.height(x, z);
     if (d > 0.5 || d < -5 || h < 0) continue;

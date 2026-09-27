@@ -54,11 +54,13 @@ const waiters = [];
 const subs = [];
 
 // the fused "up": the world's up direction in phone axes, and the time it describes
-let ux = 0, uy = 1, uz = 0, have = false, tu = 0;
+let ux = 0, uy = 1, uz = 0, have = false, tu = 0, uByGyro = false;
 // the last gyro rates (deg/s about phone x, y, z), when they came, and what the self-check learned
 let gx = 0, gy = 0, gz = 0, tg = -1e9, gyroOn = false, gyroSign = 1, gyroScale = 1;
 // the last OS orientation, as an up vector (plus its angles, for the heading when there is no gyro)
-let ox = 0, oy = 1, oz = 0, to = -1e9, oHave = false, oNew = false, oA = NaN, oB = 0, oG = 0;
+let ox = 0, oy = 1, oz = 0, to = -1e9, oHave = false, oA = NaN, oB = 0, oG = 0;
+// that orientation carried forward to now with the gyro: the target the fused pose is pulled toward
+let qx = 0, qy = 1, qz = 0, tq = 0;
 // the accelerometer, only for phones that send no orientation. iOS negates it: the sign is learned, not sniffed
 let agx = 0, agy = 0, agz = 0, gSign = 0, gGuess = false;
 // heading
@@ -227,16 +229,17 @@ function onOrientation(e) {
   const b = e.beta * D2R, c = e.gamma * D2R, cb = Math.cos(b);
   const nx = -cb * Math.sin(c), ny = Math.sin(b), nz = cb * Math.cos(c);
   if (gyroLive(t)) selfCheck(nx, ny, nz, t);
-  ox = nx; oy = ny; oz = nz; to = t; oHave = true; oNew = true;
+  ox = nx; oy = ny; oz = nz; to = t; oHave = true;
+  qx = nx; qy = ny; qz = nz; tq = t;
   oA = fin(e.alpha) ? e.alpha : NaN; oB = e.beta; oG = e.gamma;
   if (gyroLive(t)) {
     // the gyro stream moves the pose; this sample corrects it on the next motion event
-    if (!have) { ux = nx; uy = ny; uz = nz; tu = t; have = true; oNew = false; }
+    if (!have) { ux = nx; uy = ny; uz = nz; tu = t; have = true; uByGyro = false; }
     return;
   }
   // no gyro: the OS orientation is the pose
   const dts = clamp(t - tu, T.DT_MIN, T.DT_MAX) / 1000;
-  ux = nx; uy = ny; uz = nz; tu = t; have = true; oNew = false;
+  ux = nx; uy = ny; uz = nz; tu = t; have = true; uByGyro = false;
   solve(t, dts, false, true);
 }
 
@@ -251,7 +254,7 @@ function onMotion(e) {
   if (hasA) gravity(a.x, a.y, a.z, t);
   gyroOn = hasG;
   if (hasG) gyroStep(t, r.alpha, r.beta, r.gamma);
-  else if (!oHave || t - to > 100) accelStep(t); // orientation is quiet: keep the pose (and ω) ticking on the motion clock
+  else if (!oHave || t - to > 60) accelStep(t); // orientation is quiet (Chrome sends it only on a change): keep ω ticking to 0
 }
 
 function gravity(x, y, z, t) {
@@ -283,38 +286,39 @@ function gyroStep(t, ra, rb, rc) {
   const fresh = gap > 0 && gap < 100;
   const ax = fresh ? (wx + gx) / 2 : wx, ay = fresh ? (wy + gy) / 2 : wy, az = fresh ? (wz + gz) / 2 : wz;
   gx = wx; gy = wy; gz = wz; tg = t;
-  const stale = !oHave || t - to > 500;
   if (!have) {
-    if (oHave) { ux = ox; uy = oy; uz = oz; tu = to; oNew = false; }
+    if (oHave) { ux = ox; uy = oy; uz = oz; tu = to; }
     else if (gravUp()) { ux = RX; uy = RY; uz = RZ; tu = t; }
     else return;
-    have = true;
+    have = true; uByGyro = false;
   }
-  const dt = clamp(t - tu, T.DT_MIN, T.DT_MAX), dts = dt / 1000;
+  // Integrate from the time "up" describes. Between gyro samples clamp to 5..50 ms: after a stall, events arrive in a
+  // burst with nearly equal stamps. Right after an orientation sample set "up", the real (maybe tiny) gap is right
+  const dt = uByGyro ? clamp(t - tu, T.DT_MIN, T.DT_MAX) : clamp(t - tu, 0, T.DT_MAX), dts = dt / 1000;
   // between orientation samples the gyro moves the rod, so θ does not lag a whip
   rot(ux, uy, uz, ax, ay, az, dts);
-  ux = RX; uy = RY; uz = RZ; tu = t;
+  ux = RX; uy = RY; uz = RZ; tu = t; uByGyro = true;
   const spin = Math.sqrt(wx * wx + wy * wy + wz * wz);
   // hold the spin a moment after a whip stops: a lagging OS orientation would drag θ back along the stroke
   spinH = Math.max(spin, spinH * Math.exp(-dt / T.SPIN_HOLD));
   let k = 0, px = 0, py = 0, pz = 0;
-  if (oNew) {
-    oNew = false;
-    const lead = t - to; // how much older the orientation sample is than now
-    if (lead > -60 && lead < 60) {
-      rot(ox, oy, oz, ax, ay, az, lead / 1000); // bring it forward to now with the gyro
-      px = RX; py = RY; pz = RZ;
-      const s = spinH;
-      k = s <= T.SPIN_LO ? T.K_STILL : s >= T.SPIN_HI ? T.K_FAST : T.K_STILL + ((T.K_FAST - T.K_STILL) * (s - T.SPIN_LO)) / (T.SPIN_HI - T.SPIN_LO);
-      if (s < 150 && ux * px + uy * py + uz * pz < COS_SNAP()) k = Math.max(k, 0.5);
-    }
-  } else if (stale) {
+  if (oHave) {
+    // The target: the last OS orientation (set on each orientation event), carried forward to now with the gyro.
+    // Chrome sends orientation only when it changes by 0.1°, so a silent stream means "unchanged", not "gone":
+    // keep pulling toward it, or a phone held still would never settle
+    rot(qx, qy, qz, ax, ay, az, clamp(t - tq, -60, 60) / 1000);
+    qx = RX; qy = RY; qz = RZ; tq = t;
+    px = qx; py = qy; pz = qz;
+    const s = spinH;
+    k = s <= T.SPIN_LO ? T.K_STILL : s >= T.SPIN_HI ? T.K_FAST : T.K_STILL + ((T.K_FAST - T.K_STILL) * (s - T.SPIN_LO)) / (T.SPIN_HI - T.SPIN_LO);
+    if (s < 150 && ux * px + uy * py + uz * pz < COS_SNAP()) k = Math.max(k, 0.5);
+  } else {
+    // no orientation stream at all: raw gravity, and only while the phone is not being swung
     const n = gravUp();
-    // raw gravity is only true while the phone is not being swung
     if (n && Math.abs(n - 9.81) < 1.5 && spin < 120) { px = RX; py = RY; pz = RZ; k = 0.04; }
   }
   if (k > 0) {
-    k = 1 - Math.pow(1 - k, dt / 16.7);
+    k = 1 - Math.pow(1 - k, Math.max(dt, T.DT_MIN) / 16.7);
     ux += k * (px - ux); uy += k * (py - uy); uz += k * (pz - uz);
   }
   normU();
@@ -322,13 +326,13 @@ function gyroStep(t, ra, rb, rc) {
 }
 
 function accelStep(t) {
-  if (!oHave || t - to > 500) {
+  if (!oHave) {
     if (!gravUp()) return;
     if (!have) { ux = RX; uy = RY; uz = RZ; have = true; }
     else { ux += 0.3 * (RX - ux); uy += 0.3 * (RY - uy); uz += 0.3 * (RZ - uz); normU(); } // raw gravity shakes with every hand move
   } else if (!have) return;
   const dts = clamp(t - tu, T.DT_MIN, T.DT_MAX) / 1000;
-  tu = t;
+  tu = t; uByGyro = false;
   solve(t, dts, false, true);
 }
 

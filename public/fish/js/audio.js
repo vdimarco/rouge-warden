@@ -28,9 +28,11 @@ function makeEngine(ctx, { offline = false, raw = false } = {}) {
   e.bus = ctx.createGain();
   if (raw) e.bus.connect(e.out);   // tests: hear a sound as it was designed, with no compressor or limiter
   else {
-    // glue: a gentle compressor, then a soft knee that cannot go past 0.98 whatever piles up
+    // glue: a gentle compressor, then a soft knee that cannot go past 0.98 whatever piles up.
+    // The compressor adds its own make-up gain (~1.34x for quiet sounds): the bus gain takes it back out
+    e.bus.gain.value = 0.75;
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3.5; comp.attack.value = 0.003; comp.release.value = 0.25;
+    comp.threshold.value = -10; comp.knee.value = 8; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
     const pre = ctx.createGain(); pre.gain.value = 1 / 3;
     const clip = ctx.createWaveShaper(); clip.curve = softClip();
     e.bus.connect(comp); comp.connect(pre); pre.connect(clip); clip.connect(e.out);
@@ -196,8 +198,8 @@ function train(e, t, o) {
 function splashAt(e, t, s, o = {}) {
   const to = o.to || e.sfx, pan = o.pan ?? (rnd() * 0.4 - 0.2), send = o.send ?? 0.18;
   // the hit: water torn open, a hiss that darkens as it falls back
-  let end = hiss(e, t, { type: "bandpass", f: 2600 - 900 * s, f2: 650, q: 0.6, dur: 0.1 + 0.5 * s, att: 0.003, peak: 0.2 + 0.32 * s, to, pan, send });
-  hiss(e, t + 0.004, { type: "highpass", f: 4200, q: 0.7, dur: 0.05 + 0.25 * s, att: 0.002, peak: 0.08 + 0.14 * s, to, pan });
+  let end = hiss(e, t, { type: "bandpass", f: 1900 - 700 * s, f2: 520, q: 0.6, dur: 0.1 + 0.5 * s, att: 0.003, peak: 0.22 + 0.34 * s, to, pan, send });
+  hiss(e, t + 0.004, { type: "bandpass", f: 5200, q: 0.8, dur: 0.04 + 0.2 * s, att: 0.002, peak: 0.06 + 0.09 * s, to, pan });
   // the bloop: the air pocket rings and its note drops (a bigger splash has a bigger pocket and a lower note)
   const f0 = 780 - 540 * s;
   tone(e, t + 0.012, { f: f0, f2: f0 * 0.42, glide: 0.05 + 0.12 * s, dur: 0.07 + 0.2 * s, peak: 0.2 + 0.22 * s, to, pan });
@@ -341,7 +343,7 @@ function frog(e, t, o) {
 // a wave laps against the dock posts
 function lap(e, t, s, to) {
   const pan = rnd() * 0.9 - 0.45;
-  let end = hiss(e, t, { buf: e.pink, type: "bandpass", f: 300 + 380 * rnd(), q: 1.2, dur: 0.2 + 0.25 * s, att: 0.04 + 0.05 * rnd(), peak: 0.1 + 0.16 * s, to, pan });
+  let end = hiss(e, t, { buf: e.pink, type: "bandpass", f: 300 + 380 * rnd(), q: 1.2, dur: 0.2 + 0.25 * s, att: 0.04 + 0.05 * rnd(), peak: 0.05 + 0.08 * s, to, pan });
   if (rnd() < 0.4) end = Math.max(end, tone(e, t + 0.04 + 0.06 * rnd(), { f: 420 + 300 * rnd(), f2: 240, glide: 0.05, dur: 0.07, peak: 0.03 + 0.03 * s, to, pan }));
   return end;
 }
@@ -371,12 +373,12 @@ const SFX = {
   },
   // the line slips off the finger: a short zip that runs down
   slip(e, t) {
-    train(e, t, { rate: 55, rate2: 12, dur: 0.4, bands: [[2400, 4, 30], [5200, 6, 12]], peak: 0.5, att: 0.003 });
+    train(e, t, { rate: 55, rate2: 12, dur: 0.4, bands: [[2400, 4, 16], [5200, 6, 6]], peak: 0.5, att: 0.003 });
     return hiss(e, t, { type: "bandpass", f: 3400, f2: 1300, q: 1.2, dur: 0.3, att: 0.004, peak: 0.12 });
   },
   // the rod creaks as it loads at the back of the cast
   load(e, t) {
-    train(e, t, { rate: 13, rate2: 32, dur: 0.42, jitter: 260, bands: [[520, 8, 90], [1180, 6, 50]], peak: 0.55, att: 0.03 });
+    train(e, t, { rate: 13, rate2: 32, dur: 0.42, jitter: 260, bands: [[520, 8, 40], [1180, 6, 22]], peak: 0.55, att: 0.03 });
     return tone(e, t, { type: "sawtooth", f: 88, f2: 104, dur: 0.4, att: 0.05, peak: 0.05, lp: 420 });
   },
   // the line leaves the finger
@@ -427,9 +429,9 @@ const SFX = {
   // a fish leaps: the water tears, the lure rattles in the air, then it crashes back in
   jump(e, t, v) {
     const s = clamp(num(v, 0.7), 0.1, 1), air = 0.42 + 0.35 * s;
-    hiss(e, t, { type: "highpass", f: 2600, dur: 0.22, att: 0.004, peak: 0.16 + 0.14 * s, send: 0.15 });
+    hiss(e, t, { type: "bandpass", f: 4200, q: 0.8, dur: 0.22, att: 0.004, peak: 0.1 + 0.09 * s, send: 0.15 });
     hiss(e, t, { type: "bandpass", f: 1300, q: 0.7, dur: 0.2, att: 0.004, peak: 0.16 + 0.16 * s });
-    train(e, t + 0.05, { rate: 24, rate2: 30, dur: air, jitter: 400, bands: [[3300, 5, 25], [5100, 7, 12]], peak: 0.22, att: 0.02 });
+    train(e, t + 0.05, { rate: 24, rate2: 30, dur: air, jitter: 400, bands: [[3300, 5, 12], [5100, 7, 5]], peak: 0.22, att: 0.02 });
     drips(e, t + 0.1, 3, air * 0.8, e.sfx, 0.8);
     splashAt(e, t + air, Math.min(1, s + 0.3), { pan: 0, send: 0.25 });
     return tone(e, t + air + 0.01, { f: 230 - 90 * s, f2: 58, glide: 0.18, dur: 0.3, peak: 0.34 });
@@ -530,15 +532,15 @@ function brass(e, t, f, dur, peak, vib) {
 const LOOPS = {
   // the rod through the air: band-passed noise whose centre follows the rod speed, and the thin whistle of the tip
   swish(e) {
-    const n = noise(e), bp = filt(e, "bandpass", 400, 1.2), wh = filt(e, "bandpass", 900, 7), out = gain(e, 0);
+    const n = noise(e, e.pink), bp = filt(e, "bandpass", 400, 1.1), wh = filt(e, "bandpass", 900, 7), out = gain(e, 0);
     n.connect(bp); bp.connect(gain(e, 1, out));
-    n.connect(wh); wh.connect(gain(e, 0.9, out));
+    n.connect(wh); wh.connect(gain(e, 1.2, out));
     n.start(e.ctx.currentTime, rnd());
     return { out, apply(v, t) {
       v = clamp(v, 0, 1);
       out.gain.setTargetAtTime(0.9 * Math.pow(v, 1.5), t, 0.03);
-      bp.frequency.setTargetAtTime(350 + 2300 * v * v, t, 0.03);
-      wh.frequency.setTargetAtTime(500 + 2400 * v, t, 0.03);
+      bp.frequency.setTargetAtTime(260 + 1500 * v * v, t, 0.03);
+      wh.frequency.setTargetAtTime(420 + 1900 * v, t, 0.03);
     } };
   },
   // line flying off the open spool: each coil slaps off the spool lip. The coil rate is the tick rate, and at speed
@@ -556,22 +558,23 @@ const LOOPS = {
     return { out, apply(mps, t) {
       const k = clamp(mps / 24, 0, 1);
       c.frequency.setTargetAtTime(clamp(mps * 6.4, 3, 230), t, 0.03);
-      ringBP.frequency.setTargetAtTime(1500 + 2700 * k, t, 0.05);
-      nBP.frequency.setTargetAtTime(1800 + 3600 * k, t, 0.05);
+      ringBP.frequency.setTargetAtTime(1200 + 1800 * k, t, 0.05);
+      nBP.frequency.setTargetAtTime(1500 + 2200 * k, t, 0.05);
       out.gain.setTargetAtTime(mps <= 0 ? 0 : 0.14 + 0.5 * Math.pow(k, 0.7), t, mps <= 0 ? 0.08 : 0.03);
     } };
   },
   // the crank: soft ratchet ticks at the gear rate, a low gear hum, and the whirr of the rotor
   reel(e) {
-    const tk = osc(e, e.pulse, 4), out = gain(e, 0);
-    const tbp = filt(e, "bandpass", 1500, 6); tk.connect(tbp); tbp.connect(gain(e, 30, out));
+    const tk = osc(e, e.pulse, 4), out = gain(e, 0), tkG = gain(e, 13, out);
+    const tbp = filt(e, "bandpass", 1500, 6); tk.connect(tbp); tbp.connect(tkG);
     const gear = osc(e, "sawtooth", 40), glp = filt(e, "lowpass", 500, 1.5); gear.connect(glp); glp.connect(gain(e, 0.1, out));
     const n = noise(e, e.pink), nbp = filt(e, "bandpass", 1100, 1.4); n.connect(nbp); nbp.connect(gain(e, 0.22, out));
     const t0 = e.ctx.currentTime;
     tk.start(t0); gear.start(t0); n.start(t0, rnd());
     return { out, apply(rps, t) {
-      const k = clamp(rps / 3, 0, 1);
-      tk.frequency.setTargetAtTime(clamp(rps * 8, 1, 40), t, 0.05);
+      const k = clamp(rps / 3, 0, 1), rate = clamp(rps * 8, 1, 40);
+      tk.frequency.setTargetAtTime(rate, t, 0.05);
+      tkG.gain.setTargetAtTime(13 * clicks(rate, 16), t, 0.05);
       gear.frequency.setTargetAtTime(clamp(rps * 38, 8, 160), t, 0.05);
       glp.frequency.setTargetAtTime(300 + 500 * k, t, 0.05);
       nbp.frequency.setTargetAtTime(700 + 900 * k, t, 0.05);
@@ -580,18 +583,19 @@ const LOOPS = {
   },
   // the drag screams: sharp ratchet clicks whose rate follows the slip, up to a continuous zzzz
   drag(e) {
-    const c = osc(e, e.pulse, 5), out = gain(e, 0);
+    const c = osc(e, e.pulse, 5), out = gain(e, 0), clk = gain(e, 0, out);
     const wob = osc(e, "sine", 6.5), wobG = gain(e, 35); wob.connect(wobG); wobG.connect(c.detune);   // the fish pulls in surges
-    const a = filt(e, "bandpass", 3000, 6); c.connect(a); a.connect(gain(e, 60, out));
-    const b = filt(e, "bandpass", 5400, 9); c.connect(b); b.connect(gain(e, 40, out));
+    const a = filt(e, "bandpass", 3000, 6); c.connect(a); a.connect(gain(e, 16, clk));
+    const b = filt(e, "bandpass", 4300, 9); c.connect(b); b.connect(gain(e, 9, clk));
     const envLP = filt(e, "lowpass", 400, 0.7), vca = gain(e, 0);
     c.connect(envLP); envLP.connect(gain(e, 6, vca.gain));
-    const n = noise(e), hp = filt(e, "highpass", 2500, 0.7); n.connect(hp); hp.connect(vca); vca.connect(out);
+    const n = noise(e), hp = filt(e, "bandpass", 3600, 0.8); n.connect(hp); hp.connect(vca); vca.connect(out);
     const t0 = e.ctx.currentTime;
     c.start(t0); wob.start(t0); n.start(t0, rnd());
     return { out, apply(mps, t) {
-      const k = clamp(mps / 2.5, 0, 1);
-      c.frequency.setTargetAtTime(clamp(75 * mps, 4, 320), t, 0.04);
+      const k = clamp(mps / 2.5, 0, 1), rate = clamp(75 * mps, 4, 320);
+      c.frequency.setTargetAtTime(rate, t, 0.04);
+      clk.gain.setTargetAtTime(clicks(rate, 70), t, 0.04);
       a.frequency.setTargetAtTime(2800 + 700 * k, t, 0.05);
       out.gain.setTargetAtTime(mps < 0.03 ? 0 : 0.25 + 0.45 * Math.pow(k, 0.6), t, mps < 0.03 ? 0.06 : 0.03);
     } };
@@ -603,7 +607,7 @@ const LOOPS = {
     const c = osc(e, e.pulse, 8), creak = gain(e, 0, out);
     const w1 = osc(e, "sine", 0.7), w2 = osc(e, "sine", 1.9);          // two slow wobbles make the stick-slip uneven
     w1.connect(gain(e, 500, c.detune)); w2.connect(gain(e, 250, c.detune));
-    for (const [f, q, g] of [[480, 7, 90], [1150, 5, 50]]) { const b = filt(e, "bandpass", f, q); c.connect(b); b.connect(gain(e, g, creak)); }
+    for (const [f, q, g] of [[480, 7, 18], [1150, 5, 10]]) { const b = filt(e, "bandpass", f, q); c.connect(b); b.connect(gain(e, g, creak)); }
     const t0 = e.ctx.currentTime;
     for (const s of [c, w1, w2]) s.start(t0);
     n.start(t0, rnd());
@@ -611,7 +615,7 @@ const LOOPS = {
       v = clamp(v, 0, 1);
       const f = 150 + 260 * v;
       h.forEach((b, i) => b.frequency.setTargetAtTime(f * (i + 1), t, 0.08));
-      hum.gain.setTargetAtTime(9 * v * v, t, 0.06);
+      hum.gain.setTargetAtTime(2.4 * Math.pow(v, 1.5), t, 0.06);
       c.frequency.setTargetAtTime(6 + 24 * v, t, 0.1);
       creak.gain.setTargetAtTime(0.9 * smooth(0.3, 1, v), t, 0.06);
       out.gain.setTargetAtTime(v > 0.02 ? 1 : 0, t, 0.05);
@@ -619,6 +623,9 @@ const LOOPS = {
   },
 };
 const GAME_LOOPS = ["swish", "spool", "reel", "drag", "tension"];
+// A click train from one oscillator puts less into each click the faster it runs. A real ratchet does not: each tooth
+// clicks as hard. This gain puts it back (ref = the rate that keeps gain 1)
+function clicks(rate, ref) { return Math.pow(rate / ref, 0.85); }
 
 function drive(e, name, v, t) {
   v = num(v);
@@ -704,8 +711,8 @@ function lakeSet(e, onNow, hour, t) {
   const m = mix(hour);
   A.on = onNow; A.hour = hour;
   A.out.gain.setTargetAtTime(onNow ? 1 : 0, t, onNow ? 1.2 : 0.35);
-  A.lapOut.gain.setTargetAtTime(0.5 + 0.25 * m.wind, t, 2);
-  A.windOut.gain.setTargetAtTime(0.28 * m.wind, t, 2);
+  A.lapOut.gain.setTargetAtTime(0.16 + 0.08 * m.wind, t, 2);
+  A.windOut.gain.setTargetAtTime(0.12 * m.wind, t, 2);
   A.bugOut.gain.setTargetAtTime(0.05 * m.bugs, t, 3);
   if (onNow && !A.next) A.next = { lap: t + 0.4, bird: t + 1.5 + 3 * rnd(), loon: t + 5 + 7 * rnd(), frog: t + 3 + 5 * rnd() };
   if (!onNow) A.next = null;
@@ -806,9 +813,10 @@ export const Sound = {
 };
 
 // Tests: render one sound (a one-shot, a loop driven along a curve, or the lake) into an OfflineAudioContext.
-// opts: v (one-shot strength), curve(t) (loop value over time), hour and loonAt (the lake), raw (skip the master bus).
+// opts: v (one-shot strength), at (its start time), curve(t) (loop value over time), hour and loonAt (the lake),
+// raw (skip the master bus).
 // Resolves to the AudioBuffer.
-export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, loonAt = null, raw = false, sampleRate = 44100, seed = 7 } = {}) {
+export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, loonAt = null, raw = false, sampleRate = 44100, seed = 7, at = 0.25 } = {}) {
   const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
   if (!OAC) throw new Error("no OfflineAudioContext");
   const ctx = new OAC(2, Math.ceil(seconds * sampleRate), sampleRate);
@@ -817,7 +825,7 @@ export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, lo
   try {
     const e = makeEngine(ctx, { offline: true, raw });
     e.out.gain.value = raw ? 1 : VOL;
-    if (SFX[name]) SFX[name](e, 0.02, v);
+    if (SFX[name]) SFX[name](e, at, v);   // the compressor needs ~0.15 s to settle at the start of a render
     else if (LOOPS[name]) {
       const f = curve || CURVES[name];
       for (let t = 0; t < seconds; t += 1 / 60) drive(e, name, f(t), t);

@@ -162,12 +162,19 @@ section("3. Continuity where beta/gamma flip");
     });
     check(maxStep < 0.6 && maxErr < 0.5, `portrait β 80→100 (γ 5)${gyro ? "" : " without gyro"}: largest θ step ${f2(maxStep)}°, largest error ${f2(maxErr)}°`);
   }
-  // the exact degenerate output Chromium gives at beta = 90: gamma is folded into alpha
-  const M = await fresh();
-  const seq = [[30, 89.9, 5], [35, 90, 0], [30, 90.1, 5]];
-  const th = [], rl = [];
-  seq.forEach(([a, b, g], i) => { M.inject({ t: T0 + i * 16.7, alpha: a, beta: b, gamma: g, rotationRate: { alpha: 0, beta: 0, gamma: 0 } }); th.push(M.pose.theta); rl.push(M.pose.roll); });
-  check(near(th[0], 89.9, 0.05) && near(th[1], 90, 0.05) && near(th[2], 90.1, 0.05) && Math.abs(rl[1] - rl[0]) < 0.01, `raw (α,β,γ) (30,89.9,5) → (35,90,0) → (30,90.1,5): θ ${th.map(f2).join(" → ")}, roll steady`);
+  // the exact degenerate output Chromium gives at beta = 90: gamma is folded into alpha.
+  // Without a gyro the pose is the orientation itself; with a gyro reading 0 the filter settles on it in a few samples
+  for (const gyro of [false, true]) {
+    const M = await fresh();
+    const seq = [[30, 89.9, 5], [35, 90, 0], [30, 90.1, 5]];
+    const th = [], rl = [];
+    seq.forEach(([a, b, g], i) => {
+      for (let k = 0; k < (gyro ? 12 : 1); k++) M.inject({ t: T0 + (i * 12 + k) * 16.7, alpha: a, beta: b, gamma: g, ...(gyro ? { rotationRate: { alpha: 0, beta: 0, gamma: 0 } } : {}) });
+      th.push(M.pose.theta); rl.push(M.pose.roll);
+    });
+    check(near(th[0], 89.9, 0.01) && near(th[1], 90, 0.01) && near(th[2], 90.1, 0.01) && Math.abs(rl[1] - rl[0]) < 0.01 && Math.abs(rl[2] - rl[1]) < 0.01,
+      `raw (α,β,γ) (30,89.9,5) → (35,90,0) → (30,90.1,5)${gyro ? " with a still gyro" : ""}: θ ${th.map(f2).join(" → ")}, roll ${rl.map(f2).join(" → ")}`);
+  }
 }
 {
   // landscape: the phone sideways and upright, the rod raised through vertical. gamma crosses −90 and the browser's
@@ -193,13 +200,16 @@ section("3. Continuity where beta/gamma flip");
         `landscape side ${side > 0 ? "+1" : "−1"} γ ${g0}→${g1}${gyro ? "" : " without gyro"}: browser angles jumped ${jumped}, largest θ step ${f2(maxStep)}°, roll step ${f2(maxRollStep)}, θ ends ${f1(M.pose.theta)}, stays landscape ${orientOk}`);
     }
   }
-  const M = await fresh();
-  M.mode = "landscape";
-  M.inject({ t: T0, alpha: 30, beta: 3, gamma: -89, rotationRate: { alpha: 0, beta: 0, gamma: 0 } });
-  const a = { ...M.pose };
-  M.inject({ t: T0 + 16.7, alpha: 210, beta: 177, gamma: 89, rotationRate: { alpha: 0, beta: 0, gamma: 0 } });
-  check(near(a.theta, 89, 0.1) && near(M.pose.theta, 91, 0.1) && near(a.roll, M.pose.roll, 0.01) && M.pose.side === 1,
-    `raw (30,3,−89) → (210,177,89) from the brief: θ ${f2(a.theta)} → ${f2(M.pose.theta)}, roll ${f2(a.roll)} → ${f2(M.pose.roll)}, side ${M.pose.side}`);
+  for (const gyro of [false, true]) {
+    const M = await fresh();
+    M.mode = "landscape";
+    const n = gyro ? 12 : 1, rr = gyro ? { rotationRate: { alpha: 0, beta: 0, gamma: 0 } } : {};
+    for (let k = 0; k < n; k++) M.inject({ t: T0 + k * 16.7, alpha: 30, beta: 3, gamma: -89, ...rr });
+    const a = { ...M.pose };
+    for (let k = 0; k < n; k++) M.inject({ t: T0 + (n + k) * 16.7, alpha: 210, beta: 177, gamma: 89, ...rr });
+    check(near(a.theta, 89, 0.05) && near(M.pose.theta, 91, 0.05) && near(a.roll, M.pose.roll, 0.01) && M.pose.side === 1 && M.pose.orient === "landscape",
+      `raw (30,3,−89) → (210,177,89) from the brief${gyro ? " with a still gyro" : ""}: θ ${f2(a.theta)} → ${f2(M.pose.theta)}, roll ${f2(a.roll)} → ${f2(M.pose.roll)}, ${M.pose.orient} side ${M.pose.side}`);
+  }
 }
 
 /* ================= 4. ω from the gyro ================= */
@@ -316,6 +326,22 @@ const castTimeAt = (th) => 0.9 + (TW * Math.acos(1 - ((130 - th) * Math.PI) / (9
   let maxOm = 0, errMid = 0;
   play(C, (s) => portrait(clipTh(s)), 0, 0.8, { each(ts, p) { maxOm = Math.min(maxOm, p.omega); if (near(ts, 0.2 + Tc + 0.05, 0.009)) errMid = p.theta - clipTh(ts); } });
   check(maxOm >= -2000.01 && maxOm < -1900 && Math.abs(C.pose.theta - -20) < 0.5, `clipped whip (2600 deg/s): ω clamps at ${f1(maxOm)}, θ error right after ${f1(errMid)}°, settles to ${f2(C.pose.theta)}° (true −20°) once still`);
+  // Chrome sends deviceorientation only when it changes by 0.1°. A pose that differs from the fused one (after a clipped
+  // gyro, or a CDP test) arrives as ONE orientation event, then only motion events: θ must still settle on it
+  const Q = await fresh();
+  hold(Q, portrait(90), 3);
+  Q.inject({ t: T0 + 60, ...euler(portrait(130)) });
+  let settleMs = null;
+  for (let i = 1; i <= 30; i++) {
+    Q.inject({ t: T0 + 60 + i * 16.7, rotationRate: { alpha: 0, beta: 0, gamma: 0 }, acc: { x: 0, y: 9.81, z: 0 } });
+    if (settleMs == null && Math.abs(Q.pose.theta - 130) < 0.5) settleMs = i * 16.7;
+  }
+  check(settleMs != null && settleMs < 300 && near(Q.pose.theta, 130, 0.05), `one orientation event, then motion events only (Chrome, phone still): θ within 0.5° after ${f1(settleMs)} ms, ends ${f2(Q.pose.theta)}`);
+  // and the other way: the orientation stream stops while the gyro says the phone turns. θ follows the gyro
+  const Z = await fresh();
+  hold(Z, portrait(90), 3);
+  for (let i = 1; i <= 30; i++) Z.inject({ t: T0 + 40 + i * 16.7, rotationRate: { alpha: 60, beta: 0, gamma: 0 } });
+  check(near(Z.pose.theta, 90 + 60 * 0.5, 1), `orientation silent while the gyro turns 60 deg/s for 0.5 s: θ ${f1(Z.pose.theta)} (want 120, not dragged back to 90)`);
 }
 
 /* ================= 7. at(): interpolation and extrapolation ================= */
@@ -339,7 +365,7 @@ section("7. at(t): Hermite interpolation between samples, gyro extrapolation aft
   play(V, Rf, 0, 0.5, { jitter: 0.002, rnd });
   let worstI = 0;
   for (let q = 0.05; q < 0.49; q += 0.0037) worstI = Math.max(worstI, Math.abs(V.at(T0 + q * 1000).theta - (90 + 40 * Math.sin(4 * Math.PI * q))));
-  check(worstI < 0.3, `sine stroke (±500 deg/s), jittered timestamps: interpolation error ≤ ${f2(worstI)}°`);
+  check(worstI < 0.6, `sine stroke (±500 deg/s), jittered timestamps: error between samples ≤ ${f2(worstI)}° (includes the fused pose's own error)`);
   // the 15 ms touch skew on the same stroke, at many points: history only up to the sample before the touch
   let worstE = 0;
   for (let q = 0.1; q < 0.45; q += 0.023) {

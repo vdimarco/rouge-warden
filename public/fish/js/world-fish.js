@@ -60,8 +60,9 @@ function skinTexture(sp) {
     soft(faint ? 3 : 1.5);
     for (let i = 0; i < n; i++) {
       const u = 0.24 + (i + 0.5) / n * 0.7, w = (shape === "perch" ? 0.045 : 0.028) * (1 - i / n * 0.3);
-      x.globalAlpha = faint ? 0.42 : shape === "pike" ? 0.5 : 0.75;
-      x.fillStyle = shape === "pike" ? "#3e3a24" : lk.accent;
+      x.globalAlpha = faint ? 0.5 : shape === "pike" ? 0.5 : 0.75;
+      // bass bars are dark bronze (their accent colour is the red eye)
+      x.fillStyle = shape === "pike" ? "#3e3a24" : shape === "bass" ? "#3a2a14" : lk.accent;
       x.beginPath();
       x.moveTo(U(u - w), V(0.05)); x.lineTo(U(u + w), V(0.05)); x.lineTo(U(u + w * 0.35 + 0.01), V(shape === "perch" ? 0.66 : 0.72)); x.lineTo(U(u - w * 0.35 + 0.01), V(shape === "perch" ? 0.66 : 0.72));
       x.closePath(); x.fill();
@@ -250,7 +251,7 @@ function flatFin(outline, uvFn, colorFn) {
 }
 
 function finsGeo(F, sp) {
-  const lk = sp.look, fin = hex(lk.fins), acc = hex(lk.accent), parts = [];
+  const lk = sp.look, fin = hex(lk.fins), acc = hex(lk.accent), bel = hex(lk.belly), parts = [];
   const topAt = (z) => profile(F, tAt(F, z)).top, botAt = (z) => profile(F, tAt(F, z)).bot;
   // dorsal and anal fins
   const along = (d, up) => {
@@ -284,8 +285,10 @@ function finsGeo(F, sp) {
   // paired fins: pectorals behind the gill, pelvics under the belly, turned out from the body
   const pair = (z, y, len, wid, yaw, roll) => {
     const out = [[0, 0.012], [len * 0.55, wid * 0.55], [len, wid * 0.12], [len * 0.9, -wid * 0.35], [len * 0.4, -wid * 0.3], [0, -0.012]];
+    // paired fins are thin and see-through: tint them toward the belly so they do not read as dark patches
+    const pc = [lerp(fin[0], bel[0], 0.45), lerp(fin[1], bel[1], 0.45), lerp(fin[2], bel[2], 0.45)];
     for (const s of [-1, 1]) {
-      const g = flatFin(out, (a, b) => [clamp(b / wid + 0.5, 0, 1), clamp(a / len, 0, 1)], () => fin);
+      const g = flatFin(out, (a, b) => [clamp(b / wid + 0.5, 0, 1), clamp(a / len, 0, 1)], () => pc);
       const pr = profile(F, tAt(F, z));
       const m = new THREE.Matrix4().makeTranslation(s * pr.wid * 0.9, y, z).multiply(new THREE.Matrix4().makeRotationY(s * yaw)).multiply(new THREE.Matrix4().makeRotationZ(s * roll));
       g.applyMatrix4(m);
@@ -293,8 +296,8 @@ function finsGeo(F, sp) {
     }
   };
   const zPec = -0.5 + (F.eyeT + 0.13) * (F.zp + 0.5), pb = profile(F, tAt(F, zPec));
-  pair(zPec, -pb.bot * 0.35, F.pec * 0.85, F.pec * 0.42, 0.75, 0.35);
-  pair(zPec + 0.07, -pb.bot * 0.9, F.pec * 0.65, F.pec * 0.3, 0.45, 1.0);
+  pair(zPec, -pb.bot * 0.35, F.pec * 0.8, F.pec * 0.4, 0.85, 0.35);
+  pair(zPec + 0.07, -pb.bot * 0.97, F.pec * 0.6, F.pec * 0.28, 0.35, 1.25);
   const g = merge(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; return q; }));
   return g;
 }

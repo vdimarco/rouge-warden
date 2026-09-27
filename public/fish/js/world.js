@@ -31,15 +31,15 @@ export const WORLD = {
 // Keyframes of the day. Colours are sRGB hex; si = sun strength, hi = sky light strength.
 const HOURS = [
   { h: 4.5, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff8a50", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
-  { h: 5.5, zen: "#2e4278", hor: "#c2908a", glow: "#e8866a", sun: "#ff9a60", si: 0.25, sky: "#9aa4c8", gnd: "#3a4028", hi: 1.7, fog: "#b69a9a", near: 30, far: 440, deep: "#1a2c3a", shal: "#3a4436", cl: "#e8b0a0", cs: "#6a6a8a", forest: "#1c2a1c", night: 0.35 },
-  { h: 6.5, zen: "#5a86c4", hor: "#f4caa6", glow: "#ffb070", sun: "#ffc890", si: 1.15, sky: "#a8c0e0", gnd: "#4a5230", hi: 1.05, fog: "#e6c8b0", near: 35, far: 480, deep: "#224050", shal: "#58623e", cl: "#fff0dc", cs: "#9aa0b4", forest: "#28402a", night: 0 },
-  { h: 9, zen: "#4f92e0", hor: "#d4e6f2", glow: "#fff0d0", sun: "#fff0d8", si: 1.8, sky: "#b8d4f0", gnd: "#5a6a38", hi: 1.15, fog: "#c8dcea", near: 80, far: 760, deep: "#1e4a60", shal: "#6a7446", cl: "#ffffff", cs: "#a8b8cc", forest: "#2c4a30", night: 0 },
-  { h: 12, zen: "#3f86dc", hor: "#cfe4f6", glow: "#fff8e0", sun: "#fff8ea", si: 2.05, sky: "#bcd8f4", gnd: "#5e6e3a", hi: 1.2, fog: "#c6dcee", near: 95, far: 820, deep: "#1a4a64", shal: "#6e7a4a", cl: "#ffffff", cs: "#aebdd0", forest: "#2e4c32", night: 0 },
-  { h: 16.5, zen: "#4a8cdc", hor: "#dbe6ea", glow: "#fff0c8", sun: "#fff0d0", si: 1.9, sky: "#c0d6ec", gnd: "#5e6a38", hi: 1.15, fog: "#d2dee6", near: 85, far: 780, deep: "#1c4860", shal: "#6e7648", cl: "#fffaf0", cs: "#b0b8c8", forest: "#2c4a30", night: 0 },
-  { h: 19, zen: "#5c86c8", hor: "#ffd8a0", glow: "#ffb452", sun: "#ffc47a", si: 1.65, sky: "#b0c0dc", gnd: "#5a5a34", hi: 1.0, fog: "#f2d6b2", near: 45, far: 580, deep: "#23405a", shal: "#6a6a42", cl: "#fff0d8", cs: "#b4a4b0", forest: "#2c3e2c", night: 0 },
-  { h: 19.5, zen: "#5a80c2", hor: "#ffcf92", glow: "#ffa640", sun: "#ffb86a", si: 1.55, sky: "#aab8d4", gnd: "#585432", hi: 0.98, fog: "#f0cfa4", near: 42, far: 560, deep: "#223c56", shal: "#686640", cl: "#ffe8c8", cs: "#b098a8", forest: "#2a3a2a", night: 0 },
-  { h: 20.3, zen: "#4a5ea8", hor: "#ff9e70", glow: "#ff7a44", sun: "#ff8e58", si: 0.9, sky: "#a0a0c4", gnd: "#4a4630", hi: 1.3, fog: "#d8a08a", near: 40, far: 520, deep: "#1e3048", shal: "#4a4636", cl: "#ffb89a", cs: "#8a7090", forest: "#202c22", night: 0.05 },
-  { h: 21, zen: "#222a62", hor: "#b86a7e", glow: "#e0684a", sun: "#ff6a40", si: 0.12, sky: "#9a90c0", gnd: "#3a3630", hi: 2.1, fog: "#7a5a78", near: 38, far: 480, deep: "#141e34", shal: "#2a2e30", cl: "#d88a88", cs: "#4a4468", forest: "#161e1a", night: 0.45 },
+  { h: 5.5, zen: "#2e4278", hor: "#c2908a", glow: "#e8866a", sun: "#ff9a60", si: 0.25, sky: "#9aa4c8", gnd: "#3a4028", hi: 2.1, fog: "#b69a9a", near: 30, far: 440, deep: "#1a2c3a", shal: "#3a4436", cl: "#e8b0a0", cs: "#6a6a8a", forest: "#1c2a1c", night: 0.35 },
+  { h: 6.5, zen: "#5a86c4", hor: "#f4caa6", glow: "#ffb070", sun: "#ffc890", si: 1.15, sky: "#a8c0e0", gnd: "#4a5230", hi: 2.0, fog: "#e6c8b0", near: 35, far: 480, deep: "#224050", shal: "#58623e", cl: "#fff0dc", cs: "#9aa0b4", forest: "#28402a", night: 0 },
+  { h: 9, zen: "#4f92e0", hor: "#d4e6f2", glow: "#fff0d0", sun: "#fff0d8", si: 1.65, sky: "#b8d4f0", gnd: "#5a6a38", hi: 1.65, fog: "#c8dcea", near: 80, far: 760, deep: "#1e4a60", shal: "#6a7446", cl: "#ffffff", cs: "#a8b8cc", forest: "#2c4a30", night: 0 },
+  { h: 12, zen: "#3f86dc", hor: "#cfe4f6", glow: "#fff8e0", sun: "#fff8ea", si: 1.8, sky: "#bcd8f4", gnd: "#5e6e3a", hi: 1.6, fog: "#c6dcee", near: 95, far: 820, deep: "#1a4a64", shal: "#6e7a4a", cl: "#ffffff", cs: "#aebdd0", forest: "#2e4c32", night: 0 },
+  { h: 16.5, zen: "#4a8cdc", hor: "#dbe6ea", glow: "#fff0c8", sun: "#fff0d0", si: 1.7, sky: "#c0d6ec", gnd: "#5e6a38", hi: 1.6, fog: "#d2dee6", near: 85, far: 780, deep: "#1c4860", shal: "#6e7648", cl: "#fffaf0", cs: "#b0b8c8", forest: "#2c4a30", night: 0 },
+  { h: 19, zen: "#5c86c8", hor: "#ffd8a0", glow: "#ffb452", sun: "#ffc47a", si: 1.65, sky: "#b0c0dc", gnd: "#5a5a34", hi: 1.5, fog: "#f2d6b2", near: 45, far: 580, deep: "#23405a", shal: "#6a6a42", cl: "#fff0d8", cs: "#b4a4b0", forest: "#2c3e2c", night: 0 },
+  { h: 19.5, zen: "#5a80c2", hor: "#ffcf92", glow: "#ffa640", sun: "#ffb86a", si: 1.55, sky: "#aab8d4", gnd: "#585432", hi: 1.5, fog: "#f0cfa4", near: 42, far: 560, deep: "#223c56", shal: "#686640", cl: "#ffe8c8", cs: "#b098a8", forest: "#2a3a2a", night: 0 },
+  { h: 20.3, zen: "#4a5ea8", hor: "#ff9e70", glow: "#ff7a44", sun: "#ff8e58", si: 0.9, sky: "#a0a0c4", gnd: "#4a4630", hi: 1.6, fog: "#d8a08a", near: 40, far: 520, deep: "#1e3048", shal: "#4a4636", cl: "#ffb89a", cs: "#8a7090", forest: "#202c22", night: 0.05 },
+  { h: 21, zen: "#222a62", hor: "#b86a7e", glow: "#e0684a", sun: "#ff6a40", si: 0.12, sky: "#9a90c0", gnd: "#3a3630", hi: 2.2, fog: "#7a5a78", near: 38, far: 480, deep: "#141e34", shal: "#2a2e30", cl: "#d88a88", cs: "#4a4468", forest: "#161e1a", night: 0.45 },
   { h: 22, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff6a40", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
 ];
 const tmpA = new THREE.Color(), tmpB = new THREE.Color();
@@ -345,7 +345,9 @@ export async function createWorld(container, { quality = "high" } = {}) {
     if (!m) return;
     const u = m.userData.fx, len = f.len || 0.4;
     m.visible = true;
-    m.scale.setScalar(len / unitLen(m));
+    // a leap far out is drawn a little larger, so the moment reads on a phone
+    const far = (f.jump || 0) > 0 ? 1 + 0.5 * smooth(8, 30, Math.hypot(f.x - EYE.x, f.z - EYE.z)) : 1;
+    m.scale.setScalar((len / unitLen(m)) * far);
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
     let y = f.y, pitch = 0, roll = 0;
     const fwd = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
@@ -374,7 +376,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const th = f.thrash || 0;
     m.userData.phase += dt * (7 + th * 18);
     u.uWag.value.set(m.userData.phase, 0.25 + th * 0.9, j > 0 ? Math.sin(j * Math.PI) * 0.25 * (f.thrash || 0.4) : 0, 0);
-    u.uKey.value = j > 0 ? 0.8 : 0;
+    u.uKey.value = j > 0 ? 0.45 : 0;
     // under the water: tint and fade with depth and with how close it is to the surface
     const depth = -y;
     if (depth > 0.02 && j === 0) {
@@ -440,16 +442,21 @@ export async function createWorld(container, { quality = "high" } = {}) {
     for (const mt of m.userData.mats) mt.transparent = false;
     m.traverse((o) => { o.renderOrder = 30; });
     m.userData.fx.uKey.value = 1;
-    // hold it out at a distance that fits it, and narrow the view for a small fish
+    // turn on a stage around its middle; its size as shown: the long side across, its height up
+    const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+    m.position.copy(mid).negate();
+    const stage = new THREE.Group();
+    stage.add(m);
+    const W = id === "frisbee" ? size.x : size.z, H = id === "frisbee" ? size.x * 0.95 : size.y * 1.1;
+    // hold it out at a distance that fits both ways, and narrow the view for a small fish
     const aspect = S.w / S.h;
-    const dist = clamp(len * 1.3, 0.42, 1.5);
-    const hWant = 2 * Math.atan((len / 0.72) / 2 / dist);
-    let fov = 2 * Math.atan(Math.tan(hWant / 2) / aspect) / DEG;
-    fov = clamp(fov, 14, 78);
-    const hGot = 2 * Math.atan(Math.tan(fov * DEG / 2) * aspect);
-    const d2 = Math.max(dist, (len / 0.8) / 2 / Math.tan(hGot / 2));
-    S.trophy = { mesh: m, len, dist: d2, fov, t: 0, junk, id };
-    scene.add(m);
+    const d0 = clamp(Math.max(W, H) * 1.3, 0.42, 1.5);
+    const needV = (w, h, d) => Math.max(2 * Math.atan(w / 0.72 / 2 / d / aspect), 2 * Math.atan(h / 0.78 / 2 / d)) / DEG;
+    const fov = clamp(needV(W, H, d0), 14, 78);
+    const tv = Math.tan(fov * DEG / 2);
+    const dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / 2 / tv);
+    S.trophy = { mesh: stage, inner: m, len, dist, fov, t: 0, junk, id };
+    scene.add(stage);
   }
   function hideCatch() {
     if (!S.trophy) return;
@@ -472,7 +479,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     if (T.id === "frisbee") spin.setFromEuler(new THREE.Euler(1.2, T.t * 0.5, 0, "XYZ"));
     else spin.setFromEuler(new THREE.Euler(0.08 * Math.sin(T.t * 0.9), Math.PI / 2 + 0.5 * Math.sin(T.t * 0.55), 0.1 * Math.sin(T.t * 0.7), "YXZ"));
     m.quaternion.copy(q).multiply(spin);
-    const u = m.userData.fx;
+    const u = T.inner.userData.fx;
     u.uWag.value.set(T.t * 3, T.junk ? 0 : 0.12, 0, 0);
     u.uUnder.value = 0; u.uAlpha.value = 1;
     if (Math.random() < dt * 3 && !T.junk) spray.emit(p.x + (Math.random() - 0.5) * T.len * 0.6, p.y - 0.05, p.z, 0, -0.3, 0, 0.012, 0.8);

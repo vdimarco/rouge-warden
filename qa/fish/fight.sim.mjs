@@ -112,12 +112,12 @@ class Player {
 
 /* ---------------- one cast ---------------- */
 
-function runCast({ policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, trace = false }) {
+function runCast({ policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, trace = false, easy = true }) {
   const r = rng(seed * 7919 + 13);
   const pl = new Player(policy, rng(seed * 104729 + 7));
   const tip = rodTip(40, headingDeg(spot.x, spot.z));
-  const sim = new LakeSim({ lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy: true, species, bite });
-  const out = { chosen: !!sim.plan, id: sim.plan ? sim.plan.id : null, kg: sim.plan ? sim.plan.kg : 0, struck: false, hooked: false, nibbled: false, yankedEarly: false, fightT: 0, maxT: 0, outcome: "", moves: {}, events: {} };
+  const sim = new LakeSim({ lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite });
+  const out = { chosen: !!sim.plan, id: sim.plan ? sim.plan.id : null, kg: sim.plan ? sim.plan.kg : 0, struck: false, hooked: false, nibbled: false, yankedEarly: false, fightT: 0, maxT: 0, minT: Infinity, outcome: "", moves: {}, events: {} };
   let events = [];
   for (let t = 0; t < LIMIT; t += DT) {
     const inp = pl.act(sim, events);
@@ -138,7 +138,7 @@ function runCast({ policy, seed, spot, species = null, hour = 12, ring = null, b
       if (e.type === "hooked") out.hooked = true;
       if (["run", "shake", "jump", "dive", "surge"].includes(e.type)) out.moves[e.type] = (out.moves[e.type] || 0) + 1;
     }
-    if (sim.state.phase === "fight" || sim.state.phase === "land") out.maxT = Math.max(out.maxT, sim.state.tension);
+    if (sim.state.phase === "fight" || sim.state.phase === "land") { out.maxT = Math.max(out.maxT, sim.state.tension); if (sim.state.fightT > 1) out.minT = Math.min(out.minT, sim.state.tension); }
     const ph = sim.state.phase;
     if (ph === "caught" || ph === "lost" || ph === "home") {
       out.outcome = ph === "lost" ? sim.state.reason : ph;
@@ -239,7 +239,7 @@ function summary(list) {
   };
 }
 
-console.log(`\nFights: ${N} casts per species per policy, medium drag, easy mode. Rates of landed / snap / thrown / cut are out of hooked fish.`);
+console.log(`\nFights: ${N} casts per species per policy, medium drag (${REEL.DRAG_N[1]} N, the line breaks at ${REEL.BREAK_N} N), easy mode. Rates of landed / snap / thrown / cut are out of hooked fish.`);
 for (const pol of POLICIES) {
   console.log(`\n[${pol}]`);
   console.log("species        strike hooked landed  snap thrown   cut  t/o  spat spook  home  | fight s: mean  med  p10-p90   | peak N");
@@ -327,10 +327,10 @@ for (const sp of SPECIES) {
 }
 const big = Object.values(res.greedy).flat().filter((o) => o.hooked && o.kg > 2);
 const bigSnap = big.filter((o) => o.outcome === "snap").length;
-check(big.length > 50 && bigSnap / big.length >= 0.5, `greedy snaps >= 50% of hooked fish over 2 kg (${pct(bigSnap, big.length)} of ${big.length})`);
+check(big.length > N / 3 && bigSnap / big.length >= 0.5, `greedy snaps >= 50% of hooked fish over 2 kg (${pct(bigSnap, big.length)} of ${big.length})`);
 const horseBig = Object.values(res.horse).flat().filter((o) => o.hooked && o.kg > 2);
 const horseSnap = horseBig.filter((o) => o.outcome === "snap").length;
-check(horseBig.length > 50 && horseSnap / horseBig.length >= 0.5, `winding flat out with the rod low (after a good retrieve) snaps >= 50% of fish over 2 kg (${pct(horseSnap, horseBig.length)} of ${horseBig.length})`);
+check(horseBig.length > N / 3 && horseSnap / horseBig.length >= 0.5, `winding flat out with the rod low (after a good retrieve) snaps >= 50% of fish over 2 kg (${pct(horseSnap, horseBig.length)} of ${horseBig.length})`);
 const horseSmall = Object.values(res.horse).flat().filter((o) => o.hooked && o.kg < 0.6);
 check(horseSmall.filter((o) => o.outcome === "caught").length / horseSmall.length >= 0.7, `...but it still lands most small fish (${pct(horseSmall.filter((o) => o.outcome === "caught").length, horseSmall.length)} under 0.6 kg)`);
 for (const id of ONLY.rodhigh) {
@@ -396,6 +396,38 @@ console.log("\nRings");
 }
 
 /* ---------------- robustness and determinism ---------------- */
+
+console.log("\nRules");
+{
+  // hard mode: a shorter window and no free hook-ups
+  const n = 150, casts = (pol, easy) => SPECIES.slice(0, 8).flatMap((sp) => { const sp8 = spotsFor(sp, 20, 77); return Array.from({ length: n / 8 | 0 }, (_, i) => runCast({ policy: pol, seed: 700 + i, spot: sp8[i % sp8.length], species: sp.id, easy })); });
+  const lateHard = summary(casts("late", false)), goodHard = summary(casts("good", false));
+  check(lateHard.spat === lateHard.struck, `hard mode: a late hook set always misses (${pct(lateHard.spat, lateHard.struck)})`);
+  check(goodHard.hooked === goodHard.struck, `hard mode: a hook set 0.25 s after the strike still hooks (${pct(goodHard.hooked, goodHard.struck)})`);
+  // junk: it hooks itself, has no moves, pulls steadily and comes in
+  const junk = ["boot", "plunger", "frisbee"].flatMap((id) => Array.from({ length: 10 }, (_, i) => runCast({ policy: "good", seed: 800 + i, spot: { x: 3, z: -18 - i }, species: id })));
+  const moves = junk.reduce((a, o) => a + Object.values(o.moves).reduce((x, y) => x + y, 0), 0);
+  check(junk.every((o) => o.events.snag === 1 && o.hooked && !o.events.strike), "junk snags and hooks itself with no strike to answer");
+  check(moves === 0 && junk.every((o) => o.outcome === "caught"), `junk has no moves and always comes in (${junk.filter((o) => o.outcome === "caught").length} of ${junk.length})`);
+  // a steady crank on junk feels like a steady heavy weight
+  const cv = [], means = [];
+  for (const id of ["boot", "plunger", "frisbee"]) {
+    const sim = new LakeSim({ lure: { x: 2, z: -25 }, tip: rodTip(45, 5), lineOut: 26, rng: rng(5), species: id });
+    const ts = [];
+    for (let t = 0; t < 120 && !["caught", "lost", "home"].includes(sim.state.phase); t += DT) {
+      const S = sim.state, land = S.phase === "land";
+      sim.step(DT, { crank: land ? 0 : 1.2, theta: land ? 80 : 45, tip: rodTip(land ? 80 : 45, headingDeg(S.lure.x, S.lure.z)), lift: land });
+      sim.events.length = 0;
+      if (S.phase === "fight" && S.fightT > 1.5 && Math.hypot(S.lure.x, S.lure.z) > 8) ts.push(S.tension);
+    }
+    const m = mean(ts), sd = Math.sqrt(mean(ts.map((x) => (x - m) ** 2)));
+    cv.push(sd / m); means.push(m);
+  }
+  check(cv.every((x) => x < 0.15) && means.every((m) => m > 2 && m < 20), `junk on a steady crank pulls a steady weight (${means.map((m, i) => m.toFixed(1) + " N ±" + (100 * cv[i]).toFixed(0) + "%").join(", ")})`);
+  const R = new Rises(rng(8)); R.step(0.1, 12);
+  const g = R.list[0]; R.take(g);
+  check(!R.list.includes(g), "Rises.take removes a ring");
+}
 
 console.log("\nRobustness");
 {

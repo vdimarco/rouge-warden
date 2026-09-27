@@ -99,18 +99,21 @@ function mode(m, { flying = false } = {}) {
   $("#reelUI").hidden = cast;
   panel.resize(); crank.resize(); pad.resize(); gauge.resize();
 }
-let last = performance.now(), sample = false;
+let last = performance.now(), sample = false, frozen = false;
 function frame() {
   requestAnimationFrame(frame);
   const t = performance.now(), dt = Math.min(0.05, (t - last) / 1000);
   last = t;
+  if (frozen) return;
   if (sample) RATES.push({ t, rate: crank.rate, ang: crank.angle });
   if (!$("#castUI").hidden) panel.draw(dt);
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!pad.hidden) pad.draw(dt); }
 }
 requestAnimationFrame(frame);
 window.T = { panel, crank, pad, gauge, EV, PT, RATES, REEL_UI, G, applyRotation, toLocal, toClient, mode,
-  sampling(b) { sample = b; if (b) RATES.length = 0; }, get lastMove() { return lastMove; }, clear() { EV.length = 0; PT.length = 0; } };
+  sampling(b) { sample = b; if (b) RATES.length = 0; },
+  // hold the last frame still while a screenshot is taken (software raster in a busy test box is slow)
+  freeze(b) { frozen = b; }, get lastMove() { return lastMove; }, clear() { EV.length = 0; PT.length = 0; } };
 window.READY = true;
 </script></body></html>`;
 
@@ -381,10 +384,15 @@ async function padChecks(P, tag) {
 async function shots(P, tag) {
   const { page } = P;
   const shot = async (name, sel) => {
-    const clip = await page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; }, sel);
-    await page.screenshot({ path: path.join(SHOTS, "reel-" + tag + "-" + name + ".png"), clip });
+    const clip = await page.evaluate((s) => { T.freeze(true); const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; }, sel);
+    await page.screenshot({ path: path.join(SHOTS, "reel-" + tag + "-" + name + ".png"), clip, timeout: 120000 });
+    await page.evaluate(() => T.freeze(false));
   };
-  const full = (name) => page.screenshot({ path: path.join(SHOTS, "reel-" + tag + "-" + name + ".png") });
+  const full = async (name) => {
+    await page.evaluate(() => T.freeze(true));
+    await page.screenshot({ path: path.join(SHOTS, "reel-" + tag + "-" + name + ".png"), timeout: 120000 });
+    await page.evaluate(() => T.freeze(false));
+  };
   await page.evaluate(() => { T.mode("cast"); T.panel.set({ bail: "closed", glow: "bail", pinned: false, spool: 0, touchCast: false, hint: "" }); });
   await sleep(500);
   await shot("face-closed", "#reelBox");
@@ -426,7 +434,9 @@ async function shots(P, tag) {
 
 async function run() {
   // portrait phone
-  let P = await openPage(390, 844);
+  let P;
+  if (process.env.ONLY !== "landscape") {
+  P = await openPage(390, 844);
   await shots(P, "390x844");
   if (process.env.ONLY !== "shots") {
     await panelChecks(P, "portrait");
@@ -443,6 +453,7 @@ async function run() {
     }
   }
   await P.ctx.close();
+  }
   // landscape phone
   P = await openPage(844, 390);
   await shots(P, "844x390");

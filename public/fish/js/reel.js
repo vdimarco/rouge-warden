@@ -203,7 +203,8 @@ function across(ax) {
 // The bail wire: a half loop around the spool, pivoting on the two rotor arms. Angle 0 = straight up.
 const BAIL = { x: -0.28, r: 0.86, closed: 26 * DEG, open: -150 * DEG };
 const SPOOL = { front: -1.0, lip: 0.655, back: -0.14, arbor: 0.4, full: 0.6, knob: 0.29, knobFront: -1.34, skirt: 0.665 };
-const GUIDE = [-2.4, 1.6, 0];   // the first rod guide, off to the left: the line runs up to it
+const ROD_Y = 1.5;              // the rod runs along the top, above the reel
+const GUIDE = [-2.2, ROD_Y - 0.32, 0];   // the first rod guide, off to the left: the line runs up to it
 const HANDLE = { x: 1.02, y: -0.05, len: 0.8, ang: -58 * DEG };
 
 export class ReelPanel extends Widget {
@@ -318,7 +319,7 @@ export class ReelPanel extends Widget {
   layout() {
     // fit the reel (not the rod, which runs off both sides) into the box
     const pts = [[-1.34, 0.3, 0.3], [-1.34, -0.3, 0.3], [-1, 0.66, -0.66], [-1, -0.66, 0.66], [0.5, -0.72, 0.72], [1.62, -0.05, 0.34],
-      [1.5, -0.8, 1.05], [-0.66, 0.78, 0], [0.15, -0.76, 0], [1.1, 2.08, 0], [-0.3, 2.08, 0], [0.34, 0, 0.9]];
+      [1.5, -0.8, 1.05], [-0.66, 0.78, 0], [0.15, -0.76, 0], [1.1, ROD_Y + 0.14, 0], [-0.3, ROD_Y + 0.14, 0], [0.34, 0, 0.9]];
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (const [x, y, z] of pts) {
       const zc = -x * SY + z * CY, px = x * CY + z * SY, py = -y * CP + zc * SP;
@@ -492,7 +493,7 @@ export class ReelPanel extends Widget {
   }
 
   _rod(ctx) {
-    const Y = 1.95;
+    const Y = ROD_Y;
     // the blank toward the tip, the reel seat, and the cork grip behind it
     this._cyl([-4.6, Y, 0], [1, 0, 0], 4.95, 0.06, MAT.blank);
     // the first guide and its foot: the line runs up through it
@@ -519,13 +520,13 @@ export class ReelPanel extends Widget {
 
   _body(ctx) {
     // the stem that hangs the reel from the rod
-    const q = [[0.66, 0.38], [1.18, 0.38], [1.32, 1.84], [0.8, 1.84]].map(([x, y]) => this._p(x, y, 0.07));
+    const q = [[0.66, 0.38], [1.18, 0.38], [1.3, ROD_Y - 0.1], [0.82, ROD_Y - 0.1]].map(([x, y]) => this._p(x, y, 0.07));
     const g = ctx.createLinearGradient(q[0].x, 0, q[1].x, 0);
     g.addColorStop(0, "#394247"); g.addColorStop(0.35, "#5c676c"); g.addColorStop(1, "#1a2023");
     ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
     ctx.fillStyle = g; ctx.fill();
     // the foot under the rod
-    this._cyl([0.55, 1.83, 0], [1, 0, 0], 1.1, 0.06, MAT.gun);
+    this._cyl([0.55, ROD_Y - 0.12, 0], [1, 0, 0], 1.1, 0.06, MAT.gun);
     // the gearbox: a short fat cylinder across the reel, and its side plate facing us
     const c = [HANDLE.x, HANDLE.y, -0.34];
     this._cyl([0.62, -0.02, 0], [1, 0, 0], 0.5, 0.44, MAT.body);

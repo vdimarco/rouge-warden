@@ -148,7 +148,12 @@ function legacyTick(prio) {
   const t = S.clock();
   if (t - S.legacyLast < 90) return;
   S.legacyLast = t;
-  try { legacyRig().click(); } catch (e) { /* ignore */ }
+  try {
+    const label = legacyRig(), sw = label.control, prev = document.activeElement;
+    label.click();
+    // some engines focus a clicked label's checkbox: give the focus back, so nothing scrolls or steals the keys
+    if (sw && document.activeElement === sw) { sw.blur(); if (prev && prev !== document.body && prev.focus) prev.focus({ preventScroll: true }); }
+  } catch (e) { /* ignore */ }
 }
 function legacyRig() {
   if (S.legacy) return S.legacy;

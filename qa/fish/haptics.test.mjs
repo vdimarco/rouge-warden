@@ -299,5 +299,174 @@ check("every pattern is short and odd-length, with pulses of 6 ms or more", () =
   assert.ok(calls.length >= 14);
 });
 
+/* ---------- 3. the iPhone pads, in a real page (Chromium with the platform forced to "ios") ---------- */
+await iosPads();
+
 console.log(failed ? `\n${failed} check(s) failed` : "\nall haptics checks passed");
 process.exit(failed ? 1 : 0);
+
+async function iosPads() {
+  const { createRequire } = await import("module");
+  const { spawn, execSync } = await import("child_process");
+  const net = (await import("net")).default, path = (await import("path")).default, { fileURLToPath } = await import("url");
+  const req = createRequire(import.meta.url);
+  let pw = null;
+  try { pw = req("playwright"); } catch (e) { try { pw = req(path.join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright")); } catch (e2) { /* none */ } }
+  if (!pw) { failed++; console.log("FAIL  iPhone pads: the playwright package is missing (npm i -g playwright)"); return; }
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../public");
+  const port = await new Promise((res) => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => res(p)); }); });
+  const base = `http://127.0.0.1:${port}`;
+  const server = spawn("python3", ["-m", "http.server", String(port), "--bind", "127.0.0.1", "--directory", root], { stdio: "ignore" });
+  for (let i = 0; i < 100; i++) { try { if ((await fetch(base + "/fish/js/haptics.js")).ok) break; } catch (e) { /* not yet */ } await new Promise((r) => setTimeout(r, 100)); }
+  // the page: #game turned 90 degrees the way main.js does it when the phone lies sideways with rotation lock on
+  const page0 = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; }
+    #game { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; transform-origin: 50% 50%; background: #0d2f38; }
+    #castUI, #reelUI { position: absolute; inset: 0; }
+    #reelBox { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: #134451; }
+    #crankBox { position: absolute; right: 8px; bottom: 8px; width: 250px; height: 250px; background: #234; border-radius: 50%; }
+  </style><div id="game"><div id="castUI"><div id="reelBox"></div></div><div id="reelUI"><div id="crankBox"></div></div></div>
+  <script type="module">
+    import { Haptics } from "/fish/js/haptics.js";
+    window.Haptics = Haptics;
+    const game = document.getElementById("game");
+    window.rot = 0;
+    window.rotate = (r) => {
+      window.rot = r;
+      const W = innerWidth, H = innerHeight;
+      Object.assign(game.style, r ? { width: H + "px", height: W + "px", left: (W - H) / 2 + "px", top: (H - W) / 2 + "px", transform: "rotate(" + r + "deg)" } : { width: "", height: "", left: "", top: "", transform: "" });
+    };
+    // main.js's toLocal: client pixels to the unrotated pixels of el
+    window.toLocal = (cx, cy, el) => {
+      let x = cx, y = cy;
+      if (rot) { const W = innerWidth, H = innerHeight, Lw = H, Lh = W, dx = cx - W / 2, dy = cy - H / 2; if (rot === 90) { x = dy + Lw / 2; y = Lh / 2 - dx; } else { x = Lw / 2 - dy; y = dx + Lh / 2; } }
+      for (let e = el; e && e !== game && e !== document.body; e = e.offsetParent) { x -= e.offsetLeft; y -= e.offsetTop; }
+      return { x, y };
+    };
+    // and back: a point in #game's own pixels to client pixels
+    window.toClient = (x, y) => {
+      if (!rot) return { x, y };
+      const W = innerWidth, H = innerHeight, Lw = H, Lh = W;
+      return rot === 90 ? { x: W / 2 + Lh / 2 - y, y: H / 2 + x - Lw / 2 } : { x: W / 2 - Lh / 2 + y, y: H / 2 - x + Lw / 2 };
+    };
+    window.ready = true;
+  </script>`;
+  const browser = await pw.chromium.launch();
+  const errors = [];
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+    await page.route(base + "/__qa/hx.html", (r) => r.fulfill({ contentType: "text/html", body: page0 }));
+    await page.goto(base + "/__qa/hx.html");
+    await page.waitForFunction(() => window.ready === true);
+    const cdp = await context.newCDPSession(page);
+    const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
+
+    // not an iPhone: nothing is attached
+    const none = await page.evaluate(() => { Haptics._forcePlatform("none"); return [Haptics.attachPad(document.getElementById("reelBox")), Haptics.attachCrank(document.getElementById("crankBox"))]; });
+    check("iPhone pads: attachPad and attachCrank return null when the platform is not ios", () => assert.deepEqual(none, [null, null]));
+
+    // the pad on the reel face
+    const pad = await page.evaluate(() => {
+      Haptics._forcePlatform("ios");
+      const box = document.getElementById("reelBox");
+      window.log = { toggles: [], boxClicks: 0, boxPointers: [] };
+      box.addEventListener("click", () => log.boxClicks++);
+      for (const t of ["pointerdown", "pointerup"]) box.addEventListener(t, (e) => log.boxPointers.push(t + ":" + e.target.tagName));
+      window.padH = Haptics.attachPad(box, { onToggle: (on) => log.toggles.push(on) });
+      const el = padH.el, cs = getComputedStyle(el), a = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+      return { tag: el.tagName, type: el.type, sw: el.hasAttribute("switch"), tabindex: el.hasAttribute("tabindex"), tabIndexProp: el.tabIndex,
+        aria: el.getAttribute("aria-hidden"), opacity: cs.opacity, touchAction: cs.touchAction, pe: cs.pointerEvents, last: box.lastElementChild === el,
+        rect: [a.left - b.left, a.top - b.top, a.width - b.width, a.height - b.height].map((v) => Math.round(v)), center: [b.left + b.width / 2, b.top + b.height / 2] };
+    });
+    check("iPhone pads: attachPad puts a hidden switch over the whole reel face (no tabindex, opacity 0, touch-action none)", () => {
+      assert.equal(pad.tag, "INPUT"); assert.equal(pad.type, "checkbox"); assert.equal(pad.sw, true);
+      assert.equal(pad.tabindex, false, "has a tabindex attribute"); assert.equal(pad.aria, "true");
+      assert.equal(pad.opacity, "0"); assert.equal(pad.touchAction, "none"); assert.equal(pad.pe, "auto"); assert.equal(pad.last, true);
+      assert.deepEqual(pad.rect, [0, 0, 0, 0]);
+    });
+    await touch("touchStart", pad.center[0], pad.center[1]); await touch("touchEnd");
+    await page.waitForTimeout(100);
+    await touch("touchStart", pad.center[0], pad.center[1]); await page.waitForTimeout(400); await touch("touchEnd");   // a long hold, then a lift
+    await page.waitForTimeout(100);
+    const after = await page.evaluate(() => { const r = { ...log, checked: padH.el.checked }; Haptics.setEnabled(false); r.offPE = getComputedStyle(padH.el).pointerEvents; Haptics.setEnabled(true); r.onPE = getComputedStyle(padH.el).pointerEvents; padH.dispose(); r.gone = !document.querySelector("#reelBox input"); return r; });
+    check("iPhone pads: a tap and a long hold both toggle it on lift; the game still gets the pointer events, never the click", () => {
+      assert.deepEqual(after.toggles, [true, true], "toggles " + JSON.stringify(after.toggles));    // touchstart unchecks it again each time
+      assert.equal(after.boxClicks, 0, "the click leaked to the reel");
+      assert.ok(after.boxPointers.includes("pointerdown:INPUT") && after.boxPointers.includes("pointerup:INPUT"), JSON.stringify(after.boxPointers));
+    });
+    check("iPhone pads: turned off, the pad lets touches through; dispose() removes it", () => {
+      assert.equal(after.offPE, "none"); assert.equal(after.onPE, "auto"); assert.equal(after.gone, true);
+    });
+
+    // the crank, with #game turned 90 degrees
+    const crank = await page.evaluate(() => {
+      rotate(90);
+      const box = document.getElementById("crankBox");
+      window.ticks = 0;
+      window.crankH = Haptics.attachCrank(box, { toLocal, onTick: () => ticks++ });
+      const sw = crankH.el, wrap = sw.parentElement, cs = getComputedStyle(wrap);
+      // WebKit's rule, worked out on its own from the screen: the finger's side of the switch's centre line, with the
+      // switch's rotation plus #game's. It ticks when the side changes, from 200 ms after touchstart
+      window.wk = { ticks: 0, on: true, t0: 0 };
+      const side = (x, y) => {
+        const r = sw.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const th = (parseFloat((/rotate\(([-\d.e]+)deg\)/.exec(sw.style.transform) || [0, 0])[1]) + rot) * Math.PI / 180;
+        return (x - cx) * Math.cos(th) + (y - cy) * Math.sin(th) >= 0;
+      };
+      addEventListener("touchstart", (e) => { wk.t0 = e.timeStamp; wk.on = true; }, true);
+      addEventListener("touchmove", (e) => {
+        if (e.timeStamp - wk.t0 < 200) return;
+        const t = e.touches[0], s = side(t.clientX, t.clientY);
+        if (s !== wk.on) { wk.on = s; wk.ticks++; }
+      }, true);
+      // the centre and radius of the crank in #game's pixels
+      let x = box.offsetLeft + box.offsetWidth / 2, y = box.offsetTop + box.offsetHeight / 2;
+      for (let e = box.offsetParent; e && e.id !== "game"; e = e.offsetParent) { x += e.offsetLeft; y += e.offsetTop; }
+      const wr = wrap.getBoundingClientRect();
+      return { cx: x, cy: y, d: wrap.offsetWidth, s: sw.offsetWidth, radius: cs.borderRadius, overflow: cs.overflow, sq: sw.offsetWidth === sw.offsetHeight,
+        tabindex: sw.hasAttribute("tabindex"), round: Math.round(wr.width) === wrap.offsetWidth };
+    });
+    check("iPhone pads: attachCrank puts a square switch in a round window over the crank", () => {
+      assert.equal(crank.d, 250); assert.equal(crank.sq, true); assert.ok(crank.s >= 250 * 1.41, "side " + crank.s);
+      assert.equal(crank.radius, "50%"); assert.equal(crank.overflow, "hidden"); assert.equal(crank.tabindex, false);
+    });
+    // two clockwise turns of the thumb round the hub, ~1.2 turns a second
+    const R = 90, steps = 144, pt = (a) => page.evaluate(([x, y]) => toClient(x, y), [crank.cx + R * Math.cos(a), crank.cy + R * Math.sin(a)]);
+    let p = await pt(0);
+    await touch("touchStart", p.x, p.y);
+    for (let i = 1; i <= steps; i++) { p = await pt((i / steps) * 4 * Math.PI); await touch("touchMove", p.x, p.y); await page.waitForTimeout(10); }
+    await page.waitForTimeout(40);
+    const turn = await page.evaluate(() => ({ ours: ticks, webkit: wk.ticks }));
+    // hold still, then a bite: forceTick() flips the switch, so the next small move ticks
+    for (let i = 0; i < 4; i++) { p = await pt(4 * Math.PI + (i % 2 ? 0.02 : -0.02)); await touch("touchMove", p.x, p.y); await page.waitForTimeout(20); }
+    const still = await page.evaluate(() => ({ ours: ticks, webkit: wk.ticks }));
+    await page.evaluate(() => crankH.forceTick());
+    await page.waitForTimeout(60);
+    p = await pt(4 * Math.PI + 0.03); await touch("touchMove", p.x, p.y);
+    await page.waitForTimeout(40);
+    await touch("touchEnd");
+    const forced = await page.evaluate(() => ({ ours: ticks, webkit: wk.ticks }));
+    console.log(`      crank: two turns gave ${turn.ours} ticks by our count and ${turn.webkit} by WebKit's rule; forceTick added ${forced.webkit - still.webkit}`);
+    check("iPhone pads: the crank switch ticks ~6 times a turn with #game turned 90 degrees, and matches WebKit's rule", () => {
+      assert.ok(turn.webkit >= 9 && turn.webkit <= 13, "WebKit ticks " + turn.webkit);
+      assert.ok(Math.abs(turn.ours - turn.webkit) <= 1, `ours ${turn.ours} vs WebKit ${turn.webkit}`);
+      assert.equal(still.webkit, turn.webkit, "ticked while the thumb held still");
+    });
+    check("iPhone pads: forceTick() makes the next move tick", () => {
+      assert.equal(forced.webkit, still.webkit + 1);
+      assert.equal(forced.ours, still.ours + 1);
+    });
+    const flag = await page.evaluate(() => { crankH.dispose(); const gone = !document.querySelector("#crankBox .hx-crank"); localStorage.setItem("fish.iosCrank", "0"); const r = Haptics.attachCrank(document.getElementById("crankBox"), { toLocal }); localStorage.removeItem("fish.iosCrank"); return { gone, r }; });
+    check("iPhone pads: dispose() removes the crank switch; fish.iosCrank = 0 turns it off", () => { assert.equal(flag.gone, true); assert.equal(flag.r, null); });
+    // the legacy path (iOS before 26.5) runs without errors, and never takes focus
+    const legacy = await page.evaluate(() => { Haptics.unlock(); Haptics.thump(); Haptics.bail(); const l = document.querySelector("label[for=fishHxLegacy]"); return { rig: !!l, focus: document.activeElement === document.body }; });
+    check("iPhone pads: the old label.click() path builds its hidden switch and leaves focus alone", () => { assert.equal(legacy.rig, true); assert.equal(legacy.focus, true); });
+    check("iPhone pads: no console errors", () => assert.deepEqual(errors, []));
+  } finally {
+    await browser.close();
+    server.kill();
+  }
+}
