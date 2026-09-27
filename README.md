@@ -13,7 +13,7 @@ The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywh
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
-- On a phone you see one machine at a time. Swipe left or right, or tap the arrows, to switch.
+- The ◀ ▶ arrows at the sides switch machines on every screen. You can also swipe, drag with the mouse, or use the scroll wheel or a trackpad. On a phone, and on any screen too narrow for the whole row, you see one machine at a time in the middle, and the row slides.
 - Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
 
