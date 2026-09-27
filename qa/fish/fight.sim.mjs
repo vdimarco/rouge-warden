@@ -64,8 +64,9 @@ class Player {
         if (P !== "greedy") { this.target = 85; this.rate = 500; }
       }
     } else if (P === "greedy" || P === "horse") {
+      // flat out with the rod low; even this player stops cranking to lift a fish at the dock
       crank = 3; this.target = 15; this.rate = 200;
-      if (v.phase === "land") { this.target = 82; lift = true; }
+      if (v.phase === "land") { this.target = 82; this.rate = 150; lift = true; crank = 0; }
     } else if (P === "idle") {
       crank = 0; this.target = 60; this.rate = 150;
     } else {

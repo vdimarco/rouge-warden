@@ -19,7 +19,7 @@ export const REEL = {
   ROD_RATING: 30,        // N: the load that bends the rod fully (for drawing)
   SPOOL_M: 0.06,         // kg: spool inertia at the line, so a sudden spike overshoots the drag for a moment
   SPOOL_B: 2,            // N per m/s: the drag washers pull a little harder the faster they slip
-  GRIND_N: 5,            // N per rev/s: cranking while the drag slips adds this much tension
+  GRIND_N: 7,            // N per rev/s: cranking while the drag slips adds this much tension
   SLACK_N: 1,            // N: below this the line is slack
   ADDED_MASS: 1.5,       // a fish moves water with it: its mass feels this much heavier
   TOW: 0.5,              // a fish led toward you head-first drags this much less than one that swims
@@ -621,7 +621,10 @@ export class LakeSim {
       this.spool += (ten - thr - R.SPOOL_B * this.spool) / R.SPOOL_M * h;
       if (this.spool < 0) this.spool = 0;
     }
-    S.lineOut = Math.max(R.MIN_LINE, S.lineOut + (this.spool - c) * h);
+    // the reel cannot wind a fish up out of the water: once it hangs below the rod tip, cranking stalls
+    const stall = Math.max(R.MIN_LINE, T.y - f.y - 0.1);
+    S.lineOut = Math.max(Math.min(S.lineOut, stall), S.lineOut - c * h) + this.spool * h;
+    S.lineOut = Math.max(R.MIN_LINE, S.lineOut);
     if (this.spool > 0 && ten > thr) ten = Math.max(ten, thr);
     S.tension = ten;
     S.slip = this.spool;
