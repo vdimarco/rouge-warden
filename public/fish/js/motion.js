@@ -17,7 +17,7 @@ const wrap180 = (a) => a - 360 * Math.round(a / 360);
 // Tunables. Motion.tune is this object, so a debug page can change them live.
 const T = {
   K_STILL: 0.3,      // per 60 Hz sample: how hard the pose pulls toward the OS orientation while the phone is still
-  K_FAST: 0.01,     // ... and while it spins fast. Trust the gyro then: the OS orientation can lag a whip
+  K_FAST: 0.01,      // ... and while it spins fast. Trust the gyro then: the OS orientation can lag a whip
   SPIN_LO: 30,       // deg/s: slower than this counts as still
   SPIN_HI: 200,      // deg/s: faster than this counts as spinning fast
   SPIN_HOLD: 60,     // ms: after a fast move the spin reading decays with this time constant (the OS orientation catches up)
