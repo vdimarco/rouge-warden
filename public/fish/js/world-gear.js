@@ -113,6 +113,8 @@ export class Rod {
     n.normalize();
     const phi = clamp(bend, 0, 1) * 1.25 * (pull ? clamp(Math.sqrt(1 - along * along) + 0.25, 0.3, 1) : 1) + 0.04;
     const P = V3().copy(grip), T = V3().copy(dir), tmp = V3();
+    // a light load bends only the tip; a heavy one works down into the butt
+    const act = 2.3 - 1.1 * clamp(bend, 0, 1);
     let s = 0;
     const setFrame = (key, pos, tan) => {
       const f = this.frame.get(key);
@@ -128,12 +130,12 @@ export class Rod {
       if (key <= 0) { setFrame(key, tmp.copy(grip).addScaledVector(dir, key), dir); continue; }
       // integrate the bent curve up to this station in small steps
       while (s < key - 1e-6) {
-        const ds = Math.min(0.04, key - s), a = phi * ((s + ds / 2) / L) ** 2;
+        const ds = Math.min(0.04, key - s), a = phi * ((s + ds / 2) / L) ** act;
         T.copy(dir).multiplyScalar(Math.cos(a)).addScaledVector(n, Math.sin(a));
         P.addScaledVector(T, ds);
         s += ds;
       }
-      const a = phi * (s / L) ** 2;
+      const a = phi * (s / L) ** act;
       T.copy(dir).multiplyScalar(Math.cos(a)).addScaledVector(n, Math.sin(a)).normalize();
       setFrame(key, P, T);
     }
