@@ -1251,7 +1251,7 @@ function showTitle() {
   $('title').classList.remove('hidden');
   hud.el.classList.remove('on'); document.body.classList.remove('cine', 'story');
   refreshTitleModes();
-  Audio.drumOn = false; Music.loud(false); Music.unhush();
+  Audio.drumOn = false; Music.scene('title'); Music.loud(false); Music.unhush();
   if (document.pointerLockElement) document.exitPointerLock();
 }
 $('assistBtn').addEventListener('click', (e) => { e.stopPropagation(); takeAssist(); });

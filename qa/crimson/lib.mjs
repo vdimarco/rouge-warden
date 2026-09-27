@@ -15,7 +15,7 @@ export const here = (p) => new URL(p, import.meta.url).pathname;
 
 // Open the game at URL_BASE + query, wait until the models are loaded, and take manual control:
 // from then on nothing moves unless the test steps it.
-export async function open({ query = "", width = 640, height = 360, touch = false, clear = true, blockFilm = true, manual = true } = {}) {
+export async function open({ query = "", width = 640, height = 360, touch = false, clear = true, blockFilm = true, manual = true, before = null } = {}) {
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required"] });
   const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, ignoreHTTPSErrors: true } : { viewport: { width, height }, deviceScaleFactor: 1, ignoreHTTPSErrors: true });
   const page = await ctx.newPage();
@@ -36,6 +36,8 @@ export async function open({ query = "", width = 640, height = 360, touch = fals
   if (blockFilm) await page.route("**/clips/**", (r) => r.abort());
   // (inside a try: a blocked or opaque frame has no storage)
   if (clear) await page.addInitScript(() => { try { if (!sessionStorage.getItem("qa-kept")) { localStorage.clear(); sessionStorage.setItem("qa-kept", "1"); } } catch (e) { /* no storage here */ } });
+  // a test's own routes go last, so they win over the ones above
+  if (before) await before(page);
   await page.goto(URL_BASE + query);
   await page.waitForFunction(() => window.__crimson && __crimson.game.ready, null, { timeout: 300000, polling: 100 });
   if (manual) await page.evaluate(() => __crimson.step(0, false));
