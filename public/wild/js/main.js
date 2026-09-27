@@ -478,7 +478,7 @@ G.meleeHit = (P, spin, n = 0) => {
   const fin = !spin && n === (COMBO[W.kind] || 3) - 1, heavy = W.kind === "two";
   // a weapon's last hit, the one that breaks it, hits twice as hard
   const last = slot && slot.dur !== Infinity && slot.dur <= 1;
-  let hits = 0, big = false;
+  let hits = 0, big = false, anyCrit = false;
   for (const f of targets()) {
     const dx = f.x - P.x, dz = f.z - P.z, d = Math.hypot(dx, dz), r = f.T ? f.T.r : 1;
     if (d > W.reach * (spin ? 1.2 : 1) + r) continue;
@@ -493,11 +493,13 @@ G.meleeHit = (P, spin, n = 0) => {
     const sx = f.x - (dx / dd) * r * 0.8, sz = f.z - (dz / dd) * r * 0.8;
     if (ok === false) { G.fx.spark(sx, hy, sz, 0xb8c8ff, 3, 0.7); continue; }
     G.fx.spark(sx, hy, sz, crit ? 0xffd84a : 0xfff4d0, crit ? 10 : 6, crit || fin ? 1.4 : 1);
+    G.dmgNum(sx, hy + 0.6, sz, dmg, crit ? "crit" : "");
+    if (crit) anyCrit = true;
     if (f.def) big = true;
     hits++;
   }
   if (hits) {
-    A.sfx(G.slowmo > 0 ? "crit" : fin || heavy ? "smash" : "hit");
+    A.sfx(G.slowmo > 0 || anyCrit ? "crit" : fin || heavy ? "smash" : "hit");
     G.hitstop = spin ? 0.09 : fin ? 0.1 : heavy ? 0.085 : big ? 0.065 : 0.055;
     G.shake(fin || spin || heavy ? 0.22 : 0.12);
     G.loot.wear(1);
@@ -589,10 +591,47 @@ G.bossIntro = (b) => {
   G.ui.boss(b.def.name, 1);
   G.activeBoss = b;
   G.say(b, b.S.lines[0]);
+  {
+    const P = G.player, dx = P.x - b.center.x, dz = P.z - b.center.z, dd = Math.hypot(dx, dz) || 1;
+    const cx = b.center.x + (dx / dd) * (b.def.r + 6), cz = b.center.z + (dz / dd) * (b.def.r + 6);
+    if (G.world.height(cx, cz) > 0.3) { G.save.check = [cx, cz]; G.ui.toast("Checkpoint", 1.2); }
+  }
   // the King's court seals shut behind you
   if (b.def.seal) { G.world.setSeal(true); A.sfx("seal"); G.shake(0.4); }
 };
 G.bossLeft = (b) => { if (G.activeBoss === b) { G.activeBoss = null; G.ui.boss(null); } if (b.def.seal) G.world.setSeal(false); if (G.plunge) { G.plunge = null; G.player.cine = null; } };
+// damage numbers: white for hits, gold for crits, red for damage to you. Each floats up and fades.
+const dmgNums = [];
+const NV = new THREE.Vector3();
+G.dmgNum = (x, y, z, v, kind) => {
+  const el = document.createElement("div");
+  el.className = "dmgnum " + (kind || "");
+  el.textContent = Math.max(1, Math.round(v)) + (kind === "crit" ? "!" : "");
+  document.body.appendChild(el);
+  dmgNums.push({ el, x: x + (Math.random() - 0.5) * 0.6, y, z: z + (Math.random() - 0.5) * 0.6, t: 0 });
+  if (dmgNums.length > 24) { const o = dmgNums.shift(); o.el.remove(); }
+};
+function tickNums(dt) {
+  for (let i = dmgNums.length - 1; i >= 0; i--) {
+    const n = dmgNums[i];
+    n.t += dt; n.y += dt * 1.6;
+    NV.set(n.x, n.y, n.z).project(camera);
+    if (n.t > 0.9 || NV.z > 1) { n.el.remove(); dmgNums.splice(i, 1); continue; }
+    n.el.style.transform = "translate(" + ((NV.x * 0.5 + 0.5) * innerWidth) + "px," + ((-NV.y * 0.5 + 0.5) * innerHeight) + "px) translate(-50%,-50%) scale(" + (1 + Math.max(0, 0.25 - n.t) * 2) + ")";
+    n.el.style.opacity = String(Math.min(1, (0.9 - n.t) * 4));
+  }
+}
+// tips the first time they matter, once each: a critter coming, a long drop, a big fall, low health
+function firstTips(P) {
+  const T = G.save.tips || (G.save.tips = {}), say = (k, text) => { if (T[k]) return; T[k] = 1; G.ui.toast(text, 4); };
+  const pad = touchUI ? null : true;
+  if (!T.fight && G.foes.some((f) => f.alive && f.state === "windup" && Math.hypot(f.pos.x - P.x, f.pos.z - P.z) < 8))
+    say("fight", pad ? "It is winding up! Right click or K to roll through the hit, then swing with left click." : "It is winding up! Tap Roll to dodge through, then swing.");
+  if (!T.glide && P.state === "air" && P.vel.y < -14)
+    say("glide", pad ? "Falling fast: press Space to open the umbrella. Or roll as you land to break the fall." : "Falling fast: tap Jump to open the umbrella.");
+  if (!T.eat && P.hp > 0 && P.hp <= P.maxHp * 0.34 && Object.values(G.inv.food).some((n) => n > 0))
+    say("eat", pad ? "Low on hearts. Press H to eat." : "Low on hearts. Tap the food button to eat.");
+}
 G.say = (who, text) => { G.ui.toast("“" + text + "”", 2.4); if (who && who.id === "king") who.talk = 1.2; };
 G.kingPhase = (n) => { G.ui.pop(n === 2 ? "Round two" : "Final round", "red"); A.setMood("boss" + n); };
 const FREED = {
@@ -723,7 +762,7 @@ G.drown = () => {
   A.sfx("splash");
   P.exhausted = false; P.stamina = P.staminaMax;
   const at = P.lastSafe.clone();
-  P.hp -= 4; G.ui.flash();
+  P.hp -= 4; G.ui.flash(); A.sfx("hurt"); G.shake(0.3); G.dmgNum(P.x, P.y + 2, P.z, 4, "hurt");
   if (P.hp <= 0) { P.hp = 0; G.die(); return; }
   P.place(at.x, at.z); P.invuln = 1.5;
   G.ui.toast("You swam too far");
@@ -1111,6 +1150,7 @@ function loop(now) {
   if (inp.map) G.openMap();
   if (G.ui.modal === "dialog" && (inp.interact || inp.jump || inp.attack)) G.ui.advance();
   G.ui.tick(dt);
+  tickNums(dt);
   const running = !G.paused && !G.ui.modal;
   if (running) step(dt);
   if (!cam0 || running || G.ui.modal === "dialog") { updateCamera(running ? dt : 0.0001); cam0 = true; }
@@ -1135,8 +1175,16 @@ function step(dt) {
   if (before > G.clock) { respawnCritters(); if (G.started) G.ui.toast("The sludge moon rises. The critters are back."); }
   // slow time after a perfect roll, and a tiny pause on each hit
   if (G.slowmo > 0) { G.slowmo -= dt; G.foeTime = 0.25; } else G.foeTime = 1;
+  P.safeFallT = Math.max(0, (P.safeFallT || 0) - dt);
+  firstTips(P);
   G.ui.slow(G.slowmo > 0);
-  if (G.hitstop > 0) { G.hitstop -= dt; return; }
+  if (G.hitstop > 0) {
+    G.hitstop -= dt;
+    if (inp.attack) P.atkBuf = 0.3;
+    if (inp.roll) P.rollBuf = 0.25;
+    if (inp.jump) P.jumpBuf = 0.2;
+    return;
+  }
   if (inp.eat) G.eat();
   if (inp.next) G.cycleWeapon(1);
   if (inp.prev) G.cycleWeapon(-1);
@@ -1255,7 +1303,7 @@ function kayakStep(dt) {
 function abilities(dt) {
   const Ab = G.abilities, P = G.player;
   if (Ab.grit) { if (Ab.grit.charges === 0) { Ab.grit.cd -= dt; if (Ab.grit.cd <= 0) { Ab.grit.charges = 3; Ab.grit.cd = 0; } } }
-  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb" && P.state !== "kayak" && !P.fishing) { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
+  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb" && P.state !== "kayak" && !P.fishing) { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.safeFallT = 6; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
   if (Ab.fury) {
     Ab.fury.cd = Math.max(0, Ab.fury.cd - dt);
     if (inp.fury && Ab.fury.cd <= 0 && !P.dead) {

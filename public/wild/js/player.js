@@ -6,7 +6,7 @@ import { clamp, lerp } from "./noise.js";
 // Every weapon is one of three kinds. One-handed weapons swing fast in a 3-hit combo. Two-handed weapons are slow
 // and heavy, sweep wide, and knock critters flying in a 2-hit combo. Spears jab from far away and end with a lunge.
 export const WEAPONS = {
-  plunger: { name: "Plunger", kind: "one", dmg: 4, reach: 2.3, arc: 1.7, time: 0.3, dur: Infinity, knock: 5 },
+  plunger: { name: "Plunger", kind: "one", dmg: 5, reach: 2.3, arc: 1.7, time: 0.3, dur: Infinity, knock: 5 },
   branch: { name: "Maple Branch", kind: "one", dmg: 3, reach: 2.3, arc: 1.7, time: 0.28, dur: 10, knock: 4 },
   stick: { name: "Hockey Stick", kind: "one", dmg: 6, reach: 2.6, arc: 1.9, time: 0.24, dur: 30, knock: 6 },
   lacrosse: { name: "Lacrosse Stick", kind: "one", dmg: 7, reach: 2.6, arc: 1.9, time: 0.26, dur: 26, knock: 6 },
@@ -126,7 +126,8 @@ export class Player {
   hurt(q, fx, fz, knock = 6) {
     const G = this.G;
     if (this.invuln > 0 || G.cutscene || this.dead) return false;
-    if (this.roll > 0) { G.perfectDodge(); return false; }
+    // the roll dodges during its first 0.26 s; a roll that starts just before the hit lands earns Flurry
+    if (this.roll > 0.16) { if (this.roll > 0.28 && knock > 0) G.perfectDodge(); return false; }
     if (G.abilities.grit && G.abilities.grit.charges > 0) {
       G.abilities.grit.charges--; G.sfx("block"); G.ui.toast("Gabe's Grit blocked it");
       if (G.abilities.grit.charges === 0) G.abilities.grit.cd = 60;
@@ -136,6 +137,7 @@ export class Player {
     if (this.bonusHp > 0) { const b = Math.min(this.bonusHp, dmg); this.bonusHp -= b; dmg -= b; }
     this.hp -= dmg;
     this.invuln = 0.9;
+    if (dmg > 0 && G.dmgNum) G.dmgNum(this.pos.x, this.pos.y + 2.2, this.pos.z, dmg, "hurt");
     if (this.fishing && G.fishing) G.fishing.end("The fish got away");
     const dx = this.pos.x - fx, dz = this.pos.z - fz, d = Math.hypot(dx, dz) || 1;
     if (this.state === "kayak") knock = 0;
@@ -308,7 +310,11 @@ export class Player {
     if (inp.roll) this.rollBuf = 0.25;
     const free = !this.attack || (this.attack.hit && this.attack.t > 0.5 && !this.attack.spin);
     if (this.jumpBuf > 0 && this.roll <= 0 && free) { this.attack = null; this.jumpBuf = 0; this.vel.y = 9.5; this.state = "air"; this.airT = 0; G.sfx("jump"); return; }
-    if (this.rollBuf > 0 && this.roll <= 0 && free) { this.attack = null; this.rollBuf = 0; this.roll = 0.42; this.lastRoll = G.time; if (dir.mag > 0.1) this.yaw = Math.atan2(dir.x, dir.z); G.sfx("roll"); }
+    if (this.rollBuf > 0 && this.roll <= 0 && free) {
+      // a roll costs a little stamina, so it cannot be spammed forever
+      this.rollBuf = 0;
+      if (this.useStamina(14)) { this.attack = null; this.roll = 0.42; this.lastRoll = G.time; if (dir.mag > 0.1) this.yaw = Math.atan2(dir.x, dir.z); G.sfx("roll"); }
+    }
     this.combat(dt, inp, dir);
   }
 
@@ -364,6 +370,9 @@ export class Player {
     const G = this.G;
     this.airT += dt;
     this.vel.y -= 26 * dt;
+    // a roll pressed just before you land is kept, so it can break the fall
+    this.rollBuf = Math.max(0, (this.rollBuf || 0) - dt);
+    if (act && inp.roll) this.rollBuf = 0.25;
     const want = Math.max(5.5, Math.hypot(this.vel.x, this.vel.z));
     const k = 1 - Math.exp(-dt * 3);
     if (dir.mag > 0.1) { this.vel.x = lerp(this.vel.x, dir.x * want * dir.mag, k); this.vel.z = lerp(this.vel.z, dir.z * want * dir.mag, k); this.yaw = turn(this.yaw, Math.atan2(dir.x, dir.z), dt * 6); }
@@ -378,7 +387,14 @@ export class Player {
       if (g < -1.2) { this.enterSwim(); return; }
       const vy = -this.vel.y;
       this.pos.y = g; this.state = "ground"; this.vel.y = 0;
-      if (vy > 23) { const q = Math.min(40, Math.floor((vy - 23) / 3) + 2); G.sfx("thud"); this.hurt(q, this.pos.x, this.pos.z, 0); }
+      if (vy > 23 && !(this.safeFallT > 0)) {
+        let q = Math.min(40, Math.floor((vy - 23) / 3) + 2);
+        // a roll pressed just before you land breaks the fall: half the damage
+        const rolled = (this.rollBuf || 0) > 0;
+        if (rolled) { q = Math.max(1, Math.floor(q / 2)); this.rollBuf = 0; }
+        G.sfx("thud"); this.invuln = 0; this.roll = 0; this.hurt(q, this.pos.x, this.pos.z, 0);
+        if (rolled) { this.roll = 0.3; G.ui.toast("You rolled out of the fall"); }
+      }
       else G.sfx("land");
       return;
     }

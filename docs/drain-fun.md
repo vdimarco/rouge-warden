@@ -110,14 +110,14 @@ An agent read the game code and checked each system against these principles. It
 
 **Waiting:** each online Cottage call now gives up after 3.5 s, down from 6 s.
 
-## Still open
+## Second pass
 
-These need a decision or a playtest before I change them:
+These were the open items. They are now done:
 
-- **The fast-drain timer is hidden on phones.** The top bar has no room for it.
-- **Gold has few uses.** Only two items per snack bar take gold. Gold could buy hot dogs, rerolls, or a shovel upgrade.
-- **Intensity peaks and rests.** Sealed rooms are the peaks. Calm rooms and safe spots between them would give real rest.
-- **Loading the next layer.** It could be planned during the snack bar, so there is no wait at all.
-- **The streak meter.** It drains fast. Across the wide map, anything above rank C is realistic only in sealed rooms.
+- **Rest rooms.** One or two rooms in the middle rows are quiet. No critters spawn there, a lamp is always lit, and a hot dog waits on the floor. A line tells you when you walk in. This gives the rest between peaks that the pacing research asks for.
+- **Gold always has a use.** The snack bar always sells an Extra Hot Dog (35 + 10 × depth gold; one more for the run). It also sells Tip the Cook: 120 gold for 12 caps, as often as you like, so gold turns into lasting unlocks.
+- **The streak meter holds longer.** It waits 2.6 s before it drains (was 1.6 s) and drains at 5 + 3.5 × rank per second (was 7 + 5 × rank), which fits the longer gaps between fights on the wide layer.
+- **No wait between layers.** The Cottage plans the next layer while you shop, so it is ready when you leave.
+- **The fast-drain timer shows on phones.** The hot dog count moves off the top bar at that width, because the hot dog button already shows it.
 
 A playtest is still the only real test of fun. Automated tests show only that the game works.
