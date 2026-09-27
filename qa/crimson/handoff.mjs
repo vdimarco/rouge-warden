@@ -5,9 +5,13 @@
 //    Esc and SAVE & QUIT return to the title with CONTINUE and its summary, and the arena comes back.
 // 2. After a reload, CONTINUE resumes at f1 without the fight. Autopilot then finishes f1 and e1, the
 //    credits roll on game time, and KEEP PLAYING goes on to free roam.
-// 3. ?chapter=f1 jumps straight into the story; ?mission=f1&step=3 starts at that step.
-// 4. In NEW STORY, 3 deaths offer STORY ASSIST and 5 add SKIP TO THE STORY; the skip hides the death card,
-//    shows THE BEAR YIELDS and reaches f1.
+//    A hide while CONTINUE is still loading leaves the save as it was.
+// 3. ?chapter=f1 jumps straight into the story; ?mission=f1&step=3 starts at that step; ?chapter=c0 plays
+//    the cold open in the arena, then i0 swaps to Sedona.
+// 4. In NEW STORY, 3 deaths offer STORY ASSIST and 5 add SKIP TO THE STORY, by key (1 and 2) as well as by
+//    tap; the skip hides the death card, shows THE BEAR YIELDS and reaches f1.
+// 5. When the story module arrives late after a win, the arena plays on until it does.
+// The story is driven through the frozen S.test handles (types.js CONTRACT), never a package's own DOM.
 // No page errors anywhere.
 import { open, step, stepUntil, ticksUntil, nextFrames, invariants, finish } from "./lib.mjs";
 
@@ -24,7 +28,7 @@ const quitToTitle = async (page) => {
   await step(page, 0.05);
   const open = await page.evaluate(() => __crimson.story.S.ui.menu.isOpen && __crimson.story.mode === "menu");
   check(open, "Esc opens the story menu");
-  await page.click("#sQuit");
+  await page.evaluate(() => __crimson.story.S.test.ui.quit()); // the menu's SAVE & QUIT
   await step(page, 0.05);
 };
 
@@ -70,7 +74,15 @@ const quitToTitle = async (page) => {
   await page.waitForFunction(() => window.__crimson && __crimson.game.ready, null, { timeout: 300000, polling: 100 });
   await page.evaluate(() => __crimson.step(0, false));
   check(await page.evaluate(() => !document.getElementById("modeContinue").hidden && __crimson.focusMode === "continue"), "after a reload the title offers CONTINUE");
+  const saved = await page.evaluate(() => localStorage.getItem("crimson.story.v1"));
   await page.keyboard.press("Enter");
+  // the page hides while CONTINUE is still loading: the save it is loading must stay as it is
+  await page.waitForFunction(() => __crimson.storyLoaded, null, { timeout: 120000, polling: 50 });
+  await page.evaluate(() => __crimson.step(1 / 60, false));
+  const booting = await page.evaluate(() => __crimson.story.mode);
+  await page.evaluate(() => dispatchEvent(new Event("pagehide")));
+  const kept = (await page.evaluate(() => localStorage.getItem("crimson.story.v1"))) === saved;
+  check(booting === "boot" && kept, `a hide while CONTINUE loads leaves the save alone (mode ${booting}, save ${kept ? "kept" : "rewritten"})`);
   r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 20 });
   s = await state(page);
   check(r.ok && s.state === "story" && !s.fightStarted, `CONTINUE resumes at f1 without the fight (${s.chapter})`);
@@ -95,7 +107,7 @@ const quitToTitle = async (page) => {
   await page.click("#creditsAgain");
   await step(page, 0.2);
   s = await state(page);
-  const obj = await page.evaluate(() => document.querySelector("#story .sObj").textContent);
+  const obj = await page.evaluate(() => __crimson.story.S.test.ui.objective);
   check(s.smode === "play" && !(await page.evaluate(() => !document.getElementById("credits").classList.contains("hidden"))) && /Free roam/.test(obj), `KEEP PLAYING goes on to free roam (${obj})`);
   check(!!s.save && s.save.done.includes("e1"), "the save records the finished story");
   inv = await invariants(page);
@@ -121,6 +133,17 @@ const quitToTitle = async (page) => {
   errs.push(...errors);
   await browser.close();
 }
+{
+  const { browser, page, errors } = await open({ query: "?chapter=c0&seed=7&nomusic" });
+  const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "c0" && __crimson.story.mode === "play", { maxSec: 20, chunk: 1 / 60, realMs: 5 });
+  let s = await state(page);
+  check(r.ok && s.arena && !s.sedona && s.depth[0] === 0.1 && s.depth[1] === 3000, `?chapter=c0 plays the cold open in the arena (arena ${s.arena}, sedona ${s.sedona}, depth ${s.depth})`);
+  const r2 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  s = await state(page);
+  check(r2.ok && !s.arena && s.sedona, `then i0 swaps to Sedona and f1 starts (arena ${s.arena}, sedona ${s.sedona})`);
+  errs.push(...errors);
+  await browser.close();
+}
 
 /* ---------------- 4: STORY ASSIST at 3 deaths, SKIP TO THE STORY at 5 ---------------- */
 {
@@ -136,7 +159,10 @@ const quitToTitle = async (page) => {
     if (d < 3) check(!a.box, `no assist buttons after ${d} death(s)`);
     if (d === 3) {
       check(a.box && a.assist && !a.skip, "3 deaths offer STORY ASSIST only");
-      await page.click("#assistBtn");
+      const keys = await page.evaluate(() => [document.getElementById("assistKey").textContent, document.getElementById("skipKey").textContent]);
+      check(keys.join(",") === "1,2", `the buttons show their keys (${keys.join(", ")})`);
+      await page.waitForTimeout(950); // the card takes keys once it has settled (0.9 s)
+      await page.keyboard.press("Digit1");
       await step(page, 0.1);
       const as = await page.evaluate(() => ({ on: __crimson.game.assist, state: __crimson.game.state, parry: __crimson.player.stats.parryWin }));
       check(as.on && as.state === "fight" && Math.abs(as.parry - 0.38) < 1e-9, `STORY ASSIST restarts the fight with assist on (parry window ${as.parry})`);
@@ -145,7 +171,8 @@ const quitToTitle = async (page) => {
     if (d === 4) check(a.box && !a.assist && !a.skip, "with assist on, 4 deaths show no more buttons");
     if (d < 5) { await page.evaluate(() => __crimson.restart()); continue; }
     check(a.box && a.skip, "5 deaths offer SKIP TO THE STORY");
-    await page.click("#skipBtn");
+    await page.waitForTimeout(950);
+    await page.keyboard.press("Digit2");
     await step(page, 0.3);
     const card = await page.evaluate(() => __crimson.story && __crimson.story.S.test.ui.card);
     let s = await state(page);
@@ -157,6 +184,28 @@ const quitToTitle = async (page) => {
     const ronin = await page.evaluate(() => __crimson.player.state);
     check(ronin !== "dead", `the skip stands the ronin back up (${ronin})`);
   }
+  errs.push(...errors);
+  await browser.close();
+}
+
+/* ---------------- 5: the story module arrives late after a win ---------------- */
+{
+  const { browser, page, errors } = await open({ query: "?seed=7&god&nomusic" });
+  let release = null;
+  const held = new Promise((res) => { release = res; });
+  await page.route("**/js/story/index.js", async (route) => { await held; route.continue(); });
+  await page.evaluate(() => { __crimson.seed(7); __crimson.startGame("story"); });
+  await step(page, 1);
+  await page.evaluate(() => __crimson.win());
+  const k = await ticksUntil(page, () => __crimson.game.state === "story", 400);
+  const t0 = await page.evaluate(() => ({ loaded: __crimson.storyLoaded, time: __crimson.game.time, cam: __crimson.cam.pos.toArray() }));
+  await step(page, 1);
+  const t1 = await page.evaluate(() => ({ loaded: __crimson.storyLoaded, time: __crimson.game.time, cam: __crimson.cam.pos.toArray() }));
+  check(k === 120 && !t0.loaded && !t1.loaded && t1.time - t0.time > 0.9, `while the story loads after a win, the arena plays on (game time ${t0.time.toFixed(2)} to ${t1.time.toFixed(2)})`);
+  release();
+  await page.waitForFunction(() => __crimson.storyLoaded, null, { timeout: 120000, polling: 100 });
+  const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  check(r.ok, `once it arrives, the story runs the cold open and reaches f1 (${r.sec} s)`);
   errs.push(...errors);
   await browser.close();
 }

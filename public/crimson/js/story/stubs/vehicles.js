@@ -1,7 +1,7 @@
 // Stub VEHICLES (frozen; the vehicles package replaces vehicles/vehicles.js, not this file).
 // Box vehicles moved kinematically: W/S drive, A/D steer, E gets in and out at once. Ten seats, events,
 // a chase camera, and an autopilot that follows a route.
-import { VEHICLE_KINDS, CAMERA_PRIO } from '../types.js';
+import { VEHICLE_KINDS, CAMERA_PRIO, PHASE_ORDER } from '../types.js';
 
 const SIZE = { van: [2.05, 2.6, 6.0], jeep: [1.8, 1.8, 4.2], suv: [2.0, 1.9, 5.0], suv_fbi: [2.0, 1.9, 5.0], pickup: [2.0, 1.9, 5.6], sedan: [1.8, 1.4, 4.6], rv: [2.5, 3.2, 9.0], whitevan: [2.05, 2.6, 6.0] };
 const COLOR = { van: 0xe8e6e0, jeep: 0xe0782a, suv: 0x1a1a1c, suv_fbi: 0x1c2230, pickup: 0x6a5a48, sedan: 0x8a8e94, rv: 0xd8d2c4, whitevan: 0xe8e6e0 };
@@ -101,12 +101,12 @@ export function init(S) {
     sync(v);
   }
   S.register('physics', (cdt, rdt) => { for (const v of list) drive(v, rdt); });
-  // in the driver's seat: E gets out. This runs before the hero's control (order 0), so the same key
-  // press that gets in never gets straight back out.
+  // in the driver's seat: E gets out. It runs at PHASE_ORDER.control.vehicles, before the hero's control,
+  // and uses up the key ('exit' and 'use'), so one press never gets out and back in.
   S.register('control', () => {
     const v = D.riding; if (!v) return;
-    if (S.input.pressed('exit') && S.hero.mode !== 'photo') D.exit();
-  }, -5);
+    if (S.input.pressed('exit') && S.hero.mode !== 'photo') { S.input.consume('exit', 'use'); D.exit(); }
+  }, PHASE_ORDER.control.vehicles);
   S.register('ai', () => { const v = D.riding; if (v) { S.hero.pos.copy(v.pos); S.focus.copy(v.pos); } });
 
   // the chase camera: 8.5 m back, 3 m up, looking 6 m ahead

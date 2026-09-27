@@ -1,7 +1,9 @@
 // Stub UI (frozen; the ui package replaces ui/ui.js and story.css, not this file).
 // A minimal DOM inside #story: objective line, prompt pill, subtitles, dialogue box, card overlay,
 // loading text and the pause menu (RESUME, SAVE & QUIT). Keyboard and pad input; handles with done flags.
-import { CREW_IDS, GLYPHS } from '../types.js';
+// In the menu and on a card with choices, the arrows (or the d-pad) move the focus and E or Enter (pad A)
+// picks it.
+import { CREW_IDS, GLYPHS, PHASE_ORDER } from '../types.js';
 
 // key -> actions
 const KEYS = {
@@ -29,6 +31,7 @@ const CSS = `
 #story .ch, #story .sMenu .btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
 #story .ch button, #story .sMenu button, #story .sMenu a { pointer-events: auto; padding: 11px 18px; border: 1px solid rgba(233,230,223,0.3); border-radius: 3px; background: rgba(0,0,0,0.5); color: var(--ink); font: 800 12px var(--serif); letter-spacing: 0.22em; text-decoration: none; cursor: pointer; }
 #story .ch button:first-child, #story .sMenu .main { border-color: #d2263f; color: #fff; }
+#story .ch .sel, #story .sMenu .sel { outline: 2px solid #fff; outline-offset: 2px; color: #fff; }
 #story .sLoad { position: absolute; left: 50%; bottom: 8vh; transform: translateX(-50%); margin: 0; font-size: 12px; letter-spacing: 0.4em; z-index: 5; }
 #story .sMenu { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; background: rgba(0,0,0,0.88); pointer-events: auto; z-index: 7; }
 #story .sMenu h2 { margin: 0; letter-spacing: 0.5em; font-weight: 800; }
@@ -43,7 +46,7 @@ export function init(S) {
     <div class="sSay hidden"><b></b><p></p></div>
     <div class="sCard hidden"><div><div class="k"></div><h2></h2><p></p><div class="ch"></div></div></div>
     <p class="sLoad hidden">LOADING SEDONA <span></span></p>
-    <div class="sMenu hidden"><div><h2>PAUSED</h2><div class="btns"><button type="button" class="main" id="sResume">▶ RESUME</button><button type="button" id="sQuit">SAVE &amp; QUIT</button><button type="button" data-switch>SWITCH GAME</button><a href="/">◀ ARCADE</a></div><p>ESC RESUMES</p></div></div>`;
+    <div class="sMenu hidden"><div><h2>PAUSED</h2><div class="btns"><button type="button" class="main" id="sResume">▶ RESUME</button><button type="button" id="sQuit">SAVE &amp; QUIT</button><button type="button" data-switch>SWITCH GAME</button><a href="/">◀ ARCADE</a></div><p>ARROWS AND ENTER CHOOSE · ESC RESUMES</p></div></div>`;
   const q = (sel) => root.querySelector(sel);
   const el = { fade: q('.sFade'), obj: q('.sObj'), toast: q('.sToast'), subs: q('.sSubs'), prompt: q('.sPrompt'), say: q('.sSay'), card: q('.sCard'), load: q('.sLoad'), menu: q('.sMenu') };
   if (window.GameSwitch) window.GameSwitch.wire();
@@ -65,7 +68,7 @@ export function init(S) {
     setContext(c) { I.context = c; },
     pressed: (a) => pressedNow.has(a),
     held: (a) => now.has(a),
-    consume(a) { pressedNow.delete(a); },
+    consume(...actions) { for (const a of actions) pressedNow.delete(a); },
     // a key the UI used is used up, with every action it carries (E is both use and exit)
     consumeKeyActions() { for (const a of ['use', 'skip', 'exit', 'dodge', 'handbrake']) pressedNow.delete(a); },
     axis(name) {
@@ -107,6 +110,12 @@ export function init(S) {
   };
   const whoName = (who) => { const i = CREW_IDS.indexOf(who); return i >= 0 ? S.ctx.CREW[i].name.toUpperCase() : String(who || '').toUpperCase(); };
 
+  // keyboard and pad focus in the menu and on a card with choices
+  let focusI = 0;
+  const focusList = () => (menu.isOpen ? [...el.menu.querySelectorAll('.btns button, .btns a')] : cardH && cardH.choices ? [...el.card.querySelectorAll('.ch button')] : []);
+  function showFocus() { focusList().forEach((b, i) => b.classList.toggle('sel', i === focusI)); }
+  function moveFocus(d) { const l = focusList(); if (!l.length) return; focusI = (focusI + d + l.length) % l.length; showFocus(); }
+
   function finishCard(h, choice) {
     if (!h || h.done) return;
     h.done = true; h.choice = choice; h.index = choice;
@@ -125,6 +134,7 @@ export function init(S) {
     if (choices) {
       choices.forEach((label, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', (e) => { e.stopPropagation(); finishCard(h, i); }); ch.appendChild(b); });
       pushModal('card');
+      focusI = 0; showFocus();
     }
     el.card.classList.remove('hidden');
     return h;
@@ -136,7 +146,18 @@ export function init(S) {
     if (sayH.i >= sayH.lines.length) { const h = sayH; sayH = null; h.done = true; el.say.classList.add('hidden'); popModal('dialog'); }
     else showLine();
   }
-  function say(lines) {
+  // block:false: the lines play as subtitles, one after another, with no freeze (while driving)
+  let subsH = null;
+  function showSubsLine() { const l = lineOf(subsH.lines[subsH.i]); el.subs.textContent = l.who ? `${whoName(l.who)}: ${l.text}` : l.text; subsH.until = S.timers.now + 1.2 + l.text.length * 0.05; subsUntil = 0; }
+  function nextSubs() { if (!subsH) return; subsH.i++; if (subsH.i >= subsH.lines.length) { subsH.done = true; subsH = null; el.subs.textContent = ''; } else showSubsLine(); }
+  function say(lines, o = {}) {
+    if (o && o.block === false) {
+      if (subsH) subsH.done = true;
+      const h = { done: false, lines: [].concat(lines || []), i: 0, until: 0 };
+      if (!h.lines.length) { h.done = true; return h; }
+      subsH = h; showSubsLine();
+      return h;
+    }
     if (sayH) { const h = sayH; sayH = null; h.done = true; popModal('dialog'); }
     const h = { done: false, lines: [].concat(lines || []), i: 0 };
     if (!h.lines.length) { h.done = true; return h; }
@@ -148,7 +169,7 @@ export function init(S) {
   let menuPrev = 'play';
   const menu = {
     isOpen: false,
-    open() { if (menu.isOpen) return; menuPrev = S.mode; S.mode = 'menu'; menu.isOpen = true; el.menu.classList.remove('hidden'); },
+    open() { if (menu.isOpen) return; menuPrev = S.mode; S.mode = 'menu'; menu.isOpen = true; el.menu.classList.remove('hidden'); focusI = 0; showFocus(); },
     close() { if (!menu.isOpen) return; menu.isOpen = false; S.mode = menuPrev === 'menu' ? 'play' : menuPrev; el.menu.classList.add('hidden'); },
   };
   root.querySelector('#sResume').addEventListener('click', (e) => { e.stopPropagation(); menu.close(); });
@@ -170,24 +191,32 @@ export function init(S) {
     menu,
     map: { open() { S.ui.toast('The map is not here yet.'); }, close() {} },
     board: { open() { S.ui.toast('The evidence board is not here yet.'); }, close() {} },
-    advanceAll() { while (sayH) nextLine(); if (cardH) finishCard(cardH, cardH.choices ? 0 : -1); },
+    advanceAll() { while (sayH) nextLine(); while (subsH) nextSubs(); if (cardH) finishCard(cardH, cardH.choices ? 0 : -1); },
   };
 
-  // input that the UI answers: pause, music, skipping dialogue and cards
+  // input that the UI answers: pause, the menu, music, skipping dialogue and cards, picking a choice
+  const up = () => I.pressed('up') || I.pressed('left'), down = () => I.pressed('down') || I.pressed('right');
   S.register('input', () => {
     if (I.pressed('pause') && S.mode !== 'credits') { if (menu.isOpen) menu.close(); else if (S.mode === 'play' && !cardH?.modal) menu.open(); I.consume('pause'); return; }
-    if (menu.isOpen) { if (I.pressed('use')) { menu.close(); I.consumeKeyActions(); } return; }
+    if (menu.isOpen) {
+      if (up()) moveFocus(-1);
+      if (down()) moveFocus(1);
+      if (I.pressed('use')) { I.consumeKeyActions(); const b = focusList()[focusI]; if (b) b.click(); else menu.close(); }
+      return;
+    }
     if (I.pressed('music') && S.ctx.Music && S.ctx.Music.enabled) S.ctx.Music.toggle();
     if (I.pressed('map')) S.ui.map.open();
+    if (cardH && cardH.choices) { if (up()) moveFocus(-1); if (down()) moveFocus(1); }
     const adv = I.pressed('use') || I.pressed('skip');
     if (adv && sayH && S.timers.now - sayH.shownAt > 0.2) { nextLine(); I.consumeKeyActions(); }
-    else if (adv && cardH && S.timers.now - cardH.shownAt > 0.25) { finishCard(cardH, cardH.choices ? 0 : -1); I.consumeKeyActions(); }
+    else if (adv && cardH && S.timers.now - cardH.shownAt > 0.25) { finishCard(cardH, cardH.choices ? focusI : -1); I.consumeKeyActions(); }
     if (adv && S.cine.active) S.cine.skip();
     if (adv && S.film.active) S.film.skip();
-  }, -50);
+  }, PHASE_ORDER.input.ui);
   S.register('hud', () => {
     const t = S.timers.now;
     if (sayH && t >= sayH.until) nextLine();
+    if (subsH && t >= subsH.until) nextSubs();
     if (cardH && !cardH.choices && t >= cardH.until) finishCard(cardH, -1);
     if (fadeH) { const k = Math.min(1, (t - fadeH.t0) / fadeH.dur); el.fade.style.opacity = String(fadeH.from + (fadeH.to - fadeH.from) * k); if (k >= 1) { fadeH.done = true; fadeH = null; } }
     if (toastUntil && t >= toastUntil) { el.toast.textContent = ''; toastUntil = 0; }
@@ -199,7 +228,7 @@ export function init(S) {
   });
 
   const reset = () => {
-    if (sayH) { sayH.done = true; sayH = null; } if (cardH) { cardH.done = true; cardH = null; }
+    if (sayH) { sayH.done = true; sayH = null; } if (cardH) { cardH.done = true; cardH = null; } if (subsH) { subsH.done = true; subsH = null; }
     modals.length = 0; S.modal = null; menu.isOpen = false;
     for (const k of ['say', 'card', 'load', 'menu', 'prompt']) el[k].classList.add('hidden');
     el.obj.textContent = ''; el.toast.textContent = ''; el.subs.textContent = ''; el.fade.style.opacity = '0'; fadeH = null;
@@ -214,6 +243,10 @@ export function init(S) {
     overlaps: () => [],
     get card() { return cardH ? el.card.querySelector('h2').textContent : null; },
     get objective() { return el.obj.textContent; },
+    // answer the open card or choice with option i, as a click would
+    choose(i = 0) { if (!cardH || !cardH.choices) return false; finishCard(cardH, i); return true; },
+    // what the menu's SAVE & QUIT button does
+    quit() { menu.close(); S.exit(); },
     glyph: (id) => GLYPHS[id] || '',
   };
 }

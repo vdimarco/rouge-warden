@@ -68,6 +68,7 @@ const SCRIPTS = {
 };
 
 export function init(S) {
+  S.test.credits = null; // the credits handle while they roll (QA)
   S.content = {
     CHAPTERS, MISSIONS, LINES, CINES, SCRIPTS, CREDITS,
     line(id, vars = {}) {

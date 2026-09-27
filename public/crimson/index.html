@@ -222,6 +222,21 @@ body.hasSong .music { display: grid; } body.hasSong .songCredit { display: block
 #end .assist[hidden], #end .assist button[hidden] { display: none; }
 #end .assist button { padding: 10px 16px; border: 1px solid rgba(233,230,223,0.35); border-radius: 3px; background: rgba(0,0,0,0.55); color: var(--ink); font: 800 11px var(--serif); letter-spacing: 0.22em; cursor: pointer; }
 #end .assist button:hover, #end .assist button:focus-visible { border-color: var(--ink); color: #fff; }
+#end .assist kbd { display: inline-block; margin-left: 10px; padding: 1px 6px; border: 1px solid rgba(233,230,223,0.5); border-radius: 3px; font: 800 10px var(--serif); letter-spacing: 0; }
+body.touch #end .assist kbd { display: none; }
+/* short landscape phones: the title copy tightens so the name clears the top buttons */
+@media (max-height: 420px) {
+  #title .copy { padding-bottom: 3vh; }
+  #title .jp { margin-top: 6px; }
+  #crew { margin-top: 2vh; }
+  #title .pick { margin-top: 1.5vh; }
+  #modes { margin-top: 1.5vh; gap: 6px; }
+  #modes button { flex-direction: row; gap: 8px; padding: 6px 12px; }
+  #title .note { margin-top: 1vh; line-height: 1.4; }
+  #title .press { margin-top: 1.5vh; }
+  #title .req { margin-top: 4px; }
+}
+@media (max-height: 340px) { #title .req { display: none; } #title .songCredit { margin-top: 4px; } }
 /* the story: its own layer over the canvas; the fight HUD and touch buttons step aside */
 body.story #hud, body.story #touch, body.story #songHint { display: none !important; }
 #storyBoot { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; background: #000; font-size: 12px; letter-spacing: 0.4em; color: var(--muted); }
@@ -380,7 +395,7 @@ body.touch #hint small { display: none; }
     <h2 id="endTitle">DEATH</h2>
     <div class="stats" id="endStats"></div>
     <p>PRESS ANY KEY TO RISE AGAIN</p>
-    <div class="assist" id="endAssist" hidden><button type="button" id="assistBtn">STORY ASSIST</button><button type="button" id="skipBtn" hidden>SKIP TO THE STORY</button></div>
+    <div class="assist" id="endAssist" hidden><button type="button" id="assistBtn">STORY ASSIST<kbd id="assistKey">1</kbd></button><button type="button" id="skipBtn" hidden>SKIP TO THE STORY<kbd id="skipKey">2</kbd></button></div>
   </div>
 </div>
 

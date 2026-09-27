@@ -58,10 +58,36 @@ export const CARD_KINDS = Object.freeze(['chapter', 'time', 'title', 'text', 'pa
 export const INPUT_ACTIONS = Object.freeze(['move', 'look', 'light', 'heavy', 'parry', 'dodge', 'canteen', 'lock', 'use', 'crouch', 'camera', 'bearcall', 'map', 'pause', 'music', 'gas', 'brake', 'handbrake', 'horn', 'lookback', 'exit', 'skip', 'shutter', 'zoom']);
 export const INPUT_CONTEXTS = Object.freeze(['foot', 'drive', 'photo', 'menu', 'cine']);
 export const TOUCH_SETS = Object.freeze(['combat', 'explore', 'drive', 'photo', 'menu', 'none']);
-// Events on S.bus. 'start' {reason, chapter, mission, step, save}; 'exit'; 'preload' stage ('story'|'transform'|'yield');
+// Events on S.bus. 'start' {reason, chapter, mission, step, save}; 'exit'; 'preload' stage ('story'|'transform'|'begin');
 // 'chapter' {id}; 'mission' {id, state}; 'step' {mission, index, type}; 'pass' {id}; 'fail' {id, reason};
-// 'quality' q; 'coError' {task, error}; 'swap' {to: 'story'|'arena'}; 'save' SaveV1.
+// 'quality' q; 'coError' {task, error, waited}; 'swap' {to: 'story'|'arena'}; 'save' SaveV1.
+// S.bus.emit calls listeners in the order they were added, so listeners added in init run in PACKAGES order.
 export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 'mission', 'step', 'pass', 'fail', 'quality', 'coError', 'swap', 'save']);
+// Name every long-lived chain task ROOT_PREFIX + a name: MISSIONS' chapter chain ('root:chapter') and free
+// roam ('root:roam'). While the story plays, MISSIONS keeps one root task alive. A root task that ends with
+// an error, or any task that ends with an error while no live task waits on it, shows 'Something went
+// wrong.' with RETRY and SAVE & QUIT (B16). To handle a helper task's error yourself, yield its handle
+// (the error is thrown into you) and catch it.
+export const ROOT_PREFIX = 'root:';
+// Reserved orders inside a phase (lower runs first; S.register's default is 0). Each package registers at
+// its own slots, so the order never depends on init order. An input handler that acts on an action
+// consumes it (S.input.consume), so a later handler in the same tick does not act on it again: E carries
+// both 'use' and 'exit', so the handler that acts on either consumes both.
+export const PHASE_ORDER = Object.freeze({
+  input: Object.freeze({ ui: -50 }), // UI: pause, the menu, dialogue, cards and choices come first
+  script: Object.freeze({ ready: -100, missions: 0 }), // MISSIONS sets S.ready first, then its fail rules
+  control: Object.freeze({ interact: -10, vehicles: -5, hero: 0 }), // director: S.interact.update; VEHICLES: E gets out; COMBAT: the hero
+  fx: Object.freeze({ arenaFx: 100 }), // director: fx.js particles, after every package's fx
+});
+// Session lifecycle (index.js):
+// - init(S) runs once per page. It fills only the package's own S members (B13). Start no timers or tasks
+//   in init: S.timers and S.co are session-scoped.
+// - api.begin() starts a session: it emits 'preload' ('begin'), then 'start' {reason, chapter, mission, step,
+//   save}, then starts the boot task, which waits for S.ready and calls S.missions.startChapter. 'start'
+//   listeners reset state and wire packages to each other. They run in PACKAGES order, so show no UI there
+//   (UI resets itself in its own 'start' listener, after MISSIONS): show UI from tasks and phases.
+// - api.leave() (SAVE & QUIT, a new begin) cancels every task and clears every timer first (the tasks'
+//   finally blocks run), then emits 'exit'. Create timers and tasks in 'start' or later, never in init.
 
 /* ------------------------------------------------------------------ S (the one context object) */
 /**
@@ -99,7 +125,8 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
 /**
  * @typedef {object} ArenaCtx  what game.js hands the story (arenaCtx())
  * @property {object} THREE @property {object} game @property {object} cam @property {object} input
- * @property {object[]} CREW @property {number} crewPick
+ * @property {object[]} CREW @property {number} crewPick  the crew index the story plays (the title's pick)
+ * @property {(i:number)=>void} setCrewPick  sets the pick (and the title's selection); begin('continue') applies SaveV1.pick with it before 'start'
  * @property {{ronin:object, gabe:object, bear:object, katana:object}} actors  the arena actors
  * @property {object} player @property {object} boss
  * @property {object} scene @property {object} camera @property {object} renderer @property {object} post @property {object} arena
@@ -107,16 +134,18 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @property {(v:boolean)=>void} setArenaVisible  arena group, arena actors, trails, pipe; depth 0.1/3000 or 0.3/2600
  * @property {(on:boolean)=>void} setBridgeSilhouette @property {()=>void} restoreArenaLook
  * @property {(center:object, camPos:object)=>void} followLights @property {(x:number,z:number)=>number} groundHeight
- * @property {object} Music @property {object} Audio @property {object} fx
+ * @property {object} Music @property {object} Audio @property {object} fx  fx.js spawners (sparks, ink, dust, neon, fur, grass, ember, flash, ring, splat, blast)
+ * @property {(dt:number)=>void} updateFX  steps fx.js; the director calls it in 'fx' (PHASE_ORDER.fx.arenaFx) with cdt in play, else rdt
+ * @property {()=>void} clearFX  ends every particle, flash, ring, splat and blast at once
  * @property {(opts:object)=>{atEnd:boolean, skip:()=>void, stop:()=>void}} rollCredits  opts: crew, pick, result, blocks, note, againLabel, now, onAgain
  * @property {()=>void} showTitle @property {{video:object, screen:object}} film @property {object} arenaLook  ARENA_LOOK (copied values, B11)
  */
 /** @typedef {{now:number, after:(sec:number,fn:Function,tag?:string)=>number, every:(sec:number,fn:Function,tag?:string)=>number, cancel:(id:number)=>void, cancelTag:(tag:string)=>void, clear:()=>void, tick:(dt:number)=>void}} Timers */
-/** @typedef {{start:(gen:Generator,name?:string)=>Task, tick:()=>void, cancelAll:(prefix?:string)=>void, count:number}} Co
+/** @typedef {{start:(gen:Generator,name?:string)=>Task, tick:()=>void, cancelAll:(prefix?:string)=>void, count:number, list:Task[]}} Co
  *  @typedef {{id:number, name:string, done:boolean, result:any, error:any, cancelled:boolean, cancel:()=>void}} Task
  *  A generator yields: seconds (number), a predicate, a handle with `done`, or null (one tick). A child task
- *  that threw throws into the parent that waits on it; an uncaught root error is shown as
- *  'Something went wrong.' with RETRY (B16). */
+ *  that threw throws into the parent that waits on it (yields its handle). An error that ends a root task
+ *  (ROOT_PREFIX), or a task no live task waits on, shows 'Something went wrong.' with RETRY (B16). */
 /** @typedef {{on:(e:string,f:Function)=>(()=>void), emit:(e:string,d?:any)=>void, clear:()=>void}} Bus */
 /** @typedef {{day:string, hour:number, speed:number, frozen:boolean, night:boolean, set:(day?:string, hhmm?:string|number)=>void, advance:(rdt:number,k?:number)=>void, label:()=>string}} Day */
 /** @typedef {{add:(o:{id?:string,pos:{x:number,y?:number,z:number}|(()=>object),r?:number,mode?:string,hold?:number,prio?:number,label?:string,tag?:string,when?:()=>boolean,act?:Function})=>string, remove:(id:string)=>void, clear:(tag?:string)=>void, update:(hero:Hero)=>object|null, current:object|null}} Interact
@@ -137,7 +166,7 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @property {(center:object, camPos:object)=>void} followLights
  * @property {(q:0|1|2)=>void} setQuality  sets S.q and emits 'quality'
  * @property {()=>void} reset  back to ARENA: post uniforms, fog and background (ARENA_LOOK), toon ramp, depth 0.1/3000
- * @property {(rdt:number)=>void} update
+ * @property {(rdt:number)=>void} update  LOOK calls it from its own 'look' phase handler; nobody else calls it
  * @property {object} sun @property {object} moon @property {object} hemi
  * @property {{sun:object, moon:object, hemi:object, spots:object[], points:object[]}} lights  the fixed story light set (C5): only intensity and position change
  * @property {(on:boolean)=>void} headlights  the van's two spots (VEHICLES positions lights.spots)
@@ -162,7 +191,8 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @property {object} mapImage  a 1024 canvas @property {(x:number,z:number)=>[number,number]} toMap
  * @property {(placeId:string)=>void} reveal @property {Set<string>} revealed
  * @property {{enter:(id:string)=>{x:number,y:number,z:number,yaw:number}, exit:(id:string)=>{x:number,y:number,z:number,yaw:number}, wall:(id:string)=>object}} interiors  wall(id) is the evidence-wall Mesh MISSIONS textures (B6)
- * @property {(v:boolean)=>void} setVisible @property {(rdt:number, camera:object, focus:object)=>void} update
+ * @property {(v:boolean)=>void} setVisible
+ * @property {(rdt:number, camera:object, focus:object)=>void} update  WORLD calls it from its own 'world' phase handler; nobody else calls it
  * @property {()=>object} bridgeSilhouette  a low-poly bridge for world scenes (the arena has its own)
  * @property {{lights:(on:boolean)=>void}} ranch  the Hart Ranch floodlights (B6)
  * @typedef {object} Colliders
@@ -193,18 +223,24 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * Placeholders expose the same clip names and durations as the real body (D2). Clip names are prefixed:
  * 'ronin:combo', 'gabe:punches', 'bear:sweep', 'lib:walk'. Combat reads timing from the spec tables.
  * @typedef {object} Cast  S.cast
- * @property {(ids:string[])=>{done:boolean, progress:number}} preload @property {(id:string)=>boolean} ready
- * @property {(id:string, o?:{pos?:object,yaw?:number,parent?:object,tint?:number,props?:string[],lod?:boolean})=>Actor} spawn
+ * @property {(ids:string[])=>{done:boolean, progress:number}} preload @property {(id:string)=>boolean} ready  true once id's real body is loaded
+ * @property {(id:string, o?:{pos?:object,yaw?:number,parent?:object,tint?:number,props?:string[],lod?:boolean,arenaScale?:boolean})=>Actor} spawn
+ *   Works before the body is loaded: it returns an Actor at once (a placeholder with the same clip names and
+ *   durations, D2) and swaps the real body into that same Actor when it arrives. spawn('gabe') returns the
+ *   registered arena Gabe at story scale (about 1.95 m, B9); arenaScale:true keeps the arena scale (the cold open).
+ * @property {(id:string)=>Actor|null} get  a registered arena actor (else a live one) by id, with no side effects
  * @property {(a:Actor)=>void} despawn  registered arena actors are only hidden (B9)
- * @property {(id:string, actor:Actor)=>void} register  arena actors, registered by the director
+ * @property {(id:string, actor:Actor)=>void} register  arena actors, registered by the director. CAST animates
+ *   every live actor and every visible registered actor in its 'anim' phase (on story time), so the arena
+ *   actors keep moving after game.js hands the page over.
  * @property {{make:(name:string,o?:object)=>object, attach:(a:Actor,name:string,bone?:string,o?:object)=>object, detach:(a:Actor,name:string)=>void}} props
  * @property {(a:Actor, name:string, k?:number)=>void} pose  procedural poses: sitDrive, sitPass, kneel, crouch, photo, phone, talk, handsOpen, dazed, knocked
  * @property {(a:Actor, k:number)=>void} drain  neon drain; also scales limbGlow sprites by 1-k (B10)
  * @property {(a:Actor, k:number)=>void} inkShadow
  * @property {(a:Actor, kind:'rattlesnake'|'scorpion')=>{tail:object, set:(state:object)=>void}} vortexParts
- * @property {(camPos:object)=>void} lodUpdate
+ * @property {(camPos:object)=>void} lodUpdate  CAST calls it from its own 'anim' phase handler
  * @property {{add:(a:Actor,o?:object)=>void, remove:(a:Actor)=>void, board:(v:Vehicle)=>void}} followers
- * @property {{update:(rdt:number,focus:object)=>void, scatter:(x:number,z:number,r:number)=>void, setDensity:(k:number)=>void}} crowd
+ * @property {{update:(rdt:number,focus:object)=>void, scatter:(x:number,z:number,r:number)=>void, setDensity:(k:number)=>void}} crowd  CAST calls crowd.update from its own 'ai' phase handler
  * The story Gabe is the arena gabe actor at about 1.95 m while in the story (B9); showTitle restores it.
  */
 
@@ -221,7 +257,10 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @typedef {object} Vehicles  S.vehicles
  * @property {(kind:string, o?:{pos?:object,place?:string,yaw?:number,tint?:number,look?:object,protect?:boolean,bumpLimit?:number,maxSpeed?:number,seats?:number})=>Vehicle} spawn
  * @property {(v:Vehicle)=>void} despawn @property {Vehicle[]} list @property {Vehicle|null} player  the crew van
- * @property {object[]} sweeps  swept paths for dodging @property {object[]} people  soft circles {x,z,r,dive(dir)} refilled each tick
+ * @property {object[]} sweeps  swept paths for dodging, written by VEHICLES in 'physics'
+ * @property {object[]} people  soft circles {x,z,r,dive(dir)}. CAST (crowd, followers) and COMBAT (the hero on
+ *   foot, enemies) push theirs in 'ai'; VEHICLES reads the list in 'physics' and then empties it, so each
+ *   physics step sees one fresh set (one tick old)
  * @property {(evt:string, fn:Function)=>(()=>void)} on
  * @typedef {{enter:(v:Vehicle,seat?:number)=>boolean, exit:()=>({x:number,z:number}|null), riding:Vehicle|null, seat:(a:Actor,v:Vehicle,i:number)=>void, unseat:(a:Actor)=>void, seatsOf:(v:Vehicle)=>Array<object|null>, autopilot:(on:boolean, route?:object[])=>void}} Drive  S.drive
  * @typedef {{setDensity:(k:number)=>void, clear:()=>void, cars:Vehicle[]}} Traffic  S.traffic (ambient only; mission traffic is spawned by missions, C2)
@@ -244,7 +283,10 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @typedef {object} Combat  S.combat
  * @property {Fighter|null} player @property {Fighter[]} enemies @property {boolean} active @property {Fighter|null} boss
  * @property {(o?:{arena?:object,legend?:boolean,music?:boolean})=>void} begin
- * @property {(foeId:string, o?:{pos?:object,place?:string,yaw?:number,group?:string,alert?:boolean,patrol?:string,weapon?:string,flashlight?:boolean})=>Fighter} spawn
+ * @property {(foeId:string, o?:FoeOpts)=>Fighter} spawn  foeId is a FOE_IDS id; 'legend' needs o.variant (E9)
+ * @typedef {{pos?:object, place?:string, yaw?:number, group?:string, alert?:boolean, patrol?:string, weapon?:string, flashlight?:boolean, variant?:string}} FoeOpts
+ *   variant: which Legend a 'legend' foe is, a LEGEND_IDS id (javelina, vulture, gila, tarantula); only for 'legend'.
+ *   MISSIONS forwards every one of these fields from a MissionDef spawn or a wave entry to S.combat.spawn.
  * @property {(group?:string)=>void} clear @property {()=>void} end @property {(id:string)=>void} setWeapon
  * @property {(id:string, o?:{uses?:number})=>void} give @property {(d:number)=>void} lockCycle
  * @property {(evt:'down'|'takedown'|'tied'|'heroDown'|'bossPhase'|'finisher', fn:Function)=>(()=>void)} on
@@ -258,17 +300,26 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @typedef {object} Missions  S.missions
  * @property {(id:string, o?:{mission?:string, step?:number, reason?:string})=>void} startChapter  runs the chapter, then the next in CHAPTER_ORDER
  * @property {(id:string, o?:{step?:number})=>void} start @property {()=>void} pass @property {(reason:string)=>void} fail
- * @property {()=>void} retry @property {()=>void} quit
+ * @property {()=>void} retry  never a no-op, and it works when no mission is active (after the root task died):
+ *   it restarts the current (else the last) mission of this chapter from its last checkpoint, else from its
+ *   first step; with no mission it restarts the chapter; in free roam it restarts free roam. It restarts at
+ *   once or by the next tick. A checkpoint belongs to one mission of one chapter: clear it when that mission
+ *   passes and when a chapter starts, so RETRY never goes back to an earlier chapter.
+ * @property {()=>void} quit  leave the mission for free roam
  * @property {{id:string, step:number, type:string, state:string}|null} active
  * @property {(id:string)=>boolean} done @property {()=>string[]} available @property {()=>object[]} markers
  * @property {(cairnId:string)=>void} travel @property {(hhmm:string)=>void} wait @property {(on:boolean)=>void} autopilot
  * @property {string|null} chapter  the chapter now playing (B6)
  * @property {number} timeScale  the day clock's time-lapse factor, the only one (B6): nobody writes S.day.speed
- * MISSIONS owns S.ready (B2) and reads S.content at run time.
+ * MISSIONS owns S.ready (B2) and reads S.content at run time. It keeps one root task (ROOT_PREFIX) alive while
+ * the story plays: the chapter chain, or free roam.
  * @typedef {{play:(id:string, o?:{cast?:object})=>{done:boolean}, skip:()=>void, active:boolean}} Cine  S.cine
  * @typedef {{open:(o?:object)=>void, close:()=>void, shoot:()=>object|null, active:boolean, gallery:object[], best:(slot:string)=>object|null, thumb:(id:string)=>string, reference:(placeId:string)=>object|null}} Photo  S.photo
  * @typedef {{set:(slot:string, photoId:string)=>void, get:(slot:string)=>string|null, slots:Object<string,string|null>}} Evidence  S.evidence
  * @typedef {{get:()=>SaveV1, write:()=>boolean, clear:()=>void, has:()=>boolean, summary:()=>{chapter:number,title:string}, checkpoint:()=>object, restore:(cp:object)=>void}} Save  S.save
+ *   write() writes nothing and returns false until a chapter runs (S.missions.chapter is set), so the boot's
+ *   loading never replaces the save that CONTINUE is loading. api.save() (hide, pagehide, SWITCH GAME)
+ *   also waits for the boot to end.
  * @typedef {{add:(id:string, o:{x:number,z:number,y?:number,r?:number,kind?:'ring'|'pillar'|'both'})=>void, remove:(id:string)=>void, clear:()=>void, list:object[]}} Markers3D  S.markers3d (missions/markers3d.js, B6): crimson ground ring and keyed pillar
  * @typedef {object} MissionRuntime  m, passed to steps and content scripts
  * @property {Story} S @property {MissionDef} def @property {(ref:string)=>any} spawn @property {(id:string)=>any} get
@@ -288,9 +339,13 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @property {(label:string|null, key?:string, hold01?:number)=>void} prompt
  * @property {(id:string, o:{x:number,z:number,y?:number,kind?:string,label?:string})=>void} marker @property {(id:string)=>void} unmark
  * @property {(who:string, text:string, dur?:number)=>void} subs
- * @property {(lines:Array<{who:string,text:string}|string>, o?:{portraits?:boolean})=>{done:boolean}} say  modal: sets S.freeze while open
+ * @property {(lines:Array<{who:string,text:string}|string>, o?:{portraits?:boolean, block?:boolean})=>{done:boolean}} say
+ *   block (default true): a modal dialogue box that sets S.freeze while open. block:false plays the lines as
+ *   subtitles, one after another, with no freeze (while driving); done when the last line ends.
  * @property {(title:string, options:string[])=>{done:boolean, index:number}} choose
  * @property {(kind:string, data:{title?:string,sub?:string,kanji?:string,dur?:number,choices?:string[]})=>{done:boolean, choice:number}} card
+ *   Every choice (choose, a card with choices, the menu) works by keyboard and pad as well as by tap: the
+ *   arrows or the d-pad ('up', 'down', 'left', 'right') move the focus and 'use' picks it.
  * @property {(f:Fighter|null)=>void} boss @property {(text:string|null)=>void} stamp @property {(text:string)=>void} clockTag
  * @property {(state:object)=>void} evidence @property {(list:object[])=>void} seats @property {(mps:number)=>void} speed @property {(k:number)=>void} damage
  * @property {(p:number|null)=>void} loading @property {(to:number, dur:number)=>{done:boolean}} fade
@@ -302,6 +357,8 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @typedef {object} Input  S.input
  * @property {string} context @property {(c:string)=>void} setContext
  * @property {(a:string)=>boolean} pressed  true on the tick the action went down @property {(a:string)=>boolean} held
+ * @property {(...actions:string[])=>void} consume  the actions are handled: pressed() is false for them for the
+ *   rest of this tick (see PHASE_ORDER; E is both 'use' and 'exit', so consume both)
  * @property {(name:'move'|'look'|'steer')=>{x:number,y:number}} axis @property {'key'|'pad'|'touch'} device
  * @property {(e:KeyboardEvent, down:boolean)=>void} key  fed by the game.js seam @property {(pad:object)=>void} pad  fed each frame
  * @property {(actions:Object<string,boolean|object>)=>void} set  QA @property {()=>void} clear @property {()=>void} update  called by the director at the top of each tick
@@ -324,8 +381,9 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
 /**
  * @typedef {object} MissionDef
  * @property {string} id @property {string} chapter @property {string} [title] @property {string} [giver]
- * @property {Array<{id:string, cast?:string, kind?:string, foe?:string, place?:string, pos?:{x:number,z:number}, yaw?:number, look?:object, protect?:boolean, bumpLimit?:number, player?:boolean}>} [spawns]
- *   one of cast (an actor), kind (a vehicle; player:true makes it S.vehicles.player) or foe (a fighter)
+ * @property {Array<{id:string, cast?:string, kind?:string, foe?:string, place?:string, pos?:{x:number,z:number}, yaw?:number, look?:object, protect?:boolean, bumpLimit?:number, maxSpeed?:number, player?:boolean, variant?:string, group?:string, alert?:boolean, patrol?:string, weapon?:string, flashlight?:boolean}>} [spawns]
+ *   one of cast (an actor), kind (a vehicle; player:true makes it S.vehicles.player) or foe (a fighter; the
+ *   FoeOpts fields apply, and a 'legend' foe needs variant, a LEGEND_IDS id)
  * @property {StepDef[]} steps
  * @property {{vanWrecked?:boolean, heroDown?:boolean, leaveArea?:{place:string, r:number}}} [fail]
  * @property {{unlock?:string[], flags?:object, save?:boolean}} [onPass]
@@ -337,6 +395,10 @@ export const BUS_EVENTS = Object.freeze(['start', 'exit', 'preload', 'chapter', 
  * @typedef {{flags?:object, evidence?:object, clock?:{day?:string, time?:string}, day?:string, look?:string, weapon?:string, ability?:string, seats?:object[], vanLook?:object, unlock?:string[], spawn?:string[], despawn?:string[], traffic?:number, crowd?:number, save?:boolean}} SetOps
  */
 // Step params: [required, optional]. A value may name a place id (string) or give {x, z}.
+// talk.block: false plays the lines as subtitles with no freeze (Ui.say). fight/defend waves: an array of
+// waves, each an array of {foe, variant?, place?, pos?, ...FoeOpts}; fight.boss names the foe id in the waves
+// that gets the boss bar; fight.legend is the daytime ink bleed (Look.legend). A Legend fight (E9):
+// { type: 'fight', legend: true, boss: 'legend', waves: [[{ foe: 'legend', variant: 'javelina', place: 'cairn_airport' }]] }.
 export const STEP_PARAMS = Object.freeze({
   cine: [['id'], ['cast']],
   talk: [['lines'], ['block', 'who']],
@@ -382,7 +444,8 @@ export const CINE_ACTOR_DOS = Object.freeze(['play', 'moveTo', 'face', 'pose', '
 /* ------------------------------------------------------------------ the save */
 /**
  * @typedef {object} SaveV1  localStorage 'crimson.story.v1'. MISSIONS owns reading, repair and writing.
- * @property {1} v @property {number} seed @property {number} pick  crew index
+ * @property {1} v @property {number} seed  the rng seed of the session that wrote it (for bug reports; CONTINUE does not reseed)
+ * @property {number} pick  crew index; CONTINUE plays as this pick (begin() applies it with ctx.setCrewPick before 'start')
  * @property {string} chapter  the chapter CONTINUE resumes (never c0 or i0)
  * @property {{id:string, step:number}|null} mission
  * @property {string[]} done @property {Object<string,any>} flags
@@ -436,6 +499,12 @@ function checkRef(bad, where, v, tbl, kind) {
   if (typeof v === 'string') { if (tbl && !has(tbl, v)) bad.push(`${where}: unknown ${kind} '${v}'`); }
   else if (!isPoint(v)) bad.push(`${where}: needs a ${kind} id or {x, z}`);
 }
+// a foe entry: a FOE_IDS id; 'legend' needs a LEGEND_IDS variant, and only 'legend' takes one (E9)
+function checkFoe(bad, w, f) {
+  if (!FOE_IDS.includes(f.foe)) { bad.push(`${w}: unknown foe '${f.foe}'`); return; }
+  if (f.foe === 'legend' && !LEGEND_IDS.includes(f.variant)) bad.push(`${w}: a legend foe needs a variant (${LEGEND_IDS.join(', ')}), not '${f.variant}'`);
+  if (f.foe !== 'legend' && f.variant != null) bad.push(`${w}: only a legend foe takes a variant ('${f.foe}' has '${f.variant}')`);
+}
 export function validateMission(def, ids = {}) {
   const bad = [];
   if (!def || typeof def !== 'object') return ['not an object'];
@@ -449,7 +518,7 @@ export function validateMission(def, ids = {}) {
     if (typeof sp.id !== 'string') bad.push(`${w}: id missing`); else spawnIds.add(sp.id);
     if (sp.cast && !CAST_IDS.includes(sp.cast)) bad.push(`${w}: unknown cast '${sp.cast}'`);
     if (sp.kind && !VEHICLE_KINDS.includes(sp.kind)) bad.push(`${w}: unknown vehicle kind '${sp.kind}'`);
-    if (sp.foe && !FOE_IDS.includes(sp.foe)) bad.push(`${w}: unknown foe '${sp.foe}'`);
+    if (sp.foe || sp.variant != null) checkFoe(bad, w, sp);
     if (sp.place != null) checkRef(bad, w, sp.place, ids.places, 'place'); else if (sp.pos && !isPoint(sp.pos)) bad.push(`${w}: bad pos`);
   }
   for (const [i, s] of (def.steps || []).entries()) {
@@ -467,9 +536,9 @@ export function validateMission(def, ids = {}) {
     if (s.type === 'race') for (const g of [].concat(s.gates || [])) checkRef(bad, w, g, ids.places, 'gate');
     if (s.type === 'photo' && s.slot != null && !EVIDENCE.includes(s.slot)) bad.push(`${w}: unknown evidence slot '${s.slot}'`);
     if (s.type === 'photo' && s.match != null) checkRef(bad, w, s.match, ids.places, 'place');
-    if (s.type === 'fight' || s.type === 'defend') for (const wave of [].concat(s.waves || [])) for (const f of [].concat(wave)) if (f && f.foe && !FOE_IDS.includes(f.foe)) bad.push(`${w}: unknown foe '${f.foe}'`);
+    if (s.type === 'fight' || s.type === 'defend') for (const wave of [].concat(s.waves || [])) for (const f of [].concat(wave)) if (f && (f.foe || f.variant != null)) checkFoe(bad, w, f);
     if (s.type === 'fight' && s.boss != null && !FOE_IDS.includes(s.boss)) bad.push(`${w}: unknown boss '${s.boss}'`);
-    if (s.type === 'stealth') for (const g of [].concat(s.guards || [])) if (g && g.foe && !FOE_IDS.includes(g.foe)) bad.push(`${w}: unknown foe '${g.foe}'`);
+    if (s.type === 'stealth') for (const g of [].concat(s.guards || [])) if (g && (g.foe || g.variant != null)) checkFoe(bad, w, g);
     if ((s.type === 'enter' || s.type === 'exit') && typeof s.vehicle === 'string' && s.vehicle !== 'player' && !spawnIds.has(s.vehicle)) bad.push(`${w}: vehicle '${s.vehicle}' is not a spawn`);
     if (s.type === 'choice' && !(Array.isArray(s.options) && s.options.length)) bad.push(`${w}: options missing`);
     if (s.type === 'set') bad.push(...validateSetOps(s, w, ids));
@@ -517,8 +586,10 @@ export function validateCine(def, ids = {}) {
 const F = 'function';
 const fns = (base, names) => names.map((n) => `${base}.${n} ${F}`);
 export const CONTRACT = Object.freeze([
-  // foundation (index.js, core/*)
+  // foundation (index.js, core/*, and the game.js seam)
   'THREE object', 'ctx object', 'game object', 'scene object', 'camera object', 'renderer object', 'time number', 'frame number',
+  ...fns('ctx', ['setCrewPick', 'setArenaVisible', 'setBridgeSilhouette', 'restoreArenaLook', 'followLights', 'groundHeight', 'showCard', 'pop', 'updateFX', 'clearFX', 'rollCredits', 'showTitle']),
+  'ctx.crewPick number', 'ctx.actors object', 'ctx.fx object', 'ctx.arenaLook object',
   'timers object', ...fns('timers', ['after', 'every', 'cancel', 'cancelTag', 'clear', 'tick']), 'timers.now number',
   ...fns('bus', ['on', 'emit', 'clear']), 'rng function',
   ...fns('day', ['set', 'advance', 'label']), 'day.day string', 'day.hour number', 'day.speed number', 'day.frozen boolean', 'day.night boolean',
@@ -526,7 +597,7 @@ export const CONTRACT = Object.freeze([
   'hitstop number', 'slow number', 'slowT number', 'timeScale number',
   ...fns('interact', ['add', 'remove', 'clear', 'update']), 'interact.current object?',
   ...fns('film', ['play', 'skip']), 'film.active boolean', 'focus object', 'ready boolean', 'test object',
-  ...fns('co', ['start', 'tick', 'cancelAll']), 'co.count number', 'register function', 'cameras.add function', 'cameras.current object?',
+  ...fns('co', ['start', 'tick', 'cancelAll']), 'co.count number', 'co.list array', 'register function', 'cameras.add function', 'cameras.current object?',
   'api object', 'exit function', 'pkgs object',
   // look
   ...fns('look', ['set', 'legend', 'vortex', 'dawn', 'followLights', 'setQuality', 'reset', 'update', 'headlights']),
@@ -542,7 +613,7 @@ export const CONTRACT = Object.freeze([
   ...fns('world.roads', ['nearest', 'route', 'sample', 'speedLimit']), 'world.roads.lanes array',
   'world.mapImage object', 'world.revealed object', ...fns('world.interiors', ['enter', 'exit', 'wall']), 'world.ranch.lights function',
   // cast
-  ...fns('cast', ['preload', 'ready', 'spawn', 'despawn', 'register', 'pose', 'drain', 'inkShadow', 'vortexParts', 'lodUpdate']),
+  ...fns('cast', ['preload', 'ready', 'spawn', 'get', 'despawn', 'register', 'pose', 'drain', 'inkShadow', 'vortexParts', 'lodUpdate']),
   ...fns('cast.props', ['make', 'attach', 'detach']), ...fns('cast.followers', ['add', 'remove', 'board']), ...fns('cast.crowd', ['update', 'scatter', 'setDensity']),
   // vehicles
   ...fns('vehicles', ['spawn', 'despawn', 'on']), 'vehicles.list array', 'vehicles.player object?', 'vehicles.sweeps array', 'vehicles.people array',
@@ -566,20 +637,26 @@ export const CONTRACT = Object.freeze([
   // ui
   ...fns('ui', ['objective', 'timer', 'meter', 'clearMeter', 'prompt', 'marker', 'unmark', 'subs', 'say', 'choose', 'card', 'boss', 'stamp', 'clockTag', 'evidence', 'seats', 'speed', 'damage', 'loading', 'fade', 'toast', 'hint', 'photoFrame', 'touchSet', 'advanceAll']),
   ...fns('ui.menu', ['open', 'close']), 'ui.menu.isOpen boolean', ...fns('ui.map', ['open', 'close']), ...fns('ui.board', ['open', 'close']),
-  'input.context string', 'input.device string', ...fns('input', ['setContext', 'pressed', 'held', 'axis', 'key', 'pad', 'set', 'clear', 'update']),
+  'input.context string', 'input.device string', ...fns('input', ['setContext', 'pressed', 'held', 'consume', 'axis', 'key', 'pad', 'set', 'clear', 'update']),
   // content
   'content.CHAPTERS object', 'content.MISSIONS object', 'content.LINES object', 'content.CINES object', 'content.SCRIPTS object', 'content.CREDITS object', 'content.line function',
-  // QA handles
+  // QA handles. The gate tests (boss, render, handoff, contract) use only these and the ids game.js owns,
+  // never a package's own DOM, so a package can replace its stub without breaking a gate.
   'test.ready boolean', 'test.mode string', 'test.chapter string?', 'test.mission object?', 'test.skip function', 'test.autopilot function',
   'test.clock object', 'test.hero object', 'test.S object',
   ...fns('test.world', ['height', 'surface', 'teleport', 'regionAt', 'routeLen', 'info']),
-  ...fns('test.van', ['enter', 'exit', 'drive', 'teleport']),
+  ...fns('test.van', ['enter', 'exit', 'drive', 'teleport']), 'test.van.pos object?', 'test.van.yaw number?', 'test.van.speed number', 'test.van.damage number', 'test.van.seats array',
   ...fns('test.cast', ['heightRatio', 'bones']),
-  ...fns('test.combat', ['spawn', 'ko', 'tokens', 'lock']),
-  ...fns('test.missions', ['goto', 'resolve', 'pass', 'fail']),
+  ...fns('test.combat', ['spawn', 'ko', 'tokens', 'lock']), 'test.combat.enemies array',
+  ...fns('test.missions', ['goto', 'resolve', 'pass', 'fail']), 'test.missions.list array',
   ...fns('test.photo', ['aim', 'shoot']),
   ...fns('test.save', ['get', 'write', 'clear', 'load']),
-  ...fns('test.ui', ['visible', 'overlaps']),
+  // UI: card is the open card's title (null when none), objective the objective line ('' when none),
+  // choose(i) answers the open card or choice with option i as a click would (true if one was open), and
+  // quit() does what the menu's SAVE & QUIT does.
+  ...fns('test.ui', ['visible', 'overlaps', 'choose', 'quit']), 'test.ui.input object', 'test.ui.card string?', 'test.ui.objective string',
+  // CONTENT: the credits handle ({atEnd, skip, stop}) while the story's credits roll, else null
+  'test.credits object?',
   ...fns('test.perf', ['info', 'tier']),
 ]);
 // Returns the problems with S against CONTRACT (an empty list means it holds).

@@ -1,7 +1,7 @@
 // Stub COMBAT (frozen; the combat package replaces combat/combat.js, not this file).
 // A capsule hero on WASD with a follow camera and E for the nearest option; spawned enemies fall on any
 // light attack; stealth never spots anyone.
-import { CREW_IDS, FOE_IDS, WEAPON_IDS, HERO_MODES, CAMERA_PRIO } from '../types.js';
+import { CREW_IDS, FOE_IDS, LEGEND_IDS, WEAPON_IDS, HERO_MODES, CAMERA_PRIO, PHASE_ORDER } from '../types.js';
 
 export function init(S) {
   const { THREE } = S;
@@ -21,12 +21,12 @@ export function init(S) {
   };
   function sync() { if (H.actor) { H.actor.root.position.copy(pos); H.actor.root.rotation.y = H.face; } if (H.mode === 'foot') S.focus.copy(pos); }
 
-  // on foot: camera-relative WASD, E uses the nearest option
+  // on foot: camera-relative WASD, E uses the nearest option (and uses up the key, 'use' and 'exit' both)
   let camYaw = 0;
   S.register('control', (cdt) => {
     if (H.mode !== 'foot' || !S.world.visible) return;
     const cur = S.interact.current;
-    if (cur && S.input.pressed('use') && cur.act) { cur.act(); return; }
+    if (cur && S.input.pressed('use') && cur.act) { S.input.consume('use', 'exit'); cur.act(); return; }
     if (S.input.pressed('light')) for (const f of C.enemies) if (!f.downed) knock(f);
     if (S.lockControl) return;
     const m = S.input.axis('move'), fx = Math.sin(camYaw), fz = Math.cos(camYaw);
@@ -40,7 +40,7 @@ export function init(S) {
     } else if (H.actor) H.actor.play('idle');
     pos.y = S.world.surface(pos.x, pos.z, pos.y + 1);
     sync();
-  });
+  }, PHASE_ORDER.control.hero);
 
   // the foot camera: behind and above the hero, turning slowly toward where the hero faces
   const camPos = new THREE.Vector3(), look = new THREE.Vector3(), want = new THREE.Vector3();
@@ -67,9 +67,10 @@ export function init(S) {
     begin() { C.active = true; },
     spawn(foeId, o = {}) {
       if (!FOE_IDS.includes(foeId)) throw new Error(`S.combat.spawn: unknown foe '${foeId}'`);
+      if (foeId === 'legend' && !LEGEND_IDS.includes(o.variant)) throw new Error(`S.combat.spawn: a legend needs a variant (${LEGEND_IDS.join(', ')}), not '${o.variant}'`);
       const at = o.place ? S.world.place(o.place) : o.pos || { x: pos.x + 4, z: pos.z + 4 };
       const a = S.cast.spawn('gang', { pos: at, yaw: o.yaw || 0 });
-      const f = { id: `f${++fid}`, a, pos: a.root.position, face: o.yaw || 0, hp: 100, maxHp: 100, posture: 0, state: 'idle', team: 'foe', def: { id: foeId }, group: o.group || 'main', alert: !!o.alert, tied: false, downed: false, nextHit: null };
+      const f = { id: `f${++fid}`, a, pos: a.root.position, face: o.yaw || 0, hp: 100, maxHp: 100, posture: 0, state: 'idle', team: 'foe', def: { id: foeId, variant: o.variant || null }, group: o.group || 'main', alert: !!o.alert, tied: false, downed: false, nextHit: null };
       C.enemies.push(f);
       return f;
     },

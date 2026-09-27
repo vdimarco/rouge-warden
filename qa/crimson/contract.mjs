@@ -10,6 +10,11 @@
 //   longer the placeholder, and ?stub=all once.
 // - Core units: a child coroutine's error reaches its parent and a failed root task shows
 //   'SOMETHING WENT WRONG.' with RETRY (B16); timers fire in time order; interact needs |dy| < 2.5 (D6).
+// - RETRY never leaves the story stuck: an error in a task nobody waits on shows the card (a caught child's
+//   does not); a chapter task that dies before any checkpoint restarts its mission; an error in e1 retries
+//   e1, never an earlier chapter's checkpoint.
+// - A Legend fight (E9) validates with its variant; a missing or misplaced variant is caught.
+// The page is driven through the frozen S.test handles only, never a package's own DOM.
 import { open, step, stepUntil, finish, URL_BASE } from "./lib.mjs";
 
 const T = await import(new URL("../../public/crimson/js/story/types.js", import.meta.url).href);
@@ -88,12 +93,69 @@ function report(label, r) {
   await step(page, 0.1);
   const card = await page.evaluate(() => __crimson.story.S.test.ui.card);
   check(card === "SOMETHING WENT WRONG.", `a failed root task shows the error card (${card})`);
-  await page.click("#story .ch button");
+  await page.evaluate(() => __crimson.story.S.test.ui.choose(0)); // RETRY
   await step(page, 0.2);
   const after = await page.evaluate(() => ({ card: __crimson.story.S.test.ui.card, mode: __crimson.story.mode, chapter: __crimson.story.chapter }));
   check(after.mode === "play" && after.card !== "SOMETHING WENT WRONG.", `RETRY goes back into the story (${after.chapter}, ${after.mode})`);
+
+  // a child's error that its parent catches shows no card; an error in a task nobody waits on does
+  await page.evaluate(() => {
+    const S = __crimson.story.S;
+    window.__qaCaught = "";
+    function* child() { yield null; throw new Error("qa-deliberate caught error"); }
+    S.co.start((function* parent() { try { yield S.co.start(child(), "qa:child"); } catch (e) { window.__qaCaught = e.message; } })(), "qa:parent");
+  });
+  await step(page, 0.2);
+  const caught = await page.evaluate(() => ({ card: __crimson.story.S.test.ui.card, caught: window.__qaCaught }));
+  check(!caught.card && /qa-deliberate/.test(caught.caught), `a child's error that its parent catches shows no card (card ${caught.card})`);
+  await page.evaluate(() => __crimson.story.S.co.start((function* orphan() { yield null; throw new Error("qa-deliberate orphan error"); })(), "qa:orphan"));
+  await step(page, 0.1);
+  const orphan = await page.evaluate(() => __crimson.story.S.test.ui.card);
+  check(orphan === "SOMETHING WENT WRONG.", `an error in a task nobody waits on shows the card (${orphan})`);
+  await page.evaluate(() => __crimson.story.S.test.ui.choose(0));
+  await step(page, 0.2);
+
+  // the chapter task dies before any checkpoint, so no mission is active: RETRY must still restart f1
+  await page.evaluate(() => {
+    const S = __crimson.story.S, C = S.content;
+    window.__qaStep0 = C.MISSIONS.f1.steps[0];
+    let n = 0;
+    C.SCRIPTS.qaBoomOnce = function* () { yield null; if (n++ === 0) throw new Error("qa-deliberate step error"); };
+    C.MISSIONS.f1.steps[0] = { type: "script", fn: "qaBoomOnce" };
+    S.missions.startChapter("f1");
+  });
+  await step(page, 0.2);
+  const dead = await page.evaluate(() => ({ card: __crimson.story.S.test.ui.card, active: __crimson.story.S.missions.active }));
+  check(dead.card === "SOMETHING WENT WRONG." && dead.active === null, `a step that throws before the first checkpoint ends the chapter task and shows the card (${dead.card}, active ${JSON.stringify(dead.active)})`);
+  await page.evaluate(() => __crimson.story.S.test.ui.choose(0));
+  await step(page, 0.5);
+  const back = await page.evaluate(() => { const S = __crimson.story.S; return { chapter: S.missions.chapter, mission: S.missions.active && S.missions.active.id, step: S.missions.active && S.missions.active.step, roots: S.co.list.filter((t) => !t.done && t.name.startsWith("root:")).map((t) => t.name).join(",") }; });
+  check(back.chapter === "f1" && back.mission === "f1" && back.roots === "root:chapter", `RETRY with no mission active and no checkpoint restarts f1 (${JSON.stringify(back)})`);
+  await page.evaluate(() => { __crimson.story.S.content.MISSIONS.f1.steps[0] = window.__qaStep0; });
+
+  // f1's checkpoint ends with f1: an error in e1 retries e1
+  await page.evaluate(() => {
+    const S = __crimson.story.S, C = S.content, orig = C.SCRIPTS.credits;
+    let n = 0;
+    C.SCRIPTS.credits = function* (m, st) { if (n++ === 0) { yield null; throw new Error("qa-deliberate credits error"); } yield* orig(m, st); };
+    S.missions.autopilot(true);
+  });
+  const e = await stepUntil(page, () => __crimson.story.S.test.ui.card === "SOMETHING WENT WRONG.", { maxSec: 30, chunk: 1 / 60, realMs: 0 });
+  const where = await page.evaluate(() => __crimson.story.chapter);
+  await page.evaluate(() => { __crimson.story.S.missions.autopilot(false); __crimson.story.S.test.ui.choose(0); });
+  await step(page, 0.2);
+  const e1 = await page.evaluate(() => { const S = __crimson.story.S; return { chapter: S.missions.chapter, mission: S.missions.active && S.missions.active.id }; });
+  check(e.ok && where === "e1" && e1.chapter === "e1" && e1.mission === "e1", `an error in e1 retries e1, not f1's old checkpoint (error in ${where}, then ${JSON.stringify(e1)})`);
   errs.push(...errors);
   await browser.close();
+}
+
+/* ---------------- a Legend fight in the mission data (E9) ---------------- */
+{
+  const ok = T.validateMission({ id: "qa", chapter: "p1", spawns: [{ id: "jav", foe: "legend", variant: "javelina", pos: { x: 0, z: 0 } }], steps: [{ type: "fight", legend: true, boss: "legend", waves: [[{ foe: "legend", variant: "gila" }]] }] });
+  const noVariant = T.validateMission({ id: "qa", steps: [{ type: "fight", waves: [[{ foe: "legend" }]] }] });
+  const wrongFoe = T.validateMission({ id: "qa", spawns: [{ id: "d", foe: "driver", variant: "vulture", pos: { x: 0, z: 0 } }], steps: [{ type: "wait" }] });
+  check(!ok.length && noVariant.length === 1 && wrongFoe.length === 1, `a Legend fight validates with its variant; a missing or misplaced variant is caught (${[...ok, ...noVariant, ...wrongFoe].join("; ")})`);
 }
 
 /* ---------------- stubs: every stub at once, then each real package with the others stubbed ---------------- */

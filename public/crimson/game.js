@@ -128,7 +128,7 @@ addEventListener('keydown', (e) => {
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
   if (game.state === 'cutscene') { endCutscene(); return; }
-  if (game.state === 'end') { endNext(); return; }
+  if (game.state === 'end') { endKey(e); return; }
   if (game.state === 'credits') { creditsKey(e); return; }
   if (game.state === 'paused') { if (e.code === 'Escape' || e.code === 'Enter') resume(); return; }
   if (game.state !== 'fight') return;
@@ -269,7 +269,7 @@ function pollPad() {
   if (game.state === 'title') { if (edge(14)) pickCrew(crewPick - 1); if (edge(15)) pickCrew(crewPick + 1); if (edge(12)) moveTitleFocus(-1); if (edge(13)) moveTitleFocus(1); if (edge(0) || edge(9)) startGame(focusMode); }
   else if (game.state === 'intro') { if (b.some((x, i) => x && !prev[i])) endIntro(); }
   else if (game.state === 'cutscene') { if (b.some((x, i) => x && !prev[i])) endCutscene(); }
-  else if (game.state === 'end') { if (edge(0) || edge(9)) endNext(); }
+  else if (game.state === 'end') { if (edge(2)) endChoice('assist'); else if (edge(3)) endChoice('skip'); else if (edge(0) || edge(9)) endNext(); }
   else if (game.state === 'credits') { if (edge(0) || edge(9)) { if (credits && credits.atEnd) again(); else if (credits) credits.skip(); } }
   else if (game.state === 'paused') { if (edge(9) || edge(0)) resume(); }
   else if (game.state === 'fight') {
@@ -1082,9 +1082,11 @@ function showEnd(won) {
   document.querySelector('#end p').textContent = `${input.touch.on ? 'TAP' : 'PRESS ANY KEY'} ${won ? 'FOR THE CREDITS' : 'TO RISE AGAIN'}`;
   lastWin = won ? { time: t, parries: game.parries, deaths: game.deaths } : null;
   if (won) recordBest(t);
-  // NEW STORY: after 3 deaths the card offers STORY ASSIST, after 5 SKIP TO THE STORY
+  // NEW STORY: after 3 deaths the card offers STORY ASSIST, after 5 SKIP TO THE STORY. Keys 1 and 2 (pad X
+  // and Y) take them; a touch screen taps them.
   const assist = !won && game.mode === 'story' && game.deaths >= 3;
   $('endAssist').hidden = !assist; $('assistBtn').hidden = game.assist; $('skipBtn').hidden = game.deaths < 5;
+  $('assistKey').textContent = input.usingPad ? 'X' : '1'; $('skipKey').textContent = input.usingPad ? 'Y' : '2';
   $('end').classList.add('show');
   hud.el.classList.remove('on');
   // a win rolls the credits after a moment
@@ -1102,6 +1104,21 @@ function endNext() {
   if (game.state !== 'end' || performance.now() - endShownAt < 900) return;
   if (lastWin) startCredits(); else restart();
 }
+// on NEW STORY's death card, 1 takes STORY ASSIST and 2 SKIP TO THE STORY; any other key rises again
+function endKey(e) {
+  if ((e.code === 'Digit1' || e.code === 'Numpad1') && endChoice('assist')) return;
+  if ((e.code === 'Digit2' || e.code === 'Numpad2') && endChoice('skip')) return;
+  endNext();
+}
+// a key or pad choice on the death card, once the card has settled; false when that choice is not offered
+function endChoice(which) {
+  if (game.state !== 'end' || $('endAssist').hidden || performance.now() - endShownAt < 900) return false;
+  if (which === 'assist' && !$('assistBtn').hidden) { takeAssist(); return true; }
+  if (which === 'skip' && !$('skipBtn').hidden) { takeSkip(); return true; }
+  return false;
+}
+function takeAssist() { game.assist = true; restart(); }
+function takeSkip() { enterStory('skip'); }
 function startCredits() {
   game.timers.cancel(creditsTimer);
   if (game.state !== 'end' || !lastWin) return;
@@ -1146,7 +1163,7 @@ function loadStory() {
 }
 function arenaCtx() {
   return {
-    THREE, game, cam, input, CREW, get crewPick() { return crewPick; },
+    THREE, game, cam, input, CREW, get crewPick() { return crewPick; }, setCrewPick: (i) => pickCrew(i),
     actors: { ronin, gabe, bear, katana }, get player() { return player; }, get boss() { return boss; },
     scene, camera, renderer, post, arena,
     showCard, pop, hud, setArenaVisible, setBridgeSilhouette, restoreArenaLook, followLights, groundHeight,
@@ -1167,8 +1184,10 @@ function enterStory(reason, opts = {}) {
   Audio.drumOn = false; Music.loud(false); Music.hush();
   game.hitstop = 0; game.slowT = 0; game.slow = 1; game.hurt = 0;
   const u = post.m.uniforms; u.uGrey.value = 0; u.uHurt.value = 0;
-  if (reason === 'skip') { makePlayer(); makeBoss(); } // stand everyone back up (B5)
-  if (reason !== 'yield') setArenaVisible(false); // the cold open (c0) plays in the arena
+  if (reason === 'skip' || reason === 'jump') { makePlayer(); makeBoss(); } // stand everyone back up (B5)
+  // the cold open (c0) plays in the arena; the story's begin() decides for a jump (?chapter=c0 shows it again).
+  // Until the story module is in, every start but the win shows LOADING SEDONA.
+  if (reason !== 'yield') { setArenaVisible(false); if (!story) $('storyBoot').classList.remove('hidden'); }
   pendingBegin = { reason, ...opts };
   loadStory().catch(() => {});
 }
@@ -1180,7 +1199,15 @@ function startStory(opts = {}) {
   enterStory('jump', opts);
 }
 function storyTick(rdt) {
-  if (!story) return;
+  if (!story) {
+    // the story module is still on its way (a slow connection). After a win the arena plays on: the victory,
+    // the camera and the effects. Every other start shows LOADING SEDONA (enterStory).
+    if (pendingBegin && pendingBegin.reason === 'yield' && player && boss) {
+      game.time += rdt; grassUniforms.uTime.value += rdt;
+      updatePlayer(rdt); updateBoss(rdt); updateCamera(rdt); updateFX(rdt);
+    }
+    return;
+  }
   if (pendingBegin) { const o = pendingBegin; pendingBegin = null; $('storyBoot').classList.add('hidden'); story.begin(o); }
   story.tick(rdt);
 }
@@ -1227,8 +1254,8 @@ function showTitle() {
   Audio.drumOn = false; Music.loud(false); Music.unhush();
   if (document.pointerLockElement) document.exitPointerLock();
 }
-$('assistBtn').addEventListener('click', (e) => { e.stopPropagation(); game.assist = true; restart(); });
-$('skipBtn').addEventListener('click', (e) => { e.stopPropagation(); enterStory('skip'); });
+$('assistBtn').addEventListener('click', (e) => { e.stopPropagation(); takeAssist(); });
+$('skipBtn').addEventListener('click', (e) => { e.stopPropagation(); takeSkip(); });
 // hiding the page pauses the fight, or saves the story and opens its menu (B15, B16)
 function onHide() {
   if (game.state === 'fight') pause();
@@ -1290,12 +1317,13 @@ function titleOrbit(dt) {
 function tick(rdt) {
   game.frame++;
   if (game.state === 'story') { storyTick(rdt); return; }
-  // paused or in the film: nothing counts down, not even the slow motion or the timers
-  const live = game.state !== 'paused' && game.state !== 'cutscene';
   let dt = rdt;
+  // hitstop and slow motion count down on every tick, paused or not, as they always have
+  if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
+  if (game.slowT > 0) { game.slowT -= rdt; dt *= game.slow; }
+  // the flow timers stop while paused or in the film
+  const live = game.state !== 'paused' && game.state !== 'cutscene';
   if (live) {
-    if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
-    if (game.slowT > 0) { game.slowT -= rdt; dt *= game.slow; }
     game.timers.tick(rdt); // real seconds: the end screen and the story handoff ignore the slow motion
     if (game.state === 'story') return; // a timer handed the page to the story
   }

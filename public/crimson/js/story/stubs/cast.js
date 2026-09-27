@@ -52,14 +52,16 @@ export function init(S) {
   const cast = S.cast = {
     preload(ids = []) { for (const id of ids) if (!CAST_IDS.includes(id)) console.warn(`S.cast.preload: unknown cast id '${id}'`); return { done: true, progress: 1 }; },
     ready: (id) => CAST_IDS.includes(id),
+    // (capsules are ready at once; the real CAST returns a placeholder and swaps the body in when it loads)
     spawn(id, o = {}) {
       if (!CAST_IDS.includes(id)) throw new Error(`S.cast.spawn: unknown cast id '${id}'`);
       let a = reg.get(id);
-      if (a) { if (id === 'gabe') a.root.scale.setScalar(GABE_STORY_SCALE); if (o.parent) o.parent.add(a.root); }
+      if (a) { if (id === 'gabe') a.root.scale.setScalar(o.arenaScale ? 1 : GABE_STORY_SCALE); if (o.parent) o.parent.add(a.root); }
       else { a = new Capsule(THREE, id, o.tint ?? TINT[id] ?? 0x888888); (o.parent || S.world.group).add(a.root); }
       a.visible = true; place(a, o); live.add(a);
       return a;
     },
+    get: (id) => reg.get(id) || [...live].find((a) => a.id === id) || null,
     despawn(a) {
       if (!a) return;
       live.delete(a);
@@ -86,8 +88,12 @@ export function init(S) {
     followers: { list: [], add(a) { cast.followers.list.push(a); }, remove(a) { const l = cast.followers.list, i = l.indexOf(a); if (i >= 0) l.splice(i, 1); }, board() {} },
     crowd: { update() {}, scatter() {}, setDensity() {} },
   };
-  // every actor the story shows animates here: fighters on the combat clock, the rest on story time
-  S.register('anim', (cdt, rdt) => { for (const a of live) a.update(a.useCdt ? cdt : rdt); });
+  // every actor the story shows animates here: fighters on the combat clock, the rest on story time. The
+  // registered arena actors move while they show, spawned or not (game.js no longer ticks them in the story).
+  S.register('anim', (cdt, rdt) => {
+    for (const a of live) a.update(a.useCdt ? cdt : rdt);
+    for (const a of reg.values()) if (!live.has(a) && a.root.visible && a.root.parent) a.update(rdt);
+  });
   S.bus.on('exit', () => { for (const a of [...live]) cast.despawn(a); for (const a of reg.values()) if (a.limbGlow) for (const s of Object.values(a.limbGlow)) s.userData.base = null; });
   S.test.cast = { heightRatio: () => 0.9, bones: () => [], get live() { return live.size; }, crew: CREW_IDS };
 }

@@ -29,8 +29,9 @@ export function createTimers() {
 // Coroutines: generator functions that yield what they wait for.
 // yield sec (story seconds) | yield () => bool | yield handle ({done}) | yield null (one tick)
 // A handle with an error (a child task that threw) throws that error into the waiting parent, so a
-// failure climbs up to the root task instead of hanging. onError(task, error) hears every task that ends
-// with an error nobody caught.
+// failure climbs up to the root task instead of hanging. onError(task, error, { waited }) hears every
+// task that ends with an error it did not catch; waited is true when a live task yielded this task's
+// handle, so that parent gets the error next.
 export function createCo(timers, { onError = null } = {}) {
   const tasks = []; let seq = 0;
   const ready = (t) => { const w = t.wait; if (w == null) return true; if (typeof w === 'number') return timers.now + EPS >= t.until; if (typeof w === 'function') return !!w(); if (typeof w === 'object' && 'done' in w) return !!w.done; return true; };
@@ -39,7 +40,10 @@ export function createCo(timers, { onError = null } = {}) {
       const r = err ? t.gen.throw(err) : t.gen.next(v);
       if (r.done) { t.done = true; t.result = r.value; return; }
       t.wait = r.value; if (typeof r.value === 'number') t.until = timers.now + r.value;
-    } catch (e) { t.done = true; t.error = e; console.error('[co]', t.name, e); if (onError) onError(t, e); }
+    } catch (e) {
+      t.done = true; t.error = e; console.error('[co]', t.name, e);
+      if (onError) onError(t, e, { waited: tasks.some((x) => x !== t && !x.done && x.wait === t) });
+    }
   };
   return {
     start(gen, name = 'task') {

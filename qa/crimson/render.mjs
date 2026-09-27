@@ -20,7 +20,7 @@ if (AFTER) {
   await step(page, 3);
   await page.keyboard.press("Escape");
   await step(page, 0.05);
-  await page.click("#sQuit");
+  await page.evaluate(() => __crimson.story.S.test.ui.quit()); // the menu's SAVE & QUIT (a frozen QA handle)
   await step(page, 0.05);
   const st = await page.evaluate(() => __crimson.game.state);
   if (st !== "title") fails.push(`SAVE & QUIT left the game in '${st}'`);
