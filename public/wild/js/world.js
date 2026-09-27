@@ -600,8 +600,8 @@ export class World {
     const mat = new THREE.ShaderMaterial({
       uniforms: { ...this.grassU, uPatch: { value: P } }, side: THREE.DoubleSide,
       vertexShader: `
-        uniform float uTime, uPatch, uSize; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir; uniform vec4 uTrail[10];
-        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
+        uniform float uTime, uPatch, uSize, uFogNear, uFogFar; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir; uniform vec4 uTrail[10];
+        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec2 vShadeFog; varying float vGust; varying float vBack; varying float vGold;
         ${NOISE_GLSL}
         void main(){
           vec2 wp = uCenter + mod(aOff.xy - uCenter + uPatch*0.5, uPatch) - uPatch*0.5;
@@ -616,7 +616,7 @@ export class World {
           // or behind or well to the side of the camera. Every vertex of the blade takes the same branch.
           vec4 vr = viewMatrix * vec4(wp.x, h, wp.y, 1.0);
           if (keep * fade <= 0.0 || vr.z > 2.0 || abs(vr.x) > -vr.z / projectionMatrix[0][0] + 3.0) {
-            vCol = vec3(0.0); vT = 0.0; vW = vec3(0.0); vGust = 0.0; vBack = 0.0; vGold = 0.0;
+            vCol = vec3(0.0); vT = 0.0; vShadeFog = vec2(1.0, 0.0); vGust = 0.0; vBack = 0.0; vGold = 0.0;
             gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
             return;
           }
@@ -654,7 +654,9 @@ export class World {
           p.y = hs * sin(ang) / th;
           p.xz += bd * hs * (1.0 - cos(ang)) / th;
           vec3 w = vec3(wp.x, h, wp.y) + p;
-          vW = w; vT = t; vGust = gust * t;
+          vT = t; vGust = gust * t;
+          // cloud shadows and fog change over many metres, so each blade takes them at its joints
+          vShadeFog = vec2(mix(1.0, 0.68, cloudShadow(w.xz, uTime)), smoothstep(uFogNear, uFogFar, length(cameraPosition - w)));
           // light each blade by the slope under it; shady sides turn blue-green
           float e = 2.0 / uSize;
           float hl = texture2D(uHeight, uv - vec2(e, 0.0)).r, hr = texture2D(uHeight, uv + vec2(e, 0.0)).r;
@@ -677,17 +679,14 @@ export class World {
           gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
         }`,
       fragmentShader: `
-        uniform vec3 uFog, uSunCol; uniform float uFogNear, uFogFar, uLight, uTime; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
-        ${NOISE_GLSL}
+        uniform vec3 uFog, uSunCol; uniform float uLight; varying vec3 vCol; varying float vT; varying vec2 vShadeFog; varying float vGust; varying float vBack; varying float vGold;
         void main(){
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
           col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
           col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
-          col *= mix(1.0, 0.68, cloudShadow(vW.xz, uTime));
-          col *= uLight;
-          float d = length(cameraPosition - vW);
-          col = mix(col, uFog, smoothstep(uFogNear, uFogFar, d));
+          col *= vShadeFog.x * uLight;
+          col = mix(col, uFog, vShadeFog.y);
           gl_FragColor = vec4(col, 1.0);
         }`,
     });
