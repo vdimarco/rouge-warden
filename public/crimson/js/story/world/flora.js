@@ -7,7 +7,7 @@
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { toonRamp } from '../../render.js';
 import { NOISE_GLSL } from './terrain.js';
-import { N, CELL, HALF, TGRID, TCELL, MASK, MPX } from './gen.worker.js';
+import { N, CELL, HALF, TGRID, TCELL, MASK, MPX, fromHalf, walkAt } from './gen.worker.js';
 
 const lin = (v) => Math.pow(v, 2.2);
 function mulberry(a) { return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -190,7 +190,7 @@ function grassGeo(THREE, count, P, seed) {
 }
 
 /* ------------------------------------------------------------------ the flora */
-export function* createFlora(S, { THREE, group, shared, data, H, types, mask, net, colliders }) {
+export function* createFlora(S, { THREE, group, shared, data, H, types, ground, colliders }) {
   const root = new THREE.Group(); root.name = 'flora'; group.add(root);
   const R = mulberry(51);
   const toon = (o) => new THREE.MeshToonMaterial({ gradientMap: toonRamp, ...o });
@@ -256,20 +256,22 @@ export function* createFlora(S, { THREE, group, shared, data, H, types, mask, ne
     bbox = n;
   }
 
-  // grass: a height texture (half float) and a density texture from the surface types and the road mask
+  // grass: a height texture (half float) and a density texture from the surface types and the ground mask
   const hd = new Uint16Array((N + 1) * (N + 1));
   for (let k = 0; k < hd.length; k++) hd[k] = THREE.DataUtils.toHalfFloat(H[k]);
   const heightTex = new THREE.DataTexture(hd, N + 1, N + 1, THREE.RedFormat, THREE.HalfFloatType);
   heightTex.minFilter = heightTex.magFilter = THREE.LinearFilter; heightTex.needsUpdate = true;
-  const DS = 512, dens = new Uint8Array(DS * DS), TD = [0, 0.15, 0.12, 0.3, 0, 1];
+  const DS = 512, dens = new Uint8Array(DS * DS), TD = [0, 0.15, 0.12, 0.3, 0, 1], G = 2000 / DS;
   yield;
+  // no grass within one density texel (3.9 m; the map filters linearly) of a road's asphalt or a sidewalk, nor
+  // within 2 m of a lot, so no tuft ever reaches the paint
   for (let j = 0; j < DS; j++) for (let i = 0; i < DS; i++) {
     if (i === 0 && j % 128 === 0) yield;
     const x = (i + 0.5) / DS * 2000 - HALF, z = (j + 0.5) / DS * 2000 - HALF;
     const t = types[Math.min(TGRID - 1, Math.floor((z + HALF) / TCELL)) * TGRID + Math.min(TGRID - 1, Math.floor((x + HALF) / TCELL))];
-    const mk = (Math.min(MASK - 1, Math.floor((z + HALF) / MPX)) * MASK + Math.min(MASK - 1, Math.floor((x + HALF) / MPX))) * 4, id = mask[mk + 1];
+    const mk = (Math.min(MASK - 1, Math.floor((z + HALF) / MPX)) * MASK + Math.min(MASK - 1, Math.floor((x + HALF) / MPX))) * 4;
     let v = TD[t];
-    if (id) { const ad = Math.abs(mask[mk] / 255 * 2 - 1) * 8; if (id >= 100 ? mask[mk] < 150 : ad < net.roads[id - 1].hw + 1.2) v = 0; }
+    if (fromHalf(ground[mk]) < G + 1 || walkAt(ground, mk) < G + 0.5 || fromHalf(ground[mk + 1]) < 2) v = 0;
     dens[j * DS + i] = v * 255;
   }
   const densTex = new THREE.DataTexture(dens, DS, DS, THREE.RedFormat); densTex.minFilter = densTex.magFilter = THREE.LinearFilter; densTex.needsUpdate = true;

@@ -3,7 +3,7 @@
 // the terrain worker imports it to grade the ground and draw the road mask, and sedona.js wraps it as
 // S.world.roads. x,z in meters, +x east, -z north. Traffic drives on the right: lane +1 is the right of the
 // road's forward direction, lane -1 the left (driven the other way).
-import { PLACES, point, up } from './places.js';
+import { PLACES, point, up, STRIPS, STRIP_WALK, stripSkip } from './places.js';
 
 // width: full asphalt or dirt width; flat: extra flat ground each side (towns, lots); lanes: 2 two-way, 1 one-way;
 // surface: asphalt | dirt; speed: the limit in m/s; rails: guardrails; bridges: [{a, b, y, id}] flat decks.
@@ -11,7 +11,8 @@ import { PLACES, point, up } from './places.js';
 export const ROADS = Object.freeze([
   { id: 'y_ring', name: 'THE Y', ring: { x: 60, z: 40, r: 17 }, width: 9, lanes: 1, surface: 'asphalt', speed: 9, flat: 6 },
   { id: 'a89w', name: '89A WEST', pts: [[-1010, 172], [-880, 160], [-650, 140], [-380, 110], [-150, 72], [-40, 55], [43, 43]], width: 10, lanes: 2, surface: 'asphalt', speed: 16, flat: 8 },
-  { id: 'a89u', name: '89A UPTOWN', pts: [[73, 27], [120, -8], [225, -88], [318, -160]], width: 11, lanes: 2, surface: 'asphalt', speed: 12, flat: 10, sidewalk: true },
+  // (Uptown's main street runs straight along places.js UPTOWN from x 120, so the storefronts and the walks line up)
+  { id: 'a89u', name: '89A UPTOWN', pts: [[73, 27], [120, -10.3], [150, -33], [234, -96.5], [318, -160]], width: 11, lanes: 2, surface: 'asphalt', speed: 12, flat: 10, sidewalk: true },
   { id: 'a89c', name: '89A CANYON', pts: [[318, -160], [340, -206], [372, -262], [400, -330], [416, -400], [425, -455], [428.3, -491.7], [431.7, -528.3], [435, -565], [445, -606], [470, -650], [500, -690], [502, -740], [497, -800], [510, -880], [548, -950], [566, -1010]], width: 8, lanes: 2, surface: 'asphalt', speed: 14, flat: 2, rails: true, bridges: [{ id: 'midgley', a: [425, -455], b: [435, -565], y: 62 }] },
   { id: 'r179', name: 'SR 179', pts: [[72, 57], [150, 130], [182, 300], [236, 500], [240, 620], [232, 760], [208, 880], [180, 1010]], width: 9, lanes: 2, surface: 'asphalt', speed: 15, flat: 3, bridges: [{ id: 'r179_bridge', a: [150, 130], b: [160, 176], y: null }] },
   { id: 'airport', name: 'AIRPORT RD', pts: [[-130, 67], [-136, 140], [-146, 208], [-196, 262], [-244, 300]], width: 7, lanes: 2, surface: 'asphalt', speed: 11, flat: 3 },
@@ -31,7 +32,25 @@ export const ROADS = Object.freeze([
   { id: 'lot_bar', name: 'BAR LOT', pts: [up(0.6, 4), up(0.6, 13)], width: 7, lanes: 2, surface: 'asphalt', speed: 5, flat: 5 },
   { id: 'lot_airstream', name: 'AIRSTREAM', pts: [[-540, -150], [-541, -168]], width: 6, lanes: 2, surface: 'dirt', speed: 4, flat: 4 },
 ]);
-// Parking lots and yards: painted as ground (asphalt or dirt) in the terrain shader. Rectangles.
+// A rectangle beside the chord a->b of a shop strip: from lateral l0 to l1 m to the strip's side, t0..t1 along it
+// (lotDist's local x runs along the chord)
+function beside(st, l0, l1, t0, t1, o) {
+  const L = Math.hypot(st.b[0] - st.a[0], st.b[1] - st.a[1]), dx = (st.b[0] - st.a[0]) / L, dz = (st.b[1] - st.a[1]) / L, nx = -dz * st.side, nz = dx * st.side;
+  const tm = (t0 + t1) / 2, lm = (l0 + l1) / 2, r1 = (v) => Math.round(v * 100) / 100;
+  return { x: r1(st.a[0] + dx * L * tm + nx * lm), z: r1(st.a[1] + dz * L * tm + nz * lm), w: r1(L * (t1 - t0)), d: r1(l1 - l0), yaw: Math.atan2(-dz, dx), ...o };
+}
+// the stretches of a strip that have shops (whole slots), merged: [[t0, t1]]
+function stripRuns(st) {
+  const out = [];
+  for (let i = 0; i < st.n; i++) {
+    if (stripSkip(st, (i + 0.5) / st.n)) continue;
+    const last = out[out.length - 1];
+    if (last && Math.abs(last[1] - i / st.n) < 1e-9) last[1] = (i + 1) / st.n; else out.push([i / st.n, (i + 1) / st.n]);
+  }
+  return out;
+}
+// Parking lots and yards: painted as ground (asphalt or dirt) in the terrain shader. Rectangles. The strips' parking
+// aprons (apron: true) run from inside the road to just under the walk; stalls: painted bays along the walk.
 export const LOTS = Object.freeze([
   { x: -620, z: 172, w: 44, d: 30, yaw: 0, surface: 'asphalt' }, { x: -470, z: 150, w: 36, d: 24, yaw: 0, surface: 'asphalt' },
   { x: -560, z: 82, w: 50, d: 22, yaw: 0, surface: 'asphalt' }, { x: -300, z: 145, w: 40, d: 20, yaw: 0, surface: 'asphalt' },
@@ -42,7 +61,46 @@ export const LOTS = Object.freeze([
   { x: -40, z: 540, w: 18, d: 14, yaw: 0, surface: 'dirt' }, { x: 890, z: 60, w: 22, d: 16, yaw: 0, surface: 'dirt' },
   { x: -140, z: 210, w: 16, d: 12, yaw: 0.6, surface: 'asphalt' }, { x: -250, z: 316, w: 50, d: 24, yaw: 0.7, surface: 'asphalt' },
   { x: 230, z: 690, w: 10, d: 8, yaw: 0, surface: 'dirt' }, { x: -248, z: 546, w: 24, d: 16, yaw: 0.1, surface: 'dirt' },
-]);
+  ...STRIPS.flatMap((st) => stripRuns(st).map(([t0, t1]) => beside(st, st.apron, st.setback - STRIP_WALK + 0.3, t0, t1, { surface: 'asphalt', apron: true, stalls: true }))),
+].map((l) => Object.freeze(l)));
+// Sidewalks: concrete painted by the terrain shader (paint only: S.world.surface stays the ground under them, so
+// walkers and cars stand where they always did). A road walk runs along both edges of a road between the points
+// nearest a and b, from `from` to `to` m past the kerb; a line walk is a band beside a polyline, from `from` to `to`
+// m to one side (side +1 the right of travel, as places.js counts it; 0 both sides, which suits only a narrow
+// path: the mask keeps each walk's two edges as separate distances), square at its ends.
+export const WALKS = Object.freeze([
+  // Uptown: both sides of 89A from the edge of town to the canyon road, out to the storefronts and porches (8.4 m;
+  // the walk tucks 0.1 m under them)
+  { id: 'uptown', road: 'a89u', a: [120, -10.3], b: [318, -160], from: 0, to: 3 },
+  // the strips: along the shop fronts where there are shops (the fronts stand at the setback; the walk tucks 0.1 m
+  // under them), so no walk runs out across open ground in a strip's gaps
+  ...STRIPS.flatMap((st, i) => stripRuns(st).map(([t0, t1], k) => {
+    const pt = (t) => [st.a[0] + (st.b[0] - st.a[0]) * t, st.a[1] + (st.b[1] - st.a[1]) * t];
+    return { id: `${st.district}${i}_${k}`, line: [pt(t0), pt(t1)], side: st.side, from: st.setback - STRIP_WALK, to: st.setback + 0.1 };
+  })),
+  // Red Rock Plaza: a forecourt from its shop fronts (z 56.5) out to its lot
+  { id: 'west_plaza', line: [[-582.5, 56.4], [-537.5, 56.4]], side: 1, from: 0, to: 14.8 },
+  // Uptown's south-east side between the storefronts (t 0.4 to 0.72): a forecourt out to the bar's porch and the
+  // bar lot, so no dirt shows between the walk and the Rattlesnake Room, the lot or the Sunburst depot
+  // (it starts under the rock shop's porch, so its corner with the street's walk is out of sight)
+  { id: 'uptown_bar', line: [up(0.386, 0), up(0.718, 0)], side: 1, from: 8.2, to: 12.3 },
+  // the Moonrise Diner: a 4 m walk along its front (x 143.5), round both ends and back along its sides
+  { id: 'diner', line: [[143.4, 920.1], [143.4, 939.9]], side: -1, from: -0.5, to: 4 },
+  { id: 'diner_n', line: [[143.9, 922.2], [131.4, 922.2]], side: 1, from: 0, to: 2.6 },
+  { id: 'diner_s', line: [[143.9, 937.8], [131.4, 937.8]], side: -1, from: 0, to: 2.6 },
+].map((w) => Object.freeze(w)));
+// West Sedona's street trees (young cottonwoods, their crowns clear over the walk: [x, z, scale, yaw]): two a shop
+// along each strip's walk, in pits 0.55 m in from its kerb edge, either side of the gaps between the shops (the
+// flora scatter plants them, gen.worker.js)
+export const STREET_TREES = Object.freeze(STRIPS.flatMap((st) => (st.district !== 'west' ? [] : stripRuns(st).flatMap(([t0, t1]) => {
+  const L = Math.hypot(st.b[0] - st.a[0], st.b[1] - st.a[1]), dx = (st.b[0] - st.a[0]) / L, dz = (st.b[1] - st.a[1]) / L, nx = -dz * st.side, nz = dx * st.side;
+  const l = st.setback - STRIP_WALK + 0.55, out = [];
+  for (let i = Math.round(t0 * st.n); i < Math.round(t1 * st.n); i++) for (const f of [0.2, 0.8]) {
+    const t = (i + f) / st.n, h = Math.abs(Math.sin((st.a[0] + i * 7.1 + f * 3.3) * 12.9898) * 43758.5453) % 1;
+    out.push(Object.freeze([Math.round((st.a[0] + dx * L * t + nx * l) * 100) / 100, Math.round((st.a[1] + dz * L * t + nz * l) * 100) / 100, 0.6 + 0.1 * h, h * Math.PI * 2]));
+  }
+  return out;
+}))));
 export const LANE_OFFSET = 2.6;
 
 /* ------------------------------------------------------------------ smoothing */
@@ -69,6 +127,8 @@ function catmull(pts, step, straight) {
   const e = pts[pts.length - 1]; out.push({ x: e[0], z: e[1] });
   return out;
 }
+// a road's line from its points (no bridge spans), as buildNetwork smooths it
+export const smoothLine = (pts) => catmull(pts, 4, () => false);
 const onSeg = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2; return t > -0.01 && t < 1.01 && Math.abs((p[0] - a[0]) * dz - (p[1] - a[1]) * dx) / Math.sqrt(L2) < 0.5; };
 
 /* ------------------------------------------------------------------ the network */
@@ -139,7 +199,24 @@ export function buildNetwork() {
     if (r.lanes === 1) lanes.push({ id: `${r.id}+1`, road: r.id, lane: 0, dir: 1, offset: 0, speed: r.speed, len: r.len, closed: r.closed, surface: r.surface });
     else for (const lane of [1, -1]) lanes.push({ id: `${r.id}${lane > 0 ? '+' : '-'}1`, road: r.id, lane, dir: lane, offset: LANE_OFFSET * lane, speed: r.speed, len: r.len, closed: r.closed, surface: r.surface });
   }
-  return { roads, byId, nodes, edges, adj, joins, hash, cell, lanes };
+  // the walks, ready for the mask: a road walk's s range (kept 2 m inside the road's ends, so it ends square), or
+  // a line walk's segments
+  const walks = WALKS.map((w) => {
+    if (w.road) {
+      const r = byId[w.road], sa = project(r, w.a[0], w.a[1]).s, sb = project(r, w.b[0], w.b[1]).s;
+      return { id: w.id, road: r, s0: Math.max(2, Math.min(sa, sb)), s1: Math.min(r.len - 2, Math.max(sa, sb)), from: w.from, to: w.to };
+    }
+    const segs = [];
+    for (let i = 0; i < w.line.length - 1; i++) {
+      const [ax, az] = w.line[i], [bx, bz] = w.line[i + 1], len = Math.hypot(bx - ax, bz - az);
+      // the street it fronts (a lined road within 30 m of its middle), whose grading keeps it level
+      let road = null, best = 30;
+      for (const r of roads) { if (r.surface !== 'asphalt' || r.id.startsWith('lot_') || r.closed) continue; const q = project(r, (ax + bx) / 2, (az + bz) / 2); if (q.d < best) { best = q.d; road = r; } }
+      segs.push({ ax, az, bx, bz, dx: (bx - ax) / len, dz: (bz - az) / len, len, side: w.side, from: w.from, to: w.to, road });
+    }
+    return { id: w.id, segs, from: w.from, to: w.to };
+  });
+  return { roads, byId, nodes, edges, adj, joins, hash, cell, lanes, walks };
 }
 
 // closest point on a road to (x,z): {s, x, z, d, i, side} (side: +1 right of forward, -1 left)

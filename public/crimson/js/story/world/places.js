@@ -8,7 +8,8 @@ export const WORLD = Object.freeze({ SCALE: 1, HALF: 1000, SEED: 51 }); // SCALE
 
 const P = (x, z, r = 8, yaw = 0, o = null) => Object.freeze({ x, z, r, yaw, ...(o || {}) });
 // Uptown's main street as a straight line: up(t, off) is t (0..1) along it from the Y end and off meters to
-// the side (+ south-east, - north-west). The storefronts stand 8.4 m out, behind the sidewalks.
+// the side (+ south-east, - north-west). The storefronts stand 8.4 m out, behind the sidewalks (a wooden one
+// stands PORCH m further back, its porch out to 8.4 m).
 export const UPTOWN = Object.freeze({ a: [150, -33], b: [318, -160], yaw: Math.atan2(168, -127) });
 const UL = Math.hypot(UPTOWN.b[0] - UPTOWN.a[0], UPTOWN.b[1] - UPTOWN.a[1]), UD = [(UPTOWN.b[0] - UPTOWN.a[0]) / UL, (UPTOWN.b[1] - UPTOWN.a[1]) / UL], UN = [-UD[1], UD[0]];
 export const up = (t, off) => [Math.round((UPTOWN.a[0] + UD[0] * UL * t + UN[0] * off) * 10) / 10, Math.round((UPTOWN.a[1] + UD[1] * UL * t + UN[1] * off) * 10) / 10];
@@ -131,6 +132,30 @@ export const PADS = Object.freeze([
 ].map((p) => Object.freeze(p)));
 
 /* ------------------------------------------------------------------ the town layout */
+// Shop strips on the highways (West Sedona on 89A, the Village of Oak Creek on SR 179): n shops along a straight
+// chord from a to b, set back `setback` m to one side (side +1 is the right of a->b); skip lists the stretches (t
+// along the chord) left empty. roads.js lays a STRIP_WALK wide sidewalk along the shop fronts (the crowd's lines
+// run down its middle) and a parking apron from `apron` m out to the walk, in front of the shops. West Sedona's
+// shops stand where they always stood (20 m back); street trees line the walk's kerb edge (gen.worker.js).
+export const STRIP_WALK = 3;
+// a wooden storefront's porch: its roof, posts and boardwalk reach PORCH m out from the front wall
+export const PORCH = 1.8;
+const ST = (district, a, b, side, setback, n, skip, apron) => Object.freeze({ district, a: Object.freeze(a), b: Object.freeze(b), side, setback, n, skip: Object.freeze(skip.map((s) => Object.freeze(s))), apron });
+export const STRIPS = Object.freeze([
+  // West Sedona, north of 89A (gaps for Coffee Pot Dr and Red Rock Plaza's frontage), then south of it (a gap
+  // for the motel and its lot)
+  ST('west', [-420, 116], [-660, 146], 1, 20, 11, [[0.36, 0.74]], 4),
+  ST('west', [-240, 90], [-420, 116], 1, 20, 8, [], 3),
+  ST('west', [-180, 76], [-390, 108], -1, 20, 9, [[0.42, 0.78]], 3),
+  ST('west', [-680, 146], [-880, 164], -1, 20, 8, [], 0),
+  // the Village, both sides of SR 179 (the chords lie on the road; a gap on the west for the diner and its lot)
+  ST('village', [225.4, 800], [208, 880], 1, 12, 3, [], 2.5),
+  ST('village', [208, 880], [186, 985], 1, 12, 4, [[0.3, 0.72]], 2.5),
+  ST('village', [225.4, 800], [208, 880], -1, 12, 3, [], 2.5),
+  ST('village', [208, 880], [186, 985], -1, 12, 4, [], 2.5),
+]);
+export const stripSkip = (st, t) => st.skip.some(([a, b]) => t > a && t < b);
+
 // Every building as a footprint, so the worker keeps trees off them and town.js builds them. Deterministic.
 // style: stucco | adobe | wood | block | metal; sign: an atlas key or null.
 function mulberry(a) { return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -140,24 +165,27 @@ function buildLayout() {
   const GENERIC = ['gallery', 'cafe', 'rockshop', 'outfitter', 'tacos', 'books', 'icecream', 'trading', 'crystals', 'realty', 'pizza', 'bank', 'pharmacy', 'hardware'];
   let g = 0;
   const gen = () => GENERIC[(g++) % GENERIC.length];
-  // a row of shops along a street from a to b, set back s meters on one side (side +1 is the road's right)
-  function row(district, ax, az, bx, bz, side, setback, n, skip, style, depth = 12) {
+  // a row of shops along a street from a to b, set back s meters on one side (side +1 is the road's right); with
+  // porch, a wooden storefront stands PORCH m further back, so its porch (town.js) ends at the setback
+  function row(district, ax, az, bx, bz, side, setback, n, skip, style, depth = 12, porch = false) {
     const L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L, rx = -dz * side, rz = dx * side;
     const yaw = Math.atan2(-rx, -rz); // front faces the road
     for (let i = 0; i < n; i++) {
       const t = (i + 0.5) / n; if (skip && skip(t)) continue;
       const w = L / n - 2 - R() * 3, d = depth + R() * 5, h = 4.5 + R() * 3.5;
-      const x = ax + dx * L * t + rx * (setback + d / 2), z = az + dz * L * t + rz * (setback + d / 2);
-      out.push(B(district, Math.round(x * 10) / 10, Math.round(z * 10) / 10, Math.max(7, w), d, h, yaw, typeof style === 'function' ? style(i) : style, R() < 0.8 ? gen() : null));
+      const sty = typeof style === 'function' ? style(i) : style, sb = setback + (porch && sty === 'wood' ? PORCH : 0), r1 = (v) => Math.round(v * 10) / 10;
+      const at = (s) => [r1(ax + dx * L * t + rx * (s + d / 2)), r1(az + dz * L * t + rz * (s + d / 2))], [x, z] = at(sb);
+      // (was: where it stood before it made room for its porch; the flora scatter still keeps clear of it there)
+      out.push(B(district, x, z, Math.max(7, w), d, h, yaw, sty, R() < 0.8 ? gen() : null, sb > setback ? { porch: PORCH, was: Object.freeze(at(setback)) } : null));
     }
   }
   // Uptown: two rows of storefronts along the main street, ten slots a side; the named shops take theirs.
   // South-east: the bar (set back behind a patio), its lot, the jeep lot and the Sunburst depot.
   const [ua, ub] = [UPTOWN.a, UPTOWN.b], slot = (i) => (i + 0.5) / 10;
-  row('uptown', ua[0], ua[1], ub[0], ub[1], 1, 8.4, 10, (t) => t > 0.4 && t < 0.8, (i) => (i % 3 === 0 ? 'wood' : i % 3 === 1 ? 'adobe' : 'stucco'));
-  row('uptown', ua[0], ua[1], ub[0], ub[1], -1, 8.4, 10, (t) => Math.abs(t - slot(2)) < 0.01, (i) => (i % 2 ? 'wood' : 'stucco'));
+  row('uptown', ua[0], ua[1], ub[0], ub[1], 1, 8.4, 10, (t) => t > 0.4 && t < 0.8, (i) => (i % 3 === 0 ? 'wood' : i % 3 === 1 ? 'adobe' : 'stucco'), 12, true);
+  row('uptown', ua[0], ua[1], ub[0], ub[1], -1, 8.4, 10, (t) => Math.abs(t - slot(2)) < 0.01, (i) => (i % 2 ? 'wood' : 'stucco'), 12, true);
   const ub1 = (t, off, w, d, h, yaw, style, sign, extra) => { const [x, z] = up(t, off); out.push(B('uptown', x, z, w, d, h, yaw, style, sign, extra)); };
-  ub1(0.25, -(8.4 + 5.5), 13, 11, 7.5, UO, 'wood', 'mask');
+  ub1(0.25, -(8.4 + PORCH + 5.5), 13, 11, 7.5, UO, 'wood', 'mask', { porch: PORCH, was: Object.freeze(up(0.25, -(8.4 + 5.5))) });
   ub1(0.47, 14 + 6, 16, 12, 6, UO + Math.PI, 'wood', 'rattle', { door: true });
   ub1(0.75, 8.4 + 5, 14, 10, 5.5, UO + Math.PI, 'metal', 'sunburst');
   // West Sedona: the rental lot, the gas station, the plaza, the motel and a strip of shops on 89A
@@ -167,11 +195,12 @@ function buildLayout() {
   out.push(B('west', -548, 50, 11, 13.2, 6, 0, 'stucco', 'sunline'));
   out.push(B('west', -300, 170, 40, 10, 5, Math.PI, 'stucco', 'motel', { motel: true }));
   out.push(B('west', -326, 150, 10, 26, 5, Math.PI / 2, 'stucco'));
-  // (gaps for Coffee Pot Dr, the plaza's frontage and lot, the motel and its lot, Dry Creek Rd)
-  row('west', -420, 116, -660, 146, 1, 20, 11, (t) => (t > 0.36 && t < 0.47) || (t > 0.47 && t < 0.74), (i) => (i % 3 ? 'stucco' : 'block'), 11);
-  row('west', -240, 90, -420, 116, 1, 20, 8, null, (i) => (i % 2 ? 'stucco' : 'adobe'), 11);
-  row('west', -180, 76, -390, 108, -1, 20, 9, (t) => t > 0.42 && t < 0.78, (i) => (i % 2 ? 'adobe' : 'stucco'), 11);
-  row('west', -680, 146, -880, 164, -1, 20, 8, null, (i) => (i % 2 ? 'block' : 'stucco'), 11);
+  // the strips (STRIPS): gaps for Coffee Pot Dr, the plaza's frontage and lot, the motel and its lot
+  const strip = (k, style) => { const st = STRIPS[k]; row(st.district, st.a[0], st.a[1], st.b[0], st.b[1], st.side, st.setback, st.n, st.skip.length ? (t) => stripSkip(st, t) : null, style, 11); };
+  strip(0, (i) => (i % 3 ? 'stucco' : 'block'));
+  strip(1, (i) => (i % 2 ? 'stucco' : 'adobe'));
+  strip(2, (i) => (i % 2 ? 'adobe' : 'stucco'));
+  strip(3, (i) => (i % 2 ? 'block' : 'stucco'));
   // the Y and the arts village by the SR 179 bridge
   out.push(B('y', 20, 70, 14, 12, 5, 2.2, 'adobe', gen()));
   out.push(B('y', 112, 58, 12, 12, 5, -0.75, 'adobe', gen()));
@@ -182,10 +211,10 @@ function buildLayout() {
   // the Village of Oak Creek: the diner and a few neighbours
   out.push(B('village', 138, 930, 16, 11, 5, Math.PI / 2, 'metal', 'diner'));
   // shops along SR 179 either side (a gap on the west for the diner and its lot)
-  row('village', 230, 800, 208, 880, 1, 13, 3, null, (i) => (i % 2 ? 'stucco' : 'adobe'), 11);
-  row('village', 208, 880, 186, 985, 1, 13, 4, (t) => t > 0.3 && t < 0.72, 'adobe', 11);
-  row('village', 230, 800, 208, 880, -1, 13, 3, null, 'block', 11);
-  row('village', 208, 880, 186, 985, -1, 13, 4, null, (i) => (i % 3 ? 'stucco' : 'block'), 11);
+  strip(4, (i) => (i % 2 ? 'stucco' : 'adobe'));
+  strip(5, 'adobe');
+  strip(6, 'block');
+  strip(7, (i) => (i % 3 ? 'stucco' : 'block'));
   // the airport on the mesa top
   out.push(B('airport', -262, 320, 18, 10, 5, 0.7, 'block', 'airport'));
   out.push(B('airport', -226, 338, 22, 16, 7, 0.7, 'metal', null));

@@ -9,7 +9,7 @@
 // Also exports Geo, the small geometry builder the bridge and the interiors use.
 import { toonRamp } from '../../render.js';
 import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
-import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, up } from './places.js';
+import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
 
 const lin = (v) => Math.pow(v, 2.2);
@@ -206,11 +206,18 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
       if (b.style === 'wood') {
         const [x, z] = lp(0, b.d / 2 - 0.2);
         box(g, x, base + b.h, z, b.w, 1.8, 0.4, b.yaw, col);
-        // porch roof, posts and boardwalk
-        const [px2, pz2] = lp(0, b.d / 2 + 1.3);
-        box(g, px2, base + 3.3, pz2, b.w, 0.18, 2.6, b.yaw, TRIM);
-        for (const lx of [-b.w / 2 + 0.3, b.w / 2 - 0.3]) { const [qx, qz] = lp(lx, b.d / 2 + 2.4); box(g, qx, base, qz, 0.18, 3.3, 0.18, b.yaw, TRIM); }
-        box(g, px2, base - 0.5, pz2, b.w, 0.72, 2.6, b.yaw, [0.52, 0.4, 0.3]);
+        // porch roof, posts and boardwalk, PORCH m deep (Uptown's wooden storefronts stand back so it ends at the
+        // sidewalk's back edge)
+        const [rx2, rz2] = lp(0, b.d / 2 + PORCH / 2);
+        box(g, rx2, base + 3.3, rz2, b.w, 0.18, PORCH, b.yaw, TRIM);
+        for (const lx of [-b.w / 2 + 0.3, b.w / 2 - 0.3]) { const [qx, qz] = lp(lx, b.d / 2 + PORCH - 0.25); box(g, qx, base, qz, 0.18, 3.3, 0.18, b.yaw, TRIM); }
+        // the boardwalk steps with the street's grade in sections about 6 m long, so no end of it is buried
+        const nsec = Math.max(1, Math.round(b.w / 6)), sw = b.w / nsec;
+        for (let k = 0; k < nsec; k++) {
+          const l0 = -b.w / 2 + k * sw, hs = [l0, l0 + sw].map((lx) => { const [qx, qz] = lp(lx, b.d / 2 + PORCH); return height(qx, qz); });
+          const top = Math.max(...hs) + 0.18, bot = Math.min(...hs) - 0.5, [qx, qz] = lp(l0 + sw / 2, b.d / 2 + (PORCH - 0.05) / 2);
+          box(g, qx, bot, qz, sw, top - bot, PORCH - 0.05, b.yaw, [0.52, 0.4, 0.3]);
+        }
       } else if (b.style !== 'metal') {
         for (const [lx, lz, w, d] of [[0, b.d / 2 - 0.15, b.w, 0.3], [0, -b.d / 2 + 0.15, b.w, 0.3], [b.w / 2 - 0.15, 0, 0.3, b.d], [-b.w / 2 + 0.15, 0, 0.3, b.d]]) {
           const [x, z] = lp(lx, lz); box(g, x, base + b.h, z, w, 0.7, d, b.yaw, col.map((v) => v * 0.92));
@@ -273,11 +280,13 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   yield;
   // street lamps along Uptown and the Y; the Uptown clock
   const lampAt = (g, x, z, yaw) => { const y = height(x, z); g.cyl([x, y - 0.5, z], [x, y + 5.2, z], 0.1, 0.07, 6, DARK); const hx = x + Math.sin(yaw) * 0.9, hz = z + Math.cos(yaw) * 0.9; g.cyl([x, y + 5.1, z], [hx, y + 5.2, hz], 0.05, 0.05, 4, DARK); lamps.push([hx, y + 5.0, hz]); colliders.addCircle(x, z, 0.2, { y0: y - 1, y1: y + 5, tag: 'post' }); };
-  { const r = net.byId.a89u; for (let s = 20; s < r.len - 10; s += 26) for (const side of [-1, 1]) { const p = at(r, s), rx = -Math.cos(p.yaw) * side, rz = Math.sin(p.yaw) * side; lampAt(geo('uptown'), p.x + rx * 6.2, p.z + rz * 6.2, Math.atan2(-rx, -rz)); } }
+  // (Uptown's stand on its sidewalks, 0.7 m in from the kerb)
+  const upWalk = net.walks.find((w) => w.road === net.byId.a89u);
+  { const r = net.byId.a89u; for (let s = upWalk.s0 + 6; s < upWalk.s1 - 4; s += 26) for (const side of [-1, 1]) { const p = at(r, s), rx = -Math.cos(p.yaw) * side, rz = Math.sin(p.yaw) * side; lampAt(geo('uptown'), p.x + rx * 6.2, p.z + rz * 6.2, Math.atan2(-rx, -rz)); } }
   { const r = net.byId.a89w; for (let s = 380; s < 900; s += 48) { const p = at(r, s), rx = -Math.cos(p.yaw), rz = Math.sin(p.yaw); lampAt(geo('west'), p.x + rx * 7.5, p.z + rz * 7.5, Math.atan2(-rx, -rz)); } }
   { const g = geo('uptown'), p = PLACES.uptown_clock, y = height(p.x, p.z); g.cyl([p.x, y - 0.3, p.z], [p.x, y + 3.6, p.z], 0.16, 0.12, 8, [0.2, 0.26, 0.24]); box(g, p.x, y + 3.6, p.z, 1.1, 1.1, 0.4, p.yaw, [0.2, 0.26, 0.24], { front: [0.95, 0.93, 0.88], back: [0.95, 0.93, 0.88] }); colliders.addCircle(p.x, p.z, 0.3, { tag: 'post' }); }
-  // benches and planters in Uptown
-  { const g = geo('uptown'), r = net.byId.a89u; for (let s = 33; s < r.len - 10; s += 52) { const p = at(r, s), rx = -Math.cos(p.yaw), rz = Math.sin(p.yaw), x = p.x + rx * 7.3, z = p.z + rz * 7.3, y = height(x, z); box(g, x, y, z, 1.8, 0.5, 0.5, p.yaw + Math.PI / 2, [0.45, 0.3, 0.2]); box(g, x - rz * 3, y, z + rx * 3, 1.1, 0.7, 1.1, 0, [0.62, 0.38, 0.26], { top: [0.3, 0.36, 0.32] }); } }
+  // benches and planters in Uptown, in the kerb-side strip with the lamps (the crowd walks 6.75 m out)
+  { const g = geo('uptown'), r = net.byId.a89u; for (let s = upWalk.s0 + 19; s < upWalk.s1 - 4; s += 52) { const p = at(r, s), rx = -Math.cos(p.yaw), rz = Math.sin(p.yaw), x = p.x + rx * 6.0, z = p.z + rz * 6.0, y = height(x, z); box(g, x, y, z, 1.8, 0.5, 0.5, p.yaw + Math.PI / 2, [0.45, 0.3, 0.2]); box(g, x - rz * 3, y, z + rx * 3, 0.8, 0.7, 0.8, p.yaw, [0.62, 0.38, 0.26], { top: [0.3, 0.36, 0.32] }); } }
   { // the Midgley lot: picnic tables, a trash can, the trailhead board
     const g = geo('canyon'), p = PLACES.midgley_lot;
     for (const [dx, dz] of [[-12, 8], [-6, 12], [10, 10]]) { const x = p.x + dx, z = p.z + dz, y = height(x, z); picnic(g, x, y, z, R() * 3); colliders.addBox({ x, z, w: 2, d: 1.8, y0: y - 1, top: y + 0.8, tag: 'table' }); }
