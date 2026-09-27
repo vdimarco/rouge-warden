@@ -51,7 +51,8 @@ export function createInput(S) {
   let pad = null, padFed = false, padPrev = [], padAxes = [0, 0, 0, 0], padTrig = [0, 0], padHits = new Set();
   const mouse = { held: new Set(), hits: new Set(), dx: 0, dy: 0, wheel: 0, locked: false, hadLock: false, swallow: false };
   // the touch layer writes here (touch.js)
-  const touch = { held: new Set(), hits: new Set(), stick: { x: 0, y: 0 }, steer: 0, dx: 0, dy: 0, zoom: 0 };
+  // (tiltX, tiltY: radians of view turn from tilt.js, right and down)
+  const touch = { held: new Set(), hits: new Set(), stick: { x: 0, y: 0 }, steer: 0, dx: 0, dy: 0, zoom: 0, tiltX: 0, tiltY: 0 };
   let qa = null, forced = null;
   let prev = new Set(), now = new Set(), pressedNow = new Set();
   const bufT = {};
@@ -117,7 +118,7 @@ export function createInput(S) {
     set(actions) { qa = { ...(qa || {}), ...actions }; },
     clear() {
       qa = null; keyHeld.clear(); keyHits.clear(); padHits.clear(); mouse.held.clear(); mouse.hits.clear(); mouse.dx = mouse.dy = mouse.wheel = 0;
-      touch.held.clear(); touch.hits.clear(); touch.stick.x = touch.stick.y = 0; touch.steer = 0; touch.dx = touch.dy = touch.zoom = 0;
+      touch.held.clear(); touch.hits.clear(); touch.stick.x = touch.stick.y = 0; touch.steer = 0; touch.dx = touch.dy = touch.zoom = 0; touch.tiltX = touch.tiltY = 0;
       for (const k of Object.keys(bufT)) delete bufT[k];
       prev = new Set(); now = new Set(); pressedNow = new Set();
     },
@@ -178,7 +179,11 @@ export function createInput(S) {
     realT += raw || 0;
     const lx = (mouse.dx * MOUSE_RAD + touch.dx * TOUCH_RAD) / RATE / dt, ly = (mouse.dy * MOUSE_RAD * 0.85 + touch.dy * TOUCH_RAD * 0.8) / RATE / dt;
     mouse.dx = mouse.dy = 0; touch.dx = touch.dy = 0;
-    axes.look.x = dz(padAxes[2]) + lx; axes.look.y = dz(padAxes[3]) + ly;
+    // tilt (tilt.js): its turn as a rate, kept under the right stick's lock-flick line (0.9) so tilting alone
+    // never flicks the lock; what is over goes out on the next ticks
+    const td = RATE * dt, tx = Math.max(-0.85, Math.min(0.85, touch.tiltX / td)), ty = Math.max(-1.5, Math.min(1.5, touch.tiltY / td));
+    touch.tiltX -= tx * td; touch.tiltY -= ty * td;
+    axes.look.x = dz(padAxes[2]) + lx + tx; axes.look.y = dz(padAxes[3]) + ly + ty;
     // the wheel and a pinch zoom, as rates in stick units (a full stick is about ln 2 per 0.7 s): one wheel
     // notch is a quarter second of full zoom; a pinch follows the fingers (touch.zoom is ln of the spread)
     axes.zoom.y += (mouse.wheel * -0.0025 + touch.zoom) / dt;

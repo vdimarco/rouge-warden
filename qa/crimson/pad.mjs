@@ -7,7 +7,7 @@
 // 6. Driving: RT is the gas, the left stick steers, LT brakes, Y gets out.
 // 7. Holding A for 0.8 s skips a cine.
 // No page errors.
-import { open, step, stepUntil, finish } from "./lib.mjs";
+import { open, step, stepUntil, finish, freeRoam } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -26,6 +26,7 @@ const A = 0, B = 1, Y = 3, LT = 6, RT = 7, BACK = 8, START = 9, UP = 12, DOWN = 
 
 const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1" && __crimson.story.mode === "play" && !__crimson.story.S.test.ui.card, { maxSec: 60 });
 check(r.ok, "the story reaches f1");
+check((await freeRoam(page)).ok, "free roam: F1's mission quit, nothing modal");
 await step(page, 0.3);
 
 /* ---------------- 1: the stick, and pad prompts ---------------- */

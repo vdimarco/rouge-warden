@@ -31,8 +31,9 @@ export const PALETTE = g({
   signCream: 0xece0c4, signRed: 0x9a2a22, signTeal: 0x2a6a6a, signOrange: 0xd87a2a, signBrown: 0x5a3a26, trim: 0x3a2e28,
   neonSignOff: 0x5a5a5a, fence: 0x8a7a68, barbedWire: 0x5a5a58, cairnStone: 0xa89888, tent: 0xd8ccb4,
   // vehicles (all code-built)
-  vanWhite: 0xe8e6e2, vanGlass: 0x1c2226, vanTrim: 0x2a2a2c, jeepTangerine: 0xf08a24, jeepRoll: 0x2a2a2a,
-  suvBlack: 0x1a1c1e, fbiBlack: 0x16181c, pickupRed: 0x7a2a22, pickupDust: 0x9a8a78, sedanBlue: 0x3a4a6a, sedanSilver: 0xa4a6aa,
+  vanWhite: 0xe8e6e2, vanGlass: 0x1c2226, vanTrim: 0x2a2a2c, jeepTangerine: 0xe8741e, jeepRoll: 0x2a2a2a,
+  suvBlack: 0x23262b, fbiBlack: 0x1e222a, pickupRed: 0x7a2a22, pickupDust: 0x9a8a78, sedanBlue: 0x3a4a6a, sedanSilver: 0xa4a6aa,
+  glassTop: 0x6a7a88, glassLow: 0x28323a, rim: 0x9ea2a8, indicator: 0xd8862a, // glass: sky above, road below
   sedanBrown: 0x6a4a36, rvCream: 0xe0d4bc, rvStripe: 0x8a4a2a, tire: 0x1c1c1c, chrome: 0xc8ccd0, tailLight: 0xb01010,
   headlight: 0xfff1d8, lightBarRed: 0xd01818, lightBarBlue: 0x1830d0, licensePlate: 0xe0dcd0,
   // people: skin, hair and clothes

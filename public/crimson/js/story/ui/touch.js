@@ -8,6 +8,8 @@
 //           slow) and AUTO (holds the gas). A passenger gets EXIT and 写 only.
 //   photo:  SHOOT and 写 (put the phone away); a pinch zooms, a drag aims.
 //   menu, none: no buttons (dialogue and cards take taps; in a cine, holding a finger down skips).
+// TILT (tilt.js) sits by the pause button in every play set, only on touch hardware that can tilt: a tap
+// turns the tilt look on or off, a double tap recentres it.
 // On foot the left 45% is a thumb stick and the rest drags the camera. A free tap is a light attack only
 // when an enemy is within 12 m; a tap on the minimap opens the map. Sizes use --u and the safe areas, as
 // the arena's touch buttons do.
@@ -19,8 +21,10 @@ const BTN = [
   ['gas', '進', 'GAS', ['gas'], 'act'], ['brake', '退', 'BRAKE', ['brake'], 'act'], ['drift', '滑', 'DRIFT', ['handbrake'], 'act'], ['horn', '笛', 'HORN', ['horn'], 'act'],
   ['exit', '降', 'EXIT', ['exit', 'use'], 'act'], ['auto', '自', 'AUTO', [], 'act'],
   ['shoot', '撮', 'SHOOT', ['shutter'], 'act'], ['close', '写', 'CLOSE', ['camera'], 'act'],
-  ['pause', '止', '', ['pause'], 'sys'],
+  ['pause', '止', '', ['pause'], 'sys'], ['tilt', '傾', 'TILT', [], 'sys'],
 ];
+import { createTilt } from './tilt.js';
+
 const TAP_MOVE = 30, ATTACK_R = 12, COMBAT_R = 20;
 
 export function createTouch(U, { hud, mini, dlg, cards }) {
@@ -38,6 +42,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     btns[id] = { el: b, acts, id, down: false };
   }
   let forced = null, cur = 'none', skipT = 0;
+  const tilt = createTilt(U);
 
   /* ---------------- buttons ---------------- */
   const capture = (el, e) => { try { el.setPointerCapture(e.pointerId); } catch (err) { /* touch pointers are captured anyway */ } };
@@ -47,10 +52,12 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
       e.preventDefault(); e.stopPropagation(); capture(b, e);
       b.classList.add('down'); B.down = true; I.device = 'touch';
       if (B.id === 'pause') { if (S.ui.menu && S.mode === 'play') S.ui.menu.open(); return; }
+      if (B.id === 'tilt') return; // it acts on the lift (iOS asks for motion access only from a touchend)
       if (B.id === 'auto') { if (S.drive) S.drive.autoGas = !S.drive.autoGas; b.classList.toggle('on', !!(S.drive && S.drive.autoGas)); return; }
       for (const a of B.acts) { T.held.add(a); T.hits.add(a); }
     });
     const up = () => { b.classList.remove('down'); if (!B.down) return; B.down = false; for (const a of B.acts) T.held.delete(a); };
+    if (B.id === 'tilt') b.addEventListener('pointerup', () => { if (B.down) { tilt.tap(); b.classList.toggle('on', tilt.on); } });
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
     b.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -127,7 +134,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     if (used && e.cancelable) e.preventDefault();
   }, { passive: false });
   layer.addEventListener('touchmove', (e) => { for (const t of e.changedTouches) move('t' + t.identifier, t.clientX, t.clientY); if (e.cancelable) e.preventDefault(); }, { passive: false });
-  layer.addEventListener('touchend', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, true); }, { passive: false });
+  layer.addEventListener('touchend', (e) => { tilt.gesture(); for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, true); }, { passive: false });
   layer.addEventListener('touchcancel', (e) => { for (const t of e.changedTouches) end('t' + t.identifier, t.clientX, t.clientY, false); });
   // a pen or a mouse on the layer (touch goes through the touch events above)
   layer.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' || e.target.closest('button')) return; e.preventDefault(); capture(layer, e); start(e.pointerId, e.clientX, e.clientY); });
@@ -164,11 +171,12 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
       if (!v || Math.abs(v.speed) < 4) on.add('exit');
     }
     if (set === 'photo') { on.add('shoot'); on.add('close'); }
-    if (set !== 'menu' && set !== 'none' && S.mode === 'play') on.add('pause');
+    if (set !== 'menu' && set !== 'none' && S.mode === 'play') { on.add('pause'); if (tilt.supported) on.add('tilt'); }
     return on;
   }
   let lastKey = '';
   return {
+    tilt,
     set(name) { forced = name && name !== 'auto' ? name : null; },
     get current() { return cur; },
     visibleButtons() { return Object.values(btns).filter((B) => !B.el.classList.contains('hidden') && B.el.classList.contains('act')).map((B) => B.id); },
@@ -199,6 +207,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
         steer.classList.toggle('hidden', !(cur === 'drive' && want.has('gas')));
         if (!want.has('gas') && T.steer) T.steer = 0;
       }
+      if (want.has('tilt')) btns.tilt.el.classList.toggle('on', tilt.on);
       if (want.has('auto')) btns.auto.el.classList.toggle('on', !!(S.drive && S.drive.autoGas));
       if (want.has('use')) { const l = (hud.promptLabel || 'USE').split(' ')[0].toUpperCase().slice(0, 6); const sm = btns.use.el.querySelector('small'); if (sm.textContent !== l) sm.textContent = l; }
       // the hold-to-skip ring (every device shows it while the skip is held in a cine)

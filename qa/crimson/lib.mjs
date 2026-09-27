@@ -71,6 +71,14 @@ export async function loop(page, ticks, fn, arg = null, { chunk = 600 } = {}) {
   return { ticks: done, stopped: false };
 }
 
+// Leave the chapter's mission for free roam (the sandbox the package tests play in): read every line
+// through, skip the cine, quit the mission, and step until play goes on with nothing modal or locked.
+// (With the real MISSIONS and content, ?chapter=f1 opens on F1's chapter card, intro cine and talk.)
+export async function freeRoam(page, { maxSec = 10 } = {}) {
+  await page.evaluate(() => { const S = __crimson.story.S; S.ui.advanceAll(); if (S.cine.active) S.cine.skip(); S.missions.quit(); });
+  return stepUntil(page, () => { const S = __crimson.story.S; if (S.modal) S.ui.advanceAll(); return S.mode === "play" && !S.freeze && !S.modal && !S.cine.active && !S.lockControl && S.world.visible && !S.missions.active; }, { maxSec });
+}
+
 // Step game time until pred() is true in the page, letting real time pass between chunks (the story
 // module and its assets load on real time). Returns { ok, sec } with the seconds of game time stepped.
 export async function stepUntil(page, pred, { maxSec = 60, chunk = 0.25, realMs = 25 } = {}) {

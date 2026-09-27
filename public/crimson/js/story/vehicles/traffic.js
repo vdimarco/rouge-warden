@@ -6,7 +6,8 @@
 //   contact, a car is a full physics vehicle driven by pure pursuit (C7).
 // - IDM-style following with a 2 s gap; yield at the Y ring (2.5 s gap); honk after 2 s blocked; stop
 //   for 2 s after a collision.
-// - Drawn by the instanced batch in meshes.js (a few draws for every car together).
+// - Drawn by the instanced batch in meshes.js (one draw per kind and one for all the wheels; cars out of
+//   view are left out each frame).
 import * as THREE from 'three';
 import { TRAFFIC, specOf } from './specs.js';
 import { Path, drive } from './drivers.js';
@@ -350,14 +351,15 @@ export function createTraffic(S, V) {
       }
     }
   }
-  function draw(night) {
+  // cam: cars out of its view (and of shadow reach) are left out of the batch this frame
+  function draw(night, cam) {
     if (!batch) return;
     for (const v of cars) {
       const h = v.handle; if (!h) continue;
       h.pose = h.pose || {};
       Object.assign(h.pose, { x: v.pos.x, y: v.pos.y, z: v.pos.z, yaw: v.yaw, pitch: -v.susp.slopeP + v.susp.pitch, roll: v.susp.slopeR + v.susp.roll, steer: v.steerAngle, spin: v.spin, lift: v.susp.lift });
     }
-    batch.update(night);
+    batch.update(night, cam);
   }
   function clear() { for (const v of [...cars]) remove(v); holds.clear(); }
   const api = {

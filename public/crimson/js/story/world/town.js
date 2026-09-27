@@ -3,9 +3,12 @@
 // (fictional names only), and the props: the gas canopy and pumps, the Canyon Fleet lot of identical white
 // vans, the Sunburst jeeps, street lamps, the Uptown clock, picnic tables, cairns, guardrails, the Creekside
 // A-frame (the wild cabin.glb) with its deck, hot tub and kayak, Gabe's code-built Airstream, trailhead
-// outhouses (wild outhouse.glb, instanced) and the Hart Ranch with its gate and floodlights.
+// outhouses (wild outhouse.glb, instanced, only those in view written each frame) and the Hart Ranch with its gate
+// and floodlights. The parked fleet vans and tour jeeps are the vehicles package's own bodies, set flat on
+// their four wheels, each lot its own mesh drawn only near the camera.
 // Also exports Geo, the small geometry builder the bridge and the interiors use.
 import { toonRamp } from '../../render.js';
+import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
 import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, up } from './places.js';
 import { at } from './roads.js';
 
@@ -90,6 +93,17 @@ export class Geo {
       this.c.push(lin(cc[0]), lin(cc[1]), lin(cc[2])); this.uv.push(uv[0], uv[1]);
     }
     if (g.index) for (let k = 0; k < g.index.count; k++) this.i.push(base + g.index.getX(k)); else for (let k = 0; k < p.count; k++) this.i.push(base + k);
+  }
+  // a geometry that carries its own colours (already linear), transformed by a matrix
+  baked(g, m) {
+    const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color, e = m.elements, base = this.v;
+    for (let k = 0; k < p.count; k++) {
+      const x = p.getX(k), y = p.getY(k), z = p.getZ(k), nx = n.getX(k), ny = n.getY(k), nz = n.getZ(k);
+      this.p.push(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]);
+      const ox = e[0] * nx + e[4] * ny + e[8] * nz, oy = e[1] * nx + e[5] * ny + e[9] * nz, oz = e[2] * nx + e[6] * ny + e[10] * nz, l = Math.hypot(ox, oy, oz) || 1;
+      this.n.push(ox / l, oy / l, oz / l); this.c.push(c.getX(k), c.getY(k), c.getZ(k)); this.uv.push(UV.white[0], UV.white[1]);
+    }
+    for (let k = 0; k < g.index.count; k++) this.i.push(base + g.index.getX(k));
   }
   build(THREE) {
     const g = new THREE.BufferGeometry();
@@ -244,14 +258,17 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     const sx = p.x + 16, sz = p.z - 20; box(g, sx, y - 1, sz, 0.35, 7, 0.35, 0, [0.5, 0.5, 0.5]); box(g, sx, y + 6, sz, 5.4, 1.2, 0.2, Math.PI, WHITE, { uv: { front: signUV('gas'), back: signUV('gas') } });
   }
   const pumpPoints = pumps.map((q) => ({ x: q.x + 1.6 * (q.side || 1), z: q.z, yaw: 0 }));
-  { // Canyon Fleet: a row of identical white 15-passenger vans (static)
-    const g = geo('west'), p = PLACES.canyon_fleet;
-    for (let k = 0; k < 8; k++) { const x = p.x - 17 + k * 4.8, z = p.z + 4, y = height(x, z); van(g, x, y, z, Math.PI, [0.93, 0.93, 0.92]); colliders.addBox({ x, z, w: 2.05, d: 6, yaw: Math.PI, y0: y - 1, top: y + 2.6, tag: 'parked' }); }
-    const y = height(p.x - 24, p.z - 14); box(g, p.x - 24, y - 1, p.z - 14, 0.3, 6, 0.3, 0, [0.45, 0.45, 0.45]); box(g, p.x - 24, y + 5, p.z - 14, 5.4, 1.2, 0.2, Math.PI, WHITE, { uv: { front: signUV('fleet'), back: signUV('fleet') } });
+  // the parked bodies are built first, each in its own slice (the main thread stays under 50 ms a slice)
+  yield; staticVehicleGeometry('whitevan'); yield; staticVehicleGeometry('jeep'); yield;
+  { // Canyon Fleet: a row of identical white 15-passenger vans (the white van's own body, parked)
+    const g = geo('fleet'), p = PLACES.canyon_fleet;
+    for (let k = 0; k < 8; k++) { const x = p.x - 17 + k * 4.8, z = p.z + 4, y = parked(g, 'whitevan', x, z, Math.PI); colliders.addBox({ x, z, w: 2.05, d: 6, yaw: Math.PI, y0: y - 1, top: y + 2.6, tag: 'parked' }); }
+    const y = height(p.x - 24, p.z - 14); box(geo('west'), p.x - 24, y - 1, p.z - 14, 0.3, 6, 0.3, 0, [0.45, 0.45, 0.45]); box(geo('west'), p.x - 24, y + 5, p.z - 14, 5.4, 1.2, 0.2, Math.PI, WHITE, { uv: { front: signUV('fleet'), back: signUV('fleet') } });
   }
+  yield;
   { // Sunburst Jeep Tours: tangerine open jeeps at the depot
-    const g = geo('uptown'), jy = UPTOWN_OUT + Math.PI; // noses to the street
-    for (let k = 0; k < 3; k++) { const [x, z] = up(0.645 + k * 0.016, 16), y = height(x, z); jeep(g, x, y, z, jy, [0.93, 0.46, 0.12]); colliders.addBox({ x, z, w: 1.8, d: 4, yaw: jy, y0: y - 1, top: y + 2, tag: 'parked' }); }
+    const g = geo('sunburst'), jy = UPTOWN_OUT + Math.PI; // noses to the street
+    for (let k = 0; k < 3; k++) { const [x, z] = up(0.645 + k * 0.016, 16), y = parked(g, 'jeep', x, z, jy); colliders.addBox({ x, z, w: 1.8, d: 4, yaw: jy, y0: y - 1, top: y + 2, tag: 'parked' }); }
   }
   yield;
   // street lamps along Uptown and the Y; the Uptown clock
@@ -381,9 +398,13 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   // one mesh per district
   const districts = {};
   for (const [name, g] of geos) { const m = new THREE.Mesh(g.build(THREE), material); m.name = `town_${name}`; m.castShadow = true; m.receiveShadow = true; m.userData.kind = 'town'; root.add(m); districts[name] = m; }
+  // the parked lots are small: each is its own mesh, drawn only within LOT_VIEW m of the camera
+  const LOT_VIEW = 300, lots = ['fleet', 'sunburst'].map((k) => districts[k]).filter(Boolean);
+  for (const m of lots) { m.userData.managed = true; m.geometry.computeBoundingSphere(); }
 
   /* the GLB models: the A-frame cabin, the kayak and the outhouses */
   const glb = { done: false, cabin: null, kayak: null, outhouses: null };
+  let outhouseCull = null;
   const outhouseAt = [PLACES.midgley_lot, PLACES.boynton, PLACES.bell_cairn, PLACES.schnebly_vista, { x: -40, z: 540 }].map((p, i) => ({ x: p.x + (i ? -8 : -20), z: p.z + (i ? 8 : -12), yaw: i * 1.3 }));
   for (const o of outhouseAt) colliders.addBox({ x: o.x, z: o.z, w: 2.1, d: 2.1, yaw: o.yaw, y0: height(o.x, o.z) - 1, top: height(o.x, o.z) + 3.2, tag: 'outhouse' });
   colliders.addBox({ x: AF.x, z: AF.z, w: 9.5, d: 12.5, yaw: afYaw, y0: height(AF.x, AF.z) - 1, top: height(AF.x, AF.z) + 9, tag: 'cabin' });
@@ -400,9 +421,22 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
         const h = fit(outhouse, { height: 3.25, rot: -Math.PI / 2 }); h.updateMatrixWorld(true);
         let mesh = null; h.traverse((m) => { if (m.isMesh && !mesh) mesh = m; });
         if (mesh) {
-          const inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, outhouseAt.length), m = new THREE.Matrix4();
-          outhouseAt.forEach((o, i) => { m.makeRotationY(o.yaw).setPosition(o.x, height(o.x, o.z), o.z).multiply(mesh.matrixWorld); inst.setMatrixAt(i, m); });
-          inst.name = 'outhouses'; inst.castShadow = true; inst.userData.kind = 'town'; root.add(inst); glb.outhouses = inst;
+          // one instanced mesh, but only the outhouses in view (or near enough to throw a shadow into it) are
+          // written each frame (they stand kilometres apart: drawing all five wherever the camera looks costs
+          // triangles and shadows for nothing)
+          const inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, outhouseAt.length);
+          const mats = outhouseAt.map((o) => new THREE.Matrix4().makeRotationY(o.yaw).setPosition(o.x, height(o.x, o.z), o.z).multiply(mesh.matrixWorld));
+          const spheres = mats.map((m) => { const s = new THREE.Sphere(); mesh.geometry.computeBoundingSphere(); s.copy(mesh.geometry.boundingSphere).applyMatrix4(m); return s; });
+          inst.name = 'outhouses'; inst.castShadow = true; inst.userData.kind = 'town'; inst.userData.managed = true; inst.count = 0; inst.visible = false;
+          const fr = new THREE.Frustum(), pm = new THREE.Matrix4();
+          outhouseCull = (cam) => {
+            cam.updateMatrixWorld(); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
+            let n = 0;
+            mats.forEach((m, i) => { if (fr.intersectsSphere(spheres[i]) || spheres[i].center.distanceTo(cam.position) < 40) inst.setMatrixAt(n++, m); });
+            inst.count = n; inst.visible = n > 0 && root.visible; inst.instanceMatrix.needsUpdate = true;
+            if (n) inst.computeBoundingSphere();
+          };
+          root.add(inst); glb.outhouses = inst;
         }
       }
       glb.done = true;
@@ -410,20 +444,17 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   }).catch((e) => { console.warn('[world] the model loader failed', e && e.message); glb.done = true; });
 
   function poolTexture(T) { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,240,210,0.55)'); gr.addColorStop(0.5, 'rgba(255,230,190,0.22)'); gr.addColorStop(1, 'rgba(255,220,180,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t; }
-  function van(g, x, y, z, yaw, col) {
-    const c = Math.cos(yaw), s = Math.sin(yaw), lp = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
-    box(g, x, y + 0.45, z, 2.0, 2.05, 5.9, yaw, col);
-    { const [hx, hz] = lp(0, 3.3); box(g, hx, y + 0.45, hz, 1.9, 0.95, 0.9, yaw, col); }
-    { const [wx, wz] = lp(0, 2.96); box(g, wx, y + 1.45, wz, 1.84, 0.8, 0.05, yaw, [0.14, 0.16, 0.19]); }
-    for (const lz of [-1.8, -0.2, 1.4]) for (const side of [-1, 1]) { const [wx, wz] = lp(side * 1.01, lz); box(g, wx, y + 1.45, wz, 0.05, 0.62, 1.2, yaw, [0.14, 0.16, 0.19]); }
-    for (const lz of [-1.95, 2.0]) for (const side of [-1, 1]) { const [wx, wz] = lp(side * 0.95, lz); g.cyl([wx - c * 0.12, y + 0.4, wz + s * 0.12], [wx + c * 0.12, y + 0.4, wz - s * 0.12], 0.4, 0.4, 8, DARK); }
-  }
-  function jeep(g, x, y, z, yaw, col) {
-    const c = Math.cos(yaw), s = Math.sin(yaw), lp = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
-    box(g, x, y + 0.45, z, 1.75, 0.8, 3.9, yaw, col);
-    { const [hx, hz] = lp(0, 1.4); box(g, hx, y + 1.25, hz, 1.6, 0.5, 0.06, yaw, [0.16, 0.16, 0.18]); }
-    { const [bx, bz] = lp(0, -0.4); g.cyl([bx - c * 0.8, y + 1.2, bz + s * 0.8], [bx - c * 0.8, y + 2.1, bz + s * 0.8], 0.05, 0.05, 4, DARK); g.cyl([bx + c * 0.8, y + 1.2, bz - s * 0.8], [bx + c * 0.8, y + 2.1, bz - s * 0.8], 0.05, 0.05, 4, DARK); g.cyl([bx - c * 0.8, y + 2.1, bz + s * 0.8], [bx + c * 0.8, y + 2.1, bz - s * 0.8], 0.05, 0.05, 4, DARK); }
-    for (const lz of [-1.25, 1.25]) for (const side of [-1, 1]) { const [wx, wz] = lp(side * 0.9, lz); g.cyl([wx - c * 0.14, y + 0.4, wz + s * 0.14], [wx + c * 0.14, y + 0.4, wz - s * 0.14], 0.4, 0.4, 8, DARK); }
+  // a parked vehicle (the vehicles package's low-detail body) on its four wheels: the ground under each wheel
+  // sets its height, pitch and roll. Returns the height at its centre.
+  function parked(g, kind, x, z, yaw) {
+    const c = Math.cos(yaw), s = Math.sin(yaw), W = wheelSpots(kind);
+    const h = W.map(([lx, lz]) => height(x + lx * c + lz * s, z - lx * s + lz * c)); // front left, front right, rear left, rear right
+    const hx = W[0][0], hz = (W[0][1] - W[2][1]) / 2;
+    const pitch = Math.atan2((h[0] + h[1]) / 2 - (h[2] + h[3]) / 2, 2 * hz), roll = Math.atan2((h[0] + h[2]) / 2 - (h[1] + h[3]) / 2, 2 * hx);
+    const y = (h[0] + h[1] + h[2] + h[3]) / 4;
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitch, yaw, roll, 'YXZ')), new THREE.Vector3(1, 1, 1));
+    g.baked(staticVehicleGeometry(kind), m);
+    return y;
   }
   function picnic(g, x, y, z, yaw) {
     const W = [0.5, 0.38, 0.26];
@@ -449,6 +480,8 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     root, material, districts, glb, pumps: pumpPoints, ranch: ranchApi, atlas, hotTub,
     // night: 0 day .. 1 night. Windows and lamps glow; the ranch floodlights burn while it has power.
     update(night, t) {
+      if (outhouseCull && S.camera) outhouseCull(S.camera);
+      if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = S.camera.position.distanceTo(b.center) - b.radius < LOT_VIEW; }
       material.emissiveIntensity = night * 0.9;
       lampMat.color.setRGB(0.23 + night * 0.9, 0.21 + night * 0.72, 0.2 + night * 0.46);
       const lit = ranchOn ? 1 : 0;

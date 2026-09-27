@@ -1,6 +1,6 @@
 // The seam between the arena and the story, played through the page as a player would:
 // 1. NEW STORY opens on the time card with the bridge silhouette; the win hands over to the story 2.0 s
-//    later (on stepped game time) and records a best time; c0 and i0 lead to f1 with no skipping; the
+//    later (on stepped game time) and records a best time; c0 and i0 (about 62 s of cines) lead to f1 with no skipping; the
 //    arena is hidden, Sedona shows, the depth range is 0.3/2600 and the save is written at f1.
 //    Esc and SAVE & QUIT return to the title with CONTINUE and its summary, and the arena comes back.
 // 2. After a reload, CONTINUE resumes at f1 without the fight. Autopilot then finishes f1 and e1, the
@@ -51,7 +51,7 @@ const quitToTitle = async (page) => {
   let r = await stepUntil(page, () => __crimson.story.chapter === "c0", { maxSec: 5 });
   let s = await state(page);
   check(r.ok && s.arena && s.smode === "play", `the cold open c0 plays in the arena (chapter ${s.chapter}, arena ${s.arena})`);
-  r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 });
   s = await state(page);
   check(r.ok, `no skip: c0 and i0 lead to f1 (${r.sec} s)`);
   check(!s.arena && s.sedona, "the arena is hidden and Sedona shows");
@@ -83,7 +83,7 @@ const quitToTitle = async (page) => {
   await page.evaluate(() => dispatchEvent(new Event("pagehide")));
   const kept = (await page.evaluate(() => localStorage.getItem("crimson.story.v1"))) === saved;
   check(booting === "boot" && kept, `a hide while CONTINUE loads leaves the save alone (mode ${booting}, save ${kept ? "kept" : "rewritten"})`);
-  r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 20 });
+  r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 40 });
   s = await state(page);
   check(r.ok && s.state === "story" && !s.fightStarted, `CONTINUE resumes at f1 without the fight (${s.chapter})`);
   check(!s.arena && s.sedona, "CONTINUE hides the arena and shows Sedona");
@@ -119,7 +119,7 @@ const quitToTitle = async (page) => {
 /* ---------------- 3: ?chapter=f1 and ?mission=f1&step=3 ---------------- */
 {
   const { browser, page, errors } = await open({ query: "?chapter=f1&seed=7&nomusic" });
-  const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 20 });
+  const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 40 });
   const s = await state(page);
   check(r.ok && s.state === "story" && !s.fightStarted && !s.arena, `?chapter=f1 jumps into f1 without the fight (${s.chapter})`);
   errs.push(...errors);
@@ -127,7 +127,7 @@ const quitToTitle = async (page) => {
 }
 {
   const { browser, page, errors } = await open({ query: "?mission=f1&step=3&seed=7&nomusic" });
-  const r = await stepUntil(page, () => __crimson.story && __crimson.story.mission && __crimson.story.mission.id === "f1", { maxSec: 20 });
+  const r = await stepUntil(page, () => __crimson.story && __crimson.story.mission && __crimson.story.mission.id === "f1", { maxSec: 40 });
   const m = await page.evaluate(() => __crimson.story.mission && { ...__crimson.story.mission, chapter: __crimson.story.chapter });
   check(r.ok && m.step === 3 && m.type === "drive" && m.chapter === "f1", `?mission=f1&step=3 starts f1 at its drive step (${m && m.type} ${m && m.step})`);
   errs.push(...errors);
@@ -138,7 +138,7 @@ const quitToTitle = async (page) => {
   const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "c0" && __crimson.story.mode === "play", { maxSec: 20, chunk: 1 / 60, realMs: 5 });
   let s = await state(page);
   check(r.ok && s.arena && !s.sedona && s.depth[0] === 0.1 && s.depth[1] === 3000, `?chapter=c0 plays the cold open in the arena (arena ${s.arena}, sedona ${s.sedona}, depth ${s.depth})`);
-  const r2 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  const r2 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 });
   s = await state(page);
   check(r2.ok && !s.arena && s.sedona, `then i0 swaps to Sedona and f1 starts (arena ${s.arena}, sedona ${s.sedona})`);
   errs.push(...errors);
@@ -180,7 +180,7 @@ const quitToTitle = async (page) => {
     const card = await page.evaluate(() => __crimson.story && __crimson.story.S.test.ui.card);
     check(s.state === "story" && !s.end && !s.arena, `the skip hides the death card and the arena (end ${s.end}, arena ${s.arena})`);
     check(card === "THE BEAR YIELDS", `the skip opens on THE BEAR YIELDS (${card})`);
-    const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 20 });
+    const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 60 }); // i0 plays its 34 s in full
     s = await state(page);
     check(r.ok && !s.end, `the skip path reaches f1 by way of i0 (${s.chapter})`);
     const ronin = await page.evaluate(() => __crimson.player.state);
@@ -206,7 +206,7 @@ const quitToTitle = async (page) => {
   check(k === 120 && !t0.loaded && !t1.loaded && t1.time - t0.time > 0.9, `while the story loads after a win, the arena plays on (game time ${t0.time.toFixed(2)} to ${t1.time.toFixed(2)})`);
   release();
   await page.waitForFunction(() => __crimson.storyLoaded, null, { timeout: 120000, polling: 100 });
-  const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 });
   check(r.ok, `once it arrives, the story runs the cold open and reaches f1 (${r.sec} s)`);
   errs.push(...errors);
   await browser.close();

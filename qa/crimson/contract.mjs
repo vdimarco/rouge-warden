@@ -60,7 +60,7 @@ function report(label, r) {
   const r = await stepUntil(page, () => __crimson.game.state === "story" && __crimson.story.ready, { maxSec: 30 });
   const real = (Date.now() - t0) / 1000;
   check(r.ok && real <= 30, `S.ready within 30 s after the win (${r.sec} s stepped, ${real.toFixed(1)} s real)`);
-  const f1 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  const f1 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 }); // c0 (28 s) and i0 (34 s) play in full
   const save = await page.evaluate(() => JSON.parse(localStorage.getItem("crimson.story.v1") || "null"));
   const bad = T.validateSave(save);
   check(f1.ok && bad.length === 0, `the save written at f1 fits SaveV1${bad.length ? ": " + bad.join("; ") : ""}`);
@@ -107,7 +107,8 @@ function report(label, r) {
   });
   await step(page, 0.2);
   const caught = await page.evaluate(() => ({ card: __crimson.story.S.test.ui.card, caught: window.__qaCaught }));
-  check(!caught.card && /qa-deliberate/.test(caught.caught), `a child's error that its parent catches shows no card (card ${caught.card})`);
+  check(caught.card !== "SOMETHING WENT WRONG." && /qa-deliberate/.test(caught.caught), // (content may show its own cards here)
+     `a child's error that its parent catches shows no card (card ${caught.card})`);
   await page.evaluate(() => __crimson.story.S.co.start((function* orphan() { yield null; throw new Error("qa-deliberate orphan error"); })(), "qa:orphan"));
   await step(page, 0.1);
   const orphan = await page.evaluate(() => __crimson.story.S.test.ui.card);
@@ -174,7 +175,7 @@ for (const [flag, label] of runs) {
     if (flag === "stub=all") check(Object.values(out.pkgs).every((v) => v === "stub"), `${label}: every package came from stubs/`);
     else { const pkg = flag.slice(5); check(out.pkgs[pkg] === "real" && Object.entries(out.pkgs).every(([k, v]) => k === pkg || v === "stub"), `${label}: only ${pkg} is real`); }
     report(label, out);
-    const f1 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+    const f1 = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 }); // c0 (28 s) and i0 (34 s) play in full
     check(f1.ok, `${label}: i0 leads to f1`);
   }
   errs.push(...errors);

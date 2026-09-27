@@ -16,7 +16,7 @@
 // - props, the costume, every pose, the vortex parts, locomotion, LOD, the crowd and the followers work;
 //   SAVE & QUIT puts the arena actors back.
 // Pass --shots to save pictures to /tmp/cast_*.png.
-import { open, step, stepUntil, storyReady, canvasRGBA, shot, finish, writePNG } from "./lib.mjs";
+import { open, step, stepUntil, storyReady, canvasRGBA, shot, finish, writePNG, freeRoam } from "./lib.mjs";
 import { readFileSync, readdirSync, existsSync } from "fs";
 
 const fails = [];
@@ -56,6 +56,7 @@ const { browser, page, errors } = await open({ query: "?chapter=f1&seed=7&nomusi
 const r = await storyReady(page);
 check(r.ok, `the story is ready (${r.sec} s stepped)`);
 await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+check((await freeRoam(page)).ok, "free roam: F1's mission quit, nothing modal");
 await step(page, 1);
 
 // the placeholder: ryu is not in the core cast, so he is not loaded yet
@@ -370,6 +371,8 @@ check(cr.dive && dv > 1.2, `dive() sidesteps a pedestrian clear in 0.4 s (${dv.t
 check(cr.flee >= 1, `scatter() sends nearby people running (${cr.flee})`);
 const fo = await page.evaluate(() => {
   const S = __crimson.story.S, H = S.hero;
+  // (the chapter's crew already follows the hero in free roam: send them off so these two take the first slots)
+  for (const e of S.cast.followers.list.slice()) { S.cast.followers.remove(e.a); e.a.visible = false; }
   const f = [S.cast.spawn("shades", { pos: { x: H.pos.x + 3, z: H.pos.z } }), S.cast.spawn("redjersey", { pos: { x: H.pos.x - 3, z: H.pos.z } })];
   f.forEach((a) => S.cast.followers.add(a));
   window.__f = f;

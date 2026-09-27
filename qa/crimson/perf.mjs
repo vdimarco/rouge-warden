@@ -7,7 +7,7 @@
 // - the fixed light set (C5): turning the headlights, the points and the looks on and off never adds a
 //   shader program (renderer.info.programs).
 // It uses whatever world is merged (the stub or the real one). --shots saves a picture per viewpoint.
-import { open, step, stepUntil, storyReady, canvasRGBA, finish, writePNG } from "./lib.mjs";
+import { open, step, stepUntil, storyReady, canvasRGBA, finish, writePNG, freeRoam } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "ok   " : "FAIL ") + msg); if (!ok) fails.push(msg); };
@@ -20,7 +20,11 @@ for (const q of TIERS) {
   const r = await storyReady(page);
   check(r.ok, `q=${q}: the story is ready (${r.sec} s stepped)`);
   await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  // the world's budgets, measured as before content: free roam, and the chapter's crew (four friends that
+  // follow the hero to every viewpoint, about 12k triangles each) sent off
+  check((await freeRoam(page)).ok, `q=${q}: free roam, F1's mission quit`);
   await step(page, 1);
+  await page.evaluate(() => { const S = __crimson.story.S; for (const e of S.cast.followers.list.slice()) { S.cast.followers.remove(e.a); e.a.visible = false; } });
   const setup = await page.evaluate(async () => {
     const S = __crimson.story.S, T = S.THREE;
     const R = await import(new URL("js/render.js", location.href).href);

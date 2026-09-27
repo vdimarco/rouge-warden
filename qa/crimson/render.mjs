@@ -15,7 +15,7 @@ if (AFTER) {
   await step(page, 1);
   await page.waitForFunction(() => __crimson.storyLoaded, null, { timeout: 120000, polling: 100 });
   await page.evaluate(() => __crimson.win());
-  const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 40 });
+  const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1", { maxSec: 90 }); // c0 (28 s) and i0 (34 s) play in full
   if (!r.ok) fails.push("NEW STORY did not reach f1");
   await step(page, 3);
   await page.keyboard.press("Escape");
