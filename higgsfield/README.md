@@ -33,10 +33,17 @@ npm run gen -- alibaba/qwen-image-3/edit \
 
 ## How a run behaves
 
-- Progress and errors go to stderr. Output URLs go to stdout. They stay valid for at least 7 days.
+- Progress and errors go to stderr. Output URLs go to stdout, all of them before any download starts.
+  They stay valid for at least 7 days.
+- Saved files never overwrite a file: a taken name gets `_2`, `_3` and so on. A failed download still
+  exits 1, after it names the URL and the request id.
 - The exit code is 0 only when the request completes with an output. A failed, moderated (`nsfw`)
   or canceled request, or a timeout, exits 1 and names the request id.
 - The request is sent once. The SDK's own retries are off, so an error cannot start a second paid job.
 - The key goes only to api.higgsfield.ai. Uploads and downloads use the storage URLs without it.
-  No message prints it, even with `DEBUG` set.
+  No message prints it, even with `DEBUG` set. With `NODE_DEBUG` set for http, https, net or tls,
+  Node itself would print it, so the tools refuse to send.
+- If a submit gets no clear answer (a reset, a timeout or a 5xx), the API may still have taken the job.
+  Check https://open.higgsfield.ai before you run it again.
+- The npm scripts use `--use-env-proxy`, so every call goes through `HTTPS_PROXY` when it is set.
 - Model inputs are on each model's page: `https://open.higgsfield.ai/models/<model>/api-reference`.

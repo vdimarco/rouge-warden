@@ -10,7 +10,7 @@
 //   npm run gen -- kling-video/v3.0/pro/image-to-video '{"prompt":"slow push in","image_url":"@frame.png"}' --out out --name shot1
 // Use `npm run models` to list the model ids.
 
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { run, upload, outputs, download, fail, note, done } from './lib.ts';
 
 const args = process.argv.slice(2);
@@ -18,7 +18,7 @@ const flag = (name: string): string | undefined => {
   const i = args.indexOf(`--${name}`);
   if (i < 0) return undefined;
   const v = args[i + 1];
-  if (v === undefined || v.startsWith('--')) fail(`--${name} needs a value.`);
+  if (!v || v.startsWith('--')) fail(`--${name} needs a value.`);
   args.splice(i, 2);
   return v;
 };
@@ -32,6 +32,8 @@ if (!model || raw === undefined || args.length > 2) {
 }
 if (!/^[a-z0-9][a-z0-9._/-]*$/i.test(model) || model.includes('..')) fail(`"${model}" is not a model id.`);
 if (!/^[\w.-]+$/.test(name)) fail('--name may use only letters, digits, dot, dash and underscore.');
+// Check the output folder before anything is paid for.
+if (outDir) await mkdir(outDir, { recursive: true }).catch(() => fail(`cannot use ${outDir} as the output folder.`));
 
 let input: Record<string, unknown>;
 try {
@@ -64,8 +66,18 @@ input = (await uploads(input)) as Record<string, unknown>;
 const result = await run(model, input, { maxWaitMs: wait * 60_000 });
 const files = outputs(result);
 if (!files.length) fail(`request ${result.request_id} completed but returned no output URL.`);
-for (const [i, f] of files.entries()) {
-  console.log(f.url);
-  if (outDir) note(`saved ${await download(f.url, outDir, i ? `${name}-${i + 1}` : name)} (${f.kind}).`);
+// Print every URL first, so a failed download can never hide a paid output.
+for (const f of files) console.log(f.url);
+let lost = 0;
+if (outDir) {
+  for (const [i, f] of files.entries()) {
+    try {
+      note(`saved ${await download(f.url, outDir, i ? `${name}-${i + 1}` : name)} (${f.kind}).`);
+    } catch (err) {
+      lost++;
+      note(`could not save ${f.url} from request ${result.request_id}: ${(err as Error).message}. The URL stays valid for at least 7 days.`);
+    }
+  }
 }
+if (lost) fail(`${lost} of ${files.length} files were not saved.`);
 done();

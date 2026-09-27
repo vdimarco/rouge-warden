@@ -4,9 +4,9 @@
   "type": "module",
   "description": "Server-side Higgsfield API tools for Rouge Warden assets.",
   "scripts": {
-    "example": "node index.ts",
-    "gen": "node gen.ts",
-    "models": "node models.ts",
+    "example": "node --use-env-proxy --disable-warning=UNDICI-EHPA index.ts",
+    "gen": "node --use-env-proxy --disable-warning=UNDICI-EHPA gen.ts",
+    "models": "node --use-env-proxy --disable-warning=UNDICI-EHPA models.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

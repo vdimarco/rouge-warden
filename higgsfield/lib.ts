@@ -23,7 +23,9 @@ process.on('beforeExit', () => {
   if (!settled) fail('the request never settled (the connection closed before a response).');
 });
 
-// .env.local sits next to this file and never leaves the machine. Values already in the environment win.
+// .env.local sits next to this file and never leaves the machine. A value already in the environment wins,
+// but an empty one must not hide the file.
+if (!process.env.HF_CREDENTIALS?.trim()) delete process.env.HF_CREDENTIALS;
 try {
   process.loadEnvFile(new URL('./.env.local', import.meta.url));
 } catch (err) {
@@ -33,6 +35,10 @@ try {
   }
 }
 const credentials = process.env.HF_CREDENTIALS?.trim() ?? '';
+
+// Node prints a raw error with its message, which could hold the key. Send every stray error through fail().
+process.on('uncaughtException', (e) => fail(`unexpected error: ${e instanceof Error ? `${e.name}: ${clip(e.message)}` : 'unknown'}`));
+process.on('unhandledRejection', (e) => fail(`unexpected error: ${e instanceof Error ? `${e.name}: ${clip(e.message)}` : 'unknown'}`));
 
 // Remove the credential from any text before it is printed.
 export function redact(text: string): string {
@@ -61,8 +67,9 @@ export function done(): void {
 
 function authHeaders(): Record<string, string> {
   if (!credentials) fail('HF_CREDENTIALS is not set. Put HF_CREDENTIALS="key-id:key-secret" in higgsfield/.env.local.');
-  if (credentials.split(':').length !== 2 || credentials.split(':').some((part) => !part)) {
-    fail('HF_CREDENTIALS must have the form "key-id:key-secret" (one colon).');
+  // Printable characters only, one colon: a line break or space inside the key would break every request.
+  if (!/^[\x21-\x39\x3b-\x7e]+:[\x21-\x39\x3b-\x7e]+$/.test(credentials)) {
+    fail('HF_CREDENTIALS must have the form "key-id:key-secret": one colon, no spaces or line breaks.');
   }
   return { Authorization: `Key ${credentials}` };
 }
@@ -106,6 +113,11 @@ export async function upload(path: string): Promise<string> {
 // Send one request and wait for its final status. Returns only a completed request; every other end fails.
 export async function run(model: string, input: Record<string, unknown>, { maxWaitMs = 20 * 60_000 } = {}): Promise<RequestStatus> {
   authHeaders();
+  // With NODE_DEBUG set for http, https, net or tls, Node itself prints the SDK's request headers, and the
+  // key with them. Node reads NODE_DEBUG at start-up, so the only safe answer is not to send.
+  if (/https?|net|tls|\*/i.test(process.env.NODE_DEBUG ?? '')) {
+    fail('NODE_DEBUG is set for http, https, net or tls. Node would print the key. Unset NODE_DEBUG and run again.');
+  }
   // With DEBUG set, a module under the SDK prints request headers, and the key with them.
   // It reads DEBUG when it loads, so clear it before the SDK loads.
   delete process.env.DEBUG;
@@ -139,7 +151,11 @@ export async function run(model: string, input: Record<string, unknown>, { maxWa
   try {
     result = (await sdk.higgsfield.subscribe(model, { input, withPolling: false })) as RequestStatus;
   } catch (err) {
-    fail(`submit failed. ${describe(err)}`);
+    // A 4xx is a clear "no". No answer, a reset or a 5xx may come after the API took (and billed) the job.
+    const status = err instanceof sdk.APIError ? err.statusCode : undefined;
+    const sure = status !== undefined && status >= 400 && status < 500;
+    fail(`submit failed. ${describe(err)}` + (sure ? '' :
+      ' The API may still have accepted the request. Check https://open.higgsfield.ai before you run it again.'));
   }
   const id = result.request_id;
   if (!id) fail(`the API accepted the request but returned no request id: ${clip(result)}`);
@@ -193,23 +209,37 @@ const isHttps = (u: unknown): u is string => {
 // Every output URL of a completed request: images, video, audio, audios and any other { url } artifact.
 export function outputs(result: RequestStatus): { kind: string; url: string }[] {
   const out: { kind: string; url: string }[] = [];
+  const seen = new Set<string>(); // one file can be listed twice, for example as audio and audios[0]
   for (const [key, value] of Object.entries(result)) {
     const list = Array.isArray(value) ? value : [value];
     for (const item of list) {
       const url = item && typeof item === 'object' ? (item as { url?: unknown }).url : undefined;
-      if (isHttps(url)) out.push({ kind: key, url });
+      if (isHttps(url) && !seen.has(url)) { seen.add(url); out.push({ kind: key, url }); }
     }
   }
   return out;
 }
 
-// Save an output file. The credential is never sent to the file's host.
+const EXT: Record<string, string> = {
+  'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'image/gif': '.gif', 'video/mp4': '.mp4',
+  'video/quicktime': '.mov', 'audio/mpeg': '.mp3', 'audio/wav': '.wav', 'model/gltf-binary': '.glb', 'application/zip': '.zip',
+};
+// Save an output file and return its path. It never overwrites a file: a taken name gets a numbered suffix.
+// The credential is never sent to the file's host. Throws on failure, so the caller can go on with other files.
 export async function download(url: string, dir: string, name: string): Promise<string> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(300_000) });
-  if (!res.ok) fail(`download of ${name} got HTTP ${res.status}.`);
+  const res = await fetch(url, { signal: AbortSignal.timeout(600_000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = Buffer.from(await res.arrayBuffer());
+  const type = (res.headers.get('content-type') ?? '').split(';')[0].trim();
+  const ext = extname(new URL(url).pathname) || EXT[type] || '';
   await mkdir(dir, { recursive: true });
-  const ext = extname(new URL(url).pathname) || '';
-  const path = join(dir, name + ext);
-  await writeFile(path, Buffer.from(await res.arrayBuffer()));
-  return path;
+  for (let n = 1; ; n++) {
+    const path = join(dir, (n === 1 ? name : `${name}_${n}`) + ext);
+    try {
+      await writeFile(path, data, { flag: 'wx' });
+      return path;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST' || n > 999) throw err;
+    }
+  }
 }
