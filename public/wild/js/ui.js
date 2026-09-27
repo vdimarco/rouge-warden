@@ -507,6 +507,11 @@ export class UI {
   // The HUD map: a round window onto the painted map, in a brass-and-wood ring with a north mark.
   minimap() {
     const G = this.G, P = G.player, x = this.mini, S = this.mini.canvas.width, R = this.R;
+    // redraw only when the picture would change: the hero moved or turned, the camera turned,
+    // or 150 ms passed (for the pulsing icons and the critter dots)
+    const now = performance.now(), L = this.miniLast;
+    if (L && L.S === S && now - L.t < 150 && Math.abs(P.x - L.x) + Math.abs(P.z - L.z) < 0.5 && Math.abs(G.cam.yaw - L.cy) < 0.03 && Math.abs(P.yaw - L.py) < 0.03) return;
+    this.miniLast = { S, t: now, x: P.x, z: P.z, cy: G.cam.yaw, py: P.yaw };
     const rad = S / 2 - S * 0.07, view = 240, scale = (rad * 2) / ((view / SIZE) * R);
     const [cx, cy] = this.toMap(P.x, P.z, R);
     x.clearRect(0, 0, S, S);
@@ -529,7 +534,16 @@ export class UI {
     x.fillStyle = ig; x.fillRect(0, 0, S, S);
     x.restore();
     this.drawHero(x, S / 2, S / 2, P.yaw, S * 0.055, G.time);
-    // the ring: dark wood with a brass rim and tick marks
+    // the ring never changes, so it is painted once and reused
+    if (!this.miniRing || this.miniRing.width !== S || (this.ringFont && document.fonts.status === "loaded")) this.miniRing = this.paintRing(S, rad);
+    x.drawImage(this.miniRing, 0, 0);
+  }
+  // the ring: dark wood with a brass rim, tick marks, and the north mark
+  paintRing(S, rad) {
+    const c = document.createElement("canvas"); c.width = c.height = S;
+    const x = c.getContext("2d");
+    // paint it again once the title font has loaded, so the N does not keep the fallback font
+    this.ringFont = !!document.fonts && document.fonts.status !== "loaded";
     x.save(); x.translate(S / 2, S / 2);
     const ring = x.createLinearGradient(0, -S / 2, 0, S / 2); ring.addColorStop(0, "#8a5a32"); ring.addColorStop(1, "#4a2e18");
     x.strokeStyle = ring; x.lineWidth = S * 0.075; x.beginPath(); x.arc(0, 0, rad + S * 0.035, 0, 7); x.stroke();
@@ -541,5 +555,6 @@ export class UI {
     x.beginPath(); x.moveTo(0, -rad - S * 0.075); x.lineTo(S * 0.035, -rad - S * 0.02); x.lineTo(-S * 0.035, -rad - S * 0.02); x.closePath(); x.fill(); x.stroke();
     x.fillStyle = "#fff4d8"; x.font = "700 " + Math.round(S * 0.07) + "px 'Cormorant Garamond', Georgia, serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("N", 0, -rad - S * 0.042);
     x.restore();
+    return c;
   }
 }

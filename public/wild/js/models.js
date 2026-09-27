@@ -667,7 +667,9 @@ export function campfire(noRing = false) {
   [[1.3, 0.1, 0.0], [1.05, 0.55, 0.14], [0.85, 0.83, -0.12]].forEach(([sc, seed, dx]) => {
     const q = quad.clone(); q.setAttribute("aSeed", new THREE.Float32BufferAttribute(new Array(q.attributes.position.count).fill(seed), 1));
     const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, dx);
-    const m = new THREE.Mesh(q, M.flame); m.scale.setScalar(sc); m.position.y = 0.15; m.frustumCulled = false; m.renderOrder = 3; flame.add(m);
+    // the flame turns to face the camera in its shader, so give it a sphere that covers every turn
+    q.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1.1, 0), 2.2);
+    const m = new THREE.Mesh(q, M.flame); m.scale.setScalar(sc); m.position.y = 0.15; m.renderOrder = 3; flame.add(m);
   });
   // a warm pool of light on the ground
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(noRing ? 2 : 5, noRing ? 2 : 5), M.glow); pool.rotation.x = -Math.PI / 2; pool.position.y = 0.06; pool.renderOrder = 2; g.add(pool);
@@ -675,8 +677,10 @@ export function campfire(noRing = false) {
   const n = 30, attr = new Float32Array(n * 3), pos = new Float32Array(n * 3);
   for (let k = 0; k < n; k++) { const smoke = !noRing && k >= 26; attr.set([Math.random(), smoke ? 1 : 0, smoke ? 0.07 + Math.random() * 0.04 : 0.35 + Math.random() * 0.35], k * 3); }
   const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pg.setAttribute("aP", new THREE.BufferAttribute(attr, 3));
-  const pts = new THREE.Points(pg, M.specks); pts.frustumCulled = false; pts.renderOrder = 4; g.add(pts);
-  g.userData.flame = flame;
+  // the embers and smoke rise in their shader, so give them a sphere that covers the whole plume
+  pg.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 4, 0), 6);
+  const pts = new THREE.Points(pg, M.specks); pts.renderOrder = 4; g.add(pts);
+  g.userData.flame = flame; g.userData.embers = pts;
   return g;
 }
 export function cooler() {

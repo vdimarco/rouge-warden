@@ -23,13 +23,23 @@ const touchUI = matchMedia("(pointer: coarse)").matches;
 /* ---------------- renderer and scene ---------------- */
 // Graphics quality: saved from the pause menu, or a guess from the device.
 const GFX_KEY = "plungerd.wild.gfx";
-let gfx = (() => { try { const v = localStorage.getItem(GFX_KEY); if (QUALITY[v]) return v; } catch (e) { /* storage off */ } return low ? "low" : "high"; })();
+// On a touch device a saved "High" counts only if the player chose it there on purpose: the old button went from
+// Low straight to High with one tap, which left many phones on the heaviest setting.
+const GFX_TOUCH_HIGH = "plungerd.wild.gfx.touchHigh";
+let gfx = (() => {
+  try {
+    const v = localStorage.getItem(GFX_KEY);
+    if (v === "high" && touchUI && localStorage.getItem(GFX_TOUCH_HIGH) !== "1") return low ? "low" : "medium";
+    if (QUALITY[v]) return v;
+  } catch (e) { /* storage off */ }
+  return low ? "low" : "high";
+})();
 let Q = QUALITY[gfx];
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 // dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
-let resScale = 1;
-const applyRatio = () => renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale));
+let resScale = 1, redraw = true;
+const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale)); redraw = true; };
 applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -47,11 +57,17 @@ Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, n
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
-const draw = () => painter.render(scene, camera, G.look);
+const draw = () => {
+  // On the light setting the sun's shadow map is redrawn every second frame. Still things cast the same shadow,
+  // and a moving character's shadow lags one frame at most.
+  sun.shadow.autoUpdate = gfx !== "low";
+  if (gfx === "low" && (G.frame & 1)) sun.shadow.needsUpdate = true;
+  painter.render(scene, camera, G.look);
+};
 // If the graphics card resets, save and reload rather than show a frozen or black screen.
 renderer.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); G.contextLost = true; try { G.writeSave && G.writeSave(); } catch (err) { /* keep going */ } const l = $("#loading"); if (l) { l.hidden = false; l.textContent = "Repainting…"; } });
 renderer.domElement.addEventListener("webglcontextrestored", () => location.reload());
-addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); redraw = true; });
 
 /* ---------------- the game state ---------------- */
 const G = {
@@ -799,7 +815,12 @@ $("#phelpBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.ope
 $("#pquestBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openQuests(); };
 $("#soundBtn").onclick = () => { const on = A.toggle(); if (window.Chip) Chip.setOn(on); $("#soundBtn").textContent = "Sound: " + (on ? "on" : "off"); };
 const GFX_NAMES = { high: "High", medium: "Medium", low: "Low" };
-$("#gfxBtn").onclick = () => { const order = ["high", "medium", "low"]; G.setGraphics(order[(order.indexOf(gfx) + 1) % 3]); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx]; };
+// Low, Medium, High, in that order, so one tap never jumps from the lightest setting to the heaviest
+$("#gfxBtn").onclick = () => {
+  const order = ["low", "medium", "high"], next = order[(order.indexOf(gfx) + 1) % 3];
+  if (touchUI) try { localStorage.setItem(GFX_TOUCH_HIGH, next === "high" ? "1" : "0"); } catch (e) { /* storage off */ }
+  G.setGraphics(next); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
+};
 $("#pauseBtn").onclick = () => openPause();
 
 /* ---------------- goals and clock ---------------- */
@@ -1113,19 +1134,32 @@ function titleCamera(dt) {
 }
 
 /* ---------------- the loop ---------------- */
-// dynamic resolution: watch the frame time and trade sharpness for smoothness when needed
-let ftAvg = 16, ftLast = 0, ftHold = 0;
-function frameTime(now) {
-  const ft = now - (ftLast || now); ftLast = now;
-  if (ft <= 0 || ft > 250 || document.hidden) return;
-  ftAvg += (ft - ftAvg) * 0.05;
-  if ((ftHold -= ft) > 0) return;
-  if (ftAvg > 26 && resScale > 0.55) { resScale = Math.max(0.55, resScale * 0.88); applyRatio(); ftHold = 1500; }
-  else if (ftAvg < 14 && resScale < 1) { resScale = Math.min(1, resScale * 1.08); applyRatio(); ftHold = 2500; }
+// Dynamic resolution. It watches the frame time during play only (not the title, menus or loading).
+// It learns the screen's own frame interval: 16.7 ms at 60 Hz, 8.3 ms at 120 Hz, 33.3 ms in iPhone Low Power Mode,
+// so a phone that is capped at 30 fps is not mistaken for a slow one. The scale moves between a few fixed steps,
+// so the render targets are rarely rebuilt. A step down that does not help is undone: the load is elsewhere.
+const RES_STEPS = [1, 0.85, 0.72, 0.6];
+const fts = [];
+let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0;
+function frameTime(now, live) {
+  if (!live || document.hidden) { ftLast = 0; return; }
+  const ft = ftLast ? now - ftLast : 0; ftLast = now;
+  if (ft <= 0 || ft > 100) return; // a gap or a one-off hitch, not a steady load
+  fts.push(ft); if (fts.length > 60) fts.shift();
+  if ((ftHold -= ft) > 0 || fts.length < 60) return;
+  const sorted = fts.slice().sort((a, b) => a - b), med = sorted[30];
+  dispMs = Math.min(dispMs, sorted[6]);
+  noDownT -= 1;
+  const set = (k) => { resStep = k; resScale = RES_STEPS[k]; applyRatio(); fts.length = 0; };
+  if (downFrom && med > downFrom * 0.9) { set(resStep - 1); downFrom = 0; noDownT = 30; ftHold = 3000; return; }
+  downFrom = 0;
+  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; set(resStep + 1); ftHold = 2000; }
+  else if (med < dispMs * 1.12 && resStep > 0) { set(resStep - 1); ftHold = 4000; }
+  else ftHold = 1000;
 }
 G.setGraphics = (name) => {
   if (!QUALITY[name]) return;
-  gfx = name; Q = QUALITY[name]; resScale = 1;
+  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0;
   try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ }
   applyRatio();
   painter.setQuality(Q);
@@ -1133,7 +1167,11 @@ G.setGraphics = (name) => {
   G.world.quality = Q; G.world.buildGrass(Q);
 };
 G.graphics = () => gfx;
-let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false;
+let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false, stillFrames = 0;
+// Full-screen screens hide the world, or dim a world that does not move. Behind them the game draws two frames
+// (to settle the picture and warm up the shaders), then stops drawing: the canvas keeps showing its last frame.
+const STILL = { pause: 1, map: 1, quests: 1, help: 1, choice: 1 };
+const stillNow = () => (!G.started && !G.starting && !$("#title").hidden) || !!STILL[G.ui.modal];
 function loop(now) {
   requestAnimationFrame(loop);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -1142,8 +1180,11 @@ function loop(now) {
   if (!G.world) return;
   G.time += dt;
   G.punchT = Math.max(0, (G.punchT || 0) - dt * 2.5);
-  frameTime(now);
-  if (!G.started) { titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); return; }
+  frameTime(now, G.started && !G.paused && !G.ui.modal);
+  const still = stillNow();
+  stillFrames = still ? stillFrames + 1 : 0;
+  const skipDraw = still && stillFrames > 2 && !redraw;
+  if (!G.started) { if (skipDraw) return; titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); redraw = false; return; }
   readInput();
   const P = G.player;
   if (inp.pause && !G.ui.modal) openPause();
@@ -1159,10 +1200,12 @@ function loop(now) {
   fireflies.position.set(P.x, G.world.height(P.x, P.z), P.z);
   fireflies.material.opacity = G.night ? 0.9 : 0;
   fireflies.rotation.y = G.time * 0.02;
+  A.music(G.time);
+  if (skipDraw) return;
   G.ui.hud();
   G.ui.minimap();
-  A.music(G.time);
   draw();
+  redraw = false;
 }
 
 function step(dt) {

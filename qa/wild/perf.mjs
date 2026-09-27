@@ -1,6 +1,6 @@
 // Measures where the time goes in Breath of the Lake. For each graphics setting and a few places on the map it reports
 // draw calls, triangles, and the main-thread time of the game step, the world update and the draw. It also reports
-// load times, the page weight, and the top functions of a CPU profile of a short run.
+// load times, and the top functions of a CPU profile of a short run.
 // Software rendering in a test browser is slow, so compare runs with each other, not with a real graphics card.
 // Usage: node perf.mjs [quality ...]   (default: low high)
 // PERF_PHONE=1 copies an iPhone screen (390x844, touch, pixel ratio 3). PERF_FRAMES sets the frames per place (default 6).
@@ -16,14 +16,14 @@ for (const q of qualities) {
   const { browser, page, errors } = await open(phone ? { width: 390, height: 844, touch: true } : { width: 640, height: 360 });
   if (phone) { const cdp = await page.context().newCDPSession(page); await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true }); }
   await page.addInitScript((qq) => localStorage.setItem("plungerd.wild.gfx", qq), q);
-  let bytes = 0;
-  page.on("response", async (r) => { try { bytes += (await r.body()).length; } catch (e) { /* redirect */ } });
   await page.reload();
   await page.waitForSelector("#title:not([hidden])", { timeout: 300000 });
   const titleMs = Date.now() - t0;
   const t1 = Date.now();
   await newGame(page);
-  say(JSON.stringify({ quality: q, phone, titleMs, startMs: Date.now() - t1, bytes, pixelRatio: await page.evaluate(() => G.renderer.getPixelRatio()) }));
+  // reset the setting, so every run draws at the same size whatever the dynamic resolution did during loading
+  await page.evaluate((qq) => G.setGraphics(qq), q);
+  say(JSON.stringify({ quality: q, phone, titleMs, startMs: Date.now() - t1, pixelRatio: await page.evaluate(() => G.renderer.getPixelRatio()) }));
 
   const spots = await page.evaluate(() => {
     const W = G.world, b = (id) => G.bosses.find((x) => x.id === id);

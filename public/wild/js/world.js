@@ -535,13 +535,14 @@ export class World {
     };
     this.trail = this.trail || { t: 0, k: 0, last: new THREE.Vector3(0, -999, 0) };
     this.grass = new THREE.Group();
-    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5 }));
-    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true }));
+    // fewer joints per blade on the light setting and in the far layer, where the curve is a few pixels tall
+    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5, joints: q.grass < 60000 ? 4 : 6 }));
+    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true, joints: 3 }));
     this.scene.add(this.grass);
   }
   grassLayer(count, P, o) {
     // a blade: wide at the root, pointed at the tip, curved, with enough joints to bend smoothly
-    const blade = new THREE.PlaneGeometry(o.width, 1, 1, 6); blade.translate(0, 0.5, 0);
+    const blade = new THREE.PlaneGeometry(o.width, 1, 1, o.joints || 6); blade.translate(0, 0.5, 0);
     const bp = blade.attributes.position;
     for (let i = 0; i < bp.count; i++) { const y = bp.getY(i); bp.setX(i, bp.getX(i) * (1 - y * 0.94) * (1 + Math.sin(y * 3) * 0.15)); bp.setZ(i, y * y * 0.22); }
     const geo = new THREE.InstancedBufferGeometry();
@@ -567,6 +568,14 @@ export class World {
           // the near layer thins out where the far layer takes over, and the far layer fills in behind it
           float fade = (1.0 - smoothstep(${outer0.toFixed(1)}, ${outer1.toFixed(1)}, dist)) * smoothstep(${inner.toFixed(1)}, ${(inner * 1.6 + 0.01).toFixed(1)}, dist);
           float keep = step(aOff.z, m.a);
+          // skip a blade that cannot be seen before any of the costly work: no grass here, faded out,
+          // or behind or well to the side of the camera. Every vertex of the blade takes the same branch.
+          vec4 vr = viewMatrix * vec4(wp.x, h, wp.y, 1.0);
+          if (keep * fade <= 0.0 || vr.z > 2.0 || abs(vr.x) > -vr.z / projectionMatrix[0][0] + 3.0) {
+            vCol = vec3(0.0); vT = 0.0; vW = vec3(0.0); vGust = 0.0; vBack = 0.0; vGold = 0.0;
+            gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
+            return;
+          }
           // fields: soft clumps, tall meadows away from paths, and golden pampas in the east
           float clump = vnoise(wp * 0.07);
           float field = smoothstep(0.35, 0.75, vnoise(wp * 0.012 + 3.0));
@@ -587,7 +596,8 @@ export class World {
           float near = step(abs(uPlayer.y - h), 2.5);
           vec2 push = wp - uPlayer.xz; float pd = length(push);
           vec2 part = normalize(push + 0.0001) * max(0.0, 1.5 - pd) * 1.6 * near;
-          for (int i = 0; i < 10; i++) {
+          // the trail points all lie within about 10 m of the hero
+          if (pd < 12.0) for (int i = 0; i < 10; i++) {
             vec4 tr = uTrail[i];
             vec2 q = wp - tr.xz; float qd = length(q);
             part += normalize(q + 0.0001) * max(0.0, 1.1 - qd) * 1.5 * tr.w * step(abs(tr.y - h), 2.5);
@@ -702,17 +712,23 @@ export class World {
     // the round canopy: a cluster of balls, lit as one soft ball. Far away the balls use far fewer faces.
     const BLOBS = [[0, 5.3, 0, 2.4], [1.9, 4.6, 0.8, 1.7], [-1.8, 4.8, -0.7, 1.8], [0.5, 4.2, -1.9, 1.6], [-0.6, 7.0, 0.4, 1.8], [0.3, 4.4, 1.9, 1.6], [1.4, 6.4, -1.0, 1.5], [-1.5, 6.2, 1.1, 1.4], [2.2, 5.6, -0.4, 1.3], [-2.3, 5.7, 0.2, 1.3], [0.0, 8.2, -0.4, 1.3], [0.9, 3.6, 1.0, 1.2]];
     const canopyOf = (detail) => {
-      const g = mergeGeos(BLOBS.map(([x, y, z, s]) => { const b = new THREE.IcosahedronGeometry(s, detail); b.translate(x, y, z); return b; }));
+      const g = mergeGeos(BLOBS.map(([x, y, z, s]) => {
+        const b = new THREE.IcosahedronGeometry(s, detail);
+        // round normals on every ball, so a ball with few faces still shades smoothly
+        const p = b.attributes.position, n = b.attributes.normal;
+        for (let i = 0; i < p.count; i++) { TV.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); n.setXYZ(i, TV.x, TV.y, TV.z); }
+        b.translate(x, y, z); return b;
+      }));
       // light the canopy as one soft ball, not as many small ones: the trick painted trees use
       spherize(g, 0, 5.6, 0, 0.55);
       shadeByHeight(g, 3, 8.5);
-      return g;
+      return weld(g);
     };
     const pineOf = (seg) => {
       const g = mergeGeos([[3.2, 4, 3.5], [2.6, 3.6, 5.8], [1.9, 3.2, 7.9], [1.1, 2.6, 9.8], [0.5, 1.8, 11.2]].map(([r0, h, y]) => { const c = new THREE.ConeGeometry(r0, h, seg); c.translate(0, y, 0); return c; }));
       spherize(g, 0, 6, 0, 0.55);
       shadeByHeight(g, 2, 11.5);
-      return g;
+      return weld(g);
     };
     const canopyGeo = canopyOf(2), canopyFar = canopyOf(this.low ? 0 : 1);
     const pineGeo = pineOf(11), pineFar = pineOf(6);
@@ -1083,7 +1099,13 @@ export class World {
     M.fireTime.value = t;
     // the nearest fire lights up its surroundings, flickering
     let nf = null, nd = 70;
-    for (const f of this.fires) { const fl = f.obj.userData.flame; fl.scale.set(1 + Math.sin(t * 9 + f.x) * 0.05, 1 + Math.sin(t * 13 + f.z) * 0.1, 1); const d = Math.hypot(f.x - cam.position.x, f.z - cam.position.z); if (d < nd) { nd = d; nf = f; } }
+    for (const f of this.fires) {
+      const fl = f.obj.userData.flame, d = Math.hypot(f.x - cam.position.x, f.z - cam.position.z);
+      // embers are specks a few pixels wide past 80 m; a flame past 300 m is lost in the haze
+      fl.visible = d < 300; if (f.obj.userData.embers) f.obj.userData.embers.visible = d < 80;
+      if (fl.visible) fl.scale.set(1 + Math.sin(t * 9 + f.x) * 0.05, 1 + Math.sin(t * 13 + f.z) * 0.1, 1);
+      if (d < nd) { nd = d; nf = f; }
+    }
     if (!this.fireLight) { this.fireLight = new THREE.PointLight(0xff9a4a, 0, 16, 1.6); this.scene.add(this.fireLight); }
     if (nf) { this.fireLight.position.set(nf.x, nf.obj.position.y + 1.2, nf.z); this.fireLight.intensity = 26 * (0.85 + 0.15 * Math.sin(t * 11) * Math.sin(t * 7.3 + 1)); } else this.fireLight.intensity = 0;
     // the swirl hangs lower and turns faster while the King is fighting
@@ -1107,6 +1129,25 @@ function mergeGeos(list) {
   out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   out.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
   out.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return out;
+}
+// Shares the vertices that have the same position, normal and colour, so the GPU shades each one once.
+// The tree shapes come out of mergeGeos with every corner copied, about 6 times more vertices than needed.
+function weld(geo) {
+  const p = geo.attributes.position, n = geo.attributes.normal, c = geo.attributes.color;
+  const map = new Map(), index = [], pos = [], nor = [], col = [];
+  const q = (v) => Math.round(v * 1e4);
+  for (let i = 0; i < p.count; i++) {
+    const key = [q(p.getX(i)), q(p.getY(i)), q(p.getZ(i)), q(n.getX(i)), q(n.getY(i)), q(n.getZ(i)), c ? q(c.getX(i)) : 0].join(",");
+    let k = map.get(key);
+    if (k === undefined) { k = pos.length / 3; map.set(key, k); pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); if (c) col.push(c.getX(i), c.getY(i), c.getZ(i)); }
+    index.push(k);
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  if (c) out.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  out.setIndex(index);
   return out;
 }
 // Bends the normals toward one centre, so a clump of spheres shades like one soft shape.

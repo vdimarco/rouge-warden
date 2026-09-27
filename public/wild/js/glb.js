@@ -58,7 +58,9 @@ function outlineMaterial(thick) {
       .replace("#include <skinning_vertex>", "#include <skinning_vertex>\n#ifdef USE_SKINNING\n transformed += normalize(objectNormal) * uThick;\n#endif")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifndef USE_SKINNING\n transformed += normalize(normal) * uThick;\n#endif");
   };
-  m.customProgramCacheKey = () => "outline" + thick.toFixed(4);
+  // one shader for every outline: each material still keeps its own thickness uniform, so models of new sizes
+  // appearing mid-game (a boss, a spawned critter) do not stop the game to compile another program
+  m.customProgramCacheKey = () => "outline";
   return m;
 }
 function addOutlines(obj, worldThick) {
@@ -73,7 +75,15 @@ function addOutlines(obj, worldThick) {
     if (o.isSkinnedMesh) { shell = new THREE.SkinnedMesh(o.geometry, mat); shell.bind(o.skeleton, o.bindMatrix); }
     else shell = new THREE.Mesh(o.geometry, mat);
     shell.position.copy(o.position); shell.quaternion.copy(o.quaternion); shell.scale.copy(o.scale);
-    shell.userData.outline = true; shell.frustumCulled = false; o.frustumCulled = false;
+    shell.userData.outline = true;
+    // A skinned body moves its limbs away from its rest pose, so the rest-pose bounds are too small to cull with.
+    // Give the body and its outline one fixed, generous sphere; then the camera and the sun's shadow can skip
+    // a character that is off screen, instead of skinning it three times every frame.
+    if (o.isSkinnedMesh) {
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      const bs = o.geometry.boundingSphere.clone(); bs.radius *= 1.6;
+      o.boundingSphere = bs; shell.boundingSphere = bs.clone();
+    }
     o.parent.add(shell);
   }
 }
