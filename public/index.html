@@ -86,7 +86,6 @@ button { font: inherit; color: inherit; }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
 .cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
-.cab.fish .screen .title { top: 12%; font-family: var(--display); font-size: calc(var(--h) * 0.05); line-height: 0.95; color: #fff6dc; text-shadow: 0 3px 0 #e0453a, 0 6px 10px rgba(0, 0, 0, 0.5); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -257,7 +256,6 @@ button { font: inherit; color: inherit; }
         <div class="bezel"><div class="screen">
           <img src="arcade/fish.webp" alt="">
           <img class="art2" src="arcade/fish-catch.webp" alt="">
-          <div class="title">REEL<br>IT IN</div>
           <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
