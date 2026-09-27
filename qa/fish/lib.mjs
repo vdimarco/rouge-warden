@@ -11,7 +11,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 export const SHOTS = process.env.SHOTS || "";
 
 export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "" } = {}) {
-  const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+  // WebGL runs on SwiftShader; the 2D canvases (the reel, the gauge) stay on the CPU, which is far faster than an emulated GPU
+  const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"] });
   const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true } : { viewport: { width, height }, ignoreHTTPSErrors: true });
   const page = await ctx.newPage();
   page.setDefaultTimeout(120000);
