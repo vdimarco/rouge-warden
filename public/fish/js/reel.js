@@ -125,19 +125,42 @@ class Widget extends Emitter {
     c.clearRect(0, 0, this.w, this.h);
     return c;
   }
+  // An offscreen canvas the size of ours, for the parts that do not change every frame: cheap to copy, dear to draw
+  // (phones without a GPU canvas raster every gradient and blur on the main thread).
+  layer(name) {
+    const L = this._layers || (this._layers = {});
+    let c = L[name];
+    if (!c) { c = L[name] = document.createElement("canvas"); c.key = null; }
+    if (c.width !== this.cv.width || c.height !== this.cv.height) { c.width = this.cv.width; c.height = this.cv.height; c.key = null; }
+    return c;
+  }
+  // draw into a layer; the drawing helpers all use this.ctx, so point it there for the duration
+  paint(c, key, fn) {
+    if (c.key === key) return;
+    const main = this.ctx, lc = c.getContext("2d");
+    this.ctx = lc;
+    lc.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    lc.clearRect(0, 0, this.w, this.h);
+    try { fn(lc); } finally { this.ctx = main; }
+    c.key = key;
+  }
+  blit(c) { const x = this.ctx; x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(c, 0, 0); x.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); }
+  // true when this frame would look the same as the last one we drew
+  same(key) { if (key === this._drawn) return true; this._drawn = key; return false; }
   listen(target, type, fn, opt) { target.addEventListener(type, fn, opt); this._offs.push(() => target.removeEventListener(type, fn, opt)); }
   dispose() { for (const f of this._offs) f(); this._offs = []; this.cv.remove(); }
   // a soft glowing spot under a thumb
   thumbGlow(c, x, y, r, a = 1) {
     const g = c.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, rgba("255,244,214", 0.55 * a));
-    g.addColorStop(0.35, rgba(BRASS, 0.32 * a));
+    g.addColorStop(0, rgba("255,248,226", 0.8 * a));
+    g.addColorStop(0.28, rgba("255,220,140", 0.55 * a));
+    g.addColorStop(0.6, rgba(BRASS, 0.2 * a));
     g.addColorStop(1, rgba(BRASS, 0));
     c.fillStyle = g;
     c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
-    c.strokeStyle = rgba("255,236,190", 0.45 * a);
-    c.lineWidth = 1.5;
-    c.beginPath(); c.arc(x, y, r * 0.42, 0, TAU); c.stroke();
+    c.strokeStyle = rgba("255,236,190", 0.75 * a);
+    c.lineWidth = 2;
+    c.beginPath(); c.arc(x, y, r * 0.46, 0, TAU); c.stroke();
   }
   glass(c, x, y, w, h, r, alarm = 0) {
     c.beginPath(); rrect(c, x, y, w, h, r);
@@ -421,11 +444,10 @@ export class ReelPanel extends Widget {
     const ctx = this.ctx;
     ctx.lineCap = "round"; ctx.lineJoin = "round";
     if (glow > 0) {
-      ctx.save();
-      ctx.shadowColor = rgba(BRASS, glow); ctx.shadowBlur = 12 + 16 * glow;
-      this._strokePts(pts, w + 12, rgba(BRASS, 0.28 * glow));
-      this._strokePts(pts, w + 5, rgba("255,214,120", 0.75 * glow));
-      ctx.restore();
+      this._strokePts(pts, w + 26, rgba(BRASS, 0.07 * glow));
+      this._strokePts(pts, w + 16, rgba(BRASS, 0.12 * glow));
+      this._strokePts(pts, w + 9, rgba("255,214,120", 0.3 * glow));
+      this._strokePts(pts, w + 4, rgba("255,224,150", 0.8 * glow));
     }
     this._strokePts(pts, w + 1.6, "rgba(10,20,24,0.8)");
     this._strokePts(pts, w, glow > 0.3 ? "#e9dcb4" : "#b9c3c7");
@@ -438,7 +460,7 @@ export class ReelPanel extends Widget {
     if (!this.fit()) return;
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;
-    const s = this.s, fx = this.fx, ctx = this.begin();
+    const s = this.s, fx = this.fx;
     // the bail swings with a little overshoot, like the real snap
     const target = s.bail === "open" ? 1 : 0;
     if ((target === 1) !== fx.wasOpen) { fx.wasOpen = target === 1; fx.clack = 1; }
@@ -454,27 +476,42 @@ export class ReelPanel extends Widget {
     const pulse = 0.5 + 0.5 * Math.sin(this.time * 5.2);
     const phi = lerp(BAIL.closed, BAIL.open, fx.bail);
     const S = this.S, wireW = Math.max(3, S * 0.05);
-
-    this._backdrop(ctx);
-    this._rod(ctx);
-    this._body(ctx);
-    // behind the spool: the far rotor arm and the far half of the bail
-    this._arm(ctx, -1);
-    const bailGlow = s.glow === "bail" ? fx.glow * (0.55 + 0.45 * pulse) : 0;
-    this._wireStroke(this._wire(phi, Math.PI / 2, Math.PI, 20), wireW, bailGlow * 0.6);
-    this._rotor(ctx);
-    this._spool(ctx, spool);
-    this._arm(ctx, 1);
-    // the line roller on the near pivot, and the near half of the bail in front of everything
-    this._cyl([BAIL.x, 0, BAIL.r - 0.07], [0, 0, 1], 0.17, 0.075, MAT.silver);
-    this._face(this._frame([BAIL.x, 0, BAIL.r + 0.1], [1, 0, 0], [0, 1, 0], 0.075), 0, MAT.silver, 1, [0, 0, 1]);
-    this._wireStroke(this._wire(phi, 0, Math.PI / 2 + 0.02, 20), wireW, bailGlow);
+    const moving = Math.abs(fx.bailV) > 0.01 || Math.abs(fx.bail - target) > 0.002;
+    if (!moving) { fx.bail = target; fx.bailV = 0; }
+    const spinning = spool > 0.02;
+    // nothing moves and nothing glows: keep the last frame
+    const idle = !moving && !spinning && fx.glow < 0.01 && fx.thumbA < 0.01 && fx.guide < 0.01 && fx.clack <= 0 && !s.hint;
+    const sceneKey = [this.w, this.h, this.dpr, Math.round(fx.bail * 500), spinning ? Math.round(fx.spin * 60) : -1, s.line].join();
+    if (idle && this.same(sceneKey)) return;
+    if (!idle) this._drawn = null;
+    // the parts that never move, then the reel as it stands now; each is redrawn only when it changes
+    const back = this.layer("back"), scene = this.layer("scene");
+    this.paint(back, [this.w, this.h, this.dpr, this.mx].join(), (c) => {
+      this._backdrop(c); this._rod(c); this._body(c);
+      this._arm(c, -1);   // behind the spool: the far rotor arm
+    });
+    this.paint(scene, sceneKey, (c) => {
+      this.blit(back);
+      this._wireStroke(this._wire(phi, Math.PI / 2, Math.PI, 20), wireW, 0);   // the far half of the bail
+      this._rotor(c);
+      this._spool(c, spool);
+      this._arm(c, 1);
+      // the line roller on the near pivot, and the near half of the bail in front of everything
+      this._cyl([BAIL.x, 0, BAIL.r - 0.07], [0, 0, 1], 0.17, 0.075, MAT.silver);
+      this._face(this._frame([BAIL.x, 0, BAIL.r + 0.1], [1, 0, 0], [0, 1, 0], 0.075), 0, MAT.silver, 1, [0, 0, 1]);
+      this._wireStroke(this._wire(phi, 0, Math.PI / 2 + 0.02, 20), wireW, 0);
+    });
+    const ctx = this.begin();
+    this.blit(scene);
     if (fx.clack > 0) {
       const q = this._p(BAIL.x, 0, BAIL.r + 0.05);
       ctx.strokeStyle = rgba("255,250,230", fx.clack * 0.8); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(q.x, q.y, S * (0.12 + (1 - fx.clack) * 0.35), 0, TAU); ctx.stroke();
     }
     this._line(ctx, spool, fx.bail);
+    // the bail glows where you touch it: the near half, over the finished reel
+    const bailGlow = s.glow === "bail" ? fx.glow * (0.55 + 0.45 * pulse) : 0;
+    if (bailGlow > 0.01) this._wireStroke(this._wire(phi, 0, Math.PI / 2 + 0.25, 24), wireW, bailGlow);
     this._overlays(ctx, pulse, phi);
   }
 
@@ -568,10 +605,10 @@ export class ReelPanel extends Widget {
     // shaded top to bottom like a rounded bar: the lit top edge, a dark belly
     const m0 = { x: (q[0].x + q[1].x) / 2, y: (q[0].y + q[1].y) / 2 }, m1 = { x: (q[2].x + q[3].x) / 2, y: (q[2].y + q[3].y) / 2 };
     const g = ctx.createLinearGradient(m0.x, m0.y, m1.x, m1.y);
-    const k = side > 0 ? 1 : 0.55;
-    g.addColorStop(0, shade(n3([0, 0.9, 0.45 * side]), MAT.gun, k));
-    g.addColorStop(0.35, shade(n3([0, 0.2, side]), MAT.gun, k));
-    g.addColorStop(1, shade(n3([0, -0.8, 0.6 * side]), MAT.gun, k * 0.8));
+    const k = side > 0 ? 1 : 0.55, m = side > 0 ? MAT.steel : MAT.gun;
+    g.addColorStop(0, shade(n3([0, 0.9, 0.45 * side]), m, k));
+    g.addColorStop(0.4, shade(n3([0, 0.2, side]), m, k * 0.8));
+    g.addColorStop(1, shade(n3([0, -0.8, 0.6 * side]), MAT.gun, k * 0.7));
     ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
     ctx.fillStyle = g; ctx.fill();
     ctx.lineWidth = 1.2; ctx.lineCap = "round";
@@ -765,14 +802,14 @@ export class ReelPanel extends Widget {
   _guide(ctx, a, pulse) {
     const w = this.w, h = this.h, th = this.thumb, right = this.mx > 0;
     const x = right ? w - 24 : 24;
-    const y0 = clamp(h * 0.16, 26, 60), y1 = Math.max(y0 + 80, Math.min(h - 26, y0 + h * 0.62));
+    const y0 = clamp(h * 0.16, 26, 60), y1 = Math.max(y0 + 80, Math.min(h - 26, y0 + h * 0.45));
     const at = (theta) => lerp(y0, y1, clamp((theta - 80) / 80, 0, 1));
     // the same mapping main.js uses for touch casting: 150° of rod over one panel height of drag
     const theta = th ? 80 + ((th.y - th.y0) / Math.max(160, h)) * 150 : null;
     let by;
     if (th) by = at(theta);
     else { const u = (this.time * 0.55) % 1; by = u < 0.7 ? lerp(y0, at(125), smooth(0, 0.7, u)) : lerp(at(125), y0, smooth(0.7, 0.8, u)); }
-    const loaded = th ? theta >= 105 : by >= at(105);
+    const loaded = th ? theta >= 105 : false;
     ctx.save();
     ctx.globalAlpha = a;
     ctx.fillStyle = "rgba(6,22,27,0.45)";
@@ -944,42 +981,51 @@ export class Crank extends Widget {
     if (!this.fit()) return;
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;
-    const ctx = this.begin(), w = this.w, h = this.h, s = Math.min(w, h), cx = w / 2, cy = h / 2;
+    const w = this.w, h = this.h, s = Math.min(w, h), cx = w / 2, cy = h / 2;
     const R0 = s * 0.49, Rt = s * 0.335, kr = Math.max(15, s * 0.1), hubR = s * 0.11;
     const rate = this.out, a = this.ang;
-    for (let i = 0; i < 4; i++) this.lit[i] = Math.max(0, this.lit[i] - dt * 3);
-    // the glass dial
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
-    const g = ctx.createRadialGradient(cx, cy - R0 * 0.3, R0 * 0.1, cx, cy, R0);
-    g.addColorStop(0, "rgba(27,84,98,0.86)"); g.addColorStop(1, "rgba(8,28,34,0.9)");
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R0, 0, TAU); ctx.fill();
-    ctx.restore();
-    ctx.strokeStyle = "rgba(246,239,217,0.2)"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, R0 - 0.5, 0, TAU); ctx.stroke();
-    // the track the knob runs in
-    ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = kr * 2 + 8;
-    ctx.beginPath(); ctx.arc(cx, cy, Rt, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = "rgba(246,239,217,0.1)"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, Rt + kr + 4, 0, TAU); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, Rt - kr - 4, 0, TAU); ctx.stroke();
-    // quarter marks, lit as the handle passes (the same moments as the gear ticks)
-    for (let i = 0; i < 4; i++) {
-      const q = -Math.PI / 2 + (i * Math.PI) / 2, l = this.lit[i];
-      ctx.strokeStyle = l > 0 ? rgba(BRASS, 0.35 + 0.65 * l) : "rgba(246,239,217,0.3)";
-      ctx.lineWidth = 2.5 + 1.5 * l; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(cx + Math.cos(q) * (Rt + kr + 7), cy + Math.sin(q) * (Rt + kr + 7));
-      ctx.lineTo(cx + Math.cos(q) * (R0 - 5), cy + Math.sin(q) * (R0 - 5)); ctx.stroke();
-    }
-    // the arrow: which way to turn (either way works; the hint says so until you have turned it a few times)
-    const idle = this.quarters < 8 ? 1 : 0.4;
-    const ar = Rt + kr + 7 + (R0 - Rt - kr - 12) / 2, a0 = -Math.PI * 0.95, a1 = -Math.PI * 0.62, d = this.dir;
-    ctx.strokeStyle = rgba(INK, 0.35 * idle); ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(cx, cy, ar, d > 0 ? a0 : -a1 - Math.PI, d > 0 ? a1 : -a0 - Math.PI, d < 0); ctx.stroke();
-    const ah = d > 0 ? a1 : -a1 - Math.PI, hx = cx + Math.cos(ah) * ar, hy = cy + Math.sin(ah) * ar, tg = ah + (d * Math.PI) / 2;
-    ctx.fillStyle = rgba(INK, 0.5 * idle);
-    ctx.beginPath(); ctx.moveTo(hx + Math.cos(tg) * 7, hy + Math.sin(tg) * 7);
-    ctx.lineTo(hx + Math.cos(tg + 2.3) * 6, hy + Math.sin(tg + 2.3) * 6); ctx.lineTo(hx + Math.cos(tg - 2.3) * 6, hy + Math.sin(tg - 2.3) * 6); ctx.closePath(); ctx.fill();
+    let lit = 0;
+    for (let i = 0; i < 4; i++) { this.lit[i] = Math.max(0, this.lit[i] - dt * 3); lit += this.lit[i]; }
+    const hint = this.quarters < 8;
+    const key = [w, h, this.dpr, a.toFixed(3), rate > 0.15 ? rate.toFixed(2) : 0, lit.toFixed(2), this.drag ? Math.round(this.drag.x) + ":" + Math.round(this.drag.y) : "", hint ? this.quarters : 8].join();
+    if (this.same(key)) return;
+    // the dial: drawn once, then copied
+    const back = this.layer("back");
+    this.paint(back, [w, h, this.dpr, this.dir, hint].join(), (ctx) => {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+      const g = ctx.createRadialGradient(cx, cy - R0 * 0.3, R0 * 0.1, cx, cy, R0);
+      g.addColorStop(0, "rgba(27,84,98,0.86)"); g.addColorStop(1, "rgba(8,28,34,0.9)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R0, 0, TAU); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(246,239,217,0.2)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, R0 - 0.5, 0, TAU); ctx.stroke();
+      // the track the knob runs in
+      ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = kr * 2 + 8;
+      ctx.beginPath(); ctx.arc(cx, cy, Rt, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = "rgba(246,239,217,0.1)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, Rt + kr + 4, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, Rt - kr - 4, 0, TAU); ctx.stroke();
+      // fine knurling round the rim, like a real reel handle's dial
+      ctx.strokeStyle = "rgba(246,239,217,0.07)"; ctx.lineWidth = 1;
+      for (let i = 0; i < 72; i++) {
+        const q = (i * TAU) / 72;
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(q) * (R0 - 4), cy + Math.sin(q) * (R0 - 4)); ctx.lineTo(cx + Math.cos(q) * (R0 - 8), cy + Math.sin(q) * (R0 - 8)); ctx.stroke();
+      }
+      this._ticks(ctx, cx, cy, Rt, kr, R0, null);
+      // the arrow: which way to turn (either way works; the hint says so for the first few turns)
+      const idle = hint ? 1 : 0.4, ar = Rt + kr + 7 + (R0 - Rt - kr - 12) / 2, d = this.dir;
+      const a0 = d > 0 ? -Math.PI * 0.95 : -Math.PI * 0.05, a1 = d > 0 ? -Math.PI * 0.62 : -Math.PI * 0.38;
+      ctx.strokeStyle = rgba(INK, 0.35 * idle); ctx.lineWidth = 2.5; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(cx, cy, ar, Math.min(a0, a1), Math.max(a0, a1)); ctx.stroke();
+      const hx = cx + Math.cos(a1) * ar, hy = cy + Math.sin(a1) * ar, tg = a1 + (d * Math.PI) / 2;
+      ctx.fillStyle = rgba(INK, 0.5 * idle);
+      ctx.beginPath(); ctx.moveTo(hx + Math.cos(tg) * 7, hy + Math.sin(tg) * 7);
+      ctx.lineTo(hx + Math.cos(tg + 2.3) * 6, hy + Math.sin(tg + 2.3) * 6); ctx.lineTo(hx + Math.cos(tg - 2.3) * 6, hy + Math.sin(tg - 2.3) * 6); ctx.closePath(); ctx.fill();
+    });
+    const ctx = this.begin();
+    this.blit(back);
+    if (lit > 0) this._ticks(ctx, cx, cy, Rt, kr, R0, this.lit);
     // motion trail behind the knob
     if (rate > 0.15) {
       const len = Math.min(2.8, rate * 0.9), sgn = this._spinSign(), k = Math.min(1, rate / 1.2);
@@ -996,7 +1042,7 @@ export class Crank extends Widget {
       ctx.beginPath(); ctx.arc(cx, cy, Rt, from, from + len); ctx.stroke();
     }
     // the hint, the first few turns
-    if (this.quarters < 8) {
+    if (hint) {
       ctx.font = font(Math.max(9, Math.round(s * 0.052))); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = rgba(INK, 0.6 * (1 - this.quarters / 8) + 0.1);
       ctx.fillText("TURN", cx, cy - hubR - s * 0.055);
@@ -1004,23 +1050,26 @@ export class Crank extends Widget {
       spaced(ctx, 0);
     }
     const kx = cx + Math.cos(a) * Rt, ky = cy + Math.sin(a) * Rt;
-    // the arm: a tapered bar from the hub to the knob
     const nx = -Math.sin(a), ny = Math.cos(a), w0 = s * 0.05, w1 = s * 0.034;
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+    const armPath = (ox, oy) => {
+      ctx.beginPath();
+      ctx.moveTo(cx + ox + nx * w0, cy + oy + ny * w0); ctx.lineTo(kx + ox + nx * w1, ky + oy + ny * w1);
+      ctx.arc(kx + ox, ky + oy, w1, a + Math.PI / 2, a - Math.PI / 2, true);
+      ctx.lineTo(cx + ox - nx * w0, cy + oy - ny * w0);
+      ctx.arc(cx + ox, cy + oy, w0, a - Math.PI / 2, a + Math.PI / 2, true);
+      ctx.closePath();
+    };
+    // soft shadows, faked with offset copies (a blur per frame costs too much without a GPU)
+    ctx.fillStyle = "rgba(0,0,0,0.16)"; armPath(1, 5); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.22)"; armPath(0.5, 3); ctx.fill();
+    // the arm: a tapered bar from the hub to the knob
     const ag = ctx.createLinearGradient(cx + nx * w0, cy + ny * w0, cx - nx * w0, cy - ny * w0);
     ag.addColorStop(0, "#e9eef0"); ag.addColorStop(0.4, "#98a4a9"); ag.addColorStop(1, "#3b4549");
-    ctx.fillStyle = ag;
-    ctx.beginPath();
-    ctx.moveTo(cx + nx * w0, cy + ny * w0); ctx.lineTo(kx + nx * w1, ky + ny * w1);
-    ctx.arc(kx, ky, w1, a + Math.PI / 2, a - Math.PI / 2, true);
-    ctx.lineTo(cx - nx * w0, cy - ny * w0);
-    ctx.arc(cx, cy, w0, a - Math.PI / 2, a + Math.PI / 2, true);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
+    ctx.fillStyle = ag; armPath(0, 0); ctx.fill();
     // the hub: turned metal with a screw
     const hg = ctx.createConicGradient ? ctx.createConicGradient(-0.6, cx, cy) : null;
     if (hg) { for (const [o, c] of [[0, "#8e999e"], [0.12, "#f2f5f6"], [0.25, "#6a757a"], [0.5, "#8e999e"], [0.62, "#f2f5f6"], [0.75, "#6a757a"], [1, "#8e999e"]]) hg.addColorStop(o, c); }
+    ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.arc(cx + 1, cy + 3, hubR + 1, 0, TAU); ctx.fill();
     ctx.fillStyle = hg || "#aab4b8";
     ctx.beginPath(); ctx.arc(cx, cy, hubR, 0, TAU); ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
@@ -1028,15 +1077,26 @@ export class Crank extends Widget {
     ctx.strokeStyle = "#7d898e"; ctx.lineWidth = Math.max(1.5, hubR * 0.12);
     ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * hubR * 0.26, cy + Math.sin(a) * hubR * 0.26); ctx.lineTo(cx - Math.cos(a) * hubR * 0.26, cy - Math.sin(a) * hubR * 0.26); ctx.stroke();
     // the knob: the one red thing, big enough for a thumb
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+    ctx.fillStyle = "rgba(0,0,0,0.14)"; ctx.beginPath(); ctx.arc(kx + 1.5, ky + 6, kr + 2, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.arc(kx + 1, ky + 3.5, kr, 0, TAU); ctx.fill();
     const kg = ctx.createRadialGradient(kx - kr * 0.35, ky - kr * 0.4, kr * 0.1, kx, ky, kr);
     kg.addColorStop(0, "#ffb0a4"); kg.addColorStop(0.35, "#ef5a4c"); kg.addColorStop(0.8, "#b8342a"); kg.addColorStop(1, "#7e1d15");
     ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, TAU); ctx.fill();
-    ctx.restore();
     ctx.strokeStyle = "rgba(60,10,6,0.6)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(kx, ky, kr - 0.5, 0, TAU); ctx.stroke();
     ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(kx - kr * 0.32, ky - kr * 0.42, kr * 0.28, kr * 0.16, -0.5, 0, TAU); ctx.fill();
     if (this.drag) this.thumbGlow(ctx, this.drag.x, this.drag.y, Math.max(34, kr * 2), 0.8);
+  }
+  // the quarter marks; lit (brass) as the handle passes them, at the same moments as the gear ticks
+  _ticks(ctx, cx, cy, Rt, kr, R0, lit) {
+    for (let i = 0; i < 4; i++) {
+      const l = lit ? lit[i] : 0;
+      if (lit && l <= 0) continue;
+      const q = -Math.PI / 2 + (i * Math.PI) / 2;
+      ctx.strokeStyle = l > 0 ? rgba(BRASS, 0.35 + 0.65 * l) : "rgba(246,239,217,0.3)";
+      ctx.lineWidth = 2.5 + 1.5 * l; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(cx + Math.cos(q) * (Rt + kr + 7), cy + Math.sin(q) * (Rt + kr + 7));
+      ctx.lineTo(cx + Math.cos(q) * (R0 - 5), cy + Math.sin(q) * (R0 - 5)); ctx.stroke();
+    }
   }
   _spinSign() {
     if (this.drag) { const r = this._thumbRate(now()); return r < 0 ? -1 : 1; }
@@ -1132,20 +1192,25 @@ export class RodPad extends Widget {
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;
     this.yankA = Math.max(0, this.yankA - dt * 1.8);
-    const ctx = this.begin(), w = this.w, h = this.h, th = this._theta;
-    this.glass(ctx, 0.5, 0.5, w - 1, h - 1, 16);
+    const w = this.w, h = this.h, th = this._theta, d = this.drag;
+    if (this.same([w, h, this.dpr, th.toFixed(2), this._steer.toFixed(3), d ? Math.round(d.x) + ":" + Math.round(d.y) : "", this.yankA.toFixed(2)].join())) return;
+    const back = this.layer("back");
+    this.paint(back, [w, h, this.dpr].join(), (c) => this.glass(c, 0.5, 0.5, w - 1, h - 1, 16));
+    const ctx = this.begin();
+    this.blit(back);
     // the header
     ctx.textBaseline = "middle"; ctx.textAlign = "left";
     ctx.font = font(12); spaced(ctx, 0.14); ctx.fillStyle = rgba(BRASS, 1);
     ctx.fillText("ROD", 12, 16);
     const low = th < 28, high = th > 70;
     ctx.textAlign = "right"; ctx.font = font(10); spaced(ctx, 0.1);
-    ctx.fillStyle = low ? rgba(DANGER, 0.95) : high ? rgba(GREEN, 0.95) : rgba(INK, 0.55);
-    ctx.fillText(low ? "TOO LOW" : high ? "UP" : "PUMP", w - 12, 16);
+    ctx.fillStyle = low ? rgba(DANGER, 0.95) : rgba(GREEN, 0.95);
+    if (low || high) ctx.fillText(low ? "TOO LOW" : "HIGH", w - 12, 16);
     spaced(ctx, 0);
     // the rod seen from your right side: a pivot, the arc it can swing through, and the rod
     const steerY = h - 17;
-    const px = w * 0.3, py = Math.max(40, Math.min(h * 0.72, steerY - 26)), L = Math.max(20, Math.min(py - 36, w * 0.56));
+    const yTop = 34, yBot = steerY - 22, L = Math.max(20, Math.min(w * 0.56, (yBot - yTop) * 0.78));
+    const px = w * 0.3, py = Math.min(yBot - 12, (yTop + yBot) / 2 + L * 0.45);
     const ang = (d) => -d * DEG;
     // zones: too low (red), lifting (green)
     const band = (d0, d1, col) => { ctx.strokeStyle = col; ctx.lineWidth = 8; ctx.lineCap = "butt"; ctx.beginPath(); ctx.arc(px, py, L + 8, ang(d1), ang(d0)); ctx.stroke(); };
@@ -1230,7 +1295,7 @@ export class Gauge extends Widget {
     if (!this.fit()) return;
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;
-    const s = this.s, v = this.v, ctx = this.begin(), w = this.w, h = this.h;
+    const s = this.s, v = this.v, w = this.w, h = this.h;
     const tf = clamp(+s.tfrac || 0, 0, 1.2), drag = clamp(+s.dragFrac || 0, 0, 1);
     v.t = lerp(v.t, tf, 1 - Math.exp(-dt * 16));
     // a peak marker that lingers, so a spike you missed still shows
@@ -1240,100 +1305,108 @@ export class Gauge extends Widget {
     if (s.stamina != null) v.st = lerp(v.st, clamp(+s.stamina, 0, 1), 1 - Math.exp(-dt * 6));
     v.slip = lerp(v.slip, (+s.slip || 0) > 0.05 ? 1 : 0, 1 - Math.exp(-dt * 10));
     const danger = v.t > 0.85 ? 0.5 + 0.5 * Math.sin(this.time * 34) : 0;
-    this.glass(ctx, 0.5, 0.5, w - 1, h - 1, 14, danger * clamp((v.t - 0.85) / 0.1, 0, 1));
-    const strip = 26 * v.fish, top = h - strip;
+    const tired = s.stamina != null && v.st < 0.3;
+    const key = [w, h, this.dpr, v.t.toFixed(3), v.peak.toFixed(3), v.fish.toFixed(2), v.st.toFixed(3), drag.toFixed(3), s.name, (+s.lineOut || 0).toFixed(1), (+s.depth || 0).toFixed(1),
+      v.slip > 0.02 || danger || tired ? this.time.toFixed(3) : 0].join();
+    if (this.same(key)) return;
+    const back = this.layer("back");
+    this.paint(back, [w, h, this.dpr].join(), (c) => this.glass(c, 0.5, 0.5, w - 1, h - 1, 14));
+    const ctx = this.begin();
+    this.blit(back);
+    if (danger) {
+      ctx.beginPath(); rrect(ctx, 0.5, 0.5, w - 1, h - 1, 14);
+      ctx.strokeStyle = rgba(DANGER, (0.3 + 0.6 * danger) * clamp((v.t - 0.85) / 0.1, 0, 1)); ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    const strip = 32 * v.fish, top = h - strip;
     // the tension arc: 240° from the lower left, over the top, to the lower right
-    const R = Math.max(18, Math.min(top * 0.36, w * 0.2)), cx = 12 + R + 6, cy = top / 2 + R * 0.12;
-    const A0 = 150 * DEG, SW = 240 * DEG, at = (f) => A0 + SW * clamp(f, 0, 1), lw = Math.max(6, R * 0.24);
+    const R = Math.max(18, Math.min(top * 0.4, w * 0.2)), lw = Math.max(5, R * 0.22);
+    const cx = 12 + R + lw / 2, cy = Math.max(R + lw / 2 + 6, top / 2 + R * 0.25);
+    const A0 = 150 * DEG, SW = 240 * DEG, at = (f) => A0 + SW * clamp(f, 0, 1);
     ctx.lineCap = "butt";
-    ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = lw + 4;
+    ctx.strokeStyle = "rgba(0,0,0,0.38)"; ctx.lineWidth = lw + 4;
     ctx.beginPath(); ctx.arc(cx, cy, R, A0, A0 + SW); ctx.stroke();
     // faint zones: fine up to the drag, amber past it, red near the break
     const zone = (f0, f1, col) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, R, at(f0), at(f1)); ctx.stroke(); };
-    zone(0, drag, rgba(GREEN, 0.18)); zone(drag, 0.85, rgba(AMBER, 0.18)); zone(0.85, 1, rgba(DANGER, 0.26));
-    // the fill
+    zone(0, drag, rgba(GREEN, 0.16)); zone(drag, 0.85, rgba(AMBER, 0.16)); zone(0.85, 1, rgba(DANGER, 0.3));
+    // the fill, coloured by how close it is to the break
     if (v.t > 0.004) {
       let st;
       if (ctx.createConicGradient) {
         st = ctx.createConicGradient(A0, cx, cy);
         const k = SW / TAU;
         st.addColorStop(0, rgba(GREEN, 1)); st.addColorStop(k * Math.max(0.05, drag * 0.9), rgba(GREEN, 1));
-        st.addColorStop(k * Math.min(0.9, Math.max(drag + 0.08, 0.6)), rgba(AMBER, 1)); st.addColorStop(k * 0.9, rgba(DANGER, 1)); st.addColorStop(1, rgba(DANGER, 1));
+        st.addColorStop(k * Math.min(0.8, Math.max(drag + 0.1, 0.6)), rgba(AMBER, 1)); st.addColorStop(k * 0.9, rgba(DANGER, 1)); st.addColorStop(1, rgba(DANGER, 1));
       } else st = v.t > 0.85 ? rgba(DANGER, 1) : v.t > drag ? rgba(AMBER, 1) : rgba(GREEN, 1);
-      ctx.save();
-      if (danger) { ctx.shadowColor = rgba(DANGER, 0.9); ctx.shadowBlur = 8 + 10 * danger; }
+      if (danger) {
+        ctx.strokeStyle = rgba(DANGER, 0.25 * danger); ctx.lineWidth = lw + 10; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(cx, cy, R, at(Math.max(0, v.t - 0.25)), at(v.t)); ctx.stroke();
+      }
       ctx.strokeStyle = st; ctx.lineWidth = lw; ctx.lineCap = "round";
       ctx.beginPath(); ctx.arc(cx, cy, R, A0, at(v.t)); ctx.stroke();
-      ctx.restore();
     }
     // the drag slips: a ratchet of dashes runs round the outside
     if (v.slip > 0.02) {
-      ctx.strokeStyle = rgba(AMBER, 0.9 * v.slip); ctx.lineWidth = 3; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -this.time * 60;
-      ctx.beginPath(); ctx.arc(cx, cy, R + lw / 2 + 5, at(Math.max(0, drag - 0.12)), at(Math.min(1, drag + 0.12))); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = rgba(AMBER, 0.95 * v.slip); ctx.lineWidth = 3; ctx.setLineDash([3, 4]); ctx.lineDashOffset = -this.time * 60;
+      ctx.beginPath(); ctx.arc(cx, cy, R + lw / 2 + 4, at(Math.max(0, drag - 0.14)), at(Math.min(1, drag + 0.14))); ctx.stroke(); ctx.setLineDash([]);
     }
     // marks: the drag setting (cream) and the break point (red)
     const tick = (f, col, len, lw2) => {
       const a = at(f), c = Math.cos(a), sn = Math.sin(a);
       ctx.strokeStyle = col; ctx.lineWidth = lw2; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(cx + c * (R - lw / 2 - 3), cy + sn * (R - lw / 2 - 3)); ctx.lineTo(cx + c * (R + lw / 2 + len), cy + sn * (R + lw / 2 + len)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + c * (R - lw / 2 - 2), cy + sn * (R - lw / 2 - 2)); ctx.lineTo(cx + c * (R + lw / 2 + len), cy + sn * (R + lw / 2 + len)); ctx.stroke();
     };
-    tick(drag, rgba(INK, 0.95), 5, 2.5);
-    tick(1, rgba(DANGER, 1), 5, 3);
-    if (v.peak > v.t + 0.03) tick(v.peak, rgba("255,244,214", 0.55), 0, 1.5);
+    if (v.peak > v.t + 0.03) tick(v.peak, rgba("255,244,214", 0.6), 0, 1.5);
+    tick(drag, rgba(INK, 0.95), 4, 2.5);
+    tick(1, rgba(DANGER, 1), 4, 3);
     // the centre: the tension as a share of what the line can take
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const pct = Math.round(clamp(v.t, 0, 1) * 100);
-    ctx.font = font(Math.max(13, Math.round(R * 0.62)));
+    ctx.font = font(Math.max(12, Math.round(R * 0.5)));
     ctx.fillStyle = v.t > 0.85 ? rgba(DANGER, 1) : "#f6efd9";
-    ctx.fillText(pct + "%", cx, cy - R * 0.02);
-    ctx.font = font(Math.max(8, Math.round(R * 0.24))); spaced(ctx, 0.08);
-    const label = v.t > 0.85 ? "TOO TIGHT" : v.slip > 0.5 ? "DRAG" : "TENSION";
+    ctx.fillText(pct + "%", cx, cy - R * 0.1, (R - lw) * 1.8);
+    ctx.font = font(Math.max(7, Math.round(R * 0.21))); spaced(ctx, 0.08);
+    const label = v.t > 0.85 ? "TOO TIGHT" : v.slip > 0.5 ? "SLIPPING" : "TENSION";
     ctx.fillStyle = v.t > 0.85 ? rgba(DANGER, 1) : v.slip > 0.5 ? rgba(AMBER, 1) : rgba(INK, 0.55);
-    ctx.fillText(label, cx, cy + R * 0.42);
+    ctx.fillText(label, cx, cy + R * 0.3, (R - lw) * 1.9);
     spaced(ctx, 0);
     // the right column: the line out and the depth
     const x = cx + R + lw / 2 + 12, colW = w - x - 10;
     if (colW > 30) {
-      ctx.textAlign = "left";
-      const big = Math.max(15, Math.min(24, Math.round(top * 0.2)));
-      const y0 = top / 2 - big * 0.95;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      const big = Math.max(15, Math.min(24, Math.round(top * 0.22)));
+      const y0 = top / 2 - big * 1.45 + 2;
       ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.55);
-      ctx.fillText("LINE OUT", x, y0);
+      ctx.fillText("LINE OUT", x, y0, colW);
       spaced(ctx, 0);
       ctx.font = font(big); ctx.fillStyle = "#f6efd9";
       const lo = (+s.lineOut || 0).toFixed(1);
-      ctx.fillText(lo, x, y0 + big * 0.85);
+      ctx.fillText(lo, x, y0 + big * 0.95);
       const lw3 = ctx.measureText(lo).width;
       ctx.font = font(Math.round(big * 0.55), 800); ctx.fillStyle = rgba(INK, 0.7);
-      ctx.fillText(" m", x + lw3, y0 + big * 0.95);
+      ctx.fillText(" m", x + lw3, y0 + big * 1.05);
       ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.55);
-      ctx.fillText("DEPTH", x, y0 + big * 1.9);
+      ctx.fillText("DEPTH", x, y0 + big * 2.05, colW);
       spaced(ctx, 0);
-      ctx.font = font(Math.round(big * 0.66)); ctx.fillStyle = "#cfe3e0";
-      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, y0 + big * 2.55);
+      ctx.font = font(Math.round(big * 0.7)); ctx.fillStyle = "#cfe3e0";
+      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, y0 + big * 2.8);
     }
-    // the fish: its name and how much fight it has left
+    // the fish: its name, and a bar of how much fight it has left
     if (v.fish > 0.02) {
       ctx.save(); ctx.globalAlpha = v.fish;
-      const y = h - 14, bx = 12, bw = w - 24;
-      const name = String(s.name || "Fish on!");
-      ctx.font = font(11); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(BRASS, 1);
-      let nm = name;
-      while (nm.length > 3 && ctx.measureText(nm).width > bw * 0.55) nm = nm.slice(0, -2);
-      if (nm !== name) nm = nm.trim() + "…";
-      ctx.fillText(nm, bx, y - 1);
-      const nw = Math.min(bw * 0.58, ctx.measureText(nm).width + 10), barX = bx + nw, barW = Math.max(20, bw - nw);
-      ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); rrect(ctx, barX, y - 4, barW, 8, 4); ctx.fill();
+      const bx = 12, bw = w - 24, ny = h - 23, by = h - 11;
+      ctx.font = font(12); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(BRASS, 1);
+      ctx.fillText(String(s.name || "Fish on!"), bx, ny, tired ? bw - 50 : bw);
+      if (tired) {
+        ctx.font = font(9); spaced(ctx, 0.12); ctx.textAlign = "right"; ctx.fillStyle = rgba(GREEN, 0.6 + 0.4 * Math.sin(this.time * 6));
+        ctx.fillText("TIRED", bx + bw, ny); spaced(ctx, 0);
+      }
+      ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, bw, 6, 3); ctx.fill();
       if (s.stamina != null) {
-        const tired = v.st < 0.3, fw = Math.max(0, barW * v.st);
+        const fw = Math.max(0, bw * v.st);
         if (fw > 1) {
-          const g = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+          const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
           if (tired) { g.addColorStop(0, rgba(GREEN, 1)); g.addColorStop(1, rgba(GREEN, 0.8)); } else { g.addColorStop(0, rgba(AMBER, 1)); g.addColorStop(1, rgba(RED, 1)); }
-          ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, barX, y - 4, fw, 8, 4); ctx.fill();
-        }
-        if (tired) {
-          ctx.font = font(9); spaced(ctx, 0.1); ctx.textAlign = "right"; ctx.fillStyle = rgba(GREEN, 0.5 + 0.5 * Math.sin(this.time * 6));
-          ctx.fillText("TIRED", barX + barW, y - 11); spaced(ctx, 0);
+          ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill();
         }
       }
       ctx.restore();

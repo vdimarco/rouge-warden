@@ -80,7 +80,9 @@ function toClient(lx, ly, el) {
   if (G.rot === 90) { dy = x - Lw / 2; dx = Lh / 2 - y; } else { dy = Lw / 2 - x; dx = y - Lh / 2; }
   return { x: W / 2 + dx, y: H / 2 + dy };
 }
-const EV = [], PT = [], RATES = [];
+const EV = [], PT = [], RATES = [], LAT = [];
+addEventListener("pointerdown", (e) => LAT.push(Math.round(performance.now() - e.timeStamp)), true);
+const FR = []; (function fr(t) { FR.push(t); if (FR.length > 4000) FR.splice(0, 2000); requestAnimationFrame(fr); })(0);
 const panel = new ReelPanel($("#reelBox"), { toLocal, hand: "right", area: game });
 for (const t of ["bail", "pin", "pinmove", "unpin"]) panel.on(t, (e) => EV.push(Object.assign({ type: t, at: performance.now() }, e)));
 const crank = new Crank($("#crankBox"), { toLocal, hand: "right" });
@@ -88,9 +90,9 @@ crank.on("turn", (e) => EV.push(Object.assign({ type: "turn", at: performance.no
 const pad = new RodPad($("#padBox"), { toLocal });
 pad.on("yank", (e) => EV.push(Object.assign({ type: "yank", at: performance.now() }, e)));
 const gauge = new Gauge($("#gaugeBox"));
-for (const t of ["pointerdown", "pointerup", "pointercancel"]) addEventListener(t, (e) => PT.push({ type: t, id: e.pointerId, t: e.timeStamp, target: e.target.id || e.target.className || e.target.tagName }), true);
-let lastMove = 0;
-addEventListener("pointermove", (e) => { lastMove = e.timeStamp; }, true);
+for (const t of ["pointerdown", "pointerup", "pointercancel"]) addEventListener(t, (e) => PT.push({ type: t, id: e.pointerId, t: e.timeStamp, h: performance.now(), target: e.target.id || e.target.className || e.target.tagName }), true);
+let lastMove = 0, moves = 0;
+addEventListener("pointermove", (e) => { lastMove = e.timeStamp; moves++; }, true);
 function mode(m, { flying = false } = {}) {
   const wide = game.clientWidth > game.clientHeight * 1.15;
   const cast = m === "cast";
@@ -110,15 +112,17 @@ function frame() {
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!pad.hidden) pad.draw(dt); }
 }
 requestAnimationFrame(frame);
-window.T = { panel, crank, pad, gauge, EV, PT, RATES, REEL_UI, G, applyRotation, toLocal, toClient, mode,
+window.T = { LAT, FR, panel, crank, pad, gauge, EV, PT, RATES, REEL_UI, G, applyRotation, toLocal, toClient, mode,
   sampling(b) { sample = b; if (b) RATES.length = 0; },
   // hold the last frame still while a screenshot is taken (software raster in a busy test box is slow)
-  freeze(b) { frozen = b; }, get lastMove() { return lastMove; }, clear() { EV.length = 0; PT.length = 0; } };
+  freeze(b) { frozen = b; }, get lastMove() { return lastMove; }, get moves() { return moves; }, clear() { EV.length = 0; PT.length = 0; } };
 window.READY = true;
 </script></body></html>`;
 
 /* ---------- the browser ---------- */
-const browser = await pw.chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+// No SwiftShader flags here (unlike the WebGL tests): this page has no WebGL, and SwiftShader turns on "GPU" 2D canvas
+// in software, which is ~50x slower than plain Skia and starves the input and timers the checks measure.
+const browser = await pw.chromium.launch();
 const errors = [];
 async function openPage(width, height) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -192,7 +196,7 @@ async function panelChecks(P, tag) {
   await sleep(160);
   ev = await EVS(page, "pin");
   const d2 = (await page.evaluate(() => T.PT.slice())).find((p) => p.type === "pointerdown");
-  check(early.length === 0 && ev.length === 1 && ev[0].t - d2.t >= 85 && ev[0].t - d2.t < 180, `${tag}: closed bail: a hold pins after ~90 ms (${ev[0] ? (ev[0].t - d2.t).toFixed(0) : "none"} ms)`);
+  check(early.length === 0 && ev.length === 1 && ev[0].t - d2.t >= 85 && ev[0].t - d2.t < 180, `${tag}: closed bail: a hold pins after ~90 ms (${ev[0] ? (ev[0].t - d2.t).toFixed(0) : "none"} ms; the press reached the page ${(d2.h - d2.t).toFixed(0)} ms late)`);
   await P.touch("touchEnd", []);
   await sleep(40);
   ev = await EVS(page, "unpin");
@@ -251,6 +255,7 @@ async function panelChecks(P, tag) {
 /* ---------- the crank ---------- */
 async function crankChecks(P, tag) {
   const { page } = P;
+  if (process.env.DIAG) console.log("        latencies " + JSON.stringify(await page.evaluate(() => T.LAT.splice(0))) + " frame gaps>50: " + JSON.stringify(await page.evaluate(() => { const g = []; for (let i = 1; i < T.FR.length; i++) if (T.FR[i] - T.FR[i - 1] > 50) g.push(Math.round(T.FR[i - 1]) + "+" + Math.round(T.FR[i] - T.FR[i - 1])); T.FR.length = 0; return g; })));
   await page.evaluate(() => { T.mode("reel"); T.clear(); });
   await sleep(100);
   const sz = await P.size("#crankBox");
@@ -272,9 +277,10 @@ async function crankChecks(P, tag) {
   }
   const TAU = Math.PI * 2;
   // a steady 2 rev/s circle
-  await page.evaluate(() => T.sampling(true));
+  const m0 = await page.evaluate(() => { T.sampling(true); return T.moves; });
   await circle(2, 1.6, 20, { hold: 450 });
-  const log = await page.evaluate(() => ({ r: T.RATES.slice(), last: T.lastMove }));
+  const log = await page.evaluate(() => ({ r: T.RATES.slice(), last: T.lastMove, moves: T.moves, pt: T.PT.slice(-4) }));
+  console.log("        (" + (log.moves - m0) + " pointermoves seen, " + log.r.length + " frames; " + JSON.stringify(log.pt) + ")");
   await page.evaluate(() => T.sampling(false));
   await P.touch("touchEnd", []);
   const steady = log.r.filter((s) => s.t > log.r[0].t + 400 && s.t < log.last - 20).map((s) => s.rate);
@@ -437,7 +443,7 @@ async function run() {
   let P;
   if (process.env.ONLY !== "landscape") {
   P = await openPage(390, 844);
-  await shots(P, "390x844");
+  if (process.env.ONLY !== "checks") await shots(P, "390x844");
   if (process.env.ONLY !== "shots") {
     await panelChecks(P, "portrait");
     await crankChecks(P, "portrait");
@@ -456,7 +462,7 @@ async function run() {
   }
   // landscape phone
   P = await openPage(844, 390);
-  await shots(P, "844x390");
+  if (process.env.ONLY !== "checks") await shots(P, "844x390");
   if (process.env.ONLY !== "shots") {
     await panelChecks(P, "landscape");
     await crankChecks(P, "landscape");

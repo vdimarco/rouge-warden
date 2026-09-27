@@ -86,7 +86,7 @@ function noiseBuffer(ctx, kind, sec, rate = ctx.sampleRate) {
   if (peak > 0) for (let i = 0; i < n; i++) d[i] /= peak;
   return b;
 }
-function lakeIR(ctx, sec = 2.2) {
+function lakeIR(ctx, sec = 1.9) {
   const sr = ctx.sampleRate, n = Math.floor(sec * sr), b = ctx.createBuffer(2, n, sr);
   for (let c = 0; c < 2; c++) {
     const d = b.getChannelData(c);
@@ -433,8 +433,8 @@ const SFX = {
     hiss(e, t, { type: "bandpass", f: 1300, q: 0.7, dur: 0.2, att: 0.004, peak: 0.16 + 0.16 * s });
     train(e, t + 0.05, { rate: 24, rate2: 30, dur: air, jitter: 400, bands: [[3300, 5, 12], [5100, 7, 5]], peak: 0.22, att: 0.02 });
     drips(e, t + 0.1, 3, air * 0.8, e.sfx, 0.8);
-    splashAt(e, t + air, Math.min(1, s + 0.3), { pan: 0, send: 0.25 });
-    return tone(e, t + air + 0.01, { f: 230 - 90 * s, f2: 58, glide: 0.18, dur: 0.3, peak: 0.34 });
+    splashAt(e, t + air, Math.min(1, s + 0.2), { pan: 0, send: 0.25 });
+    return tone(e, t + air + 0.04, { f: 230 - 90 * s, f2: 58, glide: 0.18, dur: 0.3, peak: 0.2 });
   },
   // the line breaks: a crack, a bright twang whose pitch falls as the tension lets go, and slack line whipping back
   snap(e, t) {
@@ -489,19 +489,20 @@ const SFX = {
   loon(e, t, v) { return loon(e, t, v); },
   loonWail(e, t) { return loonWail(e, t, { pan: 0 }); },
   loonTremolo(e, t) { return loonTremolo(e, t, { pan: 0 }); },
+  // UI: a soft wooden tick with a small bell in it, like the latch of a tackle box
   ui(e, t) {
-    hiss(e, t, { type: "bandpass", f: 2600, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.22 });
-    tone(e, t, { f: 1320, dur: 0.05, peak: 0.07, att: 0.002 });
-    return tone(e, t, { f: 1980, dur: 0.03, peak: 0.03, att: 0.002 });
+    hiss(e, t, { type: "bandpass", f: 2600, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.4 });
+    tone(e, t, { f: 1320, dur: 0.05, peak: 0.13, att: 0.002 });
+    return tone(e, t, { f: 1980, dur: 0.03, peak: 0.05, att: 0.002 });
   },
   uiBack(e, t) {
-    hiss(e, t, { type: "bandpass", f: 1900, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.2 });
-    return tone(e, t, { f: 990, f2: 760, glide: 0.05, dur: 0.07, peak: 0.08, att: 0.002 });
+    hiss(e, t, { type: "bandpass", f: 1900, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.36 });
+    return tone(e, t, { f: 990, f2: 760, glide: 0.05, dur: 0.07, peak: 0.14, att: 0.002 });
   },
   // a detent: the drag knob, a gear tooth
   tick(e, t) {
-    hiss(e, t, { type: "bandpass", f: 3600, q: 4, dur: 0.008, att: 0.0003, peak: 0.3 });
-    return ring(e, t, [[4400, 0.03, 0.025]]);
+    hiss(e, t, { type: "bandpass", f: 3600, q: 4, dur: 0.008, att: 0.0003, peak: 0.5 });
+    return ring(e, t, [[4400, 0.05, 0.025]]);
   },
 };
 function mallet(e, t, f, peak, dur) {
@@ -641,8 +642,8 @@ function drive(e, name, v, t) {
     if (!e.offline && L.live && t - L.zeroAt > 1.5) { L.out.disconnect(); L.live = false; }
     return;
   }
-  // skip tiny changes: fewer automation events
-  if (v !== 0 && L.v !== 0 && Math.abs(v - L.v) <= 0.015 * Math.max(v, L.v) && t - L.t < 0.25) return;
+  // ~30 updates a second at most, and none for tiny changes: fewer automation events for the audio thread
+  if (v !== 0 && L.v !== 0 && (t - L.t < 0.03 || (Math.abs(v - L.v) <= 0.015 * Math.max(v, L.v) && t - L.t < 0.25))) return;
   if (!L.live) { L.out.connect(e.loop); L.live = true; }
   if (v === 0) L.zeroAt = t;
   L.v = v; L.t = t;
@@ -652,24 +653,27 @@ function drive(e, name, v, t) {
 /* ---------------- the lake: water, wind in the pines, birds, crickets, loons ---------------- */
 function lakeBed(e) {
   if (e.amb) return e.amb;
-  const A = { out: gain(e, 0, e.ambBus), on: false, hour: 12, next: null, timer: 0 };
+  const A = { out: gain(e, 0, e.ambBus), on: false, hour: 12, next: null, timer: 0, bugsLive: false, bugsOffAt: Infinity };
   const t0 = e.ctx.currentTime;
-  // lapping water: brown noise, darkened, swelling with two slow waves
+  // lapping water: brown noise, darkened, swelling with two slow waves (one oscillator plays both)
   const lapN = noise(e, e.brown), lapLP = filt(e, "lowpass", 650, 0.3);
   A.lapOut = gain(e, 0, A.out);
   const swell = gain(e, 0.5, A.lapOut);
   lapN.connect(lapLP); lapLP.connect(swell);
-  for (const [f, d] of [[0.21, 0.22], [0.34, 0.18]]) { const s = osc(e, "sine", f); s.connect(gain(e, d, swell.gain)); s.start(t0); }
+  const lapLFO = osc(e, swells(e.ctx, [[5, 0.22], [8, 0.18]]), 0.0425);            // 0.21 and 0.34 Hz
+  lapLFO.connect(swell.gain); lapLFO.start(t0);
   lapN.start(t0, rnd() * 4);
   // wind in the pines: a soft roar and the hiss of the needles, in slow gusts
   const wN = noise(e, e.pink), roar = filt(e, "bandpass", 480, 0.6), needles = filt(e, "highpass", 2800, 0.5);
   A.windOut = gain(e, 0, A.out);
   const gust = gain(e, 0.5, A.windOut);
   wN.connect(roar); roar.connect(gust); wN.connect(needles); needles.connect(gain(e, 0.3, gust));
-  for (const [f, d] of [[0.043, 0.16], [0.071, 0.13], [0.117, 0.08]]) { const s = osc(e, "sine", f); s.connect(gain(e, d, gust.gain)); s.start(t0); }
+  const gustLFO = osc(e, swells(e.ctx, [[3, 0.16], [5, 0.13], [8, 0.08]]), 0.0143);  // 0.043, 0.072 and 0.11 Hz: a 70 s cycle
+  gustLFO.connect(gust.gain); gustLFO.start(t0);
   wN.start(t0, rnd() * 2);
-  // crickets: a steady chirp pattern (3 pulses, then a rest) gating a pure high tone. Two of them, a little apart
-  A.bugOut = gain(e, 0, A.out);
+  // crickets: a steady chirp pattern (3 pulses, then a rest) gating a pure high tone. Two of them, a little apart.
+  // Plugged in only when they sing (see lakeSet)
+  A.bugOut = gain(e, 0);
   for (const [f, rate, pan] of [[4400, 2.35, -0.5], [4700, 2.9, 0.45]]) {
     const { wave: w, mean } = chirpWave(e.ctx, rate);
     const carrier = osc(e, "sine", f), vca = gain(e, 0), gate = osc(e, w, rate);
@@ -680,6 +684,12 @@ function lakeBed(e) {
   }
   e.amb = A;
   return A;
+}
+// a few slow sines in one oscillator: the harmonics of a very slow note, so they drift like separate swells
+function swells(ctx, parts) {
+  const n = Math.max(...parts.map((p) => p[0])) + 1, re = new Float32Array(n), im = new Float32Array(n);
+  for (const [h, d] of parts) im[h] = d;
+  return ctx.createPeriodicWave(re, im, { disableNormalization: true });
 }
 // one period of a cricket's chirp as a periodic wave: 3 smooth pulses at 30 Hz, then quiet
 function chirpWave(ctx, rate) {
@@ -714,6 +724,9 @@ function lakeSet(e, onNow, hour, t) {
   A.lapOut.gain.setTargetAtTime(0.16 + 0.08 * m.wind, t, 2);
   A.windOut.gain.setTargetAtTime(0.12 * m.wind, t, 2);
   A.bugOut.gain.setTargetAtTime(0.05 * m.bugs, t, 3);
+  // the crickets only cost anything while they are plugged in: in from dusk, out a while after dawn (see lakeEvents)
+  if (m.bugs > 0.005 && !A.bugsLive) { A.bugOut.connect(A.out); A.bugsLive = true; }
+  A.bugsOffAt = m.bugs > 0.005 ? Infinity : Math.min(A.bugsOffAt, t);
   if (onNow && !A.next) A.next = { lap: t + 0.4, bird: t + 1.5 + 3 * rnd(), loon: t + 5 + 7 * rnd(), frog: t + 3 + 5 * rnd() };
   if (!onNow) A.next = null;
 }
@@ -721,6 +734,7 @@ function lakeSet(e, onNow, hour, t) {
 function lakeEvents(e, t0, t1) {
   const A = e.amb;
   if (!A || !A.on || !A.next) return;
+  if (!e.offline && A.bugsLive && t0 - A.bugsOffAt > 15) { A.bugOut.disconnect(); A.bugsLive = false; }
   const m = mix(A.hour), N = A.next, to = e.ambBus;
   const at = (k) => Math.max(N[k], t0);
   while (N.lap < t1) { const s = rnd(); lap(e, at("lap"), s, to); N.lap = at("lap") + 0.7 + 2.2 * rnd(); }
@@ -765,7 +779,7 @@ export const Sound = {
     try { ctx = new AC({ latencyHint: "interactive" }); } catch (err) { try { ctx = new AC(); } catch (err2) { return false; } }
     E = makeEngine(ctx);
     E.out.gain.value = on ? VOL : 0;
-    E.ran = false;
+    E.ran = ctx.state === "running";
     ctx.addEventListener("statechange", () => { if (ctx.state === "running") E.ran = true; });
     // iOS: a silent sound started inside the gesture unlocks the output
     try { const b = ctx.createBuffer(1, 1, ctx.sampleRate), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(); } catch (err) { /* ignore */ }
@@ -807,8 +821,14 @@ export const Sound = {
     lakeSet(E, !!onNow, clamp(num(hour, 12), 0, 24), E.ctx.currentTime);
     lakeTimer(!!onNow && on);
   },
-  // quiets the game loops (the lake keeps going: turn it off with setAmbience(false))
-  stopLoops() { if (E) for (const n of GAME_LOOPS) drive(E, n, 0); },
+  // quiets the game loops (the lake keeps going: turn it off with setAmbience(false)). The game may stop calling the
+  // setters now (pause, title), so unplug the silent loops a little later from here
+  stopLoops() {
+    if (!E) return;
+    for (const n of GAME_LOOPS) drive(E, n, 0);
+    clearTimeout(E.parkT);
+    E.parkT = setTimeout(() => { for (const n of GAME_LOOPS) drive(E, n, 0); }, 1700);
+  },
 
   /* ---------- test hooks (not for the game) ---------- */
   _render: (...a) => renderOffline(...a),

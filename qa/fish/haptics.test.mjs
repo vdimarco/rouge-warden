@@ -1,6 +1,13 @@
-// Checks public/fish/js/haptics.js in plain node: a recorder stands in for navigator.vibrate, and a fake clock drives it.
+// Checks public/fish/js/haptics.js. Parts 1-2 run in plain node: a recorder stands in for navigator.vibrate, and a
+// fake clock drives it. Part 3 checks the iPhone switch pads in headless Chromium, with the platform forced to "ios"
+// (it serves public/ with python3 on a free port, and needs the playwright package: project, NODE_PATH or npm -g).
 // Run: node qa/fish/haptics.test.mjs   (exit code 1 on failure)
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { spawn, execSync } from "node:child_process";
+import net from "node:net";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SRC = new URL("../../public/fish/js/haptics.js", import.meta.url).href;
 let failed = 0;
@@ -306,9 +313,6 @@ console.log(failed ? `\n${failed} check(s) failed` : "\nall haptics checks passe
 process.exit(failed ? 1 : 0);
 
 async function iosPads() {
-  const { createRequire } = await import("module");
-  const { spawn, execSync } = await import("child_process");
-  const net = (await import("net")).default, path = (await import("path")).default, { fileURLToPath } = await import("url");
   const req = createRequire(import.meta.url);
   let pw = null;
   try { pw = req("playwright"); } catch (e) { try { pw = req(path.join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright")); } catch (e2) { /* none */ } }

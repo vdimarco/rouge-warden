@@ -26,7 +26,6 @@ export const U = {
   uDeep: { value: new THREE.Color() },
   uShallow: { value: new THREE.Color() },
   uFoam: { value: new THREE.Color() },
-  uLight: { value: 1 },
 };
 
 // Small hash noise without sin(), so it stays stable in mediump on phones.

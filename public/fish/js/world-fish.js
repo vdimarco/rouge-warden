@@ -336,6 +336,7 @@ function buildFish(sp) {
   const G = fishParts(sp);
   const body = fx(new THREE.MeshPhongMaterial({ map: skinTexture(sp), shininess: gold ? 80 : 45, specular: gold ? 0x806020 : 0x383838, emissive: gold ? 0x6a4a08 : 0x000000, transparent: true }), u);
   const fins = fx(new THREE.MeshPhongMaterial({ map: finTexture(), vertexColors: true, shininess: 20, specular: 0x222222, side: THREE.DoubleSide, transparent: true, depthWrite: false, alphaTest: 0.02, emissive: gold ? 0x4a3400 : 0x000000 }), u);
+  fins.userData.fin = true;
   const iris = sp.id === "walleye" ? "#d6dcc4" : lk.accent && (sp.id === "rockbass" || sp.id === "smallmouth") ? lk.accent : sp.id === "pumpkinseed" ? "#b8502a" : gold ? "#c86a10" : "#d0a038";
   const eyes = fx(new THREE.MeshPhongMaterial({ map: eyeTexture(iris, sp.id === "walleye"), shininess: 120, specular: 0xffffff, transparent: true, emissive: sp.id === "walleye" ? 0x1a1e14 : 0 }), u);
   const grp = new THREE.Group();

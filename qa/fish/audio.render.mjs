@@ -327,8 +327,9 @@ try {
       listen();
     });
     out.loud = loud;
+    // stopLoops() once, as the pause does, then no more calls: the loops must unplug themselves
     S.stopLoops();
-    await frames(150, () => { S.stopLoops(); listen(); });
+    await frames(130, () => listen());
     out.parked = Object.entries(e.loops).filter(([, L]) => L.live).map(([n]) => n);
     out.off = S.toggle();
     out.stored = localStorage.getItem("arcade.sound");

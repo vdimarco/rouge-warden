@@ -71,6 +71,29 @@ async function setPose(cdp, q) {
 const portrait = (th) => qx(th);
 const landscape = (th, side = 1, roll = 0) => qmul(qy(roll), qx(th), qz(90 * side));
 
+/* ---------------- three.js from the CDN, fetched by node ---------------- */
+// Chromium's own requests through a proxy can fail at random (ERR_TOO_MANY_RETRIES); node's fetch is steadier.
+// Cached per run, retried a few times; if it still fails the request goes on to the network as usual.
+const cdnCache = new Map();
+async function viaNode(route) {
+  const url = route.request().url();
+  if (!cdnCache.has(url)) {
+    cdnCache.set(url, (async () => {
+      for (let i = 0; i < 4; i++) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) return { body: Buffer.from(await r.arrayBuffer()), type: r.headers.get("content-type") || "application/javascript" };
+        } catch (e) { /* retry */ }
+        await sleep(300 * (i + 1));
+      }
+      return null;
+    })());
+  }
+  const got = await cdnCache.get(url);
+  if (!got) { cdnCache.delete(url); return route.continue(); }
+  return route.fulfill({ status: 200, body: got.body, headers: { "content-type": got.type, "access-control-allow-origin": "*" } });
+}
+
 /* ---------------- a static server for public/ ---------------- */
 async function freePort() {
   return new Promise((res, rej) => { const s = net.createServer(); s.once("error", rej); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => res(p)); }); });
@@ -100,8 +123,12 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
     page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
-    page.on("requestfailed", (r) => errors.push("requestfailed: " + r.url() + " (" + ((r.failure() && r.failure().errorText) || "") + ")"));
+    page.on("requestfailed", (r) => {
+      const why = (r.failure() && r.failure().errorText) || "";
+      if (!/ERR_ABORTED/.test(why)) errors.push("requestfailed: " + r.url() + " (" + why + ")"); // aborted prefetches are harmless
+    });
     page.on("response", (r) => { if (r.status() >= 400 && /\/fish\//.test(r.url())) errors.push("http " + r.status() + ": " + r.url()); });
+    await page.route("https://cdn.jsdelivr.net/**", viaNode);
     if (process.env.THREE_LOCAL) await page.route("**/three.module.min.js", (r) => r.fulfill({ path: process.env.THREE_LOCAL, contentType: "application/javascript" }));
     if (process.env.FISH_BLOCK) await page.route("**/fish/js/" + process.env.FISH_BLOCK, (r) => r.fulfill({ status: 404, body: "" }));
     await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));

@@ -102,7 +102,8 @@ const flight = () => {
   W.setHour(19.5); W.hideCatch(); W.setFish(null); W.setFollower(null); W.setAim({ visible: false });
   W.setRings([{ x: 4, z: -44, gold: false }]);
   // a lure thrown at 35 degrees, followed until it is 40 m out and still in the air
-  let p = null, v = { x: 0.6, y: 12.5, z: -20.5 }, t = 0;
+  let p = null;
+  const v = { x: 0.6, y: 12.5, z: -20.5 };
   for (let i = 0; i < 400; i++) {
     const dt = 1 / 60;
     W.setView({ mode: "flight", yaw: 0 });
@@ -114,7 +115,6 @@ const flight = () => {
     W.setLure({ ...p, visible: true, spin: 0 });
     W.setLine({ from: tip, to: p, slack: 0.3, flying: true });
     W.update(dt);
-    t += dt;
     if (-p.z >= 40) break;
   }
   window.lastLure = p;
@@ -127,7 +127,8 @@ const reel = () => {
   for (let i = 0; i < 90; i++) {
     W.setFish({ ...fish, jump: i < 80 ? 0 : 0.05 + (i - 80) * 0.04 });
     W.setFollower({ id: "largemouth", x: -1.6, y: -0.5, z: -7.2, heading: 0.3, len: 0.45 });
-    const tip = W.setRod({ theta: 58, yaw: 8, steer: 0.1, bend: 0.75, pull: { x: fish.x, y: 0, z: fish.z }, visible: true });
+    // rod low while it jumps, loaded toward the fish
+    const tip = W.setRod({ theta: 34, yaw: 8, steer: 0.1, bend: 0.8, pull: { x: fish.x, y: 0, z: fish.z }, visible: true });
     W.setLure({ x: fish.x, y: 0.7, z: fish.z, visible: false });
     W.setLine({ from: tip, to: { x: fish.x, y: 0.75, z: fish.z }, slack: 0.02 });
     W.update(1 / 30);
@@ -164,6 +165,39 @@ try {
     const { ctx, page } = await open(390, 844);
     await shot(page, "cast-portrait", cast, { portrait: true });
     await shot(page, "catch-portrait-pike", catchView, { id: "pike", kg: 4.2, portrait: true });
+    await ctx.close();
+  }
+  // the API holds up: every species and junk builds, junk rides the line, quality switches both ways
+  {
+    const { ctx, page } = await open(640, 360);
+    const r = await page.evaluate(() => {
+      const bad = [];
+      for (const id of ["pumpkinseed", "perch", "rockbass", "smallmouth", "largemouth", "walleye", "pike", "laketrout", "muskie", "golden", "boot", "plunger", "frisbee"]) {
+        const m = fishMesh(id);
+        if (!m || !m.isObject3D || !m.userData.fx) bad.push("fishMesh " + id);
+      }
+      if (fishMesh("nope") !== null) bad.push("fishMesh unknown should be null");
+      W.hideCatch(); W.hideCatch();
+      W.setView({ mode: "reel", look: null });
+      W.setFish({ id: "boot", x: 1, y: -1, z: -8, heading: 0, len: 0.3, jump: 0, thrash: 0, near: 0.6 });
+      const tip = W.setRod({ theta: 40, yaw: 0, bend: 0.4, pull: { x: 1, y: -1, z: -8 } });
+      if (![tip.x, tip.y, tip.z].every(Number.isFinite)) bad.push("tip not finite");
+      const t2 = W.tip(); if (Math.abs(t2.x - tip.x) > 1e-9) bad.push("tip() differs from setRod()");
+      W.setLure({ x: 1, y: -1, z: -8, spin: 3 });
+      W.setLine({ from: tip, to: { x: 1, y: -1, z: -8 }, slack: 0.5 });
+      W.ripple(0, -5, 0.5); W.splash(2, -6, 1); W.rise(-3, -9);
+      for (let i = 0; i < 30; i++) W.update(1 / 30);
+      W.setQuality("low"); W.update(1 / 30); W.render();
+      const lo = W.info();
+      W.setQuality("high"); W.update(1 / 30); W.render();
+      const hi = W.info();
+      W.resize(333, 517); W.update(1 / 30); W.render();
+      W.resize(640, 360);
+      return { bad, lo, hi };
+    });
+    for (const b of r.bad) fail(b);
+    console.log(`api: quality switch low ${r.lo.calls} calls ${r.lo.tris} tris, high ${r.hi.calls} calls ${r.hi.tris} tris`);
+    if (!(r.lo.tris < r.hi.tris)) fail("low quality should draw fewer triangles");
     await ctx.close();
   }
   // low quality: the same busy scenes, for the draw call and triangle budget

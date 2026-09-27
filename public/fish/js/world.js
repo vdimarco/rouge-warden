@@ -1,7 +1,7 @@
 // Reel It In: the 3D lake. One canvas with the sky, Loon Lake, the dock under your feet, the rod in your hands,
 // the line, the lure, the fish and the trophy. Everything is built in code (see world-env, world-gear, world-fish, world-fx).
 import * as THREE from "three";
-import { EYE, ROD, DOCK } from "./lake.js";
+import { EYE, ROD } from "./lake.js";
 import { byId, lengthFor } from "./species.js";
 import * as E from "./world-env.js";
 import { Rod, Line, Lure } from "./world-gear.js";
@@ -18,12 +18,12 @@ THREE.ColorManagement.enabled = false;
 // Tunables
 export const WORLD = {
   DPR: { high: 2, low: 1.25 },
-  FOV_H: { title: 78, cast: 70, flight: 70, reel: 80, catch: 60 },  // horizontal field of view to aim for, degrees
+  FOV_H: { title: 78, cast: 72, flight: 72, reel: 88, catch: 60 },  // horizontal field of view to aim for, degrees
   FOV_V_PORTRAIT: [58, 90],        // the vertical field of view is kept inside these on tall screens
   FOV_V_WIDE: [42, 62],            // and inside these on wide screens
   PITCH_CAST: { wide: -5, portrait: -11 },
   ZOOM_WIDTH: 42,                  // flight view: meters of lake across the view at the lure, once the lure is far
-  GRIP: { d: 0.5, x: 0.6, y: -0.74, px: 0.66, py: -0.6 },  // where the reel seat sits in the view (screen fractions)
+  GRIP: { d: 0.5, x: 0.6, y: -0.74, pd: 0.62, px: 0.74, py: -0.62 },  // where the reel seat sits in the view (screen fractions, distance in m)
   LURE_MIN_SCREEN: 0.022,          // the lure is drawn at least this fraction of the view height
 };
 
@@ -73,12 +73,11 @@ export async function createWorld(container, { quality = "high" } = {}) {
   const sky = E.buildSky(low);
   const { water, u: WU } = E.buildWater(low);
   scene.add(sky, water);
-  let envGroup = null, terrainMesh = null;
+  let envGroup = null;
   function buildEnv() {
-    if (envGroup) { scene.remove(envGroup); envGroup.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+    if (envGroup) { scene.remove(envGroup); envGroup.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
     envGroup = new THREE.Group();
-    terrainMesh = new THREE.Mesh(E.buildTerrain(low), E.terrainMaterial(low));
-    envGroup.add(terrainMesh, E.buildTrees(low), E.buildPads(low), E.buildReeds(low));
+    envGroup.add(new THREE.Mesh(E.buildTerrain(low), E.terrainMaterial(low)), E.buildTrees(low), E.buildPads(low), E.buildReeds(low));
     scene.add(envGroup);
   }
   buildEnv();
@@ -108,7 +107,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
 
   /* state */
   const S = {
-    clock: 0, hour: 12, w: 1, h: 1, portrait: false,
+    clock: 0, hour: 12, w: 1, h: 1,
     view: { mode: "title", yaw: 0, look: null, portrait: false },
     cam: { pos: new THREE.Vector3(0, 9, 30), yaw: 0, pitch: -0.1, fov: 55, init: false },
     rod: { theta: 60, yaw: 0, steer: 0, bend: 0, pull: null, visible: false },
@@ -116,11 +115,11 @@ export async function createWorld(container, { quality = "high" } = {}) {
     lastTip: new THREE.Vector3(),
     line: { from: null, to: null, slack: 0, visible: false, flying: false },
     lure: { x: 0, y: 1, z: -1, visible: false, spin: 0, vel: new THREE.Vector3(), prev: null, prevT: 0 },
-    fish: null, fishShown: null, jumpWas: 0, jumpSplashed: false,
+    fish: null, jumpWas: 0, jumpSplashed: false,
     follower: null, followA: 0,
     rings: [], aim: { yaw: 0, visible: false, a: 0 },
     rip: 0,
-    loon: { t: 40, dive: 0 },
+    loon: { t: 40 },
     trophy: null,
     fps: 60, lastRender: 0, info: { calls: 0, tris: 0 },
   };
@@ -203,7 +202,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
       const base = { yaw: out.yaw, pitch: out.pitch };
       lookAt(L, 0.04);
       // near the dock (the back cast) keep looking out over the lake instead of spinning round
-      const w = smooth(4, 12, dh) * (L.z < EYE.z - 1 ? 1 : 0);
+      const w = smooth(4, 12, dh) * smooth(EYE.z - 0.5, EYE.z - 4, L.z);
       out.yaw = base.yaw + angDiff(base.yaw, out.yaw) * w;
       out.pitch = lerp(base.pitch, clamp(out.pitch, -0.45, 0.55), w);
       const zoom = 2 * Math.atan(WORLD.ZOOM_WIDTH / 2 / Math.max(dh, 1) / (S.w / S.h)) / DEG;
@@ -246,13 +245,14 @@ export async function createWorld(container, { quality = "high" } = {}) {
     camera.updateMatrixWorld();
     sky.position.copy(camera.position);
   }
-  const pxAngle = () => (2 * Math.tan(camera.fov * DEG / 2)) / Math.max(1, S.h * renderer.getPixelRatio());
+  // radians per CSS pixel: thin things (line, rod tip) are kept about a pixel wide on any screen
+  const pxAngle = () => (2 * Math.tan(camera.fov * DEG / 2)) / Math.max(1, S.h);
 
   /* ---------------- rod and line ---------------- */
   const firstPerson = () => S.view.mode !== "title" && S.view.mode !== "catch";
   function gripPoint() {
     const portrait = S.view.portrait || S.w / S.h < 0.9;
-    const G = WORLD.GRIP, d = G.d;
+    const G = WORLD.GRIP, d = portrait ? G.pd : G.d;
     const tv = Math.tan(camera.fov * DEG / 2), th = tv * camera.aspect;
     // in the zoomed flight view the rod slides down out of the way
     const zoomed = clamp(1 - camera.fov / baseFov(S.view.mode === "flight" ? "flight" : "cast"), 0, 1);
@@ -298,8 +298,9 @@ export async function createWorld(container, { quality = "high" } = {}) {
       qTmp.setFromRotationMatrix(mTmp);
       g.quaternion.slerp(qTmp, 1 - Math.exp(-dt * 12));
     }
-    // blade spin: rev/s from the caller, or from the speed through the water
-    const rps = Lr.spin > 0 ? Lr.spin : Lr.y < 0 ? sp * 6 : 0;
+    // blade spin: 0..1 of full speed (about 12 turns a second), a bigger number is taken as turns a second;
+    // with none given it follows the lure's speed through the water
+    const rps = Lr.spin > 1 ? Lr.spin : Lr.spin > 0 ? Lr.spin * 12 : Lr.y < 0 ? Math.min(sp * 6, 12) : 0;
     lure.spinA += rps * Math.PI * 2 * dt;
     lure.spinner.rotation.z = lure.spinA;
     // grow it far away so it stays a few pixels tall
@@ -353,20 +354,20 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const fwd = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
     let x = f.x, z = f.z;
     if (j > 0) {
-      // a leap: out of the water nose first, arc over, and back in
-      const H = 0.35 + len * 0.9;
-      y = Math.max(f.y, -0.1) + 4 * j * (1 - j) * H;
+      // a leap: out of the water nose first, arc over, and back in. fish.js lifts y itself; a caller that
+      // only gives the phase (y still at the surface) gets an arc drawn here
+      const H = 0.35 + len * 0.9, own = 1 - smooth(0.0, 0.06, f.y);
+      y = Math.max(f.y, -0.1) + own * 4 * j * (1 - j) * H;
       pitch = (0.5 - j) * 2.2;
-      x += fwd.x * (j - 0.5) * len * 1.2; z += fwd.z * (j - 0.5) * len * 1.2;
       roll = Math.sin(S.clock * 14) * 0.3 * (f.thrash || 0.5);
-      if (S.jumpWas === 0) { splashAt(x, z, 0.4 + len * 0.6); S.jumpSplashed = false; }
-      if (j > 0.82 && !S.jumpSplashed) { splashAt(x + fwd.x * len * 0.4, z + fwd.z * len * 0.4, 0.45 + len * 0.7); S.jumpSplashed = true; }
+      if (S.jumpWas === 0) { autoSplash(x, z, 0.4 + len * 0.6); S.jumpSplashed = false; }
+      if (j > 0.82 && !S.jumpSplashed) { autoSplash(x + fwd.x * len * 0.4, z + fwd.z * len * 0.4, 0.45 + len * 0.7); S.jumpSplashed = true; }
       // water streams off the fish in the air
       for (let k = 0; k < 3; k++) if (Math.random() < dt * 30) {
         const s = (Math.random() - 0.5) * len;
         spray.emit(x + fwd.x * s, y + (Math.random() - 0.3) * len * 0.1, z + fwd.z * s, (Math.random() - 0.5) * 1.2 - fwd.x * 0.8, 0.4 + Math.random() * 0.8, (Math.random() - 0.5) * 1.2 - fwd.z * 0.8, 0.05 + Math.random() * 0.05, 0.7);
       }
-    } else if (S.jumpWas > 0 && !S.jumpSplashed) { splashAt(x, z, 0.45 + len * 0.7); }
+    } else if (S.jumpWas > 0 && !S.jumpSplashed) { autoSplash(x, z, 0.45 + len * 0.7); }
     S.jumpWas = j;
     m.position.set(x, y, z);
     m.rotation.set(0, 0, 0, "YXZ");
@@ -408,6 +409,13 @@ export async function createWorld(container, { quality = "high" } = {}) {
   function splashAt(x, z, size = 0.5) {
     ripple(x, z, size * 1.2);
     spray.burst(x, z, clamp(size, 0.1, 1.6));
+    S.lastSplash = { x, z, t: S.clock };
+  }
+  // the leap splashes on its own, unless the game just splashed there itself
+  function autoSplash(x, z, size) {
+    const L = S.lastSplash;
+    if (L && S.clock - L.t < 0.4 && Math.hypot(L.x - x, L.z - z) < 2.5) return;
+    splashAt(x, z, size);
   }
   function rise(x, z) {
     ripple(x, z, 0.35);
@@ -422,7 +430,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const cyc = L.t % 75, under = cyc > 60;
     const a = L.t * 0.018, cx = 12, cz = -44, r = 11;
     const x = cx + Math.sin(a) * r, z = cz + Math.cos(a) * r;
-    const hd = Math.atan2(Math.cos(a), -Math.sin(a));
+    const hd = Math.atan2(Math.cos(a), Math.sin(a));  // along the loop: d/da of (sin a, cos a)
     if (under !== !loon.visible) ripple(x, z, 0.5);
     loon.visible = !under;
     loon.position.set(x, 0.02 + Math.sin(S.clock * 1.3) * 0.012, z);
@@ -439,7 +447,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const sp = byId(id), junk = m.userData.kind === "junk";
     const len = junk ? JUNK_LEN[id] : lengthFor(sp, kg || sp.kg[0]) / 100;
     m.scale.setScalar(len / unitLen(m));
-    for (const mt of m.userData.mats) mt.transparent = false;
+    // solid body and eyes in the hand; the fins stay see-through
+    for (const mt of m.userData.mats) if (!mt.userData.fin) mt.transparent = false;
     m.traverse((o) => { o.renderOrder = 30; });
     m.userData.fx.uKey.value = 1;
     // turn on a stage around its middle; its size as shown: the long side across, its height up
@@ -497,8 +506,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
     drawFish(dt);
     drawFollower(dt);
     drawTrophy(dt);
-    // the aim line fades in and out
-    S.aim.a += ((S.aim.visible && firstPerson() ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
+    // the aim line fades in and out; it only belongs to the cast view
+    S.aim.a += ((S.aim.visible && S.view.mode === "cast" ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
     const ay = (S.aim.yaw || 0) * DEG;
     WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, 0);
     // gold rings glow and throw up sparkles
@@ -556,7 +565,6 @@ export async function createWorld(container, { quality = "high" } = {}) {
       water.material.defines.LOW = low ? 1 : 0; water.material.needsUpdate = true;
     },
     setView({ mode = "cast", yaw = 0, look = null, portrait = false } = {}) {
-      if (mode !== S.view.mode && mode === "catch") S.cam.pitch = Math.min(S.cam.pitch, 0);
       S.view = { mode, yaw, look, portrait };
     },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
@@ -578,6 +586,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
         if (v.length() < 80) L.vel.lerp(v, 0.5);
       } else if (!L.prev) L.vel.set(0, 0, 0);
       if (t > L.prevT + 1e-4 || !L.prev) { L.prev = { x, y, z }; L.prevT = t; }
+      // a hidden lure forgets where it was, so the next cast does not start with a jump in speed
+      if (!visible) L.prev = null;
       Object.assign(L, { x, y, z, visible, spin });
     },
     setFish(f) { S.fish = f ? { ...f } : null; },
@@ -601,15 +611,19 @@ export async function createWorld(container, { quality = "high" } = {}) {
   const rect = container.getBoundingClientRect();
   resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
   updateCamera(0);
-  // compile the shaders now (fish, junk and lure included) so the first bite does not stutter
+  // compile the shaders now (fish, junk, trophies, lure, glows) so the first bite or catch does not stutter
   const warm = [getFish("smallmouth"), getFish("boot")];
-  warm.forEach((m) => { m.visible = true; m.position.set(0, 1, -3); });
-  lure.group.visible = true; rod.mesh.visible = true; line.mesh.visible = true; shadow.visible = true;
+  const solid = [makeFish("smallmouth"), makeFish("boot")];   // the trophy variant: solid body, kept so its program stays cached
+  solid.forEach((m) => { for (const mt of m.userData.mats) if (!mt.userData.fin) mt.transparent = false; scene.add(m); });
+  const extras = [lure.group, lure.glint, rod.mesh, line.mesh, shadow, ...halos];
+  warm.concat(solid).forEach((m) => { m.visible = true; m.position.set(0, 1, -3); });
+  extras.forEach((o) => { o.visible = true; });
   try {
     if (renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
     else renderer.compile(scene, camera);
   } catch (e) { /* compile on first draw instead */ }
   warm.forEach((m) => { m.visible = false; });
-  lure.group.visible = false; rod.mesh.visible = false; line.mesh.visible = false; shadow.visible = false;
+  solid.forEach((m) => scene.remove(m));
+  extras.forEach((o) => { o.visible = false; });
   return world;
 }

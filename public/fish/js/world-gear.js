@@ -83,7 +83,7 @@ export class Rod {
       const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color;
       for (let j = 0; j < p.count; j++) push(0.02, [p.getX(j), p.getY(j), p.getZ(j)], [n.getX(j), n.getY(j), n.getZ(j)], [c.getX(j), c.getY(j), c.getZ(j)], 0);
     }
-    this.local = new Float32Array(vs); this.localN = new Float32Array(ns); this.fr = fr; this.grow = grow;
+    this.local = new Float32Array(vs); this.localN = new Float32Array(ns); this.grow = Uint8Array.from(grow);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vs.length), 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(ns.length), 3).setUsage(THREE.DynamicDrawUsage));
@@ -91,10 +91,12 @@ export class Rod {
     this.mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x5a5a5a }));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 20;
-    // the frames we need: every distinct s
+    // the frames we need: every distinct s, and for each vertex the index of its frame
     this.keys = [...new Set(fr)].sort((a, b) => a - b);
-    this.frame = new Map(this.keys.map((s) => [s, { P: V3(), T: V3(), D: V3(), B: V3(), k: 1 }]));
-    this.radius = (s) => { let r = S[0].r; for (const st of S) if (st.s <= s) r = st.r; return r; };
+    const radius = (s) => { let r = S[0].r; for (const st of S) if (st.s <= s) r = st.r; return r; };
+    this.frames = this.keys.map((s) => ({ s, r: radius(s), P: V3(), T: V3(), D: V3(), B: V3(), k: 1 }));
+    const index = new Map(this.keys.map((s, i) => [s, i]));
+    this.fi = Uint16Array.from(fr, (s) => index.get(s));
     this.tip = V3();
   }
 
@@ -116,18 +118,17 @@ export class Rod {
     // a light load bends only the tip; a heavy one works down into the butt
     const act = 2.3 - 1.1 * clamp(bend, 0, 1);
     let s = 0;
-    const setFrame = (key, pos, tan) => {
-      const f = this.frame.get(key);
+    const setFrame = (f, pos, tan) => {
       f.P.copy(pos); f.T.copy(tan);
       f.D.copy(DOWN).addScaledVector(tan, -DOWN.dot(tan));
       if (f.D.lengthSq() < 1e-6) f.D.copy(n);
       f.D.normalize();
       f.B.crossVectors(f.T, f.D);
-      const dist = pos.distanceTo(cam);
-      f.k = Math.max(1, (dist * pxAng * 0.6) / this.radius(key));
+      f.k = Math.max(1, (pos.distanceTo(cam) * pxAng * 0.6) / f.r);
     };
-    for (const key of this.keys) {
-      if (key <= 0) { setFrame(key, tmp.copy(grip).addScaledVector(dir, key), dir); continue; }
+    for (const f of this.frames) {
+      const key = f.s;
+      if (key <= 0) { setFrame(f, tmp.copy(grip).addScaledVector(dir, key), dir); continue; }
       // integrate the bent curve up to this station in small steps
       while (s < key - 1e-6) {
         const ds = Math.min(0.04, key - s), a = phi * ((s + ds / 2) / L) ** act;
@@ -137,15 +138,15 @@ export class Rod {
       }
       const a = phi * (s / L) ** act;
       T.copy(dir).multiplyScalar(Math.cos(a)).addScaledVector(n, Math.sin(a)).normalize();
-      setFrame(key, P, T);
+      setFrame(f, P, T);
     }
-    const tf = this.frame.get(GUIDES[GUIDES.length - 1]);
+    const tf = this.frames[this.frames.length - 1];
     this.tip.copy(tf.P).addScaledVector(tf.D, 0.004 * tf.k);
     // write the vertices
     const pa = this.mesh.geometry.attributes.position, na = this.mesh.geometry.attributes.normal;
-    const p = pa.array, q = na.array, lo = this.local, ln = this.localN;
-    for (let i = 0, N = this.fr.length; i < N; i++) {
-      const f = this.frame.get(this.fr[i]), g = this.grow[i];
+    const p = pa.array, q = na.array, lo = this.local, ln = this.localN, fi = this.fi, F = this.frames;
+    for (let i = 0, N = fi.length; i < N; i++) {
+      const f = F[fi[i]], g = this.grow[i];
       const k = g ? f.k : 1;
       const x = lo[i * 3] * k, y = lo[i * 3 + 1] * k, z = lo[i * 3 + 2] * k;
       p[i * 3] = f.P.x + f.T.x * x + f.D.x * y + f.B.x * z;
@@ -198,7 +199,7 @@ export class Line {
       tan.subVectors(b, a).normalize();
       view.subVectors(cam, pts[i]);
       const d = view.length();
-      side.crossVectors(tan, view).normalize().multiplyScalar(Math.max(0.0005, d * pxAng * 0.75));
+      side.crossVectors(tan, view).normalize().multiplyScalar(Math.max(0.0005, d * pxAng * 0.6));
       p[i * 6] = pts[i].x - side.x; p[i * 6 + 1] = pts[i].y - side.y; p[i * 6 + 2] = pts[i].z - side.z;
       p[i * 6 + 3] = pts[i].x + side.x; p[i * 6 + 4] = pts[i].y + side.y; p[i * 6 + 5] = pts[i].z + side.z;
     }
