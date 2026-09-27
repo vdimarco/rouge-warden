@@ -30,17 +30,17 @@ export const WORLD = {
 /* ---------------- the hours ---------------- */
 // Keyframes of the day. Colours are sRGB hex; si = sun strength, hi = sky light strength.
 const HOURS = [
-  { h: 4.5, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff8a50", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 60, far: 700, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
-  { h: 5.5, zen: "#2e4278", hor: "#c2908a", glow: "#e8866a", sun: "#ff9a60", si: 0.25, sky: "#9aa4c8", gnd: "#3a4028", hi: 1.7, fog: "#b69a9a", near: 50, far: 620, deep: "#1a2c3a", shal: "#3a4436", cl: "#e8b0a0", cs: "#6a6a8a", forest: "#1c2a1c", night: 0.35 },
-  { h: 6.5, zen: "#5a86c4", hor: "#f4caa6", glow: "#ffb070", sun: "#ffc890", si: 1.15, sky: "#a8c0e0", gnd: "#4a5230", hi: 1.05, fog: "#e6c8b0", near: 60, far: 720, deep: "#224050", shal: "#58623e", cl: "#fff0dc", cs: "#9aa0b4", forest: "#28402a", night: 0 },
-  { h: 9, zen: "#4f92e0", hor: "#d4e6f2", glow: "#fff0d0", sun: "#fff0d8", si: 1.8, sky: "#b8d4f0", gnd: "#5a6a38", hi: 1.15, fog: "#c8dcea", near: 110, far: 950, deep: "#1e4a60", shal: "#6a7446", cl: "#ffffff", cs: "#a8b8cc", forest: "#2c4a30", night: 0 },
-  { h: 12, zen: "#3f86dc", hor: "#cfe4f6", glow: "#fff8e0", sun: "#fff8ea", si: 2.05, sky: "#bcd8f4", gnd: "#5e6e3a", hi: 1.2, fog: "#c6dcee", near: 130, far: 1000, deep: "#1a4a64", shal: "#6e7a4a", cl: "#ffffff", cs: "#aebdd0", forest: "#2e4c32", night: 0 },
-  { h: 16.5, zen: "#4a8cdc", hor: "#dbe6ea", glow: "#fff0c8", sun: "#fff0d0", si: 1.9, sky: "#c0d6ec", gnd: "#5e6a38", hi: 1.15, fog: "#d2dee6", near: 120, far: 950, deep: "#1c4860", shal: "#6e7648", cl: "#fffaf0", cs: "#b0b8c8", forest: "#2c4a30", night: 0 },
-  { h: 19, zen: "#5c86c8", hor: "#ffd8a0", glow: "#ffb452", sun: "#ffc47a", si: 1.65, sky: "#b0c0dc", gnd: "#5a5a34", hi: 1.0, fog: "#f2d6b2", near: 90, far: 820, deep: "#23405a", shal: "#6a6a42", cl: "#fff0d8", cs: "#b4a4b0", forest: "#2c3e2c", night: 0 },
-  { h: 19.5, zen: "#5a80c2", hor: "#ffcf92", glow: "#ffa640", sun: "#ffb86a", si: 1.55, sky: "#aab8d4", gnd: "#585432", hi: 0.98, fog: "#f0cfa4", near: 85, far: 800, deep: "#223c56", shal: "#686640", cl: "#ffe8c8", cs: "#b098a8", forest: "#2a3a2a", night: 0 },
-  { h: 20.3, zen: "#4a5ea8", hor: "#ff9e70", glow: "#ff7a44", sun: "#ff8e58", si: 0.9, sky: "#a0a0c4", gnd: "#4a4630", hi: 1.3, fog: "#d8a08a", near: 70, far: 720, deep: "#1e3048", shal: "#4a4636", cl: "#ffb89a", cs: "#8a7090", forest: "#202c22", night: 0.05 },
-  { h: 21, zen: "#222a62", hor: "#b86a7e", glow: "#e0684a", sun: "#ff6a40", si: 0.12, sky: "#9a90c0", gnd: "#3a3630", hi: 2.1, fog: "#7a5a78", near: 60, far: 640, deep: "#141e34", shal: "#2a2e30", cl: "#d88a88", cs: "#4a4468", forest: "#161e1a", night: 0.45 },
-  { h: 22, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff6a40", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 60, far: 700, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
+  { h: 4.5, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff8a50", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
+  { h: 5.5, zen: "#2e4278", hor: "#c2908a", glow: "#e8866a", sun: "#ff9a60", si: 0.25, sky: "#9aa4c8", gnd: "#3a4028", hi: 1.7, fog: "#b69a9a", near: 30, far: 440, deep: "#1a2c3a", shal: "#3a4436", cl: "#e8b0a0", cs: "#6a6a8a", forest: "#1c2a1c", night: 0.35 },
+  { h: 6.5, zen: "#5a86c4", hor: "#f4caa6", glow: "#ffb070", sun: "#ffc890", si: 1.15, sky: "#a8c0e0", gnd: "#4a5230", hi: 1.05, fog: "#e6c8b0", near: 35, far: 480, deep: "#224050", shal: "#58623e", cl: "#fff0dc", cs: "#9aa0b4", forest: "#28402a", night: 0 },
+  { h: 9, zen: "#4f92e0", hor: "#d4e6f2", glow: "#fff0d0", sun: "#fff0d8", si: 1.8, sky: "#b8d4f0", gnd: "#5a6a38", hi: 1.15, fog: "#c8dcea", near: 80, far: 760, deep: "#1e4a60", shal: "#6a7446", cl: "#ffffff", cs: "#a8b8cc", forest: "#2c4a30", night: 0 },
+  { h: 12, zen: "#3f86dc", hor: "#cfe4f6", glow: "#fff8e0", sun: "#fff8ea", si: 2.05, sky: "#bcd8f4", gnd: "#5e6e3a", hi: 1.2, fog: "#c6dcee", near: 95, far: 820, deep: "#1a4a64", shal: "#6e7a4a", cl: "#ffffff", cs: "#aebdd0", forest: "#2e4c32", night: 0 },
+  { h: 16.5, zen: "#4a8cdc", hor: "#dbe6ea", glow: "#fff0c8", sun: "#fff0d0", si: 1.9, sky: "#c0d6ec", gnd: "#5e6a38", hi: 1.15, fog: "#d2dee6", near: 85, far: 780, deep: "#1c4860", shal: "#6e7648", cl: "#fffaf0", cs: "#b0b8c8", forest: "#2c4a30", night: 0 },
+  { h: 19, zen: "#5c86c8", hor: "#ffd8a0", glow: "#ffb452", sun: "#ffc47a", si: 1.65, sky: "#b0c0dc", gnd: "#5a5a34", hi: 1.0, fog: "#f2d6b2", near: 45, far: 580, deep: "#23405a", shal: "#6a6a42", cl: "#fff0d8", cs: "#b4a4b0", forest: "#2c3e2c", night: 0 },
+  { h: 19.5, zen: "#5a80c2", hor: "#ffcf92", glow: "#ffa640", sun: "#ffb86a", si: 1.55, sky: "#aab8d4", gnd: "#585432", hi: 0.98, fog: "#f0cfa4", near: 42, far: 560, deep: "#223c56", shal: "#686640", cl: "#ffe8c8", cs: "#b098a8", forest: "#2a3a2a", night: 0 },
+  { h: 20.3, zen: "#4a5ea8", hor: "#ff9e70", glow: "#ff7a44", sun: "#ff8e58", si: 0.9, sky: "#a0a0c4", gnd: "#4a4630", hi: 1.3, fog: "#d8a08a", near: 40, far: 520, deep: "#1e3048", shal: "#4a4636", cl: "#ffb89a", cs: "#8a7090", forest: "#202c22", night: 0.05 },
+  { h: 21, zen: "#222a62", hor: "#b86a7e", glow: "#e0684a", sun: "#ff6a40", si: 0.12, sky: "#9a90c0", gnd: "#3a3630", hi: 2.1, fog: "#7a5a78", near: 38, far: 480, deep: "#141e34", shal: "#2a2e30", cl: "#d88a88", cs: "#4a4468", forest: "#161e1a", night: 0.45 },
+  { h: 22, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff6a40", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
 ];
 const tmpA = new THREE.Color(), tmpB = new THREE.Color();
 function lerpHex(out, a, b, t) { tmpA.set(a); tmpB.set(b); return out.copy(tmpA).lerp(tmpB, t); }
@@ -360,7 +360,10 @@ export async function createWorld(container, { quality = "high" } = {}) {
       if (S.jumpWas === 0) { splashAt(x, z, 0.4 + len * 0.6); S.jumpSplashed = false; }
       if (j > 0.82 && !S.jumpSplashed) { splashAt(x + fwd.x * len * 0.4, z + fwd.z * len * 0.4, 0.45 + len * 0.7); S.jumpSplashed = true; }
       // water streams off the fish in the air
-      if (Math.random() < dt * 40) spray.emit(x + (Math.random() - 0.5) * len * 0.6, y, z + (Math.random() - 0.5) * len * 0.6, (Math.random() - 0.5) * 0.8, -0.2, (Math.random() - 0.5) * 0.8, 0.03, 0.6);
+      for (let k = 0; k < 3; k++) if (Math.random() < dt * 30) {
+        const s = (Math.random() - 0.5) * len;
+        spray.emit(x + fwd.x * s, y + (Math.random() - 0.3) * len * 0.1, z + fwd.z * s, (Math.random() - 0.5) * 1.2 - fwd.x * 0.8, 0.4 + Math.random() * 0.8, (Math.random() - 0.5) * 1.2 - fwd.z * 0.8, 0.05 + Math.random() * 0.05, 0.7);
+      }
     } else if (S.jumpWas > 0 && !S.jumpSplashed) { splashAt(x, z, 0.45 + len * 0.7); }
     S.jumpWas = j;
     m.position.set(x, y, z);
@@ -371,7 +374,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const th = f.thrash || 0;
     m.userData.phase += dt * (7 + th * 18);
     u.uWag.value.set(m.userData.phase, 0.25 + th * 0.9, j > 0 ? Math.sin(j * Math.PI) * 0.25 * (f.thrash || 0.4) : 0, 0);
-    u.uKey.value = j > 0 ? 0.35 : 0;
+    u.uKey.value = j > 0 ? 0.8 : 0;
     // under the water: tint and fade with depth and with how close it is to the surface
     const depth = -y;
     if (depth > 0.02 && j === 0) {

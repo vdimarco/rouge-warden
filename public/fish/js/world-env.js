@@ -198,8 +198,8 @@ export function ground(x, z) {
   const e = bayE(x, z);
   if (e < 1) return h;  // the point and Clog Island
   const r = e - 1;  // bayE is already the square root of lake.js's bay()
-  let v = 0.4 + r * 30 + 2.5 * L.noise(x / 17, z / 17) * smooth(0, 0.05, r);
-  v += smooth(0.15, 1.1, r) * (8 + 26 * (0.5 + 0.5 * L.noise(x / 170 + 4, z / 170 - 2)) + 7 * L.noise(x / 55, z / 55));
+  let v = 0.4 + r * 13 + 2.5 * L.noise(x / 17, z / 17) * smooth(0, 0.05, r);
+  v += smooth(0.2, 1.6, r) * (5 + 18 * (0.5 + 0.5 * L.noise(x / 170 + 4, z / 170 - 2)) + 5 * L.noise(x / 55, z / 55));
   v = Math.max(0.15, v);
   return lerp(h, v, smooth(55, 95, Math.hypot(x, z - 10)));
 }
@@ -227,7 +227,7 @@ function groundColor(x, z, h, ny) {
     const inWeeds = x > L.WEEDS.x0 && x < L.WEEDS.x1 && z > L.WEEDS.z0 && z < L.WEEDS.z1;
     if (inWeeds && d > 0.5) c = mix3(c, PAL.weed, clamp(0.55 + 0.5 * n1, 0, 1));
     if (L.pointDist(x, z) < 12 || L.islandDist(x, z) < 8) c = mix3(c, PAL.graniteDk, clamp(0.5 + n1, 0, 0.8));
-    return mul3(c, 1 + 0.1 * n2);
+    return mul3(c, 1 + 0.06 * n1);
   }
   const e = bayE(x, z), rocky = L.pointDist(x, z) < 1.5 || (L.islandDist(x, z) < 0 && L.islandDist(x, z) > -4);
   if (h < 0.75) {
@@ -376,12 +376,12 @@ export function buildWater(low) {
         g += (swell(p, vec2(0.83, 0.56), 0.55, 1.3, 0.05) + swell(p, vec2(0.28, 0.96), 0.9, 1.8, 0.03)) * s1;
         g += swell(p, vec2(-0.6, 0.8), 1.7, 2.6, 0.012) * (1.0 - smoothstep(0.3, 1.4, fp));
         float s2 = 1.0 - smoothstep(0.2, 0.9, fp);
-        g += vnoised(p * 0.7 + vec2(uTime * 0.18, uTime * 0.11)).yz * 0.13 * s2;
+        g += vnoised(p * 0.7 + vec2(uTime * 0.18, uTime * 0.11)).yz * 0.075 * s2;
         keep = s2;
         #if LOW == 0
         float s3 = 1.0 - smoothstep(0.06, 0.32, fp), s4 = 1.0 - smoothstep(0.025, 0.12, fp);
-        g += vnoised(p * 2.3 - vec2(uTime * 0.31, -uTime * 0.23)).yz * 0.07 * s3;
-        g += vnoised(p * 6.1 + vec2(uTime * 0.6, uTime * 0.2)).yz * 0.035 * s4;
+        g += vnoised(p * 2.3 - vec2(uTime * 0.31, -uTime * 0.23)).yz * 0.045 * s3;
+        g += vnoised(p * 6.1 + vec2(uTime * 0.6, uTime * 0.2)).yz * 0.025 * s4;
         keep = (s2 + s3) * 0.5;
         #endif
         // one-shot ripples: a short train of rings running out
@@ -394,9 +394,9 @@ export function buildWater(low) {
           float R0 = age * (0.8 + r.w * 0.9);
           float w = max(0.12 + age * 0.14, dot(fw, abs(dv) / rr) * 1.4);
           float x = rr - R0;
-          float env = exp(-x * x / (w * w * 4.0)) * pow(1.0 - age / life, 2.0) * min(r.w * 1.5, 1.0);
-          g += dv / rr * sin(x * 9.0) * env * 0.9 * s2;
-          foam += env * mix(1.0, smoothstep(0.0, 0.35, cos(x * 9.0)), s2) * 0.8;
+          float env = exp(-x * x / (w * w * 1.5)) * pow(1.0 - age / life, 2.0) * min(r.w * 1.5, 1.0);
+          g += dv / rr * sin(x * 9.0) * env * 0.6 * s2;
+          foam += env * mix(1.0, smoothstep(0.0, 0.35, cos(x * 9.0)), s2) * 0.5;
         }
         // the rising-fish rings: pulses that keep coming. Lines never get thinner than a pixel, so they read from the dock
         vec3 goldGlow = vec3(0.0);
@@ -426,14 +426,15 @@ export function buildWater(low) {
         vec3 N = normalize(vec3(-g.x, 1.0, -g.y));
         float ndv = max(dot(N, V), 0.0);
         float fres = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);
-        vec3 R = reflect(-V, N); R.y = abs(R.y);
+        // reflect off a calmer surface than the one we shade, so the mirrored shore breaks up gently
+        vec3 R = reflect(-V, normalize(vec3(-g.x * 0.55, 1.0, -g.y * 0.55))); R.y = abs(R.y);
         vec3 refl = skyColor(R);
         // the far shore mirrored in the water: where the reflected ray meets the treeline
         float hr = max(length(R.xz), 1e-3), t;
         vec2 d = R.xz / hr;
         float el = shoreEl(p, d, t);
         el *= 1.0 + 0.35 * (vnoise(vec2(atan(d.x, -d.y) * 40.0, 0.5)) - 0.5);
-        float shore = smoothstep(el * 1.04 + 0.004, el * 0.96 - 0.002, R.y / hr);
+        float shore = smoothstep(el * 1.15 + 0.008, el * 0.85 - 0.004, R.y / hr);
         vec3 treeCol = mix(uForest, uFogCol, smoothstep(uFogNear, uFogFar, t + dist) * 0.9);
         refl = mix(refl, treeCol, shore);
         // water colour: tea-brown shallows over the sand, dark in the deep
@@ -541,7 +542,7 @@ function treeSpots() {
     if (e < 1.58 || e > 3.9) continue;
     if (z > 60 && e > 1.9) continue;
     if (r() > 0.78) continue;
-    far.push({ x, y: ground(x, z) - 0.5, z, s: 12 + r() * 9, rot: r() * 6.28 });
+    far.push({ x, y: ground(x, z) - 0.5, z, s: 9 + r() * 7, rot: r() * 6.28 });
   }
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
   return { near: shuffle(near), leafy: shuffle(leafy), far: shuffle(far) };
