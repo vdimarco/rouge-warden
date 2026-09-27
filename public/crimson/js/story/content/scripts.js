@@ -177,6 +177,15 @@ export const SCRIPTS = {
     if (a.cine && S.content.CINES[a.cine] && !isAuto(S)) yield cineOf(m, a.cine);
   },
 
+  // E1: "Kasa hats on." (args.lines), then the hero and the crew on foot put the kasa on for the last photo
+  // (each one's own cap folds away under it: one hat each)
+  *kasaOn(m, s) {
+    const S = m.S, K = rt(S), args = argsOf(s);
+    if (args.lines) yield* waitH(S, say(m, args.lines));
+    if (!S.cast || !S.cast.props) return;
+    for (const a of new Set([S.hero && S.hero.actor, ...(K ? K.crew : [])])) if (a && a.root && CREW_IDS.includes(a.id) && !(a.props && a.props.kasa)) S.cast.props.attach(a, 'kasa');
+  },
+
   // The credits roll on story time (design 2.5 E1); KEEP PLAYING goes on to free roam.
   *credits(m) {
     const S = m.S, C = S.content.CREDITS;

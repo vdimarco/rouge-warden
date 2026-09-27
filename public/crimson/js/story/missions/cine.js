@@ -186,7 +186,7 @@ export function createCine(S, K) {
             break;
           }
           case 'place': placeActor(a, g); break;
-          case 'say': if (!skipping) S.ui.subs(who, S.content.line(typeof g === 'string' ? g : g && g.line)); break;
+          case 'say': if (!skipping) S.ui.subs(who, S.content.line(typeof g === 'string' ? g : g && g.line), undefined, who); break;
           default: console.warn(`[cine] unknown do '${c.do}'`);
         }
       } catch (e) { console.error(`[cine] ${run.def.id}: ${c.do} on ${who}`, e); }
@@ -232,7 +232,7 @@ export function createCine(S, K) {
       if (kind === 'lines') {
         const text = S.content.line(e.line);
         if (e.block) { run.hold = S.ui.say([{ who: e.who, line: e.line }], { block: true }); if (K.auto) S.ui.advanceAll(); }
-        else S.ui.subs(e.who, text);
+        else S.ui.subs(e.who, text, undefined, e.who || lineWho(e.line)); // (the line's speaker talks, even with no name shown)
       } else if (kind === 'looks') { S.look.set(e.set, { dur: e.dur ?? 1 }); }
       else if (kind === 'cards') { run.card = S.ui.card(e.kind || 'title', { title: e.title, sub: e.sub, kanji: e.kanji, n: e.n, dur: e.dur }); }
       else if (kind === 'fx') { fxAt(e); }
@@ -247,6 +247,7 @@ export function createCine(S, K) {
     const at = { x: p.x, y: e.pos && Number.isFinite(e.pos.y) ? p.y : g + 0.6, z: p.z, groundY: g };
     if (e.kind === 'ring' || e.kind === 'blast') F[e.kind](at, e.size || 2, 0.6); else if (e.kind === 'splat') F.splat(at, e.size || 2, g); else F[e.kind](at, e.n || 14, e.size || 1);
   }
+  const lineWho = (id) => { const L = S.content && S.content.LINES && S.content.LINES[id]; return (L && typeof L === 'object' && L.who) || ''; };
   const TRACKS = ['lines', 'looks', 'cards', 'fx', 'sfx'];
 
   /* ---------------- the run ---------------- */

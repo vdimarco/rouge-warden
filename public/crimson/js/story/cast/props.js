@@ -34,6 +34,8 @@ const MAKE = {
     g.add(mesh(new THREE.TorusGeometry(0.308, 0.008, 4, 28), toon(C.woodDark), 0, -0.05, 0, Math.PI / 2));
     return g;
   },
+  // the same kasa slung on the back by its cord (taken off: the face shows, the hat stays with the costume)
+  kasaBack() { return MAKE.kasa(); },
   foamKatana(o = {}) {
     const g = new THREE.Group();
     g.add(mesh(box(0.034, 0.25, 0.03), toon(C.shirtBlack), 0, 0.02, 0));
@@ -193,6 +195,9 @@ const MAKE = {
   },
 };
 export const PROP_NAMES = Object.freeze([...Object.keys(MAKE), 'haori', 'sash', 'sheath']);
+// where the costume's kasa goes in a chapter (D3): worn on the nights out as ronin (F3, F5); slung on the
+// back the morning after (F4) and after the fight (C0 once the ronin lifts it, the talks under the bridge)
+export const KASA_BACK = Object.freeze(['c0', 'i0', 'i1', 'i2', 'i3', 'f4', 'i4', 'i5']);
 
 /* ------------------------------------------------------------------ mounts */
 // How each prop sits on a body. grip: in the fist like the arena katana. at: a point in rig space (cm) the
@@ -200,6 +205,8 @@ export const PROP_NAMES = Object.freeze([...Object.keys(MAKE), 'haori', 'sash', 
 const GRIP = { bone: 'RightHand', grip: true };
 const MOUNT = {
   kasa: { bone: 'Head', at: (r) => r.headTop.clone().add(new THREE.Vector3(0, -5.5, -0.5)), level: true },
+  // on the back: the crown points back, the underside against the shoulder blades, hanging a little out
+  kasaBack: { bone: 'Spine', at: (r) => r.worldP.Spine.clone().add(new THREE.Vector3(0, -12, -19)), level: true, rot: [-Math.PI / 2 + 0.22, 0, 0] },
   sunglasses: { bone: 'Head', at: (r) => r.worldP.headfront.clone().add(new THREE.Vector3(0, 3.5, 1.5)), level: true },
   flamingo: { bone: 'Spine01', at: (r) => r.worldP.Spine01.clone().add(new THREE.Vector3(0, -8, 22)), level: true, rot: [0.25, 0, 0] },
   steelBox: { bone: 'RightHand', at: (r) => r.worldP.RightHand.clone().add(r.worldP.RightHand.clone().sub(r.worldP.RightForeArm).setLength(8)), level: true },
@@ -220,7 +227,7 @@ function relScale(a, b) {
 /* ------------------------------------------------------------------ skinned shells (haori, sash) */
 const shellCache = new WeakMap(); // body geometry -> Map(kind -> geometry)
 function shellGeometry(bodyMesh, rig, kind) {
-  const src = bodyMesh.geometry;
+  const src = bodyMesh.geometry.userData.capBase || bodyMesh.geometry;
   let m = shellCache.get(src);
   if (!m) shellCache.set(src, (m = new Map()));
   if (m.has(kind)) return m.get(kind);
@@ -271,6 +278,54 @@ function makeShell(a, kind) {
   return sm;
 }
 
+/* ------------------------------------------------------------------ one hat at a time */
+// Every crew GLB wears its own baseball cap (it is part of the mesh). Under the kasa the cap folds away: the
+// head's vertices above the kasa's rim that stand out further than the head (a cap's brim, a bun) are
+// pulled in to the head's radius, where the kasa hides them. The folded geometry is made once per body
+// geometry and shared; the mesh and its outline hull swap to it while the kasa is on.
+const foldCache = new WeakMap();
+function foldGeometry(bodyMesh, rig) {
+  const src = bodyMesh.geometry;
+  if (foldCache.has(src)) return foldCache.get(src);
+  const g = src.clone();
+  g.userData = { ...src.userData, capBase: src };
+  const P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+  const names = bodyMesh.skeleton.bones.map((b) => b.name), s = rig.skinScale, hi = names.indexOf('Head');
+  // skin space <-> rig space (cm), as rig.js does it
+  const hw = new THREE.Matrix4().copy(bodyMesh.bindMatrix).invert().multiply(new THREE.Matrix4().copy(bodyMesh.skeleton.boneInverses[rig.index.Hips]).invert());
+  const gpH = new THREE.Vector3().setFromMatrixPosition(hw);
+  const H = rig.worldP.Head, axX = H.x, axZ = H.z + 2, rim = rig.headTop.y - 11.5; // the kasa's rim (props: kasa)
+  const v = new THREE.Vector3();
+  let moved = 0;
+  for (let i = 0; i < P.count; i++) {
+    let w = 0; for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === hi) w += SW.getComponent(i, k);
+    if (w < 0.5) continue;
+    v.fromBufferAttribute(P, i).sub(gpH).divideScalar(s); v.y += rig.hipsY;
+    const dx = v.x - axX, dz = v.z - axZ, d = Math.hypot(dx, dz), face = dz > 0 && Math.abs(dx) < 6.5, front = dz > 0;
+    // over the face only above the brow (the nose and glasses stay); at the temples a little lower;
+    // behind, down to the nape
+    if (face ? v.y < rim : front ? v.y < rim - 4 : v.y < H.y - 4) continue;
+    const R = face ? 12.5 : 11;
+    if (d <= R) continue;
+    v.x = axX + dx * (R / d); v.z = axZ + dz * (R / d);
+    v.y -= rig.hipsY; v.multiplyScalar(s).add(gpH);
+    P.setXYZ(i, v.x, v.y, v.z); moved++;
+  }
+  P.needsUpdate = true;
+  g.computeVertexNormals();
+  g.userData.folded = moved;
+  foldCache.set(src, g);
+  return g;
+}
+function foldCap(a, on) {
+  const body = findSkinned(a.model || a.root); if (!body) return;
+  const base = body.geometry.userData.capBase || body.geometry;
+  const to = on ? foldGeometry(body, rigOf(body)) : base;
+  if (body.geometry === to) return;
+  const from = body.geometry;
+  (a.model || a.root).traverse((o) => { if (o.isMesh && o.geometry === from) o.geometry = to; }); // the body and its hull
+}
+
 /* ------------------------------------------------------------------ the API */
 export function createProps() {
   function make(name, o = {}) {
@@ -318,6 +373,7 @@ export function createProps() {
     if (o.rot) obj.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...o.rot)));
     b.add(obj);
     list[name] = obj;
+    if (name === 'kasa') foldCap(a, true); // one hat: the body's own cap folds away under it
     if (name === 'foamKatana' && list.sheath) list.sheath.visible = false; // drawn: the hip is empty
     return obj;
   }
@@ -328,11 +384,18 @@ export function createProps() {
     if (name === 'foamKatana' && a.props.sheath) a.props.sheath.visible = true; // back in the sash
     p.traverse((x) => { if (x.isMesh) { if (x.userData.shell) x.skeleton = null; if (!x.material.userData.shared) x.material.dispose(); if (!x.userData.shell) x.geometry.dispose(); } });
     delete a.props[name];
+    if (name === 'kasa') foldCap(a, false);
   }
   const COSTUME = ['kasa', 'haori', 'sash', 'sheath'];
-  // the crew's costume on (or off): kasa, haori tabard, crimson sash and a foam katana at the left hip
-  function costume(a, on = true) {
-    for (const n of COSTUME) if (on) attach(a, n); else detach(a, n);
+  // the crew's costume on (or off): kasa, haori tabard, crimson sash and a foam katana at the left hip.
+  // kasa: 'head' (worn), 'back' (slung on the back) or false (none); only ever one kasa
+  function costume(a, on = true, kasa = 'head') {
+    for (const n of COSTUME) if (n !== 'kasa') { if (on) { if (!(a.props && a.props[n])) attach(a, n); } else detach(a, n); }
+    const want = on ? kasa : false;
+    if (want !== 'head') detach(a, 'kasa');
+    if (want !== 'back') detach(a, 'kasaBack');
+    if (want === 'head' && !(a.props && a.props.kasa)) attach(a, 'kasa');
+    if (want === 'back' && !(a.props && a.props.kasaBack)) attach(a, 'kasaBack');
   }
   return { make, attach, detach, costume, names: PROP_NAMES, COSTUME };
 }

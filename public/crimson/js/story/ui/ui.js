@@ -112,7 +112,7 @@ export function init(S) {
   S.ui = {
     objective: (t) => hud.objective(t), timer: (s) => hud.timer(s), meter: (id, v, o) => hud.meter(id, v, o), clearMeter: (id) => hud.clearMeter(id),
     prompt: (label, key, hold) => hud.prompt(label, key, hold), marker: (id, o) => hud.marker(id, o), unmark: (id) => hud.unmark(id),
-    subs: (who, text, dur) => dlg.subs(who, text, dur), say: (lines, o) => dlg.say(lines, o), choose: (title, opts) => dlg.choose(title, opts),
+    subs: (who, text, dur, speaker) => dlg.subs(who, text, dur, speaker), say: (lines, o) => dlg.say(lines, o), choose: (title, opts) => dlg.choose(title, opts),
     card: (kind, data) => cards.card(kind, data), boss: (f) => hud.boss(f), stamp: (t) => hud.stamp(t), clockTag: (t) => hud.clockTag(t),
     evidence: (st) => hud.evidence(st), seats: (list) => hud.seats(list), speed: (mps) => hud.speed(mps), damage: (k) => hud.damage(k),
     loading: (p) => cards.loading(p), fade: (to, dur) => cards.fade(to, dur), toast: (t, hot) => hud.toast(t, hot), hint: (t) => hud.hint(t),
@@ -122,6 +122,8 @@ export function init(S) {
     // extras: is a blocking UI up (the input context reads it); the photo frame's live state
     modalOpen: () => modals.some((m) => m.kind !== 'card') || !!(cards.cur && cards.cur.choices),
     get photo() { return phone.state; },
+    // extra: the lines being spoken now {who, text, t0, cut, until}, for the talking mouths (cast/talk.js)
+    get voices() { return dlg.voices; },
   };
 
   /* ---------------- per tick ---------------- */

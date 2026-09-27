@@ -507,6 +507,9 @@ export function buildBody(donor, id, variant = 0) {
   armature.scale.setScalar(0.01);
   root.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(order));
-  root.userData = { id, variant, spec, tris: geo.index.count / 3, headTop, hatTop, bodyHeight: (headTop - Math.min(0, geo.boundingBox.min.y)) * 0.01, glow: spec.glow, height: spec.h };
+  // the painted mouth (paintFace: v 0.725 of the face) in rig space, for the talking mouth (talk.js)
+  const my = hc.y - 0.5 - (0.725 - 0.5) * hr.y * 2.1, mz = hc.z + hr.z * Math.sqrt(Math.max(0, 1 - ((my - hc.y) / hr.y) ** 2));
+  const mouth = { x: hc.x - J.Hips.x, y: my - geo.boundingBox.min.y, z: mz - J.Hips.z + 0.1, w: 3.8 };
+  root.userData = { id, variant, spec, tris: geo.index.count / 3, headTop, hatTop, mouth, bodyHeight: (headTop - Math.min(0, geo.boundingBox.min.y)) * 0.01, glow: spec.glow, height: spec.h };
   return { scene: root, animations: [], url: `code:${id}:${variant}`, built: true };
 }

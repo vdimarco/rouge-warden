@@ -20,7 +20,8 @@ import { retargetClip, clipFinite, hipsDrift } from './retarget.js';
 import { libClip, LIB_NAMES, LIB_DURATIONS, POSE_CLIPS, definePose } from './poses.js';
 import { drive, locoState } from './locomotion.js';
 import { buildBody, BUILT_IDS, variantsOf, BODIES } from './bodygen.js';
-import { createProps } from './props.js';
+import { createProps, KASA_BACK } from './props.js';
+import { createTalk } from './talk.js';
 import { vortexParts } from './vortex.js';
 import { createLod, padBounds } from './lod.js';
 import { createCrowd, createFollowers } from './crowd.js';
@@ -33,9 +34,12 @@ const GABE_STORY_SCALE = 1.95 / 2.28; // the arena Gabe stands 2.28 m; in the st
 const CREW_HEIGHT = 1.8;
 const SETS = Object.freeze({ ronin: RONIN_CUTS, gabe: GABE_CUTS, bear: BEAR_CUTS });
 const ALIASES = Object.freeze({ idle: 'lib:idle', walk: 'lib:walk', run: 'lib:run', dead: 'lib:knocked', hit: 'gabe:hit' });
-// D3: the crew wear the costume on the night of the fight: the cold open, the interludes under the bridge
-// and the flashbacks from Ronin Night Out (F3) on. i1 and i2 are the same night under the bridge, so they
-// are in it too.
+// D3: the crew wear the costume from Ronin Night Out (F3, Friday night: "Costumes stay on till Sunday.
+// House rules.") to the fight on Sunday at 3 AM: F3, F4, F5, the cold open and the interludes under the
+// bridge (all the same Sunday night). F1 and F2 (Thursday, Friday morning) and the present are day clothes.
+// Each body wears one hat: the kasa is worn on the nights out (F3, F5) and folds the body's own cap away
+// under it; the morning after (F4) and after the fight (C0 once the ronin lifts it, I0 to I5) it hangs on
+// the back and the cap shows (props.js KASA_BACK).
 export const COSTUME_CHAPTERS = Object.freeze(['c0', 'i0', 'i1', 'i2', 'f3', 'i3', 'f4', 'i4', 'f5', 'i5']);
 // H1: rigged GLBs for Vance, Voss, Rattler and the gang (BODY_URL). Boone is the gang GLB scaled about 1.12
 // with a darker tint; the gang variants are the gang GLB with tints. A GLB that fails to load falls back to
@@ -379,6 +383,7 @@ export function init(S) {
       live.delete(a);
       followers.remove(a);
       if (prepared.has(a) || [...reg.values()].includes(a)) { a.visible = false; return; } // arena actors are only hidden (B9)
+      talk.drop(a);
       if (a.dispose && !a.disposed) a.dispose();
     },
     register(id, actor) { reg.set(id, actor); actor.id = actor.id || id; dur = null; for (const k of Object.keys(srcCache)) delete srcCache[k]; },
@@ -388,8 +393,20 @@ export function init(S) {
       detach(a, name) { if (a instanceof Figure) a.attached = a.attached.filter((x) => x[0] !== name); props.detach(a, name); },
       names: props.names,
     },
-    // the crew costume (D3): kasa, haori tabard, crimson sash, foam katana at the hip
-    costume(a, on = true) { for (const n of props.COSTUME) if (on) cast.props.attach(a, n); else cast.props.detach(a, n); },
+    // the crew costume (D3): kasa, haori tabard, crimson sash, foam katana at the hip. kasa: 'head', 'back'
+    // or false; by default where the chapter puts it (KASA_BACK). Only one kasa, never over another hat.
+    costume(a, on = true, kasa = kasaMode()) {
+      if (!a) return;
+      const has = (n) => !!(a.props && a.props[n]);
+      for (const n of props.COSTUME) if (n !== 'kasa') { if (on) { if (!has(n)) cast.props.attach(a, n); } else cast.props.detach(a, n); }
+      const want = on ? kasa : false;
+      if (want !== 'head') cast.props.detach(a, 'kasa');
+      if (want !== 'back') cast.props.detach(a, 'kasaBack');
+      if (want === 'head' && !has('kasa')) cast.props.attach(a, 'kasa');
+      if (want === 'back' && !has('kasaBack')) cast.props.attach(a, 'kasaBack');
+    },
+    // what an actor wears of the costume now: {on, kasa: 'head' | 'back' | false} (QA)
+    costumeOf(a) { const p = (a && a.props) || {}; return { on: !!p.haori || !!p.sash, kasa: p.kasa ? 'head' : p.kasaBack ? 'back' : false }; },
     // a procedural pose (poses.js). k: 1 plays it, 0 goes back to the idle. 'talk' is also a light
     // additive sway: pose(a, 'talk', k) with k < 1 lays it over the current clip at that weight.
     pose(a, name, k = 1) {
@@ -455,6 +472,9 @@ export function init(S) {
   // what a Figure needs from here
   const inner = { durations, props: cast.props, drain: (a, k) => cast.drain(a, k), inkShadow: (a, k) => cast.inkShadow(a, k) };
   const crowd = createCrowd(S, cast), followers = createFollowers(S);
+  // talking mouths (talk.js): every actor that can speak, spawned or arena
+  cast.all = () => { const out = [...live]; for (const a of reg.values()) if (!live.has(a)) out.push(a); return out; };
+  const talk = cast.talk = createTalk(S, cast);
   cast.crowd = { update: (rdt, focus) => crowd.update(rdt, focus), scatter: (x, z, r) => crowd.scatter(x, z, r), setDensity: (k) => crowd.setDensity(k), get list() { return crowd.list; }, get density() { return crowd.density; } };
   cast.followers = { add: (a, o) => followers.add(a, o), remove: (a) => followers.remove(a), board: (v) => followers.board(v), get list() { return followers.list; } };
 
@@ -466,6 +486,7 @@ export function init(S) {
     for (const a of live) if (!a.disposed) lod.step(a, a.useCdt ? cdt : rdt);
     for (const a of reg.values()) if (!live.has(a) && a.root.visible && a.root.parent) a.update(rdt);
     cast.lodUpdate(S.camera.position);
+    talk.update(rdt); // after every clip has set the bones: the mouths and the nod lie over them
   });
   S.register('ai', (cdt, rdt) => {
     // VEHICLES empties S.vehicles.people after reading it; a stub might not, so take back last tick's circles
@@ -479,11 +500,18 @@ export function init(S) {
   S.bus.on('start', () => { variantSeq = {}; for (const a of reg.values()) prepare(a); });
   // the costume follows the chapter for crew bodies that did not ask for it either way
   const inCostume = () => cast.autoCostume && COSTUME_CHAPTERS.includes(S.missions && S.missions.chapter);
+  function kasaMode() { return KASA_BACK.includes(S.missions && S.missions.chapter) ? 'back' : 'head'; }
+  // (a crew body's costume and its kasa follow the chapter: nothing is left on from the chapter before)
   S.bus.on('chapter', () => {
-    const on = inCostume();
-    for (const a of live) if (a instanceof Figure && CREW_IDS.includes(a.id) && (a.autoCostume ?? true) && !!a.props.kasa !== on) { cast.costume(a, on); a.autoCostume = true; }
+    const on = inCostume(), mode = kasaMode();
+    for (const a of live) {
+      if (!(a instanceof Figure) || !CREW_IDS.includes(a.id) || !(a.autoCostume ?? true)) continue;
+      const now = cast.costumeOf(a);
+      if (now.on !== on || (on && now.kasa !== mode) || (!on && now.kasa)) { cast.costume(a, on, mode); a.autoCostume = true; }
+    }
   });
   S.bus.on('exit', () => {
+    talk.clear();
     crowd.clear(); followers.clear();
     for (const a of [...live]) cast.despawn(a);
     live.clear();

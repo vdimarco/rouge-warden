@@ -16,7 +16,7 @@ export const e1 = {
     go('e1_gift_table', 'Walk to the gift table.', { r: 3 }),
     talk('e1.gift'),
     { type: 'cine', id: 'e1_wedding' },
-    talk('e1.photo'),
+    script('kasaOn', { lines: ['e1.photo'] }), // "Kasa hats on.": said, and the crew put their kasa on for the last photo
     { type: 'photo', subject: 'crew', kind: 'timer', min: 0, store: 'e1Photo', timeLimit: 40, fail: 'skip', objective: 'Prop the phone. Ten second timer. Run in.' },
     talk('e1.ten', 'e1.know', 'e1.post', 'e1.plan'),
     script('credits'),

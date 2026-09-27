@@ -87,8 +87,7 @@ export const CINES = {
       act(1.25, 'gabe', 'pose', { name: 'kneel', k: 1 }),
       act(1.4, 'gabe', 'drain', { k: 1, dur: 2 }), // the neon drains from Gabe over 2 s (B10)
       act(7.8, 'ronin', 'prop', { name: 'foamKatanaBent', on: true, bone: 'RightHand' }), // the katana is foam, and bent
-      act(11.6, 'ronin', 'prop', { name: 'kasa', lift: true }),
-      act(12.0, 'pick', 'show', { replace: 'ronin' }), // D3: the ronin lifts the kasa; the pick's face
+      act(12.0, 'pick', 'show', { replace: 'ronin' }), // D3: the ronin's face is the pick's; his kasa is off, slung on his back (the arena ronin wears only a headband, so no second hat goes on it)
       act(12.4, 'pick', 'face', { to: W('gabe') }),
       act(14.6, 'gabe', 'pose', { name: 'talk', k: 0.6 }),
       act(19.2, 'gabe', 'pose', { name: 'crouch', k: 1 }),

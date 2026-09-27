@@ -23,6 +23,10 @@ export function createDialogue(U) {
   const bad = new Set(); // portraits that failed to load
   img.addEventListener('error', () => { bad.add(img.dataset.src); showGlyph(img.dataset.who); });
   let sayH = null, typing = null, subsH = null, subsUntil = 0, choiceH = null, focusI = 0;
+  // the voices being spoken now, for the talking mouths (cast/talk.js): the box's line and the subtitle's.
+  // {who, text, t0, cut (the box line was skipped to its end), until (the subtitle goes)}
+  let boxVoice = null, subVoice = null;
+  const speaking = (v) => !!(v && S.cast && S.cast.talk && S.cast.talk.talking(v));
 
   /* ---------------- the modal box ---------------- */
   function showGlyph(who) { const g = U.glyph(who); pf.classList.toggle('glyph', !!g); pf.classList.toggle('none', !g); img.removeAttribute('src'); gl.textContent = g; }
@@ -39,16 +43,18 @@ export function createDialogue(U) {
     ln.textContent = '';
     nx.textContent = '';
     sayH.shownAt = S.timers.now;
+    boxVoice = { who, text: l.text, t0: S.timers.now, cut: null };
   }
   function nextLine() {
     if (!sayH) return;
     sayH.i++;
+    boxVoice = null;
     if (sayH.i >= sayH.lines.length) { const h = sayH; sayH = null; typing = null; h.done = true; box.classList.add('hidden'); root.classList.remove('sayOn'); U.popModal('dialog'); }
     else showLine();
   }
   function advance() {
     if (!sayH) return;
-    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; return; }
+    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; if (boxVoice) boxVoice.cut = S.timers.now; return; }
     U.blip('move');
     nextLine();
   }
@@ -56,14 +62,15 @@ export function createDialogue(U) {
   box.addEventListener('pointerdown', (e) => e.stopPropagation());
 
   /* ---------------- subtitles ---------------- */
-  function setSubs(who, text) {
+  function setSubs(who, text, speaker) {
+    subVoice = { who: speaker ?? who, text: String(text), t0: S.timers.now, until: null };
     const name = U.whoName(who);
     subsEl.innerHTML = name ? `<b class="${U.isCrew(who) ? 'crew' : ''}">${esc(name)}</b> ${esc(text)}` : esc(text);
     subsEl.classList.remove('hidden');
   }
   const subsDur = (text) => 3.5 + String(text).length * 0.06;
-  function showSubsLine() { const l = U.lineOf(subsH.lines[subsH.i]); setSubs(l.who, l.text); subsH.until = S.timers.now + subsDur(l.text); subsUntil = 0; }
-  function nextSubs() { if (!subsH) return; subsH.i++; if (subsH.i >= subsH.lines.length) { subsH.done = true; subsH = null; subsEl.classList.add('hidden'); } else showSubsLine(); }
+  function showSubsLine() { const l = U.lineOf(subsH.lines[subsH.i]); setSubs(l.who, l.text); subsH.until = S.timers.now + subsDur(l.text); subVoice.until = subsH.until; subsUntil = 0; }
+  function nextSubs() { if (!subsH) return; subsH.i++; if (subsH.i >= subsH.lines.length) { subsH.done = true; subsH = null; subsEl.classList.add('hidden'); subVoice = null; } else showSubsLine(); }
 
   function say(lines, o = {}) {
     const list = [].concat(lines || []);
@@ -80,10 +87,11 @@ export function createDialogue(U) {
     sayH = h; U.pushModal('dialog'); box.classList.remove('hidden'); root.classList.add('sayOn'); showLine();
     return h;
   }
-  function subs(who, text, dur) {
+  // speaker: who says it when the subtitle shows no name (a cine line: the line's own speaker)
+  function subs(who, text, dur, speaker) {
     if (subsH) { subsH.done = true; subsH = null; }
-    if (!text) { subsEl.classList.add('hidden'); subsUntil = 0; return; }
-    setSubs(who, text); subsUntil = S.timers.now + (dur ?? subsDur(text));
+    if (!text) { subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; return; }
+    setSubs(who, text, speaker); subsUntil = S.timers.now + (dur ?? subsDur(text)); subVoice.until = subsUntil;
   }
 
   /* ---------------- choices ---------------- */
@@ -140,16 +148,18 @@ export function createDialogue(U) {
         if (n !== typing.n) { typing.n = n; ln.textContent = typing.text.slice(0, n); if (n % 4 === 1) U.blip('type'); }
         if (n >= typing.text.length) typing = null;
       }
-      if (sayH && !typing) nx.textContent = sayH.i + 1 < sayH.lines.length ? '▼' : '■';
+      // the box waits for input (▼) once the words are typed and the speaker has finished saying them
+      if (sayH && !typing) nx.textContent = speaking(boxVoice) ? '' : sayH.i + 1 < sayH.lines.length ? '▼' : '■';
       if (subsH && t >= subsH.until) nextSubs();
-      if (subsUntil && t >= subsUntil) { subsEl.classList.add('hidden'); subsUntil = 0; }
+      if (subsUntil && t >= subsUntil) { subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; }
     },
     advanceAll() { while (sayH) nextLine(); while (subsH) nextSubs(); if (choiceH) pick(0); },
+    get voices() { const out = []; if (boxVoice && sayH) out.push(boxVoice); if (subVoice && !subsEl.classList.contains('hidden')) out.push(subVoice); return out; },
     // on-screen boxes for the overlap check
     boxes() { const out = []; for (const [n, e] of [['subs', subsEl]]) { const r = U.box(e); if (r) out.push([n, r]); } return out; },
     reset() {
       if (sayH) { sayH.done = true; sayH = null; } if (subsH) { subsH.done = true; subsH = null; } if (choiceH) { choiceH.done = true; choiceH = null; }
-      typing = null; subsUntil = 0; root.classList.remove('sayOn');
+      typing = null; subsUntil = 0; boxVoice = null; subVoice = null; root.classList.remove('sayOn');
       box.classList.add('hidden'); subsEl.classList.add('hidden'); chEl.classList.add('hidden');
     },
   };
