@@ -37,15 +37,32 @@ let gfx = (() => {
   return low ? "low" : "high";
 })();
 let Q = QUALITY[gfx];
+// Ground textures get less filtering on the lighter settings. A phone never gets more than 2x.
+const ANISO = { low: 2, medium: 4, high: 8 };
+const anisoFor = (n) => (low ? Math.min(2, ANISO[n]) : ANISO[n]);
+// The Low setting softens shadow edges with 4 reads of the shadow map instead of 16. Medium and High keep
+// three.js's soft filter; this replaces only the plain PCF filter, which only Low uses.
+{
+  const PCF4 = "vec2 ts = 1.0 / shadowMapSize; vec2 p = shadowCoord.xy * shadowMapSize - 0.5; vec2 f = fract( p ); vec2 b = ( floor( p ) + 0.5 ) * ts;\n"
+    + "shadow = mix( mix( texture2DCompare( shadowMap, b, shadowCoord.z ), texture2DCompare( shadowMap, b + vec2( ts.x, 0.0 ), shadowCoord.z ), f.x ),\n"
+    + "mix( texture2DCompare( shadowMap, b + vec2( 0.0, ts.y ), shadowCoord.z ), texture2DCompare( shadowMap, b + ts, shadowCoord.z ), f.x ), f.y );\n";
+  const src = THREE.ShaderChunk.shadowmap_pars_fragment;
+  const out = src.replace(/(#if defined\( SHADOWMAP_TYPE_PCF \)\n)[\s\S]*?(\s*#elif defined\( SHADOWMAP_TYPE_PCF_SOFT \))/, (m, a, b) => a + PCF4 + b);
+  if (out !== src) THREE.ShaderChunk.shadowmap_pars_fragment = out;
+  else console.warn("Breath of the Lake: the shadow chunk has changed, keeping three.js's own PCF filter");
+}
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-// With no saved choice, a computer with Intel graphics or a software renderer starts on Medium, not High:
-// the painted High setting is too heavy for most of them. The player can still pick High.
+// With no saved choice, a computer with built-in graphics or a software renderer starts on Medium, not High:
+// the painted High setting is too heavy for most of them. That means Intel, AMD's Radeon Graphics and Vega chips
+// inside the processor, and phone chips in a laptop. Separate cards (Intel Arc, Radeon RX and Pro) stay on High,
+// and so do Apple, NVIDIA and names we do not know. The player can still pick High.
 if (!gfxSaved && gfx === "high") {
   try {
     const gl = renderer.getContext(), ext = gl.getExtension("WEBGL_debug_renderer_info");
     const chip = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
-    if (/intel|swiftshader|llvmpipe|software/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
+    const built = /intel|swiftshader|llvmpipe|software|Radeon(\(TM\))? (Vega \d+ )?Graphics|Radeon Vega|Mali|Adreno|PowerVR/i;
+    if (built.test(chip) && !/\bArc\b|\bRX\b|Radeon Pro/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
   } catch (e) { /* no chip name */ }
 }
 // dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
@@ -54,7 +71,8 @@ const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(deviceP
 applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const shadowType = (n) => (n === "low" ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap);
+renderer.shadowMap.type = shadowType(gfx);
 $("#game").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 5000);
@@ -158,7 +176,7 @@ G.writeSave = () => {
 function loadTextures() {
   const L = new THREE.TextureLoader(), out = {};
   const one = (k, f) => Promise.race([L.loadAsync("tex/" + f), new Promise((r) => setTimeout(r, 30000))])
-    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = low ? 2 : 8; out[k] = t; })
+    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = k === "backdrop" ? (low ? 2 : 8) : anisoFor(gfx); out[k] = t; })
     .catch(() => {});
   return Promise.all([one("grass", "grass.jpg"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg")]).then(() => out);
 }
@@ -399,7 +417,8 @@ function respawnCritters() {
     if (p.foe) { scene.remove(p.foe.rig.root); G.foes.splice(G.foes.indexOf(p.foe), 1); }
     p.foe = G.spawnFoe(p.type, p.x, p.z, p.home);
   }
-  G.items.forEach((it) => { if (it.taken) { it.taken = false; it.obj.visible = true; } });
+  // the pickups loop puts the food back in the scene
+  G.items.forEach((it) => { it.taken = false; });
   G.loot.refill();
 }
 G.onKill = (f) => {
@@ -412,10 +431,16 @@ G.onKill = (f) => {
 };
 
 /* ---------------- items and secrets ---------------- */
+// One baked model per kind of food. Every pickup is a copy that shares its shapes and paints.
+const FOOD = new Map();
+const foodMesh = (id) => { if (!FOOD.has(id)) FOOD.set(id, M.bake(M.food(id))); return FOOD.get(id).clone(); };
+// A far pickup or secret rock leaves the scene, so three.js does not walk it every frame. Hiding it is not enough:
+// three.js still updates the matrices of a hidden object's parts.
+const park = (o, on) => { if (on && !o.parent) scene.add(o); else if (!on && o.parent === scene) scene.remove(o); };
 function buildItems() {
   const w = G.world, r = rng(321);
   const blocked = (x, z, r) => { let hit = false; w.near(x, z, (c) => { if (Math.hypot(c.x - x, c.z - z) < c.r + r) hit = true; }); return hit; };
-  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5 || blocked(x, z, 0.6)) return; const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
+  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5 || blocked(x, z, 0.6)) return; const o = foodMesh(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
   w.appleSpots.slice(0, 70).forEach(([x, z]) => add("apple", x, z));
   for (let k = 0; k < 400 && G.items.length < 190; k++) {
     const x = (r() - 0.5) * 1300, z = (r() - 0.5) * 1300, h = w.height(x, z);
@@ -444,7 +469,7 @@ function buildItems() {
 }
 G.dropFood = (id, x, z) => {
   // never drop food into the lake
-  if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
+  if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = foodMesh(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
 G.foodCount = () => { const f = G.inv.food; return { total: f.apple + f.shroom + f.berry + f.syrup + (f.fish || 0), stew: f.stew }; };
 const HEAL = { apple: 2, berry: 2, shroom: 3, fish: 4, syrup: 8 };
 const FOOD_NAME = { apple: "Apple", berry: "Blueberries", shroom: "Toadstool", syrup: "Maple Syrup", fish: "Fish", stew: "Cottage Stew" };
@@ -1151,7 +1176,7 @@ function titleCamera(dt) {
 // so the render targets are rarely rebuilt. A step down that does not help is undone: the load is elsewhere.
 const RES_STEPS = [1, 0.85, 0.72, 0.6];
 const fts = [];
-let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0;
+let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, slowN = 0, autoDown = false;
 function frameTime(now, live) {
   if (!live || document.hidden) { ftLast = 0; return; }
   const ft = ftLast ? now - ftLast : 0; ftLast = now;
@@ -1164,17 +1189,40 @@ function frameTime(now, live) {
   const set = (k) => { resStep = k; resScale = RES_STEPS[k]; applyRatio(); fts.length = 0; };
   if (downFrom && med > downFrom * 0.9) { set(resStep - 1); downFrom = 0; noDownT = 30; ftHold = 3000; return; }
   downFrom = 0;
+  // Still slow at the smallest scale, though every step down helped: the graphics card is the limit. After about
+  // 5 s of that, the game drops one graphics setting, once per visit. It never climbs back by itself, it does not
+  // save the change, and it leaves alone a setting the player chose. Never during a boss fight.
+  if (!gfxSaved && !autoDown && gfx !== "low" && !G.activeBoss && resStep === RES_STEPS.length - 1 && med > dispMs * 1.45) {
+    if (++slowN >= 5) {
+      autoDown = true;
+      const next = gfx === "high" ? "medium" : "low";
+      G.setGraphics(next, { persist: false });
+      G.ui.toast("Graphics lowered to " + GFX_NAMES[next] + " for smoother play");
+      return;
+    }
+  } else slowN = 0;
   if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; set(resStep + 1); ftHold = 2000; }
   else if (med < dispMs * 1.12 && resStep > 0) { set(resStep - 1); ftHold = 4000; }
   else ftHold = 1000;
 }
-G.setGraphics = (name) => {
+// persist: false changes the setting for this visit only (the automatic step down).
+G.setGraphics = (name, { persist = true } = {}) => {
   if (!QUALITY[name]) return;
-  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0;
-  try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ }
+  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
+  if (persist) { gfxSaved = true; try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ } }
   applyRatio();
   painter.setQuality(Q);
   sun.shadow.mapSize.set(Q.shadow, Q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  // three.js does not rebuild its shaders when the shadow filter changes, so every material is marked for a rebuild,
+  // including the pickups and critters that are out of the scene. A short pause, once.
+  if (renderer.shadowMap.type !== shadowType(name)) {
+    renderer.shadowMap.type = shadowType(name);
+    const redo = (o) => o.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.needsUpdate = true; });
+    redo(scene);
+    for (const o of [...FOOD.values(), ...G.items.map((it) => it.obj), ...G.loonies.map((l) => l.obj), ...G.foes.map((f) => f.rig.root)]) if (!o.parent) redo(o);
+  }
+  const an = anisoFor(name), T = G.world.tex;
+  for (const k of ["grass", "dirt", "rock", "sand"]) if (T[k] && T[k].anisotropy !== an) { T[k].anisotropy = an; T[k].needsUpdate = true; }
   G.world.quality = Q; G.world.buildGrass(Q);
 };
 G.graphics = () => gfx;
@@ -1266,7 +1314,8 @@ function step(dt) {
   const fdt = dt * G.foeTime;
   for (const f of G.foes) {
     const d = Math.hypot(f.x - P.x, f.z - P.z);
-    f.rig.root.visible = f.rig.root.matrixWorldAutoUpdate = d < 240 && !f.gone;
+    // a critter past 240 m, or one that is gone, leaves the scene with all its bones
+    park(f.rig.root, !f.gone && d < 240);
     if (d < 170 || f.state !== "idle") f.update(fdt);
   }
   for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].gone && !G.plan.some((p) => p.foe === G.foes[i])) { scene.remove(G.foes[i].rig.root); G.foes.splice(i, 1); }
@@ -1283,22 +1332,23 @@ function step(dt) {
   A.setMood(G.activeBoss ? (G.activeBoss.phaseN > 1 ? "boss" + G.activeBoss.phaseN : "boss") : fighting ? "fight" : G.night ? "night" : "day");
   // pickups
   for (const it of G.items) {
-    if (it.taken) { it.obj.matrixWorldAutoUpdate = false; continue; }
+    if (it.taken) continue;
     const d = Math.hypot(it.x - P.x, it.z - P.z);
-    // a hidden thing also skips its matrix update, which three.js otherwise does for every object every frame
-    it.obj.visible = it.obj.matrixWorldAutoUpdate = d < 160;
-    if (d > 160) continue;
+    // shown within 160 m; 10 m of slack keeps it from going in and out at the edge
+    const on = d < (it.obj.parent ? 170 : 160);
+    park(it.obj, on);
+    if (!on) continue;
     it.obj.rotation.y += dt;
     if (d < 1.6 && Math.abs(it.y - P.y) < 2.5) {
-      it.taken = true; it.obj.visible = false;
+      it.taken = true; park(it.obj, false);
       if (it.id === "heart") { P.heal(4); A.sfx("eat"); G.ui.toast("+1 heart"); }
       else { G.inv.food[it.id]++; A.sfx("pickup"); G.ui.toast("+1 " + FOOD_NAME[it.id]); }
-      if (it.drop) { scene.remove(it.obj); G.items.splice(G.items.indexOf(it), 1); break; }
+      if (it.drop) { G.items.splice(G.items.indexOf(it), 1); break; }
     }
   }
   G.loonies.forEach((l, i) => {
     // a secret rock is a few pixels wide past 130 m, so it is not drawn out there
-    if (l.kind !== "float") { l.obj.visible = l.obj.matrixWorldAutoUpdate = Math.hypot(l.x - P.x, l.z - P.z) < 130; return; }
+    if (l.kind !== "float") { park(l.obj, Math.hypot(l.x - P.x, l.z - P.z) < (l.obj.parent ? 140 : 130)); return; }
     if (S.loonies.includes(i)) { l.obj.visible = false; return; }
     l.obj.rotation.y += dt * 2; l.obj.position.y = l.y + Math.sin(G.time * 2 + i) * 0.2;
     if (Math.hypot(l.x - P.x, l.z - P.z) < 1.6 && Math.abs(l.y - P.y - 0.8) < 2.2) { S.loonies.push(i); l.obj.visible = false; G.fx.puff(l.x, l.y, l.z, 0xffd84a, 14); foundLoonie(); }
