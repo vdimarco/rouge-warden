@@ -241,13 +241,18 @@ export class UI {
     const c = document.createElement("canvas"); c.width = c.height = R;
     const x = c.getContext("2d"), img = x.createImageData(R, R), d = img.data;
     const col = new THREE.Color(), nrm = new THREE.Vector3();
-    const H = new Float32Array(R * R);
+    // the world sampled these same points while it built the grass mask; use them once, then let them go
+    const mc = w._mapCache && w._mapCache.R === R ? w._mapCache : null;
+    const H = mc ? mc.h : new Float32Array(R * R);
     this.regionOf = new Uint8Array(R * R);
     const hash = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
       const wx = ((i + 0.5) / R) * SIZE - SIZE / 2, wz = ((j + 0.5) / R) * SIZE - SIZE / 2;
-      H[j * R + i] = w.height(wx, wz);
-      this.regionOf[j * R + i] = TOWERS.findIndex((t) => t.id === w.towerOf(wx, wz));
+      if (!mc) H[j * R + i] = w.height(wx, wz);
+      // the region is the nearest tower's
+      let best = 0, bd = Infinity;
+      for (let q = 0; q < TOWERS.length; q++) { const dx = wx - TOWERS[q].x, dz = wz - TOWERS[q].z, dd = dx * dx + dz * dz; if (dd < bd) { bd = dd; best = q; } }
+      this.regionOf[j * R + i] = best;
     }
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
       const k = j * R + i, h = H[k];
@@ -257,12 +262,12 @@ export class UI {
         // water: pale at the shore, deep blue in the middle, with rings that follow the shoreline
         const depth = -h;
         col.setRGB(0.62, 0.84, 0.86).lerp(TMPC.setRGB(0.26, 0.5, 0.72), Math.min(1, depth / 10));
-        const ring = [0.6, 2.2, 4.5].some((r) => Math.abs(depth - r) < 0.16);
+        const ring = Math.abs(depth - 0.6) < 0.16 || Math.abs(depth - 2.2) < 0.16 || Math.abs(depth - 4.5) < 0.16;
         if (ring) col.lerp(TMPC.setRGB(0.9, 0.97, 1), 0.55);
         if (depth < 0.25) col.lerp(TMPC.setRGB(1, 1, 0.97), 0.7);
       } else {
-        w.normal(wx, wz, nrm);
-        w.groundColor(wx, wz, h, nrm.y, col);
+        if (mc) { nrm.set(mc.n[k * 3], mc.n[k * 3 + 1], mc.n[k * 3 + 2]); col.setRGB(mc.c[k * 3], mc.c[k * 3 + 1], mc.c[k * 3 + 2]); }
+        else { w.normal(wx, wz, nrm); w.groundColor(wx, wz, h, nrm.y, col); }
         // soften toward a storybook palette
         const l = (col.r + col.g + col.b) / 3;
         col.lerp(TMPC.setRGB(l * 1.02, l * 1.08, l * 0.9), 0.18).multiplyScalar(1.06);
@@ -279,6 +284,7 @@ export class UI {
       col.multiplyScalar(0.97 + grain);
       d[k * 4] = Math.min(255, col.r * 255); d[k * 4 + 1] = Math.min(255, col.g * 255); d[k * 4 + 2] = Math.min(255, col.b * 255); d[k * 4 + 3] = 255;
     }
+    w._mapCache = null;
     x.putImageData(img, 0, 0);
     const to = (wx, wz) => this.toMap(wx, wz, R);
     // dotted paths
