@@ -78,7 +78,7 @@ button { font: inherit; color: inherit; }
 @media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #flaskText { display: none; }
   .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
 @media (max-width: 380px) { .bar { width: 48px; } }
-@media (max-width: 520px) { .hud { gap: 4px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
+@media (max-width: 520px) { .hud { gap: 3px; } .pill { gap: 4px; padding: 6px 5px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
 .ticker { position: fixed; z-index: 9; top: calc(var(--hudH, 50px) + 4px); right: calc(var(--sar) + 10px); max-width: min(380px, calc(100vw - 20px)); font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; background: rgba(18, 22, 31, 0.72); border: 0; border-left: 2px solid var(--iris); border-radius: 4px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity 0.5s; }
 .ticker.fade { opacity: 0; pointer-events: none; }
 .ticker[hidden] { display: none; }
