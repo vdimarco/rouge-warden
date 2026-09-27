@@ -1,0 +1,392 @@
+// Fish and junk, built in code from species.js: a lofted body per look.shape, the pattern painted into a small
+// canvas texture, fins with rays, glassy eyes. Every mesh is 1 unit long (nose at -z); the caller scales it by length.
+import * as THREE from "three";
+import { byId } from "./species.js";
+import { bake, merge, hex, clamp, lerp, smooth } from "./world-env.js";
+
+// Body forms, as fractions of the total length. top/bot = back and belly height, wid = half width,
+// peak = where the body is deepest (0 nose .. 1 tail root), ped = how thin the tail root is, zp = where the tail fin starts.
+const FORM = {
+  sunfish: { top: 0.25, bot: 0.215, wid: 0.068, peak: 0.44, ped: 0.22, zp: 0.27, nose: 0.34, eye: 0.03, eyeT: 0.14, tailH: 0.12, fork: 0.018,
+    dorsal: [{ z0: -0.19, z1: 0.02, h: 0.1, n: 10 }, { z0: 0.02, z1: 0.25, h: 0.12 }], anal: [{ z0: 0.02, z1: 0.24, h: 0.11, n: 3 }], pec: 0.13 },
+  perch: { top: 0.115, bot: 0.085, wid: 0.062, peak: 0.36, ped: 0.27, zp: 0.3, nose: 0.28, eye: 0.024, eyeT: 0.11, tailH: 0.1, fork: 0.07,
+    dorsal: [{ z0: -0.2, z1: 0.03, h: 0.1, n: 13, blotch: true }, { z0: 0.07, z1: 0.23, h: 0.075 }], anal: [{ z0: 0.1, z1: 0.23, h: 0.065, n: 2 }], pec: 0.09 },
+  bass: { top: 0.13, bot: 0.105, wid: 0.074, peak: 0.42, ped: 0.28, zp: 0.3, nose: 0.38, eye: 0.022, eyeT: 0.1, tailH: 0.11, fork: 0.035,
+    dorsal: [{ z0: -0.14, z1: 0.06, h: 0.08, n: 10 }, { z0: 0.06, z1: 0.24, h: 0.09 }], anal: [{ z0: 0.1, z1: 0.24, h: 0.07, n: 3 }], pec: 0.1 },
+  walleye: { top: 0.092, bot: 0.08, wid: 0.066, peak: 0.4, ped: 0.3, zp: 0.3, nose: 0.3, eye: 0.03, eyeT: 0.095, tailH: 0.1, fork: 0.075,
+    dorsal: [{ z0: -0.16, z1: 0.04, h: 0.085, n: 13, blotch: true }, { z0: 0.08, z1: 0.25, h: 0.065 }], anal: [{ z0: 0.12, z1: 0.25, h: 0.065, n: 2 }], pec: 0.08 },
+  pike: { top: 0.066, bot: 0.064, wid: 0.057, peak: 0.58, ped: 0.45, zp: 0.34, nose: 0.2, eye: 0.019, eyeT: 0.1, tailH: 0.085, fork: 0.055, snout: true,
+    dorsal: [{ z0: 0.15, z1: 0.31, h: 0.075 }], anal: [{ z0: 0.17, z1: 0.31, h: 0.06 }], pec: 0.07 },
+  trout: { top: 0.094, bot: 0.086, wid: 0.068, peak: 0.42, ped: 0.26, zp: 0.3, nose: 0.3, eye: 0.021, eyeT: 0.09, tailH: 0.115, fork: 0.1,
+    dorsal: [{ z0: -0.07, z1: 0.09, h: 0.085 }, { z0: 0.2, z1: 0.25, h: 0.022, adipose: true }], anal: [{ z0: 0.13, z1: 0.24, h: 0.065 }], pec: 0.085 },
+};
+export const FORMS = FORM;
+
+// the body outline: grows from a blunt nose to the deepest point, then thins to the tail root
+function env(t, pk, nose, ped) {
+  if (t < pk) return nose + (1 - nose) * Math.sin((t / pk) * Math.PI / 2) ** 0.8;
+  const u = (t - pk) / (1 - pk);
+  return ped + (1 - ped) * (0.5 + 0.5 * Math.cos(u * Math.PI));
+}
+function profile(F, t) {
+  let top = F.top * env(t, F.peak, F.nose, F.ped), bot = F.bot * env(t, Math.min(0.8, F.peak + 0.1), F.nose * 0.9, F.ped * 1.05);
+  let wid = F.wid * env(t, Math.max(0.2, F.peak - 0.12), Math.min(1, F.nose * 1.5), F.ped * 0.55);
+  if (F.snout) { const k = smooth(0, 0.24, t); top *= 0.42 + 0.58 * k; bot *= 0.55 + 0.45 * k; wid *= 0.78 + 0.22 * k; }
+  return { top, bot, wid, z: -0.5 + t * (F.zp + 0.5) };
+}
+const tAt = (F, z) => clamp((z + 0.5) / (F.zp + 0.5), 0, 1);
+
+/* ---------------- the painted skin ---------------- */
+
+const texCache = new Map();
+function skinTexture(sp) {
+  if (texCache.has(sp.id)) return texCache.get(sp.id);
+  const W = 512, H = 192, cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const x = cv.getContext("2d"), lk = sp.look, shape = lk.shape;
+  let seed = [...sp.id].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  // back to belly
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, lk.back); g.addColorStop(0.16, lk.back); g.addColorStop(0.42, lk.body); g.addColorStop(0.64, lk.body); g.addColorStop(0.84, lk.belly); g.addColorStop(1, lk.belly);
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const U = (u) => u * W, V = (v) => v * H;
+  const blob = (u, v, rw, rh, col, a = 1, rot = 0) => { x.save(); x.globalAlpha = a; x.fillStyle = col; x.translate(U(u), V(v)); x.rotate(rot); x.beginPath(); x.ellipse(0, 0, rw * W, rh * H, 0, 0, Math.PI * 2); x.fill(); x.restore(); };
+  const soft = (a) => { x.filter = a ? "blur(" + a + "px)" : "none"; };
+  // patterns
+  const p = lk.pattern;
+  if (p === "bars") {
+    const n = shape === "perch" ? 7 : shape === "pike" ? 11 : 10, faint = shape === "bass";
+    soft(faint ? 3 : 1.5);
+    for (let i = 0; i < n; i++) {
+      const u = 0.24 + (i + 0.5) / n * 0.7, w = (shape === "perch" ? 0.045 : 0.028) * (1 - i / n * 0.3);
+      x.globalAlpha = faint ? 0.42 : shape === "pike" ? 0.5 : 0.75;
+      x.fillStyle = shape === "pike" ? "#3e3a24" : lk.accent;
+      x.beginPath();
+      x.moveTo(U(u - w), V(0.05)); x.lineTo(U(u + w), V(0.05)); x.lineTo(U(u + w * 0.35 + 0.01), V(shape === "perch" ? 0.66 : 0.72)); x.lineTo(U(u - w * 0.35 + 0.01), V(shape === "perch" ? 0.66 : 0.72));
+      x.closePath(); x.fill();
+    }
+    soft(0); x.globalAlpha = 1;
+    if (shape === "bass") for (let i = 0; i < 3; i++) { x.strokeStyle = "rgba(60,40,20,0.6)"; x.lineWidth = 4; x.beginPath(); x.moveTo(U(0.1), V(0.32 + i * 0.07)); x.lineTo(U(0.2), V(0.36 + i * 0.1)); x.stroke(); }
+  } else if (p === "spots" && shape === "sunfish") {
+    for (let i = 0; i < 110; i++) { const u = 0.15 + rnd() * 0.8, v = 0.12 + rnd() * 0.6; blob(u, v, 0.008 + rnd() * 0.006, 0.02 + rnd() * 0.012, rnd() < 0.6 ? "#e8962e" : "#5aa0a0", 0.75); }
+    x.strokeStyle = "rgba(80,190,210,0.85)"; x.lineWidth = 3;
+    for (let i = 0; i < 4; i++) { x.beginPath(); for (let k = 0; k <= 10; k++) { const u = 0.02 + k * 0.02, v = 0.34 + i * 0.1 + Math.sin(k * 1.3 + i) * 0.025; k ? x.lineTo(U(u), V(v)) : x.moveTo(U(u), V(v)); } x.stroke(); }
+  } else if (p === "spots") {
+    for (let i = 0; i < 360; i++) { const u = rnd(), v = rnd() * 0.72; if (v > 0.55 && rnd() < 0.6) continue; blob(u, v, 0.004 + rnd() * 0.005, 0.012 + rnd() * 0.014, lk.accent, 0.85); }
+  } else if (p === "mottled" && shape === "walleye") {
+    soft(4);
+    for (let i = 0; i < 6; i++) blob(0.28 + i * 0.12, 0.1, 0.04, 0.18, "#2e3016", 0.55, 0.2);
+    soft(2);
+    for (let i = 0; i < 90; i++) blob(0.2 + rnd() * 0.78, 0.12 + rnd() * 0.45, 0.01 + rnd() * 0.012, 0.02 + rnd() * 0.02, rnd() < 0.5 ? "#c8b04a" : "#4a4a24", 0.45);
+    soft(0);
+  } else if (p === "mottled") {
+    // rows of dark squares along the scale rows
+    for (let r = 0; r < 7; r++) for (let i = 0; i < 26; i++) { const u = 0.2 + i * 0.03 + (r % 2) * 0.015, v = 0.16 + r * 0.075; if (rnd() < 0.2) continue; blob(u, v, 0.009, 0.024, "#2a1e14", 0.6); }
+    soft(5);
+    for (let i = 0; i < 5; i++) blob(0.3 + i * 0.13, 0.25, 0.04, 0.15, "#2a1e14", 0.35);
+    soft(0);
+  } else if (p === "stripe") {
+    soft(2);
+    x.fillStyle = lk.accent; x.globalAlpha = 0.85;
+    x.beginPath();
+    for (let k = 0; k <= 30; k++) { const u = 0.18 + k / 30 * 0.82; x.lineTo(U(u), V(0.36 + Math.sin(k * 2.1) * 0.03 - 0.05)); }
+    for (let k = 30; k >= 0; k--) { const u = 0.18 + k / 30 * 0.82; x.lineTo(U(u), V(0.47 + Math.cos(k * 1.7) * 0.035 + 0.02 * (1 - k / 30))); }
+    x.closePath(); x.fill();
+    for (let i = 0; i < 26; i++) blob(0.25 + rnd() * 0.7, 0.22 + rnd() * 0.1, 0.01, 0.02, lk.accent, 0.35);
+    soft(0); x.globalAlpha = 1;
+  } else if (p === "beans") {
+    for (let r = 0; r < 6; r++) for (let i = 0; i < 20; i++) {
+      const u = 0.16 + i * 0.042 + (r % 2) * 0.021 + (rnd() - 0.5) * 0.01, v = 0.14 + r * 0.085 + (rnd() - 0.5) * 0.02;
+      blob(u, v, 0.014 + rnd() * 0.006, 0.02 + rnd() * 0.008, lk.accent, 0.85, (rnd() - 0.5) * 0.4);
+    }
+  } else if (p === "gold") {
+    x.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 260; i++) blob(rnd(), rnd() * 0.8, 0.004, 0.012, "#fff2b0", 0.35);
+    x.globalCompositeOperation = "source-over";
+    const sh = x.createLinearGradient(0, V(0.2), 0, V(0.4));
+    sh.addColorStop(0, "rgba(255,255,220,0)"); sh.addColorStop(0.5, "rgba(255,255,230,0.45)"); sh.addColorStop(1, "rgba(255,255,220,0)");
+    x.fillStyle = sh; x.fillRect(0, V(0.2), W, V(0.2));
+  }
+  // scales: fine crescents
+  x.globalAlpha = p === "gold" ? 0.28 : 0.13; x.strokeStyle = p === "gold" ? "#fff6c0" : "#000"; x.lineWidth = 1;
+  for (let v = 0.06; v < 0.9; v += 0.04) for (let u = 0.2 + (Math.round(v * 25) % 2) * 0.008; u < 1; u += 0.016) { x.beginPath(); x.arc(U(u), V(v), 3.2, -1.2, 1.2); x.stroke(); }
+  x.globalAlpha = 1;
+  // lateral line, gill cover, mouth
+  x.strokeStyle = "rgba(20,20,10,0.35)"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(U(0.22), V(0.3)); x.quadraticCurveTo(U(0.6), V(0.24), U(1), V(0.4)); x.stroke();
+  x.strokeStyle = "rgba(20,15,10,0.45)"; x.lineWidth = 3;
+  const gill = shape === "pike" ? 0.2 : shape === "sunfish" ? 0.24 : 0.23;
+  x.beginPath(); x.moveTo(U(gill - 0.02), V(0.1)); x.quadraticCurveTo(U(gill + 0.035), V(0.45), U(gill - 0.03), V(0.85)); x.stroke();
+  const mouth = shape === "bass" ? 0.13 : shape === "pike" ? 0.16 : shape === "walleye" ? 0.1 : shape === "sunfish" ? 0.04 : 0.07;
+  x.strokeStyle = "rgba(25,15,10,0.8)"; x.lineWidth = 4;
+  x.beginPath(); x.moveTo(U(0), V(0.5)); x.quadraticCurveTo(U(mouth * 0.5), V(0.53), U(mouth), V(0.56)); x.stroke();
+  // head: darker top, and the pumpkinseed's black ear flap with its red spot
+  const hd = x.createLinearGradient(0, 0, U(0.3), 0);
+  hd.addColorStop(0, "rgba(0,0,0,0.18)"); hd.addColorStop(1, "rgba(0,0,0,0)");
+  x.fillStyle = hd; x.fillRect(0, 0, U(0.3), V(0.45));
+  if (shape === "sunfish") { blob(gill + 0.005, 0.36, 0.022, 0.07, "#141410", 1); blob(gill + 0.018, 0.36, 0.009, 0.032, lk.accent, 1); }
+  if (sp.id === "walleye") { x.fillStyle = "rgba(255,255,255,0.8)"; x.fillRect(U(0.93), V(0.82), U(0.07), V(0.18)); }
+  const t = new THREE.CanvasTexture(cv);
+  t.anisotropy = 4;
+  texCache.set(sp.id, t);
+  return t;
+}
+
+// fin rays: pale lines from the base to the edge, the edge a little see-through
+let finTex = null;
+function finTexture() {
+  if (finTex) return finTex;
+  const cv = document.createElement("canvas"); cv.width = 64; cv.height = 64;
+  const x = cv.getContext("2d");
+  const g = x.createLinearGradient(0, 64, 0, 0);
+  g.addColorStop(0, "rgba(235,235,235,0.9)"); g.addColorStop(0.6, "rgba(225,225,225,0.62)"); g.addColorStop(1, "rgba(215,215,215,0.3)");
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  x.globalCompositeOperation = "source-atop";
+  for (let i = 2; i < 64; i += 6) { x.fillStyle = "rgba(255,255,245,0.75)"; x.fillRect(i, 0, 1.2, 64); x.fillStyle = "rgba(40,30,20,0.25)"; x.fillRect(i + 1.2, 0, 1, 64); }
+  finTex = new THREE.CanvasTexture(cv);
+  return finTex;
+}
+
+function eyeTexture(iris, glassy) {
+  const key = "eye" + iris + glassy;
+  if (texCache.has(key)) return texCache.get(key);
+  const cv = document.createElement("canvas"); cv.width = 8; cv.height = 64;
+  const x = cv.getContext("2d");
+  const g = x.createLinearGradient(0, 0, 0, 64);
+  g.addColorStop(0, glassy ? "#6a7070" : "#050505"); g.addColorStop(0.2, glassy ? "#6a7070" : "#050505"); g.addColorStop(0.23, iris); g.addColorStop(0.42, iris); g.addColorStop(0.5, "#3a3020"); g.addColorStop(1, "#2a2418");
+  x.fillStyle = g; x.fillRect(0, 0, 8, 64);
+  const t = new THREE.CanvasTexture(cv);
+  texCache.set(key, t);
+  return t;
+}
+
+/* ---------------- shared shader bits ---------------- */
+
+// Every fish, junk and lure material gets: a swimming wag, a water tint when under the surface, and a studio key light for the trophy.
+export function fxUniforms() {
+  return { uWag: { value: new THREE.Vector4(0, 0, 0, 0) }, uUnder: { value: 0 }, uWater: { value: new THREE.Color(0x224455) }, uAlpha: { value: 1 }, uKey: { value: 0 } };
+}
+export function fx(mat, u, { wag = true } = {}) {
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u);
+    if (wag) sh.vertexShader = "uniform vec4 uWag;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
+      {
+        float zz = transformed.z, k = smoothstep(-0.3, 0.5, zz);
+        transformed.x += uWag.y * sin(uWag.x - zz * 7.0) * k * k * 0.11 + uWag.z * (zz + 0.15) * (zz + 0.15) * 0.7;
+        transformed.y += uWag.w * (zz + 0.1) * (zz + 0.1) * 0.5;
+      }`);
+    sh.fragmentShader = "uniform float uUnder, uAlpha, uKey; uniform vec3 uWater;\n" + sh.fragmentShader.replace("#include <opaque_fragment>", `
+      {
+        vec3 kd = normalize(vec3(0.35, 0.6, 0.75));
+        outgoingLight += uKey * diffuseColor.rgb * (0.3 + 0.55 * max(dot(normal, kd), 0.0));
+        float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 3.0);
+        outgoingLight += uKey * rim * vec3(0.4, 0.38, 0.33);
+        outgoingLight = mix(outgoingLight, uWater, uUnder);
+        diffuseColor.a *= uAlpha;
+      }
+      #include <opaque_fragment>`);
+  };
+  mat.customProgramCacheKey = () => "fishfx" + (wag ? 1 : 0);
+  return mat;
+}
+
+/* ---------------- fish ---------------- */
+
+function loft(F, NT, NA) {
+  const pos = [], uv = [], idx = [];
+  // a closing point at the nose, then rings back to the tail root
+  const p0 = profile(F, 0);
+  for (let i = 0; i <= NT; i++) {
+    const t = i === 0 ? 0 : (i / NT) ** 1.15, pr = i === 0 ? { top: 0, bot: 0, wid: 0, z: p0.z - F.top * F.nose * 0.35 } : profile(F, t);
+    for (let a = 0; a <= NA; a++) {
+      const ang = (a / NA) * Math.PI * 2, c = Math.cos(ang), s = Math.sin(ang);
+      const y = (c >= 0 ? pr.top : pr.bot) * c;
+      const xw = pr.wid * s * (c >= 0 ? 1 - 0.28 * c * c : 1 + 0.05 * c);
+      pos.push(xw, y, pr.z);
+      uv.push(t, 1 - (ang <= Math.PI ? ang / Math.PI : 2 - ang / Math.PI));
+    }
+  }
+  const row = NA + 1;
+  for (let i = 0; i < NT; i++) for (let a = 0; a < NA; a++) {
+    const p = i * row + a, q = p + row;
+    idx.push(p, p + 1, q, p + 1, q + 1, q);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // the seam runs along the back: give both sides of it the same normal
+  const n = g.attributes.normal;
+  for (let i = 0; i <= NT; i++) {
+    const a = i * row, b = a + NA;
+    const nx = (n.getX(a) + n.getX(b)) / 2, ny = (n.getY(a) + n.getY(b)) / 2, nz = (n.getZ(a) + n.getZ(b)) / 2, l = Math.hypot(nx, ny, nz) || 1;
+    n.setXYZ(a, nx / l, ny / l, nz / l); n.setXYZ(b, nx / l, ny / l, nz / l);
+  }
+  return g;
+}
+
+// A flat fin in the fish's middle plane (x = 0), from a 2D outline in (z, y).
+function flatFin(outline, uvFn, colorFn) {
+  const shape = new THREE.Shape(outline.map(([z, y]) => new THREE.Vector2(z, y)));
+  const sg = new THREE.ShapeGeometry(shape, 1);
+  const p = sg.attributes.position, n = p.count;
+  const pos = new Float32Array(n * 3), nrm = new Float32Array(n * 3), uvs = new Float32Array(n * 2), col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const z = p.getX(i), y = p.getY(i);
+    pos[i * 3] = 0; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+    nrm[i * 3] = 1;
+    const [u, v] = uvFn(z, y); uvs[i * 2] = u; uvs[i * 2 + 1] = v;
+    const c = colorFn(z, y, u, v); col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  g.setIndex(sg.index);
+  return g.toNonIndexed();
+}
+
+function finsGeo(F, sp) {
+  const lk = sp.look, fin = hex(lk.fins), acc = hex(lk.accent), parts = [];
+  const topAt = (z) => profile(F, tAt(F, z)).top, botAt = (z) => profile(F, tAt(F, z)).bot;
+  // dorsal and anal fins
+  const along = (d, up) => {
+    const out = [], span = d.z1 - d.z0, base = (z) => (up ? topAt(z) - 0.006 : -botAt(z) + 0.006), s = up ? 1 : -1;
+    for (let k = 0; k <= 6; k++) { const z = d.z0 + (k / 6) * span; out.push([z, base(z)]); }
+    const edge = [];
+    if (d.adipose) { for (let k = 6; k >= 0; k--) { const u = k / 6, z = d.z0 + u * span; edge.push([z + 0.01, base(z) + s * d.h * Math.sin(u * Math.PI) ** 0.7]); } }
+    else if (d.n) {
+      for (let k = d.n; k >= 0; k--) {
+        const u = k / d.n, z = d.z0 + u * span, hh = d.h * (0.55 + 0.45 * Math.sin(Math.min(1, u * 1.4 + 0.15) * Math.PI) ** 0.6);
+        edge.push([z + d.h * 0.25, base(z) + s * hh]);
+        if (k > 0) { const zm = z - span / d.n * 0.5; edge.push([zm + d.h * 0.15, base(zm) + s * hh * 0.62]); }
+      }
+    } else {
+      for (let k = 8; k >= 0; k--) { const u = k / 8, z = d.z0 + u * span; edge.push([z + d.h * 0.35 * u, base(z) + s * d.h * (Math.sin(u * Math.PI * 0.9 + 0.2) ** 0.55) * (1 - 0.3 * u)]); }
+    }
+    const uvFn = (z, y) => [clamp((z - d.z0) / span, 0, 1), clamp(Math.abs(y - base(clamp(z, d.z0, d.z1))) / d.h, 0, 1)];
+    parts.push(flatFin(out.concat(edge), uvFn, (z, y, u) => (d.blotch && u > 0.7 ? [fin[0] * 0.25, fin[1] * 0.25, fin[2] * 0.25] : fin)));
+  };
+  for (const d of F.dorsal) along(d, true);
+  for (const d of F.anal) along(d, false);
+  // the tail fin
+  const zp = F.zp - 0.02, hp = topAt(F.zp) * 0.9, bp = botAt(F.zp) * 0.9, H = F.tailH, fk = F.fork;
+  const tail = [[zp, hp]];
+  const curve = (a, b, c, n, outArr) => { for (let k = 1; k <= n; k++) { const t = k / n; outArr.push([(1 - t) ** 2 * a[0] + 2 * (1 - t) * t * b[0] + t * t * c[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * b[1] + t * t * c[1]]); } };
+  curve([zp, hp], [0.42, H * 0.55], [0.5, H], 5, tail);
+  curve([0.5, H], [0.5 - fk * 0.6, H * 0.3], [0.5 - fk, 0], 4, tail);
+  curve([0.5 - fk, 0], [0.5 - fk * 0.6, -H * 0.3], [0.5, -H * 0.95], 4, tail);
+  curve([0.5, -H * 0.95], [0.42, -H * 0.55], [zp, -bp], 5, tail);
+  parts.push(flatFin(tail, (z, y) => [clamp((y + H) / (2 * H), 0, 1), clamp((z - zp) / (0.5 - zp), 0, 1)], (z, y) => (sp.id === "walleye" && y < -H * 0.55 && z > 0.44 ? acc : fin)));
+  // paired fins: pectorals behind the gill, pelvics under the belly, turned out from the body
+  const pair = (z, y, len, wid, yaw, roll) => {
+    const out = [[0, 0.012], [len * 0.55, wid * 0.55], [len, wid * 0.12], [len * 0.9, -wid * 0.35], [len * 0.4, -wid * 0.3], [0, -0.012]];
+    for (const s of [-1, 1]) {
+      const g = flatFin(out, (a, b) => [clamp(b / wid + 0.5, 0, 1), clamp(a / len, 0, 1)], () => fin);
+      const pr = profile(F, tAt(F, z));
+      const m = new THREE.Matrix4().makeTranslation(s * pr.wid * 0.9, y, z).multiply(new THREE.Matrix4().makeRotationY(s * yaw)).multiply(new THREE.Matrix4().makeRotationZ(s * roll));
+      g.applyMatrix4(m);
+      parts.push(g);
+    }
+  };
+  const zPec = -0.5 + (F.eyeT + 0.13) * (F.zp + 0.5), pb = profile(F, tAt(F, zPec));
+  pair(zPec, -pb.bot * 0.35, F.pec * 0.85, F.pec * 0.42, 0.75, 0.35);
+  pair(zPec + 0.07, -pb.bot * 0.9, F.pec * 0.65, F.pec * 0.3, 0.45, 1.0);
+  const g = merge(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; return q; }));
+  return g;
+}
+
+function eyesGeo(F) {
+  const t = F.eyeT, pr = profile(F, t), c = 0.34, s = Math.sqrt(1 - c * c);
+  const y = pr.top * c, x = pr.wid * s * (1 - 0.28 * c * c) - F.eye * 0.3;
+  const parts = [];
+  for (const side of [-1, 1]) {
+    const g = new THREE.SphereGeometry(F.eye, 12, 8);
+    g.rotateZ(-side * Math.PI / 2);
+    g.translate(side * x, y, pr.z);
+    parts.push(g.toNonIndexed());
+  }
+  const out = new THREE.BufferGeometry();
+  for (const k of ["position", "normal", "uv"]) {
+    const size = parts[0].attributes[k].itemSize, arr = new Float32Array(parts[0].attributes[k].array.length * 2);
+    arr.set(parts[0].attributes[k].array, 0); arr.set(parts[1].attributes[k].array, parts[0].attributes[k].array.length);
+    out.setAttribute(k, new THREE.BufferAttribute(arr, size));
+  }
+  return out;
+}
+
+const geoCache = new Map();
+function fishParts(sp) {
+  if (geoCache.has(sp.id)) return geoCache.get(sp.id);
+  const F = FORM[sp.look.shape] || FORM.bass;
+  const g = { body: loft(F, 26, 18), fins: finsGeo(F, sp), eyes: eyesGeo(F) };
+  for (const k in g) g[k].computeBoundingSphere();
+  geoCache.set(sp.id, g);
+  return g;
+}
+
+function buildFish(sp) {
+  const u = fxUniforms(), lk = sp.look, gold = lk.pattern === "gold";
+  const G = fishParts(sp);
+  const body = fx(new THREE.MeshPhongMaterial({ map: skinTexture(sp), shininess: gold ? 80 : 45, specular: gold ? 0x806020 : 0x383838, emissive: gold ? 0x6a4a08 : 0x000000, transparent: true }), u);
+  const fins = fx(new THREE.MeshPhongMaterial({ map: finTexture(), vertexColors: true, shininess: 20, specular: 0x222222, side: THREE.DoubleSide, transparent: true, depthWrite: false, alphaTest: 0.02, emissive: gold ? 0x4a3400 : 0x000000 }), u);
+  const iris = sp.id === "walleye" ? "#d6dcc4" : lk.accent && (sp.id === "rockbass" || sp.id === "smallmouth") ? lk.accent : sp.id === "pumpkinseed" ? "#b8502a" : gold ? "#c86a10" : "#d0a038";
+  const eyes = fx(new THREE.MeshPhongMaterial({ map: eyeTexture(iris, sp.id === "walleye"), shininess: 120, specular: 0xffffff, transparent: true, emissive: sp.id === "walleye" ? 0x1a1e14 : 0 }), u);
+  const grp = new THREE.Group();
+  const mb = new THREE.Mesh(G.body, body), mf = new THREE.Mesh(G.fins, fins), me = new THREE.Mesh(G.eyes, eyes);
+  mb.renderOrder = 10; me.renderOrder = 11; mf.renderOrder = 12;
+  grp.add(mb, me, mf);
+  grp.userData = { fx: u, id: sp.id, kind: "fish", mats: [body, fins, eyes] };
+  return grp;
+}
+
+/* ---------------- junk ---------------- */
+
+function buildJunk(j) {
+  const u = fxUniforms(), parts = [], M = () => new THREE.Matrix4();
+  const body = hex(j.look.body), acc = hex(j.look.accent);
+  if (j.look.shape === "boot") {
+    // an old leather boot, toe forward (-z), about 0.3 m long
+    const foot = new THREE.CapsuleGeometry(0.055, 0.2, 4, 10);
+    foot.rotateX(Math.PI / 2); foot.scale(1, 0.75, 1);
+    parts.push(bake(foot, { matrix: M().makeTranslation(0, 0.045, -0.02), color: body }));
+    parts.push(bake(new THREE.BoxGeometry(0.115, 0.025, 0.3), { matrix: M().makeTranslation(0, 0.0, -0.01), color: acc }));
+    parts.push(bake(new THREE.CylinderGeometry(0.058, 0.064, 0.22, 12), { matrix: M().makeTranslation(0, 0.16, 0.085), colorFn: (x, y) => (y > 0.25 ? hex("#5a4632") : body) }));
+    for (let i = 0; i < 5; i++) parts.push(bake(new THREE.BoxGeometry(0.07, 0.008, 0.01), { matrix: M().makeTranslation(0, 0.08 + i * 0.035, 0.025 - i * 0.004), color: hex("#d8cfb0") }));
+    for (let i = 0; i < 4; i++) { const w = new THREE.CylinderGeometry(0.004, 0.002, 0.16, 3); w.translate(0, -0.08, 0); parts.push(bake(w, { matrix: M().makeRotationZ((i - 1.5) * 0.3).setPosition(-0.03 + i * 0.02, 0.02, 0.1 - i * 0.05), color: hex("#4f7a30") })); }
+  } else if (j.look.shape === "plunger") {
+    // the King's plunger: a red rubber cup, a long wooden handle, and a little gold crown on the end
+    const cup = new THREE.LatheGeometry([[0.079, 0], [0.082, 0.008], [0.08, 0.035], [0.068, 0.07], [0.04, 0.095], [0.018, 0.108], [0.015, 0.118]].map(([r, y]) => new THREE.Vector2(r, y)), 18);
+    cup.rotateX(Math.PI / 2);
+    parts.push(bake(cup, { matrix: M().makeTranslation(0, 0, -0.235), colorFn: (x, y, z) => (z < -0.225 ? hex("#8a1c18") : body) }));
+    parts.push(bake(new THREE.CylinderGeometry(0.013, 0.014, 0.44, 8).rotateX(Math.PI / 2), { matrix: M().makeTranslation(0, 0, 0.1), color: acc }));
+    parts.push(bake(new THREE.SphereGeometry(0.018, 8, 6), { matrix: M().makeTranslation(0, 0, 0.32), color: acc }));
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const c = new THREE.ConeGeometry(0.008, 0.03, 4); c.rotateX(Math.PI / 2); parts.push(bake(c, { matrix: M().makeTranslation(Math.cos(a) * 0.018, Math.sin(a) * 0.018, 0.35), color: hex("#f2c230") })); }
+    parts.push(bake(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 10).rotateX(Math.PI / 2), { matrix: M().makeTranslation(0, 0, 0.335), color: hex("#f2c230") }));
+  } else {
+    // Pip's frisbee: a yellow disc with an orange stripe
+    const prof = [[0, 0.018], [0.09, 0.016], [0.125, 0.01], [0.135, -0.004], [0.13, -0.018], [0.122, -0.012], [0.124, 0.002], [0.11, 0.006], [0, 0.008]];
+    const d = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 24);
+    parts.push(bake(d, { colorFn: (x, y, z) => { const r = Math.hypot(x, z); return r > 0.085 && r < 0.1 && y > 0 ? acc : r < 0.03 && y > 0 ? acc : body; } }));
+  }
+  const g = merge(parts);
+  const mat = fx(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 50, specular: 0x333333, transparent: true, side: THREE.DoubleSide }), u, { wag: false });
+  const m = new THREE.Mesh(g, mat);
+  m.renderOrder = 10;
+  const grp = new THREE.Group();
+  grp.add(m);
+  grp.userData = { fx: u, id: j.id, kind: "junk", mats: [mat] };
+  return grp;
+}
+// The real sizes of the junk, in meters (length of the long side).
+export const JUNK_LEN = { boot: 0.3, plunger: 0.57, frisbee: 0.27 };
+
+// A fish or junk mesh for a species id: a Group, 1 unit long, nose toward -z. userData.fx holds its shader uniforms.
+export function fishMesh(id) {
+  const sp = byId(id);
+  if (!sp) return null;
+  return sp.look.shape === "boot" || sp.look.shape === "plunger" || sp.look.shape === "frisbee" ? buildJunk(sp) : buildFish(sp);
+}

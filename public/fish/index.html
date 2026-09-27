@@ -52,8 +52,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-wide-cast #reelBox { left: auto; top: 0; width: min(38%, 440px); height: 100%; }
 #game.l-wide-cast #view { width: calc(100% - min(38%, 440px)); }
 
-#crankBox { position: absolute; right: calc(var(--sar) + 8px); bottom: calc(var(--sab) + 8px); width: min(44vmin, 250px); height: min(44vmin, 250px); }
-#padBox { position: absolute; left: calc(var(--sal) + 8px); bottom: calc(var(--sab) + 8px); width: min(40vmin, 220px); height: min(52vmin, 280px); }
+#crankBox { position: absolute; right: calc(var(--sar) + 30px); bottom: calc(var(--sab) + 12px); width: min(44vmin, 250px); height: min(44vmin, 250px); }
+#padBox { position: absolute; left: calc(var(--sal) + 30px); bottom: calc(var(--sab) + 12px); width: min(40vmin, 220px); height: min(52vmin, 280px); }
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
 #game.motion #padBox { display: none; }
 #dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
@@ -245,7 +245,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
     <div class="card">
       <h2>Your phone is the rod</h2>
       <p>You cast and reel with real moves. The game reads the motion sensors in your phone.</p>
-      <div class="warn" id="safety">Hold on tight. Use a wrist strap if you have one. Check that nobody is near you. A short, fast flick of the wrist is enough.</div>
+      <div class="warn" id="safety">Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one. Keep 2 m clear around you. A short, sharp flick of the wrist is enough.</div>
       <p id="setupNote" style="margin-top:12px" hidden></p>
       <div class="btns"><button type="button" class="btn alt" id="useTouch">Use touch</button><button type="button" class="btn go" id="useMotion">Use motion</button></div>
     </div>

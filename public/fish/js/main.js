@@ -373,7 +373,15 @@ function unpinLine(e) {
   G.pin = null;
   if (wasFeather || G.phase !== "cast") return;
   Haptics.mute(0);
-  if (G.step === "pinned" || G.step === "loaded") release(e.t || now());
+  if (G.step !== "pinned" && G.step !== "loaded") return;
+  // the browser took the touch away (often the page turning mid-swing): a fumble, not a cast
+  if (e.cancel) {
+    G.step = "open"; G.openAt = now() - 1000;
+    Sound.sfx("slip");
+    toast(touchDevice ? "The screen turned and dropped your thumb. Turn on the rotation lock." : "The line slipped.", 3200);
+    return;
+  }
+  release(e.t || now());
 }
 // the finger comes off the line: was it a cast, or did the line just slip?
 function release(t) {
