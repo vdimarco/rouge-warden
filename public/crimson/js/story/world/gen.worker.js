@@ -1,12 +1,12 @@
 // js/story/world/gen.worker.js : builds Sedona off the main thread (a module worker; no three.js here).
-// From the fixed seed it makes the 401 x 401 heightfield (5 m cells), the surface-type grid (8 m), the road
-// mask (1024^2: signed distance to the road centreline, the road id and a dash phase), the paper-map
+// From the fixed seed it makes the 401 x 401 heightfield (5 m cells), the surface-type grid (8 m), the two
+// road masks (1024^2: the lane markings' field, and the ground's: asphalt, lots and sidewalks), the paper-map
 // shading, the flora scatter per 100 m cell, and terrain tiles with skirts and the hero rocks at three
-// levels of detail. Messages: {init:{seed}} -> 'progress' ... 'init' {heights, types, mask, map, ...};
+// levels of detail. Messages: {init:{seed}} -> 'progress' ... 'init' {heights, types, mask, ground, map, ...};
 // {tile:{i,j,lod}} -> 'tile' {arrays}. Buffers are transferred. The same functions run in Node for tests.
 import { simplex, fbm, clamp, lerp, smooth } from '../../core/noise.js';
-import { CREEK, POOLS, WASH, WASH_HW, PADS, BUILDINGS, KAZOOS, CAIRNS } from './places.js';
-import { buildNetwork, project, at, LOTS } from './roads.js';
+import { CREEK, POOLS, WASH, WASH_HW, PADS, BUILDINGS, KAZOOS, CAIRNS, STRIPS } from './places.js';
+import { buildNetwork, project, at, LOTS, smoothLine } from './roads.js';
 import { FORMATIONS, buildFormation } from './rocks.js';
 
 export const N = 400, CELL = 5, HALF = 1000, W = N + 1;
@@ -123,7 +123,7 @@ export function generate(seed = 51, progress = () => {}) {
   const dryLine = net.byId.drycreek.line.map((p) => ({ x: p.x, z: p.z, a: [] })), DF = lineField(dryLine, 200, 0, 20);
   const cq = { d: 0, a: [0, 0], side: 0 }, fq = { d: 0, a: [0], side: 0 }, dq = { d: 0, a: [], side: 0 };
   ms.fields = Date.now() - t0;
-  const mask = roadMask(net);
+  const { mask, ground, lotIds } = roadMask(net);
   ms.mask = Date.now() - t0 - ms.fields;
   progress(0.1);
   // the regional ground on a coarse 20 m grid (it is smooth), read back bilinearly
@@ -218,7 +218,8 @@ export function generate(seed = 51, progress = () => {}) {
     forNear(b.x, b.z, R + 8, (k, d, x, z) => {
       const lx = (x - b.x) * c - (z - b.z) * s, lz = (x - b.x) * s + (z - b.z) * c;
       const out = Math.max(Math.abs(lx) - b.w / 2 - 2.5, Math.abs(lz) - b.d / 2 - (lz > 0 ? 4.5 : 2.5), 0); // (more room in front: porches, boardwalks)
-      if (out < 8 && roadEdge(mask, net, x, z) > 0.5) H[k] = lerp(H[k], py, smooth(8, 0, out));
+      // (not on a road or a lot, nor within a grid cell of a sidewalk: those keep the street's grade)
+      if (out < 8 && roadEdge(ground, x, z) > 0.5 && walkAt(ground, maskIndex(x, z)) > CELL + 0.5) H[k] = lerp(H[k], py, smooth(8, 0, out));
     });
   }
   ms.roads = Date.now() - t0 - ms.heights;
@@ -235,7 +236,7 @@ export function generate(seed = 51, progress = () => {}) {
     const cd = CF.D[k], hw = CF.A[k * 2 + 1], wl = CF.A[k * 2];
     if (cd < hw - 0.5 && heightAt(H, x, z) < wl) return T.water;
     if (POOLS.some(([px, pz, r]) => hypot(x - px, z - pz) < r - 1)) return T.water;
-    if (LOTS.some((l) => lotDist(l, x, z) < 0)) return T.dirt;
+    if (LOTS.some((l) => !l.apron && lotDist(l, x, z) < 0)) return T.dirt; // (an apron keeps the ground's type: the masks pave it)
     if (WF.D[k] < WASH_HW || cd < hw + 5) return T.sand;
     const ny = normalY(H, x, z);
     if (ny < 0.8 || rockK[k] > 0.6) return T.rock;
@@ -267,12 +268,12 @@ export function generate(seed = 51, progress = () => {}) {
   // rocks: every formation's geometry at two levels, grouped by tile
   const rocks = FORMATIONS.map((f) => { const gy = heightAt(H, f.x, f.z); return { f, lo: buildFormation(f, gy, 1), hi: buildFormation(f, gy, 0) }; });
   const rockColliders = rocks.flatMap((r) => r.hi.colliders);
-  const scatter = scatterFlora(seed, H, types, mask, net, CF, rockK, rocks);
+  const scatter = scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rocks);
   progress(0.9);
   ms.total = Date.now() - t0;
   const ctx = { H, col, rock, rocks, net };
   return {
-    H, types, mask, map, scatter, rockColliders, ctx, ms, profiles,
+    H, types, mask, ground, lotIds, map, scatter, rockColliders, ctx, ms, profiles,
     creek: creek.map((p) => [p.x, p.z, p.a[0], p.a[1]]), wash: wash.map((p) => [p.x, p.z, p.a[0]]),
     bridges: net.roads.flatMap((r) => r.spans.map((sp) => { const a = at(r, sp.s0), b = at(r, sp.s1); return { id: sp.id, road: r.id, ax: a.x, az: a.z, bx: b.x, bz: b.z, y: sp.y, width: r.width, rails: true }; })),
   };
@@ -293,21 +294,13 @@ function forNear(x, z, r, fn) {
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const px = gx(i), pz = gx(j), d = hypot(px - x, pz - z); if (d <= r) fn(j * W + i, d, px, pz); }
 }
 function lotDist(l, x, z) { const c = Math.cos(l.yaw), s = Math.sin(l.yaw), lx = (x - l.x) * c - (z - l.z) * s, lz = (x - l.x) * s + (z - l.z) * c; const qx = Math.abs(lx) - l.w / 2, qz = Math.abs(lz) - l.d / 2; return hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0); }
-// meters outside the nearest road's edge, from the mask (negative on the road or inside a lot)
-export function roadEdge(mask, net, x, z) {
-  const mi = clamp(Math.floor((x + HALF) / MPX), 0, MASK - 1), mj = clamp(Math.floor((z + HALF) / MPX), 0, MASK - 1), mk = (mj * MASK + mi) * 4;
-  const id = mask[mk + 1]; if (!id) return Infinity;
-  const d = Math.abs(mask[mk] / 255 * 2 - 1) * 8;
-  if (id >= 100) return mask[mk] < 128 ? -d : d;
-  return d - net.roads[id - 1].hw;
-}
 
 /* ------------------------------------------------------------------ roads */
 // Each road's profile: sampled every 5 m from the ground, smoothed, pinned at junctions and bridges, and
 // held under the grade limit (forward and backward passes). Then the ground within the road and its flat
 // shoulders takes the profile, and cut and fill slopes blend it into the land around.
 function gradeRoads(net, H, CF) {
-  const out = {};
+  const out = {}, WIDE = new Map(net.roads.map((r) => [r, walkWidths(net, r)]));
   for (const r of net.roads) {
     const n = Math.max(2, Math.round(r.len / 5) + 1), ds = r.len / (n - 1), y = new Float32Array(n), pin = new Uint8Array(n);
     for (let i = 0; i < n; i++) { const p = at(r, i * ds); y[i] = heightAt(H, p.x, p.z); }
@@ -318,7 +311,9 @@ function gradeRoads(net, H, CF) {
     // (level across the other road's flat surface, which the ground pass lays over this road's first meters)
     for (const j of net.joins) {
       if (j.road === r && out[j.other.id]) {
-        const o = out[j.other.id], v = o.y[clamp(Math.round(j.os / o.ds), 0, o.y.length - 1)], ext = Math.ceil((j.other.hw + (j.other.flat || 0) + 3) / ds);
+        // (level across the other road's flat, which its sidewalks may widen there)
+        const o = out[j.other.id], io = clamp(Math.round(j.os / o.ds), 0, o.y.length - 1), Wo = WIDE.get(j.other), v = o.y[io];
+        const ext = Math.ceil((Math.max(j.other.hw + (j.other.flat || 0) + 1.5, Wo.w[0][io], Wo.w[1][io]) + 1.5) / ds);
         for (let m = 0; m <= ext; m++) { const i = j.end ? n - 1 - m : m; if (i >= 0 && i < n) { y[i] = v; pin[i] = 1; } }
       }
       if (j.other === r && out[j.road.id]) { const o = out[j.road.id], v = o.y[j.end ? o.y.length - 1 : 0], i = clamp(Math.round(j.os / ds), 0, n - 1); y[i] = v; pin[i] = 1; }
@@ -351,7 +346,8 @@ function gradeRoads(net, H, CF) {
   // level across it)
   const order = [...net.roads].sort((a, b) => a.width - b.width || a.idx - b.idx);
   for (const pass of [0, 1]) for (const r of order) {
-    const P = out[r.id], flat = r.hw + (r.flat || 0) + 1.5, reach = pass ? flat : flat + 40;
+    // the flat reaches hw + flat + 1.5 m each side, and out past the road's sidewalks and aprons where it has them
+    const P = out[r.id], Wd = WIDE.get(r), flat = Wd.max, reach = pass ? flat : flat + 40;
     const nt = band(r, reach);
     for (let q = 0; q < nt; q++) {
       const k = TOUCH[q], d = BD[k], s = BS[k];
@@ -359,19 +355,21 @@ function gradeRoads(net, H, CF) {
       // the ground under a bridge keeps its shape
       if (r.spans.some((sp) => s > sp.s0 + 1 && s < sp.s1 - 1)) continue;
       const sc = clamp(s, 0, r.len), f = sc / P.ds, i0 = clamp(Math.floor(f), 0, P.n - 1), i1 = Math.min(P.n - 1, i0 + 1), yr = P.y[i0] + (P.y[i1] - P.y[i0]) * (f - i0);
+      const ws = Wd.w[BSG[k] > 0 ? 1 : 0], flatHere = ws[i0] + (ws[i1] - ws[i0]) * (f - i0);
       // past a road's end only the cut and fill apply
       const endGap = r.closed ? 0 : Math.max(0, -s, s - r.len);
       const side = endGap > 0 ? Math.sqrt(Math.max(0, d * d - endGap * endGap)) : d;
-      const dd = Math.max(side - flat, 0) + Math.max(0, endGap - 4);
+      const dd = Math.max(side - flatHere, 0) + Math.max(0, endGap - 4);
       if (dd <= 0) { if (pass) H[k] = yr; }
       else if (!pass) H[k] = clamp(H[k], yr - 0.55 * dd, yr + 0.75 * dd);
     }
   }
   return out;
 }
-// the grid vertices within reach of a road: distance in BD and arc length in BS (beyond an end the arc
-// length runs negative or past the length); their indices in TOUCH. The caller resets BD.
-const BD = new Float32Array(W * W).fill(Infinity), BS = new Float32Array(W * W), TOUCH = new Int32Array(W * W);
+// the grid vertices within reach of a road: distance in BD, arc length in BS (beyond an end the arc length
+// runs negative or past the length) and side in BSG (+1 right of travel); their indices in TOUCH. The caller
+// resets BD.
+const BD = new Float32Array(W * W).fill(Infinity), BS = new Float32Array(W * W), BSG = new Int8Array(W * W), TOUCH = new Int32Array(W * W);
 function band(r, reach) {
   let nt = 0;
   const last = r.line.length - 2;
@@ -385,53 +383,142 @@ function band(r, reach) {
       if (d >= reach || d >= BD[k]) continue;
       if (BD[k] === Infinity) TOUCH[nt++] = k;
       BS[k] = !r.closed && ((s === 0 && t < 0) || (s === last && t > 1)) ? r.cum[s] + Ls * t : r.cum[s] + Ls * tc;
+      BSG[k] = (x - a.x) * dz - (z - a.z) * dx > 0 ? -1 : 1;
       BD[k] = d;
     }
   }
   return nt;
 }
-function creekLevelNear(CF, x, z) { const i = clamp(Math.round((x + HALF) / CELL), 0, N), j = clamp(Math.round((z + HALF) / CELL), 0, N), k = j * W + i; return CF.D[k] < Infinity ? CF.A[k * 2] : -Infinity; }
-
-// The road mask: R the signed distance to the nearest centreline (-8..8 m), G the road index (lots are
-// 100 + their index; 0 is none), B and A the dash phase as sin and cos of 2 pi s / 12 (so it filters smoothly).
-function roadMask(net) {
-  const M = new Uint8Array(MASK * MASK * 4), best = new Float32Array(MASK * MASK).fill(9);
-  for (let k = 0; k < MASK * MASK; k++) { M[k * 4] = 255; M[k * 4 + 2] = 128; M[k * 4 + 3] = 128; }
-  const R = 8;
-  for (const r of net.roads) for (let s = 0; s < r.line.length - 1; s++) {
-    const a = r.line[s], b = r.line[s + 1], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1, L = Math.sqrt(L2);
-    const i0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - R + HALF) / MPX)), i1 = Math.min(MASK - 1, Math.ceil((Math.max(a.x, b.x) + R + HALF) / MPX));
-    const j0 = Math.max(0, Math.floor((Math.min(a.z, b.z) - R + HALF) / MPX)), j1 = Math.min(MASK - 1, Math.ceil((Math.max(a.z, b.z) + R + HALF) / MPX));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      const x = (i + 0.5) * MPX - HALF, z = (j + 0.5) * MPX - HALF;
-      const t = ((x - a.x) * dx + (z - a.z) * dz) / L2, tc = t < 0 ? 0 : t > 1 ? 1 : t;
-      const d = hypot(x - a.x - dx * tc, z - a.z - dz * tc), k = j * MASK + i;
-      // the road whose edge this texel is deepest inside wins (so a side road never paints over a highway)
-      if (d - r.hw < best[k]) {
-        best[k] = d - r.hw;
-        const side = (x - a.x) * dz - (z - a.z) * dx > 0 ? -1 : 1, sd = clamp(d * side, -R, R);
-        const ph = (r.cum[s] + L * tc) / 12 * Math.PI * 2;
-        M[k * 4] = Math.round((sd / R * 0.5 + 0.5) * 255); M[k * 4 + 1] = r.idx;
-        M[k * 4 + 2] = Math.round((Math.sin(ph) * 0.5 + 0.5) * 255); M[k * 4 + 3] = Math.round((Math.cos(ph) * 0.5 + 0.5) * 255);
+// How far from a road's centreline its flat reaches on each side, per profile sample (w[0] left of travel,
+// w[1] right; max the widest): hw + flat + 1.5 m, and out a grid cell past the outer edge of any sidewalk along it
+// (its own, or a shop strip's that fronts it, with the parking apron between), so a walk lies level with the
+// street instead of across a hillside. The widening tapers off over a few meters past a walk's ends.
+function walkWidths(net, r) {
+  const n = Math.max(2, Math.round(r.len / 5) + 1), ds = r.len / (n - 1), base = r.hw + (r.flat || 0) + 1.5;
+  const w = [new Float32Array(n).fill(base), new Float32Array(n).fill(base)];
+  for (const wk of net.walks) {
+    if (wk.road === r) { for (let i = 0; i < n; i++) if (i * ds > wk.s0 - 2 && i * ds < wk.s1 + 2) for (const a of w) a[i] = Math.max(a[i], r.hw + wk.to + CELL); }
+    else if (wk.segs) for (const sg of wk.segs) {
+      if (sg.road !== r) continue;
+      const nx = -sg.dz * (sg.side || 1), nz = sg.dx * (sg.side || 1);
+      for (let i = 0; i < n; i++) {
+        const p = at(r, i * ds), ex = p.x - sg.ax, ez = p.z - sg.az, u = ex * sg.dx + ez * sg.dz;
+        if (u < -2 || u > sg.len + 2) continue;
+        const l = ex * nx + ez * nz, mid = (sg.from + sg.to) / 2 - l; // the road point across the walk's frame
+        const side = (nx * mid) * Math.cos(p.yaw) - (nz * mid) * Math.sin(p.yaw) > 0 ? 0 : 1; // (band()'s sign)
+        w[side][i] = Math.max(w[side][i], sg.to - l + CELL);
       }
     }
   }
-  // lots: inside a lot (and not on a road's own asphalt) the lot wins; R is then the signed distance to its edge
-  LOTS.forEach((l, li) => {
-    const rr = hypot(l.w, l.d) / 2 + R;
-    const i0 = Math.max(0, Math.floor((l.x - rr + HALF) / MPX)), i1 = Math.min(MASK - 1, Math.ceil((l.x + rr + HALF) / MPX));
-    const j0 = Math.max(0, Math.floor((l.z - rr + HALF) / MPX)), j1 = Math.min(MASK - 1, Math.ceil((l.z + rr + HALF) / MPX));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      const x = (i + 0.5) * MPX - HALF, z = (j + 0.5) * MPX - HALF, d = lotDist(l, x, z), k = j * MASK + i;
-      if (d > 2) continue;
-      const rid = M[k * 4 + 1], road = rid && rid < 100 ? net.roads[rid - 1] : null;
-      if (road && best[k] < 0.3) continue;
-      M[k * 4] = Math.round((clamp(d, -R, R) / R * 0.5 + 0.5) * 255); M[k * 4 + 1] = 100 + li; M[k * 4 + 2] = 128; M[k * 4 + 3] = 128;
-      best[k] = Math.min(best[k], Math.max(0, d));
-    }
-  });
-  return M;
+  for (const a of w) { for (let i = 1; i < n; i++) a[i] = Math.max(a[i], a[i - 1] - 0.6 * ds); for (let i = n - 2; i >= 0; i--) a[i] = Math.max(a[i], a[i + 1] - 0.6 * ds); }
+  let max = base; for (const a of w) for (let i = 0; i < n; i++) max = Math.max(max, a[i]);
+  return { w, ds, n, max };
 }
+function creekLevelNear(CF, x, z) { const i = clamp(Math.round((x + HALF) / CELL), 0, N), j = clamp(Math.round((z + HALF) / CELL), 0, N), k = j * W + i; return CF.D[k] < Infinity ? CF.A[k * 2] : -Infinity; }
+
+// The two road masks (MASK^2 texels of 1.95 m; the terrain shader reads both bilinear, and the ids nearest).
+// Each texel belongs to the road whose edge it is deepest inside, or nearest outside (so a side road never
+// paints over a highway), out to 16 m.
+//   roads (bytes):  R the signed distance to that road's centreline over -8..8 m (the lane markings), G its
+//           index (0 none), B and A its dash phase as sin and cos of 2 pi s / 12 (so it filters smoothly; the
+//           walks' joints and the parking stalls use it too).
+//   ground (half floats, so an edge sits within millimetres: bytes would wave it by +-3 cm): R meters past the
+//           nearest road edge (min over every road: the asphalt itself, continuous through junctions and ends),
+//           G the signed distance to the nearest lot's edge (negative inside), B and A the nearest sidewalk's
+//           inner (kerb side) and outer edges and ends, as signed distances (the walk is where both are
+//           negative; kept apart because one distance to a 3 m band creases down its middle, and the filter
+//           would bend both edges toward the crease). Far is FAR.
+//   lots (bytes): the nearest lot's index + 1 (0 none).
+export const DIST = 8, enc = (d) => Math.round((clamp(d, -DIST, DIST) / DIST * 0.5 + 0.5) * 255), dec = (b) => (b / 255 * 2 - 1) * DIST;
+export const FAR = 32;
+const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer), EXP2 = Array.from({ length: 32 }, (_, e) => Math.pow(2, e - 15));
+export function toHalf(v) {
+  f32[0] = v; const x = u32[0], s = (x >>> 16) & 0x8000, e = ((x >>> 23) & 0xff) - 112, m = x & 0x7fffff;
+  if (e <= 0) return s; // (under 6e-5: zero)
+  if (e >= 31) return s | 0x7c00;
+  return s | ((e << 10) + ((m + 0x1000) >>> 13)); // rounded (a carry steps the exponent, as it should)
+}
+export function fromHalf(h) { const e = (h >>> 10) & 0x1f, v = e ? (1 + (h & 0x3ff) / 1024) * EXP2[e] : (h & 0x3ff) * 5.960464477539063e-8; return h & 0x8000 ? -v : v; }
+const gnd = (d) => toHalf(clamp(d, -FAR, FAR));
+function roadMask(net) {
+  const M = new Uint8Array(MASK * MASK * 4), G = new Uint16Array(MASK * MASK * 4).fill(gnd(FAR)), LID = new Uint8Array(MASK * MASK), REACH = 16, best = new Float32Array(MASK * MASK).fill(REACH);
+  for (let k = 0; k < MASK * MASK; k++) { M[k * 4] = 255; M[k * 4 + 2] = 128; M[k * 4 + 3] = 128; }
+  const box = (x0, z0, x1, z1, f) => {
+    const i0 = Math.max(0, Math.floor((x0 + HALF) / MPX)), i1 = Math.min(MASK - 1, Math.ceil((x1 + HALF) / MPX));
+    const j0 = Math.max(0, Math.floor((z0 + HALF) / MPX)), j1 = Math.min(MASK - 1, Math.ceil((z1 + HALF) / MPX));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) f((i + 0.5) * MPX - HALF, (j + 0.5) * MPX - HALF, j * MASK + i);
+  };
+  // (9 m past the edge, as far as the grass and flora look; 16 m for a street with sidewalks, whose joints and
+  // stalls read its phase)
+  const walked = new Set(net.walks.flatMap((w) => (w.road ? [w.road] : w.segs.map((sg) => sg.road))));
+  for (const r of net.roads) for (let s = 0; s < r.line.length - 1; s++) {
+    const a = r.line[s], b = r.line[s + 1], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1, L = Math.sqrt(L2), R = r.hw + (walked.has(r) ? REACH : 9);
+    box(Math.min(a.x, b.x) - R, Math.min(a.z, b.z) - R, Math.max(a.x, b.x) + R, Math.max(a.z, b.z) + R, (x, z, k) => {
+      const t = ((x - a.x) * dx + (z - a.z) * dz) / L2, tc = t < 0 ? 0 : t > 1 ? 1 : t;
+      const d = hypot(x - a.x - dx * tc, z - a.z - dz * tc);
+      if (d - r.hw < best[k]) {
+        best[k] = d - r.hw;
+        const side = (x - a.x) * dz - (z - a.z) * dx > 0 ? -1 : 1, ph = (r.cum[s] + L * tc) / 12 * Math.PI * 2;
+        M[k * 4] = enc(d * side); M[k * 4 + 1] = r.idx;
+        M[k * 4 + 2] = Math.round((Math.sin(ph) * 0.5 + 0.5) * 255); M[k * 4 + 3] = Math.round((Math.cos(ph) * 0.5 + 0.5) * 255);
+        G[k * 4] = gnd(d - r.hw);
+      }
+    });
+  }
+  // lots and aprons: the one whose edge is nearest (or deepest inside) out to 8 m
+  const bestL = new Float32Array(MASK * MASK).fill(DIST);
+  LOTS.forEach((l, li) => {
+    const rr = hypot(l.w, l.d) / 2 + DIST;
+    box(l.x - rr, l.z - rr, l.x + rr, l.z + rr, (x, z, k) => {
+      const d = lotDist(l, x, z);
+      if (d < bestL[k]) { bestL[k] = d; LID[k] = li + 1; G[k * 4 + 1] = gnd(d); }
+    });
+  });
+  // sidewalks: per texel the walk it is deepest inside (or nearest), as its inner and outer distances
+  const bestW = new Float32Array(MASK * MASK).fill(DIST), put = (k, wi, wo) => { const v = Math.max(wi, wo); if (v < bestW[k]) { bestW[k] = v; G[k * 4 + 2] = gnd(wi); G[k * 4 + 3] = gnd(wo); } };
+  const nd = new Float32Array(MASK * MASK).fill(Infinity), ns = new Float32Array(MASK * MASK), touched = [];
+  for (const w of net.walks) {
+    if (w.road) {
+      // the nearest point of the whole road (so the band is a true offset of it), then the band and the ends
+      const r = w.road, R = r.hw + w.to + DIST;
+      for (let s = 0; s < r.line.length - 1; s++) {
+        if (r.cum[s + 1] < w.s0 - R || r.cum[s] > w.s1 + R) continue;
+        const a = r.line[s], b = r.line[s + 1], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1, L = Math.sqrt(L2);
+        box(Math.min(a.x, b.x) - R, Math.min(a.z, b.z) - R, Math.max(a.x, b.x) + R, Math.max(a.z, b.z) + R, (x, z, k) => {
+          const t = ((x - a.x) * dx + (z - a.z) * dz) / L2, tc = t < 0 ? 0 : t > 1 ? 1 : t, d = hypot(x - a.x - dx * tc, z - a.z - dz * tc);
+          if (d < nd[k]) { if (nd[k] === Infinity) touched.push(k); nd[k] = d; ns[k] = r.cum[s] + L * tc; }
+        });
+      }
+      for (const k of touched) { const e = nd[k] - r.hw; put(k, w.from - e, Math.max(e - w.to, w.s0 - ns[k], ns[k] - w.s1)); nd[k] = Infinity; }
+      touched.length = 0;
+    } else for (const sg of w.segs) {
+      const R = Math.max(Math.abs(sg.from), Math.abs(sg.to)) + DIST;
+      box(Math.min(sg.ax, sg.bx) - R, Math.min(sg.az, sg.bz) - R, Math.max(sg.ax, sg.bx) + R, Math.max(sg.az, sg.bz) + R, (x, z, k) => { lineWalkDist(sg, x, z, WD); put(k, WD[0], WD[1]); });
+    }
+  }
+  return { mask: M, ground: G, lotIds: LID };
+}
+const WD = [0, 0];
+// A line walk segment at (x,z): out[0] the signed distance past its inner edge (from m to its side; side 0:
+// either side), out[1] past its outer edge (to m) or its square ends 0.5 m past its points (so neighbouring
+// segments meet without a notch). The walk is where both are negative.
+export function lineWalkDist(sg, x, z, out = [0, 0]) {
+  const ex = x - sg.ax, ez = z - sg.az, u = ex * sg.dx + ez * sg.dz;
+  let l = ez * sg.dx - ex * sg.dz; // + to the right of travel (places.js row() side +1)
+  l = sg.side ? l * sg.side : Math.abs(l);
+  out[0] = sg.from - l; out[1] = Math.max(l - sg.to, -0.5 - u, u - sg.len - 0.5);
+  return out;
+}
+// meters outside the nearest road's asphalt or lot, from the ground mask (negative on the road or inside a lot;
+// Infinity past the mask's reach)
+export const maskIndex = (x, z) => (clamp(Math.floor((z + HALF) / MPX), 0, MASK - 1) * MASK + clamp(Math.floor((x + HALF) / MPX), 0, MASK - 1)) * 4;
+export function roadEdge(ground, x, z) {
+  const mk = maskIndex(x, z), d = Math.min(fromHalf(ground[mk]), fromHalf(ground[mk + 1]));
+  return d >= REACH_EDGE ? Infinity : d;
+}
+const REACH_EDGE = 8; // (as the old mask: past 8 m no road or lot counts)
+// the signed distance to the nearest sidewalk at a ground texel (index mk = texel * 4): negative on it
+export const walkAt = (ground, mk) => Math.max(fromHalf(ground[mk + 2]), fromHalf(ground[mk + 3]));
 
 /* ------------------------------------------------------------------ the paper map */
 // Watercolour ground with hill shading from the upper left, contour lines every 10 m (stronger every 50 m),
@@ -468,21 +555,96 @@ function paintMap(H, types, CF, WF) {
 // Per 100 m cell: [species, x, y, z, scale, yaw] for every plant. 0 juniper, 1 cottonwood, 2 cactus or agave,
 // 3 boulder. Nothing grows on roads, lots, pads, buildings, water or steep rock.
 export const SPECIES = ['juniper', 'cottonwood', 'cactus', 'boulder'];
-function scatterFlora(seed, H, types, mask, net, CF, rockK, rocks) {
+// The strips' shops (STRIP_FOOT) and where they stood before the strips had sidewalks (LEGACY_STRIP_FOOT: 20 m
+// back in West Sedona, 13 m in the Village, and the Village's north chords from x 230): the flora scatter keeps
+// clear of the old footprints as it always did, and of the new ones without drawing on the random stream.
+const LEGACY_STRIPS = [20, 20, 20, 20, [230, 800, 13], 13, [230, 800, 13], 13];
+const STRIP_FOOT = new Set(), LEGACY_STRIP_FOOT = [];
+STRIPS.forEach((st, k) => {
+  const chord = (a, b, side) => { const L = hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / L, dz = (b[1] - a[1]) / L; return { a, L, dx, dz, rx: -dz * side, rz: dx * side }; };
+  const C = chord(st.a, st.b, st.side), old = LEGACY_STRIPS[k], O = chord(Array.isArray(old) ? [old[0], old[1]] : st.a, st.b, st.side), oldSet = Array.isArray(old) ? old[2] : old;
+  for (const b of BUILDINGS) {
+    if (b.district !== st.district) continue;
+    const ex = b.x - C.a[0], ez = b.z - C.a[1], u = ex * C.dx + ez * C.dz, l = ex * C.rx + ez * C.rz;
+    if (u < 0 || u > C.L || Math.abs(l - st.setback - b.d / 2) > 0.2) continue;
+    STRIP_FOOT.add(b);
+    const t = (Math.floor(u / C.L * st.n) + 0.5) / st.n, r1 = (v) => Math.round(v * 10) / 10;
+    LEGACY_STRIP_FOOT.push({ x: r1(O.a[0] + O.dx * O.L * t + O.rx * (oldSet + b.d / 2)), z: r1(O.a[1] + O.dz * O.L * t + O.rz * (oldSet + b.d / 2)), w: b.w + (O.L - C.L) / st.n, d: b.d, yaw: Math.atan2(-O.rx, -O.rz) });
+  }
+});
+// Uptown's main street before it was straightened along the storefronts, and the old road mask (bytes: the
+// signed distance to the winning road's centreline or lot's edge, and its id, lots 100 +) in a box round it, as
+// the flora scatter saw them.
+const LEGACY_A89U = [[73, 27], [120, -8], [225, -88], [318, -160]], LEGACY_BOX = [50, -185, 345, 52];
+function legacyUptownMask(net) {
+  const [x0, z0, x1, z1] = LEGACY_BOX, i0 = Math.floor((x0 + HALF) / MPX), j0 = Math.floor((z0 + HALF) / MPX), ni = Math.ceil((x1 + HALF) / MPX) - i0 + 1, nj = Math.ceil((z1 + HALF) / MPX) - j0 + 1;
+  const M = new Uint8Array(ni * nj * 2), best = new Float32Array(ni * nj).fill(9), R = 8, enc8 = (d) => Math.round((clamp(d, -R, R) / R * 0.5 + 0.5) * 255);
+  M.fill(255);
+  for (let k = 0; k < ni * nj; k++) M[k * 2 + 1] = 0;
+  const each = (bx0, bz0, bx1, bz1, f) => {
+    const a0 = Math.max(i0, Math.floor((bx0 + HALF) / MPX)), a1 = Math.min(i0 + ni - 1, Math.ceil((bx1 + HALF) / MPX)), b0 = Math.max(j0, Math.floor((bz0 + HALF) / MPX)), b1 = Math.min(j0 + nj - 1, Math.ceil((bz1 + HALF) / MPX));
+    for (let j = b0; j <= b1; j++) for (let i = a0; i <= a1; i++) f((i + 0.5) * MPX - HALF, (j + 0.5) * MPX - HALF, (j - j0) * ni + (i - i0));
+  };
+  const oldLine = smoothLine(LEGACY_A89U);
+  for (const r of net.roads) {
+    const line = r.id === 'a89u' ? oldLine : r.line;
+    for (let s = 0; s < line.length - 1; s++) {
+      const a = line[s], b = line[s + 1], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1;
+      each(Math.min(a.x, b.x) - R, Math.min(a.z, b.z) - R, Math.max(a.x, b.x) + R, Math.max(a.z, b.z) + R, (x, z, k) => {
+        const t = ((x - a.x) * dx + (z - a.z) * dz) / L2, tc = t < 0 ? 0 : t > 1 ? 1 : t, d = hypot(x - a.x - dx * tc, z - a.z - dz * tc);
+        if (d - r.hw < best[k]) { best[k] = d - r.hw; M[k * 2] = enc8(d * ((x - a.x) * dz - (z - a.z) * dx > 0 ? -1 : 1)); M[k * 2 + 1] = r.idx; }
+      });
+    }
+  }
+  LOTS.forEach((l, li) => {
+    if (l.apron) return;
+    const rr = hypot(l.w, l.d) / 2 + R;
+    each(l.x - rr, l.z - rr, l.x + rr, l.z + rr, (x, z, k) => {
+      const d = lotDist(l, x, z); if (d > 2) return;
+      const rid = M[k * 2 + 1]; if (rid && rid < 100 && best[k] < 0.3) return;
+      M[k * 2] = enc8(d); M[k * 2 + 1] = 100 + li; best[k] = Math.min(best[k], Math.max(0, d));
+    });
+  });
+  // blocked as it was (on or within 2.5 m of a road, within 2 m of a lot), or undefined outside the box
+  return (x, z) => {
+    const i = Math.floor((x + HALF) / MPX) - i0, j = Math.floor((z + HALF) / MPX) - j0;
+    if (i < 0 || j < 0 || i >= ni || j >= nj) return undefined;
+    const k = j * ni + i, id = M[k * 2 + 1], d = (M[k * 2] / 255 * 2 - 1) * R;
+    if (!id) return false;
+    return id >= 100 ? Math.abs(d) < 2 || M[k * 2] < 128 : Math.abs(d) < net.roads[id - 1].hw + 2.5;
+  };
+}
+// blocked() answers 1 (no plant) or 2 (no plant, but its scale and yaw are still drawn): the sidewalks, the
+// strips' parking aprons and their shops answer 2, so the random stream, and every plant away from them, stays
+// as it was before they came (a plant turned away draws nothing, so one more or less would reseat every plant
+// after it). The roads and the old lots are read as the byte mask always gave them, for the same reason.
+function scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rocks) {
   const cells = [], all = [];
   let a = (seed * 2654435761) >>> 0;
   const R = () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const oldUptown = legacyUptownMask(net);
+  const inFoot = (b, x, z, m) => { const c = Math.cos(b.yaw), s = Math.sin(b.yaw), lx = (x - b.x) * c - (z - b.z) * s, lz = (x - b.x) * s + (z - b.z) * c; return Math.abs(lx) < b.w / 2 + m && Math.abs(lz) < b.d / 2 + m; };
   const blocked = (x, z) => {
+    // not on or beside a road (2.5 m), a lot (2 m) or a sidewalk (1.5 m)
     const mi = clamp(Math.floor((x + HALF) / MPX), 0, MASK - 1), mj = clamp(Math.floor((z + HALF) / MPX), 0, MASK - 1), mk = (mj * MASK + mi) * 4;
-    const id = mask[mk + 1], d = Math.abs(mask[mk] / 255 * 2 - 1) * 8;
-    if (id >= 100) return d < 2 || mask[mk] < 128;
-    if (id > 0 && d < net.roads[id - 1].hw + 2.5) return true;
-    for (const b of BUILDINGS) { if (Math.abs(x - b.x) > 30 || Math.abs(z - b.z) > 30) continue; const c = Math.cos(b.yaw), s = Math.sin(b.yaw), lx = (x - b.x) * c - (z - b.z) * s, lz = (x - b.x) * s + (z - b.z) * c; if (Math.abs(lx) < b.w / 2 + 3 && Math.abs(lz) < b.d / 2 + 3) return true; }
-    for (const p of PADS) if (hypot(x - p.x, z - p.z) < p.r) return true;
-    for (const k of KAZOOS) if (hypot(x - k.x, z - k.z) < 2.5) return true;
-    for (const c of Object.values(CAIRNS)) if (hypot(x - c.x, z - c.z) < 5) return true;
-    for (const f of rocks) for (const c of f.hi.colliders) if (hypot(x - c.x, z - c.z) < c.r + 2) return true;
-    return false;
+    const id = mask[mk + 1], lot = LOTS[lotIds[mk >> 2] - 1], lotD = fromHalf(ground[mk + 1]), was = oldUptown(x, z);
+    if (was === true) return 1;
+    if (was === undefined) {
+      if (lot && !lot.apron && lotD <= 2 && dec(enc(lotD)) < 2) return 1;
+      if (id && Math.abs(dec(mask[mk])) < net.roads[id - 1].hw + 2.5) return 1;
+    }
+    for (const b of LEGACY_STRIP_FOOT) if (Math.abs(x - b.x) < 30 && Math.abs(z - b.z) < 30 && inFoot(b, x, z, 3)) return 1;
+    let late = walkAt(ground, mk) < 1.5 || fromHalf(ground[mk]) < 2.5 || lotD < 2;
+    for (const b of BUILDINGS) {
+      if (Math.abs(x - b.x) > 30 || Math.abs(z - b.z) > 30 || !inFoot(b, x, z, 3)) continue;
+      if (!STRIP_FOOT.has(b)) return 1;
+      late = true;
+    }
+    for (const p of PADS) if (hypot(x - p.x, z - p.z) < p.r) return 1;
+    for (const k of KAZOOS) if (hypot(x - k.x, z - k.z) < 2.5) return 1;
+    for (const c of Object.values(CAIRNS)) if (hypot(x - c.x, z - c.z) < 5) return 1;
+    for (const f of rocks) for (const c of f.hi.colliders) if (hypot(x - c.x, z - c.z) < c.r + 2) return 1;
+    return late ? 2 : 0;
   };
   for (let cj = 0; cj < 20; cj++) for (let ci = 0; ci < 20; ci++) {
     const list = [];
@@ -501,10 +663,11 @@ function scatterFlora(seed, H, types, mask, net, CF, rockK, rocks) {
       else if (u < 0.19 * scrubK * (0.35 + clump * 1.3)) sp = 0;
       else if (u > 0.985 && (t === T.scrub || t === T.sand)) sp = 2;
       else if (u > 0.97 && u <= 0.985 && (rockK[k] > 0.2 || ny < 0.9 || t === T.scrub)) sp = 3;
-      if (sp < 0 || blocked(x, z)) continue;
+      const bl = sp < 0 ? 1 : blocked(x, z);
+      if (bl === 1) continue;
       if (sp === 1 && cd < hw + 3) continue;
-      const sc = sp === 1 ? 0.9 + R() * 0.7 : sp === 3 ? 0.5 + R() * 1.4 : 0.65 + R() * 0.75;
-      list.push(sp, x, heightAt(H, x, z), z, sc, R() * Math.PI * 2);
+      const sc = sp === 1 ? 0.9 + R() * 0.7 : sp === 3 ? 0.5 + R() * 1.4 : 0.65 + R() * 0.75, yaw = R() * Math.PI * 2;
+      if (!bl) list.push(sp, x, heightAt(H, x, z), z, sc, yaw);
     }
     cells.push(all.length / 6, list.length / 6);
     all.push(...list);
@@ -600,8 +763,8 @@ if (inWorker) {
         const tiles = [];
         for (let j = 0; j < TILES; j++) for (let i = 0; i < TILES; i++) tiles.push(buildTile(ctx, i, j, 2));
         const H = Float32Array.from(g.H); // the worker keeps its own copy for tiles
-        const msg = { type: 'init', heights: H, types: g.types, mask: g.mask, map: g.map, scatter: g.scatter, rockColliders: g.rockColliders, creek: g.creek, wash: g.wash, bridges: g.bridges, tiles, ms: { ...g.ms, worker: performance.now() - t0 } };
-        self.postMessage(msg, [H.buffer, g.types.buffer, g.mask.buffer, g.map.buffer, g.scatter.data.buffer, g.scatter.cells.buffer, ...tiles.flatMap(tileTransfer)]);
+        const msg = { type: 'init', heights: H, types: g.types, mask: g.mask, ground: g.ground, lotIds: g.lotIds, map: g.map, scatter: g.scatter, rockColliders: g.rockColliders, creek: g.creek, wash: g.wash, bridges: g.bridges, tiles, ms: { ...g.ms, worker: performance.now() - t0 } };
+        self.postMessage(msg, [H.buffer, g.types.buffer, g.mask.buffer, g.ground.buffer, g.lotIds.buffer, g.map.buffer, g.scatter.data.buffer, g.scatter.cells.buffer, ...tiles.flatMap(tileTransfer)]);
       } else if (m.tile && ctx) {
         const t = buildTile(ctx, m.tile.i, m.tile.j, m.tile.lod);
         self.postMessage({ type: 'tile', tile: t, req: m.tile.req }, tileTransfer(t));

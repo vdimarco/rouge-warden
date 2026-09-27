@@ -6,7 +6,7 @@
 // the terrain inside an interior volume (C3).
 import { WORLD, REGIONS, INTERIORS, point } from './places.js';
 import { buildNetwork, nearest, route, sample, LOTS } from './roads.js';
-import { heightAt, generate, buildTile, TILES, HALF, TYPES, TGRID, TCELL, MASK, MPX, MAP } from './gen.worker.js';
+import { heightAt, generate, buildTile, TILES, HALF, TYPES, TGRID, TCELL, MASK, MPX, MAP, dec, fromHalf, walkAt } from './gen.worker.js';
 import { createColliders } from './colliders.js';
 import { createTerrain, terrainMaterial, sharedUniforms } from './terrain.js';
 import { createFlora } from './flora.js';
@@ -17,13 +17,16 @@ import { createInteriors } from './interiors.js';
 import { createMap } from './map.js';
 import { lastInfo } from '../../render.js';
 import { QUALITY } from '../look/quality.js';
+import { PALETTE } from '../look/palette.js';
 
 // Every base colour the world paints with (display sRGB), for LOOK's palette check (palette.mjs). Greens stay
-// bluish (g - b < 0.12) and nothing is yellow-green.
+// bluish (g - b < 0.12) and nothing is yellow-green. (The road and sidewalk paint takes LOOK's PALETTE.)
+const srgb = (hex) => [16, 8, 0].map((s) => Math.round(((hex >> s) & 255) / 255 * 1000) / 1000);
 export const WORLD_PALETTE = Object.freeze({
   soilRed: [0.64, 0.31, 0.19], soilDark: [0.54, 0.25, 0.16], scrub: [0.43, 0.4, 0.33], sand: [0.76, 0.62, 0.47], creekStone: [0.42, 0.39, 0.36],
   strataRed: [0.62, 0.27, 0.16], strataOrange: [0.7, 0.36, 0.21], strataDark: [0.55, 0.24, 0.15], strataBuff: [0.74, 0.48, 0.33], capRock: [0.8, 0.69, 0.55],
-  asphalt: [0.24, 0.24, 0.25], dirtRoad: [0.66, 0.44, 0.3], edgeLine: [0.86, 0.85, 0.8], centreLine: [0.8, 0.48, 0.16], shoulder: [0.56, 0.44, 0.36], sidewalk: [0.68, 0.65, 0.61],
+  asphalt: srgb(PALETTE.asphalt), asphaltWorn: srgb(PALETTE.asphaltWorn), dirtRoad: [0.66, 0.44, 0.3], edgeLine: srgb(PALETTE.roadLine), centreLine: [0.8, 0.48, 0.16],
+  parkingLine: srgb(PALETTE.parkingLine), shoulder: srgb(PALETTE.shoulder), sidewalk: srgb(PALETTE.concrete), curb: srgb(PALETTE.curb),
   juniper: [0.3, 0.4, 0.35], cottonwood: [0.36, 0.47, 0.4], agave: [0.4, 0.47, 0.44], pricklyPear: [0.36, 0.44, 0.36], boulder: [0.62, 0.33, 0.22],
   grassStraw: [0.66, 0.55, 0.38], grassBlue: [0.48, 0.5, 0.45], waterDeep: [0.15, 0.3, 0.3], waterShallow: [0.38, 0.47, 0.43],
   stucco: [0.8, 0.66, 0.52], adobe: [0.72, 0.47, 0.33], wood: [0.56, 0.4, 0.28], block: [0.66, 0.63, 0.58], metal: [0.72, 0.74, 0.74],
@@ -44,7 +47,7 @@ export function init(S) {
   const shared = sharedUniforms();
   const mapCanvas = document.createElement('canvas'); mapCanvas.width = mapCanvas.height = MAP;
   const revealed = new Set();
-  let H = null, types = null, mask = null, data = null;
+  let H = null, types = null, mask = null, ground = null, lotIds = null, data = null;
   const parts = {};
   let worker = null, steps = null, stepI = 0, genP = 0, failed = false;
   const build = { t0: 0, worker: 0, steps: [], longest: 0, ms: null };
@@ -67,13 +70,13 @@ export function init(S) {
     try {
       const g = generate(WORLD.SEED); mainCtx = g.ctx;
       const tiles = []; for (let j = 0; j < TILES; j++) for (let i = 0; i < TILES; i++) tiles.push(buildTile(mainCtx, i, j, 2));
-      onMessage({ type: 'init', heights: g.H, types: g.types, mask: g.mask, map: g.map, scatter: g.scatter, rockColliders: g.rockColliders, creek: g.creek, wash: g.wash, bridges: g.bridges, tiles, ms: g.ms });
+      onMessage({ type: 'init', heights: g.H, types: g.types, mask: g.mask, ground: g.ground, lotIds: g.lotIds, map: g.map, scatter: g.scatter, rockColliders: g.rockColliders, creek: g.creek, wash: g.wash, bridges: g.bridges, tiles, ms: g.ms });
     } catch (e) { failed = true; console.error('[world] could not build Sedona', e); }
   }
   function onMessage(m) {
     if (m.type === 'progress') genP = m.p;
     else if (m.type === 'init') {
-      data = m; H = m.heights; types = m.types; mask = m.mask;
+      data = m; H = m.heights; types = m.types; mask = m.mask; ground = m.ground; lotIds = m.lotIds;
       build.worker = performance.now() - build.t0; build.ms = m.ms;
       steps = makeSteps();
       idle();
@@ -86,10 +89,13 @@ export function init(S) {
   function makeSteps() {
     return [
       ['terrain', () => {
-        const roadTex = new THREE.DataTexture(mask, MASK, MASK, THREE.RGBAFormat);
-        roadTex.minFilter = roadTex.magFilter = THREE.LinearFilter; roadTex.generateMipmaps = false; roadTex.needsUpdate = true;
-        parts.roadTex = roadTex;
-        parts.terrainMat = terrainMaterial(THREE, shared, roadTex, net, LOTS);
+        // the road masks, read bilinear (the shader anti-aliases its own edges; no mipmaps: the ids are exact);
+        // the ground's are half floats; the lot ids are read exact
+        const tex = (data, format, type) => { const t = new THREE.DataTexture(data, MASK, MASK, format, type); t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; };
+        const roadTex = tex(mask, THREE.RGBAFormat, THREE.UnsignedByteType), groundTex = tex(ground, THREE.RGBAFormat, THREE.HalfFloatType), lotTex = tex(lotIds, THREE.RedFormat, THREE.UnsignedByteType);
+        lotTex.minFilter = lotTex.magFilter = THREE.NearestFilter;
+        parts.roadTex = roadTex; parts.groundTex = groundTex; parts.lotTex = lotTex;
+        parts.terrainMat = terrainMaterial(THREE, shared, { road: roadTex, ground: groundTex, lots: lotTex }, net, LOTS);
         parts.terrain = createTerrain(S, { THREE, group, material: parts.terrainMat, tiles0: data.tiles, request });
         for (const c of data.rockColliders) C.addCircle(c.x, c.z, c.r, { tag: 'rock' });
       }],
@@ -99,7 +105,7 @@ export function init(S) {
         const mat = parts.town.material.clone(); mat.side = THREE.DoubleSide; mat.emissiveIntensity = 0;
         parts.interiors = createInteriors(S, { THREE, group, colliders: C, material: mat });
       }],
-      ['flora', () => createFlora(S, { THREE, group, shared, data: data.scatter, H, types, mask, net, colliders: C })],
+      ['flora', () => createFlora(S, { THREE, group, shared, data: data.scatter, H, types, ground, colliders: C })],
       ['water', () => { parts.water = createWater(S, { THREE, group, shared, creek: data.creek, heightTex: parts.flora.heightTex, H, heightAt }); }],
       ['map', () => createMap(S, { mapBytes: data.map, net, creek: data.creek, revealed, canvas: mapCanvas })],
     ];
@@ -136,13 +142,14 @@ export function init(S) {
   /* ---------------- queries */
 
   const typeAt = (x, z) => types[Math.min(TGRID - 1, Math.max(0, Math.floor((z + HALF) / TCELL))) * TGRID + Math.min(TGRID - 1, Math.max(0, Math.floor((x + HALF) / TCELL)))];
-  // the road under (x,z) from the mask: {road, lot, d: signed distance, hw} or null
+  // what the masks say at (x,z) (the texel's values, gen.worker.js roadMask): {road, d: signed distance to its
+  // centreline, e: meters past the nearest road edge, lot, l: signed distance to its edge, walk: signed distance
+  // to the nearest sidewalk's edge}, or null
   function maskAt(x, z) {
     if (!mask) return null;
     const mi = Math.min(MASK - 1, Math.max(0, Math.floor((x + HALF) / MPX))), mj = Math.min(MASK - 1, Math.max(0, Math.floor((z + HALF) / MPX))), mk = (mj * MASK + mi) * 4;
-    const id = mask[mk + 1]; if (!id) return null;
-    const d = (mask[mk] / 255 * 2 - 1) * 8;
-    return id >= 100 ? { lot: LOTS[id - 100], d } : { road: net.roads[id - 1], d };
+    const id = mask[mk + 1], lid = lotIds[mk >> 2];
+    return { road: id ? net.roads[id - 1] : null, d: dec(mask[mk]), e: fromHalf(ground[mk]), lot: lid ? LOTS[lid - 1] : null, l: fromHalf(ground[mk + 1]), walk: walkAt(ground, mk) };
   }
   const W = S.world = {
     ready: false, progress: 0, SCALE: WORLD.SCALE, HALF: WORLD.HALF, group,
@@ -162,8 +169,9 @@ export function init(S) {
     surfaceType(x, z) {
       if (!types) return 'dirt';
       const m = maskAt(x, z);
-      if (m && m.road && Math.abs(m.d) < m.road.hw + 0.2) return m.road.surface;
-      if (m && m.lot && m.d < 0) return m.lot.surface;
+      if (m && m.road && m.e < 0.2) return m.road.surface;
+      if (m && m.walk < 0) return 'asphalt'; // (concrete sounds and grips like asphalt)
+      if (m && m.lot && m.l < 0) return m.lot.surface;
       return TYPES[typeAt(x, z)];
     },
     // meters from the nearest road's centreline
