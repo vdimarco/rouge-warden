@@ -246,7 +246,8 @@ export function init(S) {
   }
   let sirenT = 0;
   // (world phase: Sedona's visibility can change in a task or at leave; the group follows it before the draw)
-  S.register('world', () => { root.visible = !!S.world.visible; }, 50);
+  // the traffic batch is written here, after the camera moved: cars out of view (and of shadow reach) are left out
+  S.register('world', () => { root.visible = !!S.world.visible; if (root.visible) traffic.draw(night(), S.camera); }, 50);
   S.register('anim', (cdt, rdt) => {
     const dt = Math.min(rdt, 0.1);
     const nt = night();
@@ -262,7 +263,6 @@ export function init(S) {
       smoke(v, dt);
     }
     for (const v of traffic.api.cars) if (!v.kinematic) stepSuspension(v, dt);
-    traffic.draw(nt);
     const r = drive.api.riding;
     const lampV = r || (S.vehicles.player && S.vehicles.player.pos.distanceTo(camPos()) < 60 ? S.vehicles.player : null);
     headlights(!!lampV && lampV.lights && S.world.visible, lampV);
