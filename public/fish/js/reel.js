@@ -260,10 +260,12 @@ export class ReelPanel extends Widget {
     this.thumb = { x: p.x, y: p.y, x0: p.x, y0: p.y };
     this.emit("pin", { id: p.id, x: p.x, y: p.y, t });
   }
-  _unpin(p, t) {
+  // cancel: the browser took the touch away (pointercancel, the page lost focus), or a hold turned into a bail swipe.
+  // That is not a thumb lifting off the line, so it must not count as a cast.
+  _unpin(p, t, cancel = false) {
     p.state = "done";
     if (this.pinId === p.id) { this.pinId = null; this.thumb = null; }
-    this.emit("unpin", { id: p.id, x: p.x, y: p.y, t });
+    this.emit("unpin", { id: p.id, x: p.x, y: p.y, t, cancel });
   }
   _move(e) {
     const p = this.ptrs.get(e.pointerId);
@@ -279,7 +281,7 @@ export class ReelPanel extends Widget {
     if (p.onBail && !p.swiped && Math.abs(dy) > T.bailSwipePx && Math.abs(dy) > T.bailVertical * Math.abs(dx)) {
       p.swiped = true;
       // a closed-bail hold that turns into a swipe never held any line: it ends here
-      if (p.state === "pin" && !p.open) this._unpin(p, e.timeStamp);
+      if (p.state === "pin" && !p.open) this._unpin(p, e.timeStamp, true);
       else if (p.state !== "pin") p.state = "swipe";
       this.emit("bail", { open: dy > 0 });
     }
@@ -295,13 +297,13 @@ export class ReelPanel extends Widget {
     if (p.timer) { clearTimeout(p.timer); p.timer = 0; }
     // a cancel may carry no position: keep the last one we saw
     if (!cancel || e.clientX || e.clientY) { const q = this._local(e); p.x = q.x; p.y = q.y; }
-    if (p.state === "pin") this._unpin(p, e.timeStamp);
+    if (p.state === "pin") this._unpin(p, e.timeStamp, cancel);
   }
   _cancelAll() {
     for (const p of [...this.ptrs.values()]) {
       this.ptrs.delete(p.id);
       if (p.timer) clearTimeout(p.timer);
-      if (p.state === "pin") this._unpin(p, now());
+      if (p.state === "pin") this._unpin(p, now(), true);
     }
   }
   _onBail(x, y) { const b = this.bailArea; return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h; }
@@ -706,72 +708,98 @@ export class ReelPanel extends Widget {
 
   _overlays(ctx, pulse, phi) {
     const s = this.s, fx = this.fx, w = this.w, h = this.h, S = this.S;
-    // "touch here": the bail wire glows (drawn with it); an arrow shows which way to swipe
+    // "touch here": the bail wire glows (drawn with it); chevrons run the way to swipe
     if (s.glow === "bail" && fx.glow > 0.05) {
-      const b = this.bailArea, open = s.bail === "open", dir = open ? -1 : 1;
-      const top = this._wire(phi, Math.PI / 2, Math.PI / 2, 1)[0];
-      const x = Math.max(24, Math.min(w - 24, top.x - S * 0.95)), y0 = top.y + (open ? S * 0.2 : -S * 0.1);
-      const len = Math.min(h * 0.3, S * 0.9);
+      const open = s.bail === "open", dir = open ? -1 : 1;
+      const apex = this._wire(phi, Math.PI / 2, Math.PI / 2, 1)[0];
+      const x = clamp(apex.x - S * 0.12, 26, w - 26);
+      const len = Math.min(h * 0.32, S * 0.95), y0 = open ? apex.y + S * 0.15 : apex.y - S * 0.22;
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
       for (let i = 0; i < 3; i++) {
-        const u = ((this.time * 1.1 + i / 3) % 1), y = y0 + dir * len * u, a = Math.sin(u * Math.PI) * fx.glow;
-        ctx.strokeStyle = rgba(BRASS, 0.9 * a); ctx.lineWidth = 3.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
-        ctx.beginPath(); ctx.moveTo(x - 11, y - dir * 7); ctx.lineTo(x, y + dir * 3); ctx.lineTo(x + 11, y - dir * 7); ctx.stroke();
+        const u = (this.time * 1.1 + i / 3) % 1, y = y0 + dir * len * u, a = Math.sin(u * Math.PI) * fx.glow;
+        const path = () => { ctx.beginPath(); ctx.moveTo(x - 13, y - dir * 8); ctx.lineTo(x, y + dir * 4); ctx.lineTo(x + 13, y - dir * 8); };
+        path(); ctx.strokeStyle = rgba("6,22,27", 0.55 * a); ctx.lineWidth = 7.5; ctx.stroke();
+        path(); ctx.strokeStyle = rgba("255,214,120", a); ctx.lineWidth = 4; ctx.stroke();
       }
-      ctx.font = font(12); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = rgba(BRASS, 0.85 * fx.glow);
-      ctx.fillText(open ? "SWIPE UP" : "SWIPE DOWN", x, open ? y0 + 16 : y0 - 16);
+      const label = open ? "SWIPE UP" : "SWIPE DOWN";
+      ctx.font = font(13); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const tw = ctx.measureText(label).width, ly = open ? y0 + 22 : y0 - 20, lx = clamp(x, tw / 2 + 10, w - tw / 2 - 10);
+      ctx.beginPath(); rrect(ctx, lx - tw / 2 - 10, ly - 12, tw + 20, 24, 12);
+      ctx.fillStyle = rgba("9,34,41", 0.72 * fx.glow); ctx.fill();
+      ctx.strokeStyle = rgba(BRASS, 0.5 * fx.glow); ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = rgba("255,224,150", fx.glow);
+      ctx.fillText(label, lx, ly + 0.5);
       spaced(ctx, 0);
-      void b;
     }
     // "hold the line here": a soft ring on the spool
     if (s.glow === "pin" && fx.glow > 0.05 && !this.thumb) {
       const c = this._p(-0.55, 0.05, 0.35), r = S * (0.52 + 0.06 * pulse);
-      ctx.strokeStyle = rgba(BRASS, (0.35 + 0.45 * pulse) * fx.glow); ctx.lineWidth = 3;
-      ctx.setLineDash([7, 7]); ctx.lineDashOffset = -this.time * 14;
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 1.25);
+      g.addColorStop(0, rgba("255,224,150", 0.26 * fx.glow)); g.addColorStop(0.7, rgba(BRASS, 0.1 * fx.glow)); g.addColorStop(1, rgba(BRASS, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, r * 1.25, 0, TAU); ctx.fill();
+      ctx.strokeStyle = rgba("255,214,120", (0.45 + 0.45 * pulse) * fx.glow); ctx.lineWidth = 3;
+      ctx.setLineDash([8, 7]); ctx.lineDashOffset = -this.time * 14;
       ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
-      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-      g.addColorStop(0, rgba(BRASS, 0.16 * fx.glow)); g.addColorStop(1, rgba(BRASS, 0));
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.fill();
-      ctx.font = font(12); spaced(ctx, 0.14); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = rgba("255,244,214", 0.9 * fx.glow);
-      ctx.fillText("HOLD", c.x, c.y + r + 13);
+      ctx.font = font(13); spaced(ctx, 0.14); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const ly = Math.min(h - 14, c.y + r + 16), tw = ctx.measureText("HOLD HERE").width;
+      ctx.beginPath(); rrect(ctx, c.x - tw / 2 - 10, ly - 12, tw + 20, 24, 12);
+      ctx.fillStyle = rgba("9,34,41", 0.72 * fx.glow); ctx.fill();
+      ctx.fillStyle = rgba("255,224,150", fx.glow);
+      ctx.fillText("HOLD HERE", c.x, ly + 0.5);
       spaced(ctx, 0);
     }
     // the thumb that holds the line
-    if (this.thumb && fx.thumbA > 0.02) this.thumbGlow(ctx, this.thumb.x, this.thumb.y, 46 + 4 * pulse, fx.thumbA);
+    if (this.thumb && fx.thumbA > 0.02) this.thumbGlow(ctx, this.thumb.x, this.thumb.y, 52 + 5 * pulse, fx.thumbA);
     // touch casting: drag down, then flick up
-    if (fx.guide > 0.02) this._guide(ctx, fx.guide);
+    if (fx.guide > 0.02) this._guide(ctx, fx.guide, pulse);
     if (s.hint) {
       ctx.font = font(13, 800); spaced(ctx, 0);
-      const tw = ctx.measureText(s.hint).width + 26, x = (w - tw) / 2, y = h - 30;
+      const tw = Math.min(w - 20, ctx.measureText(s.hint).width + 26), x = (w - tw) / 2, y = h - 30;
       ctx.beginPath(); rrect(ctx, x, y, tw, 24, 12);
       ctx.fillStyle = "rgba(9,34,41,0.82)"; ctx.fill(); ctx.strokeStyle = "rgba(246,239,217,0.18)"; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = "#f6efd9"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s.hint, w / 2, y + 12.5);
+      ctx.fillStyle = "#f6efd9"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s.hint, w / 2, y + 12.5, tw - 16);
     }
   }
-  _guide(ctx, a) {
-    const w = this.w, h = this.h, th = this.thumb;
-    // beside the thumb when it holds the line, else on the free edge of the panel
-    const x = th ? clamp(th.x + 58, 24, w - 24) : this.mx > 0 ? w - 30 : 30;
-    const y0 = th ? clamp(th.y0 - 10, 20, h - 60) : h * 0.18, y1 = Math.min(h - 26, y0 + Math.max(90, h * 0.46));
+  // The touch cast guide: a rail on the free edge. With a thumb down, its bead is the rod: drag down past the brass
+  // LOAD mark, then flick up. With no thumb it shows the rhythm by itself.
+  _guide(ctx, a, pulse) {
+    const w = this.w, h = this.h, th = this.thumb, right = this.mx > 0;
+    const x = right ? w - 24 : 24;
+    const y0 = clamp(h * 0.16, 26, 60), y1 = Math.max(y0 + 80, Math.min(h - 26, y0 + h * 0.62));
+    const at = (theta) => lerp(y0, y1, clamp((theta - 80) / 80, 0, 1));
+    // the same mapping main.js uses for touch casting: 150° of rod over one panel height of drag
+    const theta = th ? 80 + ((th.y - th.y0) / Math.max(160, h)) * 150 : null;
+    let by;
+    if (th) by = at(theta);
+    else { const u = (this.time * 0.55) % 1; by = u < 0.7 ? lerp(y0, at(125), smooth(0, 0.7, u)) : lerp(at(125), y0, smooth(0.7, 0.8, u)); }
+    const loaded = th ? theta >= 105 : by >= at(105);
     ctx.save();
-    ctx.globalAlpha = a * 0.75;
-    ctx.strokeStyle = rgba(INK, 0.35); ctx.lineWidth = 2; ctx.setLineDash([4, 6]);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "rgba(6,22,27,0.45)";
+    ctx.beginPath(); rrect(ctx, x - 9, y0 - 12, 18, y1 - y0 + 24, 9); ctx.fill();
+    ctx.strokeStyle = rgba(INK, 0.3); ctx.lineWidth = 2; ctx.setLineDash([3, 5]);
     ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke(); ctx.setLineDash([]);
-    // a bead that runs down slowly, then snaps back up: the rhythm of the cast
-    const u = (this.time * 0.6) % 1, by = u < 0.72 ? lerp(y0, y1, smooth(0, 0.72, u)) : lerp(y1, y0, smooth(0.72, 0.84, u));
-    ctx.fillStyle = rgba(BRASS, 0.9);
-    ctx.beginPath(); ctx.arc(x, by, 5, 0, TAU); ctx.fill();
-    ctx.strokeStyle = rgba(BRASS, 0.8); ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.beginPath(); ctx.moveTo(x - 7, y1 - 9); ctx.lineTo(x, y1 - 2); ctx.lineTo(x + 7, y1 - 9); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x - 7, y0 + 9); ctx.lineTo(x, y0 + 2); ctx.lineTo(x + 7, y0 + 9); ctx.stroke();
-    ctx.font = font(11); spaced(ctx, 0.1); ctx.textBaseline = "middle";
-    ctx.textAlign = x > w / 2 ? "right" : "left";
-    const tx = x + (x > w / 2 ? -12 : 12);
+    // the load mark
+    const ly = at(105);
+    ctx.strokeStyle = rgba(BRASS, 0.95); ctx.lineWidth = 2.5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x - 9, ly); ctx.lineTo(x + 9, ly); ctx.stroke();
+    // the bead
+    if (loaded) {
+      const g = ctx.createRadialGradient(x, by, 0, x, by, 18);
+      g.addColorStop(0, rgba("255,224,150", 0.7)); g.addColorStop(1, rgba(BRASS, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, by, 18, 0, TAU); ctx.fill();
+    }
+    ctx.fillStyle = loaded ? "#ffe29a" : rgba(INK, 0.9);
+    ctx.beginPath(); ctx.arc(x, by, 6, 0, TAU); ctx.fill();
+    // labels on the inside of the rail
+    ctx.font = font(11); spaced(ctx, 0.1); ctx.textBaseline = "middle"; ctx.textAlign = right ? "right" : "left";
+    const tx = x + (right ? -16 : 16);
     ctx.fillStyle = rgba(INK, 0.85);
-    ctx.fillText("DRAG DOWN", tx, lerp(y0, y1, 0.45));
-    ctx.fillStyle = rgba(BRASS, 0.95);
-    ctx.fillText("FLICK UP", tx, lerp(y0, y1, 0.45) + 16);
+    ctx.fillText("DRAG DOWN", tx, lerp(y0, ly, 0.45));
+    ctx.fillStyle = rgba(BRASS, loaded ? 0.7 + 0.3 * pulse : 0.9);
+    ctx.fillText(loaded ? "NOW FLICK UP" : "FLICK UP", tx, Math.min(y1, ly + 18));
+    ctx.fillStyle = rgba(BRASS, 0.9);
+    ctx.font = font(9); ctx.fillText("LOAD", tx, ly);
     spaced(ctx, 0);
     ctx.restore();
   }
@@ -954,13 +982,18 @@ export class Crank extends Widget {
     ctx.lineTo(hx + Math.cos(tg + 2.3) * 6, hy + Math.sin(tg + 2.3) * 6); ctx.lineTo(hx + Math.cos(tg - 2.3) * 6, hy + Math.sin(tg - 2.3) * 6); ctx.closePath(); ctx.fill();
     // motion trail behind the knob
     if (rate > 0.15) {
-      const len = Math.min(2.6, rate * 0.9), sgn = this._spinSign();
-      for (let i = 0; i < 10; i++) {
-        const u0 = i / 10, u1 = (i + 1) / 10;
-        ctx.strokeStyle = rgba("255,236,190", 0.28 * (1 - u0) * Math.min(1, rate / 1.2));
-        ctx.lineWidth = kr * 1.6 * (1 - u0 * 0.5); ctx.lineCap = "butt";
-        ctx.beginPath(); ctx.arc(cx, cy, Rt, a - sgn * len * u1, a - sgn * len * u0, sgn < 0); ctx.stroke();
-      }
+      const len = Math.min(2.8, rate * 0.9), sgn = this._spinSign(), k = Math.min(1, rate / 1.2);
+      const from = sgn > 0 ? a - len : a, f = len / TAU;
+      if (ctx.createConicGradient) {
+        const g = ctx.createConicGradient(from, cx, cy);
+        const head = rgba("255,226,160", 0.42 * k), tail = rgba("255,226,160", 0);
+        if (sgn > 0) { g.addColorStop(0, tail); g.addColorStop(f, head); g.addColorStop(Math.min(1, f + 0.001), tail); }
+        else { g.addColorStop(0, head); g.addColorStop(f, tail); }
+        g.addColorStop(1, tail);
+        ctx.strokeStyle = g;
+      } else ctx.strokeStyle = rgba("255,226,160", 0.2 * k);
+      ctx.lineWidth = kr * 1.7; ctx.lineCap = "butt";
+      ctx.beginPath(); ctx.arc(cx, cy, Rt, from, from + len); ctx.stroke();
     }
     // the hint, the first few turns
     if (this.quarters < 8) {
@@ -1112,7 +1145,7 @@ export class RodPad extends Widget {
     spaced(ctx, 0);
     // the rod seen from your right side: a pivot, the arc it can swing through, and the rod
     const steerY = h - 17;
-    const px = w * 0.34, py = Math.min(h * 0.72, steerY - 26), L = Math.min(py - 30, w * 0.62);
+    const px = w * 0.3, py = Math.max(40, Math.min(h * 0.72, steerY - 26)), L = Math.max(20, Math.min(py - 36, w * 0.56));
     const ang = (d) => -d * DEG;
     // zones: too low (red), lifting (green)
     const band = (d0, d1, col) => { ctx.strokeStyle = col; ctx.lineWidth = 8; ctx.lineCap = "butt"; ctx.beginPath(); ctx.arc(px, py, L + 8, ang(d1), ang(d0)); ctx.stroke(); };
@@ -1159,7 +1192,7 @@ export class RodPad extends Widget {
     }
     // how to drag it: a quiet up and down arrow on the free side
     if (!this.drag) {
-      const x = w - 16, y0 = h * 0.3, y1 = py - 6;
+      const x = w - 12, y0 = Math.max(34, py - L * 0.9), y1 = py - 10;
       ctx.strokeStyle = rgba(INK, 0.28); ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineJoin = "round";
       ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1);
       ctx.moveTo(x - 5, y0 + 6); ctx.lineTo(x, y0); ctx.lineTo(x + 5, y0 + 6);

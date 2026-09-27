@@ -424,6 +424,7 @@ function landed(r) {
     G.landing = { x: r.x, z: r.z, dist };
     G.ring = rises ? rises.near(r.x, r.z) : null;
     G.sim = new LakeSim({ lure: { x: r.x, z: r.z }, tip: world.tip(), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist });
+    G.settle = 0;
     if (dist > save.longest) { save.longest = dist; if (dist > 12) toast("Your longest cast yet!"); }
     persist();
     report(dist, VERDICT[v] || "", (G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : LAKE.ZONE_NAMES[zone] || ""), v === "sweet");
@@ -785,10 +786,10 @@ function castUpdate(dt) {
   if ((G.step === "landed" || G.step === "ashore") && (G.sim || G.step === "ashore")) {
     tip = world.setRod({ theta: clamp(theta, -10, 170), yaw, bend: 0.05, visible: true });
     if (G.sim) {
-      G.sim.step(dt, { crank: 0, tip, theta, omega: p.omega, steer: 0, drag: G.drag, hookset: false, lift: false });
-      drainQuiet();
+      // the fish wait until you can reel: the lure just settles where it landed
       const L = G.sim.state.lure;
-      world.setLure({ x: L.x, y: L.y, z: L.z, visible: true, spin: 0 });
+      G.settle = Math.min(1, (G.settle || 0) + dt);
+      world.setLure({ x: L.x, y: -0.25 * G.settle, z: L.z, visible: true, spin: 0 });
       world.setLine({ from: tip, to: L, slack: 0.7, visible: true });
       world.setView({ mode: "cast", yaw, look: { x: L.x, y: 0, z: L.z }, portrait: G.layout === "tall-cast" });
       if (G.input === "motion" && touchDevice && physical() === "landscape") { afterLanding(); return; }
@@ -824,11 +825,6 @@ function castPrompt() {
     default: prompt("");
   }
 }
-// events while the lure sinks after the cast: only the quiet ones matter
-function drainQuiet() {
-  const ev = G.sim.events.splice(0);
-  for (const e of ev) handleEvent(e);
-}
 
 /* ---------------- per-frame: the reel ---------------- */
 const HOOK_OMEGA = 200;
@@ -854,11 +850,14 @@ function reelUpdate(dt) {
   if (G.input === "motion" && Motion.live && p.omega > HOOK_OMEGA && t - G.lastHook > 450) { hookset = true; G.lastHook = t; }
   const s = sim.state;
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
-  const tip = world.setRod({ theta, yaw: 0, steer, bend: clamp(G.tension * 1.3, 0, 1), pull: pullTo, visible: true });
+  const tip = world.setRod({ theta, yaw: 0, steer, bend: clamp(s.bend != null ? s.bend : G.tension * 1.3, 0, 1), pull: pullTo, visible: true });
   sim.step(dt, { crank: crankRate, tip, theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
   G.tension = lerp(G.tension, s.tfrac || 0, 1 - Math.exp(-dt * 12));
   for (const e of sim.events.splice(0)) handleEvent(e);
-  if (G.phase !== "reel") return;
+  // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
+  if (s.phase === "caught" && s.catch) { caught(s.catch); return; }
+  if (s.phase === "lost") { outcome("lost", reasonText(s.reason)); return; }
+  if (s.phase === "home") { outcome("home", "Nothing this time. Cast again."); return; }
 
   // draw
   const L = s.lure;
@@ -916,25 +915,27 @@ function handleEvent(e) {
   const type = typeof e === "string" ? e : e.type;
   G.lastEvent[type] = now();
   const s = G.sim && G.sim.state;
+  const fx = e.x != null ? e.x : s && s.fish ? s.fish.x : s ? s.lure.x : 0;
+  const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
     case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "follow": break;
     case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
-    case "hooked": Sound.sfx("hookset"); Haptics.hookset(); toast("Fish on!", 1400); break;
+    case "hooked":
+      if (e.junk) { Sound.sfx("junk"); toast("Snagged something heavy. Reel it in.", 2200); }
+      else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
+      break;
     case "missed": Sound.sfx("miss"); toast(G.input === "motion" ? "It spat the lure. Pull up faster next time." : "It spat the lure. Swipe up faster next time.", 2600); break;
     case "spooked": Sound.sfx("miss"); toast("Too soon! You spooked it. Wait for the strike.", 2600); break;
-    case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(e.x != null ? e.x : s.fish.x, e.z != null ? e.z : s.fish.z, e.size || 0.8); break;
-    case "splash": world.splash(e.x, e.z, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
-    case "run": if (!save.seen.run) { toast("It is running! Let the drag work.", 2400); seen("run"); } break;
-    case "reveal": if (s && s.fish) { const sp = byId(s.fish.id); if (sp) toast("It is a " + sp.name + "!", 2000); } break;
+    case "refuse": toast("It looked, and turned away.", 1800); break;
+    case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); break;
+    case "splash": world.splash(fx, fz, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
+    case "run": case "surge": if (!save.seen.run) { toast("It is running! Let the drag work.", 2400); seen("run"); } break;
+    case "shake": Haptics.bump(0.7); break;
+    case "reveal": { const sp = byId(e.id || (s && s.fish && s.fish.id)); if (sp) toast("It is a " + sp.name + "!", 2000); break; }
     case "near": Haptics.bump(0.8); break;
-    case "snap": Sound.sfx("snap"); Haptics.jolt(); flash(); outcome("lost", "SNAP! The line broke."); break;
-    case "thrown": Sound.sfx("thrown"); Haptics.jolt(); outcome("lost", reasonText("thrown")); break;
-    case "snag": Sound.sfx("thrown"); Haptics.jolt(); outcome("lost", reasonText(s && s.reason)); break;
-    case "caught": caught(s.catch); break;
-    case "home": Sound.sfx("plop"); outcome("home", "Nothing this time. Cast again."); break;
-    default:
-      if (s && s.phase === "lost" && G.phase === "reel") outcome("lost", reasonText(s.reason));
+    case "snap": Sound.sfx(e.reason === "weeds" || e.reason === "rocks" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
+    case "thrown": Sound.sfx("thrown"); Haptics.jolt(); break;
+    case "home": Sound.sfx("plop"); break;
   }
 }
 function reasonText(r) {
@@ -986,10 +987,9 @@ function step(dt) {
       turnUpdate(dt);
       if (G.sim && G.phase === "turn") {
         const tip = world.setRod({ theta: clamp(Motion.pose.theta, -10, 170), yaw: 0, bend: 0.05 });
-        G.sim.step(dt, { crank: 0, tip, theta: Motion.pose.theta, omega: 0, steer: 0, drag: G.drag, hookset: false, lift: false });
-        drainQuiet();
         const L = G.sim.state.lure;
-        world.setLure({ x: L.x, y: L.y, z: L.z, visible: true });
+        G.settle = Math.min(1, (G.settle || 0) + dt);
+        world.setLure({ x: L.x, y: -0.25 * G.settle, z: L.z, visible: true });
         world.setLine({ from: tip, to: L, slack: 0.7, visible: true });
         world.setView({ mode: "cast", look: { x: L.x, y: 0, z: L.z }, portrait: G.layout === "tall-cast" });
       }

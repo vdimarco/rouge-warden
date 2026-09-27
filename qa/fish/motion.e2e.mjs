@@ -100,7 +100,7 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
     page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
-    page.on("requestfailed", (r) => { if (/\/fish\//.test(r.url())) errors.push("requestfailed: " + r.url()); });
+    page.on("requestfailed", (r) => errors.push("requestfailed: " + r.url() + " (" + ((r.failure() && r.failure().errorText) || "") + ")"));
     page.on("response", (r) => { if (r.status() >= 400 && /\/fish\//.test(r.url())) errors.push("http " + r.status() + ": " + r.url()); });
     if (process.env.THREE_LOCAL) await page.route("**/three.module.min.js", (r) => r.fulfill({ path: process.env.THREE_LOCAL, contentType: "application/javascript" }));
     if (process.env.FISH_BLOCK) await page.route("**/fish/js/" + process.env.FISH_BLOCK, (r) => r.fulfill({ status: 404, body: "" }));
@@ -111,25 +111,25 @@ try {
     return { page, cdp, errors };
   }
 
-  // 1. the real page, if it boots
+  // 1. the real page, if it boots. A missing module never recovers; a network hiccup (the three.js CDN) gets one retry
   let P = null, which = "";
-  if (process.env.FISH_PAGE !== "harness") {
+  for (let attempt = 1; attempt <= 2 && !P && process.env.FISH_PAGE !== "harness"; attempt++) {
     const t0 = Date.now();
     const o = await openPage(base + "/fish/index.html");
     let ok = false;
     for (let i = 0; i < 1200 && !ok; i++) {
       ok = await o.page.evaluate(() => !!(window.FISH && window.FISH.Motion)).catch(() => false);
       if (ok) break;
-      // a missing module never recovers: stop waiting early
-      if (o.errors.some((e) => /^(http 404|requestfailed|pageerror)/.test(e) || /cannot draw the lake|Failed to (load|fetch)/i.test(e))) break;
+      if (o.errors.some((e) => /^(http 4|requestfailed|pageerror)/.test(e) || /cannot draw the lake/i.test(e))) { await sleep(300); break; }
       await sleep(100);
     }
-    if (ok) { P = o; which = `the real page public/fish/index.html (booted in ${Date.now() - t0} ms)`; }
-    else {
-      console.log("  The real page did not boot, so this run uses the harness page. Why:\n    " + (o.errors.slice(0, 6).join("\n    ") || "window.FISH never appeared"));
-      await o.page.close();
-    }
+    if (ok) { P = o; which = `the real page public/fish/index.html (booted in ${Date.now() - t0} ms${attempt > 1 ? ", second try" : ""})`; break; }
+    const hard = o.errors.some((e) => /^(http 4|pageerror)/.test(e) || /requestfailed: [^ ]*\/fish\//.test(e));
+    console.log(`  The real page did not boot (try ${attempt}). Why:\n    ` + (o.errors.slice(0, 6).join("\n    ") || "window.FISH never appeared"));
+    await o.page.close();
+    if (hard) break;
   }
+  if (!P && process.env.FISH_PAGE !== "harness") console.log("  So this run uses the harness page.");
   // 2. the fallback: only motion.js, same origin and path, so the import is the real file
   if (!P) {
     const html = `<!doctype html><meta name="viewport" content="width=device-width"><body><script type="module">
