@@ -75,7 +75,7 @@ button { font: inherit; color: inherit; }
 .icon .lbl { font-family: var(--fell); font-size: 13px; letter-spacing: 0.02em; }
 .sr, .icon .lbl.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .eyebtn.busy .eye::after { animation: pulse 0.8s ease-out infinite; }
-@media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #fastText { display: none; }
+@media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #flaskText { display: none; }
   .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
 @media (max-width: 380px) { .bar { width: 48px; } }
 @media (max-width: 520px) { .hud { gap: 4px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
@@ -1304,7 +1304,7 @@ function styleGain(n, how) {
   n *= [1, 0.6, 0.35, 0.2][repeats];
   if (repeats >= 2 && !run.styleHinted) { run.styleHinted = true; UI.hint("Mix it up: crits, pounds, shots, and air hits keep the streak climbing.", 3200); }
   run.style = Math.min(RANKS[RANKS.length - 1].at + 80, run.style + n);
-  run.styleT = 1.6 + 0.8 * boon("campfire");
+  run.styleT = 2.6 + 0.8 * boon("campfire");
   const now = rankOf(run.style);
   if (now > was) { UI.rankUp(now); SFX.rank(now); }
   run.log.maxRank = Math.max(run.log.maxRank, now);
@@ -1316,7 +1316,7 @@ function styleHit() {
 }
 function updateStyle(dt) {
   run.styleT -= dt;
-  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (7 + 5 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
+  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (5 + 3.5 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
   const r = rankOf(run.style);
   run.streakMult = r < 0 ? 1 : RANKS[r].m;
   if (Game.frenzyT > 0) { Game.frenzyT -= dt; if (Game.frenzyT <= 0) { Game.frenzyChain = 0; UI.hint("The Golden Plunger fades.", 1600); } }
@@ -2010,7 +2010,9 @@ const Cottage = (() => {
     }
     const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : v.startsWith("melee:") ? 70 + 15 * r.depth : v === "up:newwand" ? 80 + 25 * r.depth : v === "up:scroll" ? 90 + 20 * r.depth : 50 + 18 * r.depth);
     UI.ledger();
-    return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
+    // two things the snack bar always sells, so gold always has a use
+    const always = [{ v: "x:hotdog", price: 35 + 10 * r.depth }, { v: "x:tip", price: 120 }];
+    return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })).concat(always), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
   }
 
   async function bark(situation, r, extra) {
@@ -2740,6 +2742,9 @@ const World = (() => {
     }
     for (const row of rowsOf.slice(1)) for (const r of row) rooms.push(r);
     rooms.push(finale);
+    // a rest stop or two in the middle rows: after a peak, a calm room to breathe in
+    const restPool = rowsOf.slice(2, -1).flat().filter((r) => !r.dead && r.kind !== "cave" && r.kind !== "bridge");
+    for (let k = 0; k < Math.min(2, restPool.length); k++) { const r = restPool.splice((R() * restPool.length) | 0, 1)[0]; r.rest = true; }
     for (const r of rooms) carveRoom(r, s);
     // spokes from the middle of each cave shape to where tunnels meet it
     for (const r of rooms) if (r.mask) for (const [fx, fy] of [[-0.35, -0.5], [0.35, -0.5], [-0.55, 0.2], [0.55, 0.2], [0, 0.3]]) tunnel(r.x, r.y, r.x + fx * r.rw, r.y + fy * r.rh, 4.5, s);
@@ -2876,7 +2881,7 @@ const World = (() => {
         else for (let k = 0; k < 40; k++) put(r.x + (R() - 0.5) * pw, fy + depth - 2 - R() * 3, GOLD);
       }
       // a lamp hangs on a chain in most rooms
-      if (r.main && R() < 0.75) {
+      if (r.main && (r.rest || R() < 0.75)) {
         const x = r.x + (R() - 0.5) * r.rw * 0.8, cy = ceilAt(x, r.y - 2);
         if (cy > 0 && r.y - cy < 40) lamps.push({ x: x | 0, top: cy + 1, y: cy + 4 + ((R() * 6) | 0), lit: true });
       }
@@ -4018,7 +4023,7 @@ function updatePlayer(dt) {
   Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
     if (Math.hypot(pk.x - (p.x + 2), pk.y - (p.y + 6)) > 9) continue;
-    if (pk.scroll || pk.golden) takePickup(pk);
+    if (pk.scroll || pk.golden || pk.hotdog) takePickup(pk);
     else if (pk.wand && run.wands.length < 3 && !pk.dropped) takePickup(pk);
     else Game.nearPickup = pk;
     break;
@@ -4026,6 +4031,8 @@ function updatePlayer(dt) {
   for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) { if (c.cursed) Game.nearCursed = c; else openChest(c); }
   if (inp.swapEdge) { if (Game.nearPickup) takePickup(Game.nearPickup); else if (Game.nearCursed) openChest(Game.nearCursed, true); }
   inp.swapEdge = false;
+  // a quiet room: say so once
+  if ((World.tick & 15) === 0 && Game.level) for (const r of Game.level.rooms) if (r.rest && !r.greeted && Math.abs(p.x - r.x) < r.rw && Math.abs(p.y - r.y) < r.rh) { r.greeted = true; UI.hint("A quiet room. Nothing lives here. Catch your breath.", 2600); }
   // progress, for the Cottage's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
   // the well
@@ -4193,6 +4200,13 @@ function takePickup(pk) {
   if (i < 0) return;
   Game.pickups.splice(i, 1);
   if (pk.scroll) { SFX.well(); UI.chooseScroll(); return; }
+  if (pk.hotdog) {
+    SFX.coin();
+    if (run.flasks < run.flaskMax) { run.flasks++; UI.hint("A hot dog for later.", 1600); }
+    else { const h = Math.round(run.maxHp * 0.25); run.hp = Math.min(run.maxHp, run.hp + h); UI.hint("You eat it now. +" + h + " health.", 1600); }
+    UI.hud(true);
+    return;
+  }
   if (pk.golden) {
     // Pac-Man's power pellet: for a few seconds the critters flee, cannot hurt you, and each kill scores double the last
     Game.frenzyT = 8; Game.frenzyChain = 0;
@@ -5086,6 +5100,13 @@ const Render = (() => {
     }
     // wands lying in the caves
     for (const pk of Game.pickups) {
+      if (pk.hotdog) {
+        // a hot dog in a bun, with a line of mustard
+        const hx = pk.x - ox, hy = pk.y + Math.sin(pk.bob) * 1.5 - oy, bun = World.abgr(0xe0a860), dog = World.abgr(0xb8402a), mus = World.abgr(0xffe040);
+        for (let q = -3; q <= 3; q++) { px(hx + q, hy + 1, bun); px(hx + q, hy, dog); if (Math.abs(q) < 3) px(hx + q, hy - 1, bun); }
+        px(hx - 1, hy, mus); px(hx + 1, hy - 0, mus);
+        continue;
+      }
       if (pk.golden) {
         // the Golden Plunger: a gold cup on a gold handle, blinking
         const gx = pk.x - ox, gy = pk.y + Math.sin(pk.bob * 1.5) * 2 - oy, g1 = World.abgr(0xffd84a), g2 = World.abgr(0xc8961a);
@@ -5814,9 +5835,12 @@ const UI = (() => {
       shop.innerHTML = "";
       const shopBtns = [];
       L.shop.forEach((it) => {
-        const isSpell = it.v.startsWith("spell:"), isMelee = it.v.startsWith("melee:");
-        const id = it.v.slice(isSpell ? 6 : isMelee ? 6 : 3);
-        const b = isMelee
+        const isSpell = it.v.startsWith("spell:"), isMelee = it.v.startsWith("melee:"), isX = it.v.startsWith("x:");
+        const id = it.v.slice(isSpell ? 6 : isMelee ? 6 : isX ? 2 : 3);
+        const b = isX
+          ? (id === "hotdog" ? card({ name: "Extra Hot Dog", desc: "One more hot dog for this run. It refills at every snack bar.", color: "#e0a860", tagName: "Food", cost: it.price + " gold" })
+            : card({ name: "Tip the Cook", desc: "Turn 120 gold into 12 caps. Caps buy unlocks that stay.", color: "#e6c35c", tagName: "Caps", cost: it.price + " gold" }))
+          : isMelee
           ? card({ name: MELEE[id].name, desc: MELEE[id].desc + " It replaces your " + MELEE[run.melee].name + ".", color: MELEE[id].color, tagName: "Melee", cost: it.price + " gold" })
           : isSpell
           ? card({ name: SPELLS[id].name, desc: SPELLS[id].desc, price: SPELLS[id].price, tag: SPELLS[id].tag, tagName: TAG[SPELLS[id].tag].name, cost: it.price + " gold" })
@@ -5824,12 +5848,12 @@ const UI = (() => {
         b.onclick = () => {
           if (run.gold < it.price || it.sold) return;
           run.gold -= it.price;
-          it.sold = true;
-          if (isSpell) run.bag.push(id);
+          it.sold = it.v !== "x:tip";
+          if (isX) { if (id === "hotdog") { run.flaskMax++; run.flasks++; } else { run.caps += 12; renderTab(); } hud(true); }
+          else if (isSpell) run.bag.push(id);
           else if (isMelee) { run.melee = id; hud(true); }
           else UPGRADES[id].apply(run);
-          b.classList.add("taken");
-          b.querySelector("em").textContent = "Bought";
+          if (it.sold) { b.classList.add("taken"); b.querySelector("em").textContent = "Bought"; }
           SFX.coin();
           refreshShop();
           renderWand();
@@ -6029,13 +6053,13 @@ const UI = (() => {
 
 /* ------------------------------------------------------------------ flow */
 
-async function enterDepth(first) {
+async function enterDepth(first, pre) {
   Game.state = "loading";
   Input.clear();
   Game.frenzyT = 0; Game.frenzyChain = 0; Game.layerKills = 0; Game.goldenDropped = false;
   Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
-  const plan = await Cottage.level(run, first);
+  const plan = pre ? await pre : await Cottage.level(run, first);
   const geo = World.generate(plan);
   // label the drains: the first leads to the Cottage's favorite next look, the second is richer and harder
   geo.exits.forEach((e, k) => { e.theme = (plan.nextThemes || [])[k] || plan.theme; e.rich = k === 1; });
@@ -6055,7 +6079,10 @@ async function enterDepth(first) {
   Game.player = p;
   // most foes wait in the rooms you must cross; the rest in hollows off the route
   const placed = [];
-  const routeRooms = geo.rooms.slice(1);
+  // rest rooms stay empty of critters, and hold a hot dog
+  const restRooms = geo.rooms.filter((r) => r.rest);
+  const inRest = (x, y) => restRooms.some((r) => Math.abs(x - r.x) < r.rw + 16 && Math.abs(y - r.y) < r.rh + 12);
+  const routeRooms = geo.rooms.slice(1).filter((r) => !r.rest);
   // the layer is wide, so each critter the Cottage picked comes twice
   for (const kind of plan.foes.concat(plan.foes.filter((_, i) => i % 2 === 0))) {
     const d = FOES[kind];
@@ -6063,7 +6090,7 @@ async function enterDepth(first) {
     for (let tries = 0; tries < 400; tries++) {
       const x = rr && tries < 200 ? rr.x + (rnd() - 0.5) * rr.rw * 1.4 : 6 + rnd() * (W - 16);
       const y = rr && tries < 200 ? rr.y - rr.rh * 0.6 + rnd() * rr.rh * 1.1 : 110 + rnd() * (Math.min(geo.arenaTop, H - 60) - 110);
-      if (boxHits(x, y, d.w, d.h)) continue;
+      if (boxHits(x, y, d.w, d.h) || inRest(x, y)) continue;
       if (d.ai !== "fly" && !boxHits(x, y + 1, d.w, d.h)) continue;
       if (placed.some((q) => Math.hypot(q.x - x, q.y - y) < 22)) continue;
       const f = makeFoe(kind, x, y);
@@ -6072,11 +6099,16 @@ async function enterDepth(first) {
     }
   }
   Game.foes = placed;
+  for (const r of restRooms) {
+    let py = (r.y + r.rh * 0.6 - 4) | 0;
+    for (let k = 0; k < 20 && !blocks(World.at(r.x, py + 1)); k++) py++;
+    Game.pickups.push({ x: r.x, y: py - 3, hotdog: true, bob: rnd() * 6 });
+  }
   // sealed rooms: the last room before the drain, and more as the Cottage chose
   Game.gauntlets = [];
   if (!plan.boss && geo.rooms.length > 2) {
     const picks = [geo.rooms[geo.rooms.length - 1]];
-    const pool = geo.rooms.slice(2, -1).sort(() => rnd() - 0.5);
+    const pool = geo.rooms.slice(2, -1).filter((r) => !r.rest).sort(() => rnd() - 0.5);
     while (picks.length < (plan.gauntlets || 1) && pool.length) picks.push(pool.pop());
     for (const r of picks) Game.gauntlets.push({ r, state: "idle", wave: 0, waves: 2, foes: [], seal: [], wait: 0 });
   }
@@ -6139,11 +6171,14 @@ async function reachWell() {
   run.hp = Math.min(run.maxHp, run.hp + heal);
   L.restText = heal > 0 ? "You eat a hot dog. You heal " + Math.round(heal) + " health" + (L.rest === "full" ? ", to full." : ", half of what you lost.") : "You are already whole.";
   UI.hideBanner();
-  await UI.landing(L);
+  // the Cottage plans the next layer while you shop, so it is ready when you leave
   addScore(500 * run.depth);
   run.depth++;
+  const pre = Cottage.level(run, false);
+  pre.catch(() => {});
+  await UI.landing(L);
   reaching = false;
-  await enterDepth(false);
+  await enterDepth(false, pre);
 }
 
 async function die(cause) {
