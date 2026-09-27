@@ -45,6 +45,26 @@ The world of Get Plunger'd is painted. GPT Image 2.5 on Higgsfield painted the a
 
 Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
 
+### Levels
+
+Each layer is 384 pixels wide. It picks one of three route styles:
+
+- a zigzag from wall to wall;
+- rooms that wander anywhere across the width;
+- a few huge caverns.
+
+About half the rooms are cave shapes drawn on Higgsfield as black-and-white cross sections: a stalactite cathedral, a sinkhole, worm burrows, a lake basin that fills with the layer's liquid, an old mine, a root chamber, terraces, a crystal geode, stone arches over a pit, and a zigzag fissure. They are stored as small grids and stamped at a random size with rough edges. A walkway joins the middle of each cave to every tunnel mouth, so the way down stays open. Tunnels bend on the way between rooms, and some side rooms are small caves too.
+
+### Movement and physics
+
+- Jumps: tap jump for a short hop, or hold it for the full jump. Falling pulls harder than rising, and the top of a jump hangs for a moment.
+- Turns: turning around bites harder than speeding up.
+- Corner correction: a jump that clips the edge of a ceiling slides around it.
+- Slopes: walking down a slope keeps you on the ground.
+- Walls: push into a wall in the air to slide down it slowly, then jump off it.
+- Debris: blasts throw bits of the ground, which bounce off walls and settle as the same material where they land.
+- Smooth motion: the hero and the critters are drawn between physics steps. They squash when they land, stretch when they leap, bob and lean as they run, and turn smoothly.
+
 ### Graphics
 
 There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. In Painted mode the crew, the critters, and the bosses are pixel-art sprites made on Higgsfield, with walk and attack frames. They draw at two pixels per world cell with a dark one-pixel outline, so they sit on the same grid as the ground. Classic draws each material in four flat shades and keeps the old character art. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.

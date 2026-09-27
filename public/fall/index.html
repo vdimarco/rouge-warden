@@ -108,7 +108,7 @@ button { font: inherit; color: inherit; }
 @media (pointer: coarse) { .digbtn, .tbtn { display: block; } .digbtn { bottom: calc(var(--sab) + 140px); width: 56px; height: 56px; font-size: 11.5px; padding: 0; } }
 body.menu .digbtn, body.menu .tbtn { visibility: hidden; }
 body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
-.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
+.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 96 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
 .tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
@@ -2213,7 +2213,7 @@ const SFX = (() => {
 
 /* ------------------------------------------------------------------ the world: every pixel simulated */
 
-const W = 256, H = 720, CS = 16, CW = W / CS, CH = H / CS;
+const W = 384, H = 720, CS = 16, CW = W / CS, CH = H / CS;
 /* Painted graphics: pictures painted on Higgsfield, one texel for each world cell.
    Classic keeps the flat four-shade palettes. The choice is saved in this browser. */
 const Paint = (() => {
@@ -2305,6 +2305,25 @@ const Paint = (() => {
   };
 })();
 
+// cave shapes drawn on Higgsfield as black-and-white cross sections, cut down to small grids.
+// Each run is o (open) or x (rock) and a length; rows are split by "/". A cave room stamps one of these, scaled up with rough edges.
+const CAVE_SHAPES = [
+  { name: "cathedral", w: 62, h: 32, rle: "x62/x1o24x12o23x2/x1o18x2o1x19o19x2/x1o11x30o1x4o1x1o12x1/x1o6x45o9x1/x1o3x25o4x21o7x1/x1o2x21o3x1o10x19o4x1/x1o1x9o1x12o15x19o3x1/x7o1x1o5x7o1x1o18x6o3x9o2x1/x6o9x5o22x5o4x3o1x5o1x1/x5o11x4o22x4o6x1o3x6/x4o12x3o24x2o7x2o3x5/x3o14x2o24x2o7x1o5x4/x3o14x2o24x2o7x1o6x3/x2o15x2o24x2o6x2o6x3/x2o15x2o24x4o5x1o6x3/x2o14x3o24x3o6x1o6x3/x2o11x6o24x2o6x11/x2o14x3o20x6o7x1o1x8/x8o9x2o14x3o6x3o7x1o4x5/x6o11x2o14x3o7x2o7x1o6x3/x5o12x2o6x2o7x1o8x3o6x1o6x3/x2o14x4o3x4o16x4o5x1o6x3/x2o14x4o3x2o17x3o7x1o6x3/x2o10x2o2x4o4x1o17x3o5x3o6x3/x2o14x5o3x1o17x4o6x2o4x4/x2o4x2o8x6o2x1o14x1o2x4o6x2o4x4/x3o3x1o7x8o2x1o14x7o6x2o4x4/x3o10x12o13x10o4x2o2x6/x4o8x15o7x15o2x11/x7o3x52/x62" },
+  { name: "sinkhole", w: 22, h: 23, rle: "x22/x10o3x9/x10o3x9/x11o1x10/x10o3x9/x7o9x6/x5o13x4/x4o15x3/x3o16x3/x4o16x2/x2o18x2/x2o19x1/x3o18x1/x2o19x1/x2o19x1/x2o19x1/x2o18x2/x4o16x2/x4o15x3/x4o15x3/x2o15x5/x1o2x5o8x6/x22" },
+  { name: "burrows", w: 60, h: 34, rle: "x60/x19o14x3o2x1o1x1o1x10o2x1o4x1/x7o4x5o3x6o7x2o2x1o6x10o6x1/x4o5x4o9x7o1x5o1x4o4x11o3x2/x8o2x2o2x2o1x2o4x12o5x2o2x12o2x2/x6o2x1o1x1o2x1o3x1o2x2o2x10o2x5o2x17/x3o1x2o1x1o1x1o2x4o1x3o2x7o3x1o2x5o3x17/x3o4x1o4x3o1x5o3x5o2x1o3x3o3x1o3x15/x1o3x6o3x1o2x5o4x1o4x2o1x1o2x5o2x17/x1o5x2o1x1o1x1o1x1o1x6o1x1o1x1o1x2o4x2o2x1o3x2o1x8o1x8/x2o1x2o1x1o3x2o3x2o1x4o2x1o1x3o1x2o2x1o3x1o3x7o4x7/x4o3x1o6x2o3x4o8x2o3x5o2x6o5x6/x5o2x1o1x1o3x2o2x1o2x1o2x1o1x2o7x2o4x2o1x3o7x7/x5o4x2o1x5o3x1o4x1o2x2o1x3o3x3o1x1o2x1o1x2o2x1o1x8/x7o1x3o2x2o4x1o1x3o3x1o1x1o5x2o4x1o5x1o1x11/x12o5x3o1x2o4x1o2x1o1x1o6x1o2x1o1x2o1x1o2x10/x17o6x1o1x1o5x2o1x2o1x2o5x1o3x1o1x10/x2o4x6o4x2o4x2o1x1o1x1o1x2o5x1o4x1o1x2o1x14/x3o1x7o2x2o1x1o2x2o3x1o1x1o5x3o1x1o1x1o3x2o4x6o1x5/x1o4x6o1x1o5x3o5x1o1x1o5x10o1x2o1x5o3x4/x4o1x6o4x1o2x2o1x1o2x5o2x1o2x9o2x9o1x5/x3o2x3o2x2o1x1o1x1o1x2o4x7o1x2o4x5o1x1o1x9o1x5/x4o1x3o3x1o1x1o5x1o1x9o1x3o1x1o2x2o1x1o2x5o2x3o1x5/x3o3x1o2x4o1x1o3x2o4x2o3x1o5x3o9x2o2x1o3x5/x3o2x1o8x3o1x1o2x1o2x1o5x2o4x1o3x2o1x3o4x1o2x7/x3o2x5o4x5o1x1o2x5o3x1o1x2o1x1o4x1o2x6o2x3o3x2/x4o3x2o3x11o6x1o2x1o4x2o1x3o7x4o2x1o2x1/x5o1x4o2x13o1x2o1x2o3x1o3x3o1x1o1x3o2x6o1x1o1x2/x5o1x1o2x2o2x9o4x1o1x6o1x1o2x1o4x2o5x4o4x2/x6o2x6o2x8o1x2o2x5o1x2o4x1o3x3o2x5o1x1o2x1/x6o1x4o7x10o3x1o3x4o1x9o3x3o3x2/x6o1x4o2x3o2x10o8x14o1x3o2x4/x6o6x4o3x9o3x4o5x12o3x5/x60", thick: true },
+  { name: "lake", w: 61, h: 28, rle: "x61/x30o8x23/x7o6x9o19x9o3x8/x5o12x2o23x5o9x5/x2o56x3/x1o58x2/x1o58x2/x1o59x1/x1o59x1/x1o59x1/x1o59x1/x1o57x3/x6o51x4/x11o43x2o2x3/x11o40x10/x6o4x3o36x12/x2o15x2o25x2o7x8/x19o25x6o2x9/x20o24x17/x20o23x18/x20o23x18/x21o21x19/x21o21x19/x22o19x20/x23o17x21/x25o13x23/x27o9x25/x61" },
+  { name: "mine", w: 62, h: 29, rle: "x62/x6o5x51/x6o5x51/x6o5x51/x7o5x50/x8o45x9/x10o44x8/x12o42x8/x13o40x9/x24o6x19o2x11/x23o5x21o2x11/x22o5x22o2x11/x20o5x24o2x11/x19o4x26o2x11/x17o5x27o2x11/x1o58x3/x1o56x5/x1o54x7/x1o53x8/x3o3x56/x3o2x57/x3o2x57/x3o2x57/x3o2x57/x1o13x7o40x1/x1o14x6o40x1/x1o14x7o39x1/x1o13x10o37x1/x62" },
+  { name: "roots", w: 60, h: 29, rle: "x60/x45o2x13/x28o3x15o2x12/x26o2x1o3x11o2x2o2x6o3x2/x24o1x1o9x8o7x3o6x1/x19o3x2o11x7o4x1o3x2o7x1/x18o4x1o13x9o3x3o3x6/x15o5x3o14x10o6x7/x14o2x6o16x10o4x8/x22o16x2o5x2o4x9/x22o16x2o1x3o2x1o1x12/x21o8x5o3x2o1x4o2x14/x21o7x8o1x1o7x15/x1o1x18o3x2o1x4o3x5o2x1o1x18/x1o3x16o1x1o4x3o6x25/x1o4x17o2x4o7x25/x1o4x16o2x5o8x24/x1o3x14o3x7o8x15o1x8/x1o2x1o6x5o4x12o5x15o1x8/x7o10x10o4x2o4x3o1x2o2x5o2x8/x8o2x20o3x1o4x1o5x6o1x9/x8o2x10o2x4o1x2o3x2o5x1o2x7o4x7/x8o2x9o3x3o5x6o2x1o2x7o3x9/x9o3x6o6x1o2x5o1x1o1x3o2x8o1x11/x8o1x2o2x6o7x6o1x1o5x21/x8o5x4o7x7o2x1o3x23/x8o13x10o4x25/x9o2x1o4x44/x60", thick: true },
+  { name: "terraces", w: 62, h: 34, rle: "x62/x7o6x49/x4o11x47/x3o20x39/x2o24x36/x2o18x42/x2o14x46/x2o24x2o2x32/x2o34x26/x2o34x26/x2o27x33/x1o16x1o11x33/x1o15x3o10x8o7x18/x1o13x4o28x16/x18o23x21/x18o22x22/x19o21x22/x17o13x2o9x8o4x9/x15o14x3o9x1o14x6/x14o13x5o26x4/x31o28x3/x31o29x2/x31o29x2/x30o14x1o15x2/x29o13x3o15x2/x28o13x4o15x2/x27o2x1o10x5o15x2/x45o15x2/x45o15x2/x44o17x1/x43o18x1/x41o20x1/x40o21x1/x62" },
+  { name: "geode", w: 35, h: 34, rle: "x35/x17o1x17/x13o1x2o3x3o2x11/x13o3x1o4x1o2x11/x12o4x1o6x1o1x10/x7o9x1o5x1o3x2o1x6/x6o23x6/x8o20x7/x6o22x7/x3o27x5/x3o2x1o24x5/x3o27x1o2x2/x5o27x3/x3o29x3/x4o27x4/x2o31x2/x1o33x1/x7o22x6/x8o1x1o1x1o1x3o1x2o2x1o3x2o1x7/x3o28x4/x4o28x3/x4o29x2/x5o25x5/x5o26x4/x6o24x5/x5o21x9/x5o1x2o20x7/x8o21x6/x9o2x1o12x1o1x9/x9o1x1o10x1o2x1o1x9/x10o3x1o4x1o2x1o2x11/x12o1x2o2x1o1x1o1x1o1x12/x15o4x16/x35" },
+  { name: "arches", w: 61, h: 34, rle: "x61/x13o16x2o2x28/x10o19x2o4x26/x8o22x1o5x2o3x7o4x9/x7o23x1o5x1o5x5o7x7/x6o24x3o2x2o5x4o8x7/x4o25x3o3x3o3x5o7x8/x3o26x3o4x3o1x6o7x8/x3o2x1o7x1o17x1o4x2o1x8o7x7/x7o4x1o28x1o1x19/x11o3x5o21x1o1x3o8x8/x6o5x5o2x2o20x1o2x2o10x6/x1o8x4o2x1o3x2o1x1o20x2o10x6/x1o4x4o5x2o3x2o1x1o20x2o5x2o2x7/x1o3x4o5x1o1x1o10x7o10x2o3x1o2x10/x1o3x4o8x1o3x8o4x6o10x1o3x4o2x3/x1o4x4o2x2o5x7o9x13o6x3o3x2/x6o11x6o12x12o2x1o5x1o3x2/x10o4x7o14x12o2x2o4x1o4x1/x14o3x3o16x17o7x1/x16o3x1o14x1o1x16o4x5/x9o2x4o3x2o13x1o2x25/x3o1x1o12x2o12x1o1x1o3x24/x2o14x4o10x1o2x1o3x24/x2o11x1o4x1o3x1o3x5o2x1o3x24/x1o7x7o8x2o1x2o1x2o2x1o3x24/x1o4x20o2x1o1x1o8x23/x25o2x1o1x1o8x23/x24o5x1o7x24/x24o5x1o7x24/x24o5x2o7x23/x24o5x2o7x23/x24o5x2o7x23/x61" },
+  { name: "fissure", w: 39, h: 49, rle: "x39/x16o6x17/x17o5x17/x17o4x18/x17o4x18/x5o21x4o6x3/x1o37x1/x1o37x1/x5o10x1o7x2o13x1/x18o5x16/x19o5x15/x19o6x14/x22o4x13/x21o6x12/x5o3x11o8x12/x3o1x1o3x8o11x9o1x2/x3o5x8o3x1o3x1o1x10o2x2/x2o6x7o4x14o4x2/x2o7x4o7x11o1x1o4x2/x2o7x2o10x9o7x2/x3o1x1o4x2o10x7o8x3/x5o17x6o8x3/x6o6x7o4x5o7x4/x8o2x8o5x2o10x4/x16o13x2o5x3/x16o10x6o4x3/x15o4x14o3x3/x14o6x19/x14o8x17/x15o8x16/x16o9x14/x16o9x14/x21o6x12/x20o8x11/x19o7x13/x17o8x14/x15o8x16/x13o8x18/x7o17x15/x5o1x1o22x10/x3o26x10/x3o30x6/x3o30x6/x3o31x5/x3o26x1o4x5/x4o22x6o2x5/x4o3x3o9x5o2x13/x13o2x2o1x21/x39" },
+].map((c) => {
+  const g = new Uint8Array(c.w * c.h);
+  c.rle.split("/").forEach((row, y) => { let x = 0; for (const [, t, n] of row.matchAll(/([ox])(\d+)/g)) { for (let k = 0; k < +n; k++, x++) if (t === "o") g[y * c.w + x] = 1; } });
+  if (c.thick) { const g2 = g.slice(); for (let y = 1; y < c.h - 1; y++) for (let x = 1; x < c.w - 1; x++) if (g[y * c.w + x]) { g2[y * c.w + x + 1] = 1; g2[(y + 1) * c.w + x] = 1; } return { name: c.name, w: c.w, h: c.h, g: g2 }; }
+  return { name: c.name, w: c.w, h: c.h, g };
+});
 const World = (() => {
   const N = W * H;
   const mat = new Uint8Array(N), life = new Uint8Array(N), shade = new Uint8Array(N), clk = new Uint8Array(N);
@@ -2491,8 +2510,30 @@ const World = (() => {
         }
       }
     }
+    if (debris.length) stepDebris();
   }
   const wakeAll = () => next.fill(1);
+  // debris: loose bits of ground in flight. They bounce off walls and ceilings, and settle where they land.
+  const debris = [];
+  function stepDebris() {
+    for (let k = debris.length - 1; k >= 0; k--) {
+      const d = debris[k];
+      d.vy = Math.min(4, d.vy + 0.12); d.t++;
+      const n = Math.max(1, Math.ceil(Math.max(Math.abs(d.vx), Math.abs(d.vy))));
+      let done = false;
+      for (let q = 0; q < n && !done; q++) {
+        const nx = d.x + d.vx / n, ny = d.y + d.vy / n, xi = nx | 0, yi = ny | 0;
+        if (!inb(xi, yi)) { done = true; break; }
+        const hm = mat[yi * W + xi];
+        if (hm === EMPTY || KIND[hm] === K.GAS || KIND[hm] === K.FIRE) { d.x = nx; d.y = ny; continue; }
+        // hit something: land on a floor, or glance off a wall or ceiling
+        if (d.vy > 0 && ((d.y | 0) !== yi)) { place(d.x, d.y, d.m, 0, true); done = true; }
+        else if ((d.x | 0) !== xi) d.vx *= -0.35;
+        else d.vy *= -0.3;
+      }
+      if (done || d.t > 180) { if (!done) place(d.x, d.y, d.m, 0, true); debris[k] = debris[debris.length - 1]; debris.pop(); }
+    }
+  }
 
   function explode(cx, cy, r, power) {
     const r2 = r * r, inner = (r - 2) * (r - 2);
@@ -2506,7 +2547,12 @@ const World = (() => {
       const k = KIND[m];
       if (k === K.SOLID || k === K.POWDER) {
         if (HARD[m] > power && !(HARD[m] === power + 1 && rnd() < 0.3)) continue;
-        if (d2 > inner && rnd() < 0.3) set(i, FIRE, 10 + rnd() * 20); else set(i, EMPTY);
+        if (d2 > inner && rnd() < 0.3) set(i, FIRE, 10 + rnd() * 20);
+        else {
+          // some of the ground flies out as debris, and lands again as the same stuff
+          if (rnd() < 0.2 && debris.length < 600) { const d = Math.sqrt(d2) || 1, v = 1.2 + rnd() * 2.2 * (power > 3 ? 1.3 : 1); debris.push({ x: x + 0.5, y: y + 0.5, vx: (dx / d) * v, vy: (dy / d) * v - 1.1, m, t: 0 }); }
+          set(i, EMPTY);
+        }
       } else if (k === K.LIQUID) { if (rnd() < 0.5) set(i, m === WATER ? STEAM : EMPTY, lifeFor(STEAM)); else if (FLAM[m]) ignite(i); }
       else if (k === K.GAS) { if (FLAM[m]) ignite(i); else set(i, EMPTY); }
       else if (d2 > inner && rnd() < 0.25) set(i, FIRE, 10 + rnd() * 20);
@@ -2567,7 +2613,7 @@ const World = (() => {
     let rs = s >>> 0;
     const R = () => { rs = (Math.imul(rs, 1664525) + 1013904223) >>> 0; return rs / 4294967296; };
     applyTheme(THEMES[plan.theme]);
-    mat.fill(EMPTY); life.fill(0); clk.fill(0);
+    mat.fill(EMPTY); life.fill(0); clk.fill(0); debris.length = 0;
     const bgA = theme.bg[0], bgB = theme.bg[1];
     // 8 tones of the back wall, from its seams to its lit faces, each at 4 levels of shade
     const warm = { crypt: 0x6a5a48, cistern: 0x3a6a70, garden: 0x4a5a30, forge: 0x7a3a24 }[plan.theme] || 0x505050;
@@ -2626,23 +2672,37 @@ const World = (() => {
     // 3. the route: rooms that zigzag down the layer, joined by wide sloped tunnels
     const rooms = [];
     let side = R() < 0.5 ? 0 : 1, y = TOP + 40;
+    // each layer picks a route style: a zigzag from wall to wall, rooms that wander anywhere, or a few huge caverns
+    const style = ["zigzag", "wander", "caverns"][(R() * 3) | 0];
     for (let k = 0; k < 14; k++) {
       const band = plan.bands[bandIdx(y)];
       const [bw, bh] = ROOM[band.form];
       // each room has a kind, so the layer does not repeat itself
       const kinds = k === 0 ? ["hall"] : band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
-      const kind = kinds[(R() * kinds.length) | 0];
-      let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3);
+      // about one room in three is a cave shape stamped from the Higgsfield set
+      const caveOdds = style === "caverns" ? 0.85 : band.form === "dense" ? 0.3 : 0.5;
+      const kind = k > 0 && R() < caveOdds ? "cave" : kinds[(R() * kinds.length) | 0];
+      let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3), mask = null;
+      if (kind === "cave") {
+        mask = CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0];
+        const sw = Math.min(W * 0.46, (style === "caverns" ? 110 : 84) + R() * 50), sh = clamp(sw * mask.h / mask.w, 44, 120);
+        rw = sw / 2; rh = sh / 2;
+      }
       if (kind === "shaft") { rw *= 0.62; rh *= 1.55; }
       if (kind === "bridge") rw = Math.max(rw, 30);
       if (y + rh * 0.6 > floorY - 30) break;
       const mid = R() < 0.25;
-      const x = mid ? W / 2 + (R() - 0.5) * 40 : side ? W - 18 - rw - R() * 36 : 18 + rw + R() * 36;
-      rooms.push({ x, y, rw, rh, band, main: true, kind });
+      // rooms spread over the whole width: near a wall, or anywhere on that half
+      const span = W / 2 - 24 - rw;
+      const x = style === "wander" ? 20 + rw + R() * (W - 40 - rw * 2) : mid ? W / 2 + (R() - 0.5) * 60 : side ? W - 18 - rw - R() * span : 18 + rw + R() * span;
+      rooms.push({ x, y, rw, rh, band, main: true, kind, mask });
       if (!mid) side ^= 1;
       y += rh * 0.6 + 30 + R() * 16 + ROOM[plan.bands[bandIdx(y + 50)].form][1];
     }
     for (const r of rooms) carveRoom(r, s);
+    // a walkway through each cave shape, so the way down never depends on the drawing
+    // spokes from the middle to every place a tunnel can meet the room
+    for (const r of rooms) if (r.mask) for (const [fx, fy] of [[-0.35, -0.5], [0.35, -0.5], [-0.55, 0.2], [0.55, 0.2]]) tunnel(r.x, r.y, r.x + fx * r.rw, r.y + fy * r.rh, 4.5, s);
     // the path the compass follows: tunnel center lines, and a walk across each room
     const path = [];
     const seg = (x1, y1, x2, y2) => { const n = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 3); for (let k = 0; k <= n; k++) path.push({ x: x1 + (x2 - x1) * k / n, y: y1 + (y2 - y1) * k / n }); };
@@ -2657,7 +2717,11 @@ const World = (() => {
       const a = rooms[k], b = rooms[k + 1], dir = Math.sign(b.x - a.x) || 1;
       const ox = a.x + dir * a.rw * 0.55, oy = a.y + a.rh * 0.2;
       walk(ox, Math.min(oy, a.y + a.rh * 0.6 - 5));
-      tunnel(ox, oy, b.x - dir * b.rw * 0.35, b.y - b.rh * 0.5, 6.5, s, path);
+      // the tunnel bends once on the way, so it is not a ruler line
+      const tx = b.x - dir * b.rw * 0.35, ty = b.y - b.rh * 0.5, len = Math.hypot(tx - ox, ty - oy) || 1;
+      const bend = (R() - 0.5) * Math.min(50, len * 0.35), mx = (ox + tx) / 2 + ((ty - oy) / len) * bend, my = (oy + ty) / 2 - ((tx - ox) / len) * bend * 0.5;
+      tunnel(ox, oy, mx, my, 6.5, s, path);
+      tunnel(mx, my, tx, ty, 6.5, s, path);
       inX = b.x - dir * b.rw * 0.35; inY = b.y + b.rh * 0.6 - 5;
     }
     const last = rooms[rooms.length - 1];
@@ -2688,13 +2752,15 @@ const World = (() => {
     // 4. side rooms off the route: gold, or the stratum's liquid
     const sides = [];
     for (const r of rooms) {
-      if (R() > 0.6) continue;
-      const rw = 13 + R() * 8, rh = 9 + R() * 4;
+      if (R() > 0.75) continue;
+      const cave = R() < 0.35 ? CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0] : null;
+      const rw = cave ? 22 + R() * 10 : 13 + R() * 8, rh = cave ? clamp(rw * cave.h / cave.w, 10, 26) : 9 + R() * 4;
       const left = r.x > W / 2;
       const x = left ? clamp(r.x - r.rw - 22 - rw, 10 + rw, W - 10 - rw) : clamp(r.x + r.rw + 22 + rw, 10 + rw, W - 10 - rw);
       if (Math.abs(x - r.x) < r.rw + rw) continue;
-      const sr = { x, y: r.y + (R() - 0.3) * 10, rw, rh, band: r.band, main: false };
+      const sr = { x, y: r.y + (R() - 0.3) * 10, rw, rh, band: r.band, main: false, mask: cave };
       carveRoom(sr, s);
+      if (cave) tunnel(sr.x - sr.rw * 0.5, sr.y, sr.x + sr.rw * 0.5, sr.y, 4, s);
       tunnel(r.x + (left ? -1 : 1) * r.rw * 0.6, r.y - r.rh * 0.1, sr.x + (left ? 1 : -1) * sr.rw * 0.5, sr.y - sr.rh * 0.55, 5, s);
       sides.push(sr);
     }
@@ -2946,7 +3012,7 @@ const World = (() => {
         if (hash2(x, y, s + 90) > 0.985 && y < 28) t = 4;
         const tree = 30 - 9 * Math.abs(Math.sin(x / 11 + vnoise(x / 9, 0, s + 91) * 2)) - vnoise(x / 4, 1, s + 92) * 5;
         if (y > tree) t = y > tree + 3 ? 5 : 6;
-        if (Math.hypot(x - 200, y - 11) < 5) t = 7;
+        if (Math.hypot(x - W * 0.78, y - 11) < 5) t = 7;
         // the back wall of the outhouse: dark planks
         if (Math.abs(x - W / 2) < 9 && y > 8 && y < 31) t = (x - W / 2 + 9) % 4 === 0 ? 8 : 9;
         sky[i] = t;
@@ -2975,14 +3041,33 @@ const World = (() => {
       ao[y * W + x] = f < 0.18 ? 0 : f < 0.36 ? 1 : f < 0.55 ? 2 : 3;
     }
   }
-  // a room: an ellipse with a rough wall and a flat floor
+  // a room: an ellipse with a rough wall and a flat floor, or a cave shape
   function carveRoom(r, s) {
+    if (r.mask) return stampCave(r, s);
     for (let dy = -r.rh - 3; dy <= r.rh; dy++) for (let dx = -r.rw - 4; dx <= r.rw + 4; dx++) {
       const x = (r.x + dx) | 0, y = (r.y + dy) | 0;
       if (x < 3 || y < 3 || x >= W - 3 || y >= H - 3) continue;
       if (dy > r.rh * 0.6 + (vnoise(x / 6, 3, s + 62) - 0.5) * 3) continue;
       const nx = dx / r.rw, ny = dy / r.rh;
       if (nx * nx + ny * ny + (vnoise(x / 7, y / 7, s + 61) - 0.5) * 0.5 < 1) { mat[y * W + x] = EMPTY; life[y * W + x] = 0; }
+    }
+  }
+  // stamp a cave shape over the room's box, with noise on the edges so it does not look scaled up.
+  // A lake cave fills its low basin with the stratum's liquid.
+  function stampCave(r, s) {
+    const M = r.mask, x0 = r.x - r.rw, y0 = r.y - r.rh, sw = r.rw * 2, sh = r.rh * 2;
+    for (let yy = Math.floor(y0); yy < y0 + sh; yy++) for (let xx = Math.floor(x0); xx < x0 + sw; xx++) {
+      if (xx < 3 || yy < TOP + 4 || xx >= W - 3 || yy >= H - BOT) continue;
+      const u = ((xx - x0) / sw) * M.w + (vnoise(xx / 5, yy / 5, s + 81) - 0.5) * 1.3, v = ((yy - y0) / sh) * M.h + (vnoise(xx / 5, yy / 5, s + 82) - 0.5) * 1.3;
+      const ui = u | 0, vi = v | 0;
+      if (ui < 0 || vi < 0 || ui >= M.w || vi >= M.h || !M.g[vi * M.w + ui]) continue;
+      const i = yy * W + xx;
+      if (mat[i] !== BEDROCK) { mat[i] = EMPTY; life[i] = 0; }
+    }
+    const liq = LIQ[r.band.pocket];
+    if (M.name === "lake" && liq && liq !== MIASMA) for (let yy = Math.floor(r.y + r.rh * 0.35); yy < r.y + r.rh; yy++) for (let xx = Math.floor(x0); xx < x0 + sw; xx++) {
+      const i = yy * W + xx;
+      if (inb(xx, yy) && mat[i] === EMPTY) mat[i] = liq;
     }
   }
   // a passage with a gentle wobble, wide enough to walk or fall through
@@ -3024,7 +3109,7 @@ const World = (() => {
     }
   }
 
-  return { mat, life, shade, far, ao, sky, BGPAL, SKYPAL, get hasSky() { return hasSky; }, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
+  return { debris, mat, life, shade, far, ao, sky, BGPAL, SKYPAL, get hasSky() { return hasSky; }, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
 })();
 
 /* ------------------------------------------------------------------ bodies: the player, foes, spells */
@@ -3762,16 +3847,36 @@ function updatePlayer(dt) {
   if (!p || run.over) return;
   const c = envTick(p, dt, true);
   const inLiquid = c.frac > 0.25;
-  const accel = p.ground ? 0.34 : 0.27;
-  p.vx += inp.x * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
+  // a quick turn: pushing against your own speed bites harder than speeding up
+  const turning = inp.x && p.vx && Math.sign(inp.x) !== Math.sign(p.vx);
+  const accel = (p.ground ? 0.34 : 0.27) * (turning ? 1.7 : 1);
+  // after a wall jump the push away from the wall wins for a moment
+  const steer = p.wallLock > 0 ? 0 : inp.x;
+  p.wallLock = Math.max(0, (p.wallLock || 0) - dt);
+  p.vx += steer * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
   p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
   p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
-  if (inp.x) p.face = inp.x > 0 ? 1 : -1;
-  p.vy += inLiquid ? 0.05 : 0.15;
+  if (steer) p.face = steer > 0 ? 1 : -1;
+  // falling pulls harder than rising, and the top of a jump hangs a moment, so jumps feel weighty but floaty at the peak
+  const apex = !p.ground && Math.abs(p.vy) < 0.6 && inp.up;
+  p.vy += inLiquid ? 0.05 : p.vy > 0 ? 0.19 : apex ? 0.09 : 0.15;
+  // let go of jump on the way up for a short hop
+  if (p.rising && !inp.up && p.vy < -0.8 && !inLiquid) { p.vy *= 0.5; p.rising = false; }
+  if (p.vy >= 0) p.rising = false;
+  // wall slide: push into a wall in the air to slow your fall, then jump off it
+  const wallDir = !p.ground && !inLiquid && inp.x && boxHits(p.x + Math.sign(inp.x), p.y, p.w, p.h) ? Math.sign(inp.x) : 0;
+  if (wallDir) { p.wall = wallDir; p.wallT = 0.12; if (p.vy > 0.9) { p.vy = 0.9; if ((World.tick & 3) === 0) Game.fx.push({ x: p.x + (wallDir > 0 ? p.w : 0), y: p.y + 3, vx: -wallDir * 0.2, vy: -0.2, t: 0.3, c: World.abgr(0xb8a888) }); } }
+  else p.wallT = Math.max(0, (p.wallT || 0) - dt);
   // a short grace after leaving a ledge, and a jump pressed just before landing still counts
   p.coyote = p.ground ? 0.1 : Math.max(0, (p.coyote || 0) - dt);
   p.jumpBuf = inp.jumpEdge ? 0.12 : Math.max(0, (p.jumpBuf || 0) - dt);
-  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; p.roll = Math.min(p.roll, 0.05); }
+  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; p.roll = Math.min(p.roll, 0.05); p.rising = true; p.jumped = true; }
+  else if (p.jumpBuf > 0 && p.wallT > 0 && !p.ground) {
+    // wall jump: up and away from the wall
+    p.vy = -3.1; p.vx = -p.wall * 2.1; p.face = -p.wall; p.wallLock = 0.14; p.wallT = 0; p.jumpBuf = 0; p.rising = true; p.jumped = true;
+    for (let k = 0; k < 5; k++) Game.fx.push({ x: p.x + (p.wall > 0 ? p.w : 0), y: p.y + 5 + (rnd() - 0.5) * 4, vx: -p.wall * rnd() * 0.8, vy: -rnd() * 0.6, t: 0.35, c: World.abgr(0xc8b898) });
+    SFX.roll();
+  }
   else if (inp.up && !p.ground && p.lift > 0 && p.vy > -2.1) {
     p.vy -= 0.34;
     p.lift = Math.max(0, p.lift - dt / run.liftMax);
@@ -3779,9 +3884,23 @@ function updatePlayer(dt) {
   if (inp.down && !p.ground && !inp.keyAim) p.vy += inLiquid ? 0.1 : 0.12;
   if (inLiquid) { p.vy *= 0.9; if (inp.up) p.vy -= 0.12; }
   if (p.ground) p.lift = Math.min(1, p.lift + dt / 0.6);
-  p.vy = clamp(p.vy, -3.2, 4);
+  p.vy = clamp(p.vy, -3.4, 4.4);
   inp.jumpEdge = false;
-  moveBody(p, p.vx, p.vy);
+  const wasGround = p.ground, vyBefore = p.vy, xBefore = p.x;
+  const hit = moveBody(p, p.vx, p.vy);
+  // corner correction: a jump that clips a ceiling edge slides around it
+  if (hit.hitY && vyBefore < 0) for (let k = 1; k <= 3; k++) {
+    const d = [k, -k].find((dd) => !boxHits(p.x + dd, p.y - 1, p.w, p.h) && !boxHits(p.x + dd, p.y, p.w, p.h));
+    if (d) { p.x += d; p.vy = vyBefore; moveBody(p, 0, vyBefore); break; }
+  }
+  // walking down a slope keeps your feet on it, with no hop off each step
+  if (wasGround && !p.ground && vyBefore >= 0 && !p.jumped) for (let k = 1; k <= 3; k++) if (boxHits(p.x, p.y + k + 1, p.w, p.h) && !boxHits(p.x, p.y + k, p.w, p.h)) { p.y += k; p.ground = true; p.vy = 0; break; }
+  // landing: remember how hard, for the squash and the dust
+  if (!wasGround && p.ground) {
+    p.landV = vyBefore; p.jumped = false;
+    if (vyBefore > 2.4) for (let k = 0; k < 6; k++) Game.fx.push({ x: p.x + p.w / 2 + (rnd() - 0.5) * 6, y: p.y + p.h - 1, vx: (rnd() - 0.5) * 1.4, vy: -rnd() * 0.5, t: 0.3 + rnd() * 0.2, c: World.abgr(0xb8a888) });
+  }
+  if (p.ground) p.jumped = false;
   unstick(p);
   p.hurtT = Math.max(0, p.hurtT - dt);
   p.aegisT = Math.max(0, p.aegisT - dt);
@@ -4491,11 +4610,33 @@ const Render = (() => {
   }
 
   // one picture, flipped to face its way, with its feet (or its middle, for flyers) at a world point
-  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost) {
+  // a springy pose for a body: squash when it lands, stretch when it leaps, a bob and a lean as it runs, and a quick turn
+  function animBody(e, dt, grounded, vx, vy, fly) {
+    const a = e.an || (e.an = { s: 1, v: 0, lean: 0, face: e.face || 1, ph: Math.random() * 6, wasG: grounded });
+    dt = Math.min(dt, 0.05);
+    const sp = Math.abs(vx);
+    let target = 1;
+    if (!fly && !grounded) target = vy < -1 ? 1.1 : vy > 1.6 ? 1.05 : 1;
+    if (!fly && grounded && !a.wasG) a.v -= Math.min(9, 2.5 + Math.abs(e.landV || 2) * 1.6);
+    if (!fly && !grounded && a.wasG && vy < -1) a.v += 4;
+    a.wasG = grounded;
+    a.v += (target - a.s) * 240 * dt; a.v *= Math.exp(-16 * dt); a.s = clamp(a.s + a.v * dt, 0.7, 1.3);
+    const running = !fly && grounded && sp > 0.15;
+    a.ph += dt * (fly ? 9 : running ? sp * 12 : 2.4);
+    const bob = fly ? Math.sin(a.ph) * 0.7 : running ? Math.abs(Math.sin(a.ph)) * Math.min(1.1, sp * 0.6) : 0;
+    const tl = clamp(vx * 0.08 + (!grounded && !fly ? clamp(vy, -3, 3) * 0.02 * (Math.sign(vx) || 0) : 0), -0.26, 0.26);
+    a.lean += (tl - a.lean) * (1 - Math.exp(-12 * dt));
+    a.face += ((e.face || 1) - a.face) * (1 - Math.exp(-24 * dt));
+    const sy = a.s + (running ? Math.cos(a.ph * 2) * 0.03 : !fly && grounded ? Math.sin(a.ph) * 0.015 : 0);
+    return { pose: { sx: Math.max(0.15, Math.abs(a.face)) / Math.sqrt(sy), sy, lean: a.lean }, bob, flip: a.face < 0 };
+  }
+  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost, pose) {
     const k = KS, w = dw * k, h = dw * (sh / sw) * k;
     const x = wx * k, y = wy * k;
     actx.save();
     actx.translate(x, y);
+    // pose: a lean about the feet, and squash and stretch
+    if (pose) { if (pose.lean) actx.rotate(pose.lean); actx.scale(pose.sx, pose.sy); }
     if (flip) actx.scale(-1, 1);
     let top = mid ? -h / 2 : -h;
     if (rot) { actx.translate(0, top + h / 2); actx.rotate(rot); top = -h / 2; }
@@ -4539,7 +4680,7 @@ const Render = (() => {
     weaponShape(run.melee, len, k);
     actx.restore();
   }
-  function drawActors(ox, oy) {
+  function drawActors(ox, oy, dt) {
     actxMain.setTransform(1, 0, 0, 1, 0, 0);
     actxMain.clearRect(0, 0, ac.width, ac.height);
     const pixel = Paint.on;
@@ -4553,7 +4694,7 @@ const Render = (() => {
     actx.imageSmoothingEnabled = true;
     actx.imageSmoothingQuality = "high";
     const k = KS = pixel ? PX : scale * adpr;
-    drawActorBody(ox, oy, k);
+    drawActorBody(ox, oy, k, dt || 1 / 60);
     actx = actxMain; KS = scale * adpr;
     if (pixel) {
       // a one-pixel dark outline, then the sprites, all scaled up without smoothing
@@ -4585,7 +4726,7 @@ const Render = (() => {
       }
     }
   }
-  function drawActorBody(ox, oy, k) {
+  function drawActorBody(ox, oy, k, dt) {
     // melee weapons lying on the ground
     for (const pk of Game.pickups) {
       if (!pk.melee) continue;
@@ -4613,10 +4754,11 @@ const Render = (() => {
       const act = f.fuse > 0 || f.state === "slam" || f.state === "dash" || (d.ai === "spit" && f.cd < 0.25);
       const mid = d.ai === "fly" || d.ai === "dash" || d.ai === "hand" || (d.ai === "hop" && !f.ground);
       const fr = act ? 8 : moving || mid ? ((f.t * 12) | 0) % 8 : 0;
-      const cx = f.x + f.w / 2 - ox, wy = mid ? f.y + f.h / 2 - oy : f.y + f.h + 1 - oy;
+      const [fx, fy] = ipos(f), an = animBody(f, dt, f.ground || d.ai === "hand", f.vx, f.vy, mid);
+      const cx = fx + f.w / 2 - ox, wy = (mid ? fy + f.h / 2 : fy + f.h + 1) - oy - an.bob;
       let top;
-      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, dw, f.face < 0, fl, mid, akey + fr);
-      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving || mid ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, dw, f.face < 0, fl, mid, akey + q); }
+      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, dw, an.flip, fl, mid, akey + fr, 0, 0, an.pose);
+      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving || mid ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, dw, an.flip, fl, mid, akey + q, 0, 0, an.pose); }
       if (f.elite) {
         const ex = cx * k, ey = (top - 2) * k, r = 1.6 * k;
         actx.fillStyle = "#e6c35c"; actx.strokeStyle = "#1b1608"; actx.lineWidth = Math.max(1, k * 0.35);
@@ -4629,7 +4771,10 @@ const Render = (() => {
       // afterimages from rolls and pounds
       for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, ck, 0, g.t * 2.2);
       const rot = p.roll > 0 ? (1 - p.roll / 0.28) * Math.PI * 2 * p.rollDir : 0;
-      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, ck, rot);
+      const [hx, hy] = ipos(p), an = animBody(p, dt, p.ground, p.vx, p.vy, false);
+      // hugging a wall: lean into it
+      if (!p.ground && p.wallT > 0.05) an.pose.lean = p.wall * 0.12;
+      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, hx + p.w / 2 - ox, hy + p.h + 1.5 - oy - an.bob, dw, an.flip, p.flash > 0, false, ck, rot, 0, rot ? null : an.pose);
       if (p.atk || p.pound) drawSwing(p, ox, oy, k);
     }
     // the shovel, swinging along your aim while you dig
@@ -4849,6 +4994,8 @@ const Render = (() => {
       px(wx + 3, wy - 2, tip); px(wx + 4, wy - 2, tip); px(wx + 3, wy - 3, tip);
       if ((tk >> 3) & 1) px(wx + 4, wy - 4, 0xffffffff);
     }
+    // flying debris, drawn in its own colour with a lit edge
+    for (const d of World.debris) { px(d.x - ox, d.y - oy, PAL[d.m * 4 + (d.t & 3)]); }
     for (const f of Game.fx) {
       if (f.rift) { for (let k = 0; k < 6; k++) px(f.x + (rnd() - 0.5) * 8 - ox, f.y + (rnd() - 0.5) * 10 - oy, f.c); continue; }
       px(f.x - ox, f.y - oy, f.c);
@@ -4865,7 +5012,7 @@ const Render = (() => {
       }
     }
     wctx.putImageData(img, 0, 0);
-    drawActors(ox, oy);
+    drawActors(ox, oy, dt);
 
     // darkness, with holes where light falls
     const dw = dc.width, dh = dc.height;
@@ -5953,7 +6100,8 @@ function frame(now) {
   const p = Game.player;
   if (p) {
     const aimA = aimAngle(), lead = Game.input.cast || Game.input.sx != null ? 14 : 0;
-    const tx = p.x + 2 + Math.cos(aimA) * lead, ty = p.y + 5 + 18 + clamp(p.vy * 8, -8, 24) + Math.sin(aimA) * lead * 0.6;
+    const [cpx, cpy] = ipos(p);
+    const tx = cpx + 2 + Math.cos(aimA) * lead, ty = cpy + 5 + 18 + clamp(p.vy * 8, -8, 24) + Math.sin(aimA) * lead * 0.6;
     Game.cam.x += (tx - Game.cam.x) * 0.12;
     Game.cam.y += (ty - Game.cam.y) * 0.12;
     Game.cam.x = clamp(Game.cam.x, Render.vw / 2, W - Render.vw / 2);
@@ -5966,8 +6114,20 @@ function frame(now) {
   if ((++mapFrame & 7) === 0) Minimap.draw();
   if ((mapFrame % 30) === 0) { UI.insets(); UI.fit(); }
 }
+// where each body was before this tick, so drawing can glide between ticks
+function markPrev() {
+  const p = Game.player;
+  if (p) { p.px = p.x; p.py = p.y; }
+  for (const f of Game.foes) { f.px = f.x; f.py = f.y; }
+}
+function ipos(e) {
+  if (e.px == null || Math.abs(e.x - e.px) > 8 || Math.abs(e.y - e.py) > 8) return [e.x, e.y];
+  const a = Game.hitStop > 0 ? 1 : clamp(acc * 60, 0, 1);
+  return [e.px + (e.x - e.px) * a, e.py + (e.y - e.py) * a];
+}
 function tickGame(dt) {
   if (Game.state === "loading" || Game.state === "intro") return;
+  markPrev();
   World.step();
   if (Game.state === "play") {
     Game.levelT += dt;
