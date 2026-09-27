@@ -235,11 +235,16 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(name:string, o?:{fade?:number,loop?:boolean,speed?:number,at?:number,restart?:boolean})=>object|null} play
  * @property {(dt:number)=>void} update @property {(name:string)=>object|undefined} bone @property {(k:number)=>void} setGlow
  * @property {boolean} visible (setter) @property {(name:string, clip:object)=>void} [addClip] @property {(cuts:object)=>void} [addCuts] @property {()=>void} [dispose]
+ * @property {(speed:number, o?:{turn?:number, crouch?:number, upper?:boolean})=>void} [move]  story actors: procedural stride matched
+ *   to speed (m/s), laid over the current clip; call it every frame (A2)
+ * @property {boolean} [useCdt]  animate on the combat dt (fighters) instead of rdt
  * Placeholders expose the same clip names and durations as the real body (D2). Clip names are prefixed:
  * 'ronin:combo', 'gabe:punches', 'bear:sweep', 'lib:walk'. Combat reads timing from the spec tables.
  * @typedef {object} Cast  S.cast
  * @property {(ids:string[])=>{done:boolean, progress:number}} preload @property {(id:string)=>boolean} ready  true once id's real body is loaded
- * @property {(id:string, o?:{pos?:object,yaw?:number,parent?:object,tint?:number,props?:string[],lod?:boolean,arenaScale?:boolean})=>Actor} spawn
+ * @property {(id:string, o?:{pos?:object,yaw?:number,parent?:object,tint?:number,props?:string[],lod?:boolean,arenaScale?:boolean,variant?:number,crowd?:boolean,costume?:boolean})=>Actor} spawn
+ *   variant: which body of a multi-body id (gang, civA, civB; see variants(id)); crowd: crowd LOD rules (D4);
+ *   costume: force the crew costume on or off (default: by chapter, see autoCostume)
  *   Works before the body is loaded: it returns an Actor at once (a placeholder with the same clip names and
  *   durations, D2) and swaps the real body into that same Actor when it arrives. spawn('gabe') returns the
  *   registered arena Gabe at story scale (about 1.95 m, B9); arenaScale:true keeps the arena scale (the cold open).
@@ -248,7 +253,12 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(id:string, actor:Actor)=>void} register  arena actors, registered by the director. CAST animates
  *   every live actor and every visible registered actor in its 'anim' phase (on story time), so the arena
  *   actors keep moving after game.js hands the page over.
- * @property {{make:(name:string,o?:object)=>object, attach:(a:Actor,name:string,bone?:string,o?:object)=>object, detach:(a:Actor,name:string)=>void}} props
+ * @property {{make:(name:string,o?:object)=>object, attach:(a:Actor,name:string,bone?:string,o?:object)=>object, detach:(a:Actor,name:string)=>void, names?:string[]}} props
+ * @property {(a:Actor, on?:boolean)=>void} costume  the crew costume (D3): kasa, haori, sash, foam katana
+ * @property {boolean} autoCostume  true (default): crew bodies wear the costume in the D3 chapters on their own
+ * @property {(from:Actor, id:string, o?:object)=>Actor} replace  a new actor of id where from stands (the C0 cut from the arena ronin to the pick's crew body in costume)
+ * @property {(a:Actor, speed:number, o?:object)=>void} move  a.move(speed, o) when the actor has one
+ * @property {(id:string)=>number} variants  how many bodies an id has (1 for most)
  * @property {(a:Actor, name:string, k?:number)=>void} pose  procedural poses: sitDrive, sitPass, kneel, crouch, photo, phone, talk, handsOpen, dazed, knocked
  * @property {(a:Actor, k:number)=>void} drain  neon drain; also scales limbGlow sprites by 1-k (B10)
  * @property {(a:Actor, k:number)=>void} inkShadow
@@ -266,18 +276,25 @@ export const PHASE_ORDER = Object.freeze({
  * @property {number} speed @property {number} damage 0..100 @property {boolean} wrecked @property {boolean} protect @property {number} bumps
  * @property {{throttle:number, brake:number, steer:number, handbrake:boolean}} controls
  * @property {Array<object|null>} seats  10 seats: S0 driver, S1 front, S2..S9 rows
- * @property {boolean} lights @property {()=>void} horn @property {(x:number,z:number,yaw:number)=>void} setPose
+ * @property {boolean} lights @property {()=>void} horn @property {(x:number,z:number,yaw:number,y?:number)=>void} setPose  y: a height hint for surface() (under a deck)
+ * @property {number|null} [maxContact]  protected: any contact above this speed (m/s) emits 'hitProtected' (E4)
+ * @property {boolean} [rolling]  rolls with no parking brake (F4)
  * @property {(side:'driver'|'passenger'|'slide'|'rear')=>object} doorPoint @property {(o:object)=>void} setLook  VAN_LOOKS flags
- * @property {object} obj @property {(evt:'hit'|'bump'|'hitProtected'|'wrecked', fn:Function)=>(()=>void)} on
+ * @property {object} obj @property {(evt:string, fn:Function)=>(()=>void)} on
+ *   events: 'hit', 'bump', 'hitProtected' {by, speed, reason: 'contact'|'hard'|'bumps'}, 'wrecked', and also 'enter', 'exit',
+ *   'seat', 'unseat', 'land', 'pit', 'horn', 'noticed' (tail), 'raceDone', 'drowned'. controls.reverse: the brake reverses
+ *   at a standstill only when it is true.
  * @typedef {object} Vehicles  S.vehicles
- * @property {(kind:string, o?:{pos?:object,place?:string,yaw?:number,tint?:number,look?:object,protect?:boolean,bumpLimit?:number,maxSpeed?:number,seats?:number})=>Vehicle} spawn
+ * @property {(kind:string, o?:{pos?:object,place?:string,yaw?:number,tint?:number,look?:object,protect?:boolean,bumpLimit?:number,maxSpeed?:number,maxContact?:number,seats?:number})=>Vehicle} spawn
  * @property {(v:Vehicle)=>void} despawn @property {Vehicle[]} list @property {Vehicle|null} player  the crew van
  * @property {object[]} sweeps  swept paths for dodging, written by VEHICLES in 'physics'
- * @property {object[]} people  soft circles {x,z,r,dive(dir)}. CAST (crowd, followers) and COMBAT (the hero on
+ * @property {object[]} people  soft circles {x,z,r,dive(dir),id?} (id: remembers who was asked to dive). CAST (crowd, followers) and COMBAT (the hero on
  *   foot, enemies) push theirs in 'ai'; VEHICLES reads the list in 'physics' and then empties it, so each
  *   physics step sees one fresh set (one tick old)
  * @property {(evt:string, fn:Function)=>(()=>void)} on
- * @typedef {{enter:(v:Vehicle,seat?:number)=>boolean, exit:()=>({x:number,z:number}|null), riding:Vehicle|null, seat:(a:Actor,v:Vehicle,i:number)=>void, unseat:(a:Actor)=>void, seatsOf:(v:Vehicle)=>Array<object|null>, autopilot:(on:boolean, route?:object[])=>void}} Drive  S.drive
+ * @typedef {{enter:(v:Vehicle,seat?:number)=>boolean, exit:()=>({x:number,z:number}|null), riding:Vehicle|null, seat:(a:Actor,v:Vehicle,i:number)=>void, unseat:(a:Actor)=>void, seatsOf:(v:Vehicle)=>Array<object|null>, autopilot:(on:boolean, route?:object[]|string|object)=>void}} Drive  S.drive
+ *  exit(o?:{door}) tries that door first. autopilot route: points, a place id or {x, z}. Also heroSeat (-1 on foot),
+ *  state ('foot', 'riding' or the enter/exit animation) and autoGas (holds the gas for touch players).
  * @typedef {{setDensity:(k:number)=>void, clear:()=>void, cars:Vehicle[]}} Traffic  S.traffic (ambient only; mission traffic is spawned by missions, C2)
  * @typedef {{route:Function, tail:Function, convoy:Function, pursue:Function, flee:Function, race:Function, stop:(v:Vehicle)=>void}} Drivers  S.drivers
  * Vehicles run on rdt (scaled by S.timeScale), never on the combat dt.
@@ -396,7 +413,7 @@ export const PHASE_ORDER = Object.freeze({
 /**
  * @typedef {object} MissionDef
  * @property {string} id @property {string} chapter @property {string} [title] @property {string} [giver]
- * @property {Array<{id:string, cast?:string, kind?:string, foe?:string, place?:string, pos?:{x:number,z:number}, yaw?:number, look?:object, protect?:boolean, bumpLimit?:number, maxSpeed?:number, player?:boolean, variant?:string, group?:string, alert?:boolean, patrol?:string, weapon?:string, flashlight?:boolean}>} [spawns]
+ * @property {Array<{id:string, cast?:string, kind?:string, foe?:string, place?:string, pos?:{x:number,z:number}, yaw?:number, look?:object, protect?:boolean, bumpLimit?:number, maxSpeed?:number, maxContact?:number, player?:boolean, variant?:string, group?:string, alert?:boolean, patrol?:string, weapon?:string, flashlight?:boolean}>} [spawns]
  *   one of cast (an actor), kind (a vehicle; player:true makes it S.vehicles.player) or foe (a fighter; the
  *   FoeOpts fields apply, and a 'legend' foe needs variant, a LEGEND_IDS id)
  * @property {StepDef[]} steps
@@ -629,7 +646,7 @@ export const CONTRACT = Object.freeze([
   ...fns('world.roads', ['nearest', 'route', 'sample', 'speedLimit']), 'world.roads.lanes array',
   'world.mapImage object', 'world.mapVersion number', 'world.revealed object', ...fns('world.interiors', ['enter', 'exit', 'wall', 'open']), ...fns('world.ranch', ['lights', 'gate']),
   // cast
-  ...fns('cast', ['preload', 'ready', 'spawn', 'get', 'despawn', 'register', 'pose', 'drain', 'inkShadow', 'vortexParts', 'lodUpdate']),
+  ...fns('cast', ['preload', 'ready', 'spawn', 'get', 'despawn', 'register', 'pose', 'drain', 'inkShadow', 'vortexParts', 'lodUpdate', 'costume', 'replace', 'move', 'variants']), 'cast.autoCostume boolean',
   ...fns('cast.props', ['make', 'attach', 'detach']), ...fns('cast.followers', ['add', 'remove', 'board']), ...fns('cast.crowd', ['update', 'scatter', 'setDensity']),
   // vehicles
   ...fns('vehicles', ['spawn', 'despawn', 'on']), 'vehicles.list array', 'vehicles.player object?', 'vehicles.sweeps array', 'vehicles.people array',

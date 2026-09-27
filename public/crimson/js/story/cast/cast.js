@@ -37,6 +37,12 @@ const ALIASES = Object.freeze({ idle: 'lib:idle', walk: 'lib:walk', run: 'lib:ru
 // and the flashbacks from Ronin Night Out (F3) on. i1 and i2 are the same night under the bridge, so they
 // are in it too.
 export const COSTUME_CHAPTERS = Object.freeze(['c0', 'i0', 'i1', 'i2', 'f3', 'i3', 'f4', 'i4', 'f5', 'i5']);
+// H1: rigged GLBs for Vance, Voss, Rattler and the gang (BODY_URL). Boone is the gang GLB scaled about 1.12
+// with a darker tint; the gang variants are the gang GLB with tints. A GLB that fails to load falls back to
+// the code-built body of bodygen.js.
+const GLB_OF = (id) => BODY_URL[id] || (id === 'boone' ? BODY_URL.gang : null);
+const GLB_HEIGHT = { vance: 1.70, voss: 1.83, rattler: 1.78, gang: 1.85, boone: 1.85 * 1.12 };
+const GLB_TINT = { boone: [0x8c8680], gang: [0xffffff, 0xd8d2cc, 0xc4ccd4, 0xb0a89e] };
 const TINT = { tanktop: 0xb8b2aa, fifty: 0xc8c2b8, shades: 0x6e6a66, newbalance: 0xa09a92, redjersey: 0x8a3a38, gabe: 0x5a4a3a, vance: 0x2c3a52, voss: 0xd8d0c0, rattler: 0x4a5a70, boone: 0x3a3a3a, gang: 0x2a2a2c, civA: 0x9a8a7a, civB: 0x7a8a9a, christian: 0xa8a098, ryu: 0x989088, ronin: 0x888888, bear: 0x3a3028 };
 
 /* ------------------------------------------------------------------ the drain and ink-shadow shader patch */
@@ -149,7 +155,8 @@ class Figure {
     body.rig = info.rig; body.loco = this.loco; body.driver = driver;
     for (const c of this.extraCuts) body.addCuts(c);
     padBounds(body);
-    if (this.tint != null) for (const m of bodyMats(body)) m.color.setHex(this.tint);
+    const tint = this.tint ?? info.tint;
+    if (tint != null) for (const m of bodyMats(body)) m.color.setHex(tint);
     if (this.ph) { this.ph.dispose(); this.ph = null; }
     this.body = body; this.clips = body.clips;
     body.play(this.st.cur in body.clips ? this.st.cur : 'idle', { fade: 0, loop: this.st.loop, speed: this.st.speed, at: this.st.time });
@@ -178,6 +185,7 @@ export function init(S) {
   const reg = new Map(), live = new Set();
   const tpls = new Map(); // template key -> {state: 'loading'|'ready'|'failed', t, rig, glow, scale}
   let donor = null; // {state, t}
+  const glbs = new Map(); // H1 GLB url -> {state, t, wait}
   let variantSeq = {};
   const libs = new Map(); // rig key -> clip library (prototype object)
   let dur = null;
@@ -251,8 +259,19 @@ export function init(S) {
     if (e) return e;
     e = { key, id, state: 'loading', t: null };
     tpls.set(key, e);
-    if (isBuilt(id)) { loadDonor(); e.state = 'build'; e.variant = variant; }
-    else if (BODY_URL[id]) loadTemplate(BODY_URL[id]).then((t) => { e.t = t; e.state = 'ready'; }, (err) => { console.warn(`[cast] ${id} failed to load; keeping the placeholder`, err); e.state = 'failed'; });
+    const glb = GLB_OF(id);
+    if (glb && isBuilt(id)) { // H1: the GLB first, the code-built body if it fails
+      e.variant = variant;
+      const g = glbs.get(glb) || { state: 'loading', t: null, wait: [] };
+      if (!glbs.has(glb)) {
+        glbs.set(glb, g);
+        loadTemplate(glb).then((t) => { g.t = t; g.state = 'ready'; for (const f of g.wait) f(); }, (err) => { console.warn(`[cast] ${glb} failed to load; building the bodies in code`, err); g.state = 'failed'; for (const f of g.wait) f(); });
+      }
+      // one load per GLB, shared by every variant and by Boone
+      const take = () => { if (g.state === 'ready') { e.t = g.t; e.glb = true; e.state = 'ready'; } else { loadDonor(); e.state = 'build'; } };
+      if (g.state === 'loading') g.wait.push(take); else take();
+    } else if (isBuilt(id)) { loadDonor(); e.state = 'build'; e.variant = variant; }
+    else if (glb) loadTemplate(glb).then((t) => { e.t = t; e.state = 'ready'; }, (err) => { console.warn(`[cast] ${id} failed to load; keeping the placeholder`, err); e.state = 'failed'; });
     else e.state = 'failed';
     return e;
   }
@@ -269,8 +288,9 @@ export function init(S) {
       e.rig = rigOf(mesh);
       const ud = e.t.scene.userData || {};
       const h = ud.bodyHeight ? ud.bodyHeight : e.rig.height * 0.01;
-      e.scale = (ud.height || CREW_HEIGHT) / h;
-      e.glow = ud.glow || 0;
+      e.scale = (ud.height || (e.glb && GLB_HEIGHT[e.id]) || CREW_HEIGHT) / h;
+      if (e.glb && GLB_TINT[e.id]) { const l = GLB_TINT[e.id]; e.tint = l[(e.variant || 0) % l.length]; }
+      e.glow = ud.glow || (e.glb && BODIES[e.id] ? BODIES[e.id][0].glow : 0);
       e.tris = mesh.geometry.index ? mesh.geometry.index.count / 3 : mesh.geometry.attributes.position.count / 3;
       e.lib = library(e.rig);
     }
@@ -526,6 +546,9 @@ export function init(S) {
     heights,
     bones(id) { const a = probe(id) || reg.get(id); if (!a) return []; const m = findSkinned(a.model); return m.skeleton.bones.map((b) => b.name); },
     missingBones: (id) => missingBones(S.test.cast.bones(id)),
+    glb: Object.freeze(BUILT_IDS.filter((id) => GLB_OF(id))),
+    // the code-built fallback of a GLB body (H1), built on demand once the donor rig is in; its triangles
+    builtTris(id, variant = 0) { const d = loadDonor(); if (d.state !== 'ready') return 0; const t = buildBody(d.t, id, variant), m = findSkinned(t.scene), n = m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; t.scene.traverse((o) => { if (o.isMesh) o.geometry.dispose(); }); return n; },
     tris(id, variant = 0) { const key = keyOf(id, variant); request(id, variant); return readyKey(key) ? tpls.get(key).tris : 0; },
     template(id, variant = 0) { const key = keyOf(id, variant); request(id, variant); return readyKey(key) ? tpls.get(key) : null; },
     clipNames(id) { const a = probe(id); const out = []; if (a) for (const k in a.clips) out.push(k); return out; },

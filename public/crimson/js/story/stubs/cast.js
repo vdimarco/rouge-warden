@@ -37,6 +37,7 @@ class Capsule {
   set visible(v) { this.root.visible = v; }
   get visible() { return this.root.visible; }
   addClip(name, clip) { this.clips[name] = { name, duration: clip.duration }; }
+  move() {}
   addCuts(cuts) { for (const [name, [, a, b]] of Object.entries(cuts)) this.clips[name] = { name, duration: b - a }; }
   dispose() { this.root.removeFromParent(); this.root.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
 }
@@ -83,6 +84,9 @@ export function init(S) {
       for (const s of Object.values(a.limbGlow || {})) { if (s.userData.base == null) s.userData.base = s.material.opacity; s.material.opacity = s.userData.base * (1 - k); }
     },
     inkShadow() {},
+    costume() {}, autoCostume: true, move(a, speed, o) { if (a && a.move) a.move(speed, o); }, variants: () => 1,
+    // a new actor of id where `from` stands; `from` goes away
+    replace(from, id, o = {}) { const p = from && from.root ? from.root.position : null; const a = cast.spawn(id, { pos: p ? { x: p.x, y: p.y, z: p.z } : undefined, yaw: from && from.root ? from.root.rotation.y : 0, ...o }); cast.despawn(from); return a; },
     vortexParts() { return { tail: new THREE.Object3D(), set() {} }; },
     lodUpdate() {},
     followers: { list: [], add(a) { cast.followers.list.push(a); }, remove(a) { const l = cast.followers.list, i = l.indexOf(a); if (i >= 0) l.splice(i, 1); }, board() {} },

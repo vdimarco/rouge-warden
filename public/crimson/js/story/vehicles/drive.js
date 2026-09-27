@@ -16,6 +16,10 @@ import { PHASE_ORDER } from '../types.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const ENTER = 0.6, EXIT_MAX = 4;
+// Integration: seat nodes are on the floor and the hips belong about 0.45 m above them. CAST's seated poses
+// put the actor's root on the seat surface with the Hips bone about 0.11 m above it (measured on the crew
+// and gang bodies), so the root goes up 0.34 m: hips 0.45 m over the floor, feet on the floor.
+const SEAT_LIFT = 0.34;
 
 export function createDrive(S, V) {
   const seated = new Map(); // actor -> { v, i }
@@ -162,7 +166,7 @@ export function createDrive(S, V) {
     const node = v.view.seats[i]; if (!node) return;
     node.updateWorldMatrix(true, false);
     node.getWorldPosition(wp); node.getWorldQuaternion(wq);
-    actor.root.position.copy(wp); actor.root.quaternion.copy(wq);
+    actor.root.position.copy(wp).add(tmpV.set(0, SEAT_LIFT, 0).applyQuaternion(wq)); actor.root.quaternion.copy(wq);
   }
 
   /* ---------------- per tick */

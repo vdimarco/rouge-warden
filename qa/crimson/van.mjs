@@ -264,7 +264,8 @@ await step(page, 0.3);
     window.__ticks(10);
     const w = new S.THREE.Vector3();
     const full = v.seats.every((s, i) => s === actors[i]), shown = actors.map((a) => !!a.root.visible);
-    const near = actors.every((a, i) => a.root.position.distanceTo(v.view.seats[i].getWorldPosition(w)) < 0.05);
+    // (the root, CAST's seat surface, sits 0.34 m above the seat node on the floor)
+    const near = actors.every((a, i) => { const n = v.view.seats[i].getWorldPosition(w), d = a.root.position.distanceTo(n); return Math.hypot(a.root.position.x - n.x, a.root.position.z - n.z) < 0.08 && d > 0.28 && d < 0.4; });
     for (const a of actors) { S.drive.unseat(a); S.cast.despawn(a); }
     return { full, shown, near, empty: v.seats.every((s) => s === null), n: v.seats.length };
   });

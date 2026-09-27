@@ -35,13 +35,14 @@ function glb(path) {
 const BANNED = ["KHR_draco_mesh_compression", "EXT_meshopt_compression", "KHR_texture_basisu"];
 const urls = [...new Set([...Object.values(T.BODY_URL).filter(Boolean), T.DONOR_RIG])];
 for (const u of urls) {
-  const g = glb(PUB + u.replace(/^\//, ""));
+  const g = glb(PUB + (u.startsWith("/") ? u.slice(1) : "crimson/" + u)); // relative URLs are under /crimson/
   const ext = (g.json.extensionsUsed || []).filter((e) => BANNED.includes(e));
   const same = g.joints.length === 24 && BONES.every((n) => g.joints.includes(n));
   check(same && g.tris <= 16000 && !ext.length, `${u}: 24 Meshy bones, ${g.tris} triangles, no Draco/meshopt/Basis`);
 }
 const models = readdirSync(PUB + "crimson/models").sort();
-check(JSON.stringify(models) === JSON.stringify(["bear.glb", "gabe.glb", "ronin.glb"]), `no new character GLBs (A5): models/ holds ${models.join(", ")}`);
+// H1 overrides A5: the rigged Vance, Voss, Rattler and gang GLBs are the only new character GLBs
+check(JSON.stringify(models) === JSON.stringify(["bear.glb", "gabe.glb", "gang.glb", "rattler.glb", "ronin.glb", "vance.glb", "voss.glb"]), `only the H1 character GLBs are new: models/ holds ${models.join(", ")}`);
 check(!existsSync(PUB + "crimson/anim/anim.glb"), "no anim.glb (A5)");
 for (const n of ["vance", "voss", "rattler"]) check(existsSync(PUB + `crimson/art/portraits/${n}.webp`), `portrait art/portraits/${n}.webp exists (A3)`);
 // no timers for flow in the package (G2)
@@ -92,13 +93,15 @@ check(!durDiff.length && Object.keys(swap.dur).length >= ph.names.length, `the p
 const bodies = await page.evaluate(() => {
   const S = __crimson.story.S, C = S.test.cast, out = {};
   for (const id of [...S.test.cast.crew, "gabe", "ronin", "bear", "christian", "ryu", ...C.built]) out[id] = { bones: C.bones(id), tris: C.tris(id) };
-  const variants = {}; for (const id of C.built) variants[id] = Array.from({ length: S.cast.variants(id) }, (_, i) => C.tris(id, i));
-  return { out, variants };
+  const variants = {}, glb = {}; for (const id of C.built) variants[id] = Array.from({ length: S.cast.variants(id) }, (_, i) => (C.glb.includes(id) ? C.builtTris(id, i) : C.tris(id, i)));
+  for (const id of C.glb) glb[id] = Array.from({ length: S.cast.variants(id) }, (_, i) => C.tris(id, i));
+  return { out, variants, glb };
 });
 for (const [id, b] of Object.entries(bodies.out)) {
   const miss = BONES.filter((n) => !b.bones.includes(n)), extra = b.bones.filter((n) => !BONES.includes(n));
   check(b.bones.length === 24 && !miss.length && !extra.length, `${id}: exactly the 24 Meshy bone names`);
 }
+for (const [id, v] of Object.entries(bodies.glb)) check(v.every((t) => t > 5000 && t <= 16000), `${id}: the H1 GLB body (${v.join(", ")} triangles)`);
 for (const [id, v] of Object.entries(bodies.variants)) check(v.every((t) => t >= 2000 && t <= 5000), `${id}: ${v.length} code-built variants, ${v.join(", ")} triangles (2k-5k)`);
 // the palette: every colour a code-built body uses passes the neon test, except the gang's hi-vis stripe
 const pal = await page.evaluate(async () => {
