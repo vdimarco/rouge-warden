@@ -8,7 +8,7 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
+<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, or Reel It In. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
@@ -85,6 +85,8 @@ button { font: inherit; color: inherit; }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
+.cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
+.cab.fish .screen .title { top: 12%; font-family: var(--display); font-size: calc(var(--h) * 0.05); line-height: 0.95; color: #fff6dc; text-shadow: 0 3px 0 #e0453a, 0 6px 10px rgba(0, 0, 0, 0.5); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -248,6 +250,18 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In: Loon Lake">
+        <div class="marquee"><div><b>REEL IT IN</b><small>LOON LAKE</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="arcade/fish.webp" alt="">
+          <img class="art2" src="arcade/fish-catch.webp" alt="">
+          <div class="title">REEL<br>IT IN</div>
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
     </div>
@@ -600,6 +614,19 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
   }
   let last = 0;
   (function loop(now) { requestAnimationFrame(loop); if (document.hidden || now - last < 33) return; last = now; if (!reduceMotion || t < 120) step(); })(0);
+}
+// Reel It In: the derby best and the biggest fish; its screen flips between the lake and a catch
+{
+  const fs = store.get("fish.v1", null), fc = $(".cab.fish");
+  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS" };
+  const kg = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + " KG";
+  if (fc) {
+    const bits = [];
+    if (fs && fs.derbyBest > 0) bits.push("DERBY " + kg(fs.derbyBest));
+    if (fs && fs.biggest && fs.biggest.kg > 0) bits.push((NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg));
+    $(".hi", fc).textContent = bits.length ? bits.join(" · ") : "HI-SCORE: NONE YET";
+    setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
+  }
 }
 // Crimson Rouge flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);

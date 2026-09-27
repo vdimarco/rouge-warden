@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d2f38">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>Reel It In: Loon Lake</title>
+<meta name="description" content="Your phone is the rod and the reel. Flip the bail, whip the phone to cast, turn it sideways and crank to reel in. Free in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://warden-alpha-wheat.vercel.app/fish/">
+<meta property="og:title" content="Reel It In: Loon Lake">
+<meta property="og:description" content="Your phone is the rod and the reel. Whip it to cast. Turn it sideways and crank to reel in.">
+<meta property="og:image" content="https://warden-alpha-wheat.vercel.app/arcade/fish.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<style>
+:root {
+  --ink: #f6efd9; --muted: #b9c9c4; --deep: #0d2f38; --deep2: #134451; --glass: rgba(9, 34, 41, 0.78); --line: rgba(246, 239, 217, 0.18);
+  --red: #e0453a; --brass: #e8b64a; --green: #7ac84a; --amber: #f0a52a; --danger: #ff5a4a;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
+  --slab: "Alfa Slab One", Georgia, serif; --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--deep); color: var(--ink); font-family: var(--body); font-weight: 800;
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
+body { position: fixed; inset: 0; }
+button, a { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+
+/* #game holds everything. When the phone is sideways but the browser did not rotate, main.js turns it 90° with a transform */
+#game { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; transform-origin: 50% 50%; }
+#view { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #9cc7d4; }
+#view canvas { display: block; width: 100%; height: 100%; }
+
+/* ---------- layouts ----------
+   tall-cast: the lake on top, the reel below.   wide-cast: the lake, the reel on the right.
+   reel: the lake fills the screen, crank on the right, gauge and rod pad on the left.   tall-reel: touch play on an upright phone. */
+#castUI, #reelUI { position: absolute; inset: 0; pointer-events: none; }
+#castUI > *, #reelUI > * { pointer-events: auto; }
+#reelBox { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; transition: height 0.35s cubic-bezier(.2, .8, .2, 1); }
+.flying #reelBox { height: 28%; }
+#game.l-tall-cast #view { height: 54%; transition: height 0.35s cubic-bezier(.2, .8, .2, 1); }
+#game.l-tall-cast.flying #view { height: 72%; }
+#game.l-wide-cast #reelBox { left: auto; top: 0; width: min(38%, 440px); height: 100%; }
+#game.l-wide-cast #view { width: calc(100% - min(38%, 440px)); }
+
+#crankBox { position: absolute; right: calc(var(--sar) + 8px); bottom: calc(var(--sab) + 8px); width: min(44vmin, 250px); height: min(44vmin, 250px); }
+#padBox { position: absolute; left: calc(var(--sal) + 8px); bottom: calc(var(--sab) + 8px); width: min(40vmin, 220px); height: min(52vmin, 280px); }
+#gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
+#game.motion #padBox { display: none; }
+#dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
+#game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
+#game.l-reel.touch #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
+#dragBar button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
+#dragBar b { min-width: 64px; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
+/* tall reel (touch on an upright phone): lake on top, controls below */
+#game.l-tall-reel #view { height: 58%; }
+#game.l-tall-reel #crankBox { width: min(46vw, 230px); height: min(46vw, 230px); }
+#game.l-tall-reel #padBox { width: min(40vw, 200px); height: min(38vh, 280px); }
+#game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
+#game.l-tall-reel #dragBar { top: auto; bottom: calc(var(--sab) + min(38vh, 280px) + 18px); }
+
+/* ---------- HUD ---------- */
+#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px); display: flex; align-items: center; gap: 8px; pointer-events: none; z-index: 5; }
+#hud > * { pointer-events: auto; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
+.chip b { color: var(--brass); }
+.icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); font-size: 16px; }
+#hud .grow { flex: 1; }
+#clock { font-variant-numeric: tabular-nums; }
+
+/* the big instruction line */
+#prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); text-align: center; pointer-events: none; z-index: 4; }
+#prompt .p1 { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); font-size: clamp(16px, 4.6vmin, 22px); line-height: 1.25; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
+#prompt .p1 svg { flex: none; width: 34px; height: 34px; }
+#prompt .p2 { margin-top: 6px; font-size: 13px; color: var(--muted); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+#prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.5s infinite alternate; }
+#prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
+@keyframes hot { to { transform: scale(1.06); } }
+#game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
+
+/* the cast report after a landing */
+#report { position: absolute; left: 50%; top: 36%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
+#report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 22px rgba(0, 0, 0, 0.35); }
+#report .dist small { font-size: 0.45em; }
+#report .verdict { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: var(--glass); font-size: 15px; }
+#report .verdict.sweet { background: #2d7a45; }
+#report .zone { margin-top: 6px; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; }
+#report.show { animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } }
+
+/* the strike flash */
+#flash { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 60, 40, 0.55)); }
+#flash.go { animation: flash 0.7s ease-out; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+
+/* "turn your phone" */
+#turn { position: absolute; inset: 0; display: grid; place-items: center; z-index: 6; pointer-events: none; }
+#turn .card { display: grid; justify-items: center; gap: 10px; padding: 18px 22px; border-radius: 18px; background: var(--glass); border: 1px solid var(--line); text-align: center; font-size: 18px; max-width: 80%; }
+#turn .ph { width: 54px; height: 92px; border: 4px solid var(--ink); border-radius: 12px; position: relative; animation: rot 2.2s infinite cubic-bezier(.5, 0, .3, 1); }
+#turn .ph::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 14px; height: 3px; margin-left: -7px; border-radius: 2px; background: var(--ink); }
+#turn.up .ph { animation-name: rotback; }
+@keyframes rot { 0%, 20% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+@keyframes rotback { 0%, 20% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+#turn small { font-size: 13px; color: var(--muted); }
+#turn button { pointer-events: auto; margin-top: 4px; }
+
+#toast { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
+#toast.on { opacity: 1; }
+#game.l-tall-cast #toast { bottom: calc(46% + 12px); }
+
+/* ---------- screens ---------- */
+.screen { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: calc(var(--sat) + 16px) calc(var(--sar) + 16px) calc(var(--sab) + 16px) calc(var(--sal) + 16px); overflow-y: auto; }
+.screen.dim { background: rgba(6, 20, 25, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.card { width: min(100%, 460px); padding: 20px; border-radius: 18px; background: rgba(9, 34, 41, 0.92); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4); }
+.card h2 { margin: 0 0 10px; font-family: var(--slab); font-weight: 400; font-size: 26px; letter-spacing: 0.02em; color: var(--ink); }
+.card p { margin: 0 0 12px; font-weight: 600; line-height: 1.45; color: #dfe9e5; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.btn { flex: 1 1 auto; min-height: 48px; padding: 12px 18px; border-radius: 12px; border: 2px solid var(--line); background: var(--deep2); font-weight: 900; font-size: 16px; letter-spacing: 0.02em; text-decoration: none; text-align: center; }
+.btn.go { background: var(--red); border-color: #ff9f94; color: #fff; box-shadow: 0 4px 0 #8a2018; }
+.btn.go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a2018; }
+.btn.alt { background: transparent; }
+
+/* title */
+#title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
+#title .logo { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 7vh); text-align: center; pointer-events: none; }
+#title .kick { font-size: clamp(11px, 2.6vmin, 14px); letter-spacing: 0.4em; color: #fff4d6; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+#title h1 { margin: 6px 0 0; font-family: var(--slab); font-weight: 400; font-size: clamp(48px, 15vmin, 118px); line-height: 0.92; color: #fff6dc; letter-spacing: 0.01em;
+  text-shadow: 0 4px 0 var(--red), 0 8px 0 #7a1c14, 0 14px 26px rgba(0, 0, 0, 0.45); }
+#title h1 span { display: block; }
+#title .sub { margin-top: 18px; display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(9, 34, 41, 0.6); font-size: clamp(13px, 3vmin, 16px); letter-spacing: 0.22em; color: var(--brass); }
+#title nav { display: grid; gap: 9px; width: min(100%, 360px); }
+#title nav .btn { width: 100%; }
+#title .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+#title .best { margin: 12px 0 0; text-align: center; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; min-height: 1em; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #title { place-items: center end; padding-right: calc(var(--sar) + 24px); }
+  #title .logo { left: 0; right: auto; width: 55%; top: 50%; transform: translateY(-50%); }
+  #title nav { width: min(40vw, 320px); }
+}
+
+/* setup, help, journal, results, pause */
+.steps { display: grid; gap: 10px; margin: 6px 0 4px; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; font-weight: 700; line-height: 1.35; color: #e6efe9; }
+.steps li svg { width: 40px; height: 40px; }
+.steps li b { color: var(--brass); }
+.warn { padding: 10px 12px; border-radius: 10px; background: rgba(240, 165, 42, 0.14); border: 1px solid rgba(240, 165, 42, 0.5); font-weight: 700; line-height: 1.4; }
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.tabs button { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
+.tabs button[aria-selected="true"] { background: var(--deep2); border-color: var(--brass); color: var(--brass); }
+#jlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; max-height: min(58vh, 520px); overflow-y: auto; padding-right: 2px; }
+.jfish { padding: 9px 10px; border-radius: 10px; background: var(--deep2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; }
+.jfish b { display: block; font-size: 14px; }
+.jfish .sw { display: block; height: 8px; border-radius: 4px; margin: 6px 0; }
+.jfish.none { opacity: 0.45; }
+.jfish.none b { color: var(--muted); }
+.jfish small { color: var(--muted); font-weight: 700; }
+.set { display: grid; gap: 8px; }
+.set label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--deep2); font-weight: 800; }
+.set label small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; }
+.set input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--red); }
+.set select { font: inherit; padding: 6px; border-radius: 8px; background: var(--deep); color: var(--ink); border: 1px solid var(--line); }
+
+/* the catch card */
+#catch { place-items: end center; padding-bottom: calc(var(--sab) + 16px); }
+#catch .card { text-align: center; }
+#catch .badges { display: flex; justify-content: center; gap: 6px; min-height: 0; margin-bottom: 6px; }
+.badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; letter-spacing: 0.08em; background: var(--brass); color: #2a1a00; }
+.badge.new { background: var(--green); color: #0c2a10; }
+#catch h2 { font-size: 28px; margin-bottom: 4px; }
+#catch .kg { font-family: var(--slab); font-size: 44px; line-height: 1.05; color: var(--brass); }
+#catch .kg small { font-size: 18px; color: var(--ink); }
+#catch p { font-size: 14px; margin: 8px 0 0; }
+#game.l-reel #catch { place-items: center end; padding-right: calc(var(--sar) + 16px); }
+#game.l-reel #catch .card { width: min(46%, 380px); }
+
+/* results */
+#rlist { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; max-height: 34vh; overflow-y: auto; }
+#rlist li { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--deep2); font-size: 14px; }
+.big { font-family: var(--slab); font-size: 48px; color: var(--brass); line-height: 1.1; text-align: center; }
+.rank { text-align: center; font-size: 16px; letter-spacing: 0.1em; color: #fff; }
+
+/* debug */
+#dbg { position: absolute; right: 6px; bottom: 6px; z-index: 50; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); font: 11px/1.35 ui-monospace, monospace; white-space: pre; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #turn .ph { animation: none; } }
+</style>
+</head>
+<body>
+<div id="game" class="l-tall-cast">
+  <div id="view"></div>
+
+  <div id="castUI" hidden>
+    <div id="reelBox"></div>
+  </div>
+
+  <div id="reelUI" hidden>
+    <div id="gaugeBox"></div>
+    <div id="dragBar"><button type="button" id="dragDown" aria-label="Less drag">−</button><b id="dragName">DRAG: MED</b><button type="button" id="dragUp" aria-label="More drag">+</button></div>
+    <div id="padBox"></div>
+    <div id="crankBox"></div>
+  </div>
+
+  <div id="hud" hidden>
+    <button type="button" class="icon" id="pauseBtn" aria-label="Pause">II</button>
+    <span class="chip" id="modeChip"></span>
+    <span class="grow"></span>
+    <span class="chip" id="clock"></span>
+  </div>
+
+  <div id="prompt" hidden><div class="p1"></div><div class="p2"></div></div>
+  <div id="report" hidden><div class="dist"></div><div class="verdict"></div><div class="zone"></div></div>
+  <div id="flash"></div>
+  <div id="turn" hidden><div class="card"><div class="ph"></div><div id="turnText">Turn your phone sideways.</div><small id="turnSub">Then turn the crank to reel.</small><button type="button" class="btn alt" id="turnSkip" hidden>Reel without turning</button></div></div>
+  <div id="toast"></div>
+
+  <!-- title -->
+  <section class="screen" id="title" hidden>
+    <div class="logo">
+      <div class="kick">GET PLUNGER'D · LOON LAKE</div>
+      <h1><span>REEL</span><span>IT IN</span></h1>
+      <div class="sub">YOUR PHONE IS THE ROD</div>
+    </div>
+    <div>
+      <nav id="tmenu">
+        <button type="button" class="btn go" id="derbyBtn">Derby: 10 casts</button>
+        <button type="button" class="btn" id="freeBtn">Free fishing</button>
+        <div class="row2"><button type="button" class="btn" id="journalBtn">Journal</button><button type="button" class="btn" id="helpBtn">How to play</button></div>
+        <div class="row2"><button type="button" class="btn alt" id="setBtn">Settings</button><button type="button" class="btn alt" data-switch>Switch game</button></div>
+        <a class="btn alt" href="/">Back to the arcade</a>
+      </nav>
+      <p class="best" id="tbest"></p>
+    </div>
+  </section>
+
+  <!-- motion setup -->
+  <section class="screen dim" id="setup" hidden>
+    <div class="card">
+      <h2>Your phone is the rod</h2>
+      <p>You cast and reel with real moves. The game reads the motion sensors in your phone.</p>
+      <div class="warn" id="safety">Hold on tight. Use a wrist strap if you have one. Check that nobody is near you. A short, fast flick of the wrist is enough.</div>
+      <p id="setupNote" style="margin-top:12px" hidden></p>
+      <div class="btns"><button type="button" class="btn alt" id="useTouch">Use touch</button><button type="button" class="btn go" id="useMotion">Use motion</button></div>
+    </div>
+  </section>
+
+  <!-- how to play -->
+  <section class="screen dim" id="help" hidden>
+    <div class="card">
+      <h2>How to play</h2>
+      <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="m">Motion</button><button type="button" role="tab" aria-selected="false" data-tab="t">Touch and mouse</button></div>
+      <ol class="steps" id="helpM"></ol>
+      <ol class="steps" id="helpT" hidden></ol>
+      <div class="btns"><button type="button" class="btn go" data-close>Got it</button></div>
+    </div>
+  </section>
+
+  <!-- journal -->
+  <section class="screen dim" id="journal" hidden>
+    <div class="card" style="width:min(100%,620px)">
+      <h2>Journal</h2>
+      <p id="jsum"></p>
+      <div id="jlist"></div>
+      <div class="btns"><button type="button" class="btn go" data-close>Close</button></div>
+    </div>
+  </section>
+
+  <!-- settings -->
+  <section class="screen dim" id="settings" hidden>
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="set">
+        <label>Sound<input type="checkbox" id="optSound"></label>
+        <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
+        <label><span>Casting help<small>Softens a cast that goes too high or too low.</small></span><input type="checkbox" id="optAssist"></label>
+        <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
+        <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
+      </div>
+      <div class="btns"><button type="button" class="btn go" data-close>Done</button></div>
+    </div>
+  </section>
+
+  <!-- pause -->
+  <section class="screen dim" id="pause" hidden>
+    <div class="card">
+      <h2>Paused</h2>
+      <p id="pauseSum"></p>
+      <div class="btns" style="flex-direction:column">
+        <button type="button" class="btn go" id="resumeBtn">Resume</button>
+        <button type="button" class="btn" id="pHelp">How to play</button>
+        <button type="button" class="btn" id="pJournal">Journal</button>
+        <button type="button" class="btn" id="pSet">Settings</button>
+        <button type="button" class="btn alt" id="quitBtn">Quit to the title</button>
+        <button type="button" class="btn alt" data-switch>Switch game</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- a fish in the hand -->
+  <section class="screen" id="catch" hidden>
+    <div class="card">
+      <div class="badges" id="cbadges"></div>
+      <h2 id="cname"></h2>
+      <div class="kg" id="ckg"></div>
+      <p id="cblurb"></p>
+      <div class="btns"><button type="button" class="btn go" id="catchGo">Cast again</button></div>
+    </div>
+  </section>
+
+  <!-- derby results -->
+  <section class="screen dim" id="results" hidden>
+    <div class="card">
+      <h2>Derby over</h2>
+      <div class="big" id="rtotal"></div>
+      <div class="rank" id="rrank"></div>
+      <ul id="rlist"></ul>
+      <p id="rbest" style="text-align:center"></p>
+      <div class="btns"><button type="button" class="btn alt" id="rMenu">Title</button><button type="button" class="btn go" id="rAgain">Fish again</button></div>
+    </div>
+  </section>
+
+  <div id="dbg" hidden></div>
+</div>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
