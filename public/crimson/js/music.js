@@ -3,7 +3,7 @@
 export const SONG = 'https://soundcloud.com/skrillex/nero-promises-skrillex';
 const TITLE = '';
 
-const url = new URLSearchParams(location.search).get('song') || SONG;
+const url = new URLSearchParams(location.search).has('nomusic') ? '' : (new URLSearchParams(location.search).get('song') || SONG);
 let widget = null, wantOn = true, playing = false;
 try { wantOn = localStorage.getItem('crimson.music') !== 'off'; } catch (e) { /* storage blocked */ }
 

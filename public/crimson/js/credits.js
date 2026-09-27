@@ -260,16 +260,29 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // opts: { crew: [{ name, perk }], pick, stats: { time, parries, deaths }, touch, onAgain }
+// The story adds (all optional; without them the roll is the arena's own):
+//   result { kanji, title, stats } replaces the win line; blocks (HTML strings) replace the cast, crew,
+//   made-with and set-in blocks; note replaces the closing note; againLabel names the first button;
+//   now() is the clock in ms (the story passes game time, so stepping drives the scroll).
 export function rollCredits(opts) {
   const box = document.getElementById('credits'), roll = document.getElementById('roll'), skipHint = document.getElementById('creditsSkip');
   const { crew, pick, stats } = opts;
+  const clock = opts.now || null, nowMs = () => (clock ? clock() : performance.now());
   const me = crew[pick], others = crew.map((c, i) => ({ ...c, i })).filter((c) => c.i !== pick);
-  const mmss = `${Math.floor(stats.time / 60)}:${String(stats.time % 60).padStart(2, '0')}`;
+  const res = opts.result || null;
+  const mmss = stats ? `${Math.floor(stats.time / 60)}:${String(stats.time % 60).padStart(2, '0')}` : '';
+  const note = opts.note ?? 'No bears were harmed. Gabe is fine.';
   roll.innerHTML = '';
-  roll.append(
-    el('div', 'blk head', `<h1>CRIMSON <span>ROUGE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
+  roll.append(res
+    ? el('div', 'blk head', `<h1>CRIMSON <span>ROUGE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
+      <p class="result">${esc(res.kanji || '')}</p><p class="won">${esc(res.title || '')}</p>${res.stats ? `<p class="stats">${esc(res.stats)}</p>` : ''}`)
+    : el('div', 'blk head', `<h1>CRIMSON <span>ROUGE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
       <p class="result">勝</p><p class="won">THE BEAR SLEEPS</p>
-      <p class="stats">${mmss} · ${stats.parries} DEFLECTS · ${stats.deaths} ${stats.deaths === 1 ? 'DEATH' : 'DEATHS'}</p>`),
+      <p class="stats">${mmss} · ${stats.parries} DEFLECTS · ${stats.deaths} ${stats.deaths === 1 ? 'DEATH' : 'DEATHS'}</p>`));
+  if (opts.blocks) {
+    for (const html of opts.blocks) roll.append(el('div', 'blk', html));
+    if (opts.note != null) roll.append(el('div', 'blk', `<p class="note">${esc(note)}</p>`));
+  } else roll.append(
     el('div', 'blk', `<h3>THE CAST</h3>
       <div class="role"><img src="art/crew/${pick + 1}.webp" alt=""><span><b>${esc(me.name.toUpperCase())}</b><small>THE RONIN</small></span></div>
       <div class="role"><img src="art/gabe.webp" alt=""><span><b>GABE</b><small>THE MOUNTAIN MAN</small></span></div>
@@ -284,10 +297,10 @@ export function rollCredits(opts) {
       <p class="line"><span>LETTERS</span><b>Shippori Mincho B1 · Yuji Syuku</b><small>Zhi Mang Xing · Ma Shan Zheng</small></p>
       <p class="line"><span>BUILT WITH</span><b>Claude Code</b></p>`),
     el('div', 'blk', `<p class="line"><span>SET IN</span><b>The red-rock hills of Sedona</b></p>
-      <p class="note">No bears were harmed. Gabe is fine.</p>`),
+      <p class="note">${esc(note)}</p>`),
   );
   const fin = el('div', 'blk fin', `<p class="thanks">THANK YOU FOR PLAYING</p><h2>MORE FROM THE COTTAGE ARCADE</h2><div class="games"></div>
-    <div class="again"><button type="button" class="main" id="creditsAgain">▶ FIGHT AGAIN</button><a href="/">◀ ARCADE</a></div>`);
+    <div class="again"><button type="button" class="main" id="creditsAgain">${esc(opts.againLabel || '▶ FIGHT AGAIN')}</button><a href="/">◀ ARCADE</a></div>`);
   roll.append(fin);
   // the other cabinets, from the arcade's own list (a game still being built shows once its page answers)
   const grid = fin.querySelector('.games');
@@ -307,12 +320,15 @@ export function rollCredits(opts) {
 
   // music: through the game's own sound engine, already allowed to play since the first tap
   let score = null, stopped = false, scrollFor = 66, t0 = null;
-  const go = () => { if (t0 == null) t0 = performance.now(); };
+  const go = () => { if (t0 == null) t0 = nowMs(); };
   startMusic().then((m) => {
     if (stopped) { if (m) m.stop(0.1); return; }
     score = m; if (m) scrollFor = m.finalAt - 1; go();
   }, go);
-  setTimeout(go, 1500);
+  // with no music after 1.5 s, scroll anyway. On the story's clock the scroll always starts 1.5 s in,
+  // so a stepped run scrolls the same way every time.
+  const started = nowMs();
+  if (clock) t0 = started + 1500; else setTimeout(go, 1500);
 
   // scroll: from below the screen up until the last block sits in view, landing as the last drum hits
   let done = false, skipFrom = null, raf = 0, y = innerHeight;
@@ -320,14 +336,15 @@ export function rollCredits(opts) {
     const room = innerHeight - fin.offsetHeight;
     return -(fin.offsetTop - Math.max(16, room / 2));
   };
-  const frame = (now) => {
+  const frame = (rafNow) => {
+    const now = clock ? clock() : rafNow;
     const y1 = endY();
     if (skipFrom) {
       const k = Math.min(1, (now - skipFrom.t) / 900), e = 1 - Math.pow(1 - k, 3);
       y = skipFrom.y + (y1 - skipFrom.y) * e;
       if (k >= 1) done = true;
     } else {
-      const k = t0 == null ? 0 : Math.min(1, (now - t0) / 1000 / scrollFor);
+      const k = t0 == null ? 0 : Math.max(0, Math.min(1, (now - t0) / 1000 / scrollFor));
       y = innerHeight + (y1 - innerHeight) * k;
       if (k >= 1) done = true;
     }
@@ -341,8 +358,9 @@ export function rollCredits(opts) {
   addEventListener('resize', onResize);
 
   return {
-    get atEnd() { return done; },
-    skip() { if (!done && !skipFrom) skipFrom = { t: performance.now(), y }; },
+    // on the story's clock the end is worked out from the clock, not from the last painted frame
+    get atEnd() { return done || (!!clock && (skipFrom ? clock() - skipFrom.t >= 900 : t0 != null && clock() - t0 >= scrollFor * 1000)); },
+    skip() { if (!done && !skipFrom) skipFrom = { t: nowMs(), y }; },
     stop() {
       cancelAnimationFrame(raf); raf = 0; done = true; stopped = true;
       removeEventListener('resize', onResize);

@@ -13,6 +13,18 @@ export const FOG_COLOR = new THREE.Color(0.075, 0.075, 0.078);
 export const FOG_DENSITY = 0.017;
 scene.fog = new THREE.FogExp2(FOG_COLOR, FOG_DENSITY);
 scene.background = FOG_COLOR.clone();
+// every arena object lives in this group, so the story can hide the whole arena at once
+export const arena = new THREE.Group();
+arena.name = 'arena';
+scene.add(arena);
+// The arena's look as copied values. The story uses its own fog and grass settings; restoreArenaLook()
+// writes these back, so FIGHT GABE looks the same after a story session.
+export const ARENA_LOOK = {
+  fog: scene.fog, background: scene.background,
+  fogColor: FOG_COLOR.clone(), fogDensity: FOG_DENSITY, backgroundColor: scene.background.clone(),
+  grassFogColor: FOG_COLOR.clone(), grassFogDensity: FOG_DENSITY, grassWind: 1,
+  toonRamp: Uint8Array.from(toonRamp.image.data),
+};
 
 // the moon in the sky painting sits at this bearing; the fight is laid out to face it
 const MOON_THETA = 0.18 * TAU;
@@ -57,11 +69,11 @@ export function buildSky() {
   const sky = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false, depthWrite: false, color: new THREE.Color(0.9, 0.9, 0.9) }));
   sky.position.y = top - H / 2;
   sky.renderOrder = -10;
-  scene.add(sky);
+  arena.add(sky);
   // a dark cap overhead, above the painting
   const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshBasicMaterial({ color: 0x030303, fog: false, depthWrite: false, side: THREE.DoubleSide }));
   cap.rotation.x = Math.PI / 2; cap.position.y = top - 1; cap.renderOrder = -10;
-  scene.add(cap);
+  arena.add(cap);
   return sky;
 }
 
@@ -94,7 +106,7 @@ export function buildGround() {
   }, [140, 140]);
   const ground = new THREE.Mesh(geo, toon({ map: tex, vertexColors: true }));
   ground.receiveShadow = true;
-  scene.add(ground);
+  arena.add(ground);
   return ground;
 }
 
@@ -137,7 +149,7 @@ function formation(x, z, kind, s) {
     add(rockColumn(7 * s, 3 * s, 40 * s, 8, 0.45), 0, 0, 0);
     add(rockColumn(14 * s, 8 * s, 8 * s, 9, 0.3), 0, 0, 0);
   }
-  scene.add(g);
+  arena.add(g);
 }
 export function buildRocks() {
   // a few formations close enough to show their strata; the painted sky carries the far ones
@@ -167,7 +179,7 @@ export function buildBoulders() {
   const place = (x, z, r, solid) => {
     const m = new THREE.Mesh(boulderGeo(r), mat);
     m.position.set(x, groundHeight(x, z) + r * 0.25, z); m.rotation.y = rand(0, TAU);
-    m.castShadow = true; m.receiveShadow = true; scene.add(m);
+    m.castShadow = true; m.receiveShadow = true; arena.add(m);
     if (solid) colliders.push({ x, z, r: r * 0.9 });
   };
   for (let i = 0; i < 34; i++) { const a = rand(0, TAU), r = rand(ARENA + 1, ARENA + 7); place(Math.sin(a) * r, Math.cos(a) * r, rand(1.2, 3.2), true); }
@@ -212,7 +224,7 @@ export function buildJunipers() {
       m.compose(new THREE.Vector3(x, groundHeight(x, z) - 0.2, z), q, s); inst.setMatrixAt(i, m);
     }
     inst.castShadow = true; inst.receiveShadow = true;
-    scene.add(inst);
+    arena.add(inst);
   }
 }
 
@@ -278,23 +290,23 @@ export function buildGrass() {
   geo.instanceCount = n;
   const mesh = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: grassUniforms, vertexShader: grassVert, fragmentShader: grassFrag, side: THREE.DoubleSide }));
   mesh.frustumCulled = false;
-  scene.add(mesh);
+  arena.add(mesh);
 }
 
 /* ---------------- light ---------------- */
 export const lights = {};
 export function buildLights() {
-  scene.add(new THREE.HemisphereLight(0x9aa2b0, 0x1a1816, 0.55));
+  arena.add(new THREE.HemisphereLight(0x9aa2b0, 0x1a1816, 0.55));
   const moon = new THREE.DirectionalLight(0xe6ecf5, 2.0);
   moon.castShadow = true;
   moon.shadow.mapSize.setScalar(LITE ? 1024 : 2048);
   Object.assign(moon.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 140 });
   moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.04;
-  scene.add(moon, moon.target);
+  arena.add(moon, moon.target);
   const fill = new THREE.DirectionalLight(0xffffff, 1.0);
-  scene.add(fill, fill.target);
+  arena.add(fill, fill.target);
   const rim = new THREE.DirectionalLight(0xffffff, 1.6);
-  scene.add(rim, rim.target);
+  arena.add(rim, rim.target);
   Object.assign(lights, { moon, fill, rim });
 }
 export function followLights(center, camPos) {
@@ -305,6 +317,54 @@ export function followLights(center, camPos) {
   rim.position.copy(center).addScaledVector(MOON_DIR, 20).setY(center.y + 12); rim.target.position.copy(center);
 }
 
+/* ---------------- Midgley Bridge, far off (NEW STORY only) ---------------- */
+// A near-black deck arch against the sky, beyond the rocks, beside where Gabe stands at the start.
+// Built without the seeded random stream, so the arena layout stays the same. Hidden unless the story is on.
+let bridge = null;
+export function buildBridgeSilhouette() {
+  const bearing = Math.atan2(FACE_DIR.x, FACE_DIR.z) + 0.5, dist = 120;
+  const cx = Math.sin(bearing) * dist, cz = Math.cos(bearing) * dist;
+  const deckY = 34, len = 100, span = 62, crown = deckY - 1.2, spring = deckY - 30;
+  const archY = (x) => crown - (crown - spring) * Math.pow(2 * x / span, 2);
+  const parts = [];
+  const deck = new THREE.BoxGeometry(len, 1.6, 7); deck.translate(0, deckY, 0); parts.push(deck);
+  for (const side of [-2.6, 2.6]) {
+    const pts = []; for (let i = 0; i <= 12; i++) { const x = -span / 2 + span * i / 12; pts.push(new THREE.Vector3(x, archY(x), side)); }
+    parts.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.8, 5, false));
+    for (const x of [-24, -16, -8, 8, 16, 24]) {
+      const y0 = archY(x), h = deckY - y0;
+      const post = new THREE.CylinderGeometry(0.35, 0.35, h, 5); post.translate(x, y0 + h / 2, side); parts.push(post);
+    }
+  }
+  for (const x of [-48, -39, 39, 48]) { const pier = new THREE.BoxGeometry(2.2, deckY, 6); pier.translate(x, deckY / 2 - 2, 0); parts.push(pier); }
+  bridge = new THREE.Mesh(mergeGeos(parts), new THREE.MeshBasicMaterial({ color: 0x0b0b0c, fog: false }));
+  bridge.name = 'bridgeSilhouette';
+  bridge.position.set(cx, groundHeight(cx, cz), cz);
+  bridge.rotation.y = bearing; // the deck runs across the view
+  bridge.visible = false;
+  arena.add(bridge);
+  return bridge;
+}
+export function setBridgeSilhouette(on) { if (bridge) bridge.visible = !!on; }
+export const bridgeSilhouetteVisible = () => !!bridge && bridge.visible;
+
+// write the arena look back (fog, background, grass fog and wind, toon ramp)
+export function restoreArenaLook() {
+  const L = ARENA_LOOK;
+  L.fog.color.copy(L.fogColor); L.fog.density = L.fogDensity; scene.fog = L.fog;
+  L.background.copy(L.backgroundColor); scene.background = L.background;
+  FOG_COLOR.copy(L.grassFogColor);
+  grassUniforms.uFogColor.value = FOG_COLOR; grassUniforms.uFogDensity.value = L.grassFogDensity; grassUniforms.uWind.value = L.grassWind;
+  const d = toonRamp.image.data;
+  if (d.some((v, i) => v !== L.toonRamp[i])) { d.set(L.toonRamp); toonRamp.needsUpdate = true; }
+}
+// stand the grass back up: no fighters pushing it, no blasts
+export function calmGrass() {
+  for (const v of grassUniforms.uPush.value) v.set(0, 0, 1, 0);
+  for (const v of grassUniforms.uBlast.value) v.set(0, 0, 0, 0);
+}
+
 export function buildWorld() {
   buildSky(); buildGround(); buildRocks(); buildBoulders(); buildJunipers(); buildGrass(); buildLights();
+  buildBridgeSilhouette();
 }

@@ -137,6 +137,11 @@ function blurInPlace(src, tmp, k) {
 }
 // draw calls and triangles of the last scene pass (post passes not counted), for tests and perf checks
 export const lastInfo = { calls: 0, triangles: 0 };
+// one-shot callbacks run right after the next frame reaches the canvas (a photo reads it back there)
+const afterFns = [];
+export function afterDraw(fn) { afterFns.push(fn); }
+// the camera's depth range: the arena uses 0.1 to 3000, the story 0.3 to 2600
+export function setDepth(near, far) { camera.near = near; camera.far = far; camera.updateProjectionMatrix(); }
 export function draw(time) {
   post.m.uniforms.uTime.value = time;
   renderer.setRenderTarget(sceneRT);
@@ -151,6 +156,7 @@ export function draw(time) {
   blurInPlace(quarterA, quarterB, 2.0);
   renderer.setRenderTarget(null);
   renderer.render(post.s, orthoCam);
+  if (afterFns.length) { const list = afterFns.splice(0); for (const fn of list) fn(renderer.domElement); }
 }
 
 /* ---------------- materials for the ink look ---------------- */

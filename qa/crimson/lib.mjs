@@ -69,6 +69,49 @@ export async function loop(page, ticks, fn, arg = null, { chunk = 600 } = {}) {
   return { ticks: done, stopped: false };
 }
 
+// Step game time until pred() is true in the page, letting real time pass between chunks (the story
+// module and its assets load on real time). Returns { ok, sec } with the seconds of game time stepped.
+export async function stepUntil(page, pred, { maxSec = 60, chunk = 0.25, realMs = 25 } = {}) {
+  const src = pred.toString();
+  for (let t = 0; ; t += chunk) {
+    if (await page.evaluate((src) => !!(0, eval)("(" + src + ")")(), src)) return { ok: true, sec: t };
+    if (t >= maxSec) return { ok: false, sec: t };
+    await step(page, chunk);
+    if (realMs) await page.waitForTimeout(realMs);
+  }
+}
+// Step until the story says it is ready (S.ready: the world is built and the core cast is loaded).
+export const storyReady = (page, opts = {}) => stepUntil(page, () => !!(window.__crimson.story && __crimson.story.ready), { maxSec: 30, ...opts });
+// Count single ticks until pred() is true (for exact timing). Returns the ticks stepped, or -1.
+export async function ticksUntil(page, pred, max = 3600) {
+  const r = await page.evaluate(([src, max]) => {
+    const f = (0, eval)("(" + src + ")");
+    for (let i = 0; i <= max; i++) { if (f()) return i; __crimson.step(1 / 60, false); }
+    return -1;
+  }, [pred.toString(), max]);
+  return r;
+}
+
+// Wait for the page to paint n frames (DOM set in a requestAnimationFrame callback, like the credits roll).
+export const nextFrames = (page, n = 2) => page.evaluate((n) => new Promise((res) => { const f = (k) => (k ? requestAnimationFrame(() => f(k - 1)) : res()); f(n); }), n);
+// The story's invariants: hero and camera finite, the hero on or above the ground and inside the world,
+// hp in range, vehicles finite. Returns the problems (an empty list when all hold).
+export const invariants = (page) => page.evaluate(() => {
+  const S = window.__crimson && __crimson.story && __crimson.story.S, bad = [];
+  if (!S) return ["no story"];
+  const H = S.hero, p = H.pos, c = S.camera.position, fin = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+  if (!fin(p)) bad.push("hero position is not finite");
+  else {
+    if (Math.abs(p.x) > S.world.HALF || Math.abs(p.z) > S.world.HALF) bad.push(`hero outside the world at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`);
+    const g = S.world.surface(p.x, p.z, p.y + 1);
+    if (p.y < g - 0.2) bad.push(`hero under the ground (${p.y.toFixed(2)} below ${g.toFixed(2)})`);
+  }
+  if (!(H.hp >= 0 && H.hp <= H.maxHp)) bad.push(`hero hp ${H.hp} outside 0..${H.maxHp}`);
+  if (!fin(c)) bad.push("camera position is not finite");
+  for (const v of S.vehicles.list) if (!fin(v.pos) || !Number.isFinite(v.speed)) bad.push(`vehicle ${v.id} is not finite`);
+  return bad;
+});
+
 // Wait for the game to run n more ticks (live mode, after __crimson.live()).
 export async function frames(page, n = 3) {
   const f0 = await page.evaluate(() => __crimson.frame);

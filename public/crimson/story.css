@@ -1,0 +1,4 @@
+/* Crimson Rouge story UI. The UI package owns this file; until then the stub UI injects its own few rules.
+   The #story root sits over the canvas and lets taps through to the game except on its own controls. */
+#story { position: absolute; inset: 0; pointer-events: none; }
+#story.hidden { display: none; }
