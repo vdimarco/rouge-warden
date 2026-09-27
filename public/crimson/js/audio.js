@@ -1,9 +1,15 @@
 // Every sound is made in the browser: clangs, whooshes, roars, and the taiko.
+// The story adds its own sounds with define() and defineLoop(), plays them with play(name, {at, gain})
+// (through a 3D panner when `at` is given), and moves the wind bed with setWind(). The arena's sounds are
+// the same as ever.
 const rand = (a, b) => a + Math.random() * (b - a);
+// the arena's own sounds (play's switch below); the story can never redefine them
+const ARENA_SOUNDS = new Set(['slash', 'heavy', 'bossSwing', 'clang', 'block', 'hit', 'cut', 'hurt', 'slam', 'glint', 'tell', 'roar', 'pipe', 'pvc', 'punch', 'thud', 'growl', 'tear', 'surge', 'dodge', 'drink', 'broken', 'deathblow', 'start', 'death', 'victory']);
 /* ------------------------------------------------------------------ audio */
 export const Audio = {
   phase2: () => false,
   ctx: null, master: null, drumNext: 0, drumStep: 0, drumOn: false,
+  defs: {}, loopDefs: {}, wind: null, sfxBus: null,
   init() {
     if (this.ctx) { this.ctx.resume(); return; }
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
@@ -20,23 +26,72 @@ export const Audio = {
     const g = ctx.createGain(); g.gain.value = 0.05;
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.035; lfo.connect(lg); lg.connect(g.gain); lfo.start();
     w.connect(f); f.connect(g); g.connect(this.master); w.start();
+    this.wind = { filter: f, gain: g, depth: lg, freq: 420, level: 0.05 }; // the story moves it by region
+    this.sfxBus = ctx.createGain(); this.sfxBus.connect(this.master);
     setInterval(() => this.schedule(), 40);
   },
   env(node, t, a, peak, dec) { node.gain.setValueAtTime(0.0001, t); node.gain.exponentialRampToValueAtTime(peak, t + a); node.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); },
-  noiseHit(t, type, freq, q, peak, dec, sweepTo) {
+  noiseHit(t, type, freq, q, peak, dec, sweepTo, dest) {
     const ctx = this.ctx, s = ctx.createBufferSource(); s.buffer = this.noise;
     const f = ctx.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
     if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dec);
     const g = ctx.createGain(); this.env(g, t, 0.004, peak, dec);
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, Math.random()); s.stop(t + dec + 0.1);
+    s.connect(f); f.connect(g); g.connect(dest || this.master); s.start(t, Math.random()); s.stop(t + dec + 0.1);
   },
-  tone(t, type, f0, f1, peak, dec, a = 0.004) {
+  tone(t, type, f0, f1, peak, dec, a = 0.004, dest) {
     const ctx = this.ctx, o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dec);
-    const g = ctx.createGain(); this.env(g, t, a, peak, dec); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + a + dec + 0.05);
+    const g = ctx.createGain(); this.env(g, t, a, peak, dec); o.connect(g); g.connect(dest || this.master); o.start(t); o.stop(t + a + dec + 0.05);
   },
-  play(name) {
+  // a new sound: fn(ctx, t, out, opts) schedules it at time t into the node `out` (never an arena name)
+  define(name, fn) { if (ARENA_SOUNDS.has(name)) throw new Error(`Audio.define: '${name}' is an arena sound`); this.defs[name] = fn; },
+  // a new looping sound: fn(ctx, out, opts) starts it and returns { set(params), stop(fadeSec) }
+  defineLoop(name, fn) { this.loopDefs[name] = fn; },
+  // where a story sound goes: a gain (opts.gain), then a panner when opts.at is a world position
+  route(opts = {}) {
+    const ctx = this.ctx, g = ctx.createGain(); g.gain.value = opts.gain == null ? 1 : opts.gain;
+    if (opts.at && Number.isFinite(opts.at.x)) {
+      const p = ctx.createPanner();
+      p.panningModel = 'equalpower'; p.distanceModel = 'inverse'; p.refDistance = opts.ref || 6; p.maxDistance = 400; p.rolloffFactor = opts.rolloff == null ? 1.2 : opts.rolloff;
+      if (p.positionX) { p.positionX.value = opts.at.x; p.positionY.value = opts.at.y || 0; p.positionZ.value = opts.at.z; } else p.setPosition(opts.at.x, opts.at.y || 0, opts.at.z);
+      g.connect(p); p.connect(opts.bus || this.sfxBus);
+      g.panner = p;
+    } else g.connect(opts.bus || this.sfxBus);
+    return g;
+  },
+  // the listener's place and heading (the story moves it with the camera each frame)
+  listen(pos, fwd, up) {
+    const L = this.ctx && this.ctx.listener; if (!L) return;
+    if (L.positionX) {
+      const t = this.ctx.currentTime;
+      L.positionX.setTargetAtTime(pos.x, t, 0.02); L.positionY.setTargetAtTime(pos.y, t, 0.02); L.positionZ.setTargetAtTime(pos.z, t, 0.02);
+      L.forwardX.setTargetAtTime(fwd.x, t, 0.02); L.forwardY.setTargetAtTime(fwd.y, t, 0.02); L.forwardZ.setTargetAtTime(fwd.z, t, 0.02);
+      L.upX.value = up ? up.x : 0; L.upY.value = up ? up.y : 1; L.upZ.value = up ? up.z : 0;
+    } else { L.setPosition(pos.x, pos.y, pos.z); L.setOrientation(fwd.x, fwd.y, fwd.z, up ? up.x : 0, up ? up.y : 1, up ? up.z : 0); }
+  },
+  // the wind bed: its band (Hz) and level; the arena's is 420 Hz at 0.05
+  setWind(freq = 420, level = 0.05, ramp = 1.5) {
+    const w = this.wind; if (!w) return;
+    const t = this.ctx.currentTime;
+    w.filter.frequency.setTargetAtTime(freq, t, ramp / 3); w.gain.gain.setTargetAtTime(level, t, ramp / 3); w.depth.gain.setTargetAtTime(level * 0.7, t, ramp / 3);
+    w.freq = freq; w.level = level;
+  },
+  // start a defined loop; without sound it hands back a handle that does nothing
+  loop(name, opts = {}) {
+    const def = this.loopDefs[name];
+    if (!this.ctx || !def) return { set() {}, stop() {}, silent: true };
+    const out = this.route(opts);
+    const h = def(this.ctx, out, opts) || { set() {}, stop() {} };
+    const stop = h.stop;
+    h.stop = (fade = 0.25) => { if (h.stopped) return; h.stopped = true; const t = this.ctx.currentTime; out.gain.setTargetAtTime(0, t, Math.max(0.01, fade / 3)); if (stop) stop.call(h, fade); }; // the loop's own stop ends its sources after the fade
+    const set = h.set;
+    h.set = (p = {}) => { if (h.stopped) return; if (p.at && out.panner) { const P = out.panner; if (P.positionX) { P.positionX.value = p.at.x; P.positionY.value = p.at.y || 0; P.positionZ.value = p.at.z; } else P.setPosition(p.at.x, p.at.y || 0, p.at.z); } if (p.gain != null) out.gain.setTargetAtTime(p.gain, this.ctx.currentTime, 0.05); if (set) set.call(h, p); };
+    return h;
+  },
+  play(name, opts) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime + 0.005;
+    const def = this.defs[name];
+    if (def) { def(this.ctx, t + (opts && opts.delay || 0), this.route(opts), opts || {}); return; }
     switch (name) {
       case 'slash': this.noiseHit(t, 'bandpass', 3200, 1.2, 0.35, 0.16, 700); break;
       case 'heavy': this.noiseHit(t, 'bandpass', 1800, 1, 0.5, 0.3, 300); break;
