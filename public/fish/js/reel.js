@@ -159,7 +159,10 @@ class Widget extends Emitter {
     g.addColorStop(1, rgba(BRASS, 0));
     c.fillStyle = g;
     c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
-    c.strokeStyle = rgba("255,236,190", 0.75 * a);
+    c.strokeStyle = rgba("6,22,27", 0.35 * a);
+    c.lineWidth = 5;
+    c.beginPath(); c.arc(x, y, r * 0.46 + 2, 0, TAU); c.stroke();
+    c.strokeStyle = rgba("255,236,190", 0.9 * a);
     c.lineWidth = 2;
     c.beginPath(); c.arc(x, y, r * 0.46, 0, TAU); c.stroke();
   }
@@ -260,7 +263,7 @@ export class ReelPanel extends Widget {
   _local(e) { return this.toLocal(e.clientX, e.clientY, this.el); }
   _down(e) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (this.hidden || blocked(e.target, this.area)) return;
+    if (!this.fit() || blocked(e.target, this.area)) return;
     // the same id again means we missed its end (a lost pointerup): close the old one first
     if (this.ptrs.has(e.pointerId)) this._up(e, true);
     const q = this._local(e);
@@ -469,11 +472,13 @@ export class ReelPanel extends Widget {
     fx.bailV += acc * dt; fx.bail = clamp(fx.bail + fx.bailV * dt, -0.12, 1.12);
     fx.clack = Math.max(0, fx.clack - dt * 3.5);
     const spool = Math.max(0, +s.spool || 0);
-    fx.spin += spool * TAU * dt;
+    // what you see turn is capped: past a few turns a second a spinning part only strobes; the streaks show the speed
+    fx.spin += Math.min(spool, 2.5) * TAU * dt;
     fx.glow = lerp(fx.glow, s.glow ? 1 : 0, 1 - Math.exp(-dt * 8));
-    fx.thumbA = lerp(fx.thumbA, this.thumb ? 1 : 0, 1 - Math.exp(-dt * 14));
+    // full glow once the game takes the pin (set({pinned})); a dim one while it does not (the bail is still shut)
+    fx.thumbA = lerp(fx.thumbA, this.thumb ? (s.pinned ? 1 : 0.35) : 0, 1 - Math.exp(-dt * 14));
     const guideOn = s.touchCast && s.bail === "open" && (this.pinId != null || spool < 0.5) && s.glow !== "bail";
-    fx.guide = lerp(fx.guide, guideOn ? 1 : 0, 1 - Math.exp(-dt * 6));
+    fx.guide = lerp(fx.guide, guideOn ? 1 : 0, 1 - Math.exp(-dt * (guideOn ? 6 : 14)));
     const pulse = 0.5 + 0.5 * Math.sin(this.time * 5.2);
     const phi = lerp(BAIL.closed, BAIL.open, fx.bail);
     const S = this.S, wireW = Math.max(3, S * 0.05);
@@ -544,7 +549,7 @@ export class ReelPanel extends Widget {
     ctx.beginPath(); ctx.moveTo(gt.x, gt.y); ctx.lineTo(g.x, g.y - this.S * 0.08); ctx.stroke();
     ctx.strokeStyle = "#dfe6e8"; ctx.lineWidth = Math.max(1.5, this.S * 0.022);
     ctx.beginPath(); ctx.ellipse(g.x, g.y, this.S * 0.05, this.S * 0.09, 0, 0, TAU); ctx.stroke();
-    const grip = this._cyl([1.72, Y, 0], [1, 0, 0], 3.6, 0.165, MAT.cork);
+    this._cyl([1.72, Y, 0], [1, 0, 0], 3.6, 0.165, MAT.cork);
     // cork has pores
     ctx.fillStyle = "rgba(70,45,20,0.35)";
     for (let i = 0; i < 70; i++) {
@@ -552,7 +557,6 @@ export class ReelPanel extends Widget {
       const q = this._p(x, Y + Math.cos(a) * 0.16, Math.sin(a) * 0.16);
       ctx.fillRect(q.x, q.y, 1.4, 1.1);
     }
-    void grip;
     this._cyl([0.32, Y, 0], [1, 0, 0], 1.42, 0.125, MAT.gun);
     // hood rings at both ends of the seat, one in the accent colour
     this._cyl([0.3, Y, 0], [1, 0, 0], 0.16, 0.14, MAT.silver);
@@ -571,7 +575,7 @@ export class ReelPanel extends Widget {
     // the gearbox: a short fat cylinder across the reel, and its side plate facing us
     const c = [HANDLE.x, HANDLE.y, -0.34];
     this._cyl([0.62, -0.02, 0], [1, 0, 0], 0.5, 0.44, MAT.body);
-    const box = this._cyl(c, [0, 0, 1], 0.68, 0.6, MAT.body);
+    this._cyl(c, [0, 0, 1], 0.68, 0.6, MAT.body);
     const plate = this._frame([HANDLE.x, HANDLE.y, 0.34], [1, 0, 0], [0, 1, 0], 0.6);
     this._face(plate, 0, MAT.body, 1.05, [0, 0, 1]);
     // a thin accent ring and four screws on the plate
@@ -582,7 +586,6 @@ export class ReelPanel extends Widget {
       ctx.fillStyle = "#0b1012"; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1.5, this.S * 0.03), 0, TAU); ctx.fill();
       ctx.fillStyle = "rgba(200,210,214,0.45)"; ctx.beginPath(); ctx.arc(p.x - 0.5, p.y - 0.5, Math.max(0.8, this.S * 0.013), 0, TAU); ctx.fill();
     }
-    void box;
     // the handle: a stub, a flat arm, and a knob that sticks out toward us
     this._cyl([HANDLE.x, HANDLE.y, 0.34], [0, 0, 1], 0.2, 0.13, MAT.silver);
     const a = HANDLE.ang, kx = HANDLE.x + Math.cos(a) * HANDLE.len, ky = HANDLE.y + Math.sin(a) * HANDLE.len;
@@ -594,15 +597,17 @@ export class ReelPanel extends Widget {
     ctx.fillStyle = ag; ctx.fill();
     const hub = this._frame([HANDLE.x, HANDLE.y, 0.56], [1, 0, 0], [0, 1, 0], 0.1);
     this._face(hub, 0, MAT.silver, 1.1, [0, 0, 1]);
-    const knob = this._cyl([kx, ky, 0.6], [0, 0, 1], 0.4, 0.14, MAT.red);
+    this._cyl([kx, ky, 0.6], [0, 0, 1], 0.4, 0.14, MAT.red);
     this._face(this._frame([kx, ky, 1.0], [1, 0, 0], [0, 1, 0], 0.14), 0, MAT.red, 1.05, [0, 0, 1]);
-    void knob;
   }
 
   // a rotor arm, near (+1) or far (−1): it carries a bail pivot out past the spool
   _arm(ctx, side) {
-    const z0 = side * 0.6, z1 = side * (BAIL.r - 0.02), hb = 0.13, ht = 0.1;
+    const z0 = side * 0.6, z1 = side * (BAIL.r - 0.02), hb = 0.15, ht = 0.085;
     const q = [[0.46, hb, z0], [BAIL.x - 0.03, ht, z1], [BAIL.x - 0.03, -ht, z1], [0.46, -hb, z0]].map(([x, y, z]) => this._p(x, y, z));
+    // bow the long edges out a little, and round off the end at the pivot
+    const bow = (a, b, k) => ({ x: (a.x + b.x) / 2 - (b.y - a.y) * k, y: (a.y + b.y) / 2 + (b.x - a.x) * k });
+    const tipC = this._p(BAIL.x - 0.13, 0, z1 + side * 0.02);
     // shaded top to bottom like a rounded bar: the lit top edge, a dark belly
     const m0 = { x: (q[0].x + q[1].x) / 2, y: (q[0].y + q[1].y) / 2 }, m1 = { x: (q[2].x + q[3].x) / 2, y: (q[2].y + q[3].y) / 2 };
     const g = ctx.createLinearGradient(m0.x, m0.y, m1.x, m1.y);
@@ -610,13 +615,24 @@ export class ReelPanel extends Widget {
     g.addColorStop(0, shade(n3([0, 0.9, 0.45 * side]), m, k));
     g.addColorStop(0.4, shade(n3([0, 0.2, side]), m, k * 0.8));
     g.addColorStop(1, shade(n3([0, -0.8, 0.6 * side]), MAT.gun, k * 0.7));
-    ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
+    const top = bow(q[0], q[1], 0.12), bot = bow(q[2], q[3], 0.1);
+    ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y);
+    ctx.quadraticCurveTo(top.x, top.y, q[1].x, q[1].y);
+    ctx.quadraticCurveTo(tipC.x, tipC.y, q[2].x, q[2].y);
+    ctx.quadraticCurveTo(bot.x, bot.y, q[3].x, q[3].y);
+    ctx.closePath();
     ctx.fillStyle = g; ctx.fill();
-    ctx.lineWidth = 1.2; ctx.lineCap = "round";
-    ctx.strokeStyle = side > 0 ? "rgba(235,242,244,0.55)" : "rgba(0,0,0,0.3)";
-    ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[1].x, q[1].y); ctx.stroke();
+    ctx.lineWidth = 1.3; ctx.lineCap = "round";
+    ctx.strokeStyle = side > 0 ? "rgba(235,242,244,0.6)" : "rgba(0,0,0,0.3)";
+    ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.quadraticCurveTo(top.x, top.y, q[1].x, q[1].y); ctx.stroke();
     ctx.strokeStyle = "rgba(0,0,0,0.45)";
-    ctx.beginPath(); ctx.moveTo(q[2].x, q[2].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(q[2].x, q[2].y); ctx.quadraticCurveTo(bot.x, bot.y, q[3].x, q[3].y); ctx.stroke();
+    // an accent pinstripe along the arm on the near side
+    if (side > 0) {
+      const p0 = this._p(0.3, 0.02, z0 + 0.03), p1 = this._p(BAIL.x + 0.08, 0.01, z1 - 0.02);
+      ctx.strokeStyle = rgba(RED, 0.8); ctx.lineWidth = Math.max(1, this.S * 0.012);
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+    }
     // the pivot boss
     const b = this._frame([BAIL.x, 0, z1], [1, 0, 0], [0, 1, 0], 0.1);
     this._face(b, 0, side > 0 ? MAT.gun : MAT.body, 1.1, [0, 0, side]);
@@ -721,7 +737,7 @@ export class ReelPanel extends Widget {
       ctx.strokeStyle = rgba("20,30,30", 0.35 * a); ctx.lineWidth = 2.4; ctx.stroke();
       ctx.strokeStyle = rgba("250,242,205", 0.85 * a); ctx.lineWidth = 1.1; ctx.stroke();
     };
-    const thumb = this.thumb && this.fx.thumbA > 0.05 && this.thumb.x > 0 && this.thumb.x < this.w && this.thumb.y > 0 && this.thumb.y < this.h ? this.thumb : null;
+    const thumb = this.thumb && this.s.pinned && this.thumb.x > 0 && this.thumb.x < this.w && this.thumb.y > 0 && this.thumb.y < this.h ? this.thumb : null;
     if (bail < 0.5) {
       // shut: from the near side of the spool, over the roller, up to the guide
       const a = this._p(-0.34, 0.1, rl), r = this._p(BAIL.x, 0.04, BAIL.r + 0.02);
@@ -932,7 +948,7 @@ export class Crank extends Widget {
     this.hist = [];
   }
   // how long without a sample before we call the thumb stopped
-  _stale() { return clamp(Math.max(1.6 * this.gap, 2 * this.step), T.crankStaleMs, 150); }
+  _stale() { return clamp(Math.max(1.3 * this.gap, 1.5 * this.step), T.crankStaleMs, 150); }
   // signed rev/s: the angle the thumb swept over the last window
   _thumbRate(t) {
     const h = this.hist;
@@ -951,7 +967,8 @@ export class Crank extends Widget {
     this.travel += rev;
     while (this.travel >= (this.quarters + 1) * 0.25) {
       this.quarters++;
-      this.lit[this.quarters % 4] = 1;
+      // light the quarter mark the knob is passing
+      this.lit[((Math.round((this.ang + Math.PI / 2) / (Math.PI / 2)) % 4) + 4) % 4] = 1;
       this.emit("turn", { n: this.quarters, turns: this.quarters / 4 });
     }
   }
@@ -1176,9 +1193,11 @@ export class RodPad extends Widget {
     if (v > T.yankPxs && d.armed) { d.armed = false; this.yankA = 1; this.emit("yank", { v }); }
     else if (v < T.yankPxs * 0.35) d.armed = true;
   }
-  _up(e) {
+  _up(e, cancel = false) {
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
+    // a flick that lets go mid-stroke: the lift point still counts toward the speed
+    if (!cancel) { const q = this.toLocal(e.clientX, e.clientY, this.el); d.hist.push({ t: e.timeStamp, y: q.y }); this._yankCheck(e.timeStamp); }
     this.drag = null;
   }
   _update() {
@@ -1213,13 +1232,18 @@ export class RodPad extends Widget {
     ctx.font = font(12); spaced(ctx, 0.14); ctx.fillStyle = rgba(BRASS, 1);
     ctx.fillText("ROD", 12, 16);
     const low = th < 28, high = th > 70;
+    if (h > 230) {
+      ctx.font = font(10, 800); spaced(ctx, 0.04); ctx.fillStyle = rgba(INK, 0.5);
+      ctx.fillText("Drag it up and down.", 12, 34);
+      ctx.fillText("Swipe up fast to hook.", 12, 48);
+    }
     ctx.textAlign = "right"; ctx.font = font(10); spaced(ctx, 0.1);
     ctx.fillStyle = low ? rgba(DANGER, 0.95) : rgba(GREEN, 0.95);
     if (low || high) ctx.fillText(low ? "TOO LOW" : "HIGH", w - 12, 16);
     spaced(ctx, 0);
     // the rod seen from your right side: a pivot, the arc it can swing through, and the rod
     const steerY = h - 17;
-    const yTop = 34, yBot = steerY - 22, L = Math.max(20, Math.min(w * 0.56, (yBot - yTop) * 0.78));
+    const yTop = h > 230 ? 60 : 34, yBot = steerY - 22, L = Math.max(20, Math.min(w * 0.56, (yBot - yTop) * 0.78));
     const px = w * 0.3, py = Math.min(yBot - 12, (yTop + yBot) / 2 + L * 0.45);
     const ang = (d) => -d * DEG;
     // zones: too low (red), lifting (green)
@@ -1383,13 +1407,19 @@ export class Gauge extends Widget {
     const x = cx + R + lw / 2 + 12, colW = w - x - 10;
     if (colW > 30) {
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      const big = Math.max(15, Math.min(24, Math.round(top * 0.22)));
+      const lo = (+s.lineOut || 0).toFixed(1);
+      // as big as the column allows: "123.4 m" must fit as well as "8.2 m"
+      let big = Math.max(13, Math.min(24, Math.round(top * 0.22)));
+      for (; big > 13; big--) {
+        ctx.font = font(big); const a = ctx.measureText(lo).width;
+        ctx.font = font(Math.round(big * 0.55), 800);
+        if (a + ctx.measureText(" m").width <= colW) break;
+      }
       const y0 = top / 2 - big * 1.45 + 2;
       ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.55);
       ctx.fillText("LINE OUT", x, y0, colW);
       spaced(ctx, 0);
       ctx.font = font(big); ctx.fillStyle = "#f6efd9";
-      const lo = (+s.lineOut || 0).toFixed(1);
       ctx.fillText(lo, x, y0 + big * 0.95);
       const lw3 = ctx.measureText(lo).width;
       ctx.font = font(Math.round(big * 0.55), 800); ctx.fillStyle = rgba(INK, 0.7);

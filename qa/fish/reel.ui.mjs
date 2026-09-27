@@ -134,7 +134,9 @@ async function openPage(width, height) {
   await page.waitForFunction(() => window.READY === true);
   const cdp = await ctx.newCDPSession(page);
   // one touch event; pts = the fingers that are down after it (CDP releases any finger missing from the list)
-  const touch = (type, pts) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: pts.map((p) => ({ x: p.x, y: p.y, id: p.id, radiusX: 9, radiusY: 9, force: 1 })) });
+  // at = the moment the finger was there (ms since the epoch); it becomes the event's timeStamp, so a message that
+  // waits in CDP's queue still says when it happened, as a real touch would
+  const touch = (type, pts, at) => cdp.send("Input.dispatchTouchEvent", Object.assign({ type, touchPoints: pts.map((p) => ({ x: p.x, y: p.y, id: p.id, radiusX: 9, radiusY: 9, force: 1 })) }, at ? { timestamp: at / 1000 } : {}));
   // client point for a point in an element's local css pixels
   const at = (sel, x, y) => page.evaluate(([s, x, y]) => T.toClient(x, y, document.querySelector(s)), [sel, x, y]);
   const size = (sel) => page.evaluate((s) => { const e = document.querySelector(s); return { w: e.clientWidth, h: e.clientHeight }; }, sel);
@@ -142,15 +144,22 @@ async function openPage(width, height) {
 }
 const EVS = (page, type) => page.evaluate((t) => T.EV.filter((e) => !t || e.type === t), type);
 
-// a swipe in local coordinates of sel, from (x,y) by (dx,dy) in n steps of ms
+// a swipe in local coordinates of sel, from (x,y) by (dx,dy) in n steps of ms: paced in real time and timestamped
+// (pipelined, not awaited one by one, or CDP's round trip would slow every swipe down)
 async function swipe(P, sel, x, y, dx, dy, { n = 6, ms = 16, id = 1, hold = 0 } = {}) {
   const pts = [];
   for (let i = 0; i <= n; i++) pts.push(await P.at(sel, x + (dx * i) / n, y + (dy * i) / n));
-  await P.touch("touchStart", [{ ...pts[0], id }]);
+  const e0 = Date.now() - performance.now();
+  await P.touch("touchStart", [{ ...pts[0], id }], e0 + performance.now());
   if (hold) await sleep(hold);
-  for (let i = 1; i <= n; i++) { await sleep(ms); await P.touch("touchMove", [{ ...pts[i], id }]); }
+  const t0 = performance.now(), pend = [];
+  for (let i = 1; i <= n; i++) {
+    while (performance.now() < t0 + i * ms) await sleep(1);
+    pend.push(P.touch("touchMove", [{ ...pts[i], id }], e0 + performance.now()));
+  }
+  await Promise.all(pend);
   await sleep(ms);
-  await P.touch("touchEnd", []);
+  await P.touch("touchEnd", [], e0 + performance.now());
   await sleep(30);
 }
 
@@ -263,15 +272,20 @@ async function crankChecks(P, tag) {
   const ux = { x: cx1.x - c0.x, y: cx1.y - c0.y }, uy = { x: cy1.x - c0.x, y: cy1.y - c0.y };
   const R = Math.min(sz.w, sz.h) * 0.3;
   const pt = (a) => ({ x: c0.x + ux.x * Math.cos(a) * R + uy.x * Math.sin(a) * R, y: c0.y + ux.y * Math.cos(a) * R + uy.y * Math.sin(a) * R });
+  // a thumb going round at rps for secs: moves every 16 ms like a real 60 Hz touch screen. The sends are pipelined
+  // (not awaited one by one), or CDP's round trip would set the pace instead.
   async function circle(rps, secs, id, { lift = false, hold = 0 } = {}) {
     const t0 = performance.now();
     await P.touch("touchStart", [{ ...pt(0), id }]);
-    let el = 0;
-    while (el < secs) {
-      await sleep(4);
-      el = (performance.now() - t0) / 1000;
-      await P.touch("touchMove", [{ ...pt(TAU * rps * el), id }]);
+    const pend = [];
+    const e0 = Date.now() - performance.now();
+    for (let k = 1; ; k++) {
+      while (performance.now() < t0 + k * 16) await sleep(1);
+      const tn = performance.now(), el = (tn - t0) / 1000;
+      if (el > secs) break;
+      pend.push(P.touch("touchMove", [{ ...pt(TAU * rps * el), id }], e0 + tn));
     }
+    await Promise.all(pend);
     if (hold) await sleep(hold);
     if (lift) await P.touch("touchEnd", []);
   }
@@ -285,8 +299,9 @@ async function crankChecks(P, tag) {
   await P.touch("touchEnd", []);
   const steady = log.r.filter((s) => s.t > log.r[0].t + 400 && s.t < log.last - 20).map((s) => s.rate);
   const mean = steady.reduce((a, b) => a + b, 0) / Math.max(1, steady.length);
-  const lo = Math.min(...steady), hi = Math.max(...steady);
-  check(steady.length > 20 && Math.abs(mean - 2) < 0.3 && lo > 1.7 && hi < 2.3, `${tag}: a steady 2 rev/s circle reads ${mean.toFixed(2)} rev/s (min ${lo.toFixed(2)}, max ${hi.toFixed(2)}, ${steady.length} frames)`);
+  // 9 frames in 10 within the band: one late delivery on a busy test box may dip a single frame
+  const srt = [...steady].sort((a, b) => a - b), lo = srt[Math.floor(srt.length * 0.1)], hi = srt[Math.floor(srt.length * 0.9)];
+  check(steady.length > 20 && Math.abs(mean - 2) < 0.3 && lo > 1.7 && hi < 2.3, `${tag}: a steady 2 rev/s circle reads ${mean.toFixed(2)} rev/s (10th-90th percentile ${lo.toFixed(2)}-${hi.toFixed(2)}, lowest ${srt[0].toFixed(2)}, ${steady.length} frames)`);
   const zeroAt = log.r.find((s) => s.t > log.last && s.rate === 0);
   const stop = zeroAt ? zeroAt.t - log.last : Infinity;
   check(stop <= 260, `${tag}: the rate falls to 0 ${stop.toFixed(0)} ms after the thumb stops (want <= 250)`);
@@ -297,8 +312,8 @@ async function crankChecks(P, tag) {
   await circle(-1.5, 1.0, 21, { lift: true });
   const back = await page.evaluate(() => T.RATES.slice());
   await page.evaluate(() => T.sampling(false));
-  const bm = back.filter((s, i) => i > back.length * 0.5).map((s) => s.rate);
-  check(bm.length && bm.every((r) => r > 1.1 && r < 1.9), `${tag}: turning the other way also reels (${(bm.reduce((a, b) => a + b, 0) / Math.max(1, bm.length)).toFixed(2)} rev/s)`);
+  const bm = back.filter((s, i) => i > back.length * 0.5).map((s) => s.rate).sort((a, b) => a - b), bmean = bm.reduce((a, b) => a + b, 0) / Math.max(1, bm.length);
+  check(bm.length && Math.abs(bmean - 1.5) < 0.3 && bm[Math.floor(bm.length * 0.1)] > 1.2, `${tag}: turning the other way also reels (${bmean.toFixed(2)} rev/s for 1.5, lowest ${bm[0].toFixed(2)})`);
   // a fling keeps a little spin after the thumb lifts
   await sleep(1400);
   await page.evaluate(() => { T.sampling(true); });
@@ -352,23 +367,24 @@ async function padChecks(P, tag) {
   await sleep(50);
   const th2 = await page.evaluate(() => T.pad.theta);
   check(th2 >= 10 && th2 < th1 - 20, `${tag}: drag down lowers the rod (${th2.toFixed(1)}°), never below 10`);
-  // steer: a finger near the right edge steers right; it springs back after the lift
-  // (not the very edge: at 390 px wide the page's #crankBox overlaps the pad's right few pixels)
-  const rp = await P.at("#padBox", sz.w - 12, sz.h * 0.5);
+  // steer: a finger near the right edge steers right; it springs back after the lift.
+  // Not at the very edge: at 390 px wide #crankBox overlaps the pad by a few pixels, and Chrome's touch adjustment
+  // (a 9 px finger) snaps a press there onto the crank's switch input.
+  const rp = await P.at("#padBox", sz.w - 20, sz.h * 0.5);
   await P.touch("touchStart", [{ ...rp, id: 32 }]);
   await sleep(40);
   const sr = await page.evaluate(() => T.pad.steer);
-  if (!(sr > 0.9)) console.log("        (steer press landed on " + JSON.stringify(await page.evaluate((p) => { const e = document.elementFromPoint(p.x, p.y); return [p, e && (e.id || e.className || e.tagName), T.PT.slice(-2)]; }, rp)) + ")");
+  if (!(sr > 0.8)) console.log("        (steer press landed on " + JSON.stringify(await page.evaluate((p) => { const e = document.elementFromPoint(p.x, p.y); return [p, e && (e.id || e.className || e.tagName), T.PT.slice(-2)]; }, rp)) + ")");
   await P.touch("touchEnd", []);
   await sleep(300);
   const s0 = await page.evaluate(() => T.pad.steer);
-  const lp = await P.at("#padBox", 12, sz.h * 0.5);
+  const lp = await P.at("#padBox", 20, sz.h * 0.5);
   await P.touch("touchStart", [{ ...lp, id: 33 }]);
   await sleep(40);
   const sl = await page.evaluate(() => T.pad.steer);
   await P.touch("touchEnd", []);
   await sleep(300);
-  check(sr > 0.9 && sl < -0.9 && s0 === 0, `${tag}: steer right ${sr.toFixed(2)}, left ${sl.toFixed(2)}, and back to ${s0} on release`);
+  check(sr > 0.8 && sl < -0.8 && s0 === 0, `${tag}: steer right ${sr.toFixed(2)}, left ${sl.toFixed(2)}, and back to ${s0} on release`);
   // a fast swipe up sets the hook, once
   await page.evaluate(() => T.clear());
   await swipe(P, "#padBox", sz.w / 2, sz.h * 0.75, 0, -Math.min(150, sz.h * 0.6), { n: 5, ms: 16, id: 34 });

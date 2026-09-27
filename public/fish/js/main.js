@@ -386,13 +386,15 @@ function unpinLine(e) {
     toast(touchDevice ? "The screen turned and dropped your thumb. Turn on the rotation lock." : "The line slipped.", 3200);
     return;
   }
-  release(e.t || now());
+  // with sensors, the exact input time of the lift matters; with a finger, the finger's own clock is the rod's clock
+  release(sensing() ? e.t || now() : now());
 }
 // the finger comes off the line: was it a cast, or did the line just slip?
 function release(t) {
   const s = Motion.at(t);
   const pk = Motion.peak(t - 450, t);
   const fwd = Math.max(0, -pk.minOmega, -s.omega);
+  G.lastRelease = { t, theta: s.theta, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
   // hand tremor alone reaches 20 to 40 deg/s: a motion release needs a real swing
   const minSpeed = sensing() ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
   if (fwd < minSpeed) {
@@ -1055,7 +1057,8 @@ async function boot() {
     // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast
     const h = Math.max(160, $("#reelBox").clientHeight);
     G.pin.theta = clamp(80 + ((e.y - G.pin.y0) / h) * 150, 5, 170);
-    if (!sensing()) Motion.virtual({ t: e.t || now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });
+    // one clock for the finger: pointer times are input times and can run behind the frame's own samples
+    if (!sensing()) Motion.virtual({ t: now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });
   });
   reelPanel.on("unpin", (e) => unpinLine(e));
   // every sensor sample: catch quick moves that a slow frame could miss
