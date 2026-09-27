@@ -263,9 +263,9 @@ function loonWail(e, t, o = {}) {
   a.setTargetAtTime(0, last, 0.14);
   // the vibrato grows through each note, and rests at the slide
   const d = v.depth.gain;
-  d.setValueAtTime(0, t); d.linearRampToValueAtTime(b * 0.012, t + 1.3); d.linearRampToValueAtTime(b * 0.003, t + 1.6);
-  d.linearRampToValueAtTime(b * 0.024, t + 2.9);
-  if (three) { d.linearRampToValueAtTime(b * 0.006, t + 3.25); d.linearRampToValueAtTime(b * 0.02, t + 4.3); }
+  d.setValueAtTime(0, t); d.linearRampToValueAtTime(b * 0.016, t + 1.3); d.linearRampToValueAtTime(b * 0.004, t + 1.6);
+  d.linearRampToValueAtTime(b * 0.03, t + 2.9);
+  if (three) { d.linearRampToValueAtTime(b * 0.008, t + 3.25); d.linearRampToValueAtTime(b * 0.026, t + 4.3); }
   const end = last + 1.1;
   v.go(end);
   return end;
@@ -765,6 +765,8 @@ export const Sound = {
     try { ctx = new AC({ latencyHint: "interactive" }); } catch (err) { try { ctx = new AC(); } catch (err2) { return false; } }
     E = makeEngine(ctx);
     E.out.gain.value = on ? VOL : 0;
+    E.ran = false;
+    ctx.addEventListener("statechange", () => { if (ctx.state === "running") E.ran = true; });
     // iOS: a silent sound started inside the gesture unlocks the output
     try { const b = ctx.createBuffer(1, 1, ctx.sampleRate), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(); } catch (err) { /* ignore */ }
     if (on) wake(); else ctx.suspend();
@@ -791,6 +793,8 @@ export const Sound = {
   isOn() { return on; },
   sfx(name, v) {
     if (!live() || !SFX[name]) return;
+    // a context that ran and is now asleep (hidden tab, iOS interruption) would play everything at once on resume
+    if (E.ran && E.ctx.state !== "running") return;
     try { SFX[name](E, E.ctx.currentTime + 0.005, v); } catch (err) { /* never let a sound break the game */ }
   },
   setSwish(v) { if (E) drive(E, "swish", v); },
@@ -813,6 +817,7 @@ export const Sound = {
 };
 
 // Tests: render one sound (a one-shot, a loop driven along a curve, or the lake) into an OfflineAudioContext.
+// name: an sfx name, a loop name, "ambience", or "stress" (every loop, the lake and a stream of one-shots together).
 // opts: v (one-shot strength), at (its start time), curve(t) (loop value over time), hour and loonAt (the lake),
 // raw (skip the master bus).
 // Resolves to the AudioBuffer.
@@ -829,10 +834,16 @@ export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, lo
     else if (LOOPS[name]) {
       const f = curve || CURVES[name];
       for (let t = 0; t < seconds; t += 1 / 60) drive(e, name, f(t), t);
-    } else if (name === "ambience") {
+    } else if (name === "ambience" || name === "stress") {
       lakeSet(e, true, hour, 0);
       if (loonAt != null) e.amb.next.loon = loonAt;
       lakeEvents(e, 0, seconds);
+      // stress: a whole fight at once, every loop running with the lake, and a one-shot every half second
+      if (name === "stress") {
+        const names = Object.keys(SFX);
+        for (let t = 0; t < seconds; t += 1 / 60) for (const n of GAME_LOOPS) drive(e, n, CURVES[n](t % 4) || 0.5, t);
+        for (let i = 0; i * 0.5 < seconds - 1; i++) SFX[names[i % names.length]](e, 0.3 + i * 0.5, 0.7);
+      }
     } else throw new Error("unknown sound " + name);
   } finally { rnd = keep; }
   return ctx.startRendering();

@@ -483,6 +483,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
     u.uWag.value.set(T.t * 3, T.junk ? 0 : 0.12, 0, 0);
     u.uUnder.value = 0; u.uAlpha.value = 1;
     if (Math.random() < dt * 3 && !T.junk) spray.emit(p.x + (Math.random() - 0.5) * T.len * 0.6, p.y - 0.05, p.z, 0, -0.3, 0, 0.012, 0.8);
+    // the legend glitters
+    if (T.id === "golden" && Math.random() < dt * 12) spray.emit(p.x + (Math.random() - 0.5) * T.len, p.y + (Math.random() - 0.5) * T.len * 0.3, p.z + (Math.random() - 0.5) * 0.1, 0, 0.08, 0, 0.012, 1.2, 1, 0);
   }
 
   /* ---------------- per frame ---------------- */

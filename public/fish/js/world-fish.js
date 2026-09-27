@@ -371,9 +371,10 @@ function buildJunk(j) {
     parts.push(bake(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 10).rotateX(Math.PI / 2), { matrix: M().makeTranslation(0, 0, 0.335), color: hex("#f2c230") }));
   } else {
     // Pip's frisbee: a yellow disc with an orange stripe
-    const prof = [[0, 0.018], [0.09, 0.016], [0.125, 0.01], [0.135, -0.004], [0.13, -0.018], [0.122, -0.012], [0.124, 0.002], [0.11, 0.006], [0, 0.008]];
-    const d = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 24);
-    parts.push(bake(d, { colorFn: (x, y, z) => { const r = Math.hypot(x, z); return r > 0.085 && r < 0.1 && y > 0 ? acc : r < 0.03 && y > 0 ? acc : body; } }));
+    // extra rings where the colour changes, so the stripes stay crisp
+    const prof = [[0, 0.018], [0.028, 0.018], [0.031, 0.018], [0.083, 0.0166], [0.086, 0.0164], [0.099, 0.0156], [0.102, 0.0153], [0.125, 0.01], [0.135, -0.004], [0.13, -0.018], [0.122, -0.012], [0.124, 0.002], [0.11, 0.006], [0, 0.008]];
+    const d = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 28);
+    parts.push(bake(d, { colorFn: (x, y, z) => { const r = Math.hypot(x, z); return y > 0.012 && ((r > 0.085 && r < 0.1) || r < 0.03) ? acc : body; } }));
   }
   const g = merge(parts);
   const mat = fx(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 50, specular: 0x333333, transparent: true, side: THREE.DoubleSide }), u, { wag: false });

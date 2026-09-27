@@ -420,12 +420,13 @@ export class ReelPanel extends Widget {
     ctx.lineCap = "round"; ctx.lineJoin = "round";
     if (glow > 0) {
       ctx.save();
-      ctx.shadowColor = rgba(BRASS, 0.9 * glow); ctx.shadowBlur = 10 + 14 * glow;
-      this._strokePts(pts, w + 5, rgba(BRASS, 0.55 * glow));
+      ctx.shadowColor = rgba(BRASS, glow); ctx.shadowBlur = 12 + 16 * glow;
+      this._strokePts(pts, w + 12, rgba(BRASS, 0.28 * glow));
+      this._strokePts(pts, w + 5, rgba("255,214,120", 0.75 * glow));
       ctx.restore();
     }
     this._strokePts(pts, w + 1.6, "rgba(10,20,24,0.8)");
-    this._strokePts(pts, w, "#b9c3c7");
+    this._strokePts(pts, w, glow > 0.3 ? "#e9dcb4" : "#b9c3c7");
     ctx.save(); ctx.translate(-w * 0.18, -w * 0.22);
     this._strokePts(pts, w * 0.38, "rgba(255,255,255,0.9)");
     ctx.restore();
@@ -560,15 +561,22 @@ export class ReelPanel extends Widget {
 
   // a rotor arm, near (+1) or far (−1): it carries a bail pivot out past the spool
   _arm(ctx, side) {
-    const z0 = side * 0.66, z1 = side * (BAIL.r - 0.02);
-    const q = [[0.36, 0.15, z0], [BAIL.x - 0.02, 0.085, z1], [BAIL.x - 0.02, -0.085, z1], [0.36, -0.15, z0]].map(([x, y, z]) => this._p(x, y, z));
-    const g = ctx.createLinearGradient(q[0].x, q[0].y, q[3].x, q[3].y);
-    if (side > 0) { g.addColorStop(0, "#6f7b80"); g.addColorStop(0.3, "#39434a"); g.addColorStop(1, "#141a1d"); }
-    else { g.addColorStop(0, "#2c3438"); g.addColorStop(1, "#101518"); }
+    const z0 = side * 0.6, z1 = side * (BAIL.r - 0.02), hb = 0.13, ht = 0.1;
+    const q = [[0.46, hb, z0], [BAIL.x - 0.03, ht, z1], [BAIL.x - 0.03, -ht, z1], [0.46, -hb, z0]].map(([x, y, z]) => this._p(x, y, z));
+    // shaded top to bottom like a rounded bar: the lit top edge, a dark belly
+    const m0 = { x: (q[0].x + q[1].x) / 2, y: (q[0].y + q[1].y) / 2 }, m1 = { x: (q[2].x + q[3].x) / 2, y: (q[2].y + q[3].y) / 2 };
+    const g = ctx.createLinearGradient(m0.x, m0.y, m1.x, m1.y);
+    const k = side > 0 ? 1 : 0.55;
+    g.addColorStop(0, shade(n3([0, 0.9, 0.45 * side]), MAT.gun, k));
+    g.addColorStop(0.35, shade(n3([0, 0.2, side]), MAT.gun, k));
+    g.addColorStop(1, shade(n3([0, -0.8, 0.6 * side]), MAT.gun, k * 0.8));
     ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
     ctx.fillStyle = g; ctx.fill();
-    ctx.strokeStyle = side > 0 ? "rgba(220,230,232,0.35)" : "rgba(0,0,0,0.3)"; ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2; ctx.lineCap = "round";
+    ctx.strokeStyle = side > 0 ? "rgba(235,242,244,0.55)" : "rgba(0,0,0,0.3)";
     ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[1].x, q[1].y); ctx.stroke();
+    ctx.strokeStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath(); ctx.moveTo(q[2].x, q[2].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
     // the pivot boss
     const b = this._frame([BAIL.x, 0, z1], [1, 0, 0], [0, 1, 0], 0.1);
     this._face(b, 0, side > 0 ? MAT.gun : MAT.body, 1.1, [0, 0, side]);
@@ -652,14 +660,14 @@ export class ReelPanel extends Widget {
     this._face(cap, 0, MAT.gun, 1.15);
     ctx.beginPath(); this._use(cap); ctx.arc(0, 0, 0.8, 0, TAU); ctx.moveTo(0.62, 0); ctx.arc(0, 0, 0.62, 0, TAU, true); this._flat();
     ctx.fillStyle = rgba(RED, 0.95); ctx.fill("evenodd");
-    // a little arrow on the cap, turning with the spool
+    // a raised grip bar across the cap; it turns with the spool, so you can see it spin
+    const t = fx.spin, c0 = Math.cos(t), s0 = Math.sin(t);
     ctx.beginPath(); this._use(cap);
-    const t = fx.spin;
-    ctx.moveTo(Math.cos(t) * 0.45, Math.sin(t) * 0.45);
-    ctx.lineTo(Math.cos(t + 2.5) * 0.3, Math.sin(t + 2.5) * 0.3);
-    ctx.lineTo(Math.cos(t - 2.5) * 0.3, Math.sin(t - 2.5) * 0.3);
+    ctx.moveTo(c0 * 0.5 - s0 * 0.09, s0 * 0.5 + c0 * 0.09); ctx.lineTo(-c0 * 0.5 - s0 * 0.09, -s0 * 0.5 + c0 * 0.09);
+    ctx.lineTo(-c0 * 0.5 + s0 * 0.09, -s0 * 0.5 - c0 * 0.09); ctx.lineTo(c0 * 0.5 + s0 * 0.09, s0 * 0.5 - c0 * 0.09);
     ctx.closePath(); this._flat();
-    ctx.fillStyle = "rgba(235,240,242,0.8)"; ctx.fill();
+    ctx.fillStyle = shade([-1, 0, 0], MAT.gun, 1.5); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.4)"; ctx.lineWidth = 1; ctx.stroke();
     this._band = { rl, vis: band.vis };
   }
 
@@ -670,8 +678,8 @@ export class ReelPanel extends Widget {
     ctx.lineCap = "round"; ctx.lineJoin = "round";
     const stroke = (pts, a = 1) => {
       ctx.beginPath(); pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
-      ctx.strokeStyle = rgba("20,30,30", 0.45 * a); ctx.lineWidth = 2.6; ctx.stroke();
-      ctx.strokeStyle = rgba("250,242,205", 0.95 * a); ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.strokeStyle = rgba("20,30,30", 0.35 * a); ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.strokeStyle = rgba("250,242,205", 0.85 * a); ctx.lineWidth = 1.1; ctx.stroke();
     };
     const thumb = this.thumb && this.fx.thumbA > 0.05 && this.thumb.x > 0 && this.thumb.x < this.w && this.thumb.y > 0 && this.thumb.y < this.h ? this.thumb : null;
     if (bail < 0.5) {
@@ -683,11 +691,11 @@ export class ReelPanel extends Widget {
     const top = this._p(SPOOL.front - 0.02, SPOOL.lip * 0.93, 0.12);
     if (spool > 0.3) {
       // open and paying out: loose coils leave the lip and straighten toward the guide
-      const k = clamp(spool / 6, 0.2, 1), pts = [], n = 44;
+      const k = clamp(spool / 6, 0.2, 1), pts = [], n = 160;
       for (let i = 0; i <= n; i++) {
-        const u = i / n, amp = S * 0.3 * k * Math.pow(1 - u, 1.6);
-        const ph = this.fx.spin * 3 + u * 30;
-        pts.push({ x: lerp(top.x, G.x, u) + Math.cos(ph) * amp, y: lerp(top.y, G.y, u) + Math.sin(ph) * amp * 0.6 });
+        const u = i / n, amp = S * 0.26 * k * Math.pow(1 - u, 1.3);
+        const ph = -this.fx.spin * 2.2 + u * 24;
+        pts.push({ x: lerp(top.x, G.x, u) + Math.cos(ph) * amp, y: lerp(top.y, G.y, u) + Math.sin(ph) * amp * 0.55 });
       }
       stroke(pts, 0.9);
       return;

@@ -237,9 +237,10 @@ try {
   console.log("\nloops:");
   const LOOPS = {
     swish: { secs: 2.2, segs: [[0.45, 0.75], [1.28, 1.42], [1.9, 2.2]] },
-    spool: { secs: 4, segs: [[0.2, 0.8], [2.3, 3.0], [3.6, 4]] },
-    reel: { secs: 4.6, segs: [[0.5, 1.4], [1.7, 2.7], [3.05, 3.2], [3.3, 3.95], [4.4, 4.6]] },
-    drag: { secs: 4.2, segs: [[0.4, 1.1], [1.4, 2.3], [2.6, 3.5], [3.9, 4.2]] },
+    // rates: the click rate the loop should make in each window (6.4 coils per m of line, 8 ticks per crank turn, 75 clicks per m of slip)
+    spool: { secs: 4, segs: [[0.3, 0.5], [2.5, 2.8], [3.6, 4]], rates: [6.4 * (2 + 28 * Math.exp(-0.3 / 1.1)), 6.4 * (2 + 28 * Math.exp(-2.55 / 1.1))] },
+    reel: { secs: 4.6, segs: [[0.5, 1.4], [1.7, 2.7], [3.05, 3.2], [3.3, 3.95], [4.4, 4.6]], rates: [9.6, 20.8, 0, 32] },
+    drag: { secs: 4.2, segs: [[0.4, 1.1], [1.4, 2.3], [2.6, 3.5], [3.9, 4.2]], rates: [18.75, 75, 210] },
     tension: { secs: 4, segs: [[0.5, 1.2], [2.6, 3.4], [3.8, 4]] },
   };
   const segRow = (s) => `[${s.s}-${s.e}s rms ${s.rms.toFixed(3)} peak ${s.peak.toFixed(3)} rate ${s.rate.toFixed(1)} Hz centroid ${Math.round(s.centroid)} Hz]`;
@@ -254,6 +255,8 @@ try {
     if (r.peak < 0.02 || r.rms < 0.004) why.push("silent");
     if (r.peak >= 1 || r.overs || raw.peak >= 1) why.push("clips");
     if (name === "swish") { if (!(S[1].rms > 2 * S[0].rms && S[1].centroid > S[0].centroid + 300)) why.push("the whip is not louder and brighter than the back swing"); if (S[2].rms > 0.002) why.push("does not go quiet at 0"); }
+    const near = (got, want) => Math.abs(got - want) <= 0.25 * want;
+    if (L.rates) L.rates.forEach((want, i) => { if (want && !near(S[i].rate, want)) why.push(`click rate ${S[i].rate.toFixed(1)} Hz in ${S[i].s}-${S[i].e} s, want ~${want}`); });
     if (name === "spool") {
       if (!(S[0].rate > 2 * S[1].rate)) why.push("the click rate does not fall as the lure slows");
       if (!(S[0].centroid > S[1].centroid)) why.push("the pitch does not fall as the lure slows");
@@ -295,16 +298,14 @@ try {
   }
   if (!(lake.dusk.band > 4 * lake.noon.band)) fail("crickets: no more 4.2-4.9 kHz energy at dusk than at noon"); else ok("crickets sing at dusk, not at noon");
 
-  /* ---------- CPU: everything at once, rendered offline, against the clock ---------- */
-  const cpu = await page.evaluate(async () => {
-    const t0 = performance.now();
-    await Promise.all(["swish", "spool", "reel", "drag", "tension"].map((n) => window.Sound._render(n, 4)));
-    const loops = performance.now() - t0;
-    const t1 = performance.now();
-    await window.Sound._render("ambience", 12, { hour: 20.4 });
-    return { loops: loops / 1000 / 4, lake: (performance.now() - t1) / 1000 / 12 };
-  });
-  console.log(`\n      render cost: the 5 game loops ${(cpu.loops * 100).toFixed(1)}% of real time, the lake ${(cpu.lake * 100).toFixed(1)}% (this machine, one core)`);
+  /* ---------- everything at once: no clipping, and what it costs ---------- */
+  console.log("\neverything at once:");
+  const st = await page.evaluate(() => analyse("stress", 12, { hour: 20.4 }));
+  const lk = await page.evaluate(() => analyse("ambience", 12, { hour: 20.4 }));
+  st.rawPeak = (await page.evaluate(() => analyse("stress", 12, { hour: 20.4, raw: true }))).peak;
+  console.log("      " + row(st));
+  console.log(`      render cost (offline, one core of this machine, incl. setup): all loops + lake + one-shots ${(st.ms / 120).toFixed(1)}% of real time; the lake alone ${(lk.ms / 120).toFixed(1)}%`);
+  if (st.bad || st.peak >= 1 || st.overs) fail("stress: clips or breaks (peak " + st.peak.toFixed(3) + ")"); else ok("stress: every loop, the lake and a one-shot every 0.5 s stay under 1.0 (raw sum " + st.rawPeak.toFixed(2) + ")");
 
   /* ---------- the live path: a real AudioContext, every call, the switch ---------- */
   const lv = await page.evaluate(async () => {
