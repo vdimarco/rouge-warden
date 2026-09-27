@@ -13,30 +13,61 @@ export const FIT = {
   kayak: { length: 4.8, rot: 0 }, fish: { length: 0.75, rot: 0 },
   cabin: { length: 13.5, rot: -Math.PI / 2 }, outhouse: { height: 3.25, rot: -Math.PI / 2 }, statue: { height: 4.2, rot: -Math.PI / 2 },
 };
-const GLB = {};
+const GLB = {}, FITS = {};
 let gradient = null, skinClone = null;
+const jobs = new Map(), settled = new Set();
 
-// Load every model at once. Resolves when all have loaded or failed; never rejects.
-export async function loadModels(gradientMap, onProgress) {
+// Start loading every model. The ones in `first` start at once; the rest start when those are in, so the title
+// screen does not share the network with models it does not need yet. Nothing here ever rejects.
+export function loadModels(gradientMap, renderer, first = Object.keys(FIT)) {
   gradient = gradientMap;
-  let GLTFLoader;
-  try {
-    ({ GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js"));
-    ({ clone: skinClone } = await import("three/addons/utils/SkeletonUtils.js"));
-  } catch (e) {
-    console.warn("3D model loader unavailable; using built-in shapes", e);
-    return 0;
-  }
-  const loader = new GLTFLoader();
-  const names = Object.keys(FIT);
-  let done = 0, ok = 0;
-  await Promise.all(names.map((n) => Promise.race([
-    loader.loadAsync(BASE + n + ".glb").then((g) => { GLB[n] = g; ok++; }),
+  const lib = Promise.all([import("three/addons/loaders/GLTFLoader.js"), import("three/addons/utils/SkeletonUtils.js")])
+    .then(([L, S]) => { skinClone = S.clone; return new L.GLTFLoader(); })
+    .catch((e) => { console.warn("3D model loader unavailable; using built-in shapes", e); return null; });
+  const load = (n, after) => after.then(() => lib).then((loader) => loader && Promise.race([
+    loader.loadAsync(BASE + n + ".glb").then((g) => keep(n, g, renderer)),
     new Promise((res) => setTimeout(res, 60000)),
-  ]).catch((e) => console.warn("model " + n + " failed; using built-in shape", e)).finally(() => { done++; if (onProgress) onProgress(done, names.length); })));
-  return ok;
+  ])).catch((e) => console.warn("model " + n + " failed; using built-in shape", e)).finally(() => settled.add(n));
+  for (const n of first) jobs.set(n, load(n, Promise.resolve()));
+  const firstIn = ready(first);
+  for (const n of Object.keys(FIT)) if (!jobs.has(n)) jobs.set(n, load(n, firstIn));
 }
+// Resolves when every named model has loaded, failed, or timed out.
+export function ready(names, onProgress) {
+  let done = 0;
+  return Promise.all(names.map((n) => (jobs.get(n) || Promise.resolve()).then(() => { done++; if (onProgress) onProgress(done, names.length); })));
+}
+export const isReady = (names) => names.every((n) => settled.has(n) || !jobs.has(n));
 export const has = (n) => !!GLB[n];
+
+// A model that loaded: measure its fit once, and let go of what the game never draws.
+// Only the scene is kept; the loader's own copy of the file goes.
+function keep(n, g, renderer) {
+  FITS[n] = measure(g.scene, n);
+  trim(g.scene, renderer);
+  GLB[n] = g.scene;
+}
+// The toon look uses only each model's colour map. The other maps (normal, roughness, metal, light, glow) are
+// decoded but never drawn, so they are closed now. The colour maps go to the graphics card here, and their decoded
+// copies are closed too. A closed texture can never be uploaded again: never set needsUpdate on these textures, or
+// change their anisotropy, colorSpace or wrap (these are part of three's texture cache key). A lost graphics
+// context reloads the page, so nothing has to upload them twice.
+function trim(scene, renderer) {
+  const mats = new Set(), maps = new Set();
+  scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) mats.add(m); });
+  for (const m of mats) if (m.map) maps.add(m.map);
+  const images = new Set([...maps].map((t) => t.image));
+  for (const m of mats) for (const k of Object.keys(m)) {
+    const t = m[k];
+    if (k === "map" || !t || !t.isTexture || maps.has(t)) continue;
+    if (!images.has(t.image)) t.image?.close?.();
+    t.dispose(); m[k] = null;
+  }
+  for (const t of maps) t.anisotropy = 4;
+  if (!renderer) return;
+  for (const t of maps) renderer.initTexture(t);
+  for (const t of maps) t.image?.close?.();
+}
 
 /* ---------------- materials and outlines ---------------- */
 function toonify(obj) {
@@ -44,7 +75,6 @@ function toonify(obj) {
     if (!o.isMesh) return;
     const old = o.material;
     o.material = new THREE.MeshToonMaterial({ map: old.map || null, color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)), gradientMap: gradient });
-    if (o.material.map) o.material.map.anisotropy = 4;
     o.castShadow = true; o.receiveShadow = false;
     old.dispose();
   });
@@ -89,10 +119,10 @@ function addOutlines(obj, worldThick) {
 }
 
 // Scale and turn a model so it faces +z, stands on y = 0, and has the size in FIT.
-function fitted(name) {
-  const g = GLB[name], f = FIT[name];
-  const inner = (g.scene.getObjectByProperty("type", "SkinnedMesh") ? skinClone(g.scene) : g.scene.clone(true));
-  const holder = new THREE.Group();
+// Measuring walks every vertex, so each model is measured once, when it loads; every copy reuses the numbers.
+const copy = (scene) => (scene.getObjectByProperty("type", "SkinnedMesh") ? skinClone(scene) : scene.clone(true));
+function measure(scene, name) {
+  const f = FIT[name], inner = copy(scene), holder = new THREE.Group();
   holder.add(inner);
   inner.rotation.y = f.rot || 0;
   holder.updateMatrixWorld(true);
@@ -101,10 +131,17 @@ function fitted(name) {
   inner.scale.multiplyScalar(k);
   holder.updateMatrixWorld(true);
   const b2 = new THREE.Box3().setFromObject(inner, true), c = b2.getCenter(new THREE.Vector3());
-  inner.position.x -= c.x; inner.position.z -= c.z; inner.position.y -= b2.min.y;
+  return { k, off: new THREE.Vector3(c.x, b2.min.y, c.z), size: b2.getSize(new THREE.Vector3()) };
+}
+function fitted(name) {
+  const F = FITS[name], inner = copy(GLB[name]), holder = new THREE.Group();
+  holder.add(inner);
+  inner.rotation.y = FIT[name].rot || 0;
+  inner.scale.multiplyScalar(F.k);
+  inner.position.sub(F.off);
   toonify(inner);
   holder.updateMatrixWorld(true);
-  holder.userData.size = b2.getSize(new THREE.Vector3());
+  holder.userData.size = F.size.clone();
   return holder;
 }
 
