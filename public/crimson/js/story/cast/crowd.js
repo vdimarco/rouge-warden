@@ -7,7 +7,7 @@
 // Followers: friends that keep a slot behind the hero, and board or leave a van with a short fade.
 import * as THREE from 'three';
 import { PLACES } from '../world/places.js';
-import { ROADS } from '../world/roads.js';
+import { ROADS, WALKS, smoothLine } from '../world/roads.js';
 
 const TAU = Math.PI * 2;
 export const CROWD_COUNT = Object.freeze([3, 6, 12]);
@@ -15,14 +15,28 @@ export const CROWD_COUNT = Object.freeze([3, 6, 12]);
 // trailhead lookouts where people stand, wander a little and take photos.
 function lines() {
   const L = [];
-  // Uptown: both sidewalks of 89A, the middle of the concrete strip (half the road plus 1.2 m)
-  const u = ROADS.find((r) => r.id === 'a89u');
-  if (u) { const off = u.width / 2 + 1.25, pts = u.pts.slice(1); L.push(['uptown', offsetLine(pts, off), 'walk'], ['uptown', offsetLine(pts, -off), 'walk']); }
-  // West Sedona: the shop strip north of 89A, set back from the road
-  const strip = (ax, az, bx, bz, off) => { const Ln = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / Ln, dz = (bz - az) / Ln, rx = -dz, rz = dx; return Array.from({ length: 9 }, (_, i) => { const t = i / 8; return [Math.round(ax + dx * Ln * t + rx * off), Math.round(az + dz * Ln * t + rz * off)]; }); };
-  L.push(['west', strip(-420, 116, -660, 146, 13.5), 'walk'], ['west', strip(-240, 90, -420, 116, 13.5), 'walk']);
-  L.push(['west', [[-590, 92], [-560, 94], [-530, 92], [-526, 80], [-560, 82], [-594, 80]], 'walk']); // Red Rock Plaza's front walk
-  L.push(['diner', [[166, 916], [168, 930], [166, 944], [176, 948], [178, 924]], 'walk']);
+  // the sidewalks (roads.js WALKS), a little back from the middle of the concrete (clear of the lamps, benches
+  // and street trees on the kerb side): Uptown's along both sides of 89A between the ends of its walk, and West
+  // Sedona's (and Red Rock Plaza's forecourt) and the diner's along their shop fronts
+  const zoneOf = { uptown: 'uptown', west: 'west', diner: 'diner' };
+  for (const w of WALKS) {
+    const zone = zoneOf[w.id.replace(/[0-9_].*$/, '')]; if (!zone) continue;
+    const mid = w.to - w.from > 6 ? w.from + 2.6 : (w.from + w.to) / 2 + Math.min(0.35, (w.to - w.from) * 0.1); // (a forecourt: along the shop fronts)
+    if (w.road) {
+      const r = ROADS.find((q) => q.id === w.road), line = smoothLine(r.pts), acc = [0];
+      for (let i = 1; i < line.length; i++) acc.push(acc[i - 1] + Math.hypot(line[i].x - line[i - 1].x, line[i].z - line[i - 1].z));
+      const near = ([x, z]) => { let best = 0, bd = Infinity; line.forEach((p, i) => { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; best = acc[i]; } }); return best; };
+      const s0 = Math.min(near(w.a), near(w.b)) + 3, s1 = Math.max(near(w.a), near(w.b)) - 3;
+      const pts = line.filter((p, i) => acc[i] >= s0 && acc[i] <= s1).map((p) => [p.x, p.z]);
+      const off = r.width / 2 + mid;
+      L.push([zone, offsetLine(pts, off), 'walk'], [zone, offsetLine(pts, -off), 'walk']);
+    } else if (w.line.length === 2) {
+      const [[ax, az], [bx, bz]] = w.line, Ln = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / Ln, dz = (bz - az) / Ln, o = mid * (w.side || 1);
+      if (Ln < 8) continue;
+      // (1.5 m in from the walk's ends)
+      L.push([zone, [[ax + dx * 1.5 - dz * o, az + dz * 1.5 + dx * o], [bx - dx * 1.5 - dz * o, bz - dz * 1.5 + dx * o]], 'walk']);
+    }
+  }
   for (const id of ['midgley_lot', 'airport_overlook', 'boynton', 'bell_cairn', 'cathedral_saddle', 'airport_mesa', 'slide_rock']) {
     const p = PLACES[id]; if (!p) continue;
     L.push([id, [[p.x - 4, p.z - 2], [p.x + 3, p.z - 4], [p.x + 5, p.z + 3], [p.x - 2, p.z + 5]], 'view']);

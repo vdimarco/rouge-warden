@@ -58,6 +58,7 @@ float bandc(float x, float a, float b, float fw) { return clamp((min(x + 0.5 * f
 float linec(float x, float c, float w, float fw) { return bandc(x, c - 0.5 * w, c + 0.5 * w, fw); }
 // meters to the nearest multiple of p along the road, from s mod 12 (p divides 12, so it is seamless)
 float jointD(float s12, float p) { return abs(fract(s12 / p + 0.5) - 0.5) * p; }
+float gWalk = 0.0; // how much of this pixel is sidewalk (the lighting keeps its shade neutral grey)
 vec3 paintGround(vec3 col, float flatK, float g2) {
   vec2 ruv = clamp((vWP.xz + 1000.0) / 2000.0, 0.0, 0.9999);
   ivec2 tx = ivec2(ruv * ${MASK.toFixed(1)});
@@ -108,20 +109,25 @@ vec3 paintGround(vec3 col, float flatK, float g2) {
   c = mix(c, C_CENTER, center * 0.92);
   col = mix(col, c, asphRoad * cov(e, fe) * (1.0 - lotK * (1.0 - lined)) * flatK);
   // 5. sidewalks: concrete flags a shade apart with a joint every 1.5 m; where the walk meets a lined road or an
-  // asphalt lot, a light curb top and a dark face and gutter (a raised kerb, in paint); a tooled line along a
-  // free edge. Across a driveway the concrete runs on, jointless and flush.
+  // asphalt lot, a light curb top and a dark face and gutter (a raised kerb, in paint). Its free edges (its ends,
+  // the back in the gaps between buildings) take the same curb, returned round the ends, with its face and a
+  // soft shadow on the dirt instead of a gutter. Across a driveway the concrete runs on, jointless and flush.
   float curbK = max(lined * (1.0 - smoothstep(0.05, 0.35, e)), isLot * (1.0 - step(0.5, LP.x)) * (1.0 - smoothstep(0.05, 0.35, lotD)));
+  float paved = max(road * (1.0 - smoothstep(0.05, 0.35, e)), isLot * (1.0 - smoothstep(0.05, 0.35, lotD)));
+  float freeK = (1.0 - curbK) * (1.0 - paved), edgeK = max(curbK, freeK);
   float slab = floor(s12 / 1.5 + 0.5);
   vec3 wc = C_CONC * 0.93 * (0.95 + 0.06 * nHash(vec2(slab, id))) * (0.95 + 0.08 * g2) * (1.0 - 0.05 * vnoise(vWP.xz * 0.45));
   wc *= 1.0 - 0.24 * mark * linec(j15, 0.0, 0.06, fj);
-  wc *= 1.0 - 0.1 * linec(wv, -0.14, 0.04, fv) * (1.0 - curbK);
   // the curb top, brightest along its arris
-  wc = mix(wc, C_CURB * (1.04 + 0.05 * g2), bandc(wv, -0.22, -0.035, fv) * curbK);
-  wc = mix(wc, C_CURB * 1.18, linec(wv, -0.06, 0.04, fv) * curbK * 0.8);
-  col = mix(col, wc, cov(wv, fv) * flatK);
-  // the gutter, darkest in the curb's shadow, then the face
+  wc = mix(wc, C_CURB * (1.04 + 0.05 * g2), bandc(wv, -0.22, -0.035, fv) * edgeK);
+  wc = mix(wc, C_CURB * 1.18, linec(wv, -0.06, 0.04, fv) * edgeK * 0.8);
+  float walkK = cov(wv, fv) * flatK;
+  col = mix(col, wc, walkK);
+  // the gutter, darkest in the curb's shadow, then the face; on dirt the face and a soft shadow
   col = mix(col, asph * mix(0.42, 0.85, smoothstep(0.0, 0.38, wv)), bandc(wv, 0.0, 0.38, fv) * curbK * flatK);
-  col = mix(col, C_ASPH * 0.25, linec(wv, 0.0, 0.06, fv) * curbK * 0.92 * flatK);
+  col *= 1.0 - 0.3 * (1.0 - smoothstep(0.0, 0.3, wv)) * bandc(wv, 0.0, 0.3, fv) * freeK * flatK;
+  col = mix(col, C_ASPH * 0.25, linec(wv, 0.0, 0.06, fv) * edgeK * 0.92 * flatK);
+  gWalk = walkK;
   return col;
 }
 `;
@@ -157,7 +163,9 @@ export function terrainMaterial(THREE, shared, tex, net, lots) {
         float flatK = smoothstep(0.72, 0.9, n.y) * (1.0 - rk);
         diffuseColor.rgb = paintGround(diffuseColor.rgb, flatK, g2);
         diffuseColor.rgb *= mix(1.0, 0.74, cloudShadow(vWP.xz, uTime) * uCloud);
-      }`);
+      }`).replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      // a sidewalk in shade reads as grey concrete, not as the sky's blue (or dusk's purple): its sky light, neutral
+      reflectedLight.indirectDiffuse = mix(reflectedLight.indirectDiffuse, dot(reflectedLight.indirectDiffuse, vec3(0.3, 0.55, 0.15)) * vec3(1.3, 1.22, 1.1), gWalk);`);
   };
   m.customProgramCacheKey = () => 'sedonaTerrain';
   return m;

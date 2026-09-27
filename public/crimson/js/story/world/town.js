@@ -9,7 +9,7 @@
 // Also exports Geo, the small geometry builder the bridge and the interiors use.
 import { toonRamp } from '../../render.js';
 import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
-import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, up } from './places.js';
+import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
 
 const lin = (v) => Math.pow(v, 2.2);
@@ -206,11 +206,18 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
       if (b.style === 'wood') {
         const [x, z] = lp(0, b.d / 2 - 0.2);
         box(g, x, base + b.h, z, b.w, 1.8, 0.4, b.yaw, col);
-        // porch roof, posts and a boardwalk 1.3 m deep: it sits on the sidewalk and leaves the kerb side clear
-        const [rx2, rz2] = lp(0, b.d / 2 + 0.9), [px2, pz2] = lp(0, b.d / 2 + 0.65);
-        box(g, rx2, base + 3.3, rz2, b.w, 0.18, 1.8, b.yaw, TRIM);
-        for (const lx of [-b.w / 2 + 0.3, b.w / 2 - 0.3]) { const [qx, qz] = lp(lx, b.d / 2 + 1.15); box(g, qx, base, qz, 0.18, 3.3, 0.18, b.yaw, TRIM); }
-        box(g, px2, base - 0.5, pz2, b.w, 0.72, 1.3, b.yaw, [0.52, 0.4, 0.3]);
+        // porch roof, posts and boardwalk, PORCH m deep (Uptown's wooden storefronts stand back so it ends at the
+        // sidewalk's back edge)
+        const [rx2, rz2] = lp(0, b.d / 2 + PORCH / 2);
+        box(g, rx2, base + 3.3, rz2, b.w, 0.18, PORCH, b.yaw, TRIM);
+        for (const lx of [-b.w / 2 + 0.3, b.w / 2 - 0.3]) { const [qx, qz] = lp(lx, b.d / 2 + PORCH - 0.25); box(g, qx, base, qz, 0.18, 3.3, 0.18, b.yaw, TRIM); }
+        // the boardwalk steps with the street's grade in sections about 6 m long, so no end of it is buried
+        const nsec = Math.max(1, Math.round(b.w / 6)), sw = b.w / nsec;
+        for (let k = 0; k < nsec; k++) {
+          const l0 = -b.w / 2 + k * sw, hs = [l0, l0 + sw].map((lx) => { const [qx, qz] = lp(lx, b.d / 2 + PORCH); return height(qx, qz); });
+          const top = Math.max(...hs) + 0.18, bot = Math.min(...hs) - 0.5, [qx, qz] = lp(l0 + sw / 2, b.d / 2 + (PORCH - 0.05) / 2);
+          box(g, qx, bot, qz, sw, top - bot, PORCH - 0.05, b.yaw, [0.52, 0.4, 0.3]);
+        }
       } else if (b.style !== 'metal') {
         for (const [lx, lz, w, d] of [[0, b.d / 2 - 0.15, b.w, 0.3], [0, -b.d / 2 + 0.15, b.w, 0.3], [b.w / 2 - 0.15, 0, 0.3, b.d], [-b.w / 2 + 0.15, 0, 0.3, b.d]]) {
           const [x, z] = lp(lx, lz); box(g, x, base + b.h, z, w, 0.7, d, b.yaw, col.map((v) => v * 0.92));

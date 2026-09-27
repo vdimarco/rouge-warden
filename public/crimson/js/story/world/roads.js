@@ -69,17 +69,38 @@ export const LOTS = Object.freeze([
 // m to one side (side +1 the right of travel, as places.js counts it; 0 both sides, which suits only a narrow
 // path: the mask keeps each walk's two edges as separate distances), square at its ends.
 export const WALKS = Object.freeze([
-  // Uptown: both sides of 89A from the edge of town to the canyon road, out to the storefronts (8.4 m)
-  { id: 'uptown', road: 'a89u', a: [120, -10.3], b: [318, -160], from: 0, to: 2.9 },
+  // Uptown: both sides of 89A from the edge of town to the canyon road, out to the storefronts and porches (8.4 m;
+  // the walk tucks 0.1 m under them)
+  { id: 'uptown', road: 'a89u', a: [120, -10.3], b: [318, -160], from: 0, to: 3 },
   // the strips: along the shop fronts where there are shops (the fronts stand at the setback; the walk tucks 0.1 m
   // under them), so no walk runs out across open ground in a strip's gaps
   ...STRIPS.flatMap((st, i) => stripRuns(st).map(([t0, t1], k) => {
     const pt = (t) => [st.a[0] + (st.b[0] - st.a[0]) * t, st.a[1] + (st.b[1] - st.a[1]) * t];
     return { id: `${st.district}${i}_${k}`, line: [pt(t0), pt(t1)], side: st.side, from: st.setback - STRIP_WALK, to: st.setback + 0.1 };
   })),
-  // the Moonrise Diner's front walk, from its front (x 143.5) out to the lot
-  { id: 'diner', line: [[143.4, 920.5], [143.4, 939.5]], side: -1, from: 0, to: 3.2 },
+  // Red Rock Plaza: a forecourt from its shop fronts (z 56.5) out to its lot
+  { id: 'west_plaza', line: [[-582.5, 56.4], [-537.5, 56.4]], side: 1, from: 0, to: 14.8 },
+  // Uptown's south-east side between the storefronts (t 0.4 to 0.72): a forecourt out to the bar's porch and the
+  // bar lot, so no dirt shows between the walk and the Rattlesnake Room, the lot or the Sunburst depot
+  // (it starts under the rock shop's porch, so its corner with the street's walk is out of sight)
+  { id: 'uptown_bar', line: [up(0.386, 0), up(0.718, 0)], side: 1, from: 8.2, to: 12.3 },
+  // the Moonrise Diner: a 4 m walk along its front (x 143.5), round both ends and back along its sides
+  { id: 'diner', line: [[143.4, 920.1], [143.4, 939.9]], side: -1, from: -0.5, to: 4 },
+  { id: 'diner_n', line: [[143.9, 922.2], [131.4, 922.2]], side: 1, from: 0, to: 2.6 },
+  { id: 'diner_s', line: [[143.9, 937.8], [131.4, 937.8]], side: -1, from: 0, to: 2.6 },
 ].map((w) => Object.freeze(w)));
+// West Sedona's street trees (young cottonwoods, their crowns clear over the walk: [x, z, scale, yaw]): two a shop
+// along each strip's walk, in pits 0.55 m in from its kerb edge, either side of the gaps between the shops (the
+// flora scatter plants them, gen.worker.js)
+export const STREET_TREES = Object.freeze(STRIPS.flatMap((st) => (st.district !== 'west' ? [] : stripRuns(st).flatMap(([t0, t1]) => {
+  const L = Math.hypot(st.b[0] - st.a[0], st.b[1] - st.a[1]), dx = (st.b[0] - st.a[0]) / L, dz = (st.b[1] - st.a[1]) / L, nx = -dz * st.side, nz = dx * st.side;
+  const l = st.setback - STRIP_WALK + 0.55, out = [];
+  for (let i = Math.round(t0 * st.n); i < Math.round(t1 * st.n); i++) for (const f of [0.2, 0.8]) {
+    const t = (i + f) / st.n, h = Math.abs(Math.sin((st.a[0] + i * 7.1 + f * 3.3) * 12.9898) * 43758.5453) % 1;
+    out.push(Object.freeze([Math.round((st.a[0] + dx * L * t + nx * l) * 100) / 100, Math.round((st.a[1] + dz * L * t + nz * l) * 100) / 100, 0.6 + 0.1 * h, h * Math.PI * 2]));
+  }
+  return out;
+}))));
 export const LANE_OFFSET = 2.6;
 
 /* ------------------------------------------------------------------ smoothing */

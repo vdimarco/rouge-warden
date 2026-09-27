@@ -6,7 +6,7 @@
 // {tile:{i,j,lod}} -> 'tile' {arrays}. Buffers are transferred. The same functions run in Node for tests.
 import { simplex, fbm, clamp, lerp, smooth } from '../../core/noise.js';
 import { CREEK, POOLS, WASH, WASH_HW, PADS, BUILDINGS, KAZOOS, CAIRNS, STRIPS } from './places.js';
-import { buildNetwork, project, at, LOTS, smoothLine } from './roads.js';
+import { buildNetwork, project, at, LOTS, smoothLine, STREET_TREES } from './roads.js';
 import { FORMATIONS, buildFormation } from './rocks.js';
 
 export const N = 400, CELL = 5, HALF = 1000, W = N + 1;
@@ -556,8 +556,9 @@ function paintMap(H, types, CF, WF) {
 // 3 boulder. Nothing grows on roads, lots, pads, buildings, water or steep rock.
 export const SPECIES = ['juniper', 'cottonwood', 'cactus', 'boulder'];
 // The strips' shops (STRIP_FOOT) and where they stood before the strips had sidewalks (LEGACY_STRIP_FOOT: 20 m
-// back in West Sedona, 13 m in the Village, and the Village's north chords from x 230): the flora scatter keeps
-// clear of the old footprints as it always did, and of the new ones without drawing on the random stream.
+// back in West Sedona, where they still stand, 13 m in the Village, and the Village's north chords from x 230):
+// the flora scatter keeps clear of the old footprints as it always did, and of the new ones without drawing on the
+// random stream.
 const LEGACY_STRIPS = [20, 20, 20, 20, [230, 800, 13], 13, [230, 800, 13], 13];
 const STRIP_FOOT = new Set(), LEGACY_STRIP_FOOT = [];
 STRIPS.forEach((st, k) => {
@@ -636,8 +637,10 @@ function scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rock
     for (const b of LEGACY_STRIP_FOOT) if (Math.abs(x - b.x) < 30 && Math.abs(z - b.z) < 30 && inFoot(b, x, z, 3)) return 1;
     let late = walkAt(ground, mk) < 1.5 || fromHalf(ground[mk]) < 2.5 || lotD < 2;
     for (const b of BUILDINGS) {
+      // (a storefront moved back for its porch keeps the plants clear of where it stood, as the random stream saw it)
+      if (b.was && Math.abs(x - b.was[0]) < 30 && Math.abs(z - b.was[1]) < 30 && inFoot({ ...b, x: b.was[0], z: b.was[1] }, x, z, 3)) return 1;
       if (Math.abs(x - b.x) > 30 || Math.abs(z - b.z) > 30 || !inFoot(b, x, z, 3)) continue;
-      if (!STRIP_FOOT.has(b)) return 1;
+      if (!STRIP_FOOT.has(b) && !b.was) return 1;
       late = true;
     }
     for (const p of PADS) if (hypot(x - p.x, z - p.z) < p.r) return 1;
@@ -646,6 +649,9 @@ function scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rock
     for (const f of rocks) for (const c of f.hi.colliders) if (hypot(x - c.x, z - c.z) < c.r + 2) return 1;
     return late ? 2 : 0;
   };
+  // the street trees (roads.js STREET_TREES), planted in their cells after the scatter (they take nothing from it)
+  const planted = new Map();
+  for (const [x, z, sc, yaw] of STREET_TREES) { const c = clamp(Math.floor((z + HALF) / 100), 0, 19) * 20 + clamp(Math.floor((x + HALF) / 100), 0, 19); if (!planted.has(c)) planted.set(c, []); planted.get(c).push(1, x, heightAt(H, x, z), z, sc, yaw); }
   for (let cj = 0; cj < 20; cj++) for (let ci = 0; ci < 20; ci++) {
     const list = [];
     for (let gz = 0; gz < 100; gz += 5) for (let gxx = 0; gxx < 100; gxx += 5) {
@@ -669,6 +675,7 @@ function scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rock
       const sc = sp === 1 ? 0.9 + R() * 0.7 : sp === 3 ? 0.5 + R() * 1.4 : 0.65 + R() * 0.75, yaw = R() * Math.PI * 2;
       if (!bl) list.push(sp, x, heightAt(H, x, z), z, sc, yaw);
     }
+    if (planted.has(cj * 20 + ci)) list.push(...planted.get(cj * 20 + ci));
     cells.push(all.length / 6, list.length / 6);
     all.push(...list);
   }
