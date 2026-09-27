@@ -1,5 +1,5 @@
 // js/story/ui/menu.js : the story's pause menu. RESUME, MAP, EVIDENCE, MISSIONS (the chapter log),
-// CONTROLS (for the device in use), MUSIC, SAVE & QUIT (S.exit, back to the title), SWITCH GAME
+// CONTROLS (for the device in use; TILT only on a phone that can tilt), MUSIC, SAVE & QUIT (S.exit, back to the title), SWITCH GAME
 // (data-switch) and ARCADE. It opens on Esc, P or pad Start, when the pointer lock is lost, and when the
 // page hides (the director's pauseMenu). The story clock stops while it is open. The arrows, the d-pad or
 // the left stick move the focus; E, Enter or pad A picks; Esc or pad B goes back.
@@ -10,7 +10,7 @@ const CONTROLS = [
   ['ON FOOT', [['Move', 'move'], ['Camera', 'look'], ['Light attack', 'light'], ['Heavy attack', 'heavy'], ['Parry (hold)', 'parry'], ['Dodge', 'dodge'], ['Drink', 'canteen'], ['Lock on', 'lock'], ['Use', 'use'], ['Crouch', 'crouch'], ['Phone camera', 'camera'], ['Bear call', 'bearcall']]],
   ['DRIVING', [['Gas', 'gas'], ['Brake and reverse', 'brake'], ['Steer', 'steer'], ['Drift', 'handbrake'], ['Horn', 'horn'], ['Look back', 'lookback'], ['Get out', 'exit']]],
   ['PHONE CAMERA', [['Take the photo', 'shutter'], ['Zoom', 'zoom'], ['Put it away', 'camera']]],
-  ['ANY TIME', [['Map', 'map'], ['Pause', 'pause'], ['Music', 'music']]],
+  ['ANY TIME', [['Map', 'map'], ['Pause', 'pause'], ['Music', 'music'], ['Tilt camera (double-tap: centre)', 'tilt']]],
 ];
 
 export function createMenu(U, { map, board }) {
@@ -75,7 +75,7 @@ export function createMenu(U, { map, board }) {
     const d = U.touch ? 'touch' : U.device;
     const head = { key: 'KEYBOARD AND MOUSE', pad: 'CONTROLLER', touch: 'TOUCH' }[d];
     const L = U.KEY_LABELS[d] || U.KEY_LABELS.key;
-    return `<h3>CONTROLS · ${head}</h3><div class="ctl">${CONTROLS.map(([t, rows]) => `<table><tr><th colspan="2">${t}</th></tr>${rows.filter(([, a]) => L[a]).map(([n, a]) => `<tr><td>${n}</td><td><kbd>${esc(L[a])}</kbd></td></tr>`).join('')}</table>`).join('')}</div>`;
+    return `<h3>CONTROLS · ${head}</h3><div class="ctl">${CONTROLS.map(([t, rows]) => `<table><tr><th colspan="2">${t}</th></tr>${rows.filter(([, a]) => L[a] && (a !== 'tilt' || (d === 'touch' && U.pieces.touch.tilt.supported))).map(([n, a]) => `<tr><td>${n}</td><td><kbd>${esc(L[a])}</kbd></td></tr>`).join('')}</table>`).join('')}</div>`;
   }
   const focusList = () => [...(page === 'main' ? mainEl : pageEl).querySelectorAll('.mBtns button:not(.hidden), .mBtns a')];
   function showFocus() { focusList().forEach((b, i) => b.classList.toggle('sel', i === focusI)); }

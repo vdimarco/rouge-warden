@@ -22,7 +22,7 @@ export const KEY_LABELS = {
   pad: { use: 'Y', exit: 'Y', light: 'RB', heavy: 'RT', parry: 'LB', dodge: 'A', canteen: 'X', lock: 'R3', crouch: 'L3', camera: '▼', bearcall: '▲', map: 'Back', pause: 'Start', music: '', horn: 'L3',
     handbrake: 'A', lookback: 'R3', gas: 'RT', brake: 'LT', steer: 'LS', move: 'LS', look: 'RS', shutter: 'A', zoom: 'LB RB', skip: 'A', back: 'B' },
   touch: { use: 'USE', exit: 'EXIT', light: 'CUT', heavy: 'HEAVY', parry: 'GUARD', dodge: 'DODGE', canteen: 'GOURD', lock: 'LOCK', crouch: 'CROUCH', camera: '写', bearcall: '熊', map: 'MAP', pause: '止', music: '',
-    horn: 'HORN', handbrake: 'DRIFT', lookback: '', gas: 'GAS', brake: 'BRAKE', steer: 'SLIDE', move: 'LEFT THUMB', look: 'DRAG', shutter: 'SHOOT', zoom: 'PINCH', skip: 'HOLD', back: '✕' },
+    horn: 'HORN', handbrake: 'DRIFT', lookback: '', gas: 'GAS', brake: 'BRAKE', steer: 'SLIDE', move: 'LEFT THUMB', look: 'DRAG', shutter: 'SHOOT', zoom: 'PINCH', skip: 'HOLD', back: '✕', tilt: 'TILT' },
 };
 const NAMES = { gabe: 'GABE', vance: 'AGENT VANCE', voss: 'HARLAN VOSS', rattler: 'RATTLER', boone: 'BOONE', dana: 'DANA', christian: 'CHRISTIAN', ryu: 'RYU', radio: 'RADIO', guide: 'GUIDE', clerk: 'CLERK', gang: 'DRIVER', voice: 'VOICE', all: 'ALL', crew: 'ALL' };
 

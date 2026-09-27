@@ -386,6 +386,8 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 #st_shoot { --s: calc(80 * var(--u)); right: calc(20 * var(--u) + var(--sr)); bottom: calc(50% - 40 * var(--u)); }
 #st_close { --s: calc(44 * var(--u)); right: calc(38 * var(--u) + var(--sr)); bottom: calc(50% + 52 * var(--u)); }
 #st_pause { --s: calc(34 * var(--u)); right: calc(10 * var(--u) + var(--sr)); top: calc(8 * var(--u) + var(--st)); }
+#st_tilt  { --s: calc(34 * var(--u)); right: calc(52 * var(--u) + var(--sr)); top: calc(8 * var(--u) + var(--st)); opacity: 0.7; }
+#st_tilt.on { opacity: 1; }
 [data-set="drive"] #st_cam { right: calc(100 * var(--u) + var(--sr)); bottom: calc(14 * var(--u) + var(--sb)); }
 @media (orientation: portrait) {
   #st_lock { right: calc(32 * var(--u) + var(--sr)); bottom: calc(172 * var(--u) + var(--sb)); }
