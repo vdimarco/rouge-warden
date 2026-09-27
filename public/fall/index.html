@@ -1153,9 +1153,14 @@ const Art = (() => {
   const load = (key, file, fw) => {
     const im = new Image();
     im.src = base + file;
-    im.decode().then(() => { out[key] = { img: im, fw: fw || im.width, fh: im.height }; }).catch(() => { /* drawn as pixels until it loads */ });
+    // a negative fw is a frame count
+    im.decode().then(() => { out[key] = { img: im, fw: fw < 0 ? im.width / -fw : fw || im.width, fh: im.height }; }).catch(() => { /* drawn as pixels until it loads */ });
   };
   CREW.forEach((c, i) => load("crew" + i, "crew" + (i + 1) + ".webp"));
+  // pixel-art sprites for Painted mode: one pose for each friend, and walk, walk, attack strips for the critters and bosses
+  CREW.forEach((c, i) => load("pxcrew" + i, "pxcrew" + (i + 1) + ".webp"));
+  for (const k of ["raccoon", "hornet", "gull", "bat", "skunk", "moose", "goose", "king"]) load("px_c_" + k, "px_" + k + ".webp", -3);
+  for (const k of ["gabe", "christian", "ryu"]) load("px_" + k, "px_" + k + ".webp", -3);
   load("gabe", "gabe.webp", 273);
   load("christian", "christian.webp", 349);
   load("ryu", "ryu.webp", 270);
@@ -4415,7 +4420,11 @@ async function cottageWatch() {
 const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111", "!": "010010010000010", "+": "000010111010000" };
 const Render = (() => {
   const wc = $("#world"), dc = $("#dark"), ac = $("#actors");
-  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actx = ac.getContext("2d");
+  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actxMain = ac.getContext("2d");
+  // in Painted mode the crew and critters draw at 2 pixels per world cell, then scale up sharp with a dark outline,
+  // so they sit on the same pixel grid as the ground
+  const PX = 2, pix = document.createElement("canvas"), pctx = pix.getContext("2d"), edge = document.createElement("canvas"), ectx = edge.getContext("2d");
+  let actx = actxMain, KS = 1;
   // colored light: one soft stamp per color, added on top of the darkness
   const tints = new Map();
   function tint(hex) {
@@ -4483,7 +4492,7 @@ const Render = (() => {
 
   // one picture, flipped to face its way, with its feet (or its middle, for flyers) at a world point
   function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost) {
-    const k = scale * adpr, w = dw * k, h = dw * (sh / sw) * k;
+    const k = KS, w = dw * k, h = dw * (sh / sw) * k;
     const x = wx * k, y = wy * k;
     actx.save();
     actx.translate(x, y);
@@ -4531,21 +4540,35 @@ const Render = (() => {
     actx.restore();
   }
   function drawActors(ox, oy) {
-    actx.setTransform(1, 0, 0, 1, 0, 0);
-    actx.clearRect(0, 0, ac.width, ac.height);
+    actxMain.setTransform(1, 0, 0, 1, 0, 0);
+    actxMain.clearRect(0, 0, ac.width, ac.height);
+    const pixel = Paint.on;
+    if (pixel) {
+      const pw = vw * PX, ph = vh * PX;
+      if (pix.width !== pw || pix.height !== ph) { pix.width = edge.width = pw; pix.height = edge.height = ph; }
+      pctx.setTransform(1, 0, 0, 1, 0, 0);
+      pctx.clearRect(0, 0, pw, ph);
+      actx = pctx;
+    } else actx = actxMain;
     actx.imageSmoothingEnabled = true;
     actx.imageSmoothingQuality = "high";
-    const k = scale * adpr;
-    // melee weapons lying on the ground
-    for (const pk of Game.pickups) {
-      if (!pk.melee) continue;
-      actx.save();
-      actx.translate((pk.x - ox) * k, (pk.y + Math.sin(pk.bob) * 1.5 - oy) * k);
-      actx.rotate(-0.8);
-      actx.translate(-5 * k, 0);
-      weaponShape(pk.melee, 9, k);
-      actx.restore();
+    const k = KS = pixel ? PX : scale * adpr;
+    drawActorBody(ox, oy, k);
+    actx = actxMain; KS = scale * adpr;
+    if (pixel) {
+      // a one-pixel dark outline, then the sprites, all scaled up without smoothing
+      ectx.globalCompositeOperation = "copy"; ectx.drawImage(pix, 0, 0);
+      ectx.globalCompositeOperation = "source-in"; ectx.fillStyle = "#0b0907"; ectx.fillRect(0, 0, edge.width, edge.height);
+      ectx.globalCompositeOperation = "source-over";
+      const s = KS / PX, W2 = pix.width * s, H2 = pix.height * s;
+      actxMain.imageSmoothingEnabled = false;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) actxMain.drawImage(edge, dx * s, dy * s, W2, H2);
+      actxMain.drawImage(pix, 0, 0, W2, H2);
+      actxMain.imageSmoothingEnabled = true;
     }
+    drainLabels(ox, oy, KS);
+  }
+  function drainLabels(ox, oy, k) {
     // the drains are labeled with where they lead
     const L = Game.level;
     if (L && L.exits && L.exits.length > 1) {
@@ -4561,6 +4584,18 @@ const Render = (() => {
         if (e.rich) { const t2 = "richer, harder"; actx.font = "700 " + Math.round(9.5 * adpr) + "px Alegreya Sans, sans-serif"; actx.strokeText(t2, tx, ty + 12 * adpr); actx.fillText(t2, tx, ty + 12 * adpr); }
       }
     }
+  }
+  function drawActorBody(ox, oy, k) {
+    // melee weapons lying on the ground
+    for (const pk of Game.pickups) {
+      if (!pk.melee) continue;
+      actx.save();
+      actx.translate((pk.x - ox) * k, (pk.y + Math.sin(pk.bob) * 1.5 - oy) * k);
+      actx.rotate(-0.8);
+      actx.translate(-5 * k, 0);
+      weaponShape(pk.melee, 9, k);
+      actx.restore();
+    }
     // hornet nests hang from the ceilings and shake when hit
     const nest = Art.get("c_nest");
     if (nest) for (const n of Game.props || []) {
@@ -4569,7 +4604,10 @@ const Render = (() => {
       actor(fr, 0, 0, fr.width, fr.height, n.x - ox + wob, n.y + 12 - oy, 10, false, n.wob > 0.2, false, "nest");
     }
     for (const f of Game.foes) {
-      const d = f.d, a = Art.get(d.art) || Art.get("c_king");
+      const d = f.d, a0 = Art.get(d.art) || Art.get("c_king"), px = Paint.on && Art.get("px_" + d.art);
+      // a pixel sprite stands as tall as the old art did
+      const a = px || a0, f0 = a0.frames ? a0.frames[0] : null, oldH = d.aw * (f0 ? f0.height / f0.width : a0.fh / a0.fw);
+      const dw = px ? oldH * (d.boss ? 1.15 : 0.85) * px.fw / px.fh : d.aw, akey = px ? "px_" + d.art : d.art;
       const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
       const moving = Math.abs(f.vx) + Math.abs(f.vy) > 0.05;
       const act = f.fuse > 0 || f.state === "slam" || f.state === "dash" || (d.ai === "spit" && f.cd < 0.25);
@@ -4577,21 +4615,21 @@ const Render = (() => {
       const fr = act ? 8 : moving || mid ? ((f.t * 12) | 0) % 8 : 0;
       const cx = f.x + f.w / 2 - ox, wy = mid ? f.y + f.h / 2 - oy : f.y + f.h + 1 - oy;
       let top;
-      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, d.aw, f.face < 0, fl, mid, d.art + fr);
-      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, d.aw, f.face < 0, fl, mid, d.art + q); }
+      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, dw, f.face < 0, fl, mid, akey + fr);
+      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving || mid ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, dw, f.face < 0, fl, mid, akey + q); }
       if (f.elite) {
         const ex = cx * k, ey = (top - 2) * k, r = 1.6 * k;
         actx.fillStyle = "#e6c35c"; actx.strokeStyle = "#1b1608"; actx.lineWidth = Math.max(1, k * 0.35);
         actx.beginPath(); actx.moveTo(ex, ey - r); actx.lineTo(ex + r, ey); actx.lineTo(ex, ey + r); actx.lineTo(ex - r, ey); actx.closePath(); actx.fill(); actx.stroke();
       }
     }
-    const p = Game.player, c = Art.get("crew" + run.crew);
+    const p = Game.player, ck = (Paint.on && Art.get("pxcrew" + run.crew) ? "pxcrew" : "crew") + run.crew, c = Art.get(ck);
     if (p && !run.over && c) {
-      const dw = 14 * c.fw / c.fh;
+      const dw = (ck[0] === "p" ? 16 : 14) * c.fw / c.fh;
       // afterimages from rolls and pounds
-      for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, "crew" + run.crew, 0, g.t * 2.2);
+      for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, ck, 0, g.t * 2.2);
       const rot = p.roll > 0 ? (1 - p.roll / 0.28) * Math.PI * 2 * p.rollDir : 0;
-      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, "crew" + run.crew, rot);
+      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, ck, rot);
       if (p.atk || p.pound) drawSwing(p, ox, oy, k);
     }
     // the shovel, swinging along your aim while you dig
