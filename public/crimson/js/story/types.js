@@ -155,7 +155,8 @@ export const PHASE_ORDER = Object.freeze({
 /* ------------------------------------------------------------------ LOOK (look/look.js, render.js) */
 /**
  * @typedef {object} Look  S.look
- * @property {(name:string, o?:{dur?:number})=>void} set  a LOOKS preset; tweens over dur
+ * @property {(name:string, o?:{dur?:number, clock?:boolean})=>void} set  a LOOKS preset; tweens over dur. clock:true lets
+ *   DAY/DUSK/NIGHT/DAWN follow S.day (they also do when the clock agrees with the name)
  * @property {(on:boolean)=>void} legend  daytime fight ink bleed: uInk to 1 in 0.6 s, back in 1.2 s
  * @property {(on:boolean, dur?:number)=>void} vortex  the 1.2 s dissolve to ink with neon kept
  * @property {(dur:number)=>void} dawn  ink drains from the ground up
@@ -167,12 +168,22 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(q:0|1|2)=>void} setQuality  sets S.q and emits 'quality'
  * @property {()=>void} reset  back to ARENA: post uniforms, fog and background (ARENA_LOOK), toon ramp, depth 0.1/3000
  * @property {(rdt:number)=>void} update  LOOK calls it from its own 'look' phase handler; nobody else calls it
- * @property {object} sun @property {object} moon @property {object} hemi
+ * @property {object} sun  the key light and the only shadow caster: the sun by day, the moon's bearing by night
+ * @property {object} moon  a shadowless fill from the camera's side (also S.look.fill) @property {object} fill @property {object} hemi
  * @property {{sun:object, moon:object, hemi:object, spots:object[], points:object[]}} lights  the fixed story light set (C5): only intensity and position change
  * @property {(on:boolean)=>void} headlights  the van's two spots (VEHICLES positions lights.spots)
+ *   lights.points: set userData.pinned when you place one; a pinned point keeps the position and intensity its
+ *   owner sets (WORLD lights the interiors this way), an unpinned one follows the look near the focus.
+ * @property {{uFogColor:{value:object}, uFogNear:{value:number}, uFogFar:{value:number}, uSunDir:{value:object}, uTime:{value:number}}} uniforms
+ *   live values for custom shaders (the story fog is one linear THREE.Fog, so fog:true also works)
+ * @property {{solid:(mat:object)=>object, glow:(mat:object)=>object}} KEY  render.js KEY: solid keeps a crimson material's
+ *   colour in the ink (it writes alpha 0); glow keys an additive crimson glow. Custom shaders write alpha 1 or more.
+ * Beyond the contract (real LOOK only): tier and QUALITY (look/quality.js), params (the live preset values),
+ * active, debugKey(on), and S.test.look / S.test.audio for QA.
  * render.js (LOOK) adds post uniforms with defaults that reproduce the arena, KEY.solid/glow, setQuality, adaptConfig.
  */
-/** @typedef {{sfx:(name:string,o?:{at?:object,gain?:number})=>void, loop:(name:string)=>{set:(p:object)=>void, stop:()=>void}, cue:(name:string|null)=>void, wind:(region:string)=>void}} Audio  S.audio */
+/** @typedef {{sfx:(name:string,o?:{at?:object,gain?:number,surface?:string})=>void, loop:(name:string,o?:{at?:object})=>{set:(p:object)=>void, stop:()=>void}, cue:(name:string|null)=>void, wind:(region:string)=>void}} Audio  S.audio
+ *  cue: 'day' | 'night' | 'chase' | 'memory' | 'boss', 'auto' (the default: picked from the look and the fight) or null. */
 
 /* ------------------------------------------------------------------ WORLD (world/*.js) */
 /**
@@ -194,7 +205,11 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(v:boolean)=>void} setVisible
  * @property {(rdt:number, camera:object, focus:object)=>void} update  WORLD calls it from its own 'world' phase handler; nobody else calls it
  * @property {()=>object} bridgeSilhouette  a low-poly bridge for world scenes (the arena has its own)
- * @property {{lights:(on:boolean)=>void}} ranch  the Hart Ranch floodlights (B6)
+ * @property {{lights:(on:boolean)=>void, gate:(open:boolean)=>void, on:boolean}} ranch  the Hart Ranch floodlights (B6); the gate blocks FR 9 until gate(true)
+ * @property {number} mapVersion  goes up on every redraw of mapImage
+ * interiors also has open(id, on) (door interacts outside free roam), points and roomAt(x, y, z). Add each saved
+ * revealed id with reveal(id) (it redraws the map). Real WORLD only: colliders.walkTop, colliders.removeTag,
+ * roads.list, roads.net, ranch.bunkDoor, town.pumps, and world/sedona.js exports WORLD_PALETTE.
  * @typedef {object} Colliders
  * @property {(x:number,z:number,r:number,o?:object)=>number} addCircle
  * @property {(o:{x:number,z:number,w:number,d:number,yaw?:number,y0?:number,top?:number,walk?:boolean})=>number} addBox
@@ -204,7 +219,7 @@ export const PHASE_ORDER = Object.freeze({
  * @property {(id:number)=>void} remove @property {(x:number,z:number,r:number,cb:Function)=>void} query
  * @property {(p:object, r:number, yFeet?:number)=>boolean} resolveCircle  pushes p out; true on contact
  * @property {(obb:object)=>({nx:number,nz:number,depth:number}|null)} resolveOBB
- * @property {(a:object, b:object)=>number|null} raycast  t in 0..1 of the first hit
+ * @property {(a:object, b:object, o?:{terrain?:boolean})=>number|null} raycast  t in 0..1 of the first hit; outdoors it hits the ground too
  * @typedef {object} Roads
  * @property {(x:number,z:number)=>{x:number,z:number,road:string|null,dist:number}} nearest
  * @property {(from:object|string, to:object|string)=>{x:number,z:number}[]} route  A* over the road graph
@@ -274,7 +289,7 @@ export const PHASE_ORDER = Object.freeze({
  * @property {'foot'|'drive'|'passenger'|'photo'} mode @property {object} pos  Vector3 @property {number} face
  * @property {Actor|null} actor @property {boolean} crouch @property {number} hp @property {number} maxHp @property {number} st
  * @property {number} canteen @property {number} canteenMax @property {string} weapon  a WEAPON_IDS id
- * @property {(crewId:string)=>void} setBody @property {(x:number, z:number, yaw?:number)=>void} place @property {(m:string)=>void} setMode
+ * @property {(crewId:string)=>void} setBody @property {(x:number, z:number, yaw?:number, y?:number)=>void} place  y: the height hint for surface() (a room at -300) @property {(m:string)=>void} setMode
  * @property {boolean} down
  * @typedef {object} Fighter
  * @property {string} id @property {Actor} a @property {object} pos @property {number} face @property {number} hp @property {number} maxHp
@@ -604,6 +619,7 @@ export const CONTRACT = Object.freeze([
   'look.name string', 'look.clockDriven boolean', 'look.overlay object', 'look.overlay.legend boolean', 'look.overlay.vortex boolean',
   'look.base object', 'look.base.flash number', 'look.base.hurt number', 'look.base.grey number', 'look.base.neonBoost number', 'look.base.smear number',
   'look.sun object', 'look.moon object', 'look.hemi object', 'look.lights object', 'look.lights.spots array', 'look.lights.points array',
+  'look.uniforms object', ...fns('look.KEY', ['solid', 'glow']),
   // audio
   ...fns('audio', ['sfx', 'loop', 'cue', 'wind']),
   // world
@@ -611,7 +627,7 @@ export const CONTRACT = Object.freeze([
   ...fns('world', ['height', 'normal', 'surface', 'surfaceType', 'roadDist', 'regionAt', 'water', 'place', 'toMap', 'reveal', 'setVisible', 'update', 'bridgeSilhouette']),
   ...fns('world.colliders', ['addCircle', 'addBox', 'addSegment', 'addVolume', 'inVolume', 'remove', 'query', 'resolveCircle', 'resolveOBB', 'raycast']),
   ...fns('world.roads', ['nearest', 'route', 'sample', 'speedLimit']), 'world.roads.lanes array',
-  'world.mapImage object', 'world.revealed object', ...fns('world.interiors', ['enter', 'exit', 'wall']), 'world.ranch.lights function',
+  'world.mapImage object', 'world.mapVersion number', 'world.revealed object', ...fns('world.interiors', ['enter', 'exit', 'wall', 'open']), ...fns('world.ranch', ['lights', 'gate']),
   // cast
   ...fns('cast', ['preload', 'ready', 'spawn', 'get', 'despawn', 'register', 'pose', 'drain', 'inkShadow', 'vortexParts', 'lodUpdate']),
   ...fns('cast.props', ['make', 'attach', 'detach']), ...fns('cast.followers', ['add', 'remove', 'board']), ...fns('cast.crowd', ['update', 'scatter', 'setDensity']),

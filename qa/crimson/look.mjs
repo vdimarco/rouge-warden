@@ -21,13 +21,13 @@ check(r.ok, `the story is ready (${r.sec} s stepped)`);
 await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
 await step(page, 1);
 
-// a fixed QA camera at Schnebly vista, looking east over the flat, with test quads 7 m ahead
+// a fixed QA camera at Schnebly vista, looking out along the vista's own bearing (downhill), with test quads 7 m ahead
 await page.evaluate(async () => {
   const S = __crimson.story.S, T = S.THREE;
   const R = await import(new URL("js/render.js", location.href).href);
   const P = await import(new URL("js/story/look/palette.js", location.href).href);
   const p = S.world.place("schnebly_vista"), y = S.world.surface(p.x, p.z, 50);
-  const eye = new T.Vector3(p.x, y + 1.7, p.z), yaw = Math.PI / 2 + 0.35; // east-south-east
+  const eye = new T.Vector3(p.x, y + 1.7, p.z), yaw = (p.yaw ?? Math.PI / 2) + 0.35; // the real world slopes up to the east
   const f = new T.Vector3(Math.sin(yaw), 0, Math.cos(yaw)), rt = new T.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const at = eye.clone().addScaledVector(f, 10);
   const Q = window.__lookQA = { eye, at, on: true, props: [] };

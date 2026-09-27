@@ -2,6 +2,7 @@
 // Its own fog objects per preset, the fixed story light set (hidden in the arena), the base post effects
 // written each frame while the story runs, and reset() back to the arena look (B11).
 import { LOOKS } from '../types.js';
+import { KEY } from '../../render.js';
 
 // fog: 'exp' (density) or 'lin' (near, far); light levels for sun, moon and sky
 const PRESETS = {
@@ -33,6 +34,7 @@ export function init(S) {
     name: 'ARENA', clockDriven: false, overlay: { legend: false, vortex: false },
     base: { flash: 0, hurt: 0, grey: 0, neonBoost: 1, smear: 0 },
     sun, moon, hemi, lights: { sun, moon, hemi, spots, points }, group,
+    uniforms: { uFogColor: { value: linFog.color }, uFogNear: { value: 250 }, uFogFar: { value: 1100 }, uSunDir: { value: SUN.clone() }, uTime: { value: 0 } }, KEY,
     set(name) {
       if (!LOOKS.includes(name)) throw new Error(`S.look.set: unknown look '${name}'`);
       L.name = name;

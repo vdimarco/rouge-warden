@@ -16,6 +16,7 @@ import { createTown } from './town.js';
 import { createInteriors } from './interiors.js';
 import { createMap } from './map.js';
 import { lastInfo } from '../../render.js';
+import { QUALITY } from '../look/quality.js';
 
 // Every base colour the world paints with (display sRGB), for LOOK's palette check (palette.mjs). Greens stay
 // bluish (g - b < 0.12) and nothing is yellow-green.
@@ -30,8 +31,8 @@ export const WORLD_PALETTE = Object.freeze({
   barWall: [0.42, 0.2, 0.14], poolFelt: [0.12, 0.3, 0.36], windowGlow: [1, 0.48, 0.2], lampShade: [1, 0.76, 0.48],
 });
 
-// view distance (m) by tier, day and night (design 3.7); the tile LOD bias by tier
-const VIEW = [[450, 160], [700, 220], [1100, 300]], BIAS = [0.6, 0.8, 1];
+// view distance (day, night) and tile LOD bias per tier come from LOOK's quality table (one source for C8)
+const VIEW = QUALITY.map((t) => [t.view.day, t.view.night]), BIAS = QUALITY.map((t) => t.lodBias);
 const NIGHT_LOOKS = { NIGHT: 1, MEMORY_NIGHT: 1, VORTEX: 1, DEEP_INK: 1, INTERIOR: 1, ARENA: 1, DUSK: 0.55, DAWN: 0.45 };
 
 export function init(S) {
@@ -268,9 +269,9 @@ export function init(S) {
     const pts = S.look && S.look.lights && S.look.lights.points;
     if (room && pts && pts.length) {
       const L = room === 'rattlesnake_room' ? parts.interiors.lamps : [[INTERIORS.airstream.x - 1.5, INTERIORS.airstream.y + 2, INTERIORS.airstream.z], [INTERIORS.airstream.x + 2.5, INTERIORS.airstream.y + 2, INTERIORS.airstream.z]];
-      pts.forEach((p, i) => { const l = L[i % L.length]; p.position.set(l[0], l[1] - 0.3, l[2]); if (!pointsLit) p.intensity = room === 'airstream' ? 1.6 : 14; });
+      pts.forEach((p, i) => { const l = L[i % L.length]; p.userData.pinned = true; p.position.set(l[0], l[1] - 0.3, l[2]); if (!pointsLit) p.intensity = room === 'airstream' ? 1.6 : 14; });
       pointsLit = true;
-    } else if (pointsLit && pts) { for (const p of pts) p.intensity = 0; pointsLit = false; }
+    } else if (pointsLit && pts) { for (const p of pts) { p.intensity = 0; p.userData.pinned = false; } pointsLit = false; }
   }
   S.register('world', (cdt, rdt) => W.update(rdt, S.camera, S.focus));
   // hide what lies beyond the view distance (fog hides it anyway): the children of a root, by their bounds
@@ -296,7 +297,7 @@ export function init(S) {
     try {
       if (S.ui && S.ui.fade) yield S.ui.fade(1, 0.35);
       const sp = into ? W.interiors.enter(id) : W.interiors.exit(id);
-      if (sp && S.hero) { S.hero.pos.y = sp.y; S.hero.place(sp.x, sp.z, sp.yaw); }
+      if (sp && S.hero) { S.hero.pos.y = sp.y; S.hero.place(sp.x, sp.z, sp.yaw, sp.y); }
       if (S.look && S.look.set) { if (into) { prevLook = S.look.name; S.look.set('INTERIOR'); } else if (prevLook && prevLook !== 'ARENA') { S.look.set(prevLook); prevLook = null; } }
       yield 0.15;
       if (S.ui && S.ui.fade) yield S.ui.fade(0, 0.35);
@@ -310,7 +311,7 @@ export function init(S) {
       S.interact.add({ id: `door:${id}:out`, tag: 'world:doors', label: 'LEAVE', r: 2.2, pos: () => { const p = W.interiors.points[id]; return p ? { x: p.door.x, y: I.y, z: p.door.z } : { x: 0, y: -1e4, z: 0 }; }, when: () => !busy, act: () => S.co.start(through(id, false), `world:door:${id}`) });
     }
   });
-  S.bus.on('exit', () => { busy = false; prevLook = null; if (pointsLit && S.look && S.look.lights) for (const p of S.look.lights.points) p.intensity = 0; pointsLit = false; });
+  S.bus.on('exit', () => { busy = false; prevLook = null; if (pointsLit && S.look && S.look.lights) for (const p of S.look.lights.points) { p.intensity = 0; p.userData.pinned = false; } pointsLit = false; });
   S.bus.on('quality', (q) => { if (parts.flora) parts.flora.setQuality(q); });
 
   /* ---------------- QA */

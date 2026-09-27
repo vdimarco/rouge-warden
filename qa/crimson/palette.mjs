@@ -25,6 +25,16 @@ const { browser, page, errors } = await open({ query: "?chapter=f1&seed=7&nomusi
 check((await storyReady(page)).ok, "the story is ready");
 await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
 await step(page, 1);
+// WORLD keeps its own colours (world/sedona.js WORLD_PALETTE, sRGB floats): the same neon check applies
+const wp = await page.evaluate(async () => {
+  const P = await import(new URL("js/story/look/palette.js", location.href).href);
+  const W = await import(new URL("js/story/world/sedona.js", location.href).href);
+  if (!W.WORLD_PALETTE) return null;
+  const hex = (c) => (Math.round(c[0] * 255) << 16) | (Math.round(c[1] * 255) << 8) | Math.round(c[2] * 255);
+  const entries = Object.fromEntries(Object.entries(W.WORLD_PALETTE).map(([k, c]) => [k, hex(c)]));
+  return { n: Object.keys(entries).length, bad: P.checkNeon({ entries, dev: false }) };
+});
+if (wp) check(wp.bad.length === 0, `all ${wp.n} WORLD_PALETTE colours pass the neon check${wp.bad.length ? ": " + wp.bad.slice(0, 8).map((b) => `${b.name} ${b.hex} ${b.rule || b.score}`).join("; ") : ""}`);
 await page.evaluate(() => {
   const S = __crimson.story.S, T = S.THREE;
   const Q = window.__palQA = { eye: new T.Vector3(), at: new T.Vector3(), on: true };

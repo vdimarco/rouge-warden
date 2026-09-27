@@ -54,6 +54,7 @@ export function init(S) {
     reveal(id) { W.revealed.add(id); },
     revealed: new Set(),
     interiors: {
+      open() {},
       enter(id) { const I = INTERIORS[id]; return I ? { x: I.x, y: I.y, z: I.z, yaw: 0 } : null; },
       exit(id) { const p = point((INTERIORS[id] || {}).door || id); return p ? { x: p.x, y: 0, z: p.z + 3, yaw: 0 } : null; },
       wall(id) {
@@ -64,7 +65,8 @@ export function init(S) {
     setVisible(v) { group.visible = !!v; },
     update() {},
     bridgeSilhouette() { return new THREE.Group(); },
-    ranch: { lights(on) { ranchOn = !!on; }, get on() { return ranchOn; } },
+    ranch: { lights(on) { ranchOn = !!on; }, gate() {}, get on() { return ranchOn; } },
+    mapVersion: 0,
   };
 
   function buildSlice() {

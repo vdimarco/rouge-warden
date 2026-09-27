@@ -10,7 +10,8 @@
 // Beyond the contract (types.js Look), for other packages:
 // - S.look.sun is the key light and the only shadow caster: the sun by day, the moon by night. S.look.moon
 //   (also S.look.fill) is a shadowless fill from the camera's side. lights.spots are the van's headlights
-//   (VEHICLES aims them); lights.points are two warm points (set userData.pinned when you place one).
+//   (VEHICLES aims them); lights.points are two warm points (set userData.pinned when you place one; a
+//   pinned point keeps the intensity its owner sets, an unpinned one follows the look near the focus).
 // - S.look.uniforms {uFogColor, uFogNear, uFogFar, uSunDir, uTime}: live values for custom shaders.
 // - S.look.KEY (render.js KEY): KEY.solid(mat) for crimson crew and objective materials, KEY.glow(mat)
 //   for additive crimson glows. S.look.QUALITY / S.look.tier: the tier table (quality.js).
@@ -213,7 +214,7 @@ export function init(S) {
     lights.sun.color.setRGB(P.keyColor[0], P.keyColor[1], P.keyColor[2]); lights.sun.intensity = P.keyInt;
     lights.moon.color.setRGB(P.fillColor[0], P.fillColor[1], P.fillColor[2]); lights.moon.intensity = P.fillInt;
     lights.hemi.color.setRGB(P.hemiSky[0], P.hemiSky[1], P.hemiSky[2]); lights.hemi.groundColor.setRGB(P.hemiGround[0], P.hemiGround[1], P.hemiGround[2]); lights.hemi.intensity = P.hemiInt;
-    for (const p of lights.points) { p.color.setRGB(P.pointColor[0], P.pointColor[1], P.pointColor[2]); if (!p.userData.pinned || P.pointInt > 0) p.intensity = P.pointInt; }
+    for (const p of lights.points) { p.color.setRGB(P.pointColor[0], P.pointColor[1], P.pointColor[2]); if (!p.userData.pinned) p.intensity = P.pointInt; } // a pinned point's intensity is its owner's (WORLD lights the rooms)
     // where the lights and the shadow box go: the focus, or in front of the camera when the focus is far off
     const cam = S.camera;
     center.copy(S.focus);

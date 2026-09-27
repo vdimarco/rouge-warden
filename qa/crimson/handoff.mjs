@@ -174,8 +174,10 @@ const quitToTitle = async (page) => {
     await page.waitForTimeout(950);
     await page.keyboard.press("Digit2");
     await step(page, 0.3);
-    const card = await page.evaluate(() => __crimson.story && __crimson.story.S.test.ui.card);
     let s = await state(page);
+    // the real world may still be building in its worker (real time): the loading card shows first, then the title card
+    await stepUntil(page, () => __crimson.story && __crimson.story.S.test.ui.card === "THE BEAR YIELDS", { maxSec: 20, chunk: 0.1, realMs: 100 });
+    const card = await page.evaluate(() => __crimson.story && __crimson.story.S.test.ui.card);
     check(s.state === "story" && !s.end && !s.arena, `the skip hides the death card and the arena (end ${s.end}, arena ${s.arena})`);
     check(card === "THE BEAR YIELDS", `the skip opens on THE BEAR YIELDS (${card})`);
     const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 20 });

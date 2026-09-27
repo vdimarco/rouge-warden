@@ -15,7 +15,7 @@ export function init(S) {
       H.body = crewId; H.actor = S.cast.spawn(crewId, { pos, yaw: H.face });
       H.actor.visible = H.mode === 'foot' || H.mode === 'photo';
     },
-    place(x, z, yaw) { pos.set(x, S.world.surface(x, z, pos.y + 1), z); if (yaw != null) { H.face = yaw; camYaw = yaw; camInit = false; } sync(); },
+    place(x, z, yaw, y) { pos.set(x, S.world.surface(x, z, y ?? pos.y + 1), z); if (yaw != null) { H.face = yaw; camYaw = yaw; camInit = false; } sync(); },
     setMode(m) { if (!HERO_MODES.includes(m)) throw new Error(`S.hero.setMode: unknown mode '${m}'`); H.mode = m; if (H.actor) H.actor.visible = m === 'foot' || m === 'photo'; },
     get down() { return H.hp <= 0; },
   };
