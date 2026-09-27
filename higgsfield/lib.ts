@@ -152,8 +152,10 @@ export async function run(model: string, input: Record<string, unknown>, { maxWa
     result = (await sdk.higgsfield.subscribe(model, { input, withPolling: false })) as RequestStatus;
   } catch (err) {
     // A 4xx is a clear "no". No answer, a reset or a 5xx may come after the API took (and billed) the job.
+    // (AuthenticationError and CredentialsMissedError are not APIErrors, so check them by name.)
     const status = err instanceof sdk.APIError ? err.statusCode : undefined;
-    const sure = status !== undefined && status >= 400 && status < 500;
+    const sure = err instanceof sdk.AuthenticationError || err instanceof sdk.CredentialsMissedError ||
+      (status !== undefined && status >= 400 && status < 500);
     fail(`submit failed. ${describe(err)}` + (sure ? '' :
       ' The API may still have accepted the request. Check https://open.higgsfield.ai before you run it again.'));
   }
