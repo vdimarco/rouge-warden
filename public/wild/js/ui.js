@@ -5,6 +5,10 @@ import { weaponStats, maxDur } from "./player.js";
 import { WICO, Loot } from "./loot.js";
 
 const $ = (s) => document.querySelector(s);
+// the window size, kept up to date here, so the HUD never has to ask the page for it in the middle of a frame
+let VW = innerWidth, VH = innerHeight;
+addEventListener("resize", () => { VW = innerWidth; VH = innerHeight; });
+const SV = new THREE.Vector3();
 const HEART = (fill, gold) => {
   const f = Math.max(0, Math.min(4, fill));
   const col = gold ? "#ffd84a" : "#ff4a5a";
@@ -65,20 +69,22 @@ export class UI {
     const side = G.quests ? G.quests.hudLine() : "";
     if (side !== this.last.side) { this.last.side = side; $("#side").textContent = side; $("#side").hidden = !side; }
     this.foeBars();
+    // text is written only when it changes, so the page does not lay itself out again every frame
+    const set = (id, v) => { v = String(v); if (this.last[id] !== v) { this.last[id] = v; $("#" + id).textContent = v; } };
     const f = G.foodCount();
-    $("#fcount").textContent = f.total + (f.stew ? " · " + f.stew + "🍲" : "");
-    $("#lcount").textContent = G.save.loonies.length + "/" + G.loonies.length;
-    $("#ocount").textContent = G.save.orbs;
-    // the stamina wheel sits beside the hero and hides when full
+    set("fcount", f.total + (f.stew ? " · " + f.stew + "🍲" : ""));
+    set("lcount", G.save.loonies.length + "/" + G.loonies.length);
+    set("ocount", G.save.orbs);
+    // the stamina wheel sits beside the hero and hides when full; it moves by transform, which needs no layout
     const full = P.stamina >= P.staminaMax && !P.exhausted;
     const el = $("#stamina");
-    el.style.opacity = full ? 0 : 1;
+    if (full !== this.last.full) { this.last.full = full; el.style.opacity = full ? 0 : 1; }
     if (!full) {
-      const v = new THREE.Vector3(P.x, P.y + 1.6, P.z).project(G.camera);
-      el.style.left = ((v.x + 1) / 2) * innerWidth + 48 + "px";
-      el.style.top = ((1 - v.y) / 2) * innerHeight - 20 + "px";
-      this.stamArc.setAttribute("stroke-dashoffset", String(113.1 * (1 - P.stamina / P.staminaMax)));
-      this.stamArc.setAttribute("stroke", P.exhausted ? "#e0453a" : P.stamina < 30 ? "#ffb03a" : "#7ac84a");
+      const v = SV.set(P.x, P.y + 1.6, P.z).project(G.camera);
+      el.style.transform = "translate(" + (((v.x + 1) / 2) * VW + 48).toFixed(1) + "px," + (((1 - v.y) / 2) * VH - 20).toFixed(1) + "px) translate(-50%, -50%)";
+      this.stamArc.setAttribute("stroke-dashoffset", (113.1 * (1 - P.stamina / P.staminaMax)).toFixed(1));
+      const col = P.exhausted ? "#e0453a" : P.stamina < 30 ? "#ffb03a" : "#7ac84a";
+      if (col !== this.last.stamCol) { this.last.stamCol = col; this.stamArc.setAttribute("stroke", col); }
     }
     // abilities
     const A = G.abilities, ak = JSON.stringify([A.grit && [A.grit.charges, Math.ceil(A.grit.cd)], A.lift && Math.ceil(A.lift.cd), A.fury && Math.ceil(A.fury.cd)]);
@@ -91,7 +97,7 @@ export class UI {
       $("#abil").innerHTML = h;
       $("#tlift").hidden = !A.lift; $("#tfury").hidden = !A.fury;
     }
-    $("#clock").textContent = G.clockText();
+    set("clock", G.clockText());
     const goal = G.goal();
     if (goal !== this.last.goal) { this.last.goal = goal; $("#goal").innerHTML = goal; }
   }

@@ -26,17 +26,28 @@ const GFX_KEY = "plungerd.wild.gfx";
 // On a touch device a saved "High" counts only if the player chose it there on purpose: the old button went from
 // Low straight to High with one tap, which left many phones on the heaviest setting.
 const GFX_TOUCH_HIGH = "plungerd.wild.gfx.touchHigh";
+let gfxSaved = true;
 let gfx = (() => {
   try {
     const v = localStorage.getItem(GFX_KEY);
     if (v === "high" && touchUI && localStorage.getItem(GFX_TOUCH_HIGH) !== "1") return low ? "low" : "medium";
     if (QUALITY[v]) return v;
   } catch (e) { /* storage off */ }
+  gfxSaved = false;
   return low ? "low" : "high";
 })();
 let Q = QUALITY[gfx];
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+// With no saved choice, a computer with Intel graphics or a software renderer starts on Medium, not High:
+// the painted High setting is too heavy for most of them. The player can still pick High.
+if (!gfxSaved && gfx === "high") {
+  try {
+    const gl = renderer.getContext(), ext = gl.getExtension("WEBGL_debug_renderer_info");
+    const chip = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+    if (/intel|swiftshader|llvmpipe|software/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
+  } catch (e) { /* no chip name */ }
+}
 // dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
 let resScale = 1, redraw = true;
 const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale)); redraw = true; };
@@ -1255,7 +1266,7 @@ function step(dt) {
   const fdt = dt * G.foeTime;
   for (const f of G.foes) {
     const d = Math.hypot(f.x - P.x, f.z - P.z);
-    f.rig.root.visible = d < 240 && !f.gone;
+    f.rig.root.visible = f.rig.root.matrixWorldAutoUpdate = d < 240 && !f.gone;
     if (d < 170 || f.state !== "idle") f.update(fdt);
   }
   for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].gone && !G.plan.some((p) => p.foe === G.foes[i])) { scene.remove(G.foes[i].rig.root); G.foes.splice(i, 1); }
@@ -1272,9 +1283,10 @@ function step(dt) {
   A.setMood(G.activeBoss ? (G.activeBoss.phaseN > 1 ? "boss" + G.activeBoss.phaseN : "boss") : fighting ? "fight" : G.night ? "night" : "day");
   // pickups
   for (const it of G.items) {
-    if (it.taken) continue;
+    if (it.taken) { it.obj.matrixWorldAutoUpdate = false; continue; }
     const d = Math.hypot(it.x - P.x, it.z - P.z);
-    it.obj.visible = d < 160;
+    // a hidden thing also skips its matrix update, which three.js otherwise does for every object every frame
+    it.obj.visible = it.obj.matrixWorldAutoUpdate = d < 160;
     if (d > 160) continue;
     it.obj.rotation.y += dt;
     if (d < 1.6 && Math.abs(it.y - P.y) < 2.5) {
@@ -1285,7 +1297,9 @@ function step(dt) {
     }
   }
   G.loonies.forEach((l, i) => {
-    if (l.kind !== "float" || S.loonies.includes(i)) { if (l.kind === "float") l.obj.visible = false; return; }
+    // a secret rock is a few pixels wide past 130 m, so it is not drawn out there
+    if (l.kind !== "float") { l.obj.visible = l.obj.matrixWorldAutoUpdate = Math.hypot(l.x - P.x, l.z - P.z) < 130; return; }
+    if (S.loonies.includes(i)) { l.obj.visible = false; return; }
     l.obj.rotation.y += dt * 2; l.obj.position.y = l.y + Math.sin(G.time * 2 + i) * 0.2;
     if (Math.hypot(l.x - P.x, l.z - P.z) < 1.6 && Math.abs(l.y - P.y - 0.8) < 2.2) { S.loonies.push(i); l.obj.visible = false; G.fx.puff(l.x, l.y, l.z, 0xffd84a, 14); foundLoonie(); }
   });

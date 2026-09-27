@@ -443,7 +443,10 @@ export class World {
         }`,
     });
     this.sky = new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), mat);
-    this.sky.renderOrder = -1;
+    // The sky sits at the far plane and draws after every other solid thing, so the GPU skips each sky pixel
+    // that the ground, trees or buildings already cover, instead of shading the whole screen first.
+    // (The painted backdrop and the clouds are see-through, so they still draw over it.)
+    this.sky.renderOrder = 1000;
     this.sky.frustumCulled = false;
     this.scene.add(this.sky);
   }
@@ -878,7 +881,7 @@ export class World {
     this.addBox({ x: c.x, z: c.z - 5.3, hw: 5, hd: 1.2, rot: Math.PI, y0: this.cabin.position.y - 1, top: this.cabin.position.y + 0.4, walk: true });
     this.place(M.outhouse(false), c.x + 16, c.z + 6, Math.PI * 0.8);
     this.addBox({ x: c.x + 16, z: c.z + 6, hw: 1.1, hd: 1.1, rot: Math.PI * 0.8, y0: this.height(c.x + 16, c.z + 6), top: this.height(c.x + 16, c.z + 6) + 3.2, climb: true });
-    this.fire = this.place(M.campfire(), c.x - 8, c.z - 14);
+    this.fire = bakeFire(this.place(M.campfire(), c.x - 8, c.z - 14));
     this.fires = [{ x: c.x - 8, z: c.z - 14, obj: this.fire, home: true }];
     this.updraft.push({ x: c.x - 8, z: c.z - 14, r: 2.2 });
     this.statueObj = this.place(M.loonStatue(), this.statue.x, this.statue.z, Math.PI * 0.9);
@@ -899,6 +902,7 @@ export class World {
     // towers
     this.towers = TOWERS.map((t) => {
       const o = this.place(M.fireTower(), t.x, t.z, 0.4);
+      M.bake(o, [o.userData.beacon]);
       const y = o.position.y, H = o.userData.H;
       this.addBox({ x: t.x, z: t.z, hw: 3.2, hd: 3.2, rot: 0.4, y0: y - 1, top: y + H + 0.2, climb: true, tower: t.id });
       this.addBox({ x: t.x, z: t.z, hw: 4, hd: 4, rot: 0.4, y0: y + H - 0.4, top: y + H + 0.2, walk: true });
@@ -913,7 +917,7 @@ export class World {
     });
     // critter camps with a cooler and a fire
     this.camps = CAMPS.map(([x, z], i) => {
-      const f = this.place(M.campfire(), x, z);
+      const f = bakeFire(this.place(M.campfire(), x, z));
       this.fires.push({ x, z, obj: f });
       this.updraft.push({ x, z, r: 2.2 });
       const ch = this.place(M.cooler(), x + 4, z + 2, i);
@@ -924,11 +928,11 @@ export class World {
     this.maskTex.needsUpdate = true;
     // boss arenas
     const B = Object.fromEntries(BOSSES.map((b) => [b.id, b]));
-    this.place(M.stoneCircle(), B.christian.x, B.christian.z);
-    const dj = this.place(M.dojo(), B.ryu.x, B.ryu.z, Math.PI / 2);
+    M.bake(this.place(M.stoneCircle(), B.christian.x, B.christian.z));
+    const dj = M.bake(this.place(M.dojo(), B.ryu.x, B.ryu.z, Math.PI / 2));
     this.addBox({ x: B.ryu.x, z: B.ryu.z, hw: 17, hd: 17, rot: 0, y0: dj.position.y - 3, top: dj.position.y + 1, walk: true });
     const cz = ISLAND.z - 34;
-    this.castle = this.place(M.castle(), ISLAND.x, cz, 0, ISLAND.top - 0.5);
+    this.castle = M.bake(this.place(M.castle(), ISLAND.x, cz, 0, ISLAND.top - 0.5));
     // the tank and the bowl: stacked, never side by side, so climbing one never puts you inside the other
     this.addBox({ x: ISLAND.x, z: cz - 2, hw: 15, hd: 17, rot: 0, y0: 0, top: ISLAND.top + 13, climb: true });
     this.addBox({ x: ISLAND.x, z: cz - 10, hw: 13, hd: 5, rot: 0, y0: ISLAND.top + 13, top: ISLAND.top + 34, climb: true });
@@ -1118,6 +1122,8 @@ export class World {
 }
 
 const UP = new THREE.Vector3(0, 1, 0), TV = new THREE.Vector3(), TV2 = new THREE.Vector3(), TMP = new THREE.Color();
+// a campfire's logs and stones never move; its flame and embers do
+const bakeFire = (f) => M.bake(f, [f.userData.flame, f.userData.embers]);
 
 function mergeGeos(list) {
   let n = 0, idx = 0;

@@ -331,6 +331,8 @@ export class Loot {
     for (const c of this.chests) {
       const d = Math.hypot(c.x - P.x, c.z - P.z);
       c.beam.visible = !c.open && d < 420 && d > 6;
+      // the chest itself is a few pixels wide past 170 m; its beam still shows the way
+      c.obj.visible = d < 170;
       if (c.t > 0 && c.t < 1) { c.t = Math.min(1, c.t + dt * 1.6); const u = c.t; c.obj.userData.lid.rotation.x = -1.9 * (1 - Math.pow(1 - u, 3)) - Math.sin(u * Math.PI) * 0.15; }
     }
   }
