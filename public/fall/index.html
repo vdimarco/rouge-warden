@@ -1385,6 +1385,7 @@ function newRun() {
   const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], flow: 1, score: 0, style: 0, styleT: 0, streakMult: 1, boons: {}, log: { maxRank: -1,  dmgBy: {}, hitsBy: {}, hits: 0, rolls: 0, flasks: 0, t0: 0, lowHp: 1, bursts: 0, recent: [], digSwings: 0, caveIns: 0 }, melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
   const U = (Memory.data && Memory.data.meta.unlocked) || {};
   r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0) + Tune.get("hotdogs");
+  if (Memory.data && Memory.data.bankCaps) { r.caps = Memory.data.bankCaps; Memory.data.bankCaps = 0; Memory.save(); }
   r.log.t0 = performance.now();
   if (U.spade) r.shovel = 2;
   if (U.purse) r.gold = 60;
@@ -1473,7 +1474,7 @@ const Cottage = (() => {
 
   async function remoteAnswer(payload, questions) {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 6000);
+    const timer = setTimeout(() => ctl.abort(), 3500);
     let res;
     try { res = await fetch(JEV_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: ctl.signal }); }
     finally { clearTimeout(timer); }
@@ -3392,7 +3393,12 @@ function hurtPlayer(dmg, cause, raw) {
   if (!raw) {
     if (p.hurtT > 0 || p.roll > 0 || p.pound) return;
     if (p.aegisT > 0) { p.aegisT = 0; p.hurtT = 0.6; addFx(p.x + 2, p.y + 5, 0xb39ddb, 14); SFX.zap(); return; }
-    p.hurtT = 0.35;
+    // a hit knocks you clear and gives you time to recover, so critters cannot chain hits while you stand in them
+    p.hurtT = 0.8;
+    let src = null, sd = 1e9;
+    for (const f of Game.foes) { if (f.dead || f.kind !== cause) continue; const d = Math.abs(f.x + f.w / 2 - p.x - p.w / 2) + Math.abs(f.y - p.y); if (d < sd) { sd = d; src = f; } }
+    const kd = src ? Math.sign(p.x + p.w / 2 - src.x - src.w / 2) || -p.face : -p.face;
+    p.vx = kd * 2.4; p.vy = Math.min(p.vy, -1.6);
   }
   if (Game.frenzyT > 0 && FOES[cause]) return;
   dmg *= run.armor * (1 - 0.12 * boon("moose"));
@@ -3411,7 +3417,16 @@ function hurtPlayer(dmg, cause, raw) {
   run.hp -= dmg;
   run.lastHitBy = cause;
   p.flash = 0.15;
-  if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); }
+  if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); Game.nums.push({ x: p.x + 2, y: p.y - 2, v: Math.round(dmg), t: 0.8, hurt: true }); }
+  else if (raw) {
+    p.rawAcc = (p.rawAcc || 0) + dmg;
+    const now2 = performance.now();
+    if (p.rawAcc >= 2 && now2 - (p.rawT || 0) > 280) {
+      p.rawT = now2; SFX.hurt(); Game.cam.shake = Math.min(4, Game.cam.shake + 1.5); p.flash = 0.2;
+      Game.nums.push({ x: p.x + 2, y: p.y - 2, v: Math.round(p.rawAcc), t: 0.7, hurt: true });
+      p.rawAcc = 0;
+    }
+  }
   if (run.hp <= 0 && run.secondWind) {
     run.secondWind = false; run.hp = Math.round(run.maxHp * 0.3); run.curse = 0; p.hurtT = 1.2;
     Game.flashes.push({ x: p.x + 2, y: p.y + 5, r: 30, t: 0.5 }); SFX.well();
@@ -3921,8 +3936,11 @@ function updatePlayer(dt) {
   const steer = p.wallLock > 0 ? 0 : inp.x;
   p.wallLock = Math.max(0, (p.wallLock || 0) - dt);
   p.vx += steer * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
-  p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
-  p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
+  // a roll keeps its own speed; only walking is held to the run speed
+  if (p.roll <= 0) {
+    p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
+    p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
+  }
   if (steer) p.face = steer > 0 ? 1 : -1;
   // falling pulls harder than rising, and the top of a jump hangs a moment, so jumps feel weighty but floaty at the peak
   const apex = !p.ground && Math.abs(p.vy) < 0.6 && inp.up;
@@ -3985,10 +4003,17 @@ function updatePlayer(dt) {
   }
   p.stamT = Math.max(0, (p.stamT || 0) - dt);
   if (p.stamT <= 0) p.stam = Math.min(1, p.stam + dt * 0.28);
-  Game.noise = Math.max(0, (Game.noise || 0) - dt * 0.05);
+  Game.noise = Math.max(0, (Game.noise || 0) - dt * 0.16);
+  if (Game.noise > 0.7 && !Game.noiseWarned) { Game.noiseWarned = true; Game.cam.shake = Math.min(5, Game.cam.shake + 3); SFX.rumble(); UI.hint("The ground groans. Stop digging for a moment, or it answers.", 2600); }
+  if (Game.noise < 0.3) Game.noiseWarned = false;
   updateCombat(p, dt);
   if (inp.flaskEdge) { inp.flaskEdge = false; drinkFlask(p); }
-  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Hold Shovel and push the stick the way you want to dig." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
+  // tips the first time they matter: hover on a long fall, a hot dog when you are hurt
+  const tips = Memory.data.tips || (Memory.data.tips = {}), touch = matchMedia("(pointer: coarse)").matches;
+  if (!tips.hover && p.vy > 3 && !p.ground && p.lift > 0.9 && Game.levelT > 4) { tips.hover = 1; Memory.save(); UI.hint(touch ? "Falling fast? Push up on the stick to hover with the leaf blower." : "Falling fast? Hold W or Space in the air to hover with the leaf blower.", 3200); }
+  if (!tips.eat && run.hp / run.maxHp < 0.4 && run.flasks > 0) { tips.eat = 1; Memory.save(); UI.hint(touch ? "Hurt? Tap the hot dog to eat it." : "Hurt? Press R to eat a hot dog.", 3200); }
+  if (!tips.wall && p.wallT > 0.1 && p.vy > 0.5) { tips.wall = 1; Memory.save(); UI.hint("Push into a wall to slide down it. Jump to kick off.", 3000); }
+  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Hold Shovel and push the stick the way you want to dig." : "Stuck? Hold F to dig through the dirt toward the cursor.", 4500); }
   // wands lying in the caves
   Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
@@ -4265,7 +4290,7 @@ function updateFoes(dt) {
         const want = Math.atan2(dy - 14, dx), hold = dist > 34 ? 1 : -1;
         f.vx = f.vx * 0.9 + Math.cos(want) * 0.12 * hold * (f.elite ? 1.3 : 1); f.vy = f.vy * 0.9 + Math.sin(want) * 0.12 * hold;
         moveBody(f, f.vx * 1.6, f.vy * 1.6);
-        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35 * Tune.get("windup"); }
+        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35 * Tune.get("windup"); SFX.clink(); }
       }
     } else if (d.ai === "fly") {
       const a = Math.atan2(dy + Math.sin(f.t * 3) * 6, dx);
@@ -4279,7 +4304,7 @@ function updateFoes(dt) {
     } else {
       let want = dir;
       if (d.ai === "spit" && dist < 50) want = -dir;
-      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35 * Tune.get("windup"); }
+      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35 * Tune.get("windup"); SFX.clink(); }
       if (f.windT > 0) { f.windT -= dt; f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0); want = 0; }
       if (d.ai === "spit" && f.windT < 0) {
         f.windT = 0;
@@ -4290,7 +4315,8 @@ function updateFoes(dt) {
       // the moose lowers its head, then charges
       if (d.ai === "brute") {
         if (f.charge > 0) { f.charge -= dt; want = f.chargeDir * 3.2; if (f.charge <= 0) f.cd = 2 + rnd(); }
-        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45 * Tune.get("windup"); f.chargeDir = dir; }
+        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45 * Tune.get("windup"); f.chargeDir = dir; SFX.clink(); }
+        if (f.windT > 0) f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0);
         if (f.windT < 0) { f.windT = 0; f.charge = 0.55; SFX.zap(); }
       }
       if (d.ai === "bomb") {
@@ -4338,16 +4364,20 @@ function updateHand(f, dt, dx, dy) {
     f.vx += clamp(tx - f.x, -1, 1) * 0.05; f.vy += clamp(ty - f.y, -1, 1) * 0.05;
     f.vx *= 0.94; f.vy *= 0.94;
     f.x = clamp(f.x + f.vx, 4, W - 4 - f.w); f.y = clamp(f.y + f.vy, Game.level.arenaTop + 4, H - 40);
-    if (f.cd <= 0) { if (Math.abs(dx) < 30 && dy > 10) { f.state = "slam"; f.vy = 0; } else f.cd = 0.8; }
+    if (f.cd <= 0) { if (Math.abs(dx) < 30 && dy > 10) { f.state = "tell"; f.tellT = 0.5 * Tune.get("windup"); f.vx = f.vy = 0; SFX.rumble(); } else f.cd = 0.8; }
+  } else if (f.state === "tell") {
+    f.tellT -= dt; f.flash = ((f.tellT * 20) | 0) % 2 ? 0.05 : 0;
+    f.x += Math.sin(f.tellT * 70) * 0.6;
+    if (f.tellT <= 0) { f.state = "slam"; f.vy = 0; }
   } else if (f.state === "slam") {
     f.vy = Math.min(5, f.vy + 0.35);
     const r = moveBody(f, 0, f.vy);
     if (r.hitY || f.y > H - 40) {
       blast(f.x + f.w / 2, f.y + f.h, 11, 3, 24, f.kind, f);
-      f.state = "rise"; f.cd = 1.2;
+      f.state = "rise"; f.cd = 1.2; f.downT = 0.7;
     }
   } else if (f.state === "rise") {
-    f.y -= 1.2;
+    if (f.downT > 0) f.downT -= dt; else f.y -= 1.2;
     if (f.cd <= 0) { f.state = "hover"; f.cd = 2.5 + rnd() * 1.5; }
   }
   Game.handT -= dt;
@@ -4379,7 +4409,10 @@ function handDown() {
   Memory.save();
   SFX.roar();
   Cottage.bark("hand_dead", run).then((l) => UI.voice(l));
-  UI.hint("The drain is open.");
+  // a boss pays out: a scroll of power and a rich cooler at your feet
+  const p = Game.player;
+  if (p) { Game.pickups.push({ x: p.x + 10, y: p.y - 3, scroll: true, bob: 0 }); Game.chests.push({ x: Math.round(p.x - 8), y: Math.round(p.y + p.h), open: false, rich: true }); }
+  UI.hint("The drain is open. It left something behind.");
 }
 function spawnFoe(kind, x, y) {
   const f = makeFoe(kind, x, y);
@@ -4425,6 +4458,10 @@ function updateCaps(dt) {
 }
 function pipeAt(x, y) { return (Game.pipes || []).find((q) => y >= q.y && y <= q.y + 1 && x >= q.x1 && x <= q.x2); }
 function explodeTank(t) {
+  if (t.dead || t.fuse > 0) return;
+  t.fuse = 1.1; SFX.sizzle();
+}
+function boomTank(t) {
   if (t.dead) return;
   t.dead = true;
   for (let yy = t.y - 8; yy < t.y; yy++) for (let q = -3; q <= 3; q++) if (World.at(t.x + q, yy) === METAL) World.set(yy * W + t.x + q, EMPTY);
@@ -4459,6 +4496,7 @@ function updateProps(dt) {
   for (const t of Game.props || []) {
     if (t.dead) continue;
     if (t.kind === "tank") {
+      if (t.fuse > 0) { t.fuse -= dt; if (((t.fuse * 10) | 0) % 3 === 0) Game.fx.push({ x: t.x + (rnd() - 0.5) * 4, y: t.y - 9, vx: (rnd() - 0.5) * 0.4, vy: -0.6, t: 0.4, c: World.abgr(0xfff0c0) }); if (t.fuse <= 0) boomTank(t); continue; }
       if ((tick & 7) !== 0) continue;
       let metal = 0, hot = 0;
       for (let yy = t.y - 9; yy <= t.y; yy++) for (let q = -3; q <= 3; q++) { const m = World.at(t.x + q, yy); if (m === METAL) metal++; else if (m === FIRE || m === EMBER || m === LAVA) hot++; }
@@ -4469,8 +4507,8 @@ function updateProps(dt) {
       if (!p || run.over) continue;
       const d = Math.hypot(p.x + 2 - t.x, p.y + 5 - t.y);
       t.t -= dt;
-      if (d < 80 && t.t <= 0 && Game.foes.filter((f) => f.nest === t && !f.dead).length < 3) {
-        const f = spawnFoe("hornet", t.x - 2, t.y + 10); f.nest = t; t.t = 3.2; t.wob = 0.3;
+      if (d < 80 && t.t <= 0 && (t.made || 0) < 6 && Game.foes.filter((f) => f.nest === t && !f.dead).length < 3) {
+        const f = spawnFoe("hornet", t.x - 2, t.y + 10); f.nest = t; t.t = 3.2; t.wob = 0.3; t.made = (t.made || 0) + 1;
       }
       // fire burns a nest down
       if ((tick & 7) === 0 && [World.at(t.x, t.y + 4), World.at(t.x - 2, t.y + 8), World.at(t.x + 2, t.y + 8)].some((m) => m === FIRE || m === LAVA)) hitNest(t, 6);
@@ -4942,12 +4980,22 @@ const Render = (() => {
       if (tgt) {
         const dx = tgt.x - (p.x + 2), dy = tgt.y - (p.y + 5), d = Math.hypot(dx, dy);
         if (d > 10) {
+          // teal, so it does not blend with the yellow aim line
           const ux = dx / d, uy = dy / d, cx0 = p.x + 2 + ux * 11, cy0 = p.y + 5 + uy * 11;
-          const col = World.abgr(((tk >> 4) & 1) ? 0xe6c35c : 0xfff0a0);
-          for (let k = 0; k < 4; k++) px(cx0 + ux * k - ox, cy0 + uy * k - oy, col);
-          px(cx0 + ux * 2 - uy * 2 - ox, cy0 + uy * 2 + ux * 2 - oy, col);
-          px(cx0 + ux * 2 + uy * 2 - ox, cy0 + uy * 2 - ux * 2 - oy, col);
+          const col = World.abgr(((tk >> 4) & 1) ? 0x5fe8e0 : 0xc8fffa);
+          for (let k = 0; k < 6; k++) px(cx0 + ux * k - ox, cy0 + uy * k - oy, col);
+          for (const q of [3, 4]) { px(cx0 + ux * q - uy * (6 - q) - ox, cy0 + uy * q + ux * (6 - q) - oy, col); px(cx0 + ux * q + uy * (6 - q) - ox, cy0 + uy * q - ux * (6 - q) - oy, col); }
         }
+      }
+      // once the drains open, an arrow at the edge of the screen points to each one; the richer drain is orange
+      const LV = Game.level;
+      if (LV && !Game.clip && drainOpen(LV)) for (const e of LV.exits || []) {
+        const sx = e.x - ox, sy = e.y - 6 - oy;
+        if (sx > 6 && sx < vw - 6 && sy > 6 && sy < vh - 6) continue;
+        const cx = vw / 2, cy = vh / 2, ddx = sx - cx, ddy = sy - cy, dd = Math.hypot(ddx, ddy) || 1, ux = ddx / dd, uy = ddy / dd;
+        const kk = Math.min((vw / 2 - 12) / Math.max(0.001, Math.abs(ddx)), (vh / 2 - 14) / Math.max(0.001, Math.abs(ddy)));
+        const ax = cx + ddx * kk, ay = cy + ddy * kk, colA = World.abgr(e.rich ? 0xff8a3a : 0xe6c35c);
+        for (let q = 0; q < 8; q++) { const wd = Math.round((8 - q) * 0.55); for (let r = -wd; r <= wd; r++) px(ax - ux * q - uy * r, ay - uy * q + ux * r, (r === -wd || r === wd) ? 0xff000000 : colA); }
       }
       // aim: a dotted line from the wand, and a reticle when you aim without the mouse
       const a = aimAngle(), ca = Math.cos(a), sa = Math.sin(a), ax = p.x + 2, ay = p.y + 4;
@@ -5069,7 +5117,7 @@ const Render = (() => {
     }
     // damage numbers
     for (const n of Game.nums) {
-      const str = String(n.v), c = n.big ? World.abgr(0xffd070) : 0xffffffff;
+      const str = String(n.v), c = n.hurt ? World.abgr(0xff5a4a) : n.big ? World.abgr(0xffd070) : 0xffffffff;
       let x0 = Math.round(n.x - ox - str.length * 2), y0 = Math.round(n.y - oy);
       for (const ch of str) {
         const g = DIGITS[ch];
@@ -5091,7 +5139,7 @@ const Render = (() => {
     const light = (x, y, r, a) => { dctx.globalAlpha = Math.min(1, a); dctx.drawImage(stamp, (x - ox - r) / 2, (y - oy - r) / 2, r, r); };
     if (p && !run.over) {
       const fl = reduceMotion ? 1 : 0.94 + Math.sin(performance.now() / 90) * 0.03 + rnd() * 0.03;
-      light(p.x + 2, p.y + 5, 75 * fl * run.light, 1);
+      light(p.x + 2, p.y + 5, 96 * fl * run.light, 1);
       light(p.x + 2, p.y + 5, 34, 1);
     }
     // moonlight over the outhouse on the first layer
@@ -5112,6 +5160,9 @@ const Render = (() => {
     for (const fl of Game.flashes) light(fl.x, fl.y, fl.r * 2, fl.t * 4);
     for (const e of Game.emitters) if (e.tele > 0 && !e.follow) light(e.x, e.y, 40, 0.8);
     for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand" || f.elite) light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
+    // a tell you cannot see is not a tell: anything about to strike glows
+    for (const f of Game.foes) if (!f.dead && (f.windT > 0 || f.fuse > 0 || f.state === "wind" || f.state === "tell" || f.charge > 0)) light(f.x + f.w / 2, f.y + f.h / 2, 44, 0.9);
+    for (const t of Game.props || []) if (t.kind === "tank" && t.fuse > 0) light(t.x, t.y - 4, 50, ((t.fuse * 10) | 0) % 2 ? 1 : 0.4);
     if (L) for (const e of L.exits || []) light(e.x, e.y - 4, 70, drainOpen(L) ? 0.9 : 0.4);
     for (const c of Game.chests) if (c.cursed && !c.open) light(c.x, c.y - 2, 30, 0.6);
     dctx.globalAlpha = 1;
@@ -6006,7 +6057,7 @@ async function enterDepth(first) {
   const placed = [];
   const routeRooms = geo.rooms.slice(1);
   // the layer is wide, so each critter the Cottage picked comes twice
-  for (const kind of plan.foes.concat(plan.foes)) {
+  for (const kind of plan.foes.concat(plan.foes.filter((_, i) => i % 2 === 0))) {
     const d = FOES[kind];
     const onRoute = routeRooms.length && rnd() < 0.65, rr = onRoute ? routeRooms[(rnd() * routeRooms.length) | 0] : null;
     for (let tries = 0; tries < 400; tries++) {
@@ -6105,6 +6156,9 @@ async function die(cause) {
   m.lastDeath = cause;
   m.deathsBy[cause] = (m.deathsBy[cause] || 0) + 1;
   m.deepest = Math.max(m.deepest, run.depth);
+  // a death costs half your caps, not all: the rest start your next run
+  const keptCaps = Math.floor(run.caps / 2);
+  m.bankCaps = (m.bankCaps || 0) + keptCaps;
   Memory.save();
   const p = Game.player;
   if (p) { World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); addFx(p.x + 2, p.y + 5, 0xd0485f, 20); }
@@ -6119,7 +6173,7 @@ async function die(cause) {
     ["Gifts", Object.keys(run.boons).map((k) => BOONS[k].name + (run.boons[k] > 1 ? " " + run.boons[k] : "")).join(", ") || "none"],
     ["Friend", CREW[run.crew].name],
     ["Weapon", MELEE[run.melee].name],
-    ["Caps dropped", String(run.caps) + (run.caps ? " (spend them at the tab next time)" : "")],
+    ["Caps", run.caps ? keptCaps + " of " + run.caps + " kept for your next run" : "none"],
     ["Relics", String(run.relics.length)],
     ["Scrolls", String(run.scrolls)],
     ["Killed by", causeName(cause)],
