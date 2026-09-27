@@ -96,7 +96,7 @@ export function createRoam(S, K) {
   const storyOver = () => K.doneSet.has('e1');
   const reached = (ch) => storyOver() || K.doneSet.has(ch);
   const sideOpen = () => reached('p1');
-  const legendAwake = (v) => { const c = Object.values(CAIRNS).find((x) => x.legend === v); return !!c && reached(LEGEND_AFTER[c.act] || 'p1') && !S.flags[`legend_${v}`]; };
+  const legendAwake = (v) => { const c = Object.values(CAIRNS).find((x) => x.legend === v); return !!c && reached(LEGEND_AFTER[c.act] || 'p1') && !S.flags[`legend_${v}`] && !K.doneSet.has(`legend_${v}`); }; // (content's own Legend defs set another flag)
   function available() {
     if (!sideOpen()) return [];
     buildSide();

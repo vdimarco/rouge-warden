@@ -1,8 +1,10 @@
 // js/story/missions/cine.js : S.cine, the cut-scene player (design 4.3, types.js CineDef).
 // play(id, {cast}) runs a CineDef on story time as a task (the handle is the task: {done}). Tracks:
 // - shots {at, dur, from, to, look, fov, ease, shake}: the camera (priority 100) moves from -> to over dur.
-//   A point is {x, y, z} in the world, a place id (eye height above it), {who, x, y, z} in that actor's
-//   own frame (+z ahead of it, +x to its left) or {at: placeId, x, y, z}. look is a point the same way
+//   A point is {x, y, z} in the world (y above the ground there), a place id (eye height above it), {who,
+//   x, y, z} in that actor's own frame (+z ahead of it, +x to its right), {at | place: placeId, x, y, z}
+//   (offset from the place) or {bridge: true, y} (the arena's bridge silhouette in an arena cine, the
+//   Midgley deck elsewhere; y above the deck). look is a point the same way
 //   (an actor's point defaults to 1.5 m up). ease: 'inOut' (default), 'in', 'out', 'linear'. Between
 //   shots the last one holds; with no shot yet, the camera that was already running keeps the view.
 // - actors {at, who, do, args}: play (clip | {clip, loop, speed, fade}), moveTo (place | {x, z} |
@@ -20,7 +22,7 @@
 //   look}: applied when the cine ends or is skipped. A skip also applies every actor cue it jumped over.
 // The letterbox is body.cine. The hero ignores move input (S.lockControl) while a cine plays. The UI owns
 // the hold-to-skip (0.8 s); S.cine.skip() ends the cine at once.
-import { CAMERA_PRIO, CAST_IDS, CREW_IDS } from '../types.js';
+import { ARENA_CAST, CAMERA_PRIO, CAST_IDS, CREW_IDS } from '../types.js';
 
 const EASE = {
   linear: (t) => t, in: (t) => t * t, out: (t) => 1 - (1 - t) * (1 - t),
@@ -46,12 +48,14 @@ export function createCine(S, K) {
       if (!spec) return null;
       if (spec.root || spec.a) return spec.a || spec; // an actor or a fighter
       if (spec.pos && spec.kind && spec.setPose) return vanWrap(spec);
-      const id = typeof spec === 'string' ? spec : spec.id;
+      let id = typeof spec === 'string' ? spec : spec.id;
+      if (id === 'pick') id = pickId; // content: cast {pick: {id: 'pick', costume}}
       if (!CAST_IDS.includes(id)) return null;
-      if (id === S.hero.body && S.hero.actor) return S.hero.actor;
+      // (an arena cine takes only the arena's own actors as they are: the Sedona group, with the hero, is hidden there)
+      if (id === S.hero.body && S.hero.actor && !run.def.arena) return S.hero.actor;
       const live = typeof spec === 'string' || !spec.fresh ? S.cast.get(id) : null;
-      if (live && (live.visible || run.def.arena)) return live;
-      const p = typeof spec === 'object' ? (spec.place ? S.world.place(spec.place) : spec.pos) : null;
+      if (live && (run.def.arena ? ARENA_CAST.includes(id) : live.visible)) return live;
+      const p = typeof spec === 'object' ? (spec.place ? S.world.place(spec.place) : spec.pos || castAt(spec.at)) : null;
       const at = p || { x: S.hero.pos.x, y: S.hero.pos.y, z: S.hero.pos.z };
       // (in the arena, a body joins the arena scene: the Sedona group is hidden there)
       const parent = run.def.arena ? S.ctx.arena || S.scene : undefined;
@@ -63,7 +67,7 @@ export function createCine(S, K) {
     if (oc) a = fromSpec(oc);
     else if (dc) a = fromSpec(dc);
     else if (who === 'hero') a = S.hero.actor;
-    else if (who === 'pick') a = S.hero.body === pickId ? S.hero.actor : fromSpec(pickId);
+    else if (who === 'pick') a = S.hero.body === pickId && !run.def.arena ? S.hero.actor : fromSpec(pickId);
     else if (who === 'van') a = S.vehicles.player ? vanWrap(S.vehicles.player) : null;
     else if (CAST_IDS.includes(who)) a = fromSpec(who);
     run.actors.set(who, a);
@@ -83,11 +87,32 @@ export function createCine(S, K) {
     if (p.who) {
       const a = actorOf(p.who); if (!a || !a.root) return null;
       const r = a.root.position, yaw = a.root.rotation.y, lx = p.x || 0, lz = p.z || 0;
-      return out.set(r.x + lx * Math.cos(yaw) + lz * Math.sin(yaw), r.y + (p.y ?? lookY), r.z - lx * Math.sin(yaw) + lz * Math.cos(yaw));
+      return out.set(r.x - lx * Math.cos(yaw) + lz * Math.sin(yaw), r.y + (p.y ?? lookY), r.z + lx * Math.sin(yaw) + lz * Math.cos(yaw));
     }
-    if (p.at) { const q = S.world.place(p.at); if (!q) return null; return out.set(q.x + (p.x || 0), q.y + (p.y ?? 1.7), q.z + (p.z || 0)); }
-    if (Number.isFinite(p.x) && Number.isFinite(p.z)) return out.set(p.x, Number.isFinite(p.y) ? p.y : ground(p.x, p.z) + 1.7, p.z);
+    const pl = typeof p.at === 'string' ? p.at : typeof p.place === 'string' ? p.place : null;
+    if (pl) { const q = S.world.place(pl); if (!q) return null; return out.set(q.x + (p.x || 0), q.y + (p.y ?? 1.7), q.z + (p.z || 0)); }
+    if (p.bridge) {
+      const b = run && run.def.arena ? (S.ctx.arena || S.scene).getObjectByName('bridgeSilhouette') : null;
+      if (b) return out.set(b.position.x, b.position.y + 34 + (p.y || 0), b.position.z);
+      return out.set(430, 62 + (p.y || 0), -510); // Midgley Bridge deck (world/roads.js)
+    }
+    // a world point: y above the ground there (the hero's height picks the floor inside an interior)
+    if (Number.isFinite(p.x) && Number.isFinite(p.z)) return out.set(p.x, ground(p.x, p.z, (S.hero.pos.y || 0) + 3) + (Number.isFinite(p.y) ? p.y : 1.7), p.z);
     return null;
+  }
+  // a cast entry's at (content): a point; a world point's y is a floor hint (-300: an interior)
+  function castAt(at) {
+    if (!at) return null;
+    if (typeof at === 'string') return S.world.place(at);
+    if (!at.who && !at.place && !at.at && !at.bridge && Number.isFinite(at.x)) return { x: at.x, z: at.z, y: ground(at.x, at.z, Number.isFinite(at.y) ? at.y + 2 : (S.hero.pos.y || 0) + 3) };
+    const q = point({ ...at, y: at.y ?? 0 }, new THREE.Vector3()); return q ? { x: q.x, y: q.y, z: q.z } : null;
+  }
+  // a cue's target: a place id, a point in any of the forms above, or {x, z}
+  function target(g) {
+    if (g == null) return null;
+    if (typeof g === 'string') return S.world.place(g);
+    if (g.who || g.place || g.at || g.bridge) { const q = point({ ...g, y: g.y ?? 0 }, new THREE.Vector3()); return q ? { x: q.x, y: q.y, z: q.z, yaw: g.yaw } : null; }
+    return g;
   }
 
   /* ---------------- the camera ---------------- */
@@ -123,10 +148,10 @@ export function createCine(S, K) {
       const g = c.args;
       try {
         switch (c.do) {
-          case 'play': { const o = typeof g === 'string' ? { clip: g } : g || {}; if (a.play) a.play(o.clip, { loop: o.loop, speed: o.speed, fade: o.fade ?? 0.25, restart: o.restart }); break; }
+          case 'play': { const o = typeof g === 'string' ? { clip: g } : g || {}; if (a.play) a.play(o.clip, { loop: o.loop, speed: o.speed, fade: o.fade ?? 0.25, restart: o.restart, at: o.at }); break; }
           case 'moveTo': {
             const o = typeof g === 'string' || (g && Number.isFinite(g.x)) ? { to: g } : g || {};
-            const p = typeof o.to === 'string' ? S.world.place(o.to) : o.to;
+            const p = target(o.to);
             if (!p) break;
             const walk = { a, x: p.x, z: p.z, yaw: p.yaw, speed: o.speed || (o.run ? 4.6 : 1.45) };
             if (skipping) finishWalk(walk); else { run.walks = run.walks.filter((w) => w.a !== a); run.walks.push(walk); }
@@ -135,6 +160,7 @@ export function createCine(S, K) {
           case 'face': {
             let yaw = null;
             if (Number.isFinite(g)) yaw = g;
+            else if (g && g.to) { const q = target(g.to); if (q) yaw = Math.atan2(q.x - a.root.position.x, q.z - a.root.position.z); }
             else if (g && g.who) { const b = actorOf(g.who); if (b && b.root) yaw = Math.atan2(b.root.position.x - a.root.position.x, b.root.position.z - a.root.position.z); }
             else if (g && Number.isFinite(g.x)) yaw = Math.atan2(g.x - a.root.position.x, g.z - a.root.position.z);
             else if (typeof g === 'string') { const q = S.world.place(g); if (q) yaw = Math.atan2(q.x - a.root.position.x, q.z - a.root.position.z); }
@@ -143,7 +169,13 @@ export function createCine(S, K) {
           }
           case 'pose': { const o = typeof g === 'string' ? { name: g } : g || {}; if (!a.isVan) S.cast.pose(a, o.name, o.k ?? 1); break; }
           case 'prop': { const o = typeof g === 'string' ? { name: g } : g || {}; if (a.isVan) break; if (o.on === false) S.cast.props.detach(a, o.name); else S.cast.props.attach(a, o.name, o.bone); break; }
-          case 'show': a.visible = true; break;
+          case 'show': {
+            // content: {replace: who} stands this actor where that one is and hides it (C0: the ronin to the pick)
+            const from = g && g.replace ? actorOf(g.replace) : null;
+            if (from && from !== a && from.root) { placeActor(a, { x: from.root.position.x, y: from.root.position.y, z: from.root.position.z, yaw: from.root.rotation.y }); from.visible = false; }
+            else if (g && g.at) placeActor(a, { ...target(g.at), ...(g.yaw != null ? { yaw: g.yaw } : {}) });
+            a.visible = true; break;
+          }
           case 'hide': a.visible = false; break;
           case 'glow': if (a.setGlow) a.setGlow(+g || 0); break;
           case 'drain': {
@@ -162,7 +194,9 @@ export function createCine(S, K) {
   }
   function placeActor(a, g) {
     if (!a || !g) return;
-    const p = typeof g === 'string' ? S.world.place(g) : g;
+    let p = typeof g === 'string' ? S.world.place(g) : g;
+    if (p && p.at != null && !Number.isFinite(p.x)) { const q = target(p.at); p = q ? { ...q, ...(g.yaw != null ? { yaw: g.yaw } : {}) } : null; } // content: {at: point, yaw}
+    else if (p && (p.who || p.place || p.bridge)) p = target(p);
     if (!p) return;
     if (a.isVan) { a.vehicle.setPose(p.x, p.z, p.yaw ?? a.vehicle.yaw); return; }
     const y = Number.isFinite(p.y) ? p.y : ground(p.x, p.z, (a.root.position.y || 0) + 2);

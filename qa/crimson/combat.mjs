@@ -13,7 +13,7 @@
 // - The Bear Call staggers grunts in its cone and needs 40 s to charge; hitstop slows only the combat
 //   clock; a freeze stops the enemies; the combat files use no setTimeout.
 // Pass --shots to save pictures to /tmp/combat_*.png.
-import { open, step, stepUntil, storyReady, finish, shot, loop } from "./lib.mjs";
+import { open, step, stepUntil, storyReady, finish, shot, loop, freeRoam } from "./lib.mjs";
 import { readFileSync, readdirSync } from "fs";
 
 const fails = [];
@@ -39,7 +39,8 @@ async function session(query, { full = true } = {}) {
   const r = await storyReady(page);
   check(r.ok, `${query}: the story is ready (${r.sec} s stepped)`);
   await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
-  await step(page, 3); // past the chapter card
+  check((await freeRoam(page)).ok, `${query}: free roam, F1's mission quit`);
+  await step(page, 3);
   // the gang body loads before the fights (placeholders fight just as well, D2)
   await page.evaluate(async () => { const S = __crimson.story.S; const h = S.cast.preload(["gang", "rattler", "voss", "boone"]); const t0 = performance.now(); while (!h.done && performance.now() - t0 < 60000) await new Promise((r) => setTimeout(r, 100)); });
   await page.evaluate(([mx, mz]) => {
@@ -272,12 +273,16 @@ async function tokens(page, label, sec = 60) {
   /* ---- hero down ---- */
   await page.evaluate(() => { __cq.reset(); const S = __cq.S; S.combat.begin({ legend: false }); const f = __cq.at("driver", 1.6, 0); f.cooldown = 0; f.token = true; S.hero.hp = 1; window.__f = f; });
   const hd = await loop(page, 10 * 60, () => __cq.S.hero.hp <= 0 && window.__log.some((e) => e[0] === "heroDown"));
-  await step(page, 2);
-  const hdr = await page.evaluate(() => ({ hp: __cq.S.hero.hp, n: window.__log.filter((e) => e[0] === "heroDown").length, down: __cq.S.hero.down, state: __cq.S.hero.state }));
-  check(hd.stopped && hdr.hp === 0 && hdr.n === 1 && hdr.down, `hero hp 0 fires 'heroDown' once and hp stays at 0, never below (hp ${hdr.hp}, events ${hdr.n}, state ${hdr.state})`);
+  const hd0 = await page.evaluate(() => ({ hp: __cq.S.hero.hp, down: __cq.S.hero.down }));
+  // (in free roam MISSIONS fades out and stands the hero up at the A-frame once he is down: hp only reads 0 or full)
+  let hdMin = 0;
+  for (let i = 0; i < 8; i++) { await step(page, 0.25); hdMin = Math.min(hdMin, await page.evaluate(() => __cq.S.hero.hp)); }
+  const hdr = await page.evaluate(() => ({ max: __cq.S.hero.maxHp, hp: __cq.S.hero.hp, n: window.__log.filter((e) => e[0] === "heroDown").length, down: __cq.S.hero.down, state: __cq.S.hero.state }));
+  check(hd.stopped && hd0.hp === 0 && hd0.down && hdMin === 0 && hdr.n === 1 && (hdr.down ? hdr.hp === 0 : hdr.hp === hdr.max), `hero hp 0 fires 'heroDown' once and hp stays at 0, never below (hp ${hdr.hp}, events ${hdr.n}, state ${hdr.state})`);
   await page.evaluate(() => { __cq.S.hero.hp = 50; });
   await step(page, 0.2);
   check(await page.evaluate(() => __cq.S.hero.state === "move"), "life given back (a checkpoint) stands the hero up");
+  await stepUntil(page, () => !__crimson.story.S.lockControl && !__crimson.story.S.modal, { maxSec: 4 }); // (the free-roam respawn, if it ran, is over)
 
   /* ---- stealth ---- */
   const see = await page.evaluate(() => {

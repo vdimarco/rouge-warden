@@ -12,7 +12,7 @@
 //    back and closes; EVIDENCE opens the board; MAP opens the map. M opens the map in play, a click sets a
 //    waypoint that the minimap routes to, and M closes it.
 // Set SHOTS=dir to save screenshots of each state. No page errors anywhere.
-import { open, step, stepUntil, shot, finish } from "./lib.mjs";
+import { open, step, stepUntil, shot, finish, freeRoam } from "./lib.mjs";
 
 const SHOTS = process.env.SHOTS || "";
 const fails = [], errs = [];
@@ -24,7 +24,8 @@ async function boot(opts) {
   const s = await open({ query: "?chapter=f1&seed=7&nomusic&q=2", ...opts });
   const r = await stepUntil(s.page, () => __crimson.story && __crimson.story.chapter === "f1" && __crimson.story.mode === "play" && !__crimson.story.S.test.ui.card, { maxSec: 60 });
   if (!r.ok) throw new Error("the story did not reach f1");
-  // the enter step: the van stands by the hero with GET IN in reach
+  if (!(await freeRoam(s.page)).ok) throw new Error("F1's mission did not quit to free roam");
+  // free roam at F1's start: the van stands by the hero with GET IN in reach
   await step(s.page, 0.5);
   return s;
 }
@@ -155,6 +156,7 @@ if (ONLY.includes("flow")) {
   await page.route("**/art/portraits/voss.webp", (r) => r.abort()); // a missing portrait shows its glyph card (A3)
   const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1" && __crimson.story.mode === "play" && !__crimson.story.S.test.ui.card, { maxSec: 60 });
   check(r.ok, "the story reaches f1");
+  check((await freeRoam(page)).ok, "free roam: F1's mission quit, nothing modal");
   await step(page, 0.3);
 
   // cines: letterbox bars, subtitles and the dialogue box on top of them
@@ -279,7 +281,10 @@ if (ONLY.includes("flow")) {
   check(!s.open && s.mode === "play", "Esc closes the menu");
 
   // the map: M opens it, a click sets a waypoint, M closes it, the minimap routes to it
-  await T(page, () => { const S = __crimson.story.S; for (const id of ["goal", "gabe", "far"]) S.ui.unmark(id); S.markers3d.clear(); });
+  await T(page, () => { const S = __crimson.story.S; for (const id of ["goal", "gabe", "far"]) S.ui.unmark(id); S.markers3d.clear(); for (const m of S.markers3d.list) m.hidden = true; });
+  await step(page, 0.05);
+  // (free roam lays its CHAPTER 3 marker again at once: hidden, the GPS takes the waypoint)
+  await T(page, () => { for (const m of __crimson.story.S.markers3d.list) m.hidden = true; });
   await page.keyboard.press("KeyM"); await step(page, 0.1);
   s = await T(page, () => ({ open: __crimson.story.S.ui.map.isOpen, modal: __crimson.story.S.modal, mode: __crimson.story.mode }));
   check(s.open && s.modal === "map" && s.mode === "menu", `M opens the map (modal ${s.modal}, mode ${s.mode})`);

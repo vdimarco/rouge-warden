@@ -361,21 +361,34 @@ export const PHASE_ORDER = Object.freeze({
  * @property {string|null} chapter  the chapter now playing (B6)
  * @property {number} timeScale  the day clock's time-lapse factor, the only one (B6): nobody writes S.day.speed
  * @property {string[]} cairns  the vortex cairn ids found (the map offers travel to them)
+ * @property {boolean} auto  the autopilot is on (read only; content scripts take a short route on it)
+ * @property {(id:string)=>string} [title]  a mission's title (side content too), else the id; the UI's menu uses it
  * markers() items: {id, x, z, y?, kind:'objective'|'giver'|'danger'|'van'|'waypoint'|'cairn', who?, label?, hidden?}
  *   (the UI draws unknown kinds as objectives, and falls back to markers3d.list when the list is empty)
  * MISSIONS owns S.ready (B2) and reads S.content at run time. It keeps one root task (ROOT_PREFIX) alive while
  * the story plays: the chapter chain, or free roam.
  * @typedef {{play:(id:string, o?:{cast?:object})=>{done:boolean}, skip:()=>void, active:boolean}} Cine  S.cine
  *   The UI owns skipping: holding skip for 0.8 s calls S.cine.skip() (a film skips on one press). Cine itself does not skip on a press.
+ *   CineDef extensions the real player reads (missions/cine.js): cast entries {id, place | pos | at, yaw, props,
+ *   costume, fresh} (id 'pick' is the player's friend); end.actors[who] {keep, drain, pose, clip, hide, show,
+ *   place | pos, yaw}; film.wait (seconds to buffer, default 1.5); fx kind 'flash' or any S.ctx.fx spawner.
+ *   Points: {x, y, z} (y above the ground), a place id, {who, x, y, z} (actor frame: +x right, +z ahead),
+ *   {at | place: placeId, x, y, z}, {bridge: true, y} (y above the deck). Actor cues also take face {to},
+ *   place {at, yaw}, show {replace: who, at, yaw} and play {clip, at}.
  * @typedef {{open:(o?:object)=>void, close:()=>void, shoot:()=>object|null, active:boolean, gallery:object[], best:(slot:string)=>object|null, thumb:(id:string)=>string, reference:(placeId:string)=>object|null}} Photo  S.photo
  *   MISSIONS (photo.js) opens and closes on pressed('camera'), reads 'shutter' and axis('zoom') (zoom *= exp(y * k * dt)),
  *   and draws with S.ui.photoFrame(on, {zoom, score, min, subject, focus:{x,y,r}, note, countdown, flash:{score,text}}).
- * @typedef {{set:(slot:string, photoId:string)=>void, get:(slot:string)=>string|null, slots:Object<string,string|null>}} Evidence  S.evidence
+ *   Real MISSIONS extras for custom photo scripts: subject(id, spec), unsubject(id), onShot(fn) -> off,
+ *   captureReference(placeId), scoreOf(id). open({timer: 10}) props the phone on a self-timer.
+ * @typedef {{set:(slot:string, photoId:string)=>void, get:(slot:string)=>string|null, slots:Object<string,string|null>, pin?:(photoId:string|null)=>void}} Evidence  S.evidence
+ *   pin(id) (real MISSIONS): pins the player's F5 photo on Gabe's Airstream wall (P1). MISSIONS paints the wall and
+ *   marks it userData.composedBy = 'missions'.
  * @typedef {{get:()=>SaveV1, write:()=>boolean, clear:()=>void, has:()=>boolean, summary:()=>{chapter:number,title:string}, checkpoint:()=>object, restore:(cp:object)=>void}} Save  S.save
  *   write() writes nothing and returns false until a chapter runs (S.missions.chapter is set), so the boot's
  *   loading never replaces the save that CONTINUE is loading. api.save() (hide, pagehide, SWITCH GAME)
  *   also waits for the boot to end.
- * @typedef {{add:(id:string, o:{x:number,z:number,y?:number,r?:number,kind?:'ring'|'pillar'|'both'})=>void, remove:(id:string)=>void, clear:()=>void, list:object[]}} Markers3D  S.markers3d (missions/markers3d.js, B6): crimson ground ring and keyed pillar
+ * @typedef {{add:(id:string, o:{x:number,z:number,y?:number,r?:number,kind?:'ring'|'pillar'|'both',hud?:boolean})=>void, remove:(id:string)=>void, clear:()=>void, list:object[], move?:(id:string,x:number,z:number,y?:number)=>void}} Markers3D  S.markers3d (missions/markers3d.js, B6): crimson ground ring and keyed pillar
+ *   hud:false keeps a marker out of S.missions.markers() (the HUD, minimap and map). move() shifts one without a rebuild.
  * @typedef {object} MissionRuntime  m, passed to steps and content scripts
  * @property {Story} S @property {MissionDef} def @property {(ref:string)=>any} spawn @property {(id:string)=>any} get
  * @property {(text:string)=>void} objective @property {(id:string, o:object)=>void} marker @property {(id:string)=>void} unmark
@@ -694,7 +707,7 @@ export const CONTRACT = Object.freeze([
   ...fns('stealth', ['watch', 'unwatch', 'level', 'on']), 'stealth.spotted boolean', 'stealth.list array', 'stealth.exposure number',
   // missions
   ...fns('missions', ['startChapter', 'start', 'pass', 'fail', 'retry', 'quit', 'done', 'available', 'markers', 'travel', 'wait', 'autopilot']),
-  'missions.active object?', 'missions.chapter string?', 'missions.timeScale number', 'missions.cairns array',
+  'missions.active object?', 'missions.chapter string?', 'missions.timeScale number', 'missions.cairns array', 'missions.auto boolean',
   ...fns('cine', ['play', 'skip']), 'cine.active boolean',
   ...fns('photo', ['open', 'close', 'shoot', 'best', 'thumb', 'reference']), 'photo.active boolean', 'photo.gallery array',
   ...fns('evidence', ['set', 'get']), 'evidence.slots object',

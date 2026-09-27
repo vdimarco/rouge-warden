@@ -11,7 +11,7 @@
 // - Colliders, roads, surface types, water, the map, the ranch lights (no new programs), the doors and
 //   30 s of walking inside the bar all behave; the world palette passes the neon test; S.world holds every
 //   CONTRACT member; no page errors.
-import { open, step, stepUntil, finish, storyReady, canvasRGBA } from "./lib.mjs";
+import { open, step, stepUntil, finish, storyReady, canvasRGBA, freeRoam } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -55,6 +55,10 @@ async function draws(page, q) {
   const r = await storyReady(page, { maxSec: 60 });
   check(r.ok, `the world is ready (${r.sec} s stepped)`);
   await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 20 });
+  // free roam, and a second for the crew to join the hero (the first body with neon inks its mask once, a
+  // one-off cast cost that is not the world's streaming)
+  check((await freeRoam(page)).ok, "free roam: F1's mission quit, nothing modal");
+  await step(page, 1);
   const info = await page.evaluate(() => __crimson.story.world.info());
   check(info.build.worker > 0 && info.build.worker < 2500, `the worker builds Sedona in ${info.build.worker} ms (< 2500; heights ${info.build.gen.heights} ms, roads ${info.build.gen.roads} ms)`);
   check(info.build.longest < 50, `every assembly slice on the main thread is under 50 ms (longest ${info.build.longest} ms; steps ${info.build.steps.map(([n, ms]) => n + " " + ms).join(", ")})`);

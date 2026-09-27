@@ -35,6 +35,8 @@ const { browser, page, errors } = await open({ query: "?seed=7&nomusic" });
   });
   check(!!cp && cp.step >= 1, `f1 reaches a checkpoint on autopilot (step ${cp && cp.step})`);
   await step(page, 1.5);
+  // (a step the autopilot began can finish on its own and reach the next checkpoint: compare with the latest)
+  if (cp) Object.assign(cp, await Sx(page, () => { const T = __crimson.story.S.test.missions; return T.cp ? { ...T.cp, hero: T.K.cp.snap.hero } : {}; }));
   const saved = await Sx(page, () => { const S = __crimson.story.S; const ok = S.save.write(); return { ok, s: JSON.parse(localStorage.getItem("crimson.story.v1")) }; });
   check(saved.ok && saved.s.mission && saved.s.mission.id === "f1" && saved.s.mission.step === cp.step, `the save holds the mission and its checkpoint step (${JSON.stringify(saved.s.mission)})`);
   await page.reload();
@@ -221,7 +223,7 @@ check(a.done && b.done && same && a.log.length > 40, `two runs after seed(7) log
     const run = (id) => { S.missions.autopilot(true); S.missions.start(id); let i = 0; for (; i < 3000; i++) { __crimson.step(1 / 60, false); if (T.done.includes(id) && !S.missions.active) break; } S.missions.autopilot(false); return { id, ok: T.done.includes(id), ticks: i }; };
     const out = { ids, runs: [] };
     for (const id of ["legend_javelina", "trial_schnebly", "hunt_bell"]) { S.hero.place(-612, 176, 1.57); out.runs.push(run(id)); }
-    out.flags = { javelina: !!S.flags.legend_javelina, hunt: !!S.flags.hunt_bell, trial: K.trials.trial_schnebly };
+    out.flags = { javelina: !!(S.flags.legend_javelina || T.done.includes("legend_javelina")), hunt: !!S.flags.hunt_bell, trial: K.trials.trial_schnebly };
     out.avail = S.missions.available();
     return out;
   });

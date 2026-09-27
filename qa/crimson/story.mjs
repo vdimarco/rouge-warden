@@ -34,8 +34,11 @@ const next = (ch) => T.CHAPTER_ORDER[T.CHAPTER_ORDER.indexOf(ch) + 1] || null;
 const budgetOf = (ch) => CHAPTERS[ch].missions.reduce((s, id) => s + (C.MISSIONS[id].budget || 60), 0) + 10;
 const story = (page) => page.evaluate(() => { const s = __crimson.story, S = s.S; return { chapter: s.chapter, mode: s.mode, mission: s.mission && { ...s.mission }, card: S.test.ui.card, flags: { ...S.flags }, evidence: { ...S.evidence.slots }, save: JSON.parse(localStorage.getItem("crimson.story.v1") || "null") }; });
 
-async function continueAfterReload(page) {
+async function continueAfterReload(page, errors = []) {
+  const n0 = errors.length;
   await page.goto(`${URL_BASE}?${Q.slice(1)}`); // a reload without the ?chapter= jump (the save stays: storage is cleared once a session)
+  // (a rigged body still loading when the page goes away fails its blob texture on the old page: not an error of the game)
+  for (let i = errors.length - 1; i >= n0; i--) if (/GLTFLoader: Couldn't load texture blob:/.test(errors[i])) errors.splice(i, 1);
   await page.waitForFunction(() => window.__crimson && __crimson.game.ready, null, { timeout: 300000, polling: 100 });
   await page.evaluate(() => __crimson.step(0, false));
   const cont = await page.evaluate(() => !document.getElementById("modeContinue").hidden);
@@ -100,7 +103,7 @@ for (const name of runShards) {
     if (!T.COLD_OPEN.includes(nx)) {
       check(!!s.save && s.save.chapter === nx && T.validateSave(s.save).length === 0, `the save names ${nx} and fits SaveV1 (${s.save && s.save.chapter})`);
       if (RELOAD && list.includes(nx)) {
-        const c = await continueAfterReload(page);
+        const c = await continueAfterReload(page, errors);
         const s2 = await story(page);
         check(c.cont && c.ok && s2.chapter === nx, `CONTINUE after a reload resumes at ${nx} (${s2.chapter})`);
         if (s2.chapter !== nx) break;
@@ -140,7 +143,8 @@ if (runScripts) {
     await shot(page, "/tmp/story_f1_crew.png");
     await page.evaluate(() => window.__qaCam());
     await page.evaluate(() => __crimson.story.S.test.van.enter());
-    await step(page, 1.5);
+    // (f1's own talk step may still be open: a blocking line freezes play, so read it through)
+    for (let i = 0; i < 6; i++) { await page.evaluate(() => __crimson.story.S.ui.advanceAll()); await step(page, 0.25); }
     const seated = await page.evaluate(() => { const S = __crimson.story.S, v = S.vehicles.player; return { riding: S.drive.riding === v, n: v.seats.filter((x) => x && x !== "hero" && x.crewId).length, followers: S.cast.followers.list.length }; });
     check(seated.riding && seated.n === 4 && seated.followers === 0, `in the van the four take seats (${seated.n} seated, ${seated.followers} on foot)`);
     await page.evaluate(() => { const S = __crimson.story.S; S.vehicles.player.speed = 0; S.test.van.exit(); });
@@ -212,7 +216,7 @@ if (runScripts) {
     await page.evaluate(() => { __crimson.story.S.flags.f5Photo = null; });
     await loop(page, 60 * 10, () => __crimson.story.mission && __crimson.story.mission.step >= 10);
     const inside = await page.evaluate(() => { const S = __crimson.story.S; return { y: S.hero.pos.y, room: S.world.interiors.roomAt ? S.world.interiors.roomAt(S.hero.pos.x, S.hero.pos.y, S.hero.pos.z) : null, wall: S.world.interiors.wall("airstream").userData.composedBy, pins: S.flags.wallPins }; });
-    check(inside.y < -250 && inside.wall === "content" && inside.pins && inside.pins[0] === "lost", `P1: into the Airstream, and the wall pins the F5 photo slot beside Gabe's (y ${inside.y.toFixed(1)}, ${inside.wall}, ${inside.pins})`);
+    check(inside.y < -250 && (inside.wall === "content" || (MISSIONS_REAL && inside.wall === "missions")) && inside.pins && inside.pins[0] === "lost", `P1: into the Airstream, and the wall pins the F5 photo slot beside Gabe's (y ${inside.y.toFixed(1)}, ${inside.wall}, ${inside.pins})`);
     await page.evaluate(() => { const S = __crimson.story.S, w = S.world.interiors.wall("airstream"); w.updateMatrixWorld(); const p = w.getWorldPosition(new S.THREE.Vector3()); S.cameras.add("qa", 999, () => true, () => { S.camera.position.set(p.x + 0.2, p.y + 0.1, p.z + 2.2); S.camera.lookAt(p); }); });
     await step(page, 0.3, { draw: true });
     await shot(page, "/tmp/story_p1_wall.png");

@@ -394,6 +394,20 @@ export function createSteps(S, K) {
 
     *chase(m, s) {
       const tv = vehicleOf(m, s.target); if (!tv) return;
+      // goal 'takedown' (content, P9): the target is a foe on foot; catch him and knock him down
+      if (s.goal === 'takedown' || typeof tv.on !== 'function') {
+        if (!(tv.a && tv.def)) return;
+        S.combat.begin({ music: false });
+        try {
+          while (!isDown(tv)) {
+            if (S.hero.down) m.fail(s.fail || 'The crew pulls you out.');
+            m.marker('target', { x: tv.pos.x, z: tv.pos.z, y: tv.pos.y, r: 3, kind: 'pillar', mapKind: 'danger' });
+            if (M.auto) { if (riding()) getOut(riding()); ko(tv); }
+            yield null;
+          }
+        } finally { m.unmark('target'); }
+        return;
+      }
       const goal = s.goal || 'disable', need = s.hits ?? 3;
       const prot = [].concat(s.protect || []).map((ref) => vehicleOf(m, ref)).filter(Boolean);
       const offs = [];
@@ -642,22 +656,25 @@ export function createSteps(S, K) {
     },
 
     *collect(m, s) {
-      const items = [].concat(s.items || []).map((it, i) => ({ ...(typeof it === 'string' ? { id: it, at: it } : it), i, got: false }));
+      // items: {id, at | place | pos, subject?, slot?, lines | line?, label} (content writes pos, subject, slot and line)
+      const items = [].concat(s.items || []).map((it, i) => { const o = typeof it === 'string' ? { id: it, at: it } : { ...it }; if (o.lines == null && o.line != null) o.lines = o.line; return { ...o, i, got: false }; });
       const need = Math.min(items.length, s.need ?? items.length);
       let n = 0, sayH = null;
-      const got = (it) => {
+      const got = (it, photo) => {
         if (it.got) return; it.got = true; n++;
+        if (it.slot && photo) S.evidence.set(it.slot, photo.id);
         S.interact.remove(`clue:${m.def.id}:${it.id}`); m.unmark(`clue:${it.id}`); K.photo.unsubject(`clue:${it.id}`);
         S.flags[it.flag || `clue:${it.id}`] = true;
         S.ui.toast(`${n}/${need}`);
         if (it.lines) sayH = S.ui.say([].concat(it.lines), { block: true });
         if (S.audio) S.audio.sfx('pickup', {});
       };
-      const offShot = s.photo ? K.photo.P.onShot((p) => { const it = items.find((x) => `clue:${x.id}` === p.subject); if (it && p.score >= (it.min ?? s.min ?? 45)) got(it); }) : () => {};
+      const offShot = s.photo ? K.photo.P.onShot((p) => { const it = items.find((x) => `clue:${x.id}` === p.subject); if (it && p.score >= (it.min ?? s.min ?? 45)) got(it, p); }) : () => {};
       for (const it of items) {
-        const T = target(m, it.at || it.id, 1.5); if (!T) { it.got = true; continue; }
+        const ref = it.at || it.place || it.pos || it.id;
+        const T = target(m, ref, 1.5); if (!T) { it.got = true; continue; }
         it.T = T;
-        if (s.photo) K.photo.subject(`clue:${it.id}`, { ...subjectSpec(m, it.at || it.id, { kind: it.kind || 'thing' }), label: it.label || '' });
+        if (s.photo) K.photo.subject(`clue:${it.id}`, { ...((it.subject && subjectSpec(m, it.subject, { kind: it.kind || 'thing' })) || subjectSpec(m, typeof ref === 'string' ? ref : T(), { kind: it.kind || 'thing' })), label: it.label || '' });
         else S.interact.add({ id: `clue:${m.def.id}:${it.id}`, tag: 'mission', label: it.label || 'LOOK', r: it.r || 2.2, mode: 'foot', prio: 4, pos: () => { const p = T(); return { x: p.x, y: p.y, z: p.z }; }, act: () => got(it) });
       }
       try {
@@ -665,7 +682,7 @@ export function createSteps(S, K) {
           for (const it of items) if (!it.got && it.T) { const p = it.T(); m.marker(`clue:${it.id}`, { x: p.x, z: p.z, y: p.y, r: 1.3, kind: 'ring', mapKind: 'objective' }); }
           S.ui.meter('clues', n, { pips: need, label: s.photo ? 'PHOTOS' : 'CLUES' });
           if (sayH && !sayH.done) { if (M.auto) S.ui.advanceAll(); yield null; continue; }
-          if (M.auto) { const it = items.find((x) => !x.got && x.T); if (it) { const p = it.T(); if (riding()) getOut(riding()); S.hero.place(p.x + 0.6, p.z + 0.6); got(it); } }
+          if (M.auto) { const it = items.find((x) => !x.got && x.T); if (it) { const p = it.T(); if (riding()) getOut(riding()); S.hero.place(p.x + 0.6, p.z + 0.6); let ph = null; if (s.photo && it.slot) { K.aimAt(`clue:${it.id}`); ph = K.photo.shoot({ force: true, score: s.min ?? 60 }); if (K.photo.active) K.photo.close(); } got(it, ph); } }
           yield null;
         }
         while (sayH && !sayH.done) { if (M.auto) S.ui.advanceAll(); yield null; }
@@ -720,8 +737,12 @@ export function createSteps(S, K) {
   }
   function* runEvent(m, e) {
     if (e.set) yield* applySet(m, e.set);
-    if (e.look) S.look.set(e.look, { dur: 1 });
+    // look: a LOOKS preset; content also writes a place id there ({at, line, look: 'perch', sfx, fx}), a hint only
+    if (e.look && LOOKS.includes(e.look)) S.look.set(e.look, { dur: 1 });
+    if (e.sfx && S.audio) S.audio.sfx(e.sfx);
+    if (e.fx === 'flash' && S.look && S.look.base) S.look.base.flash = 1;
     if (e.card) yield* await_(S.ui.card(e.card.kind || 'time', e.card));
+    if (e.line && !e.lines) e = { ...e, lines: e.line };
     if (e.lines) { const h = S.ui.say([].concat(e.lines), { block: e.block ?? true }); if (e.block !== false) yield* await_(h); }
     if (e.cine) yield S.cine.play(e.cine, { cast: m.castMap() });
     if (e.fn) { const fn = S.content.SCRIPTS && S.content.SCRIPTS[e.fn]; if (fn) { const r = fn(m, e); if (r && r.next) yield* r; } }

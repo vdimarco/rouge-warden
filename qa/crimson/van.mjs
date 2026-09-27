@@ -15,7 +15,7 @@
 // - Traffic at Q2: 14 cars, kinematic beyond 72 m and full physics within 60 m (C7). A convoy keeps its
 //   gaps and a pursuer lands side rams. The van's draw calls; the vehicles' CONTRACT members; no page errors.
 // VAN_SHOT=/tmp/van.png saves a frame of the chase camera at the end.
-import { open, step, stepUntil, finish, storyReady, shot } from "./lib.mjs";
+import { open, step, stepUntil, finish, storyReady, shot, freeRoam } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -26,8 +26,7 @@ const r = await storyReady(page, { maxSec: 60 });
 check(r.ok, `the story is ready (${r.sec} s stepped)`);
 await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 20 });
 // leave the chapter's mission for free roam: nothing modal, Sedona showing
-await page.evaluate(() => { const S = __crimson.story.S; S.ui.advanceAll(); S.missions.quit(); });
-const roam = await stepUntil(page, () => { const S = __crimson.story.S; S.ui.advanceAll(); return S.mode === "play" && !S.freeze && S.world.visible; }, { maxSec: 10 });
+const roam = await freeRoam(page);
 check(roam.ok, "free roam: playing, not frozen, Sedona showing");
 
 const contract = await page.evaluate(() => __crimson.story.contract().filter((l) => /^S\.(vehicles|drive|traffic|drivers|test\.van)\b/.test(l)));
@@ -35,6 +34,8 @@ check(contract.length === 0, `S.vehicles, S.drive, S.traffic, S.drivers and S.te
 
 // traffic at Q2 (C2, C7), before the tests turn it off (cars come and go: wait for the full count)
 await step(page, 3);
+// (free roam sets the traffic density by region and hour once a second; the Q2 count is density 1: set it after)
+await page.evaluate(() => __crimson.story.S.traffic.setDensity(1));
 await stepUntil(page, () => __crimson.story.S.traffic.cars.length === 14, { maxSec: 12, realMs: 0 });
 const tr = await page.evaluate(() => {
   const S = __crimson.story.S, H = S.hero.pos, cars = S.traffic.cars;
@@ -273,10 +274,11 @@ await step(page, 0.3);
   check(res.shown.every((s, i) => s === i < 2), `only S0 and S1 show through the glass (${res.shown.map((s) => (s ? 1 : 0)).join("")})`);
   const w = await page.evaluate(() => {
     const S = __crimson.story.S, v = window.__van, T = window.__tun, R = window.__R(5);
-    let wrecked = 0; const off = v.on("wrecked", () => wrecked++);
+    // (read the van as the event fires: in free roam MISSIONS then tows a wrecked van home and repairs it)
+    let wrecked = 0, at = null; const off = v.on("wrecked", () => { wrecked++; if (!at) at = { dmg: v.damage, flag: v.wrecked }; });
     v.damage = 0; v.wrecked = false;
     let hits = 0;
-    for (let k = 0; k < 40 && !v.wrecked; k++) {
+    for (let k = 0; k < 40 && !wrecked; k++) {
       const it = T.BX[Math.floor(R() * T.BX.length)], nx = it.c, nz = -it.s, px = it.x + it.hw * it.c, pz = it.z - it.hw * it.s;
       if (!T.clearRun(px + nx * 17, pz + nz * 17, -nx, -nz, 13)) continue;
       v.setPose(px + nx * 17, pz + nz * 17, Math.atan2(-nx, -nz)); v.speed = 28;
@@ -284,8 +286,9 @@ await step(page, 0.3);
     }
     window.__ticks(30);
     off();
-    return { wrecked, dmg: v.damage, flag: v.wrecked, hits };
+    return { wrecked, dmg: at ? at.dmg : v.damage, flag: at ? at.flag : v.wrecked, hits };
   });
+  await stepUntil(page, () => { const S = __crimson.story.S; if (S.modal) S.ui.advanceAll(); return !S.lockControl && !S.modal; }, { maxSec: 6 }); // (the tow, if it ran)
   check(w.wrecked === 1 && w.flag && w.dmg === 100, `damage 100 emits 'wrecked' once (${w.hits} hits at 28 m/s; damage ${w.dmg.toFixed(1)})`);
   await page.evaluate(() => { const v = window.__van; v.damage = 0; v.wrecked = false; v.drowned = false; v.view.clearDents(); });
 }

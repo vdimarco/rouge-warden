@@ -7,7 +7,7 @@
 // 5. A pinch zooms the phone camera's viewfinder.
 // 6. Hiding the page opens the story menu; a tap on SAVE & QUIT returns to the title with CONTINUE.
 // No page errors.
-import { open, step, stepUntil, finish } from "./lib.mjs";
+import { open, step, stepUntil, finish, freeRoam } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -27,6 +27,7 @@ const buttons = () => T(() => __crimson.story.S.test.ui.touchButtons);
 
 const r = await stepUntil(page, () => __crimson.story && __crimson.story.chapter === "f1" && __crimson.story.mode === "play" && !__crimson.story.S.test.ui.card, { maxSec: 60 });
 check(r.ok, "the story reaches f1 on a phone");
+check((await freeRoam(page)).ok, "free roam: F1's mission quit, nothing modal");
 await step(page, 0.3);
 check(await T(() => document.body.classList.contains("touch") && __crimson.story.S.test.ui.visible("stouch")), "the story's touch layer shows");
 
@@ -127,7 +128,7 @@ await step(page, 0.2);
 
 /* ---------------- 5: the pinch ---------------- */
 await T(() => {
-  const S = __crimson.story.S; S.photo.open(); S.ui.photoFrame(true, { zoom: 1 });
+  const S = __crimson.story.S; S.photo.open({ force: true }); S.ui.photoFrame(true, { zoom: 1 }); // (force: the real phone camera waits out the attack just thrown)
   window.__zoom = 0; S.register("camera", (c, r, raw) => { window.__zoom += S.input.axis("zoom").y * (raw || 0); });
 });
 await step(page, 0.2);

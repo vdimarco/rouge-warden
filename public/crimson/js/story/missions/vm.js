@@ -272,7 +272,9 @@ export function createVM(S, K) {
     if (!COLD_OPEN.includes(C.id)) S.save.write(); // CONTINUE resumes here, never in the cold open
     const list = C.missions || [];
     // the interlude or intro cine plays first, unless we come back into the middle of the chapter
-    if (C.cine && !o.mission && !resuming) yield S.cine.play(C.cine);
+    // (content plays an interlude's cine as its mission's step: then the chapter does not play it again)
+    const inMission = (id) => list.some((mid) => ((S.content.MISSIONS[mid] || {}).steps || []).some((s) => s && s.type === 'cine' && s.id === id));
+    if (C.cine && !o.mission && !resuming && !inMission(C.cine)) yield S.cine.play(C.cine);
     let at = o.mission ? list.indexOf(o.mission) : 0;
     if (at < 0) at = 0;
     for (let i = at; i < list.length; i++) {

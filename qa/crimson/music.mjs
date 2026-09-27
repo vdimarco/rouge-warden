@@ -97,7 +97,7 @@ const lastPlay = (s) => [...s.calls].reverse().find((c) => c[0] === "play" || c[
   ok = await until(page, () => __sc.paused);
   let s = await sc(page);
   check(ok && lastPlay(s)[0] === "pause", `the story holds the song (last call ${JSON.stringify(lastPlay(s))})`);
-  const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 30 });
+  const r = await stepUntil(page, () => __crimson.story.chapter === "f1", { maxSec: 90 }); // c0 (28 s) and i0 (34 s) play in full
   check(r.ok, `the story reaches f1 (${r.sec} s)`);
   await page.keyboard.press("Escape");
   await step(page, 0.05);

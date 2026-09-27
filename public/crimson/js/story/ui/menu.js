@@ -68,7 +68,7 @@ export function createMenu(U, { map, board }) {
       rows.push(`<li class="${state}"><i>${now ? '▶' : done ? '完' : '·'}</i><span>CHAPTER ${c.n}</span><b>${state === 'later' ? '· · ·' : esc(c.title)}</b></li>`);
     }
     let side = '';
-    try { const av = (M.available && M.available()) || []; if (av.length) side = `<h4>YOU CAN ALSO PLAY</h4><ul class="av">${av.map((id) => `<li>${esc(((S.content.MISSIONS || {})[id] || {}).title || id)}</li>`).join('')}</ul>`; } catch (e) { /* none */ }
+    try { const av = (M.available && M.available()) || []; if (av.length) side = `<h4>YOU CAN ALSO PLAY</h4><ul class="av">${av.map((id) => `<li>${esc((M.title && M.title(id)) || ((S.content.MISSIONS || {})[id] || {}).title || id)}</li>`).join('')}</ul>`; } catch (e) { /* none */ }
     return `<h3>MISSIONS</h3>${obj ? `<p class="now">NOW: ${esc(obj)}</p>` : ''}<ul class="log">${rows.join('')}</ul>${side}`;
   }
   function controlsHtml() {

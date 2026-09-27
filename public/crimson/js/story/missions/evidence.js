@@ -28,6 +28,8 @@ export function createEvidence(S, K) {
     // extras: how many of FACE, PLACE and DATE are in, and a repaint request
     get count() { return ['face', 'place', 'date'].filter((k) => slots[k]).length; },
     touch() { dirty = true; },
+    // P1 (content's pinWall): pin the player's F5 photo beside Gabe's shot of the van
+    pin(id) { if (id && id !== 'lost') S.flags.f5Photo = S.flags.f5Photo || id; dirty = true; },
   };
 
   function thumbUrl(id) {
@@ -103,7 +105,7 @@ export function createEvidence(S, K) {
     // the night the crew met the Bear: their photo of him, his photo of them
     const f5 = S.flags.f5Photo;
     if (f5 || K.doneSet.has('f5') || K.doneSet.has('p1')) {
-      pins.push(print(g, 250, 370, pw, ph, -0.05, f5 || null, 'YOURS', 'the Perch, 2:54 AM'));
+      pins.push(print(g, 250, 370, pw, ph, -0.05, f5 || 'lost', 'YOURS', 'the Perch, 2:54 AM')); // (no photo: PHOTO LOST)
       pins.push(gabeShot(g, 520, 380, pw, ph, 0.06));
       g.fillStyle = 'rgba(20,12,8,0.85)'; g.font = 'italic 24px Georgia, serif'; g.textAlign = 'left';
       g.fillText('Same minute. Wrong people.', 740, 450);
@@ -131,6 +133,7 @@ export function createEvidence(S, K) {
     dirty = false; paint();
     const m = w.material;
     if (m.map !== tex) { m.map = tex; if (m.color) m.color.set(0xffffff); m.needsUpdate = true; }
+    w.userData.composedBy = 'missions';
   }
   function reset(save) {
     for (const k of EVIDENCE) slots[k] = save && save.evidence ? save.evidence[k] ?? null : null;
