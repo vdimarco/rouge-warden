@@ -47,13 +47,18 @@ Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and boss
 
 ### Levels
 
-Each layer is 384 pixels wide. It picks one of three route styles:
+Each layer is 1024 pixels wide and 720 tall, so it is wider than it is tall. It is a web of rooms, not one line:
 
-- a zigzag from wall to wall;
-- rooms that wander anywhere across the width;
-- a few huge caverns.
+- An entry room sits under the hole. Below it, rows of four to six rooms spread across the whole width.
+- Each open room leads down to one or two rooms near it. Some rows also have side passages, so you can cross over to another way down.
+- About one room in five is a dead end: you can get in, but there is no way on. Dead ends hold a cooler or a heap of gold. Blind tunnels also run off into the dirt, and some end in gold.
+- Every open way meets again in one last room above the two drains. That room is the sealed room that opens the drains.
+- The compass follows the shortest way through the web.
+- Each layer picks a style: an even web, rooms that wander, or mostly huge caverns.
 
-About half the rooms are cave shapes drawn on Higgsfield as black-and-white cross sections: a stalactite cathedral, a sinkhole, worm burrows, a lake basin that fills with the layer's liquid, an old mine, a root chamber, terraces, a crystal geode, stone arches over a pit, and a zigzag fissure. They are stored as small grids and stamped at a random size with rough edges. A walkway joins the middle of each cave to every tunnel mouth, so the way down stays open. Tunnels bend on the way between rooms, and some side rooms are small caves too.
+The layer is bigger, so each critter the Cottage picks comes twice, and the fast-drain timer is 60% longer. The minimap shows the whole width.
+
+About half the rooms are cave shapes drawn on Higgsfield as black-and-white cross sections: a stalactite cathedral, a sinkhole, worm burrows, a lake basin that fills with the layer's liquid, an old mine, a root chamber, terraces, a crystal geode, stone arches over a pit, and a zigzag fissure. They are stored as small grids and stamped at a random size with rough edges. Short tunnels join the middle of each cave to every tunnel mouth, so the way through stays open. Tunnels bend on the way between rooms.
 
 ### Movement and physics
 

@@ -108,7 +108,7 @@ button { font: inherit; color: inherit; }
 @media (pointer: coarse) { .digbtn, .tbtn { display: block; } .digbtn { bottom: calc(var(--sab) + 140px); width: 56px; height: 56px; font-size: 11.5px; padding: 0; } }
 body.menu .digbtn, body.menu .tbtn { visibility: hidden; }
 body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
-.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 96 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
+.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); width: min(300px, 42vw); height: auto; aspect-ratio: 256 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
 .tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
@@ -2213,7 +2213,7 @@ const SFX = (() => {
 
 /* ------------------------------------------------------------------ the world: every pixel simulated */
 
-const W = 384, H = 720, CS = 16, CW = W / CS, CH = H / CS;
+const W = 1024, H = 720, CS = 16, CW = W / CS, CH = H / CS;
 /* Painted graphics: pictures painted on Higgsfield, one texel for each world cell.
    Classic keeps the flat four-shade palettes. The choice is saved in this browser. */
 const Paint = (() => {
@@ -2650,7 +2650,7 @@ const World = (() => {
     }
 
     // 1b. junk buried in the ground: canoes, tires, old toilets, fridges, bottles, and bones
-    const junkN = 14 + Math.min(10, plan.depth * 2);
+    const junkN = ((14 + Math.min(10, plan.depth * 2)) * W) / 256;
     for (let k = 0; k < junkN; k++) {
       const J = JUNK[(R() * JUNK.length) | 0], flip = R() < 0.5;
       const jx = 8 + ((R() * (W - 40)) | 0), jy = TOP + 12 + ((R() * (floorY - TOP - 40)) | 0);
@@ -2669,78 +2669,139 @@ const World = (() => {
       if (fbm(x / 26, y / 20, s + 71) > t) mat[y * W + x] = EMPTY;
     }
 
-    // 3. the route: rooms that zigzag down the layer, joined by wide sloped tunnels
-    const rooms = [];
-    let side = R() < 0.5 ? 0 : 1, y = TOP + 40;
-    // each layer picks a route style: a zigzag from wall to wall, rooms that wander anywhere, or a few huge caverns
-    const style = ["zigzag", "wander", "caverns"][(R() * 3) | 0];
-    for (let k = 0; k < 14; k++) {
+    // 3. the route: a web of rooms over the whole width. Many ways lead down, a few rooms go nowhere,
+    // and every open way meets again in one last room above the two drains.
+    const rooms = [], edges = [];
+    const style = ["web", "wander", "caverns"][(R() * 3) | 0];
+    const makeRoom = (x, y, k, forceKind) => {
       const band = plan.bands[bandIdx(y)];
       const [bw, bh] = ROOM[band.form];
-      // each room has a kind, so the layer does not repeat itself
-      const kinds = k === 0 ? ["hall"] : band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
-      // about one room in three is a cave shape stamped from the Higgsfield set
-      const caveOdds = style === "caverns" ? 0.85 : band.form === "dense" ? 0.3 : 0.5;
-      const kind = k > 0 && R() < caveOdds ? "cave" : kinds[(R() * kinds.length) | 0];
+      const kinds = band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
+      const caveOdds = style === "caverns" ? 0.75 : band.form === "dense" ? 0.3 : 0.45;
+      const kind = forceKind || (R() < caveOdds ? "cave" : kinds[(R() * kinds.length) | 0]);
       let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3), mask = null;
-      if (kind === "cave") {
-        mask = CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0];
-        const sw = Math.min(W * 0.46, (style === "caverns" ? 110 : 84) + R() * 50), sh = clamp(sw * mask.h / mask.w, 44, 120);
-        rw = sw / 2; rh = sh / 2;
-      }
       if (kind === "shaft") { rw *= 0.62; rh *= 1.55; }
       if (kind === "bridge") rw = Math.max(rw, 30);
-      if (y + rh * 0.6 > floorY - 30) break;
-      const mid = R() < 0.25;
-      // rooms spread over the whole width: near a wall, or anywhere on that half
-      const span = W / 2 - 24 - rw;
-      const x = style === "wander" ? 20 + rw + R() * (W - 40 - rw * 2) : mid ? W / 2 + (R() - 0.5) * 60 : side ? W - 18 - rw - R() * span : 18 + rw + R() * span;
-      rooms.push({ x, y, rw, rh, band, main: true, kind, mask });
-      if (!mid) side ^= 1;
-      y += rh * 0.6 + 30 + R() * 16 + ROOM[plan.bands[bandIdx(y + 50)].form][1];
+      if (kind === "cave") {
+        mask = CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0];
+        const sw = (style === "caverns" ? 110 : 84) + R() * 60, sh = clamp(sw * mask.h / mask.w, 44, 120);
+        rw = sw / 2; rh = sh / 2;
+      }
+      return { x: clamp(x, 16 + rw, W - 16 - rw), y, rw, rh, band, main: true, kind, mask, row: k, links: [] };
+    };
+    // the entry room under the hole, then rows of rooms spread across the width
+    const entry = makeRoom(W / 2, TOP + 40, 0, "hall");
+    rooms.push(entry);
+    const rowsOf = [[entry]];
+    let y = TOP + 40 + entry.rh + 46;
+    const lastY = floorY - 80;
+    while (y < lastY) {
+      const n = 4 + ((R() * 3) | 0), slot = (W - 60) / n, row = [];
+      for (let q = 0; q < n; q++) {
+        if (R() < 0.12) continue;
+        const x = 30 + slot * (q + 0.5) + (R() - 0.5) * slot * (style === "wander" ? 0.8 : 0.45);
+        const r = makeRoom(x, y + (R() - 0.5) * 24, rowsOf.length);
+        if (row.some((o) => Math.abs(o.x - r.x) < o.rw + r.rw + 14)) continue;
+        row.push(r);
+      }
+      if (!row.length) row.push(makeRoom(W / 2 + (R() - 0.5) * W * 0.6, y, rowsOf.length));
+      row.sort((p1, p2) => p1.x - p2.x);
+      rowsOf.push(row);
+      y += Math.max(...row.map((r) => r.rh)) * 1.2 + 34 + R() * 20;
     }
+    // the last room: every open way ends here, and it is the sealed room before the drains
+    const finale = makeRoom(W / 2 + (R() - 0.5) * W * 0.4, Math.min(floorY - 40, y), rowsOf.length, "hall");
+    finale.rw *= 1.4;
+    const link = (p1, p2) => { if (p1 === p2 || p1.links.includes(p2)) return; p1.links.push(p2); p2.links.push(p1); edges.push([p1, p2]); };
+    // some rooms are dead ends: you can get in, but no way on
+    for (let k = 1; k < rowsOf.length; k++) {
+      const row = rowsOf[k];
+      if (row.length > 2) for (const r of row) if (R() < 0.22 && row.filter((o) => !o.dead).length > 2) r.dead = true;
+    }
+    for (let k = 0; k < rowsOf.length; k++) {
+      const row = rowsOf[k], below = rowsOf[k + 1];
+      if (!below) { for (const r of row) if (!r.dead) link(r, finale); continue; }
+      const live = below.filter((r) => !r.dead);
+      // each open room leads down to one or two rooms near it
+      for (const r of row) {
+        if (r.dead) continue;
+        const near = below.slice().sort((p1, p2) => Math.abs(p1.x - r.x) - Math.abs(p2.x - r.x));
+        link(r, near[0]);
+        if (near[1] && R() < 0.55) link(r, near[1]);
+        if (k === 0) for (const o of near.slice(1)) if (R() < 0.5) link(r, o);
+      }
+      // every room below needs a way in, and every open room below a way on
+      const openAbove = row.filter((r) => !r.dead);
+      for (const b of below) if (!b.links.length) link(openAbove.sort((p1, p2) => Math.abs(p1.x - b.x) - Math.abs(p2.x - b.x))[0], b);
+      // side passages along a row, so you can cross over to another way down
+      for (let q = 0; q + 1 < row.length; q++) if (!row[q].dead && !row[q + 1].dead && R() < 0.4) link(row[q], row[q + 1]);
+      if (!live.length) below[0].dead = false;
+    }
+    for (const row of rowsOf.slice(1)) for (const r of row) rooms.push(r);
+    rooms.push(finale);
     for (const r of rooms) carveRoom(r, s);
-    // a walkway through each cave shape, so the way down never depends on the drawing
-    // spokes from the middle to every place a tunnel can meet the room
-    for (const r of rooms) if (r.mask) for (const [fx, fy] of [[-0.35, -0.5], [0.35, -0.5], [-0.55, 0.2], [0.55, 0.2]]) tunnel(r.x, r.y, r.x + fx * r.rw, r.y + fy * r.rh, 4.5, s);
-    // the path the compass follows: tunnel center lines, and a walk across each room
+    // spokes from the middle of each cave shape to where tunnels meet it
+    for (const r of rooms) if (r.mask) for (const [fx, fy] of [[-0.35, -0.5], [0.35, -0.5], [-0.55, 0.2], [0.55, 0.2], [0, 0.3]]) tunnel(r.x, r.y, r.x + fx * r.rw, r.y + fy * r.rh, 4.5, s);
+    // tunnels: each bends once on the way. Remember the bend, to trace the compass route later.
+    for (const e of edges) {
+      const [p1, p2] = e[0].y <= e[1].y ? e : [e[1], e[0]], flat = Math.abs(p2.y - p1.y) < 30, dir = Math.sign(p2.x - p1.x) || 1;
+      const ox = p1.x + dir * p1.rw * 0.5, oy = flat ? p1.y + p1.rh * 0.1 : p1.y + p1.rh * 0.2;
+      const tx = p2.x - dir * p2.rw * (flat ? 0.5 : 0.35), ty = flat ? p2.y + p2.rh * 0.1 : p2.y - p2.rh * 0.5, len = Math.hypot(tx - ox, ty - oy) || 1;
+      const bend = (R() - 0.5) * Math.min(60, len * 0.35), mx = (ox + tx) / 2 + ((ty - oy) / len) * bend, my = (oy + ty) / 2 - ((tx - ox) / len) * bend * 0.5;
+      tunnel(ox, oy, mx, my, flat ? 5.5 : 6.5, s);
+      tunnel(mx, my, tx, ty, flat ? 5.5 : 6.5, s);
+      e.pts = [p1, { x: ox, y: oy }, { x: mx, y: my }, { x: tx, y: ty }, p2];
+      e.a = p1; e.b = p2;
+    }
+    // blind tunnels that stop in the dirt: some hide gold at the end, some hide nothing
+    const stubs = [];
+    for (const r of rooms) if (r !== entry && r !== finale && R() < 0.3) {
+      const a0 = R() < 0.5 ? Math.PI : 0, ang = a0 + (R() - 0.5) * 0.9, len = 40 + R() * 50;
+      const sx = r.x + Math.cos(ang) * r.rw * 0.6, sy = r.y + r.rh * 0.2, ex = clamp(sx + Math.cos(ang) * len, 12, W - 12), ey = clamp(sy + Math.sin(ang) * len * 0.5 + 10, TOP + 20, floorY - 20);
+      tunnel(sx, sy, ex, ey, 5, s);
+      stubs.push({ x: ex, y: ey, gold: R() < 0.6 });
+    }
+    // the compass route: the shortest way through the web from the entry to the last room
     const path = [];
     const seg = (x1, y1, x2, y2) => { const n = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 3); for (let k = 0; k <= n; k++) path.push({ x: x1 + (x2 - x1) * k / n, y: y1 + (y2 - y1) * k / n }); };
-    let inX = W / 2, inY = TOP - 6;
-    const walk = (x, y) => { seg(inX, inY, x, y); };
-    const enter = rooms[0];
+    {
+      const dist = new Map([[entry, 0]]), prev = new Map(), todo = new Set(rooms);
+      while (todo.size) {
+        let u = null, du = Infinity;
+        for (const r of todo) { const d = dist.has(r) ? dist.get(r) : Infinity; if (d < du) { du = d; u = r; } }
+        if (!u || u === finale) break;
+        todo.delete(u);
+        for (const v of u.links) { const d = du + Math.hypot(v.x - u.x, v.y - u.y); if (d < (dist.has(v) ? dist.get(v) : Infinity)) { dist.set(v, d); prev.set(v, u); } }
+      }
+      const chain = [finale];
+      while (prev.has(chain[0])) chain.unshift(prev.get(chain[0]));
+      for (const r of chain) r.onRoute = true;
+      let inX = W / 2, inY = TOP - 6;
+      for (let k = 0; k + 1 < chain.length; k++) {
+        const e = edges.find((q) => (q.a === chain[k] && q.b === chain[k + 1]) || (q.b === chain[k] && q.a === chain[k + 1]));
+        const pts = e.a === chain[k] ? e.pts : e.pts.slice().reverse();
+        for (let q = 1; q < pts.length; q++) { seg(inX, inY, pts[q].x, pts[q].y + 3); inX = pts[q].x; inY = pts[q].y + 3; }
+      }
+    }
     for (let k = 0; k < 10; k++) carve(W / 2, TOP - 4 + k, 12 - k * 0.5);
     buildTop(plan, s);
-    tunnel(W / 2, TOP - 6, enter.x, enter.y - enter.rh * 0.5, 7, s, path);
-    inX = enter.x; inY = enter.y + enter.rh * 0.6 - 5;
-    for (let k = 0; k + 1 < rooms.length; k++) {
-      const a = rooms[k], b = rooms[k + 1], dir = Math.sign(b.x - a.x) || 1;
-      const ox = a.x + dir * a.rw * 0.55, oy = a.y + a.rh * 0.2;
-      walk(ox, Math.min(oy, a.y + a.rh * 0.6 - 5));
-      // the tunnel bends once on the way, so it is not a ruler line
-      const tx = b.x - dir * b.rw * 0.35, ty = b.y - b.rh * 0.5, len = Math.hypot(tx - ox, ty - oy) || 1;
-      const bend = (R() - 0.5) * Math.min(50, len * 0.35), mx = (ox + tx) / 2 + ((ty - oy) / len) * bend, my = (oy + ty) / 2 - ((tx - ox) / len) * bend * 0.5;
-      tunnel(ox, oy, mx, my, 6.5, s, path);
-      tunnel(mx, my, tx, ty, 6.5, s, path);
-      inX = b.x - dir * b.rw * 0.35; inY = b.y + b.rh * 0.6 - 5;
-    }
-    const last = rooms[rooms.length - 1];
+    tunnel(W / 2, TOP - 6, entry.x, entry.y - entry.rh * 0.5, 7, s);
+    const last = finale;
     const exitX = Math.round(clamp(last.x + (R() - 0.5) * 60, 40, W - 40));
     if (plan.boss) {
       // the hand's cavern: a sealed ceiling with one hole, and rock ledges to stand on
-      walk(last.x, last.y + last.rh * 0.2);
-      tunnel(last.x, last.y, last.x, arenaTop + 6, 7, s, path);
+      tunnel(last.x, last.y, last.x, arenaTop + 6, 7, s);
       seg(last.x, arenaTop + 6, exitX, H - 22);
       for (let x = 2; x < W - 2; x++) for (let yy = arenaTop - 5; yy < arenaTop; yy++) if (Math.abs(x - last.x) > 8) mat[yy * W + x] = ROCK;
-      for (let k = 0; k < 7; k++) {
-        const ly = arenaTop + 40 + k * 38, lx = 20 + ((hash2(k, 3, s) * (W - 70)) | 0), lw = 26 + ((hash2(k, 4, s) * 20) | 0);
+      for (let k = 0; k < 7 * W / 256; k++) {
+        const ly = arenaTop + 40 + (k % 7) * 38, lx = 20 + ((hash2(k, 3, s) * (W - 70)) | 0), lw = 26 + ((hash2(k, 4, s) * 20) | 0);
         for (let x = lx; x < lx + lw && x < W - 2; x++) for (let yy = ly; yy < ly + 4; yy++) mat[yy * W + x] = ROCK;
       }
-    } else { walk(last.x, last.y + last.rh * 0.2); tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s, path); seg(exitX, H - BOT + 4, exitX, H - 22); }
+    } else { tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s); seg(last.x, last.y, exitX, H - BOT + 4); seg(exitX, H - BOT + 4, exitX, H - 22); }
     // a second drain on the far side: you choose where the next layer goes
     const exits = [exitX];
     if (!plan.boss) {
-      const x2 = clamp(exitX > W / 2 ? exitX - 120 : exitX + 120, 34, W - 34);
+      const x2 = clamp(exitX > W / 2 ? exitX - 140 : exitX + 140, 34, W - 34);
       tunnel(last.x, last.y, x2, H - BOT + 4, 6, s);
       exits.push(x2);
     }
@@ -2913,7 +2974,7 @@ const World = (() => {
     // small lights on cave floors: candles, crystals, mushrooms, or embers, by look
     const glows = [];
     const glowColor = { crypt: 0xffd070, cistern: 0x7fd8ff, garden: 0x9cff6a, forge: 0xff8a3a }[plan.theme];
-    for (let tries = 0; tries < 900 && glows.length < 26; tries++) {
+    for (let tries = 0; tries < 3600 && glows.length < (26 * W) / 256; tries++) {
       const x = 6 + ((R() * (W - 12)) | 0), y = TOP + 10 + ((R() * (floorY - TOP - 20)) | 0), i = y * W + x;
       if (mat[i] !== EMPTY || mat[i - W] !== EMPTY || KIND[mat[i + W]] !== K.SOLID) continue;
       if (glows.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) < 24)) continue;
@@ -2921,6 +2982,12 @@ const World = (() => {
     }
     // a few side rooms hold a chest in place of loose gold
     for (const r of sides) if (!LIQ[r.band.pocket] && R() < 0.35) { chests.push({ x: r.x | 0, y: floorOf(r), open: false }); r.chest = true; }
+    // dead ends pay for the detour: a cooler or a heap of gold. Blind tunnels sometimes end in gold too.
+    for (const r of rooms) if (r.dead) {
+      if (R() < 0.55) chests.push({ x: r.x | 0, y: floorOf(r), open: false, rich: R() < 0.3 });
+      else for (let k = 0; k < 50; k++) put(r.x + (R() - 0.5) * r.rw, floorOf(r) - 1 - R() * 4, GOLD);
+    }
+    for (const t of stubs) if (t.gold) for (let k = 0; k < 24; k++) put(t.x + (R() - 0.5) * 8, t.y + 3 - R() * 4, GOLD);
 
     // 5. sand keeps a crust of earth, so rooms do not fill in on their own
     for (let yy = TOP; yy < floorY; yy++) for (let x = 3; x < W - 3; x++) {
@@ -5938,7 +6005,8 @@ async function enterDepth(first) {
   // most foes wait in the rooms you must cross; the rest in hollows off the route
   const placed = [];
   const routeRooms = geo.rooms.slice(1);
-  for (const kind of plan.foes) {
+  // the layer is wide, so each critter the Cottage picked comes twice
+  for (const kind of plan.foes.concat(plan.foes)) {
     const d = FOES[kind];
     const onRoute = routeRooms.length && rnd() < 0.65, rr = onRoute ? routeRooms[(rnd() * routeRooms.length) | 0] : null;
     for (let tries = 0; tries < 400; tries++) {
@@ -5987,7 +6055,7 @@ async function enterDepth(first) {
   // from the second layer on, some coolers are cursed
   if (run.depth >= 2 && rnd() < 0.55) { const c = geo.chests.filter((q) => !q.rich); if (c.length) c[(rnd() * c.length) | 0].cursed = true; }
   // reach the drain fast for a bonus
-  Game.fastT = 110 + 20 * run.depth;
+  Game.fastT = (110 + 20 * run.depth) * 1.6;
   Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false; Game.digDmg = new Uint8Array(W * H); Game.noise = 0;
   Minimap.reset();
   Minimap.reveal(p);
