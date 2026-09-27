@@ -67,7 +67,14 @@ button { font: inherit; color: inherit; }
 .stage { position: relative; z-index: 2; display: grid; place-items: end center; min-height: 0; padding-bottom: 1vh; touch-action: none; }
 .row.drag { transition: none; }
 .row { display: flex; align-items: flex-end; gap: calc(var(--w) * 0.14); transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.nav { display: none; }
+/* arrows on every screen size */
+.nav { display: grid; place-items: center; position: absolute; z-index: 5; bottom: 40%; width: 44px; height: 64px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(20, 12, 36, 0.7); font-family: var(--pixel); font-size: 16px; color: #fff; cursor: pointer; }
+.nav:hover { background: rgba(60, 30, 100, 0.85); }
+.nav.prev { left: calc(var(--sal, 0px) + 8px); } .nav.next { right: calc(var(--sar, 0px) + 8px); }
+/* the row slides so the chosen machine is centered: on phones, and whenever the machines do not all fit */
+.stage.slide { display: block; cursor: grab; }
+.stage.slide .row { position: absolute; left: 0; bottom: 1vh; }
+.stage.slide.grabbing { cursor: grabbing; }
 
 .cab { --c1: #d2332a; --c2: #ffcf4a; --glow: rgba(255, 90, 60, 0.55); position: relative; width: var(--w); height: var(--h); flex: none; display: flex; flex-direction: column; align-items: center;
   transition: transform 0.35s, filter 0.35s; filter: brightness(0.62) saturate(0.8); transform: scale(0.94); transform-origin: 50% 100%; }
@@ -181,11 +188,8 @@ button { font: inherit; color: inherit; }
 /* phones: one cabinet at a time, with arrows */
 @media (max-width: 760px), (max-aspect-ratio: 5/6) {
   :root { --h: min(67dvh, 165vw, 600px); }
-  .stage { display: block; }
-  .row { position: absolute; left: 0; bottom: 1vh; gap: 12vw; }
+  .row { gap: 12vw; }
   .cab { filter: none; transform: none; }
-  .nav { display: grid; place-items: center; position: absolute; z-index: 5; bottom: 40%; width: 44px; height: 64px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(20, 12, 36, 0.7); font-family: var(--pixel); font-size: 16px; cursor: pointer; }
-  .nav.prev { left: 6px; } .nav.next { right: 6px; }
   .help .keys { display: none; }
 }
 @media (max-height: 520px) { .sign p { display: none; } .help { display: none; } .purse { min-height: 44px; padding: 4px 10px; } }
@@ -341,7 +345,16 @@ $("#changeBtn").onclick = () => {
 const cabs = $$(".cab");
 let sel = 1;
 const credits = {};
-const carousel = () => getComputedStyle($(".nav")).display !== "none";
+// the sliding row: always on phones, and on any screen where the machines do not all fit side by side
+const phone = matchMedia("(max-width: 760px), (max-aspect-ratio: 5/6)");
+function fitRow() {
+  const stage = $("#stage"), row = $("#row");
+  stage.classList.remove("slide");
+  row.style.transform = "";
+  const tooWide = row.scrollWidth > stage.clientWidth - 2 * 64;
+  stage.classList.toggle("slide", phone.matches || tooWide);
+}
+const carousel = () => $("#stage").classList.contains("slide");
 const rowX = (i) => $("#stage").clientWidth / 2 - (cabs[i].offsetLeft + cabs[i].offsetWidth / 2);
 function pick(i, quiet) {
   sel = (i + cabs.length) % cabs.length;
@@ -356,13 +369,13 @@ function pick(i, quiet) {
   const stage = $("#stage"), row = $("#row");
   let sw = null;
   stage.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse" || dragging || e.target.closest(".nav")) return;
+    if (dragging || e.target.closest(".nav") || (e.pointerType === "mouse" && (e.button !== 0 || e.target.closest(".slot, .start")))) return;
     sw = { id: e.pointerId, x0: e.clientX, y0: e.clientY, base: carousel() ? rowX(sel) : 0, moved: false };
   });
   stage.addEventListener("pointermove", (e) => {
     if (!sw || e.pointerId !== sw.id) return;
     const dx = e.clientX - sw.x0;
-    if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sw.y0)) { sw.moved = true; row.classList.add("drag"); }
+    if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sw.y0)) { sw.moved = true; row.classList.add("drag"); stage.classList.add("grabbing"); }
     // at the ends the row resists, like a rubber band
     if (sw.moved && carousel()) { const edge = (sel === 0 && dx > 0) || (sel === cabs.length - 1 && dx < 0); row.style.transform = "translateX(" + (sw.base + (edge ? dx * 0.3 : dx)) + "px)"; }
   });
@@ -371,6 +384,7 @@ function pick(i, quiet) {
     const dx = e.clientX - sw.x0, moved = sw.moved;
     sw = null;
     row.classList.remove("drag");
+    stage.classList.remove("grabbing");
     if (!moved) return;
     stage.dataset.swiped = "1";
     setTimeout(() => { delete stage.dataset.swiped; }, 0);
@@ -384,10 +398,23 @@ function pick(i, quiet) {
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
-cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging) pick(k); }));
+cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); }));
 $("#prevBtn").onclick = () => pick(sel - 1);
 $("#nextBtn").onclick = () => pick(sel + 1);
-addEventListener("resize", () => pick(sel, true));
+// a scroll wheel or a two-finger trackpad swipe steps one machine per flick
+{
+  let acc = 0, lock = 0;
+  $("#stage").addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const now = performance.now();
+    if (now < lock) return;
+    acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(acc) > 40) { pick(sel + Math.sign(acc)); acc = 0; lock = now + 320; }
+  }, { passive: false });
+}
+addEventListener("resize", () => { fitRow(); pick(sel, true); });
+fitRow();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitRow(); pick(sel, true); });
 
 function showCredit(c) {
   const n = credits[c.dataset.game] || 0;
