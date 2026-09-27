@@ -8,7 +8,7 @@
 // No page errors anywhere.
 import { open, step, ticksUntil, stepUntil, finish } from "./lib.mjs";
 
-const TITLE_SONG = "https://soundcloud.com/a-band-apart-uk/little-green-bag-reservoir-dogs";
+const TITLE_SONG = "https://soundcloud.com/zigliosmusique/george-baker-selection-little";
 const SONG = "https://soundcloud.com/skrillex/nero-promises-skrillex";
 const fails = [], errs = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -16,7 +16,7 @@ const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.
 // The stand-in keeps a log in window.__sc: the song it holds, its volume, and every play, pause and load.
 const FAKE_API = `(() => {
   const log = window.__sc = { sound: '', volume: null, paused: true, calls: [] };
-  const names = { 'little-green-bag-reservoir-dogs': ['Little Green Bag (Reservoir Dogs)', 'A Band Apart UK'], 'nero-promises-skrillex': ['Nero - Promises (Skrillex Remix)', 'Skrillex'] };
+  const names = { 'george-baker-selection-little': ['George Baker selection-Little green bag-Marco Zeta Bootleg remix', "Ziglio's Musique"], 'nero-promises-skrillex': ['Nero - Promises (Skrillex Remix)', 'Skrillex'] };
   function Widget(frame) {
     log.sound = new URL(frame.src).searchParams.get('url');
     const on = {}, emit = (e) => (on[e] || []).forEach((f) => f());
@@ -56,14 +56,14 @@ const lastPlay = (s) => [...s.calls].reverse().find((c) => c[0] === "play" || c[
   let s = await sc(page);
   check(s.frameSong === TITLE_SONG, `the player loads the title song (${s.frameSong})`);
   check(ok && s.scene === "title" && s.sound === TITLE_SONG, `the title song plays at the middle level (volume ${s.volume}, scene ${s.scene})`);
-  ok = await until(page, () => /Little Green Bag/.test(document.querySelector("#title .songCredit").textContent));
+  ok = await until(page, () => /Little green bag/i.test(document.querySelector("#title .songCredit").textContent));
   s = await sc(page);
-  check(ok && /A Band Apart UK · Little Green Bag/.test(s.credit), `the title credits the song (${s.credit})`);
+  check(ok && /Ziglio's Musique · George Baker selection-Little green bag/.test(s.credit), `the title credits the song (${s.credit})`);
   await page.keyboard.press("KeyM");
   ok = await until(page, () => __sc.paused);
   check(ok, "M turns the title song off");
   await page.keyboard.press("KeyM");
-  ok = await until(page, () => !__sc.paused && __sc.sound.includes("little-green-bag"));
+  ok = await until(page, () => !__sc.paused && __sc.sound.includes("george-baker-selection-little"));
   check(ok, "M turns it back on");
 
   await page.evaluate(() => { __crimson.seed(7); __crimson.startGame("fight"); });
@@ -106,7 +106,7 @@ const lastPlay = (s) => [...s.calls].reverse().find((c) => c[0] === "play" || c[
   ok = await until(page, (song) => __crimson.game.state === "title" && __sc.sound === song && !__sc.paused && __sc.volume === 40, TITLE_SONG);
   s = await sc(page);
   check(ok && s.scene === "title", `SAVE & QUIT plays the title song again (song ${s.sound}, volume ${s.volume}, state ${await page.evaluate(() => __crimson.game.state)})`);
-  ok = await until(page, () => /Little Green Bag/.test(document.querySelector("#title .songCredit").textContent));
+  ok = await until(page, () => /Little green bag/i.test(document.querySelector("#title .songCredit").textContent));
   check(ok, "the title credit is back");
   errs.push(...errors);
   await browser.close();

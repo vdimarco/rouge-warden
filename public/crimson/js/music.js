@@ -1,9 +1,9 @@
 // Background songs through SoundCloud's own embed player (the Widget API).
-// The title screen plays "Little Green Bag" (Reservoir Dogs), by A Band Apart UK.
+// The title screen plays George Baker Selection's "Little Green Bag" (Marco Zeta bootleg remix), from Ziglio's Musique.
 // The fight plays Nero's "Promises" (Skrillex remix), from Skrillex's SoundCloud page.
 // One player plays both: it changes song when the game leaves the title and when it comes back.
 // Try others with ?titlesong=<link> and ?song=<link>. ?nomusic turns both off.
-export const TITLE_SONG = 'https://soundcloud.com/a-band-apart-uk/little-green-bag-reservoir-dogs';
+export const TITLE_SONG = 'https://soundcloud.com/zigliosmusique/george-baker-selection-little';
 export const SONG = 'https://soundcloud.com/skrillex/nero-promises-skrillex';
 
 const Q = new URLSearchParams(location.search);
