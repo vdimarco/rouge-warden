@@ -1,6 +1,7 @@
 // Checks reel.js (the reel face, the crank, the rod pad, the gauge) in a real browser with real touch sequences.
 // Run: node qa/fish/reel.ui.mjs            (serves public/ itself on a free port; exit code 1 on failure)
-// Options: SHOTS=dir (where the screenshots go; default qa/fish/shots), ONLY=shots to take the screenshots only.
+// Options: SHOTS=dir (where the screenshots go; default the system temp folder), ONLY=shots (screenshots only),
+// ONLY=checks (no screenshots), ONLY=landscape (the 844x390 part only), DIAG=1 (input latency and frame gaps).
 // The harness page mirrors index.html: the same CSS (read from the file), the same #game / #reelBox / #crankBox /
 // #padBox / #gaugeBox structure, invisible switch pads like haptics.js adds, and main.js's toLocal and CSS rotation.
 import { createRequire } from "module";
@@ -9,13 +10,14 @@ import { readFileSync, mkdirSync } from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 import net from "net";
+import os from "os";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
 const req = createRequire(import.meta.url);
 let pw;
 try { pw = req("playwright"); } catch (e) { pw = req(path.join(execSync("npm root -g").toString().trim(), "playwright")); }
-const SHOTS = process.env.SHOTS || path.join(here, "shots");
+const SHOTS = process.env.SHOTS || path.join(os.tmpdir(), "fish-reel-shots");
 mkdirSync(SHOTS, { recursive: true });
 
 const fails = [];
@@ -237,7 +239,12 @@ async function panelChecks(P, tag) {
   await P.touch("touchEnd", []);
   await sleep(40);
   ev = await EVS(page, "unpin");
-  check(ev.length === 1 && ev[0].id === pins[0].id, `${tag}: only the pinning finger unpins`);
+  check(ev.length === 1 && ev[0].id === pins[0].id && ev[0].cancel === false, `${tag}: only the pinning finger unpins`);
+  // the browser takes the touch away (pointercancel): unpin says so, so main.js does not read it as a cast
+  await page.evaluate(() => T.clear());
+  await P.touch("touchStart", [{ ...A, id: 16 }]); await sleep(30); await P.touch("touchCancel", []); await sleep(40);
+  ev = await EVS(page);
+  check(ev.filter((e) => e.type === "pin").length === 1 && ev.filter((e) => e.type === "unpin" && e.cancel === true).length === 1, `${tag}: a cancelled touch unpins with cancel: true`);
   // controls are not pins: the HUD button and a [data-nopin] area; the invisible switch pad on the reel is
   await page.evaluate(() => T.clear());
   const hudBtn = await page.evaluate(() => { const r = document.querySelector("#pauseBtn"); return T.toClient(r.offsetWidth / 2, r.offsetHeight / 2, r); });
