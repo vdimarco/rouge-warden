@@ -4,7 +4,9 @@
   "type": "module",
   "description": "Server-side Higgsfield API tools for Rouge Warden assets.",
   "scripts": {
-    "example": "node --env-file-if-exists=.env.local index.ts",
+    "example": "node index.ts",
+    "gen": "node gen.ts",
+    "models": "node models.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
