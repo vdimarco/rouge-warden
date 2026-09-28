@@ -1261,8 +1261,9 @@ G.setGraphics = (name, { persist = true } = {}) => {
   painter.setQuality(Q);
   sun.shadow.mapSize.set(Q.shadow, Q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
   // three.js does not rebuild its shaders when the shadow filter changes, so every material is marked for a rebuild,
-  // including the pickups and critters that are out of the scene. A short pause, once.
-  if (renderer.shadowMap.type !== shadowType(name)) {
+  // including the pickups and critters that are out of the scene. A short pause, once. The automatic step down
+  // keeps the filter it has: rebuilding every shader in the middle of play would stall the slow machines it helps.
+  if (persist && renderer.shadowMap.type !== shadowType(name)) {
     renderer.shadowMap.type = shadowType(name);
     const redo = (o) => o.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.needsUpdate = true; });
     redo(scene);
