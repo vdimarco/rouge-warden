@@ -1044,27 +1044,28 @@ export class World {
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
       if (Math.cos(a) < -0.45 || Math.abs(Math.atan2(Math.sin(a - dockA), Math.cos(a - dockA))) < 0.4) continue;
-      const px = x + Math.sin(a) * (R + 3), pz = z + Math.cos(a) * (R + 3), h = 3.6 + (k % 3) * 1.3, g = new THREE.Group();
+      const px = x + Math.sin(a) * (R + 3), pz = z + Math.cos(a) * (R + 3), h = 3.6 + (k % 3) * 1.3, g = new THREE.Group(), parts = new THREE.Group();
       // each pipe has its own materials, so it can fade out when the camera comes close behind it
       const mats = [copper, dark, hole, sludge].map((m) => m.clone()), [cu, dk, ho, sl] = mats;
-      // The copper parts become one mesh, drawn in this order. A fading pipe writes no depth, so the joint comes
-      // last: it covers the ends of both pipes, as it did when each part was sorted on its own.
-      const out = new THREE.Mesh(pipeGeo, cu); out.scale.y = 1.8; out.rotation.x = Math.PI / 2; out.position.set(0, h, 0.9); g.add(out);
-      const up = new THREE.Mesh(pipeGeo, cu); up.scale.y = h; up.position.y = h / 2; g.add(up);
-      for (const yy of [0.15, h * 0.55]) { const c = new THREE.Mesh(ringGeo, dk); c.position.y = yy; g.add(c); }
-      const j = new THREE.Mesh(jointGeo, cu); j.position.y = h; g.add(j);
-      const lipR = new THREE.Mesh(ringGeo, dk); lipR.rotation.x = Math.PI / 2; lipR.position.set(0, h, 1.8); g.add(lipR);
+      const up = new THREE.Mesh(pipeGeo, cu); up.scale.y = h; up.position.y = h / 2; parts.add(up);
+      for (const yy of [0.15, h * 0.55]) { const c = new THREE.Mesh(ringGeo, dk); c.position.y = yy; parts.add(c); }
+      const j = new THREE.Mesh(jointGeo, cu); j.position.y = h; parts.add(j);
+      const out = new THREE.Mesh(pipeGeo, cu); out.scale.y = 1.8; out.rotation.x = Math.PI / 2; out.position.set(0, h, 0.9); parts.add(out);
+      const lipR = new THREE.Mesh(ringGeo, dk); lipR.rotation.x = Math.PI / 2; lipR.position.set(0, h, 1.8); parts.add(lipR);
+      g.add(parts);
       const hl = new THREE.Mesh(holeGeo, ho); hl.position.set(0, h, 1.96); g.add(hl);
       const drip = new THREE.Mesh(dripGeo, sl); drip.position.set(0, h - 0.5, 1.85); g.add(drip);
       const pud = new THREE.Mesh(puddleGeo, sl); pud.position.set(0, 0.05, 1.85); g.add(pud);
       g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-      // the dark rings become one mesh too; the drop falls, so it stays apart
-      M.bake(g, [drip]);
+      // A solid pipe draws as one copper mesh and one dark mesh. A fading pipe writes no depth, so what shows depends
+      // on draw order: it shows the separate parts instead, sorted one by one as before.
+      const solid = M.bake(parts.clone());
+      parts.visible = false; g.add(solid);
       g.position.set(px, this.height(px, pz) - 0.2, pz); g.rotation.y = Math.atan2(x - px, z - pz);
       this.scene.add(g);
       this.addCircle(px, pz, 0.8, "pipe");
       const m = new THREE.Vector3(0, h, 2.2); g.updateMatrixWorld(true); g.localToWorld(m);
-      C.pipes.push({ x: px, z: pz, h, mx: m.x, my: m.y, mz: m.z, drip, ph: k * 0.37, g, mats, fade: 1 });
+      C.pipes.push({ x: px, z: pz, h, mx: m.x, my: m.y, mz: m.z, drip, ph: k * 0.37, g, parts, solid, mats, fade: 1 });
     }
     // the sludge wall: hidden in the floor until the fight starts
     const wall = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.6, r + 0.6, 5, 96, 1, true).translate(0, 2.5, 0), new THREE.ShaderMaterial({
@@ -1110,7 +1111,7 @@ export class World {
     for (const p of C.pipes) {
       const u = (t * 0.45 + p.ph) % 1; p.drip.position.y = p.h - 0.45 - u * u * (p.h - 0.5); p.drip.scale.setScalar(u < 0.1 ? u * 10 : 1);
       const f = clamp((Math.hypot(cam.position.x - p.x, cam.position.z - p.z) - 3) / 6, 0.12, 1);
-      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
+      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; p.parts.visible = f < 1; p.solid.visible = f >= 1; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
     }
   }
 
