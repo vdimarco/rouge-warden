@@ -72,7 +72,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 /* motion on an upright phone: no rod pad (the phone is the rod), so a bigger crank under the thumb, the drag bar low on the left */
 #game.l-tall-reel.motion #view { height: 62%; }
 #game.l-tall-reel.motion #crankBox { width: min(64vw, 32cqh, 290px); height: min(64vw, 32cqh, 290px); }
-#game.l-tall-reel.motion #dragBar { bottom: calc(var(--sab) + 26px); }
+/* the drag bar sits just above the crank: under it, the crank canvas would take its taps */
+#game.l-tall-reel.motion #dragBar { bottom: calc(var(--sab) + min(64vw, 32cqh, 290px) + 20px); z-index: 1; }
 #game.l-tall-reel.motion #toast { bottom: calc(38% + 12px); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }

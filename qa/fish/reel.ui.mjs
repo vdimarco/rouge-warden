@@ -279,10 +279,11 @@ async function panelChecks(P, tag) {
   ev = await EVS(page);
   check(ev.filter((e) => e.type === "pin").length === 1 && ev.filter((e) => e.type === "bail").length === 0, `${tag}: grab "panel": a drag that starts on the reel pins at once and is no bail swipe`);
   await page.evaluate(() => T.clear());
-  await P.touch("touchStart", [{ ...lake, id: 19 }]); await sleep(40);
+  // a rest on the lake before an aim drag, longer than the closed-bail hold time, is still no pin
+  await P.touch("touchStart", [{ ...lake, id: 19 }]); await sleep(160);
   early = await EVS(page, "pin");
   await P.touch("touchEnd", []); await sleep(30);
-  check(early.length === 0, `${tag}: grab "panel": a quick press on the lake does not pin`);
+  check(early.length === 0, `${tag}: grab "panel": a 160 ms rest on the lake does not pin`);
   await page.evaluate(() => T.panel.set({ bail: "closed", glow: "", grab: "" }));
 }
 
