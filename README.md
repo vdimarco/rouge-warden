@@ -6,14 +6,14 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
-- On a phone you see one machine at a time. Swipe left or right, or tap the arrows, to switch.
+- The ◀ ▶ arrows at the sides switch machines on every screen. You can also swipe, drag with the mouse, or use the scroll wheel or a trackpad. On a phone, and on any screen too narrow for the whole row, you see one machine at a time in the middle, and the row slides.
 - Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
 
@@ -45,9 +45,47 @@ The world of Get Plunger'd is painted. GPT Image 2.5 on Higgsfield painted the a
 
 Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
 
+### Levels
+
+Each layer is 1024 pixels wide and 720 tall, so it is wider than it is tall. It is a web of rooms, not one line:
+
+- An entry room sits under the hole. Below it, rows of four to six rooms spread across the whole width.
+- Each open room leads down to one or two rooms near it. Some rows also have side passages, so you can cross over to another way down.
+- About one room in five is a dead end: you can get in, but there is no way on. Dead ends hold a cooler or a heap of gold. Blind tunnels also run off into the dirt, and some end in gold.
+- Every open way meets again in one last room above the two drains. That room is the sealed room that opens the drains.
+- The compass follows the shortest way through the web.
+- Each layer picks a style: an even web, rooms that wander, or mostly huge caverns.
+
+The layer is bigger, so each critter the Cottage picks comes twice, and the fast-drain timer is 60% longer. The minimap shows the whole width.
+
+About half the rooms are cave shapes drawn on Higgsfield as black-and-white cross sections: a stalactite cathedral, a sinkhole, worm burrows, a lake basin that fills with the layer's liquid, an old mine, a root chamber, terraces, a crystal geode, stone arches over a pit, and a zigzag fissure. They are stored as small grids and stamped at a random size with rough edges. Short tunnels join the middle of each cave to every tunnel mouth, so the way through stays open. Tunnels bend on the way between rooms.
+
+### Fair play
+
+Research on what makes action games fun, and how this game was tuned against it, is in [docs/drain-fun.md](docs/drain-fun.md). In short:
+
+- A hit knocks you back and gives you 0.8 s of safety.
+- Every attack has a wind-up you can see and hear, and it glows through the dark.
+- Hazards make a sound and show red damage numbers.
+- Propane tanks hiss on a fuse before they blow.
+- The boss shudders before it slams, then stays down for a moment. It drops a scroll and a rich cooler when it dies.
+- Digging warns you before the ground answers.
+- A death keeps half your caps for the next run.
+- Once the drains open, arrows at the screen edge point to them.
+
+### Movement and physics
+
+- Jumps: tap jump for a short hop, or hold it for the full jump. Falling pulls harder than rising, and the top of a jump hangs for a moment.
+- Turns: turning around bites harder than speeding up.
+- Corner correction: a jump that clips the edge of a ceiling slides around it.
+- Slopes: walking down a slope keeps you on the ground.
+- Walls: push into a wall in the air to slide down it slowly, then jump off it.
+- Debris: blasts throw bits of the ground, which bounce off walls and settle as the same material where they land.
+- Smooth motion: the hero and the critters are drawn between physics steps. They squash when they land, stretch when they leap, bob and lean as they run, and turn smoothly.
+
 ### Graphics
 
-There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. Classic draws each material in four flat shades. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.
+There are two looks. Painted, the default, draws the ground with pixel-art textures made on Higgsfield: cobbles, mossy stone, packed earth, roots, bones, gold nuggets, iron plates, and porcelain tile. Each layer also gets its own back wall: cellar stone, septic tank tile, crawlspace boards, or sauna brick. The textures are pinned to the world, so when you dig, you cut through them. Top edges catch the light, and edges next to open air go dark, like an outline. In Painted mode the crew, the critters, and the bosses are pixel-art sprites made on Higgsfield, with walk and attack frames. They draw at two pixels per world cell with a dark one-pixel outline, so they sit on the same grid as the ground. Classic draws each material in four flat shades and keeps the old character art. Switch with the brush button in the top bar, the G key, the Graphics item on the title menu, or the button in the Stats sheet. The game remembers your choice.
 
 ### The loop
 
@@ -221,7 +259,8 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 - **Light the beacons.** Four lookout towers stand on high ground, each with a beacon on top. Climb one and light its beacon, and you map the land you can see from up there: the map opens and the clouds part over that region. You can travel to any lit beacon from the map.
 - **Clear the outhouse trials.** Twelve outhouses glow blue. Win the fight inside the ring for a Golden Orb. Pray at the loon statue with four orbs for a new heart or more stamina.
 - **Find the Loonies.** Thirty are hidden: most under odd little rocks with flowers on top, and some up high.
-- **Fight.** Swing in a combo, or hold and let go for a spin. Tap again during a swing and the next one follows as soon as the first lands. Each swing steps you in toward the target, and the last swing of a combo is a heavy one. Roll or jump to cut off the end of a swing. Every hit lands with a spark, a short freeze, and a flash on the target. Roll just as a hit lands and time slows down.
+- **Fight.** Swing in a combo, or hold and let go for a spin. Tap again during a swing and the next one follows as soon as the first lands. Each swing steps you in toward the target, and the last swing of a combo is a heavy one. Roll or jump to cut off the end of a swing. Every hit lands with a spark, a short freeze, a flash on the target, and a number: white, gold for a critical hit, and red for damage to you. A roll costs a little stamina and keeps you safe for its first quarter second. Roll the moment before a hit lands and time slows down. Roll as you land from a long fall to take half the damage.
+- **Fair play.** Critters take turns: no more than two wind up at once. Each wind-up makes a sound, and a bite lands only in front of the critter. A boss fight sets a checkpoint outside the arena. The King waits until your three friends are free. Research on what makes games fun, and how this game was tuned against it, is in [docs/botl-fun.md](docs/botl-fun.md).
 - **Weapons.** There are 14, in three kinds, and each kind swings its own way:
   - One-handed weapons swing fast in a 3-hit combo: the Plunger, Maple Branch, Hockey Stick, Lacrosse Stick, Frying Pan (stuns), Marshmallow Torch (sets critters on fire), Frisbee, and Golden Plunger.
   - Two-handed weapons are slow and heavy. They sweep wide and knock critters flying in a 2-hit combo: the Canoe Paddle, Curling Broom, and Antler Axe.
@@ -254,13 +293,63 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 
 **The camera.** When a wall or a hill gets between the camera and you, the camera rises over your shoulder instead of moving into you. It moves in fast and eases back out slowly, so it does not jitter.
 
-**Graphics settings.** The pause menu has High, Medium, and Low. Phones start on Low. The game also lowers its resolution on its own when frames get slow, and raises it again when there is room.
+**Graphics settings.** The pause menu has High, Medium, and Low. The Graphics button steps through them in that order. Phones start on Low. On a phone, High counts only if you picked it on that phone. Computers with built-in graphics (Intel, AMD Radeon Graphics, phone chips) start on Medium. During play the game lowers its resolution in a few steps when frames get slow, and raises it again when there is room. It knows the screen's own frame rate, so an iPhone in Low Power Mode (30 fps) does not count as slow. If a computer is still slow at the lowest step, the game drops one setting for that visit and says so.
+
+**Speed.** How the game was made faster, with the numbers, is in [docs/botl-perf.md](docs/botl-perf.md). In short:
+- The forest is split into tiles. Far tiles use a simpler tree and cast no shadow.
+- Grass that the camera cannot see is skipped.
+- Props such as campfires and towers are merged into a few meshes.
+- Nothing is drawn behind the title and full-screen menus.
+- The title waits only for the models the world needs.
 
 **Painted assets.** The crew, the three bosses, the King, the critters, the kayak, the fish, the cabin, the outhouses, and the loon statue are 3D models made with [Higgsfield](https://higgsfield.ai/). Each one started as a painted concept picture, then became a textured model. The people have skeletons, and the game drives them with the same walk, climb, glide, swim, and swing poses as before. The ground uses painted grass, dirt, sand, and rock textures. A painted ring of far mountains stands behind the valley, and the loading screen and the arcade cabinet show a painted key art picture. If a model or texture does not load, the game uses its old shape-built version.
 
 **The title screen.** It opens on a painted dawn over the valley, with a gold logo and "Press any button". The first press starts an 8-bit overture and opens the menu. New Journey leads to the hero select: five painted hero cards. Pick one with the arrow keys, a click, or a swipe, and press Begin the Journey.
 
 It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. The sounds and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
+
+## Reel It In
+
+Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake. Your phone is the rod and the reel: you cast it and reel it with real moves.
+
+**Cast with the phone upright.** The top of the screen shows the lake. The bottom shows the reel.
+
+1. Swipe the silver bail arm down to open it, or give the phone a quick twist of the wrist. It clacks open.
+2. Turn your body to aim. A dotted line on the water shows where the lure goes. Then hold your thumb on the reel. Your thumb holds the line. If you open the bail and nothing holds the line, the lure slips down.
+3. Tip the phone back over your shoulder. The rod creaks when it loads.
+4. Whip the phone forward and lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
+   - The gyro measures how fast you swing. A faster flick casts farther, up to about 55 m. A short, sharp flick of the wrist is enough; a wild throw gains almost nothing.
+   - When you let go sets the launch angle. The game times your thumb against the moment the rod passes 11 o'clock, so you get the same window of about a tenth of a second at any swing speed. Let go too early and the lure goes high and short, or behind you onto the dock. Let go too late and it slaps the water in front of you.
+   - The gyro measures the swing across the rod, so the cast reads true whether the screen faces you or leans toward your thumb.
+   - Where you face sets the direction.
+   - Touch the reel while the lure flies to feather the line. The lure slows and drops short, onto a target.
+5. Swipe the bail up to close it, twist the wrist again, or just turn the crank. The first turn snaps the bail shut, like a real reel.
+
+After each cast you see the distance and how the release went. Rings on the water show rising fish. Cast into a ring for a near-sure bite.
+
+**Reel with the phone sideways.** Turn the phone sideways and the whole screen shows the lake. The top edge of the phone is now the rod.
+
+- Turn the crank on the right with your thumb to reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
+- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: pull the phone up fast to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
+- Fight the fish: pull up to raise the rod, then reel as you tip it back down. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
+- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
+- When the fish is tired and close to the dock, raise the rod and hold it to lift the fish out.
+
+**Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the bail swipe, the release of your thumb, and the crank. The other cues come through sound and pictures there.
+
+**The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+
+**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about 40 seconds for a muskie, so your arm does not tire.
+
+**Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
+
+**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: E opens and closes the bail, W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag.
+
+**Phones and rotation.** If your phone does not turn the page when you turn it sideways (rotation lock is on), the game turns the picture itself. On Android the game goes full screen and locks the page upright for the same reason. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
+
+**Safety.** Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you.
+
+The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
 
 ## Files
 
@@ -282,13 +371,15 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/js/story/` | Crimson Rouge story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
 | `qa/crimson/` | Playwright tests for Crimson Rouge (see below) |
 | `higgsfield/` | Command-line tools that run Higgsfield API models. The key stays in a git-ignored `.env.local` |
-| `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, and its hero cards |
+| `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, its hero cards, and the Painted-mode pixel sprites (`pxcrew*.webp` for the crew, `px_*.webp` walk, walk, and attack strips for the critters and bosses) |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
 | `public/wild/js/` | Breath of the Lake modules: `world.js` (terrain, water, sky, grass, trees, places), `post.js` (the painted look), `player.js`, `foes.js` (critters and bosses), `models.js` (shape-built models), `glb.js` (loads the Higgsfield models and drives their skeletons), `fishing.js` (fishing), `loot.js` (the weapon pouch, thrown and dropped weapons, chests, and camp coolers), `quests.js` (the friendly critters and their side quests), `ui.js` (HUD and map), `audio.js`, and `main.js` |
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
+| `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
+| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `lake.js` (the lake map), `species.js` (the fish and the junk), `world.js` and `world-*.js` (the 3D lake), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
 | `public/icons/`, `public/favicon.ico` | The arcade's browser and home-screen icons |
 | `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with three original songs: the arcade theme, the Breath of the Lake overture, and the Down the Drain theme |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
@@ -329,9 +420,29 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
 | `adventure.mjs` | Every weapon and its combo, the modifiers, the double-damage last hit, throwing and picking up, the Frisbee coming back, a full pouch, the chests (four in each land), the camp cooler lock, all five side quests, Chip's bigger pouch, the two mini-bosses, and that a save with all of this loads again. |
 | `king.mjs` | A bot fights the whole Porcelain King fight with the normal controls. All three rounds happen, plunging works, the sludge wall keeps you on the court, and after the fight or a death everything is put back. |
+| `fun.mjs` | The fair-play rules: the King's gate, the roll cost, bites from behind miss, two wind-ups at most, damage numbers, the landing roll, the updraft fall, and the boss lines. |
+| `perf.mjs [quality ...]` | Speed: draw calls, triangles, and the time of the game step, the world update and the draw at five places, plus load times. `PERF_PHONE=1` copies an iPhone screen. Compare runs with each other; software rendering is slow. |
 | `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
 
 Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL` to a local `three.module.min.js` and `THREE_ADDONS` to a local copy of three's `examples/jsm` folder.
+
+### Reel It In tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails. They serve three.js from the repo's own copy, so they need no CDN.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events: a twist opens the bail, the thumb pins the line, the rod loads, the whip and the release cast the lure, the phone turns sideways (the game turns itself), the crank brings a strike, a pull sets the hook, the fight lands the fish, and the next cast asks for the phone upright again |
+| `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
+| `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
+| `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
+| `qa/fish/fight.sim.mjs` | Thousands of fights with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also bite rates by zone and the weights |
+| `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
+| `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
+| `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
+| `qa/fish/world.render.mjs` | The lake at every hour and in every view, each fish, the trophy view, and the draw call and triangle limits |
+
+Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 
 ## Jev and cost
 

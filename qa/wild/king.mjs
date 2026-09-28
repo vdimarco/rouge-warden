@@ -18,6 +18,8 @@ const r = await page.evaluate(async () => {
   const hurt0 = P.hurt.bind(P);
   P.hurt = (q, x, z, k) => { const ok = hurt0(q, x, z, k); if (ok) { out.hurt += q; out.hits++; } return ok; };
   const n0 = G.scene.children.length;
+  // the King fights only once the three friends are free
+  for (const o of G.bosses) if (o !== b) { o.alive = false; o.rig.root.visible = false; }
   // walk onto the court: the fight starts and the wall rises
   P.place(C.x, C.z + C.r - 3); QA.clear();
   QA.step(10);
@@ -88,6 +90,7 @@ const { browser: b2, page: p2, errors: e2 } = await open();
 await newGame(p2);
 const r2 = await p2.evaluate(() => {
   const P = G.player, C = G.world.court, b = G.bosses.find((x) => x.id === "king");
+  for (const o of G.bosses) if (o !== b) { o.alive = false; o.rig.root.visible = false; }
   P.place(C.x, C.z + C.r - 3); QA.step(30);
   // travel away in the middle of a plunge: the plunge stops and never pulls you back
   b.endMove(); b.stagger(3); P.place(b.x + Math.sin(b.yaw) * 6, b.z + Math.cos(b.yaw) * 6); G.inp.attack = true; QA.step(8);

@@ -5,6 +5,10 @@ import { weaponStats, maxDur } from "./player.js";
 import { WICO, Loot } from "./loot.js";
 
 const $ = (s) => document.querySelector(s);
+// the window size, kept up to date here, so the HUD never has to ask the page for it in the middle of a frame
+let VW = innerWidth, VH = innerHeight;
+addEventListener("resize", () => { VW = innerWidth; VH = innerHeight; });
+const SV = new THREE.Vector3();
 const HEART = (fill, gold) => {
   const f = Math.max(0, Math.min(4, fill));
   const col = gold ? "#ffd84a" : "#ff4a5a";
@@ -65,20 +69,22 @@ export class UI {
     const side = G.quests ? G.quests.hudLine() : "";
     if (side !== this.last.side) { this.last.side = side; $("#side").textContent = side; $("#side").hidden = !side; }
     this.foeBars();
+    // text is written only when it changes, so the page does not lay itself out again every frame
+    const set = (id, v) => { v = String(v); if (this.last[id] !== v) { this.last[id] = v; $("#" + id).textContent = v; } };
     const f = G.foodCount();
-    $("#fcount").textContent = f.total + (f.stew ? " · " + f.stew + "🍲" : "");
-    $("#lcount").textContent = G.save.loonies.length + "/" + G.loonies.length;
-    $("#ocount").textContent = G.save.orbs;
-    // the stamina wheel sits beside the hero and hides when full
+    set("fcount", f.total + (f.stew ? " · " + f.stew + "🍲" : ""));
+    set("lcount", G.save.loonies.length + "/" + G.loonies.length);
+    set("ocount", G.save.orbs);
+    // the stamina wheel sits beside the hero and hides when full; it moves by transform, which needs no layout
     const full = P.stamina >= P.staminaMax && !P.exhausted;
     const el = $("#stamina");
-    el.style.opacity = full ? 0 : 1;
+    if (full !== this.last.full) { this.last.full = full; el.style.opacity = full ? 0 : 1; }
     if (!full) {
-      const v = new THREE.Vector3(P.x, P.y + 1.6, P.z).project(G.camera);
-      el.style.left = ((v.x + 1) / 2) * innerWidth + 48 + "px";
-      el.style.top = ((1 - v.y) / 2) * innerHeight - 20 + "px";
-      this.stamArc.setAttribute("stroke-dashoffset", String(113.1 * (1 - P.stamina / P.staminaMax)));
-      this.stamArc.setAttribute("stroke", P.exhausted ? "#e0453a" : P.stamina < 30 ? "#ffb03a" : "#7ac84a");
+      const v = SV.set(P.x, P.y + 1.6, P.z).project(G.camera);
+      el.style.transform = "translate(" + (((v.x + 1) / 2) * VW + 48).toFixed(1) + "px," + (((1 - v.y) / 2) * VH - 20).toFixed(1) + "px) translate(-50%, -50%)";
+      this.stamArc.setAttribute("stroke-dashoffset", (113.1 * (1 - P.stamina / P.staminaMax)).toFixed(1));
+      const col = P.exhausted ? "#e0453a" : P.stamina < 30 ? "#ffb03a" : "#7ac84a";
+      if (col !== this.last.stamCol) { this.last.stamCol = col; this.stamArc.setAttribute("stroke", col); }
     }
     // abilities
     const A = G.abilities, ak = JSON.stringify([A.grit && [A.grit.charges, Math.ceil(A.grit.cd)], A.lift && Math.ceil(A.lift.cd), A.fury && Math.ceil(A.fury.cd)]);
@@ -91,7 +97,7 @@ export class UI {
       $("#abil").innerHTML = h;
       $("#tlift").hidden = !A.lift; $("#tfury").hidden = !A.fury;
     }
-    $("#clock").textContent = G.clockText();
+    set("clock", G.clockText());
     const goal = G.goal();
     if (goal !== this.last.goal) { this.last.goal = goal; $("#goal").innerHTML = goal; }
   }
@@ -235,13 +241,18 @@ export class UI {
     const c = document.createElement("canvas"); c.width = c.height = R;
     const x = c.getContext("2d"), img = x.createImageData(R, R), d = img.data;
     const col = new THREE.Color(), nrm = new THREE.Vector3();
-    const H = new Float32Array(R * R);
+    // the world sampled these same points while it built the grass mask; use them once, then let them go
+    const mc = w._mapCache && w._mapCache.R === R ? w._mapCache : null;
+    const H = mc ? mc.h : new Float32Array(R * R);
     this.regionOf = new Uint8Array(R * R);
     const hash = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
       const wx = ((i + 0.5) / R) * SIZE - SIZE / 2, wz = ((j + 0.5) / R) * SIZE - SIZE / 2;
-      H[j * R + i] = w.height(wx, wz);
-      this.regionOf[j * R + i] = TOWERS.findIndex((t) => t.id === w.towerOf(wx, wz));
+      if (!mc) H[j * R + i] = w.height(wx, wz);
+      // the region is the nearest tower's
+      let best = 0, bd = Infinity;
+      for (let q = 0; q < TOWERS.length; q++) { const dx = wx - TOWERS[q].x, dz = wz - TOWERS[q].z, dd = dx * dx + dz * dz; if (dd < bd) { bd = dd; best = q; } }
+      this.regionOf[j * R + i] = best;
     }
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
       const k = j * R + i, h = H[k];
@@ -251,12 +262,12 @@ export class UI {
         // water: pale at the shore, deep blue in the middle, with rings that follow the shoreline
         const depth = -h;
         col.setRGB(0.62, 0.84, 0.86).lerp(TMPC.setRGB(0.26, 0.5, 0.72), Math.min(1, depth / 10));
-        const ring = [0.6, 2.2, 4.5].some((r) => Math.abs(depth - r) < 0.16);
+        const ring = Math.abs(depth - 0.6) < 0.16 || Math.abs(depth - 2.2) < 0.16 || Math.abs(depth - 4.5) < 0.16;
         if (ring) col.lerp(TMPC.setRGB(0.9, 0.97, 1), 0.55);
         if (depth < 0.25) col.lerp(TMPC.setRGB(1, 1, 0.97), 0.7);
       } else {
-        w.normal(wx, wz, nrm);
-        w.groundColor(wx, wz, h, nrm.y, col);
+        if (mc) { nrm.set(mc.n[k * 3], mc.n[k * 3 + 1], mc.n[k * 3 + 2]); col.setRGB(mc.c[k * 3], mc.c[k * 3 + 1], mc.c[k * 3 + 2]); }
+        else { w.normal(wx, wz, nrm); w.groundColor(wx, wz, h, nrm.y, col); }
         // soften toward a storybook palette
         const l = (col.r + col.g + col.b) / 3;
         col.lerp(TMPC.setRGB(l * 1.02, l * 1.08, l * 0.9), 0.18).multiplyScalar(1.06);
@@ -273,6 +284,7 @@ export class UI {
       col.multiplyScalar(0.97 + grain);
       d[k * 4] = Math.min(255, col.r * 255); d[k * 4 + 1] = Math.min(255, col.g * 255); d[k * 4 + 2] = Math.min(255, col.b * 255); d[k * 4 + 3] = 255;
     }
+    w._mapCache = null;
     x.putImageData(img, 0, 0);
     const to = (wx, wz) => this.toMap(wx, wz, R);
     // dotted paths
@@ -507,6 +519,11 @@ export class UI {
   // The HUD map: a round window onto the painted map, in a brass-and-wood ring with a north mark.
   minimap() {
     const G = this.G, P = G.player, x = this.mini, S = this.mini.canvas.width, R = this.R;
+    // redraw only when the picture would change: the hero moved or turned, the camera turned,
+    // or 150 ms passed (for the pulsing icons and the critter dots)
+    const now = performance.now(), L = this.miniLast;
+    if (L && L.S === S && now - L.t < 150 && Math.abs(P.x - L.x) + Math.abs(P.z - L.z) < 0.5 && Math.abs(G.cam.yaw - L.cy) < 0.03 && Math.abs(P.yaw - L.py) < 0.03) return;
+    this.miniLast = { S, t: now, x: P.x, z: P.z, cy: G.cam.yaw, py: P.yaw };
     const rad = S / 2 - S * 0.07, view = 240, scale = (rad * 2) / ((view / SIZE) * R);
     const [cx, cy] = this.toMap(P.x, P.z, R);
     x.clearRect(0, 0, S, S);
@@ -529,7 +546,16 @@ export class UI {
     x.fillStyle = ig; x.fillRect(0, 0, S, S);
     x.restore();
     this.drawHero(x, S / 2, S / 2, P.yaw, S * 0.055, G.time);
-    // the ring: dark wood with a brass rim and tick marks
+    // the ring never changes, so it is painted once and reused
+    if (!this.miniRing || this.miniRing.width !== S || (this.ringFont && document.fonts.status === "loaded")) this.miniRing = this.paintRing(S, rad);
+    x.drawImage(this.miniRing, 0, 0);
+  }
+  // the ring: dark wood with a brass rim, tick marks, and the north mark
+  paintRing(S, rad) {
+    const c = document.createElement("canvas"); c.width = c.height = S;
+    const x = c.getContext("2d");
+    // paint it again once the title font has loaded, so the N does not keep the fallback font
+    this.ringFont = !!document.fonts && document.fonts.status !== "loaded";
     x.save(); x.translate(S / 2, S / 2);
     const ring = x.createLinearGradient(0, -S / 2, 0, S / 2); ring.addColorStop(0, "#8a5a32"); ring.addColorStop(1, "#4a2e18");
     x.strokeStyle = ring; x.lineWidth = S * 0.075; x.beginPath(); x.arc(0, 0, rad + S * 0.035, 0, 7); x.stroke();
@@ -541,5 +567,6 @@ export class UI {
     x.beginPath(); x.moveTo(0, -rad - S * 0.075); x.lineTo(S * 0.035, -rad - S * 0.02); x.lineTo(-S * 0.035, -rad - S * 0.02); x.closePath(); x.fill(); x.stroke();
     x.fillStyle = "#fff4d8"; x.font = "700 " + Math.round(S * 0.07) + "px 'Cormorant Garamond', Georgia, serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("N", 0, -rad - S * 0.042);
     x.restore();
+    return c;
   }
 }

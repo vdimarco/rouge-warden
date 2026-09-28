@@ -8,7 +8,7 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
+<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, or Reel It In. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
@@ -67,7 +67,14 @@ button { font: inherit; color: inherit; }
 .stage { position: relative; z-index: 2; display: grid; place-items: end center; min-height: 0; padding-bottom: 1vh; touch-action: none; }
 .row.drag { transition: none; }
 .row { display: flex; align-items: flex-end; gap: calc(var(--w) * 0.14); transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.nav { display: none; }
+/* arrows on every screen size */
+.nav { display: grid; place-items: center; position: absolute; z-index: 5; bottom: 40%; width: 44px; height: 64px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(20, 12, 36, 0.7); font-family: var(--pixel); font-size: 16px; color: #fff; cursor: pointer; }
+.nav:hover { background: rgba(60, 30, 100, 0.85); }
+.nav.prev { left: calc(var(--sal, 0px) + 8px); } .nav.next { right: calc(var(--sar, 0px) + 8px); }
+/* the row slides so the chosen machine is centered: on phones, and whenever the machines do not all fit */
+.stage.slide { display: block; cursor: grab; }
+.stage.slide .row { position: absolute; left: 0; bottom: 1vh; }
+.stage.slide.grabbing { cursor: grabbing; }
 
 .cab { --c1: #d2332a; --c2: #ffcf4a; --glow: rgba(255, 90, 60, 0.55); position: relative; width: var(--w); height: var(--h); flex: none; display: flex; flex-direction: column; align-items: center;
   transition: transform 0.35s, filter 0.35s; filter: brightness(0.62) saturate(0.8); transform: scale(0.94); transform-origin: 50% 100%; }
@@ -78,6 +85,7 @@ button { font: inherit; color: inherit; }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
+.cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -181,11 +189,8 @@ button { font: inherit; color: inherit; }
 /* phones: one cabinet at a time, with arrows */
 @media (max-width: 760px), (max-aspect-ratio: 5/6) {
   :root { --h: min(67dvh, 165vw, 600px); }
-  .stage { display: block; }
-  .row { position: absolute; left: 0; bottom: 1vh; gap: 12vw; }
+  .row { gap: 12vw; }
   .cab { filter: none; transform: none; }
-  .nav { display: grid; place-items: center; position: absolute; z-index: 5; bottom: 40%; width: 44px; height: 64px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(20, 12, 36, 0.7); font-family: var(--pixel); font-size: 16px; cursor: pointer; }
-  .nav.prev { left: 6px; } .nav.next { right: 6px; }
   .help .keys { display: none; }
 }
 @media (max-height: 520px) { .sign p { display: none; } .help { display: none; } .purse { min-height: 44px; padding: 4px 10px; } }
@@ -244,6 +249,17 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In: Loon Lake">
+        <div class="marquee"><div><b>REEL IT IN</b><small>LOON LAKE</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="arcade/fish.webp" alt="">
+          <img class="art2" src="arcade/fish-catch.webp" alt="">
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
     </div>
@@ -341,7 +357,16 @@ $("#changeBtn").onclick = () => {
 const cabs = $$(".cab");
 let sel = 1;
 const credits = {};
-const carousel = () => getComputedStyle($(".nav")).display !== "none";
+// the sliding row: always on phones, and on any screen where the machines do not all fit side by side
+const phone = matchMedia("(max-width: 760px), (max-aspect-ratio: 5/6)");
+function fitRow() {
+  const stage = $("#stage"), row = $("#row");
+  stage.classList.remove("slide");
+  row.style.transform = "";
+  const tooWide = row.scrollWidth > stage.clientWidth - 2 * 64;
+  stage.classList.toggle("slide", phone.matches || tooWide);
+}
+const carousel = () => $("#stage").classList.contains("slide");
 const rowX = (i) => $("#stage").clientWidth / 2 - (cabs[i].offsetLeft + cabs[i].offsetWidth / 2);
 function pick(i, quiet) {
   sel = (i + cabs.length) % cabs.length;
@@ -356,13 +381,13 @@ function pick(i, quiet) {
   const stage = $("#stage"), row = $("#row");
   let sw = null;
   stage.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse" || dragging || e.target.closest(".nav")) return;
+    if (dragging || e.target.closest(".nav") || (e.pointerType === "mouse" && (e.button !== 0 || e.target.closest(".slot, .start")))) return;
     sw = { id: e.pointerId, x0: e.clientX, y0: e.clientY, base: carousel() ? rowX(sel) : 0, moved: false };
   });
   stage.addEventListener("pointermove", (e) => {
     if (!sw || e.pointerId !== sw.id) return;
     const dx = e.clientX - sw.x0;
-    if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sw.y0)) { sw.moved = true; row.classList.add("drag"); }
+    if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sw.y0)) { sw.moved = true; row.classList.add("drag"); stage.classList.add("grabbing"); }
     // at the ends the row resists, like a rubber band
     if (sw.moved && carousel()) { const edge = (sel === 0 && dx > 0) || (sel === cabs.length - 1 && dx < 0); row.style.transform = "translateX(" + (sw.base + (edge ? dx * 0.3 : dx)) + "px)"; }
   });
@@ -371,6 +396,7 @@ function pick(i, quiet) {
     const dx = e.clientX - sw.x0, moved = sw.moved;
     sw = null;
     row.classList.remove("drag");
+    stage.classList.remove("grabbing");
     if (!moved) return;
     stage.dataset.swiped = "1";
     setTimeout(() => { delete stage.dataset.swiped; }, 0);
@@ -384,10 +410,23 @@ function pick(i, quiet) {
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
-cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging) pick(k); }));
+cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); }));
 $("#prevBtn").onclick = () => pick(sel - 1);
 $("#nextBtn").onclick = () => pick(sel + 1);
-addEventListener("resize", () => pick(sel, true));
+// a scroll wheel or a two-finger trackpad swipe steps one machine per flick
+{
+  let acc = 0, lock = 0;
+  $("#stage").addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const now = performance.now();
+    if (now < lock) return;
+    acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(acc) > 40) { pick(sel + Math.sign(acc)); acc = 0; lock = now + 320; }
+  }, { passive: false });
+}
+addEventListener("resize", () => { fitRow(); pick(sel, true); });
+fitRow();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitRow(); pick(sel, true); });
 
 function showCredit(c) {
   const n = credits[c.dataset.game] || 0;
@@ -573,6 +612,19 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
   }
   let last = 0;
   (function loop(now) { requestAnimationFrame(loop); if (document.hidden || now - last < 33) return; last = now; if (!reduceMotion || t < 120) step(); })(0);
+}
+// Reel It In: the derby best and the biggest fish; its screen flips between the lake and a catch
+{
+  const fs = store.get("fish.v1", null), fc = $(".cab.fish");
+  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS" };
+  const kg = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + " KG";
+  if (fc) {
+    // one stat, so the line stays short: the derby best, else the biggest fish
+    const n = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+    $(".hi", fc).textContent = fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest)
+      : fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "HI-SCORE: NONE YET";
+    setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
+  }
 }
 // Crimson Rouge flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);

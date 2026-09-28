@@ -56,7 +56,11 @@ export class Foe {
     if (this.state === "idle" || this.state === "notice") this.alert();
     // a mini-boss shrugs off most hits and keeps coming; the rest flinch
     if (this.T.mini) { if (stun && this.state !== "strike" && this.state !== "leap") { this.state = "hurt"; this.t = 0.5; } }
-    else if (this.state !== "strike" || !this.T.charge) { this.state = "hurt"; this.t = stun ? 1.2 : 0.35; }
+    else if (this.state !== "strike" || !this.T.charge) {
+      // poise: a critter flinches, then shrugs off hits for a moment, so it cannot be locked down forever
+      const now = this.G.time;
+      if (stun || now - (this.lastFlinch || -9) > 1.4) { this.lastFlinch = now; this.state = "hurt"; this.t = stun ? 1.2 : 0.35; }
+    }
     // the Raccoon King calls his bandits twice
     if (this.type === "raccoonKing" && this.hp > 0) for (const at of [0.6, 0.3]) if (this.hp / this.T.hp < at && !(this.calls || []).includes(at)) { (this.calls = this.calls || []).push(at); this.callHelp(); }
     if (this.hp <= 0) this.die();
@@ -108,7 +112,9 @@ export class Foe {
         if (leash > 55 || d > T.sight * 2.2 || P.dead) { this.state = "return"; break; }
         const want = T.charge ? 14 : T.reach + P.rigR();
         if (T.leap && d > 7 && d < 16 && (this.leapCd = (this.leapCd || 0) - dt) <= 0) { this.leapCd = 4 + Math.random() * 2; this.state = "leap"; this.lt = 0; this.from = this.pos.clone(); this.to = { x: P.x, z: P.z }; G.hazards.mark(P.x, P.z, 3, 0xff5a2a, 0.75); G.sfx("whoosh"); break; }
-        if (d < want && (!T.charge || d > 5)) { this.state = "windup"; this.t = T.windup; }
+        // at most two critters wind up at once, so a crowd takes turns
+        const busy = G.foes ? G.foes.filter((o) => o !== this && o.alive && (o.state === "windup" || o.state === "strike")).length : 0;
+        if (d < want && (!T.charge || d > 5) && busy < 2) { this.state = "windup"; this.t = Math.max(0.4, T.windup); G.sfx(this.type === "goose" ? "honk" : this.type === "bear" ? "growl" : "swing"); }
         else if (T.charge && d < 5) { this.state = "windup"; this.t = 0.5; }
         break;
       }
@@ -119,7 +125,9 @@ export class Foe {
           if (!this.hitDone && d < T.r + 1.3 && Math.abs(P.y - this.pos.y) < 3) { this.hitDone = true; P.hurt(T.dmg, this.pos.x, this.pos.z, 14); }
         } else {
           speed = T.run * 1.3;
-          if (!this.hitDone && d < T.reach + 0.6 && Math.abs(P.y - this.pos.y) < 2.2) { this.hitDone = true; P.hurt(T.dmg, this.pos.x, this.pos.z, 7); }
+          // the bite lands only in front of the critter: step behind it and it misses
+          let fa = Math.atan2(P.x - this.pos.x, P.z - this.pos.z) - this.yaw; fa = Math.atan2(Math.sin(fa), Math.cos(fa));
+          if (!this.hitDone && d < T.reach + 0.6 && Math.abs(P.y - this.pos.y) < 2.2 && Math.abs(fa) < 1.1) { this.hitDone = true; P.hurt(T.dmg, this.pos.x, this.pos.z, 7); }
         }
         if (this.t <= 0) { this.state = "recover"; this.t = T.cd; }
         break;
@@ -298,16 +306,30 @@ export class Hazards {
   constructor(G) {
     this.G = G; this.shots = []; this.rings = []; this.pools = []; this.marks = [];
     this.globMat = M.toon(0x7a3a9a, { emissive: 0x3a0a4a, emissiveIntensity: 0.5 });
+    // Finished hazard materials wait here to be used again. A disposed material can take its compiled shader with it,
+    // and compiling it again in the middle of a fight freezes the game for a moment on a phone.
+    this.spare = new Map();
   }
-  mat(fs, u) {
-    return new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, ...u }, vertexShader: FLAT_VS, fragmentShader: fs, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  mat(fs, u, polygon = true) {
+    const key = fs + (polygon ? "|p" : ""), free = this.spare.get(key);
+    const m = free && free.pop();
+    if (m) {
+      // the shader keeps a link to each uniform object, so set the values rather than swap the objects
+      m.uniforms.uAlpha.value = 1;
+      for (const k in u) { const v = u[k].value; if (v && v.isColor) m.uniforms[k].value.copy(v); else m.uniforms[k].value = v; }
+      return m;
+    }
+    const n = new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, ...u }, vertexShader: FLAT_VS, fragmentShader: fs, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: polygon, polygonOffsetFactor: polygon ? -2 : 0, polygonOffsetUnits: polygon ? -2 : 0 });
+    n.userData.spareKey = key;
+    return n;
   }
-  // take a hazard out of the world and free what it owns
+  // take a hazard out of the world; its material goes back to the spares, anything else it owns is freed
   drop(m) {
     if (!m) return;
     this.G.scene.remove(m);
     if (m.userData.shared) return;
-    if (m.material && (m.material.isShaderMaterial || m.material.isMeshBasicMaterial)) m.material.dispose();
+    if (m.material && m.material.userData.spareKey) { const k = m.material.userData.spareKey; if (!this.spare.has(k)) this.spare.set(k, []); this.spare.get(k).push(m.material); }
+    else if (m.material && (m.material.isShaderMaterial || m.material.isMeshBasicMaterial)) m.material.dispose();
     if (m.geometry && !Object.values(GEO).includes(m.geometry)) m.geometry.dispose();
   }
   mark(x, z, r, color = 0xff4a2a, time = 0) {
@@ -339,7 +361,7 @@ export class Hazards {
     return s;
   }
   ring(x, z, o = {}) {
-    const m = new THREE.Mesh(GEO.wave, new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, uColor: { value: new THREE.Color(o.color || 0xffe08a) } }, vertexShader: FLAT_VS, fragmentShader: WAVE_FS, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(GEO.wave, this.mat(WAVE_FS, { uColor: { value: new THREE.Color(o.color || 0xffe08a) } }, false));
     const y = this.G.groundAt(x, z, 999); m.position.set(x, y, z); m.scale.set(1, o.h || 1, 1); m.renderOrder = 2;
     this.G.scene.add(m);
     this.rings.push({ x, z, y, r: 1, speed: o.speed || 14, max: o.max || 22, dmg: o.dmg ?? 4, h: o.h || 1, knock: o.knock || 9, mesh: m, hit: false, dust: o.color || 0xd8ccb0 });
@@ -417,9 +439,9 @@ export class Hazards {
 
 /* ---------------- bosses ---------------- */
 export const BOSS_STATS = {
-  gabe: { hp: 220, r: 1.6, lines: ["You hear that? That's my buddy.", "These are MY mountains.", "Bears listen to me. You don't."] },
-  christian: { hp: 180, r: 1.4, lines: ["Pick a card. Any card.", "Now you see me.", "The cards told me you'd lose."] },
-  ryu: { hp: 160, r: 1.4, lines: ["My turn.", "You call that a plunger?", "Down here, I make the rules."] },
+  gabe: { hp: 180, r: 1.6, lines: ["You hear that? That's my buddy.", "These are MY mountains.", "Bears listen to me. You don't."] },
+  christian: { hp: 150, r: 1.4, lines: ["Pick a card. Any card.", "Now you see me.", "The cards told me you'd lose."] },
+  ryu: { hp: 140, r: 1.4, lines: ["My turn.", "You call that a plunger?", "Down here, I make the rules."] },
   king: { hp: 480, r: 4.5, lines: ["Who clogged me?", "Bow to the throne.", "Flush. FLUSH."] },
 };
 
@@ -441,7 +463,7 @@ export class Boss {
   get x() { return this.pos.x; } get z() { return this.pos.z; }
   get T() { return { h: this.id === "king" ? 9 : 4, r: this.r }; }
   reset() {
-    this.hp = this.maxHp; this.active = false; this.state = "wait"; this.pos.set(this.center.x, this.G.groundAt(this.center.x, this.center.z, 999), this.center.z);
+    this.hp = this.maxHp; this.said = []; this.active = false; this.state = "wait"; this.pos.set(this.center.x, this.G.groundAt(this.center.x, this.center.z, 999), this.center.z);
     this.clones.forEach((c) => this.G.scene.remove(c.rig.root)); this.clones = []; this.summoned = false;
     this.G.hazards.clear();
     if (this.line) { this.G.scene.remove(this.line); this.line = null; }
@@ -460,6 +482,8 @@ export class Boss {
       this.sqv -= 2.4; this.flinchT = 0.18;
     }
     this.hp -= dmg; this.flash = 0.15; this.hitsTaken++;
+    // the boss talks as the fight turns: its second line at two thirds, its third at one third
+    for (const [at, k] of [[0.66, 1], [0.33, 2]]) if (this.hp > 0 && this.hp / this.maxHp < at && !(this.said || []).includes(k) && this.S.lines[k]) { (this.said = this.said || []).push(k); this.G.say(this, this.S.lines[k]); }
     this.G.sfx("bonk");
     if (this.hp <= 0) { this.hp = 0; this.alive = false; this.exposed = false; this.G.bossDown(this); }
     if (this.id === "king" && this.alive) {
@@ -478,7 +502,17 @@ export class Boss {
     if (!this.active) {
       this.idleAnim(dt);
       // the King waits until you step onto his court; the others notice you from a little way off
-      if (dC < this.def.r + (this.def.seal ? -1.5 : 6) && !P.dead && Math.abs(P.y - this.pos.y) < 15) { this.active = true; this.state = "intro"; this.t = 2.6; G.bossIntro(this); }
+      if (dC < this.def.r + (this.def.seal ? -1.5 : 6) && !P.dead && Math.abs(P.y - this.pos.y) < 15) {
+        // the King will not fight until the three friends are free; he turns you away with a warning
+        const freed = G.bosses.filter((b) => b !== this && !b.alive).length;
+        if (this.id === "king" && freed < 3) {
+          const dx = P.x - this.center.x, dz = P.z - this.center.z, dd = Math.hypot(dx, dz) || 1;
+          P.vel.x = (dx / dd) * 10; P.vel.z = (dz / dd) * 10;
+          if (G.time - (this.warnT || -9) > 4) { this.warnT = G.time; G.sfx("boss"); G.ui.toast("The Porcelain King: Free your three friends first, little plunger. " + freed + " of 3.", 3.5); }
+          return;
+        }
+        this.active = true; this.state = "intro"; this.t = 2.6; G.bossIntro(this);
+      }
       return;
     }
     if (dC > this.def.r + 60 || P.dead) { this.reset(); return; }
@@ -605,7 +639,7 @@ export class Boss {
     for (let k = 0; k < n; k++) {
       const a = base + (k - (n - 1) / 2) * 0.16;
       const card = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.9), new THREE.MeshBasicMaterial({ color: k % 2 ? 0xffffff : 0xe8303a }));
-      G.hazards.shot({ pos: new THREE.Vector3(from.pos.x + Math.sin(a) * 2, from.pos.y + 2.2, from.pos.z + Math.cos(a) * 2), vel: new THREE.Vector3(Math.sin(a) * 15, 0, Math.cos(a) * 15), r: 0.55, dmg: 2, mesh: card, spin: true, color: 0xffffff, life: 3 });
+      G.hazards.shot({ pos: new THREE.Vector3(from.pos.x + Math.sin(a) * 2, from.pos.y + 1.3, from.pos.z + Math.cos(a) * 2), vel: new THREE.Vector3(Math.sin(a) * 15, 0, Math.cos(a) * 15), r: 0.55, dmg: 2, mesh: card, spin: true, color: 0xffffff, life: 3 });
     }
     G.sfx("cards");
   }
@@ -1184,8 +1218,9 @@ export class FX {
       const c = document.createElement("canvas"); c.width = 32; c.height = 64;
       const k = c.getContext("2d"); k.fillStyle = "#ffd84a"; k.strokeStyle = "#3a1a00"; k.lineWidth = 5; k.font = "bold 56px sans-serif"; k.textAlign = "center"; k.strokeText("!", 16, 54); k.fillText("!", 16, 54);
       this.bangTex = new THREE.CanvasTexture(c);
+      this.bangMat = new THREE.SpriteMaterial({ map: this.bangTex, depthTest: false });
     }
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.bangTex, depthTest: false }));
+    const s = new THREE.Sprite(this.bangMat);
     s.scale.set(0.6, 1.2, 1); s.position.set(x, y, z); this.G.scene.add(s);
     this.list.push({ m: s, v: new THREE.Vector3(0, 1.5, 0), life: 0.7 });
   }
@@ -1200,7 +1235,7 @@ export class FX {
       const p = this.list[i];
       p.life -= dt;
       p.m.position.addScaledVector(p.v, dt);
-      if (p.life <= 0) { G.scene.remove(p.m); p.m.material.dispose(); this.list.splice(i, 1); }
+      if (p.life <= 0) { G.scene.remove(p.m); if (p.m.material !== this.bangMat) p.m.material.dispose(); this.list.splice(i, 1); }
     }
   }
 }

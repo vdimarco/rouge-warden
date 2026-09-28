@@ -23,17 +23,56 @@ const touchUI = matchMedia("(pointer: coarse)").matches;
 /* ---------------- renderer and scene ---------------- */
 // Graphics quality: saved from the pause menu, or a guess from the device.
 const GFX_KEY = "plungerd.wild.gfx";
-let gfx = (() => { try { const v = localStorage.getItem(GFX_KEY); if (QUALITY[v]) return v; } catch (e) { /* storage off */ } return low ? "low" : "high"; })();
+// On a touch device a saved "High" counts only if the player chose it there on purpose: the old button went from
+// Low straight to High with one tap, which left many phones on the heaviest setting.
+const GFX_TOUCH_HIGH = "plungerd.wild.gfx.touchHigh";
+let gfxSaved = true;
+let gfx = (() => {
+  try {
+    const v = localStorage.getItem(GFX_KEY);
+    if (v === "high" && touchUI && localStorage.getItem(GFX_TOUCH_HIGH) !== "1") return low ? "low" : "medium";
+    if (QUALITY[v]) return v;
+  } catch (e) { /* storage off */ }
+  gfxSaved = false;
+  return low ? "low" : "high";
+})();
 let Q = QUALITY[gfx];
+// Ground textures get less filtering on the lighter settings. A phone never gets more than 2x.
+const ANISO = { low: 2, medium: 4, high: 8 };
+const anisoFor = (n) => (low ? Math.min(2, ANISO[n]) : ANISO[n]);
+// The Low setting softens shadow edges with 4 reads of the shadow map instead of 16. Medium and High keep
+// three.js's soft filter; this replaces only the plain PCF filter, which only Low uses.
+{
+  const PCF4 = "vec2 ts = 1.0 / shadowMapSize; vec2 p = shadowCoord.xy * shadowMapSize - 0.5; vec2 f = fract( p ); vec2 b = ( floor( p ) + 0.5 ) * ts;\n"
+    + "shadow = mix( mix( texture2DCompare( shadowMap, b, shadowCoord.z ), texture2DCompare( shadowMap, b + vec2( ts.x, 0.0 ), shadowCoord.z ), f.x ),\n"
+    + "mix( texture2DCompare( shadowMap, b + vec2( 0.0, ts.y ), shadowCoord.z ), texture2DCompare( shadowMap, b + ts, shadowCoord.z ), f.x ), f.y );\n";
+  const src = THREE.ShaderChunk.shadowmap_pars_fragment;
+  const out = src.replace(/(#if defined\( SHADOWMAP_TYPE_PCF \)\n)[\s\S]*?(\s*#elif defined\( SHADOWMAP_TYPE_PCF_SOFT \))/, (m, a, b) => a + PCF4 + b);
+  if (out !== src) THREE.ShaderChunk.shadowmap_pars_fragment = out;
+  else console.warn("Breath of the Lake: the shadow chunk has changed, keeping three.js's own PCF filter");
+}
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+// With no saved choice, a computer with built-in graphics or a software renderer starts on Medium, not High:
+// the painted High setting is too heavy for most of them. That means Intel, AMD's Radeon Graphics and Vega chips
+// inside the processor, and phone chips in a laptop. Separate cards (Intel Arc, Radeon RX and Pro) stay on High,
+// and so do Apple, NVIDIA and names we do not know. The player can still pick High.
+if (!gfxSaved && gfx === "high") {
+  try {
+    const gl = renderer.getContext(), ext = gl.getExtension("WEBGL_debug_renderer_info");
+    const chip = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+    const built = /intel|swiftshader|llvmpipe|software|Radeon(\(TM\))? (Vega \d+ )?Graphics|Radeon Vega|Mali|Adreno|PowerVR/i;
+    if (built.test(chip) && !/\bArc\b|\bRX\b|Radeon Pro/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
+  } catch (e) { /* no chip name */ }
+}
 // dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
-let resScale = 1;
-const applyRatio = () => renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale));
+let resScale = 1, redraw = true;
+const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale)); redraw = true; };
 applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const shadowType = (n) => (n === "low" ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap);
+renderer.shadowMap.type = shadowType(gfx);
 $("#game").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 5000);
@@ -47,11 +86,17 @@ Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, n
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
-const draw = () => painter.render(scene, camera, G.look);
+const draw = () => {
+  // On the light setting the sun's shadow map is redrawn every second frame. Still things cast the same shadow,
+  // and a moving character's shadow lags one frame at most.
+  sun.shadow.autoUpdate = gfx !== "low";
+  if (gfx === "low" && (G.frame & 1)) sun.shadow.needsUpdate = true;
+  painter.render(scene, camera, G.look);
+};
 // If the graphics card resets, save and reload rather than show a frozen or black screen.
 renderer.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); G.contextLost = true; try { G.writeSave && G.writeSave(); } catch (err) { /* keep going */ } const l = $("#loading"); if (l) { l.hidden = false; l.textContent = "Repainting…"; } });
 renderer.domElement.addEventListener("webglcontextrestored", () => location.reload());
-addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); redraw = true; });
 
 /* ---------------- the game state ---------------- */
 const G = {
@@ -131,13 +176,18 @@ G.writeSave = () => {
 function loadTextures() {
   const L = new THREE.TextureLoader(), out = {};
   const one = (k, f) => Promise.race([L.loadAsync("tex/" + f), new Promise((r) => setTimeout(r, 30000))])
-    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = low ? 2 : 8; out[k] = t; })
+    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = k === "backdrop" ? (low ? 2 : 8) : anisoFor(gfx); out[k] = t; })
     .catch(() => {});
   return Promise.all([one("grass", "grass.jpg"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg")]).then(() => out);
 }
+// The title waits only for the models the world is built from (the quest critters use the four animals).
+// The crew, the bosses and the fish load behind the title; start() waits for any still on the way.
+const WORLD_MODELS = ["cabin", "outhouse", "statue", "kayak", "goose", "raccoon", "bear", "moose"];
+const CREW_MODELS = Object.keys(GLB.FIT).filter((n) => !WORLD_MODELS.includes(n));
 setTimeout(async () => {
   const lt = $("#loadText");
-  const [tex] = await Promise.all([loadTextures(), GLB.loadModels(M.gradientMap(), (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
+  GLB.loadModels(M.gradientMap(), renderer, WORLD_MODELS);
+  const [tex] = await Promise.all([loadTextures(), GLB.ready(WORLD_MODELS, (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
   G.world = new World(scene, { low, quality: Q, tex });
   G.fx = new FX(G);
   G.fishing = new Fishing(G);
@@ -153,7 +203,38 @@ setTimeout(async () => {
   $("#loading").hidden = true;
   titleScreen();
   requestAnimationFrame(loop);
+  requestAnimationFrame(warmLoop);
 }, 30);
+
+// Shaders for things that first show up mid-game are compiled behind the opaque title instead, so the game does not
+// stall when they appear: the King's sludge wall, a hero under the umbrella, and Christian's see-through clones.
+// It waits for the first title frames, so the fire light exists and the light count matches the game's.
+let warmed = false, sealWarmed = false;
+const warmV = new THREE.Vector3();
+function warmUp() {
+  if (!(G.frame > 2)) return;
+  if (!sealWarmed) { sealWarmed = true; renderer.compile(G.world.court.seal, camera, scene); }
+  if (warmed || $("#title").hidden || !GLB.isReady(CREW_MODELS)) return;
+  warmed = true;
+  // One frame with a throwaway hero and clone in front of the camera. The copies are dropped but not disposed,
+  // so their shader programs stay. The clone's materials are made see-through as in Boss.makeClones.
+  const g = new THREE.Group(), hero = M.person(M.LOOKS[0]), clone = M.boss("christian");
+  if (hero.glider) hero.glider.visible = true;
+  clone.root.traverse((o) => { if (o.isMesh && !o.userData.outline) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; } });
+  clone.root.position.x = 4;
+  g.add(hero.root, clone.root);
+  // never culled, so the frame draws them and their shadows wherever they stand
+  g.traverse((o) => { o.frustumCulled = false; });
+  g.position.copy(camera.position).add(camera.getWorldDirection(warmV).multiplyScalar(8));
+  scene.add(g);
+  sun.shadow.needsUpdate = true; // the light setting skips the shadow map on some frames
+  draw();
+  scene.remove(g);
+  // the loop draws a clean frame next, in case a see-through screen shows the canvas
+  redraw = true;
+}
+// tries once a frame until done; if the game starts first, start() does it before the title goes
+function warmLoop() { if (warmed || G.starting || G.started) return; warmUp(); requestAnimationFrame(warmLoop); }
 
 /* ---------------- title ---------------- */
 let pick = 0;
@@ -265,10 +346,18 @@ function titleFX() {
   })(last);
 }
 
-function start(save) {
+async function start(save) {
   // a double click on New game or Continue must not start two games
   if (G.starting || G.started) return;
   G.starting = true;
+  // the crew and the bosses load behind the title; if some are still on the way, wait for them here
+  // (a model that failed to load falls back to its shape-built version, a slow one is waited for)
+  if (!GLB.isReady(CREW_MODELS)) {
+    $("#tmenu").hidden = $("#tpick").hidden = true; $("#tmain").hidden = false;
+    const note = $("#tpress"); note.textContent = "Waking the crew…"; note.hidden = false;
+    await GLB.ready(CREW_MODELS);
+  }
+  warmUp();
   G.save = save;
   if (save.friend !== pick && !save.intro) save.friend = pick;
   G.ui.hide("title");
@@ -301,6 +390,9 @@ function start(save) {
   G.ui.renderMap();
   if (!save.intro) intro(); else G.ui.banner(G.world.regionAt(P.x, P.z), "Day " + save.day);
   G.region = G.world.regionAt(P.x, P.z);
+  // Compile every shader the game has now, inside the Begin pause, hidden ones too: a beaten boss, the King's lid,
+  // a far critter, the sword trail. Otherwise each one stalls the game the first time it shows up.
+  renderer.compile(scene, camera);
 }
 
 async function intro() {
@@ -372,7 +464,8 @@ function respawnCritters() {
     if (p.foe) { scene.remove(p.foe.rig.root); G.foes.splice(G.foes.indexOf(p.foe), 1); }
     p.foe = G.spawnFoe(p.type, p.x, p.z, p.home);
   }
-  G.items.forEach((it) => { if (it.taken) { it.taken = false; it.obj.visible = true; } });
+  // the pickups loop puts the food back in the scene
+  G.items.forEach((it) => { it.taken = false; });
   G.loot.refill();
 }
 G.onKill = (f) => {
@@ -385,10 +478,16 @@ G.onKill = (f) => {
 };
 
 /* ---------------- items and secrets ---------------- */
+// One baked model per kind of food. Every pickup is a copy that shares its shapes and paints.
+const FOOD = new Map();
+const foodMesh = (id) => { if (!FOOD.has(id)) FOOD.set(id, M.bake(M.food(id))); return FOOD.get(id).clone(); };
+// A far pickup or secret rock leaves the scene, so three.js does not walk it every frame. Hiding it is not enough:
+// three.js still updates the matrices of a hidden object's parts.
+const park = (o, on) => { if (on && !o.parent) scene.add(o); else if (!on && o.parent === scene) scene.remove(o); };
 function buildItems() {
   const w = G.world, r = rng(321);
   const blocked = (x, z, r) => { let hit = false; w.near(x, z, (c) => { if (Math.hypot(c.x - x, c.z - z) < c.r + r) hit = true; }); return hit; };
-  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5 || blocked(x, z, 0.6)) return; const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
+  const add = (id, x, z) => { const y = w.height(x, z); if (y < 1.5 || blocked(x, z, 0.6)) return; const o = foodMesh(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false }); };
   w.appleSpots.slice(0, 70).forEach(([x, z]) => add("apple", x, z));
   for (let k = 0; k < 400 && G.items.length < 190; k++) {
     const x = (r() - 0.5) * 1300, z = (r() - 0.5) * 1300, h = w.height(x, z);
@@ -417,7 +516,7 @@ function buildItems() {
 }
 G.dropFood = (id, x, z) => {
   // never drop food into the lake
-  if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = M.food(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
+  if (G.groundAt(x, z, 999) < 0.5) { const P = G.player; x = P.x; z = P.z; } const y = G.groundAt(x, z, 999); const o = foodMesh(id); o.position.set(x, y, z); scene.add(o); G.items.push({ id, x, z, y, obj: o, taken: false, drop: true }); };
 G.foodCount = () => { const f = G.inv.food; return { total: f.apple + f.shroom + f.berry + f.syrup + (f.fish || 0), stew: f.stew }; };
 const HEAL = { apple: 2, berry: 2, shroom: 3, fish: 4, syrup: 8 };
 const FOOD_NAME = { apple: "Apple", berry: "Blueberries", shroom: "Toadstool", syrup: "Maple Syrup", fish: "Fish", stew: "Cottage Stew" };
@@ -478,7 +577,7 @@ G.meleeHit = (P, spin, n = 0) => {
   const fin = !spin && n === (COMBO[W.kind] || 3) - 1, heavy = W.kind === "two";
   // a weapon's last hit, the one that breaks it, hits twice as hard
   const last = slot && slot.dur !== Infinity && slot.dur <= 1;
-  let hits = 0, big = false;
+  let hits = 0, big = false, anyCrit = false;
   for (const f of targets()) {
     const dx = f.x - P.x, dz = f.z - P.z, d = Math.hypot(dx, dz), r = f.T ? f.T.r : 1;
     if (d > W.reach * (spin ? 1.2 : 1) + r) continue;
@@ -493,11 +592,13 @@ G.meleeHit = (P, spin, n = 0) => {
     const sx = f.x - (dx / dd) * r * 0.8, sz = f.z - (dz / dd) * r * 0.8;
     if (ok === false) { G.fx.spark(sx, hy, sz, 0xb8c8ff, 3, 0.7); continue; }
     G.fx.spark(sx, hy, sz, crit ? 0xffd84a : 0xfff4d0, crit ? 10 : 6, crit || fin ? 1.4 : 1);
+    G.dmgNum(sx, hy + 0.6, sz, dmg, crit ? "crit" : "");
+    if (crit) anyCrit = true;
     if (f.def) big = true;
     hits++;
   }
   if (hits) {
-    A.sfx(G.slowmo > 0 ? "crit" : fin || heavy ? "smash" : "hit");
+    A.sfx(G.slowmo > 0 || anyCrit ? "crit" : fin || heavy ? "smash" : "hit");
     G.hitstop = spin ? 0.09 : fin ? 0.1 : heavy ? 0.085 : big ? 0.065 : 0.055;
     G.shake(fin || spin || heavy ? 0.22 : 0.12);
     G.loot.wear(1);
@@ -589,10 +690,47 @@ G.bossIntro = (b) => {
   G.ui.boss(b.def.name, 1);
   G.activeBoss = b;
   G.say(b, b.S.lines[0]);
+  {
+    const P = G.player, dx = P.x - b.center.x, dz = P.z - b.center.z, dd = Math.hypot(dx, dz) || 1;
+    const cx = b.center.x + (dx / dd) * (b.def.r + 6), cz = b.center.z + (dz / dd) * (b.def.r + 6);
+    if (G.world.height(cx, cz) > 0.3) { G.save.check = [cx, cz]; G.ui.toast("Checkpoint", 1.2); }
+  }
   // the King's court seals shut behind you
   if (b.def.seal) { G.world.setSeal(true); A.sfx("seal"); G.shake(0.4); }
 };
 G.bossLeft = (b) => { if (G.activeBoss === b) { G.activeBoss = null; G.ui.boss(null); } if (b.def.seal) G.world.setSeal(false); if (G.plunge) { G.plunge = null; G.player.cine = null; } };
+// damage numbers: white for hits, gold for crits, red for damage to you. Each floats up and fades.
+const dmgNums = [];
+const NV = new THREE.Vector3();
+G.dmgNum = (x, y, z, v, kind) => {
+  const el = document.createElement("div");
+  el.className = "dmgnum " + (kind || "");
+  el.textContent = Math.max(1, Math.round(v)) + (kind === "crit" ? "!" : "");
+  document.body.appendChild(el);
+  dmgNums.push({ el, x: x + (Math.random() - 0.5) * 0.6, y, z: z + (Math.random() - 0.5) * 0.6, t: 0 });
+  if (dmgNums.length > 24) { const o = dmgNums.shift(); o.el.remove(); }
+};
+function tickNums(dt) {
+  for (let i = dmgNums.length - 1; i >= 0; i--) {
+    const n = dmgNums[i];
+    n.t += dt; n.y += dt * 1.6;
+    NV.set(n.x, n.y, n.z).project(camera);
+    if (n.t > 0.9 || NV.z > 1) { n.el.remove(); dmgNums.splice(i, 1); continue; }
+    n.el.style.transform = "translate(" + ((NV.x * 0.5 + 0.5) * innerWidth) + "px," + ((-NV.y * 0.5 + 0.5) * innerHeight) + "px) translate(-50%,-50%) scale(" + (1 + Math.max(0, 0.25 - n.t) * 2) + ")";
+    n.el.style.opacity = String(Math.min(1, (0.9 - n.t) * 4));
+  }
+}
+// tips the first time they matter, once each: a critter coming, a long drop, a big fall, low health
+function firstTips(P) {
+  const T = G.save.tips || (G.save.tips = {}), say = (k, text) => { if (T[k]) return; T[k] = 1; G.ui.toast(text, 4); };
+  const pad = touchUI ? null : true;
+  if (!T.fight && G.foes.some((f) => f.alive && f.state === "windup" && Math.hypot(f.pos.x - P.x, f.pos.z - P.z) < 8))
+    say("fight", pad ? "It is winding up! Right click or K to roll through the hit, then swing with left click." : "It is winding up! Tap Roll to dodge through, then swing.");
+  if (!T.glide && P.state === "air" && P.vel.y < -14)
+    say("glide", pad ? "Falling fast: press Space to open the umbrella. Or roll as you land to break the fall." : "Falling fast: tap Jump to open the umbrella.");
+  if (!T.eat && P.hp > 0 && P.hp <= P.maxHp * 0.34 && Object.values(G.inv.food).some((n) => n > 0))
+    say("eat", pad ? "Low on hearts. Press H to eat." : "Low on hearts. Tap the food button to eat.");
+}
 G.say = (who, text) => { G.ui.toast("“" + text + "”", 2.4); if (who && who.id === "king") who.talk = 1.2; };
 G.kingPhase = (n) => { G.ui.pop(n === 2 ? "Round two" : "Final round", "red"); A.setMood("boss" + n); };
 const FREED = {
@@ -723,7 +861,7 @@ G.drown = () => {
   A.sfx("splash");
   P.exhausted = false; P.stamina = P.staminaMax;
   const at = P.lastSafe.clone();
-  P.hp -= 4; G.ui.flash();
+  P.hp -= 4; G.ui.flash(); A.sfx("hurt"); G.shake(0.3); G.dmgNum(P.x, P.y + 2, P.z, 4, "hurt");
   if (P.hp <= 0) { P.hp = 0; G.die(); return; }
   P.place(at.x, at.z); P.invuln = 1.5;
   G.ui.toast("You swam too far");
@@ -760,7 +898,12 @@ $("#phelpBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.ope
 $("#pquestBtn").onclick = () => { G.ui.hide("pause"); G.ui.modal = null; G.ui.openQuests(); };
 $("#soundBtn").onclick = () => { const on = A.toggle(); if (window.Chip) Chip.setOn(on); $("#soundBtn").textContent = "Sound: " + (on ? "on" : "off"); };
 const GFX_NAMES = { high: "High", medium: "Medium", low: "Low" };
-$("#gfxBtn").onclick = () => { const order = ["high", "medium", "low"]; G.setGraphics(order[(order.indexOf(gfx) + 1) % 3]); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx]; };
+// Low, Medium, High, in that order, so one tap never jumps from the lightest setting to the heaviest
+$("#gfxBtn").onclick = () => {
+  const order = ["low", "medium", "high"], next = order[(order.indexOf(gfx) + 1) % 3];
+  if (touchUI) try { localStorage.setItem(GFX_TOUCH_HIGH, next === "high" ? "1" : "0"); } catch (e) { /* storage off */ }
+  G.setGraphics(next); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
+};
 $("#pauseBtn").onclick = () => openPause();
 
 /* ---------------- goals and clock ---------------- */
@@ -1074,27 +1217,68 @@ function titleCamera(dt) {
 }
 
 /* ---------------- the loop ---------------- */
-// dynamic resolution: watch the frame time and trade sharpness for smoothness when needed
-let ftAvg = 16, ftLast = 0, ftHold = 0;
-function frameTime(now) {
-  const ft = now - (ftLast || now); ftLast = now;
-  if (ft <= 0 || ft > 250 || document.hidden) return;
-  ftAvg += (ft - ftAvg) * 0.05;
-  if ((ftHold -= ft) > 0) return;
-  if (ftAvg > 26 && resScale > 0.55) { resScale = Math.max(0.55, resScale * 0.88); applyRatio(); ftHold = 1500; }
-  else if (ftAvg < 14 && resScale < 1) { resScale = Math.min(1, resScale * 1.08); applyRatio(); ftHold = 2500; }
+// Dynamic resolution. It watches the frame time during play only (not the title, menus or loading).
+// It learns the screen's own frame interval: 16.7 ms at 60 Hz, 8.3 ms at 120 Hz, 33.3 ms in iPhone Low Power Mode,
+// so a phone that is capped at 30 fps is not mistaken for a slow one. The scale moves between a few fixed steps,
+// so the render targets are rarely rebuilt. A step down that does not help is undone: the load is elsewhere.
+const RES_STEPS = [1, 0.85, 0.72, 0.6];
+const fts = [];
+let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, slowN = 0, autoDown = false;
+function frameTime(now, live) {
+  if (!live || document.hidden) { ftLast = 0; return; }
+  const ft = ftLast ? now - ftLast : 0; ftLast = now;
+  if (ft <= 0 || ft > 100) return; // a gap or a one-off hitch, not a steady load
+  fts.push(ft); if (fts.length > 60) fts.shift();
+  if ((ftHold -= ft) > 0 || fts.length < 60) return;
+  const sorted = fts.slice().sort((a, b) => a - b), med = sorted[30];
+  dispMs = Math.min(dispMs, sorted[6]);
+  noDownT -= 1;
+  const set = (k) => { resStep = k; resScale = RES_STEPS[k]; applyRatio(); fts.length = 0; };
+  if (downFrom && med > downFrom * 0.9) { set(resStep - 1); downFrom = 0; noDownT = 30; ftHold = 3000; return; }
+  downFrom = 0;
+  // Still slow at the smallest scale, though every step down helped: the graphics card is the limit. After about
+  // 5 s of that, the game drops one graphics setting, once per visit. It never climbs back by itself, it does not
+  // save the change, and it leaves alone a setting the player chose. Never during a boss fight.
+  if (!gfxSaved && !autoDown && gfx !== "low" && !G.activeBoss && resStep === RES_STEPS.length - 1 && med > dispMs * 1.45) {
+    if (++slowN >= 5) {
+      autoDown = true;
+      const next = gfx === "high" ? "medium" : "low";
+      G.setGraphics(next, { persist: false });
+      G.ui.toast("Graphics lowered to " + GFX_NAMES[next] + " for smoother play");
+      return;
+    }
+  } else slowN = 0;
+  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; set(resStep + 1); ftHold = 2000; }
+  else if (med < dispMs * 1.12 && resStep > 0) { set(resStep - 1); ftHold = 4000; }
+  else ftHold = 1000;
 }
-G.setGraphics = (name) => {
+// persist: false changes the setting for this visit only (the automatic step down).
+G.setGraphics = (name, { persist = true } = {}) => {
   if (!QUALITY[name]) return;
-  gfx = name; Q = QUALITY[name]; resScale = 1;
-  try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ }
+  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
+  if (persist) { gfxSaved = true; try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ } }
   applyRatio();
   painter.setQuality(Q);
   sun.shadow.mapSize.set(Q.shadow, Q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  // three.js does not rebuild its shaders when the shadow filter changes, so every material is marked for a rebuild,
+  // including the pickups and critters that are out of the scene. A short pause, once. The automatic step down
+  // keeps the filter it has: rebuilding every shader in the middle of play would stall the slow machines it helps.
+  if (persist && renderer.shadowMap.type !== shadowType(name)) {
+    renderer.shadowMap.type = shadowType(name);
+    const redo = (o) => o.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.needsUpdate = true; });
+    redo(scene);
+    for (const o of [...FOOD.values(), ...G.items.map((it) => it.obj), ...G.loonies.map((l) => l.obj), ...G.foes.map((f) => f.rig.root)]) if (!o.parent) redo(o);
+  }
+  const an = anisoFor(name), T = G.world.tex;
+  for (const k of ["grass", "dirt", "rock", "sand"]) if (T[k] && T[k].anisotropy !== an) { T[k].anisotropy = an; T[k].needsUpdate = true; }
   G.world.quality = Q; G.world.buildGrass(Q);
 };
 G.graphics = () => gfx;
-let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false;
+let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false, stillFrames = 0;
+// Full-screen screens hide the world, or dim a world that does not move. Behind them the game draws two frames
+// (to settle the picture and warm up the shaders), then stops drawing: the canvas keeps showing its last frame.
+const STILL = { pause: 1, map: 1, quests: 1, help: 1, choice: 1 };
+const stillNow = () => (!G.started && !$("#title").hidden) || !!STILL[G.ui.modal];
 function loop(now) {
   requestAnimationFrame(loop);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -1103,14 +1287,18 @@ function loop(now) {
   if (!G.world) return;
   G.time += dt;
   G.punchT = Math.max(0, (G.punchT || 0) - dt * 2.5);
-  frameTime(now);
-  if (!G.started) { titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); return; }
+  frameTime(now, G.started && !G.paused && !G.ui.modal);
+  const still = stillNow();
+  stillFrames = still ? stillFrames + 1 : 0;
+  const skipDraw = still && stillFrames > 2 && !redraw;
+  if (!G.started) { if (skipDraw) return; titleCamera(dt); lighting(); G.world.update(dt, G.time, camera, camera.position); draw(); redraw = false; return; }
   readInput();
   const P = G.player;
   if (inp.pause && !G.ui.modal) openPause();
   if (inp.map) G.openMap();
   if (G.ui.modal === "dialog" && (inp.interact || inp.jump || inp.attack)) G.ui.advance();
   G.ui.tick(dt);
+  tickNums(dt);
   const running = !G.paused && !G.ui.modal;
   if (running) step(dt);
   if (!cam0 || running || G.ui.modal === "dialog") { updateCamera(running ? dt : 0.0001); cam0 = true; }
@@ -1119,10 +1307,12 @@ function loop(now) {
   fireflies.position.set(P.x, G.world.height(P.x, P.z), P.z);
   fireflies.material.opacity = G.night ? 0.9 : 0;
   fireflies.rotation.y = G.time * 0.02;
+  A.music(G.time);
+  if (skipDraw) return;
   G.ui.hud();
   G.ui.minimap();
-  A.music(G.time);
   draw();
+  redraw = false;
 }
 
 function step(dt) {
@@ -1135,8 +1325,16 @@ function step(dt) {
   if (before > G.clock) { respawnCritters(); if (G.started) G.ui.toast("The sludge moon rises. The critters are back."); }
   // slow time after a perfect roll, and a tiny pause on each hit
   if (G.slowmo > 0) { G.slowmo -= dt; G.foeTime = 0.25; } else G.foeTime = 1;
+  P.safeFallT = Math.max(0, (P.safeFallT || 0) - dt);
+  firstTips(P);
   G.ui.slow(G.slowmo > 0);
-  if (G.hitstop > 0) { G.hitstop -= dt; return; }
+  if (G.hitstop > 0) {
+    G.hitstop -= dt;
+    if (inp.attack) P.atkBuf = 0.3;
+    if (inp.roll) P.rollBuf = 0.25;
+    if (inp.jump) P.jumpBuf = 0.2;
+    return;
+  }
   if (inp.eat) G.eat();
   if (inp.next) G.cycleWeapon(1);
   if (inp.prev) G.cycleWeapon(-1);
@@ -1164,7 +1362,8 @@ function step(dt) {
   const fdt = dt * G.foeTime;
   for (const f of G.foes) {
     const d = Math.hypot(f.x - P.x, f.z - P.z);
-    f.rig.root.visible = d < 240 && !f.gone;
+    // a critter past 240 m, or one that is gone, leaves the scene with all its bones
+    park(f.rig.root, !f.gone && d < 240);
     if (d < 170 || f.state !== "idle") f.update(fdt);
   }
   for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].gone && !G.plan.some((p) => p.foe === G.foes[i])) { scene.remove(G.foes[i].rig.root); G.foes.splice(i, 1); }
@@ -1183,18 +1382,22 @@ function step(dt) {
   for (const it of G.items) {
     if (it.taken) continue;
     const d = Math.hypot(it.x - P.x, it.z - P.z);
-    it.obj.visible = d < 160;
-    if (d > 160) continue;
+    // shown within 160 m; 10 m of slack keeps it from going in and out at the edge
+    const on = d < (it.obj.parent ? 170 : 160);
+    park(it.obj, on);
+    if (!on) continue;
     it.obj.rotation.y += dt;
     if (d < 1.6 && Math.abs(it.y - P.y) < 2.5) {
-      it.taken = true; it.obj.visible = false;
+      it.taken = true; park(it.obj, false);
       if (it.id === "heart") { P.heal(4); A.sfx("eat"); G.ui.toast("+1 heart"); }
       else { G.inv.food[it.id]++; A.sfx("pickup"); G.ui.toast("+1 " + FOOD_NAME[it.id]); }
-      if (it.drop) { scene.remove(it.obj); G.items.splice(G.items.indexOf(it), 1); break; }
+      if (it.drop) { G.items.splice(G.items.indexOf(it), 1); break; }
     }
   }
   G.loonies.forEach((l, i) => {
-    if (l.kind !== "float" || S.loonies.includes(i)) { if (l.kind === "float") l.obj.visible = false; return; }
+    // a secret rock is a few pixels wide past 130 m, so it is not drawn out there
+    if (l.kind !== "float") { park(l.obj, Math.hypot(l.x - P.x, l.z - P.z) < (l.obj.parent ? 140 : 130)); return; }
+    if (S.loonies.includes(i)) { l.obj.visible = false; return; }
     l.obj.rotation.y += dt * 2; l.obj.position.y = l.y + Math.sin(G.time * 2 + i) * 0.2;
     if (Math.hypot(l.x - P.x, l.z - P.z) < 1.6 && Math.abs(l.y - P.y - 0.8) < 2.2) { S.loonies.push(i); l.obj.visible = false; G.fx.puff(l.x, l.y, l.z, 0xffd84a, 14); foundLoonie(); }
   });
@@ -1255,7 +1458,7 @@ function kayakStep(dt) {
 function abilities(dt) {
   const Ab = G.abilities, P = G.player;
   if (Ab.grit) { if (Ab.grit.charges === 0) { Ab.grit.cd -= dt; if (Ab.grit.cd <= 0) { Ab.grit.charges = 3; Ab.grit.cd = 0; } } }
-  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb" && P.state !== "kayak" && !P.fishing) { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
+  if (Ab.lift) { Ab.lift.cd = Math.max(0, Ab.lift.cd - dt); if (inp.lift && Ab.lift.cd <= 0 && !P.dead && P.state !== "climb" && P.state !== "kayak" && !P.fishing) { Ab.lift.cd = 25; P.vel.y = 27; P.state = "air"; P.airT = 0.2; P.safeFallT = 6; P.rig.glider.visible = false; A.sfx("lift"); G.fx.puff(P.x, P.y + 0.5, P.z, 0xdff4ff, 24); } }
   if (Ab.fury) {
     Ab.fury.cd = Math.max(0, Ab.fury.cd - dt);
     if (inp.fury && Ab.fury.cd <= 0 && !P.dead) {

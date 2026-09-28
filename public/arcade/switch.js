@@ -8,6 +8,7 @@
     { id: "crimson", name: "Crimson Rouge", sub: "紅の月の下で", url: "/crimson/", art: "/crimson/art/keyart2.webp", color: "#d0485f" },
     // still in the works on its own branch: its tile shows only once /wild/ is live
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
+    { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
   ];
   // a game marked probe shows only when its page answers
   const live = {};
@@ -52,7 +53,8 @@
     box.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     box.querySelector(".gsw-close").onclick = close;
-    document.body.appendChild(box);
+    // a game that turns its own frame (Reel It In held sideways) marks a host, so the list turns with it
+    (document.querySelector("[data-switch-host]") || document.body).appendChild(box);
   }
   async function open(current) {
     if (!box) build();

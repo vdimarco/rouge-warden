@@ -75,10 +75,10 @@ button { font: inherit; color: inherit; }
 .icon .lbl { font-family: var(--fell); font-size: 13px; letter-spacing: 0.02em; }
 .sr, .icon .lbl.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .eyebtn.busy .eye::after { animation: pulse 0.8s ease-out infinite; }
-@media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #fastText { display: none; }
+@media (max-width: 700px) { .pill { padding: 6px 7px; gap: 6px; font-size: 12px; } #flaskText { display: none; }
   .bar { width: 64px; } .eyebtn .lbl { display: none; } .depth { padding: 6px 7px; font-size: 12px; } .icon { min-width: 32px; height: 32px; padding: 0 6px; } }
 @media (max-width: 380px) { .bar { width: 48px; } }
-@media (max-width: 520px) { .hud { gap: 4px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
+@media (max-width: 520px) { .hud { gap: 3px; } .pill { gap: 4px; padding: 6px 5px; } #gfxBtn { display: none; } .icon { min-width: 30px; padding: 0 5px; } .bar { width: 44px; } .depth { padding: 6px 5px; } }
 .ticker { position: fixed; z-index: 9; top: calc(var(--hudH, 50px) + 4px); right: calc(var(--sar) + 10px); max-width: min(380px, calc(100vw - 20px)); font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; background: rgba(18, 22, 31, 0.72); border: 0; border-left: 2px solid var(--iris); border-radius: 4px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity 0.5s; }
 .ticker.fade { opacity: 0; pointer-events: none; }
 .ticker[hidden] { display: none; }
@@ -108,7 +108,7 @@ button { font: inherit; color: inherit; }
 @media (pointer: coarse) { .digbtn, .tbtn { display: block; } .digbtn { bottom: calc(var(--sab) + 140px); width: 56px; height: 56px; font-size: 11.5px; padding: 0; } }
 body.menu .digbtn, body.menu .tbtn { visibility: hidden; }
 body.menu .hotbar, body.menu .voice, body.menu .hint, body.menu .ticker, body.menu .swapbtn, body.menu .mini, body.menu .bossbar { visibility: hidden; }
-.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); height: min(220px, 34vh); aspect-ratio: 64 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
+.mini { position: fixed; z-index: 9; left: calc(var(--sal) + 10px); top: calc(var(--hudH, 50px) + 6px); width: min(300px, 42vw); height: auto; aspect-ratio: 256 / 180; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; background: #0a0c10; cursor: pointer; opacity: 0.8; }
 .mini[hidden] { display: none; }
 .tool[aria-pressed="true"] { border-color: rgba(230, 195, 92, 0.55); }
 .bossbar { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: var(--hudH, 70px); width: min(480px, 84vw); text-align: center; pointer-events: none; }
@@ -1153,9 +1153,14 @@ const Art = (() => {
   const load = (key, file, fw) => {
     const im = new Image();
     im.src = base + file;
-    im.decode().then(() => { out[key] = { img: im, fw: fw || im.width, fh: im.height }; }).catch(() => { /* drawn as pixels until it loads */ });
+    // a negative fw is a frame count
+    im.decode().then(() => { out[key] = { img: im, fw: fw < 0 ? im.width / -fw : fw || im.width, fh: im.height }; }).catch(() => { /* drawn as pixels until it loads */ });
   };
   CREW.forEach((c, i) => load("crew" + i, "crew" + (i + 1) + ".webp"));
+  // pixel-art sprites for Painted mode: one pose for each friend, and walk, walk, attack strips for the critters and bosses
+  CREW.forEach((c, i) => load("pxcrew" + i, "pxcrew" + (i + 1) + ".webp"));
+  for (const k of ["raccoon", "hornet", "gull", "bat", "skunk", "moose", "goose", "king"]) load("px_c_" + k, "px_" + k + ".webp", -3);
+  for (const k of ["gabe", "christian", "ryu"]) load("px_" + k, "px_" + k + ".webp", -3);
   load("gabe", "gabe.webp", 273);
   load("christian", "christian.webp", 349);
   load("ryu", "ryu.webp", 270);
@@ -1299,7 +1304,7 @@ function styleGain(n, how) {
   n *= [1, 0.6, 0.35, 0.2][repeats];
   if (repeats >= 2 && !run.styleHinted) { run.styleHinted = true; UI.hint("Mix it up: crits, pounds, shots, and air hits keep the streak climbing.", 3200); }
   run.style = Math.min(RANKS[RANKS.length - 1].at + 80, run.style + n);
-  run.styleT = 1.6 + 0.8 * boon("campfire");
+  run.styleT = 2.6 + 0.8 * boon("campfire");
   const now = rankOf(run.style);
   if (now > was) { UI.rankUp(now); SFX.rank(now); }
   run.log.maxRank = Math.max(run.log.maxRank, now);
@@ -1311,7 +1316,7 @@ function styleHit() {
 }
 function updateStyle(dt) {
   run.styleT -= dt;
-  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (7 + 5 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
+  if (run.styleT <= 0 && run.style > 0) run.style = Math.max(0, run.style - dt * (5 + 3.5 * Math.max(0, rankOf(run.style))) * (1 - 0.3 * boon("campfire")));
   const r = rankOf(run.style);
   run.streakMult = r < 0 ? 1 : RANKS[r].m;
   if (Game.frenzyT > 0) { Game.frenzyT -= dt; if (Game.frenzyT <= 0) { Game.frenzyChain = 0; UI.hint("The Golden Plunger fades.", 1600); } }
@@ -1380,6 +1385,7 @@ function newRun() {
   const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], flow: 1, score: 0, style: 0, styleT: 0, streakMult: 1, boons: {}, log: { maxRank: -1,  dmgBy: {}, hitsBy: {}, hits: 0, rolls: 0, flasks: 0, t0: 0, lowHp: 1, bursts: 0, recent: [], digSwings: 0, caveIns: 0 }, melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
   const U = (Memory.data && Memory.data.meta.unlocked) || {};
   r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0) + Tune.get("hotdogs");
+  if (Memory.data && Memory.data.bankCaps) { r.caps = Memory.data.bankCaps; Memory.data.bankCaps = 0; Memory.save(); }
   r.log.t0 = performance.now();
   if (U.spade) r.shovel = 2;
   if (U.purse) r.gold = 60;
@@ -1468,7 +1474,7 @@ const Cottage = (() => {
 
   async function remoteAnswer(payload, questions) {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 6000);
+    const timer = setTimeout(() => ctl.abort(), 3500);
     let res;
     try { res = await fetch(JEV_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: ctl.signal }); }
     finally { clearTimeout(timer); }
@@ -2004,7 +2010,9 @@ const Cottage = (() => {
     }
     const price = (v) => (v.startsWith("spell:") ? 30 + 25 * SPELLS[v.slice(6)].tier + 12 * r.depth : v.startsWith("melee:") ? 70 + 15 * r.depth : v === "up:newwand" ? 80 + 25 * r.depth : v === "up:scroll" ? 90 + 20 * r.depth : 50 + 18 * r.depth);
     UI.ledger();
-    return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
+    // two things the snack bar always sells, so gold always has a use
+    const always = [{ v: "x:hotdog", price: 35 + 10 * r.depth }, { v: "x:tip", price: 120 }];
+    return { mood, offers, shop: shop.map((v) => ({ v, price: price(v) })).concat(always), rest: E.answers.rest.pick, line: fillLine(E.answers.line.pick, ctx, r) };
   }
 
   async function bark(situation, r, extra) {
@@ -2208,7 +2216,7 @@ const SFX = (() => {
 
 /* ------------------------------------------------------------------ the world: every pixel simulated */
 
-const W = 256, H = 720, CS = 16, CW = W / CS, CH = H / CS;
+const W = 1024, H = 720, CS = 16, CW = W / CS, CH = H / CS;
 /* Painted graphics: pictures painted on Higgsfield, one texel for each world cell.
    Classic keeps the flat four-shade palettes. The choice is saved in this browser. */
 const Paint = (() => {
@@ -2300,6 +2308,25 @@ const Paint = (() => {
   };
 })();
 
+// cave shapes drawn on Higgsfield as black-and-white cross sections, cut down to small grids.
+// Each run is o (open) or x (rock) and a length; rows are split by "/". A cave room stamps one of these, scaled up with rough edges.
+const CAVE_SHAPES = [
+  { name: "cathedral", w: 62, h: 32, rle: "x62/x1o24x12o23x2/x1o18x2o1x19o19x2/x1o11x30o1x4o1x1o12x1/x1o6x45o9x1/x1o3x25o4x21o7x1/x1o2x21o3x1o10x19o4x1/x1o1x9o1x12o15x19o3x1/x7o1x1o5x7o1x1o18x6o3x9o2x1/x6o9x5o22x5o4x3o1x5o1x1/x5o11x4o22x4o6x1o3x6/x4o12x3o24x2o7x2o3x5/x3o14x2o24x2o7x1o5x4/x3o14x2o24x2o7x1o6x3/x2o15x2o24x2o6x2o6x3/x2o15x2o24x4o5x1o6x3/x2o14x3o24x3o6x1o6x3/x2o11x6o24x2o6x11/x2o14x3o20x6o7x1o1x8/x8o9x2o14x3o6x3o7x1o4x5/x6o11x2o14x3o7x2o7x1o6x3/x5o12x2o6x2o7x1o8x3o6x1o6x3/x2o14x4o3x4o16x4o5x1o6x3/x2o14x4o3x2o17x3o7x1o6x3/x2o10x2o2x4o4x1o17x3o5x3o6x3/x2o14x5o3x1o17x4o6x2o4x4/x2o4x2o8x6o2x1o14x1o2x4o6x2o4x4/x3o3x1o7x8o2x1o14x7o6x2o4x4/x3o10x12o13x10o4x2o2x6/x4o8x15o7x15o2x11/x7o3x52/x62" },
+  { name: "sinkhole", w: 22, h: 23, rle: "x22/x10o3x9/x10o3x9/x11o1x10/x10o3x9/x7o9x6/x5o13x4/x4o15x3/x3o16x3/x4o16x2/x2o18x2/x2o19x1/x3o18x1/x2o19x1/x2o19x1/x2o19x1/x2o18x2/x4o16x2/x4o15x3/x4o15x3/x2o15x5/x1o2x5o8x6/x22" },
+  { name: "burrows", w: 60, h: 34, rle: "x60/x19o14x3o2x1o1x1o1x10o2x1o4x1/x7o4x5o3x6o7x2o2x1o6x10o6x1/x4o5x4o9x7o1x5o1x4o4x11o3x2/x8o2x2o2x2o1x2o4x12o5x2o2x12o2x2/x6o2x1o1x1o2x1o3x1o2x2o2x10o2x5o2x17/x3o1x2o1x1o1x1o2x4o1x3o2x7o3x1o2x5o3x17/x3o4x1o4x3o1x5o3x5o2x1o3x3o3x1o3x15/x1o3x6o3x1o2x5o4x1o4x2o1x1o2x5o2x17/x1o5x2o1x1o1x1o1x1o1x6o1x1o1x1o1x2o4x2o2x1o3x2o1x8o1x8/x2o1x2o1x1o3x2o3x2o1x4o2x1o1x3o1x2o2x1o3x1o3x7o4x7/x4o3x1o6x2o3x4o8x2o3x5o2x6o5x6/x5o2x1o1x1o3x2o2x1o2x1o2x1o1x2o7x2o4x2o1x3o7x7/x5o4x2o1x5o3x1o4x1o2x2o1x3o3x3o1x1o2x1o1x2o2x1o1x8/x7o1x3o2x2o4x1o1x3o3x1o1x1o5x2o4x1o5x1o1x11/x12o5x3o1x2o4x1o2x1o1x1o6x1o2x1o1x2o1x1o2x10/x17o6x1o1x1o5x2o1x2o1x2o5x1o3x1o1x10/x2o4x6o4x2o4x2o1x1o1x1o1x2o5x1o4x1o1x2o1x14/x3o1x7o2x2o1x1o2x2o3x1o1x1o5x3o1x1o1x1o3x2o4x6o1x5/x1o4x6o1x1o5x3o5x1o1x1o5x10o1x2o1x5o3x4/x4o1x6o4x1o2x2o1x1o2x5o2x1o2x9o2x9o1x5/x3o2x3o2x2o1x1o1x1o1x2o4x7o1x2o4x5o1x1o1x9o1x5/x4o1x3o3x1o1x1o5x1o1x9o1x3o1x1o2x2o1x1o2x5o2x3o1x5/x3o3x1o2x4o1x1o3x2o4x2o3x1o5x3o9x2o2x1o3x5/x3o2x1o8x3o1x1o2x1o2x1o5x2o4x1o3x2o1x3o4x1o2x7/x3o2x5o4x5o1x1o2x5o3x1o1x2o1x1o4x1o2x6o2x3o3x2/x4o3x2o3x11o6x1o2x1o4x2o1x3o7x4o2x1o2x1/x5o1x4o2x13o1x2o1x2o3x1o3x3o1x1o1x3o2x6o1x1o1x2/x5o1x1o2x2o2x9o4x1o1x6o1x1o2x1o4x2o5x4o4x2/x6o2x6o2x8o1x2o2x5o1x2o4x1o3x3o2x5o1x1o2x1/x6o1x4o7x10o3x1o3x4o1x9o3x3o3x2/x6o1x4o2x3o2x10o8x14o1x3o2x4/x6o6x4o3x9o3x4o5x12o3x5/x60", thick: true },
+  { name: "lake", w: 61, h: 28, rle: "x61/x30o8x23/x7o6x9o19x9o3x8/x5o12x2o23x5o9x5/x2o56x3/x1o58x2/x1o58x2/x1o59x1/x1o59x1/x1o59x1/x1o59x1/x1o57x3/x6o51x4/x11o43x2o2x3/x11o40x10/x6o4x3o36x12/x2o15x2o25x2o7x8/x19o25x6o2x9/x20o24x17/x20o23x18/x20o23x18/x21o21x19/x21o21x19/x22o19x20/x23o17x21/x25o13x23/x27o9x25/x61" },
+  { name: "mine", w: 62, h: 29, rle: "x62/x6o5x51/x6o5x51/x6o5x51/x7o5x50/x8o45x9/x10o44x8/x12o42x8/x13o40x9/x24o6x19o2x11/x23o5x21o2x11/x22o5x22o2x11/x20o5x24o2x11/x19o4x26o2x11/x17o5x27o2x11/x1o58x3/x1o56x5/x1o54x7/x1o53x8/x3o3x56/x3o2x57/x3o2x57/x3o2x57/x3o2x57/x1o13x7o40x1/x1o14x6o40x1/x1o14x7o39x1/x1o13x10o37x1/x62" },
+  { name: "roots", w: 60, h: 29, rle: "x60/x45o2x13/x28o3x15o2x12/x26o2x1o3x11o2x2o2x6o3x2/x24o1x1o9x8o7x3o6x1/x19o3x2o11x7o4x1o3x2o7x1/x18o4x1o13x9o3x3o3x6/x15o5x3o14x10o6x7/x14o2x6o16x10o4x8/x22o16x2o5x2o4x9/x22o16x2o1x3o2x1o1x12/x21o8x5o3x2o1x4o2x14/x21o7x8o1x1o7x15/x1o1x18o3x2o1x4o3x5o2x1o1x18/x1o3x16o1x1o4x3o6x25/x1o4x17o2x4o7x25/x1o4x16o2x5o8x24/x1o3x14o3x7o8x15o1x8/x1o2x1o6x5o4x12o5x15o1x8/x7o10x10o4x2o4x3o1x2o2x5o2x8/x8o2x20o3x1o4x1o5x6o1x9/x8o2x10o2x4o1x2o3x2o5x1o2x7o4x7/x8o2x9o3x3o5x6o2x1o2x7o3x9/x9o3x6o6x1o2x5o1x1o1x3o2x8o1x11/x8o1x2o2x6o7x6o1x1o5x21/x8o5x4o7x7o2x1o3x23/x8o13x10o4x25/x9o2x1o4x44/x60", thick: true },
+  { name: "terraces", w: 62, h: 34, rle: "x62/x7o6x49/x4o11x47/x3o20x39/x2o24x36/x2o18x42/x2o14x46/x2o24x2o2x32/x2o34x26/x2o34x26/x2o27x33/x1o16x1o11x33/x1o15x3o10x8o7x18/x1o13x4o28x16/x18o23x21/x18o22x22/x19o21x22/x17o13x2o9x8o4x9/x15o14x3o9x1o14x6/x14o13x5o26x4/x31o28x3/x31o29x2/x31o29x2/x30o14x1o15x2/x29o13x3o15x2/x28o13x4o15x2/x27o2x1o10x5o15x2/x45o15x2/x45o15x2/x44o17x1/x43o18x1/x41o20x1/x40o21x1/x62" },
+  { name: "geode", w: 35, h: 34, rle: "x35/x17o1x17/x13o1x2o3x3o2x11/x13o3x1o4x1o2x11/x12o4x1o6x1o1x10/x7o9x1o5x1o3x2o1x6/x6o23x6/x8o20x7/x6o22x7/x3o27x5/x3o2x1o24x5/x3o27x1o2x2/x5o27x3/x3o29x3/x4o27x4/x2o31x2/x1o33x1/x7o22x6/x8o1x1o1x1o1x3o1x2o2x1o3x2o1x7/x3o28x4/x4o28x3/x4o29x2/x5o25x5/x5o26x4/x6o24x5/x5o21x9/x5o1x2o20x7/x8o21x6/x9o2x1o12x1o1x9/x9o1x1o10x1o2x1o1x9/x10o3x1o4x1o2x1o2x11/x12o1x2o2x1o1x1o1x1o1x12/x15o4x16/x35" },
+  { name: "arches", w: 61, h: 34, rle: "x61/x13o16x2o2x28/x10o19x2o4x26/x8o22x1o5x2o3x7o4x9/x7o23x1o5x1o5x5o7x7/x6o24x3o2x2o5x4o8x7/x4o25x3o3x3o3x5o7x8/x3o26x3o4x3o1x6o7x8/x3o2x1o7x1o17x1o4x2o1x8o7x7/x7o4x1o28x1o1x19/x11o3x5o21x1o1x3o8x8/x6o5x5o2x2o20x1o2x2o10x6/x1o8x4o2x1o3x2o1x1o20x2o10x6/x1o4x4o5x2o3x2o1x1o20x2o5x2o2x7/x1o3x4o5x1o1x1o10x7o10x2o3x1o2x10/x1o3x4o8x1o3x8o4x6o10x1o3x4o2x3/x1o4x4o2x2o5x7o9x13o6x3o3x2/x6o11x6o12x12o2x1o5x1o3x2/x10o4x7o14x12o2x2o4x1o4x1/x14o3x3o16x17o7x1/x16o3x1o14x1o1x16o4x5/x9o2x4o3x2o13x1o2x25/x3o1x1o12x2o12x1o1x1o3x24/x2o14x4o10x1o2x1o3x24/x2o11x1o4x1o3x1o3x5o2x1o3x24/x1o7x7o8x2o1x2o1x2o2x1o3x24/x1o4x20o2x1o1x1o8x23/x25o2x1o1x1o8x23/x24o5x1o7x24/x24o5x1o7x24/x24o5x2o7x23/x24o5x2o7x23/x24o5x2o7x23/x61" },
+  { name: "fissure", w: 39, h: 49, rle: "x39/x16o6x17/x17o5x17/x17o4x18/x17o4x18/x5o21x4o6x3/x1o37x1/x1o37x1/x5o10x1o7x2o13x1/x18o5x16/x19o5x15/x19o6x14/x22o4x13/x21o6x12/x5o3x11o8x12/x3o1x1o3x8o11x9o1x2/x3o5x8o3x1o3x1o1x10o2x2/x2o6x7o4x14o4x2/x2o7x4o7x11o1x1o4x2/x2o7x2o10x9o7x2/x3o1x1o4x2o10x7o8x3/x5o17x6o8x3/x6o6x7o4x5o7x4/x8o2x8o5x2o10x4/x16o13x2o5x3/x16o10x6o4x3/x15o4x14o3x3/x14o6x19/x14o8x17/x15o8x16/x16o9x14/x16o9x14/x21o6x12/x20o8x11/x19o7x13/x17o8x14/x15o8x16/x13o8x18/x7o17x15/x5o1x1o22x10/x3o26x10/x3o30x6/x3o30x6/x3o31x5/x3o26x1o4x5/x4o22x6o2x5/x4o3x3o9x5o2x13/x13o2x2o1x21/x39" },
+].map((c) => {
+  const g = new Uint8Array(c.w * c.h);
+  c.rle.split("/").forEach((row, y) => { let x = 0; for (const [, t, n] of row.matchAll(/([ox])(\d+)/g)) { for (let k = 0; k < +n; k++, x++) if (t === "o") g[y * c.w + x] = 1; } });
+  if (c.thick) { const g2 = g.slice(); for (let y = 1; y < c.h - 1; y++) for (let x = 1; x < c.w - 1; x++) if (g[y * c.w + x]) { g2[y * c.w + x + 1] = 1; g2[(y + 1) * c.w + x] = 1; } return { name: c.name, w: c.w, h: c.h, g: g2 }; }
+  return { name: c.name, w: c.w, h: c.h, g };
+});
 const World = (() => {
   const N = W * H;
   const mat = new Uint8Array(N), life = new Uint8Array(N), shade = new Uint8Array(N), clk = new Uint8Array(N);
@@ -2486,8 +2513,30 @@ const World = (() => {
         }
       }
     }
+    if (debris.length) stepDebris();
   }
   const wakeAll = () => next.fill(1);
+  // debris: loose bits of ground in flight. They bounce off walls and ceilings, and settle where they land.
+  const debris = [];
+  function stepDebris() {
+    for (let k = debris.length - 1; k >= 0; k--) {
+      const d = debris[k];
+      d.vy = Math.min(4, d.vy + 0.12); d.t++;
+      const n = Math.max(1, Math.ceil(Math.max(Math.abs(d.vx), Math.abs(d.vy))));
+      let done = false;
+      for (let q = 0; q < n && !done; q++) {
+        const nx = d.x + d.vx / n, ny = d.y + d.vy / n, xi = nx | 0, yi = ny | 0;
+        if (!inb(xi, yi)) { done = true; break; }
+        const hm = mat[yi * W + xi];
+        if (hm === EMPTY || KIND[hm] === K.GAS || KIND[hm] === K.FIRE) { d.x = nx; d.y = ny; continue; }
+        // hit something: land on a floor, or glance off a wall or ceiling
+        if (d.vy > 0 && ((d.y | 0) !== yi)) { place(d.x, d.y, d.m, 0, true); done = true; }
+        else if ((d.x | 0) !== xi) d.vx *= -0.35;
+        else d.vy *= -0.3;
+      }
+      if (done || d.t > 180) { if (!done) place(d.x, d.y, d.m, 0, true); debris[k] = debris[debris.length - 1]; debris.pop(); }
+    }
+  }
 
   function explode(cx, cy, r, power) {
     const r2 = r * r, inner = (r - 2) * (r - 2);
@@ -2501,7 +2550,12 @@ const World = (() => {
       const k = KIND[m];
       if (k === K.SOLID || k === K.POWDER) {
         if (HARD[m] > power && !(HARD[m] === power + 1 && rnd() < 0.3)) continue;
-        if (d2 > inner && rnd() < 0.3) set(i, FIRE, 10 + rnd() * 20); else set(i, EMPTY);
+        if (d2 > inner && rnd() < 0.3) set(i, FIRE, 10 + rnd() * 20);
+        else {
+          // some of the ground flies out as debris, and lands again as the same stuff
+          if (rnd() < 0.2 && debris.length < 600) { const d = Math.sqrt(d2) || 1, v = 1.2 + rnd() * 2.2 * (power > 3 ? 1.3 : 1); debris.push({ x: x + 0.5, y: y + 0.5, vx: (dx / d) * v, vy: (dy / d) * v - 1.1, m, t: 0 }); }
+          set(i, EMPTY);
+        }
       } else if (k === K.LIQUID) { if (rnd() < 0.5) set(i, m === WATER ? STEAM : EMPTY, lifeFor(STEAM)); else if (FLAM[m]) ignite(i); }
       else if (k === K.GAS) { if (FLAM[m]) ignite(i); else set(i, EMPTY); }
       else if (d2 > inner && rnd() < 0.25) set(i, FIRE, 10 + rnd() * 20);
@@ -2562,7 +2616,7 @@ const World = (() => {
     let rs = s >>> 0;
     const R = () => { rs = (Math.imul(rs, 1664525) + 1013904223) >>> 0; return rs / 4294967296; };
     applyTheme(THEMES[plan.theme]);
-    mat.fill(EMPTY); life.fill(0); clk.fill(0);
+    mat.fill(EMPTY); life.fill(0); clk.fill(0); debris.length = 0;
     const bgA = theme.bg[0], bgB = theme.bg[1];
     // 8 tones of the back wall, from its seams to its lit faces, each at 4 levels of shade
     const warm = { crypt: 0x6a5a48, cistern: 0x3a6a70, garden: 0x4a5a30, forge: 0x7a3a24 }[plan.theme] || 0x505050;
@@ -2599,7 +2653,7 @@ const World = (() => {
     }
 
     // 1b. junk buried in the ground: canoes, tires, old toilets, fridges, bottles, and bones
-    const junkN = 14 + Math.min(10, plan.depth * 2);
+    const junkN = ((14 + Math.min(10, plan.depth * 2)) * W) / 256;
     for (let k = 0; k < junkN; k++) {
       const J = JUNK[(R() * JUNK.length) | 0], flip = R() < 0.5;
       const jx = 8 + ((R() * (W - 40)) | 0), jy = TOP + 12 + ((R() * (floorY - TOP - 40)) | 0);
@@ -2618,60 +2672,142 @@ const World = (() => {
       if (fbm(x / 26, y / 20, s + 71) > t) mat[y * W + x] = EMPTY;
     }
 
-    // 3. the route: rooms that zigzag down the layer, joined by wide sloped tunnels
-    const rooms = [];
-    let side = R() < 0.5 ? 0 : 1, y = TOP + 40;
-    for (let k = 0; k < 14; k++) {
+    // 3. the route: a web of rooms over the whole width. Many ways lead down, a few rooms go nowhere,
+    // and every open way meets again in one last room above the two drains.
+    const rooms = [], edges = [];
+    const style = ["web", "wander", "caverns"][(R() * 3) | 0];
+    const makeRoom = (x, y, k, forceKind) => {
       const band = plan.bands[bandIdx(y)];
       const [bw, bh] = ROOM[band.form];
-      // each room has a kind, so the layer does not repeat itself
-      const kinds = k === 0 ? ["hall"] : band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
-      const kind = kinds[(R() * kinds.length) | 0];
-      let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3);
+      const kinds = band.form === "open" ? ["hall", "pillars", "bridge", "dome", "pillars"] : band.form === "tunnels" ? ["hall", "shaft", "bridge", "dome"] : ["hall", "shaft", "dome"];
+      const caveOdds = style === "caverns" ? 0.75 : band.form === "dense" ? 0.3 : 0.45;
+      const kind = forceKind || (R() < caveOdds ? "cave" : kinds[(R() * kinds.length) | 0]);
+      let rw = bw * (0.85 + R() * 0.3), rh = bh * (0.85 + R() * 0.3), mask = null;
       if (kind === "shaft") { rw *= 0.62; rh *= 1.55; }
       if (kind === "bridge") rw = Math.max(rw, 30);
-      if (y + rh * 0.6 > floorY - 30) break;
-      const mid = R() < 0.25;
-      const x = mid ? W / 2 + (R() - 0.5) * 40 : side ? W - 18 - rw - R() * 36 : 18 + rw + R() * 36;
-      rooms.push({ x, y, rw, rh, band, main: true, kind });
-      if (!mid) side ^= 1;
-      y += rh * 0.6 + 30 + R() * 16 + ROOM[plan.bands[bandIdx(y + 50)].form][1];
+      if (kind === "cave") {
+        mask = CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0];
+        const sw = (style === "caverns" ? 110 : 84) + R() * 60, sh = clamp(sw * mask.h / mask.w, 44, 120);
+        rw = sw / 2; rh = sh / 2;
+      }
+      return { x: clamp(x, 16 + rw, W - 16 - rw), y, rw, rh, band, main: true, kind, mask, row: k, links: [] };
+    };
+    // the entry room under the hole, then rows of rooms spread across the width
+    const entry = makeRoom(W / 2, TOP + 40, 0, "hall");
+    rooms.push(entry);
+    const rowsOf = [[entry]];
+    let y = TOP + 40 + entry.rh + 46;
+    const lastY = floorY - 80;
+    while (y < lastY) {
+      const n = 4 + ((R() * 3) | 0), slot = (W - 60) / n, row = [];
+      for (let q = 0; q < n; q++) {
+        if (R() < 0.12) continue;
+        const x = 30 + slot * (q + 0.5) + (R() - 0.5) * slot * (style === "wander" ? 0.8 : 0.45);
+        const r = makeRoom(x, y + (R() - 0.5) * 24, rowsOf.length);
+        if (row.some((o) => Math.abs(o.x - r.x) < o.rw + r.rw + 14)) continue;
+        row.push(r);
+      }
+      if (!row.length) row.push(makeRoom(W / 2 + (R() - 0.5) * W * 0.6, y, rowsOf.length));
+      row.sort((p1, p2) => p1.x - p2.x);
+      rowsOf.push(row);
+      y += Math.max(...row.map((r) => r.rh)) * 1.2 + 34 + R() * 20;
     }
+    // the last room: every open way ends here, and it is the sealed room before the drains
+    const finale = makeRoom(W / 2 + (R() - 0.5) * W * 0.4, Math.min(floorY - 40, y), rowsOf.length, "hall");
+    finale.rw *= 1.4;
+    const link = (p1, p2) => { if (p1 === p2 || p1.links.includes(p2)) return; p1.links.push(p2); p2.links.push(p1); edges.push([p1, p2]); };
+    // some rooms are dead ends: you can get in, but no way on
+    for (let k = 1; k < rowsOf.length; k++) {
+      const row = rowsOf[k];
+      if (row.length > 2) for (const r of row) if (R() < 0.22 && row.filter((o) => !o.dead).length > 2) r.dead = true;
+    }
+    for (let k = 0; k < rowsOf.length; k++) {
+      const row = rowsOf[k], below = rowsOf[k + 1];
+      if (!below) { for (const r of row) if (!r.dead) link(r, finale); continue; }
+      const live = below.filter((r) => !r.dead);
+      // each open room leads down to one or two rooms near it
+      for (const r of row) {
+        if (r.dead) continue;
+        const near = below.slice().sort((p1, p2) => Math.abs(p1.x - r.x) - Math.abs(p2.x - r.x));
+        link(r, near[0]);
+        if (near[1] && R() < 0.55) link(r, near[1]);
+        if (k === 0) for (const o of near.slice(1)) if (R() < 0.5) link(r, o);
+      }
+      // every room below needs a way in, and every open room below a way on
+      const openAbove = row.filter((r) => !r.dead);
+      for (const b of below) if (!b.links.length) link(openAbove.sort((p1, p2) => Math.abs(p1.x - b.x) - Math.abs(p2.x - b.x))[0], b);
+      // side passages along a row, so you can cross over to another way down
+      for (let q = 0; q + 1 < row.length; q++) if (!row[q].dead && !row[q + 1].dead && R() < 0.4) link(row[q], row[q + 1]);
+      if (!live.length) below[0].dead = false;
+    }
+    for (const row of rowsOf.slice(1)) for (const r of row) rooms.push(r);
+    rooms.push(finale);
+    // a rest stop or two in the middle rows: after a peak, a calm room to breathe in
+    const restPool = rowsOf.slice(2, -1).flat().filter((r) => !r.dead && r.kind !== "cave" && r.kind !== "bridge");
+    for (let k = 0; k < Math.min(2, restPool.length); k++) { const r = restPool.splice((R() * restPool.length) | 0, 1)[0]; r.rest = true; }
     for (const r of rooms) carveRoom(r, s);
-    // the path the compass follows: tunnel center lines, and a walk across each room
+    // spokes from the middle of each cave shape to where tunnels meet it
+    for (const r of rooms) if (r.mask) for (const [fx, fy] of [[-0.35, -0.5], [0.35, -0.5], [-0.55, 0.2], [0.55, 0.2], [0, 0.3]]) tunnel(r.x, r.y, r.x + fx * r.rw, r.y + fy * r.rh, 4.5, s);
+    // tunnels: each bends once on the way. Remember the bend, to trace the compass route later.
+    for (const e of edges) {
+      const [p1, p2] = e[0].y <= e[1].y ? e : [e[1], e[0]], flat = Math.abs(p2.y - p1.y) < 30, dir = Math.sign(p2.x - p1.x) || 1;
+      const ox = p1.x + dir * p1.rw * 0.5, oy = flat ? p1.y + p1.rh * 0.1 : p1.y + p1.rh * 0.2;
+      const tx = p2.x - dir * p2.rw * (flat ? 0.5 : 0.35), ty = flat ? p2.y + p2.rh * 0.1 : p2.y - p2.rh * 0.5, len = Math.hypot(tx - ox, ty - oy) || 1;
+      const bend = (R() - 0.5) * Math.min(60, len * 0.35), mx = (ox + tx) / 2 + ((ty - oy) / len) * bend, my = (oy + ty) / 2 - ((tx - ox) / len) * bend * 0.5;
+      tunnel(ox, oy, mx, my, flat ? 5.5 : 6.5, s);
+      tunnel(mx, my, tx, ty, flat ? 5.5 : 6.5, s);
+      e.pts = [p1, { x: ox, y: oy }, { x: mx, y: my }, { x: tx, y: ty }, p2];
+      e.a = p1; e.b = p2;
+    }
+    // blind tunnels that stop in the dirt: some hide gold at the end, some hide nothing
+    const stubs = [];
+    for (const r of rooms) if (r !== entry && r !== finale && R() < 0.3) {
+      const a0 = R() < 0.5 ? Math.PI : 0, ang = a0 + (R() - 0.5) * 0.9, len = 40 + R() * 50;
+      const sx = r.x + Math.cos(ang) * r.rw * 0.6, sy = r.y + r.rh * 0.2, ex = clamp(sx + Math.cos(ang) * len, 12, W - 12), ey = clamp(sy + Math.sin(ang) * len * 0.5 + 10, TOP + 20, floorY - 20);
+      tunnel(sx, sy, ex, ey, 5, s);
+      stubs.push({ x: ex, y: ey, gold: R() < 0.6 });
+    }
+    // the compass route: the shortest way through the web from the entry to the last room
     const path = [];
     const seg = (x1, y1, x2, y2) => { const n = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 3); for (let k = 0; k <= n; k++) path.push({ x: x1 + (x2 - x1) * k / n, y: y1 + (y2 - y1) * k / n }); };
-    let inX = W / 2, inY = TOP - 6;
-    const walk = (x, y) => { seg(inX, inY, x, y); };
-    const enter = rooms[0];
+    {
+      const dist = new Map([[entry, 0]]), prev = new Map(), todo = new Set(rooms);
+      while (todo.size) {
+        let u = null, du = Infinity;
+        for (const r of todo) { const d = dist.has(r) ? dist.get(r) : Infinity; if (d < du) { du = d; u = r; } }
+        if (!u || u === finale) break;
+        todo.delete(u);
+        for (const v of u.links) { const d = du + Math.hypot(v.x - u.x, v.y - u.y); if (d < (dist.has(v) ? dist.get(v) : Infinity)) { dist.set(v, d); prev.set(v, u); } }
+      }
+      const chain = [finale];
+      while (prev.has(chain[0])) chain.unshift(prev.get(chain[0]));
+      for (const r of chain) r.onRoute = true;
+      let inX = W / 2, inY = TOP - 6;
+      for (let k = 0; k + 1 < chain.length; k++) {
+        const e = edges.find((q) => (q.a === chain[k] && q.b === chain[k + 1]) || (q.b === chain[k] && q.a === chain[k + 1]));
+        const pts = e.a === chain[k] ? e.pts : e.pts.slice().reverse();
+        for (let q = 1; q < pts.length; q++) { seg(inX, inY, pts[q].x, pts[q].y + 3); inX = pts[q].x; inY = pts[q].y + 3; }
+      }
+    }
     for (let k = 0; k < 10; k++) carve(W / 2, TOP - 4 + k, 12 - k * 0.5);
     buildTop(plan, s);
-    tunnel(W / 2, TOP - 6, enter.x, enter.y - enter.rh * 0.5, 7, s, path);
-    inX = enter.x; inY = enter.y + enter.rh * 0.6 - 5;
-    for (let k = 0; k + 1 < rooms.length; k++) {
-      const a = rooms[k], b = rooms[k + 1], dir = Math.sign(b.x - a.x) || 1;
-      const ox = a.x + dir * a.rw * 0.55, oy = a.y + a.rh * 0.2;
-      walk(ox, Math.min(oy, a.y + a.rh * 0.6 - 5));
-      tunnel(ox, oy, b.x - dir * b.rw * 0.35, b.y - b.rh * 0.5, 6.5, s, path);
-      inX = b.x - dir * b.rw * 0.35; inY = b.y + b.rh * 0.6 - 5;
-    }
-    const last = rooms[rooms.length - 1];
+    tunnel(W / 2, TOP - 6, entry.x, entry.y - entry.rh * 0.5, 7, s);
+    const last = finale;
     const exitX = Math.round(clamp(last.x + (R() - 0.5) * 60, 40, W - 40));
     if (plan.boss) {
       // the hand's cavern: a sealed ceiling with one hole, and rock ledges to stand on
-      walk(last.x, last.y + last.rh * 0.2);
-      tunnel(last.x, last.y, last.x, arenaTop + 6, 7, s, path);
+      tunnel(last.x, last.y, last.x, arenaTop + 6, 7, s);
       seg(last.x, arenaTop + 6, exitX, H - 22);
       for (let x = 2; x < W - 2; x++) for (let yy = arenaTop - 5; yy < arenaTop; yy++) if (Math.abs(x - last.x) > 8) mat[yy * W + x] = ROCK;
-      for (let k = 0; k < 7; k++) {
-        const ly = arenaTop + 40 + k * 38, lx = 20 + ((hash2(k, 3, s) * (W - 70)) | 0), lw = 26 + ((hash2(k, 4, s) * 20) | 0);
+      for (let k = 0; k < 7 * W / 256; k++) {
+        const ly = arenaTop + 40 + (k % 7) * 38, lx = 20 + ((hash2(k, 3, s) * (W - 70)) | 0), lw = 26 + ((hash2(k, 4, s) * 20) | 0);
         for (let x = lx; x < lx + lw && x < W - 2; x++) for (let yy = ly; yy < ly + 4; yy++) mat[yy * W + x] = ROCK;
       }
-    } else { walk(last.x, last.y + last.rh * 0.2); tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s, path); seg(exitX, H - BOT + 4, exitX, H - 22); }
+    } else { tunnel(last.x, last.y, exitX, H - BOT + 4, 7, s); seg(last.x, last.y, exitX, H - BOT + 4); seg(exitX, H - BOT + 4, exitX, H - 22); }
     // a second drain on the far side: you choose where the next layer goes
     const exits = [exitX];
     if (!plan.boss) {
-      const x2 = clamp(exitX > W / 2 ? exitX - 120 : exitX + 120, 34, W - 34);
+      const x2 = clamp(exitX > W / 2 ? exitX - 140 : exitX + 140, 34, W - 34);
       tunnel(last.x, last.y, x2, H - BOT + 4, 6, s);
       exits.push(x2);
     }
@@ -2683,13 +2819,15 @@ const World = (() => {
     // 4. side rooms off the route: gold, or the stratum's liquid
     const sides = [];
     for (const r of rooms) {
-      if (R() > 0.6) continue;
-      const rw = 13 + R() * 8, rh = 9 + R() * 4;
+      if (R() > 0.75) continue;
+      const cave = R() < 0.35 ? CAVE_SHAPES[(R() * CAVE_SHAPES.length) | 0] : null;
+      const rw = cave ? 22 + R() * 10 : 13 + R() * 8, rh = cave ? clamp(rw * cave.h / cave.w, 10, 26) : 9 + R() * 4;
       const left = r.x > W / 2;
       const x = left ? clamp(r.x - r.rw - 22 - rw, 10 + rw, W - 10 - rw) : clamp(r.x + r.rw + 22 + rw, 10 + rw, W - 10 - rw);
       if (Math.abs(x - r.x) < r.rw + rw) continue;
-      const sr = { x, y: r.y + (R() - 0.3) * 10, rw, rh, band: r.band, main: false };
+      const sr = { x, y: r.y + (R() - 0.3) * 10, rw, rh, band: r.band, main: false, mask: cave };
       carveRoom(sr, s);
+      if (cave) tunnel(sr.x - sr.rw * 0.5, sr.y, sr.x + sr.rw * 0.5, sr.y, 4, s);
       tunnel(r.x + (left ? -1 : 1) * r.rw * 0.6, r.y - r.rh * 0.1, sr.x + (left ? 1 : -1) * sr.rw * 0.5, sr.y - sr.rh * 0.55, 5, s);
       sides.push(sr);
     }
@@ -2743,7 +2881,7 @@ const World = (() => {
         else for (let k = 0; k < 40; k++) put(r.x + (R() - 0.5) * pw, fy + depth - 2 - R() * 3, GOLD);
       }
       // a lamp hangs on a chain in most rooms
-      if (r.main && R() < 0.75) {
+      if (r.main && (r.rest || R() < 0.75)) {
         const x = r.x + (R() - 0.5) * r.rw * 0.8, cy = ceilAt(x, r.y - 2);
         if (cy > 0 && r.y - cy < 40) lamps.push({ x: x | 0, top: cy + 1, y: cy + 4 + ((R() * 6) | 0), lit: true });
       }
@@ -2842,7 +2980,7 @@ const World = (() => {
     // small lights on cave floors: candles, crystals, mushrooms, or embers, by look
     const glows = [];
     const glowColor = { crypt: 0xffd070, cistern: 0x7fd8ff, garden: 0x9cff6a, forge: 0xff8a3a }[plan.theme];
-    for (let tries = 0; tries < 900 && glows.length < 26; tries++) {
+    for (let tries = 0; tries < 3600 && glows.length < (26 * W) / 256; tries++) {
       const x = 6 + ((R() * (W - 12)) | 0), y = TOP + 10 + ((R() * (floorY - TOP - 20)) | 0), i = y * W + x;
       if (mat[i] !== EMPTY || mat[i - W] !== EMPTY || KIND[mat[i + W]] !== K.SOLID) continue;
       if (glows.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) < 24)) continue;
@@ -2850,6 +2988,12 @@ const World = (() => {
     }
     // a few side rooms hold a chest in place of loose gold
     for (const r of sides) if (!LIQ[r.band.pocket] && R() < 0.35) { chests.push({ x: r.x | 0, y: floorOf(r), open: false }); r.chest = true; }
+    // dead ends pay for the detour: a cooler or a heap of gold. Blind tunnels sometimes end in gold too.
+    for (const r of rooms) if (r.dead) {
+      if (R() < 0.55) chests.push({ x: r.x | 0, y: floorOf(r), open: false, rich: R() < 0.3 });
+      else for (let k = 0; k < 50; k++) put(r.x + (R() - 0.5) * r.rw, floorOf(r) - 1 - R() * 4, GOLD);
+    }
+    for (const t of stubs) if (t.gold) for (let k = 0; k < 24; k++) put(t.x + (R() - 0.5) * 8, t.y + 3 - R() * 4, GOLD);
 
     // 5. sand keeps a crust of earth, so rooms do not fill in on their own
     for (let yy = TOP; yy < floorY; yy++) for (let x = 3; x < W - 3; x++) {
@@ -2941,7 +3085,7 @@ const World = (() => {
         if (hash2(x, y, s + 90) > 0.985 && y < 28) t = 4;
         const tree = 30 - 9 * Math.abs(Math.sin(x / 11 + vnoise(x / 9, 0, s + 91) * 2)) - vnoise(x / 4, 1, s + 92) * 5;
         if (y > tree) t = y > tree + 3 ? 5 : 6;
-        if (Math.hypot(x - 200, y - 11) < 5) t = 7;
+        if (Math.hypot(x - W * 0.78, y - 11) < 5) t = 7;
         // the back wall of the outhouse: dark planks
         if (Math.abs(x - W / 2) < 9 && y > 8 && y < 31) t = (x - W / 2 + 9) % 4 === 0 ? 8 : 9;
         sky[i] = t;
@@ -2970,14 +3114,33 @@ const World = (() => {
       ao[y * W + x] = f < 0.18 ? 0 : f < 0.36 ? 1 : f < 0.55 ? 2 : 3;
     }
   }
-  // a room: an ellipse with a rough wall and a flat floor
+  // a room: an ellipse with a rough wall and a flat floor, or a cave shape
   function carveRoom(r, s) {
+    if (r.mask) return stampCave(r, s);
     for (let dy = -r.rh - 3; dy <= r.rh; dy++) for (let dx = -r.rw - 4; dx <= r.rw + 4; dx++) {
       const x = (r.x + dx) | 0, y = (r.y + dy) | 0;
       if (x < 3 || y < 3 || x >= W - 3 || y >= H - 3) continue;
       if (dy > r.rh * 0.6 + (vnoise(x / 6, 3, s + 62) - 0.5) * 3) continue;
       const nx = dx / r.rw, ny = dy / r.rh;
       if (nx * nx + ny * ny + (vnoise(x / 7, y / 7, s + 61) - 0.5) * 0.5 < 1) { mat[y * W + x] = EMPTY; life[y * W + x] = 0; }
+    }
+  }
+  // stamp a cave shape over the room's box, with noise on the edges so it does not look scaled up.
+  // A lake cave fills its low basin with the stratum's liquid.
+  function stampCave(r, s) {
+    const M = r.mask, x0 = r.x - r.rw, y0 = r.y - r.rh, sw = r.rw * 2, sh = r.rh * 2;
+    for (let yy = Math.floor(y0); yy < y0 + sh; yy++) for (let xx = Math.floor(x0); xx < x0 + sw; xx++) {
+      if (xx < 3 || yy < TOP + 4 || xx >= W - 3 || yy >= H - BOT) continue;
+      const u = ((xx - x0) / sw) * M.w + (vnoise(xx / 5, yy / 5, s + 81) - 0.5) * 1.3, v = ((yy - y0) / sh) * M.h + (vnoise(xx / 5, yy / 5, s + 82) - 0.5) * 1.3;
+      const ui = u | 0, vi = v | 0;
+      if (ui < 0 || vi < 0 || ui >= M.w || vi >= M.h || !M.g[vi * M.w + ui]) continue;
+      const i = yy * W + xx;
+      if (mat[i] !== BEDROCK) { mat[i] = EMPTY; life[i] = 0; }
+    }
+    const liq = LIQ[r.band.pocket];
+    if (M.name === "lake" && liq && liq !== MIASMA) for (let yy = Math.floor(r.y + r.rh * 0.35); yy < r.y + r.rh; yy++) for (let xx = Math.floor(x0); xx < x0 + sw; xx++) {
+      const i = yy * W + xx;
+      if (inb(xx, yy) && mat[i] === EMPTY) mat[i] = liq;
     }
   }
   // a passage with a gentle wobble, wide enough to walk or fall through
@@ -3019,7 +3182,7 @@ const World = (() => {
     }
   }
 
-  return { mat, life, shade, far, ao, sky, BGPAL, SKYPAL, get hasSky() { return hasSky; }, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
+  return { debris, mat, life, shade, far, ao, sky, BGPAL, SKYPAL, get hasSky() { return hasSky; }, get bg() { return bg; }, PAL, RIM, FIRE_PAL, NB, set, place, at, inb, step, wakeAll, explode, spill, survey, ignite, generate, carve, clearArea, lifeFor, get tick() { return tick; }, get theme() { return theme; }, abgr, stats };
 })();
 
 /* ------------------------------------------------------------------ bodies: the player, foes, spells */
@@ -3235,7 +3398,12 @@ function hurtPlayer(dmg, cause, raw) {
   if (!raw) {
     if (p.hurtT > 0 || p.roll > 0 || p.pound) return;
     if (p.aegisT > 0) { p.aegisT = 0; p.hurtT = 0.6; addFx(p.x + 2, p.y + 5, 0xb39ddb, 14); SFX.zap(); return; }
-    p.hurtT = 0.35;
+    // a hit knocks you clear and gives you time to recover, so critters cannot chain hits while you stand in them
+    p.hurtT = 0.8;
+    let src = null, sd = 1e9;
+    for (const f of Game.foes) { if (f.dead || f.kind !== cause) continue; const d = Math.abs(f.x + f.w / 2 - p.x - p.w / 2) + Math.abs(f.y - p.y); if (d < sd) { sd = d; src = f; } }
+    const kd = src ? Math.sign(p.x + p.w / 2 - src.x - src.w / 2) || -p.face : -p.face;
+    p.vx = kd * 2.4; p.vy = Math.min(p.vy, -1.6);
   }
   if (Game.frenzyT > 0 && FOES[cause]) return;
   dmg *= run.armor * (1 - 0.12 * boon("moose"));
@@ -3254,7 +3422,16 @@ function hurtPlayer(dmg, cause, raw) {
   run.hp -= dmg;
   run.lastHitBy = cause;
   p.flash = 0.15;
-  if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); }
+  if (dmg >= 3) { SFX.hurt(); Game.cam.shake = Math.min(6, Game.cam.shake + dmg * 0.25); Game.nums.push({ x: p.x + 2, y: p.y - 2, v: Math.round(dmg), t: 0.8, hurt: true }); }
+  else if (raw) {
+    p.rawAcc = (p.rawAcc || 0) + dmg;
+    const now2 = performance.now();
+    if (p.rawAcc >= 2 && now2 - (p.rawT || 0) > 280) {
+      p.rawT = now2; SFX.hurt(); Game.cam.shake = Math.min(4, Game.cam.shake + 1.5); p.flash = 0.2;
+      Game.nums.push({ x: p.x + 2, y: p.y - 2, v: Math.round(p.rawAcc), t: 0.7, hurt: true });
+      p.rawAcc = 0;
+    }
+  }
   if (run.hp <= 0 && run.secondWind) {
     run.secondWind = false; run.hp = Math.round(run.maxHp * 0.3); run.curse = 0; p.hurtT = 1.2;
     Game.flashes.push({ x: p.x + 2, y: p.y + 5, r: 30, t: 0.5 }); SFX.well();
@@ -3757,16 +3934,39 @@ function updatePlayer(dt) {
   if (!p || run.over) return;
   const c = envTick(p, dt, true);
   const inLiquid = c.frac > 0.25;
-  const accel = p.ground ? 0.34 : 0.27;
-  p.vx += inp.x * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
-  p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
-  p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
-  if (inp.x) p.face = inp.x > 0 ? 1 : -1;
-  p.vy += inLiquid ? 0.05 : 0.15;
+  // a quick turn: pushing against your own speed bites harder than speeding up
+  const turning = inp.x && p.vx && Math.sign(inp.x) !== Math.sign(p.vx);
+  const accel = (p.ground ? 0.34 : 0.27) * (turning ? 1.7 : 1);
+  // after a wall jump the push away from the wall wins for a moment
+  const steer = p.wallLock > 0 ? 0 : inp.x;
+  p.wallLock = Math.max(0, (p.wallLock || 0) - dt);
+  p.vx += steer * accel * run.speedMult * (run.swim && inLiquid ? 1.4 : 1);
+  // a roll keeps its own speed; only walking is held to the run speed
+  if (p.roll <= 0) {
+    p.vx *= p.ground ? 0.78 : inLiquid ? (run.swim ? 0.92 : 0.86) : 0.93;
+    p.vx = clamp(p.vx, -1.9 * run.speedMult, 1.9 * run.speedMult);
+  }
+  if (steer) p.face = steer > 0 ? 1 : -1;
+  // falling pulls harder than rising, and the top of a jump hangs a moment, so jumps feel weighty but floaty at the peak
+  const apex = !p.ground && Math.abs(p.vy) < 0.6 && inp.up;
+  p.vy += inLiquid ? 0.05 : p.vy > 0 ? 0.19 : apex ? 0.09 : 0.15;
+  // let go of jump on the way up for a short hop
+  if (p.rising && !inp.up && p.vy < -0.8 && !inLiquid) { p.vy *= 0.5; p.rising = false; }
+  if (p.vy >= 0) p.rising = false;
+  // wall slide: push into a wall in the air to slow your fall, then jump off it
+  const wallDir = !p.ground && !inLiquid && inp.x && boxHits(p.x + Math.sign(inp.x), p.y, p.w, p.h) ? Math.sign(inp.x) : 0;
+  if (wallDir) { p.wall = wallDir; p.wallT = 0.12; if (p.vy > 0.9) { p.vy = 0.9; if ((World.tick & 3) === 0) Game.fx.push({ x: p.x + (wallDir > 0 ? p.w : 0), y: p.y + 3, vx: -wallDir * 0.2, vy: -0.2, t: 0.3, c: World.abgr(0xb8a888) }); } }
+  else p.wallT = Math.max(0, (p.wallT || 0) - dt);
   // a short grace after leaving a ledge, and a jump pressed just before landing still counts
   p.coyote = p.ground ? 0.1 : Math.max(0, (p.coyote || 0) - dt);
   p.jumpBuf = inp.jumpEdge ? 0.12 : Math.max(0, (p.jumpBuf || 0) - dt);
-  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; p.roll = Math.min(p.roll, 0.05); }
+  if (p.jumpBuf > 0 && p.coyote > 0) { p.vy = -3.3; p.jumpBuf = 0; p.coyote = 0; p.roll = Math.min(p.roll, 0.05); p.rising = true; p.jumped = true; }
+  else if (p.jumpBuf > 0 && p.wallT > 0 && !p.ground) {
+    // wall jump: up and away from the wall
+    p.vy = -3.1; p.vx = -p.wall * 2.1; p.face = -p.wall; p.wallLock = 0.14; p.wallT = 0; p.jumpBuf = 0; p.rising = true; p.jumped = true;
+    for (let k = 0; k < 5; k++) Game.fx.push({ x: p.x + (p.wall > 0 ? p.w : 0), y: p.y + 5 + (rnd() - 0.5) * 4, vx: -p.wall * rnd() * 0.8, vy: -rnd() * 0.6, t: 0.35, c: World.abgr(0xc8b898) });
+    SFX.roll();
+  }
   else if (inp.up && !p.ground && p.lift > 0 && p.vy > -2.1) {
     p.vy -= 0.34;
     p.lift = Math.max(0, p.lift - dt / run.liftMax);
@@ -3774,9 +3974,23 @@ function updatePlayer(dt) {
   if (inp.down && !p.ground && !inp.keyAim) p.vy += inLiquid ? 0.1 : 0.12;
   if (inLiquid) { p.vy *= 0.9; if (inp.up) p.vy -= 0.12; }
   if (p.ground) p.lift = Math.min(1, p.lift + dt / 0.6);
-  p.vy = clamp(p.vy, -3.2, 4);
+  p.vy = clamp(p.vy, -3.4, 4.4);
   inp.jumpEdge = false;
-  moveBody(p, p.vx, p.vy);
+  const wasGround = p.ground, vyBefore = p.vy, xBefore = p.x;
+  const hit = moveBody(p, p.vx, p.vy);
+  // corner correction: a jump that clips a ceiling edge slides around it
+  if (hit.hitY && vyBefore < 0) for (let k = 1; k <= 3; k++) {
+    const d = [k, -k].find((dd) => !boxHits(p.x + dd, p.y - 1, p.w, p.h) && !boxHits(p.x + dd, p.y, p.w, p.h));
+    if (d) { p.x += d; p.vy = vyBefore; moveBody(p, 0, vyBefore); break; }
+  }
+  // walking down a slope keeps your feet on it, with no hop off each step
+  if (wasGround && !p.ground && vyBefore >= 0 && !p.jumped) for (let k = 1; k <= 3; k++) if (boxHits(p.x, p.y + k + 1, p.w, p.h) && !boxHits(p.x, p.y + k, p.w, p.h)) { p.y += k; p.ground = true; p.vy = 0; break; }
+  // landing: remember how hard, for the squash and the dust
+  if (!wasGround && p.ground) {
+    p.landV = vyBefore; p.jumped = false;
+    if (vyBefore > 2.4) for (let k = 0; k < 6; k++) Game.fx.push({ x: p.x + p.w / 2 + (rnd() - 0.5) * 6, y: p.y + p.h - 1, vx: (rnd() - 0.5) * 1.4, vy: -rnd() * 0.5, t: 0.3 + rnd() * 0.2, c: World.abgr(0xb8a888) });
+  }
+  if (p.ground) p.jumped = false;
   unstick(p);
   p.hurtT = Math.max(0, p.hurtT - dt);
   p.aegisT = Math.max(0, p.aegisT - dt);
@@ -3794,15 +4008,22 @@ function updatePlayer(dt) {
   }
   p.stamT = Math.max(0, (p.stamT || 0) - dt);
   if (p.stamT <= 0) p.stam = Math.min(1, p.stam + dt * 0.28);
-  Game.noise = Math.max(0, (Game.noise || 0) - dt * 0.05);
+  Game.noise = Math.max(0, (Game.noise || 0) - dt * 0.16);
+  if (Game.noise > 0.7 && !Game.noiseWarned) { Game.noiseWarned = true; Game.cam.shake = Math.min(5, Game.cam.shake + 3); SFX.rumble(); UI.hint("The ground groans. Stop digging for a moment, or it answers.", 2600); }
+  if (Game.noise < 0.3) Game.noiseWarned = false;
   updateCombat(p, dt);
   if (inp.flaskEdge) { inp.flaskEdge = false; drinkFlask(p); }
-  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Hold Shovel and push the stick the way you want to dig." : "Stuck? Hold F or Shift to plunge through the dirt toward the cursor.", 4500); }
+  // tips the first time they matter: hover on a long fall, a hot dog when you are hurt
+  const tips = Memory.data.tips || (Memory.data.tips = {}), touch = matchMedia("(pointer: coarse)").matches;
+  if (!tips.hover && p.vy > 3 && !p.ground && p.lift > 0.9 && Game.levelT > 4) { tips.hover = 1; Memory.save(); UI.hint(touch ? "Falling fast? Push up on the stick to hover with the leaf blower." : "Falling fast? Hold W or Space in the air to hover with the leaf blower.", 3200); }
+  if (!tips.eat && run.hp / run.maxHp < 0.4 && run.flasks > 0) { tips.eat = 1; Memory.save(); UI.hint(touch ? "Hurt? Tap the hot dog to eat it." : "Hurt? Press R to eat a hot dog.", 3200); }
+  if (!tips.wall && p.wallT > 0.1 && p.vy > 0.5) { tips.wall = 1; Memory.save(); UI.hint("Push into a wall to slide down it. Jump to kick off.", 3000); }
+  if (Game.idleT > 9 && !Game.digHinted) { Game.digHinted = true; UI.hint(matchMedia("(pointer: coarse)").matches ? "Stuck? Hold Shovel and push the stick the way you want to dig." : "Stuck? Hold F to dig through the dirt toward the cursor.", 4500); }
   // wands lying in the caves
   Game.nearPickup = null; Game.nearCursed = null;
   for (const pk of Game.pickups) {
     if (Math.hypot(pk.x - (p.x + 2), pk.y - (p.y + 6)) > 9) continue;
-    if (pk.scroll || pk.golden) takePickup(pk);
+    if (pk.scroll || pk.golden || pk.hotdog) takePickup(pk);
     else if (pk.wand && run.wands.length < 3 && !pk.dropped) takePickup(pk);
     else Game.nearPickup = pk;
     break;
@@ -3810,6 +4031,8 @@ function updatePlayer(dt) {
   for (const c of Game.chests) if (!c.open && Math.abs(c.x - (p.x + 2)) < 6 && Math.abs(c.y - (p.y + p.h)) < 6) { if (c.cursed) Game.nearCursed = c; else openChest(c); }
   if (inp.swapEdge) { if (Game.nearPickup) takePickup(Game.nearPickup); else if (Game.nearCursed) openChest(Game.nearCursed, true); }
   inp.swapEdge = false;
+  // a quiet room: say so once
+  if ((World.tick & 15) === 0 && Game.level) for (const r of Game.level.rooms) if (r.rest && !r.greeted && Math.abs(p.x - r.x) < r.rw && Math.abs(p.y - r.y) < r.rh) { r.greeted = true; UI.hint("A quiet room. Nothing lives here. Catch your breath.", 2600); }
   // progress, for the Cottage's sense of a stall
   if (p.y > Game.bestY + 6) { Game.bestY = p.y; Game.idleT = 0; } else Game.idleT += dt;
   // the well
@@ -3977,6 +4200,13 @@ function takePickup(pk) {
   if (i < 0) return;
   Game.pickups.splice(i, 1);
   if (pk.scroll) { SFX.well(); UI.chooseScroll(); return; }
+  if (pk.hotdog) {
+    SFX.coin();
+    if (run.flasks < run.flaskMax) { run.flasks++; UI.hint("A hot dog for later.", 1600); }
+    else { const h = Math.round(run.maxHp * 0.25); run.hp = Math.min(run.maxHp, run.hp + h); UI.hint("You eat it now. +" + h + " health.", 1600); }
+    UI.hud(true);
+    return;
+  }
   if (pk.golden) {
     // Pac-Man's power pellet: for a few seconds the critters flee, cannot hurt you, and each kill scores double the last
     Game.frenzyT = 8; Game.frenzyChain = 0;
@@ -4074,7 +4304,7 @@ function updateFoes(dt) {
         const want = Math.atan2(dy - 14, dx), hold = dist > 34 ? 1 : -1;
         f.vx = f.vx * 0.9 + Math.cos(want) * 0.12 * hold * (f.elite ? 1.3 : 1); f.vy = f.vy * 0.9 + Math.sin(want) * 0.12 * hold;
         moveBody(f, f.vx * 1.6, f.vy * 1.6);
-        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35 * Tune.get("windup"); }
+        if (f.cd <= 0 && dist < 80) { f.state = "wind"; f.dashT = 0.35 * Tune.get("windup"); SFX.clink(); }
       }
     } else if (d.ai === "fly") {
       const a = Math.atan2(dy + Math.sin(f.t * 3) * 6, dx);
@@ -4088,7 +4318,7 @@ function updateFoes(dt) {
     } else {
       let want = dir;
       if (d.ai === "spit" && dist < 50) want = -dir;
-      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35 * Tune.get("windup"); }
+      if (d.ai === "spit" && dist < 110 && f.cd <= 0 && !f.windT) { f.windT = 0.35 * Tune.get("windup"); SFX.clink(); }
       if (f.windT > 0) { f.windT -= dt; f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0); want = 0; }
       if (d.ai === "spit" && f.windT < 0) {
         f.windT = 0;
@@ -4099,7 +4329,8 @@ function updateFoes(dt) {
       // the moose lowers its head, then charges
       if (d.ai === "brute") {
         if (f.charge > 0) { f.charge -= dt; want = f.chargeDir * 3.2; if (f.charge <= 0) f.cd = 2 + rnd(); }
-        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45 * Tune.get("windup"); f.chargeDir = dir; }
+        else if (!f.windT && f.cd <= 0 && dist < 70 && Math.abs(dy) < 14) { f.windT = 0.45 * Tune.get("windup"); f.chargeDir = dir; SFX.clink(); }
+        if (f.windT > 0) f.flash = Math.max(f.flash, ((f.windT * 20) | 0) % 2 ? 0.05 : 0);
         if (f.windT < 0) { f.windT = 0; f.charge = 0.55; SFX.zap(); }
       }
       if (d.ai === "bomb") {
@@ -4147,16 +4378,20 @@ function updateHand(f, dt, dx, dy) {
     f.vx += clamp(tx - f.x, -1, 1) * 0.05; f.vy += clamp(ty - f.y, -1, 1) * 0.05;
     f.vx *= 0.94; f.vy *= 0.94;
     f.x = clamp(f.x + f.vx, 4, W - 4 - f.w); f.y = clamp(f.y + f.vy, Game.level.arenaTop + 4, H - 40);
-    if (f.cd <= 0) { if (Math.abs(dx) < 30 && dy > 10) { f.state = "slam"; f.vy = 0; } else f.cd = 0.8; }
+    if (f.cd <= 0) { if (Math.abs(dx) < 30 && dy > 10) { f.state = "tell"; f.tellT = 0.5 * Tune.get("windup"); f.vx = f.vy = 0; SFX.rumble(); } else f.cd = 0.8; }
+  } else if (f.state === "tell") {
+    f.tellT -= dt; f.flash = ((f.tellT * 20) | 0) % 2 ? 0.05 : 0;
+    f.x += Math.sin(f.tellT * 70) * 0.6;
+    if (f.tellT <= 0) { f.state = "slam"; f.vy = 0; }
   } else if (f.state === "slam") {
     f.vy = Math.min(5, f.vy + 0.35);
     const r = moveBody(f, 0, f.vy);
     if (r.hitY || f.y > H - 40) {
       blast(f.x + f.w / 2, f.y + f.h, 11, 3, 24, f.kind, f);
-      f.state = "rise"; f.cd = 1.2;
+      f.state = "rise"; f.cd = 1.2; f.downT = 0.7;
     }
   } else if (f.state === "rise") {
-    f.y -= 1.2;
+    if (f.downT > 0) f.downT -= dt; else f.y -= 1.2;
     if (f.cd <= 0) { f.state = "hover"; f.cd = 2.5 + rnd() * 1.5; }
   }
   Game.handT -= dt;
@@ -4188,7 +4423,10 @@ function handDown() {
   Memory.save();
   SFX.roar();
   Cottage.bark("hand_dead", run).then((l) => UI.voice(l));
-  UI.hint("The drain is open.");
+  // a boss pays out: a scroll of power and a rich cooler at your feet
+  const p = Game.player;
+  if (p) { Game.pickups.push({ x: p.x + 10, y: p.y - 3, scroll: true, bob: 0 }); Game.chests.push({ x: Math.round(p.x - 8), y: Math.round(p.y + p.h), open: false, rich: true }); }
+  UI.hint("The drain is open. It left something behind.");
 }
 function spawnFoe(kind, x, y) {
   const f = makeFoe(kind, x, y);
@@ -4234,6 +4472,10 @@ function updateCaps(dt) {
 }
 function pipeAt(x, y) { return (Game.pipes || []).find((q) => y >= q.y && y <= q.y + 1 && x >= q.x1 && x <= q.x2); }
 function explodeTank(t) {
+  if (t.dead || t.fuse > 0) return;
+  t.fuse = 1.1; SFX.sizzle();
+}
+function boomTank(t) {
   if (t.dead) return;
   t.dead = true;
   for (let yy = t.y - 8; yy < t.y; yy++) for (let q = -3; q <= 3; q++) if (World.at(t.x + q, yy) === METAL) World.set(yy * W + t.x + q, EMPTY);
@@ -4268,6 +4510,7 @@ function updateProps(dt) {
   for (const t of Game.props || []) {
     if (t.dead) continue;
     if (t.kind === "tank") {
+      if (t.fuse > 0) { t.fuse -= dt; if (((t.fuse * 10) | 0) % 3 === 0) Game.fx.push({ x: t.x + (rnd() - 0.5) * 4, y: t.y - 9, vx: (rnd() - 0.5) * 0.4, vy: -0.6, t: 0.4, c: World.abgr(0xfff0c0) }); if (t.fuse <= 0) boomTank(t); continue; }
       if ((tick & 7) !== 0) continue;
       let metal = 0, hot = 0;
       for (let yy = t.y - 9; yy <= t.y; yy++) for (let q = -3; q <= 3; q++) { const m = World.at(t.x + q, yy); if (m === METAL) metal++; else if (m === FIRE || m === EMBER || m === LAVA) hot++; }
@@ -4278,8 +4521,8 @@ function updateProps(dt) {
       if (!p || run.over) continue;
       const d = Math.hypot(p.x + 2 - t.x, p.y + 5 - t.y);
       t.t -= dt;
-      if (d < 80 && t.t <= 0 && Game.foes.filter((f) => f.nest === t && !f.dead).length < 3) {
-        const f = spawnFoe("hornet", t.x - 2, t.y + 10); f.nest = t; t.t = 3.2; t.wob = 0.3;
+      if (d < 80 && t.t <= 0 && (t.made || 0) < 6 && Game.foes.filter((f) => f.nest === t && !f.dead).length < 3) {
+        const f = spawnFoe("hornet", t.x - 2, t.y + 10); f.nest = t; t.t = 3.2; t.wob = 0.3; t.made = (t.made || 0) + 1;
       }
       // fire burns a nest down
       if ((tick & 7) === 0 && [World.at(t.x, t.y + 4), World.at(t.x - 2, t.y + 8), World.at(t.x + 2, t.y + 8)].some((m) => m === FIRE || m === LAVA)) hitNest(t, 6);
@@ -4415,7 +4658,11 @@ async function cottageWatch() {
 const DIGITS = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001111", "!": "010010010000010", "+": "000010111010000" };
 const Render = (() => {
   const wc = $("#world"), dc = $("#dark"), ac = $("#actors");
-  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actx = ac.getContext("2d");
+  const wctx = wc.getContext("2d"), dctx = dc.getContext("2d"), actxMain = ac.getContext("2d");
+  // in Painted mode the crew and critters draw at 2 pixels per world cell, then scale up sharp with a dark outline,
+  // so they sit on the same pixel grid as the ground
+  const PX = 2, pix = document.createElement("canvas"), pctx = pix.getContext("2d"), edge = document.createElement("canvas"), ectx = edge.getContext("2d");
+  let actx = actxMain, KS = 1;
   // colored light: one soft stamp per color, added on top of the darkness
   const tints = new Map();
   function tint(hex) {
@@ -4482,11 +4729,33 @@ const Render = (() => {
   }
 
   // one picture, flipped to face its way, with its feet (or its middle, for flyers) at a world point
-  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost) {
-    const k = scale * adpr, w = dw * k, h = dw * (sh / sw) * k;
+  // a springy pose for a body: squash when it lands, stretch when it leaps, a bob and a lean as it runs, and a quick turn
+  function animBody(e, dt, grounded, vx, vy, fly) {
+    const a = e.an || (e.an = { s: 1, v: 0, lean: 0, face: e.face || 1, ph: Math.random() * 6, wasG: grounded });
+    dt = Math.min(dt, 0.05);
+    const sp = Math.abs(vx);
+    let target = 1;
+    if (!fly && !grounded) target = vy < -1 ? 1.1 : vy > 1.6 ? 1.05 : 1;
+    if (!fly && grounded && !a.wasG) a.v -= Math.min(9, 2.5 + Math.abs(e.landV || 2) * 1.6);
+    if (!fly && !grounded && a.wasG && vy < -1) a.v += 4;
+    a.wasG = grounded;
+    a.v += (target - a.s) * 240 * dt; a.v *= Math.exp(-16 * dt); a.s = clamp(a.s + a.v * dt, 0.7, 1.3);
+    const running = !fly && grounded && sp > 0.15;
+    a.ph += dt * (fly ? 9 : running ? sp * 12 : 2.4);
+    const bob = fly ? Math.sin(a.ph) * 0.7 : running ? Math.abs(Math.sin(a.ph)) * Math.min(1.1, sp * 0.6) : 0;
+    const tl = clamp(vx * 0.08 + (!grounded && !fly ? clamp(vy, -3, 3) * 0.02 * (Math.sign(vx) || 0) : 0), -0.26, 0.26);
+    a.lean += (tl - a.lean) * (1 - Math.exp(-12 * dt));
+    a.face += ((e.face || 1) - a.face) * (1 - Math.exp(-24 * dt));
+    const sy = a.s + (running ? Math.cos(a.ph * 2) * 0.03 : !fly && grounded ? Math.sin(a.ph) * 0.015 : 0);
+    return { pose: { sx: Math.max(0.15, Math.abs(a.face)) / Math.sqrt(sy), sy, lean: a.lean }, bob, flip: a.face < 0 };
+  }
+  function actor(src, sx, sy, sw, sh, wx, wy, dw, flip, flash, mid, key, rot, ghost, pose) {
+    const k = KS, w = dw * k, h = dw * (sh / sw) * k;
     const x = wx * k, y = wy * k;
     actx.save();
     actx.translate(x, y);
+    // pose: a lean about the feet, and squash and stretch
+    if (pose) { if (pose.lean) actx.rotate(pose.lean); actx.scale(pose.sx, pose.sy); }
     if (flip) actx.scale(-1, 1);
     let top = mid ? -h / 2 : -h;
     if (rot) { actx.translate(0, top + h / 2); actx.rotate(rot); top = -h / 2; }
@@ -4530,22 +4799,36 @@ const Render = (() => {
     weaponShape(run.melee, len, k);
     actx.restore();
   }
-  function drawActors(ox, oy) {
-    actx.setTransform(1, 0, 0, 1, 0, 0);
-    actx.clearRect(0, 0, ac.width, ac.height);
+  function drawActors(ox, oy, dt) {
+    actxMain.setTransform(1, 0, 0, 1, 0, 0);
+    actxMain.clearRect(0, 0, ac.width, ac.height);
+    const pixel = Paint.on;
+    if (pixel) {
+      const pw = vw * PX, ph = vh * PX;
+      if (pix.width !== pw || pix.height !== ph) { pix.width = edge.width = pw; pix.height = edge.height = ph; }
+      pctx.setTransform(1, 0, 0, 1, 0, 0);
+      pctx.clearRect(0, 0, pw, ph);
+      actx = pctx;
+    } else actx = actxMain;
     actx.imageSmoothingEnabled = true;
     actx.imageSmoothingQuality = "high";
-    const k = scale * adpr;
-    // melee weapons lying on the ground
-    for (const pk of Game.pickups) {
-      if (!pk.melee) continue;
-      actx.save();
-      actx.translate((pk.x - ox) * k, (pk.y + Math.sin(pk.bob) * 1.5 - oy) * k);
-      actx.rotate(-0.8);
-      actx.translate(-5 * k, 0);
-      weaponShape(pk.melee, 9, k);
-      actx.restore();
+    const k = KS = pixel ? PX : scale * adpr;
+    drawActorBody(ox, oy, k, dt || 1 / 60);
+    actx = actxMain; KS = scale * adpr;
+    if (pixel) {
+      // a one-pixel dark outline, then the sprites, all scaled up without smoothing
+      ectx.globalCompositeOperation = "copy"; ectx.drawImage(pix, 0, 0);
+      ectx.globalCompositeOperation = "source-in"; ectx.fillStyle = "#0b0907"; ectx.fillRect(0, 0, edge.width, edge.height);
+      ectx.globalCompositeOperation = "source-over";
+      const s = KS / PX, W2 = pix.width * s, H2 = pix.height * s;
+      actxMain.imageSmoothingEnabled = false;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) actxMain.drawImage(edge, dx * s, dy * s, W2, H2);
+      actxMain.drawImage(pix, 0, 0, W2, H2);
+      actxMain.imageSmoothingEnabled = true;
     }
+    drainLabels(ox, oy, KS);
+  }
+  function drainLabels(ox, oy, k) {
     // the drains are labeled with where they lead
     const L = Game.level;
     if (L && L.exits && L.exits.length > 1) {
@@ -4561,6 +4844,18 @@ const Render = (() => {
         if (e.rich) { const t2 = "richer, harder"; actx.font = "700 " + Math.round(9.5 * adpr) + "px Alegreya Sans, sans-serif"; actx.strokeText(t2, tx, ty + 12 * adpr); actx.fillText(t2, tx, ty + 12 * adpr); }
       }
     }
+  }
+  function drawActorBody(ox, oy, k, dt) {
+    // melee weapons lying on the ground
+    for (const pk of Game.pickups) {
+      if (!pk.melee) continue;
+      actx.save();
+      actx.translate((pk.x - ox) * k, (pk.y + Math.sin(pk.bob) * 1.5 - oy) * k);
+      actx.rotate(-0.8);
+      actx.translate(-5 * k, 0);
+      weaponShape(pk.melee, 9, k);
+      actx.restore();
+    }
     // hornet nests hang from the ceilings and shake when hit
     const nest = Art.get("c_nest");
     if (nest) for (const n of Game.props || []) {
@@ -4569,29 +4864,36 @@ const Render = (() => {
       actor(fr, 0, 0, fr.width, fr.height, n.x - ox + wob, n.y + 12 - oy, 10, false, n.wob > 0.2, false, "nest");
     }
     for (const f of Game.foes) {
-      const d = f.d, a = Art.get(d.art) || Art.get("c_king");
+      const d = f.d, a0 = Art.get(d.art) || Art.get("c_king"), px = Paint.on && Art.get("px_" + d.art);
+      // a pixel sprite stands as tall as the old art did
+      const a = px || a0, f0 = a0.frames ? a0.frames[0] : null, oldH = d.aw * (f0 ? f0.height / f0.width : a0.fh / a0.fw);
+      const dw = px ? oldH * (d.boss ? 1.15 : 0.85) * px.fw / px.fh : d.aw, akey = px ? "px_" + d.art : d.art;
       const fl = f.flash > 0 || (f.fuse && ((f.fuse * 20) | 0) % 2 === 0);
       const moving = Math.abs(f.vx) + Math.abs(f.vy) > 0.05;
       const act = f.fuse > 0 || f.state === "slam" || f.state === "dash" || (d.ai === "spit" && f.cd < 0.25);
       const mid = d.ai === "fly" || d.ai === "dash" || d.ai === "hand" || (d.ai === "hop" && !f.ground);
       const fr = act ? 8 : moving || mid ? ((f.t * 12) | 0) % 8 : 0;
-      const cx = f.x + f.w / 2 - ox, wy = mid ? f.y + f.h / 2 - oy : f.y + f.h + 1 - oy;
+      const [fx, fy] = ipos(f), an = animBody(f, dt, f.ground || d.ai === "hand", f.vx, f.vy, mid);
+      const cx = fx + f.w / 2 - ox, wy = (mid ? fy + f.h / 2 : fy + f.h + 1) - oy - an.bob;
       let top;
-      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, d.aw, f.face < 0, fl, mid, d.art + fr);
-      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, d.aw, f.face < 0, fl, mid, d.art + q); }
+      if (a.frames) top = actor(a.frames[fr], 0, 0, a.frames[fr].width, a.frames[fr].height, cx, wy, dw, an.flip, fl, mid, akey + fr, 0, 0, an.pose);
+      else { const n = Math.max(1, Math.round(a.img.width / a.fw)), q = act ? n - 1 : moving || mid ? ((f.t * 8) | 0) % Math.max(1, n - 1) : 0; top = actor(a.img, q * a.fw, 0, a.fw, a.fh, cx, wy, dw, an.flip, fl, mid, akey + q, 0, 0, an.pose); }
       if (f.elite) {
         const ex = cx * k, ey = (top - 2) * k, r = 1.6 * k;
         actx.fillStyle = "#e6c35c"; actx.strokeStyle = "#1b1608"; actx.lineWidth = Math.max(1, k * 0.35);
         actx.beginPath(); actx.moveTo(ex, ey - r); actx.lineTo(ex + r, ey); actx.lineTo(ex, ey + r); actx.lineTo(ex - r, ey); actx.closePath(); actx.fill(); actx.stroke();
       }
     }
-    const p = Game.player, c = Art.get("crew" + run.crew);
+    const p = Game.player, ck = (Paint.on && Art.get("pxcrew" + run.crew) ? "pxcrew" : "crew") + run.crew, c = Art.get(ck);
     if (p && !run.over && c) {
-      const dw = 14 * c.fw / c.fh;
+      const dw = (ck[0] === "p" ? 16 : 14) * c.fw / c.fh;
       // afterimages from rolls and pounds
-      for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, "crew" + run.crew, 0, g.t * 2.2);
+      for (const g of p.ghosts) actor(c.img, 0, 0, c.fw, c.fh, g.x + p.w / 2 - ox, g.y + p.h + 1.5 - oy, dw, g.face < 0, false, false, ck, 0, g.t * 2.2);
       const rot = p.roll > 0 ? (1 - p.roll / 0.28) * Math.PI * 2 * p.rollDir : 0;
-      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, p.x + p.w / 2 - ox, p.y + p.h + 1.5 - oy, dw, p.face < 0, p.flash > 0, false, "crew" + run.crew, rot);
+      const [hx, hy] = ipos(p), an = animBody(p, dt, p.ground, p.vx, p.vy, false);
+      // hugging a wall: lean into it
+      if (!p.ground && p.wallT > 0.05) an.pose.lean = p.wall * 0.12;
+      if (!(p.hurtT > 0 && p.roll <= 0 && !p.pound && ((p.hurtT * 20) | 0) % 2 === 0)) actor(c.img, 0, 0, c.fw, c.fh, hx + p.w / 2 - ox, hy + p.h + 1.5 - oy - an.bob, dw, an.flip, p.flash > 0, false, ck, rot, 0, rot ? null : an.pose);
       if (p.atk || p.pound) drawSwing(p, ox, oy, k);
     }
     // the shovel, swinging along your aim while you dig
@@ -4692,12 +4994,22 @@ const Render = (() => {
       if (tgt) {
         const dx = tgt.x - (p.x + 2), dy = tgt.y - (p.y + 5), d = Math.hypot(dx, dy);
         if (d > 10) {
+          // teal, so it does not blend with the yellow aim line
           const ux = dx / d, uy = dy / d, cx0 = p.x + 2 + ux * 11, cy0 = p.y + 5 + uy * 11;
-          const col = World.abgr(((tk >> 4) & 1) ? 0xe6c35c : 0xfff0a0);
-          for (let k = 0; k < 4; k++) px(cx0 + ux * k - ox, cy0 + uy * k - oy, col);
-          px(cx0 + ux * 2 - uy * 2 - ox, cy0 + uy * 2 + ux * 2 - oy, col);
-          px(cx0 + ux * 2 + uy * 2 - ox, cy0 + uy * 2 - ux * 2 - oy, col);
+          const col = World.abgr(((tk >> 4) & 1) ? 0x5fe8e0 : 0xc8fffa);
+          for (let k = 0; k < 6; k++) px(cx0 + ux * k - ox, cy0 + uy * k - oy, col);
+          for (const q of [3, 4]) { px(cx0 + ux * q - uy * (6 - q) - ox, cy0 + uy * q + ux * (6 - q) - oy, col); px(cx0 + ux * q + uy * (6 - q) - ox, cy0 + uy * q - ux * (6 - q) - oy, col); }
         }
+      }
+      // once the drains open, an arrow at the edge of the screen points to each one; the richer drain is orange
+      const LV = Game.level;
+      if (LV && !Game.clip && drainOpen(LV)) for (const e of LV.exits || []) {
+        const sx = e.x - ox, sy = e.y - 6 - oy;
+        if (sx > 6 && sx < vw - 6 && sy > 6 && sy < vh - 6) continue;
+        const cx = vw / 2, cy = vh / 2, ddx = sx - cx, ddy = sy - cy, dd = Math.hypot(ddx, ddy) || 1, ux = ddx / dd, uy = ddy / dd;
+        const kk = Math.min((vw / 2 - 12) / Math.max(0.001, Math.abs(ddx)), (vh / 2 - 14) / Math.max(0.001, Math.abs(ddy)));
+        const ax = cx + ddx * kk, ay = cy + ddy * kk, colA = World.abgr(e.rich ? 0xff8a3a : 0xe6c35c);
+        for (let q = 0; q < 8; q++) { const wd = Math.round((8 - q) * 0.55); for (let r = -wd; r <= wd; r++) px(ax - ux * q - uy * r, ay - uy * q + ux * r, (r === -wd || r === wd) ? 0xff000000 : colA); }
       }
       // aim: a dotted line from the wand, and a reticle when you aim without the mouse
       const a = aimAngle(), ca = Math.cos(a), sa = Math.sin(a), ax = p.x + 2, ay = p.y + 4;
@@ -4788,6 +5100,13 @@ const Render = (() => {
     }
     // wands lying in the caves
     for (const pk of Game.pickups) {
+      if (pk.hotdog) {
+        // a hot dog in a bun, with a line of mustard
+        const hx = pk.x - ox, hy = pk.y + Math.sin(pk.bob) * 1.5 - oy, bun = World.abgr(0xe0a860), dog = World.abgr(0xb8402a), mus = World.abgr(0xffe040);
+        for (let q = -3; q <= 3; q++) { px(hx + q, hy + 1, bun); px(hx + q, hy, dog); if (Math.abs(q) < 3) px(hx + q, hy - 1, bun); }
+        px(hx - 1, hy, mus); px(hx + 1, hy - 0, mus);
+        continue;
+      }
       if (pk.golden) {
         // the Golden Plunger: a gold cup on a gold handle, blinking
         const gx = pk.x - ox, gy = pk.y + Math.sin(pk.bob * 1.5) * 2 - oy, g1 = World.abgr(0xffd84a), g2 = World.abgr(0xc8961a);
@@ -4811,13 +5130,15 @@ const Render = (() => {
       px(wx + 3, wy - 2, tip); px(wx + 4, wy - 2, tip); px(wx + 3, wy - 3, tip);
       if ((tk >> 3) & 1) px(wx + 4, wy - 4, 0xffffffff);
     }
+    // flying debris, drawn in its own colour with a lit edge
+    for (const d of World.debris) { px(d.x - ox, d.y - oy, PAL[d.m * 4 + (d.t & 3)]); }
     for (const f of Game.fx) {
       if (f.rift) { for (let k = 0; k < 6; k++) px(f.x + (rnd() - 0.5) * 8 - ox, f.y + (rnd() - 0.5) * 10 - oy, f.c); continue; }
       px(f.x - ox, f.y - oy, f.c);
     }
     // damage numbers
     for (const n of Game.nums) {
-      const str = String(n.v), c = n.big ? World.abgr(0xffd070) : 0xffffffff;
+      const str = String(n.v), c = n.hurt ? World.abgr(0xff5a4a) : n.big ? World.abgr(0xffd070) : 0xffffffff;
       let x0 = Math.round(n.x - ox - str.length * 2), y0 = Math.round(n.y - oy);
       for (const ch of str) {
         const g = DIGITS[ch];
@@ -4827,7 +5148,7 @@ const Render = (() => {
       }
     }
     wctx.putImageData(img, 0, 0);
-    drawActors(ox, oy);
+    drawActors(ox, oy, dt);
 
     // darkness, with holes where light falls
     const dw = dc.width, dh = dc.height;
@@ -4839,7 +5160,7 @@ const Render = (() => {
     const light = (x, y, r, a) => { dctx.globalAlpha = Math.min(1, a); dctx.drawImage(stamp, (x - ox - r) / 2, (y - oy - r) / 2, r, r); };
     if (p && !run.over) {
       const fl = reduceMotion ? 1 : 0.94 + Math.sin(performance.now() / 90) * 0.03 + rnd() * 0.03;
-      light(p.x + 2, p.y + 5, 75 * fl * run.light, 1);
+      light(p.x + 2, p.y + 5, 96 * fl * run.light, 1);
       light(p.x + 2, p.y + 5, 34, 1);
     }
     // moonlight over the outhouse on the first layer
@@ -4860,6 +5181,9 @@ const Render = (() => {
     for (const fl of Game.flashes) light(fl.x, fl.y, fl.r * 2, fl.t * 4);
     for (const e of Game.emitters) if (e.tele > 0 && !e.follow) light(e.x, e.y, 40, 0.8);
     for (const f of Game.foes) if (f.d.ai === "fly" || f.d.ai === "hand" || f.elite) light(f.x + f.w / 2, f.y + f.h / 2, f.d.ai === "hand" ? 90 : 26, 0.6);
+    // a tell you cannot see is not a tell: anything about to strike glows
+    for (const f of Game.foes) if (!f.dead && (f.windT > 0 || f.fuse > 0 || f.state === "wind" || f.state === "tell" || f.charge > 0)) light(f.x + f.w / 2, f.y + f.h / 2, 44, 0.9);
+    for (const t of Game.props || []) if (t.kind === "tank" && t.fuse > 0) light(t.x, t.y - 4, 50, ((t.fuse * 10) | 0) % 2 ? 1 : 0.4);
     if (L) for (const e of L.exits || []) light(e.x, e.y - 4, 70, drainOpen(L) ? 0.9 : 0.4);
     for (const c of Game.chests) if (c.cursed && !c.open) light(c.x, c.y - 2, 30, 0.6);
     dctx.globalAlpha = 1;
@@ -5511,9 +5835,12 @@ const UI = (() => {
       shop.innerHTML = "";
       const shopBtns = [];
       L.shop.forEach((it) => {
-        const isSpell = it.v.startsWith("spell:"), isMelee = it.v.startsWith("melee:");
-        const id = it.v.slice(isSpell ? 6 : isMelee ? 6 : 3);
-        const b = isMelee
+        const isSpell = it.v.startsWith("spell:"), isMelee = it.v.startsWith("melee:"), isX = it.v.startsWith("x:");
+        const id = it.v.slice(isSpell ? 6 : isMelee ? 6 : isX ? 2 : 3);
+        const b = isX
+          ? (id === "hotdog" ? card({ name: "Extra Hot Dog", desc: "One more hot dog for this run. It refills at every snack bar.", color: "#e0a860", tagName: "Food", cost: it.price + " gold" })
+            : card({ name: "Tip the Cook", desc: "Turn 120 gold into 12 caps. Caps buy unlocks that stay.", color: "#e6c35c", tagName: "Caps", cost: it.price + " gold" }))
+          : isMelee
           ? card({ name: MELEE[id].name, desc: MELEE[id].desc + " It replaces your " + MELEE[run.melee].name + ".", color: MELEE[id].color, tagName: "Melee", cost: it.price + " gold" })
           : isSpell
           ? card({ name: SPELLS[id].name, desc: SPELLS[id].desc, price: SPELLS[id].price, tag: SPELLS[id].tag, tagName: TAG[SPELLS[id].tag].name, cost: it.price + " gold" })
@@ -5521,12 +5848,12 @@ const UI = (() => {
         b.onclick = () => {
           if (run.gold < it.price || it.sold) return;
           run.gold -= it.price;
-          it.sold = true;
-          if (isSpell) run.bag.push(id);
+          it.sold = it.v !== "x:tip";
+          if (isX) { if (id === "hotdog") { run.flaskMax++; run.flasks++; } else { run.caps += 12; renderTab(); } hud(true); }
+          else if (isSpell) run.bag.push(id);
           else if (isMelee) { run.melee = id; hud(true); }
           else UPGRADES[id].apply(run);
-          b.classList.add("taken");
-          b.querySelector("em").textContent = "Bought";
+          if (it.sold) { b.classList.add("taken"); b.querySelector("em").textContent = "Bought"; }
           SFX.coin();
           refreshShop();
           renderWand();
@@ -5726,13 +6053,13 @@ const UI = (() => {
 
 /* ------------------------------------------------------------------ flow */
 
-async function enterDepth(first) {
+async function enterDepth(first, pre) {
   Game.state = "loading";
   Input.clear();
   Game.frenzyT = 0; Game.frenzyChain = 0; Game.layerKills = 0; Game.goldenDropped = false;
   Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
   UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
-  const plan = await Cottage.level(run, first);
+  const plan = pre ? await pre : await Cottage.level(run, first);
   const geo = World.generate(plan);
   // label the drains: the first leads to the Cottage's favorite next look, the second is richer and harder
   geo.exits.forEach((e, k) => { e.theme = (plan.nextThemes || [])[k] || plan.theme; e.rich = k === 1; });
@@ -5752,14 +6079,18 @@ async function enterDepth(first) {
   Game.player = p;
   // most foes wait in the rooms you must cross; the rest in hollows off the route
   const placed = [];
-  const routeRooms = geo.rooms.slice(1);
-  for (const kind of plan.foes) {
+  // rest rooms stay empty of critters, and hold a hot dog
+  const restRooms = geo.rooms.filter((r) => r.rest);
+  const inRest = (x, y) => restRooms.some((r) => Math.abs(x - r.x) < r.rw + 16 && Math.abs(y - r.y) < r.rh + 12);
+  const routeRooms = geo.rooms.slice(1).filter((r) => !r.rest);
+  // the layer is wide, so each critter the Cottage picked comes twice
+  for (const kind of plan.foes.concat(plan.foes.filter((_, i) => i % 2 === 0))) {
     const d = FOES[kind];
     const onRoute = routeRooms.length && rnd() < 0.65, rr = onRoute ? routeRooms[(rnd() * routeRooms.length) | 0] : null;
     for (let tries = 0; tries < 400; tries++) {
       const x = rr && tries < 200 ? rr.x + (rnd() - 0.5) * rr.rw * 1.4 : 6 + rnd() * (W - 16);
       const y = rr && tries < 200 ? rr.y - rr.rh * 0.6 + rnd() * rr.rh * 1.1 : 110 + rnd() * (Math.min(geo.arenaTop, H - 60) - 110);
-      if (boxHits(x, y, d.w, d.h)) continue;
+      if (boxHits(x, y, d.w, d.h) || inRest(x, y)) continue;
       if (d.ai !== "fly" && !boxHits(x, y + 1, d.w, d.h)) continue;
       if (placed.some((q) => Math.hypot(q.x - x, q.y - y) < 22)) continue;
       const f = makeFoe(kind, x, y);
@@ -5768,11 +6099,16 @@ async function enterDepth(first) {
     }
   }
   Game.foes = placed;
+  for (const r of restRooms) {
+    let py = (r.y + r.rh * 0.6 - 4) | 0;
+    for (let k = 0; k < 20 && !blocks(World.at(r.x, py + 1)); k++) py++;
+    Game.pickups.push({ x: r.x, y: py - 3, hotdog: true, bob: rnd() * 6 });
+  }
   // sealed rooms: the last room before the drain, and more as the Cottage chose
   Game.gauntlets = [];
   if (!plan.boss && geo.rooms.length > 2) {
     const picks = [geo.rooms[geo.rooms.length - 1]];
-    const pool = geo.rooms.slice(2, -1).sort(() => rnd() - 0.5);
+    const pool = geo.rooms.slice(2, -1).filter((r) => !r.rest).sort(() => rnd() - 0.5);
     while (picks.length < (plan.gauntlets || 1) && pool.length) picks.push(pool.pop());
     for (const r of picks) Game.gauntlets.push({ r, state: "idle", wave: 0, waves: 2, foes: [], seal: [], wait: 0 });
   }
@@ -5802,7 +6138,7 @@ async function enterDepth(first) {
   // from the second layer on, some coolers are cursed
   if (run.depth >= 2 && rnd() < 0.55) { const c = geo.chests.filter((q) => !q.rich); if (c.length) c[(rnd() * c.length) | 0].cursed = true; }
   // reach the drain fast for a bonus
-  Game.fastT = 110 + 20 * run.depth;
+  Game.fastT = (110 + 20 * run.depth) * 1.6;
   Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false; Game.digDmg = new Uint8Array(W * H); Game.noise = 0;
   Minimap.reset();
   Minimap.reveal(p);
@@ -5835,11 +6171,14 @@ async function reachWell() {
   run.hp = Math.min(run.maxHp, run.hp + heal);
   L.restText = heal > 0 ? "You eat a hot dog. You heal " + Math.round(heal) + " health" + (L.rest === "full" ? ", to full." : ", half of what you lost.") : "You are already whole.";
   UI.hideBanner();
-  await UI.landing(L);
+  // the Cottage plans the next layer while you shop, so it is ready when you leave
   addScore(500 * run.depth);
   run.depth++;
+  const pre = Cottage.level(run, false);
+  pre.catch(() => {});
+  await UI.landing(L);
   reaching = false;
-  await enterDepth(false);
+  await enterDepth(false, pre);
 }
 
 async function die(cause) {
@@ -5852,6 +6191,9 @@ async function die(cause) {
   m.lastDeath = cause;
   m.deathsBy[cause] = (m.deathsBy[cause] || 0) + 1;
   m.deepest = Math.max(m.deepest, run.depth);
+  // a death costs half your caps, not all: the rest start your next run
+  const keptCaps = Math.floor(run.caps / 2);
+  m.bankCaps = (m.bankCaps || 0) + keptCaps;
   Memory.save();
   const p = Game.player;
   if (p) { World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); addFx(p.x + 2, p.y + 5, 0xd0485f, 20); }
@@ -5866,7 +6208,7 @@ async function die(cause) {
     ["Gifts", Object.keys(run.boons).map((k) => BOONS[k].name + (run.boons[k] > 1 ? " " + run.boons[k] : "")).join(", ") || "none"],
     ["Friend", CREW[run.crew].name],
     ["Weapon", MELEE[run.melee].name],
-    ["Caps dropped", String(run.caps) + (run.caps ? " (spend them at the tab next time)" : "")],
+    ["Caps", run.caps ? keptCaps + " of " + run.caps + " kept for your next run" : "none"],
     ["Relics", String(run.relics.length)],
     ["Scrolls", String(run.scrolls)],
     ["Killed by", causeName(cause)],
@@ -5915,7 +6257,8 @@ function frame(now) {
   const p = Game.player;
   if (p) {
     const aimA = aimAngle(), lead = Game.input.cast || Game.input.sx != null ? 14 : 0;
-    const tx = p.x + 2 + Math.cos(aimA) * lead, ty = p.y + 5 + 18 + clamp(p.vy * 8, -8, 24) + Math.sin(aimA) * lead * 0.6;
+    const [cpx, cpy] = ipos(p);
+    const tx = cpx + 2 + Math.cos(aimA) * lead, ty = cpy + 5 + 18 + clamp(p.vy * 8, -8, 24) + Math.sin(aimA) * lead * 0.6;
     Game.cam.x += (tx - Game.cam.x) * 0.12;
     Game.cam.y += (ty - Game.cam.y) * 0.12;
     Game.cam.x = clamp(Game.cam.x, Render.vw / 2, W - Render.vw / 2);
@@ -5928,8 +6271,20 @@ function frame(now) {
   if ((++mapFrame & 7) === 0) Minimap.draw();
   if ((mapFrame % 30) === 0) { UI.insets(); UI.fit(); }
 }
+// where each body was before this tick, so drawing can glide between ticks
+function markPrev() {
+  const p = Game.player;
+  if (p) { p.px = p.x; p.py = p.y; }
+  for (const f of Game.foes) { f.px = f.x; f.py = f.y; }
+}
+function ipos(e) {
+  if (e.px == null || Math.abs(e.x - e.px) > 8 || Math.abs(e.y - e.py) > 8) return [e.x, e.y];
+  const a = Game.hitStop > 0 ? 1 : clamp(acc * 60, 0, 1);
+  return [e.px + (e.x - e.px) * a, e.py + (e.y - e.py) * a];
+}
 function tickGame(dt) {
   if (Game.state === "loading" || Game.state === "intro") return;
+  markPrev();
   World.step();
   if (Game.state === "play") {
     Game.levelT += dt;
