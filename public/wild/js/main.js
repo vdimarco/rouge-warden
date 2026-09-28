@@ -180,9 +180,14 @@ function loadTextures() {
     .catch(() => {});
   return Promise.all([one("grass", "grass.jpg"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg")]).then(() => out);
 }
+// The title waits only for the models the world is built from (the quest critters use the four animals).
+// The crew, the bosses and the fish load behind the title; start() waits for any still on the way.
+const WORLD_MODELS = ["cabin", "outhouse", "statue", "kayak", "goose", "raccoon", "bear", "moose"];
+const CREW_MODELS = Object.keys(GLB.FIT).filter((n) => !WORLD_MODELS.includes(n));
 setTimeout(async () => {
   const lt = $("#loadText");
-  const [tex] = await Promise.all([loadTextures(), GLB.loadModels(M.gradientMap(), (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
+  GLB.loadModels(M.gradientMap(), renderer, WORLD_MODELS);
+  const [tex] = await Promise.all([loadTextures(), GLB.ready(WORLD_MODELS, (d, n) => { if (lt) lt.textContent = "Painting the valley… " + Math.round((d / n) * 100) + "%"; })]);
   G.world = new World(scene, { low, quality: Q, tex });
   G.fx = new FX(G);
   G.fishing = new Fishing(G);
@@ -198,7 +203,38 @@ setTimeout(async () => {
   $("#loading").hidden = true;
   titleScreen();
   requestAnimationFrame(loop);
+  requestAnimationFrame(warmLoop);
 }, 30);
+
+// Shaders for things that first show up mid-game are compiled behind the opaque title instead, so the game does not
+// stall when they appear: the King's sludge wall, a hero under the umbrella, and Christian's see-through clones.
+// It waits for the first title frames, so the fire light exists and the light count matches the game's.
+let warmed = false, sealWarmed = false;
+const warmV = new THREE.Vector3();
+function warmUp() {
+  if (!(G.frame > 2)) return;
+  if (!sealWarmed) { sealWarmed = true; renderer.compile(G.world.court.seal, camera, scene); }
+  if (warmed || $("#title").hidden || !GLB.isReady(CREW_MODELS)) return;
+  warmed = true;
+  // One frame with a throwaway hero and clone in front of the camera. The copies are dropped but not disposed,
+  // so their shader programs stay. The clone's materials are made see-through as in Boss.makeClones.
+  const g = new THREE.Group(), hero = M.person(M.LOOKS[0]), clone = M.boss("christian");
+  if (hero.glider) hero.glider.visible = true;
+  clone.root.traverse((o) => { if (o.isMesh && !o.userData.outline) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; } });
+  clone.root.position.x = 4;
+  g.add(hero.root, clone.root);
+  // never culled, so the frame draws them and their shadows wherever they stand
+  g.traverse((o) => { o.frustumCulled = false; });
+  g.position.copy(camera.position).add(camera.getWorldDirection(warmV).multiplyScalar(8));
+  scene.add(g);
+  sun.shadow.needsUpdate = true; // the light setting skips the shadow map on some frames
+  draw();
+  scene.remove(g);
+  // the loop draws a clean frame next, in case a see-through screen shows the canvas
+  redraw = true;
+}
+// tries once a frame until done; if the game starts first, start() does it before the title goes
+function warmLoop() { if (warmed || G.starting || G.started) return; warmUp(); requestAnimationFrame(warmLoop); }
 
 /* ---------------- title ---------------- */
 let pick = 0;
@@ -310,10 +346,18 @@ function titleFX() {
   })(last);
 }
 
-function start(save) {
+async function start(save) {
   // a double click on New game or Continue must not start two games
   if (G.starting || G.started) return;
   G.starting = true;
+  // the crew and the bosses load behind the title; if some are still on the way, wait for them here
+  // (a model that failed to load falls back to its shape-built version, a slow one is waited for)
+  if (!GLB.isReady(CREW_MODELS)) {
+    $("#tmenu").hidden = $("#tpick").hidden = true; $("#tmain").hidden = false;
+    const note = $("#tpress"); note.textContent = "Waking the crew…"; note.hidden = false;
+    await GLB.ready(CREW_MODELS);
+  }
+  warmUp();
   G.save = save;
   if (save.friend !== pick && !save.intro) save.friend = pick;
   G.ui.hide("title");
@@ -346,6 +390,9 @@ function start(save) {
   G.ui.renderMap();
   if (!save.intro) intro(); else G.ui.banner(G.world.regionAt(P.x, P.z), "Day " + save.day);
   G.region = G.world.regionAt(P.x, P.z);
+  // Compile every shader the game has now, inside the Begin pause, hidden ones too: a beaten boss, the King's lid,
+  // a far critter, the sword trail. Otherwise each one stalls the game the first time it shows up.
+  renderer.compile(scene, camera);
 }
 
 async function intro() {
@@ -1230,7 +1277,7 @@ let last = performance.now(), saveT = 0, regionT = 0, skeeterT = 0, cam0 = false
 // Full-screen screens hide the world, or dim a world that does not move. Behind them the game draws two frames
 // (to settle the picture and warm up the shaders), then stops drawing: the canvas keeps showing its last frame.
 const STILL = { pause: 1, map: 1, quests: 1, help: 1, choice: 1 };
-const stillNow = () => (!G.started && !G.starting && !$("#title").hidden) || !!STILL[G.ui.modal];
+const stillNow = () => (!G.started && !$("#title").hidden) || !!STILL[G.ui.modal];
 function loop(now) {
   requestAnimationFrame(loop);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
