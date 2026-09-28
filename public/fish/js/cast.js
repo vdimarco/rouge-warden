@@ -4,7 +4,7 @@ import { height, onDock, DOCK } from "./lake.js";
 
 export const CAST = {
   IDEAL_RELEASE: 68,     // deg: θ at release that gives the 38° launch the assist aims for
-  LOAD_THETA: 105,       // deg: tip the rod back past this to load it
+  LOAD_THETA: 100,       // deg: tip the rod back past this to load it (10° past upright)
   PITCH_OFFSET: 30,      // launch pitch = θ release − this (the lure leaves along the rod's arc, not along the rod)
   ASSIST_PITCH: 38,      // the assist pulls the launch toward this
   ASSIST_PULL: 0.35,     // how far it pulls (0..1), only when the pitch is inside ASSIST_RANGE

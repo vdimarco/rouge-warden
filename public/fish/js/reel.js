@@ -250,7 +250,9 @@ export class ReelPanel extends Widget {
     this.area = area || container;
     this.toLocal = toLocal || offsetLocal;
     this.mx = hand === "left" ? -1 : 1;
-    this.s = { bail: "closed", pinned: false, spool: 0, line: 0.85, hint: "", glow: "", touchCast: false };
+    // grab: a press takes the line at once even with the bail shut (the game opens the bail on the pin).
+    // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then)
+    this.s = { bail: "closed", pinned: false, spool: 0, line: 0.85, hint: "", glow: "", touchCast: false, grab: "" };
     this.fx = { bail: 0, bailV: 0, spin: 0, glow: 0, clack: 0, thumbA: 0, guide: 0, wasOpen: false };
     this.ptrs = new Map();
     this.pinId = null;
@@ -278,10 +280,13 @@ export class ReelPanel extends Widget {
     if (this.ptrs.has(e.pointerId)) this._up(e, true);
     const q = this._local(e);
     const open = this.s.bail === "open";
-    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: this._onBail(q.x, q.y), open, state: "wait", timer: 0, swiped: false };
+    const inFace = q.x >= 0 && q.y >= 0 && q.x <= this.w && q.y <= this.h;
+    const grab = this.s.grab === "all" || (this.s.grab === "panel" && inFace);
+    // a grab press is never a bail swipe: the press itself opens the bail
+    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !grab && this._onBail(q.x, q.y), open: open || grab, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
-    if (open) {
-      // the bail is open and the line runs free: any press holds it, at once
+    if (open || grab) {
+      // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
     } else {
       p.timer = setTimeout(() => {

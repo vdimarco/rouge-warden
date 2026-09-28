@@ -1,5 +1,6 @@
-// The whole game on a phone, with motion: open the bail with a twist, pin the line, tip back, whip and let go,
-// turn the phone sideways, crank, set the hook with a pull, fight the fish, and land it.
+// The whole game on a phone, with motion, all with the phone upright: one press opens the bail and holds the line,
+// tip back, whip and let go, crank (the first turn closes the bail), set the hook with a pull, fight, and land it.
+// Then the two forgiving cases: a lift with no swing starts again, and a swing with the thumb still down casts low.
 // Serve public/ first (cd public && python3 -m http.server 8765), then: node qa/fish/flow.mjs
 // Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, pointer, center, shot, sleep } from "./lib.mjs";
@@ -26,15 +27,20 @@ try {
   check((await page.evaluate(() => FISH.G.rot)) === 0, "no CSS rotation while upright");
   await shot(page, "flow-1-ready");
 
-  // a quick twist of the wrist opens the bail
-  await page.evaluate(async () => { __phone.spin.y = 700; await new Promise((r) => setTimeout(r, 130)); __phone.spin.y = 0; });
-  await until(page, () => FISH.G.bail === "open", null, 5000).then(() => check(true, "a wrist twist opens the bail"), () => check(false, "a wrist twist opens the bail"));
+  check((await page.evaluate(() => FISH.G.bail)) === "closed", "the bail starts closed");
 
-  // the thumb pins the line
+  // a press with no swing: nothing flies, and the game is ready again with no fuss
   const rb = await center(page, "#reelBox");
   const px = rb.x + rb.w * 0.2, py = rb.y + rb.h * 0.25;
   await pointer(page, "pointerdown", px, py);
-  await until(page, () => FISH.G.step === "pinned", null, 5000).then(() => check(true, "holding the thumb on the reel pins the line"), () => check(false, "holding the thumb on the reel pins the line"));
+  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 5000).then(() => check(true, "one press opens the bail and holds the line"), () => check(false, "one press opens the bail and holds the line"));
+  await sleep(300);
+  await pointer(page, "pointerup", px, py);
+  await until(page, () => FISH.G.step === "ready" && FISH.G.bail === "closed" && !FISH.G.cast, null, 5000).then(() => check(true, "a lift with no swing starts again (bail shut, no cast)"), () => check(false, "a lift with no swing starts again (bail shut, no cast)"));
+
+  // the thumb holds the line again
+  await pointer(page, "pointerdown", px, py);
+  await until(page, () => FISH.G.step === "pinned", null, 5000).then(() => check(true, "a second press holds the line again"), () => check(false, "a second press holds the line again"));
 
   // tip back over the shoulder, whip forward, and lift the thumb at 11 o'clock. Done inside the page so the timing is exact
   const rel = await page.evaluate(async ({ px, py }) => {
@@ -59,7 +65,7 @@ try {
     P.pose(40);
     return { loaded, released };
   }, { px, py });
-  check(rel.loaded === "loaded", "tipping back past 105° loads the rod (step " + rel.loaded + ")");
+  check(rel.loaded === "loaded", "tipping back past 100° loads the rod (step " + rel.loaded + ")");
   await until(page, () => FISH.G.step === "flight" || FISH.G.step === "landed", null, 5000).catch(() => {});
   const cast = await page.evaluate(() => FISH.G.cast);
   check(!!cast, "letting go during the whip casts");
@@ -72,16 +78,17 @@ try {
   const land = await page.evaluate(() => ({ step: FISH.G.step, dist: FISH.G.landing && FISH.G.landing.dist }));
   check(land.step === "landed", "the lure lands in the water");
   check(land.dist > 15, "a firm whip casts past 15 m (got " + (land.dist || 0).toFixed(1) + " m)");
-  await shot(page, "flow-3-landed");
 
-  // turn the phone sideways: the browser does not rotate here, so the game turns itself
-  await page.evaluate(() => __phone.pose(50, "landscape"));
-  await until(page, () => FISH.G.phase === "reel", null, 8000).then(() => check(true, "turning the phone sideways starts the reel"), () => check(false, "turning the phone sideways starts the reel"));
-  check((await page.evaluate(() => FISH.G.rot)) === 90, "the game turns itself 90° when the browser stays upright");
+  // the reel starts at once, with the phone still upright: no turn, no rotation
+  await until(page, () => FISH.G.phase === "reel", null, 3000).then(() => check(true, "the reel starts as soon as the lure lands"), () => check(false, "the reel starts as soon as the lure lands"));
+  const rs = await page.evaluate(() => ({ rot: FISH.G.rot, layout: FISH.G.layout, mode: FISH.Motion.mode, bail: FISH.G.bail, crank: !document.querySelector("#reelUI").hidden }));
+  check(rs.rot === 0 && rs.layout === "tall-reel" && rs.mode === "portrait", "the reel stays upright (" + JSON.stringify(rs) + ")");
+  check(rs.crank, "the crank shows");
+  await page.evaluate(() => __phone.pose(50));
   await sleep(400);
   const lth = await page.evaluate(() => FISH.Motion.pose.theta);
-  check(Math.abs(lth - 50) < 4, "sideways phone reads θ ≈ 50 (got " + lth.toFixed(1) + ")");
-  await shot(page, "flow-4-reel");
+  check(Math.abs(lth - 50) < 4, "the upright phone tipped to 50° reads θ ≈ 50 (got " + lth.toFixed(1) + ")");
+  await shot(page, "flow-3-reel");
 
   // crank until the fish strikes, then pull up to set the hook
   const cr = await center(page, "#crankBox");
@@ -90,7 +97,7 @@ try {
     const el = () => document.elementFromPoint(cx + R, cy) || document.body;
     const target = el();
     const ev = (type, a) => target.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: "touch", clientX: cx + R * Math.cos(a), clientY: cy + R * Math.sin(a), bubbles: true, buttons: type === "pointerup" ? 0 : 1 }));
-    let a = 0;
+    let a = 0, closedBy = null;
     ev("pointerdown", a);
     const t0 = performance.now();
     let log = [], strikeAt = null;
@@ -102,21 +109,23 @@ try {
       const pause = ((performance.now() - t0) % 4000) > 3300;
       if (!pause) a += 2 * Math.PI * 1.2 * 0.016;
       ev("pointermove", a);
+      if (closedBy == null && FISH.G.bail === "closed") closedBy = +(a / (2 * Math.PI)).toFixed(2);
       if (log.length < 400) log.push(s.phase);
       await wait(16);
     }
     ev("pointerup", a);
-    if (strikeAt == null) return { ok: false, phase: FISH.G.sim && FISH.G.sim.state.phase, g: FISH.G.phase };
+    if (strikeAt == null) return { ok: false, phase: FISH.G.sim && FISH.G.sim.state.phase, g: FISH.G.phase, closedBy };
     await wait(220);
     // the hook set: a fast pull up, 50° → 95° in 110 ms
     const P = window.__phone, t1 = performance.now();
-    while (performance.now() - t1 < 110) { P.pose(50 + 45 * ((performance.now() - t1) / 110), "landscape"); await wait(8); }
-    P.pose(95, "landscape");
+    while (performance.now() - t1 < 110) { P.pose(50 + 45 * ((performance.now() - t1) / 110)); await wait(8); }
+    P.pose(95);
     // slow test frames: give the game a moment to see it
     const t2 = performance.now();
     while (performance.now() - t2 < 4000 && FISH.G.sim && FISH.G.sim.state.phase === "strike") await wait(20);
-    return { ok: true, phase: FISH.G.sim && FISH.G.sim.state.phase, byPull: FISH.G.lastHook >= t1 };
+    return { ok: true, phase: FISH.G.sim && FISH.G.sim.state.phase, byPull: FISH.G.lastHook >= t1, closedBy };
   }, { cx: cr.x, cy: cr.y, R: Math.min(cr.w, cr.h) * 0.3 });
+  check(hooked.closedBy != null && hooked.closedBy < 1, "the first turn of the crank closes the bail (at " + hooked.closedBy + " turns)");
   check(hooked.ok, "cranking brings a strike (" + JSON.stringify(hooked) + ")");
   check((hooked.phase === "fight" || hooked.phase === "land" || hooked.phase === "caught") && hooked.byPull, "pulling the phone up sets the hook (" + hooked.phase + ", by the pull: " + hooked.byPull + ")");
   await shot(page, "flow-5-fight");
@@ -139,7 +148,7 @@ try {
       else if (f.move === "jump") { th = 30; crank = false; }
       else if ((s.slip || 0) > 0.05 || (s.tfrac || 0) > 0.75) { th = Math.min(90, th + 1); crank = false; }
       else { if (!down) { th += 1.6; if (th >= 88) down = true; } else { th -= 1.1; if (th <= 45) down = false; } crank = down || (s.tfrac || 0) < 0.2; }
-      P.pose(th, "landscape");
+      P.pose(th);
       // turn by real time, so slow frames do not slow the crank
       const now = performance.now(), dts = Math.min(0.05, (now - (window.__lastCrank || now)) / 1000);
       window.__lastCrank = now;
@@ -164,11 +173,28 @@ try {
     const j = await page.evaluate(() => FISH.save.journal.perch);
     check(j && j.n === 1 && j.kg > 0, "the perch goes in the journal");
     await page.click("#catchGo");
-    // next cast: the game asks for the phone upright again
-    await until(page, () => FISH.G.phase === "turn" && FISH.G.turnTo === "portrait", null, 5000).then(() => check(true, "after a catch the game asks to turn the phone upright"), () => check(false, "after a catch the game asks to turn the phone upright"));
+    // next cast: straight back to the cast, still upright
     await page.evaluate(() => __phone.pose(88));
-    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 8000).then(() => check(true, "upright again: ready to cast"), () => check(false, "upright again: ready to cast"));
-    check((await page.evaluate(() => FISH.G.rot)) === 0, "the game turns back when the phone is upright");
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 5000).then(() => check(true, "after a catch the next cast is ready at once"), () => check(false, "after a catch the next cast is ready at once"));
+    check((await page.evaluate(() => FISH.G.rot)) === 0, "still no rotation");
+
+    // swing through with the thumb still down: it casts anyway, low, and says to lift sooner
+    await sleep(600);
+    await pointer(page, "pointerdown", px, py);
+    await until(page, () => FISH.G.step === "pinned", null, 5000).catch(() => {});
+    const thru = await page.evaluate(async () => {
+      const P = window.__phone, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      for (let i = 0; i <= 20; i++) { P.pose(88 + 32 * (i / 20)); await wait(16); }
+      await wait(200);
+      const t0 = performance.now();
+      while (performance.now() - t0 < 200) { const k = (performance.now() - t0) / 200; P.pose(120 - 110 * (0.5 - 0.5 * Math.cos(Math.PI * k))); await wait(4); }
+      P.pose(10);
+      const t1 = performance.now();
+      while (performance.now() - t1 < 3000 && FISH.G.step !== "flight" && FISH.G.step !== "landed" && FISH.G.phase === "cast") await wait(20);
+      return { step: FISH.G.step, phase: FISH.G.phase, verdict: FISH.G.cast && FISH.G.cast.verdict };
+    });
+    await pointer(page, "pointerup", px, py);
+    check((thru.step === "flight" || thru.step === "landed" || thru.phase === "reel") && (thru.verdict === "low" || thru.verdict === "slam"), "a swing with the thumb still down casts low (" + JSON.stringify(thru) + ")");
   }
 } catch (e) {
   check(false, "exception: " + (e && e.message));

@@ -1,5 +1,6 @@
-// The game on a computer, with no sensors: E opens the bail, a mouse drag down and a flick up casts,
-// E closes the bail, the mouse wheel reels, Space sets the hook, and W and S work the rod.
+// The game on a computer, with no sensors: a press on the reel opens the bail and holds the line, a drag down and
+// a flick up casts, the reel starts when the lure lands, the mouse wheel reels (its first turn closes the bail),
+// Space sets the hook, and W and S work the rod.
 // Serve public/ first (cd public && python3 -m http.server 8765), then: node qa/fish/desk.mjs
 // Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, center, shot, sleep } from "./lib.mjs";
@@ -18,15 +19,12 @@ try {
   await page.evaluate(() => { FISH.G.force = { species: "pumpkinseed", bite: true }; });
   await shot(page, "desk-1-ready");
 
-  await page.keyboard.press("e");
-  await until(page, () => FISH.G.bail === "open", null, 3000).then(() => check(true, "E opens the bail"), () => check(false, "E opens the bail"));
-
   // hold on the reel, drag down to tip the rod back, then flick up and let go during the flick
   const rb = await center(page, "#reelBox");
   const x = rb.x, y0 = rb.y - rb.h * 0.15;
   await page.mouse.move(x, y0);
   await page.mouse.down();
-  await until(page, () => FISH.G.step === "pinned", null, 3000).then(() => check(true, "pressing on the reel pins the line"), () => check(false, "pressing on the reel pins the line"));
+  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel opens the bail and holds the line"), () => check(false, "pressing on the reel opens the bail and holds the line"));
   for (let i = 1; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
   await sleep(200);
   const loaded = await page.evaluate(() => FISH.G.step);
@@ -49,19 +47,20 @@ try {
   await shot(page, "desk-2-landed");
 
   if (land.step === "landed") {
-    await page.keyboard.press("e");
-    await until(page, () => FISH.G.phase === "reel", null, 5000).then(() => check(true, "E closes the bail and starts the reel"), () => check(false, "E closes the bail and starts the reel"));
+    await until(page, () => FISH.G.phase === "reel", null, 5000).then(() => check(true, "the reel starts when the lure lands"), () => check(false, "the reel starts when the lure lands"));
     check((await page.evaluate(() => FISH.G.layout)) === "reel", "the reel uses the wide layout");
     // reel with the wheel until the strike, then Space
     await page.mouse.move(640, 360);
-    let phase = "";
+    let phase = "", closedAt = null;
     for (let i = 0; i < 1500; i++) {
       const st = await page.evaluate(() => ({ p: FISH.G.sim ? FISH.G.sim.state.phase : "none", g: FISH.G.phase }));
       phase = st.p;
       if (phase === "strike" || phase === "fight" || phase === "lost" || phase === "home" || st.g !== "reel") break;
       if (i % 40 < 34) await page.mouse.wheel(0, 90);
       await sleep(30);
+      if (closedAt == null && (await page.evaluate(() => FISH.G.bail)) === "closed") closedAt = i;
     }
+    check(closedAt != null && closedAt < 10, "the wheel's first turn closes the bail (after " + closedAt + " wheel steps)");
     check(phase === "strike" || phase === "fight", "the wheel reels until a strike (" + phase + ")");
     if (phase === "strike") {
       await page.keyboard.press("Space");

@@ -265,7 +265,25 @@ async function panelChecks(P, tag) {
   await P.touch("touchStart", [{ ...lake, id: 15 }]); await sleep(30); await P.touch("touchEnd", []); await sleep(30);
   ev = await EVS(page);
   check(ev.filter((e) => e.type === "pin").length === 1 && ev.filter((e) => e.type === "unpin").length === 1, `${tag}: a press on the lake view pins (the whole game area listens)`);
-  await page.evaluate(() => T.panel.set({ bail: "closed", glow: "" }));
+
+  // grab (the game's ready step): a press takes the line at once with the bail shut, and a drag right away is
+  // still a pin (touch casting drags down at once). "panel" grabs only on the reel face: the lake is for aiming
+  await page.evaluate(() => { T.panel.set({ bail: "closed", glow: "pin", grab: "all" }); T.clear(); });
+  await P.touch("touchStart", [{ ...lake, id: 17 }]); await sleep(30);
+  ev = await EVS(page, "pin");
+  const d3 = (await page.evaluate(() => T.PT.slice())).find((p) => p.type === "pointerdown");
+  check(ev.length === 1 && Math.abs(ev[0].t - d3.t) < 0.01, `${tag}: grab "all": a press on the lake pins at once, with the press time`);
+  await P.touch("touchEnd", []); await sleep(30);
+  await page.evaluate(() => { T.panel.set({ grab: "panel" }); T.clear(); });
+  await swipe(P, "#reelBox", box.w * 0.5, box.h * 0.3, 0, 90, { n: 4, ms: 12, id: 18 });
+  ev = await EVS(page);
+  check(ev.filter((e) => e.type === "pin").length === 1 && ev.filter((e) => e.type === "bail").length === 0, `${tag}: grab "panel": a drag that starts on the reel pins at once and is no bail swipe`);
+  await page.evaluate(() => T.clear());
+  await P.touch("touchStart", [{ ...lake, id: 19 }]); await sleep(40);
+  early = await EVS(page, "pin");
+  await P.touch("touchEnd", []); await sleep(30);
+  check(early.length === 0, `${tag}: grab "panel": a quick press on the lake does not pin`);
+  await page.evaluate(() => T.panel.set({ bail: "closed", glow: "", grab: "" }));
 }
 
 /* ---------- the crank ---------- */

@@ -312,10 +312,12 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 
 Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake. Your phone is the rod and the reel: you cast it and reel it with real moves.
 
-**Cast with the phone upright.** The top of the screen shows the lake. The bottom shows the reel.
+**Hold the phone upright the whole time.** Its top edge is the rod, for the cast and for the reel. You never turn it sideways.
 
-1. Swipe the silver bail arm down to open it, or give the phone a quick twist of the wrist. It clacks open.
-2. Turn your body to aim. A dotted line on the water shows where the lure goes. Then hold your thumb on the reel. Your thumb holds the line. If you open the bail and nothing holds the line, the lure slips down.
+**Cast.** The top of the screen shows the lake. The bottom shows the reel.
+
+1. Turn your body to aim. A dotted line on the water shows where the lure goes.
+2. Press and hold your thumb on the reel. The bail clacks open and your thumb holds the line, in one move.
 3. Tip the phone back over your shoulder. The rod creaks when it loads.
 4. Whip the phone forward and lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
    - The gyro measures how fast you swing. A faster flick casts farther, up to about 55 m. A short, sharp flick of the wrist is enough; a wild throw gains almost nothing.
@@ -323,19 +325,19 @@ Reel It In is a first-person fishing game at `/fish/`. You stand at the end of t
    - The gyro measures the swing across the rod, so the cast reads true whether the screen faces you or leans toward your thumb.
    - Where you face sets the direction.
    - Touch the reel while the lure flies to feather the line. The lure slows and drops short, onto a target.
-5. Swipe the bail up to close it, twist the wrist again, or just turn the crank. The first turn snaps the bail shut, like a real reel.
+   - The cast forgives you. Lift your thumb with no swing and the bail snaps shut, ready for the next try. Swing and forget to lift, and the lure still flies, low, and the game says to lift sooner.
 
 After each cast you see the distance and how the release went. Rings on the water show rising fish. Cast into a ring for a near-sure bite.
 
-**Reel with the phone sideways.** Turn the phone sideways and the whole screen shows the lake. The top edge of the phone is now the rod.
+**Reel.** The reel starts the moment the lure lands. The lake fills the top of the screen and the crank sits under your thumb.
 
-- Turn the crank on the right with your thumb to reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
-- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: pull the phone up fast to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
-- Fight the fish: pull up to raise the rod, then reel as you tip it back down. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
+- Turn the crank with your thumb to reel. The first turn snaps the bail shut, like a real reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
+- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: snap the phone up to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
+- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone left or right like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
 - Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
-- When the fish is tired and close to the dock, raise the rod and hold it to lift the fish out.
+- When the fish is tired and close to the dock, tip the phone up and hold it to lift the fish out.
 
-**Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the bail swipe, the release of your thumb, and the crank. The other cues come through sound and pictures there.
+**Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the press on the reel, the release of your thumb, and the crank. The other cues come through sound and pictures there.
 
 **The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
 
@@ -343,9 +345,9 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 **Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
 
-**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: E opens and closes the bail, W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag.
+**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag. E also opens and closes the bail, but you never need it.
 
-**Phones and rotation.** If your phone does not turn the page when you turn it sideways (rotation lock is on), the game turns the picture itself. On Android the game goes full screen and locks the page upright for the same reason. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
+**Phones and rotation.** The game stays upright on the phone. If the browser turns the page anyway (rotation lock off, or a big steering tilt), the game turns the picture back. On Android the game goes full screen and locks the page upright. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
 
 **Safety.** Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you.
 
@@ -432,7 +434,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 
 | Script | What it checks |
 | --- | --- |
-| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events: a twist opens the bail, the thumb pins the line, the rod loads, the whip and the release cast the lure, the phone turns sideways (the game turns itself), the crank brings a strike, a pull sets the hook, the fight lands the fish, and the next cast asks for the phone upright again |
+| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events, all upright: one press opens the bail and holds the line, a lift with no swing starts again, the rod loads, the whip and the release cast the lure, the reel starts on the landing, the first crank turn closes the bail, the crank brings a strike, a pull sets the hook, the fight lands the fish, the next cast is ready at once, and a swing with the thumb still down casts low |
 | `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
 | `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
 | `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
