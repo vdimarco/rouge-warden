@@ -7,7 +7,7 @@
 //                           cine, a CAST id, 'hero', 'pick' (the player's friend), 'van' or 'crew'
 //   {bridge: true, y}       the bridge: the arena's silhouette in an arena cine, Midgley deck elsewhere
 // Actor cues: play {clip, loop, speed, at}; moveTo {to: point, speed}; face {to: point}; pose {name, k};
-//   prop {name, on, bone}; show {replace, at: point, yaw}; hide; glow {k}; drain {k, dur}; place {at, yaw}.
+//   prop {name, on, bone}; show {replace, at: point, yaw}; hide; glow {k}; drain {k, dur}; place {at, yaw, face}.
 // cast: {name: castId | {id, at, yaw, props, variant, costume}}. A cast id that is the hero's body uses the
 //   hero's actor. 'pick' spawns the player's friend (a crew id picked at run time).
 // Lines are subtitles on the cine's clock (block:false); cards are UI cards; looks tween S.look.
@@ -49,13 +49,18 @@ function interlude(id, time, lines, extra = {}) {
     ...extra,
   };
 }
-// a chapter intro: an establishing crane over the start place, then down to the hero
+// a chapter intro: an establishing crane over the start place, then down to the hero, a three-quarter
+// shot from in front (the old one sat behind him, and the crew following him stood in the lens; the lens
+// moves clear of a wall or a van he faces, cine.js)
 function introCine(id, place, look, o = {}) {
   return {
     id, look, dur: o.dur || 7,
     shots: [
-      shot(0, 4, P(place, o.dx ?? -40, 26, o.dz ?? 40), P(place, (o.dx ?? -40) * 0.6, 14, (o.dz ?? 40) * 0.6), P(place, 0, 2, 0), 55),
-      shot(4, (o.dur || 7) - 4, W('hero', 1.2, 2.0, -4.5), W('hero', 0.9, 1.8, -3.6), W('hero', 0, 1.5, 2), 50),
+      // (o.over: the start place stands among rock formations a crane flies into, Hart Ridge and the
+      // Cathedral: the establishing shot looks out over the hero's shoulder instead)
+      o.over ? shot(0, 4, W('hero', 0.9, 2.3, -5), W('hero', 0.6, 2.0, -3.4), W('hero', 0, 0.5, 45), 55)
+        : shot(0, 4, P(place, o.dx ?? -40, 26, o.dz ?? 40), P(place, (o.dx ?? -40) * 0.6, 14, (o.dz ?? 40) * 0.6), P(place, 0, 2, 0), 55),
+      shot(4, (o.dur || 7) - 4, W('hero', -1.7, 1.75, 3.4), W('hero', -1.3, 1.7, 2.8), W('hero', -0.15, 1.45, 0), 42),
     ],
     lines: (o.lines || []).map((l, i) => line(1 + i * 3, l)),
     ...(o.extra || {}),
@@ -70,20 +75,20 @@ export const CINES = {
     film: { at: 1.2, src: 'clips/yield' }, // H2: the bear sinks into ink smoke; the engine flash and kneel below are the fallback
     shots: [
       shot(0, 1.2, W('gabe', 3.6, 2.4, 5.2), W('gabe', 3.0, 2.0, 4.4), W('gabe', 0, 1.3, 0), 46, { ease: 'out' }),
-      shot(1.2, 5, W('ronin', 1.3, 1.9, -3.6), W('ronin', 0.9, 1.7, -2.8), W('gabe', 0, 0.9, 0), 42),
-      shot(6.2, 1.8, W('gabe', 0.9, 1.1, 1.8), W('gabe', 0.6, 1.05, 1.5), W('gabe', 0, 1.0, 0), 32),
-      shot(8, 2.5, W('ronin', 0.55, 1.05, 0.95), W('ronin', 0.45, 0.95, 0.8), W('ronin', 0.3, 0.85, 0.55), 28),
+      shot(1.2, 5, W('ronin', 1.3, 1.9, -3.6), W('ronin', 0.9, 1.7, -2.8), W('gabe', 0, 1.3, 0), 42), // (the arena Gabe is 2.1 m: kneeling, his head is at 1.6 m)
+      shot(6.2, 1.8, W('gabe', 0.9, 1.55, 1.9), W('gabe', 0.65, 1.55, 1.6), W('gabe', 0, 1.5, 0.1), 34),
+      shot(8, 2.5, W('ronin', 0.6, 1.25, 1.2), W('ronin', 0.45, 1.15, 1.0), W('ronin', 0, 0.95, 0), 36), // the bent foam katana in his hand
       shot(10.5, 4.5, W('gabe', -0.9, 1.35, 2.0), W('gabe', -0.8, 1.4, 1.8), W('ronin', 0, 1.62, 0), 36),
-      shot(15, 2.5, W('pick', 0.8, 1.6, -1.6), W('pick', 0.7, 1.6, -1.4), W('gabe', 0, 1.0, 0), 38),
+      shot(15, 2.5, W('pick', 0.8, 1.6, -1.6), W('pick', 0.7, 1.6, -1.4), W('gabe', 0, 1.4, 0), 38),
       shot(17.5, 4, W('gabe', 0.6, 1.2, -2.2), W('gabe', 0.3, 1.0, -2.6), { bridge: true, y: 4 }, 48, { shake: 0.15 }),
-      shot(21.5, 3.5, W('gabe', 2.4, 0.9, 1.4), W('gabe', 2.2, 0.8, 1.2), W('gabe', 0, 0.8, 0), 44),
+      shot(21.5, 3.5, W('gabe', 2.4, 1.3, 1.7), W('gabe', 2.2, 1.2, 1.5), W('gabe', 0, 1.25, 0), 46),
       shot(25, 3, W('gabe', 4, 3, 4), W('gabe', 5, 5, 5), { bridge: true, y: 10 }, 50),
     ],
     actors: [
       act(0, 'bear', 'play', { clip: 'bear:dead', at: 0.9, speed: 0 }), // bear form: 'dead' held at 0.9 s
       act(0, 'gabe', 'play', { clip: 'gabe:hit', speed: 0.35 }), // human form: from 'hit' into the kneel
-      act(1.2, 'bear', 'hide'),
-      act(1.2, 'gabe', 'show'),
+      act(1.2, 'gabe', 'show', { replace: 'bear' }), // (under the flash: Gabe where the bear fell, the ronin squared up to him, 2.4 m off,
+      act(1.22, 'ronin', 'place', { at: W('gabe', 0, 0, 2.4), face: 'gabe' }), //  wherever the fight left them: the shots are framed on that)
       act(1.25, 'gabe', 'pose', { name: 'kneel', k: 1 }),
       act(1.4, 'gabe', 'drain', { k: 1, dur: 2 }), // the neon drains from Gabe over 2 s (B10)
       act(7.8, 'ronin', 'prop', { name: 'foamKatanaBent', on: true, bone: 'RightHand' }), // the katana is foam, and bent
@@ -146,9 +151,9 @@ export const CINES = {
   p2_intro: introCine('p2_intro', 'diner', 'DAY', { dx: 30, dz: 30 }),
   p3_intro: introCine('p3_intro', 'sunline_plaza', 'DAY', { dx: 30, dz: 35 }),
   p4_intro: introCine('p4_intro', 'p3_watch', 'DAY', { dx: -25, dz: 30 }),
-  p5_intro: introCine('p5_intro', 'hart_ridge', 'DUSK', { dx: -40, dz: 20 }),
+  p5_intro: introCine('p5_intro', 'hart_ridge', 'DUSK', { over: true }),
   p6_intro: introCine('p6_intro', 'aframe', 'NIGHT', { dx: -22, dz: 18 }),
-  p7_intro: introCine('p7_intro', 'cathedral', 'DAY', { dx: -60, dz: -60 }),
+  p7_intro: introCine('p7_intro', 'cathedral', 'DAY', { over: true }),
   p8_intro: introCine('p8_intro', 'gas', 'DAY', { dx: 30, dz: 30 }),
   p9_intro: introCine('p9_intro', 'diner', 'NIGHT', { dx: -30, dz: 25 }),
   p10_intro: introCine('p10_intro', 'hart_ranch', 'NIGHT', { dx: -50, dz: -60 }),
@@ -163,7 +168,7 @@ export const CINES = {
     shots: [
       shot(0, 4, W('rattler', 1.8, 1.6, 2.6), W('rattler', 1.4, 1.6, 2.2), W('rattler', 0, 1.2, 0), 40),
       shot(4, 3.5, W('fifty', -1.2, 1.7, 2.0), W('fifty', -1.0, 1.7, 1.8), W('rattler', 0, 1.6, 0), 36),
-      shot(7.5, 2, W('fifty', 0.4, 0.3, 1.4), W('fifty', 0.6, 0.25, 2.4), W('fifty', 0.4, 0.05, 2.8), 40),
+      shot(7.5, 2, W('fifty', -0.7, 1.6, 1.9), W('fifty', -0.6, 1.6, 1.7), W('fifty', 0, 1.55, 0), 36), // "Hey! My ring!": his face (the old floor insert showed an empty floor, the box is not a prop there)
       shot(9.5, 4.5, W('rattler', -2.2, 1.8, 3.2), W('rattler', -2.6, 2.0, 3.6), W('rattler', 0, 1.2, 0), 44),
       shot(14, 3, W('hero', 1.5, 1.8, -3), W('hero', 1.2, 1.7, -2.5), W('rattler', 0, 1.5, 0), 48),
     ],
@@ -180,10 +185,10 @@ export const CINES = {
   },
   f3_lights: {
     id: 'f3_lights', look: 'INTERIOR', dur: 10,
-    cast: { rattler: { id: 'rattler', at: { x: -897, y: -300, z: 898 }, yaw: 2.6 }, newbalance: { id: 'newbalance', at: { x: -902, y: -300, z: 901 }, yaw: 0.4 } },
+    cast: { rattler: { id: 'rattler', at: { x: -897, y: -300, z: 898 }, yaw: -0.9 }, newbalance: { id: 'newbalance', at: { x: -898.6, y: -300, z: 899.2 }, yaw: 2.2 } }, // (close enough to swap the fob)
     shots: [
       shot(0, 3, W('hero', 2.5, 2.4, -3), W('hero', 2.2, 2.2, -2.6), W('hero', 0, 1, 2), 52, { shake: 0.1 }),
-      shot(3, 4, { x: -899.5, y: 0.5, z: 899.6 }, { x: -899.4, y: 0.35, z: 899.4 }, { x: -899.5, y: 0.02, z: 899.8 }, 34),
+      shot(3, 4, { x: -896.2, y: 0.9, z: 900.7 }, { x: -896.4, y: 0.8, z: 900.4 }, { x: -897.8, y: 0.55, z: 898.6 }, 40), // the two of them crouched in the dark, the fob between them
       shot(7, 3, W('newbalance', 0.6, 1.7, 1.6), W('newbalance', 0.5, 1.7, 1.4), W('newbalance', 0, 1.6, 0), 34),
     ],
     actors: [act(3.6, 'newbalance', 'pose', { name: 'crouch', k: 1 }), act(3.8, 'rattler', 'pose', { name: 'crouch', k: 1 }), act(5.2, 'newbalance', 'pose', { name: 'crouch', k: 0 }), act(5.3, 'rattler', 'pose', { name: 'crouch', k: 0 })],
@@ -196,7 +201,9 @@ export const CINES = {
   /* ---------------- F5: YOU KNOW THE REST ---------------- */
   f5_rest: {
     id: 'f5_rest', look: 'MEMORY_NIGHT', dur: 16,
-    cast: { gabe: { id: 'gabe', at: P('f5_trail', 3, 0, -6), yaw: 2.6, props: ['flashlight'] }, pick: { id: 'pick', costume: true, at: P('f5_trail', 0, 0, 0), yaw: -0.5 } },
+    // (the trail drops 8 m in 6 m below the deck: the two stand along its contour, level with each other, so
+    // no shot has the hill between the lens and a face)
+    cast: { gabe: { id: 'gabe', at: P('f5_trail', 6.5, 0, 2.2), yaw: -1.9, props: ['flashlight'] }, pick: { id: 'pick', costume: true, at: P('f5_trail', 0, 0, 0), yaw: 1.24 } },
     shots: [
       shot(0, 4, W('pick', 0.8, 1.7, -2.4), W('pick', 0.6, 1.7, -1.8), W('gabe', 0, 1.6, 0), 42),
       shot(4, 3, W('gabe', -0.6, 1.7, 2.2), W('gabe', -0.5, 1.7, 1.9), W('gabe', 0, 1.62, 0), 32),
@@ -214,14 +221,17 @@ export const CINES = {
   /* ---------------- P1: the evidence wall (it shows the player's F5 photo) ---------------- */
   p1_wall: {
     id: 'p1_wall', look: 'INTERIOR', dur: 27,
-    cast: { gabe: { id: 'gabe', at: { x: -870.8, y: -300, z: 899.8 }, yaw: Math.PI } },
+    // The Airstream is 9 m long and 2.6 m deep (world/interiors.js): the two of them stand along its length,
+    // Gabe by the wall facing the door end, the hero 3.6 m off facing him, so every shot of Gabe is inside
+    // the shell (the old marks turned him to the wall and put the lens 2 m outside it)
+    cast: { gabe: { id: 'gabe', at: { x: -872.2, y: -300, z: 899.9 }, yaw: Math.PI / 2 } },
     shots: [
-      shot(0, 5, { x: -870.2, y: 1.6, z: 901.2 }, { x: -870.3, y: 1.55, z: 900.4 }, { x: -870.4, y: 1.45, z: 899.3 }, 44), // the wall: the F5 photo beside Gabe's photo of their van
-      shot(5, 6, W('gabe', 0.7, 1.7, 2.2), W('gabe', 0.5, 1.68, 1.9), W('gabe', 0, 1.64, 0), 32),
-      shot(11, 8, W('gabe', -0.8, 1.6, 2.4), W('gabe', -0.6, 1.62, 2.0), W('gabe', 0, 1.6, 0), 30),
-      shot(19, 8, { x: -869.6, y: 1.4, z: 901 }, { x: -869.9, y: 1.5, z: 900.6 }, W('gabe', 0, 1.5, 0), 40),
+      shot(0, 5, { x: -870.0, y: 1.55, z: 900.9 }, { x: -870.2, y: 1.5, z: 900.5 }, { x: -870.4, y: 1.45, z: 899.2 }, 44), // the wall: the F5 photo beside Gabe's photo of their van
+      shot(5, 6, W('gabe', 0.35, 1.65, 1.9), W('gabe', 0.3, 1.65, 1.6), W('gabe', 0, 1.62, 0), 34),
+      shot(11, 8, W('gabe', -0.45, 1.6, 2.1), W('gabe', -0.35, 1.62, 1.8), W('gabe', 0, 1.6, 0), 32),
+      shot(19, 8, { x: -868.9, y: 1.45, z: 900.8 }, { x: -869.2, y: 1.5, z: 900.6 }, W('gabe', 0, 1.5, 0), 42),
     ],
-    actors: [act(5, 'gabe', 'pose', { name: 'talk', k: 0.6 }), act(19, 'gabe', 'pose', { name: 'handsOpen', k: 1 })],
+    actors: [act(0, 'hero', 'place', { x: -868.6, y: -300, z: 900.0, yaw: -Math.PI / 2 }), act(5, 'gabe', 'pose', { name: 'talk', k: 0.6 }), act(19, 'gabe', 'pose', { name: 'handsOpen', k: 1 })],
     lines: [line(1.2, 'p1.wall'), line(5.4, 'p1.neon'), line(10.6, 'p1.why1'), line(14.2, 'p1.why2'), line(19.6, 'p1.card')],
     end: { look: 'INTERIOR', actors: { gabe: { pose: 'idle' } } },
   },
@@ -264,7 +274,7 @@ export const CINES = {
   p11_finisher: {
     id: 'p11_finisher', look: 'VORTEX', dur: 5,
     cast: { tanktop: 'tanktop', fifty: 'fifty', shades: 'shades', newbalance: 'newbalance', redjersey: 'redjersey', gabe: 'gabe' },
-    shots: ['tanktop', 'fifty', 'shades', 'newbalance', 'redjersey', 'gabe'].map((w, i) => shot(0.2 + i * 0.5, 0.5, W(w, 0.9, 1.5, 1.8), W(w, 0.6, 1.45, 1.4), W(w, 0, 1.3, 0), 30, { ease: 'out' }))
+    shots: ['tanktop', 'fifty', 'shades', 'newbalance', 'redjersey', 'gabe'].map((w, i) => shot(0.2 + i * 0.5, 0.5, W(w, 0.9, 1.6, 1.9), W(w, 0.6, 1.58, 1.5), W(w, 0, 1.45, 0), 32, { ease: 'out' })) // (head and shoulders: the old aim at 1.3 m cut the heads off)
       .concat([shot(3.2, 1.8, W('hero', 3, 2.5, -4), W('hero', 4, 3.4, -5.5), W('hero', 0, 1, 3), 52)]),
     actors: [act(0.2, 'tanktop', 'play', { clip: 'ronin:heavy' }), act(0.7, 'fifty', 'play', { clip: 'ronin:combo' }), act(1.2, 'shades', 'play', { clip: 'ronin:parry' }),
       act(1.7, 'newbalance', 'play', { clip: 'ronin:roll' }), act(2.2, 'redjersey', 'play', { clip: 'ronin:combo' }), act(2.7, 'gabe', 'play', { clip: 'gabe:call' })],
@@ -286,9 +296,12 @@ export const CINES = {
       shot(8, 6, P('p12_lot', -18, 3, 10), P('p12_lot', -17, 3, 9), P('p12_lot', 14, 1.2, -9), 36), // Dana meets the four, from far away
       shot(14, 8, W('vance', -0.9, 1.7, 2.2), W('vance', -0.7, 1.7, 2.0), W('gabe', 0, 1.6, 0), 34),
       shot(22, 8, W('gabe', 0.8, 1.7, 2.4), W('gabe', 0.6, 1.7, 2.1), W('vance', 0, 1.6, 0), 34),
-      shot(30, 10, W('fifty', 1.2, 1.5, 2.2), W('fifty', 1.5, 2.2, 3.4), W('gabe', 0, 1.3, 0), 38),
+      // the ring changes hands: the two turn to each other and the lens takes them side on, both faces (the old
+      // angle had Gabe's back and Fifty-One on the frame's edge)
+      shot(30, 10, W('gabe', 2.7, 1.6, 1.0), W('gabe', 2.4, 1.65, 1.1), W('gabe', 0, 1.45, 1.0), 44),
     ],
     actors: [
+      act(29.6, 'fifty', 'face', { who: 'gabe' }), act(29.6, 'gabe', 'face', { who: 'fifty' }),
       act(30.4, 'fifty', 'prop', { name: 'ringBox', on: true, bone: 'RightHand' }), act(33, 'fifty', 'prop', { name: 'ringBox', on: false }),
       act(33, 'gabe', 'prop', { name: 'ringBox', on: true, bone: 'RightHand' }), act(14, 'vance', 'pose', { name: 'talk', k: 0.5 }),
     ],

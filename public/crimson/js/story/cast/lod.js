@@ -10,6 +10,9 @@
 //   the tier's body distance (5 / 8 / 14 m), or beyond 3.5 m when past the nearest 2 / 2 / 4 heavy bodies
 //   or the budget of full actors: the same skinned vertices,
 //   about a third of the triangles (a fight's five gang bodies cost 78k triangles in full)
+// - in a cine (S.cine.active) every body draws in full, and within 60 m it animates every frame:
+//   a cut scene frames people close, and a coarse body or a 10 Hz mixer shows there (the swap would pop
+//   between two shots); the outline hulls keep their rules
 // It also runs each actor's update at its rate, so the 'anim' phase calls lod.step(actor, dt).
 import * as THREE from 'three';
 
@@ -101,6 +104,7 @@ export function createLod(S) {
     }
     vis.sort((x, y) => x.d - y.d);
     const qi = Math.max(0, Math.min(2, q));
+    const cine = !!(S.cine && S.cine.active);
     let heavyN = 0;
     vis.forEach((e, i) => {
       const a = e.a, over = e.kind !== 'arena' && i >= budget;
@@ -109,11 +113,12 @@ export function createLod(S) {
       // only the post pass's ink edges: the hull would double the phone's biggest actor cost
       const heavyOff = q < 2 && a.heavy && e.kind !== 'arena';
       setHull(a, !over && !heavyOff && e.d <= lim);
-      if (a.heavy && e.kind !== 'arena' && !(S.hero && S.hero.actor === a)) {
+      if (cine) { if (a.coarseOn) setCoarse(a, false); }
+      else if (a.heavy && e.kind !== 'arena' && !(S.hero && S.hero.actor === a)) {
         const near = LOD.body[qi], full = heavyN++ < LOD.bodyFull[qi];
         setCoarse(a, (over || !full) && e.d > LOD.bodyMin || e.d > (a.coarseOn ? near : near + 1));
       } else if (a.coarseOn) setCoarse(a, false);
-      a.lodHz = over ? LOD.crowdHz : e.kind === 'crowd' ? (e.d > LOD.crowdNear ? LOD.crowdHz : 0) : e.d > LOD.slow ? LOD.slowHz : 0;
+      a.lodHz = cine && e.d <= LOD.slow * 2 ? 0 : over ? LOD.crowdHz : e.kind === 'crowd' ? (e.d > LOD.crowdNear ? LOD.crowdHz : 0) : e.d > LOD.slow ? LOD.slowHz : 0;
     });
     for (const e of list) if (e.a && e.a.lodHidden) setHull(e.a, false);
     return vis.length;

@@ -19,12 +19,12 @@
 // - the story fog is linear (one THREE.Fog for every look, so no material recompiles between looks); its
 //   far end never passes the tier's view distance (C8).
 import * as THREE from 'three';
-import { post, resetPost, setQuality as renderQuality, adaptConfig, adaptHold, adaptInfo, createAdapter, setDepth, toonRamp, lastInfo, KEY, LITE } from '../../render.js';
+import { post, resetPost, setQuality as renderQuality, quality as renderNow, adaptConfig, adaptHold, adaptInfo, createAdapter, setDepth, toonRamp, lastInfo, KEY, LITE } from '../../render.js';
 import { LOOKS } from '../types.js';
 import { PRESETS, CLOCK, CLOCK_LOOKS, clockLook } from './presets.js';
 import { createSky, MOON_THETA, MOON_ELEV } from './sky.js';
 import { createLights } from './lights.js';
-import { QUALITY, tierOf, startTier, renderOpts } from './quality.js';
+import { QUALITY, tierOf, startTier, renderOpts, CINE_PR } from './quality.js';
 import { checkNeon } from './palette.js';
 
 /* ---------------- presets as flat numbers ---------------- */
@@ -71,6 +71,7 @@ export function init(S) {
   const ov = { legend: 0, legendOn: false, vortex: 0, vortexOn: false, vortexRate: 1 / 1.2 };
   const sunDir = new THREE.Vector3(), moonDir = new THREE.Vector3(Math.sin(MOON_THETA) * Math.cos(MOON_ELEV), Math.sin(MOON_ELEV), Math.cos(MOON_THETA) * Math.cos(MOON_ELEV)), keyDir = new THREE.Vector3();
   const center = new THREE.Vector3(), fwd = new THREE.Vector3();
+  let cineSave = null; // the render settings a cine put aside (cineQuality)
   let active = false, compiled = false, stamp = null, lastRamp = '', debugKey = false, lastVariant = 'INK';
   const rampBytes = toonRamp.image.data;
 
@@ -100,8 +101,15 @@ export function init(S) {
     adaptHold(1000);
     scene.fog = storyFog; scene.background = storyBg;
   }
+  const CINE_SHADOW_BIAS = -0.0012;
+  // in a cine the fill (from the camera's side) is at least this: the dark looks (VORTEX, DEEP_INK, the
+  // bar) left the faces of a close-up black; play keeps the look's own
+  const CINE_FILL = 0.8;
+  function cineOpts() { const t = tierOf(S.q), pr = L.cinePR(); return { ...renderOpts(t), samples: Math.max(2, t.msaa), prMin: pr, prMax: Math.max(pr, t.pr[1]), pr }; }
   function deactivate() {
     const was = active;
+    if (cineSave) lights.sun.shadow.bias = cineSave.bias;
+    cineSave = null;
     active = false;
     lights.group.visible = false; sky.group.visible = false;
     for (const s of lights.spots) s.intensity = 0;
@@ -151,9 +159,29 @@ export function init(S) {
       q = Math.max(0, Math.min(2, Math.round(q) || 0));
       S.q = q;
       const t = tierOf(q);
-      if (active) { renderQuality(renderOpts(t)); lights.setTier(t); sky.setTier(t); adaptHold(1000); }
+      if (active) { renderQuality(cineSave ? cineOpts() : renderOpts(t)); lights.setTier(t); sky.setTier(t); adaptHold(1000); }
       S.bus.emit('quality', q);
     },
+    // a cine's render scale: the tier's top pixel ratio and a step past it (quality.js CINE_PR), capped by
+    // the screen's own; the frame-time governor may not take it (or the tier) down while the cine plays
+    cinePR() { return Math.min(devicePixelRatio || 1, CINE_PR[Math.max(0, Math.min(2, S.q))]); },
+    // on: the cine's render settings (the pixel ratio above, at least 2x MSAA); off: the ones before it
+    cineQuality(on) {
+      if (on && !cineSave) {
+        cineSave = { pr: renderNow.pr, tier: adaptConfig.tier, active, bias: lights.sun.shadow.bias };
+        adaptConfig.tier = null;
+        // (a close-up shows the key light's shadow acne on flat panels, a van's side: a deeper bias clears it)
+        lights.sun.shadow.bias = CINE_SHADOW_BIAS;
+        renderQuality(active ? cineOpts() : { prMin: L.cinePR(), prMax: L.cinePR(), pr: L.cinePR() });
+      } else if (!on && cineSave) {
+        const sv = cineSave; cineSave = null;
+        lights.sun.shadow.bias = sv.bias;
+        if (sv.active && active) { adaptConfig.tier = sv.tier; renderQuality({ ...renderOpts(tierOf(S.q)), pr: sv.pr }); }
+        else if (!sv.active && !active) renderQuality(null); // the arena's own settings
+        adaptHold(1000);
+      }
+    },
+    get cineOn() { return !!cineSave; },
     headlights(on) { for (const s of lights.spots) s.intensity = on ? 60 : 0; },
     // QA: show the key mask (1 - alpha) as grey
     debugKey(on) { debugKey = !!on; },
@@ -212,7 +240,7 @@ export function init(S) {
     keyDir.lerp(moonDir, clamp01(P.keyFrom)).normalize();
     uniforms.uSunDir.value.copy(keyDir);
     lights.sun.color.setRGB(P.keyColor[0], P.keyColor[1], P.keyColor[2]); lights.sun.intensity = P.keyInt;
-    lights.moon.color.setRGB(P.fillColor[0], P.fillColor[1], P.fillColor[2]); lights.moon.intensity = P.fillInt;
+    lights.moon.color.setRGB(P.fillColor[0], P.fillColor[1], P.fillColor[2]); lights.moon.intensity = cineSave ? Math.max(P.fillInt, CINE_FILL) : P.fillInt;
     lights.hemi.color.setRGB(P.hemiSky[0], P.hemiSky[1], P.hemiSky[2]); lights.hemi.groundColor.setRGB(P.hemiGround[0], P.hemiGround[1], P.hemiGround[2]); lights.hemi.intensity = P.hemiInt;
     for (const p of lights.points) { p.color.setRGB(P.pointColor[0], P.pointColor[1], P.pointColor[2]); if (!p.userData.pinned) p.intensity = P.pointInt; } // a pinned point's intensity is its owner's (WORLD lights the rooms)
     // where the lights and the shadow box go: the focus, or in front of the camera when the focus is far off

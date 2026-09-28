@@ -18,6 +18,7 @@ import { createMap } from './map.js';
 import { lastInfo } from '../../render.js';
 import { QUALITY } from '../look/quality.js';
 import { PALETTE } from '../look/palette.js';
+const ROOM_LAMP = 60; // the bar's two lamps (W.update)
 
 // Every base colour the world paints with (display sRGB), for LOOK's palette check (palette.mjs). Greens stay
 // bluish (g - b < 0.12) and nothing is yellow-green. (The road and sidewalk paint takes LOOK's PALETTE.)
@@ -272,12 +273,13 @@ export function init(S) {
     if (parts.town.ranch.on !== ranchLights) parts.town.ranch.lights(ranchLights);
     parts.town.update(night, S.time);
     parts.water.setLight(1 - night * 0.75, S.scene.fog && S.scene.fog.color);
-    // inside a room: keep the walker in, and hang the fixed point lights over it
+    // inside a room: keep the walker in, and hang the fixed point lights over it (the bar's two lamps at 60:
+    // at 14 the room read black, its walls and the people in it lost in the F3 cines)
     const room = S.hero && S.hero.mode === 'foot' && hero.y < -200 ? parts.interiors.contain(S.hero.pos) : null;
     const pts = S.look && S.look.lights && S.look.lights.points;
     if (room && pts && pts.length) {
       const L = room === 'rattlesnake_room' ? parts.interiors.lamps : [[INTERIORS.airstream.x - 1.5, INTERIORS.airstream.y + 2, INTERIORS.airstream.z], [INTERIORS.airstream.x + 2.5, INTERIORS.airstream.y + 2, INTERIORS.airstream.z]];
-      pts.forEach((p, i) => { const l = L[i % L.length]; p.userData.pinned = true; p.position.set(l[0], l[1] - 0.3, l[2]); if (!pointsLit) p.intensity = room === 'airstream' ? 1.6 : 14; });
+      pts.forEach((p, i) => { const l = L[i % L.length]; p.userData.pinned = true; p.position.set(l[0], l[1] - 0.3, l[2]); if (!pointsLit) p.intensity = room === 'airstream' ? 1.6 : ROOM_LAMP; });
       pointsLit = true;
     } else if (pointsLit && pts) { for (const p of pts) { p.intensity = 0; p.userData.pinned = false; } pointsLit = false; }
   }

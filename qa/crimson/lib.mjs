@@ -15,9 +15,9 @@ export const here = (p) => new URL(p, import.meta.url).pathname;
 
 // Open the game at URL_BASE + query, wait until the models are loaded, and take manual control:
 // from then on nothing moves unless the test steps it.
-export async function open({ query = "", width = 640, height = 360, touch = false, clear = true, blockFilm = true, manual = true, before = null } = {}) {
+export async function open({ query = "", width = 640, height = 360, touch = false, dpr = 1, clear = true, blockFilm = true, manual = true, before = null } = {}) {
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required"] });
-  const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, ignoreHTTPSErrors: true } : { viewport: { width, height }, deviceScaleFactor: 1, ignoreHTTPSErrors: true });
+  const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: dpr, ignoreHTTPSErrors: true } : { viewport: { width, height }, deviceScaleFactor: dpr, ignoreHTTPSErrors: true });
   const page = await ctx.newPage();
   // software rendering is slow, and the page loads its 3D models before the title screen
   page.setDefaultTimeout(240000);
