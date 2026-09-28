@@ -296,9 +296,12 @@ export const CINES = {
       shot(8, 6, P('p12_lot', -18, 3, 10), P('p12_lot', -17, 3, 9), P('p12_lot', 14, 1.2, -9), 36), // Dana meets the four, from far away
       shot(14, 8, W('vance', -0.9, 1.7, 2.2), W('vance', -0.7, 1.7, 2.0), W('gabe', 0, 1.6, 0), 34),
       shot(22, 8, W('gabe', 0.8, 1.7, 2.4), W('gabe', 0.6, 1.7, 2.1), W('vance', 0, 1.6, 0), 34),
-      shot(30, 10, W('fifty', 1.2, 1.5, 2.2), W('fifty', 1.5, 2.2, 3.4), W('gabe', 0, 1.3, 0), 38),
+      // the ring changes hands: the two turn to each other and the lens takes them side on, both faces (the old
+      // angle had Gabe's back and Fifty-One on the frame's edge)
+      shot(30, 10, W('gabe', 2.7, 1.6, 1.0), W('gabe', 2.4, 1.65, 1.1), W('gabe', 0, 1.45, 1.0), 44),
     ],
     actors: [
+      act(29.6, 'fifty', 'face', { who: 'gabe' }), act(29.6, 'gabe', 'face', { who: 'fifty' }),
       act(30.4, 'fifty', 'prop', { name: 'ringBox', on: true, bone: 'RightHand' }), act(33, 'fifty', 'prop', { name: 'ringBox', on: false }),
       act(33, 'gabe', 'prop', { name: 'ringBox', on: true, bone: 'RightHand' }), act(14, 'vance', 'pose', { name: 'talk', k: 0.5 }),
     ],
