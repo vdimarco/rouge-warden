@@ -528,7 +528,13 @@ export class World {
   // part around you as you walk and spring back behind you, and glow at the tips when the sun is behind them.
   // Two layers: fine blades close by, and wider clumps farther out so the fields reach the distance.
   buildGrass(q = this.quality) {
-    if (this.grass) { this.scene.remove(this.grass); this.grass.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
+    if (this.grass) {
+      this.scene.remove(this.grass);
+      // the buckets of a layer share one material
+      const mats = new Set();
+      this.grass.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); mats.add(o.material); } });
+      for (const m of mats) m.dispose();
+    }
     const u = this.grassU = this.grassU || {
       uTime: SHARED.uTime, uWind: SHARED.uWind, uCenter: { value: new THREE.Vector2() }, uSize: { value: SIZE },
       uHeight: { value: this.heightTex }, uMask: { value: this.maskTex }, uPlayer: { value: new THREE.Vector3() },
@@ -537,30 +543,65 @@ export class World {
       uSunDir: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
     };
     this.trail = this.trail || { t: 0, k: 0, last: new THREE.Vector3(0, -999, 0) };
+    this.grassCull = this.grassCull || this.grassCells();
     this.grass = new THREE.Group();
-    // fewer joints per blade on the light setting and in the far layer, where the curve is a few pixels tall
-    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5, joints: q.grass < 60000 ? 4 : 6 }));
-    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true, joints: 3 }));
+    // fewer joints per blade on the light setting and in the far layer, where the curve is a few pixels tall;
+    // each layer is cut into 4 x 4 buckets on the light setting and 8 x 8 on the others
+    const B = q.grass < 60000 ? 4 : 8;
+    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5, joints: q.grass < 60000 ? 4 : 6, buckets: B }));
+    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true, joints: 3, buckets: B }));
     this.scene.add(this.grass);
+  }
+  // A coarse grid of 32 m cells for the grass culling: the lowest and highest ground and the thickest grass in each
+  // cell. It reads the same texels the grass shader samples, one texel wider on every side. Clearings made later
+  // only thin the grass, so the thickest value stays safe.
+  grassCells() {
+    const C = 32, GC = SIZE / C, lo = new Float32Array(GC * GC), hi = new Float32Array(GC * GC), ma = new Uint8Array(GC * GC);
+    const W = N + 1, hd = this.heightTex.image.data, h = new Float32Array(W * W), md = this.maskData, R = this.maskR;
+    for (let k = 0; k < W * W; k++) h[k] = THREE.DataUtils.fromHalfFloat(hd[k]);
+    // the first and last texel a linear sample anywhere in each cell can touch, in a texture n texels wide
+    const span = (n) => Array.from({ length: GC }, (_, c) => [Math.max(0, Math.floor(((c * C) / SIZE) * n - 0.5) - 1), Math.min(n - 1, Math.floor((((c + 1) * C) / SIZE) * n - 0.5) + 2)]);
+    const sw = span(W), sr = span(R);
+    for (let cj = 0; cj < GC; cj++) for (let ci = 0; ci < GC; ci++) {
+      let a = Infinity, b = -Infinity, m = 0;
+      for (let j = sw[cj][0]; j <= sw[cj][1]; j++) for (let i = sw[ci][0]; i <= sw[ci][1]; i++) { const v = h[j * W + i]; if (v < a) a = v; if (v > b) b = v; }
+      for (let j = sr[cj][0]; j <= sr[cj][1]; j++) for (let i = sr[ci][0]; i <= sr[ci][1]; i++) m = Math.max(m, md[(j * R + i) * 4 + 3]);
+      const k = cj * GC + ci; lo[k] = a; hi[k] = b; ma[k] = m;
+    }
+    return { C, GC, lo, hi, ma, xs: new Float64Array(4), zs: new Float64Array(4), frustum: new THREE.Frustum(), m: new THREE.Matrix4(), box: new THREE.Box3() };
   }
   grassLayer(count, P, o) {
     // a blade: wide at the root, pointed at the tip, curved, with enough joints to bend smoothly
     const blade = new THREE.PlaneGeometry(o.width, 1, 1, o.joints || 6); blade.translate(0, 0.5, 0);
     const bp = blade.attributes.position;
     for (let i = 0; i < bp.count; i++) { const y = bp.getY(i); bp.setX(i, bp.getX(i) * (1 - y * 0.94) * (1 + Math.sin(y * 3) * 0.15)); bp.setZ(i, y * y * 0.22); }
-    const geo = new THREE.InstancedBufferGeometry();
-    geo.index = blade.index; geo.setAttribute("position", bp); geo.setAttribute("uv", blade.attributes.uv);
     const off = new Float32Array(count * 3), shp = new Float32Array(count * 2), r = rng(o.seed);
     for (let k = 0; k < count; k++) { off.set([(r() - 0.5) * P, (r() - 0.5) * P, r()], k * 3); shp.set([0.55 + r() * 0.75, r()], k * 2); }
-    geo.setAttribute("aOff", new THREE.InstancedBufferAttribute(off, 3));
-    geo.setAttribute("aShape", new THREE.InstancedBufferAttribute(shp, 2));
-    geo.instanceCount = count;
+    // Cut the patch into B x B buckets, so update() can skip the ones that cannot show a blade. Inside a bucket the
+    // blades go cell by cell along a Z curve, so blades drawn together stand together and take the same early-out.
+    const B = o.buckets, S = P / B, CS = o.far ? 8 : 4, key = new Uint16Array(count), at = new Uint32Array(B * B * 64 + 1);
+    const bits = (v) => (v & 1) | ((v & 2) << 1) | ((v & 4) << 2);
+    for (let k = 0; k < count; k++) {
+      const x = off[k * 3] + P / 2, z = off[k * 3 + 1] + P / 2;
+      const bi = Math.min(B - 1, (x / S) | 0), bj = Math.min(B - 1, (z / S) | 0);
+      const ci = Math.min(7, ((x - bi * S) / CS) | 0), cj = Math.min(7, ((z - bj * S) / CS) | 0);
+      key[k] = (bj * B + bi) * 64 + (bits(ci) | (bits(cj) << 1));
+      at[key[k] + 1]++;
+    }
+    for (let k = 1; k < at.length; k++) at[k] += at[k - 1];
+    const first = Array.from({ length: B * B + 1 }, (_, b) => at[b * 64]);
+    const off2 = new Float32Array(count * 3), shp2 = new Float32Array(count * 2);
+    for (let k = 0; k < count; k++) {
+      const i = at[key[k]]++;
+      off2[i * 3] = off[k * 3]; off2[i * 3 + 1] = off[k * 3 + 1]; off2[i * 3 + 2] = off[k * 3 + 2];
+      shp2[i * 2] = shp[k * 2]; shp2[i * 2 + 1] = shp[k * 2 + 1];
+    }
     const inner = o.far ? P * 0.1 : 0, outer0 = o.far ? P * 0.36 : P * 0.3, outer1 = P * 0.5;
     const mat = new THREE.ShaderMaterial({
       uniforms: { ...this.grassU, uPatch: { value: P } }, side: THREE.DoubleSide,
       vertexShader: `
-        uniform float uTime, uPatch, uSize; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir; uniform vec4 uTrail[10];
-        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
+        uniform float uTime, uPatch, uSize, uFogNear, uFogFar; uniform vec2 uCenter, uWind; uniform sampler2D uHeight, uMask; uniform vec3 uPlayer, uSunDir; uniform vec4 uTrail[10];
+        attribute vec3 aOff; attribute vec2 aShape; varying vec3 vCol; varying float vT; varying vec2 vShadeFog; varying float vGust; varying float vBack; varying float vGold;
         ${NOISE_GLSL}
         void main(){
           vec2 wp = uCenter + mod(aOff.xy - uCenter + uPatch*0.5, uPatch) - uPatch*0.5;
@@ -575,7 +616,7 @@ export class World {
           // or behind or well to the side of the camera. Every vertex of the blade takes the same branch.
           vec4 vr = viewMatrix * vec4(wp.x, h, wp.y, 1.0);
           if (keep * fade <= 0.0 || vr.z > 2.0 || abs(vr.x) > -vr.z / projectionMatrix[0][0] + 3.0) {
-            vCol = vec3(0.0); vT = 0.0; vW = vec3(0.0); vGust = 0.0; vBack = 0.0; vGold = 0.0;
+            vCol = vec3(0.0); vT = 0.0; vShadeFog = vec2(1.0, 0.0); vGust = 0.0; vBack = 0.0; vGold = 0.0;
             gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
             return;
           }
@@ -613,7 +654,9 @@ export class World {
           p.y = hs * sin(ang) / th;
           p.xz += bd * hs * (1.0 - cos(ang)) / th;
           vec3 w = vec3(wp.x, h, wp.y) + p;
-          vW = w; vT = t; vGust = gust * t;
+          vT = t; vGust = gust * t;
+          // cloud shadows and fog change over many metres, so each blade takes them at its joints
+          vShadeFog = vec2(mix(1.0, 0.68, cloudShadow(w.xz, uTime)), smoothstep(uFogNear, uFogFar, length(cameraPosition - w)));
           // light each blade by the slope under it; shady sides turn blue-green
           float e = 2.0 / uSize;
           float hl = texture2D(uHeight, uv - vec2(e, 0.0)).r, hr = texture2D(uHeight, uv + vec2(e, 0.0)).r;
@@ -636,24 +679,82 @@ export class World {
           gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
         }`,
       fragmentShader: `
-        uniform vec3 uFog, uSunCol; uniform float uFogNear, uFogFar, uLight, uTime; varying vec3 vCol; varying float vT; varying vec3 vW; varying float vGust; varying float vBack; varying float vGold;
-        ${NOISE_GLSL}
+        uniform vec3 uFog, uSunCol; uniform float uLight; varying vec3 vCol; varying float vT; varying vec2 vShadeFog; varying float vGust; varying float vBack; varying float vGold;
         void main(){
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
           col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
           col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
-          col *= mix(1.0, 0.68, cloudShadow(vW.xz, uTime));
-          col *= uLight;
-          float d = length(cameraPosition - vW);
-          col = mix(col, uFog, smoothstep(uFogNear, uFogFar, d));
+          col *= vShadeFog.x * uLight;
+          col = mix(col, uFog, vShadeFog.y);
           gl_FragColor = vec4(col, 1.0);
         }`,
     });
     mat.uniforms.uTrail = this.grassU.uTrail;
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.frustumCulled = false;
-    return mesh;
+    const layer = new THREE.Group();
+    layer.userData = { P, S, inner };
+    for (let b = 0; b < B * B; b++) {
+      const a = first[b], e = first[b + 1];
+      if (e === a) continue;
+      // every bucket shares the blade and the material, and has its own blades
+      const geo = new THREE.InstancedBufferGeometry();
+      geo.index = blade.index; geo.setAttribute("position", bp); geo.setAttribute("uv", blade.attributes.uv);
+      geo.setAttribute("aOff", new THREE.InstancedBufferAttribute(off2.subarray(a * 3, e * 3), 3));
+      geo.setAttribute("aShape", new THREE.InstancedBufferAttribute(shp2.subarray(a * 2, e * 2), 2));
+      geo.instanceCount = e - a;
+      // a blade grows only where the mask reaches its own threshold, so keep the lowest one
+      let k0 = 1;
+      for (let k = a; k < e; k++) k0 = Math.min(k0, off2[k * 3 + 2]);
+      const mesh = new THREE.Mesh(geo, mat);
+      // the shader places the blades, so three's own culling cannot work: update() hides buckets instead.
+      // Drawn before the ground, the blades hide the ground under them before it is shaded.
+      mesh.frustumCulled = false; mesh.renderOrder = -1;
+      mesh.userData = { x: (b % B) * S - P / 2, z: Math.floor(b / B) * S - P / 2, k0 };
+      layer.add(mesh);
+    }
+    return layer;
+  }
+  // Hides the buckets that cannot show a blade: out of view, faded out, or on bare ground. A bucket lands around the
+  // centre in one piece, or in up to four where it crosses the wrap seam. The boxes are generous, so no blade on
+  // screen is lost. The position only sorts the buckets front to back; the shader ignores it.
+  cullGrass(cam) {
+    const K = this.grassCull, c = this.grassU.uCenter.value, cx = c.x, cz = c.y, xs = K.xs, zs = K.zs, box = K.box;
+    cam.updateMatrixWorld();
+    K.frustum.setFromProjectionMatrix(K.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    // the world spans of the local span [lo, lo + S), as the shader wraps it around the centre
+    const wrap = (lo, S, c, P, out) => {
+      const e = c - P / 2, s = lo - P * Math.floor((lo - e) / P), t = s + S;
+      out[0] = s; out[1] = Math.min(t, e + P); out[2] = e; out[3] = t - P;
+      return t > e + P ? 2 : 1;
+    };
+    const cell = (v) => Math.min(K.GC - 1, Math.max(0, Math.floor((v + HALF) / K.C)));
+    for (const layer of this.grass.children) {
+      const { P, S, inner } = layer.userData, R2 = (P / 2) * (P / 2), I2 = inner * inner;
+      for (const mesh of layer.children) {
+        const b = mesh.userData, nx = wrap(b.x, S, cx, P, xs), nz = wrap(b.z, S, cz, P, zs);
+        let best = Infinity;
+        for (let u = 0; u < nx; u++) for (let v = 0; v < nz; v++) {
+          const x0 = xs[u * 2], x1 = xs[u * 2 + 1], z0 = zs[v * 2], z1 = zs[v * 2 + 1];
+          // past the outer fade, or inside the far layer's inner fade
+          const dx = Math.max(x0 - cx, cx - x1, 0), dz = Math.max(z0 - cz, cz - z1, 0);
+          if (dx * dx + dz * dz >= R2) continue;
+          const fx = Math.max(cx - x0, x1 - cx), fz = Math.max(cz - z0, z1 - cz);
+          if (fx * fx + fz * fz <= I2) continue;
+          let lo = Infinity, hi = -Infinity, ma = 0;
+          const i0 = cell(x0), i1 = cell(x1), j1 = cell(z1);
+          for (let j = cell(z0); j <= j1; j++) for (let i = i0; i <= i1; i++) {
+            const k = j * K.GC + i; lo = Math.min(lo, K.lo[k]); hi = Math.max(hi, K.hi[k]); ma = Math.max(ma, K.ma[k]);
+          }
+          if (ma < b.k0 * 255) continue;
+          // room for a blade's bend and width to the sides, and its full height above the ground
+          box.min.set(x0 - 2.5, lo - 0.1, z0 - 2.5); box.max.set(x1 + 2.5, hi + 3.5, z1 + 2.5);
+          if (!K.frustum.intersectsBox(box)) continue;
+          const px = (x0 + x1) / 2, pz = (z0 + z1) / 2, d = (px - cam.position.x) ** 2 + (pz - cam.position.z) ** 2;
+          if (d < best) { best = d; mesh.position.set(px, (lo + hi) / 2, pz); }
+        }
+        mesh.visible = best < Infinity;
+      }
+    }
   }
 
   /* ---------------- trees, rocks, flowers ---------------- */
@@ -1074,6 +1175,7 @@ export class World {
     this.time = t;
     SHARED.uTime.value = t;
     this.grassU.uCenter.value.set(cam.position.x * 0.5 + player.x * 0.5, cam.position.z * 0.5 + player.z * 0.5);
+    this.cullGrass(cam);
     this.grassU.uPlayer.value.set(player.x, player.y, player.z);
     // drop a trail point every few steps; each one fades over a few seconds, so the grass springs back
     const tr = this.trail, T = this.grassU.uTrail.value;
