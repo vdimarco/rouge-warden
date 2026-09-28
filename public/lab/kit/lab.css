@@ -34,5 +34,5 @@ canvas.view { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 10
 .toast { position: fixed; left: 50%; top: 22%; transform: translate(-50%, -8px); padding: 8px 16px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font: 700 18px/1.2 var(--body); opacity: 0; transition: opacity 0.18s, transform 0.18s; pointer-events: none; z-index: 7; white-space: nowrap; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
-.hud { position: fixed; left: 50%; top: calc(var(--sat) + 10px); transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; pointer-events: none; }
+.hud { position: fixed; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; pointer-events: none; }
 .hud span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font: 700 14px/1 var(--body); white-space: nowrap; }
