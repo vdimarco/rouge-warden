@@ -173,8 +173,9 @@ export function readSessions(text, repo) {
     if (s.repo) repos.add(slug(s.repo));
     if (!s.repo || slug(s.repo) === want) for (const b of [].concat(s.branch || [], s.branches || [])) branches.add(b);
     if (!repos.has(want)) continue;
+    // the studio keeper refreshes this board; it is no agent of the studio
     const tags = Array.isArray(s.tags) ? s.tags : [];
-    if (tags.includes(KEEPER_TAG)) continue;
+    if (tags.includes(KEEPER_TAG) || /^studio keeper\b/i.test(String(s.title || "").trim())) continue;
     const bucket = String(s.status_bucket || s.bucket || "").replace(/^SESSION_STATUS_BUCKET_/, "").toUpperCase();
     const status = String(s.session_status || s.status || "").replace(/^SESSION_STATUS_/, "").toLowerCase();
     out.push({

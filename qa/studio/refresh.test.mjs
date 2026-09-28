@@ -148,6 +148,7 @@ const sessions = [
   session("session_04Vr", "VR </script><b>game</b>", "BLOCKED", "IDLE", ["claude/vr-swing-zz9zz9"]),
   session("session_05Keeper", "Studio keeper", "WORKING", "RUNNING", [], { tags: ["studio-keeper"] }),
   session("session_06NoBranch", "Question about the repo", "COMPLETED", "IDLE", []),
+  session("session_08KeeperRun", "Studio keeper", "WORKING", "RUNNING", []),
   session("session_07Cli", "Terminal session", "REVIEW_READY", "IDLE", [], {
     session_context: { sources: [{ git_repository: { url: "https://github.com/owner/game" } }], outcomes: [{ git_repository: { git_info: { repo: "owner/game", branches: null } } }] },
     external_metadata: { current_branches: { "owner/game": "claude/stale-abc" } }, origin: "claude_code_cli",
@@ -194,6 +195,7 @@ check("every session on this repo is an agent; other repos and the keeper are no
   for (const id of ["session_01Lab", "session_02Fish", "session_04Vr", "session_06NoBranch", "session_07Cli"]) assert.ok(ids.includes(id), id + " missing");
   assert.ok(!ids.includes("session_03Other"), "a session from another repo is on the board");
   assert.ok(!ids.includes("session_05Keeper"), "the studio keeper is on the board");
+  assert.ok(!ids.includes("session_08KeeperRun"), "a keeper run with no tag is on the board");
 });
 check("agent states follow the session and its work tree", () => {
   assert.equal(agent("session_01Lab").state, "working");
