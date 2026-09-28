@@ -1212,7 +1212,8 @@ export class World {
     for (const p of C.pipes) {
       const u = (t * 0.45 + p.ph) % 1; p.drip.position.y = p.h - 0.45 - u * u * (p.h - 0.5); p.drip.scale.setScalar(u < 0.1 ? u * 10 : 1);
       const f = clamp((Math.hypot(cam.position.x - p.x, cam.position.z - p.z) - 3) / 6, 0.12, 1);
-      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; p.parts.visible = f < 1; p.solid.visible = f >= 1; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
+      // small steps are skipped, but a pipe always settles at exactly 1, so it goes back to its merged, solid mesh
+      if (Math.abs(f - p.fade) > 0.01 || (f === 1 && p.fade !== 1)) { p.fade = f; p.parts.visible = f < 1; p.solid.visible = f >= 1; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
     }
   }
 
