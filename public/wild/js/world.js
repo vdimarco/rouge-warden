@@ -22,7 +22,11 @@ float cloudShadow(vec2 p, float t) {
 }
 `;
 // Paints a toon material: brush-stroke colour variation in world space, warm sunlit patches, and cloud shadows.
-export function paint(mat, { strokes = 1, scale = 1, shadow = 1 } = {}) {
+// lakebed (the ground only): deep under the lake the water hides the ground almost fully, so the brushwork fades out
+// from 5 m to 7 m down and is skipped below that. The LAKEBED define tells splat() to do the same.
+export function paint(mat, { strokes = 1, scale = 1, shadow = 1, lakebed = false } = {}) {
+  if (lakebed) mat.defines = { ...mat.defines, LAKEBED: "" };
+  const bed = lakebed ? " * bed" : "";
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = SHARED.uTime;
     sh.vertexShader = "varying vec3 vWP;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
@@ -32,16 +36,16 @@ export function paint(mat, { strokes = 1, scale = 1, shadow = 1 } = {}) {
       #endif
       vWP = wp4.xyz;`);
     sh.fragmentShader = "uniform float uTime;\nvarying vec3 vWP;\n" + NOISE_GLSL + sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
-      {
+      ${lakebed ? "float bed = smoothstep(-7.0, -5.0, vWP.y);\n      if (bed > 0.0)" : ""} {
         vec2 q = vWP.xz * ${(0.09 * scale).toFixed(4)} + vWP.y * ${(0.05 * scale).toFixed(4)};
         float n1 = vnoise(q), n2 = vnoise(q * 3.7 + n1 * 2.0);
         float st = vnoise(vec2(dot(vWP.xz, vec2(0.8, 0.6)) * ${(0.9 * scale).toFixed(4)}, dot(vWP.xz, vec2(-0.6, 0.8)) * ${(0.16 * scale).toFixed(4)}) + vWP.y * 0.3);
-        diffuseColor.rgb *= 1.0 + ${(0.16 * strokes).toFixed(3)} * (n1 - 0.5) + ${(0.12 * strokes).toFixed(3)} * (st - 0.5);
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.1, 1.05, 0.84), smoothstep(0.6, 0.85, n2) * ${(0.45 * strokes).toFixed(3)});
-        diffuseColor.rgb *= mix(1.0, 0.7, cloudShadow(vWP.xz, uTime) * ${shadow.toFixed(2)});
+        diffuseColor.rgb *= 1.0 + ${(0.16 * strokes).toFixed(3)}${bed} * (n1 - 0.5) + ${(0.12 * strokes).toFixed(3)}${bed} * (st - 0.5);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.1, 1.05, 0.84), smoothstep(0.6, 0.85, n2) * ${(0.45 * strokes).toFixed(3)}${bed});
+        diffuseColor.rgb *= mix(1.0, 0.7, cloudShadow(vWP.xz, uTime) * ${shadow.toFixed(2)}${bed});
       }`);
   };
-  mat.customProgramCacheKey = () => "paint" + strokes + "_" + scale + "_" + shadow;
+  mat.customProgramCacheKey = () => "paint" + strokes + "_" + scale + "_" + shadow + (lakebed ? "_bed" : "");
   return mat;
 }
 
@@ -61,24 +65,36 @@ export function splat(mat, tex) {
     prev(sh, r);
     Object.assign(sh.uniforms, U);
     sh.vertexShader = "varying vec3 vWN;\n" + sh.vertexShader.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n vWN = normalize(mat3(modelMatrix) * objectNormal);");
+    // Each texture is read only where it shows: rock on steep ground, sand at the waterline, nothing on the high
+    // peaks (or deep under the lake with LAKEBED). Their weights are exactly 0 elsewhere, so the look is the same.
+    // The screen-space gradients are taken first, outside any branch, so the reads inside still pick the same mip.
     sh.fragmentShader = "uniform sampler2D t_grass, t_rock, t_sand, t_dirt; uniform vec3 m_grass, m_rock, m_sand, m_dirt; varying vec3 vWN;\n" + sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
       {
-        vec3 n = normalize(vWN);
-        vec2 uv = vWP.xz / 11.0;
-        vec3 g = texture2D(t_grass, uv).rgb / m_grass;
-        vec3 g2 = texture2D(t_grass, uv * 0.23 + 0.37).rgb / m_grass;
-        vec3 dt = texture2D(t_dirt, uv * 1.3).rgb / m_dirt;
-        vec3 sa = texture2D(t_sand, uv * 1.2).rgb / m_sand;
-        vec3 bw = abs(n); bw /= (bw.x + bw.y + bw.z);
-        vec3 rk = (texture2D(t_rock, vWP.zy / 16.0).rgb * bw.x + texture2D(t_rock, vWP.xz / 16.0).rgb * bw.y + texture2D(t_rock, vWP.xy / 16.0).rgb * bw.z) / m_rock;
-        float wr = smoothstep(0.86, 0.7, n.y), ws = smoothstep(2.6, 1.3, vWP.y) * (1.0 - wr);
-        float wd = smoothstep(0.35, 0.8, vnoise(vWP.xz * 0.02)) * 0.35 * (1.0 - wr - ws);
-        vec3 detail = mix(g, g2, 0.35);
-        detail = mix(detail, dt, wd);
-        detail = mix(detail, sa, ws);
-        detail = mix(detail, rk, wr);
+        vec3 dX = dFdx(vWP), dY = dFdy(vWP);
+        vec2 uv = vWP.xz / 11.0, duvX = dFdx(uv), duvY = dFdy(uv);
         float fade = 1.0 - smoothstep(95.0, 115.0, vWP.y);
-        diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.8 * fade);
+        #ifdef LAKEBED
+        fade *= smoothstep(-7.0, -5.0, vWP.y);
+        #endif
+        if (fade > 0.0) {
+          vec3 n = normalize(vWN);
+          float wr = smoothstep(0.86, 0.7, n.y), ws = smoothstep(2.6, 1.3, vWP.y) * (1.0 - wr);
+          vec3 g = texture2D(t_grass, uv).rgb / m_grass;
+          vec3 g2 = texture2D(t_grass, uv * 0.23 + 0.37).rgb / m_grass;
+          vec3 dt = texture2D(t_dirt, uv * 1.3).rgb / m_dirt;
+          vec3 sa = vec3(1.0), rk = vec3(1.0);
+          if (ws > 0.0) sa = textureGrad(t_sand, uv * 1.2, duvX * 1.2, duvY * 1.2).rgb / m_sand;
+          if (wr > 0.0) {
+            vec3 bw = abs(n); bw /= (bw.x + bw.y + bw.z);
+            rk = (textureGrad(t_rock, vWP.zy / 16.0, dX.zy / 16.0, dY.zy / 16.0).rgb * bw.x + textureGrad(t_rock, vWP.xz / 16.0, dX.xz / 16.0, dY.xz / 16.0).rgb * bw.y + textureGrad(t_rock, vWP.xy / 16.0, dX.xy / 16.0, dY.xy / 16.0).rgb * bw.z) / m_rock;
+          }
+          float wd = smoothstep(0.35, 0.8, vnoise(vWP.xz * 0.02)) * 0.35 * (1.0 - wr - ws);
+          vec3 detail = mix(g, g2, 0.35);
+          detail = mix(detail, dt, wd);
+          detail = mix(detail, sa, ws);
+          detail = mix(detail, rk, wr);
+          diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.8 * fade);
+        }
       }`);
   };
   const key = mat.customProgramCacheKey;
@@ -153,29 +169,36 @@ export class World {
   }
 
   /* ---------------- height ---------------- */
+  // Each term below is skipped where its weight is exactly 0, so the heights come out the same, only faster.
   raw(x, z) {
     const n = this.n, n2 = this.n2;
     let h = 7 + fbm(n, x / 420, z / 420, 4) * 20 + fbm(n2, x / 110, z / 110, 3) * 5 * (1 - 0.6 * smooth(250, 520, x));
     // north: a ridge of mountains with a peak
     const m = smooth(-230, -520, z);
-    const ridge = 1 - Math.abs(fbm(n2, x / 190, z / 190, 4));
-    h += m * (ridge * ridge * 95 + 20);
+    if (m > 0) {
+      const ridge = 1 - Math.abs(fbm(n2, x / 190, z / 190, 4));
+      h += m * (ridge * ridge * 95 + 20);
+    }
     h += 70 * Math.exp(-(((x + 130) / 120) ** 2 + ((z + 610) / 90) ** 2));
     // west: rolling forest hills; east: soft meadows
-    h += smooth(-250, -550, x) * (fbm(n, x / 160, z / 160, 3) * 14 + 6);
-    // the lake bowl, with a ragged shore
+    if (x < -250) h += smooth(-250, -550, x) * (fbm(n, x / 160, z / 160, 3) * 14 + 6);
+    // the lake bowl, with a ragged shore. The shore never reaches past 390 m (lr + 70), so farther out it is skipped.
     const lx = x - LAKE.x, lz = z - LAKE.z;
-    const ang = Math.atan2(lz, lx);
-    const lr = LAKE.r + fbm(n2, Math.cos(ang) * 1.3 + 5, Math.sin(ang) * 1.3, 3) * 70;
     const d = Math.hypot(lx, lz);
-    h = lerp(h, -16, smooth(lr + 70, lr - 25, d));
+    if (d < 420) {
+      const ang = Math.atan2(lz, lx);
+      const lr = LAKE.r + fbm(n2, Math.cos(ang) * 1.3 + 5, Math.sin(ang) * 1.3, 3) * 70;
+      h = lerp(h, -16, smooth(lr + 70, lr - 25, d));
+    }
     // the island rises out of the middle
     const di = Math.hypot(x - ISLAND.x, z - ISLAND.z);
-    const isl = ISLAND.top + fbm(n, x / 30, z / 30, 2) * 2;
-    h = Math.max(h, lerp(-16, isl, smooth(ISLAND.r + 10, ISLAND.r - 18, di)));
+    if (di < ISLAND.r + 10) {
+      const isl = ISLAND.top + fbm(n, x / 30, z / 30, 2) * 2;
+      h = Math.max(h, lerp(-16, isl, smooth(ISLAND.r + 10, ISLAND.r - 18, di)));
+    } else h = Math.max(h, -16);
     // the edge of the world is a wall of mountains
     const e = Math.max(Math.abs(x), Math.abs(z));
-    h += smooth(600, 790, e) * (110 + fbm(n, x / 90, z / 90, 3) * 40);
+    if (e > 600) h += smooth(600, 790, e) * (110 + fbm(n, x / 90, z / 90, 3) * 40);
     return h;
   }
   // anything that landed in the lake walks away from it until it is on dry land
@@ -208,12 +231,21 @@ export class World {
       { x: ISLAND.x, z: ISLAND.z, r: 40, f: 8, h: ISLAND.top },
     ];
     for (const p of pads) p.h = p.h ?? Math.max(p.min, this.rawGrid(p.x, p.z));
-    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
-      const x = i * CELL - HALF, z = j * CELL - HALF;
-      let h = H[j * (N + 1) + i];
-      for (const p of pads) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r + p.f) h = lerp(h, p.h, smooth(p.r + p.f, p.r, d)); }
-      H[j * (N + 1) + i] = h;
+    // Each pad only visits the cells in its square, and a cell still meets the pads in the same order.
+    // The heights stay in full precision until every pad is done, as when each cell went through the whole list.
+    const F = Float64Array.from(H);
+    for (const p of pads) {
+      const R = p.r + p.f, R2 = (R + 0.01) * (R + 0.01);
+      const i0 = Math.max(0, Math.floor((p.x - R + HALF) / CELL) - 1), i1 = Math.min(N, Math.ceil((p.x + R + HALF) / CELL) + 1);
+      const j0 = Math.max(0, Math.floor((p.z - R + HALF) / CELL) - 1), j1 = Math.min(N, Math.ceil((p.z + R + HALF) / CELL) + 1);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const dx = i * CELL - HALF - p.x, dz = j * CELL - HALF - p.z;
+        if (dx * dx + dz * dz > R2) continue;
+        const k = j * (N + 1) + i, d = Math.hypot(dx, dz);
+        if (d < R) F[k] = lerp(F[k], p.h, smooth(R, p.r, d));
+      }
     }
+    H.set(F);
     this.pads = pads;
     // cut a straight ramp into the island cliff for the stair; the flat part in the middle is wide,
     // because the ground is made of 5 m triangles and they must all lie on the slope
@@ -250,7 +282,7 @@ export class World {
   towerOf(x, z) { let best = TOWERS[0], bd = 1e9; for (const t of TOWERS) { const d = Math.hypot(x - t.x, z - t.z); if (d < bd) { bd = d; best = t; } } return best.id; }
 
   /* ---------------- ground colors ---------------- */
-  groundColor(x, z, h, ny, out) {
+  groundColor(x, z, h, ny, out, pd) {
     const n = this.n3;
     const v = fbm(n, x / 60, z / 60, 3), v2 = n(x / 9, z / 9);
     const c = out;
@@ -272,12 +304,17 @@ export class World {
     // the island is sick with sludge
     const di = Math.hypot(x - ISLAND.x, z - ISLAND.z);
     if (di < ISLAND.r + 6 && h > 1) c.lerp(TMP.setRGB(0.4, 0.32, 0.44), smooth(ISLAND.r + 6, ISLAND.r - 10, di) * (0.6 + v * 0.4));
-    // dirt paths
-    const p = this.pathDist(x, z);
-    if (p < 3 && h > 1.5) c.lerp(TMP.setRGB(0.76, 0.64, 0.44), smooth(3, 1.4, p) * 0.85);
+    // dirt paths; the caller may pass the path distance when it has it already
+    if (h > 1.5) {
+      const p = pd ?? this.pathDist(x, z, 3);
+      if (p < 3) c.lerp(TMP.setRGB(0.76, 0.64, 0.44), smooth(3, 1.4, p) * 0.85);
+    }
     return c;
   }
-  pathDist(x, z) {
+  // Distance to the nearest path, a little wider in places. A caller only asking "closer than lim?" passes lim:
+  // a segment whose box, grown by lim * 1.5, misses the point cannot be that close (the widening is at most 1.4),
+  // so it is skipped. Any answer below lim is exactly the one a full search gives; one above it may be larger.
+  pathDist(x, z, lim = Infinity) {
     if (!this.paths) {
       const c = this.cottage, t = Object.fromEntries(TOWERS.map((q) => [q.id, q]));
       const B = Object.fromEntries(BOSSES.map((b) => [b.id, b]));
@@ -289,38 +326,43 @@ export class World {
         [[t.east.x, t.east.z], [360, -120], [260, -300], [t.north.x, t.north.z]],
         [[-160, -360], [-110, -440], [B.gabe.x, B.gabe.z + 20]],
       ].flatMap((line) => line.slice(1).map((b, k) => [line[k], b]));
+      // per segment: start, direction, squared length, and its box
+      const S = (this.pathSeg = new Float64Array(this.paths.length * 9));
+      this.paths.forEach(([a, b], k) => { const dx = b[0] - a[0], dz = b[1] - a[1]; S.set([a[0], a[1], dx, dz, dx * dx + dz * dz, Math.min(a[0], b[0]), Math.max(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[1], b[1])], k * 9); });
     }
+    const S = this.pathSeg, g = lim * 1.5;
     let best = 1e9;
-    for (const [a, b] of this.paths) {
-      const dx = b[0] - a[0], dz = b[1] - a[1];
-      const t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz), 0, 1);
-      const w = 1 + Math.sin((a[0] + t * dx) * 0.05) * 0.4;
-      best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) / w);
+    for (let k = 0; k < S.length; k += 9) {
+      if (x < S[k + 5] - g || x > S[k + 6] + g || z < S[k + 7] - g || z > S[k + 8] + g) continue;
+      const ax = S[k], az = S[k + 1], dx = S[k + 2], dz = S[k + 3];
+      const t = clamp(((x - ax) * dx + (z - az) * dz) / S[k + 4], 0, 1);
+      const w = 1 + Math.sin((ax + t * dx) * 0.05) * 0.4;
+      best = Math.min(best, Math.hypot(x - ax - t * dx, z - az - t * dz) / w);
     }
     return best;
   }
 
   /* ---------------- terrain mesh ---------------- */
   buildTerrain() {
-    const W = N + 1, pos = new Float32Array(W * W * 3), col = new Float32Array(W * W * 3), idx = [];
+    const W = N + 1, pos = new Float32Array(W * W * 3), col = new Float32Array(W * W * 3), idx = new Uint32Array(N * N * 6);
     const c = new THREE.Color(), nrm = new THREE.Vector3();
     for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) {
       const k = j * W + i, x = i * CELL - HALF, z = j * CELL - HALF, h = this.H[k];
-      pos.set([x, h, z], k * 3);
+      pos[k * 3] = x; pos[k * 3 + 1] = h; pos[k * 3 + 2] = z;
       this.normal(x, z, nrm);
       this.groundColor(x, z, h, nrm.y, c);
-      col.set([c.r, c.g, c.b], k * 3);
+      col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
     }
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    for (let j = 0, q = 0; j < N; j++) for (let i = 0; i < N; i++, q += 6) {
       const a = j * W + i, b = a + 1, d = a + W, e = d + 1;
-      idx.push(a, d, e, a, e, b);
+      idx[q] = a; idx[q + 1] = d; idx[q + 2] = e; idx[q + 3] = a; idx[q + 4] = e; idx[q + 5] = b;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    geo.setIndex(idx);
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2 }), this.tex);
+    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2, lakebed: true }), this.tex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -335,16 +377,21 @@ export class World {
   // where grass grows, and its color
   buildMask() {
     const R = 512, data = new Uint8Array(R * R * 4), c = new THREE.Color(), nrm = new THREE.Vector3();
+    // The painted map samples the same points, so keep what it needs until it is drawn (ui.js paintMap).
+    const mc = (this._mapCache = { R, h: new Float32Array(R * R), n: new Float32Array(R * R * 3), c: new Float32Array(R * R * 3) });
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
       const x = ((i + 0.5) / R) * SIZE - HALF, z = ((j + 0.5) / R) * SIZE - HALF;
       const h = this.height(x, z); this.normal(x, z, nrm);
-      this.groundColor(x, z, h, nrm.y, c);
+      // one path search serves the colour and the grass; both only care about paths closer than 3 m on dry ground
+      const p = h > 1.5 ? this.pathDist(x, z, 3) : 1e9;
+      this.groundColor(x, z, h, nrm.y, c, p);
       let d = smooth(1.6, 2.8, h) * smooth(0.7, 0.82, nrm.y) * smooth(100, 80, h);
-      d *= smooth(1.2, 3, this.pathDist(x, z));
+      d *= smooth(1.2, 3, p);
       if (Math.hypot(x - ISLAND.x, z - ISLAND.z) < ISLAND.r + 4) d = 0;
       d *= 0.82 + 0.18 * smooth(-0.4, 0.3, this.n3(x / 40, z / 40));
-      const k = (j * R + i) * 4;
+      const q = j * R + i, k = q * 4;
       data[k] = c.r * 255; data[k + 1] = c.g * 255; data[k + 2] = c.b * 255; data[k + 3] = d * 255;
+      mc.h[q] = h; mc.n[q * 3] = nrm.x; mc.n[q * 3 + 1] = nrm.y; mc.n[q * 3 + 2] = nrm.z; mc.c[q * 3] = c.r; mc.c[q * 3 + 1] = c.g; mc.c[q * 3 + 2] = c.b;
     }
     this.maskData = data; this.maskR = R;
     this.maskTex = new THREE.DataTexture(data, R, R, THREE.RGBAFormat);
@@ -769,7 +816,7 @@ export class World {
   }
   clearOf(x, z, r) {
     for (const p of this.pads) if (Math.hypot(x - p.x, z - p.z) < p.r + r) return false;
-    if (this.pathDist(x, z) < 3 + r) return false;
+    if (this.pathDist(x, z, 3 + r) < 3 + r) return false;
     return true;
   }
   // Tree leaves: painted like the ground, with a slow sway in the wind.
@@ -914,7 +961,7 @@ export class World {
       const meadow = smooth(100, 400, x) + (Math.hypot(x - this.cottage.x, z - this.cottage.z) < 120 ? 0.6 : 0) + smooth(-0.2, 0.5, this.n3(x / 50, z / 50)) * 0.3;
       if (r() > meadow * 0.6) continue;
       const h = this.height(x, z); if (h < 2.2 || h > 70) continue;
-      if (this.normal(x, z, TV).y < 0.86 || this.pathDist(x, z) < 2.5) continue;
+      if (this.normal(x, z, TV).y < 0.86 || this.pathDist(x, z, 2.5) < 2.5) continue;
       list.push([x, h, z, r(), cols[(r() * cols.length) | 0]]);
     }
     const a = new THREE.PlaneGeometry(0.34, 0.34); a.translate(0, 0.55, 0);
@@ -945,7 +992,8 @@ export class World {
     }
     // a mooring post and a coil of rope at the end
     const end = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.4, 8), post); end.position.set(dx + 1.4, 1.6, z1 + Math.sign(z0 - z1) * 0.4); g.add(end);
-    this.scene.add(g);
+    // the planks, piles and posts all share one material, so they draw as one mesh
+    this.scene.add(M.bake(g));
     return this.addBox({ x: dx, z: zc, hw: 1.6, hd: L / 2, rot: 0, y0: -20, top: 1.2, walk: true, dock: true });
   }
   // Fishing spots: rings on the water where fish rise. Some are near the shore, some on the way to the island.
@@ -1013,6 +1061,8 @@ export class World {
     this.shrines = SHRINES.map((s) => {
       const rot = Math.atan2(c.x - s.x, c.z - s.z);
       const o = this.place(M.outhouse(true), s.x, s.z, rot);
+      // the four glowing bars around the door become one mesh; the ring spins, so it stays apart
+      M.bake(o, [o.userData.ring]);
       this.addBox({ x: s.x, z: s.z, hw: 1.1, hd: 1.1, rot, y0: o.position.y, top: o.position.y + 3.2, climb: true });
       return { ...s, obj: o, y: o.position.y, rot };
     });
@@ -1095,23 +1145,28 @@ export class World {
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
       if (Math.cos(a) < -0.45 || Math.abs(Math.atan2(Math.sin(a - dockA), Math.cos(a - dockA))) < 0.4) continue;
-      const px = x + Math.sin(a) * (R + 3), pz = z + Math.cos(a) * (R + 3), h = 3.6 + (k % 3) * 1.3, g = new THREE.Group();
-      const up = new THREE.Mesh(pipeGeo, copper); up.scale.y = h; up.position.y = h / 2; g.add(up);
-      for (const yy of [0.15, h * 0.55]) { const c = new THREE.Mesh(ringGeo, dark); c.position.y = yy; g.add(c); }
-      const j = new THREE.Mesh(jointGeo, copper); j.position.y = h; g.add(j);
-      const out = new THREE.Mesh(pipeGeo, copper); out.scale.y = 1.8; out.rotation.x = Math.PI / 2; out.position.set(0, h, 0.9); g.add(out);
-      const lipR = new THREE.Mesh(ringGeo, dark); lipR.rotation.x = Math.PI / 2; lipR.position.set(0, h, 1.8); g.add(lipR);
-      const hl = new THREE.Mesh(holeGeo, hole); hl.position.set(0, h, 1.96); g.add(hl);
-      const drip = new THREE.Mesh(dripGeo, sludge); drip.position.set(0, h - 0.5, 1.85); g.add(drip);
-      const pud = new THREE.Mesh(puddleGeo, sludge); pud.position.set(0, 0.05, 1.85); g.add(pud);
+      const px = x + Math.sin(a) * (R + 3), pz = z + Math.cos(a) * (R + 3), h = 3.6 + (k % 3) * 1.3, g = new THREE.Group(), parts = new THREE.Group();
       // each pipe has its own materials, so it can fade out when the camera comes close behind it
-      const mats = [];
-      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.material = o.material.clone(); mats.push(o.material); } });
+      const mats = [copper, dark, hole, sludge].map((m) => m.clone()), [cu, dk, ho, sl] = mats;
+      const up = new THREE.Mesh(pipeGeo, cu); up.scale.y = h; up.position.y = h / 2; parts.add(up);
+      for (const yy of [0.15, h * 0.55]) { const c = new THREE.Mesh(ringGeo, dk); c.position.y = yy; parts.add(c); }
+      const j = new THREE.Mesh(jointGeo, cu); j.position.y = h; parts.add(j);
+      const out = new THREE.Mesh(pipeGeo, cu); out.scale.y = 1.8; out.rotation.x = Math.PI / 2; out.position.set(0, h, 0.9); parts.add(out);
+      const lipR = new THREE.Mesh(ringGeo, dk); lipR.rotation.x = Math.PI / 2; lipR.position.set(0, h, 1.8); parts.add(lipR);
+      g.add(parts);
+      const hl = new THREE.Mesh(holeGeo, ho); hl.position.set(0, h, 1.96); g.add(hl);
+      const drip = new THREE.Mesh(dripGeo, sl); drip.position.set(0, h - 0.5, 1.85); g.add(drip);
+      const pud = new THREE.Mesh(puddleGeo, sl); pud.position.set(0, 0.05, 1.85); g.add(pud);
+      g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      // A solid pipe draws as one copper mesh and one dark mesh. A fading pipe writes no depth, so what shows depends
+      // on draw order: it shows the separate parts instead, sorted one by one as before.
+      const solid = M.bake(parts.clone());
+      parts.visible = false; g.add(solid);
       g.position.set(px, this.height(px, pz) - 0.2, pz); g.rotation.y = Math.atan2(x - px, z - pz);
       this.scene.add(g);
       this.addCircle(px, pz, 0.8, "pipe");
       const m = new THREE.Vector3(0, h, 2.2); g.updateMatrixWorld(true); g.localToWorld(m);
-      C.pipes.push({ x: px, z: pz, h, mx: m.x, my: m.y, mz: m.z, drip, ph: k * 0.37, g, mats, fade: 1 });
+      C.pipes.push({ x: px, z: pz, h, mx: m.x, my: m.y, mz: m.z, drip, ph: k * 0.37, g, parts, solid, mats, fade: 1 });
     }
     // the sludge wall: hidden in the floor until the fight starts
     const wall = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.6, r + 0.6, 5, 96, 1, true).translate(0, 2.5, 0), new THREE.ShaderMaterial({
@@ -1157,7 +1212,7 @@ export class World {
     for (const p of C.pipes) {
       const u = (t * 0.45 + p.ph) % 1; p.drip.position.y = p.h - 0.45 - u * u * (p.h - 0.5); p.drip.scale.setScalar(u < 0.1 ? u * 10 : 1);
       const f = clamp((Math.hypot(cam.position.x - p.x, cam.position.z - p.z) - 3) / 6, 0.12, 1);
-      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
+      if (Math.abs(f - p.fade) > 0.01) { p.fade = f; p.parts.visible = f < 1; p.solid.visible = f >= 1; for (const m of p.mats) { m.transparent = f < 1; m.opacity = f; m.depthWrite = f >= 1; } }
     }
   }
 
@@ -1207,11 +1262,14 @@ export class World {
     let nf = null, nd = 70;
     for (const f of this.fires) {
       const fl = f.obj.userData.flame, d = Math.hypot(f.x - cam.position.x, f.z - cam.position.z);
-      // embers are specks a few pixels wide past 80 m; a flame past 300 m is lost in the haze
+      // embers are specks a few pixels wide past 80 m; a flame past 300 m is lost in the haze, and the logs past 400 m
+      f.obj.visible = d < 400;
       fl.visible = d < 300; if (f.obj.userData.embers) f.obj.userData.embers.visible = d < 80;
       if (fl.visible) fl.scale.set(1 + Math.sin(t * 9 + f.x) * 0.05, 1 + Math.sin(t * 13 + f.z) * 0.1, 1);
       if (d < nd) { nd = d; nf = f; }
     }
+    // a camp's cooler is a few pixels wide past 250 m
+    for (const c of this.camps) c.cooler.visible = Math.hypot(c.cooler.position.x - cam.position.x, c.cooler.position.z - cam.position.z) < 250;
     if (!this.fireLight) { this.fireLight = new THREE.PointLight(0xff9a4a, 0, 16, 1.6); this.scene.add(this.fireLight); }
     if (nf) { this.fireLight.position.set(nf.x, nf.obj.position.y + 1.2, nf.z); this.fireLight.intensity = 26 * (0.85 + 0.15 * Math.sin(t * 11) * Math.sin(t * 7.3 + 1)); } else this.fireLight.intensity = 0;
     // the swirl hangs lower and turns faster while the King is fighting
