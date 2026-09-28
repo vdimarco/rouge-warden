@@ -490,7 +490,7 @@ export const STEP_PARAMS = Object.freeze({
   tail: [['target', 'to'], ['near', 'far', 'notice']],
   lose: [['pursuers'], ['sec', 'dist']],
   chase: [['target', 'goal'], ['hits', 'pit', 'protect', 'bumpLimit', 'maxSpeed', 'maxContact']],
-  race: [['gates', 'target'], ['void', 'vehicle', 'rubber']],
+  race: [['gates', 'target'], ['void', 'vehicle', 'rubber', 'rival']], // rival: the spawn that races the player (drivers.race)
   fight: [['waves'], ['arena', 'legend', 'music', 'boss', 'pickups', 'until']],
   defend: [['protect', 'waves'], ['boss', 'arena']],
   stealth: [['guards'], ['onSpotted', 'to', 'r', 'deepInk']],

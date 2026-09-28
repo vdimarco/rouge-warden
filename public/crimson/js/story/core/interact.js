@@ -1,5 +1,5 @@
 // js/story/core/interact.js : the "press E" options near the hero. The nearest option within its radius
-// (flat distance, minus a small bonus for prio) whose mode matches the hero's wins. Heights must be within
+// (flat distance, minus 0.3 m for each point of prio: a mission prompt beats a vehicle's GET IN beside it) whose mode matches the hero's wins. Heights must be within
 // 2.5 m when both sides give a y, so a prompt on the bridge deck never shows in the wash below (D6).
 export function createInteract() {
   const opts = new Map(); let seq = 0, cur = null;
@@ -19,7 +19,7 @@ export function createInteract() {
         const p = typeof o.pos === 'function' ? o.pos() : o.pos;
         if (!p) continue;
         if (Number.isFinite(p.y) && Number.isFinite(hero.pos.y) && Math.abs(p.y - hero.pos.y) >= 2.5) continue;
-        const d = Math.hypot(p.x - hero.pos.x, p.z - hero.pos.z) - o.prio * 0.01;
+        const d = Math.hypot(p.x - hero.pos.x, p.z - hero.pos.z) - o.prio * 0.3;
         if (d <= o.r && d < best) { best = d; cur = o; }
       }
       return cur;

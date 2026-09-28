@@ -21,7 +21,7 @@ import { createRoam } from './freeroam.js';
 export function init(S) {
   let preload = null;
   const K = {
-    S, side: {}, doneSet: new Set(), unlocked: new Set(), cp: null, last: null, failReq: null, passReq: false, failing: false,
+    S, side: {}, doneSet: new Set(), unlocked: new Set(), cp: null, last: null, failReq: null, passReq: false, skipReq: false, failing: false,
     roaming: false, roamReq: null, current: null, waiting: null, bootSave: null, lastSave: null, retryT: 0, trials: {},
     density: { traffic: null, crowd: null }, stats: { deaths: 0, photos: 0, km: 0, playTime: 0 }, base: null, combat0: null,
     events: [], t0: 0,
@@ -133,11 +133,11 @@ export function init(S) {
       if (m.timerLeft != null && !S.freeze && S.mode === 'play') {
         m.timerLeft -= rdt;
         S.ui.timer(Math.max(0, m.timerLeft));
-        if (m.timerLeft <= 0) { m.timerLeft = null; S.ui.timer(null); if (!M.auto) M.fail(m.timerReason); }
+        if (m.timerLeft <= 0) { m.timerLeft = null; S.ui.timer(null); if (m.timerSkip) { m.timerSkip = false; K.skipReq = true; } else if (!M.auto) M.fail(m.timerReason); }
       }
     }
     // a pass or fail was asked for: wake the chain from whatever it waits on, so the step ends this tick
-    if ((K.failReq && !K.failing) || K.passReq) {
+    if ((K.failReq && !K.failing) || K.passReq || K.skipReq) {
       const ch = vm.chain;
       if (ch && !ch.done && ch.wait != null) {
         const w = ch.wait;

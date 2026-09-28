@@ -106,7 +106,7 @@ export function createRoam(S, K) {
       if (d.side === 'legend' ? !legendAwake(d.legend) : K.doneSet.has(id) && d.side === 'hunt') continue;
       out.push(id);
     }
-    for (const id of K.unlocked) if (!K.doneSet.has(id) && K.lookup(id)) out.push(id);
+    for (const id of K.unlocked) if (!K.doneSet.has(id) && K.lookup(id) && !out.includes(id)) out.push(id);
     return out;
   }
 
@@ -258,7 +258,7 @@ export function createRoam(S, K) {
     if (!sideOpen()) return null;
     const H = S.hero; let best = null;
     for (const id of available()) {
-      const d = side[id] || K.lookup(id); if (!d || !d.at || d.side === 'legend') continue;
+      const d = K.lookup(id); if (!d || !d.at || (d.side || d.kind) === 'legend') continue; // (the def that runs: content's first, as runMission reads it)
       const at = typeof d.at === 'string' ? S.world.place(d.at) : d.at; if (!at) continue;
       if (d.window && !inWindow(d.window)) continue;
       const dd = flat(H.pos, at); if (dd < 3.2 && (!best || dd < best.d)) best = { id, x: at.x, z: at.z, d: dd };
@@ -456,9 +456,9 @@ export function createRoam(S, K) {
         if (legendAwake(c.legend) && K.roaming && d < 320) out.push({ id: `legend:${id}`, x: c.x, z: c.z, kind: 'danger', label: LEGEND_INFO[c.legend][0] });
       }
       if (K.roaming && !M.active) for (const id of available()) {
-        const d = side[id] || K.lookup(id); if (!d || !d.at || d.side === 'legend') continue;
+        const d = K.lookup(id); if (!d || !d.at || (d.side || d.kind) === 'legend') continue; // (the def that runs: content's first, as runMission reads it)
         const at = typeof d.at === 'string' ? S.world.place(d.at) : d.at; if (!at || flat(H, at) > 240) continue;
-        if (d.side === 'hunt' && K.doneSet.has(id)) continue;
+        if ((d.side || d.kind) === 'hunt' && K.doneSet.has(id)) continue;
         out.push({ id: `side:${id}`, x: at.x, z: at.z, kind: 'giver', who: d.giver, glyph: d.glyph || '●', label: d.giverLabel || d.title });
       }
     }
@@ -469,7 +469,7 @@ export function createRoam(S, K) {
     if (!S.api || !S.api.active || !S.world.visible || !K.roaming || M.active || !sideOpen()) { for (const id of shownRings) K.markers3d.remove(id); shownRings.clear(); return; }
     const H = S.hero, want = new Set();
     for (const id of available()) {
-      const d = side[id] || K.lookup(id); if (!d || !d.at || d.side === 'legend') continue;
+      const d = K.lookup(id); if (!d || !d.at || (d.side || d.kind) === 'legend') continue; // (the def that runs: content's first, as runMission reads it)
       const at = typeof d.at === 'string' ? S.world.place(d.at) : d.at; if (!at || flat(H.pos, at) > 150) continue;
       const mid = `roam:side:${id}`; want.add(mid);
       if (!shownRings.has(mid)) { K.markers3d.add(mid, { x: at.x, z: at.z, r: 2.4, kind: 'ring', mapKind: 'giver', hud: false }); shownRings.add(mid); }

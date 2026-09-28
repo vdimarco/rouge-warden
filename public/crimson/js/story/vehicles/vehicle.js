@@ -297,7 +297,9 @@ function penetration(v, it, A) {
   const y0 = v.pos.y + 0.3, y1 = v.pos.y + v.h;
   if (!(y1 > it.y0 && y0 < it.y1)) return null;
   if (it.kind === 'box') {
-    if (it.walk && v.pos.y >= it.top - 0.5) return null;
+    // a floor the vehicle drives onto: within 0.5 m of its top. A bridge deck within 1 m: the middle of the
+    // vehicle is still down the approach grade when its nose reaches the deck (FR 9's bridge, westbound)
+    if (it.walk && v.pos.y >= it.top - (it.tag && it.tag.startsWith('deck:') ? 1 : 0.5)) return null;
     const B = { x: it.x, z: it.z, hw: it.hw, hd: it.hd, c: it.c, s: it.s }, r = sat(A, B);
     if (!r) return null;
     const p = contactPoint(A, B, r); r.x = p[0]; r.z = p[1]; return r;

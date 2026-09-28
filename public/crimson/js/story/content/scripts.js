@@ -308,7 +308,9 @@ export const SCRIPTS = {
     const S = m.S, a = argsOf(s), v = get(m, a.vehicle) || S.vehicles.player, to = pt(S, a.to), need = a.rocks || 4;
     if (!v) return;
     const finish = () => {
-      if (to) teleportV(S, v, { x: to.x + 4, z: to.z - 8, y: to.y }, 2.6);
+      // out of the creek and up on the road (args.out, a pose on Creekside Dr), where the van can drive off
+      const o = a.out ? pt(S, a.out) : to ? { x: to.x + 4, z: to.z - 8, y: to.y, yaw: 2.6 } : null;
+      if (o) teleportV(S, v, o, o.yaw);
       if (v.setLook) v.setLook({ noBumper: true });
       if (S.audio) S.audio.sfx('bump', { at: v.pos });
     };
@@ -443,6 +445,15 @@ export const SCRIPTS = {
       if (van) { teleportV(S, van, stopAt, along); stopV(S, van); }
       if (suv) teleportV(S, suv, { x: at.x - Math.sin(along) * 60, z: at.z - Math.cos(along) * 60, y: at.y }, along + Math.PI);
       return;
+    }
+    // The SUV and the van come up to the block from the south (the jeep stands across the bridge from the start
+    // of the mission, so the convoy waits at it). A RETRY from this checkpoint rebuilt the convoy back at Red
+    // Rock Plaza: then they come up the canyon behind the block again.
+    const far = (o) => !!o && !near(o.pos, at, 400);
+    if (far(suv) || far(van)) {
+      const up = Math.atan2(16, -70); // 89A north, from (400, -330) to (416, -400)
+      if (suv) { stopV(S, suv); teleportV(S, suv, { x: 412.3, z: -383.9 }, up); routeTo(K, suv, [at], { speed: 13, r: 4 }); }
+      if (van) { stopV(S, van); teleportV(S, van, { x: 405.5, z: -352 }, up); routeTo(K, van, [at], { speed: 13, r: 4 }); }
     }
     const lead = suv || van, t0 = S.time;
     while (lead && !near(lead.pos, at, 70) && S.time - t0 < 180) yield null;
@@ -581,6 +592,14 @@ export const SCRIPTS = {
         g.removeFromParent(); g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); // the shared glow texture stays
       }
     })());
+  },
+
+  // one actor of the mission takes a seat (F2: Gabe drives the tour jeep before the hero gets in beside him);
+  // at: a pose the vehicle takes first ({x, z, yaw}: F2's start line for the race down the hill)
+  *seat(m, s) {
+    const S = m.S, a = argsOf(s), who = get(m, a.who), v = get(m, a.vehicle);
+    if (v && a.at) { const p = pt(S, a.at); if (p) { stopV(S, v); teleportV(S, v, p, p.yaw); } }
+    if (who && who.root && v && v.seats && S.drive && S.drive.seat && !v.seats[a.seat || 0]) S.drive.seat(who, v, a.seat || 0);
   },
 
   // one actor of the mission: a prop on or off, a pose

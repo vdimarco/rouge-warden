@@ -305,14 +305,15 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   { const g = geo('y'), m = new THREE.Matrix4(); for (let k = 0; k < 5; k++) { const a = k * 1.3, x = 60 + Math.sin(a) * 4, z = 40 + Math.cos(a) * 4, st = new THREE.IcosahedronGeometry(1.2 + R(), 0); m.makeRotationY(a).setPosition(x, height(x, z) + 0.4, z); g.geom(st, m, [0.66, 0.36, 0.24]); } colliders.addCircle(60, 40, 7, { tag: 'island' }); }
 
   yield;
-  // guardrails on the downhill side of the canyon road
-  const railSegs = [];
+  // guardrails on the downhill side of the canyon road, with a gap north of Slide Rock: the path down to the
+  // creek, where F4 finds Red Jersey (the rail still stands between the road and the pools themselves)
+  const railSegs = [], pullouts = [{ x: 500, z: -783 }];
   { const r = net.byId.a89c, g = geo('rails');
     for (const side of [-1, 1]) {
       let run = null;
       for (let s = 40; s <= r.len; s += 4) {
         const p = at(r, s), rx = -Math.cos(p.yaw) * side, rz = Math.sin(p.yaw) * side;
-        const onBridge = r.spans.some((sp) => s > sp.s0 - 2 && s < sp.s1 + 2);
+        const onBridge = r.spans.some((sp) => s > sp.s0 - 2 && s < sp.s1 + 2) || pullouts.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < 7);
         const x = p.x + rx * (r.hw + 0.9), z = p.z + rz * (r.hw + 0.9), y = height(x, z), drop = y - height(p.x + rx * (r.hw + 7), p.z + rz * (r.hw + 7));
         if (!onBridge && drop > 1.6) { box(g, x, y - 0.4, z, 0.14, 1.15, 0.14, p.yaw, [0.55, 0.55, 0.53]); if (run) { rail(g, run, [x, y, z]); railSegs.push([run, [x, y, z]]); } run = [x, y, z]; }
         else run = null;

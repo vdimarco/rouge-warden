@@ -47,7 +47,8 @@ export const legend_tarantula = legend('tarantula', 'cairn_boynton', 'THE TARANT
 
 /* ---------------- two jeep time trials (the race step, E9) ---------------- */
 const SCHNEBLY = [[848, 60], [772, 60], [696, 60], [620, 60], [548, 60], [470, 75], [400, 97], [330, 119], [260, 141], [196, 162]].map(([x, z]) => ({ x, z }));
-const CANYON = [[436, -610], [458, -650], [492, -684], [506, -720], [514, -760], [520, -800], [532, -850], [546, -900]].map(([x, z]) => ({ x, z }));
+// (on 89A: the last four gates stood 13 to 27 m off the road down by the creek, behind the guardrail)
+const CANYON = [[436, -610], [458, -650], [492, -684], [506, -720], [500, -759], [498, -804], [506, -854], [527, -911]].map(([x, z]) => ({ x, z }));
 export const trial_schnebly = {
   id: 'trial_schnebly', kind: 'trial', at: 'schnebly_vista', title: 'Schnebly Hill Run', cast: [], budget: 180,
   fail: { vanWrecked: true },
@@ -62,12 +63,14 @@ export const trial_schnebly = {
   ],
   onPass: { flags: { trialSchnebly: true }, save: true },
 };
+// (its marker stands at the lot's exit, apart from the photo hunt's in the middle of the lot: one START each)
+const CANYON_START = { x: 431, z: -589.5 };
 export const trial_canyon = {
-  id: 'trial_canyon', kind: 'trial', at: 'midgley_lot', title: 'Canyon Run', cast: [], budget: 180,
+  id: 'trial_canyon', kind: 'trial', at: CANYON_START, title: 'Canyon Run', cast: [], budget: 180,
   fail: { vanWrecked: true },
-  spawns: [{ id: 'jeep', kind: 'jeep', place: 'midgley_lot' }],
+  spawns: [{ id: 'jeep', kind: 'jeep', pos: { x: 426, z: -594 }, yaw: 1.91 }],
   steps: [
-    go('midgley_lot', 'Walk to the orange jeep in the Midgley lot.', { r: 12 }),
+    go(CANYON_START, 'Walk to the orange jeep in the Midgley lot.', { r: 12 }),
     talk('side.trialCanyon'),
     enter('jeep', { objective: 'Get in the jeep.' }),
     { type: 'race', gates: CANYON, target: 75, vehicle: 'jeep', cp: true, objective: 'Eight gates up the canyon. Beat 1:15.' },
@@ -93,7 +96,8 @@ function hunt(id, at, line, places, labels) {
 }
 export const hunt_uptown = hunt('hunt_uptown', 'uptown', 'side.huntUptown', ['uptown_clock', 'mask_mayhem', 'rattlesnake_room'], ['the Uptown clock', 'Mask & Mayhem', 'The Rattlesnake Room']);
 export const hunt_canyon = hunt('hunt_canyon', 'midgley_lot', 'side.huntCanyon', ['midgley_deck_s', 'perch', 'slide_rock'], ['Midgley Bridge', "Gabe's Perch", 'Slide Rock']);
-export const hunt_rocks = hunt('hunt_rocks', 'y_roundabout', 'side.huntRocks', ['snoopy_rock', 'bell_rock', 'cathedral'], ['Snoopy Rock', 'Bell Rock', 'Cathedral Rock']);
+// (its marker stands beside the Y, not in the middle: the boulder island there cannot be walked onto)
+export const hunt_rocks = hunt('hunt_rocks', { x: 60, z: 66 }, 'side.huntRocks', ['snoopy_rock', 'bell_rock', 'cathedral'], ['Snoopy Rock', 'Bell Rock', 'Cathedral Rock']);
 
 export const SIDE = { legend_javelina, legend_vulture, legend_gila, legend_tarantula, trial_schnebly, trial_canyon, hunt_uptown, hunt_canyon, hunt_rocks };
 export const MISSIONS = { e1, ...SIDE };

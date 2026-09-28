@@ -61,6 +61,7 @@ export const f2 = {
     { type: 'photo', subject: 'any', kind: 'any', count: 3, min: 0, objective: 'Press the camera key. Take three photos.' },
     go('blush_depot', 'Walk to the Sunburst Jeep Tours lot.', { r: 6 }),
     talk('f2.welcome', 'f2.card', 'f2.later'),
+    script('seat', { who: 'gabe', vehicle: 'jeep', seat: 0 }), // Gabe drives: the hero rides beside him
     enter('jeep', { seat: 1, objective: 'Get in the orange jeep.' }),
     subs('f2.film'),
     script('rideAlong', { vehicle: 'jeep', to: 'schnebly_vista' }, { objective: 'Ride up Schnebly Hill with Gabe.' }),
@@ -68,8 +69,10 @@ export const f2 = {
     exit('Get out at the vista.'),
     talk('f2.race'),
     enter('jeep2', { objective: 'Take the other jeep.' }),
+    script('seat', { who: 'gabe', vehicle: 'jeep', seat: 0, at: { x: 885, z: 64.5, yaw: -1.6 } }), // Gabe races in the tour jeep, from the line beside the hero's
     script('suvBelow', { vehicle: 'suv', gate: 7 }),
-    { type: 'race', gates: SCHNEBLY, target: 130, void: 7, vehicle: 'jeep2', rubber: true, objective: 'Race Gabe down the hill. Ten gates.', cp: true },
+    { type: 'race', gates: SCHNEBLY, target: 130, void: 7, vehicle: 'jeep2', rival: 'jeep', rubber: true, objective: 'Race Gabe down the hill. Ten gates.', cp: true },
+    script('arrive', { vehicle: 'jeep', to: { x: 414, z: 87.5 } }), // Gabe pulls up at gate 7 to film the SUV
     subs('f2.stop'),
     { type: 'photo', subject: 'gabe', kind: 'any', min: 50, objective: 'Film Gabe and the black SUV below.', cp: true },
     talk('f2.sorry'),
@@ -110,7 +113,11 @@ export const f3 = {
 export const i3 = interlude('i3', ['gabe', 'fifty']);
 
 /* ---------------- F4 The Morning After (Fifty-One, Saturday 8:15 AM) ---------------- */
-const VC = { x: 476, z: -312 }; // the van, nose-down in Oak Creek (SPAWNS.f4_van_creek)
+// the van, nose-down in Oak Creek (SPAWNS.f4_van_creek); rocked out it stands on Creekside Dr west of the
+// creek bridge (VO), facing Uptown, and the five wrong things are around it there (VAT: a point beside the
+// van, lx to its right, lz ahead of its middle)
+const VO = { x: 445.4, z: -281.2, yaw: -0.86 };
+const VAT = (lx, lz) => { const c = Math.cos(VO.yaw), s = Math.sin(VO.yaw); return { x: +(VO.x + lx * c + lz * s).toFixed(2), z: +(VO.z - lx * s + lz * c).toFixed(2) }; };
 export const f4 = {
   id: 'f4', chapter: 'f4', title: 'The Morning After', cast: ['fifty', 'tanktop', 'shades', 'newbalance', 'redjersey'], budget: 240,
   fail: { vanWrecked: true },
@@ -125,16 +132,16 @@ export const f4 = {
     go('f4_van_creek', 'Find the van.', { r: 7 }),
     talk('f4.creek'),
     enter('van', { cp: true }),
-    script('rockVan', { vehicle: 'van', to: 'creek_bridge', rocks: 4 }, { objective: 'Rock the van out. Hit the gas on each forward swing.' }),
+    script('rockVan', { vehicle: 'van', to: 'creek_bridge', out: VO, rocks: 4 }, { objective: 'Rock the van out. Hit the gas on each forward swing.' }),
     talk('f4.bumper', 'f4.leave'),
     exit('Get out and look around.'),
     { type: 'collect', objective: 'Search the van. Five things are wrong.', cp: true, need: 5,
       items: [
-        { id: 'dice', pos: { x: VC.x + 1.4, z: VC.z - 1.2 }, label: 'FUZZY DICE', line: 'f4.dice' },
-        { id: 'tag', pos: { x: VC.x - 1.3, z: VC.z - 0.4 }, label: 'RENTAL TAG', line: 'f4.tag' },
-        { id: 'box', pos: { x: VC.x - 0.6, z: VC.z + 2.6 }, label: 'STEEL BOX', line: 'f4.box' },
-        { id: 'phone', pos: { x: VC.x + 1.2, z: VC.z + 0.8 }, label: 'BURNER PHONE', line: ['f4.text1', 'f4.text2', 'f4.text3'] },
-        { id: 'photo', pos: { x: VC.x + 0.3, z: VC.z + 2.2 }, label: 'FLASH PHOTO', line: 'f4.flash' },
+        { id: 'dice', pos: VAT(-1.5, 1.4), label: 'FUZZY DICE', line: 'f4.dice' },
+        { id: 'tag', pos: VAT(-1.6, -0.6), label: 'RENTAL TAG', line: 'f4.tag' },
+        { id: 'box', pos: VAT(0, -3.6), label: 'STEEL BOX', line: 'f4.box' },
+        { id: 'phone', pos: VAT(1.6, 1.0), label: 'BURNER PHONE', line: ['f4.text1', 'f4.text2', 'f4.text3'] },
+        { id: 'photo', pos: VAT(1.6, -1.4), label: 'FLASH PHOTO', line: 'f4.flash' },
       ] },
     talk('f4.rj'),
     enter('van'),
@@ -147,7 +154,7 @@ export const f4 = {
     exit('Get out.'),
     { type: 'photo', subject: 'creek_rail', kind: 'place', match: 'creek_rail', min: 40, objective: 'Match his photo of the bridge rail.', cp: true },
     enter('van'),
-    drive('slide_rock', 'Follow the creek up to Slide Rock.', { r: 16 }),
+    drive('slide_rock', 'Follow the creek up to Slide Rock.', { r: 30 }), // (Slide Rock is down by the creek, 25 m off the road)
     exit('Get out.'),
     script('actor', { who: 'redjersey', prop: 'flamingo', pose: 'knocked' }),
     go('f4_redjersey', 'Find Red Jersey.', { r: 3 }),

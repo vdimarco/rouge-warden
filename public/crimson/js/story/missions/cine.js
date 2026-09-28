@@ -260,6 +260,9 @@ export function createCine(S, K) {
     r.sorted = sorted;
     P.active = true; S.lockControl = true;
     document.body.classList.add('cine');
+    // the cast placed in the scene stands there from the first frame, not only once a shot or a cue names it
+    // (E1's bride, Christian and Ryu; P12's Dana: no shot names them, so they never came)
+    for (const [who, spec] of Object.entries(def.cast || {})) if (spec && typeof spec === 'object' && (spec.at || spec.place || spec.pos)) actorOf(who);
     if (def.look) S.look.set(def.look, { dur: 0 });
     K.log('cine', def.id, 'start');
     let last = S.timers.now;

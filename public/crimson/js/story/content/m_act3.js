@@ -19,24 +19,26 @@ export const p9 = {
     { id: 'voss_suv', kind: 'suv', pos: { x: -520, z: 110 }, yaw: 1.5 },
     { id: 'van1', kind: 'whitevan', pos: { x: -538, z: 111 }, yaw: 1.5, protect: true, bumpLimit: 3, maxContact: 1 },
     { id: 'pickup', kind: 'pickup', pos: { x: -556, z: 112 }, yaw: 1.5 },
-    // Gabe's orange jeep, sideways across Midgley Bridge
-    { id: 'jeep', kind: 'jeep', place: 'p9_bridge_block' },
+    // Gabe's orange jeep, sideways across Midgley Bridge (from the start: the convoy stops at it)
+    { id: 'jeep', kind: 'jeep', place: 'p9_bridge_block', yaw: 4.62 },
     { id: 'gabe', cast: 'gabe', pos: { x: 426, z: -507 }, yaw: 3.0 },
   ],
   steps: [
     intro('p9_intro'),
     talk('p9.whale', 'p9.bags'),
     enter('whale', { objective: 'Get in the Whale.', cp: true }),
-    script('convoy', { vehicles: ['voss_suv', 'van1', 'pickup'], to: 'fr9_turnoff' }),
+    // (the checkpoint is the convoy's start, not the chase: a RETRY sends the convoy off again)
+    script('convoy', { vehicles: ['voss_suv', 'van1', 'pickup'], to: 'fr9_turnoff' }, { cp: true }),
     subs('p9.moves'),
     script('rule', { line: 'p9.rule', sec: 10 }),
     subs('p9.careful'),
-    { type: 'chase', target: 'pickup', goal: 'disable', hits: 3, pit: true, protect: 'van1', bumpLimit: 3, maxContact: 1, cp: true,
+    { type: 'chase', target: 'pickup', goal: 'disable', hits: 3, pit: true, protect: 'van1', bumpLimit: 3, maxContact: 1,
       objective: 'Stop the guard pickup. Three rams or a PIT.' },
     subs('p9.pickup'),
-    script('bridgeBlock', { jeep: 'jeep', gabe: 'gabe', suv: 'voss_suv', van: 'van1', at: 'p9_bridge_block' }),
+    // (the checkpoint is the block: a RETRY brings the SUV and the van back up the canyon to it)
+    script('bridgeBlock', { jeep: 'jeep', gabe: 'gabe', suv: 'voss_suv', van: 'van1', at: 'p9_bridge_block' }, { cp: true }),
     subs('p9.follow'),
-    { type: 'chase', target: 'van1', goal: 'stop', protect: 'van1', maxContact: 1, cp: true, objective: 'Follow the van in. Slow. Do not touch it.' },
+    { type: 'chase', target: 'van1', goal: 'stop', protect: 'van1', maxContact: 1, objective: 'Follow the van in. Slow. Do not touch it.' },
     subs('p9.runs'),
     exit('Get out. Go!'),
     { type: 'chase', target: 'runner', goal: 'takedown', objective: 'Catch the driver.' },

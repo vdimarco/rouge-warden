@@ -28,10 +28,12 @@ export const p5 = {
     { type: 'set', look: 'NIGHT' },
     { type: 'collect', need: 4, photo: true, cp: true, objective: 'Photograph the bunkhouse door, the van plates, a guard and the generator shed.',
       items: [
-        { id: 'door', subject: 'bunkhouse', pos: RANCH(812, -782), label: 'BUNKHOUSE DOOR', slot: 'place' },
+        // (the photo points face the ridge: the bunkhouse's north wall and the shed's north end; points inside a
+        // building, or on its far side, can never be seen from up here)
+        { id: 'door', subject: 'bunkhouse', pos: RANCH(812, -790.2), label: 'BUNKHOUSE DOOR', slot: 'place' },
         { id: 'plates', subject: 'ranch_van', pos: RANCH(826, -772), label: 'VAN PLATES' },
         { id: 'guard', subject: 'ranch_guard', pos: RANCH(800, -748), label: 'A GUARD' },
-        { id: 'shed', subject: 'generator', pos: RANCH(790, -740), label: 'GENERATOR SHED' },
+        { id: 'shed', subject: 'generator', pos: RANCH(790, -743.2), label: 'GENERATOR SHED' },
       ] },
     talk('p5.patrol'),
     { type: 'stealth', guards: [{ spawn: 'patrol', flashlight: true }], onSpotted: 'fight', cp: true,

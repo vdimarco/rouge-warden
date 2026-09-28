@@ -39,7 +39,7 @@
 //   {label, set, lines, flag}]}: the pick goes in S.flags['choice:<step id or mission>'].
 // - set: SetOps. script {fn, args}: S.content.SCRIPTS[fn](m, s).
 import { toHour } from '../../core/clock.js';
-import { CAST_IDS, EVIDENCE, LOOKS, VAN_LOOKS, WEAPON_IDS } from '../types.js';
+import { CAST_IDS, CREW_IDS, EVIDENCE, LOOKS, VAN_LOOKS, WEAPON_IDS } from '../types.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -61,8 +61,16 @@ export function createSteps(S, K) {
       console.warn(`[steps] unknown target '${to}'`);
       return () => ({ x: S.hero.pos.x, y: S.hero.pos.y, z: S.hero.pos.z, r: r0 || 4, yaw: 0 });
     }
-    if (Number.isFinite(to.x) && Number.isFinite(to.z)) { const p = { x: to.x, y: Number.isFinite(to.y) ? to.y : S.world.surface(to.x, to.z), z: to.z, r: to.r || r0 || 6, yaw: to.yaw || 0 }; return () => p; }
+    if (Number.isFinite(to.x) && Number.isFinite(to.z)) { const p = { x: to.x, y: Number.isFinite(to.y) ? to.y : levelY(to.x, to.z), z: to.z, r: to.r || r0 || 6, yaw: to.yaw || 0 }; return () => p; }
     return null;
+  }
+  // a point given without a height stands on the level nearest the hero's: F4's clues under the creek
+  // bridge are on the creek bed where the van is, not on the deck above them
+  function levelY(x, z) {
+    const top = S.world.surface(x, z), hy = heroAt().y;
+    if (!Number.isFinite(hy)) return top;
+    const low = S.world.surface(x, z, hy + 1);
+    return Number.isFinite(low) && low > S.world.height(x, z) - 1 && Math.abs(low - hy) < Math.abs(top - hy) ? low : top;
   }
   function posOf(o, r0 = 4) {
     const p = o.pos || (o.a && o.a.root && o.a.root.position) || (o.root && o.root.position) || o;
@@ -287,11 +295,16 @@ export function createSteps(S, K) {
       const list = [].concat(s.subject);
       const ids = [];
       list.forEach((ref, i) => {
+        if (ref === 'any') return;
         const id = `ms:${typeof ref === 'string' ? ref : `pt${i}`}`;
         const spec = subjectSpec(m, ref, s);
         if (spec) { K.photo.subject(id, spec); ids.push(id); }
       });
-      const need = s.match ? 1 : Math.min(ids.length || 1, s.count ?? ids.length ?? 1);
+      // subject 'any' (F2's three photos): every picture counts, count of them. A subject that is not
+      // there counts any picture too, so the step never waits on nothing (and never passes on nothing).
+      const anyShot = !s.match && (list.includes('any') || !ids.length);
+      const timer = s.kind === 'timer'; // P7, E1: prop the phone, the shutter starts ten seconds, run in
+      const need = s.match ? 1 : anyShot ? Math.max(1, s.count ?? 1) : Math.min(ids.length, s.count ?? ids.length);
       const min = s.min ?? 50;
       const got = new Set();
       let best = null, refShown = false, tries = 0;
@@ -304,18 +317,24 @@ export function createSteps(S, K) {
       }
       const off = K.photo.P.onShot((p) => {
         if (s.match) { if (p.match === s.match) { got.add(s.match); best = p; } else S.ui.toast('Not the same spot. Look at the picture.'); return; }
+        if (timer && min <= 0) { got.add(p.id); if (!best || p.score > best.score) best = p; return; } // a keepsake: whatever the timer caught
+        if (anyShot) { if (p.score >= min) { got.add(p.id); if (!best || p.score > best.score) best = p; if (need > 1 && got.size < need) S.ui.toast(`${got.size}/${need}`); } else S.ui.toast(`SCORE ${p.score}. YOU NEED ${min}.`); return; }
         if (ids.includes(p.subject) && p.score >= min) { got.add(p.subject); if (!best || p.score > best.score) best = p; }
         else if (ids.includes(p.subject)) S.ui.toast(`SCORE ${p.score}. YOU NEED ${min}.`);
       });
       const label = s.objective || '';
-      hintOnce('camera', 'Press {camera} for the phone camera.');
+      if (timer) hintOnce('timer', 'Press {camera} to prop the phone. The shutter starts ten seconds: run into the picture.');
+      else hintOnce('camera', 'Press {camera} for the phone camera.');
       if (s.window) m.timer(s.window, s.fail || 'You missed the shot.');
       try {
         while (got.size < need) {
+          // the timer photo: {camera} props the phone where the hero stands (the step reads it before the camera does)
+          if (timer && !M.auto && !K.photo.active && S.input.pressed('camera') && !K.photoLocked()) { S.input.consume('camera'); K.photo.open({ timer: 10, min, subject: label }); }
           if (K.photo.active) K.photo.open({ min, subject: label });
           if (M.auto) {
             tries++;
-            if (s.match) { const r = K.photo.P.reference(s.match); if (r) { K.photo.open({ force: true, min }); K.photo.pose({ x: r.x, y: r.y, z: r.z, yaw: r.yaw, pitch: r.pitch || 0, zoom: 1 }); K.photo.shoot({ force: true }); } }
+            if (anyShot) { K.photo.open({ force: true, min }); K.photo.shoot({ force: true, score: Math.max(min, 60) }); }
+            else if (s.match) { const r = K.photo.P.reference(s.match); if (r) { K.photo.open({ force: true, min }); K.photo.pose({ x: r.x, y: r.y, z: r.z, yaw: r.yaw, pitch: r.pitch || 0, zoom: 1 }); K.photo.shoot({ force: true }); } }
             else {
               const id = ids.find((x) => !got.has(x));
               if (id) {
@@ -411,7 +430,7 @@ export function createSteps(S, K) {
       const goal = s.goal || 'disable', need = s.hits ?? 3;
       const prot = [].concat(s.protect || []).map((ref) => vehicleOf(m, ref)).filter(Boolean);
       const offs = [];
-      let hits = 0, lastHit = -9, disabled = false, still = 0, gone = 0, pitted = false;
+      let hits = 0, lastHit = -9, disabled = false, still = 0, gone = 0, pitted = false, closed = false;
       for (const p of prot) {
         p.protect = true; p.bumps = 0;
         if (s.bumpLimit != null) p.bumpLimit = s.bumpLimit;
@@ -437,11 +456,14 @@ export function createSteps(S, K) {
             if (!disabled && (hits >= need || (pitted && s.pit !== false))) { disabled = true; S.drivers.stop(tv); tv.damage = Math.max(tv.damage || 0, 85); S.ui.toast('DISABLED'); }
             if (disabled && Math.abs(tv.speed) < 1) return;
           } else if (goal === 'stop' || goal === 'boxIn') {
-            still = Math.abs(tv.speed) < 0.5 && d < 15 ? still + m.dt : 0;
+            // (25 m: on P9's bridge the stopped pickup can stand between the van and you)
+            still = Math.abs(tv.speed) < 0.5 && d < 25 ? still + m.dt : 0;
             if (still >= 2) return;
           } else if (goal === 'catch') { if (d < 8) return; }
           else if (placeGoal && flat(tv.pos, placeGoal) < (placeGoal.r || 10)) m.fail(s.fail || 'They got away.');
-          gone = d > 400 ? gone + m.dt : 0;
+          // they get away only once you have caught up with them (P9's convoy leaves from across town)
+          if (d < 300) closed = true;
+          gone = closed && d > 400 ? gone + m.dt : 0;
           if (gone > 10) m.fail(s.fail || 'They got away.');
           if (M.auto) {
             if (goal === 'disable') { hits = need; S.drivers.stop(tv); tv.speed = 0; }
@@ -460,7 +482,9 @@ export function createSteps(S, K) {
       const limit = s.target, voidAt = s.void;
       let i = 0, t = 0, started = false;
       let rival = null;
-      if (s.rubber != null && m.get('rival')) rival = S.drivers.race(m.get('rival'), gates, { rubber: s.rubber });
+      // the rival: s.rival names a spawn (F2: Gabe in the tour jeep), else a spawn called 'rival'
+      const rv = m.get(s.rival || 'rival');
+      if (s.rubber != null && s.rubber !== false && rv && !rv.gone) rival = S.drivers.race(rv, gates, { rubber: s.rubber === true ? 0.1 : +s.rubber });
       try {
         while (i < gates.length) {
           const g = gates[i], nx = gates[i + 1];
@@ -550,7 +574,10 @@ export function createSteps(S, K) {
 
     *stealth(m, s) {
       const guards = [].concat(s.guards || []).map((g, i, all) => {
-        if (typeof g === 'string') return m.get(g) || m.spawn(g);
+        if (typeof g === 'string') return watcherOf(m.get(g) || m.spawn(g));
+        // {spawn, flashlight}: the mission's own spawn (P3's lookout, F5's Gabe, P5's patrol, P10's six), not a
+        // new guard dropped beside the hero; a cast actor (F5's Gabe) watches through a stand-in
+        if (g && typeof g.spawn === 'string') return watcherOf(m.get(g.spawn) || m.spawn(g.spawn));
         return spawnFoe(m, { ...g, foe: g.foe || 'guard', alert: g.alert ?? false }, i, all.length);
       }).filter(Boolean);
       const cfgOf = (g) => (typeof g === 'object' ? { flashlight: g.flashlight, mirrors: g.mirrors, range: g.range, sharp: g.sharp, vehicle: g.vehicle } : {});
@@ -562,14 +589,16 @@ export function createSteps(S, K) {
       const off = S.stealth.on('spotted', () => { spotted = true; });
       const T = s.to ? target(m, s.to, s.r) : null;
       hintOnce('crouch', 'Press {crouch} to crouch. Stay out of their light.');
+      const standIns = guards.filter((f) => f.standIn);
       try {
         for (;;) {
+          for (const f of standIns) standInTick(f);
           if (spotted) {
             if (s.onSpotted === 'fight') {
               spotted = false;
               S.combat.begin({});
               for (const f of guards) f.alert = true;
-              while (!guards.every(isDown)) { if (S.hero.down) m.fail('The crew pulls you out.'); if (M.auto) guards.forEach(ko); yield null; }
+              while (!guards.every((g) => g.standIn || isDown(g))) { if (S.hero.down) m.fail('The crew pulls you out.'); if (M.auto) guards.forEach(ko); yield null; }
               S.combat.end();
               if (!T) return;
             } else if (!M.auto) m.fail(s.fail || 'They saw you.');
@@ -580,13 +609,14 @@ export function createSteps(S, K) {
             if (flat(S.hero.pos, p) <= r) return;
             if (M.auto) { S.hero.place(p.x, p.z); }
           } else {
-            if (guards.every(isDown)) return;
+            if (guards.every((g) => g.standIn || isDown(g))) return;
             if (M.auto) guards.forEach(ko);
           }
           yield null;
         }
       } finally {
         off(); for (const f of guards) S.stealth.unwatch(f);
+        for (const f of standIns) if (f.beam) { f.beam.removeFromParent(); f.beam.material.dispose(); f.beam = null; }
         if (setInk) S.stealth.deepInk = false;
         S.flags.stealth = hadFlag; if (hadFlag === undefined) delete S.flags.stealth;
         m.unmark('goal');
@@ -598,7 +628,7 @@ export function createSteps(S, K) {
       let done = false, spotted = false;
       const id = `mission:${m.def.id}:${m.index}`;
       S.interact.add({ id, tag: 'mission', label: s.label, r: 2.4, hold: s.hold || 0, mode: s.mode || 'foot', prio: 5, pos: () => { const p = T(); return { x: p.x, y: p.y, z: p.z }; }, act: () => { done = true; } });
-      const watchers = [].concat(s.watchers || []).map((ref) => m.get(ref) || m.spawn(ref)).filter((f) => f && f.pos);
+      const watchers = [].concat(s.watchers || []).map((ref) => { const id = ref && typeof ref === 'object' ? ref.spawn : ref; return watcherOf(m.get(id) || m.spawn(id)); }).filter((f) => f && f.pos);
       for (const f of watchers) S.stealth.watch(f, {});
       const off = watchers.length ? S.stealth.on('spotted', (e) => { if (!e || watchers.includes(e.f || e)) spotted = true; }) : () => {};
       if (s.window) m.timer(s.window, s.fail || 'Too late.');
@@ -642,6 +672,7 @@ export function createSteps(S, K) {
           m.objectiveOverride('Wait for them.');
           while (walks.length) { moveAll(m.dt); yield null; }
         }
+        m.unmark('cover'); // the last cover is done: only the goal shows now
         for (const a of fol) S.cast.followers.add(a);
         m.objectiveOverride(null);
         for (;;) {
@@ -757,6 +788,7 @@ export function createSteps(S, K) {
   function subjectSpec(m, ref, s = {}) {
     if (ref && typeof ref === 'object') { if (ref.root || ref.a) return ref.a ? { fighter: ref, kind: s.kind || 'face' } : { actor: ref, kind: s.kind || 'face' }; return { x: ref.x, y: ref.y, z: ref.z, h: ref.h, kind: s.kind || 'place', lit: ref.lit }; }
     if (typeof ref !== 'string') return null;
+    if (ref === 'crew') { const g = crewGroup(); return g.length ? { group: g, kind: 'face' } : null; }
     const o = m.get(ref) || ((m.def.spawns || []).some((x) => x.id === ref) ? m.spawn(ref) : null);
     if (o) {
       if (o.a && o.def) return { fighter: o, kind: s.kind || 'face' };
@@ -766,6 +798,27 @@ export function createSteps(S, K) {
     if (S.world.place(ref)) return { place: ref, kind: s.kind || 'place' };
     if (CAST_IDS.includes(ref)) { const a = S.cast.get(ref); if (a) return { actor: a, kind: s.kind || 'face' }; }
     return null;
+  }
+  // A cast actor as a stealth watcher (F5's Gabe on the trail): the stealth rules read pos, face and the
+  // fighter flags, so it watches through a stand-in. It looks left and right from where it stands (as a posted
+  // guard does), its flashlight cone follows it, and it cannot be taken down (it is not a fighter).
+  function watcherOf(o) {
+    if (!o || (o.a && o.def) || !o.root || o.standIn) return o;
+    const a = o, home = a.root.rotation.y, t0 = S.time;
+    return { id: `watch:${a.id}`, standIn: true, actor: a, home, t0, downed: false, gone: false, tied: false, alert: false, state: 'calm', t: 0, cooldown: 0, idleClip: 'idle',
+      get pos() { return a.root.position; }, get face() { return a.root.rotation.y; }, set face(v) { a.root.rotation.y = v; }, get yaw() { return a.root.rotation.y; } };
+  }
+  function standInTick(f) {
+    if (!f.alert) f.face = f.home + Math.sin((S.time - f.t0) * 0.35) * 0.7;
+    if (f.beam) { f.beam.visible = S.world.visible; f.beam.position.set(f.pos.x + Math.sin(f.yaw) * 0.3, f.pos.y + 1.25, f.pos.z + Math.cos(f.yaw) * 0.3); f.beam.rotation.set(0.12, f.yaw, 0, 'YXZ'); }
+  }
+  // the crew in the scene for a group photo: the hero and every crew body within 40 m
+  function crewGroup() {
+    const out = new Set(), H = S.hero;
+    for (const a of [H && H.actor, ...CREW_IDS.map((id) => S.cast.get(id)), ...((S.cast.followers && S.cast.followers.list) || [])]) {
+      if (a && a.root && a.visible !== false && CREW_IDS.includes(a.id) && flat(a.root.position, H.pos) < 40) out.add(a);
+    }
+    return [...out];
   }
   // weapons on the floor to pick up (F3: the pool cue, the bar stool)
   function pickups(m, list) {

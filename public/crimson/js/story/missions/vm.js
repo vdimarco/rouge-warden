@@ -27,6 +27,9 @@ export function createVM(S, K) {
   /* ---------------- the runtime m ---------------- */
   function runtime(def) {
     const spawned = new Map(), fighters = [], temps = [];
+    // a vehicle the mission asks the hero to get into (enter, drive, race, a drive escort) gets its doors,
+    // even when the spawn does not say enterable (F2's jeeps, the jeep time trials)
+    const boards = (ref) => (def.steps || []).some((st) => st && st.vehicle === ref && (st.type === 'enter' || st.type === 'drive' || st.type === 'race' || (st.type === 'escort' && st.drive)));
     const m = {
       S, def, index: 0, dt: 0, result: {}, lastPhoto: null, subsHandle: null,
       get auto() { return M.auto; },
@@ -47,7 +50,7 @@ export function createVM(S, K) {
             if (sp.player && pv && pv.kind === sp.kind && !pv.gone) { obj = pv; pv.setPose(P.x, P.z, yaw, Number.isFinite(P.y) ? P.y + 1 : undefined); pv.damage = Math.min(pv.damage || 0, 60); pv.wrecked = false; if (sp.look && pv.setLook) pv.setLook(sp.look); }
             else {
               if (sp.player && pv && !pv.gone) { if (S.drive.riding === pv) K.forceOut(pv); S.vehicles.despawn(pv); }
-              obj = S.vehicles.spawn(sp.kind, { pos: { x: P.x, y: P.y, z: P.z }, yaw, look: sp.look, protect: sp.protect, bumpLimit: sp.bumpLimit, maxSpeed: sp.maxSpeed, maxContact: sp.maxContact, player: sp.player, gang: sp.gang, enterable: sp.enterable, tint: sp.tint, lights: sp.lights, siren: sp.siren });
+              obj = S.vehicles.spawn(sp.kind, { pos: { x: P.x, y: P.y, z: P.z }, yaw, look: sp.look, protect: sp.protect, bumpLimit: sp.bumpLimit, maxSpeed: sp.maxSpeed, maxContact: sp.maxContact, player: sp.player, gang: sp.gang, enterable: sp.enterable ?? boards(ref), tint: sp.tint, lights: sp.lights, siren: sp.siren });
               if (Number.isFinite(P.y) && obj.setPose) obj.setPose(P.x, P.z, yaw, P.y + 1);
             }
             obj.missionRef = ref;
@@ -105,8 +108,9 @@ export function createVM(S, K) {
       // run any step inline from a script: yield* m.run({type: 'fight', waves: [...]})
       *run(step) { const fn = K.STEPS[step.type]; if (!fn) throw new Error(`m.run: unknown step type '${step.type}'`); yield* fn(m, step); },
       // a timer for this step: fails with reason at 0 (stops while a modal freezes play)
-      timer(sec, reason) { m.timerLeft = sec; m.timerReason = reason || 'Out of time.'; S.ui.timer(sec); },
-      clearTimer() { m.timerLeft = null; S.ui.timer(null); },
+      // skip: at 0 the step ends and the mission goes on (STEP_COMMON fail: 'skip')
+      timer(sec, reason, skip = false) { m.timerLeft = sec; m.timerReason = reason || 'Out of time.'; m.timerSkip = !!skip; S.ui.timer(sec); },
+      clearTimer() { m.timerLeft = null; m.timerSkip = false; S.ui.timer(null); },
       timerLeft: null, timerReason: '', objText: null, override: null,
       // the crew's van (a player:true spawn) stays for free roam and a retry; everything else goes
       cleanup() {
@@ -144,6 +148,7 @@ export function createVM(S, K) {
         const now = S.timers.now; m.dt = Math.max(0, now - last); last = now;
         if (K.failReq) return FAIL;
         if (K.passReq) { K.passReq = false; return PASS; }
+        if (K.skipReq) { K.skipReq = false; return null; } // an optional step ran out of time: on to the next
         r = err ? g.throw(err) : g.next(v);
       }
       if (K.failReq) return FAIL; // asked for while the step ran to its end in one go
@@ -161,7 +166,7 @@ export function createVM(S, K) {
     M.active = { id, step: step0, type: null, state: 'run' };
     K.last = { chapter: M.chapter, mission: id, step: step0 };
     K.current = m;
-    K.failReq = null; K.passReq = false;
+    K.failReq = null; K.passReq = false; K.skipReq = false;
     const t0 = S.time, stats0 = K.combatStats(), photos0 = K.photo.list().length;
     S.bus.emit('mission', { id, state: 'start' });
     K.log('mission', id, 'start', step0);
@@ -172,13 +177,13 @@ export function createVM(S, K) {
       if (!(K.cp && K.cp.mission === id && K.cp.chapter === M.chapter && K.cp.step <= step0)) K.checkpoint(id, step0, false, m);
       for (let i = step0; i < def.steps.length; i++) {
         const s = def.steps[i];
-        m.index = i; m.objText = null; m.override = null; m.clearTimer();
+        m.index = i; m.objText = null; m.override = null; m.clearTimer(); K.skipReq = false;
         Object.assign(M.active, { step: i, type: s.type }); K.last.step = i;
         if (s.when && !cond(s.when)) continue;
         if (s.cp && i !== step0) K.checkpoint(id, i, true, m);
         else if (s.cp && i === step0 && !o.snap) K.checkpoint(id, i, true, m);
         m.objective(s.objective || null);
-        if (s.timeLimit) m.timer(s.timeLimit, typeof s.fail === 'string' ? s.fail : 'Out of time.');
+        if (s.timeLimit) m.timer(s.timeLimit, typeof s.fail === 'string' && s.fail !== 'skip' ? s.fail : 'Out of time.', s.fail === 'skip');
         S.bus.emit('step', { mission: id, index: i, type: s.type });
         K.log('step', id, i, s.type);
         const fn = K.STEPS[s.type];
@@ -326,7 +331,7 @@ export function createVM(S, K) {
   function startChapter(id, o = {}) {
     S.timers.cancelTag('missions:switch');
     if (chain) chain.cancel();
-    K.failReq = null; K.passReq = false; K.failing = false; K.roaming = false;
+    K.failReq = null; K.passReq = false; K.skipReq = false; K.failing = false; K.roaming = false;
     K.cp = null; // a checkpoint belongs to one run of one mission (retry read it before coming here)
     chain = S.co.start(runChain(id || 'f1', o), `${ROOT_PREFIX}chapter`);
     return chain;
@@ -339,7 +344,7 @@ export function createVM(S, K) {
     // a mission of no chapter (side content, QA): run it from free roam, then roam on
     S.timers.cancelTag('missions:switch');
     if (chain) chain.cancel();
-    K.failReq = null; K.passReq = false; K.failing = false;
+    K.failReq = null; K.passReq = false; K.skipReq = false; K.failing = false;
     if (!M.chapter) M.chapter = def.chapter || 'p1';
     chain = S.co.start(K.roam.forever({ side: id, step: o.step || 0, snap: o.snap || null }), `${ROOT_PREFIX}roam`);
     return chain;
