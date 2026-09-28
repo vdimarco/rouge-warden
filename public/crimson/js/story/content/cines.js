@@ -121,7 +121,8 @@ export const CINES = {
       shot(29, 5, P('wash', -6, 1.2, 6), P('wash', -12, 6, 12), { bridge: true, y: 6 }, 50),
     ],
     actors: [
-      act(0, 'gabe', 'pose', { name: 'crouch', k: 1 }), act(0, 'tanktop', 'pose', { name: 'crouch', k: 1 }), act(0, 'fifty', 'pose', { name: 'crouch', k: 1 }),
+      // Gabe sits back on his heels; the crew stand (crouched, they read as a sumo squat with the arms out)
+      act(0, 'gabe', 'pose', { name: 'crouch', k: 1 }),
       act(3, 'gabe', 'pose', { name: 'talk', k: 0.6 }), act(6, 'fifty', 'pose', { name: 'talk', k: 0.5 }), act(19, 'tanktop', 'pose', { name: 'handsOpen', k: 1 }),
     ],
     lines: [line(3, 'i0.cost'), line(6.2, 'i0.what'), line(8.8, 'i0.first'), line(10.6, 'i0.why'), line(14.2, 'i0.three'), line(16.6, 'i0.ronin'), line(19.2, 'i0.dark'), line(24.4, 'i0.vo')],
