@@ -58,7 +58,12 @@ export async function createWorld(container, { quality = "high" } = {}) {
   let low = quality === "low";
   const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high));
+  // shader error checks are synchronous GL calls on each program's first draw: only in ?debug
+  renderer.debug.checkShaderErrors = /[?&]debug\b/.test(location.search);
+  // dynamic resolution: when frames run long the render scale drops, and it creeps back when there is room
+  let resScale = 1, ftAvg = 16.7, ftHold = 0;
+  const ratio = () => Math.max(0.6, Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high) * resScale);
+  renderer.setPixelRatio(ratio());
   renderer.domElement.style.display = "block";
   container.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
@@ -75,7 +80,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
   scene.add(sky, water);
   let envGroup = null;
   function buildEnv() {
-    if (envGroup) { scene.remove(envGroup); envGroup.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+    // an InstancedMesh frees its instance buffers only on its own dispose
+    if (envGroup) { scene.remove(envGroup); envGroup.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
     envGroup = new THREE.Group();
     envGroup.add(new THREE.Mesh(E.buildTerrain(low), E.terrainMaterial(low)), E.buildTrees(low), E.buildPads(low), E.buildReeds(low));
     scene.add(envGroup);
@@ -546,7 +552,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
 
   function resize(w, h) {
     S.w = Math.max(1, w | 0); S.h = Math.max(1, h | 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high));
+    renderer.setPixelRatio(ratio());
     renderer.setSize(S.w, S.h);
     applyCamera();
   }
@@ -558,7 +564,8 @@ export async function createWorld(container, { quality = "high" } = {}) {
       const nl = q === "low";
       if (nl === low) return;
       low = nl;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high));
+      resScale = 1;
+      renderer.setPixelRatio(ratio());
       renderer.setSize(S.w, S.h);
       buildEnv();
       sky.material.defines.OCT = low ? 3 : 5; sky.material.needsUpdate = true;
@@ -604,7 +611,20 @@ export async function createWorld(container, { quality = "high" } = {}) {
     setHour,
     showCatch, hideCatch,
     update, render,
-    info() { return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps) }; },
+    info() { return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +resScale.toFixed(2) }; },
+    // main.js reports each frame's time in ms: long frames lower the render scale, short ones raise it again
+    frameTime(ms) {
+      if (!(ms > 0) || ms > 250 || document.hidden) return;
+      ftAvg += (ms - ftAvg) * 0.05;
+      if ((ftHold -= ms) > 0) return;
+      if (ftAvg > 22 && resScale > 0.6) { resScale = Math.max(0.6, resScale * 0.85); renderer.setPixelRatio(ratio()); ftHold = 1500; }
+      else if (ftAvg < 14 && resScale < 1) { resScale = Math.min(1, resScale * 1.08); renderer.setPixelRatio(ratio()); ftHold = 4000; }
+    },
+    // upload a fish's painted skin before it is needed: the sim picks the fish at the landing, seconds before the strike
+    prepareFish(id) {
+      const m = getFish(id);
+      if (m && m.userData && m.userData.mats) for (const mt of m.userData.mats) if (mt.map) renderer.initTexture(mt.map);
+    },
   };
 
   setHour(12);
@@ -618,10 +638,15 @@ export async function createWorld(container, { quality = "high" } = {}) {
   const extras = [lure.group, lure.glint, rod.mesh, line.mesh, shadow, ...halos];
   warm.concat(solid).forEach((m) => { m.visible = true; m.position.set(0, 1, -3); });
   extras.forEach((o) => { o.visible = true; });
+  // a real draw, not just a compile: three checks each program and the driver builds its pipeline on first use,
+  // and those must not land on the release, the strike or the catch
+  const culled = [];
+  scene.traverse((o) => { if (o.frustumCulled) { culled.push(o); o.frustumCulled = false; } });
   try {
     if (renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
-    else renderer.compile(scene, camera);
-  } catch (e) { /* compile on first draw instead */ }
+    renderer.render(scene, camera);
+  } catch (e) { /* draw on first use instead */ }
+  culled.forEach((o) => { o.frustumCulled = true; });
   warm.forEach((m) => { m.visible = false; });
   solid.forEach((m) => scene.remove(m));
   extras.forEach((o) => { o.visible = false; });

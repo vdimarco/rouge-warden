@@ -21,6 +21,7 @@ const rgba = (c, a) => "rgba(" + c + "," + a + ")";
 
 // Tunables. Exported so a test or a settings screen can read them.
 export const REEL_UI = {
+  maxDpr: 2,           // canvas pixel ratio cap; main.js lowers it on low quality
   pinHoldMs: 90,       // bail closed: a press becomes a pin after this long without a big move
   pinSlopPx: 12,       // "a big move"
   bailSwipePx: 40,     // the bail swipe: at least this far...
@@ -102,10 +103,16 @@ class Widget extends Emitter {
     this.w = 0; this.h = 0; this.dpr = 1;
     this.time = 0;
     this._offs = [];
+    // while the box animates its size, keep the canvas as it is and scale it; reallocate once at the end
+    this.anim = false;
+    container.addEventListener("transitionrun", (e) => { if (e.target === container) this.anim = true; });
+    const done = (e) => { if (e.target === container) { this.anim = false; this.resize(); } };
+    container.addEventListener("transitionend", done);
+    container.addEventListener("transitioncancel", done);
   }
   get hidden() { return !(this.el.clientWidth > 0 && this.el.clientHeight > 0); }
   resize() {
-    const w = this.el.clientWidth, h = this.el.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = this.el.clientWidth, h = this.el.clientHeight, dpr = Math.min(T.maxDpr, window.devicePixelRatio || 1);
     if (w === this.w && h === this.h && dpr === this.dpr) return false;
     this.w = w; this.h = h; this.dpr = dpr;
     this.cv.width = Math.max(1, Math.round(w * dpr));
@@ -116,7 +123,8 @@ class Widget extends Emitter {
   layout() {}
   // The container can change size without a resize() call (the reel box animates its height during the flight).
   fit() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (this.anim) return this.w > 0 && this.h > 0;
+    const dpr = Math.min(T.maxDpr, window.devicePixelRatio || 1);
     if (this.el.clientWidth !== this.w || this.el.clientHeight !== this.h || dpr !== this.dpr) this.resize();
     return this.w > 0 && this.h > 0;
   }
@@ -487,7 +495,8 @@ export class ReelPanel extends Widget {
     const spinning = spool > 0.02;
     // nothing moves and nothing glows: keep the last frame
     const idle = !moving && !spinning && fx.glow < 0.01 && fx.thumbA < 0.01 && fx.guide < 0.01 && fx.clack <= 0 && !s.hint;
-    const sceneKey = [this.w, this.h, this.dpr, Math.round(fx.bail * 500), spinning ? Math.round(fx.spin * 60) : -1, s.line].join();
+    // a spinning spool repaints 20 times a second: the ports strobe at that speed anyway, and the coils move every frame
+    const sceneKey = [this.w, this.h, this.dpr, Math.round(fx.bail * 500), spinning ? Math.floor(this.time * 20) : -1, s.line].join();
     if (idle && this.same(sceneKey)) return;
     if (!idle) this._drawn = null;
     // the parts that never move, then the reel as it stands now; each is redrawn only when it changes

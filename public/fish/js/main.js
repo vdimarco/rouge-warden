@@ -8,7 +8,7 @@ import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { CAST, castParams, Flight } from "./cast.js";
 import { Rises, LakeSim, rodTip } from "./fish.js";
-import { ReelPanel, Crank, RodPad, Gauge } from "./reel.js";
+import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
 import * as LAKE from "./lake.js";
 import { SPECIES, JUNK, byId } from "./species.js";
 
@@ -193,7 +193,9 @@ function toLocal(cx, cy, el) {
 function layoutFor(phase) {
   const Lw = game.clientWidth, Lh = game.clientHeight;
   G.wide = Lw > Lh * 1.15;
-  if (phase === "cast" || (phase === "turn" && G.turnTo === "landscape")) return G.wide ? "wide-cast" : "tall-cast";
+  // while the player turns the phone, keep the layout: the drawing is resized once, when the reel starts
+  if (phase === "turn") return G.layout || (G.wide ? "wide-cast" : "tall-cast");
+  if (phase === "cast") return G.wide ? "wide-cast" : "tall-cast";
   if (phase === "reel" || phase === "lost" || (phase === "turn" && G.turnTo === "portrait")) return G.wide ? "reel" : "tall-reel";
   if (phase === "catch") return G.wide ? "reel" : "full";
   return "full";
@@ -209,8 +211,8 @@ function relayout(force) {
   const inCast = L === "tall-cast" || L === "wide-cast";
   $("#castUI").hidden = !(inCast && (G.phase === "cast" || G.phase === "turn"));
   $("#reelUI").hidden = !((G.phase === "reel" || G.phase === "lost") && (L === "reel" || L === "tall-reel"));
-  // the view keeps its size through the css transition; resize the drawing once it settles
-  resizeView();
+  // the view animates its size: resize the drawing once it settles (transitionend), not at every step on the way
+  if (!$("#view").getAnimations().length) resizeView();
   setTimeout(resizeView, 380);
   if (reelPanel) reelPanel.resize();
   if (crank) crank.resize();
@@ -285,9 +287,12 @@ let wake = null;
 async function keepAwake() {
   try { if ("wakeLock" in navigator && !wake && document.visibilityState === "visible") { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch (e) { wake = null; }
 }
+// a phone left paused on the table must be free to sleep
+function releaseAwake() { if (wake) { wake.release().catch(() => {}); wake = null; } }
 
 /* ---------------- title ---------------- */
 function toTitle() {
+  releaseAwake();
   G.phase = "title";
   G.sim = null; G.flight = null;
   $("#hud").hidden = true;
@@ -319,6 +324,7 @@ $("#helpBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); o
 $("#setBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); syncSettings(); overlay("settings"); });
 
 function startMode(mode) {
+  keepAwake();
   G.mode = mode;
   G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = [];
   G.hour = mode === "derby" ? 18.3 : 6.2;
@@ -466,6 +472,7 @@ function landed(r) {
     // G.force lets a test pick the fish: { species, kg, bite }
     G.sim = new LakeSim(Object.assign({ lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || {}));
     G.settle = 0;
+    if (G.sim.plan && world.prepareFish) world.prepareFish(G.sim.plan.id);
     if (dist > save.longest) { save.longest = dist; if (dist > 12) toast("Your longest cast yet!"); }
     persist();
     report(dist, VV[v] || "", (G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : LAKE.ZONE_NAMES[zone] || ""), v === "sweet");
@@ -584,6 +591,7 @@ $("#catchGo").addEventListener("click", () => { Sound.sfx("ui"); show(null); wor
 /* ---------------- the derby ---------------- */
 const RANKS = [[0, "SKUNKED"], [0.01, "DOCK ROOKIE"], [2, "WEEKEND ANGLER"], [5, "COTTAGE REGULAR"], [9, "LAKE PRO"], [14, "LOON LAKE CHAMPION"]];
 function endDerby() {
+  releaseAwake();
   G.phase = "results";
   Sound.stopLoops(); Haptics.stop();
   prompt("");
@@ -707,12 +715,19 @@ $("#optInput").addEventListener("change", async (e) => {
   } else { G.input = "touch"; save.input = "touch"; }
   persist(); syncSettings(); relayout(true);
 });
-function applyQuality() { if (world) world.setQuality(save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality); }
+function quality() { return save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality; }
+function applyQuality() {
+  // the reel canvases follow the quality too: fewer pixels to paint on a phone
+  REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
+  if (world) world.setQuality(quality());
+  for (const w of [reelPanel, crank, rodPad, gauge]) if (w && w.resize) w.resize();
+}
 
 /* ---------------- pause ---------------- */
 function pause() {
   if (G.paused || !(G.phase === "cast" || G.phase === "turn" || G.phase === "reel" || G.phase === "lost")) return;
   G.paused = true;
+  releaseAwake();
   Sound.stopLoops(); Haptics.stop();
   if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) { G.pin = null; G.step = "open"; }
   $("#pauseSum").textContent = hudText();
@@ -727,7 +742,7 @@ $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journ
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { pause(); Sound.stopLoops(); Haptics.stop(); }
-  else keepAwake();
+  else if (!G.paused && G.phase !== "title" && G.phase !== "results") keepAwake();
 });
 // Safari: no pinch zoom
 document.addEventListener("gesturestart", (e) => e.preventDefault());
@@ -1018,6 +1033,7 @@ function frame() {
   requestAnimationFrame(frame);
   const t = now();
   let dt = (t - last) / 1000;
+  if (world && world.frameTime) world.frameTime(t - last);
   last = t;
   if (!(dt > 0)) dt = 0.016;
   G.frame++;
@@ -1029,8 +1045,10 @@ function frame() {
   if (!world) return;
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
   dt = Math.min(dt, 0.05);
-  world.update(dt);
-  world.render();
+  // under the pause menu and the dimmed screens the lake stands still: draw it once, then let the GPU rest
+  const still = G.paused || !!document.querySelector(".screen.dim:not([hidden])");
+  if (!still || !G.stillDrawn) { world.update(dt); world.render(); }
+  G.stillDrawn = still;
   if (reelPanel && !$("#castUI").hidden) reelPanel.draw(dt);
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!rodPad.hidden) rodPad.draw && rodPad.draw(dt); }
   if (DEBUG) debug();
@@ -1044,8 +1062,10 @@ function step(dt) {
     if (G.hour >= 21) { G.hour = 5; toast("A new day on Loon Lake."); }
     if (Math.floor(was * 6) !== Math.floor(G.hour * 6)) { world.setHour(G.hour); Sound.setAmbience(true, G.hour); updateHud(); }
     if (rises) {
-      for (const e of rises.step(dt, G.hour) || []) if (e.type === "rise") { world.rise(e.x, e.z); if (e.gold) toast("A gold ring! Something big is rising.", 2600); }
-      world.setRings(rises.list.map((r) => ({ x: r.x, z: r.z, gold: !!r.gold })));
+      const ev = rises.step(dt, G.hour) || [];
+      for (const e of ev) if (e.type === "rise") { world.rise(e.x, e.z); if (e.gold) toast("A gold ring! Something big is rising.", 2600); }
+      // the rings only change when one rises or goes quiet
+      if (ev.length || rises.list.length !== G.ringN) { G.ringN = rises.list.length; world.setRings(rises.list); }
     }
   } else if (G.phase === "title") {
     world.setView({ mode: "title" });
@@ -1090,7 +1110,8 @@ function debug() {
 /* ---------------- boot ---------------- */
 async function boot() {
   try {
-    world = await createWorld($("#view"), { quality: save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality });
+    REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
+    world = await createWorld($("#view"), { quality: quality() });
   } catch (err) {
     console.error(err);
     document.body.insertAdjacentHTML("beforeend", "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");
@@ -1140,6 +1161,7 @@ async function boot() {
   rodPad = new RodPad($("#padBox"), { toLocal });
   rodPad.on("yank", () => { if (G.phase === "reel") G.hookReq = true; });
   gauge = new Gauge($("#gaugeBox"));
+  $("#view").addEventListener("transitionend", (e) => { if (e.target.id === "view") resizeView(); });
   // iPhone: only a real finger on a switch control can tick. The reel face and the crank carry hidden switches
   Haptics.attachPad($("#reelBox"));
   crankPad = Haptics.attachCrank($("#crankBox"), { toLocal });
