@@ -266,7 +266,14 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 
 **The camera.** When a wall or a hill gets between the camera and you, the camera rises over your shoulder instead of moving into you. It moves in fast and eases back out slowly, so it does not jitter.
 
-**Graphics settings.** The pause menu has High, Medium, and Low. Phones start on Low. The game also lowers its resolution on its own when frames get slow, and raises it again when there is room.
+**Graphics settings.** The pause menu has High, Medium, and Low. The Graphics button steps through them in that order. Phones start on Low. On a phone, High counts only if you picked it on that phone. Computers with built-in graphics (Intel, AMD Radeon Graphics, phone chips) start on Medium. During play the game lowers its resolution in a few steps when frames get slow, and raises it again when there is room. It knows the screen's own frame rate, so an iPhone in Low Power Mode (30 fps) does not count as slow. If a computer is still slow at the lowest step, the game drops one setting for that visit and says so.
+
+**Speed.** How the game was made faster, with the numbers, is in [docs/botl-perf.md](docs/botl-perf.md). In short:
+- The forest is split into tiles. Far tiles use a simpler tree and cast no shadow.
+- Grass that the camera cannot see is skipped.
+- Props such as campfires and towers are merged into a few meshes.
+- Nothing is drawn behind the title and full-screen menus.
+- The title waits only for the models the world needs.
 
 **Painted assets.** The crew, the three bosses, the King, the critters, the kayak, the fish, the cabin, the outhouses, and the loon statue are 3D models made with [Higgsfield](https://higgsfield.ai/). Each one started as a painted concept picture, then became a textured model. The people have skeletons, and the game drives them with the same walk, climb, glide, swim, and swing poses as before. The ground uses painted grass, dirt, sand, and rock textures. A painted ring of far mountains stands behind the valley, and the loading screen and the arcade cabinet show a painted key art picture. If a model or texture does not load, the game uses its old shape-built version.
 
@@ -323,6 +330,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `adventure.mjs` | Every weapon and its combo, the modifiers, the double-damage last hit, throwing and picking up, the Frisbee coming back, a full pouch, the chests (four in each land), the camp cooler lock, all five side quests, Chip's bigger pouch, the two mini-bosses, and that a save with all of this loads again. |
 | `king.mjs` | A bot fights the whole Porcelain King fight with the normal controls. All three rounds happen, plunging works, the sludge wall keeps you on the court, and after the fight or a death everything is put back. |
 | `fun.mjs` | The fair-play rules: the King's gate, the roll cost, bites from behind miss, two wind-ups at most, damage numbers, the landing roll, the updraft fall, and the boss lines. |
+| `perf.mjs [quality ...]` | Speed: draw calls, triangles, and the time of the game step, the world update and the draw at five places, plus load times. `PERF_PHONE=1` copies an iPhone screen. Compare runs with each other; software rendering is slow. |
 | `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
 
 Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL` to a local `three.module.min.js` and `THREE_ADDONS` to a local copy of three's `examples/jsm` folder.
