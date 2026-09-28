@@ -854,7 +854,7 @@ function castPrompt() {
   // held sideways: say so here, without a card in the way (the picture already stays upright on the phone)
   if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "turn");
   switch (G.step) {
-    case "ready": prompt(m ? "Press and hold your thumb on the reel." : "Press and hold on the reel.", m ? "Turn to aim. The dotted line shows where it goes." : "Drag the lake to aim.", "thumb"); break;
+    case "ready": prompt(m ? "Hold your thumb on the reel." : "Press and hold on the reel.", m ? "Turn to aim." : "Drag the lake to aim.", "thumb"); break;
     case "open": prompt(m ? "Hold your thumb on the reel." : "Press and hold on the reel.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
     case "pinned": prompt(m ? "Tip the phone back over your shoulder." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
     case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;

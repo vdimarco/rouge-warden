@@ -13,6 +13,8 @@ try {
   // a derby, with motion
   await page.click("#derbyBtn");
   await page.waitForSelector("#setup:not([hidden])");
+  // the double-tap guard ignores a click in the first 300 ms of a screen that a tap just opened
+  await sleep(400);
   await page.click("#useMotion");
   await until(page, () => window.FISH && FISH.G.phase === "cast" && FISH.G.input === "motion", null, 15000);
   check(true, "Use motion starts the derby with motion input");
