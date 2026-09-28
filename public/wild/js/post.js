@@ -1,6 +1,7 @@
 // The painted look. The scene is drawn into a texture first, then one full-screen pass turns it into
 // something closer to a hand-painted film frame: soft brush strokes (a Kuwahara filter), thin ink lines
 // where the depth jumps, warm colour grading, a soft glow on bright things, haze around the sun, and paper grain.
+// The glow is gathered just before, in a small pass at half size.
 import * as THREE from "three";
 
 export const QUALITY = {
@@ -16,19 +17,29 @@ export class Painter {
     this.scale = 1;
     this.target = null;
     this.uniforms = {
-      tColor: { value: null }, tDepth: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
+      tColor: { value: null }, tDepth: { value: null }, tGlow: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
       uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uFarR: { value: quality.farR || 0 }, uHaze: { value: new THREE.Color(0.6, 0.75, 0.9) }, uGlow: { value: quality.glow },
       uTime: { value: 0 }, uSun: { value: new THREE.Vector2(-9, -9) }, uSunVis: { value: 0 }, uSunCol: { value: new THREE.Color(1, 0.92, 0.75) },
       uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
     };
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
       uniforms: this.uniforms, depthTest: false, depthWrite: false,
-      vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
-      fragmentShader: FRAG,
+      vertexShader: VERT,
+      fragmentShader: frag(quality),
     }));
     this.quad.frustumCulled = false;
     this.scene = new THREE.Scene();
     this.scene.add(this.quad);
+    // the glow on bright things is gathered first, into a half-size picture that the main pass adds
+    this.glowQuad = new THREE.Mesh(this.quad.geometry, new THREE.ShaderMaterial({
+      uniforms: { tColor: this.uniforms.tColor, uRes: this.uniforms.uRes }, depthTest: false, depthWrite: false,
+      vertexShader: VERT,
+      fragmentShader: GLOW,
+    }));
+    this.glowQuad.frustumCulled = false;
+    this.glowScene = new THREE.Scene();
+    this.glowScene.add(this.glowQuad);
+    this.glowRT = null;
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   }
   setQuality(q) {
@@ -36,9 +47,15 @@ export class Painter {
     this.uniforms.uRadius.value = q.radius;
     this.uniforms.uFarR.value = q.farR || 0;
     this.uniforms.uGlow.value = q.glow;
+    // the brush sizes are written into the shader, so a new setting builds it again
+    this.quad.material.fragmentShader = frag(q);
+    this.quad.material.needsUpdate = true;
     this.dispose();
   }
-  dispose() { if (this.target) { this.target.depthTexture.dispose(); this.target.dispose(); this.target = null; } }
+  dispose() {
+    if (this.target) { this.target.depthTexture.dispose(); this.target.dispose(); this.target = null; }
+    if (this.glowRT) { this.glowRT.dispose(); this.glowRT = null; }
+  }
   ensure() {
     const r = this.renderer, s = r.getDrawingBufferSize(new THREE.Vector2());
     if (this.target && this.target.width === s.x && this.target.height === s.y) return;
@@ -46,6 +63,9 @@ export class Painter {
     const dt = new THREE.DepthTexture(s.x, s.y);
     dt.type = THREE.UnsignedIntType;
     this.target = new THREE.WebGLRenderTarget(s.x, s.y, { depthTexture: dt, samples: this.q.samples, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+    // the glow is soft, so half the size each way is enough
+    if (this.q.glow) this.glowRT = new THREE.WebGLRenderTarget(Math.ceil(s.x / 2), Math.ceil(s.y / 2), { depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+    this.uniforms.tGlow.value = this.glowRT ? this.glowRT.texture : null;
     this.uniforms.uRes.value.set(s.x, s.y);
   }
   render(scene, camera, look) {
@@ -69,43 +89,84 @@ export class Painter {
       U.uSunVis.value = front ? Math.max(0, Math.min(1, look.sunDir.y * 4 + 0.2)) * (1 - look.night) : 0;
       U.uSunCol.value.copy(look.sunCol);
     }
+    if (this.glowRT) { r.setRenderTarget(this.glowRT); r.render(this.glowScene, this.cam); r.setRenderTarget(null); }
     r.render(this.scene, this.cam);
   }
 }
 
-const FRAG = /* glsl */ `
-uniform sampler2D tColor, tDepth; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch;
+const VERT = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
+
+// Kuwahara: split the neighbourhood in four, and keep the average of the calmest quarter.
+// Edges stay sharp and flat areas turn into soft patches of colour, like brush strokes.
+// The brush is written out here texel by texel, for the sizes its setting can reach, so the shader has no loop
+// or quarter test left to run. Each texel is read once and added to every quarter it belongs to: the middle row
+// and column belong to two quarters, the centre to all four. A broader brush only adds rings around the
+// smallest one, so pixels with different sizes side by side cost no more than the broadest.
+const tap = (i, j) => {
+  const inside = [i <= 0 && j <= 0, i >= 0 && j <= 0, i <= 0 && j >= 0, i >= 0 && j >= 0];
+  return `  c = texture2D(tColor, uv + vec2(${i}.0, ${j}.0) * px).rgb; cc = c * c;` + inside.map((b, k) => (b ? ` m${k} += c; s${k} += cc;` : "")).join("") + "\n";
+};
+const brush = (q) => {
+  const top = q.radius + (q.farR || 0), base = Math.max(1, q.radius);
+  if (top < 1) return "vec3 brush(vec2 uv, float R, vec2 px, bool sky) { return texture2D(tColor, uv).rgb; }";
+  let taps = "";
+  for (let j = -base; j <= base; j++) for (let i = -base; i <= base; i++) taps += tap(i, j);
+  // each broader size adds a ring: its left and right columns, then the rest of its top and bottom rows
+  for (let r = base + 1; r <= top; r++) {
+    taps += `  if (R > ${r - 1}.5) {\n`;
+    for (let j = -r; j <= r; j++) taps += "  " + tap(-r, j) + "  " + tap(r, j);
+    for (let i = 1 - r; i < r; i++) taps += "  " + tap(i, -r) + "  " + tap(i, r);
+    taps += "  }\n";
+  }
+  return /* glsl */ `
+void calm(vec3 m, vec3 s, float n, inout vec3 best, inout float bv) {
+  vec3 mu = m / n; vec3 v = abs(s / n - mu * mu);
+  float vv = v.r + v.g + v.b;
+  if (vv < bv) { bv = vv; best = mu; }
+}
+vec3 brush(vec2 uv, float R, vec2 px, bool sky) {
+  // Open sky that is flat across the whole brush comes out as its own colour anyway, so it skips the brush.
+  // The centre and the four corners tell: they must be within one 8-bit step of each other.
+  if (sky) {
+    vec2 o = R * px;
+    vec3 c = texture2D(tColor, uv).rgb;
+    vec3 a = texture2D(tColor, uv - o).rgb, b = texture2D(tColor, uv + o).rgb;
+    vec3 e = texture2D(tColor, uv + vec2(o.x, -o.y)).rgb, f = texture2D(tColor, uv + vec2(-o.x, o.y)).rgb;
+    vec3 d = max(max(c, a), max(b, max(e, f))) - min(min(c, a), min(b, min(e, f)));
+    if (max(d.r, max(d.g, d.b)) < 1.5 / 255.0) return c;
+  }
+  vec3 m0 = vec3(0.0), m1 = m0, m2 = m0, m3 = m0, s0 = m0, s1 = m0, s2 = m0, s3 = m0, c, cc;
+${taps}  float n = (R + 1.0) * (R + 1.0);
+  vec3 best = m0 / n; float bv = 1e9;
+  calm(m0, s0, n, best, bv); calm(m1, s1, n, best, bv); calm(m2, s2, n, best, bv); calm(m3, s3, n, best, bv);
+  return best;
+}`;
+};
+
+// The glow ring, worked out once for each texel of a half-size picture. Each half-size texel stands on one
+// full-size texel, so the thresholds see the same colours as before, and the steps are full-size pixels.
+const GLOW = /* glsl */ `
+uniform sampler2D tColor; uniform vec2 uRes;
+void main() {
+  vec2 px = 1.0 / uRes, uv = (floor(gl_FragCoord.xy) * 2.0 + 0.5) * px;
+  vec3 g = vec3(0.0);
+  for (int k = 0; k < 8; k++) {
+    float a = float(k) * 0.785398;
+    vec2 o = vec2(cos(a), sin(a)) * px;
+    vec3 c1 = texture2D(tColor, uv + o * 5.0).rgb, c2 = texture2D(tColor, uv + o * 13.0).rgb;
+    g += max(c1 - 0.78, 0.0) + max(c2 - 0.8, 0.0) * 0.7;
+  }
+  gl_FragColor = vec4(g * 0.16, 1.0);
+}`;
+
+const frag = (q) => /* glsl */ `
+uniform sampler2D tColor, tDepth, tGlow; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch;
 uniform vec3 uSunCol, uInk, uHaze; varying vec2 vUv;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-// Kuwahara: split the neighbourhood in four, and keep the average of the calmest quarter.
-// Edges stay sharp and flat areas turn into soft patches of colour, like brush strokes.
-vec3 kuwahara(vec2 uv, float R) {
-  vec2 px = 1.0 / uRes;
-  vec3 m[4]; vec3 s[4];
-  for (int k = 0; k < 4; k++) { m[k] = vec3(0.0); s[k] = vec3(0.0); }
-  float n = 0.0;
-  for (int j = 0; j <= 5; j++) {
-    if (float(j) > R) break;
-    for (int i = 0; i <= 5; i++) {
-      if (float(i) > R) break;
-      vec3 a = texture2D(tColor, uv + vec2(-i, -j) * px).rgb; m[0] += a; s[0] += a * a;
-      vec3 b = texture2D(tColor, uv + vec2( i, -j) * px).rgb; m[1] += b; s[1] += b * b;
-      vec3 c = texture2D(tColor, uv + vec2(-i,  j) * px).rgb; m[2] += c; s[2] += c * c;
-      vec3 d = texture2D(tColor, uv + vec2( i,  j) * px).rgb; m[3] += d; s[3] += d * d;
-      n += 1.0;
-    }
-  }
-  vec3 best = m[0] / n; float bv = 1e9;
-  for (int k = 0; k < 4; k++) {
-    vec3 mu = m[k] / n; vec3 v = abs(s[k] / n - mu * mu);
-    float vv = v.r + v.g + v.b;
-    if (vv < bv) { bv = vv; best = mu; }
-  }
-  return best;
-}
+${brush(q)}
 void main() {
   vec2 uv = vUv, px = 1.0 / uRes;
   float d0 = texture2D(tDepth, uv).r;
@@ -113,7 +174,7 @@ void main() {
   // far away, the brush gets broader, so distant hills turn into soft painted shapes
   float far = d0 < 1.0 ? smoothstep(70.0, 380.0, z0) : 0.0;
   float R = uRadius + floor(uFarR * far + 0.5);
-  vec3 col = R > 0.5 ? kuwahara(uv, R) : texture2D(tColor, uv).rgb;
+  vec3 col = R > 0.5 ? brush(uv, R, px, d0 >= 1.0) : texture2D(tColor, uv).rgb;
   // a big hit: the colours split for a moment, out from the middle of the screen
   if (uPunch > 0.01) { vec2 o = (uv - 0.5) * uPunch * 0.012; col.r = mix(col.r, texture2D(tColor, uv + o).r, 0.8); col.b = mix(col.b, texture2D(tColor, uv - o).b, 0.8); }
   // aerial perspective: the farther away, the more it fades into a clear, cool blue
@@ -132,17 +193,9 @@ void main() {
   float size = max(sx, sy) / max(z0, 0.001);
   float ink = smoothstep(1.0, 1.8, bendR) * smoothstep(0.02, 0.07, size) * (1.0 - smoothstep(40.0, 320.0, z0)) * (d0 < 1.0 ? 1.0 : 0.0);
   col = mix(col, col * uInk * 2.2, ink * 0.55);
-  // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes
-  if (uGlow > 0.5) {
-    vec3 g = vec3(0.0);
-    for (int k = 0; k < 8; k++) {
-      float a = float(k) * 0.785398;
-      vec2 o = vec2(cos(a), sin(a)) * px;
-      vec3 c1 = texture2D(tColor, uv + o * 5.0).rgb, c2 = texture2D(tColor, uv + o * 13.0).rgb;
-      g += max(c1 - 0.78, 0.0) + max(c2 - 0.8, 0.0) * 0.7;
-    }
-    col += g * 0.16;
-  }
+  // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes. It comes from the half-size
+  // glow picture; half a pixel over, each even pixel reads exactly the texel made for it.
+  if (uGlow > 0.5) col += texture2D(tGlow, uv + 0.5 * px).rgb;
   // haze around the sun, like light in the air on a summer afternoon
   vec2 asp = vec2(uRes.x / uRes.y, 1.0);
   float sd = length((uv - uSun) * asp);

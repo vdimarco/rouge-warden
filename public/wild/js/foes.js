@@ -306,16 +306,30 @@ export class Hazards {
   constructor(G) {
     this.G = G; this.shots = []; this.rings = []; this.pools = []; this.marks = [];
     this.globMat = M.toon(0x7a3a9a, { emissive: 0x3a0a4a, emissiveIntensity: 0.5 });
+    // Finished hazard materials wait here to be used again. A disposed material can take its compiled shader with it,
+    // and compiling it again in the middle of a fight freezes the game for a moment on a phone.
+    this.spare = new Map();
   }
-  mat(fs, u) {
-    return new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, ...u }, vertexShader: FLAT_VS, fragmentShader: fs, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  mat(fs, u, polygon = true) {
+    const key = fs + (polygon ? "|p" : ""), free = this.spare.get(key);
+    const m = free && free.pop();
+    if (m) {
+      // the shader keeps a link to each uniform object, so set the values rather than swap the objects
+      m.uniforms.uAlpha.value = 1;
+      for (const k in u) { const v = u[k].value; if (v && v.isColor) m.uniforms[k].value.copy(v); else m.uniforms[k].value = v; }
+      return m;
+    }
+    const n = new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, ...u }, vertexShader: FLAT_VS, fragmentShader: fs, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: polygon, polygonOffsetFactor: polygon ? -2 : 0, polygonOffsetUnits: polygon ? -2 : 0 });
+    n.userData.spareKey = key;
+    return n;
   }
-  // take a hazard out of the world and free what it owns
+  // take a hazard out of the world; its material goes back to the spares, anything else it owns is freed
   drop(m) {
     if (!m) return;
     this.G.scene.remove(m);
     if (m.userData.shared) return;
-    if (m.material && (m.material.isShaderMaterial || m.material.isMeshBasicMaterial)) m.material.dispose();
+    if (m.material && m.material.userData.spareKey) { const k = m.material.userData.spareKey; if (!this.spare.has(k)) this.spare.set(k, []); this.spare.get(k).push(m.material); }
+    else if (m.material && (m.material.isShaderMaterial || m.material.isMeshBasicMaterial)) m.material.dispose();
     if (m.geometry && !Object.values(GEO).includes(m.geometry)) m.geometry.dispose();
   }
   mark(x, z, r, color = 0xff4a2a, time = 0) {
@@ -347,7 +361,7 @@ export class Hazards {
     return s;
   }
   ring(x, z, o = {}) {
-    const m = new THREE.Mesh(GEO.wave, new THREE.ShaderMaterial({ uniforms: { uTime: HT, uAlpha: { value: 1 }, uColor: { value: new THREE.Color(o.color || 0xffe08a) } }, vertexShader: FLAT_VS, fragmentShader: WAVE_FS, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(GEO.wave, this.mat(WAVE_FS, { uColor: { value: new THREE.Color(o.color || 0xffe08a) } }, false));
     const y = this.G.groundAt(x, z, 999); m.position.set(x, y, z); m.scale.set(1, o.h || 1, 1); m.renderOrder = 2;
     this.G.scene.add(m);
     this.rings.push({ x, z, y, r: 1, speed: o.speed || 14, max: o.max || 22, dmg: o.dmg ?? 4, h: o.h || 1, knock: o.knock || 9, mesh: m, hit: false, dust: o.color || 0xd8ccb0 });
@@ -1204,8 +1218,9 @@ export class FX {
       const c = document.createElement("canvas"); c.width = 32; c.height = 64;
       const k = c.getContext("2d"); k.fillStyle = "#ffd84a"; k.strokeStyle = "#3a1a00"; k.lineWidth = 5; k.font = "bold 56px sans-serif"; k.textAlign = "center"; k.strokeText("!", 16, 54); k.fillText("!", 16, 54);
       this.bangTex = new THREE.CanvasTexture(c);
+      this.bangMat = new THREE.SpriteMaterial({ map: this.bangTex, depthTest: false });
     }
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.bangTex, depthTest: false }));
+    const s = new THREE.Sprite(this.bangMat);
     s.scale.set(0.6, 1.2, 1); s.position.set(x, y, z); this.G.scene.add(s);
     this.list.push({ m: s, v: new THREE.Vector3(0, 1.5, 0), life: 0.7 });
   }
@@ -1220,7 +1235,7 @@ export class FX {
       const p = this.list[i];
       p.life -= dt;
       p.m.position.addScaledVector(p.v, dt);
-      if (p.life <= 0) { G.scene.remove(p.m); p.m.material.dispose(); this.list.splice(i, 1); }
+      if (p.life <= 0) { G.scene.remove(p.m); if (p.m.material !== this.bangMat) p.m.material.dispose(); this.list.splice(i, 1); }
     }
   }
 }

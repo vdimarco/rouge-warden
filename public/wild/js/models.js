@@ -40,6 +40,59 @@ function mesh(geo, mat, x = 0, y = 0, z = 0, outline = true, thick = 0.045) {
   return m;
 }
 const put = (p, c) => (p.add(c), c);
+// Merges the fixed parts of a prop into one mesh per material, so a campfire or a tower costs a few draw calls
+// instead of dozens. Parts listed in `keep`, and anything see-through, textured, skinned or instanced, stay as
+// they are. Call it once the prop is built; parts that move must be in `keep`.
+export function bake(root, keep = []) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), m4 = new THREE.Matrix4();
+  const skip = new Set(keep.filter(Boolean)), sets = new Map();
+  const plain = (o) => { const k = Object.keys(o.userData); return k.length === 0 || (k.length === 1 && o.userData.outline); };
+  const visit = (o) => {
+    if (skip.has(o) || !o.visible) return;
+    if (o !== root && o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && plain(o)) {
+      const m = o.material, g = o.geometry;
+      if (!Array.isArray(m) && !m.transparent && !m.isShaderMaterial && !m.map && g.attributes.position && g.attributes.normal && o.children.every((c) => c.userData.outline)) {
+        const key = m.uuid + (o.castShadow ? "s" : "-") + (o.receiveShadow ? "r" : "-");
+        if (!sets.has(key)) sets.set(key, { m, cast: o.castShadow, recv: o.receiveShadow, list: [] });
+        sets.get(key).list.push(o);
+      }
+    }
+    for (const c of o.children) visit(c);
+  };
+  visit(root);
+  const gone = [], made = [];
+  for (const { m, cast, recv, list } of sets.values()) {
+    if (list.length < 2) continue;
+    let nv = 0, ni = 0;
+    for (const o of list) { nv += o.geometry.attributes.position.count; ni += o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count; }
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+    let vo = 0, io = 0;
+    for (const o of list) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", o.geometry.attributes.position.clone()); g.setAttribute("normal", o.geometry.attributes.normal.clone());
+      g.applyMatrix4(m4.multiplyMatrices(inv, o.matrixWorld));
+      const n = g.attributes.position.count, src = o.geometry.index ? o.geometry.index.array : null, cnt = src ? src.length : n;
+      // a mirrored part turns its triangles inside out, so flip their winding back
+      const flip = m4.determinant() < 0;
+      for (let i = 0; i < cnt; i += 3) {
+        const a = src ? src[i] : i, b = src ? src[i + 1] : i + 1, c = src ? src[i + 2] : i + 2;
+        idx[io++] = vo + a; idx[io++] = vo + (flip ? c : b); idx[io++] = vo + (flip ? b : c);
+      }
+      pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3);
+      vo += n; gone.push(o);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
+    const baked = new THREE.Mesh(geo, m); baked.castShadow = cast; baked.receiveShadow = recv;
+    made.push(baked);
+  }
+  for (const o of gone) if (o.parent) o.parent.remove(o);
+  for (const b of made) root.add(b);
+  return root;
+}
+
 const sph = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 10);
 const cyl = (a, b, h, s = 10) => new THREE.CylinderGeometry(a, b, h, s);
@@ -667,7 +720,9 @@ export function campfire(noRing = false) {
   [[1.3, 0.1, 0.0], [1.05, 0.55, 0.14], [0.85, 0.83, -0.12]].forEach(([sc, seed, dx]) => {
     const q = quad.clone(); q.setAttribute("aSeed", new THREE.Float32BufferAttribute(new Array(q.attributes.position.count).fill(seed), 1));
     const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, dx);
-    const m = new THREE.Mesh(q, M.flame); m.scale.setScalar(sc); m.position.y = 0.15; m.frustumCulled = false; m.renderOrder = 3; flame.add(m);
+    // the flame turns to face the camera in its shader, so give it a sphere that covers every turn
+    q.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1.1, 0), 2.2);
+    const m = new THREE.Mesh(q, M.flame); m.scale.setScalar(sc); m.position.y = 0.15; m.renderOrder = 3; flame.add(m);
   });
   // a warm pool of light on the ground
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(noRing ? 2 : 5, noRing ? 2 : 5), M.glow); pool.rotation.x = -Math.PI / 2; pool.position.y = 0.06; pool.renderOrder = 2; g.add(pool);
@@ -675,8 +730,10 @@ export function campfire(noRing = false) {
   const n = 30, attr = new Float32Array(n * 3), pos = new Float32Array(n * 3);
   for (let k = 0; k < n; k++) { const smoke = !noRing && k >= 26; attr.set([Math.random(), smoke ? 1 : 0, smoke ? 0.07 + Math.random() * 0.04 : 0.35 + Math.random() * 0.35], k * 3); }
   const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pg.setAttribute("aP", new THREE.BufferAttribute(attr, 3));
-  const pts = new THREE.Points(pg, M.specks); pts.frustumCulled = false; pts.renderOrder = 4; g.add(pts);
-  g.userData.flame = flame;
+  // the embers and smoke rise in their shader, so give them a sphere that covers the whole plume
+  pg.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 4, 0), 6);
+  const pts = new THREE.Points(pg, M.specks); pts.renderOrder = 4; g.add(pts);
+  g.userData.flame = flame; g.userData.embers = pts;
   return g;
 }
 export function cooler() {

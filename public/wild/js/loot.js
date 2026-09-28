@@ -280,6 +280,8 @@ export class Loot {
     }
     pick.forEach((p, i) => {
       const obj = M.chest(); const y = w.height(p.x, p.z);
+      // the gold bands and the latch become one mesh; the lid is baked on its own so it still swings open
+      M.bake(obj, [obj.userData.lid]); M.bake(obj.userData.lid);
       obj.position.set(p.x, y, p.z); obj.rotation.y = r() * 6.28; G.scene.add(obj);
       w.addCircle(p.x, p.z, 0.8, "chest");
       const beam = new THREE.Mesh(this.beamGeo, this.beamMat); beam.position.set(p.x, y + 0.6, p.z); beam.frustumCulled = false; beam.renderOrder = 5; G.scene.add(beam);
@@ -321,8 +323,10 @@ export class Loot {
     this.updateFlying(dt);
     for (const it of this.ground) {
       const d = Math.hypot(it.x - P.x, it.z - P.z);
-      it.obj.visible = d < 150;
-      if (d > 150) continue;
+      // a far weapon leaves the scene, so three.js skips it entirely; it comes back 10 m closer than it went
+      const show = d < (it.obj.parent ? 160 : 150);
+      if (show !== !!it.obj.parent) { if (show) G.scene.add(it.obj); else G.scene.remove(it.obj); }
+      if (!show) continue;
       // a fresh drop pops out of the critter and lands
       if (it.pop > 0) { it.pop -= dt; it.obj.position.y = it.y + Math.sin((1 - it.pop / 0.5) * Math.PI) * 1.2; }
       it.t -= dt;
@@ -331,6 +335,10 @@ export class Loot {
     for (const c of this.chests) {
       const d = Math.hypot(c.x - P.x, c.z - P.z);
       c.beam.visible = !c.open && d < 420 && d > 6;
+      // the chest itself is a few pixels wide past 170 m, so it leaves the scene (10 m later on the way out);
+      // its beam still shows the way
+      const show = d < (c.obj.parent ? 180 : 170);
+      if (show !== !!c.obj.parent) { if (show) G.scene.add(c.obj); else G.scene.remove(c.obj); }
       if (c.t > 0 && c.t < 1) { c.t = Math.min(1, c.t + dt * 1.6); const u = c.t; c.obj.userData.lid.rotation.x = -1.9 * (1 - Math.pow(1 - u, 3)) - Math.sin(u * Math.PI) * 0.15; }
     }
   }
