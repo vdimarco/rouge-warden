@@ -5,7 +5,8 @@
 //   Ids this build does not know (chapters, missions) go to save.quarantine instead of being dropped, so a
 //   later build can migrate them. Text that reaches the title (the summary) is rebuilt from the content.
 // - createSave(S, K) is S.save: get, has, write, clear, summary, checkpoint, restore. write() writes nothing
-//   and returns false until a chapter runs (the boot's loading never replaces the save CONTINUE loads).
+//   and returns false until a chapter runs (the boot's loading never replaces the save CONTINUE loads),
+//   nor in the cold open while a save is stored (NEW STORY replaces the old save only from f1).
 //   While a mission runs, the save holds its checkpoint (the hero, the van, the clock and the flags as they
 //   were there), so CONTINUE resumes at that checkpoint, as RETRY would.
 import { CHAPTER_ORDER, COLD_OPEN, CREW_IDS, CAST_IDS, EVIDENCE, SAVE_KEY, VEHICLE_KINDS, VAN_LOOKS, WEAPON_IDS, HERO_MODES, blankSaveV1 } from '../types.js';
@@ -256,6 +257,9 @@ export function createSave(S, K) {
     has: () => !!load(),
     write() {
       if (!S.missions.chapter) return false;
+      // NEW STORY's cold open (c0, i0) never replaces a stored save: CONTINUE resumes the old story until
+      // f1 begins (a hide during the cold open wrote the old chapter with an empty done list)
+      if (COLD_OPEN.includes(S.missions.chapter) && load()) return false;
       let s;
       try { s = snapshot(); } catch (e) { console.error('[save] snapshot', e); return false; }
       let text = JSON.stringify(s);

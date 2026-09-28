@@ -175,6 +175,9 @@ class Figure {
   dispose() {
     for (const n of Object.keys(this.props)) this.cast.props.detach(this, n);
     if (this.vortex) for (const v of Object.values(this.vortex)) v.remove();
+    // the full meshes back before the body frees its geometry: the coarse copy (lod.js) shares the vertex
+    // buffers of every clone of this GLB, and freeing it made them all upload again
+    if (this.coarseOn && this.body) { this.body.root.traverse((o) => { if (o.userData.fullGeo) o.geometry = o.userData.fullGeo; }); this.coarseOn = false; }
     if (this.body) this.body.dispose(); else if (this.ph) this.ph.dispose();
     this.root.removeFromParent();
     this.disposed = true;

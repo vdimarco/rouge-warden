@@ -93,6 +93,23 @@ const { browser, page, errors } = await open({ query: "?chapter=f1&seed=7&nomusi
     return out;
   });
   check(boot.mode === "boot" && boot.chapter === null && !boot.wrote && boot.same, `write() writes nothing until a chapter runs (${JSON.stringify(boot)})`);
+  // NEW STORY's cold open never replaces a stored save (a hide in c0 wrote the old chapter with nothing done)
+  await stepUntil(page, () => { const S = __crimson.story.S; return !!S.missions.chapter && S.mode === "play"; }, { maxSec: 30 });
+  const cold = await page.evaluate(() => {
+    const S = __crimson.story.S, M = S.missions, old = JSON.stringify({ v: 1, chapter: "f3", done: ["f1", "f2"], flags: { kept: true } });
+    localStorage.setItem("crimson.story.v1", old);
+    const ch = M.chapter; M.chapter = "c0";
+    let wrote; try { wrote = S.save.write(); } finally { M.chapter = ch; }
+    return { wrote, same: localStorage.getItem("crimson.story.v1") === old };
+  });
+  check(!cold.wrote && cold.same, `the cold open leaves a stored save as it was (${JSON.stringify(cold)})`);
+  // the title offers CONTINUE for any stored save: the story repairs it (truncated, another version)
+  const title = await page.evaluate((raw) => {
+    localStorage.setItem("crimson.story.v1", raw);
+    __crimson.showTitle();
+    return !document.getElementById("modeContinue").hidden && __crimson.focusMode === "continue";
+  }, CASES[1].raw);
+  check(title, "the title offers CONTINUE for a truncated save");
 }
 errs.push(...errors);
 await browser.close();

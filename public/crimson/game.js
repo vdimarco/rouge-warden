@@ -996,8 +996,13 @@ function titleKey(e) {
 // the title's three ways in: NEW STORY, CONTINUE (only with a story save) and FIGHT GABE
 const modeBtns = [...document.querySelectorAll('#modes button')];
 for (const b of modeBtns) b.addEventListener('click', (e) => { e.stopPropagation(); startGame(b.dataset.mode); });
+// Any stored story save counts: the story repairs a truncated, older or newer one on CONTINUE (save.js
+// repairSave), so the title offers it too. Only the summary line needs a readable save.
 function readStorySave() {
-  try { const s = JSON.parse(localStorage.getItem('crimson.story.v1') || 'null'); return s && s.v === 1 && typeof s.chapter === 'string' ? s : null; } catch (e) { return null; }
+  let text = null;
+  try { text = localStorage.getItem('crimson.story.v1'); } catch (e) { return null; }
+  if (!text) return null;
+  try { const s = JSON.parse(text); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; }
 }
 function refreshTitleModes() {
   const s = readStorySave(), cont = $('modeContinue');
