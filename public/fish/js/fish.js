@@ -1,7 +1,9 @@
 // Bites and fights: which fish takes the lure, how it follows and strikes, and the fight on the line.
 // Pure logic (no DOM, no three.js), deterministic for a given rng, so node can test it: node qa/fish/fight.sim.mjs
 import { rng as makeRng, depth, zone, ROD } from "./lake.js";
-import { SPECIES, JUNK, byId, lengthFor } from "./species.js";
+import { JUNK, byId, lengthFor } from "./species.js";
+import { ecology } from "./fishing.js";
+import { PLACES } from "./places.js";
 
 // the reel, the line and the fight. Tuned with qa/fish/fight.sim.mjs
 export const REEL = {
@@ -72,6 +74,10 @@ export const BITE = {
   EMPTY_T: 5,            // s: with no fish coming, the lure skips home after this...
   EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute
   HOME_R: 3,             // m: the lure is home this close to the dock
+  TROPHY: 1 / 25,        // share of fish above the usual range (at no boost)
+  FAR0: 15, FAR1: 45,    // m: casts past FAR0 find bigger fish, fully at FAR1...
+  FAR_BOOST: 0.8,        // ...by this much (see rollWeight)
+  RING_BOOST: 0.5,       // a rising fish is a feeding fish: bigger
 };
 
 const GOOD_ZONES = new Set(["pads", "weeds", "rocks", "dropoff", "dock", "island"]);
@@ -102,27 +108,26 @@ export function rodTip(theta, yaw = 0, steer = 0) {
   return { x: ROD.base.x + ROD.length * Math.sin(y) * Math.cos(t), y: ROD.base.y + ROD.length * Math.sin(t), z: ROD.base.z - ROD.length * Math.cos(y) * Math.cos(t) };
 }
 
-// the time-of-day multiplier for a species
-function hourMul(sp, hour) {
+// the time-of-day multiplier for a fish at a place (eco: its row in fishing.js ecology())
+function hourMul(eco, hour) {
   let m = 1;
-  for (const [a, b, x] of sp.hours || []) if (hour >= a && hour <= b) m = Math.max(m, x);
+  for (const [a, b, x] of eco.hours || []) if (hour >= a && hour <= b) m = Math.max(m, x);
   return m;
 }
-// how well the water depth suits a species
-function depthFit(sp, d) {
-  const [a, b] = sp.depth;
+// how well the water depth suits a fish at a place
+function depthFit(eco, d) {
+  const [a, b] = eco.depth;
   if (d < a) return Math.max(0.15, d / a);
   if (d > b) return Math.max(0.15, b / d);
   return 1;
 }
-// every species that could bite at a spot, with its weight
-export function speciesWeights(zn, d, hour, ring = null) {
+// every species that could bite at a spot of a place (a place or its id), with its weight
+export function speciesWeights(zn, d, hour, ring = null, place = PLACES.loon) {
   const out = [];
-  for (const sp of SPECIES) {
-    if (sp.legend) continue;
-    let w = (sp.zones[zn] || 0);
+  for (const [sp, eco] of ecology(place)) {
+    let w = (eco.zones[zn] || 0);
     if (ring && ring.species === sp.id) w = Math.max(w, 1) * BITE.RING_MUL;
-    w *= sp.rarity * hourMul(sp, hour) * depthFit(sp, d);
+    w *= eco.rarity * hourMul(eco, hour) * depthFit(eco, d);
     if (w > 0) out.push([sp, w]);
   }
   return out;
@@ -134,13 +139,22 @@ function pickW(list, r) {
   for (const [x, w] of list) { if ((u -= w) <= 0) return x; }
   return list.length ? list[list.length - 1][0] : null;
 }
-// a weight within the usual range, with a long rare tail up to the trophy (about 1 in 30 above the range)
-export function rollWeight(sp, r) {
+// a weight: most fish are mid-range (a triangle, with its middle at the middle of the range), and about 1 in 25 is
+// above the range, on a long rare tail up to the trophy. A boost (a long cast, a ring) shifts the roll up:
+// at boost 1.3, about 1 in 11 is above the range
+export function rollWeight(sp, r, boost = 0) {
   const [a, b] = sp.kg;
   let kg;
-  if (sp.trophy && r() < 1 / 30) kg = b + (sp.trophy - b) * Math.pow(r(), 1.8);
-  else kg = a + (b - a) * Math.pow(r(), 1.35);
+  if (sp.trophy && r() < BITE.TROPHY * (1 + boost)) kg = b + (sp.trophy - b) * Math.pow(r(), 1.5);
+  else { const t = (r() + r()) / 2; kg = a + (b - a) * (1 - Math.pow(1 - t, 1 + boost)); }
   return Math.round(kg * 100) / 100;
+}
+// how big a fish is for its kind, 0..1: the share of rollWeight's fish (at no boost) that are lighter
+export function sizeRank(sp, kg) {
+  const [a, b] = sp.kg, T = sp.trophy, pt = T ? BITE.TROPHY : 0;
+  if (kg <= a) return 0;
+  if (kg <= b) { const u = (kg - a) / (b - a), F = u <= 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u); return (1 - pt) * F; }
+  return T ? 1 - pt + pt * Math.pow(Math.min(1, (kg - b) / (T - b)), 1 / 1.5) : 1;
 }
 // how much a fish likes the lure at this speed (0..1)
 function likeSpeed(sp, s) {
@@ -212,13 +226,13 @@ export class Rises {
 /* ---------------- the lake around the lure ---------------- */
 
 // How main.js drives it, once per frame after the lure lands:
-//   const sim = new LakeSim({ lure: {x, z}, tip, lineOut: flight.lineOut, hour, ring: rises.near(x, z), rng: rng(seed) });
+//   const sim = new LakeSim({ place, lure: {x, z}, tip, lineOut: flight.lineOut, hour, ring: rises.near(x, z), rng: rng(seed) });
 //   sim.step(dt, { crank, tip: rodTip(theta, yaw, steer), theta, omega, steer, drag, hookset, lift });
 //   for (const e of sim.events.splice(0)) ...;  then draw from sim.state.
 // Pass the unbent tip from rodTip(): the rod's bend is already inside the line physics, and world.setRod can bend it
 // for the picture from state.bend. If a ring's fish is hooked, call rises.take(ring).
 export class LakeSim {
-  // opts: { lure, tip, lineOut, hour, ring, rng, easy = true }
+  // opts: { place = Loon Lake, lure, tip, lineOut, hour, ring, rng, easy = true }
   // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none)
   constructor(opts = {}) {
     const o = opts || {};
@@ -226,6 +240,7 @@ export class LakeSim {
     this.easy = o.easy !== false;
     this.hour = fin(o.hour, 12);
     this.ring = o.ring || null;
+    this.pl = o.place || PLACES.loon;
     const lx = fin(o.lure && o.lure.x, 0), lz = fin(o.lure && o.lure.z, -15);
     this.tip = this.cleanTip(o.tip, null) || rodTip(45, headingOf(lx, lz) / D2R);
     const d0 = Math.hypot(lx - this.tip.x, this.tip.y, lz - this.tip.z);
@@ -282,12 +297,14 @@ export class LakeSim {
         // plungers and frisbees sit by the dock; boots are everywhere
         sp = dockNear ? JUNK[(r() * JUNK.length) | 0] : r() < 0.7 ? JUNK[0] : JUNK[(r() * JUNK.length) | 0];
       } else if (ring && ring.gold) sp = byId("golden");
-      else sp = pickW(speciesWeights(zn, this.water, this.hour, ring), r);
+      else sp = pickW(speciesWeights(zn, this.water, this.hour, ring, this.pl), r);
     }
     if (!sp) return null;
     const junk = JUNK.includes(sp);
-    const kg = Number.isFinite(o.kg) ? o.kg : junk ? Math.round((sp.kg[0] + (sp.kg[1] - sp.kg[0]) * r()) * 100) / 100 : rollWeight(sp, r);
     const inRing = !!(ring && (ring.species === sp.id || ring.gold));
+    // a long cast, or a fish from a ring, is a bigger fish
+    const boost = BITE.FAR_BOOST * smooth(BITE.FAR0, BITE.FAR1, Math.hypot(this.state.lure.x, this.state.lure.z)) + (inRing ? BITE.RING_BOOST : 0);
+    const kg = Number.isFinite(o.kg) ? o.kg : junk ? Math.round((sp.kg[0] + (sp.kg[1] - sp.kg[0]) * r()) * 100) / 100 : rollWeight(sp, r, boost);
     const style = junk ? "junk" : sp.bite;
     // a short cast leaves little time before the lure is home, so fish near the dock make up their minds faster
     const avail = (Math.hypot(this.state.lure.x, this.state.lure.z) - BITE.HOME_R) / 0.8;
