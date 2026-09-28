@@ -6,7 +6,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, and Breath of the Lake at `/wild/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
@@ -281,6 +281,49 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 
 It saves on its own every 10 seconds, and the arcade cabinet shows your progress. It runs on [three.js](https://threejs.org/), loaded from a CDN. The sounds and music are made in code. It works with a keyboard and mouse, a game pad, or a phone.
 
+## Reel It In
+
+Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake. Your phone is the rod and the reel: you cast it and reel it with real moves.
+
+**Cast with the phone upright.** The top of the screen shows the lake. The bottom shows the reel.
+
+1. Swipe the silver bail arm down to open it, or give the phone a quick twist of the wrist. It clacks open.
+2. Turn your body to aim. A dotted line on the water shows where the lure goes. Then hold your thumb on the reel. Your thumb holds the line. If you open the bail and nothing holds the line, the lure slips down.
+3. Tip the phone back over your shoulder. The rod creaks when it loads.
+4. Whip the phone forward and lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
+   - The gyro measures how fast you swing. A faster flick casts farther, up to about 55 m. A short, sharp flick of the wrist is enough; a wild throw gains almost nothing.
+   - When you let go sets the launch angle. The game times your thumb against the moment the rod passes 11 o'clock, so you get the same window of about a tenth of a second at any swing speed. Let go too early and the lure goes high and short, or behind you onto the dock. Let go too late and it slaps the water in front of you.
+   - The gyro measures the swing across the rod, so the cast reads true whether the screen faces you or leans toward your thumb.
+   - Where you face sets the direction.
+   - Touch the reel while the lure flies to feather the line. The lure slows and drops short, onto a target.
+5. Swipe the bail up to close it, twist the wrist again, or just turn the crank. The first turn snaps the bail shut, like a real reel.
+
+After each cast you see the distance and how the release went. Rings on the water show rising fish. Cast into a ring for a near-sure bite.
+
+**Reel with the phone sideways.** Turn the phone sideways and the whole screen shows the lake. The top edge of the phone is now the rod.
+
+- Turn the crank on the right with your thumb to reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
+- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: pull the phone up fast to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
+- Fight the fish: pull up to raise the rod, then reel as you tip it back down. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
+- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
+- When the fish is tired and close to the dock, raise the rod and hold it to lift the fish out.
+
+**Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the bail swipe, the release of your thumb, and the crank. The other cues come through sound and pictures there.
+
+**The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+
+**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about 40 seconds for a muskie, so your arm does not tire.
+
+**Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
+
+**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: E opens and closes the bail, W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag.
+
+**Phones and rotation.** If your phone does not turn the page when you turn it sideways (rotation lock is on), the game turns the picture itself. On Android the game goes full screen and locks the page upright for the same reason. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
+
+**Safety.** Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you.
+
+The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
+
 ## Files
 
 | Path | What it does |
@@ -305,6 +348,8 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
+| `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
+| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `lake.js` (the lake map), `species.js` (the fish and the junk), `world.js` and `world-*.js` (the 3D lake), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
 | `public/icons/`, `public/favicon.ico` | The arcade's browser and home-screen icons |
 | `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with three original songs: the arcade theme, the Breath of the Lake overture, and the Down the Drain theme |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
@@ -334,6 +379,24 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `touch.mjs` | On a phone screen: the stick moves the hero, a drag turns the camera, the buttons swing and jump, and nothing on the HUD covers the buttons. |
 
 Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL` to a local `three.module.min.js` and `THREE_ADDONS` to a local copy of three's `examples/jsm` folder.
+
+### Reel It In tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails. They serve three.js from the repo's own copy, so they need no CDN.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events: a twist opens the bail, the thumb pins the line, the rod loads, the whip and the release cast the lure, the phone turns sideways (the game turns itself), the crank brings a strike, a pull sets the hook, the fight lands the fish, and the next cast asks for the phone upright again |
+| `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
+| `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
+| `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
+| `qa/fish/fight.sim.mjs` | Thousands of fights with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also bite rates by zone and the weights |
+| `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
+| `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
+| `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
+| `qa/fish/world.render.mjs` | The lake at every hour and in every view, each fish, the trophy view, and the draw call and triangle limits |
+
+Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 
 ## Jev and cost
 
