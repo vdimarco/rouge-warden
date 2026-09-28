@@ -36,6 +36,15 @@ let save = blank();
   if (!save.journal || typeof save.journal !== "object" || Array.isArray(save.journal)) save.journal = {};
   if (!save.seen || typeof save.seen !== "object") save.seen = {};
   if (save.input !== "motion" && save.input !== "touch") save.input = null;
+  // nested values are trusted nowhere else: keep only well-formed ones
+  const fin = (v) => typeof v === "number" && Number.isFinite(v);
+  const J = {};
+  for (const [id, e] of Object.entries(save.journal)) if (byId(id) && e && typeof e === "object") J[id] = { n: fin(e.n) ? Math.max(0, Math.floor(e.n)) : 0, kg: fin(e.kg) ? e.kg : 0, cm: fin(e.cm) ? e.cm : 0 };
+  save.journal = J;
+  const b = save.biggest;
+  save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
+  for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
+  if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
 }
 const persist = () => store.set(SAVE_KEY, save);
 
@@ -85,13 +94,23 @@ const ICON = {
 /* ---------------- screens and messages ---------------- */
 const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results"];
 let returnTo = null;
+let shownAt = 0, tapAt = -1e9, tapShown = false;
 function show(id) {
+  shownAt = now();
+  tapShown = shownAt - tapAt < 250;
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
-  const focus = id && $("#" + id + " .btn.go, #" + id + " button");
+  const focus = id && ($("#" + id + " .btn.go") || $("#" + id + " button"));
   if (focus && !touchDevice) focus.focus({ preventScroll: true });
 }
 function overlay(id) { returnTo = SCREENS.find((s) => !$("#" + s).hidden) || null; show(id); }
 function closeOverlay() { show(returnTo); returnTo = null; }
+// the second tap of a double tap must not press the button that the first tap's new screen puts under the finger
+// (pointer clicks only: Enter and Space stay instant)
+game.addEventListener("click", (e) => {
+  if (!(e.detail > 0)) return;
+  if (tapShown && now() - shownAt < 300 && e.target.closest && e.target.closest(".screen button, .screen a")) { e.preventDefault(); e.stopPropagation(); return; }
+  tapAt = now();
+}, true);
 for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sfx("uiBack"); closeOverlay(); });
 
 let toastT = 0;
@@ -215,14 +234,15 @@ function relayout(force) {
   if (!$("#view").getAnimations().length) resizeView();
   setTimeout(resizeView, 380);
   if (reelPanel) reelPanel.resize();
-  if (crank) crank.resize();
-  if (rodPad) rodPad.resize && rodPad.resize();
-  if (gauge) gauge.resize && gauge.resize();
+  // a hidden box is 0 by 0: leave the reel controls as they are until they show
+  if (!$("#reelUI").hidden) for (const w of [crank, rodPad, gauge]) if (w && w.resize) w.resize();
 }
 function resizeView() {
   if (!world) return;
   const v = $("#view");
   world.resize(Math.max(1, v.clientWidth), Math.max(1, v.clientHeight));
+  // a resize clears the canvas: a still lake must be drawn again
+  G.stillDrawn = false;
 }
 addEventListener("resize", () => { G.layout = ""; relayout(true); });
 if (screen.orientation) screen.orientation.addEventListener("change", () => { G.layout = ""; setTimeout(() => relayout(true), 60); });
@@ -328,6 +348,7 @@ function startMode(mode) {
   G.mode = mode;
   G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = [];
   G.hour = mode === "derby" ? 18.3 : 6.2;
+  if (world) world.setHour(G.hour);
   G.seed = (Math.random() * 1e9) | 0;
   rises = new Rises(LAKE.rng(G.seed));
   G.paused = false;
@@ -510,6 +531,7 @@ function goTurn(to, then) {
   $("#turnSkip").textContent = to === "landscape" ? "Reel without turning" : "Cast without turning";
   prompt("");
   relayout(true);
+  updateHud();
 }
 $("#turnSkip").addEventListener("click", () => { G.turnForce = true; });
 function turnUpdate(dt) {
@@ -568,7 +590,6 @@ function caught(c) {
   world.setFish(null); world.setFollower(null);
   world.setLine({ visible: false });
   world.setLure({ x: 0, y: -5, z: 0, visible: false });
-  world.showCatch(c.id, c.kg);
   Sound.sfx(junk ? "junk" : "landed");
   if (record || (isNew && !junk)) setTimeout(() => Sound.sfx("record"), 500);
   Haptics.land();
@@ -583,6 +604,8 @@ function caught(c) {
   $("#cblurb").textContent = sp ? sp.blurb : "";
   $("#catchGo").textContent = G.mode === "derby" && G.castsLeft <= 0 ? "See the results" : "Cast again";
   relayout(true);
+  // after the new layout, so the fish is fitted to the view it will be seen in
+  world.showCatch(c.id, c.kg);
   show("catch");
   updateHud();
 }
@@ -720,6 +743,7 @@ function applyQuality() {
   // the reel canvases follow the quality too: fewer pixels to paint on a phone
   REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
   if (world) world.setQuality(quality());
+  G.stillDrawn = false;
   for (const w of [reelPanel, crank, rodPad, gauge]) if (w && w.resize) w.resize();
 }
 
@@ -748,13 +772,17 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
 /* ---------------- HUD ---------------- */
-function hudText() {
+// short: the HUD chip, which must fit beside the pause button and the clock on a narrow phone
+function hudText(short) {
   const kg = G.bag.reduce((a, b) => a + b.kg, 0);
-  if (G.mode === "derby") return "Derby · cast " + Math.min(10, G.casts + (G.step === "flight" || G.phase !== "cast" ? 0 : 1)) + " of 10 · " + fmtKg(kg);
-  return "Free fishing · " + G.bag.length + " fish · " + fmtKg(kg);
+  // the next cast is still to come: before the release, or while turning upright for it
+  const next = (G.phase === "cast" && ["ready", "open", "pinned", "loaded"].includes(G.step)) || (G.phase === "turn" && G.turnTo === "portrait");
+  const n = Math.min(10, G.casts + (next ? 1 : 0));
+  if (G.mode === "derby") return short ? "Derby " + n + "/10 · " + fmtKg(kg) : "Derby · cast " + n + " of 10 · " + fmtKg(kg);
+  return (short ? "Free · " : "Free fishing · ") + G.bag.length + " fish · " + fmtKg(kg);
 }
 function updateHud() {
-  $("#modeChip").textContent = hudText();
+  $("#modeChip").textContent = hudText(true);
   $("#clock").textContent = fmtHour(G.hour);
 }
 
@@ -764,13 +792,14 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
+  if (e.code === "Escape" && ["help", "journal", "settings"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
   if (G.paused) return;
   if (e.code === "KeyE" && G.phase === "cast") { if (G.bail === "closed" && G.step === "ready") openBail("key"); else if (G.bail === "open" && (G.step === "landed" || G.step === "open")) closeBail(); }
   if (e.code === "Space" && (G.phase === "reel")) { G.hookReq = true; e.preventDefault(); }
   if (e.code === "BracketLeft") setDrag(G.drag - 1);
   if (e.code === "BracketRight") setDrag(G.drag + 1);
-  if (e.code === "Enter" && G.phase === "catch") $("#catchGo").click();
+  if (e.code === "Enter" && G.phase === "catch") { e.preventDefault(); $("#catchGo").click(); }
   syncPadKeys();
 });
 addEventListener("keyup", (e) => { keys[e.code] = false; syncPadKeys(); });
@@ -1073,6 +1102,8 @@ function step(dt) {
   switch (G.phase) {
     case "cast": castUpdate(dt); reelPanel.set({ bail: G.bail, pinned: !!G.pin, line: 0.85, hint: "", glow: G.step === "ready" || G.step === "landed" ? "bail" : G.step === "open" ? "pin" : "", touchCast: !sensing() }); if (G.step !== "flight") reelPanel.set({ spool: G.drop > 0 && G.drop < 1.2 && G.bail === "open" && !G.pin ? 1.2 : 0 }); break;
     case "turn":
+      // the reel face under the turn card: the bail as it is now, no cast hints
+      reelPanel.set({ bail: G.bail, pinned: false, glow: "", hint: "", spool: 0 });
       turnUpdate(dt);
       if (G.sim && G.phase === "turn") {
         const tip = world.setRod({ theta: clamp(Motion.pose.theta, -10, 170), yaw: 0, bend: 0.05 });
@@ -1081,7 +1112,7 @@ function step(dt) {
         world.setLure({ x: L.x, y: -0.25 * G.settle, z: L.z, visible: true });
         world.setLine({ from: tip, to: L, slack: 0.7, visible: true });
         world.setView({ mode: "cast", look: { x: L.x, y: 0, z: L.z }, portrait: G.layout === "tall-cast" });
-      }
+      } else if (G.phase === "turn") world.setView({ mode: "cast", yaw: 0 });
       break;
     case "reel": reelUpdate(dt); break;
     case "lost":
@@ -1089,7 +1120,8 @@ function step(dt) {
       world.setFish(null); world.setFollower(null); world.setLine({ visible: false }); world.setLure({ x: 0, y: -5, z: 0, visible: false });
       if (now() - G.outcomeAt > 2400) { prompt(""); nextAfterOutcome(); }
       break;
-    case "catch": world.setView({ mode: "catch" }); break;
+    // wide: the card sits on the right, so frame the fish in the part of the lake left free
+    case "catch": world.setView({ mode: "catch", inset: G.layout === "reel" ? Math.min(0.6, ($("#catch .card").offsetWidth + 32) / Math.max(1, game.clientWidth)) : 0 }); break;
     case "results": world.setView({ mode: "title" }); break;
   }
 }

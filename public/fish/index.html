@@ -36,7 +36,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
 
 /* #game holds everything. When the phone is sideways but the browser did not rotate, main.js turns it 90° with a transform */
-#game { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; transform-origin: 50% 50%; }
+#game { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; transform-origin: 50% 50%; container-type: size; }
 #view { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #9cc7d4; }
 #view canvas { display: block; width: 100%; height: 100%; }
 
@@ -59,27 +59,31 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
 #game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
 #game.l-reel.touch #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
-#dragBar button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
+#dragBar button { position: relative; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
+#dragBar button::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 #dragBar b { min-width: 64px; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
 /* tall reel (touch on an upright phone): lake on top, controls below */
 #game.l-tall-reel #view { height: 58%; }
 #game.l-tall-reel #crankBox { width: min(46vw, 230px); height: min(46vw, 230px); }
-#game.l-tall-reel #padBox { width: min(36vw, 200px); height: min(38vh, 280px); }
+#game.l-tall-reel #padBox { width: min(36vw, 200px); height: min(38cqh, 280px); }
 #game.l-reel #padBox { height: min(40vmin, 220px); }
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
-#game.l-tall-reel #dragBar { top: auto; bottom: calc(var(--sab) + min(38vh, 280px) + 18px); }
+#game.l-tall-reel #dragBar { top: auto; bottom: calc(var(--sab) + min(38cqh, 280px) + 18px); }
 
 /* ---------- HUD ---------- */
 #hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px); display: flex; align-items: center; gap: 8px; pointer-events: none; z-index: 5; }
 #hud > * { pointer-events: auto; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
 .chip b { color: var(--brass); }
-.icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); font-size: 16px; }
+.icon { position: relative; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); font-size: 16px; }
+.icon::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; }
 #hud .grow { flex: 1; }
+#hud .icon, #clock { flex: none; }
+#modeChip { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 #clock { font-variant-numeric: tabular-nums; }
 
 /* the big instruction line */
-#prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); text-align: center; pointer-events: none; z-index: 4; }
+#prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 4; }
 #prompt .p1 { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); font-size: clamp(16px, 4.6vmin, 22px); line-height: 1.25; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
 #prompt .p1 svg { flex: none; width: 34px; height: 34px; }
 #prompt .p2 { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; color: #eef4f1; }
@@ -90,9 +94,14 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
 #game.l-wide-cast #prompt, #game.l-wide-cast #report, #game.l-wide-cast #toast { left: calc((100% - min(38%, 440px)) / 2); }
 #game.l-wide-cast #prompt { width: min(calc(100% - min(38%, 440px) - 24px), 560px); }
+/* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
+#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+/* the tall reel: the prompt goes under the gauge, the toast above the controls */
+#game.l-tall-reel #prompt { top: calc(var(--sat) + 60px + min(30vmin, 150px)); }
+#game.l-tall-reel #toast { bottom: calc(42% + 12px); }
 
 /* the cast report after a landing */
-#report { position: absolute; left: 50%; top: 36%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
+#report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 22px rgba(0, 0, 0, 0.35); }
 #report .dist small { font-size: 0.45em; }
 #report .verdict { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: var(--glass); font-size: 15px; }
@@ -135,20 +144,30 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* title */
 #title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
-#title .logo { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 7vh); text-align: center; pointer-events: none; }
+#title .logo { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 7cqh); text-align: center; pointer-events: none; }
 #title .kick { font-size: clamp(11px, 2.6vmin, 14px); letter-spacing: 0.4em; color: #fff4d6; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
 #title h1 { margin: 6px 0 0; font-family: var(--slab); font-weight: 400; font-size: clamp(48px, 15vmin, 118px); line-height: 0.92; color: #fff6dc; letter-spacing: 0.01em;
   text-shadow: 0 4px 0 var(--red), 0 8px 0 #7a1c14, 0 14px 26px rgba(0, 0, 0, 0.45); }
 #title h1 span { display: block; }
 #title .sub { margin-top: 18px; display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(9, 34, 41, 0.6); font-size: clamp(13px, 3vmin, 16px); letter-spacing: 0.22em; color: var(--brass); }
-#title nav { display: grid; gap: 9px; width: min(100%, 360px); }
+#title > div:not(.logo) { width: min(100%, 360px); }
+#title nav { display: grid; gap: 9px; width: 100%; }
 #title nav .btn { width: 100%; }
 #title .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 #title .best { margin: 12px 0 0; text-align: center; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; min-height: 1em; }
-@media (orientation: landscape) and (max-height: 520px) {
+/* a short wide game (a phone held sideways, or turned by main.js): the logo left, the menu right, two-column pause */
+@container (orientation: landscape) and (max-height: 520px) {
   #title { place-items: center end; padding-right: calc(var(--sar) + 24px); }
   #title .logo { left: 0; right: auto; width: 55%; top: 50%; transform: translateY(-50%); }
-  #title nav { width: min(40vw, 320px); }
+  #title > div:not(.logo) { width: min(40cqw, 320px); }
+  #pause .btns { display: grid; grid-template-columns: 1fr 1fr; }
+  #pause .btns .go { grid-column: 1 / -1; }
+  #rlist { max-height: 22cqh; }
+  #results .card { padding: 14px 20px; }
+  #results h2 { font-size: 22px; margin-bottom: 2px; }
+  #results .big { font-size: 36px; }
+  #rbest { margin: 0; }
+  #results .btns { margin-top: 8px; }
 }
 
 /* setup, help, journal, results, pause */
@@ -158,9 +177,12 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .steps li b { color: var(--brass); }
 .warn { padding: 10px 12px; border-radius: 10px; background: rgba(240, 165, 42, 0.14); border: 1px solid rgba(240, 165, 42, 0.5); font-weight: 700; line-height: 1.4; }
 .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
-.tabs button { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
+#help .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
+#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+#help .btns { flex: none; }
+.tabs button { flex: 1; min-height: 44px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
 .tabs button[aria-selected="true"] { background: var(--deep2); border-color: var(--brass); color: var(--brass); }
-#jlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; max-height: min(58vh, 520px); overflow-y: auto; padding-right: 2px; }
+#jlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; max-height: min(58cqh, 520px); overflow-y: auto; padding-right: 2px; }
 .jfish { padding: 9px 10px; border-radius: 10px; background: var(--deep2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; }
 .jfish b { display: block; font-size: 14px; }
 .jfish .sw { display: block; height: 8px; border-radius: 4px; margin: 6px 0; }
@@ -170,7 +192,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .set { display: grid; gap: 8px; }
 .set label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--deep2); font-weight: 800; }
 .set label small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; }
-.set input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--red); }
+.set input[type="checkbox"] { flex: none; width: 22px; height: 22px; accent-color: var(--red); }
 .set select { font: inherit; padding: 6px; border-radius: 8px; background: var(--deep); color: var(--ink); border: 1px solid var(--line); }
 
 /* the catch card */
@@ -187,7 +209,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-reel #catch .card { width: min(46%, 380px); }
 
 /* results */
-#rlist { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; max-height: 34vh; overflow-y: auto; }
+#rlist { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; max-height: 34cqh; overflow-y: auto; }
 #rlist li { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--deep2); font-size: 14px; }
 .big { font-family: var(--slab); font-size: 48px; color: var(--brass); line-height: 1.1; text-align: center; }
 .rank { text-align: center; font-size: 16px; letter-spacing: 0.1em; color: #fff; }
@@ -198,7 +220,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
-<div id="game" class="l-tall-cast">
+<div id="game" class="l-tall-cast" data-switch-host>
   <div id="view"></div>
 
   <div id="castUI" hidden>

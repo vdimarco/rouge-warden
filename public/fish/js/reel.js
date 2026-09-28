@@ -117,6 +117,8 @@ class Widget extends Emitter {
     this.w = w; this.h = h; this.dpr = dpr;
     this.cv.width = Math.max(1, Math.round(w * dpr));
     this.cv.height = Math.max(1, Math.round(h * dpr));
+    // a new size clears the canvas: paint it again even if the scene did not change
+    this._drawn = null;
     this.layout();
     return true;
   }
@@ -1077,14 +1079,6 @@ export class Crank extends Widget {
       ctx.lineWidth = kr * 1.7; ctx.lineCap = "butt";
       ctx.beginPath(); ctx.arc(cx, cy, Rt, from, from + len); ctx.stroke();
     }
-    // the hint, the first few turns
-    if (hint) {
-      ctx.font = font(Math.max(9, Math.round(s * 0.052))); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = rgba(INK, 0.6 * (1 - this.quarters / 8) + 0.1);
-      ctx.fillText("TURN", cx, cy - hubR - s * 0.055);
-      ctx.fillText("EITHER WAY", cx, cy + hubR + s * 0.06);
-      spaced(ctx, 0);
-    }
     const kx = cx + Math.cos(a) * Rt, ky = cy + Math.sin(a) * Rt;
     const nx = -Math.sin(a), ny = Math.cos(a), w0 = s * 0.05, w1 = s * 0.034;
     const armPath = (ox, oy) => {
@@ -1120,6 +1114,19 @@ export class Crank extends Widget {
     ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, TAU); ctx.fill();
     ctx.strokeStyle = "rgba(60,10,6,0.6)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(kx, ky, kr - 0.5, 0, TAU); ctx.stroke();
     ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(kx - kr * 0.32, ky - kr * 0.42, kr * 0.28, kr * 0.16, -0.5, 0, TAU); ctx.fill();
+    // the hint, the first few turns: over the handle, each word on its own dark pill, so the arm never hides it
+    if (hint) {
+      const fp = Math.max(9, Math.round(s * 0.052)), fade = 0.6 * (1 - this.quarters / 8) + 0.1;
+      ctx.font = font(fp); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (const [t, y] of [["TURN", cy - hubR - s * 0.055], ["EITHER WAY", cy + hubR + s * 0.06]]) {
+        const tw = ctx.measureText(t).width + fp * 1.1, th = fp * 1.7;
+        ctx.fillStyle = rgba("9,34,41", 0.72 * Math.min(1, fade * 1.6));
+        ctx.beginPath(); rrect(ctx, cx - tw / 2, y - th / 2, tw, th, Math.min(10, th / 2)); ctx.fill();
+        ctx.fillStyle = rgba(INK, fade + 0.2);
+        ctx.fillText(t, cx, y);
+      }
+      spaced(ctx, 0);
+    }
     if (this.drag) this.thumbGlow(ctx, this.drag.x, this.drag.y, Math.max(34, kr * 2), 0.8);
   }
   // the quarter marks; lit (brass) as the handle passes them, at the same moments as the gear ticks

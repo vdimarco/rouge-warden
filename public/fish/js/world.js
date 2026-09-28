@@ -247,6 +247,10 @@ export async function createWorld(container, { quality = "high" } = {}) {
     camera.fov = C.fov;
     camera.aspect = S.w / S.h;
     camera.near = S.view.mode === "catch" ? 0.05 : 0.08;
+    // the catch card covers the right part of a wide view: shift the picture so the fish sits in the free part
+    const inset = S.view.mode === "catch" ? S.view.inset || 0 : 0;
+    if (inset > 0) camera.setViewOffset(S.w, S.h, S.w * inset / 2, 0, S.w, S.h);
+    else if (camera.view && camera.view.enabled) camera.clearViewOffset();
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     sky.position.copy(camera.position);
@@ -463,15 +467,22 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const stage = new THREE.Group();
     stage.add(m);
     const W = id === "frisbee" ? size.x : size.z, H = id === "frisbee" ? size.x * 0.95 : size.y * 1.1;
-    // hold it out at a distance that fits both ways, and narrow the view for a small fish
-    const aspect = S.w / S.h;
+    S.trophy = { mesh: stage, inner: m, len, W, H, dist: 1, fov: 40, t: 0, junk, id };
+    fitTrophy();
+    scene.add(stage);
+  }
+  // hold the fish out at a distance that fits both ways in the free part of the view, and narrow the view for a
+  // small fish. Again on every resize: the view often changes size just as the catch shows
+  function fitTrophy() {
+    const T = S.trophy;
+    if (!T) return;
+    const { W, H } = T;
+    const aspect = S.w * (1 - (S.view.inset || 0)) / S.h;
     const d0 = clamp(Math.max(W, H) * 1.3, 0.42, 1.5);
     const needV = (w, h, d) => Math.max(2 * Math.atan(w / 0.72 / 2 / d / aspect), 2 * Math.atan(h / 0.78 / 2 / d)) / DEG;
-    const fov = clamp(needV(W, H, d0), 14, 78);
-    const tv = Math.tan(fov * DEG / 2);
-    const dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / 2 / tv);
-    S.trophy = { mesh: stage, inner: m, len, dist, fov, t: 0, junk, id };
-    scene.add(stage);
+    T.fov = clamp(needV(W, H, d0), 14, 78);
+    const tv = Math.tan(T.fov * DEG / 2);
+    T.dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / 2 / tv);
   }
   function hideCatch() {
     if (!S.trophy) return;
@@ -554,6 +565,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     S.w = Math.max(1, w | 0); S.h = Math.max(1, h | 0);
     renderer.setPixelRatio(ratio());
     renderer.setSize(S.w, S.h);
+    fitTrophy();
     applyCamera();
   }
 
@@ -571,8 +583,11 @@ export async function createWorld(container, { quality = "high" } = {}) {
       sky.material.defines.OCT = low ? 3 : 5; sky.material.needsUpdate = true;
       water.material.defines.LOW = low ? 1 : 0; water.material.needsUpdate = true;
     },
-    setView({ mode = "cast", yaw = 0, look = null, portrait = false } = {}) {
-      S.view = { mode, yaw, look, portrait };
+    // inset: the part of the width (from the right) that a card covers, for the catch view
+    setView({ mode = "cast", yaw = 0, look = null, portrait = false, inset = 0 } = {}) {
+      const refit = inset !== (S.view.inset || 0);
+      S.view = { mode, yaw, look, portrait, inset };
+      if (refit) fitTrophy();
     },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
       S.rod = { theta, yaw, steer, bend, pull, visible };

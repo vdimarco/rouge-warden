@@ -619,10 +619,10 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
   const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS" };
   const kg = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + " KG";
   if (fc) {
-    const bits = [];
-    if (fs && fs.derbyBest > 0) bits.push("DERBY " + kg(fs.derbyBest));
-    if (fs && fs.biggest && fs.biggest.kg > 0) bits.push((NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg));
-    $(".hi", fc).textContent = bits.length ? bits.join(" · ") : "HI-SCORE: NONE YET";
+    // one stat, so the line stays short: the derby best, else the biggest fish
+    const n = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+    $(".hi", fc).textContent = fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest)
+      : fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "HI-SCORE: NONE YET";
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
