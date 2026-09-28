@@ -82,7 +82,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); text-align: center; pointer-events: none; z-index: 4; }
 #prompt .p1 { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); font-size: clamp(16px, 4.6vmin, 22px); line-height: 1.25; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
 #prompt .p1 svg { flex: none; width: 34px; height: 34px; }
-#prompt .p2 { margin-top: 6px; font-size: 13px; color: var(--muted); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+#prompt .p2 { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; color: #eef4f1; }
+#prompt .p2:empty { display: none; }
 #prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.5s infinite alternate; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
 @keyframes hot { to { transform: scale(1.06); } }
@@ -116,7 +117,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #turn small { font-size: 13px; color: var(--muted); }
 #turn button { pointer-events: auto; margin-top: 4px; }
 
-#toast { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
+#toast { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: normal; text-align: center; width: max-content; max-width: min(92%, 420px); line-height: 1.3; }
 #toast.on { opacity: 1; }
 #game.l-tall-cast #toast { bottom: calc(46% + 12px); }
 
@@ -282,7 +283,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
       <div class="set">
         <label>Sound<input type="checkbox" id="optSound"></label>
         <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
-        <label><span>Casting help<small>Softens a cast that goes too high or too low.</small></span><input type="checkbox" id="optAssist"></label>
+        <label><span>Easy mode<small>Softens bad casts. Gives you more time to set the hook.</small></span><input type="checkbox" id="optAssist"></label>
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
       </div>

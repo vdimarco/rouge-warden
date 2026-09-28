@@ -31,6 +31,8 @@ let save = blank();
 {
   const s = store.get(SAVE_KEY, null);
   if (s && typeof s === "object") for (const k of Object.keys(save)) if (k in s && typeof s[k] === typeof save[k]) save[k] = s[k];
+  // input starts as null, so the type check above never copies it
+  if (s && (s.input === "motion" || s.input === "touch")) save.input = s.input;
   if (!save.journal || typeof save.journal !== "object" || Array.isArray(save.journal)) save.journal = {};
   if (!save.seen || typeof save.seen !== "object") save.seen = {};
   if (save.input !== "motion" && save.input !== "touch") save.input = null;
@@ -141,7 +143,10 @@ let physLast = "portrait";
 function physical() {
   if (sensing()) {
     const o = Motion.pose.orient;
-    if (o === "portrait" || o === "landscape") physLast = o;
+    // mid-cast a rolled grip pointing low at the water can read as sideways: hold the upright view
+    // until the player has looked up once after the landing
+    const hold = G.phase === "cast" && (G.step === "pinned" || G.step === "loaded" || G.step === "flight" || (G.step === "landed" && !G.upSeen));
+    if (!hold && (o === "portrait" || o === "landscape")) physLast = o;
     return physLast;
   }
   return innerWidth > innerHeight ? "landscape" : "portrait";
@@ -162,11 +167,17 @@ function wantedRotation() {
   return r === 90 || r === -90 ? r : 0;
 }
 function applyRotation(rot) {
-  if (rot === G.rot) return;
-  G.rot = rot;
   const W = innerWidth, H = innerHeight;
+  // the same angle still needs a new size when the viewport changed (a toolbar, leaving full screen)
+  if (rot === G.rot && (!rot || (G.rotW === W && G.rotH === H))) return;
+  G.rot = rot; G.rotW = W; G.rotH = H;
   if (rot) Object.assign(game.style, { width: H + "px", height: W + "px", left: (W - H) / 2 + "px", top: (H - W) / 2 + "px", transform: "rotate(" + rot + "deg)" });
   else Object.assign(game.style, { width: "", height: "", left: "", top: "", transform: "" });
+  // the notch and the home bar turn with the picture: swap the safe-area insets to match
+  const st = game.style, E = (k) => "env(safe-area-inset-" + k + ", 0px)";
+  if (rot === 90) { st.setProperty("--sat", E("right")); st.setProperty("--sar", E("bottom")); st.setProperty("--sab", E("left")); st.setProperty("--sal", E("top")); }
+  else if (rot === -90) { st.setProperty("--sat", E("left")); st.setProperty("--sar", E("top")); st.setProperty("--sab", E("right")); st.setProperty("--sal", E("bottom")); }
+  else for (const k of ["--sat", "--sar", "--sab", "--sal"]) st.removeProperty(k);
   G.layout = "";
 }
 // client (screen) coordinates to the unrotated CSS pixels of el (or of #game)
@@ -370,7 +381,8 @@ function pinLine(e) {
   G.drop = Math.min(G.drop, 1.2);
   Sound.sfx("pin"); Haptics.tick();
   // the motor shakes the gyro: keep still until the line is released
-  if (G.input === "motion") { Motion.recenter(); Haptics.mute(4000); }
+  // keep the heading: the player aims by turning toward a ring before the pin
+  if (G.input === "motion") Haptics.mute(4000);
 }
 function unpinLine(e) {
   if (!G.pin || (e.id != null && G.pin.id != null && e.id !== G.pin.id)) return;
@@ -383,17 +395,20 @@ function unpinLine(e) {
   if (e.cancel) {
     G.step = "open"; G.openAt = now() - 1000;
     Sound.sfx("slip");
-    toast(touchDevice ? "The screen turned and dropped your thumb. Turn on the rotation lock." : "The line slipped.", 3200);
+    toast(touchDevice ? "The screen turned. Turn on the rotation lock." : "The line slipped.", 3200);
     return;
   }
   // with sensors, the exact input time of the lift matters; with a finger, the finger's own clock is the rod's clock
   release(sensing() ? e.t || now() : now());
 }
+// the rod loads over the shoulder, where the player cannot see the screen: a short tap gets through the mute
+function loadTap() { if (sensing()) { Haptics.mute(0); Haptics.load(); Haptics.mute(3000); } else Haptics.load(); }
 // the finger comes off the line: was it a cast, or did the line just slip?
 function release(t) {
   const s = Motion.at(t);
   const pk = Motion.peak(t - 450, t);
-  const fwd = Math.max(0, -pk.minOmega, -s.omega);
+  // the swing square to the rod: a thumb grip rolls the screen, and the pitch rate alone reads it short
+  const fwd = Math.max(0, -(pk.minSwing != null ? pk.minSwing : pk.minOmega), -s.omega);
   G.lastRelease = { t, theta: s.theta, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
   // hand tremor alone reaches 20 to 40 deg/s: a motion release needs a real swing
   const minSpeed = sensing() ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
@@ -402,10 +417,20 @@ function release(t) {
     G.step = "open";
     G.openAt = now() - 1000;
     Sound.sfx("slip");
-    toast(G.input === "motion" ? "Keep your thumb down until you swing." : "Keep holding. Drag down, then flick up and let go.");
+    toast(G.input === "motion" ? "Keep your thumb down until you swing." : "Keep holding. Drag down. Then flick up and let go.");
     return;
   }
-  const params = castParams({ thetaRelease: s.theta, omegaPeak: fwd, thetaBack: Math.max(G.backMax, pk.maxTheta), yaw: G.input === "motion" ? clamp(s.yaw, -75, 75) : G.aimYaw, assist: save.assist });
+  // grade the release by time, not angle: a fast whip sweeps the sweet band in 30 ms, so measure how far
+  // the lift was from the moment the rod crossed the ideal angle, and map ±90 ms onto that band
+  let thRel = s.theta;
+  if (sensing() && s.theta < 110 && fwd > 0) {
+    const I = CAST.IDEAL_RELEASE || 68;
+    let tc = null;
+    for (let q = t; q >= t - 450; q -= 2) if (Motion.at(q - 2).theta >= I && Motion.at(q).theta < I) { tc = q; break; }
+    const errMs = tc != null ? t - tc : -((s.theta - I) / fwd) * 1000;
+    thRel = I - clamp(errMs, -400, 400) * 0.22;
+  }
+  const params = castParams({ thetaRelease: thRel, omegaPeak: fwd, thetaBack: Math.max(G.backMax, pk.maxTheta), yaw: G.input === "motion" ? clamp(s.yaw, -75, 75) : G.aimYaw, assist: save.assist });
   G.cast = params;
   // physics uses the real rod geometry; world.tip() is the drawn, camera-held rod
   G.flight = new Flight(rodTip(clamp(s.theta, -10, 170), params.yaw), params);
@@ -420,13 +445,19 @@ function release(t) {
 }
 const VERDICT = {
   sweet: "Sweet cast!", high: "Too high. Let go a little later.", low: "Too low. Let go a little sooner.",
-  slam: "Too late. Let go sooner.", behind: "Way too early!", weak: "Whip it faster.",
+  slam: "Too late. Let go sooner.", behind: "Far too early. It went behind you.", weak: "Flick it faster.",
+};
+const VERDICT_M = {
+  sweet: "Sweet cast!", high: "Too high. Lift your thumb a little later.", low: "Too low. Lift your thumb a little sooner.",
+  slam: "Too late. Lift your thumb sooner.", behind: "Far too early. It went behind you.", weak: "Too slow. Whip it faster.",
 };
 function landed(r) {
   const dist = Math.hypot(r.x, r.z);
   G.step = r.land === "water" ? "landed" : "ashore";
   const zone = LAKE.zone(r.x, r.z);
   const v = G.cast ? G.cast.verdict : "";
+  const VV = G.input === "motion" ? VERDICT_M : VERDICT;
+  G.upSeen = false;
   if (r.land === "water") {
     world.splash(r.x, r.z, 0.5);
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
@@ -437,12 +468,12 @@ function landed(r) {
     G.settle = 0;
     if (dist > save.longest) { save.longest = dist; if (dist > 12) toast("Your longest cast yet!"); }
     persist();
-    report(dist, VERDICT[v] || "", (G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : LAKE.ZONE_NAMES[zone] || ""), v === "sweet");
+    report(dist, VV[v] || "", (G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : LAKE.ZONE_NAMES[zone] || ""), v === "sweet");
     if (G.ring) Sound.sfx("ui");
   } else {
     Sound.sfx("plop");
     const msg = r.land === "tree" ? "You caught a pine tree." : r.land === "dock" ? "You hooked the dock." : "You cast onto the shore.";
-    report(r.land === "dock" ? null : dist, VERDICT[v] || "", msg, false);
+    report(r.land === "dock" ? null : dist, VV[v] || "", msg, false);
     G.outcomeAt = now();
   }
   relayout();
@@ -497,10 +528,11 @@ function enterReel() {
   relayout(true);
   updateHud();
 }
-function outcome(kind, msg) {
+function outcome(kind, msg, sub = "") {
+  if (Array.isArray(msg)) { sub = msg[1]; msg = msg[0]; }
   G.phase = "lost";
   G.outcomeAt = now();
-  prompt(msg, "", kind === "home" ? "crank" : "stop", "");
+  prompt(msg, sub, kind === "home" ? "crank" : "stop", "");
   relayout();
 }
 function nextAfterOutcome() {
@@ -531,7 +563,7 @@ function caught(c) {
   world.setLure({ x: 0, y: -5, z: 0, visible: false });
   world.showCatch(c.id, c.kg);
   Sound.sfx(junk ? "junk" : "landed");
-  if (record || (isNew && sp && sp.legend)) setTimeout(() => Sound.sfx("record"), 500);
+  if (record || (isNew && !junk)) setTimeout(() => Sound.sfx("record"), 500);
   Haptics.land();
   const badges = $("#cbadges");
   badges.innerHTML = "";
@@ -550,7 +582,7 @@ function caught(c) {
 $("#catchGo").addEventListener("click", () => { Sound.sfx("ui"); show(null); world.hideCatch(); nextAfterOutcome(); });
 
 /* ---------------- the derby ---------------- */
-const RANKS = [[0, "SKUNKED"], [0.01, "DOCK ROOKIE"], [1, "WEEKEND ANGLER"], [3, "COTTAGE REGULAR"], [6, "LAKE LEGEND"], [10, "THE LOON LAKE RECORD"]];
+const RANKS = [[0, "SKUNKED"], [0.01, "DOCK ROOKIE"], [2, "WEEKEND ANGLER"], [5, "COTTAGE REGULAR"], [9, "LAKE PRO"], [14, "LOON LAKE CHAMPION"]];
 function endDerby() {
   G.phase = "results";
   Sound.stopLoops(); Haptics.stop();
@@ -610,30 +642,37 @@ function renderJournal() {
 }
 function zoneHint(sp) {
   const z = Object.entries(sp.zones || {}).sort((a, b) => b[1] - a[1])[0];
-  return z ? "Try " + (LAKE.ZONE_NAMES[z[0]] || z[0]).toLowerCase() + "." : "";
+  // the hour it bites best, if it has one
+  const best = (sp.hours || []).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
+  const when = !best ? "" : best[1] <= 10 ? " in the morning" : best[0] >= 17 ? " at dusk" : " at midday";
+  return z ? "Try " + (LAKE.ZONE_NAMES[z[0]] || z[0]).toLowerCase() + when + "." : "";
 }
 
 /* ---------------- help ---------------- */
 const HELP_M = [
   ["bail", "Swipe the <b>bail</b> down to open it. Or give the phone a quick <b>twist</b>."],
-  ["thumb", "<b>Hold your thumb</b> on the reel. It holds the line."],
+  ["turn", "Turn your body to <b>aim</b>. The dotted line shows where the lure goes."],
+  ["thumb", "<b>Hold your thumb</b> on the reel. Your thumb holds the line."],
   ["back", "Tip the phone <b>back</b> over your shoulder."],
-  ["flick", "<b>Whip it forward.</b> Lift your thumb just after the phone passes straight up."],
-  ["swipe", "Swipe the bail <b>up</b> to close it. Or just start to reel."],
+  ["flick", "<b>Whip it forward.</b> Lift your thumb as the phone tips forward, at 11 o'clock. Keep a tight grip."],
+  ["thumb", "To stop the lure short, touch the reel while it flies."],
+  ["swipe", "Swipe the bail <b>up</b> to close it. Or turn the crank."],
   ["turn", "Turn the phone <b>sideways</b>. Its top edge is now the rod."],
-  ["crank", "Turn the <b>crank</b> with your thumb to reel."],
-  ["pull", "A fish strikes? <b>Pull the phone up</b> fast to set the hook."],
-  ["pull", "<b>Pump and reel:</b> pull up, then reel as you tip the phone down."],
-  ["stop", "When the drag <b>buzzes</b>, stop reeling. When a fish <b>jumps</b>, tip the rod down."],
+  ["crank", "Turn the <b>crank</b> with your thumb. Reel <b>slowly</b>. Stop now and then."],
+  ["pull", "When a fish <b>strikes</b>, pull the phone up fast. This sets the hook."],
+  ["pull", "<b>Pump and reel.</b> Pull the phone up. Then reel as you tip it down."],
+  ["stop", "When the drag <b>slips</b>, stop reeling. When a fish <b>jumps</b>, lower the rod."],
+  ["fish", "When the fish is <b>tired</b> and close, raise the rod and hold it up."],
 ];
 const HELP_T = [
-  ["bail", "Swipe the <b>bail</b> down to open it. On a keyboard, press <b>E</b>."],
+  ["bail", "Drag the lake left or right to <b>aim</b>. Then swipe the <b>bail</b> down to open it. On a keyboard, press <b>E</b>."],
   ["thumb", "<b>Press and hold</b> on the reel. <b>Drag down</b> to tip the rod back."],
-  ["flick", "<b>Flick up</b> and let go during the flick. Drag the lake left or right to aim."],
+  ["flick", "<b>Flick up</b>. Let go during the flick."],
   ["swipe", "Swipe the bail <b>up</b> to close it."],
-  ["crank", "Turn the <b>crank</b> in circles, or use the mouse wheel. Hold <b>R</b> to reel."],
+  ["crank", "Turn the <b>crank</b> in circles, or use the mouse wheel, or hold <b>R</b>. Reel slowly."],
   ["pull", "The <b>rod pad</b> on the left: drag up to raise the rod. A fast swipe up sets the hook. Keys: <b>W S A D</b> and <b>Space</b>."],
-  ["stop", "When the drag <b>buzzes</b>, stop reeling. When a fish <b>jumps</b>, lower the rod."],
+  ["stop", "When the drag <b>slips</b>, stop reeling. When a fish <b>jumps</b>, lower the rod."],
+  ["fish", "When the fish is <b>tired</b> and close, drag the rod up and hold it."],
 ];
 for (const [id, list] of [["#helpM", HELP_M], ["#helpT", HELP_T]]) $(id).innerHTML = list.map(([ic, t]) => "<li>" + ICON[ic] + "<span>" + t + "</span></li>").join("");
 for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => {
@@ -663,6 +702,7 @@ $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
     const st = await Motion.request();
     if (st === "granted") { G.input = "motion"; save.input = "motion"; }
+    else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
     else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? "Motion is blocked for this page." : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
   persist(); syncSettings(); relayout(true);
@@ -756,6 +796,9 @@ addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused)
 function castUpdate(dt) {
   const t = now();
   const p = Motion.pose;
+  if (p.orient === "portrait") G.upSeen = true;
+  // a wrist twist also turns the heading: once the twist is over, count the aim from here
+  if (G.recenterAt && t >= G.recenterAt) { G.recenterAt = 0; if (G.step === "open" && !G.pin) Motion.recenter(); }
   // touch mode: the finger on the reel is the rod. Drag down = rod back; flick up = forward
   if (!sensing()) {
     let th = 75;
@@ -776,7 +819,7 @@ function castUpdate(dt) {
   if (G.step === "pinned" || G.step === "loaded") {
     G.backMax = Math.max(G.backMax, theta);
     Sound.setSwish(clamp(Math.abs(p.omega) / 900, 0, 1));
-    if (G.step === "pinned" && theta >= (CAST.LOAD_THETA || 105)) { G.step = "loaded"; Sound.sfx("load"); Haptics.load(); }
+    if (G.step === "pinned" && theta >= (CAST.LOAD_THETA || 105)) { G.step = "loaded"; Sound.sfx("load"); loadTap(); }
     // swung through with the thumb still down: nothing flies
     if (G.step === "loaded" && theta < 35 && p.omega < -250) { G.step = "pinned"; G.backMax = theta; toast("Lift your thumb during the swing."); }
   } else Sound.setSwish(0);
@@ -791,8 +834,8 @@ function castUpdate(dt) {
     world.setLine({ from: tip, to: { x: r.x, y: r.y, z: r.z }, slack: 0.15, visible: true, flying: true });
     world.setView({ mode: "flight", look: { x: r.x, y: Math.max(r.y, 0), z: r.z }, portrait: G.layout === "tall-cast" });
     // feathering: a finger on the reel slows the line, so the lure drops short onto a target
-    if (G.pin && G.pin.feather) prompt("Feathering: the lure slows.", "", "thumb");
-    else prompt(save.casts < 6 ? "Touch the reel to stop the lure short." : "", "", "thumb");
+    if (G.pin && G.pin.feather) prompt("Your thumb slows the line.", "", "thumb");
+    else prompt(save.casts >= 3 && save.casts < 9 ? "To stop the lure short, touch the reel." : "", "", "thumb");
     if (r.done) { Sound.setSpool(0); prompt(""); landed(r); }
     return;
   }
@@ -830,9 +873,9 @@ function castPrompt() {
   const m = G.input === "motion";
   switch (G.step) {
     case "ready": prompt("Swipe the bail down to open it.", m ? "Or give the phone a quick twist." : touchDevice ? "Drag the lake to aim." : "Or press E. Drag the lake to aim.", "bail"); break;
-    case "open": prompt(m ? "Hold your thumb on the reel." : "Press and hold on the reel.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
+    case "open": prompt(m ? "Hold your thumb on the reel." : "Press and hold on the reel.", G.drop > 0.3 ? "The line is slipping! Hold it." : m ? "Turn to aim. The dotted line shows where it goes." : "Your thumb holds the line.", "thumb"); break;
     case "pinned": prompt(m ? "Tip the phone back over your shoulder." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
-    case "loaded": prompt(m ? "Whip it forward. Let go!" : "Flick up and let go!", m ? "Lift your thumb just after straight up." : "", "flick", "hot"); break;
+    case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : "Flick up and let go!", m ? "Lift it as the phone tips forward. Keep a tight grip." : "", "flick", "hot"); break;
     case "landed": prompt(m ? "Close the bail. Swipe it up." : "Swipe the bail up to reel.", m ? "Or turn the phone sideways and crank." : "", "swipe"); break;
     case "ashore": prompt(""); break;
     default: prompt("");
@@ -870,7 +913,7 @@ function reelUpdate(dt) {
   // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
   if (s.phase === "caught" && s.catch) { caught(s.catch); return; }
   if (s.phase === "lost") { outcome("lost", reasonText(s.reason)); return; }
-  if (s.phase === "home") { outcome("home", "Nothing this time. Cast again."); return; }
+  if (s.phase === "home") { outcome("home", "Nothing this time.", "Cast again. Try a rising ring."); return; }
 
   // draw
   const L = s.lure;
@@ -888,6 +931,8 @@ function reelUpdate(dt) {
   const look = s.fish ? { x: s.fish.x, y: 0, z: s.fish.z } : { x: L.x, y: 0, z: L.z };
   world.setView({ mode: "reel", look, portrait: G.layout === "tall-reel" });
   const sp = s.fish ? byId(s.fish.id) : null;
+  // during a jump the rod pad shows a low rod as the right move
+  rodPad.jump = !!(s.fish && (s.fish.move === "jump" || t - (G.lastEvent.jump || -1e9) < 900));
   gauge.set({ tfrac: s.tfrac || 0, dragFrac: (s.dragN || 18) / (s.breakN || 45), slip: s.slip || 0, lineOut: s.lineOut || 0, depth: Math.max(0, -(s.fish ? s.fish.y : L.y)), stamina: s.fish ? s.fish.stamina : null, name: s.fish ? (s.fish.known && sp ? sp.name : "Fish on!") : "" });
 
   // feel
@@ -905,8 +950,9 @@ function reelPrompt(s, crankRate, theta) {
   if (G.bail === "open") return prompt("Turn the crank to close the bail.", "", "crank");
   switch (s.phase) {
     case "sink": case "retrieve":
-      if (recent("nibble", 900)) return prompt("Something is nibbling...", "Wait for the strike.", "fish");
-      if (s.follower) return prompt("A fish is following. Keep reeling.", "A short pause can make it bite.", "crank");
+      if (s.empty) return prompt("Nothing is biting here.", "Reel in and cast again.", "crank");
+      if (recent("nibble", 900)) return prompt("A fish is nibbling.", "Wait for the strike.", "fish");
+      if (s.follower) return s.tooFast ? prompt("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : prompt("A fish is following.", "Stop for a moment. It may bite.", "crank");
       return prompt("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
     case "strike":
       return prompt(m ? "PULL UP! Set the hook!" : touchDevice ? "SWIPE UP! Set the hook!" : "PRESS SPACE! Set the hook!", "", "pull", "hot");
@@ -914,11 +960,11 @@ function reelPrompt(s, crankRate, theta) {
       const f = s.fish || {};
       if (f.move === "jump" || recent("jump", 900)) return prompt("It jumped! Lower the rod!", "", "low", "hot");
       if ((s.slip || 0) > 0.15 && crankRate > 0.3) return prompt("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot");
-      if ((s.tfrac || 0) > 0.82) return prompt("Too tight! Ease off.", "Stop reeling and lower the rod a little.", "low", "hot");
+      if ((s.tfrac || 0) > 0.85) return prompt("Too tight! Stop reeling.", "Lower the rod a little.", "low", "hot");
       if ((s.slip || 0) > 0.15) return prompt("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
       if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
       if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the top of the phone back toward you." : "Drag the rod pad up.", "pull");
-      return prompt("Pump and reel.", m ? "Pull up, then reel as you tip the phone down." : "Drag the rod up, then reel as it comes down.", "pull");
+      return prompt("Pump and reel.", m ? "Pull up. Then reel as you tip the phone down." : "Drag the rod up. Then reel as it comes down.", "pull");
     }
     case "land": return prompt("Lift it out! Raise the rod and hold.", "", "pull", "good");
     default: return prompt("");
@@ -934,30 +980,36 @@ function handleEvent(e) {
     case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
     case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
     case "hooked":
-      if (e.junk) { Sound.sfx("junk"); toast("Snagged something heavy. Reel it in.", 2200); }
+      if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
       else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
       // the ring's fish is on the line: its ring goes quiet
       if (G.ring && rises && rises.take) { rises.take(G.ring); G.ring = null; }
       break;
-    case "missed": Sound.sfx("miss"); toast(G.input === "motion" ? "It spat the lure. Pull up faster next time." : "It spat the lure. Swipe up faster next time.", 2600); break;
-    case "spooked": Sound.sfx("miss"); toast("Too soon! You spooked it. Wait for the strike.", 2600); break;
-    case "refuse": toast("It looked, and turned away.", 1800); break;
+    case "missed": case "spooked": Sound.sfx("miss"); break;
+    case "refuse": Sound.sfx("miss"); toast("Too fast. It turned away. Reel slower.", 2600); break;
+    case "slack": Sound.sfx("slip"); Haptics.bump(0.3); break;
     case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); break;
     case "splash": world.splash(fx, fz, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
     case "run": case "surge": if (!save.seen.run) { toast("It is running! Let the drag work.", 2400); seen("run"); } break;
     case "shake": Haptics.bump(0.7); break;
     case "reveal": { const sp = byId(e.id || (s && s.fish && s.fish.id)); if (sp) toast("It is a " + sp.name + "!", 2000); break; }
-    case "near": Haptics.bump(0.8); break;
+    case "near": Sound.sfx("splash", 0.3); world.splash(fx, fz, 0.3); Haptics.bump(0.8); break;
     case "snap": Sound.sfx(e.reason === "weeds" || e.reason === "rocks" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
-    case "thrown": Sound.sfx("thrown"); Haptics.jolt(); break;
+    case "thrown": G.thrownBy = e.jump ? "jump" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
     case "home": Sound.sfx("plop"); break;
   }
 }
+// what went wrong, and what to do next time
 function reasonText(r) {
+  const steer = sensing() ? "Tilt the phone to steer it away." : "Drag the rod pad sideways to steer it.";
   return ({
-    snap: "SNAP! The line broke.", thrown: "It threw the hook.", spat: "It spat the lure.", spooked: "You spooked it.",
-    weeds: "It wrapped the line in the weeds.", rocks: "It cut the line on the rocks.",
-  })[r] || "It got away.";
+    snap: ["SNAP! The line broke.", "Stop reeling when the drag slips."],
+    thrown: ["It threw the hook.", G.thrownBy === "jump" ? "Lower the rod when it jumps." : "Keep the line tight."],
+    spat: ["It spat the lure.", sensing() ? "Pull up as soon as it strikes." : "Swipe up as soon as it strikes."],
+    spooked: ["You spooked it.", "Wait for the strike."],
+    weeds: ["It wrapped the line in the weeds.", steer],
+    rocks: ["It cut the line on the rocks.", steer],
+  })[r] || ["It got away.", ""];
 }
 
 /* ---------------- the loop ---------------- */
@@ -1074,13 +1126,13 @@ async function boot() {
     // the rod loads the moment it passes back over the shoulder, even between two frames
     if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) {
       G.backMax = Math.max(G.backMax, pose.theta);
-      if (G.step === "pinned" && pose.theta >= (CAST.LOAD_THETA || 105)) { G.step = "loaded"; Sound.sfx("load"); Haptics.load(); }
+      if (G.step === "pinned" && pose.theta >= (CAST.LOAD_THETA || 105)) { G.step = "loaded"; Sound.sfx("load"); loadTap(); }
       return;
     }
     if (G.pin) return;
     if (Math.abs(pose.twist || 0) > 380 && t - (G.twistAt || 0) > 700) {
       G.twistAt = t;
-      if (G.step === "ready" && G.bail === "closed") G.twistReq = true;
+      if (G.step === "ready" && G.bail === "closed") { G.twistReq = true; G.recenterAt = now() + 400; }
       else if (G.step === "landed" && G.bail === "open") closeBail();
     }
   });

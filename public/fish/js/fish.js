@@ -6,6 +6,7 @@ import { SPECIES, JUNK, byId, lengthFor } from "./species.js";
 // the reel, the line and the fight. Tuned with qa/fish/fight.sim.mjs
 export const REEL = {
   LINE_PER_TURN: 0.75,   // m of line per crank turn (a 5.2:1 spinning reel)
+  FIGHT_LINE_PER_TURN: 1.15, // m per turn once a fish is on: game time, so fights last 3 to 45 s, not the minutes of real fishing
   BREAK_N: 45,           // 10 lb line
   DRAG_N: [12, 18, 26],  // light, medium, heavy drag
   STEP: 1 / 240,         // s: internal step, so a big frame time never blows up the springs
@@ -19,7 +20,7 @@ export const REEL = {
   ROD_RATING: 30,        // N: the load that bends the rod fully (for drawing)
   SPOOL_M: 0.06,         // kg: spool inertia at the line, so a sudden spike overshoots the drag for a moment
   SPOOL_B: 2,            // N per m/s: the drag washers pull a little harder the faster they slip
-  GRIND_N: 7,            // N per rev/s: cranking while the drag slips adds this much tension
+  GRIND_N: 7.5,          // N per rev/s: cranking while the drag slips adds this much tension
   SLACK_N: 1,            // N: below this the line is slack
   ADDED_MASS: 1.5,       // a fish moves water with it: its mass feels this much heavier
   TOW: 0.5,              // a fish led toward you head-first drags this much less than one that swims
@@ -68,6 +69,8 @@ export const BITE = {
   SINK: 0.35,            // m/s the lure sinks when slow
   RISE: 0.5,             // m/s it rises when fast
   NEUTRAL: 0.55,         // m/s: the retrieve speed that holds the lure's depth
+  EMPTY_T: 5,            // s: with no fish coming, the lure skips home after this...
+  EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute
   HOME_R: 3,             // m: the lure is home this close to the dock
 };
 
@@ -235,6 +238,8 @@ export class LakeSim {
       tension: 0, tfrac: 0, slip: 0, slack: true,
       dragN: REEL.DRAG_N[1], breakN: REEL.BREAK_N, dragFrac: REEL.DRAG_N[1] / REEL.BREAK_N,
       follower: null, fish: null, catch: null, reason: null,
+      tooFast: false,  // a fish follows but the lure runs away from it
+      empty: false,    // nothing is coming: the lure skips home
       // extras for the HUD
       t: 0,            // s since the lure landed
       zone: this.zone, // the kind of water the lure landed in
@@ -366,7 +371,12 @@ export class LakeSim {
   retrieve(h, I) {
     const S = this.state, L = S.lure, B = BITE;
     if (S.phase === "sink" && I.crank > 0.05) S.phase = "retrieve";
-    const c = I.crank * REEL.LINE_PER_TURN;
+    // no fish on its way: after a few seconds the retrieve speeds up
+    const empty = !this.ap || this.ap.stage === "gone";
+    this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h : 0;
+    const fast = 1 + (B.EMPTY_MUL - 1) * clamp(this.emptyT - B.EMPTY_T, 0, 1);
+    S.empty = fast > 1;
+    const c = I.crank * REEL.LINE_PER_TURN * fast;
     S.lineOut = Math.max(REEL.MIN_LINE, S.lineOut - c * h);
     const px = L.x, pz = L.z;
     const f = S.phase === "strike" ? S.follower : null;
@@ -440,19 +450,21 @@ export class LakeSim {
     const bx = L.x - I.tip.x, bz = L.z - I.tip.z, bl = Math.hypot(bx, bz) || 1;
     const tx = L.x + bx / bl * 0.6, tz = L.z + bz / bl * 0.6, ty = L.y - 0.1;
     const dx = tx - f.x, dy = ty - f.y, dz = tz - f.z, dl = Math.hypot(dx, dy, dz);
-    // it swims up at a little more than the lure's speed, but never faster than it can
-    const spd = Math.min(P.sp.fight.speed * 1.1, Math.max(0.6, L.speed + 0.8));
+    const like = likeSpeed(P.sp, L.speed);
+    // it swims up at a little more than the lure's speed, up to its burst speed, and always a little faster
+    // than the lure so a small fish can still catch a brisk retrieve; the prompt tells the player to slow down
+    const spd = Math.max(Math.min(P.sp.fight.speed * 1.1, Math.max(0.6, L.speed + 0.8)), L.speed + 0.3);
+    S.tooFast = like < 0.5;
     if (dl > 1e-6) {
       const m = Math.min(dl, spd * h) / dl;
       f.x += dx * m; f.y += dy * m; f.z += dz * m;
       if (dl > 0.2) f.heading += wrap(headingOf(dx, dz) - f.heading) * Math.min(1, h * 4);
     }
     const close = Math.hypot(f.x - L.x, f.z - L.z) < 1.6 && Math.abs(f.y - L.y) < 1.2;
-    const like = likeSpeed(P.sp, L.speed);
     ap.bored = like < 0.25 ? ap.bored + h : Math.max(0, ap.bored - h);
     if (ap.bored > 3.5) {
       // too fast for it: it turns away
-      ap.stage = "gone"; S.follower = null;
+      ap.stage = "gone"; S.follower = null; S.tooFast = false;
       this.emit("refuse", { id: P.id });
       return;
     }
@@ -477,7 +489,7 @@ export class LakeSim {
     // last chance: the lure is about to leave the water
     if (!strike && ap.interest >= 0.45 && Math.hypot(L.x, L.z) < B.HOME_R + 2) strike = r() < 1.5 * h;
     if (strike) {
-      S.phase = "strike";
+      S.phase = "strike"; S.tooFast = false;
       S.strikeLeft = this.easy ? B.WINDOW_EASY : B.WINDOW;
       ap.crankT = 0;
       f.x = L.x; f.y = L.y; f.z = L.z;
@@ -627,7 +639,7 @@ export class LakeSim {
     if (junk && stretch > -0.2) ten += P.kg * 3;
 
     /* the reel: the spool slips when the line pulls harder than the drag; cranking into a slipping drag grinds */
-    const c = I.crank * R.LINE_PER_TURN;
+    const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN);
     const thr = S.dragN + R.GRIND_N * I.crank;
     if (this.spool > 0 || ten > thr) {
       this.spool += (ten - thr - R.SPOOL_B * this.spool) / R.SPOOL_M * h;

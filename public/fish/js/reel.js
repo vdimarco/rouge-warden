@@ -1222,7 +1222,7 @@ export class RodPad extends Widget {
     this.time += dt;
     this.yankA = Math.max(0, this.yankA - dt * 1.8);
     const w = this.w, h = this.h, th = this._theta, d = this.drag;
-    if (this.same([w, h, this.dpr, th.toFixed(2), this._steer.toFixed(3), d ? Math.round(d.x) + ":" + Math.round(d.y) : "", this.yankA.toFixed(2)].join())) return;
+    if (this.same([w, h, this.dpr, th.toFixed(2), this._steer.toFixed(3), d ? Math.round(d.x) + ":" + Math.round(d.y) : "", this.yankA.toFixed(2), this.jump ? 1 : 0].join())) return;
     const back = this.layer("back");
     this.paint(back, [w, h, this.dpr].join(), (c) => this.glass(c, 0.5, 0.5, w - 1, h - 1, 16));
     const ctx = this.begin();
@@ -1238,8 +1238,9 @@ export class RodPad extends Widget {
       ctx.fillText("Swipe up fast to hook.", 12, 48);
     }
     ctx.textAlign = "right"; ctx.font = font(10); spaced(ctx, 0.1);
-    ctx.fillStyle = low ? rgba(DANGER, 0.95) : rgba(GREEN, 0.95);
-    if (low || high) ctx.fillText(low ? "TOO LOW" : "HIGH", w - 12, 16);
+    // main.js sets jump while a fish leaps: then a low rod is the right move
+    ctx.fillStyle = low && !this.jump ? rgba(DANGER, 0.95) : rgba(GREEN, 0.95);
+    if (low || high) ctx.fillText(low ? (this.jump ? "LOW: GOOD" : "TOO LOW") : "LIFT", w - 12, 16);
     spaced(ctx, 0);
     // the rod seen from your right side: a pivot, the arc it can swing through, and the rod
     const steerY = h - 17;

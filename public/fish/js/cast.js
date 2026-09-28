@@ -74,8 +74,9 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   let verdict;
   if (pitch >= 90) verdict = "behind"; // straight up or past it: it comes down behind you
   else if (pitch < 0) verdict = "slam";
-  else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
+  // an early lift is "high" even when the short stroke also cut the power: the fix is the timing, not more speed
   else if (raw > C.HIGH_PITCH) verdict = "high";
+  else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
   else if (raw < C.LOW_PITCH) verdict = "low";
   else verdict = "sweet";
   return { v0, pitch, yaw: fin(yaw, 0), power, verdict, clock: clockOf(th) };

@@ -87,7 +87,8 @@ try {
         else if (!up && th <= 51) { up = true; target = 85; }
         hold(th < target - 3 ? "KeyW" : th > target + 3 ? "KeyS" : null);
         const now = performance.now();
-        if (!up && s.phase !== "land" && (s.slip || 0) < 0.05 && (s.tfrac || 0) < 0.75 && now - lastWheel > 60) { lastWheel = now; window.dispatchEvent(new WheelEvent("wheel", { deltaY: 60, bubbles: true, cancelable: true })); }
+        // reel on the way down, and any time the line goes slack (the game says so)
+        if ((!up || s.slack) && s.phase !== "land" && (s.slip || 0) < 0.05 && (s.tfrac || 0) < 0.75 && now - lastWheel > 60) { lastWheel = now; window.dispatchEvent(new WheelEvent("wheel", { deltaY: 60, bubbles: true, cancelable: true })); }
         await wait(16);
       }
       hold(null);

@@ -78,18 +78,20 @@ const pose = { t: 0, theta: 90, omega: 0, yaw: 0, yawRate: 0, roll: 0, twist: 0,
 const HN = 512;
 const HT = new Float64Array(HN), HA = new Float64Array(HN), HW = new Float64Array(HN), HY = new Float64Array(HN);
 const HG = new Uint8Array(HN); // 1 = ω came from the gyro (an exact slope, so at() can bend the curve)
+// the whole swing square to the rod, signed like ω: a thumb grip rolls the screen, and the pitch rate alone then reads short
+const HS = new Float64Array(HN);
 let h0 = 0, hn = 0, hYR = 0;
 const idx = (i) => (h0 + i) % HN;
-function push(t, th, w, y, g, yr) {
+function push(t, th, w, y, g, yr, sw = w) {
   hYR = yr;
   if (hn) {
     const L = idx(hn - 1);
     // same time or out of order (a touch timestamp older than the last frame): the newest news wins
-    if (t <= HT[L]) { HA[L] = th; HW[L] = w; HY[L] = y; HG[L] = g; return; }
+    if (t <= HT[L]) { HA[L] = th; HW[L] = w; HY[L] = y; HG[L] = g; HS[L] = sw; return; }
   }
   let j;
   if (hn < HN) { j = idx(hn); hn++; } else { j = h0; h0 = (h0 + 1) % HN; }
-  HT[j] = t; HA[j] = th; HW[j] = w; HY[j] = y; HG[j] = g;
+  HT[j] = t; HA[j] = th; HW[j] = w; HY[j] = y; HG[j] = g; HS[j] = sw;
   while (hn > 2 && t - HT[h0] > T.HIST_MS) { h0 = (h0 + 1) % HN; hn--; }
 }
 // the newest sample at or before t (logical index), or −1
@@ -202,7 +204,9 @@ function solve(t, dts, g, commit) {
   pose.t = t; pose.theta = th; pose.omega = om; pose.yaw = yaw; pose.yawRate = yawRateS; pose.roll = roll;
   pose.twist = g ? gy : 0;
   pose.spin = g ? Math.sqrt(gx * gx + gy * gy + gz * gz) : Math.abs(om);
-  push(t, th, om, yaw, g ? 1 : 0, yawRateS);
+  // the rod is phone y (portrait) or phone x (landscape): the swing is the rate about the other two axes
+  const sw = g ? (om < 0 ? -1 : 1) * Math.hypot(land ? gy : gx, gz) : om;
+  push(t, th, om, yaw, g ? 1 : 0, yawRateS, sw);
   emit();
 }
 function emit() {
@@ -450,22 +454,23 @@ export const Motion = {
   pose,
   // {theta, omega, yaw} at time t (ms, performance.now clock), from the ~2 s history
   at(t) { return atRaw((fin(t) ? t : now()) + T.LAG_MS); },
-  // {minOmega, maxOmega, maxTheta, minTheta} over [t0, t1], including the values right at both ends
+  // {minOmega, maxOmega, maxTheta, minTheta, minSwing} over [t0, t1], including the values right at both ends.
+  // minSwing is the fastest forward swing measured square to the rod (so a rolled grip reads true)
   peak(t0, t1) {
     const q0 = t0 + T.LAG_MS, q1 = t1 + T.LAG_MS;
-    let n = 0, minO = Infinity, maxO = -Infinity, minT = Infinity, maxT = -Infinity;
+    let n = 0, minO = Infinity, maxO = -Infinity, minT = Infinity, maxT = -Infinity, minS = Infinity;
     const add = (w, th) => { n++; if (w < minO) minO = w; if (w > maxO) maxO = w; if (th < minT) minT = th; if (th > maxT) maxT = th; };
     if (hn && fin(q0) && fin(q1) && q1 >= q0) {
       for (let i = Math.max(0, find(q0)); i < hn; i++) {
         const j = idx(i);
         if (HT[j] > q1) break;
-        if (HT[j] >= q0) add(HW[j], HA[j]);
+        if (HT[j] >= q0) { add(HW[j], HA[j]); if (HS[j] < minS) minS = HS[j]; }
       }
       if (q0 >= HT[idx(0)] && q0 <= HT[idx(hn - 1)]) { const e = atRaw(q0); add(e.omega, e.theta); }
       if (q1 >= HT[idx(0)]) { const e = atRaw(q1); add(e.omega, e.theta); }
     }
-    if (!n) return { minOmega: 0, maxOmega: 0, maxTheta: pose.theta, minTheta: pose.theta };
-    return { minOmega: minO, maxOmega: maxO, maxTheta: maxT, minTheta: minT };
+    if (!n) return { minOmega: 0, maxOmega: 0, maxTheta: pose.theta, minTheta: pose.theta, minSwing: 0 };
+    return { minOmega: minO, maxOmega: maxO, maxTheta: maxT, minTheta: minT, minSwing: Math.min(minS, minO) };
   },
   // aim from here: yaw 0 = the way the phone points now
   recenter() {

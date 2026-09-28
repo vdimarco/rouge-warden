@@ -353,7 +353,8 @@ check(good.struck / good.n >= 0.8, `a forced fish usually strikes a good retriev
 // the spec gives perch 5-10, bass 20-40, pike and trout 30-60, muskie 60-120. The rest are ours:
 // rock bass live at the rocky point 30-45 m out, and the reel cannot bring anything in faster than 2.25 m/s;
 // the golden bass rises 40-55 m out.
-const RANGES = { pumpkinseed: [5, 12], perch: [5, 10], rockbass: [8, 20], smallmouth: [20, 40], largemouth: [20, 40], walleye: [20, 45], pike: [30, 60], laketrout: [30, 60], muskie: [60, 120], golden: [30, 70] };
+// compressed game time (the fishing brief): short enough to keep an arm up, long enough to feel the fish
+const RANGES = { pumpkinseed: [3, 6], perch: [3, 6], rockbass: [6, 12], smallmouth: [8, 20], largemouth: [8, 20], walleye: [10, 20], pike: [15, 30], laketrout: [20, 45], muskie: [20, 45], golden: [20, 45] };
 for (const sp of SPECIES) {
   const m = median(summary(res.good[sp.id]).times), [a, b] = RANGES[sp.id];
   check(m >= a * 0.85 && m <= b * 1.15, `${sp.id} fight time ${m.toFixed(1)} s is in ${a}-${b} s`);
