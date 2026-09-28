@@ -13,6 +13,8 @@ try {
   // a derby, with motion
   await page.click("#derbyBtn");
   await page.waitForSelector("#setup:not([hidden])");
+  // the double-tap guard ignores a click in the first 300 ms of a screen that a tap just opened
+  await sleep(400);
   await page.click("#useMotion");
   await until(page, () => window.FISH && FISH.G.phase === "cast" && FISH.G.input === "motion", null, 15000);
   check(true, "Use motion starts the derby with motion input");
@@ -97,7 +99,8 @@ try {
     const el = () => document.elementFromPoint(cx + R, cy) || document.body;
     const target = el();
     const ev = (type, a) => target.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: "touch", clientX: cx + R * Math.cos(a), clientY: cy + R * Math.sin(a), bubbles: true, buttons: type === "pointerup" ? 0 : 1 }));
-    let a = 0, closedBy = null;
+    // the bail closes in the game frame where the crank first turns: count game frames, not test time (slow frames)
+    let a = 0, closedBy = null, turnF = null, closeF = null;
     ev("pointerdown", a);
     const t0 = performance.now();
     let log = [], strikeAt = null;
@@ -109,12 +112,14 @@ try {
       const pause = ((performance.now() - t0) % 4000) > 3300;
       if (!pause) a += 2 * Math.PI * 1.2 * 0.016;
       ev("pointermove", a);
-      if (closedBy == null && FISH.G.bail === "closed") closedBy = +(a / (2 * Math.PI)).toFixed(2);
+      if (turnF == null && FISH.crank && FISH.crank.rate > 0.25) turnF = FISH.G.frame;
+      if (closedBy == null && FISH.G.bail === "closed") { closedBy = +(a / (2 * Math.PI)).toFixed(2); closeF = FISH.G.frame; if (turnF == null) turnF = closeF; }
       if (log.length < 400) log.push(s.phase);
       await wait(16);
     }
     ev("pointerup", a);
-    if (strikeAt == null) return { ok: false, phase: FISH.G.sim && FISH.G.sim.state.phase, g: FISH.G.phase, closedBy };
+    const closeFrames = closeF != null ? closeF - turnF : null;
+    if (strikeAt == null) return { ok: false, phase: FISH.G.sim && FISH.G.sim.state.phase, g: FISH.G.phase, closedBy, closeFrames };
     await wait(220);
     // the hook set: a fast pull up, 50° → 95° in 110 ms
     const P = window.__phone, t1 = performance.now();
@@ -123,9 +128,9 @@ try {
     // slow test frames: give the game a moment to see it
     const t2 = performance.now();
     while (performance.now() - t2 < 4000 && FISH.G.sim && FISH.G.sim.state.phase === "strike") await wait(20);
-    return { ok: true, phase: FISH.G.sim && FISH.G.sim.state.phase, byPull: FISH.G.lastHook >= t1, closedBy };
+    return { ok: true, phase: FISH.G.sim && FISH.G.sim.state.phase, byPull: FISH.G.lastHook >= t1, closedBy, closeFrames };
   }, { cx: cr.x, cy: cr.y, R: Math.min(cr.w, cr.h) * 0.3 });
-  check(hooked.closedBy != null && hooked.closedBy < 1, "the first turn of the crank closes the bail (at " + hooked.closedBy + " turns)");
+  check(hooked.closeFrames != null && hooked.closeFrames <= 1, "the first turn of the crank closes the bail (" + hooked.closeFrames + " game frames after the crank turned, at " + hooked.closedBy + " test turns)");
   check(hooked.ok, "cranking brings a strike (" + JSON.stringify(hooked) + ")");
   check((hooked.phase === "fight" || hooked.phase === "land" || hooked.phase === "caught") && hooked.byPull, "pulling the phone up sets the hook (" + hooked.phase + ", by the pull: " + hooked.byPull + ")");
   await shot(page, "flow-5-fight");
