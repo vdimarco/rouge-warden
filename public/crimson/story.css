@@ -93,6 +93,7 @@ body.story.smenu #song.show { z-index: 11; }
 .sToast { left: 50%; top: 30vh; transform: translateX(-50%); width: max-content; max-width: 78vw; text-align: center; font: 800 13px/1.4 var(--serif); letter-spacing: 0.24em; color: #fff; text-shadow: 0 0 10px #000, 0 0 2px #000; z-index: 2; }
 .sToast.hot { color: var(--neon); }
 .sToast.go { animation: sToast 2.6s ease-out forwards; }
+#story.cineOn .sToast { visibility: hidden; } /* (a cut scene shows no toast over the picture: P11's finisher) */
 @keyframes sToast { 0% { opacity: 0; transform: translate(-50%, 6px); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
 .sSubs { left: 50%; bottom: calc(140px + var(--sb)); transform: translateX(-50%); width: max-content; max-width: min(640px, 84vw); text-align: center; font: 500 17px/1.45 var(--serif); color: #fbf8f2; text-shadow: 0 2px 6px #000, 0 0 3px #000, 0 0 1px #000; z-index: 6;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -451,7 +452,9 @@ body.stouch .sSay .pf { width: 60px; height: 60px; }
 body.stouch .sSay .pf .gl { font-size: 38px; }
 body.stouch .sSay .ln { font-size: 15px; min-height: 2.8em; }
 body.stouch .sSkip { right: calc(14px + var(--sr)); }
-body.stouch.cine .sSubs { max-width: calc(100vw - 32px); }
+/* a cine on a phone: the words sit in the lower bar, as on a desktop (the play position above, 62 px up, put them
+   over the picture, across the people's feet and the bar's edge) */
+body.stouch.cine .sSubs { max-width: calc(100vw - 32px); bottom: calc(max(3px, 5.5vh - 1.45em) + var(--sb)); font-size: 15px; }
 @media (orientation: portrait) {
   body.stouch .sTL { max-width: calc(100vw - 172px); }
   body.stouch .sInfo { left: auto; right: calc(12px + var(--sr)); transform: none; top: calc(10 * var(--u) + 34 * var(--u) + 150px + var(--st)); flex-direction: column; align-items: flex-end; gap: 6px; }

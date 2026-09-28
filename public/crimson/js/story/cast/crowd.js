@@ -210,6 +210,7 @@ export function createFollowers(S) {
     const W = S.world;
     list.forEach((e, i) => {
       const a = e.a;
+      if (a.cineHeld) { e.pos.copy(a.root.position); e.face = a.root.rotation.y; return; } // on a cine's mark (cine.js)
       if (e.board) { // walk to the door, fade out, take a seat
         const v = e.board, door = v.doorPoint ? v.doorPoint('slide') : v.pos;
         const dx = door.x - e.pos.x, dz = door.z - e.pos.z, d = Math.hypot(dx, dz);

@@ -30,5 +30,8 @@ export function startTier() {
   const mem = navigator.deviceMemory;
   return mem && mem <= 2 ? 0 : 1;
 }
+// a cine's pixel ratio on each tier (look.js cineQuality): a cut scene holds still and frames faces close,
+// so it draws a step sharper than play does (capped by the screen's own ratio)
+export const CINE_PR = Object.freeze([1.25, 1.5, 1.75]);
 // what render.js setQuality() takes for a tier
 export const renderOpts = (t) => ({ samples: t.msaa, prMin: t.pr[0], prMax: t.pr[1], shadowType: t.shadow.type === 'soft' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap });
