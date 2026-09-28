@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, or Reel It In. Free in your browser.">
+<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rogue, Breath of the Lake, or Reel It In. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
+<meta property="og:description" content="Drop a token into Get Plunger'd, Down the Drain, or Crimson Rogue. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -230,15 +230,15 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
-      <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
-        <div class="marquee"><div><b>CRIMSON ROUGE</b><small>紅の月の下で</small></div></div>
+      <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rogue">
+        <div class="marquee"><div><b>CRIMSON ROGUE</b><small>紅の月の下で</small></div></div>
         <div class="bezel"><div class="screen">
           <img src="crimson/art/keyart2.webp" alt="">
           <img class="art2" src="crimson/art/bear.webp" alt="">
           <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rogue"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rogue"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
       <article class="cab wild" data-game="wild" data-url="/wild/" aria-label="Get Plunger'd: Breath of the Lake">
@@ -626,7 +626,7 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
-// Crimson Rouge flips between the standoff and the grizzly
+// Crimson Rogue flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
 {
   const cr = store.get("crimson.best.v1", null);

@@ -1,4 +1,4 @@
-/* Crimson Rouge: the story UI (the ui package). Everything sits in #story over the canvas. #story has no
+/* Crimson Rogue: the story UI (the ui package). Everything sits in #story over the canvas. #story has no
    z-index, so its layers stack with the page's own: the cine letterbox bars are z 4, so subtitles and the
    dialogue box (z 6) sit on top of them. Crimson marks the crew and objectives; neon (--red-hot) is only for
    danger. Sizes on touch screens use --u and the safe areas, like the arena's touch buttons. */
