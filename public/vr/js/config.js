@@ -16,7 +16,7 @@ export const WORLD = {
   street: 20,
   needle: { x: -90, z: 225, shaftR: 7, podY0: 262, podY1: 286, podR: 19, top: 360, collars: [60, 110, 160, 210], deckY: 262 },
   dome: { x: 70, z: 215, r: 55, h: 40 },
-  expressway: { z: 270, y: 12, w: 22 },
+  expressway: { z: 283, y: 12, w: 22 }, // south of the Dome, which reaches z 270
   clogsPerDistrict: 2,
   loonies: 80,
   anchorReach: 60, // from any point above 15 m there is a surface this close
