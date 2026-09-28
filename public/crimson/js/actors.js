@@ -1,33 +1,56 @@
 // Rigged characters: load a packed GLB, ink it, and play its clips with cross-fades.
 // Attacks are cut out of longer clips as sub-clips, so they chain and blend cleanly.
+// The story adds a clone path (loadTemplate, spawnActor) so one GLB gives many actors that share their
+// clips, plus addClip, addCuts, dispose and an optional driver that runs after the mixer. None of it
+// changes the arena: its three actors are built exactly as before and never get a driver.
 import * as THREE from 'three';
 import { GLTFLoader } from '../lib/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from '../lib/addons/utils/SkeletonUtils.js';
 import { scene, inkify } from './render.js';
 
 const loader = new GLTFLoader();
 const FPS = 30;
+// sub-clips are cut once per source clip and shared by every actor that asks for the same cut
+const cutCache = new WeakMap();
+function cutOf(src, name, from, to) {
+  let m = cutCache.get(src);
+  if (!m) cutCache.set(src, (m = new Map()));
+  const key = `${name}|${from}|${to}`;
+  let sub = m.get(key);
+  if (!sub) { sub = THREE.AnimationUtils.subclip(src, name, Math.round(from * FPS), Math.round(Math.min(to, src.duration) * FPS), FPS); m.set(key, sub); }
+  return sub;
+}
+// geometry shared by clones is freed when the last actor using it is disposed
+const geoUsers = new WeakMap();
 
 export class Actor {
-  constructor(gltf, { outline = 0.02, glow = 0, scale = 1, cuts = {}, smooth = [] } = {}) {
+  constructor(gltf, { outline = 0.02, glow = 0, scale = 1, cuts = {}, smooth = [], parent = null, addToScene = true, ink = true } = {}) {
     this.root = new THREE.Group();
     this.model = gltf.scene;
     this.model.scale.multiplyScalar(scale);
     this.root.add(this.model);
-    this.glowMats = inkify(this.model, { outline: outline / scale, glow });
+    this.glowMats = ink ? inkify(this.model, { outline: outline / scale, glow }) : [];
     this.mixer = new THREE.AnimationMixer(this.model);
     this.clips = {};
     for (const c of gltf.animations) this.clips[c.name] = c;
+    this.sources = gltf.animations; // the whole clips as loaded (a cut may take a whole clip's name)
     for (const name of smooth) if (this.clips[name]) smoothLoop(this.clips[name]);
     // sub-clips: name → [source clip, from, to] in seconds
-    for (const [name, [src, from, to]] of Object.entries(cuts)) {
-      const c = this.clips[src]; if (!c) { console.warn('missing clip', src); continue; }
-      const sub = THREE.AnimationUtils.subclip(c, name, Math.round(from * FPS), Math.round(Math.min(to, c.duration) * FPS), FPS);
-      this.clips[name] = sub;
-    }
+    this.addCuts(cuts);
     this.bones = {};
     this.model.traverse((o) => { if (o.isBone) this.bones[o.name] = o; });
     this.action = null; this.cur = ''; this.weights = new Map(); this.fade = 0.12;
-    scene.add(this.root);
+    // story only: a function (actor, dt) run after the mixer each update (procedural layers). null in the arena.
+    this.driver = null;
+    if (parent) parent.add(this.root);
+    else if (addToScene) scene.add(this.root);
+  }
+  addClip(name, clip) { this.clips[name] = clip; }
+  addCuts(cuts) {
+    for (const [name, [src, from, to]] of Object.entries(cuts)) {
+      const c = this.clips[src]; if (!c) { console.warn('missing clip', src); continue; }
+      this.clips[name] = cutOf(c, name, from, to);
+    }
   }
   // play a clip; loop, speed, and fade time are optional.
   // Blending is done here, not with three.js cross-fades: those restart the weights at 0 and 1 when a
@@ -66,15 +89,42 @@ export class Actor {
     if (!total && this.action) { this.weights.set(this.action, 1); total = 1; }
     for (const [a, w] of this.weights) a.setEffectiveWeight(w / total);
     this.mixer.update(dt);
+    if (this.driver) this.driver(this, dt);
   }
   bone(name) { return this.bones[name]; }
   setGlow(k) { for (const m of this.glowMats) m.emissiveIntensity = k; }
   set visible(v) { this.root.visible = v; }
+  get visible() { return this.root.visible; }
+  // Free what this actor owns: its inked materials, its outline hulls, its bone texture, and the geometry
+  // once no other clone of the same template uses it. Shared clips stay (the template owns them).
+  dispose() {
+    this.root.removeFromParent();
+    this.mixer.stopAllAction();
+    this.mixer.uncacheRoot(this.model);
+    this.weights.clear(); this.action = null; this.driver = null;
+    const geos = new Set();
+    this.root.traverse((o) => {
+      if (o.isMesh || o.isSprite) {
+        for (const m of [].concat(o.material)) if (m) m.dispose();
+        if (o.geometry) geos.add(o.geometry);
+      }
+      if (o.isSkinnedMesh && o.skeleton && !o.userData.hull) o.skeleton.dispose();
+    });
+    for (const g of geos) {
+      const n = (geoUsers.get(g) || 1) - 1;
+      if (n <= 0) { g.dispose(); geoUsers.delete(g); } else geoUsers.set(g, n);
+    }
+    this.disposed = true;
+  }
 }
 
 // Soften a looping clip's keys (two passes of a 1-2-1 filter that wraps around the loop), so a coarse
 // 30 fps cycle turns smoothly at 60 fps in place of jerking at each key. Used on locomotion only.
+// A clip is smoothed once, however many actors share it.
+const smoothed = new WeakSet();
 function smoothLoop(clip) {
+  if (smoothed.has(clip)) return;
+  smoothed.add(clip);
   for (const t of clip.tracks) {
     const size = t.getValueSize(), v = t.values, n = t.times.length - 1; // the last key repeats the first
     if (n < 4) continue;
@@ -98,10 +148,33 @@ function smoothLoop(clip) {
     }
   }
 }
+export const smoothPasses = (clip) => smoothed.has(clip);
 
 export async function loadActor(url, opts) {
   const gltf = await loader.loadAsync(url);
   return new Actor(gltf, opts);
+}
+
+// The clone path. A template is a loaded GLB (or a code-built body with the same shape: {scene, animations})
+// that is never shown; spawnActor clones its skeleton and meshes (geometry and clips are shared) and inks
+// the clone. Asset loading is the only promise here; callers watch a flag, never chain game flow on it.
+export async function loadTemplate(url) {
+  const gltf = await loader.loadAsync(url);
+  return makeTemplate(gltf.scene, gltf.animations, url);
+}
+export function makeTemplate(sceneRoot, animations = [], url = '') {
+  sceneRoot.updateMatrixWorld(true);
+  return { scene: sceneRoot, animations, url };
+}
+export function spawnActor(template, opts = {}) {
+  const copy = cloneSkinned(template.scene);
+  copy.traverse((o) => { if (o.isMesh && o.geometry) geoUsers.set(o.geometry, (geoUsers.get(o.geometry) || 0) + 1); });
+  const a = new Actor({ scene: copy, animations: template.animations }, opts);
+  // mark the outline hulls inkify added, so the LOD can switch them off at a distance
+  a.hulls = [];
+  a.root.traverse((o) => { if (o.isMesh && o.material && o.material.side === THREE.BackSide && o.material.isMeshBasicMaterial) { o.userData.hull = true; a.hulls.push(o); } });
+  a.template = template;
+  return a;
 }
 
 // a katana made in code, sized in meters, for the ronin's right hand

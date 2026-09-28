@@ -2,95 +2,43 @@
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
-import { scene, camera, post, draw, adapt, toonRamp } from './js/render.js';
+import { scene, camera, renderer, post, draw, adapt, toonRamp, lastInfo, setDepth } from './js/render.js';
 import { Music } from './js/music.js';
 import { rollCredits, preloadCreditsMusic } from './js/credits.js';
-import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR } from './js/world.js';
-import { fx, updateFX, Trail, glowTex } from './js/fx.js';
+import { buildWorld, ARENA, colliders, groundHeight, grassUniforms, followLights, FACE_DIR, skyLoaded, arena, ARENA_LOOK, restoreArenaLook, calmGrass, setBridgeSilhouette, bridgeSilhouetteVisible } from './js/world.js';
+import { fx, updateFX, clearFX, Trail, glowTex } from './js/fx.js';
 import { Audio } from './js/audio.js';
 import { loadActor, makeKatana } from './js/actors.js';
+import { rng, seed as seedRng } from './js/core/rng.js';
+import { createTimers } from './js/core/clock.js';
+import { TUNE, CREW, RONIN_CUTS, GABE_CUTS, BEAR_CUTS, PATK, GABE_ATK, BEAR_ATK } from './js/moves.js';
 
 const TAU = Math.PI * 2;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const damp = (a, b, rate, dt) => lerp(a, b, 1 - Math.exp(-rate * dt));
-const rand = (a, b) => a + Math.random() * (b - a);
+const rand = (a, b) => a + Math.random() * (b - a); // visuals only
+// Gabe's choices come from a seeded stream (?seed=N), so a replay with the same inputs plays the same fight
+const aiRand = rng('ai'), arand = (a, b) => a + aiRand() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 const angleTo = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
 const flatDist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-const GOD = new URLSearchParams(location.search).has('god');
+const Q = new URLSearchParams(location.search);
+const GOD = Q.has('god');
+const STILL = Q.get('qa') === 'still'; // the still-image test: no ambient dust, fixed resolution
 const NEON3 = new THREE.Color(0.72, 1.0, 0.1);
 
 /* ------------------------------------------------------------------ the crew */
-// Difficulty. Every knob that sets how hard the fight is lives here.
-const TUNE = {
-  bossDmg: 0.6,          // share of each hit's damage that lands on you
-  bossHp: 800,
-  postureGain: 1.35,     // how fast deflects and hits fill Gabe's posture bar
-  rest: [1.2, 2.0],      // Gabe's pause between attacks, seconds
-  restBear: [0.9, 1.6],
-  atkSpeed: 0.9,         // Gabe's attack playback speed
-  counterRate: 0.7,      // how often he slips a swing and counters
-  parryWin: 0.3,         // seconds before a blow lands that a tap still deflects
-  iframe: 0.46,          // the part of a roll that dodges everything
-  gourds: 5, heal: 50,
-  chargeSpeed: 9,
-  blockCost: 0.6,        // share of a blow's ki cost when you block it
-};
-const CREW = [
-  { name: 'Tank Top', glyph: '力', perk: 'Hits 20% harder', apply: (s) => { s.dmg *= 1.2; } },
-  { name: 'Fifty-One', glyph: '命', perk: '20% more life', apply: (s) => { s.maxHp = 120; } },
-  { name: 'Shades', glyph: '影', perk: 'Wider parry window', apply: (s) => { s.parryWin = 0.38; } },
-  { name: 'New Balance', glyph: '风', perk: 'Dodges cost less ki', apply: (s) => { s.dodgeCost *= 0.6; } },
-  { name: 'Red Jersey', glyph: '速', perk: 'Moves 12% faster', apply: (s) => { s.speed *= 1.12; } },
-];
 let crewPick = 2;
 try { const saved = +localStorage.getItem('crimson.crew'); if (saved >= 0 && saved < CREW.length) crewPick = saved; } catch (e) { /* storage blocked */ }
 
-/* ------------------------------------------------------------------ moves */
-// Times are in seconds of the source clip. A cut is a slice of a clip; hits, lunges, and
-// cancels use the same clock, so they line up with the motion.
-const RONIN_CUTS = {
-  l1: ['combo', 0.25, 1.12], l2: ['combo', 1.12, 1.9], l3: ['combo', 1.9, 3.0],
-  hvy: ['heavy', 0.2, 2.05], db: ['thrust', 0.0, 1.9], guard: ['block', 1.0, 3.3], defl: ['parry', 0.2, 1.4],
-  rollc: ['roll', 0.55, 1.87], down: ['knock', 0.0, 1.4], sip: ['drink', 2.8, 5.6],
-};
-const PATK = {
-  l1: { cut: 'l1', from: 0.25, speed: 1.65, hit: [0.64, 0.86], dmg: 20, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l2', cancel: 0.93, lunge: [0.5, 0.8, 3.2], snd: 'slash' },
-  l2: { cut: 'l2', from: 1.12, speed: 1.65, hit: [1.42, 1.62], dmg: 22, post: 5, reach: 2.4, arc: 1.25, cost: 12, next: 'l3', cancel: 1.68, lunge: [1.3, 1.55, 3.2], snd: 'slash' },
-  l3: { cut: 'l3', from: 1.9, speed: 1.55, hit: [2.16, 2.38], dmg: 30, post: 8, reach: 2.5, arc: 1.0, cost: 14, next: 'l1', cancel: 2.5, lunge: [2.0, 2.3, 4.2], snd: 'heavy' },
-  heavy: { cut: 'hvy', from: 0.2, speed: 1.35, hit: [1.08, 1.3], dmg: 55, post: 16, reach: 2.7, arc: 1.0, cost: 26, cancel: 1.75, lunge: [0.85, 1.25, 5], snd: 'heavy' },
-  deathblow: { cut: 'db', from: 0.0, speed: 1.0, hit: [0.68, 0.86], dmg: 0, post: 0, reach: 4.2, arc: 1.7, cost: 0, cancel: 1.7, lunge: [0.4, 0.78, 7], snd: 'heavy' },
-};
-// Gabe's clips; the cut ranges and hit times come from measuring each clip's strike peaks
-const GABE_CUTS = {
-  jabs: ['punches', 0.2, 2.3], kick: ['kick', 0.9, 3.0], fly: ['flykick', 0.8, 4.2], counter: ['counter', 1.6, 5.9], grab: ['grab', 1.6, 4.7],
-  call: ['taunt', 1.6, 3.7],
-};
-const BEAR_CUTS = {
-  sweep: ['sweep', 1.2, 4.9], chop: ['chop', 2.6, 6.2], smash: ['smash', 0.0, 1.87], slam: ['slam', 0.0, 2.9],
-};
-// Boss moves. hits: [t0, t1, shape]; shape is { reach, arc } or { aoe: [forward, radius] }.
-const GABE_ATK = {
-  jabs: { cut: 'jabs', from: 0.2, speed: 1.22, tell: 0.35, track: 1.0, limb: 'LeftHand', limb2: 'RightHand', hits: [[0.58, 0.76, { reach: 2.3, arc: 0.7 }], [1.18, 1.38, { reach: 2.4, arc: 0.7 }]], dmg: 13, pp: 16, bc: 12, lunges: [[0.4, 0.7, 2.8], [1.0, 1.3, 2.8]], snd: 'punch' },
-  kick: { cut: 'kick', from: 0.9, speed: 1.22, tell: 1.5, track: 1.9, limb: 'LeftFoot', hits: [[2.0, 2.3, { reach: 3.0, arc: 1.4 }]], dmg: 22, pp: 24, bc: 26, lunges: [[1.4, 2.1, 4]], snd: 'bossSwing' },
-  fly: { cut: 'fly', from: 0.8, speed: 1.28, tell: 1.4, track: 1.6, limb: 'RightFoot', hits: [[2.8, 3.06, { reach: 2.6, arc: 0.9 }]], dmg: 24, pp: 26, bc: 26, leap: [1.5, 2.8], knock: true, snd: 'bossSwing' },
-  counter: { cut: 'counter', from: 1.6, speed: 1.6, tell: 4.4, track: 4.9, limb: 'LeftHand', hits: [[5.0, 5.24, { reach: 2.6, arc: 0.8 }]], dmg: 20, pp: 24, bc: 20, dodge: [1.6, 3.4], lunges: [[4.7, 5.1, 4]], snd: 'punch' },
-  // the bear call: he pulls a PVC pipe, puts it to his mouth, and roars down it. Unblockable: roll through it.
-  call: { cut: 'call', from: 1.6, speed: 1.2, tell: 2.0, track: 2.3, limb: 'RightHand', unblock: true, pipe: [1.85, 3.4], blow: [2.3, 3.05], hits: [[2.38, 2.95, { reach: 8, arc: 0.42 }]], dmg: 16, snd: 'pipe' },
-  grab: { cut: 'grab', from: 1.6, speed: 1.15, tell: 1.9, track: 2.6, limb: 'RightHand', unblock: true, hits: [[2.72, 3.05, { reach: 2.4, arc: 0.8 }]], throwAt: 3.55, dmg: 30, lunges: [[2.4, 2.95, 6]], snd: 'bossSwing' },
-};
-const BEAR_ATK = {
-  sweep: { cut: 'sweep', from: 1.2, speed: 1.0, tell: 1.8, track: 2.35, limb: 'RightHand', hits: [[2.45, 2.75, { reach: 4.6, arc: 1.6 }], [3.2, 3.5, { reach: 4.6, arc: 1.6 }]], dmg: 22, pp: 20, bc: 28, lunges: [[2.3, 2.75, 3.5], [3.05, 3.5, 3]], snd: 'bossSwing' },
-  chop: { cut: 'chop', from: 2.6, speed: 1.0, tell: 3.6, track: 4.15, limb: 'RightHand', hits: [[4.3, 4.55, { reach: 4.8, arc: 0.55 }]], dmg: 32, pp: 32, bc: 40, lunges: [[4.1, 4.5, 5]], impact: 4.45, snd: 'bossSwing' },
-  smash: { cut: 'smash', from: 0, speed: 1.0, tell: 0.9, track: 1.3, limb: 'LeftHand', hits: [[1.45, 1.66, { aoe: [2.7, 2.5] }]], dmg: 30, pp: 28, bc: 45, knock: true, impact: 1.57, snd: 'bossSwing' },
-  slam: { cut: 'slam', from: 0, speed: 1.0, tell: 0.9, track: 1.3, limb: 'RightHand', hits: [[1.58, 1.8, { aoe: [1.4, 4.3] }]], dmg: 34, pp: 30, bc: 55, knock: true, impact: 1.67, snd: 'bossSwing' },
-  charge: { charge: true, unblock: true, limb: 'Head', hits: [[0, 0, null]], dmg: 30, knock: true, windup: 0.9, run: 1.5 },
-};
-
 /* ------------------------------------------------------------------ state */
-const game = { state: 'loading', time: 0, phase2: false, hitstop: 0, slow: 1, slowT: 0, deaths: 0, parries: 0, fightStart: 0, flash: 0, hurt: 0, ready: false };
+// mode: 'arcade' (FIGHT GABE) or 'story' (NEW STORY and after). Flow runs on game-time timers, so
+// __crimson.step() drives the end screen, the credits and the story handoff too.
+const game = { state: 'loading', mode: 'arcade', time: 0, frame: 0, phase2: false, hitstop: 0, slow: 1, slowT: 0, deaths: 0, parries: 0, fightStart: 0, flash: 0, hurt: 0, ready: false, assist: false, timers: createTimers() };
+const after = (sec, fn, tag) => game.timers.after(sec, fn, tag);
+let focusMode = 'story'; // the title's selected mode: 'story', 'continue' or 'fight'
 Audio.phase2 = () => game.phase2;
 const input = { keys: {}, mouse: { l: false, r: false }, buf: { light: -9, heavy: -9, dodge: -9, heal: -9, parry: -9 }, move: new THREE.Vector2(), pad: null, padPrev: [], usingPad: false,
   touch: { on: false, guard: false, stick: new THREE.Vector2() } };
@@ -133,7 +81,8 @@ async function loadAll() {
   }
   makePlayer(); makeBoss();
   game.ready = true; game.state = 'title';
-  titleText();
+  refreshTitleModes();
+  autostart();
 }
 loadAll().catch((e) => { console.error(e); pressEl.textContent = 'COULD NOT LOAD THE MODELS'; });
 
@@ -141,6 +90,7 @@ function makePlayer() {
   const f = CREW[crewPick];
   const stats = { maxHp: 100, dmg: 1, speed: 4.6, parryWin: TUNE.parryWin, dodgeCost: 22 };
   f.apply(stats);
+  stats.parryWin += game.assist ? 0.08 : 0; // STORY ASSIST
   player = {
     a: ronin, f, stats, pos: SPAWN_P.clone(), vel: new THREE.Vector3(), face: Math.atan2(FACE_DIR.x, FACE_DIR.z),
     hp: stats.maxHp, st: 100, stDelay: 0, gourds: TUNE.gourds, state: 'move', t: 0, atk: null, combo: null, comboT: -9,
@@ -173,11 +123,12 @@ addEventListener('keydown', (e) => {
   if (e.repeat) return;
   input.usingPad = false; setTouch(false);
   input.keys[e.code] = true;
+  if (game.state === 'story') { if (story) story.key(e, true); return; }
   if (e.code === 'KeyM' && Music.enabled) { Music.toggle(); return; }
   if (game.state === 'title') { titleKey(e); return; }
   if (game.state === 'intro') { endIntro(); return; }
   if (game.state === 'cutscene') { endCutscene(); return; }
-  if (game.state === 'end') { endNext(); return; }
+  if (game.state === 'end') { endKey(e); return; }
   if (game.state === 'credits') { creditsKey(e); return; }
   if (game.state === 'paused') { if (e.code === 'Escape' || e.code === 'Enter') resume(); return; }
   if (game.state !== 'fight') return;
@@ -186,7 +137,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyF') input.buf.parry = game.time;
   if (e.code === 'Tab') toggleLock();
 });
-addEventListener('keyup', (e) => { input.keys[e.code] = false; });
+addEventListener('keyup', (e) => { input.keys[e.code] = false; if (game.state === 'story' && story) story.key(e, false); });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('contextmenu', (e) => { if (game.state === 'fight') e.preventDefault(); });
 canvas.addEventListener('mousedown', (e) => {
@@ -220,7 +171,8 @@ function setTouch(on) {
 }
 function titleText() {
   const t = input.touch.on;
-  if (game.ready) pressEl.textContent = t ? 'TAP TO FIGHT' : 'PRESS ANY KEY TO FIGHT';
+  const verb = { story: 'START THE STORY', continue: 'CONTINUE', fight: 'FIGHT' }[focusMode] || 'FIGHT';
+  if (game.ready) pressEl.textContent = t ? `TAP TO ${verb}` : `PRESS ANY KEY TO ${verb}`;
   const pick = document.querySelector('#title .pick');
   pick.textContent = (pick.dataset.perk || 'CHOOSE YOUR FRIEND').toUpperCase() + (t ? '' : ' · ◀ ▶');
   document.querySelector('#intro .skip').textContent = t ? 'TAP TO SKIP' : 'ANY KEY TO SKIP';
@@ -311,12 +263,13 @@ function pollPad() {
   let pad = null; for (const p of pads) if (p && p.connected) { pad = p; break; }
   input.pad = pad;
   if (!pad) return;
+  if (game.state === 'story') { if (story) story.pad(pad); input.padPrev = pad.buttons.map((x) => x.pressed); return; }
   const b = pad.buttons.map((x) => x.pressed), prev = input.padPrev, edge = (i) => b[i] && !prev[i];
   if (b.some((x) => x) || pad.axes.some((a) => Math.abs(a) > 0.4)) input.usingPad = true;
-  if (game.state === 'title') { if (edge(14)) pickCrew(crewPick - 1); if (edge(15)) pickCrew(crewPick + 1); if (edge(0) || edge(9)) startGame(); }
+  if (game.state === 'title') { if (edge(14)) pickCrew(crewPick - 1); if (edge(15)) pickCrew(crewPick + 1); if (edge(12)) moveTitleFocus(-1); if (edge(13)) moveTitleFocus(1); if (edge(0) || edge(9)) startGame(focusMode); }
   else if (game.state === 'intro') { if (b.some((x, i) => x && !prev[i])) endIntro(); }
   else if (game.state === 'cutscene') { if (b.some((x, i) => x && !prev[i])) endCutscene(); }
-  else if (game.state === 'end') { if (edge(0) || edge(9)) endNext(); }
+  else if (game.state === 'end') { if (edge(2)) endChoice('assist'); else if (edge(3)) endChoice('skip'); else if (edge(0) || edge(9)) endNext(); }
   else if (game.state === 'credits') { if (edge(0) || edge(9)) { if (credits && credits.atEnd) again(); else if (credits) credits.skip(); } }
   else if (game.state === 'paused') { if (edge(9) || edge(0)) resume(); }
   else if (game.state === 'fight') {
@@ -579,11 +532,11 @@ function chooseAttack() {
     else opts.push(['sweep', 3], ['smash', 2.2], ['slam', 1.3], ['chop', 1.4]);
   }
   for (const o of opts) { if (o[0] === boss.last) o[1] *= 0.35; if (o[0] === boss.last && o[0] === boss.lastLast) o[1] = 0.01; }
-  let r = Math.random() * opts.reduce((a, o) => a + o[1], 0), pick = opts[0][0];
+  let r = aiRand() * opts.reduce((a, o) => a + o[1], 0), pick = opts[0][0];
   for (const o of opts) { r -= o[1]; if (r <= 0) { pick = o[0]; break; } }
   const q = [pick];
-  if (isBear) { if (pick === 'sweep' && Math.random() < 0.4) q.push('smash'); if (pick === 'chop' && Math.random() < 0.35) q.push('slam'); }
-  else if (pick === 'jabs' && Math.random() < 0.35) q.push('kick');
+  if (isBear) { if (pick === 'sweep' && aiRand() < 0.4) q.push('smash'); if (pick === 'chop' && aiRand() < 0.35) q.push('slam'); }
+  else if (pick === 'jabs' && aiRand() < 0.35) q.push('kick');
   boss.lastLast = boss.last; boss.last = pick;
   return q;
 }
@@ -644,6 +597,7 @@ function updateBoss(dt) {
           if (flatDist(b.pos, p.pos) < 7) p.pos.addScaledVector(tmpB.set(Math.sin(toP), 0, Math.cos(toP)), 2.6);
           showCard('GABE', 'THE GRIZZLY OF SEDONA', '熊');
           preloadCreditsMusic(); // the credits music, ready for the end
+          if (game.mode === 'story' && story) story.preload('transform');
         }
       } else {
         const k = b.t - b.swapT;
@@ -662,10 +616,10 @@ function updateBoss(dt) {
       bossTurn(toP, turnRate, dt);
       b.cooldown -= dt;
       // Gabe reads your swing: sometimes he slips it and counters
-      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && Math.random() < dt * TUNE.counterRate) { b.queue = []; startBossAttack('counter'); break; }
+      if (b.form === 'gabe' && p.state === 'attack' && dist < 3 && b.cooldown < 0.8 && aiRand() < dt * TUNE.counterRate) { b.queue = []; startBossAttack('counter'); break; }
       if (dist > 3.4) move = b.form === 'bear' ? (game.phase2 ? 3.4 : 3) : 4.4;
       else if (dist < 1.4) move = -1.2;
-      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = Math.random() < 0.5 ? -1 : 1; b.strafeT = rand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
+      else { b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = aiRand() < 0.5 ? -1 : 1; b.strafeT = arand(0.8, 1.8); } move = b.form === 'bear' ? 0.9 : 1.4; moveDir = b.face + b.strafe * Math.PI / 2; }
       if (Math.abs(move) > 1.5) A.play(b.form === 'bear' ? 'charge' : 'run', { speed: b.form === 'bear' ? 0.55 : 1.15, fade: 0.14 });
       else A.play('idle', { fade: 0.18, speed: b.form === 'bear' ? 1 : 1.3 });
       if (b.cooldown <= 0) { b.queue = chooseAttack(); startBossAttack(b.queue.shift()); }
@@ -717,10 +671,10 @@ function updateBoss(dt) {
         hurtPlayer(GABE_ATK.grab.dmg, true);
         fx.dust(p.pos, 14, 1.4); Audio.play('slam'); cam.shake = 1;
       }
-      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = rand(...TUNE.rest); }
+      if (A.done) { b.state = 'idle'; b.t = 0; b.cooldown = arand(...TUNE.rest); }
       break;
     }
-    case 'recoil': if (b.t > 0.75) { b.state = 'idle'; b.t = 0; b.cooldown = rand(0.3, 0.8); } break;
+    case 'recoil': if (b.t > 0.75) { b.state = 'idle'; b.t = 0; b.cooldown = arand(0.3, 0.8); } break;
     case 'broken': if (b.t > 3.6) { b.state = 'recover'; b.t = 0; b.posture = 40; A.play('idle', { fade: 0.6 }); } break;
     case 'recover': if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cooldown = 0.5; } break;
     case 'dead': glowWant = Math.max(0, 1 - b.t * 0.4); break;
@@ -795,6 +749,10 @@ function updatePipe(dt) {
     if (u.age > 0.6) { scene.remove(w); w.material.dispose(); waves.splice(i, 1); }
   }
 }
+function clearWaves() {
+  for (const w of waves) { scene.remove(w); w.material.dispose(); }
+  waves.length = 0; pipe.visible = false;
+}
 function updateCharge(dt, toP) {
   // the bear drops low, roars, then barrels at you: dodge it
   const b = boss, s = b.atk.spec, p = player;
@@ -815,7 +773,7 @@ function updateCharge(dt, toP) {
 function endBossAttack(stagger) {
   const b = boss;
   if (b.queue.length && player.state !== 'dead') { startBossAttack(b.queue.shift()); return; }
-  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? rand(...TUNE.restBear) : rand(...TUNE.rest)) + (stagger ? 0.6 : 0);
+  b.state = 'idle'; b.t = 0; b.atk = null; b.cooldown = (game.phase2 ? arand(...TUNE.restBear) : arand(...TUNE.rest)) + (stagger ? 0.6 : 0);
 }
 function beginTransform() {
   const b = boss;
@@ -892,7 +850,7 @@ function receive(a, idx) {
 function hurtPlayer(dmg, knock, chip) {
   const p = player;
   if (GOD) dmg = 0;
-  dmg *= TUNE.bossDmg;
+  dmg *= TUNE.bossDmg * (game.assist ? 0.5 : 1);
   p.hp -= dmg;
   if (!chip) {
     Audio.play('hurt');
@@ -910,20 +868,27 @@ function playerDies() {
   ronin.play('dead', { loop: false, fade: 0.15, restart: true });
   Audio.play('death'); Audio.drumOn = false;
   game.slow = 0.35; game.slowT = 1.2; boss.queue = [];
-  setTimeout(() => showEnd(false), 2600);
+  after(2.6, () => showEnd(false));
 }
 function bossDies() {
-  const b = boss;
+  const b = boss, inStory = game.mode === 'story';
   b.hp = 0; b.state = 'dead'; b.t = 0; b.atk = null; b.queue = [];
-  if (b.form === 'gabe') { b.form = 'bear'; gabe.visible = false; bear.visible = true; b.a = bear; }
-  bear.play('dead', { loop: false, fade: 0.2, restart: true });
+  // the arcade win always ends on the bear; in NEW STORY Gabe stays as he is and yields (C0)
+  if (b.form === 'gabe' && !inStory) { b.form = 'bear'; gabe.visible = false; bear.visible = true; b.a = bear; }
+  if (b.form === 'bear') bear.play('dead', { loop: false, fade: 0.2, restart: true });
+  else gabe.play('hit', { loop: false, speed: 0.35, fade: 0.2, restart: true });
   player.state = 'victory'; player.t = 0;
   Audio.play('victory'); Audio.drumOn = false;
   game.slow = 0.25; game.slowT = 2.2; game.flash = 0.6; cam.punch = 1.2;
   const c = tmpA.set(b.pos.x, ground(b.pos) + 2.5, b.pos.z);
   fx.neon(c, 90, 2); fx.ink(c, 30, 2, 1); fx.blast(b.pos, 1.5); fx.splat(b.pos, 4, ground(b.pos));
   hud.hint.style.opacity = 0;
-  setTimeout(() => showEnd(true), 4400);
+  if (inStory) {
+    // a NEW STORY win counts as a best time too, then the story takes over (B16)
+    game.timers.cancelTag('card');
+    recordBest(Math.round(game.time - game.fightStart));
+    after(2.0, () => enterStory('yield'));
+  } else after(4.4, () => showEnd(true));
 }
 
 /* ------------------------------------------------------------------ camera */
@@ -1021,10 +986,35 @@ function pickCrew(i) {
   }
 }
 function titleKey(e) {
+  if (e.code === 'ArrowUp') { moveTitleFocus(-1); return; }
+  if (e.code === 'ArrowDown') { moveTitleFocus(1); return; }
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { pickCrew(crewPick - 1); return; }
   if (e.code === 'ArrowRight' || e.code === 'KeyD') { pickCrew(crewPick + 1); return; }
   if (/^Digit[1-5]$/.test(e.code)) { pickCrew(+e.code.slice(5) - 1); return; }
-  startGame();
+  startGame(focusMode);
+}
+// the title's three ways in: NEW STORY, CONTINUE (only with a story save) and FIGHT GABE
+const modeBtns = [...document.querySelectorAll('#modes button')];
+for (const b of modeBtns) b.addEventListener('click', (e) => { e.stopPropagation(); startGame(b.dataset.mode); });
+// Any stored story save counts: the story repairs a truncated, older or newer one on CONTINUE (save.js
+// repairSave), so the title offers it too. Only the summary line needs a readable save.
+function readStorySave() {
+  let text = null;
+  try { text = localStorage.getItem('crimson.story.v1'); } catch (e) { return null; }
+  if (!text) return null;
+  try { const s = JSON.parse(text); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; }
+}
+function refreshTitleModes() {
+  const s = readStorySave(), cont = $('modeContinue');
+  cont.hidden = !s;
+  const m = (s && s.summary) || {};
+  cont.querySelector('small').textContent = s && m.chapter ? `CHAPTER ${m.chapter} · ${String(m.title || '').toUpperCase()}` : '';
+  focusTitleMode(s ? 'continue' : 'story');
+}
+function focusTitleMode(m) { focusMode = m; for (const b of modeBtns) b.classList.toggle('focus', b.dataset.mode === m); titleText(); }
+function moveTitleFocus(d) {
+  const list = modeBtns.filter((b) => !b.hidden).map((b) => b.dataset.mode), i = Math.max(0, list.indexOf(focusMode));
+  focusTitleMode(list[(i + d + list.length) % list.length]);
 }
 // Screens act when the finger lifts. A phone's synthetic click can come late or not at all when the finger
 // moves a little, so touch uses pointerup; the mouse still uses click. Buttons and links keep their own taps.
@@ -1042,14 +1032,22 @@ function onTap(el, fn) {
   el.addEventListener('pointercancel', () => { down = null; });
   el.addEventListener('click', (e) => { if (performance.now() - lastTouchTap < 800) return; fn(e); });
 }
-onTap($('title'), startGame);
+onTap($('title'), () => startGame(focusMode));
 onTap($('intro'), () => { if (game.state === 'cutscene') endCutscene(); else endIntro(); });
-function startGame() {
+// kind: 'fight' (FIGHT GABE, the default), 'story' (NEW STORY: the same fight, then the story) or 'continue'
+function startGame(kind = 'fight') {
   if (game.state !== 'title' || !game.ready) return;
+  if (kind !== 'story' && kind !== 'continue') kind = 'fight';
   Audio.init(); Audio.play('start'); Music.start();
   $('title').classList.add('hidden');
   // the film plays later, at the change; phones only allow its sound if it first plays during a tap like this one
   if (introVid.src) { introVid.muted = false; introVid.volume = 0; introVid.play().then(() => { introVid.pause(); introVid.currentTime = 0; introVid.volume = 1; }, () => { introVid.volume = 1; }); }
+  if (kind === 'continue') { $('storyBoot').classList.remove('hidden'); enterStory('continue'); return; }
+  game.mode = kind === 'story' ? 'story' : 'arcade';
+  if (game.mode === 'story') {
+    game.deaths = 0; game.assist = false;
+    loadStory().then((st) => st.preload('story'), () => {}); // the story loads while you fight
+  }
   endIntro(true);
 }
 function endIntro(force) {
@@ -1064,7 +1062,13 @@ function beginFight() {
   cam.yaw = Math.atan2(FACE_DIR.x, FACE_DIR.z); cam.lock = true;
   cam.pos.copy(SPAWN_P).addScaledVector(FACE_DIR, -5).setY(3); cam.look.copy(SPAWN_B).setY(1.6);
   hud.el.classList.add('on'); hud.hint.style.opacity = 1;
-  showCard('GABE', 'THE MOUNTAIN MAN OF SEDONA');
+  setBridgeSilhouette(game.mode === 'story');
+  game.timers.cancelTag('card');
+  if (game.mode === 'story') {
+    // NEW STORY opens on the time and place, then the boss card
+    showCard('SUNDAY · 2:58 AM', 'MIDGLEY BRIDGE', '夜');
+    after(3.2, () => showCard('GABE', 'THE MOUNTAIN MAN OF SEDONA'), 'card');
+  } else showCard('GABE', 'THE MOUNTAIN MAN OF SEDONA');
   Audio.drumOn = !Music.playing;
   Music.loud(true);
   if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } }
@@ -1082,16 +1086,22 @@ function showEnd(won) {
     : `Gabe had ${Math.round(boss.hp / boss.maxHp * 100)}% life left${boss.form === 'bear' ? ', as a bear' : ''} · ${game.parries} deflects`;
   document.querySelector('#end p').textContent = `${input.touch.on ? 'TAP' : 'PRESS ANY KEY'} ${won ? 'FOR THE CREDITS' : 'TO RISE AGAIN'}`;
   lastWin = won ? { time: t, parries: game.parries, deaths: game.deaths } : null;
-  if (won) {
-    try {
-      const best = JSON.parse(localStorage.getItem('crimson.best.v1') || 'null');
-      if (!best || t < best.time) localStorage.setItem('crimson.best.v1', JSON.stringify({ time: t, name: player.f.name }));
-    } catch (e) { /* storage blocked */ }
-  }
+  if (won) recordBest(t);
+  // NEW STORY: after 3 deaths the card offers STORY ASSIST, after 5 SKIP TO THE STORY. Keys 1 and 2 (pad X
+  // and Y) take them; a touch screen taps them.
+  const assist = !won && game.mode === 'story' && game.deaths >= 3;
+  $('endAssist').hidden = !assist; $('assistBtn').hidden = game.assist; $('skipBtn').hidden = game.deaths < 5;
+  $('assistKey').textContent = input.usingPad ? 'X' : '1'; $('skipKey').textContent = input.usingPad ? 'Y' : '2';
   $('end').classList.add('show');
   hud.el.classList.remove('on');
   // a win rolls the credits after a moment
-  if (won) creditsTimer = setTimeout(startCredits, 4500);
+  if (won) creditsTimer = after(4.5, startCredits);
+}
+function recordBest(t) {
+  try {
+    const best = JSON.parse(localStorage.getItem('crimson.best.v1') || 'null');
+    if (!best || t < best.time) localStorage.setItem('crimson.best.v1', JSON.stringify({ time: t, name: player.f.name }));
+  } catch (e) { /* storage blocked */ }
 }
 let lastWin = null, credits = null, creditsTimer = 0;
 // the end screen's tap or key: a win goes on to the credits, a death fights again
@@ -1099,8 +1109,23 @@ function endNext() {
   if (game.state !== 'end' || performance.now() - endShownAt < 900) return;
   if (lastWin) startCredits(); else restart();
 }
+// on NEW STORY's death card, 1 takes STORY ASSIST and 2 SKIP TO THE STORY; any other key rises again
+function endKey(e) {
+  if ((e.code === 'Digit1' || e.code === 'Numpad1') && endChoice('assist')) return;
+  if ((e.code === 'Digit2' || e.code === 'Numpad2') && endChoice('skip')) return;
+  endNext();
+}
+// a key or pad choice on the death card, once the card has settled; false when that choice is not offered
+function endChoice(which) {
+  if (game.state !== 'end' || $('endAssist').hidden || performance.now() - endShownAt < 900) return false;
+  if (which === 'assist' && !$('assistBtn').hidden) { takeAssist(); return true; }
+  if (which === 'skip' && !$('skipBtn').hidden) { takeSkip(); return true; }
+  return false;
+}
+function takeAssist() { game.assist = true; restart(); }
+function takeSkip() { enterStory('skip'); }
 function startCredits() {
-  clearTimeout(creditsTimer);
+  game.timers.cancel(creditsTimer);
   if (game.state !== 'end' || !lastWin) return;
   $('end').classList.remove('show');
   game.state = 'credits';
@@ -1120,11 +1145,143 @@ function again() {
 }
 onTap($('end'), endNext);
 onTap($('credits'), () => { if (credits && !credits.atEnd) credits.skip(); });
-function restart() { clearTimeout(creditsTimer); lastWin = null; $('end').classList.remove('show'); game.parries = 0; beginFight(); }
+function restart() { game.timers.cancel(creditsTimer); lastWin = null; $('end').classList.remove('show'); game.parries = 0; beginFight(); }
 let pausedAt = 0;
-function pause() { if (game.state !== 'fight') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
+// no pause while the win or the death plays out in slow motion: its timers must run to the end screen
+function pause() { if (game.state !== 'fight' || !player || player.state === 'victory' || player.state === 'dead') return; Music.loud(false); game.state = 'paused'; pausedAt = performance.now(); $('pause').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock(); }
 function resume() { game.state = 'fight'; Music.loud(true); $('pause').classList.add('hidden'); hadLock = false; if (canvas.requestPointerLock && !navigator.webdriver) { try { canvas.requestPointerLock(); } catch (e) { /* ignore */ } } }
 onTap($('pause'), (e) => { if (e.target.closest('a, [data-switch]') || performance.now() - pausedAt < 400) return; resume(); });
+
+/* ------------------------------------------------------------------ the story seam */
+// The story is its own module, loaded only by NEW STORY, CONTINUE or a story URL flag. FIGHT GABE never
+// imports it. It gets the arena through arenaCtx() and runs on this page's loop through story.tick().
+let story = null, storyP = null, pendingBegin = null;
+function loadStory() {
+  return storyP || (storyP = import('./js/story/index.js')
+    .then((m) => m.createStory(arenaCtx()))
+    .then((api) => { story = api; return api; }, (err) => {
+      console.error('[story] could not load', err);
+      storyP = null;
+      if (game.state === 'story') showTitle();
+      throw err;
+    }));
+}
+function arenaCtx() {
+  return {
+    THREE, game, cam, input, CREW, get crewPick() { return crewPick; }, setCrewPick: (i) => pickCrew(i),
+    actors: { ronin, gabe, bear, katana }, get player() { return player; }, get boss() { return boss; },
+    scene, camera, renderer, post, arena,
+    showCard, pop, hud, setArenaVisible, setBridgeSilhouette, restoreArenaLook, followLights, groundHeight,
+    Music, Audio, fx, updateFX, clearFX, rollCredits, showTitle,
+    film: { video: introVid, screen: $('intro') }, arenaLook: ARENA_LOOK,
+  };
+}
+// Hand the page to the story. reason: 'yield' (the fight was won), 'skip' (SKIP TO THE STORY),
+// 'continue' (the save) or 'jump' (a URL flag). The story's begin() runs on the next tick once loaded.
+function enterStory(reason, opts = {}) {
+  if (game.state === 'story' || !game.ready) return;
+  game.timers.clear();
+  if (credits) { credits.stop(); credits = null; }
+  game.mode = 'story'; game.state = 'story';
+  $('end').classList.remove('show'); $('pause').classList.add('hidden'); $('intro').classList.add('hidden');
+  hud.el.classList.remove('on'); document.body.classList.remove('cine'); document.body.classList.add('story');
+  if (document.pointerLockElement) document.exitPointerLock();
+  Audio.drumOn = false; Music.loud(false); Music.hush();
+  game.hitstop = 0; game.slowT = 0; game.slow = 1; game.hurt = 0;
+  const u = post.m.uniforms; u.uGrey.value = 0; u.uHurt.value = 0;
+  if (reason === 'skip' || reason === 'jump') { makePlayer(); makeBoss(); } // stand everyone back up (B5)
+  // the cold open (c0) plays in the arena; the story's begin() decides for a jump (?chapter=c0 shows it again).
+  // Until the story module is in, every start but the win shows LOADING SEDONA.
+  if (reason !== 'yield') { setArenaVisible(false); if (!story) $('storyBoot').classList.remove('hidden'); }
+  pendingBegin = { reason, ...opts };
+  loadStory().catch(() => {});
+}
+// ?chapter=, ?mission=&step= and __crimson.startStory: straight into the story, no fight
+function startStory(opts = {}) {
+  if (!game.ready || game.state === 'story') return;
+  if (game.state === 'title') { Audio.init(); Music.start(); $('title').classList.add('hidden'); }
+  $('storyBoot').classList.remove('hidden');
+  enterStory('jump', opts);
+}
+function storyTick(rdt) {
+  if (!story) {
+    // the story module is still on its way (a slow connection). After a win the arena plays on: the victory,
+    // the camera and the effects. Every other start shows LOADING SEDONA (enterStory).
+    if (pendingBegin && pendingBegin.reason === 'yield' && player && boss) {
+      game.time += rdt; grassUniforms.uTime.value += rdt;
+      updatePlayer(rdt); updateBoss(rdt); updateCamera(rdt); updateFX(rdt);
+    }
+    return;
+  }
+  if (pendingBegin) { const o = pendingBegin; pendingBegin = null; $('storyBoot').classList.add('hidden'); story.begin(o); }
+  story.tick(rdt);
+}
+// Show or hide everything that belongs to the fight: the arena group, the three actors, the trails, the
+// pipe and its rings. Hidden, the camera takes the story's depth range (B10).
+function setArenaVisible(v) {
+  arena.visible = v;
+  ronin.visible = v; gabe.visible = v && (!boss || boss.form !== 'bear'); bear.visible = v && !!boss && boss.form === 'bear';
+  pipe.visible = false;
+  for (const w of waves) w.visible = v;
+  if (player) player.trail.mesh.visible = v;
+  if (boss) boss.trail.mesh.visible = v;
+  if (!v) clearFX();
+  setDepth(v ? 0.1 : 0.3, v ? 3000 : 2600);
+}
+// Back to the title from the story (SAVE & QUIT) or anywhere else: every arena setting comes back,
+// so FIGHT GABE plays and looks exactly as it does on a fresh page.
+function showTitle() {
+  if (story) story.leave();
+  game.timers.clear();
+  if (credits) { credits.stop(); credits = null; }
+  pendingBegin = null; lastWin = null;
+  game.state = 'title'; game.mode = 'arcade'; game.assist = false; game.deaths = 0; game.parries = 0;
+  game.hitstop = 0; game.slow = 1; game.slowT = 0; game.flash = 0; game.hurt = 0; game.phase2 = false;
+  cam.punch = 0; cam.shake = 0; cam.creditsYaw = undefined;
+  for (const k of Object.keys(input.keys)) input.keys[k] = false;
+  for (const k of Object.keys(input.buf)) input.buf[k] = -9;
+  input.mouse.l = input.mouse.r = false; input.touch.guard = false; input.touch.stick.set(0, 0);
+  // the arena actors: back in the scene at arena scale (the story Gabe is smaller, B9), with their neon
+  for (const a of [ronin, gabe, bear]) { if (a.root.parent !== scene) scene.add(a.root); a.root.scale.set(1, 1, 1); a.root.rotation.set(0, 0, 0); }
+  gabe.setGlow(0.35); bear.setGlow(0.5);
+  for (const a of [gabe, bear]) for (const sp of Object.values(a.limbGlow || {})) { sp.material.opacity = 0; sp.userData.base = null; }
+  restoreArenaLook(); clearFX(); calmGrass(); clearWaves();
+  setArenaVisible(true); setBridgeSilhouette(false);
+  camera.fov = 52; camera.zoom = 1; camera.updateProjectionMatrix();
+  const u = post.m.uniforms; u.uFlash.value = 0; u.uHurt.value = 0; u.uGrey.value = 0; u.uNeonBoost.value = 1;
+  if (introVid.src && !/clips\/intro\.mp4$/.test(introVid.src)) loadClip(introVid, 'clips/intro.mp4', () => {}); // a story film took the player
+  makePlayer(); makeBoss();
+  for (const id of ['end']) $(id).classList.remove('show');
+  for (const id of ['pause', 'intro', 'storyBoot', 'credits']) $(id).classList.add('hidden');
+  $('title').classList.remove('hidden');
+  hud.el.classList.remove('on'); document.body.classList.remove('cine', 'story');
+  refreshTitleModes();
+  Audio.drumOn = false; Music.scene('title'); Music.loud(false); Music.unhush();
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+$('assistBtn').addEventListener('click', (e) => { e.stopPropagation(); takeAssist(); });
+$('skipBtn').addEventListener('click', (e) => { e.stopPropagation(); takeSkip(); });
+// hiding the page pauses the fight, or saves the story and opens its menu (B15, B16)
+function onHide() {
+  if (game.state === 'fight') pause();
+  else if (game.state === 'story' && story) { story.save(); story.pauseMenu(true); }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') onHide(); });
+addEventListener('pagehide', onHide);
+// SWITCH GAME leaves the page: save the story first (B16)
+addEventListener('click', (e) => { if (game.state === 'story' && story && e.target.closest && e.target.closest('[data-switch]')) story.save(); }, true);
+// a lost GPU context: save, say so, and reload once the context comes back (B17)
+canvas.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  if (game.state === 'story' && story) story.save(); else pause();
+  $('glLost').classList.remove('hidden');
+});
+canvas.addEventListener('webglcontextrestored', () => location.reload());
+// URL flags, once the models are in: ?story plays NEW STORY; ?chapter= or ?mission=&step= jump into the story
+function autostart() {
+  if (Q.has('chapter') || Q.has('mission')) startStory({ chapter: Q.get('chapter') || undefined, mission: Q.get('mission') || undefined, step: Q.has('step') ? +Q.get('step') : undefined });
+  else if (Q.has('story')) startGame('story');
+}
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
 loadClip(introVid, 'clips/intro.mp4', () => {});
 crewRow();
@@ -1142,37 +1299,47 @@ const gabeHero = $('heroGabe'); if (gabeHero.complete && gabeHero.naturalWidth) 
 let ambientT = 0, last = performance.now(), manual = false, smoothDt = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
-  const frameMs = now - last; last = now;
+  const frameMs = Math.max(0, now - last); last = now; // the first rAF time can come before the module's clock read
   // average the step over a few frames: uneven frame times (common on phones) otherwise read as stutter
   smoothDt += (Math.min(0.05, frameMs / 1000) - smoothDt) * 0.3;
   const rdt = Math.abs(frameMs / 1000 - smoothDt) > 0.03 ? Math.min(0.05, frameMs / 1000) : smoothDt;
   const fighting = game.state === 'fight';
   if (fighting !== wasFighting) { wasFighting = fighting; document.body.classList.toggle('fighting', fighting); }
   if (manual) return;
-  adapt(frameMs);
+  if (!STILL) adapt(frameMs);
   pollPad(); tick(rdt); draw(now / 1000);
 }
 let wasFighting = false;
+// behind the title: a slow orbit of the two of them
+function titleOrbit(dt) {
+  const a = game.time * 0.05, c = SPAWN_P.clone().lerp(SPAWN_B, 0.5);
+  camera.position.set(c.x + Math.sin(a) * 11, ground(c) + 2.4, c.z + Math.cos(a) * 11);
+  camera.lookAt(c.x, ground(c) + 1.6, c.z);
+  ronin.root.position.set(SPAWN_P.x, ground(SPAWN_P), SPAWN_P.z); ronin.root.rotation.y = Math.atan2(FACE_DIR.x, FACE_DIR.z); ronin.update(dt);
+  gabe.root.position.set(SPAWN_B.x, ground(SPAWN_B), SPAWN_B.z); gabe.root.rotation.y = Math.atan2(-FACE_DIR.x, -FACE_DIR.z); gabe.update(dt);
+  followLights(c, camera.position);
+}
 function tick(rdt) {
+  game.frame++;
+  if (game.state === 'story') { storyTick(rdt); return; }
   let dt = rdt;
+  // hitstop and slow motion count down on every tick, paused or not, as they always have
   if (game.hitstop > 0) { game.hitstop -= rdt; dt *= 0.04; }
   if (game.slowT > 0) { game.slowT -= rdt; dt *= game.slow; }
-  if (game.state !== 'paused' && game.state !== 'cutscene') {
+  // the flow timers stop while paused or in the film
+  const live = game.state !== 'paused' && game.state !== 'cutscene';
+  if (live) {
+    game.timers.tick(rdt); // real seconds: the end screen and the story handoff ignore the slow motion
+    if (game.state === 'story') return; // a timer handed the page to the story
+  }
+  if (live) {
     game.time += dt;
     grassUniforms.uTime.value += dt;
     if (game.ready && (game.state === 'fight' || game.state === 'end' || game.state === 'credits')) { updatePlayer(dt); updateBoss(dt); updateCamera(rdt); updateHud(); }
-    else if (game.ready) {
-      // behind the title: a slow orbit of the two of them
-      const a = game.time * 0.05, c = SPAWN_P.clone().lerp(SPAWN_B, 0.5);
-      camera.position.set(c.x + Math.sin(a) * 11, ground(c) + 2.4, c.z + Math.cos(a) * 11);
-      camera.lookAt(c.x, ground(c) + 1.6, c.z);
-      ronin.root.position.set(SPAWN_P.x, ground(SPAWN_P), SPAWN_P.z); ronin.root.rotation.y = Math.atan2(FACE_DIR.x, FACE_DIR.z); ronin.update(dt);
-      gabe.root.position.set(SPAWN_B.x, ground(SPAWN_B), SPAWN_B.z); gabe.root.rotation.y = Math.atan2(-FACE_DIR.x, -FACE_DIR.z); gabe.update(dt);
-      followLights(c, camera.position);
-    }
+    else if (game.ready) titleOrbit(dt);
     updateFX(dt);
     ambientT -= dt;
-    if (ambientT <= 0) { ambientT = game.phase2 ? 0.08 : 0.22; fx.ambient(camera.position, game.phase2 && game.state === 'fight'); }
+    if (ambientT <= 0 && !STILL) { ambientT = game.phase2 ? 0.08 : 0.22; fx.ambient(camera.position, game.phase2 && game.state === 'fight'); }
   }
   game.flash = Math.max(0, game.flash - rdt * 2.5);
   game.hurt = Math.max(0, game.hurt - rdt * 1.4);
@@ -1187,6 +1354,27 @@ requestAnimationFrame(frame);
 window.__crimson = {
   step(sec, drawIt = true) { manual = true; const n = Math.round(sec * 60); for (let i = 0; i < n; i++) tick(1 / 60); if (drawIt) draw(performance.now() / 1000); },
   live() { manual = false; },
+  draw: (t) => draw(t),
+  // reseed every stream and restart the game clock, so a stepped run replays exactly
+  seed(n) { seedRng(n); game.time = 0; },
+  // one fixed picture of the arena for the golden image test: the title orbit at time t, with no actors
+  async still(t) {
+    manual = true;
+    while (!skyLoaded || !game.ready) await new Promise((r) => setTimeout(r, 50));
+    for (const a of [ronin, gabe, bear]) a.visible = false;
+    pipe.visible = false;
+    game.time = t; grassUniforms.uTime.value = t;
+    game.flash = 0; game.hurt = 0;
+    const u = post.m.uniforms; u.uFlash.value = 0; u.uHurt.value = 0; u.uGrey.value = 0; u.uNeonBoost.value = 1;
+    titleOrbit(0);
+    draw(5.0);
+  },
+  get frame() { return game.frame; }, get skyLoaded() { return skyLoaded; }, lastInfo,
   game, cam, input, startGame, beginFight, pickCrew, bossAttack: (n) => startBossAttack(n), win: () => bossDies(),
+  after, showEnd, endCutscene, restart, showTitle, enterStory, startStory, pause: () => pause(), resume: () => resume(), die: () => playerDies(),
+  // the story's QA handle (S.test), and its director api once loaded
+  get story() { return story && story.test; }, get storyApi() { return story; }, get storyLoaded() { return !!story; },
+  get arenaVisible() { return arena.visible; }, get bridgeVisible() { return bridgeSilhouetteVisible(); },
+  get depth() { return [camera.near, camera.far]; }, get focusMode() { return focusMode; },
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };

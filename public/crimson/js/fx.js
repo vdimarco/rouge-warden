@@ -106,14 +106,14 @@ class Sparks {
     l.frustumCulled = false; scene.add(l);
     this.cursor = 0;
   }
-  spawn(x, y, z, vx, vy, vz, life, heat, tint) { const p = this.p[this.cursor]; this.cursor = (this.cursor + 1) % this.max; Object.assign(p, { x, y, z, vx, vy, vz, life, max: life, heat, tint: tint || [1, 1, 1] }); }
+  spawn(x, y, z, vx, vy, vz, life, heat, tint, floor = 0.03) { const p = this.p[this.cursor]; this.cursor = (this.cursor + 1) % this.max; Object.assign(p, { x, y, z, vx, vy, vz, life, max: life, heat, tint: tint || [1, 1, 1], floor }); }
   update(dt) {
     for (let i = 0; i < this.max; i++) {
       const p = this.p[i], o = i * 6;
       if (p.life <= 0) { this.col.fill(0, o, o + 6); continue; }
       p.life -= dt; p.vy -= 9 * dt; p.vx *= 0.985; p.vz *= 0.985;
       p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
-      if (p.y < 0.03) { p.y = 0.03; p.vy *= -0.35; }
+      if (p.y < p.floor) { p.y = p.floor; p.vy *= -0.35; }
       const k = Math.max(p.life / p.max, 0), s = 0.024 + 0.02 * k;
       this.pos.set([p.x, p.y, p.z, p.x - p.vx * s, p.y - p.vy * s, p.z - p.vz * s], o);
       const h = p.heat * k * k, t = p.tint;
@@ -138,7 +138,7 @@ export class Trail {
       vertexShader: 'attribute float alpha; varying float vA; void main(){ vA = alpha; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.); }',
       fragmentShader: 'uniform vec3 uColor; varying float vA; void main(){ gl_FragColor = vec4(uColor, vA); }',
     });
-    const mesh = new THREE.Mesh(g, this.mat); mesh.frustumCulled = false; scene.add(mesh);
+    const mesh = this.mesh = new THREE.Mesh(g, this.mat); mesh.frustumCulled = false; scene.add(mesh);
   }
   push(a, b, i) {
     const last = this.pts[0];
@@ -180,39 +180,55 @@ let splatCursor = 0, flashCursor = 0, ringCursor = 0, blastCursor = 0;
 
 export const fx = {
   sparks(pos, dir, n, speed, heat = 5, tint) {
+    const fl = (pos.groundY ?? 0) + 0.03;
     for (let i = 0; i < n; i++) {
       const v = new THREE.Vector3(rand(-1, 1), rand(-0.3, 1), rand(-1, 1)).normalize().multiplyScalar(speed * rand(0.3, 1));
       if (dir) v.addScaledVector(dir, speed * 0.6);
-      FX.sparks.spawn(pos.x, pos.y, pos.z, v.x, v.y, v.z, rand(0.25, 0.7), heat, tint);
+      FX.sparks.spawn(pos.x, pos.y, pos.z, v.x, v.y, v.z, rand(0.25, 0.7), heat, tint, fl);
     }
   },
   ink(pos, n, spread = 1, up = 1) {
-    for (let i = 0; i < n; i++) FX.ink.spawn({ x: pos.x + rand(-0.2, 0.2), y: pos.y + rand(-0.2, 0.2), z: pos.z + rand(-0.2, 0.2), vx: rand(-2, 2) * spread, vy: rand(0, 2) * up, vz: rand(-2, 2) * spread, life: rand(0.5, 1.2), s0: rand(0.2, 0.4), s1: rand(0.8, 1.6), a0: 0.75, drag: 0.08, c: [0, 0, 0] });
+    const fl = (pos.groundY ?? 0) + 0.02;
+    for (let i = 0; i < n; i++) FX.ink.spawn({ x: pos.x + rand(-0.2, 0.2), y: pos.y + rand(-0.2, 0.2), z: pos.z + rand(-0.2, 0.2), vx: rand(-2, 2) * spread, vy: rand(0, 2) * up, vz: rand(-2, 2) * spread, life: rand(0.5, 1.2), s0: rand(0.2, 0.4), s1: rand(0.8, 1.6), a0: 0.75, drag: 0.08, floor: fl, c: [0, 0, 0] });
   },
   dust(pos, n, spread = 1) {
-    for (let i = 0; i < n; i++) { const v = rand(0.5, 0.75); FX.ink.spawn({ x: pos.x + rand(-0.5, 0.5), y: 0.2 + rand(0, 0.4), z: pos.z + rand(-0.5, 0.5), vx: rand(-3, 3) * spread, vy: rand(0.3, 1.6), vz: rand(-3, 3) * spread, life: rand(0.8, 1.8), s0: rand(0.4, 0.8), s1: rand(1.6, 3), a0: 0.4, drag: 0.15, c: [v, v * 0.97, v * 0.93] }); }
+    const g = pos.groundY ?? 0, fl = g + 0.02;
+    for (let i = 0; i < n; i++) { const v = rand(0.5, 0.75); FX.ink.spawn({ x: pos.x + rand(-0.5, 0.5), y: g + 0.2 + rand(0, 0.4), z: pos.z + rand(-0.5, 0.5), vx: rand(-3, 3) * spread, vy: rand(0.3, 1.6), vz: rand(-3, 3) * spread, life: rand(0.8, 1.8), s0: rand(0.4, 0.8), s1: rand(1.6, 3), a0: 0.4, drag: 0.15, floor: fl, c: [v, v * 0.97, v * 0.93] }); }
   },
   neon(pos, n, spread = 1) {
-    for (let i = 0; i < n; i++) FX.shards.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-3, 3) * spread, vy: rand(1, 4.5), vz: rand(-3, 3) * spread, life: rand(0.9, 2), s0: rand(0.07, 0.14), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 4, flutter: 5, c: NEON_RGB });
-    for (let i = 0; i < n / 2; i++) FX.glow.spawn({ x: pos.x + rand(-0.3, 0.3), y: pos.y + rand(-0.3, 0.3), z: pos.z + rand(-0.3, 0.3), vx: rand(-1.5, 1.5) * spread, vy: rand(0, 2), vz: rand(-1.5, 1.5) * spread, life: rand(0.4, 0.9), s0: rand(0.15, 0.3), s1: 0.05, a0: 0.9, drag: 0.2, c: [0.5, 0.8, 0.05] });
+    const fl = (pos.groundY ?? 0) + 0.02;
+    for (let i = 0; i < n; i++) FX.shards.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-3, 3) * spread, vy: rand(1, 4.5), vz: rand(-3, 3) * spread, life: rand(0.9, 2), s0: rand(0.07, 0.14), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 4, flutter: 5, floor: fl, c: NEON_RGB });
+    for (let i = 0; i < n / 2; i++) FX.glow.spawn({ x: pos.x + rand(-0.3, 0.3), y: pos.y + rand(-0.3, 0.3), z: pos.z + rand(-0.3, 0.3), vx: rand(-1.5, 1.5) * spread, vy: rand(0, 2), vz: rand(-1.5, 1.5) * spread, life: rand(0.4, 0.9), s0: rand(0.15, 0.3), s1: 0.05, a0: 0.9, drag: 0.2, floor: fl, c: [0.5, 0.8, 0.05] });
   },
   fur(pos, n, spread = 1) {
-    for (let i = 0; i < n; i++) { const v = rand(0.08, 0.2); FX.bits.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-3, 3) * spread, vy: rand(1, 4), vz: rand(-3, 3) * spread, life: rand(0.8, 1.6), s0: rand(0.15, 0.3), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 6, flutter: 3, c: [v, v, v] }); }
+    const fl = (pos.groundY ?? 0) + 0.02;
+    for (let i = 0; i < n; i++) { const v = rand(0.08, 0.2); FX.bits.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-3, 3) * spread, vy: rand(1, 4), vz: rand(-3, 3) * spread, life: rand(0.8, 1.6), s0: rand(0.15, 0.3), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 6, flutter: 3, floor: fl, c: [v, v, v] }); }
   },
   grass(pos, n, spread = 1) {
-    for (let i = 0; i < n; i++) { const t = rand(0.45, 0.85); FX.bits.spawn({ x: pos.x + rand(-0.4, 0.4), y: 0.2 + rand(0, 0.4), z: pos.z + rand(-0.4, 0.4), vx: rand(-3, 3) * spread, vy: rand(2, 5), vz: rand(-3, 3) * spread, life: rand(0.9, 1.8), s0: rand(0.2, 0.4), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 6, flutter: 3, c: [t, t, t * 0.96] }); }
+    const g = pos.groundY ?? 0, fl = g + 0.02;
+    for (let i = 0; i < n; i++) { const t = rand(0.45, 0.85); FX.bits.spawn({ x: pos.x + rand(-0.4, 0.4), y: g + 0.2 + rand(0, 0.4), z: pos.z + rand(-0.4, 0.4), vx: rand(-3, 3) * spread, vy: rand(2, 5), vz: rand(-3, 3) * spread, life: rand(0.9, 1.8), s0: rand(0.2, 0.4), a0: 1, vr: rand(-10, 10), drag: 0.3, grav: 6, flutter: 3, floor: fl, c: [t, t, t * 0.96] }); }
   },
-  ember(pos) { FX.glow.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-0.3, 0.3), vy: rand(0.2, 0.8), vz: rand(-0.3, 0.3), life: rand(0.3, 0.6), s0: rand(0.12, 0.22), s1: 0.02, a0: 0.8, drag: 0.5, c: [0.45, 0.75, 0.04] }); },
+  ember(pos) { FX.glow.spawn({ x: pos.x, y: pos.y, z: pos.z, vx: rand(-0.3, 0.3), vy: rand(0.2, 0.8), vz: rand(-0.3, 0.3), life: rand(0.3, 0.6), s0: rand(0.12, 0.22), s1: 0.02, a0: 0.8, drag: 0.5, floor: (pos.groundY ?? 0) + 0.02, c: [0.45, 0.75, 0.04] }); },
   flash(pos, size = 2, d = 0.18) { const f = FX.flashes[flashCursor++ % FX.flashes.length]; f.s.position.copy(pos); f.t = d; f.d = d; f.size = size; f.s.visible = true; f.s.material.rotation = rand(0, TAU); },
   ring(pos, r = 5, d = 0.6) { const g = FX.rings[ringCursor++ % FX.rings.length]; g.m.position.set(pos.x, (pos.groundY ?? 0) + 0.08, pos.z); g.t = d; g.d = d; g.r = r; g.m.visible = true; },
   splat(pos, size = 2, y = 0) { const s = FX.splats[splatCursor++ % FX.splats.length]; s.m.position.set(pos.x, y + 0.04, pos.z); s.m.scale.setScalar(size); s.m.rotation.z = rand(0, TAU); s.t = s.d; s.m.visible = true; },
   blast(pos, strength = 1) { FX.blasts[blastCursor++ % 4] = { x: pos.x, z: pos.z, t: 0, s: strength }; },
-  // ambient drifting dust and ash near the camera
+  // ambient drifting dust and ash near the camera (cam.groundY lifts it over raised ground)
   ambient(cam, rage) {
-    FX.bits.spawn({ x: cam.x + rand(-14, 14), y: rand(1, 6), z: cam.z + rand(-14, 14), vx: rand(0.6, 1.4), vy: rand(-0.3, -0.05), vz: rand(-0.3, 0.3), life: rand(4, 7), s0: rand(0.05, 0.1), a0: 0.5, vr: rand(-2, 2), drag: 1, flutter: 0.6, c: [0.8, 0.8, 0.8] });
-    if (rage) FX.glow.spawn({ x: cam.x + rand(-12, 12), y: rand(0.5, 5), z: cam.z + rand(-12, 12), vx: rand(-0.2, 0.2), vy: rand(0.2, 0.6), vz: rand(-0.2, 0.2), life: rand(2, 4), s0: rand(0.05, 0.1), a0: 0.7, drag: 1, flutter: 0.8, c: [0.35, 0.6, 0.03] });
+    const g = cam.groundY ?? 0, fl = g + 0.02;
+    FX.bits.spawn({ x: cam.x + rand(-14, 14), y: g + rand(1, 6), z: cam.z + rand(-14, 14), vx: rand(0.6, 1.4), vy: rand(-0.3, -0.05), vz: rand(-0.3, 0.3), life: rand(4, 7), s0: rand(0.05, 0.1), a0: 0.5, vr: rand(-2, 2), drag: 1, flutter: 0.6, floor: fl, c: [0.8, 0.8, 0.8] });
+    if (rage) FX.glow.spawn({ x: cam.x + rand(-12, 12), y: g + rand(0.5, 5), z: cam.z + rand(-12, 12), vx: rand(-0.2, 0.2), vy: rand(0.2, 0.6), vz: rand(-0.2, 0.2), life: rand(2, 4), s0: rand(0.05, 0.1), a0: 0.7, drag: 1, flutter: 0.8, floor: fl, c: [0.35, 0.6, 0.03] });
   },
 };
+// end every particle, flash, ring, splat and blast at once
+export function clearFX() {
+  for (const k of ['ink', 'bits', 'shards', 'glow']) { const P = FX[k]; for (const p of P.p) p.life = 0; P.update(0); }
+  for (const p of FX.sparks.p) p.life = 0; FX.sparks.update(0);
+  for (const f of FX.flashes) { f.t = 0; f.s.visible = false; }
+  for (const g of FX.rings) { g.t = 0; g.m.visible = false; }
+  for (const s of FX.splats) { s.t = 0; s.m.visible = false; }
+  for (let i = 0; i < 4; i++) { FX.blasts[i] = null; grassUniforms.uBlast.value[i].set(0, 0, 0, 0); }
+}
 export function updateFX(dt) {
   FX.ink.update(dt); FX.bits.update(dt); FX.shards.update(dt); FX.glow.update(dt); FX.sparks.update(dt);
   for (const f of FX.flashes) { if (!f.s.visible) continue; f.t -= dt; const k = 1 - f.t / f.d; f.s.scale.setScalar(f.size * (0.4 + k * 1.2)); f.s.material.opacity = Math.max(0, 1 - k) * 0.9; if (f.t <= 0) f.s.visible = false; }
