@@ -8,6 +8,10 @@
 //   ends on the far side, never deep inside), speed and position finite.
 // - 10 seats fill with seat(); only S0 and S1 show; damage 100 emits 'wrecked' once. Every kind, full: each
 //   seated head stays under the roof and inside the cabin, and the riders that show keep their feet on the floor.
+// - F1's drive to Red Dirt Gas & Go, played on a phone (1000x750, touch, Q0) and at Q2: the crew are seated
+//   off their follow walk, the Whale drives off-road under the chase camera (coarse LOD bodies at Q0), and
+//   every rider's drawn mesh stays under the roof with its hips on the seat; hiding the riders changes no
+//   pixel of the chase camera's frame.
 // - A person 20 m ahead at 20 m/s dives clear, or (when they cannot) the van stops: never closer than 0.8 m;
 //   the hero's hp is unchanged.
 // - A protected van takes 3 bumps at 2 m/s without failing and emits 'hitProtected' on a 7 m/s hit; with
@@ -15,8 +19,8 @@
 // - S.hitstop = 0.2 does not change the van's travelled distance over 1 s.
 // - Traffic at Q2: 14 cars, kinematic beyond 72 m and full physics within 60 m (C7). A convoy keeps its
 //   gaps and a pursuer lands side rams. The van's draw calls; the vehicles' CONTRACT members; no page errors.
-// VAN_SHOT=/tmp/van.png saves a frame of the chase camera at the end.
-import { open, step, stepUntil, finish, storyReady, shot, freeRoam } from "./lib.mjs";
+// VAN_SHOT=/tmp/van.png saves a frame of the chase camera at the end (and van-riders-q0.png, -q2.png).
+import { open, step, stepUntil, finish, storyReady, shot, freeRoam, canvasRGBA } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (ok) console.log("ok   " + msg); else { console.log("FAIL " + msg); fails.push(msg); } };
@@ -487,5 +491,68 @@ await step(page, 0.3);
   check(d <= 24, `the van draws in ${d} meshes (24 at most); the frame: ${info.calls} calls, ${Math.round(info.tris / 1000)}k triangles`);
 }
 
+await browser.close();
+
+/* ---------------- what the chase camera draws of the riders, on a phone and at the top tier */
+// F1's drive to Red Dirt Gas & Go as a phone plays it (1000x750, touch) at Q0 and as a desktop at Q2: the
+// crew walk up as followers and are seated when the hero gets in, then the Whale drives off-road with the
+// chase camera several metres back (the heavy bodies draw their coarse LOD copy there). For every seated
+// rider, the mesh actually drawn (the geometry the LOD set, only the vertices its index uses, every bone,
+// hat and hull included) tops out under the roof in the van's own frame, the hips sit on the seat, and
+// hiding the riders changes no pixel of the chase camera's frame.
+for (const q of [0, 2]) {
+  const P = await open({ query: `?mission=f1&step=3&seed=7&nomusic&q=${q}`, width: 1000, height: 750, touch: q === 0 });
+  const pg = P.page;
+  const ok = await stepUntil(pg, () => __crimson.story && __crimson.story.mission && __crimson.story.mission.id === "f1" && __crimson.story.S.vehicles.player && __crimson.story.ready, { maxSec: 90 });
+  await pg.evaluate(() => { const S = __crimson.story.S; S.ui.advanceAll(); if (S.cine.active) S.cine.skip(); });
+  await step(pg, 1);
+  await pg.evaluate(() => { const S = __crimson.story.S; S.ui.advanceAll(); S.drive.enter(S.vehicles.player, 0); });
+  await step(pg, 2);
+  await pg.evaluate(() => { __crimson.story.S.drive.autoGas = true; });
+  await step(pg, 4);
+  const m = await pg.evaluate(() => {
+    const S = __crimson.story.S, T = S.THREE, v = S.drive.riding, q = new T.Vector3(), cam = S.camera.position;
+    if (!v) return null;
+    const ch = v.view.chassis; ch.updateMatrixWorld(true);
+    const inv = ch.matrixWorld.clone().invert(), out = { q: S.q, roof: v.view.info.roofY, cam: S.cameras.current && S.cameras.current.name, speed: Math.abs(v.speed), riders: [] };
+    v.seats.forEach((s, i) => {
+      const a = s === "hero" ? S.hero.actor : s; if (!a || !a.root) return;
+      a.root.updateMatrixWorld(true);
+      const r = { i, id: a.id, shown: a.visible, coarse: !!a.coarseOn, d: a.root.getWorldPosition(q).distanceTo(cam), top: -9, hips: 0 };
+      a.root.traverse((o) => {
+        if (!o.isMesh || !o.geometry.attributes.position) return;
+        const g = o.geometry, Pa = g.attributes.position, used = g.index ? new Set(g.index.array) : null;
+        if (o.isSkinnedMesh) o.skeleton.update();
+        for (let j = 0; j < Pa.count; j++) {
+          if (used && !used.has(j)) continue;
+          q.fromBufferAttribute(Pa, j); if (o.isSkinnedMesh) o.applyBoneTransform(j, q);
+          q.applyMatrix4(o.matrixWorld).applyMatrix4(inv); if (q.y > r.top) r.top = q.y;
+        }
+      });
+      const hb = a.bone && a.bone("Hips"); if (hb) { hb.getWorldPosition(q).applyMatrix4(inv); const root = a.root.position.clone().applyMatrix4(inv); r.hips = q.y - root.y; }
+      out.riders.push(r);
+    });
+    return out;
+  });
+  // the chase camera's frame with the riders drawn, then hidden (same instant, same film grain)
+  const frame = (vis) => canvasRGBA(pg, async (vis) => {
+    const S = __crimson.story.S, v = S.drive.riding, L = v.seats.map((a) => (a === "hero" ? S.hero.actor : a)).filter((a) => a && a.root);
+    window.__riderVis = window.__riderVis || L.map((a) => a.root.visible);
+    L.forEach((a, i) => { a.root.visible = vis && window.__riderVis[i]; });
+    __crimson.draw(5);
+  }, vis);
+  const A = await frame(true), B = await frame(false);
+  await frame(true);
+  let px = 0; for (let i = 0; i < A.data.length; i += 4) if (Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i + 1] - B.data[i + 1]) + Math.abs(A.data[i + 2] - B.data[i + 2]) > 12) px++;
+  if (process.env.VAN_SHOT) await shot(pg, process.env.VAN_SHOT.replace(/(\.png)?$/, `-riders-q${q}.png`));
+  const R = (m && m.riders) || [], shown = R.filter((x) => x.shown);
+  const bad = R.filter((x) => !(x.top < m.roof - 0.03) || !(x.hips > 0 && x.hips < 0.3)).map((x) => `S${x.i} ${x.id}${x.coarse ? " (coarse)" : ""}: top ${x.top.toFixed(2)}, hips ${x.hips.toFixed(2)} over the seat`);
+  check(ok.ok && m && m.q === q && m.cam === "drive" && m.speed > 3 && R.length >= 5 && shown.length === 2 && shown.every((x) => x.d > 5) && (q > 0 || shown.some((x) => x.coarse)) && bad.length === 0,
+    `Q${q}: F1's drive off-road, chase camera ${shown.map((x) => x.d.toFixed(1)).join(" and ")} m from the shown riders (${shown.filter((x) => x.coarse).length} coarse): ${R.length} seated riders, the drawn meshes top out at ${R.length ? Math.max(...R.map((x) => x.top)).toFixed(2) : "?"} m under the roof at ${m ? m.roof : "?"} m, hips on the seats${bad.length ? ": " + bad.join("; ") : ""}`);
+  check(px <= 8, `Q${q}: hiding the riders changes ${px} pixels of the chase camera's frame (none of them shows over the roof)`);
+  errors.push(...P.errors);
+  await P.browser.close();
+}
+
 console.log(`     ${((Date.now() - t0) / 1000).toFixed(0)} s`);
-await finish("van", fails, browser, errors);
+await finish("van", fails, null, errors);

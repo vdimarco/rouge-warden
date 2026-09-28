@@ -81,6 +81,7 @@ export function createDrive(S, V) {
       D.unseat(actor, { keep: true });
       if (v.seats[i] && v.seats[i] !== actor) D.unseat(v.seats[i]);
       v.seats[i] = actor; seated.set(actor, { v, i });
+      sitStill(actor);
       if (S.cast && S.cast.pose) S.cast.pose(actor, i === 0 ? 'sitDrive' : 'sitPass', 1);
       actor.visible = i < v.spec.shown;
       place(actor, v, i);
@@ -160,6 +161,16 @@ export function createDrive(S, V) {
     }
     return null;
   }
+  // A seated actor does not walk. CAST's procedural locomotion lays a stride over whatever clip plays, at
+  // full weight while the actor's speed is set, so a crew member still walking when seated (a follower
+  // taken off mid-step by seatCrew) stood up through the sitting pose: hips 0.95 m over the seat and the
+  // head 0.5 m through the white van's roof. The speed and the stride's weight go to zero at once.
+  function sitStill(actor) {
+    const L = actor && actor.loco;
+    if (!L || (!L.w && !(L.speed > 0) && !L.turn && !L.crouch)) return;
+    if (actor.move) actor.move(0); else { L.speed = 0; L.turn = 0; L.crouch = 0; }
+    L.w = 0;
+  }
   // an actor's world transform from its seat node (actors live in the world group, so no reparenting)
   function place(actor, v, i) {
     if (!actor || !actor.root || !v.view) return;
@@ -207,9 +218,10 @@ export function createDrive(S, V) {
         D.anim = null;
         if (a && S.cast && S.cast.pose) S.cast.pose(a, D.heroSeat === 0 ? 'sitDrive' : 'sitPass', 1);
       }
-    } else if (v && a && a.root) { place(a, v, D.heroSeat); a.visible = D.heroSeat < v.spec.shown; }
+    } else if (v && a && a.root) { sitStill(a); place(a, v, D.heroSeat); a.visible = D.heroSeat < v.spec.shown; }
     for (const [actor, rec] of seated) {
       if (!V.alive(rec.v)) { seated.delete(actor); continue; }
+      sitStill(actor); // (whoever sets a seated actor walking again, it stays seated)
       place(actor, rec.v, rec.i);
     }
     // the hero is where the vehicle is (regions, audio, traffic and the look follow)

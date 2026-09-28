@@ -417,6 +417,10 @@ export function init(S) {
       if (name === 'talk' && k < 1) { if (a.loco) a.loco.talk = Math.max(0, k); return; }
       const clip = POSE_CLIPS[name] || (`lib:${name}` in (a.clips || {}) ? `lib:${name}` : null);
       if (!clip) { console.warn(`S.cast.pose: no pose '${name}'`); return; }
+      // an arena actor (C0's Gabe kneels) has no pose clips of its own: they come from its rig's library
+      if (a.clips && !(clip in a.clips) && a.model && reg.get(a.id) === a) {
+        try { const L = library(a.rig || rigOf(a.model)), c = L[clip]; if (c) { a.clips[clip] = c; if (clip !== 'lib:idle' && !('lib:idle' in a.clips)) a.clips['lib:idle'] = L['lib:idle']; } } catch (e) { console.warn(`S.cast.pose: '${name}' on ${a.id}`, e); }
+      }
       if (a.loco) a.loco.talk = 0;
       a.pose = k > 0 ? name : null;
       a.play(k > 0 ? clip : 'lib:idle', { fade: 0.35, loop: name !== 'knock' });
