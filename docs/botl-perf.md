@@ -98,14 +98,36 @@ In iPhone mode on the Low setting (the one phones use), each frame drew about 5.
 
 ## Results
 
-A/B test in iPhone mode on Low, with main and this branch at the same draw size (pixel ratio 0.85). Frame times come from software rendering, so only the ratio counts.
+**iPhone mode on Low.** This is an A/B test of main against this branch, at the same draw size (pixel ratio 0.85), at five places on the map. Frame times come from software rendering, so only the ratio counts.
+
+| | main | now | Change |
+| --- | --- | --- | --- |
+| Triangles per frame | 5.13 to 5.33 M | 0.40 to 0.63 M | −88% to −92% |
+| Draw calls per frame | 529 to 596 | 177 to 198 | about −67% |
+| Main-thread time to send a frame to the GPU | 9.6 to 13.1 ms | 3.7 to 5.7 ms | about −57% |
+| Frame time (software rendering) | 1,050 to 2,970 ms | 120 to 830 ms | −72% to −93% |
+| Meshes in the scene | 3,423 | 1,084 | −68% |
+| JS memory | 60 MB | 42 MB | −30% |
+
+**Every setting.** Taken at the cottage, the meadow and a lake vista.
+
+| Setting | Triangles, main | Triangles, now | Draw calls, main | Draw calls, now |
+| --- | --- | --- | --- | --- |
+| Low | 5.29 to 5.36 M | 0.86 to 1.02 M | 442 to 1,010 | 148 to 374 |
+| Medium | 8.56 to 8.64 M | 2.07 to 2.36 M | 443 to 1,011 | 266 to 457 |
+| High | 11.0 to 11.1 M | 2.72 to 2.95 M | 443 to 1,010 | 262 to 450 |
+
+**Loading.** Measured on the test machine; a phone on a slow network gains more.
 
 | | main | now |
 | --- | --- | --- |
-| Triangles per frame | 5.1 to 5.3 M | see below |
-| Draw calls per frame | 528 to 596 | see below |
+| Time to the title | 11.7 s | 2.9 s |
+| Time to play | 65 s | 11.6 s |
+| Downloaded before the title (10 Mbps test) | 12.1 MB | 5.4 MB |
 
-(The final numbers are added below when the last run finishes.)
+**The look.** Screenshots at every setting match main, except for one change. Grass blades whose height is zero no longer draw as grey specks on the sand and the lake.
+
+**Tests.** All of `qa/wild` passes: level, king, adventure, stress, flows, fun, touch, render and fuzz. The stress test is flaky on main too. It failed there once with "fishing-stuck", and on this branch once with a single camera frame. It passes on a rerun.
 
 ## What could still help
 
