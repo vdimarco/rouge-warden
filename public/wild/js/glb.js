@@ -74,14 +74,26 @@ function toonify(obj) {
   obj.traverse((o) => {
     if (!o.isMesh) return;
     const old = o.material;
-    o.material = new THREE.MeshToonMaterial({ map: old.map || null, color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)), gradientMap: gradient });
+    o.material = rim(new THREE.MeshToonMaterial({ map: old.map || null, color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)), gradientMap: gradient }));
     o.castShadow = true; o.receiveShadow = false;
     old.dispose();
   });
 }
+// A soft, warm rim of light along the edges of a model that turn away from the camera, as the sun catches
+// the outline of a character in an animated film. All models share one program.
+const RIM = new THREE.Color(1.0, 0.9, 0.72);
+function rim(m) {
+  m.onBeforeCompile = (s) => {
+    s.uniforms.uRim = { value: RIM };
+    s.fragmentShader = "uniform vec3 uRim;\n" + s.fragmentShader.replace("#include <opaque_fragment>",
+      "float rimF = 1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);\n outgoingLight += uRim * diffuseColor.rgb * smoothstep(0.55, 0.95, rimF) * 0.55;\n#include <opaque_fragment>");
+  };
+  m.customProgramCacheKey = () => "rim";
+  return m;
+}
 // a dark shell pushed out along the normals, drawn from the inside: the ink outline
 function outlineMaterial(thick) {
-  const m = new THREE.MeshBasicMaterial({ color: 0x3a2a20, side: THREE.BackSide });
+  const m = new THREE.MeshBasicMaterial({ color: 0x4a3428, side: THREE.BackSide });
   m.onBeforeCompile = (s) => {
     s.uniforms.uThick = { value: thick };
     s.vertexShader = "uniform float uThick;\n" + s.vertexShader
