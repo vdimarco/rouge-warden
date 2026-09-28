@@ -1,24 +1,44 @@
 // Proves the House Rules hooks change nothing in the normal game: NODE_PATH=$(npm root -g) node qa/lab/rules.regress.mjs
-// It plays public/fall/index.html from before the hooks (the branch's fork from main, or BASE_REF) and from now,
-// with the same seeded random and a fake clock, and compares the world, the critters, the props, the player and the
-// score after the first layer settles, and again after 8 seconds of scripted play (walk, swing, dig down). A second
-// run of the new file shows that the test repeats. Then it checks that every changed hunk of the file names Custom.
-// Serve public/ first. Exit code 1 on failure.
-import { execSync } from "child_process";
+// It plays public/fall/index.html as it is now, and the same file with the House Rules hooks taken back out, with the
+// same seeded random and a fake clock. It compares the world, the critters, the props, the player and the score after
+// the first layer settles, and again after 8 seconds of scripted play (walk, swing, dig down). A second run of the
+// file as it is now shows that the test repeats. Then it checks that every hunk of the hooks names Custom.
+// The hooks come from the commit that added "const Custom" to the file, so the test still works after a merge and
+// after other changes to the game. Set BASE_REF to compare with the file at some commit instead. Serve public/ first.
+// Exit code 1 on failure.
+import { execFileSync } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { createRequire } from "module";
 import { BASE, ROOT, report } from "./lib.mjs";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const R = report("rules.regress");
-const git = (cmd) => execSync("git " + cmd, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
-let base = process.env.BASE_REF;
-if (!base) for (const ref of ["origin/main", "main"]) { try { base = git(`merge-base HEAD ${ref}`).trim(); break; } catch (e) { /* try the next */ } }
-if (!base) { console.log("No base to compare with: set BASE_REF."); process.exit(1); }
-const OLD = git(`show ${base}:public/fall/index.html`);
-const NEW = fs.readFileSync(path.join(ROOT, "public/fall/index.html"), "utf8");
-console.log(`base ${base.slice(0, 10)}: ${OLD.split("\n").length} lines before, ${NEW.split("\n").length} now`);
+const FILE = "public/fall/index.html";
+const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
+const NEW = fs.readFileSync(path.join(ROOT, FILE), "utf8");
+// the hooks: the change to the game file in the commit that added them
+const hookCommit = git("log", "-S", "const Custom = (() =>", "--format=%H", "--reverse", "--", FILE).trim().split("\n")[0];
+if (!hookCommit) { console.log("No commit adds the House Rules hooks to " + FILE + " (a shallow clone?). Set BASE_REF."); process.exit(1); }
+const HOOKS = git("diff", hookCommit + "^", hookCommit, "--", FILE);
+let OLD, from;
+if (process.env.BASE_REF) {
+  OLD = git("show", process.env.BASE_REF + ":" + FILE);
+  from = "the file at " + process.env.BASE_REF;
+} else {
+  // the file as it is now, with the hooks taken back out
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "rules-regress-"));
+  fs.mkdirSync(path.join(tmp, path.dirname(FILE)), { recursive: true });
+  fs.writeFileSync(path.join(tmp, FILE), NEW);
+  fs.writeFileSync(path.join(tmp, "hooks.diff"), HOOKS);
+  try { execFileSync("git", ["apply", "-R", "hooks.diff"], { cwd: tmp, stdio: "pipe" }); }
+  catch (e) { console.log("The hooks no longer come out of " + FILE + " cleanly. Set BASE_REF to compare with a commit.\n" + String(e.stderr || e)); process.exit(1); }
+  OLD = fs.readFileSync(path.join(tmp, FILE), "utf8");
+  fs.rmSync(tmp, { recursive: true, force: true });
+  from = "the file now, less the hooks of " + hookCommit.slice(0, 10);
+}
+console.log(`comparing ${from} (${OLD.split("\n").length} lines) with the file now (${NEW.split("\n").length} lines)`);
 
 const FALL = new URL("../fall/", BASE).href;
 const SEEDED = `(() => { let s = 12345 >>> 0; Math.random = () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();`;
@@ -105,7 +125,7 @@ R.check(!a.errors.length && !b.errors.length, `no page errors${a.errors.concat(b
 
 R.section("Every change names Custom");
 {
-  const diff = git(`diff -U0 ${base} -- public/fall/index.html`);
+  const diff = git("diff", "-U0", hookCommit + "^", hookCommit, "--", FILE);
   const hunks = diff.split(/\n(?=@@)/).slice(1);
   const bad = hunks.filter((hk) => !/Custom/.test(hk));
   R.check(hunks.length > 0 && bad.length === 0, `${hunks.length} changed hunks, and each one names Custom${bad.length ? "; not: " + bad.map((x) => x.split("\n")[0]).join(", ") : ""}`);
