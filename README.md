@@ -281,12 +281,13 @@ Reel It In is a first-person fishing game at `/fish/`. You stand at the end of t
 **Cast with the phone upright.** The top of the screen shows the lake. The bottom shows the reel.
 
 1. Swipe the silver bail arm down to open it, or give the phone a quick twist of the wrist. It clacks open.
-2. Hold your thumb on the reel. Your thumb holds the line. If you open the bail and nothing holds the line, the lure slips down.
+2. Turn your body to aim. A dotted line on the water shows where the lure goes. Then hold your thumb on the reel. Your thumb holds the line. If you open the bail and nothing holds the line, the lure slips down.
 3. Tip the phone back over your shoulder. The rod creaks when it loads.
-4. Whip the phone forward and lift your thumb just after the phone passes straight up (11 o'clock). The line zips off the spool and the lure flies.
+4. Whip the phone forward and lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
    - The gyro measures how fast you swing. A faster flick casts farther, up to about 55 m. A short, sharp flick of the wrist is enough; a wild throw gains almost nothing.
-   - When you let go sets the launch angle. Let go too early and the lure goes high and short, or behind you onto the dock. Let go too late and it slaps the water in front of you.
-   - Where the phone points sets the direction.
+   - When you let go sets the launch angle. The game times your thumb against the moment the rod passes 11 o'clock, so you get the same window of about a tenth of a second at any swing speed. Let go too early and the lure goes high and short, or behind you onto the dock. Let go too late and it slaps the water in front of you.
+   - The gyro measures the swing across the rod, so the cast reads true whether the screen faces you or leans toward your thumb.
+   - Where you face sets the direction.
    - Touch the reel while the lure flies to feather the line. The lure slows and drops short, onto a target.
 5. Swipe the bail up to close it, twist the wrist again, or just turn the crank. The first turn snaps the bail shut, like a real reel.
 
@@ -294,7 +295,7 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 **Reel with the phone sideways.** Turn the phone sideways and the whole screen shows the lake. The top edge of the phone is now the rod.
 
-- Turn the crank on the right with your thumb to reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite.
+- Turn the crank on the right with your thumb to reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
 - A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: pull the phone up fast to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
 - Fight the fish: pull up to raise the rod, then reel as you tip it back down. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
 - Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
@@ -304,7 +305,9 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 **The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
 
-**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind. The arcade cabinet shows your best derby and your biggest fish.
+**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby and your biggest fish. A fight lasts from a few seconds for a perch to about 40 seconds for a muskie, so your arm does not tire.
+
+**Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
 
 **Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: E opens and closes the bail, W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag.
 
