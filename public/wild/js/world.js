@@ -545,9 +545,17 @@ export class World {
       for (let y = base - 20; y > top; y -= 26 + r() * 10) puffs.push([px + (r() - 0.5) * 40, y, 34 + hump * (tall ? 60 : 40) * (0.6 + r() * 0.5)]);
     }
     // the shadowed belly
-    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(150,170,205,0.95)"); g.addColorStop(1, "rgba(150,170,205,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
+    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(128,152,200,0.95)"); g.addColorStop(1, "rgba(128,152,200,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
     // the sunlit tops
     for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px - pr * 0.25, py - pr * 0.45, pr * 0.05, px, py - pr * 0.1, pr * 0.95); g.addColorStop(0, "rgba(255,253,245,1)"); g.addColorStop(0.55, "rgba(250,250,255,0.92)"); g.addColorStop(1, "rgba(235,242,255,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py - pr * 0.15, pr * 0.88, 0, 7); x.fill(); }
+    // one soft shade over the lower half, so each cloud reads as lit from above: warm top, cool blue-grey belly
+    const gs = x.createLinearGradient(0, base - (tall ? H * 0.62 : H * 0.4), 0, base);
+    gs.addColorStop(0, "rgba(120,148,200,0)"); gs.addColorStop(1, "rgba(120,148,200,0.62)");
+    x.globalCompositeOperation = "source-atop"; x.fillStyle = gs; x.fillRect(0, 0, W, H);
+    const gw = x.createLinearGradient(0, 0, 0, base * 0.5);
+    gw.addColorStop(0, "rgba(255,238,205,0.32)"); gw.addColorStop(1, "rgba(255,238,205,0)");
+    x.fillStyle = gw; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = "source-over";
     // a flat, soft base
     const gb = x.createLinearGradient(0, base - 30, 0, base + 30);
     gb.addColorStop(0, "rgba(0,0,0,0)"); gb.addColorStop(1, "rgba(0,0,0,1)");
@@ -679,7 +687,7 @@ export class World {
           // head over its top joint. They stand a little above the grass, so the colour shows.
           float fl = ${o.far ? "0.0" : "step(0.95, fract(aShape.y * 7.31 + aOff.z * 3.7)) * (1.0 - step(0.3, gold)) * step(0.45, vnoise(wp * 0.05 + 2.0))"};
           float head = step(${(1 - 1 / (o.joints || 6) - 0.01).toFixed(3)}, t);
-          float bx = fl > 0.5 ? sign(position.x) * mix(0.012, 0.1, head) : position.x;
+          float bx = fl > 0.5 ? sign(position.x) * mix(0.012, 0.062, head) : position.x;
           hs *= 1.0 + fl * 0.15;
           vec3 p = vec3(bx*cos(a) - position.z*sin(a), t*hs, bx*sin(a) + position.z*cos(a));
           // wind: every blade leans with it, small flutters, and big waves that roll across whole fields
@@ -725,7 +733,7 @@ export class World {
           vCol = mix(vCol, vCol * vec3(0.86, 1.0, 1.02), smoothstep(0.55, 0.8, hue) * 0.6);
           vCol = mix(vCol, vCol * vec3(1.18, 1.08, 0.72), smoothstep(0.62, 0.9, clump) * t * 0.6);
           // pampas: straw stems and pale, feathery heads
-          vec3 straw = mix(vec3(0.62, 0.5, 0.28), vec3(1.0, 0.9, 0.62), t) * mix(0.8, 1.05, sun);
+          vec3 straw = mix(vec3(0.5, 0.38, 0.2), vec3(0.95, 0.84, 0.56), smoothstep(0.0, 1.0, t)) * mix(0.8, 1.05, sun);
           vCol = mix(vCol, straw, gold * 0.85);
           // the flower heads: yellow, white, pink, blue and orange
           float fh = fract(aShape.y * 13.7);
@@ -745,7 +753,7 @@ export class World {
         void main(){
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
-          col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
+          col = mix(col, col * 1.22 + uSunCol * 0.1, vGust * 0.45);
           col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
           col *= vShadeFog.x * uLight;
           col = mix(col, uFog, vShadeFog.y);
