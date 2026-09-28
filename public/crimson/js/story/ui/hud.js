@@ -52,8 +52,11 @@ export function createHud(U) {
   const show = (e, on) => { if (e.classList.contains('hidden') === !on) return; e.classList.toggle('hidden', !on); };
 
   /* ---------------- the api ---------------- */
+  // the text can name keys ("{Press} {pause} for the menu."): shown for the device in use, and redrawn
+  // when the device changes
   function objective(text) {
-    st.obj = text ? String(text) : '';
+    st.objRaw = text ? String(text) : '';
+    st.obj = U.keys(st.objRaw);
     obj.querySelector('p').textContent = st.obj;
     show(obj, !!st.obj);
     // the underline draws in again for a new objective
@@ -172,9 +175,65 @@ export function createHud(U) {
         e.style.setProperty('--k', lvl.toFixed(3));
       }
     }
+    fightMarks(visible, W, H, F);
     for (let i = n; i < pool.length; i++) if (pool[i].dataset.cls !== 'off') { pool[i].className = 'off'; pool[i].dataset.cls = 'off'; }
     for (let i = ne; i < eyes.length; i++) if (eyes[i].dataset.cls !== 'off') { eyes[i].className = 'off'; eyes[i].dataset.cls = 'off'; }
     markersOn = n > 0;
+  }
+
+  /* ---------------- the locked enemy and the danger tells ---------------- */
+  // the lock-on: a ring at the locked enemy's feet and, over its head, a small life bar with its posture
+  // under it (a boss has the top bar, so only the ring). A tell (危, an unblockable attack coming) shows over
+  // the attacker's head for 0.9 s, following it.
+  const lockEl = make('div', 'lk off', marks, '<i class="rg"></i><div class="lb"><i class="hp"></i><i class="po"></i></div>');
+  const tells = [];
+  const headAt = (f, out) => {
+    const hb = f.a && f.a.bone && f.a.bone('Head');
+    if (hb) { hb.getWorldPosition(out); out.y += 0.3; } else out.set(f.pos.x, (f.pos.y || 0) + 2.05, f.pos.z);
+    return out;
+  };
+  const hv = new THREE.Vector3();
+  function fightMarks(visible, W, H, F) {
+    const C = S.combat, list = (visible && C && C.enemies) || [], now = S.time;
+    const f = visible && C && C.lock;
+    let lockOn = false;
+    if (f && !f.gone && !f.downed && f.pos) {
+      headAt(f, hv);
+      const top = project(hv.x, hv.y, hv.z, W, H, F), gy = Number.isFinite(f.pos.y) ? f.pos.y : S.world.surface(f.pos.x, f.pos.z);
+      const foot = project(f.pos.x, gy + 0.05, f.pos.z, W, H, F);
+      if (top.on && foot.on) {
+        lockOn = true;
+        const h = clamp(foot.y - top.y, 20, 600), rw = clamp(h * 0.62, 26, 260);
+        lockEl.style.transform = `translate(${foot.x.toFixed(1)}px, ${foot.y.toFixed(1)}px)`;
+        const rg = lockEl.firstChild; rg.style.width = `${rw.toFixed(0)}px`; rg.style.height = `${(rw * 0.32).toFixed(0)}px`;
+        const lb = lockEl.lastChild; lb.style.transform = `translate(-50%, ${(top.y - foot.y - 16).toFixed(1)}px)`;
+        const boss = !!f.boss || f === C.boss;
+        lb.style.display = boss ? 'none' : '';
+        if (!boss) {
+          lb.firstChild.style.transform = `scaleX(${clamp((f.hp || 0) / (f.maxHp || 1), 0, 1).toFixed(3)})`;
+          lb.lastChild.style.transform = `scaleX(${clamp((f.posture || 0) / (f.maxPosture || 100), 0, 1).toFixed(3)})`;
+          lb.classList.toggle('broken', f.state === 'broken');
+        }
+      }
+    }
+    const lc = lockOn ? 'lk' : 'lk off'; if (lockEl.className !== lc) lockEl.className = lc;
+    let nt = 0;
+    for (const e of list) {
+      if (e.tellT == null || now - e.tellT > 0.9 || e.downed || e.gone || !e.pos) continue;
+      headAt(e, hv);
+      const p = project(hv.x, hv.y, hv.z, W, H, F);
+      p.y -= 38; // over the life bar
+      if (!p.on) continue;
+      let el = tells[nt];
+      if (!el) { el = tells[nt] = make('div', 'tell', marks, '<b>危</b>'); }
+      if (el.className !== 'tell') el.className = 'tell';
+      // on game time: in fast, a moment at full, then up and out
+      const k = (now - e.tellT) / 0.9, sc = k < 0.15 ? 1.6 - 4 * k : 1, rise = k > 0.75 ? (k - 0.75) * 60 : 0;
+      el.style.transform = `translate(${p.x.toFixed(1)}px, ${(p.y - rise).toFixed(1)}px) scale(${sc.toFixed(2)})`;
+      el.style.opacity = (k < 0.15 ? k / 0.15 : k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1).toFixed(2);
+      nt++;
+    }
+    for (let i = nt; i < tells.length; i++) if (tells[i].className !== 'tell off') tells[i].className = 'tell off';
   }
 
   /* ---------------- per tick ---------------- */
@@ -193,6 +252,7 @@ export function createHud(U) {
 
     // objective, timer, meters
     show(tl, play || menu);
+    if (st.objRaw && st.objRaw.includes('{')) { const t = U.keys(st.objRaw); if (t !== st.obj) { st.obj = t; obj.querySelector('p').textContent = t; } }
     // vitals: on foot in the world
     const vOn = play && world && mode === 'foot' && !!H;
     show(vit, vOn);

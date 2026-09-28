@@ -5,7 +5,7 @@
 #story {
   --crimson: #d2263f; --crimson-glow: rgba(210, 38, 63, 0.45); --neon: var(--red-hot, #c6ff1a); --paper: #e8dcc0;
   --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px); --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
-  --m: 28px; --u: clamp(1.05px, calc(min(100vw, 100vh) / 340), 1.35px);
+  --label: #d2cdc3; --m: 28px; --u: clamp(1.05px, calc(min(100vw, 100vh) / 340), 1.35px);
   position: absolute; inset: 0; pointer-events: none; color: var(--ink); font-family: var(--serif);
 }
 #story.hidden, #story .hidden { display: none !important; }
@@ -28,7 +28,7 @@ body.story.smenu #song.show { z-index: 11; }
 .sTimer.hot b { color: var(--neon); text-shadow: 0 0 14px rgba(198, 255, 26, 0.6), 0 2px 6px #000; }
 .sMeters { display: flex; flex-direction: column; gap: 8px; width: 210px; max-width: 100%; }
 .sMeters:empty { display: none; }
-.meter p { display: flex; justify-content: space-between; font: 800 9px var(--serif); letter-spacing: 0.24em; color: var(--muted); text-shadow: 0 1px 3px #000; margin-bottom: 4px; }
+.meter p { display: flex; justify-content: space-between; font: 800 10px var(--serif); letter-spacing: 0.22em; color: var(--label); text-shadow: 0 1px 3px #000, 0 0 2px #000; margin-bottom: 4px; }
 .meter p b { color: var(--ink); letter-spacing: 0.12em; }
 .meter .mb { position: relative; height: 6px; background: rgba(0, 0, 0, 0.62); border: 1px solid rgba(233, 230, 223, 0.22); overflow: hidden; }
 .meter .mb i { position: absolute; top: 0; bottom: 0; left: 0; }
@@ -61,7 +61,7 @@ body.story.smenu #song.show { z-index: 11; }
 .sVit { left: calc(var(--m) + var(--sl)); bottom: calc(var(--m) + 216px + var(--sb)); width: 200px; z-index: 2; }
 .sTL > .sVit { position: static; width: 170px; }
 .sVit .row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-.sVit .row span { width: 2.6em; font: 800 9px var(--serif); letter-spacing: 0.24em; color: var(--muted); text-shadow: 0 1px 3px #000; }
+.sVit .row span { width: 2.6em; font: 800 10px var(--serif); letter-spacing: 0.2em; color: var(--label); text-shadow: 0 1px 3px #000, 0 0 2px #000; }
 .sVit .bar { flex: 1; height: 7px; }
 .sVit .ki { flex: 0.75; height: 4px; }
 .sVit .hp .fl { background: linear-gradient(#f2efe8, #a9a59d); }
@@ -73,7 +73,7 @@ body.story.smenu #song.show { z-index: 11; }
 .sVit .pips { display: flex; align-items: center; gap: 5px; margin: 8px 0 0 calc(2.6em + 8px); }
 .sVit .pips b { width: 9px; height: 14px; border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%; background: #e9e6df; box-shadow: 0 0 0 1px #000; }
 .sVit .pips b.used { background: #2a2a2a; }
-.sVit .pips span { margin-left: 4px; font: 800 8px var(--serif); letter-spacing: 0.22em; color: var(--muted); }
+.sVit .pips span { margin-left: 4px; font: 800 9px var(--serif); letter-spacing: 0.2em; color: var(--label); text-shadow: 0 1px 3px #000, 0 0 2px #000; }
 
 /* ---------------- minimap ---------------- */
 .sMini { left: calc(var(--m) + var(--sl)); bottom: calc(var(--m) + var(--sb)); width: 200px; height: 200px; border-radius: 50%; overflow: hidden; pointer-events: auto; cursor: pointer; z-index: 2;
@@ -115,10 +115,10 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 .sSay .pf.glyph .gl { display: block; }
 .sSay .pf.none { display: none; }
 .sSay .tx { flex: 1; min-width: 0; }
-.sSay .nm { font: 800 11px var(--serif); letter-spacing: 0.3em; color: var(--muted); margin: 3px 0 8px; }
+.sSay .nm { font: 800 12px var(--serif); letter-spacing: 0.28em; color: var(--label); margin: 3px 0 8px; }
 .sSay.crew .nm { color: #ff5a70; }
 .sSay .ln { font: 500 17px/1.5 var(--serif); color: #f3f0ea; min-height: 3em; }
-.sSay .nx { position: absolute; right: 14px; bottom: 9px; font-style: normal; font-size: 10px; color: var(--muted); animation: blink 1.2s ease-in-out infinite; }
+.sSay .nx { position: absolute; right: 14px; bottom: 9px; font-style: normal; font-size: 12px; color: var(--label); animation: blink 1.2s ease-in-out infinite; }
 
 /* ---------------- choices ---------------- */
 .sChoice { inset: 0; display: grid; place-items: end center; background: linear-gradient(transparent 30%, rgba(0, 0, 0, 0.8)); z-index: 7; pointer-events: auto; }
@@ -168,7 +168,7 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 
 /* ---------------- boss bar ---------------- */
 .sBoss { left: 50%; top: calc(26px + var(--st)); transform: translateX(-50%); width: min(44vw, 620px); z-index: 2; }
-.sBoss .nm { display: flex; align-items: baseline; gap: 12px; margin: 0 0 7px 2px; font: 800 clamp(11px, 1.2vw, 15px) var(--serif); letter-spacing: 0.3em; color: var(--ink); text-shadow: 0 2px 6px #000; white-space: nowrap; overflow: hidden; }
+.sBoss .nm { display: flex; align-items: baseline; gap: 12px; width: max-content; max-width: 100%; margin: 0 0 7px 0; padding: 2px 12px 2px 4px; font: 800 clamp(11px, 1.2vw, 15px) var(--serif); letter-spacing: 0.3em; color: #f3f0ea; text-shadow: 0 2px 6px #000, 0 0 2px #000; white-space: nowrap; overflow: hidden; background: linear-gradient(90deg, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.45) 70%, rgba(0, 0, 0, 0)); }
 .sBoss .nm small { font: 400 1.5em/1 var(--grass); letter-spacing: 0; color: var(--neon); text-shadow: 0 0 12px rgba(198, 255, 26, 0.5); }
 .sBoss .bar { height: 10px; }
 .sBoss .bar .gh { background: #e9e6df; opacity: 0.55; }
@@ -214,6 +214,17 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 .mk.danger .ar { border-left-color: var(--neon); }
 .mk.van b { width: 11px; height: 20px; border-radius: 3px; background: #f4efe4; border: 1.5px solid #111; }
 .mk.van .ar { border-left-color: #f4efe4; }
+/* the lock-on ring at the locked enemy's feet, its life and posture over its head; the 危 tell */
+.lk .rg { position: absolute; transform: translate(-50%, -50%); border: 2px solid rgba(244, 239, 228, 0.85); border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), 0 0 10px var(--crimson-glow), inset 0 0 0 1px rgba(0, 0, 0, 0.5); }
+.lk .rg::before, .lk .rg::after { content: ""; position: absolute; top: 50%; width: 7px; height: 7px; margin-top: -4px; background: var(--crimson); border: 1px solid #f4efe4; transform: rotate(45deg); }
+.lk .rg::before { left: -5px; }
+.lk .rg::after { right: -5px; }
+.lk .lb { position: absolute; left: 0; top: 0; width: 64px; height: 9px; background: linear-gradient(rgba(0, 0, 0, 0.6) 0 5px, transparent 5px 7px, rgba(0, 0, 0, 0.6) 7px); box-shadow: 0 0 0 1px rgba(233, 230, 223, 0.25); }
+.lk .lb i { position: absolute; left: 0; right: 0; transform-origin: 0 50%; }
+.lk .lb .hp { top: 0; height: 5px; background: linear-gradient(#f2efe8, #a9a59d); box-shadow: 0 0 0 1px #000; }
+.lk .lb .po { top: 7px; height: 2px; background: #d8d4cc; box-shadow: 0 0 0 1px #000; }
+.lk .lb.broken .po { background: var(--neon); box-shadow: 0 0 6px var(--neon); }
+.tell b { font: 400 30px/1 var(--grass); color: var(--neon); text-shadow: 0 0 14px var(--neon), 0 0 3px #000, 0 0 2px #000; }
 .eye b { width: 26px; height: 13px; border-radius: 50% / 60%; border: 1.5px solid #f1eee7; box-shadow: 0 0 0 1px #000; background: linear-gradient(90deg, var(--crimson) calc(var(--k, 0) * 100%), rgba(0, 0, 0, 0.6) 0); }
 .eye b::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
 .eye.alert b { border-color: var(--neon); background: var(--neon); box-shadow: 0 0 12px var(--neon); animation: sEye 0.35s ease-in-out infinite alternate; }
@@ -263,7 +274,7 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 .sMenu .mWrap { width: min(92vw, 860px); margin: auto; text-align: center; }
 .sMenu .mK { font: 400 60px/1 var(--grass); color: var(--crimson); text-shadow: 0 0 30px var(--crimson-glow); }
 .sMenu h2 { margin: 6px 0 0; font: 800 24px var(--serif); letter-spacing: 0.5em; padding-left: 0.5em; }
-.sMenu .mCh { margin-top: 10px; font-size: 10px; letter-spacing: 0.3em; color: var(--muted); }
+.sMenu .mCh { margin-top: 10px; font-size: 11px; letter-spacing: 0.28em; color: var(--label); }
 .sMenu .mBtns { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: 20px; }
 .sMenu .mBtns button, .sMenu .mBtns a { display: flex; justify-content: center; align-items: center; gap: 10px; width: min(320px, 80vw); padding: 10px 16px; border: 1px solid rgba(233, 230, 223, 0.26); border-radius: 3px; background: rgba(0, 0, 0, 0.5); color: var(--ink); font: 800 12px var(--serif); letter-spacing: 0.22em; text-decoration: none; cursor: pointer; }
 .sMenu .mBtns button small { font-size: 9px; color: var(--muted); letter-spacing: 0.2em; }
@@ -300,9 +311,9 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 @media (max-width: 520px) { .sMenu .log, .sMenu .av { columns: 1; } }
 
 /* ---------------- the map ---------------- */
-.sMap { inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, 0.93); z-index: 10; pointer-events: auto; padding: calc(12px + var(--st)) calc(12px + var(--sr)) calc(12px + var(--sb)) calc(12px + var(--sl)); }
-.sMap .mIn { position: relative; display: flex; gap: 18px; width: 100%; height: 100%; max-width: 1280px; }
-.sMap canvas { flex: 1; min-width: 0; height: 100%; border: 1px solid rgba(233, 230, 223, 0.25); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); touch-action: none; cursor: crosshair; background: #0c0907; }
+.sMap { inset: 0; display: grid; place-items: center; grid-template: minmax(0, 1fr) / minmax(0, 1fr); background: rgba(0, 0, 0, 0.93); z-index: 10; pointer-events: auto; padding: calc(12px + var(--st)) calc(12px + var(--sr)) calc(12px + var(--sb)) calc(12px + var(--sl)); }
+.sMap .mIn { position: relative; display: flex; gap: 18px; max-width: 100%; max-height: 100%; }
+.sMap canvas { flex: none; width: 300px; height: 300px; border: 1px solid rgba(233, 230, 223, 0.25); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); touch-action: none; cursor: crosshair; background: #0c0907; }
 .sMap .mSide { flex: none; width: 190px; padding-top: 34px; overflow-wrap: anywhere; }
 .sMap h3 { margin: 0 0 14px; font: 800 14px var(--serif); letter-spacing: 0.5em; color: #f3f0ea; }
 .sMap .leg { list-style: none; margin: 0; padding: 0; }
@@ -322,7 +333,7 @@ body.stouch #story.sayOn .sSubs { bottom: calc(112px + var(--sb)); }
 .sMap .mX, .sBoard .bX { position: absolute; right: 0; top: 0; margin: 0; width: 38px; height: 38px; padding: 0; font-size: 15px; letter-spacing: 0; }
 @media (max-aspect-ratio: 1/1) {
   .sMap .mIn { flex-direction: column; }
-  .sMap canvas { width: 100%; height: auto; flex: 1; }
+
   .sMap .mSide { width: auto; padding-top: 0; }
   .sMap .leg { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .sMap .leg li { margin: 0; }
@@ -460,4 +471,20 @@ body.stouch.cine .sSubs { max-width: calc(100vw - 32px); }
 @media (max-width: 760px) {
   body:not(.stouch) .sTL { max-width: 34vw; }
   body:not(.stouch) .sBoss { width: 40vw; }
+}
+/* short keyboard screens (640x360 and the like): a smaller minimap, and a right-hand column under the clock
+   and chips for the boss bar and the vitals, so nothing piles onto the objective and the meters */
+@media (max-height: 520px) {
+  body:not(.stouch) #story { --m: 16px; }
+  body:not(.stouch) .sTL { top: calc(14px + var(--st)); gap: 7px; }
+  body:not(.stouch) .sInfo { top: calc(14px + var(--st)); gap: 6px; }
+  body:not(.stouch) .sMini { width: 120px; height: 120px; }
+  body:not(.stouch) .sBoss { left: auto; right: calc(var(--m) + var(--sr)); top: calc(62px + var(--st)); transform: none; width: min(40vw, 300px); }
+  body:not(.stouch) .sBoss .nm { font-size: 10px; letter-spacing: 0.2em; margin-bottom: 4px; }
+  body:not(.stouch) .sVit { left: auto; right: calc(var(--m) + var(--sr)); bottom: auto; top: calc(64px + var(--st)); width: 170px; }
+  body:not(.stouch) #story:has(#sboss:not(.hidden)) .sVit { top: calc(112px + var(--st)); }
+  body:not(.stouch) .sHint, body:not(.stouch) .sSubs { max-width: calc(100vw - 2 * (var(--m) + 132px)); }
+  body:not(.stouch) .sHint { bottom: calc(40px + var(--sb)); }
+  body:not(.stouch) .sPrompt { bottom: calc(76px + var(--sb)); }
+  body:not(.stouch) .sSubs { bottom: calc(118px + var(--sb)); }
 }

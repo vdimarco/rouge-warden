@@ -300,6 +300,33 @@ await step(page, 0.3);
     return out;
   });
   check(ld.ok && res.kinds === 8 && res.placeholders === 0 && res.bad.length === 0, `seated riders fit: ${res.n} riders in ${res.kinds} kinds, every head under the roof and inside the cabin, the shown riders' feet on the floor${res.bad.length ? ": " + res.bad.slice(0, 6).join("; ") : ""}`);
+  // on a slope (west of Uptown, about 0.35 rad) the riders pitch and roll with the white van: facing up,
+  // down and across the hill, every head stays under the roof in the van's own frame
+  const sl = await page.evaluate(() => {
+    const S = __crimson.story.S, T = S.THREE, ids = ["tanktop", "fifty", "shades", "newbalance", "redjersey", "gang"], q = new T.Vector3(), out = { worst: -9, slope: 0, roof: 0, n: 0 };
+    for (const yaw of [0, Math.PI, Math.PI / 2]) {
+      const v = S.vehicles.spawn("whitevan", { pos: { x: -592.07, z: 153.21 }, yaw }), actors = [];
+      for (let i = 0; i < v.seats.length; i++) { const a = S.cast.spawn(ids[i % ids.length], { pos: { x: -586, z: 153 + i }, lod: false }); actors.push(a); S.drive.seat(a, v, i); }
+      window.__ticks(90);
+      const ch = v.view.chassis; ch.updateMatrixWorld(true);
+      const inv = ch.matrixWorld.clone().invert();
+      out.slope = Math.max(out.slope, Math.abs(v.susp.slopeP) + Math.abs(v.susp.slopeR)); out.roof = v.view.info.roofY;
+      for (const a of actors) {
+        a.root.updateMatrixWorld(true);
+        a.root.traverse((o) => {
+          if (!o.isSkinnedMesh) return;
+          o.skeleton.update();
+          const hb = o.skeleton.bones.findIndex((b) => /head$/i.test(b.name)), P = o.geometry.attributes.position, SI = o.geometry.attributes.skinIndex, SW = o.geometry.attributes.skinWeight;
+          for (let j = 0; j < P.count; j += 3) { let w = 0; for (let c = 0; c < 4; c++) if (SI.getComponent(j, c) === hb) w += SW.getComponent(j, c); if (w < 0.5) continue; q.fromBufferAttribute(P, j); o.applyBoneTransform(j, q); q.applyMatrix4(o.matrixWorld).applyMatrix4(inv); out.worst = Math.max(out.worst, q.y); }
+        });
+        out.n++;
+      }
+      for (const a of actors) { S.drive.unseat(a); S.cast.despawn(a); }
+      S.vehicles.despawn(v);
+    }
+    return out;
+  });
+  check(sl.n === 30 && sl.slope > 0.25 && sl.worst < sl.roof - 0.03, `on a slope (${sl.slope.toFixed(2)} rad) the white van's ${sl.n} riders tilt with it: the highest head is at ${sl.worst.toFixed(2)} m in the van's frame, under the roof at ${sl.roof}`);
 }
 
 /* ---------------- ten seats, and the wreck */

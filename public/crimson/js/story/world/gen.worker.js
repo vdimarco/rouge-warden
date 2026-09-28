@@ -526,7 +526,7 @@ export const walkAt = (ground, mk) => Math.max(fromHalf(ground[mk + 2]), fromHal
 function paintMap(H, types, CF, WF) {
   const out = new Uint8Array(MAP * MAP * 4), px = 2000 / MAP;
   const hash = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
-  const hs = new Float32Array(MAP * MAP);
+  const hs = new Float32Array(MAP * MAP), fs = { d: 0, a: [0, 0], side: 0 };
   for (let j = 0; j < MAP; j++) for (let i = 0; i < MAP; i++) hs[j * MAP + i] = heightAt(H, (i + 0.5) * px - HALF, (j + 0.5) * px - HALF);
   for (let j = 0; j < MAP; j++) for (let i = 0; i < MAP; i++) {
     const k = j * MAP + i, h = hs[k], x = (i + 0.5) * px - HALF, z = (j + 0.5) * px - HALF;
@@ -542,9 +542,20 @@ function paintMap(H, types, CF, WF) {
     if (t === T.sand) { r = lerp(r, 0.95, 0.4); g = lerp(g, 0.88, 0.4); b = lerp(b, 0.7, 0.4); }
     if (light > 0.62) { const w = Math.min(0.3, (light - 0.62) * 1.2); r = lerp(r, 1, w); g = lerp(g, 0.96, w); b = lerp(b, 0.84, w); }
     else { const w = Math.min(0.42, (0.62 - light) * 1.1); r = lerp(r, 0.42, w); g = lerp(g, 0.4, w); b = lerp(b, 0.5, w); }
-    // contours
-    if (Math.floor(h / 10) !== Math.floor(hl / 10) || Math.floor(h / 10) !== Math.floor(hu / 10)) { const m = Math.floor(h / 50) !== Math.floor(hl / 50) || Math.floor(h / 50) !== Math.floor(hu / 50) ? 0.7 : 0.86; r *= m; g *= m; b *= m; }
-    if (t === T.water) { r = 0.45; g = 0.62; b = 0.72; }
+    // contours; on the steep walls (the canyon's terraces) only every 50 m, so they do not pile into bands
+    const c50 = Math.floor(h / 50) !== Math.floor(hl / 50) || Math.floor(h / 50) !== Math.floor(hu / 50);
+    if (c50 || ((Math.floor(h / 10) !== Math.floor(hl / 10) || Math.floor(h / 10) !== Math.floor(hu / 10)) && hypot(nx, nz) < 0.9)) { const m = c50 ? 0.7 : 0.86; r *= m; g *= m; b *= m; }
+    // water: the creek from its own line (half width, soft edge: no stair steps from the type grid), pools
+    // from the types
+    let wk = t === T.water ? 1 : 0;
+    if (CF) {
+      sampleField(CF, x, z, fs);
+      if (fs.d < 60) {
+        const hw = fs.a[1] || 0, pool = t === T.water && POOLS.some(([qx, qz, qr]) => hypot(x - qx, z - qz) < qr);
+        wk = pool ? 1 : hw > 0.5 && h < fs.a[0] + 0.3 ? clamp((hw - 0.5 - fs.d) / px + 0.5, 0, 1) : 0;
+      }
+    }
+    if (wk > 0) { r = lerp(r, 0.45, wk); g = lerp(g, 0.62, wk); b = lerp(b, 0.72, wk); }
     const grain = 0.97 + hash(i, j) * 0.05 + hash(i >> 3, j >> 3) * 0.04;
     out[k * 4] = clamp(r * grain, 0, 1) * 255; out[k * 4 + 1] = clamp(g * grain, 0, 1) * 255; out[k * 4 + 2] = clamp(b * grain, 0, 1) * 255; out[k * 4 + 3] = 255;
   }

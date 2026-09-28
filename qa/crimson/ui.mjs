@@ -1,5 +1,5 @@
 // The story UI, played through the page:
-// 1. Layout: at 1280x720 (keyboard), 844x390 (touch) and 390x844 (touch), with the HUD full (objective,
+// 1. Layout: at 1280x720 and 640x360 (keyboard), 844x390 (touch) and 390x844 (touch), with the HUD full (objective,
 //    timer, meters, clock and chips, vitals, prompt, hint, subtitles, minimap, markers), no HUD piece
 //    overlaps a touch button or another HUD piece, on foot, driving, in the phone camera, in stealth (with
 //    suspicion eyes) and in a boss fight (the boss bar). On touch the combat set never shows more than 7
@@ -50,6 +50,9 @@ const arenaHud = (page) => T(page, () => { const b = document.getElementById("bo
 async function layouts(label, opts) {
   const { browser, page, errors } = await boot(opts);
   const touch = !!opts.touch;
+  // free roam's objective names the menu key for the device: Esc on a keyboard, 止 on touch
+  const ob = await T(page, () => { const S = __crimson.story.S; S.ui.objective("Free roam. {Press} {pause} for the menu."); return S.test.ui.objective; });
+  check(ob === (touch ? "Free roam. Tap 止 for the menu." : "Free roam. Press Esc for the menu."), `${label} foot: the free roam objective names the right key (${ob})`);
   await fillHud(page);
   await T(page, () => __crimson.story.S.ui.prompt("GET IN", "use"));
   await step(page, 0.3);
@@ -108,6 +111,15 @@ async function layouts(label, opts) {
     check(b3.length === 7 && b3.includes("bear"), `${label} boss: 熊 shows once the bear call is known (${b3.join(", ")})`);
     await T(page, () => { delete __crimson.story.S.flags.bearCall; });
   }
+  // the lock-on ring at the locked foe's feet, and a danger tell (危) over its head, following it
+  await T(page, () => { const S = __crimson.story.S, K = S.test.combat.K, f = S.combat.boss; K.lock = f; K.danger(f); });
+  await step(page, 0.2);
+  const lk = await T(page, () => {
+    const ring = document.querySelector("#sMarks .lk"), tell = [...document.querySelectorAll("#sMarks .tell")].find((e) => !e.classList.contains("off"));
+    const r = ring && !ring.classList.contains("off") ? ring.querySelector(".rg").getBoundingClientRect() : null, t = tell ? tell.querySelector("b").getBoundingClientRect() : null;
+    return { ring: !!r, tell: !!t, above: !!(r && t && t.bottom < r.top && Math.abs((t.left + t.right) / 2 - (r.left + r.right) / 2) < 60), toast: document.querySelector("#sToast:not(.hidden)") ? document.querySelector("#sToast").textContent : "" };
+  });
+  check(lk.ring && lk.tell && lk.above && lk.toast !== "危", `${label} boss: the lock-on ring shows at the boss's feet and 危 over its head, not pinned to the screen (${JSON.stringify(lk)})`);
   await snap(page, `${label}-boss`);
   await T(page, () => { const S = __crimson.story.S; S.ui.boss(null); S.combat.boss = null; S.combat.active = false; S.combat.clear(); });
 
@@ -144,9 +156,11 @@ async function layouts(label, opts) {
   await browser.close();
 }
 
-// ONLY=desk,land,port,flow runs part of it while working on the UI
-const ONLY = (process.env.ONLY || "desk,land,port,flow").split(",");
+// ONLY=desk,short,land,port,flow runs part of it while working on the UI
+const ONLY = (process.env.ONLY || "desk,short,land,port,flow").split(",");
 if (ONLY.includes("desk")) await layouts("desk", { width: 1280, height: 720 });
+// a short keyboard screen (640x360): the vitals, the objective and the meters must not pile up
+if (ONLY.includes("short")) await layouts("short", { width: 640, height: 360 });
 if (ONLY.includes("land")) await layouts("land", { width: 844, height: 390, touch: true });
 if (ONLY.includes("port")) await layouts("port", { width: 390, height: 844, touch: true });
 

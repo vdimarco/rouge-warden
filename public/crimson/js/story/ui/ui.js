@@ -42,8 +42,9 @@ export function init(S) {
     get device() { return S.input ? S.input.device : 'key'; },
     get touch() { return document.body.classList.contains('touch') || (S.input && S.input.device === 'touch'); },
     key(action) { const d = U.touch ? 'touch' : U.device; return (KEY_LABELS[d] || KEY_LABELS.key)[action] ?? action.toUpperCase(); },
-    // "{use} to talk" -> "E to talk" (keyboard), "Y to talk" (pad), "USE to talk" (touch)
-    keys(text) { return String(text).replace(/\{(\w+)\}/g, (m, a) => U.key(a) || a.toUpperCase()); },
+    // "{use} to talk" -> "E to talk" (keyboard), "Y to talk" (pad), "USE to talk" (touch); {Press} is the
+    // verb for the device: "Tap" on touch, "Press" otherwise
+    keys(text) { return String(text).replace(/\{(\w+)\}/g, (m, a) => (a === 'Press' ? (U.touch ? 'Tap' : 'Press') : U.key(a) || a.toUpperCase())); },
     pushModal(kind, freeze = true) {
       modals.push({ kind, freeze });
       S.modal = kind;

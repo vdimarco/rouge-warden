@@ -248,7 +248,7 @@ export function createDrivers(S, V) {
     return group;
   }
   // Pursue a vehicle (or anything with pos): road route when far, straight at it when near; o.ram rams
-  // its side, then backs off for 2 s. h.hits counts rams that landed.
+  // its side, then backs off for 2 s. h.hits counts rams that landed. o.max caps the speed it asks for.
   function pursue(v, target, o = {}) {
     const h = attach(v, { kind: 'pursue', path: new Path([{ x: v.pos.x, z: v.pos.z }, { x: target.pos.x, z: target.pos.z }]), o, target, hits: 0, cool: 0, replanT: 0 });
     const off = v.on('hit', (e) => { if (e.other === target && h.cool <= 0 && o.ram) { h.hits++; h.cool = o.cooldown ?? 2; } });
@@ -277,6 +277,7 @@ export function createDrivers(S, V) {
           speed = ts + 4;
         }
       } else if (!o.ram && d < 20) speed = Math.max(0, ts + (d - 12) * 0.5);
+      if (o.max != null) speed = Math.min(speed, o.max);
       follow(h, speed, { stopEnd: false, aimX, aimZ, latA: 6, ignore: target });
     };
     return h;

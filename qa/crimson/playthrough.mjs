@@ -202,6 +202,11 @@ if (ids.includes("fixes")) {
   check(wed.cine === "e1_wedding" && wed.trees === 0, `E1: the wedding's opening shot has no tree at the lens (${wed.trees} trunks within 5 m)`);
   check(["christian", "ryu", "civB", "gabe"].every((id) => wed.there.includes(id)), `E1: Gabe, Christian, Ryu and the bride stand at the wedding from the first shot (${wed.there.join(" ")})`);
   await page.evaluate(() => { const S = __crimson.story.S; S.cine.skip(); S.missions.quit(); }); await step(page, 0.5);
+  // F5's chase: the pickup and the SUV top out a little under the van, so good driving loses them
+  await jump("f5", 4);
+  const f5 = await page.evaluate(() => { const S = __crimson.story.S, m = S.test.missions.K.current, v = S.vehicles.player; return { top: v.spec.top, caps: ["pickup", "suv"].map((id) => { const x = m.get(id); return x && x.controller && x.controller.o ? x.controller.o.max : null; }) }; });
+  check(f5.caps.every((c) => c != null && c < f5.top && c > f5.top * 0.85), `F5: the pursuers ask for at most ${f5.caps.map((c) => (c == null ? "?" : c.toFixed(1))).join(" and ")} m/s, under the van's ${f5.top}`);
+  await page.evaluate(() => { __crimson.story.S.missions.quit(); }); await step(page, 0.5);
   // FR 9: the Whale drives west onto the FR 9 bridge (the deck end is not a wall)
   const fr9 = await page.evaluate(() => { const S = __crimson.story.S, T = S.test.van; S.missions.quit(); return true; });
   await step(page, 1);

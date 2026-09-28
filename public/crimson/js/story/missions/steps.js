@@ -395,7 +395,10 @@ export function createSteps(S, K) {
       const list = [].concat(s.pursuers).map((ref) => vehicleOf(m, ref)).filter(Boolean);
       const sec = s.sec ?? 10, dist = s.dist ?? 250;
       const heroTarget = { get pos() { return heroAt(); }, get vel() { const v = riding(); return v ? v.vel : null; }, get speed() { const v = riding(); return v ? v.speed : 0; }, get yaw() { const v = riding(); return v ? v.yaw : S.hero.face; } };
-      const hs = list.map((v) => (v.controller ? v.controller : S.drivers.pursue(v, heroTarget, { ram: false })));
+      // the pursuers top out a little under the hero's vehicle (a pickup's 32 m/s would outrun the van's 28):
+      // good driving loses them
+      const mine = riding() || S.vehicles.player, cap = (mine && mine.spec ? mine.spec.top : 28) * 0.93;
+      const hs = list.map((v) => (v.controller ? v.controller : S.drivers.pursue(v, heroTarget, { ram: false, max: cap })));
       let hid = 0;
       try {
         for (;;) {

@@ -107,8 +107,10 @@ export function init(S) {
   const vm = K.vm = createVM(S, K);
   const roam = K.roam = createRoam(S, K);
 
-  // S.ready: the world is built and the core cast is loaded (B2)
-  const ensurePreload = () => { if (!preload) preload = S.cast.preload(CORE_CAST); };
+  // S.ready: the world is built and the core cast is loaded (B2), and with it the story's recurring GLB
+  // bodies (Vance, Voss, Rattler, the gang), so none of them stands in as a capsule after LOADING SEDONA
+  const STORY_GLBS = ['vance', 'voss', 'rattler', 'gang'];
+  const ensurePreload = () => { if (!preload) preload = S.cast.preload([...CORE_CAST, ...STORY_GLBS]); };
   S.bus.on('preload', ensurePreload);
   S.register('script', () => { if (!S.ready && preload && preload.done && S.world.ready) S.ready = true; }, PHASE_ORDER.script.ready);
 

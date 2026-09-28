@@ -310,7 +310,7 @@ export const CINES = {
       shot(0, 7, P('wedding', -12.8, 5, -16.7), P('wedding', -9.5, 3.4, -12.4), P('wedding', 0, 1.5, 0), 48), // Red Rock Crossing at golden hour; the bride from behind (clear of the cottonwoods: the old path flew through their crowns)
       shot(7, 5, W('vance', 0.8, 1.6, 2.0), W('vance', 0.6, 1.6, 1.8), W('vance', 0, 1.6, 0), 30), // Vance, back row, sunglasses
       shot(12, 5, W('gabe', 0.7, 1.7, 2.1), W('gabe', 0.5, 1.7, 1.8), W('gabe', 0, 1.62, 0), 32),
-      shot(17, 5, W('gabe', 0.9, 1.3, 1.0), W('gabe', 0.7, 1.2, 0.9), W('gabe', 0.3, 1.1, 0.5), 30), // the ring
+      shot(17, 5, W('gabe', 1.0, 1.6, 2.4), W('gabe', 0.85, 1.55, 2.15), W('gabe', 0.1, 1.42, 0.1), 38), // the ring: his face and his hands in one frame
     ],
     actors: [act(17, 'gabe', 'prop', { name: 'ringBox', on: true, bone: 'RightHand' }), act(19.5, 'gabe', 'pose', { name: 'handsOpen', k: 1 })],
     lines: [line(12.4, 'e1.alone'), line(17.4, 'e1.ringOn')],

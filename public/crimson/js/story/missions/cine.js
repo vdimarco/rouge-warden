@@ -284,7 +284,7 @@ export function createCine(S, K) {
         if (def.film && !r.filmDone && def.film.at <= r.t + 1e-6) { r.filmDone = true; r.film = S.film.play(def.film.src, { wait: def.film.wait ?? 1.5 }); }
         stepMotion(dt);
         if (r.t >= def.dur && !r.hold && !r.film) break;
-        if (K.auto && r.t > 0.05) { r.skip = true; break; }
+        if (K.auto && r.t > 0.04) { r.skip = true; break; } // (between the 2nd and 3rd tick: 3 ticks of 1/60 land on 0.05 give or take the float rounding)
         yield null;
       }
       finish(r);

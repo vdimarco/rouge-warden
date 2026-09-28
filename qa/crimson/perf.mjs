@@ -5,7 +5,9 @@
 // - the tier sets MSAA, the pixel-ratio range and the shadow box; fog ends at or before the view distance
 //   by day and by night (C8); the day painting is 2048 wide on Q1 and Q0 (C6);
 // - the fixed light set (C5): turning the headlights, the points and the looks on and off never adds a
-//   shader program (renderer.info.programs).
+//   shader program (renderer.info.programs);
+// - a fight (five gang guards, the legend look, the foot camera) in Uptown and at the ranch yard stays under
+//   the same budgets (far gang bodies draw their coarse copy: cast/lod.js).
 // It uses whatever world is merged (the stub or the real one). --shots saves a picture per viewpoint.
 import { open, step, stepUntil, storyReady, canvasRGBA, finish, writePNG, freeRoam } from "./lib.mjs";
 
@@ -86,6 +88,31 @@ for (const q of TIERS) {
     return [before, S.test.perf.programs()];
   });
   check(progs[0] === progs[1], `q=${q}: headlights, points, legend and looks add no shader program (${progs[0]} then ${progs[1]})`);
+
+  // the fight view: five gang guards 4 to 8 m ahead of the hero, the legend look, seen through the foot
+  // camera for 3 s, in Uptown (the heaviest street) and at the ranch yard: under the tier's budgets
+  await page.evaluate(() => { const S = __crimson.story.S; __perfQA.on = false; S.look.set("DAY", { clock: false }); window.__gangLoad = S.cast.preload(["gang"]); });
+  await stepUntil(page, () => window.__gangLoad.done, { maxSec: 60, realMs: 200 });
+  for (const [label, id] of [["Uptown", "bar_lot"], ["the ranch yard", "p11_yard"]]) {
+    await page.evaluate((id) => {
+      const S = __crimson.story.S, p = S.world.place(id);
+      S.combat.clear(); S.combat.end(); S.hero.place(p.x, p.z, 0); S.hero.face = 0; S.test.combat.footcam.cam.init = false;
+    }, id);
+    await step(page, 1);
+    await page.evaluate(() => {
+      const S = __crimson.story.S, p = S.hero.pos;
+      S.combat.begin({});
+      for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.45; S.combat.spawn("guard", { pos: { x: p.x + Math.sin(S.hero.face + a) * (4 + i), z: p.z + Math.cos(S.hero.face + a) * (4 + i) } }); }
+    });
+    let calls = 0, tris = 0;
+    for (let k = 0; k < 6; k++) {
+      await step(page, 0.5);
+      const info = await page.evaluate(() => { __crimson.step(1 / 60, true); return __crimson.story.S.test.perf.info(); });
+      calls = Math.max(calls, info.calls); tris = Math.max(tris, info.triangles);
+    }
+    check(calls <= T.draws && tris <= T.tris, `q=${q} fight in ${label}: ${calls} draws (budget ${T.draws}), ${Math.round(tris / 1000)}k triangles (budget ${T.tris / 1000}k) with five guards`);
+    await page.evaluate(() => { const S = __crimson.story.S; S.combat.clear(); S.combat.end(); });
+  }
   allErrors = allErrors.concat(errors);
   await browser.close();
 }

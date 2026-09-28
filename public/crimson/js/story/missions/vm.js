@@ -12,7 +12,7 @@
 //   the hero going down (always), a step's own timeLimit, and whatever a step asks for (m.fail).
 // - Passing a mission applies onPass (unlock, flags), shows MISSION PASSED with its numbers when it had
 //   anything to play, and saves. A fail shows MISSION FAILED with the reason, RETRY first, QUIT second.
-import { CHAPTER_ORDER, COLD_OPEN, CREW_IDS, ROOT_PREFIX } from '../types.js';
+import { CAST_IDS, CHAPTER_ORDER, COLD_OPEN, CREW_IDS, ROOT_PREFIX } from '../types.js';
 
 export const FAIL = Object.freeze({ fail: true }), PASS = Object.freeze({ pass: true });
 // steps that are play (a mission made only of the others is a scene: no MISSION PASSED card)
@@ -260,6 +260,12 @@ export function createVM(S, K) {
   function* runChapter(C, o = {}) {
     M.chapter = C.id; K.chapterNext = null; S.bus.emit('chapter', { id: C.id });
     K.log('chapter', C.id, o.reason || '');
+    // the chapter's bodies start loading now (the missions' cast and the foes' gang body), well before a
+    // cine or a step spawns them
+    const want = new Set();
+    for (const mid of C.missions || []) { const d = S.content.MISSIONS[mid] || {}; for (const c of d.cast || []) want.add(c); for (const sp of d.spawns || []) want.add(sp.cast || (sp.foe && (CAST_IDS.includes(sp.foe) ? sp.foe : 'gang'))); }
+    const bodies = [...want].filter((c) => CAST_IDS.includes(c) && !S.cast.ready(c));
+    if (bodies.length) S.cast.preload(bodies);
     if (!C.arena) yield* ensureWorld();
     const resuming = !!o.snap || !!o.resume;
     // CONTINUE into the middle of a mission: the save holds that mission's checkpoint (clock, hero, van)

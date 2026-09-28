@@ -39,7 +39,8 @@ export function init(S) {
     dust(pos, n, s) { const g = K.groundAt(pos); S.ctx.fx.dust(K.at(pos.x, g, pos.z, g), n, s); },
     sfx(name, pos, o = {}) { if (S.audio) S.audio.sfx(name, pos ? { at: pos, ...o } : o); },
     toast(text, hot) { if (S.ui && S.ui.toast) S.ui.toast(text, hot); },
-    danger(f) { K.sfx('tell', f.pos); K.toast('危', true); K.emit('danger', f); },
+    // the HUD shows 危 over the attacker's head while the tell is fresh (f.tellT)
+    danger(f) { K.sfx('tell', f.pos); f.tellT = S.time; K.emit('danger', f); },
     flash(k) { if (S.look && S.look.base) S.look.base.flash = Math.max(S.look.base.flash || 0, k); },
     hurt(k) { if (S.look && S.look.base) S.look.base.hurt = Math.max(S.look.base.hurt || 0, k); },
     smear(sec) { smearT = sec; smearDur = sec; },

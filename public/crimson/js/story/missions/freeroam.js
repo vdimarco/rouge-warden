@@ -282,7 +282,7 @@ export function createRoam(S, K) {
   function objective() {
     if (giverOn) { const C = giverOn; S.ui.objective(`Chapter ${C.n}: ${C.title}. Go to the marker.`); return; }
     if (resumeId) { const C = S.content.CHAPTERS[resumeId]; S.ui.objective(`Free roam. Go to the marker to play ${C ? C.title : 'on'}.`); return; }
-    S.ui.objective(storyOver() ? 'Free roam. Find the cairns and the kazoos.' : 'Free roam. Press Esc for the menu.');
+    S.ui.objective(storyOver() ? 'Free roam. Find the cairns and the kazoos.' : 'Free roam. {Press} {pause} for the menu.');
   }
   // one tick of roaming: the asked-for errands (a side mission, a rest, travel, a wait), the tow and the respawn
   function* roamTick() {

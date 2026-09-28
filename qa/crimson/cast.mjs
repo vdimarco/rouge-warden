@@ -339,12 +339,18 @@ const lo = await page.evaluate(() => {
   const cam = S.camera.position.clone();
   const at = (d) => { a.root.position.set(cam.x + d, a.root.position.y, cam.z); S.cast.lodUpdate(cam); return { hull: a.hullOn, hz: a.lodHz || 0, hidden: !!a.lodHidden, model: a.model.visible }; };
   out.lod = { near: at(5), mid: at(28), far: at(60), gone: at(150), back: at(5) };
+  // a heavy body draws its coarse copy far off (a third of the triangles, the same skin), the full one near
+  const tris = () => { let n = 0; a.root.traverse((o) => { if (o.isSkinnedMesh) n += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }); return n; };
+  at(5); const tn = tris(); at(28); const tf = tris(); at(5); const tb = tris();
+  out.coarse = { heavy: !!a.heavy, near: tn, far: tf, back: tb };
   return out;
 });
 check(lo.walks && lo.stops, "move(speed) lays a stride over the clip and fades out at rest");
 check(lo.replace, `replace() stands a costumed crew body in for another on the same clip and time (the C0 cut)${lo.replaceInfo ? " " + JSON.stringify(lo.replaceInfo) : ""}`);
 const L = lo.lod;
 check(L.near.hull && !L.near.hz && !L.mid.hull && L.far.hz === 15 && L.gone.hidden && !L.gone.model && L.back.hull && L.back.model, `LOD: hull within 25 m, 15 Hz beyond 30 m, hidden beyond 120 m (${JSON.stringify(L)})`);
+const Co = lo.coarse;
+check(!Co.heavy || (Co.far < Co.near * 0.5 && Co.far > Co.near * 0.2 && Co.back === Co.near), `LOD: a heavy body draws a coarse copy far off (${JSON.stringify(Co)})`);
 
 /* ---------------- the crowd and followers ---------------- */
 await page.evaluate(() => { const S = __crimson.story.S; window.__qa = null; S.look.set("DAY", { dur: 0, clock: false }); const u = S.world.place("uptown"); S.hero.place(u.x, u.z, 0); });

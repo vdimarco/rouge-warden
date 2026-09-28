@@ -33,12 +33,19 @@ export function createMapScreen(U) {
     return s;
   }
   const canTravel = () => !(S.missions && S.missions.active) && !!(S.missions && S.missions.travel);
+  // the canvas is square (the map is), as big as the screen allows beside the legend (under it on a tall
+  // screen): the whole map fits with no empty bars
   function fit() {
+    const cs = getComputedStyle(el), side = el.querySelector('.mSide');
+    const aw = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), ah = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const tall = getComputedStyle(el.querySelector('.mIn')).flexDirection === 'column';
+    const sq = Math.max(120, Math.floor(Math.min(tall ? aw : aw - side.offsetWidth - 18, tall ? ah - side.offsetHeight - 18 : ah)));
+    if (cv.style.width !== `${sq}px`) { cv.style.width = cv.style.height = `${sq}px`; }
     const r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
     const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
     if (w !== cv.width || h !== cv.height) { cv.width = w; cv.height = h; dirty = true; }
     size = Math.min(r.width, r.height);
-    view.min = size / (2 * HALF()) * 0.98;
+    view.min = size / (2 * HALF());
     view.s = Math.max(view.min, Math.min(view.max, view.s));
   }
   // world <-> screen (css px inside the canvas)
@@ -107,7 +114,7 @@ export function createMapScreen(U) {
   function useAt(x, z) {
     const kn = known();
     for (const [id, c] of Object.entries(CAIRNS)) {
-      if (Math.hypot(c.x - x, c.z - z) * view.s > 18) continue;
+      if (Math.hypot(c.x - x, c.z - z) * view.s > 11 * Math.max(0.8, Math.min(1.6, view.s / 0.45)) + 3) continue; // on the cairn's disc
       if (!kn.has(id)) { U.pieces.hud.toast('Find this cairn first.'); return; }
       if (!canTravel()) { U.pieces.hud.toast('Not during a mission.'); return; }
       pending = id;
@@ -163,7 +170,8 @@ export function createMapScreen(U) {
       el.classList.remove('hidden');
       fit();
       const hp = heroAt();
-      view.s = Math.max(view.min, 0.5); view.cx = hp.x; view.cz = hp.z;
+      // the whole map at first; the wheel, a pinch or LB RB zoom in
+      view.s = view.min; view.cx = hp.x; view.cz = hp.z;
       cursor.x = hp.x; cursor.z = hp.z; cursor.on = U.device === 'pad';
       pending = null; ask.classList.add('hidden');
       el.querySelector('.mHelp').textContent = U.touch ? 'TAP TO MARK A WAYPOINT · PINCH TO ZOOM' : U.device === 'pad' ? 'A MARKS A WAYPOINT · LB RB ZOOM · B CLOSES' : 'CLICK TO MARK A WAYPOINT · WHEEL ZOOMS · M CLOSES';

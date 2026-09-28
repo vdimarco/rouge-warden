@@ -164,10 +164,74 @@ export function createBosses(K) {
     if (f.def.mark === 'spots') for (const [bn, to] of [['Spine02', 'Spine01'], ['Spine01', 'Spine'], ['Spine', 'neck'], ['LeftArm', 'LeftForeArm'], ['RightArm', 'RightForeArm'], ['LeftForeArm', 'LeftHand'], ['RightForeArm', 'RightHand'], ['LeftUpLeg', 'LeftLeg'], ['RightUpLeg', 'RightLeg'], ['LeftLeg', 'LeftFoot'], ['RightLeg', 'RightFoot']]) for (const k of [0.3, 0.7]) for (const sd of [-1, 1]) parts.push({ o: sprite(0.13, 0.9), bone: bn, to, k, side: sd, kind: 'bead' });
     if (f.def.mark === 'legs') for (let i = 0; i < 6; i++) parts.push({ a: rod(0.022), b: rod(0.016), i, kind: 'leg' });
     for (const sd of [-1, 1]) parts.push({ o: sprite(0.12), bone: 'Head', side: sd, kind: 'eye' });
+    silhouette(f, g, parts);
     S.world.group.add(g);
     f.marks = { g, parts };
   }
+  // Each Legend's own shape, in solid ink over the gang body, so none reads as a guard: the javelina's boar
+  // head, snout and bristled hump; the vulture's wings (webbed from the arm to the hip), hooked beak and ruff;
+  // the gila's flat head and long dragging tail; the tarantula's heavier legs, round abdomen and fangs.
+  // Placed like the marks: from the bones' world positions in the fighter's own frame (right, up, forward).
+  const inkMat = new THREE.MeshBasicMaterial({ color: 0x0b0a0a });
+  const inkSide = new THREE.MeshBasicMaterial({ color: 0x0b0a0a, side: THREE.DoubleSide });
+  const cone = (r, h, n = 6) => { const c = new THREE.ConeGeometry(r, h, n); c.rotateX(Math.PI / 2); return c; }; // points +z (forward)
+  const merge = (list) => {
+    // a few small geometries as one (position only: the ink material has no light)
+    const pos = []; const idx = [];
+    for (const [geo, x, y, z, rx = 0, ry = 0, rz = 0] of list) {
+      const gg = geo; const m4 = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')).setPosition(x, y, z);
+      const P = gg.attributes.position, base = pos.length / 3, v = new THREE.Vector3();
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(m4); pos.push(v.x, v.y, v.z); }
+      if (gg.index) for (const i of gg.index.array) idx.push(base + i); else for (let i = 0; i < P.count; i++) idx.push(base + i);
+    }
+    const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setIndex(idx); out.computeBoundingSphere();
+    return out;
+  };
+  const SHAPES = {
+    tusks: () => [
+      // a boar's head over the head: a heavy block, a long snout with a flat disc nose
+      { geo: merge([[new THREE.BoxGeometry(0.34, 0.3, 0.34), 0, 0, 0], [cone(0.13, 0.36), 0, -0.05, 0.3], [new THREE.CylinderGeometry(0.075, 0.075, 0.05, 8), 0, -0.05, 0.48, Math.PI / 2], [cone(0.05, 0.14, 4), 0.13, 0.17, -0.02, -1.2], [cone(0.05, 0.14, 4), -0.13, 0.17, -0.02, -1.2]]), bone: 'Head', off: [0, 0.02, 0.06] },
+      // the bristled hump: a ridge of spikes from the neck down the back
+      { geo: merge([0, 1, 2, 3, 4, 5, 6].map((i) => [cone(0.07 - i * 0.005, 0.3 - i * 0.02, 4), 0, 0.02 - i * 0.07, -i * 0.05, -1.05 - i * 0.08])), bone: 'Spine', off: [0, 0.22, -0.16] },
+      { geo: new THREE.SphereGeometry(0.3, 8, 6), bone: 'Spine', off: [0, 0.06, -0.08], scale: [1.25, 0.9, 1.0] },
+    ],
+    wings: () => [
+      { geo: merge([[cone(0.06, 0.26, 5), 0, 0, 0.13, 0.35]]), bone: 'Head', off: [0, -0.03, 0.14] }, // the hooked beak
+      { geo: new THREE.TorusGeometry(0.17, 0.07, 5, 12), bone: 'neck', off: [0, -0.02, 0], rot: [Math.PI / 2, 0, 0] }, // the ruff
+      { wing: 'Left' }, { wing: 'Right' },
+    ],
+    spots: () => [
+      { geo: merge([[new THREE.BoxGeometry(0.34, 0.15, 0.4), 0, 0, 0], [cone(0.12, 0.2, 5), 0, -0.02, 0.28]]), bone: 'Head', off: [0, -0.02, 0.08], scale: [1, 0.8, 1] },
+      { tail: 6 },
+    ],
+    legs: () => [
+      { geo: new THREE.SphereGeometry(0.36, 9, 7), bone: 'Spine02', off: [0, 0.12, -0.52], scale: [1, 0.85, 1.3] }, // the abdomen
+      { geo: merge([[cone(0.035, 0.16, 4), 0.06, 0, 0, 0.9], [cone(0.035, 0.16, 4), -0.06, 0, 0, 0.9]]), bone: 'Head', off: [0, -0.1, 0.12], neon: true }, // fangs
+      { thick: true },
+    ],
+  };
+  function silhouette(f, g, parts) {
+    const list = (SHAPES[f.def.mark] || (() => []))();
+    for (const d of list) {
+      if (d.thick) { for (const p of parts) if (p.kind === 'leg') { for (const r of [p.a, p.b]) r.userData.w *= 1.8; } continue; }
+      if (d.wing) {
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6 * 3), 3));
+        geo.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5]);
+        const o = new THREE.Mesh(geo, inkSide); o.frustumCulled = false; o.userData.own = true; g.add(o);
+        parts.push({ o, side: d.wing, kind: 'wing' });
+        continue;
+      }
+      if (d.tail) {
+        for (let i = 0; i < d.tail; i++) { const r = new THREE.Mesh(unitRod, inkMat); r.userData.w = 0.34 - i * 0.05; g.add(r); parts.push({ o: r, i, n: d.tail, kind: 'tail' }); }
+        continue;
+      }
+      const o = new THREE.Mesh(d.geo, d.neon ? neonMat() : inkMat); o.userData.own = true; g.add(o);
+      if (d.scale) o.scale.set(...d.scale);
+      parts.push({ o, bone: d.bone, off: d.off, rot: d.rot || [0, 0, 0], kind: 'shape' });
+    }
+  }
   const Y = new THREE.Vector3(0, 1, 0), q = new THREE.Quaternion(), tC = new THREE.Vector3(), tD = new THREE.Vector3(), tE = new THREE.Vector3();
+  const eul = new THREE.Euler(0, 0, 0, 'YXZ'), wv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   // stretch a unit rod from a to b
   function span(o, a, b) { tE.copy(b).sub(a); const L = tE.length(); o.position.copy(a); o.scale.set(o.userData.w, Math.max(0.01, L), o.userData.w); if (L > 1e-5) o.quaternion.setFromUnitVectors(Y, tE.multiplyScalar(1 / L)); }
   function driveMarks(f) {
@@ -182,6 +246,38 @@ export function createBosses(K) {
         a.bone(p.from).getWorldPosition(tmp); a.bone(p.to).getWorldPosition(tmp2);
         tC.copy(tmp).lerp(tmp2, p.k);
         tD.set(tC.x - fx * p.len * 0.55, tC.y - p.len * 0.8, tC.z - fz * p.len * 0.55);
+        span(p.o, tC, tD);
+        continue;
+      }
+      if (p.kind === 'shape') {
+        // rigid, in the fighter's frame: x right, y up, z forward from the bone
+        a.bone(p.bone).getWorldPosition(tmp);
+        const [ox, oy, oz] = p.off;
+        p.o.position.set(tmp.x + rx * ox + fx * oz, tmp.y + oy, tmp.z + rz * ox + fz * oz);
+        eul.set(p.rot[0], f.yaw + p.rot[1], p.rot[2]); p.o.quaternion.setFromEuler(eul);
+        continue;
+      }
+      if (p.kind === 'wing') {
+        // webbed from the shoulder along the arm to past the hand, then back and down to the hip
+        // (held a little open: the outer feathers reach out and up from the hand, away from the chest)
+        const sd = p.side, P = p.o.geometry.attributes.position;
+        a.bone('Spine').getWorldPosition(tmp);
+        a.bone(`${sd}Arm`).getWorldPosition(wv[0]); a.bone(`${sd}ForeArm`).getWorldPosition(wv[1]); a.bone(`${sd}Hand`).getWorldPosition(wv[2]);
+        let ox = wv[0].x - tmp.x, oz = wv[0].z - tmp.z; const ol = Math.hypot(ox, oz) || 1; ox /= ol; oz /= ol;
+        wv[0].y += 0.18; wv[0].x += ox * 0.05 - fx * 0.08; wv[0].z += oz * 0.05 - fz * 0.08;
+        wv[3].copy(wv[2]).sub(wv[1]).multiplyScalar(0.9).add(wv[2]); wv[3].x += ox * 0.75 - fx * 0.2; wv[3].z += oz * 0.75 - fz * 0.2; wv[3].y += 0.15;
+        a.bone(`${sd}UpLeg`).getWorldPosition(wv[5]); wv[5].x -= fx * 0.3 - ox * 0.1; wv[5].z -= fz * 0.3 - oz * 0.1; wv[5].y -= 0.3;
+        wv[4].copy(wv[3]).lerp(wv[5], 0.55); wv[4].x += ox * 0.2 - fx * 0.3; wv[4].z += oz * 0.2 - fz * 0.3; wv[4].y -= 0.35;
+        for (let i = 0; i < 6; i++) P.setXYZ(i, wv[i].x, wv[i].y, wv[i].z);
+        P.needsUpdate = true;
+        continue;
+      }
+      if (p.kind === 'tail') {
+        // from the hips back and down to the ground, a slow sway along it
+        a.bone('Hips').getWorldPosition(tmp);
+        const g0 = f.pos.y + f.air, L = 0.36, sway = (i) => Math.sin(K.ct * 2.2 - i * 0.7) * 0.07 * i;
+        const at = (i, out) => { const b = 0.12 + i * L, h = Math.max(g0 + 0.08, tmp.y - 0.2 - i * 0.13); return out.set(tmp.x - fx * b + rx * sway(i), h, tmp.z - fz * b + rz * sway(i)); };
+        at(p.i, tC); at(p.i + 1, tD);
         span(p.o, tC, tD);
         continue;
       }
@@ -215,7 +311,7 @@ export function createBosses(K) {
     S.interact.add({ id: `tie:${f.id}`, tag: 'combat', label: 'TIE UP', hold: 1, r: 2.4, mode: 'foot', pos: () => ({ x: f.pos.x, y: f.pos.y, z: f.pos.z }), when: () => f.downed && !f.tied && !f.gone, act: () => K.tie(f) });
   }
   function release(f) {
-    if (f.marks) { f.marks.g.removeFromParent(); f.marks.g.traverse((o) => { if (o.material) o.material.dispose(); }); f.marks = null; } // the geometry is shared
+    if (f.marks) { f.marks.g.removeFromParent(); f.marks.g.traverse((o) => { if (o.material && o.material !== inkMat && o.material !== inkSide) o.material.dispose(); if (o.userData.own) o.geometry.dispose(); }); f.marks = null; } // the marks' geometry is shared; the shapes' is their own
     if (f.parts && f.a && !f.a.disposed && f.a.vortex) { for (const v of Object.values(f.a.vortex)) v.remove(); }
     f.parts = null;
     if (K.combat.boss === f) { K.combat.boss = null; if (S.ui && S.ui.boss) S.ui.boss(null); }
