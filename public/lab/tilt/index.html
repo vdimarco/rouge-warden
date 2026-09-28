@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b0f1c">
+<title>Full Tilt · The Lab</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+body.toy { background: #0b0f1c; }
+/* the score panel: over the table on a tall screen, beside it on a wide one (main.js lays the table out to match) */
+.dmd { position: fixed; left: 50%; top: calc(var(--sat) + 46px); transform: translateX(-50%); z-index: 4; pointer-events: none; width: min(calc(100vw - 24px), 380px); padding: 4px 12px 5px; border-radius: 10px; background: #120804; border: 2px solid #2b170b; box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8); font: 700 12px/1.15 ui-monospace, "Courier New", monospace; color: #ff9b2f; text-shadow: 0 0 6px rgba(255, 140, 40, 0.8); letter-spacing: 0.08em; }
+.dmd[hidden] { display: none; }
+.dmd .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.dmd .score { font-size: 24px; letter-spacing: 0.05em; }
+.dmd .msg { min-height: 1.15em; color: #ffd07a; text-align: center; }
+@media (orientation: landscape) { .dmd { left: 16px; top: calc(var(--sat) + 52px); transform: none; width: 240px; } }
+</style>
+</head>
+<body class="toy">
+<canvas class="view" id="view" aria-label="Full Tilt"></canvas>
+<div class="dmd" id="dmd" hidden>
+  <div class="row"><span id="dBall">BALL 1</span><span class="score" id="dScore">0</span><span id="dMult">X1</span></div>
+  <div class="msg" id="dMsg"></div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

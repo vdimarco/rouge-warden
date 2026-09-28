@@ -20,9 +20,10 @@ export function labBar() {
   return bar;
 }
 
-// { title, pitch, how: [lines], button, motion, onStart(status) }. status is the motion status: "granted",
-// "denied", "no-data", "unsupported", or "off" when the toy did not ask.
-export function startCard({ title, pitch, how = [], button = "Start", motion = false, onStart }) {
+// { title, pitch, how: [lines], button, motion, wait, onStart(status) }. status is the motion status: "granted",
+// "denied", "no-data", "unsupported", or "off" when the toy did not ask. A toy that can play without motion sets
+// wait: false: it starts at once with status "pending", and the request finishes in the background.
+export function startCard({ title, pitch, how = [], button = "Start", motion = false, wait = true, onStart }) {
   const el = make("section", "card start", `<h1></h1><p class="pitch"></p><ul class="how"></ul><button class="go" type="button"></button>`);
   el.querySelector("h1").textContent = title;
   el.querySelector(".pitch").textContent = pitch;
@@ -36,6 +37,7 @@ export function startCard({ title, pitch, how = [], button = "Start", motion = f
     try { Haptics.unlock(); } catch (e) { /* no buzz here */ }
     const ask = motion ? Motion.request() : Promise.resolve("off");
     el.hidden = true;
+    if (!wait) { Promise.resolve(ask).catch(() => {}); if (onStart) onStart("pending"); return; }
     Promise.resolve(ask).catch(() => "off").then((st) => { if (onStart) onStart(st); });
   });
   setTimeout(() => go.focus({ preventScroll: true }), 50);
