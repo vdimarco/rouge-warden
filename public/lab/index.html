@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>The Lab · Cottage Arcade</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+body { min-height: 100%; padding: calc(var(--sat) + 18px) 16px calc(var(--sab) + 28px); }
+main { max-width: 760px; margin: 0 auto; }
+header h1 { font: 700 38px/1.05 var(--title); color: var(--gold); margin: 8px 0 6px; }
+header p { color: var(--muted); margin: 0 0 6px; }
+header a { color: var(--ink); }
+.toys { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 18px; }
+.toy { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.toy h2 { font: 700 24px/1.1 var(--title); margin: 0 0 4px; }
+.toy .pitch { color: var(--muted); margin: 0 0 10px; }
+.toy h3 { font: 700 13px/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin: 10px 0 4px; }
+.toy ul { margin: 0; padding-left: 18px; }
+.toy li { margin: 2px 0; }
+.toy .time { margin: 12px 0 12px; color: var(--muted); font-size: 14px; }
+.toy .play { margin-top: auto; display: block; text-align: center; font: 700 18px/1 var(--body); padding: 13px; border-radius: 12px; background: var(--gold); color: #1d1606; text-decoration: none; }
+footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="/">◀ Arcade</a>
+    <h1>The Lab</h1>
+    <p>Toys for new games. Each toy has only the core move, with no art and no menus. If you want another go without anyone asking, the toy has passed. Tell the crew your time.</p>
+  </header>
+
+  <section class="toys">
+    <article class="toy" data-toy="plunge">
+      <h2>Take the Plunge</h2>
+      <p class="pitch">You are a loon, and winter is coming. Dive into the lakes for speed and fly south.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Hold anywhere (or Space) to tuck and dive. Let go to glide.</li>
+        <li>Hit a lake steep for a rip. A flat landing is a belly-flop.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul>
+        <li>Dive through the fish and burst out of the water.</li>
+        <li>Share your run, and race a friend's ghost.</li>
+      </ul>
+      <p class="time"></p>
+      <a class="play" href="/lab/plunge/">Play</a>
+    </article>
+
+    <article class="toy" data-toy="creek">
+      <h2>Up the Creek</h2>
+      <p class="pitch">Your phone is the canoe paddle. Run the rapid and catch the eddies behind the rocks.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Phone: tip it to a side, then rock the top to stroke on that side. Twist at the end for a J-stroke. Tip it hard and hold to brace.</li>
+        <li>Touch: drag down on a side to stroke. Keys: A and D stroke, Q and E J-stroke, Z and C brace.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul>
+        <li>Paddle straight with J-strokes.</li>
+        <li>Lean into an eddy and sit still while the rapid roars past.</li>
+      </ul>
+      <p class="time"></p>
+      <a class="play" href="/lab/creek/">Play</a>
+    </article>
+
+    <article class="toy" data-toy="tilt">
+      <h2>Full Tilt</h2>
+      <p class="pitch">A bare pinball table. The question is the flippers: do they feel like a real machine?</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Tap the left or right half of the screen to flip. Drag the plunger down and let go to launch.</li>
+        <li>Keys: Z and / flip, Space launches. Shake the phone, or press A or L, to nudge.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul>
+        <li>Cradle the ball on a raised flipper, then pass it across with a quick tap.</li>
+        <li>Nudge a ball back from the outlane. Nudge too hard and it tilts.</li>
+      </ul>
+      <p class="time"></p>
+      <a class="play" href="/lab/tilt/">Play</a>
+    </article>
+
+    <article class="toy" data-toy="rules">
+      <h2>House Rules</h2>
+      <p class="pitch">You are the Cottage. Build a Down the Drain layer, clear it yourself, and send it to the crew.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Paint rock, sand, water, lava and more. Place critters and propane tanks.</li>
+        <li>Press Test it to play your layer in Down the Drain. Reach a drain to unlock Share.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul>
+        <li>Hold a lake up with a thin sand dam, and watch what happens when someone digs.</li>
+      </ul>
+      <p class="time"></p>
+      <a class="play" href="/lab/rules/">Build</a>
+    </article>
+  </section>
+
+  <footer>The toys keep your play time in this browser only. The ideas behind them are in <code>docs/game-ideas.md</code> in the repo.</footer>
+</main>
+<script type="module">
+import { readStats, fmtTime } from "/lab/kit/stats.js";
+for (const card of document.querySelectorAll(".toy")) {
+  const s = readStats(card.dataset.toy);
+  card.querySelector(".time").textContent = s.ms > 0 ? `Your time: ${fmtTime(s.ms)}, ${s.runs} ${s.runs === 1 ? "run" : "runs"}.` : "Not played yet in this browser.";
+}
+</script>
+</body>
+</html>
