@@ -53,7 +53,7 @@
     box.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     box.querySelector(".gsw-close").onclick = close;
-    // a game that turns its own frame (Reel It In held sideways) marks a host, so the list turns with it
+    // a game that turns its own frame (Reel It In keeps itself upright on the phone) marks a host, so the list turns with it
     (document.querySelector("[data-switch-host]") || document.body).appendChild(box);
   }
   async function open(current) {
