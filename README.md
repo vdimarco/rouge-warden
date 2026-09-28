@@ -167,6 +167,33 @@ Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of B
 | Pause | Esc or P | II |
 | Music on or off | M | ♪ on the title screen |
 
+### Ten Seats: the story
+
+The title screen offers three ways in: NEW STORY, CONTINUE and FIGHT GABE. FIGHT GABE plays the boss fight above, exactly as before, and loads no story code.
+
+NEW STORY opens with the Gabe fight. When you win, Gabe yields, and the game goes back three days to Fifty-One's bachelor party in Sedona. From there it is an open world: a 2 km Sedona with Uptown, West Sedona, the creek, the trailheads and Midgley Bridge. The crew rides in the Whale, a ten-seat white van. The crew learns that Gabe watches the bridge for a trafficking gang and meets the FBI once a month. Together they bring the gang to justice.
+
+- **Missions.** Chapters mix driving, chases, stealth, photo steps, clue hunts and fights in the style of the boss fight. A failed mission offers RETRY from its last checkpoint.
+- **Side jobs.** Four Legends (the javelina, the vulture, the gila and the tarantula), two time trials and three photo hunts, marked on the map.
+- **Cast.** The crew, Agent Vance, Harlan Voss, "Rattler" and the gang. Mouths move with the lines, and each costume fits the chapter.
+- **Saves.** The game saves at checkpoints and when you hide the page. CONTINUE on the title picks up from the last save, and repairs a damaged one.
+- **Phones.** Touch controls, a HUD that fits short screens, and an optional tilt look: tap 傾 to steer the camera by tilting the phone, and double-tap to centre it.
+
+| Action | Keyboard | On foot / in a vehicle |
+| --- | --- | --- |
+| Move or steer | WASD or arrows | both |
+| Use, talk, get in or out | E or Enter | both |
+| Handbrake | Space | vehicle |
+| Horn | H | vehicle |
+| Look back | C | vehicle |
+| Crouch | C, X or Ctrl | foot |
+| Phone camera | V | both |
+| Map | M | both |
+| Fight | the boss fight keys above | foot |
+| Pause and menu | Esc or P | both |
+
+The story code is in `public/crimson/js/story/`, one folder for each package: `look`, `world`, `cast`, `vehicles`, `combat`, `ui`, `missions` and `content`. `types.js` holds the contracts between them.
+
 ### How it is made
 
 - **Characters.** The ronin, Gabe, and the bear are textured 3D models with skeletons, made with Higgsfield (Meshy image-to-3D) from concept art. Every move is a motion-capture clip from the same library. The rigging service gives each clip a slightly different skeleton, so a build step moves each clip onto the detailed model: it copies every bone's world rotation change from the rest pose. The game cuts attacks out of the longer clips, and hit timings come from measuring when each fist, foot, or paw moves fastest.
@@ -252,6 +279,9 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
 | `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
+| `public/crimson/js/story/` | Crimson Rouge story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
+| `qa/crimson/` | Playwright tests for Crimson Rouge (see below) |
+| `higgsfield/` | Command-line tools that run Higgsfield API models. The key stays in a git-ignored `.env.local` |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, and its hero cards |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
 | `public/wild/index.html` | Breath of the Lake: the page, the HUD, and the menus |
@@ -269,6 +299,22 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 | `legacy/warden-iso.html` | An older build, kept for reference |
 
 The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
+
+### Crimson Rouge tests
+
+Serve `public/` (for example `python3 -m http.server 8765 --directory public`), set `CRIMSON_URL=http://127.0.0.1:8765/crimson/`, then run each script with Node from the repo root. Each one exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `boss.mjs`, `render.mjs` | FIGHT GABE plays and draws exactly as the recorded golden run and images. |
+| `handoff.mjs`, `contract.mjs`, `story.mjs` | The fight hands over to the story, and the story packages keep their contracts. |
+| `world.mjs`, `look.mjs`, `palette.mjs` | Sedona builds, the roads connect, and the day and night looks stay in range. |
+| `cast.mjs`, `talk.mjs`, `van.mjs` | Bodies, poses, talking mouths, and riders seated inside every vehicle, on slopes too. |
+| `combat.mjs`, `missions.mjs`, `photo.mjs` | Fights, mission steps and the phone camera. |
+| `ui.mjs`, `touch.mjs`, `pad.mjs`, `tilt.mjs`, `text.mjs` | The HUD at desktop and phone sizes, touch, gamepad, tilt and text. |
+| `save.mjs`, `music.mjs` | Saves, damaged saves and CONTINUE; the title and fight songs. |
+| `perf.mjs` | Triangle and draw budgets at each quality setting, in town and in fights. |
+| `playthrough.mjs <fixes, a chapter id, a side job id or newstory>` | A bot plays with the normal controls only. `fixes` runs one check for each blocker found in the full playthrough. |
 
 ### Breath of the Lake tests
 
