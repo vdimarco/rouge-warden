@@ -136,6 +136,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 #toast { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: normal; text-align: center; width: max-content; max-width: min(92%, 420px); line-height: 1.3; }
 #toast.on { opacity: 1; }
+body[data-screen="pause"] #toast, body[data-screen="settings"] #toast { z-index: 11; }
 #game.l-tall-cast #toast { bottom: calc(46% + 12px); }
 
 /* ---------- screens ---------- */
@@ -149,6 +150,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .btn.go { background: var(--red); border-color: #ff9f94; color: #fff; box-shadow: 0 4px 0 #8a2018; }
 .btn.go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a2018; }
 .btn.alt { background: transparent; }
+#pause .card, #settings .card { max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); overflow-y: auto; touch-action: pan-y; }
 
 /* title */
 #title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
@@ -420,7 +422,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
       </div>
-      <div class="btns"><button type="button" class="btn go" data-close>Done</button></div>
+      <div class="btns"><button type="button" class="btn" data-fullscreen hidden>Fullscreen</button><button type="button" class="btn go" data-close>Done</button></div>
     </div>
   </section>
 
@@ -434,6 +436,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
         <button type="button" class="btn" id="pHelp">How to play</button>
         <button type="button" class="btn" id="pJournal">Journal</button>
         <button type="button" class="btn" id="pSet">Settings</button>
+        <button type="button" class="btn" data-fullscreen hidden>Fullscreen</button>
         <button type="button" class="btn alt" id="quitBtn">Quit to the title</button>
         <button type="button" class="btn alt" data-switch>Switch game</button>
       </div>
@@ -474,3 +477,4 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
+
