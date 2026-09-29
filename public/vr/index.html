@@ -132,6 +132,19 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
 @media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 2vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 48px; } }
 @media (max-width: 420px) { .btn { padding: 10px 16px; letter-spacing: 0.1em; } .kicker { letter-spacing: 0.2em; } }
 @media (prefers-reduced-motion: reduce) { .logo, .rope .swing { animation: none; } .btn, .load, .load .track i { transition: none; } }
+
+#phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
+#phoneControls[hidden] { display:none; }
+#phoneControls button { pointer-events:auto; touch-action:none; user-select:none; -webkit-user-select:none; color:#fff6df; background:rgba(15,27,37,.85); border:1px solid #e1bc7480; border-radius:18px; min-height:48px; padding:12px 18px; font:600 16px sans-serif; }
+.phone-top { display:flex; justify-content:center; gap:8px; padding: max(12px,env(safe-area-inset-top)) 8px 0; }
+.phone-hint { margin:10px auto; max-width:340px; padding:8px 14px; text-align:center; color:#fff6df; background:#101c2dcc; border-radius:14px; font:14px/1.4 sans-serif; }
+.phone-bottom { position:absolute; bottom:max(22px,env(safe-area-inset-bottom)); left:max(18px,env(safe-area-inset-left)); right:max(18px,env(safe-area-inset-right)); display:flex; align-items:end; justify-content:space-between; gap:12px; }
+#phoneControls .phone-stick { width:92px; height:92px; border-radius:50%; background:radial-gradient(circle,#d7ad6330,#101c2dcc); }
+.phone-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+#phoneControls [data-action="throw"] { grid-column:1 / -1; min-height:70px; background:#e7b462; color:#172536; font-size:21px; }
+#phoneControls [data-action="throw"].held { background:#fff1bd; box-shadow:0 0 24px #e7b46280; }
+#view canvas { touch-action:none; }
+@media (max-height:480px) { .phone-hint { max-width:300px; font-size:12px; } .phone-bottom { bottom:12px; } #phoneControls [data-action="throw"] { min-height:54px; } }
 </style>
 </head>
 <body data-mode="title">
@@ -169,7 +182,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
       </div>
     </nav>
     <p class="note" id="note" role="status" hidden></p>
-    <p class="note" id="touchNote" hidden>Open this page on a Quest or a computer.</p>
+    <p class="note" id="touchNote" hidden>Tilt to aim. Hold Throw and flick forward. Pull toward you to reel; release to fly. Touch controls also work.</p>
     <p class="note" id="noXR" hidden>This browser has no VR. You can play on this screen.</p>
     <p class="note hint" id="installHint" hidden>Install it from the browser menu to launch it straight into the headset.</p>
     <div class="load" id="load" role="progressbar" aria-label="Building the city" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">

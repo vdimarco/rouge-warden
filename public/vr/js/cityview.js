@@ -60,6 +60,13 @@ vec3 skyColor(vec3 d) {
   c = mix(c, c * vec3(0.9, 0.8, 1.04) + vec3(0.02, 0.0, 0.06), (1.0 - toward) * (1.0 - smoothstep(0.0, 0.7, y)) * 0.75);
   float s = max(dot(d, uSunDir), 0.0);
   c += uGlow * (pow(s, 6.0) * 0.32 + pow(s, 48.0) * 0.4) * (1.0 - 0.5 * smoothstep(0.0, 0.5, y));
+  // Broad cloud banks give the skyline scale, with a warm sunward rim.
+  // Two noise samples avoid a full-screen volumetric pass on phone and headset GPUs.
+  vec2 cloudUV = d.xz / max(d.y + 0.22, 0.08) * 1.4;
+  float cloud = vnoise(cloudUV) * 0.7 + vnoise(cloudUV * 2.8 + 9.1) * 0.3;
+  float bank = smoothstep(0.48, 0.7, cloud) * smoothstep(0.015, 0.18, d.y);
+  vec3 cloudCol = mix(uSkyMid * 0.83, uSkyHor * 0.8 + uGlow * 0.35, toward);
+  c = mix(c, cloudCol, bank * 0.65);
   return c;
 }
 // In the sun or in a shadow, from the map's shadow height over the point: 1 in the sun, 0 in shade, soft at the edge.
@@ -262,7 +269,15 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     // up close: frames, glazing bars, sills and lintels, lamps and curtains in the rooms
     vec2 wl = (f - wr.xy) / (wr.zw - wr.xy);
     vec2 px = fq / (wr.zw - wr.xy);
-    float lamp = 0.72 + 0.4 * wl.y;
+    // View-dependent room depth. Recessed walls and a ceiling slide behind the pane
+    // as the player swings past, without adding geometry or draw calls.
+    vec3 tangent = vec3(N.z, 0.0, -N.x);
+    vec2 roomShift = vec2(dot(V, tangent), V.y) / max(dot(V, N), 0.25) * 0.16;
+    vec2 backUV = (wl - 0.5) * 0.72 + 0.5 - roomShift;
+    float backWall = box2(backUV, vec4(0.08, 0.08, 0.92, 0.92), max(px, vec2(0.008)));
+    float roomDepth = mix(0.42, 1.0, backWall);
+    float ceiling = smoothstep(0.76, 0.94, backUV.y);
+    float lamp = (0.72 + 0.4 * wl.y) * roomDepth * (1.0 - ceiling * 0.28);
     float curtain = step(0.6, fract(r * 31.7)) * (bar(wl.x, 0.0, 0.18 + 0.2 * fract(r * 7.9), px.x) + bar(wl.x, 1.0, 0.12 + 0.2 * fract(r * 3.3), px.x));
     vec3 roomNear = lit > 0.5 ? warm * lamp * (1.0 - 0.45 * clamp(curtain, 0.0, 1.0)) + vec3(0.2, 0.08, 0.06) * clamp(curtain, 0.0, 1.0) * lit : dark * (0.8 + 0.6 * wl.y);
     if (glassy && lit > 0.5) roomNear = mix(roomNear, vec3(0.62, 0.6, 0.56) * 0.7, step(0.72, wl.y) * step(0.5, fract(r * 5.1)));

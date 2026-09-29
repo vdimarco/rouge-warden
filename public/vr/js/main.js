@@ -267,6 +267,7 @@ function syncPauseState() {
   else if (!ui.paused && G.state === "paused") { G.state = G.pausedFrom || "play"; onResume(); }
 }
 function onPause() {
+  D.mobile.reset();
   ropes.setMode("special");
   if (G.mode === "ar") setWorldVisible(false); // passthrough around the pause panel and the diorama
   audio.duck(true);
@@ -747,7 +748,7 @@ function wireTitle() {
     audio.init();
     audioStarted = true;
     note("");
-    if (mode === "desktop") startDesktop(); else startXR(mode);
+    if (mode === "desktop") { D.mobile.start(); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
@@ -769,7 +770,7 @@ function wireTitle() {
       saveNow();
     });
   }
-  if (TOUCH_ONLY) { $("#playFlat").hidden = true; $("#touchNote").hidden = false; }
+  if (TOUCH_ONLY) { $("#playFlat").textContent = "PLAY ON PHONE"; $("#touchNote").hidden = false; }
   const quest = /OculusBrowser|Quest/i.test(navigator.userAgent);
   if (quest && !matchMedia("(display-mode: standalone)").matches) $("#installHint").hidden = false;
   X.supported.then(({ vr, ar }) => {
@@ -780,7 +781,7 @@ function wireTitle() {
     G.supported = { vr, ar };
   });
   // flat play: a click on the city while paused goes back to play
-  renderer.domElement.addEventListener("mousedown", () => {
+  renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
     if (G.state === "paused") { ui.closePause(); D.lock(); }
     else if (!D.locked) D.lock();
