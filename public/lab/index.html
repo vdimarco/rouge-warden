@@ -30,10 +30,23 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
   <header>
     <a href="/">◀ Arcade</a>
     <h1>The Lab</h1>
-    <p>Toys for new games. Each toy has only the core move, with no art and no menus. If you want another go without anyone asking, the toy has passed. Tell the crew your time.</p>
+    <p>Toys for new games. Each prototype explores a different core move. If you want another go without anyone asking, the toy has passed. Tell the crew your time.</p>
   </header>
 
   <section class="toys">
+    <article class="toy">
+      <h2>Loon Echo</h2>
+      <p class="pitch">Same lake, wrong dimension. Bring your growing family of little weirdos home.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Drag or use the arrow keys to steer. Rescued chicks echo your turns.</li>
+        <li>CALL (or Space) gathers the flock and braces against boat wakes.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul><li>Take a detour for a chick, then get the whole tail through the next gap.</li><li>Bring all eight home without losing anyone to the shore.</li></ul>
+      <p class="time">A 72-second crossing. Your best home count stays in this browser.</p>
+      <a class="play" href="/echo/">Play Loon Echo</a>
+    </article>
     <article class="toy" data-toy="plunge">
       <h2>Take the Plunge</h2>
       <p class="pitch">You are a loon, and winter is coming. Dive into the lakes for speed and fly south.</p>
@@ -108,7 +121,7 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
 </main>
 <script type="module">
 import { readStats, fmtTime } from "/lab/kit/stats.js";
-for (const card of document.querySelectorAll(".toy")) {
+for (const card of document.querySelectorAll(".toy[data-toy]")) {
   const s = readStats(card.dataset.toy);
   card.querySelector(".time").textContent = s.ms > 0 ? `Your time: ${fmtTime(s.ms)}, ${s.runs} ${s.runs === 1 ? "run" : "runs"}.` : "Not played yet in this browser.";
 }
