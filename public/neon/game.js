@@ -16,7 +16,7 @@ function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;cons
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
 function panel(html){$('explore').hidden=true;$('panel').innerHTML=html;$('overlay').hidden=false;$('controls').hidden=true}
-function menu(){panel(`<div class="eyebrow">OPEN DISTRICT / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>A living district of lanterns, rooftop gardens and wandering sentinels.</p><p>Run with the left thumb stick. Drag the right side to look. Hold your phone like a sword handle to cut and block. Collect spirit lights to recover.</p><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="ghibli">Cyber Ghibli</option><option value="rick-morty">Rick and Morty</option></select><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">${district?"Explore the market and canal. WASD also moves on desktop.":"3D could not start on this device. The fixed-view duel is available."} Keep a firm grip. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
+function menu(){panel(`<div class="eyebrow">OPEN DISTRICT / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>A living district of lanterns, rooftop gardens and wandering sentinels.</p><p>Run with the left thumb stick. In gyro mode, move your phone to look, cut and block. In touch mode, drag the right side to look. Collect spirit lights to recover.</p><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="ghibli">Cyber Ghibli</option><option value="rick-morty">Rick and Morty</option></select><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">${district?"Explore the market and canal. WASD also moves on desktop.":"3D could not start on this device. The fixed-view duel is available."} Keep a firm grip. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
 function start(){audioStart();district?.reset();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say('MATCH THE BRIGHT LINE')}
 function resume(){state='play';resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('explore').hidden=!district;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
 function spawn(){const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0);district?.placeEnemy(enemy)}
@@ -43,7 +43,7 @@ function orientationQuaternion(alpha,beta,gamma) {
   return multiply(multiply([Math.cos(a),0,0,Math.sin(a)],[Math.cos(b),Math.sin(b),0,0]),[Math.cos(c),0,Math.sin(c),0]);
 }
 function rotate(q,v){return multiply(multiply(q,[0,...v]),inverse(q)).slice(1)}
-function resetSword(){base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;sword.direction=[0,1,0];sword.lastDirection=[0,1,0];sword.travel=0;sword.lastVelocity=null;guard=false;guardAt=-10}
+function resetSword(){if(gyro)district?.beginMotionView();else district?.endMotionView();base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;sword.direction=[0,1,0];sword.lastDirection=[0,1,0];sword.travel=0;sword.lastVelocity=null;guard=false;guardAt=-10}
 // The phone's physical top edge is the blade axis. The wrist is the pivot;
 // the blade keeps a fixed world length and foreshortens when aimed in depth.
 function swordSegment() {
@@ -68,7 +68,7 @@ function bladeBlocks() {
   return cross>.78&&t>=0&&t<=1&&ix>W*.15&&ix<W*.85&&iy>H*.25&&iy<H*.85;
 }
 function motionUI(){
-  $('guard').hidden=gyro;$('burst').hidden=gyro;
+  $('guard').hidden=gyro;$('burst').hidden=gyro;$('lookPad').hidden=gyro;
   $('motion').textContent=gyro?'Gyro on · switch to touch':'Enable gyro';
 }
 function disableGyro(message){gyro=false;resetSword();clearTimeout(motionTimer);motionUI();$('hint').textContent=message}
@@ -100,6 +100,10 @@ addEventListener('deviceorientation',e=>{
   const sweptAngle=Math.acos(clamp(dot,-1,1))*180/Math.PI;
   const speed=sweptAngle/dt;
   if(speed>1800){resetSword();return} // Reject sensor discontinuities.
+  const forward=rotate(relative,[0,0,-1]);
+  const viewYaw=Math.atan2(-forward[0],-forward[2])-Math.atan2(direction[0],direction[1])*.55;
+  const viewPitch=Math.asin(clamp(forward[1],-1,1));
+  district?.aimMotionView(viewYaw,viewPitch,dt);
   const prior=swordSegment(),alpha=1-Math.exp(-dt/.018);
   const velocity=direction.map((v,i)=>(v-sword.lastDirection[i])/dt);
   const reverse=sword.lastVelocity&&velocity.reduce((n,v,i)=>n+v*sword.lastVelocity[i],0)<-0.5;

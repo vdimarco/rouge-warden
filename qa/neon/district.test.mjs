@@ -20,3 +20,6 @@ assert.ok(Math.abs(travel(60)-10.5)<.001);assert.ok(Math.abs(travel(30)-travel(6
 d.reset();d.actor.visible=false;d.position.set(-8,1.65,-13);d.keys.add('KeyA');for(let i=0;i<20;i++)d.update(.1,true,null);assert.equal(d.collides(d.position.x,d.position.z),false);
 console.log('Scenery batches:',d.batchStats);
 console.log('PASS: real Three scene construction, walk movement, building collision, approach/range/facing gates, pause reset, pickup debounce, viewport resize. GPU renderer mocked.');
+
+// Phone look keeps the current heading when recentered and unwraps compass turns.
+d.reset();d.yaw=.8;d.pitch=.1;d.beginMotionView();d.aimMotionView(.5,.3,.1);assert.ok(d.yaw>.8);assert.ok(d.pitch>.1);const heading=d.yaw;d.beginMotionView();d.aimMotionView(0,0,.1);assert.equal(d.yaw,heading);d.aimMotionView(Math.PI-.01,0,.1);const beforeWrap=d.yaw;d.aimMotionView(-Math.PI+.01,0,.1);assert.ok(Math.abs(d.yaw-beforeWrap)<.5);d.aimMotionView(0,10,.1);assert.ok(d.pitch<=.85);d.endMotionView();assert.equal(d.motionView,null);

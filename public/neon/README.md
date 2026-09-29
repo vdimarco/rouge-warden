@@ -51,3 +51,7 @@ Choose Cyber Ghibli or Rick and Morty in the start menu. The selection saves loc
 The Rick and Morty option is a custom runtime style. Higgsfield's preset lookup did not resolve a matching entry. An environment art request was submitted with GPT Image 2 (job `c0a9c08a-97e4-4106-a00b-63e75395799c`), but result retrieval failed twice with a service error. No generated art is included in this change and the game does not depend on that job.
 
 Nine Node tests pass. The district test also verifies batching, reversible style changes, equal travel at 15/30/60 Hz, and wall collision at running speed. GPU rendering is mocked.
+
+## Phone controls the view
+
+In gyro mode, phone rotation changes the camera as well as the sword. Sideways blade motion also turns the view. Camera response uses 45 ms smoothing, with pitch limited to keep the horizon stable. The right look pad is hidden while gyro is active; the left stick moves relative to the current view. Recenter preserves the current view and sets the present grip as neutral. Touch mode restores drag-to-look. Sensor loss and resume keep the existing calibration flow. Automated scene tests cover camera motion, recentering, angle wrap and pitch limits; physical-device feel remains unverified.
