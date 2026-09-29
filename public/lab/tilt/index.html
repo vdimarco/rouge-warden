@@ -5,22 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b0f1c">
-<title>Full Tilt · The Lab</title>
+<title>Full Tilt · Celestial</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
 <style>
-body.toy { background: #0b0f1c; }
-/* the score panel: over the table on a tall screen, beside it on a wide one (main.js lays the table out to match) */
-.dmd { position: fixed; left: 50%; top: calc(var(--sat) + 46px); transform: translateX(-50%); z-index: 4; pointer-events: none; width: min(calc(100vw - 24px), 380px); padding: 4px 12px 5px; border-radius: 10px; background: #120804; border: 2px solid #2b170b; box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8); font: 700 12px/1.15 ui-monospace, "Courier New", monospace; color: #ff9b2f; text-shadow: 0 0 6px rgba(255, 140, 40, 0.8); letter-spacing: 0.08em; }
+body.toy { background: #040a13; }
+.labbar { gap: 8px; }
+.labbar > :last-child { margin-left: auto; }
+.labbar > * { font-size: 11px; background: #091923dd; border-color: #9fc9bf44; }
+.dmd { position: fixed; left: 50%; top: calc(var(--sat) + 45px); transform: translateX(-50%); z-index: 4; pointer-events: none; width: min(calc(100vw - 28px), 350px); padding: 5px 14px; border-radius: 4px; background: #07131bde; border: 1px solid #bba17266; font: 600 10px/1.15 ui-monospace, monospace; color: #91d9c9; letter-spacing: .1em; }
 .dmd[hidden] { display: none; }
-.dmd .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.dmd .score { font-size: 24px; letter-spacing: 0.05em; }
-.dmd .msg { min-height: 1.15em; color: #ffd07a; text-align: center; }
-@media (orientation: landscape) { .dmd { left: 16px; top: calc(var(--sat) + 52px); transform: none; width: 240px; } }
+.dmd .row { display:flex;align-items:center;justify-content:space-between;gap:14px; }
+.dmd .score { font-size:24px;color:#f2dfb7;letter-spacing:.04em; }
+.dmd .msg { min-height:1.15em;text-align:center;color:#c4eae1; }
+.flipper-control { display:none; position:fixed; bottom:calc(var(--sab) + 14px); z-index:4; min-width:88px; min-height:48px; border:1px solid #90dac56b; background:#12303ad9;color:#dfeddf;border-radius:24px;font:600 11px ui-monospace,monospace;touch-action:none; }
+.playing .flipper-control { display:block; }
+.flipper-control:active { background:#65dfba;color:#041914; }
+.left-flip { left:max(12px, env(safe-area-inset-left)); }
+.right-flip { right:max(12px, env(safe-area-inset-right)); }
+.card { background:linear-gradient(145deg,#142c36f5,#07131bf5);border:1px solid #bca37488;border-radius:6px;box-shadow:0 20px 80px #000c; }
+.card h1 { color:#edd4a1; }
+.card .go,.card .again { background:#a6ddc9;color:#08221c;border-radius:3px; }
+.card .how { font-size:13px; }
+@media (orientation:landscape) {
+  .dmd { top:calc(var(--sat) + 5px);width:min(34vw,360px);padding:3px 12px;border-color:#bba17233; }
+  .dmd .score { font-size:20px; }
+  .dmd .msg { font-size:9px; }
+  .labbar { left:max(8px, env(safe-area-inset-left));right:max(8px, env(safe-area-inset-right)); }
+  .left-flip { top:58px;bottom:auto; }
+  .right-flip { right:auto;left:max(12px, env(safe-area-inset-left));bottom:12px; }
+  .flipper-control { min-width:74px;min-height:42px;font-size:10px; }
+  .toast { top:48px;font-size:13px; }
+  .card { width:min(76vw,660px);padding:18px 24px; }
+  .card .how { columns:2;column-gap:26px; }
+  .card .how li { break-inside:avoid; }
+}
 </style>
 </head>
 <body class="toy">
-<canvas class="view" id="view" aria-label="Full Tilt"></canvas>
+<canvas class="view" id="view" aria-label="Celestial pinball table"></canvas>
 <div class="dmd" id="dmd" hidden>
   <div class="row"><span id="dBall">BALL 1</span><span class="score" id="dScore">0</span><span id="dMult">X1</span></div>
   <div class="msg" id="dMsg"></div>
