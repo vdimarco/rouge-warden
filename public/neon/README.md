@@ -39,3 +39,15 @@ The physical top edge of the phone defines the sword axis. Calibrate with the ph
 Cut speed comes from blade-axis movement, not total phone rotation. Turning around the handle axis cannot score a cut. A cut needs at least 12 degrees of travel and contact with the target. A reversal rearms the swing, supporting backhand cuts; cooldown still limits repeated hits. Sensor discontinuities recalibrate. Phone orientation cannot measure reliable absolute hand translation or provide physical resistance.
 
 Eight automated tests pass. Real-device feel remains unverified.
+
+## Fast movement and style selection
+
+The left stick now runs at 10.5 world units per second (previously 3.8). Analog stick distance controls speed; direction changes apply immediately. Movement checks collisions in steps of at most 0.15 units, including on slow frames. Simulation accepts up to 100 ms per frame to avoid slowing movement at 15–25 FPS. Longer stalls remain capped.
+
+Static scenery is merged by material: 978 meshes become 39 batches. Animated objects stay separate. Both render layers cap device pixel ratio at 1.25, WebGL MSAA is off, and the menu avoids backdrop blur. These lower render cost; actual phone frame rate is unmeasured.
+
+Choose Cyber Ghibli or Rick and Morty in the start menu. The selection saves locally. Rick and Morty adds a violet sky, flat pastel colors, ink edges, a green portal and cartoon eyes to the 3D scene. The existing art style stays the default. Style changes restore the original material colors when switching back.
+
+The Rick and Morty option is a custom runtime style. Higgsfield's preset lookup did not resolve a matching entry. An environment art request was submitted with GPT Image 2 (job `c0a9c08a-97e4-4106-a00b-63e75395799c`), but result retrieval failed twice with a service error. No generated art is included in this change and the game does not depend on that job.
+
+Nine Node tests pass. The district test also verifies batching, reversible style changes, equal travel at 15/30/60 Hz, and wall collision at running speed. GPU rendering is mocked.
