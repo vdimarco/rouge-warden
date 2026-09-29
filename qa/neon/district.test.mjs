@@ -36,3 +36,6 @@ d.reinforce(1);d.reset();assert.equal(d.drones.length,0);assert.equal(d.dashCool
 d.actor.position.set(0,0,2);d.lunge();assert.ok(d.position.z<8);assert.equal(d.collides(d.position.x,d.position.z),false);
 d.active=true;d.position.set(-8,1.65,-13);d.requestDash(-1,0);d.update(.1,true,null);assert.equal(d.collides(d.position.x,d.position.z),false);const dashTime=d.dash;d.update(.5,false,null);assert.equal(d.dash,dashTime);
 console.log('PASS: patrol cap, attack windup, dash immunity/cooldown, cleave, reset, lunge collision and pause.');
+
+// Full groups preserve arm animation, select living targets, and retire old encounters.
+const fsquad=[{id:0,hp:6,phase:'guard',period:1,dir:0},{id:1,hp:6,phase:'windup',period:1,timer:.5,dir:1}];d.reset();d.beginEncounter(fsquad);assert.equal(d.crowd.length,2);assert.ok(d.crowd.every(c=>c.arm&&c.legs.every(Boolean)));d.update(.05,true,fsquad[0]);assert.ok(d.crowd[1].arm.rotation.x<-.35);fsquad[0].hp=0;assert.equal(d.chooseFighter(null),fsquad[1]);d.update(.05,true,fsquad[1]);assert.equal(d.crowd[0].mesh.visible,false);const retired=d.crowd.map(c=>c.mesh);d.beginEncounter([{id:2,hp:6,phase:'guard'}]);assert.ok(retired.every(m=>!d.scene.children.includes(m)));
