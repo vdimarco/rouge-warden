@@ -15,8 +15,8 @@ function closeSheet() { $('sheet').close(); paused = false; resetInput(); last =
 function sheet(html) { $('sheet').classList.remove('market'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); }
 function pause() {
   if (!running || resultShown) return;
-  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">WASD or arrows to move · Q / E / R skills · F rift · M map · B return · Esc pause</p>');
-  $('resume').onclick = closeSheet; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
+  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">WASD or arrows to move · Q / E / R skills · F rift · M map · B return · Esc pause</p>');
+  $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
 function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = createMatch(selected); sound.next = 0; }
 function updateSound() { $('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
@@ -34,7 +34,7 @@ function start() {
 }
 function how() {
   const h = HEROES[selected];
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range. Tap an enemy to focus it.</li><li>Tap a skill for aim assist, or drag to aim and release. Your ultimate unlocks at level 3.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Hunt side spirits for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items with unique powers. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / R skills · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range. Targets are chosen automatically. Tap an enemy only to override focus.</li><li>Tap a skill for aim assist, or drag to aim and release. Your ultimate unlocks at level 3.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Hunt side spirits for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / R skills · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -68,7 +68,11 @@ function updateUI() {
   $('realm-fill').style.width = `${(1 - state.time % SHIFT / SHIFT) * 100}%`;
   $('objective').classList.toggle('shifting', until <= 6);
   $('portal').disabled = distance(p, gate) >= 150 || p.portalCd > 0 || p.hp <= 0;
-  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : distance(p, gate) < 150 ? 'Jump across the map' : `Gate ${Math.round(distance(p, gate) / 10)}m away`;
+  $('portal').hidden = distance(p, gate) >= 180 && p.portalCd <= 0;
+  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : 'Jump across the map';
+  const focus = state.units.find(e => e.id === p.target && e.hp > 0);
+  $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : focus ? `AUTO · ${focus.name || 'Wisp'}` : 'AUTO · READY';
+  $('auto-status').classList.toggle('engaged', !!focus);
   if (waypoint && distance(p, waypoint) < 110) waypoint = null;
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : state.towers[1] < 3 ? 'Their rift is exposed. Push with your wisps.' : state.objective ? 'Wild Hunt is awake in the center' : 'Break a wardstone. Open their rift.';
   if (state.time > 18) $('coach').hidden = true;
@@ -80,18 +84,17 @@ $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); 
 document.querySelectorAll('[data-hero]').forEach(b => b.onclick = () => choose(+b.dataset.hero));
 const joy = $('joystick');
 function moveStick(e) { if (e.pointerId !== moveId) return; const x = e.clientX - moveOrigin.x, y = e.clientY - moveOrigin.y, d = Math.max(1, Math.hypot(x, y) / 38); movement.x = x / d / 38; movement.y = y / d / 38; $('thumb').style.transform = `translate(${movement.x * 29}px,${movement.y * 29}px)`; }
-joy.addEventListener('pointerdown', e => { if (!running || paused || moveId !== null) return; e.preventDefault(); sound.start(); $('coach').hidden = true; moveId = e.pointerId; const r = joy.getBoundingClientRect(); moveOrigin = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; joy.setPointerCapture(e.pointerId); moveStick(e); });
+joy.addEventListener('pointerdown', e => { if (!running || paused || moveId !== null) return; e.preventDefault(); sound.start(); $('coach').hidden = true; moveId = e.pointerId; moveOrigin = { x: e.clientX, y: e.clientY }; joy.classList.add('active'); joy.setPointerCapture(e.pointerId); moveStick(e); });
 joy.addEventListener('pointermove', moveStick);
-for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEventListener(type, e => { if (e.pointerId !== moveId) return; moveId = null; movement.x = movement.y = 0; $('thumb').style.transform = ''; });
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEventListener(type, e => { if (e.pointerId !== moveId) return; moveId = null; movement.x = movement.y = 0; $('thumb').style.transform = ''; joy.classList.remove('active'); });
 skillButtons.forEach(b => {
   // Native keyboard and assistive activation do not send a pointer sequence.
   b.addEventListener('click', e => { if (e.detail === 0 && running && !paused) { sound.start(); castQueue = { slot: +b.dataset.skill, aim: null }; } });
-  b.addEventListener('pointerdown', e => { if (!running || paused || skillId !== null) return; e.preventDefault(); sound.start(); skillId = e.pointerId; skillSlot = +b.dataset.skill; skillOrigin = { x: e.clientX, y: e.clientY }; aim = null; b.setPointerCapture(e.pointerId); });
+  b.addEventListener('pointerdown', e => { if (!running || paused || skillId !== null || b.getAttribute('aria-disabled') === 'true') return; e.preventDefault(); sound.start(); skillId = e.pointerId; skillSlot = +b.dataset.skill; skillOrigin = { x: e.clientX, y: e.clientY }; aim = null; b.setPointerCapture(e.pointerId); });
   b.addEventListener('pointermove', e => { if (e.pointerId !== skillId) return; const x = e.clientX - skillOrigin.x, y = e.clientY - skillOrigin.y; aim = Math.hypot(x, y) > 12 ? { x, y } : null; });
   b.addEventListener('pointerup', e => { if (e.pointerId !== skillId) return; castQueue = { slot: skillSlot, aim }; skillId = null; skillSlot = null; aim = null; });
   for (const event of ['pointercancel', 'lostpointercapture']) b.addEventListener(event, e => { if (e.pointerId === skillId) { skillId = null; skillSlot = null; aim = null; } });
 });
-$('attack').addEventListener('pointerdown', e => { e.preventDefault(); sound.start(); if (!running || paused) return; const p = player(state); const candidates = state.units.filter(e => e.team !== 0 && e.hp > 0 && distance(e, p) < p.range + e.radius && visibleTo(state, 0, e)).sort((a, b) => distance(a, p) - distance(b, p)); const index = candidates.findIndex(e => e.id === target); target = candidates[(index + 1) % candidates.length]?.id || 0; });
 $('battle').addEventListener('pointerdown', e => { if (!running || paused) return; const point = renderer.world(e.clientX, e.clientY); const hit = state.units.filter(u => u.team !== 0 && u.hp > 0 && distance(u, point) < 90 && visibleTo(state, 0, u)).sort((a, b) => distance(a, point) - distance(b, point))[0]; if (hit) target = hit.id; });
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();

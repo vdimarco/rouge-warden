@@ -4,14 +4,14 @@ const surface = (w,h=w) => { const c=document.createElement('canvas');c.width=w;
 export const worldArt = {
   makeGround(phase) {
     const c = surface(2400), g = c.getContext('2d'); g.scale(.5, .5);
-    g.fillStyle = g.createPattern(this.tiles[phase], 'repeat'); g.fillRect(0, 0, SIZE, SIZE);
-    g.fillStyle = phase ? '#08191840' : '#080e1c45'; g.fillRect(0, 0, SIZE, SIZE);
+    g.fillStyle = g.createPattern(this.tiles[1], 'repeat'); g.fillRect(0, 0, SIZE, SIZE);
+    g.fillStyle = phase ? '#10341f22' : '#234b2218'; g.fillRect(0, 0, SIZE, SIZE);
     // Three broad lanes have a consistent footprint across the realm change.
     for (const lane of LANES) {
       g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); lane.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
-      g.strokeStyle = phase ? '#637153' : '#182536'; g.lineWidth = 280; g.stroke();
-      g.strokeStyle = g.createPattern(this.tiles[3], 'repeat'); g.lineWidth = 244; g.globalAlpha = phase ? .58 : .6; g.stroke(); g.globalAlpha = 1;
-      if (!phase) { g.strokeStyle = '#c5b47755'; g.lineWidth = 3; g.setLineDash([28, 34]); g.stroke(); g.setLineDash([]); }
+      g.strokeStyle = phase ? '#3c563b' : '#3c4839'; g.lineWidth = 280; g.stroke();
+      g.strokeStyle = g.createPattern(this.tiles[3], 'repeat'); g.lineWidth = 244; g.globalAlpha = phase ? .88 : 1; g.stroke(); g.globalAlpha = 1;
+      if (!phase) { g.strokeStyle = '#c5b47722'; g.lineWidth = 3; g.setLineDash([28, 34]); g.stroke(); g.setLineDash([]); }
     }
     g.beginPath(); for (let y = 100; y <= 4700; y += 35) y === 100 ? g.moveTo(RIVER(y), y) : g.lineTo(RIVER(y), y);
     g.lineWidth = 235; g.strokeStyle = '#93bd9560'; g.stroke(); g.lineWidth = 203; g.strokeStyle = g.createPattern(this.tiles[2], 'repeat'); g.stroke();

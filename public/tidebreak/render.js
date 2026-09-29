@@ -4,6 +4,7 @@ import { GLTFLoader } from '/vr/lib/addons/loaders/GLTFLoader.js';
 import { player, HEROES } from './sim.js';
 import { SIZE, BASES, PORTALS, OBSTACLES, BRUSH, RIVER, visibleTo, concealed, distance } from './world.js';
 import { worldArt } from './world-art.js';
+import { dressWorld, stoneTexture, grassTexture } from './environment.js';
 const TEAM = ['#c6ec92', '#ff8e7b'], UNIT = .01, TAU = Math.PI * 2;
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const ease = x => x * x * (3 - 2 * x);
@@ -50,19 +51,20 @@ export class Renderer {
   constructor(canvas, mini, art) {
     this.canvas = canvas; this.mini = mini; this.art = art; this.cam = { x: 2400, y: 2870 }; this.visible = new Set(); this.sightTime = -1; this.entities = new Map(); this.blend = 0; this.menuTime = 0; this.frames = 0;
     this.gl = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-    this.gl.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); this.gl.outputColorSpace = THREE.SRGBColorSpace; this.gl.toneMapping = THREE.ACESFilmicToneMapping; this.gl.toneMappingExposure = 1.5;
+    this.gl.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); this.gl.outputColorSpace = THREE.SRGBColorSpace; this.gl.toneMapping = THREE.ACESFilmicToneMapping; this.gl.toneMappingExposure = 1.13;
     this.gl.shadowMap.enabled = true; this.gl.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#182b32'); this.scene.fog = new THREE.FogExp2('#233b40', .014);
     this.camera = new THREE.OrthographicCamera(-8, 8, 10, -10, .1, 140);
-    this.scene.add(new THREE.HemisphereLight('#bddce8', '#56684b', 2.1));
-    this.sun = new THREE.DirectionalLight('#ffedc8', 3); this.sun.castShadow = true; this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.camera.left = this.sun.shadow.camera.bottom = -14; this.sun.shadow.camera.right = this.sun.shadow.camera.top = 14; this.sun.shadow.camera.near = 1; this.sun.shadow.camera.far = 70; this.sun.shadow.bias = -.001; this.sun.shadow.normalBias = .035; this.scene.add(this.sun, this.sun.target);
+    this.scene.add(new THREE.HemisphereLight('#a8d6eb', '#374d31', 1.45));
+    this.sun = new THREE.DirectionalLight('#ffe4b6', 3.2); this.sun.castShadow = true; this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.camera.left = this.sun.shadow.camera.bottom = -14; this.sun.shadow.camera.right = this.sun.shadow.camera.top = 14; this.sun.shadow.camera.near = 1; this.sun.shadow.camera.far = 70; this.sun.shadow.bias = -.001; this.sun.shadow.normalBias = .035; this.scene.add(this.sun, this.sun.target);
     this.ray = new THREE.Raycaster(); this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); this.point = new THREE.Vector3();
     this.overlay = surface(1); this.overlay.id = 'battle-overlay'; canvas.after(this.overlay); this.ctx = this.overlay.getContext('2d');
     this.tiles = Array.from({ length: 4 }, (_, i) => { const c = surface(300), size = art.ground.width / 2; c.getContext('2d').drawImage(art.ground, i % 2 * size + 8, Math.floor(i / 2) * size + 8, size - 16, size - 16, 0, 0, 300, 300); return c; });
+    this.tiles[3] = stoneTexture(); this.tiles[1] = grassTexture();
     this.grounds = [this.makeGround(0), this.makeGround(1)]; this.groundMaps = this.grounds.map(c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(4, this.gl.capabilities.getMaxAnisotropy()); return t; });
-    this.groundMaterial = mat('#a9bbb0', { map: this.groundMaps[0] });
+    this.groundMaterial = mat('#d2d9c4', { map: this.groundMaps[0], bumpMap: this.groundMaps[0], bumpScale: .055 });
     const ground = mesh(this.scene, new THREE.PlaneGeometry(48, 48), this.groundMaterial, 24, -.03, 24); ground.rotation.x = -Math.PI / 2; ground.castShadow = false;
-    this.city = new THREE.Group(); this.woods = new THREE.Group(); this.scenery = new THREE.Group(); this.scene.add(this.city, this.woods, this.scenery); this.buildWorld(); this.batchScenery(this.woods); this.batchScenery(this.scenery);
+    this.city = new THREE.Group(); this.woods = new THREE.Group(); this.scenery = new THREE.Group(); this.scene.add(this.city, this.woods, this.scenery); this.buildWorld(); dressWorld(this); this.batchScenery(this.woods); this.batchScenery(this.scenery);
     this.fx = new THREE.Group(); this.scene.add(this.fx); this.fxPool = []; this.fxUsed = 0;
     this.templates = art.models.map((gltf, kind) => this.prepareModel(gltf.scene, kind));
     this.blob = this.shadowTexture(); this.resize();
@@ -105,12 +107,22 @@ export class Renderer {
     const root = new THREE.Group(), body = new THREE.Group(); root.add(body); this.scene.add(root); const uniforms = [], tint = e.team === 1 ? '#ec987f' : e.team === 0 ? '#c0e999' : '#edc987'; let height = .7;
     if (e.kind === 'hero') {
       const template = this.templates[e.hero]; height = template.userData.height;
-      template.children.forEach(node => { const a = animatedMaterial(node.material, e.hero), m = new THREE.Mesh(node.geometry, a.material); m.castShadow = false; m.receiveShadow = true; body.add(m); uniforms.push(a.uniforms); });
+      template.children.forEach(node => { const a = animatedMaterial(node.material, e.hero), m = new THREE.Mesh(node.geometry, a.material); m.castShadow = true; m.receiveShadow = true; body.add(m); uniforms.push(a.uniforms); });
     } else if (e.kind === 'tower' || e.kind === 'core') {
-      const core = e.kind === 'core'; height = core ? 2.7 : 2.1; const stone = mat('#778582'), rune = mat(tint, { emissive: tint, emissiveIntensity: .5 });
-      mesh(body, shared.cylinder, mat('#3f5358'), 0, .13, 0, core ? 1 : .65, .26, core ? 1 : .65);
-      for (let n = 0; n < (core ? 5 : 3); n++) { const a = n / (core ? 5 : 3) * TAU; mesh(body, shared.crystal, stone, Math.cos(a) * .47, .7, Math.sin(a) * .47, .26, .75, .29); }
-      mesh(body, shared.crystal, rune, 0, height * .69, 0, core ? .6 : .42, core ? 1.05 : .72, core ? .6 : .42);
+      const core = e.kind === 'core'; height = core ? 3.0 : 2.55;
+      const stone = mat('#384b51'), trim = mat('#8a916e', { metalness: .35 }), glowColor = e.team ? '#b979ff' : '#79e8d3', rune = mat(glowColor, { emissive: glowColor, emissiveIntensity: 1.7, roughness: .25, metalness: .2 });
+      mesh(body, new THREE.CylinderGeometry(core ? .94 : .65, core ? 1.15 : .8, .22, 12), stone, 0, .11, 0);
+      mesh(body, new THREE.CylinderGeometry(.46, .6, .16, 12), trim, 0, .3, 0);
+      for (let n = 0; n < 5; n++) { const a = n / 5 * TAU, x = Math.cos(a) * .45, z = Math.sin(a) * .45;
+        mesh(body, new THREE.CylinderGeometry(.11, .19, 1.35, 5), stone, x, .86, z);
+        mesh(body, shared.crystal, rune, x * 1.06, 1.3, z * 1.06, .08, .23, .08);
+        mesh(body, shared.cone, trim, x, 1.55, z, .17, .35, .17);
+      }
+      mesh(body, new THREE.CylinderGeometry(.3, .48, .75, 10), stone, 0, .68, 0);
+      for (const y of [.42, 1.02, 1.35]) { const band = mesh(body, new THREE.TorusGeometry(.46, .035, 6, 32), y === 1.02 ? rune : trim, 0, y, 0); band.rotation.x = Math.PI / 2; }
+      mesh(body, shared.crystal, rune, 0, height * .73, 0, core ? .42 : .31, core ? .95 : .75, core ? .42 : .31);
+      const halo = mesh(body, new THREE.TorusGeometry(.55, .018, 5, 40), rune, 0, height * .64, 0); halo.rotation.x = Math.PI / 2.5; this.batchScenery(body);
+
     } else {
       const color = mat(e.team < 0 ? '#d9b379' : e.team ? '#dd8c79' : '#a1c989', { emissive: e.team < 0 ? '#835e2c' : '#354833', emissiveIntensity: .3 });
       const big = ['boss', 'leviathan'].includes(e.kind), camp = e.kind === 'camp'; height = big ? 1.6 : camp ? .85 : .48;
@@ -123,8 +135,8 @@ export class Renderer {
     const marker = ring(root, 0, 0, e.kind === 'hero' ? .48 : e.radius * UNIT, e.player ? '#edfaac' : tint, e.kind === 'minion' ? .3 : .85, e.player ? .045 : .023);
     const entity = { root, body, shadow, marker, height, uniforms, stride: 0, angle: 0 }; this.entities.set(e.id, entity); return entity;
   }
-  resize() { this.width = innerWidth; this.height = innerHeight; this.gl.setSize(this.width, this.height, false); const dpr = Math.min(devicePixelRatio || 1, 2); this.overlay.width = this.width * dpr; this.overlay.height = this.height * dpr; this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); const span = this.width < 600 ? 22 : this.height < 500 ? 12 : 19, aspect = this.width / this.height; this.camera.left = -span * aspect / 2; this.camera.right = span * aspect / 2; this.camera.top = span * .52; this.camera.bottom = -span * .48; this.camera.updateProjectionMatrix(); }
-  screenDirection(x, y) { const magnitude = Math.hypot(x, y); y /= 21 / Math.hypot(21, 15, 15); const scale = magnitude / (Math.hypot(x, y) || 1); return { x: (x + y) * Math.SQRT1_2 * scale, y: (y - x) * Math.SQRT1_2 * scale }; }
+  resize() { this.width = innerWidth; this.height = innerHeight; this.gl.setSize(this.width, this.height, false); const dpr = Math.min(devicePixelRatio || 1, 2); this.overlay.width = this.width * dpr; this.overlay.height = this.height * dpr; this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); const span = this.width < 600 ? 22 : this.height < 500 ? 12 : 19, aspect = this.width / this.height; this.camera.left = -span * aspect / 2; this.camera.right = span * aspect / 2; this.camera.top = span * .59; this.camera.bottom = -span * .41; this.camera.updateProjectionMatrix(); }
+  screenDirection(x, y) { const magnitude = Math.hypot(x, y); y /= Math.SQRT1_2; const scale = magnitude / (Math.hypot(x, y) || 1); return { x: x * scale, y: y * scale }; }
   world(x, y) { this.ray.setFromCamera(new THREE.Vector2(x / this.width * 2 - 1, 1 - y / this.height * 2), this.camera); this.ray.ray.intersectPlane(this.plane, this.point); return { x: this.point.x / UNIT, y: this.point.z / UNIT }; }
   project(x, y, height = 0) { this.point.set(x * UNIT, height, y * UNIT).project(this.camera); return { x: (this.point.x + 1) * this.width / 2, y: (1 - this.point.y) * this.height / 2 }; }
   onScreen(e, pad = 180) { const p = this.project(e.x, e.y); return p.x > -pad && p.x < this.width + pad && p.y > -pad && p.y < this.height + pad; }
@@ -136,11 +148,11 @@ export class Renderer {
     const motionPoint = e => { const m = e.motion, t = m ? Math.min(1, (s.time - m.start) / m.duration) : 1; return m && t < 1 ? { x: m.x + (e.x - m.x) * ease(t), y: m.y + (e.y - m.y) * ease(t), jump: Math.sin(t * Math.PI) * m.arc * UNIT } : { x: e.x, y: e.y, jump: 0 }; };
     ({ x: px, y: py, jump } = motionPoint(p));
     this.cam.x += (px - this.cam.x) * Math.min(1, dt * 8); this.cam.y += (py - this.cam.y) * Math.min(1, dt * 8);
-    const x = this.cam.x * UNIT, z = this.cam.y * UNIT; this.camera.position.set(x + 15, 21, z + 15); this.camera.lookAt(x, 0, z); this.camera.updateMatrixWorld(); this.sun.position.set(x - 8, 21, z + 10); this.sun.target.position.set(x, 0, z);
+    const x = this.cam.x * UNIT, z = this.cam.y * UNIT; this.camera.position.set(x, 21, z + 21); this.camera.lookAt(x, 0, z); this.environment.update(time); this.camera.updateMatrixWorld(); this.sun.position.set(x - 8, 21, z + 10); this.sun.target.position.set(x, 0, z);
     this.blend += (s.phase - this.blend) * Math.min(1, dt * 3); this.city.visible = this.blend < .5; this.woods.visible = this.blend >= .5; this.city.scale.y = Math.max(.025, 1 - this.blend * 1.6); this.woods.scale.y = Math.max(.025, this.blend);
     const pp = this.project(px, py, 1);
-    for (const b of this.coverProps) { const foot = this.project(b.x, b.y), top = this.project(b.x, b.y, 3.4), width = (b.w + b.h) * UNIT / (this.camera.right - this.camera.left) * this.width * .36; const hidden = pp.y > top.y - 20 && pp.y < foot.y + 15 && Math.abs(pp.x - foot.x) < width && (b.x + b.y > px + py); for (const material of b.materials) { material.transparent = true; material.opacity += ((hidden ? .3 : 1) - material.opacity) * Math.min(1, dt * 10); material.depthWrite = material.opacity > .95; } }
-    this.groundMaterial.map = this.groundMaps[s.phase]; this.scene.fog.density = .012 + this.blend * .012;
+    for (const b of this.coverProps) { const foot = this.project(b.x, b.y), top = this.project(b.x, b.y, 3.4), width = (b.w + b.h) * UNIT / (this.camera.right - this.camera.left) * this.width * .36; const hidden = pp.y > top.y - 20 && pp.y < foot.y + 15 && Math.abs(pp.x - foot.x) < width && (b.y > py); for (const material of b.materials) { material.transparent = true; material.opacity += ((hidden ? .3 : 1) - material.opacity) * Math.min(1, dt * 10); material.depthWrite = material.opacity > .95; } }
+    this.groundMaterial.map = this.groundMaterial.bumpMap = this.groundMaps[s.phase]; this.scene.fog.density = .012 + this.blend * .012;
     if (s.time - this.sightTime > .1 || s.time < this.sightTime || s.time === 0) { this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.sightTime = s.time; }
     c.clearRect(0, 0, this.width, this.height); this.fxUsed = 0;
     const aliveIds = new Set(s.units.map(e => e.id));
@@ -185,6 +197,6 @@ export class Renderer {
     for (const f of s.floaters) { const a = this.project(f.x, f.y, 1.8 + (.8 - f.life) * .5); c.globalAlpha = Math.min(1, f.life * 2); c.font = '700 18px Barlow'; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(f.text, a.x, a.y); c.fillStyle = f.color; c.fillText(f.text, a.x, a.y); } c.globalAlpha = 1;
     this.gl.render(this.scene, this.camera); if (this.frames++ % 6 === 0) this.drawMap(s, this.mini, waypoint);
   }
-  stats() { return { renderer: 'WebGL 3D', models: this.templates.length, calls: this.gl.info.render.calls, triangles: this.gl.info.render.triangles, geometries: this.gl.info.memory.geometries, textures: this.gl.info.memory.textures }; }
+  stats() { return { renderer: 'WebGL 3D', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, foliage: this.environment.grassCount, models: this.templates.length, calls: this.gl.info.render.calls, triangles: this.gl.info.render.triangles, geometries: this.gl.info.memory.geometries, textures: this.gl.info.memory.textures }; }
 }
 Object.assign(Renderer.prototype, worldArt);

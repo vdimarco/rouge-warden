@@ -42,34 +42,44 @@ function reward(s, team, xp, gold) {
   }
 }
 function finish(s, winner, reason) { s.winner = winner; s.reason = reason; announce(s, winner === 0 ? 'Legends never die' : 'Lost to the veil', reason); }
+export function heal(s, e, amount) { if (e.hp <= 0) return; e.hp = Math.min(e.maxHp, e.hp + amount * (e.woundedUntil > s.time ? .55 : 1)); }
 export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
   if (target.kind === 'core' && s.towers[target.team] === 3) { if (source.player && s.time - (s.lockTip || -10) > 4) { announce(s, 'Rift protected', 'Destroy any enemy wardstone first.'); s.lockTip = s.time; } return; }
   if (target.kind === 'hero' && target.respawn > 0) return;
   if (kind === 'spell') amount += (source.power || 0) * .55;
-  amount *= 100 / (100 + (target.armor || 0));
+  const armor = target.armor || 0;
+  amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
+  const shieldMultiplier = kind === 'attack' && hasItem(source, 'reaper') ? 1.5 : 1;
+  if (shieldMultiplier > 1) target.woundedUntil = s.time + 4;
   if (target.kind === 'hero' && hasItem(target, 'mirror') && source.kind === 'hero' && s.time >= (target.itemState.mirror || 0)) {
     target.shield += 220; target.itemState.mirror = s.time + 20; burst(s, target.x, target.y, '#b9c9ff', 105);
   }
-  const absorbed = Math.min(target.shield, amount); target.shield -= absorbed; amount -= absorbed;
+  const absorbed = Math.min(target.shield, amount * shieldMultiplier); target.shield -= absorbed; amount -= absorbed / shieldMultiplier;
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (source.player) s.stats.damage += actual;
-  if (source.hp > 0 && source.frenzy > s.time) source.hp = Math.min(source.maxHp, source.hp + actual * .3);
+  if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
   if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
   if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (t.kind === 'tower' && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
-  if (source.hp > 0 && kind === 'attack' && source.lifesteal) source.hp = Math.min(source.maxHp, source.hp + actual * source.lifesteal);
+  if (source.hp > 0 && kind === 'attack' && source.lifesteal) heal(s, source, actual * source.lifesteal);
   if (target.hp > 0 && target.kind === 'hero' && hasItem(target, 'root') && target.hp < target.maxHp * .35 && s.time >= (target.itemState.root || 0)) {
     target.shield += 300; target.itemState.root = s.time + 35; burst(s, target.x, target.y, '#b8eb91', 120);
   }
   if (target.hp > 0 && kind === 'spell' && source.kind === 'hero' && !['tower', 'core'].includes(target.kind)) {
     if (hasItem(source, 'lantern')) target.burn = { source: source.id, until: s.time + 3, tick: target.burn?.source === source.id ? target.burn.tick : s.time + 1, amount: 28 + source.power * .05 };
     if (hasItem(source, 'frost')) target.slow = Math.max(target.slow, 1.2);
+    if (hasItem(source, 'winter')) {
+      target.frostMarks ||= {}; const mark = target.frostMarks[source.id] ||= { count: 0, until: 0, ready: 0 };
+      if (s.time >= mark.ready) { mark.count = (s.time <= mark.until ? mark.count : 0) + 1; mark.until = s.time + 5;
+        if (mark.count >= 3) { target.stun = Math.max(target.stun, 1); mark.count = 0; mark.ready = s.time + 10; burst(s, target.x, target.y, '#b9e8ff', 130); }
+      }
+    }
   }
   if (target.hp > 0) return actual;
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[2] = Math.max(0, source.cd[2] - 3); }
-    target.burn = null; target.motion = null; target.pendingAttack = null; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
+    target.burn = null; target.motion = null; target.pendingAttack = null; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (source.kind === 'hero') source.kills++; }
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (source.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
@@ -85,7 +95,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     announce(s, source.team === 0 ? 'The Wild Hunt rides with us' : 'Enemy claimed the Wild Hunt', 'Escort the great beast to their wardstone.');
   } else if (target.kind === 'camp') {
     reward(s, source.team, 90, 110); s.campTimers[target.camp] = s.time + 32;
-    if (source.kind === 'hero' && source.hp > 0) { source.hp = Math.min(source.maxHp, source.hp + 430); source.huntUntil = s.time + 18; }
+    if (source.kind === 'hero' && source.hp > 0) { heal(s, source, 430); source.huntUntil = s.time + 18; }
     if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', '+110 embers · Healing · 18 seconds of haste'); }
   } else if (source.team >= 0) reward(s, source.team, target.kind === 'leviathan' ? 120 : 18, target.kind === 'leviathan' ? 100 : 12);
 }
@@ -99,6 +109,14 @@ function nearest(s, a, range, preferHero = false) {
     if (n < score) { score = n; best = b; }
   }
   return best;
+}
+// Stable, sight-aware focus. Walking away never causes an automatic chase.
+export function autoTarget(s, e, manual = 0) {
+  const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= e.range + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
+  const chosen = candidates.find(t => t.id === manual); if (chosen) return chosen;
+  const heroes = candidates.filter(t => t.kind === 'hero'), pool = heroes.length ? heroes : candidates;
+  const previous = pool.find(t => t.id === e.target); if (previous) return previous;
+  return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
 function attack(s, e, t) {
   if (!t || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
@@ -118,15 +136,17 @@ function resolveAttack(s, e) {
   if (e.kind === 'hero') {
     const v = e.itemState; v.hits = (v.hits || 0) + 1;
     if (hasItem(e, 'nightfang') && v.empowered > s.time && s.time >= (v.nightfang || 0)) {
-      damage(s, e, t, 65 + e.power * .5, 'item'); v.empowered = 0; v.nightfang = s.time + 3; burst(s, t.x, t.y, '#fff2ae', 90);
+      damage(s, e, t, 65 + e.power * .5 + (hasItem(e, 'eclipse') && t.kind === 'hero' ? Math.min(200, (t.maxHp - t.hp) * .08) : 0), 'item'); v.empowered = 0; v.nightfang = s.time + 3; burst(s, t.x, t.y, '#fff2ae', 90);
     }
     if (v.hits % 3 === 0) {
       if (hasItem(e, 'thorn')) damage(s, e, t, Math.min(160, t.maxHp * .03), 'item');
+      if (hasItem(e, 'tempest')) damage(s, e, t, 60 + e.power * .2, 'item');
       if (hasItem(e, 'storm')) for (const other of s.units.filter(u => u.id !== t.id && hostile(s, e, u) && distance(t, u) < 300 && canSee(s, e, u)).slice(0, 2)) {
         damage(s, e, other, 60 + e.power * .2, 'item');
         s.effects.push({ type: 'beam', x: t.x, y: t.y, tx: other.x, ty: other.y, color: '#86eaff', life: .35, maxLife: .35 });
       }
     }
+    if (hasItem(e, 'starfall') && v.spells >= 3) { v.spells = 0; for (const other of s.units) if (hostile(s, e, other) && distance(t, other) < 240 && lineOfSight(s, t, other)) damage(s, e, other, 160 + e.power * .4, 'item'); burst(s, t.x, t.y, '#cbb1ff', 240, 'ultimate'); }
   }
   s.effects.push({ type: e.range > 200 ? 'beam' : 'slash', x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .2, maxLife: .2 });
 }
@@ -138,9 +158,14 @@ function area(s, e, center, radius, amount, status = {}) {
 }
 export function cast(s, e, slot, aim) {
   if (e.kind !== 'hero' || ![0, 1, 2].includes(slot) || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.cd[slot] > 0 || s.winner !== null || (slot === 2 && e.level < 3)) return false;
-  const target = nearest(s, e, 540, true);
+  const target = s.units.find(t => t.id === e.target && hostile(s, e, t) && canSee(s, e, t) && distance(e, t) < 540 && lineOfSight(s, e, t)) || nearest(s, e, 540, true);
   const angle = aim && Math.hypot(aim.x, aim.y) > .1 ? Math.atan2(aim.y, aim.x) : target ? Math.atan2(target.y - e.y, target.x - e.x) : e.facing;
   e.recall = 0; e.cd[slot] = [4.5, 7, 23][slot] * e.haste; e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.itemState.empowered = s.time + 5;
+  e.itemState.spells = Math.min(3, (e.itemState.spells || 0) + 1);
+  if (slot === 2 && hasItem(e, 'worldroot') && s.time >= (e.itemState.worldroot || 0)) {
+    e.itemState.worldroot = s.time + 18;
+    for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e, ally) < 450) { ally.shield += e.maxHp * .15; burst(s, ally.x, ally.y, '#c8f9bc', 110); }
+  }
   const color = HEROES[e.hero].color, origin = { x: e.x, y: e.y };
   if (slot === 0) {
     const length = [490, 410, 330, 460][e.hero];
@@ -148,7 +173,7 @@ export function cast(s, e, slot, aim) {
     e.motion = { ...origin, start: s.time, duration: .38, arc: [95, 30, 160, 130][e.hero] };
     s.effects.push({ ...origin, tx: e.x, ty: e.y, color, type: 'beam', life: .45, maxLife: .45 });
     if (e.hero === 0) { e.cloak = s.time + 2; e.revealedUntil = -1; e.ambushReady = true; }
-    if (e.hero === 1) { e.hp = Math.min(e.maxHp, e.hp + 190); s.zones.push({ ...origin, team: e.team, source: e.id, radius: 180, life: 7, tick: 0, type: 'water' }); }
+    if (e.hero === 1) { heal(s, e, 190); s.zones.push({ ...origin, team: e.team, source: e.id, radius: 180, life: 7, tick: 0, type: 'water' }); }
     if (e.hero === 2) e.shield = Math.max(e.shield, 380);
     if (e.hero === 3) { area(s, e, e, 160, 165 + e.level * 12, { stun: .65 }); burst(s, e.x, e.y, color, 160); }
   } else if (slot === 1) {
@@ -170,7 +195,7 @@ export function cast(s, e, slot, aim) {
     if (e.hero === 3) { area(s, e, e, 260, 175 + e.level * 12, { fear: 1.25 }); burst(s, e.x, e.y, color, 260); }
   } else {
     if (e.hero === 0) { area(s, e, e, 340, 340 + e.level * 20, { fear: 1.2 }); e.cloak = s.time + 6; e.sightUntil = s.time + 6; e.revealedUntil = -1; e.ambushReady = true; }
-    if (e.hero === 1) { area(s, e, e, 460, 370 + e.level * 20, { slow: 4 }); s.zones.push({ ...origin, source: e.id, team: e.team, radius: 460, life: 7, tick: 0, type: 'water' }); for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && distance(e, t) < 460 && t.hp > 0) t.hp = Math.min(t.maxHp, t.hp + 340); }
+    if (e.hero === 1) { area(s, e, e, 460, 370 + e.level * 20, { slow: 4 }); s.zones.push({ ...origin, source: e.id, team: e.team, radius: 460, life: 7, tick: 0, type: 'water' }); for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && distance(e, t) < 460 && t.hp > 0) heal(s, t, 340); }
     if (e.hero === 2) s.zones.push({ ...origin, source: e.id, team: e.team, radius: 360, life: 2.5, tick: 0, type: 'stomp' });
     if (e.hero === 3) { e.frenzy = s.time + 8; e.shield = Math.max(e.shield, 250); }
     burst(s, e.x, e.y, color, e.hero === 1 ? 460 : 340, 'ultimate');
@@ -191,17 +216,17 @@ export function setGoal(s, id) { player(s).goal = id; }
 function itemTick(s, e, dt) {
   if (e.burn && e.hp > 0 && e.burn.tick <= s.time) {
     const source = s.units.find(v => v.id === e.burn.source);
-    if (source && s.time <= e.burn.until + dt) damage(s, source, e, e.burn.amount, 'item');
+    if (source && s.time <= e.burn.until + dt) damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item');
     if (e.burn) e.burn.tick += 1;
   }
   if (e.burn && e.burn.until < s.time) e.burn = null;
   if (e.kind !== 'hero' || e.hp <= 0) return;
-  e.hp = Math.min(e.maxHp, e.hp + e.regen * dt);
+  heal(s, e, e.regen * dt);
   const v = e.itemState;
   if (s.time >= (v.aura || 0)) {
     v.aura = s.time + 1;
-    if (hasItem(e, 'grave')) for (const t of s.units) if (hostile(s, e, t) && distance(e, t) < 220 && lineOfSight(s, e, t)) damage(s, e, t, 24, 'item');
-    if (hasItem(e, 'beacon')) for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && t.hp > 0 && distance(e, t) < 300) t.hp = Math.min(t.maxHp, t.hp + 24);
+    if (hasItem(e, 'grave')) for (const t of s.units) if (hostile(s, e, t) && distance(e, t) < 220 && lineOfSight(s, e, t)) damage(s, e, t, 24 + (hasItem(e, 'colossus') ? e.maxHp * .01 : 0), 'item');
+    if (hasItem(e, 'beacon')) for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && t.hp > 0 && distance(e, t) < 300) heal(s, t, 24 + (hasItem(e, 'root') ? e.maxHp * .01 : 0));
   }
 }
 function spawnWave(s) {
@@ -284,8 +309,8 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp; e.shield = 140; e.waypoint = 1; e.cd = [0, 0, Math.min(6, e.cd[2])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
-      if (distance(e, BASES[e.team]) < 215) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * .24 * dt);
-      else if (s.time - e.lastHit > 5) e.hp = Math.min(e.maxHp, e.hp + 12 * dt);
+      if (distance(e, BASES[e.team]) < 215) heal(s, e, e.maxHp * .24 * dt);
+      else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
       e.shield = Math.max(0, e.shield - dt * 13);
       if (concealed(s, e)) e.ambushReady = true;
       else if (e.cloak <= s.time && !concealed(s, e)) e.ambushReady = false;
@@ -306,8 +331,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       }
       if (input.cast !== undefined) cast(s, e, input.cast, input.aim);
       if (!e.recall) {
-        const selected = s.units.find(x => x.id === input.target && hostile(s, e, x) && canSee(s, e, x) && distance(e, x) <= e.range + x.radius);
-        const t = selected || nearest(s, e, e.range, true); e.target = t?.id || 0;
+        const t = autoTarget(s, e, input.target); e.target = t?.id || 0;
         if (input.attack !== false) attack(s, e, t);
       }
     } else {

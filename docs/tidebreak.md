@@ -76,3 +76,32 @@ The concept is visual direction, not a screenshot used as the application. All l
 The second concept, `docs/monster-iso-concept.webp`, sets the angled camera, moonlit village, chartreuse shop tabs, recipe panel and six-slot inventory. The implementation retains those relationships and uses a scrolling native shop on narrow phones. Differences: minions and wardstones use simple procedural meshes; creature motion uses deformation rather than studio animation rigs. All shop text and controls are live native elements.
 
 The final 3D browser pass used 20 fps render scheduling in the software-GPU test harness while retaining the 60 Hz simulation. It passed real multitouch movement/aim, purchases, component ownership, build switching, resale, map markers, realm transition and restarting with all four creatures. Viewports: 390×844, 320×568, 844×390, 1440×900. No relevant console or asset errors. Cloud Browser reports WebGL disabled; unsupported browsers receive a clear graphics message. This is not a physical-device performance benchmark.
+
+
+## Vertical camera, fluid controls and relic builds
+
+The latest pass rotates the camera yaw from 45° to 0°, retaining a 45° elevated 3D view. The main lane and minimap now run vertically: allied base below, enemy base above. The hero sits slightly below center to expose more of the lane ahead. Screen-to-world movement and aim use the same projection; the renderer reports the projected lane X difference for QA.
+
+The attack button is removed. Auto targeting prefers visible enemy creatures in range, holds a valid focus, then selects another target when it dies or leaves range. It checks line of sight and never walks the player toward a target. Tapping a creature remains an optional override. The left pad starts from the touch point; the right thumb has three larger ability buttons in a fan. Tap for aim assist or drag and release. The shop and quick buy form one small bottom strip. Return is in the pause menu, and rift jump appears only near a gate or during its cooldown.
+
+The catalog now contains 26 items: six components, twelve finished items and eight relics. A build can contain one relic. Two finished items forge into a relic, which inherits their powers while replacing their stats. Recipe quotes consume each matching finished item or nested component exactly once. Quick buy follows unfinished branches; relic ownership counts as ownership of its inherited powers and prevents duplicate purchases. Four saved build paths now include a relic. The shop shows upgrade branches, inherited effects, trade-offs and active synergies.
+
+| Relic | Build change |
+| --- | --- |
+| Eclipse covenant | Empowered attacks add missing-health damage; kill resets enable pursuit |
+| Tempest engine | Third-hit lightning also damages the primary target |
+| Winter sovereign | Three spell hits within 5 seconds root; per-target 10-second cooldown |
+| Hollow inferno | Burns against slowed targets deal 60% more damage |
+| Worldroot pact | Ultimate casts shield nearby allies; loses 20 movement speed |
+| Pale reaper | Attacks cut healing by 45% for 4 seconds and damage shields 50% faster |
+| Starfall grimoire | Three casts charge an explosive next attack; loses 120 health and 8 armor |
+| Gravemaw idol | Damage aura scales with maximum health; loses 25 movement speed |
+
+Lantern + Frost grants 35% stronger burns against slowed targets. Root + Beacon adds 1% of the owner's maximum health to each healing pulse. Relic upgrades keep these interactions without duplicating stats. Healing reduction applies to skill healing, item healing, life steal, regeneration and fountain healing. Shield-breaking bonus applies only to shield absorption.
+
+Higgsfield produced `monster-vertical-concept.webp`. A subsequent terrain-atlas request was rejected because the Higgsfield workspace had no credits. The shipped pass therefore implements the concept through native 3D geometry and materials: fine cobbles, grass tufts, wind, flowing water and foam, bank stones, amber lanterns, motes, detailed wardstones, directional light and shadows. Existing generated creature and village meshes are retained. This is an art-directed mobile renderer, not a claim that the live game reproduces the concept's offline-render detail. The concept's full environment and UI remain references; no concept screenshot is placed over gameplay.
+
+Validation: item tests cover nested discounts, relic uniqueness, inherited powers, quick-buy recursion, all eight relic effects, negative-stat trade-offs, healing reduction, synergy multipliers and automatic targeting without chasing. Twelve complete deterministic bot matches finished in 97–216 seconds, with 12–28 creature kills and at most 50 units. Real-phone frame rate remains unmeasured.
+
+
+The browser pass verified simultaneous touch movement and aimed casting, release, pause, quick-buy, nested recipes, relic browsing, trade-off descriptions, resale, map marking, realm transition and all four creature restarts. Viewports: 390×844, 320×568, 844×390 and 1440×900. No console or HTTP errors. A post-batching smoke capture loaded all four models, reported a zero horizontal difference between the main-lane endpoints, and used about 158 draws / 277K triangles in the opening scene. The local software-GPU harness limits rendering to 20 fps for longer interaction tests; it is not a phone-performance measurement.
