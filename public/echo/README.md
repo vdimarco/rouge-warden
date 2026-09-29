@@ -1,15 +1,15 @@
-# Loon Echo — bring your little weirdos home
+# Loon Echo — rescue run
 
-A 72-second lake crossing at `/echo` or `/echo/`. Drag or use the left/right arrows (A/D also work) to steer a parent loon. Rescue up to eight golden chicks; the growing family repeats your turns with a delay. Follow the crossing progress through the quiet reeds, boat channel, and home stretch.
+A free-swimming rescue game at `/echo` and `/echo/`. Swim around the lake to collect eight chicks, lead their delayed trail back to the safe nest, and decide whether to bank a small group or risk a long flock for a larger delivery bonus. There is no countdown or automatic victory: all eight must be delivered. Each delivery restores one energy, up to three.
 
-Rocks hurt the parent or send a chick safely ashore. Boats announce their arrival, then leave two wakes with a visible calm gap. CALL (button or Space) gathers the flock for 2.6 seconds and braces it against wakes, with an eight-second recharge. It does not protect against rocks. The parent has three energy; reaching home counts how many chicks made it. The route repeats so learning it improves the next attempt. Best home count is saved locally; blocked storage or audio does not stop play.
+- Click/tap a destination, drag, or use arrows/WASD to move in both axes.
+- DIVE (Space) is a toggle. Three seconds of breath let the whole flock pass under rocks and boats and break the eel's pursuit. Surface to rescue or deliver chicks. Empty breath forces surfacing and a short recovery before diving again.
+- HONK (E) gathers nearby chicks and stuns a nearby eel. It has a seven-second cooldown and cannot be used underwater.
+- The eel hunts the tail, then visibly winds up before lunging at a fixed location. Turning, diving, or honking gives an escape. It stays away from the nest.
+- Boat lanes flash before a boat crosses. Surface collisions cost energy; a hit scatters up to two carried chicks, which remain available for rescue. Delivered chicks stay safe.
+- Underwater fish grant points and shorten the honk cooldown. Group deliveries score `100 × group size²`; completing a rescue also grants a speed bonus. The best score stays in local storage.
+- Pause with P, Escape, or the button. Switching away pauses automatically. Blocked storage/audio does not prevent play.
 
-Pause with the button, P, or Escape. Switching away automatically pauses. Both end states support a clean restart. Lab and arcade links stay available.
+The alien lake and six original sprites were previously generated through Higgsfield in the requested cartoon direction and are reused here. `art/provenance.json` records those generations; this mechanics change requires no new generated art.
 
-## Art
-
-The alien cottage lake and six original cartoon sprites were generated with Higgsfield GPT Image 2.5, following the requested Rick and Morty-inspired visual direction. Generated images were converted to WebP; the magenta sprite backdrop was keyed out and the six cells cropped into individual assets. Generation IDs and sources are in `art/provenance.json`. The original `lake.webp` remains as the previous prototype's asset; the new game uses `art/lake.webp`.
-
-## Verification
-
-Serve `public/` using a static server. Run `node --test qa/echo/crossing.test.mjs` for rescue, delayed following, call/recharge, wake gaps, collisions, invulnerability, successful arrival, exhaustion, and idle-play regression checks. No package installation is required. Gameplay is in `crossing.js`, rendering/input/audio in `main.js`.
+Serve `public/` with a static server. Run `node --test qa/echo/crossing.test.mjs` for simulation checks, including a full rescue with hazards active. `crossing.js` contains the simulation; `main.js` handles rendering, input, sound, and UI. New runs vary chick positions slightly; explicit simulation seeds make tests repeatable.
