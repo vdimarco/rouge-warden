@@ -288,7 +288,7 @@ export class World {
     const c = out;
     // grass: fresh near the cottage, deep in the west forest, gold in the east meadows
     const west = smooth(-200, -500, x), east = smooth(200, 520, x), north = smooth(-200, -450, z);
-    c.setRGB(0.47 + v * 0.07, 0.68 + v * 0.07, 0.33);
+    c.setRGB(0.46 + v * 0.06, 0.59 + v * 0.06, 0.36);
     c.lerp(TMP.setRGB(0.26, 0.5, 0.24), west * 0.8);
     c.lerp(TMP.setRGB(0.72, 0.76, 0.34), east * (0.55 + v * 0.3));
     c.lerp(TMP.setRGB(0.4, 0.56, 0.32), north * 0.6);
@@ -387,6 +387,9 @@ export class World {
       this.groundColor(x, z, h, nrm.y, c, p);
       let d = smooth(1.6, 2.8, h) * smooth(0.7, 0.82, nrm.y) * smooth(100, 80, h);
       d *= smooth(1.2, 3, p);
+      // A tended clearing keeps tall grass out of the cottage and its veranda.
+      const yard = Math.max(Math.abs(x - this.cottage.x) / 8, Math.abs(z - (this.cottage.z - 2)) / 9);
+      d *= smooth(0.85, 1.3, yard);
       if (Math.hypot(x - ISLAND.x, z - ISLAND.z) < ISLAND.r + 4) d = 0;
       d *= 0.82 + 0.18 * smooth(-0.4, 0.3, this.n3(x / 40, z / 40));
       const q = j * R + i, k = q * 4;
@@ -727,7 +730,7 @@ export class World {
           vec3 base = m.rgb * mix(vec3(0.6, 0.76, 0.95), vec3(1.06, 1.02, 0.9), sun);
           // soft, cool roots and bright yellow-green tips: a smooth wash of colour up the blade, with little
           // difference from one blade to the next, so a field reads as one soft mass
-          vec3 root = base * vec3(0.62, 0.7, 0.66), tip = base * vec3(1.2, 1.2, 0.82);
+          vec3 root = base * vec3(0.62, 0.7, 0.66), tip = base * vec3(1.15, 1.12, 0.93);
           vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.93 + aShape.y*0.14);
           float hue = vnoise(wp * 0.018 + 7.0);
           vCol = mix(vCol, vCol * vec3(0.86, 1.0, 1.02), smoothstep(0.55, 0.8, hue) * 0.6);
@@ -754,7 +757,7 @@ export class World {
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
           col = mix(col, col * 1.22 + uSunCol * 0.1, vGust * 0.45);
-          col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
+          col += uSunCol * vBack * mix(vec3(0.65, 0.73, 0.4), vec3(0.9, 0.75, 0.4), vGold) * 0.55;
           col *= vShadeFog.x * uLight;
           col = mix(col, uFog, vShadeFog.y);
           // alpha 0 marks grass for the painted pass, which then draws no ink lines between the blades
@@ -1049,7 +1052,7 @@ export class World {
     this.cabin = this.place(M.cabin(), c.x, c.z, Math.PI);
     // the painted cabin is taller than the shape-built one; you climb onto the roof ridge
     const csz = this.cabin.userData.size;
-    this.cabinTop = this.cabin.position.y + (csz ? Math.min(8, csz.y * 0.7) : 5.2);
+    this.cabinTop = this.cabin.position.y + (this.cabin.userData.roofHeight ?? (csz ? Math.min(8, csz.y * 0.7) : 5.2));
     this.addBox({ x: c.x, z: c.z, hw: 5.3, hd: 4.3, rot: Math.PI, y0: this.cabin.position.y, top: this.cabinTop, climb: true });
     this.addBox({ x: c.x, z: c.z - 5.3, hw: 5, hd: 1.2, rot: Math.PI, y0: this.cabin.position.y - 1, top: this.cabin.position.y + 0.4, walk: true });
     this.place(M.outhouse(false), c.x + 16, c.z + 6, Math.PI * 0.8);

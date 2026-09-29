@@ -252,6 +252,7 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 
 Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The Legend of Zelda: Breath of the Wild, with a soft, hand-painted look like a Studio Ghibli film. The Porcelain King clogged Loon Lake. His sludge took Gabe, Christian, and Ryu, and gave them red eyes. You wake up at the cottage and go get them back.
 
+- **A painted lakeside cottage.** Weathered teal boards, cream sash windows and linen curtains frame a furnished veranda, with a loveseat, books, breakfast dishes and planters. Warm daylight, cooler shadows and quieter meadow greens carry the same palette into the valley. The cottage is built locally in `public/wild/js/cottage.js`, with merged geometry and procedural wood pigment; it needs no generated texture or model download. Its interior remains a solid, climbable building.
 - **Go anywhere.** The valley is about 1.6 km across: the cottage on the south shore, the pine forest to the west, the meadows to the east, and the mountains to the north. A short dock at the cottage has a kayak tied to it. Paddle it out to Clog Island.
 - **Climb anything.** Walk into a cliff, a tower, or a building, and you grab on. You climb hand over hand in pulls, lean into rock faces, and pull yourself up over the top edge. Climbing uses stamina.
 - **Glide.** Jump, then jump again in the air to open a beach umbrella. A campfire under you pushes you up.

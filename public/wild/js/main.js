@@ -929,7 +929,7 @@ G.clockText = () => {
 /* ---------------- day and night ---------------- */
 const C = (h) => new THREE.Color(h);
 const SKY = {
-  day: { top: C(0x3596e2), hor: C(0xc8ecf8), sun: C(0xfff0d0), hemi: C(0xd2e8ff), gnd: C(0x7f9450), si: 1.65, hi: 1.05 },
+  day: { top: C(0x72aebe), hor: C(0xd6e5da), sun: C(0xffe2ac), hemi: C(0xb6d4d6), gnd: C(0x81775b), si: 1.4, hi: 0.95 },
   dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
   night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.35, hi: 0.55 },
 };
@@ -938,7 +938,7 @@ const tmpC = new THREE.Color();
 function mixSky(a, b, t, key) { return tmpC.copy(a[key]).lerp(b[key], t).clone(); }
 function lighting() {
   const t = G.clock, a = (t - 0.25) * Math.PI * 2;
-  const sd = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.35).normalize();
+  const sd = new THREE.Vector3(Math.cos(a), Math.sin(a), -0.55).normalize();
   const elev = sd.y;
   let A1, B1, k;
   if (elev > 0.25) { A1 = SKY.day; B1 = SKY.day; k = 0; }
@@ -981,7 +981,7 @@ function lighting() {
   // the colour far hills fade into: a deeper blue than the fog, like the painted distances in an animated film
   G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42), mood, punch: G.punchT || 0 };
   w.cabin.userData.windows.emissiveIntensity = night * 1.2;
-  if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 40;
+  if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = 6 + night * 34;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
   sun.position.set(cx + lightDir.x * 200, (P ? P.y : 10) + Math.max(0.2, lightDir.y) * 200, cz + lightDir.z * 200);
   sun.target.position.set(cx, P ? P.y : 10, cz);

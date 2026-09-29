@@ -2,6 +2,7 @@
 // Toon materials give the flat, painted look. A dark shell behind each character draws its outline.
 import * as THREE from "three";
 import * as GLB from "./glb.js";
+import { paintedCottage } from "./cottage.js";
 
 const cache = new Map();
 let gradient = null;
@@ -552,41 +553,8 @@ function king() {
 }
 
 /* ---------------- buildings and props ---------------- */
-function logWall(g, len, h, x, z, rot, col = 0x9a6a3e) {
-  const w = new THREE.Group(); w.position.set(x, 0, z); w.rotation.y = rot; g.add(w);
-  const n = Math.round(h / 0.4);
-  for (let k = 0; k < n; k++) { const l = mesh(cyl(0.21, 0.21, len + 0.5, 8), k % 2 ? col : 0x8a5a32, 0, 0.22 + k * 0.4, 0, false); l.rotation.z = Math.PI / 2; l.receiveShadow = true; w.add(l); }
-  return w;
-}
 export function cabin() {
-  const glb = GLB.building("cabin");
-  if (glb) {
-    // a warm lamp inside, for the windows at night
-    const lamp = new THREE.PointLight(0xffb060, 0, 22, 1.5); lamp.position.set(0, 2.2, 0); glb.add(lamp);
-    glb.userData.lamp = lamp; glb.userData.windows = toon(0xffd07a, { emissive: 0xffa040 });
-    return glb;
-  }
-  const g = new THREE.Group();
-  const W = 10, D = 8, H = 3.6;
-  logWall(g, W, H, 0, D / 2, 0); logWall(g, W, H, 0, -D / 2, 0); logWall(g, D, H, W / 2, 0, Math.PI / 2); logWall(g, D, H, -W / 2, 0, Math.PI / 2);
-  const floor = mesh(box(W, 0.3, D), 0x7a5a3a, 0, 0.15, 0, false); floor.receiveShadow = true; g.add(floor);
-  // gables and roof
-  const gable = new THREE.Shape(); gable.moveTo(-D / 2 - 0.3, 0); gable.lineTo(D / 2 + 0.3, 0); gable.lineTo(0, 2.8); gable.closePath();
-  for (const s of [-1, 1]) { const m = mesh(new THREE.ShapeGeometry(gable), toon(0x8a5a32, { side: THREE.DoubleSide }), s * W / 2, H + 0.1, 0, false); m.rotation.y = Math.PI / 2; g.add(m); }
-  const slope = Math.atan2(2.8, D / 2 + 0.3), len = Math.hypot(2.8, D / 2 + 0.3) + 0.6;
-  for (const s of [-1, 1]) { const r = mesh(box(W + 1.4, 0.28, len), 0x4a7a4a, 0, H + 1.4, s * (D / 4 + 0.15)); r.rotation.x = s * slope; g.add(r); }
-  g.add(mesh(box(1, 3, 1), 0x8a8a8a, 2.5, H + 2.2, -1.2));
-  // door and windows, which glow at night
-  const glow = toon(0xffd07a, { emissive: 0xffa040, emissiveIntensity: 0 });
-  g.userData.windows = glow;
-  g.add(mesh(box(1.3, 2.2, 0.2), 0x5a3a24, 0, 1.4, D / 2 + 0.2, false));
-  for (const x of [-3, 3]) { g.add(mesh(box(1.4, 1.1, 0.2), glow, x, 2, D / 2 + 0.2, false)); g.add(mesh(box(1.6, 0.14, 0.3), 0xf0e8d0, x, 1.4, D / 2 + 0.25, false)); }
-  for (const x of [-W / 2 - 0.2, W / 2 + 0.2]) g.add(mesh(box(0.2, 1.1, 1.4), glow, x, 2, 0, false));
-  // porch
-  g.add(mesh(box(W, 0.2, 2.4), 0x9a7a52, 0, 0.3, D / 2 + 1.3, false));
-  for (const x of [-W / 2 + 0.3, W / 2 - 0.3]) g.add(mesh(cyl(0.12, 0.12, 3), 0x7a5a3a, x, 1.7, D / 2 + 2.3, false));
-  put(g, mesh(box(W + 0.4, 0.2, 2.8), 0x4a7a4a, 0, 3.2, D / 2 + 1.3, false)).rotation.x = 0.18;
-  return g;
+  return paintedCottage(toon, bake);
 }
 export function outhouse(shrine) {
   const g = GLB.building("outhouse", 0.02) || new THREE.Group();
