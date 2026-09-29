@@ -207,5 +207,42 @@ try {
 }
 check(errors.length === 0, "no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
 await browser.close();
+
+// the screen lock: a derby asks for one lock (begin and startMode ask in the same tick), and pause and quit let it go
+{
+  const { browser, page, errors } = await open({ query: "?debug", save: { v: 1, input: "touch" } });
+  try {
+    // a wake lock that answers after 5 ms, and counts the requests and the locks still held
+    await page.evaluate(() => {
+      const w = (window.__wl = { req: 0, live: 0 });
+      const stub = { request: async () => { w.req++; await new Promise((r) => setTimeout(r, 5)); w.live++; const lock = new EventTarget(); lock.release = async () => { w.live--; lock.dispatchEvent(new Event("release")); }; return lock; } };
+      Object.defineProperty(navigator, "wakeLock", { value: stub, configurable: true });
+    });
+    const wl = async () => { await sleep(150); return page.evaluate(() => ({ ...window.__wl })); };
+    await page.click("#derbyBtn");
+    await until(page, () => FISH.G.phase === "cast", null, 30000);
+    let w = await wl();
+    check(w.req === 1 && w.live === 1, "a derby asks for one wake lock (asked " + w.req + ", held " + w.live + ")");
+    await page.click("#pauseBtn");
+    await page.waitForSelector("#pause:not([hidden])");
+    w = await wl();
+    check(w.live === 0, "pause lets the lock go (held " + w.live + ")");
+    await sleep(400);
+    await page.click("#resumeBtn");
+    w = await wl();
+    check(w.req === 2 && w.live === 1, "resume takes one lock again (asked " + w.req + ", held " + w.live + ")");
+    await page.click("#pauseBtn");
+    await page.waitForSelector("#pause:not([hidden])");
+    await sleep(400);
+    await page.click("#quitBtn");
+    await page.waitForSelector("#title:not([hidden])");
+    w = await wl();
+    check(w.live === 0, "and quitting to the title leaves no lock held (held " + w.live + ")");
+  } catch (e) {
+    check(false, "exception in the wake lock part: " + (e && e.message));
+  }
+  check(errors.length === 0, "wake lock part: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
 console.log(fails.length ? "\n" + fails.length + " failed" : "\nall passed");
 process.exit(fails.length ? 1 : 0);

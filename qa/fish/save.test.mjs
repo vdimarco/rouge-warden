@@ -307,7 +307,8 @@ section("5. journey.js");
     "Loon Lake ranks: 0 SKUNKED, 0.2 DOCK ROOKIE, 4 WEEKEND ANGLER, 30 LOON LAKE CHAMPION");
   check(rankFor("sea", 20) === "TIDE READER" && rankFor("moon", 9) === "COTTAGE REGULAR", "Gull Rock 20 kg: TIDE READER; an unknown place uses Loon Lake's ranks");
   check(goalText("loon") === "Land a fish of 3.5 kg or more here to open Stump Bay." && goalText("stumps", "remind") === "Goal: land a fish of 6 kg or more. It opens Cedar River."
-    && goalText("river", "card") === "To open: land a fish of 8 kg or more at Cedar River." && goalText("sea") === "", "the goal lines, and none at Gull Rock");
+    && goalText("river", "card") === "To open: land a fish of 8 kg or more at Cedar River." && goalText("stumps", "next") === "Next: land 6 kg or more at Stump Bay to open Cedar River."
+    && goalText("sea") === "" && goalText("sea", "next") === "", "the goal lines, and none at Gull Rock");
   check(openedText("river", 6.24, "Channel Catfish", "results") === "Your 6.2 kg Channel Catfish opened Cedar River.", "the derby results line: \"Your 6.2 kg Channel Catfish opened Cedar River.\"");
   check(legendHint("loon", 0) === JOURNEY.loon.hints[0] && legendHint("stumps", 1) === "Look for a gold ring late at night, 30 to 45 m out. Cast right into it."
     && legendHint("river", 2) === JOURNEY.river.hints[2] && legendHint("sea", 3) === null, "legend hints: the rumor, the ring (\"late at night, 30 to 45 m out\"), the fight tip");
