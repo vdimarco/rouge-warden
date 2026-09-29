@@ -4,6 +4,7 @@
 // The modules do the parts: motion.js reads the phone, reel.js is the reel you touch, cast.js flies the lure,
 // fish.js runs the fish and the fight, world.js draws the place, audio.js and haptics.js make the feel.
 // places.js holds the maps, fishing.js who lives where, journey.js the trail and its words, save.js the save file.
+import { normalizeStyle } from "./art-style.js";
 import { Motion } from "./motion.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
@@ -915,6 +916,24 @@ for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => {
 });
 function seen(k) { if (!save.seen[k]) { save.seen[k] = 1; persist(); } }
 
+/* ---------------- art style ---------------- */
+function syncArtStyle() {
+  document.body.dataset.artStyle = save.artStyle;
+  for (const button of $$("[data-art]")) button.setAttribute("aria-pressed", String(button.dataset.art === save.artStyle));
+  $("#optArtStyle").value = save.artStyle;
+  $("#artNote").textContent = save.artStyle === "ghibli" ? "Painted skies and soft summer light" : "Classic lake scenery";
+}
+function setArtStyle(style) {
+  save.artStyle = normalizeStyle(style);
+  persist();
+  syncArtStyle();
+  if (world) world.setArtStyle(save.artStyle);
+  G.stillDrawn = false;
+}
+for (const button of $$("[data-art]")) button.addEventListener("click", () => setArtStyle(button.dataset.art));
+$("#optArtStyle").addEventListener("change", (event) => setArtStyle(event.target.value));
+syncArtStyle();
+
 /* ---------------- settings ---------------- */
 function syncSettings() {
   $("#optSound").checked = Sound.isOn();
@@ -926,6 +945,7 @@ function syncSettings() {
   $("#optInput").disabled = !touchDevice || !Motion.available;
   $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : "Drag and flick on the screen.";
   $("#optQuality").value = save.quality;
+  syncArtStyle();
 }
 $("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
 $("#optHaptics").addEventListener("change", (e) => { Haptics.unlock(); Haptics.setEnabled(e.target.checked); if (e.target.checked) Haptics.bump(0.6); });
@@ -1408,7 +1428,7 @@ async function boot() {
     REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
     // the map first: the world builds the place the map is set to
     LAKE.setPlace(G.place);
-    world = await createWorld($("#view"), { quality: quality(), place: G.place });
+    world = await createWorld($("#view"), { quality: quality(), place: G.place, style: save.artStyle });
   } catch (err) {
     console.error(err);
     document.body.insertAdjacentHTML("beforeend", "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");

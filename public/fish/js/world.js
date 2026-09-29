@@ -2,6 +2,7 @@
 // the stand under your feet, the rod in your hands, the line, the lure, the fish and the trophy. Everything is built in
 // code (see world-env, world-look, world-gear, world-fish, world-fx). world.setPlace(place) changes the place.
 import * as THREE from "three";
+import { artStyle, normalizeStyle } from "./art-style.js";
 import { PLACES, getPlace } from "./places.js";
 import { placeSpecies } from "./fishing.js";
 import { byId, lengthFor } from "./species.js";
@@ -46,7 +47,9 @@ export function sunAt(h, look = null) {
 
 /* ---------------- the world ---------------- */
 
-export async function createWorld(container, { quality = "high", place = PLACES.loon } = {}) {
+export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "original" } = {}) {
+  let currentStyle = normalizeStyle(style);
+  artStyle.value = currentStyle === "ghibli" ? 1 : 0;
   let low = quality === "low";
   let PL = typeof place === "string" ? getPlace(place) : place, LK = lookOf(PL);   // the place we are at, and how it looks
   const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
@@ -167,6 +170,18 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // a place may have its own fog at some hours (a morning mist)
     const F = LK.fog && LK.fog(h, { near, far });
     if (F) { near = F.near; far = F.far; if (F.k > 0) U.uFogCol.value.lerp(mistCol.set(F.col), F.k); }
+    if (artStyle.value) {
+      // Apply from this hour's base palette each time, so repeated toggles cannot drift.
+      const daylight = 1 - U.uNight.value;
+      U.uZenith.value.lerp(mistCol.set(0x70bed0), 0.42 * daylight);
+      U.uHorizon.value.lerp(mistCol.set(0xf5e5b8), 0.32 * daylight);
+      U.uCloudLit.value.lerp(mistCol.set(0xfff2cb), 0.45 * daylight);
+      U.uCloudShade.value.lerp(mistCol.set(0x97b6b8), 0.35 * daylight);
+      U.uFogCol.value.lerp(mistCol.set(0xa6c9b6), 0.3 * daylight);
+      U.uDeep.value.lerp(mistCol.set(0x277e73), 0.52 * daylight);
+      U.uShallow.value.lerp(mistCol.set(0x83bea2), 0.48 * daylight);
+      U.uForest.value.lerp(mistCol.set(0x48765a), 0.35 * daylight);
+    }
     U.uFogNear.value = near; U.uFogFar.value = far;
     scene.fog.color.copy(U.uFogCol.value); scene.fog.near = U.uFogNear.value; scene.fog.far = U.uFogFar.value;
     const sd = sunAt(h, LK);
@@ -194,6 +209,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     lerpHex(hemi.color, a.sky, b.sky, t);
     lerpHex(hemi.groundColor, a.gnd, b.gnd, t);
     hemi.intensity = num("hi");
+    if (artStyle.value) {
+      hemi.color.lerp(mistCol.set(0xffe9bf), 0.25 * (1 - U.uNight.value));
+      hemi.intensity *= 1.15;
+      sun.intensity *= 0.86;
+    }
     // foam and the line catch the light of the hour
     U.uFoam.value.copy(U.uHorizon.value).lerp(new THREE.Color(1, 1, 1), 0.5).multiplyScalar(0.55 + 0.45 * vis);
     line.mat.color.setRGB(0.95, 0.94, 0.78).multiplyScalar(0.45 + 0.55 * Math.max(vis, 0.3));
@@ -679,6 +699,13 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   const world = {
     renderer, scene, camera,
     resize,
+    get artStyle() { return currentStyle; },
+    setArtStyle(style) {
+      currentStyle = normalizeStyle(style);
+      artStyle.value = currentStyle === "ghibli" ? 1 : 0;
+      setHour(S.hour);
+      if (artStyle.value) E.loadStorySky().then(render);
+    },
     setQuality(q) {
       const nl = q === "low";
       if (nl === low) return;
@@ -795,5 +822,6 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
   updateCamera(0);
   await warmUp();
+  if (artStyle.value) E.loadStorySky().then(render);
   return world;
 }

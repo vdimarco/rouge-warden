@@ -2,6 +2,7 @@
 // loon, a road, a wall with a lighthouse, a logjam). Every mesh is built here in code from the place's map (places/*.js),
 // so the fish logic and the picture share one map. What each place looks like is in world-look.js.
 import * as THREE from "three";
+import { artStyle, storyMaterial } from "./art-style.js";
 import { rng, noise, capsule } from "./places/util.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -11,6 +12,8 @@ export const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); r
 // Uniforms that many materials share: the clock and the colours of the hour (world.js sets them).
 export const U = {
   uTime: { value: 0 },
+  uSkyPaint: { value: null },
+  uSkyPaintReady: { value: 0 },
   uSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uSunCol: { value: new THREE.Color(1, 1, 1) },
   uSunVis: { value: 1 },
@@ -30,6 +33,27 @@ export const U = {
   uFoam: { value: new THREE.Color() },
 };
 
+// One local sky texture, requested only for the optional style. A failed image leaves
+// the procedural sky active. Switching again can retry; completed loads are reused.
+let storySkyLoad = null;
+export function loadStorySky() {
+  if (U.uSkyPaintReady.value) return Promise.resolve();
+  if (storySkyLoad) return storySkyLoad;
+  storySkyLoad = new Promise((resolve) => {
+    new THREE.TextureLoader().load(new URL("../art/ghibli-sky.webp", import.meta.url).href, (texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      // atan wraps at the rear: implicit mip derivatives otherwise draw a seam there.
+      texture.generateMipmaps = false;
+      texture.minFilter = texture.magFilter = THREE.LinearFilter;
+      texture.colorSpace = THREE.NoColorSpace;
+      U.uSkyPaint.value = texture;
+      U.uSkyPaintReady.value = 1;
+      resolve();
+    }, undefined, () => { storySkyLoad = null; resolve(); });
+  });
+  return storySkyLoad;
+}
+
 // Small hash noise without sin(), so it stays stable in mediump on phones.
 export const NOISE_GLSL = /* glsl */ `
 float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
@@ -48,13 +72,23 @@ vec3 vnoised(vec2 p) {
 // The sky colour in a direction. The water uses it too, for its reflection.
 export const SKY_GLSL = /* glsl */ `
 uniform vec3 uZenith, uHorizon, uGlow, uSunDir, uSunCol, uFogCol;
-uniform float uNight;
+uniform float uNight, uArtStyle, uSkyPaintReady;
+uniform sampler2D uSkyPaint;
 vec3 skyColor(vec3 d) {
   float y = max(d.y, 0.0);
   vec3 c = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.85, y), 0.6));
   float s = max(dot(d, uSunDir), 0.0);
   float low = 1.0 - smoothstep(0.0, 0.55, y);
   c += uGlow * (pow(s, 3.0) * 0.42 * low + pow(s, 24.0) * 0.5 + pow(s, 200.0) * 0.6);
+  if (uArtStyle > 0.5 && uSkyPaintReady > 0.5) {
+    vec2 uv = vec2(atan(d.x, -d.z) / 6.2831853 + 0.5, 0.08 + sqrt(y) * 0.86);
+    vec3 paper = texture2D(uSkyPaint, uv).rgb;
+    // Fold the edge sample into the opposite edge for a soft panoramic seam.
+    float seam = smoothstep(0.46, 0.5, abs(uv.x - 0.5));
+    paper = mix(paper, texture2D(uSkyPaint, vec2(1.0 - uv.x, uv.y)).rgb, seam * 0.5);
+    paper *= mix(uHorizon * 1.1, vec3(1.0), smoothstep(0.0, 0.65, y));
+    c = mix(c, paper, 0.88 * (1.0 - uNight) * smoothstep(0.0, 0.09, y));
+  }
   return c;
 }
 `;
@@ -107,7 +141,7 @@ export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = fals
       }`);
   };
   mat.customProgramCacheKey = () => "fishpaint" + strokes + "_" + scale + "_" + sway + "_" + caustics + (wet ? "_wet" : "") + key;
-  return mat;
+  return storyMaterial(mat);
 }
 
 /* ---------------- geometry helpers ---------------- */
@@ -149,7 +183,7 @@ export const M4 = () => new THREE.Matrix4();
 
 export function buildSky(low) {
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uMoon: U.uMoon, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
+    uniforms: { uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady, uArtStyle: artStyle, uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uMoon: U.uMoon, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     defines: { OCT: low ? 3 : 5 },
     vertexShader: /* glsl */ `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
@@ -169,8 +203,10 @@ export function buildSky(low) {
           vec2 uv = d.xz / (d.y + 0.14);
           uv = vec2(uv.x * 0.9 + uv.y * 0.25, uv.y * 2.1) * 0.9 + vec2(uTime * 0.006, uTime * 0.002);
           float n = fbm(uv);
-          float body = smoothstep(0.5, 0.74, n) * smoothstep(0.0, 0.2, d.y);
+          float body = smoothstep(mix(0.5, 0.42, uArtStyle), mix(0.74, 0.60, uArtStyle), n) * smoothstep(0.0, 0.2, d.y);
+          body *= 1.0 - uArtStyle * uSkyPaintReady * 0.97;
           float thick = smoothstep(0.58, 0.95, n);
+          thick = mix(thick, floor(thick * 4.0 + 0.5) / 4.0, uArtStyle * 0.55);
           float toward = pow(max(s, 0.0), 4.0);
           vec3 cc = mix(uCloudLit, uCloudShade, thick * 0.75);
           cc += uGlow * (toward * 0.8 + 0.12) * (1.0 - thick * 0.5);
@@ -268,6 +304,7 @@ export const RIPPLES = 16, RINGS = 6;
 // setWaterPlace sets, so a change of place needs no new shader.
 export function buildWater(low, place, look) {
   const u = {
+    uArtStyle: artStyle, uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady,
     uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight,
     uFogNear: U.uFogNear, uFogFar: U.uFogFar, uForest: U.uForest, uDeep: U.uDeep, uShallow: U.uShallow, uFoam: U.uFoam, uSunVis: U.uSunVis,
     uDepth: { value: null }, uBox: { value: new THREE.Vector4() },
@@ -431,6 +468,13 @@ export function buildWater(low, place, look) {
         spec += pow(sd, 40.0) * step(0.96, hash12(floor(gq) + floor(uTime * 7.0))) * smoothstep(0.32, 0.08, length(fract(gq) - 0.5)) * 2.2 * s4;
         #endif
         spec *= uSunVis * (1.0 - shore);
+        if (uArtStyle > 0.5) {
+          // Long brush-like reflections; the bite rings and aim are drawn on top.
+          float brush = vnoise(vec2(p.x * 0.12, p.y * 1.8 + uTime * 0.10));
+          col = mix(col, body, 0.22);
+          col *= 0.96 + 0.10 * smoothstep(0.35, 0.7, brush);
+          spec = min(spec, 1.2);
+        }
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
         col += goldGlow;

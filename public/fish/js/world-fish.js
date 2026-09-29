@@ -2,6 +2,7 @@
 // canvas texture, fins with rays, glassy eyes. Every mesh is 1 unit long (nose at -z); the caller scales it by length.
 // A fish is 3 draw calls: body (a hooked jaw is part of it), eyes, fins (barbels are part of them).
 import * as THREE from "three";
+import { storyMaterial } from "./art-style.js";
 import { byId } from "./species.js";
 import { bake, merge, hex, clamp, lerp, smooth } from "./world-env.js";
 
@@ -267,7 +268,7 @@ export function fx(mat, u, { wag = true } = {}) {
       #include <opaque_fragment>`);
   };
   mat.customProgramCacheKey = () => "fishfx" + (wag ? 1 : 0);
-  return mat;
+  return storyMaterial(mat);
 }
 
 /* ---------------- fish ---------------- */

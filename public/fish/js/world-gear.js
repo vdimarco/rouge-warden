@@ -1,6 +1,7 @@
 // The tackle in first person: the rod (blank, guides, cork grip, a spinning reel), the line, and the spinner lure.
 // The rod is rebuilt on the CPU each frame along a bent curve: it is small, and it keeps the tip exact for the line.
 import * as THREE from "three";
+import { storyMaterial } from "./art-style.js";
 import { ROD } from "./lake.js";
 import { bake, merge, hex, clamp, lerp } from "./world-env.js";
 import { fx, fxUniforms } from "./world-fish.js";
@@ -88,7 +89,7 @@ export class Rod {
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vs.length), 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(ns.length), 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(cs), 3));
-    this.mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x5a5a5a }));
+    this.mesh = new THREE.Mesh(geo, storyMaterial(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x5a5a5a })));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 20;
     // the frames we need: every distinct s, and for each vertex the index of its frame
