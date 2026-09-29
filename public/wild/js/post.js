@@ -7,10 +7,10 @@ import * as THREE from "three";
 export const QUALITY = {
 // ratio is the starting pixel ratio and maxRatio the most the dynamic resolution may climb to on a sharp screen.
 // Low smooths its edges with FXAA in the final pass; Medium and High draw the scene with 4x multisampling.
-// dof blurs the few metres right in front of the camera, like a film lens.
+// Keep nearby generated artwork sharp; only distant geometry receives a one-pixel brush.
   low: { farR: 0, radius: 0, ratio: 0.85, maxRatio: 1.5, glow: 0, samples: 0, fxaa: 1, dof: 0, grass: 50000, patch: 64, shadow: 1024 },
-  medium: { farR: 1, radius: 2, ratio: 1, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 0, grass: 190000, patch: 96, shadow: 2048 },
-  high: { farR: 2, radius: 3, ratio: 1.25, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 1, grass: 310000, patch: 118, shadow: 2048 },
+  medium: { farR: 1, radius: 0, ratio: 1, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 0, grass: 190000, patch: 96, shadow: 2048 },
+  high: { farR: 1, radius: 0, ratio: 1.5, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 0, grass: 310000, patch: 118, shadow: 2048 },
 };
 
 export class Painter {
@@ -223,7 +223,7 @@ void main() {
   // no ink between grass blades: the grass writes 0 in alpha, and thousands of dark lines in a field look scratchy
   if (ink > 0.001) ink *= min(texture2D(tColor, uv).a, min(min(texture2D(tColor, uv - vec2(px.x, 0.0)).a, texture2D(tColor, uv + vec2(px.x, 0.0)).a),
     min(texture2D(tColor, uv - vec2(0.0, px.y)).a, texture2D(tColor, uv + vec2(0.0, px.y)).a)));
-  col = mix(col, col * uInk * 2.2, ink * 0.38);
+  col = mix(col, col * uInk * 2.2, ink * 0.16);
   // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes. It comes from the half-size
   // glow picture; half a pixel over, each even pixel reads exactly the texel made for it.
   if (uGlow > 0.5) col += texture2D(tGlow, uv + 0.5 * px).rgb;
@@ -231,18 +231,23 @@ void main() {
   vec2 asp = vec2(uRes.x / uRes.y, 1.0);
   float sd = length((uv - uSun) * asp);
   col += uSunCol * uSunVis * (exp(-sd * 3.2) * 0.10 + exp(-sd * 12.0) * 0.15);
+  // Keep moonlit surfaces distinct from the dark horizon after the display transform.
+  col = max(vec3(0.0), (col - 0.025) * (1.0 + uNight * 0.8) + 0.025);
   // colour grade: cool, lifted shadows, warm highlights, a touch more colour
   float l = luma(col);
   col = mix(vec3(l), col, 0.98 - uNight * 0.12);
-  col = mix(col * vec3(0.87, 0.99, 1.04) + vec3(0.016, 0.023, 0.026), col, smoothstep(0.0, 0.45, l));
+  col = mix(col * vec3(0.87, 0.99, 1.04) + vec3(0.016, 0.023, 0.026) * (1.0 - uNight * 0.95), col, smoothstep(0.0, 0.45, l));
   col = mix(col, col * vec3(1.04, 1.01, 0.93), smoothstep(0.55, 1.0, l));
   // paper grain and a soft vignette
   float grain = vnoise(uv * uRes * 0.5) * 0.6 + vnoise(uv * uRes * 0.12) * 0.4;
-  col *= 0.965 + 0.05 * grain;
+  col *= 0.993 + 0.01 * grain;
   float v = length((uv - 0.5) * asp);
   col *= mix(1.0, 0.8 - uMood * 0.18, smoothstep(0.45 - uMood * 0.12, 1.05, v));
   // the King's storm: a cool purple grade with less colour
   col = mix(col, vec3(luma(col)) * vec3(0.92, 0.86, 1.08), uMood * 0.3);
   col += vec3(1.0, 0.96, 0.9) * uPunch * 0.18;
+  // Single display transform: all intermediate buffers remain linear.
+  col = col / (1.0 + col * 0.35);
   gl_FragColor = vec4(col, 1.0);
+  #include <colorspace_fragment>
 }`;
