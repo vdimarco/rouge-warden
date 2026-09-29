@@ -38,7 +38,7 @@ test('phone pose moves the sword, blocks with geometry and hides combat buttons'
  // A vertical blade cannot catch a vertical attack.
  run('enemy.phase="windup";enemy.dir=1;enemy.timer=.01;update(.02)');assert.equal(run('health'),84);
  // Roll the grip to lay the blade across a vertical strike.
- pose(90);for(let i=0;i<8;i++)pose(90);
+ pose(45);pose(90);for(let i=0;i<8;i++)pose(90);
  run('enemy.phase="windup";enemy.dir=1;enemy.timer=1;update(.01)');assert.equal(run('guard'),true);
  assert.ok(run('Math.abs(Math.cos(sword.pose.angle))>.95'));
  run('enemy.timer=.01;update(.02)');assert.equal(run('health'),84);assert.equal(run('enemy.phase'),'open');
@@ -51,7 +51,7 @@ test('gyro cuts require a physical blade sweep and rearm; stale sensors pause sa
  pose(0);pose(0);pose(35);assert.ok(run('enemy.hp<10'));
  const hp=run('enemy.hp');run('cooldown=0');pose(70);assert.equal(run('enemy.hp'),hp);
  for(let i=0;i<6;i++)pose(70);assert.equal(run('gyroReady'),true);
- run('charge=100;cooldown=0;enemy.phase="open"');pose(35);assert.equal(run('slow'),4);
+ run('charge=100;cooldown=0;enemy.phase="open"');pose(0);assert.equal(run('slow'),4);
  run('now+=1600;update(.02)');assert.equal(run('gyro'),false);assert.equal(run('state'),'pause');assert.equal(elements.get('guard').hidden,false);
 });
 test('permission denial, null samples and landscape calibration preserve touch fallback',async()=>{
@@ -67,3 +67,16 @@ test('permission denial, null samples and landscape calibration preserve touch f
 test('render path runs at portrait and landscape sizes',()=>{const {run}=boot();run('start();draw();innerWidth=844;innerHeight=390;resize();draw()')});
 
 test('photographic assets render after load and preserve fallback on failure',()=>{const {run}=boot();run('start();draw();for(const im of Object.values(art)){im.complete=true;im.naturalWidth=1024;im.naturalHeight=1536}draw();gyro=true;draw();innerWidth=844;innerHeight=390;resize();draw();art.duelist.naturalWidth=0;draw()')});
+
+test('twisting the handle never cuts; blade depth changes its visible length',async()=>{
+ const {run,events,elements}=boot();run('start();enemy.hp=20;enemy.dir=0');await elements.get('motion').onclick();
+ const pose=(a,b,g)=>{run('now+=40');events.deviceorientation({alpha:a,beta:b,gamma:g})};
+ pose(0,0,0);pose(0,0,0);
+ for(let g=10;g<=70;g+=10)pose(0,0,g);
+ assert.equal(run('enemy.hp'),20);assert.ok(run('sword.speed<.01'));
+ assert.ok(run('Math.abs(sword.direction[0])<.001'));
+ const length=run('Math.hypot(swordSegment().bx-swordSegment().ax,swordSegment().by-swordSegment().ay)');
+ elements.get('center').onclick();pose(0,0,0);
+ for(let b=10;b<=60;b+=10)pose(0,b,0);
+ assert.ok(run('Math.hypot(swordSegment().bx-swordSegment().ax,swordSegment().by-swordSegment().ay)')<length*.6);
+});

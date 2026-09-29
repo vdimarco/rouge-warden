@@ -3,14 +3,14 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let W=innerWidth,H=innerHeight,state='menu',time=0,last=0,enemy,particles=[],trails=[],cooldown=0,guard=false,guardAt=0,combo=0,health=100,score=0,wave=1,kills=0,charge=0,damage=1,windowBonus=0,leech=0,slow=0,flash=0,notice=0,muted=false,audio,beat=0,best=0;
 try{best=Number(localStorage.getItem('neon-best'))||0}catch{}
 let gyro=false,base=null,aim={x:0,y:0},raw=null,gyroReady=true,lastMotion=0,motionTimer;
-const sword={pose:{x:0,y:0,angle:-Math.PI/2},last:0,speed:0,previous:null};
+const sword={pose:{x:0,y:0,angle:-Math.PI/2},last:0,speed:0,previous:null,direction:[0,1,0],lastDirection:[0,1,0],travel:0,lastVelocity:null};
 const upgrades=[['Edge amplifier','Cuts deal +1 damage.',()=>damage++],['Time crystal','Parry window grows by 40 ms.',()=>windowBonus=Math.min(.25,windowBonus+.04)],['Repair pulse','Restore 35 integrity.',()=>health=Math.min(100,health+35)],['Vampire circuit','Each takedown restores 2 integrity.',()=>leech+=2],['Capacitor','Gain 35% overdrive now.',()=>charge=Math.min(100,charge+35)]];
 function resize(){W=innerWidth;H=innerHeight;const d=Math.min(devicePixelRatio||1,2);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);resetSword()}addEventListener('resize',resize);resize();
 function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);o.frequency.exponentialRampToValueAtTime(f*.5,audio.currentTime+d);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
 function panel(html){$('panel').innerHTML=html;$('overlay').hidden=false;$('controls').hidden=true}
-function menu(){panel(`<div class="eyebrow">FIRST-PERSON / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Your phone is the hilt. Turn it to move the blade. Catch an incoming strike across your blade, then swing through the enemy.</p><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">Hold a firm grip and use small wrist movements. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
+function menu(){panel(`<div class="eyebrow">FIRST-PERSON / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Hold the phone upright like a sword handle, with its top edge pointing along the blade. Swing through the opponent. Put your blade across an incoming cut to block.</p><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">Keep a firm grip. Make controlled swings with room around you. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
 function start(){audioStart();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say('MATCH THE BRIGHT LINE')}
 function resume(){state='play';resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
 function spawn(){const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0)}
@@ -37,11 +37,17 @@ function orientationQuaternion(alpha,beta,gamma) {
   return multiply(multiply([Math.cos(a),0,0,Math.sin(a)],[Math.cos(b),Math.sin(b),0,0]),[Math.cos(c),0,Math.sin(c),0]);
 }
 function rotate(q,v){return multiply(multiply(q,[0,...v]),inverse(q)).slice(1)}
-function resetSword(){base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;guard=false;guardAt=-10}
-function swordSegment(p=sword.pose) {
-  const length=Math.min(W*.68,H*.38),cx=W*(.5+p.x*.27),cy=H*(.51+p.y*.2);
-  return {ax:cx-Math.cos(p.angle)*length*.48,ay:cy-Math.sin(p.angle)*length*.48,
-    bx:cx+Math.cos(p.angle)*length*.52,by:cy+Math.sin(p.angle)*length*.52};
+function resetSword(){base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;sword.direction=[0,1,0];sword.lastDirection=[0,1,0];sword.travel=0;sword.lastVelocity=null;guard=false;guardAt=-10}
+// The phone's physical top edge is the blade axis. The wrist is the pivot;
+// the blade keeps a fixed world length and foreshortens when aimed in depth.
+function swordSegment() {
+  const [x,y,z]=sword.direction;
+  const roll=.19,pitch=.42;
+  const rx=x*Math.cos(roll)-y*Math.sin(roll),ry=x*Math.sin(roll)+y*Math.cos(roll);
+  const vy=ry*Math.cos(pitch)-z*Math.sin(pitch),vz=ry*Math.sin(pitch)+z*Math.cos(pitch);
+  const length=Math.min(W*.85,H*.46),perspective=2.8/(2.8-vz*.85);
+  const ax=W*.61+rx*Math.min(W,H)*.055,ay=H*.76+(1-vy)*Math.min(W,H)*.045;
+  return {ax,ay,bx:ax+rx*length*perspective,by:ay-vy*length*perspective};
 }
 function nearBlade(s,x,y,r) {
   const dx=s.bx-s.ax,dy=s.by-s.ay,t=clamp(((x-s.ax)*dx+(y-s.ay)*dy)/(dx*dx+dy*dy||1),0,1);
@@ -49,8 +55,11 @@ function nearBlade(s,x,y,r) {
 }
 function bladeBlocks() {
   if(!gyro||!raw||performance.now()-sword.last>300||sword.speed>80)return false;
-  const s=swordSegment(),cross=enemy.dir===0?Math.abs(Math.sin(sword.pose.angle)):Math.abs(Math.cos(sword.pose.angle));
-  return cross>.78&&nearBlade(s,W*.5,H*.48,Math.min(W,H)*.095);
+  const s=swordSegment(),dx=s.bx-s.ax,dy=s.by-s.ay,len=Math.hypot(dx,dy);if(len<Math.min(W,H)*.28)return false;const cross=enemy.dir===0?Math.abs(dy/len):Math.abs(dx/len);
+  // Intercept the incoming blade along its path, including a low horizontal guard.
+  const t=enemy.dir===0?(H*.48-s.ay)/(dy||1):(W*.5-s.ax)/(dx||1);
+  const ix=s.ax+dx*t,iy=s.ay+dy*t;
+  return cross>.78&&t>=0&&t<=1&&ix>W*.15&&ix<W*.85&&iy>H*.25&&iy<H*.85;
 }
 function motionUI(){
   $('guard').hidden=gyro;$('burst').hidden=gyro;
@@ -63,7 +72,7 @@ async function enableGyro(){
     // Called directly by a tap, as required by iOS permission prompts.
     const permission=typeof DeviceOrientationEvent.requestPermission==='function'?DeviceOrientationEvent.requestPermission():Promise.resolve('granted');
     if(await permission!=='granted')throw Error('denied');
-    gyro=true;resetSword();motionUI();$('hint').textContent='Hold your phone like a sword. Turn it across the incoming strike.';
+    gyro=true;resetSword();motionUI();$('hint').textContent='Hold the phone by its lower half. Its top edge points along the blade.';
     clearTimeout(motionTimer);
     motionTimer=setTimeout(()=>{if(gyro&&!raw)disableGyro('No motion signal. Swipe to cut; hold Guard to block.');},3000);
     return true;
@@ -77,25 +86,29 @@ addEventListener('deviceorientation',e=>{
   const dt=(now-sword.last)/1000;
   if(dt<=0)return;
   if(dt>.3){resetSword();return}
-  const relative=multiply(inverse(base),q),screenAngle=(screen.orientation?.angle||0)*Math.PI/180;
-  // Rotate screen axes into the calibrated grip before projecting the blade.
-  const up=rotate(relative,[-Math.sin(screenAngle),Math.cos(screenAngle),0]);
-  const normal=rotate(relative,[0,0,1]);
-  const ux=up[0]*Math.cos(screenAngle)+up[1]*Math.sin(screenAngle);
-  const uy=-up[0]*Math.sin(screenAngle)+up[1]*Math.cos(screenAngle);
-  const nx=normal[0]*Math.cos(screenAngle)+normal[1]*Math.sin(screenAngle);
-  const ny=-normal[0]*Math.sin(screenAngle)+normal[1]*Math.cos(screenAngle);
-  const target={x:clamp(nx*1.6,-1,1),y:clamp(-ny*1.4,-1,1),angle:Math.atan2(-uy,ux)};
-  const prior=swordSegment(),alpha=1-Math.exp(-dt/0.035);
-  sword.pose.x+=(target.x-sword.pose.x)*alpha;sword.pose.y+=(target.y-sword.pose.y)*alpha;
-  const turn=Math.atan2(Math.sin(target.angle-sword.pose.angle),Math.cos(target.angle-sword.pose.angle));
-  sword.pose.angle+=turn*alpha;
-  const dot=Math.abs(q.reduce((sum,v,i)=>sum+v*sword.previous[i],0));
-  sword.speed=2*Math.acos(clamp(dot,-1,1))/dt*180/Math.PI;
+  const relative=multiply(inverse(base),q);
+  // +Y always points out of the physical top of the phone, even in landscape.
+  // Twisting about this axis turns the edge but cannot create a blade swing.
+  const direction=rotate(relative,[0,1,0]);
+  const dot=direction.reduce((sum,v,i)=>sum+v*sword.lastDirection[i],0);
+  const sweptAngle=Math.acos(clamp(dot,-1,1))*180/Math.PI;
+  const speed=sweptAngle/dt;
+  if(speed>1800){resetSword();return} // Reject sensor discontinuities.
+  const prior=swordSegment(),alpha=1-Math.exp(-dt/.018);
+  const velocity=direction.map((v,i)=>(v-sword.lastDirection[i])/dt);
+  const reverse=sword.lastVelocity&&velocity.reduce((n,v,i)=>n+v*sword.lastVelocity[i],0)<-0.5;
+  if(reverse&&speed>45){gyroReady=true;sword.travel=0}
+  if(speed<35){gyroReady=true;sword.travel=0}
+  sword.travel+=sweptAngle;
+  sword.direction=sword.direction.map((v,i)=>v+(direction[i]-v)*alpha);
+  const norm=Math.hypot(...sword.direction)||1;sword.direction=sword.direction.map(v=>v/norm);
+  sword.speed=speed;sword.lastDirection=direction;sword.lastVelocity=velocity;
   sword.last=now;sword.previous=q;raw=q;
+  const visible=swordSegment();
+  sword.pose.angle=Math.atan2(visible.by-visible.ay,visible.bx-visible.ax);
+  sword.pose.x=direction[0];sword.pose.y=direction[2];
   const current=swordSegment(),dx=current.bx-prior.bx,dy=current.by-prior.by;
-  if(sword.speed<45)gyroReady=true;
-  if(sword.speed>95&&gyroReady&&Math.hypot(dx,dy)/dt>90){
+  if(sword.speed>70&&sword.travel>=12&&gyroReady&&Math.hypot(dx,dy)/dt>65){
     // Sample the swept blade so fast swings cannot skip through the target.
     const radius=Math.min(W,H)*.16;
     let contact=false;
@@ -103,7 +116,7 @@ addEventListener('deviceorientation',e=>{
       const t=i/8,s={};for(const k of ['ax','ay','bx','by'])s[k]=prior[k]+(current[k]-prior[k])*t;
       if(nearBlade(s,W*.5,H*.48,radius)){contact=true;break}
     }
-    if(contact){guard=false;slash(dx,dy);gyroReady=false}
+    if(contact&&cooldown<=0){guard=false;slash(dx,dy);gyroReady=false;sword.travel=0}
   }
 });
 function update(dt){time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);if(state!=='play')return;if(gyro){if(!raw)return;if(performance.now()-sword.last>500){disableGyro('Motion signal lost. Swipe to play.');pause();return}const blocked=bladeBlocks();if(blocked&&!guard)guardAt=time;guard=blocked;$('hint').textContent=guard?'BLADE SET · catch the strike':enemy.dir===0?'Hold the blade upright across the incoming cut.':'Turn the blade sideways across the incoming cut.';}enemy.hit=Math.max(0,enemy.hit-dt);enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=guard?(gyro?0:5):(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else {if(guard&&gyro){burstParticles(W*.5,H*.48,'#65efff',18);tone(480,.09)}say(guard?'BLADE BLOCK':'HIT')}}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
