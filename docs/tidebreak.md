@@ -74,3 +74,5 @@ The concept is visual direction, not a screenshot used as the application. All l
 
 
 The second concept, `docs/monster-iso-concept.webp`, sets the angled camera, moonlit village, chartreuse shop tabs, recipe panel and six-slot inventory. The implementation retains those relationships and uses a scrolling native shop on narrow phones. Differences: minions and wardstones use simple procedural meshes; creature motion uses deformation rather than studio animation rigs. All shop text and controls are live native elements.
+
+The final 3D browser pass used 20 fps render scheduling in the software-GPU test harness while retaining the 60 Hz simulation. It passed real multitouch movement/aim, purchases, component ownership, build switching, resale, map markers, realm transition and restarting with all four creatures. Viewports: 390×844, 320×568, 844×390, 1440×900. No relevant console or asset errors. Cloud Browser reports WebGL disabled; unsupported browsers receive a clear graphics message. This is not a physical-device performance benchmark.

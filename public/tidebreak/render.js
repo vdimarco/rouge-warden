@@ -70,7 +70,7 @@ export class Renderer {
   prepareModel(source, kind) {
     const group = new THREE.Group(), bounds = new THREE.Box3().setFromObject(source), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3()), scale = [2.55, 2.7, 2.2, 2.3][kind] / Math.max(size.x, size.y, size.z);
     source.updateMatrixWorld(true);
-    source.traverse(node => { if (!node.isMesh) return; const geo = node.geometry.clone(); geo.applyMatrix4(node.matrixWorld); geo.translate(-center.x, -bounds.min.y, -center.z); geo.scale(scale, scale, scale); const m = new THREE.Mesh(geo, node.material); group.add(m); });
+    source.traverse(node => { if (!node.isMesh) return; const geo = node.geometry.clone(); geo.applyMatrix4(node.matrixWorld); geo.translate(-center.x, -bounds.min.y, -center.z); geo.scale(scale, scale, scale); geo.rotateY(Math.PI); const m = new THREE.Mesh(geo, node.material); group.add(m); });
     group.userData.height = size.y * scale; return group;
   }
   shadowTexture() { const c = surface(64), g = c.getContext('2d'), grad = g.createRadialGradient(32, 32, 3, 32, 32, 30); grad.addColorStop(0, '#00000088'); grad.addColorStop(1, '#00000000'); g.fillStyle = grad; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); }
@@ -149,7 +149,7 @@ export class Renderer {
       let v = this.entities.get(e.id); const shown = e.hp > 0 && this.onScreen(e) && (menu || this.visible.has(e.id));
       if (!v && !shown) continue; if (!v) v = this.createEntity(e); v.root.visible = shown; if (!shown) continue;
       const pos = motionPoint(e); v.root.position.set(pos.x * UNIT, 0, pos.y * UNIT); v.stride += ((e.moving ? 1 : 0) - v.stride) * Math.min(1, dt * 10);
-      // GLBs face -Z. Turn on the ground plane; never mirror the character.
+      // Meshy +Z forward is normalized to -Z in prepareModel. Turn on the ground plane.
       const target = -e.facing - Math.PI / 2, delta = Math.atan2(Math.sin(target - v.angle), Math.cos(target - v.angle)); v.angle += delta * Math.min(1, dt * 14);
       const attack = e.attackStarted === undefined ? 1 : Math.min(1, (s.time - e.attackStarted) / .42), strike = attack < .22 ? -Math.sin(attack / .22 * Math.PI) * .2 : Math.sin((attack - .22) / .78 * Math.PI);
       v.body.rotation.set(0, v.angle, 0); if (!['tower', 'core'].includes(e.kind)) { v.body.rotation.x = strike * .1 + Math.sin(time * 10 + e.id) * v.stride * .035; v.body.rotation.z = Math.sin(time * 10 + e.id) * v.stride * (e.hero === 2 ? .07 : .02); }
