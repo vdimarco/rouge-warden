@@ -1,18 +1,14 @@
 // How big the fish are: node qa/fish/size.test.mjs
-// 1. The weight mix at each place's derby hour (plan 3.5). Loon Lake runs the real bite code (LakeSim chooses the fish
-//    and rolls its weight); the other places use the same steps on their own maps from places.js.
+// 1. The weight mix at each place's derby hour (plan 3.5), with the real bite code: LakeSim chooses the fish and rolls its weight.
 // 2. The rare tail: every species has 3-5% of its fish above its usual range at no boost.
 // 3. sizeRank (the catch card's "Bigger than 9 in 10") matches the weights rollWeight really rolls.
 // Exit code 1 if a target is missed.
-import { LakeSim, BITE, rodTip, rollWeight, sizeRank, speciesWeights } from "../../public/fish/js/fish.js";
+import { LakeSim, BITE, rodTip, rollWeight, sizeRank } from "../../public/fish/js/fish.js";
 import { SPECIES } from "../../public/fish/js/species.js";
-import { fishingOf } from "../../public/fish/js/fishing.js";
 import { PLACES } from "../../public/fish/js/places.js";
 import { rng } from "../../public/fish/js/lake.js";
 
 const D2R = Math.PI / 180;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const q = (s, p) => s[Math.min(s.length - 1, Math.floor(p * s.length))];
 const share = (s, f) => s.filter(f).length / s.length;
 const pc = (x) => (100 * x).toFixed(0) + "%";
@@ -33,30 +29,14 @@ function* casts(map, n, seed, d0 = 12, d1 = 45, hours = null) {
     yield { x, z, zn, hour, i };
   }
 }
-// Loon Lake: the real thing. LakeSim picks the fish (or nothing, or junk) and rolls its weight in choose()
-function loonMix(n, seed, d0, d1, hours) {
+// any place: the real thing. LakeSim picks the fish (or nothing, or junk) and rolls its weight in choose()
+function mix(place, n, seed, d0, d1, hours) {
   const kgs = [], by = {};
-  for (const c of casts(PLACES.loon, n, seed, d0, d1, hours)) {
-    const sim = new LakeSim({ lure: { x: c.x, z: c.z }, tip: rodTip(40, Math.atan2(c.x, -c.z) / D2R), lineOut: Math.hypot(c.x, c.z), hour: c.hour, rng: rng(7 + c.i) });
+  for (const c of casts(place, n, seed, d0, d1, hours)) {
+    const sim = new LakeSim({ place, lure: { x: c.x, z: c.z }, tip: rodTip(40, Math.atan2(c.x, -c.z) / D2R, 0, place.stand.rod), lineOut: Math.hypot(c.x, c.z), hour: c.hour, rng: rng(7 + c.i) });
     const P = sim.plan;
     if (!P || P.junk) continue;
     kgs.push(P.kg); by[P.id] = (by[P.id] || 0) + 1;
-  }
-  return { kgs: kgs.sort((a, b) => a - b), by };
-}
-// any place: the same steps as LakeSim.choose() (bite chance, junk, the fish, its weight with the long-cast boost)
-function placeMix(place, n, seed, hours) {
-  const F = fishingOf(place), r = rng(seed + 1), kgs = [], by = {};
-  for (const c of casts(place, n, seed, 12, 45, hours)) {
-    if (r() >= (F.goodZones.includes(c.zn) ? BITE.GOOD : BITE.OPEN)) continue;
-    const dist = Math.hypot(c.x, c.z);
-    if (r() < BITE.JUNK * (c.zn === "dock" || dist < F.junkR ? BITE.JUNK_DOCK : 1)) continue;
-    const list = speciesWeights(c.zn, place.depth(c.x, c.z), c.hour, null, place);
-    if (!list.length) continue;
-    let u = r() * list.reduce((a, [, w]) => a + w, 0), sp = list[list.length - 1][0];
-    for (const [s, w] of list) if ((u -= w) <= 0) { sp = s; break; }
-    const kg = rollWeight(sp, r, BITE.FAR_BOOST * smooth(BITE.FAR0, BITE.FAR1, dist));
-    kgs.push(kg); by[sp.id] = (by[sp.id] || 0) + 1;
   }
   return { kgs: kgs.sort((a, b) => a - b), by };
 }
@@ -70,27 +50,23 @@ function show(label, m) {
 
 console.log("The weight mix: casts 12-45 m out, within 70°, at the derby hour");
 {
-  const d = loonMix(20000, 11, 12, 45, DERBY.loon);
+  const d = mix(PLACES.loon, 20000, 11, 12, 45, DERBY.loon);
   show("Loon Lake, derby", d);
   const med = q(d.kgs, 0.5);
   check(med >= 1.7 && med <= 2.4, `Loon: the median fish is 1.7-2.4 kg (${med})`);
   check(share(d.kgs, (x) => x < 0.5) <= 0.25, `Loon: 25% or less are under 0.5 kg (${pc(share(d.kgs, (x) => x < 0.5))})`);
   const big = share(d.kgs, (x) => x >= 2);
   check(big >= 0.4 && big <= 0.6, `Loon: 40-60% are 2 kg or more (${pc(big)})`);
-  const s = loonMix(20000, 12, 8, 25), l = loonMix(20000, 13, 35, 50);
+  const s = mix(PLACES.loon, 20000, 12, 8, 25), l = mix(PLACES.loon, 20000, 13, 35, 50);
   show("Loon Lake, short casts 8-25 m, all day", s);
   show("Loon Lake, long casts 35-50 m, all day", l);
   check(q(l.kgs, 0.5) >= 1.8 * q(s.kgs, 0.5), `Loon: the long-cast median is 1.8 x the short-cast median or more (${q(l.kgs, 0.5)} vs ${q(s.kgs, 0.5)} kg: ${(q(l.kgs, 0.5) / q(s.kgs, 0.5)).toFixed(2)} x)`);
-  // the copy of the bite steps for the other places gives the same mix as the real code
-  const c = placeMix(PLACES.loon, 20000, 11, DERBY.loon);
-  show("Loon Lake, derby, by the place steps", c);
-  check(Math.abs(q(c.kgs, 0.5) / med - 1) < 0.06, `the place steps match LakeSim at Loon (median ${q(c.kgs, 0.5)} vs ${med} kg)`);
 }
 {
   // [id, median range, under 1 kg range, 10 kg or more range]
   const T = [["stumps", [2.3, 3.4], [0.15, 0.3], null], ["river", [3.0, 4.3], [0.08, 0.2], null], ["sea", [4.0, 5.8], [0.15, 0.3], [0.1, 0.2]]];
   for (const [id, [m0, m1], [u0, u1], ten] of T) {
-    const P = PLACES[id], d = placeMix(P, 20000, 21, DERBY[id]);
+    const P = PLACES[id], d = mix(P, 20000, 21, 12, 45, DERBY[id]);
     show(`${P.name}, derby`, d);
     const med = q(d.kgs, 0.5), u = share(d.kgs, (x) => x < 1);
     check(med >= m0 && med <= m1, `${id}: the median fish is ${m0}-${m1} kg (${med})`);
