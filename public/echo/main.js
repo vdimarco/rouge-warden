@@ -1,6 +1,6 @@
 const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d');
 const panel=document.querySelector('#panel'),scoreEl=document.querySelector('#score'),flockEl=document.querySelector('#flock'),timeEl=document.querySelector('#time');
-const bg=new Image();bg.src='./lake.webp';let W=0,H=0,dpr=1,run=null,last=0,audio=null,pressed=false;
+const bg=new Image();bg.src=new URL('./lake.webp',import.meta.url).href;let W=0,H=0,dpr=1,run=null,last=0,audio=null,pressed=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();
 function sound(freq=500,len=.08,type='sine',vol=.08){try{audio??=new AudioContext();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(70,freq*.55),audio.currentTime+len);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+len);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+len)}catch{}}
