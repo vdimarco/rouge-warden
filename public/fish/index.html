@@ -364,7 +364,10 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
       <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="m">Motion</button><button type="button" role="tab" aria-selected="false" data-tab="t">Touch and mouse</button></div>
       <ol class="steps" id="helpM"></ol>
       <ol class="steps" id="helpT" hidden></ol>
-      <div class="btns"><button type="button" class="btn go" data-close>Got it</button></div>
+      <div id="pullDemo" hidden>
+        <video id="pullDemoVideo" src="clips/pull-back-demo.mp4" poster="clips/pull-back-poster.webp" controls muted playsinline preload="none" controlslist="nofullscreen noremoteplayback" disablepictureinpicture aria-label="How to add reel strength by tipping the phone back"></video>
+      </div>
+      <div class="btns"><button type="button" class="btn" id="watchPullDemo">Watch pull-back demo</button><button type="button" class="btn go" data-close>Got it</button></div>
     </div>
   </section>
 

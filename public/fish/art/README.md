@@ -11,3 +11,11 @@ The Higgsfield connector resolved the request as a style brief, so generation us
 Ghibli is the default for new players and saves without an art preference. An explicit Original choice is preserved. Both styles can be selected from the title or Settings.
 
 In Ghibli mode, fish have fuller bodies, larger eyes and simplified painted markings; instanced trees have rounded crowns; and the reel uses flat colors and ink outlines. Shared materials use cel shading, reduced highlights and shaded edges, alongside the painted sky and water reflections. Original geometry and textures remain available when switching styles. The day cycle, fish animation and fishing cues remain live. The game needs no Higgsfield account or runtime API call.
+
+## Regenerated 3D models
+
+`cartoon-models.glb` was built through Higgsfield 3D Jutsu with Blender 5.2 on 2026-09-29. Project: `b85c63a1-6192-41ac-bc7c-f7e36556a937`; committed model revision: 1; operation: `build-cartoon-fishing-model-set-v2`. The editable generation script is `scripts/build-fishing-cartoon-models.py`.
+
+The pack contains a bamboo rod with a rounded enamel reel, a painted lure and its leaf blade, pine and broadleaf trees in two detail levels, a far-tree mesh, a cottage and a cartoon loon. The game imports the named meshes, joins their material colors into one geometry per asset and reuses the existing bend, spinner and swimming animation. The 3D rod, casting panel and touch rod control share the bamboo and jade palette.
+
+The Ghibli request was resolved as a style brief. These are generated Blender meshes through Higgsfield 3D Jutsu, rather than the output of a catalog preset. The existing cartoon fish and other procedural scenery retain the same cel treatment. Original mode restores its original rod, lure and scenery. The procedural cartoon versions remain available when the model file fails to load.

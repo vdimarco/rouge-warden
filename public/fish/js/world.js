@@ -9,6 +9,7 @@ import { byId, lengthFor } from "./species.js";
 import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
 import { Rod, Line, Lure } from "./world-gear.js";
+import { loadCartoonModels } from "./cartoon-models.js";
 import * as Fish from "./world-fish.js";
 import { fishMesh as makeFish, JUNK_LEN } from "./world-fish.js";
 import { Spray, followerShadow, fireflies as makeFireflies, Gulls, boardMesh, BOARD_LENGTHS } from "./world-fx.js";
@@ -48,6 +49,7 @@ export function sunAt(h, look = null) {
 /* ---------------- the world ---------------- */
 
 export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "ghibli" } = {}) {
+  await loadCartoonModels();
   let currentStyle = normalizeStyle(style);
   artStyle.value = currentStyle === "ghibli" ? 1 : 0;
   let low = quality === "low";
@@ -709,7 +711,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
         envGroup.remove(treeGroup); dispose(treeGroup);
         treeGroup = E.buildTrees(low, PL, LK, currentStyle);
         envGroup.add(treeGroup);
+        buildProps();
       }
+      rod.setArtStyle(currentStyle); lure.setArtStyle(currentStyle); poseRod();
       setHour(S.hour);
       if (artStyle.value) E.loadStorySky().then(render);
     },

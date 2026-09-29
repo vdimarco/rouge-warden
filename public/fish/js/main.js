@@ -99,6 +99,7 @@ const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catc
 let returnTo = null;
 let shownAt = 0, tapAt = -1e9, tapShown = false;
 function show(id) {
+  if (id !== "help") setPullDemo(false);
   shownAt = now();
   tapShown = shownAt - tapAt < 250;
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
@@ -947,10 +948,27 @@ const HELP_T = [
   ["fish", "Land a big fish to open a new place. Each place has its own derby and its own legend."],
 ];
 for (const [id, list] of [["#helpM", HELP_M], ["#helpT", HELP_T]]) $(id).innerHTML = list.map(([ic, t]) => "<li>" + ICON[ic] + "<span>" + t + "</span></li>").join("");
+function setPullDemo(open) {
+  const motionTab = $("#help [data-tab='m']").getAttribute("aria-selected") === "true";
+  $("#pullDemo").hidden = !open;
+  $("#helpM").hidden = open || !motionTab;
+  $("#helpT").hidden = open || motionTab;
+  $("#watchPullDemo").hidden = !motionTab;
+  $("#watchPullDemo").textContent = open ? "Back to steps" : "Watch pull-back demo";
+  if (!open) $("#pullDemoVideo").pause();
+}
+$("#watchPullDemo").addEventListener("click", () => {
+  const open = $("#pullDemo").hidden;
+  setPullDemo(open);
+  if (open) {
+    const video = $("#pullDemoVideo");
+    video.currentTime = 0;
+    video.play().catch(() => { /* Native playback controls remain available. */ });
+  }
+});
 for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => {
   for (const t of $$("#help [data-tab]")) t.setAttribute("aria-selected", String(t === tab));
-  $("#helpM").hidden = tab.dataset.tab !== "m";
-  $("#helpT").hidden = tab.dataset.tab !== "t";
+  setPullDemo(false);
 });
 function seen(k) { if (!save.seen[k]) { save.seen[k] = 1; persist(); } }
 
@@ -1027,7 +1045,7 @@ $("#pHelp").addEventListener("click", () => overlay("help"));
 $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journal"); });
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { pause(); Sound.stopLoops(); Haptics.stop(); }
+  if (document.hidden) { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); }
   else if (!G.paused && G.phase !== "title" && G.phase !== "results") keepAwake();
 });
 // Safari: no pinch zoom
@@ -1401,6 +1419,7 @@ function frame() {
   if (!world) return;
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
   guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice,
+    pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
   // under the pause menu and the dimmed screens the lake stands still: draw it once, then let the GPU rest

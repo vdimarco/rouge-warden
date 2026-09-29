@@ -230,7 +230,8 @@ function shade(n, m, k = 1, a = 1) {
   if (cartoon()) {
     const level = nl > 0.65 ? 1 : nl > 0.18 ? 0.82 : 0.64;
     const base = m === MAT.silver ? [0.93, 0.88, 0.66] : m === MAT.steel ? [0.69, 0.77, 0.63]
-      : m === MAT.body || m === MAT.gun ? [0.34, 0.52, 0.41] : m === MAT.red ? [0.92, 0.42, 0.27] : m.base;
+      : m === MAT.body || m === MAT.gun ? [0.34, 0.52, 0.41] : m === MAT.red ? [0.92, 0.42, 0.27]
+      : m === MAT.blank ? [0.88, 0.69, 0.36] : m.base;
     return `rgba(${base.map(v => Math.round(clamp(v * level * k, 0, 1) * 255)).join(",")},${a})`;
   }
   const ry = 2 * nv * n[1] - VIEW[1];                                   // the reflected view ray
@@ -588,9 +589,9 @@ export class ReelPanel extends Widget {
     // the first guide and its foot: the line runs up through it
     const g = this._p(GUIDE[0], GUIDE[1], GUIDE[2]), gt = this._p(GUIDE[0], Y - 0.04, 0);
     ctx.lineCap = "round";
-    ctx.strokeStyle = "#8e9aa0"; ctx.lineWidth = Math.max(1.5, this.S * 0.025);
+    ctx.strokeStyle = cartoon() ? "#e2d4a6" : "#8e9aa0"; ctx.lineWidth = Math.max(1.5, this.S * 0.025);
     ctx.beginPath(); ctx.moveTo(gt.x, gt.y); ctx.lineTo(g.x, g.y - this.S * 0.08); ctx.stroke();
-    ctx.strokeStyle = "#dfe6e8"; ctx.lineWidth = Math.max(1.5, this.S * 0.022);
+    ctx.strokeStyle = cartoon() ? "#e2d4a6" : "#dfe6e8"; ctx.lineWidth = Math.max(1.5, this.S * 0.022);
     ctx.beginPath(); ctx.ellipse(g.x, g.y, this.S * 0.05, this.S * 0.09, 0, 0, TAU); ctx.stroke();
     this._cyl([1.72, Y, 0], [1, 0, 0], 3.6, 0.165, MAT.cork);
     // cork has pores
@@ -1321,12 +1322,12 @@ export class RodPad extends Widget {
     ctx.beginPath(); ctx.moveTo(px + Math.cos(ga) * 4, py + Math.sin(ga) * 4 - 2); ctx.lineTo(px + Math.cos(ga) * gl, py + Math.sin(ga) * gl - 2); ctx.stroke();
     // the blank, bending a little under its own weight
     const bend = 0.06 * L * Math.cos(a), mx = lerp(px, tx, 0.55) + Math.sin(a) * -bend, my = lerp(py, ty, 0.55) + Math.cos(a) * bend;
-    for (const [lw, col] of [[5, "#0b1417"], [3.4, "#2d3a3f"], [1.2, "rgba(200,220,224,0.6)"]]) {
+    for (const [lw, col] of (cartoon() ? [[6, OUTLINE], [4, "#ddbc75"], [1.2, "#f7df9f"]] : [[5, "#0b1417"], [3.4, "#2d3a3f"], [1.2, "rgba(200,220,224,0.6)"]])) {
       ctx.strokeStyle = col; ctx.lineWidth = lw;
       ctx.beginPath(); ctx.moveTo(px, py); ctx.quadraticCurveTo(mx, my, tx, ty); ctx.stroke();
     }
     // the reel hanging under the pivot
-    ctx.fillStyle = "#1f292d"; ctx.strokeStyle = "rgba(246,239,217,0.3)"; ctx.lineWidth = 1;
+    ctx.fillStyle = cartoon() ? "#70946b" : "#1f292d"; ctx.strokeStyle = cartoon() ? "#ead7a2" : "rgba(246,239,217,0.3)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(px + Math.cos(a - Math.PI / 2) * -9, py + Math.sin(a - Math.PI / 2) * -9, 7, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = rgba(RED, 1); ctx.beginPath(); ctx.arc(px, py, 3.5, 0, TAU); ctx.fill();
     // the tip, and the flash when you strike

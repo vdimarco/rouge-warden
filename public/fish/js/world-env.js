@@ -3,6 +3,7 @@
 // so the fish logic and the picture share one map. What each place looks like is in world-look.js.
 import * as THREE from "three";
 import { artStyle, storyMaterial } from "./art-style.js";
+import { cartoonGeometry } from "./cartoon-models.js";
 import { rng, noise, capsule } from "./places/util.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -568,6 +569,14 @@ function farPineGeo(low) {
 // Soft, rounded canopies use a small mesh shared by all instances. The far
 // forest uses one crown per tree to keep the phone's triangle count low.
 function storyTreeGeo(low, broad = false, far = false, pale = null) {
+  const asset = cartoonGeometry(far ? "tree_far" : "tree_" + (broad ? "leaf" : "pine") + (low ? "_low" : "_high"));
+  if (asset) {
+    if (pale) {
+      const c = asset.attributes.color, p = asset.attributes.position;
+      for (let i = 0; i < c.count; i++) if (p.getY(i) > .4) { const v = .65 + p.getY(i) * .3; c.setXYZ(i, v, v, v * .91); }
+    }
+    return asset;
+  }
   const parts = [];
   const crowns = far ? [[0, 0.56, 0, low ? 0.44 : 0.31, 0.48, low ? 0.43 : 0.30]] : low
     ? [[0, 0.60, 0, broad ? 0.36 : 0.48, 0.42, broad ? 0.34 : 0.45]] : broad
@@ -822,6 +831,13 @@ export function buildDock(place) {
 export function buildCottage(place, look) {
   const parts = [], ground = (x, z) => look.ground(x, z, place);
   const x0 = -9, z0 = 34, y0 = Math.max(0.5, ground(x0, z0)) - 0.2;
+  const story = artStyle.value ? cartoonGeometry("cottage") : null;
+  if (story) {
+    story.rotateY(Math.PI); story.translate(x0, y0, z0);
+    const canoe = new THREE.SphereGeometry(1, 12, 6); canoe.scale(.45, .22, 2.4);
+    const boat = bake(canoe, { matrix: M4().makeRotationY(.4).setPosition(6, Math.max(.3, ground(6, 22)) + .15, 22), color: hex("#d77a48") });
+    return new THREE.Mesh(merge([story, boat]), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: .5, scale: 3, key: "cartoon-cottage" }));
+  }
   const box = (w, h, d, x, y, z, c) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().makeTranslation(x0 + x, y0 + y, z0 + z), color: c }));
   box(8, 3, 6, 0, 1.5, 0, hex("#7a5236"));
   box(8.2, 0.3, 6.2, 0, 0.1, 0, hex("#5a4a3a"));
@@ -842,6 +858,8 @@ export function buildCottage(place, look) {
 /* ---------------- the loon ---------------- */
 
 export function buildLoon() {
+  const story = artStyle.value ? cartoonGeometry("loon") : null;
+  if (story) { const m = new THREE.Mesh(story, storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }))); m.scale.setScalar(1.25); return m; }
   const parts = [], r = rng(8);
   const black = hex("#15181a"), white = hex("#e8ece8"), dk = hex("#243030");
   const body = new THREE.SphereGeometry(1, 18, 10);
