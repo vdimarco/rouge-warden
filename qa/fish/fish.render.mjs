@@ -165,23 +165,25 @@ window.catchFrame = ({ id, kg, portrait }) => {
   const withFish = grab();
   let changed = 0; const n = withFish.lum.length;
   for (let i = 0; i < n; i++) if (Math.abs(withFish.lum[i] - empty.lum[i]) > 0.05) changed++;
-  // the stage is the newest scene child that holds this fish; project its box to the screen
+  // the stage is the scene child marked trophy; the fish is inside it (with a measuring board behind it). Project the fish to the screen
   let fit = null;
-  const stage = W.scene.children.find((o) => o.children && o.children[0] && o.children[0].userData && o.children[0].userData.id === id && o.children[0].userData.kind);
-  if (stage) {
+  let fishObj = null;
+  const stage = W.scene.children.find((o) => o.userData && o.userData.trophy);
+  if (stage) stage.traverse((o) => { if (!fishObj && o.userData && o.userData.id === id && o.userData.kind) fishObj = o; });
+  if (stage && fishObj) {
     stage.updateWorldMatrix(true, true);
     W.camera.updateMatrixWorld(true);
     // every vertex of the shown fish, projected to the screen
     const p = new THREE.Vector3();
     let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
-    stage.traverse((o) => {
+    fishObj.traverse((o) => {
       if (!o.isMesh) return;
       const ps = o.geometry.attributes.position;
       for (let i = 0; i < ps.count; i++) { p.fromBufferAttribute(ps, i).applyMatrix4(o.matrixWorld).project(W.camera); x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
     });
     fit = { x0, x1, y0, y1 };
   }
-  return { stats: withFish.stats, changed: changed / n, fit, size: stage ? new THREE.Box3().setFromObject(stage, true).getSize(new THREE.Vector3()).toArray() : null };
+  return { stats: withFish.stats, changed: changed / n, fit, size: fishObj ? new THREE.Box3().setFromObject(fishObj, true).getSize(new THREE.Vector3()).toArray() : null };
 };
 window.ready = true;
 </script></body></html>`;
