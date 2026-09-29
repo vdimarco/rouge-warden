@@ -268,7 +268,8 @@ button { font: inherit; color: inherit; }
       <article class="cab vr" data-game="vr" data-url="/vr/" aria-label="In Full Swing: a VR game for Meta Quest">
         <div class="marquee"><div><b>IN FULL SWING</b><small>META QUEST VR</small></div></div>
         <div class="bezel"><div class="screen">
-          <canvas id="swing" width="240" height="198"></canvas>
+          <img src="arcade/vr.webp" alt="">
+          <canvas class="art2" id="swing" width="240" height="198"></canvas>
           <span class="vrtag">VR</span>
           <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
@@ -640,52 +641,103 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
-// In Full Swing: a skyline at sunset, the Needle, and a friend swinging on a plunger rope
+// In Full Swing: the screen shows the key art, and flips to a small comic-book animation of it: a skyline at sunset, the
+// Needle with the Porcelain King, and a friend swinging on a plunger rope. The static part is drawn once, the swing every frame.
 {
   const vc = $(".cab.vr"), cv = $("#swing");
   if (vc && cv) {
     const sv = store.get("plungerd.vr.v1", null), n = sv && Array.isArray(sv.clogs) ? sv.clogs.length : 0;
     $(".hi", vc).textContent = sv && sv.king ? "THE KING IS FLUSHED" : n ? "CLOGS " + n + "/12" : "PUT ON YOUR HEADSET";
-    const g = cv.getContext("2d"), W = cv.width, H = cv.height, sea = H * 0.8;
+    setInterval(() => { if (!document.hidden) $(".screen", vc).classList.toggle("flip"); }, 3400);
+    const g = cv.getContext("2d"), W = cv.width, H = cv.height, sea = Math.round(H * 0.8);
+    const INK = "#140a18", GOLD = "#ffd84a", WARM = "#ff9a4a", GREEN = "#9cff3a";
     // the skyline is fixed, so build it once from a seeded random
     let seed = 11;
     const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const nx = Math.round(W * 0.66), sunX = Math.round(W * 0.9), anchor = { x: Math.round(W * 0.27), y: sea - 104 };
     const towers = [];
     for (let x = -4; x < W;) {
-      const w = 12 + rnd() * 20, core = Math.exp(-(((x - W * 0.62) / (W * 0.22)) ** 2)), h = 18 + rnd() * 30 + core * 80;
+      const w = 12 + rnd() * 20, core = Math.exp(-(((x - W * 0.36) / (W * 0.24)) ** 2)), h = 18 + rnd() * 30 + core * 74;
+      if (Math.abs(x + w / 2 - nx) < 10) { x += w + 2; continue; }
       const lit = [];
-      for (let wy = sea - h + 5; wy < sea - 4; wy += 5) for (let wx = x + 3; wx < x + w - 3; wx += 4) if (rnd() < 0.45) lit.push(wx, wy);
-      towers.push({ x, w, h, lit });
+      for (let wy = sea - h + 5; wy < sea - 4; wy += 5) for (let wx = x + 3; wx < x + w - 3; wx += 4) if (rnd() < 0.5) lit.push(wx, wy, rnd() < 0.3);
+      towers.push({ x, w, h, lit, clog: h > 40 && rnd() < 0.3 });
       x += w + 1 + rnd() * 3;
     }
-    const nx = W * 0.2, anchor = { x: W * 0.46, y: sea - 96 };
-    function draw(t) {
-      const sky = g.createLinearGradient(0, 0, 0, sea);
-      sky.addColorStop(0, "#2c3f78"); sky.addColorStop(0.55, "#d97a4a"); sky.addColorStop(1, "#ffc27a");
-      g.fillStyle = sky; g.fillRect(0, 0, W, sea);
-      g.fillStyle = "#fff1c8"; g.beginPath(); g.arc(W * 0.12, sea - 16, 11, 0, 7); g.fill();
-      // the Needle: shaft, pod and antenna, with a blinking light on top
-      g.fillStyle = "#3a2440"; g.fillRect(nx - 3, sea - 150, 6, 150); g.fillRect(nx - 10, sea - 124, 20, 9); g.fillRect(nx - 1, sea - 186, 2, 36);
-      g.fillStyle = (t * 2) % 2 < 1 ? "#ff3a2a" : "#6a2030"; g.fillRect(nx - 1, sea - 188, 2, 2);
-      for (const b of towers) {
-        g.fillStyle = "#35223f"; g.fillRect(b.x, sea - b.h, b.w, b.h);
-        g.fillStyle = "#ffcf7a";
-        for (let i = 0; i < b.lit.length; i += 2) g.fillRect(b.lit[i], b.lit[i + 1], 2, 2);
+    // ink outline: a thick ink stroke under the colour
+    const inked = (c, path, lw, col) => { c.lineJoin = "round"; c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = lw + 2.4; path(); c.stroke(); c.strokeStyle = col; c.lineWidth = lw; path(); c.stroke(); };
+    const bg = document.createElement("canvas");
+    bg.width = W; bg.height = H;
+    {
+      const b = bg.getContext("2d");
+      // sky: violet, magenta, orange, yellow, then the Ben-Day dots (ink-violet, small toward the horizon)
+      const sky = b.createLinearGradient(0, 0, 0, sea);
+      sky.addColorStop(0, "#3b2380"); sky.addColorStop(0.38, "#d8457a"); sky.addColorStop(0.72, "#ff7a2a"); sky.addColorStop(1, GOLD);
+      b.fillStyle = sky; b.fillRect(0, 0, W, sea);
+      b.fillStyle = "rgba(59, 35, 128, 0.5)";
+      for (let y = 1, row = 0; y < sea * 0.7; y += 3, row++) for (let x = (row & 1) * 1.5; x < W; x += 3) { const r = 1.05 * (1 - y / (sea * 0.7)); if (r > 0.2) { b.beginPath(); b.arc(x, y, r, 0, 7); b.fill(); } }
+      // cloud streaks, inked
+      for (const [cx, cy, l, t] of [[30, 30, 70, -0.12], [120, 22, 60, 0.1], [178, 52, 66, -0.08], [60, 68, 54, 0.06]]) {
+        const path = () => { b.beginPath(); b.moveTo(cx - l / 2, cy); b.quadraticCurveTo(cx, cy - 8 + t * 40, cx + l / 2, cy + t * 30); };
+        inked(b, path, 2.4, "rgba(216, 69, 122, 0.85)");
       }
-      // the lake, with the sun and the lights mirrored in it
-      const lake = g.createLinearGradient(0, sea, 0, H);
-      lake.addColorStop(0, "#c7784a"); lake.addColorStop(1, "#2f3d6a");
-      g.fillStyle = lake; g.fillRect(0, sea, W, H - sea);
-      g.fillStyle = "rgba(255, 230, 170, 0.6)";
-      for (let k = 0; k < 6; k++) g.fillRect(W * 0.12 - 9 + Math.sin(t * 3 + k) * 3, sea + 3 + k * 6, 18 - k * 2, 2);
-      // the swing: a rope from a roof, a friend at the end, and a red cup stuck to the tower
-      const a = Math.sin(t * 1.7) * 0.8, len = 70, px = anchor.x + Math.sin(a) * len, py = anchor.y + Math.cos(a) * len;
-      g.strokeStyle = "#d8b872"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(anchor.x, anchor.y); g.lineTo(px, py); g.stroke();
-      g.fillStyle = "#d2202a"; g.fillRect(anchor.x - 3, anchor.y - 3, 6, 4);
-      g.fillStyle = "#1b1020"; g.fillRect(px - 3, py, 6, 9); g.fillRect(px - 2, py - 5, 4, 4);
-      g.fillRect(px - 3 + Math.sin(t * 3.4) * 2, py + 9, 2, 6); g.fillRect(px + 1 - Math.sin(t * 3.4) * 2, py + 9, 2, 6);
+      // the sun, low, with a hard ink edge
+      const glow = b.createRadialGradient(sunX, sea - 8, 4, sunX, sea - 8, 44);
+      glow.addColorStop(0, "rgba(255, 216, 74, 0.7)"); glow.addColorStop(1, "rgba(255, 216, 74, 0)");
+      b.fillStyle = glow; b.fillRect(sunX - 46, sea - 54, 92, 60);
+      b.fillStyle = GOLD; b.strokeStyle = INK; b.lineWidth = 2; b.beginPath(); b.arc(sunX, sea - 8, 12, 0, 7); b.fill(); b.stroke();
+      // the lake: violet bands, inked wave strokes, and a Ben-Day fade at the shore
+      const lake = b.createLinearGradient(0, sea, 0, H);
+      lake.addColorStop(0, "#9a3f86"); lake.addColorStop(1, "#2f2a70");
+      b.fillStyle = lake; b.fillRect(0, sea, W, H - sea);
+      b.strokeStyle = "rgba(20, 10, 24, 0.55)"; b.lineWidth = 1;
+      for (let y = sea + 5; y < H; y += 6) { b.beginPath(); for (let x = (y * 7) % 19; x < W; x += 19) { b.moveTo(x, y); b.lineTo(x + 8, y); } b.stroke(); }
+      // towers: a violet shadow body, a warm rim on the sun side, ink edges, lit windows
+      for (const t of towers) {
+        b.fillStyle = "#2a2058"; b.fillRect(t.x, sea - t.h, t.w, t.h);
+        b.fillStyle = "#1f3f6e"; b.fillRect(t.x + t.w * 0.55, sea - t.h, t.w * 0.45, t.h);
+        b.fillStyle = WARM; b.fillRect(t.x, sea - t.h, 2, t.h);
+        b.strokeStyle = INK; b.lineWidth = 1.6; b.strokeRect(t.x, sea - t.h, t.w, t.h);
+        for (let i = 0; i < t.lit.length; i += 3) { b.fillStyle = t.lit[i + 2] ? "#ffb32a" : "#ffcf5a"; b.fillRect(t.lit[i], t.lit[i + 1], 2, 2); }
+        if (t.clog) {
+          // a green-beamed toilet on the roof, like the clogs in the game
+          b.fillStyle = "rgba(156, 255, 58, 0.5)"; b.fillRect(t.x + t.w / 2 - 1, sea - t.h - 34, 2, 34);
+          b.fillStyle = "#f4f1ea"; b.strokeStyle = INK; b.lineWidth = 1.2; b.fillRect(t.x + t.w / 2 - 3, sea - t.h - 5, 6, 5); b.strokeRect(t.x + t.w / 2 - 3, sea - t.h - 5, 6, 5);
+          b.fillStyle = GREEN; b.fillRect(t.x + t.w / 2 - 3, sea - t.h, 6, 3);
+        }
+      }
+      // the Needle: a tapered shaft, the pod ring, and the Porcelain King on top with a crown
+      const shaft = () => { b.beginPath(); b.moveTo(nx - 3.4, sea); b.lineTo(nx - 1.4, sea - 118); b.lineTo(nx + 1.4, sea - 118); b.lineTo(nx + 3.4, sea); b.closePath(); };
+      b.fillStyle = "#3a2a6a"; shaft(); b.fill(); b.fillStyle = "#1f3f6e"; b.fillRect(nx, sea - 118, 2, 118); b.strokeStyle = INK; b.lineWidth = 1.6; shaft(); b.stroke();
+      b.fillStyle = GREEN; b.fillRect(nx - 1, sea - 112, 2, 40); b.fillRect(nx + 1, sea - 90, 1.5, 24);
+      b.fillStyle = "#c9c2dc"; b.strokeStyle = INK; b.lineWidth = 1.6;
+      b.beginPath(); b.ellipse(nx, sea - 121, 11, 4.4, 0, 0, 7); b.fill(); b.stroke();
+      b.fillStyle = "#ffcf5a"; b.fillRect(nx - 7, sea - 122, 14, 2);
+      b.fillStyle = "#f4f1ea"; b.beginPath(); b.rect(nx - 6, sea - 140, 12, 15); b.fill(); b.stroke();
+      b.fillStyle = "#b9b0d8"; b.fillRect(nx + 2, sea - 139, 3, 13);
+      b.fillStyle = GOLD; b.beginPath(); b.moveTo(nx - 6, sea - 140); b.lineTo(nx - 7, sea - 148); b.lineTo(nx - 3, sea - 144); b.lineTo(nx, sea - 150); b.lineTo(nx + 3, sea - 144); b.lineTo(nx + 7, sea - 148); b.lineTo(nx + 6, sea - 140); b.closePath(); b.fill(); b.stroke();
+      b.strokeStyle = INK; b.lineWidth = 1.4; b.beginPath(); b.moveTo(nx - 5, sea - 134); b.lineTo(nx - 1, sea - 132); b.moveTo(nx + 5, sea - 134); b.lineTo(nx + 1, sea - 132); b.stroke();
     }
     let t = 0, last = 0;
+    function draw(t) {
+      g.drawImage(bg, 0, 0);
+      // the King's eyes pulse green
+      g.fillStyle = "rgba(156, 255, 58, " + (0.65 + 0.35 * Math.sin(t * 4)) + ")";
+      g.fillRect(nx - 4.4, sea - 133.6, 2.6, 2); g.fillRect(nx + 1.8, sea - 133.6, 2.6, 2);
+      // the sun's road on the lake glitters
+      g.fillStyle = "rgba(255, 226, 120, 0.85)";
+      for (let k = 0; k < 7; k++) g.fillRect(sunX - 10 + k * 0.5 + Math.sin(t * 2.5 + k * 1.7) * 4, sea + 3 + k * 5, 19 - k * 2, 1.6);
+      // the swing: a rope from a roof, a friend at the end, and a red cup stuck to the tower, all inked
+      const a = Math.sin(t * 1.7) * 0.8, len = 70, px = anchor.x + Math.sin(a) * len, py = anchor.y + Math.cos(a) * len;
+      inked(g, () => { g.beginPath(); g.moveTo(anchor.x, anchor.y); g.lineTo(px, py - 4); }, 1.6, "#d8b872");
+      g.fillStyle = "#d2202a"; g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.ellipse(anchor.x, anchor.y - 1, 4, 3, 0, 0, 7); g.fill(); g.stroke();
+      const sw = Math.sin(t * 3.4) * 2.4, lean = Math.sin(a) * 3;
+      // legs (blue jeans), body (red shirt), head and hair, an arm up to the rope
+      inked(g, () => { g.beginPath(); g.moveTo(px - 1.5 + lean, py + 5); g.lineTo(px - 2.6 - sw + lean, py + 14); g.moveTo(px + 1.5 + lean, py + 5); g.lineTo(px + 2.6 + sw + lean, py + 14); }, 2.4, "#1f3f6e");
+      inked(g, () => { g.beginPath(); g.moveTo(px + lean * 0.5, py - 2); g.lineTo(px + lean, py + 6); }, 4.2, "#d2202a");
+      inked(g, () => { g.beginPath(); g.moveTo(px + lean * 0.4, py - 1); g.lineTo(px, py - 4); }, 1.8, "#d2202a");
+      g.fillStyle = "#3a2418"; g.strokeStyle = INK; g.lineWidth = 1.3; g.beginPath(); g.arc(px + lean * 0.2, py - 6.4, 2.8, 0, 7); g.fill(); g.stroke();
+    }
     draw(0);
     (function loop(now) { requestAnimationFrame(loop); if (reduceMotion || document.hidden || now - last < 33) return; last = now; t += 1 / 30; draw(t); })(0);
   }
