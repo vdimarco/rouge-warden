@@ -33,6 +33,7 @@ const BODY = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 import * as THREE from "three";
 import { fishMesh, releaseFish, FORMS, JUNK_LEN } from "./js/world-fish.js";
 import { SPECIES, JUNK, byId } from "./js/species.js";
+import { artStyle } from "./js/art-style.js";
 const cv = document.getElementById("c");
 const R = new THREE.WebGLRenderer({ canvas: cv, antialias: false, preserveDrawingBuffer: true });
 R.setSize(96, 64, false);
@@ -44,7 +45,7 @@ cam.position.set(-3, 0, 0); cam.lookAt(0, 0, 0);
 const triCount = (m) => { let n = 0, calls = 0; m.traverse((o) => { if (o.isMesh) { calls++; const g = o.geometry; n += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); return { tris: n, calls }; };
 // draw one mesh alone and read the renderer's own counts
 const drawOne = (m) => { scene.add(m); R.info.reset(); R.render(scene, cam); const r = { calls: R.info.render.calls, tris: R.info.render.triangles }; scene.remove(m); return r; };
-window.T = { THREE, R, scene, cam, fishMesh, releaseFish, FORMS, JUNK_LEN, SPECIES, JUNK, byId, triCount, drawOne };
+window.T = { THREE, R, scene, cam, fishMesh, releaseFish, FORMS, JUNK_LEN, SPECIES, JUNK, byId, triCount, drawOne, artStyle };
 
 // per id: mesh facts. geometry z and y extents (nose at -z), draw calls and triangles, both counted and measured
 window.facts = () => {
@@ -56,7 +57,7 @@ window.facts = () => {
     if (!m) { out.push({ id: s.id, missing: true }); continue; }
     const box = new THREE.Box3().setFromObject(m), c = triCount(m), d = drawOne(m);
     let finite = true;
-    m.traverse((o) => { if (o.isMesh) for (const k of ["position", "normal", "uv"]) { const a = o.geometry.attributes[k]; if (a) for (let i = 0; i < a.array.length; i++) if (!Number.isFinite(a.array[i])) finite = false; } });
+    m.traverse((o) => { if (o.isMesh) for (const k of ["position", "normal", "uv", "storyPosition", "storyNormal"]) { const a = o.geometry.attributes[k]; if (a) for (let i = 0; i < a.array.length; i++) if (!Number.isFinite(a.array[i])) finite = false; } });
     out.push({ id: s.id, ms, finite, kind: m.userData.kind, hasFx: !!m.userData.fx, mats: m.userData.mats.length, uid: m.userData.id, minZ: box.min.z, maxZ: box.max.z, minY: box.min.y, maxY: box.max.y, minX: box.min.x, maxX: box.max.x, tris: c.tris, calls: c.calls, drawCalls: d.calls, drawTris: d.tris, shape: s.look.shape, formOk: !!FORMS[s.look.shape] });
   }
   return out;
@@ -73,7 +74,8 @@ window.band = (id, part, z0, z1) => {
 window.iris = (id) => { const m = fishMesh(id), cv = m.userData.mats[2].map.image, d = cv.getContext("2d").getImageData(4, 20, 1, 1).data; return [d[0], d[1], d[2]]; };
 window.glassy = (id) => { const m = fishMesh(id), cv = m.userData.mats[2].map.image, d = cv.getContext("2d").getImageData(4, 6, 1, 1).data; return [d[0], d[1], d[2]]; };
 // a contact sheet of every fish, side view
-window.sheet = (cols, cw, ch) => {
+window.sheet = (cols, cw, ch, style = 1) => {
+  artStyle.value = style;
   const ids = [...SPECIES, ...JUNK].map((s) => s.id), rows = Math.ceil(ids.length / cols);
   const r2 = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   r2.setSize(cols * cw, rows * ch, false); r2.setScissorTest(true); r2.setClearColor(0x3a4a52);
@@ -86,7 +88,7 @@ window.sheet = (cols, cw, ch) => {
     const col = i % cols, row = Math.floor(i / cols), x = col * cw, y = (rows - 1 - row) * ch;
     r2.setViewport(x, y, cw, ch); r2.setScissor(x, y, cw, ch);
     const box = new THREE.Box3().setFromObject(m), mid = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
-    const asp = cw / ch, w = Math.max(size.z, size.y * asp) * 0.56 + 0.02, h = w / asp;
+    const asp = cw / ch, w = Math.max(size.z, size.y * asp * (style ? 1.3 : 1)) * 0.56 + 0.02, h = w / asp;
     const oc = new THREE.OrthographicCamera(-w, w, h, -h, 0.01, 20);
     oc.position.set(-3, mid.y, mid.z); oc.lookAt(0, mid.y, mid.z);
     r2.render(scene, oc);
@@ -178,7 +180,7 @@ window.catchFrame = ({ id, kg, portrait }) => {
     let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
     fishObj.traverse((o) => {
       if (!o.isMesh) return;
-      const ps = o.geometry.attributes.position;
+      const ps = o.geometry.attributes.storyPosition || o.geometry.attributes.position;
       for (let i = 0; i < ps.count; i++) { p.fromBufferAttribute(ps, i).applyMatrix4(o.matrixWorld).project(W.camera); x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
     });
     fit = { x0, x1, y0, y1 };
@@ -244,6 +246,25 @@ try {
     check(!slow.length, "a fish takes over 500 ms to build: " + slow.map((f) => f.id + " " + f.ms.toFixed(0)).join(", "));
     check((await page.evaluate(() => window.T.fishMesh("nope"))) === null, "fishMesh of an unknown id should be null");
 
+    // Cartoon morphs retain topology, fit their culling bounds, and switch on existing meshes.
+    const cartoons = await page.evaluate(() => window.T.SPECIES.map(s => {
+      const m = T.fishMesh(s.id);
+      let matched = true, bounded = true;
+      m.traverse(o => {
+        if (!o.isMesh) return;
+        const g = o.geometry, p = g.attributes.storyPosition, n = g.attributes.storyNormal;
+        matched &&= !!p && !!n && p.count === g.attributes.position.count && n.count === g.attributes.normal.count;
+        if (p) for (let i = 0; i < p.count; i++) if (new T.THREE.Vector3().fromBufferAttribute(p, i).distanceTo(g.boundingSphere.center) > g.boundingSphere.radius) bounded = false;
+      });
+      T.artStyle.value = 0; const original = T.drawOne(m);
+      T.artStyle.value = 1; const cartoon = T.drawOne(m);
+      return { id: s.id, matched, bounded, original, cartoon };
+    }));
+    for (const c of cartoons) {
+      check(c.matched && c.bounded, c.id + ": cartoon topology matches and fits the culling bounds");
+      check(c.original.calls === 3 && c.cartoon.calls === 3 && c.original.tris === c.cartoon.tris, c.id + ": both styles draw the same three animated parts");
+    }
+
     // shape parts
     const catB = await page.evaluate(() => ({ cat: window.band("catfish", "fins", -0.6, -0.38), whisk: window.band("whiskers", "fins", -0.6, -0.38), cod: window.band("cod", "fins", -0.6, -0.38), bass: window.band("smallmouth", "fins", -0.6, -0.38), pike: window.band("pike", "fins", -0.6, -0.38) }));
     check(catB.cat.n >= 8 * 6 * 3 && catB.whisk.n >= 8 * 6 * 3, `catfish barbels: 8 strips of 6 triangles expected in the fins mesh (vertices near the nose: ${catB.cat.n} and ${catB.whisk.n})`);
@@ -274,14 +295,17 @@ try {
     // the contact sheet
     const url = await page.evaluate(() => window.sheet(6, 420, 190));
     fs.writeFileSync(path.join(SHOTS, "fish-sheet.png"), Buffer.from(url.split(",")[1], "base64"));
+    const original = await page.evaluate(() => window.sheet(6, 420, 190, 0));
+    fs.writeFileSync(path.join(SHOTS, "fish-sheet-original.png"), Buffer.from(original.split(",")[1], "base64"));
+    await page.evaluate(() => { T.artStyle.value = 1; });
 
     // releaseFish
     const r = await page.evaluate(() => window.release());
     console.log("INFO release:", JSON.stringify(r));
     check(r.full.textures >= 26 + 1, `all fish drawn: ${r.full.textures} textures on the GPU`);
     check(r.freed.skins === 25 && r.freed.geometries > 0, `releaseFish(["perch","boot"]) should free 25 skins, freed ${r.freed.skins}`);
-    // kept: the perch skin, its eye, the fin ray texture. The boot has no texture
-    check(r.kept.textures <= 3, `after the release ${r.kept.textures} textures are left (perch skin, perch eye, fin rays)`);
+    // kept: both perch skins, its eye, the fin ray texture. The boot has no texture
+    check(r.kept.textures <= 4, `after the release ${r.kept.textures} textures are left (both perch skins, perch eye, fin rays)`);
     check(r.kept.geometries <= 4, `after the release ${r.kept.geometries} geometries are left (perch 3, boot 1)`);
     check(r.perchSame, "a kept species keeps its skin texture");
     check(r.codNew, "a released species gets a new skin the next time it is built");
