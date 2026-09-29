@@ -1,0 +1,55 @@
+{
+  "packageId": "com.cottagearcade.fullswing",
+  "applicationId": "0",
+  "host": "warden-alpha-wheat.vercel.app",
+  "name": "In Full Swing",
+  "launcherName": "Full Swing",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#E0482C",
+  "themeColorDark": "#1A1020",
+  "navigationColor": "#1A1020",
+  "navigationColorDark": "#1A1020",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#1A1020",
+  "startUrl": "/vr/?source=pwa",
+  "fullScopeUrl": "https://warden-alpha-wheat.vercel.app/vr/",
+  "webManifestUrl": "https://warden-alpha-wheat.vercel.app/vr/manifest.webmanifest",
+  "iconUrl": "https://warden-alpha-wheat.vercel.app/vr/icons/icon-512.png",
+  "maskableIconUrl": "https://warden-alpha-wheat.vercel.app/vr/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": false,
+  "enableMicrophone": false,
+  "enableXRScene": true,
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": true,
+  "horizonOSAppMode": "immersive",
+  "minSdkVersion": 32,
+  "appVersion": "1.0.0",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "./fullswing.keystore",
+    "alias": "fullswing"
+  },
+  "features": {
+    "horizonPlatformSDK": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "fallbackType": "customtabs",
+  "generatorApp": "bubblewrap-cli",
+  "shortcuts": [],
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": []
+}
