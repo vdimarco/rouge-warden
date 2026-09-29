@@ -16,7 +16,7 @@ export class District {
     const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);
     this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;
     this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
-    this.build();this.batchScenery();this.makeEnemy();this.makePortal();this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.wire();this.resize();
+    this.build();this.batchScenery();this.makeEnemy();this.makePortal();this.fighterTemplate=this.actor;this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.wire();this.resize();
   }
   // Merge static geometry by material once. Moving actors and pickups stay separate.
   batchScenery(){
@@ -114,6 +114,13 @@ export class District {
     this.arm=new THREE.Group();this.arm.position.set(.46,1.36,0);this.actor.add(this.arm);
     this.box(0,-.22,0,.2,.6,.23,'#a7b5a0',this.arm);this.box(0,-.55,.42,.06,.06,1.25,'#e2f1c4',this.arm);
     this.box(-.46,1.07,0,.2,.6,.24,'#a7b5a0',this.actor);
+    // Layered armour, a broad helmet and a blade that reads clearly in a clash.
+    this.box(0,1.78,-.02,.77,.12,.57,'#263f52',this.actor);this.box(0,1.91,-.05,.46,.2,.38,'#365467',this.actor);
+    this.box(0,1.75,.34,.52,.055,.025,'#e5c17c',this.actor);
+    for(const x of [-.4,.4]){for(let i=0;i<3;i++)this.box(x,1.38-i*.09,0,.27,.075,.44,'#314d60',this.actor)}
+    for(let i=0;i<4;i++)this.box(0,1.25-i*.13,.21,.55,.08,.05,i%2?'#405f70':'#b19764',this.actor);
+    this.box(0,.65,-.16,.72,.38,.12,'#283b50',this.actor);
+    this.box(0,-.54,.35,.28,.045,.07,'#d6b675',this.arm);
     this.actor.position.set(0,0,0);this.actor.visible=false;this.enemyState=null;
   }
   placeEnemy(enemy){
@@ -123,6 +130,31 @@ export class District {
     if(this.collides(spot.x,spot.z,.6))spot.set(0,0,0);
     this.actor.position.set(spot.x,0,spot.z);this.actor.visible=true;
   }
+  retireCrowd(){for(const c of this.crowd||[]){this.scene.remove(c.mesh);c.ring.geometry.dispose();c.ring.material.dispose()}this.crowd=null}
+  beginEncounter(fighters){
+    this.clearDrones();this.retireCrowd();this.crowd=[];this.fighterTemplate.visible=false;
+    fighters.forEach((fighter,i)=>{const mesh=this.fighterTemplate.clone(true);mesh.visible=true;mesh.scale.setScalar(fighter.boss?1.15:1);this.scene.add(mesh);const angle=this.yaw+(i-(fighters.length-1)/2)*.5;let spot=null;
+      for(let j=0;j<32;j++){const a=angle+(j%2?1:-1)*Math.ceil(j/2)*.2,range=4+(j%3);const x=this.position.x-Math.sin(a)*range,z=this.position.z-Math.cos(a)*range;if(!this.collides(x,z,.6)&&!this.crowd.some(c=>Math.hypot(c.mesh.position.x-x,c.mesh.position.z-z)<1.2)){spot={x,z};break}}
+      if(!spot)spot={x:0,z:0};mesh.position.set(spot.x,0,spot.z);
+      const armIndex=this.fighterTemplate.children.indexOf(this.arm),legIndices=this.legs.map(l=>this.fighterTemplate.children.indexOf(l));
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.65,.025,4,24),new THREE.MeshBasicMaterial({color:'#ffd288'}));ring.rotation.x=Math.PI/2;ring.position.y=.04;mesh.add(ring);
+      this.crowd.push({fighter,mesh,arm:mesh.children[armIndex],legs:legIndices.map(n=>mesh.children[n]),ring});
+    });this.applyFighterModels();this.selectFighter(fighters[0]);
+  }
+  applyFighterModels(){if(!this.fighterModel)return;for(const c of this.crowd||[]){if(c.generated)continue;const model=this.fighterModel.clone(true);for(const child of c.mesh.children){if(child!==c.arm&&child!==c.ring)child.visible=false}c.mesh.add(model);c.generated=model}}
+  selectFighter(f){const c=this.crowd?.find(c=>c.fighter===f);if(c){this.actor=c.mesh;this.selected=f}}
+  fighterDistance(f){const c=this.crowd?.find(c=>c.fighter===f);return c?Math.hypot(c.mesh.position.x-this.position.x,c.mesh.position.z-this.position.z):Infinity}
+  chooseFighter(active){
+    const living=this.crowd?.filter(c=>c.fighter.hp>0)||[];
+    const rank=c=>{const dx=c.mesh.position.x-this.position.x,dz=c.mesh.position.z-this.position.z,n=Math.hypot(dx,dz);return (-Math.sin(this.yaw)*dx-Math.cos(this.yaw)*dz)/(n||1)*8-n*.3+(active===c.fighter?2:0)};
+    living.sort((a,b)=>rank(b)-rank(a));if(living.length)this.selectFighter(living[0].fighter);return this.selected;
+  }
+  updateCrowd(dt){for(const c of this.crowd){const f=c.fighter;c.mesh.visible=f.hp>0;if(!c.mesh.visible)continue;const p=c.mesh.position,dx=this.position.x-p.x,dz=this.position.z-p.z,n=Math.hypot(dx,dz);let mx=dx/(n||1)*dt*3.6,mz=dz/(n||1)*dt*3.6;
+    if(n>2.4&&f.phase!=='windup'&&f.phase!=='open'){for(const other of this.crowd){if(other===c||other.fighter.hp<=0)continue;const ox=p.x-other.mesh.position.x,oz=p.z-other.mesh.position.z,d=Math.hypot(ox,oz);if(d<1.4&&d>.01){mx+=ox/d*dt*2;mz+=oz/d*dt*2}}if(!this.collides(p.x+mx,p.z,.5))p.x+=mx;if(!this.collides(p.x,p.z+mz,.5))p.z+=mz;for(let i=0;i<c.legs.length;i++)if(c.legs[i])c.legs[i].rotation.x=Math.sin(this.clock*9+i*Math.PI)*.45}
+    c.mesh.lookAt(this.position.x,0,this.position.z);const progress=f.phase==='windup'?1-Math.max(0,f.timer/f.period):0;
+    if(c.arm){c.arm.rotation.x=-.35-progress*1.5;c.arm.rotation.z=f.dir===0?progress*1.1:0;if(f.phase==='open')c.arm.rotation.x=.6}
+    c.ring.material.color.set(f.phase==='open'?'#baff54':f.phase==='windup'?'#ff496c':'#78d9db');c.ring.scale.setScalar(f.phase==='windup'?1+progress*.35:1);p.y=f.hit>0?Math.sin(f.hit*35)*.05:0;
+  }}
   distanceToActor(){return Math.hypot(this.actor.position.x-this.position.x,this.actor.position.z-this.position.z)}
   moveSafe(dx,dz){const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.12));for(let i=0;i<steps;i++){if(!this.collides(this.position.x+dx/steps,this.position.z))this.position.x+=dx/steps;if(!this.collides(this.position.x,this.position.z+dz/steps))this.position.z+=dz/steps}}
   lunge(){
@@ -156,7 +188,7 @@ export class District {
     return distance<3.5&&facing>.72;
   }
   resize(){this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight)}
-  reset(){this.clearDrones();this.dash=0;this.dashCooldown=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
+  reset(){this.retireCrowd();this.actor=this.fighterTemplate;this.clearDrones();this.dash=0;this.dashCooldown=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
   beginMotionView(){this.motionView={yaw:this.yaw,pitch:this.pitch,last:0,turn:0};this.look=null}
   aimMotionView(yaw,pitch,dt){
     if(!this.motionView)this.beginMotionView();const v=this.motionView;
@@ -187,12 +219,13 @@ export class District {
       let x=this.move.x+(this.keys.has('KeyD')?1:0)-(this.keys.has('KeyA')?1:0),y=this.move.y+(this.keys.has('KeyS')?1:0)-(this.keys.has('KeyW')?1:0);
       const n=Math.max(1,Math.hypot(x,y));x/=n;y/=n;
       const speed=dt*10.5,dx=(Math.cos(this.yaw)*x+Math.sin(this.yaw)*y)*speed,dz=(-Math.sin(this.yaw)*x+Math.cos(this.yaw)*y)*speed;
-      const blocked=(x,z)=>this.collides(x,z)||(this.actor.visible&&Math.hypot(x-this.actor.position.x,z-this.actor.position.z)<.85);
+      const blocked=(x,z)=>this.collides(x,z)||(this.crowd?this.crowd.some(c=>c.fighter.hp>0&&Math.hypot(x-c.mesh.position.x,z-c.mesh.position.z)<.8):(this.actor.visible&&Math.hypot(x-this.actor.position.x,z-this.actor.position.z)<.85));
       // Substeps prevent fast movement from crossing thin walls.
       const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.15));
       for(let i=0;i<steps;i++){if(!blocked(this.position.x+dx/steps,this.position.z))this.position.x+=dx/steps;if(!blocked(this.position.x,this.position.z+dz/steps))this.position.z+=dz/steps}
       this.moveAmount=Math.hypot(x,y);
-      if(enemy&&this.actor.visible){
+      if(this.crowd)this.updateCrowd(dt*(this.enemyTimeScale||1));
+      if(!this.crowd&&enemy&&this.actor.visible){
         const to=this.position.clone().sub(this.actor.position);to.y=0;const dist=to.length();
         if(dist>2.4&&dist<18){to.normalize().multiplyScalar(dt*(this.enemyTimeScale||1)*(enemy.boss?3.4:4.6));const p=this.actor.position;
           if(!this.collides(p.x+to.x,p.z,.5))p.x+=to.x;if(!this.collides(p.x,p.z+to.z,.5))p.z+=to.z;
@@ -212,4 +245,5 @@ export class District {
     this.renderer.render(this.scene,this.camera);
   }
 }
+
 
