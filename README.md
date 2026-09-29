@@ -45,6 +45,8 @@ The world of Get Plunger'd is painted. GPT Image 2.5 on Higgsfield painted the a
 
 Down the Drain is a spin-off at `/fall/`, with the same crew, critters, and bosses as Get Plunger'd. The outhouse backed up, and the ground under the cottage is now a falling-sand world. Every pixel moves. Sand and gold fall. Water, oil, lava, drain cleaner (acid), sewage, and blood flow. Fire spreads through wood, moss, oil, and swamp gas. It plays like a fast action roguelite in the style of Dead Cells, dropped into a Noita-like world.
 
+A link from House Rules (`/fall/#L=...`) opens a layer that a player painted. See [The lab](#the-lab).
+
 ### Levels
 
 Each layer is 1024 pixels wide and 720 tall, so it is wider than it is tall. It is a web of rooms, not one line:
@@ -353,6 +355,19 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
 
+## The lab
+
+The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade does not show the lab, and the game switcher does not list it. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
+
+Each toy starts with a card that says what to try. The lab page shows how long you played each toy. Only your browser keeps these times. Tell the crew your times, and whether you wanted another go.
+
+- **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A steep entry keeps your speed, and a flat one belly-flops. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
+- **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle. Rock the top edge to take a stroke on the side you tip to. Twist at the end of the stroke for a J-stroke. Tilt hard and hold still to brace. Catch the eddies behind the rocks on the way down. Thumbs and keys work too.
+- **Full Tilt** (`/lab/tilt/`). A bare pinball table. Hold the halves of the screen to flip, slide down on the right half to pull the plunger, and jolt the phone to nudge. The ball bounces off a flipper at the flipper's own speed where they touch, so you can cradle, pass and catch as on a real machine. A soft launch drops the ball into a top lane. The green lane is the skill shot.
+- **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own sand and water rules. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew.
+
+A House Rules link opens Down the Drain at `/fall/#L=<code>`. The code holds the brush strokes, so a busy layer fits in 2,000 characters. With a layer in the link, the game gives you one life, no unlocks, no banked caps and neutral tuning, so everyone plays the same layer. It saves nothing to your memory, your tuning or the high scores. Every change this needs in `public/fall/index.html` sits behind `Custom.on`, which is off for any other link.
+
 ## The studio board
 
 The [Cottage Arcade Studio](https://claude.ai/artifact/1XZhrTjde2i2zNrqxT5KfT) is a page that shows who builds what. Every Claude Code session on this repo is an agent. Every branch, and every local git worktree, is a work tree. A branch with no session (from Codex, for example) is an agent too. Every game in `public/arcade/switch.js` is a cabinet, and so is a new game folder on an open branch. When a new agent starts or a new branch is pushed, the next refresh adds it. Nobody has to add it by hand.
@@ -403,6 +418,14 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/wild/art/` | The hero cards for the hero select |
 | `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
 | `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `lake.js` (the lake map), `species.js` (the fish and the junk), `world.js` and `world-*.js` (the 3D lake), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
+| `public/lab/index.html` | The lab: the four toys, and your play time in each |
+| `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
+| `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
+| `public/lab/creek/` | Up the Creek: `river.js` (the river and its current), `canoe.js` (the canoe), `paddle.js` (reads strokes from the phone), and `main.js` |
+| `public/lab/tilt/` | Full Tilt: `table.js` (the table), `physics.js` (the ball and the flippers), and `main.js` |
+| `public/lab/rules/` | House Rules: `layer.js` (a layer as data, as a link, and as ground), `sand.js` (a copy of Down the Drain's sand rules, for the preview), `editor.js`, and `play.js` (the layer inside Down the Drain) |
+| `docs/game-ideas.md` | The bar for new games, eight ideas, ideas for every cabinet, and the toys in the lab |
+| `qa/lab/` | Tests for the lab (see below) |
 | `public/icons/`, `public/favicon.ico` | The arcade's browser and home-screen icons |
 | `public/chip.js` | A small 8-bit music player (pulse, triangle, and noise voices) with three original songs: the arcade theme, the Breath of the Lake overture, and the Down the Drain theme |
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
@@ -468,6 +491,28 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/world.render.mjs` | The lake at every hour and in every view, each fish, the trophy view, and the draw call and triangle limits |
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
+
+### Lab tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/lab/hidden.mjs` | The arcade and the game switcher never mention the lab, and every lab page asks search engines not to index it |
+| `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, winter follows its curve, and a good flyer goes at least twice as far as a random one |
+| `qa/lab/plunge.e2e.mjs` | Take the Plunge on a phone and on a computer: hold and let go, a dive, winter at the end, Again, and a ghost link |
+| `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a brace keeps you up where a fast crossing tips you, eddies can be caught, and a simple paddler gets down most rivers |
+| `qa/lab/creek.paddle.test.mjs` | Made-up sensor data gives the right strokes, J-strokes, back strokes and braces, and a walk gives none |
+| `qa/lab/creek.e2e.mjs` | Up the Creek with a virtual phone that sends real sensor events, with thumbs, and with keys |
+| `qa/lab/tilt.sim.mjs` | Fast balls never pass through a wall or a flipper, the cradle, the tap pass and the live catch work, the ball never gains energy, a soft pull picks a top lane, and a bot plays two hours with no trapped ball |
+| `qa/lab/tilt.e2e.mjs` | Full Tilt with two thumbs, the plunger drag, jolts that nudge and tilt, and keys |
+| `qa/lab/rules.link.mjs` | 500 random layers survive their links, a busy layer fits, the clear stamp catches a changed link, junk links give nothing, and old links still build the same ground |
+| `qa/lab/rules.drift.mjs` | The copy of Down the Drain's sand rules in `sand.js`, and the sizes and ids in `layer.js`, still match the game |
+| `qa/lab/rules.e2e.mjs` | The House Rules editor on a phone and on a computer: dig, zoom, critters, Settle, the link meter, Test it, and Share after a clear |
+| `qa/lab/rules.drain.mjs` | A painted layer in Down the Drain: its ground, critters and drains, no tuning or unlocks, the clear, a death that saves nothing, and broken links |
+| `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with the House Rules hooks taken back out, play the same game with a seeded random and a fake clock |
+
+Set `LAB_URL` to test another address, and `SHOTS` to a folder to save screenshots.
 
 ### Studio tests
 

@@ -1,0 +1,38 @@
+/* Shared look for the lab toys: a night on the lake, gold for what you press. */
+:root {
+  --ink: #f3ecd8; --muted: #b6c3bf; --bg: #0b1f26; --panel: rgba(8, 26, 32, 0.9); --line: rgba(243, 236, 216, 0.18);
+  --gold: #f0b848; --red: #e0553f; --green: #79c85a; --blue: #6fb6e0;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --title: Georgia, "Times New Roman", serif; --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 16px/1.4 var(--body); }
+body.toy { overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+canvas.view { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; }
+
+.labbar { position: fixed; top: calc(var(--sat) + 8px); left: 8px; right: 8px; display: flex; justify-content: space-between; pointer-events: none; z-index: 5; }
+.labbar > * { pointer-events: auto; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px; font: 600 14px/1 var(--body); text-decoration: none; cursor: pointer; }
+
+.card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 430px); max-height: 88vh; max-height: 88dvh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; z-index: 6; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
+.card[hidden] { display: none; }
+.card h1, .card h2 { font: 700 30px/1.1 var(--title); color: var(--gold); margin: 0 0 8px; }
+.card h2 { font-size: 26px; }
+.card .pitch, .card .line { color: var(--muted); margin: 0 0 12px; }
+.card ul.how { margin: 0 0 16px; padding-left: 20px; }
+.card ul.how li { margin: 4px 0; }
+.card b { color: var(--ink); }
+.card button { font: 700 18px/1 var(--body); padding: 13px 18px; border-radius: 12px; border: 0; background: var(--gold); color: #1d1606; cursor: pointer; width: 100%; }
+.card button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.card .row { display: flex; gap: 10px; }
+.card .row button { flex: 1; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; text-align: right; font-weight: 700; }
+.card .note { margin: 10px 0 0; min-height: 1em; color: var(--muted); font-size: 14px; text-align: center; }
+
+.toast { position: fixed; left: 50%; top: 22%; transform: translate(-50%, -8px); width: max-content; max-width: calc(100vw - 32px); padding: 8px 16px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); font: 700 18px/1.2 var(--body); text-align: center; opacity: 0; transition: opacity 0.18s, transform 0.18s; pointer-events: none; z-index: 7; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.hud { position: fixed; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; pointer-events: none; }
+.hud span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font: 700 14px/1 var(--body); white-space: nowrap; }
