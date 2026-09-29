@@ -214,12 +214,12 @@ export function boardTexture(bl) {
   x.fillStyle = "#c9b98c"; x.fillRect(0, 0, 512, 5); x.fillRect(0, 43, 512, 5);
   const [minor, mid, major, step] = BOARD_TICKS[bl] || BOARD_TICKS[100];
   const px = (cm) => 4 + (cm / bl) * 504;
-  x.fillStyle = "#2a2418"; x.strokeStyle = "#2a2418"; x.textAlign = "center"; x.font = "bold 15px sans-serif";
+  x.fillStyle = "#2a2418"; x.strokeStyle = "#2a2418"; x.textAlign = "center"; x.font = "bold 21px sans-serif";
   for (let cm = 0; cm <= bl + 1e-6; cm += minor) {
     const isMajor = cm % major === 0, isMid = cm % mid === 0;
-    const h = isMajor ? 22 : isMid ? 15 : 9;
+    const h = isMajor ? 17 : isMid ? 12 : 8;
     x.fillRect(Math.round(px(cm)) - 1, 43 - h, 2, h);
-    if (cm % step === 0) { const t = String(cm); x.fillText(t, Math.min(498 - 7 * t.length, Math.max(4 + 4 * t.length, px(cm))), 16); }
+    if (cm % step === 0) { const t = String(cm); x.fillText(t, Math.min(498 - 10 * t.length, Math.max(4 + 6 * t.length, px(cm))), 22); }
   }
   const t = new THREE.CanvasTexture(cv);
   t.anisotropy = 4;
