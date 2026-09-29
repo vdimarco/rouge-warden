@@ -4,6 +4,7 @@
 // The modules do the parts: motion.js reads the phone, reel.js is the reel you touch, cast.js flies the lure,
 // fish.js runs the fish and the fight, world.js draws the place, audio.js and haptics.js make the feel.
 // places.js holds the maps, fishing.js who lives where, journey.js the trail and its words, save.js the save file.
+import { PullStrength } from "./pull.js";
 import { Motion } from "./motion.js";
 import { createGuide } from "./guide.js";
 import { Haptics } from "./haptics.js";
@@ -24,6 +25,8 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const now = () => performance.now();
+const pullStrength = new PullStrength();
+const pullMeter = document.querySelector("#pullStrength");
 const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
 // ?open opens every place for this page load. It is never saved.
@@ -957,6 +960,7 @@ function applyQuality() {
 function pause() {
   if (G.paused || !(G.phase === "cast" || G.phase === "reel" || G.phase === "lost")) return;
   G.paused = true;
+  pullStrength.reset();
   releaseAwake();
   Sound.stopLoops(); Haptics.stop();
   // a thumb on the line when the game stops: the line goes back, and the next press starts the cast again
@@ -1141,10 +1145,16 @@ function reelUpdate(dt) {
   let hookset = false;
   if (G.hookReq) { hookset = true; G.hookReq = false; }
   const s = sim.state;
+  const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
+  const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
+    active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
+  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85;
+  pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
+  pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
   const tip = world.setRod({ theta, yaw: 0, steer, bend: clamp(s.bend != null ? s.bend : G.tension * 1.3, 0, 1), pull: pullTo, visible: true });
   // the sim bends its own rod: give it the straight rod's tip, not the drawn one
-  sim.step(dt, { crank: crankRate, tip: rodTip(theta, 0, steer, G.place.stand.rod), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
+  sim.step(dt, { crank: crankRate, pull, tip: rodTip(theta, 0, steer, G.place.stand.rod), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
   G.tension = lerp(G.tension, s.tfrac || 0, 1 - Math.exp(-dt * 12));
   for (const e of sim.events.splice(0)) handleEvent(e);
   // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
@@ -1242,7 +1252,7 @@ function reelPrompt(s, crankRate, theta) {
       if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
       if (s.beaten) return prompt("It is tired. Reel it in.", "", "crank", "good");
       if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the phone up toward you." : "Drag the rod pad up.", "pull");
-      return prompt("Pump and reel.", m ? "Tip the phone up. Then reel as you lower it." : "Drag the rod up. Then reel as it comes down.", "pull");
+      return prompt("Pump and reel.", m ? "Tip the phone back toward you as you reel. Ease forward to relax." : "Drag the rod up. Then reel as it comes down.", "pull");
     }
     case "land": return prompt(G.place.id === "sea" ? "Bring it to the wall! Raise the rod and hold." : "Lift it out! Raise the rod and hold.", "", "pull", "good");
     default: return prompt("");

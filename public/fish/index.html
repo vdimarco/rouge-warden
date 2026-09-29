@@ -56,6 +56,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #crankBox { position: absolute; right: calc(var(--sar) + 30px); bottom: calc(var(--sab) + 12px); width: min(44vmin, 250px); height: min(44vmin, 250px); }
 #padBox { position: absolute; left: calc(var(--sal) + 30px); bottom: calc(var(--sab) + 12px); width: min(40vmin, 220px); height: min(52vmin, 280px); }
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
+#pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40vw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
+#pullStrength b { display: block; height: 5px; margin-top: 6px; border-radius: 4px; background: #ffffff26; overflow: hidden; }
+#pullStrength i { display: block; height: 100%; background: #95eac5; transform: scaleX(0); transform-origin: left; }
 #game.motion #padBox { display: none; }
 #dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
 #game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
@@ -294,6 +297,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
 
   <div id="reelUI" hidden>
     <div id="gaugeBox"></div>
+    <div id="pullStrength" hidden><span>Tip back as you reel</span><b><i></i></b></div>
     <div id="dragBar"><button type="button" id="dragDown" aria-label="Less drag">−</button><b id="dragName">DRAG: MED</b><button type="button" id="dragUp" aria-label="More drag">+</button></div>
     <div id="padBox"></div>
     <div id="crankBox"></div>
