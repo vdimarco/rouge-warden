@@ -127,6 +127,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* the strike flash */
 #flash { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 60, 40, 0.55)); }
+/* the photo of a trophy: a white camera flash, not the red strike frame */
+#flash.photo { background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8)); }
 #flash.go { animation: flash 0.7s ease-out; }
 @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 
@@ -159,8 +161,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #title nav .btn { width: 100%; }
 #title .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 #title .row2 .btn { padding-left: 8px; padding-right: 8px; font-size: 14px; letter-spacing: 0; }
-/* a toast on the title (an old save opened a place) goes under the logo, clear of the best lines at the bottom */
-body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); }
+/* a toast on the title (an old save opened a place) goes at the top, clear of the menu and the best lines */
+body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-index: 12; }
 #title .best { margin: 12px 0 0; text-align: center; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; min-height: 1em; white-space: pre-line; line-height: 1.4; }
 #title .btn { position: relative; }
 .newtag { position: absolute; top: -8px; right: -3px; padding: 2px 8px; border-radius: 999px; background: var(--brass); color: #2a1a00; font-size: 11px; letter-spacing: 0.1em; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
@@ -169,9 +171,17 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
   #title { place-items: center end; padding-right: calc(var(--sar) + 24px); }
   #title .logo { left: 0; right: auto; width: 55%; top: 50%; transform: translateY(-50%); }
   #title > div:not(.logo) { width: min(40cqw, 320px); }
-  #pause .btns { display: grid; grid-template-columns: 1fr 1fr; }
+  body[data-screen="title"] #toast { left: 27.5%; max-width: 50%; }
+  #title { padding-top: calc(var(--sat) + 8px); padding-bottom: calc(var(--sab) + 8px); }
+  #title nav { gap: 6px; }
+  #title .best { margin-top: 6px; font-size: 12px; line-height: 1.3; }
+  #pause .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   #pause .btns .go { grid-column: 1 / -1; }
-  #rlist { max-height: 22cqh; }
+  #pause .card { padding: 12px 20px; }
+  #pause h2 { font-size: 22px; margin-bottom: 4px; }
+  #pause p { margin-bottom: 4px; font-size: 14px; line-height: 1.3; }
+  #pause .btn { min-height: 40px; padding: 6px 12px; }
+  #results #rlist { max-height: 22cqh; }
   #results .card { padding: 14px 20px; }
   #results h2 { font-size: 22px; margin-bottom: 2px; }
   #results .big { font-size: 36px; }
@@ -198,7 +208,9 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
 .warn { padding: 10px 12px; border-radius: 10px; background: rgba(240, 165, 42, 0.14); border: 1px solid rgba(240, 165, 42, 0.5); font-weight: 700; line-height: 1.4; }
 .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 #help .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
-#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
+/* the fade under the list says that more follows. A spacer after the last row keeps that row clear of the fade */
+#help .steps::after { content: ""; height: 14px; }
 #help .btns { flex: none; }
 .tabs button { flex: 1; min-height: 44px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
 .tabs button[aria-selected="true"] { background: var(--deep2); border-color: var(--brass); color: var(--brass); }
