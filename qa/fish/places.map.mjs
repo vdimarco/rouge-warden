@@ -108,6 +108,7 @@ console.log("\nCurrent, snags and rocks");
   check(PLACES.stumps.props.stumps === S, "Stump Bay: the stump props are the snags");
   const posts = PLACES.river.snags;
   check(posts.length >= 40 && posts.every((s) => s.kind === "logs") && PLACES.river.props.logs.length === 6 && PLACES.river.props.boulders.length === 7, `Cedar River: ${posts.length} log posts from 6 logs, and 7 boulders`);
+  check(posts.every((s) => s.ends && s.ends.length === 2 && s.ends.flat().length === 4 && s.ends.flat().every(Number.isFinite)), "Cedar River: each log post knows the two ends of its log (fish.js steers toward the nearer one)");
   check(PLACES.sea.rough(0, -3) === true && PLACES.sea.rough(0, -45) === false, "Gull Rock: rough bottom at the foot of the wall (0, -3), not out in the channel");
   check(PLACES.loon.rough === null && PLACES.loon.flow === null && PLACES.loon.snags.length === 0, "Loon Lake: no current, no snags, no rough bottom");
   // snagNear must find every snag within 6 m of any point

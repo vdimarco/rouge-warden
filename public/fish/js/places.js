@@ -14,7 +14,7 @@
 //   zone(x, z)       the kind of water; zoneNames: { zone: "Name" } for the text
 //   treeMin          land higher than this has trees on it (a cast catches in them)
 //   flow             null, or (x, z) => {x, z}: the current in m/s
-//   snags            [{x, z, r, top, kind: "stump" | "logs"}]: posts the line rubs on
+//   snags            [{x, z, r, top, kind: "stump" | "logs", ends?}]: posts the line rubs on (a log post has ends: [[ax, az], [bx, bz]], the ends of its log)
 //   snagNear(x, z)   the snags near a point (every snag within 6 m, from a 6 m grid)
 //   rough            null, or (x, z) => true over rocky bottom
 //   props            { rocks: [{x, z, r, top}], lilies: [{x, z, r, rot, flower}], reeds: [{x, z, n, h}],
