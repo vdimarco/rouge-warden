@@ -223,19 +223,19 @@ void main() {
   // no ink between grass blades: the grass writes 0 in alpha, and thousands of dark lines in a field look scratchy
   if (ink > 0.001) ink *= min(texture2D(tColor, uv).a, min(min(texture2D(tColor, uv - vec2(px.x, 0.0)).a, texture2D(tColor, uv + vec2(px.x, 0.0)).a),
     min(texture2D(tColor, uv - vec2(0.0, px.y)).a, texture2D(tColor, uv + vec2(0.0, px.y)).a)));
-  col = mix(col, col * uInk * 2.2, ink * 0.42);
+  col = mix(col, col * uInk * 2.2, ink * 0.38);
   // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes. It comes from the half-size
   // glow picture; half a pixel over, each even pixel reads exactly the texel made for it.
   if (uGlow > 0.5) col += texture2D(tGlow, uv + 0.5 * px).rgb;
   // haze around the sun, like light in the air on a summer afternoon
   vec2 asp = vec2(uRes.x / uRes.y, 1.0);
   float sd = length((uv - uSun) * asp);
-  col += uSunCol * uSunVis * (exp(-sd * 3.2) * 0.28 + exp(-sd * 12.0) * 0.25);
+  col += uSunCol * uSunVis * (exp(-sd * 3.2) * 0.10 + exp(-sd * 12.0) * 0.15);
   // colour grade: cool, lifted shadows, warm highlights, a touch more colour
   float l = luma(col);
-  col = mix(vec3(l), col, 1.12 - uNight * 0.26);
-  col = mix(col * vec3(0.9, 0.97, 1.08) + vec3(0.02, 0.03, 0.05), col, smoothstep(0.0, 0.45, l));
-  col = mix(col, col * vec3(1.05, 1.01, 0.92), smoothstep(0.55, 1.0, l));
+  col = mix(vec3(l), col, 0.98 - uNight * 0.12);
+  col = mix(col * vec3(0.87, 0.99, 1.04) + vec3(0.016, 0.023, 0.026), col, smoothstep(0.0, 0.45, l));
+  col = mix(col, col * vec3(1.04, 1.01, 0.93), smoothstep(0.55, 1.0, l));
   // paper grain and a soft vignette
   float grain = vnoise(uv * uRes * 0.5) * 0.6 + vnoise(uv * uRes * 0.12) * 0.4;
   col *= 0.965 + 0.05 * grain;
