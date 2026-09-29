@@ -31,3 +31,11 @@ Browser execution remains blocked by the build environment (`socket() failed: Op
 Generated with the built-in image tool. Prompt set: a human-eye-level rain-lit cyberpunk alley with clear foreground; a full-body graphite-armoured duelist with cyan/magenta rim lighting on transparency; a first-person gloved right hand holding a vertical katana hilt on transparency. No UI or logos in the assets.
 
 Seven Node tests pass, including loaded and failed image render paths with mock canvas at portrait and landscape sizes. Browser/physical-device visual QA remains unverified because local browser execution is blocked by socket permissions.
+
+## Handle-pivot sword mapping
+
+The physical top edge of the phone defines the sword axis. Calibrate with the phone upright, screen toward you, in a comfortable grip. The on-screen sword pivots from the handle. Its fixed-length 3D direction is projected into the view, so forward/backward tilts change its visible length. Blocking tests intersection with the incoming cut path, including low horizontal guards.
+
+Cut speed comes from blade-axis movement, not total phone rotation. Turning around the handle axis cannot score a cut. A cut needs at least 12 degrees of travel and contact with the target. A reversal rearms the swing, supporting backhand cuts; cooldown still limits repeated hits. Sensor discontinuities recalibrate. Phone orientation cannot measure reliable absolute hand translation or provide physical resistance.
+
+Eight automated tests pass. Real-device feel remains unverified.
