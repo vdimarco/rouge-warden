@@ -362,7 +362,7 @@ export class World {
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2, lakebed: true }), this.tex);
+    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.softGradientMap() }), { strokes: 1.2, lakebed: true }), this.tex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -545,9 +545,17 @@ export class World {
       for (let y = base - 20; y > top; y -= 26 + r() * 10) puffs.push([px + (r() - 0.5) * 40, y, 34 + hump * (tall ? 60 : 40) * (0.6 + r() * 0.5)]);
     }
     // the shadowed belly
-    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(150,170,205,0.95)"); g.addColorStop(1, "rgba(150,170,205,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
+    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(128,152,200,0.95)"); g.addColorStop(1, "rgba(128,152,200,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
     // the sunlit tops
     for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px - pr * 0.25, py - pr * 0.45, pr * 0.05, px, py - pr * 0.1, pr * 0.95); g.addColorStop(0, "rgba(255,253,245,1)"); g.addColorStop(0.55, "rgba(250,250,255,0.92)"); g.addColorStop(1, "rgba(235,242,255,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py - pr * 0.15, pr * 0.88, 0, 7); x.fill(); }
+    // one soft shade over the lower half, so each cloud reads as lit from above: warm top, cool blue-grey belly
+    const gs = x.createLinearGradient(0, base - (tall ? H * 0.62 : H * 0.4), 0, base);
+    gs.addColorStop(0, "rgba(120,148,200,0)"); gs.addColorStop(1, "rgba(120,148,200,0.62)");
+    x.globalCompositeOperation = "source-atop"; x.fillStyle = gs; x.fillRect(0, 0, W, H);
+    const gw = x.createLinearGradient(0, 0, 0, base * 0.5);
+    gw.addColorStop(0, "rgba(255,238,205,0.32)"); gw.addColorStop(1, "rgba(255,238,205,0)");
+    x.fillStyle = gw; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = "source-over";
     // a flat, soft base
     const gb = x.createLinearGradient(0, base - 30, 0, base + 30);
     gb.addColorStop(0, "rgba(0,0,0,0)"); gb.addColorStop(1, "rgba(0,0,0,1)");
@@ -675,7 +683,13 @@ export class World {
           float hs = aShape.x * keep * fade * (0.35 + 0.5*m.a) * (0.7 + 0.5*clump) * (0.8 + 0.9*field + 0.5*gold) * ${o.tall.toFixed(2)};
           float t = position.y;
           float a = aOff.z * 43.0;
-          vec3 p = vec3(position.x*cos(a) - position.z*sin(a), t*hs, position.x*sin(a) + position.z*cos(a));
+          // a few blades in the near layer are wild flowers, in loose patches: a thin stem that opens into a wide
+          // head over its top joint. They stand a little above the grass, so the colour shows.
+          float fl = ${o.far ? "0.0" : "step(0.95, fract(aShape.y * 7.31 + aOff.z * 3.7)) * (1.0 - step(0.3, gold)) * step(0.45, vnoise(wp * 0.05 + 2.0))"};
+          float head = step(${(1 - 1 / (o.joints || 6) - 0.01).toFixed(3)}, t);
+          float bx = fl > 0.5 ? sign(position.x) * mix(0.012, 0.062, head) : position.x;
+          hs *= 1.0 + fl * 0.15;
+          vec3 p = vec3(bx*cos(a) - position.z*sin(a), t*hs, bx*sin(a) + position.z*cos(a));
           // wind: every blade leans with it, small flutters, and big waves that roll across whole fields
           vec2 wd = normalize(uWind + vec2(vnoise(wp*0.004 + uTime*0.02) - 0.5, vnoise(wp*0.004 + 5.0) - 0.5) * 0.8);
           float flutter = sin(uTime*4.3 + aOff.z*60.0 + wp.x*0.3) * 0.12;
@@ -711,15 +725,24 @@ export class World {
           vec3 gn = normalize(vec3(hl - hr, 4.0, hd - hu));
           float sun = clamp(dot(gn, normalize(uSunDir)) * 0.6 + 0.45, 0.25, 1.1);
           vec3 base = m.rgb * mix(vec3(0.6, 0.76, 0.95), vec3(1.06, 1.02, 0.9), sun);
-          // dark, cool roots and bright, warm tips
-          vec3 root = base * vec3(0.42, 0.5, 0.52), tip = base * vec3(1.22, 1.18, 0.86);
-          vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.88 + aShape.y*0.24);
+          // soft, cool roots and bright yellow-green tips: a smooth wash of colour up the blade, with little
+          // difference from one blade to the next, so a field reads as one soft mass
+          vec3 root = base * vec3(0.62, 0.7, 0.66), tip = base * vec3(1.2, 1.2, 0.82);
+          vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.93 + aShape.y*0.14);
           float hue = vnoise(wp * 0.018 + 7.0);
           vCol = mix(vCol, vCol * vec3(0.86, 1.0, 1.02), smoothstep(0.55, 0.8, hue) * 0.6);
           vCol = mix(vCol, vCol * vec3(1.18, 1.08, 0.72), smoothstep(0.62, 0.9, clump) * t * 0.6);
           // pampas: straw stems and pale, feathery heads
-          vec3 straw = mix(vec3(0.62, 0.5, 0.28), vec3(1.0, 0.9, 0.62), t) * mix(0.8, 1.05, sun);
+          vec3 straw = mix(vec3(0.5, 0.38, 0.2), vec3(0.95, 0.84, 0.56), smoothstep(0.0, 1.0, t)) * mix(0.8, 1.05, sun);
           vCol = mix(vCol, straw, gold * 0.85);
+          // the flower heads: yellow, white, pink, blue and orange
+          float fh = fract(aShape.y * 13.7);
+          vec3 fc = fh < 0.32 ? vec3(1.0, 0.85, 0.25) : fh < 0.52 ? vec3(1.0, 0.97, 0.9) : fh < 0.7 ? vec3(1.0, 0.56, 0.64) : fh < 0.86 ? vec3(0.46, 0.62, 1.0) : vec3(1.0, 0.52, 0.3);
+          vCol = mix(vCol, fc * mix(0.82, 1.08, sun), fl * head);
+          ${o.far ? `// far away the flowers are too small to draw, so the tips of the clumps take their colour in patches
+          float bloom = smoothstep(0.6, 0.78, vnoise(wp * 0.03 + 17.0)) * (1.0 - gold);
+          vec3 bc = mix(vec3(1.0, 0.86, 0.3), vec3(1.0, 0.62, 0.7), step(0.55, vnoise(wp * 0.01 + 4.0)));
+          vCol = mix(vCol, bc * mix(0.85, 1.05, sun), bloom * t * t * 0.45);` : ""}
           // sun behind the grass: the tips light up
           vec3 V = normalize(cameraPosition - w);
           vBack = pow(max(dot(-V, normalize(uSunDir)), 0.0), 3.0) * t * t * step(0.0, uSunDir.y);
@@ -730,11 +753,12 @@ export class World {
         void main(){
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
-          col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
+          col = mix(col, col * 1.22 + uSunCol * 0.1, vGust * 0.45);
           col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
           col *= vShadeFog.x * uLight;
           col = mix(col, uFog, vShadeFog.y);
-          gl_FragColor = vec4(col, 1.0);
+          // alpha 0 marks grass for the painted pass, which then draws no ink lines between the blades
+          gl_FragColor = vec4(col, 0.0);
         }`,
     });
     mat.uniforms.uTrail = this.grassU.uTrail;

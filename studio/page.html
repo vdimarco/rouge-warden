@@ -1,0 +1,877 @@
+<title>Cottage Arcade Studio</title>
+<!-- Built by studio/refresh.mjs in github.com/vdimarco/rouge-warden. Every hour the studio keeper rebuilds the agents, the work trees and the git facts of each cabinet from the Claude Code sessions and the git branches. It keeps the rest of the board-data JSON below as it finds it: the production crew, the stages, the feed, the bug board, and the name, blurb, colour and art of each cabinet. Edit those there. Edits to the agents or worktrees lists do not last. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root {
+  --paper: #eceef1;
+  --card: #f8f9fa;
+  --ink: #16151a;
+  --ink-2: #4a4953;
+  --ink-3: #7b7a85;
+  --rule: #d3d5db;
+  --crimson: #b01e3c;
+  --crimson-soft: #f3dde2;
+  --jade: #2f7a5f;
+  --jade-soft: #dcece5;
+  --indigo: #4a54a3;
+  --indigo-soft: #e1e3f3;
+  --neon: #c6ff1a;
+  --stamp-ink: #16151a;
+  --stamp-paper: #f8f9fa;
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #121116; --card: #1b1a21; --ink: #ecedf0; --ink-2: #b4b3bd; --ink-3: #82818c; --rule: #2e2d36;
+    --crimson: #e2415f; --crimson-soft: #3a1720; --jade: #5cc39b; --jade-soft: #13291f; --indigo: #9aa3f0; --indigo-soft: #1d2040;
+    --stamp-ink: #ecedf0; --stamp-paper: #1b1a21;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121116; --card: #1b1a21; --ink: #ecedf0; --ink-2: #b4b3bd; --ink-3: #82818c; --rule: #2e2d36;
+  --crimson: #e2415f; --crimson-soft: #3a1720; --jade: #5cc39b; --jade-soft: #13291f; --indigo: #9aa3f0; --indigo-soft: #1d2040;
+  --stamp-ink: #ecedf0; --stamp-paper: #1b1a21;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 48px; display: grid; gap: 22px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+.label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+
+/* header */
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; }
+.seal { width: 56px; height: 56px; flex: none; display: grid; place-items: center; background: var(--crimson); color: #fff; font-family: var(--display); font-weight: 800; font-size: 32px; border-radius: 6px; transform: rotate(-3deg); }
+.titles { flex: 1 1 260px; display: grid; gap: 2px; }
+.titles h1 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; letter-spacing: 0.02em; }
+.titles p { margin: 0; color: var(--ink-2); }
+.hstat { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--card); border-radius: 999px; padding: 4px 11px; font-size: 12px; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+a.pill:hover, a.pill:focus-visible { border-color: var(--ink); color: var(--ink); outline: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.live { background: var(--crimson); animation: pulse 1.6s ease-in-out infinite; }
+.dot.ok { background: var(--jade); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* counters */
+.counters { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.counter { display: grid; gap: 0; }
+.counter b { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.1; }
+.counter span { font-size: 12px; color: var(--ink-3); }
+
+/* stage map */
+.stages { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 14px; overflow-x: auto; }
+.stages ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 10), minmax(92px, 1fr)); min-width: 960px; position: relative; }
+.stages li { position: relative; display: grid; justify-items: center; text-align: center; gap: 6px; padding-top: 2px; }
+.stages li::before { content: ""; position: absolute; top: 17px; left: -50%; width: 100%; height: 3px; background: var(--rule); z-index: 0; }
+.stages li:first-child::before { display: none; }
+.stages li.done::before, .stages li.now::before { background: var(--ink); }
+.node { position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 15px; background: var(--paper); border: 2px solid var(--rule); color: var(--ink-3); }
+.done .node { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.now .node { background: var(--crimson); border-color: var(--crimson); color: #fff; box-shadow: 0 0 0 5px var(--crimson-soft); }
+.stages .sname { font-weight: 700; font-size: 12.5px; line-height: 1.25; }
+.stages .snote { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
+.now .sname { color: var(--crimson); }
+
+/* layout */
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+section { display: grid; gap: 12px; }
+.sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sechead h2 { font-size: 20px; font-weight: 800; }
+.sechead .kanji { font-family: var(--display); color: var(--crimson); margin-right: 8px; }
+
+/* crew cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 12px; align-content: start; }
+.card.working { border-color: var(--crimson); box-shadow: inset 4px 0 0 var(--crimson); }
+.stamp { grid-row: span 3; width: 48px; height: 48px; border: 2px solid var(--stamp-ink); color: var(--stamp-ink); background: var(--stamp-paper); border-radius: 6px; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 24px; }
+.working .stamp { border-color: var(--crimson); color: var(--crimson); }
+.card .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.card h3 { font-size: 16px; font-weight: 800; }
+.chip { font-size: 11px; letter-spacing: 0.06em; border-radius: 4px; padding: 1px 7px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.state { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 4px; padding: 1px 7px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.state.working { background: var(--crimson-soft); color: var(--crimson); }
+.state.shipped { background: var(--jade-soft); color: var(--jade); }
+.state.queued { border: 1px dashed var(--ink-3); color: var(--ink-3); }
+.state.review { background: var(--indigo-soft); color: var(--indigo); }
+.state.blocked { background: #16151a; color: var(--neon); }
+.task { font-weight: 700; color: var(--ink); }
+.detail { color: var(--ink-2); font-size: 13px; }
+.meta { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+.meta .mono { color: var(--ink-2); }
+
+/* shipped roster */
+.roster { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 640px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+tr.group td { background: var(--paper); font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: 0.04em; }
+td .k { font-family: var(--display); font-weight: 800; color: var(--ink-2); margin-right: 6px; }
+td.what { color: var(--ink-2); font-size: 13px; }
+tr:last-child td { border-bottom: 0; }
+
+/* side */
+.side { display: grid; gap: 22px; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; }
+.feed li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.feed li:last-child { border-bottom: 0; }
+.feed time { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+.feed .ev { font-size: 13px; }
+.feed .ev.k-ship { color: var(--ink); }
+.feed .ev.k-ship::before { content: "✓ "; color: var(--jade); font-weight: 700; }
+.feed .ev.k-note { color: var(--ink-2); }
+.bugs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bug { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px 9px 14px; position: relative; display: grid; gap: 2px; }
+.bug::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: var(--ink-3); }
+.bug.high::before { background: var(--crimson); }
+.bug.mid::before { background: var(--indigo); }
+.bug .area { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bug .fixing { color: var(--crimson); font-weight: 700; letter-spacing: 0.06em; }
+.bug .txt { font-size: 13px; }
+.note { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; color: var(--ink-2); }
+.empty { color: var(--ink-3); font-size: 13px; }
+footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--rule); padding-top: 12px; }
+:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } .cards { grid-template-columns: minmax(0, 1fr); } }
+
+/* overhead floor */
+.floor { position: relative; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; display: grid; gap: 8px; }
+.floor canvas { width: 100%; height: auto; display: block; border-radius: 6px; touch-action: manipulation; cursor: default; }
+.floor .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-3); }
+.floor .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.tip { position: absolute; z-index: 5; max-width: 280px; background: var(--card); border: 1px solid var(--ink); border-radius: 8px; padding: 10px 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.18); display: grid; gap: 3px; pointer-events: none; }
+.tip b { font-family: var(--display); font-size: 15px; }
+.tip .s { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--crimson); }
+.tip .t { font-size: 13px; }
+.tip .d { font-size: 12px; color: var(--ink-2); }
+
+/* cabinets */
+.cabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.cab { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; border-top: 4px solid var(--gc); }
+.cab.prod { box-shadow: 0 0 0 2px var(--gc); }
+.cab .art { aspect-ratio: 16 / 9; background: var(--ink) center / cover no-repeat; display: grid; place-items: center; color: var(--paper); font-family: var(--display); font-weight: 800; font-size: 22px; max-width: 100%; }
+.cab .body { padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; }
+.cab h3 { font-size: 16px; font-weight: 800; }
+.cab .sub { font-size: 12px; color: var(--ink-3); }
+.cab .st { justify-self: start; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; padding: 1px 7px; }
+.cab .st.production { background: var(--crimson-soft); color: var(--crimson); }
+.cab .st.live { background: var(--jade-soft); color: var(--jade); }
+.cab .blurb { font-size: 13px; color: var(--ink-2); }
+.cab .facts { font-size: 11.5px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.cab .latest { font-size: 12px; color: var(--ink-2); border-top: 1px dashed var(--rule); padding-top: 6px; margin-top: 2px; }
+.prodhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border-top: 2px solid var(--ink); padding-top: 14px; }
+.prodhead h2 { font-size: 22px; font-weight: 800; }
+
+/* agents and work trees: rebuilt from the sessions and the branches at every refresh */
+.prod { display: grid; gap: 22px; }
+.col { display: grid; gap: 26px; align-content: start; min-width: 0; }
+.card.review { border-color: var(--indigo); box-shadow: inset 4px 0 0 var(--indigo); }
+.review .stamp { border-color: var(--indigo); color: var(--indigo); }
+.card.blocked { border-color: var(--ink); box-shadow: inset 4px 0 0 var(--ink); }
+.card.failed { border-color: var(--crimson); }
+.card.idle .stamp { border-style: dashed; border-color: var(--ink-3); color: var(--ink-3); }
+.state.idle { border: 1px dashed var(--ink-3); color: var(--ink-3); }
+.state.done { background: var(--jade-soft); color: var(--jade); }
+.state.failed { border: 1px solid var(--crimson); color: var(--crimson); }
+.chip.k-codex { border-color: var(--indigo); color: var(--indigo); }
+.meta a { color: var(--ink-2); text-underline-offset: 2px; }
+.meta a:hover, .meta a:focus-visible { color: var(--crimson); }
+.finished { display: grid; gap: 8px; }
+.done-list { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; }
+.done-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.done-list li:last-child { border-bottom: 0; }
+.done-list .k { font-family: var(--display); font-weight: 800; color: var(--ink-3); }
+.done-list .what { min-width: 0; font-size: 13px; }
+.done-list .br { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.done-list time { font-family: var(--mono); font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.trees td { font-size: 13px; }
+.trees td.br { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; min-width: 190px; }
+.trees td.br .sub { margin-top: 2px; }
+.trees .sub { display: block; font-family: var(--body); font-size: 11.5px; color: var(--ink-3); }
+.trees .vs { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.trees .vs.merged { color: var(--jade); }
+.trees .vs.even { color: var(--ink-3); }
+.trees td.what .mono { color: var(--ink-3); margin-right: 6px; }
+.trees .chip { display: inline-block; margin: 0 4px 3px 0; }
+.trees a { color: var(--ink-2); white-space: nowrap; text-underline-offset: 2px; }
+.trees a:hover, .trees a:focus-visible { color: var(--crimson); }
+.cab .st.dev { background: var(--indigo-soft); color: var(--indigo); }
+.cab.dev .art { background-color: var(--indigo); }
+.cab .art { align-content: center; gap: 6px; }
+.cab .art .ak { font-size: 48px; line-height: 1; }
+.cab .art .an { font-family: var(--body); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.cab .crew { font-size: 12px; font-weight: 700; color: var(--crimson); }
+.cab .crew.none { font-weight: 500; color: var(--ink-3); }
+.feed .ev.k-agent::before { content: "人 "; color: var(--crimson); font-family: var(--display); font-weight: 800; }
+.feed .ev.k-tree::before { content: "枝 "; color: var(--jade); font-family: var(--display); font-weight: 800; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="seal" aria-hidden="true">赤</div>
+    <div class="titles">
+      <h1 id="h-title">Cottage Arcade Studio</h1>
+      <p id="h-sub">Every agent, work tree and cabinet in the arcade, and the crew on the game in production.</p>
+    </div>
+    <div class="hstat">
+      <span class="pill"><span class="dot" id="live-dot"></span><span id="h-updated">Loading the floor…</span></span>
+      <a class="pill" id="h-pr" href="https://github.com/vdimarco/rouge-warden/pull/35" target="_blank" rel="noopener"><span class="dot" id="pr-dot"></span><span id="h-pr-text">PR #35</span></a>
+      <a class="pill" id="h-play" href="https://warden-git-claude-nifty-gates-bjgt6l-vdimarcos-projects.vercel.app/crimson/" target="_blank" rel="noopener">▶ Play the preview</a>
+    </div>
+  </header>
+
+  <div class="counters" id="studio-counters" aria-live="polite"></div>
+
+  <div class="main">
+    <div class="col">
+      <section aria-labelledby="s-agents">
+        <div class="sechead"><h2 id="s-agents"><span class="kanji">員</span>Agents</h2><span class="label" id="agent-count"></span></div>
+        <div class="cards" id="agents"></div>
+        <div class="finished" id="finished-wrap" hidden>
+          <span class="label">Finished</span>
+          <ul class="done-list" id="finished"></ul>
+        </div>
+      </section>
+      <section aria-labelledby="s-trees">
+        <div class="sechead"><h2 id="s-trees"><span class="kanji">枝</span>Work trees</h2><span class="label" id="tree-count"></span></div>
+        <div class="roster"><table class="trees"><thead><tr><th>Work tree and agent</th><th>Game</th><th>Against main</th><th>Last commit</th><th>Pull request</th></tr></thead><tbody id="trees"></tbody></table></div>
+      </section>
+    </div>
+    <aside class="side">
+      <section aria-labelledby="s-feed">
+        <div class="sechead"><h2 id="s-feed"><span class="kanji">報</span>Studio feed</h2><span class="label">UTC</span></div>
+        <ul class="feed" id="feed"></ul>
+      </section>
+    </aside>
+  </div>
+
+  <section aria-labelledby="s-cabs">
+    <div class="sechead"><h2 id="s-cabs"><span class="kanji">筐</span>Arcade floor</h2><span class="label" id="cab-count"></span></div>
+    <div class="cabs" id="cabs"></div>
+  </section>
+
+  <section class="floor" aria-labelledby="s-overhead">
+    <div class="sechead"><h2 id="s-overhead"><span class="kanji">俯</span>Floor view</h2><span class="label">Tap anyone for their card</span></div>
+    <canvas id="floorcv" width="1000" height="900" role="img" aria-label="Overhead view of the studio: the production wing with its crew, and an office for each cabinet with the agents at work on it."></canvas>
+    <div class="legend"><span><i style="background:var(--crimson)"></i>working</span><span><i style="background:var(--indigo)"></i>ready for review</span><span><i style="background:var(--neon);box-shadow:0 0 0 1px var(--ink)"></i>needs you</span><span><i style="background:var(--ink-3)"></i>idle or queued</span><span><i style="background:var(--jade)"></i>lead</span><span>🏆 shipped job (hover for commit)</span></div>
+    <div class="tip" id="tip" hidden></div>
+  </section>
+
+  <div class="prod" id="prod">
+    <div class="prodhead"><span class="kanji" style="font-family:var(--display);color:var(--crimson);font-size:22px">製</span><h2 id="prod-title">Now in production: Crimson Rouge</h2><span class="label">the crew, the stages and the bug board below are this game's</span></div>
+
+    <div class="counters" id="counters" aria-live="polite"></div>
+
+    <div class="stages" aria-label="Production stages"><ol id="stages"></ol></div>
+
+    <div class="main">
+      <div class="col">
+        <section aria-labelledby="s-floor">
+          <div class="sechead"><h2 id="s-floor"><span class="kanji">働</span>On the floor now</h2><span class="label" id="floor-count"></span></div>
+          <div class="cards" id="working"></div>
+        </section>
+        <section aria-labelledby="s-next">
+          <div class="sechead"><h2 id="s-next"><span class="kanji">次</span>Up next</h2><span class="label" id="next-count"></span></div>
+          <div class="cards" id="queued"></div>
+        </section>
+        <section aria-labelledby="s-shipped">
+          <div class="sechead"><h2 id="s-shipped"><span class="kanji">済</span>Shipped today</h2><span class="label" id="ship-count"></span></div>
+          <div class="roster"><table><thead><tr><th>Crew</th><th>What they delivered</th><th>Commit</th><th>Time</th></tr></thead><tbody id="shipped"></tbody></table></div>
+        </section>
+      </div>
+      <aside class="side">
+        <section aria-labelledby="s-bugs">
+          <div class="sechead"><h2 id="s-bugs"><span class="kanji">虫</span>Bug board</h2><span class="label" id="bug-count"></span></div>
+          <ul class="bugs" id="bugs"></ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div class="note" id="offline" hidden>The board data could not be read.</div>
+
+  <footer id="foot">Agents, work trees and cabinets refresh every hour from the Claude Code sessions and the git branches of this repo. The production crew, the stages and the bug board are kept by the production lead. Times are UTC.</footer>
+</div>
+
+<script type="application/json" id="board-data">{}</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const STATE_LABEL = { live: 'Live in the arcade', production: 'In production', dev: 'In development', working: 'Working', shipped: 'Shipped', queued: 'Queued', review: 'In review', blocked: 'Blocked' };
+  const AGENT_LABEL = { working: 'Working', blocked: 'Needs you', failed: 'Stopped', review: 'Ready for review', idle: 'Idle', done: 'Done' };
+  const AGENT_ORDER = { working: 0, blocked: 1, failed: 2, review: 3, idle: 4, done: 5 };
+  const KIND_LABEL = { claude: 'Claude', codex: 'Codex', cursor: 'Cursor', copilot: 'Copilot', devin: 'Devin', jules: 'Jules', human: 'Person' };
+  const ORIGIN_LABEL = { android: 'phone', ios: 'phone', web_claude_ai: 'web', desktop_app: 'desktop', claude_code_cli: 'terminal', worktree: 'local worktree' };
+  const WORKSHOP = { id: 'workshop', name: 'Studio workshop', kanji: '工', status: 'workshop', statusText: 'Tools and this board' };
+  const state = { crew: [], status: null, feed: null, bugs: null, games: null, agents: [], trees: [], auto: null };
+  let gameMap = {}, treeMap = {};
+
+  function hhmm(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+  }
+  function ago(iso) {
+    const d = new Date(iso); if (!iso || isNaN(d)) return '';
+    const m = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    const h = Math.floor(m / 60);
+    if (h < 48) return h + ' h ' + (m % 60) + ' min ago';
+    return Math.floor(h / 24) + ' days ago';
+  }
+  function day(iso) {
+    const d = new Date(iso); if (!iso || isNaN(d)) return '';
+    return String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+  }
+  const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+  const repo = () => { const r = state.auto && state.auto.repo; return /^[\w.-]+\/[\w.-]+$/.test(r || '') ? r : 'vdimarco/rouge-warden'; };
+  const prUrl = (n) => 'https://github.com/' + repo() + '/pull/' + Number(n);
+  const sessionUrl = (id) => (/^session_[A-Za-z0-9]+$/.test(id || '') ? 'https://claude.ai/code/' + id : '');
+  const placeOf = (id) => gameMap[id] || (id === 'workshop' ? WORKSHOP : null);
+  const nameOf = (id) => (placeOf(id) || { name: id }).name;
+  const onFloor = (a) => a.state !== 'done';
+  // an agent works in the office of the first cabinet its branch touches, or in the workshop
+  const officeOf = (a) => (a.games || []).find((id) => gameMap[id]) || 'workshop';
+  const byAgent = (a, b) => (AGENT_ORDER[a.state] ?? 9) - (AGENT_ORDER[b.state] ?? 9) || (Date.parse(b.active) || 0) - (Date.parse(a.active) || 0);
+  const production = () => (state.status && state.status.production) || {};
+  const prodName = () => production().name || 'Crimson Rouge';
+  function link(text, href, cls) { const a = el('a', cls || null, text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
+  function short(a) {
+    if (a.kind && a.kind !== 'claude') return KIND_LABEL[a.kind] || a.kind;
+    const w = String(a.title || '').split(/\s+/).filter(Boolean);
+    let s = w[0] || '';
+    if (w[1] && (s + ' ' + w[1]).length <= 11) s += ' ' + w[1];
+    return s.length > 11 ? s.slice(0, 10) + '…' : s;
+  }
+  function latest(a) { const t = treeMap[a.branch]; return t && t.subject && t.state !== 'even' ? 'Latest: ' + t.subject : ''; }
+
+  function card(c) {
+    const s = c.state || 'queued';
+    const a = el('article', 'card ' + s);
+    a.appendChild(el('div', 'stamp', c.sigil || '人')).setAttribute('aria-hidden', 'true');
+    const top = el('div', 'top');
+    top.appendChild(el('h3', null, c.role || 'Agent'));
+    const st = el('span', 'state ' + s);
+    if (s === 'working') st.appendChild(el('span', 'dot live'));
+    st.appendChild(document.createTextNode(STATE_LABEL[s] || s));
+    top.appendChild(st);
+    if (c.dept) top.appendChild(el('span', 'chip', c.dept));
+    a.appendChild(top);
+    if (c.task) a.appendChild(el('div', 'task', c.task));
+    if (c.detail) a.appendChild(el('div', 'detail', c.detail));
+    const meta = el('div', 'meta');
+    const add = (k, v, mono) => { if (!v) return; const span = el('span'); span.appendChild(document.createTextNode(k + ' ')); span.appendChild(el('span', mono ? 'mono' : '', v)); meta.appendChild(span); };
+    add('since', c.since ? hhmm(c.since) : '', true);
+    add('branch', c.branch, true);
+    add('commit', c.commit, true);
+    add('crew of', c.crew ? String(c.crew) : '', true);
+    if (meta.childNodes.length) a.appendChild(meta);
+    return a;
+  }
+
+  function agentCard(a) {
+    const place = placeOf(officeOf(a));
+    const art = el('article', 'card ' + a.state);
+    art.appendChild(el('div', 'stamp', (place && place.kanji) || '新')).setAttribute('aria-hidden', 'true');
+    const top = el('div', 'top');
+    top.appendChild(el('h3', null, a.title || 'Agent'));
+    const st = el('span', 'state ' + a.state);
+    if (a.state === 'working') st.appendChild(el('span', 'dot live'));
+    st.appendChild(document.createTextNode(AGENT_LABEL[a.state] || a.state));
+    top.appendChild(st);
+    top.appendChild(el('span', 'chip k-' + a.kind, KIND_LABEL[a.kind] || a.kind));
+    for (const id of (a.games || []).slice(0, 2)) top.appendChild(el('span', 'chip', nameOf(id)));
+    art.appendChild(top);
+    if (a.summary) art.appendChild(el('div', 'task', a.summary));
+    const l = latest(a);
+    if (l) art.appendChild(el('div', 'detail', l));
+    const meta = el('div', 'meta');
+    const add = (k, v, mono) => { if (!v) return; const span = el('span'); span.appendChild(document.createTextNode(k + ' ')); span.appendChild(el('span', mono ? 'mono' : '', v)); meta.appendChild(span); };
+    const t = treeMap[a.branch];
+    add('branch', a.branch, true);
+    if (t && (t.state === 'open' || t.state === 'local')) add('against main', t.ahead + ' ahead, ' + t.behind + ' behind', true);
+    if (a.pr) { const span = el('span'); span.appendChild(document.createTextNode('PR ')); span.appendChild(link('#' + a.pr.number + ' ' + a.pr.state, prUrl(a.pr.number), 'mono')); meta.appendChild(span); }
+    add('started', day(a.since), true);
+    add('active', ago(a.active));
+    add('from', ORIGIN_LABEL[a.origin] || a.origin);
+    const su = sessionUrl(a.id);
+    if (su) meta.appendChild(link('open the session', su));
+    art.appendChild(meta);
+    return art;
+  }
+
+  function treeRow(t) {
+    const tr = el('tr');
+    const a = state.agents.find((x) => x.id === t.agent);
+    const br = el('td', 'br', t.branch);
+    br.appendChild(el('span', 'sub', [a ? a.title : '', KIND_LABEL[t.kind] || t.kind, a ? (AGENT_LABEL[a.state] || a.state).toLowerCase() : ''].filter(Boolean).join(' · ')));
+    if (t.local) br.appendChild(el('span', 'sub', 'local worktree' + (t.unpushed ? ', ' + plural(t.unpushed, 'commit', 'commits') + ' not pushed' : '')));
+    tr.appendChild(br);
+    const gm = el('td');
+    (t.games || []).slice(0, 2).forEach((id) => gm.appendChild(el('span', 'chip', nameOf(id))));
+    tr.appendChild(gm);
+    const vs = t.state === 'open' || t.state === 'local' ? t.ahead + ' ahead · ' + t.behind + ' behind' : t.state === 'merged' ? 'merged' : 'no new commits';
+    tr.appendChild(el('td', 'vs ' + t.state, vs));
+    const last = el('td', 'what');
+    last.appendChild(el('span', 'mono', t.head || ''));
+    last.appendChild(document.createTextNode(t.subject || ''));
+    last.appendChild(el('span', 'sub', ago(t.date)));
+    tr.appendChild(last);
+    const pr = el('td');
+    pr.appendChild(t.pr ? link('#' + t.pr.number + ' ' + t.pr.state, prUrl(t.pr.number)) : el('span', 'sub', 'none'));
+    tr.appendChild(pr);
+    return tr;
+  }
+
+  function renderStudio() {
+    const agents = state.agents, trees = state.trees;
+    const games = (state.games && state.games.items) || [];
+    const count = (s) => agents.filter((a) => a.state === s).length;
+    const openTrees = trees.filter((t) => t.state === 'open' || t.state === 'local');
+    const openPrs = new Set(trees.filter((t) => t.pr && t.pr.state === 'open').map((t) => t.pr.number));
+    const ctr = $('studio-counters'); ctr.replaceChildren();
+    for (const [n, one, many] of [
+      [count('working'), 'agent working', 'agents working'],
+      [count('review'), 'ready for review', 'ready for review'],
+      [count('blocked'), 'needs you', 'need you'],
+      [openTrees.length, 'open work tree', 'open work trees'],
+      [openPrs.size, 'open pull request', 'open pull requests'],
+      [games.filter((g) => g.status === 'dev').length, 'cabinet in development', 'cabinets in development'],
+    ]) { const c = el('div', 'counter'); c.appendChild(el('b', null, String(n))); c.appendChild(el('span', null, n === 1 ? one : many)); ctr.appendChild(c); }
+
+    const box = $('agents'); box.replaceChildren();
+    const floor = agents.filter(onFloor).sort(byAgent);
+    floor.forEach((a) => box.appendChild(agentCard(a)));
+    if (!floor.length) box.appendChild(el('p', 'empty', 'No agent is at work on this repo right now.'));
+    $('agent-count').textContent = plural(floor.length, 'agent', 'agents') + ' on the floor';
+    const done = agents.filter((a) => !onFloor(a)).sort(byAgent).slice(0, 10);
+    const fl = $('finished'); fl.replaceChildren();
+    for (const a of done) {
+      const li = el('li');
+      li.appendChild(el('span', 'k', (placeOf(officeOf(a)) || WORKSHOP).kanji)).setAttribute('aria-hidden', 'true');
+      const t = treeMap[a.branch];
+      const what = el('div', 'what', a.title + (t && t.state === 'merged' ? ' · merged' : ''));
+      if (a.branch) what.appendChild(el('span', 'br', a.branch));
+      li.appendChild(what);
+      const tm = el('time', null, day(a.active)); tm.dateTime = a.active || ''; li.appendChild(tm);
+      fl.appendChild(li);
+    }
+    $('finished-wrap').hidden = !done.length;
+
+    const tb = $('trees'); tb.replaceChildren();
+    const byDate = (a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0);
+    const inMain = trees.filter((t) => t.state === 'merged' || t.state === 'even').sort(byDate);
+    const row = (text, cls) => { const tr = el('tr', cls || null); const td = el('td', cls ? null : 'what', text); td.colSpan = 5; tr.appendChild(td); tb.appendChild(tr); };
+    const group = (label, list) => { if (!list.length) return; row(label, 'group'); list.forEach((t) => tb.appendChild(treeRow(t))); };
+    group('Open work', openTrees.slice().sort(byDate));
+    group('In main', inMain.slice(0, 8));
+    if (inMain.length > 8) row('and ' + plural(inMain.length - 8, 'older work tree', 'older work trees') + ' with nothing new');
+    if (!trees.length) row('No branches besides main.');
+    $('tree-count').textContent = openTrees.length + ' open · ' + trees.length + ' in all';
+  }
+
+  function renderCabs() {
+    const box = $('cabs'); if (!box) return; box.replaceChildren();
+    const games = (state.games && state.games.items) || [];
+    const dev = games.filter((g) => g.status === 'dev').length;
+    $('cab-count').textContent = plural(games.length - dev, 'cabinet', 'cabinets') + (dev ? ' · ' + dev + ' in development' : '');
+    const floor = state.agents.filter(onFloor);
+    games.forEach((g) => {
+      const a = el('article', 'cab' + (g.status === 'production' ? ' prod' : '') + (g.status === 'dev' ? ' dev' : ''));
+      a.style.setProperty('--gc', g.color || 'var(--ink)');
+      const art = el('div', 'art');
+      if (g.art) { art.style.backgroundImage = 'url(' + g.art + ')'; art.setAttribute('role', 'img'); art.setAttribute('aria-label', g.name + ' cabinet art'); }
+      else { art.appendChild(el('span', 'ak', g.kanji || '新')); art.appendChild(el('span', 'an', g.name || '')); art.setAttribute('aria-hidden', 'true'); }
+      a.appendChild(art);
+      const b = el('div', 'body');
+      b.appendChild(el('h3', null, g.name));
+      if (g.sub) b.appendChild(el('div', 'sub', g.sub));
+      b.appendChild(el('span', 'st ' + (g.status || 'live'), g.statusText || STATE_LABEL[g.status] || g.status));
+      if (g.blurb) b.appendChild(el('div', 'blurb', g.blurb));
+      const f = el('div', 'facts');
+      if (g.commits != null) f.appendChild(el('span', 'mono', plural(g.commits, 'commit', 'commits')));
+      if (g.since) f.appendChild(el('span', 'mono', 'since ' + String(g.since).slice(5)));
+      if (g.last) f.appendChild(el('span', 'mono', 'last ' + String(g.last).slice(5)));
+      if (g.status === 'dev' && g.branch) f.appendChild(el('span', 'mono', 'on ' + g.branch));
+      b.appendChild(f);
+      const here = floor.filter((x) => officeOf(x) === g.id);
+      b.appendChild(el('div', 'crew' + (here.length ? '' : ' none'), here.length ? plural(here.length, 'agent', 'agents') + ' on it: ' + here.map((x) => x.title).join(', ') : 'No agent on it now'));
+      if (g.latest) b.appendChild(el('div', 'latest', 'Latest: ' + g.latest));
+      a.appendChild(b); box.appendChild(a);
+    });
+  }
+
+  function render() {
+    const st = state.status || {};
+    gameMap = {}; for (const g of (state.games && state.games.items) || []) gameMap[g.id] = g;
+    treeMap = {}; for (const t of state.trees) treeMap[t.branch] = t;
+    renderCabs();
+    renderStudio();
+    if (st.title) $('h-title').textContent = st.title;
+    if (st.subtitle) $('h-sub').textContent = st.subtitle;
+    if (st.updated) { $('h-updated').textContent = 'Updated ' + hhmm(st.updated) + ' UTC · ' + ago(st.updated); }
+    const working = state.crew.filter((c) => c.state === 'working' || c.state === 'review' || c.state === 'blocked');
+    $('live-dot').className = 'dot' + (working.length || state.agents.some((a) => a.state === 'working') ? ' live' : '');
+    $('h-pr').hidden = !st.pr;
+    if (st.pr) {
+      $('h-pr-text').textContent = 'PR #' + st.pr.number + ' · ' + (st.pr.state || '');
+      $('pr-dot').className = 'dot' + (st.pr.state === 'green' ? ' ok' : '');
+      if (st.pr.url) $('h-pr').href = st.pr.url;
+    }
+    $('h-play').hidden = !st.preview;
+    if (st.preview) $('h-play').href = st.preview;
+
+    // the production block shows while the page keeps a production crew
+    $('prod').hidden = !(state.crew.length || (st.stages || []).length);
+    $('prod-title').textContent = 'Now in production: ' + prodName();
+
+    // counters
+    const ctr = $('counters'); ctr.replaceChildren();
+    for (const [n, label] of (st.counters || [])) {
+      const c = el('div', 'counter'); c.appendChild(el('b', null, String(n))); c.appendChild(el('span', null, label)); ctr.appendChild(c);
+    }
+
+    // stages
+    const ol = $('stages'); ol.replaceChildren();
+    const stages = st.stages || [];
+    ol.style.setProperty('--n', stages.length || 1);
+    stages.forEach((s) => {
+      const li = el('li', s.state || '');
+      if (s.state === 'now') li.setAttribute('aria-current', 'step');
+      li.appendChild(el('div', 'node', s.sigil || ''));
+      li.appendChild(el('div', 'sname', s.name));
+      if (s.note) li.appendChild(el('div', 'snote', s.note));
+      ol.appendChild(li);
+    });
+
+    // crew
+    const byOrder = (a, b) => (a.order ?? 999) - (b.order ?? 999);
+    const w = $('working'); w.replaceChildren();
+    working.sort(byOrder).forEach((c) => w.appendChild(card(c)));
+    if (!working.length) w.appendChild(el('p', 'empty', 'Nobody is on the floor right now.'));
+    $('floor-count').textContent = working.length + (working.length === 1 ? ' agent' : ' agents');
+    const queued = state.crew.filter((c) => c.state === 'queued').sort(byOrder);
+    const q = $('queued'); q.replaceChildren();
+    queued.forEach((c) => q.appendChild(card(c)));
+    if (!queued.length) q.appendChild(el('p', 'empty', 'Nothing queued.'));
+    $('next-count').textContent = queued.length + ' queued';
+
+    const shipped = state.crew.filter((c) => c.state === 'shipped').sort(byOrder);
+    const tb = $('shipped'); tb.replaceChildren();
+    let group = null;
+    shipped.forEach((c) => {
+      if (c.group !== group) {
+        group = c.group;
+        const tr = el('tr', 'group'); const td = el('td', null, group || 'Other'); td.colSpan = 4; tr.appendChild(td); tb.appendChild(tr);
+      }
+      const tr = el('tr');
+      const who = el('td'); who.appendChild(el('span', 'k', c.sigil || '')); who.appendChild(document.createTextNode(c.role + (c.crew > 1 ? ' ×' + c.crew : '')));
+      if (c.crew === 0) who.appendChild(el('span', 'chip', 'lead'));
+      tr.appendChild(who);
+      tr.appendChild(el('td', 'what', c.task || ''));
+      tr.appendChild(el('td', 'mono', c.commit || 'none'));
+      tr.appendChild(el('td', 'mono', c.done ? hhmm(c.done) : ''));
+      tb.appendChild(tr);
+    });
+    const agents = shipped.reduce((n, c) => n + (c.crew ?? 1), 0);
+    $('ship-count').textContent = agents + ' agents';
+
+    // feed
+    const fd = $('feed'); fd.replaceChildren();
+    ((state.feed && state.feed.items) || []).slice(0, 18).forEach((it) => {
+      const li = el('li');
+      const t = el('time', null, hhmm(it.t)); t.dateTime = it.t || ''; li.appendChild(t);
+      li.appendChild(el('div', 'ev k-' + (it.kind || 'note'), it.text));
+      fd.appendChild(li);
+    });
+
+    // bugs
+    const bl = $('bugs'); bl.replaceChildren();
+    const bugs = (state.bugs && state.bugs.items) || [];
+    bugs.forEach((b) => {
+      const li = el('li', 'bug ' + (b.sev || 'low'));
+      const area = el('div', 'area', null); area.appendChild(document.createTextNode(b.area || ''));
+      if (b.fixing) area.appendChild(el('span', 'fixing', 'being fixed'));
+      li.appendChild(area); li.appendChild(el('div', 'txt', b.text || ''));
+      bl.appendChild(li);
+    });
+    $('bug-count').textContent = (state.bugs && state.bugs.total ? state.bugs.total : bugs.length) + ' open';
+    if (st.footer) $('foot').textContent = st.footer;
+  }
+
+  /* ---------------- overhead floor view ---------------- */
+  const cv = $('floorcv'), g = cv.getContext('2d'), tip = $('tip');
+  const W = 1000, OFF_H = 240;
+  let H = 900, top = 604, hasProd = true, offices = [];
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ROOMS = {
+    Art: { x: 16, y: 78, w: 232, h: 282, k: '絵' }, World: { x: 258, y: 78, w: 232, h: 282, k: '地' },
+    Engineering: { x: 500, y: 78, w: 232, h: 282, k: '工' }, QA: { x: 742, y: 78, w: 242, h: 282, k: '査' },
+    Production: { x: 16, y: 372, w: 300, h: 212, k: '監' }, Build: { x: 326, y: 372, w: 300, h: 212, k: '結' },
+    Lobby: { x: 636, y: 372, w: 348, h: 212, k: '待' },
+  };
+  const roomOf = (c) => {
+    if (/build engineer/i.test(c.role || '')) return 'Build';
+    const d = (c.dept || '').split(/[·\s]/)[0];
+    return ROOMS[d] ? d : 'Engineering';
+  };
+  let tok = {}, hits = [], t0 = performance.now();
+  function readTokens() {
+    const cs = getComputedStyle(document.documentElement);
+    for (const k of ['paper', 'card', 'ink', 'ink-2', 'ink-3', 'rule', 'crimson', 'crimson-soft', 'jade', 'indigo', 'neon']) tok[k] = cs.getPropertyValue('--' + k).trim();
+  }
+  readTokens();
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', readTokens);
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  function fit() {
+    const r = window.devicePixelRatio || 1, cw = cv.clientWidth || 1000;
+    cv.width = Math.round(cw * r); cv.height = Math.round(cw * H / W * r);
+  }
+  // one office per cabinet, five to a row, under the production wing (or at the top when there is none)
+  function layout() {
+    hasProd = state.crew.length > 0;
+    top = hasProd ? 604 : 0;
+    const list = ((state.games && state.games.items) || []).slice();
+    if (state.agents.some((a) => onFloor(a) && officeOf(a) === 'workshop')) list.push(WORKSHOP);
+    const cols = Math.min(5, Math.max(1, list.length)), rows = Math.max(1, Math.ceil(list.length / cols));
+    const ow = (W - 12 - (cols - 1) * 10) / cols;
+    offices = list.map((o, i) => ({ o, x: 6 + (i % cols) * (ow + 10), y: top + 36 + Math.floor(i / cols) * (OFF_H + 12), w: ow, h: OFF_H }));
+    H = top + 36 + rows * (OFF_H + 12);
+    fit(); draw(performance.now());
+  }
+  addEventListener('resize', () => { fit(); draw(performance.now()); });
+
+  function fitText(s, max) {
+    s = String(s || '');
+    if (g.measureText(s).width <= max) return s;
+    while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
+    return s + '…';
+  }
+  function person(x, y, col, bob, lab, size) {
+    g.save(); g.translate(x, y + bob);
+    g.fillStyle = 'rgba(0,0,0,0.12)'; g.beginPath(); g.ellipse(0, 12, 14, 5, 0, 0, 7); g.fill();
+    g.fillStyle = col; g.beginPath(); g.ellipse(0, 3, 13, 8, 0, 0, 7); g.fill();
+    if (col === tok.neon) { g.strokeStyle = tok.ink; g.lineWidth = 1.5; g.stroke(); }
+    g.fillStyle = tok.ink; g.beginPath(); g.arc(0, -3, 7, 0, 7); g.fill();
+    g.restore();
+    if (lab) { g.fillStyle = tok['ink-2']; g.font = '600 ' + (size || 11) + 'px "Zen Kaku Gothic New", system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(lab, x, y + 30); }
+  }
+  function bubble(x, y, ch, col) {
+    g.fillStyle = col; g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill();
+    g.strokeStyle = tok.ink; g.lineWidth = 1; g.stroke();
+    g.fillStyle = col === tok.neon ? '#16151a' : tok.paper; g.font = '800 10px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(ch, x, y + 3.5);
+  }
+  const stateCol = (s) => ({ working: tok.crimson, review: tok.indigo, blocked: tok.neon, failed: tok.crimson })[s] || tok['ink-3'];
+  function agentTip(a) {
+    const t = treeMap[a.branch];
+    return {
+      role: a.title, sigil: (placeOf(officeOf(a)) || WORKSHOP).kanji, label: AGENT_LABEL[a.state] || a.state,
+      task: a.summary || latest(a),
+      detail: [KIND_LABEL[a.kind] || a.kind, a.branch, a.pr ? 'PR #' + a.pr.number + ' ' + a.pr.state : '', a.active ? 'active ' + ago(a.active) : ''].filter(Boolean).join(' · '),
+      commit: t ? t.head : '',
+    };
+  }
+  function officeTip(o, here) {
+    return {
+      role: o.name, sigil: o.kanji || '', label: o.statusText || STATE_LABEL[o.status] || o.status,
+      task: o.blurb || (o.status === 'dev' && o.branch ? 'In development on ' + o.branch : ''),
+      detail: here.length ? 'At work: ' + here.map((a) => a.title).join(', ') : 'No agent at work on it now.',
+      commit: o.lastCommit || '',
+    };
+  }
+
+  function drawWing(t) {
+    // shipped wall
+    g.fillStyle = tok.ink; g.fillRect(0, 0, W, 60);
+    g.fillStyle = tok.paper; g.font = '800 13px "Shippori Mincho B1", Georgia, serif'; g.textAlign = 'left'; g.fillText(prodName().toUpperCase() + ' · SHIPPED 済', 14, 22);
+    const shipped = state.crew.filter((c) => c.state === 'shipped').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const step = Math.min(34, (W - 150) / Math.max(1, shipped.length));
+    shipped.forEach((c, i) => {
+      const x = 150 + i * step + step / 2, y = 34;
+      g.font = '18px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('🏆', x, y + 6);
+      g.fillStyle = tok.paper; g.font = '10px "IBM Plex Mono", monospace'; g.fillText(c.sigil || '', x, 54); g.fillStyle = tok.paper;
+      hits.push({ x, y, r: 14, c });
+    });
+    // the production wing
+    g.strokeStyle = tok.crimson; g.lineWidth = 6; g.strokeRect(6, 66, W - 12, 530);
+    g.fillStyle = tok.crimson; g.fillRect(W / 2 - 150, 58, 300, 22);
+    g.fillStyle = '#fff'; g.font = '800 13px "Shippori Mincho B1", Georgia, serif'; g.textAlign = 'center';
+    g.fillText(fitText(prodName().toUpperCase() + ' WING · ' + (production().kanji || '紅') + ' · IN PRODUCTION', 290), W / 2, 73);
+    // rooms
+    for (const [name, R] of Object.entries(ROOMS)) {
+      g.fillStyle = tok.card; g.strokeStyle = tok.ink; g.lineWidth = 2;
+      g.fillRect(R.x, R.y, R.w, R.h); g.strokeRect(R.x, R.y, R.w, R.h);
+      g.clearRect(R.x + R.w / 2 - 18, R.y + R.h - 1, 36, 3); g.fillStyle = tok.card; g.fillRect(R.x + R.w / 2 - 18, R.y + R.h - 2, 36, 4); // door
+      g.fillStyle = tok.crimson; g.font = '800 20px "Shippori Mincho B1", Georgia, serif'; g.textAlign = 'left'; g.fillText(R.k, R.x + 10, R.y + 26);
+      g.fillStyle = tok.ink; g.font = '700 12px "Zen Kaku Gothic New", system-ui, sans-serif'; g.fillText(name.toUpperCase(), R.x + 36, R.y + 24);
+    }
+    // build rack
+    const B = ROOMS.Build;
+    for (let i = 0; i < 3; i++) {
+      const rx = B.x + B.w - 70 + i * 20, ry = B.y + 40;
+      g.fillStyle = tok.ink; g.fillRect(rx, ry, 16, 120);
+      for (let j = 0; j < 10; j++) { const on = still ? j % 3 === 0 : Math.sin(t * 6 + i * 2.1 + j * 1.7) > 0.3; g.fillStyle = on ? tok.jade : tok['ink-2']; g.fillRect(rx + 4, ry + 8 + j * 11, 8, 3); }
+    }
+    // desks + working crew
+    const working = state.crew.filter((c) => c.state === 'working' || c.state === 'review' || c.state === 'blocked');
+    const byRoom = {};
+    for (const c of working) { if (/^lead$/i.test(c.role || '')) continue; (byRoom[roomOf(c)] = byRoom[roomOf(c)] || []).push(c); }
+    const stops = [];
+    for (const [room, list] of Object.entries(byRoom)) {
+      const R = ROOMS[room];
+      list.forEach((c, i) => {
+        let x, y;
+        if (room === 'Build') { x = B.x + B.w - 110; y = B.y + 100 + i * 50; }
+        else { const cols = 2; x = R.x + 60 + (i % cols) * (R.w - 120); y = R.y + 90 + Math.floor(i / cols) * 100; }
+        if (room !== 'Build') {
+          g.fillStyle = tok['ink-2']; g.fillRect(x - 32, y - 34, 64, 20); // desk
+          const fl = still ? 1 : 0.65 + 0.35 * Math.abs(Math.sin(t * 3 + i));
+          g.globalAlpha = fl; g.fillStyle = tok.crimson; g.fillRect(x - 14, y - 32, 28, 6); g.globalAlpha = 1; // monitor glow
+          g.fillStyle = tok.paper; g.font = '800 11px "Shippori Mincho B1", serif'; g.textAlign = 'center'; g.fillText(c.sigil || '', x + 22, y - 19);
+        }
+        person(x, y, tok.crimson, still ? 0 : Math.sin(t * 8 + i) * 0.8, c.role);
+        hits.push({ x, y, r: 18, c });
+        stops.push({ x, y: y + 44 });
+      });
+    }
+    // queue in the lobby
+    const L = ROOMS.Lobby, queued = state.crew.filter((c) => c.state === 'queued').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    queued.forEach((c, i) => {
+      const x = L.x + 48 + (i % 4) * 84, y = L.y + 70 + Math.floor(i / 4) * 72;
+      person(x, y, tok['ink-3'], still ? 0 : Math.sin(t * 1.5 + i * 0.9) * 1.2, (c.role || '').split(' ')[0]);
+      hits.push({ x, y, r: 18, c });
+    });
+    // the lead walks from desk to desk
+    const lead = state.crew.find((c) => /^lead$/i.test(c.role || '') && c.state === 'working');
+    if (lead) {
+      const P = ROOMS.Production, home = { x: P.x + 70, y: P.y + 110 };
+      const path = stops.length ? stops : [home];
+      let x = home.x, y = home.y;
+      if (!still && path.length) {
+        const seg = 5, n = path.length, k = Math.floor(t / seg) % n, f = (t % seg) / seg, a = path[k], b = path[(k + 1) % n];
+        const m = Math.min(1, Math.max(0, (f - 0.4) / 0.6)), e = m * m * (3 - 2 * m);
+        x = a.x + (b.x - a.x) * e; y = a.y + (b.y - a.y) * e;
+      } else if (path.length) { x = path[0].x; y = path[0].y; }
+      g.fillStyle = tok['ink-2']; g.fillRect(home.x - 32, home.y - 34, 64, 20);
+      person(x, y, tok.jade, 0, 'Lead');
+      hits.push({ x, y, r: 18, c: lead });
+    }
+    if (!working.length && !queued.length) { g.fillStyle = tok['ink-3']; g.font = '14px system-ui'; g.textAlign = 'center'; g.fillText('The production floor is quiet.', W / 2, 250); }
+  }
+
+  function drawOffices(t) {
+    g.fillStyle = tok.rule; g.fillRect(0, top, W, 26);
+    g.fillStyle = tok['ink-3']; g.font = '700 11px "Zen Kaku Gothic New", system-ui, sans-serif'; g.textAlign = 'left';
+    g.fillText('CORRIDOR · AN OFFICE FOR EACH CABINET, WITH THE AGENTS AT WORK ON IT', 12, top + 17);
+    const floor = state.agents.filter(onFloor).sort(byAgent);
+    offices.forEach(({ o, x, y, w, h }, i) => {
+      const col = o.color || tok['ink-3'];
+      const here = floor.filter((a) => officeOf(a) === o.id);
+      g.globalAlpha = 0.14; g.fillStyle = col; g.fillRect(x, y, w, h); g.globalAlpha = 1; // carpet
+      g.strokeStyle = col; g.lineWidth = 5; g.strokeRect(x, y, w, h);
+      g.fillStyle = tok.paper; g.fillRect(x + w / 2 - 20, y - 3, 40, 6); // door on the corridor
+      g.fillStyle = col; g.fillRect(x, y, w, 26);
+      g.fillStyle = '#16151a'; g.font = '800 13px "Shippori Mincho B1", Georgia, serif'; g.textAlign = 'left';
+      g.fillText(fitText((o.name || '').toUpperCase(), w - 40), x + 10, y + 18);
+      g.textAlign = 'right'; g.fillText(o.kanji || '', x + w - 8, y + 19);
+      // the cabinet, fenced off while it is still in development; the workshop has a bench instead
+      const cx = x + w - 52, cy = y + 40;
+      if (o.id === 'workshop') {
+        g.fillStyle = tok['ink-2']; g.fillRect(cx - 4, cy + 10, 48, 50);
+        g.fillStyle = tok.card; for (let k = 0; k < 3; k++) g.fillRect(cx + 2 + k * 14, cy + 18, 8, 34);
+      } else {
+        g.fillStyle = tok.ink; g.fillRect(cx, cy, 40, 64);
+        const glow = still ? 0.8 : 0.55 + 0.45 * Math.abs(Math.sin(t * 1.3 + i));
+        g.globalAlpha = o.status === 'dev' ? glow * 0.5 : glow; g.fillStyle = col; g.fillRect(cx + 5, cy + 7, 30, 22); g.globalAlpha = 1;
+        g.fillStyle = tok['ink-2']; g.fillRect(cx + 7, cy + 38, 26, 6);
+        g.fillStyle = col; g.beginPath(); g.arc(cx + 13, cy + 41, 3, 0, 7); g.arc(cx + 27, cy + 41, 3, 0, 7); g.fill();
+        if (o.status === 'dev') { g.setLineDash([5, 4]); g.strokeStyle = tok.ink; g.lineWidth = 1.5; g.strokeRect(cx - 5, cy - 5, 50, 74); g.setLineDash([]); }
+      }
+      // four desks; an agent sits at each one in turn, busiest first
+      const dx = Math.max(50, Math.min(70, cx - x - 76));
+      [[x + 36, y + 80], [x + 36 + dx, y + 80], [x + 36, y + 148], [x + 36 + dx, y + 148]].forEach(([sx, sy], k) => {
+        const a = here[k];
+        g.fillStyle = tok['ink-3']; g.fillRect(sx - 24, sy - 30, 48, 14); // desk
+        if (!a) { g.strokeStyle = tok['ink-3']; g.lineWidth = 1.5; g.beginPath(); g.arc(sx, sy + 2, 8, 0, 7); g.stroke(); return; } // empty chair
+        const c = stateCol(a.state);
+        g.globalAlpha = a.state === 'working' && !still ? 0.65 + 0.35 * Math.abs(Math.sin(t * 3 + k + i)) : a.state === 'idle' ? 0.4 : 1;
+        g.fillStyle = c; g.fillRect(sx - 12, sy - 28, 24, 6); g.globalAlpha = 1; // monitor
+        person(sx, sy, c, a.state === 'working' && !still ? Math.sin(t * 8 + k) * 0.8 : 0, short(a), 10);
+        if (a.state === 'blocked') bubble(sx + 13, sy - 14, '?', c);
+        else if (a.state === 'review') bubble(sx + 13, sy - 14, '!', c);
+        hits.push({ x: sx, y: sy, r: 16, c: agentTip(a) });
+      });
+      // the door sign
+      const sy0 = y + h - 52;
+      g.fillStyle = tok.card; g.fillRect(x + 8, sy0, w - 16, 46);
+      g.fillStyle = tok.ink; g.font = '700 12px "Zen Kaku Gothic New", system-ui, sans-serif'; g.textAlign = 'left';
+      g.fillText(fitText(o.statusText || STATE_LABEL[o.status] || '', w - 32), x + 16, sy0 + 15);
+      g.fillStyle = tok['ink-3']; g.font = '11px "IBM Plex Mono", monospace';
+      const busy = here.filter((a) => a.state === 'working').length;
+      const more = here.length > 4 ? ' · ' + (here.length - 4) + ' more' : '';
+      g.fillText(fitText(here.length ? plural(here.length, 'agent', 'agents') + (busy ? ', ' + busy + ' working' : '') + more : 'no agents now', w - 32), x + 16, sy0 + 29);
+      if (o.commits != null) g.fillText(fitText(plural(o.commits, 'commit', 'commits') + ' · last ' + String(o.last || '').slice(5), w - 32), x + 16, sy0 + 42);
+      hits.push({ x: x + w / 2, y: y + h / 2, r: Math.min(w, h) / 2 - 10, c: officeTip(o, here) });
+    });
+  }
+
+  function draw(now) {
+    const t = still ? 0 : (now - t0) / 1000;
+    const sc = cv.width / W; g.setTransform(sc, 0, 0, sc, 0, 0);
+    g.fillStyle = tok.paper; g.fillRect(0, 0, W, H);
+    // floor tiles
+    const y0 = hasProd ? 64 : 0;
+    g.strokeStyle = tok.rule; g.lineWidth = 0.5;
+    for (let x = 0; x <= W; x += 40) { g.beginPath(); g.moveTo(x, y0); g.lineTo(x, H); g.stroke(); }
+    for (let y = y0; y <= H; y += 40) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    hits = [];
+    if (hasProd) drawWing(t);
+    drawOffices(t);
+  }
+  function loop(now) { draw(now); if (!still) requestAnimationFrame(loop); }
+
+  function pick(ev) {
+    const r = cv.getBoundingClientRect(), x = (ev.clientX - r.left) * W / r.width, y = (ev.clientY - r.top) * W / r.width;
+    let best = null, bd = 1e9;
+    for (const h of hits) { const d = Math.hypot(h.x - x, h.y - y); if (d < h.r + 6 && d < bd) { bd = d; best = h; } }
+    return best && { h: best, px: ev.clientX - cv.parentElement.getBoundingClientRect().left, py: ev.clientY - cv.parentElement.getBoundingClientRect().top };
+  }
+  function show(p) {
+    if (!p) { tip.hidden = true; cv.style.cursor = 'default'; return; }
+    const c = p.h.c; cv.style.cursor = 'pointer';
+    tip.replaceChildren(el('b', null, (c.sigil ? c.sigil + '  ' : '') + (c.role || '')), el('span', 's', c.label || STATE_LABEL[c.state] || c.state || ''), el('span', 't', c.task || ''));
+    if (c.detail) tip.appendChild(el('span', 'd', c.detail));
+    if (c.commit) tip.appendChild(el('span', 'd mono', 'commit ' + c.commit));
+    tip.hidden = false;
+    const pw = cv.parentElement.clientWidth, tw = Math.min(280, pw - 24);
+    tip.style.left = Math.max(12, Math.min(pw - tw - 12, p.px + 14)) + 'px'; tip.style.top = (p.py + 14) + 'px';
+  }
+  cv.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') show(pick(e)); });
+  cv.addEventListener('pointerleave', () => show(null));
+  cv.addEventListener('click', (e) => show(pick(e)));
+
+  // The data is written into this page at each refresh (a public page cannot use a live store).
+  try {
+    const d = JSON.parse(document.getElementById('board-data').textContent);
+    state.crew = d.crew || []; state.status = d.status || null; state.feed = d.feed || null; state.bugs = d.bugs || null; state.games = d.games || null;
+    state.agents = (d.agents && d.agents.items) || []; state.trees = (d.worktrees && d.worktrees.items) || []; state.auto = d.auto || null;
+  } catch (e) { $('offline').hidden = false; }
+  render();
+  layout();
+  requestAnimationFrame(loop);
+  if (still) setInterval(() => draw(performance.now()), 5000);
+  setInterval(render, 60000); // refresh the "min ago" text only
+})();
+</script>

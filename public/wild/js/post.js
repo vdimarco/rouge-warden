@@ -5,9 +5,12 @@
 import * as THREE from "three";
 
 export const QUALITY = {
-  low: { farR: 0, radius: 0, ratio: 0.85, glow: 0, samples: 0, grass: 50000, patch: 64, shadow: 1024 },
-  medium: { farR: 1, radius: 2, ratio: 1, glow: 1, samples: 0, grass: 190000, patch: 96, shadow: 2048 },
-  high: { farR: 2, radius: 3, ratio: 1.25, glow: 1, samples: 4, grass: 310000, patch: 118, shadow: 2048 },
+// ratio is the starting pixel ratio and maxRatio the most the dynamic resolution may climb to on a sharp screen.
+// Low smooths its edges with FXAA in the final pass; Medium and High draw the scene with 4x multisampling.
+// dof blurs the few metres right in front of the camera, like a film lens.
+  low: { farR: 0, radius: 0, ratio: 0.85, maxRatio: 1.5, glow: 0, samples: 0, fxaa: 1, dof: 0, grass: 50000, patch: 64, shadow: 1024 },
+  medium: { farR: 1, radius: 2, ratio: 1, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 0, grass: 190000, patch: 96, shadow: 2048 },
+  high: { farR: 2, radius: 3, ratio: 1.25, maxRatio: 2, glow: 1, samples: 4, fxaa: 0, dof: 1, grass: 310000, patch: 118, shadow: 2048 },
 };
 
 export class Painter {
@@ -108,7 +111,7 @@ const tap = (i, j) => {
 };
 const brush = (q) => {
   const top = q.radius + (q.farR || 0), base = Math.max(1, q.radius);
-  if (top < 1) return "vec3 brush(vec2 uv, float R, vec2 px, bool sky) { return texture2D(tColor, uv).rgb; }";
+  if (top < 1) return q.fxaa ? FXAA : "vec3 brush(vec2 uv, float R, vec2 px, bool sky, float soft) { return texture2D(tColor, uv).rgb; }";
   let taps = "";
   for (let j = -base; j <= base; j++) for (let i = -base; i <= base; i++) taps += tap(i, j);
   // each broader size adds a ring: its left and right columns, then the rest of its top and bottom rows
@@ -124,7 +127,7 @@ void calm(vec3 m, vec3 s, float n, inout vec3 best, inout float bv) {
   float vv = v.r + v.g + v.b;
   if (vv < bv) { bv = vv; best = mu; }
 }
-vec3 brush(vec2 uv, float R, vec2 px, bool sky) {
+vec3 brush(vec2 uv, float R, vec2 px, bool sky, float soft) {
   // Open sky that is flat across the whole brush comes out as its own colour anyway, so it skips the brush.
   // The centre and the four corners tell: they must be within one 8-bit step of each other.
   if (sky) {
@@ -139,9 +142,31 @@ vec3 brush(vec2 uv, float R, vec2 px, bool sky) {
 ${taps}  float n = (R + 1.0) * (R + 1.0);
   vec3 best = m0 / n; float bv = 1e9;
   calm(m0, s0, n, best, bv); calm(m1, s1, n, best, bv); calm(m2, s2, n, best, bv); calm(m3, s3, n, best, bv);
-  return best;
+  // soft: the calmest quarter gives crisp strokes, but far hills turn blocky with it. There, and in the lens blur
+  // right in front of the camera, it fades into the plain average of all four quarters: a smooth wash.
+  return soft > 0.0 ? mix(best, (m0 + m1 + m2 + m3) / (4.0 * n), soft) : best;
 }`;
 };
+
+// FXAA for Low, which has no brush: find the direction of an edge from the four diagonal neighbours and blend
+// along it. Flat areas return after five reads, and an edge costs four more.
+const FXAA = /* glsl */ `
+vec3 brush(vec2 uv, float R, vec2 px, bool sky, float soft) {
+  vec3 cM = texture2D(tColor, uv).rgb;
+  if (sky) return cM;
+  float lM = luma(cM);
+  float lNW = luma(texture2D(tColor, uv + vec2(-1.0, -1.0) * px).rgb), lNE = luma(texture2D(tColor, uv + vec2(1.0, -1.0) * px).rgb);
+  float lSW = luma(texture2D(tColor, uv + vec2(-1.0, 1.0) * px).rgb), lSE = luma(texture2D(tColor, uv + vec2(1.0, 1.0) * px).rgb);
+  float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
+  if (lMax - lMin < max(0.03, lMax * 0.12)) return cM;
+  vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
+  float reduce = max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078125);
+  dir = clamp(dir / (min(abs(dir.x), abs(dir.y)) + reduce), -8.0, 8.0) * px;
+  vec3 a = 0.5 * (texture2D(tColor, uv - dir * 0.1667).rgb + texture2D(tColor, uv + dir * 0.1667).rgb);
+  vec3 b = a * 0.5 + 0.25 * (texture2D(tColor, uv - dir * 0.5).rgb + texture2D(tColor, uv + dir * 0.5).rgb);
+  float lB = luma(b);
+  return (lB < lMin || lB > lMax) ? a : b;
+}`;
 
 // The glow ring, worked out once for each texel of a half-size picture. Each half-size texel stands on one
 // full-size texel, so the thresholds see the same colours as before, and the steps are full-size pixels.
@@ -161,6 +186,7 @@ void main() {
 
 const frag = (q) => /* glsl */ `
 uniform sampler2D tColor, tDepth, tGlow; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch;
+#define DOF ${q.dof ? "1.0" : "0.0"}
 uniform vec3 uSunCol, uInk, uHaze; varying vec2 vUv;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
@@ -174,13 +200,15 @@ void main() {
   // far away, the brush gets broader, so distant hills turn into soft painted shapes
   float far = d0 < 1.0 ? smoothstep(70.0, 380.0, z0) : 0.0;
   float R = uRadius + floor(uFarR * far + 0.5);
-  vec3 col = R > 0.5 ? brush(uv, R, px, d0 >= 1.0) : texture2D(tColor, uv).rgb;
+  // far hills become a soft wash; with DOF, so does the first few metres in front of the lens
+  float soft = max(far * 0.7, DOF * smoothstep(2.8, 1.2, z0));
+  vec3 col = R > 0.5 || ${q.fxaa ? "true" : "false"} ? brush(uv, R, px, d0 >= 1.0, soft) : texture2D(tColor, uv).rgb;
   // a big hit: the colours split for a moment, out from the middle of the screen
   if (uPunch > 0.01) { vec2 o = (uv - 0.5) * uPunch * 0.012; col.r = mix(col.r, texture2D(tColor, uv + o).r, 0.8); col.b = mix(col.b, texture2D(tColor, uv - o).b, 0.8); }
   // aerial perspective: the farther away, the more it fades into a clear, cool blue
   float haze = d0 < 1.0 ? (1.0 - exp(-max(z0 - 50.0, 0.0) / 520.0)) : 0.0;
   vec3 hz = uHaze; hz = clamp(mix(vec3(dot(hz, vec3(0.299, 0.587, 0.114))), hz, 1.5) * 0.93, 0.0, 1.0);
-  col = mix(col, hz * (1.0 - uNight * 0.6), haze * 0.52);
+  col = mix(col, hz * (1.0 - uNight * 0.6), haze * 0.42);
   col = mix(col, col * vec3(0.9, 0.98, 1.08), haze);
   // ink lines where the depth jumps: silhouettes of hills, trees, people, and buildings
   float zl = lin(texture2D(tDepth, uv - vec2(px.x, 0.0)).r), zr = lin(texture2D(tDepth, uv + vec2(px.x, 0.0)).r);
@@ -192,7 +220,10 @@ void main() {
   float bendR = max(sx / (gx + z0 * 0.004), sy / (gy + z0 * 0.004));
   float size = max(sx, sy) / max(z0, 0.001);
   float ink = smoothstep(1.0, 1.8, bendR) * smoothstep(0.02, 0.07, size) * (1.0 - smoothstep(40.0, 320.0, z0)) * (d0 < 1.0 ? 1.0 : 0.0);
-  col = mix(col, col * uInk * 2.2, ink * 0.55);
+  // no ink between grass blades: the grass writes 0 in alpha, and thousands of dark lines in a field look scratchy
+  if (ink > 0.001) ink *= min(texture2D(tColor, uv).a, min(min(texture2D(tColor, uv - vec2(px.x, 0.0)).a, texture2D(tColor, uv + vec2(px.x, 0.0)).a),
+    min(texture2D(tColor, uv - vec2(0.0, px.y)).a, texture2D(tColor, uv + vec2(0.0, px.y)).a)));
+  col = mix(col, col * uInk * 2.2, ink * 0.42);
   // soft glow on bright things: sunlit clouds, water sparkles, fire, the King's eyes. It comes from the half-size
   // glow picture; half a pixel over, each even pixel reads exactly the texel made for it.
   if (uGlow > 0.5) col += texture2D(tGlow, uv + 0.5 * px).rgb;
@@ -202,7 +233,7 @@ void main() {
   col += uSunCol * uSunVis * (exp(-sd * 3.2) * 0.28 + exp(-sd * 12.0) * 0.25);
   // colour grade: cool, lifted shadows, warm highlights, a touch more colour
   float l = luma(col);
-  col = mix(vec3(l), col, 1.04 - uNight * 0.2);
+  col = mix(vec3(l), col, 1.12 - uNight * 0.26);
   col = mix(col * vec3(0.9, 0.97, 1.08) + vec3(0.02, 0.03, 0.05), col, smoothstep(0.0, 0.45, l));
   col = mix(col, col * vec3(1.05, 1.01, 0.92), smoothstep(0.55, 1.0, l));
   // paper grain and a soft vignette

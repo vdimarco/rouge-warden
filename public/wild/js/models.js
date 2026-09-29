@@ -16,6 +16,18 @@ export function gradientMap() {
   gradient.needsUpdate = true;
   return gradient;
 }
+// For the land: two wide, soft bands of light, blended with no hard step, so hills read as smooth rounded
+// shapes, like the painted hills of an animated film.
+let softGradient = null;
+export function softGradientMap() {
+  if (softGradient) return softGradient;
+  const n = 64, data = new Uint8Array(n * 4), sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for (let i = 0; i < n; i++) { const x = i / (n - 1), v = 0.44 + 0.32 * sm(0.3, 0.5, x) + 0.24 * sm(0.55, 0.78, x); data.set([v * 255, v * 255, v * 255, 255], i * 4); }
+  softGradient = new THREE.DataTexture(data, n, 1, THREE.RGBAFormat);
+  softGradient.minFilter = softGradient.magFilter = THREE.LinearFilter;
+  softGradient.needsUpdate = true;
+  return softGradient;
+}
 export function toon(color, extra = {}) {
   const key = typeof color === "number" && !Object.keys(extra).length ? color : null;
   if (key !== null && cache.has(key)) return cache.get(key);

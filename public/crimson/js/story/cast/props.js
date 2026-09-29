@@ -388,10 +388,12 @@ export function createProps() {
   }
   const COSTUME = ['kasa', 'haori', 'sash', 'sheath'];
   // the crew's costume on (or off): kasa, haori tabard, crimson sash and a foam katana at the left hip.
-  // kasa: 'head' (worn), 'back' (slung on the back) or false (none); only ever one kasa
+  // kasa: 'head' (worn), 'back' (off: the hat stays with the bags) or false (none); only ever one kasa
   function costume(a, on = true, kasa = 'head') {
     for (const n of COSTUME) if (n !== 'kasa') { if (on) { if (!(a.props && a.props[n])) attach(a, n); } else detach(a, n); }
-    const want = on ? kasa : false;
+    // 'back' draws no hat: slung on the back, the wide kasa read as a grey disc cutting through the body
+    // under the ink outline, so on those days the crew simply leave it off (costumeOf still says 'back')
+    const want = on && kasa !== 'back' ? kasa : false;
     if (want !== 'head') detach(a, 'kasa');
     if (want !== 'back') detach(a, 'kasaBack');
     if (want === 'head' && !(a.props && a.props.kasa)) attach(a, 'kasa');
