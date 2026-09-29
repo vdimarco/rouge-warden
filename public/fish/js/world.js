@@ -10,6 +10,7 @@ import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
 import { Rod, Line, Lure } from "./world-gear.js";
 import { loadCartoonModels } from "./cartoon-models.js";
+import { loadPaintedForest } from "./painted-forest.js";
 import * as Fish from "./world-fish.js";
 import { fishMesh as makeFish, JUNK_LEN } from "./world-fish.js";
 import { Spray, followerShadow, fireflies as makeFireflies, Gulls, boardMesh, BOARD_LENGTHS } from "./world-fx.js";
@@ -49,7 +50,7 @@ export function sunAt(h, look = null) {
 /* ---------------- the world ---------------- */
 
 export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "ghibli" } = {}) {
-  await loadCartoonModels();
+  await Promise.all([loadCartoonModels(), loadPaintedForest(), E.loadPaintedWater()]);
   let currentStyle = normalizeStyle(style);
   artStyle.value = currentStyle === "ghibli" ? 1 : 0;
   let low = quality === "low";
@@ -181,8 +182,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       U.uCloudLit.value.lerp(mistCol.set(0xfff2cb), 0.45 * daylight);
       U.uCloudShade.value.lerp(mistCol.set(0x97b6b8), 0.35 * daylight);
       U.uFogCol.value.lerp(mistCol.set(0xa6c9b6), 0.3 * daylight);
-      U.uDeep.value.lerp(mistCol.set(0x277e73), 0.52 * daylight);
-      U.uShallow.value.lerp(mistCol.set(0x83bea2), 0.48 * daylight);
+      U.uDeep.value.lerp(mistCol.set(0x3e9293), 0.78 * daylight);
+      U.uShallow.value.lerp(mistCol.set(0x8cbd9f), 0.72 * daylight);
       U.uForest.value.lerp(mistCol.set(0x48765a), 0.35 * daylight);
     }
     U.uFogNear.value = near; U.uFogFar.value = far;

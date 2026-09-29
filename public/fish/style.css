@@ -26,14 +26,21 @@ body[data-art-style="ghibli"] {
   --red: #b45038; --brass: #f4d280;
 }
 body[data-art-style="ghibli"] #title {
-  background: linear-gradient(rgba(15, 43, 39, .13), transparent 38%, rgba(13, 38, 31, .65)), url("./art/ghibli-lake.webp") center 54% / cover;
+  background: linear-gradient(rgba(15, 43, 39, .10), transparent 38%, rgba(13, 38, 31, .60)), url("./art/film-lake.webp") center 50% / cover;
 }
-body[data-art-style="ghibli"] #title h1 { text-shadow: 0 3px 0 #426b50, 0 6px 0 #284837, 0 10px 26px rgba(15, 36, 29, .45); }
+body[data-art-style="ghibli"] #title h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, .45); }
 body[data-art-style="ghibli"] #title .sub { background: rgba(22, 55, 45, .88); color: #fff0c6; }
 body[data-art-style="ghibli"] #title .btn { background: rgba(27, 67, 53, .96); border-color: #b0bb8c; }
 body[data-art-style="ghibli"] #title .btn.go { background: #b45038; border-color: #f1bb89; box-shadow: 0 4px 0 #643527; }
 body[data-art-style="ghibli"] .card { background: rgba(20, 49, 40, .96); }
 body[data-art-style="ghibli"] #title .best { color: #fff5db; }
+/* Small paper labels sit quietly over the moving illustration. */
+body[data-art-style="ghibli"] #hud .chip,
+body[data-art-style="ghibli"] #hud .icon { background: #f4ecd6; color: #33574d; border-color: #d1c8a8; box-shadow: 0 2px 0 #334e382b; }
+body[data-art-style="ghibli"] #hud .chip b { color: #8c5935; }
+body[data-art-style="ghibli"] #pullStrength { background: #f4ecd6; color: #33574d; border: 1px solid #d1c8a8; }
+body[data-art-style="ghibli"] #pullStrength b { background: #33574d25; }
+body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
 @container (max-height: 740px) {
   #title { gap: 12px; }
   #title .logo { padding: 0; }
