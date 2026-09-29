@@ -65,9 +65,15 @@ if (!gfxSaved && gfx === "high") {
     if (built.test(chip) && !/\bArc\b|\bRX\b|Radeon Pro/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
   } catch (e) { /* no chip name */ }
 }
-// dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
+// dynamic resolution: the render scale drops when frames are slow and climbs back when there is room.
+// Above 1 it climbs past the setting's own ratio toward maxRatio, so a sharp phone screen that has time to spare
+// gets crisper edges; it never goes past the screen's own pixel ratio.
 let resScale = 1, redraw = true;
-const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale)); redraw = true; };
+const applyRatio = () => {
+  const base = Math.min(devicePixelRatio, Q.ratio);
+  renderer.setPixelRatio(Math.max(0.5, resScale > 1 ? Math.min(devicePixelRatio, Q.maxRatio || Q.ratio, Q.ratio * resScale) : base * resScale));
+  redraw = true;
+};
 applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -923,7 +929,7 @@ G.clockText = () => {
 /* ---------------- day and night ---------------- */
 const C = (h) => new THREE.Color(h);
 const SKY = {
-  day: { top: C(0x3a82d6), hor: C(0xd6ecf6), sun: C(0xfff0d0), hemi: C(0xd2e6ff), gnd: C(0x7a8a50), si: 1.65, hi: 1.05 },
+  day: { top: C(0x3596e2), hor: C(0xc8ecf8), sun: C(0xfff0d0), hemi: C(0xd2e8ff), gnd: C(0x7f9450), si: 1.65, hi: 1.05 },
   dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
   night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.35, hi: 0.55 },
 };
@@ -1221,9 +1227,17 @@ function titleCamera(dt) {
 // It learns the screen's own frame interval: 16.7 ms at 60 Hz, 8.3 ms at 120 Hz, 33.3 ms in iPhone Low Power Mode,
 // so a phone that is capped at 30 fps is not mistaken for a slow one. The scale moves between a few fixed steps,
 // so the render targets are rarely rebuilt. A step down that does not help is undone: the load is elsewhere.
-const RES_STEPS = [1, 0.85, 0.72, 0.6];
+const RES_DOWN = [1, 0.85, 0.72, 0.6];
+// the steps for the current setting: up to two steps above 1 where the screen is sharper than the setting's ratio
+let RES_STEPS = RES_DOWN, RES_ONE = 0;
+function resSteps() {
+  const top = Math.min(devicePixelRatio, Q.maxRatio || Q.ratio) / Q.ratio, up = [];
+  if (top > 1.05) { up.push(top); if (top > 1.3) up.push(Math.sqrt(top)); }
+  RES_STEPS = [...up, ...RES_DOWN]; RES_ONE = up.length;
+}
+resSteps();
 const fts = [];
-let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, slowN = 0, autoDown = false;
+let resStep = RES_ONE, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, noUpT = 0, slowN = 0, autoDown = false;
 function frameTime(now, live) {
   if (!live || document.hidden) { ftLast = 0; return; }
   const ft = ftLast ? now - ftLast : 0; ftLast = now;
@@ -1232,7 +1246,7 @@ function frameTime(now, live) {
   if ((ftHold -= ft) > 0 || fts.length < 60) return;
   const sorted = fts.slice().sort((a, b) => a - b), med = sorted[30];
   dispMs = Math.min(dispMs, sorted[6]);
-  noDownT -= 1;
+  noDownT -= 1; noUpT -= 1;
   const set = (k) => { resStep = k; resScale = RES_STEPS[k]; applyRatio(); fts.length = 0; };
   if (downFrom && med > downFrom * 0.9) { set(resStep - 1); downFrom = 0; noDownT = 30; ftHold = 3000; return; }
   downFrom = 0;
@@ -1248,14 +1262,15 @@ function frameTime(now, live) {
       return;
     }
   } else slowN = 0;
-  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; set(resStep + 1); ftHold = 2000; }
-  else if (med < dispMs * 1.12 && resStep > 0) { set(resStep - 1); ftHold = 4000; }
+  // a step down from above 1 means the extra sharpness did not fit: wait 60 checks (a minute or two) before trying it again
+  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; if (resStep < RES_ONE) noUpT = 60; set(resStep + 1); ftHold = 2000; }
+  else if (med < dispMs * 1.12 && resStep > 0 && (resStep > RES_ONE || noUpT <= 0)) { set(resStep - 1); ftHold = 4000; }
   else ftHold = 1000;
 }
 // persist: false changes the setting for this visit only (the automatic step down).
 G.setGraphics = (name, { persist = true } = {}) => {
   if (!QUALITY[name]) return;
-  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
+  gfx = name; Q = QUALITY[name]; resSteps(); resScale = 1; resStep = RES_ONE; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
   if (persist) { gfxSaved = true; try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ } }
   applyRatio();
   painter.setQuality(Q);
