@@ -35,3 +35,7 @@
 #fishGuide .g-pause { fill: #ffb0a8; }
 #fishGuide .guide-video { display: block; width: 100%; height: 77px; margin: 5px 0; object-fit: contain; }
 #fishGuide[data-compact="true"] .guide-video { height: 50px; margin: 2px 0; }
+#pullDemo { min-height: 0; flex: 1 1 auto; }
+#pullDemoVideo { display: block; width: 100%; height: min(calc(100cqh - 220px), 680px); object-fit: contain; border-radius: 12px; background: #092229; }
+#help:has(#pullDemo:not([hidden])) .tabs { display: none; }
+#help #watchPullDemo { font-size: 14px; }
