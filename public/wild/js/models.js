@@ -553,8 +553,8 @@ function king() {
 }
 
 /* ---------------- buildings and props ---------------- */
-export function cabin() {
-  return paintedCottage(toon, bake);
+export function cabin(tex) {
+  return paintedCottage(tex);
 }
 export function outhouse(shrine) {
   const g = GLB.building("outhouse", 0.02) || new THREE.Group();

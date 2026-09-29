@@ -11,7 +11,7 @@ export const FIT = {
   raccoon: { length: 1.25, rot: -Math.PI / 2 }, goose: { height: 1.25, rot: Math.PI },
   bear: { length: 2.9, rot: -Math.PI / 2 }, moose: { height: 4.1, rot: 0 },
   kayak: { length: 4.8, rot: 0 }, fish: { length: 0.75, rot: 0 },
-  cabin: { length: 13.5, rot: -Math.PI / 2 }, outhouse: { height: 3.25, rot: -Math.PI / 2 }, statue: { height: 4.2, rot: -Math.PI / 2 },
+  outhouse: { height: 3.25, rot: -Math.PI / 2 }, statue: { height: 4.2, rot: -Math.PI / 2 },
 };
 const GLB = {}, FITS = {};
 let gradient = null, skinClone = null;
@@ -47,49 +47,27 @@ function keep(n, g, renderer) {
   trim(g.scene, renderer);
   GLB[n] = g.scene;
 }
-// The toon look uses only each model's colour map. The other maps (normal, roughness, metal, light, glow) are
-// decoded but never drawn, so they are closed now. The colour maps go to the graphics card here, and their decoded
-// copies are closed too. A closed texture can never be uploaded again: never set needsUpdate on these textures, or
-// change their anisotropy, colorSpace or wrap (these are part of three's texture cache key). A lost graphics
-// context reloads the page, so nothing has to upload them twice.
+// Upload all maps once. Imported normals and roughness remain available to the PBR material.
 function trim(scene, renderer) {
-  const mats = new Set(), maps = new Set();
-  scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) mats.add(m); });
-  for (const m of mats) if (m.map) maps.add(m.map);
-  const images = new Set([...maps].map((t) => t.image));
-  for (const m of mats) for (const k of Object.keys(m)) {
-    const t = m[k];
-    if (k === "map" || !t || !t.isTexture || maps.has(t)) continue;
-    if (!images.has(t.image)) t.image?.close?.();
-    t.dispose(); m[k] = null;
-  }
-  for (const t of maps) t.anisotropy = 4;
-  if (!renderer) return;
-  for (const t of maps) renderer.initTexture(t);
-  for (const t of maps) t.image?.close?.();
+  const maps = new Set();
+  scene.traverse(o => { if(o.isMesh) for(const m of [].concat(o.material)) for(const value of Object.values(m)) if(value?.isTexture) maps.add(value); });
+  for(const t of maps) { t.anisotropy=4; if(renderer) renderer.initTexture(t); }
+  if(renderer) for(const image of new Set([...maps].map(t=>t.image))) image?.close?.();
 }
 
-/* ---------------- materials and outlines ---------------- */
 function toonify(obj) {
-  obj.traverse((o) => {
-    if (!o.isMesh) return;
-    const old = o.material;
-    o.material = rim(new THREE.MeshToonMaterial({ map: old.map || null, color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)), gradientMap: gradient }));
-    o.castShadow = true; o.receiveShadow = false;
-    old.dispose();
+  obj.traverse(o => {
+    if(!o.isMesh) return;
+    const convert = old => new THREE.MeshStandardMaterial({
+      map:old.map || null, color:old.color || 0xffffff,
+      normalMap:old.normalMap || null, roughnessMap:old.roughnessMap || null,
+      roughness:.9, metalness:0, side:old.side,
+      // A little baked pigment bounce keeps drawn faces legible without an artificial rim.
+      emissive:0xffffff, emissiveMap:old.map || null, emissiveIntensity:old.map ? .06 : 0,
+    });
+    o.material=Array.isArray(o.material) ? o.material.map(convert) : convert(o.material);
+    o.castShadow=true; o.receiveShadow=true;
   });
-}
-// A soft, warm rim of light along the edges of a model that turn away from the camera, as the sun catches
-// the outline of a character in an animated film. All models share one program.
-const RIM = new THREE.Color(1.0, 0.9, 0.72);
-function rim(m) {
-  m.onBeforeCompile = (s) => {
-    s.uniforms.uRim = { value: RIM };
-    s.fragmentShader = "uniform vec3 uRim;\n" + s.fragmentShader.replace("#include <opaque_fragment>",
-      "float rimF = 1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);\n outgoingLight += uRim * diffuseColor.rgb * smoothstep(0.55, 0.95, rimF) * 0.55;\n#include <opaque_fragment>");
-  };
-  m.customProgramCacheKey = () => "rim";
-  return m;
 }
 // a dark shell pushed out along the normals, drawn from the inside: the ink outline
 function outlineMaterial(thick) {
@@ -206,7 +184,7 @@ export function person(name, scale = 1) {
   const knees = [mk(), mk()], elbows = [mk(), mk()];
   const glider = umbrellaFrom();
   if (glider) { glider.visible = false; glider.position.set(0, 2.25, 0); root.add(glider); }
-  addOutlines(model, 0.018);
+  addOutlines(model, 0.004);
   const E = new THREE.Euler(), R = new THREE.Quaternion(), T = new THREE.Quaternion(), W = new THREE.Quaternion();
   // Each bone eases toward its new pose instead of jumping there, so every change of pose blends.
   // k = 1 snaps (used when there is no frame time, for example the first frame).
@@ -243,7 +221,7 @@ export function creature(name) {
   root.add(body);
   const m = fitted(name);
   body.add(m);
-  addOutlines(m, 0.025);
+  addOutlines(m, 0.006);
   const head = new THREE.Object3D(); body.add(head);
   return { root, body, head, legs: [], glb: true, lid: new THREE.Object3D() };
 }
