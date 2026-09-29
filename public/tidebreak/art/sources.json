@@ -1,50 +1,70 @@
 {
-  "assets": [
+  "game": "Monster Mash",
+  "generated": [
     {
-      "role": "concept",
-      "job_id": "743087e4-467c-4764-9e9d-9725ec212f47",
-      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151831_743087e4-467c-4764-9e9d-9725ec212f47.png",
       "provider": "Higgsfield",
-      "model": "gpt_image_2_5",
+      "purpose": "Design concept",
+      "job_id": "facefe03-74fe-40a3-a67a-c238d7343438",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_160800_facefe03-74fe-40a3-a67a-c238d7343438.png",
       "params": {
-        "prompt": "Use case: ui-mockup. Full portrait mobile gameplay screenshot for original premium MOBA TIDEBREAK. Complete screen, 9:16. Playable production design reference. Isometric painterly ruined reef arena, midnight navy ocean, ivory limestone lanes, bioluminescent turquoise vegetation, coral red enemy architecture. Camera looks down at teal armored reef duelist with crescent glaive at center, tiny soldiers and distant coral towers. Large clean battle area. Code-native UI to be built separately: very compact top HUD translucent navy with TIDEBREAK left, centered score 0 : 0 and 04:00, small pause icon right. Upper left 80px square minimap. Top center short objective text 'Break their heart'. Bottom has left transparent circular movement joystick; right fan of three circular ability controls 'DASH', 'SURGE', 'ULT' plus larger attack control. Center bottom health bar and level 1. Sharp angular gold borders, white narrow sans serif labels, big thumb targets. Main battlefield occupies 80% of display. Polished readable style. No phone mockup, no frame, no marketing hero. Original characters only.",
-        "aspect_ratio": "9:16",
+        "model": "gpt_image_2_5",
         "quality": "low",
-        "resolution": "1k"
-      }
+        "resolution": "1k",
+        "aspect_ratio": "9:16",
+        "folder_id": "cda385ce-0437-4c31-a52d-9a3df67a76cb",
+        "prompt": "Create a polished mobile game UI concept screenshot for MONSTER MASH, an original folklore beast MOBA. Portrait phone screen, no phone frame. Premium eerie illustrated storybook art with chunky readable silhouettes, luminous amber eyes, midnight indigo, moss green, parchment ivory, acid chartreuse accent. Header small 'THE VEIL IS THIN', large condensed serif-like two-line title MONSTER MASH. Center stunning full body Mothman: huge black feathery wings, two burning red eyes, moth-like fuzzy body, creature not humanoid. Behind him rain-slick small town rooftops dissolve into a deep foggy pine forest with a luminous turquoise portal. Bottom native-looking creature selection four compact cards Mothman / Nessie / Baba Yaga / Jersey Devil, then strong lime button 'START THE HUNT', microtext '3v3 • Shifting realms • 6 min'. Main creature name and role 'MOTHMAN / AMBUSH HUNTER'. Precise clear hierarchy, dense useful screen, beautiful atmospheric concept art, no existing franchise IP, no extra logos."
+      },
+      "file": "docs/monster-mash-concept.webp"
     },
     {
-      "role": "atlas",
-      "job_id": "de8fea73-426e-4145-b3cd-a2fb5ccd96cc",
-      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151903_de8fea73-426e-4145-b3cd-a2fb5ccd96cc.png",
-      "provider": "Higgsfield",
-      "model": "gpt_image_2_5",
+      "provider": "fal",
+      "model": "fal-ai/nano-banana-pro",
+      "purpose": "Creatures and scenery sprites",
+      "request_id": "01a0edee-cae3-7c51-9f50-fa9e927a84be",
+      "url": "https://v3b.fal.media/files/b/0aac6380/cHhk3N7Pqxd9_E5yCIIMx_YYanf1fE.png",
       "params": {
-        "prompt": "Production game sprite atlas for original MOBA Tidebreak. EXACT 3 columns by 3 rows, 9 separate objects, strict evenly spaced square cells. Orthographic isometric 3/4 top-down painterly 3D game art, bright silhouettes. Transparent background, NO shadows outside objects. Row1: teal armored reef duelist holding crescent glaive; orange crab-shell guardian holding anchor hammer; violet ivory jellyfish mage. Row2: tiny turquoise shell soldier with spear; red coral soldier with spear; enormous gold and ivory hermit crab with shrine on its shell. Row3: glowing teal branching coral defense tower on circular stone plinth; glowing red coral defense tower on circular stone plinth; living ivory shell heart crystal base radiating turquoise. All objects fully isolated, full bodies, each centered in cell, 18% empty margins per cell. Consistent camera angle, premium painterly detail readable at small size, expressive original designs, no text no grid no labels. Exactly 9 objects in 3x3 cells.",
+        "prompt": "Production sprite atlas for original mobile folklore MOBA MONSTER MASH. Exactly 4 columns x 4 rows, sixteen equally sized square cells in a square 2048px image. Each object isolated centered completely inside its cell with at least 50px of empty margin. SOLID FLAT CHROMA KEY MAGENTA (#ff00ff) background everywhere, no ground plane, no cast shadows, no labels, no grid lines. Consistent beautiful painterly 3D game-render style, chunky readable silhouettes, 3/4 overhead isometric view, midnight blues moss greens and ivory with luminous eyes, high contrast. ROW 1 left to right: 1 Mothman black fuzzy moth beast with enormous spread feathered wings and bright red eyes, 2 Nessie long-necked green aquatic lake dragon with flippers curled tail, 3 Baba Yaga's walking crooked wooden cabin on TWO giant chicken legs with amber windows (NO human), 4 Jersey Devil lean red-brown horse-headed winged cryptid with horns and cloven hooves. ROW 2: 5 tiny teal ghost soldier carrying lantern, 6 tiny coral-red ghost soldier carrying lantern, 7 tall ancient ward stone tower with turquoise rune, 8 large circular stone portal with luminous ivory-green vortex. ROW 3: 9 huge mossy antlered forest boar boss, 10 small glowing amber jack-o-lantern wisp, 11 small floating blue eye spirit, 12 a gnarled stump with green glowing eyes. ROW 4: 13 cluster of gothic urban houses with slate rooftops and amber lit windows, 14 cluster of tall twisted pine trees dark green, 15 old red phone booth and streetlamp, 16 tangled low moss bush with tiny gold fireflies. All sixteen objects individually cuttable, full silhouettes, distinct shapes, no magenta color on objects.",
+        "resolution": "2K",
         "aspect_ratio": "1:1",
-        "quality": "medium",
-        "resolution": "2k",
-        "background": "transparent"
-      }
+        "num_images": 1,
+        "output_format": "png"
+      },
+      "file": "public/tidebreak/art/monsters.webp"
     },
     {
-      "role": "arena",
-      "job_id": "a1702b87-5018-4753-9e90-9811fa43bf72",
-      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151905_a1702b87-5018-4753-9e90-9811fa43bf72.png",
-      "provider": "Higgsfield",
-      "model": "gpt_image_2_5",
+      "provider": "fal",
+      "model": "fal-ai/nano-banana-pro",
+      "purpose": "Town, forest, water and path textures",
+      "request_id": "01a0edf4-6666-7a31-8e79-5169a26fcbc9",
+      "url": "https://v3b.fal.media/files/b/0aac63a5/BtkvzKVF6XjU10Ahiczax_J18AZZuq.png",
       "params": {
-        "prompt": "Production environment game map for original MOBA Tidebreak, single square texture, straight top-down orthographic plan view. A luminous sunken reef city at night. Three broad ivory stone lanes connect a round empty base platform at bottom center to a round empty base platform at top center. Center lane is straight vertical, outer lanes curve left and right through turquoise coral gardens. Clear circular central arena. The whole land is a wide roughly circular island surrounded by midnight navy water at edges. Rich painterly premium strategy game art, teal bioluminescent coral, deep green moss, gold seams, fallen stone arches, small pink anemones. Paths form clean passable networks with room for fighters. High angle almost plan view, no sky or horizon. Flat readable ground without extreme perspective. No heroes, no soldiers, no towers, no UI, no words. Entire map visible. Symmetric competitive arena layout, beautifully textured, artistic cinematic lighting.",
+        "prompt": "Game terrain texture atlas for atmospheric illustrated folklore MOBA. Square image divided EXACTLY into four equal square quadrants, no borders, no text. Orthographic straight down ground texture only, seamless repeatable each quadrant, fully filled ground to every edge. Upper left quadrant: weathered midnight-blue and dark grey wet cobblestone pavement with tiny gold flecks, no buildings or large objects. Upper right quadrant: lush mossy forest floor muted jade green and blue, scattered small fern leaves and roots, no trees, no large objects. Lower left quadrant: moonlit dark teal shallow lake water with fine ripples and hints of underwater stones, no shore. Lower right quadrant: old grey dirt and broken stone trail with amber leaves. Premium hand-painted storybook game art, legible quiet textures, eerie luminous midnight palette, subdued balanced contrast, no baked shadows or light spots, consistent medium texture scale.",
+        "resolution": "2K",
         "aspect_ratio": "1:1",
-        "quality": "medium",
-        "resolution": "2k",
-        "background": "opaque"
-      }
+        "num_images": 1,
+        "output_format": "png"
+      },
+      "file": "public/tidebreak/art/ground.webp"
     }
   ],
-  "processing": "Lossy WebP compression; atlas top-row crops for hero portraits. Generated alpha preserved.",
-  "provider_limits": {
-    "fal": "nano-banana-pro request rejected before submission: balance_exhausted (403). No fal asset used.",
-    "four04": "No callable 404-GEN connector or credential available. No 404 model generated or included."
-  }
+  "processing": "Cropped cells, chroma-key magenta removal, repacked 16 sprites, transparent WebP and four portraits. Ground atlas converted to WebP. Geometry, fog, UI and effects are native code.",
+  "spriteOrder": [
+    "Mothman",
+    "Nessie",
+    "Baba Yaga hut",
+    "Jersey Devil",
+    "allied wisp",
+    "enemy wisp",
+    "wardstone",
+    "rift",
+    "Wild Hunt boar",
+    "lantern spirit",
+    "eye spirit",
+    "hex stump",
+    "town block",
+    "pine grove",
+    "phone booth",
+    "ambush brush"
+  ],
+  "limitations": "2D sprites. No rigged 3D or 404-GEN integration. No 404 connector/credential; fal catalog query returned no 404 endpoint. Higgsfield terrain request rejected before submission for unavailable model, then completed through fal."
 }

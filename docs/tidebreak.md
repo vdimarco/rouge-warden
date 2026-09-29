@@ -1,51 +1,54 @@
-# Tidebreak
+# Monster Mash
 
-An original browser MOBA at `/tidebreak/`. A reef duelist, a shell guardian, and a current weaver fight over a living coral city. One human plays with two allies against three bots. The arcade cabinet and game switcher link to it.
+A mobile folklore MOBA in the Warden arcade. The existing `/tidebreak/` route and draft PR are retained so prior links work. One player joins two bots against three bots. No runtime generation service, new dependency, or account is required to play.
 
-## Play
+## What changed
 
-The left pad moves. Basic attacks fire at nearby enemies; tap a world target or use Attack to change focus. Tap a skill for aim assist, or drag its button and release to choose a direction. Dash uses that direction, and Vela's ultimate lands ahead of her. Other area skills center on the caster.
+The original 1600 × 1600 reef was too cramped and its three characters played too similarly. The new 4800 × 4800 arena has nine times the area, three lanes, side spirit camps, a winding traversable river, and four paired rift gates. First waves and creatures start near the front, so the enlarged world does not add a long opening walk. Movement outside combat is 35% faster, and rift gates cross the map with a ten-second cooldown.
 
-Escort a wave into a spire's range. Spires prioritize soldiers; attacking an enemy hero under their spire draws its fire. Destroy any enemy spire to expose the heart. Destroy the heart to win. At four minutes, the team with more combined structure health wins. Equal health gives a draw. Damage rises during the last minute.
+Every 40 seconds, the town becomes deep woods or returns. Town blocks have broad collision and line-of-sight footprints. Forest groves have smaller footprints, opening flanking passages. Vision shrinks from 950 to 620 world units. Marked brush hides creatures beyond 125 units unless they attack or take damage. A basic attack from concealment deals 75% extra damage to a creature. Attacking reveals the attacker for 2.6 seconds. Both bot targeting and player targeting enforce line of sight. Hidden enemy units are culled from the battlefield and minimap; allied vision is shared. The fog overlay shows the player's local field of vision.
 
-Leviathan appears after 30 seconds. Defeat it to recruit a siege beast in the winning hero's lane. It returns 65 seconds after capture. Every 50 seconds the center current gives the player a brief movement boost. Enemy hero lane assignments vary by match seed.
+| Creature | Movement | Skill | Ultimate at level 3 |
+| --- | --- | --- | --- |
+| Mothman | Flies over obstacles and cloaks | Slowing wing blast | Blackout: cloak, sight through cover, fear |
+| Nessie | Healing dive, slowing wake; river speed bonus | Pulls a forward cone of enemies | Flood: persistent damage, slow and allied healing |
+| Baba Yaga | Play the chicken-legged hut; hop and shield | Places a hidden rooting trap | Three damaging, stunning stomps |
+| Jersey Devil | Leaps over obstacles; stunning landing | Fears nearby enemies | Eight-second attack frenzy with life steal |
 
-Team experience raises hero levels. The ultimate opens at level 3. Pearls buy attack, health, or shorter skill cooldowns; each upgrade stacks three times. Return channels for three seconds and cancels on movement or damage. Home heals you. Death leads to a short respawn.
+## Match and controls
 
-Keyboard: WASD or arrows move, Q dashes, E casts Surge, R casts the ultimate, B returns, and Escape pauses. Portrait and landscape use the same layout rules. A second touch can aim a skill while the first moves. The game pauses when the page loses focus. Audio begins with the first Play tap; the sound preference and match record stay on the device.
+Escort wisp waves into wardstone range. Wardstones prioritize wisps; attacking a creature under its ward draws its fire. Break any enemy wardstone to expose their elder rift, then destroy the rift. Matches end at six minutes if neither rift falls; combined remaining ward and rift health decides the result. Damage rises after four minutes.
 
-## Code and assets
+The central Wild Hunt spawns after 26 seconds. The team that slays it recruits a siege beast in the killer's lane. Side spirit camps award embers, healing and temporary haste. Team kills, camps and waves share experience and embers. Purchase damage, health or cooldown upgrades, each capped at three stacks. Death leads to respawn at the healing rift.
 
-`sim.js` holds fixed-step battle rules. `render.js` draws generated art on Canvas 2D. `main.js` connects native HTML controls and dialogs. `audio.js` synthesizes a quiet theme and attack sounds. No runtime model calls, API keys, new dependencies, or server are required. Serve `public/` with the existing static host.
+- Touch: left movement pad; tap a skill for aim assist, or drag and release to aim. Basic attacks are automatic. Tap an enemy or Attack to change target.
+- Tap the minimap for a large tactical map. Tap a position or a named destination to place a navigation marker.
+- Near a gate, Rift Jump activates the paired gate. Return channels a trip home and cancels on movement or damage.
+- Keyboard: WASD/arrows move; Q/E/R skills; F gate; M map; B return; Esc pause. Skill buttons also support keyboard and assistive activation.
+- Pause, help, upgrades, map, focus loss and the arcade game switcher pause the simulation. Pointer cancellation, resize and dialogs clear held input.
 
-Higgsfield GPT Image 2.5 generated the concept, nine-object sprite atlas, and arena. The atlas contains three heroes, two soldiers, Leviathan, two spires, and a heart. The shipped WebP files preserve alpha. Hero portraits are crops of the same atlas. Source prompts, job IDs, and URLs are in `public/tidebreak/art/sources.json`.
+## Implementation and art
 
-The fal Nano Banana Pro request was rejected before submission because the account had no credits. No 404-GEN connector or credential was available. This version uses generated 2D sprites; it contains no 404 mesh or rig. Online multiplayer, server authority, skeletal animation, and a broader hero roster remain separate work.
+`world.js` owns the same geometry used for movement, collision recovery at realm shifts, LOS, minimaps and scenery. `sim.js` has deterministic browser-independent battle rules. `render.js` composites generated ground textures, scenery and sprites with native canvas tactical effects. `main.js` owns touch, keyboard, dialogs and the fixed-step loop. No artificial network or multiplayer status is displayed.
 
-## Visual spec
+Higgsfield generated the design concept. After the fal account was topped up, Nano Banana Pro through fal generated the four creatures, scenery and terrain. Asset provenance and full prompts are in `art/sources.json`. The original generation placed both wisps in one cell; the build separates those crops and repacks the atlas. Chroma-key cleanup preserves transparent sprites. The shipped game loads about 620 KB for its two main atlases plus approximately 140 KB for portraits.
 
-The [portrait concept](tidebreak-concept.webp) sets the direction: midnight navy, luminous teal, red enemies, ivory paths, and thin gold control borders. Barlow Condensed uses the arcade's existing local font files. The battlefield fills the screen; a compact score sits at the top, the minimap at upper left, the movement pad at lower left, and skill controls at lower right. Health sits between the controls. The hero picker and dialogs continue these colors and fonts.
+404-GEN is not integrated: no callable connector or credential was available, and the fal catalog returned no 404 endpoint. The playable assets are 2D sprites, not rigged 3D models. Online multiplayer, authoritative servers, proper animation rigs and real-device performance tuning remain future work.
 
-Intentional implementation changes from the concept: the arena uses a top-down map with three visible lanes; characters are generated 3/4-view sprites. Skill glyphs, targeting rings, health bars, and effects use code. The primary actions have English labels. The UI adds Return, a pearl shop, a small animated first-play tip, and honest bot-mode text. These controls are required by the match rules. The game has no borrowed characters, names, map art, or logos.
+## Verification
 
-## Checks
+Run `node qa/tidebreak/sim.test.mjs`. It verifies the ninefold map area, open lanes in both realms, collision recovery on a shift, blocked LOS, concealment and reveal, ambush damage, wall-blocked attacks, four distinct kits, portal transit/cooldown, purchase caps, respawn, return interruption, objective rewards, deterministic replay and 12 full bot matches. Those matches completed in 228–360 seconds, produced 26–52 creature kills, and peaked at 49 units.
 
-Run `node qa/tidebreak/sim.test.mjs`. It checks the protected heart, dash cooldown, ultimate lock, purchase cost and cap, respawn, interrupted return, single Leviathan reward, deterministic replay, and 18 full bot matches with finite health/positions and bounded wave counts.
+Browser flow: choose a creature → start → move with one thumb while aiming a skill with the other → release → pause/resume → upgrade panel → map destination → realm shift → full result → replay. Local Chromium loads checked-in files through request routing because Cloud Browser rejected loopback navigation with `ERR_BLOCKED_BY_CLIENT`. The rendered checks cover 390 × 844, 320 × 568, 844 × 390 and 1440 × 900. The public preview is checked separately in Cloud Browser after publishing.
 
-The cloud browser rejected the local address with `ERR_BLOCKED_BY_CLIENT`. Local Chromium QA serves the same checked-in files through Playwright request routing, because the cloud browser and shell server do not share a reachable loopback interface. Browser checks cover hero selection, help, touch and keyboard controls, pause, shop, match completion, replay, and portrait/landscape/desktop layouts. Browser evidence is kept outside the repo.
+## Concept comparison
 
-### Visual review
-
-The concept and final render were inspected together at 752 × 1344 pixels. Additional views: 390 × 844, 320 × 568, 844 × 390, and 1440 × 900. Page identity, asset loading, console health, and the core interaction flow passed.
-
-| Check | Concept and implementation |
+| Reference | Implementation |
 | --- | --- |
-| Layout | Top score, upper-left map, lower-left movement, lower-right skills, and bottom health preserved. |
-| Palette | Navy chrome, teal allies, red enemies, ivory paths, and gold borders preserved. The separate arena asset is brighter than the concept. |
-| Type | Local Barlow Condensed gives consistent labels and readable phone controls. It is narrower and heavier than the concept's generic sans serif. |
-| Art | All characters, buildings, and terrain use generated images. The top-down arena and fixed sprite perspectives are deliberate changes for this first playable build. |
-| Controls | Buttons have English labels. Native SVG glyphs replace the concept's raster ability icons. Cooldowns and the level gate are visible. |
-| Copy | Tidebreak, Break their heart, Dash, Surge, and Ult retained. Attack, Move, Return, Upgrade, and the first-play tip are explicit functional additions. |
-| Small screens | All primary controls fit in portrait and landscape. The first-play tip hides when movement starts, clearing the battlefield. |
+| Ivory two-line serif title and lime start button | Native text and buttons, with the same hierarchy and palette |
+| Eerie Mothman against shifting town/forest | Generated sprite with native world scenery behind the menu |
+| Four creature selection cards | Four interactive cards with generated portraits; selection changes name, role and kit |
+| Full-bleed painted scene | The playable map is assembled from textures and scenery matched to physical obstacles |
+| Tall cinematic creature | Compact sprites stay legible in combat; Baba Yaga is represented by the walking hut |
 
-This review verifies the implemented visual spec and records its differences from the initial concept. It does not claim pixel-identical reproduction of the concept.
+The concept is visual direction, not a screenshot used as the application. All labels, controls, match state and map interactions are native. Local visual review caught and fixed a fourth-card overflow on phones. Geometry checks caught and fixed scenery intersecting the outer lanes.

@@ -1,37 +1,62 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, step, cast, damage, buy } from '../../public/tidebreak/sim.js';
-const advance = (s, seconds, input = {}) => { for (let i = 0; i < seconds * 60; i++) step(s, input); };
+import { createMatch, player, step, cast, damage, buy, portal, HEROES, SIZE, LIMIT } from '../../public/tidebreak/sim.js';
+import { LANES, PORTALS, OBSTACLES, BRUSH, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance } from '../../public/tidebreak/world.js';
+const advance = (s, seconds, input = {}) => { for (let i = 0; i < seconds * 20; i++) step(s, input, .05); };
+const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800 }); Object.assign(foe, { x: 2400, y: 2650 }); return { s, p, foe }; };
+assert.equal((SIZE / 1600) ** 2, 9, 'arena has nine times the original area');
+for (const phase of [0, 1]) for (const lane of LANES) for (let i = 1; i < lane.length; i++) assert.ok(lineOfSight({ phase }, lane[i - 1], lane[i]), 'every lane stays open through realm changes');
 {
   const s = createMatch(), p = player(s), core = s.units.find(e => e.kind === 'core' && e.team === 1);
-  damage(s, p, core, 9999); assert.equal(core.hp, core.maxHp, 'heart stays protected while all spires stand');
-  const t = s.units.find(e => e.kind === 'tower' && e.team === 1); damage(s, p, t, 9999); assert.equal(s.towers[1], 2);
-  damage(s, p, core, 9999); assert.equal(s.winner, 0, 'breaking a spire enables the win condition');
+  damage(s, p, core, 9999); assert.equal(core.hp, core.maxHp);
+  damage(s, p, s.units.find(e => e.kind === 'tower' && e.team === 1), 9999); assert.equal(s.towers[1], 2);
+  damage(s, p, core, 9999); assert.equal(s.winner, 0);
 }
 {
-  const s = createMatch(), p = player(s); assert.equal(cast(s, p, 2), false, 'ultimate locks until level 3');
-  const y = p.y; assert.equal(cast(s, p, 0, { x: 0, y: -1 }), true); assert.ok(p.y < y - 200); assert.equal(cast(s, p, 0), false, 'dash has a real cooldown');
-  assert.equal(buy(s, 'fang'), false); p.gold = 650; const attack = p.damage; assert.equal(buy(s, 'fang'), true); assert.equal(p.gold, 450); assert.equal(p.damage, attack + 24);
-  assert.equal(buy(s, 'fang'), true); assert.equal(buy(s, 'fang'), true); p.gold = 1000; assert.equal(buy(s, 'fang'), false, 'upgrade cap enforced');
-  damage(s, s.units.find(e => e.team === 1 && e.kind === 'hero'), p, 99999); assert.equal(p.hp, 0); advance(s, 8); assert.ok(p.hp > 0, 'death leads to a respawn');
+  const s = createMatch(), a = { x: 1600, y: 1600 }, b = { x: 1600, y: 2100 };
+  assert.equal(lineOfSight(s, a, b), false, 'city blocks obstruct attacks and sight');
+  s.time = 40; assert.equal(shiftWorld(s), true); assert.equal(lineOfSight(s, a, b), true, 'forest opens a route beside the smaller grove');
+  const p = player(s); p.x = 1600; p.y = 1850; s.time = 80; shiftWorld(s); const r = OBSTACLES[0][0]; assert.ok(Math.abs(p.x - r.x) >= r.w / 2 + p.radius || Math.abs(p.y - r.y) >= r.h / 2 + p.radius, 'realm changes eject bodies from new obstacles');
 }
 {
-  const s = createMatch(), p = player(s); p.x = 600; p.y = 950; step(s, { recall: true }); assert.ok(p.recall > 0); step(s, { x: 1 }); assert.equal(p.recall, 0, 'moving cancels return');
-  step(s, { recall: true }); damage(s, s.units.find(e => e.team === 1), p, 1); step(s); assert.equal(p.recall, 0, 'damage cancels return');
+  const { s, p, foe } = duel(); s.phase = 1; s.time = 42; Object.assign(p, BRUSH[0]); p.radius = 22; Object.assign(foe, { x: p.x + 180, y: p.y });
+  assert.equal(canSee(s, foe, p), false); assert.equal(visibleTo(s, 1, p), false, 'enemy team cannot track a hidden creature');
+  p.revealedUntil = s.time + 2; assert.equal(canSee(s, foe, p), true, 'attacking or taking damage reveals cover');
+  p.revealedUntil = -1; p.range = 220; const hp = foe.hp; step(s, {}, .05); assert.ok(hp - foe.hp >= p.damage * 1.75); assert.equal(s.stats.ambushes, 1); assert.equal(canSee(s, foe, p), true, 'ambush reveals the attacker');
 }
 {
-  const s = createMatch(), p = player(s); advance(s, 31); const boss = s.units.find(e => e.kind === 'boss'); assert.ok(boss);
-  damage(s, p, boss, 9999); assert.equal(s.units.filter(e => e.kind === 'leviathan').length, 1); assert.equal(s.objective, null); damage(s, p, boss, 9999); assert.equal(s.units.filter(e => e.kind === 'leviathan').length, 1, 'objective reward cannot duplicate');
+  const { s, p, foe } = duel(); p.x = 1170; p.y = 1850; foe.x = 1690; foe.y = 1850; p.range = 700; const hp = foe.hp; step(s, {}, .05); assert.equal(foe.hp, hp, 'auto attack cannot shoot through a building');
+  assert.equal(cast(s, p, 2), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > 1650, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
+  p.gold = 800; const atk = p.damage; for (let i = 0; i < 3; i++) assert.equal(buy(s, 'fang'), true); assert.equal(p.damage, atk + 84); assert.equal(buy(s, 'fang'), false);
+}
+{
+  const { s, p, foe } = duel(1); p.hp -= 400; const hp = p.hp; cast(s, p, 0, { x: 1, y: 0 }); assert.ok(p.hp > hp); assert.equal(s.zones.length, 1);
+  p.x = 2400; p.y = 2800; foe.x = 2400; foe.y = 2440; cast(s, p, 1, { x: 0, y: -1 }); assert.ok(distance(p, foe) < 110, 'Nessie pulls enemies into bite range');
+}
+{
+  const { s, p, foe } = duel(2); cast(s, p, 1, { x: 0, y: -1 }); assert.equal(s.traps.length, 1); Object.assign(foe, { x: s.traps[0].x, y: s.traps[0].y }); const hp = foe.hp; advance(s, .6); assert.ok(foe.hp < hp); assert.ok(foe.stun > 0, 'Baba Yaga traps root enemies');
+  p.level = 3; cast(s, p, 2); assert.ok(s.zones.some(z => z.type === 'stomp'));
+}
+{
+  const { s, p, foe } = duel(3); cast(s, p, 1); assert.ok(foe.fear > 0); p.level = 3; cast(s, p, 2); assert.ok(p.frenzy > s.time); p.hp -= 400; const hp = p.hp; damage(s, p, foe, 100); assert.equal(p.hp, hp + 30, 'Devil frenzy grants life steal');
+}
+{
+  const { s, p, foe } = duel(); assert.equal(portal(s), false); Object.assign(p, PORTALS[0]); assert.equal(portal(s), true); assert.equal(p.x, PORTALS[3].x); assert.equal(p.y, PORTALS[3].y); assert.equal(portal(s), false); assert.equal(s.stats.portals, 1);
+  step(s, { recall: true }); assert.ok(p.recall > 0); step(s, { x: 1 }); assert.equal(p.recall, 0); step(s, { recall: true }); damage(s, foe, p, 1); step(s); assert.equal(p.recall, 0);
+  damage(s, foe, p, 99999); advance(s, 7); assert.ok(p.hp > 0, 'creatures respawn');
+}
+{
+  const s = createMatch(), p = player(s); advance(s, 27); const boss = s.units.find(e => e.kind === 'boss'); assert.ok(boss); damage(s, p, boss, 99999); assert.equal(s.units.filter(e => e.kind === 'leviathan').length, 1); damage(s, p, boss, 99999); assert.equal(s.units.filter(e => e.kind === 'leviathan').length, 1);
+  const campState = createMatch(), hunter = player(campState); step(campState); const camp = campState.units.find(e => e.kind === 'camp'); damage(campState, hunter, camp, 9999); assert.ok(hunter.huntUntil > campState.time); assert.equal(campState.stats.camps, 1);
 }
 const summaries = [];
-for (let seed = 1; seed <= 6; seed++) for (let hero = 0; hero < 3; hero++) {
-  const s = createMatch(hero, seed); let max = 0;
-  for (let tick = 0; tick < 14410 && s.winner === null; tick++) {
-    step(s, { autopilot: true }); max = Math.max(max, s.units.length);
-    assert.ok(s.units.every(e => Number.isFinite(e.x + e.y + e.hp) && e.hp >= 0 && e.hp <= e.maxHp), 'unit state remains finite and bounded');
+for (let seed = 1; seed <= 3; seed++) for (let kind = 0; kind < HEROES.length; kind++) {
+  const s = createMatch(kind, seed); let max = 0, phases = new Set();
+  for (let tick = 0; tick < (LIMIT + 1) * 20 && s.winner === null; tick++) {
+    step(s, { autopilot: true }, .05); max = Math.max(max, s.units.length); phases.add(s.phase);
+    assert.ok(s.units.every(e => Number.isFinite(e.x + e.y + e.hp) && e.hp >= 0 && e.hp <= e.maxHp && e.x >= 180 && e.x <= SIZE - 180));
   }
-  assert.notEqual(s.winner, null, 'every match ends'); assert.ok(max < 130, 'wave population stays bounded');
-  summaries.push({ seed, hero, winner: s.winner, seconds: Math.round(s.time), maxUnits: max });
+  assert.notEqual(s.winner, null); assert.equal(phases.size, 2); assert.ok(max < 150); assert.ok(s.score[0] + s.score[1] > 4, 'matches produce creature fights'); assert.ok(s.towers.some(t => t < 3), 'waves reach and damage the wards');
+  summaries.push({ seed, creature: HEROES[kind].name, winner: s.winner, seconds: Math.round(s.time), kills: s.score.reduce((a,b)=>a+b,0), maxUnits: max });
 }
-const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 40, { autopilot: true }); advance(b, 40, { autopilot: true }); assert.deepEqual(a.units, b.units, 'same seed and inputs replay exactly');
-console.log('PASS: core gate, skill cooldowns, upgrades, respawn, return interruption, leviathan reward, deterministic replay, and 18 full matches.');
-console.table(summaries);
+const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 85, { autopilot: true }); advance(b, 85, { autopilot: true }); assert.deepEqual(a.units, b.units);
+console.log('PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, all four kits, upgrades, portals, respawn, interrupted return, objectives, deterministic replay and 12 complete matches.');console.table(summaries);
