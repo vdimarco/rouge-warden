@@ -12,3 +12,16 @@ h1{font-weight:800;letter-spacing:-3px}h1 span{color:#d8f3ef}.eyebrow{color:#ffb
 #hint{color:#eef7fa;text-shadow:0 2px 6px #000}
 #callout{top:23%;font-size:14px;text-shadow:0 2px 8px #000}
 @media(max-height:520px){#hud{top:54px}#callout{top:25%;text-align:left;padding-left:22px}}
+
+/* Open district: layered WebGL world, combat canvas and touch controls. */
+#district{z-index:0}#world{z-index:1}header,#hud,#callout{z-index:5}#overlay{z-index:12}#controls{z-index:8}
+#explore{position:fixed;inset:0;z-index:3;pointer-events:none}
+#walkStick{position:absolute;left:22px;bottom:165px;width:104px;height:104px;border:1px solid #e0f5d84d;border-radius:50%;background:#1e444633;pointer-events:auto;touch-action:none;display:grid;place-items:center}
+#stickNub{display:block;width:46px;height:46px;border-radius:50%;background:#e1efcb99;border:1px solid #f4f4d599;box-shadow:0 4px 15px #24454266}
+#walkStick small{position:absolute;bottom:-20px;color:#f1efce;font-size:10px;letter-spacing:2px;text-shadow:0 1px 5px #000}
+#lookPad{position:absolute;right:0;top:145px;bottom:165px;width:27%;pointer-events:auto;touch-action:none;background:transparent}
+#lookPad span{position:absolute;bottom:12px;right:12px;color:#f0efd9aa;font-size:9px;letter-spacing:1px;writing-mode:vertical-rl}
+#districtStatus{position:absolute;left:20px;top:123px;font:11px system-ui;color:#f1f5de;text-shadow:0 1px 5px #193a38;margin:0}
+#panel{background:linear-gradient(135deg,#203f40ee,#385450d9);border-color:#c8dcc182;box-shadow:0 20px 80px #243d3b66}
+h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#233c38}header{background:linear-gradient(#183b3f99,transparent)}
+@media(max-height:520px){#walkStick{bottom:30px;left:20px;width:86px;height:86px}#lookPad{top:110px;bottom:150px;width:30%}#districtStatus{top:108px;max-width:240px;font-size:10px}#hud{gap:16px}#panel .fine{display:none}}

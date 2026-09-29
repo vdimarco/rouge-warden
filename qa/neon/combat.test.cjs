@@ -6,8 +6,8 @@ function boot(){
  const elements=new Map(),events={};
  const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',onclick:null,addEventListener(){},setPointerCapture(){},getContext:()=>ctx});return elements.get(id)};
- const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console,Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
- s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8'),s);
+ const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
+ s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8').replace("import { District } from './district.js';","class District {constructor(){throw Error('No WebGL in unit test')}}"),s);
  return {run:code=>vm.runInContext(code,s),events,elements};
 }
 test('direction, cooldown, parry, chip damage and pause',()=>{
