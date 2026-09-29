@@ -4,8 +4,8 @@ import * as THREE from '../crimson/lib/three.module.min.js';
 // only the opponent, camera and a few lanterns animate each frame.
 export class District {
   constructor() {
-    this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));
+    this.renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'high-performance'});
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
     this.renderer.setSize(innerWidth,innerHeight);
     this.renderer.domElement.id='district';
     document.body.prepend(this.renderer.domElement);
@@ -16,7 +16,37 @@ export class District {
     const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);
     this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;
     this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
-    this.build();this.makeEnemy();this.wire();this.resize();
+    this.build();this.batchScenery();this.makeEnemy();this.makePortal();this.style="ghibli";this.wire();this.resize();
+  }
+  // Merge static geometry by material once. Moving actors and pickups stay separate.
+  batchScenery(){
+    const dynamic=new Set([...this.orbs.map(o=>o.mesh),...this.lamps]),groups=new Map();
+    const meshes=this.scene.children.filter(m=>m.isMesh&&!dynamic.has(m));
+    for(const m of meshes){m.updateMatrix();const g=(m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone()).applyMatrix4(m.matrix);const list=groups.get(m.material)||[];list.push(g);groups.set(m.material,list);this.scene.remove(m);m.geometry.dispose()}
+    this.staticBatches=[];const edgeArrays=[];
+    for(const [material,geometries] of groups){const merged=new THREE.BufferGeometry();
+      for(const name of ['position','normal','uv']){const arrays=geometries.map(g=>g.getAttribute(name));if(arrays.some(a=>!a))continue;const data=new Float32Array(arrays.reduce((n,a)=>n+a.array.length,0));let offset=0;for(const a of arrays){data.set(a.array,offset);offset+=a.array.length}merged.setAttribute(name,new THREE.BufferAttribute(data,arrays[0].itemSize))}
+      merged.computeBoundingSphere();const mesh=new THREE.Mesh(merged,material);this.scene.add(mesh);this.staticBatches.push(mesh);
+      const edges=new THREE.EdgesGeometry(merged,35);edgeArrays.push(new Float32Array(edges.attributes.position.array));edges.dispose();geometries.forEach(g=>g.dispose());
+    }
+    const data=new Float32Array(edgeArrays.reduce((n,a)=>n+a.length,0));let offset=0;for(const a of edgeArrays){data.set(a,offset);offset+=a.length}
+    this.ink=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(data,3)),new THREE.LineBasicMaterial({color:'#172127'}));this.ink.visible=false;this.scene.add(this.ink);
+    this.batchStats={before:meshes.length,after:this.staticBatches.length};
+  }
+  makePortal(){
+    this.portal=new THREE.Group();this.portal.position.set(6,2,-18);this.scene.add(this.portal);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.15,8,40),new THREE.MeshBasicMaterial({color:'#b6ff3b'}));this.portal.add(ring);
+    const disc=new THREE.Mesh(new THREE.CircleGeometry(1.45,40),new THREE.MeshBasicMaterial({color:'#438e30',side:THREE.DoubleSide}));this.portal.add(disc);
+    const spiral=[];for(let i=0;i<130;i++){const t=i/129,a=t*Math.PI*8,r=t*1.4;spiral.push(Math.cos(a)*r,Math.sin(a)*r,.02)}
+    this.portalSwirl=new THREE.Line(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(spiral,3)),new THREE.LineBasicMaterial({color:'#d6ff77'}));this.portal.add(this.portalSwirl);this.portal.visible=false;
+    this.alienEyes=new THREE.Group();this.actor.add(this.alienEyes);
+    for(const x of [-.16,.16]){this.ball(x,1.77,.29,.13,'#fffbd4',this.alienEyes);this.ball(x,1.77,.40,.045,'#172127',this.alienEyes)}this.alienEyes.visible=false;
+  }
+  setStyle(style){
+    this.style=style==='rick-morty'?'rick-morty':'ghibli';const cartoon=this.style==='rick-morty';
+    const palette=['#acb9df','#d1a9c8','#99d6b0','#e8c979','#829bc1','#b0ce72'];let i=0;
+    for(const material of Object.values(this.materials)){material.userData.original??=material.color.getHex();material.color.setHex(material.userData.original);if(cartoon){if(material.isMeshBasicMaterial)material.color.set('#b6ff3b');else material.color.set(palette[i++%palette.length])}}
+    this.scene.background.set(cartoon?'#938bc0':'#a5c6cc');this.scene.fog.color.copy(this.scene.background);this.ink.visible=cartoon;this.portal.visible=cartoon;this.alienEyes.visible=cartoon;
   }
   mat(color,glow=false){const key=color+glow;if(!this.materials[key])this.materials[key]=glow?new THREE.MeshBasicMaterial({color}):new THREE.MeshToonMaterial({color});return this.materials[key]}
   box(x,y,z,w,h,d,color,parent=this.scene){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),this.mat(color));m.position.set(x,y,z);parent.add(m);return m}
@@ -116,14 +146,16 @@ export class District {
     addEventListener('keyup',e=>this.keys.delete(e.code));addEventListener('blur',()=>this.clearInput());
   }
   update(dt,active,enemy){
-    if(this.active&&!active)this.clearInput();this.active=active;this.clock+=dt;
+    if(this.active&&!active)this.clearInput();this.active=active;this.clock+=dt;if(!active)this.moveAmount=0;
     if(active){
       let x=this.move.x+(this.keys.has('KeyD')?1:0)-(this.keys.has('KeyA')?1:0),y=this.move.y+(this.keys.has('KeyS')?1:0)-(this.keys.has('KeyW')?1:0);
       const n=Math.max(1,Math.hypot(x,y));x/=n;y/=n;
-      const speed=dt*3.8,dx=(Math.cos(this.yaw)*x+Math.sin(this.yaw)*y)*speed,dz=(-Math.sin(this.yaw)*x+Math.cos(this.yaw)*y)*speed;
+      const speed=dt*10.5,dx=(Math.cos(this.yaw)*x+Math.sin(this.yaw)*y)*speed,dz=(-Math.sin(this.yaw)*x+Math.cos(this.yaw)*y)*speed;
       const blocked=(x,z)=>this.collides(x,z)||(this.actor.visible&&Math.hypot(x-this.actor.position.x,z-this.actor.position.z)<.85);
-      if(!blocked(this.position.x+dx,this.position.z))this.position.x+=dx;
-      if(!blocked(this.position.x,this.position.z+dz))this.position.z+=dz;
+      // Substeps prevent fast movement from crossing thin walls.
+      const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.15));
+      for(let i=0;i<steps;i++){if(!blocked(this.position.x+dx/steps,this.position.z))this.position.x+=dx/steps;if(!blocked(this.position.x,this.position.z+dz/steps))this.position.z+=dz/steps}
+      this.moveAmount=Math.hypot(x,y);
       if(enemy&&this.actor.visible){
         const to=this.position.clone().sub(this.actor.position);to.y=0;const dist=to.length();
         if(dist>2.4&&dist<18){to.normalize().multiplyScalar(dt*(enemy.boss?1.1:1.35));const p=this.actor.position;
@@ -138,6 +170,7 @@ export class District {
       for(const o of this.orbs){if(!o.available){o.timer-=dt;if(o.timer<=0){o.available=true;o.mesh.visible=true}}else if(Math.hypot(this.position.x-o.x,this.position.z-o.z)<1){o.available=false;o.timer=30;o.mesh.visible=false;this.collected++;this.onPickup?.()}}
     }
     for(const o of this.orbs){o.mesh.position.y=1.1+Math.sin(this.clock*2+o.x)*.12;o.mesh.rotation.y=this.clock}
+    if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;
     this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');
     this.renderer.render(this.scene,this.camera);
   }

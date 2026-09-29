@@ -1,0 +1,12 @@
+{
+  "provider": "fal.ai",
+  "endpoint": "minimax/h3-max/reference-to-video",
+  "request_id": "01a0edfc-89ed-7e90-8055-e79a6441312b",
+  "seed": 725284105,
+  "source": "https://v3b.fal.media/files/b/0aac63da/lOOA-S2KRVCZQRyPi53Xd_minimax-h3.mp4",
+  "direction": "Spider-Verse-inspired comic animation: cel shading, halftones, cyan/magenta print edges, stepped poses; Gabe's black cap and lime tracksuit preserved.",
+  "reference_images": [
+    "public/crimson/art/gabe.webp"
+  ],
+  "encoding": "H.264, 1280px wide, yuv420p, AAC, faststart"
+}
