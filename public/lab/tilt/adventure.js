@@ -1,0 +1,226 @@
+// Celestial expedition: large chambers use the same steel-ball/flipper solver as Full Tilt.
+// Positions are world coordinates with y up. This module has no browser dependencies.
+import { makeWorld, step, serve, setFlip, H } from './physics.js';
+import { BALL_R } from './table.js';
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const NAMES = ['Lunar Harbor', 'Amber Belt', 'Jade Observatory', 'Violet Reach', 'Solar Forge', 'The Star Engine'];
+const COLORS = ['#70dddf', '#edb66c', '#8ee0ae', '#b8a3f4', '#ff9672', '#f0df9e'];
+const FIELDS = ['pull', 'pull', 'tide', 'repel', 'pull', 'pull'];
+const DESCRIPTIONS = ['A gentle moon bends your shots.', 'Dense asteroids build long chains.', 'A shifting tide changes your aim.', 'A dark planet pushes the ball away.', 'Strong gravity rewards a clean orbit.', 'Charge each core twice to restart the sun.'];
+const RELAYS = [
+  [[-335, 590], [330, 725], [-50, 970]], [[-375, 655], [260, 785], [-165, 990]],
+  [[-330, 750], [340, 575], [155, 990]], [[-350, 540], [360, 805], [-105, 1010]],
+  [[-360, 810], [340, 620], [165, 1000]], [[-340, 610], [340, 720], [-80, 995]],
+];
+const ROUTE = [[0, 0], [1, 0], [2, 0], [2, 1], [1, 1], [0, 1]];
+const UPGRADES = [
+  { id: 'pulse', name: 'Quick pulse', description: 'Your gravity pulse recharges 20% faster.' },
+  { id: 'shield', name: 'Hull repair', description: 'Restore one life and extend the launch shield.' },
+  { id: 'comet', name: 'Comet drive', description: 'Stronger pulses and 20% more points from relays.' },
+];
+const segment = (a, b, extra = {}) => ({ a, b, e: 0.48, ...extra });
+const emit = (run, type, extra = {}) => (run._updating ? run.events : run._pendingEvents).push({ type, x: run.world.ball.x, y: run.world.ball.y, ...extra });
+export const currentSector = (run) => run.sectors[run.sectorIndex];
+export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
+
+export function createAdventure(seed = 1) {
+  let n = (Number(seed) || 1) >>> 0;
+  const random = () => { n = (Math.imul(1664525, n) + 1013904223) >>> 0; return n / 4294967296; };
+  const table = { W: 3600, H: 2800, walls: [], posts: [], bumpers: [], drops: [], lanes: [], flippers: [],
+    outline: [[20, 20], [3580, 20], [3580, 2780], [20, 2780]], launch: { x: 600, y: 350 }, drainY: 0 };
+  const sectors = ROUTE.map(([col, row], id) => {
+    const x = 600 + col * 1200, y = 130 + row * 1320;
+    const sector = { id, name: NAMES[id], x, y, w: 1100, h: 1150, color: COLORS[id], descriptor: DESCRIPTIONS[id],
+      planet: { x: x + (id % 2 ? -55 : 55), y: y + 665, r: 90 + id * 4, mass: 23500000 + id * 900000,
+        kind: FIELDS[id], strength: id === 4 ? 1.35 : id === 3 ? -0.85 : 1 },
+      relays: [], gate: { x, y: y + 1060, r: 82, open: false },
+      station: { x, y: y + 225 }, visited: id === 0, cleared: false };
+    // An outer capsule contains shots. A broad bowl brings the whole chamber into the flippers.
+    const pts = [[x - 535, y + 45], [x - 535, y + 940], [x - 485, y + 1080],
+      [x - 350, y + 1140], [x + 350, y + 1140], [x + 485, y + 1080],
+      [x + 535, y + 940], [x + 535, y + 45], [x - 535, y + 45]];
+    for (let i = 1; i < pts.length; i++) table.walls.push(segment(pts[i - 1], pts[i], { sector: id }));
+    for (const side of [-1, 1]) {
+      const guide = [[x + side * 535, y + 470], [x + side * 420, y + 300], [x + side * 116, y + 171]];
+      for (let i = 1; i < guide.length; i++) table.walls.push(segment(guide[i - 1], guide[i], { sector: id, bowl: true, e: 0.25 }));
+      table.flippers.push({ sector: id, side, px: x + side * 122, py: y + 160, len: 100, r1: 12, r2: 6,
+        rest: side < 0 ? -Math.PI / 6 : Math.PI + Math.PI / 6,
+        up: side < 0 ? 28 * Math.PI / 180 : Math.PI - 28 * Math.PI / 180 });
+    }
+    table.posts.push({ ...sector.planet, planet: true, sector: id, e: 0.78 });
+    RELAYS[id].forEach(([rx, ry], index) => {
+      const relay = { id: id * 10 + index, sector: id, x: x + rx, y: y + ry, r: 42, kick: 1100,
+        relay: true, hit: false, hits: 0, required: id === 5 ? 2 : 1 };
+      sector.relays.push(relay); table.bumpers.push(relay);
+    });
+    // Broad gaps make each route accessible to an ordinary aimed flipper shot.
+    const rocks = [[3, -365, 920], [4, 360, 445], [5, -195, 425]];
+    if (id === 1) rocks.push([6, 365, 1000], [7, 170, 470]);
+    if (id === 3) rocks[2] = [5, -335, 720];
+    if (id === 4) rocks[0] = [3, -210, 1010];
+    for (const [index, ax, ay] of rocks) {
+      table.bumpers.push({ id: id * 10 + index, sector: id, x: x + ax + (random() - 0.5) * 34,
+        y: y + ay + (random() - 0.5) * 28, r: 25 + random() * 9, kick: 730, asteroid: true });
+    }
+    return sector;
+  });
+  const run = { seed, table, sectors, sectorIndex: 0, phase: 'ready', lives: 3, score: 0, cycle: 1,
+    clock: 0, saveUntil: 0, saved: false, pulseCooldown: 0, upgrades: [], events: [], flight: null,
+    combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
+    _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false };
+  // Softened inverse-square gravity is strongest near each planet. The bowl keeps predictable downward gravity.
+  table.gravity = (ball) => {
+    const s = currentSector(run), p = s.planet;
+    let ax = 0, ay = -800;
+    if (ball.y > s.y + 395) {
+      const dx = p.x - ball.x, dy = p.y - ball.y, d = Math.hypot(dx, dy);
+      const force = Math.min(560, p.mass / (d * d + 155 * 155)) * p.strength;
+      const blend = clamp((ball.y - s.y - 395) / 140, 0, 1);
+      if (d > 1) { ax += dx / d * force * blend; ay += dy / d * force * blend; }
+      if (p.kind === 'tide') ax += Math.sin(run.clock * 0.85) * 160 * blend;
+    }
+    return { x: ax, y: ay };
+  };
+  table.isDrain = b => b.y < currentSector(run).y + 100;
+  table.leaveLane = () => true;
+  run.world = makeWorld(table);
+  checkpoint(run);
+  return run;
+}
+
+function checkpoint(run) {
+  const sector = currentSector(run);
+  run.table.launch = { ...sector.station };
+  serve(run.world);
+  for (const f of run.world.flippers) { f.held = false; f.th = f.rest; f.om = 0; f.sd = 0; }
+  run.phase = 'ready'; run._still = 0; run._lastX = sector.station.x; run._lastY = sector.station.y;
+}
+
+export function launchAdventure(run, power = 0.75) {
+  if (run.phase !== 'ready') return false;
+  const b = run.world.ball, s = currentSector(run);
+  b.live = true; b.lane = false;
+  b.vx = (run.seed % 2 ? -1 : 1) * (175 + run.sectorIndex * 15);
+  b.vy = 2400 + clamp(power, 0.35, 1) * 1400;
+  run.phase = 'play'; run.saveUntil = run.clock + 10 + run._shieldLevel * 3;
+  run._still = 0;
+  emit(run, 'launch', { sector: s.id });
+  return true;
+}
+
+export function pulseAdventure(run, dx = 0) {
+  if (run.phase !== 'play' || run.pulseCooldown > 0) return false;
+  const b = run.world.ball, s = currentSector(run), boost = 1 + run._cometLevel * 0.14;
+  // A centred pulse bends the shot toward the closest unlit relay. A swipe chooses a lateral direction.
+  const targets = s.relays.filter(r => !r.hit);
+  const target = (targets.length ? targets : [s.gate]).reduce((a, t) =>
+    Math.hypot(t.x - b.x, t.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? t : a);
+  const vx = dx ? clamp(dx, -1, 1) * 950 : clamp((target.x - b.x) * 1.5, -850, 850);
+  b.vx = b.vx * 0.30 + vx * boost;
+  b.vy = Math.max(1050, b.vy * 0.3 + 1100 * boost);
+  run.pulseCooldown = Math.max(0.9, 2.5 * 0.8 ** run._pulseLevel);
+  emit(run, 'pulse');
+  return true;
+}
+
+export function chooseUpgrade(run, id) {
+  if (run.phase !== 'upgrade' || !UPGRADES.some(u => u.id === id)) return false;
+  run.upgrades.push(id);
+  if (id === 'pulse') run._pulseLevel++;
+  if (id === 'comet') run._cometLevel++;
+  if (id === 'shield') { run.lives = Math.min(5, run.lives + 1); run._shieldLevel++; }
+  const from = currentSector(run), to = run.sectors[run.sectorIndex + 1];
+  if (!to) return false;
+  const b = run.world.ball;
+  run.flight = { from: { x: b.x, y: b.y }, to: { ...to.station }, fromSector: from.id, toSector: to.id,
+    progress: 0, duration: 2.15 };
+  run.phase = 'flight';
+  setFlip(run.world, -1, false); setFlip(run.world, 1, false);
+  emit(run, 'depart');
+  return true;
+}
+
+function drain(run) {
+  run.drainCount++;
+  if (run.clock < run.saveUntil && !run.saved) {
+    run.saved = true; checkpoint(run); emit(run, 'save'); return;
+  }
+  run.lives--; run.saved = false; run.combo = 0;
+  if (run.lives <= 0) { run.phase = 'over'; emit(run, 'over'); return; }
+  checkpoint(run); emit(run, 'drain');
+}
+
+function tick(run) {
+  run.clock += H;
+  run.pulseCooldown = Math.max(0, run.pulseCooldown - H);
+  if (run.phase === 'flight') {
+    const f = run.flight, b = run.world.ball;
+    f.progress = Math.min(1, f.progress + H / f.duration);
+    const t = f.progress, smooth = t * t * (3 - 2 * t);
+    b.x = f.from.x + (f.to.x - f.from.x) * smooth;
+    b.y = f.from.y + (f.to.y - f.from.y) * smooth + Math.sin(t * Math.PI) * 170;
+    b.vx = 0; b.vy = 0;
+    if (t >= 1) {
+      run.sectorIndex = f.toSector; currentSector(run).visited = true;
+      run.flight = null; run.saved = false; run.pulseCooldown = 0; checkpoint(run); emit(run, 'arrive');
+    }
+    return;
+  }
+  if (run.phase !== 'play') return;
+  const collisions = [];
+  step(run.world, collisions);
+  const sector = currentSector(run), b = run.world.ball;
+  for (const e of collisions) {
+    if (e.k === 'drain') { drain(run); return; }
+    if (e.k === 'bumper') {
+      const relay = sector.relays.find(r => r.id === e.id);
+      run.combo = run.clock - run.lastHit < 2.4 ? Math.min(8, run.combo + 1) : 1;
+      run.lastHit = run.clock;
+      run.score += 50 * run.combo;
+      if (relay && !relay.hit) {
+        relay.hits++; relay.hit = relay.hits >= relay.required;
+        if (relay.hit) run.relaysHit++;
+        run.score += Math.round((relay.hit ? 1000 : 450) * (1 + 0.2 * run._cometLevel));
+        emit(run, 'relay', { id: e.id, x: relay.x, y: relay.y, complete: relay.hit, hits: relay.hits, required: relay.required });
+        if (sector.relays.every(r => r.hit)) {
+          sector.gate.open = true; run.score += 1500; emit(run, 'gate', { x: sector.gate.x, y: sector.gate.y });
+        }
+      } else emit(run, 'bumper', { id: e.id });
+    } else if (e.k === 'flipper') emit(run, 'flipper', { side: e.side });
+  }
+  if (sector.gate.open && Math.hypot(b.x - sector.gate.x, b.y - sector.gate.y) < sector.gate.r) {
+    sector.cleared = true; run.score += 3000; b.vx = 0; b.vy = 0;
+    run.phase = run.sectorIndex === run.sectors.length - 1 ? 'won' : 'upgrade';
+    emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id });
+    return;
+  }
+  // A trapped ball is returned to the current dock. Deliberate flipper cradles are exempt.
+  const cradled = run.world.flippers.some(f => f.sector === sector.id && f.held && Math.hypot(b.x - f.px, b.y - f.py) < 130);
+  if (Math.hypot(b.x - run._lastX, b.y - run._lastY) > 24) {
+    run._lastX = b.x; run._lastY = b.y; run._still = 0;
+  } else if (!cradled) run._still += H;
+  if (run._still > 8) { run.recalls++; checkpoint(run); emit(run, 'recall'); }
+}
+
+export function updateAdventure(run, dt = H) {
+  run.events.length = 0;
+  run.events.push(...run._pendingEvents.splice(0));
+  run._updating = true;
+  run._acc += Math.min(0.1, Math.max(0, dt));
+  while (run._acc + 1e-10 >= H) { tick(run); run._acc -= H; }
+  run._updating = false;
+  return run.events;
+}
+
+export function objective(run) {
+  if (run.phase === 'won') return 'Star Engine restored. All six sectors are open.';
+  if (run.phase === 'over') return 'Expedition ended. Start a new journey.';
+  if (run.phase === 'upgrade') return 'Choose a relic for the next sector.';
+  if (run.phase === 'flight') return `Travelling to ${run.sectors[run.flight.toSector].name}`;
+  const s = currentSector(run), count = s.relays.filter(r => r.hit).length;
+  if (run.phase === 'ready') return 'Hold LAUNCH, then release to leave the dock.';
+  return s.gate.open ? 'Enter the bright gate above the planet.' : s.id === 5
+    ? `Charge each core twice · ${s.relays.reduce((sum, r) => sum + r.hits, 0)}/6`
+    : `Light the three relays · ${count}/3`;
+}

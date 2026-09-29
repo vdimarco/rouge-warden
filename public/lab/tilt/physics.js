@@ -80,6 +80,7 @@ function collideStatic(w, ev) {
   for (const it of w.grid[cy * w.cols + cx]) {
     if (it.kind === "seg") {
       const s = it.s;
+      if (s.enabled === false) continue;
       if (s.drop && !s.drop.up) continue;
       const ax = s.a[0], ay = s.a[1], dx = s.b[0] - ax, dy = s.b[1] - ay;
       let u = ((b.x - ax) * dx + (b.y - ay) * dy) / s.len2;
@@ -160,7 +161,10 @@ export function step(w, ev = null) {
   for (let i = 0; i < n; i++) {
     moveFlippers(w, hs);
     const px = b.x, py = b.y;
-    b.vy -= F.G * hs;
+    if (w.table.gravity) {
+      const a = w.table.gravity(b, w);
+      b.vx += a.x * hs; b.vy += a.y * hs;
+    } else b.vy -= F.G * hs;
     b.x += b.vx * hs; b.y += b.vy * hs;
     collideStatic(w, ev);
     collideFlippers(w, ev);
@@ -172,13 +176,13 @@ export function step(w, ev = null) {
   const s = Math.hypot(b.vx, b.vy);
   if (s > F.V_MAX) { b.vx *= F.V_MAX / s; b.vy *= F.V_MAX / s; }
   // out of the shooter lane and into play
-  if (b.lane && b.x < 455 && b.y > 700) b.lane = false;
+  if (b.lane && (w.table.leaveLane ? w.table.leaveLane(b) : b.x < 455 && b.y > 700)) b.lane = false;
   // the top lanes
   for (const L of w.table.lanes) {
     if (Math.abs(b.x - L.x) < 16 && Math.abs(b.y - L.y) < 22) { if (w.laneHit !== L.id) { w.laneHit = L.id; if (ev) ev.push({ k: "lane", id: L.id }); } }
   }
   if (w.laneHit >= 0 && Math.abs(b.y - w.table.lanes[w.laneHit].y) > 40) w.laneHit = -1;
-  if (b.live && b.y < w.table.drainY && b.x < 455) { b.live = false; if (ev) ev.push({ k: "drain" }); }
+  if (b.live && (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY && b.x < 455)) { b.live = false; if (ev) ev.push({ k: "drain" }); }
 }
 
 export function setFlip(w, side, held) { for (const f of w.flippers) if (f.side === side) f.held = !!held; }
