@@ -16,21 +16,21 @@ Use small wrist movements with a firm grip. The game pauses and returns to touch
 
 Choose Play with touch, or switch from gyro in the settings. Swipe along the enemy's bright line. Hold Guard just before impact for a parry. Early touch guards reduce damage. Arrows cut; Space guards; E uses overdrive; Escape pauses.
 
-## Progress and verification
+## Open 3D district
+
+The default WebGL scene is a walkable district with connected lanes, a market, a canal and bridges. Warm windows, rooftop plants, lanterns and cel-shaded buildings give the neon setting a softer illustrated look. It reuses the repository's standalone Three.js vendor module.
+
+Drag the left stick to walk and the right edge to look around. WASD also moves. Gyro continues to control the sword independently of the camera. Buildings stop movement. Sentinels approach in world space; combat requires proximity and facing the opponent. Spirit lights restore health and charge, then respawn after 30 seconds. The district has outer boundaries and is not an infinite world. Enemies use direct pursuit with collision sliding, so scenery can obstruct them.
+
+If WebGL initialization fails, the game identifies its fixed-view fallback and uses the existing photographic street, duelist and grip assets. These generated WebP assets are retained for compatibility.
 
 District clears offer random circuits. Health and speed rise with districts; every fifth district has enforcers. Best score saves locally at the end of a run. Audio starts on the play gesture and can be muted.
 
-Run `node --test qa/neon/combat.test.cjs` from the repository root. Six tests cover combat, pose-based blocking, blade sweeps, gyro rearming, automatic overdrive, stale sensors, permission denial, calibration, compass wrap, landscape calibration and touch fallback.
+## Verification
 
-Browser execution remains blocked by the build environment (`socket() failed: Operation not permitted`). Tests use simulated orientation events and a mock canvas. Physical-device feel, motion permissions on iOS/Android, visual layout and balance still require playtesting.
+Run `node --test qa/neon/combat.test.cjs qa/neon/district.test.mjs` from the repository root. Eight combat tests exercise simulated sensor events and mock canvas rendering. The district test uses real Three.js scene and vector math with a mocked GPU renderer, covering movement, building collision, combat range/facing, pause input reset, collectible debounce and viewport resizing.
 
-## Photorealistic scene
-
-`art/street.webp`, `art/duelist.webp` and `art/grip.webp` are generated image assets committed with the game. Canvas composites them with rain, enemy approach/recoil, a reflective steel blade and live gyro control. This is a layered 2D presentation rather than a 3D environment. Procedural art remains available while images load or if a file fails. Assets use WebP; character and grip preserve alpha.
-
-Generated with the built-in image tool. Prompt set: a human-eye-level rain-lit cyberpunk alley with clear foreground; a full-body graphite-armoured duelist with cyan/magenta rim lighting on transparency; a first-person gloved right hand holding a vertical katana hilt on transparency. No UI or logos in the assets.
-
-Seven Node tests pass, including loaded and failed image render paths with mock canvas at portrait and landscape sizes. Browser/physical-device visual QA remains unverified because local browser execution is blocked by socket permissions.
+Browser execution is blocked by the build environment (`socket() failed: Operation not permitted`). Actual GPU rendering, mobile layout, performance and physical-device gyro feel still need playtesting.
 
 ## Handle-pivot sword mapping
 
