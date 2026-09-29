@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, or Reel It In. Free in your browser.">
+<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, Reel It In, or In Full Swing, a VR game for Meta Quest. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Drop a token into Get Plunger'd, Down the Drain, or Crimson Rouge. Free in your browser.">
+<meta property="og:description" content="Drop a token into six machines, from Get Plunger'd to In Full Swing, a VR game for Meta Quest. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -86,6 +86,9 @@ button { font: inherit; color: inherit; }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
 .cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
+.cab.vr { --c1: #4a1f5c; --c2: #ff8a3a; --glow: rgba(255, 138, 58, 0.5); }
+/* the VR machine wears a headset badge on its screen */
+.screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
 /* the cabinet's body: two side panels and the front */
 .cab::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: calc(var(--h) * 0.012);
@@ -260,6 +263,17 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab vr" data-game="vr" data-url="/vr/" aria-label="In Full Swing: a VR game for Meta Quest">
+        <div class="marquee"><div><b>IN FULL SWING</b><small>META QUEST VR</small></div></div>
+        <div class="bezel"><div class="screen">
+          <canvas id="swing" width="240" height="198"></canvas>
+          <span class="vrtag">VR</span>
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
     </div>
@@ -632,6 +646,56 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
       : open > 1 && big ? "PLACES " + open + "/4 · " + big
       : fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest) : big || "HI-SCORE: NONE YET";
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
+  }
+}
+// In Full Swing: a skyline at sunset, the Needle, and a friend swinging on a plunger rope
+{
+  const vc = $(".cab.vr"), cv = $("#swing");
+  if (vc && cv) {
+    const sv = store.get("plungerd.vr.v1", null), n = sv && Array.isArray(sv.clogs) ? sv.clogs.length : 0;
+    $(".hi", vc).textContent = sv && sv.king ? "THE KING IS FLUSHED" : n ? "CLOGS " + n + "/12" : "PUT ON YOUR HEADSET";
+    const g = cv.getContext("2d"), W = cv.width, H = cv.height, sea = H * 0.8;
+    // the skyline is fixed, so build it once from a seeded random
+    let seed = 11;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const towers = [];
+    for (let x = -4; x < W;) {
+      const w = 12 + rnd() * 20, core = Math.exp(-(((x - W * 0.62) / (W * 0.22)) ** 2)), h = 18 + rnd() * 30 + core * 80;
+      const lit = [];
+      for (let wy = sea - h + 5; wy < sea - 4; wy += 5) for (let wx = x + 3; wx < x + w - 3; wx += 4) if (rnd() < 0.45) lit.push(wx, wy);
+      towers.push({ x, w, h, lit });
+      x += w + 1 + rnd() * 3;
+    }
+    const nx = W * 0.2, anchor = { x: W * 0.46, y: sea - 96 };
+    function draw(t) {
+      const sky = g.createLinearGradient(0, 0, 0, sea);
+      sky.addColorStop(0, "#2c3f78"); sky.addColorStop(0.55, "#d97a4a"); sky.addColorStop(1, "#ffc27a");
+      g.fillStyle = sky; g.fillRect(0, 0, W, sea);
+      g.fillStyle = "#fff1c8"; g.beginPath(); g.arc(W * 0.12, sea - 16, 11, 0, 7); g.fill();
+      // the Needle: shaft, pod and antenna, with a blinking light on top
+      g.fillStyle = "#3a2440"; g.fillRect(nx - 3, sea - 150, 6, 150); g.fillRect(nx - 10, sea - 124, 20, 9); g.fillRect(nx - 1, sea - 186, 2, 36);
+      g.fillStyle = (t * 2) % 2 < 1 ? "#ff3a2a" : "#6a2030"; g.fillRect(nx - 1, sea - 188, 2, 2);
+      for (const b of towers) {
+        g.fillStyle = "#35223f"; g.fillRect(b.x, sea - b.h, b.w, b.h);
+        g.fillStyle = "#ffcf7a";
+        for (let i = 0; i < b.lit.length; i += 2) g.fillRect(b.lit[i], b.lit[i + 1], 2, 2);
+      }
+      // the lake, with the sun and the lights mirrored in it
+      const lake = g.createLinearGradient(0, sea, 0, H);
+      lake.addColorStop(0, "#c7784a"); lake.addColorStop(1, "#2f3d6a");
+      g.fillStyle = lake; g.fillRect(0, sea, W, H - sea);
+      g.fillStyle = "rgba(255, 230, 170, 0.6)";
+      for (let k = 0; k < 6; k++) g.fillRect(W * 0.12 - 9 + Math.sin(t * 3 + k) * 3, sea + 3 + k * 6, 18 - k * 2, 2);
+      // the swing: a rope from a roof, a friend at the end, and a red cup stuck to the tower
+      const a = Math.sin(t * 1.7) * 0.8, len = 70, px = anchor.x + Math.sin(a) * len, py = anchor.y + Math.cos(a) * len;
+      g.strokeStyle = "#d8b872"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(anchor.x, anchor.y); g.lineTo(px, py); g.stroke();
+      g.fillStyle = "#d2202a"; g.fillRect(anchor.x - 3, anchor.y - 3, 6, 4);
+      g.fillStyle = "#1b1020"; g.fillRect(px - 3, py, 6, 9); g.fillRect(px - 2, py - 5, 4, 4);
+      g.fillRect(px - 3 + Math.sin(t * 3.4) * 2, py + 9, 2, 6); g.fillRect(px + 1 - Math.sin(t * 3.4) * 2, py + 9, 2, 6);
+    }
+    let t = 0, last = 0;
+    draw(0);
+    (function loop(now) { requestAnimationFrame(loop); if (reduceMotion || document.hidden || now - last < 33) return; last = now; t += 1 / 30; draw(t); })(0);
   }
 }
 // Crimson Rouge flips between the standoff and the grizzly
