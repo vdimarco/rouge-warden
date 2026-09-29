@@ -136,7 +136,7 @@ export class Player {
       } else if (this.sulk) {
         this.target = 40; this.rate = 90; crank = 2;
       } else if (v.beaten && v.move !== "surge" && v.tfrac < S.dragFrac * 0.8 && v.slip < 0.15) {
-        // the gauge says TIRED and the prompt says "It is tired. Reel it in.": a steady crank, rod at 60
+        // the gauge says TIRED and the prompt says "It is tired. Reel steadily.": a steady crank, rod at 60
         this.target = 60; this.rate = 90; crank = 3;
       } else if (v.slip > 0.15 && flaw === "grinder") {
         crank = 2.4; this.target = 72; this.rate = 150; this.pump = "up";
