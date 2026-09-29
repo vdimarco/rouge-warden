@@ -131,7 +131,8 @@ function prompt(text, sub = "", icon = "", tone = "") {
   p.querySelector(".p1 span").textContent = text;
   p.querySelector(".p2").textContent = sub;
 }
-function flash() { const f = $("#flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
+// kind "photo" is the white camera flash of a trophy; the strike and the loss flash red
+function flash(kind = "") { const f = $("#flash"); f.classList.remove("go"); f.classList.toggle("photo", kind === "photo"); void f.offsetWidth; f.classList.add("go"); }
 let reportT = 0;
 function report(dist, verdict, zoneName, sweet) {
   const r = $("#report");
@@ -285,9 +286,12 @@ function lockPortrait() {
 }
 
 /* ---------------- wake lock: the screen must not sleep while you wait for a bite ---------------- */
-let wake = null;
+// wakeBusy: a request is on its way. begin() and startMode() both ask in the same tick, and the second must not start a lock that nothing releases
+let wake = null, wakeBusy = false;
 async function keepAwake() {
-  try { if ("wakeLock" in navigator && !wake && document.visibilityState === "visible") { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch (e) { wake = null; }
+  if (!("wakeLock" in navigator) || wake || wakeBusy || document.visibilityState !== "visible") return;
+  wakeBusy = true;
+  try { const lock = await navigator.wakeLock.request("screen"); wake = lock; lock.addEventListener("release", () => { if (wake === lock) wake = null; }); } catch (e) { wake = null; } finally { wakeBusy = false; }
 }
 // a phone left paused on the table must be free to sleep
 function releaseAwake() { if (wake) { wake.release().catch(() => {}); wake = null; } }
@@ -328,7 +332,7 @@ function titleBest() {
   if (bits.length) lines.push("Here: " + bits.join(" · "));
   // the goal of this place; when the next place is open already, the goal of the first place still locked
   const lock = ORDER.find((p) => !openNow(p)), from = lock && prevPlace(lock);
-  if (lock) lines.push(from === id ? goalText(id, "title") : goalText(from, "card"));
+  if (lock) lines.push(from === id ? goalText(id, "title") : goalText(from, "next"));
   else lines.push(legendsLanded(save) >= ORDER.length ? "You landed every legend." : save.longest > 0 ? "Longest cast " + save.longest.toFixed(1) + " m" : "");
   $("#tbest").textContent = lines.filter(Boolean).join("\n");
 }
@@ -357,6 +361,7 @@ function startMode(mode) {
   if (world) world.setHour(G.hour);
   G.seed = (Math.random() * 1e9) | 0;
   rises = new Rises(LAKE.rng(G.seed), G.place);
+  G.goldAt = null;
   G.paused = false;
   show(null);
   $("#hud").hidden = false;
@@ -649,7 +654,9 @@ function landed(r) {
     const best = dist > save.longest && dist > 12;
     if (dist > save.longest) save.longest = dist;
     persist();
-    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : best ? "Your longest cast yet!" : G.place.zoneNames[zone] || "", v === "sweet");
+    // at Loon the big fish live farther out; a new player with short casts is told so
+    const hint = G.place.id === "loon" && dist < 15 && save.casts <= 12 ? "Farther out, the fish are bigger." : "";
+    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : hint || (best ? "Your longest cast yet!" : G.place.zoneNames[zone] || ""), v === "sweet");
     if (G.ring) Sound.sfx("ui");
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
@@ -738,7 +745,7 @@ function caught(c) {
   updateHud();
   if (!photo) { countUp(c, junk, rank); return; }
   cardT = setTimeout(() => {
-    flash(); Sound.sfx("shutter"); Haptics.thump();
+    flash("photo"); Sound.sfx("shutter"); Haptics.thump();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
   }, PHOTO.flash * 1000);
 }
@@ -868,8 +875,9 @@ function zoneHint(sp, pid) {
   const eco = ecology(pid).find(([s]) => s.id === sp.id), E = eco && eco[1];
   if (!E) return "";
   const z = Object.entries(E.zones || {}).sort((a, b) => b[1] - a[1])[0];
-  // the hour it bites best, if it has one
-  const best = (E.hours || []).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
+  // the hour it bites best, if it has one and the place's clock runs through it (Stump Bay only runs 19:00 to 24:00)
+  const c = journeyOf(pid).clock, lo = Math.min(c.free, c.derby, c.wrap);
+  const best = (E.hours || []).filter((h) => h[1] > lo && h[0] < c.end).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
   const when = !best ? "" : best[0] >= 20.5 ? " at night" : best[1] <= 10 ? " in the morning" : best[0] >= 17 ? " at dusk" : " at midday";
   return z ? "Try " + (getPlace(pid).zoneNames[z[0]] || z[0]).toLowerCase() + when + "." : "";
 }
@@ -981,8 +989,10 @@ function hudText(short) {
   // the next cast is still to come: before the release
   const next = G.phase === "cast" && ["ready", "open", "pinned", "loaded"].includes(G.step);
   const n = Math.min(10, G.casts + (next ? 1 : 0));
-  if (G.mode === "derby") return short ? "Derby " + n + "/10 · " + fmtKg(kg) : "Derby · cast " + n + " of 10 · " + fmtKg(kg);
-  return (short ? "Free · " : "Free fishing · ") + G.bag.length + " fish · " + fmtKg(kg);
+  // 100 kg or more (Big Blue) in whole kg, so the chip fits a 360 px phone
+  const w = short && kg >= 100 ? Math.round(kg) + " kg" : fmtKg(kg);
+  if (G.mode === "derby") return short ? "Derby " + n + "/10 · " + w : "Derby · cast " + n + " of 10 · " + w;
+  return (short ? "Free · " : "Free fishing · ") + G.bag.length + " fish · " + w;
 }
 function updateHud() {
   $("#modeChip").textContent = hudText(true);
@@ -1002,7 +1012,8 @@ addEventListener("keydown", (e) => {
   if (e.code === "Space" && (G.phase === "reel")) { G.hookReq = true; e.preventDefault(); }
   if (e.code === "BracketLeft") setDrag(G.drag - 1);
   if (e.code === "BracketRight") setDrag(G.drag + 1);
-  if (e.code === "Enter" && G.phase === "catch") { e.preventDefault(); $("#catchGo").click(); }
+  // the unlock card shows while the phase is still "catch": there Enter must press the button that has the focus
+  if (e.code === "Enter" && G.phase === "catch" && !$("#catch").hidden) { e.preventDefault(); $("#catchGo").click(); }
   syncPadKeys();
 });
 addEventListener("keyup", (e) => { keys[e.code] = false; syncPadKeys(); });
@@ -1197,6 +1208,9 @@ function reelPrompt(s, crankRate, theta) {
   const m = sensing();
   const t = now();
   const recent = (k, ms) => t - (G.lastEvent[k] || -1e9) < ms;
+  // the drag slips in short bursts: the slip prompts stay 0.7 s after the last slip, so they do not flicker
+  if ((s.slip || 0) > 0.15) G.slipAt = t;
+  const slipRecent = t - (G.slipAt || -1e9) < 700;
   // the way to steer: side +1 is right
   const dirWord = (side) => (side > 0 ? "right" : side < 0 ? "left" : "");
   const steerSub = (side) => { const d = dirWord(side); return m ? (d ? "Tilt the phone " + d + "." : "Tilt the phone left or right.") : (d ? "Drag the rod pad " + d + "." : "Drag the rod pad sideways."); };
@@ -1208,7 +1222,7 @@ function reelPrompt(s, crankRate, theta) {
       if (recent("nibble", 900)) return nightAt(G.hour) >= 0.5 ? prompt("It is dark. Feel for the bite.", "Wait for the strike.", "fish") : prompt("A fish is nibbling.", "Wait for the strike.", "fish");
       if (s.follower) return s.tooFast ? prompt("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : prompt("A fish is following.", "Stop for a moment. It may bite.", "crank");
       // the river: the current swings the lure. Said once
-      if (G.place.flow && !save.seen["river.swing"]) { seen("river.swing"); G.swingUntil = t + 4500; }
+      if (G.place.flow && !save.seen["river.swing"] && $("#report").hidden) { seen("river.swing"); G.swingUntil = t + 4500; }
       if (t < (G.swingUntil || 0)) return prompt("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank");
       return prompt("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
     }
@@ -1220,23 +1234,36 @@ function reelPrompt(s, crankRate, theta) {
       // 2. a jump, or a tail walk: keep the rod low
       if (f.move === "jump" || recent("jump", 900)) return G.walk ? prompt("It jumps again and again!", "Keep the rod low.", "low", "hot") : prompt("It jumped! Lower the rod!", "", "low", "hot");
       // 3. the line rubs on something: steer it off
-      if ((s.rub || 0) > 0.15) {
-        const d = dirWord(s.rubSide), steer = " Steer " + (d || "away") + ".", K = s.rubKind;
-        return prompt(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(s.rubSide), K === "rocks" ? "pull" : "turn", "hot");
+      if ((s.rub || 0) <= 0.15) G.rubDir = null;
+      else {
+        // the side to steer can flip many times a second while the line lies on a post: a new side must hold for 300 ms
+        // before the words change (display only). A new kind of rub starts again
+        const R = G.rubDir && G.rubDir.kind === s.rubKind ? G.rubDir : (G.rubDir = { kind: s.rubKind, shown: 0, want: 0, since: t }), side = s.rubSide || 0;
+        if (!R.shown) R.shown = R.want = side;
+        else if (side && side !== R.shown) {
+          if (side !== R.want) { R.want = side; R.since = t; }
+          if (t - R.since >= 300) R.shown = side;
+        } else if (side) R.want = side;
+        const d = dirWord(R.shown), steer = " Steer " + (d || "away") + ".", K = s.rubKind;
+        return prompt(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(R.shown), K === "rocks" ? "pull" : "turn", "hot");
       }
-      if (recent("lastrun", 2000)) return prompt("It sees you! Let it run.", "Stop reeling. Hold the rod up.", "stop", "hot");
-      if (f.move === "thrash") return prompt("It shakes its head!", "Hold the rod up. Keep the line tight.", "pull", "hot");
+      // 4. its last run. A fish of the wall swims at you and the line goes slack: then reel
+      if (recent("lastrun", 2000)) return s.slack ? prompt("Slack line! Reel it in.", "Keep the line tight.", "crank", "hot") : prompt("It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up.", "stop", "hot");
+      // the tuna's first run: the banner says to let it go, and so does the prompt
+      if (s.boss && s.boss.n === 1 && /let it go/i.test(s.boss.name || "") && f.move === "run" && (s.fightT || 0) < 2.5) return prompt("It runs! Let it go.", "Hold the rod up. Reel only if the line goes slack.", "pull", "hot");
+      if (f.move === "thrash" || f.move === "shake" || recent("shake", 700)) return prompt("It shakes its head!", "Hold the rod up. Reel in any slack.", "pull", "hot");
       if (f.move === "turn" || recent("turn", 1200)) return prompt("It turned. Stop reeling!", "", "stop", "hot");
       if (f.move === "charge") return prompt("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot");
-      if ((s.slip || 0) > 0.15 && crankRate > 0.3) return prompt("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot");
+      if (slipRecent && crankRate > 0.3) return prompt("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot");
       if ((s.tfrac || 0) > 0.85) return prompt("Too tight! Stop reeling.", "Lower the rod a little.", "low", "hot");
-      if ((s.spoolFrac || 0) > 0.75) return prompt("The spool is almost empty!", "Tighten the drag.", "stop", "hot");
+      // only while the drag slips: a full spool warning that stays up would hide the rest and the sulk
+      if ((s.spoolFrac || 0) > 0.75 && slipRecent) return G.drag < 2 ? prompt("The spool is almost empty!", "Tighten the drag.", "stop", "hot") : prompt("The spool is almost empty!", "Hold on. Keep the rod up.", "pull", "hot");
       if (f.move === "hold") return prompt("It rests. Rest your arm.", "Keep the line tight.", "fish", "good");
       if (f.move === "sulk") return prompt("It holds on the bottom.", "Lift the rod slowly. Then reel as you lower it.", "pull");
       if (s.cover) return prompt("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
-      if ((s.slip || 0) > 0.15) return prompt("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
+      if (slipRecent) return prompt("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
       if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
-      if (s.beaten) return prompt("It is tired. Reel it in.", "", "crank", "good");
+      if (s.beaten) return prompt("It is tired. Reel steadily.", "Slow down if the gauge turns red.", "crank", "good");
       if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the phone up toward you." : "Drag the rod pad up.", "pull");
       return prompt("Pump and reel.", m ? "Tip the phone up. Then reel as you lower it." : "Drag the rod up. Then reel as it comes down.", "pull");
     }
@@ -1356,7 +1383,11 @@ function step(dt) {
       const ev = rises.step(dt, G.hour) || [];
       for (const e of ev) if (e.type === "rise") {
         world.rise(e.x, e.z);
-        if (e.gold) { toast("A gold ring! Something big is rising.", 2600); if (legendStep(save, G.place.id, 1)) persist(); }
+        if (e.gold) {
+          // said once for each ring (it pulses every few seconds), and not in the middle of a fight
+          if (G.phase !== "reel" && !(G.goldAt && Math.hypot(e.x - G.goldAt.x, e.z - G.goldAt.z) < 1)) { G.goldAt = { x: e.x, z: e.z }; toast("A gold ring! Something big is rising.", 2600); }
+          if (legendStep(save, G.place.id, 1)) persist();
+        }
       }
       // the rings only change when one rises or goes quiet
       if (ev.length || rises.list.length !== G.ringN) { G.ringN = rises.list.length; world.setRings(rises.list); }
@@ -1383,8 +1414,13 @@ function step(dt) {
       world.setFish(null); world.setFollower(null); world.setLine({ visible: false }); world.setLure({ x: 0, y: -5, z: 0, visible: false });
       if (now() - G.outcomeAt > 2400) { prompt(""); nextAfterOutcome(); }
       break;
-    // wide: the card sits on the right, so frame the fish in the part of the lake left free
-    case "catch": world.setView({ mode: "catch", inset: G.layout === "reel" ? Math.min(0.6, ($("#catch .card").offsetWidth + 32) / Math.max(1, game.clientWidth)) : 0 }); break;
+    // wide: the card sits on the right, so frame the fish in the part of the lake left free.
+    // tall: the card covers the bottom of the view (bottom: its share of the height), so frame the fish above it
+    case "catch": {
+      const wide = G.layout === "reel", card = $("#catch .card");
+      world.setView({ mode: "catch", inset: wide ? Math.min(0.6, (card.offsetWidth + 32) / Math.max(1, game.clientWidth)) : 0, bottom: wide ? 0 : Math.min(0.62, (card.offsetHeight + 24) / Math.max(1, game.clientHeight)) });
+      break;
+    }
     case "results": world.setView({ mode: "title" }); break;
   }
 }
