@@ -32,7 +32,7 @@ export async function open({ width = 390, height = 844, touch = true, phone = tr
 // Runs in the page before any script: a virtual phone that sends orientation and motion events at 60 Hz.
 // Tests move it by setting a pose (an "up" vector in device coordinates); the gyro reading is worked out
 // from how that up vector turns between frames, so the orientation and the gyro always agree.
-function installPhone() {
+export function installPhone() {
   const D = 180 / Math.PI;
   const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
   // beta/gamma for an up vector, keeping gamma in [-90, 90) like a real browser

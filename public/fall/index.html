@@ -628,6 +628,13 @@ const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const rnd = Math.random;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// House Rules (/lab/rules/): a layer someone painted, from a link with #L=. Every change it makes to the game sits
+// behind Custom.on, which is false for any other link, so the normal game runs as it always did.
+const Custom = (() => {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (!q.get("L")) return { on: false };
+  return { on: true, api: null, ready: import("/lab/rules/play.js").then((m) => m.open(q)).catch(() => null) };
+})();
 
 /* ------------------------------------------------------------------ materials */
 
@@ -1226,8 +1233,8 @@ const Tune = {
   },
   save() { try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (e) { /* storage off */ } },
   reset() { this.data = { dials: {}, kind: {}, history: [] }; this.save(); },
-  get(k) { const v = this.data && this.data.dials[k]; return v == null ? DIALS[k].def : v; },
-  kind(k) { const v = this.data && this.data.kind[k]; return v == null ? 1 : v; },
+  get(k) { const v = Custom.on ? null : this.data && this.data.dials[k]; return v == null ? DIALS[k].def : v; },
+  kind(k) { const v = Custom.on ? null : this.data && this.data.kind[k]; return v == null ? 1 : v; },
   // move one dial a step or two, inside its bounds; returns the change, or null
   move(k, dir) {
     const D = DIALS[k], was = this.get(k), to = +clamp(was + dir * D.step, D.lo, D.hi).toFixed(3);
@@ -1383,15 +1390,15 @@ function giveWand(r, w) {
 function newRun() {
   const crew = clamp(Memory.data ? Memory.data.crew || 0 : 0, 0, CREW.length - 1);
   const r = { crew, dmgMult: 1, crit: 0, digMult: 1, speedMult: 1, rateMult: 1, swingMult: 1, capMult: 1, fireResist: 1, rollMult: 1, swim: false, homing: 0, critHeal: 0, light: 1, armor: 1, shovel: 1, relics: [], flow: 1, score: 0, style: 0, styleT: 0, streakMult: 1, boons: {}, log: { maxRank: -1,  dmgBy: {}, hitsBy: {}, hits: 0, rolls: 0, flasks: 0, t0: 0, lowHp: 1, bursts: 0, recent: [], digSwings: 0, caveIns: 0 }, melee: "plunger", muscle: 1, aim: 1, caps: 0, flasks: 2, flaskMax: 2, scrolls: 0, curse: 0, depth: 1, hp: 100, maxHp: 100, liftMax: 3, gold: 0, wands: [makeWand(0, true)], wi: 0, get wand() { return this.wands[this.wi]; }, bag: [], kills: 0, mood: null, lastTheme: null, recentLines: [], lastHitBy: null, over: false, casts: 0, hands: 0, calls: 0, lowBarked: false };
-  const U = (Memory.data && Memory.data.meta.unlocked) || {};
+  const U = (!Custom.on && Memory.data && Memory.data.meta.unlocked) || {};
   r.flasks = r.flaskMax = 2 + (U.hotdog1 ? 1 : 0) + (U.hotdog2 ? 1 : 0) + Tune.get("hotdogs");
-  if (Memory.data && Memory.data.bankCaps) { r.caps = Memory.data.bankCaps; Memory.data.bankCaps = 0; Memory.save(); }
+  if (!Custom.on && Memory.data && Memory.data.bankCaps) { r.caps = Memory.data.bankCaps; Memory.data.bankCaps = 0; Memory.save(); }
   r.log.t0 = performance.now();
   if (U.spade) r.shovel = 2;
   if (U.purse) r.gold = 60;
   r.secondWind = !!U.second;
   r.startScroll = !!U.scroll;
-  const sm = Memory.data && Memory.data.startMelee;
+  const sm = !Custom.on && Memory.data && Memory.data.startMelee;
   if (sm && MELEE[sm] && meleeUnlocked(sm)) r.melee = sm;
   CREW[crew].apply(r);
   return r;
@@ -6058,9 +6065,11 @@ async function enterDepth(first, pre) {
   Input.clear();
   Game.frenzyT = 0; Game.frenzyChain = 0; Game.layerKills = 0; Game.goldenDropped = false;
   Game.gauntlets = []; Game.foes = []; Game.shots = []; Game.fx = []; Game.emitters = []; Game.bolts = []; Game.flashes = []; Game.nums = []; Game.pickups = []; Game.lamps = []; Game.chests = [];
-  UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
-  const plan = pre ? await pre : await Cottage.level(run, first);
+  if (Custom.on) UI.banner(Custom.api.title, Custom.api.sub, true);
+  else UI.banner("Depth " + run.depth, isBossDepth(run.depth) ? FOES[bossFor(run.depth)].name + " waits below" : "The Cottage pours the next layer", true);
+  const plan = Custom.on ? Custom.api.plan() : pre ? await pre : await Cottage.level(run, first);
   const geo = World.generate(plan);
+  if (Custom.on) Custom.api.apply(World, geo, blocks);
   // label the drains: the first leads to the Cottage's favorite next look, the second is richer and harder
   geo.exits.forEach((e, k) => { e.theme = (plan.nextThemes || [])[k] || plan.theme; e.rich = k === 1; });
   Game.level = { theme: plan.theme, boss: plan.boss, handDead: false, ...geo };
@@ -6098,7 +6107,7 @@ async function enterDepth(first, pre) {
       break;
     }
   }
-  Game.foes = placed;
+  Game.foes = Custom.on ? Custom.api.critters(makeFoe) : placed;
   for (const r of restRooms) {
     let py = (r.y + r.rh * 0.6 - 4) | 0;
     for (let k = 0; k < 20 && !blocks(World.at(r.x, py + 1)); k++) py++;
@@ -6142,7 +6151,7 @@ async function enterDepth(first, pre) {
   Game.bestY = p.y; Game.idleT = 0; Game.levelT = 0; Game.digHinted = false; Game.clogHinted = false; Game.digDmg = new Uint8Array(W * H); Game.noise = 0;
   Minimap.reset();
   Minimap.reveal(p);
-  Game.watchT = 12 + rnd() * 6;
+  Game.watchT = Custom.on ? Infinity : 12 + rnd() * 6;
   Game.handT = 3;
   run.lowBarked = run.hp / run.maxHp < 0.3;
   UI.hideBanner();
@@ -6158,6 +6167,7 @@ async function reachWell() {
   Game.state = "landing";
   Input.clear();
   SFX.well();
+  if (Custom.on) { Custom.api.cleared(Game.levelT, startRun); return; }
   Memory.data.deepest = Math.max(Memory.data.deepest, run.depth);
   Memory.save();
   // the fast drain bonus
@@ -6186,6 +6196,7 @@ async function die(cause) {
   run.over = true;
   Game.state = "dead";
   Input.clear();
+  if (Custom.on) { const p = Game.player; if (p) World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); Custom.api.died(causeName(cause), startRun); return; }
   const m = Memory.data;
   const prevKiller = m.lastDeath;
   m.lastDeath = cause;
@@ -6223,13 +6234,13 @@ async function die(cause) {
 }
 
 async function startRun() {
+  if (Custom.on && (!(Custom.api = await Custom.ready) || Custom.api.broken)) return;
   $("#intro").hidden = true;
   $("#attract").hidden = true; $("#howto").hidden = true;
   if (window.Chip) Chip.stop(1.2);
   $("#end").hidden = true;
   SFX.init();
-  Memory.data.runs++;
-  Memory.save();
+  if (!Custom.on) { Memory.data.runs++; Memory.save(); }
   run = newRun();
   reaching = false;
   await enterDepth(true);
@@ -6375,7 +6386,7 @@ const Title = (() => {
   $("#attract").addEventListener("pointerdown", (e) => { if (stage === "press" && !e.target.closest("a")) openMenu(); });
   $("#goDown").onclick = pick; $("#howBtn").onclick = how; $("#pickBack").onclick = back; $("#howBack").onclick = back;
   addEventListener("keydown", (e) => {
-    if (Game.state !== "intro" || (!$("#sheet").hidden)) return;
+    if (Custom.on || Game.state !== "intro" || (!$("#sheet").hidden)) return;
     if (stage === "press") { if (!e.metaKey && !e.ctrlKey && e.key !== "Tab") { e.preventDefault(); openMenu(); } return; }
     if (stage === "menu") {
       const l = items(), k = l.findIndex((x) => x.classList.contains("sel"));
@@ -6442,6 +6453,11 @@ $("#mini").onclick = () => Minimap.toggle();
 if (!document.documentElement.requestFullscreen) $("#fsBtn").style.display = "none";
 $("#fsBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); };
 requestAnimationFrame(frame);
+// House Rules: the painted layer's intro card, in place of the title. A link the game cannot load opens the normal game.
+if (Custom.on) {
+  $("#attract").hidden = true;
+  Custom.ready.then((api) => { if (!api) { location.replace("/fall/"); return; } Custom.api = api; api.intro(startRun); });
+}
 </script>
 </body>
 </html>
