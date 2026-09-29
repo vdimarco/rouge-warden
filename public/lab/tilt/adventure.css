@@ -38,7 +38,7 @@ button:disabled { cursor: default; opacity: .45; }
 .lives-readout { min-width: 25px; }
 .lives-readout strong { font-size: 17px; color: var(--cyan); }
 .hud-actions { display: flex; align-items: center; gap: 4px; pointer-events: auto; }
-.hud-actions button { min-height: 44px; padding: 8px 10px; border: 1px solid transparent; border-radius: 5px; background: #0c192870; color: #c6dbdd; font-size: 10px; white-space: nowrap; }
+.hud-actions button { min-width: 44px; min-height: 44px; padding: 8px 10px; border: 1px solid transparent; border-radius: 5px; background: #0c192870; color: #c6dbdd; font-size: 10px; white-space: nowrap; }
 .hud-actions button:hover { background: #163140; border-color: var(--line); }
 .mini-map-wrap { position: absolute; top: calc(77px + var(--safe-top)); right: max(18px, env(safe-area-inset-right)); width: 172px; padding: 8px; border: 1px solid #acdcd718; border-radius: 7px; background: #050c1970; }
 .mini-map-label { display: block; font-size: 7px; letter-spacing: .2em; color: #9abfbf; margin-bottom: 5px; }
