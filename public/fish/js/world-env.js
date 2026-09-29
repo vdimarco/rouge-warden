@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { artStyle, storyMaterial } from "./art-style.js";
 import { cartoonGeometry } from "./cartoon-models.js";
+import { paintedTrees } from "./painted-forest.js";
 import { rng, noise, capsule } from "./places/util.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -15,6 +16,8 @@ export const U = {
   uTime: { value: 0 },
   uSkyPaint: { value: null },
   uSkyPaintReady: { value: 0 },
+  uWaterPaint: { value: null },
+  uWaterPaintReady: { value: 0 },
   uSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uSunCol: { value: new THREE.Color(1, 1, 1) },
   uSunVis: { value: 1 },
@@ -53,6 +56,26 @@ export function loadStorySky() {
     }, undefined, () => { storySkyLoad = null; resolve(); });
   });
   return storySkyLoad;
+}
+
+let waterPaintLoad = null;
+export function loadPaintedWater() {
+  if (U.uWaterPaintReady.value) return Promise.resolve(true);
+  if (waterPaintLoad) return waterPaintLoad;
+  waterPaintLoad = new Promise(resolve => {
+    let settled = false;
+    const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); waterPaintLoad = null; resolve(ok); };
+    const timer = setTimeout(() => finish(false), 8000);
+    new THREE.TextureLoader().load(new URL("../art/painted-water.webp", import.meta.url).href, texture => {
+      if (settled) { texture.dispose(); return; }
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.anisotropy = 4;
+      U.uWaterPaint.value = texture; U.uWaterPaintReady.value = 1;
+      finish(true);
+    }, undefined, () => finish(false));
+  });
+  return waterPaintLoad;
 }
 
 // Small hash noise without sin(), so it stays stable in mediump on phones.
@@ -306,6 +329,7 @@ export const RIPPLES = 16, RINGS = 6;
 export function buildWater(low, place, look) {
   const u = {
     uArtStyle: artStyle, uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady,
+    uWaterPaint: U.uWaterPaint, uWaterPaintReady: U.uWaterPaintReady,
     uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight,
     uFogNear: U.uFogNear, uFogFar: U.uFogFar, uForest: U.uForest, uDeep: U.uDeep, uShallow: U.uShallow, uFoam: U.uFoam, uSunVis: U.uSunVis,
     uDepth: { value: null }, uBox: { value: new THREE.Vector4() },
@@ -325,7 +349,7 @@ export function buildWater(low, place, look) {
       precision highp float;
       uniform float uTime, uFogNear, uFogFar, uSunVis;
       uniform vec3 uForest, uDeep, uShallow, uFoam;
-      uniform sampler2D uDepth; uniform vec4 uBox;
+      uniform sampler2D uDepth, uWaterPaint; uniform float uWaterPaintReady; uniform vec4 uBox;
       uniform vec4 uShoreC, uShoreP, uIsle[2]; uniform float uSwell, uCur; uniform vec2 uFlow;
       uniform vec4 uRip[RIPPLES];
       uniform vec4 uRing[RINGS];
@@ -470,11 +494,30 @@ export function buildWater(low, place, look) {
         #endif
         spec *= uSunVis * (1.0 - shore);
         if (uArtStyle > 0.5) {
-          // Long brush-like reflections; the bite rings and aim are drawn on top.
-          float brush = vnoise(vec2(p.x * 0.12, p.y * 1.8 + uTime * 0.10));
-          col = mix(col, body, 0.22);
-          col *= 0.96 + 0.10 * smoothstep(0.35, 0.7, brush);
-          spec = min(spec, 1.2);
+          // Cel-painted water: broad colour shapes and horizontal strokes.
+          // Game rings, wakes, and the aiming dots still draw above this paint.
+          float brush = vnoise(vec2(p.x * .48 + uTime * .025, p.y * 2.8 + uTime * .10 + sin(p.x * .36) * .18));
+          float mass = vnoise(vec2(p.x * .065, p.y * .32 - uTime * .035));
+          float wash = smoothstep(.32, .39, mass) * .11 + smoothstep(.59, .66, mass) * .10;
+          vec3 lakePaint = body * (.99 + wash);
+          float reflection = smoothstep(.15, .8, fres) * .45;
+          col = mix(lakePaint, mix(uForest, uHorizon, .66), reflection);
+          // Reflected boughs are soft painted bars, without mirror-like glare.
+          col = mix(col, treeCol * vec3(.85, 1.12, 1.13), shore * (.16 + .17 * step(.49, brush)));
+          float dash = smoothstep(.57, .62, brush) * (1. - smoothstep(.67, .73, brush));
+          col = mix(col, uFoam, dash * .19 * (1. - smoothstep(.5, 2., fp)));
+          float grain = hash12(floor(p * 17.));
+          col *= .988 + grain * .024;
+          if (uWaterPaintReady > .5) {
+            // The painted tile supplies brush detail. Subtle distortion carries
+            // the wind/current, while gameplay ripples and wakes remain live.
+            vec2 paintUV = pf * vec2(.022, .045) + vec2(uTime * .0007, uTime * .00035);
+            paintUV += vec2(sin(p.y * .24 + uTime * .32), sin(p.x * .17 - uTime * .23)) * .002;
+            vec3 paint = texture2D(uWaterPaint, paintUV).rgb;
+            paint *= clamp(body / vec3(.24, .50, .49), vec3(.07), vec3(1.35));
+            col = mix(col, paint, .86);
+          }
+          spec = min(spec, .3) * smoothstep(.52, .67, brush);
         }
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
@@ -494,6 +537,7 @@ export function buildWater(low, place, look) {
         // soft edge at the shore
         float edge = smoothstep(0.02, 0.35, depth);
         float alpha = clamp(mix(0.25, 1.0, smoothstep(0.0, 5.0, depth)) + fres * 0.7 + spec + foam * 0.3 + length(goldGlow), 0.0, 1.0);
+        alpha = mix(alpha, max(alpha, .88), uArtStyle);
         alpha *= edge;
         col += uFoam * (1.0 - smoothstep(0.05, 0.45, depth + (vnoise(p * 0.6 + uTime * 0.2) - 0.5) * 0.25)) * 0.35 * edge;
         float fg = smoothstep(uFogNear, uFogFar, dist);
@@ -642,6 +686,15 @@ function instanced(geo, mat, spots, max, tint) {
 export function buildTrees(low, place, look, style = "ghibli") {
   const cartoon = style === "ghibli";
   const S = treeSpots(place, look), T = look.trees;
+  if (cartoon) {
+    const g = new THREE.Group(), caps = low ? T.caps.low : T.caps.high;
+    const kinds = ["pine", "leaf", "far"], spots = [S.near, S.leafy, S.far];
+    for (let i = 0; i < 3; i++) {
+      const mesh = paintedTrees(spots[i], caps[i], kinds[i], U, i === 1 ? T.leafy.tint : T.pineTint, rng(77 + i));
+      if (mesh) g.add(mesh);
+    }
+    if (g.children.length) return g;
+  }
   // Broader crowns cover the same forest with fewer instances on phones.
   const caps = low ? T.caps.low.map((n, i) => Math.floor(n * (cartoon ? [0.4, 1, 0.5][i] : 1))) : T.caps.high;
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.9, scale: 1.4, sway: 0.012, key: "tree" });
