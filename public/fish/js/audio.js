@@ -1,9 +1,11 @@
-// Every sound of Loon Lake, made in code with Web Audio. There are no sound files.
+// Every sound of Reel It In, made in code with Web Audio. There are no sound files.
 // One-shots (sfx) build a few nodes, play, and let go. The loops (the rod swish, the spool, the crank, the drag, the
 // line under load, the lake) are built once and then only steered with setTargetAtTime, so they never click. A loop
 // that has been silent for a while is unplugged from the mix, so it costs nothing on a phone.
 // All of it goes through one bus: a compressor, then a soft limiter, so a strike on top of a screaming drag never clips.
 // The arcade shares one sound switch: localStorage "arcade.sound" (a JSON bool, on by default).
+// Each place has its own sound bed (setPlace): the loons call at Loon Lake only, frogs and crickets fill Stump Bay at
+// night, the river rushes, and the surf breaks at Gull Rock.
 
 const VOL = 0.9;                  // master level when the sound is on
 const HAS_WINDOW = typeof window !== "undefined";
@@ -14,6 +16,7 @@ const smooth = (a, b, v) => { const x = clamp((v - a) / (b - a), 0, 1); return x
 let E = null;                     // the live engine (null until init() runs inside a gesture)
 let on = true;
 try { on = JSON.parse(localStorage.getItem("arcade.sound") ?? "true") !== false; } catch (e) { /* storage off, or node */ }
+let place = "loon";               // where the player is: the sound bed follows (setPlace)
 let rnd = Math.random;            // renderOffline swaps in a seeded one, so test renders repeat
 function seeded(seed) {
   let s = seed >>> 0;
@@ -381,6 +384,20 @@ const SFX = {
     train(e, t, { rate: 13, rate2: 32, dur: 0.42, jitter: 260, bands: [[520, 8, 40], [1180, 6, 22]], peak: 0.55, att: 0.03 });
     return tone(e, t, { type: "sawtooth", f: 88, f2: 104, dur: 0.4, att: 0.05, peak: 0.05, lp: 420 });
   },
+  // a big fish holds on the bottom and the rod groans: slow stick-slip creaks over a low strain
+  creak(e, t) {
+    train(e, t, { rate: 11, rate2: 5, dur: 0.85, jitter: 420, bands: [[380, 9, 30], [860, 6, 12], [1500, 5, 5]], peak: 0.5, att: 0.06 });
+    tone(e, t, { type: "sawtooth", f: 64, f2: 52, dur: 0.85, att: 0.08, peak: 0.07, lp: 300 });
+    return hiss(e, t + 0.05, { buf: e.pink, type: "bandpass", f: 700, f2: 420, q: 3, dur: 0.6, att: 0.12, peak: 0.05 });
+  },
+  // the photo of a big catch: the shutter opens and shuts, two clicks
+  shutter(e, t) {
+    hiss(e, t, { type: "highpass", f: 2500, dur: 0.02, att: 0.0003, peak: 0.55 });
+    ring(e, t, [[1800, 0.12, 0.03], [3300, 0.08, 0.025]]);
+    hiss(e, t + 0.055, { type: "bandpass", f: 1300, q: 1.5, dur: 0.03, att: 0.0004, peak: 0.42 });
+    tone(e, t + 0.055, { f: 460, f2: 300, dur: 0.05, peak: 0.16 });
+    return ring(e, t + 0.055, [[900, 0.09, 0.05], [2100, 0.05, 0.03]]);
+  },
   // the line leaves the finger
   release(e, t) {
     hiss(e, t, { type: "highpass", f: 4200, dur: 0.005, att: 0.0003, peak: 0.2 });
@@ -622,8 +639,28 @@ const LOOPS = {
       out.gain.setTargetAtTime(v > 0.02 ? 1 : 0, t, 0.05);
     } };
   },
+  // the line rubs on a stump, a log or the rocks: a gritty scratch, gated by a fast rattle, over a low groan.
+  // It grows louder, brighter and faster as the meter fills
+  grind(e) {
+    const c = osc(e, e.pulse, 20), out = gain(e, 0), vca = gain(e, 0.25);
+    const n = noise(e), hp = filt(e, "highpass", 700, 0.7), bp = filt(e, "bandpass", 1500, 1.1);
+    n.connect(hp); hp.connect(bp); bp.connect(vca); vca.connect(out);
+    const envLP = filt(e, "lowpass", 260, 0.7);
+    c.connect(envLP); envLP.connect(gain(e, 4, vca.gain));
+    const g = osc(e, "sawtooth", 58), glp = filt(e, "lowpass", 230, 1), gG = gain(e, 0.05, out);
+    g.connect(glp); glp.connect(gG);
+    const t0 = e.ctx.currentTime;
+    c.start(t0); g.start(t0); n.start(t0, rnd());
+    return { out, apply(v, t) {
+      v = clamp(v, 0, 1);
+      c.frequency.setTargetAtTime(14 + 46 * v, t, 0.06);
+      bp.frequency.setTargetAtTime(1000 + 1700 * v, t, 0.06);
+      gG.gain.setTargetAtTime(0.05 + 0.2 * v, t, 0.06);
+      out.gain.setTargetAtTime(v < 0.03 ? 0 : 0.25 + 0.65 * v, t, v < 0.03 ? 0.08 : 0.04);
+    } };
+  },
 };
-const GAME_LOOPS = ["swish", "spool", "reel", "drag", "tension"];
+const GAME_LOOPS = ["swish", "spool", "reel", "drag", "tension", "grind"];
 // A click train from one oscillator puts less into each click the faster it runs. A real ratchet does not: each tooth
 // clicks as hard. This gain puts it back (ref = the rate that keeps gain 1)
 function clicks(rate, ref) { return Math.pow(rate / ref, 0.85); }
@@ -650,7 +687,7 @@ function drive(e, name, v, t) {
   L.apply(v, t);
 }
 
-/* ---------------- the lake: water, wind in the pines, birds, crickets, loons ---------------- */
+/* ---------------- the place: water, wind, birds, crickets, frogs, loons, the river, the surf ---------------- */
 function lakeBed(e) {
   if (e.amb) return e.amb;
   const A = { out: gain(e, 0, e.ambBus), on: false, hour: 12, next: null, timer: 0, bugsLive: false, bugsOffAt: Infinity };
@@ -685,6 +722,42 @@ function lakeBed(e) {
   e.amb = A;
   return A;
 }
+// The river: a steady rush of water over stones. Pink noise through a lowpass at 900 Hz, with a softer hiss on top
+// and a slow, uneven wobble. Built when the river is first heard, and unplugged again a while after it is left
+function rushBed(e) {
+  const out = gain(e, 0), mod = gain(e, 1, out), t0 = e.ctx.currentTime;
+  const n = noise(e, e.pink), lp = filt(e, "lowpass", 900, 0.5);
+  n.connect(lp); lp.connect(gain(e, 0.75, mod));
+  const nb = noise(e, e.brown), lpb = filt(e, "lowpass", 450, 0.4);   // the weight of the water under it
+  nb.connect(lpb); lpb.connect(gain(e, 0.9, mod));
+  const n2 = noise(e, e.white), bp = filt(e, "bandpass", 2600, 0.7);
+  n2.connect(bp); bp.connect(gain(e, 0.04, mod));
+  // the flow breathes: two slow waves, 0.13 and 0.31 Hz (the level stays between 0.8 and 1.2, so out silences it)
+  const w1 = osc(e, "sine", 0.13), w2 = osc(e, "sine", 0.31);
+  w1.connect(gain(e, 0.13, mod.gain)); w2.connect(gain(e, 0.07, mod.gain));
+  for (const s of [w1, w2]) s.start(t0);
+  n.start(t0, rnd() * 2); nb.start(t0, rnd() * 4); n2.start(t0, rnd() * 2);
+  return out;
+}
+// The sea: surf on the rocks. Waves come in 6 to 10 s: the level swells and falls, and the hiss of the foam swells
+// faster than the low rumble under it
+function surfBed(e) {
+  const out = gain(e, 0), t0 = e.ctx.currentTime;
+  const rumble = gain(e, 0.55, out), foam = gain(e, 0.2, out);
+  const n = noise(e, e.brown), lp = filt(e, "lowpass", 380, 0.4);
+  n.connect(lp); lp.connect(rumble);
+  const n2 = noise(e, e.pink), bp = filt(e, "bandpass", 1500, 0.5);
+  n2.connect(bp); bp.connect(foam);
+  // two sets of waves that drift in and out of step: 8 s and 6.3 s, and a small 10 s one
+  // (the two levels never go below 0, so the waves swell and fall without turning the sound upside down)
+  for (const [f, a, b] of [[0.125, 0.25, 0.09], [0.159, 0.15, 0.06], [0.1, 0.1, 0.04]]) {
+    const w = osc(e, "sine", f);
+    w.connect(gain(e, a, rumble.gain)); w.connect(gain(e, b, foam.gain));
+    w.start(t0);
+  }
+  n.start(t0, rnd() * 4); n2.start(t0, rnd() * 2);
+  return out;
+}
 // a few slow sines in one oscillator: the harmonics of a very slow note, so they drift like separate swells
 function swells(ctx, parts) {
   const n = Math.max(...parts.map((p) => p[0])) + 1, re = new Float32Array(n), im = new Float32Array(n);
@@ -708,36 +781,56 @@ function chirpWave(ctx, rate) {
   }
   return { wave: ctx.createPeriodicWave(re, im, { disableNormalization: true }), mean };
 }
-// how busy each part of the lake is at an hour (5 = before dawn, 21 = dusk)
-function mix(h) {
+// How busy each part of the place is at an hour (5 = before dawn, 21 = dusk). Loons call at Loon Lake only.
+// lap: the water on the dock posts. frogs and frogGap: how many frogs, and how long they wait between calls.
+// rush: the river, surf: the sea. The bed of Stump Bay is all frogs and crickets, heavy after 20
+function mix(h, place = "loon") {
   const birds = smooth(5.2, 6, h) * (1 - smooth(19, 20.2, h)) * (0.45 + 0.55 * Math.exp(-Math.pow((h - 7) / 1.6, 2)));
   const bugs = Math.max(smooth(18.8, 20.2, h), 1 - smooth(5, 5.8, h));
   const wind = 0.3 + 0.5 * Math.exp(-Math.pow((h - 14) / 3, 2));
   const loons = h < 8.5 || h > 18.3 ? 1 : 0.35;
-  return { birds, bugs, wind, loons };
+  const base = { birds, bugs, wind, loons, lap: 1, frogs: bugs, frogGap: 1, rush: 0, surf: 0 };
+  if (place === "stumps") {
+    const night = smooth(19.4, 20.6, h);
+    return { ...base, birds: birds * 0.25, bugs: 0.55 + 0.45 * night, wind: 0.18, loons: 0, lap: 0.45, frogs: 0.6 + 0.4 * night, frogGap: 1 / (1 + 2.4 * night) };
+  }
+  if (place === "river") return { ...base, birds: Math.min(1, birds * 1.15), bugs: bugs * 0.3, wind: 0.5 * wind + 0.15, loons: 0, lap: 0, frogs: 0, rush: 1 };
+  if (place === "sea") return { ...base, birds: 0, bugs: 0, wind: 0.45 + 0.4 * wind, loons: 0, lap: 0, frogs: 0, surf: 1 };
+  return base;
 }
-function lakeSet(e, onNow, hour, t) {
+function lakeSet(e, onNow, hour, t, where = "loon") {
   const A = lakeBed(e);
-  const m = mix(hour);
-  A.on = onNow; A.hour = hour;
+  const m = mix(hour, where);
+  A.on = onNow; A.hour = hour; A.place = where;
   A.out.gain.setTargetAtTime(onNow ? 1 : 0, t, onNow ? 1.2 : 0.35);
-  A.lapOut.gain.setTargetAtTime(0.16 + 0.08 * m.wind, t, 2);
+  A.lapOut.gain.setTargetAtTime((0.16 + 0.08 * m.wind) * m.lap, t, 2);
   A.windOut.gain.setTargetAtTime(0.12 * m.wind, t, 2);
   A.bugOut.gain.setTargetAtTime(0.05 * m.bugs, t, 3);
   // the crickets only cost anything while they are plugged in: in from dusk, out a while after dawn (see lakeEvents)
   if (m.bugs > 0.005 && !A.bugsLive) { A.bugOut.connect(A.out); A.bugsLive = true; }
   A.bugsOffAt = m.bugs > 0.005 ? Infinity : Math.min(A.bugsOffAt, t);
+  // the river and the surf are built the first time they are heard, and unplugged after they have faded
+  for (const [key, build, level] of [["rush", rushBed, 0.34], ["surf", surfBed, 0.5]]) {
+    const on = m[key] > 0.005;
+    if (on && !A[key]) A[key] = build(e);
+    if (!A[key]) continue;
+    if (on && !A[key + "Live"]) { A[key].connect(A.out); A[key + "Live"] = true; }
+    A[key + "OffAt"] = on ? Infinity : Math.min(A[key + "OffAt"] ?? Infinity, t);
+    A[key].gain.setTargetAtTime(on ? level * m[key] : 0, t, on ? 1.5 : 1);
+  }
   if (onNow && !A.next) A.next = { lap: t + 0.4, bird: t + 1.5 + 3 * rnd(), loon: t + 5 + 7 * rnd(), frog: t + 3 + 5 * rnd() };
   if (!onNow) A.next = null;
 }
-// schedule the lake's one-shots that fall between t0 and t1
+// schedule the place's one-shots that fall between t0 and t1
 function lakeEvents(e, t0, t1) {
   const A = e.amb;
   if (!A || !A.on || !A.next) return;
   if (!e.offline && A.bugsLive && t0 - A.bugsOffAt > 15) { A.bugOut.disconnect(); A.bugsLive = false; }
-  const m = mix(A.hour), N = A.next, to = e.ambBus;
+  for (const key of ["rush", "surf"]) if (!e.offline && A[key + "Live"] && t0 - (A[key + "OffAt"] ?? Infinity) > 8) { A[key].disconnect(); A[key + "Live"] = false; }
+  const m = mix(A.hour, A.place), N = A.next, to = e.ambBus;
   const at = (k) => Math.max(N[k], t0);
-  while (N.lap < t1) { const s = rnd(); lap(e, at("lap"), s, to); N.lap = at("lap") + 0.7 + 2.2 * rnd(); }
+  // no lapping on the river or at the sea: the rush and the surf are the water
+  while (N.lap < t1) { const s = rnd(); if (m.lap > 0) lap(e, at("lap"), s, to); N.lap = at("lap") + (0.7 + 2.2 * rnd()) / Math.max(0.3, m.lap); }
   while (N.bird < t1) {
     if (m.birds > 0.04 && rnd() < m.birds) {
       const r = rnd(), o = { to, pan: rnd() * 1.6 - 0.8, peak: 0.03 + 0.03 * rnd(), send: 0.3 };
@@ -745,13 +838,14 @@ function lakeEvents(e, t0, t1) {
     }
     N.bird = at("bird") + 3 + 7 * rnd();
   }
+  // the loons: the signature of Loon Lake, and nowhere else
   while (N.loon < t1) {
-    loon(e, at("loon"), undefined, { to, gain: 0.32, send: 0.85 });
+    if (m.loons > 0) loon(e, at("loon"), undefined, { to, gain: 0.32, send: 0.85 });
     N.loon = at("loon") + (m.loons >= 1 ? 22 + 28 * rnd() : 60 + 70 * rnd());
   }
   while (N.frog < t1) {
-    if (m.bugs > 0.5) frog(e, at("frog"), { to, pan: -0.6 + 0.4 * rnd(), peak: 0.05 });
-    N.frog = at("frog") + 5 + 9 * rnd();
+    if (m.frogs > 0.5) frog(e, at("frog"), { to, pan: -0.6 + 0.4 * rnd(), peak: 0.05 });
+    N.frog = at("frog") + (5 + 9 * rnd()) * m.frogGap;
   }
 }
 
@@ -816,10 +910,16 @@ export const Sound = {
   setReel(rps) { if (E) drive(E, "reel", rps); },
   setDrag(mps) { if (E) drive(E, "drag", mps); },
   setTension(v) { if (E) drive(E, "tension", v); },
+  setGrind(v) { if (E) drive(E, "grind", v); },
   setAmbience(onNow, hour) {
     if (!E) return;
-    lakeSet(E, !!onNow, clamp(num(hour, 12), 0, 24), E.ctx.currentTime);
+    lakeSet(E, !!onNow, clamp(num(hour, 12), 0, 24), E.ctx.currentTime, place);
     lakeTimer(!!onNow && on);
+  },
+  // the place the player is at: loon, stumps, river or sea. The sound bed changes with it (anything else is Loon Lake)
+  setPlace(id) {
+    place = id === "stumps" || id === "river" || id === "sea" ? id : "loon";
+    if (E && E.amb && E.amb.on) lakeSet(E, true, E.amb.hour, E.ctx.currentTime, place);
   },
   // quiets the game loops (the lake keeps going: turn it off with setAmbience(false)). The game may stop calling the
   // setters now (pause, title), so unplug the silent loops a little later from here
@@ -833,15 +933,16 @@ export const Sound = {
   /* ---------- test hooks (not for the game) ---------- */
   _render: (...a) => renderOffline(...a),
   _names: { sfx: Object.keys(SFX), loops: [...GAME_LOOPS, "ambience"] },
+  _mix: mix,
   get _engine() { return E; },
 };
 
 // Tests: render one sound (a one-shot, a loop driven along a curve, or the lake) into an OfflineAudioContext.
 // name: an sfx name, a loop name, "ambience", or "stress" (every loop, the lake and a stream of one-shots together).
-// opts: v (one-shot strength), at (its start time), curve(t) (loop value over time), hour and loonAt (the lake),
-// raw (skip the master bus).
+// opts: v (one-shot strength), at (its start time), curve(t) (loop value over time), hour, place and loonAt (the
+// place's sound bed), raw (skip the master bus).
 // Resolves to the AudioBuffer.
-export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, loonAt = null, raw = false, sampleRate = 44100, seed = 7, at = 0.25 } = {}) {
+export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, loonAt = null, place: where = "loon", raw = false, sampleRate = 44100, seed = 7, at = 0.25 } = {}) {
   const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
   if (!OAC) throw new Error("no OfflineAudioContext");
   const ctx = new OAC(2, Math.ceil(seconds * sampleRate), sampleRate);
@@ -855,7 +956,7 @@ export async function renderOffline(name, seconds = 2, { v, curve, hour = 12, lo
       const f = curve || CURVES[name];
       for (let t = 0; t < seconds; t += 1 / 60) drive(e, name, f(t), t);
     } else if (name === "ambience" || name === "stress") {
-      lakeSet(e, true, hour, 0);
+      lakeSet(e, true, hour, 0, where);
       if (loonAt != null) e.amb.next.loon = loonAt;
       lakeEvents(e, 0, seconds);
       // stress: a whole fight at once, every loop running with the lake, and a one-shot every half second
@@ -876,4 +977,5 @@ const CURVES = {
   reel: (t) => (t < 0.2 ? 0 : t < 1.5 ? 1.2 : t < 2.8 ? 2.6 : t < 3.2 ? 0 : t < 4 ? 4 : 0),  // steady, faster, a pause, flat out
   drag: (t) => (t < 0.2 ? 0 : t < 1.2 ? 0.25 : t < 2.4 ? 1 : t < 3.6 ? 2.8 : 0),             // a slow give, a run, a big run
   tension: (t) => (t < 0.2 || t > 3.5 ? 0 : (t - 0.2) / 3.3),                               // the load builds to the break
+  grind: (t) => (t < 0.2 || t > 3.5 ? 0 : (t - 0.2) / 3.3),                                 // the rub meter fills up to the cut
 };

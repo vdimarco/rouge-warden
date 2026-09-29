@@ -1,6 +1,6 @@
 // The cast: how the rod stroke becomes a launch, and how the lure flies until it lands.
 // Pure logic (no DOM, no three.js), so node can test it: node qa/fish/cast.sim.mjs
-import { height, onDock, DOCK } from "./lake.js";
+import { height, onDock, DOCK, currentPlace } from "./lake.js";
 
 export const CAST = {
   IDEAL_RELEASE: 68,     // deg: θ at release that gives the 38° launch the assist aims for
@@ -29,7 +29,6 @@ export const CAST = {
   SAG: 0.03,             // line out = straight distance × (1 + SAG) + SAG_M: the line never flies perfectly straight
   SAG_M: 0.3,
   SPOOL_MAX: 150,        // m of line on the spool
-  TREE_MIN: 1.2,         // m: land higher than this has pines on it
   TREE_H: 6,             // m: how tall the pines are
   STEP: 1 / 240,         // s: internal time step
 };
@@ -82,11 +81,12 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   return { v0, pitch, yaw: fin(yaw, 0), power, verdict, clock: clockOf(th) };
 }
 
-// what is under a point: the water (0), the dock deck, or the land
+// what is under a point: the water (0), the stand (dock, road, bar or wall), or the land.
+// Land higher than the place's treeMin has trees on it.
 function ground(x, z) {
   if (onDock(x, z)) return { y: DOCK.deck, kind: "dock" };
   const h = height(x, z);
-  if (h > 0) return { y: h, kind: h > CAST.TREE_MIN ? "trees" : "land" };
+  if (h > 0) return { y: h, kind: h > currentPlace().treeMin ? "trees" : "land" };
   return { y: 0, kind: "water" };
 }
 

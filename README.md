@@ -312,7 +312,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 
 ## Reel It In
 
-Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake. Your phone is the rod and the reel: you cast it and reel it with real moves.
+Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake, and later at three more places. Your phone is the rod and the reel: you cast it and reel it with real moves.
 
 **Hold the phone upright the whole time.** Its top edge is the rod, for the cast and for the reel. You never turn it sideways.
 
@@ -335,15 +335,35 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 - Turn the crank with your thumb to reel. The first turn snaps the bail shut, like a real reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
 - A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: snap the phone up to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
-- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone left or right like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
-- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
+- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. Each move has one right answer, and the game names it:
+  - A fish that **shakes its head**: hold the rod up and keep the line tight.
+  - A fish that **jumps**, or jumps again and again (a tail walk): lower the rod.
+  - A fish that **swims at you**: reel fast, or the line goes slack and it throws the hook.
+  - A fish that **holds on the bottom**: pump it up. Tip the phone up slowly, then reel as you lower it.
+  - A fish that **runs for cover**: tilt the phone left or right like a steering wheel, and turn it away from the weeds, the stumps, the logs, or the rocks.
+- The red band on the gauge is the **rub meter**. It fills when the line touches a stump, a log, a rock, or the weeds, and the line is cut when it is full. Steer the fish away, or lift the rod over low rocks.
+- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag. At Gull Rock the spool can empty on a long run: tighten the drag.
+- A legend fights in three stages and rests between them, so your arm rests too.
 - When the fish is tired and close to the dock, tip the phone up and hold it to lift the fish out.
 
 **Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the press on the reel, the release of your thumb, and the crank. The other cues come through sound and pictures there.
 
-**The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+**Places.** Land a big fish to open the next place. Each place has its own look, its own gear, its own derby and best score, its own tab in the Journal, and its own legend.
 
-**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about 40 seconds for a muskie, so your arm does not tire.
+| Place | You open it with | What is different | Legend |
+| --- | --- | --- | --- |
+| Loon Lake | (open from the start) | A calm lake. It teaches the moves. Line: 10 lb. | Golden Loon Bass |
+| Stump Bay | A 3.5 kg fish at Loon Lake | A flooded forest at dusk, then night. The line rubs on stumps, so you steer fish out. Catfish bite in the dark. Line: 20 lb braid. | Old Whiskers, a giant catfish |
+| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current swings your lure, and salmon run down the river toward a logjam. Line: 20 lb. | Old Hookjaw, an old salmon |
+| Gull Rock | An 8 kg fish at Cedar River | The open sea, from the end of a stone wall. Long runs can empty your spool, and fish dive for the rocks at your feet. Line: 30 lb. | Big Blue, a tuna as big as a man |
+
+An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is open. Add `?open` to the URL to open every place for that visit only.
+
+**The fish at Loon Lake.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+
+**The other places have 16 more fish.** Stump Bay has Black Crappie, Bowfin, Longnose Gar, Channel Catfish, and Old Whiskers. Cedar River has Steelhead, Chinook Salmon, Brown Trout, Brook Trout, and Old Hookjaw. Gull Rock has Atlantic Mackerel, Pollock, Striped Bass, Bluefish, Atlantic Cod, and Big Blue. Each fights its own way. Fish are bigger than before: a usual catch is about 2 kg at Loon Lake, and long casts find the biggest ones. The catch card says how big your fish is for its kind, and a very big one gets a TROPHY badge and a photo.
+
+**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal has a tab for each place. It keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about a minute for a legend, and a legend rests between its stages, so your arm does not tire.
 
 **Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
 
@@ -417,7 +437,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
 | `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
-| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `lake.js` (the lake map), `species.js` (the fish and the junk), `world.js` and `world-*.js` (the 3D lake), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
+| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `places.js` and `places/` (the four maps: height, depth, zones, current, snags), `lake.js` (the map of the place you are at), `species.js` (the 26 fish and the junk), `fishing.js` (who lives where, the gear, the cover, and the legend at each place), `journey.js` (the trail of places, goals, ranks, and text), `save.js` (the save file), `world.js`, `world-look.js` and `world-*.js` (the 3D places and the fish bodies), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
@@ -484,11 +504,19 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
 | `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
 | `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
-| `qa/fish/fight.sim.mjs` | Thousands of fights with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also bite rates by zone and the weights |
+| `qa/fish/fight.sim.mjs` | Thousands of fights at Loon Lake with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also the fight times, bite rates by zone, and the weights |
+| `qa/fish/places.sim.mjs` | Fights at all four places with skilled, casual and flawed players: median fight times, land rates, the legends' three stages and rests, the rub meter, the spool, and the dead-tow time. Uses `fightlib.mjs` |
+| `qa/fish/size.test.mjs` | The weight mix at each place (median, small and big shares, long casts against short casts), and the size rank of every species |
+| `qa/fish/places.map.mjs` | The four maps: zone shares, the stand, the current, the snags, the speed of `height()`, and that Loon Lake is unchanged |
+| `qa/fish/save.test.mjs` | The save file: old saves, junk values, the move of an old save to the places, and a stable round trip |
+| `qa/fish/journey.sim.mjs` | How many casts a novice and a good player need to open each place, the derby ranks, and that each goal is a fair size |
+| `qa/fish/screens.mjs` | The prompts in their order, the loss lines, the catch card, the unlock cards, the results, the journal, and the cabinet line, with staged fights |
+| `qa/fish/travel.mjs` | Travel between the places: the cards, the draw call and triangle limits at each place, and that memory does not grow over a loop of trips |
+| `qa/fish/fish.render.mjs` | Every fish and junk builds with 3 draw calls, stays within the triangle limit, shows in the catch view, and frees its textures |
 | `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
 | `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
 | `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
-| `qa/fish/world.render.mjs` | The lake at every hour and in every view, each fish, the trophy view, and the draw call and triangle limits |
+| `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 

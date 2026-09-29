@@ -16,7 +16,8 @@ try {
   const st = await page.evaluate(() => ({ input: FISH.G.input, layout: FISH.G.layout }));
   check(st.input === "touch", "a computer plays with the mouse (" + st.input + ")");
   check(st.layout === "wide-cast", "a wide screen gets the wide cast layout (" + st.layout + ")");
-  await page.evaluate(() => { FISH.G.force = { species: "pumpkinseed", bite: true }; });
+  // (kg: a long cast can roll a pumpkinseed too heavy to swing in, and this test wants a small fish it can land)
+  await page.evaluate(() => { FISH.G.force = { species: "pumpkinseed", kg: 0.25, bite: true }; });
   await shot(page, "desk-1-ready");
 
   // hold on the reel, drag down to tip the rod back, then flick up and let go during the flick
@@ -106,10 +107,19 @@ try {
   check(await page.isVisible("#pause"), "Esc pauses");
   await page.click("#pJournal");
   check(await page.isVisible("#journal"), "the journal opens from the pause menu");
+  // Loon Lake lists its own 13 (9 fish, the legend, 3 junk), not all 29 kinds of the game
+  const rows = await page.evaluate(() => ({ n: document.querySelectorAll("#jlist .jfish").length, sum: document.querySelector("#jsum").textContent, tabs: document.querySelectorAll("#jtabs button").length }));
+  check(rows.n === 13 && /^\d+ of 13 found here · \d+ of 29 in all/.test(rows.sum) && rows.tabs === 4, "the journal shows Loon Lake's 13 rows and a chip for each of the 4 places (" + rows.n + " rows, " + rows.tabs + " chips: " + rows.sum + ")");
   await page.click("#journal [data-close]");
   check(await page.isVisible("#pause"), "closing the journal returns to the pause menu");
   await page.click("#quitBtn");
   check(await page.isVisible("#title"), "Quit goes back to the title");
+  // the Places screen, from the keyboard
+  await sleep(400);
+  await page.click("#placesBtn");
+  check(await page.isVisible("#places") && (await page.locator("#plist .pcard").count()) === 4, "Places shows four cards");
+  await page.keyboard.press("Escape");
+  check(await page.isVisible("#title") && !(await page.isVisible("#places")), "Esc closes Places");
 } catch (e) {
   check(false, "exception: " + (e && e.message) + " at " + page.url() + "\n" + String(e && e.stack).split("\n").slice(0, 6).join("\n"));
 }

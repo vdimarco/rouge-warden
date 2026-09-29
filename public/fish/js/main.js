@@ -1,16 +1,22 @@
-// Reel It In: Loon Lake. The phone is the rod and the reel.
-// This file runs the game: the title, the cast and the reel (the phone stays upright for both), the catch, and the derby.
+// Reel It In. The phone is the rod and the reel.
+// This file runs the game: the title and the places, the cast and the reel (the phone stays upright for both), the catch,
+// and the derby.
 // The modules do the parts: motion.js reads the phone, reel.js is the reel you touch, cast.js flies the lure,
-// fish.js runs the fish and the fight, world.js draws the lake, audio.js and haptics.js make the feel.
+// fish.js runs the fish and the fight, world.js draws the place, audio.js and haptics.js make the feel.
+// places.js holds the maps, fishing.js who lives where, journey.js the trail and its words, save.js the save file.
 import { Motion } from "./motion.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { CAST, castParams, Flight } from "./cast.js";
-import { Rises, LakeSim, rodTip } from "./fish.js";
+import { Rises, LakeSim, rodTip, sizeRank } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
 import * as LAKE from "./lake.js";
-import { SPECIES, JUNK, byId } from "./species.js";
+import { PLACES, getPlace } from "./places.js";
+import { byId } from "./species.js";
+import { fishingOf, ecology, placeSpecies } from "./fishing.js";
+import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText } from "./journey.js";
+import { SAVE_KEY, loadSave, placeRec, recordCatch, legendStep, recordDerby } from "./save.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -19,34 +25,18 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const now = () => performance.now();
 const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
+// ?open opens every place for this page load. It is never saved.
+const OPEN_ALL = QS.has("open");
 
 /* ---------------- saving ---------------- */
-const SAVE_KEY = "fish.v1";
+// save.js reads and cleans the file; this is only the storage
 const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage off */ } },
 };
-const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", seen: {}, caught: 0 });
-let save = blank();
-{
-  const s = store.get(SAVE_KEY, null);
-  if (s && typeof s === "object") for (const k of Object.keys(save)) if (k in s && typeof s[k] === typeof save[k]) save[k] = s[k];
-  // input starts as null, so the type check above never copies it
-  if (s && (s.input === "motion" || s.input === "touch")) save.input = s.input;
-  if (!save.journal || typeof save.journal !== "object" || Array.isArray(save.journal)) save.journal = {};
-  if (!save.seen || typeof save.seen !== "object") save.seen = {};
-  if (save.input !== "motion" && save.input !== "touch") save.input = null;
-  // nested values are trusted nowhere else: keep only well-formed ones
-  const fin = (v) => typeof v === "number" && Number.isFinite(v);
-  const J = {};
-  for (const [id, e] of Object.entries(save.journal)) if (byId(id) && e && typeof e === "object") J[id] = { n: fin(e.n) ? Math.max(0, Math.floor(e.n)) : 0, kg: fin(e.kg) ? e.kg : 0, cm: fin(e.cm) ? e.cm : 0 };
-  save.journal = J;
-  const b = save.biggest;
-  save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
-  for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
-  if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
-}
+const save = loadSave(store.raw(SAVE_KEY));
 const persist = () => store.set(SAVE_KEY, save);
+const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
 const game = $("#game");
@@ -54,6 +44,12 @@ const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouc
 const G = {
   phase: "boot",    // boot | title | cast | reel | catch | lost | results
   mode: "free",     // free | derby
+  place: getPlace(save.place), // the place the player is at (a places.js map); the whole game reads it. The save holds an open one
+  unlocked: [],     // places this derby opened: { id, kg, name }
+  unlockId: null,   // the place the last catch opened
+  pendingUnlock: null, closeCall: "", cardWait: false,   // the catch card: a place to announce next, a close-call toast, the photo beat is running
+  big: null,        // the fish on the line is a big one: { at, said }
+  walk: false,      // the fish is in a tail walk (jump after jump)
   input: "touch",   // motion | touch
   paused: false,
   hour: 6.2,
@@ -69,10 +65,11 @@ const G = {
   layout: "", rot: 0, vw: 0, vh: 0,
   hookReq: false, lastHook: 0,
   tension: 0, lastEvent: {}, outcomeAt: 0,
-  frame: 0, fps: 60, seed: 1, force: null,
+  frame: 0, fps: 60, seed: 1, force: null,   // force lets a test pick the fish: { species, kg, bite }
   wide: false,
 };
 let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, gauge = null, crankPad = null;
+let cardT = 0, countT = 0;   // the catch card: the timer of the photo beat, the timer of the count-up
 
 /* ---------------- icons for the prompts and the help ---------------- */
 const PHONE = "<rect x='14' y='5' width='12' height='22' rx='2.5' fill='none' stroke='currentColor' stroke-width='2.4'/>";
@@ -91,13 +88,14 @@ const ICON = {
 };
 
 /* ---------------- screens and messages ---------------- */
-const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results"];
+const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results", "places", "travel", "arrive", "unlock"];
 let returnTo = null;
 let shownAt = 0, tapAt = -1e9, tapShown = false;
 function show(id) {
   shownAt = now();
   tapShown = shownAt - tapAt < 250;
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
+  document.body.dataset.screen = id || "";
   const focus = id && ($("#" + id + " .btn.go") || $("#" + id + " button"));
   if (focus && !touchDevice) focus.focus({ preventScroll: true });
 }
@@ -148,8 +146,9 @@ function report(dist, verdict, zoneName, sweet) {
   reportT = setTimeout(() => { r.hidden = true; }, 2600);
 }
 const hideReport = () => { $("#report").hidden = true; };
-const fmtKg = (kg) => (kg < 1 ? kg.toFixed(2) : kg.toFixed(1)) + " kg";
 const fmtHour = (h) => { const hh = Math.floor(h), mm = Math.floor((h - hh) * 60); return ((hh + 11) % 12 + 1) + ":" + String(mm).padStart(2, "0") + (hh < 12 ? " AM" : " PM"); };
+// the time on the catch photo: 21:14
+const fmtClock = (h) => { const hh = Math.floor(h) % 24, mm = Math.floor((h - Math.floor(h)) * 60); return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0"); };
 
 /* ---------------- layout and orientation ---------------- */
 // With the sensors on, the phone stays upright from the cast to the catch: its top edge is the rod. If the browser
@@ -294,25 +293,44 @@ async function keepAwake() {
 function releaseAwake() { if (wake) { wake.release().catch(() => {}); wake = null; } }
 
 /* ---------------- title ---------------- */
-function toTitle() {
+// leave the play screens: the state of the session is gone, the lake is empty
+function stopPlay() {
   releaseAwake();
   G.phase = "title";
-  G.sim = null; G.flight = null;
+  G.sim = null; G.flight = null; G.big = null; G.walk = false; G.pendingUnlock = null;
   $("#hud").hidden = true;
   prompt("");
   hideReport();
+  clearTimeout(cardT); clearInterval(countT);
   if (world) { world.hideCatch(); world.setLure({ x: 0, y: -5, z: 0, visible: false }); world.setLine({ visible: false }); world.setFish(null); world.setFollower(null); world.setAim({ visible: false }); world.setRod({ theta: 70, yaw: 0, visible: false }); }
   Sound.stopLoops(); Haptics.stop();
+}
+function toTitle() {
+  stopPlay();
+  // the title shows the place at its free-fishing hour: the postcard of the place
+  G.hour = startHour(G.place.id, "free");
+  if (world) world.setHour(G.hour);
+  Sound.setAmbience(true, G.hour);
+  $("#tkick").textContent = "GET PLUNGER'D · " + journeyOf(G.place.id).kick;
+  $("#placesNew").hidden = !newPlaces(save).length;
   show("title");
   titleBest();
   relayout(true);
 }
+// "Here: best derby 18.4 kg · biggest Channel Catfish 7.2 kg", then what to do next
 function titleBest() {
+  const id = G.place.id, e = placeRec(save, id);
   const bits = [];
-  if (save.derbyBest > 0) bits.push("Derby best " + fmtKg(save.derbyBest));
-  if (save.biggest) { const sp = byId(save.biggest.id); if (sp) bits.push("Biggest: " + sp.name + " " + fmtKg(save.biggest.kg)); }
-  if (save.longest > 0) bits.push("Longest cast " + save.longest.toFixed(1) + " m");
-  $("#tbest").textContent = bits.join(" · ");
+  if (e && e.d > 0) bits.push("best derby " + fmtKg(e.d));
+  const sp = e && e.id && byId(e.id);
+  if (sp && e.kg > 0) bits.push("biggest " + sp.name + " " + fmtKg(e.kg));
+  const lines = [];
+  if (bits.length) lines.push("Here: " + bits.join(" · "));
+  // the goal of this place; when the next place is open already, the goal of the first place still locked
+  const lock = ORDER.find((p) => !openNow(p)), from = lock && prevPlace(lock);
+  if (lock) lines.push(from === id ? goalText(id, "title") : goalText(from, "card"));
+  else lines.push(legendsLanded(save) >= ORDER.length ? "You landed every legend." : save.longest > 0 ? "Longest cast " + save.longest.toFixed(1) + " m" : "");
+  $("#tbest").textContent = lines.filter(Boolean).join("\n");
 }
 function begin(mode) {
   Sound.init(); Haptics.unlock(); keepAwake();
@@ -324,21 +342,159 @@ $("#freeBtn").addEventListener("click", () => begin("free"));
 $("#journalBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); renderJournal(); overlay("journal"); });
 $("#helpBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); overlay("help"); });
 $("#setBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); syncSettings(); overlay("settings"); });
+$("#placesBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); renderPlaces(); overlay("places"); });
 
+// the goal of the place you are at, while the next place is still locked ("" when there is nothing to say)
+function goalLine(kind) {
+  const nx = nextPlace(G.place.id);
+  return nx && !openNow(nx) ? goalText(G.place.id, kind) : "";
+}
 function startMode(mode) {
   keepAwake();
   G.mode = mode;
-  G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = [];
-  G.hour = mode === "derby" ? 18.3 : 6.2;
+  G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = []; G.unlocked = [];
+  G.hour = startHour(G.place.id, mode);
   if (world) world.setHour(G.hour);
   G.seed = (Math.random() * 1e9) | 0;
-  rises = new Rises(LAKE.rng(G.seed));
+  rises = new Rises(LAKE.rng(G.seed), G.place);
   G.paused = false;
   show(null);
   $("#hud").hidden = false;
   Sound.setAmbience(true, G.hour);
+  const goal = goalLine("remind");
+  if (goal) toast(goal, 3600);
   newCast(true);
 }
+
+/* ---------------- the places ---------------- */
+// one small picture for each place: the dock, the stumps, the river and the rock with a gull
+const PLACE_ICON = {
+  loon: "<svg viewBox='0 0 48 48'><circle cx='36' cy='12' r='4.5' fill='#f0c060'/><path d='M3 29 H45 V45 H3Z' fill='#2f7f92'/><path d='M7 35 q4 -3 8 0 t8 0 t8 0 t8 0' fill='none' stroke='#9fd2dc' stroke-width='1.6'/><rect x='3' y='24' width='27' height='4.5' rx='1' fill='#b98346'/><rect x='7' y='28' width='3' height='12' fill='#7a5228'/><rect x='22' y='28' width='3' height='12' fill='#7a5228'/><ellipse cx='38' cy='33' rx='5' ry='2.6' fill='#20272b'/><circle cx='42' cy='30' r='1.8' fill='#20272b'/></svg>",
+  stumps: "<svg viewBox='0 0 48 48'><rect width='48' height='48' fill='#1a2a4a'/><circle cx='34' cy='12' r='5.5' fill='#dfe6ff'/><circle cx='37' cy='10.5' r='5' fill='#1a2a4a'/><path d='M3 30 H45 V45 H3Z' fill='#16180e'/><path d='M9 42 V22 l4 -3 l4 3 V42Z' fill='#6a5230'/><path d='M27 42 V17 l3 -2 l4 2 V42Z' fill='#6a5230'/><path d='M19 42 V31 h5 V42Z' fill='#5a4326'/><path d='M5 39 q4 -2 8 0 t8 0 t8 0 t8 0' fill='none' stroke='#5c6a44' stroke-width='1.4'/></svg>",
+  river: "<svg viewBox='0 0 48 48'><rect width='48' height='48' fill='#3a5a5a'/><path d='M3 15 q6 -6 12 0 t12 0 t12 0' fill='none' stroke='#9fd2cc' stroke-width='2.2' stroke-linecap='round'/><path d='M3 26 q6 -6 12 0 t12 0 t12 0' fill='none' stroke='#7cc2cc' stroke-width='2.2' stroke-linecap='round'/><path d='M3 37 q6 -6 12 0 t12 0 t12 0' fill='none' stroke='#9fd2cc' stroke-width='2.2' stroke-linecap='round'/><path d='M30 5 q11 0 11 11 q-11 0 -11 -11Z' fill='#d8742a'/></svg>",
+  sea: "<svg viewBox='0 0 48 48'><rect width='48' height='48' fill='#2a5a68'/><path d='M6 44 L14 27 L26 23 L38 29 L44 44Z' fill='#9096a0'/><path d='M14 27 L26 23 L38 29 L30 32Z' fill='#b8bec6'/><path d='M3 41 q5 -4 10 0 t10 0 t10 0 t10 0' fill='none' stroke='#8fd0dc' stroke-width='1.8'/><path d='M14 11 q4 -5 8 0 q4 -5 8 0' fill='none' stroke='#f6efd9' stroke-width='2.4' stroke-linecap='round'/></svg>",
+};
+// how far the player got with a place's legend: 0 not seen, 1 its gold ring seen, 2 hooked, 3 landed
+function legendStepOf(id) {
+  const e = save.places[id], j = save.journal[fishingOf(id).legend.id];
+  return j && j.n > 0 ? 3 : e ? e.lg : 0;
+}
+function renderPlaces() {
+  const list = $("#plist");
+  list.innerHTML = "";
+  const lock = ORDER.find((id) => !openNow(id));
+  for (const id of ORDER) {
+    const J = JOURNEY[id], open = openNow(id), here = id === G.place.id, rec = save.places[id] || { d: 0, kg: 0 };
+    const li = document.createElement("li");
+    li.className = "pcard" + (here ? " here" : "") + (open ? "" : " locked");
+    li.dataset.place = id;
+    li.dataset.state = !open ? (id === lock ? "next" : "locked") : here ? "here" : "open";
+    const ic = document.createElement("div"), body = document.createElement("div");
+    ic.className = "ic"; ic.innerHTML = PLACE_ICON[id];
+    const h = document.createElement("h3"), lvl = document.createElement("span");
+    lvl.className = "lvl"; lvl.textContent = J.level;
+    h.append(J.name + " ", lvl);
+    body.appendChild(h);
+    const para = (t, cls) => { const p = document.createElement("p"); if (cls) p.className = cls; p.textContent = t; body.appendChild(p); return p; };
+    if (open) {
+      para(J.blurb);
+      const facts = document.createElement("div"), f = foundHere(save, id);
+      facts.className = "facts";
+      for (const t of ["Line: " + fishingOf(id).gear.line, "Top fish: " + topFish(id).name, f.n + " of " + f.m + " found · Best derby " + (rec.d > 0 ? fmtKg(rec.d) : "none yet"), "Legend: " + LEGEND_STEPS[legendStepOf(id)]]) {
+        const d = document.createElement("div"); d.textContent = t; facts.appendChild(d);
+      }
+      body.appendChild(facts);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = here ? "btn alt" : "btn go"; b.disabled = here;
+      b.textContent = here ? "You are here" : "Fish here";
+      b.addEventListener("click", () => { Sound.sfx("ui"); travelTo(id); });
+      body.appendChild(b);
+    } else if (id === lock) {
+      const from = prevPlace(id), best = (save.places[from] || {}).kg || 0;
+      para(goalText(from, "card"));
+      para("Your best there: " + (best > 0 ? fmtKg(best) : "none yet") + ".");
+    } else para("Open " + JOURNEY[prevPlace(id)].name + " first.");
+    li.append(ic, body);
+    list.appendChild(li);
+  }
+  $("#pfoot").textContent = "Legends landed: " + legendsLanded(save) + " of " + ORDER.length;
+}
+
+/* ---------------- travel ---------------- */
+// The core of a trip: the map, the drawing and the sound move to place id. Resolves to the place, or to null when it
+// did not load (then Loon Lake is back).
+async function switchPlace(id) {
+  const p = getPlace(id);
+  try {
+    LAKE.setPlace(p);
+    G.place = p;
+    // a failure here (or in the world build) is the same as a load error: back to Loon Lake
+    await world.setPlace(p);
+    Sound.setPlace(p.id);
+  } catch (err) {
+    console.error(err);
+    LAKE.setPlace(PLACES.loon);
+    G.place = PLACES.loon;
+    try { await world.setPlace(PLACES.loon); } catch (err2) { console.error(err2); }
+    Sound.setPlace("loon");
+    G.stillDrawn = false;
+    return null;
+  }
+  // the dimmed screens over the lake draw it once: draw the new place
+  G.stillDrawn = false;
+  return p;
+}
+let traveling = false;
+// A trip from the places screen, the unlock card or the results. A card covers the load, and it stays up for 1.2 s at
+// least, so the wait reads as a trip and not as a glitch.
+async function travelTo(id) {
+  if (traveling || !openNow(id)) return;
+  if (id === G.place.id) { toTitle(); return; }
+  traveling = true;
+  stopPlay();
+  $("#travelTxt").textContent = "On the way to " + JOURNEY[id].name + ".";
+  show("travel");
+  const t0 = now();
+  const p = await switchPlace(id);
+  const left = 1200 - (now() - t0);
+  if (left > 0) await new Promise((r) => setTimeout(r, left));
+  traveling = false;
+  if (!p) {
+    save.place = "loon"; persist();
+    toTitle();
+    toast(JOURNEY[id].name + " did not load. Back to Loon Lake.", 3600);
+    return;
+  }
+  // ?open must never save a place the player has not earned
+  if (isOpen(save, id)) { save.place = id; persist(); }
+  if (id !== "loon" && !save.seen["at." + id]) arrival(id);
+  else toTitle();
+}
+// the first visit: where you are, what is new, and one tip
+function arrival(id) {
+  const J = JOURNEY[id];
+  seen("at." + id);
+  $("#akick").textContent = J.kick;
+  $("#aname").textContent = J.name;
+  $("#ablurb").textContent = J.blurb;
+  $("#agear").textContent = "New gear: " + J.gear.charAt(0).toLowerCase() + J.gear.slice(1);
+  $("#atip").textContent = J.tip;
+  $("#atip").hidden = !J.tip;
+  G.phase = "title";
+  show("arrive");
+}
+$("#aStart").addEventListener("click", () => { Sound.sfx("ui"); toTitle(); });
+
+/* ---------------- a fish opens the next place ---------------- */
+function unlockCard(id) {
+  seen("opened." + id);
+  G.unlockId = id;
+  $("#uname").textContent = JOURNEY[id].name + " is open!";
+  $("#ublurb").textContent = JOURNEY[id].blurb;
+  show("unlock");
+}
+$("#uGo").addEventListener("click", () => { Sound.sfx("ui"); travelTo(G.unlockId); });
+$("#uStay").addEventListener("click", () => { Sound.sfx("uiBack"); show(null); nextAfterOutcome(); });
 
 /* ---------------- the cast ---------------- */
 function newCast(first) {
@@ -452,7 +608,7 @@ function release(t, late = false) {
   G.cast = params;
   G.cast.late = late;
   // physics uses the real rod geometry; world.tip() is the drawn, camera-held rod
-  G.flight = new Flight(rodTip(clamp(s.theta, -10, 170), params.yaw), params);
+  G.flight = new Flight(rodTip(clamp(s.theta, -10, 170), params.yaw, 0, G.place.stand.rod), params);
   G.step = "flight";
   G.casts++;
   if (G.mode === "derby") G.castsLeft--;
@@ -462,6 +618,8 @@ function release(t, late = false) {
   updateHud();
   relayout();
 }
+// the cast landed on the place where you stand
+const STAND_HIT = { dock: "You hooked the dock.", road: "You hit the road.", bar: "You hit the gravel bar.", wall: "You hit the wall." };
 const VERDICT = {
   sweet: "Sweet cast!", high: "Too high. Let go a little later.", low: "Too low. Let go a little sooner.",
   slam: "Too late. Let go sooner.", behind: "Far too early. It went behind you.", weak: "Flick it faster.",
@@ -475,7 +633,7 @@ const VERDICT_M = {
 function landed(r) {
   const dist = Math.hypot(r.x, r.z);
   G.step = r.land === "water" ? "landed" : "ashore";
-  const zone = LAKE.zone(r.x, r.z);
+  const zone = G.place.zone(r.x, r.z);
   const v = G.cast ? (G.cast.late ? "late" : G.cast.verdict) : "";
   const VV = G.input === "motion" ? VERDICT_M : VERDICT;
   if (r.land === "water") {
@@ -484,20 +642,21 @@ function landed(r) {
     G.landing = { x: r.x, z: r.z, dist };
     G.ring = rises ? rises.near(r.x, r.z) : null;
     // G.force lets a test pick the fish: { species, kg, bite }
-    G.sim = new LakeSim(Object.assign({ lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || {}));
+    G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || {}));
+    G.big = null; G.walk = false;
     G.settle = 0;
     if (G.sim.plan && world.prepareFish) world.prepareFish(G.sim.plan.id);
     const best = dist > save.longest && dist > 12;
     if (dist > save.longest) save.longest = dist;
     persist();
-    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : best ? "Your longest cast yet!" : LAKE.ZONE_NAMES[zone] || "", v === "sweet");
+    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : best ? "Your longest cast yet!" : G.place.zoneNames[zone] || "", v === "sweet");
     if (G.ring) Sound.sfx("ui");
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
     return;
   } else {
     Sound.sfx("plop");
-    const msg = r.land === "tree" ? "You caught a pine tree." : r.land === "dock" ? "You hooked the dock." : "You cast onto the shore.";
+    const msg = r.land === "tree" ? (G.place.id === "loon" ? "You caught a pine tree." : "You caught a tree.") : r.land === "dock" ? STAND_HIT[G.place.stand.kind] || "You hooked the dock." : "You cast onto the shore.";
     report(r.land === "dock" ? null : dist, VV[v] || "", msg, false);
     G.outcomeAt = now();
   }
@@ -524,62 +683,115 @@ function nextAfterOutcome() {
 }
 
 /* ---------------- the catch ---------------- */
+// the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
+// in), the flash and the shutter come, then the card slides up. Seconds
+const PHOTO = { flash: 1.2, card: 1.5 };
 function caught(c) {
-  const sp = byId(c.id);
-  const junk = !!c.junk || JUNK.some((j) => j.id === c.id);
-  const j = save.journal[c.id] || { n: 0, kg: 0, cm: 0 };
-  const isNew = j.n === 0;
-  const record = !junk && !isNew && c.kg > j.kg;
-  j.n++;
-  if (c.kg > j.kg) { j.kg = c.kg; j.cm = c.cm || 0; }
-  save.journal[c.id] = j;
-  if (!junk) {
-    save.caught++;
-    if (!save.biggest || c.kg > save.biggest.kg) save.biggest = { id: c.id, kg: c.kg };
-    G.bag.push({ id: c.id, kg: c.kg });
-  }
+  const sp = byId(c.id), at = G.place.id;
+  const r = recordCatch(save, at, c);
+  const junk = r.junk;
+  if (!junk) G.bag.push({ id: c.id, kg: c.kg });
   persist();
   G.phase = "catch";
   prompt("");
+  G.big = null; G.walk = false;
   world.setFish(null); world.setFollower(null);
   world.setLine({ visible: false });
   world.setLure({ x: 0, y: -5, z: 0, visible: false });
+  // how big it is for its kind: the size line, TROPHY, and how loud the party is
+  const rank = !junk && sp ? sizeRank(sp, c.kg) : 0;
+  const legend = !!(sp && sp.legend), trophy = rank >= TROPHY_RANK;
+  const photo = !junk && (trophy || legend || !!r.opened);
+  if (r.opened) {
+    G.unlockId = r.opened;
+    if (G.mode === "derby") G.unlocked.push({ id: r.opened, kg: c.kg, name: sp.name });
+    else G.pendingUnlock = r.opened;
+  }
+  G.closeCall = r.close ? goalText(at, "close") : "";
   Sound.sfx(junk ? "junk" : "landed");
-  if (record || (isNew && !junk)) setTimeout(() => Sound.sfx("record"), 500);
-  Haptics.land();
+  if (r.record || (r.isNew && !junk) || trophy || legend) setTimeout(() => Sound.sfx("record"), 500);
+  if (legend && at === "loon") setTimeout(() => Sound.sfx("loonWail"), 1700);
+  Haptics.land(legend ? 2 : trophy ? 1 : 0);
+  // at most two badges, in this order
   const badges = $("#cbadges");
   badges.innerHTML = "";
-  const addBadge = (t, cls) => { const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = t; badges.appendChild(b); };
-  if (isNew) addBadge(junk ? "NEW FIND" : "NEW SPECIES", "new");
-  if (record) addBadge("NEW RECORD", "");
-  if (sp && sp.legend) addBadge("LEGEND", "");
+  const marks = [];
+  if (legend) marks.push(["LEGEND", ""]);
+  if (r.isNew) marks.push([junk ? "NEW FIND" : "NEW SPECIES", "new"]);
+  if (r.record) marks.push(["NEW RECORD", ""]);
+  if (trophy) marks.push(["TROPHY", ""]);
+  for (const [t, cls] of marks.slice(0, 2)) { const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = t; badges.appendChild(b); }
   $("#cname").textContent = sp ? sp.name : c.name || "A fish";
-  $("#ckg").innerHTML = junk ? "<small>Junk</small>" : fmtKg(c.kg) + (c.cm ? " <small>· " + c.cm + " cm</small>" : "");
+  $("#csize").textContent = junk ? "" : sizeLine(rank);
+  $("#cold").textContent = r.record ? "Your old record: " + fmtKg(r.oldKg) + "." : "";
   $("#cblurb").textContent = sp ? sp.blurb : "";
-  $("#catchGo").textContent = G.mode === "derby" && G.castsLeft <= 0 ? "See the results" : "Cast again";
+  $("#ccap").textContent = photo ? journeyOf(at).name + " · " + fmtClock(G.hour) : "";
+  $("#catch .card").classList.toggle("photo", photo);
+  $("#catchGo").textContent = G.mode === "derby" && G.castsLeft <= 0 ? "See the results" : G.pendingUnlock ? "Next" : "Cast again";
+  clearTimeout(cardT); clearInterval(countT);
+  G.cardWait = photo;
+  $("#catch").classList.toggle("wait", photo);
   relayout(true);
   // after the new layout, so the fish is fitted to the view it will be seen in
-  world.showCatch(c.id, c.kg);
+  world.showCatch(c.id, c.kg, { photo });
   show("catch");
   updateHud();
+  if (!photo) { countUp(c, junk, rank); return; }
+  cardT = setTimeout(() => {
+    flash(); Sound.sfx("shutter"); Haptics.thump();
+    cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
+  }, PHOTO.flash * 1000);
 }
-$("#catchGo").addEventListener("click", () => { Sound.sfx("ui"); show(null); world.hideCatch(); nextAfterOutcome(); });
+// the weight and the length on the card
+function catchKg(c, junk, kg) {
+  // the length grows with the cube root of the weight, like the fish itself
+  const cm = c.cm && c.kg > 0 ? Math.round(c.cm * Math.cbrt(clamp(kg / c.kg, 0, 1))) : 0;
+  $("#ckg").innerHTML = junk ? "<small>Junk</small>" : fmtKg(kg) + (cm ? " <small>· " + cm + " cm</small>" : "");
+  // data-kg is set when the count-up is done, so a test can wait for it
+  $("#ckg").dataset.kg = junk || kg < c.kg ? "" : String(c.kg);
+}
+// The weight counts up from 0, over 0.4 + 1.2 × rank² seconds, with up to 10 ticks. A trophy ends with a thump.
+function countUp(c, junk, rank) {
+  clearInterval(countT);
+  if (junk || matchMedia("(prefers-reduced-motion: reduce)").matches) { catchKg(c, junk, c.kg); return; }
+  const dur = 0.4 + 1.2 * rank * rank, ticks = clamp(Math.round(dur * 8), 3, 10), t0 = now();
+  let done = 0;
+  catchKg(c, junk, 0);
+  countT = setInterval(() => {
+    const k = clamp((now() - t0) / 1000 / dur, 0, 1);
+    catchKg(c, junk, c.kg * (1 - Math.pow(1 - k, 2)));
+    while (done < ticks && k >= (done + 1) / ticks) { done++; Sound.sfx("tick"); Haptics.tick(); }
+    if (k >= 1) {
+      clearInterval(countT);
+      catchKg(c, junk, c.kg);
+      if (rank >= TROPHY_RANK) Haptics.thump();
+    }
+  }, 40);
+}
+$("#catchGo").addEventListener("click", () => {
+  if (G.cardWait) return;
+  Sound.sfx("ui");
+  clearTimeout(cardT); clearInterval(countT);
+  // the fish opened a place in free fishing: the card of the new place comes next
+  if (G.pendingUnlock) { const id = G.pendingUnlock; G.pendingUnlock = null; unlockCard(id); return; }
+  show(null); world.hideCatch();
+  if (G.closeCall) { toast(G.closeCall, 3600); G.closeCall = ""; }
+  nextAfterOutcome();
+});
 
 /* ---------------- the derby ---------------- */
-const RANKS = [[0, "SKUNKED"], [0.01, "DOCK ROOKIE"], [2, "WEEKEND ANGLER"], [5, "COTTAGE REGULAR"], [9, "LAKE PRO"], [14, "LOON LAKE CHAMPION"]];
 function endDerby() {
   releaseAwake();
   G.phase = "results";
   Sound.stopLoops(); Haptics.stop();
   prompt("");
+  const id = G.place.id, J = journeyOf(id);
   const total = G.bag.reduce((a, b) => a + b.kg, 0);
-  const best = total > save.derbyBest;
-  if (best) save.derbyBest = total;
+  const d = recordDerby(save, id, total);
   persist();
+  $("#rkick").textContent = J.kick;
   $("#rtotal").textContent = fmtKg(total);
-  let rank = RANKS[0][1];
-  for (const [kg, name] of RANKS) if (total >= kg) rank = name;
-  $("#rrank").textContent = rank;
+  $("#rrank").textContent = rankFor(id, total);
   const ul = $("#rlist");
   ul.innerHTML = "";
   if (!G.bag.length) { const li = document.createElement("li"); li.textContent = "No fish this time."; ul.appendChild(li); }
@@ -589,47 +801,77 @@ function endDerby() {
     a.textContent = (byId(f.id) || {}).name || f.id; b.textContent = fmtKg(f.kg);
     li.append(a, b); ul.appendChild(li);
   }
-  $("#rbest").textContent = best && total > 0 ? "A new best derby!" : save.derbyBest > 0 ? "Your best derby: " + fmtKg(save.derbyBest) : "";
-  if (best && total > 0) Sound.sfx("record");
+  const rec = placeRec(save, id);
+  $("#rbest").textContent = d.best && total > 0 ? "A new best derby here!" : rec && rec.d > 0 ? "Your best derby here: " + fmtKg(rec.d) : "";
+  // a fish of this derby opened the next place
+  const up = G.unlocked[G.unlocked.length - 1];
+  $("#runlock").hidden = $("#rGo").hidden = !up;
+  if (up) { $("#runlock").textContent = openedText(up.id, up.kg, up.name, "results"); seen("opened." + up.id); G.unlockId = up.id; }
+  if (d.best && total > 0) Sound.sfx("record");
   relayout(true);
   show("results");
 }
 $("#rAgain").addEventListener("click", () => { Sound.sfx("ui"); startMode("derby"); });
 $("#rMenu").addEventListener("click", () => { Sound.sfx("uiBack"); toTitle(); });
+$("#rGo").addEventListener("click", () => { Sound.sfx("ui"); travelTo(G.unlockId); });
 
 /* ---------------- journal ---------------- */
-function renderJournal() {
+// one chip for each place; the rows are the fish of the chosen place, small to big, then its legend, then its junk
+function renderJournal(pid) {
+  pid = pid || G.place.id;
+  const tabs = $("#jtabs");
+  tabs.innerHTML = "";
+  for (const id of ORDER) {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "tab"); b.dataset.place = id;
+    b.setAttribute("aria-selected", String(id === pid));
+    b.className = openNow(id) ? "" : "lock";
+    b.textContent = JOURNEY[id].short;
+    b.addEventListener("click", () => { Sound.sfx("ui"); renderJournal(id); });
+    tabs.appendChild(b);
+  }
   const list = $("#jlist");
   list.innerHTML = "";
-  let got = 0;
-  for (const sp of [...SPECIES, ...JUNK]) {
-    const j = save.journal[sp.id];
+  const all = foundAll(save), tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts";
+  if (!openNow(pid)) {
     const d = document.createElement("div");
-    d.className = "jfish" + (j && j.n ? "" : " none");
+    d.className = "jnote"; d.textContent = "Open " + JOURNEY[pid].name + " to see its fish.";
+    list.appendChild(d);
+    $("#jsum").textContent = tail;
+    return;
+  }
+  const F = fishingOf(pid), here = placeSpecies(pid).map(byId);
+  const rows = [...here.filter((sp) => !sp.legend && !F.junk.includes(sp.id)).sort((a, b) => a.kg[1] - b.kg[1]), ...here.filter((sp) => sp.legend), ...here.filter((sp) => F.junk.includes(sp.id))];
+  for (const sp of rows) {
+    const j = save.journal[sp.id], junk = F.junk.includes(sp.id);
+    const d = document.createElement("div");
+    d.className = "jfish" + (j && j.n ? "" : " none") + (sp.legend ? " legend" : "");
     const b = document.createElement("b"), sw = document.createElement("i"), sm = document.createElement("small");
     sw.className = "sw";
-    const junk = JUNK.includes(sp);
     if (j && j.n) {
-      got++;
       b.textContent = sp.name;
       sw.style.background = "linear-gradient(90deg," + sp.look.back + "," + sp.look.body + "," + (sp.look.belly || sp.look.accent || sp.look.body) + ")";
       sm.textContent = junk ? "Found " + j.n + "×" : "Best " + fmtKg(j.kg) + (j.cm ? " · " + j.cm + " cm" : "") + " · caught " + j.n;
     } else {
       b.textContent = sp.legend ? "The legend" : junk ? "Something odd" : "Not caught yet";
       sw.style.background = "rgba(255,255,255,0.12)";
-      sm.textContent = sp.legend ? "Look for a gold ring at dawn or dusk." : junk ? "It is on the bottom somewhere." : (zoneHint(sp) || "");
+      sm.textContent = sp.legend ? legendHint(pid, legendStepOf(pid)) : junk ? "It is on the bottom somewhere." : (zoneHint(sp, pid) || "");
     }
     d.append(b, sw, sm);
     list.appendChild(d);
   }
-  $("#jsum").textContent = got + " of " + (SPECIES.length + JUNK.length) + " found · " + save.caught + " fish landed · " + save.casts + " casts";
+  const f = foundHere(save, pid);
+  $("#jsum").textContent = f.n + " of " + f.m + " found here · " + tail;
 }
-function zoneHint(sp) {
-  const z = Object.entries(sp.zones || {}).sort((a, b) => b[1] - a[1])[0];
+// where and when a fish bites, from this place's own table
+function zoneHint(sp, pid) {
+  const eco = ecology(pid).find(([s]) => s.id === sp.id), E = eco && eco[1];
+  if (!E) return "";
+  const z = Object.entries(E.zones || {}).sort((a, b) => b[1] - a[1])[0];
   // the hour it bites best, if it has one
-  const best = (sp.hours || []).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
-  const when = !best ? "" : best[1] <= 10 ? " in the morning" : best[0] >= 17 ? " at dusk" : " at midday";
-  return z ? "Try " + (LAKE.ZONE_NAMES[z[0]] || z[0]).toLowerCase() + when + "." : "";
+  const best = (E.hours || []).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
+  const when = !best ? "" : best[0] >= 20.5 ? " at night" : best[1] <= 10 ? " in the morning" : best[0] >= 17 ? " at dusk" : " at midday";
+  return z ? "Try " + (getPlace(pid).zoneNames[z[0]] || z[0]).toLowerCase() + when + "." : "";
 }
 
 /* ---------------- help ---------------- */
@@ -643,9 +885,13 @@ const HELP_M = [
   ["crank", "Turn the <b>crank</b> with your thumb. The first turn closes the bail. Reel <b>slowly</b>. Stop now and then."],
   ["pull", "When a fish <b>strikes</b>, snap the phone up. This sets the hook."],
   ["pull", "<b>Pump and reel.</b> Tip the phone up. Then reel as you lower it."],
-  ["stop", "When the drag <b>slips</b>, stop reeling. When a fish <b>jumps</b>, lower the rod."],
-  ["turn", "Tilt the phone left or right to <b>steer</b> a running fish away from the weeds and rocks."],
+  ["stop", "When the drag <b>slips</b>, stop reeling."],
+  ["turn", "Tilt the phone left or right to <b>steer</b> a running fish. Keep it away from weeds, rocks, stumps and logs."],
+  ["low", "When it <b>shakes its head</b>, hold the rod up. When it <b>jumps</b>, lower it."],
+  ["crank", "When it <b>swims at you</b>, reel fast."],
+  ["pull", "When it <b>holds on the bottom</b>, pump it up."],
   ["fish", "When the fish is <b>tired</b> and close, tip the phone up and hold it there."],
+  ["fish", "Land a big fish to open a new place. Each place has its own derby and its own legend."],
 ];
 const HELP_T = [
   ["turn", "Drag the lake left or right to <b>aim</b>."],
@@ -653,8 +899,13 @@ const HELP_T = [
   ["flick", "<b>Flick up</b>. Let go during the flick."],
   ["crank", "Turn the <b>crank</b> in circles, or use the mouse wheel, or hold <b>R</b>. The first turn closes the bail. Reel slowly."],
   ["pull", "The <b>rod pad</b> on the left: drag up to raise the rod. A fast swipe up sets the hook. Keys: <b>W S A D</b> and <b>Space</b>."],
-  ["stop", "When the drag <b>slips</b>, stop reeling. When a fish <b>jumps</b>, lower the rod."],
+  ["stop", "When the drag <b>slips</b>, stop reeling."],
+  ["turn", "Drag the rod pad left or right to <b>steer</b> a running fish. Keep it away from weeds, rocks, stumps and logs."],
+  ["low", "When it <b>shakes its head</b>, hold the rod up. When it <b>jumps</b>, lower it."],
+  ["crank", "When it <b>swims at you</b>, reel fast."],
+  ["pull", "When it <b>holds on the bottom</b>, pump it up."],
   ["fish", "When the fish is <b>tired</b> and close, drag the rod up and hold it."],
+  ["fish", "Land a big fish to open a new place. Each place has its own derby and its own legend."],
 ];
 for (const [id, list] of [["#helpM", HELP_M], ["#helpT", HELP_T]]) $(id).innerHTML = list.map(([ic, t]) => "<li>" + ICON[ic] + "<span>" + t + "</span></li>").join("");
 for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => {
@@ -706,7 +957,7 @@ function pause() {
   Sound.stopLoops(); Haptics.stop();
   // a thumb on the line when the game stops: the line goes back, and the next press starts the cast again
   if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) { G.pin = null; G.step = "ready"; G.bail = "closed"; G.drop = 0; }
-  $("#pauseSum").textContent = hudText();
+  $("#pauseSum").textContent = [hudText(), goalLine("remind")].filter(Boolean).join("\n");
   show("pause");
 }
 function resume() { G.paused = false; show(null); Sound.sfx("ui"); keepAwake(); }
@@ -744,7 +995,7 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
-  if (e.code === "Escape" && ["help", "journal", "settings"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
+  if (e.code === "Escape" && ["help", "journal", "settings", "places"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
   if (G.paused) return;
   if (e.code === "KeyE" && G.phase === "cast") { if (G.bail === "closed" && G.step === "ready") openBail("key"); else if (G.bail === "open" && G.step === "open") closeBail(); }
@@ -864,6 +1115,13 @@ function castPrompt() {
 
 /* ---------------- per-frame: the reel ---------------- */
 const HOOK_OMEGA = 300;
+// the fish is big for this place, or big for its kind: the warning during the fight
+function sayBig() {
+  if (!G.big || G.big.said) return;
+  G.big.said = true;
+  toast("It is a big one!", 2200);
+  Haptics.thump();
+}
 function reelUpdate(dt) {
   const sim = G.sim;
   if (!sim) return;
@@ -882,19 +1140,23 @@ function reelUpdate(dt) {
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
   const tip = world.setRod({ theta, yaw: 0, steer, bend: clamp(s.bend != null ? s.bend : G.tension * 1.3, 0, 1), pull: pullTo, visible: true });
   // the sim bends its own rod: give it the straight rod's tip, not the drawn one
-  sim.step(dt, { crank: crankRate, tip: rodTip(theta, 0, steer), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
+  sim.step(dt, { crank: crankRate, tip: rodTip(theta, 0, steer, G.place.stand.rod), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
   G.tension = lerp(G.tension, s.tfrac || 0, 1 - Math.exp(-dt * 12));
   for (const e of sim.events.splice(0)) handleEvent(e);
   // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
   if (s.phase === "caught" && s.catch) { caught(s.catch); return; }
   if (s.phase === "lost") { outcome("lost", reasonText(s.reason)); return; }
   if (s.phase === "home") { outcome("home", "Nothing this time.", "Cast again. Try a rising ring."); return; }
+  if (G.big && t - G.big.at > 4000) sayBig();
 
   // draw
   const L = s.lure;
+  // a beaten fish lies over on its side
+  G.roll = lerp(G.roll || 0, s.beaten ? 1.1 : 0, 1 - Math.exp(-dt * 4));
   if (s.fish) {
     const f = s.fish;
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, jump: f.jump || 0, thrash: f.move === "shake" ? 1 : 0, near: f.near == null ? 0.5 : f.near });
+    // roll: the body turned about its length, in radians
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
@@ -907,42 +1169,78 @@ function reelUpdate(dt) {
   world.setView({ mode: "reel", look, portrait: G.layout === "tall-reel" });
   const sp = s.fish ? byId(s.fish.id) : null;
   // during a jump the rod pad shows a low rod as the right move
-  rodPad.jump = !!(s.fish && (s.fish.move === "jump" || t - (G.lastEvent.jump || -1e9) < 900));
-  gauge.set({ tfrac: s.tfrac || 0, dragFrac: (s.dragN || 18) / (s.breakN || 45), slip: s.slip || 0, lineOut: s.lineOut || 0, depth: Math.max(0, -(s.fish ? s.fish.y : L.y)), stamina: s.fish ? s.fish.stamina : null, name: s.fish ? (s.fish.known && sp ? sp.name : "Fish on!") : "" });
+  rodPad.jump = !!(s.fish && (s.fish.move === "jump" || G.walk || t - (G.lastEvent.jump || -1e9) < 900));
+  const known = !!(s.fish && s.fish.known && sp);
+  gauge.set({
+    tfrac: s.tfrac || 0, dragFrac: (s.dragN || 18) / (s.breakN || 45), slip: s.slip || 0, lineOut: s.lineOut || 0, depth: Math.max(0, -(s.fish ? s.fish.y : L.y)),
+    stamina: s.fish ? s.fish.stamina : null, name: s.fish ? (known ? sp.name : "Fish on!") : "",
+    rub: s.rub || 0, spool: s.spoolFrac || 0, phases: s.boss ? s.boss.at : null, label: G.big && G.big.said && !known ? "Big fish on!" : "",
+  });
 
   // feel
   Sound.setReel(crankRate);
   Sound.setDrag(s.slip || 0);
   Sound.setTension(s.phase === "fight" || s.phase === "land" ? G.tension : 0);
+  Sound.setGrind((s.rub || 0) > 0.03 ? s.rub : 0);
   Haptics.setCrank(crankRate);
   Haptics.setTension(G.tension, s.slip || 0, s.phase === "fight" || s.phase === "land");
+  Haptics.rub((s.rub || 0) > 0.03 ? s.rub : 0);
+  if (s.fish && s.fish.move === "sulk") Haptics.throb();
   reelPrompt(s, crankRate, theta);
 }
+// how dark it is: 0 by day, 1 at night. Stump Bay is the place where it matters
+const nightAt = (h) => (h >= 12 ? smooth(20.5, 22, h) : 1 - smooth(4.6, 5.8, h));
+function smooth(a, b, v) { const x = clamp((v - a) / (b - a), 0, 1); return x * x * (3 - 2 * x); }
+// what the cover is called in the prompt
+const COVER_NAME = { weeds: "weeds", pads: "lily pads", stumps: "stumps", logs: "logs", rocks: "rocks", wall: "wall", ledge: "ledge" };
 function reelPrompt(s, crankRate, theta) {
   const m = sensing();
   const t = now();
   const recent = (k, ms) => t - (G.lastEvent[k] || -1e9) < ms;
+  // the way to steer: side +1 is right
+  const dirWord = (side) => (side > 0 ? "right" : side < 0 ? "left" : "");
+  const steerSub = (side) => { const d = dirWord(side); return m ? (d ? "Tilt the phone " + d + "." : "Tilt the phone left or right.") : (d ? "Drag the rod pad " + d + "." : "Drag the rod pad sideways."); };
   // the bail is still open: say how to start, but let a follower, a nibble or a strike speak for themselves
   if (G.bail === "open" && (s.phase === "sink" || s.phase === "retrieve") && !s.follower && !recent("nibble", 900)) return prompt("Turn the crank to reel.", "The first turn closes the bail.", "crank");
   switch (s.phase) {
-    case "sink": case "retrieve":
+    case "sink": case "retrieve": {
       if (s.empty) return prompt("Nothing is biting here.", "Reel in and cast again.", "crank");
-      if (recent("nibble", 900)) return prompt("A fish is nibbling.", "Wait for the strike.", "fish");
+      if (recent("nibble", 900)) return nightAt(G.hour) >= 0.5 ? prompt("It is dark. Feel for the bite.", "Wait for the strike.", "fish") : prompt("A fish is nibbling.", "Wait for the strike.", "fish");
       if (s.follower) return s.tooFast ? prompt("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : prompt("A fish is following.", "Stop for a moment. It may bite.", "crank");
+      // the river: the current swings the lure. Said once
+      if (G.place.flow && !save.seen["river.swing"]) { seen("river.swing"); G.swingUntil = t + 4500; }
+      if (t < (G.swingUntil || 0)) return prompt("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank");
       return prompt("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
+    }
     case "strike":
       return prompt(m ? "PULL UP! Set the hook!" : touchDevice ? "SWIPE UP! Set the hook!" : "PRESS SPACE! Set the hook!", "", "pull", "hot");
     case "fight": {
       const f = s.fish || {};
-      if (f.move === "jump" || recent("jump", 900)) return prompt("It jumped! Lower the rod!", "", "low", "hot");
+      if (G.walk && f.move !== "jump" && !recent("jump", 1500)) G.walk = false;
+      // 2. a jump, or a tail walk: keep the rod low
+      if (f.move === "jump" || recent("jump", 900)) return G.walk ? prompt("It jumps again and again!", "Keep the rod low.", "low", "hot") : prompt("It jumped! Lower the rod!", "", "low", "hot");
+      // 3. the line rubs on something: steer it off
+      if ((s.rub || 0) > 0.15) {
+        const d = dirWord(s.rubSide), steer = " Steer " + (d || "away") + ".", K = s.rubKind;
+        return prompt(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(s.rubSide), K === "rocks" ? "pull" : "turn", "hot");
+      }
+      if (recent("lastrun", 2000)) return prompt("It sees you! Let it run.", "Stop reeling. Hold the rod up.", "stop", "hot");
+      if (f.move === "thrash") return prompt("It shakes its head!", "Hold the rod up. Keep the line tight.", "pull", "hot");
+      if (f.move === "turn" || recent("turn", 1200)) return prompt("It turned. Stop reeling!", "", "stop", "hot");
+      if (f.move === "charge") return prompt("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot");
       if ((s.slip || 0) > 0.15 && crankRate > 0.3) return prompt("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot");
       if ((s.tfrac || 0) > 0.85) return prompt("Too tight! Stop reeling.", "Lower the rod a little.", "low", "hot");
+      if ((s.spoolFrac || 0) > 0.75) return prompt("The spool is almost empty!", "Tighten the drag.", "stop", "hot");
+      if (f.move === "hold") return prompt("It rests. Rest your arm.", "Keep the line tight.", "fish", "good");
+      if (f.move === "sulk") return prompt("It holds on the bottom.", "Lift the rod slowly. Then reel as you lower it.", "pull");
+      if (s.cover) return prompt("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
       if ((s.slip || 0) > 0.15) return prompt("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
       if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
+      if (s.beaten) return prompt("It is tired. Reel it in.", "", "crank", "good");
       if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the phone up toward you." : "Drag the rod pad up.", "pull");
       return prompt("Pump and reel.", m ? "Tip the phone up. Then reel as you lower it." : "Drag the rod up. Then reel as it comes down.", "pull");
     }
-    case "land": return prompt("Lift it out! Raise the rod and hold.", "", "pull", "good");
+    case "land": return prompt(G.place.id === "sea" ? "Bring it to the wall! Raise the rod and hold." : "Lift it out! Raise the rod and hold.", "", "pull", "good");
     default: return prompt("");
   }
 }
@@ -955,12 +1253,20 @@ function handleEvent(e) {
   switch (type) {
     case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
     case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
-    case "hooked":
+    case "hooked": {
       if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
       else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
       // the ring's fish is on the line: its ring goes quiet
       if (G.ring && rises && rises.take) { rises.take(G.ring); G.ring = null; }
+      // a big one gets a warning at the first run of the drag, or 4 s from now
+      const hs = !e.junk && byId(e.id || (s && s.fish && s.fish.id)), kg = s && s.fish ? s.fish.kg : 0;
+      G.big = hs && kg > 0 && isBigFish(G.place.id, kg, sizeRank(hs, kg)) ? { at: now(), said: false } : null;
+      G.walk = false;
+      // the legend of this place is on the line
+      if (hs && hs.legend && legendStep(save, G.place.id, 2)) persist();
       break;
+    }
+    case "drag": sayBig(); break;
     case "missed": case "spooked": Sound.sfx("miss"); break;
     case "refuse": Sound.sfx("miss"); toast("Too fast. It turned away. Reel slower.", 2600); break;
     case "slack": Sound.sfx("slip"); Haptics.bump(0.3); break;
@@ -968,23 +1274,47 @@ function handleEvent(e) {
     case "splash": world.splash(fx, fz, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
     case "run": case "surge": if (!save.seen.run) { toast("It is running! Let the drag work.", 2400); seen("run"); } break;
     case "shake": Haptics.bump(0.7); break;
-    case "reveal": { const sp = byId(e.id || (s && s.fish && s.fish.id)); if (sp) toast("It is a " + sp.name + "!", 2000); break; }
+    case "reveal": {
+      const sp = byId(e.id || (s && s.fish && s.fish.id));
+      if (sp) toast(revealText(sp, !!G.big), 2000);
+      if (G.big) G.big.said = true;
+      break;
+    }
     case "near": Sound.sfx("splash", 0.3); world.splash(fx, fz, 0.3); Haptics.bump(0.8); break;
-    case "snap": Sound.sfx(e.reason === "weeds" || e.reason === "rocks" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
-    case "thrown": G.thrownBy = e.jump ? "jump" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
+    // the fight moves. Each has a warning: a sound and a buzz
+    case "charge": Sound.sfx("slip"); Haptics.charge(); break;
+    case "turn": Haptics.thump(); break;
+    case "sulk": Sound.sfx("creak"); Haptics.throb(); break;
+    case "pump": Haptics.bump(0.4); break;
+    case "unstuck": Sound.sfx("splash", 0.3); world.splash(fx, fz, 0.3); break;
+    case "walk": G.walk = true; break;
+    case "walkEnd": G.walk = false; break;
+    case "thrash": Haptics.thrash(); Sound.sfx("splash", 0.4); world.splash(fx, fz, 0.4); break;
+    case "turned": toast("You turned it!", 1800); break;
+    case "lastrun": Haptics.jolt(); break;
+    case "phase": toast(e.name, 2200); Sound.sfx("record"); Haptics.phase(); break;
+    case "spool": Sound.sfx("slip"); Haptics.bump(0.8); break;
+    case "snap":
+      // a line that rubbed through, or ran out: the loss line says which
+      Sound.sfx(e.reason === "weeds" || e.reason === "rocks" || e.reason === "stump" || e.reason === "logs" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
+    case "thrown": G.thrownBy = e.jump ? "jump" : e.thrash ? "thrash" : e.charge ? "charge" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
     case "home": Sound.sfx("plop"); break;
   }
 }
 // what went wrong, and what to do next time
 function reasonText(r) {
   const steer = sensing() ? "Tilt the phone left or right to steer it away." : "Drag the rod pad sideways to steer it.";
+  const thrown = { jump: ["It threw the hook.", "Lower the rod when it jumps."], thrash: ["It shook the hook out.", "Hold the rod up when it shakes its head."], charge: ["It threw the hook.", "Reel fast when it swims at you."] };
   return ({
     snap: ["SNAP! The line broke.", "Stop reeling when the drag slips."],
-    thrown: ["It threw the hook.", G.thrownBy === "jump" ? "Lower the rod when it jumps." : "Keep the line tight."],
+    thrown: thrown[G.thrownBy] || ["It threw the hook.", "Keep the line tight."],
     spat: ["It spat the lure.", sensing() ? "Pull up as soon as it strikes." : "Swipe up as soon as it strikes."],
     spooked: ["You spooked it.", "Wait for the strike."],
     weeds: ["It wrapped the line in the weeds.", steer],
-    rocks: ["It cut the line on the rocks.", steer],
+    stump: ["The line broke on a stump.", "Steer the fish away from the stumps."],
+    logs: ["The line broke on the logs.", "Keep the fish away from the logjam."],
+    rocks: ["The line broke on the rocks.", "Hold the rod up near the rocks, and steer away."],
+    spooled: ["It took all your line.", "Tighten the drag on a long run."],
   })[r] || ["It got away.", ""];
 }
 
@@ -1017,14 +1347,17 @@ function frame() {
 function step(dt) {
   const inPlay = G.phase === "cast" || G.phase === "reel" || G.phase === "lost";
   if (inPlay) {
-    // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour
-    const was = G.hour;
-    G.hour += dt / (G.mode === "derby" ? 400 : 75);
-    if (G.hour >= 21) { G.hour = 5; toast("A new day on Loon Lake."); }
+    // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour (journey.js has the clock)
+    const was = G.hour, day = stepHour(G.place.id, G.hour, dt, G.mode);
+    G.hour = day.hour;
+    if (day.wrapped) toast(journeyOf(G.place.id).newDay);
     if (Math.floor(was * 6) !== Math.floor(G.hour * 6)) { world.setHour(G.hour); Sound.setAmbience(true, G.hour); updateHud(); }
     if (rises) {
       const ev = rises.step(dt, G.hour) || [];
-      for (const e of ev) if (e.type === "rise") { world.rise(e.x, e.z); if (e.gold) toast("A gold ring! Something big is rising.", 2600); }
+      for (const e of ev) if (e.type === "rise") {
+        world.rise(e.x, e.z);
+        if (e.gold) { toast("A gold ring! Something big is rising.", 2600); if (legendStep(save, G.place.id, 1)) persist(); }
+      }
       // the rings only change when one rises or goes quiet
       if (ev.length || rises.list.length !== G.ringN) { G.ringN = rises.list.length; world.setRings(rises.list); }
     }
@@ -1073,13 +1406,16 @@ function debug() {
 async function boot() {
   try {
     REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
-    world = await createWorld($("#view"), { quality: quality() });
+    // the map first: the world builds the place the map is set to
+    LAKE.setPlace(G.place);
+    world = await createWorld($("#view"), { quality: quality(), place: G.place });
   } catch (err) {
     console.error(err);
     document.body.insertAdjacentHTML("beforeend", "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");
     return;
   }
   world.setHour(G.hour);
+  Sound.setPlace(G.place.id);
   reelPanel = new ReelPanel($("#reelBox"), { toLocal, hand: "right", area: game });
   reelPanel.on("bail", (e) => {
     if (G.paused || G.phase !== "cast") return;
@@ -1122,8 +1458,30 @@ async function boot() {
   Haptics.attachPad($("#reelBox"));
   crankPad = Haptics.attachCrank($("#crankBox"), { toLocal });
   setDrag(1);
-  window.FISH = { G, Motion, get world() { return world; }, get crank() { return crank; }, get sim() { return G.sim; }, get save() { return save; }, startMode, newCast, toTitle, release, openBail, closeBail, enterReel, relayout, toLocal, pinLine, unpinLine, get rises() { return rises; } };
+  window.FISH = {
+    G, Motion, get world() { return world; }, get crank() { return crank; }, get sim() { return G.sim; }, get save() { return save; },
+    startMode, newCast, toTitle, release, openBail, closeBail, enterReel, relayout, toLocal, pinLine, unpinLine, get rises() { return rises; },
+    // go to an open place, with no cards (a Promise: true when it loaded). The player's way is the Places screen
+    async setPlace(id) {
+      if (!openNow(id) || traveling) return false;
+      stopPlay();
+      const p = await switchPlace(id);
+      if (p && isOpen(save, id)) { save.place = id; persist(); }
+      toTitle();
+      return !!p;
+    },
+    get place() { return G.place; }, PLACES, JOURNEY,
+    // for the tests: the parts a test watches or listens to
+    get gauge() { return gauge; }, Sound, Haptics,
+  };
   toTitle();
+  // an old save that already holds a big fish: tell the player which place it opened, once
+  const told = untoldOpens(save);
+  if (told.length) {
+    for (const id of told) seen("opened." + id);
+    const from = prevPlace(told[0]), e = save.places[from], sp = e && byId(e.id);
+    if (sp && e.kg > 0) toast(openedText(told[0], e.kg, sp.name), 4200);
+  }
   // the lake starts to sound with the first touch on the title (browsers keep audio off until then)
   addEventListener("pointerup", () => { Sound.init(); if (G.phase === "title") Sound.setAmbience(true, G.hour); }, { once: true });
   requestAnimationFrame(frame);

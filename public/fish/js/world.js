@@ -1,12 +1,16 @@
-// Reel It In: the 3D lake. One canvas with the sky, Loon Lake, the dock under your feet, the rod in your hands,
-// the line, the lure, the fish and the trophy. Everything is built in code (see world-env, world-gear, world-fish, world-fx).
+// Reel It In: the 3D world. One canvas with the sky, the place you fish (Loon Lake, Stump Bay, Cedar River or Gull Rock),
+// the stand under your feet, the rod in your hands, the line, the lure, the fish and the trophy. Everything is built in
+// code (see world-env, world-look, world-gear, world-fish, world-fx). world.setPlace(place) changes the place.
 import * as THREE from "three";
-import { EYE, ROD } from "./lake.js";
+import { PLACES, getPlace } from "./places.js";
+import { placeSpecies } from "./fishing.js";
 import { byId, lengthFor } from "./species.js";
 import * as E from "./world-env.js";
+import { lookOf } from "./world-look.js";
 import { Rod, Line, Lure } from "./world-gear.js";
+import * as Fish from "./world-fish.js";
 import { fishMesh as makeFish, JUNK_LEN } from "./world-fish.js";
-import { Spray, followerShadow } from "./world-fx.js";
+import { Spray, followerShadow, fireflies as makeFireflies, Gulls, boardMesh, BOARD_LENGTHS } from "./world-fx.js";
 
 export { fishMesh } from "./world-fish.js";
 
@@ -25,37 +29,26 @@ export const WORLD = {
   ZOOM_WIDTH: 42,                  // flight view: meters of lake across the view at the lure, once the lure is far
   GRIP: { d: 0.5, x: 0.6, y: -0.74, pd: 0.62, px: 0.74, py: -0.62 },  // where the reel seat sits in the view (screen fractions, distance in m)
   LURE_MIN_SCREEN: 0.022,          // the lure is drawn at least this fraction of the view height
+  PHOTO: { push: 1.2, from: 1.35, freeze: 0.3 },   // the photo beat of a big catch: seconds of slow push-in, its start distance (x), seconds the fish holds still after
 };
 
 /* ---------------- the hours ---------------- */
-// Keyframes of the day. Colours are sRGB hex; si = sun strength, hi = sky light strength.
-const HOURS = [
-  { h: 4.5, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff8a50", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
-  { h: 5.5, zen: "#2e4278", hor: "#c2908a", glow: "#e8866a", sun: "#ff9a60", si: 0.25, sky: "#9aa4c8", gnd: "#3a4028", hi: 2.1, fog: "#b69a9a", near: 30, far: 440, deep: "#1a2c3a", shal: "#3a4436", cl: "#e8b0a0", cs: "#6a6a8a", forest: "#1c2a1c", night: 0.35 },
-  { h: 6.5, zen: "#5a86c4", hor: "#f4caa6", glow: "#ffb070", sun: "#ffc890", si: 1.15, sky: "#a8c0e0", gnd: "#4a5230", hi: 2.0, fog: "#e6c8b0", near: 35, far: 480, deep: "#224050", shal: "#58623e", cl: "#fff0dc", cs: "#9aa0b4", forest: "#28402a", night: 0 },
-  { h: 9, zen: "#4f92e0", hor: "#d4e6f2", glow: "#fff0d0", sun: "#fff0d8", si: 1.65, sky: "#b8d4f0", gnd: "#5a6a38", hi: 1.65, fog: "#c8dcea", near: 80, far: 760, deep: "#1e4a60", shal: "#6a7446", cl: "#ffffff", cs: "#a8b8cc", forest: "#2c4a30", night: 0 },
-  { h: 12, zen: "#3f86dc", hor: "#cfe4f6", glow: "#fff8e0", sun: "#fff8ea", si: 1.8, sky: "#bcd8f4", gnd: "#5e6e3a", hi: 1.6, fog: "#c6dcee", near: 95, far: 820, deep: "#1a4a64", shal: "#6e7a4a", cl: "#ffffff", cs: "#aebdd0", forest: "#2e4c32", night: 0 },
-  { h: 16.5, zen: "#4a8cdc", hor: "#dbe6ea", glow: "#fff0c8", sun: "#fff0d0", si: 1.7, sky: "#c0d6ec", gnd: "#5e6a38", hi: 1.6, fog: "#d2dee6", near: 85, far: 780, deep: "#1c4860", shal: "#6e7648", cl: "#fffaf0", cs: "#b0b8c8", forest: "#2c4a30", night: 0 },
-  { h: 19, zen: "#5c86c8", hor: "#ffd8a0", glow: "#ffb452", sun: "#ffc47a", si: 1.65, sky: "#b0c0dc", gnd: "#5a5a34", hi: 1.5, fog: "#f2d6b2", near: 45, far: 580, deep: "#23405a", shal: "#6a6a42", cl: "#fff0d8", cs: "#b4a4b0", forest: "#2c3e2c", night: 0 },
-  { h: 19.5, zen: "#5a80c2", hor: "#ffcf92", glow: "#ffa640", sun: "#ffb86a", si: 1.55, sky: "#aab8d4", gnd: "#585432", hi: 1.5, fog: "#f0cfa4", near: 42, far: 560, deep: "#223c56", shal: "#686640", cl: "#ffe8c8", cs: "#b098a8", forest: "#2a3a2a", night: 0 },
-  { h: 20.3, zen: "#4a5ea8", hor: "#ff9e70", glow: "#ff7a44", sun: "#ff8e58", si: 0.9, sky: "#a0a0c4", gnd: "#4a4630", hi: 1.6, fog: "#d8a08a", near: 40, far: 520, deep: "#1e3048", shal: "#4a4636", cl: "#ffb89a", cs: "#8a7090", forest: "#202c22", night: 0.05 },
-  { h: 21, zen: "#222a62", hor: "#b86a7e", glow: "#e0684a", sun: "#ff6a40", si: 0.12, sky: "#9a90c0", gnd: "#3a3630", hi: 2.2, fog: "#7a5a78", near: 38, far: 480, deep: "#141e34", shal: "#2a2e30", cl: "#d88a88", cs: "#4a4468", forest: "#161e1a", night: 0.45 },
-  { h: 22, zen: "#0e1634", hor: "#2e3658", glow: "#3a2440", sun: "#ff6a40", si: 0, sky: "#6a78a8", gnd: "#2a3024", hi: 1.9, fog: "#2e3658", near: 50, far: 520, deep: "#0c1622", shal: "#1a2622", cl: "#3a4260", cs: "#1c2240", forest: "#10180f", night: 1 },
-];
+// The keyframes of the day are in world-look.js (each place has its own).
 const tmpA = new THREE.Color(), tmpB = new THREE.Color();
 function lerpHex(out, a, b, t) { tmpA.set(a); tmpB.set(b); return out.copy(tmpA).lerp(tmpB, t); }
 // Sun path: rises in the north-east, high in the south at noon, sets in the north-west (a summer day, a little
-// stretched so the evening sun hangs over the far west shore where the angler can see it).
-export function sunAt(h) {
+// stretched so the evening sun hangs over the far west shore where the angler can see it). A place may turn it.
+export function sunAt(h, look = null) {
   const elev = 58 * Math.sin(Math.PI * (h - 5.8) / 15) * DEG;
-  const az = clamp(180 + (h - 12.8) * 18.5, 40, 332) * DEG;  // from north (-z), clockwise toward east (+x)
+  const az = (clamp(180 + (h - 12.8) * 18.5, 40, 332) + (look && look.sunTurn || 0)) * DEG;  // from north (-z), clockwise toward east (+x)
   return new THREE.Vector3(Math.sin(az) * Math.cos(elev), Math.sin(elev), -Math.cos(az) * Math.cos(elev));
 }
 
 /* ---------------- the world ---------------- */
 
-export async function createWorld(container, { quality = "high" } = {}) {
+export async function createWorld(container, { quality = "high", place = PLACES.loon } = {}) {
   let low = quality === "low";
+  let PL = typeof place === "string" ? getPlace(place) : place, LK = lookOf(PL);   // the place we are at, and how it looks
   const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   // shader error checks are synchronous GL calls on each program's first draw: only in ?debug
@@ -74,21 +67,40 @@ export async function createWorld(container, { quality = "high" } = {}) {
   const sun = new THREE.DirectionalLight(0xffffff, 2);
   scene.add(hemi, sun, sun.target);
 
-  /* the lake: pieces that depend on the quality are rebuilt when it changes */
+  /* the place: the sky and water are built once; the ground and its trees (they depend on the quality) are rebuilt when it
+     changes, and everything else when the place changes */
   const sky = E.buildSky(low);
-  const { water, u: WU } = E.buildWater(low);
+  const { water, u: WU } = E.buildWater(low, PL, LK);
   scene.add(sky, water);
-  let envGroup = null;
+  // an InstancedMesh frees its instance buffers only on its own dispose
+  function dispose(root) {
+    root.traverse((o) => {
+      if (o.isInstancedMesh) o.dispose();
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) { if (m.map) m.map.dispose(); m.dispose(); }
+    });
+  }
+  let envGroup = null, propGroup = null, loon = null, flies = null, gulls = null;
   function buildEnv() {
-    // an InstancedMesh frees its instance buffers only on its own dispose
-    if (envGroup) { scene.remove(envGroup); envGroup.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+    if (envGroup) { scene.remove(envGroup); dispose(envGroup); }
     envGroup = new THREE.Group();
-    envGroup.add(new THREE.Mesh(E.buildTerrain(low), E.terrainMaterial(low)), E.buildTrees(low), E.buildPads(low), E.buildReeds(low));
+    envGroup.add(new THREE.Mesh(E.buildTerrain(low, PL, LK), E.terrainMaterial(low)), E.buildTrees(low, PL, LK));
+    if (PL.props.lilies.length) envGroup.add(E.buildPads(low, PL, LK));
+    if (PL.props.reeds.length) envGroup.add(E.buildReeds(low, PL, LK));
     scene.add(envGroup);
   }
+  // rocks, the stand, the cottage and the loon, or a road, a wall, a logjam: they do not change with the quality
+  function buildProps() {
+    for (const o of [propGroup, flies, gulls && gulls.mesh]) if (o) { scene.remove(o); dispose(o); }
+    flies = gulls = null;
+    const b = E.buildProps(PL, LK);
+    propGroup = b.group; loon = b.loon;
+    scene.add(propGroup);
+    if (LK.props.includes("fireflies")) { flies = makeFireflies(PL); scene.add(flies); }
+    if (LK.props.includes("gulls")) { gulls = new Gulls(); scene.add(gulls.mesh); }
+  }
   buildEnv();
-  const rocks = E.buildRocks(), dock = E.buildDock(), cottage = E.buildCottage(), loon = E.buildLoon();
-  scene.add(rocks, dock, cottage, loon);
+  buildProps();
 
   /* tackle and fish */
   const rod = new Rod(low), line = new Line(), lure = new Lure();
@@ -117,7 +129,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     view: { mode: "title", yaw: 0, look: null, portrait: false },
     cam: { pos: new THREE.Vector3(0, 9, 30), yaw: 0, pitch: -0.1, fov: 55, init: false },
     rod: { theta: 60, yaw: 0, steer: 0, bend: 0, pull: null, visible: false },
-    tip: new THREE.Vector3(ROD.base.x, ROD.base.y + ROD.length, ROD.base.z),
+    tip: new THREE.Vector3(),
     lastTip: new THREE.Vector3(),
     line: { from: null, to: null, slack: 0, visible: false, flying: false },
     lure: { x: 0, y: 1, z: -1, visible: false, spin: 0, vel: new THREE.Vector3(), prev: null, prevT: 0 },
@@ -131,12 +143,14 @@ export async function createWorld(container, { quality = "high" } = {}) {
   };
 
   /* ---------------- hours ---------------- */
+  const moonDir = new THREE.Vector3(), mistCol = new THREE.Color();
   function setHour(h) {
-    h = clamp(h, 4.5, 22);
+    const rows = LK.hours;
+    h = clamp(h, rows[0].h, rows[rows.length - 1].h);
     S.hour = h;
     let i = 0;
-    while (i < HOURS.length - 2 && HOURS[i + 1].h < h) i++;
-    const a = HOURS[i], b = HOURS[i + 1], t = clamp((h - a.h) / (b.h - a.h), 0, 1);
+    while (i < rows.length - 2 && rows[i + 1].h < h) i++;
+    const a = rows[i], b = rows[i + 1], t = clamp((h - a.h) / (b.h - a.h), 0, 1);
     const num = (k) => lerp(a[k], b[k], t);
     lerpHex(U.uZenith.value, a.zen, b.zen, t);
     lerpHex(U.uHorizon.value, a.hor, b.hor, t);
@@ -149,16 +163,34 @@ export async function createWorld(container, { quality = "high" } = {}) {
     lerpHex(U.uDeep.value, a.deep, b.deep, t);
     lerpHex(U.uShallow.value, a.shal, b.shal, t);
     U.uNight.value = num("night");
-    U.uFogNear.value = num("near"); U.uFogFar.value = num("far");
+    let near = num("near"), far = num("far");
+    // a place may have its own fog at some hours (a morning mist)
+    const F = LK.fog && LK.fog(h, { near, far });
+    if (F) { near = F.near; far = F.far; if (F.k > 0) U.uFogCol.value.lerp(mistCol.set(F.col), F.k); }
+    U.uFogNear.value = near; U.uFogFar.value = far;
     scene.fog.color.copy(U.uFogCol.value); scene.fog.near = U.uFogNear.value; scene.fog.far = U.uFogFar.value;
-    const sd = sunAt(h);
+    const sd = sunAt(h, LK);
+    let si = num("si"), moonW = 0;
+    // at night a moon takes the sun's place: same light, same glitter on the water, a colder colour
+    const M = LK.moon;
+    if (M) {
+      moonW = smooth(M.from, M.from + M.fade, h);
+      if (moonW > 0) {
+        const az = M.az * DEG, el = M.el * DEG;
+        moonDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+        sd.lerp(moonDir, moonW).normalize();
+        U.uSunCol.value.lerp(mistCol.set(M.col), moonW);
+        si = lerp(si, M.si, moonW);
+      }
+    }
+    U.uMoon.value = moonW;
     U.uSunDir.value.copy(sd);
-    // the sun light fades as it nears the horizon; below it, only the sky lights the lake
+    // the sun light fades as it nears the horizon; below it, only the sky lights the world
     const vis = smooth(-0.04, 0.08, sd.y);
     U.uSunVis.value = vis;
     sun.position.copy(sd).multiplyScalar(100);
     sun.color.copy(U.uSunCol.value);
-    sun.intensity = num("si") * vis;
+    sun.intensity = si * vis;
     lerpHex(hemi.color, a.sky, b.sky, t);
     lerpHex(hemi.groundColor, a.gnd, b.gnd, t);
     hemi.intensity = num("hi");
@@ -171,7 +203,15 @@ export async function createWorld(container, { quality = "high" } = {}) {
   }
 
   /* ---------------- camera ---------------- */
-  const EYEV = new THREE.Vector3(EYE.x, EYE.y, EYE.z);
+  // the eye of this place, and where the catch camera hangs (a little below the eye)
+  const EYEV = new THREE.Vector3(), CATCH_CAM = new THREE.Vector3(0.12, 2.05, 1.05);
+  function applyStand() {
+    const e = PL.stand.eye, R = PL.stand.rod;
+    EYEV.set(e.x, e.y, e.z);
+    CATCH_CAM.set(0.12, e.y - 0.2, 1.05);
+    S.tip.set(R.base.x, R.base.y + R.length, R.base.z);
+  }
+  applyStand();
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
   function baseFov(mode) {
     const aspect = S.w / S.h, portrait = S.view.portrait || aspect < 0.9;
@@ -180,11 +220,11 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const [lo, hi] = portrait ? WORLD.FOV_V_PORTRAIT : WORLD.FOV_V_WIDE;
     return clamp(v, lo, hi);
   }
-  const CATCH_CAM = new THREE.Vector3(0.12, 2.05, 1.05), CATCH_PITCH = -36 * DEG, CATCH_YAW = -3 * DEG;
+  const CATCH_PITCH = -36 * DEG, CATCH_YAW = -3 * DEG;
   const trophySpot = () => {
-    // the fish is held out toward the end of the dock, below the eye
-    const d = S.trophy ? S.trophy.dist : 1.1;
-    return new THREE.Vector3(Math.sin(CATCH_YAW) * Math.cos(CATCH_PITCH), Math.sin(CATCH_PITCH), -Math.cos(CATCH_YAW) * Math.cos(CATCH_PITCH)).multiplyScalar(d).add(CATCH_CAM);
+    // the fish is held out toward the end of the stand, below the eye (a big one is held out flatter, so it stays above the water)
+    const T = S.trophy, d = T ? T.dist * T.push : 1.1, p = T ? T.pitch : CATCH_PITCH;
+    return new THREE.Vector3(Math.sin(CATCH_YAW) * Math.cos(p), Math.sin(p), -Math.cos(CATCH_YAW) * Math.cos(p)).multiplyScalar(d).add(CATCH_CAM);
   };
   function camTarget() {
     const m = S.view.mode, portrait = S.view.portrait || S.w / S.h < 0.9;
@@ -197,18 +237,19 @@ export async function createWorld(container, { quality = "high" } = {}) {
     };
     if (m === "title") {
       const t = S.clock, sd = U.uSunDir.value;
-      out.pos.set(7 + 5 * Math.sin(t * 0.021), 6 + 0.8 * Math.sin(t * 0.031), 7 + 3 * Math.cos(t * 0.017));
+      const A = LK.title;
+      out.pos.set(A.x + 5 * Math.sin(t * 0.021), A.y + 0.8 * Math.sin(t * 0.031), A.z + 3 * Math.cos(t * 0.017));
       const sunAz = Math.atan2(sd.x, -sd.z), low = 1 - smooth(0.25, 0.6, sd.y);
       out.yaw = lerp(-12 * DEG, clamp(sunAz * 0.72, -48 * DEG, 42 * DEG), low * 0.9) + 7 * DEG * Math.sin(t * 0.013);
       out.pitch = -4 * DEG;
       out.rate = 1.2; out.posRate = 0.9;
     } else if (m === "flight") {
       const L = S.view.look || S.lure;
-      const dh = Math.hypot(L.x - EYE.x, L.z - EYE.z);
+      const dh = Math.hypot(L.x - EYEV.x, L.z - EYEV.z);
       const base = { yaw: out.yaw, pitch: out.pitch };
       lookAt(L, 0.04);
       // near the dock (the back cast) keep looking out over the lake instead of spinning round
-      const w = smooth(4, 12, dh) * smooth(EYE.z - 0.5, EYE.z - 4, L.z);
+      const w = smooth(4, 12, dh) * smooth(EYEV.z - 0.5, EYEV.z - 4, L.z);
       out.yaw = base.yaw + angDiff(base.yaw, out.yaw) * w;
       out.pitch = lerp(base.pitch, clamp(out.pitch, -0.45, 0.55), w);
       const zoom = 2 * Math.atan(WORLD.ZOOM_WIDTH / 2 / Math.max(dh, 1) / (S.w / S.h)) / DEG;
@@ -357,10 +398,10 @@ export async function createWorld(container, { quality = "high" } = {}) {
     const u = m.userData.fx, len = f.len || 0.4;
     m.visible = true;
     // a leap far out is drawn a little larger, so the moment reads on a phone
-    const far = (f.jump || 0) > 0 ? 1 + 0.5 * smooth(8, 30, Math.hypot(f.x - EYE.x, f.z - EYE.z)) : 1;
+    const far = (f.jump || 0) > 0 ? 1 + 0.5 * smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
     m.scale.setScalar((len / unitLen(m)) * far);
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
-    let y = f.y, pitch = 0, roll = 0;
+    let y = f.y, pitch = 0, roll = f.roll || 0;   // roll: the body turns about its length (radians): a thrashing or beaten fish lies over
     const fwd = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
     let x = f.x, z = f.z;
     if (j > 0) {
@@ -369,7 +410,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
       const H = 0.35 + len * 0.9, own = 1 - smooth(0.0, 0.06, f.y);
       y = Math.max(f.y, -0.1) + own * 4 * j * (1 - j) * H;
       pitch = (0.5 - j) * 2.2;
-      roll = Math.sin(S.clock * 14) * 0.3 * (f.thrash || 0.5);
+      roll += Math.sin(S.clock * 14) * 0.3 * (f.thrash || 0.5);
       if (S.jumpWas === 0) { autoSplash(x, z, 0.4 + len * 0.6); S.jumpSplashed = false; }
       if (j > 0.82 && !S.jumpSplashed) { autoSplash(x + fwd.x * len * 0.4, z + fwd.z * len * 0.4, 0.45 + len * 0.7); S.jumpSplashed = true; }
       // water streams off the fish in the air
@@ -400,7 +441,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
   function drawFollower(dt) {
     const f = S.follower;
     S.followA += ((f ? 1 : 0) - S.followA) * (1 - Math.exp(-dt * 3));
-    shadow.visible = S.followA > 0.01 && !!(f || S.followLast);
+    shadow.visible = S.followA > 0.01 && !!(f || S.followLast) && !(LK.nightShadow != null && U.uNight.value > LK.nightShadow);
     if (f) S.followLast = f;
     const g = S.followLast;
     if (!shadow.visible || !g) return;
@@ -434,6 +475,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
 
   /* ---------------- loon ---------------- */
   function drawLoon(dt) {
+    if (!loon) return;
     const L = S.loon;
     L.t += dt;
     // it paddles a slow loop out in the bay, and now and then dives and comes up somewhere else
@@ -450,7 +492,10 @@ export async function createWorld(container, { quality = "high" } = {}) {
   }
 
   /* ---------------- the trophy ---------------- */
-  function showCatch(id, kg) {
+  // A fish in the catch view lies on a measuring board: a strip with cm marks, the nose at 0, the shortest of
+  // BOARD_LENGTHS that holds the fish. So a big fish looks big and a small one looks small. There is none for junk.
+  // photo: a slow push-in first (WORLD.PHOTO), for a trophy, a legend or a fish that opens a place.
+  function showCatch(id, kg, { photo = false } = {}) {
     hideCatch();
     const m = makeFish(id);
     if (!m) return;
@@ -464,10 +509,24 @@ export async function createWorld(container, { quality = "high" } = {}) {
     // turn on a stage around its middle; its size as shown: the long side across, its height up
     const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
     m.position.copy(mid).negate();
-    const stage = new THREE.Group();
-    stage.add(m);
-    const W = id === "frisbee" ? size.x : size.z, H = id === "frisbee" ? size.x * 0.95 : size.y * 1.1;
-    S.trophy = { mesh: stage, inner: m, len, W, H, dist: 1, fov: 40, t: 0, junk, id };
+    const pivot = new THREE.Group(), stage = new THREE.Group();
+    stage.userData.trophy = true;
+    pivot.add(m);
+    stage.add(pivot);
+    let W = id === "frisbee" ? size.x : size.z, H = id === "frisbee" ? size.x * 0.95 : size.y * 1.1;
+    let board = null, behind = 0;
+    if (!junk) {
+      const bl = BOARD_LENGTHS.find((b) => b / 100 >= size.z / 0.85) || BOARD_LENGTHS[BOARD_LENGTHS.length - 1], L = bl / 100, bh = L * 48 / 512;
+      board = boardMesh(bl);
+      // the fish lies along the board with its nose at 0; the board is a little behind it and under its belly; the pair is centred
+      const yb = -size.y / 2 - bh * 0.35, yc = (size.y / 2 + (yb - bh / 2)) / 2;
+      pivot.position.set(-L / 2 + size.z / 2, -yc, 0);
+      behind = size.x / 2 + 0.07 * size.z + 0.01;
+      board.position.set(0, yb - yc, -behind);
+      stage.add(board);
+      W = L * 1.06; H = (size.y / 2 - (yb - bh / 2)) * 1.1;
+    }
+    S.trophy = { mesh: stage, pivot, inner: m, board, behind, len, W, H, dist: 1, fov: 40, t: 0, sw: 0, junk, id, photo, push: photo ? WORLD.PHOTO.from : 1, pitch: CATCH_PITCH };
     fitTrophy();
     scene.add(stage);
   }
@@ -483,28 +542,41 @@ export async function createWorld(container, { quality = "high" } = {}) {
     T.fov = clamp(needV(W, H, d0), 14, 78);
     const tv = Math.tan(T.fov * DEG / 2);
     T.dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / 2 / tv);
+    // a big fish (or a narrow view) puts the fish far out: hold it flatter, so it does not sink into the stand or the water
+    const floor = Math.max(0, PL.stand.dock.deck) + H / 2 + 0.25;
+    T.pitch = clamp(Math.asin(clamp((floor - CATCH_CAM.y) / T.dist, -1, 1)), CATCH_PITCH, -8 * DEG);
   }
   function hideCatch() {
-    if (!S.trophy) return;
-    scene.remove(S.trophy.mesh);
-    S.trophy.mesh.traverse((o) => { if (o.material) o.material.dispose(); });
+    const T = S.trophy;
+    if (!T) return;
+    scene.remove(T.mesh);
+    T.mesh.traverse((o) => { if (o.material) o.material.dispose(); });   // the fish's own skin and shape are cached in world-fish
+    if (T.board) { T.board.geometry.dispose(); T.board.material.map.dispose(); T.board.material.dispose(); }
     S.trophy = null;
   }
   function drawTrophy(dt) {
     const T = S.trophy;
     if (!T) return;
     T.t += dt;
-    const m = T.mesh;
+    const m = T.mesh, P = WORLD.PHOTO;
     m.visible = S.view.mode === "catch";
+    // the board lies a little behind the fish: drawn larger by that much, its marks line up with the fish as the eye sees it
+    if (T.board) T.board.scale.setScalar(1 + T.behind / Math.max(0.3, T.dist * T.push));
+    // the photo beat: the view eases in from far away, then the fish holds still for a moment
+    if (T.photo) T.push = lerp(P.from, 1, 1 - Math.pow(1 - clamp(T.t / P.push, 0, 1), 3));
+    const frozen = T.photo && T.t > P.push && T.t < P.push + P.freeze;
+    if (!frozen) T.sw += dt;
     const p = trophySpot();
     // face the camera: the stage turns with the view, the fish swings slowly on it
     m.position.copy(p);
     m.position.y += Math.sin(T.t * 1.4) * 0.01;
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(S.cam.pitch, -S.cam.yaw, 0, "YXZ"));
-    const spin = new THREE.Quaternion();
+    m.quaternion.copy(q);
+    // on the board the swing is small, so the nose stays at 0
+    const sw = T.board ? 0.12 : 0.5, spin = new THREE.Quaternion();
     if (T.id === "frisbee") spin.setFromEuler(new THREE.Euler(1.2, T.t * 0.5, 0, "XYZ"));
-    else spin.setFromEuler(new THREE.Euler(0.08 * Math.sin(T.t * 0.9), Math.PI / 2 + 0.5 * Math.sin(T.t * 0.55), 0.1 * Math.sin(T.t * 0.7), "YXZ"));
-    m.quaternion.copy(q).multiply(spin);
+    else spin.setFromEuler(new THREE.Euler(0.08 * Math.sin(T.sw * 0.9), Math.PI / 2 + sw * Math.sin(T.sw * 0.55), 0.1 * Math.sin(T.sw * 0.7), "YXZ"));
+    T.pivot.quaternion.copy(spin);
     const u = T.inner.userData.fx;
     u.uWag.value.set(T.t * 3, T.junk ? 0 : 0.12, 0, 0);
     u.uUnder.value = 0; u.uAlpha.value = 1;
@@ -526,7 +598,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     // the aim line fades in and out; it only belongs to the cast view
     S.aim.a += ((S.aim.visible && S.view.mode === "cast" ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
     const ay = (S.aim.yaw || 0) * DEG;
-    WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, 0);
+    WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, PL.stand.dock.z0);
     // gold rings glow and throw up sparkles
     halos.forEach((h, i) => {
       const r = S.rings[i];
@@ -543,6 +615,9 @@ export async function createWorld(container, { quality = "high" } = {}) {
       spray.emit(r.x + Math.cos(a) * d, 0.05, r.z + Math.sin(a) * d, 0, 0.5 + Math.random() * 0.6, 0, 0.18 + 0.004 * Math.hypot(r.x, r.z), 1.4, 1, 0);
     }
     spray.update(dt);
+    // the gulls circle over the rising fish, the fireflies come out at night
+    if (gulls) gulls.update(dt, S.rings);
+    if (flies) flies.visible = U.uNight.value > 0.5;
     S.lureDt = dt;
   }
   function render() {
@@ -553,6 +628,7 @@ export async function createWorld(container, { quality = "high" } = {}) {
     drawLure(S.lureDt || 1 / 60);
     shadow.visible = shadow.visible && S.view.mode !== "catch";
     spray.u.uScale.value = (S.h * renderer.getPixelRatio()) / (2 * Math.tan(camera.fov * DEG / 2));
+    if (flies) flies.userData.u.uScale.value = spray.u.uScale.value;
     renderer.render(scene, camera);
     S.info.calls = renderer.info.render.calls;
     S.info.tris = renderer.info.render.triangles;
@@ -567,6 +643,37 @@ export async function createWorld(container, { quality = "high" } = {}) {
     renderer.setSize(S.w, S.h);
     fitTrophy();
     applyCamera();
+  }
+
+  // Go to another place (a place or its id). Everything that belongs to the old place is freed: props, trees, ground, the
+  // water texture and the fish it had that this place does not. Returns { ms }, the time it took. Do it behind a card.
+  let travel = Promise.resolve();
+  async function goTo(next) {
+    const np = typeof next === "string" ? getPlace(next) : next;
+    if (!np || !np.stand || np === PL) return { ms: 0 };
+    const t0 = performance.now();
+    hideCatch();
+    PL = np; LK = lookOf(np);
+    applyStand();
+    E.setWaterPlace(water, WU, PL, LK);
+    buildEnv();
+    buildProps();
+    // fish of the old place go; the two warm-up fish stay (their shaders stay cached), and the fish module frees the skins
+    const keep = placeSpecies(PL.id);
+    for (const [id, m] of fishCache) if (!keep.includes(id) && !WARM_IDS.includes(id)) { scene.remove(m); for (const mt of m.userData.mats) mt.dispose(); fishCache.delete(id); }
+    Fish.releaseFish([...new Set([...keep, ...WARM_IDS])]);
+    // nothing carries over: no fish, rings, lure, aim or trophy
+    S.fish = null; S.follower = null; S.followLast = null; S.followA = 0; S.rings = [];
+    for (let i = 0; i < E.RINGS; i++) WU.uRing.value[i].set(0, 0, 0, 0);
+    WU.uLure.value.set(0, 0, 0, 0); WU.uLoon.value.set(0, 0, 0, 0);
+    S.lure.visible = false; S.lure.prev = null; S.line.visible = false; S.aim.visible = false; S.aim.a = 0;
+    S.view = { mode: "title", yaw: 0, look: null, portrait: false };
+    S.cam.init = false;
+    setHour(S.hour);
+    updateCamera(0);
+    await warmUp();
+    setHour(S.hour);
+    return { ms: performance.now() - t0 };
   }
 
   const world = {
@@ -626,7 +733,17 @@ export async function createWorld(container, { quality = "high" } = {}) {
     setHour,
     showCatch, hideCatch,
     update, render,
-    info() { return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +resScale.toFixed(2) }; },
+    info() {
+      const m = renderer.info.memory;
+      return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +resScale.toFixed(2), mem: { geometries: m.geometries, textures: m.textures } };
+    },
+    place: () => PL,
+    // one trip at a time: a second call waits for the first
+    setPlace(next) {
+      const trip = travel.then(() => goTo(next));
+      travel = trip.catch(() => {});
+      return trip;
+    },
     // main.js reports each frame's time in ms: long frames lower the render scale, short ones raise it again
     frameTime(ms) {
       if (!(ms > 0) || ms > 250 || document.hidden) return;
@@ -642,28 +759,41 @@ export async function createWorld(container, { quality = "high" } = {}) {
     },
   };
 
+  // Compile the shaders now (fish, junk, trophies, lure, glows, and the props of this place) so the first bite or catch
+  // does not stutter. A real draw, not just a compile: three checks each program and the driver builds its pipeline on
+  // first use, and those must not land on the release, the strike or the catch.
+  const WARM_IDS = ["smallmouth", "boot"];
+  let solid = null, warmBoard = null;
+  async function warmUp() {
+    const warm = WARM_IDS.map(getFish);
+    if (!solid) {
+      solid = WARM_IDS.map(makeFish);   // the trophy variant: solid body, kept so its program stays cached
+      solid.forEach((m) => { for (const mt of m.userData.mats) if (!mt.userData.fin) mt.transparent = false; });
+    }
+    solid.forEach((m) => scene.add(m));
+    if (!warmBoard) warmBoard = boardMesh(BOARD_LENGTHS[0]);   // the measuring board of the catch view, kept so its shader stays cached
+    scene.add(warmBoard);
+    const extras = [lure.group, lure.glint, rod.mesh, line.mesh, shadow, ...halos, ...(flies ? [flies] : [])];
+    warm.concat(solid).forEach((m) => { m.visible = true; m.position.set(0, 1, -3); });
+    extras.forEach((o) => { o.visible = true; });
+    warmBoard.position.set(0, 1, -3);
+    const culled = [];
+    scene.traverse((o) => { if (o.frustumCulled) { culled.push(o); o.frustumCulled = false; } });
+    try {
+      if (renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
+      renderer.render(scene, camera);
+    } catch (e) { /* draw on first use instead */ }
+    culled.forEach((o) => { o.frustumCulled = true; });
+    warm.forEach((m) => { m.visible = false; });
+    solid.forEach((m) => scene.remove(m));
+    scene.remove(warmBoard);
+    extras.forEach((o) => { o.visible = false; });
+  }
+
   setHour(12);
   const rect = container.getBoundingClientRect();
   resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
   updateCamera(0);
-  // compile the shaders now (fish, junk, trophies, lure, glows) so the first bite or catch does not stutter
-  const warm = [getFish("smallmouth"), getFish("boot")];
-  const solid = [makeFish("smallmouth"), makeFish("boot")];   // the trophy variant: solid body, kept so its program stays cached
-  solid.forEach((m) => { for (const mt of m.userData.mats) if (!mt.userData.fin) mt.transparent = false; scene.add(m); });
-  const extras = [lure.group, lure.glint, rod.mesh, line.mesh, shadow, ...halos];
-  warm.concat(solid).forEach((m) => { m.visible = true; m.position.set(0, 1, -3); });
-  extras.forEach((o) => { o.visible = true; });
-  // a real draw, not just a compile: three checks each program and the driver builds its pipeline on first use,
-  // and those must not land on the release, the strike or the catch
-  const culled = [];
-  scene.traverse((o) => { if (o.frustumCulled) { culled.push(o); o.frustumCulled = false; } });
-  try {
-    if (renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
-    renderer.render(scene, camera);
-  } catch (e) { /* draw on first use instead */ }
-  culled.forEach((o) => { o.frustumCulled = true; });
-  warm.forEach((m) => { m.visible = false; });
-  solid.forEach((m) => scene.remove(m));
-  extras.forEach((o) => { o.visible = false; });
+  await warmUp();
   return world;
 }

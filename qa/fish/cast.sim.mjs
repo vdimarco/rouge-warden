@@ -1,7 +1,8 @@
 // Checks the cast physics in cast.js with no browser: node qa/fish/cast.sim.mjs
 // Prints a table of where casts land, then checks the reference numbers in the spec. Exit code 1 on failure.
 import { CAST, castParams, Flight, castLanding, strokeFactor, clockOf } from "../../public/fish/js/cast.js";
-import { ROD } from "../../public/fish/js/lake.js";
+import { ROD, setPlace } from "../../public/fish/js/lake.js";
+import { PLACE_IDS } from "../../public/fish/js/places.js";
 
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); };
@@ -132,6 +133,28 @@ console.log("\nRobustness");
   do { r = f.step(1); n++; } while (!r.done && n < 100);
   check(r.done, `a flight always ends (${n} big steps, ${r.land})`);
 }
+
+// 7. every place: the same landings from its own stand (lake.js follows setPlace, and so does tipAt through ROD)
+console.log("\nPlaces");
+for (const id of PLACE_IDS) {
+  const P = setPlace(id);
+  const s = cast(68, 1000);
+  check(s.r.land === "water" && s.r.dist > 35 && s.r.dist < 62, `${P.name}: a sweet 1000 °/s cast lands in the water 35..62 m out (${s.r.dist.toFixed(1)} m, ${s.r.land})`);
+  // along a river bank or a breakwater there is water to both sides
+  if (id === "river" || id === "sea") for (const yaw of [-60, 60]) {
+    const y = cast(68, 1000, { yaw });
+    check(y.r.land === "water", `${P.name}: a sweet cast at yaw ${yaw}° lands in the water (${y.r.dist.toFixed(1)} m, ${y.r.land})`);
+  }
+  for (const [th, w] of [[125, 300], [130, 700], [140, 1000], [150, 1500]]) {
+    const b = cast(th, w, { back: th + 30 });
+    check(b.r.z > 0 && ["dock", "land", "tree"].includes(b.r.land), `${P.name}: an early release at ${th}°, ${w} °/s lands behind on the ${b.r.land === "dock" ? "stand" : b.r.land} (z ${b.r.z.toFixed(1)})`);
+  }
+  for (const [th, w] of [[25, 600], [20, 1000], [10, 1500]]) {
+    const b = cast(th, w);
+    check(b.r.land === "water" && b.r.dist < 12 && b.r.z < 0, `${P.name}: a very late release at ${th}°, ${w} °/s lands in the water close in (${b.r.dist.toFixed(1)} m)`);
+  }
+}
+setPlace("loon");
 
 console.log(fails.length ? `\n${fails.length} check(s) failed` : "\nAll cast checks passed");
 process.exit(fails.length ? 1 : 0);
