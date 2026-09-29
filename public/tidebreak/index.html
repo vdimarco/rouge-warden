@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#061b29">
+  <meta name="description" content="Tidebreak. An original mobile MOBA in a living reef. Pick a hero, lead your waves, claim the leviathan, and break the enemy heart in a four-minute battle.">
+  <meta property="og:title" content="Tidebreak | Cottage Arcade">
+  <meta property="og:description" content="A living reef. A rising tide. Four minutes to break their heart. Play the 3v3 bot arena.">
+  <meta property="og:image" content="/tidebreak/art/arena.webp">
+  <title>Tidebreak · Cottage Arcade</title>
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <canvas id="battle" aria-label="Tidebreak battlefield"></canvas>
+  <div id="hud" hidden>
+    <header><span class="wordmark">TIDEBREAK</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">04:00</time></div><button id="pause" class="pause" aria-label="Pause game"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button></header>
+    <canvas id="minimap" width="160" height="160" aria-label="Map: your team is teal; enemies are red"></canvas>
+    <div id="objective"><b>Break their heart</b><span id="objective-sub">Lead a wave to an enemy spire</span></div>
+    <button id="shop" class="utility"><span id="gold">0</span> pearls <small>UPGRADE</small></button>
+    <button id="recall" class="utility">RETURN <small>Heal at home</small></button>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <div id="respawn" hidden></div>
+    <div id="coach"><svg viewBox="0 0 80 38" aria-hidden="true"><circle cx="28" cy="20" r="14"/><circle class="coach-thumb" cx="28" cy="20" r="5"/><path d="M51 20h17m-6-6 6 6-6 6"/></svg><span>Drag the left pad to move.<br>Attack fires when an enemy is near.</span><button id="coach-close" aria-label="Close control tip">×</button></div>
+    <div id="controls">
+      <div id="joystick" role="group" aria-label="Movement pad"><span class="stick-arrows"></span><span id="thumb"></span><small>MOVE</small></div>
+      <div class="abilities">
+        <button class="ability dash" data-skill="0" aria-label="Dash. Drag to aim, release to cast"><svg viewBox="0 0 40 40"><path d="m9 29 12-19 2 11 9-7-12 19-1-11z"/></svg><span>DASH</span><b></b><kbd>Q</kbd></button>
+        <button class="ability surge" data-skill="1" aria-label="Surge. Release to cast"><svg viewBox="0 0 40 40"><path d="M32 17c-8-15-28-3-23 9 4 10 19 8 20-2 1-8-11-12-15-5-3 5 4 10 7 6"/></svg><span>SURGE</span><b></b><kbd>E</kbd></button>
+        <button class="ability ult" data-skill="2" aria-label="Ultimate. Unlocks at level three"><svg viewBox="0 0 40 40"><path d="m20 4 4 12 12 4-12 4-4 12-4-12-12-4 12-4z"/></svg><span>ULT</span><b>LV 3</b><kbd>R</kbd></button>
+        <button id="attack" aria-label="Attack nearest enemy"><svg viewBox="0 0 56 56"><path d="m12 45 23-28 1-9 10-3-1 11-10 3-23 28M23 29l8 7"/></svg><span>ATTACK</span></button>
+      </div>
+      <div class="health"><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="xp-fill"></i></div></div>
+    </div>
+  </div>
+  <main id="menu" class="overlay">
+    <div class="intro">
+      <h1>TIDEBREAK</h1><p class="tagline">The reef is alive. Make it yours.</p>
+      <div class="hero-stage"><img id="hero-art" src="./art/nacre.webp" alt="Nacre, the reef duelist"></div>
+      <div class="hero-copy"><h2 id="hero-name">Nacre</h2><span id="hero-role">Reef duelist</span><p id="hero-note">Close the gap. Cut through a lane.</p></div>
+      <div class="hero-picks" role="group" aria-label="Choose a hero"><button data-hero="0" aria-pressed="true">Nacre</button><button data-hero="1" aria-pressed="false">Brine</button><button data-hero="2" aria-pressed="false">Vela</button></div>
+      <p class="match-info">3 vs 3 with bots <span>·</span> 4-minute match</p>
+      <button id="play" class="primary" disabled>Loading the reef…</button>
+      <p id="load-error" role="alert" hidden>Art could not load. Check your connection and <button onclick="location.reload()">try again</button>.</p>
+      <div class="menu-links"><button id="how">How to play</button><button data-switch>Switch game</button><button id="sound-menu">Sound on</button></div>
+    </div>
+  </main>
+  <dialog id="sheet"><button id="close-sheet" class="close" aria-label="Close panel">×</button><div id="sheet-content"></div></dialog>
+  <script src="/arcade/switch.js"></script><script type="module" src="./main.js"></script>
+</body>
+</html>

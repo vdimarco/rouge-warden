@@ -1,0 +1,50 @@
+{
+  "assets": [
+    {
+      "role": "concept",
+      "job_id": "743087e4-467c-4764-9e9d-9725ec212f47",
+      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151831_743087e4-467c-4764-9e9d-9725ec212f47.png",
+      "provider": "Higgsfield",
+      "model": "gpt_image_2_5",
+      "params": {
+        "prompt": "Use case: ui-mockup. Full portrait mobile gameplay screenshot for original premium MOBA TIDEBREAK. Complete screen, 9:16. Playable production design reference. Isometric painterly ruined reef arena, midnight navy ocean, ivory limestone lanes, bioluminescent turquoise vegetation, coral red enemy architecture. Camera looks down at teal armored reef duelist with crescent glaive at center, tiny soldiers and distant coral towers. Large clean battle area. Code-native UI to be built separately: very compact top HUD translucent navy with TIDEBREAK left, centered score 0 : 0 and 04:00, small pause icon right. Upper left 80px square minimap. Top center short objective text 'Break their heart'. Bottom has left transparent circular movement joystick; right fan of three circular ability controls 'DASH', 'SURGE', 'ULT' plus larger attack control. Center bottom health bar and level 1. Sharp angular gold borders, white narrow sans serif labels, big thumb targets. Main battlefield occupies 80% of display. Polished readable style. No phone mockup, no frame, no marketing hero. Original characters only.",
+        "aspect_ratio": "9:16",
+        "quality": "low",
+        "resolution": "1k"
+      }
+    },
+    {
+      "role": "atlas",
+      "job_id": "de8fea73-426e-4145-b3cd-a2fb5ccd96cc",
+      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151903_de8fea73-426e-4145-b3cd-a2fb5ccd96cc.png",
+      "provider": "Higgsfield",
+      "model": "gpt_image_2_5",
+      "params": {
+        "prompt": "Production game sprite atlas for original MOBA Tidebreak. EXACT 3 columns by 3 rows, 9 separate objects, strict evenly spaced square cells. Orthographic isometric 3/4 top-down painterly 3D game art, bright silhouettes. Transparent background, NO shadows outside objects. Row1: teal armored reef duelist holding crescent glaive; orange crab-shell guardian holding anchor hammer; violet ivory jellyfish mage. Row2: tiny turquoise shell soldier with spear; red coral soldier with spear; enormous gold and ivory hermit crab with shrine on its shell. Row3: glowing teal branching coral defense tower on circular stone plinth; glowing red coral defense tower on circular stone plinth; living ivory shell heart crystal base radiating turquoise. All objects fully isolated, full bodies, each centered in cell, 18% empty margins per cell. Consistent camera angle, premium painterly detail readable at small size, expressive original designs, no text no grid no labels. Exactly 9 objects in 3x3 cells.",
+        "aspect_ratio": "1:1",
+        "quality": "medium",
+        "resolution": "2k",
+        "background": "transparent"
+      }
+    },
+    {
+      "role": "arena",
+      "job_id": "a1702b87-5018-4753-9e90-9811fa43bf72",
+      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_151905_a1702b87-5018-4753-9e90-9811fa43bf72.png",
+      "provider": "Higgsfield",
+      "model": "gpt_image_2_5",
+      "params": {
+        "prompt": "Production environment game map for original MOBA Tidebreak, single square texture, straight top-down orthographic plan view. A luminous sunken reef city at night. Three broad ivory stone lanes connect a round empty base platform at bottom center to a round empty base platform at top center. Center lane is straight vertical, outer lanes curve left and right through turquoise coral gardens. Clear circular central arena. The whole land is a wide roughly circular island surrounded by midnight navy water at edges. Rich painterly premium strategy game art, teal bioluminescent coral, deep green moss, gold seams, fallen stone arches, small pink anemones. Paths form clean passable networks with room for fighters. High angle almost plan view, no sky or horizon. Flat readable ground without extreme perspective. No heroes, no soldiers, no towers, no UI, no words. Entire map visible. Symmetric competitive arena layout, beautifully textured, artistic cinematic lighting.",
+        "aspect_ratio": "1:1",
+        "quality": "medium",
+        "resolution": "2k",
+        "background": "opaque"
+      }
+    }
+  ],
+  "processing": "Lossy WebP compression; atlas top-row crops for hero portraits. Generated alpha preserved.",
+  "provider_limits": {
+    "fal": "nano-banana-pro request rejected before submission: balance_exhausted (403). No fal asset used.",
+    "four04": "No callable 404-GEN connector or credential available. No 404 model generated or included."
+  }
+}

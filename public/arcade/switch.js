@@ -3,6 +3,7 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    { id: "tidebreak", name: "Tidebreak", sub: "3v3 reef MOBA", url: "/tidebreak/", art: "/tidebreak/art/arena.webp", color: "#72f6dc" },
     { id: "plungerd", name: "Get Plunger'd", sub: "Cottage Brawl", url: "/plungerd/", art: "/arcade/plungerd.webp", color: "#e6c35c" },
     { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/drain.webp", color: "#5fb8d0" },
     { id: "crimson", name: "Crimson Rouge", sub: "紅の月の下で", url: "/crimson/", art: "/crimson/art/keyart2.webp", color: "#d0485f" },
