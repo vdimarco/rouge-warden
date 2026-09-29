@@ -25,3 +25,10 @@ h1{font-weight:800;letter-spacing:-3px}h1 span{color:#d8f3ef}.eyebrow{color:#ffb
 #panel{background:linear-gradient(135deg,#203f40ee,#385450d9);border-color:#c8dcc182;box-shadow:0 20px 80px #243d3b66}
 h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#233c38}header{background:linear-gradient(#183b3f99,transparent)}
 @media(max-height:520px){#walkStick{bottom:30px;left:20px;width:86px;height:86px}#lookPad{top:110px;bottom:150px;width:30%}#districtStatus{top:108px;max-width:240px;font-size:10px}#hud{gap:16px}#panel .fine{display:none}}
+
+.style-label{display:block;font-size:10px;letter-spacing:2px;margin:14px 0 6px;color:#f0e6c8}#visualStyle{width:100%;min-height:44px;padding:10px;background:#1e3637;color:#fff1d4;border:1px solid #90aa98;border-radius:6px;font:inherit;touch-action:manipulation}
+[data-style="rick-morty"] #panel{background:#302e47f5;border:3px solid #172127;border-radius:15px;box-shadow:5px 6px 0 #172127}
+[data-style="rick-morty"] h1 span,[data-style="rick-morty"] .eyebrow{color:#bdff52}
+[data-style="rick-morty"] .primary{background:#bdff52;border:2px solid #172127;border-radius:8px;color:#172127}
+[data-style="rick-morty"] #stickNub{background:#bdff52;border:3px solid #172127}
+#panel{backdrop-filter:none}
