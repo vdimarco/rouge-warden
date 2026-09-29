@@ -1533,4 +1533,3 @@ async function boot() {
   requestAnimationFrame(frame);
 }
 boot();
-
