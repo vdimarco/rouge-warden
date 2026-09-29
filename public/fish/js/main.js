@@ -5,6 +5,7 @@
 // fish.js runs the fish and the fight, world.js draws the place, audio.js and haptics.js make the feel.
 // places.js holds the maps, fishing.js who lives where, journey.js the trail and its words, save.js the save file.
 import { Motion } from "./motion.js";
+import { createGuide } from "./guide.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
@@ -40,6 +41,8 @@ const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
 const game = $("#game");
+const guide = createGuide(game, $("#guideToggle"));
+let guideCue = { text: "", sub: "", icon: "", tone: "" };
 const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 const G = {
   phase: "boot",    // boot | title | cast | reel | catch | lost | results
@@ -120,6 +123,7 @@ function toast(msg, ms = 2200) {
 }
 let promptKey = "";
 function prompt(text, sub = "", icon = "", tone = "") {
+  guideCue = { text, sub, icon, tone };
   const p = $("#prompt");
   if (!text) { p.hidden = true; promptKey = ""; return; }
   const key = text + "|" + sub + "|" + icon + "|" + tone;
@@ -1335,6 +1339,8 @@ function frame() {
   relayout();
   if (!world) return;
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
+  guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice,
+    fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
   // under the pause menu and the dimmed screens the lake stands still: draw it once, then let the GPU rest
   const still = G.paused || !!document.querySelector(".screen.dim:not([hidden])");
