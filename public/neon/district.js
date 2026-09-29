@@ -133,13 +133,23 @@ export class District {
   }
   resize(){this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight)}
   reset(){this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
+  beginMotionView(){this.motionView={yaw:this.yaw,pitch:this.pitch,last:0,turn:0};this.look=null}
+  aimMotionView(yaw,pitch,dt){
+    if(!this.motionView)this.beginMotionView();const v=this.motionView;
+    const delta=Math.atan2(Math.sin(yaw-v.last),Math.cos(yaw-v.last));v.turn+=delta;v.last=yaw;
+    const a=1-Math.exp(-dt/.045);this.yaw+=(v.yaw+v.turn-this.yaw)*a;
+    this.pitch+=(Math.max(-.85,Math.min(.85,v.pitch+pitch))-this.pitch)*a;
+    // Update projection before the same sensor event checks sword contact.
+    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');this.camera.updateMatrixWorld();
+  }
+  endMotionView(){this.motionView=null}
   clearInput(){this.keys.clear();this.move={x:0,y:0};this.look=null;this.stickPointer=null;document.getElementById('stickNub')?.style.setProperty('transform','translate(0,0)')}
   wire(){
     const stick=document.getElementById('walkStick'),nub=document.getElementById('stickNub'),look=document.getElementById('lookPad');
     const move=e=>{if(e.pointerId!==this.stickPointer)return;const b=stick.getBoundingClientRect(),x=(e.clientX-b.left-b.width/2)/42,y=(e.clientY-b.top-b.height/2)/42,n=Math.max(1,Math.hypot(x,y));this.move={x:x/n,y:y/n};nub.style.transform=`translate(${this.move.x*30}px,${this.move.y*30}px)`};
     stick.onpointerdown=e=>{if(!this.active)return;this.stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);move(e)};stick.onpointermove=move;
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,()=>{this.stickPointer=null;this.move={x:0,y:0};nub.style.transform='translate(0,0)'});
-    look.onpointerdown=e=>{if(!this.active)return;look.setPointerCapture(e.pointerId);this.look={id:e.pointerId,x:e.clientX,y:e.clientY}};
+    look.onpointerdown=e=>{if(!this.active||this.motionView)return;look.setPointerCapture(e.pointerId);this.look={id:e.pointerId,x:e.clientX,y:e.clientY}};
     look.onpointermove=e=>{if(this.look?.id!==e.pointerId)return;this.yaw-=(e.clientX-this.look.x)*.005;this.pitch=Math.max(-.45,Math.min(.45,this.pitch-(e.clientY-this.look.y)*.003));this.look.x=e.clientX;this.look.y=e.clientY};
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(ev,()=>this.look=null);
     addEventListener('keydown',e=>{if(this.active&&['KeyW','KeyA','KeyS','KeyD'].includes(e.code)){this.keys.add(e.code);e.preventDefault()}});
