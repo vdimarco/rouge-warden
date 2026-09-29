@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="Drop a token into 12 game machines, including Neon Ronin, Reel It In, Loon Echo, and Full Tilt. Free in your browser.">
+<meta name="description" content="Drop a token into 18 game machines, including Threadwake, Foldwild, Storm Choir, and Heartship. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Explore 12 arcade machines, from neon sword duels to lake adventures and pinball. Free in your browser.">
+<meta property="og:description" content="Explore 18 arcade machines, from living landscapes and folding rivers to lake adventures and pinball. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -181,6 +181,8 @@ button { font: inherit; color: inherit; }
 /* the power-on: the chosen screen grows to fill the window, then the game loads */
 .boot { position: fixed; z-index: 80; overflow: hidden; background: #000; border-radius: 12% / 14%; transition: all 0.55s cubic-bezier(0.7, 0, 0.3, 1); }
 .boot img, .boot canvas { width: 100%; height: 100%; object-fit: cover; }
+/* Each Small Worlds machine shows its own panel of the shared illustrated atlas. */
+.screen img.world-art { position: absolute; inset: auto; top: 50%; left: calc(var(--col) * -100%); width: 300%; height: auto; max-width: none; transform: translateY(calc(-25% - var(--row) * 50%)); }
 .boot.full { border-radius: 0; }
 .boot .line { position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #fff; box-shadow: 0 0 20px #fff; transform: scaleX(0); }
 .boot.full .line { animation: crt 0.5s 0.5s forwards; }
@@ -333,6 +335,60 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into House Rules"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into House Rules"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="threadwake" data-url="/lab/worlds/#threadwake" aria-label="Threadwake" style="--c1: #477d62; --c2: #c7e5ac; --glow: #c7e5ac70">
+        <div class="marquee"><div><b>THREADWAKE</b><small>PULL A LIVING LANDSCAPE</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 0; --row: 0" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">FIND YOUR FLOW</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Threadwake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Threadwake"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="foldwild" data-url="/lab/worlds/#foldwild" aria-label="Foldwild" style="--c1: #886547; --c2: #f0d6a0; --glow: #f0d6a070">
+        <div class="marquee"><div><b>FOLDWILD</b><small>FOLD A RIVER INTO A PATH</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 1; --row: 0" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">CHANGE YOUR PERSPECTIVE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Foldwild"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Foldwild"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="stormchoir" data-url="/lab/worlds/#stormchoir" aria-label="Storm Choir" style="--c1: #476c8f; --c2: #b8dbf0; --glow: #b8dbf070">
+        <div class="marquee"><div><b>STORM CHOIR</b><small>YOU ARE THE WIND</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 2; --row: 0" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">MOVE WITH THE WEATHER</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Storm Choir"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Storm Choir"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="borrowed" data-url="/lab/worlds/#borrowed" aria-label="Borrowed Bodies" style="--c1: #77568e; --c2: #dcc5f1; --glow: #dcc5f170">
+        <div class="marquee"><div><b>BORROWED BODIES</b><small>ONE SPARK · MANY LIVES</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 0; --row: 1" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">TRY ANOTHER LIFE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Borrowed Bodies"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Borrowed Bodies"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="season" data-url="/lab/worlds/#season" aria-label="Season Thief" style="--c1: #956535; --c2: #f0cc83; --glow: #f0cc8370">
+        <div class="marquee"><div><b>SEASON THIEF</b><small>BORROW A LITTLE TIME</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 1; --row: 1" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">MAKE TIME YOUR OWN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Season Thief"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Season Thief"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="heartship" data-url="/lab/worlds/#heartship" aria-label="Heartship" style="--c1: #9a565c; --c2: #efb6ad; --glow: #efb6ad70">
+        <div class="marquee"><div><b>HEARTSHIP</b><small>SAIL A LIVING SHIP</small></div></div>
+        <div class="bezel"><div class="screen"><img class="world-art" src="/lab/worlds/assets/worlds-atlas.webp" style="--col: 2; --row: 1" alt="" width="1254" height="1254">
+          <div class="osd"><p class="hi">FIND YOUR RHYTHM</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Heartship"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Heartship"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
     </div>
@@ -584,7 +640,15 @@ function boot(c) {
   b.className = "boot";
   Object.assign(b.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
   const art = $("img, canvas", scr);
-  if (art.tagName === "IMG") { const im = document.createElement("img"); im.src = art.src; im.alt = ""; b.appendChild(im); }
+  if (art.tagName === "IMG" && art.classList.contains("world-art") && art.naturalWidth) {
+    // Isolate this atlas panel before it expands to fill a portrait screen.
+    const cv = document.createElement("canvas"), w = art.naturalWidth / 3, h = art.naturalHeight / 2;
+    cv.width = w; cv.height = h;
+    const col = Number(art.style.getPropertyValue("--col")), row = Number(art.style.getPropertyValue("--row"));
+    cv.getContext("2d").drawImage(art, col * w, row * h, w, h, 0, 0, w, h);
+    b.appendChild(cv);
+  }
+  else if (art.tagName === "IMG") { const im = document.createElement("img"); im.src = art.src; im.alt = ""; b.appendChild(im); }
   else { const cv = document.createElement("canvas"); cv.width = art.width; cv.height = art.height; cv.getContext("2d").drawImage(art, 0, 0); cv.style.imageRendering = "pixelated"; b.appendChild(cv); }
   b.insertAdjacentHTML("beforeend", "<i class='line'></i><div class='msg'>LOADING…</div>");
   document.body.appendChild(b);
