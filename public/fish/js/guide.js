@@ -13,12 +13,14 @@ const PAD = `<rect x="32" y="8" width="43" height="65" rx="12" fill="#174a55" st
 
 export function sceneMarkup(kind, motion) {
   let body;
-  if (kind === "reel" || kind === "stop") {
+  if (kind === "drag") {
+    body = `<rect x="20" y="23" width="98" height="36" rx="10" fill="#174a55" stroke="#b9c9c4" stroke-width="2"/><path d="M32 41h14M91 41h14M98 34v14" stroke="#e8b64a" stroke-width="3"/><text x="58" y="45" fill="#f6efd9" font-size="12" font-family="sans-serif">DRAG</text><circle cx="98" cy="41" r="17" fill="none" stroke="#e8b64a" stroke-width="2"/>`;
+  } else if (kind === "reel" || kind === "stop") {
     body = CRANK + (kind === "stop" ? `<g class="g-pause"><rect x="105" y="26" width="6" height="24" rx="2"/><rect x="116" y="26" width="6" height="24" rx="2"/></g>` : `<path class="g-trail" d="M101 23q13 20-4 35m0-8v8h8"/>`);
   } else if (kind === "flight") {
     body = `<path d="M9 62q12-5 24 0t24 0t24 0t24 0t24 0" fill="none" stroke="#658a8c" stroke-width="2"/><path class="g-trail" d="M17 53Q62-9 107 53"/><g class="g-flight"><circle cx="17" cy="53" r="5" fill="#e8b64a"/><path d="M17 58v6q0 6 5 2" fill="none" stroke="#f6efd9" stroke-width="2"/></g>`;
   } else {
-    const cls = { back: "g-back", cast: "g-flick", hook: "g-lift", pump: "g-pump", land: "g-lift", low: "g-low", turn: "g-steer" }[kind] || "";
+    const cls = { back: "g-back", cast: "g-flick", hook: "g-lift", pump: "g-pump", land: "g-lift", raise: "g-lift", low: "g-low", turn: "g-steer" }[kind] || "";
     if (motion) body = `<g class="g-phone ${cls}">${PHONE}${HAND}${kind === "hold" || kind === "back" ? `<g class="g-tap">${DOT}</g>` : ""}</g>`;
     else body = (kind === "hold" || kind === "back" || kind === "cast" ? PHONE : PAD) + `<g class="${kind === "back" || kind === "low" ? "g-down" : kind === "hold" || kind === "turn" ? "g-tap" : "g-up"}">${DOT}</g>`;
     if (kind === "back" || kind === "low") body += DOWN;
@@ -75,12 +77,14 @@ export function lesson(kind, motion, touch = true) {
     cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", "Touch the reel to stop it short."],
     reel: ["Turn the crank", "Reel slowly. Pause now and then."],
-    hook: [motion ? "Snap the phone up" : touch ? "Swipe the rod pad up" : "Press Space", "Set the hook when the fish strikes."],
-    pump: [motion ? "Lift, then lower + reel" : "Rod pad up, then down + reel", "Reel as you lower the rod."],
+    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod pad up" : "Press Space", "Set the hook when the fish strikes."],
+    pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
     stop: ["Stop turning the crank", "Let the fish run."],
     low: [motion ? "Lower the phone" : "Drag the rod pad down", "Lower the rod."],
     turn: [motion ? "Tilt to steer" : "Drag the rod pad sideways", "Keep the fish clear of cover."],
     land: [motion ? "Lift the phone. Hold." : "Rod pad up. Hold.", "Lift the fish out of the water."],
+    raise: [motion ? "Hold the phone up" : "Hold the rod pad up", "Keep the rod raised."],
+    drag: ["Tap + to tighten drag", "Keep some line on the spool."],
   })[kind] || ["Watch the line", "Follow the prompt."];
 }
 
@@ -90,10 +94,12 @@ export function activeLesson({ phase, step, fishPhase, cue }) {
   if (phase === "cast") return ({ pinned: "back", loaded: "cast", flight: "flight" })[step] || "hold";
   if (fishPhase === "strike") return "hook";
   if (fishPhase === "land") return "land";
+  if (/Tighten the drag/i.test(cue.text + " " + cue.sub)) return "drag";
   if (cue.icon === "stop" || /Stop reeling|Let it run|Let it go|rests\.|Rest your arm|following|nibbling/i.test(cue.text + " " + cue.sub)) return "stop";
   if (cue.icon === "low") return "low";
   if (cue.icon === "turn") return "turn";
   if (cue.icon === "crank") return "reel";
+  if (/Hold the rod up|Keep your rod up|Keep the rod up/i.test(cue.text + " " + cue.sub)) return "raise";
   return fishPhase === "fight" ? "pump" : "reel";
 }
 
@@ -115,11 +121,18 @@ export function createGuide(game, button) {
   let dismissed = false;
   try { dismissed = localStorage.getItem(KEY) === "hidden"; } catch (_) { /* storage may be disabled */ }
   let state = null, key = "", started = 0, lastDraw = -Infinity, layoutKey = "", nextLayout = 0, kindNow = "hold", parts = [];
-  let videoMode = "", videoFailed = false;
+  let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });
   let lastPhase = "", lastStep = "", now = 0;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const title = () => { button.setAttribute("aria-expanded", String(!panel.hidden)); button.setAttribute("aria-label", dismissed ? "Show animated guide" : "Hide animated guide"); };
+  let buttonState = "";
+  const title = () => {
+    const next = `${dismissed}:${panel.hidden}`;
+    if (next === buttonState) return;
+    buttonState = next;
+    button.setAttribute("aria-expanded", String(!panel.hidden));
+    button.setAttribute("aria-label", dismissed ? "Show animated guide" : panel.hidden ? "Guide hidden while screen is busy" : "Hide animated guide");
+  };
   button.addEventListener("click", () => {
     dismissed = !dismissed;
     try { localStorage.setItem(KEY, dismissed ? "hidden" : "shown"); } catch (_) { /* storage may be disabled */ }
@@ -144,17 +157,17 @@ export function createGuide(game, button) {
   function place() {
     panel.hidden = false;
     const view = game.querySelector("#view"), W = game.clientWidth, H = game.clientHeight;
-    const blocks = ["hud", "prompt", "report", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox"]
-      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length).map(rect);
+    const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox"]
+      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
-    const xs = [10];
+    const xs = [10 + (parseFloat(getComputedStyle(game).getPropertyValue("--sal")) || 0)];
     if (W > H * 1.15 && state.phase === "reel") xs.push(Math.min(W * .38, game.querySelector("#gaugeBox").offsetWidth + 24));
     let found = null;
-    for (const compact of [false, true]) {
+    for (const compact of [false, true, "tiny"]) {
       panel.dataset.compact = String(compact);
       const w = panel.offsetWidth, h = panel.offsetHeight;
-      const bottom = Math.min(H, view.offsetHeight) - h - 10;
+      const bottom = Math.min(H, view.offsetHeight) - h - (compact === "tiny" ? 4 : 10);
       for (const x of xs) {
         for (let y = bottom; y >= 54; y -= 8) {
           const r = { x, y, w, h };
@@ -186,10 +199,13 @@ export function createGuide(game, button) {
     }
     const useVideo = intro && !reduced.matches && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
-    if (useVideo && video.paused) video.play().catch(() => { videoFailed = true; });
+    if (useVideo && video.paused && !playPending) {
+      playPending = true;
+      video.play().catch(e => { if (e.name !== "AbortError") videoFailed = true; }).finally(() => { playPending = false; });
+    }
     if (!useVideo) video.pause();
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
-    const index = intro ? Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
+    const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
     const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text;
     if (nextKey !== key) {
@@ -203,14 +219,14 @@ export function createGuide(game, button) {
       panel.dataset.mode = s.motion ? "motion" : "touch";
       panel.dataset.tone = intro ? "" : s.cue.tone;
       panel.dataset.still = String(kind === "stop");
-      kicker.textContent = intro ? "WATCH + TRY" : "TRY THIS NOW";
+      kicker.textContent = intro ? "WATCH + TRY" : "YOUR MOVE";
       count.textContent = intro ? (index + 1) + " / " + INTRO.length : s.motion ? "MOTION" : "TOUCH";
       [...panel.querySelectorAll(".guide-track i")].forEach((el, i) => el.classList.toggle("on", i === index));
       panel.hidden = false;
       parts = Object.keys(poseAt(kind, 0)).flatMap(cls => [...art.querySelectorAll("." + cls)].map(el => [el, cls]));
       layoutKey = "";
     }
-    const nextLayoutKey = [game.className, game.clientWidth, game.clientHeight, s.cue.text, game.querySelector("#report").hidden].join(":");
+    const nextLayoutKey = [game.className, game.clientWidth, game.clientHeight, s.cue.text, game.querySelector("#report").hidden, game.querySelector("#toast").className].join(":");
     if (nextLayoutKey !== layoutKey || t >= nextLayout) {
       layoutKey = nextLayoutKey; nextLayout = t + .5; place();
     }
