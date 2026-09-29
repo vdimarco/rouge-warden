@@ -10,7 +10,7 @@
 // - actors {at, who, do, args}: play (clip | {clip, loop, speed, fade}), moveTo (place | {x, z} |
 //   {to, speed, run}: a walk with the procedural stride), face (yaw | {who} | {x, z}), pose (name |
 //   {name, k}), prop ({name, on, bone}), show, hide, glow (k), drain (k | {k, dur}: Gabe's neon over 2 s),
-//   place (place | {x, z, yaw}), say (line id: a subtitle).
+//   place (place | {x, z, yaw} | {at: point, yaw, face: who}), say (line id: a subtitle).
 //   who: a key of o.cast or def.cast (a cast id, or {id, place, pos, yaw, props, costume}), 'hero' (the
 //   hero's body), 'pick' (the player's friend), 'crew' (every crew member in the scene), 'van', or a cast
 //   id (a live or arena actor, else one is spawned for the cine and removed after it).
@@ -20,6 +20,12 @@
 //   404, not buffered in 1.5 s) the engine does a white flash instead.
 // - end {actors: {who: {place|pos, yaw, pose, clip, hide, show}}, hero: {place|pos, yaw}, van: {...},
 //   look}: applied when the cine ends or is skipped. A skip also applies every actor cue it jumped over.
+// The lens (design 2.2): at each cut the shot's path is tested against the ground, the colliders, the
+// vehicles and the bodies; a blocked shot moves as a whole (in along its line of sight, then round what it
+// looks at, then up), found once per shot. A cast entry with a place stands its actor there even when it
+// is already in the scene (a follower comes to the mark), and the actors a cine places or walks keep their
+// marks until it ends. While a cine plays the bodies draw in full (lod.js) and the render scale goes up
+// (look.js cineQuality).
 // The letterbox is body.cine. The hero ignores move input (S.lockControl) while a cine plays. The UI owns
 // the hold-to-skip (0.8 s); S.cine.skip() ends the cine at once.
 import { ARENA_CAST, CAMERA_PRIO, CAST_IDS, CREW_IDS } from '../types.js';
@@ -70,6 +76,16 @@ export function createCine(S, K) {
     else if (who === 'pick') a = S.hero.body === pickId && !run.def.arena ? S.hero.actor : fromSpec(pickId);
     else if (who === 'van') a = S.vehicles.player ? vanWrap(S.vehicles.player) : null;
     else if (CAST_IDS.includes(who)) a = fromSpec(who);
+    // a cast entry with a mark stands its actor there, even one already in the scene: a follower, or the
+    // mission's own spawn that the mission hands in (F5's Gabe stood on the Perch, 20 m off the shots)
+    if (a && a.root && !a.isVan && a !== S.hero.actor && !run.def.arena && dc && typeof dc === 'object' && (dc.place || dc.pos || dc.at)) {
+      const mark = dc.place ? S.world.place(dc.place) : dc.pos || castAt(dc.at);
+      // (out of a seat first: a seated actor rides wherever the vehicle is)
+      if (mark && Number.isFinite(mark.x)) { if (S.drive && S.drive.unseat) S.drive.unseat(a); placeActor(a, { x: mark.x, y: mark.y, z: mark.z, yaw: dc.yaw ?? mark.yaw }); hold(a); }
+    }
+    // the arena Gabe standing in a story scene (the Perch, the wedding) idles in his boss-fight stance: in a
+    // cine he stands as a person does, unless a cue says otherwise
+    if (a && !run.def.arena && a.kind === 'arena' && a.play && !(a.cur && String(a.cur).startsWith('lib:')) && !a.pose) S.cast.pose(a, 'idle', 1);
     run.actors.set(who, a);
     return a;
   }
@@ -85,12 +101,26 @@ export function createCine(S, K) {
     if (p == null) return null;
     if (typeof p === 'string') { const q = S.world.place(p); if (!q) return null; return out.set(q.x, q.y + 1.7, q.z); }
     if (p.who) {
+      // the hero at the wheel (a chapter that opens in the van): the shot is on the vehicle, framed as far
+      // out again as a person's (a person's 3 m puts the lens against the door)
+      const v = p.who === 'hero' && S.drive && S.drive.riding && S.hero && (S.hero.mode === 'drive' || S.hero.mode === 'passenger') ? S.drive.riding : null;
+      if (v && v.pos) {
+        const yaw = v.yaw, lx = (p.x || 0) * 2.4, lz = (p.z || 0) * 2.4;
+        return out.set(v.pos.x - lx * Math.cos(yaw) + lz * Math.sin(yaw), v.pos.y + (p.y ?? lookY) + 0.4, v.pos.z + lx * Math.sin(yaw) + lz * Math.cos(yaw));
+      }
       const a = actorOf(p.who); if (!a || !a.root) return null;
       const r = a.root.position, yaw = a.root.rotation.y, lx = p.x || 0, lz = p.z || 0;
-      return out.set(r.x - lx * Math.cos(yaw) + lz * Math.sin(yaw), r.y + (p.y ?? lookY), r.z + lx * Math.sin(yaw) + lz * Math.cos(yaw));
+      return out.set(r.x - lx * Math.cos(yaw) + lz * Math.sin(yaw), r.y + (p.y ?? lookY) * heightOf(a), r.z + lx * Math.sin(yaw) + lz * Math.cos(yaw));
     }
     const pl = typeof p.at === 'string' ? p.at : typeof p.place === 'string' ? p.place : null;
-    if (pl) { const q = S.world.place(pl); if (!q) return null; return out.set(q.x + (p.x || 0), q.y + (p.y ?? 1.7), q.z + (p.z || 0)); }
+    if (pl) {
+      const q = S.world.place(pl); if (!q) return null;
+      const x = q.x + (p.x || 0), z = q.z + (p.z || 0), y = p.y ?? 1.7;
+      // (y is above the place's ground; where the ground rises within the offset, above the ground there: a
+      // wide shot 20 m off the P12 lot sat 5.7 m inside the hill)
+      const h = q.y > -200 && S.world.height ? S.world.height(x, z) : -Infinity;
+      return out.set(x, q.y + y < h + 0.4 ? h + y : q.y + y, z);
+    }
     if (p.bridge) {
       const b = run && run.def.arena ? (S.ctx.arena || S.scene).getObjectByName('bridgeSilhouette') : null;
       if (b) return out.set(b.position.x, b.position.y + 34 + (p.y || 0), b.position.z);
@@ -99,6 +129,19 @@ export function createCine(S, K) {
     // a world point: y above the ground there (the hero's height picks the floor inside an interior)
     if (Number.isFinite(p.x) && Number.isFinite(p.z)) return out.set(p.x, ground(p.x, p.z, (S.hero.pos.y || 0) + 3) + (Number.isFinite(p.y) ? p.y : 1.7), p.z);
     return null;
+  }
+  // the heights in an actor's frame are written for a person whose eyes are at 1.62 m; a body well off that
+  // (the arena Gabe on the Perch in F5, 2.1 m) scales them, so a close-up still finds the face. Measured once,
+  // standing (an arena cine keeps its own numbers: they were set on the arena bodies)
+  const hv = new THREE.Vector3(), hv2 = new THREE.Vector3();
+  function heightOf(a) {
+    if (run && run.def.arena) return 1;
+    if (a.cineH != null) return a.cineH;
+    const h = a.bone && a.bone('Head');
+    if (!h || a.isVan || (a.pose && a.pose !== 'idle')) return 1;
+    a.root.updateMatrixWorld(true);
+    const k = (h.getWorldPosition(hv).y - a.root.getWorldPosition(hv2).y) / 1.62;
+    return (a.cineH = Number.isFinite(k) && Math.abs(k - 1) > 0.1 ? Math.max(0.8, Math.min(1.4, k)) : 1);
   }
   // a cast entry's at (content): a point; a world point's y is a floor hint (-300: an interior)
   function castAt(at) {
@@ -113,6 +156,88 @@ export function createCine(S, K) {
     if (typeof g === 'string') return S.world.place(g);
     if (g.who || g.place || g.at || g.bridge) { const q = point({ ...g, y: g.y ?? 0 }, new THREE.Vector3()); return q ? { x: q.x, y: q.y, z: q.z, yaw: g.yaw } : null; }
     return g;
+  }
+
+  // an actor the cine places or walks keeps its mark (a follower does not walk back to the hero mid-cine)
+  function hold(a) { if (!run || !a || a.isVan || a === S.hero.actor) return; a.cineHeld = true; run.held.add(a); }
+
+  /* ---------------- the lens ---------------- */
+  const e3 = new THREE.Vector3(), f3 = new THREE.Vector3(), g3 = new THREE.Vector3(), dv3 = new THREE.Vector3(), seg = new THREE.Line3(), q3 = new THREE.Vector3();
+  const shownActor = (a) => { if (!a || !a.root || !a.root.parent || a.visible === false) return false; for (let o = a.root; o; o = o.parent) if (!o.visible) return false; return !a.lodHidden; };
+  // the body's axis, feet to the top of the head
+  function axisOf(a) {
+    const r = a.root.getWorldPosition(e3), h = a.bone && a.bone('Head');
+    const top = h ? h.getWorldPosition(f3).add(g3.set(0, 0.2, 0)) : f3.copy(r).add(g3.set(0, 1.85, 0));
+    return seg.set(r, top);
+  }
+  // what is wrong with a camera at p looking at L (fov: the shot's, degrees; own: the actors the shot is
+  // on, who may stand close): null when the lens is clear
+  function blocked(p, L, fov = 50, own = []) {
+    const d = p.distanceTo(L);
+    if (!run.def.arena) {
+      if (p.y < ground(p.x, p.z, p.y + 0.5) + 0.3) return 'ground';
+      let hit = null;
+      const C = S.world.colliders;
+      // down in the rooms (y -300) the lens stays inside one, under its ceiling (its volume ends 1 m above it)
+      if (p.y < -200) { const vol = C.inVolume ? C.inVolume(p.x, p.y, p.z) : null; if (!vol) return 'outside'; if (p.y > vol.y1 - 1.25) return 'ceiling'; }
+      // the lens, and its line of sight: the first stretch of it (a wall between the lens and the people), or
+      // in a shot under 12 m all of it but the last 0.6 m (a parked jeep between the lens and a face)
+      const far = d < 12 ? Math.max(0, d - 0.6) : Math.min(1.5, d * 0.5), n = Math.max(1, Math.ceil(far / 0.4));
+      for (let i = 0; i <= n && !hit; i++) {
+        const q = q3.copy(p).lerp(L, i ? far * i / n / d : 0);
+        // (a rock formation's collider has no height, and its columns stand 12 to 58 m: the whole column counts)
+        C.query(q.x, q.z, i ? 0.05 : 0.5, (it) => { if (it.kind !== 'volume' && q.y > it.y0 && q.y < it.y1) { hit = it.tag || it.kind; return false; } });
+      }
+      if (hit) return hit;
+      // the ground across the line of sight (a trail on a slope: the hill between the lens and the people)
+      if (p.y > -200) for (let i = 1, k = Math.min(40, Math.ceil(d / 0.5)); i < k; i++) { const q = q3.copy(p).lerp(L, i / k); if (q.y < S.world.height(q.x, q.z) + 0.05) return 'terrain'; }
+      // a vehicle at the lens or across the same line of sight (a jeep's roll cage across a face); the one
+      // the shot looks into (the hero at the wheel) is the subject: the lens keeps 1.2 m off it
+      for (const v of S.vehicles.list || []) {
+        if (!v.toLocal || !v.pos) continue;
+        const inside = (q, m) => { const [lx, lz] = v.toLocal(q.x, q.z); return Math.abs(lx) < v.hw + m && Math.abs(lz) < v.hd + m && q.y < v.pos.y + (v.h || 2) + m && q.y > v.pos.y - 0.5; };
+        const subject = inside(L, 0);
+        if (inside(p, subject ? 1.2 : 0.35)) return 'vehicle';
+        if (!subject) for (let i = 1; i <= n; i++) if (inside(q3.copy(p).lerp(L, far * i / n / d), 0.1)) return 'vehicle';
+      }
+    }
+    // a body at the lens, across the first metre of the line of sight, or a head within 1.3 m in the frame
+    const dir = dv3.copy(L).sub(p).normalize(), half = (fov * Math.PI / 360) * 1.25;
+    for (const a of S.cast.all()) {
+      if (!shownActor(a) || a.isVan) continue;
+      const ax = axisOf(a);
+      if (ax.closestPointToPoint(p, true, q3).distanceTo(p) < 0.42) return 'actor';
+      if (d > 1.6) { const m = g3.copy(p).lerp(L, 0.9 / d); if (ax.closestPointToPoint(m, true, q3).distanceTo(m) < 0.3) return 'actor'; }
+      if (!own.includes(a)) {
+        const h = q3.copy(ax.end).sub(p), hd = h.length();
+        if (hd < 1.3 && hd > 1e-3 && Math.acos(Math.min(1, h.dot(dir) / hd)) < half) return 'actor';
+      }
+    }
+    return null;
+  }
+  // the moves a blocked shot tries, in order: [pull in, swing (rad), rise (m)]
+  const MOVES = [[1, 0, 0], [0.85, 0, 0], [0.7, 0, 0], [1, 0.35, 0], [1, -0.35, 0], [0.85, 0.6, 0], [0.85, -0.6, 0], [1, 0, 0.7], [0.8, 0.35, 0.5], [0.8, -0.35, 0.5],
+    [0.55, 0, 0], [1, 0.9, 0.3], [1, -0.9, 0.3], [0.7, 0, 1.2], [0.45, 0, 0.4]];
+  function moved(p, L, m, out) {
+    const vx = (p.x - L.x) * m[0], vy = (p.y - L.y) * m[0], vz = (p.z - L.z) * m[0], c = Math.cos(m[1]), s = Math.sin(m[1]);
+    return out.set(L.x + vx * c + vz * s, L.y + vy + m[2], L.z - vx * s + vz * c);
+  }
+  // the move for this shot: the first that clears the start, the middle and the end of its path
+  function solveShot(s) {
+    const from = point(s.from, new THREE.Vector3()), to = s.to ? point(s.to, new THREE.Vector3()) : null, L = s.look != null ? point(s.look, new THREE.Vector3(), 1.5) : null;
+    if (!from || !L) return MOVES[0];
+    const keep = from.distanceTo(L) < 1.2; // (a close-up is not pulled in further)
+    const own = [s.look && s.look.who, s.from && s.from.who].filter(Boolean).map((w) => actorOf(w)).filter(Boolean);
+    const P = [0, 0.5, 1].map((k) => (to ? from.clone().lerp(to, k) : from.clone())), t = new THREE.Vector3();
+    // (none clears it all: the one that clears most of the path)
+    let best = MOVES[0], bestN = -1;
+    for (const m of MOVES) {
+      if (keep && m[0] < 1) continue;
+      const clear = P.filter((p) => { moved(p, L, m, t); return t.distanceTo(L) > 0.7 && !blocked(t, L, s.fov || 50, own); }).length;
+      if (clear === P.length) return m;
+      if (clear > bestN) { best = m; bestN = clear; }
+    }
+    return best;
   }
 
   /* ---------------- the camera ---------------- */
@@ -131,6 +256,10 @@ export function createCine(S, K) {
     if (!from) return;
     camPos.copy(from); if (to) camPos.lerp(to, e);
     const L = s.look != null ? point(s.look, c3, 1.5) : null;
+    if (run.shot !== s) { run.shot = s; run.move = solveShot(s); }
+    if (L && run.move !== MOVES[0]) moved(camPos, L, run.move, camPos);
+    // (not under the ground; an interior far below it, 300 m down, is left alone)
+    if (!run.def.arena) { const g = ground(camPos.x, camPos.z, camPos.y + 0.5) + 0.3; if (camPos.y < g && camPos.y > g - 30) camPos.y = g; }
     if (L) camLook.copy(L); else camLook.copy(camPos).add(d3.set(0, -0.05, -1));
     S.camera.position.copy(camPos);
     if (s.shake) S.camera.position.add(d3.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(s.shake * 0.12));
@@ -154,6 +283,7 @@ export function createCine(S, K) {
             const p = target(o.to);
             if (!p) break;
             const walk = { a, x: p.x, z: p.z, yaw: p.yaw, speed: o.speed || (o.run ? 4.6 : 1.45) };
+            hold(a);
             if (skipping) finishWalk(walk); else { run.walks = run.walks.filter((w) => w.a !== a); run.walks.push(walk); }
             break;
           }
@@ -164,7 +294,7 @@ export function createCine(S, K) {
             else if (g && g.who) { const b = actorOf(g.who); if (b && b.root) yaw = Math.atan2(b.root.position.x - a.root.position.x, b.root.position.z - a.root.position.z); }
             else if (g && Number.isFinite(g.x)) yaw = Math.atan2(g.x - a.root.position.x, g.z - a.root.position.z);
             else if (typeof g === 'string') { const q = S.world.place(g); if (q) yaw = Math.atan2(q.x - a.root.position.x, q.z - a.root.position.z); }
-            if (yaw != null) { if (skipping) a.root.rotation.y = yaw; else { run.turns = run.turns.filter((w) => w.a !== a); run.turns.push({ a, yaw }); } }
+            if (yaw != null) { hold(a); if (skipping) a.root.rotation.y = yaw; else { run.turns = run.turns.filter((w) => w.a !== a); run.turns.push({ a, yaw }); } }
             break;
           }
           case 'pose': { const o = typeof g === 'string' ? { name: g } : g || {}; if (!a.isVan) S.cast.pose(a, o.name, o.k ?? 1); break; }
@@ -172,6 +302,7 @@ export function createCine(S, K) {
           case 'show': {
             // content: {replace: who} stands this actor where that one is and hides it (C0: the ronin to the pick)
             const from = g && g.replace ? actorOf(g.replace) : null;
+            if (from && from !== a && from.root || g && g.at) hold(a);
             if (from && from !== a && from.root) { placeActor(a, { x: from.root.position.x, y: from.root.position.y, z: from.root.position.z, yaw: from.root.rotation.y }); from.visible = false; }
             else if (g && g.at) placeActor(a, { ...target(g.at), ...(g.yaw != null ? { yaw: g.yaw } : {}) });
             a.visible = true; break;
@@ -185,7 +316,13 @@ export function createCine(S, K) {
             else { run.drains = run.drains.filter((w) => w.a !== a); run.drains.push({ a, from: a.drainK ?? 0, to, t: 0, dur }); }
             break;
           }
-          case 'place': placeActor(a, g); break;
+          case 'place': {
+            hold(a); placeActor(a, g);
+            // content: {at, face: who}: stood on the mark facing another actor
+            const b = g && g.face ? actorOf(g.face) : null;
+            if (b && b.root && b !== a) { const yaw = Math.atan2(b.root.position.x - a.root.position.x, b.root.position.z - a.root.position.z); if (a.isVan) a.vehicle.setPose(a.vehicle.pos.x, a.vehicle.pos.z, yaw); else a.root.rotation.y = yaw; }
+            break;
+          }
           case 'say': if (!skipping) S.ui.subs(who, S.content.line(typeof g === 'string' ? g : g && g.line), undefined, who); break;
           default: console.warn(`[cine] unknown do '${c.do}'`);
         }
@@ -252,7 +389,7 @@ export function createCine(S, K) {
 
   /* ---------------- the run ---------------- */
   function* play(def, o) {
-    const r = run = { def, o, t: 0, actors: new Map(), temp: [], walks: [], turns: [], drains: [], hold: null, card: null, skip: false, next: {}, film: null, done: false,
+    const r = run = { def, o, t: 0, actors: new Map(), temp: [], walks: [], turns: [], drains: [], hold: null, card: null, skip: false, next: {}, film: null, done: false, held: new Set(), shot: null, move: null,
       chapterDrain: (S.content.CHAPTERS[S.missions.chapter] || {}).drain };
     for (const k of ['actors', ...TRACKS]) r.next[k] = 0;
     const sorted = {};
@@ -264,6 +401,8 @@ export function createCine(S, K) {
     // (E1's bride, Christian and Ryu; P12's Dana: no shot names them, so they never came)
     for (const [who, spec] of Object.entries(def.cast || {})) if (spec && typeof spec === 'object' && (spec.at || spec.place || spec.pos)) actorOf(who);
     if (def.look) S.look.set(def.look, { dur: 0 });
+    if (S.look.cineQuality) S.look.cineQuality(true);
+    if (!def.arena) stepOut();
     K.log('cine', def.id, 'start');
     let last = S.timers.now;
     try {
@@ -292,6 +431,22 @@ export function createCine(S, K) {
       if (!r.done) finish(r, true);
     }
   }
+  // A chapter opens with the hero on its start place, and the mission then parks the van on the same place
+  // (F5's bar lot, P1's Midgley lot, P3's watch, P9's diner): on foot inside the van's body, the intro filmed
+  // him through its side. He steps out to the driver's door first.
+  function stepOut() {
+    const H = S.hero;
+    if (!H || H.mode !== 'foot' || !H.pos) return;
+    for (const v of S.vehicles.list || []) {
+      if (!v.toLocal || !v.pos || !v.doorPoint) continue;
+      const [lx, lz] = v.toLocal(H.pos.x, H.pos.z);
+      if (Math.abs(lx) > v.hw + 0.2 || Math.abs(lz) > v.hd + 0.2 || Math.abs(H.pos.y - v.pos.y) > 2) continue;
+      const d = v.doorPoint('driver'), yaw = Math.atan2(d.x - v.pos.x, d.z - v.pos.z); // (facing away from the van)
+      H.place(d.x, d.z, yaw, d.y + 1);
+      if (H.actor) { H.actor.root.position.set(d.x, d.y, d.z); H.actor.root.rotation.y = yaw; }
+      return;
+    }
+  }
   // the end state: every cue it skipped, then def.end
   function finish(r, aborted = false) {
     if (r.done) return;
@@ -317,8 +472,10 @@ export function createCine(S, K) {
       for (const a of r.temp) if (!keep.has(a)) S.cast.despawn(a); else K.adopt(a);
       if (S.hero && S.hero.actor && S.hero.mode === 'foot' && S.hero.resetGround) { S.hero.pos.copy(S.hero.actor.root.position); S.hero.resetGround(); }
     } catch (e) { console.error(`[cine] ${r.def.id}: end state`, e); }
+    for (const a of r.held) a.cineHeld = false;
     if (run === r) run = null;
     P.active = false; S.lockControl = false;
+    if (S.look.cineQuality) S.look.cineQuality(false);
     document.body.classList.remove('cine');
     K.log('cine', r.def.id, r.skip ? 'skipped' : 'end');
   }
@@ -344,6 +501,7 @@ export function createCine(S, K) {
     skip() { if (run) { run.skip = true; if (run.hold && !run.hold.done) S.ui.advanceAll(); if (run.film && !run.film.done) S.film.skip(); } },
     // extras: the cine now playing and its clock (QA)
     get current() { return run ? run.def.id : null; }, get t() { return run ? run.t : 0; },
+    actor(who) { return (run && run.actors.get(who)) || null; }, // (the actor a cast name stands for now, QA)
   };
   return { P, stop() { if (run) { run.skip = true; finish(run, true); } } };
 }
