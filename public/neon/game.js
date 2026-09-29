@@ -3,34 +3,127 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let W=innerWidth,H=innerHeight,state='menu',time=0,last=0,enemy,particles=[],trails=[],cooldown=0,guard=false,guardAt=0,combo=0,health=100,score=0,wave=1,kills=0,charge=0,damage=1,windowBonus=0,leech=0,slow=0,flash=0,notice=0,muted=false,audio,beat=0,best=0;
 try{best=Number(localStorage.getItem('neon-best'))||0}catch{}
 let gyro=false,base=null,aim={x:0,y:0},raw=null,gyroReady=true,lastMotion=0,motionTimer;
+const sword={pose:{x:0,y:0,angle:-Math.PI/2},last:0,speed:0,previous:null};
 const upgrades=[['Edge amplifier','Cuts deal +1 damage.',()=>damage++],['Time crystal','Parry window grows by 40 ms.',()=>windowBonus=Math.min(.25,windowBonus+.04)],['Repair pulse','Restore 35 integrity.',()=>health=Math.min(100,health+35)],['Vampire circuit','Each takedown restores 2 integrity.',()=>leech+=2],['Capacitor','Gain 35% overdrive now.',()=>charge=Math.min(100,charge+35)]];
-function resize(){W=innerWidth;H=innerHeight;const d=Math.min(devicePixelRatio||1,2);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);base=null;raw=null;gyroReady=false}addEventListener('resize',resize);resize();
+function resize(){W=innerWidth;H=innerHeight;const d=Math.min(devicePixelRatio||1,2);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);resetSword()}addEventListener('resize',resize);resize();
 function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);o.frequency.exponentialRampToValueAtTime(f*.5,audio.currentTime+d);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
 function panel(html){$('panel').innerHTML=html;$('overlay').hidden=false;$('controls').hidden=true}
-function menu(){panel(`<div class="eyebrow">MOTION COMBAT / ENDLESS RUN</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Cut along the bright line. Hold guard just before a strike to parry, then cut while the enemy is exposed.</p><button class="primary" id="start">ENTER THE DISTRICT</button><p class="fine">Swipe to play. Enable gyro during a run for small wrist turns. Keep a firm grip. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=start}
+function menu(){panel(`<div class="eyebrow">MOTION COMBAT / ENDLESS RUN</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Your phone is the hilt. Turn it to move the blade. Catch an incoming strike across your blade, then swing through the enemy.</p><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">Hold a firm grip and use small wrist movements. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
 function start(){audioStart();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say('MATCH THE BRIGHT LINE')}
-function resume(){state='play';guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
+function resume(){state='play';resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
 function spawn(){const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0)}
 function burstParticles(x,y,color,n=22){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=40+Math.random()*260;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+Math.random()*.45,color})}if(particles.length>220)particles.splice(0,particles.length-220)}
 function hit(amount,parry=false){enemy.hp-=amount;enemy.hit=.2;burstParticles(W/2,H*.46,parry?'#caff54':'#5cf5ff');tone(parry?640:330);charge=Math.min(100,charge+(parry?16:7));if(enemy.hp<=0){combo++;score+=Math.round((enemy.boss?500:100)*(1+Math.min(combo,20)*.1));health=Math.min(100,health+leech);kills++;if(kills>=3+Math.min(wave,5)){wave++;kills=0;state='upgrade';guard=false;const options=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);panel(`<div class="eyebrow">DISTRICT CLEARED</div><h2>Rewrite your blade.</h2><p>Choose a circuit for district ${wave}.</p>${options.map((u,i)=>`<button class="choice" data-choice="${i}"><strong>${u[0]}</strong><span>${u[1]}</span></button>`).join('')}`);document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{options[+b.dataset.choice][2]();spawn();resume()})}else{spawn();say(combo>1?`${combo} CHAIN`:'TARGET DOWN')}}}
-function slash(dx,dy){if(state!=='play'||cooldown>0||guard)return;cooldown=.24;const horizontal=Math.abs(dx)>=Math.abs(dy);trails.push({horizontal,life:.22});tone(150,.08);if(enemy.phase==='open'||(horizontal?0:1)===enemy.dir){hit(damage);if(state==='play')say('CLEAN CUT')}else{say('MATCH THE LINE');tone(75)}}
+function slash(dx,dy){if(state!=='play'||cooldown>0||(!gyro&&guard))return;cooldown=.24;const horizontal=Math.abs(dx)>=Math.abs(dy);trails.push({horizontal,life:.22,blade:gyro?swordSegment():null});tone(150,.08);if(enemy.phase==='open'||(horizontal?0:1)===enemy.dir){const powered=gyro&&charge>=100;if(powered){charge=0;slow=4;say('TIME FRACTURE')}hit(powered?damage*3:damage);if(state==='play')say('CLEAN CUT')}else{say('MATCH THE LINE');tone(75)}}
 function overdrive(){if(state!=='play'||charge<100)return;charge=0;slow=4;say('TIME FRACTURE');tone(880,.4);hit(damage*3,true)}
-function setGuard(value){if(state!=='play'){guard=false;return}if(value&&!guard)guardAt=time;guard=value;$('guard').textContent=value?'GUARD ACTIVE':'HOLD TO GUARD'}
+function setGuard(value){if(gyro)return;if(state!=='play'){guard=false;return}if(value&&!guard)guardAt=time;guard=value;$('guard').textContent=value?'GUARD ACTIVE':'HOLD TO GUARD'}
 function pause(){if(state!=='play')return;state='pause';guard=false;panel('<div class="eyebrow">SIGNAL HELD</div><h2>Paused</h2><button class="primary" id="resume">RESUME</button><button class="secondary" id="quit">END RUN</button>');$('resume').onclick=resume;$('quit').onclick=gameOver}
 function gameOver(){state='over';guard=false;best=Math.max(best,score);try{localStorage.setItem('neon-best',best)}catch{}panel(`<div class="eyebrow">CONNECTION LOST</div><h2>District ${wave}</h2><p>${score.toLocaleString()} points · Best ${best.toLocaleString()}</p><button class="primary" id="retry">RUN IT BACK</button>`);$('retry').onclick=start}
-$('pause').onclick=pause;$('burst').onclick=overdrive;$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'Sound off':'Sound on';audioStart()};$('center').onclick=()=>{base=null;raw=null;gyroReady=false;say('HOLD PHONE COMFORTABLY')};
+$('pause').onclick=pause;$('burst').onclick=overdrive;$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'Sound off':'Sound on';audioStart()};$('center').onclick=()=>{resetSword();say('HOLD PHONE COMFORTABLY')};
 $('guard').onpointerdown=e=>{e.preventDefault();$('guard').setPointerCapture(e.pointerId);setGuard(true)};for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('guard').addEventListener(ev,()=>setGuard(false));
-let pointer=null;canvas.onpointerdown=e=>{if(state!=='play')return;canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY}};canvas.onpointermove=e=>{if(!pointer||pointer.id!==e.pointerId)return;aim.x=clamp((e.clientX/W-.5)*2,-1,1);aim.y=clamp((e.clientY/H-.5)*2,-1,1);const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(Math.hypot(dx,dy)>32){slash(dx,dy);pointer.x=e.clientX;pointer.y=e.clientY}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>pointer=null);
+let pointer=null;canvas.onpointerdown=e=>{if(state!=='play'||gyro)return;canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY}};canvas.onpointermove=e=>{if(!pointer||pointer.id!==e.pointerId)return;aim.x=clamp((e.clientX/W-.5)*2,-1,1);aim.y=clamp((e.clientY/H-.5)*2,-1,1);const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(Math.hypot(dx,dy)>32){slash(dx,dy);pointer.x=e.clientX;pointer.y=e.clientY}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>pointer=null);
 addEventListener('keydown',e=>{if(['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='Space')setGuard(true);if(['ArrowLeft','ArrowRight'].includes(e.code))slash(1,0);if(['ArrowUp','ArrowDown'].includes(e.code))slash(0,1);if(e.code==='KeyE')overdrive();if(e.code==='Escape')pause()});addEventListener('keyup',e=>{if(e.code==='Space')setGuard(false)});addEventListener('blur',pause);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
-function disableGyro(message){gyro=false;base=null;raw=null;clearTimeout(motionTimer);$('motion').textContent='Enable gyro';$('hint').textContent=message}
-$('motion').onclick=async()=>{if(gyro){disableGyro('Swipe across the guard line to cut.');return}try{if(!window.isSecureContext||!window.DeviceMotionEvent)throw Error('unavailable');if(typeof DeviceMotionEvent.requestPermission==='function'&&await DeviceMotionEvent.requestPermission()!=='granted')throw Error('denied');gyro=true;base=null;raw=null;gyroReady=false;lastMotion=performance.now();$('motion').textContent='Gyro on';$('hint').textContent='Small wrist turns cut. Hold GUARD to parry.';motionTimer=setTimeout(()=>{if(gyro&&!raw)disableGyro('No gyro signal. Swipe to play.');},2500)}catch{disableGyro('Gyro unavailable. Swipe to play.')}};
-addEventListener('devicemotion',e=>{if(!gyro||state!=='play')return;const r=e.rotationRate;if(!r||![r.beta,r.gamma].every(Number.isFinite))return;const now=performance.now(),dt=Math.min(.05,(now-lastMotion)/1000);lastMotion=now;const angle=(screen.orientation?.angle||0)*Math.PI/180,x=r.beta*Math.cos(angle)-r.gamma*Math.sin(angle),y=r.beta*Math.sin(angle)+r.gamma*Math.cos(angle);raw={x,y};aim.x=clamp(aim.x+x*dt*.018,-1,1);aim.y=clamp(aim.y+y*dt*.018,-1,1);const speed=Math.hypot(x,y);if(speed<30)gyroReady=true;if(speed>105&&gyroReady){slash(x,y);gyroReady=false}});
-addEventListener('deviceorientation',e=>{if(!gyro||state!=='play'||!Number.isFinite(e.gamma)||!Number.isFinite(e.beta))return;base??={x:e.gamma,y:e.beta};const x=clamp((e.gamma-base.x)/25,-1,1),y=clamp((e.beta-base.y)/25,-1,1);aim.x+=(x-aim.x)*.15;aim.y+=(y-aim.y)*.15});
-function update(dt){time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);if(state!=='play')return;enemy.hit=Math.max(0,enemy.hit-dt);enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=guard?5:(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else say(guard?'BLOCKED':'HIT')}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
+// Orientation is calibrated in the player's grip. Quaternion differences avoid
+// compass wrap and keep rotations continuous across portrait/landscape grips.
+function multiply(a,b) {
+  const [w,x,y,z]=a,[v,i,j,k]=b;
+  return [w*v-x*i-y*j-z*k,w*i+x*v+y*k-z*j,w*j-x*k+y*v+z*i,w*k+x*j-y*i+z*v];
+}
+function inverse(q){return [q[0],-q[1],-q[2],-q[3]]}
+function orientationQuaternion(alpha,beta,gamma) {
+  const a=alpha*Math.PI/360,b=beta*Math.PI/360,c=gamma*Math.PI/360;
+  return multiply(multiply([Math.cos(a),0,0,Math.sin(a)],[Math.cos(b),Math.sin(b),0,0]),[Math.cos(c),0,Math.sin(c),0]);
+}
+function rotate(q,v){return multiply(multiply(q,[0,...v]),inverse(q)).slice(1)}
+function resetSword(){base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;guard=false;guardAt=-10}
+function swordSegment(p=sword.pose) {
+  const length=Math.min(W*.68,H*.38),cx=W*(.5+p.x*.27),cy=H*(.51+p.y*.2);
+  return {ax:cx-Math.cos(p.angle)*length*.48,ay:cy-Math.sin(p.angle)*length*.48,
+    bx:cx+Math.cos(p.angle)*length*.52,by:cy+Math.sin(p.angle)*length*.52};
+}
+function nearBlade(s,x,y,r) {
+  const dx=s.bx-s.ax,dy=s.by-s.ay,t=clamp(((x-s.ax)*dx+(y-s.ay)*dy)/(dx*dx+dy*dy||1),0,1);
+  return Math.hypot(x-s.ax-dx*t,y-s.ay-dy*t)<r;
+}
+function bladeBlocks() {
+  if(!gyro||!raw||performance.now()-sword.last>300||sword.speed>80)return false;
+  const s=swordSegment(),cross=enemy.dir===0?Math.abs(Math.sin(sword.pose.angle)):Math.abs(Math.cos(sword.pose.angle));
+  return cross>.78&&nearBlade(s,W*.5,H*.48,Math.min(W,H)*.095);
+}
+function motionUI(){
+  $('guard').hidden=gyro;$('burst').hidden=gyro;
+  $('motion').textContent=gyro?'Gyro on · switch to touch':'Enable gyro';
+}
+function disableGyro(message){gyro=false;resetSword();clearTimeout(motionTimer);motionUI();$('hint').textContent=message}
+async function enableGyro(){
+  try {
+    if(!window.isSecureContext||!window.DeviceOrientationEvent)throw Error('unavailable');
+    // Called directly by a tap, as required by iOS permission prompts.
+    const permission=typeof DeviceOrientationEvent.requestPermission==='function'?DeviceOrientationEvent.requestPermission():Promise.resolve('granted');
+    if(await permission!=='granted')throw Error('denied');
+    gyro=true;resetSword();motionUI();$('hint').textContent='Hold your phone like a sword. Turn it across the incoming strike.';
+    clearTimeout(motionTimer);
+    motionTimer=setTimeout(()=>{if(gyro&&!raw)disableGyro('No motion signal. Swipe to cut; hold Guard to block.');},3000);
+    return true;
+  }catch{disableGyro('Motion unavailable. Swipe to cut; hold Guard to block.');return false}
+}
+$('motion').onclick=()=>gyro?disableGyro('Swipe to cut; hold Guard to block.'):enableGyro();
+addEventListener('deviceorientation',e=>{
+  if(!gyro||state!=='play'||![e.alpha,e.beta,e.gamma].every(Number.isFinite))return;
+  const q=orientationQuaternion(e.alpha,e.beta,e.gamma),now=performance.now();
+  if(!base){base=q;sword.last=now;sword.previous=q;sword.pose={x:0,y:0,angle:-Math.PI/2};raw=q;return}
+  const dt=(now-sword.last)/1000;
+  if(dt<=0)return;
+  if(dt>.3){resetSword();return}
+  const relative=multiply(inverse(base),q),screenAngle=(screen.orientation?.angle||0)*Math.PI/180;
+  // Rotate screen axes into the calibrated grip before projecting the blade.
+  const up=rotate(relative,[-Math.sin(screenAngle),Math.cos(screenAngle),0]);
+  const normal=rotate(relative,[0,0,1]);
+  const ux=up[0]*Math.cos(screenAngle)+up[1]*Math.sin(screenAngle);
+  const uy=-up[0]*Math.sin(screenAngle)+up[1]*Math.cos(screenAngle);
+  const nx=normal[0]*Math.cos(screenAngle)+normal[1]*Math.sin(screenAngle);
+  const ny=-normal[0]*Math.sin(screenAngle)+normal[1]*Math.cos(screenAngle);
+  const target={x:clamp(nx*1.6,-1,1),y:clamp(-ny*1.4,-1,1),angle:Math.atan2(-uy,ux)};
+  const prior=swordSegment(),alpha=1-Math.exp(-dt/0.035);
+  sword.pose.x+=(target.x-sword.pose.x)*alpha;sword.pose.y+=(target.y-sword.pose.y)*alpha;
+  const turn=Math.atan2(Math.sin(target.angle-sword.pose.angle),Math.cos(target.angle-sword.pose.angle));
+  sword.pose.angle+=turn*alpha;
+  const dot=Math.abs(q.reduce((sum,v,i)=>sum+v*sword.previous[i],0));
+  sword.speed=2*Math.acos(clamp(dot,-1,1))/dt*180/Math.PI;
+  sword.last=now;sword.previous=q;raw=q;
+  const current=swordSegment(),dx=current.bx-prior.bx,dy=current.by-prior.by;
+  if(sword.speed<45)gyroReady=true;
+  if(sword.speed>95&&gyroReady&&Math.hypot(dx,dy)/dt>90){
+    // Sample the swept blade so fast swings cannot skip through the target.
+    const radius=Math.min(W,H)*.16;
+    let contact=false;
+    for(let i=0;i<=8;i++){
+      const t=i/8,s={};for(const k of ['ax','ay','bx','by'])s[k]=prior[k]+(current[k]-prior[k])*t;
+      if(nearBlade(s,W*.5,H*.48,radius)){contact=true;break}
+    }
+    if(contact){guard=false;slash(dx,dy);gyroReady=false}
+  }
+});
+function update(dt){time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);if(state!=='play')return;if(gyro){if(!raw)return;if(performance.now()-sword.last>500){disableGyro('Motion signal lost. Swipe to play.');pause();return}const blocked=bladeBlocks();if(blocked&&!guard)guardAt=time;guard=blocked;$('hint').textContent=guard?'BLADE SET · catch the strike':enemy.dir===0?'Hold the blade upright across the incoming cut.':'Turn the blade sideways across the incoming cut.';}enemy.hit=Math.max(0,enemy.hit-dt);enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=guard?(gyro?0:5):(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else {if(guard&&gyro){burstParticles(W*.5,H*.48,'#65efff',18);tone(480,.09)}say(guard?'BLADE BLOCK':'HIT')}}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
 function line(x1,y1,x2,y2,c,w=1){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
 function draw(){ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
 if(enemy){const x=W/2,y=H*.45,s=Math.min(W*.25,H*.19),bob=Math.sin(time*3)*4;ctx.save();ctx.translate(x+Math.sin(enemy.hit*80)*enemy.hit*30,y+bob);ctx.shadowBlur=enemy.hit>0?28:12;ctx.shadowColor=enemy.boss?'#ff579e':'#42dce8';ctx.strokeStyle=enemy.phase==='open'?'#caff54':'#74c9e0';ctx.lineWidth=2;ctx.fillStyle=enemy.hit>0?'#b2ebf8':'#182039';ctx.beginPath();ctx.moveTo(-s*.42,-s*.55);ctx.lineTo(0,-s*.75);ctx.lineTo(s*.42,-s*.55);ctx.lineTo(s*.26,-s*.12);ctx.lineTo(-s*.26,-s*.12);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,-s*.4,s*.25,-s*.4,'#ff64c9',5);ctx.beginPath();ctx.moveTo(-s*.28,-s*.05);ctx.lineTo(-s*.62,s*.28);ctx.lineTo(-s*.4,s*.7);ctx.lineTo(s*.4,s*.7);ctx.lineTo(s*.62,s*.28);ctx.lineTo(s*.28,-s*.05);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,s*.7,-s*.35,s*1.2,'#54829f',13);line(s*.25,s*.7,s*.35,s*1.2,'#54829f',13);const c=enemy.phase==='open'?'#caff54':'#ff6bcc';if(enemy.dir===0)line(-s*.85,s*.15,s*.85,s*.15,c,5);else line(0,-s*.7,0,s*.85,c,5);ctx.shadowBlur=0;ctx.fillStyle='#d1ddeb';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(enemy.type,0,-s-22);ctx.fillStyle='#303047';ctx.fillRect(-s*.6,-s-12,s*1.2,4);ctx.fillStyle=c;ctx.fillRect(-s*.6,-s-12,s*1.2*Math.max(0,enemy.hp/enemy.max),4);if(enemy.phase==='windup'){const ratio=clamp(enemy.timer/enemy.period,0,1);ctx.strokeStyle=ratio<.25?'#ff4b78':'#67efff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,s*.2,s*1.02,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);ctx.stroke();ctx.fillStyle='#e8edfa';ctx.fillText(ratio<.25?'GUARD NOW':'INCOMING',0,s*1.5)}else{ctx.fillStyle='#caff54';ctx.fillText('EXPOSED · CUT',0,s*1.5)}ctx.restore()}
-for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line(p.x,p.y,p.x-p.vx*.035,p.y-p.vy*.035,p.color,2)}ctx.globalAlpha=1;for(const t of trails){ctx.globalAlpha=t.life/.22;ctx.shadowBlur=20;ctx.shadowColor='#70faff';if(t.horizontal)line(W*.13,H*.44,W*.87,H*.48,'#d8ffff',7);else line(W*.48,H*.23,W*.53,H*.7,'#d8ffff',7)}ctx.globalAlpha=1;ctx.shadowBlur=0;if(state==='play'){const bx=W*.65+aim.x*W*.12,by=H*.75+aim.y*H*.08;ctx.shadowBlur=20;ctx.shadowColor='#58eaff';line(bx,by,bx-W*.13,by-H*.28,'#66ebff',8);line(bx,by,bx-W*.13,by-H*.28,'#eaffff',2);ctx.shadowBlur=0;line(bx-12,by+5,bx+15,by-7,'#d2a8e8',6);if(guard){ctx.strokeStyle='#65efff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(W/2,H*.55,Math.min(W*.4,H*.27),Math.PI,Math.PI*2);ctx.stroke()}}if(flash>0){ctx.fillStyle=`rgba(255,30,90,${flash*.8})`;ctx.fillRect(0,0,W,H)}if(slow>0){ctx.strokeStyle='#caff54';ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4)}}
+for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line(p.x,p.y,p.x-p.vx*.035,p.y-p.vy*.035,p.color,2)}ctx.globalAlpha=1;for(const t of trails){ctx.globalAlpha=t.life/.22;ctx.shadowBlur=20;ctx.shadowColor='#70faff';if(t.blade)line(t.blade.ax,t.blade.ay,t.blade.bx,t.blade.by,'#d8ffff',7);else if(t.horizontal)line(W*.13,H*.44,W*.87,H*.48,'#d8ffff',7);else line(W*.48,H*.23,W*.53,H*.7,'#d8ffff',7)}ctx.globalAlpha=1;ctx.shadowBlur=0;if(state==='play'){
+  const blade=gyro?swordSegment():{ax:W*.65+aim.x*W*.12,ay:H*.75+aim.y*H*.08,bx:W*.52+aim.x*W*.12,by:H*.47+aim.y*H*.08};
+  const dx=blade.bx-blade.ax,dy=blade.by-blade.ay,length=Math.hypot(dx,dy)||1,nx=-dy/length,ny=dx/length;
+  ctx.shadowBlur=guard?28:16;ctx.shadowColor=guard?'#caff54':'#58eaff';
+  line(blade.ax,blade.ay,blade.bx,blade.by,guard?'#caff54':'#66ebff',8);
+  line(blade.ax,blade.ay,blade.bx,blade.by,'#eaffff',2);ctx.shadowBlur=0;
+  line(blade.ax-nx*18,blade.ay-ny*18,blade.ax+nx*18,blade.ay+ny*18,'#b790d5',6);
+  line(blade.ax,blade.ay,blade.ax-dx/length*32,blade.ay-dy/length*32,'#38394f',12);
+  if(gyro&&enemy.phase==='windup'){
+    const x=W*.5,y=H*.48,l=Math.min(W,H)*.13;
+    ctx.setLineDash([5,7]);
+    if(enemy.dir===0)line(x,y-l,x,y+l,guard?'#caff54':'#ffffff66',3);
+    else line(x-l,y,x+l,y,guard?'#caff54':'#ffffff66',3);
+    ctx.setLineDash([]);
+  }
+}if(flash>0){ctx.fillStyle=`rgba(255,30,90,${flash*.8})`;ctx.fillRect(0,0,W,H)}if(slow>0){ctx.strokeStyle='#caff54';ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4)}}
 function frame(now){const dt=Math.min(.04,(now-last)/1000||.016);last=now;update(dt);draw();requestAnimationFrame(frame)}menu();requestAnimationFrame(frame);
