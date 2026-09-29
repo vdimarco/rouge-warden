@@ -2,12 +2,15 @@
 // the stand under your feet, the rod in your hands, the line, the lure, the fish and the trophy. Everything is built in
 // code (see world-env, world-look, world-gear, world-fish, world-fx). world.setPlace(place) changes the place.
 import * as THREE from "three";
+import { artStyle, normalizeStyle } from "./art-style.js";
 import { PLACES, getPlace } from "./places.js";
 import { placeSpecies } from "./fishing.js";
 import { byId, lengthFor } from "./species.js";
 import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
 import { Rod, Line, Lure } from "./world-gear.js";
+import { loadCartoonModels } from "./cartoon-models.js";
+import { loadPaintedForest } from "./painted-forest.js";
 import * as Fish from "./world-fish.js";
 import { fishMesh as makeFish, JUNK_LEN } from "./world-fish.js";
 import { Spray, followerShadow, fireflies as makeFireflies, Gulls, boardMesh, BOARD_LENGTHS } from "./world-fx.js";
@@ -46,7 +49,10 @@ export function sunAt(h, look = null) {
 
 /* ---------------- the world ---------------- */
 
-export async function createWorld(container, { quality = "high", place = PLACES.loon } = {}) {
+export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "ghibli" } = {}) {
+  await Promise.all([loadCartoonModels(), loadPaintedForest(), E.loadPaintedWater()]);
+  let currentStyle = normalizeStyle(style);
+  artStyle.value = currentStyle === "ghibli" ? 1 : 0;
   let low = quality === "low";
   let PL = typeof place === "string" ? getPlace(place) : place, LK = lookOf(PL);   // the place we are at, and how it looks
   const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
@@ -80,11 +86,12 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) { if (m.map) m.map.dispose(); m.dispose(); }
     });
   }
-  let envGroup = null, propGroup = null, loon = null, flies = null, gulls = null;
+  let envGroup = null, treeGroup = null, propGroup = null, loon = null, flies = null, gulls = null;
   function buildEnv() {
     if (envGroup) { scene.remove(envGroup); dispose(envGroup); }
     envGroup = new THREE.Group();
-    envGroup.add(new THREE.Mesh(E.buildTerrain(low, PL, LK), E.terrainMaterial(low)), E.buildTrees(low, PL, LK));
+    treeGroup = E.buildTrees(low, PL, LK, currentStyle);
+    envGroup.add(new THREE.Mesh(E.buildTerrain(low, PL, LK), E.terrainMaterial(low)), treeGroup);
     if (PL.props.lilies.length) envGroup.add(E.buildPads(low, PL, LK));
     if (PL.props.reeds.length) envGroup.add(E.buildReeds(low, PL, LK));
     scene.add(envGroup);
@@ -167,6 +174,18 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // a place may have its own fog at some hours (a morning mist)
     const F = LK.fog && LK.fog(h, { near, far });
     if (F) { near = F.near; far = F.far; if (F.k > 0) U.uFogCol.value.lerp(mistCol.set(F.col), F.k); }
+    if (artStyle.value) {
+      // Apply from this hour's base palette each time, so repeated toggles cannot drift.
+      const daylight = 1 - U.uNight.value;
+      U.uZenith.value.lerp(mistCol.set(0x70bed0), 0.42 * daylight);
+      U.uHorizon.value.lerp(mistCol.set(0xf5e5b8), 0.32 * daylight);
+      U.uCloudLit.value.lerp(mistCol.set(0xfff2cb), 0.45 * daylight);
+      U.uCloudShade.value.lerp(mistCol.set(0x97b6b8), 0.35 * daylight);
+      U.uFogCol.value.lerp(mistCol.set(0xa6c9b6), 0.3 * daylight);
+      U.uDeep.value.lerp(mistCol.set(0x3e9293), 0.78 * daylight);
+      U.uShallow.value.lerp(mistCol.set(0x8cbd9f), 0.72 * daylight);
+      U.uForest.value.lerp(mistCol.set(0x48765a), 0.35 * daylight);
+    }
     U.uFogNear.value = near; U.uFogFar.value = far;
     scene.fog.color.copy(U.uFogCol.value); scene.fog.near = U.uFogNear.value; scene.fog.far = U.uFogFar.value;
     const sd = sunAt(h, LK);
@@ -194,6 +213,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     lerpHex(hemi.color, a.sky, b.sky, t);
     lerpHex(hemi.groundColor, a.gnd, b.gnd, t);
     hemi.intensity = num("hi");
+    if (artStyle.value) {
+      hemi.color.lerp(mistCol.set(0xffe9bf), 0.25 * (1 - U.uNight.value));
+      hemi.intensity *= 1.15;
+      sun.intensity *= 0.86;
+    }
     // foam and the line catch the light of the hour
     U.uFoam.value.copy(U.uHorizon.value).lerp(new THREE.Color(1, 1, 1), 0.5).multiplyScalar(0.55 + 0.45 * vis);
     line.mat.color.setRGB(0.95, 0.94, 0.78).multiplyScalar(0.45 + 0.55 * Math.max(vis, 0.3));
@@ -679,6 +703,21 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   const world = {
     renderer, scene, camera,
     resize,
+    get artStyle() { return currentStyle; },
+    setArtStyle(style) {
+      const previousStyle = currentStyle;
+      currentStyle = normalizeStyle(style);
+      artStyle.value = currentStyle === "ghibli" ? 1 : 0;
+      if (currentStyle !== previousStyle) {
+        envGroup.remove(treeGroup); dispose(treeGroup);
+        treeGroup = E.buildTrees(low, PL, LK, currentStyle);
+        envGroup.add(treeGroup);
+        buildProps();
+      }
+      rod.setArtStyle(currentStyle); lure.setArtStyle(currentStyle); poseRod();
+      setHour(S.hour);
+      if (artStyle.value) E.loadStorySky().then(render);
+    },
     setQuality(q) {
       const nl = q === "low";
       if (nl === low) return;
@@ -795,5 +834,6 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
   updateCamera(0);
   await warmUp();
+  if (artStyle.value) E.loadStorySky().then(render);
   return world;
 }

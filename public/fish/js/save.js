@@ -1,7 +1,7 @@
 // The save file (localStorage key fish.v1). Pure functions (no DOM, no storage), so node can test them:
 // node qa/fish/save.test.mjs. main.js reads the text from storage, gives it to loadSave, and writes JSON.stringify(save).
 //
-// A save: journal { id: { n, kg, cm } }, casts, longest, derbyBest, biggest { id, kg } or null, input, assist, quality,
+// A save: journal { id: { n, kg, cm } }, casts, longest, derbyBest, biggest { id, kg } or null, input, assist, quality, artStyle,
 //   seen { flag: 1 }, caught, and for the places: place (where the player is) and places { id: record }.
 // A place record: { open: 0|1, d: best derby kg here, kg: biggest fish here, id: its species or null,
 //   n: fish landed here, lg: the legend step 0..3 (0 not seen, 1 its gold ring seen, 2 hooked, 3 landed) }.
@@ -13,7 +13,7 @@ import { fishingOf } from "./fishing.js";
 import { ORDER, JOURNEY, nextPlace, isOpen } from "./journey.js";
 
 export const SAVE_KEY = "fish.v1";
-export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", seen: {}, caught: 0, place: "loon", places: {} });
+export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", seen: {}, caught: 0, place: "loon", places: {} });
 export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
@@ -49,6 +49,7 @@ export function loadSave(raw) {
   save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
   for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
   if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
+  if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "ghibli";
   // a copy, so the new save shares nothing with what it was read from
   if (!Array.isArray(save.seen)) save.seen = { ...save.seen };
 

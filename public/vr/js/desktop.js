@@ -2,6 +2,7 @@
 // The camera is the head at standing height; the mouse turns the rig (main adds input.turn to rigYaw) and tilts the head.
 // Both ropes aim along the centre of the screen and leave from two muzzles low in the view.
 import * as THREE from "three";
+import { createMobile } from "./mobile.js";
 import { COMFORT } from "./config.js";
 import { createInput, clearEdges } from "./xr.js";
 
@@ -32,7 +33,7 @@ export function createDesktop(canvas, camera, settings) {
   const D = {
     input: inp, locked: false, active: false,
     lock() {
-      if (document.pointerLockElement === canvas) return;
+      if (mobile.enabled || document.pointerLockElement === canvas) return;
       try {
         const p = canvas.requestPointerLock && canvas.requestPointerLock();
         if (p && p.catch) p.catch(() => { /* no pointer lock here (a test browser): the buttons still work */ });
@@ -41,8 +42,10 @@ export function createDesktop(canvas, camera, settings) {
     unlock() { if (document.pointerLockElement === canvas) document.exitPointerLock(); },
     onUnlock: (fn) => unlockFns.push(fn),
     // For tests and resets: look straight ahead.
-    level() { pitch = 0; },
+    level() { pitch = 0; mobile.reset(); },
   };
+
+  const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused");
 
   /* ---------------- events ---------------- */
   document.addEventListener("pointerlockchange", () => {
@@ -59,7 +62,7 @@ export function createDesktop(canvas, camera, settings) {
   });
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("mousedown", (e) => {
-    if (!D.active) return;
+    if (!D.active || mobile.enabled) return;
     if (e.button === 0) mouse[0] = true;
     else if (e.button === 2) mouse[1] = true;
     e.preventDefault();
@@ -88,13 +91,15 @@ export function createDesktop(canvas, camera, settings) {
   D.update = (dt) => {
     clearEdges(inp);
     const gp = standardPad();
+    const phone = mobile.sample(dt);
     // look: the mouse (only while the pointer is locked) and the pad's right stick
-    let turn = -dx * SENS, dp = -dy * SENS;
+    let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
     let mx = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0), my = (keys.has("KeyW") ? 1 : 0) - (keys.has("KeyS") ? 1 : 0);
-    trig[0] = mouse[0]; trig[1] = mouse[1];
-    let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0, yank = Q.yank;
-    let jump = Q.jump, menu = Q.menu, map = Q.map;
+    mx += phone.moveX; my += phone.moveY;
+    trig[0] = mouse[0]; trig[1] = mouse[1] || phone.hold;
+    let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
+    let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map;
     if (gp) {
       turn -= padAxis(gp, 2) * PAD_LOOK * dt; dp -= padAxis(gp, 3) * PAD_LOOK * dt;
       if (!mx && !my) { mx = padAxis(gp, 0); my = -padAxis(gp, 1); }
@@ -134,13 +139,13 @@ export function createDesktop(canvas, camera, settings) {
       if (!on && pressed[i]) h.triggerUp = true;
       pressed[i] = on;
       h.holding = on;
-      h.grip = grip ? 1 : 0;
+      h.grip = grip ? (phone.reel && !keys.has("ShiftLeft") && !keys.has("ShiftRight") && wheel <= 0 && !gp ? Math.max(.55, phone.reel) : 1) : 0;
       if (grip && !gripOn[i]) h.gripDown = true;
       if (!grip && gripOn[i]) h.gripUp = true;
       gripOn[i] = grip;
       h.velRel.set(0, 0, 0);
       // F yanks every attached rope; physics ignores it on an idle one
-      h.yank = yank ? YANK_F : 0;
+      h.yank = yank ? YANK_F : phone.yank;
     }
     // the camera is the head (in XR, three sets it from the viewer pose instead)
     camera.position.copy(head.pos);

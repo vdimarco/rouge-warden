@@ -1,6 +1,8 @@
 // The tackle in first person: the rod (blank, guides, cork grip, a spinning reel), the line, and the spinner lure.
 // The rod is rebuilt on the CPU each frame along a bent curve: it is small, and it keeps the tip exact for the line.
 import * as THREE from "three";
+import { artStyle, storyMaterial } from "./art-style.js";
+import { cartoonGeometry } from "./cartoon-models.js";
 import { ROD } from "./lake.js";
 import { bake, merge, hex, clamp, lerp } from "./world-env.js";
 import { fx, fxUniforms } from "./world-fish.js";
@@ -88,7 +90,7 @@ export class Rod {
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vs.length), 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(ns.length), 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(cs), 3));
-    this.mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x5a5a5a }));
+    this.mesh = new THREE.Mesh(geo, storyMaterial(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x5a5a5a })));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 20;
     // the frames we need: every distinct s, and for each vertex the index of its frame
@@ -98,6 +100,35 @@ export class Rod {
     const index = new Map(this.keys.map((s, i) => [s, i]));
     this.fi = Uint16Array.from(fr, (s) => index.get(s));
     this.tip = V3();
+    this.original = { geometry: geo, local: this.local, localN: this.localN, grow: this.grow, frames: this.frames, fi: this.fi };
+    const drawn = cartoonGeometry("rod");
+    if (drawn) {
+      // GLB is Y-up. The rod's bend frames use local Y downward.
+      drawn.scale(1, -1, 1);
+      // Reflection keeps the crank on the player's left; restore triangle winding.
+      for (const attribute of Object.values(drawn.attributes)) {
+        const a = attribute.array, size = attribute.itemSize;
+        for (let i = 0; i < attribute.count; i += 3) for (let c = 0; c < size; c++) { const j = (i + 1) * size + c, k = (i + 2) * size + c, t = a[j]; a[j] = a[k]; a[k] = t; }
+      }
+      const local = drawn.attributes.position.array.slice(), localN = drawn.attributes.normal.array.slice();
+      const stations = [], length = local.length / 3;
+      for (let i = 0; i < length; i++) {
+        const x = local[i * 3], s = x < 0.27 ? 0.02 : Math.min(ROD.length, Math.round(x / 0.025) * 0.025);
+        stations.push(s); local[i * 3] -= s;
+      }
+      const keys = [...new Set([...stations, ROD.length])].sort((a, b) => a - b), index = new Map(keys.map((s, i) => [s, i]));
+      const frames = keys.map(s => ({ s, r: Math.max(.003, .014 * (1 - s / ROD.length)), P: V3(), T: V3(), D: V3(), B: V3(), k: 1 }));
+      drawn.attributes.position.setUsage(THREE.DynamicDrawUsage); drawn.attributes.normal.setUsage(THREE.DynamicDrawUsage);
+      this.cartoon = { geometry: drawn, local, localN, frames, grow: new Uint8Array(length).fill(1), fi: Uint16Array.from(stations, s => index.get(s)) };
+    }
+    this.setArtStyle(artStyle.value ? "ghibli" : "original");
+  }
+
+  setArtStyle(style) {
+    const data = style === "ghibli" && this.cartoon ? this.cartoon : this.original;
+    this.mesh.geometry = data.geometry;
+    for (const key of ["local", "localN", "grow", "frames", "fi"]) this[key] = data[key];
+    this.mesh.userData.cartoonAsset = data === this.cartoon ? "rod" : null;
   }
 
   // grip: world point of the reel seat. dir: unit rod direction. bend 0..1, pull: world point the line pulls toward (or null).
@@ -141,7 +172,8 @@ export class Rod {
       setFrame(f, P, T);
     }
     const tf = this.frames[this.frames.length - 1];
-    this.tip.copy(tf.P).addScaledVector(tf.D, 0.004 * tf.k);
+    this.tip.copy(tf.P).addScaledVector(tf.D, (this.mesh.userData.cartoonAsset ? 0.015 : 0.004) * tf.k);
+    if (this.mesh.userData.cartoonAsset) this.tip.addScaledVector(tf.T, -0.005);
     // write the vertices
     const pa = this.mesh.geometry.attributes.position, na = this.mesh.geometry.attributes.normal;
     const p = pa.array, q = na.array, lo = this.local, ln = this.localN, fi = this.fi, F = this.frames;
@@ -274,5 +306,13 @@ export class Lure {
     this.glint.renderOrder = 14;
     this.spinA = 0;
     this.q = new THREE.Quaternion();
+    this.original = { body: this.body.geometry, blade: this.blade.geometry, material: this.blade.material };
+    this.cartoon = { body: cartoonGeometry("lure_body"), blade: cartoonGeometry("lure_blade"), material: fx(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, side: THREE.DoubleSide, transparent: true }), this.fx, { wag: false }) };
+    this.setArtStyle(artStyle.value ? "ghibli" : "original");
+  }
+  setArtStyle(style) {
+    const data = style === "ghibli" && this.cartoon.body && this.cartoon.blade ? this.cartoon : this.original;
+    this.body.geometry = data.body; this.blade.geometry = data.blade; this.blade.material = data.material;
+    this.body.userData.cartoonAsset = data === this.cartoon ? "lure_body" : null;
   }
 }
