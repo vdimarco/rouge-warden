@@ -565,6 +565,24 @@ function farPineGeo(low) {
   return bake(g, { colorFn: (x, y) => mix3(hex("#26462c"), hex("#4a7a40"), y) });
 }
 
+// Soft, rounded canopies use a small mesh shared by all instances. The far
+// forest uses one crown per tree to keep the phone's triangle count low.
+function storyTreeGeo(low, broad = false, far = false, pale = null) {
+  const parts = [];
+  const crowns = far ? [[0, 0.56, 0, low ? 0.44 : 0.31, 0.48, low ? 0.43 : 0.30]] : low
+    ? [[0, 0.60, 0, broad ? 0.36 : 0.48, 0.42, broad ? 0.34 : 0.45]] : broad
+    ? [[-0.12, 0.59, 0, 0.30, 0.32, 0.31], [0.15, 0.69, 0.02, 0.31, 0.33, 0.29]]
+    : [[0, 0.41, 0, 0.34, 0.28, 0.32], [0.02, 0.71, 0.01, 0.24, 0.31, 0.23]];
+  const lo = hex(pale ? pale.lo : "#346e55"), hi = hex(pale ? pale.hi : "#99b95f");
+  for (const [x, y, z, sx, sy, sz] of crowns) {
+    const g = new THREE.SphereGeometry(1, low ? (far ? 4 : 5) : 8, low ? (far ? 2 : 3) : (far ? 3 : 4));
+    g.scale(sx, sy, sz); g.translate(x, y, z);
+    parts.push(bake(g, { colorFn: (x, y) => mix3(lo, hi, smooth(0.2, 1, y)) }));
+  }
+  if (!far) parts.push(bake(new THREE.CylinderGeometry(0.035, 0.055, 0.48, low ? 3 : 5, 1, low), { matrix: M4().makeTranslation(0, 0.24, 0), color: hex("#8b6642") }));
+  return merge(parts);
+}
+
 // Where the trees stand, from the place's look: near trees (pines and leafy ones) on a jittered grid where the forest
 // mask says so, and small far cones on the hills. Sorted in a shuffled order so "low" can draw only the first part and still look even.
 function treeSpots(place, look) {
@@ -612,15 +630,18 @@ function instanced(geo, mat, spots, max, tint) {
   return m;
 }
 
-export function buildTrees(low, place, look) {
-  const S = treeSpots(place, look), T = look.trees, caps = low ? T.caps.low : T.caps.high;
+export function buildTrees(low, place, look, style = "ghibli") {
+  const cartoon = style === "ghibli";
+  const S = treeSpots(place, look), T = look.trees;
+  // Broader crowns cover the same forest with fewer instances on phones.
+  const caps = low ? T.caps.low.map((n, i) => Math.floor(n * (cartoon ? [0.4, 1, 0.5][i] : 1))) : T.caps.high;
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.9, scale: 1.4, sway: 0.012, key: "tree" });
   const leafMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.2, scale: 2.2, sway: 0.02, key: "leaf" });
   const farMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.8, scale: 0.6, key: "far" });
   const g = new THREE.Group();
-  if (caps[0] && S.near.length) g.add(instanced(pineGeo(low), mat, S.near, caps[0], T.pineTint));
-  if (caps[1] && S.leafy.length) g.add(instanced(leafyGeo(low, T.leafy.geo), leafMat, S.leafy, caps[1], T.leafy.tint));
-  if (caps[2] && S.far.length) g.add(instanced(farPineGeo(low), farMat, S.far, caps[2], T.pineTint));
+  if (caps[0] && S.near.length) g.add(instanced(cartoon ? storyTreeGeo(low) : pineGeo(low), mat, S.near, caps[0], T.pineTint));
+  if (caps[1] && S.leafy.length) g.add(instanced(cartoon ? storyTreeGeo(low, true, false, T.leafy.geo) : leafyGeo(low, T.leafy.geo), leafMat, S.leafy, caps[1], T.leafy.tint));
+  if (caps[2] && S.far.length) g.add(instanced(cartoon ? storyTreeGeo(low, false, true) : farPineGeo(low), farMat, S.far, caps[2], T.pineTint));
   return g;
 }
 
@@ -699,7 +720,7 @@ export function buildPads(low, place, look) {
   }
   parts.push(bake(new THREE.SphereGeometry(0.035, 6, 4), { matrix: M4().makeTranslation(0, 0.03, 0), color: hex("#f2c230") }));
   const fl = LILIES.filter((l) => l.flower);
-  const flowers = new THREE.InstancedMesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }), fl.length);
+  const flowers = new THREE.InstancedMesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })), fl.length);
   fl.forEach((l, i) => { mx.compose(new THREE.Vector3(l.x + 0.1, 0.05, l.z), q.setFromAxisAngle(up, l.rot), new THREE.Vector3(1.5, 1.5, 1.5)); flowers.setMatrixAt(i, mx); });
   flowers.frustumCulled = false;
   group.add(flowers);
@@ -837,7 +858,7 @@ export function buildLoon() {
   const tail = new THREE.ConeGeometry(0.06, 0.12, 6);
   tail.rotateX(Math.PI / 2);
   parts.push(bake(tail, { matrix: M4().makeTranslation(0, 0.03, 0.44), color: black }));
-  const m = new THREE.Mesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const m = new THREE.Mesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })));
   m.scale.setScalar(1.25);
   return m;
 }

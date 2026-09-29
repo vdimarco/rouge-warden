@@ -431,7 +431,7 @@ export class LakeSim {
     const from = this.tip;
     const to = this.cleanTip(i.tip, null) || rodTip(theta, this.aimYaw(), steer, this.rod);
     const n = Math.max(1, Math.ceil(dt / this.R.STEP - 1e-9)), h = dt / n;
-    const I = { crank, theta, omega: fin(i.omega, 0), steer, hookset: !!i.hookset, lift: !!i.lift, tip: { ...from } };
+    const I = { crank, pull: clamp(fin(i.pull, 0), 0, 1), theta, omega: fin(i.omega, 0), steer, hookset: !!i.hookset, lift: !!i.lift, tip: { ...from } };
     for (let k = 1; k <= n; k++) {
       // slide the tip across the frame, so a fast rod snap stretches the line smoothly
       const u = k / n;
@@ -867,7 +867,7 @@ export class LakeSim {
     if (junk && stretch > -0.2) ten += P.kg * 3 * R.G;
 
     /* the reel: the spool slips when the line pulls harder than the drag; cranking into a slipping drag grinds */
-    const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN);
+    const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN) * (1 + 0.35 * I.pull);
     // for the first moments after the hook set the drag just slips ("Fish on! Let it run."): no grind yet
     const thr = S.dragN + R.GRIND_N * I.crank * smooth(R.GRACE_T, R.GRACE_T + 0.4, S.fightT);
     if (this.spool > 0 || ten > thr) {

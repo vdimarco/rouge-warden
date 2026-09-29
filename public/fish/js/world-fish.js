@@ -72,7 +72,7 @@ const tAt = (F, z) => clamp((z + 0.5) / (F.zp + 0.5), 0, 1);
 // where the gill cover and the mouth end on the skin (0..1 along the body), by shape
 const GILL = { pike: 0.2, sunfish: 0.24, tuna: 0.21, cod: 0.22, salmon: 0.21, catfish: 0.23, gar: 0.38, bowfin: 0.22, striper: 0.22 };
 const MOUTH = { bass: 0.13, pike: 0.16, walleye: 0.1, sunfish: 0.04, tuna: 0.09, cod: 0.11, striper: 0.12, salmon: 0.09, catfish: 0.12, gar: 0.27, bowfin: 0.1 };
-const texCache = new Map(), eyeCache = new Map();
+const texCache = new Map(), eyeCache = new Map(), storySkins = new Map();
 function skinTexture(sp) {
   if (texCache.has(sp.id)) return texCache.get(sp.id);
   const W = 512, H = 192, cv = document.createElement("canvas");
@@ -210,6 +210,29 @@ function skinTexture(sp) {
   t.anisotropy = 4;
   texCache.set(sp.id, t);
   return t;
+}
+
+// Simple painted markings keep each species recognizable in the cartoon style.
+function storySkin(sp) {
+  if (storySkins.has(sp.id)) return storySkins.get(sp.id);
+  const cv = document.createElement("canvas"); cv.width = 256; cv.height = 128;
+  const x = cv.getContext("2d"), l = sp.look;
+  x.fillStyle = l.body; x.fillRect(0, 0, 256, 128);
+  x.fillStyle = l.back; x.fillRect(0, 0, 256, 28);
+  x.fillStyle = l.belly; x.beginPath(); x.moveTo(0, 96); x.quadraticCurveTo(128, 72, 256, 100); x.lineTo(256, 128); x.lineTo(0, 128); x.fill();
+  x.fillStyle = l.accent; x.globalAlpha = 0.70;
+  if (l.pattern === "bars") {
+    for (let i = 0; i < 6; i++) { const u = 75 + i * 28; x.beginPath(); x.moveTo(u, 22); x.lineTo(u + 13, 22); x.quadraticCurveTo(u + 18, 47, u + 5, 80); x.quadraticCurveTo(u - 3, 46, u, 22); x.fill(); }
+  } else if (l.pattern === "stripe" || l.pattern === "lines") {
+    x.fillRect(60, 56, 196, 10); if (l.pattern === "lines") { x.fillRect(68, 38, 188, 5); x.fillRect(65, 77, 191, 5); }
+  } else if (l.pattern !== "plain" && l.pattern !== "gold") {
+    for (let i = 0; i < 15; i++) { x.beginPath(); x.ellipse(75 + (i * 37) % 170, 34 + (i * 19) % 45, l.pattern === "beans" ? 7 : 4, 5, -0.25, 0, Math.PI * 2); x.fill(); }
+  }
+  x.globalAlpha = 1; x.strokeStyle = "#344237"; x.lineCap = "round"; x.lineWidth = 3;
+  const gill = (GILL[l.shape] || 0.22) * 256, mouth = (MOUTH[l.shape] || 0.1) * 256;
+  x.beginPath(); x.moveTo(gill, 32); x.quadraticCurveTo(gill + 13, 62, gill - 2, 93); x.stroke();
+  x.beginPath(); x.moveTo(0, 66); x.quadraticCurveTo(mouth * 0.5, 80, mouth, 68); x.stroke();
+  const texture = new THREE.CanvasTexture(cv); storySkins.set(sp.id, texture); return texture;
 }
 
 // fin rays: pale lines from the base to the edge, the edge a little see-through
@@ -491,7 +514,16 @@ function fishParts(sp) {
   if (geoCache.has(sp.id)) return geoCache.get(sp.id);
   const F = formOf(sp);
   const g = { body: loft(F, 26, 18), fins: finsGeo(F, sp), eyes: eyesGeo(F) };
-  for (const k in g) g[k].computeBoundingSphere();
+  const C = { ...F, top: F.top * 1.28, bot: F.bot * 1.3, wid: F.wid * 1.45, eye: F.eye * 1.75 };
+  const cartoon = { body: loft(C, 26, 18), eyes: eyesGeo(C), fins: g.fins.clone().scale(1.45, 1.28, 1) };
+  for (const k in g) {
+    g[k].setAttribute("storyPosition", cartoon[k].attributes.position.clone());
+    g[k].setAttribute("storyNormal", cartoon[k].attributes.normal.clone());
+    g[k].computeBoundingSphere(); cartoon[k].computeBoundingSphere();
+    g[k].boundingSphere.union(cartoon[k].boundingSphere);
+    g[k].boundingSphere.radius *= 1.1; // include swimming motion around both silhouettes
+    cartoon[k].dispose();
+  }
   geoCache.set(sp.id, g);
   return g;
 }
@@ -506,6 +538,8 @@ function buildFish(sp) {
   fins.forceSinglePass = true;
   // the eye: look.iris is the colour; look.eyeshine gives a pale, glassy eye that catches the light in the dark
   const eyes = fx(new THREE.MeshPhongMaterial({ map: eyeTexture(lk.iris || "#d0a038", !!lk.eyeshine), shininess: 120, specular: 0xffffff, transparent: true, emissive: lk.eyeshine ? 0x1a1e14 : 0 }), u);
+  for (const m of [body, fins, eyes]) m.userData.storyMorph = true;
+  body.userData.storyMap = storySkin(sp);
   const grp = new THREE.Group();
   const mb = new THREE.Mesh(G.body, body), mf = new THREE.Mesh(G.fins, fins), me = new THREE.Mesh(G.eyes, eyes);
   mb.renderOrder = 10; me.renderOrder = 11; mf.renderOrder = 12;
@@ -584,6 +618,7 @@ export function releaseFish(keepIds = []) {
     if (keep.has(id)) continue;
     t.dispose(); texCache.delete(id); out.skins++;
   }
+  for (const [id, t] of storySkins) if (!keep.has(id)) { t.dispose(); storySkins.delete(id); }
   // an eye texture is shared by the species with the same iris, so it stays while one of them is kept
   const eyes = new Set();
   for (const id of keep) { const sp = byId(id); if (sp && sp.look && !JUNK_LEN[id]) eyes.add(eyeKey(sp)); }

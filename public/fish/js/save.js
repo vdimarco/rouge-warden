@@ -13,7 +13,7 @@ import { fishingOf } from "./fishing.js";
 import { ORDER, JOURNEY, nextPlace, isOpen } from "./journey.js";
 
 export const SAVE_KEY = "fish.v1";
-export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "original", seen: {}, caught: 0, place: "loon", places: {} });
+export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", seen: {}, caught: 0, place: "loon", places: {} });
 export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
@@ -49,7 +49,7 @@ export function loadSave(raw) {
   save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
   for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
   if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
-  if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "original";
+  if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "ghibli";
   // a copy, so the new save shares nothing with what it was read from
   if (!Array.isArray(save.seen)) save.seen = { ...save.seen };
 

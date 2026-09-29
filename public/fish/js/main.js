@@ -5,6 +5,7 @@
 // fish.js runs the fish and the fight, world.js draws the place, audio.js and haptics.js make the feel.
 // places.js holds the maps, fishing.js who lives where, journey.js the trail and its words, save.js the save file.
 import { normalizeStyle } from "./art-style.js";
+import { PullStrength } from "./pull.js";
 import { Motion } from "./motion.js";
 import { createGuide } from "./guide.js";
 import { Haptics } from "./haptics.js";
@@ -25,6 +26,8 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const now = () => performance.now();
+const pullStrength = new PullStrength();
+const pullMeter = document.querySelector("#pullStrength");
 const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
 // ?open opens every place for this page load. It is never saved.
@@ -100,6 +103,7 @@ function show(id) {
   tapShown = shownAt - tapAt < 250;
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
   document.body.dataset.screen = id || "";
+  if (id === "title") { $("#title").scrollTop = 0; $("#title .title-menu").scrollTop = 0; }
   const focus = id && ($("#" + id + " .btn.go") || $("#" + id + " button"));
   if (focus && !touchDevice) focus.focus({ preventScroll: true });
 }
@@ -243,9 +247,8 @@ async function chooseInput(then) {
   if (save.input === "motion") {
     // a returning player: ask again inside this tap (iOS forgets between visits)
     const req = Motion.request();
-    lockPortrait();
     const st = await req;
-    if (st === "granted") { G.input = "motion"; then(); return; }
+    if (st === "granted") { G.input = "motion"; lockPortrait(); then(); return; }
   }
   $("#setupNote").hidden = true;
   $("#useMotion").hidden = false;
@@ -257,10 +260,10 @@ $("#useMotion").addEventListener("click", async () => {
   Sound.init(); Haptics.unlock();
   Sound.sfx("ui");
   const req = Motion.request();
-  lockPortrait();
   const st = await req;
   if (st === "granted") {
     G.input = "motion"; save.input = "motion"; persist();
+    lockPortrait();
     show(null);
     const f = setupThen; setupThen = null; if (f) f();
     return;
@@ -281,13 +284,44 @@ $("#useTouch").addEventListener("click", () => {
   const f = setupThen; setupThen = null; if (f) f();
 });
 
-// Android: full screen with a portrait lock, so the browser never turns the page in the middle of a cast.
-// iPhone has neither API and skips this: if its page turns, we turn #game back (see wantedRotation).
+// Fullscreen is an explicit choice for this visit. Motion play in a browser window
+// stays upright through wantedRotation(), without triggering Android's fullscreen notice.
 function lockPortrait() {
-  const el = document.documentElement;
-  if (!touchDevice || !el.requestFullscreen || !screen.orientation || !screen.orientation.lock || document.fullscreenElement) return;
-  try { el.requestFullscreen({ navigationUI: "hide" }).then(() => screen.orientation.lock("portrait")).catch(() => {}); } catch (e) { /* not allowed here */ }
+  if (!touchDevice || G.input !== "motion" || !document.fullscreenElement || !screen.orientation?.lock) return;
+  try { screen.orientation.lock("portrait").catch(() => {}); } catch (e) { /* use the layout fallback */ }
 }
+const fullscreenButtons = $$("[data-fullscreen]");
+let fullscreenBusy = false;
+function syncFullscreen() {
+  const active = !!document.fullscreenElement;
+  for (const b of fullscreenButtons) {
+    b.hidden = !active && !(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+    b.disabled = fullscreenBusy;
+    b.textContent = active ? "Exit fullscreen" : "Fullscreen";
+  }
+}
+for (const b of fullscreenButtons) b.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  if (fullscreenBusy) return;
+  fullscreenBusy = true;
+  syncFullscreen();
+  const exiting = !!document.fullscreenElement;
+  try {
+    if (exiting) await document.exitFullscreen();
+    else {
+      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+      lockPortrait();
+    }
+  } catch (e) {
+    toast(exiting ? "Use your browser's fullscreen control to exit." : "Fullscreen is unavailable. Keep playing in this window.");
+  } finally {
+    fullscreenBusy = false;
+    syncFullscreen();
+    relayout(true);
+  }
+});
+document.addEventListener("fullscreenchange", () => { syncFullscreen(); relayout(true); });
+syncFullscreen();
 
 /* ---------------- wake lock: the screen must not sleep while you wait for a bite ---------------- */
 let wake = null;
@@ -925,7 +959,7 @@ function syncArtStyle() {
   document.body.dataset.artStyle = save.artStyle;
   for (const button of $$("[data-art]")) button.setAttribute("aria-pressed", String(button.dataset.art === save.artStyle));
   $("#optArtStyle").value = save.artStyle;
-  $("#artNote").textContent = save.artStyle === "ghibli" ? "Painted skies and soft summer light" : "Classic lake scenery";
+  $("#artNote").textContent = save.artStyle === "ghibli" ? "Cartoon models and painted skies" : "Classic lake scenery";
 }
 function setArtStyle(style) {
   save.artStyle = normalizeStyle(style);
@@ -958,7 +992,7 @@ $("#optQuality").addEventListener("change", (e) => { save.quality = e.target.val
 $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
     const st = await Motion.request();
-    if (st === "granted") { G.input = "motion"; save.input = "motion"; }
+    if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
     else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? "Motion is blocked for this page." : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
@@ -977,6 +1011,7 @@ function applyQuality() {
 function pause() {
   if (G.paused || !(G.phase === "cast" || G.phase === "reel" || G.phase === "lost")) return;
   G.paused = true;
+  pullStrength.reset();
   releaseAwake();
   Sound.stopLoops(); Haptics.stop();
   // a thumb on the line when the game stops: the line goes back, and the next press starts the cast again
@@ -1161,10 +1196,16 @@ function reelUpdate(dt) {
   let hookset = false;
   if (G.hookReq) { hookset = true; G.hookReq = false; }
   const s = sim.state;
+  const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
+  const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
+    active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
+  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85;
+  pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
+  pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
   const tip = world.setRod({ theta, yaw: 0, steer, bend: clamp(s.bend != null ? s.bend : G.tension * 1.3, 0, 1), pull: pullTo, visible: true });
   // the sim bends its own rod: give it the straight rod's tip, not the drawn one
-  sim.step(dt, { crank: crankRate, tip: rodTip(theta, 0, steer, G.place.stand.rod), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
+  sim.step(dt, { crank: crankRate, pull, tip: rodTip(theta, 0, steer, G.place.stand.rod), theta, omega: p.omega, steer, drag: G.drag, hookset, lift: theta > 70 });
   G.tension = lerp(G.tension, s.tfrac || 0, 1 - Math.exp(-dt * 12));
   for (const e of sim.events.splice(0)) handleEvent(e);
   // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
@@ -1262,7 +1303,7 @@ function reelPrompt(s, crankRate, theta) {
       if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
       if (s.beaten) return prompt("It is tired. Reel it in.", "", "crank", "good");
       if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the phone up toward you." : "Drag the rod pad up.", "pull");
-      return prompt("Pump and reel.", m ? "Tip the phone up. Then reel as you lower it." : "Drag the rod up. Then reel as it comes down.", "pull");
+      return prompt("Pump and reel.", m ? "Tip the phone back toward you as you reel. Ease forward to relax." : "Drag the rod up. Then reel as it comes down.", "pull");
     }
     case "land": return prompt(G.place.id === "sea" ? "Bring it to the wall! Raise the rod and hold." : "Lift it out! Raise the rod and hold.", "", "pull", "good");
     default: return prompt("");

@@ -8,7 +8,15 @@
 // toLocal() it passes in. We never call preventDefault() on pointer or touch events: the iOS haptic switch pads
 // under the thumb need their default handling, and the page's touch-action: none already stops scrolling and zooming.
 
+import { artStyle } from "./art-style.js";
+
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
+const cartoon = () => artStyle.value > 0.5;
+const OUTLINE = "#294b3e";
+function ink(ctx) {
+  if (!cartoon()) return;
+  ctx.strokeStyle = OUTLINE; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
+}
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -147,6 +155,7 @@ class Widget extends Emitter {
   }
   // draw into a layer; the drawing helpers all use this.ctx, so point it there for the duration
   paint(c, key, fn) {
+    key += ":" + artStyle.value;
     if (c.key === key) return;
     const main = this.ctx, lc = c.getContext("2d");
     this.ctx = lc;
@@ -157,7 +166,7 @@ class Widget extends Emitter {
   }
   blit(c) { const x = this.ctx; x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(c, 0, 0); x.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); }
   // true when this frame would look the same as the last one we drew
-  same(key) { if (key === this._drawn) return true; this._drawn = key; return false; }
+  same(key) { key += ":" + artStyle.value; if (key === this._drawn) return true; this._drawn = key; return false; }
   listen(target, type, fn, opt) { target.addEventListener(type, fn, opt); this._offs.push(() => target.removeEventListener(type, fn, opt)); }
   dispose() { for (const f of this._offs) f(); this._offs = []; this.cv.remove(); }
   // a soft glowing spot under a thumb
@@ -218,6 +227,12 @@ const MAT = {
 };
 function shade(n, m, k = 1, a = 1) {
   const nl = Math.max(0, dot3(n, LIGHT)), nh = Math.max(0, dot3(n, HALF)), nv = dot3(n, VIEW);
+  if (cartoon()) {
+    const level = nl > 0.65 ? 1 : nl > 0.18 ? 0.82 : 0.64;
+    const base = m === MAT.silver ? [0.93, 0.88, 0.66] : m === MAT.steel ? [0.69, 0.77, 0.63]
+      : m === MAT.body || m === MAT.gun ? [0.34, 0.52, 0.41] : m === MAT.red ? [0.92, 0.42, 0.27] : m.base;
+    return `rgba(${base.map(v => Math.round(clamp(v * level * k, 0, 1) * 255)).join(",")},${a})`;
+  }
   const ry = 2 * nv * n[1] - VIEW[1];                                   // the reflected view ray
   const sky = smooth(-0.2, 0.45, ry), band = Math.exp(-((ry - 0.05) ** 2) / 0.006) * 0.3;  // a bright horizon line
   const sp = m.spec * Math.pow(nh, m.shin), rim = Math.pow(1 - Math.abs(nv), 4) * 0.12;
@@ -420,10 +435,14 @@ export class ReelPanel extends Widget {
       const th = vis - Math.PI / 2 + (Math.PI * i) / 12, P = this._at(f, Math.cos(th), Math.sin(th));
       const s = ((P.x - T1.x) * N.x + (P.y - T1.y) * N.y) / span;
       const nn = [Math.cos(th) * e1[0] + Math.sin(th) * e2[0], Math.cos(th) * e1[1] + Math.sin(th) * e2[1], Math.cos(th) * e1[2] + Math.sin(th) * e2[2]];
-      g.addColorStop(clamp(s, 0, 1), shade(nn, mat, k));
+      if (!cartoon()) g.addColorStop(clamp(s, 0, 1), shade(nn, mat, k));
+    }
+    if (cartoon()) {
+      for (const [stop, light] of [[0, .67], [.28, .67], [.28, 1], [.7, 1], [.7, .82], [1, .82]])
+        g.addColorStop(stop, shade(LIGHT, mat, k * light));
     }
     ctx.fillStyle = g;
-    ctx.fill();
+    ctx.fill(); ink(ctx);
     return { f, w, phi, vis, e1, e2, back };
   }
   // A flat disc (or ring, with rIn) on a frame, brushed like turned metal: the highlight is a reflection and does not turn.
@@ -434,7 +453,7 @@ export class ReelPanel extends Widget {
     ctx.arc(0, 0, 1, 0, TAU);
     if (rIn > 0) { ctx.moveTo(rIn, 0); ctx.arc(0, 0, rIn, 0, TAU, true); }
     const base = shade(facing, mat, k);
-    if (ctx.createConicGradient) {
+    if (!cartoon() && ctx.createConicGradient) {
       const g = ctx.createConicGradient(-0.6, 0, 0);
       const hi = shade(facing, mat, k * 1.35), lo = shade(facing, mat, k * 0.72);
       g.addColorStop(0, base); g.addColorStop(0.1, hi); g.addColorStop(0.22, lo); g.addColorStop(0.36, base);
@@ -443,6 +462,7 @@ export class ReelPanel extends Widget {
     } else ctx.fillStyle = base;
     ctx.fill("evenodd");
     this._flat();
+    ink(ctx);
   }
   // points of the bail wire loop, for t from t0 to t1 (0 = the near pivot, π = the far pivot)
   _wire(phi, t0, t1, n) {
@@ -540,6 +560,12 @@ export class ReelPanel extends Widget {
 
   _backdrop(ctx) {
     const w = this.w, h = this.h;
+    if (cartoon()) {
+      ctx.fillStyle = "#577563"; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#668571"; ctx.beginPath(); ctx.ellipse(w * .48, h * .55, w * .52, h * .38, -.08, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#b4c293"; ctx.fillRect(0, 0, w, 2);
+      return;
+    }
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#134451"); g.addColorStop(0.5, "#0d2f38"); g.addColorStop(1, "#08202a");
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
@@ -569,7 +595,7 @@ export class ReelPanel extends Widget {
     this._cyl([1.72, Y, 0], [1, 0, 0], 3.6, 0.165, MAT.cork);
     // cork has pores
     ctx.fillStyle = "rgba(70,45,20,0.35)";
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < (cartoon() ? 18 : 70); i++) {
       const x = 1.78 + ((i * 0.618) % 1) * 3.3, a = ((i * 0.377) % 1) * 1.6 - 0.35;
       const q = this._p(x, Y + Math.cos(a) * 0.16, Math.sin(a) * 0.16);
       ctx.fillRect(q.x, q.y, 1.4, 1.1);
@@ -586,7 +612,7 @@ export class ReelPanel extends Widget {
     const g = ctx.createLinearGradient(q[0].x, 0, q[1].x, 0);
     g.addColorStop(0, "#394247"); g.addColorStop(0.35, "#5c676c"); g.addColorStop(1, "#1a2023");
     ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
-    ctx.fillStyle = g; ctx.fill();
+    ctx.fillStyle = cartoon() ? "#668577" : g; ctx.fill(); ink(ctx);
     // the foot under the rod
     this._cyl([0.55, ROD_Y - 0.12, 0], [1, 0, 0], 1.1, 0.06, MAT.gun);
     // the gearbox: a short fat cylinder across the reel, and its side plate facing us
@@ -611,7 +637,7 @@ export class ReelPanel extends Widget {
     const ag = ctx.createLinearGradient(arm[0].x, arm[0].y, arm[3].x, arm[3].y);
     ag.addColorStop(0, "#eef2f3"); ag.addColorStop(0.45, "#9aa5aa"); ag.addColorStop(1, "#4b5559");
     ctx.beginPath(); arm.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
-    ctx.fillStyle = ag; ctx.fill();
+    ctx.fillStyle = cartoon() ? "#d3c99c" : ag; ctx.fill(); ink(ctx);
     const hub = this._frame([HANDLE.x, HANDLE.y, 0.56], [1, 0, 0], [0, 1, 0], 0.1);
     this._face(hub, 0, MAT.silver, 1.1, [0, 0, 1]);
     this._cyl([kx, ky, 0.6], [0, 0, 1], 0.4, 0.14, MAT.red);
@@ -638,7 +664,7 @@ export class ReelPanel extends Widget {
     ctx.quadraticCurveTo(tipC.x, tipC.y, q[2].x, q[2].y);
     ctx.quadraticCurveTo(bot.x, bot.y, q[3].x, q[3].y);
     ctx.closePath();
-    ctx.fillStyle = g; ctx.fill();
+    ctx.fillStyle = cartoon() ? (side > 0 ? "#afbd98" : "#567263") : g; ctx.fill(); ink(ctx);
     ctx.lineWidth = 1.3; ctx.lineCap = "round";
     ctx.strokeStyle = side > 0 ? "rgba(235,242,244,0.6)" : "rgba(0,0,0,0.3)";
     ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.quadraticCurveTo(top.x, top.y, q[1].x, q[1].y); ctx.stroke();
@@ -673,7 +699,7 @@ export class ReelPanel extends Widget {
     this._cyl([SPOOL.front + 0.1, 0, 0], [1, 0, 0], len, SPOOL.arbor, MAT.steel);
     const band = this._cyl([SPOOL.front + 0.1, 0, 0], [1, 0, 0], len, rl, MAT.line);
     // the wraps: fine crossing turns across the visible half of the line
-    const n = Math.max(10, Math.round((len * S * 0.9) / 3));
+    const n = cartoon() ? 8 : Math.max(10, Math.round((len * S * 0.9) / 3));
     ctx.lineWidth = 1;
     for (let i = 1; i < n; i++) {
       const x = SPOOL.front + 0.1 + (len * i) / n, tilt = (i % 2 ? 1 : -1) * 0.05;
@@ -1040,7 +1066,7 @@ export class Crank extends Widget {
       ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
       const g = ctx.createRadialGradient(cx, cy - R0 * 0.3, R0 * 0.1, cx, cy, R0);
       g.addColorStop(0, "rgba(27,84,98,0.86)"); g.addColorStop(1, "rgba(8,28,34,0.9)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R0, 0, TAU); ctx.fill();
+      ctx.fillStyle = cartoon() ? "#3e6553" : g; ctx.beginPath(); ctx.arc(cx, cy, R0, 0, TAU); ctx.fill();
       ctx.restore();
       ctx.strokeStyle = "rgba(246,239,217,0.2)"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(cx, cy, R0 - 0.5, 0, TAU); ctx.stroke();
@@ -1101,12 +1127,12 @@ export class Crank extends Widget {
     // the arm: a tapered bar from the hub to the knob
     const ag = ctx.createLinearGradient(cx + nx * w0, cy + ny * w0, cx - nx * w0, cy - ny * w0);
     ag.addColorStop(0, "#e9eef0"); ag.addColorStop(0.4, "#98a4a9"); ag.addColorStop(1, "#3b4549");
-    ctx.fillStyle = ag; armPath(0, 0); ctx.fill();
+    ctx.fillStyle = cartoon() ? "#e2d3a1" : ag; armPath(0, 0); ctx.fill(); ink(ctx);
     // the hub: turned metal with a screw
     const hg = ctx.createConicGradient ? ctx.createConicGradient(-0.6, cx, cy) : null;
     if (hg) { for (const [o, c] of [[0, "#8e999e"], [0.12, "#f2f5f6"], [0.25, "#6a757a"], [0.5, "#8e999e"], [0.62, "#f2f5f6"], [0.75, "#6a757a"], [1, "#8e999e"]]) hg.addColorStop(o, c); }
     ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.arc(cx + 1, cy + 3, hubR + 1, 0, TAU); ctx.fill();
-    ctx.fillStyle = hg || "#aab4b8";
+    ctx.fillStyle = cartoon() ? "#9cae86" : hg || "#aab4b8";
     ctx.beginPath(); ctx.arc(cx, cy, hubR, 0, TAU); ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = "#1b2326"; ctx.beginPath(); ctx.arc(cx, cy, hubR * 0.36, 0, TAU); ctx.fill();
@@ -1117,7 +1143,7 @@ export class Crank extends Widget {
     ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.arc(kx + 1, ky + 3.5, kr, 0, TAU); ctx.fill();
     const kg = ctx.createRadialGradient(kx - kr * 0.35, ky - kr * 0.4, kr * 0.1, kx, ky, kr);
     kg.addColorStop(0, "#ffb0a4"); kg.addColorStop(0.35, "#ef5a4c"); kg.addColorStop(0.8, "#b8342a"); kg.addColorStop(1, "#7e1d15");
-    ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, TAU); ctx.fill();
+    ctx.fillStyle = cartoon() ? "#e78652" : kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, TAU); ctx.fill(); ink(ctx);
     ctx.strokeStyle = "rgba(60,10,6,0.6)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(kx, ky, kr - 0.5, 0, TAU); ctx.stroke();
     ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(kx - kr * 0.32, ky - kr * 0.42, kr * 0.28, kr * 0.16, -0.5, 0, TAU); ctx.fill();
     // the hint, the first few turns: over the handle, each word on its own dark pill, so the arm never hides it

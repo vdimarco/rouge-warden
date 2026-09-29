@@ -63,11 +63,13 @@ function placesOk(s) {
 
 /* ---------------- art style preferences ---------------- */
 section("Art style preferences");
-check(loadSave(null).artStyle === "original", "new and old saves use the original art");
+check(loadSave(null).artStyle === "ghibli", "new saves default to Ghibli");
+check(loadSave({ casts: 12 }).artStyle === "ghibli", "old saves without a style default to Ghibli");
+check(loadSave(text(loadSave({ artStyle: "original" }))).artStyle === "original", "an explicit Original choice survives reload");
 const styled = loadSave({ artStyle: "ghibli", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
 check(loadSave(text(styled)).artStyle === "ghibli", "Ghibli survives a save and reload");
 check(styled.casts === 12 && styled.journal.perch.n === 2, "the art preference keeps fishing progress");
-check(loadSave({ artStyle: "unknown" }).artStyle === "original", "an unknown art style falls back to original");
+check(loadSave({ artStyle: "unknown" }).artStyle === "ghibli", "an unknown art style falls back to Ghibli");
 
 /* ---------------- 1. today's saves ---------------- */
 section("1. today's saves load as before");

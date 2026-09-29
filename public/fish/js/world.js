@@ -47,7 +47,7 @@ export function sunAt(h, look = null) {
 
 /* ---------------- the world ---------------- */
 
-export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "original" } = {}) {
+export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "ghibli" } = {}) {
   let currentStyle = normalizeStyle(style);
   artStyle.value = currentStyle === "ghibli" ? 1 : 0;
   let low = quality === "low";
@@ -83,11 +83,12 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) { if (m.map) m.map.dispose(); m.dispose(); }
     });
   }
-  let envGroup = null, propGroup = null, loon = null, flies = null, gulls = null;
+  let envGroup = null, treeGroup = null, propGroup = null, loon = null, flies = null, gulls = null;
   function buildEnv() {
     if (envGroup) { scene.remove(envGroup); dispose(envGroup); }
     envGroup = new THREE.Group();
-    envGroup.add(new THREE.Mesh(E.buildTerrain(low, PL, LK), E.terrainMaterial(low)), E.buildTrees(low, PL, LK));
+    treeGroup = E.buildTrees(low, PL, LK, currentStyle);
+    envGroup.add(new THREE.Mesh(E.buildTerrain(low, PL, LK), E.terrainMaterial(low)), treeGroup);
     if (PL.props.lilies.length) envGroup.add(E.buildPads(low, PL, LK));
     if (PL.props.reeds.length) envGroup.add(E.buildReeds(low, PL, LK));
     scene.add(envGroup);
@@ -701,8 +702,14 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     resize,
     get artStyle() { return currentStyle; },
     setArtStyle(style) {
+      const previousStyle = currentStyle;
       currentStyle = normalizeStyle(style);
       artStyle.value = currentStyle === "ghibli" ? 1 : 0;
+      if (currentStyle !== previousStyle) {
+        envGroup.remove(treeGroup); dispose(treeGroup);
+        treeGroup = E.buildTrees(low, PL, LK, currentStyle);
+        envGroup.add(treeGroup);
+      }
       setHour(S.hour);
       if (artStyle.value) E.loadStorySky().then(render);
     },
