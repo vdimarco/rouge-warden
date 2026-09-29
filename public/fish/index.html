@@ -8,6 +8,7 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Reel It In</title>
+<link rel="stylesheet" href="guide.css">
 <meta name="description" content="Your phone is the rod and the reel. Hold the line with your thumb, whip the phone to cast, and crank to reel in. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/fish/">
@@ -300,6 +301,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
 
   <div id="hud" hidden>
     <button type="button" class="icon" id="pauseBtn" aria-label="Pause">II</button>
+    <button type="button" class="icon" id="guideToggle" aria-label="Hide animated guide" aria-expanded="true" data-nopin>?</button>
     <span class="chip" id="modeChip"></span>
     <span class="grow"></span>
     <span class="chip" id="clock"></span>
