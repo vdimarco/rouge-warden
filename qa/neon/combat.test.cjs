@@ -2,12 +2,12 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-function boot(){
+function boot(districtClass=null){
  const elements=new Map(),events={};
  const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',onclick:null,addEventListener(){},setPointerCapture(){},getContext:()=>ctx});return elements.get(id)};
  const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
- s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8').replace("import { District } from './district.js';","class District {constructor(){throw Error('No WebGL in unit test')}}"),s);
+ s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8').replace("import { District } from './district.js';",districtClass||"class District {constructor(){throw Error('No WebGL in unit test')}}"),s);
  return {run:code=>vm.runInContext(code,s),events,elements};
 }
 test('direction, cooldown, parry, chip damage and pause',()=>{
@@ -79,4 +79,14 @@ test('twisting the handle never cuts; blade depth changes its visible length',as
  elements.get('center').onclick();pose(0,0,0);
  for(let b=10;b<=60;b+=10)pose(0,b,0);
  assert.ok(run('Math.hypot(swordSegment().bx-swordSegment().ax,swordSegment().by-swordSegment().ay)')<length*.6);
+});
+
+
+test('patrol swings, chain expiry, automatic charge and widescreen fallback',async()=>{
+ const {run,elements}=boot(`class District {constructor(){this.drones=[];this.dash=0;this.collected=0}setStyle(){}resize(){}reset(){this.drones=[]}endMotionView(){}beginMotionView(){}placeEnemy(){}reinforce(){this.drones=[{},{}]}target(){return{x:195,y:400}}canStrike(){return true}lunge(){this.lunged=true}cutDrones(){return 0}}`);
+ run('start();enemy.hp=10;enemy.dir=0;slash(0,100)');assert.equal(run('enemy.hp'),9);assert.equal(run('district.lunged'),true);
+ run('chainKill();chainKill();chainKill();chainKill()');assert.equal(run('combo'),4);assert.equal(run('slow'),1.5);assert.equal(run('chainBest'),4);
+ run('pause();update(8)');assert.equal(run('chainClock'),6);run('resume();enemy.timer=99;update(6.1)');assert.equal(run('combo'),0);
+ run('charge=100;cooldown=0;enemy.hp=20;slash(100,0)');assert.equal(run('enemy.hp'),17);assert.equal(run('slow'),3);assert.ok(run('charge<100'));
+ await elements.get('wideStart').onclick();assert.match(elements.get('wideHelp').textContent,/Rotate/);
 });

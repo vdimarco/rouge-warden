@@ -32,3 +32,26 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
 [data-style="rick-morty"] .primary{background:#bdff52;border:2px solid #172127;border-radius:8px;color:#172127}
 [data-style="rick-morty"] #stickNub{background:#bdff52;border:3px solid #172127}
 #panel{backdrop-filter:none}
+
+
+#runStatus{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 125px);left:20px;right:20px;pointer-events:none;text-shadow:0 2px 4px #000;color:#fff;font-size:11px}#runStatus strong,#runStatus span{display:block}#chain{color:#caff54;margin-top:6px;font-weight:800;letter-spacing:1px}#districtStatus{top:177px;font-size:10px}#callout{top:29%}@media(max-height:520px){#runStatus{top:100px;right:auto}#districtStatus{top:141px}#callout{top:36%}}
+
+.wide-help{font-size:11px;line-height:1.45;margin:7px 0;color:#dce9d5}
+/* Landscape tablets: full viewport, thumb zones at opposite ends. */
+@media (orientation:landscape){
+ #overlay{inset:54px 0 0;padding:14px 28px;align-items:center}
+ #panel{width:min(820px,90vw);padding:20px 26px;display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start;max-height:calc(100dvh - 78px);overflow:auto}
+ #panel h1{font-size:54px;margin:10px 0;grid-column:1;grid-row:2 / span 2}
+ #panel .eyebrow{grid-column:1 / -1}
+ #panel p{font-size:12px;margin:8px 0}#panel .primary,#panel .secondary{margin-top:6px}
+ #panel .fine{grid-column:1 / -1;display:block}#panel h2{grid-column:1 / -1}#panel .choice{grid-column:1 / -1}
+ #walkStick{left:calc(env(safe-area-inset-left) + 32px);bottom:calc(env(safe-area-inset-bottom) + 36px);width:124px;height:124px}
+ #stickNub{width:54px;height:54px}#walkStick small{bottom:-19px}
+ #controls{left:auto;right:calc(env(safe-area-inset-right) + 20px);width:290px;bottom:12px;background:linear-gradient(transparent,#152830b3);border-radius:16px;padding:12px}
+ #controls .buttons button{min-height:56px}#hint{font-size:11px;line-height:1.35}
+ #lookPad{right:0;top:100px;bottom:170px;width:38%}
+ #hud{top:62px;left:24px;right:24px;justify-content:center;gap:48px}
+ #runStatus{top:66px;left:24px;right:auto;max-width:30vw}#districtStatus{top:116px;max-width:30vw}
+ #callout{top:23%;text-align:center;padding:0}header{padding-left:24px;padding-right:24px}
+}
+@media(orientation:landscape) and (max-height:500px){#panel{padding:12px 20px}#panel h1{font-size:40px}#panel p{font-size:11px}#walkStick{width:96px;height:96px;bottom:28px}#hud{gap:26px}#controls{width:260px}#runStatus{font-size:10px}}
