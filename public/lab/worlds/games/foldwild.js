@@ -42,7 +42,7 @@ export default function createGame(api){
       if(remaining===0&&!complete){complete=true;say('The spring is resting. Try a new set of folds.');api.finish({title:'The spring grew quiet',detail:`You grew ${grows.length} of three gardens. Restart to try a new arrangement. Match the blue river ends across the paper edges.`,score:grows.length*200});}
     },
     draw(ctx){
-      ctx.save();const scrim=ctx.createLinearGradient(0,110,0,665);scrim.addColorStop(0,'rgba(13,28,33,.22)');scrim.addColorStop(1,'rgba(13,28,33,.68)');ctx.fillStyle=scrim;ctx.fillRect(0,100,420,565);
+      ctx.save();const scrim=ctx.createLinearGradient(0,0,0,680);scrim.addColorStop(0,'rgba(13,28,33,.22)');scrim.addColorStop(1,'rgba(13,28,33,.68)');ctx.fillStyle=scrim;ctx.fillRect(0,0,420,680);
       // The spring hangs beside the first paper panel.
       ctx.strokeStyle='rgba(180,222,237,.4)';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(22,195);ctx.lineTo(22,215);ctx.lineTo(57,215);ctx.stroke();ctx.strokeStyle='#b7edf6';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#d2f9ff';ctx.beginPath();ctx.arc(22,192,6,0,TAU);ctx.fill();
       ctx.textAlign='center';ctx.font='9px system-ui';ctx.fillStyle='#dbf2ee';ctx.fillText('SPRING',33,172);

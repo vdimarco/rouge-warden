@@ -65,7 +65,7 @@ export default function createGame(api) {
   }
   function draw(ctx) {
     ctx.save();
-    const bg = ctx.createLinearGradient(0, 80, 0, 390); bg.addColorStop(0, 'rgba(11,35,54,.22)'); bg.addColorStop(1, 'rgba(9,35,49,.86)'); ctx.fillStyle = bg; ctx.fillRect(0, 75, 420, 335);
+    const bg = ctx.createLinearGradient(0, 80, 0, 390); bg.addColorStop(0, 'rgba(11,35,54,.22)'); bg.addColorStop(1, 'rgba(9,35,49,.86)'); ctx.fillStyle = bg; ctx.fillRect(0, 0, 420, 680);
     text(ctx, 'CARRY YOUR LIVING SHIP TO DAWN', 210, 93, 10, '#d4deda', 650);
     for (let i = 0; i < 3; i++) {
       const x = laneX(i); ctx.beginPath(); ctx.moveTo(x, 105); ctx.lineTo(x, 368); ctx.strokeStyle = 'rgba(170,228,223,.13)'; ctx.setLineDash([2, 11]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);

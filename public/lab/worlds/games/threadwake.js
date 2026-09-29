@@ -46,7 +46,7 @@ export default function createGame(api){
     },
     draw(ctx){
       ctx.save();
-      const shade=ctx.createLinearGradient(0,90,0,680);shade.addColorStop(0,'rgba(3,22,28,.04)');shade.addColorStop(1,'rgba(3,22,28,.58)');ctx.fillStyle=shade;ctx.fillRect(0,80,420,600);
+      const shade=ctx.createLinearGradient(0,90,0,680);shade.addColorStop(0,'rgba(3,22,28,.04)');shade.addColorStop(1,'rgba(3,22,28,.58)');ctx.fillStyle=shade;ctx.fillRect(0,0,420,680);
       for(let i=0;i<17;i++){let x=(i*83+time*(i%2?4:-3)+420)%420,y=140+(i*127)%480+Math.sin(time+i)*12;ctx.globalAlpha=.22+Math.sin(time+i)*.12;ctx.fillStyle='#baffdc';ctx.beginPath();ctx.arc(x,y,1.7,0,TAU);ctx.fill();}ctx.globalAlpha=1;
       // Starting island with a folded underside and gently moving grass.
       ctx.fillStyle='#23494a';ctx.beginPath();ctx.moveTo(0,588);ctx.bezierCurveTo(40,573,103,576,148,593);ctx.lineTo(92,622);ctx.lineTo(34,616);ctx.closePath();ctx.fill();ctx.strokeStyle='#86c7a6';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,588);ctx.quadraticCurveTo(80,570,145,592);ctx.stroke();

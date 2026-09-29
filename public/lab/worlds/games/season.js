@@ -123,7 +123,7 @@ export default function createGame(api) {
   }
   function draw(ctx) {
     ctx.save();
-    const wash = ctx.createLinearGradient(0, 70, 0, 535); wash.addColorStop(0, 'rgba(16,26,39,.22)'); wash.addColorStop(1, 'rgba(16,30,36,.84)'); ctx.fillStyle = wash; ctx.fillRect(0, 60, W, 495);
+    const wash = ctx.createLinearGradient(0, 70, 0, 535); wash.addColorStop(0, 'rgba(16,26,39,.22)'); wash.addColorStop(1, 'rgba(16,30,36,.84)'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
     txt(ctx, 'A LITTLE TIME CAN OPEN A WORLD', 210, 91, 10, '#e3d9b5', 'center', 650);
     for (const p of particles) { ctx.globalAlpha = 0.24 + Math.sin(time + p.p) * 0.18; ctx.fillStyle = '#fff3a9'; ctx.beginPath(); ctx.arc(p.x + Math.sin(time * 0.2 + p.p) * 8, p.y, 1.5, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1;
     // Sloping islands establish three readable crossings.
