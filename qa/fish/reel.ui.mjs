@@ -434,6 +434,90 @@ async function padChecks(P, tag) {
 }
 
 /* ---------- screenshots ---------- */
+/* ---------- the gauge: the rub band, the red line-out text, the stage marks and the label ---------- */
+async function gaugeChecks(P, tag) {
+  const { page } = P;
+  // count the pixels in a rectangle (css px of the gauge) that match a colour test, read back from the canvas
+  const count = (rect, test) => page.evaluate(([r, t]) => {
+    const g = T.gauge, d = g.dpr, c = g.cv.getContext("2d");
+    const x0 = Math.max(0, Math.floor(r[0] * d)), y0 = Math.max(0, Math.floor(r[1] * d)), w = Math.max(1, Math.floor(r[2] * d)), h = Math.max(1, Math.floor(r[3] * d));
+    const px = c.getImageData(x0, y0, w, h).data, f = new Function("r", "g", "b", "a", "return " + t);
+    let n = 0;
+    for (let i = 0; i < px.length; i += 4) if (f(px[i], px[i + 1], px[i + 2], px[i + 3])) n++;
+    return n;
+  }, [rect, test]);
+  const shot = async (name, sel) => {
+    if (process.env.ONLY === "checks") return;
+    const clip = await page.evaluate((s) => { T.freeze(true); const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; }, sel);
+    await page.screenshot({ path: path.join(SHOTS, "reel-" + tag.replace(/\W+/g, "-") + "-" + name + ".png"), clip, timeout: 120000 });
+    await page.evaluate(() => T.freeze(false));
+  };
+  const RED = "a > 200 && r > 165 && g < 110 && b < 100", CREAM = "a > 200 && r > 225 && g > 215 && b > 190";
+  const settle = async () => { await page.evaluate(() => { T.freeze(false); }); await sleep(700); };
+  const size = await page.evaluate(() => { T.mode("reel"); T.gauge.resize(); return { w: T.gauge.w, h: T.gauge.h }; });
+  const { w, h } = size, top = h - 32;
+  const FISH = { tfrac: 0.3, dragFrac: 0.4, slip: 0, lineOut: 40, depth: 2, stamina: 0.7, name: "Walleye", rub: 0, spool: 0, phases: null, label: "" };
+  const set = (o) => page.evaluate((o) => T.gauge.set(o), Object.assign({}, FISH, o));
+
+  // set() takes the new keys, keeps the old ones, and ignores what it does not know
+  const back = await page.evaluate(() => { T.gauge.set({ rub: 0.4, spool: 0.7, phases: [0.6, 0.3], label: "Big fish on!", nonsense: 5 }); T.gauge.set(null); const s = T.gauge.s; return { rub: s.rub, spool: s.spool, phases: s.phases, label: s.label, nonsense: "nonsense" in s, tfrac: s.tfrac }; });
+  check(back.rub === 0.4 && back.spool === 0.7 && JSON.stringify(back.phases) === "[0.6,0.3]" && back.label === "Big fish on!" && !back.nonsense, `${tag}: gauge.set() takes rub, spool, phases and label, and ignores the rest (${JSON.stringify(back)})`);
+  const bad = await page.evaluate(async () => {
+    try { for (const o of [{ rub: NaN, spool: "x", phases: "no", label: null }, { phases: [NaN, -1, 0, 1, 2, 0.5] }, { rub: 9, spool: -3 }, { rub: undefined }]) { T.gauge.set(o); T.gauge.draw(0.016); } return "ok"; } catch (e) { return e.message; }
+  });
+  check(bad === "ok", `${tag}: nonsense values in the new fields do not break the gauge (${bad})`);
+
+  // the rub band: red pixels under the arc, none with a clean line
+  await set({}); await settle();
+  const band = [12, top - 10, w - 24, 10];
+  const r0 = await count(band, RED);
+  await set({ rub: 0.8 }); await settle();
+  const r8 = await count(band, RED);
+  await set({ rub: 0.2 }); await settle();
+  const r2 = await count(band, RED);
+  check(r0 < 30 && r8 > 120 && r8 > 2.5 * r2 && r2 > r0, `${tag}: the rub band fills as the line rubs (red pixels: none ${r0}, 20% ${r2}, 80% ${r8})`);
+  await set({ rub: 0.8 }); await settle();
+  await shot("gauge-rub", "#gaugeBox");
+  // it is a band, not a spot: it runs from the left edge in
+  const left = await count([12, top - 10, (w - 24) * 0.5, 10], RED), right = await count([12 + (w - 24) * 0.6, top - 10, (w - 24) * 0.4, 10], RED);
+  check(left > 40 && right < left * 0.6, `${tag}: an 80% band ends before the right edge (left half ${left}, right 40% ${right})`);
+
+  // the spool: the line-out number turns red above 0.6
+  const col = [w * 0.5, 0, w * 0.5 - 4, top - 12];
+  await set({ spool: 0.3 }); await settle();
+  const s3 = await count(col, RED);
+  await set({ spool: 0.59 }); await settle();
+  const s59 = await count(col, RED);
+  await set({ spool: 0.65 }); await settle();
+  const s65 = await count(col, RED);
+  await set({ spool: 0.9 }); await settle();
+  const s9 = await count(col, RED);
+  await shot("gauge-spool", "#gaugeBox");
+  check(s3 < 40 && s59 < 40 && s65 > 90 && s9 > 90, `${tag}: the line out turns red above 0.6 of the spool (red pixels: 0.3 ${s3}, 0.59 ${s59}, 0.65 ${s65}, 0.9 ${s9})`);
+
+  // the stage marks on the stamina bar: a cream tick where each next stage starts
+  const bx = 12, bw = w - 24, by = h - 11;
+  await set({}); await settle();
+  const m0 = (await count([bx + bw * 0.6 - 1, by - 6, 2, 3], CREAM)) + (await count([bx + bw * 0.3 - 1, by - 6, 2, 3], CREAM));
+  await set({ phases: [0.6, 0.3] }); await settle();
+  const m6 = await count([bx + bw * 0.6 - 1, by - 6, 2, 3], CREAM), m3 = await count([bx + bw * 0.3 - 1, by - 6, 2, 3], CREAM);
+  const mMid = await count([bx + bw * 0.45 - 1, by - 6, 2, 3], CREAM);
+  await shot("gauge-phases", "#gaugeBox");
+  check(m0 === 0 && m6 > 0 && m3 > 0 && mMid === 0, `${tag}: a legend's stage marks show on the stamina bar at 0.6 and 0.3 (marks ${m6}/${m3}, between ${mMid}, before ${m0})`);
+
+  // the label: red text in the strip in place of the brass name
+  const strip = [12, h - 30, w - 24, 14];
+  await set({}); await settle();
+  const l0 = await count(strip, RED);
+  await set({ label: "Big fish on!" }); await settle();
+  const l1 = await count(strip, RED);
+  await shot("gauge-label", "#gaugeBox");
+  check(l0 < 20 && l1 > 40, `${tag}: "Big fish on!" takes the place of the name, in red (red pixels: name ${l0}, label ${l1})`);
+  await set({ name: "Golden Loon Bass", rub: 0.5, spool: 0.8, phases: [0.55, 0.3], label: "" }); await settle();
+  await shot("gauge-all", "#gaugeBox");
+  await page.evaluate(() => T.gauge.set({ tfrac: 0, slip: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "" }));
+}
+
 async function shots(P, tag) {
   const { page } = P;
   const shot = async (name, sel) => {
@@ -495,6 +579,7 @@ async function run() {
     await panelChecks(P, "portrait");
     await crankChecks(P, "portrait");
     await padChecks(P, "portrait");
+    await gaugeChecks(P, "portrait");
     // the phone sideways with the browser locked upright: main.js turns #game with CSS
     for (const rot of [90, -90]) {
       await P.page.evaluate((r) => { T.applyRotation(r); }, rot);
@@ -513,6 +598,7 @@ async function run() {
   if (process.env.ONLY !== "shots") {
     await panelChecks(P, "landscape");
     await crankChecks(P, "landscape");
+    await gaugeChecks(P, "landscape");
   }
   await P.ctx.close();
 }
