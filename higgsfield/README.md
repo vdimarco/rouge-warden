@@ -11,6 +11,17 @@ not through the Higgsfield app or its MCP connector.
    Git ignores `.env.local`. Do not put the key anywhere else.
 3. Run `npm install`.
 
+The tools also accept `HIGGSFIELD_API_KEY` (key ID) and `HIGGSFIELD_API_SECRET`
+(secret), matching the server-only variables configured in Vercel. A combined
+`key-id:key-secret` value in `HIGGSFIELD_API_KEY` also works. `HF_CREDENTIALS`
+takes precedence when populated. Do not use a `NEXT_PUBLIC_` prefix.
+
+Vercel variables are available to deployments, not automatically to these local
+CLI tools. Run the tools in an environment with those variables securely injected,
+or use an authenticated Vercel CLI to pull them to the git-ignored `.env.local`.
+Adding Vercel variables alone does not run asset generation; this static game has
+no deployed generation endpoint.
+
 ## Commands
 
 - `npm run models [-- <filter>]` lists the API's models (free). The API makes images and video only.
