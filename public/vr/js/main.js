@@ -411,6 +411,14 @@ function tick(dt, frame, time) {
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   // 3. test overrides
   applyOverrides(inp);
+  // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
+  // clock releases several frames at once
+  for (const h of inp.hands) {
+    if (h.triggerDown) pushRing({ type: "input", side: h.index, edge: "triggerDown", value: h.trigger });
+    if (h.triggerUp) pushRing({ type: "input", side: h.index, edge: "triggerUp", value: h.trigger });
+    if (h.gripDown) pushRing({ type: "input", side: h.index, edge: "gripDown", value: h.grip });
+    if (h.gripUp) pushRing({ type: "input", side: h.index, edge: "gripUp", value: h.grip });
+  }
   // 4. world poses from the current rig
   toWorld(inp);
   const hl = inp.head.local.pos;

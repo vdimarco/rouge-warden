@@ -40,27 +40,38 @@ try {
   // point the right controller at the sky, so the trigger test fires nothing
   await controller(page, "right", { pos: [0.25, 1.4, -0.35], quat: lookQuat([0, 1, -0.05]) });
   await frames(page, 2);
+  // Edges are read from the event ring (main logs each raw edge as it happens): the frozen test clock can release
+  // several XR frames in one step, and a one-frame edge would be gone before a snapshot sees it.
+  const edgesSince = async (since, side) => (await newEvents(page, since)).filter((e) => e.type === "input" && e.side === side);
+  const e0 = (await state(page)).frame;
   await controller(page, "right", { trigger: 1 });
   await frames(page, 1);
-  inp = await input(page);
-  const d1 = inp.hands[1];
-  await frames(page, 1);
+  const d1 = (await input(page)).hands[1];
+  await frames(page, 2);
   const d2 = (await input(page)).hands[1];
+  const e1 = (await state(page)).frame;
   await controller(page, "right", { trigger: 0 });
   await frames(page, 1);
   const d3 = (await input(page)).hands[1];
-  await frames(page, 1);
-  const d4 = (await input(page)).hands[1];
-  check(d1.trigger === 1 && d1.triggerDown && d1.holding && !d2.triggerDown && d2.holding && d3.trigger === 0 && d3.triggerUp && !d3.holding && !d4.triggerUp, "the trigger gives its value and one-frame down and up edges", { d1: [d1.trigger, d1.triggerDown, d1.holding], d2: [d2.triggerDown, d2.holding], d3: [d3.trigger, d3.triggerUp], d4: d4.triggerUp });
+  await frames(page, 2);
+  const tDown = (await edgesSince(e0, 1)).filter((e) => e.edge === "triggerDown");
+  const tUp = (await edgesSince(e1, 1)).filter((e) => e.edge === "triggerUp");
+  const tHeld = (await edgesSince(e0, 1)).filter((e) => e.frame <= e1 && e.edge === "triggerUp");
+  check(d1.trigger === 1 && d1.holding && d2.holding && d3.trigger === 0 && !d3.holding && tDown.length === 1 && tDown[0].value === 1 && tUp.length === 1 && tUp[0].value === 0 && tHeld.length === 0,
+    "the trigger gives its value and exactly one down and one up edge", { d1: [d1.trigger, d1.holding], d2: d2.holding, d3: [d3.trigger, d3.holding], down: tDown, up: tUp, upWhileHeld: tHeld });
+  const g0 = (await state(page)).frame;
   await controller(page, "left", { squeeze: 0.8 });
   await frames(page, 1);
   const g1 = (await input(page)).hands[0];
-  await frames(page, 1);
-  const g2 = (await input(page)).hands[0];
+  await frames(page, 2);
+  const gMid = (await state(page)).frame;
   await controller(page, "left", { squeeze: 0.2 });
   await frames(page, 1);
   const g3 = (await input(page)).hands[0];
-  check(near(g1.grip, 0.8, 1e-3) && g1.gripDown && !g2.gripDown && g3.gripUp && near(g3.grip, 0.2, 1e-3), "the grip gives its value and edges at 0.7 and 0.4", { g1: [g1.grip, g1.gripDown], g2: g2.gripDown, g3: [g3.grip, g3.gripUp] });
+  await frames(page, 1);
+  const gDown = (await edgesSince(g0, 0)).filter((e) => e.edge === "gripDown");
+  const gUp = (await edgesSince(gMid, 0)).filter((e) => e.edge === "gripUp");
+  check(near(g1.grip, 0.8, 1e-3) && near(g3.grip, 0.2, 1e-3) && gDown.length === 1 && gUp.length === 1, "the grip gives its value and one edge each way at 0.7 and 0.4", { g1: g1.grip, g3: g3.grip, down: gDown, up: gUp });
   const ev0 = (await state(page)).frame;
   await controller(page, "left", { stick: [0.1, 0.08] });
   await frames(page, 1);
