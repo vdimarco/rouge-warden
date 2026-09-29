@@ -356,7 +356,6 @@ function startMode(mode) {
   G.hour = startHour(G.place.id, mode);
   if (world) world.setHour(G.hour);
   G.seed = (Math.random() * 1e9) | 0;
-  // INTEGRATION: Rises takes the place for its rings and its gold hours (fish.js, WP2)
   rises = new Rises(LAKE.rng(G.seed), G.place);
   G.paused = false;
   show(null);
@@ -429,8 +428,7 @@ async function switchPlace(id) {
   try {
     LAKE.setPlace(p);
     G.place = p;
-    // INTEGRATION: world.setPlace is built by WP3 (world.js). A world without it throws here, and the trip fails
-    // the same way as a load error does: back to Loon Lake.
+    // a failure here (or in the world build) is the same as a load error: back to Loon Lake
     await world.setPlace(p);
     Sound.setPlace(p.id);
   } catch (err) {
@@ -644,7 +642,6 @@ function landed(r) {
     G.landing = { x: r.x, z: r.z, dist };
     G.ring = rises ? rises.near(r.x, r.z) : null;
     // G.force lets a test pick the fish: { species, kg, bite }
-    // INTEGRATION: LakeSim takes { place } and reads its gear, bite and cover from it (fish.js, WP2)
     G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || {}));
     G.big = null; G.walk = false;
     G.settle = 0;
@@ -736,7 +733,6 @@ function caught(c) {
   $("#catch").classList.toggle("wait", photo);
   relayout(true);
   // after the new layout, so the fish is fitted to the view it will be seen in
-  // INTEGRATION: showCatch takes { photo } for the slow push-in, and draws the measuring board (world.js, WP3)
   world.showCatch(c.id, c.kg, { photo });
   show("catch");
   updateHud();
@@ -1159,7 +1155,7 @@ function reelUpdate(dt) {
   G.roll = lerp(G.roll || 0, s.beaten ? 1.1 : 0, 1 - Math.exp(-dt * 4));
   if (s.fish) {
     const f = s.fish;
-    // INTEGRATION: setFish takes roll, the body turned about its length in radians (world.js, WP3)
+    // roll: the body turned about its length, in radians
     world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
@@ -1412,7 +1408,6 @@ async function boot() {
     REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
     // the map first: the world builds the place the map is set to
     LAKE.setPlace(G.place);
-    // INTEGRATION: createWorld takes { place } (world.js, WP3); an older world ignores it and draws Loon Lake
     world = await createWorld($("#view"), { quality: quality(), place: G.place });
   } catch (err) {
     console.error(err);

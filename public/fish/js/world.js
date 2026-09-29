@@ -661,8 +661,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // fish of the old place go; the two warm-up fish stay (their shaders stay cached), and the fish module frees the skins
     const keep = placeSpecies(PL.id);
     for (const [id, m] of fishCache) if (!keep.includes(id) && !WARM_IDS.includes(id)) { scene.remove(m); for (const mt of m.userData.mats) mt.dispose(); fishCache.delete(id); }
-    // INTEGRATION: releaseFish is WP4's (world-fish.js); until it is merged there is nothing to call
-    if (typeof Fish.releaseFish === "function") Fish.releaseFish([...new Set([...keep, ...WARM_IDS])]);
+    Fish.releaseFish([...new Set([...keep, ...WARM_IDS])]);
     // nothing carries over: no fish, rings, lure, aim or trophy
     S.fish = null; S.follower = null; S.followLast = null; S.followA = 0; S.rings = [];
     for (let i = 0; i < E.RINGS; i++) WU.uRing.value[i].set(0, 0, 0, 0);
