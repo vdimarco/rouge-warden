@@ -13,7 +13,13 @@ const PAD = `<rect x="32" y="8" width="43" height="65" rx="12" fill="#174a55" st
 
 export function sceneMarkup(kind, motion) {
   let body;
-  if (kind === "drag") {
+  if (kind === "strength") {
+    body = `<circle cx="17" cy="23" r="9" fill="#d6b796"/><path d="M6 70V47q0-15 13-15q11 0 15 15l7 12h27" fill="none" stroke="#658a8c" stroke-width="9" stroke-linecap="round"/>
+      <rect x="58" y="8" width="26" height="48" rx="5" fill="none" stroke="#658a8c" stroke-dasharray="3 4"/>
+      <g class="g-strength-phone"><rect x="58" y="8" width="26" height="48" rx="5" fill="#174a55" stroke="#f6efd9" stroke-width="2"/><circle cx="71" cy="35" r="8" fill="#092229" stroke="#e8b64a"/><g class="g-strength-crank"><path d="M71 35l5-5" stroke="#e8b64a" stroke-width="2"/><circle cx="76" cy="30" r="3" fill="#ff7866"/></g><path d="M61 57l-5-13q-1-4 2-4l7 9 12-2 5 7-5 11H65Z" fill="#d6b796" stroke="#f6efd9"/></g>
+      <path d="M72 4Q44-2 39 24m-2-8 2 8 8-4" fill="none" stroke="#e8b64a" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="94" y="30" font-size="8" font-family="sans-serif" fill="#f6efd9">REEL</text><text x="94" y="42" font-size="8" font-family="sans-serif" fill="#e8b64a">POWER</text><rect x="93" y="50" width="38" height="8" rx="3" fill="#174a55"/><g transform="translate(93 50)"><rect class="g-strength-bar" width="38" height="8" rx="3" fill="#e8b64a"/></g>`;
+  } else if (kind === "drag") {
     body = `<rect x="20" y="23" width="98" height="36" rx="10" fill="#174a55" stroke="#b9c9c4" stroke-width="2"/><path d="M32 41h14M91 41h14M98 34v14" stroke="#e8b64a" stroke-width="3"/><text x="58" y="45" fill="#f6efd9" font-size="12" font-family="sans-serif">DRAG</text><circle cx="98" cy="41" r="17" fill="none" stroke="#e8b64a" stroke-width="2"/>`;
   } else if (kind === "reel" || kind === "stop") {
     body = CRANK + (kind === "stop" ? `<g class="g-pause"><rect x="105" y="26" width="6" height="24" rx="2"/><rect x="116" y="26" width="6" height="24" rx="2"/></g>` : `<path class="g-trail" d="M101 23q13 20-4 35m0-8v8h8"/>`);
@@ -47,7 +53,11 @@ export function poseAt(kind, time) {
   const travel = n => `translate(0 ${n.toFixed(3)})`;
   const lift = track([[0, 24], [.15, 24], [.45, -18], [.72, -18], [1, 24]]);
   const flight = track([[0, 0], [.1, 0], [.75, 1], [1, 1]]);
+  const strength = track([[0, 0], [.15, 0], [.5, 1], [.82, 1], [1, 0]]);
   return {
+    "g-strength-phone": { transform: turn(-32 * strength, 71, 59) },
+    "g-strength-crank": { transform: turn(p * 720, 71, 35) },
+    "g-strength-bar": { transform: `scale(${strength.toFixed(3)} 1)` },
     "g-tap": { opacity: track([[0, .25], [.18, 1], [.7, 1], [.85, .25], [1, .25]]) },
     "g-down": { transform: travel(track([[0, -17], [.15, -17], [.55, 15], [.82, 15], [1, -17]])) },
     "g-up": { transform: travel(track([[0, 16], [.22, 16], [.43, -20], [.86, -20], [1, 16]])), opacity: track([[0, 1], [.7, 1], [.86, 0], [1, 0]]) },
@@ -79,6 +89,7 @@ export function lesson(kind, motion, touch = true) {
     reel: ["Turn the crank", "Reel slowly. Pause now and then."],
     hook: [motion ? "Snap the phone up" : touch ? "Swipe rod pad up" : "Press Space", "Set the hook when the fish strikes."],
     pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
+    strength: ["Tip back as you reel", "Bring the top of the phone toward you for extra reel power."],
     stop: ["Stop turning the crank", "Let the fish run."],
     low: [motion ? "Lower the phone" : "Drag the rod pad down", "Lower the rod."],
     turn: [motion ? "Tilt to steer" : "Drag the rod pad sideways", "Keep the fish clear of cover."],
@@ -90,7 +101,7 @@ export function lesson(kind, motion, touch = true) {
 
 // Use the same cue as the main prompt, including urgent fight instructions.
 // This avoids teaching a pump or a crank while the game asks the player to stop.
-export function activeLesson({ phase, step, fishPhase, cue }) {
+export function activeLesson({ phase, step, fishPhase, cue, motion, pullAvailable }) {
   if (phase === "cast") return ({ pinned: "back", loaded: "cast", flight: "flight" })[step] || "hold";
   if (fishPhase === "strike") return "hook";
   if (fishPhase === "land") return "land";
@@ -98,6 +109,7 @@ export function activeLesson({ phase, step, fishPhase, cue }) {
   if (cue.icon === "stop" || /Stop reeling|Let it run|Let it go|rests\.|Rest your arm|following|nibbling/i.test(cue.text + " " + cue.sub)) return "stop";
   if (cue.icon === "low") return "low";
   if (cue.icon === "turn") return "turn";
+  if (motion && pullAvailable && fishPhase === "fight") return "strength";
   if (cue.icon === "crank") return "reel";
   if (/Hold the rod up|Keep your rod up|Keep the rod up/i.test(cue.text + " " + cue.sub)) return "raise";
   return fishPhase === "fight" ? "pump" : "reel";
@@ -157,7 +169,7 @@ export function createGuide(game, button) {
   function place() {
     panel.hidden = false;
     const view = game.querySelector("#view"), W = game.clientWidth, H = game.clientHeight;
-    const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox"]
+    const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox", "pullStrength"]
       .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
