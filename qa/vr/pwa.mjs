@@ -254,9 +254,11 @@ try {
 
   let controlled = false;
   await test("sw.js registers and takes control", async (ok) => {
-    // an old cache of ours must go on activate, and a cache of another game must stay
-    await page.goto(BASE + "/vr/");
+    // an old cache of ours must go on activate, and a cache of another game must stay. Plant them on privacy.html,
+    // which registers no worker, so the game page cannot activate the worker before the caches exist.
+    await page.goto(BASE + "/vr/privacy.html");
     await page.evaluate(async () => { await (await caches.open("fullswing-0.0.0-old")).put("/old", new Response("old")); await (await caches.open("other-game")).put("/x", new Response("x")); });
+    await page.goto(BASE + "/vr/");
     if (/serviceWorker\.register\(/.test(indexSrc)) {
       ok(/<link[^>]+rel="manifest"[^>]+href="\.?\/?(vr\/)?manifest\.webmanifest"/.test(indexSrc) || /<link[^>]+href="\.?\/?(vr\/)?manifest\.webmanifest"[^>]+rel="manifest"/.test(indexSrc), "index.html registers sw.js but has no <link rel=\"manifest\">");
       ok(/serviceWorker\.register\(\s*["']\.\/sw\.js["']/.test(indexSrc), "index.html does not register ./sw.js");

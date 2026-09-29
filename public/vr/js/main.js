@@ -134,7 +134,7 @@ function createWorld() {
   P = G.P = createPlayer(city);
   view = G.view = createCityView(renderer, scene, city, { low: false });
   ropes = G.ropes = createRopes(scene, city, settings);
-  hands = G.hands = createHands(rig, scene);
+  hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
@@ -377,7 +377,7 @@ function flatCamera(fov) {
 /* ---------------- the frame (spec §6, 14 steps) ---------------- */
 const physIn = { move: { x: 0, z: 0 }, jump: false, hands: [0, 1].map(() => ({ pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false })) };
 const lastAim = [null, null], fireWait = [0, 0], hapT = [0, 0], TIPS = [null, null], toggled = [false, false];
-const prevVel = new THREE.Vector3(), accelV = new THREE.Vector3(), comfortIn = { vel: null, speed: 0, accel: 0, yawRate: 0, snapped: false };
+const prevVel = new THREE.Vector3(), accelV = new THREE.Vector3(), comfortIn = { vel: null, speed: 0, accel: 0, yawRate: 0, snapped: false, play: false, ar: false, mode: "xr" };
 const ring = [];
 let ringAt = 0;
 function pushRing(ev) {
@@ -592,6 +592,8 @@ function after(dt, inp, yawDelta) {
   const smooth = settings.turn === "smooth" && inp.mode === "xr";
   comfortIn.yawRate = smooth && dt > 0 ? (Math.abs(yawDelta) / dt) * (180 / Math.PI) : 0;
   comfortIn.snapped = !smooth && inp.mode === "xr" && yawDelta !== 0;
+  // the vignette only works in play; in AR it shows the real room; flat play has no seated offset
+  comfortIn.play = inPlay; comfortIn.ar = G.mode === "ar"; comfortIn.mode = inp.mode;
   comfort.update(dt, comfortIn);
   if (G.mode === "ar" && inPlay) comfort.reality(X, inp.head.local.pos, inp.hands, P);
   // the head inside a wall: fade to the fog colour (to passthrough in AR). The head is never pushed.
@@ -672,11 +674,11 @@ function shotPose(name) {
   const c = city, S = c.start, N = c.needle;
   switch (name) {
     case "start": return { pos: [S.x, S.y + COMFORT.standingHead, S.z], at: [S.x - Math.sin(S.yaw) * 100, S.y + 10, S.z - Math.cos(S.yaw) * 100] };
-    case "needle": return { pos: [N.x + 170, 150, N.z - 160], at: [N.x, 230, N.z] };
+    case "needle": return { pos: [N.x + 45, 190, N.z - 256], at: [N.x, 230, N.z] }; // a clear line to the whole Needle, the sunset behind it
     case "canyon": return { pos: [-18, 24, -60], at: [-18, 60, -400] };
     case "harbour": return { pos: [-90, 28, 470], at: [-90, 80, 150] };
     case "aerial": return { pos: [120, 720, 640], at: [-40, 0, -200] };
-    case "street": return { pos: [-162, 1.7, 40], at: [-162, 8, -300] };
+    case "street": return { pos: [-154.5, 1.7, 30.5], at: [-162, 8, -300] }; // the sidewalk corner, clear of the traffic
     case "diorama": return { pos: [0, 1.65, 0], at: [0, 1.0, -1.1], diorama: true };
     default: return null;
   }
