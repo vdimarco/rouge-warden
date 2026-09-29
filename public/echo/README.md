@@ -1,7 +1,15 @@
-# Loon Echo (lab prototype)
+# Loon Echo — bring your little weirdos home
 
-A one-thumb timing toy at `/echo/`. The lead loon steers horizontally. Each bird behind it repeats the lead's position 0.31 seconds later. Rings drift toward the flock. Every bird that passes through earns points; a full flock pass adds a bonus. Blue rings also add time. Rocks remove birds. Runs last up to 60 seconds and the best score stays in local storage.
+A 72-second lake crossing at `/echo` or `/echo/`. Drag or use the left/right arrows (A/D also work) to steer a parent loon. Rescue up to eight golden chicks; the growing family repeats your turns with a delay. Follow the crossing progress through the quiet reeds, boat channel, and home stretch.
 
-This is a test of the core move, separate from the Cottage Arcade cabinet list. Watch whether a new player understands the delayed flock and asks for another run. The spawn sequence is random, so score comparisons across runs are informal. A later pass should add a daily seed and real-device playtest before considering a full build.
+Rocks hurt the parent or send a chick safely ashore. Boats announce their arrival, then leave two wakes with a visible calm gap. CALL (button or Space) gathers the flock for 2.6 seconds and braces it against wakes, with an eight-second recharge. It does not protect against rocks. The parent has three energy; reaching home counts how many chicks made it. The route repeats so learning it improves the next attempt. Best home count is saved locally; blocked storage or audio does not stop play.
 
-Serve `public/` with a static server and open `/echo/` on a phone or desktop. Drag or use left/right keys. Sound starts with Play.
+Pause with the button, P, or Escape. Switching away automatically pauses. Both end states support a clean restart. Lab and arcade links stay available.
+
+## Art
+
+The alien cottage lake and six original cartoon sprites were generated with Higgsfield GPT Image 2.5, following the requested Rick and Morty-inspired visual direction. Generated images were converted to WebP; the magenta sprite backdrop was keyed out and the six cells cropped into individual assets. Generation IDs and sources are in `art/provenance.json`. The original `lake.webp` remains as the previous prototype's asset; the new game uses `art/lake.webp`.
+
+## Verification
+
+Serve `public/` using a static server. Run `node --test qa/echo/crossing.test.mjs` for rescue, delayed following, call/recharge, wake gaps, collisions, invulnerability, successful arrival, exhaustion, and idle-play regression checks. No package installation is required. Gameplay is in `crossing.js`, rendering/input/audio in `main.js`.

@@ -1,0 +1,16 @@
+{
+  "provider": "Higgsfield",
+  "model": "gpt_image_2_5",
+  "direction": "Rick and Morty-inspired alien cottage lake with original loon characters, flat cel shading and ink outlines",
+  "background": {
+    "job_id": "5d7b3a9a-ca33-496f-b760-d6b795d11ea6",
+    "source": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_063407_5d7b3a9a-ca33-496f-b760-d6b795d11ea6.png",
+    "files": ["lake.webp"]
+  },
+  "sprites": {
+    "job_id": "1360eef9-293c-4937-9c6f-574714926ab2",
+    "source": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20260929_063432_1360eef9-293c-4937-9c6f-574714926ab2.png",
+    "files": ["parent.webp", "chick.webp", "rock.webp", "boat.webp", "nest.webp", "mint-chick.webp"],
+    "processing": "3-column by 2-row sheet; magenta chroma key; trim transparent margins; cap at 320px; lossless WebP"
+  }
+}
