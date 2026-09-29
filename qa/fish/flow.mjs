@@ -19,7 +19,8 @@ try {
   await until(page, () => window.FISH && FISH.G.phase === "cast" && FISH.G.input === "motion", null, 15000);
   check(true, "Use motion starts the derby with motion input");
   // the next fish is a perch that will bite, so the test does not depend on luck
-  await page.evaluate(() => { FISH.G.force = { species: "perch", bite: true }; });
+  // (kg: a long cast can roll a perch too heavy to swing in, and this test wants a small fish it can land)
+  await page.evaluate(() => { FISH.G.force = { species: "perch", kg: 0.35, bite: true }; });
 
   // hold the phone upright; give the camera time to settle at the dock
   await page.evaluate(() => __phone.pose(88));

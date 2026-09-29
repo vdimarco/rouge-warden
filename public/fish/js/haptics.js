@@ -23,10 +23,21 @@ const TUNE = {
   TENSION_MIN: 0.06,    // below this the line is slack, and slack has no feel
   SLIP_MIN: 0.05,       // m/s: below this the drag holds
   SLIP_FULL: 2.5,       // m/s: the drag screams flat out
+  THROB_EVERY: 1000,    // ms: a fish that sulks on the bottom throbs once a second
+  THROB: [34, 70, 20],  // lub-dub
+  RUB_MIN: 0.03,        // the rub meter below this has no feel
+  RUB_SLOW: 130,        // ms between rub pulses when the meter is just above 0 ...
+  RUB_FAST: 60,         // ... and when it is full: a rougher, quicker scratch
+  RUB_PULSE: 7,         // ms: the width of one rub click (grows with the level)
+  THRASH: [14, 111, 14, 111, 14],   // three bumps at 8 Hz: a fish that shakes its head
+  CHARGE: [10, 100, 10],            // two light bumps: it swims at you
+  PHASE_MS: 300,        // a boss starts its next stage: one long buzz
+  LAND: [[25, 70, 25, 70, 60], [40, 60, 40, 60, 40, 60, 140], [60, 50, 60, 50, 60, 50, 250, 100, 400]],   // a fish, a trophy, a legend
+  LAND_TAPS: [2, 3, 5],             // the same on an iPhone: taps 120 ms apart
 };
 
 // A pattern may cut one of the same or a lower priority, never a higher one.
-const PRIO = { tick: 0, tension: 1, drag: 2, bail: 3, bump: 3, splash: 3, load: 3, hookset: 4, thump: 5, land: 5, jolt: 6 };
+const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, hookset: 4, thump: 5, land: 5, jolt: 6 };
 
 const HAS_DOM = typeof window !== "undefined" && typeof document !== "undefined";
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -62,7 +73,7 @@ const S = {
   busyUntil: 0, busyPrio: -1, playingUntil: 0,
   calls: [], lastCont: -1e9, lastTick: -1e9,
   train: "", trainLast: -1e9, jit: 1,
-  crankT: -1, crankPhase: 0.5, whirrLast: -1e9,
+  crankT: -1, crankPhase: 0.5, whirrLast: -1e9, throbLast: -1e9, rubLast: -1e9,
   buzzStart: -1e9, buzzEnd: -1e9, restUntil: 0,
   seed: 0x2f6b1d3,
   legacy: null, legacyLast: -1e9,
@@ -130,7 +141,7 @@ function cancel() {
   S.playingUntil = 0; S.busyUntil = 0; S.busyPrio = -1;
 }
 function resetTrains() {
-  S.train = ""; S.trainLast = -1e9; S.crankT = -1; S.crankPhase = 0.5; S.whirrLast = -1e9;
+  S.train = ""; S.trainLast = -1e9; S.crankT = -1; S.crankPhase = 0.5; S.whirrLast = -1e9; S.throbLast = -1e9; S.rubLast = -1e9;
 }
 function tickPulse(cont) {
   const t = S.clock();
@@ -225,7 +236,21 @@ export const Haptics = {
     if (ok) S.restUntil = S.clock() + 140 + TUNE.SNAP_QUIET;
     return ok;
   },
-  land() { return emit([25, 70, 25, 70, 60], PRIO.land); },
+  // level 0 a fish, 1 a trophy, 2 a legend: the bigger the fish, the longer the shake of the hand
+  land(level = 0) {
+    const k = clamp(Math.round(num(level)), 0, 2);
+    if (S.kind === "ios") {
+      // one tap cannot say how big it is: taps in a row can
+      for (let i = 1; i < TUNE.LAND_TAPS[k]; i++) setTimeout(() => legacyTick(PRIO.land), i * 120);
+    }
+    return emit(TUNE.LAND[k], PRIO.land);
+  },
+  // a fish shakes its head: three bumps at 8 Hz
+  thrash() { return emit(TUNE.THRASH, PRIO.bump); },
+  // a fish swims at you: two light bumps
+  charge() { return emit(TUNE.CHARGE, PRIO.bump); },
+  // a boss starts its next stage: one buzz of 300 ms
+  phase() { return emit([TUNE.PHASE_MS], PRIO.thump); },
   splash(s) {
     s = clamp(num(s, 0.5), 0, 1);
     const w = 10 + 22 * s;
@@ -263,6 +288,31 @@ export const Haptics = {
       S.trainLast = t;
       S.jit = mode === "drag" ? 0.9 + 0.2 * rnd() : 0.8 + 0.4 * rnd();
     }
+  },
+  // A fish sulks on the bottom: a slow throb, once a second. Call it every frame while it lasts; it keeps its own time.
+  throb() {
+    if (S.kind !== "vibrate") return false;
+    const t = S.clock();
+    if (!S.enabled || t < S.muteUntil || t - S.throbLast < TUNE.THROB_EVERY) return false;
+    if (!emit(TUNE.THROB, PRIO.throb, true)) return false;
+    S.throbLast = t;
+    return true;
+  },
+  // The line rubs on a stump, a log or the rocks. level is the rub meter, 0..1: a scratchy double click that comes
+  // quicker and harder as the meter fills, and stops when it empties. Call it every frame.
+  rub(level) {
+    if (S.kind !== "vibrate") return false;
+    level = clamp(num(level), 0, 1);
+    const t = S.clock();
+    if (level < TUNE.RUB_MIN || !S.enabled || t < S.muteUntil) { S.rubLast = -1e9; return false; }
+    const gap = TUNE.RUB_SLOW - (TUNE.RUB_SLOW - TUNE.RUB_FAST) * level;
+    // a scratch is never even
+    if (t - S.rubLast < gap * (0.85 + 0.3 * rnd())) return false;
+    const w = TUNE.RUB_PULSE + 5 * level, pat = [w, 16, w];
+    if (!buzzRoom(t, sum(pat))) return false;
+    if (!emit(pat, PRIO.rub, true)) return false;
+    S.rubLast = t;
+    return true;
   },
   // Every frame while reeling: about 4 gear ticks per crank turn, at most ~15 a second. Faster than that, a light whirr.
   setCrank(revPerSec) {
@@ -407,7 +457,7 @@ export const Haptics = {
   _clock(fn) { S.clock = typeof fn === "function" ? fn : () => performance.now(); },
   _reset() {
     Object.assign(S, { gesture: false, muteUntil: 0, busyUntil: 0, busyPrio: -1, playingUntil: 0, calls: [], lastCont: -1e9, lastTick: -1e9,
-      buzzStart: -1e9, buzzEnd: -1e9, restUntil: 0, seed: 0x2f6b1d3, legacyLast: -1e9 });
+      buzzStart: -1e9, buzzEnd: -1e9, restUntil: 0, seed: 0x2f6b1d3, legacyLast: -1e9, throbLast: -1e9, rubLast: -1e9 });
     resetTrains();
   },
   _tune: TUNE,

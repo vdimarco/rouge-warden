@@ -616,13 +616,21 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
 // Reel It In: the derby best and the biggest fish; its screen flips between the lake and a catch
 {
   const fs = store.get("fish.v1", null), fc = $(".cab.fish");
-  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS" };
+  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS",
+    crappie: "CRAPPIE", bowfin: "BOWFIN", gar: "GAR", catfish: "CATFISH", whiskers: "WHISKERS", mackerel: "MACKEREL", pollock: "POLLOCK", striper: "STRIPER", bluefish: "BLUEFISH", cod: "COD", bigblue: "BIG BLUE",
+    steelhead: "STEELHEAD", chinook: "CHINOOK", browntrout: "BROWN TROUT", brooktrout: "BROOK TROUT", hookjaw: "HOOKJAW" };
   const kg = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + " KG";
   if (fc) {
-    // one stat, so the line stays short: the derby best, else the biggest fish
+    // one stat, so the line stays short: all four legends, else the places open with the biggest fish, else the derby best
     const n = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
-    $(".hi", fc).textContent = fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest)
-      : fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "HI-SCORE: NONE YET";
+    const big = fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "";
+    const has = (id) => !!(fs && fs.journal && fs.journal[id] && n(fs.journal[id].n) > 0);
+    const legends = ["golden", "whiskers", "hookjaw", "bigblue"].filter(has).length;
+    // Loon Lake is always open; the others when the save says so
+    const open = 1 + ["stumps", "river", "sea"].filter((id) => fs && fs.places && fs.places[id] && (fs.places[id].open === 1 || fs.places[id].open === true)).length;
+    $(".hi", fc).textContent = legends === 4 ? "ALL 4 LEGENDS" + (big ? " · " + big : "")
+      : open > 1 && big ? "PLACES " + open + "/4 · " + big
+      : fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest) : big || "HI-SCORE: NONE YET";
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
