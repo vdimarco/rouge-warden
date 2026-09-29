@@ -1,21 +1,25 @@
 # Neon Ronin
 
-Standalone mobile cyberpunk sword game. Serve `public`, then open `/neon/`.
-The arcade Lab links to the game. No build or external assets are required.
+Serve `public` and open `/neon/`. No build or external assets are required.
 
-## Controls
+## Phone sword controls
 
-- Swipe horizontally or vertically to match the enemy's bright guard line.
-- Hold Guard just before the countdown ends to parry. A parry opens the enemy to either cut direction. Holding guard early reduces damage but does not prevent it.
-- Enable gyro over HTTPS. Small wrist turns trigger cuts. Return to a steady grip between cuts. Recenter resets aim.
-- Overdrive spends a full meter to deal damage and slow combat for four seconds.
-- Keyboard: arrows cut, Space guards, E uses overdrive, Escape pauses.
+Choose **Play with gyro** and allow motion access over HTTPS. Hold a comfortable grip for calibration. The phone acts as the hilt: its relative orientation moves and rotates the blade. Recenter sets the current grip as neutral. Rotation or resume also recalibrates.
 
-Clearing a district offers three random circuits. Enemy health and speed rise with districts. Every fifth district features enforcers. High score saves locally when a run ends. Audio starts on the first play gesture. Sound can be muted.
+Catch the incoming cut across the blade: upright against a horizontal cut, sideways against a vertical cut. The dotted guide shows the blocking position. The actual blade segment must cover that position with the correct angle. A steady block stops damage; setting the blade just before impact parries and exposes the enemy.
 
-## Verification
+Swing through the opponent to cut. The projected blade must sweep through the opponent, and the phone must return to a slower movement before another cut can fire. A charged overdrive fires on the next successful cut. Guard and overdrive buttons are hidden in gyro mode.
 
-Run from the repository root: `node --test qa/neon/combat.test.cjs`.
-Tests cover direction matching, cooldown, timed parry, guard damage, pause, progression, overdrive, loss/restart, gyro rearming and touch fallback. Canvas calls run against a mock context at portrait and landscape sizes; this does not validate pixels.
+Use small wrist movements with a firm grip. The game pauses and returns to touch controls if sensor updates stop. Permission denial and missing sensor data also provide touch controls. Combat waits during calibration.
 
-Browser visual QA was blocked in the build workspace because Playwright had no browser executable. Test on Android Chrome and iOS Safari before release, including permission denial, orientation changes, background/resume, and sensitivity. The 105 degrees/second cut threshold requires physical-device tuning. No long-session fun or retention claim has been validated.
+## Touch and keyboard
+
+Choose Play with touch, or switch from gyro in the settings. Swipe along the enemy's bright line. Hold Guard just before impact for a parry. Early touch guards reduce damage. Arrows cut; Space guards; E uses overdrive; Escape pauses.
+
+## Progress and verification
+
+District clears offer random circuits. Health and speed rise with districts; every fifth district has enforcers. Best score saves locally at the end of a run. Audio starts on the play gesture and can be muted.
+
+Run `node --test qa/neon/combat.test.cjs` from the repository root. Six tests cover combat, pose-based blocking, blade sweeps, gyro rearming, automatic overdrive, stale sensors, permission denial, calibration, compass wrap, landscape calibration and touch fallback.
+
+Browser execution remains blocked by the build environment (`socket() failed: Operation not permitted`). Tests use simulated orientation events and a mock canvas. Physical-device feel, motion permissions on iOS/Android, visual layout and balance still require playtesting.

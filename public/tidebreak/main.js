@@ -66,6 +66,8 @@ joy.addEventListener('pointerdown', e => { if (!running || paused || moveId !== 
 joy.addEventListener('pointermove', moveStick);
 for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEventListener(type, e => { if (e.pointerId !== moveId) return; moveId = null; movement.x = movement.y = 0; $('thumb').style.transform = ''; });
 skillButtons.forEach(b => {
+  // Native keyboard and assistive activation do not send a pointer sequence.
+  b.addEventListener('click', e => { if (e.detail === 0 && running && !paused) { sound.start(); castQueue = { slot: +b.dataset.skill, aim: null }; } });
   b.addEventListener('pointerdown', e => { if (!running || paused || skillId !== null) return; e.preventDefault(); sound.start(); skillId = e.pointerId; skillSlot = +b.dataset.skill; skillOrigin = { x: e.clientX, y: e.clientY }; aim = null; b.setPointerCapture(e.pointerId); });
   b.addEventListener('pointermove', e => { if (e.pointerId !== skillId) return; const x = e.clientX - skillOrigin.x, y = e.clientY - skillOrigin.y; aim = Math.hypot(x, y) > 12 ? { x, y } : null; });
   b.addEventListener('pointerup', e => { if (e.pointerId !== skillId) return; castQueue = { slot: skillSlot, aim }; skillId = null; skillSlot = null; aim = null; });

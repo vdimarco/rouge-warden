@@ -245,9 +245,8 @@ async function chooseInput(then) {
   if (save.input === "motion") {
     // a returning player: ask again inside this tap (iOS forgets between visits)
     const req = Motion.request();
-    lockPortrait();
     const st = await req;
-    if (st === "granted") { G.input = "motion"; then(); return; }
+    if (st === "granted") { G.input = "motion"; lockPortrait(); then(); return; }
   }
   $("#setupNote").hidden = true;
   $("#useMotion").hidden = false;
@@ -259,10 +258,10 @@ $("#useMotion").addEventListener("click", async () => {
   Sound.init(); Haptics.unlock();
   Sound.sfx("ui");
   const req = Motion.request();
-  lockPortrait();
   const st = await req;
   if (st === "granted") {
     G.input = "motion"; save.input = "motion"; persist();
+    lockPortrait();
     show(null);
     const f = setupThen; setupThen = null; if (f) f();
     return;
@@ -283,13 +282,44 @@ $("#useTouch").addEventListener("click", () => {
   const f = setupThen; setupThen = null; if (f) f();
 });
 
-// Android: full screen with a portrait lock, so the browser never turns the page in the middle of a cast.
-// iPhone has neither API and skips this: if its page turns, we turn #game back (see wantedRotation).
+// Fullscreen is an explicit choice for this visit. Motion play in a browser window
+// stays upright through wantedRotation(), without triggering Android's fullscreen notice.
 function lockPortrait() {
-  const el = document.documentElement;
-  if (!touchDevice || !el.requestFullscreen || !screen.orientation || !screen.orientation.lock || document.fullscreenElement) return;
-  try { el.requestFullscreen({ navigationUI: "hide" }).then(() => screen.orientation.lock("portrait")).catch(() => {}); } catch (e) { /* not allowed here */ }
+  if (!touchDevice || G.input !== "motion" || !document.fullscreenElement || !screen.orientation?.lock) return;
+  try { screen.orientation.lock("portrait").catch(() => {}); } catch (e) { /* use the layout fallback */ }
 }
+const fullscreenButtons = $$("[data-fullscreen]");
+let fullscreenBusy = false;
+function syncFullscreen() {
+  const active = !!document.fullscreenElement;
+  for (const b of fullscreenButtons) {
+    b.hidden = !active && !(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+    b.disabled = fullscreenBusy;
+    b.textContent = active ? "Exit fullscreen" : "Fullscreen";
+  }
+}
+for (const b of fullscreenButtons) b.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  if (fullscreenBusy) return;
+  fullscreenBusy = true;
+  syncFullscreen();
+  const exiting = !!document.fullscreenElement;
+  try {
+    if (exiting) await document.exitFullscreen();
+    else {
+      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+      lockPortrait();
+    }
+  } catch (e) {
+    toast(exiting ? "Use your browser's fullscreen control to exit." : "Fullscreen is unavailable. Keep playing in this window.");
+  } finally {
+    fullscreenBusy = false;
+    syncFullscreen();
+    relayout(true);
+  }
+});
+document.addEventListener("fullscreenchange", () => { syncFullscreen(); relayout(true); });
+syncFullscreen();
 
 /* ---------------- wake lock: the screen must not sleep while you wait for a bite ---------------- */
 let wake = null;
@@ -941,7 +971,7 @@ $("#optQuality").addEventListener("change", (e) => { save.quality = e.target.val
 $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
     const st = await Motion.request();
-    if (st === "granted") { G.input = "motion"; save.input = "motion"; }
+    if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
     else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? "Motion is blocked for this page." : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
