@@ -10,7 +10,7 @@ function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;cons
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
 function panel(html){$('panel').innerHTML=html;$('overlay').hidden=false;$('controls').hidden=true}
-function menu(){panel(`<div class="eyebrow">MOTION COMBAT / ENDLESS RUN</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Your phone is the hilt. Turn it to move the blade. Catch an incoming strike across your blade, then swing through the enemy.</p><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">Hold a firm grip and use small wrist movements. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
+function menu(){panel(`<div class="eyebrow">FIRST-PERSON / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>A blade of light. A city that hunts you.</p><p>Your phone is the hilt. Turn it to move the blade. Catch an incoming strike across your blade, then swing through the enemy.</p><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">Hold a firm grip and use small wrist movements. Recenter sets your current grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
 function start(){audioStart();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say('MATCH THE BRIGHT LINE')}
 function resume(){state='play';resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
 function spawn(){const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0)}
@@ -108,16 +108,80 @@ addEventListener('deviceorientation',e=>{
 });
 function update(dt){time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);if(state!=='play')return;if(gyro){if(!raw)return;if(performance.now()-sword.last>500){disableGyro('Motion signal lost. Swipe to play.');pause();return}const blocked=bladeBlocks();if(blocked&&!guard)guardAt=time;guard=blocked;$('hint').textContent=guard?'BLADE SET · catch the strike':enemy.dir===0?'Hold the blade upright across the incoming cut.':'Turn the blade sideways across the incoming cut.';}enemy.hit=Math.max(0,enemy.hit-dt);enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=guard?(gyro?0:5):(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else {if(guard&&gyro){burstParticles(W*.5,H*.48,'#65efff',18);tone(480,.09)}say(guard?'BLADE BLOCK':'HIT')}}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
 function line(x1,y1,x2,y2,c,w=1){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
-function draw(){ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
-if(enemy){const x=W/2,y=H*.45,s=Math.min(W*.25,H*.19),bob=Math.sin(time*3)*4;ctx.save();ctx.translate(x+Math.sin(enemy.hit*80)*enemy.hit*30,y+bob);ctx.shadowBlur=enemy.hit>0?28:12;ctx.shadowColor=enemy.boss?'#ff579e':'#42dce8';ctx.strokeStyle=enemy.phase==='open'?'#caff54':'#74c9e0';ctx.lineWidth=2;ctx.fillStyle=enemy.hit>0?'#b2ebf8':'#182039';ctx.beginPath();ctx.moveTo(-s*.42,-s*.55);ctx.lineTo(0,-s*.75);ctx.lineTo(s*.42,-s*.55);ctx.lineTo(s*.26,-s*.12);ctx.lineTo(-s*.26,-s*.12);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,-s*.4,s*.25,-s*.4,'#ff64c9',5);ctx.beginPath();ctx.moveTo(-s*.28,-s*.05);ctx.lineTo(-s*.62,s*.28);ctx.lineTo(-s*.4,s*.7);ctx.lineTo(s*.4,s*.7);ctx.lineTo(s*.62,s*.28);ctx.lineTo(s*.28,-s*.05);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,s*.7,-s*.35,s*1.2,'#54829f',13);line(s*.25,s*.7,s*.35,s*1.2,'#54829f',13);const c=enemy.phase==='open'?'#caff54':'#ff6bcc';if(enemy.dir===0)line(-s*.85,s*.15,s*.85,s*.15,c,5);else line(0,-s*.7,0,s*.85,c,5);ctx.shadowBlur=0;ctx.fillStyle='#d1ddeb';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(enemy.type,0,-s-22);ctx.fillStyle='#303047';ctx.fillRect(-s*.6,-s-12,s*1.2,4);ctx.fillStyle=c;ctx.fillRect(-s*.6,-s-12,s*1.2*Math.max(0,enemy.hp/enemy.max),4);if(enemy.phase==='windup'){const ratio=clamp(enemy.timer/enemy.period,0,1);ctx.strokeStyle=ratio<.25?'#ff4b78':'#67efff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,s*.2,s*1.02,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);ctx.stroke();ctx.fillStyle='#e8edfa';ctx.fillText(ratio<.25?'GUARD NOW':'INCOMING',0,s*1.5)}else{ctx.fillStyle='#caff54';ctx.fillText('EXPOSED · CUT',0,s*1.5)}ctx.restore()}
+// Generated raster plates are composited with live combat, weather and the
+// orientation-driven weapon. Keep procedural art as a loading/error fallback.
+const art={};
+for(const name of ['street','duelist','grip']){
+  const image=new Image();image.decoding='async';image.src=`art/${name}.webp`;
+  art[name]=image;
+}
+const ready=image=>image&&image.complete&&image.naturalWidth>0;
+function drawStreet(){
+  const im=art.street,scale=Math.max(W/im.naturalWidth,H/im.naturalHeight)*1.04;
+  const w=im.naturalWidth*scale,h=im.naturalHeight*scale;
+  const shift=gyro?sword.pose.x:aim.x;
+  ctx.drawImage(im,(W-w)/2-shift*5,(H-h)*.43,w,h);
+  const shade=ctx.createLinearGradient(0,0,0,H);
+  shade.addColorStop(0,'#03081566');shade.addColorStop(.4,'#05071600');shade.addColorStop(1,'#03040ac9');
+  ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+  // Rain and slow vapour retain depth while the camera remains comfortable.
+  for(let i=0;i<55;i++){
+    const x=(i*97+time*17)%W,y=(i*67+time*(230+i%5*30))%H;
+    line(x,y,x-2,y+9,'#b5dce12b',.7);
+  }
+  const mist=ctx.createRadialGradient(W*.3+Math.sin(time*.2)*W*.1,H*.68,1,W*.4,H*.65,W*.6);
+  mist.addColorStop(0,'#719ea61c');mist.addColorStop(1,'#719ea600');ctx.fillStyle=mist;ctx.fillRect(0,H*.35,W,H*.5);
+}
+function drawDuelist(){
+  const im=art.duelist,baseHeight=Math.min(H*.60,W*.94),ratio=im.naturalWidth/im.naturalHeight;
+  const pressure=enemy.phase==='windup'?1-clamp(enemy.timer/enemy.period,0,1):0;
+  const lunge=pressure>.8?(pressure-.8)*.45:0;
+  const height=baseHeight*(1+lunge+(enemy.boss?.10:0)),width=height*ratio;
+  const center=W*.5+Math.sin(time*1.6)*3,feet=H*.74;
+  ctx.save();
+  ctx.fillStyle='#02040b99';ctx.beginPath();ctx.ellipse(center,feet-3,width*.34,9,0,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=.14;ctx.save();ctx.translate(center,feet);ctx.scale(1,-.26);ctx.drawImage(im,-width/2,-height,width,height);ctx.restore();ctx.globalAlpha=1;
+  ctx.translate(center,feet-height+Math.sin(time*2.2)*1.5);
+  if(enemy.hit>0)ctx.translate(Math.sin(enemy.hit*65)*enemy.hit*20,0);
+  ctx.drawImage(im,-width/2,0,width,height);
+  ctx.restore();
+  // Compact world-space health bar and an incoming cut projected on the body.
+  const top=feet-height;
+  ctx.fillStyle='#070b16b3';ctx.fillRect(center-53,top-24,106,20);
+  ctx.font='10px monospace';ctx.textAlign='center';ctx.fillStyle='#d8e2e8';ctx.fillText(enemy.type,center,top-11);
+  ctx.fillStyle='#ffffff24';ctx.fillRect(center-50,top-1,100,2);ctx.fillStyle=enemy.phase==='open'?'#caff54':'#ff745b';ctx.fillRect(center-50,top-1,100*Math.max(0,enemy.hp/enemy.max),2);
+  const x=W*.5,y=H*.48,r=Math.min(W,H)*.13,c=enemy.phase==='open'?'#caff54':pressure>.76?'#ff785e':'#efc6a98c';
+  ctx.globalAlpha=enemy.phase==='open'?.65:.25+pressure*.6;
+  if(enemy.dir===0)line(x-r,y,x+r,y,c,2);else line(x,y-r,x,y+r,c,2);
+  ctx.globalAlpha=1;
+  if(enemy.phase==='windup'){
+    ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r*1.3,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-pressure));ctx.stroke();
+  }
+}
+function drawSteel(blade){
+  const dx=blade.bx-blade.ax,dy=blade.by-blade.ay,length=Math.hypot(dx,dy)||1;
+  ctx.save();ctx.translate(blade.ax,blade.ay);ctx.rotate(Math.atan2(dy,dx)+Math.PI/2);
+  const metal=ctx.createLinearGradient(-7,0,8,0);
+  metal.addColorStop(0,'#113540');metal.addColorStop(.22,'#98cbd4');metal.addColorStop(.48,'#e7f0ed');metal.addColorStop(.53,'#6c788b');metal.addColorStop(1,'#222a3d');
+  ctx.fillStyle=metal;ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-5,-length+24);ctx.lineTo(4,-length);ctx.lineTo(8,2);ctx.closePath();ctx.fill();
+  ctx.shadowBlur=guard?16:4;ctx.shadowColor=guard?'#caff54':'#52d6e0';line(-7,1,-5,-length+24,guard?'#d9ffae':'#b3f3ed',1.5);ctx.shadowBlur=0;
+  // Fine highlights on the steel, with a real gloved grip below the guard.
+  for(let i=0;i<9;i++)line(-3,-length*.12-i*length*.075,4,-length*.12-i*length*.075-3,'#eaf6f62b',.5);
+  if(ready(art.grip)){
+    const size=clamp(Math.min(W,H)*.60,150,300);
+    ctx.drawImage(art.grip,-size*.495,-size*.305,size,size);
+  }else{
+    line(-18,0,18,0,'#8b8091',6);line(0,5,0,38,'#24222e',12);
+  }
+  ctx.restore();
+}
+
+function draw(){if(ready(art.street)){drawStreet()}else{ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
+}
+if(enemy&&ready(art.duelist)){drawDuelist()}else if(enemy){const x=W/2,y=H*.45,s=Math.min(W*.25,H*.19),bob=Math.sin(time*3)*4;ctx.save();ctx.translate(x+Math.sin(enemy.hit*80)*enemy.hit*30,y+bob);ctx.shadowBlur=enemy.hit>0?28:12;ctx.shadowColor=enemy.boss?'#ff579e':'#42dce8';ctx.strokeStyle=enemy.phase==='open'?'#caff54':'#74c9e0';ctx.lineWidth=2;ctx.fillStyle=enemy.hit>0?'#b2ebf8':'#182039';ctx.beginPath();ctx.moveTo(-s*.42,-s*.55);ctx.lineTo(0,-s*.75);ctx.lineTo(s*.42,-s*.55);ctx.lineTo(s*.26,-s*.12);ctx.lineTo(-s*.26,-s*.12);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,-s*.4,s*.25,-s*.4,'#ff64c9',5);ctx.beginPath();ctx.moveTo(-s*.28,-s*.05);ctx.lineTo(-s*.62,s*.28);ctx.lineTo(-s*.4,s*.7);ctx.lineTo(s*.4,s*.7);ctx.lineTo(s*.62,s*.28);ctx.lineTo(s*.28,-s*.05);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,s*.7,-s*.35,s*1.2,'#54829f',13);line(s*.25,s*.7,s*.35,s*1.2,'#54829f',13);const c=enemy.phase==='open'?'#caff54':'#ff6bcc';if(enemy.dir===0)line(-s*.85,s*.15,s*.85,s*.15,c,5);else line(0,-s*.7,0,s*.85,c,5);ctx.shadowBlur=0;ctx.fillStyle='#d1ddeb';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(enemy.type,0,-s-22);ctx.fillStyle='#303047';ctx.fillRect(-s*.6,-s-12,s*1.2,4);ctx.fillStyle=c;ctx.fillRect(-s*.6,-s-12,s*1.2*Math.max(0,enemy.hp/enemy.max),4);if(enemy.phase==='windup'){const ratio=clamp(enemy.timer/enemy.period,0,1);ctx.strokeStyle=ratio<.25?'#ff4b78':'#67efff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,s*.2,s*1.02,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);ctx.stroke();ctx.fillStyle='#e8edfa';ctx.fillText(ratio<.25?'GUARD NOW':'INCOMING',0,s*1.5)}else{ctx.fillStyle='#caff54';ctx.fillText('EXPOSED · CUT',0,s*1.5)}ctx.restore()}
 for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line(p.x,p.y,p.x-p.vx*.035,p.y-p.vy*.035,p.color,2)}ctx.globalAlpha=1;for(const t of trails){ctx.globalAlpha=t.life/.22;ctx.shadowBlur=20;ctx.shadowColor='#70faff';if(t.blade)line(t.blade.ax,t.blade.ay,t.blade.bx,t.blade.by,'#d8ffff',7);else if(t.horizontal)line(W*.13,H*.44,W*.87,H*.48,'#d8ffff',7);else line(W*.48,H*.23,W*.53,H*.7,'#d8ffff',7)}ctx.globalAlpha=1;ctx.shadowBlur=0;if(state==='play'){
   const blade=gyro?swordSegment():{ax:W*.65+aim.x*W*.12,ay:H*.75+aim.y*H*.08,bx:W*.52+aim.x*W*.12,by:H*.47+aim.y*H*.08};
-  const dx=blade.bx-blade.ax,dy=blade.by-blade.ay,length=Math.hypot(dx,dy)||1,nx=-dy/length,ny=dx/length;
-  ctx.shadowBlur=guard?28:16;ctx.shadowColor=guard?'#caff54':'#58eaff';
-  line(blade.ax,blade.ay,blade.bx,blade.by,guard?'#caff54':'#66ebff',8);
-  line(blade.ax,blade.ay,blade.bx,blade.by,'#eaffff',2);ctx.shadowBlur=0;
-  line(blade.ax-nx*18,blade.ay-ny*18,blade.ax+nx*18,blade.ay+ny*18,'#b790d5',6);
-  line(blade.ax,blade.ay,blade.ax-dx/length*32,blade.ay-dy/length*32,'#38394f',12);
+  drawSteel(blade);
   if(gyro&&enemy.phase==='windup'){
     const x=W*.5,y=H*.48,l=Math.min(W,H)*.13;
     ctx.setLineDash([5,7]);

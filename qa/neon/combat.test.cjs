@@ -4,9 +4,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 function boot(){
  const elements=new Map(),events={};
- const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',onclick:null,addEventListener(){},setPointerCapture(){},getContext:()=>ctx});return elements.get(id)};
- const s={console,Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
+ const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console,Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
  s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8'),s);
  return {run:code=>vm.runInContext(code,s),events,elements};
 }
@@ -65,3 +65,5 @@ test('permission denial, null samples and landscape calibration preserve touch f
  elements.get('world').onpointerdown({pointerId:1,clientX:20,clientY:300});elements.get('world').onpointermove({pointerId:1,clientX:200,clientY:300});assert.equal(run('enemy.hp'),1);
 });
 test('render path runs at portrait and landscape sizes',()=>{const {run}=boot();run('start();draw();innerWidth=844;innerHeight=390;resize();draw()')});
+
+test('photographic assets render after load and preserve fallback on failure',()=>{const {run}=boot();run('start();draw();for(const im of Object.values(art)){im.complete=true;im.naturalWidth=1024;im.naturalHeight=1536}draw();gyro=true;draw();innerWidth=844;innerHeight=390;resize();draw();art.duelist.naturalWidth=0;draw()')});
