@@ -454,7 +454,8 @@ export class LakeSim {
     // it swims up at a little more than the lure's speed, up to its burst speed, and always a little faster
     // than the lure so a small fish can still catch a brisk retrieve; the prompt tells the player to slow down
     const spd = Math.max(Math.min(P.sp.fight.speed * 1.1, Math.max(0.6, L.speed + 0.8)), L.speed + 0.3);
-    S.tooFast = like < 0.5;
+    // too fast only when the lure moves faster than the fish likes (a lure at rest is not too fast)
+    S.tooFast = like < 0.5 && L.speed > P.sp.lure[1];
     if (dl > 1e-6) {
       const m = Math.min(dl, spd * h) / dl;
       f.x += dx * m; f.y += dy * m; f.z += dz * m;

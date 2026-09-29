@@ -368,6 +368,27 @@ Each toy starts with a card that says what to try. The lab page shows how long y
 
 A House Rules link opens Down the Drain at `/fall/#L=<code>`. The code holds the brush strokes, so a busy layer fits in 2,000 characters. With a layer in the link, the game gives you one life, no unlocks, no banked caps and neutral tuning, so everyone plays the same layer. It saves nothing to your memory, your tuning or the high scores. Every change this needs in `public/fall/index.html` sits behind `Custom.on`, which is off for any other link.
 
+## The studio board
+
+The [Cottage Arcade Studio](https://claude.ai/artifact/1XZhrTjde2i2zNrqxT5KfT) is a page that shows who builds what. Every Claude Code session on this repo is an agent. Every branch, and every local git worktree, is a work tree. A branch with no session (from Codex, for example) is an agent too. Every game in `public/arcade/switch.js` is a cabinet, and so is a new game folder on an open branch. When a new agent starts or a new branch is pushed, the next refresh adds it. Nobody has to add it by hand.
+
+`studio/refresh.mjs` builds the page from `studio/page.html`. It reads the branches, the local worktrees and the pull request refs with git, and the sessions from the Claude Code Remote `list_sessions` tool. It reads the hand-kept parts from the live page and keeps them: the production crew, the stages, the feed, the bug board, and the name, blurb, colour and art of each cabinet. It rebuilds the rest, and it adds a feed line for each new agent, new work tree, merge and new cabinet. It reads `switch.js` and the page titles on a branch as text. It never runs code from a branch.
+
+A keeper session refreshes the board every hour. To refresh it by hand, do the same steps:
+
+1. Save the `list_sessions` result (your own sessions, limit 50) to a file.
+2. Read the live page with the Artifact tool, which saves it to a file.
+3. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
+4. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
+
+| Agent state | When |
+| --- | --- |
+| Working | The session is in a turn now, or a branch with no session got a commit in the last 2 hours |
+| Needs you | The session waits for your answer or approval |
+| Ready for review | The session stopped with work that is not in main, or a branch has an open pull request |
+| Idle | A branch has commits that are not in main, and nobody works on it now |
+| Done | The work is in main, or the session is finished |
+
 ## Files
 
 | Path | What it does |
@@ -410,6 +431,8 @@ A House Rules link opens Down the Drain at `/fall/#L=<code>`. The code holds the
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
+| `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
+| `qa/studio/` | Tests for the studio board |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
@@ -490,6 +513,10 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with the House Rules hooks taken back out, play the same game with a seeded random and a fake clock |
 
 Set `LAB_URL` to test another address, and `SHOTS` to a folder to save screenshots.
+
+### Studio tests
+
+Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git repo with branches, pull request refs and a local worktree, runs `studio/refresh.mjs` on it with made-up sessions, and checks the agents, the work trees, the cabinets and the feed. Then it opens the page in Chromium at desktop and phone width. The browser part needs Playwright (`NODE_PATH=$(npm root -g)`). It exits with code 1 when something fails.
 
 ## Jev and cost
 

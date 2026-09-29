@@ -288,7 +288,8 @@ export class ReelPanel extends Widget {
     if (open || grab) {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
-    } else {
+    } else if (this.s.grab !== "panel") {
+      // (with grab "panel" the lake is for aiming: a rest there before the drag is never a pin)
       p.timer = setTimeout(() => {
         p.timer = 0;
         if (this.ptrs.get(p.id) !== p || p.state !== "wait") return;
