@@ -1,6 +1,6 @@
 // Full Tilt: the page. The physics in physics.js runs at 120 frames a second; this file adds the game (three balls, a
 // skill shot, a ball save, drop targets, top lanes you can shift with the flippers, a multiplier), the plunger,
-// nudging and tilt, the drawing, sound and buzz. It is a bare table on purpose: the question is the flippers.
+// nudging and tilt, the drawing, sound and buzz. The celestial table rotates as a unit in landscape; physics always stays in table coordinates.
 import { makeTable, BALL_R } from "./table.js";
 import { makeWorld, step, setFlip, serve, launch, pullPower, nudge, tip, H } from "./physics.js";
 import { startLoop, fitCanvas } from "../kit/loop.js";
@@ -195,13 +195,14 @@ function bump(dvx, dvy) {
 /* ---------------- input ---------------- */
 // fingers: each pointer is a flipper side (-1 or 1) or the plunger
 const fingers = new Map();
-const pullSpan = () => Math.min(220, innerHeight * 0.25);
+const landscape = () => innerWidth > innerHeight;
+const pullSpan = () => Math.min(220, (landscape() ? innerWidth : innerHeight) * 0.25);
 canvas.addEventListener("pointerdown", (e) => {
   if (onUi(e) || phase !== "play") return;
   e.preventDefault();
-  const side = e.clientX < innerWidth / 2 ? -1 : 1;
+  const side = landscape() ? (e.clientY < innerHeight / 2 ? -1 : 1) : (e.clientX < innerWidth / 2 ? -1 : 1);
   // while the ball waits, the right half is the plunger: slide down to pull it back
-  if (side === 1 && waiting() && pullStart({ y: e.clientY })) {
+  if (side === 1 && waiting() && pullStart({ y: e.clientY, x: e.clientX, wide: landscape() })) {
     fingers.set(e.pointerId, "plunger");
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events have no capture */ }
     return;
@@ -211,7 +212,7 @@ canvas.addEventListener("pointerdown", (e) => {
 });
 window.addEventListener("pointermove", (e) => {
   if (fingers.get(e.pointerId) !== "plunger" || !game.pulling || game.pulling === "key") return;
-  pullTo((e.clientY - game.pulling.y) / pullSpan());
+  pullTo((game.pulling.wide ? game.pulling.x - e.clientX : e.clientY - game.pulling.y) / pullSpan());
 });
 const lift = (e) => {
   const f = fingers.get(e.pointerId);
@@ -267,14 +268,42 @@ function sndNudge(e, t) { tone(e, t, { f: 70, f2: 50, dur: 0.12, peak: 0.3 }); }
 function sndTilt(e, t, len = 0.4) { tone(e, t, { f: 110, dur: len, peak: 0.12, wave: "square", lp: 1200 }); }
 
 /* ---------------- start and end ---------------- */
-labBar();
+const bar = labBar();
+const full = document.createElement("button");
+full.type = "button"; full.textContent = "Full screen";
+full.addEventListener("click", async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch { toast("Use your browser’s full-screen option."); }
+});
+bar.insertBefore(full, bar.lastChild);
+document.addEventListener("fullscreenchange", () => { full.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen"; });
+for (const side of [-1, 1]) {
+  const button = document.createElement("button");
+  button.className = "ui flipper-control " + (side === -1 ? "left-flip" : "right-flip");
+  button.textContent = side === -1 ? "FLIP · Z" : "FLIP · /";
+  button.setAttribute("aria-label", side === -1 ? "Left flipper" : "Right flipper");
+  button.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); button.setPointerCapture(e.pointerId); fingers.set(e.pointerId, side); flip(side, true);
+  });
+  document.body.append(button);
+}
+// Release held controls on focus loss or rotation; keep the current ball and score.
+function releaseControls() {
+  fingers.clear();
+  if (game) { game.pulling = null; game.pull = 0; }
+  setFlip(w, -1, false); setFlip(w, 1, false);
+}
+window.addEventListener("blur", releaseControls);
+window.addEventListener("resize", releaseControls);
 const dmd = $("#dmd");
 const card = startCard({
-  title: "Full Tilt",
-  pitch: "A bare pinball table. We want to know one thing: do the flippers feel like a real machine?",
+  title: "Full Tilt · Celestial",
+  pitch: "Fire a silver comet through a clockwork star atlas. Turn your phone sideways to open the full table.",
   how: [
-    "<b>Flip:</b> hold the left or right half of the screen. Keys: Z and /.",
-    "<b>Launch:</b> put a finger on the right half and slide it down. Let go to shoot. Key: hold Space.",
+    "<b>Flip:</b> hold the marked flipper pads. You can also hold each screen half: left/right upright, top/bottom sideways. Keys: Z and /.",
+    "<b>Launch:</b> slide down on the right half. Sideways: slide left on the bottom half. Release to fire. Keyboard: hold Space, then release.",
     "<b>Skill shot:</b> a soft launch drops the ball into a top lane. The green lane gives 5,000.",
     "<b>Nudge:</b> jolt the phone, or push A, L or ↑. Too many hard nudges tilt the table.",
     "Try a cradle: hold a flipper up and let the ball stop on it. Then let go, and flip as the ball rolls down.",
@@ -290,13 +319,15 @@ function begin() {
   fingers.clear();
   phase = "play";
   dmd.hidden = false;
+  document.body.classList.add("playing");
   S.play();
   S.run();
   card.hide();
-  if (matchMedia("(pointer: coarse)").matches) toast("Slide down on the right half to pull the plunger.", 2600);
+  if (matchMedia("(pointer: coarse)").matches) toast(landscape() ? "Slide left on the bottom half, then release." : "Slide down on the right half, then release.", 2600);
 }
 function over() {
   phase = "end";
+  document.body.classList.remove("playing");
   S.stop();
   const prev = S.data.best, isBest = S.best(game.score);
   setTimeout(() => endC.show({
@@ -309,25 +340,28 @@ function over() {
 /* ---------------- drawing ---------------- */
 let W = 1, Hh = 1, DPR = 1, shake = 0, clock = 0;
 fitCanvas(canvas, (w_, h, r) => { W = w_; Hh = h; DPR = r; });
-const view = { s: 1, ox: 0, oy: 0 };
+const view = { s: 1, ox: 0, oy: 0, wide: false };
 function layout() {
-  // the score panel sits over the table on a tall screen, and beside it on a wide one (see index.html)
-  const top = (W > Hh ? 12 : 104) * DPR, bottom = 10 * DPR;
-  const s = Math.min((W - 12 * DPR) / 500, (Hh - top - bottom) / 1060);
-  view.s = s;
-  view.ox = (W - 500 * s) / 2;
-  view.oy = top + 1060 * s;
+  view.wide = W > Hh;
+  const top = (view.wide ? 46 : 104) * DPR, bottom = 12 * DPR;
+  const width = view.wide ? 1060 : 500, height = view.wide ? 500 : 1060;
+  view.s = Math.max(0.01, Math.min((W - 24 * DPR) / width, (Hh - top - bottom) / height));
+  view.ox = (W - width * view.s) / 2;
+  view.oy = top + (Hh - top - bottom - height * view.s) / 2;
+  if (!view.wide) view.oy += height * view.s;
 }
-// table millimetres to the screen, with y up
+// Rigid rotation keeps the ball circular and collision geometry aligned with the art.
 function world() {
   const j = shake > 0 ? (Math.random() - 0.5) * shake * 8 * DPR : 0;
-  g.setTransform(view.s, 0, 0, -view.s, view.ox + j, view.oy);
+  if (view.wide) g.setTransform(0, view.s, view.s, 0, view.ox + j, view.oy);
+  else g.setTransform(view.s, 0, 0, -view.s, view.ox + j, view.oy);
 }
 // text on the table, the right way up
 function label(text, x, y, size, color) {
   g.save();
   g.translate(x, y);
-  g.scale(1, -1);
+  if (view.wide) { g.rotate(Math.PI / 2); g.scale(1, -1); }
+  else g.scale(1, -1);
   g.font = `800 ${size}px system-ui, sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
@@ -341,8 +375,14 @@ function draw(alpha, dt) {
   shake = Math.max(0, shake - dt * 3);
   layout();
   g.setTransform(1, 0, 0, 1, 0, 0);
-  g.fillStyle = "#0b0f1c";
+  g.fillStyle = "#040a13";
   g.fillRect(0, 0, W, Hh);
+  // Stars outside the cabinet continue its atlas across the viewport.
+  for (let i = 0; i < 90; i++) {
+    const x = ((i * 137.508) % 997) / 997 * W, y = ((i * 71.73) % 991) / 991 * Hh;
+    g.fillStyle = `rgba(145,201,212,${0.12 + 0.16 * Math.sin(i + clock * 0.4) ** 2})`;
+    g.fillRect(x, y, DPR, DPR);
+  }
   world();
   playfield();
   inserts();
@@ -365,15 +405,39 @@ function outlinePath() {
 }
 function playfield() {
   outlinePath();
-  const gr = g.createLinearGradient(0, 40, 0, 1040);
-  gr.addColorStop(0, "#161a3a");
-  gr.addColorStop(0.5, "#1f2358");
-  gr.addColorStop(1, "#2a1a4a");
-  g.fillStyle = gr;
-  g.fill();
-  // the shooter lane is bare wood, and runs on below the table to the plunger
-  g.fillStyle = "#1b1611";
-  g.fillRect(455, 0, 45, 760);
+  const gr = g.createLinearGradient(0, 0, 500, 1040);
+  gr.addColorStop(0, "#102b34"); gr.addColorStop(0.45, "#091827"); gr.addColorStop(1, "#26364a");
+  g.fillStyle = gr; g.fill();
+  g.save(); g.clip();
+  // Engraved meridians, constellations, and a large astrolabe beneath the targets.
+  g.lineWidth = 0.7; g.strokeStyle = "#98c9c51c";
+  for (let y = 80; y < 1060; y += 40) { g.beginPath(); g.moveTo(0,y); g.lineTo(500,y); g.stroke(); }
+  for (let x = 20; x < 500; x += 40) { g.beginPath(); g.moveTo(x,40); g.lineTo(x,1040); g.stroke(); }
+  for (let i = 0; i < 160; i++) {
+    const x = 24 + ((i * 137.508) % 425), y = 300 + ((i * 71.731) % 710);
+    g.fillStyle = i % 7 ? "#c0e8e380" : "#f2d397";
+    g.beginPath(); g.arc(x,y,i % 7 ? 0.8 : 1.8,0,Math.PI*2); g.fill();
+    if (i % 7 === 0) { g.strokeStyle = "#9cbbca30"; g.beginPath(); g.moveTo(x,y); g.lineTo(24+(((i+1)*137.508)%425),300+(((i+1)*71.731)%710)); g.stroke(); }
+  }
+  for (const r of [80, 120, 174, 183, 196]) {
+    g.beginPath(); g.arc(228,660,r,0,Math.PI*2); g.strokeStyle = r > 174 ? "#d0ac6655" : "#68cfc137"; g.lineWidth = r === 183 ? 2 : 1; g.stroke();
+  }
+  for (let i=0;i<60;i++) {
+    const a=i*Math.PI/30, r=i%5===0?173:180;
+    g.beginPath(); g.moveTo(228+Math.cos(a)*r,660+Math.sin(a)*r); g.lineTo(228+Math.cos(a)*193,660+Math.sin(a)*193); g.strokeStyle="#bfa47475"; g.stroke();
+  }
+  // Crescent moon with a luminous rim, drawn into the atlas rather than over the ball.
+  g.beginPath(); g.arc(228,868,40,0,Math.PI*2); g.fillStyle="#dfc88a"; g.fill();
+  g.beginPath(); g.arc(244,878,38,0,Math.PI*2); g.fillStyle="#152938"; g.fill();
+  label("C E L E S T I A L",228,425,22,"#d9c799");
+  label("THE COMET ENGINE",228,392,10,"#8ebcb8");
+  g.strokeStyle="#d6b97655"; g.lineWidth=1;
+  g.beginPath(); g.moveTo(120,373); g.lineTo(335,373); g.stroke();
+  g.restore();
+  const lane = g.createLinearGradient(455,0,500,0);
+  lane.addColorStop(0,"#153d45"); lane.addColorStop(.5,"#08141e"); lane.addColorStop(1,"#183f45");
+  g.fillStyle=lane; g.fillRect(455,0,45,760);
+  for(let y=100;y<750;y+=24) { g.fillStyle="#72dbc230"; g.fillRect(470,y,15,2); }
 }
 function lamp(x, y, r, on, col) {
   if (on) {
@@ -424,7 +488,7 @@ function walls() {
     g.lineTo(...pts[1]);
     g.lineTo(...pts[2]);
     g.closePath();
-    g.fillStyle = game && game.flash["s" + side] > 0 ? "#ffe07a" : "#c0392b";
+    g.fillStyle = game && game.flash["s" + side] > 0 ? "#ffe07a" : "#236b72";
     g.fill();
   }
   for (const s of table.walls) {
@@ -435,6 +499,8 @@ function walls() {
     g.lineTo(s.a[1] === 40 && s.b[1] === 40 ? 455 : s.b[0], s.b[1]);
     g.strokeStyle = s.kick ? "#f4f4f4" : s.oneway ? "rgba(200,200,210,0.5)" : "#b9c0cc";
     g.lineWidth = s.kick ? 7 : s.oneway ? 3 : 6;
+    if (!s.oneway) { g.strokeStyle = "#071019"; g.lineWidth += 7; g.stroke(); g.lineWidth -= 7; }
+    g.strokeStyle = s.kick ? "#8affdf" : s.oneway ? "#8098a080" : "#bea577";
     g.stroke();
   }
   g.beginPath();
@@ -453,20 +519,22 @@ function walls() {
   }
 }
 function bumpers() {
+  const colors = ["#69e5ca", "#e8ad74", "#bda8ff"];
   for (const b of table.bumpers) {
     const hot = game && game.flash["b" + b.id] > 0;
-    g.beginPath();
-    g.arc(b.x, b.y, b.r + 5, 0, Math.PI * 2);
-    g.fillStyle = hot ? "#ffffff" : "#20243f";
-    g.fill();
-    g.beginPath();
-    g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    g.fillStyle = hot ? "#ff6a5a" : "#d8453a";
-    g.fill();
-    g.beginPath();
-    g.arc(b.x, b.y, b.r * 0.55, 0, Math.PI * 2);
-    g.fillStyle = hot ? "#ffffff" : "#f3e2c0";
-    g.fill();
+    g.save(); g.translate(b.x,b.y);
+    const halo=g.createRadialGradient(0,0,15,0,0,53);
+    halo.addColorStop(0,colors[b.id]+"70"); halo.addColorStop(1,colors[b.id]+"00");
+    g.fillStyle=halo; g.beginPath(); g.arc(0,0,53,0,Math.PI*2); g.fill();
+    g.strokeStyle=colors[b.id]; g.lineWidth=1.5;
+    g.beginPath(); g.ellipse(0,0,46,18,clock*.25+b.id,0,Math.PI*2); g.stroke();
+    const body=g.createRadialGradient(-9,10,2,0,0,b.r);
+    body.addColorStop(0,hot?"#ffffff":"#d3eee7"); body.addColorStop(.35,colors[b.id]); body.addColorStop(1,"#102c39");
+    g.beginPath(); g.arc(0,0,b.r,0,Math.PI*2); g.fillStyle=body; g.fill();
+    g.strokeStyle="#e6d5ab"; g.lineWidth=2; g.stroke();
+    g.beginPath(); g.arc(0,0,b.r+5,-clock-b.id,-clock-b.id+Math.PI*1.35); g.strokeStyle=colors[b.id]; g.lineWidth=2; g.stroke();
+    if(hot) { g.beginPath(); g.arc(0,0,b.r+10+(1-game.flash["b"+b.id]/.12)*30,0,Math.PI*2); g.strokeStyle="#d9fff0"; g.stroke(); }
+    g.restore();
   }
 }
 function flippers() {
@@ -482,7 +550,7 @@ function flippers() {
     g.fillStyle = game && game.tilted ? "#8a8a8a" : "#f7f7f7";
     g.fill();
     g.lineWidth = 3;
-    g.strokeStyle = "#d8302c";
+    g.strokeStyle = "#53d4bc";
     g.stroke();
     g.beginPath();
     g.arc(f.px, f.py, 4, 0, Math.PI * 2);
@@ -525,14 +593,14 @@ function ball() {
   // on the plunger, the ball rides back with it
   const y = waiting() && game ? b.y - game.pull * TRAVEL : b.y;
   const sp = Math.hypot(b.vx, b.vy);
-  if (sp > 1500) {
+  if (sp > 400) {
     // a short streak behind a fast ball
-    g.strokeStyle = "rgba(220,230,255,0.25)";
+    g.strokeStyle = "rgba(104,255,216,0.5)";
     g.lineWidth = BALL_R * 1.4;
     g.lineCap = "round";
     g.beginPath();
     g.moveTo(b.x, y);
-    g.lineTo(b.x - b.vx * 0.012, y - b.vy * 0.012);
+    g.lineTo(b.x - b.vx * 0.025, y - b.vy * 0.025);
     g.stroke();
   }
   const gr = g.createRadialGradient(b.x - 4, y + 4, 1, b.x, y, BALL_R);
@@ -574,6 +642,7 @@ startLoop({ step: frame, draw, h: H, maxSteps: 8 });
 
 // hooks for the tests in qa/lab/
 window.QA = {
+  get view() { return { ...view, W, Hh, DPR }; },
   get w() { return w; },
   get game() { return game; },
   get phase() { return phase; },
