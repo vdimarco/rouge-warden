@@ -12,7 +12,7 @@
         "resolution": "1k",
         "aspect_ratio": "9:16",
         "folder_id": "cda385ce-0437-4c31-a52d-9a3df67a76cb",
-        "prompt": "Create a polished mobile game UI concept screenshot for MONSTER MASH, an original folklore beast MOBA. Portrait phone screen, no phone frame. Premium eerie illustrated storybook art with chunky readable silhouettes, luminous amber eyes, midnight indigo, moss green, parchment ivory, acid chartreuse accent. Header small 'THE VEIL IS THIN', large condensed serif-like two-line title MONSTER MASH. Center stunning full body Mothman: huge black feathery wings, two burning red eyes, moth-like fuzzy body, creature not humanoid. Behind him rain-slick small town rooftops dissolve into a deep foggy pine forest with a luminous turquoise portal. Bottom native-looking creature selection four compact cards Mothman / Nessie / Baba Yaga / Jersey Devil, then strong lime button 'START THE HUNT', microtext '3v3 • Shifting realms • 6 min'. Main creature name and role 'MOTHMAN / AMBUSH HUNTER'. Precise clear hierarchy, dense useful screen, beautiful atmospheric concept art, no existing franchise IP, no extra logos."
+        "prompt": "Create a polished mobile game UI concept screenshot for MONSTER MASH, an original folklore beast MOBA. Portrait phone screen, no phone frame. Premium eerie illustrated storybook art with chunky readable silhouettes, luminous amber eyes, midnight indigo, moss green, parchment ivory, acid chartreuse accent. Header small 'THE VEIL IS THIN', large condensed serif-like two-line title MONSTER MASH. Center stunning full body Mothman: huge black feathery wings, two burning red eyes, moth-like fuzzy body, creature not humanoid. Behind him rain-slick small town rooftops dissolve into a deep foggy pine forest with a luminous turquoise portal. Bottom native-looking creature selection four compact cards Mothman / Nessie / Baba Yaga / Jersey Devil, then strong lime button 'START THE HUNT', microtext '3v3 \u2022 Shifting realms \u2022 6 min'. Main creature name and role 'MOTHMAN / AMBUSH HUNTER'. Precise clear hierarchy, dense useful screen, beautiful atmospheric concept art, no existing franchise IP, no extra logos."
       },
       "file": "docs/monster-mash-concept.webp"
     },
@@ -45,9 +45,147 @@
         "output_format": "png"
       },
       "file": "public/tidebreak/art/ground.webp"
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "mothman textured 3D mesh",
+      "request_id": "01a0ee8e-08fe-7132-a4bd-020e7c3d4d3b",
+      "url": "https://v3b.fal.media/files/b/0aac6799/bB8pZMzZzK58gf8apnVls_model.glb",
+      "file": "public/tidebreak/models/mothman.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 6000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "auto",
+        "reference": "PNG conversion of existing mothman portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "nessie textured 3D mesh",
+      "request_id": "01a0ee8e-12cd-7ef0-9bc9-5bf3a2dfd033",
+      "url": "https://v3b.fal.media/files/b/0aac679a/79RwttqVD-7J4v00bzJkO_model.glb",
+      "file": "public/tidebreak/models/nessie.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 6000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "auto",
+        "reference": "PNG conversion of existing nessie portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "baba textured 3D mesh",
+      "request_id": "01a0eea1-9280-7f43-8c91-45380a9e502f",
+      "url": "https://v3b.fal.media/files/b/0aac6818/HwAE3GzBRN0T-SisVbA5t_model.glb",
+      "file": "public/tidebreak/models/baba.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 5000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "auto",
+        "reference": "PNG conversion of existing baba portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "devil textured 3D mesh",
+      "request_id": "01a0eea1-d925-7621-8b2f-e70dff35756a",
+      "url": "https://v3b.fal.media/files/b/0aac6819/7d0ojzDU5wb1_jJ1Z8F5b_model.glb",
+      "file": "public/tidebreak/models/devil.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 5000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "auto",
+        "reference": "PNG conversion of existing devil portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "townhouse textured 3D mesh",
+      "request_id": "01a0eea4-b8a3-7fc3-87c2-f6659bcef83f",
+      "url": "https://v3b.fal.media/files/b/0aac682e/GQSNe_bBCMCLkp2tAwjaV_model.glb",
+      "file": "public/tidebreak/models/townhouse.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 5000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "off",
+        "reference": "PNG conversion of existing townhouse portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "meshy/v7.1/image-to-3d",
+      "purpose": "pinegrove textured 3D mesh",
+      "request_id": "01a0eea4-c024-7430-8d62-4fcff39e4c22",
+      "url": "https://v3b.fal.media/files/b/0aac682d/4Aw-LZwHKMvJc0viV8rkl_model.glb",
+      "file": "public/tidebreak/models/pinegrove.glb",
+      "params": {
+        "model_type": "smart-topology",
+        "target_polycount": 5000,
+        "should_texture": true,
+        "enable_pbr": false,
+        "enable_rigging": false,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "off",
+        "reference": "PNG conversion of existing pinegrove portrait / atlas cell"
+      },
+      "postprocess": "Embedded base color resized to 1024px and JPEG quality83; GLB buffer views repacked. No external URLs loaded at runtime."
+    },
+    {
+      "provider": "fal",
+      "model": "fal-ai/nano-banana-pro",
+      "purpose": "Isometric scene and Night Market design reference",
+      "request_id": "01a0ee8d-4e55-76f0-9190-04800cb97786",
+      "url": "https://v3b.fal.media/files/b/0aac678f/riM4aHqevy6jwLWhvJF1i_RwSH6PTE.png",
+      "file": "docs/monster-iso-concept.webp",
+      "direction": "Two portrait screens: moonlit isometric village battle and native Night Market with recipes, builds, six slots, chartreuse and midnight palette."
+    },
+    {
+      "provider": "fal",
+      "model": "fal-ai/nano-banana-pro",
+      "purpose": "18 item icons in 6x3 atlas",
+      "request_id": "01a0ee95-9306-7271-8f44-07ce30530f16",
+      "url": "https://v3b.fal.media/files/b/0aac67c5/QUGH9n4wMxHgrpBUoWaK6_uyPk43Gr.png",
+      "file": "public/tidebreak/art/items.webp",
+      "params": {
+        "aspect_ratio": "21:9",
+        "resolution": "2K",
+        "output_format": "png",
+        "num_images": 1,
+        "prompt": "Game inventory icon atlas, exactly 6 columns and 3 rows, 18 equal square cells edge to edge, no gutters, NO TEXT. Painterly high end folklore MOBA equipment icons, vibrant magical glow on midnight navy backgrounds, crisp recognizable silhouettes occupying central 75 percent of each cell. Row 1 left to right: sharpened ivory bone shard, cyan swift feather, violet ember gemstone, engraved iron plate, glowing green heart seed, silver pouch spilling moon dust. Row 2: curved ivory nightfang dagger teal aura, red blood talisman amulet, lightning storm talon claw, witch lantern with violet flame, frosty blue bell, living thorn root crown. Row 3: silver moon boots, mystical mirror cloak, ancient grave bell green spirit, hunter\u2019s bone crossbow, quickthorn red spiked thorn blade, beacon heart gold crystal. Consistent three quarter view painted volume, rim light, detailed materials. Square icons packed 6x3 in 2:1 canvas. No words, letters, numbers, borders, grids or UI."
+      }
     }
   ],
-  "processing": "Cropped cells, chroma-key magenta removal, repacked 16 sprites, transparent WebP and four portraits. Ground atlas converted to WebP. Geometry, fog, UI and effects are native code.",
+  "processing": "Cropped cells, chroma-key magenta removal, repacked 16 sprites, transparent WebP and four portraits. Ground atlas converted to WebP. Geometry, fog, UI and effects are native code. Real 3D GLBs replace battlefield creature and scenery sprites. Shader deformation animates creatures; native geometry supplies wisps, wards, bridge planks and tactical effects.",
   "spriteOrder": [
     "Mothman",
     "Nessie",
@@ -66,5 +204,5 @@
     "phone booth",
     "ambush brush"
   ],
-  "limitations": "2D sprites. No rigged 3D or 404-GEN integration. No 404 connector/credential; fal catalog query returned no 404 endpoint. Higgsfield terrain request rejected before submission for unavailable model, then completed through fal."
+  "limitations": "Real textured 3D GLBs with procedural vertex animation. No authored skeletal clips or online multiplayer. 404-GEN remains unconnected. Meshy advertised lowpoly in the schema but rejected that enum; shipped models use the supported smart-topology mode."
 }

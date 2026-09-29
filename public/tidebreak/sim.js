@@ -1,4 +1,5 @@
 // Deterministic Monster Mash rules. Rendering and input are separate.
+import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
 import { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 export const HEROES = [
@@ -7,11 +8,6 @@ export const HEROES = [
   { name: 'Baba Yaga', slug: 'baba', role: 'Walking fortress', note: 'Your hut has legs. Your traps have teeth.', hp: 1820, speed: 285, range: 360, damage: 94, rate: .8, color: '#edc47c', sprite: 2, skills: ['Hut hop', 'Hex trap', 'Stomp ritual'], labels: ['HOP', 'HEX', 'STOMP'], descriptions: ['Hop forward and shield the walking hut.', 'Plant a hidden trap. It roots the next nearby enemy.', 'Three stomps damage and stun foes around the hut.'] },
   { name: 'Jersey Devil', slug: 'devil', role: 'Relentless chaser', note: 'Leap into a brawl. Feed on the fear.', hp: 1690, speed: 365, range: 140, damage: 143, rate: .68, color: '#f6a086', sprite: 3, skills: ['Pine leap', 'Hell shriek', 'Blood moon'], labels: ['LEAP', 'SHRIEK', 'FRENZY'], descriptions: ['Leap over obstacles. Your landing damages and stuns.', 'Send nearby enemies fleeing in fear.', 'Eight seconds of faster attacks, movement and life steal.'] },
 ];
-export const UPGRADES = [
-  { id: 'fang', name: 'Old fang', text: '+28 attack damage', cost: 200 },
-  { id: 'shell', name: 'Iron charm', text: '+360 maximum health', cost: 200 },
-  { id: 'current', name: 'Moon dust', text: '15% shorter skill cooldowns', cost: 200 },
-];
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
   const e = { id: s.nextId++, hp: 100, maxHp: 100, radius: 22, speed: 0, range: 100, damage: 10, rate: 1, attackCd: 0, hit: 0, shield: 0, stun: 0, slow: 0, fear: 0, lastHit: -100, revealedUntil: -1, facing: -Math.PI / 2, ...data };
@@ -19,7 +15,7 @@ function add(s, data) {
 }
 function hero(s, team, kind, lane, human = false) {
   const h = HEROES[kind], front = LANES[lane][2], toward = team ? -1 : 1;
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 80, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0], haste: 1, upgrades: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0], haste: 1, inventory: [], build: BUILDS[kind].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 export function createMatch(kind = 0, seed = 49) {
   const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: [0, 0], winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
@@ -40,26 +36,40 @@ function reward(s, team, xp, gold) {
   for (const h of s.units.filter(e => e.kind === 'hero' && e.team === team)) {
     h.gold += gold; h.xp += xp;
     while (h.level < 10 && h.xp >= h.level * 100) {
-      h.xp -= h.level * 100; h.level++; h.maxHp += 110; h.hp = h.hp > 0 ? Math.min(h.maxHp, h.hp + 230) : 0; h.damage += 13;
+      h.xp -= h.level * 100; h.level++; recalculate(h, HEROES[h.hero]); h.hp = h.hp > 0 ? Math.min(h.maxHp, h.hp + 230) : 0;
       if (h.player) { burst(s, h.x, h.y, '#e3f57b', 140); announce(s, `Level ${h.level}`, h.level === 3 ? 'Your ultimate is unlocked.' : 'Health and attack increased.'); }
     }
   }
 }
 function finish(s, winner, reason) { s.winner = winner; s.reason = reason; announce(s, winner === 0 ? 'Legends never die' : 'Lost to the veil', reason); }
-export function damage(s, source, target, amount) {
+export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
   if (target.kind === 'core' && s.towers[target.team] === 3) { if (source.player && s.time - (s.lockTip || -10) > 4) { announce(s, 'Rift protected', 'Destroy any enemy wardstone first.'); s.lockTip = s.time; } return; }
   if (target.kind === 'hero' && target.respawn > 0) return;
+  if (kind === 'spell') amount += (source.power || 0) * .55;
+  amount *= 100 / (100 + (target.armor || 0));
+  if (target.kind === 'hero' && hasItem(target, 'mirror') && source.kind === 'hero' && s.time >= (target.itemState.mirror || 0)) {
+    target.shield += 220; target.itemState.mirror = s.time + 20; burst(s, target.x, target.y, '#b9c9ff', 105);
+  }
   const absorbed = Math.min(target.shield, amount); target.shield -= absorbed; amount -= absorbed;
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (source.player) s.stats.damage += actual;
   if (source.hp > 0 && source.frenzy > s.time) source.hp = Math.min(source.maxHp, source.hp + actual * .3);
   if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
   if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (t.kind === 'tower' && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
-  if (target.hp > 0) return;
+  if (source.hp > 0 && kind === 'attack' && source.lifesteal) source.hp = Math.min(source.maxHp, source.hp + actual * source.lifesteal);
+  if (target.hp > 0 && target.kind === 'hero' && hasItem(target, 'root') && target.hp < target.maxHp * .35 && s.time >= (target.itemState.root || 0)) {
+    target.shield += 300; target.itemState.root = s.time + 35; burst(s, target.x, target.y, '#b8eb91', 120);
+  }
+  if (target.hp > 0 && kind === 'spell' && source.kind === 'hero' && !['tower', 'core'].includes(target.kind)) {
+    if (hasItem(source, 'lantern')) target.burn = { source: source.id, until: s.time + 3, tick: target.burn?.source === source.id ? target.burn.tick : s.time + 1, amount: 28 + source.power * .05 };
+    if (hasItem(source, 'frost')) target.slow = Math.max(target.slow, 1.2);
+  }
+  if (target.hp > 0) return actual;
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
-    target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
+    if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[2] = Math.max(0, source.cd[2] - 3); }
+    target.burn = null; target.motion = null; target.pendingAttack = null; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (source.kind === 'hero') source.kills++; }
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (source.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
@@ -92,12 +102,32 @@ function nearest(s, a, range, preferHero = false) {
 }
 function attack(s, e, t) {
   if (!t || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
-  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = .24; e.facing = Math.atan2(t.y - e.y, t.x - e.x);
+  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = .42; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x);
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
   e.ambushReady = false; e.revealedUntil = s.time + 2.6;
   const multiplier = s.time > 240 ? 1 + (s.time - 240) / 110 : 1;
-  damage(s, e, t, e.damage * multiplier * (ambush ? 1.75 : 1));
+  e.pendingAttack = { target: t.id, at: s.time + .12, amount: e.damage * multiplier * (ambush ? 1.75 : 1) };
+}
+function resolveAttack(s, e) {
+  const pending = e.pendingAttack; if (!pending || s.time < pending.at) return;
+  e.pendingAttack = null;
+  const t = s.units.find(u => u.id === pending.target);
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) return;
+  damage(s, e, t, pending.amount, 'attack');
+  if (e.kind === 'hero') {
+    const v = e.itemState; v.hits = (v.hits || 0) + 1;
+    if (hasItem(e, 'nightfang') && v.empowered > s.time && s.time >= (v.nightfang || 0)) {
+      damage(s, e, t, 65 + e.power * .5, 'item'); v.empowered = 0; v.nightfang = s.time + 3; burst(s, t.x, t.y, '#fff2ae', 90);
+    }
+    if (v.hits % 3 === 0) {
+      if (hasItem(e, 'thorn')) damage(s, e, t, Math.min(160, t.maxHp * .03), 'item');
+      if (hasItem(e, 'storm')) for (const other of s.units.filter(u => u.id !== t.id && hostile(s, e, u) && distance(t, u) < 300 && canSee(s, e, u)).slice(0, 2)) {
+        damage(s, e, other, 60 + e.power * .2, 'item');
+        s.effects.push({ type: 'beam', x: t.x, y: t.y, tx: other.x, ty: other.y, color: '#86eaff', life: .35, maxLife: .35 });
+      }
+    }
+  }
   s.effects.push({ type: e.range > 200 ? 'beam' : 'slash', x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .2, maxLife: .2 });
 }
 function area(s, e, center, radius, amount, status = {}) {
@@ -110,11 +140,12 @@ export function cast(s, e, slot, aim) {
   if (e.kind !== 'hero' || ![0, 1, 2].includes(slot) || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.cd[slot] > 0 || s.winner !== null || (slot === 2 && e.level < 3)) return false;
   const target = nearest(s, e, 540, true);
   const angle = aim && Math.hypot(aim.x, aim.y) > .1 ? Math.atan2(aim.y, aim.x) : target ? Math.atan2(target.y - e.y, target.x - e.x) : e.facing;
-  e.recall = 0; e.cd[slot] = [4.5, 7, 23][slot] * e.haste; e.facing = angle; e.attackAnim = .3;
+  e.recall = 0; e.cd[slot] = [4.5, 7, 23][slot] * e.haste; e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.itemState.empowered = s.time + 5;
   const color = HEROES[e.hero].color, origin = { x: e.x, y: e.y };
   if (slot === 0) {
     const length = [490, 410, 330, 460][e.hero];
     e.x += Math.cos(angle) * length; e.y += Math.sin(angle) * length; resolveBody(s, e);
+    e.motion = { ...origin, start: s.time, duration: .38, arc: [95, 30, 160, 130][e.hero] };
     s.effects.push({ ...origin, tx: e.x, ty: e.y, color, type: 'beam', life: .45, maxLife: .45 });
     if (e.hero === 0) { e.cloak = s.time + 2; e.revealedUntil = -1; e.ambushReady = true; }
     if (e.hero === 1) { e.hp = Math.min(e.maxHp, e.hp + 190); s.zones.push({ ...origin, team: e.team, source: e.id, radius: 180, life: 7, tick: 0, type: 'water' }); }
@@ -153,14 +184,25 @@ export function portal(s, e = player(s)) {
   const to = PORTALS[gate.to]; burst(s, e.x, e.y, '#c1f4ed', 180, 'ultimate'); e.x = to.x; e.y = to.y; e.portalCd = 10; e.recall = 0; resolveBody(s, e); burst(s, e.x, e.y, '#c1f4ed', 180);
   if (e.player) { s.stats.portals++; announce(s, 'Through the looking glass', 'You crossed the map. Find your ambush.'); } return true;
 }
-export function buy(s, id) {
-  const p = player(s), u = UPGRADES.find(x => x.id === id), count = p.upgrades[id] || 0;
-  if (!u || count >= 3 || p.gold < u.cost || s.winner !== null) return false;
-  p.gold -= u.cost; p.upgrades[id] = count + 1;
-  if (id === 'fang') p.damage += 28;
-  if (id === 'shell') { p.maxHp += 360; if (p.hp > 0) p.hp += 360; }
-  if (id === 'current') p.haste *= .85;
-  return true;
+export function buy(s, id, e = player(s)) { return s.winner === null && purchase(e, id, HEROES[e.hero]); }
+export function sell(s, slot, e = player(s)) { return s.winner === null && sellItem(e, slot, HEROES[e.hero]); }
+export function setBuild(s, id) { const e = player(s); if (!BUILDS.some(b => b.id === id)) return false; e.build = id; e.goal = null; return true; }
+export function setGoal(s, id) { player(s).goal = id; }
+function itemTick(s, e, dt) {
+  if (e.burn && e.hp > 0 && e.burn.tick <= s.time) {
+    const source = s.units.find(v => v.id === e.burn.source);
+    if (source && s.time <= e.burn.until + dt) damage(s, source, e, e.burn.amount, 'item');
+    if (e.burn) e.burn.tick += 1;
+  }
+  if (e.burn && e.burn.until < s.time) e.burn = null;
+  if (e.kind !== 'hero' || e.hp <= 0) return;
+  e.hp = Math.min(e.maxHp, e.hp + e.regen * dt);
+  const v = e.itemState;
+  if (s.time >= (v.aura || 0)) {
+    v.aura = s.time + 1;
+    if (hasItem(e, 'grave')) for (const t of s.units) if (hostile(s, e, t) && distance(e, t) < 220 && lineOfSight(s, e, t)) damage(s, e, t, 24, 'item');
+    if (hasItem(e, 'beacon')) for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && t.hp > 0 && distance(e, t) < 300) t.hp = Math.min(t.maxHp, t.hp + 24);
+  }
 }
 function spawnWave(s) {
   s.wave++;
@@ -233,9 +275,10 @@ export function step(s, input = {}, dt = 1 / 60) {
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
     for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt);
-    e.moving = false;
+    e.moving = false; itemTick(s, e, dt); resolveAttack(s, e);
     if (e.kind === 'hero') {
-      e.cd = e.cd.map(c => Math.max(0, c - dt)); e.portalCd = Math.max(0, e.portalCd - dt); e.gold += dt * 2.1;
+      e.cd = e.cd.map(c => Math.max(0, c - dt)); e.portalCd = Math.max(0, e.portalCd - dt); e.gold += dt * 3.2;
+      if ((!e.player || input.autopilot) && s.time >= (e.nextShop || 0)) { const id = nextPurchase(e); if (id) buy(s, id, e); e.nextShop = s.time + 2; }
       if (e.hp <= 0) {
         e.respawn -= dt;
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp; e.shield = 140; e.waypoint = 1; e.cd = [0, 0, Math.min(6, e.cd[2])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }

@@ -21,12 +21,12 @@ for (const phase of [0, 1]) for (const lane of LANES) for (let i = 1; i < lane.l
   const { s, p, foe } = duel(); s.phase = 1; s.time = 42; Object.assign(p, BRUSH[0]); p.radius = 22; Object.assign(foe, { x: p.x + 180, y: p.y });
   assert.equal(canSee(s, foe, p), false); assert.equal(visibleTo(s, 1, p), false, 'enemy team cannot track a hidden creature');
   p.revealedUntil = s.time + 2; assert.equal(canSee(s, foe, p), true, 'attacking or taking damage reveals cover');
-  p.revealedUntil = -1; p.range = 220; const hp = foe.hp; step(s, {}, .05); assert.ok(hp - foe.hp >= p.damage * 1.75); assert.equal(s.stats.ambushes, 1); assert.equal(canSee(s, foe, p), true, 'ambush reveals the attacker');
+  p.revealedUntil = -1; p.range = 220; const hp = foe.hp; foe.gold = 0; foe.nextShop = 9999; foe.stun = 2; advance(s, .2); assert.ok(hp - foe.hp >= p.damage * 1.75); assert.equal(s.stats.ambushes, 1); assert.equal(canSee(s, foe, p), true, 'ambush reveals the attacker');
 }
 {
   const { s, p, foe } = duel(); p.x = 1170; p.y = 1850; foe.x = 1690; foe.y = 1850; p.range = 700; const hp = foe.hp; step(s, {}, .05); assert.equal(foe.hp, hp, 'auto attack cannot shoot through a building');
   assert.equal(cast(s, p, 2), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > 1650, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
-  p.gold = 800; const atk = p.damage; for (let i = 0; i < 3; i++) assert.equal(buy(s, 'fang'), true); assert.equal(p.damage, atk + 84); assert.equal(buy(s, 'fang'), false);
+  p.gold = 800; const atk = p.damage; assert.equal(buy(s, 'nightfang'), true); assert.equal(p.damage, atk + 48); assert.equal(buy(s, 'nightfang'), false);
 }
 {
   const { s, p, foe } = duel(1); p.hp -= 400; const hp = p.hp; cast(s, p, 0, { x: 1, y: 0 }); assert.ok(p.hp > hp); assert.equal(s.zones.length, 1);
@@ -59,4 +59,4 @@ for (let seed = 1; seed <= 3; seed++) for (let kind = 0; kind < HEROES.length; k
   summaries.push({ seed, creature: HEROES[kind].name, winner: s.winner, seconds: Math.round(s.time), kills: s.score.reduce((a,b)=>a+b,0), maxUnits: max });
 }
 const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 85, { autopilot: true }); advance(b, 85, { autopilot: true }); assert.deepEqual(a.units, b.units);
-console.log('PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, all four kits, upgrades, portals, respawn, interrupted return, objectives, deterministic replay and 12 complete matches.');console.table(summaries);
+console.log('PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, all four kits, items, portals, respawn, interrupted return, objectives, deterministic replay and 12 complete matches.');console.table(summaries);

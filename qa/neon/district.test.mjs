@@ -23,3 +23,16 @@ console.log('PASS: real Three scene construction, walk movement, building collis
 
 // Phone look keeps the current heading when recentered and unwraps compass turns.
 d.reset();d.yaw=.8;d.pitch=.1;d.beginMotionView();d.aimMotionView(.5,.3,.1);assert.ok(d.yaw>.8);assert.ok(d.pitch>.1);const heading=d.yaw;d.beginMotionView();d.aimMotionView(0,0,.1);assert.equal(d.yaw,heading);d.aimMotionView(Math.PI-.01,0,.1);const beforeWrap=d.yaw;d.aimMotionView(-Math.PI+.01,0,.1);assert.ok(Math.abs(d.yaw-beforeWrap)<.5);d.aimMotionView(0,10,.1);assert.ok(d.pitch<=.85);d.endMotionView();assert.equal(d.motionView,null);
+
+// A patrol has bounded threats, readable windups, and dash escape windows.
+d.reset();d.actor.visible=false;d.reinforce(1);assert.equal(d.drones.length,2);d.reinforce(50);assert.equal(d.drones.length,5);d.reinforce(50);assert.equal(d.drones.length,5);
+let droneHits=0,droneKills=0;d.onDroneAttack=()=>droneHits++;d.onDroneKill=()=>droneKills++;
+for(const drone of d.drones)drone.mesh.position.set(0,1.35,6);
+d.updateDrones(.01);assert.ok(d.drones.every(x=>x.phase==='windup'));assert.equal(droneHits,0);
+d.active=true;assert.equal(d.requestDash(1,0),true);assert.equal(d.requestDash(1,0),false);d.updateDrones(1);assert.equal(droneHits,0);
+d.dash=0;for(const drone of d.drones){drone.phase='windup';drone.timer=.01}d.updateDrones(.02);assert.equal(droneHits,5);
+assert.equal(d.cutDrones(),5);assert.equal(droneKills,5);assert.equal(d.drones.length,0);
+d.reinforce(1);d.reset();assert.equal(d.drones.length,0);assert.equal(d.dashCooldown,0);
+d.actor.position.set(0,0,2);d.lunge();assert.ok(d.position.z<8);assert.equal(d.collides(d.position.x,d.position.z),false);
+d.active=true;d.position.set(-8,1.65,-13);d.requestDash(-1,0);d.update(.1,true,null);assert.equal(d.collides(d.position.x,d.position.z),false);const dashTime=d.dash;d.update(.5,false,null);assert.equal(d.dash,dashTime);
+console.log('PASS: patrol cap, attack windup, dash immunity/cooldown, cleave, reset, lunge collision and pause.');

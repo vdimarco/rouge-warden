@@ -1,4 +1,6 @@
-import { createMatch, step, player, HEROES, UPGRADES, buy, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
+import { market, inventoryHTML } from './market.js';
+import { ITEM, nextItem, nextPurchase, quote } from './items.js';
+import { createMatch, step, player, HEROES, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
 import { loadArt, Renderer } from './render.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
@@ -10,7 +12,7 @@ const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill')
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 function resetInput() { keys.clear(); movement.x = movement.y = 0; moveId = skillId = null; castQueue = undefined; recallQueue = portalQueue = false; aim = null; skillSlot = null; $('thumb').style.transform = ''; }
 function closeSheet() { $('sheet').close(); paused = false; resetInput(); last = performance.now(); }
-function sheet(html) { paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); }
+function sheet(html) { $('sheet').classList.remove('market'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); }
 function pause() {
   if (!running || resultShown) return;
   sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">WASD or arrows to move · Q / E / R skills · F rift · M map · B return · Esc pause</p>');
@@ -24,7 +26,7 @@ function choose(kind) {
   document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
 }
 function start() {
-  sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
+  sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 3; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y - 150 };
@@ -32,7 +34,7 @@ function start() {
 }
 function how() {
   const h = HEROES[selected];
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range. Tap an enemy to focus it.</li><li>Tap a skill for aim assist, or drag to aim and release. Your ultimate unlocks at level 3.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Hunt side spirits for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Embers buy upgrades. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / R skills · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range. Tap an enemy to focus it.</li><li>Tap a skill for aim assist, or drag to aim and release. Your ultimate unlocks at level 3.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Hunt side spirits for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items with unique powers. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / R skills · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -43,12 +45,7 @@ function map() {
   $('back-map').onclick = closeSheet;
   renderer.drawMap(state, $('tactical-map'), waypoint);
 }
-function shop() {
-  const p = player(state);
-  sheet(`<h2>Feed your legend</h2><p>${Math.floor(p.gold)} embers available. Each upgrade stacks up to 3 times.</p>${UPGRADES.map(u => `<button class="row-btn" data-buy="${u.id}" ${p.gold < u.cost || (p.upgrades[u.id] || 0) >= 3 ? 'disabled' : ''}>${u.name} <span>· ${u.cost}</span><small>${u.text} · ${p.upgrades[u.id] || 0}/3</small></button>`).join('')}<button id="back-battle" class="primary">Back to battle</button>`);
-  document.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => { if (buy(state, b.dataset.buy)) { sound.tone(660, .16); shop(); updateUI(); } }; });
-  $('back-battle').onclick = closeSheet;
-}
+function shop() { market(state, { sheet, close: closeSheet, changed: () => { try { localStorage.setItem('monster-mash.build.' + selected, player(state).build); } catch {} sound.tone(660, .16); updateUI(); } }); }
 function result() {
   resultShown = true; resetInput(); const p = player(state), victory = state.winner === 0;
   try { const saved = JSON.parse(localStorage.getItem('monster-mash.record') || '{"wins":0,"matches":0}'); saved.matches++; if (victory) saved.wins++; localStorage.setItem('monster-mash.record', JSON.stringify(saved)); } catch {}
@@ -58,7 +55,9 @@ function result() {
 function updateUI() {
   const p = player(state), remain = Math.max(0, Math.ceil(LIMIT - state.time));
   dom.clock.textContent = `${String(Math.floor(remain / 60)).padStart(2, '0')}:${String(remain % 60).padStart(2, '0')}`;
-  $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${p.xp / (p.level * 100) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', p.gold >= 200);
+  $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${p.xp / (p.level * 100) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
+  const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
+  const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').textContent = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete';
   skillButtons.forEach((b, i) => { const locked = i === 2 && p.level < 3; b.querySelector('b').textContent = locked ? 'LV 3' : p.cd[i] > 0 ? Math.ceil(p.cd[i]) : ''; b.querySelector('b').classList.toggle('locked', locked); b.setAttribute('aria-disabled', String(locked || p.cd[i] > 0 || p.hp <= 0)); });
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
@@ -74,6 +73,7 @@ function updateUI() {
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : state.towers[1] < 3 ? 'Their rift is exposed. Push with your wisps.' : state.objective ? 'Wild Hunt is awake in the center' : 'Break a wardstone. Open their rift.';
   if (state.time > 18) $('coach').hidden = true;
 }
+$('inventory').onclick = shop; $('quick-buy').onclick = () => { const id = $('quick-buy').dataset.item; if (id && buy(state, id)) { sound.tone(660, .16); updateUI(); } };
 $('map-button').onclick = map; $('portal').onclick = () => { if (running && !paused) portalQueue = true; }; $('play').onclick = start; $('pause').onclick = pause; $('how').onclick = how; $('shop').onclick = shop; $('recall').onclick = () => { if (running && !paused) recallQueue = true; }; $('close-sheet').onclick = closeSheet; $('coach-close').onclick = () => $('coach').hidden = true;
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
@@ -113,17 +113,18 @@ function frame(now) {
     while (accumulator >= 1 / 60) {
       const p = player(state), command = castQueue; castQueue = undefined;
       const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, cast: command?.slot, aim: command?.aim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false;
+      const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y; if (input.aim) input.aim = renderer.screenDirection(input.aim.x, input.aim.y);
       const before = command ? p.cd[command.slot] : 0; step(state, input);
       if (command && p.cd[command.slot] > before) sound.skill(command.slot);
-      if (p.attackAnim > lastAttack && p.attackAnim <= .24) sound.hit(); lastAttack = p.attackAnim;
+      if (p.attackAnim > lastAttack && p.attackAnim <= .42) sound.hit(); lastAttack = p.attackAnim;
       accumulator -= 1 / 60;
     }
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
-  renderer?.draw(state, dt, !running, aim, waypoint);
+  renderer?.draw(state, dt, !running, aim ? renderer.screenDirection(aim.x, aim.y) : null, waypoint);
   requestAnimationFrame(frame);
 }
 loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').textContent = 'Start the hunt'; requestAnimationFrame(frame); }).catch(error => { console.error(error); $('load-error').hidden = false; $('play').textContent = 'Veil unavailable'; });
 // A read-only snapshot supports the existing arcade's QA tooling.
-export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer });
+export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd], inventory: [...player(state).inventory] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer, graphics: renderer?.stats() });

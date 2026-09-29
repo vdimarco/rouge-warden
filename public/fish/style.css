@@ -1,0 +1,66 @@
+/* Keep the title and menu in normal flow, including phones with browser bars. */
+#title {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: clamp(14px, 3cqh, 30px); overflow-y: auto; touch-action: pan-y;
+  padding: calc(var(--sat) + 20px) calc(var(--sar) + 16px) calc(var(--sab) + 16px) calc(var(--sal) + 16px);
+}
+#title .logo {
+  position: relative; inset: auto; transform: none; width: 100%; z-index: 1;
+  flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding: 8px 0;
+}
+#title h1 { font-size: clamp(42px, min(13cqw, 14cqh), 100px); }
+#title .sub { align-self: center; margin-top: 14px; }
+#title .title-menu { position: relative; z-index: 1; flex: 0 0 auto; width: min(100%, 360px); min-width: 0; }
+#title nav { gap: 7px; }
+#title nav .btn { min-height: 44px; padding-top: 10px; padding-bottom: 10px; }
+#title .best { font-size: 12px; margin-top: 9px; }
+.art-picker { margin: 0 0 10px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); }
+.art-label { display: block; margin: 0 0 8px; color: var(--ink); font-size: 12px; line-height: 1.3; letter-spacing: .12em; text-transform: uppercase; }
+.art-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.art-options button { min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 9px; background: transparent; font-size: 14px; }
+.art-options button[aria-pressed="true"] { background: var(--ink); color: var(--deep); border-color: var(--ink); }
+.art-note { margin: 7px 0 0; font-size: 11px; line-height: 1.4; font-weight: 600; color: var(--muted); text-align: center; }
+body[data-art-style="ghibli"] {
+  --ink: #fff4d8; --muted: #cedcc2; --deep: #163e38; --deep2: #29584a;
+  --glass: rgba(20, 52, 44, .94); --line: rgba(241, 230, 193, .3);
+  --red: #b45038; --brass: #f4d280;
+}
+body[data-art-style="ghibli"] #title {
+  background: linear-gradient(rgba(15, 43, 39, .10), transparent 38%, rgba(13, 38, 31, .60)), url("./art/film-lake.webp") center 50% / cover;
+}
+body[data-art-style="ghibli"] #title h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, .45); }
+body[data-art-style="ghibli"] #title .sub { background: rgba(22, 55, 45, .88); color: #fff0c6; }
+body[data-art-style="ghibli"] #title .btn { background: rgba(27, 67, 53, .96); border-color: #b0bb8c; }
+body[data-art-style="ghibli"] #title .btn.go { background: #b45038; border-color: #f1bb89; box-shadow: 0 4px 0 #643527; }
+body[data-art-style="ghibli"] .card { background: rgba(20, 49, 40, .96); }
+body[data-art-style="ghibli"] #title .best { color: #fff5db; }
+/* Small paper labels sit quietly over the moving illustration. */
+body[data-art-style="ghibli"] #hud .chip,
+body[data-art-style="ghibli"] #hud .icon { background: #f4ecd6; color: #33574d; border-color: #d1c8a8; box-shadow: 0 2px 0 #334e382b; }
+body[data-art-style="ghibli"] #hud .chip b { color: #8c5935; }
+body[data-art-style="ghibli"] #pullStrength { background: #f4ecd6; color: #33574d; border: 1px solid #d1c8a8; }
+body[data-art-style="ghibli"] #pullStrength b { background: #33574d25; }
+body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
+@container (max-height: 740px) {
+  #title { gap: 12px; }
+  #title .logo { padding: 0; }
+  #title .sub { font-size: 11px; margin-top: 9px; }
+  #title nav .btn { padding-top: 8px; padding-bottom: 8px; }
+  .art-picker { padding: 10px; margin-bottom: 8px; }
+  #title .best { font-size: 11px; }
+}
+@container (orientation: landscape) and (max-height: 600px) {
+  #title { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 360px); align-items: center; gap: 20px; padding-top: calc(var(--sat) + 12px); padding-bottom: calc(var(--sab) + 12px); overflow: hidden; }
+  #title .logo { position: relative; inset: auto; width: 100%; transform: none; }
+  #title .title-menu { width: 100%; max-height: 100%; overflow-y: auto; touch-action: pan-y; padding: 4px; }
+  #title h1 { font-size: clamp(40px, 15cqh, 80px); }
+  #title .art-note { display: none; }
+  #title nav { gap: 5px; }
+}
+@container (orientation: portrait) and (max-height: 650px) {
+  #title { padding-top: calc(var(--sat) + 12px); gap: 12px; }
+  #title h1 span { display: inline; }
+  #title h1 span + span::before { content: " "; }
+  #title .kick { letter-spacing: .2em; font-size: 10px; }
+  #title .art-note { display: none; }
+}
