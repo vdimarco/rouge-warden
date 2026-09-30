@@ -1,5 +1,6 @@
 import * as THREE from '../crimson/lib/three.module.min.js';
 import { AlienWorld } from './alien-world.js';
+import { viewport,viewportPoint,centeredPoint } from './viewport.js';
 
 // A real, walkable 3D courtyard network. Static scenery shares materials;
 // only the opponent, camera and a few lanterns animate each frame.
@@ -7,15 +8,15 @@ export class District {
   constructor() {
     this.renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
-    this.renderer.setSize(innerWidth,innerHeight);
+    this.renderer.setSize(viewport.width,viewport.height);
     this.renderer.domElement.id='district';
-    document.body.prepend(this.renderer.domElement);
+    document.getElementById('gameViewport').prepend(this.renderer.domElement);
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#a5c6cc');
     this.scene.fog=new THREE.Fog('#a5c6cc',30,95);
-    this.camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.08,120);
+    this.camera=new THREE.PerspectiveCamera(68,viewport.width/viewport.height,.08,120);
     this.hemi=new THREE.HemisphereLight('#fff0d2','#496268',2.6);this.scene.add(this.hemi);
     const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);this.sun=sun;
-    this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;
+    this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;this.roll=0;
     this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
     this.build();this.batchScenery();this.citySolids=this.solids;this.cityScenery=this.scene.children.filter(c=>!c.isLight&&!this.orbs.some(o=>o.mesh===c));this.alienWorld=new AlienWorld(this.scene);this.makeEnemy();this.makePortal();this.fighterTemplate=this.actor;this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.wire();this.resize();
   }
@@ -48,7 +49,7 @@ export class District {
     for(const item of this.cityScenery)item.visible=!cartoon;
     this.ink.visible=false;this.portal.visible=false;this.alienEyes.visible=false;
     this.alienWorld.root.visible=cartoon;this.solids=cartoon?this.alienWorld.solids:this.citySolids;
-    this.scene.background.set(cartoon?'#b9add0':'#a5c6cc');this.scene.fog.color.copy(this.scene.background);
+    this.scene.background=cartoon&&this.alienWorld.sky?this.alienWorld.sky:new THREE.Color(cartoon?'#b9add0':'#a5c6cc');this.scene.fog.color.set(cartoon?'#b9add0':'#a5c6cc');this.applyFighterModels();
     this.scene.fog.near=cartoon?45:30;this.scene.fog.far=cartoon?108:95;
     this.hemi.intensity=cartoon?2:2.6;this.sun.intensity=cartoon?2.1:3.2;
     if(this.collides(this.position.x,this.position.z))this.position.set(0,1.65,8);
@@ -146,7 +147,17 @@ export class District {
       this.crowd.push({fighter,mesh,arm:mesh.children[armIndex],legs:legIndices.map(n=>mesh.children[n]),ring});
     });this.applyFighterModels();this.selectFighter(fighters[0]);
   }
-  applyFighterModels(){if(!this.fighterModel)return;for(const c of this.crowd||[]){if(c.generated)continue;const model=this.fighterModel.clone(true);for(const child of c.mesh.children){if(child!==c.arm&&child!==c.ring)child.visible=false}c.mesh.add(model);c.generated=model}}
+  applyFighterModels(){
+    const id=this.style==='rick-morty'?'ronin-toon':'ronin',source=this.fighterModels?.[id];if(!source)return;
+    this.fighterModel=source;
+    for(const c of this.crowd||[]){if(c.generatedId===id)continue;if(c.generated)c.mesh.remove(c.generated);
+      const model=source.clone(true);for(const child of c.mesh.children)child.visible=child===c.arm||child===c.ring;
+      c.mesh.add(model);c.generated=model;c.generatedId=id;
+      // The generated model supplies the body and hands; only the live blade is
+      // retained from the primitive rig, avoiding a second visible forearm.
+      c.arm.children[0].visible=id!=='ronin-toon';c.arm.position.set(.46,id==='ronin-toon'?1.05:1.36,0);
+    }
+  }
   selectFighter(f){const c=this.crowd?.find(c=>c.fighter===f);if(c){this.actor=c.mesh;this.selected=f}}
   fighterDistance(f){const c=this.crowd?.find(c=>c.fighter===f);return c?Math.hypot(c.mesh.position.x-this.position.x,c.mesh.position.z-this.position.z):Infinity}
   chooseFighter(active){
@@ -158,6 +169,7 @@ export class District {
     if(n>2.4&&f.phase!=='windup'&&f.phase!=='open'){for(const other of this.crowd){if(other===c||other.fighter.hp<=0)continue;const ox=p.x-other.mesh.position.x,oz=p.z-other.mesh.position.z,d=Math.hypot(ox,oz);if(d<1.4&&d>.01){mx+=ox/d*dt*2;mz+=oz/d*dt*2}}if(!this.collides(p.x+mx,p.z,.5))p.x+=mx;if(!this.collides(p.x,p.z+mz,.5))p.z+=mz;for(let i=0;i<c.legs.length;i++)if(c.legs[i])c.legs[i].rotation.x=Math.sin(this.clock*9+i*Math.PI)*.45}
     c.mesh.lookAt(this.position.x,0,this.position.z);const progress=f.phase==='windup'?1-Math.max(0,f.timer/f.period):0;
     if(c.arm){c.arm.rotation.x=-.35-progress*1.5;c.arm.rotation.z=f.dir===0?progress*1.1:0;if(f.phase==='open')c.arm.rotation.x=.6}
+    if(c.generated){c.generated.rotation.x=f.phase==='windup'?-.08*progress:f.phase==='open'?.09:0;c.generated.rotation.z=Math.sin(this.clock*3)*.018;c.generated.position.y=n>2.4?Math.abs(Math.sin(this.clock*7))*.035:0}
     c.ring.material.color.set(f.phase==='open'?'#baff54':f.phase==='windup'?'#ff496c':'#78d9db');c.ring.scale.setScalar(f.phase==='windup'?1+progress*.35:1);p.y=f.hit>0?Math.sin(f.hit*35)*.05:0;
   }}
   distanceToActor(){return Math.hypot(this.actor.position.x-this.position.x,this.actor.position.z-this.position.z)}
@@ -185,37 +197,38 @@ export class District {
     else{d.timer-=dt;if(d.timer<=0)d.phase='chase'}
   }}
   collides(x,z,r=.36){return Math.abs(x)>43||z< -43||z>42||this.solids.some(b=>Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r)}
-  target(){const v=this.actor.position.clone();v.y=1.2;v.project(this.camera);return {x:(v.x*.5+.5)*innerWidth,y:(-.5*v.y+.5)*innerHeight}}
+  target(){const v=this.actor.position.clone();v.y=1.2;v.project(this.camera);return {x:(v.x*.5+.5)*viewport.width,y:(-.5*v.y+.5)*viewport.height}}
   canStrike(){
     if(!this.actor.visible)return false;
     const dx=this.actor.position.x-this.position.x,dz=this.actor.position.z-this.position.z;
     const distance=Math.hypot(dx,dz),facing=(-Math.sin(this.yaw)*dx-Math.cos(this.yaw)*dz)/(distance||1);
     return distance<3.5&&facing>.72;
   }
-  resize(){this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight)}
-  reset(){this.retireCrowd();this.actor=this.fighterTemplate;this.clearDrones();this.dash=0;this.dashCooldown=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
+  resize(){this.camera.aspect=viewport.width/viewport.height;this.camera.updateProjectionMatrix();this.renderer.setSize(viewport.width,viewport.height)}
+  reset(){this.retireCrowd();this.actor=this.fighterTemplate;this.clearDrones();this.dash=0;this.dashCooldown=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.roll=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
   beginMotionView(){
     // Any comfortable grip is neutral. Never preserve a trapped downward view.
-    this.pitch=0;this.motionView={yaw:this.yaw,pitch:0,last:0,turn:0};this.look=null;
+    this.pitch=0;this.roll=0;this.motionView={yaw:this.yaw,pitch:0,last:0,turn:0};this.look=null;
     this.camera.rotation.set(0,this.yaw,0,'YXZ');this.camera.updateMatrixWorld();
   }
-  aimMotionView(yaw,pitch,dt){
+  aimMotionView(yaw,pitch,dt,roll=0){
     if(!this.motionView)this.beginMotionView();const v=this.motionView;
     const delta=Math.atan2(Math.sin(yaw-v.last),Math.cos(yaw-v.last));v.turn+=delta;v.last=yaw;
     const a=1-Math.exp(-dt/.045);this.yaw+=(v.yaw+v.turn-this.yaw)*a;
     this.pitch+=(Math.max(-.38,Math.min(.38,pitch*.45))-this.pitch)*a;
+    this.roll+=Math.atan2(Math.sin(roll-this.roll),Math.cos(roll-this.roll))*(1-Math.exp(-dt/.035));
     // Update projection before the same sensor event checks sword contact.
-    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');this.camera.updateMatrixWorld();
+    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,this.roll,'YXZ');this.camera.updateMatrixWorld();
   }
-  endMotionView(){this.motionView=null}
+  endMotionView(){this.motionView=null;this.roll=0}
   clearInput(){this.keys.clear();this.move={x:0,y:0};this.look=null;this.stickPointer=null;document.getElementById('stickNub')?.style.setProperty('transform','translate(0,0)')}
   wire(){
     const stick=document.getElementById('walkStick'),nub=document.getElementById('stickNub'),look=document.getElementById('lookPad');
-    const move=e=>{if(e.pointerId!==this.stickPointer)return;const b=stick.getBoundingClientRect(),x=(e.clientX-b.left-b.width/2)/42,y=(e.clientY-b.top-b.height/2)/42,n=Math.max(1,Math.hypot(x,y));this.move={x:x/n,y:y/n};nub.style.transform=`translate(${this.move.x*30}px,${this.move.y*30}px)`;if(Math.hypot(x,y)>.9&&!this.stickDashed){this.requestDash(x,y);this.stickDashed=true}};
+    const move=e=>{if(e.pointerId!==this.stickPointer)return;const point=centeredPoint(e,stick),x=point.x/42,y=point.y/42,n=Math.max(1,Math.hypot(x,y));this.move={x:x/n,y:y/n};nub.style.transform=`translate(${this.move.x*30}px,${this.move.y*30}px)`;if(Math.hypot(x,y)>.9&&!this.stickDashed){this.requestDash(x,y);this.stickDashed=true}};
     stick.onpointerdown=e=>{if(!this.active)return;this.stickDashed=false;this.stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);move(e)};stick.onpointermove=move;
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,()=>{this.stickPointer=null;this.move={x:0,y:0};nub.style.transform='translate(0,0)'});
-    look.onpointerdown=e=>{if(!this.active||this.motionView)return;look.setPointerCapture(e.pointerId);this.look={id:e.pointerId,x:e.clientX,y:e.clientY}};
-    look.onpointermove=e=>{if(this.look?.id!==e.pointerId)return;this.yaw-=(e.clientX-this.look.x)*.005;this.pitch=Math.max(-.45,Math.min(.45,this.pitch-(e.clientY-this.look.y)*.003));this.look.x=e.clientX;this.look.y=e.clientY};
+    look.onpointerdown=e=>{if(!this.active||this.motionView)return;look.setPointerCapture(e.pointerId);this.look={id:e.pointerId,...viewportPoint(e)}};
+    look.onpointermove=e=>{if(this.look?.id!==e.pointerId)return;const point=viewportPoint(e);this.yaw-=(point.x-this.look.x)*.005;this.pitch=Math.max(-.45,Math.min(.45,this.pitch-(point.y-this.look.y)*.003));this.look.x=point.x;this.look.y=point.y};
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(ev,()=>this.look=null);
     addEventListener('keydown',e=>{if(this.active&&e.code==='ShiftLeft')this.requestDash(this.move.x,this.move.y||-1);if(this.active&&['KeyW','KeyA','KeyS','KeyD'].includes(e.code)){this.keys.add(e.code);e.preventDefault()}});
     addEventListener('keyup',e=>this.keys.delete(e.code));addEventListener('blur',()=>this.clearInput());
@@ -250,7 +263,7 @@ export class District {
     for(const o of this.orbs){o.mesh.position.y=1.1+Math.sin(this.clock*2+o.x)*.12;o.mesh.rotation.y=this.clock}
     if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;this.alienWorld.update(this.clock);
     const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5));if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
-    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');
+    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,this.roll,'YXZ');
     this.renderer.render(this.scene,this.camera);
   }
 }

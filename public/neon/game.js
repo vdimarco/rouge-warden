@@ -1,11 +1,13 @@
 import { District } from './district.js';
 import { drawAlienBackdrop } from './alien-world.js';
 import { Duel } from './duel.js';
+import { viewport,viewportPoint,lockViewport,unlockViewport } from './viewport.js';
+import { orientationQuaternion,motionFrame } from './motion-frame.js';
 const $=id=>document.getElementById(id), canvas=$('world'),ctx=canvas.getContext('2d');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let district=null;try{district=new District()}catch(error){console.warn('3D district unavailable',error)}
 const target=()=>district?district.target():{x:W*.5,y:H*.48};
-let W=innerWidth,H=innerHeight,state='menu',time=0,last=0,enemy,particles=[],trails=[],cooldown=0,guard=false,guardAt=0,combo=0,health=100,score=0,wave=1,kills=0,charge=0,damage=1,windowBonus=0,leech=0,slow=0,flash=0,notice=0,muted=false,audio,beat=0,best=0;
+let W=viewport.width,H=viewport.height,state='menu',time=0,last=0,enemy,particles=[],trails=[],cooldown=0,guard=false,guardAt=0,combo=0,health=100,score=0,wave=1,kills=0,charge=0,damage=1,windowBonus=0,leech=0,slow=0,flash=0,notice=0,muted=false,audio,beat=0,best=0;
 try{best=Number(localStorage.getItem('neon-best'))||0}catch{}
 // New biome defaults on once, then respects subsequent player choices.
 let visualStyle='rick-morty';try{if(localStorage.getItem('neon-biome-version')==='2')visualStyle=localStorage.getItem('neon-style')==='ghibli'?'ghibli':'rick-morty';localStorage.setItem('neon-biome-version','2')}catch{}
@@ -13,10 +15,11 @@ function applyStyle(value){visualStyle=value==='rick-morty'?'rick-morty':'ghibli
 applyStyle(visualStyle);
 let duel=null,duelGuardAt=-10,duelWasBlocked=false;
 let chainClock=0,chainBest=0,killFlash=0,runTime=0,cleaveRadius=3.8,droneArmor=0;
+let motionRoll=0;
 let gyro=false,base=null,aim={x:0,y:0},raw=null,gyroReady=true,lastMotion=0,motionTimer;
 const sword={pose:{x:0,y:0,angle:-Math.PI/2},last:0,speed:0,previous:null,direction:[0,1,0],lastDirection:[0,1,0],travel:0,lastVelocity:null};
 const upgrades=[['Edge amplifier','Cuts deal +1 damage.',()=>damage++],['Time crystal','Parry window grows by 40 ms.',()=>windowBonus=Math.min(.25,windowBonus+.04)],['Repair pulse','Restore 35 integrity.',()=>health=Math.min(100,health+35)],['Vampire circuit','Each takedown restores 2 integrity.',()=>leech+=2],['Capacitor','Gain 35% overdrive now.',()=>charge=Math.min(100,charge+35)]];
-function resize(){W=innerWidth;H=innerHeight;const d=Math.min(devicePixelRatio||1,1.25);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);district?.resize();resetSword()}addEventListener('resize',resize);resize();
+function resize(){W=viewport.width;H=viewport.height;const d=Math.min(devicePixelRatio||1,1.25);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);district?.resize()}addEventListener('resize',resize);resize();
 function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);o.frequency.exponentialRampToValueAtTime(f*.5,audio.currentTime+d);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
@@ -27,7 +30,7 @@ async function enterWidescreen(){
   const message=innerWidth>innerHeight?'Widescreen ready. Hold both ends and choose Play.':'Rotate your tablet sideways, then choose Play.';
   $('wideHelp').textContent=message;
 }
-function menu(){panel(`<div class="eyebrow">PORTAL BADLANDS / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>Meet their blade. Break their guard. Land a clean strike. Win longer duels against one opponent, then two, three and larger groups.</p><p>Run with the left thumb stick. In gyro mode, move your phone to look, cut and block. In touch mode, drag the right side to look. Push the stick to its edge to dash. Hold the sword across an incoming cut to block. Set it just before impact to parry.</p><button class="secondary" id="wideStart">WIDESCREEN · TWO HANDS</button><p class="wide-help" id="wideHelp">Tablet: rotate to landscape and hold both ends. Left thumb moves; turn the tablet to aim.</p><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="rick-morty">Rick and Morty · Portal Badlands</option><option value="ghibli">Cyber Ghibli · Courtyard</option></select><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">${district?"Explore the open world. WASD also moves on desktop.":"3D could not start on this device. The fixed-view duel is available."} Hold both ends in landscape. Hold the phone at any comfortable angle, even low. Tap Reset view to level the camera and set that grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('wideStart').onclick=enterWidescreen;$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
+function menu(){panel(`<div class="eyebrow">PORTAL BADLANDS / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>Meet their blade. Break their guard. Land a clean strike. Win longer duels against one opponent, then two, three and larger groups.</p><p>Run with the left thumb stick. In gyro mode, move your phone to look, cut and block. In touch mode, drag the right side to look. Push the stick to its edge to dash. Hold the sword across an incoming cut to block. Set it just before impact to parry.</p><button class="secondary" id="wideStart">WIDESCREEN · TWO HANDS</button><p class="wide-help" id="wideHelp">Tablet: rotate to landscape and hold both ends. Left thumb moves; turn the tablet to aim.</p><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="rick-morty">Rick and Morty · Portal Badlands</option><option value="ghibli">Cyber Ghibli · Courtyard</option></select><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">PLAY WITH TOUCH</button><p class="fine">${district?"Explore the open world. WASD also moves on desktop.":"3D could not start on this device. The fixed-view duel is available."} Hold both ends in landscape. Hold the phone at any comfortable angle, even low. Screen layout stays locked during play. Roll your wrist to turn the blade; the world counter-rotates to keep its horizon steady. Tap Reset view to set your comfortable grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('wideStart').onclick=enterWidescreen;$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{void lockViewport();disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
 function start(){chainClock=0;chainBest=0;killFlash=0;runTime=0;cleaveRadius=3.8;droneArmor=0;audioStart();district?.reset();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say(district?'MATCH BLADES · BREAK THEIR GUARD':'MATCH THE BRIGHT LINE')}
 function resume(){state='play';$('runStatus').hidden=!district;resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('explore').hidden=!district;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
 function spawn(){if(district){duel=new Duel(wave);district.beginEncounter(duel.fighters);if(!district.assetsRequested){district.assetsRequested=true;import('./model-assets.js').then(m=>m.loadDuelAssets(district)).catch(()=>{district.modelStatus='unavailable'})}enemy=duel.fighters[0];return}const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0);district?.placeEnemy(enemy);district?.reinforce(wave)}
@@ -68,25 +71,15 @@ function slash(dx,dy){
 }
 function overdrive(){if(duel&&district){if(state==='play'&&charge>=100&&cooldown<=0)duelSwing(1,0);return}if(state!=='play'||charge<100||(district&&!district.canStrike()))return;charge=0;slow=4;say('TIME FRACTURE');tone(880,.4);hit(damage*3,true)}
 function setGuard(value){if(gyro)return;if(state!=='play'){guard=false;return}if(value&&!guard)guardAt=time;guard=value;$('guard').textContent=value?'GUARD ACTIVE':'HOLD TO GUARD'}
-function pause(){if(state!=='play')return;state='pause';guard=false;panel('<div class="eyebrow">SIGNAL HELD</div><h2>Paused</h2><button class="primary" id="resume">RESUME</button><button class="secondary" id="quit">END RUN</button>');$('resume').onclick=resume;$('quit').onclick=gameOver}
-function gameOver(){state='over';guard=false;best=Math.max(best,score);try{localStorage.setItem('neon-best',best)}catch{}panel(`<div class="eyebrow">CONNECTION LOST</div><h2>District ${wave}</h2><p>${score.toLocaleString()} points · Best ${best.toLocaleString()}</p>${district?`<p>Best chain: ${chainBest} · Survived ${Math.floor(runTime)} seconds</p>`:""}<button class="primary" id="retry">RUN IT BACK</button>`);$('retry').onclick=start}
+function pause(){if(state!=='play')return;state='pause';guard=false;panel('<div class="eyebrow">SIGNAL HELD</div><h2>Paused</h2><button class="primary" id="resume">RESUME</button><button class="secondary" id="quit">END RUN</button>');$('resume').onclick=()=>{void lockViewport();resume()};$('quit').onclick=gameOver}
+function gameOver(){unlockViewport();state='over';guard=false;best=Math.max(best,score);try{localStorage.setItem('neon-best',best)}catch{}panel(`<div class="eyebrow">CONNECTION LOST</div><h2>District ${wave}</h2><p>${score.toLocaleString()} points · Best ${best.toLocaleString()}</p>${district?`<p>Best chain: ${chainBest} · Survived ${Math.floor(runTime)} seconds</p>`:""}<button class="primary" id="retry">RUN IT BACK</button>`);$('retry').onclick=()=>{void lockViewport();start()}}
 $('pause').onclick=pause;$('burst').onclick=overdrive;$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'Sound off':'Sound on';audioStart()};$('center').onclick=()=>{resetSword();say('VIEW RESET · THIS GRIP IS NEUTRAL')};
 $('guard').onpointerdown=e=>{e.preventDefault();$('guard').setPointerCapture(e.pointerId);setGuard(true)};for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('guard').addEventListener(ev,()=>setGuard(false));
-let pointer=null;canvas.onpointerdown=e=>{if(state!=='play'||gyro)return;canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY}};canvas.onpointermove=e=>{if(!pointer||pointer.id!==e.pointerId)return;aim.x=clamp((e.clientX/W-.5)*2,-1,1);aim.y=clamp((e.clientY/H-.5)*2,-1,1);const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(Math.hypot(dx,dy)>32){slash(dx,dy);pointer.x=e.clientX;pointer.y=e.clientY}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>pointer=null);
+let pointer=null;canvas.onpointerdown=e=>{if(state!=='play'||gyro)return;canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,...viewportPoint(e)}};canvas.onpointermove=e=>{if(!pointer||pointer.id!==e.pointerId)return;const point=viewportPoint(e);aim.x=clamp((point.x/W-.5)*2,-1,1);aim.y=clamp((point.y/H-.5)*2,-1,1);const dx=point.x-pointer.x,dy=point.y-pointer.y;if(Math.hypot(dx,dy)>32){slash(dx,dy);pointer.x=point.x;pointer.y=point.y}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>pointer=null);
 addEventListener('keydown',e=>{if(['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='Space')setGuard(true);if(['ArrowLeft','ArrowRight'].includes(e.code))slash(1,0);if(['ArrowUp','ArrowDown'].includes(e.code))slash(0,1);if(e.code==='KeyE')overdrive();if(e.code==='Escape')pause()});addEventListener('keyup',e=>{if(e.code==='Space')setGuard(false)});addEventListener('blur',pause);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 // Orientation is calibrated in the player's grip. Quaternion differences avoid
 // compass wrap and keep rotations continuous across portrait/landscape grips.
-function multiply(a,b) {
-  const [w,x,y,z]=a,[v,i,j,k]=b;
-  return [w*v-x*i-y*j-z*k,w*i+x*v+y*k-z*j,w*j-x*k+y*v+z*i,w*k+x*j-y*i+z*v];
-}
-function inverse(q){return [q[0],-q[1],-q[2],-q[3]]}
-function orientationQuaternion(alpha,beta,gamma) {
-  const a=alpha*Math.PI/360,b=beta*Math.PI/360,c=gamma*Math.PI/360;
-  return multiply(multiply([Math.cos(a),0,0,Math.sin(a)],[Math.cos(b),Math.sin(b),0,0]),[Math.cos(c),0,Math.sin(c),0]);
-}
-function rotate(q,v){return multiply(multiply(q,[0,...v]),inverse(q)).slice(1)}
-function resetSword(){if(gyro)district?.beginMotionView();else district?.endMotionView();base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;sword.pose={x:0,y:0,angle:-Math.PI/2};sword.direction=[0,1,0];sword.lastDirection=[0,1,0];sword.travel=0;sword.lastVelocity=null;guard=false;guardAt=-10}
+function resetSword(){motionRoll=0;if(gyro)district?.beginMotionView();else district?.endMotionView();base=null;raw=null;gyroReady=false;sword.last=0;sword.speed=0;sword.previous=null;sword.pose={x:0,y:0,angle:-Math.PI/2};sword.direction=[0,1,0];sword.lastDirection=[0,1,0];sword.travel=0;sword.lastVelocity=null;guard=false;guardAt=-10}
 // The phone's physical top edge is the blade axis. The wrist is the pivot;
 // the blade keeps a fixed world length and foreshortens when aimed in depth.
 function swordSegment() {
@@ -120,8 +113,10 @@ async function enableGyro(){
   try {
     if(!window.isSecureContext||!window.DeviceOrientationEvent)throw Error('unavailable');
     // Called directly by a tap, as required by iOS permission prompts.
+    const orientationLock=lockViewport();
     const permission=typeof DeviceOrientationEvent.requestPermission==='function'?DeviceOrientationEvent.requestPermission():Promise.resolve('granted');
     if(await permission!=='granted')throw Error('denied');
+    await orientationLock;
     gyro=true;resetSword();motionUI();$('hint').textContent=W>H?'Hold both ends. Turn the tablet to aim and swing.':'Hold your natural grip. Turn the phone to aim and swing.';
     clearTimeout(motionTimer);
     motionTimer=setTimeout(()=>{if(gyro&&!raw)disableGyro('No motion signal. Swipe to cut; hold Guard to block.');},3000);
@@ -136,18 +131,16 @@ addEventListener('deviceorientation',e=>{
   const dt=(now-sword.last)/1000;
   if(dt<=0)return;
   if(dt>.3){resetSword();return}
-  const relative=multiply(inverse(base),q);
+  const frame=motionFrame(base,q,viewport.startAngle);
   // +Y always points out of the physical top of the phone, even in landscape.
   // Twisting about this axis turns the edge but cannot create a blade swing.
-  const direction=rotate(relative,[0,1,0]);
+  const direction=frame.direction;
   const dot=direction.reduce((sum,v,i)=>sum+v*sword.lastDirection[i],0);
   const sweptAngle=Math.acos(clamp(dot,-1,1))*180/Math.PI;
   const speed=sweptAngle/dt;
   if(speed>1800){resetSword();return} // Reject sensor discontinuities.
-  const forward=rotate(relative,[0,0,-1]);
-  const viewYaw=Math.atan2(-forward[0],-forward[2])-Math.atan2(direction[0],direction[1])*.55;
-  const viewPitch=Math.asin(clamp(forward[1],-1,1));
-  district?.aimMotionView(viewYaw,viewPitch,dt);
+  district?.aimMotionView(frame.yaw,frame.pitch,dt,frame.roll);
+  motionRoll+=Math.atan2(Math.sin(frame.roll-motionRoll),Math.cos(frame.roll-motionRoll))*(1-Math.exp(-dt/.035));
   const prior=swordSegment(),alpha=1-Math.exp(-dt/.018);
   const velocity=direction.map((v,i)=>(v-sword.lastDirection[i])/dt);
   const reverse=sword.lastVelocity&&velocity.reduce((n,v,i)=>n+v*sword.lastVelocity[i],0)<-0.5;
@@ -178,7 +171,7 @@ function line(x1,y1,x2,y2,c,w=1){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath
 // Generated raster plates are composited with live combat, weather and the
 // orientation-driven weapon. Keep procedural art as a loading/error fallback.
 const art={};
-for(const name of ['street','duelist','grip']){
+for(const name of ['street','duelist','grip','alien-sky','ronin-toon']){
   const image=new Image();image.decoding='async';if(!district)image.src=`art/${name}.webp`;
   art[name]=image;
 }
@@ -200,7 +193,7 @@ function drawStreet(){
   mist.addColorStop(0,'#719ea61c');mist.addColorStop(1,'#719ea600');ctx.fillStyle=mist;ctx.fillRect(0,H*.35,W,H*.5);
 }
 function drawDuelist(){
-  const im=art.duelist,baseHeight=Math.min(H*.60,W*.94),ratio=im.naturalWidth/im.naturalHeight;
+  const im=visualStyle==='rick-morty'&&ready(art['ronin-toon'])?art['ronin-toon']:art.duelist,baseHeight=Math.min(H*.60,W*.94),ratio=im.naturalWidth/im.naturalHeight;
   const pressure=enemy.phase==='windup'?1-clamp(enemy.timer/enemy.period,0,1):0;
   const lunge=pressure>.8?(pressure-.8)*.45:0;
   const height=baseHeight*(1+lunge+(enemy.boss?.10:0)),width=height*ratio;
@@ -230,15 +223,15 @@ function drawSteel(blade){
   ctx.save();ctx.translate(blade.ax,blade.ay);ctx.rotate(Math.atan2(dy,dx)+Math.PI/2);
   const metal=ctx.createLinearGradient(-7,0,8,0);
   metal.addColorStop(0,'#113540');metal.addColorStop(.22,'#98cbd4');metal.addColorStop(.48,'#e7f0ed');metal.addColorStop(.53,'#6c788b');metal.addColorStop(1,'#222a3d');
-  ctx.fillStyle=metal;ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-5,-length+24);ctx.lineTo(4,-length);ctx.lineTo(8,2);ctx.closePath();ctx.fill();
+  ctx.fillStyle=metal;ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-5,-length+24);ctx.lineTo(4,-length);ctx.lineTo(8,2);ctx.closePath();ctx.fill();if(visualStyle==='rick-morty'){ctx.strokeStyle='#293d47';ctx.lineWidth=2;ctx.stroke()}
   ctx.shadowBlur=guard?16:4;ctx.shadowColor=guard?'#caff54':'#52d6e0';line(-7,1,-5,-length+24,guard?'#d9ffae':'#b3f3ed',1.5);ctx.shadowBlur=0;
   // Fine highlights on the steel, with a real gloved grip below the guard.
   for(let i=0;i<9;i++)line(-3,-length*.12-i*length*.075,4,-length*.12-i*length*.075-3,'#eaf6f62b',.5);
-  if(!district&&ready(art.grip)){
+  if(!district&&visualStyle!=='rick-morty'&&ready(art.grip)){
     const size=clamp(Math.min(W,H)*.60,150,300);
     ctx.drawImage(art.grip,-size*.495,-size*.305,size,size);
   }else{
-    line(-18,0,18,0,'#bbd4aa',6);line(0,5,0,48,'#5a7971',14);if(district){ctx.fillStyle='#bdc9a6';ctx.beginPath();ctx.ellipse(9,28,18,24,-.2,0,Math.PI*2);ctx.fill();line(18,45,47,108,'#587c79',30);for(let i=0;i<3;i++)line(-4,15+i*9,12,18+i*9,'#718e7b',3);}
+    line(-18,0,18,0,'#bbd4aa',6);line(0,5,0,48,'#5a7971',14);if(district||visualStyle==='rick-morty'){ctx.fillStyle=visualStyle==='rick-morty'?'#80bfb7':'#bdc9a6';ctx.beginPath();ctx.ellipse(9,28,18,24,-.2,0,Math.PI*2);ctx.fill();line(18,45,47,108,'#587c79',30);for(let i=0;i<3;i++)line(-4,15+i*9,12,18+i*9,'#718e7b',3);}
   }
   ctx.restore();
 }
@@ -255,10 +248,10 @@ function drawThreats(){
   if(district.dash>0){for(let i=0;i<8;i++){const a=i*Math.PI/4;line(W/2+Math.cos(a)*W*.42,H/2+Math.sin(a)*H*.42,W/2+Math.cos(a)*W*.49,H/2+Math.sin(a)*H*.49,'#d3ffffaa',2)}}
 }
 
-function draw(){if(district){ctx.clearRect(0,0,W,H)}else if(visualStyle==='rick-morty'){drawAlienBackdrop(ctx,W,H,time)}else if(ready(art.street)){drawStreet()}else{ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
+function draw(){ctx.save();if(!district&&gyro){ctx.translate(W/2,H/2);ctx.rotate(-motionRoll);const c=Math.abs(Math.cos(motionRoll)),s=Math.abs(Math.sin(motionRoll)),cover=Math.max(c+s*H/W,c+s*W/H);ctx.scale(cover,cover);ctx.translate(-W/2,-H/2)}if(district){ctx.clearRect(0,0,W,H)}else if(visualStyle==='rick-morty'){if(ready(art['alien-sky'])){const im=art['alien-sky'];ctx.drawImage(im,im.naturalWidth*.17,im.naturalHeight*.06,im.naturalWidth*.66,im.naturalHeight*.88,0,0,W,H)}else drawAlienBackdrop(ctx,W,H,time)}else if(ready(art.street)){drawStreet()}else{ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
 }
 if(!district&&enemy&&ready(art.duelist)){drawDuelist()}else if(!district&&enemy){const x=W/2,y=H*.45,s=Math.min(W*.25,H*.19),bob=Math.sin(time*3)*4;ctx.save();ctx.translate(x+Math.sin(enemy.hit*80)*enemy.hit*30,y+bob);ctx.shadowBlur=enemy.hit>0?28:12;ctx.shadowColor=enemy.boss?'#ff579e':'#42dce8';ctx.strokeStyle=enemy.phase==='open'?'#caff54':'#74c9e0';ctx.lineWidth=2;ctx.fillStyle=enemy.hit>0?'#b2ebf8':'#182039';ctx.beginPath();ctx.moveTo(-s*.42,-s*.55);ctx.lineTo(0,-s*.75);ctx.lineTo(s*.42,-s*.55);ctx.lineTo(s*.26,-s*.12);ctx.lineTo(-s*.26,-s*.12);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,-s*.4,s*.25,-s*.4,'#ff64c9',5);ctx.beginPath();ctx.moveTo(-s*.28,-s*.05);ctx.lineTo(-s*.62,s*.28);ctx.lineTo(-s*.4,s*.7);ctx.lineTo(s*.4,s*.7);ctx.lineTo(s*.62,s*.28);ctx.lineTo(s*.28,-s*.05);ctx.closePath();ctx.fill();ctx.stroke();line(-s*.25,s*.7,-s*.35,s*1.2,'#54829f',13);line(s*.25,s*.7,s*.35,s*1.2,'#54829f',13);const c=enemy.phase==='open'?'#caff54':'#ff6bcc';if(enemy.dir===0)line(-s*.85,s*.15,s*.85,s*.15,c,5);else line(0,-s*.7,0,s*.85,c,5);ctx.shadowBlur=0;ctx.fillStyle='#d1ddeb';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(enemy.type,0,-s-22);ctx.fillStyle='#303047';ctx.fillRect(-s*.6,-s-12,s*1.2,4);ctx.fillStyle=c;ctx.fillRect(-s*.6,-s-12,s*1.2*Math.max(0,enemy.hp/enemy.max),4);if(enemy.phase==='windup'){const ratio=clamp(enemy.timer/enemy.period,0,1);ctx.strokeStyle=ratio<.25?'#ff4b78':'#67efff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,s*.2,s*1.02,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);ctx.stroke();ctx.fillStyle='#e8edfa';ctx.fillText(ratio<.25?'GUARD NOW':'INCOMING',0,s*1.5)}else{ctx.fillStyle='#caff54';ctx.fillText('EXPOSED · CUT',0,s*1.5)}ctx.restore()}
-for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line(p.x,p.y,p.x-p.vx*.035,p.y-p.vy*.035,p.color,2)}ctx.globalAlpha=1;for(const t of trails){ctx.globalAlpha=t.life/.22;ctx.shadowBlur=20;ctx.shadowColor='#70faff';if(t.blade)line(t.blade.ax,t.blade.ay,t.blade.bx,t.blade.by,'#d8ffff',7);else if(t.horizontal)line(W*.13,H*.44,W*.87,H*.48,'#d8ffff',7);else line(W*.48,H*.23,W*.53,H*.7,'#d8ffff',7)}ctx.globalAlpha=1;ctx.shadowBlur=0;if(state==='play'){
+ctx.restore();for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line(p.x,p.y,p.x-p.vx*.035,p.y-p.vy*.035,p.color,2)}ctx.globalAlpha=1;for(const t of trails){ctx.globalAlpha=t.life/.22;ctx.shadowBlur=20;ctx.shadowColor='#70faff';if(t.blade)line(t.blade.ax,t.blade.ay,t.blade.bx,t.blade.by,'#d8ffff',7);else if(t.horizontal)line(W*.13,H*.44,W*.87,H*.48,'#d8ffff',7);else line(W*.48,H*.23,W*.53,H*.7,'#d8ffff',7)}ctx.globalAlpha=1;ctx.shadowBlur=0;if(state==='play'){
   if(district)drawThreats();
   const blade=gyro?swordSegment():{ax:W*.65+aim.x*W*.12,ay:H*.75+aim.y*H*.08,bx:W*.52+aim.x*W*.12,by:H*.47+aim.y*H*.08};
   drawSteel(blade);

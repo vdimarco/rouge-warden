@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const events={},element={style:{},dataset:{}};let calls=[];
+globalThis.innerWidth=400;globalThis.innerHeight=800;globalThis.window={orientation:0};globalThis.document={getElementById:()=>element,fullscreenElement:null,documentElement:{requestFullscreen:async()=>{calls.push('fullscreen');}}};
+globalThis.screen={orientation:{angle:0,type:'portrait-primary',lock:async type=>{calls.push(type);throw Error('unsupported')},unlock:()=>{},addEventListener:(key,fn)=>{events[key]=fn}}};
+globalThis.addEventListener=(key,fn)=>{events[key]=fn};globalThis.dispatchEvent=e=>{events[e.type]?.()};
+const m=await import('../public/neon/viewport.js');
+assert.equal(await m.lockViewport(),false);assert.equal(m.viewport.locked,true);assert.deepEqual(calls,['fullscreen','portrait-primary']);
+screen.orientation.angle=90;innerWidth=800;innerHeight=400;events.change();assert.equal(m.viewport.width,400);assert.equal(m.viewport.height,800);assert(element.style.transform.includes('rotate(90deg)'));
+m.unlockViewport();assert.equal(m.viewport.width,800);assert.equal(m.viewport.angle,0);assert.equal(m.viewport.locked,false);
+console.log('Viewport fallback passed: rejected native lock, rotated layout dimensions, compensated transform, unlock.');
