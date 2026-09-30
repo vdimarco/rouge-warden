@@ -179,7 +179,7 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     assert(chooseUpgrade(run, choice));
     if (choice === 'shield') assert.equal(run.lives, Math.min(5, beforeLives + 1));
     assert.equal(run.phase, 'flight');
-    advance(run, 2.3);
+    advance(run, run.flight.duration + H * 2);
     assert.equal(run.phase, 'ready');
     assert.equal(run.sectorIndex, sectorIndex + 1);
     assert.deepEqual([run.world.ball.x, run.world.ball.y], [currentSector(run).station.x, currentSector(run).station.y]);

@@ -191,7 +191,7 @@ const deploy = (run, kind = 'pull') => {
     assert.equal(run.phase, finalSector ? 'won' : 'upgrade');
     assert(events.some(e => e.type === 'field-expire' && e.reason === (finalSector ? 'won' : 'sector')));
     if (!finalSector) {
-      assert(chooseUpgrade(run, 'pulse')); advance(run, 2.3);
+      assert(chooseUpgrade(run, 'pulse')); advance(run, run.flight.duration + H * 2);
       assert.equal(run.sectorIndex, 1); assert.equal(run.phase, 'ready');
       assert.equal(run.fieldCharges, carried, 'unused charges carry to the next sector');
       assert.equal(run.gravityWell, null);
