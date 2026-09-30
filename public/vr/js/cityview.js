@@ -111,7 +111,7 @@ uniform vec3 uFog;
 uniform sampler2D uMap;
 uniform vec4 uMapBox;
 varying vec4 vFog;
-${COMMON.slice(COMMON.indexOf("// The golden-hour sky"), COMMON.indexOf("// Sun (lambert)"))}
+${COMMON.slice(COMMON.indexOf("float hash12"), COMMON.indexOf("// Sun (lambert)"))}
 ${COMMON.slice(COMMON.indexOf("float fogAmount"), COMMON.indexOf("vec3 fogMix"))}
 float sunVisV(vec3 p) {
   vec2 uv = (p.xz - uMapBox.xy) * uMapBox.zw;
@@ -454,8 +454,11 @@ void main() {
     float fl = fract(az * 24.0 / 6.2832);
     float ffw = fwidth(az * 24.0 / 6.2832);
     float flute = mix(0.5, smoothstep(0.1, 0.5, abs(fl - 0.5)), 1.0 - smoothstep(0.2, 0.6, ffw));
-    vec3 alb = vec3(0.78, 0.74, 0.68) * (0.92 + 0.1 * flute) * (0.94 + 0.08 * vnoise(vec2(az * 3.0, vW.y * 0.05)));
+    vec3 alb = vec3(0.86, 0.83, 0.76) * (0.92 + 0.1 * flute) * (0.94 + 0.08 * vnoise(vec2(az * 3.0, vW.y * 0.05)));
+    // Three vertical elevator ribbons emphasize the tower's height.
+    float lift = aaLine(fract((az - .3) * 3.0 / 6.2832) - .5, .022, fwidth(az * 3.0 / 6.2832));
     col = shade(alb, N, vis);
+    col = mix(col, skyColor(reflect(-V, N)) * .65 + vec3(.08,.16,.19), lift * .85);
   } else if (k == 11) {
     // the pod's concrete, with a dark reveal line every few metres
     float rv = aaLine(fract(vW.y / 4.0) - 0.5, 0.03, fwidth(vW.y / 4.0));
@@ -472,7 +475,7 @@ void main() {
     float fres = 0.12 + 0.88 * pow(1.0 - max(dot(N, V), 0.0), 4.0);
     float pulse = 0.75 + 0.25 * sin(uTime * 3.0);
     vec3 glow = mix(vec3(1.0, 0.76, 0.46), vec3(0.35, 1.0, 0.25) * pulse, uKing);
-    vec3 inter = glow * (0.75 + 0.25 * uFinale + 0.4 * uKing);
+    vec3 inter = mix(vec3(.12,.23,.28), glow * .76, .42 + .18 * sin(az * 13.0)) * (1.0 + 0.25 * uFinale + 0.4 * uKing);
     col = mix(inter * (1.0 - fres) + skyColor(R) * fres * 0.8, vec3(0.2, 0.2, 0.22), mull * 0.85 + floorLine * 0.6);
   } else if (k == 13) {
     // collars and the deck: metal, with a ring of warm lights on the rim
@@ -1688,9 +1691,18 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // the pod: a wall, the window band, a sloped top, the roof the King sits on; the antenna; the perch
   function needlePod(b, N, dr, dy) {
     const pr = N.podR, p0 = N.podY0, p1 = N.podY1;
-    lathe(b, [[dr - 0.35, dy, 11], [pr, p0 + 0.2, 11], [pr + 0.3, p0 + 3, 11], [pr + 0.3, p0 + 7, 12], [pr + 0.3, p0 + 17, 11], [pr + 0.3, p1 - 2.5, 11], [pr - 1, p1, 11], [4, p1, 11], [3.4, p1 + 0.6, 14]], 48, N.x, N.z);
-    // the antenna: a mast to 322, a thin spike to the top
-    lathe(b, [[3.4, p1 + 0.6, 14], [3.2, 322, 14], [1.5, 322.4, 14], [1.4, N.top - 2, 14], [0.25, N.top, 14]], 16, N.x, N.z);
+    // A tapered observation saucer with two continuous glazing bands and a thin crown.
+    lathe(b, [[N.shaftR, dy - 5, 11], [pr - 2, p0 + .2, 11],
+      [pr + .3, p0 + 3, 13], [pr + .3, p0 + 3.6, 12], [pr + .3, p0 + 9, 12],
+      [pr + .65, p0 + 9.3, 13], [pr + .65, p0 + 10.1, 13],
+      [pr + .1, p0 + 10.5, 12], [pr - .6, p0 + 17.5, 12],
+      [pr - 1, p0 + 18.2, 13], [pr - 2.5, p1 - 1, 11],
+      [pr - 4.5, p1, 11], [4, p1, 11], [3.4, p1 + .6, 14]], 96, N.x, N.z);
+    // Upper SkyPod, steel mast shoulders and the red-white broadcast antenna.
+    lathe(b, [[3.4, p1 + .6, 10], [3.0, 310, 10], [5.8, 311.5, 13],
+      [6.2, 313, 12], [6.2, 315.2, 12], [5.4, 316, 13],
+      [2.7, 317, 14], [2.3, 325, 14], [1.5, 326, 14],
+      [1.05, N.top - 4, 14], [.22, N.top, 14]], 48, N.x, N.z);
     lathe(b, [[5.2, p1, 21], [5.2, p1 + 0.6, 21], [4.6, p1 + 1.1, 21], [0, p1 + 1.1, 21]], 24, perch.x, perch.z);
     for (const y of [300, 322.6, 341, N.top + 0.3]) beacons.push([N.x, y, N.z, 1.4]);
   }
@@ -1700,8 +1712,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
       const a = (j / 3) * Math.PI * 2 + 0.3, ca = Math.cos(a), sa = Math.sin(a), th = 0.8;
       const px = -sa * th, pz = ca * th; // across the leg
       const P = (r, y, side) => [N.x + ca * r + px * side, y, N.z + sa * r + pz * side];
-      const top = 150, rOut = (y) => R + 4.5 * Math.pow(1 - y / top, 1.3);
-      const steps = 6;
+      const top = N.deck.y - 9, rOut = (y) => R + 8.5 * Math.pow(1 - y / top, 1.7);
+      const steps = 18;
       for (let s = 0; s < steps; s++) {
         const ya = (s / steps) * top, yb = ((s + 1) / steps) * top, ra = rOut(ya), rb = rOut(yb);
         const nOut = [ca, (ra - rb) / (yb - ya), sa], l = Math.hypot(...nOut);

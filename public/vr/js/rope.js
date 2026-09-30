@@ -320,7 +320,7 @@ export function createRopes(scene, city, settings) {
   const floorBelow = (h, oy) => h.ny > 0.7 && h.y < oy - 0.3;
   // The cone search over the city (spec §8 step 2), with hysteresis on the last city target.
   function cone(i, ox, oy, oz, vel) {
-    const c = (SWING.aimCone[settings && settings.aim] || 0) * DEG;
+    const c = (settings?.easySwing ? 24 : SWING.aimCone[settings && settings.aim] || 0) * DEG;
     if (!(c > 0)) return null;
     // two directions across the aim ray
     if (Math.abs(D.y) < 0.9) U.set(0, 1, 0); else U.set(1, 0, 0);

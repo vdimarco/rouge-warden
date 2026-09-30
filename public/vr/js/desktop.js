@@ -42,7 +42,7 @@ export function createDesktop(canvas, camera, settings) {
     unlock() { if (document.pointerLockElement === canvas) document.exitPointerLock(); },
     onUnlock: (fn) => unlockFns.push(fn),
     // For tests and resets: look straight ahead.
-    level() { pitch = 0; mobile.reset(); },
+    level(angle = 0) { pitch = clamp(angle, -PITCH_MAX, PITCH_MAX); mobile.reset(); },
   };
 
   const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused");
@@ -90,8 +90,10 @@ export function createDesktop(canvas, camera, settings) {
   /* ---------------- per frame ---------------- */
   D.update = (dt) => {
     clearEdges(inp);
-    const gp = standardPad();
+    const gp = mobile.enabled ? null : standardPad();
     const phone = mobile.sample(dt);
+    inp.easySwing = mobile.enabled;
+    inp.phoneFire = phone.fire;
     // look: the mouse (only while the pointer is locked) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
@@ -132,10 +134,15 @@ export function createDesktop(canvas, camera, settings) {
       h.gripLocal.pos.copy(GRIP_OFF[i]).applyQuaternion(head.quat).add(head.pos);
       h.gripLocal.quat.copy(head.quat);
       h.aimLocal.pos.copy(head.pos);
-      h.aimLocal.dir.set(0, 0, -1).applyQuaternion(head.quat);
+      h.aimLocal.dir.set(0, 0, -1);
+      if (i === 1 && phone.aim) {
+        const f = Math.tan(camera.fov * Math.PI / 360);
+        h.aimLocal.dir.set(phone.aim.x * f * camera.aspect, phone.aim.y * f, -1).normalize();
+      }
+      h.aimLocal.dir.applyQuaternion(head.quat);
       const on = trig[i];
       h.trigger = on ? 1 : 0;
-      if (on && !pressed[i]) h.triggerDown = true;
+      if ((on && !pressed[i]) || (i === 1 && phone.fire)) h.triggerDown = true;
       if (!on && pressed[i]) h.triggerUp = true;
       pressed[i] = on;
       h.holding = on;
