@@ -11,7 +11,11 @@ if(!job){
  // Record intent first. If the response is lost, do not blindly charge a second job.
  await writeFile(jobFile,JSON.stringify({asset:id,status:'submission-unknown'}));
  const r=await fetch(`${base}/add_task`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({prompt:specs[id],model:'404-mesh',seed:1709}),signal:AbortSignal.timeout(45000)});
- if(!r.ok)throw Error(`404 Gen submission HTTP ${r.status}. Check the provider before resubmitting.`);
+ if(!r.ok){
+  const detail=(await r.text()).replaceAll(key,'[redacted]').slice(0,1000);
+  console.error(`404 Gen rejected the request: ${detail}`);
+  throw Error(`404 Gen submission HTTP ${r.status}. Check the provider before resubmitting.`);
+ }
  const result=await r.json();if(typeof result.id!=='string')throw Error('Provider returned no task ID; verify the job before retrying.');
  job={asset:id,taskId:result.id,status:'pending'};await writeFile(jobFile,JSON.stringify(job));console.log(`Saved ${id} task ${job.taskId}`);
 }
