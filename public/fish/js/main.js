@@ -630,7 +630,8 @@ function release(t, late = false) {
   G.lastRelease = { t, theta: s.theta, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
   // hand tremor alone reaches 20 to 40 deg/s: a motion release needs a real swing
   const minSpeed = sensing() ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
-  if (fwd < minSpeed) {
+  const forwardTravel = Math.max(G.backMax, pk.maxTheta) - s.theta;
+  if (fwd < minSpeed || (sensing() && (forwardTravel < 8 || s.omega > 60))) {
     // no swing: nothing flies. Start again with no fuss
     resetCast(G.input === "motion" ? "Swing the phone forward. Lift your thumb as it tips." : "Drag down. Then flick up and let go.");
     return;
@@ -651,7 +652,7 @@ function release(t, late = false) {
   G.cast = params;
   G.cast.late = late;
   // physics uses the real rod geometry; world.tip() is the drawn, camera-held rod
-  G.flight = new Flight(rodTip(clamp(s.theta, -10, 170), params.yaw, 0, G.place.stand.rod), params);
+  G.flight = new Flight(rodTip(clamp(s.theta, 0, 85), params.yaw, 0, G.place.stand.rod), params);
   G.step = "flight";
   G.casts++;
   if (G.mode === "derby") G.castsLeft--;

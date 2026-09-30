@@ -66,7 +66,7 @@ export function loadPaintedWater() {
     let settled = false;
     const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); waterPaintLoad = null; resolve(ok); };
     const timer = setTimeout(() => finish(false), 8000);
-    new THREE.TextureLoader().load(new URL("../art/painted-water.webp", import.meta.url).href, texture => {
+    new THREE.TextureLoader().load(new URL("../art/fal-lake-water.webp", import.meta.url).href, texture => {
       if (settled) { texture.dispose(); return; }
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.NoColorSpace;
@@ -511,11 +511,13 @@ export function buildWater(low, place, look) {
           if (uWaterPaintReady > .5) {
             // The painted tile supplies brush detail. Subtle distortion carries
             // the wind/current, while gameplay ripples and wakes remain live.
-            vec2 paintUV = pf * vec2(.022, .045) + vec2(uTime * .0007, uTime * .00035);
+            vec2 paintUV = pf * vec2(.045, .045) + vec2(uTime * .0007, uTime * .00035);
             paintUV += vec2(sin(p.y * .24 + uTime * .32), sin(p.x * .17 - uTime * .23)) * .002;
             vec3 paint = texture2D(uWaterPaint, paintUV).rgb;
+            vec3 drift = texture2D(uWaterPaint, paintUV * .61 + vec2(.37, -.21) - vec2(uTime * .0004, 0.)).rgb;
+            paint = mix(paint, drift, .28);
             paint *= clamp(body / vec3(.24, .50, .49), vec3(.07), vec3(1.35));
-            col = mix(col, paint, .86);
+            col = mix(col, paint, .64);
           }
           spec = min(spec, .3) * smoothstep(.52, .67, brush);
         }
