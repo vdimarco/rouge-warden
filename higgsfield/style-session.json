@@ -1,0 +1,10 @@
+{
+  "tokenSha256": "640d9bfcebab9007bb8d53d10652813c3ed4646cbb0979e95bd21eff2def7224",
+  "expiresAt": "2026-09-30T04:32:48.933606+00:00",
+  "idempotency": {
+    "scenery": "681277102ffc5d326905ba597891298774479dd9a5dcc20d",
+    "heroes": "034e5e964ac2283fdb38176de8b466a54f365b3da44734c2",
+    "units": "e5b607e2bb67d18fc7982b9bf1569edc0da394ac1205a151",
+    "abilities": "961d5fcf1af54c386ee07c2a05ed70d99a53235d1c64efc4"
+  }
+}
