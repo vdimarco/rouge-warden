@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { scene, toonRamp, LITE } from './render.js';
 import { mulberry32 } from './core/rng.js';
-import { mergeVertices } from './lib/addons/utils/BufferGeometryUtils.js';
+import { mergeVertices } from '../lib/addons/utils/BufferGeometryUtils.js';
 
 const TAU = Math.PI * 2;
 // one fixed seed, so the arena is laid out the same way on every load
