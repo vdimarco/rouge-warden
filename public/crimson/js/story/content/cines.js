@@ -70,7 +70,7 @@ function introCine(id, place, look, o = {}) {
 export const CINES = {
   /* ---------------- C0 The Bear Yields (the arena) ---------------- */
   c0: {
-    id: 'c0', arena: true, look: 'ARENA', dur: 16.8,
+    id: 'c0', arena: true, look: 'COMIC', dur: 16.8,
     cast: { pick: { id: 'pick', costume: true } },
     film: { at: 0.6, src: 'clips/gabe-return-comic' },
     shots: [
@@ -90,7 +90,7 @@ export const CINES = {
       act(0.6, 'gabe', 'show', { replace: 'bear' }),
       act(0.62, 'ronin', 'place', { at: W('gabe', 0, 0, 2.4), face: 'gabe' }),
       act(0.65, 'gabe', 'pose', { name: 'kneel', k: 1 }),
-      act(0.7, 'gabe', 'drain', { k: 1, dur: 1.2 }),
+      act(0.7, 'gabe', 'drain', { k: 0.15, dur: 1.2 }),
       act(1.1, 'gabe', 'pose', { name: 'kneelOpen', k: 1 }),
       act(2.5, 'ronin', 'prop', { name: 'foamKatanaBent', on: true, bone: 'RightHand' }),
       act(3.9, 'pick', 'show', { replace: 'ronin' }),
@@ -105,12 +105,12 @@ export const CINES = {
     lines: [line(1.2, 'c0.swing'), line(4.1, 'c0.gabe'), line(6.3, 'c0.buddy'), line(10.2, 'c0.down'), line(12.2, 'c0.voice')],
     fx: [{ at: 0.6, kind: 'flash' }, { at: 0.7, kind: 'ink', pos: W('gabe', 0, 0.5) }, { at: 9, kind: 'headlights', pos: { bridge: true, y: 1 } }],
     sfx: [{ at: 0.6, name: 'yield' }, { at: 8.9, name: 'engine' }, { at: 12.1, name: 'doorClose' }],
-    end: { actors: { gabe: { pose: 'crouch' } }, look: 'NIGHT' },
+    end: { actors: { gabe: { pose: 'crouch' } }, look: 'COMIC' },
   },
 
   /* ---------------- I0 Under the Bridge: cut on the speaker, keep reactions moving ---------------- */
   i0: {
-    id: 'i0', look: 'NIGHT', dur: 23.5, cast: UNDER,
+    id: 'i0', look: 'COMIC', dur: 23.5, cast: UNDER,
     cards: [card(0, 'time', 'SUNDAY · 3:12 AM', 'UNDER MIDGLEY BRIDGE'), card(21.3, 'title', 'HOW DID WE GET HERE', 'THURSDAY. THREE DAYS EARLIER.', '回想')],
     shots: [
       shot(0, 1.7, P('wash', -9, 1.2, 7), P('wash', -7, 1.5, 5), P('wash', 0, 1.3, 0.5), 50),
@@ -125,6 +125,7 @@ export const CINES = {
       shot(21.3, 2.2, P('wash', -6, 2, 6), P('wash', -12, 6, 12), { bridge: true, y: 6 }, 50),
     ],
     actors: [
+      act(0, 'gabe', 'drain', { k: 0.15, dur: 0 }),
       act(0, 'gabe', 'pose', { name: 'idle', k: 1 }),
       act(0, 'fifty', 'face', { who: 'gabe' }),
       act(1.7, 'gabe', 'face', { who: 'fifty' }),
