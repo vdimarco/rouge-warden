@@ -24,6 +24,18 @@ no deployed generation endpoint.
 
 ## Commands
 
+The Monster Mash style comparison is at `/tidebreak/styles/`. Three concepts were
+generated through the direct API on 2026-09-30 using `marketing-studio/image`.
+`monster-styles.json` preserves the shared composition, each style prompt and the
+generation parameters. The gallery's `sources.json` records the request IDs and
+source URLs. These are custom Ghibli-, Pixar-, and Rick and Morty-inspired prompts,
+not named provider presets or screenshots of the game's current renderer.
+
+The generation used a temporary preview-only server function with hashed bearer
+authentication, a two-hour expiry and three fixed upstream idempotency keys. It
+was removed after the images completed. No generation credentials were downloaded
+or committed, and the gallery contains only static assets.
+
 - `npm run models [-- <filter>]` lists the API's models (free). The API makes images and video only.
   It has no 3D models.
 - `npm run gen -- <model> <input JSON or @file.json> [--out <dir>] [--name <base>] [--wait <minutes>]`
