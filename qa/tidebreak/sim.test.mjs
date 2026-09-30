@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, step, cast, damage, buy, portal, HEROES, SIZE, LIMIT } from '../../public/tidebreak/sim.js';
-import { LANES, PORTALS, OBSTACLES, BRUSH, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance } from '../../public/tidebreak/world.js';
+import { LANES, PATHS, PORTALS, OBSTACLES, BRUSH, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance } from '../../public/tidebreak/world.js';
 const advance = (s, seconds, input = {}) => { for (let i = 0; i < seconds * 20; i++) step(s, input, .05); };
 const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800 }); Object.assign(foe, { x: 2400, y: 2650 }); return { s, p, foe }; };
 assert.equal((SIZE / 1600) ** 2, 9, 'arena has nine times the original area');
-for (const phase of [0, 1]) for (const lane of LANES) for (let i = 1; i < lane.length; i++) assert.ok(lineOfSight({ phase }, lane[i - 1], lane[i]), 'every lane stays open through realm changes');
+for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.length; i++) assert.ok(lineOfSight({ phase }, lane[i - 1], lane[i]), 'every lane stays open through realm changes');
 {
   const s = createMatch(), p = player(s), core = s.units.find(e => e.kind === 'core' && e.team === 1);
   damage(s, p, core, 9999); assert.equal(core.hp, core.maxHp);

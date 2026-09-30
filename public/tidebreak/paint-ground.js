@@ -1,79 +1,85 @@
-import { SIZE, LANES, BASES, PORTALS, CAMPS } from './world.js';
-import { sceneryRandom } from './scenery.js';
+import { SIZE, PATHS, BASES, PORTALS, CAMPS } from './world.js';
+import { sceneryRandom, laneDistance } from './scenery.js';
 import { riverSample, riverOutline } from './river.js';
 const TAU = Math.PI * 2;
-
-// Cached once per match and realm. Irregular paths, soil and stones never cost
-// thousands of draw calls in the animation loop.
-export function paintGround(tiles, scene) {
-  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 2400;
-  const c = canvas.getContext('2d'), rand = sceneryRandom(scene.seed ^ 0xeca95);
-  c.scale(.5, .5); c.fillStyle = scene.phase ? '#263e42' : '#435249'; c.fillRect(0, 0, SIZE, SIZE);
-  c.globalAlpha = .48; c.fillStyle = c.createPattern(tiles[1], 'repeat'); c.fillRect(0, 0, SIZE, SIZE); c.globalAlpha = 1;
-  for (const p of scene.patches) {
-    c.save(); c.translate(p.x, p.y); c.rotate(p.angle); c.scale(1, .6);
-    const glow = c.createRadialGradient(0, 0, 0, 0, 0, p.r);
-    const color = p.hue < .32 ? '28,63,59' : p.hue < .66 ? '127,139,83' : '105,83,80';
-    glow.addColorStop(0, `rgba(${color},.36)`); glow.addColorStop(1, `rgba(${color},0)`);
-    c.fillStyle = glow; c.fillRect(-p.r, -p.r, p.r * 2, p.r * 2); c.restore();
+const texture = (image, column, row, scale = 600) => {
+  const c = document.createElement('canvas'); c.width = c.height = scale;
+  const w = image.width / 2, h = image.height / 2;
+  c.getContext('2d').drawImage(image, column * w + 8, row * h + 8, w - 16, h - 16, 0, 0, scale, scale); return c;
+};
+function outline(c, points) {
+  c.beginPath(); c.moveTo((points.at(-1).x + points[0].x) / 2, (points.at(-1).y + points[0].y) / 2);
+  for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; c.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2); } c.closePath();
+}
+function ribbon(path, seed, lane, spread = 0) {
+  const left = [], right = [];
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i], a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)], length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const nx = -(b.y - a.y) / length, ny = (b.x - a.x) / length;
+    // Long variations form clearings; independent banks prevent a machined road.
+    const width = (lane === 1 ? 79 : 73) + Math.sin(i * .21 + seed % 13) * 17 + Math.sin(i * .57 + lane) * 8;
+    const l = width + spread + Math.sin(i * 1.3) * 9, r = width + spread + Math.cos(i * .9) * 10;
+    left.push({ x: p.x + nx * l, y: p.y + ny * l }); right.push({ x: p.x - nx * r, y: p.y - ny * r });
   }
+  return [...left, ...right.reverse()];
+}
+// Cached terrain combines Higgsfield materials, curved tracks and region masks.
+export function paintGround(tiles, scene, surfaces) {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 3072;
+  const c = canvas.getContext('2d'), rand = sceneryRandom(scene.seed ^ 0xeca95), materials = [0,1,2,3].map(i=>texture(surfaces,i%2,Math.floor(i/2)));
+  c.scale(canvas.width / SIZE, canvas.height / SIZE); c.fillStyle = '#667558'; c.fillRect(0,0,SIZE,SIZE);
+  c.fillStyle = c.createPattern(materials[0], 'repeat'); c.fillRect(0,0,SIZE,SIZE);
+  // Ground regions feather into one another, with irregular long contours.
+  for (const district of scene.districts) {
+    c.save(); c.translate(district.x, district.y); c.rotate(district.angle);
+    const points = Array.from({length:20},(_,i)=>{const a=i/20*TAU,n=.78+rand()*.32;return {x:Math.cos(a)*district.rx*n,y:Math.sin(a)*district.ry*n};});
+    outline(c,points); c.clip();
+    c.fillStyle = district.color; c.globalAlpha = .45; c.fillRect(-district.rx*1.5,-district.ry*1.5,district.rx*3,district.ry*3);
+    c.globalAlpha = .63; c.fillStyle = c.createPattern(materials[district.material], 'repeat'); c.fillRect(-district.rx*1.5,-district.ry*1.5,district.rx*3,district.ry*3); c.restore();
+  }
+  for (const patch of scene.patches) {
+    c.save(); c.translate(patch.x,patch.y); c.rotate(patch.angle); c.scale(1,.65);
+    const mask = c.createRadialGradient(0,0,0,0,0,patch.r), color = patch.hue < .3 ? '21,67,62' : patch.hue < .68 ? '204,181,112' : '121,101,71';
+    mask.addColorStop(0,`rgba(${color},.25)`); mask.addColorStop(1,`rgba(${color},0)`); c.fillStyle = mask; c.fillRect(-patch.r,-patch.r,patch.r*2,patch.r*2); c.restore();
+  }
+  // Narrow paths link real clearings; they curl around the main landscape pieces.
   c.lineCap = c.lineJoin = 'round';
-  // Thin wandering footpaths join the camp clearings to the lane network.
-  for (const a of [...CAMPS, ...PORTALS]) {
-    c.beginPath(); c.moveTo(a.x, a.y); c.bezierCurveTo(a.x + (2400 - a.x) * .3, a.y + 130, a.x + (2400 - a.x) * .7, a.y - 100, 2400, a.y);
-    c.strokeStyle = '#96927621'; c.lineWidth = 75; c.stroke(); c.strokeStyle = '#8d89704c'; c.lineWidth = 38; c.stroke();
+  for (const a of [...CAMPS,...PORTALS]) {
+    const nearest = PATHS.flat().reduce((p,q)=>Math.hypot(a.x-p.x,a.y-p.y)<Math.hypot(a.x-q.x,a.y-q.y)?p:q);
+    c.beginPath();c.moveTo(a.x,a.y);c.bezierCurveTo(a.x+(nearest.x-a.x)*.3,a.y+95,a.x+(nearest.x-a.x)*.7,nearest.y-80,nearest.x,nearest.y);
+    c.strokeStyle = '#aa966b44';c.lineWidth = 64;c.stroke();c.strokeStyle = '#bda77c4a';c.lineWidth = 32;c.stroke();
   }
-  for (const lane of LANES) {
-    c.beginPath(); lane.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
-    c.strokeStyle = '#223733'; c.lineWidth = 270; c.stroke();
-    c.strokeStyle = '#7e806158'; c.lineWidth = 260; c.stroke();
-    c.strokeStyle = c.createPattern(tiles[3], 'repeat'); c.lineWidth = 227; c.stroke();
-    c.strokeStyle = '#8f856c26'; c.stroke();
-    for (let i = 1; i < lane.length; i++) {
-      const a = lane[i - 1], b = lane[i], len = Math.hypot(b.x - a.x, b.y - a.y), angle = Math.atan2(b.y - a.y, b.x - a.x);
-      for (let d = 0; d < len; d += 34) for (let row = -3; row <= 3; row++) {
-        const along = d + rand() * 12, side = row * 31 + (rand() - .5) * 13;
-        const x = a.x + Math.cos(angle) * along - Math.sin(angle) * side, y = a.y + Math.sin(angle) * along + Math.cos(angle) * side;
-        if (Math.abs(row) === 3 && rand() < .25) continue;
-        const r = 10 + rand() * 7, tone = Math.floor(rand() * 23);
-        c.globalAlpha = .16;
-        c.save(); c.translate(x, y); c.rotate(angle + (rand() - .5) * .7);
-        c.beginPath(); for (let j = 0; j < 6; j++) { const t = j / 6 * TAU, radius = r * (.8 + rand() * .3); j ? c.lineTo(Math.cos(t) * radius, Math.sin(t) * radius * .85) : c.moveTo(Math.cos(t) * radius, Math.sin(t) * radius * .85); } c.closePath();
-        c.fillStyle = `rgb(${120 + tone},${121 + tone},${99 + tone})`; c.fill(); c.strokeStyle = '#414d4380'; c.lineWidth = 1.8; c.stroke();
-        c.beginPath(); c.moveTo(-r * .6, -r * .4); c.lineTo(r * .2, -r * .65); c.strokeStyle = '#d2ccb442'; c.lineWidth = 2; c.stroke(); c.restore(); c.globalAlpha = 1;
-      }
+  for (const [lane,path] of PATHS.entries()) {
+    outline(c,ribbon(path,scene.seed,lane,20));c.fillStyle = '#7a785750';c.fill();
+    c.save();outline(c,ribbon(path,scene.seed,lane));c.clip();
+    c.fillStyle = c.createPattern(materials[1],'repeat');c.fillRect(0,0,SIZE,SIZE);
+    c.fillStyle = '#c0a88320';c.fillRect(0,0,SIZE,SIZE);
+    c.restore();
+    // Grass and small broken slabs interrupt the path edge at uneven intervals.
+    for(let i=3;i<path.length-3;i++) {
+      const p=path[i],q=path[i+1],a=Math.atan2(q.y-p.y,q.x-p.x),side=rand()<.5?-1:1,offset=65+rand()*31;
+      const x=p.x-Math.sin(a)*offset*side,y=p.y+Math.cos(a)*offset*side;
+      const edge=c.createRadialGradient(x,y,0,x,y,25);edge.addColorStop(0,'#71835766');edge.addColorStop(1,'#71835700');c.fillStyle=edge;c.fillRect(x-25,y-25,50,50);
+      if(rand()<.23){c.save();c.translate(p.x+(rand()-.5)*90,p.y+(rand()-.5)*60);c.rotate(a+rand());c.fillStyle='#a7a78a9e';c.strokeStyle='#6f775a99';c.lineWidth=2;c.beginPath();c.moveTo(-7,-4);c.lineTo(5,-5);c.lineTo(8,3);c.lineTo(-3,7);c.closePath();c.fill();c.stroke();c.restore();}
     }
   }
-  // Fill two independent banks. No parallel border strokes or uniform canal bed.
-  riverOutline(c, scene.river, 42); c.fillStyle = '#253e343c'; c.fill();
-  riverOutline(c, scene.river, 23); c.fillStyle = '#84906c88'; c.fill();
-  c.save(); riverOutline(c, scene.river); c.clip();
-  const water = c.createLinearGradient(0, 1700, 4000, 2600); water.addColorStop(0, '#34767a'); water.addColorStop(.35, '#2a6c72'); water.addColorStop(.65, '#3b8680'); water.addColorStop(1, '#275e6c');
-  c.fillStyle = water; c.fillRect(0, 1400, SIZE, 1500);
-  c.globalAlpha = .16; c.fillStyle = c.createPattern(tiles[2], 'repeat'); c.fillRect(0, 1400, SIZE, 1500); c.globalAlpha = 1;
-  // Shallow gravel shelves gather in pockets along the bends.
-  for (let i = 0; i < 35; i++) {
-    const x = rand() * SIZE, bank = riverSample(x, scene.seed), y = i % 2 ? bank.north : bank.south, radius = 40 + rand() * 150;
-    const shelf = c.createRadialGradient(x, y, 0, x, y, radius); shelf.addColorStop(0, '#b4bea052'); shelf.addColorStop(.5, '#9baf8940'); shelf.addColorStop(1, '#80a38500');
-    c.fillStyle = shelf; c.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  riverOutline(c,scene.river,50);c.fillStyle='#45685644';c.fill();riverOutline(c,scene.river,18);c.fillStyle='#aaa7877c';c.fill();
+  c.save();riverOutline(c,scene.river);c.clip();
+  const water=c.createLinearGradient(0,1700,4000,2600);water.addColorStop(0,'#659f9c');water.addColorStop(.35,'#3b8e91');water.addColorStop(.65,'#77b5a2');water.addColorStop(1,'#387c8d');c.fillStyle=water;c.fillRect(0,1300,SIZE,1700);
+  c.globalAlpha=.12;c.fillStyle=c.createPattern(tiles[2],'repeat');c.fillRect(0,1300,SIZE,1700);c.globalAlpha=1;
+  for(let i=0;i<45;i++){const x=rand()*SIZE,bank=riverSample(x,scene.seed),y=i%2?bank.north:bank.south,radius=50+rand()*160,mask=c.createRadialGradient(x,y,0,x,y,radius);mask.addColorStop(0,'#d8d1a975');mask.addColorStop(1,'#9fcbb300');c.fillStyle=mask;c.fillRect(x-radius,y-radius,radius*2,radius*2);}c.restore();
+  // Broad contact shadows and warm soil beds join the cutouts to their setting.
+  for(const p of scene.props){
+    if(p.height<200)continue;
+    const radius=p.height*.44;c.save();c.translate(p.x+radius*.12,p.y-20);c.scale(1,.5);
+    const shadow=c.createRadialGradient(0,0,0,0,0,radius);shadow.addColorStop(0,p.solid?'#193b3975':'#1c42435a');shadow.addColorStop(1,'#23453900');c.fillStyle=shadow;c.fillRect(-radius,-radius,radius*2,radius*2);c.restore();
   }
-  c.restore();
-  for (let i = 0; i < 210; i++) {
-    const x = rand() * SIZE, bank = riverSample(x, scene.seed), y = i % 2 ? bank.north - rand() * 32 : bank.south + rand() * 36;
-    if (rand() < .35) continue;
-    c.fillStyle = ['#7b8973', '#526d64', '#9ca48a', '#365850'][Math.floor(rand() * 4)]; c.beginPath(); c.ellipse(x, y, 3 + rand() * 9, 2 + rand() * 5, rand() * TAU, 0, TAU); c.fill();
+  // Little details gather around scenery rather than spraying the playfield.
+  for(const p of scene.props.filter(p=>p.height<230))for(let i=0;i<5;i++){
+    const x=p.x+(rand()-.5)*130,y=p.y+(rand()-.5)*90;if(laneDistance({x,y})<110)continue;
+    c.strokeStyle='#bec19172';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x-4,y-8-rand()*12);c.stroke();
   }
-  for (const p of scene.props) {
-    if (p.solid) {
-      const shade = c.createRadialGradient(p.x, p.y, 5, p.x, p.y, 180); shade.addColorStop(0, '#10292388'); shade.addColorStop(1, '#10292300');
-      c.fillStyle = shade; c.fillRect(p.x - 180, p.y - 180, 360, 360);
-    }
-    // Sprigs and scattered petals give the ground detail between full sprites.
-    for (let j = 0; j < 8; j++) { const x = p.x + (rand() - .5) * 120, y = p.y + (rand() - .5) * 90; c.strokeStyle = '#92a77560'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y - 6 - rand() * 9); c.stroke(); if (j % 3 === 0) { c.fillStyle = rand() < .5 ? '#bc8ab4a0' : '#c5c49880'; c.fillRect(x, y - 8, 3, 3); } }
-  }
-  for (const [i, p] of BASES.entries()) {
-    c.strokeStyle = i ? '#ad79c956' : '#89d9b650'; c.lineWidth = 8; c.beginPath(); c.ellipse(p.x, p.y, 230, 210, 0, 0, TAU); c.stroke();
-    for (let j = 0; j < 12; j++) { const a = j / 12 * TAU; c.save(); c.translate(p.x + Math.cos(a) * 200, p.y + Math.sin(a) * 185); c.rotate(a); c.strokeRect(-9, -4, 18, 8); c.restore(); }
-  }
+  for(const [i,p] of BASES.entries()){c.strokeStyle=i?'#96799e6b':'#9ad4b66b';c.lineWidth=6;c.beginPath();c.ellipse(p.x,p.y,170,150,0,0,TAU);c.stroke();}
+  if(scene.phase){c.fillStyle='#1b435e23';c.fillRect(0,0,SIZE,SIZE);}
   return canvas;
 }

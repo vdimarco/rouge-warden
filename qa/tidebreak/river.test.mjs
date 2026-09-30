@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { riverGeometry, riverSample, riverCrossings, insideRiver } from '../../public/tidebreak/river.js';
-import { LANES, inWater } from '../../public/tidebreak/world.js';
+import { PATHS, inWater } from '../../public/tidebreak/world.js';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
 
 for (const seed of [1, 49, 91822, 0xffffffff]) {
@@ -16,7 +16,7 @@ for (const seed of [1, 49, 91822, 0xffffffff]) {
     assert(!insideRiver({ x: p.x, y: p.south + 1 }, seed));
     assert.equal(inWater({ x: p.x, y: p.y }, { seed }), true, 'Nessie uses the same water footprint');
   }
-  const bridges = riverCrossings(LANES, seed); assert.equal(bridges.length, 3);
+  const bridges = riverCrossings(PATHS, seed); assert.equal(bridges.length, 3);
   for (const b of bridges) { assert(Math.abs(b.y - riverSample(b.x, seed).y) < .01, 'bridge center lies on seeded river'); assert(b.span > riverSample(b.x, seed).south - riverSample(b.x, seed).north, 'bridge spans water and banks'); }
 }
 // Measure real movement on a wide, unobstructed part of the central crossing.

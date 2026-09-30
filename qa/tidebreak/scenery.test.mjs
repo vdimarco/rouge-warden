@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { makeScenery, laneDistance } from '../../public/tidebreak/scenery.js';
-import { OBSTACLES } from '../../public/tidebreak/world.js';
+import { OBSTACLES, PATHS, BASES, lineOfSight, resolveBody } from '../../public/tidebreak/world.js';
 import { outsideRiver } from '../../public/tidebreak/river.js';
 import { attackPose } from '../../public/tidebreak/combat-motion.js';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
@@ -35,3 +35,15 @@ for (let hero = 0; hero < 4; hero++) {
   assert.equal(attackPose(p, s.time).stage, 2);
 }
 console.log('PASS: seeded scenery, variant diversity, collision footprints, lane clearance, all four attack wind-ups and synchronized damage/pose events.');
+
+// Renderer, bridge placement and units share these curved centerlines.
+for (const phase of [0, 1]) for (const path of PATHS) {
+  assert(path.length > 60, 'lanes have sampled curves instead of five straight segments');
+  assert.deepEqual(path[0], BASES[0]); assert.deepEqual(path.at(-1), BASES[1]);
+  for (let i = 0; i < path.length; i++) {
+    const e = { ...path[i], radius: 42 }; resolveBody({ phase }, e);
+    assert(Math.hypot(e.x - path[i].x, e.y - path[i].y) < .001, 'largest moving bodies fit through every curved route');
+    if (i) assert(lineOfSight({ phase }, path[i - 1], path[i]), 'curve segments are clear in both realms');
+  }
+}
+console.log('PASS: curved routes, 42-unit body clearance, matching lane endpoints and sight through every segment.');

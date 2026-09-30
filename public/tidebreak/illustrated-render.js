@@ -1,6 +1,6 @@
 import { player, HEROES } from './sim.js';
-import { SIZE, BASES, LANES, PORTALS, BRUSH, visibleTo, concealed, distance } from './world.js';
-import { LANDMARKS, PLANTS, makeScenery } from './scenery.js';
+import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, visibleTo, concealed, distance, clamp } from './world.js';
+import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
 import { attackPose, drawCombatEffect } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
@@ -8,9 +8,9 @@ const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
-  const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...HEROES.flatMap(h => [h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
+  const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap(h => [h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
-  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])), ground: await load('./art/toon-ground.webp') };
+  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
 // An orthographic 2.5D stage: separate illustrated objects, depth sorting, camera
 // tracking and world-space effects. The concept screenshot is never a backdrop.
@@ -23,13 +23,13 @@ export class Renderer {
   }
   setScene(seed) {
     if (seed === this.sceneSeed) return;
-    this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase)); this.bridges = riverCrossings(LANES, seed);
-    this.grounds = this.scenes.map(scene => paintGround(this.tiles, scene));
+    this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase)); this.bridges = riverCrossings(PATHS, seed);
+    this.grounds = this.scenes.map(scene => paintGround(this.tiles, scene, this.art.surfaces));
   }
   resize() {
     this.width = innerWidth; this.height = innerHeight; this.dpr = Math.min(devicePixelRatio || 1, 2);
     this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr;
-    this.scale = Math.min(this.width / 810, this.height / 1720);
+    this.scale = Math.min(this.width / 1040, this.height / 1840);
     this.anchor = this.height < 520 ? .76 : .86;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); this.ctx.imageSmoothingEnabled = true;
   }
@@ -53,6 +53,9 @@ export class Renderer {
   draw(s, dt, menu = false, aim = null, waypoint = null) {
     const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
     this.cam.x += (p.x - this.cam.x) * Math.min(1, dt * 8); this.cam.y += (p.y - this.cam.y) * Math.min(1, dt * 8);
+    // Keep the complete camera footprint inside the landscape at each viewport.
+    const halfW = Math.min(SIZE / 2, this.width / this.scale / 2), top = this.height * this.anchor / (this.scale * .88), bottom = this.height * (1 - this.anchor) / (this.scale * .88);
+    this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
     const impact = this.reducedMotion ? 0 : Math.min(1, s.effects.filter(f => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250)).reduce((n, f) => Math.max(n, Math.max(0, f.life / f.maxLife - .55)), 0));
     this.shakeX = Math.sin(time * 103) * impact * 3; this.shakeY = Math.cos(time * 127) * impact * 2;
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
@@ -144,8 +147,8 @@ export class Renderer {
     const m = canvas.getContext('2d'), size = canvas.width, full = size > 250; m.clearRect(0, 0, size, size); m.fillStyle = '#1c353a'; m.fillRect(0, 0, size, size);
     m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
     m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
-    for (const lane of LANES) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
-    for (const b of riverCrossings(LANES, s.seed)) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
+    for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
+    for (const b of riverCrossings(PATHS, s.seed)) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
     for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
@@ -156,5 +159,5 @@ export class Renderer {
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }

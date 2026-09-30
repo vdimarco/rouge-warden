@@ -1,6 +1,6 @@
 // Deterministic Monster Mash rules. Rendering and input are separate.
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
-import { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
+import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0, skills: ['Night flight', 'Dread wings', 'Blackout'], labels: ['FLY', 'DREAD', 'BLACKOUT'], descriptions: ['Fly over walls and cloak for 2 seconds.', 'Wing blast damages and slows nearby enemies.', 'Cloak and see through cover for 6 seconds. Fear nearby foes.'] },
@@ -238,12 +238,11 @@ function spawnWave(s) {
   }
 }
 function followLane(s, e, dt) {
-  const path = e.team ? [...LANES[e.lane]].reverse() : LANES[e.lane];
-  // On returning from a chase, skip waypoints already behind the unit.
-  if (e.waypoint < 2 && (e.team ? e.y > path[1].y + 100 : e.y < path[1].y - 100)) e.waypoint = 2;
-  const p = path[Math.min(e.waypoint, path.length - 1)];
-  if (distance(e, p) < 80 && e.waypoint < path.length - 1) e.waypoint++;
-  move(s, e, p.x, p.y, dt, e.speed * (e.slow > 0 ? .52 : 1));
+  const path = e.team ? [...PATHS[e.lane]].reverse() : PATHS[e.lane];
+  // Rejoin the closest piece of the curved lane after a chase or teleport.
+  const index = closestTrack(e, path), ahead = path[Math.min(path.length - 1, index + 2)];
+  e.waypoint = index; move(s, e, ahead.x, ahead.y, dt, e.speed * (e.slow > 0 ? .52 : 1));
+
 }
 function bot(s, e, dt) {
   if (e.hp < e.maxHp * .23 || e.retreat && e.hp < e.maxHp * .85) {
