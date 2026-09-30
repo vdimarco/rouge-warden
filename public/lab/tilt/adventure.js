@@ -22,6 +22,13 @@ const segment = (a, b, extra = {}) => ({ a, b, e: 0.48, ...extra });
 const emit = (run, type, extra = {}) => (run._updating ? run.events : run._pendingEvents).push({ type, x: run.world.ball.x, y: run.world.ball.y, ...extra });
 export const currentSector = (run) => run.sectors[run.sectorIndex];
 export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
+// A small optional steering force: at most one tenth of the dock's gravity.
+export const TILT_ACCELERATION = 80;
+export function setAdventureTilt(run, x = 0, y = 0) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) { x = 0; y = 0; }
+  const length = Math.max(1, Math.hypot(x, y));
+  run.tilt.x = x / length; run.tilt.y = y / length;
+}
 
 export function createAdventure(seed = 1) {
   let n = (Number(seed) || 1) >>> 0;
@@ -65,7 +72,7 @@ export function createAdventure(seed = 1) {
     clock: 0, saveUntil: 0, saved: false, pulseCooldown: 0, upgrades: [], events: [], flight: null,
     combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
     _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false,
-    orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100 };
+    orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100, tilt: { x: 0, y: 0 } };
   // Other systems stay visible but are reached through their jump gates.
   table.isActive = object => object.sector === run.sectorIndex;
   table.launchVelocity = (power = 0.75) => ({
@@ -99,7 +106,8 @@ export function createAdventure(seed = 1) {
     }
     const magnitude = Math.hypot(ax, ay);
     if (magnitude > 6800) { ax *= 6800 / magnitude; ay *= 6800 / magnitude; }
-    return { x: ax, y: ay };
+    // Shared by the solver and shot preview so gentle tilt also bends the guide.
+    return { x: ax + run.tilt.x * TILT_ACCELERATION, y: ay + run.tilt.y * TILT_ACCELERATION };
   };
   table.isDrain = b => {
     const s = currentSector(run);
