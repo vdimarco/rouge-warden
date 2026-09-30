@@ -148,12 +148,12 @@ export function mouthSpot(mesh, rig, ud = {}) {
   }
   if (ck < 0) for (const k of valid) if (zmax[k] > noseZ - 6) ck = k;
   const tipY = yOf(nk), chinY = yOf(ck), D = Math.max(4, tipY - chinY);
-  const y = tipY - 1.5 - (D - 1.5) / 3 + 0.8; // (the lip line: the jaw opens down from it)
+  const y = tipY - D * 0.58; // lip line between the nose tip and chin
   // the lips: the front of the face around that height
   let z = -Infinity;
   for (let k = 0; k < n; k++) if (zmax[k] != null && Math.abs(yOf(k) - y) <= 1) z = Math.max(z, zmax[k]);
   if (!Number.isFinite(z)) z = noseZ - 1.5;
-  const r = { x: H.x, y, z: z + 0.3, w: 5.2 };
+  const r = { x: H.x, y, z: z + 0.12, w: 4.6 };
   g.userData.mouthSpot = r;
   return r;
 }
@@ -181,7 +181,7 @@ function buildMouth(a) {
   const mesh = findSkinned(a.model || a.root); if (!mesh) return null;
   const rig = rigOf(mesh); if (!rig) return null;
   const b = a.bone ? a.bone('Head') : (a.bones && a.bones.Head); if (!b) return null;
-  const ud = (a.body && a.body.template && a.body.template.scene && a.body.template.scene.userData) || {};
+  const ud = a.body?.template?.scene?.userData || a.template?.scene?.userData || a.model?.userData || {};
   const spot = mouthSpot(mesh, rig, ud);
   const P = sharedParts();
   const g = new THREE.Group(); g.name = 'prop:mouth';
