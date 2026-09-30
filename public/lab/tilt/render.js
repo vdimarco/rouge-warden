@@ -1,4 +1,5 @@
 import { createCamera, updateCamera, worldToScreen, clamp } from './camera.js';
+import { F } from './physics.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
@@ -64,9 +65,9 @@ export function createRenderer(canvas, minimap) {
     const type = event.type || event.k;
     const x = event.x ?? run?.world?.ball?.x ?? 0;
     const y = event.y ?? run?.world?.ball?.y ?? 0;
-    const color = run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
-    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall'].includes(type);
-    if (['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch'].includes(type)) {
+    const color = type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
+    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit'].includes(type);
+    if (['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
       rings.push({ x, y, age: 0, life: large ? 0.8 : 0.35, r: large ? 220 : 75, color: type === 'relay' ? '#fff2b0' : color });
       if (!reducedMotion) {
         const count = large ? 26 : type === 'relay' ? 19 : 9;
@@ -128,18 +129,77 @@ export function createRenderer(canvas, minimap) {
     g.restore();
   }
 
-  function planet(planet, index, color, clock) {
+  function gravityField(room, run, active, clock) {
+    const p = room.planet, radius = room.gravityRadius || 470;
+    if (!visible(p.x, p.y, radius * 1.4)) return;
+    const color = room.color || PALETTE[room.id % 6];
+    const ballDistance = Math.hypot(run.world.ball.x - p.x, run.world.ball.y - p.y);
+    const proximity = active ? clamp(1 - ballDistance / (radius * 1.3), 0, 1) : 0;
+    const direction = room.orbitDirection || (room.id % 2 ? -1 : 1);
+    g.save();
+    // Broken, softly fading streamlines leave open space between each current.
+    // They describe the field without looking like a solid collision boundary.
+    const phase = reducedMotion ? 0 : clock * 0.065 * direction;
+    for (let lane = 0; lane < 5; lane++) {
+      const start = lane * 2.39 + room.id * 0.6 + phase;
+      const distance = p.r + 95 + lane * (radius - p.r - 65) / 5;
+      const span = 0.66 + lane * 0.12;
+      for (let part = 0; part < 3; part++) {
+        g.strokeStyle = color;
+        g.globalAlpha = (active ? 0.11 + proximity * 0.09 : 0.055) * [0.35, 1, 0.45][part];
+        g.lineWidth = (active ? 1.2 : 0.8) / Math.max(0.65, camera.scale);
+        g.beginPath();
+        g.ellipse(p.x, p.y, distance, distance * 0.96, lane * 0.14,
+          start + part * span / 3, start + (part + 1) * span / 3);
+        g.stroke();
+      }
+    }
+    if (active && typeof run.table.gravity === 'function') {
+      // Short moving wisps follow the same acceleration used by the ball.
+      // A tide can bend their direction; repulsion points them away from the body.
+      const count = reducedMotion ? 9 : 14;
+      for (let i = 0; i < count; i++) {
+        const a = i * 2.39996 + room.id * 0.55;
+        const t = reducedMotion ? rand(i + room.id * 20) : (rand(i + room.id * 20) + clock * 0.1) % 1;
+        const outward = p.kind === 'repel';
+        const distance = p.r + 65 + (outward ? t : 1 - t) * (radius - p.r - 55);
+        const x = p.x + Math.cos(a) * distance, y = p.y + Math.sin(a) * distance;
+        const force = run.table.gravity({ x, y, vx: 0, vy: 0 });
+        const magnitude = Math.hypot(force.x, force.y);
+        if (magnitude < 1) continue;
+        const nx = force.x / magnitude, ny = force.y / magnitude;
+        const length = 12 + clamp(magnitude / 75, 0, 20);
+        g.globalAlpha = Math.sin(t * Math.PI) * (0.2 + proximity * 0.16);
+        g.strokeStyle = color; g.lineWidth = 1.1 / Math.max(0.65, camera.scale);
+        g.beginPath(); g.moveTo(x - nx * length, y - ny * length); g.lineTo(x, y); g.stroke();
+        g.beginPath(); g.moveTo(x - nx * 5 + ny * 3, y - ny * 5 - nx * 3);
+        g.lineTo(x, y); g.lineTo(x - nx * 5 - ny * 3, y - ny * 5 + nx * 3); g.stroke();
+      }
+      // Sparse outer currents make the soft return force visible at the edge.
+      const returnRadius = room.returnRadius || radius + 100;
+      for (let i = 0; i < 4; i++) {
+        const a = i * TAU / 4 + 0.3;
+        const x = p.x + Math.cos(a) * returnRadius, y = p.y + Math.sin(a) * returnRadius;
+        const force = run.table.gravity({ x, y, vx: 0, vy: 0 });
+        const magnitude = Math.hypot(force.x, force.y);
+        if (magnitude < 1) continue;
+        const nx = force.x / magnitude, ny = force.y / magnitude;
+        g.globalAlpha = 0.1;
+        g.beginPath(); g.moveTo(x - nx * 30, y - ny * 30);
+        g.quadraticCurveTo(x - nx * 15 + ny * 7, y - ny * 15 - nx * 7, x, y); g.stroke();
+      }
+    }
+    g.restore();
+  }
+
+  function planet(planet, index, color, clock, active, ball) {
     const { x, y, r } = planet;
     if (!visible(x, y, r * 3.1)) return;
     g.save();
+    const near = active && Math.hypot(ball.x - x, ball.y - y) < r * 3.2;
     const glow = g.createRadialGradient(x, y, r * 0.65, x, y, r * 2.8);
-    glow.addColorStop(0, `${color}36`); glow.addColorStop(0.45, `${color}0d`); glow.addColorStop(1, `${color}00`);
+    glow.addColorStop(0, near ? `${color}65` : `${color}36`); glow.addColorStop(0.45, near ? `${color}19` : `${color}0d`); glow.addColorStop(1, `${color}00`);
     g.fillStyle = glow; circle(g, x, y, r * 2.8); g.fill();
-    g.strokeStyle = `${color}35`;
-    g.lineWidth = 1.15;
-    g.setLineDash([3, 13]);
-    for (let k = 1; k <= 3; k++) { circle(g, x, y, r + 36 + k * 38); g.stroke(); }
-    g.setLineDash([]);
     if (assets.sprites) {
       const kind = index === 1 || index === 4 ? 'amber' : index === 3 || index === 5 ? 'violet' : 'ice';
       g.save();
@@ -169,17 +229,8 @@ export function createRenderer(canvas, minimap) {
     const shade = g.createRadialGradient(x - r * 0.35, y + r * 0.3, r * 0.2, x - r * 0.35, y + r * 0.3, r * 1.6);
     shade.addColorStop(0, '#00111f00'); shade.addColorStop(0.6, '#00081325'); shade.addColorStop(1, '#010309ef');
     g.fillStyle = shade; circle(g, x, y, r); g.fill();
-    // Direction marks show the pull toward the real gravity body.
-    g.strokeStyle = `${color}70`; g.lineWidth = 1.5;
-    for (let i = 0; i < 3; i++) {
-      const a = i * TAU / 3 + index * 0.8, radius = r + 88;
-      const cx = x + Math.cos(a) * radius, cy = y + Math.sin(a) * radius;
-      g.save(); g.translate(cx, cy); g.rotate(a + (planet.kind === 'repel' ? Math.PI : 0));
-      g.beginPath(); g.moveTo(11, -5); g.lineTo(0, 0); g.lineTo(11, 5); g.stroke(); g.restore();
-    }
     g.restore();
-    if (planet.kind === 'repel') label('REPULSION', x, y - r - 34, color, 10);
-    if (planet.kind === 'tide') label('GRAVITY TIDE', x, y - r - 34, color, 10);
+    if (active) label(planet.kind === 'repel' ? 'REPULSION' : planet.kind === 'tide' ? 'GRAVITY TIDE' : 'GRAVITY WELL', x, y - r - 34, color, 10);
   }
 
   function asteroid(b, index, color) {
@@ -270,12 +321,19 @@ export function createRenderer(canvas, minimap) {
       const a = point(s.a), b = point(s.b);
       return visible((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.hypot(a[0] - b[0], a[1] - b[1]) / 2 + 15);
     });
-    for (let pass = 0; pass < 3; pass++) {
-      g.lineWidth = [13, 5, 1.4][pass];
-      g.strokeStyle = ['#070f17', '#536477', '#d2ba82'][pass];
-      g.beginPath();
-      for (const s of segments) { const a = point(s.a), b = point(s.b); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
-      g.stroke();
+    for (const active of [false, true]) {
+      g.save(); g.globalAlpha = active || camera.overview ? 1 : 0.22;
+      for (let pass = 0; pass < 3; pass++) {
+        g.lineWidth = [13, 5, 1.4][pass];
+        g.strokeStyle = ['#070f17', '#536477', '#d2ba82'][pass];
+        g.beginPath();
+        for (const s of segments) {
+          if (Boolean(!table.isActive || table.isActive(s)) !== active) continue;
+          const a = point(s.a), b = point(s.b); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
+        }
+        g.stroke();
+      }
+      g.restore();
     }
     for (const s of segments) {
       if (!s.sling && !s.kick) continue;
@@ -293,7 +351,7 @@ export function createRenderer(canvas, minimap) {
       if (!visible(f.px, f.py, f.len + 30)) continue;
       const tx = f.px + Math.cos(f.th) * f.len, ty = f.py + Math.sin(f.th) * f.len;
       const nx = -Math.sin(f.th), ny = Math.cos(f.th);
-      g.save();
+      g.save(); g.globalAlpha = !run.table.isActive || run.table.isActive(f) || camera.overview ? 1 : 0.22;
       g.strokeStyle = '#060c15'; g.lineWidth = f.r1 * 2 + 7; g.lineCap = 'round';
       g.beginPath(); g.moveTo(f.px, f.py); g.lineTo(tx, ty); g.stroke();
       g.beginPath();
@@ -312,6 +370,66 @@ export function createRenderer(canvas, minimap) {
       circle(g, f.px, f.py, f.r1 * 0.43); g.fillStyle = '#0a2639'; g.fill();
       g.restore();
     }
+  }
+
+  function trajectory(run, charge = 0) {
+    const charging = run.phase === 'ready' && charge > 0 && typeof run.table.launchVelocity === 'function';
+    if ((!charging && run.phase !== 'play') || camera.overview || typeof run.table.gravity !== 'function') return;
+    const launch = charging ? run.table.launchVelocity(charge) : null;
+    const ball = launch ? { ...run.world.ball, vx: launch.x, vy: launch.y } : run.world.ball;
+    const speed = Math.hypot(ball.vx, ball.vy);
+    if (speed < 90) return;
+    const probe = { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy };
+    // Forecast acceleration, then stop before the next contact. Collisions and
+    // later player inputs change the path, so this remains a short local guide.
+    const dt = Math.min(0.025, 30 / speed), points = [];
+    const isActive = object => !run.table.isActive || run.table.isActive(object);
+    const circles = [...run.table.posts, ...run.table.bumpers].filter(c => isActive(c)
+      && Math.hypot(c.x - ball.x, c.y - ball.y) < 850 + c.r);
+    const walls = run.table.walls.filter(s => isActive(s) && s.enabled !== false && (!s.drop || s.drop.up));
+    const flippers = run.world.flippers.filter(isActive), maxSpeed = run.table.maxSpeed ?? F.V_MAX;
+    const distanceToSegment = (x, y, ax, ay, bx, by) => {
+      const dx = bx - ax, dy = by - ay;
+      const t = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      return Math.hypot(x - ax - t * dx, y - ay - t * dy);
+    };
+    const crosses = (ax, ay, bx, by, cx, cy, dx, dy) => {
+      const c1 = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+      const c2 = (bx - ax) * (dy - ay) - (by - ay) * (dx - ax);
+      const c3 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx);
+      const c4 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
+      return c1 * c2 < 0 && c3 * c4 < 0;
+    };
+    for (let i = 0; i < 24; i++) {
+      const force = run.table.gravity(probe), previous = { x: probe.x, y: probe.y };
+      probe.vx += force.x * dt; probe.vy += force.y * dt;
+      const magnitude = Math.hypot(probe.vx, probe.vy);
+      if (magnitude > maxSpeed) { probe.vx *= maxSpeed / magnitude; probe.vy *= maxSpeed / magnitude; }
+      probe.x += probe.vx * dt; probe.y += probe.vy * dt;
+      probe.vx *= 1 - F.ROLL_DAMP * dt; probe.vy *= 1 - F.ROLL_DAMP * dt;
+      const hitBody = circles.some(c => distanceToSegment(c.x, c.y, previous.x, previous.y, probe.x, probe.y) < c.r + 13.5);
+      const hitWall = walls.some(s => {
+        const a = point(s.a), b = point(s.b);
+        return distanceToSegment(probe.x, probe.y, a[0], a[1], b[0], b[1]) < 14
+          || crosses(previous.x, previous.y, probe.x, probe.y, a[0], a[1], b[0], b[1]);
+      });
+      const hitFlipper = flippers.some(f => distanceToSegment(probe.x, probe.y,
+        f.px, f.py, f.px + Math.cos(f.th) * f.len, f.py + Math.sin(f.th) * f.len) < f.r1 + 13.5);
+      if (hitBody || hitWall || hitFlipper || run.table.isDrain?.(probe)) break;
+      points.push({ x: probe.x, y: probe.y });
+    }
+    g.save();
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], b = points[i], fade = 1 - i / 24;
+      g.globalAlpha = fade * 0.27; g.strokeStyle = '#c9f4ff';
+      g.lineWidth = 1 / Math.max(0.55, camera.scale);
+      g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+      if (i % 3 === 0) {
+        g.globalAlpha = fade * 0.6; g.fillStyle = '#dffaff';
+        circle(g, b.x, b.y, Math.max(2.1, 1.15 / camera.scale)); g.fill();
+      }
+    }
+    g.restore();
   }
 
   function drawBall(run, dt, charge) {
@@ -340,8 +458,6 @@ export function createRenderer(canvas, minimap) {
     sphere.addColorStop(0, '#ffffff'); sphere.addColorStop(0.35, '#dcf9ff'); sphere.addColorStop(0.7, '#7eabbf'); sphere.addColorStop(1, '#214c72');
     g.fillStyle = sphere; circle(g, b.x, b.y, r); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 1.4; g.stroke();
     if (run.phase === 'ready' && charge > 0) {
-      g.strokeStyle = '#c5f7ff'; g.lineWidth = 3; g.setLineDash([6, 9]);
-      g.beginPath(); g.moveTo(b.x, b.y + 30); g.lineTo(b.x - 15 * charge, b.y + 80 + charge * 150); g.stroke(); g.setLineDash([]);
       circle(g, b.x, b.y, 28 + charge * 9); g.strokeStyle = '#ffe9a9'; g.lineWidth = 3;
       g.beginPath(); g.arc(b.x, b.y, 28 + charge * 9, -Math.PI / 2, -Math.PI / 2 + charge * TAU); g.stroke();
     }
@@ -373,20 +489,35 @@ export function createRenderer(canvas, minimap) {
     const padding = 8, scale = Math.min((mapW - padding * 2) / run.table.W, (mapH - padding * 2) / run.table.H);
     const ox = (mapW - run.table.W * scale) / 2, oy = (mapH - run.table.H * scale) / 2;
     const mx = (x) => ox + x * scale, my = (y) => mapH - oy - y * scale;
-    mg.lineWidth = 1; mg.strokeStyle = '#61778a45'; mg.setLineDash([2, 3]); mg.beginPath();
-    for (let i = 0; i < run.sectors.length; i++) { const room = run.sectors[i]; if (i === 0) mg.moveTo(mx(room.x), my(room.y + room.h / 2)); else mg.lineTo(mx(room.x), my(room.y + room.h / 2)); }
-    mg.stroke(); mg.setLineDash([]);
+    // A constellation route gives orientation without implying boxed rooms.
+    mg.lineWidth = 0.85;
+    for (let i = 1; i < run.sectors.length; i++) {
+      const previous = run.sectors[i - 1].planet, next = run.sectors[i].planet;
+      mg.strokeStyle = run.sectors[i - 1].cleared ? '#a9d9ce77' : '#61778a4c';
+      mg.setLineDash(run.sectors[i - 1].cleared ? [] : [1.5, 3]);
+      mg.beginPath(); mg.moveTo(mx(previous.x), my(previous.y)); mg.lineTo(mx(next.x), my(next.y)); mg.stroke();
+    }
+    mg.setLineDash([]);
     run.sectors.forEach((room, index) => {
       const active = index === run.sectorIndex, color = room.color || PALETTE[index % 6];
-      const x = mx(room.x - room.w / 2), y = my(room.y + room.h), w = room.w * scale, h = room.h * scale;
-      mg.fillStyle = active ? `${color}26` : room.visited ? '#36516430' : '#18253633'; mg.fillRect(x, y, w, h);
-      mg.strokeStyle = active ? color : room.cleared ? '#799b9670' : '#4b60703b'; mg.lineWidth = active ? 1.1 : 0.6; mg.strokeRect(x, y, w, h);
-      circle(mg, mx(room.planet.x), my(room.planet.y), Math.max(2.3, room.planet.r * scale)); mg.fillStyle = active ? color : room.visited ? '#6b838b' : '#344352'; mg.fill();
-      if (room.cleared) { mg.fillStyle = '#ffe6a6'; mg.fillRect(x + w - 4, y + 2, 2, 2); }
+      const x = mx(room.planet.x), y = my(room.planet.y), r = Math.max(2.5, room.planet.r * scale);
+      if (active) {
+        const glow = mg.createRadialGradient(x, y, 0, x, y, r + 9);
+        glow.addColorStop(0, `${color}85`); glow.addColorStop(1, `${color}00`);
+        mg.fillStyle = glow; circle(mg, x, y, r + 9); mg.fill();
+        mg.strokeStyle = `${color}90`; mg.lineWidth = 0.8;
+        mg.beginPath(); mg.ellipse(x, y, r + 6, r + 3, -0.45, 0.3, 2.5); mg.stroke();
+      }
+      circle(mg, x, y, r); mg.fillStyle = active ? color : room.cleared ? '#afc9b1' : room.visited ? '#6b838b' : '#445361'; mg.fill();
+      for (const relay of room.relays) {
+        circle(mg, mx(relay.x), my(relay.y), active ? 1.2 : 0.8);
+        mg.fillStyle = relay.hit ? '#ffe6a6' : active ? `${color}77` : '#52637860'; mg.fill();
+      }
+      if (room.cleared) {
+        mg.strokeStyle = '#ffe6a6'; mg.lineWidth = 1;
+        mg.beginPath(); mg.moveTo(x - 1.5, y); mg.lineTo(x, y + 1.5); mg.lineTo(x + 2.4, y - 1.5); mg.stroke();
+      }
     });
-    const view = camera.view;
-    mg.strokeStyle = '#eaf6ff55'; mg.lineWidth = 0.7;
-    mg.strokeRect(mx(Math.max(0, view.left)), my(Math.min(run.table.H, view.top)), (Math.min(run.table.W, view.right) - Math.max(0, view.left)) * scale, (Math.min(run.table.H, view.top) - Math.max(0, view.bottom)) * scale);
     circle(mg, mx(run.world.ball.x), my(run.world.ball.y), 2.5); mg.fillStyle = '#fff9df'; mg.fill();
   }
 
@@ -411,17 +542,24 @@ export function createRenderer(canvas, minimap) {
       const room = run.sectors[index];
       if (!visible(room.x, room.y + room.h / 2, Math.max(room.w, room.h) * 0.7)) continue;
       const color = room.color || PALETTE[index % 6];
-      planet(room.planet, index, color, clock);
-      gate(room, clock, index === run.sectorIndex);
+      const active = index === run.sectorIndex;
+      gravityField(room, run, active, clock);
+      g.save(); g.globalAlpha = active || camera.overview ? 1 : 0.32;
+      planet(room.planet, index, color, clock, active, run.world.ball);
+      gate(room, clock, active);
       for (const target of room.relays || []) relay(target, color, clock);
-      if (index === run.sectorIndex) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
+      g.restore();
+      if (active) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
     }
     for (let i = 0; i < run.table.bumpers.length; i++) {
       const b = run.table.bumpers[i];
+      g.save(); g.globalAlpha = b.sector === run.sectorIndex || camera.overview ? 1 : 0.3;
       if (!b.relay) asteroid(b, i, '#adbad1');
+      g.restore();
     }
     rails(run.table);
     flippers(run);
+    trajectory(run, options.charge || 0);
     drawBall(run, elapsed, options.charge || 0);
     effects(elapsed);
     g.restore();

@@ -81,6 +81,7 @@ function collideStatic(w, ev) {
     if (it.kind === "seg") {
       const s = it.s;
       if (s.enabled === false) continue;
+      if (w.table.isActive && !w.table.isActive(s)) continue;
       if (s.drop && !s.drop.up) continue;
       const ax = s.a[0], ay = s.a[1], dx = s.b[0] - ax, dy = s.b[1] - ay;
       let u = ((b.x - ax) * dx + (b.y - ay) * dy) / s.len2;
@@ -103,7 +104,9 @@ function collideStatic(w, ev) {
         else if (ev && vin > 250) ev.push({ k: "wall", v: vin });
       }
     } else {
-      const c = it.c, dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), min = R + c.r;
+      const c = it.c;
+      if (w.table.isActive && !w.table.isActive(c)) continue;
+      const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), min = R + c.r;
       if (d >= min || d < 1e-6) continue;
       const nx = dx / d, ny = dy / d;
       b.x = c.x + nx * min; b.y = c.y + ny * min;
@@ -122,6 +125,7 @@ function collideStatic(w, ev) {
 function collideFlippers(w, ev) {
   const b = w.ball;
   for (const f of w.flippers) {
+    if (w.table.isActive && !w.table.isActive(f)) continue;
     const [tx, ty] = tip(f), dx = tx - f.px, dy = ty - f.py, L2 = f.len * f.len;
     let u = ((b.x - f.px) * dx + (b.y - f.py) * dy) / L2;
     const side = (dx * (b.y - f.py) - dy * (b.x - f.px)) / f.len;   // + left of the axis, - right of it
@@ -168,13 +172,14 @@ export function step(w, ev = null) {
     b.x += b.vx * hs; b.y += b.vy * hs;
     collideStatic(w, ev);
     collideFlippers(w, ev);
-    if (!inside(w.table.outline, b.x, b.y)) { w.escapes++; b.x = px; b.y = py; b.vx *= -0.5; b.vy *= -0.5; }
+    if (!w.table.openSpace && !inside(w.table.outline, b.x, b.y)) { w.escapes++; b.x = px; b.y = py; b.vx *= -0.5; b.vy *= -0.5; }
   }
   // a little rolling drag, and a speed limit that keeps the substeps honest
   const k = 1 - F.ROLL_DAMP * H;
   b.vx *= k; b.vy *= k;
   const s = Math.hypot(b.vx, b.vy);
-  if (s > F.V_MAX) { b.vx *= F.V_MAX / s; b.vy *= F.V_MAX / s; }
+  const maxSpeed = w.table.maxSpeed ?? F.V_MAX;
+  if (s > maxSpeed) { b.vx *= maxSpeed / s; b.vy *= maxSpeed / s; }
   // out of the shooter lane and into play
   if (b.lane && (w.table.leaveLane ? w.table.leaveLane(b) : b.x < 455 && b.y > 700)) b.lane = false;
   // the top lanes

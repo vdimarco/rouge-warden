@@ -1,13 +1,12 @@
-// Celestial expedition: large chambers use the same steel-ball/flipper solver as Full Tilt.
+// Celestial expedition: open orbital fields use Full Tilt's steel-ball/flipper solver.
 // Positions are world coordinates with y up. This module has no browser dependencies.
 import { makeWorld, step, serve, setFlip, H } from './physics.js';
-import { BALL_R } from './table.js';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const NAMES = ['Lunar Harbor', 'Amber Belt', 'Jade Observatory', 'Violet Reach', 'Solar Forge', 'The Star Engine'];
 const COLORS = ['#70dddf', '#edb66c', '#8ee0ae', '#b8a3f4', '#ff9672', '#f0df9e'];
 const FIELDS = ['pull', 'pull', 'tide', 'repel', 'pull', 'pull'];
-const DESCRIPTIONS = ['A gentle moon bends your shots.', 'Dense asteroids build long chains.', 'A shifting tide changes your aim.', 'A dark planet pushes the ball away.', 'Strong gravity rewards a clean orbit.', 'Charge each core twice to restart the sun.'];
+const DESCRIPTIONS = ['Slingshot around the moon to reach its relays.', 'Thread an orbit through the asteroid belt.', 'Ride the changing gravitational tide.', 'Use the dark planet’s push to reach the relays.', 'A close flyby gives your shot more speed.', 'Charge each core twice to restart the sun.'];
 const RELAYS = [
   [[-335, 590], [330, 725], [-50, 970]], [[-375, 655], [260, 785], [-165, 990]],
   [[-330, 750], [340, 575], [155, 990]], [[-350, 540], [360, 805], [-105, 1010]],
@@ -27,30 +26,27 @@ export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
 export function createAdventure(seed = 1) {
   let n = (Number(seed) || 1) >>> 0;
   const random = () => { n = (Math.imul(1664525, n) + 1013904223) >>> 0; return n / 4294967296; };
-  const table = { W: 3600, H: 2800, walls: [], posts: [], bumpers: [], drops: [], lanes: [], flippers: [],
+  const table = { W: 3600, H: 2800, openSpace: true, maxSpeed: 1850, walls: [], posts: [], bumpers: [], drops: [], lanes: [], flippers: [],
     outline: [[20, 20], [3580, 20], [3580, 2780], [20, 2780]], launch: { x: 600, y: 350 }, drainY: 0 };
   const sectors = ROUTE.map(([col, row], id) => {
     const x = 600 + col * 1200, y = 130 + row * 1320;
     const sector = { id, name: NAMES[id], x, y, w: 1100, h: 1150, color: COLORS[id], descriptor: DESCRIPTIONS[id],
-      planet: { x: x + (id % 2 ? -55 : 55), y: y + 665, r: 90 + id * 4, mass: 23500000 + id * 900000,
-        kind: FIELDS[id], strength: id === 4 ? 1.35 : id === 3 ? -0.85 : 1 },
+      gravityRadius: 465, returnRadius: 510, dockRadius: 240, orbitDirection: id % 2 ? -1 : 1,
+      planet: { x: x + (id % 2 ? -55 : 55), y: y + 665, r: 90 + id * 4, mass: 155000000 + id * 7000000,
+        kind: FIELDS[id], strength: id === 4 ? 1.3 : id === 3 ? -0.72 : 1 },
       relays: [], gate: { x, y: y + 1060, r: 82, open: false },
       station: { x, y: y + 225 }, visited: id === 0, cleared: false };
-    // An outer capsule contains shots. A broad bowl brings the whole chamber into the flippers.
-    const pts = [[x - 535, y + 45], [x - 535, y + 940], [x - 485, y + 1080],
-      [x - 350, y + 1140], [x + 350, y + 1140], [x + 485, y + 1080],
-      [x + 535, y + 940], [x + 535, y + 45], [x - 535, y + 45]];
-    for (let i = 1; i < pts.length; i++) table.walls.push(segment(pts[i - 1], pts[i], { sector: id }));
+    // Only the small launch dock has rails. Space has no collision boundary.
     for (const side of [-1, 1]) {
-      const guide = [[x + side * 535, y + 470], [x + side * 420, y + 300], [x + side * 116, y + 171]];
-      for (let i = 1; i < guide.length; i++) table.walls.push(segment(guide[i - 1], guide[i], { sector: id, bowl: true, e: 0.25 }));
+      const guide = [[x + side * 226, y + 240], [x + side * 176, y + 199], [x + side * 116, y + 171]];
+      for (let i = 1; i < guide.length; i++) table.walls.push(segment(guide[i - 1], guide[i], { sector: id, dock: true, bowl: true, e: 0.25 }));
       table.flippers.push({ sector: id, side, px: x + side * 122, py: y + 160, len: 100, r1: 12, r2: 6,
         rest: side < 0 ? -Math.PI / 6 : Math.PI + Math.PI / 6,
         up: side < 0 ? 28 * Math.PI / 180 : Math.PI - 28 * Math.PI / 180 });
     }
-    table.posts.push({ ...sector.planet, planet: true, sector: id, e: 0.78 });
+    table.posts.push({ ...sector.planet, planet: true, sector: id, e: 0.96 });
     RELAYS[id].forEach(([rx, ry], index) => {
-      const relay = { id: id * 10 + index, sector: id, x: x + rx, y: y + ry, r: 42, kick: 1100,
+      const relay = { id: id * 10 + index, sector: id, x: x + rx, y: y + ry, r: 42, kick: 900,
         relay: true, hit: false, hits: 0, required: id === 5 ? 2 : 1 };
       sector.relays.push(relay); table.bumpers.push(relay);
     });
@@ -61,28 +57,54 @@ export function createAdventure(seed = 1) {
     if (id === 4) rocks[0] = [3, -210, 1010];
     for (const [index, ax, ay] of rocks) {
       table.bumpers.push({ id: id * 10 + index, sector: id, x: x + ax + (random() - 0.5) * 34,
-        y: y + ay + (random() - 0.5) * 28, r: 25 + random() * 9, kick: 730, asteroid: true });
+        y: y + ay + (random() - 0.5) * 28, r: 25 + random() * 9, kick: 660, asteroid: true });
     }
     return sector;
   });
   const run = { seed, table, sectors, sectorIndex: 0, phase: 'ready', lives: 3, score: 0, cycle: 1,
     clock: 0, saveUntil: 0, saved: false, pulseCooldown: 0, upgrades: [], events: [], flight: null,
     combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
-    _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false };
-  // Softened inverse-square gravity is strongest near each planet. The bowl keeps predictable downward gravity.
+    _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false,
+    orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100 };
+  // Other systems stay visible but are reached through their jump gates.
+  table.isActive = object => object.sector === run.sectorIndex;
+  table.launchVelocity = (power = 0.75) => ({
+    x: (run.seed % 2 ? -1 : 1) * (320 + run.sectorIndex * 12),
+    y: 1020 + clamp(power, 0.35, 1) * 350,
+  });
+  // The dock alone has a down direction. Beyond it, gravity curves the whole shot.
+  // The outer return flow is a smooth force, never a bounce or a position clamp.
   table.gravity = (ball) => {
     const s = currentSector(run), p = s.planet;
-    let ax = 0, ay = -800;
-    if (ball.y > s.y + 395) {
-      const dx = p.x - ball.x, dy = p.y - ball.y, d = Math.hypot(dx, dy);
-      const force = Math.min(560, p.mass / (d * d + 155 * 155)) * p.strength;
-      const blend = clamp((ball.y - s.y - 395) / 140, 0, 1);
-      if (d > 1) { ax += dx / d * force * blend; ay += dy / d * force * blend; }
-      if (p.kind === 'tide') ax += Math.sin(run.clock * 0.85) * 160 * blend;
+    const dx = p.x - ball.x, dy = p.y - ball.y, d = Math.hypot(dx, dy), inv = 1 / Math.max(1, d);
+    const nx = dx * inv, ny = dy * inv;
+    const dockX = clamp((s.dockRadius - Math.abs(ball.x - s.x)) / 90, 0, 1);
+    const dockY = clamp((s.y + 370 - ball.y) / 110, 0, 1) * clamp((ball.y - s.y + 20) / 90, 0, 1);
+    const dock = dockX * dockY, field = 1 - dock;
+    const force = Math.min(3300, p.mass / (d * d + 145 * 145)) * p.strength;
+    let ax = nx * force * field, ay = ny * force * field - 800 * dock;
+    if (p.kind === 'tide') {
+      // A tangential tide varies without introducing a universal down direction.
+      const tide = Math.sin(run.clock * 0.85) * 210 * field;
+      ax += ny * tide; ay -= nx * tide;
     }
+    const edge = clamp((d - s.returnRadius) / 160, 0, 1);
+    const outward = Math.max(0, -(Number(ball.vx) || 0) * nx - (Number(ball.vy) || 0) * ny);
+    const returning = edge * Math.min(6400, (d - s.returnRadius) * 14 + outward * 3.5) * field;
+    ax += nx * returning; ay += ny * returning;
+    // A light flow along the near surface prevents a ball from resting on a planet.
+    if (d < p.r + 105 && field > 0) {
+      const drift = 230 * clamp((p.r + 105 - d) / 70, 0, 1) * s.orbitDirection * field;
+      ax -= ny * drift; ay += nx * drift;
+    }
+    const magnitude = Math.hypot(ax, ay);
+    if (magnitude > 6800) { ax *= 6800 / magnitude; ay *= 6800 / magnitude; }
     return { x: ax, y: ay };
   };
-  table.isDrain = b => b.y < currentSector(run).y + 100;
+  table.isDrain = b => {
+    const s = currentSector(run);
+    return Math.abs(b.x - s.x) < 104 && b.y < s.y + 100 && b.y > s.y + 40 && b.vy < 0;
+  };
   table.leaveLane = () => true;
   run.world = makeWorld(table);
   checkpoint(run);
@@ -95,14 +117,15 @@ function checkpoint(run) {
   serve(run.world);
   for (const f of run.world.flippers) { f.held = false; f.th = f.rest; f.om = 0; f.sd = 0; }
   run.phase = 'ready'; run._still = 0; run._lastX = sector.station.x; run._lastY = sector.station.y;
+  run._orbitAngle = null; run._orbitTravel = 0;
 }
 
 export function launchAdventure(run, power = 0.75) {
   if (run.phase !== 'ready') return false;
   const b = run.world.ball, s = currentSector(run);
   b.live = true; b.lane = false;
-  b.vx = (run.seed % 2 ? -1 : 1) * (175 + run.sectorIndex * 15);
-  b.vy = 2400 + clamp(power, 0.35, 1) * 1400;
+  const velocity = run.table.launchVelocity(power);
+  b.vx = velocity.x; b.vy = velocity.y;
   run.phase = 'play'; run.saveUntil = run.clock + 10 + run._shieldLevel * 3;
   run._still = 0;
   emit(run, 'launch', { sector: s.id });
@@ -112,13 +135,17 @@ export function launchAdventure(run, power = 0.75) {
 export function pulseAdventure(run, dx = 0) {
   if (run.phase !== 'play' || run.pulseCooldown > 0) return false;
   const b = run.world.ball, s = currentSector(run), boost = 1 + run._cometLevel * 0.14;
-  // A centred pulse bends the shot toward the closest unlit relay. A swipe chooses a lateral direction.
+  // Aim in every direction, including below the ball. Lateral input biases the shot.
   const targets = s.relays.filter(r => !r.hit);
   const target = (targets.length ? targets : [s.gate]).reduce((a, t) =>
     Math.hypot(t.x - b.x, t.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? t : a);
-  const vx = dx ? clamp(dx, -1, 1) * 950 : clamp((target.x - b.x) * 1.5, -850, 850);
-  b.vx = b.vx * 0.30 + vx * boost;
-  b.vy = Math.max(1050, b.vy * 0.3 + 1100 * boost);
+  let tx = target.x - b.x, ty = target.y - b.y;
+  const distance = Math.max(1, Math.hypot(tx, ty)), speed = Math.min(1800, 1420 * boost);
+  const travel = Math.min(0.55, distance / speed), acceleration = run.table.gravity(b);
+  tx -= acceleration.x * travel * travel * 0.45; ty -= acceleration.y * travel * travel * 0.45;
+  tx += clamp(dx, -1, 1) * distance * 0.65;
+  const length = Math.max(1, Math.hypot(tx, ty));
+  b.vx = tx / length * speed; b.vy = ty / length * speed;
   run.pulseCooldown = Math.max(0.9, 2.5 * 0.8 ** run._pulseLevel);
   emit(run, 'pulse');
   return true;
@@ -195,12 +222,33 @@ function tick(run) {
     emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id });
     return;
   }
-  // A trapped ball is returned to the current dock. Deliberate flipper cradles are exempt.
+  // Reward a real half-orbit. Relays and gates still decide voyage progression.
+  const p = sector.planet, radius = Math.hypot(b.x - p.x, b.y - p.y);
+  const angle = Math.atan2(b.y - p.y, b.x - p.x);
+  if (radius < sector.gravityRadius && radius > p.r + 35 && Math.hypot(b.vx, b.vy) > 220) {
+    if (run._orbitAngle !== null) {
+      let delta = angle - run._orbitAngle;
+      if (delta > Math.PI) delta -= Math.PI * 2;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+      run._orbitTravel += delta;
+      if (Math.abs(run._orbitTravel) >= Math.PI && run.clock - run._orbitAwardAt > 7) {
+        run.score += 750; run.orbitCount++; run._orbitAwardAt = run.clock; run._orbitTravel = 0;
+        emit(run, 'orbit', { sector: sector.id, bonus: 750 });
+      }
+    }
+    run._orbitAngle = angle;
+  } else { run._orbitAngle = null; run._orbitTravel = 0; }
+  // A stalled ball gets a small tangential rescue burn without moving its position.
   const cradled = run.world.flippers.some(f => f.sector === sector.id && f.held && Math.hypot(b.x - f.px, b.y - f.py) < 130);
   if (Math.hypot(b.x - run._lastX, b.y - run._lastY) > 24) {
     run._lastX = b.x; run._lastY = b.y; run._still = 0;
   } else if (!cradled) run._still += H;
-  if (run._still > 8) { run.recalls++; checkpoint(run); emit(run, 'recall'); }
+  if (run._still > 8) {
+    const nx = (b.x - p.x) / Math.max(1, radius), ny = (b.y - p.y) / Math.max(1, radius);
+    b.vx += -ny * 620 * sector.orbitDirection + nx * 180;
+    b.vy += nx * 620 * sector.orbitDirection + ny * 180;
+    run._still = 0; emit(run, 'rescue');
+  }
 }
 
 export function updateAdventure(run, dt = H) {

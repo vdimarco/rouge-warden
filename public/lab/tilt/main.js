@@ -21,7 +21,7 @@ function sound(kind, strength = 1) {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
     if (kind === 'pulse' || kind === 'launch') { hiss(e,t,{type:'bandpass',f:250,f2:1800,dur:.3,peak:.1}); tone(e,t,{f:140,f2:520,dur:.22,peak:.1}); return; }
-    const notes = kind === 'relay' || kind === 'upgrade' || kind === 'gate' ? [440,660,880] : [300 + strength * 90];
+    const notes = kind === 'relay' || kind === 'upgrade' || kind === 'gate' || kind === 'orbit' ? [440,660,880] : [300 + strength * 90];
     notes.forEach((f,i) => tone(e,t+i*.07,{f,dur:.21,peak:.075,wave:'sine',send:.25}));
   });
 }
@@ -61,7 +61,7 @@ function newRun() {
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
   $('hud').hidden=false; document.body.classList.add('playing');
   renderer.resize(); syncHud();
-  announce('Hold Launch, then release. Hit the three bright relays.');
+  announce('Release Launch to fly. Use Pulse to aim through gravity.');
   canvas.focus({preventScroll:true});
 }
 function pause() {
@@ -113,7 +113,7 @@ function syncHud() {
   $('launch-button').hidden=run.phase!=='ready';
   $('pulse-button').hidden=run.phase==='ready';
   $('pulse-button').disabled=run.phase!=='play' || run.pulseCooldown>0;
-  $('pulse-button').textContent=run.pulseCooldown>0?`Pulse ${run.pulseCooldown.toFixed(1)}s`:'Pulse ↑';
+  $('pulse-button').textContent=run.pulseCooldown>0?`Pulse ${run.pulseCooldown.toFixed(1)}s`:'Pulse ◎';
   $('map-button').disabled=['upgrade','flight','won','over'].includes(run.phase);
   if (run.phase!==oldPhase) {
     oldPhase=run.phase;
@@ -181,8 +181,8 @@ startLoop({h:H,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse'].includes(kind))sound(kind);
-    const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
+    if(['relay','bumper','gate','drain','save','pulse','orbit'].includes(kind))sound(kind);
+    const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
   }
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
