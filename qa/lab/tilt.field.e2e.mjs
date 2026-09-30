@@ -26,6 +26,7 @@ async function arm(page) {
 async function freshFlight(page) {
   if (!await page.locator('#pause-panel').isVisible()) await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await page.getByRole('button', { name: 'Start a new voyage', exact: true }).click();
+  await watchFieldTransition(page);
   await launch(page);
 }
 async function touchController(ctx, page) {
@@ -37,22 +38,33 @@ async function touchController(ctx, page) {
     close: () => cdp.detach(),
   };
 }
-async function watchFieldSpend(page) {
-  // Observe the public count across aim and its first return to flight. A later relay hit
-  // can replenish inventory before Playwright reads the page, so retain the actual transition.
+async function watchFieldTransition(page) {
+  // Keep the exact count when aim closes. Play can earn a later charge before
+  // Playwright reads the page, so a delayed inventory read cannot prove a spend.
   await page.evaluate(() => {
     const button = document.getElementById('field-button');
+    const message = document.getElementById('message');
     const count = text => /^Field (\d+)$/.exec(text)?.[1];
-    let before = Number(count(button.textContent)), aiming = false;
-    window.__fieldSpend = null;
+    const reward = text => /^Gravity charge gained · (\d+)\/\d+$/.exec(text)?.[1];
+    // Rewards announce their new count immediately; button text updates at 10 Hz.
+    // These watchers start in a fresh run, or after cancellation before any
+    // deployment. A visible reward count has therefore never been reduced by a spend.
+    let before = Math.max(Number(count(button.textContent)), Number(reward(message.textContent) || 0));
+    let aiming = false;
+    window.__fieldTransition = null;
     const observer = new MutationObserver(records => {
       for (const record of records) {
         const text = [...record.addedNodes].map(node => node.textContent).join('');
+        if (record.target === message) {
+          const value = reward(text);
+          if (!aiming && value !== undefined) before = Number(value);
+          continue;
+        }
         if (text === 'Cancel') aiming = true;
         const value = count(text);
         if (value === undefined) continue;
         if (aiming) {
-          window.__fieldSpend = { before, after: Number(value) };
+          window.__fieldTransition = { before, after: Number(value) };
           observer.disconnect();
           return;
         }
@@ -60,7 +72,12 @@ async function watchFieldSpend(page) {
       }
     });
     observer.observe(button, { childList: true });
+    observer.observe(message, { childList: true });
   });
+}
+async function fieldChange(page) {
+  await until(page, () => window.__fieldTransition !== null, null, 3000);
+  return page.evaluate(() => window.__fieldTransition.after - window.__fieldTransition.before);
 }
 
 for (const size of [
@@ -74,8 +91,8 @@ for (const size of [
     await start(page);
     R.check(await inventory(page) === 'Field 1' && await page.locator('#field-button').isDisabled(), 'A fresh voyage carries one field and waits for launch');
     R.check(await fits(page.locator('#field-button')), 'The field control fits with a usable touch area');
+    await watchFieldTransition(page);
     await launch(page);
-    const carried = await inventory(page);
     await page.keyboard.down('z');
     await arm(page);
     R.check(await held(page) === 0, 'Entering aim releases a held flipper');
@@ -91,9 +108,12 @@ for (const size of [
     await page.locator('#field-push').click();
     R.check(await page.locator('#field-push').getAttribute('aria-pressed') === 'true' && await page.locator('#field-pull').getAttribute('aria-pressed') === 'false', 'Pull and Push expose the selected choice');
     await page.locator('#cancel-field').click();
-    R.check(await page.locator('#field-placement').isHidden() && await inventory(page) === carried && await active(page) === 'false', 'Cancel resumes flight without spending inventory');
+    // Deliberately let play advance before reading: later relay rewards must not
+    // change the retained cancellation boundary.
+    await sleep(350);
+    R.check(await page.locator('#field-placement').isHidden() && await fieldChange(page) === 0 && await active(page) === 'false', 'Cancel resumes flight without spending inventory, including after a delayed read');
 
-    await watchFieldSpend(page);
+    await watchFieldTransition(page);
     await arm(page);
     await page.locator('#field-' + size.kind).click();
     await shot(page, 'tilt-field-' + size.name + '-aim');
@@ -129,8 +149,7 @@ for (const size of [
     } else await page.locator('#deploy-field').click();
     await until(page, () => document.getElementById('field-status').dataset.active === 'true', null, 3000);
     R.check(await page.locator('#field-placement').isHidden() && await held(page) === 0, 'Deployment closes aim and leaves flippers released');
-    const spent = await page.evaluate(() => window.__fieldSpend);
-    R.check(spent && spent.before - spent.after === 1, 'A successful placement spends exactly one charge before later rewards');
+    R.check(await fieldChange(page) === -1, 'A successful placement spends exactly one charge before later rewards');
     R.check(await page.locator('#field-button').isDisabled(), 'An active field prevents a second deployment');
     R.check(new RegExp('^' + (size.kind === 'push' ? 'Push' : 'Pull') + ' field · [0-5]\\.\\ds$').test(await page.locator('#field-status').textContent()), 'The active kind and remaining time are visible');
     await shot(page, 'tilt-field-' + size.name + '-deployed');
@@ -156,8 +175,7 @@ R.section('Invalid targets and input lifecycle');
 {
   const { page, ctx, errors, close } = await open('tilt/', PHONE);
   try {
-    await start(page); await launch(page);
-    const carried = await inventory(page);
+    await start(page); await watchFieldTransition(page); await launch(page);
     await page.keyboard.press('f');
     await page.locator('#field-placement').waitFor({ state: 'visible' });
     // The camera remains frozen while this public keyboard scan reaches a planet or sector edge.
@@ -171,7 +189,7 @@ R.section('Invalid targets and input lifecycle');
     R.check(await page.locator('#field-placement').isVisible() && await active(page) === 'false', 'E on an invalid point keeps aim open');
     R.check(await held(page) === 0, 'WASD aim never leaks into flipper controls');
     await page.keyboard.press('Escape');
-    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#pause-panel').isHidden() && await inventory(page) === carried, 'Escape cancels aim without a charge or an extra pause');
+    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#pause-panel').isHidden() && await fieldChange(page) === 0, 'Escape cancels aim without a charge or an extra pause');
 
     await freshFlight(page); await arm(page);
     const touch = await touchController(ctx, page);
@@ -179,20 +197,20 @@ R.section('Invalid targets and input lifecycle');
       await touch.send('touchStart', { x: PHONE.width * .3, y: PHONE.height * .4 });
       await touch.send('touchCancel');
     } finally { await touch.close(); }
-    R.check(await page.locator('#field-placement').isHidden() && await inventory(page) === 'Field 1' && await held(page) === 0, 'A cancelled touch leaves the charge available and all controls released');
+    R.check(await page.locator('#field-placement').isHidden() && await fieldChange(page) === 0 && await held(page) === 0, 'A cancelled touch leaves the charge available and all controls released');
 
     await freshFlight(page); await arm(page);
     await page.setViewportSize({ width: 844, height: 390 });
     await page.locator('#field-placement').waitFor({ state: 'hidden' });
-    R.check(await page.locator('#field-placement').isHidden() && await inventory(page) === 'Field 1' && await held(page) === 0, 'Rotation cancels stale aim without spending a charge');
-    await arm(page);
+    R.check(await page.locator('#field-placement').isHidden() && await fieldChange(page) === 0 && await held(page) === 0, 'Rotation cancels stale aim without spending a charge');
+    await watchFieldTransition(page); await arm(page);
     // Browser lifecycle event only; no application state or private game API is accessed.
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#pause-panel').isVisible() && await inventory(page) === 'Field 1', 'Losing focus cancels aim and pauses the voyage');
+    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#pause-panel').isVisible() && await fieldChange(page) === 0, 'Losing focus cancels aim and pauses the voyage');
     await page.getByRole('button', { name: 'Resume voyage', exact: true }).click();
-    await arm(page);
+    await watchFieldTransition(page); await arm(page);
     await page.getByRole('button', { name: 'Map', exact: true }).click();
-    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#map-panel').isVisible() && await inventory(page) === 'Field 1', 'Opening the map cancels aim without spending inventory');
+    R.check(await page.locator('#field-placement').isHidden() && await page.locator('#map-panel').isVisible() && await fieldChange(page) === 0, 'Opening the map cancels aim without spending inventory');
     await page.getByRole('button', { name: 'Close map', exact: true }).click();
   } catch (error) {
     await shot(page, 'tilt-field-lifecycle-failure');

@@ -54,7 +54,11 @@
       <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
       <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
       <div class="motion-controls menu-motion">
-        <button id="motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="motion-status">Enable tilt</button>
+        <div class="motion-actions">
+          <button id="motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="motion-status">Enable tilt</button>
+          <button id="menu-sound-button" class="motion-button" type="button" aria-pressed="true" aria-describedby="music-status">Sound on</button>
+        </div>
+        <p id="music-status" class="motion-status">Space music starts with your voyage.</p>
         <p id="motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
       </div>
       <div class="flight-guide" aria-label="How to play">
@@ -105,10 +109,11 @@
     </div>
   </section>
 
-  <section id="map-panel" class="overlay panel-overlay" aria-labelledby="map-title" hidden>
+  <section id="map-panel" class="overlay map-overlay" aria-labelledby="map-title" hidden>
     <div class="dialog-card route-card">
-      <div class="panel-heading"><div><h2 id="map-title">Your route.</h2></div><button id="close-map" class="icon-button" type="button" aria-label="Close map">✕</button></div>
+      <div class="panel-heading"><div><p class="eyebrow">THE CELESTIAL VOYAGE</p><h2 id="map-title">Across the stars.</h2><p id="map-progress">0 of 6 worlds explored</p></div><button id="close-map" class="icon-button" type="button" aria-label="Close map">✕</button></div>
       <ul id="route-list" class="route-list"></ul>
+      <p class="map-footnote">Open each gate to reach the next world.</p>
     </div>
   </section>
 

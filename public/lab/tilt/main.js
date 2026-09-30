@@ -139,6 +139,7 @@ function newRun() {
   transitAudio.stop();
   spaceMusic.stop();
   Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase=''; scoreClock=0;
+  document.body.classList.remove('showing-map');
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
   $('hud').hidden=false; document.body.classList.add('playing');
@@ -159,15 +160,18 @@ function showMap() {
   cancelField();
   if(mode==='title' || ['upgrade','flight','won','over'].includes(run.phase))return;
   releaseControls(); suspendMotion(); spaceMusic.stop(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
+  document.body.classList.add('showing-map');
+  $('map-progress').textContent=`${run.sectors.filter(s=>s.cleared).length} of ${run.sectors.length} worlds explored`;
   $('route-list').replaceChildren(...run.sectors.map((s,i)=>{
     const li=document.createElement('li'); li.className=i===run.sectorIndex?'current':s.cleared?'complete':'';
+    li.style.setProperty('--route-color',s.color);
     const name=document.createElement('strong'); name.textContent=`${String(i+1).padStart(2,'0')}  ${s.name}`;
     const state=document.createElement('span'); state.textContent=s.cleared?'Complete':i===run.sectorIndex?'You are here':'Unexplored';
     li.append(name,state);return li;
   }));
   $('close-map').focus();
 }
-function closeMap() { $('map-panel').hidden=true; mode=mapReturn; if(mode==='play')resumeMotion(); canvas.focus({preventScroll:true}); }
+function closeMap() { $('map-panel').hidden=true; document.body.classList.remove('showing-map'); mode=mapReturn; if(mode==='play')resumeMotion(); canvas.focus({preventScroll:true}); }
 function showUpgrades() {
   releaseControls(); suspendMotion(); $('upgrade-panel').hidden=false;
   $('upgrade-detail').textContent=`${currentSector(run).name} complete. Choose what you carry into the next sector.`;
@@ -260,8 +264,38 @@ $('pause-button').addEventListener('click',()=>mode==='pause'?resume():pause());
 $('resume-button').addEventListener('click',resume);
 $('map-button').addEventListener('click',showMap);
 $('close-map').addEventListener('click',closeMap);
-$('sound-button').addEventListener('click',()=>{ Sfx.init();Sfx.toggle();paintSound(); });
-function paintSound(){ $('sound-button').textContent=Sfx.isOn()?'Sound on':'Sound off';$('sound-button').setAttribute('aria-pressed',String(Sfx.isOn())); }
+const SOUND_PREFERENCE = 'tilt.voyage.sound';
+function setGameSound(enabled) {
+  if (Sfx.isOn() === enabled) return;
+  // The shared engine persists its global switch. Keep this game's choice local.
+  let sharedPreference;
+  try { sharedPreference = localStorage.getItem('arcade.sound'); } catch { /* private browsing */ }
+  Sfx.toggle();
+  if (sharedPreference !== undefined) {
+    try {
+      if (sharedPreference === null) localStorage.removeItem('arcade.sound');
+      else localStorage.setItem('arcade.sound', sharedPreference);
+    } catch { /* private browsing */ }
+  }
+}
+function paintSound() {
+  const enabled = Sfx.isOn();
+  for (const id of ['sound-button', 'menu-sound-button']) {
+    $(id).textContent = enabled ? 'Sound on' : 'Sound off';
+    $(id).setAttribute('aria-pressed', String(enabled));
+  }
+  $('music-status').textContent = enabled ? 'Space music starts with your voyage.' : 'Sound is off for this game.';
+}
+function toggleSound() {
+  setGameSound(!Sfx.isOn());
+  Sfx.init();
+  try { localStorage.setItem(SOUND_PREFERENCE, JSON.stringify(Sfx.isOn())); } catch { /* private browsing */ }
+  paintSound();
+}
+let soundEnabled = true;
+try { soundEnabled = JSON.parse(localStorage.getItem(SOUND_PREFERENCE) ?? 'true') !== false; } catch { /* default to sound on */ }
+setGameSound(soundEnabled);
+for (const id of ['sound-button', 'menu-sound-button']) $(id).addEventListener('click', toggleSound);
 paintSound();
 $('fullscreen-button').addEventListener('click',async()=>{
   try{ if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen(); }
