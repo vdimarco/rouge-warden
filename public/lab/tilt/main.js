@@ -1,5 +1,5 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, objective, currentSector, setAdventureTilt } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY } from './adventure.js';
 import { createTiltControl } from './motion.js';
 import { setFlip, H } from './physics.js';
 import { createRenderer } from './render.js';
@@ -11,6 +11,7 @@ const canvas = $('view'), renderer = createRenderer(canvas, $('mini-map'));
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let run = createAdventure(), mode = 'title', oldPhase = '', hudClock = 0, messageUntil = 0;
 let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', musicClock = 0;
+let fieldAim = null, fieldPointer = null, fieldKind = 'pull';
 const fingers = new Map(), keys = new Set(), activations = new Set();
 const motion = createTiltControl({ onChange: paintMotion });
 const FLIPS = { z: -1, arrowleft: -1, '/': 1, arrowright: 1, shiftleft: -1, shiftright: 1 };
@@ -22,6 +23,7 @@ function sound(kind, strength = 1) {
   Sfx.play((e,t) => {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
+    if (kind === 'field-deploy') { tone(e,t,{f:110,f2:330,dur:.65,peak:.12,wave:'sine',send:.5}); hiss(e,t,{type:'bandpass',f:350,f2:1300,dur:.45,peak:.065}); return; }
     if (kind === 'pulse' || kind === 'launch') { hiss(e,t,{type:'bandpass',f:250,f2:1800,dur:.3,peak:.1}); tone(e,t,{f:140,f2:520,dur:.22,peak:.1}); return; }
     const notes = kind === 'relay' || kind === 'upgrade' || kind === 'gate' || kind === 'orbit' ? [440,660,880] : [300 + strength * 90];
     notes.forEach((f,i) => tone(e,t+i*.07,{f,dur:.21,peak:.075,wave:'sine',send:.25}));
@@ -58,7 +60,7 @@ async function toggleMotion() {
 function suspendMotion() { motion.suspend(); setAdventureTilt(run); }
 function resumeMotion() { motion.resume(); setAdventureTilt(run); }
 function releaseControls() {
-  fingers.clear(); keys.clear(); activations.clear(); chargeStart = null; chargeOwner = null; charge = 0;
+  fingers.clear(); keys.clear(); activations.clear(); chargeStart = null; chargeOwner = null; charge = 0; fieldPointer = null;
   setFlip(run.world,-1,false); setFlip(run.world,1,false);
   $('left-flip').classList.remove('held'); $('right-flip').classList.remove('held');
   $('launch-button').style.setProperty('--charge',0);
@@ -86,7 +88,48 @@ function pulse(dx=0) {
   if(pulseAdventure(run,dx)) announce('Gravity pulse');
   syncHud();
 }
+function boundedAim(point) {
+  const screen = renderer.toScreen(point.x, point.y);
+  const x = Math.max(22, Math.min(innerWidth - 22, screen.x));
+  const y = Math.max(Math.min(130, innerHeight * .27), Math.min(innerHeight - Math.min(160, innerHeight * .3), screen.y));
+  return renderer.toWorld(x, y);
+}
+function moveFieldAim(point) {
+  if (mode !== 'field') return;
+  fieldAim = { ...boundedAim(point), kind: fieldKind };
+  fieldAim.valid = canDeployGravityWell(run, fieldAim.x, fieldAim.y, fieldKind);
+  $('deploy-field').disabled = !fieldAim.valid;
+  $('field-pull').setAttribute('aria-pressed', String(fieldKind === 'pull'));
+  $('field-push').setAttribute('aria-pressed', String(fieldKind === 'push'));
+  const help = fieldAim.valid ? 'Time paused. Tap space to place, or drag and release.' : 'Choose open space near the active planet.';
+  if ($('field-aim-help').textContent !== help) $('field-aim-help').textContent = help;
+}
+function beginField() {
+  if (mode === 'field') { cancelField(); return; }
+  if (mode !== 'play' || run.phase !== 'play' || run.fieldCharges < 1 || run.gravityWell) return;
+  releaseControls(); suspendMotion(); mode = 'field';
+  $('field-placement').hidden = false; document.body.classList.add('aiming-field');
+  const b = run.world.ball;
+  const candidates = [{ x: b.x + b.vx * .2, y: b.y + b.vy * .2 }];
+  for (const radius of [150, 280, 430]) for (let i = 0; i < 8; i++) candidates.push({ x: b.x + Math.cos(i * Math.PI / 4) * radius, y: b.y + Math.sin(i * Math.PI / 4) * radius });
+  const target = candidates.map(boundedAim).find(p => canDeployGravityWell(run, p.x, p.y, fieldKind)) || boundedAim(b);
+  moveFieldAim(target); syncHud(); canvas.focus({preventScroll:true});
+}
+function cancelField() {
+  if (mode !== 'field') return;
+  fieldAim = null; fieldPointer = null; mode = 'play';
+  $('field-placement').hidden = true; document.body.classList.remove('aiming-field');
+  releaseControls(); resumeMotion(); syncHud();
+}
+function placeField() {
+  if (mode !== 'field' || !fieldAim) return;
+  if (!deployGravityWell(run, fieldAim.x, fieldAim.y, fieldKind)) {
+    moveFieldAim(fieldAim); return;
+  }
+  cancelField(); canvas.focus({preventScroll:true});
+}
 function newRun() {
+  cancelField();
   Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase='';
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
@@ -97,13 +140,15 @@ function newRun() {
   canvas.focus({preventScroll:true});
 }
 function pause() {
+  cancelField();
   if(mode!=='play' || ['upgrade','won','over'].includes(run.phase))return;
-  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; $('resume-button').focus();
+  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
 }
 function resume() {
-  $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; canvas.focus({preventScroll:true});
+  $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; syncHud(); canvas.focus({preventScroll:true});
 }
 function showMap() {
+  cancelField();
   if(mode==='title')return;
   releaseControls(); suspendMotion(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
   $('route-list').replaceChildren(...run.sectors.map((s,i)=>{
@@ -144,9 +189,16 @@ function syncHud() {
   $('lives').textContent=`${run.lives} ${run.lives===1?'heart':'hearts'}`;
   $('launch-button').hidden=run.phase!=='ready';
   $('pulse-button').hidden=run.phase==='ready';
-  $('pulse-button').disabled=run.phase!=='play' || run.pulseCooldown>0;
+  $('pulse-button').disabled=mode!=='play' || run.phase!=='play' || run.pulseCooldown>0;
   $('pulse-button').textContent=run.pulseCooldown>0?`Pulse ${run.pulseCooldown.toFixed(1)}s`:'Pulse ◎';
   $('map-button').disabled=['upgrade','flight','won','over'].includes(run.phase);
+  $('field-button').textContent = mode === 'field' ? 'Cancel' : `Field ${run.fieldCharges}`;
+  $('field-button').disabled = mode !== 'field' && (mode !== 'play' || run.phase !== 'play' || run.fieldCharges < 1 || !!run.gravityWell);
+  $('field-button').setAttribute('aria-pressed', String(mode === 'field'));
+  $('field-button').setAttribute('aria-label', mode === 'field' ? 'Cancel gravity field' : `Gravity field, ${run.fieldCharges} of ${FIELD_CAPACITY} charges`);
+  const well = run.gravityWell;
+  $('field-status').textContent = well ? `${well.kind === 'push' ? 'Push' : 'Pull'} field · ${well.remaining.toFixed(1)}s` : 'Relays and orbits earn field charges';
+  $('field-status').dataset.active = String(!!well);
   if (run.phase!==oldPhase) {
     oldPhase=run.phase;
     if(run.phase==='upgrade')showUpgrades();
@@ -156,6 +208,10 @@ function syncHud() {
 }
 
 $('play-button').addEventListener('click',newRun);
+$('field-button').addEventListener('click',beginField);
+$('cancel-field').addEventListener('click',cancelField);
+$('deploy-field').addEventListener('click',placeField);
+for (const kind of ['pull', 'push']) $('field-' + kind).addEventListener('click',()=>{fieldKind = kind; if(fieldAim)moveFieldAim(fieldAim);});
 $('motion-button').addEventListener('click',toggleMotion);
 $('pause-motion-button').addEventListener('click',toggleMotion);
 $('recenter-motion-button').addEventListener('click',()=>{
@@ -176,7 +232,7 @@ $('fullscreen-button').addEventListener('click',async()=>{
   try{ if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen(); }
   catch{announce('Use the full screen option in your browser.');}
 });
-document.addEventListener('fullscreenchange',()=>{$('fullscreen-button').textContent=document.fullscreenElement?'Exit full screen':'Full screen';releaseControls();});
+document.addEventListener('fullscreenchange',()=>{$('fullscreen-button').textContent=document.fullscreenElement?'Exit full screen':'Full screen';cancelField();releaseControls();});
 function holdFlip(e,side,el) {
   if(mode!=='play'||!['ready','play'].includes(run.phase))return;
   e.preventDefault();Sfx.init();fingers.set(e.pointerId,side);el.setPointerCapture(e.pointerId);updateFlips();
@@ -187,11 +243,26 @@ for(const side of [-1,1]){
   el.addEventListener('click',e=>{if(e.detail===0 && mode==='play'){activations.add(side);updateFlips();setTimeout(()=>{activations.delete(side);updateFlips();},120);}});
 }
 canvas.tabIndex=0;
-canvas.addEventListener('pointerdown',e=>holdFlip(e,e.clientX<innerWidth/2?-1:1,canvas));
+canvas.addEventListener('pointerdown',e=>{
+  if (mode === 'field') {
+    e.preventDefault(); if(fieldPointer !== null)return;
+    fieldPointer = e.pointerId; canvas.setPointerCapture(e.pointerId);
+    moveFieldAim(renderer.toWorld(e.clientX, e.clientY)); return;
+  }
+  holdFlip(e,e.clientX<innerWidth/2?-1:1,canvas);
+});
+canvas.addEventListener('pointermove',e=>{
+  if(mode === 'field' && e.pointerId === fieldPointer) { e.preventDefault(); moveFieldAim(renderer.toWorld(e.clientX,e.clientY)); }
+});
 $('launch-button').addEventListener('pointerdown',e=>{if(!startCharge(e.pointerId))return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);fingers.set(e.pointerId,'launch');});
 $('launch-button').addEventListener('click',e=>{if(e.detail===0 && run.phase==='ready'){if(startCharge('activation'))endCharge(false,'activation');}});
 $('pulse-button').addEventListener('click',()=>pulse());
 function pointerEnd(e,cancel=false){
+  if(e.pointerId === fieldPointer) {
+    fieldPointer = null;
+    if(cancel)cancelField(); else if(mode === 'field') { moveFieldAim(renderer.toWorld(e.clientX,e.clientY)); placeField(); }
+    return;
+  }
   const action=fingers.get(e.pointerId);fingers.delete(e.pointerId);
   if(action==='launch')endCharge(cancel,e.pointerId);else updateFlips();
 }
@@ -199,7 +270,14 @@ window.addEventListener('pointerup',e=>pointerEnd(e));
 window.addEventListener('pointercancel',e=>pointerEnd(e,true));
 window.addEventListener('keydown',e=>{
   const key=keyName(e);
-  if(key==='escape'){if(e.repeat)return;if(mode==='map')closeMap();else if(mode==='pause')resume();else pause();return;}
+  if(key==='escape'){if(e.repeat)return;if(mode==='field')cancelField();else if(mode==='map')closeMap();else if(mode==='pause')resume();else pause();return;}
+  if(mode === 'field') {
+    if(['arrowleft','arrowright','arrowup','arrowdown'].includes(key)) {
+      e.preventDefault(); moveFieldAim({ x: fieldAim.x + (key === 'arrowright' ? 45 : key === 'arrowleft' ? -45 : 0), y: fieldAim.y + (key === 'arrowup' ? 45 : key === 'arrowdown' ? -45 : 0) });
+    } else if(key === 'enter' && !e.target.closest('button,a')) { e.preventDefault(); if(!e.repeat)placeField(); }
+    else if(key === 'f' && !e.repeat)cancelField();
+    return;
+  }
   if(mode!=='play'||['upgrade','over','won'].includes(run.phase))return;
   if([' ','enter'].includes(key)&&e.target.closest('button,a'))return;
   if(key in FLIPS){e.preventDefault();keys.add(key);updateFlips();}
@@ -208,11 +286,12 @@ window.addEventListener('keydown',e=>{
   else if(key==='a'){if(!e.repeat)pulse(-1);}
   else if(key==='d'){if(!e.repeat)pulse(1);}
   else if(key==='m'&&!e.repeat)showMap();
+  else if(key==='f'&&!e.repeat){e.preventDefault();beginField();}
 });
 window.addEventListener('keyup',e=>{const key=keyName(e);keys.delete(key);updateFlips();if(key===' ')endCharge(false,'space');});
-window.addEventListener('blur',()=>{releaseControls();if(mode==='play')pause();});
-window.addEventListener('resize',()=>releaseControls());
-document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseControls();if(mode==='play')pause();}});
+window.addEventListener('blur',()=>{cancelField();releaseControls();if(mode==='play')pause();});
+window.addEventListener('resize',()=>{cancelField();releaseControls();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelField();releaseControls();if(mode==='play')pause();}});
 
 startLoop({h:H,step:()=>{
   if(mode!=='play')return;
@@ -222,9 +301,11 @@ startLoop({h:H,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse','orbit'].includes(kind))sound(kind);
+    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge'].includes(kind))sound(kind);
     const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
+    if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
+    if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
   }
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
   if(run.phase==='play' && (musicClock-=H)<=0){
@@ -233,7 +314,7 @@ startLoop({h:H,step:()=>{
   }
 },draw:(_,dt)=>{
   if(chargeStart!=null){charge=Math.min(1,(performance.now()-chargeStart)/1200);$('launch-button').style.setProperty('--charge',charge);}
-  renderer.draw(run,dt,{overview:mode==='map',reducedMotion,charge});
+  renderer.draw(run,dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:mode==='field'});
   if((hudClock-=dt)<=0){hudClock=.1;if(mode!=='title')syncHud();}
   if(performance.now()>messageUntil)$('message').classList.remove('visible');
 }});
