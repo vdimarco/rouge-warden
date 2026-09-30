@@ -63,6 +63,14 @@ h1 { margin: 0; color: var(--mist); font-family: Georgia, "Times New Roman", ser
 .primary-button:active { transform: translateY(1px); }
 .primary-button > span { font-size: 22px; font-weight: 400; }
 #play-button { width: 265px; }
+.motion-controls { margin-top: 14px; }
+.menu-motion { max-width: 350px; }
+.motion-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.motion-button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 4px; background: #0c1928b0; color: #c6dbdd; font-size: 11px; }
+.motion-button:hover { background: #163140; }
+.motion-button[aria-pressed="true"] { color: var(--cyan); border-color: #8be6d570; }
+.motion-status { margin: 7px 0 0; color: #98b0ba; font-size: 10px; line-height: 1.6; }
+.pause-motion { margin: -9px 0 22px; }
 .flight-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 25px; margin-top: 34px; padding-top: 25px; border-top: 1px solid var(--line); max-width: 460px; }
 .flight-guide > div { display: flex; gap: 11px; align-items: flex-start; }
 .guide-symbol { flex: 0 0 29px; color: var(--gold); font-size: 20px; line-height: 1.45; font-family: Georgia, serif; }
@@ -143,4 +151,5 @@ body.playing #controls { display: flex; }
   #controls { bottom: calc(10px + var(--safe-bottom)); left: max(13px, env(safe-area-inset-left)); right: max(13px, env(safe-area-inset-right)); }.flipper-button { min-height: 49px; width: min(23vw, 185px); font-size: 8px; }.center-controls button { min-height: 44px; min-width: 81px; padding: 8px 12px; }.center-controls button > span { display: inline; margin-right: 5px; }.panel-overlay { padding-top: calc(14px + var(--safe-top)); padding-bottom: calc(14px + var(--safe-bottom)); }.dialog-card { padding: 25px; }.upgrade-card { width: min(100%, 850px); }.upgrade-options { grid-template-columns: repeat(3, 1fr); }.upgrade-options button { min-height: 120px; padding: 16px; }.panel-footnote { margin-top: 16px; }
 }
 @media (pointer: coarse) { .keyboard-hint, .flipper-button kbd { display: none; } }
+@media (orientation: landscape) and (max-height: 620px) { .menu-motion { grid-column: 1; }.pause-motion { margin-bottom: 15px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }

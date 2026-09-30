@@ -43,6 +43,10 @@
       <p class="menu-pitch">Launch into open space. Curve around planets and use their gravity to reach the relays. A short trail shows where your next shot will go.</p>
       <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
       <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
+      <div class="motion-controls menu-motion">
+        <button id="motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="motion-status">Enable tilt</button>
+        <p id="motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
+      </div>
       <div class="flight-guide" aria-label="How to play">
         <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Press either side to flip at the dock.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">↑</span><p><strong>Launch</strong>Hold to charge. Release to fly.</p></div>
@@ -57,6 +61,13 @@
     <div class="dialog-card">
       <h2 id="pause-title">Take your time.</h2>
       <p class="panel-description">Your voyage will be here when you are ready.</p>
+      <div class="motion-controls pause-motion">
+        <div class="motion-actions">
+          <button id="pause-motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="pause-motion-status">Enable tilt</button>
+          <button id="recenter-motion-button" class="motion-button" type="button" hidden>Recenter tilt</button>
+        </div>
+        <p id="pause-motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
+      </div>
       <button id="resume-button" class="primary-button" type="button">Resume voyage <span aria-hidden="true">↗</span></button>
       <button id="restart-button" class="secondary-button" type="button">Start a new voyage</button>
       <a class="quiet-link" href="/">Return to arcade</a>

@@ -1,5 +1,6 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, objective, currentSector } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, objective, currentSector, setAdventureTilt } from './adventure.js';
+import { createTiltControl } from './motion.js';
 import { setFlip, H } from './physics.js';
 import { createRenderer } from './render.js';
 import { startLoop } from '../kit/loop.js';
@@ -11,6 +12,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let run = createAdventure(), mode = 'title', oldPhase = '', hudClock = 0, messageUntil = 0;
 let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', musicClock = 0;
 const fingers = new Map(), keys = new Set(), activations = new Set();
+const motion = createTiltControl({ onChange: paintMotion });
 const FLIPS = { z: -1, arrowleft: -1, '/': 1, arrowright: 1, shiftleft: -1, shiftright: 1 };
 const keyName = e => e.code === 'ShiftLeft' ? 'shiftleft' : e.code === 'ShiftRight' ? 'shiftright' : e.key.toLowerCase();
 let best = 0;
@@ -26,6 +28,35 @@ function sound(kind, strength = 1) {
   });
 }
 function announce(text) { if (!text) return; $('message').textContent = text; $('message').classList.add('visible'); messageUntil = performance.now() + 2400; }
+function paintMotion(state) {
+  const active = state === 'on' || state === 'calibrating';
+  const labels = { requesting: 'Allow tilt…', calibrating: 'Tilt on', on: 'Tilt on' };
+  const descriptions = {
+    off: 'Optional: hold your phone comfortably, then enable a gentle gravity nudge.',
+    requesting: 'Allow motion access to use gentle tilt.',
+    calibrating: 'Hold comfortably. Your next sensor reading sets the center.',
+    on: 'Tilt gently to influence the ball. Planets still guide your flight.',
+    denied: 'Motion access was not allowed. You can keep playing with the touch controls.',
+    unavailable: 'Motion readings are unavailable here. Touch controls are ready to use.',
+  };
+  for (const id of ['motion-button', 'pause-motion-button']) {
+    const button = $(id);
+    button.textContent = labels[state] || 'Enable tilt';
+    button.dataset.state = state;
+    button.setAttribute('aria-pressed', String(active));
+    button.disabled = state === 'requesting';
+  }
+  for (const id of ['motion-status', 'pause-motion-status']) $(id).textContent = descriptions[state] || descriptions.off;
+  $('recenter-motion-button').hidden = !active;
+  if (!active) setAdventureTilt(run);
+}
+async function toggleMotion() {
+  if (motion.state === 'on' || motion.state === 'calibrating') motion.disable();
+  else await motion.enable(); // Called directly by the tap, as motion permission requires.
+  setAdventureTilt(run);
+}
+function suspendMotion() { motion.suspend(); setAdventureTilt(run); }
+function resumeMotion() { motion.resume(); setAdventureTilt(run); }
 function releaseControls() {
   fingers.clear(); keys.clear(); activations.clear(); chargeStart = null; chargeOwner = null; charge = 0;
   setFlip(run.world,-1,false); setFlip(run.world,1,false);
@@ -60,20 +91,21 @@ function newRun() {
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
   $('hud').hidden=false; document.body.classList.add('playing');
+  resumeMotion(); motion.recenter();
   renderer.resize(); syncHud();
   announce('Release Launch to fly. Use Pulse to aim through gravity.');
   canvas.focus({preventScroll:true});
 }
 function pause() {
   if(mode!=='play' || ['upgrade','won','over'].includes(run.phase))return;
-  releaseControls(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; $('resume-button').focus();
+  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; $('resume-button').focus();
 }
 function resume() {
-  $('pause-panel').hidden=true; mode='play'; $('pause-button').textContent='Pause'; canvas.focus({preventScroll:true});
+  $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; canvas.focus({preventScroll:true});
 }
 function showMap() {
   if(mode==='title')return;
-  releaseControls(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
+  releaseControls(); suspendMotion(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
   $('route-list').replaceChildren(...run.sectors.map((s,i)=>{
     const li=document.createElement('li'); li.className=i===run.sectorIndex?'current':s.cleared?'complete':'';
     const name=document.createElement('strong'); name.textContent=`${String(i+1).padStart(2,'0')}  ${s.name}`;
@@ -82,9 +114,9 @@ function showMap() {
   }));
   $('close-map').focus();
 }
-function closeMap() { $('map-panel').hidden=true; mode=mapReturn; canvas.focus({preventScroll:true}); }
+function closeMap() { $('map-panel').hidden=true; mode=mapReturn; if(mode==='play')resumeMotion(); canvas.focus({preventScroll:true}); }
 function showUpgrades() {
-  releaseControls(); $('upgrade-panel').hidden=false;
+  releaseControls(); suspendMotion(); $('upgrade-panel').hidden=false;
   $('upgrade-detail').textContent=`${currentSector(run).name} complete. Choose what you carry into the next sector.`;
   $('upgrade-options').replaceChildren(...availableUpgrades(run).map(item=>{
     const button=document.createElement('button');button.type='button';
@@ -92,13 +124,13 @@ function showUpgrades() {
     const desc=document.createElement('span');desc.textContent=item.description;
     button.append(name,desc);
     button.addEventListener('click',()=>{
-      if(chooseUpgrade(run,item.id)!==false){ $('upgrade-panel').hidden=true; sound('upgrade'); canvas.focus({preventScroll:true}); syncHud(); }
+      if(chooseUpgrade(run,item.id)!==false){ $('upgrade-panel').hidden=true; resumeMotion(); sound('upgrade'); canvas.focus({preventScroll:true}); syncHud(); }
     });return button;
   }));
   $('upgrade-options').querySelector('button')?.focus();
 }
 function showEnd() {
-  releaseControls(); best=Math.max(best,run.score);
+  releaseControls(); suspendMotion(); best=Math.max(best,run.score);
   try{localStorage.setItem('tilt.voyage.best',String(best));}catch{/* private browsing */}
   $('end-title').textContent=run.phase==='won'?'The stars are yours.':'A voyage to remember.';
   $('end-detail').textContent=`${run.score.toLocaleString()} points · ${run.sectors.filter(s=>s.cleared).length} of ${run.sectors.length} sectors · Best ${best.toLocaleString()}`;
@@ -124,6 +156,13 @@ function syncHud() {
 }
 
 $('play-button').addEventListener('click',newRun);
+$('motion-button').addEventListener('click',toggleMotion);
+$('pause-motion-button').addEventListener('click',toggleMotion);
+$('recenter-motion-button').addEventListener('click',()=>{
+  motion.recenter(); setAdventureTilt(run);
+  $('pause-motion-status').textContent='Hold comfortably when you resume. Tilt will center on that position.';
+});
+paintMotion(motion.state);
 $('again-button').addEventListener('click',newRun);
 $('restart-button').addEventListener('click',newRun);
 $('pause-button').addEventListener('click',()=>mode==='pause'?resume():pause());
@@ -177,6 +216,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseCon
 
 startLoop({h:H,step:()=>{
   if(mode!=='play')return;
+  const tilt = ['ready','play'].includes(run.phase) ? motion.sample(H) : { x: 0, y: 0 };
+  setAdventureTilt(run, tilt.x, tilt.y);
   updateAdventure(run,H);
   for(const event of run.events){
     renderer.onEvent?.(event,run);
