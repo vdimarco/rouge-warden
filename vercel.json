@@ -5,7 +5,17 @@
   "headers": [
     {
       "source": "/.well-known/assetlinks.json",
-      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
-  ]
+  ],
+  "functions": {
+    "api/monster-style-session.js": {
+      "maxDuration": 60
+    }
+  }
 }
