@@ -21,6 +21,8 @@ const blocks = [
   [490, 3300, 280, 430], [4310, 3300, 280, 430],
   [1770, 1200, 320, 230], [3030, 1200, 320, 230],
   [1770, 3600, 320, 230], [3030, 3600, 320, 230],
+  // The central street is framed by continuous village / woodland cover.
+  ...[1380, 1810, 2580, 3060].flatMap(y => [[2050, y, 220, 220], [2760, y + 60, 180, 220]]),
 ];
 export const OBSTACLES = [0, 1].map(phase => blocks.map(([x, y, w, h], id) => ({ x, y, w: w * (phase ? .58 : 1), h: h * (phase ? .58 : 1), id })));
 export const BRUSH = [
@@ -29,7 +31,8 @@ export const BRUSH = [
   [1550, 3270], [3250, 1530], [1550, 1530], [3250, 3270],
 ].map(([x, y]) => ({ x, y, radius: 150 }));
 export const RIVER = y => 2400 + Math.sin((y - 500) / 480) * 430;
-export function inWater(e) { return Math.abs(e.x - RIVER(e.y)) < 105; }
+export const CREEK = x => 1980 + Math.sin((x - 2400) / 600) * 80;
+export function inWater(e) { return Math.abs(e.y - CREEK(e.x)) < 105; }
 export function inBrush(s, e) { return s.phase === 1 && BRUSH.some(b => distance(b, e) < b.radius); }
 export function concealed(s, e) { return e.kind === 'hero' && (e.cloak > s.time || inBrush(s, e)) && e.revealedUntil < s.time; }
 function segmentRect(a, b, r) {

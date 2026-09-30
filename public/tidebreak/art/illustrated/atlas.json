@@ -1,0 +1,393 @@
+{
+  "house-a": {
+    "source": "scenery",
+    "cell": [
+      0,
+      0,
+      1024,
+      1024
+    ],
+    "trim": [
+      169,
+      12,
+      850,
+      999
+    ],
+    "width": 621,
+    "height": 900
+  },
+  "house-b": {
+    "source": "scenery",
+    "cell": [
+      1024,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      104,
+      25,
+      821,
+      999
+    ],
+    "width": 663,
+    "height": 900
+  },
+  "pines": {
+    "source": "scenery",
+    "cell": [
+      0,
+      1024,
+      1024,
+      2048
+    ],
+    "trim": [
+      136,
+      31,
+      898,
+      966
+    ],
+    "width": 733,
+    "height": 900
+  },
+  "stones": {
+    "source": "scenery",
+    "cell": [
+      1024,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      92,
+      143,
+      881,
+      916
+    ],
+    "width": 760,
+    "height": 745
+  },
+  "mothman-back": {
+    "source": "heroes",
+    "cell": [
+      0,
+      0,
+      512,
+      1024
+    ],
+    "trim": [
+      61,
+      257,
+      442,
+      899
+    ],
+    "width": 381,
+    "height": 642
+  },
+  "nessie-back": {
+    "source": "heroes",
+    "cell": [
+      512,
+      0,
+      1024,
+      1024
+    ],
+    "trim": [
+      27,
+      33,
+      394,
+      991
+    ],
+    "width": 345,
+    "height": 900
+  },
+  "baba-back": {
+    "source": "heroes",
+    "cell": [
+      1024,
+      0,
+      1536,
+      1024
+    ],
+    "trim": [
+      18,
+      111,
+      512,
+      938
+    ],
+    "width": 494,
+    "height": 827
+  },
+  "devil-back": {
+    "source": "heroes",
+    "cell": [
+      1536,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      0,
+      191,
+      481,
+      980
+    ],
+    "width": 481,
+    "height": 789
+  },
+  "mothman-front": {
+    "source": "heroes",
+    "cell": [
+      0,
+      1024,
+      512,
+      2048
+    ],
+    "trim": [
+      48,
+      203,
+      422,
+      847
+    ],
+    "width": 374,
+    "height": 644
+  },
+  "nessie-front": {
+    "source": "heroes",
+    "cell": [
+      512,
+      1024,
+      1024,
+      2048
+    ],
+    "trim": [
+      12,
+      17,
+      512,
+      886
+    ],
+    "width": 500,
+    "height": 869
+  },
+  "baba-front": {
+    "source": "heroes",
+    "cell": [
+      1024,
+      1024,
+      1536,
+      2048
+    ],
+    "trim": [
+      0,
+      0,
+      512,
+      856
+    ],
+    "width": 512,
+    "height": 856
+  },
+  "devil-front": {
+    "source": "heroes",
+    "cell": [
+      1536,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      0,
+      115,
+      484,
+      862
+    ],
+    "width": 484,
+    "height": 747
+  },
+  "tower-enemy": {
+    "source": "units",
+    "cell": [
+      0,
+      0,
+      1024,
+      1024
+    ],
+    "trim": [
+      357,
+      59,
+      826,
+      998
+    ],
+    "width": 450,
+    "height": 900
+  },
+  "tower-ally": {
+    "source": "units",
+    "cell": [
+      1024,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      209,
+      59,
+      677,
+      998
+    ],
+    "width": 449,
+    "height": 900
+  },
+  "wisp-ally": {
+    "source": "units",
+    "cell": [
+      0,
+      1024,
+      1024,
+      2048
+    ],
+    "trim": [
+      407,
+      208,
+      817,
+      785
+    ],
+    "width": 410,
+    "height": 577
+  },
+  "wisp-enemy": {
+    "source": "units",
+    "cell": [
+      1024,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      213,
+      200,
+      605,
+      817
+    ],
+    "width": 392,
+    "height": 617
+  },
+  "ability-wave": {
+    "source": "abilities",
+    "cell": [
+      0,
+      0,
+      683,
+      1024
+    ],
+    "trim": [
+      35,
+      221,
+      657,
+      846
+    ],
+    "width": 622,
+    "height": 625
+  },
+  "ability-whirlpool": {
+    "source": "abilities",
+    "cell": [
+      683,
+      0,
+      1365,
+      1024
+    ],
+    "trim": [
+      27,
+      221,
+      644,
+      846
+    ],
+    "width": 617,
+    "height": 625
+  },
+  "ability-ghosts": {
+    "source": "abilities",
+    "cell": [
+      1365,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      21,
+      221,
+      638,
+      846
+    ],
+    "width": 617,
+    "height": 625
+  },
+  "ability-wings": {
+    "source": "abilities",
+    "cell": [
+      0,
+      1024,
+      683,
+      2048
+    ],
+    "trim": [
+      35,
+      90,
+      657,
+      717
+    ],
+    "width": 622,
+    "height": 627
+  },
+  "ability-stomp": {
+    "source": "abilities",
+    "cell": [
+      683,
+      1024,
+      1365,
+      2048
+    ],
+    "trim": [
+      27,
+      90,
+      645,
+      717
+    ],
+    "width": 618,
+    "height": 627
+  },
+  "ability-devil": {
+    "source": "abilities",
+    "cell": [
+      1365,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      21,
+      90,
+      638,
+      717
+    ],
+    "width": 617,
+    "height": 627
+  },
+  "bridge": {
+    "source": "bridge",
+    "cell": [
+      0,
+      0,
+      2048,
+      2048
+    ],
+    "trim": [
+      595,
+      102,
+      1457,
+      1920
+    ],
+    "width": 427,
+    "height": 900
+  }
+}

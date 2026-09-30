@@ -115,3 +115,16 @@ The direct Higgsfield API generated the production texture atlas `art/toon-groun
 `toon.js` owns the material ramp and outline render target; `toon.css` supplies inked HUD borders, cyan ability discs, tarnished gold rings and the matching market palette. Camera yaw remains zero and the main lane projects vertically. Existing labels, automatic attacks, three special abilities, item recipes and simulation rules are preserved.
 
 This adapts the concept to the existing playable three-lane arena: it does not reproduce the concept's fixed illustration, invented UI numbers, or exact village layout. The HUD retains the game's score, timer, objectives and cooldowns. Existing portrait/item illustrations and native 3D towers, bridge geometry, foliage and effects remain; their surfaces now share the toon palette. Physical-phone GPU performance is not yet measured.
+
+
+## Reference-matched illustrated arena
+
+The user clarified that the playable game should reproduce the selected image's appearance, rather than add comedy or merely recolor the existing meshes. This pass uses 23 separate Higgsfield-generated illustrated assets, each generated against `styles/rick-and-morty.webp`: front/back views of four creatures, two crooked houses, pines, standing stones, two crystal towers, two wisps, a stone bridge and six ability illustrations. Their prompts and request provenance are committed. No humor additions were retained.
+
+The default renderer is now `illustrated-render.js`, a Canvas 2.5D orthographic stage with a moving camera, depth-sorted independent scenery and actors, front/back facing, movement sway, Nessie tail deformation, attack lunges, airborne ability arcs and world-space combat effects. This is an illustrated rendering approach, not a claim that the new sprites are 3D meshes. It reproduces the selected image's linework and silhouettes directly and also works where WebGL is unavailable. The earlier mesh renderer remains in source as an alternative implementation.
+
+Camera framing is bounded by both viewport width and height, preserving the vertical lane, the large Nessie silhouette, the bridge above the player, and the purple tower in the distance at the reference aspect ratio. The HUD uses the generated brass-rimmed ability art, a circular map and a compact six-slot shop strip. Nessie is the initial menu selection. Player health, actual score, objective text, cooldowns, one-relic builds and match actions remain live UI. The reference's arbitrary numbers and three-slot inventory are not copied.
+
+The active creek crosses horizontally; its geometry and Nessie's water-speed test share `CREEK`. Additional central street cover keeps all three bot lanes open. New scenery fades when it would cover the player. Rendered creature bodies have hit boxes for optional tap focus; automatic targeting remains in the simulation. The scene is built from individual assets and live entities, never a screenshot pasted behind controls.
+
+Validation: item suite and twelve complete deterministic bot matches; mobile multitouch movement and aimed casting, pause, keyboard, purchases/recipes/relics/resale, map markers, realm transition and all four hero restarts. Viewports 390×844, 320×568, 844×390 and 1440×900; additional 390×690 visual comparison against the normalized source. No console or asset errors in the final gameplay run.

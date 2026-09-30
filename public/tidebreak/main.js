@@ -1,12 +1,12 @@
 import { market, inventoryHTML } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
 import { createMatch, step, player, HEROES, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
-import { loadArt, Renderer } from './render.js';
+import { loadArt, Renderer } from './illustrated-render.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
-let state = createMatch(), renderer, selected = 0, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, castQueue, recallQueue = false, target = 0, moveId = null, moveOrigin, skillId = null, skillOrigin, skillSlot = null, lastAttack = 0, portalQueue = false, waypoint = null;
+let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, castQueue, recallQueue = false, target = 0, moveId = null, moveOrigin, skillId = null, skillOrigin, skillSlot = null, lastAttack = 0, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
@@ -22,14 +22,16 @@ function menu() { closeSheet(); running = false; resultShown = false; $('menu').
 function updateSound() { $('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
 function choose(kind) {
   selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('hero-role').textContent = h.role; $('hero-note').textContent = h.note;
-  $('hero-art').src = `./art/${h.slug}.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
+  $('hero-art').src = `./art/illustrated/${h.slug}-front.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
   document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
 }
 function start() {
   sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 3; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
-  if (renderer) renderer.cam = { x: player(state).x, y: player(state).y - 150 };
+  if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
+  const icons = selected === 1 ? ['wave', 'whirlpool', 'ghosts'] : selected === 0 ? ['wings', 'ghosts', 'wings'] : selected === 2 ? ['stomp', 'ghosts', 'stomp'] : ['devil', 'wings', 'devil'];
+  skillButtons.forEach((b, i) => b.style.backgroundImage = `url(./art/illustrated/ability-${icons[i]}.webp)`);
   updateUI();
 }
 function how() {
@@ -57,7 +59,7 @@ function updateUI() {
   dom.clock.textContent = `${String(Math.floor(remain / 60)).padStart(2, '0')}:${String(remain % 60).padStart(2, '0')}`;
   $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${p.xp / (p.level * 100) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
   const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
-  const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').textContent = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete';
+  const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').title = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete'; $('quick-buy').textContent = next ? '+' : '·'; $('quick-buy').setAttribute('aria-label', $('quick-buy').title);
   skillButtons.forEach((b, i) => { const locked = i === 2 && p.level < 3; b.querySelector('b').textContent = locked ? 'LV 3' : p.cd[i] > 0 ? Math.ceil(p.cd[i]) : ''; b.querySelector('b').classList.toggle('locked', locked); b.setAttribute('aria-disabled', String(locked || p.cd[i] > 0 || p.hp <= 0)); });
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
@@ -95,7 +97,7 @@ skillButtons.forEach(b => {
   b.addEventListener('pointerup', e => { if (e.pointerId !== skillId) return; castQueue = { slot: skillSlot, aim }; skillId = null; skillSlot = null; aim = null; });
   for (const event of ['pointercancel', 'lostpointercapture']) b.addEventListener(event, e => { if (e.pointerId === skillId) { skillId = null; skillSlot = null; aim = null; } });
 });
-$('battle').addEventListener('pointerdown', e => { if (!running || paused) return; const point = renderer.world(e.clientX, e.clientY); const hit = state.units.filter(u => u.team !== 0 && u.hp > 0 && distance(u, point) < 90 && visibleTo(state, 0, u)).sort((a, b) => distance(a, point) - distance(b, point))[0]; if (hit) target = hit.id; });
+$('battle').addEventListener('pointerdown', e => { if (!running || paused) return; const point = renderer.world(e.clientX, e.clientY); const picked = renderer.pick(state, e.clientX, e.clientY); if (picked) { target = picked; return; } const hit = state.units.filter(u => u.team !== 0 && u.hp > 0 && distance(u, point) < 90 && visibleTo(state, 0, u)).sort((a, b) => distance(a, point) - distance(b, point))[0]; if (hit) target = hit.id; });
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else pause(); return; }
@@ -129,5 +131,6 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').textContent = 'Start the hunt'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').textContent = 'Veil unavailable'; });
+choose(selected);
 // A read-only snapshot supports the existing arcade's QA tooling.
 export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd], inventory: [...player(state).inventory] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer, graphics: renderer?.stats() });
