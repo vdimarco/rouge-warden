@@ -261,8 +261,10 @@ const GUIDE = [-2.2, ROD_Y - 0.32, 0];   // the first rod guide, off to the left
 const HANDLE = { x: 1.02, y: -0.05, len: 0.8, ang: -58 * DEG };
 
 export class ReelPanel extends Widget {
-  constructor(container, { toLocal, hand = "right", area = null } = {}) {
+  constructor(container, { toLocal, hand = "right", area = null, direct = false } = {}) {
     super(container, "reel-face");
+    this.direct = direct;
+    if (direct) this.cv.hidden = true;
     this.area = area || container;
     this.toLocal = toLocal || offsetLocal;
     this.mx = hand === "left" ? -1 : 1;
@@ -288,7 +290,7 @@ export class ReelPanel extends Widget {
   }
 
   /* ----- touch ----- */
-  _local(e) { return this.toLocal(e.clientX, e.clientY, this.el); }
+  _local(e) { return this.toLocal(e.clientX, e.clientY, this.direct ? undefined : this.el); }
   _down(e) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (!this.fit() || blocked(e.target, this.area)) return;
@@ -296,10 +298,12 @@ export class ReelPanel extends Widget {
     if (this.ptrs.has(e.pointerId)) this._up(e, true);
     const q = this._local(e);
     const open = this.s.bail === "open";
-    const inFace = q.x >= 0 && q.y >= 0 && q.x <= this.w && q.y <= this.h;
+    const hit = this.direct ? this.toLocal(e.clientX, e.clientY, this.el) : q;
+    const inFace = hit.x >= 0 && hit.y >= 0 && hit.x <= this.w && hit.y <= this.h;
+    if (this.direct && !inFace && this.s.grab !== "all") return;
     const grab = this.s.grab === "all" || (this.s.grab === "panel" && inFace);
     // a grab press is never a bail swipe: the press itself opens the bail
-    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !grab && this._onBail(q.x, q.y), open: open || grab, state: "wait", timer: 0, swiped: false };
+    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && this._onBail(q.x, q.y), open: open || grab, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
     if (open || grab) {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
@@ -498,6 +502,8 @@ export class ReelPanel extends Widget {
   }
 
   draw(dt = 0.016) {
+    // Direct controls use the scene's rod. Keep only the existing gesture handling.
+    if (this.direct) return;
     if (!this.fit()) return;
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;
@@ -1182,8 +1188,10 @@ export class Crank extends Widget {
 
 /* ---------------- the rod pad ---------------- */
 export class RodPad extends Widget {
-  constructor(container, { toLocal } = {}) {
+  constructor(container, { toLocal, direct = false } = {}) {
     super(container, "rodpad");
+    this.direct = direct;
+    if (direct) this.cv.hidden = true;
     this.toLocal = toLocal || offsetLocal;
     this._theta = T.rodStart;
     this._steer = 0;
@@ -1216,12 +1224,16 @@ export class RodPad extends Widget {
     this._update();
     const q = this.toLocal(e.clientX, e.clientY, this.el);
     this.drag = { id: e.pointerId, y0: q.y, th0: this._theta, x: q.x, y: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true };
+    if (this.direct) {
+      const p = this.toLocal(e.clientX, e.clientY);
+      this.drag.origin = { x: p.x - q.x, y: p.y - q.y };
+    }
     this._steer = this._steerAt(q.x);
   }
   _move(e) {
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
-    const q = this.toLocal(e.clientX, e.clientY, this.el);
+    const q = this._dragLocal(e);
     d.x = q.x; d.y = q.y;
     // relative: the rod stays where you leave it, like holding a real one
     this._theta = clamp(d.th0 - (q.y - d.y0) * this._degPerPx(), T.rodMin, T.rodMax);
@@ -1246,8 +1258,13 @@ export class RodPad extends Widget {
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     // a flick that lets go mid-stroke: the lift point still counts toward the speed
-    if (!cancel) { const q = this.toLocal(e.clientX, e.clientY, this.el); d.hist.push({ t: e.timeStamp, y: q.y }); this._yankCheck(e.timeStamp); }
+    if (!cancel) { const q = this._dragLocal(e); d.hist.push({ t: e.timeStamp, y: q.y }); this._yankCheck(e.timeStamp); }
     this.drag = null;
+  }
+  _dragLocal(e) {
+    if (!this.drag?.origin) return this.toLocal(e.clientX, e.clientY, this.el);
+    const p = this.toLocal(e.clientX, e.clientY), o = this.drag.origin;
+    return { x: p.x - o.x, y: p.y - o.y };
   }
   _update() {
     const t = now();
@@ -1266,6 +1283,7 @@ export class RodPad extends Widget {
   }
   draw(dt = 0.016) {
     this._update();
+    if (this.direct) return;
     if (!this.fit()) return;
     dt = clamp(dt || 0, 0, 0.1);
     this.time += dt;

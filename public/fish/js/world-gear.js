@@ -133,7 +133,7 @@ export class Rod {
 
   // grip: world point of the reel seat. dir: unit rod direction. bend 0..1, pull: world point the line pulls toward (or null).
   // cam + pxAng: to keep the thin end at least about a pixel wide.
-  pose(grip, dir, bend, pull, cam, pxAng) {
+  pose(grip, dir, bend, pull, cam, pxAng, width = 1) {
     const L = ROD.length;
     // bend toward the pull, most of it near the tip (a fast-action rod)
     const n = V3();
@@ -172,7 +172,7 @@ export class Rod {
       setFrame(f, P, T);
     }
     const tf = this.frames[this.frames.length - 1];
-    this.tip.copy(tf.P).addScaledVector(tf.D, (this.mesh.userData.cartoonAsset ? 0.015 : 0.004) * tf.k);
+    this.tip.copy(tf.P).addScaledVector(tf.D, (this.mesh.userData.cartoonAsset ? 0.015 : 0.004) * tf.k * width);
     if (this.mesh.userData.cartoonAsset) this.tip.addScaledVector(tf.T, -0.005);
     // write the vertices
     const pa = this.mesh.geometry.attributes.position, na = this.mesh.geometry.attributes.normal;
@@ -180,11 +180,11 @@ export class Rod {
     for (let i = 0, N = fi.length; i < N; i++) {
       const f = F[fi[i]], g = this.grow[i];
       const k = g ? f.k : 1;
-      const x = lo[i * 3] * k, y = lo[i * 3 + 1] * k, z = lo[i * 3 + 2] * k;
+      const x = lo[i * 3] * k, y = lo[i * 3 + 1] * k * width, z = lo[i * 3 + 2] * k * width;
       p[i * 3] = f.P.x + f.T.x * x + f.D.x * y + f.B.x * z;
       p[i * 3 + 1] = f.P.y + f.T.y * x + f.D.y * y + f.B.y * z;
       p[i * 3 + 2] = f.P.z + f.T.z * x + f.D.z * y + f.B.z * z;
-      const a = ln[i * 3], b = ln[i * 3 + 1], c = ln[i * 3 + 2];
+      const a = ln[i * 3], b = ln[i * 3 + 1] / width, c = ln[i * 3 + 2] / width;
       q[i * 3] = f.T.x * a + f.D.x * b + f.B.x * c;
       q[i * 3 + 1] = f.T.y * a + f.D.y * b + f.B.y * c;
       q[i * 3 + 2] = f.T.z * a + f.D.z * b + f.B.z * c;
