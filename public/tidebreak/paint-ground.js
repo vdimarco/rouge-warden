@@ -1,5 +1,6 @@
-import { SIZE, LANES, BASES, PORTALS, CAMPS, CREEK } from './world.js';
+import { SIZE, LANES, BASES, PORTALS, CAMPS } from './world.js';
 import { sceneryRandom } from './scenery.js';
+import { riverSample, riverOutline } from './river.js';
 const TAU = Math.PI * 2;
 
 // Cached once per match and realm. Irregular paths, soil and stones never cost
@@ -43,13 +44,24 @@ export function paintGround(tiles, scene) {
       }
     }
   }
-  // The river has layered banks and shallow shelves, not a uniform texture strip.
-  c.beginPath(); for (let x = 0; x <= SIZE; x += 25) x ? c.lineTo(x, CREEK(x)) : c.moveTo(x, CREEK(x));
-  for (const [color, width] of [['#213b38', 280], ['#66745a', 255], ['#8c937044', 237], ['#254f56', 215], ['#317a7e', 185], ['#398e9290', 140]]) { c.strokeStyle = color; c.lineWidth = width; c.stroke(); }
-  c.globalAlpha = .27; c.strokeStyle = c.createPattern(tiles[2], 'repeat'); c.lineWidth = 187; c.stroke(); c.globalAlpha = 1;
-  for (let i = 0; i < 330; i++) {
-    const x = rand() * SIZE, side = rand() < .5 ? -1 : 1, y = CREEK(x) + side * (105 + rand() * 42);
-    c.fillStyle = ['#929b7b', '#526d64', '#b0b496', '#365850'][Math.floor(rand() * 4)]; c.beginPath(); c.ellipse(x, y, 4 + rand() * 12, 3 + rand() * 7, rand() * TAU, 0, TAU); c.fill();
+  // Fill two independent banks. No parallel border strokes or uniform canal bed.
+  riverOutline(c, scene.river, 42); c.fillStyle = '#253e343c'; c.fill();
+  riverOutline(c, scene.river, 23); c.fillStyle = '#84906c88'; c.fill();
+  c.save(); riverOutline(c, scene.river); c.clip();
+  const water = c.createLinearGradient(0, 1700, 4000, 2600); water.addColorStop(0, '#34767a'); water.addColorStop(.35, '#2a6c72'); water.addColorStop(.65, '#3b8680'); water.addColorStop(1, '#275e6c');
+  c.fillStyle = water; c.fillRect(0, 1400, SIZE, 1500);
+  c.globalAlpha = .16; c.fillStyle = c.createPattern(tiles[2], 'repeat'); c.fillRect(0, 1400, SIZE, 1500); c.globalAlpha = 1;
+  // Shallow gravel shelves gather in pockets along the bends.
+  for (let i = 0; i < 35; i++) {
+    const x = rand() * SIZE, bank = riverSample(x, scene.seed), y = i % 2 ? bank.north : bank.south, radius = 40 + rand() * 150;
+    const shelf = c.createRadialGradient(x, y, 0, x, y, radius); shelf.addColorStop(0, '#b4bea052'); shelf.addColorStop(.5, '#9baf8940'); shelf.addColorStop(1, '#80a38500');
+    c.fillStyle = shelf; c.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  c.restore();
+  for (let i = 0; i < 210; i++) {
+    const x = rand() * SIZE, bank = riverSample(x, scene.seed), y = i % 2 ? bank.north - rand() * 32 : bank.south + rand() * 36;
+    if (rand() < .35) continue;
+    c.fillStyle = ['#7b8973', '#526d64', '#9ca48a', '#365850'][Math.floor(rand() * 4)]; c.beginPath(); c.ellipse(x, y, 3 + rand() * 9, 2 + rand() * 5, rand() * TAU, 0, TAU); c.fill();
   }
   for (const p of scene.props) {
     if (p.solid) {

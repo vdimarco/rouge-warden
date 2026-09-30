@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { makeScenery, laneDistance } from '../../public/tidebreak/scenery.js';
-import { OBSTACLES, CREEK } from '../../public/tidebreak/world.js';
+import { OBSTACLES } from '../../public/tidebreak/world.js';
+import { outsideRiver } from '../../public/tidebreak/river.js';
 import { attackPose } from '../../public/tidebreak/combat-motion.js';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
 
@@ -13,8 +14,8 @@ for (const seed of [1, 49, 91822]) for (const phase of [0, 1]) {
     const block = OBSTACLES[phase].find(p => p.id === prop.id);
     assert(block && prop.x === block.x && Math.abs(prop.y - block.y) <= block.h / 2, 'large prop belongs to shared collision footprint');
   }
-  for (const prop of a.props.filter(p => !p.solid && p.height <= 102 && !a.props.some(q => q.solid && Math.hypot(q.x - p.x, q.y - p.y) < 340))) {
-    assert(laneDistance(prop) >= 175 && Math.abs(prop.y - CREEK(prop.x)) >= 125, 'scattered cover leaves lanes and water open');
+  for (const prop of a.props.filter(p => !p.solid && !p.shoreline && p.height <= 102 && !a.props.some(q => q.solid && Math.hypot(q.x - p.x, q.y - p.y) < 340))) {
+    assert(laneDistance(prop) >= 175 && outsideRiver(prop, seed) >= 35, 'scattered cover leaves lanes and water open');
   }
 }
 for (let hero = 0; hero < 4; hero++) {

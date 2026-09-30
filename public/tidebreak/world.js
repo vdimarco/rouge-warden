@@ -1,4 +1,5 @@
 // Geometry is shared by movement, targeting, fog, the minimap and the renderer.
+import { creekCenter, insideRiver } from './river.js';
 export const SIZE = 4800;
 export const LIMIT = 360;
 export const SHIFT = 40;
@@ -31,8 +32,8 @@ export const BRUSH = [
   [1550, 3270], [3250, 1530], [1550, 1530], [3250, 3270],
 ].map(([x, y]) => ({ x, y, radius: 150 }));
 export const RIVER = y => 2400 + Math.sin((y - 500) / 480) * 430;
-export const CREEK = x => 1980 + Math.sin((x - 2400) / 600) * 80;
-export function inWater(e) { return Math.abs(e.y - CREEK(e.x)) < 105; }
+export const CREEK = creekCenter;
+export function inWater(e, s) { return insideRiver(e, s?.seed ?? 49); }
 export function inBrush(s, e) { return s.phase === 1 && BRUSH.some(b => distance(b, e) < b.radius); }
 export function concealed(s, e) { return e.kind === 'hero' && (e.cloak > s.time || inBrush(s, e)) && e.revealedUntil < s.time; }
 function segmentRect(a, b, r) {

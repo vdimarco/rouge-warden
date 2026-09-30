@@ -1,8 +1,9 @@
 import { player, HEROES } from './sim.js';
-import { SIZE, BASES, LANES, PORTALS, BRUSH, CREEK, visibleTo, concealed, distance } from './world.js';
+import { SIZE, BASES, LANES, PORTALS, BRUSH, visibleTo, concealed, distance } from './world.js';
 import { LANDMARKS, PLANTS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
 import { attackPose, drawCombatEffect } from './combat-motion.js';
+import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
@@ -22,7 +23,7 @@ export class Renderer {
   }
   setScene(seed) {
     if (seed === this.sceneSeed) return;
-    this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase));
+    this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase)); this.bridges = riverCrossings(LANES, seed);
     this.grounds = this.scenes.map(scene => paintGround(this.tiles, scene));
   }
   resize() {
@@ -57,7 +58,7 @@ export class Renderer {
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
     const origin = this.project(0, 0); c.drawImage(this.grounds[s.phase], origin.x, origin.y, SIZE * this.scale, SIZE * this.scale * .88);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.hitBoxes = [];
-    for (const x of [790, 2400, 4010]) this.drawAsset('bridge', x, CREEK(x) + 150, 250);
+    for (const b of this.bridges) this.drawAsset('bridge', b.x + b.dx * b.span * .43, b.y + b.dy * b.span * .43, b.span, { tilt: -Math.atan2(b.dx, b.dy * .88) });
     for (const gate of PORTALS) { this.ring(gate.x, gate.y, 95, '#79e1d2', .65 + Math.sin(time * 3) * .15, 3); this.ring(gate.x, gate.y, 70, '#88e8bf', .45); }
     if (s.phase) for (const b of BRUSH) { this.ring(b.x, b.y, b.radius, '#a7c794', .4); }
     for (const z of s.zones) this.ring(z.x, z.y, z.radius * (.95 + Math.sin(time * 3) * .025), z.type === 'water' ? '#8febd9' : '#efd48c', .5, 5);
@@ -130,13 +131,21 @@ export class Renderer {
     c.restore();
     c.save(); c.strokeStyle = '#b8eee459'; c.lineWidth = 1.5;
     const left = Math.max(0, this.world(0, 0).x), right = Math.min(SIZE, this.world(this.width, 0).x);
-    for (let x = left; x < right; x += 145) { const p = this.project(x, CREEK(x) + Math.sin(x * .035 + time) * 60); c.globalAlpha = .25 + Math.sin(x + time * 2) * .16; c.beginPath(); c.ellipse(p.x, p.y, 15 * this.scale, 3 * this.scale, 0, .15, 2.8); c.stroke(); }
+    for (let i = 0; i < 34; i++) {
+      const x = (i * 143 + (this.reducedMotion ? 0 : time * 16)) % SIZE; if (x < left - 40 || x > right + 40) continue;
+      const water = riverSample(x, s.seed), offset = Math.sin(i * 2.399) * Math.min(water.y - water.north, water.south - water.y) * .7;
+      const a = this.project(x, water.y + offset), next = riverSample(Math.min(SIZE, x + 38), s.seed), b = this.project(x + 38, next.y + offset);
+      c.globalAlpha = .18 + Math.max(0, Math.sin(i + time * 1.1)) * .2;
+      c.beginPath(); c.moveTo(a.x, a.y); c.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 - 2, b.x, b.y); c.stroke();
+    }
     c.restore();
   }
   drawMap(s, canvas, waypoint = null) {
     const m = canvas.getContext('2d'), size = canvas.width, full = size > 250; m.clearRect(0, 0, size, size); m.fillStyle = '#1c353a'; m.fillRect(0, 0, size, size);
+    m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
     m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
     for (const lane of LANES) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
+    for (const b of riverCrossings(LANES, s.seed)) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
     for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
@@ -147,5 +156,5 @@ export class Renderer {
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }

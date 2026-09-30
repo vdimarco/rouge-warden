@@ -321,7 +321,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       const dx = input.x || 0, dy = input.y || 0, moving = Math.hypot(dx, dy) > .12;
       if (moving) {
         const mag = Math.max(1, Math.hypot(dx, dy)), sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-        const speed = e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.hero === 1 && inWater(e) ? 1.4 : 1);
+        const speed = e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
         move(s, e, e.x + dx / mag * 250, e.y + dy / mag * 250, dt, speed); e.recall = 0;
       }
       if (input.portal) portal(s, e);
