@@ -65,3 +65,13 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
   .gyro-mode #walkStick{bottom:126px}
   .gyro-mode #districtStatus{display:none}
 }
+
+
+/* Portal Badlands: legible ink-and-paper controls over the alien landscape. */
+[data-style="rick-morty"] header{background:linear-gradient(#363249aa,transparent)}
+[data-style="rick-morty"] #panel{background:#363249ee;border-color:#29333d;box-shadow:5px 6px 0 #29333d}
+[data-style="rick-morty"] #visualStyle{background:#454157;border:2px solid #202e38;color:#f6eaca}
+[data-style="rick-morty"] .primary{background:#c4e991;color:#253c34}
+[data-style="rick-morty"] #controls{background:linear-gradient(transparent,#363249db);border-radius:14px}
+[data-style="rick-morty"] #walkStick{background:#d8d1a544;border:2px solid #34494c99}
+[data-style="rick-morty"] #stickNub{background:#c4e991;box-shadow:2px 3px 0 #34494c88}
