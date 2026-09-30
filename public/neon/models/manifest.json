@@ -1,1 +1,13 @@
-{"provider":"404-gen","assets":[]}
+{
+  "provider": "404-gen",
+  "assets": [
+    {
+      "id": "ronin",
+      "status": "ready",
+      "taskId": "60d0bbdd-4402-4747-8596-60f45017f080",
+      "url": "./models/ronin.glb",
+      "bytes": 2315712,
+      "triangles": 39784
+    }
+  ]
+}
