@@ -10,12 +10,14 @@
 import * as THREE from 'three';
 import { defineAll, WIND } from './sfx.js';
 import { createMusic } from './music.js';
+import { createCinematicSound } from './cinematic.js';
 
 export function init(S) {
   const A = S.ctx.Audio, Music = S.ctx.Music;
   let defined = false;
   const ensure = () => { if (!defined && A && A.ctx) { defineAll(A); defined = true; } return defined; };
   const music = createMusic(A, Music);
+  const cinematic = createCinematicSound(S, A);
   const loops = new Set();
   const amb = { crickets: null, creek: null };
   const st = { auto: true, region: null, pinned: null, checkT: 0, windKey: '' };
@@ -43,6 +45,11 @@ export function init(S) {
   };
 
   S.audio = {
+    beginCinematic: () => cinematic.begin(),
+    endCinematic: () => cinematic.end(),
+    speak: (who, text) => cinematic.speak(who, text),
+    stopVoice: () => cinematic.stopVoice(),
+    get voice() { return cinematic.voice; },
     sfx(name, o = {}) {
       if (!ensure()) return;
       let n = name, opts = o;
@@ -96,6 +103,7 @@ export function init(S) {
   S.bus.on('start', () => { st.auto = true; st.pinned = null; st.windKey = ''; });
   // the story is over: every loop stops, the score rests, the arena's wind comes back
   S.bus.on('exit', () => {
+    cinematic.end();
     for (const h of [...loops]) h.stop(0.2);
     loops.clear(); amb.crickets = amb.creek = null;
     music.cue(null);
@@ -104,6 +112,7 @@ export function init(S) {
   });
 
   S.test.audio = {
+    get cinematicReady() { return cinematic.ready; }, get scoreSource() { return cinematic.scoreSource; },
     get cue() { return music.cue; }, get region() { return st.region; }, get loops() { return loops.size; },
     get defined() { return defined; }, names: () => Object.keys((A && A.defs) || {}), loopNames: () => Object.keys((A && A.loopDefs) || {}),
     get wind() { return A && A.wind ? { freq: A.wind.freq, level: A.wind.level } : null; },

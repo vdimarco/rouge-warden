@@ -19,7 +19,6 @@
 import * as THREE from 'three';
 import { CREW_IDS } from '../types.js';
 import { rigOf, findSkinned } from './rig.js';
-import { toonRamp } from '../../render.js';
 
 /* ------------------------------------------------------------------ the voice: text to a track */
 // shapes: [width, height] of the opening, as a share of the mouth's width
@@ -158,58 +157,56 @@ export function mouthSpot(mesh, rig, ud = {}) {
   return r;
 }
 
-/* ------------------------------------------------------------------ the mouth mesh */
-let parts = null;
-function sharedParts() {
-  if (parts) return parts;
-  // a unit opening (1 wide, 1 high) that curves back a little at the corners, like the face
-  const disc = (segs, bend) => {
-    const g = new THREE.CircleGeometry(0.5, segs);
-    const p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) p.setZ(i, -bend * p.getX(i) * p.getX(i));
-    g.computeVertexNormals();
-    return g;
-  };
-  const mat = (hex, basic) => { const m = basic ? new THREE.MeshBasicMaterial({ color: hex }) : new THREE.MeshToonMaterial({ color: hex, gradientMap: toonRamp }); m.userData.shared = true; m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2; return m; };
-  parts = {
-    open: disc(16, 0.22), teeth: disc(10, 0.2), lip: disc(14, 0.2),
-    mOpen: mat(0x2a0d0c, true), mTeeth: mat(0xd9d0c2, false), mLip: mat(0x6e3530, false),
-  };
-  return parts;
-}
+/* ------------------------------------------------------------------ facial deformation */
+// Move the existing lips and jaw in the character's own skinned mesh. There
+// is no second mouth plane to position or draw over the painted lips.
 function buildMouth(a) {
   const mesh = findSkinned(a.model || a.root); if (!mesh) return null;
   const rig = rigOf(mesh); if (!rig) return null;
-  const b = a.bone ? a.bone('Head') : (a.bones && a.bones.Head); if (!b) return null;
+  const b = a.bone ? a.bone('Head') : a.bones?.Head; if (!b) return null;
   const ud = a.body?.template?.scene?.userData || a.template?.scene?.userData || a.model?.userData || {};
-  const spot = mouthSpot(mesh, rig, ud);
-  const P = sharedParts();
-  const g = new THREE.Group(); g.name = 'prop:mouth';
-  // rig space (cm) into the Head bone's rest frame, as props.js mounts things
-  const q = rig.worldQ.Head.clone().invert();
-  g.position.copy(tv.set(spot.x, spot.y, spot.z).sub(rig.worldP.Head).applyQuaternion(q));
-  g.quaternion.copy(q);
-  const lip = new THREE.Mesh(P.lip, P.mLip), open = new THREE.Mesh(P.open, P.mOpen), teeth = new THREE.Mesh(P.teeth, P.mTeeth);
-  lip.position.z = -0.08; open.position.z = 0; teeth.position.z = 0.03;
-  lip.renderOrder = 1; open.renderOrder = 2; teeth.renderOrder = 3;
-  for (const m of [lip, open, teeth]) { m.name = 'prop:mouth'; m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; g.add(m); }
-  g.visible = false;
-  b.add(g);
-  return { g, lip, open, teeth, w: spot.w, bone: b, rig, spot, cur: { w: SHAPES.closed[0], h: 0 }, nod: 0, nodQ: null, nodSet: null };
+  const spot = mouthSpot(mesh, rig, ud), original = mesh.geometry;
+  const geometry = original.clone(), pos = geometry.attributes.position;
+  // GLB positions can be interleaved with normals and UVs. Read through
+  // the attribute accessors instead of treating their buffer as packed XYZ.
+  const base = new Float32Array(pos.count * 3), affected = [];
+  for (let i = 0; i < pos.count; i++) { base[i * 3] = pos.getX(i); base[i * 3 + 1] = pos.getY(i); base[i * 3 + 2] = pos.getZ(i); }
+  const gpH = new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(mesh.bindMatrix).invert().multiply(new THREE.Matrix4().copy(mesh.skeleton.boneInverses[rig.index.Hips]).invert()));
+  const si = geometry.attributes.skinIndex, sw = geometry.attributes.skinWeight;
+  for (let i = 0; i < pos.count; i++) {
+    let head = 0;
+    for (let j = 0; j < 4; j++) if (si.getComponent(i, j) === rig.index.Head) head += sw.getComponent(i, j);
+    if (head < 0.5) continue;
+    tv.fromBufferAttribute(pos, i).sub(gpH).divideScalar(rig.skinScale); tv.y += rig.hipsY;
+    const dx = tv.x - spot.x, dy = tv.y - spot.y;
+    if (Math.abs(dx) > 8 || dy > 2.2 || dy < -9 || tv.z < spot.z - 6) continue;
+    const side = 1 - THREE.MathUtils.smoothstep(Math.abs(dx), 3, 8);
+    const upper = 1 - THREE.MathUtils.smoothstep(dy, -0.5, 2.2);
+    const lower = THREE.MathUtils.smoothstep(dy, -9, -5);
+    affected.push({ i, weight: side * upper * lower * head, dx });
+  }
+  mesh.geometry = geometry;
+  const hulls = [];
+  (a.model || a.root).traverse(o => { if (o !== mesh && o.isMesh && o.geometry === original) { hulls.push(o); o.geometry = geometry; } });
+  // A state marker for QA, with no visible surface of its own.
+  const g = new THREE.Group(); g.name = 'face:jaw'; g.visible = false; b.add(g);
+  return { g, mesh, geometry, original, hulls, base, affected, w: spot.w, bone: b, rig, spot, cur: { w: SHAPES.closed[0], h: 0 }, nod: 0, nodQ: null, nodSet: null };
 }
-// lay the shape on the mesh: the opening, the teeth at its top, the lower lip's shadow under it
 function shapeMouth(M, w, h) {
-  const W = M.w * w, Hh = M.w * h;
-  const vis = Hh > 0.06;
-  M.g.visible = vis;
-  if (!vis) return;
-  // the upper lip stays near the lip line and the jaw drops: the opening hangs a little under the spot
-  const cy = -Hh * 0.28;
-  M.open.scale.set(W, Hh, 1); M.open.position.y = cy;
-  const th = Hh * 0.3; // upper teeth: a strip under the top of the opening
-  M.teeth.scale.set(W * 0.6, th, 1); M.teeth.position.y = cy + Hh / 2 - th / 2 - Hh * 0.02;
-  M.teeth.visible = Hh > 0.5;
-  M.lip.scale.set(W * 1.08, Hh + 0.55, 1); M.lip.position.y = cy - 0.12;
+  M.g.visible = h > 0.006;
+  const p = M.geometry.attributes.position, scale = M.rig.skinScale;
+  for (const v of M.affected) {
+    const i = v.i, k = v.weight;
+    p.setXYZ(i, M.base[i * 3] + v.dx * (w - 0.7) * 0.12 * k * scale,
+      M.base[i * 3 + 1] - h * 4.2 * k * scale,
+      M.base[i * 3 + 2] + h * 0.7 * k * scale);
+  }
+  p.needsUpdate = true;
+}
+function restoreFace(M) {
+  if (M.mesh.geometry === M.geometry) M.mesh.geometry = M.original;
+  for (const hull of M.hulls) if (hull.geometry === M.geometry) hull.geometry = M.original;
+  M.geometry.dispose(); M.g.removeFromParent();
 }
 
 /* ------------------------------------------------------------------ the driver */
@@ -221,7 +218,7 @@ export function createTalk(S, cast) {
     if (!a || a.disposed) return null;
     let M = mouths.get(a);
     // a body that arrived since (a placeholder swapped for its body) needs its own mouth
-    if (M && M.model !== (a.model || a.root)) { M.g.removeFromParent(); mouths.delete(a); M = null; }
+    if (M && (M.model !== (a.model || a.root) || M.mesh.geometry !== M.geometry)) { restoreFace(M); mouths.delete(a); M = null; }
     if (!M) {
       if (a.body === null && a.ph) return null; // still the capsule
       M = buildMouth(a); if (!M) return null;
@@ -258,6 +255,7 @@ export function createTalk(S, cast) {
   // is this voice (from S.ui.voices) still speaking? (the box holds its ▼ until it is done)
   function talking(v) {
     if (!v) return false;
+    if (v.audio?.source) return !v.audio.done;
     const tr = speechTrack(v.text);
     if (tr.silent) return false;
     return voiceTime() - v.t0 < endOf(v, tr);
@@ -272,7 +270,8 @@ export function createTalk(S, cast) {
       if (!v || !v.text) continue;
       const tr = speechTrack(v.text);
       if (tr.silent) continue;
-      for (const a of actorsOf(v.who)) want.set(a, { tr, t: now - v.t0, end: endOf(v, tr) });
+      const audio = v.audio?.source ? v.audio : null;
+      for (const a of actorsOf(v.who)) want.set(a, { tr, t: audio ? audio.elapsed / audio.duration * tr.dur : now - v.t0, end: audio ? tr.dur : endOf(v, tr), audio });
     }
     for (const [a, s] of speakers) if (!want.has(a) && s.manual) want.set(a, { tr: s.tr, t: now - s.t0, end: s.tr.dur, manual: s });
     // step every mouth: speakers toward their shape, the rest shut
@@ -286,6 +285,7 @@ export function createTalk(S, cast) {
       if (sp && sp.t < sp.end && !(a.inkK > 0)) {
         const k = shapeAt(sp.tr, sp.t), sh = SHAPES[k.shape] || SHAPES.closed;
         tw = sh[0] * (0.85 + 0.15 * Math.min(1.2, k.amp)); th = sh[1] * k.amp;
+        if (sp.audio) th = sp.audio.done ? 0 : Math.max(th * 0.4, sp.audio.energy * 0.36);
         nod = nodAt(sp.tr, sp.t);
       }
       if (sp && sp.manual && sp.t >= sp.end) speakers.delete(a);
@@ -323,7 +323,7 @@ export function createTalk(S, cast) {
   }
   function drop(a) {
     const M = mouths.get(a);
-    if (M) { if (M.nodSet && M.nodQ && M.bone.quaternion.equals(M.nodSet)) M.bone.quaternion.multiply(inv.copy(M.nodQ).invert()); M.g.removeFromParent(); }
+    if (M) { if (M.nodSet && M.nodQ && M.bone.quaternion.equals(M.nodSet)) M.bone.quaternion.multiply(inv.copy(M.nodQ).invert()); restoreFace(M); }
     if (M) for (const g of M.gestures) if (g.set && g.bone.quaternion.equals(g.set)) g.bone.quaternion.multiply(inv.copy(g.q).invert());
     mouths.delete(a); speakers.delete(a);
   }
