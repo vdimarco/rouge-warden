@@ -14,6 +14,10 @@ for (const [width, height] of sizes) {
   const run = createAdventure(7), camera = createCamera(width, height);
   for (const sector of run.sectors) {
     run.sectorIndex = sector.id;
+    Object.assign(run.world.ball, { ...sector.station, vx: 0, vy: 0 });
+    updateCamera(camera, run, 0, { reducedMotion: true });
+    check(Math.abs(worldToScreen(camera, sector.station.x, sector.station.y).x - width / 2) < 1,
+      `The ready field is centered in open space: ${width}x${height}, sector ${sector.id}`);
     for (const dx of [-500, 0, 500]) for (const dy of [100, 500, 1050]) {
       // Large position changes model a fast shot or a gate crossing after a slow frame.
       for (const [vx, vy] of [[-7000, -6000], [0, 0], [7000, 6000]]) {

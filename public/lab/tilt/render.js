@@ -2,9 +2,11 @@ import { createCamera, updateCamera, worldToScreen, screenToWorld, clamp } from 
 import { F } from './physics.js';
 import { FIELD_DURATION, FIELD_RADIUS } from './adventure.js';
 import { sampleTransit, visibleSectorIds, galaxyNode, transitEase } from './transit.js';
+import { makeGalaxyTexture, makeOrbitDust } from './cosmic-textures.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
+const MINERALS = { stone: [57,60,529,528], iron: [676,69,527,522], ice: [69,665,524,523], core: [677,671,522,518] };
 const PALETTE = ['#7ee8ff', '#ffa967', '#cbb4ff', '#7dffd4', '#ff95bd', '#ffe4a0'];
 const FIELD_COLORS = { pull: '#79f5ed', push: '#e8a5ff', invalid: '#ff9b82' };
 const rand = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -19,6 +21,8 @@ export function createRenderer(canvas, minimap) {
   const particles = [];
   const rings = [];
   const trail = [];
+  const dust = new Map();
+  let galaxyTexture = null;
   let width = 1, height = 1, dpr = 1, mapW = 156, mapH = 116;
   let lastWorld = null, reducedMotion = false, lastFlight = null;
   const stars = Array.from({ length: 680 }, (_, i) => ({ x: rand(i * 3 + 1) * 4200 - 300, y: rand(i * 3 + 2) * 3400 - 300, r: 0.6 + rand(i * 3 + 3) * 1.7, a: 0.17 + rand(i * 7) * 0.55 }));
@@ -54,13 +58,21 @@ export function createRenderer(canvas, minimap) {
     })));
   }
 
-  loadAssets({ nebula: new URL('./assets/deep-space.webp', import.meta.url).href, sprites: new URL('./assets/celestial-sprites.webp', import.meta.url).href, horizon: new URL('./art/transit/event-horizon.webp', import.meta.url).href });
+  loadAssets({ nebula: new URL('./assets/deep-space.webp', import.meta.url).href, sprites: new URL('./assets/celestial-sprites.webp', import.meta.url).href, horizon: new URL('./art/transit/event-horizon.webp', import.meta.url).href, organic: new URL('./art/organic/mineral-sprites.webp', import.meta.url).href });
 
   function sprite(name, x, y, w, h = w) {
     if (!assets.sprites) return false;
     g.save(); g.translate(x - w / 2, y + h / 2); g.scale(1, -1);
     g.drawImage(assets.sprites, ...SPRITES[name], 0, 0, w, h);
     g.restore(); return true;
+  }
+
+  function organicSprite(name, x, y, radius) {
+    if (!assets.organic || !MINERALS[name]) return false;
+    const rect = MINERALS[name], scale = radius * 2 / Math.max(rect[2], rect[3]);
+    const w = rect[2] * scale, h = rect[3] * scale;
+    g.save(); g.translate(x - w / 2, y + h / 2); g.scale(1, -1);
+    g.drawImage(assets.organic, ...rect, 0, 0, w, h); g.restore(); return true;
   }
 
   function onEvent(event, run) {
@@ -175,9 +187,8 @@ export function createRenderer(canvas, minimap) {
         const length = 12 + clamp(magnitude / 75, 0, 20);
         g.globalAlpha = Math.sin(t * Math.PI) * (0.2 + proximity * 0.16);
         g.strokeStyle = color; g.lineWidth = 1.1 / Math.max(0.65, camera.scale);
-        g.beginPath(); g.moveTo(x - nx * length, y - ny * length); g.lineTo(x, y); g.stroke();
-        g.beginPath(); g.moveTo(x - nx * 5 + ny * 3, y - ny * 5 - nx * 3);
-        g.lineTo(x, y); g.lineTo(x - nx * 5 - ny * 3, y - ny * 5 + nx * 3); g.stroke();
+        g.beginPath(); g.moveTo(x - nx * length, y - ny * length);
+        g.quadraticCurveTo(x - nx * length * .5 + ny * 3, y - ny * length * .5 - nx * 3, x, y); g.stroke();
       }
       // Sparse outer currents make the soft return force visible at the edge.
       const returnRadius = room.returnRadius || radius + 100;
@@ -229,100 +240,134 @@ export function createRenderer(canvas, minimap) {
       }
       g.restore();
     }
-    g.strokeStyle = `${color}cc`; g.lineWidth = 1.6; circle(g, x, y, r); g.stroke();
+    // A lit crescent gives the planet an atmosphere without an interface outline.
+    g.strokeStyle = `${color}8c`; g.lineWidth = 1.8;
+    g.beginPath(); g.arc(x, y, r * 1.012, .30, Math.PI * .94); g.stroke();
     const shade = g.createRadialGradient(x - r * 0.35, y + r * 0.3, r * 0.2, x - r * 0.35, y + r * 0.3, r * 1.6);
     shade.addColorStop(0, '#00111f00'); shade.addColorStop(0.6, '#00081325'); shade.addColorStop(1, '#010309ef');
     g.fillStyle = shade; circle(g, x, y, r); g.fill();
     g.restore();
-    if (active) label(planet.kind === 'repel' ? 'REPULSION' : planet.kind === 'tide' ? 'GRAVITY TIDE' : 'GRAVITY WELL', x, y - r - 34, color, 10);
+    if (active && (planet.kind === 'repel' || planet.kind === 'tide')) label(planet.kind === 'repel' ? 'REPULSION' : 'GRAVITY TIDE', x, y - r - 34, color, 10);
   }
 
   function asteroid(b, index, color) {
-    if (!visible(b.x, b.y, b.r + 10)) return;
-    if (assets.sprites) {
-      g.save(); circle(g, b.x, b.y, b.r * 1.05); g.clip();
-      sprite('asteroid', b.x, b.y, b.r * 2.1, b.r * 2.1); g.restore();
-      return;
+    if (!visible(b.x, b.y, b.r * 1.3)) return;
+    g.save(); g.translate(b.x, b.y); g.rotate((rand(index * 13) - .5) * .9);
+    if (assets.organic) {
+      organicSprite(['stone', 'iron', 'ice'][index % 3], 0, 0, b.r * 1.03);
+      g.restore(); return;
     }
-    const count = 10;
-    g.save(); g.translate(b.x, b.y);
+    const count = 14, seed = index * 21;
     g.beginPath();
     for (let n = 0; n < count; n++) {
-      const a = n / count * TAU, radius = b.r * (0.83 + rand(index * 21 + n) * 0.17);
+      const a = n / count * TAU, radius = b.r * (.87 + rand(seed + n) * .13);
       const x = Math.cos(a) * radius, y = Math.sin(a) * radius;
       if (n === 0) g.moveTo(x, y); else g.lineTo(x, y);
     }
     g.closePath();
     const stone = g.createLinearGradient(-b.r, b.r, b.r, -b.r);
-    stone.addColorStop(0, '#8e8a84'); stone.addColorStop(0.3, '#555b66'); stone.addColorStop(1, '#141d2a');
-    g.fillStyle = stone; g.fill();
-    g.strokeStyle = '#a4b9ca73'; g.lineWidth = 2; g.stroke();
-    for (let n = 0; n < 3; n++) {
-      const x = (rand(index + n * 33) - 0.5) * b.r;
-      const y = (rand(index * 4 + n * 21) - 0.5) * b.r;
-      circle(g, x, y, b.r * (0.09 + rand(n * 6 + index) * 0.14));
-      g.fillStyle = '#050e164f'; g.fill(); g.strokeStyle = '#a1b1b020'; g.lineWidth = 1; g.stroke();
+    stone.addColorStop(0, ['#a3aab1', '#bd9677', '#a7c6d6'][index % 3]);
+    stone.addColorStop(.45, ['#515c6a', '#73594b', '#466981'][index % 3]); stone.addColorStop(1, '#111c2a');
+    g.fillStyle = stone; g.fill(); g.save(); g.clip();
+    if (assets.sprites) {
+      g.globalAlpha = .76; sprite('asteroid', 0, 0, b.r * 2.15); g.globalAlpha = 1;
     }
-    g.restore();
+    for (let n = 0; n < 6; n++) {
+      const x = (rand(seed + n * 33) - .5) * b.r * 1.4;
+      const y = (rand(seed * 4 + n * 21) - .5) * b.r * 1.4;
+      circle(g, x, y, b.r * (.055 + rand(n * 6 + index) * .12));
+      g.fillStyle = '#050e164f'; g.fill(); g.strokeStyle = '#c5d1d025'; g.lineWidth = .7; g.stroke();
+    }
+    g.restore(); g.restore();
   }
 
   function relay(b, color, clock) {
     if (!visible(b.x, b.y, b.r * 3)) return;
-    const active = b.hit;
-    g.save();
-    const glow = g.createRadialGradient(b.x, b.y, b.r * 0.3, b.x, b.y, b.r * 2.4);
-    glow.addColorStop(0, active ? '#ffe8a173' : `${color}40`); glow.addColorStop(1, '#00000000');
-    g.fillStyle = glow; circle(g, b.x, b.y, b.r * 2.4); g.fill();
-    circle(g, b.x, b.y, b.r); g.fillStyle = active ? '#b29762' : '#183345'; g.fill();
-    g.strokeStyle = active ? '#ffe9a0' : color; g.lineWidth = active ? 4 : 2.5; g.stroke();
-    circle(g, b.x, b.y, b.r * 0.66); g.strokeStyle = active ? '#fff5c2' : '#ddeffc85'; g.lineWidth = 1; g.stroke();
-    if (b.required > 1 && b.hits > 0 && !active) {
-      g.strokeStyle = '#ffe29a'; g.lineWidth = 5;
-      g.beginPath(); g.arc(b.x, b.y, b.r + 7, -Math.PI / 2, -Math.PI / 2 + TAU * b.hits / b.required); g.stroke();
+    const active = b.hit, t = reducedMotion ? 0 : clock;
+    const warmth = active ? '#ffe1a1' : '#afdff2';
+    g.save(); g.translate(b.x, b.y);
+    const corona = g.createRadialGradient(0, 0, b.r * .22, 0, 0, b.r * 2.25);
+    corona.addColorStop(0, active ? '#ffce7780' : `${color}65`);
+    corona.addColorStop(.42, active ? '#e8a84a26' : `${color}20`); corona.addColorStop(1, '#00000000');
+    g.fillStyle = corona; circle(g, 0, 0, b.r * 2.25); g.fill();
+    // The luminous body is the collider. Wisps outside it are translucent gas.
+    const surface = g.createRadialGradient(-b.r * .3, b.r * .36, 0, 0, 0, b.r);
+    surface.addColorStop(0, active ? '#fff8d5' : '#e3f7ff');
+    surface.addColorStop(.22, active ? '#f8d185' : '#92c2d3');
+    surface.addColorStop(.62, active ? '#93623d' : '#375c72'); surface.addColorStop(1, '#0b1d2b');
+    if (assets.organic) {
+      g.save(); g.filter = active ? 'none' : 'saturate(.3) brightness(.86)';
+      organicSprite('core', 0, 0, b.r * 1.02); g.restore();
+    } else {
+      g.fillStyle = surface; circle(g, 0, 0, b.r); g.fill();
+      g.save(); circle(g, 0, 0, b.r); g.clip();
+      for (let i = 0; i < 12; i++) {
+        const angle = i * 2.399 + b.id, radius = b.r * (.2 + rand(i + b.id) * .6);
+        const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
+        g.strokeStyle = i % 3 ? '#b6ebec40' : '#fff7d768'; g.lineWidth = 1 + i % 3;
+        g.beginPath(); g.moveTo(x * .3, y * .3); g.quadraticCurveTo(x - y * .4, y + x * .4, x, y); g.stroke();
+      }
+      g.restore();
     }
-    g.fillStyle = active ? '#fff4c2' : '#c3e9fa';
-    const r = b.r * 0.25;
-    g.beginPath(); g.moveTo(b.x, b.y + r); g.lineTo(b.x + r, b.y); g.lineTo(b.x, b.y - r); g.lineTo(b.x - r, b.y); g.closePath(); g.fill();
+    // Small, irregular plasma arcs retain a clear contact silhouette.
+    for (let i = 0; i < 4; i++) {
+      const start = i * 1.7 + b.id * .73 + Math.sin(t * .28 + i) * .13;
+      g.strokeStyle = warmth; g.globalAlpha = active ? .56 : .30; g.lineWidth = 1.5;
+      g.beginPath(); g.arc(0, 0, b.r * (1.03 + i * .025), start, start + .45 + i * .11); g.stroke();
+    }
+    g.globalAlpha = 1;
+    // Charged targets carry a small star. Double-charge cores keep two marks.
+    {
+      const glow = g.createRadialGradient(-b.r * .16, b.r * .16, 0, 0, 0, b.r * .7);
+      glow.addColorStop(0, active ? '#fffdecc0' : '#d7f8ffa0');
+      glow.addColorStop(.35, active ? '#ffedaf45' : '#74cfe542');
+      glow.addColorStop(1, active ? '#ffdc8000' : '#58bcdc00');
+      g.fillStyle = glow; circle(g, 0, 0, b.r * .7); g.fill();
+    }
+    if (b.required > 1) for (let i = 0; i < b.required; i++) {
+      circle(g, (i - .5) * 12, -b.r - 12, 3.2);
+      g.fillStyle = i < b.hits ? '#fff0b1' : '#779ba1'; g.fill();
+    }
     g.restore();
   }
 
   function gate(room, clock, active) {
     const gate = room.gate;
-    if (!gate || !visible(gate.x, gate.y, gate.r * 2)) return;
-    const color = room.color || PALETTE[room.id % 6];
-    const open = gate.open;
-    g.save();
-    const glow = g.createRadialGradient(gate.x, gate.y, 0, gate.x, gate.y, gate.r * 1.6);
-    glow.addColorStop(0, open ? `${color}2e` : '#020711'); glow.addColorStop(0.45, '#040a14'); glow.addColorStop(0.66, open ? `${color}75` : `${color}18`); glow.addColorStop(1, '#00000000');
-    g.fillStyle = glow; circle(g, gate.x, gate.y, gate.r * 1.6); g.fill();
+    if (!gate || !visible(gate.x, gate.y, gate.r * 2.2)) return;
+    const open = gate.open, t = reducedMotion ? 0 : clock;
+    const lit = room.relays?.filter(r => r.hit).length || 0;
+    g.save(); g.translate(gate.x, gate.y);
+    const glow = g.createRadialGradient(0, 0, gate.r * .65, 0, 0, gate.r * 1.95);
+    glow.addColorStop(0, open ? '#ffd29b65' : '#8095b020');
+    glow.addColorStop(.4, open ? '#c97e4c28' : '#60809810'); glow.addColorStop(1, '#00000000');
+    g.fillStyle = glow; circle(g, 0, 0, gate.r * 1.95); g.fill();
+    // An accretion flow, with broad soft bands and fine uneven filaments.
+    g.rotate(-.35);
+    for (let i = 0; i < 9; i++) {
+      const radius = gate.r * (1.02 + i * .045);
+      g.globalAlpha = (open ? .13 : .035) * (1 - i / 12);
+      g.strokeStyle = i % 3 === 0 ? '#ffe4ba' : '#d6966a'; g.lineWidth = i < 4 ? 9 : 3;
+      g.beginPath(); g.ellipse(0, 0, radius * 1.22, radius * .48, 0, 0, TAU); g.stroke();
+    }
+    g.globalAlpha = 1;
+    const dark = g.createRadialGradient(-gate.r * .1, gate.r * .1, 0, 0, 0, gate.r);
+    dark.addColorStop(0, '#010208'); dark.addColorStop(.85, '#020710'); dark.addColorStop(1, open ? '#5d4539' : '#162331');
+    g.fillStyle = dark; circle(g, 0, 0, gate.r); g.fill();
     if (open && assets.horizon) {
-      const img = assets.horizon, diameter = gate.r * 2.5;
-      const scale = diameter / Math.min(img.width, img.height);
-      g.save(); circle(g, gate.x, gate.y, gate.r * 1.12); g.clip();
-      g.translate(gate.x, gate.y); g.scale(1, -1);
-      g.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale);
-      g.restore();
-    } else if (assets.sprites) {
-      g.save(); g.globalAlpha = open ? 0.95 : 0.47;
-      circle(g, gate.x, gate.y, gate.r * 1.12); g.clip();
-      sprite('portal', gate.x, gate.y, gate.r * 2.27); g.restore();
+      const img = assets.horizon, scale = gate.r * 2.35 / Math.min(img.width, img.height);
+      g.save(); circle(g, 0, 0, gate.r * 1.04); g.clip(); g.scale(1, -1);
+      g.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale); g.restore();
     }
-    g.strokeStyle = open ? '#ffdfa9' : `${color}66`; g.lineWidth = open ? 3 : 2;
-    circle(g, gate.x, gate.y, gate.r); g.stroke();
-    const lit = room.relays?.filter((r) => r.hit).length || 0;
-    for (let i = 0; i < 3; i++) {
-      const start = i * TAU / 3 + 0.14;
-      g.strokeStyle = i < lit ? '#ffe7a3' : '#56626b'; g.lineWidth = 6;
-      g.beginPath(); g.arc(gate.x, gate.y, gate.r + 12, start, start + TAU / 3 - 0.28); g.stroke();
+    for (let i = 0; i < 7; i++) {
+      const start = i * .81 + Math.sin(t * .23 + i) * .07;
+      g.globalAlpha = open ? .35 + rand(i) * .3 : .12;
+      g.strokeStyle = i % 2 ? '#f0b276' : '#d1e1ed'; g.lineWidth = .6 + rand(i + 5) * 1.4;
+      g.beginPath(); g.arc(0, 0, gate.r * (1.01 + rand(i) * .07), start, start + .55 + rand(i + 9) * .3); g.stroke();
     }
-    if (open) {
-      g.save(); g.translate(gate.x, gate.y); g.rotate(reducedMotion ? 0 : clock * 0.4);
-      g.strokeStyle = `${color}72`; g.lineWidth = 1.5;
-      for (let i = 0; i < 3; i++) { g.rotate(TAU / 3); g.beginPath(); g.ellipse(0, 0, gate.r * 0.7, gate.r * 0.22, 0, 0, TAU); g.stroke(); }
-      g.restore();
-    }
+    g.globalAlpha = open ? .45 : .1; g.strokeStyle = '#ffe0b4'; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(0, 0, gate.r * 1.43, gate.r * .38, 0, Math.PI, TAU); g.stroke();
     g.restore();
-    if (active) label(open ? 'ENTER BLACK HOLE' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 43, open ? '#e5faff' : '#a6afb7', 12);
+    if (active) label(open ? 'ENTER BLACK HOLE' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 38, open ? '#f5e8cf' : '#a6afb7', 11);
   }
 
   function rails(table, sectorIndex) {
@@ -553,6 +598,15 @@ export function createRenderer(canvas, minimap) {
     g.globalAlpha = 1;
   }
 
+  function orbitDust(room) {
+    if (!dust.has(room.id)) dust.set(room.id, makeOrbitDust(room.id, room.color));
+    const diameter = room.gravityRadius * 2.7;
+    if (!visible(room.planet.x, room.planet.y, diameter / 2)) return;
+    g.save(); g.globalAlpha = .70;
+    g.drawImage(dust.get(room.id), room.planet.x - diameter / 2, room.planet.y - diameter / 2, diameter, diameter);
+    g.restore();
+  }
+
   // The chart uses a spiral route, independent of engine coordinates. No rails,
   // targets or distant playfields appear here or behind the current level.
   function galaxyChart(ctx, run, chartWidth, chartHeight, { full = false, orbit = 0, transit = null } = {}) {
@@ -561,37 +615,10 @@ export function createRenderer(canvas, minimap) {
     const radius = Math.min(chartWidth * 0.43, chartHeight * (full ? 0.50 : 0.59));
     const spin = full ? orbit : -0.08;
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(spin);
-    if (full && assets.nebula) {
-      const img = assets.nebula, scale = Math.max(radius * 2.5 / img.width, radius * 1.7 / img.height);
-      ctx.save();
-      ctx.beginPath(); ctx.ellipse(0, 0, radius * 1.22, radius * 0.79, 0, 0, TAU); ctx.clip();
-      ctx.globalAlpha = opacity * 0.58;
-      ctx.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale);
-      const edge = ctx.createRadialGradient(0, 0, radius * 0.15, 0, 0, radius * 1.22);
-      edge.addColorStop(0, '#02071200'); edge.addColorStop(0.55, '#02071224'); edge.addColorStop(1, '#020712');
-      ctx.globalAlpha = opacity; ctx.fillStyle = edge; ctx.fillRect(-radius * 1.3, -radius, radius * 2.6, radius * 2);
-      ctx.restore();
-    }
-    const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-    halo.addColorStop(0, '#e8e0ba28'); halo.addColorStop(0.16, '#cf967022');
-    halo.addColorStop(0.52, '#4e79a522'); halo.addColorStop(1, '#060a1700');
-    ctx.fillStyle = halo; circle(ctx, 0, 0, radius); ctx.fill();
-    const count = full ? 145 : 45;
-    for (let i = 0; i < count; i++) {
-      const t = rand(i * 5 + 70), arm = i % 3;
-      const angle = arm * TAU / 3 + t * 5.2 + (rand(i + 87) - 0.5) * 0.45;
-      const r = radius * (0.055 + t * 0.96);
-      const x = Math.cos(angle) * r, y = Math.sin(angle) * r * 0.65;
-      ctx.globalAlpha = opacity * (0.13 + rand(i * 9) * 0.5) * (full ? 1 : 0.6);
-      ctx.fillStyle = i % 4 === 0 ? '#eecba2' : '#a8d0e9';
-      circle(ctx, x, y, full ? 0.55 + rand(i + 16) * 1.4 : 0.4); ctx.fill();
-    }
+    if (!galaxyTexture) galaxyTexture = makeGalaxyTexture();
+    ctx.globalAlpha = opacity * (full ? .90 : .65);
+    ctx.drawImage(galaxyTexture, -radius * 1.22, -radius * 1.22, radius * 2.44, radius * 2.44);
     ctx.globalAlpha = opacity;
-    // The diffuse core sits inside thin lens arcs and gives the chart a depth axis.
-    ctx.strokeStyle = '#b99d6d25'; ctx.lineWidth = full ? 1.2 : 0.5;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath(); ctx.ellipse(0, 0, radius * (0.37 + i * 0.23), radius * (0.12 + i * 0.13), -0.15, -1.7, 1.6); ctx.stroke();
-    }
     const nodes = run.sectors.map((room, index) => {
       const n = galaxyNode(index, run.sectors.length);
       return { x: n.x * radius, y: n.y * radius, room, index };
@@ -619,9 +646,12 @@ export function createRenderer(canvas, minimap) {
         ctx.strokeStyle = FIELD_COLORS[run.gravityWell.kind] || FIELD_COLORS.pull; ctx.lineWidth = 1.2;
         circle(ctx, x, y, r + (full ? 12 : 6)); ctx.stroke();
       }
-      ctx.fillStyle = current || next ? color : room.cleared ? '#a0cabc' : '#788692';
-      circle(ctx, x, y, r); ctx.fill();
-      if (full && (transit ? next : current)) {
+      const bodyRadius = full ? (current || next ? 9 : 6) : r;
+      const sphere = ctx.createRadialGradient(x - bodyRadius * .35, y - bodyRadius * .35, 0, x, y, bodyRadius);
+      sphere.addColorStop(0, current || next || room.cleared ? '#f7eddb' : '#99a9b7');
+      sphere.addColorStop(.32, current || next || room.cleared ? color : '#5d7089'); sphere.addColorStop(1, '#0a1421');
+      ctx.fillStyle = sphere; circle(ctx, x, y, bodyRadius); ctx.fill();
+      if (full && (transit ? next : true)) {
         ctx.save(); ctx.translate(x, y); ctx.rotate(-spin);
         const fontSize = Math.max(10, Math.min(13, chartWidth / 35));
         ctx.font = `500 ${fontSize}px "Trebuchet MS", sans-serif`;
@@ -630,9 +660,11 @@ export function createRenderer(canvas, minimap) {
         const side = [0, 4].includes(index) ? -1 : [2, 3].includes(index) ? 1 : 0;
         const preferred = side < 0 ? -textWidth - 12 : side > 0 ? 12 : -textWidth / 2;
         const labelX = clamp(preferred, 12 - screenX, chartWidth - 12 - screenX - textWidth);
-        const labelY = transit ? -19 : 26;
+        const labelY = transit ? -22 : [1, 2, 5].includes(index) ? -23 : 27;
         ctx.textAlign = 'left';
-        ctx.fillStyle = current || next ? '#e5ebed' : '#8996a6';
+        ctx.strokeStyle = '#020914d9'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+        ctx.strokeText(room.name, labelX, labelY);
+        ctx.fillStyle = current || next ? '#f5e8d5' : room.cleared ? '#b4d4c9' : '#92a8bc';
         ctx.fillText(room.name, labelX, labelY);
         ctx.restore();
       }
@@ -791,7 +823,12 @@ export function createRenderer(canvas, minimap) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     backdrop(run);
     if (options.overview) {
-      galaxyChart(g, run, width, height, { full: true });
+      const shortLandscape = width > height && height <= 620;
+      const sideCard = width > 760 || shortLandscape;
+      const chartWidth = sideCard ? width - (shortLandscape ? 300 : 382) : width;
+      const chartHeight = sideCard ? height - 70 : Math.max(220, height - 300);
+      g.save(); g.translate(sideCard ? 10 : 0, sideCard ? 65 : 62);
+      galaxyChart(g, run, chartWidth, chartHeight, { full: true }); g.restore();
       map(run);
       return;
     }
@@ -813,6 +850,7 @@ export function createRenderer(canvas, minimap) {
         g.fillStyle = `rgba(202,221,235,${star.a * 0.5})`; circle(g, star.x, star.y, star.r); g.fill();
       }
       const clock = run.clock || 0, color = room.color || PALETTE[sectorIndex % 6];
+      orbitDust(room);
       gravityField(room, renderRun, !timeline, clock);
       planet(room.planet, sectorIndex, color, clock, !timeline, renderRun.world.ball);
       gate(room, clock, !timeline);
