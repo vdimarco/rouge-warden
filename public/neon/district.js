@@ -189,12 +189,16 @@ export class District {
   }
   resize(){this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight)}
   reset(){this.retireCrowd();this.actor=this.fighterTemplate;this.clearDrones();this.dash=0;this.dashCooldown=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
-  beginMotionView(){this.motionView={yaw:this.yaw,pitch:this.pitch,last:0,turn:0};this.look=null}
+  beginMotionView(){
+    // Any comfortable grip is neutral. Never preserve a trapped downward view.
+    this.pitch=0;this.motionView={yaw:this.yaw,pitch:0,last:0,turn:0};this.look=null;
+    this.camera.rotation.set(0,this.yaw,0,'YXZ');this.camera.updateMatrixWorld();
+  }
   aimMotionView(yaw,pitch,dt){
     if(!this.motionView)this.beginMotionView();const v=this.motionView;
     const delta=Math.atan2(Math.sin(yaw-v.last),Math.cos(yaw-v.last));v.turn+=delta;v.last=yaw;
     const a=1-Math.exp(-dt/.045);this.yaw+=(v.yaw+v.turn-this.yaw)*a;
-    this.pitch+=(Math.max(-.85,Math.min(.85,v.pitch+pitch))-this.pitch)*a;
+    this.pitch+=(Math.max(-.38,Math.min(.38,pitch*.45))-this.pitch)*a;
     // Update projection before the same sensor event checks sword contact.
     this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');this.camera.updateMatrixWorld();
   }

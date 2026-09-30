@@ -55,3 +55,13 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
  #callout{top:23%;text-align:center;padding:0}header{padding-left:24px;padding-right:24px}
 }
 @media(orientation:landscape) and (max-height:500px){#panel{padding:12px 20px}#panel h1{font-size:40px}#panel p{font-size:11px}#walkStick{width:96px;height:96px;bottom:28px}#hud{gap:26px}#controls{width:260px}#runStatus{font-size:10px}}
+
+/* Keep the calibration action thumb-sized and the duel visible. */
+#center{min-height:48px;min-width:108px;border-color:#a9e6d4;color:#d9fff0;font-weight:700}
+.gyro-mode #controls .buttons{display:none}
+.gyro-mode #controls{background:linear-gradient(transparent,rgba(5,12,20,.72));padding-top:6px}
+.gyro-mode #hint{font-size:11px;margin:4px 0 8px}
+@media (orientation:portrait){
+  .gyro-mode #walkStick{bottom:126px}
+  .gyro-mode #districtStatus{display:none}
+}

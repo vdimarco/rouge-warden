@@ -22,6 +22,64 @@ const segment = (a, b, extra = {}) => ({ a, b, e: 0.48, ...extra });
 const emit = (run, type, extra = {}) => (run._updating ? run.events : run._pendingEvents).push({ type, x: run.world.ball.x, y: run.world.ball.y, ...extra });
 export const currentSector = (run) => run.sectors[run.sectorIndex];
 export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
+export const FIELD_CAPACITY = 3;
+export const FIELD_DURATION = 5;
+export const FIELD_RADIUS = 340;
+export const FIELD_ACCELERATION = 1500;
+const smooth = t => t * t * (3 - 2 * t);
+
+// A temporary field bends flight continuously. Its center and outer edge both
+// have zero force, and easing avoids a sudden acceleration at birth or expiry.
+export function gravityWellForce(well, ball) {
+  if (!well || !ball || !Number.isFinite(well.x + well.y + ball.x + ball.y) ||
+      !(well.remaining > 0) || !(well.duration > 0) || !(well.radius > 0)) return { x: 0, y: 0 };
+  const dx = well.x - ball.x, dy = well.y - ball.y, d = Math.hypot(dx, dy);
+  if (d < 1e-8 || d >= well.radius || (well.kind !== 'pull' && well.kind !== 'push')) return { x: 0, y: 0 };
+  const birth = smooth(clamp((well.duration - well.remaining) / 0.18, 0, 1));
+  const expiry = smooth(clamp(well.remaining / 0.75, 0, 1));
+  const radial = Math.sin(Math.PI * d / well.radius) ** 2;
+  const force = FIELD_ACCELERATION * radial * birth * expiry * (well.kind === 'push' ? -1 : 1);
+  return { x: dx / d * force, y: dy / d * force };
+}
+
+export function canDeployGravityWell(run, x, y, kind = 'pull') {
+  if (run.phase !== 'play' || !run.world.ball.live || run.fieldCharges < 1 || run.gravityWell ||
+      !Number.isFinite(x) || !Number.isFinite(y) || (kind !== 'pull' && kind !== 'push')) return false;
+  const s = currentSector(run), p = s.planet, distance = Math.hypot(x - p.x, y - p.y);
+  if (distance > 700 || distance < p.r + 28) return false;
+  return !run.table.bumpers.some(body => body.sector === s.id && body.asteroid &&
+    Math.hypot(x - body.x, y - body.y) < body.r + 24);
+}
+
+export function deployGravityWell(run, x, y, kind = 'pull') {
+  if (!canDeployGravityWell(run, x, y, kind)) return false;
+  run.fieldCharges--;
+  run.gravityWell = { x, y, kind, remaining: FIELD_DURATION, duration: FIELD_DURATION,
+    radius: FIELD_RADIUS, sector: run.sectorIndex };
+  emit(run, 'field-deploy', { x, y, kind, duration: FIELD_DURATION, radius: FIELD_RADIUS, charges: run.fieldCharges });
+  return true;
+}
+
+function chargeGravityWell(run, source, position = run.world.ball) {
+  if (run.fieldCharges >= FIELD_CAPACITY) return;
+  run.fieldCharges++;
+  emit(run, 'field-charge', { x: position.x, y: position.y, source, amount: 1, charges: run.fieldCharges });
+}
+
+function clearGravityWell(run, reason) {
+  if (!run.gravityWell) return;
+  const { x, y, kind } = run.gravityWell;
+  run.gravityWell = null;
+  emit(run, 'field-expire', { x, y, kind, reason });
+}
+
+// A small optional steering force: at most one tenth of the dock's gravity.
+export const TILT_ACCELERATION = 80;
+export function setAdventureTilt(run, x = 0, y = 0) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) { x = 0; y = 0; }
+  const length = Math.max(1, Math.hypot(x, y));
+  run.tilt.x = x / length; run.tilt.y = y / length;
+}
 
 export function createAdventure(seed = 1) {
   let n = (Number(seed) || 1) >>> 0;
@@ -65,7 +123,8 @@ export function createAdventure(seed = 1) {
     clock: 0, saveUntil: 0, saved: false, pulseCooldown: 0, upgrades: [], events: [], flight: null,
     combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
     _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false,
-    orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100 };
+    orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100, tilt: { x: 0, y: 0 },
+    fieldCharges: 1, gravityWell: null };
   // Other systems stay visible but are reached through their jump gates.
   table.isActive = object => object.sector === run.sectorIndex;
   table.launchVelocity = (power = 0.75) => ({
@@ -74,7 +133,8 @@ export function createAdventure(seed = 1) {
   });
   // The dock alone has a down direction. Beyond it, gravity curves the whole shot.
   // The outer return flow is a smooth force, never a bounce or a position clamp.
-  table.gravity = (ball) => {
+  table.gravityAt = (ball, elapsed = 0, overrideWell = undefined) => {
+    elapsed = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
     const s = currentSector(run), p = s.planet;
     const dx = p.x - ball.x, dy = p.y - ball.y, d = Math.hypot(dx, dy), inv = 1 / Math.max(1, d);
     const nx = dx * inv, ny = dy * inv;
@@ -85,7 +145,7 @@ export function createAdventure(seed = 1) {
     let ax = nx * force * field, ay = ny * force * field - 800 * dock;
     if (p.kind === 'tide') {
       // A tangential tide varies without introducing a universal down direction.
-      const tide = Math.sin(run.clock * 0.85) * 210 * field;
+      const tide = Math.sin((run.clock + elapsed) * 0.85) * 210 * field;
       ax += ny * tide; ay -= nx * tide;
     }
     const edge = clamp((d - s.returnRadius) / 160, 0, 1);
@@ -99,8 +159,15 @@ export function createAdventure(seed = 1) {
     }
     const magnitude = Math.hypot(ax, ay);
     if (magnitude > 6800) { ax *= 6800 / magnitude; ay *= 6800 / magnitude; }
-    return { x: ax, y: ay };
+    const selectedWell = overrideWell === undefined ? run.gravityWell : overrideWell;
+    if (selectedWell && selectedWell.sector === run.sectorIndex) {
+      const well = gravityWellForce(elapsed ? { ...selectedWell, remaining: selectedWell.remaining - elapsed } : selectedWell, ball);
+      ax += well.x; ay += well.y;
+    }
+    // Shared by the solver and shot preview so gentle tilt also bends the guide.
+    return { x: ax + run.tilt.x * TILT_ACCELERATION, y: ay + run.tilt.y * TILT_ACCELERATION };
   };
+  table.gravity = ball => table.gravityAt(ball);
   table.isDrain = b => {
     const s = currentSector(run);
     return Math.abs(b.x - s.x) < 104 && b.y < s.y + 100 && b.y > s.y + 40 && b.vy < 0;
@@ -112,6 +179,7 @@ export function createAdventure(seed = 1) {
 }
 
 function checkpoint(run) {
+  clearGravityWell(run, 'checkpoint');
   const sector = currentSector(run);
   run.table.launch = { ...sector.station };
   serve(run.world);
@@ -169,6 +237,7 @@ export function chooseUpgrade(run, id) {
 }
 
 function drain(run) {
+  clearGravityWell(run, 'drain');
   run.drainCount++;
   if (run.clock < run.saveUntil && !run.saved) {
     run.saved = true; checkpoint(run); emit(run, 'save'); return;
@@ -195,6 +264,10 @@ function tick(run) {
     return;
   }
   if (run.phase !== 'play') return;
+  if (run.gravityWell) {
+    run.gravityWell.remaining = Math.max(0, run.gravityWell.remaining - H);
+    if (run.gravityWell.remaining < 1e-9) clearGravityWell(run, 'expired');
+  }
   const collisions = [];
   step(run.world, collisions);
   const sector = currentSector(run), b = run.world.ball;
@@ -210,6 +283,7 @@ function tick(run) {
         if (relay.hit) run.relaysHit++;
         run.score += Math.round((relay.hit ? 1000 : 450) * (1 + 0.2 * run._cometLevel));
         emit(run, 'relay', { id: e.id, x: relay.x, y: relay.y, complete: relay.hit, hits: relay.hits, required: relay.required });
+        chargeGravityWell(run, 'relay', relay);
         if (sector.relays.every(r => r.hit)) {
           sector.gate.open = true; run.score += 1500; emit(run, 'gate', { x: sector.gate.x, y: sector.gate.y });
         }
@@ -219,6 +293,7 @@ function tick(run) {
   if (sector.gate.open && Math.hypot(b.x - sector.gate.x, b.y - sector.gate.y) < sector.gate.r) {
     sector.cleared = true; run.score += 3000; b.vx = 0; b.vy = 0;
     run.phase = run.sectorIndex === run.sectors.length - 1 ? 'won' : 'upgrade';
+    clearGravityWell(run, run.phase === 'won' ? 'won' : 'sector');
     emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id });
     return;
   }
@@ -234,6 +309,7 @@ function tick(run) {
       if (Math.abs(run._orbitTravel) >= Math.PI && run.clock - run._orbitAwardAt > 7) {
         run.score += 750; run.orbitCount++; run._orbitAwardAt = run.clock; run._orbitTravel = 0;
         emit(run, 'orbit', { sector: sector.id, bonus: 750 });
+        chargeGravityWell(run, 'orbit');
       }
     }
     run._orbitAngle = angle;

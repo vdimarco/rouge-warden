@@ -63,6 +63,14 @@ h1 { margin: 0; color: var(--mist); font-family: Georgia, "Times New Roman", ser
 .primary-button:active { transform: translateY(1px); }
 .primary-button > span { font-size: 22px; font-weight: 400; }
 #play-button { width: 265px; }
+.motion-controls { margin-top: 14px; }
+.menu-motion { max-width: 350px; }
+.motion-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.motion-button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 4px; background: #0c1928b0; color: #c6dbdd; font-size: 11px; }
+.motion-button:hover { background: #163140; }
+.motion-button[aria-pressed="true"] { color: var(--cyan); border-color: #8be6d570; }
+.motion-status { margin: 7px 0 0; color: #98b0ba; font-size: 10px; line-height: 1.6; }
+.pause-motion { margin: -9px 0 22px; }
 .flight-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 25px; margin-top: 34px; padding-top: 25px; border-top: 1px solid var(--line); max-width: 460px; }
 .flight-guide > div { display: flex; gap: 11px; align-items: flex-start; }
 .guide-symbol { flex: 0 0 29px; color: var(--gold); font-size: 20px; line-height: 1.45; font-family: Georgia, serif; }
@@ -114,12 +122,29 @@ body.playing #controls { display: flex; }
 .flipper-arrow { color: var(--cyan); font-size: 26px; line-height: 1; }
 .flipper-button:active, .flipper-button.active, .flipper-button.held { background: #8be6d5; border-color: #cefff0; color: #0b2630; box-shadow: 0 0 28px #8be6d543; }
 .flipper-button:active .flipper-arrow, .flipper-button.active .flipper-arrow, .flipper-button.held .flipper-arrow { color: #0c302f; }
-.center-controls { display: flex; gap: 8px; }
+.center-controls { position: relative; display: flex; gap: 8px; }
 .center-controls button { min-height: 49px; min-width: 92px; padding: 9px 16px; border-radius: 8px; background: #102736e6; border: 1px solid #8be6d548; font-size: 12px; font-weight: 550; }
 .center-controls button > span { margin-right: 7px; font-size: 18px; vertical-align: -1px; }
 .center-controls .launch-button { position: relative; overflow: hidden; color: var(--gold); border-color: #f0d6a44d; }
 .center-controls .launch-button::after { content: ""; position: absolute; left: 0; bottom: 0; width: calc(var(--charge, 0) * 100%); height: 3px; background: var(--gold); box-shadow: 0 0 12px #f0d6a470; pointer-events: none; }
 .center-controls .pulse-button { color: var(--cyan); }
+.center-controls .field-button { color: #cab7fa; border-color: #b8a3f45c; }
+.center-controls .field-button[aria-pressed="true"] { color: #101b2b; background: #cbb4ff; }
+#field-status { position: absolute; bottom: calc(100% + 11px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 90vw; padding: 5px 9px; border-radius: 5px; background: #061321d9; font-size: 10px; color: #b6c9cf; pointer-events: none; }
+#field-status[data-active="true"] { color: #ddcfff; }
+.field-guide { max-width: 450px; margin: 20px 0 0; color: #98b0ba; font-size: 11px; line-height: 1.7; }
+.field-guide strong { color: #cab7fa; font-weight: 500; }
+#field-placement { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
+#field-aim-help { position: absolute; top: calc(101px + var(--safe-top)); left: 50%; transform: translateX(-50%); width: max-content; max-width: min(420px, 88vw); margin: 0; padding: 10px 14px; border: 1px solid #cbb4ff55; border-radius: 6px; background: #071423ed; color: #eee6ff; font-size: 12px; line-height: 1.5; text-align: center; }
+.field-tools { position: absolute; bottom: calc(92px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 7px; width: max-content; max-width: calc(100vw - 20px); padding: 7px; border: 1px solid #cbb4ff55; border-radius: 8px; background: #081522f5; pointer-events: auto; }
+.field-tools button { min-width: 48px; min-height: 44px; padding: 8px 13px; border: 1px solid #8be6d533; border-radius: 4px; background: #122736; color: #cce3e1; font-size: 11px; touch-action: manipulation; }
+.field-kinds { display: flex; gap: 3px; }
+#field-pull[aria-pressed="true"] { background: #8be6d5; color: #08252c; }
+#field-push[aria-pressed="true"] { background: #cbb4ff; color: #201732; }
+#deploy-field { color: #f0d6a4; }
+.aiming-field #field-status, .aiming-field #message { visibility: hidden; }
+.aiming-field #view { cursor: crosshair; }
+.aiming-field .flipper-button, .aiming-field #pulse-button { opacity: .4; }
 .center-controls button:active { background: #23495c; }
 @media (min-width: 1500px) { .menu-content { margin-left: 4vw; }.menu-planet { right: 6vw; }.menu-pitch { font-size: 16px; max-width: 460px; }.flight-guide p { font-size: 12px; }.flight-guide strong { font-size: 13px; } }
 @media (max-width: 1100px) { #hud { gap: 12px; }.hud-brand { gap: 10px; }.hud-right { gap: 12px; }.hud-actions button { padding: 8px; }#objective { font-size: 10px; max-width: 240px; }#fullscreen-button { width: 44px; padding: 8px; font-size: 0; }#fullscreen-button::after { content: "⛶"; font-size: 19px; }.mini-map-wrap { width: 145px; }.menu-content { max-width: 490px; }.menu-planet { right: -10vw; top: 27%; width: 58vw; }.menu-orbit { right: -24vw; }.menu-coordinate { right: 5vw; } }
@@ -143,4 +168,7 @@ body.playing #controls { display: flex; }
   #controls { bottom: calc(10px + var(--safe-bottom)); left: max(13px, env(safe-area-inset-left)); right: max(13px, env(safe-area-inset-right)); }.flipper-button { min-height: 49px; width: min(23vw, 185px); font-size: 8px; }.center-controls button { min-height: 44px; min-width: 81px; padding: 8px 12px; }.center-controls button > span { display: inline; margin-right: 5px; }.panel-overlay { padding-top: calc(14px + var(--safe-top)); padding-bottom: calc(14px + var(--safe-bottom)); }.dialog-card { padding: 25px; }.upgrade-card { width: min(100%, 850px); }.upgrade-options { grid-template-columns: repeat(3, 1fr); }.upgrade-options button { min-height: 120px; padding: 16px; }.panel-footnote { margin-top: 16px; }
 }
 @media (pointer: coarse) { .keyboard-hint, .flipper-button kbd { display: none; } }
+@media (orientation: landscape) and (max-height: 620px) { .menu-motion { grid-column: 1; }.pause-motion { margin-bottom: 15px; } }
+@media (max-width: 760px) { #field-status { font-size: 9px; }.center-controls .field-button { min-width: 60px; }.field-tools { gap: 5px; padding: 5px; }.field-tools button { padding: 8px 10px; } }
+@media (orientation: landscape) and (max-height: 620px) { .field-guide { grid-column: 1 / -1; font-size: 10px; max-width: none; margin-top: 16px; }#field-aim-help { top: calc(61px + var(--safe-top)); font-size: 11px; padding: 7px 12px; }.field-tools { bottom: calc(74px + var(--safe-bottom)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
