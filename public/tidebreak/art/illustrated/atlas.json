@@ -389,5 +389,719 @@
     ],
     "width": 427,
     "height": 900
+  },
+  "observatory": {
+    "source": "motion-landmarks",
+    "cell": [
+      0,
+      0,
+      683,
+      683
+    ],
+    "trim": [
+      83,
+      74,
+      593,
+      664
+    ],
+    "width": 510,
+    "height": 590
+  },
+  "mill": {
+    "source": "motion-landmarks",
+    "cell": [
+      683,
+      0,
+      1365,
+      683
+    ],
+    "trim": [
+      69,
+      172,
+      594,
+      635
+    ],
+    "width": 525,
+    "height": 463
+  },
+  "market": {
+    "source": "motion-landmarks",
+    "cell": [
+      1365,
+      0,
+      2048,
+      683
+    ],
+    "trim": [
+      34,
+      159,
+      598,
+      610
+    ],
+    "width": 564,
+    "height": 451
+  },
+  "abbey": {
+    "source": "motion-landmarks",
+    "cell": [
+      0,
+      683,
+      683,
+      1365
+    ],
+    "trim": [
+      110,
+      43,
+      553,
+      602
+    ],
+    "width": 443,
+    "height": 559
+  },
+  "hollow-log": {
+    "source": "motion-landmarks",
+    "cell": [
+      683,
+      683,
+      1365,
+      1365
+    ],
+    "trim": [
+      26,
+      70,
+      627,
+      588
+    ],
+    "width": 601,
+    "height": 518
+  },
+  "greenhouse": {
+    "source": "motion-landmarks",
+    "cell": [
+      1365,
+      683,
+      2048,
+      1365
+    ],
+    "trim": [
+      54,
+      24,
+      560,
+      595
+    ],
+    "width": 506,
+    "height": 571
+  },
+  "shrine": {
+    "source": "motion-landmarks",
+    "cell": [
+      0,
+      1365,
+      683,
+      2048
+    ],
+    "trim": [
+      176,
+      1,
+      469,
+      538
+    ],
+    "width": 293,
+    "height": 537
+  },
+  "ivy-wall": {
+    "source": "motion-landmarks",
+    "cell": [
+      683,
+      1365,
+      1365,
+      2048
+    ],
+    "trim": [
+      8,
+      83,
+      562,
+      508
+    ],
+    "width": 554,
+    "height": 425
+  },
+  "pier": {
+    "source": "motion-landmarks",
+    "cell": [
+      1365,
+      1365,
+      2048,
+      2048
+    ],
+    "trim": [
+      25,
+      1,
+      570,
+      546
+    ],
+    "width": 545,
+    "height": 545
+  },
+  "willow": {
+    "source": "motion-botanicals",
+    "cell": [
+      0,
+      0,
+      683,
+      683
+    ],
+    "trim": [
+      58,
+      64,
+      644,
+      662
+    ],
+    "width": 586,
+    "height": 598
+  },
+  "oak": {
+    "source": "motion-botanicals",
+    "cell": [
+      683,
+      0,
+      1365,
+      683
+    ],
+    "trim": [
+      117,
+      72,
+      623,
+      680
+    ],
+    "width": 506,
+    "height": 608
+  },
+  "birches": {
+    "source": "motion-botanicals",
+    "cell": [
+      1365,
+      0,
+      2048,
+      683
+    ],
+    "trim": [
+      58,
+      55,
+      507,
+      683
+    ],
+    "width": 449,
+    "height": 628
+  },
+  "mushrooms": {
+    "source": "motion-botanicals",
+    "cell": [
+      0,
+      683,
+      683,
+      1365
+    ],
+    "trim": [
+      43,
+      97,
+      563,
+      584
+    ],
+    "width": 520,
+    "height": 487
+  },
+  "ferns": {
+    "source": "motion-botanicals",
+    "cell": [
+      683,
+      683,
+      1365,
+      1365
+    ],
+    "trim": [
+      0,
+      106,
+      565,
+      609
+    ],
+    "width": 565,
+    "height": 503
+  },
+  "juniper": {
+    "source": "motion-botanicals",
+    "cell": [
+      1365,
+      683,
+      2048,
+      1365
+    ],
+    "trim": [
+      0,
+      104,
+      595,
+      609
+    ],
+    "width": 595,
+    "height": 505
+  },
+  "reeds": {
+    "source": "motion-botanicals",
+    "cell": [
+      0,
+      1365,
+      683,
+      2048
+    ],
+    "trim": [
+      49,
+      0,
+      533,
+      571
+    ],
+    "width": 484,
+    "height": 571
+  },
+  "boulders": {
+    "source": "motion-botanicals",
+    "cell": [
+      683,
+      1365,
+      1365,
+      2048
+    ],
+    "trim": [
+      7,
+      62,
+      682,
+      567
+    ],
+    "width": 675,
+    "height": 505
+  },
+  "branch": {
+    "source": "motion-botanicals",
+    "cell": [
+      1365,
+      1365,
+      2048,
+      2048
+    ],
+    "trim": [
+      0,
+      68,
+      583,
+      526
+    ],
+    "width": 583,
+    "height": 458
+  },
+  "mothman-attack-back-0": {
+    "source": "motion-mothman",
+    "cell": [
+      0,
+      0,
+      683,
+      1024
+    ],
+    "trim": [
+      104,
+      248,
+      683,
+      859
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "mothman-attack-back-1": {
+    "source": "motion-mothman",
+    "cell": [
+      683,
+      0,
+      1365,
+      1024
+    ],
+    "trim": [
+      0,
+      213,
+      682,
+      868
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "mothman-attack-back-2": {
+    "source": "motion-mothman",
+    "cell": [
+      1365,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      151,
+      247,
+      518,
+      824
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "mothman-attack-front-0": {
+    "source": "motion-mothman",
+    "cell": [
+      0,
+      1024,
+      683,
+      2048
+    ],
+    "trim": [
+      104,
+      117,
+      683,
+      715
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "mothman-attack-front-1": {
+    "source": "motion-mothman",
+    "cell": [
+      683,
+      1024,
+      1365,
+      2048
+    ],
+    "trim": [
+      0,
+      125,
+      682,
+      737
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "mothman-attack-front-2": {
+    "source": "motion-mothman",
+    "cell": [
+      1365,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      0,
+      124,
+      618,
+      691
+    ],
+    "width": 690,
+    "height": 663
+  },
+  "nessie-attack-back-0": {
+    "source": "motion-nessie",
+    "cell": [
+      0,
+      0,
+      683,
+      1024
+    ],
+    "trim": [
+      80,
+      90,
+      566,
+      965
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "nessie-attack-back-1": {
+    "source": "motion-nessie",
+    "cell": [
+      683,
+      0,
+      1365,
+      1024
+    ],
+    "trim": [
+      20,
+      134,
+      645,
+      973
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "nessie-attack-back-2": {
+    "source": "motion-nessie",
+    "cell": [
+      1365,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      71,
+      98,
+      622,
+      986
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "nessie-attack-front-0": {
+    "source": "motion-nessie",
+    "cell": [
+      0,
+      1024,
+      683,
+      2048
+    ],
+    "trim": [
+      75,
+      81,
+      683,
+      914
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "nessie-attack-front-1": {
+    "source": "motion-nessie",
+    "cell": [
+      683,
+      1024,
+      1365,
+      2048
+    ],
+    "trim": [
+      0,
+      128,
+      662,
+      925
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "nessie-attack-front-2": {
+    "source": "motion-nessie",
+    "cell": [
+      1365,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      94,
+      54,
+      626,
+      912
+    ],
+    "width": 568,
+    "height": 760
+  },
+  "baba-attack-back-0": {
+    "source": "motion-baba",
+    "cell": [
+      0,
+      0,
+      683,
+      1024
+    ],
+    "trim": [
+      98,
+      61,
+      638,
+      913
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "baba-attack-back-1": {
+    "source": "motion-baba",
+    "cell": [
+      683,
+      0,
+      1365,
+      1024
+    ],
+    "trim": [
+      113,
+      104,
+      682,
+      942
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "baba-attack-back-2": {
+    "source": "motion-baba",
+    "cell": [
+      1365,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      0,
+      258,
+      580,
+      932
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "baba-attack-front-0": {
+    "source": "motion-baba",
+    "cell": [
+      0,
+      1024,
+      683,
+      2048
+    ],
+    "trim": [
+      60,
+      0,
+      591,
+      907
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "baba-attack-front-1": {
+    "source": "motion-baba",
+    "cell": [
+      683,
+      1024,
+      1365,
+      2048
+    ],
+    "trim": [
+      55,
+      12,
+      638,
+      948
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "baba-attack-front-2": {
+    "source": "motion-baba",
+    "cell": [
+      1365,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      12,
+      160,
+      596,
+      939
+    ],
+    "width": 477,
+    "height": 760
+  },
+  "devil-attack-back-0": {
+    "source": "motion-devil",
+    "cell": [
+      0,
+      0,
+      683,
+      1024
+    ],
+    "trim": [
+      129,
+      155,
+      595,
+      859
+    ],
+    "width": 638,
+    "height": 760
+  },
+  "devil-attack-back-1": {
+    "source": "motion-devil",
+    "cell": [
+      683,
+      0,
+      1365,
+      1024
+    ],
+    "trim": [
+      58,
+      89,
+      661,
+      903
+    ],
+    "width": 638,
+    "height": 760
+  },
+  "devil-attack-back-2": {
+    "source": "motion-devil",
+    "cell": [
+      1365,
+      0,
+      2048,
+      1024
+    ],
+    "trim": [
+      44,
+      292,
+      468,
+      879
+    ],
+    "width": 638,
+    "height": 760
+  },
+  "devil-attack-front-0": {
+    "source": "motion-devil",
+    "cell": [
+      0,
+      1024,
+      683,
+      2048
+    ],
+    "trim": [
+      65,
+      26,
+      683,
+      803
+    ],
+    "width": 638,
+    "height": 760
+  },
+  "devil-attack-front-1": {
+    "source": "motion-devil",
+    "cell": [
+      683,
+      1024,
+      1365,
+      2048
+    ],
+    "trim": [
+      0,
+      26,
+      682,
+      772
+    ],
+    "width": 638,
+    "height": 760
+  },
+  "devil-attack-front-2": {
+    "source": "motion-devil",
+    "cell": [
+      1365,
+      1024,
+      2048,
+      2048
+    ],
+    "trim": [
+      0,
+      36,
+      547,
+      822
+    ],
+    "width": 638,
+    "height": 760
   }
 }

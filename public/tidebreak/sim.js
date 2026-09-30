@@ -56,7 +56,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     target.shield += 220; target.itemState.mirror = s.time + 20; burst(s, target.x, target.y, '#b9c9ff', 105);
   }
   const absorbed = Math.min(target.shield, amount * shieldMultiplier); target.shield -= absorbed; amount -= absorbed / shieldMultiplier;
-  const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
+  const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (source.player) s.stats.damage += actual;
   if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
   if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
@@ -120,7 +120,7 @@ export function autoTarget(s, e, manual = 0) {
 }
 function attack(s, e, t) {
   if (!t || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
-  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = .42; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x);
+  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = .42; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
   e.ambushReady = false; e.revealedUntil = s.time + 2.6;
@@ -148,7 +148,7 @@ function resolveAttack(s, e) {
     }
     if (hasItem(e, 'starfall') && v.spells >= 3) { v.spells = 0; for (const other of s.units) if (hostile(s, e, other) && distance(t, other) < 240 && lineOfSight(s, t, other)) damage(s, e, other, 160 + e.power * .4, 'item'); burst(s, t.x, t.y, '#cbb1ff', 240, 'ultimate'); }
   }
-  s.effects.push({ type: e.range > 200 ? 'beam' : 'slash', x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .2, maxLife: .2 });
+  s.effects.push({ type: e.kind === 'hero' ? 'strike' : 'beam', hero: e.hero, source: e.id, x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .38, maxLife: .38 });
 }
 function area(s, e, center, radius, amount, status = {}) {
   for (const t of s.units) if (hostile(s, e, t) && distance(t, center) < radius + t.radius && lineOfSight(s, center, t)) {
@@ -160,13 +160,14 @@ export function cast(s, e, slot, aim) {
   if (e.kind !== 'hero' || ![0, 1, 2].includes(slot) || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.cd[slot] > 0 || s.winner !== null || (slot === 2 && e.level < 3)) return false;
   const target = s.units.find(t => t.id === e.target && hostile(s, e, t) && canSee(s, e, t) && distance(e, t) < 540 && lineOfSight(s, e, t)) || nearest(s, e, 540, true);
   const angle = aim && Math.hypot(aim.x, aim.y) > .1 ? Math.atan2(aim.y, aim.x) : target ? Math.atan2(target.y - e.y, target.x - e.x) : e.facing;
-  e.recall = 0; e.cd[slot] = [4.5, 7, 23][slot] * e.haste; e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.itemState.empowered = s.time + 5;
+  e.recall = 0; e.cd[slot] = [4.5, 7, 23][slot] * e.haste; e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.castFacing = angle; e.itemState.empowered = s.time + 5;
   e.itemState.spells = Math.min(3, (e.itemState.spells || 0) + 1);
   if (slot === 2 && hasItem(e, 'worldroot') && s.time >= (e.itemState.worldroot || 0)) {
     e.itemState.worldroot = s.time + 18;
     for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e, ally) < 450) { ally.shield += e.maxHp * .15; burst(s, ally.x, ally.y, '#c8f9bc', 110); }
   }
   const color = HEROES[e.hero].color, origin = { x: e.x, y: e.y };
+  s.effects.push({ ...origin, type: 'spell', hero: e.hero, source: e.id, slot, radius: slot === 2 ? 430 : slot === 1 ? 285 : 130, color, life: slot === 2 ? .9 : .62, maxLife: slot === 2 ? .9 : .62 });
   if (slot === 0) {
     const length = [490, 410, 330, 460][e.hero];
     e.x += Math.cos(angle) * length; e.y += Math.sin(angle) * length; resolveBody(s, e);
