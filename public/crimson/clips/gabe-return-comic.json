@@ -1,0 +1,9 @@
+{
+  "description": "Comic bear-to-human return, derived from the existing Fal human-to-bear animation.",
+  "source_url": "https://v3b.fal.media/files/b/0aac63da/lOOA-S2KRVCZQRyPi53Xd_minimax-h3.mp4",
+  "source_model": "minimax/h3-max/reference-to-video",
+  "source_request_id": "01a0edfc-89ed-7e90-8055-e79a6441312b",
+  "edit": "Picture reversed at 1.1x, resized to 960px wide. Original audio removed; filtered pink-noise whoosh added. MP4 and WebM.",
+  "new_generation": false,
+  "generation_note": "A new Fal return-to-human generation was attempted but rejected because the account balance was empty."
+}

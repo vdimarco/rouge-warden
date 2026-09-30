@@ -369,7 +369,7 @@ export function createCine(S, K) {
       if (kind === 'lines') {
         const text = S.content.line(e.line);
         if (e.block) { run.hold = S.ui.say([{ who: e.who, line: e.line }], { block: true }); if (K.auto) S.ui.advanceAll(); }
-        else S.ui.subs(e.who, text, undefined, e.who || lineWho(e.line)); // (the line's speaker talks, even with no name shown)
+        else S.ui.subs(e.who, text, Math.min(e.dur ?? Math.max(1.6, 0.7 + String(text).length * 0.045), Math.max(0.1, run.def.dur - run.t)), e.who || lineWho(e.line)); // (the line's speaker talks, even with no name shown)
       } else if (kind === 'looks') { S.look.set(e.set, { dur: e.dur ?? 1 }); }
       else if (kind === 'cards') { run.card = S.ui.card(e.kind || 'title', { title: e.title, sub: e.sub, kanji: e.kanji, n: e.n, dur: e.dur }); }
       else if (kind === 'fx') { fxAt(e); }
