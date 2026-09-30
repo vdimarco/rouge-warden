@@ -7,18 +7,20 @@ import { startLoop } from '../kit/loop.js';
 import { Sfx, tone, hiss } from '../kit/sfx.js';
 import { sampleTransit } from './transit.js';
 import { createTransitAudio } from './transit-audio.js';
+import { createSpaceMusic } from './space-music.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), renderer = createRenderer(canvas, $('mini-map'));
 const transitAudio = createTransitAudio(Sfx);
+const spaceMusic = createSpaceMusic(Sfx);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let run = createAdventure(), mode = 'title', oldPhase = '', hudClock = 0, messageUntil = 0;
-let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', musicClock = 0;
+let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', scoreClock = 0;
 let fieldAim = null, fieldPointer = null, fieldKind = 'pull';
 const fingers = new Map(), keys = new Set(), activations = new Set();
 const motion = createTiltControl({ onChange: paintMotion });
-const FLIPS = { z: -1, arrowleft: -1, '/': 1, arrowright: 1, shiftleft: -1, shiftright: 1 };
-const keyName = e => e.code === 'ShiftLeft' ? 'shiftleft' : e.code === 'ShiftRight' ? 'shiftright' : e.key.toLowerCase();
+const FLIPS = { z: -1, x: 1 };
+const keyName = e => e.key.toLowerCase();
 let best = 0;
 try { best = Number(localStorage.getItem('tilt.voyage.best')) || 0; } catch { /* private browsing */ }
 
@@ -105,13 +107,13 @@ function moveFieldAim(point) {
   $('deploy-field').disabled = !fieldAim.valid;
   $('field-pull').setAttribute('aria-pressed', String(fieldKind === 'pull'));
   $('field-push').setAttribute('aria-pressed', String(fieldKind === 'push'));
-  const help = fieldAim.valid ? 'Time paused. Tap space to place, or drag and release.' : 'Choose open space near the active planet.';
+  const help = fieldAim.valid ? (matchMedia('(pointer: coarse)').matches ? 'Time paused. Tap space to place, or drag and release.' : 'Time paused. WASD aim · Q Pull/Push · E place · F cancel') : 'Choose open space near the active planet.';
   if ($('field-aim-help').textContent !== help) $('field-aim-help').textContent = help;
 }
 function beginField() {
   if (mode === 'field') { cancelField(); return; }
   if (mode !== 'play' || run.phase !== 'play' || run.fieldCharges < 1 || run.gravityWell) return;
-  releaseControls(); suspendMotion(); mode = 'field';
+  releaseControls(); suspendMotion(); spaceMusic.stop(); mode = 'field';
   $('field-placement').hidden = false; document.body.classList.add('aiming-field');
   const b = run.world.ball;
   const candidates = [{ x: b.x + b.vx * .2, y: b.y + b.vy * .2 }];
@@ -135,7 +137,8 @@ function placeField() {
 function newRun() {
   cancelField();
   transitAudio.stop();
-  Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase='';
+  spaceMusic.stop();
+  Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase=''; scoreClock=0;
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
   $('hud').hidden=false; document.body.classList.add('playing');
@@ -147,7 +150,7 @@ function newRun() {
 function pause() {
   cancelField();
   if(mode!=='play' || ['upgrade','won','over'].includes(run.phase))return;
-  releaseControls(); suspendMotion(); transitAudio.stop(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
+  releaseControls(); suspendMotion(); transitAudio.stop(); spaceMusic.stop(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
 }
 function resume() {
   $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; syncHud(); canvas.focus({preventScroll:true});
@@ -155,7 +158,7 @@ function resume() {
 function showMap() {
   cancelField();
   if(mode==='title' || ['upgrade','flight','won','over'].includes(run.phase))return;
-  releaseControls(); suspendMotion(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
+  releaseControls(); suspendMotion(); spaceMusic.stop(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
   $('route-list').replaceChildren(...run.sectors.map((s,i)=>{
     const li=document.createElement('li'); li.className=i===run.sectorIndex?'current':s.cleared?'complete':'';
     const name=document.createElement('strong'); name.textContent=`${String(i+1).padStart(2,'0')}  ${s.name}`;
@@ -168,9 +171,11 @@ function closeMap() { $('map-panel').hidden=true; mode=mapReturn; if(mode==='pla
 function showUpgrades() {
   releaseControls(); suspendMotion(); $('upgrade-panel').hidden=false;
   $('upgrade-detail').textContent=`${currentSector(run).name} complete. Choose what you carry into the next sector.`;
-  $('upgrade-options').replaceChildren(...availableUpgrades(run).map(item=>{
+  $('upgrade-options').replaceChildren(...availableUpgrades(run).map((item,index)=>{
     const button=document.createElement('button');button.type='button';
+    button.setAttribute('aria-keyshortcuts', String(index + 1));
     const name=document.createElement('strong');name.textContent=item.name;
+    const shortcut=document.createElement('kbd');shortcut.className='upgrade-key';shortcut.textContent=String(index + 1);name.prepend(shortcut,document.createTextNode(' '));
     const desc=document.createElement('span');desc.textContent=item.description;
     button.append(name,desc);
     button.addEventListener('click',()=>{
@@ -269,7 +274,7 @@ function holdFlip(e,side,el) {
 }
 for(const side of [-1,1]){
   const el=$(side===-1?'left-flip':'right-flip');el.addEventListener('pointerdown',e=>holdFlip(e,side,el));
-  // Native keyboard activation gives a short stroke; key holds on Z and / remain independent.
+  // Native keyboard activation gives a short stroke; key holds on Z and X remain independent.
   el.addEventListener('click',e=>{if(e.detail===0 && mode==='play' && ['ready','play'].includes(run.phase)){activations.add(side);updateFlips();setTimeout(()=>{activations.delete(side);updateFlips();},120);}});
 }
 canvas.tabIndex=0;
@@ -299,23 +304,32 @@ function pointerEnd(e,cancel=false){
 window.addEventListener('pointerup',e=>pointerEnd(e));
 window.addEventListener('pointercancel',e=>pointerEnd(e,true));
 window.addEventListener('keydown',e=>{
+  if(e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
   const key=keyName(e);
   if(key==='escape'){if(e.repeat)return;if(mode==='field')cancelField();else if(mode==='map')closeMap();else if(mode==='pause')resume();else pause();return;}
+  if(mode==='map' && key==='r'){e.preventDefault();if(!e.repeat)closeMap();return;}
   if(mode === 'field') {
-    if(['arrowleft','arrowright','arrowup','arrowdown'].includes(key)) {
-      e.preventDefault(); moveFieldAim({ x: fieldAim.x + (key === 'arrowright' ? 45 : key === 'arrowleft' ? -45 : 0), y: fieldAim.y + (key === 'arrowup' ? 45 : key === 'arrowdown' ? -45 : 0) });
-    } else if(key === 'enter' && !e.target.closest('button,a')) { e.preventDefault(); if(!e.repeat)placeField(); }
-    else if(key === 'f' && !e.repeat)cancelField();
+    if(['w','a','s','d'].includes(key)) {
+      e.preventDefault(); moveFieldAim({ x: fieldAim.x + (key === 'd' ? 45 : key === 'a' ? -45 : 0), y: fieldAim.y + (key === 'w' ? 45 : key === 's' ? -45 : 0) });
+    } else if(key === 'q') { e.preventDefault(); if(!e.repeat){fieldKind=fieldKind==='pull'?'push':'pull';moveFieldAim(fieldAim);} }
+    else if(key === 'e') { e.preventDefault(); if(!e.repeat)placeField(); }
+    else if(key === 'f') { e.preventDefault(); if(!e.repeat)cancelField(); }
     return;
+  }
+  if(mode==='play' && run.phase==='upgrade' && /^[1-3]$/.test(key)){
+    e.preventDefault();if(!e.repeat)$('upgrade-options').children[Number(key)-1]?.click();return;
+  }
+  if(mode==='play' && run.phase==='flight' && key==='e'){
+    e.preventDefault();if(!e.repeat)$('skip-transit').click();return;
   }
   if(mode!=='play'||['upgrade','flight','over','won'].includes(run.phase))return;
   if([' ','enter'].includes(key)&&e.target.closest('button,a'))return;
   if(key in FLIPS){e.preventDefault();keys.add(key);updateFlips();}
   else if(key===' '){e.preventDefault();if(!e.repeat)startCharge('space');}
-  else if(key==='arrowup'||key==='x'){e.preventDefault();if(!e.repeat)pulse();}
-  else if(key==='a'){if(!e.repeat)pulse(-1);}
-  else if(key==='d'){if(!e.repeat)pulse(1);}
-  else if(key==='m'&&!e.repeat)showMap();
+  else if(key==='c'){e.preventDefault();if(!e.repeat)pulse();}
+  else if(key==='a'){e.preventDefault();if(!e.repeat)pulse(-1);}
+  else if(key==='d'){e.preventDefault();if(!e.repeat)pulse(1);}
+  else if(key==='r'){e.preventDefault();if(!e.repeat)showMap();}
   else if(key==='f'&&!e.repeat){e.preventDefault();beginField();}
 });
 window.addEventListener('keyup',e=>{const key=keyName(e);keys.delete(key);updateFlips();if(key===' ')endCharge(false,'space');});
@@ -339,15 +353,14 @@ startLoop({h:H,step:()=>{
     if(kind === 'arrive') { releaseControls(); resumeMotion(); syncHud(); }
   }
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
-  if(run.phase==='play' && (musicClock-=H)<=0){
-    musicClock=2.6;
-    Sfx.play((e,t)=>tone(e,t,{f:[110,164.81,146.83,130.81][Math.floor(run.clock/10)%4],dur:2.5,peak:.018,wave:'sine',send:.6}));
-  }
 },draw:(_,dt)=>{
   if(chargeStart!=null){charge=Math.min(1,(performance.now()-chargeStart)/1200);$('launch-button').style.setProperty('--charge',charge);}
   const frozen = mode === 'field' || mode === 'pause';
   renderer.draw(run,frozen ? 0 : dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:frozen});
   transitAudio.update(run.flight, mode === 'play' && run.phase === 'flight', reducedMotion);
+  const musicActive = mode === 'play' && ['ready','play','upgrade'].includes(run.phase);
+  if(musicActive)scoreClock+=Math.min(dt,.1);
+  spaceMusic.update({ active: musicActive, clock: scoreClock, sector: run.sectorIndex, phase: run.phase, reducedMotion });
   paintTransit();
   if((hudClock-=dt)<=0){hudClock=.1;if(mode!=='title')syncHud();}
   if(performance.now()>messageUntil)$('message').classList.remove('visible');

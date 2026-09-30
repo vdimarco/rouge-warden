@@ -13,7 +13,7 @@ async function reachGate(page) {
   let attempts = 1;
   while (Date.now() - started < 90000) {
     if (await page.locator('#upgrade-panel').isVisible()) {
-      await page.keyboard.up('z'); await page.keyboard.up('/');
+      await page.keyboard.up('z'); await page.keyboard.up('x');
       return;
     }
     if (await page.locator('#end-panel').isVisible()) {
@@ -22,12 +22,12 @@ async function reachGate(page) {
     }
     const launch = page.locator('#launch-button'), pulse = page.locator('#pulse-button');
     if (await launch.isVisible()) {
-      await page.keyboard.down('z'); await page.keyboard.down('/');
+      await page.keyboard.down('z'); await page.keyboard.down('x');
       await launch.click();
     }
     // A checkpoint can hide Pulse between observation and action. Its ordinary keyboard
     // shortcut safely follows the current phase instead of waiting for a vanished button.
-    else if (await pulse.isVisible() && await pulse.isEnabled()) await page.keyboard.press('ArrowUp');
+    else if (await pulse.isVisible() && await pulse.isEnabled()) await page.keyboard.press('c');
     await sleep(70);
   }
   throw new Error('Natural launch/Pulse route did not reach a gate in 90 seconds');
@@ -67,17 +67,17 @@ for (const size of [
     await reachGate(page);
     R.check((await page.locator('#upgrade-detail').textContent()).includes('Lunar Harbor complete'), 'Normal play reaches the first gate and offers an upgrade');
     await watchStages(page);
-    await page.locator('#upgrade-options button').first().click();
+    await page.keyboard.press('1');
     await page.locator('#transit-panel').waitFor({ state: 'visible' });
     await until(page, () => document.querySelector('#transit-title').textContent.includes('Amber Belt'));
-    R.check((await page.locator('#transit-title').textContent()).includes('Amber Belt'), 'The transit names the destination');
+    R.check((await page.locator('#transit-title').textContent()).includes('Amber Belt'), '1 selects the first upgrade and starts travel to the named destination');
     R.check(await fits(page.locator('#skip-transit')), 'Skip jump stays visible with a usable touch target');
     R.check(await page.locator('#controls').isHidden(), 'The cinematic hides ordinary gameplay controls');
     R.check(await page.locator('#pulse-button').isDisabled() && await page.locator('#field-button').isDisabled() &&
       await page.locator('#left-flip').isDisabled() && await page.locator('#right-flip').isDisabled() && await page.locator('#map-button').isDisabled(),
       'Gameplay and map controls are disabled during travel');
     await page.locator('#view').focus();
-    await page.keyboard.press('z'); await page.keyboard.press('f'); await page.keyboard.press('m'); await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('z'); await page.keyboard.press('f'); await page.keyboard.press('r'); await page.keyboard.press('c');
     R.check(await page.locator('.flipper-button.held').count() === 0 && await page.locator('#field-placement').isHidden() && await page.locator('#map-panel').isHidden(),
       'Transit keys cannot hold flippers, arm a field or open the map');
 
@@ -106,9 +106,9 @@ for (const size of [
       R.check(await visibleField(page) === 'none', 'Black-hole travel conceals both source and destination fields');
     }
     if (size.skip) {
-      await page.locator('#skip-transit').click();
+      await page.keyboard.press('e');
       await page.locator('#launch-button').waitFor({ state: 'visible' });
-      R.check(await page.locator('#transit-panel').isHidden(), 'Skip ends travel at a playable dock');
+      R.check(await page.locator('#transit-panel').isHidden(), 'E skips travel and arrives at a playable dock');
     } else {
       await page.locator('#transit-panel').waitFor({ state: 'hidden', timeout: size.reduced ? 3000 : 12000 });
       await page.locator('#launch-button').waitFor({ state: 'visible' });

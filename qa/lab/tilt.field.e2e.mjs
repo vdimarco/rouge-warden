@@ -117,10 +117,15 @@ for (const size of [
       } finally { await touch.close(); }
     } else if (size.method === 'keyboard') {
       await page.locator('#view').focus();
-      await page.keyboard.press('ArrowRight');
-      // Return to the known valid reticle before confirming with Enter.
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('Enter');
+      await page.keyboard.press('d');
+      await page.keyboard.press('a');
+      await page.keyboard.press('w');
+      await page.keyboard.press('s');
+      await page.keyboard.press('q');
+      R.check(await page.locator('#field-push').getAttribute('aria-pressed') === 'true', 'Q switches the field from Pull to Push');
+      await page.keyboard.press('q');
+      R.check(await page.locator('#field-pull').getAttribute('aria-pressed') === 'true', 'Q switches the field back to Pull');
+      await page.keyboard.press('e');
     } else await page.locator('#deploy-field').click();
     await until(page, () => document.getElementById('field-status').dataset.active === 'true', null, 3000);
     R.check(await page.locator('#field-placement').isHidden() && await held(page) === 0, 'Deployment closes aim and leaves flippers released');
@@ -156,15 +161,15 @@ R.section('Invalid targets and input lifecycle');
     await page.keyboard.press('f');
     await page.locator('#field-placement').waitFor({ state: 'visible' });
     // The camera remains frozen while this public keyboard scan reaches a planet or sector edge.
-    for (const key of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']) {
+    for (const key of ['w', 'a', 's', 'd']) {
       if (await page.locator('#deploy-field').isDisabled()) break;
       for (let i = 0; i < 32 && await page.locator('#deploy-field').isEnabled(); i++) await page.keyboard.press(key);
     }
     R.check(await page.locator('#deploy-field').isDisabled(), 'An invalid point disables the confirm control');
     R.check(/Choose open space/.test(await page.locator('#field-aim-help').textContent()), 'Invalid placement gives a visible instruction');
-    await page.keyboard.press('Enter');
-    R.check(await page.locator('#field-placement').isVisible() && await active(page) === 'false', 'Enter on an invalid point keeps aim open');
-    R.check(await held(page) === 0, 'Aim arrows never leak into flipper controls');
+    await page.keyboard.press('e');
+    R.check(await page.locator('#field-placement').isVisible() && await active(page) === 'false', 'E on an invalid point keeps aim open');
+    R.check(await held(page) === 0, 'WASD aim never leaks into flipper controls');
     await page.keyboard.press('Escape');
     R.check(await page.locator('#field-placement').isHidden() && await page.locator('#pause-panel').isHidden() && await inventory(page) === carried, 'Escape cancels aim without a charge or an extra pause');
 
