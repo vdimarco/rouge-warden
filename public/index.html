@@ -915,12 +915,16 @@ for (const cv of $$(".mini-game")) {
   }
 }
 // Crimson Rouge flips between the standoff and the grizzly
-setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
+setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimson"]')).classList.toggle("flip"); }, 4100);
 {
   const cr = store.get("crimson.best.v1", null);
-  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
+  $(".hi", $('.cab[data-game="crimson"]')).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
 }
 
+{
+ const best = store.get("olympus-legacy-v2", null);
+ $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
+}
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);
