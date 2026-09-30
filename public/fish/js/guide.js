@@ -82,19 +82,19 @@ export function sceneFrame(kind, motion, time) {
 
 export function lesson(kind, motion, touch = true) {
   return ({
-    hold: ["Hold the reel", "Press and keep your thumb down."],
-    back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the reel."],
+    hold: ["Hold the rod", "Press and keep your thumb down."],
+    back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
     cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
-    flight: ["Your lure is flying", "Touch the reel to stop it short."],
+    flight: ["Your lure is flying", "Touch the rod to stop it short."],
     reel: ["Turn the crank", "Reel slowly. Pause now and then."],
-    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod pad up" : "Press Space", "Set the hook when the fish strikes."],
+    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod up" : "Press Space", "Set the hook when the fish strikes."],
     pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
     strength: ["Tip back as you reel", "Bring the top of the phone toward you for extra reel power."],
     stop: ["Stop turning the crank", "Let the fish run."],
-    low: [motion ? "Lower the phone" : "Drag the rod pad down", "Lower the rod."],
-    turn: [motion ? "Tilt to steer" : "Drag the rod pad sideways", "Keep the fish clear of cover."],
-    land: [motion ? "Lift the phone. Hold." : "Rod pad up. Hold.", "Lift the fish out of the water."],
-    raise: [motion ? "Hold the phone up" : "Hold the rod pad up", "Keep the rod raised."],
+    low: [motion ? "Lower the phone" : "Drag the rod down", "Lower the rod."],
+    turn: [motion ? "Tilt to steer" : "Drag the rod sideways", "Keep the fish clear of cover."],
+    land: [motion ? "Lift the phone. Hold." : "Rod up. Hold.", "Lift the fish out of the water."],
+    raise: [motion ? "Hold the phone up" : "Hold the rod up", "Keep the rod raised."],
     drag: ["Tap + to tighten drag", "Keep some line on the spool."],
   })[kind] || ["Watch the line", "Follow the prompt."];
 }
@@ -130,8 +130,8 @@ export function createGuide(game, button) {
   video.className = "guide-video";
   art.before(video);
   const count = panel.querySelector(".guide-count"), kicker = panel.querySelector(".guide-kicker");
-  let dismissed = false;
-  try { dismissed = localStorage.getItem(KEY) === "hidden"; } catch (_) { /* storage may be disabled */ }
+  let dismissed = true;
+  try { dismissed = localStorage.getItem(KEY) !== "shown"; } catch (_) { /* storage may be disabled */ }
   let state = null, key = "", started = 0, lastDraw = -Infinity, layoutKey = "", nextLayout = 0, kindNow = "hold", parts = [];
   let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });

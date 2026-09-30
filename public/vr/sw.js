@@ -2,7 +2,7 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 
@@ -14,6 +14,7 @@ const LIB = ["three.module.min.js", "three.core.min.js", "addons/loaders/GLTFLoa
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
+  "./models/cn-tower.glb",
   "./privacy.html",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

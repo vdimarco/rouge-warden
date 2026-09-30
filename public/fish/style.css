@@ -64,3 +64,25 @@ body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
   #title .kick { letter-spacing: .2em; font-size: 10px; }
   #title .art-note { display: none; }
 }
+
+/* On-rod cues share the painted palette and leave the water visible. */
+#rodCue { position: absolute; width: 96px; height: 96px; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; color: #fff3c9; filter: drop-shadow(0 2px 2px #163d3f88); }
+#rodCue svg { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+#rodCue .rod-ring { position: absolute; inset: 0; width: 96px; height: 96px; }
+.rod-halo { stroke-width: 2; stroke-dasharray: 5 7; opacity: .7; }
+.rod-tension { transform: rotate(-90deg); transform-origin: center; stroke: #e8b64a; stroke-width: 5; stroke-dasharray: 0 100; }
+#rodCue .rod-action { position: absolute; width: 36px; height: 36px; right: 90px; top: 30px; stroke-width: 3; }
+#rodCue span { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 140px; padding: 5px 10px; border: 1px solid #e8dbaf; border-radius: 999px; color: #315349; background: #fff4dc; font-size: 12px; line-height: 1.25; text-align: center; }
+#rodCue[data-tone="hot"] { color: #ffe1a4; }
+#rodCue[data-tone="hot"] span { background: #a54332; color: #fff3dc; border-color: #ffd5ac; }
+#rodCue[data-tone="hot"] .rod-tension { stroke: #ff8b62; }
+#rodCue[data-held="true"] .rod-halo { stroke-dasharray: none; opacity: 1; }
+#rodCue[data-cue="hold"] .rod-halo, #rodCue[data-cue="nibble"] .rod-halo { animation: rod-pulse 1.6s ease-in-out infinite; }
+#rodCue:is([data-cue="back"], [data-cue="low"]) .rod-action { animation: rod-down 1.2s ease-in-out infinite; }
+#rodCue:is([data-cue="cast"], [data-cue="hook"], [data-cue="land"], [data-cue="pump"]) .rod-action { animation: rod-up .9s ease-in-out infinite; }
+#crankBox[data-cue="reel"]::after { content: ""; position: absolute; inset: 8%; border: 2px dashed #fff1bf; border-radius: 50%; pointer-events: none; animation: rod-turn 4s linear infinite; }
+@keyframes rod-pulse { 50% { opacity: .25; } }
+@keyframes rod-up { 50% { transform: translateY(-10px); } }
+@keyframes rod-down { 50% { transform: translateY(10px); } }
+@keyframes rod-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #rodCue *, #crankBox::after { animation: none !important; } }

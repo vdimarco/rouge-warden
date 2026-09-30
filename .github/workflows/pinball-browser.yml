@@ -46,7 +46,10 @@ jobs:
           cat /tmp/pinball-server.log
           exit 1
       - name: Physics simulation
-        run: node qa/lab/tilt.sim.mjs
+        run: |
+          node qa/lab/tilt.sim.mjs
+          node qa/lab/tilt.adventure.sim.mjs
+          node qa/lab/tilt.camera.sim.mjs
       - name: Browser interactions and responsive layout
         run: npm run test:pinball --prefix qa/browser
         env:

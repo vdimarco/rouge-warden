@@ -20,6 +20,9 @@ await page.addInitScript(()=>{
 });
 try {
  await open(page,'?nosw'); await page.waitForFunction(()=>G.viewDone);
+ await page.waitForFunction(()=>G.scene.getObjectByName('CN Tower Higgsfield'));
+ assert.equal(await page.evaluate(()=>!!G.scene.getObjectByName('CN Tower fallback')),false);
+ console.log('PASS Higgsfield tower loaded and replaced fallback');
  assert.match(await page.title(),/In Full Swing/);
  await page.locator('#playFlat').click();await page.waitForFunction(()=>G.state==='play');
  await page.locator('#phoneControls').waitFor({state:'visible'});

@@ -490,6 +490,8 @@ void main() {
     float bq = vW.y / 6.0, bfw = fwidth(bq);
     float band = mix(0.5, smoothstep(0.5 - bfw, 0.5 + bfw, fract(bq)), 1.0 - smoothstep(0.2, 0.5, bfw)) * step(330.0, vW.y);
     col = shade(mix(vec3(0.58, 0.58, 0.6), vec3(0.75, 0.16, 0.12), band), N, vis);
+  } else if (k == 15) {
+    col = shade(vec3(.12,.16,.18), N, vis) + skyColor(reflect(-V,N)) * .15;
   } else if (k == 16 || k == 17) {
     // the Dome: pale roof panels on ribs, arched openings round the base
     float a = atan(vW.z - uDome.y, vW.x - uDome.x);
@@ -1660,12 +1662,13 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---------------- 4. the Needle, the Dome, the expressway ---------------- */
   const beacons = [];
   const lb = Buf({ aKind: 1 }, 16384);
+  const needleBuffer = Buf({ aKind: 1 }, 16384);
   // the King's perch: a gold plinth on the pod roof, on the side that faces the start (known before the build)
   const perchR = 9.5, perchA = Math.atan2(S0.z - N0.z, S0.x - N0.x);
   perch.x = N0.x + Math.cos(perchA) * perchR; perch.z = N0.z + Math.sin(perchA) * perchR; perch.y = N0.podY1 + 1.1;
   perch.yaw = Math.atan2(-(S0.x - perch.x), -(S0.z - perch.z));
   function buildNeedle(part) {
-    const b = lb;
+    const b = needleBuffer;
     const N = N0, R = N.shaftR;
     if (part === 2) { needleLegs(b, N, R); return; }
     const dr = N.deck.r, dy = N.deck.y;
@@ -1723,6 +1726,48 @@ export function createCityView(renderer, scene, city, opts = {}) {
       }
     }
   }
+  // Higgsfield 3D Jutsu revision 2. Batch its semantic parts into our landmark
+  // shader, preserving sunset reflections, fog and a single draw call.
+  async function loadTower(fallback) {
+    try {
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const gltf = await new GLTFLoader().loadAsync(new URL("../models/cn-tower.glb", import.meta.url).href);
+      gltf.scene.updateMatrixWorld(true);
+      const b = Buf({ aKind: 1 }, 16384), N = N0;
+      const levels = [[0,0],[325,N.deck.y-9],[340,N.podY0],[361,N.podY1],[505,322],[553,N.top]];
+      const height = y => {
+        let i=1; while(i<levels.length-1 && y>levels[i][0]) i++;
+        const [a,u]=levels[i-1], [z,v]=levels[i]; return u+(v-u)*(y-a)/(z-a);
+      };
+      gltf.scene.traverse(o => {
+        if (!o.isMesh) return;
+        const g=o.geometry.clone().applyMatrix4(o.matrixWorld), p=g.attributes.position;
+        for(let i=0;i<p.count;i++) {
+          const y=p.getY(i);
+          const scale=/Tapered_central/.test(o.name) && y<=325 ? N.shaftR/Math.max(.001,Math.hypot(p.getX(i),p.getZ(i))) : N.podR/22;
+          p.setXYZ(i,N.x+p.getX(i)*scale,height(y),N.z+p.getZ(i)*scale);
+        }
+        g.computeVertexNormals();
+        const name=o.material.name;
+        const kind=/Antenna_band/i.test(o.name)?14:/glass/i.test(name)?12:/graphite/i.test(name)?15:/red/i.test(name)?14:/aluminum/i.test(name)?13:10;
+        const normals=g.attributes.normal, offset=b.v;
+        reserve(b,p.count,g.index?g.index.count:p.count);
+        for(let i=0;i<p.count;i++) {
+          const v=vtx(b,p.getX(i),p.getY(i),p.getZ(i),normals.getX(i),normals.getY(i),normals.getZ(i));
+          b.x.aKind.a[v]=kind;
+        }
+        for(let i=0;i<(g.index?g.index.count:p.count);i++) b.i[b.ni++]=offset+(g.index?g.index.getX(i):i);
+        g.dispose();o.geometry.dispose();o.material.dispose();
+      });
+      if(!b.v) throw new Error("CN Tower model contains no mesh");
+      // Playable collar ledges, deck and King's perch retain their collision dimensions.
+      for(const C of N.collars) lathe(b,[[N.shaftR-.1,C.y-.75,13],[C.r,C.y-.75,13],[C.r,C.y+.75,13],[N.shaftR-.1,C.y+.75,13]],32,N.x,N.z);
+      lathe(b,[[N.shaftR,N.deck.y-1,13],[N.deck.r,N.deck.y-1,13],[N.deck.r,N.deck.y,13],[N.shaftR,N.deck.y,13]],64,N.x,N.z);
+      lathe(b,[[5.2,N.podY1,21],[5.2,N.podY1+.6,21],[4.6,N.podY1+1.1,21],[0,N.podY1+1.1,21]],24,perch.x,perch.z);
+      const mesh=add(new THREE.Mesh(finish(b),landMat));mesh.name="CN Tower Higgsfield";
+      root.remove(fallback);staticTris-=fallback.userData.tris;info.meshes--;fallback.geometry.dispose();
+    } catch(error) { console.warn("CN Tower model unavailable; retaining built-in tower",error); }
+  }
   // the Dome: a ribbed half-shell, arches round its foot
   function buildDome() {
     const dp = [];
@@ -1746,6 +1791,9 @@ export function createCityView(renderer, scene, city, opts = {}) {
       return;
     }
     if (part === 2) {
+      const fallback = add(new THREE.Mesh(finish(needleBuffer), landMat));
+      fallback.name = "CN Tower fallback";
+      loadTower(fallback);
       const m = new THREE.Mesh(finish(b), landMat);
       m.frustumCulled = false;
       add(m, 0);

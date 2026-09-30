@@ -30,7 +30,7 @@ export const WORLD = {
   FOV_V_WIDE: [42, 62],            // and inside these on wide screens
   PITCH_CAST: { wide: -5, portrait: -11 },
   ZOOM_WIDTH: 42,                  // flight view: meters of lake across the view at the lure, once the lure is far
-  GRIP: { d: 0.5, x: 0.6, y: -0.74, pd: 0.62, px: 0.74, py: -0.62 },  // where the reel seat sits in the view (screen fractions, distance in m)
+  GRIP: { d: 0.9, x: 0.5, y: -0.4, pd: 0.9, px: 0.5, py: -0.4 },  // room below the grip for a pull-back gesture
   LURE_MIN_SCREEN: 0.022,          // the lure is drawn at least this fraction of the view height
   PHOTO: { push: 1.2, from: 1.35, freeze: 0.3 },   // the photo beat of a big catch: seconds of slow push-in, its start distance (x), seconds the fish holds still after
 };
@@ -336,10 +336,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function poseRod() {
     const R = S.rod;
-    const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = R.theta * DEG;
+    // Present the rod toward the lake; physics still uses the measured angle.
+    const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = (R.theta - 35) * DEG;
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(th), Math.sin(th), -Math.cos(yaw) * Math.cos(th)).normalize();
     const pull = R.pull ? new THREE.Vector3(R.pull.x, R.pull.y, R.pull.z) : null;
-    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle());
+    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle(), 1.35);
     S.tip.copy(tip);
     return tip;
   }
@@ -743,6 +744,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       return { x: tip.x, y: tip.y, z: tip.z };
     },
     tip() { return { x: S.tip.x, y: S.tip.y, z: S.tip.z }; },
+    rodAnchor() {
+      const p = gripPoint().project(camera);
+      return { x: (p.x + 1) * S.w / 2, y: (1 - p.y) * S.h / 2 };
+    },
     setLine({ from = null, to = null, slack = 0, visible = true, flying = false } = {}) {
       S.line = { from, to, slack, visible, flying };
     },
