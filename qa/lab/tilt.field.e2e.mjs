@@ -37,6 +37,31 @@ async function touchController(ctx, page) {
     close: () => cdp.detach(),
   };
 }
+async function watchFieldSpend(page) {
+  // Observe the public count across aim and its first return to flight. A later relay hit
+  // can replenish inventory before Playwright reads the page, so retain the actual transition.
+  await page.evaluate(() => {
+    const button = document.getElementById('field-button');
+    const count = text => /^Field (\d+)$/.exec(text)?.[1];
+    let before = Number(count(button.textContent)), aiming = false;
+    window.__fieldSpend = null;
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        const text = [...record.addedNodes].map(node => node.textContent).join('');
+        if (text === 'Cancel') aiming = true;
+        const value = count(text);
+        if (value === undefined) continue;
+        if (aiming) {
+          window.__fieldSpend = { before, after: Number(value) };
+          observer.disconnect();
+          return;
+        }
+        before = Number(value);
+      }
+    });
+    observer.observe(button, { childList: true });
+  });
+}
 
 for (const size of [
   { name: 'phone-portrait', ...PHONE, kind: 'pull', method: 'touch' },
@@ -68,6 +93,7 @@ for (const size of [
     await page.locator('#cancel-field').click();
     R.check(await page.locator('#field-placement').isHidden() && await inventory(page) === carried && await active(page) === 'false', 'Cancel resumes flight without spending inventory');
 
+    await watchFieldSpend(page);
     await arm(page);
     await page.locator('#field-' + size.kind).click();
     await shot(page, 'tilt-field-' + size.name + '-aim');
@@ -98,7 +124,8 @@ for (const size of [
     } else await page.locator('#deploy-field').click();
     await until(page, () => document.getElementById('field-status').dataset.active === 'true', null, 3000);
     R.check(await page.locator('#field-placement').isHidden() && await held(page) === 0, 'Deployment closes aim and leaves flippers released');
-    R.check(await inventory(page) === 'Field 0', 'A successful placement spends exactly one starting charge');
+    const spent = await page.evaluate(() => window.__fieldSpend);
+    R.check(spent && spent.before - spent.after === 1, 'A successful placement spends exactly one charge before later rewards');
     R.check(await page.locator('#field-button').isDisabled(), 'An active field prevents a second deployment');
     R.check(new RegExp('^' + (size.kind === 'push' ? 'Push' : 'Pull') + ' field · [0-5]\\.\\ds$').test(await page.locator('#field-status').textContent()), 'The active kind and remaining time are visible');
     await shot(page, 'tilt-field-' + size.name + '-deployed');
