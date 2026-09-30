@@ -16,3 +16,10 @@ export class MouseSword {
     return {ax,ay,bx,by};
   }
 }
+
+export class MouseLook {
+  constructor(){this.reset()}
+  reset(){this.pendingYaw=0;this.pendingPitch=0}
+  move(dx,dy){if(!Number.isFinite(dx)||!Number.isFinite(dy))return;this.pendingYaw-=clamp(dx,-180,180)*.003;this.pendingPitch-=clamp(dy,-180,180)*.0024}
+  update(dt,pitch){const a=1-Math.exp(-dt/.035),yaw=this.pendingYaw*a,turn=this.pendingPitch*a;this.pendingYaw-=yaw;this.pendingPitch-=turn;return {yaw,pitch:clamp(pitch+turn,-.65,.65)}}
+}
