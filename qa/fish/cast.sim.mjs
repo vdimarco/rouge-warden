@@ -65,7 +65,7 @@ console.log("\nLaunch rules");
   check(castParams({ thetaRelease: 40, omegaPeak: 900, thetaBack: 150 }).verdict === "low", "a late release is low");
   check(castParams({ thetaRelease: 68, omegaPeak: 150, thetaBack: 150 }).verdict === "weak", "a slow stroke is weak");
   check(castParams({ thetaRelease: 20, omegaPeak: 900, thetaBack: 150 }).verdict === "slam", "a very late release slams");
-  check(castParams({ thetaRelease: 130, omegaPeak: 900, thetaBack: 170 }).verdict === "behind", "a release past 120° goes behind");
+  check(castParams({ thetaRelease: 130, omegaPeak: 900, thetaBack: 170 }).verdict === "high", "an overhead release stays forward and grades high");
   check(castParams({ thetaRelease: 68, omegaPeak: -900, thetaBack: 150 }).v0 > 20, "a negative (motion.js style) forward speed works too");
 }
 
@@ -82,10 +82,10 @@ console.log("\nLandings");
   check(fe.r.done && fe.r.dist < free.r.dist * 0.75, "feathering stops the lure short");
   const late = cast(68, 900, { featherAt: 2.0 });
   check(late.r.dist < free.r.dist && late.r.dist > fe.r.dist, `feathering late stops it less short (${late.r.dist.toFixed(1)} m)`);
-  // backward casts land behind you
+  // Overhead releases retain positive forward velocity.
   for (const [th, w] of [[125, 300], [130, 700], [140, 1000], [150, 1500]]) {
     const b = cast(th, w, { back: th + 30 });
-    check(b.p.verdict === "behind" && b.r.z > 0 && b.r.done, `release at ${th}°, ${w} °/s goes behind: lands at z ${b.r.z.toFixed(1)} on the ${b.r.land}`);
+    check(b.p.verdict === "high" && b.p.pitch <= CAST.MAX_PITCH && new Flight(tipAt(th), b.p).v.z < 0 && b.r.done, `release at ${th}°, ${w} °/s stays forward: lands at z ${b.r.z.toFixed(1)} on the ${b.r.land}`);
   }
   // slams land close
   for (const [th, w] of [[25, 600], [20, 1000], [10, 1500]]) {
@@ -147,7 +147,7 @@ for (const id of PLACE_IDS) {
   }
   for (const [th, w] of [[125, 300], [130, 700], [140, 1000], [150, 1500]]) {
     const b = cast(th, w, { back: th + 30 });
-    check(b.r.z > 0 && ["dock", "land", "tree"].includes(b.r.land), `${P.name}: an early release at ${th}°, ${w} °/s lands behind on the ${b.r.land === "dock" ? "stand" : b.r.land} (z ${b.r.z.toFixed(1)})`);
+    check(b.r.z < 0 && b.r.land === "water", `${P.name}: an early release at ${th}°, ${w} °/s lands forward on the ${b.r.land === "dock" ? "stand" : b.r.land} (z ${b.r.z.toFixed(1)})`);
   }
   for (const [th, w] of [[25, 600], [20, 1000], [10, 1500]]) {
     const b = cast(th, w);

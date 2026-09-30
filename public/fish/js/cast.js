@@ -18,6 +18,7 @@ export const CAST = {
   BACK_HALF: 20,         // ... and this much gives BACK_HALF_POWER
   BACK_HALF_POWER: 0.6,
   BACK_MIN_POWER: 0.3,   // no back cast at all still flicks the lure out a little
+  MAX_PITCH: 75,        // early releases stay in the forward hemisphere, even with assist off
   HIGH_PITCH: 58,        // raw launch pitch above this is a "high" lob (released too early)
   LOW_PITCH: 18,         // below this is a "low" line drive (released too late)
   SLAM_STEEP: 2.5,       // a release below the horizon drives the lure down this much more steeply...
@@ -65,14 +66,14 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   if (assist && pitch >= C.ASSIST_RANGE[0] && pitch <= C.ASSIST_RANGE[1]) pitch += C.ASSIST_PULL * (C.ASSIST_PITCH - pitch);
   // a late release: the tip is already swinging down at the water, so the lure goes in hard and close
   if (raw < 0) pitch = Math.max(-80, raw * C.SLAM_STEEP);
+  pitch = clamp(pitch, -80, C.MAX_PITCH);
   const k = strokeFactor(thetaBack, th);
   let v0 = w < C.MIN_STROKE_SPEED ? C.V_MIN : C.V_MAX * (1 - Math.exp(-w / C.V_K)) * k;
   if (raw < 0) v0 *= 1 - C.SLAM_LOSS * Math.min(1, -raw / 5);
   v0 = Math.max(C.V_MIN, v0);
   const power = clamp(v0 / C.V_MAX, 0, 1);
   let verdict;
-  if (pitch >= 90) verdict = "behind"; // straight up or past it: it comes down behind you
-  else if (pitch < 0) verdict = "slam";
+  if (pitch < 0) verdict = "slam";
   // an early lift is "high" even when the short stroke also cut the power: the fix is the timing, not more speed
   else if (raw > C.HIGH_PITCH) verdict = "high";
   else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
@@ -95,8 +96,8 @@ export class Flight {
     const C = CAST;
     this.tip = { x: fin(tip && tip.x, 0.28), y: fin(tip && tip.y, 3.5), z: fin(tip && tip.z, -1) };
     const p = params || castParams({});
-    const v0 = fin(p.v0, C.V_MIN), pitch = fin(p.pitch, 35) * D2R, yaw = fin(p.yaw, 0) * D2R;
-    // pitch past 90° has a negative cosine, so the lure flies back over your head
+    const v0 = fin(p.v0, C.V_MIN), pitch = clamp(fin(p.pitch, 35), -80, C.MAX_PITCH) * D2R, yaw = fin(p.yaw, 0) * D2R;
+    // Enforce a forward launch even for callers supplying raw flight parameters.
     const h = Math.cos(pitch);
     this.p = { ...this.tip };
     this.v = { x: v0 * h * Math.sin(yaw), y: v0 * Math.sin(pitch), z: -v0 * h * Math.cos(yaw) };
