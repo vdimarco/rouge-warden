@@ -89,6 +89,27 @@ export function defineAll(A) {
   // a light touch between vehicles (the protected van's bump meter)
   A.define('bump', (ctx, t, out, o) => { const k = o.hard ? 1 : 0.5; hit(t, 'lowpass', 260, 1, 0.9 * k, 0.2, 0, out); tone(t, 'sine', 70, 35, 0.7 * k, 0.25, 0.003, out); hit(t, 'bandpass', 1500, 1.5, 0.3 * k, 0.08, 0, out); });
 
+  // A six-second transformation bed. Its handle lets the cine stop it on skip or film failure.
+  A.defineLoop('gabeMorph', (ctx, out) => {
+    const nodes = [], start = ctx.currentTime;
+    const note = (delay, f0, f1, level, duration, type = 'sine') => {
+      const x = ctx.createOscillator(), g = ctx.createGain(), t = start + delay;
+      x.type = type; x.frequency.setValueAtTime(f0, t); x.frequency.exponentialRampToValueAtTime(f1, t + duration);
+      env(g, t, 0.025, level, duration * 0.55, duration * 0.45); x.connect(g); g.connect(out);
+      x.start(t); x.stop(t + duration + 0.1); nodes.push(x);
+    };
+    note(0, 72, 32, 0.35, 1.2); // collapse of the bear's mass
+    for (let i = 0; i < 5; i++) note(0.45 + i * 0.48, 180 + i * 65, 70, 0.07, 0.5, 'triangle');
+    const n = noiseSrc(ctx, start, 6.7), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.frequency.setValueAtTime(180, start); f.frequency.exponentialRampToValueAtTime(2800, start + 2.8); f.frequency.exponentialRampToValueAtTime(240, start + 5.8);
+    env(g, start, 1.2, 0.16, 2.6, 2.5); n.connect(f); f.connect(g); g.connect(out); nodes.push(n);
+    note(3.2, 95, 42, 0.3, 0.7); // landing on the sandstone
+    for (const [i, f0] of [294, 440, 587].entries()) note(4.4 + i * 0.15, f0, f0, 0.065, 1.7);
+    return { set() {}, stop(fade = 0.2) { for (const x of nodes) { try { x.stop(ctx.currentTime + fade + 0.02); } catch (e) { /* already ended */ } } } };
+  });
+  A.define('cineWhoosh', (ctx, t, out) => hit(t, 'bandpass', 250, 0.7, 0.16, 0.38, 2200, out));
+  A.define('cineTraffic', (ctx, t, out) => { tone(t, 'triangle', 85, 52, 0.1, 2.4, 0.3, out); hit(t, 'lowpass', 700, 0.6, 0.12, 2.3, 220, out); });
+
   /* ---------------- loops ---------------- */
   // the engine: two detuned saws through a lowpass that opens with rpm and throttle
   A.defineLoop('engine', (ctx, out, o) => {

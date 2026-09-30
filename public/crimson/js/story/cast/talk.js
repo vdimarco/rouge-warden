@@ -153,7 +153,7 @@ export function mouthSpot(mesh, rig, ud = {}) {
   let z = -Infinity;
   for (let k = 0; k < n; k++) if (zmax[k] != null && Math.abs(yOf(k) - y) <= 1) z = Math.max(z, zmax[k]);
   if (!Number.isFinite(z)) z = noseZ - 1.5;
-  const r = { x: H.x, y, z: z + 0.15, w: 4.6 };
+  const r = { x: H.x, y, z: z + 0.3, w: 5.2 };
   g.userData.mouthSpot = r;
   return r;
 }
@@ -226,6 +226,8 @@ export function createTalk(S, cast) {
       if (a.body === null && a.ph) return null; // still the capsule
       M = buildMouth(a); if (!M) return null;
       M.model = a.model || a.root;
+      M.gestures = ['Spine', 'RightForeArm'].map((name) => ({ name, bone: a.bone?.(name), q: new THREE.Quaternion(), set: null })).filter((g) => g.bone);
+      M.gesture = 0;
       mouths.set(a, M);
     }
     return M;
@@ -234,7 +236,14 @@ export function createTalk(S, cast) {
   function actorsOf(who) {
     if (!who) return [];
     const cam = S.camera.position;
-    const vis = (a) => a && a.root && a.root.visible && a.root.parent && (!a.model || a.model.visible !== false) && !a.lodHidden;
+    const vis = (a) => {
+      if (!a?.root?.parent || a.model?.visible === false || a.lodHidden) return false;
+      for (let p = a.root; p; p = p.parent) if (!p.visible) return false;
+      return true;
+    };
+    // The cinematic owns its cast, including the arena's stand-in for the selected friend.
+    const directed = S.cine?.actor?.(who);
+    if (vis(directed)) return [directed];
     if (who === 'all') return cast.all().filter((a) => CREW_IDS.includes(a.id) && vis(a) && a.root.getWorldPosition(tv).distanceTo(cam) < 14);
     const id = who === 'pick' || who === 'hero' ? CREW_IDS[S.ctx.crewPick] || 'shades' : who;
     let best = null, bd = 40;
@@ -271,7 +280,7 @@ export function createTalk(S, cast) {
     for (const a of new Set([...mouths.keys(), ...want.keys()])) {
       if (a.disposed || (a.root && !a.root.parent)) { drop(a); continue; }
       const sp = want.get(a);
-      const M = sp || (mouths.get(a) && (mouths.get(a).cur.h > 0.001 || mouths.get(a).nod)) ? mouthOf(a) : null;
+      const M = sp || (mouths.get(a) && (mouths.get(a).cur.h > 0.001 || mouths.get(a).nod || mouths.get(a).gesture)) ? mouthOf(a) : null;
       if (!M) continue;
       let tw = SHAPES.closed[0], th = 0, nod = 0;
       if (sp && sp.t < sp.end && !(a.inkK > 0)) {
@@ -287,6 +296,17 @@ export function createTalk(S, cast) {
       M.nod += (nod - M.nod) * (1 - Math.exp(-dt / 0.05));
       if (Math.abs(M.nod) < 1e-4 && nod === 0) M.nod = 0;
       applyNod(M);
+      const speaking = sp && sp.t >= 0 && sp.t < sp.end && !sp.tr.silent;
+      const gesture = speaking ? Math.sin(sp.t * 4.8) * 0.018 + nod * 0.65 : 0;
+      M.gesture += (gesture - M.gesture) * (1 - Math.exp(-dt / 0.12));
+      if (!speaking && Math.abs(M.gesture) < 1e-4) M.gesture = 0;
+      for (const g of M.gestures) {
+        if (g.set && g.bone.quaternion.equals(g.set)) g.bone.quaternion.multiply(inv.copy(g.q).invert());
+        xAxis.set(g.name === 'Spine' ? 0 : 1, g.name === 'Spine' ? 1 : 0, 0).applyQuaternion(inv.copy(M.rig.worldQ[g.name]).invert());
+        g.q.setFromAxisAngle(xAxis, M.gesture * (g.name === 'Spine' ? 1 : 3));
+        g.bone.quaternion.multiply(g.q);
+        g.set = (g.set || new THREE.Quaternion()).copy(g.bone.quaternion);
+      }
       M.speaking = !!(sp && sp.t < sp.end);
     }
   }
@@ -304,6 +324,7 @@ export function createTalk(S, cast) {
   function drop(a) {
     const M = mouths.get(a);
     if (M) { if (M.nodSet && M.nodQ && M.bone.quaternion.equals(M.nodSet)) M.bone.quaternion.multiply(inv.copy(M.nodQ).invert()); M.g.removeFromParent(); }
+    if (M) for (const g of M.gestures) if (g.set && g.bone.quaternion.equals(g.set)) g.bone.quaternion.multiply(inv.copy(g.q).invert());
     mouths.delete(a); speakers.delete(a);
   }
   return {

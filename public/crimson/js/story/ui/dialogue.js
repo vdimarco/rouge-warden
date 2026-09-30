@@ -2,15 +2,15 @@
 // ui.choose, as handles instead of promises).
 // say(lines, {portraits, block}) -> {done}. A line is a LINES id, {who, text} or {who, line}. block (the
 // default) is a modal box that freezes play: an ink portrait (types.js PORTRAITS; a missing file shows the
-// speaker's glyph card instead, A3; Dana has none, by design), the name, and the words typing at 45
+// speaker's glyph card instead, A3; Dana has none, by design), the name, and the words typing at 70
 // characters a second. E, Space, Enter, pad A or a tap finishes the typing, then goes on. block:false plays
 // the lines as subtitles one after another with no freeze (while driving); done when the last one ends.
-// subs(who, text, dur): one subtitle, at most two lines, for dur or 3.5 s + 60 ms a character. Subtitles and
+// subs(who, text, dur): one subtitle, at most two lines, for dur or 0.7 s + 45 ms a character (at least 1.6 s). Subtitles and
 // the box sit above the cine letterbox bars.
 // choose(title, options) -> {done, index}: choice cards, by the arrows, the d-pad or a tap.
 import { esc } from './cards.js';
 
-const CPS = 45;
+const CPS = 70;
 
 export function createDialogue(U) {
   const { S, make, root } = U;
@@ -68,7 +68,7 @@ export function createDialogue(U) {
     subsEl.innerHTML = name ? `<b class="${U.isCrew(who) ? 'crew' : ''}">${esc(name)}</b> ${esc(text)}` : esc(text);
     subsEl.classList.remove('hidden');
   }
-  const subsDur = (text) => 3.5 + String(text).length * 0.06;
+  const subsDur = (text) => Math.max(1.6, 0.7 + String(text).length * 0.045);
   function showSubsLine() { const l = U.lineOf(subsH.lines[subsH.i]); setSubs(l.who, l.text); subsH.until = S.timers.now + subsDur(l.text); subVoice.until = subsH.until; subsUntil = 0; }
   function nextSubs() { if (!subsH) return; subsH.i++; if (subsH.i >= subsH.lines.length) { subsH.done = true; subsH = null; subsEl.classList.add('hidden'); subVoice = null; } else showSubsLine(); }
 
