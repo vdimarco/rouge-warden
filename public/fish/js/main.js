@@ -46,6 +46,7 @@ const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
 const game = $("#game");
+game.dataset.reelSide = save.reelSide;
 const guide = createGuide(game, $("#guideToggle"));
 let guideCue = { text: "", sub: "", icon: "", tone: "" };
 const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
@@ -1003,12 +1004,18 @@ function syncSettings() {
   $("#optInput").disabled = !touchDevice || !Motion.available;
   $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : "Drag and flick on the screen.";
   $("#optQuality").value = save.quality;
+  $("#optReelSide").value = save.reelSide;
   syncArtStyle();
 }
 $("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
 $("#optHaptics").addEventListener("change", (e) => { Haptics.unlock(); Haptics.setEnabled(e.target.checked); if (e.target.checked) Haptics.bump(0.6); });
 $("#optAssist").addEventListener("change", (e) => { save.assist = e.target.checked; persist(); });
 $("#optQuality").addEventListener("change", (e) => { save.quality = e.target.value; persist(); applyQuality(); });
+$("#optReelSide").addEventListener("change", (e) => {
+  save.reelSide = e.target.value === "left" ? "left" : "right";
+  game.dataset.reelSide = save.reelSide;
+  persist();
+});
 $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
     const st = await Motion.request();
