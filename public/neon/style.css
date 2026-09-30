@@ -82,3 +82,8 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
 #gameViewport canvas{position:absolute;width:100%;height:100%}
 #gameViewport #explore{position:absolute}
 #gameViewport #panel{max-height:calc(100cqh - 78px)}
+
+
+/* Mouse aiming spans the world; touch camera zones must not steal its input. */
+.mouse-mode #lookPad,.mouse-mode #walkStick{display:none!important;pointer-events:none}
+.mouse-mode #world{cursor:crosshair}
