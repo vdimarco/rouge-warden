@@ -196,6 +196,24 @@
         "aspect_ratio": "9:16"
       },
       "integration": "Visual reference for real geometry, vertical lane framing, three thumb abilities, native shop and lighting. Not a gameplay backdrop."
+    },
+    {
+      "provider": "Higgsfield API",
+      "purpose": "Selected cartoon style: production terrain atlas",
+      "model": "marketing-studio/image",
+      "request_id": "79dc42a4-6d70-4482-b883-72fd042c8756",
+      "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/6c0ace62-6529-4d8b-ab67-3212c5a75820.png",
+      "file": "public/tidebreak/art/toon-ground.webp",
+      "reference": "public/tidebreak/styles/rick-and-morty.webp",
+      "params": {
+        "resolution": "2k",
+        "aspect_ratio": "1:1",
+        "enhance_prompt": false,
+        "image_urls": [
+          "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/ffaa4140-d4af-4972-93e0-4798616e7619.png"
+        ]
+      },
+      "prompt_file": "higgsfield/monster-toon-assets.json"
     }
   ],
   "processing": "Cropped cells, chroma-key magenta removal, repacked 16 sprites, transparent WebP and four portraits. Ground atlas converted to WebP. Geometry, fog, UI and effects are native code. Real 3D GLBs replace battlefield creature and scenery sprites. Shader deformation animates creatures; native geometry supplies wisps, wards, bridge planks and tactical effects.",

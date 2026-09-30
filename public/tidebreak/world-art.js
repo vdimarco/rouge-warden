@@ -1,15 +1,15 @@
 import { SIZE, LANES, BASES, PORTALS, CAMPS, RIVER } from './world.js';
-const TEAM = ['#bdeaa0', '#ff8779'];
+const TEAM = ['#70dbbb', '#ce74e2'];
 const surface = (w,h=w) => { const c=document.createElement('canvas');c.width=w;c.height=h;return c; };
 export const worldArt = {
   makeGround(phase) {
     const c = surface(2400), g = c.getContext('2d'); g.scale(.5, .5);
     g.fillStyle = g.createPattern(this.tiles[1], 'repeat'); g.fillRect(0, 0, SIZE, SIZE);
-    g.fillStyle = phase ? '#10341f22' : '#234b2218'; g.fillRect(0, 0, SIZE, SIZE);
+    g.fillStyle = phase ? '#2638391c' : '#34433008'; g.fillRect(0, 0, SIZE, SIZE);
     // Three broad lanes have a consistent footprint across the realm change.
     for (const lane of LANES) {
       g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); lane.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
-      g.strokeStyle = phase ? '#3c563b' : '#3c4839'; g.lineWidth = 280; g.stroke();
+      g.strokeStyle = phase ? '#253a30' : '#222e2b'; g.lineWidth = 280; g.stroke();
       g.strokeStyle = g.createPattern(this.tiles[3], 'repeat'); g.lineWidth = 244; g.globalAlpha = phase ? .88 : 1; g.stroke(); g.globalAlpha = 1;
       if (!phase) { g.strokeStyle = '#c5b47722'; g.lineWidth = 3; g.setLineDash([28, 34]); g.stroke(); g.setLineDash([]); }
     }

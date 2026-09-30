@@ -105,3 +105,13 @@ Validation: item tests cover nested discounts, relic uniqueness, inherited power
 
 
 The browser pass verified simultaneous touch movement and aimed casting, release, pause, quick-buy, nested recipes, relic browsing, trade-off descriptions, resale, map marking, realm transition and all four creature restarts. Viewports: 390×844, 320×568, 844×390 and 1440×900. No console or HTTP errors. A post-batching smoke capture loaded all four models, reported a zero horizontal difference between the main-lane endpoints, and used about 158 draws / 277K triangles in the opening scene. The local software-GPU harness limits rendering to 20 fps for longer interaction tests; it is not a phone-performance measurement.
+
+## Selected cartoon direction
+
+The user selected the Rick and Morty-inspired concept at `public/tidebreak/styles/rick-and-morty.webp`. The playable renderer now uses four-band cel lighting, a single depth-based ink-outline pass, lifted albedo on the generated GLBs, muted olive/teal woods, cyan creek water and violet enemies. The same animated creature models remain original folklore designs. Town props occupy the western side while eastern obstacles use pine groves; the woodland phase still transforms the town. Collision and line-of-sight footprints are unchanged.
+
+The direct Higgsfield API generated the production texture atlas `art/toon-ground.webp` from the selected concept using `marketing-studio/image`. Its four quadrants supply dirt, grass, water and cobblestones. `higgsfield/monster-toon-assets.json` preserves the prompt and input reference; `art/sources.json` records the completed request. The temporary authenticated generation route was removed after completion.
+
+`toon.js` owns the material ramp and outline render target; `toon.css` supplies inked HUD borders, cyan ability discs, tarnished gold rings and the matching market palette. Camera yaw remains zero and the main lane projects vertically. Existing labels, automatic attacks, three special abilities, item recipes and simulation rules are preserved.
+
+This adapts the concept to the existing playable three-lane arena: it does not reproduce the concept's fixed illustration, invented UI numbers, or exact village layout. The HUD retains the game's score, timer, objectives and cooldowns. Existing portrait/item illustrations and native 3D towers, bridge geometry, foliage and effects remain; their surfaces now share the toon palette. Physical-phone GPU performance is not yet measured.
