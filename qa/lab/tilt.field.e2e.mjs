@@ -151,6 +151,7 @@ R.section('Invalid targets and input lifecycle');
 
     await freshFlight(page); await arm(page);
     await page.setViewportSize({ width: 844, height: 390 });
+    await page.locator('#field-placement').waitFor({ state: 'hidden' });
     R.check(await page.locator('#field-placement').isHidden() && await inventory(page) === 'Field 1' && await held(page) === 0, 'Rotation cancels stale aim without spending a charge');
     await arm(page);
     // Browser lifecycle event only; no application state or private game API is accessed.

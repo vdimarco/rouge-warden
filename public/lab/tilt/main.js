@@ -142,10 +142,10 @@ function newRun() {
 function pause() {
   cancelField();
   if(mode!=='play' || ['upgrade','won','over'].includes(run.phase))return;
-  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; $('resume-button').focus();
+  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
 }
 function resume() {
-  $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; canvas.focus({preventScroll:true});
+  $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; syncHud(); canvas.focus({preventScroll:true});
 }
 function showMap() {
   cancelField();
