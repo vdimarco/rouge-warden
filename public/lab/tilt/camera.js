@@ -1,9 +1,11 @@
+import { sampleTransit, transitEase } from './transit.js';
+
 // A y-up chase camera. The play area leaves room for the fixed HUD and controls.
 export const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const mix = (a, b, t) => a + (b - a) * t;
 
 export function createCamera(width = 1000, height = 700) {
-  return { x: 600, y: 600, scale: 1, width, height, top: 75, bottom: 85, initialized: false, overview: false };
+  return { x: 600, y: 600, scale: 1, width, height, top: 75, bottom: 85, initialized: false, overview: false, rotation: 0 };
 }
 
 export function updateCamera(camera, run, dt = 1 / 60, options = {}) {
@@ -15,6 +17,12 @@ export function updateCamera(camera, run, dt = 1 / 60, options = {}) {
   const ball = run.world?.ball || { x: 600, y: 300, vx: 0, vy: 0 };
   const bounds = { width: run.table?.W || 3600, height: run.table?.H || 2800 };
   const overview = Boolean(options.overview);
+  if (run.phase === 'flight' && run.flight) return updateTransitCamera(camera, run, options);
+  // Skip and natural completion both settle into the destination immediately.
+  if (camera.transitFlight || (camera.sectorIndex !== undefined && camera.sectorIndex !== run.sectorIndex)) camera.initialized = false;
+  camera.sectorIndex = run.sectorIndex;
+  camera.rotation = 0;
+  camera.transitFlight = null;
   const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
   const landscape = width > height;
   let worldWidth = landscape ? 1460 : 770;
@@ -97,10 +105,62 @@ export function updateCamera(camera, run, dt = 1 / 60, options = {}) {
   return camera;
 }
 
+// A destination pose comes from the ordinary ready-camera path, including its
+// mobile edge constraints. The last transit frame therefore matches live play.
+function readyPose(camera, run, sectorIndex) {
+  const sector = run.sectors[sectorIndex];
+  const target = createCamera(camera.width, camera.height);
+  const poseRun = { ...run, phase: 'ready', sectorIndex, world: { ...run.world,
+    ball: { ...run.world.ball, ...sector.station, vx: 0, vy: 0 } } };
+  updateCamera(target, poseRun, 0, { reducedMotion: true });
+  return target;
+}
+
+function updateTransitCamera(camera, run, options) {
+  const flight = run.flight, timeline = sampleTransit(flight.progress, options.reducedMotion);
+  const source = run.sectors[flight.fromSector];
+  if (camera.transitFlight !== flight) {
+    const initial = camera.initialized ? camera : readyPose(camera, run, flight.fromSector);
+    camera.transitStart = { x: initial.x, y: initial.y, scale: initial.scale, rotation: initial.rotation || 0 };
+    camera.transitFlight = flight;
+  }
+  const start = camera.transitStart, destination = readyPose(camera, run, flight.toSector);
+  const arrival = timeline.arrival;
+  if (timeline.visible === 'destination') {
+    camera.x = destination.x;
+    camera.y = destination.y;
+    camera.scale = destination.scale * (timeline.reducedMotion ? 1 : mix(0.19, 1, arrival));
+    camera.rotation = timeline.reducedMotion ? 0 : -0.35 * (1 - arrival);
+  } else {
+    const t = timeline.departure;
+    camera.x = mix(start.x, source.planet.x, t);
+    camera.y = mix(start.y, source.planet.y, t);
+    camera.scale = mix(start.scale, destination.scale * 0.2, t);
+    camera.rotation = timeline.reducedMotion ? 0 : mix(start.rotation, 0.48, transitEase(t));
+  }
+  camera.top = destination.top;
+  camera.bottom = destination.bottom;
+  camera.centerY = destination.centerY;
+  const halfW = camera.width / camera.scale / 2;
+  const halfH = Math.max(100, camera.height - camera.top - camera.bottom) / camera.scale / 2;
+  // A rotated viewport needs the circumscribed bounds for culling.
+  const c = Math.abs(Math.cos(camera.rotation)), s = Math.abs(Math.sin(camera.rotation));
+  const extentX = halfW * c + halfH * s, extentY = halfW * s + halfH * c;
+  camera.view = { left: camera.x - extentX, right: camera.x + extentX, bottom: camera.y - extentY, top: camera.y + extentY };
+  camera.initialized = true;
+  camera.overview = false;
+  camera.world = run.world;
+  return camera;
+}
+
 export function worldToScreen(camera, x, y) {
-  return { x: camera.width / 2 + (x - camera.x) * camera.scale, y: camera.centerY - (y - camera.y) * camera.scale };
+  const dx = (x - camera.x) * camera.scale, dy = -(y - camera.y) * camera.scale;
+  const c = Math.cos(camera.rotation || 0), s = Math.sin(camera.rotation || 0);
+  return { x: camera.width / 2 + dx * c - dy * s, y: camera.centerY + dx * s + dy * c };
 }
 
 export function screenToWorld(camera, x, y) {
-  return { x: camera.x + (x - camera.width / 2) / camera.scale, y: camera.y - (y - camera.centerY) / camera.scale };
+  const dx = x - camera.width / 2, dy = y - camera.centerY;
+  const c = Math.cos(camera.rotation || 0), s = Math.sin(camera.rotation || 0);
+  return { x: camera.x + (dx * c + dy * s) / camera.scale, y: camera.y - (-dx * s + dy * c) / camera.scale };
 }

@@ -1,13 +1,16 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY } from './adventure.js';
 import { createTiltControl } from './motion.js';
 import { setFlip, H } from './physics.js';
 import { createRenderer } from './render.js';
 import { startLoop } from '../kit/loop.js';
 import { Sfx, tone, hiss } from '../kit/sfx.js';
+import { sampleTransit } from './transit.js';
+import { createTransitAudio } from './transit-audio.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), renderer = createRenderer(canvas, $('mini-map'));
+const transitAudio = createTransitAudio(Sfx);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let run = createAdventure(), mode = 'title', oldPhase = '', hudClock = 0, messageUntil = 0;
 let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', musicClock = 0;
@@ -58,7 +61,7 @@ async function toggleMotion() {
   setAdventureTilt(run);
 }
 function suspendMotion() { motion.suspend(); setAdventureTilt(run); }
-function resumeMotion() { motion.resume(); setAdventureTilt(run); }
+function resumeMotion() { if (run.phase === 'flight') motion.suspend(); else motion.resume(); setAdventureTilt(run); }
 function releaseControls() {
   fingers.clear(); keys.clear(); activations.clear(); chargeStart = null; chargeOwner = null; charge = 0; fieldPointer = null;
   setFlip(run.world,-1,false); setFlip(run.world,1,false);
@@ -69,9 +72,10 @@ function updateFlips() {
   for (const side of [-1,1]) {
     const held = activations.has(side) || [...fingers.values()].some(v=>v===side) || [...keys].some(k=>FLIPS[k]===side);
     const was = run.world.flippers.some(f=>f.side===side && f.held);
-    setFlip(run.world,side,held && mode === 'play');
-    if (held && !was) sound('flip');
-    $(side === -1 ? 'left-flip' : 'right-flip').classList.toggle('held',held);
+    const allowed = held && mode === 'play' && ['ready','play'].includes(run.phase);
+    setFlip(run.world,side,allowed);
+    if (allowed && !was) sound('flip');
+    $(side === -1 ? 'left-flip' : 'right-flip').classList.toggle('held',allowed);
   }
 }
 function startCharge(owner) { if(mode !== 'play' || run.phase !== 'ready' || chargeStart != null) return false; chargeOwner=owner; chargeStart=performance.now(); return true; }
@@ -130,6 +134,7 @@ function placeField() {
 }
 function newRun() {
   cancelField();
+  transitAudio.stop();
   Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase='';
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
@@ -142,14 +147,14 @@ function newRun() {
 function pause() {
   cancelField();
   if(mode!=='play' || ['upgrade','won','over'].includes(run.phase))return;
-  releaseControls(); suspendMotion(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
+  releaseControls(); suspendMotion(); transitAudio.stop(); mode='pause'; $('pause-panel').hidden=false; $('pause-button').textContent='Resume'; syncHud(); $('resume-button').focus();
 }
 function resume() {
   $('pause-panel').hidden=true; mode='play'; resumeMotion(); $('pause-button').textContent='Pause'; syncHud(); canvas.focus({preventScroll:true});
 }
 function showMap() {
   cancelField();
-  if(mode==='title')return;
+  if(mode==='title' || ['upgrade','flight','won','over'].includes(run.phase))return;
   releaseControls(); suspendMotion(); mapReturn=mode; mode='map'; $('map-panel').hidden=false;
   $('route-list').replaceChildren(...run.sectors.map((s,i)=>{
     const li=document.createElement('li'); li.className=i===run.sectorIndex?'current':s.cleared?'complete':'';
@@ -169,7 +174,7 @@ function showUpgrades() {
     const desc=document.createElement('span');desc.textContent=item.description;
     button.append(name,desc);
     button.addEventListener('click',()=>{
-      if(chooseUpgrade(run,item.id)!==false){ $('upgrade-panel').hidden=true; resumeMotion(); sound('upgrade'); canvas.focus({preventScroll:true}); syncHud(); }
+      if(chooseUpgrade(run,item.id,{reducedMotion})!==false){ $('upgrade-panel').hidden=true; releaseControls(); suspendMotion(); $('message').classList.remove('visible'); messageUntil=0; sound('upgrade'); canvas.focus({preventScroll:true}); syncHud(); }
     });return button;
   }));
   $('upgrade-options').querySelector('button')?.focus();
@@ -199,6 +204,11 @@ function syncHud() {
   const well = run.gravityWell;
   $('field-status').textContent = well ? `${well.kind === 'push' ? 'Push' : 'Pull'} field · ${well.remaining.toFixed(1)}s` : 'Relays and orbits earn field charges';
   $('field-status').dataset.active = String(!!well);
+  const inTransit = run.phase === 'flight';
+  document.body.classList.toggle('in-transit', inTransit);
+  $('controls').hidden = inTransit;
+  $('transit-panel').hidden = !inTransit || mode !== 'play';
+  for (const id of ['left-flip','right-flip']) $(id).disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
   if (run.phase!==oldPhase) {
     oldPhase=run.phase;
     if(run.phase==='upgrade')showUpgrades();
@@ -206,6 +216,26 @@ function syncHud() {
     else if(run.phase==='ready' && mode==='play')announce('Ready to launch');
   }
 }
+
+const TRANSIT_LABELS = { departure: 'Leaving orbit', galaxy: 'Crossing the galaxy', horizon: 'Entering the event horizon', tunnel: 'Through the singularity', arrival: 'Arriving in a new world' };
+function paintTransit() {
+  if (!run.flight || run.phase !== 'flight') return;
+  const flight = run.flight, phase = sampleTransit(flight.progress, reducedMotion).phase;
+  const destination = run.sectors[flight.toSector];
+  const stage = TRANSIT_LABELS[phase] || 'Crossing the galaxy';
+  if ($('transit-stage').textContent !== stage) $('transit-stage').textContent = stage;
+  if ($('transit-title').textContent !== destination.name) $('transit-title').textContent = destination.name;
+  const route = `${run.sectors[flight.fromSector].name}  /  ${String(flight.toSector + 1).padStart(2, '0')}`;
+  if ($('transit-route').textContent !== route) $('transit-route').textContent = route;
+  $('transit-panel').dataset.phase = phase;
+  $('transit-progress').setAttribute('aria-valuenow', String(Math.round(flight.progress * 100)));
+  $('transit-progress').firstElementChild.style.transform = `scaleX(${flight.progress})`;
+}
+
+$('skip-transit').addEventListener('click',()=>{
+  if(mode !== 'play' || !skipAdventureFlight(run))return;
+  transitAudio.stop(); releaseControls(); resumeMotion(); syncHud(); canvas.focus({preventScroll:true});
+});
 
 $('play-button').addEventListener('click',newRun);
 $('field-button').addEventListener('click',beginField);
@@ -240,7 +270,7 @@ function holdFlip(e,side,el) {
 for(const side of [-1,1]){
   const el=$(side===-1?'left-flip':'right-flip');el.addEventListener('pointerdown',e=>holdFlip(e,side,el));
   // Native keyboard activation gives a short stroke; key holds on Z and / remain independent.
-  el.addEventListener('click',e=>{if(e.detail===0 && mode==='play'){activations.add(side);updateFlips();setTimeout(()=>{activations.delete(side);updateFlips();},120);}});
+  el.addEventListener('click',e=>{if(e.detail===0 && mode==='play' && ['ready','play'].includes(run.phase)){activations.add(side);updateFlips();setTimeout(()=>{activations.delete(side);updateFlips();},120);}});
 }
 canvas.tabIndex=0;
 canvas.addEventListener('pointerdown',e=>{
@@ -278,7 +308,7 @@ window.addEventListener('keydown',e=>{
     else if(key === 'f' && !e.repeat)cancelField();
     return;
   }
-  if(mode!=='play'||['upgrade','over','won'].includes(run.phase))return;
+  if(mode!=='play'||['upgrade','flight','over','won'].includes(run.phase))return;
   if([' ','enter'].includes(key)&&e.target.closest('button,a'))return;
   if(key in FLIPS){e.preventDefault();keys.add(key);updateFlips();}
   else if(key===' '){e.preventDefault();if(!e.repeat)startCharge('space');}
@@ -306,6 +336,7 @@ startLoop({h:H,step:()=>{
     if(event.message || messages[kind])announce(event.message || messages[kind]);
     if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
     if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
+    if(kind === 'arrive') { releaseControls(); resumeMotion(); syncHud(); }
   }
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
   if(run.phase==='play' && (musicClock-=H)<=0){
@@ -314,7 +345,10 @@ startLoop({h:H,step:()=>{
   }
 },draw:(_,dt)=>{
   if(chargeStart!=null){charge=Math.min(1,(performance.now()-chargeStart)/1200);$('launch-button').style.setProperty('--charge',charge);}
-  renderer.draw(run,dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:mode==='field'});
+  const frozen = mode === 'field' || mode === 'pause';
+  renderer.draw(run,frozen ? 0 : dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:frozen});
+  transitAudio.update(run.flight, mode === 'play' && run.phase === 'flight', reducedMotion);
+  paintTransit();
   if((hudClock-=dt)<=0){hudClock=.1;if(mode!=='title')syncHud();}
   if(performance.now()>messageUntil)$('message').classList.remove('visible');
 }});

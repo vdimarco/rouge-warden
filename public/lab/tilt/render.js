@@ -1,6 +1,7 @@
 import { createCamera, updateCamera, worldToScreen, screenToWorld, clamp } from './camera.js';
 import { F } from './physics.js';
 import { FIELD_DURATION, FIELD_RADIUS } from './adventure.js';
+import { sampleTransit, visibleSectorIds, galaxyNode, transitEase } from './transit.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
@@ -19,7 +20,7 @@ export function createRenderer(canvas, minimap) {
   const rings = [];
   const trail = [];
   let width = 1, height = 1, dpr = 1, mapW = 156, mapH = 116;
-  let lastWorld = null, reducedMotion = false;
+  let lastWorld = null, reducedMotion = false, lastFlight = null;
   const stars = Array.from({ length: 680 }, (_, i) => ({ x: rand(i * 3 + 1) * 4200 - 300, y: rand(i * 3 + 2) * 3400 - 300, r: 0.6 + rand(i * 3 + 3) * 1.7, a: 0.17 + rand(i * 7) * 0.55 }));
 
   function resize() {
@@ -53,7 +54,7 @@ export function createRenderer(canvas, minimap) {
     })));
   }
 
-  loadAssets({ nebula: new URL('./assets/deep-space.webp', import.meta.url).href, sprites: new URL('./assets/celestial-sprites.webp', import.meta.url).href });
+  loadAssets({ nebula: new URL('./assets/deep-space.webp', import.meta.url).href, sprites: new URL('./assets/celestial-sprites.webp', import.meta.url).href, horizon: new URL('./art/transit/event-horizon.webp', import.meta.url).href });
 
   function sprite(name, x, y, w, h = w) {
     if (!assets.sprites) return false;
@@ -294,12 +295,19 @@ export function createRenderer(canvas, minimap) {
     const glow = g.createRadialGradient(gate.x, gate.y, 0, gate.x, gate.y, gate.r * 1.6);
     glow.addColorStop(0, open ? `${color}2e` : '#020711'); glow.addColorStop(0.45, '#040a14'); glow.addColorStop(0.66, open ? `${color}75` : `${color}18`); glow.addColorStop(1, '#00000000');
     g.fillStyle = glow; circle(g, gate.x, gate.y, gate.r * 1.6); g.fill();
-    if (assets.sprites) {
+    if (open && assets.horizon) {
+      const img = assets.horizon, diameter = gate.r * 2.5;
+      const scale = diameter / Math.min(img.width, img.height);
+      g.save(); circle(g, gate.x, gate.y, gate.r * 1.12); g.clip();
+      g.translate(gate.x, gate.y); g.scale(1, -1);
+      g.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale);
+      g.restore();
+    } else if (assets.sprites) {
       g.save(); g.globalAlpha = open ? 0.95 : 0.47;
       circle(g, gate.x, gate.y, gate.r * 1.12); g.clip();
       sprite('portal', gate.x, gate.y, gate.r * 2.27); g.restore();
     }
-    g.strokeStyle = open ? color : `${color}66`; g.lineWidth = open ? 4 : 2;
+    g.strokeStyle = open ? '#ffdfa9' : `${color}66`; g.lineWidth = open ? 3 : 2;
     circle(g, gate.x, gate.y, gate.r); g.stroke();
     const lit = room.relays?.filter((r) => r.hit).length || 0;
     for (let i = 0; i < 3; i++) {
@@ -314,47 +322,44 @@ export function createRenderer(canvas, minimap) {
       g.restore();
     }
     g.restore();
-    if (active) label(open ? 'JUMP' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 43, open ? '#e5faff' : '#a6afb7', 12);
+    if (active) label(open ? 'ENTER BLACK HOLE' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 43, open ? '#e5faff' : '#a6afb7', 12);
   }
 
-  function rails(table) {
+  function rails(table, sectorIndex) {
     g.lineCap = 'round'; g.lineJoin = 'round';
     const segments = table.walls.filter((s) => {
-      if (s.enabled === false || (s.drop && !s.drop.up)) return false;
+      if (s.sector !== sectorIndex || s.enabled === false || (s.drop && !s.drop.up)) return false;
       const a = point(s.a), b = point(s.b);
       return visible((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.hypot(a[0] - b[0], a[1] - b[1]) / 2 + 15);
     });
-    for (const active of [false, true]) {
-      g.save(); g.globalAlpha = active || camera.overview ? 1 : 0.22;
-      for (let pass = 0; pass < 3; pass++) {
-        g.lineWidth = [13, 5, 1.4][pass];
-        g.strokeStyle = ['#070f17', '#536477', '#d2ba82'][pass];
-        g.beginPath();
-        for (const s of segments) {
-          if (Boolean(!table.isActive || table.isActive(s)) !== active) continue;
-          const a = point(s.a), b = point(s.b); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
-        }
-        g.stroke();
+    g.save(); g.globalAlpha = 1;
+    for (let pass = 0; pass < 3; pass++) {
+      g.lineWidth = [13, 5, 1.4][pass];
+      g.strokeStyle = ['#070f17', '#536477', '#d2ba82'][pass];
+      g.beginPath();
+      for (const s of segments) {
+        const a = point(s.a), b = point(s.b); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
       }
-      g.restore();
+      g.stroke();
     }
+    g.restore();
     for (const s of segments) {
       if (!s.sling && !s.kick) continue;
       const a = point(s.a), b = point(s.b);
       g.strokeStyle = '#9beff5'; g.lineWidth = 3; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
     }
     for (const p of table.posts || []) {
-      if (p.planet || !visible(p.x, p.y, p.r + 10)) continue;
+      if (p.sector !== sectorIndex || p.planet || !visible(p.x, p.y, p.r + 10)) continue;
       circle(g, p.x, p.y, p.r); g.fillStyle = '#7c8d9d'; g.fill(); g.strokeStyle = '#e1d5b5'; g.lineWidth = 1.5; g.stroke();
     }
   }
 
   function flippers(run) {
     for (const f of run.world.flippers || []) {
-      if (!visible(f.px, f.py, f.len + 30)) continue;
+      if (f.sector !== run.sectorIndex || !visible(f.px, f.py, f.len + 30)) continue;
       const tx = f.px + Math.cos(f.th) * f.len, ty = f.py + Math.sin(f.th) * f.len;
       const nx = -Math.sin(f.th), ny = Math.cos(f.th);
-      g.save(); g.globalAlpha = !run.table.isActive || run.table.isActive(f) || camera.overview ? 1 : 0.22;
+      g.save(); g.globalAlpha = 1;
       g.strokeStyle = '#060c15'; g.lineWidth = f.r1 * 2 + 7; g.lineCap = 'round';
       g.beginPath(); g.moveTo(f.px, f.py); g.lineTo(tx, ty); g.stroke();
       g.beginPath();
@@ -548,52 +553,214 @@ export function createRenderer(canvas, minimap) {
     g.globalAlpha = 1;
   }
 
+  // The chart uses a spiral route, independent of engine coordinates. No rails,
+  // targets or distant playfields appear here or behind the current level.
+  function galaxyChart(ctx, run, chartWidth, chartHeight, { full = false, orbit = 0, transit = null } = {}) {
+    const opacity = ctx.globalAlpha;
+    const cx = chartWidth * 0.5, cy = chartHeight * (full ? 0.47 : 0.5);
+    const radius = Math.min(chartWidth * 0.43, chartHeight * (full ? 0.50 : 0.59));
+    const spin = full ? orbit : -0.08;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(spin);
+    if (full && assets.nebula) {
+      const img = assets.nebula, scale = Math.max(radius * 2.5 / img.width, radius * 1.7 / img.height);
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(0, 0, radius * 1.22, radius * 0.79, 0, 0, TAU); ctx.clip();
+      ctx.globalAlpha = opacity * 0.58;
+      ctx.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale);
+      const edge = ctx.createRadialGradient(0, 0, radius * 0.15, 0, 0, radius * 1.22);
+      edge.addColorStop(0, '#02071200'); edge.addColorStop(0.55, '#02071224'); edge.addColorStop(1, '#020712');
+      ctx.globalAlpha = opacity; ctx.fillStyle = edge; ctx.fillRect(-radius * 1.3, -radius, radius * 2.6, radius * 2);
+      ctx.restore();
+    }
+    const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    halo.addColorStop(0, '#e8e0ba28'); halo.addColorStop(0.16, '#cf967022');
+    halo.addColorStop(0.52, '#4e79a522'); halo.addColorStop(1, '#060a1700');
+    ctx.fillStyle = halo; circle(ctx, 0, 0, radius); ctx.fill();
+    const count = full ? 145 : 45;
+    for (let i = 0; i < count; i++) {
+      const t = rand(i * 5 + 70), arm = i % 3;
+      const angle = arm * TAU / 3 + t * 5.2 + (rand(i + 87) - 0.5) * 0.45;
+      const r = radius * (0.055 + t * 0.96);
+      const x = Math.cos(angle) * r, y = Math.sin(angle) * r * 0.65;
+      ctx.globalAlpha = opacity * (0.13 + rand(i * 9) * 0.5) * (full ? 1 : 0.6);
+      ctx.fillStyle = i % 4 === 0 ? '#eecba2' : '#a8d0e9';
+      circle(ctx, x, y, full ? 0.55 + rand(i + 16) * 1.4 : 0.4); ctx.fill();
+    }
+    ctx.globalAlpha = opacity;
+    // The diffuse core sits inside thin lens arcs and gives the chart a depth axis.
+    ctx.strokeStyle = '#b99d6d25'; ctx.lineWidth = full ? 1.2 : 0.5;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.ellipse(0, 0, radius * (0.37 + i * 0.23), radius * (0.12 + i * 0.13), -0.15, -1.7, 1.6); ctx.stroke();
+    }
+    const nodes = run.sectors.map((room, index) => {
+      const n = galaxyNode(index, run.sectors.length);
+      return { x: n.x * radius, y: n.y * radius, room, index };
+    });
+    for (let i = 1; i < nodes.length; i++) {
+      const a = nodes[i - 1], b = nodes[i];
+      const activeRoute = transit && i === run.flight?.toSector;
+      ctx.strokeStyle = activeRoute ? '#ffe4b6aa' : a.room.cleared ? '#8dd4cc66' : '#7890a030';
+      ctx.lineWidth = activeRoute ? 1.6 : 0.8;
+      ctx.setLineDash(activeRoute || a.room.cleared ? [] : [2, 5]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo((a.x + b.x) * 0.17, (a.y + b.y) * 0.17, b.x, b.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    nodes.forEach(({ x, y, room, index }) => {
+      const current = index === run.sectorIndex, next = transit && index === run.flight?.toSector;
+      const color = room.color || PALETTE[index % 6], r = full ? current || next ? 5 : 3.4 : current ? 3.4 : 2.1;
+      if (current || next) {
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+        glow.addColorStop(0, `${color}88`); glow.addColorStop(1, `${color}00`);
+        ctx.fillStyle = glow; circle(ctx, x, y, r * 5); ctx.fill();
+        ctx.strokeStyle = `${color}b0`; ctx.lineWidth = 0.9;
+        circle(ctx, x, y, r + (full ? 7 : 3)); ctx.stroke();
+      }
+      if (current && run.gravityWell?.remaining > 0) {
+        ctx.strokeStyle = FIELD_COLORS[run.gravityWell.kind] || FIELD_COLORS.pull; ctx.lineWidth = 1.2;
+        circle(ctx, x, y, r + (full ? 12 : 6)); ctx.stroke();
+      }
+      ctx.fillStyle = current || next ? color : room.cleared ? '#a0cabc' : '#788692';
+      circle(ctx, x, y, r); ctx.fill();
+      if (full && (transit ? next : current)) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(-spin);
+        const fontSize = Math.max(10, Math.min(13, chartWidth / 35));
+        ctx.font = `500 ${fontSize}px "Trebuchet MS", sans-serif`;
+        const textWidth = ctx.measureText?.(room.name)?.width || room.name.length * fontSize * 0.56;
+        const screenX = cx + x * Math.cos(spin) - y * Math.sin(spin);
+        const side = [0, 4].includes(index) ? -1 : [2, 3].includes(index) ? 1 : 0;
+        const preferred = side < 0 ? -textWidth - 12 : side > 0 ? 12 : -textWidth / 2;
+        const labelX = clamp(preferred, 12 - screenX, chartWidth - 12 - screenX - textWidth);
+        const labelY = transit ? -19 : 26;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = current || next ? '#e5ebed' : '#8996a6';
+        ctx.fillText(room.name, labelX, labelY);
+        ctx.restore();
+      }
+    });
+    if (transit && run.flight) {
+      const a = nodes[run.flight.fromSector], b = nodes[run.flight.toSector];
+      const t = transitEase((transit.progress - 0.2) / 0.2), u = 1 - t;
+      const x = u * u * a.x + 2 * u * t * (a.x + b.x) * 0.17 + t * t * b.x;
+      const y = u * u * a.y + 2 * u * t * (a.y + b.y) * 0.17 + t * t * b.y;
+      ctx.fillStyle = '#fff3ce'; circle(ctx, x, y, 3.2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function map(run) {
     if (!mg) return;
     mg.setTransform(dpr, 0, 0, dpr, 0, 0);
     mg.clearRect(0, 0, mapW, mapH);
     mg.fillStyle = '#030a13b0'; mg.fillRect(0, 0, mapW, mapH);
-    const padding = 8, scale = Math.min((mapW - padding * 2) / run.table.W, (mapH - padding * 2) / run.table.H);
-    const ox = (mapW - run.table.W * scale) / 2, oy = (mapH - run.table.H * scale) / 2;
-    const mx = (x) => ox + x * scale, my = (y) => mapH - oy - y * scale;
-    // A constellation route gives orientation without implying boxed rooms.
-    mg.lineWidth = 0.85;
-    for (let i = 1; i < run.sectors.length; i++) {
-      const previous = run.sectors[i - 1].planet, next = run.sectors[i].planet;
-      mg.strokeStyle = run.sectors[i - 1].cleared ? '#a9d9ce77' : '#61778a4c';
-      mg.setLineDash(run.sectors[i - 1].cleared ? [] : [1.5, 3]);
-      mg.beginPath(); mg.moveTo(mx(previous.x), my(previous.y)); mg.lineTo(mx(next.x), my(next.y)); mg.stroke();
+    galaxyChart(mg, run, mapW, mapH);
+  }
+
+  function cinematicTransit(run, timeline) {
+    const { progress: p, galaxy, horizon, tunnel } = timeline;
+    if (timeline.reducedMotion) {
+      g.fillStyle = `rgba(2,5,12,${timeline.black})`; g.fillRect(0, 0, width, height);
+      return;
     }
-    mg.setLineDash([]);
-    run.sectors.forEach((room, index) => {
-      const active = index === run.sectorIndex, color = room.color || PALETTE[index % 6];
-      const x = mx(room.planet.x), y = my(room.planet.y), r = Math.max(2.5, room.planet.r * scale);
-      if (active) {
-        const glow = mg.createRadialGradient(x, y, 0, x, y, r + 9);
-        glow.addColorStop(0, `${color}85`); glow.addColorStop(1, `${color}00`);
-        mg.fillStyle = glow; circle(mg, x, y, r + 9); mg.fill();
-        mg.strokeStyle = `${color}90`; mg.lineWidth = 0.8;
-        mg.beginPath(); mg.ellipse(x, y, r + 6, r + 3, -0.45, 0.3, 2.5); mg.stroke();
-      }
-      circle(mg, x, y, r); mg.fillStyle = active ? color : room.cleared ? '#afc9b1' : room.visited ? '#6b838b' : '#445361'; mg.fill();
-      for (const relay of room.relays) {
-        circle(mg, mx(relay.x), my(relay.y), active ? 1.2 : 0.8);
-        mg.fillStyle = relay.hit ? '#ffe6a6' : active ? `${color}77` : '#52637860'; mg.fill();
-      }
-      if (room.cleared) {
-        mg.strokeStyle = '#ffe6a6'; mg.lineWidth = 1;
-        mg.beginPath(); mg.moveTo(x - 1.5, y); mg.lineTo(x, y + 1.5); mg.lineTo(x + 2.4, y - 1.5); mg.stroke();
-      }
-    });
-    const well = run.gravityWell;
-    if (well?.remaining > 0) {
-      const x = mx(well.x), y = my(well.y), r = Math.max(3, well.radius * scale);
-      mg.strokeStyle = `${FIELD_COLORS[well.kind] || FIELD_COLORS.pull}85`; mg.lineWidth = 0.8;
-      circle(mg, x, y, r); mg.stroke();
-      mg.fillStyle = FIELD_COLORS[well.kind] || FIELD_COLORS.pull;
-      mg.beginPath(); mg.moveTo(x, y - 2); mg.lineTo(x + 2, y); mg.lineTo(x, y + 2); mg.lineTo(x - 2, y); mg.closePath(); mg.fill();
+    // Screen-space layers are tied to simulation progress, never wall time.
+    if (galaxy > 0) {
+      g.save(); g.globalAlpha = galaxy;
+      g.fillStyle = '#020712'; g.fillRect(0, 0, width, height);
+      galaxyChart(g, run, width, height, { full: true, orbit: -0.32 + p * 1.2, transit: timeline });
+      g.restore();
     }
-    circle(mg, mx(run.world.ball.x), my(run.world.ball.y), 2.5); mg.fillStyle = '#fff9df'; mg.fill();
+    const centerX = width * (0.50 + Math.sin(p * 5) * 0.018);
+    const centerY = height * 0.46;
+    if (horizon > 0) {
+      g.save(); g.globalAlpha = horizon;
+      g.fillStyle = '#02040b'; g.fillRect(0, 0, width, height);
+      const dive = transitEase((p - 0.43) / 0.29);
+      if (assets.horizon) {
+        const img = assets.horizon, scale = Math.max(width / img.width, height / img.height) * (1.06 + dive * 1.55);
+        g.save(); g.translate(centerX, centerY); g.rotate(-0.10 + dive * 0.28);
+        g.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale); g.restore();
+      }
+      if (!assets.horizon) {
+        // Generated art already contains its lens and core. Draw this complete
+        // procedural fallback only when that plate is unavailable.
+        const radius = Math.min(width, height) * (0.13 + dive * 0.60);
+        const glow = g.createRadialGradient(centerX, centerY, radius * 0.45, centerX, centerY, radius * 2.7);
+        glow.addColorStop(0, '#02040c00'); glow.addColorStop(0.34, '#ffc78128');
+        glow.addColorStop(0.54, '#de7d3b20'); glow.addColorStop(0.78, '#568dd511'); glow.addColorStop(1, '#03040b00');
+        g.fillStyle = glow; g.fillRect(0, 0, width, height);
+        g.save(); g.translate(centerX, centerY); g.rotate(-0.17 + dive * 0.46);
+        g.globalCompositeOperation = 'screen';
+        for (let i = 0; i < 14; i++) {
+          const spread = 1 + i * 0.085;
+          g.strokeStyle = i % 4 === 0 ? '#badcf9' : i % 3 === 0 ? '#ffeaca' : '#db9259';
+          g.globalAlpha = horizon * (0.065 + (14 - i) * 0.008);
+          g.lineWidth = i < 3 ? 2.6 : 0.7;
+          g.beginPath(); g.ellipse(0, 0, radius * spread * 1.85, radius * spread * 0.29, 0, 0, TAU); g.stroke();
+        }
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = horizon;
+        g.fillStyle = '#01030a'; circle(g, 0, 0, radius * 0.96); g.fill();
+        g.globalAlpha = horizon * 0.9;
+        g.strokeStyle = '#ffdaaa'; g.lineWidth = 1.7;
+        g.beginPath(); g.arc(0, 0, radius, Math.PI * 0.97, Math.PI * 2.13); g.stroke();
+        g.strokeStyle = '#d7e9ff50'; g.lineWidth = 3;
+        g.beginPath(); g.arc(0, 0, radius * 1.023, 0.10, Math.PI * 0.87); g.stroke();
+        g.restore();
+      }
+
+      g.restore();
+    }
+    if (tunnel > 0) {
+      g.save();
+      const u = transitEase((p - 0.65) / 0.27);
+      const glow = g.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height) * 0.85);
+      glow.addColorStop(0, '#02040b'); glow.addColorStop(0.08, '#081124'); glow.addColorStop(0.3, '#182040'); glow.addColorStop(0.64, '#123248'); glow.addColorStop(1, '#050b19');
+      g.globalAlpha = tunnel * (1 - transitEase((p - 0.87) / 0.11));
+      g.fillStyle = glow; g.fillRect(0, 0, width, height);
+      g.globalCompositeOperation = 'screen'; g.lineCap = 'round';
+      const count = width < 700 ? 115 : 170, reach = Math.hypot(width, height) * 0.75;
+      for (let i = 0; i < count; i++) {
+        const angle = rand(i + 921) * TAU + u * 0.25;
+        const depth = (rand(i * 5 + 29) + p * (2.2 + rand(i + 41) * 0.8)) % 1;
+        const radius = 12 + Math.pow(depth, 2.6) * reach;
+        const length = (12 + depth * depth * reach * 0.30) * tunnel;
+        const dx = Math.cos(angle), dy = Math.sin(angle);
+        g.globalAlpha = tunnel * (0.15 + depth * 0.65);
+        g.strokeStyle = i % 7 === 0 ? '#ffc88d' : i % 3 === 0 ? '#8bb2ff' : '#b8edff';
+        g.lineWidth = 0.6 + depth * (i % 9 === 0 ? 2 : 0.8);
+        g.beginPath(); g.moveTo(centerX + dx * radius, centerY + dy * radius);
+        g.lineTo(centerX + dx * (radius + length), centerY + dy * (radius + length)); g.stroke();
+      }
+      // Sparse crystalline frames form a folded interior, with fine connecting
+      // filaments. Depth advances continuously; the far/near ends fade in place.
+      let previousFrame = null;
+      const folds = Array.from({ length: 7 }, (_, i) => (i / 7 + p * 0.85) % 1).sort((a, b) => a - b);
+      for (const depth of folds) {
+        const radius = 12 + depth * depth * reach * 1.4, turn = -0.22 + depth * 0.13;
+        const cos = Math.cos(turn), sin = Math.sin(turn);
+        const corners = [[-1.25, -0.76], [1.05, -0.92], [1.26, 0.76], [-1.06, 0.92]].map(([x, y]) =>
+          ({ x: centerX + (x * cos - y * sin) * radius, y: centerY + (x * sin + y * cos) * radius }));
+        g.globalAlpha = tunnel * Math.sin(depth * Math.PI) * 0.13;
+        g.strokeStyle = depth > 0.5 ? '#b6e6f2' : '#d6b69f'; g.lineWidth = 0.7 + depth * 0.5;
+        g.beginPath(); corners.forEach((point, i) => i ? g.lineTo(point.x, point.y) : g.moveTo(point.x, point.y)); g.closePath(); g.stroke();
+        if (previousFrame) {
+          g.globalAlpha *= 0.8;
+          g.beginPath(); corners.forEach((point, i) => { g.moveTo(previousFrame[i].x, previousFrame[i].y); g.lineTo(point.x, point.y); }); g.stroke();
+        }
+        previousFrame = corners;
+      }
+      // Curved wavefronts convey depth through the wormhole without flashing.
+      g.globalAlpha = tunnel * 0.13; g.strokeStyle = '#a2d9ff'; g.lineWidth = 1.2;
+      for (let i = 0; i < 5; i++) {
+        const depth = (i / 5 + p * 1.2) % 1, radius = 16 + depth * depth * reach;
+        g.beginPath(); g.ellipse(centerX, centerY, radius, radius * 0.72, u * 0.28, 0, TAU); g.stroke();
+      }
+      g.restore();
+    }
+    // Soft edge shading remains stable while speed grows toward the vanishing point.
+    g.save();
+    const edge = g.createRadialGradient(width / 2, height * 0.47, Math.min(width, height) * 0.15, width / 2, height * 0.47, Math.max(width, height) * 0.74);
+    edge.addColorStop(0, '#01030a00'); edge.addColorStop(1, '#01030acd');
+    g.fillStyle = edge; g.globalAlpha = Math.max(galaxy, horizon, tunnel) * 0.75; g.fillRect(0, 0, width, height);
+    g.restore();
   }
 
   function draw(run, dt = 1 / 60, options = {}) {
@@ -611,45 +778,67 @@ export function createRenderer(canvas, minimap) {
       const halfW = width / camera.scale / 2, halfH = playHeight / camera.scale / 2;
       camera.view = { left: camera.x - halfW, right: camera.x + halfW, bottom: camera.y - halfH, top: camera.y + halfH };
     }
+    const timeline = run.phase === 'flight' && run.flight ? sampleTransit(run.flight.progress, reducedMotion) : null;
+    const visibleIds = visibleSectorIds(run, options);
+    if (canvas.dataset) {
+      canvas.dataset.transitPhase = timeline?.phase || 'none';
+      canvas.dataset.visibleSector = visibleIds.length ? String(visibleIds[0]) : 'none';
+    }
+    if (lastFlight !== run.flight) {
+      trail.length = 0; particles.length = 0; rings.length = 0;
+      lastFlight = run.flight;
+    }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     backdrop(run);
-    g.save();
-    g.translate(width / 2, camera.centerY);
-    g.scale(camera.scale, -camera.scale);
-    g.translate(-camera.x, -camera.y);
-    for (const s of stars) {
-      if (!visible(s.x, s.y, 3)) continue;
-      g.fillStyle = `rgba(202,221,235,${s.a * 0.5})`; circle(g, s.x, s.y, s.r); g.fill();
+    if (options.overview) {
+      galaxyChart(g, run, width, height, { full: true });
+      map(run);
+      return;
     }
-    const clock = run.clock || 0;
-    for (let index = 0; index < run.sectors.length; index++) {
-      const room = run.sectors[index];
-      if (!visible(room.x, room.y + room.h / 2, Math.max(room.w, room.h) * 0.7)) continue;
-      const color = room.color || PALETTE[index % 6];
-      const active = index === run.sectorIndex;
-      gravityField(room, run, active, clock);
-      g.save(); g.globalAlpha = active || camera.overview ? 1 : 0.32;
-      planet(room.planet, index, color, clock, active, run.world.ball);
-      gate(room, clock, active);
+    if (visibleIds.length) {
+      const sectorIndex = visibleIds[0], room = run.sectors[sectorIndex];
+      // Flight rendering never reads the engine's interpolated route position.
+      // That route is hidden; only the departure gate and arrival dock are shown.
+      const renderRun = timeline ? { ...run, sectorIndex,
+        phase: timeline.visible === 'destination' ? 'ready' : 'flight',
+        world: { ...run.world, ball: { ...run.world.ball,
+          ...(timeline.visible === 'destination' ? run.flight.to : run.flight.from), vx: 0, vy: 0 } } } : run;
+      g.save();
+      g.translate(width / 2, camera.centerY);
+      g.rotate(camera.rotation || 0);
+      g.scale(camera.scale, -camera.scale);
+      g.translate(-camera.x, -camera.y);
+      for (const star of stars) {
+        if (!visible(star.x, star.y, 3)) continue;
+        g.fillStyle = `rgba(202,221,235,${star.a * 0.5})`; circle(g, star.x, star.y, star.r); g.fill();
+      }
+      const clock = run.clock || 0, color = room.color || PALETTE[sectorIndex % 6];
+      gravityField(room, renderRun, !timeline, clock);
+      planet(room.planet, sectorIndex, color, clock, !timeline, renderRun.world.ball);
+      gate(room, clock, !timeline);
       for (const target of room.relays || []) relay(target, color, clock);
+      if (!timeline) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
+      for (let i = 0; i < run.table.bumpers.length; i++) {
+        const bumper = run.table.bumpers[i];
+        if (bumper.sector === sectorIndex && !bumper.relay) asteroid(bumper, i, '#adbad1');
+      }
+      rails(run.table, sectorIndex);
+      flippers(renderRun);
+      if (!timeline) {
+        if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);
+        if (options.fieldAim) temporaryField(options.fieldAim, clock, true);
+        trajectory(run, options.charge || 0, options.fieldAim);
+        effects(options.freezeCamera ? 0 : elapsed);
+      }
+      drawBall(renderRun, options.freezeCamera || timeline ? 0 : elapsed, options.charge || 0);
       g.restore();
-      if (active) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
     }
-    for (let i = 0; i < run.table.bumpers.length; i++) {
-      const b = run.table.bumpers[i];
-      g.save(); g.globalAlpha = b.sector === run.sectorIndex || camera.overview ? 1 : 0.3;
-      if (!b.relay) asteroid(b, i, '#adbad1');
-      g.restore();
+    if (timeline) {
+      if (!timeline.reducedMotion && timeline.worldAlpha < 1) {
+        g.fillStyle = `rgba(2,5,12,${1 - timeline.worldAlpha})`; g.fillRect(0, 0, width, height);
+      }
+      cinematicTransit(run, timeline);
     }
-    rails(run.table);
-    flippers(run);
-    if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);
-    if (options.fieldAim) temporaryField(options.fieldAim, clock, true);
-    trajectory(run, options.charge || 0, options.fieldAim);
-    const effectElapsed = options.freezeCamera ? 0 : elapsed;
-    effects(effectElapsed);
-    drawBall(run, effectElapsed, options.charge || 0);
-    g.restore();
     map(run);
   }
 

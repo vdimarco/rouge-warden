@@ -34,13 +34,23 @@
 
   <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
 
+  <section id="transit-panel" aria-label="Travel to the next zone" hidden>
+    <div class="transit-caption">
+      <p id="transit-stage">Leaving orbit</p>
+      <h2 id="transit-title">Beyond the horizon</h2>
+      <p id="transit-route"></p>
+      <div id="transit-progress" role="progressbar" aria-label="Jump progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+    </div>
+    <button id="skip-transit" type="button">Skip jump <span aria-hidden="true">↗</span></button>
+  </section>
+
   <section id="menu" class="overlay menu-overlay" aria-labelledby="menu-title">
     <div class="menu-sky" aria-hidden="true"><div class="menu-orbit orbit-one"></div><div class="menu-orbit orbit-two"></div><div class="menu-planet"></div><div class="menu-moon"></div></div>
     <a class="menu-back arcade-link" href="/"><span aria-hidden="true">↖</span> Back to arcade</a>
     <div class="menu-content">
       <h1 id="menu-title">Full Tilt<span class="title-star" aria-hidden="true">✦</span></h1>
       <p class="menu-subtitle">A pinball voyage.</p>
-      <p class="menu-pitch">Launch into open space. Curve around planets and use their gravity to reach the relays. A short trail shows where your next shot will go.</p>
+      <p class="menu-pitch">Curve around planets and use their gravity to reach the relays. Open a black-hole gate, leave orbit, and cross the galaxy to a new world.</p>
       <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
       <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
       <div class="motion-controls menu-motion">

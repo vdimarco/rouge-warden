@@ -1,10 +1,12 @@
 # Full Tilt: a pinball voyage
 
-The arcade's `/lab/tilt/` route opens a six-sector space adventure. The route spans 3,600 × 2,800 world units, with open space around each planet. Its camera follows the comet and frames the active flippers on the approach. Portrait and landscape use the same upright physics world.
+The arcade's `/lab/tilt/` route opens a six-sector space adventure. Each zone is shown on its own, with open space around its planet. Other playfields stay hidden. Its camera follows the comet and frames the active flippers on the approach. Portrait and landscape use the same upright physics world.
 
 ## Play
 
 Press either screen half or the marked flipper pads to flip at the dock. Z and slash also control the flippers. Hold Launch or Space, then release. Pulse (Up/X) bends a shot toward an uncharged relay in any direction; A/D steer sideways. A short projected path helps you read the gravity curve. Relays open a jump gate. Enter it to choose an upgrade and fly to the next sector. The Star Engine's cores each need two hits.
+
+**Travel between worlds:** after choosing an upgrade, the camera leaves the current orbit, turns through a galaxy view, dives into a black hole, and arrives at the next dock. A jump lasts 6.6 seconds. The galaxy shows symbolic route markers; it never exposes adjacent playfields. **Skip jump** goes straight to the same destination. Pause, a hidden tab, and lost focus stop travel and its sound. Touch controls and phone tilt stay suspended until arrival. Devices with reduced motion enabled use a 1.1-second fade with no camera rotation or streaks. The destination stays at the dock until the player launches.
 
 For optional phone steering, hold the phone comfortably and tap **Enable tilt** on the start screen or in Pause. Allow motion access if asked. Tilting gently nudges the ball toward the lowered edge of the screen. The force is smoothed and capped at 80 world units/s², one tenth of the dock's pull, including diagonal tilts. Planetary gravity remains the main force. The shot preview includes the same nudge. Pause includes a toggle and **Recenter tilt**. Returning to play or rotating the screen sets a fresh center. Tilt starts off each page load; denied permission or missing sensors leave all touch controls usable.
 
@@ -17,10 +19,13 @@ Planets use strong, softened radial forces. Open flight has no uniform downward 
 - `adventure.js`: seeded geometry, progression, upgrades, gravity and checkpoint recovery.
 - `physics.js`: the existing 120 Hz capsule-flipper solver, with optional table gravity/drain, active-sector, speed-limit and open-space hooks. The classic geometry and regression suite remain available for solver checks.
 - `camera.js`: a pure camera model with velocity lead, viewport guards and flipper framing.
+- `transit.js`: shared travel timing, camera stages and isolated-sector visibility.
+- `transit-audio.js`: a small reusable audio graph driven by travel progress, with a deep horizon hush and arrival chord.
 - `render.js`: generated art, effects and the route map. Rails, flippers, relay charge marks and the white ball use code to keep collision and input feedback exact.
 - `main.js`: touch/keyboard controls, sound, pause, route and upgrade UI.
 - `motion.js`: opt-in device orientation, permission handling, screen-relative calibration, dead zone and smoothing. Sensor readings stay in the page and are not stored or sent.
-- `assets/provenance.json`: exact art prompts, sources and crop bounds. Production art totals about 613 KB.
+- `assets/provenance.json`: original celestial art prompts, sources and crop bounds, about 613 KB.
+- `art/transit/event-horizon.webp`: original generated black-hole plate, about 285 KB. Its companion provenance file records the provider and prompt. Camera motion, lens effects and the crystalline tunnel run in the renderer, with no video download or playback dependency.
 
 ## Checks
 
@@ -32,6 +37,7 @@ node qa/lab/tilt.adventure.sim.mjs
 node qa/lab/tilt.camera.sim.mjs
 node qa/lab/tilt.motion.sim.mjs
 node qa/lab/tilt.field.sim.mjs
+node qa/lab/tilt.transit.sim.mjs
 ```
 
 The classic physics suite covers high-speed shots, catch/pass skills, energy and two simulated hours without a trapped ball. Adventure tests cover actual relay collisions, upgrades, checkpoints and a bot that clears all six sectors. Camera tests cover 3,314 cases across seven screen sizes.
@@ -39,6 +45,8 @@ The classic physics suite covers high-speed shots, catch/pass skills, energy and
 `qa/lab/tilt.e2e.mjs` contains browser checks for the public controls. `qa/lab/tilt.motion.e2e.mjs` uses a virtual phone sensor to check permission, calibration, rotation, pause, denied access and missing hardware through the public UI. Use the existing `qa/lab/lib.mjs` server configuration to run them. Physical phone tests remain useful for the native permission prompt, sensor feel, touch latency and sustained frame rate.
 
 `qa/lab/tilt.field.sim.mjs` checks earned charges, physical pull/push flight, the five-second lifetime and cleanup. `qa/lab/tilt.field.e2e.mjs` checks placement through the public touch and keyboard controls. Field rings and direction marks are drawn from the same radius as the force, so they remain exact at every camera scale.
+
+`qa/lab/tilt.transit.sim.mjs` checks travel timing, isolated visibility, camera transforms and arrival/skip state. `qa/lab/tilt.transit.e2e.mjs` reaches the first gate through the public launch, Pulse and flipper controls. It checks the full mobile jump, pause, hidden-tab handling, landscape skip, restored controls and reduced motion.
 
 ## Design reference
 

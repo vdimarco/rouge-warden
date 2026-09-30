@@ -1,6 +1,7 @@
 // Celestial expedition: open orbital fields use Full Tilt's steel-ball/flipper solver.
 // Positions are world coordinates with y up. This module has no browser dependencies.
 import { makeWorld, step, serve, setFlip, H } from './physics.js';
+import { TRANSIT_DURATION, REDUCED_TRANSIT_DURATION } from './transit.js';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const NAMES = ['Lunar Harbor', 'Amber Belt', 'Jade Observatory', 'Violet Reach', 'Solar Forge', 'The Star Engine'];
@@ -219,7 +220,7 @@ export function pulseAdventure(run, dx = 0) {
   return true;
 }
 
-export function chooseUpgrade(run, id) {
+export function chooseUpgrade(run, id, { reducedMotion = false } = {}) {
   if (run.phase !== 'upgrade' || !UPGRADES.some(u => u.id === id)) return false;
   run.upgrades.push(id);
   if (id === 'pulse') run._pulseLevel++;
@@ -229,10 +230,25 @@ export function chooseUpgrade(run, id) {
   if (!to) return false;
   const b = run.world.ball;
   run.flight = { from: { x: b.x, y: b.y }, to: { ...to.station }, fromSector: from.id, toSector: to.id,
-    progress: 0, duration: 2.15 };
+    progress: 0, duration: reducedMotion ? REDUCED_TRANSIT_DURATION : TRANSIT_DURATION };
   run.phase = 'flight';
   setFlip(run.world, -1, false); setFlip(run.world, 1, false);
   emit(run, 'depart');
+  return true;
+}
+
+function arrive(run) {
+  const destination = run.flight.toSector;
+  run.sectorIndex = destination;
+  currentSector(run).visited = true;
+  run.flight = null; run.saved = false; run.pulseCooldown = 0;
+  checkpoint(run);
+  emit(run, 'arrive');
+}
+
+export function skipAdventureFlight(run) {
+  if (run.phase !== 'flight' || !run.flight) return false;
+  arrive(run);
   return true;
 }
 
@@ -257,10 +273,7 @@ function tick(run) {
     b.x = f.from.x + (f.to.x - f.from.x) * smooth;
     b.y = f.from.y + (f.to.y - f.from.y) * smooth + Math.sin(t * Math.PI) * 170;
     b.vx = 0; b.vy = 0;
-    if (t >= 1) {
-      run.sectorIndex = f.toSector; currentSector(run).visited = true;
-      run.flight = null; run.saved = false; run.pulseCooldown = 0; checkpoint(run); emit(run, 'arrive');
-    }
+    if (t >= 1) arrive(run);
     return;
   }
   if (run.phase !== 'play') return;

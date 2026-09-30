@@ -45,6 +45,24 @@ button:disabled { cursor: default; opacity: .45; }
 #mini-map { display: block; width: 100%; height: auto; }
 #message { position: fixed; z-index: 8; top: calc(110px + var(--safe-top)); left: 50%; transform: translateX(-50%); max-width: min(440px, 82vw); text-align: center; font-size: 14px; font-weight: 500; color: var(--gold); padding: 12px 19px; line-height: 1.45; background: #071423dc; border: 1px solid #d5dbaa35; border-radius: 7px; box-shadow: 0 8px 35px #0003; pointer-events: none; }
 #message:empty, #message:not(.visible) { display: none; }
+#transit-panel { position: fixed; inset: 0; z-index: 9; pointer-events: none; color: #f6ead6; background: linear-gradient(0deg, #02050eb8, transparent 35%, transparent 85%, #02050e75); }
+.transit-caption { position: absolute; left: 24px; right: 24px; bottom: max(100px, 15vh); text-align: center; text-shadow: 0 2px 24px #000; }
+#transit-stage { margin: 0 0 12px; color: #edcea2; font-size: 10px; letter-spacing: .22em; text-transform: uppercase; }
+#transit-title { font-size: clamp(32px, 5.5vw, 68px); letter-spacing: -.03em; color: #fff2da; }
+#transit-route { margin: 12px 0 18px; color: #a7bbc8; font-size: 11px; letter-spacing: .09em; }
+#transit-progress { width: 100px; height: 1px; margin: 0 auto; background: #e9dab42b; overflow: hidden; }
+#transit-progress span { display: block; height: 100%; background: #f4dca5; transform: scaleX(0); transform-origin: left; }
+#skip-transit { position: absolute; right: max(22px, env(safe-area-inset-right)); bottom: calc(22px + var(--safe-bottom)); min-height: 44px; padding: 10px 16px; border: 1px solid #eed3a945; border-radius: 4px; background: #06111bc9; color: #e6d9c4; font-size: 12px; pointer-events: auto; }
+#skip-transit span { margin-left: 14px; }
+body.in-transit #controls, body.in-transit #message, body.in-transit .mini-map-wrap, body.in-transit .hud-brand, body.in-transit #objective, body.in-transit .readout, body.in-transit #map-button, body.in-transit #fullscreen-button { display: none; }
+body.in-transit #hud { justify-content: flex-end; z-index: 10; background: none; }
+body.in-transit .hud-actions button { background: #06111b99; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .transit-caption { bottom: 35px; left: 150px; right: 150px; }
+  #transit-title { font-size: 32px; }
+  #transit-stage { margin-bottom: 6px; font-size: 9px; }
+  #transit-route { margin: 7px 0 12px; }
+}
 .overlay { position: fixed; inset: 0; z-index: 20; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .menu-overlay { display: flex; align-items: center; min-height: 100%; isolation: isolate; padding: calc(86px + var(--safe-top)) max(7vw, env(safe-area-inset-right)) calc(48px + var(--safe-bottom)); background: radial-gradient(ellipse at 75% 32%, #25576a33 0, transparent 52%), linear-gradient(90deg, #050c19 2%, #07101def 30%, #06142180 64%, #071321a3); }
 .menu-overlay::after { content: ""; position: fixed; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(0deg, #050c19 0, transparent 28%, transparent 85%, #050c19a8); }
