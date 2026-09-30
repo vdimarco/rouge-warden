@@ -1,4 +1,5 @@
 import * as THREE from '../crimson/lib/three.module.min.js';
+import { AlienWorld } from './alien-world.js';
 
 // A real, walkable 3D courtyard network. Static scenery shares materials;
 // only the opponent, camera and a few lanterns animate each frame.
@@ -12,11 +13,11 @@ export class District {
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#a5c6cc');
     this.scene.fog=new THREE.Fog('#a5c6cc',30,95);
     this.camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.08,120);
-    this.scene.add(new THREE.HemisphereLight('#fff0d2','#496268',2.6));
-    const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);
+    this.hemi=new THREE.HemisphereLight('#fff0d2','#496268',2.6);this.scene.add(this.hemi);
+    const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);this.sun=sun;
     this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;
     this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
-    this.build();this.batchScenery();this.makeEnemy();this.makePortal();this.fighterTemplate=this.actor;this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.wire();this.resize();
+    this.build();this.batchScenery();this.citySolids=this.solids;this.cityScenery=this.scene.children.filter(c=>!c.isLight&&!this.orbs.some(o=>o.mesh===c));this.alienWorld=new AlienWorld(this.scene);this.makeEnemy();this.makePortal();this.fighterTemplate=this.actor;this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.wire();this.resize();
   }
   // Merge static geometry by material once. Moving actors and pickups stay separate.
   batchScenery(){
@@ -44,9 +45,13 @@ export class District {
   }
   setStyle(style){
     this.style=style==='rick-morty'?'rick-morty':'ghibli';const cartoon=this.style==='rick-morty';
-    const palette=['#acb9df','#d1a9c8','#99d6b0','#e8c979','#829bc1','#b0ce72'];let i=0;
-    for(const material of Object.values(this.materials)){material.userData.original??=material.color.getHex();material.color.setHex(material.userData.original);if(cartoon){if(material.isMeshBasicMaterial)material.color.set('#b6ff3b');else material.color.set(palette[i++%palette.length])}}
-    this.scene.background.set(cartoon?'#938bc0':'#a5c6cc');this.scene.fog.color.copy(this.scene.background);this.ink.visible=cartoon;this.portal.visible=cartoon;this.alienEyes.visible=cartoon;
+    for(const item of this.cityScenery)item.visible=!cartoon;
+    this.ink.visible=false;this.portal.visible=false;this.alienEyes.visible=false;
+    this.alienWorld.root.visible=cartoon;this.solids=cartoon?this.alienWorld.solids:this.citySolids;
+    this.scene.background.set(cartoon?'#b9add0':'#a5c6cc');this.scene.fog.color.copy(this.scene.background);
+    this.scene.fog.near=cartoon?45:30;this.scene.fog.far=cartoon?108:95;
+    this.hemi.intensity=cartoon?2:2.6;this.sun.intensity=cartoon?2.1:3.2;
+    if(this.collides(this.position.x,this.position.z))this.position.set(0,1.65,8);
   }
   mat(color,glow=false){const key=color+glow;if(!this.materials[key])this.materials[key]=glow?new THREE.MeshBasicMaterial({color}):new THREE.MeshToonMaterial({color});return this.materials[key]}
   box(x,y,z,w,h,d,color,parent=this.scene){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),this.mat(color));m.position.set(x,y,z);parent.add(m);return m}
@@ -243,11 +248,12 @@ export class District {
       for(const o of this.orbs){if(!o.available){o.timer-=dt;if(o.timer<=0){o.available=true;o.mesh.visible=true}}else if(Math.hypot(this.position.x-o.x,this.position.z-o.z)<1){o.available=false;o.timer=30;o.mesh.visible=false;this.collected++;this.onPickup?.()}}
     }
     for(const o of this.orbs){o.mesh.position.y=1.1+Math.sin(this.clock*2+o.x)*.12;o.mesh.rotation.y=this.clock}
-    if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;
+    if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;this.alienWorld.update(this.clock);
     const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5));if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
     this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');
     this.renderer.render(this.scene,this.camera);
   }
 }
+
 
 
