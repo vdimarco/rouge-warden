@@ -1,0 +1,9 @@
+{
+  "tokenSha256": "9a0ad331a47799973c867db0562e5f9ecf6662337a31bd252c718c2491b774e2",
+  "expiresAt": "2026-09-30T03:01:23.687670+00:00",
+  "idempotency": {
+    "ghibli": "5755ebf7-b4b7-472e-a2e5-cec8a4b2122d",
+    "pixar": "142cd30c-ce4a-4211-8bfa-934d315438ec",
+    "rick-and-morty": "d0adc0fa-75e3-4005-a089-265fec74e54e"
+  }
+}
