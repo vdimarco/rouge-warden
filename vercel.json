@@ -5,7 +5,13 @@
   "headers": [
     {
       "source": "/.well-known/assetlinks.json",
-      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
-  ]
+  ],
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then node scripts/generate-neon-model.mjs --asset=ronin --wait; fi"
 }
