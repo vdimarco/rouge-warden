@@ -104,7 +104,7 @@ export const CINES = {
     ],
     lines: [line(1.2, 'c0.swing'), line(4.1, 'c0.gabe'), line(6.3, 'c0.buddy'), line(10.2, 'c0.down'), line(12.2, 'c0.voice')],
     fx: [{ at: 0.6, kind: 'flash' }, { at: 0.7, kind: 'ink', pos: W('gabe', 0, 0.5) }, { at: 9, kind: 'headlights', pos: { bridge: true, y: 1 } }],
-    sfx: [{ at: 0.6, name: 'yield' }, { at: 8.9, name: 'engine' }, { at: 12.1, name: 'doorClose' }],
+    sfx: [{ at: 0.6, name: 'yield' }, { at: 2.5, name: 'cineWhoosh' }, { at: 8.9, name: 'cineTraffic' }, { at: 12.1, name: 'doorClose' }],
     end: { actors: { gabe: { pose: 'crouch' } }, look: 'COMIC' },
   },
 
@@ -142,7 +142,7 @@ export const CINES = {
     lines: [line(1.7, 'i0.cost'), line(4, 'i0.what'), line(5.9, 'i0.first'), line(7.5, 'i0.why'), line(11.6, 'i0.three'), line(13.7, 'i0.ronin'), line(15.1, 'i0.dark'), line(18.4, 'i0.vo')],
     fx: [{ at: 0.5, kind: 'flashlight', pos: { bridge: true, y: 1 } }],
     looks: [{ at: 21.3, set: 'MEMORY', dur: 2 }],
-    sfx: [{ at: 0.2, name: 'crickets' }],
+    sfx: [{ at: 0.2, name: 'cineWhoosh' }],
     end: { look: 'MEMORY' },
   },
 
@@ -162,7 +162,7 @@ export const CINES = {
   f3_intro: introCine('f3_intro', 'aframe', 'MEMORY_NIGHT', { dx: -20, dz: 25, extra: { actors: [act(0, 'crew', 'prop', { name: 'kasa', on: true })] } }),
   f4_intro: introCine('f4_intro', 'f4_van_creek', 'HANGOVER', { dx: 18, dz: -14, dur: 8 }),
   f5_intro: introCine('f5_intro', 'bar_lot', 'MEMORY', { dx: 25, dz: 20 }),
-  p1_intro: introCine('p1_intro', 'midgley_lot', 'NIGHT', { dx: -30, dz: 30 }),
+  p1_intro: introCine('p1_intro', 'midgley_lot', 'NIGHT', { dx: -22, dz: 24 }),
   p2_intro: introCine('p2_intro', 'diner', 'DAY', { dx: 30, dz: 30 }),
   p3_intro: introCine('p3_intro', 'sunline_plaza', 'DAY', { dx: 30, dz: 35 }),
   p4_intro: introCine('p4_intro', 'p3_watch', 'DAY', { dx: -25, dz: 30 }),

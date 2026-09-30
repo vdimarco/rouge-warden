@@ -403,6 +403,11 @@ export function createCine(S, K) {
     if (def.look) S.look.set(def.look, { dur: 0 });
     if (S.look.cineQuality) S.look.cineQuality(true);
     if (!def.arena) stepOut();
+    r.soundLoops = [];
+    if (def.id === 'c0' || def.id === 'i0') {
+      S.audio.cue('night');
+      r.soundLoops.push(S.audio.loop('creek', { level: 0.45 }), S.audio.loop('crickets', { level: 0.35 }));
+    }
     K.log('cine', def.id, 'start');
     let last = S.timers.now;
     try {
@@ -411,8 +416,9 @@ export function createCine(S, K) {
         const now = S.timers.now, dt = Math.max(0, now - last); last = now;
         if (r.hold) { if (K.auto) S.ui.advanceAll(); if (!r.hold.done) { yield null; continue; } r.hold = null; }
         if (r.film) {
-          if (!r.film.done) { if (K.auto) S.film.skip(); yield null; continue; }
+          if (!r.film.done) { if (r.def.id === 'c0' && S.film.active && !r.morphSound) r.morphSound = S.audio.loop('gabeMorph'); if (K.auto) S.film.skip(); yield null; continue; }
           if (!r.film.played && S.look && S.look.base) S.look.base.flash = 1; // the engine's white flash stands in
+          if (r.morphSound) { r.morphSound.stop(0.15); r.morphSound = null; }
           r.film = null;
         }
         r.t += dt;
@@ -451,6 +457,9 @@ export function createCine(S, K) {
   function finish(r, aborted = false) {
     if (r.done) return;
     r.done = true;
+    if (r.morphSound) r.morphSound.stop(0.1);
+    for (const h of r.soundLoops || []) h.stop(0.25);
+    if (r.def.id === 'c0' || r.def.id === 'i0') S.audio.cue('auto');
     try {
       if (r.hold && !r.hold.done) S.ui.advanceAll();
       if (r.film && !r.film.done) S.film.skip();

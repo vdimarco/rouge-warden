@@ -157,6 +157,11 @@ export function terrainMaterial(THREE, shared, tex, net, lots) {
         st = mix(st, vec3(0.8, 0.69, 0.55), smoothstep(92.0, 100.0, yy) * smoothstep(122.0, 112.0, yy));
         float streak = smoothstep(0.5, 0.85, vnoise(vec2(dot(vWP.xz, vec2(0.6, 0.8)) * 0.4, vWP.y * 0.015)));
         st *= 1.0 - 0.3 * streak * (1.0 - abs(n.y));
+        // Fine sediment seams and pale mineral shelves make close cliffs readable.
+        float seam = 1.0 - smoothstep(0.025, 0.095, abs(fract(yy * 0.7) - 0.5));
+        float shelf = smoothstep(0.86, 0.94, fract(yy * 0.19));
+        st *= 1.0 - seam * 0.16 * (1.0 - abs(n.y));
+        st = mix(st, vec3(0.78, 0.57, 0.39), shelf * 0.22);
         float rk = clamp(vRock, 0.0, 1.0);
         diffuseColor.rgb = mix(diffuseColor.rgb, L3(st), rk) * grain;
         // roads, lots and sidewalks from the two masks (gen.worker.js roadMask)

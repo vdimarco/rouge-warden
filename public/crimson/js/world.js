@@ -111,11 +111,26 @@ export function buildGround() {
 }
 
 /* ---------------- sandstone mesas and spires ---------------- */
-const strataTex = canvasTex(64, 512, (g, w, h) => {
-  let y = 0;
-  while (y < h) { const t = rand(4, 26), v = 118 + R() * 46 | 0; g.fillStyle = `rgb(${v},${v - 6},${v - 10})`; g.fillRect(0, y, w, t); y += t; }
-  g.fillStyle = 'rgba(20,20,20,0.5)';
-  for (let i = 0; i < 40; i++) g.fillRect(0, R() * h, w, 1.5);
+const strataTex = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = '#a95736'; g.fillRect(0, 0, w, h);
+  for (let y = 0; y < h;) {
+    const band = rand(8, 38), v = rand(-16, 16);
+    g.fillStyle = `rgb(${172 + v},${91 + v * 0.7},${57 + v * 0.45})`;
+    g.fillRect(0, y, w, band);
+    g.strokeStyle = 'rgba(54,28,28,0.38)'; g.lineWidth = rand(1, 3);
+    g.beginPath(); g.moveTo(0, y);
+    for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x * 0.035) * 2);
+    g.stroke(); y += band;
+  }
+  for (let i = 0; i < 1600; i++) {
+    g.fillStyle = i % 3 ? 'rgba(60,29,24,0.10)' : 'rgba(243,195,138,0.18)';
+    g.fillRect(R() * w, R() * h, rand(1, 5), rand(1, 2));
+  }
+  g.strokeStyle = 'rgba(48,26,26,0.45)'; g.lineWidth = 1.4;
+  for (let i = 0; i < 24; i++) {
+    const x = R() * w, y = R() * h; g.beginPath(); g.moveTo(x, y);
+    g.lineTo(x + rand(-8, 8), y + 14); g.lineTo(x + rand(-15, 15), y + 35); g.stroke();
+  }
 });
 strataTex.wrapS = strataTex.wrapT = THREE.RepeatWrapping;
 function rockColumn(r0, r1, h, sides, rough) {
@@ -130,7 +145,7 @@ function rockColumn(r0, r1, h, sides, rough) {
   geo.computeVertexNormals();
   return geo;
 }
-const rockMat = toon({ map: strataTex, color: 0xb8b2aa });
+const rockMat = toon({ map: strataTex, color: 0xffddbd });
 function formation(x, z, kind, s) {
   const g = new THREE.Group(); g.position.set(x, groundHeight(x, z) - 2, z); g.rotation.y = rand(0, TAU);
   const add = (geo, px, py, pz) => { const m = new THREE.Mesh(geo, rockMat); m.position.set(px, py, pz); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
@@ -171,11 +186,14 @@ function boulderGeo(r) {
     const k = 1 + (fbm(n.x * 2 + seed, n.y * 2 + n.z * 2, 3) - 0.5) * 0.7;
     v.multiplyScalar(k); v.y *= 0.7; p.setXYZ(i, v.x, v.y, v.z);
   }
+  // Cylindrical UVs keep sediment bands horizontal on irregular boulders.
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < p.count; i++) uv.setXY(i, Math.atan2(p.getX(i), p.getZ(i)) / TAU + 0.5, p.getY(i) / (r * 2) + 0.5);
   geo.computeVertexNormals();
   return geo;
 }
 export function buildBoulders() {
-  const mat = toon({ map: strataTex, color: 0xa8a39c });
+  const mat = toon({ map: strataTex, color: 0xf2c49f });
   const place = (x, z, r, solid) => {
     const m = new THREE.Mesh(boulderGeo(r), mat);
     m.position.set(x, groundHeight(x, z) + r * 0.25, z); m.rotation.y = rand(0, TAU);
