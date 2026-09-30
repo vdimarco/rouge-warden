@@ -49,7 +49,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #reelBox:active, #padBox:active { cursor: grabbing; }
 #reelBox canvas, #padBox canvas { display: none; }
 
-#crankBox { position: absolute; left: calc(var(--sal) + 16px); bottom: calc(var(--sab) + 12px); width: min(34vmin, 160px); height: min(34vmin, 160px); }
+#crankBox { position: absolute; right: calc(var(--sar) + 16px); bottom: calc(var(--sab) + 12px); width: min(34vmin, 160px); height: min(34vmin, 160px); }
+
+#game[data-reel-side="left"] #crankBox { left: calc(var(--sal) + 16px); right: auto; }
 
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
 #pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40vw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
@@ -417,6 +419,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 246px); 
         <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
         <label><span>Easy mode<small>Softens bad casts. Gives you more time to set the hook.</small></span><input type="checkbox" id="optAssist"></label>
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
+        <label><span>Reel side<small>Choose which hand turns the reel.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
         <label><span>Art style</span><select id="optArtStyle"><option value="original">Original</option><option value="ghibli">Ghibli</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
       </div>
