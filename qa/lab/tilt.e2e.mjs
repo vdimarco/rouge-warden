@@ -111,11 +111,18 @@ R.section('Desktop keys, pause, and restart');
   try {
     await start(page);
     await page.keyboard.down('z');
-    await page.keyboard.down('/');
-    R.check(await held(page, 'left-flip') && await held(page, 'right-flip'), 'Z and slash hold both flippers');
-    await page.keyboard.up('/');
+    await page.keyboard.down('x');
+    R.check(await held(page, 'left-flip') && await held(page, 'right-flip'), 'Z and X hold both flippers');
+    await page.keyboard.up('x');
     R.check(await held(page, 'left-flip') && !await held(page, 'right-flip'), 'Releasing one key leaves the other flipper held');
     await page.keyboard.up('z');
+    for (const key of ['ArrowLeft', 'ArrowRight', '/', 'ShiftRight', 'm', 'Enter']) {
+      await page.keyboard.down(key);
+      R.check(!await held(page, 'left-flip') && !await held(page, 'right-flip') &&
+        await page.locator('#map-panel').isHidden() && await charge(page) === 0,
+        key + ' has no game shortcut on the focused canvas');
+      await page.keyboard.up(key);
+    }
 
     await page.keyboard.down('z');
     await page.keyboard.down('Space');
@@ -132,11 +139,12 @@ R.section('Desktop keys, pause, and restart');
     R.check(await page.locator('#launch-button').isVisible(), 'A release during pause cannot launch the ball');
 
     await page.keyboard.down('z');
-    await page.keyboard.press('m');
+    await page.keyboard.press('r');
     R.check(await page.locator('#map-panel').isVisible() && !await held(page, 'left-flip'),
       'Opening the map releases a held flipper');
     await page.keyboard.up('z');
-    await page.keyboard.press('Escape');
+    await page.keyboard.press('r');
+    R.check(await page.locator('#map-panel').isHidden(), 'R closes the map and returns to play');
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
     await page.getByRole('button', { name: 'Start a new voyage', exact: true }).click();
     R.check(await page.getByRole('button', { name: 'Pause', exact: true }).isVisible() && await page.locator('#score').textContent() === '0',
@@ -147,6 +155,15 @@ R.section('Desktop keys, pause, and restart');
     await page.keyboard.up('Space');
     await page.locator('#pulse-button').waitFor({ state: 'visible' });
     R.check(!await page.locator('#launch-button').isVisible(), 'Space launches from the keyboard');
+    await page.keyboard.press('ArrowUp');
+    R.check(await page.locator('#pulse-button').isEnabled(), 'Arrow Up leaves the pulse available');
+    await page.keyboard.down('x');
+    R.check(await held(page, 'right-flip') && await page.locator('#pulse-button').isEnabled(),
+      'X holds the right flipper in flight without spending a pulse');
+    await page.keyboard.up('x');
+    await page.keyboard.press('c');
+    R.check(await page.locator('#pulse-button').isDisabled() && /^Pulse [0-9]/.test(await page.locator('#pulse-button').textContent()),
+      'C fires a gravity pulse and starts its visible cooldown');
     await shot(page, 'tilt-voyage-desktop-flight');
   } catch (error) { R.check(false, error.stack || error.message); }
   finally { for (const error of errors) R.check(false, error); await close(); }

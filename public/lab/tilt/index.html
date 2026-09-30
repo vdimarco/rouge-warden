@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/lab/tilt/adventure.css">
 </head>
 <body>
-  <canvas id="view" aria-label="Space pinball adventure. Use the on-screen flippers or Z and slash on your keyboard."></canvas>
+  <canvas id="view" aria-label="Space pinball adventure. Use the on-screen controls or Z and X for flippers, Space to launch, C to pulse, F for a gravity field, R for the map, and Escape to pause."></canvas>
 
   <header id="hud" hidden>
     <div class="hud-brand">
@@ -23,8 +23,8 @@
       <div class="readout"><span class="readout-label">SCORE</span><strong id="score">0</strong></div>
       <div class="readout lives-readout"><span class="readout-label">HULL</span><strong id="lives">3</strong></div>
       <nav class="hud-actions" aria-label="Game options">
-        <button id="map-button" type="button" aria-controls="map-panel">Map</button>
-        <button id="pause-button" type="button" aria-controls="pause-panel">Pause</button>
+        <button id="map-button" type="button" aria-controls="map-panel" aria-keyshortcuts="R">Map</button>
+        <button id="pause-button" type="button" aria-controls="pause-panel" aria-keyshortcuts="Escape">Pause</button>
         <button id="sound-button" type="button" aria-pressed="true">Sound on</button>
         <button id="fullscreen-button" type="button">Full screen</button>
       </nav>
@@ -41,7 +41,7 @@
       <p id="transit-route"></p>
       <div id="transit-progress" role="progressbar" aria-label="Jump progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
     </div>
-    <button id="skip-transit" type="button">Skip jump <span aria-hidden="true">↗</span></button>
+    <button id="skip-transit" type="button" aria-keyshortcuts="E">Skip jump <kbd class="desktop-key">E</kbd> <span aria-hidden="true">↗</span></button>
   </section>
 
   <section id="menu" class="overlay menu-overlay" aria-labelledby="menu-title">
@@ -64,7 +64,7 @@
         <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Explore</strong>Hit 3 relays. Enter the jump gate.</p></div>
       </div>
       <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim.</p>
-      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>/</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>↑</kbd> pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>Esc</kbd> pause</p>
+      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> pause</p>
     </div>
   </section>
 
@@ -81,6 +81,7 @@
       </div>
       <button id="resume-button" class="primary-button" type="button">Resume voyage <span aria-hidden="true">↗</span></button>
       <button id="restart-button" class="secondary-button" type="button">Start a new voyage</button>
+      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch<br><kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse<br><kbd>F</kbd> field <span>·</span> <kbd>WASD</kbd> aim <span>·</span> <kbd>Q</kbd> Pull/Push <span>·</span> <kbd>E</kbd> place<br><kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> resume<br><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> upgrade <span>·</span> <kbd>E</kbd> skip jump</p>
       <a class="quiet-link" href="/">Return to arcade</a>
     </div>
   </section>
@@ -118,20 +119,20 @@
         <button id="field-pull" type="button" aria-pressed="true">Pull</button>
         <button id="field-push" type="button" aria-pressed="false">Push</button>
       </div>
-      <button id="deploy-field" type="button">Place here</button>
-      <button id="cancel-field" type="button">Cancel</button>
+      <button id="deploy-field" type="button" aria-keyshortcuts="E">Place here <kbd class="desktop-key">E</kbd></button>
+      <button id="cancel-field" type="button" aria-keyshortcuts="F Escape">Cancel <kbd class="desktop-key">F</kbd></button>
     </div>
   </section>
 
   <div id="controls" aria-label="Pinball controls">
-    <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper"><span class="flipper-arrow" aria-hidden="true">↗</span><span>LEFT FLIPPER</span><kbd>Z</kbd></button>
+    <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper" aria-keyshortcuts="Z"><span class="flipper-arrow" aria-hidden="true">↗</span><span>LEFT FLIPPER</span><kbd>Z</kbd></button>
     <div class="center-controls">
       <span id="field-status">Relays and orbits earn field charges</span>
-      <button id="launch-button" class="launch-button" type="button"><span aria-hidden="true">↑</span> Launch</button>
-      <button id="pulse-button" class="pulse-button" type="button"><span aria-hidden="true">◎</span> Pulse</button>
-      <button id="field-button" class="field-button" type="button" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>
+      <button id="launch-button" class="launch-button" type="button" aria-keyshortcuts="Space"><span aria-hidden="true">↑</span> Launch</button>
+      <button id="pulse-button" class="pulse-button" type="button" aria-keyshortcuts="C A D"><span aria-hidden="true">◎</span> Pulse</button>
+      <button id="field-button" class="field-button" type="button" aria-keyshortcuts="F" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>
     </div>
-    <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper"><kbd>/</kbd><span>RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
+    <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper" aria-keyshortcuts="X"><kbd>X</kbd><span>RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
   </div>
   <script type="module" src="/lab/tilt/main.js"></script>
 </body>
