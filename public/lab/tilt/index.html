@@ -53,7 +53,8 @@
         <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Bend your flight toward the next relay.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Explore</strong>Hit 3 relays. Enter the jump gate.</p></div>
       </div>
-      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>/</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>↑</kbd> pulse <span>·</span> <kbd>Esc</kbd> pause</p>
+      <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim.</p>
+      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>/</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>↑</kbd> pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>Esc</kbd> pause</p>
     </div>
   </section>
 
@@ -100,11 +101,25 @@
     </div>
   </section>
 
+  <section id="field-placement" aria-label="Place a gravity field" hidden>
+    <p id="field-aim-help" role="status">Time paused. Tap space to place, or drag and release.</p>
+    <div class="field-tools">
+      <div class="field-kinds" role="group" aria-label="Field direction">
+        <button id="field-pull" type="button" aria-pressed="true">Pull</button>
+        <button id="field-push" type="button" aria-pressed="false">Push</button>
+      </div>
+      <button id="deploy-field" type="button">Place here</button>
+      <button id="cancel-field" type="button">Cancel</button>
+    </div>
+  </section>
+
   <div id="controls" aria-label="Pinball controls">
     <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper"><span class="flipper-arrow" aria-hidden="true">↗</span><span>LEFT FLIPPER</span><kbd>Z</kbd></button>
     <div class="center-controls">
+      <span id="field-status">Relays and orbits earn field charges</span>
       <button id="launch-button" class="launch-button" type="button"><span aria-hidden="true">↑</span> Launch</button>
       <button id="pulse-button" class="pulse-button" type="button"><span aria-hidden="true">◎</span> Pulse</button>
+      <button id="field-button" class="field-button" type="button" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>
     </div>
     <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper"><kbd>/</kbd><span>RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
   </div>

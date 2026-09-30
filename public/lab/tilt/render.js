@@ -1,9 +1,11 @@
-import { createCamera, updateCamera, worldToScreen, clamp } from './camera.js';
+import { createCamera, updateCamera, worldToScreen, screenToWorld, clamp } from './camera.js';
 import { F } from './physics.js';
+import { FIELD_DURATION, FIELD_RADIUS } from './adventure.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
 const PALETTE = ['#7ee8ff', '#ffa967', '#cbb4ff', '#7dffd4', '#ff95bd', '#ffe4a0'];
+const FIELD_COLORS = { pull: '#79f5ed', push: '#e8a5ff', invalid: '#ff9b82' };
 const rand = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 const point = (p) => Array.isArray(p) ? p : [p.x, p.y];
 const circle = (g, x, y, radius) => { g.beginPath(); g.arc(x, y, Math.max(0, radius), 0, TAU); };
@@ -65,10 +67,11 @@ export function createRenderer(canvas, minimap) {
     const type = event.type || event.k;
     const x = event.x ?? run?.world?.ball?.x ?? 0;
     const y = event.y ?? run?.world?.ball?.y ?? 0;
-    const color = type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
-    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit'].includes(type);
-    if (['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
-      rings.push({ x, y, age: 0, life: large ? 0.8 : 0.35, r: large ? 220 : 75, color: type === 'relay' ? '#fff2b0' : color });
+    const fieldEvent = type === 'field-deploy' || type === 'field-expire';
+    const color = fieldEvent ? FIELD_COLORS[event.kind] || FIELD_COLORS.pull : type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
+    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy'].includes(type);
+    if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
+      rings.push({ x, y, age: 0, life: fieldEvent ? 0.55 : large ? 0.8 : 0.35, r: fieldEvent ? FIELD_RADIUS - 15 : large ? 220 : 75, inward: type === 'field-expire', color: type === 'relay' ? '#fff2b0' : color });
       if (!reducedMotion) {
         const count = large ? 26 : type === 'relay' ? 19 : 9;
         for (let i = 0; i < count; i++) {
@@ -372,7 +375,66 @@ export function createRenderer(canvas, minimap) {
     }
   }
 
-  function trajectory(run, charge = 0) {
+  function temporaryField(well, clock, aiming = false) {
+    if (!well || !Number.isFinite(well.x) || !Number.isFinite(well.y)) return;
+    const { x, y } = well, radius = well.radius || FIELD_RADIUS;
+    if (!visible(x, y, radius)) return;
+    const valid = !aiming || well.valid !== false;
+    const color = valid ? FIELD_COLORS[well.kind] || FIELD_COLORS.pull : FIELD_COLORS.invalid;
+    const duration = well.duration || FIELD_DURATION;
+    const remaining = aiming ? duration : clamp(well.remaining, 0, duration);
+    const fade = aiming ? 0.72 : Math.min(1, remaining / 0.55);
+    const scale = Math.max(0.5, camera.scale);
+    const outward = well.kind === 'push';
+    g.save();
+    g.globalAlpha = fade;
+    // The faint range ring is the true force radius. Its broken stroke keeps it
+    // distinct from a rail; the diamond identifies this as a placed device.
+    const glow = g.createRadialGradient(x, y, 0, x, y, radius);
+    glow.addColorStop(0, `${color}27`); glow.addColorStop(0.3, `${color}15`);
+    glow.addColorStop(0.74, `${color}07`); glow.addColorStop(1, `${color}00`);
+    g.fillStyle = glow; circle(g, x, y, radius); g.fill();
+    g.strokeStyle = `${color}${aiming ? '95' : '4d'}`;
+    g.lineWidth = (aiming ? 1.2 : 0.85) / scale;
+    g.setLineDash([3 / scale, 10 / scale]);
+    circle(g, x, y, radius); g.stroke(); g.setLineDash([]);
+
+    // Radial arrows show the direction without implying an orbit or a solid
+    // boundary. Each wisp ends before the softened, force-free center.
+    const count = reducedMotion ? 8 : 12;
+    for (let i = 0; i < count; i++) {
+      const angle = i * TAU / count + 0.17;
+      const progress = reducedMotion || aiming ? 0.28 + (i % 3) * 0.22 : (clock * 0.38 + i * 0.31) % 1;
+      const distance = 55 + (outward ? progress : 1 - progress) * (radius - 83);
+      const nx = Math.cos(angle) * (outward ? 1 : -1), ny = Math.sin(angle) * (outward ? 1 : -1);
+      const px = x + Math.cos(angle) * distance, py = y + Math.sin(angle) * distance;
+      const length = (13 + Math.sin(progress * Math.PI) * 13) / scale;
+      g.globalAlpha = fade * (0.2 + Math.sin(progress * Math.PI) * 0.48);
+      g.strokeStyle = color; g.lineWidth = 1.15 / scale;
+      g.beginPath(); g.moveTo(px - nx * length, py - ny * length); g.lineTo(px, py);
+      g.moveTo(px - nx * 6 / scale + ny * 3 / scale, py - ny * 6 / scale - nx * 3 / scale);
+      g.lineTo(px, py); g.lineTo(px - nx * 6 / scale - ny * 3 / scale, py - ny * 6 / scale + nx * 3 / scale); g.stroke();
+    }
+
+    g.globalAlpha = fade;
+    const core = 17 / scale, ring = 29 / scale;
+    g.fillStyle = '#061d2de6';
+    g.strokeStyle = color; g.lineWidth = 1.6 / scale;
+    g.beginPath(); g.moveTo(x, y + core); g.lineTo(x + core, y);
+    g.lineTo(x, y - core); g.lineTo(x - core, y); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - 5 / scale, y); g.lineTo(x + 5 / scale, y);
+    if (outward) { g.moveTo(x, y - 5 / scale); g.lineTo(x, y + 5 / scale); }
+    g.stroke();
+    g.strokeStyle = `${color}3a`; g.lineWidth = 2 / scale;
+    circle(g, x, y, ring); g.stroke();
+    g.strokeStyle = color;
+    g.beginPath(); g.arc(x, y, ring, Math.PI / 2, Math.PI / 2 + TAU * remaining / duration); g.stroke();
+    g.restore();
+    const text = aiming ? valid ? `${outward ? 'PUSH' : 'PULL'} · ${duration}s` : 'CHOOSE OPEN SPACE' : `${outward ? 'PUSH' : 'PULL'} · ${remaining.toFixed(1)}s`;
+    label(text, x, y - 45 / scale, color, 11);
+  }
+
+  function trajectory(run, charge = 0, fieldAim = null) {
     const charging = run.phase === 'ready' && charge > 0 && typeof run.table.launchVelocity === 'function';
     if ((!charging && run.phase !== 'play') || camera.overview || typeof run.table.gravity !== 'function') return;
     const launch = charging ? run.table.launchVelocity(charge) : null;
@@ -400,8 +462,12 @@ export function createRenderer(canvas, minimap) {
       const c4 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
       return c1 * c2 < 0 && c3 * c4 < 0;
     };
+    const previewWell = fieldAim?.valid ? { ...fieldAim, radius: FIELD_RADIUS, remaining: FIELD_DURATION, duration: FIELD_DURATION, sector: run.sectorIndex } : undefined;
     for (let i = 0; i < 24; i++) {
-      const force = run.table.gravity(probe), previous = { x: probe.x, y: probe.y };
+      const force = typeof run.table.gravityAt === 'function'
+        ? run.table.gravityAt(probe, i * dt, previewWell)
+        : run.table.gravity(probe);
+      const previous = { x: probe.x, y: probe.y };
       probe.vx += force.x * dt; probe.vy += force.y * dt;
       const magnitude = Math.hypot(probe.vx, probe.vy);
       if (magnitude > maxSpeed) { probe.vx *= maxSpeed / magnitude; probe.vy *= maxSpeed / magnitude; }
@@ -421,11 +487,12 @@ export function createRenderer(canvas, minimap) {
     g.save();
     for (let i = 1; i < points.length; i++) {
       const a = points[i - 1], b = points[i], fade = 1 - i / 24;
-      g.globalAlpha = fade * 0.27; g.strokeStyle = '#c9f4ff';
-      g.lineWidth = 1 / Math.max(0.55, camera.scale);
+      const color = previewWell ? FIELD_COLORS[previewWell.kind] || FIELD_COLORS.pull : '#c9f4ff';
+      g.globalAlpha = fade * (previewWell ? 0.62 : 0.27); g.strokeStyle = color;
+      g.lineWidth = (previewWell ? 1.5 : 1) / Math.max(0.55, camera.scale);
       g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
       if (i % 3 === 0) {
-        g.globalAlpha = fade * 0.6; g.fillStyle = '#dffaff';
+        g.globalAlpha = fade * 0.6; g.fillStyle = previewWell ? color : '#dffaff';
         circle(g, b.x, b.y, Math.max(2.1, 1.15 / camera.scale)); g.fill();
       }
     }
@@ -476,7 +543,7 @@ export function createRenderer(canvas, minimap) {
       if (p.age >= p.life) { rings.splice(i, 1); continue; }
       const t = p.age / p.life;
       g.globalAlpha = (1 - t) * 0.8; g.strokeStyle = p.color; g.lineWidth = 3 * (1 - t) + 0.5;
-      circle(g, p.x, p.y, 15 + p.r * t); g.stroke();
+      circle(g, p.x, p.y, 15 + p.r * (p.inward ? 1 - t : t)); g.stroke();
     }
     g.globalAlpha = 1;
   }
@@ -518,6 +585,14 @@ export function createRenderer(canvas, minimap) {
         mg.beginPath(); mg.moveTo(x - 1.5, y); mg.lineTo(x, y + 1.5); mg.lineTo(x + 2.4, y - 1.5); mg.stroke();
       }
     });
+    const well = run.gravityWell;
+    if (well?.remaining > 0) {
+      const x = mx(well.x), y = my(well.y), r = Math.max(3, well.radius * scale);
+      mg.strokeStyle = `${FIELD_COLORS[well.kind] || FIELD_COLORS.pull}85`; mg.lineWidth = 0.8;
+      circle(mg, x, y, r); mg.stroke();
+      mg.fillStyle = FIELD_COLORS[well.kind] || FIELD_COLORS.pull;
+      mg.beginPath(); mg.moveTo(x, y - 2); mg.lineTo(x + 2, y); mg.lineTo(x, y + 2); mg.lineTo(x - 2, y); mg.closePath(); mg.fill();
+    }
     circle(mg, mx(run.world.ball.x), my(run.world.ball.y), 2.5); mg.fillStyle = '#fff9df'; mg.fill();
   }
 
@@ -526,7 +601,16 @@ export function createRenderer(canvas, minimap) {
     const elapsed = clamp(dt, 0, 0.08);
     reducedMotion = Boolean(options.reducedMotion);
     if (lastWorld !== run.world) { trail.length = 0; particles.length = 0; rings.length = 0; lastWorld = run.world; }
-    updateCamera(camera, run, elapsed, options);
+    if (!options.freezeCamera || !camera.initialized || camera.world !== run.world) {
+      updateCamera(camera, run, elapsed, options);
+    } else {
+      // Placement uses the exact same transform for drawing and hit testing.
+      // Preserve its center and zoom while still accounting for canvas resize.
+      const playHeight = Math.max(100, height - camera.top - camera.bottom);
+      camera.centerY = camera.top + playHeight / 2;
+      const halfW = width / camera.scale / 2, halfH = playHeight / camera.scale / 2;
+      camera.view = { left: camera.x - halfW, right: camera.x + halfW, bottom: camera.y - halfH, top: camera.y + halfH };
+    }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     backdrop(run);
     g.save();
@@ -559,12 +643,25 @@ export function createRenderer(canvas, minimap) {
     }
     rails(run.table);
     flippers(run);
-    trajectory(run, options.charge || 0);
-    drawBall(run, elapsed, options.charge || 0);
-    effects(elapsed);
+    if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);
+    if (options.fieldAim) temporaryField(options.fieldAim, clock, true);
+    trajectory(run, options.charge || 0, options.fieldAim);
+    const effectElapsed = options.freezeCamera ? 0 : elapsed;
+    effects(effectElapsed);
+    drawBall(run, effectElapsed, options.charge || 0);
     g.restore();
     map(run);
   }
 
-  return { draw, resize, camera, loadAssets, onEvent, worldToScreen: (x, y) => worldToScreen(camera, x, y), destroy() { observer?.disconnect(); globalThis.removeEventListener?.('resize', resize); } };
+  function toWorld(clientX, clientY) {
+    const bounds = canvas.getBoundingClientRect();
+    return screenToWorld(camera, (clientX - bounds.left) * width / (bounds.width || width), (clientY - bounds.top) * height / (bounds.height || height));
+  }
+
+  function toScreen(x, y) {
+    const bounds = canvas.getBoundingClientRect(), local = worldToScreen(camera, x, y);
+    return { x: bounds.left + local.x * (bounds.width || width) / width, y: bounds.top + local.y * (bounds.height || height) / height };
+  }
+
+  return { draw, resize, camera, loadAssets, onEvent, toWorld, toScreen, screenToWorld: toWorld, worldToScreen: (x, y) => worldToScreen(camera, x, y), destroy() { observer?.disconnect(); globalThis.removeEventListener?.('resize', resize); } };
 }
