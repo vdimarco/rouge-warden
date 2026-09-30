@@ -87,6 +87,17 @@ console.log('ok: natural and skipped travel, exact duration, paused clock, prese
 console.log('ok: isolated fields, symbolic galaxy, ordered cinematic stages and motion-free fade');
 
 for (const [width, height] of [[390, 844], [844, 390], [1280, 800]]) {
+  for (const drawDeparture of [false, true]) {
+    const run = reachUpgrade(), camera = createCamera(width, height);
+    updateCamera(camera, run);
+    chooseUpgrade(run, 'pulse');
+    if (drawDeparture) { run.flight.progress = .5; updateCamera(camera, run); }
+    skipAdventureFlight(run);
+    updateCamera(camera, run, 1 / 60);
+    const expected = createCamera(width, height); updateCamera(expected, run);
+    assert(['x', 'y', 'scale', 'rotation'].every(key => Math.abs(camera[key] - expected[key]) < 1e-8),
+      'Skip reaches the destination camera even before the first transit frame');
+  }
   for (const reducedMotion of [false, true]) {
     const run = reachUpgrade(), camera = createCamera(width, height);
     updateCamera(camera, run);
