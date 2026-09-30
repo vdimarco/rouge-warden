@@ -3,24 +3,25 @@ import * as THREE from '../crimson/lib/three.module.min.js';
 // Alien biome, kept separate from the courtyard so style switches change both
 // visible terrain and collision geometry. No additional render passes or lights.
 export class AlienWorld {
-  constructor(scene) {
+  constructor(scene,{loadTextures=true}={}) {
     this.root=new THREE.Group();this.root.name='Portal Badlands';scene.add(this.root);
     this.solids=[];this.portals=[];this.materials=new Map();this.parts=[];
-    this.rng=1709;
+    this.rng=1709;this.groveFallback=[];this.scene=scene;
     const ramp=new THREE.DataTexture(new Uint8Array([85,165,255]),3,1,THREE.RedFormat);
     ramp.minFilter=ramp.magFilter=THREE.NearestFilter;ramp.needsUpdate=true;this.ramp=ramp;
-    this.build();this.batch();this.root.visible=false;
+    this.build();this.batch();this.root.visible=false;if(loadTextures)this.loadTextures();
   }
   random(){this.rng=(Math.imul(this.rng,1664525)+1013904223)>>>0;return this.rng/4294967296}
   mat(color,flat=false){const key=color+flat;if(!this.materials.has(key))this.materials.set(key,flat?new THREE.MeshBasicMaterial({color}):new THREE.MeshToonMaterial({color,gradientMap:this.ramp}));return this.materials.get(key)}
   piece(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rz=0,flat=false){const mesh=new THREE.Mesh(geometry,this.mat(color,flat));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.rotation.z=rz;this.parts.push(mesh);return mesh}
   blob(color,x,y,z,sx,sy,sz,detail=1){return this.piece(new THREE.IcosahedronGeometry(1,detail),color,x,y,z,sx,sy,sz)}
   plant(x,z,size=1,hue='#69c9b0'){
+    const start=this.parts.length;
     this.piece(new THREE.CylinderGeometry(.18,.34,1,7), '#ebc59d',x,1.5*size,z,size,3*size,size,.13);
     const cap=this.piece(new THREE.SphereGeometry(1,14,8,0,Math.PI*2,0,Math.PI*.6),hue,x+.2*size,3*size,z,1.7*size,.85*size,1.5*size,-.12);
     for(let i=0;i<5;i++){const a=i*2.4;this.blob('#dff2ad',x+.2*size+Math.cos(a)*size,3.55*size,z+Math.sin(a)*size,.18*size,.065*size,.18*size)}
-    this.solids.push({x,z,w:.8*size,d:.8*size});
-    return cap;
+    this.solids.push({x,z,w:.8*size,d:.8*size,kind:"mushroom"});
+    this.parts.slice(start).forEach(m=>m.userData.groveFallback=true);return cap;
   }
   portal(x,z,scale=1,angle=0){
     const p=new THREE.Group();p.position.set(x,2.3*scale,z);p.scale.set(scale,scale*1.18,scale);p.rotation.y=angle;this.root.add(p);
@@ -63,11 +64,33 @@ export class AlienWorld {
     for(let i=0;i<12;i++){const a=i*.59,r=46;this.blob('#dfced4',Math.cos(a)*r,22+Math.sin(i*2)*4,Math.sin(a)*r,6,.8,2.4)}
   }
   batch(){
-    const groups=new Map();for(const part of this.parts){part.updateMatrix();const g=(part.geometry.index?part.geometry.toNonIndexed():part.geometry.clone()).applyMatrix4(part.matrix);const list=groups.get(part.material)||[];list.push(g);groups.set(part.material,list);part.geometry.dispose()}
+    const groups=new Map();
+    for(const part of this.parts){part.updateMatrix();const g=(part.geometry.index?part.geometry.toNonIndexed():part.geometry.clone()).applyMatrix4(part.matrix),fallback=!!part.userData.groveFallback,key=part.material.uuid+fallback;
+      const group=groups.get(key)||{material:part.material,items:[],fallback};group.items.push(g);groups.set(key,group);part.geometry.dispose();}
     let triangles=0;
-    for(const [material,items] of groups){const merged=new THREE.BufferGeometry();for(const name of ['position','normal','uv']){const attrs=items.map(g=>g.getAttribute(name));if(attrs.some(a=>!a))continue;const array=new Float32Array(attrs.reduce((n,a)=>n+a.array.length,0));let at=0;for(const a of attrs){array.set(a.array,at);at+=a.array.length}merged.setAttribute(name,new THREE.BufferAttribute(array,attrs[0].itemSize))}merged.computeBoundingSphere();this.root.add(new THREE.Mesh(merged,material));triangles+=merged.attributes.position.count/3;
-      if(!material.isMeshBasicMaterial){const edges=new THREE.EdgesGeometry(merged,48);this.root.add(new THREE.LineSegments(edges,this.ink??=new THREE.LineBasicMaterial({color:'#394252',transparent:true,opacity:.55})))}items.forEach(g=>g.dispose());}
+    for(const {material,items,fallback} of groups.values()){
+      const merged=new THREE.BufferGeometry();
+      for(const name of ['position','normal','uv']){const attrs=items.map(g=>g.getAttribute(name));if(attrs.some(a=>!a))continue;const array=new Float32Array(attrs.reduce((n,a)=>n+a.array.length,0));let at=0;for(const a of attrs){array.set(a.array,at);at+=a.array.length}merged.setAttribute(name,new THREE.BufferAttribute(array,attrs[0].itemSize))}
+      merged.computeBoundingSphere();const mesh=new THREE.Mesh(merged,material);this.root.add(mesh);if(fallback)this.groveFallback.push(mesh);triangles+=merged.attributes.position.count/3;
+      if(!material.isMeshBasicMaterial){const edges=new THREE.EdgesGeometry(merged,48),line=new THREE.LineSegments(edges,this.ink??=new THREE.LineBasicMaterial({color:'#394252',transparent:true,opacity:.55}));this.root.add(line);if(fallback)this.groveFallback.push(line)}items.forEach(g=>g.dispose());
+    }
     this.stats={triangles,materials:groups.size};this.parts=[];
+  }
+  loadTextures(){
+    const loader=new THREE.TextureLoader();
+    loader.load('./art/alien-sky.webp',texture=>{texture.colorSpace=THREE.SRGBColorSpace;texture.mapping=THREE.EquirectangularReflectionMapping;this.sky=texture;if(this.root.visible)this.scene.background=texture;},undefined,()=>{});
+    loader.load('./art/alien-ground.webp',texture=>{texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(14,14);texture.anisotropy=2;
+      const ground=new THREE.Mesh(new THREE.PlaneGeometry(110,110),new THREE.MeshToonMaterial({map:texture,gradientMap:this.ramp}));ground.rotation.x=-Math.PI/2;ground.position.y=.006;this.root.add(ground);
+    },undefined,()=>{});
+  }
+  installGrove(source){
+    if(this.generatedGrove)return;this.generatedGrove=true;
+    for(const m of this.groveFallback)m.visible=false;
+    for(let i=this.solids.length-1;i>=0;i--)if(this.solids[i].kind==='mushroom')this.solids.splice(i,1);
+    // Instances share geometry, textures and materials. Cluster bases stay out
+    // of the central duel lane and agree with the movement collision layout.
+    const spots=[[-13,-10,1,0], [16,-16,1.15,-.7], [-27,-23,1.35,.6], [28,7,.95,-1.2], [-24,23,1.1,.4], [18,30,1.25,-.5]];
+    for(const [x,z,scale,angle] of spots){const clone=source.clone(true);clone.position.set(x,0,z);clone.scale.setScalar(scale);clone.rotation.y=angle;this.root.add(clone);const bounds=new THREE.Box3().setFromObject(clone),size=bounds.getSize(new THREE.Vector3());this.solids.push({x,z,w:Math.min(8,size.x*.7),d:Math.min(7,size.z*.7)})}
   }
   update(time){if(!this.root.visible)return;this.portals.forEach((p,i)=>{p.rotation.z=time*(.18+i*.035)})}
 }
