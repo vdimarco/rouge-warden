@@ -274,9 +274,9 @@ export function rollCredits(opts) {
   const note = opts.note ?? 'No bears were harmed. Gabe is fine.';
   roll.innerHTML = '';
   roll.append(res
-    ? el('div', 'blk head', `<h1>CRIMSON <span>ROUGE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
+    ? el('div', 'blk head', `<h1>CRIMSON <span>ROGUE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
       <p class="result">${esc(res.kanji || '')}</p><p class="won">${esc(res.title || '')}</p>${res.stats ? `<p class="stats">${esc(res.stats)}</p>` : ''}`)
-    : el('div', 'blk head', `<h1>CRIMSON <span>ROUGE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
+    : el('div', 'blk head', `<h1>CRIMSON <span>ROGUE</span></h1><p class="jp">赤 い 岩 の 山 で</p>
       <p class="result">勝</p><p class="won">THE BEAR SLEEPS</p>
       <p class="stats">${mmss} · ${stats.parries} DEFLECTS · ${stats.deaths} ${stats.deaths === 1 ? 'DEATH' : 'DEATHS'}</p>`));
   if (opts.blocks) {
@@ -369,3 +369,4 @@ export function rollCredits(opts) {
     },
   };
 }
+

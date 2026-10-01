@@ -1,4 +1,4 @@
-// Crimson Rouge: a third-person boss fight in the ink-dark hills of Sedona.
+// Crimson Rogue: a third-person boss fight in the ink-dark hills of Sedona.
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
@@ -1386,3 +1386,4 @@ window.__crimson = {
   get depth() { return [camera.near, camera.far]; }, get focusMode() { return focusMode; },
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };
+
