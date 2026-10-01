@@ -2,3 +2,5 @@
 - [x] Add shallow transparency, moving light, and ripple distortion.
 - [ ] Run low/high browser rendering and inspect the result.
 - [ ] Check the result on a physical phone.
+- [x] Strengthen jade depth colour, live reflections, caustic scale/contrast, and ripple distortion after user feedback.
+- [ ] Compare matching daylight frames and five seconds of motion in portrait and landscape on low/high quality.
