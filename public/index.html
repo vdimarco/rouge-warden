@@ -88,6 +88,7 @@ button { font: inherit; color: inherit; }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
 .cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
+.cab.tidebreak { --c1: #154b54; --c2: #a6f2d5; --glow: rgba(100, 240, 220, 0.45); }
 .cab.vr { --c1: #4a1f5c; --c2: #ff8a3a; --glow: rgba(255, 138, 58, 0.5); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
@@ -293,6 +294,16 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab tidebreak" data-game="tidebreak" data-url="/tidebreak/" aria-label="Monster Mash: folklore realm MOBA">
+        <div class="marquee"><div><b>MONSTER MASH</b><small>THE VEIL IS THIN</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="tidebreak/art/mothman.webp" alt="Mothman spreads his wings">
+          <div class="osd"><p class="hi">3 VS 3 · SHIFTING REALMS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Monster Mash"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Monster Mash"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
       <article class="cab vr" data-game="vr" data-url="/vr/" aria-label="In Full Swing: a VR game for Meta Quest">
