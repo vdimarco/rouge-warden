@@ -255,7 +255,7 @@ export function createTalk(S, cast) {
   // is this voice (from S.ui.voices) still speaking? (the box holds its ▼ until it is done)
   function talking(v) {
     if (!v) return false;
-    if (v.audio?.source) return !v.audio.done;
+    if (v.audio) return !v.audio.pending && !v.audio.done;
     const tr = speechTrack(v.text);
     if (tr.silent) return false;
     return voiceTime() - v.t0 < endOf(v, tr);
@@ -268,10 +268,11 @@ export function createTalk(S, cast) {
     const voices = (S.ui && S.ui.voices) || [];
     for (const v of voices) {
       if (!v || !v.text) continue;
+      if (v.audio && (v.audio.pending || v.audio.done)) continue;
       const tr = speechTrack(v.text);
       if (tr.silent) continue;
-      const audio = v.audio?.source ? v.audio : null;
-      for (const a of actorsOf(v.who)) want.set(a, { tr, t: audio ? audio.elapsed / audio.duration * tr.dur : now - v.t0, end: audio ? tr.dur : endOf(v, tr), audio });
+      const audio = v.audio || null;
+      for (const a of actorsOf(v.who)) want.set(a, { tr, t: audio ? audio.pending ? 0 : audio.elapsed / Math.max(.01, audio.duration) * tr.dur : now - v.t0, end: audio ? tr.dur : endOf(v, tr), audio });
     }
     for (const [a, s] of speakers) if (!want.has(a) && s.manual) want.set(a, { tr: s.tr, t: now - s.t0, end: s.tr.dur, manual: s });
     // step every mouth: speakers toward their shape, the rest shut

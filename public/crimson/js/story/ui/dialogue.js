@@ -26,7 +26,7 @@ export function createDialogue(U) {
   // the voices being spoken now, for the talking mouths (cast/talk.js): the box's line and the subtitle's.
   // {who, text, t0, cut (the box line was skipped to its end), until (the subtitle goes)}
   let boxVoice = null, subVoice = null;
-  const speaking = (v) => !!(v && S.cast && S.cast.talk && S.cast.talk.talking(v));
+  const speaking = (v) => !!(v && (v.audio ? !v.audio.done : S.cast && S.cast.talk && S.cast.talk.talking(v)));
 
   /* ---------------- the modal box ---------------- */
   function showGlyph(who) { const g = U.glyph(who); pf.classList.toggle('glyph', !!g); pf.classList.toggle('none', !g); img.removeAttribute('src'); gl.textContent = g; }
@@ -56,7 +56,7 @@ export function createDialogue(U) {
   }
   function advance() {
     if (!sayH) return;
-    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; if (boxVoice) boxVoice.cut = S.timers.now; S.audio?.stopVoice?.(); return; }
+    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; return; }
     U.blip('move');
     nextLine();
   }
@@ -148,7 +148,7 @@ export function createDialogue(U) {
       const t = S.timers.now;
       if (typing && sayH) {
         const n = Math.min(typing.text.length, Math.floor((t - sayH.shownAt) * CPS));
-        if (n !== typing.n) { typing.n = n; ln.textContent = typing.text.slice(0, n); if (n % 4 === 1) U.blip('type'); }
+        if (n !== typing.n) { typing.n = n; ln.textContent = typing.text.slice(0, n); if (n % 4 === 1 && !boxVoice?.audio) U.blip('type'); }
         if (n >= typing.text.length) typing = null;
       }
       // the box waits for input (▼) once the words are typed and the speaker has finished saying them
@@ -168,3 +168,4 @@ export function createDialogue(U) {
     },
   };
 }
+

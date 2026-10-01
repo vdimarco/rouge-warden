@@ -45,7 +45,7 @@ export function init(S) {
   };
 
   S.audio = {
-    beginCinematic: () => cinematic.begin(),
+    beginCinematic: (scene) => cinematic.begin(scene),
     endCinematic: () => cinematic.end(),
     speak: (who, text) => cinematic.speak(who, text),
     stopVoice: () => cinematic.stopVoice(),
@@ -118,3 +118,4 @@ export function init(S) {
     get wind() { return A && A.wind ? { freq: A.wind.freq, level: A.wind.level } : null; },
   };
 }
+
