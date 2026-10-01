@@ -276,8 +276,11 @@ function nthActionLines(rows) {
 }
 
 async function open(browser, url, opts = {}) {
+  const viewport = opts.width && opts.height
+    ? { width: opts.width, height: opts.height }
+    : (opts.viewport || { width: 390, height: 844 });
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport,
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 1,

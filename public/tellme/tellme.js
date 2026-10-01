@@ -1,4 +1,4 @@
-// Tell Me — Indian poker against Bram and Fennel. Plain ES, no dependencies.
+// Tell Me. Indian poker against Bram and Fennel. Plain ES, no dependencies.
 // Faces leak the player's card. Chips are play chips only.
 // Dialogue uses createLinePicker (its own mulberry32 per situation) and never draws from rng.
 // Face honesty rolls stay on rng. They are the spec's per-hand draws.
