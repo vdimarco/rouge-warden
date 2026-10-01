@@ -21,6 +21,12 @@ const base = { build: 1, h: 1.78, f: false, skin: C.skin2, hair: { style: 'short
   shoes: C.boots, sole: C.tire, hat: null, glasses: null, bolo: false, face: { smile: 0.2, brows: 1 }, glow: 0 };
 const V = (o) => Object.freeze({ ...base, ...o, face: { ...base.face, ...(o.face || {}) } });
 export const BODIES = {
+  police: [V({ h: 1.81, build: 1.06, skin: C.skin2, hair: { style: 'short', color: C.hairBrown },
+    shirt: 0x24394e, sleeves: 'long', pants: 0x182636, shoes: C.boots, belt: 0x181818,
+    glasses: C.sunglasses, face: { smile: 0, brows: 1.1 } })],
+  sheriff: [V({ h: 1.84, build: 1.1, skin: C.skin3, hair: { style: 'short', color: C.hairBrown }, moustache: C.hairBrown,
+    shirt: 0xc4ae79, sleeves: 'long', pants: 0x344737, shoes: C.boots, belt: 0x30251e,
+    hat: { kind: 'cowboy', color: C.cowboyHat, band: C.woodDark }, glasses: C.sunglasses, face: { smile: 0, brows: 1.2 } })],
   // FBI Special Agent Nora Vance: navy suit, white shirt, hair up
   vance: [V({ f: true, h: 1.72, build: 0.9, skin: C.skin3, hair: { style: 'bun', color: C.hairBlack }, shirt: C.shirtWhite, sleeves: 'long', jacket: { color: C.fbiNavy }, pants: C.fbiNavy, shoes: C.shirtBlack, face: { smile: 0, brows: 1.2, lashes: true } })],
   // Harlan Voss, the Smiling Man: cream suit, bolo tie, pale hat, always smiling
@@ -83,12 +89,29 @@ function paintFace(g, F, s) {
   const sk = new THREE.Color(s.skin), dark = '#1a1210', shade = '#' + sk.clone().multiplyScalar(0.72).getHexString();
   const hairC = '#' + new THREE.Color(s.hair.color).getHexString(), br = s.face.brows;
   g.lineCap = 'round';
+  if (s === BODIES.sheriff[0] || BODIES.civA.includes(s) || BODIES.civB.includes(s)) {
+    const contour = g.createRadialGradient(X(0.48), Y(0.43), 3, X(0.5), Y(0.5), F.s * 0.48);
+    contour.addColorStop(0, 'rgba(255,235,210,0.16)'); contour.addColorStop(0.6, 'rgba(90,45,30,0)'); contour.addColorStop(1, 'rgba(70,30,20,0.3)');
+    g.fillStyle = contour; g.fillRect(F.x, F.y, F.s, F.s);
+    for (const side of [-1, 1]) {
+      g.fillStyle = 'rgba(110,47,38,0.16)'; g.beginPath(); g.ellipse(X(0.5 + side * 0.2), Y(0.59), 5, 3, 0, 0, Math.PI * 2); g.fill();
+    }
+  }
   // brows
   g.strokeStyle = s.hair.style === 'bald' ? shade : hairC; g.lineWidth = 2.2 * br;
   for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(X(0.5 + sd * 0.07), Y(0.4 - 0.01 * br)); g.lineTo(X(0.5 + sd * 0.19), Y(0.39 + (s.face.smile > 0.8 ? -0.01 : 0.01) * br)); g.stroke(); }
   // eyes: dark almonds (sunglasses are geometry, drawn over)
   g.fillStyle = dark;
   for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(X(0.5 + sd * 0.13), Y(0.47), 2.6, s.face.smile > 0.8 ? 1.2 : 1.9, 0, 0, Math.PI * 2); g.fill(); }
+  if (BODIES.civA.includes(s) || BODIES.civB.includes(s) || s === BODIES.sheriff[0]) {
+    for (const side of [-1, 1]) {
+      const eyeX = X(0.5 + side * 0.13), eyeY = Y(0.47);
+      g.fillStyle = '#e2dcd2'; g.beginPath(); g.ellipse(eyeX, eyeY, 2.1, 1.15, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = s.skin === C.skin1 ? '#647c80' : '#684631'; g.beginPath(); g.arc(eyeX, eyeY, 1.05, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#181515'; g.beginPath(); g.arc(eyeX, eyeY, 0.55, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff6df'; g.fillRect(eyeX - 0.55, eyeY - 0.6, 0.55, 0.55);
+    }
+  }
   if (s.face.lashes) { g.strokeStyle = dark; g.lineWidth = 1; for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(X(0.5 + sd * 0.17), Y(0.46)); g.lineTo(X(0.5 + sd * 0.2), Y(0.445)); g.stroke(); } }
   // nose: a soft shadow
   g.strokeStyle = shade; g.lineWidth = 1.6;

@@ -41,6 +41,8 @@ export function createHud(U) {
   for (let i = 0; i < 10; i++) make('i', 'seat', seatsEl);
   const boss = make('div', 'sBoss hidden', root, `<p class="nm"><span></span><small></small></p><div class="bar"><i class="gh"></i><i class="fl"></i><span class="tk"></span></div><div class="post"><i></i></div>`);
   boss.id = 'sboss';
+  const wanted = make('div', 'sWanted hidden', root, '<b></b><span></span><progress max="6" value="0" aria-label="Arrest progress"></progress>');
+  wanted.id = 'sWanted'; wanted.setAttribute('role', 'status');
 
   // state
   const st = {
@@ -249,6 +251,18 @@ export function createHud(U) {
     const riding = !!(S.drive && S.drive.riding) && (mode === 'drive' || mode === 'passenger');
     const menu = S.mode === 'menu';
     root.classList.toggle('cineOn', cine);
+    const law = S.law?.state;
+    show(wanted, play && world && !photo && !!law?.stars);
+    if (law?.stars) {
+      const stars = '★'.repeat(law.stars) + '☆'.repeat(5 - law.stars);
+      const rating = wanted.querySelector('b'); if (rating.textContent !== stars) rating.textContent = stars;
+      wanted.classList.toggle('searching', law.status === 'search');
+      const message = law.arrest > 0 ? 'BUSTING — MOVE!' : law.status === 'dispatch' ? '911 • UNITS INBOUND'
+        : law.status === 'search' ? `SEARCHING • EVADE ${Math.ceil(18 + law.stars * 4 - law.search)}s`
+        : law.stars >= 3 ? 'AIR SUPPORT • PURSUIT' : 'COUNTY POLICE • PURSUIT';
+      const status = wanted.querySelector('span'); if (status.textContent !== message) status.textContent = message;
+      const progress = wanted.querySelector('progress'); progress.value = law.arrest; progress.hidden = law.arrest <= 0;
+    }
 
     // objective, timer, meters
     show(tl, play || menu);

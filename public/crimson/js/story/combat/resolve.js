@@ -3,7 +3,6 @@
 // - receive(att, idx): an enemy's hit window reaches the hero: roll i-frames, unblockables (charge, pipe,
 //   grab), deflect inside the parry window (posture to the attacker), block (ki cost, chip), guard break.
 // - heroHitCheck(): the hero's swing, against every enemy in its arc (cleave: each once per swing).
-// - non-lethal: hp 0 is down (knocked out, then a dazed sit), never dead; the hero at 0 is 'heroDown'.
 import * as THREE from 'three';
 import { TUNE } from '../../moves.js';
 import { angDiff, angleTo, flatDist, breakPosture } from './fighter.js';
@@ -102,7 +101,7 @@ export function createResolve(K) {
   // every enemy in the swing's arc takes the hit once per swing (a Set per swing)
   function heroHitCheck() {
     const H = S.hero, s = H.atk.spec, set = H.atk.cleave, w = WEAPONS[H.weapon] || WEAPONS.fists;
-    let landed = 0;
+    let landed = S.cast.crowd?.strike?.(H, H.atk, s.dmg * w.dmg * H.stats.dmg) || 0;
     for (const f of K.enemies) {
       if (set.has(f) || f.downed || f.tied || f.gone || f.state === 'vanish') continue;
       const d = flatDist(H.pos, f.pos) - f.radius;
@@ -125,6 +124,7 @@ export function createResolve(K) {
     const open = f.state === 'recover' || f.state === 'recoil' || f.state === 'stagger';
     const dmg = s.dmg * w.dmg * H.stats.dmg * (open ? 1.25 : 1);
     f.hp -= dmg;
+    if (f.lawUnit) S.bus.emit('pedestrianCrime', { fatal: f.hp <= 0, pos: f.pos.clone() });
     f.posture = Math.min(f.maxPosture, f.posture + s.post * w.post * TUNE.postureGain * (f.state === 'recoil' ? 1.6 : 1) * (f.postureK || 1));
     f.postureT = 0; f.flinch = 1;
     K.sfx(H.weapon === 'fists' ? 'hit' : 'cut', f.pos);

@@ -33,6 +33,7 @@ export function createDrive(S, V) {
       if (!v || !S.hero) return false;
       if (D.riding === v) return true;
       if (D.riding || v.wrecked || v.traffic) return false;
+      if (v.lawUnit && !v.lawUnit.deputy && !v.lawUnit.stolen) return false;
       seat = clamp(seat | 0, 0, v.seats.length - 1);
       if (v.seats[seat] && v.seats[seat] !== 'hero') {
         if (seat === 0) return false;
@@ -100,6 +101,7 @@ export function createDrive(S, V) {
       v.emit('unseat', { actor, seat: i });
     },
     seatsOf: (v) => (v ? v.seats : []),
+    landingSpot,
     // the hero's vehicle drives itself along `route` (points, a place id or {x,z}); off gives control back
     autopilot(on, route) {
       if (D.auto) { D.auto.stop(); D.auto = null; }

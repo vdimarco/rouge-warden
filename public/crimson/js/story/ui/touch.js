@@ -120,7 +120,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     const c = ctx();
     if (c === 'menu' || p.kind === 'tap') { T.hits.add('use'); T.hits.add('skip'); return; }
     if (c === 'cine') { if (S.film && S.film.active) T.hits.add('skip'); return; }
-    if (c === 'foot' && enemyWithin(ATTACK_R)) T.hits.add('light');
+    if (c === 'foot' && (enemyWithin(ATTACK_R) || civilianWithin(3))) T.hits.add('light');
   }
   function enemyWithin(r) {
     const H = S.hero, E = S.combat && S.combat.enemies; if (!H || !E) return false;
@@ -155,7 +155,11 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     if (c === 'cine') return 'none';
     if (c === 'photo') return 'photo';
     if (c === 'drive') return 'drive';
-    return enemyWithin(COMBAT_R) ? 'combat' : 'explore';
+    return enemyWithin(COMBAT_R) || civilianWithin(3) ? 'combat' : 'explore';
+  }
+  function civilianWithin(radius) {
+    const hero = S.hero;
+    return !!hero && (S.cast.crowd?.list || []).some((person) => !person.dead && Math.abs(person.pos.y - hero.pos.y) < 1.5 && Math.hypot(person.pos.x - hero.pos.x, person.pos.z - hero.pos.z) < radius);
   }
   const hasBear = () => { const H = S.hero, f = S.flags || {}; return !!((H && H.abilities && H.abilities.bearCall) || f.bearCall || f.ability_bearCall || (S.combat && S.combat.bearCall && S.combat.bearCall.unlocked)); };
   const stealthy = () => !!((S.stealth && S.stealth.list && S.stealth.list.length) || (S.hero && S.hero.crouch));

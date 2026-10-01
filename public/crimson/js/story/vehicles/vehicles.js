@@ -9,12 +9,6 @@
 // - Physics: 1/120 s substeps on the story's rdt (never the combat dt, so hitstop leaves vehicles alone),
 //   up to 8 a frame. Vehicles within 60 m of the hero or in a mission get full physics; ambient traffic
 //   farther out moves kinematically on its lane (C7).
-// - People: every 'ai' tick CAST and COMBAT push soft circles {x, z, r, dive(dir), id?} into
-//   S.vehicles.people; physics reads them and empties the list. Anyone in a vehicle's path (the next 2 s)
-//   above 3 m/s is asked to dive clear (dir: a unit {x, z} away from the path); if dive() returns false,
-//   or it is too late, they are a soft wall: the vehicle stops 1.5 m short. No damage, no push, nobody hit.
-//   dive() may be called again on later ticks while the person is still in the path; it must be idempotent.
-//   S.vehicles.sweeps lists each moving vehicle's path ahead {v, x, z, dx, dz, len, hw, speed} for dodging.
 // - Events (per vehicle with v.on, or every vehicle with S.vehicles.on, which adds {v}): 'hit' {other,
 //   speed}, 'bump' {by, speed, bumps}, 'hitProtected' {by, speed, reason}, 'wrecked', plus 'enter', 'exit',
 //   'seat', 'unseat', 'land', 'pit', 'horn', 'noticed', 'raceDone', 'drowned'.
@@ -26,6 +20,8 @@ import { createDrive } from './drive.js';
 import { createDriveCam } from './drivecam.js';
 import { createTraffic } from './traffic.js';
 import { createDrivers } from './drivers.js';
+import { pedestrianContact } from './pedestrian-impact.js';
+import { createLaw } from './law.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
@@ -77,7 +73,7 @@ export function init(S) {
     return v;
   }
   function addDoors(v) {
-    const can = () => !drive.api.riding && !v.wrecked && Math.abs(v.speed) < 3 && S.world.visible && v.enterable;
+    const can = () => !drive.api.riding && !v.wrecked && Math.abs(v.speed) < 3 && S.world.visible && v.enterable && (!v.lawUnit || v.lawUnit.deputy || v.lawUnit.stolen);
     const at = (door) => () => v.doorPoint(door);
     S.interact.add({ id: `getin:${v.id}:driver`, tag: 'vehicles', label: 'GET IN', r: 3.2, mode: 'foot', pos: at('driver'), when: can, act: () => drive.api.enter(v, 0, { door: 'driver' }) });
     S.interact.add({ id: `getin:${v.id}:passenger`, tag: 'vehicles', label: v.seats[0] ? 'RIDE' : 'GET IN', r: 3.2, mode: 'foot', pos: at('passenger'), when: can,
@@ -117,6 +113,7 @@ export function init(S) {
       const sp = v.speed, as = Math.abs(sp); if (as < 0.3 || !P.length) continue;
       const dir = sp > 0 ? 1 : -1;
       for (const p of P) {
+        if (p.dead || (p.hit && S.drive.riding === v && S.drive.heroSeat === 0)) continue;
         const [lx, lz] = v.toLocal(p.x, p.z), r = p.r ?? 0.4;
         if (Math.abs(lx) > v.hw + r + 0.35) continue;
         const along = dir * lz - v.hd - r;
@@ -176,7 +173,12 @@ export function init(S) {
     const P = collectPeople();
     planPeople(phys, P);
     for (let k = 0; k < n; k++) {
-      for (const v of phys) { softStop(v); stepVehicle(S, v, h); }
+      for (const v of phys) {
+        softStop(v); stepVehicle(S, v, h);
+        if (S.drive.riding === v && S.drive.heroSeat === 0) {
+          for (const person of P) if (pedestrianContact(v, person)) person.hit(v);
+        }
+      }
       for (let i = 0; i < phys.length; i++) for (let j = i + 1; j < phys.length; j++) collidePair(S, phys[i], phys[j]);
     }
     // the paths ahead, for anyone who wants to get out of the way
@@ -315,4 +317,5 @@ export function init(S) {
     landingSpot: (v, door) => drive.landingSpot(v, door),
     specs: (kind) => specOf(kind), looks: VAN_LOOKS,
   };
+  createLaw(S);
 }

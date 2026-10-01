@@ -491,4 +491,11 @@ body.stouch.cine .sSubs { max-width: calc(100vw - 32px); bottom: calc(max(3px, 5
   body:not(.stouch) .sPrompt { bottom: calc(76px + var(--sb)); }
   body:not(.stouch) .sSubs { bottom: calc(118px + var(--sb)); }
 }
-
+ .sWanted { position:absolute; right:18px; top:100px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; padding:9px 12px; border-right:3px solid #ff584e; background:rgba(16,20,29,.86); color:#fff1dc; font:700 11px/1.4 sans-serif; letter-spacing:1px; pointer-events:none; max-width:calc(100vw - 36px); }
+ .sWanted b { color:#ffba67; font-size:25px; letter-spacing:5px; }
+ .sWanted.searching { border-color:#73b9f4; }
+ .sWanted.searching b { color:#73b9f4; }
+ .sWanted progress { width:100%; height:7px; accent-color:#ff584e; }
+ @media (max-width:700px) { .sWanted { top:155px; right:10px; padding:6px 8px; font-size:9px; max-width:210px; } .sWanted b { font-size:21px; } }
+ @media (max-height:500px) and (min-width:701px) { .sWanted { top:78px; font-size:9px; padding:5px 8px; } .sWanted b { font-size:20px; } }
+ body.touch .sWanted { top:calc(var(--st) + 110px); left:50%; right:auto; transform:translateX(-50%); font-size:9px; padding:5px 8px; }
