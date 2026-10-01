@@ -1,0 +1,24 @@
+name: Shared creature exports
+on:
+  push:
+    branches: ['codex/shared-procedural-creatures']
+    paths: ['tools/creatures/**', 'scripts/export-creatures.sh', '.github/workflows/creature-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Export original seeded creatures for browser games
+        run: bash scripts/export-creatures.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: procedural-creature-assets
+          path: public/arcade/creatures
+          retention-days: 14
