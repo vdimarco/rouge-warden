@@ -83,6 +83,9 @@ button { font: inherit; color: inherit; }
 .cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
 .cab.olympus { --c1:#124442; --c2:#edc06b; --glow:rgba(237,192,107,.4); }
+.cab.breakthrough { --c1:#3f6650; --c2:#efc574; --glow:rgba(120,190,140,.42); }
+.cab.breakthrough .screen { background:linear-gradient(#9fc3c1 0 55%,#527457 55%); }
+.cab.breakthrough .screen::after { background:linear-gradient(125deg,rgba(255,255,255,.18),transparent 35%); }
 .cab.olympus .screen img.art2 { object-fit:contain; object-position:center; }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
@@ -261,6 +264,16 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab breakthrough" data-game="breakthrough" data-url="/breakthrough/" aria-label="Breakthrough: climate strategy roguelike">
+        <div class="marquee"><div><b>BREAKTHROUGH</b><small>2026 → 2100</small></div></div>
+        <div class="bezel"><div class="screen">
+          <div class="title">BUILD<br>THE<br>FUTURE</div>
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breakthrough"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breakthrough"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
       <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
