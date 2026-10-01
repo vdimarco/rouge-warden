@@ -3,6 +3,7 @@ import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from '
 import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 import { ATTACK_TIMINGS } from './basic-attacks.js';
+import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../arcade/creatures/catalog.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0, skills: ['Night flight', 'Dread wings', 'Blackout'], labels: ['FLY', 'DREAD', 'BLACKOUT'], descriptions: ['Fly over walls and cloak for 2 seconds.', 'Wing blast damages and slows nearby enemies.', 'Cloak and see through cover for 6 seconds. Fear nearby foes.'] },
@@ -20,7 +21,7 @@ function hero(s, team, kind, lane, human = false) {
   return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0], haste: 1, inventory: [], build: BUILDS[kind].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 export function createMatch(kind = 0, seed = 49) {
-  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: [0, 0], winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
+  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
     add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
     for (let lane = 0; lane < 3; lane++) add(s, { kind: 'tower', name: 'Wardstone', team, lane, ...LANES[lane][team ? 3 : 1], hp: 3100, maxHp: 3100, radius: 42, range: 360, damage: 180, rate: 1.05, sprite: 6 });
@@ -49,6 +50,10 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
   if (target.kind === 'core' && s.towers[target.team] === 3) { if (source.player && s.time - (s.lockTip || -10) > 4) { announce(s, 'Rift protected', 'Destroy any enemy wardstone first.'); s.lockTip = s.time; } return; }
   if (target.kind === 'hero' && target.respawn > 0) return;
+  if (target.kind === 'camp') {
+    if (target.leash) return;
+    if (source.team >= 0) provokeNeutral(target, source, s.time);
+  }
   if (kind === 'spell') amount += (source.power || 0) * .55;
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
@@ -92,7 +97,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   else if (target.kind === 'boss') {
     reward(s, source.team, 190, 160); s.objectiveAt = s.time + 65; s.objective = null;
     const lane = source.lane ?? 1, path = source.team ? [...LANES[lane]].reverse() : LANES[lane];
-    add(s, { kind: 'leviathan', name: 'Wild Hunt', team: source.team, ...path[2], lane, waypoint: 3, hp: 4400, maxHp: 4400, radius: 52, range: 190, damage: 350, rate: 1.2, speed: 180, sprite: 8 });
+    add(s, { kind: 'leviathan', name: 'Wild Hunt', team: source.team, ...path[2], lane, waypoint: 3, hp: 4400, maxHp: 4400, radius: 52, range: 190, damage: 350, rate: 1.2, speed: 180, sprite: 8, creatureId: target.creatureId });
     if (source.team === 0) s.stats.leviathans++;
     announce(s, source.team === 0 ? 'The Wild Hunt rides with us' : 'Enemy claimed the Wild Hunt', 'Escort the great beast to their wardstone.');
   } else if (target.kind === 'camp') {
@@ -105,7 +110,7 @@ function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.tea
 function nearest(s, a, range, preferHero = false) {
   let best = null, score = Infinity;
   for (const b of s.units) {
-    if (!hostile(s, a, b) || !canSee(s, a, b)) continue;
+    if (!hostile(s, a, b) || !canSee(s, a, b) || (b.kind === 'camp' && (b.leash || !(b.aggroUntil > s.time)))) continue;
     const d = distance(a, b); if (d > range + b.radius) continue;
     const n = d + (preferHero && b.kind !== 'hero' ? 100 : 0);
     if (n < score) { score = n; best = b; }
@@ -116,7 +121,8 @@ function nearest(s, a, range, preferHero = false) {
 export function autoTarget(s, e, manual = 0) {
   const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= e.range + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
   const chosen = candidates.find(t => t.id === manual); if (chosen) return chosen;
-  const heroes = candidates.filter(t => t.kind === 'hero'), pool = heroes.length ? heroes : candidates;
+  const active = candidates.filter(t => t.kind !== 'camp' || (!t.leash && t.aggroUntil > s.time));
+  const heroes = active.filter(t => t.kind === 'hero'), pool = heroes.length ? heroes : active;
   const previous = pool.find(t => t.id === e.target); if (previous) return previous;
   return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
@@ -244,7 +250,7 @@ function spawnWave(s) {
   s.wave++;
   for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) for (let i = 0; i < 3; i++) {
     const front = LANES[lane][2], base = s.wave === 1 ? { x: front.x, y: front.y + (team ? -1 : 1) * 370 } : BASES[team], siege = i === 2 && s.wave % 3 === 0;
-    add(s, { kind: 'minion', team, lane, x: base.x + (i - 1) * 32, y: base.y + (team ? 1 : -1) * i * 28, waypoint: s.wave === 1 ? 2 : 1, hp: siege ? 780 : 390, maxHp: siege ? 780 : 390, damage: siege ? 88 : 45, rate: 1, range: siege ? 270 : 95, speed: 205, radius: 16, sprite: team ? 5 : 4, siege });
+    add(s, { kind: 'minion', team, lane, x: base.x + (i - 1) * 32, y: base.y + (team ? 1 : -1) * i * 28, waypoint: s.wave === 1 ? 2 : 1, hp: siege ? 780 : 390, maxHp: siege ? 780 : 390, damage: siege ? 88 : 45, rate: 1, range: siege ? 270 : 95, speed: 205, radius: 16, sprite: team ? 5 : 4, siege, creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege ? 'siege' : 'lane').id });
   }
 }
 function followLane(s, e, dt) {
@@ -301,11 +307,14 @@ export function step(s, input = {}, dt = 1 / 60) {
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
   if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += 14; }
   if (!s.objective && s.time >= s.objectiveAt) {
-    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, x: 2400, y: 2400, homeX: 2400, homeY: 2400, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55 });
+    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, x: 2400, y: 2400, homeX: 2400, homeY: 2400, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
     s.objective = boss.id; announce(s, 'The Wild Hunt awakens', 'Slay the great beast. It will fight for your team.');
   }
   for (let i = 0; i < CAMPS.length; i++) if (s.time >= s.campTimers[i] && !s.units.some(e => e.kind === 'camp' && e.camp === i && e.hp > 0)) {
-    const p = CAMPS[i]; add(s, { kind: 'camp', name: i ? 'Lantern spirit' : 'Will-o-wisp', team: -1, camp: i, ...p, homeX: p.x, homeY: p.y, hp: 960, maxHp: 960, damage: 55, range: 170, speed: 120, rate: 1.1, sprite: i ? 9 : 10, radius: 30 });
+    const roll = s.campRolls[i]++, key = `camp:${i}:${roll}`, creature = chooseCreature(s.seed, key, 'neutral');
+    const spot = { x: CAMPS[i].x + creatureHash(s.seed, key + ':x') % 121 - 60, y: CAMPS[i].y + creatureHash(s.seed, key + ':y') % 121 - 60, radius: 30 };
+    resolveBody(s, spot);
+    add(s, { kind: 'camp', name: `${creature.family[0].toUpperCase() + creature.family.slice(1)} guardian`, team: -1, camp: i, ...spot, homeX: spot.x, homeY: spot.y, hp: 960, maxHp: 960, damage: 55, range: 170, speed: 120, rate: 1.1, sprite: i ? 9 : 10, creatureId: creature.id, aggro: 0, aggroUntil: 0 });
   }
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
@@ -351,6 +360,17 @@ export function step(s, input = {}, dt = 1 / 60) {
         let t = s.units.find(x => x.id === e.aggro && s.time < e.aggroUntil && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x));
         if (!t) t = s.units.filter(x => x.team !== e.team && x.team !== -1 && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x) && !['tower', 'core'].includes(x.kind)).sort((a, b) => (a.kind === 'hero') - (b.kind === 'hero') || distance(e, a) - distance(e, b))[0];
         attack(s, e, t);
+      } else if (e.kind === 'camp') {
+        // Neutral guardians retaliate against the attacker. Auto attacks leave resting camps alone.
+        const t = s.units.find(u => u.id === e.aggro), intent = neutralIntent(e, t, s.time);
+        if (intent.mode === 'return' || intent.mode === 'reset') {
+          e.leash = true; e.pendingAttack = null; e.attackAnim = 0;
+          move(s, e, intent.x, intent.y, dt, e.speed * 1.5);
+          e.hp = Math.min(e.maxHp, e.hp + dt * 240);
+          if (intent.mode === 'reset') { e.leash = false; e.aggro = 0; e.aggroUntil = 0; e.hp = e.maxHp; }
+        } else if (intent.mode === 'fight') {
+          attack(s, e, t); if (distance(e, t) > e.range) move(s, e, intent.x, intent.y, dt, e.speed * (e.slow > 0 ? .52 : 1));
+        }
       } else if (e.team === -1) {
         const home = { x: e.homeX, y: e.homeY }, t = nearest(s, e, 330);
         if (distance(e, home) > 390) e.leash = true;
@@ -374,3 +394,4 @@ export function step(s, input = {}, dt = 1 / 60) {
     const a = value(0), b = value(1); finish(s, a === b ? -1 : a > b ? 0 : 1, 'Six minutes. The team with more ward and rift health wins.');
   }
 }
+

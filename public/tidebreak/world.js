@@ -30,7 +30,7 @@ export function closestTrack(p, path) {
   return index;
 }
 export const PORTALS = [{ x: 1300, y: 3270, to: 3 }, { x: 3500, y: 3270, to: 2 }, { x: 1300, y: 1530, to: 1 }, { x: 3500, y: 1530, to: 0 }];
-export const CAMPS = [{ x: 1480, y: 2440 }, { x: 3320, y: 2360 }];
+export const CAMPS = [{ x: 1480, y: 2440 }, { x: 3320, y: 2360 }, { x: 1220, y: 2970 }, { x: 3580, y: 1830 }];
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 // Broad town blocks become smaller groves. Lanes stay open in both realms.
@@ -108,3 +108,4 @@ export function shiftWorld(s) {
   for (const e of s.units) if (e.speed && e.hp > 0) resolveBody(s, e);
   return true;
 }
+
