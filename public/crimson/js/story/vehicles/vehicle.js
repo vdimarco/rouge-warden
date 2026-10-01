@@ -10,13 +10,13 @@
 //   damage += max(0, |v.n| - 3) * 2.2. Vehicle against vehicle (collidePair) trades mass impulses, spins
 //   a car hit in the rear quarter (PIT) and applies the protected-vehicle rules.
 import * as THREE from 'three';
-import { specOf, G, AIR_G, DAMAGE, CONTACT, OFFROAD, steerMax } from './specs.js';
+import { specOf, PATROL_TUNE, G, AIR_G, DAMAGE, CONTACT, OFFROAD, steerMax } from './specs.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const tmpN = new THREE.Vector3();
 
 export function createVehicle(S, id, kind, o, view) {
-  const sp = specOf(kind), half = { w: sp.size.w / 2, l: sp.size.l / 2 };
+  const sp = o.patrol ? { ...specOf(kind), ...PATROL_TUNE } : specOf(kind), half = { w: sp.size.w / 2, l: sp.size.l / 2 };
   const own = new Map();
   const v = {
     id, kind, spec: sp, view, obj: view ? view.obj : null,

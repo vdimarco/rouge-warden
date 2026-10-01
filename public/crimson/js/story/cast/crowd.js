@@ -101,7 +101,7 @@ export function createCrowd(S, cast) {
     else a.play('lib:idle', { fade: 0.4 });
   }
   function hit(p, source) {
-    if (p.dead || S.time - p.hitAt < 0.8) return false;
+    if (p.dead || S.time - p.hitAt < (source.cooldown ?? 0.8)) return false;
     p.hitAt = S.time;
     const speed = source.vel ? Math.hypot(source.vel.x, source.vel.z) : source.speed;
     const damage = source.impactDamage ?? impactDamage(Math.abs(speed));

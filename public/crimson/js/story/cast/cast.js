@@ -483,7 +483,7 @@ export function init(S) {
   // talking mouths (talk.js): every actor that can speak, spawned or arena
   cast.all = () => { const out = [...live]; for (const a of reg.values()) if (!live.has(a)) out.push(a); return out; };
   const talk = cast.talk = createTalk(S, cast);
-  cast.crowd = { update: (rdt, focus) => crowd.update(rdt, focus), scatter: (x, z, r) => crowd.scatter(x, z, r), strike: crowd.strike, setDensity: (k) => crowd.setDensity(k), get list() { return crowd.list; }, get density() { return crowd.density; } };
+  cast.crowd = { update: (rdt, focus) => crowd.update(rdt, focus), scatter: (x, z, r) => crowd.scatter(x, z, r), strike: crowd.strike, hit: crowd.hit, setDensity: (k) => crowd.setDensity(k), get list() { return crowd.list; }, get density() { return crowd.density; } };
   cast.followers = { add: (a, o) => followers.add(a, o), remove: (a) => followers.remove(a), board: (v) => followers.board(v), get list() { return followers.list; } };
 
   /* ---------- phases ---------- */

@@ -62,7 +62,7 @@ export function createLaw(S) {
     }
     if (!pose) return;
     const sheriff = state.stars >= 2 && units.length % 2 === 1;
-    const vehicle = S.vehicles.spawn('suv_fbi', { pos: pose, yaw: pose.yaw, tint: sheriff ? 0xc4ae79 : 0xf1eee4, siren: true, enterable: true });
+    const vehicle = S.vehicles.spawn('suv_fbi', { pos: pose, yaw: pose.yaw, tint: sheriff ? 0xc4ae79 : 0xf1eee4, siren: true, enterable: true, patrol: true });
     const unit = { vehicle, sheriff, target: null, search: false, deputy: null, stolen: false, parking: false, group: `law:${vehicle.id}`, dispose: label(vehicle, sheriff) };
     vehicle.lawUnit = unit; vehicle.seats[0] = 'officer';
     vehicle.on('enter', ({ who, seat }) => {
@@ -73,7 +73,7 @@ export function createLaw(S) {
       toast('PATROL VEHICLE STOLEN — COUNTY ALERT');
     });
     units.push(unit);
-    S.drivers.pursue(vehicle, target(), { ram: true, max: 36, speed: 31 + state.stars });
+    S.drivers.pursue(vehicle, target(), { ram: true, max: 46, speed: 38 + state.stars, latA: 9.5, decel: 10 });
     unit.target = target();
   }
   function makeHelicopter() {
@@ -157,7 +157,8 @@ export function createLaw(S) {
           const door = S.drive.landingSpot(vehicle, 'driver');
           if (door) {
             unit.deputy = S.combat.spawn('driver', { pos: door, cast: unit.sheriff ? 'sheriff' : 'police', group: unit.group });
-            unit.deputy.lawUnit = unit; unit.deputy.speed = 4.8;
+            unit.deputy.lawUnit = unit; unit.deputy.speed = 5.2; unit.deputy.ringR = 5 + units.indexOf(unit);
+            S.cast.props.attach(unit.deputy.a, 'pistol');
             vehicle.seats[0] = null;
           }
         }
@@ -214,14 +215,14 @@ export function createLaw(S) {
       if (unit.target !== suspect || unit.search !== searching) {
         unit.search = searching; unit.target = suspect;
         if (searching) S.drivers.route(unit.vehicle, { x: lastKnown.x, z: lastKnown.z }, { speed: 20 });
-        else S.drivers.pursue(unit.vehicle, suspect, { ram: !!S.drive.riding, max: 36, speed: 31 + state.stars });
+        else S.drivers.pursue(unit.vehicle, suspect, { ram: !!S.drive.riding, max: 46, speed: 38 + state.stars, latA: 9.5, decel: 10 });
       }
     }
-    if (!siren && S.audio) siren = S.audio.loop('siren');
+    if ((!siren || siren.silent) && S.audio) siren = S.audio.loop('siren');
     const nearest = units.reduce((distance, unit) => Math.min(distance, unit.vehicle.pos.distanceTo(suspect.pos)), Infinity);
     siren?.set({ level: Math.max(0, 1 - nearest / 180) });
-    if (helicopter && !rotorSound && S.audio) rotorSound = S.audio.loop('helicopter');
-    rotorSound?.set({ level: helicopter ? Math.max(0, 1 - helicopter.pos.distanceTo(suspect.pos) / 150) : 0 });
+    if (helicopter && (!rotorSound || rotorSound.silent) && S.audio) rotorSound = S.audio.loop('helicopter');
+    rotorSound?.set({ level: helicopter ? Math.max(0, 1 - helicopter.pos.distanceTo(suspect.pos) / 240) : 0 });
   }, 40);
   S.bus.on('start', reset); S.bus.on('exit', reset);
   S.register('hud', () => {

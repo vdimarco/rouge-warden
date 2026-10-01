@@ -228,7 +228,9 @@ export function init(S) {
     lastVariant = post.variant(P.ink <= 0.002 ? 'COLOR' : P.ink >= 0.998 ? 'INK' : 'TRANSITION');
     // fog, and the background under it (the sky covers it, but a cleared pixel must match)
     const t = tierOf(S.q), view = t.view.day + (t.view.night - t.view.day) * clamp01(P.fogView);
-    const far = Math.min(P.fogFar, view), near = Math.min(P.fogNear * Math.min(1, view / 1100 + 0.25), far * 0.6);
+    const far = Math.min(P.fogFar, view);
+    const baseNear = P.fogNear * Math.min(1, view / 1100 + 0.25);
+    const near = Math.min(Math.max(baseNear, far * 0.55 * (1 - clamp01(P.fogView))), far * 0.6);
     storyFog.color.setRGB(P.fogColor[0], P.fogColor[1], P.fogColor[2]); storyFog.near = near; storyFog.far = far;
     storyBg.copy(storyFog.color);
     if (scene.fog !== storyFog) scene.fog = storyFog;

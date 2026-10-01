@@ -267,6 +267,7 @@ export function createFoes(K) {
         if (f.alert) { f.state = 'idle'; f.t = 0; f.cooldown = Math.max(f.cooldown, 0.6); break; } // told to fight
         K.stealth.patrol(f, dt); move = f.walk || 0; moveDir = f.walkDir ?? f.face; break;
       case 'idle': {
+        if (f.gunTell > 0) { turn(f, toP, 5, dt); A.play('lib:aim', { fade: 0.08 }); break; }
         if (K.bosses.check(f)) break;
         if (heroOut) { A.play(f.idleClip, { fade: 0.3 }); f.cooldown = Math.max(f.cooldown, 0.8); if (dist < 3) { move = -1.2; } break; }
         turn(f, toP, f.boss ? 4.2 : 5, dt);

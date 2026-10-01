@@ -155,7 +155,7 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
     if (c === 'cine') return 'none';
     if (c === 'photo') return 'photo';
     if (c === 'drive') return 'drive';
-    return enemyWithin(COMBAT_R) || civilianWithin(3) ? 'combat' : 'explore';
+    return S.arsenal?.ranged || enemyWithin(COMBAT_R) || civilianWithin(3) ? 'combat' : 'explore';
   }
   function civilianWithin(radius) {
     const hero = S.hero;
@@ -199,6 +199,9 @@ export function createTouch(U, { hud, mini, dlg, cards }) {
       if (!on) { if (ptrs.size || T.held.size) releaseAll(); cur = 'none'; }
       else cur = forced || auto();
       const want = on ? wanted(cur) : new Set();
+      for (const [id, label] of [['cut', S.arsenal?.ranged ? 'FIRE' : 'CUT'], ['guard', S.arsenal?.ranged ? 'AIM' : 'GUARD']]) {
+        btns[id].el.querySelector('small').textContent = label; btns[id].el.setAttribute('aria-label', label);
+      }
       const key = `${cur}|${[...want].join(',')}`;
       if (key !== lastKey) {
         lastKey = key;

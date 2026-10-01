@@ -121,7 +121,7 @@ export function createHero(K) {
       buf.parry = -9;
       p.parryPresses = p.parryPresses.filter((t) => now - t < 1.0); p.parryPresses.push(now);
       p.parryT = now; p.state = 'guard'; p.t = 0; p.atk = null;
-      if (H.actor) H.actor.play('ronin:guard', { speed: 0.35, fade: 0.06 });
+      if (H.actor) H.actor.play(WEAPONS[H.weapon]?.ranged ? 'lib:aim' : 'ronin:guard', { speed: 0.35, fade: 0.06 });
     }
     if (!canCancel) return;
     if (fresh('canteen') && p.state !== 'attack') {
@@ -133,6 +133,7 @@ export function createHero(K) {
       }
       K.toast(p.canteen > 0 ? 'LIFE IS FULL' : 'THE CANTEEN IS EMPTY');
     }
+    if (WEAPONS[H.weapon]?.ranged) { buf.light = buf.heavy = -9; return; }
     const broken = K.tokens.brokenNear(p.pos, 5);
     if (fresh('light') && p.st > 0) {
       buf.light = -9;
@@ -199,19 +200,19 @@ export function createHero(K) {
     const a = H.actor;
     switch (p.state) {
       case 'move': {
-        H.sprint = !H.crouch && moving && dodgeHeldT > 0.3 && p.st > 0;
+        H.sprint = !H.crouch && moving && (In.held('sprint') || dodgeHeldT > 0.3) && p.st > 0;
         speed = want.length() * p.stats.speed * (H.crouch ? 0.4 : H.sprint ? 1.55 : 1);
         if (speed > 0.1) p.face += angDiff(p.face, Math.atan2(want.x, want.z)) * Math.min(1, dt * 16);
         else if (lock) p.face += angDiff(p.face, toLock) * Math.min(1, dt * 10);
         const out = p.t < 0.2 ? 0.24 : 0.18;
-        a.play(H.crouch ? 'lib:crouch' : fight ? (H.weapon === 'fists' ? 'gabe:idle' : 'ronin:idle') : 'idle', { fade: out + 0.06 });
-        mv(a, p.speedNow, { crouch: H.crouch ? 1 : 0, upper: !fight });
+        a.play(WEAPONS[H.weapon]?.ranged ? 'lib:aim' : H.crouch ? 'lib:crouch' : fight ? (H.weapon === 'fists' ? 'gabe:idle' : 'ronin:idle') : 'idle', { fade: out + 0.06 });
+        mv(a, p.speedNow, { crouch: H.crouch ? 1 : 0, upper: !fight && !WEAPONS[H.weapon]?.ranged });
         if (H.sprint) { p.st = Math.max(0, p.st - 6 * dt); p.stDelay = 0.3; }
         break;
       }
       case 'guard':
         speed = want.length() * p.stats.speed * 0.4;
-        p.face += angDiff(p.face, lock ? toLock : K.tokens.nearestFacing(p) ?? p.face) * Math.min(1, dt * 10);
+        p.face += angDiff(p.face, WEAPONS[H.weapon]?.ranged ? K.cam.yaw : lock ? toLock : K.tokens.nearestFacing(p) ?? p.face) * Math.min(1, dt * 10);
         mv(a, p.speedNow, { upper: false });
         if (!parryHeld && p.t > 0.12) { p.state = 'move'; p.t = 0; }
         break;

@@ -19,6 +19,7 @@ export const SUBSTEP = 1 / 120; // fixed physics substep
 export const MAX_SUBSTEPS = 8;
 
 const grip = (asphalt, dirt, off) => Object.freeze({ asphalt, dirt, rock: off + 0.5, sand: off - 0.6, scrub: off, water: 2.2 });
+export const PATROL_TUNE = Object.freeze({ top: 46, offTop: 27, dirtTop: 35, accel: 7.4, brake: 13.5, drag: 0.0025, steerV: 15, steerRate: 3.8, grip: grip(12.5, 8, 6.8) });
 
 export const SPECS = Object.freeze({
   van: Object.freeze({

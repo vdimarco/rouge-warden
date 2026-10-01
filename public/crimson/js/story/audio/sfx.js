@@ -11,6 +11,17 @@ export function defineAll(A) {
   if (A.defs.horn) return; // once per page
   const tone = (t, type, f0, f1, peak, dec, a, out) => A.tone(t, type, f0, f1, peak, dec, a, out);
   const hit = (t, type, freq, q, peak, dec, sweep, out) => A.noiseHit(t, type, freq, q, peak, dec, sweep, out);
+  for (const [name, pitch, gain, decay] of [['pistol', 160, 0.35, 0.16], ['goldenEagle', 95, 0.5, 0.24], ['ak47', 210, 0.28, 0.11]]) {
+    A.define(name, (context, time, output) => {
+      hit(time, 'highpass', 900, 0.7, gain, decay, 0, output);
+      tone(time, 'triangle', pitch, 45, gain, decay, 0.002, output);
+    });
+  }
+  A.define('bearSpray', (context, time, output) => hit(time, 'bandpass', 2400, 0.6, 0.18, 0.22, 0, output));
+  A.define('reload', (context, time, output) => {
+    hit(time, 'highpass', 1600, 0.8, 0.1, 0.05, 0, output);
+    hit(time + 0.22, 'highpass', 2100, 0.8, 0.13, 0.06, 0, output);
+  });
   const noiseSrc = (ctx, t, dur) => { const s = ctx.createBufferSource(); s.buffer = A.noise; s.loop = true; s.start(t, Math.random() * 1.5); if (dur) s.stop(t + dur); return s; };
   const env = (g, t, a, peak, hold, rel) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel); };
   for (const name of ['siren', 'helicopter']) A.defineLoop(name, (context, output) => {
@@ -20,10 +31,12 @@ export function defineAll(A) {
     voice.type = air ? 'triangle' : 'sine'; voice.frequency.value = air ? 65 : 750;
     modulator.frequency.value = air ? 19 : 0.8; depth.gain.value = air ? 38 : 300;
     volume.gain.value = 0;
-    modulator.connect(depth); depth.connect(voice.frequency); voice.connect(volume); volume.connect(output);
+    const pulse = context.createGain(); pulse.gain.value = air ? 0.6 : 1;
+    modulator.connect(depth); depth.connect(voice.frequency); voice.connect(pulse); pulse.connect(volume); volume.connect(output);
+    const pulseDepth = context.createGain(); pulseDepth.gain.value = air ? 0.38 : 0; modulator.connect(pulseDepth); pulseDepth.connect(pulse.gain);
     voice.start(); modulator.start();
     return {
-      set(options) { volume.gain.setTargetAtTime(Math.max(0, Math.min(1, options.level ?? 0)) * (air ? 0.16 : 0.09), context.currentTime, 0.15); },
+      set(options) { volume.gain.setTargetAtTime(Math.max(0, Math.min(1, options.level ?? 0)) * (air ? 0.45 : 0.09), context.currentTime, 0.15); },
       stop(fade = 0.2) { volume.gain.setTargetAtTime(0, context.currentTime, Math.max(0.01, fade / 3)); voice.stop(context.currentTime + fade + 0.1); modulator.stop(context.currentTime + fade + 0.1); },
     };
   });

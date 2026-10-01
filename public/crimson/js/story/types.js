@@ -44,7 +44,7 @@ export const PORTRAITS = Object.freeze({
 export const GLYPHS = Object.freeze({ tanktop: '力', fifty: '命', shades: '影', newbalance: '风', redjersey: '速', gabe: '熊', vance: '法', voss: '笑', rattler: '蛇' });
 export const FOE_IDS = Object.freeze(['driver', 'guard', 'boone', 'rattler', 'voss', 'legend']);
 export const LEGEND_IDS = Object.freeze(['javelina', 'vulture', 'gila', 'tarantula']); // E9: 'legend' foes, one per cairn
-export const WEAPON_IDS = Object.freeze(['fists', 'foamKatana', 'cue', 'stool', 'staff']);
+export const WEAPON_IDS = Object.freeze(['fists', 'foamKatana', 'cue', 'stool', 'staff', 'pistol', 'goldenEagle', 'ak47', 'katana', 'baseballBat', 'bearSpray']);
 export const ABILITIES = Object.freeze(['bearCall']);
 export const EVIDENCE = Object.freeze(['face', 'place', 'date', 'link']);
 export const LOOKS = Object.freeze(['ARENA', 'COMIC', 'DAY', 'DUSK', 'NIGHT', 'DAWN', 'MEMORY', 'MEMORY_NIGHT', 'INTERIOR', 'HANGOVER', 'VORTEX', 'DEEP_INK']);
@@ -55,7 +55,7 @@ export const VEHICLE_KINDS = Object.freeze(['van', 'jeep', 'suv', 'suv_fbi', 'pi
 export const VAN_LOOKS = Object.freeze(['noBumper', 'tapedWindows', 'noMirror', 'justMarried']);
 export const SURFACES = Object.freeze(['asphalt', 'dirt', 'rock', 'sand', 'water', 'scrub']);
 export const CARD_KINDS = Object.freeze(['chapter', 'time', 'title', 'text', 'pass', 'fail', 'error', 'loading']);
-export const INPUT_ACTIONS = Object.freeze(['move', 'look', 'light', 'heavy', 'parry', 'dodge', 'canteen', 'lock', 'use', 'crouch', 'camera', 'bearcall', 'map', 'pause', 'music', 'gas', 'brake', 'handbrake', 'horn', 'lookback', 'exit', 'skip', 'shutter', 'zoom']);
+export const INPUT_ACTIONS = Object.freeze(['move', 'look', 'light', 'heavy', 'parry', 'dodge', 'sprint', 'canteen', 'lock', 'use', 'crouch', 'camera', 'bearcall', 'map', 'pause', 'music', 'gas', 'brake', 'handbrake', 'horn', 'lookback', 'exit', 'skip', 'shutter', 'zoom', 'weaponNext', 'reload', 'weapon1', 'weapon2', 'weapon3', 'weapon4', 'weapon5', 'weapon6', 'weapon7']);
 export const INPUT_CONTEXTS = Object.freeze(['foot', 'drive', 'photo', 'menu', 'cine']);
 export const TOUCH_SETS = Object.freeze(['combat', 'explore', 'drive', 'photo', 'menu', 'none']);
 // Events on S.bus. 'start' {reason, chapter, mission, step, save}; 'exit'; 'preload' stage ('story'|'transform'|'begin');
