@@ -2,6 +2,8 @@
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
 import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
+import { ATTACK_TIMINGS } from './basic-attacks.js';
+import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0, skills: ['Night flight', 'Dread wings', 'Blackout'], labels: ['FLY', 'DREAD', 'BLACKOUT'], descriptions: ['Fly over walls and cloak for 2 seconds.', 'Wing blast damages and slows nearby enemies.', 'Cloak and see through cover for 6 seconds. Fear nearby foes.'] },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1, skills: ['Loch dive', 'Undertow', 'Flood'], labels: ['DIVE', 'PULL', 'FLOOD'], descriptions: ['Dive forward, heal, and leave a slowing wake.', 'Pull enemies in front of you into biting range.', 'Flood a wide area, damaging foes and healing allies.'] },
@@ -20,7 +22,7 @@ function hero(s, team, kind, lane, human = false) {
 export function createMatch(kind = 0, seed = 49) {
   const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: [0, 0], winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
-    add(s, { kind: 'core', name: 'Elder rift', team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 76, sprite: 7, range: 350, damage: 145, rate: 1.1 });
+    add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
     for (let lane = 0; lane < 3; lane++) add(s, { kind: 'tower', name: 'Wardstone', team, lane, ...LANES[lane][team ? 3 : 1], hp: 3100, maxHp: 3100, radius: 42, range: 360, damage: 180, rate: 1.05, sprite: 6 });
   }
   const p = hero(s, 0, kind, 1, true); s.playerId = p.id;
@@ -79,7 +81,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[2] = Math.max(0, source.cd[2] - 3); }
-    target.burn = null; target.motion = null; target.pendingAttack = null; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
+    target.burn = null; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (source.kind === 'hero') source.kills++; }
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (source.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
@@ -120,18 +122,26 @@ export function autoTarget(s, e, manual = 0) {
 }
 function attack(s, e, t) {
   if (!t || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
-  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = .42; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
+  if (e.kind === 'hero') {
+    if (e.comboTarget !== t.id || s.time > (e.comboUntil || 0)) e.comboNext = 0;
+    e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
+  }
+  const timing = ATTACK_TIMINGS[e.attackVariant || 0];
+  e.attackWindup = e.kind === 'hero' ? timing.windup : .12;
+  e.attackDuration = e.kind === 'hero' ? timing.duration : .46;
+  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
   e.ambushReady = false; e.revealedUntil = s.time + 2.6;
   const multiplier = s.time > 240 ? 1 + (s.time - 240) / 110 : 1;
-  e.pendingAttack = { target: t.id, at: s.time + .12, amount: e.damage * multiplier * (ambush ? 1.75 : 1) };
+  e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1) };
 }
 function resolveAttack(s, e) {
   const pending = e.pendingAttack; if (!pending || s.time < pending.at) return;
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) return;
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) { e.comboNext = 0; e.comboUntil = 0; return; }
+  if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   damage(s, e, t, pending.amount, 'attack');
   if (e.kind === 'hero') {
     const v = e.itemState; v.hits = (v.hits || 0) + 1;
@@ -148,7 +158,7 @@ function resolveAttack(s, e) {
     }
     if (hasItem(e, 'starfall') && v.spells >= 3) { v.spells = 0; for (const other of s.units) if (hostile(s, e, other) && distance(t, other) < 240 && lineOfSight(s, t, other)) damage(s, e, other, 160 + e.power * .4, 'item'); burst(s, t.x, t.y, '#cbb1ff', 240, 'ultimate'); }
   }
-  s.effects.push({ type: e.kind === 'hero' ? 'strike' : 'beam', hero: e.hero, source: e.id, x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .38, maxLife: .38 });
+  s.effects.push({ type: e.kind === 'hero' ? 'strike' : 'beam', hero: e.hero, variant: pending.variant, source: e.id, x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, radius: e.range, color: e.team === 0 ? '#e3f88a' : e.team === 1 ? '#ff8875' : '#ecbc74', life: .38, maxLife: .38 });
 }
 function area(s, e, center, radius, amount, status = {}) {
   for (const t of s.units) if (hostile(s, e, t) && distance(t, center) < radius + t.radius && lineOfSight(s, center, t)) {
@@ -309,7 +319,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp; e.shield = 140; e.waypoint = 1; e.cd = [0, 0, Math.min(6, e.cd[2])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
-      if (distance(e, BASES[e.team]) < 215) heal(s, e, e.maxHp * .24 * dt);
+      if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * .24 * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
       e.shield = Math.max(0, e.shield - dt * 13);
       if (concealed(s, e)) e.ambushReady = true;
