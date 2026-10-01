@@ -1,6 +1,7 @@
 // The tackle in first person: the rod (blank, guides, cork grip, a spinning reel), the line, and the spinner lure.
 // The rod is rebuilt on the CPU each frame along a bent curve: it is small, and it keeps the tip exact for the line.
 import * as THREE from "three";
+import { LineMotion } from "./line-motion.js";
 import { artStyle, storyMaterial } from "./art-style.js";
 import { cartoonGeometry } from "./cartoon-models.js";
 import { ROD } from "./lake.js";
@@ -210,21 +211,12 @@ export class Line {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 3;
     this.pts = Array.from({ length: N }, V3);
+    this.motion = new LineMotion(N);
   }
-  build(from, to, slack, flying, cam, pxAng) {
+  build(from, to, slack, flying, cam, pxAng, dt) {
     const N = this.N, pts = this.pts;
-    const len = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
-    // a flying line is pulled nearly straight by the lure; a slack one bellies down to the water
-    const sag = flying ? len * 0.006 : len * (0.01 + clamp(slack, 0, 1) * 0.22);
-    for (let i = 0; i < N; i++) {
-      // in flight the belly hangs near the rod; the lure end is pulled straight
-      const t = i / (N - 1), tt = flying ? t ** 0.55 : t;
-      const x = lerp(from.x, to.x, t), y0 = lerp(from.y, to.y, t), z = lerp(from.z, to.z, t);
-      let y = y0 - sag * 4 * tt * (1 - tt);
-      // slack line lies on the water instead of sinking with its sag
-      y = Math.max(y, Math.min(y0, 0.012));
-      pts[i].set(x, y, z);
-    }
+    const simulated = this.motion.step(from, to, slack, flying, dt);
+    for (let i = 0; i < N; i++) pts[i].copy(simulated[i]);
     const p = this.mesh.geometry.attributes.position.array, tan = V3(), view = V3(), side = V3();
     for (let i = 0; i < N; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)];

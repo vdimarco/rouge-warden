@@ -344,14 +344,14 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     S.tip.copy(tip);
     return tip;
   }
-  function drawLine() {
+  function drawLine(dt) {
     const Ln = S.line;
     const show = Ln.visible && Ln.from && Ln.to && firstPerson();
     line.mesh.visible = !!show;
-    if (!show) return;
+    if (!show) { line.motion.reset(); return; }
     // if the caller drew the line from the tip we returned, follow the tip as the camera settles this frame
     const from = Math.hypot(Ln.from.x - S.lastTip.x, Ln.from.y - S.lastTip.y, Ln.from.z - S.lastTip.z) < 0.25 ? S.tip : Ln.from;
-    line.build(from, Ln.to, Ln.slack, Ln.flying, camera.position, pxAngle());
+    line.build(from, Ln.to, Ln.slack, Ln.flying, camera.position, pxAngle(), dt);
   }
 
   /* ---------------- lure ---------------- */
@@ -649,7 +649,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     applyCamera();
     rod.mesh.visible = S.rod.visible && firstPerson() && camera.fov > baseFov(S.view.mode) * 0.8;
     if (rod.mesh.visible) poseRod();
-    drawLine();
+    drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
     shadow.visible = shadow.visible && S.view.mode !== "catch";
     spray.u.uScale.value = (S.h * renderer.getPixelRatio()) / (2 * Math.tan(camera.fov * DEG / 2));
