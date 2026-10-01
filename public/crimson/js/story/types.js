@@ -26,14 +26,14 @@ export const CAMERA_PRIO = Object.freeze({ cine: 100, photo: 90, drive: 50, foot
 export const SAVE_KEY = 'crimson.story.v1';
 
 export const CREW_IDS = Object.freeze(['tanktop', 'fifty', 'shades', 'newbalance', 'redjersey']); // CREW index order
-export const CAST_IDS = Object.freeze([...CREW_IDS, 'gabe', 'vance', 'voss', 'rattler', 'boone', 'gang', 'civA', 'civB', 'christian', 'ryu', 'ronin', 'bear']);
+export const CAST_IDS = Object.freeze([...CREW_IDS, 'gabe', 'vance', 'voss', 'rattler', 'boone', 'gang', 'civA', 'civB', 'sheriff', 'police', 'christian', 'ryu', 'ronin', 'bear']);
 export const ARENA_CAST = Object.freeze(['ronin', 'gabe', 'bear']); // registered arena actors: hidden, never disposed (B9)
 export const CORE_CAST = Object.freeze([...CREW_IDS, 'gabe']); // S.ready waits for S.cast.preload(CORE_CAST) (B2)
 // Bodies. null means code-built by cast/bodygen.js (A1) or an arena actor. GLBs load by absolute path.
 export const BODY_URL = Object.freeze({
   tanktop: '/wild/models/crew1.glb', fifty: '/wild/models/crew2.glb', shades: '/wild/models/crew3.glb', newbalance: '/wild/models/crew4.glb', redjersey: '/wild/models/crew5.glb',
   christian: '/wild/models/christian.glb', ryu: '/wild/models/ryu.glb',
-  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: null, civB: null,
+  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: null, civB: null, sheriff: null, police: null,
 });
 export const DONOR_RIG = '/wild/models/crew4.glb'; // the skeleton code-built bodies clone (A1)
 // Dialogue portraits. A missing file shows the glyph card instead (A3). Dana has none, by design.

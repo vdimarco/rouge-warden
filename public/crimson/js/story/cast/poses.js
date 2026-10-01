@@ -16,6 +16,15 @@ const cyc = (sp, o) => TAU / strideRate(sp); // one stride cycle in seconds
 // name -> { dur, loop, keys, pose(t) }. The locomotion cycles are one stride long at a set speed; the
 // driver in locomotion.js does any other speed live.
 export const LIB = {
+  tumble: { dur: 0.7, keys: 19, pose: (time) => {
+    const wave = Math.sin(time / 0.7 * TAU);
+    return { hips: { h: 0.4 }, torso: { x: 0.3 * wave, z: 0.2 }, head: { x: -0.25, y: wave * 0.4 },
+      arms: [{ x: -1.8 + wave, out: 1.1 }, { x: -0.7 - wave, out: 1.3 }], elbows: [0.5, 1.2],
+      legs: [{ x: -0.6 + wave * 0.6, out: 0.4 }, { x: 0.3 - wave * 0.6, out: 0.2 }], knees: [0.8, 1.5], level: 0 };
+  } },
+  dead: { dur: 1, keys: 2, pose: () => ({ hips: { x: -1.52, h: 0.13 }, torso: { z: 0.12 }, head: { y: 0.6 },
+    arms: [{ x: 0.2, out: 1 }, { x: 0.1, out: 0.5 }], elbows: [0.1, 0.7],
+    legs: [{ x: -0.1, out: 0.15 }, { x: -0.2, out: 0.3 }], knees: [0.1, 0.4], level: 0 }) },
   idle: { dur: 4, keys: 17, pose: stand },
   walk: { dur: cyc(1.4), keys: 25, pose: (t, d) => stride(t / d * TAU, 1.4) },
   jog: { dur: cyc(3.2), keys: 21, pose: (t, d) => stride(t / d * TAU, 3.2) },

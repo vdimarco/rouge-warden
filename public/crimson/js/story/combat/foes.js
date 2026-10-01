@@ -206,7 +206,7 @@ export function createFoes(K) {
     f.cooldown = K.arand(0.6, 1.4); f.ringR = K.arand(3.6, 5.8); f.strafe = K.aiRand() < 0.5 ? -1 : 1;
     f.patrol = o.patrol && PATROLS[o.patrol] ? PATROLS[o.patrol] : null; f.patrolI = 0; f.flashlight = !!o.flashlight;
     f.home = new THREE.Vector3(at.x, y, at.z); f.homeYaw = yaw;
-    const a = f.a = S.cast.spawn(def.cast, { pos: { x: at.x, y, z: at.z }, yaw });
+    const a = f.a = S.cast.spawn(o.cast || def.cast, { pos: { x: at.x, y, z: at.z }, yaw });
     a.useCdt = true;
     arm(f, o.weapon || def.weapon);
     if (f.flashlight) K.stealth.flashlight(f, true);
@@ -247,6 +247,15 @@ export function createFoes(K) {
   /* ---------------- the brain and the body (updateBoss, per enemy) ---------------- */
   function update(f, dt) {
     if (f.gone) return;
+    if (f.returnToVehicle && !f.downed && !f.tied) {
+      const destination = f.returnToVehicle;
+      const distance = flatDist(f.pos, destination);
+      f.face = angleTo(f.pos, destination);
+      const travel = Math.min(distance, f.speed * dt);
+      f.pos.x += Math.sin(f.face) * travel; f.pos.z += Math.cos(f.face) * travel;
+      K.solid(f); mv(f.a, distance > 0.5 ? f.speed : 0); sync(f, dt);
+      return;
+    }
     const H = S.hero, A = f.a;
     const toP = angleTo(f.pos, H.pos), dist = flatDist(f.pos, H.pos) - f.radius;
     const heroOut = H.mode !== 'foot' || H.hp <= 0;

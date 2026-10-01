@@ -68,6 +68,15 @@ export function createMinimap(U, hud) {
     const van = S.vehicles && S.vehicles.player;
     if (van && !(S.drive && S.drive.riding === van)) { const [x, y] = W(van.pos.x, van.pos.z); g.save(); g.translate(x, y); g.rotate(-van.yaw + Math.PI); g.fillStyle = '#f4efe4'; g.strokeStyle = INK; g.lineWidth = 1.5; g.fillRect(-D * 0.018, -D * 0.04, D * 0.036, D * 0.08); g.strokeRect(-D * 0.018, -D * 0.04, D * 0.036, D * 0.08); g.restore(); }
     // alerted foes: neon dots
+    for (const unit of S.law?.units || []) {
+      const [unitX, unitY] = W(unit.vehicle.pos.x, unit.vehicle.pos.z);
+      g.fillStyle = unit.sheriff ? '#b88628' : '#247cde'; g.strokeStyle = '#fff'; g.lineWidth = 1.5;
+      g.beginPath(); g.arc(unitX, unitY, D * 0.022, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    if (S.law?.helicopter) {
+      const [airX, airY] = W(S.law.helicopter.pos.x, S.law.helicopter.pos.z);
+      g.strokeStyle = '#247cde'; g.lineWidth = 3; g.strokeRect(airX - 4, airY - 4, 8, 8);
+    }
     for (const f of (S.combat && S.combat.enemies) || []) {
       if (!f || f.downed || f.tied || !f.pos) continue;
       if (!f.alert && !(S.combat.active && Math.hypot(f.pos.x - hp.x, f.pos.z - hp.z) < 40)) continue;

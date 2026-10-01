@@ -13,6 +13,20 @@ export function defineAll(A) {
   const hit = (t, type, freq, q, peak, dec, sweep, out) => A.noiseHit(t, type, freq, q, peak, dec, sweep, out);
   const noiseSrc = (ctx, t, dur) => { const s = ctx.createBufferSource(); s.buffer = A.noise; s.loop = true; s.start(t, Math.random() * 1.5); if (dur) s.stop(t + dur); return s; };
   const env = (g, t, a, peak, hold, rel) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel); };
+  for (const name of ['siren', 'helicopter']) A.defineLoop(name, (context, output) => {
+    const voice = context.createOscillator(), modulator = context.createOscillator();
+    const depth = context.createGain(), volume = context.createGain();
+    const air = name === 'helicopter';
+    voice.type = air ? 'triangle' : 'sine'; voice.frequency.value = air ? 65 : 750;
+    modulator.frequency.value = air ? 19 : 0.8; depth.gain.value = air ? 38 : 300;
+    volume.gain.value = 0;
+    modulator.connect(depth); depth.connect(voice.frequency); voice.connect(volume); volume.connect(output);
+    voice.start(); modulator.start();
+    return {
+      set(options) { volume.gain.setTargetAtTime(Math.max(0, Math.min(1, options.level ?? 0)) * (air ? 0.16 : 0.09), context.currentTime, 0.15); },
+      stop(fade = 0.2) { volume.gain.setTargetAtTime(0, context.currentTime, Math.max(0.01, fade / 3)); voice.stop(context.currentTime + fade + 0.1); modulator.stop(context.currentTime + fade + 0.1); },
+    };
+  });
 
   // the van's horn: two reedy tones a third apart
   A.define('horn', (ctx, t, out, o) => {
