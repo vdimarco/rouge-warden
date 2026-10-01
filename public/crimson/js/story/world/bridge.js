@@ -15,6 +15,27 @@ function midgleyGeo(THREE, L, deckY, groundAt, lod = 0) {
   // the deck slab, its edge girders and the road surface
   g.box(L / 2, deckY - 1.25, 0, 9.2, 1.25, L, Math.PI / 2, DECK, { top: [0.3, 0.3, 0.31] });
   for (const v of [-4.1, 4.1]) g.box(L / 2, deckY - 2.1, v, 0.5, 0.9, L, Math.PI / 2, STEEL);
+  // Visible approaches are part of the bridge mesh, including its distant silhouette.
+  // Meet the existing highway surface on both banks without an exposed deck end.
+  const reach = 70, step = 5;
+  const roadY = (u) => {
+    const end = u <= 0 ? 0 : L, d = Math.abs(u - end);
+    const t = Math.min(1, d / 25), ease = t * t * (3 - 2 * t);
+    return deckY + (groundAt(u, 0) + 0.08 - deckY) * ease;
+  };
+  for (const [start, end] of [[-reach, 0], [L, L + reach]]) {
+    for (let u = start; u < end; u += step) {
+      const v = Math.min(end, u + step), y0 = roadY(u), y1 = roadY(v);
+      g.quad([u, y0, -4], [u, y0, 4], [v, y1, 4], [v, y1, -4], [0.18, 0.19, 0.22]);
+      // Pale shoulders and two yellow centre lines keep the roadway legible from below.
+      for (const [lo, hi, col] of [[-4.6,-4,[0.52,0.47,0.39]], [4,4.6,[0.52,0.47,0.39]], [-0.2,-0.08,[0.92,0.68,0.2]], [0.08,0.2,[0.92,0.68,0.2]]])
+        g.quad([u,y0+0.025,lo], [u,y0+0.025,hi], [v,y1+0.025,hi], [v,y1+0.025,lo],col);
+      for (const z of [-4.4,4.4]) {
+        g.box(u,y0,z,0.12,0.9,0.12,0,RAIL);
+        g.cyl([u,y0+0.8,z],[v,y1+0.8,z],0.055,0.055,4,RAIL);
+      }
+    }
+  }
   // two arch ribs, each two chords tied by struts
   for (const v of [-3.2, 3.2]) {
     const n = lod ? 12 : 24;

@@ -1,6 +1,7 @@
 // Loads the painted 3D models made with Higgsfield (Meshy and Tripo) and fits them into the game.
 // Every model is optional: if one fails to load, the game uses the shape-built version in models.js instead.
 import * as THREE from "three";
+import { cartoonMaterial } from "./cartoon.js";
 
 const BASE = "models/";
 // which way each model faces as it comes out of the generator, and how big it should be in the game
@@ -47,7 +48,7 @@ function keep(n, g, renderer) {
   trim(g.scene, renderer);
   GLB[n] = g.scene;
 }
-// Upload all maps once. Imported normals and roughness remain available to the PBR material.
+// Upload source maps once before closing their decoded images; cartoon shading uses color maps.
 function trim(scene, renderer) {
   const maps = new Set();
   scene.traverse(o => { if(o.isMesh) for(const m of [].concat(o.material)) for(const value of Object.values(m)) if(value?.isTexture) maps.add(value); });
@@ -58,12 +59,11 @@ function trim(scene, renderer) {
 function toonify(obj) {
   obj.traverse(o => {
     if(!o.isMesh) return;
-    const convert = old => new THREE.MeshStandardMaterial({
+    const convert = old => cartoonMaterial({
       map:old.map || null, color:old.color || 0xffffff,
-      normalMap:old.normalMap || null, roughnessMap:old.roughnessMap || null,
-      roughness:.9, metalness:0, side:old.side,
+      side:old.side, transparent:old.transparent, opacity:old.opacity, alphaTest:old.alphaTest,
       // A little baked pigment bounce keeps drawn faces legible without an artificial rim.
-      emissive:0xffffff, emissiveMap:old.map || null, emissiveIntensity:old.map ? .06 : 0,
+      emissive:0xffffff, emissiveMap:old.map || null, emissiveIntensity:old.map ? .025 : 0,
     });
     o.material=Array.isArray(o.material) ? o.material.map(convert) : convert(o.material);
     o.castShadow=true; o.receiveShadow=true;
@@ -184,7 +184,7 @@ export function person(name, scale = 1) {
   const knees = [mk(), mk()], elbows = [mk(), mk()];
   const glider = umbrellaFrom();
   if (glider) { glider.visible = false; glider.position.set(0, 2.25, 0); root.add(glider); }
-  addOutlines(model, 0.004);
+  addOutlines(model, 0.010);
   const E = new THREE.Euler(), R = new THREE.Quaternion(), T = new THREE.Quaternion(), W = new THREE.Quaternion();
   // Each bone eases toward its new pose instead of jumping there, so every change of pose blends.
   // k = 1 snaps (used when there is no frame time, for example the first frame).
@@ -221,7 +221,7 @@ export function creature(name) {
   root.add(body);
   const m = fitted(name);
   body.add(m);
-  addOutlines(m, 0.006);
+  addOutlines(m, 0.012);
   const head = new THREE.Object3D(); body.add(head);
   return { root, body, head, legs: [], glb: true, lid: new THREE.Object3D() };
 }

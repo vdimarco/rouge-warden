@@ -88,7 +88,7 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
 sun.castShadow = true;
 sun.shadow.mapSize.set(Q.shadow, Q.shadow);
-Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 600 });
+Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, near: 1, far: 600 });
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
@@ -929,7 +929,7 @@ G.clockText = () => {
 /* ---------------- day and night ---------------- */
 const C = (h) => new THREE.Color(h);
 const SKY = {
-  day: { top: C(0x72aebe), hor: C(0xd6e5da), sun: C(0xffe2ac), hemi: C(0xb6d4d6), gnd: C(0x81775b), si: 1.4, hi: 0.95 },
+  day: { top: C(0x72aebe), hor: C(0xd6e5da), sun: C(0xffedc5), hemi: C(0xaac8ee), gnd: C(0x829774), si: 2.7, hi: 1.15 },
   dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
   night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.9, hi: 0.55 },
 };
@@ -981,7 +981,7 @@ function lighting() {
   for (const c of w.clouds) c.material.color.copy(cloudCol);
   // the colour far hills fade into: a deeper blue than the fog, like the painted distances in an animated film
   G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42), mood, punch: G.punchT || 0 };
-  w.cabin.userData.windows.emissiveIntensity = 0.08 + night * 0.25;
+  w.cabin.userData.windows.emissiveIntensity = 0.015 + night * 0.25;
   if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 12;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
   sun.position.set(cx + lightDir.x * 200, (P ? P.y : 10) + Math.max(0.2, lightDir.y) * 200, cz + lightDir.z * 200);

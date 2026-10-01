@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="Drop a token into 18 game machines, including Threadwake, Foldwild, Storm Choir, and Heartship. Free in your browser.">
+<meta name="description" content="Drop a token into 21 game machines, including Threadwake, Foldwild, Storm Choir, and Heartship. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Explore 18 arcade machines, from living landscapes and folding rivers to lake adventures and pinball. Free in your browser.">
+<meta property="og:description" content="Explore 21 arcade machines, from living landscapes and folding rivers to lake adventures and pinball. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -82,6 +82,8 @@ button { font: inherit; color: inherit; }
 .cab:not(.broken) { cursor: pointer; }
 .cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
+.cab.olympus { --c1:#124442; --c2:#edc06b; --glow:rgba(237,192,107,.4); }
+.cab.olympus .screen img.art2 { object-fit:contain; object-position:center; }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
@@ -241,6 +243,27 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
+      <article class="cab" data-game="brawl" data-url="/brawl/" aria-label="Cottage Brawl: platform fighter">
+        <div class="marquee"><div><b>COTTAGE BRAWL</b><small>8 FIGHTERS · ONE DOCK</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="/brawl/art/og-preview.png" alt="">
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Cottage Brawl"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Cottage Brawl"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab olympus" data-game="olympus" data-url="/olympus/" aria-label="Olympus: Last Flame">
+        <div class="marquee"><div><b>OLYMPUS</b><small>LAST FLAME</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="olympus/art/asphodel.webp" alt="">
+          <img class="art2" src="olympus/art/hero-8.png" alt="">
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
       <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
         <div class="marquee"><div><b>CRIMSON ROUGE</b><small>紅の月の下で</small></div></div>
         <div class="bezel"><div class="screen">
@@ -330,10 +353,19 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Up the Creek"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Up the Creek"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
+      <article class="cab extra moonwell" data-game="moonwell" data-url="/moonwell/" aria-label="Moonwell: endless pinball dungeons" style="--c1: #23475f; --c2: #edc779; --glow: #edc77970">
+        <div class="marquee"><div><b>MOONWELL</b><small>ENDLESS PINBALL DUNGEONS</small></div></div>
+        <div class="bezel"><div class="screen"><img src="/moonwell/assets/moon-islands.png" alt="Moonlit islands with golden pinball rails">
+          <div class="osd"><p class="hi">OPEN THE MOON PORTAL</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
       <article class="cab extra tilt" data-game="tilt" data-url="/lab/tilt/" aria-label="Full Tilt" style="--c1: #66328c; --c2: #f5a6e5; --glow: #f5a6e570">
-        <div class="marquee"><div><b>FULL TILT</b><small>PINBALL IN YOUR POCKET</small></div></div>
+        <div class="marquee"><div><b>FULL TILT</b><small>A PINBALL VOYAGE</small></div></div>
         <div class="bezel"><div class="screen"><canvas class="mini-game" data-scene="tilt" width="240" height="198" aria-hidden="true"></canvas>
-          <div class="osd"><p class="hi">KEEP THE BALL ALIVE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+          <div class="osd"><p class="hi">EXPLORE THE STARS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Full Tilt"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Full Tilt"><i></i><span>25¢</span></button></div>
@@ -913,12 +945,16 @@ for (const cv of $$(".mini-game")) {
   }
 }
 // Crimson Rouge flips between the standoff and the grizzly
-setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
+setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimson"]')).classList.toggle("flip"); }, 4100);
 {
   const cr = store.get("crimson.best.v1", null);
-  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
+  $(".hi", $('.cab[data-game="crimson"]')).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
 }
 
+{
+ const best = store.get("olympus-legacy-v2", null);
+ $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
+}
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);

@@ -289,6 +289,35 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   { const g = geo('uptown'), r = net.byId.a89u; for (let s = upWalk.s0 + 19; s < upWalk.s1 - 4; s += 52) { const p = at(r, s), rx = -Math.cos(p.yaw), rz = Math.sin(p.yaw), x = p.x + rx * 6.0, z = p.z + rz * 6.0, y = height(x, z); box(g, x, y, z, 1.8, 0.5, 0.5, p.yaw + Math.PI / 2, [0.45, 0.3, 0.2]); box(g, x - rz * 3, y, z + rx * 3, 0.8, 0.7, 0.8, p.yaw, [0.62, 0.38, 0.26], { top: [0.3, 0.36, 0.32] }); } }
   { // the Midgley lot: picnic tables, a trash can, the trailhead board
     const g = geo('canyon'), p = PLACES.midgley_lot;
+    // Painted bays and sandstone edging frame the small scenic turnout.
+    const yaw = 0.2, c = Math.cos(yaw), sn = Math.sin(yaw);
+    const local = (lx, lz) => [396 + lx * c + lz * sn, -585 - lx * sn + lz * c];
+    const mark = (lx, lz, w, d, col) => {
+      const [x, z] = local(lx, lz);
+      box(g, x, height(x, z) + 0.045, z, w, 0.025, d, yaw, col);
+    };
+    for (let i = -3; i <= 3; i++) {
+      mark(i * 3.4, -6.5, 0.12, 5.4, [0.88, 0.84, 0.69]);
+      if (i < 3) mark(i * 3.4 + 1.7, -8.5, 1.9, 0.25, [0.63, 0.51, 0.38]);
+    }
+    for (const side of [-1, 1]) for (let j = 0; j < 9; j++) {
+      const [x, z] = local(side * 15.4, -8 + j * 2);
+      const y = height(x, z);
+      box(g, x, y - 0.1, z, 0.65, 0.42, 1.85, yaw, [0.62, 0.34, 0.23], { top: [0.78, 0.52, 0.35] });
+    }
+    // Native planting islands outside the drive aisle, with layered sandstone blocks.
+    for (const [lx, lz] of [[-19, -8], [-19, 1], [18, -9], [18, 8]]) {
+      const [x, z] = local(lx, lz), y = height(x, z);
+      for (let k = 0; k < 3; k++) box(g, x + k * 0.25, y + k * 0.32, z, 2.2 - k * 0.45, 0.35, 1.6 - k * 0.3, yaw + k * 0.3, [0.64 + k * 0.04, 0.35 + k * 0.03, 0.23]);
+      colliders.addCircle(x, z, 1.3, { tag: 'rock' });
+      for (let k = 0; k < 5; k++) {
+        const a = k * 1.26, bx = x + Math.sin(a) * 2, bz = z + Math.cos(a) * 2, by = height(bx, bz);
+        g.cyl([bx, by, bz], [bx + Math.sin(a) * 0.45, by + 0.8, bz + Math.cos(a) * 0.45], 0.12, 0.015, 4, [0.34, 0.39, 0.25]);
+      }
+    }
+    lampAt(g, p.x - 16, p.z + 9, 1.1);
+    lampAt(g, p.x + 16, p.z + 9, -1.1);
+
     for (const [dx, dz] of [[-12, 8], [-6, 12], [10, 10]]) { const x = p.x + dx, z = p.z + dz, y = height(x, z); picnic(g, x, y, z, R() * 3); colliders.addBox({ x, z, w: 2, d: 1.8, y0: y - 1, top: y + 0.8, tag: 'table' }); }
     const x = p.x - 14, z = p.z - 6, y = height(x, z); box(g, x, y - 0.5, z, 0.2, 2.6, 0.2, 0, TRIM); box(g, x + 1.4, y - 0.5, z, 0.2, 2.6, 0.2, 0, TRIM); box(g, x + 0.7, y + 1.1, z, 1.8, 1, 0.12, 0.6, WHITE, { uv: { front: signUV('trail') } });
   }

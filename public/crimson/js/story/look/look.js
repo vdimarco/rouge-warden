@@ -31,7 +31,7 @@ import { checkNeon } from './palette.js';
 const lin = (hex) => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };
 function flatten(p) {
   return {
-    ink: p.ink === 'keep' ? NaN : p.ink, key: p.crimsonKey, exposure: p.exposure, grade: [...p.grade], lift: p.lift, sat: p.sat, edge: p.edge, grain: p.grain,
+    comic: p.comic || 0, ink: p.ink === 'keep' ? NaN : p.ink, key: p.crimsonKey, exposure: p.exposure, grade: [...p.grade], lift: p.lift, sat: p.sat, edge: p.edge, grain: p.grain,
     scratch: p.scratch, memory: p.memory, vig: p.vig, bloomThresh: p.bloomThresh, bloomGain: p.bloomGain, hotColor: p.hotColor, hueNeon: p.hueNeon,
     neonBoost: p.neonBoost, hangover: p.hangover, smear: p.smear, dissolve: p.dissolve, dissolveUp: p.dissolveUp, skyEdge: p.skyEdge,
     fogColor: lin(p.fog.color), fogNear: p.fog.near, fogFar: p.fog.far, fogView: p.fog.view,
@@ -220,7 +220,7 @@ export function init(S) {
   }
   function writeAll(rdt) {
     const u = post.m.uniforms, P = fin;
-    u.uInk.value = P.ink; u.uKey.value = P.key; u.uExposure.value = P.exposure; u.uGrade.value.set(P.grade[0], P.grade[1], P.grade[2]);
+    u.uComic.value = P.comic; u.uInk.value = P.ink; u.uKey.value = P.key; u.uExposure.value = P.exposure; u.uGrade.value.set(P.grade[0], P.grade[1], P.grade[2]);
     u.uLift.value = P.lift; u.uSat.value = P.sat; u.uEdge.value = P.edge; u.uGrain.value = P.grain; u.uScratch.value = P.scratch;
     u.uMemory.value = P.memory; u.uVig.value = P.vig; u.uBloomThresh.value = P.bloomThresh; u.uBloomGain.value = P.bloomGain; u.uHotColor.value = P.hotColor;
     u.uHueNeon.value = P.hueNeon; u.uHangover.value = P.hangover; u.uDissolve.value = P.dissolve; u.uDissolveUp.value = P.dissolveUp; u.uSkyEdge.value = P.skyEdge;

@@ -30,7 +30,7 @@ export const WORLD = {
   FOV_V_WIDE: [42, 62],            // and inside these on wide screens
   PITCH_CAST: { wide: -5, portrait: -11 },
   ZOOM_WIDTH: 42,                  // flight view: meters of lake across the view at the lure, once the lure is far
-  GRIP: { d: 0.5, x: 0.6, y: -0.74, pd: 0.62, px: 0.74, py: -0.62 },  // where the reel seat sits in the view (screen fractions, distance in m)
+  GRIP: { d: 0.9, x: 0.5, y: -0.4, pd: 0.9, px: 0.5, py: -0.4 },  // room below the grip for a pull-back gesture
   LURE_MIN_SCREEN: 0.022,          // the lure is drawn at least this fraction of the view height
   PHOTO: { push: 1.2, from: 1.35, freeze: 0.3 },   // the photo beat of a big catch: seconds of slow push-in, its start distance (x), seconds the fish holds still after
 };
@@ -336,21 +336,22 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function poseRod() {
     const R = S.rod;
-    const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = R.theta * DEG;
+    // Present the rod toward the lake; physics still uses the measured angle.
+    const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = (R.theta - 35) * DEG;
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(th), Math.sin(th), -Math.cos(yaw) * Math.cos(th)).normalize();
     const pull = R.pull ? new THREE.Vector3(R.pull.x, R.pull.y, R.pull.z) : null;
-    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle());
+    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle(), 1.35);
     S.tip.copy(tip);
     return tip;
   }
-  function drawLine() {
+  function drawLine(dt) {
     const Ln = S.line;
     const show = Ln.visible && Ln.from && Ln.to && firstPerson();
     line.mesh.visible = !!show;
-    if (!show) return;
+    if (!show) { line.motion.reset(); return; }
     // if the caller drew the line from the tip we returned, follow the tip as the camera settles this frame
     const from = Math.hypot(Ln.from.x - S.lastTip.x, Ln.from.y - S.lastTip.y, Ln.from.z - S.lastTip.z) < 0.25 ? S.tip : Ln.from;
-    line.build(from, Ln.to, Ln.slack, Ln.flying, camera.position, pxAngle());
+    line.build(from, Ln.to, Ln.slack, Ln.flying, camera.position, pxAngle(), dt);
   }
 
   /* ---------------- lure ---------------- */
@@ -648,7 +649,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     applyCamera();
     rod.mesh.visible = S.rod.visible && firstPerson() && camera.fov > baseFov(S.view.mode) * 0.8;
     if (rod.mesh.visible) poseRod();
-    drawLine();
+    drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
     shadow.visible = shadow.visible && S.view.mode !== "catch";
     spray.u.uScale.value = (S.h * renderer.getPixelRatio()) / (2 * Math.tan(camera.fov * DEG / 2));
@@ -743,6 +744,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       return { x: tip.x, y: tip.y, z: tip.z };
     },
     tip() { return { x: S.tip.x, y: S.tip.y, z: S.tip.z }; },
+    rodAnchor() {
+      const p = gripPoint().project(camera);
+      return { x: (p.x + 1) * S.w / 2, y: (1 - p.y) * S.h / 2 };
+    },
     setLine({ from = null, to = null, slack = 0, visible = true, flying = false } = {}) {
       S.line = { from, to, slack, visible, flying };
     },

@@ -1,6 +1,7 @@
 // The tackle in first person: the rod (blank, guides, cork grip, a spinning reel), the line, and the spinner lure.
 // The rod is rebuilt on the CPU each frame along a bent curve: it is small, and it keeps the tip exact for the line.
 import * as THREE from "three";
+import { LineMotion } from "./line-motion.js";
 import { artStyle, storyMaterial } from "./art-style.js";
 import { cartoonGeometry } from "./cartoon-models.js";
 import { ROD } from "./lake.js";
@@ -133,7 +134,7 @@ export class Rod {
 
   // grip: world point of the reel seat. dir: unit rod direction. bend 0..1, pull: world point the line pulls toward (or null).
   // cam + pxAng: to keep the thin end at least about a pixel wide.
-  pose(grip, dir, bend, pull, cam, pxAng) {
+  pose(grip, dir, bend, pull, cam, pxAng, width = 1) {
     const L = ROD.length;
     // bend toward the pull, most of it near the tip (a fast-action rod)
     const n = V3();
@@ -172,7 +173,7 @@ export class Rod {
       setFrame(f, P, T);
     }
     const tf = this.frames[this.frames.length - 1];
-    this.tip.copy(tf.P).addScaledVector(tf.D, (this.mesh.userData.cartoonAsset ? 0.015 : 0.004) * tf.k);
+    this.tip.copy(tf.P).addScaledVector(tf.D, (this.mesh.userData.cartoonAsset ? 0.015 : 0.004) * tf.k * width);
     if (this.mesh.userData.cartoonAsset) this.tip.addScaledVector(tf.T, -0.005);
     // write the vertices
     const pa = this.mesh.geometry.attributes.position, na = this.mesh.geometry.attributes.normal;
@@ -180,11 +181,11 @@ export class Rod {
     for (let i = 0, N = fi.length; i < N; i++) {
       const f = F[fi[i]], g = this.grow[i];
       const k = g ? f.k : 1;
-      const x = lo[i * 3] * k, y = lo[i * 3 + 1] * k, z = lo[i * 3 + 2] * k;
+      const x = lo[i * 3] * k, y = lo[i * 3 + 1] * k * width, z = lo[i * 3 + 2] * k * width;
       p[i * 3] = f.P.x + f.T.x * x + f.D.x * y + f.B.x * z;
       p[i * 3 + 1] = f.P.y + f.T.y * x + f.D.y * y + f.B.y * z;
       p[i * 3 + 2] = f.P.z + f.T.z * x + f.D.z * y + f.B.z * z;
-      const a = ln[i * 3], b = ln[i * 3 + 1], c = ln[i * 3 + 2];
+      const a = ln[i * 3], b = ln[i * 3 + 1] / width, c = ln[i * 3 + 2] / width;
       q[i * 3] = f.T.x * a + f.D.x * b + f.B.x * c;
       q[i * 3 + 1] = f.T.y * a + f.D.y * b + f.B.y * c;
       q[i * 3 + 2] = f.T.z * a + f.D.z * b + f.B.z * c;
@@ -210,21 +211,12 @@ export class Line {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 3;
     this.pts = Array.from({ length: N }, V3);
+    this.motion = new LineMotion(N);
   }
-  build(from, to, slack, flying, cam, pxAng) {
+  build(from, to, slack, flying, cam, pxAng, dt) {
     const N = this.N, pts = this.pts;
-    const len = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
-    // a flying line is pulled nearly straight by the lure; a slack one bellies down to the water
-    const sag = flying ? len * 0.006 : len * (0.01 + clamp(slack, 0, 1) * 0.22);
-    for (let i = 0; i < N; i++) {
-      // in flight the belly hangs near the rod; the lure end is pulled straight
-      const t = i / (N - 1), tt = flying ? t ** 0.55 : t;
-      const x = lerp(from.x, to.x, t), y0 = lerp(from.y, to.y, t), z = lerp(from.z, to.z, t);
-      let y = y0 - sag * 4 * tt * (1 - tt);
-      // slack line lies on the water instead of sinking with its sag
-      y = Math.max(y, Math.min(y0, 0.012));
-      pts[i].set(x, y, z);
-    }
+    const simulated = this.motion.step(from, to, slack, flying, dt);
+    for (let i = 0; i < N; i++) pts[i].copy(simulated[i]);
     const p = this.mesh.geometry.attributes.position.array, tan = V3(), view = V3(), side = V3();
     for (let i = 0; i < N; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)];

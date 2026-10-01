@@ -72,10 +72,17 @@ export function makeScenery(seed, phase) {
     if (tall && (d < 260 || rand() < .48)) continue;
     props.push({ ...p, name, height: tall ? 220 + rand() * 180 : 65 + rand() * 115, flip: rand() < .5, sway: ['reeds','ferns','willow','birches'].includes(name), biome: district.name, canopy: tall });
   }
-  for (let i = 0; i < 70; i++) {
-    const x = rand() * SIZE, bank = riverSample(x, seed), p = { x, y: rand() < .5 ? bank.north - 26 : bank.south + 32 };
-    if (laneDistance(p) < 180 || blocked(p)) continue;
-    props.push({ ...p, name: pick(['reeds','reeds','boulders']), height: 70 + rand() * 80, flip: rand() < .5, sway: true, biome: 'wetland', shoreline: true });
+  // Unequal reed beds leave exposed sand between them and avoid crossings.
+  for (let i = 0; i < 24; i++) {
+    const center = 80 + rand() * (SIZE - 160), side = rand() < .5 ? 'north' : 'south';
+    const spread = 36 + rand() * 115, count = 2 + Math.floor(rand() * 5);
+    for (let j = 0; j < count; j++) {
+      const x = Math.max(0, Math.min(SIZE, center + (rand() - .5) * spread * 2)), bank = riverSample(x, seed);
+      const p = { x, y: side === 'north' ? bank.north - 8 - rand() * 65 : bank.south + 8 + rand() * 65 };
+      if (laneDistance(p) < 180 || blocked(p) || props.some(q => distance(p, q) < 32)) continue;
+      const name = pick(['reeds', 'reeds', 'ferns', 'boulders']);
+      props.push({ ...p, name, height: 48 + rand() * 92, flip: rand() < .5, sway: name !== 'boulders', biome: 'wetland', shoreline: true });
+    }
   }
   for (let i = 0; i < 220; i++) patches.push({ x: rand() * SIZE, y: rand() * SIZE, r: 90 + rand() * 270, hue: rand(), angle: rand() * Math.PI });
   return { props, patches, districts: DISTRICTS, seed, phase, river: riverGeometry(seed) };

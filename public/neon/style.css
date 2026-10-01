@@ -1,4 +1,4 @@
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080817;color:#ecfaff;font-family:system-ui,sans-serif;touch-action:none;overscroll-behavior:none}canvas{position:fixed;inset:0;width:100%;height:100%}header{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;font-size:10px;letter-spacing:2px}a{color:#7ae9ed;text-decoration:none}button{font:inherit;color:inherit;background:#101527;border:1px solid #396076;min-height:44px;border-radius:6px;padding:10px 14px;cursor:pointer;touch-action:none}button:active{background:#284858}button:focus-visible{outline:2px solid #caff54}header button{font-size:11px;min-height:36px}#hud{position:absolute;top:calc(env(safe-area-inset-top) + 75px);left:22px;right:22px;display:flex;justify-content:space-between;pointer-events:none}small{font-size:9px;letter-spacing:2px;color:#a4b8cd;display:block}b{display:block;font:500 25px monospace;margin-top:5px}#overlay{position:absolute;inset:65px 0 0;display:grid;place-items:center;padding:18px 20px;overflow:auto;background:linear-gradient(transparent,#080817bb)}#panel{width:min(100%,440px);padding:26px;border:1px solid #4a5476;background:#0b1024ee;box-shadow:0 0 65px #a027a72a;border-radius:12px}h1{font-size:clamp(48px,13vw,70px);line-height:.92;letter-spacing:-4px;margin:16px 0 22px;font-weight:900}h1 span{color:#caff54}h2{font-size:28px;margin:8px 0 18px}p{color:#b9c8da;font-size:14px;line-height:1.6}.eyebrow{color:#fe72ce;font:11px monospace;letter-spacing:3px}.primary{width:100%;background:#caff54;color:#121b12;border:0;font-weight:800;letter-spacing:2px;margin-top:12px}.secondary{width:100%;margin-top:10px}.fine{font-size:11px;margin-bottom:0}.choice{text-align:left;width:100%;margin-top:10px;display:block}.choice strong{color:#caff54;display:block;margin-bottom:4px}.choice span{font-size:12px;color:#b9c8da}#controls{position:absolute;bottom:0;left:0;right:0;padding:10px 18px calc(env(safe-area-inset-bottom) + 14px);background:linear-gradient(transparent,#080817 45%)}#hint{text-align:center;font-size:12px;margin:0 0 10px;color:#bce9f0}.buttons{display:flex;gap:10px}.buttons button{flex:1;min-height:56px;font-size:12px;font-weight:800;letter-spacing:1px}#guard{border-color:#55ecfc}#burst{border-color:#df56bd}.settings{display:flex;justify-content:center;gap:6px;margin-top:7px}.settings button{border:0;background:transparent;color:#91a8bb;font-size:11px;padding:5px 12px}#callout{position:absolute;top:30%;width:100%;text-align:center;color:#caff54;font-weight:800;letter-spacing:3px;pointer-events:none;text-shadow:0 0 20px #caff54}[hidden]{display:none!important}@media(max-height:520px){#panel{padding:16px;width:480px}h1{font-size:42px;margin:8px 0}#panel p{margin:6px 0}#overlay{inset:55px 0 0}#hud{top:58px;right:auto;gap:24px}#controls{left:auto;width:310px}.fine{display:none}#callout{top:22%}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080817;color:#ecfaff;font-family:system-ui,sans-serif;touch-action:none;overscroll-behavior:none}canvas{position:fixed;inset:0;width:100%;height:100%}header{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;font-size:10px;letter-spacing:2px}a{color:#7ae9ed;text-decoration:none}button{font:inherit;color:inherit;background:#101527;border:1px solid #396076;min-height:44px;border-radius:6px;padding:10px 14px;cursor:pointer;touch-action:none}button:active{background:#284858}button:focus-visible{outline:2px solid #caff54}header button{font-size:11px;min-height:36px}#hud{position:absolute;top:calc(env(safe-area-inset-top) + 75px);left:22px;right:22px;display:flex;justify-content:space-between;pointer-events:none}small{font-size:9px;letter-spacing:2px;color:#a4b8cd;display:block}b{display:block;font:500 25px monospace;margin-top:5px}#overlay{position:absolute;inset:65px 0 0;display:grid;place-items:center;padding:18px 20px;overflow:auto;background:linear-gradient(transparent,#080817bb)}#panel{width:min(100%,440px);padding:26px;border:1px solid #4a5476;background:#0b1024ee;box-shadow:0 0 65px #a027a72a;border-radius:12px}h1{font-size:clamp(48px,13vw,70px);line-height:.92;letter-spacing:-4px;margin:16px 0 22px;font-weight:900}h1 span{color:#caff54}h2{font-size:28px;margin:8px 0 18px}p{color:#b9c8da;font-size:14px;line-height:1.6}.eyebrow{color:#fe72ce;font:11px monospace;letter-spacing:3px}.primary{width:100%;background:#caff54;color:#121b12;border:0;font-weight:800;letter-spacing:2px;margin-top:12px}.secondary{width:100%;margin-top:10px}.fine{font-size:11px;margin-bottom:0}.choice{text-align:left;width:100%;margin-top:10px;display:block}.choice strong{color:#caff54;display:block;margin-bottom:4px}.choice span{font-size:12px;color:#b9c8da}#controls{position:absolute;bottom:0;left:0;right:0;padding:10px 18px calc(env(safe-area-inset-bottom) + 14px);background:linear-gradient(transparent,#080817 45%)}#hint{text-align:center;font-size:12px;margin:0 0 10px;color:#bce9f0}.buttons{display:flex;gap:10px}.buttons button{flex:1;min-height:56px;font-size:12px;font-weight:800;letter-spacing:1px}#guard{border-color:#55ecfc}#burst{border-color:#df56bd}.settings{display:flex;justify-content:center;gap:6px;margin-top:7px}.settings button{border:0;background:transparent;color:#91a8bb;font-size:11px;padding:5px 12px}#callout{position:absolute;top:30%;width:100%;text-align:center;color:#caff54;font-weight:800;letter-spacing:3px;pointer-events:none;text-shadow:0 0 20px #caff54}[hidden]{display:none!important}@container game (max-height:520px){#panel{padding:16px;width:480px}h1{font-size:42px;margin:8px 0}#panel p{margin:6px 0}#overlay{inset:55px 0 0}#hud{top:58px;right:auto;gap:24px}#controls{left:auto;width:310px}.fine{display:none}#callout{top:22%}}
 
 /* Quiet HUD over the photographic scene. */
 header{background:linear-gradient(#03050bbf,transparent);text-shadow:0 1px 4px #000}
@@ -11,7 +11,7 @@ h1{font-weight:800;letter-spacing:-3px}h1 span{color:#d8f3ef}.eyebrow{color:#ffb
 #controls{background:linear-gradient(transparent,#03060acf 60%)}
 #hint{color:#eef7fa;text-shadow:0 2px 6px #000}
 #callout{top:23%;font-size:14px;text-shadow:0 2px 8px #000}
-@media(max-height:520px){#hud{top:54px}#callout{top:25%;text-align:left;padding-left:22px}}
+@container game (max-height:520px){#hud{top:54px}#callout{top:25%;text-align:left;padding-left:22px}}
 
 /* Open district: layered WebGL world, combat canvas and touch controls. */
 #district{z-index:0}#world{z-index:1}header,#hud,#callout{z-index:5}#overlay{z-index:12}#controls{z-index:8}
@@ -24,7 +24,7 @@ h1{font-weight:800;letter-spacing:-3px}h1 span{color:#d8f3ef}.eyebrow{color:#ffb
 #districtStatus{position:absolute;left:20px;top:123px;font:11px system-ui;color:#f1f5de;text-shadow:0 1px 5px #193a38;margin:0}
 #panel{background:linear-gradient(135deg,#203f40ee,#385450d9);border-color:#c8dcc182;box-shadow:0 20px 80px #243d3b66}
 h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#233c38}header{background:linear-gradient(#183b3f99,transparent)}
-@media(max-height:520px){#walkStick{bottom:30px;left:20px;width:86px;height:86px}#lookPad{top:110px;bottom:150px;width:30%}#districtStatus{top:108px;max-width:240px;font-size:10px}#hud{gap:16px}#panel .fine{display:none}}
+@container game (max-height:520px){#walkStick{bottom:30px;left:20px;width:86px;height:86px}#lookPad{top:110px;bottom:150px;width:30%}#districtStatus{top:108px;max-width:240px;font-size:10px}#hud{gap:16px}#panel .fine{display:none}}
 
 .style-label{display:block;font-size:10px;letter-spacing:2px;margin:14px 0 6px;color:#f0e6c8}#visualStyle{width:100%;min-height:44px;padding:10px;background:#1e3637;color:#fff1d4;border:1px solid #90aa98;border-radius:6px;font:inherit;touch-action:manipulation}
 [data-style="rick-morty"] #panel{background:#302e47f5;border:3px solid #172127;border-radius:15px;box-shadow:5px 6px 0 #172127}
@@ -34,11 +34,11 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
 #panel{backdrop-filter:none}
 
 
-#runStatus{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 125px);left:20px;right:20px;pointer-events:none;text-shadow:0 2px 4px #000;color:#fff;font-size:11px}#runStatus strong,#runStatus span{display:block}#chain{color:#caff54;margin-top:6px;font-weight:800;letter-spacing:1px}#districtStatus{top:177px;font-size:10px}#callout{top:29%}@media(max-height:520px){#runStatus{top:100px;right:auto}#districtStatus{top:141px}#callout{top:36%}}
+#runStatus{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 125px);left:20px;right:20px;pointer-events:none;text-shadow:0 2px 4px #000;color:#fff;font-size:11px}#runStatus strong,#runStatus span{display:block}#chain{color:#caff54;margin-top:6px;font-weight:800;letter-spacing:1px}#districtStatus{top:177px;font-size:10px}#callout{top:29%}@container game (max-height:520px){#runStatus{top:100px;right:auto}#districtStatus{top:141px}#callout{top:36%}}
 
 .wide-help{font-size:11px;line-height:1.45;margin:7px 0;color:#dce9d5}
 /* Landscape tablets: full viewport, thumb zones at opposite ends. */
-@media (orientation:landscape){
+@container game (min-aspect-ratio:1/1){
  #overlay{inset:54px 0 0;padding:14px 28px;align-items:center}
  #panel{width:min(820px,90vw);padding:20px 26px;display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start;max-height:calc(100dvh - 78px);overflow:auto}
  #panel h1{font-size:54px;margin:10px 0;grid-column:1;grid-row:2 / span 2}
@@ -54,4 +54,36 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
  #runStatus{top:66px;left:24px;right:auto;max-width:30vw}#districtStatus{top:116px;max-width:30vw}
  #callout{top:23%;text-align:center;padding:0}header{padding-left:24px;padding-right:24px}
 }
-@media(orientation:landscape) and (max-height:500px){#panel{padding:12px 20px}#panel h1{font-size:40px}#panel p{font-size:11px}#walkStick{width:96px;height:96px;bottom:28px}#hud{gap:26px}#controls{width:260px}#runStatus{font-size:10px}}
+@container game (min-aspect-ratio:1/1) and (max-height:500px){#panel{padding:12px 20px}#panel h1{font-size:40px}#panel p{font-size:11px}#walkStick{width:96px;height:96px;bottom:28px}#hud{gap:26px}#controls{width:260px}#runStatus{font-size:10px}}
+
+/* Keep the calibration action thumb-sized and the duel visible. */
+#center{min-height:48px;min-width:108px;border-color:#a9e6d4;color:#d9fff0;font-weight:700}
+.gyro-mode #controls .buttons{display:none}
+.gyro-mode #controls{background:linear-gradient(transparent,rgba(5,12,20,.72));padding-top:6px}
+.gyro-mode #hint{font-size:11px;margin:4px 0 8px}
+@container game (max-aspect-ratio:1/1){
+  .gyro-mode #walkStick{bottom:126px}
+  .gyro-mode #districtStatus{display:none}
+}
+
+
+/* Portal Badlands: legible ink-and-paper controls over the alien landscape. */
+[data-style="rick-morty"] header{background:linear-gradient(#363249aa,transparent)}
+[data-style="rick-morty"] #panel{background:#363249ee;border-color:#29333d;box-shadow:5px 6px 0 #29333d}
+[data-style="rick-morty"] #visualStyle{background:#454157;border:2px solid #202e38;color:#f6eaca}
+[data-style="rick-morty"] .primary{background:#c4e991;color:#253c34}
+[data-style="rick-morty"] #controls{background:linear-gradient(transparent,#363249db);border-radius:14px}
+[data-style="rick-morty"] #walkStick{background:#d8d1a544;border:2px solid #34494c99}
+[data-style="rick-morty"] #stickNub{background:#c4e991;box-shadow:2px 3px 0 #34494c88}
+
+/* A transformed fixed containing block preserves the starting layout even if
+   the browser refuses Screen Orientation locking. */
+#gameViewport{position:fixed;left:50%;top:50%;width:100vw;height:100dvh;transform:translate(-50%,-50%);overflow:hidden;container:game / size;isolation:isolate}
+#gameViewport canvas{position:absolute;width:100%;height:100%}
+#gameViewport #explore{position:absolute}
+#gameViewport #panel{max-height:calc(100cqh - 78px)}
+
+
+/* Mouse aiming spans the world; touch camera zones must not steal its input. */
+.mouse-mode #lookPad,.mouse-mode #walkStick{display:none!important;pointer-events:none}
+.mouse-mode #world{cursor:crosshair}

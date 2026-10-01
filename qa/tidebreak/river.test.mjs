@@ -19,6 +19,18 @@ for (const seed of [1, 49, 91822, 0xffffffff]) {
   const bridges = riverCrossings(PATHS, seed); assert.equal(bridges.length, 3);
   for (const b of bridges) { assert(Math.abs(b.y - riverSample(b.x, seed).y) < .01, 'bridge center lies on seeded river'); assert(b.span > riverSample(b.x, seed).south - riverSample(b.x, seed).north, 'bridge spans water and banks'); }
 }
+// Erosion must keep water connected, and bridges must land beyond both banks.
+for (let seed = 0; seed < 128; seed++) {
+  const river = riverGeometry(seed);
+  for (const p of river.samples) {
+    assert(p.north < p.y - 15 && p.south > p.y + 15, 'erosion keeps an open water channel');
+    assert(Number.isFinite(p.northShelf) && Number.isFinite(p.southShelf));
+  }
+  for (const bridge of riverCrossings(PATHS, seed)) for (const sign of [-1, 1]) {
+    const end = { x: bridge.x + sign * bridge.dx * bridge.span / 2, y: bridge.y + sign * bridge.dy * bridge.span / 2 };
+    assert(!insideRiver(end, seed), `bridge ${bridge.lane} lands on dry ground for seed ${seed}`);
+  }
+}
 // Measure real movement on a wide, unobstructed part of the central crossing.
 const measure = y => {
   const s = createMatch(1, 49), p = player(s); s.units = [p]; s.nextWave = s.objectiveAt = Infinity; s.campTimers = [Infinity, Infinity];

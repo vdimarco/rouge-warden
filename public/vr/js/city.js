@@ -322,7 +322,7 @@ function makeColliders(buildings) {
   // The Needle: shaft, four collars you can hang from, the walkable deck under the pod, the pod, the antenna.
   const N = NEEDLE;
   cyl(N.x, N.z, N.shaftR, 0, N.podY0, "needle");
-  for (const y of N.collars) cyl(N.x, N.z, N.shaftR + 4, y - 0.75, y + 0.75, "needle");
+  for (const y of N.collars) cyl(N.x, N.z, N.shaftR + 0.4, y - 0.75, y + 0.75, "needle");
   cyl(N.x, N.z, N.podR + 3, N.deckY - 1, N.deckY, "needle");
   cyl(N.x, N.z, N.podR, N.podY0, N.podY1, "needle");
   cyl(N.x, N.z, 3.2, N.podY1, 322, "needle");
@@ -704,7 +704,7 @@ export function generate(seed = WORLD.seed) {
   });
   const needle = {
     x: N.x, z: N.z, shaftR: N.shaftR, podY0: N.podY0, podY1: N.podY1, podR: N.podR, top: N.top,
-    collars: N.collars.map((y) => ({ y, r: N.shaftR + 4 })), deck: { y: N.deckY, r: N.podR + 3 }, pipes,
+    collars: N.collars.map((y) => ({ y, r: N.shaftR + 0.4 })), deck: { y: N.deckY, r: N.podR + 3 }, pipes,
   };
 
   /* ---- Loonies ---- */

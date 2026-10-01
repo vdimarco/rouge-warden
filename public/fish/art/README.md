@@ -31,3 +31,9 @@ The water remains a live shader with broad paint shapes and broken horizontal st
 The pack contains a bamboo rod with a rounded enamel reel, a painted lure and its leaf blade, pine and broadleaf trees in two detail levels, a far-tree mesh, a cottage and a cartoon loon. The game imports the named meshes, joins their material colors into one geometry per asset and reuses the existing bend, spinner and swimming animation. The 3D rod, casting panel and touch rod control share the bamboo and jade palette.
 
 The Ghibli request was resolved as a style brief. These are generated Blender meshes through Higgsfield 3D Jutsu, rather than the output of a catalog preset. The existing cartoon fish and other procedural scenery retain the same cel treatment. Original mode restores its original rod, lure and scenery. The procedural cartoon versions remain available when the model file fails to load.
+
+## Fal lake water, 2026-09-30
+
+fal-lake-water.webp: 1024 × 1024 hand-painted jade lake tile. Generated with fal-ai/nano-banana-pro, request 01a0f42d-3fa1-71c3-89a8-e8d803064b81. Source: https://v3b.fal.media/files/b/0aac8c6c/P09Onh1dIlL_XO4xXMKgY_SoKUx32s.webp
+
+Brief: seamless top-down calm lake water, Japanese animated film background, jade and turquoise gouache with low-contrast mint ripples and caustics. Two drifting samples blend with live depth, reflections and gameplay ripples. Existing procedural fallback remains.
