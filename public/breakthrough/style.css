@@ -1,3 +1,8 @@
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/dm-sans-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/dm-sans-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/dm-sans-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Fraunces";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/fraunces-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Fraunces";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/fraunces-latin-700-normal.woff2") format("woff2")}
 :root{
   --paper:#f5efdf;--ink:#26302b;--muted:#6e776f;--moss:#486b4b;--leaf:#6d8b59;
   --sun:#efbd67;--sky:#a9c5c5;--water:#6e9ca0;--rust:#b96647;--card:#fffaf0;
@@ -100,3 +105,6 @@ dialog::backdrop{background:rgba(24,36,29,.6);backdrop-filter:blur(5px)}
   .endStats{grid-template-columns:repeat(2,1fr)}
   .settlement{transform:scale(.7);transform-origin:left bottom}
 }
+html.fast,html.fast *,html.fast *::before,html.fast *::after,html.fast dialog::backdrop{transition:none!important;animation:none!important}
+.seedNote{margin:8px 0 0;font-size:12px;font-weight:600;color:#6a3b28}
+.phase .runSeed{display:block;margin-top:2px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}

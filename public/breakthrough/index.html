@@ -6,9 +6,7 @@
 <meta name="theme-color" content="#25382c">
 <title>BREAKTHROUGH — Climate Roguelike</title>
 <meta name="description" content="A 30-minute strategy roguelike about inventing humanity's way through the 21st century.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -35,6 +33,7 @@
         <h1>Invent a future<br>worth reaching.</h1>
         <p class="lede">Build breakthroughs, survive shocks, and bend humanity's climate trajectory in a run that lasts under 30 minutes.</p>
         <button id="startBtn" class="primary">Begin a new timeline</button>
+        <p id="seedNote" class="seedNote hidden" role="status"></p>
         <p class="micro">12 turns · deterministic seeds · one-handed mobile play</p>
       </div>
     </section>
@@ -58,6 +57,7 @@
         <div class="phase">
           <span id="turnLabel">Turn 1 of 12</span>
           <strong id="phaseTitle">Choose humanity's next bet</strong>
+          <span id="runSeed" class="runSeed"></span>
         </div>
         <div class="meters">
           <div><span>Capital</span><b id="capital">8</b></div>
