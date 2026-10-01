@@ -4,7 +4,7 @@
 (() => {
   const GAMES = [
     { id: "tidebreak", name: "Monster Mash", sub: "Folklore realm MOBA", url: "/tidebreak/", art: "/tidebreak/art/mothman.webp", color: "#d2e46d" },
-    { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/og-preview.png", color: "#ffca51" },
+    { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
     { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/lab/worlds/assets/worlds-atlas.webp", color: "#c7e5ac" },
     { id: "plungerd", name: "Get Plunger'd", sub: "Cottage Brawl", url: "/plungerd/", art: "/arcade/plungerd.webp", color: "#e6c35c" },
     { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/drain.webp", color: "#5fb8d0" },
@@ -96,4 +96,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
   window.GameSwitch = { open, close, wire, get isOpen() { return !!box && !box.hidden; }, GAMES };
 })();
+
 
