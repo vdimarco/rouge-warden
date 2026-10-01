@@ -1,5 +1,7 @@
 // The world: one big valley around Loon Lake. Terrain, water, sky, clouds, grass, trees, rocks, and the places to find.
 import * as THREE from "three";
+import { cartoonMaterial, cartoonRamp } from "./cartoon.js";
+import { mergeGeometries as mergeTextured } from "three/addons/utils/BufferGeometryUtils.js";
 import { rng, simplex, fbm, clamp, lerp, smooth } from "./noise.js";
 import * as M from "./models.js";
 
@@ -93,7 +95,7 @@ export function splat(mat, tex) {
           detail = mix(detail, dt, wd);
           detail = mix(detail, sa, ws);
           detail = mix(detail, rk, wr);
-          diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.8 * fade);
+          diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.32 * fade);
         }
       }`);
   };
@@ -288,7 +290,7 @@ export class World {
     const c = out;
     // grass: fresh near the cottage, deep in the west forest, gold in the east meadows
     const west = smooth(-200, -500, x), east = smooth(200, 520, x), north = smooth(-200, -450, z);
-    c.setRGB(0.47 + v * 0.07, 0.68 + v * 0.07, 0.33);
+    c.setRGB(0.46 + v * 0.06, 0.59 + v * 0.06, 0.36);
     c.lerp(TMP.setRGB(0.26, 0.5, 0.24), west * 0.8);
     c.lerp(TMP.setRGB(0.72, 0.76, 0.34), east * (0.55 + v * 0.3));
     c.lerp(TMP.setRGB(0.4, 0.56, 0.32), north * 0.6);
@@ -351,6 +353,7 @@ export class World {
       pos[k * 3] = x; pos[k * 3 + 1] = h; pos[k * 3 + 2] = z;
       this.normal(x, z, nrm);
       this.groundColor(x, z, h, nrm.y, c);
+      c.convertSRGBToLinear();
       col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
     }
     for (let j = 0, q = 0; j < N; j++) for (let i = 0; i < N; i++, q += 6) {
@@ -362,7 +365,7 @@ export class World {
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.gradientMap() }), { strokes: 1.2, lakebed: true }), this.tex);
+    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: cartoonRamp() }), { strokes: 1.2, lakebed: true }), this.tex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -387,6 +390,9 @@ export class World {
       this.groundColor(x, z, h, nrm.y, c, p);
       let d = smooth(1.6, 2.8, h) * smooth(0.7, 0.82, nrm.y) * smooth(100, 80, h);
       d *= smooth(1.2, 3, p);
+      // A tended clearing keeps tall grass out of the cottage and its veranda.
+      const yard = Math.max(Math.abs(x - this.cottage.x) / 8, Math.abs(z - (this.cottage.z - 2)) / 9);
+      d *= smooth(0.85, 1.3, yard);
       if (Math.hypot(x - ISLAND.x, z - ISLAND.z) < ISLAND.r + 4) d = 0;
       d *= 0.82 + 0.18 * smooth(-0.4, 0.3, this.n3(x / 40, z / 40));
       const q = j * R + i, k = q * 4;
@@ -469,15 +475,28 @@ export class World {
   /* ---------------- sky ---------------- */
   buildSky() {
     const u = this.skyU = { uTop: { value: new THREE.Color(0x3a8ae0) }, uHorizon: { value: new THREE.Color(0xcfeaff) }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Color(0xfff2c8) }, uNight: { value: 0 }, uTime: { value: 0 } };
+    u.uPaintSky = { value: this.tex.sky || null }; u.uHasSky = { value: this.tex.sky ? 1 : 0 };
+    u.uDaylight = { value: 1 }; u.uMood = { value: 0 };
     const mat = new THREE.ShaderMaterial({
       uniforms: u, side: THREE.BackSide, depthWrite: false, fog: false,
       vertexShader: `varying vec3 vD; void main(){ vD = normalize(position); vec4 p = projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position = p.xyww; }`,
       fragmentShader: `
+        uniform sampler2D uPaintSky; uniform float uHasSky, uDaylight, uMood;
         uniform vec3 uTop, uHorizon, uSun, uSunCol; uniform float uNight, uTime; varying vec3 vD;
         float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,37.719)))*43758.5453); }
         void main(){
           float y = clamp(vD.y, -0.2, 1.0);
           vec3 col = mix(uHorizon, uTop, pow(smoothstep(-0.02, 0.9, y), 0.7));
+          if (uHasSky > 0.5) {
+            vec3 dir = normalize(vD);
+            float longitude = fract(atan(dir.z, dir.x) / 6.2831853 * 2.0 + uTime * 0.0004);
+            float latitude = clamp((asin(dir.y) + 0.035) / 1.15, 0.015, 0.985);
+            vec3 painted = texture2D(uPaintSky, vec2(longitude, latitude)).rgb;
+            // Fade the panorama seam, zenith and night into the live day/night sky.
+            float edge = smoothstep(0.0, 0.04, longitude) * (1.0-smoothstep(0.96,1.0,longitude));
+            float blend = smoothstep(-0.025,0.055,dir.y) * (1.0-smoothstep(0.82,0.97,dir.y));
+            col = mix(col, painted, blend * edge * (1.0-uNight) * uDaylight * (1.0-uMood));
+          }
           float sd = max(dot(vD, normalize(uSun)), 0.0);
           col += uSunCol * (pow(sd, 900.0)*2.0 + pow(sd, 12.0)*0.35);
           vec3 moon = normalize(-uSun);
@@ -545,9 +564,17 @@ export class World {
       for (let y = base - 20; y > top; y -= 26 + r() * 10) puffs.push([px + (r() - 0.5) * 40, y, 34 + hump * (tall ? 60 : 40) * (0.6 + r() * 0.5)]);
     }
     // the shadowed belly
-    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(150,170,205,0.95)"); g.addColorStop(1, "rgba(150,170,205,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
+    for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px, py + pr * 0.35, pr * 0.1, px, py, pr); g.addColorStop(0, "rgba(128,152,200,0.95)"); g.addColorStop(1, "rgba(128,152,200,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill(); }
     // the sunlit tops
     for (const [px, py, pr] of puffs) { const g = x.createRadialGradient(px - pr * 0.25, py - pr * 0.45, pr * 0.05, px, py - pr * 0.1, pr * 0.95); g.addColorStop(0, "rgba(255,253,245,1)"); g.addColorStop(0.55, "rgba(250,250,255,0.92)"); g.addColorStop(1, "rgba(235,242,255,0)"); x.fillStyle = g; x.beginPath(); x.arc(px, py - pr * 0.15, pr * 0.88, 0, 7); x.fill(); }
+    // one soft shade over the lower half, so each cloud reads as lit from above: warm top, cool blue-grey belly
+    const gs = x.createLinearGradient(0, base - (tall ? H * 0.62 : H * 0.4), 0, base);
+    gs.addColorStop(0, "rgba(120,148,200,0)"); gs.addColorStop(1, "rgba(120,148,200,0.62)");
+    x.globalCompositeOperation = "source-atop"; x.fillStyle = gs; x.fillRect(0, 0, W, H);
+    const gw = x.createLinearGradient(0, 0, 0, base * 0.5);
+    gw.addColorStop(0, "rgba(255,238,205,0.32)"); gw.addColorStop(1, "rgba(255,238,205,0)");
+    x.fillStyle = gw; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = "source-over";
     // a flat, soft base
     const gb = x.createLinearGradient(0, base - 30, 0, base + 30);
     gb.addColorStop(0, "rgba(0,0,0,0)"); gb.addColorStop(1, "rgba(0,0,0,1)");
@@ -562,6 +589,7 @@ export class World {
     const add = (tex, sc, aspect, x, y, z, op = 0.97) => {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, fog: false, depthWrite: false, transparent: true, opacity: op }));
       s.scale.set(sc, sc * aspect, 1); s.position.set(x, y, z); s.center.set(0.5, 0.18);
+      s.visible = !this.tex.sky; // the generated sky replaces daytime cloud billboards
       this.scene.add(s); this.clouds.push(s); return s;
     };
     // drifting cumulus over the valley
@@ -595,8 +623,8 @@ export class World {
     // fewer joints per blade on the light setting and in the far layer, where the curve is a few pixels tall;
     // each layer is cut into 4 x 4 buckets on the light setting and 8 x 8 on the others
     const B = q.grass < 60000 ? 4 : 8;
-    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.13, tall: 1, seed: 5, joints: q.grass < 60000 ? 4 : 6, buckets: B }));
-    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.4, tall: 1.1, seed: 9, far: true, joints: 3, buckets: B }));
+    this.grass.add(this.grassLayer(q.grass, q.patch, { width: 0.055, tall: 0.55, seed: 5, joints: q.grass < 60000 ? 4 : 6, buckets: B }));
+    if (q.grass >= 60000) this.grass.add(this.grassLayer(Math.round(q.grass * 0.7), q.patch * 3, { width: 0.16, tall: 0.6, seed: 9, far: true, joints: 3, buckets: B }));
     this.scene.add(this.grass);
   }
   // A coarse grid of 32 m cells for the grass culling: the lowest and highest ground and the thickest grass in each
@@ -655,6 +683,7 @@ export class World {
           vec2 uv = (wp + uSize*0.5)/uSize;
           float h = texture2D(uHeight, uv).r;
           vec4 m = texture2D(uMask, uv);
+          m.rgb = pow(m.rgb, vec3(2.2)); // authored mask pigments are sRGB
           float dist = length(wp - uCenter);
           // the near layer thins out where the far layer takes over, and the far layer fills in behind it
           float fade = (1.0 - smoothstep(${outer0.toFixed(1)}, ${outer1.toFixed(1)}, dist)) * smoothstep(${inner.toFixed(1)}, ${(inner * 1.6 + 0.01).toFixed(1)}, dist);
@@ -675,7 +704,13 @@ export class World {
           float hs = aShape.x * keep * fade * (0.35 + 0.5*m.a) * (0.7 + 0.5*clump) * (0.8 + 0.9*field + 0.5*gold) * ${o.tall.toFixed(2)};
           float t = position.y;
           float a = aOff.z * 43.0;
-          vec3 p = vec3(position.x*cos(a) - position.z*sin(a), t*hs, position.x*sin(a) + position.z*cos(a));
+          // a few blades in the near layer are wild flowers, in loose patches: a thin stem that opens into a wide
+          // head over its top joint. They stand a little above the grass, so the colour shows.
+          float fl = ${o.far ? "0.0" : "step(0.95, fract(aShape.y * 7.31 + aOff.z * 3.7)) * (1.0 - step(0.3, gold)) * step(0.45, vnoise(wp * 0.05 + 2.0))"};
+          float head = step(${(1 - 1 / (o.joints || 6) - 0.01).toFixed(3)}, t);
+          float bx = fl > 0.5 ? sign(position.x) * mix(0.012, 0.062, head) : position.x;
+          hs *= 1.0 + fl * 0.15;
+          vec3 p = vec3(bx*cos(a) - position.z*sin(a), t*hs, bx*sin(a) + position.z*cos(a));
           // wind: every blade leans with it, small flutters, and big waves that roll across whole fields
           vec2 wd = normalize(uWind + vec2(vnoise(wp*0.004 + uTime*0.02) - 0.5, vnoise(wp*0.004 + 5.0) - 0.5) * 0.8);
           float flutter = sin(uTime*4.3 + aOff.z*60.0 + wp.x*0.3) * 0.12;
@@ -711,15 +746,24 @@ export class World {
           vec3 gn = normalize(vec3(hl - hr, 4.0, hd - hu));
           float sun = clamp(dot(gn, normalize(uSunDir)) * 0.6 + 0.45, 0.25, 1.1);
           vec3 base = m.rgb * mix(vec3(0.6, 0.76, 0.95), vec3(1.06, 1.02, 0.9), sun);
-          // dark, cool roots and bright, warm tips
-          vec3 root = base * vec3(0.42, 0.5, 0.52), tip = base * vec3(1.22, 1.18, 0.86);
-          vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.88 + aShape.y*0.24);
+          // soft, cool roots and bright yellow-green tips: a smooth wash of colour up the blade, with little
+          // difference from one blade to the next, so a field reads as one soft mass
+          vec3 root = base * vec3(0.62, 0.7, 0.66), tip = base * vec3(1.15, 1.12, 0.93);
+          vCol = mix(root, tip, smoothstep(0.0, 1.0, t)) * (0.93 + aShape.y*0.14);
           float hue = vnoise(wp * 0.018 + 7.0);
           vCol = mix(vCol, vCol * vec3(0.86, 1.0, 1.02), smoothstep(0.55, 0.8, hue) * 0.6);
           vCol = mix(vCol, vCol * vec3(1.18, 1.08, 0.72), smoothstep(0.62, 0.9, clump) * t * 0.6);
           // pampas: straw stems and pale, feathery heads
-          vec3 straw = mix(vec3(0.62, 0.5, 0.28), vec3(1.0, 0.9, 0.62), t) * mix(0.8, 1.05, sun);
+          vec3 straw = mix(vec3(0.5, 0.38, 0.2), vec3(0.95, 0.84, 0.56), smoothstep(0.0, 1.0, t)) * mix(0.8, 1.05, sun);
           vCol = mix(vCol, straw, gold * 0.85);
+          // the flower heads: yellow, white, pink, blue and orange
+          float fh = fract(aShape.y * 13.7);
+          vec3 fc = fh < 0.32 ? vec3(1.0, 0.85, 0.25) : fh < 0.52 ? vec3(1.0, 0.97, 0.9) : fh < 0.7 ? vec3(1.0, 0.56, 0.64) : fh < 0.86 ? vec3(0.46, 0.62, 1.0) : vec3(1.0, 0.52, 0.3);
+          vCol = mix(vCol, fc * mix(0.82, 1.08, sun), fl * head);
+          ${o.far ? `// far away the flowers are too small to draw, so the tips of the clumps take their colour in patches
+          float bloom = smoothstep(0.6, 0.78, vnoise(wp * 0.03 + 17.0)) * (1.0 - gold);
+          vec3 bc = mix(vec3(1.0, 0.86, 0.3), vec3(1.0, 0.62, 0.7), step(0.55, vnoise(wp * 0.01 + 4.0)));
+          vCol = mix(vCol, bc * mix(0.85, 1.05, sun), bloom * t * t * 0.45);` : ""}
           // sun behind the grass: the tips light up
           vec3 V = normalize(cameraPosition - w);
           vBack = pow(max(dot(-V, normalize(uSunDir)), 0.0), 3.0) * t * t * step(0.0, uSunDir.y);
@@ -730,11 +774,12 @@ export class World {
         void main(){
           vec3 col = vCol;
           // the silvery sheen that runs over a field as the wind flattens it
-          col = mix(col, col * 1.3 + uSunCol * 0.14, vGust * 0.6);
-          col += uSunCol * vBack * mix(vec3(0.55, 0.75, 0.2), vec3(0.9, 0.75, 0.4), vGold) * 0.9;
+          col = mix(col, col * 1.22 + uSunCol * 0.1, vGust * 0.45);
+          col += uSunCol * vBack * mix(vec3(0.65, 0.73, 0.4), vec3(0.9, 0.75, 0.4), vGold) * 0.55;
           col *= vShadeFog.x * uLight;
           col = mix(col, uFog, vShadeFog.y);
-          gl_FragColor = vec4(col, 1.0);
+          // alpha 0 marks grass for the painted pass, which then draws no ink lines between the blades
+          gl_FragColor = vec4(col, 0.0);
         }`,
     });
     mat.uniforms.uTrail = this.grassU.uTrail;
@@ -881,8 +926,24 @@ export class World {
       shadeByHeight(g, 2, 11.5);
       return weld(g);
     };
-    const canopyGeo = canopyOf(2), canopyFar = canopyOf(this.low ? 0 : 1);
-    const pineGeo = pineOf(11), pineFar = pineOf(6);
+    // Crossed, irregular leaf clusters preserve silhouette detail from every direction.
+    const leafCrown = (pine, far) => {
+      const cards = [], levels = pine ? 7 : 4, spokes = far ? 3 : 6;
+      for(let level=0;level<levels;level++) for(let k=0;k<spokes;k++) {
+        const a=k/spokes*Math.PI*2 + level*.77;
+        const width=pine ? 5.8-level*.68 : 4.2-level*.38;
+        const g=new THREE.PlaneGeometry(width, pine ? 2.8 : 3.5);
+        g.rotateY(a); g.rotateX(-.1);
+        const spread=pine ? .3 : 1.05;
+        g.translate(Math.cos(a)*spread, (pine ? 3.2 : 4.4)+level*(pine?1.25:1.05), Math.sin(a)*spread);
+        cards.push(g);
+      }
+      const g=mergeTextured(cards); cards.forEach(c=>c.dispose()); return g;
+    };
+    const canopyGeo = this.tex.leaves ? leafCrown(false,false) : canopyOf(2);
+    const canopyFar = this.tex.leaves ? leafCrown(false,true) : canopyOf(this.low ? 0 : 1);
+    const pineGeo = this.tex.leaves ? leafCrown(true,false) : pineOf(11);
+    const pineFar = this.tex.leaves ? leafCrown(true,true) : pineOf(6);
     // Trees are split into square tiles. The camera and the sun's shadow skip the tiles they cannot see.
     // Each tile has a near version and a far version. The far version uses a simpler shape and casts no shadow.
     this.treeTiles = this.treeTiles || [];
@@ -912,12 +973,26 @@ export class World {
         this.treeTiles.push({ near, far, x: bs.center.x, z: bs.center.z, r: bs.radius });
       }
     };
-    const canopyMat = this.swayMaterial(0xffffff); canopyMat.vertexColors = true;
-    const pineMat = this.swayMaterial(0xffffff); pineMat.vertexColors = true;
+    const foliage = () => {
+      if (!this.tex.leaves) { const m=this.swayMaterial(0xffffff); m.vertexColors=true; return m; }
+      const m=cartoonMaterial({map:this.tex.leaves,alphaTest:.65,side:THREE.DoubleSide,emissive:0xffffff,emissiveMap:this.tex.leaves,emissiveIntensity:.025});
+      const pigment=m.onBeforeCompile;
+      m.onBeforeCompile = sh => {
+        pigment(sh);
+        sh.uniforms.uTime=SHARED.uTime;
+        sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+          #ifdef USE_INSTANCING
+          float phase=instanceMatrix[3].x*.07+instanceMatrix[3].z*.05;
+          transformed.x+=sin(uTime+phase+position.y*.6)*max(position.y-2.0,0.0)*.025;
+          #endif`);
+      };
+      m.customProgramCacheKey=()=> 'cartoon-leaf-cards';return m;
+    };
+    const canopyMat=foliage(), pineMat=foliage();
     mk(trunkGeo, trunkGeo, M.toon(0x7a5238), round);
     mk(trunkGeo, trunkGeo, M.toon(0x6a4430), pine, null, 0.6);
-    mk(canopyGeo, canopyFar, canopyMat, round, (c, v, x) => c.setHSL(0.25 + v * 0.07 - smooth(200, 500, x) * 0.04, 0.46 + v * 0.1, 0.42 + v * 0.1));
-    mk(pineGeo, pineFar, pineMat, pine, (c, v) => c.setHSL(0.35 + v * 0.05, 0.36, 0.33 + v * 0.07));
+    mk(canopyGeo, canopyFar, canopyMat, round, (c, v, x) => this.tex.leaves ? c.setRGB(.83+v*.17,.89+v*.11,.8+v*.2) : c.setHSL(0.25 + v * 0.07 - smooth(200, 500, x) * 0.04, 0.46 + v * 0.1, 0.42 + v * 0.1));
+    mk(pineGeo, pineFar, pineMat, pine, (c, v) => this.tex.leaves ? c.setRGB(.61+v*.2,.77+v*.18,.7+v*.18) : c.setHSL(0.35 + v * 0.05, 0.36, 0.33 + v * 0.07));
     this.treeCount = round.length + pine.length;
     this.bigTree(canopyGeo, canopyMat, trunkGeo);
     // apples under some round trees
@@ -1022,10 +1097,10 @@ export class World {
   buildPlaces() {
     const c = this.cottage;
     // the cottage, facing the lake
-    this.cabin = this.place(M.cabin(), c.x, c.z, Math.PI);
+    this.cabin = this.place(M.cabin(this.tex), c.x, c.z, Math.PI);
     // the painted cabin is taller than the shape-built one; you climb onto the roof ridge
     const csz = this.cabin.userData.size;
-    this.cabinTop = this.cabin.position.y + (csz ? Math.min(8, csz.y * 0.7) : 5.2);
+    this.cabinTop = this.cabin.position.y + (this.cabin.userData.roofHeight ?? (csz ? Math.min(8, csz.y * 0.7) : 5.2));
     this.addBox({ x: c.x, z: c.z, hw: 5.3, hd: 4.3, rot: Math.PI, y0: this.cabin.position.y, top: this.cabinTop, climb: true });
     this.addBox({ x: c.x, z: c.z - 5.3, hw: 5, hd: 1.2, rot: Math.PI, y0: this.cabin.position.y - 1, top: this.cabin.position.y + 0.4, walk: true });
     this.place(M.outhouse(false), c.x + 16, c.z + 6, Math.PI * 0.8);

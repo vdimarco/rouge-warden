@@ -1,5 +1,5 @@
 // js/story/ui/menu.js : the story's pause menu. RESUME, MAP, EVIDENCE, MISSIONS (the chapter log),
-// CONTROLS (for the device in use; TILT only on a phone that can tilt), MUSIC, SAVE & QUIT (S.exit, back to the title), SWITCH GAME
+// CONTROLS (for the device in use; TILT only on a phone that can tilt), MUSIC, FULL SCREEN, SAVE & QUIT (S.exit, back to the title), SWITCH GAME
 // (data-switch) and ARCADE. It opens on Esc, P or pad Start, when the pointer lock is lost, and when the
 // page hides (the director's pauseMenu). The story clock stops while it is open. The arrows, the d-pad or
 // the left stick move the focus; E, Enter or pad A picks; Esc or pad B goes back.
@@ -17,7 +17,7 @@ export function createMenu(U, { map, board }) {
   const { S, make, root } = U;
   const el = make('div', 'sMenu hidden', root, `<div class="mWrap"><div class="mMain"><p class="mK">止</p><h2>PAUSED</h2><p class="mCh"></p><div class="mBtns">
     <button type="button" class="main" data-a="resume">▶ RESUME</button><button type="button" data-a="map">MAP</button><button type="button" data-a="board">EVIDENCE</button>
-    <button type="button" data-a="missions">MISSIONS</button><button type="button" data-a="controls">CONTROLS</button><button type="button" data-a="music">MUSIC <small></small></button>
+    <button type="button" data-a="missions">MISSIONS</button><button type="button" data-a="controls">CONTROLS</button><button type="button" data-a="music">MUSIC <small></small></button><button type="button" data-a="full">FULL SCREEN <small></small></button>
     <button type="button" data-a="quit">SAVE &amp; QUIT</button><button type="button" data-a="switch" data-switch>SWITCH GAME</button><a href="/" data-a="arcade">◀ ARCADE</a></div>
     <p class="mTip"></p></div><div class="mPage hidden"><div class="mBody"></div><div class="mBtns"><button type="button" data-a="back">◀ BACK</button></div></div></div>`);
   el.id = 'sMenu';
@@ -41,7 +41,13 @@ export function createMenu(U, { map, board }) {
     else if (a === 'missions' || a === 'controls') showPage(a);
     else if (a === 'back') showPage('main');
     else if (a === 'music') { const M = S.ctx.Music; if (M && M.enabled) M.toggle(); musicLabel(); }
+    else if (a === 'full') { const F = window.CrimsonFullscreen; if (F && F.can) F.set(!F.on); fullLabel(); }
     else if (a === 'quit') { api.close(); S.exit(); }
+  }
+  function fullLabel() {
+    const F = window.CrimsonFullscreen, b = el.querySelector('[data-a="full"]');
+    b.classList.toggle('hidden', !(F && F.can));
+    if (F) b.querySelector('small').textContent = F.on ? 'ON' : 'OFF';
   }
   function musicLabel() {
     const M = S.ctx.Music, b = el.querySelector('[data-a="music"]');
@@ -92,7 +98,7 @@ export function createMenu(U, { map, board }) {
       const C = S.content && S.content.CHAPTERS && S.content.CHAPTERS[S.missions && S.missions.chapter];
       el.querySelector('.mCh').textContent = C ? `CHAPTER ${C.n} · ${String(C.title).toUpperCase()}` : '';
       el.querySelector('.mTip').textContent = U.touch ? 'TAP A BUTTON' : U.device === 'pad' ? 'D-PAD MOVES · A CHOOSES · B RESUMES' : 'ARROWS MOVE · ENTER CHOOSES · ESC RESUMES';
-      musicLabel();
+      musicLabel(); fullLabel();
       el.querySelector('[data-a="map"]').classList.toggle('hidden', !(S.world && S.world.visible));
       el.classList.remove('hidden');
       showPage('main');

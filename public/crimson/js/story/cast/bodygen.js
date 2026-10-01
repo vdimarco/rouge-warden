@@ -294,7 +294,9 @@ export function buildBody(donor, id, variant = 0) {
     const u = front ? u0 : (u0 < 0.5 ? 0.02 : 0.98), v = Math.min(0.98, Math.max(0.02, v0));
     return [(F.x + u * F.s) / AT, (F.y + v * F.s) / AT];
   };
-  ellipsoid(G, hc, hr.x, hr.y, hr.z, (p) => (p.y < J.Head.y + 2 ? W2('neck', 'Head', 0.8) : W1('Head')), faceUV, { lat: 10, lon: 14 });
+  // The face and its talking mouth share the Head bone so head turns keep
+  // the lips attached. More rings soften the silhouette in close-ups.
+  ellipsoid(G, hc, hr.x, hr.y, hr.z, () => W1('Head'), faceUV, { lat: 20, lon: 28 });
   // ears
   for (const sd of [-1, 1]) ellipsoid(G, V3(hc.x + sd * (hr.x - 0.5), hc.y - 1, hc.z - 1), 1.3, 3, 2.2, W1('Head'), () => skinC, { lat: 4, lon: 6 });
   const headTop = hc.y + hr.y;
@@ -508,8 +510,23 @@ export function buildBody(donor, id, variant = 0) {
   root.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(order));
   // the painted mouth (paintFace: v 0.725 of the face) in rig space, for the talking mouth (talk.js)
-  const my = hc.y - 0.5 - (0.725 - 0.5) * hr.y * 2.1, mz = hc.z + hr.z * Math.sqrt(Math.max(0, 1 - ((my - hc.y) / hr.y) ** 2));
-  const mouth = { x: hc.x - J.Hips.x, y: my - geo.boundingBox.min.y, z: mz - J.Hips.z + 0.1, w: 3.8 };
+  const mouthV = 0.735 + 0.01 * spec.face.smile;
+  const my = hc.y - 0.5 - (mouthV - 0.5) * hr.y * 2.1;
+  // Intersect the actual triangles at the painted lip centre. The ideal
+  // ellipsoid sits in front of the mesh and made the mouth float.
+  let mz = -Infinity;
+  const P = geo.attributes.position, I = geo.index;
+  for (let k = 0; k < I.count; k += 3) {
+    const a = I.getX(k), b = I.getX(k + 1), c = I.getX(k + 2);
+    const ax = P.getX(a), ay = P.getY(a), bx = P.getX(b), by = P.getY(b), cx = P.getX(c), cy = P.getY(c);
+    const den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(den) < 1e-8) continue;
+    const u = ((by - cy) * (hc.x - cx) + (cx - bx) * (my - cy)) / den;
+    const v = ((cy - ay) * (hc.x - cx) + (ax - cx) * (my - cy)) / den;
+    if (u >= 0 && v >= 0 && u + v <= 1) mz = Math.max(mz, u * P.getZ(a) + v * P.getZ(b) + (1 - u - v) * P.getZ(c));
+  }
+  if (!Number.isFinite(mz)) mz = hc.z + hr.z;
+  const mouth = { x: hc.x - J.Hips.x, y: my - geo.boundingBox.min.y, z: mz - J.Hips.z + 0.08, w: 4.8 };
   root.userData = { id, variant, spec, tris: geo.index.count / 3, headTop, hatTop, mouth, bodyHeight: (headTop - Math.min(0, geo.boundingBox.min.y)) * 0.01, glow: spec.glow, height: spec.h };
   return { scene: root, animations: [], url: `code:${id}:${variant}`, built: true };
 }

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#25382c">
+<title>BREAKTHROUGH — Climate Roguelike</title>
+<meta name="description" content="A 30-minute strategy roguelike about inventing humanity's way through the 21st century.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a href="/" class="back">← Arcade</a>
+    <div class="brand">BREAKTHROUGH</div>
+    <button id="soundBtn" class="iconBtn" aria-label="Toggle sound">♪</button>
+  </header>
+
+  <main>
+    <section id="titleScreen" class="screen title-screen">
+      <div class="sky">
+        <div class="sun"></div>
+        <div class="mountains far"></div>
+        <div class="mountains near"></div>
+        <div class="city">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="wind w1"></div><div class="wind w2"></div><div class="wind w3"></div>
+      </div>
+      <div class="titleCard">
+        <p class="eyebrow">2026 → 2100</p>
+        <h1>Invent a future<br>worth reaching.</h1>
+        <p class="lede">Build breakthroughs, survive shocks, and bend humanity's climate trajectory in a run that lasts under 30 minutes.</p>
+        <button id="startBtn" class="primary">Begin a new timeline</button>
+        <p id="seedNote" class="seedNote hidden" role="status"></p>
+        <p class="micro">12 turns · deterministic seeds · one-handed mobile play</p>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen game-screen hidden">
+      <div class="world" id="world">
+        <div class="worldSky"></div>
+        <div class="worldSun"></div>
+        <div class="cloud c1"></div><div class="cloud c2"></div>
+        <div class="ridge r1"></div><div class="ridge r2"></div>
+        <div class="forest" id="forest"></div>
+        <div class="settlement" id="settlement"></div>
+        <div class="infrastructure" id="infrastructure"></div>
+        <div class="smog" id="smog"></div>
+        <div class="worldOverlay"></div>
+        <div class="year" id="year">2026</div>
+        <div class="tempBadge"><span id="warming">+2.8°C</span><small>2100 path</small></div>
+      </div>
+
+      <div class="hud">
+        <div class="phase">
+          <span id="turnLabel">Turn 1 of 12</span>
+          <strong id="phaseTitle">Choose humanity's next bet</strong>
+          <span id="runSeed" class="runSeed"></span>
+        </div>
+        <div class="meters">
+          <div><span>Capital</span><b id="capital">8</b></div>
+          <div><span>Research</span><b id="research">7</b></div>
+          <div><span>Political</span><b id="political">6</b></div>
+          <div><span>Trust</span><b id="trust">6</b></div>
+          <div><span>Industry</span><b id="industry">6</b></div>
+        </div>
+      </div>
+
+      <div class="statusStrip">
+        <div><span>Emissions</span><strong id="emissions">100</strong></div>
+        <div><span>Energy cost</span><strong id="energy">100</strong></div>
+        <div><span>Prosperity</span><strong id="prosperity">55</strong></div>
+        <div><span>Ecology</span><strong id="ecology">55</strong></div>
+      </div>
+
+      <section class="decisionPanel">
+        <div id="eventBanner" class="eventBanner hidden"></div>
+        <div id="cards" class="cards"></div>
+        <div class="footerActions">
+          <button id="ideaBtn" class="secondary">Idea Lab</button>
+          <button id="timelineBtn" class="secondary">Timeline</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="endScreen" class="screen end-screen hidden">
+      <div class="endArt" id="endArt"></div>
+      <div class="endCard">
+        <p class="eyebrow">YOUR 21ST CENTURY</p>
+        <h2 id="endingTitle">The Age of Abundance</h2>
+        <p id="endingCopy"></p>
+        <div id="endStats" class="endStats"></div>
+        <div>
+          <h3>Breakthroughs</h3>
+          <div id="breakthroughList" class="chips"></div>
+        </div>
+        <button id="againBtn" class="primary">Start another timeline</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="modal">
+    <button class="modalClose" id="modalClose">×</button>
+    <div id="modalBody"></div>
+  </dialog>
+</div>
+<script src="./game.js"></script>
+</body>
+</html>

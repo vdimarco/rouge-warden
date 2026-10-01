@@ -1,0 +1,25 @@
+{
+  "provider": "Higgsfield API",
+  "model": "marketing-studio/image",
+  "recipe": "higgsfield/monster-environment-assets.json",
+  "jobs": {
+    "landforms": {
+      "request_id": "95eff9cb-1d9d-45b7-a216-0d3462798dcc",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/d7c432cb-49ae-4f08-9e37-eb8c4b5a521c.png"
+        }
+      ]
+    },
+    "surfaces": {
+      "request_id": "0dbbb3c0-3deb-4f33-a318-9bc60ec25d5a",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/1e5b189a-938e-4f26-bad9-b039578d3248.png"
+        }
+      ]
+    }
+  }
+}

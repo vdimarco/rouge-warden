@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {MouseSword} from '../public/neon/mouse-sword.js';
+const mouse=new MouseSword();
+mouse.move(150,200,1000,800);mouse.update(.1);let blade=mouse.blade(1000,800);assert(Math.abs(blade.bx-150)<2);assert(Math.abs(blade.by-200)<2);
+mouse.move(900,150,1000,800);mouse.update(.1);blade=mouse.blade(1000,800);assert(Math.abs(blade.bx-900)<4);assert(Math.abs(blade.by-150)<2);
+assert.equal(mouse.drag(950,150),null,'hover must never attack');
+mouse.press(100,100);assert.equal(mouse.drag(105,103),null,'jitter must not attack');assert.deepEqual(mouse.release(),{x:750,y:-50},'click should use latest direction');assert.equal(mouse.release(),null,'release cannot duplicate click');
+mouse.press(100,100);assert.deepEqual(mouse.drag(120,100),{x:20,y:0});assert.equal(mouse.release(),null,'drag release must not add a second strike');
+mouse.press(100,100);assert.deepEqual(mouse.drag(100,80),{x:0,y:-20});mouse.release();
+const a=new MouseSword(),b=new MouseSword();a.move(900,100,1000,800);b.move(900,100,1000,800);for(let i=0;i<6;i++)a.update(1/60);for(let i=0;i<12;i++)b.update(1/120);assert(Math.abs(a.x-b.x)<1e-10);assert(Math.abs(a.y-b.y)<1e-10);
+const side=a.blade(1000,800,true,false),overhead=a.blade(1000,800,true,true);assert(Math.abs(side.by-side.ay)>Math.abs(side.bx-side.ax));assert(Math.abs(overhead.bx-overhead.ax)>Math.abs(overhead.by-overhead.ay));
+mouse.attack(-1);mouse.update(.08);assert(mouse.swing>0);mouse.update(.2);assert.equal(mouse.swing,0);mouse.reset();assert.equal(mouse.active,false);assert.equal(mouse.down,false);
+console.log('Mouse controls passed: full-width hover aim, frame-independent smoothing, click/drag strikes, jitter rejection, no duplicate release hits, guard poses, and reset.');

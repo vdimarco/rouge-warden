@@ -1,0 +1,27 @@
+{
+  "asset": "worlds-atlas.webp",
+  "source": "OpenAI built-in image generation",
+  "created": "2026-09-29",
+  "layout": {
+    "columns": 3,
+    "rows": 2,
+    "order": [
+      "threadwake",
+      "foldwild",
+      "stormchoir",
+      "borrowed",
+      "season",
+      "heartship"
+    ]
+  },
+  "original_size": [
+    1254,
+    1254
+  ],
+  "encoding": {
+    "format": "webp",
+    "quality": 83
+  },
+  "prompt_summary": "Six equal portrait game backdrops in a 3-column, 2-row atlas: teal suspended root islands, ivory origami mountains, cobalt cloud cathedral, violet bioluminescent insect-scale forest, amber/cyan seasonal garden, living turquoise ocean. Cohesive hand painted atmosphere with quiet centres, no text or characters.",
+  "provider_notes": "Fal pricing/submission orchestration stalled without returning request IDs or results; submission status unknown. Higgsfield local API credentials were absent. No Fal or Higgsfield output is claimed for this asset."
+}

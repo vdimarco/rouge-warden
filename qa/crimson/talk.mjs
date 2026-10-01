@@ -6,7 +6,7 @@
 // - Subtitles and cine lines move the line's speaker (a cine line names no one: its LINES speaker talks),
 //   on a GLB body, the arena Gabe and a code-built body alike; the mouth is a few dozen triangles.
 // - Hats: each chapter's costume and kasa follow the rule (costume from F3 to I5 and in C0 and I0; the kasa
-//   worn on the nights out F3 and F5, slung on the back the morning after and after the fight; day clothes
+//   worn on the nights out F3 and F5, off (not drawn) the morning after and after the fight; day clothes
 //   in F1, F2 and the present), one hat each (the body's own cap folds away under a worn kasa, and back when
 //   it comes off), nothing carries over between chapters, the arena ronin gets no second hat in C0, and
 //   the crew put the kasa on for the E1 photo ("Kasa hats on.").
@@ -119,7 +119,9 @@ await step(page, 3);
 
 /* 5. a cine line (it names no speaker; the line's own speaker talks): I1 under the bridge, Gabe */
 const cine = await page.evaluate(() => {
+  // This deterministic animation test uses simulation time. Real audio clocks are tested in cinematic-sound.mjs.
   const S = __crimson.story.S;
+  S.audio.beginCinematic = () => ({ ready: true }); S.audio.speak = () => null;
   window.__qaOn = null;
   window.__cine = S.cine.play("i1");
   const out = []; let gabe = null;
@@ -139,7 +141,7 @@ await step(page, 1);
 
 /* 6. hats per chapter */
 const HEAD = ["f3", "f5"], BACK = ["c0", "i0", "i1", "i2", "i3", "f4", "i4", "i5"];
-const want = (ch) => ({ on: HEAD.includes(ch) || BACK.includes(ch), kasa: HEAD.includes(ch) ? "head" : BACK.includes(ch) ? "back" : false });
+const want = (ch) => ({ on: HEAD.includes(ch) || BACK.includes(ch), kasa: HEAD.includes(ch) ? "head" : false }); // BACK days: costume on, no kasa drawn
 const hats = await page.evaluate((order) => {
   const S = __crimson.story.S, T3 = S.THREE, M = S.missions, was = M.chapter, out = {};
   const p = S.hero.pos;
@@ -172,7 +174,7 @@ for (const ch of T.CHAPTER_ORDER) for (const r of hats[ch]) {
   if (r.kasa !== "head" && r.folded) bad.push(`${ch} ${r.id}: the cap is still folded with no kasa on the head`);
   if (!r.hullSame) bad.push(`${ch} ${r.id}: the outline hull does not match the body`);
   if (r.kasa === "head" && !(r.kasaUp > 0.05 && r.kasaUp < 0.3 && r.kasaOff < 0.12)) bad.push(`${ch} ${r.id}: the kasa sits off the head (${r.kasaUp} up, ${r.kasaOff} off)`);
-  if (r.kasa === "back" && !(r.backZ < -0.1 && r.backY > 1.1 && r.backY < 1.6)) bad.push(`${ch} ${r.id}: the kasa is not on the back (z ${r.backZ}, y ${r.backY})`);
+  if (BACK.includes(ch) && r.hats !== 0) bad.push(`${ch} ${r.id}: a kasa draws on a day it stays off (a slung one read as a disc through the body)`);
 }
 check(!bad.length, `every chapter dresses the crew by the rule, one hat each, nothing carried over (${bad.length ? bad.slice(0, 6).join("; ") : T.CHAPTER_ORDER.map((c) => `${c}:${hats[c][0].on ? hats[c][0].kasa : "day"}`).join(" ")})`);
 if (SHOTS) {

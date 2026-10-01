@@ -1,0 +1,19 @@
+{
+  "id": "/vr/",
+  "name": "In Full Swing",
+  "short_name": "Full Swing",
+  "description": "Swing through the city on plunger ropes and flush the Porcelain King. A VR game for Meta Quest 3.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/vr/?source=pwa",
+  "scope": "/vr/",
+  "display": "standalone",
+  "background_color": "#1a1020",
+  "theme_color": "#e0482c",
+  "categories": ["games"],
+  "icons": [
+    { "src": "/vr/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/vr/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/vr/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

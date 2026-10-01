@@ -34,7 +34,11 @@ try {
     process.exit(1);
   }
 }
-const credentials = process.env.HF_CREDENTIALS?.trim() ?? '';
+// Accept the Vercel names as well as the original CLI combined credential.
+const apiKey = process.env.HIGGSFIELD_API_KEY?.trim() ?? '';
+const apiSecret = process.env.HIGGSFIELD_API_SECRET?.trim() ?? '';
+const credentials = process.env.HF_CREDENTIALS?.trim()
+  || (apiKey.includes(':') ? apiKey : apiKey && apiSecret ? `${apiKey}:${apiSecret}` : '');
 
 // Node prints a raw error with its message, which could hold the key. Send every stray error through fail().
 process.on('uncaughtException', (e) => fail(`unexpected error: ${e instanceof Error ? `${e.name}: ${clip(e.message)}` : 'unknown'}`));
@@ -43,7 +47,7 @@ process.on('unhandledRejection', (e) => fail(`unexpected error: ${e instanceof E
 // Remove the credential from any text before it is printed.
 export function redact(text: string): string {
   let out = text;
-  for (const secret of [credentials, ...credentials.split(':')]) {
+  for (const secret of [credentials, ...credentials.split(':'), apiKey, apiSecret]) {
     if (secret.length >= 8) out = out.split(secret).join('[redacted]');
   }
   return out;
@@ -66,10 +70,10 @@ export function done(): void {
 }
 
 function authHeaders(): Record<string, string> {
-  if (!credentials) fail('HF_CREDENTIALS is not set. Put HF_CREDENTIALS="key-id:key-secret" in higgsfield/.env.local.');
+  if (!credentials) fail('Set HIGGSFIELD_API_KEY and HIGGSFIELD_API_SECRET, or a combined key-id:key-secret in HIGGSFIELD_API_KEY or HF_CREDENTIALS.');
   // Printable characters only, one colon: a line break or space inside the key would break every request.
   if (!/^[\x21-\x39\x3b-\x7e]+:[\x21-\x39\x3b-\x7e]+$/.test(credentials)) {
-    fail('HF_CREDENTIALS must have the form "key-id:key-secret": one colon, no spaces or line breaks.');
+    fail('The Higgsfield credential must have the form "key-id:key-secret": one colon, no spaces or line breaks.');
   }
   return { Authorization: `Key ${credentials}` };
 }

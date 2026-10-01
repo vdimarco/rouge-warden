@@ -13,7 +13,7 @@ import * as A from "./audio.js";
 import { rng, clamp, lerp, smooth } from "./noise.js";
 import { Painter, QUALITY } from "./post.js";
 
-THREE.ColorManagement.enabled = false;
+THREE.ColorManagement.enabled = true;
 const $ = (s) => document.querySelector(s);
 const SAVE_KEY = "plungerd.wild.v1";
 const DAY = 600;
@@ -52,7 +52,7 @@ const anisoFor = (n) => (low ? Math.min(2, ANISO[n]) : ANISO[n]);
   else console.warn("Breath of the Lake: the shadow chunk has changed, keeping three.js's own PCF filter");
 }
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 // With no saved choice, a computer with built-in graphics or a software renderer starts on Medium, not High:
 // the painted High setting is too heavy for most of them. That means Intel, AMD's Radeon Graphics and Vega chips
 // inside the processor, and phone chips in a laptop. Separate cards (Intel Arc, Radeon RX and Pro) stay on High,
@@ -65,9 +65,15 @@ if (!gfxSaved && gfx === "high") {
     if (built.test(chip) && !/\bArc\b|\bRX\b|Radeon Pro/i.test(chip)) { gfx = "medium"; Q = QUALITY.medium; }
   } catch (e) { /* no chip name */ }
 }
-// dynamic resolution: the render scale drops when frames are slow and climbs back when there is room
+// dynamic resolution: the render scale drops when frames are slow and climbs back when there is room.
+// Above 1 it climbs past the setting's own ratio toward maxRatio, so a sharp phone screen that has time to spare
+// gets crisper edges; it never goes past the screen's own pixel ratio.
 let resScale = 1, redraw = true;
-const applyRatio = () => { renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, Q.ratio) * resScale)); redraw = true; };
+const applyRatio = () => {
+  const base = Math.min(devicePixelRatio, Q.ratio);
+  renderer.setPixelRatio(Math.max(0.5, resScale > 1 ? Math.min(devicePixelRatio, Q.maxRatio || Q.ratio, Q.ratio * resScale) : base * resScale));
+  redraw = true;
+};
 applyRatio();
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -82,7 +88,7 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
 sun.castShadow = true;
 sun.shadow.mapSize.set(Q.shadow, Q.shadow);
-Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 600 });
+Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, near: 1, far: 600 });
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
@@ -176,13 +182,13 @@ G.writeSave = () => {
 function loadTextures() {
   const L = new THREE.TextureLoader(), out = {};
   const one = (k, f) => Promise.race([L.loadAsync("tex/" + f), new Promise((r) => setTimeout(r, 30000))])
-    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = k === "backdrop" ? (low ? 2 : 8) : anisoFor(gfx); out[k] = t; })
+    .then((t) => { if (!t) return; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = k === "backdrop" ? (low ? 2 : 8) : anisoFor(gfx); if (["facade", "siding", "oak", "shingles", "linen", "leaves", "sky"].includes(k)) t.colorSpace = THREE.SRGBColorSpace; out[k] = t; })
     .catch(() => {});
-  return Promise.all([one("grass", "grass.jpg"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg")]).then(() => out);
+  return Promise.all([one("grass", "painted-meadow.webp"), one("dirt", "dirt.jpg"), one("rock", "rock.jpg"), one("sand", "sand.jpg"), one("backdrop", "backdrop.jpg"), ...Object.entries({facade:"cottage-facade",siding:"cottage-siding",oak:"cottage-oak",shingles:"cottage-shingles",linen:"cottage-linen",leaves:"painted-leaves",sky:"summer-sky"}).map(([k,f])=>one(k,f+".webp"))]).then(() => out);
 }
 // The title waits only for the models the world is built from (the quest critters use the four animals).
 // The crew, the bosses and the fish load behind the title; start() waits for any still on the way.
-const WORLD_MODELS = ["cabin", "outhouse", "statue", "kayak", "goose", "raccoon", "bear", "moose"];
+const WORLD_MODELS = [ "outhouse", "statue", "kayak", "goose", "raccoon", "bear", "moose"];
 const CREW_MODELS = Object.keys(GLB.FIT).filter((n) => !WORLD_MODELS.includes(n));
 setTimeout(async () => {
   const lt = $("#loadText");
@@ -923,16 +929,16 @@ G.clockText = () => {
 /* ---------------- day and night ---------------- */
 const C = (h) => new THREE.Color(h);
 const SKY = {
-  day: { top: C(0x3a82d6), hor: C(0xd6ecf6), sun: C(0xfff0d0), hemi: C(0xd2e6ff), gnd: C(0x7a8a50), si: 1.65, hi: 1.05 },
+  day: { top: C(0x72aebe), hor: C(0xd6e5da), sun: C(0xffedc5), hemi: C(0xaac8ee), gnd: C(0x829774), si: 2.7, hi: 1.15 },
   dusk: { top: C(0x5c6cbc), hor: C(0xffc49a), sun: C(0xffa868), hemi: C(0xffd6b8), gnd: C(0x5a4a3a), si: 1.15, hi: 0.9 },
-  night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.35, hi: 0.55 },
+  night: { top: C(0x0a1230), hor: C(0x24345a), sun: C(0x8aa0ff), hemi: C(0x5a70b0), gnd: C(0x1a2030), si: 0.9, hi: 0.55 },
 };
 const STORM = { top: C(0x2a1638), hor: C(0x8a6a9a), sun: C(0xd8b8ff), hemi: C(0x9a80c0) };
 const tmpC = new THREE.Color();
 function mixSky(a, b, t, key) { return tmpC.copy(a[key]).lerp(b[key], t).clone(); }
 function lighting() {
   const t = G.clock, a = (t - 0.25) * Math.PI * 2;
-  const sd = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.35).normalize();
+  const sd = new THREE.Vector3(Math.cos(a), Math.sin(a), -0.55).normalize();
   const elev = sd.y;
   let A1, B1, k;
   if (elev > 0.25) { A1 = SKY.day; B1 = SKY.day; k = 0; }
@@ -951,6 +957,7 @@ function lighting() {
   w.skyU.uSunCol.value.copy(mixSky(A1, B1, k, "sun"));
   const night = smooth(-0.05, -0.3, elev);
   w.skyU.uNight.value = night;
+  w.skyU.uDaylight.value = smooth(0.05, 0.4, elev); w.skyU.uMood.value = mood;
   if (w.backU) { w.backU.uTint.value.copy(hor).lerp(top, 0.18); w.backU.uNight.value = night; w.backU.uLight.value = 0.45 + 0.55 * (1 - night); }
   G.night = night > 0.5;
   // distant hills fade into a soft blue haze, like a painted backdrop
@@ -974,8 +981,8 @@ function lighting() {
   for (const c of w.clouds) c.material.color.copy(cloudCol);
   // the colour far hills fade into: a deeper blue than the fog, like the painted distances in an animated film
   G.look = { time: G.time, night, sunDir: sd, sunCol, haze: hor.clone().lerp(top, 0.42), mood, punch: G.punchT || 0 };
-  w.cabin.userData.windows.emissiveIntensity = night * 1.2;
-  if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 40;
+  w.cabin.userData.windows.emissiveIntensity = 0.015 + night * 0.25;
+  if (w.cabin.userData.lamp) w.cabin.userData.lamp.intensity = night * 12;
   const P = G.player, cx = P ? P.x : w.cottage.x, cz = P ? P.z : w.cottage.z;
   sun.position.set(cx + lightDir.x * 200, (P ? P.y : 10) + Math.max(0.2, lightDir.y) * 200, cz + lightDir.z * 200);
   sun.target.position.set(cx, P ? P.y : 10, cz);
@@ -986,6 +993,12 @@ const fireflies = (() => {
   for (let k = 0; k < n; k++) p.set([(Math.random() - 0.5) * 60, Math.random() * 4 + 0.5, (Math.random() - 0.5) * 60], k * 3);
   g.setAttribute("position", new THREE.BufferAttribute(p, 3));
   const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xfff08a, size: 0.35, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  // Soft circular glows stay small even when a particle passes close to the camera.
+  m.material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader.replace('#include <logdepthbuf_vertex>', 'gl_PointSize = min(gl_PointSize, 10.0);\n#include <logdepthbuf_vertex>');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat glowRadius = length(gl_PointCoord - vec2(0.5));\ndiffuseColor.a *= 1.0 - smoothstep(0.08, 0.5, glowRadius);');
+  };
+  m.material.customProgramCacheKey = () => 'soft-fireflies';
   m.frustumCulled = false;
   scene.add(m);
   return m;
@@ -1221,9 +1234,17 @@ function titleCamera(dt) {
 // It learns the screen's own frame interval: 16.7 ms at 60 Hz, 8.3 ms at 120 Hz, 33.3 ms in iPhone Low Power Mode,
 // so a phone that is capped at 30 fps is not mistaken for a slow one. The scale moves between a few fixed steps,
 // so the render targets are rarely rebuilt. A step down that does not help is undone: the load is elsewhere.
-const RES_STEPS = [1, 0.85, 0.72, 0.6];
+const RES_DOWN = [1, 0.85, 0.72, 0.6];
+// the steps for the current setting: up to two steps above 1 where the screen is sharper than the setting's ratio
+let RES_STEPS = RES_DOWN, RES_ONE = 0;
+function resSteps() {
+  const top = Math.min(devicePixelRatio, Q.maxRatio || Q.ratio) / Q.ratio, up = [];
+  if (top > 1.05) { up.push(top); if (top > 1.3) up.push(Math.sqrt(top)); }
+  RES_STEPS = [...up, ...RES_DOWN]; RES_ONE = up.length;
+}
+resSteps();
 const fts = [];
-let resStep = 0, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, slowN = 0, autoDown = false;
+let resStep = RES_ONE, ftLast = 0, ftHold = 2000, dispMs = 1000, downFrom = 0, noDownT = 0, noUpT = 0, slowN = 0, autoDown = false;
 function frameTime(now, live) {
   if (!live || document.hidden) { ftLast = 0; return; }
   const ft = ftLast ? now - ftLast : 0; ftLast = now;
@@ -1232,7 +1253,7 @@ function frameTime(now, live) {
   if ((ftHold -= ft) > 0 || fts.length < 60) return;
   const sorted = fts.slice().sort((a, b) => a - b), med = sorted[30];
   dispMs = Math.min(dispMs, sorted[6]);
-  noDownT -= 1;
+  noDownT -= 1; noUpT -= 1;
   const set = (k) => { resStep = k; resScale = RES_STEPS[k]; applyRatio(); fts.length = 0; };
   if (downFrom && med > downFrom * 0.9) { set(resStep - 1); downFrom = 0; noDownT = 30; ftHold = 3000; return; }
   downFrom = 0;
@@ -1248,14 +1269,15 @@ function frameTime(now, live) {
       return;
     }
   } else slowN = 0;
-  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; set(resStep + 1); ftHold = 2000; }
-  else if (med < dispMs * 1.12 && resStep > 0) { set(resStep - 1); ftHold = 4000; }
+  // a step down from above 1 means the extra sharpness did not fit: wait 60 checks (a minute or two) before trying it again
+  if (med > dispMs * 1.45 && resStep < RES_STEPS.length - 1 && noDownT <= 0) { downFrom = med; if (resStep < RES_ONE) noUpT = 60; set(resStep + 1); ftHold = 2000; }
+  else if (med < dispMs * 1.12 && resStep > 0 && (resStep > RES_ONE || noUpT <= 0)) { set(resStep - 1); ftHold = 4000; }
   else ftHold = 1000;
 }
 // persist: false changes the setting for this visit only (the automatic step down).
 G.setGraphics = (name, { persist = true } = {}) => {
   if (!QUALITY[name]) return;
-  gfx = name; Q = QUALITY[name]; resScale = 1; resStep = 0; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
+  gfx = name; Q = QUALITY[name]; resSteps(); resScale = 1; resStep = RES_ONE; fts.length = 0; downFrom = 0; slowN = 0; ftHold = 2000;
   if (persist) { gfxSaved = true; try { localStorage.setItem(GFX_KEY, name); } catch (e) { /* storage off */ } }
   applyRatio();
   painter.setQuality(Q);

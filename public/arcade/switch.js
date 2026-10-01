@@ -3,12 +3,16 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    { id: "tidebreak", name: "Monster Mash", sub: "Folklore realm MOBA", url: "/tidebreak/", art: "/tidebreak/art/mothman.webp", color: "#d2e46d" },
+    { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/og-preview.png", color: "#ffca51" },
+    { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/lab/worlds/assets/worlds-atlas.webp", color: "#c7e5ac" },
     { id: "plungerd", name: "Get Plunger'd", sub: "Cottage Brawl", url: "/plungerd/", art: "/arcade/plungerd.webp", color: "#e6c35c" },
     { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/drain.webp", color: "#5fb8d0" },
     { id: "crimson", name: "Crimson Rogue", sub: "紅の月の下で", url: "/crimson/", art: "/crimson/art/keyart2.webp", color: "#d0485f" },
     // still in the works on its own branch: its tile shows only once /wild/ is live
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
+    { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
   ];
   // a game marked probe shows only when its page answers
   const live = {};
@@ -92,3 +96,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
   window.GameSwitch = { open, close, wire, get isOpen() { return !!box && !box.hidden; }, GAMES };
 })();
+

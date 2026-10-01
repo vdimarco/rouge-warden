@@ -1,0 +1,4 @@
+- [x] Inspect the supplied recording and existing shader.
+- [x] Add shallow transparency, moving light, and ripple distortion.
+- [ ] Run low/high browser rendering and inspect the result.
+- [ ] Check the result on a physical phone.

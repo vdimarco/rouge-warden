@@ -402,7 +402,8 @@ export function init(S) {
       if (!a) return;
       const has = (n) => !!(a.props && a.props[n]);
       for (const n of props.COSTUME) if (n !== 'kasa') { if (on) { if (!has(n)) cast.props.attach(a, n); } else cast.props.detach(a, n); }
-      const want = on ? kasa : false;
+      // 'back' draws no hat (a slung kasa read as a grey disc through the body): the crew leave it off
+      const want = on && kasa !== 'back' ? kasa : false;
       if (want !== 'head') cast.props.detach(a, 'kasa');
       if (want !== 'back') cast.props.detach(a, 'kasaBack');
       if (want === 'head' && !has('kasa')) cast.props.attach(a, 'kasa');

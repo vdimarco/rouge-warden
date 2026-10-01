@@ -1,0 +1,49 @@
+{
+  "provider": "Higgsfield",
+  "model": "gpt_image_2_5",
+  "quality": "high",
+  "resolution": "2k",
+  "assets": [
+    {
+      "file": "public/wild/tex/cottage-facade.webp",
+      "bytes": 346210,
+      "sha256": "f8b10adf7a1a8d4a6ad9e8fd60daf24310eed504cc9f685cd37dd74b50f01c48"
+    },
+    {
+      "file": "public/wild/tex/cottage-siding.webp",
+      "bytes": 331538,
+      "sha256": "bbb70dd5805c3b7375bb10fcebfac591e4ae1c908008f19139b7b185998ecd86"
+    },
+    {
+      "file": "public/wild/tex/cottage-oak.webp",
+      "bytes": 331810,
+      "sha256": "11178eb78d03bf6b1eef8394e3301b8a3c9613994d0481b33495167de740e8e3"
+    },
+    {
+      "file": "public/wild/tex/cottage-shingles.webp",
+      "bytes": 465488,
+      "sha256": "3f6db995893bca4fa6120a11a10a2004535fc5e6377d3b1d50e0f6cf0ab92801"
+    },
+    {
+      "file": "public/wild/tex/cottage-linen.webp",
+      "bytes": 525998,
+      "sha256": "8e19146e6536ea5e2e95a13855483a042f9549cf4f10595634d531e9d66c9280"
+    },
+    {
+      "file": "public/wild/tex/summer-sky.webp",
+      "bytes": 352918,
+      "sha256": "dd5303574c66f81cf9017f697256a5b84a7a6b2c4734fb2f149e84286014f8cc"
+    },
+    {
+      "file": "public/wild/tex/painted-leaves.webp",
+      "bytes": 388344,
+      "sha256": "d9951b0843847dc25da0bafa31139191b7742cb5d5f0fb57e34ad31b82890cd6"
+    },
+    {
+      "file": "public/wild/tex/painted-meadow.webp",
+      "bytes": 484858,
+      "sha256": "fef7ed4ff3ed414a6b406eff2187decbfdd58f88a887bf7ed4ffe66c01166e7f"
+    }
+  ],
+  "facade_restyle_job": "d3e7d219-c53a-4807-9083-c85e35c81085"
+}

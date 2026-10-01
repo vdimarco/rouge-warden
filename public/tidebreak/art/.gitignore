@@ -1,0 +1,2 @@
+# Keep production WebP files in git; generation source PNGs stay in scratch.
+*.png

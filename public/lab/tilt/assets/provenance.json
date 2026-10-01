@@ -1,0 +1,74 @@
+{
+  "created_at": "2026-09-29",
+  "tool": "OpenAI built-in image_gen.imagegen",
+  "generation_mode": "built-in",
+  "assets": [
+    {
+      "file": "deep-space.webp",
+      "source_file": "exec-1f1635e6-13c4-464e-9fe2-a1a1b69b264f.png",
+      "width": 1536,
+      "height": 1024,
+      "transparent": false,
+      "prompt": "Use case: stylized-concept. Asset type: production background layer for a premium celestial pinball adventure game. Create a landscape 1536 by 1024 deep-space background only. Midnight navy near-black space, subtle smoky teal nebula ribbons, distant copper cosmic dust, luminous pale mint star clusters. Elegant cinematic illustrated astronomy, fine natural texture, painterly realism with deep contrast. The image must feel vast and calm, have ample dark empty space across the central 75 percent for gameplay. Brightest restrained nebula near the far upper-right and lower-left edges. Very sparse tiny distant stars with varied scale. No planets, no asteroids, no moons, no large spheres, no rails, no flippers, no pinball ball, no spacecraft, no bright central object, no text, no interface, no borders, no logos. This will be a full viewport parallax layer behind legible luminous gameplay."
+    },
+    {
+      "file": "celestial-sprites.webp",
+      "source_file": "exec-cf72b312-03d8-4a64-ab9e-277e03bc5f5d.png",
+      "width": 1254,
+      "height": 1254,
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: transparent production sprite atlas for an elegant celestial pinball game. A perfectly regular 3 columns by 2 rows grid on a fully transparent alpha background, square overall image. Each of the six items is completely isolated, centered within its equal cell, with at least 12% of its cell empty around it. There are NO visible grid lines and NO text. Row 1 left: round icy turquoise planet with pearlescent frozen blue texture, pale luminous atmospheric rim, subtly shaded lower right, viewed in space, no rings. Row 1 middle: warm amber gas planet with realistic cream/copper bands, diagonally tilted thin champagne Saturn rings fitting fully in cell. Row 1 right: round violet ocean planet with crystalline lavender glowing edges, softly swirling purple surface, no rings. Row 2 left: rugged charcoal-gray asteroid with chiseled natural crater texture, a few faint gold mineral veins, roundish asymmetric silhouette, light from upper left. Row 2 middle: a bright small pearlescent white marble sphere for the player's pinball, glowing icy blue rim and small short comet tail trailing toward upper left, entire object centered in the cell and occupying 65% of cell. Row 2 right: elegant circular brass portal ring, front-facing perfect circle, three layered thin champagne-brass rims, cyan energy wisps within ring, transparent open center. Painterly realistic premium game art, glossy cinematic lighting, deep dark shadows, warm antique brass accents. Every object must have complete clean edges with true transparency outside. No background scene, no contact shadows, no words, no UI, no extra objects. Large 1536 by 1536 image."
+    }
+  ],
+  "concept": {
+    "source_file": "exec-d1c631b9-fb00-40cf-a271-b18383512080.png",
+    "width": 1536,
+    "height": 1024,
+    "prompt": "Use case: ui-mockup. Asset type: polished in-game concept screenshot for a real mobile and tablet pinball adventure named FULL TILT. Wide landscape 1536 by 1024. Full viewport top-down celestial pinball playfield in vast midnight navy deep space, subtle teal nebula clouds, stars and warm cosmic dust. Camera close enough to see details, showing one wide open region of a larger connected cosmic world. Playfield fills the screen with no cabinet, browser, device, perspective trapezoid, or enclosing rectangular table. A luminous textured icy cyan planet at left, a smaller amber Saturn with tilted brass rings at upper right, three charcoal asteroids around the central routes and one violet planet toward right. Thin champagne-brass rails bend organically across the scene like orbital arcs, with gaps and junctions opening into distant sectors. White marble ball with short pale cyan comet trail in the center-right near an asteroid. Each planet emits restrained curved cyan gravity-flow arcs around it. Two pairs of slender ivory flippers at bottom-center and far right inside local catch basins, functional pinball lanes with sparse glowing gold targets. Spacious dark areas between objects. Realistic illustrated planet assets, cinematic painterly materials, premium elegant restraint. Sparse native-looking HUD along top in small legible sans-serif type: top left 'FULL TILT', below it 'Launch Basin'; center score '0'; near top right '3 hearts'; two discreet controls 'Map' and 'Pause'. Bottom: wide transparent touch area on left with a thin brass outline and a single slim flipper icon; symmetric touch area right. Center two small native outlined buttons 'PULSE' and 'LAUNCH'. Use warm ivory text, muted blue-gray secondary text, brass lines, muted teal glows. Clean compact UI directly overlaying space, no panels filled with descriptions, no menus covering gameplay. Make the pinball physics layout legible and spectacular, a vast celestial adventure that scrolls with the ball."
+  },
+  "processing": "PNG to WebP encoding only. No art edits.",
+  "sprite_regions": {
+    "ice": [
+      5,
+      132,
+      436,
+      421
+    ],
+    "amber": [
+      396,
+      143,
+      489,
+      391
+    ],
+    "violet": [
+      837,
+      133,
+      414,
+      422
+    ],
+    "asteroid": [
+      14,
+      681,
+      425,
+      420
+    ],
+    "comet": [
+      380,
+      650,
+      452,
+      452
+    ],
+    "portal": [
+      808,
+      673,
+      437,
+      434
+    ],
+    "ballCore": [
+      540,
+      817,
+      208,
+      234
+    ]
+  }
+}

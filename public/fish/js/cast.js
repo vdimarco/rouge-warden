@@ -1,6 +1,6 @@
 // The cast: how the rod stroke becomes a launch, and how the lure flies until it lands.
 // Pure logic (no DOM, no three.js), so node can test it: node qa/fish/cast.sim.mjs
-import { height, onDock, DOCK } from "./lake.js";
+import { height, onDock, DOCK, currentPlace } from "./lake.js";
 
 export const CAST = {
   IDEAL_RELEASE: 68,     // deg: θ at release that gives the 38° launch the assist aims for
@@ -18,6 +18,7 @@ export const CAST = {
   BACK_HALF: 20,         // ... and this much gives BACK_HALF_POWER
   BACK_HALF_POWER: 0.6,
   BACK_MIN_POWER: 0.3,   // no back cast at all still flicks the lure out a little
+  MAX_PITCH: 75,        // early releases stay in the forward hemisphere, even with assist off
   HIGH_PITCH: 58,        // raw launch pitch above this is a "high" lob (released too early)
   LOW_PITCH: 18,         // below this is a "low" line drive (released too late)
   SLAM_STEEP: 2.5,       // a release below the horizon drives the lure down this much more steeply...
@@ -29,7 +30,6 @@ export const CAST = {
   SAG: 0.03,             // line out = straight distance × (1 + SAG) + SAG_M: the line never flies perfectly straight
   SAG_M: 0.3,
   SPOOL_MAX: 150,        // m of line on the spool
-  TREE_MIN: 1.2,         // m: land higher than this has pines on it
   TREE_H: 6,             // m: how tall the pines are
   STEP: 1 / 240,         // s: internal time step
 };
@@ -66,14 +66,14 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   if (assist && pitch >= C.ASSIST_RANGE[0] && pitch <= C.ASSIST_RANGE[1]) pitch += C.ASSIST_PULL * (C.ASSIST_PITCH - pitch);
   // a late release: the tip is already swinging down at the water, so the lure goes in hard and close
   if (raw < 0) pitch = Math.max(-80, raw * C.SLAM_STEEP);
+  pitch = clamp(pitch, -80, C.MAX_PITCH);
   const k = strokeFactor(thetaBack, th);
   let v0 = w < C.MIN_STROKE_SPEED ? C.V_MIN : C.V_MAX * (1 - Math.exp(-w / C.V_K)) * k;
   if (raw < 0) v0 *= 1 - C.SLAM_LOSS * Math.min(1, -raw / 5);
   v0 = Math.max(C.V_MIN, v0);
   const power = clamp(v0 / C.V_MAX, 0, 1);
   let verdict;
-  if (pitch >= 90) verdict = "behind"; // straight up or past it: it comes down behind you
-  else if (pitch < 0) verdict = "slam";
+  if (pitch < 0) verdict = "slam";
   // an early lift is "high" even when the short stroke also cut the power: the fix is the timing, not more speed
   else if (raw > C.HIGH_PITCH) verdict = "high";
   else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
@@ -82,11 +82,12 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
   return { v0, pitch, yaw: fin(yaw, 0), power, verdict, clock: clockOf(th) };
 }
 
-// what is under a point: the water (0), the dock deck, or the land
+// what is under a point: the water (0), the stand (dock, road, bar or wall), or the land.
+// Land higher than the place's treeMin has trees on it.
 function ground(x, z) {
   if (onDock(x, z)) return { y: DOCK.deck, kind: "dock" };
   const h = height(x, z);
-  if (h > 0) return { y: h, kind: h > CAST.TREE_MIN ? "trees" : "land" };
+  if (h > 0) return { y: h, kind: h > currentPlace().treeMin ? "trees" : "land" };
   return { y: 0, kind: "water" };
 }
 
@@ -95,8 +96,8 @@ export class Flight {
     const C = CAST;
     this.tip = { x: fin(tip && tip.x, 0.28), y: fin(tip && tip.y, 3.5), z: fin(tip && tip.z, -1) };
     const p = params || castParams({});
-    const v0 = fin(p.v0, C.V_MIN), pitch = fin(p.pitch, 35) * D2R, yaw = fin(p.yaw, 0) * D2R;
-    // pitch past 90° has a negative cosine, so the lure flies back over your head
+    const v0 = fin(p.v0, C.V_MIN), pitch = clamp(fin(p.pitch, 35), -80, C.MAX_PITCH) * D2R, yaw = fin(p.yaw, 0) * D2R;
+    // Enforce a forward launch even for callers supplying raw flight parameters.
     const h = Math.cos(pitch);
     this.p = { ...this.tip };
     this.v = { x: v0 * h * Math.sin(yaw), y: v0 * Math.sin(pitch), z: -v0 * h * Math.cos(yaw) };

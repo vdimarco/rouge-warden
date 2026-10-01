@@ -1,0 +1,72 @@
+{
+  "provider": "fal.ai",
+  "created": "2026-10-01",
+  "jobs": [
+    {
+      "name": "asphodel",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Square seamlessly tiling TOP DOWN orthographic ground texture only. Worn ivory marble paving in irregular natural fragments, sage moss, sparse little asphodel flowers, warm sandy earth, subtle meandering footpaths. Entire image is flat walkable ground. Low contrast so characters read clearly. No horizon, perspective, buildings or characters. Matching opposite edges, no border.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51d-50af-73c0-810a-c8795d7c17a5",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac9291/RqV7dTwu1JS5tCtDTfgBL_NCXUsf4z.png"
+    },
+    {
+      "name": "styx",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Square seamlessly tiling TOP DOWN orthographic ground texture only. Dark teal riverbank stone and wet slate, turquoise shallow puddles, pale rounded gravel, violet reeds, soft luminous ripples, ancient cracked dark marble, uneven natural arrangement. Mostly walkable dark stone with small water patches. Low contrast so characters read clearly. No horizon, perspective, buildings or characters. Matching opposite edges, no border.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51d-b524-7640-a08d-020696995b5d",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac9294/yoqrIqwyqdFhoSDPIOSMl_hL5jzYqX.png"
+    },
+    {
+      "name": "tartarus",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Square seamlessly tiling TOP DOWN orthographic ground texture only. Volcanic charcoal basalt, ancient chipped bronze floor inlays, winding thin glowing amber lava fissures, burgundy rock and ash. Mostly dark flat walkable ground, restrained glowing seams. Low contrast so characters read clearly. No horizon, perspective, buildings or characters. Matching opposite edges, no border.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51e-7d1e-7a33-ab2f-01f5dac144a6",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac9299/lr0spnZmmyCXPiuShxWL6_weqIBz2j.png"
+    },
+    {
+      "name": "hero",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Game animation SPRITE SHEET exactly FOUR columns and THREE rows, 12 equal square cells, all on perfectly solid flat magenta #FF00FF background for extraction. Each cell contains ONE same full-body Prometheus hero at the same scale and feet baseline, ample blank margin. Three-quarter overhead action RPG camera. Athletic adult dark curly-haired Greek man, bronze breastplate, short ivory tunic, deep red scarf and cape, boots, glowing amber fire torch held in right hand. Faces right in every cell. ROW ONE four running stride frames with clearly alternating legs and cape follow-through. ROW TWO four torch attack frames windup, swing, thrust, recovery. ROW THREE relaxed idle, flinch, kneeling fallen, alert idle. Strong anatomical consistency across all twelve cells. No grid lines, text, shadows on background or other objects.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51e-186a-7962-9963-5e437c638aa8",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac9296/mE20LYw-96DArGBbgt0xZ_m5FyQSYN.png"
+    },
+    {
+      "name": "world",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Game asset atlas exactly FOUR columns and THREE rows, 12 equal square cells, solid flat magenta #FF00FF background for extraction. One centered full object per cell, ample blank space. Three-quarter overhead camera consistent with Hades game. Row 1: ghostly teal armored shade warrior, coiled violet serpent with ivory fangs, bronze animated hoplite guardian with spear and shield, massive horned minotaur boss holding axe. Row 2: spectral violet archer shade, pale broken Greek column with vines, gnarled olive tree with sage foliage, white asphodel flowering bush. Row 3: antique marble shrine with burning brazier, jagged basalt rock with orange lava vein, glowing turquoise soul crystal, small crimson healing amphora. Each entire object fits inside its own cell, no touching. No text, grid lines or ground shadows.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51e-dd1c-70a3-9162-420fe73a75a3",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac929b/8Sl_m1eC8ljUUjqk2jJ4S_ZvrnxyLP.png"
+    },
+    {
+      "name": "weapons",
+      "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text. Game weapon atlas exactly FOUR columns and TWO rows, 8 equal cells on solid flat magenta #FF00FF background for extraction. One centered full isolated object per cell with large margin, vertical orientation pointing up, hand-painted gleaming divine weapons. Row 1: Prometheus golden flaming torch, Zeus blue-white lightning spear, Ares ornate red bronze curved sword, Poseidon sea-green ornate trident. Row 2: Artemis silver bow with emerald arrow, Hermes golden winged sandal, Athena ivory gold shield with owl motif, Demeter crystalline pale ice sickle. Objects should be readable small with clear distinct silhouettes and restrained glow contained inside each cell. No text, lettering or grids.",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "request_id": "01a0f51f-45bd-7191-9d58-24dfae6978b7",
+      "status": "completed",
+      "url": "https://v3b.fal.media/files/b/0aac929e/U2PH5iIqq0mxMIP0XcidS_w60l4U8I.png"
+    }
+  ],
+  "cuts": [
+    {
+      "name": "hero",
+      "request_id": "01a0f522-8b24-7f53-b892-d00402e42462",
+      "url": "https://v3b.fal.media/files/b/0aac92b3/NEHvPwAPrMFFqe48VHmxl_result.png"
+    },
+    {
+      "name": "world",
+      "request_id": "01a0f522-ad13-73f2-ade7-6409515db508",
+      "url": "https://v3b.fal.media/files/b/0aac92b4/apWiCAHD1oapkZJbhGrvB_result.png"
+    },
+    {
+      "name": "weapons",
+      "request_id": "01a0f522-9b25-7bc1-aa76-e773f4509070",
+      "url": "https://v3b.fal.media/files/b/0aac92b4/_HdfZr6eHepIi6dvV_WeC_result.png"
+    }
+  ],
+  "notes": "Frames extracted and resized from generated atlases. Background removal by Pixelcut. Scenery is decorative; combat rules and collisions are unchanged."
+}

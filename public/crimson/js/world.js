@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { scene, toonRamp, LITE } from './render.js';
 import { mulberry32 } from './core/rng.js';
+import { mergeVertices } from '../lib/addons/utils/BufferGeometryUtils.js';
 
 const TAU = Math.PI * 2;
 // one fixed seed, so the arena is laid out the same way on every load
@@ -111,15 +112,30 @@ export function buildGround() {
 }
 
 /* ---------------- sandstone mesas and spires ---------------- */
-const strataTex = canvasTex(64, 512, (g, w, h) => {
-  let y = 0;
-  while (y < h) { const t = rand(4, 26), v = 118 + R() * 46 | 0; g.fillStyle = `rgb(${v},${v - 6},${v - 10})`; g.fillRect(0, y, w, t); y += t; }
-  g.fillStyle = 'rgba(20,20,20,0.5)';
-  for (let i = 0; i < 40; i++) g.fillRect(0, R() * h, w, 1.5);
+const strataTex = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = '#a95736'; g.fillRect(0, 0, w, h);
+  for (let y = 0; y < h;) {
+    const band = rand(8, 38), v = rand(-16, 16);
+    g.fillStyle = `rgb(${172 + v},${91 + v * 0.7},${57 + v * 0.45})`;
+    g.fillRect(0, y, w, band);
+    g.strokeStyle = 'rgba(54,28,28,0.18)'; g.lineWidth = rand(0.7, 1.8);
+    g.beginPath(); g.moveTo(0, y);
+    for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x * 0.035) * 2);
+    g.stroke(); y += band;
+  }
+  for (let i = 0; i < 1600; i++) {
+    g.fillStyle = i % 3 ? 'rgba(60,29,24,0.10)' : 'rgba(243,195,138,0.18)';
+    g.fillRect(R() * w, R() * h, rand(1, 5), rand(1, 2));
+  }
+  g.strokeStyle = 'rgba(48,26,26,0.22)'; g.lineWidth = 0.9;
+  for (let i = 0; i < 24; i++) {
+    const x = R() * w, y = R() * h; g.beginPath(); g.moveTo(x, y);
+    g.lineTo(x + rand(-8, 8), y + 14); g.lineTo(x + rand(-15, 15), y + 35); g.stroke();
+  }
 });
 strataTex.wrapS = strataTex.wrapT = THREE.RepeatWrapping;
 function rockColumn(r0, r1, h, sides, rough) {
-  const geo = new THREE.CylinderGeometry(r1, r0, h, sides, Math.max(3, Math.round(h / 3)), false);
+  const geo = new THREE.CylinderGeometry(r1, r0, h, sides * 2, Math.max(6, Math.round(h / 2)), false);
   const p = geo.attributes.position, seed = R() * 100;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(x, z);
@@ -130,7 +146,7 @@ function rockColumn(r0, r1, h, sides, rough) {
   geo.computeVertexNormals();
   return geo;
 }
-const rockMat = toon({ map: strataTex, color: 0xb8b2aa });
+const rockMat = toon({ map: strataTex, color: 0xffddbd });
 function formation(x, z, kind, s) {
   const g = new THREE.Group(); g.position.set(x, groundHeight(x, z) - 2, z); g.rotation.y = rand(0, TAU);
   const add = (geo, px, py, pz) => { const m = new THREE.Mesh(geo, rockMat); m.position.set(px, py, pz); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
@@ -165,17 +181,23 @@ export function buildRocks() {
 /* ---------------- boulders ---------------- */
 export const colliders = [];
 function boulderGeo(r) {
-  const geo = new THREE.IcosahedronGeometry(r, 2), p = geo.attributes.position, seed = R() * 50;
+  const source = new THREE.IcosahedronGeometry(r, 3);
+  source.deleteAttribute('normal'); source.deleteAttribute('uv');
+  const geo = mergeVertices(source), p = geo.attributes.position, seed = R() * 50;
+  source.dispose();
   for (let i = 0; i < p.count; i++) {
     const v = new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i)); const n = v.clone().normalize();
     const k = 1 + (fbm(n.x * 2 + seed, n.y * 2 + n.z * 2, 3) - 0.5) * 0.7;
     v.multiplyScalar(k); v.y *= 0.7; p.setXYZ(i, v.x, v.y, v.z);
   }
+  // Cylindrical UVs keep sediment bands horizontal on irregular boulders.
+  const uv = new THREE.Float32BufferAttribute(new Float32Array(p.count * 2), 2); geo.setAttribute('uv', uv);
+  for (let i = 0; i < p.count; i++) uv.setXY(i, Math.atan2(p.getX(i), p.getZ(i)) / TAU + 0.5, p.getY(i) / (r * 2) + 0.5);
   geo.computeVertexNormals();
   return geo;
 }
 export function buildBoulders() {
-  const mat = toon({ map: strataTex, color: 0xa8a39c });
+  const mat = toon({ map: strataTex, color: 0xf2c49f });
   const place = (x, z, r, solid) => {
     const m = new THREE.Mesh(boulderGeo(r), mat);
     m.position.set(x, groundHeight(x, z) + r * 0.25, z); m.rotation.y = rand(0, TAU);
@@ -195,8 +217,15 @@ function juniperGeo() {
   for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setX(i, p.getX(i) + Math.sin(y * 2.3) * 0.15); }
   trunk.translate(0, 1.1, 0); parts.push(trunk);
   for (let i = 0; i < 6; i++) {
-    const b = new THREE.IcosahedronGeometry(rand(0.7, 1.3), 1), q = b.attributes.position;
-    for (let k = 0; k < q.count; k++) q.setXYZ(k, q.getX(k) * rand(0.85, 1.15), q.getY(k) * rand(0.6, 0.9), q.getZ(k) * rand(0.85, 1.15));
+    const b = new THREE.IcosahedronGeometry(rand(0.7, 1.3), 2), q = b.attributes.position;
+    // Duplicate corners must get the same displacement. Independent random
+    // offsets tore the canopy into disconnected triangular shards.
+    const seed = rand(0, 50);
+    for (let k = 0; k < q.count; k++) {
+      const x = q.getX(k), y = q.getY(k), z = q.getZ(k);
+      const lump = 0.92 + vnoise(x * 2 + seed, z * 2 + y) * 0.16;
+      q.setXYZ(k, x * lump, y * lump * 0.75, z * lump);
+    }
     b.translate(rand(-1, 1), rand(1.8, 3.2), rand(-1, 1)); parts.push(b);
   }
   const merged = mergeGeos(parts);
@@ -209,7 +238,7 @@ function mergeGeos(list) {
   const pos = new Float32Array(n * 3); let o = 0;
   for (const g of list) { const a = g.attributes.position.array; pos.set(a, o); o += a.length; }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  return geo;
+  return mergeVertices(geo);
 }
 export function buildJunipers() {
   const mat = toon({ color: 0x2a2c28 });
