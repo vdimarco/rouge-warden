@@ -1,6 +1,7 @@
 // Tell Me — Indian poker against Bram and Fennel. Plain ES, no dependencies.
 // Faces leak the player's card. Chips are play chips only.
-// Dialogue uses its own mulberry32 (seed XOR LINE_SALT) and never draws from rng.
+// Dialogue uses createLinePicker (its own mulberry32 per situation) and never draws from rng.
+// Face honesty rolls stay on rng. They are the spec's per-hand draws.
 //
 // Assumptions (also listed on the PR):
 // - Tie odd chip goes to the earliest seat in order player, Bram, Fennel.
@@ -14,7 +15,7 @@
 //   or higher, Good is 60 to 79%, Rookie is under 60%.
 // - ?fast=1 skips waits. It does not change the deck, tells, or the log.
 
-import { LINES } from "./lines.js";
+import { createLinePicker } from "./lines.js";
 import { faceInner, mountCritters } from "./critters.js";
 
 const SEATS = ["player", "bram", "fennel"];
@@ -65,9 +66,7 @@ function mulberry32(a) {
 }
 
 let rng = mulberry32(seed);
-const LINE_SALT = 0x7E11;
-let lineRng = mulberry32((seed ^ LINE_SALT) >>> 0);
-const lastLine = { bram: "", fennel: "" };
+const pickFromBank = createLinePicker(seed);
 const lineLog = [];
 window.__lineLog = lineLog;
 let stack = 100;
@@ -242,14 +241,13 @@ const bubbleGen = { bram: 0, fennel: 0 };
 const bubbleTimers = { bram: 0, fennel: 0 };
 
 function pickLine(who, situation) {
-  const bank = LINES[who][situation];
-  const n = bank.length;
-  let i = Math.floor(lineRng() * n);
-  let guard = 0;
-  while (n > 1 && bank[i] === lastLine[who] && guard++ < n) i = (i + 1) % n;
-  const text = bank[i];
-  lastLine[who] = text;
-  lineLog.push({ who, situation, text });
+  const text = pickFromBank(who, situation);
+  lineLog.push({
+    who,
+    situation,
+    text,
+    revealed: playerCard.classList.contains("revealed"),
+  });
   return text;
 }
 function hideBubbles() {
@@ -554,6 +552,10 @@ function resetGame() {
 async function playHand(h) {
   const drawn = drawHand();
   const cards = drawn.cards;
+  const forcedRank = window.__playerRankOverride;
+  if (Number.isInteger(forcedRank) && forcedRank >= 2 && forcedRank <= 14) {
+    cards.player = { rank: forcedRank, suit: cards.player.suit };
+  }
   const tells = {
     bram: tellOf(cards.player.rank, drawn.rolls.bram, "bram"),
     fennel: tellOf(cards.player.rank, drawn.rolls.fennel, "fennel"),

@@ -1,6 +1,8 @@
 // Static flavor lines for Bram and Fennel. Bundled, no network.
-// A separate dialogue RNG picks them. Lines must stay flavor only:
-// they must not encode the player's rank or hidden hand strength.
+// Each (critter, situation) has its own mulberry32, seeded from the run
+// seed mixed with LINE_SALT. That stream is not the game's mulberry32.
+// Before showdown a line may vary only by the critter's own action.
+// Card ranks, faces, and hand strength are not inputs.
 export const LINES = {
   bram: {
     deal: [
@@ -315,3 +317,47 @@ export const LINES = {
     ],
   },
 };
+
+export const LINE_SALT = 0x7E11;
+
+function mulberry32(a) {
+  a >>>= 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function situationSeed(runSeed, who, situation) {
+  let h = (Number(runSeed) ^ LINE_SALT) >>> 0;
+  const tag = who + ":" + situation;
+  for (let i = 0; i < tag.length; i++) h = Math.imul(h ^ tag.charCodeAt(i), 0x5bd1e995) >>> 0;
+  return h >>> 0;
+}
+
+// Third argument is ignored. Tests pass the player's card there so a future
+// read of rank, face, or strength fails the card-independence check.
+export function createLinePicker(runSeed) {
+  const streams = new Map();
+  const lastText = new Map();
+  return function pick(who, situation, _ctx) {
+    const key = who + ":" + situation;
+    let rng = streams.get(key);
+    if (!rng) {
+      rng = mulberry32(situationSeed(runSeed, who, situation));
+      streams.set(key, rng);
+    }
+    const bank = LINES[who][situation];
+    const n = bank.length;
+    let i = Math.floor(rng() * n);
+    let guard = 0;
+    const prev = lastText.get(key) || "";
+    while (n > 1 && bank[i] === prev && guard++ < n) i = (i + 1) % n;
+    const text = bank[i];
+    lastText.set(key, text);
+    return text;
+  };
+}

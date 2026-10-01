@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import fs from "fs";
 import path from "path";
-import { LINES } from "../../public/tellme/lines.js";
+import { LINES, createLinePicker } from "../../public/tellme/lines.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const require = createRequire(path.join(root, "qa/browser/package.json"));
@@ -238,6 +238,43 @@ function repeats(rows) {
   return bad;
 }
 
+const ACTION_SITS = ["check", "small", "big", "call", "fold"];
+
+function linesForCard(seed, playerRank) {
+  const pick = createLinePicker(seed);
+  const out = [];
+  const ctx = {
+    playerRank,
+    pot: 18,
+    cards: {
+      player: { rank: playerRank, suit: 1 },
+      bram: { rank: 11, suit: 0 },
+      fennel: { rank: 4, suit: 2 },
+    },
+    strength: playerRank,
+    face: playerRank >= 13 ? "sweating" : "smug",
+  };
+  for (const who of ["bram", "fennel"]) {
+    for (const action of ACTION_SITS) {
+      out.push(pick(who, action, ctx));
+      out.push(pick(who, action, ctx));
+    }
+  }
+  return out;
+}
+
+function nthActionLines(rows) {
+  const n = { bram: {}, fennel: {} };
+  const map = new Map();
+  for (const row of rows) {
+    if (!ACTION_SITS.includes(row.situation)) continue;
+    const i = n[row.who][row.situation] || 0;
+    n[row.who][row.situation] = i + 1;
+    map.set(`${row.who}:${row.situation}:${i}`, row.text);
+  }
+  return map;
+}
+
 async function open(browser, url, opts = {}) {
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -382,6 +419,10 @@ const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
 try {
   const lineProblems = auditLines();
   check(lineProblems.length === 0, lineProblems.length ? lineProblems.slice(0, 6).join("; ") : "dialogue banks are flavor, unique, and at most 8 words");
+  const lowCardLines = linesForCard(123, 2);
+  const highCardLines = linesForCard(123, 14);
+  const cardDrift = lowCardLines.filter((text, i) => text !== highCardLines[i]);
+  check(lowCardLines.length === highCardLines.length && cardDrift.length === 0, cardDrift.length ? `action line changed with the player card: "${cardDrift[0]}"` : "same dialogue seed and action, different player card, same line");
 
   // --- daily seed, before any tap ---
   {
@@ -515,6 +556,55 @@ try {
   check(JSON.stringify(two.test.log) === JSON.stringify(a.test.log.slice(0, 2)), "hands=2 matches the start of the full run");
   for (const e of short.errors) check(false, e);
   await short.close();
+
+  console.log("\nplayer card vs action lines");
+  async function playedLines(rank) {
+    const s = await open(browser, base + "?seed=123&fast=1&hands=4");
+    await s.page.evaluate((r) => { window.__playerRankOverride = r; }, rank);
+    await begin(s.page);
+    const run = await drive(s.page, scripted);
+    const rows = await s.page.evaluate(() => window.__lineLog.map((row) => ({
+      who: row.who,
+      situation: row.situation,
+      text: row.text,
+      revealed: row.revealed === true,
+    })));
+    for (const e of s.errors) check(false, e);
+    await s.close();
+    return { rows, log: run.test.log };
+  }
+  const playedLow = await playedLines(2);
+  const playedHigh = await playedLines(14);
+  const early = [...playedLow.rows, ...playedHigh.rows].filter((row) => (row.situation === "win" || row.situation === "lose") && !row.revealed);
+  check(early.length === 0, early.length ? "win or lose line before the reveal" : "win and lose lines appear only after the card is revealed");
+  const before = [...playedLow.rows, ...playedHigh.rows].filter((row) => ACTION_SITS.includes(row.situation) && row.revealed);
+  check(before.length === 0, before.length ? "action line after the reveal" : "action lines stay before showdown");
+  const mapLow = nthActionLines(playedLow.rows);
+  const mapHigh = nthActionLines(playedHigh.rows);
+  const drifted = [];
+  let shared = 0;
+  for (const [key, text] of mapLow) {
+    if (!mapHigh.has(key)) continue;
+    shared++;
+    if (mapHigh.get(key) !== text) drifted.push(`${key} "${text}" vs "${mapHigh.get(key)}"`);
+  }
+  check(shared > 0, `compared ${shared} live action lines across player ranks 2 and 14`);
+  check(drifted.length === 0, drifted.length ? drifted.slice(0, 3).join("; ") : "live action lines ignore the player card");
+  const sameCritters = playedLow.log.length === playedHigh.log.length && playedLow.log.every((hand, i) => {
+    const other = playedHigh.log[i];
+    return hand.cards.bram.rank === other.cards.bram.rank
+      && hand.cards.bram.suit === other.cards.bram.suit
+      && hand.cards.fennel.rank === other.cards.fennel.rank
+      && hand.cards.fennel.suit === other.cards.fennel.suit
+      && hand.cards.player.rank === 2
+      && other.cards.player.rank === 14;
+  });
+  check(sameCritters, "rank override keeps the critter cards and changes only the player's rank");
+  function replayMismatch(rows) {
+    const pick = createLinePicker(123);
+    return rows.filter((row) => pick(row.who, row.situation) !== row.text).length;
+  }
+  check(replayMismatch(playedLow.rows) === 0 && replayMismatch(playedHigh.rows) === 0, "live lines match the separate dialogue picker");
 
   // --- bust ---
   console.log("\nbust seed 239");
