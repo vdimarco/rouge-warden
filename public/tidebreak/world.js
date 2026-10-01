@@ -3,7 +3,7 @@ import { creekCenter, insideRiver } from './river.js';
 export const SIZE = 4800;
 export const LIMIT = 360;
 export const SHIFT = 40;
-export const BASES = [{ x: 2400, y: 4330 }, { x: 2400, y: 470 }];
+export const BASES = [{ x: 2400, y: 4000 }, { x: 2400, y: 800 }];
 // Strategic anchors remain stable; the shared sampled tracks wind between them.
 export const LANES = [
   [BASES[0], { x: 1060, y: 3530 }, { x: 690, y: 2410 }, { x: 1110, y: 1280 }, BASES[1]],

@@ -4,6 +4,7 @@ import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
 import { attackPose, drawCombatEffect } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
+import { BASE_STYLES, drawBaseCore } from './bases.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
@@ -92,14 +93,14 @@ export class Renderer {
   drawUnit(s, e, time) {
     const c = this.ctx, hero = e.kind === 'hero', tower = e.kind === 'tower' || e.kind === 'core';
     let name = tower ? e.team ? 'tower-enemy' : 'tower-ally' : e.team === 1 ? 'wisp-enemy' : 'wisp-ally';
-    let height = tower ? e.kind === 'core' ? 335 : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
+    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
     if (hero) { name = HEROES[e.hero].slug + (Math.sin(e.facing) > .2 ? '-front' : '-back'); height = e.player ? [365, 475, 360, 390][e.hero] : [285, 345, 290, 320][e.hero]; }
     const pose = hero ? attackPose(e, s.time) : null;
-    const direction = pose?.angle ?? e.facing;
+    const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
     if (pose) { name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`; this.lastPoses.push({ id: e.id, hero: e.hero, stage: pose.stage, asset: name }); }
     let x = e.x, y = e.y, jump = 0;
     if (e.motion) { const t = Math.min(1, (s.time - e.motion.start) / e.motion.duration), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
-    const swing = pose?.power || 0, recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
+    const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
     x += Math.cos(direction) * swing * (hero && e.hero === 1 ? 42 : 28) + Math.cos(e.hitAngle || 0) * recoil;
     y += Math.sin(direction) * swing * 24 + Math.sin(e.hitAngle || 0) * recoil;
     if (hero && e.hero === 3 && pose) jump += Math.max(0, swing) * 27;
@@ -108,7 +109,7 @@ export class Renderer {
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (player(s).target === e.id) this.ring(x, y, e.radius + 28, '#e8c48f', .9);
     const moving = e.moving && !pose, gait = Math.sin(time * (hero && e.hero === 2 ? 8 : 11) + e.id);
-    const box = this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 });
+    const box = e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 });
     if (!box) return; this.hitBoxes.push({ ...box, id: e.id, team: e.team });
     if (tower || hero || e.hp < e.maxHp || e.kind === 'minion') {
       const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = this.project(x, y, height + jump + 9);
@@ -153,7 +154,7 @@ export class Renderer {
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
       const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
-      if (e.kind === 'tower' || e.kind === 'core') { const image = this.art[e.team ? 'tower-enemy' : 'tower-ally']; m.drawImage(image, x - 6 * scale, y - 10 * scale, 12 * scale, 17 * scale); }
+      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
       else { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (e.player ? 4 : e.kind === 'hero' ? 2.5 : 1) * scale, 0, TAU); m.fill(); if (e.player) { m.strokeStyle = '#8de7b9'; m.lineWidth = 2; m.beginPath(); m.arc(x, y, 7 * scale, 0, TAU); m.stroke(); } }
     }
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
