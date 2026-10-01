@@ -79,19 +79,28 @@ function probeArt() {
     .catch(() => artImages);
 }
 
+function normalizeSeed(n) {
+  const reduced = Number(n) >>> 0;
+  return reduced === 0 ? 1 : reduced;
+}
+
 function clockSeed() {
-  return (Date.now() % 2147483646) + 1;
+  return normalizeSeed((Date.now() % 2147483646) + 1);
+}
+
+function freshSeed(avoid) {
+  let next = clockSeed();
+  if (next === avoid) next = next >= 2147483646 ? 1 : next + 1;
+  return next;
 }
 
 function readSeedString(raw) {
-  if (raw == null || raw === "") return { seed: clockSeed(), bad: false };
+  if (raw == null || raw === "") return { seed: clockSeed(), bad: false, pinned: false };
   if (/^-?\d+$/.test(raw)) {
     const n = Number(raw);
-    if (Number.isSafeInteger(n)) {
-      return { seed: n < 0 ? (n >>> 0) : n, bad: false };
-    }
+    if (Number.isSafeInteger(n)) return { seed: normalizeSeed(n), bad: false, pinned: true };
   }
-  return { seed: clockSeed(), bad: true };
+  return { seed: clockSeed(), bad: true, pinned: false };
 }
 
 const params = new URLSearchParams(location.search);
@@ -99,6 +108,8 @@ const fast = params.get("fast") === "1";
 let seedInfo = readSeedString(params.get("seed"));
 let seed = seedInfo.seed;
 let badSeed = seedInfo.bad;
+const seedPinned = seedInfo.pinned;
+const pinnedSeed = seedPinned ? seed : 0;
 let run = null;
 let ui = "title";
 let busy = false;
@@ -121,6 +132,15 @@ function pairs(obj, labels) {
   return bits.join(" · ");
 }
 
+function costText(obj) {
+  const bits = [];
+  for (const [key, value] of Object.entries(obj || {})) {
+    if (!value) continue;
+    bits.push(`${Math.abs(value)} ${COST_LABEL[key] || key}`);
+  }
+  return bits.join(" · ");
+}
+
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -138,7 +158,7 @@ function cardButton(offer) {
   btn.append(el("span", "lane", lane));
   btn.append(el("strong", "", offer.name));
   btn.append(el("span", "meta", offer.text));
-  const cost = pairs(offer.cost, COST_LABEL);
+  const cost = costText(offer.cost);
   btn.append(el("span", "meta", cost ? `Cost ${cost}` : "Cost free"));
   const fx = pairs(offer.effect, FX_LABEL);
   if (fx) btn.append(el("span", "fx", fx));
@@ -260,7 +280,7 @@ function renderOffers() {
       btn.type = "button";
       btn.dataset.choice = option.id;
       if (option.affordable === false) btn.setAttribute("aria-disabled", "true");
-      const cost = pairs(option.cost, COST_LABEL);
+      const cost = costText(option.cost);
       const fx = pairs(option.effect, FX_LABEL);
       btn.append(el("strong", "", option.name));
       btn.append(el("span", "meta", option.text));
@@ -339,7 +359,6 @@ function showEnding() {
 }
 
 const REFUSAL = {
-  cooldown: "Idea Lab is closed for three turns.",
   afford: "You cannot pay that.",
   event: "Settle the news first.",
   unoffered: "That card is not in this hand.",
@@ -355,7 +374,14 @@ function choose(id) {
   const before = run.state().turn;
   const result = run.choose(id);
   if (!result.ok) {
-    $("note").textContent = REFUSAL[result.reason] || "Not now.";
+    if (result.reason === "cooldown") {
+      const left = run.state().lab.turnsLeft;
+      $("note").textContent = left === 1
+        ? "Idea Lab is closed for 1 turn."
+        : `Idea Lab is closed for ${left} turns.`;
+    } else {
+      $("note").textContent = REFUSAL[result.reason] || "Not now.";
+    }
     return result;
   }
   $("note").textContent = "";
@@ -371,12 +397,12 @@ function choose(id) {
 
 function startGame(next) {
   if (typeof next === "number" && Number.isInteger(next)) {
-    seed = next < 0 ? (next >>> 0) : next;
+    seed = normalizeSeed(next);
     badSeed = false;
   } else if (typeof next === "string") {
-    seedInfo = readSeedString(next);
-    seed = seedInfo.seed;
-    badSeed = seedInfo.bad;
+    const parsed = readSeedString(next);
+    seed = parsed.seed;
+    badSeed = parsed.bad;
   }
   clearTimeout(flashTimer);
   busy = false;
@@ -392,6 +418,17 @@ function startGame(next) {
   return { ok: true, seed };
 }
 
+function playAgain() {
+  if (seedPinned) {
+    seed = pinnedSeed;
+    badSeed = false;
+  } else {
+    seed = freshSeed(seed);
+    badSeed = false;
+  }
+  return startGame();
+}
+
 function openHelp() {
   $("howto").hidden = false;
 }
@@ -405,7 +442,7 @@ $("sheet").addEventListener("click", (event) => {
   choose(btn.dataset.choice);
 });
 $("start").addEventListener("click", () => startGame());
-$("again").addEventListener("click", () => startGame());
+$("again").addEventListener("click", () => playAgain());
 $("help").addEventListener("click", openHelp);
 $("howto-open").addEventListener("click", openHelp);
 $("howto-close").addEventListener("click", closeHelp);
@@ -414,44 +451,47 @@ window.addEventListener("resize", () => {
   paintShown();
 });
 
-window.__test = {
-  state() {
-    const base = run ? run.state() : {
-      phase: "title",
-      turn: 0,
-      year: 2026,
-      span: 0,
-      warming: PREVIEW.warming,
-      projected: null,
-      ending: null,
-      endingName: null,
-    };
-    return { ...base, seed, badSeed, fast, busy, ui };
-  },
-  log() {
-    return run ? run.log() : [];
-  },
-  offers() {
-    return run && ui === "play" ? run.offers() : null;
-  },
-  choose,
-  start(next) {
-    return startGame(next);
-  },
-  ending() {
-    return run ? run.ending() : null;
-  },
-  tweak(partial) {
-    if (!run) return null;
-    const state = run.tweak(partial);
-    shown = viewOf(state);
-    render(false);
-    return state;
-  },
-  clampEffect,
-  ideaClamp: IDEA_CLAMP,
-  cardCount: CARDS.length,
-};
+const exposeTest = params.get("test") === "1" || params.get("fast") === "1" || params.has("seed");
+if (exposeTest) {
+  window.__test = {
+    state() {
+      const base = run ? run.state() : {
+        phase: "title",
+        turn: 0,
+        year: 2026,
+        span: 0,
+        warming: PREVIEW.warming,
+        projected: null,
+        ending: null,
+        endingName: null,
+      };
+      return { ...base, seed, badSeed, fast, busy, ui };
+    },
+    log() {
+      return run ? run.log() : [];
+    },
+    offers() {
+      return run && ui === "play" ? run.offers() : null;
+    },
+    choose,
+    start(next) {
+      return startGame(next);
+    },
+    ending() {
+      return run ? run.ending() : null;
+    },
+    tweak(partial) {
+      if (!run) return null;
+      const state = run.tweak(partial);
+      shown = viewOf(state);
+      render(false);
+      return state;
+    },
+    clampEffect,
+    ideaClamp: IDEA_CLAMP,
+    cardCount: CARDS.length,
+  };
+}
 
 render(false);
 probeArt().then(() => paintShown());

@@ -70,9 +70,11 @@ function pngSize(file) {
   return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20), bytes: buf.length };
 }
 
-async function open(browser, url) {
+async function open(browser, url, size) {
+  const width = size?.width || 390;
+  const height = size?.height || 844;
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width, height },
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 1,
@@ -106,12 +108,31 @@ async function open(browser, url) {
   };
 }
 
-async function shoot(page, name) {
+async function shoot(page, name, width = 390, height = 844) {
   const file = path.join(SHOTS, name + ".png");
   await page.screenshot({ path: file, fullPage: false });
   const size = pngSize(file);
-  check(size.w === 390 && size.h === 844, `${name}.png is ${size.w}x${size.h}`);
+  check(size.w === width && size.h === height, `${name}.png is ${size.w}x${size.h}`);
   return file;
+}
+
+async function reach(locator) {
+  await locator.scrollIntoViewIfNeeded();
+  return locator.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
+    const visibleW = Math.min(box.right, viewW) - Math.max(box.left, 0);
+    const visibleH = Math.min(box.bottom, viewH) - Math.max(box.top, 0);
+    return {
+      w: box.width,
+      h: box.height,
+      visibleW,
+      visibleH,
+      left: box.left,
+      top: box.top,
+    };
+  });
 }
 
 function quoteAttr(id) {
@@ -277,6 +298,22 @@ try {
   check(!/[\u2014\u2013]/.test(endText), "end screen has no em or en dashes");
   check(played.minTap && played.minTap.w >= 44 && played.minTap.h >= 44, `first choice target ${played.minTap ? Math.round(played.minTap.w) + "x" + Math.round(played.minTap.h) : "missing"}`);
   await shoot(runA.page, "breakthrough2-ending");
+  const endName = await runA.page.locator("#end-name").innerText();
+  const endStats = await runA.page.locator("#end-stats").innerText();
+  await runA.page.evaluate(() => window.__test.tweak({ trust: NaN }));
+  check(await runA.page.locator("#ending").isVisible() && await runA.page.locator("#end-name").innerText() === endName && await runA.page.locator("#end-stats").innerText() === endStats, "NaN tweak leaves the end screen intact");
+  await runA.page.locator("#again").tap();
+  await runA.page.waitForFunction(() => window.__test.state().ui === "play" && window.__test.state().turn === 1);
+  const kept = await runA.page.evaluate(() => {
+    const offers = window.__test.offers();
+    return {
+      seed: window.__test.state().seed,
+      cards: offers.cards.map((card) => card.id).join(),
+      event: offers.event ? offers.event.id : "",
+    };
+  });
+  const nodeOpening = createRun(123).offers();
+  check(kept.seed === 123 && kept.cards === nodeOpening.cards.map((card) => card.id).join() && kept.event === (nodeOpening.event ? nodeOpening.event.id : ""), "play again with ?seed=123 replays that seed");
 
   console.log("\nseed 123 click replay");
   const runB = await open(browser, base + "?seed=123&fast=1");
@@ -346,6 +383,8 @@ try {
     const labState = await lab.page.evaluate(() => window.__test.state().lab);
     check(again.ok === false && again.reason === "cooldown", `second idea use refused (${again.reason})`);
     check(labState.ready === false && labState.turnsLeft > 0, `lab closed for ${labState.turnsLeft} turns`);
+    const cooldownNote = await lab.page.locator("#note").innerText();
+    check(cooldownNote === `Idea Lab is closed for ${labState.turnsLeft} turn${labState.turnsLeft === 1 ? "" : "s"}.`, `cooldown note "${cooldownNote}"`);
     const log = await lab.page.evaluate(() => window.__test.log());
     const used = log.at(-1);
     check(used && used.pick.kind === "idea" && used.pick.id === affordable.id, "the idea was the turn's pick");
@@ -382,6 +421,107 @@ try {
   check(nanDrop, "tweak drops NaN and Infinity");
   check(maps.errors.length === 0 && maps.net404.length === 0 && maps.off.length === 0, "map probe added no errors, 404s, or off-origin calls");
   await maps.close();
+
+  console.log("\nlayout");
+  const viewports = [
+    { width: 390, height: 844, shot: "breakthrough2-event-390" },
+    { width: 360, height: 740, shot: "" },
+    { width: 320, height: 568, shot: "breakthrough2-event-320" },
+    { width: 844, height: 390, shot: "breakthrough2-landscape-844" },
+    { width: 667, height: 375, shot: "" },
+  ];
+  for (const vp of viewports) {
+    const label = `${vp.width}x${vp.height}`;
+    const frame = await open(browser, base + "?seed=123&fast=1", vp);
+    await frame.page.locator("#start").tap();
+    await frame.page.waitForFunction(() => window.__test.state().ui === "play" && window.__test.state().turn === 1);
+    check(await frame.page.locator("#news").isVisible(), `${label} turn 1 shows the event`);
+    if (vp.shot) await shoot(frame.page, vp.shot, vp.width, vp.height);
+    const cards = frame.page.locator("#hand .card");
+    const cardCount = await cards.count();
+    check(cardCount === 3, `${label} deals ${cardCount} cards`);
+    for (let i = 0; i < cardCount; i += 1) {
+      const box = await reach(cards.nth(i));
+      const ok = box.h >= 80 && box.visibleH >= 80 && box.visibleW >= 44;
+      check(ok, `${label} card ${i + 1} ${Math.round(box.w)}x${Math.round(box.h)} visible ${Math.round(box.visibleW)}x${Math.round(box.visibleH)}`);
+    }
+    const pass = await reach(frame.page.locator("#pass"));
+    check(pass.h >= 44 && pass.visibleH >= 44 && pass.visibleW >= 44, `${label} Hold steady ${Math.round(pass.w)}x${Math.round(pass.h)} visible ${Math.round(pass.visibleH)}px`);
+    if (vp.width === 320) {
+      const type = await frame.page.evaluate(() => ({
+        label: parseFloat(getComputedStyle(document.querySelector(".meter span")).fontSize),
+        tag: parseFloat(getComputedStyle(document.querySelector(".card .lane")).fontSize),
+        wide: document.documentElement.scrollWidth - window.innerWidth,
+      }));
+      check(type.label >= 11 && type.tag >= 11, `${label} type is ${type.label}px labels and ${type.tag}px tags`);
+      check(type.wide <= 1, `${label} page overflow ${type.wide}px`);
+    }
+    if (vp.width === 390 && vp.height === 844) {
+      const costLine = await frame.page.locator("#hand .card .meta").nth(1).innerText();
+      check(/^Cost \d/.test(costLine) && !/\+/.test(costLine), `${label} cost reads "${costLine}"`);
+    }
+    check(frame.errors.length === 0, frame.errors.length ? frame.errors.join("; ") : `${label} layout run is clean`);
+    await frame.close();
+  }
+
+  console.log("\noption lines and seeds");
+  const deal = await open(browser, base + "?seed=35&fast=1");
+  await deal.page.locator("#start").tap();
+  await deal.page.waitForFunction(() => window.__test.state().ui === "play");
+  const split = await deal.page.locator("#news-options .option").first().evaluate((el) => {
+    const name = el.querySelector("strong").getBoundingClientRect();
+    const text = el.querySelector(".meta").getBoundingClientRect();
+    return { gap: text.top - name.bottom, name: el.querySelector("strong").textContent, text: el.querySelector(".meta").textContent };
+  });
+  check(split.gap >= 2, `option "${split.name}" sits ${Math.round(split.gap)}px above "${split.text}"`);
+  await deal.close();
+
+  const wrapped = await open(browser, base + "?seed=4294967297&fast=1");
+  check((await wrapped.page.locator("#title-seed").innerText()) === "Seed 1", "seed 2^32+1 shows as seed 1");
+  await wrapped.page.locator("#start").tap();
+  const wrappedDeal = await wrapped.page.evaluate(() => window.__test.offers().cards.map((card) => card.id).join());
+  const seedOne = createRun(1).offers().cards.map((card) => card.id).join();
+  check(wrappedDeal === seedOne, "seed 2^32+1 deals the same hand as seed 1");
+  await wrapped.close();
+
+  const bare = await open(browser, base);
+  check(await bare.page.evaluate(() => window.__test === undefined), "no test hook without test, fast, or seed");
+  check(bare.errors.length === 0, bare.errors.length ? bare.errors.join("; ") : "bare load is clean");
+  await bare.close();
+
+  console.log("\nplay again without a url seed");
+  const loose = await open(browser, base + "?test=1&fast=1");
+  await loose.page.locator("#start").tap();
+  await loose.page.waitForFunction(() => window.__test.state().ui === "play");
+  const opening = await loose.page.evaluate(() => {
+    const offers = window.__test.offers();
+    return {
+      seed: window.__test.state().seed,
+      cards: offers.cards.map((card) => card.id).join(),
+      event: offers.event ? offers.event.id : "",
+    };
+  });
+  let spins = 0;
+  while ((await loose.page.evaluate(() => window.__test.state().phase)) !== "end" && spins < 40) {
+    const offers = await loose.page.evaluate(() => window.__test.offers());
+    await loose.page.evaluate((id) => window.__test.choose(id), scripted(offers));
+    spins += 1;
+  }
+  check(await loose.page.evaluate(() => window.__test.state().phase) === "end", "unseeded run reaches an ending");
+  await loose.page.locator("#again").tap();
+  await loose.page.waitForFunction(() => window.__test.state().ui === "play" && window.__test.state().turn === 1);
+  const redraw = await loose.page.evaluate(() => {
+    const offers = window.__test.offers();
+    return {
+      seed: window.__test.state().seed,
+      cards: offers.cards.map((card) => card.id).join(),
+      event: offers.event ? offers.event.id : "",
+    };
+  });
+  check(redraw.seed !== opening.seed, `play again seed ${opening.seed} then ${redraw.seed}`);
+  check(redraw.cards !== opening.cards || redraw.event !== opening.event, "play again without ?seed changes the first hand or event");
+  check(loose.errors.length === 0, loose.errors.length ? loose.errors.join("; ") : "play again run is clean");
+  await loose.close();
 
   console.log("\nseeds 1 to 50");
   const randomCounts = tally((seed) => randomPolicy(seed));
