@@ -1,0 +1,16 @@
+{
+  "model": "marketing-studio/image",
+  "common": "Production environment art for the attached Monster Mash game reference, hand-inked animated television cartoon, finely drawn irregular dark contours, muted sage and ochre terrain, dark blue-teal shadows, luminous cyan accents and sparse violet wildflowers. Detailed painterly interior texture, natural asymmetry, no text, no labels, no grid, no interface, no characters. Match the selected cartoon world. ",
+  "styles": {
+    "landforms": "Exactly THREE columns and TWO rows, six separate fully isolated LARGE NATURAL LANDFORM cutouts. Elevated oblique game camera looking north, same camera as reference. Every object on flat pure magenta #FF00FF, generous margins all around, no contact with adjacent cells. Row1: a long crescent-shaped pale sandstone cliff ridge, mossy grassy upper shelf, broken rock strata and dark crevices in front; massive tangled banyan roots making an arch with moss, ferns and a small pool nestled below; a ruined semicircular abbey courtyard, half-collapsed stone arches, cracked ancient paving, creeping plants and weathered steps. Row2: a small atmospheric watermill yard with crooked timber shed, wooden waterwheel, barrels, dock and reeds grouped as one coherent village landmark; a broad low rock outcrop with shale slabs, sunlit moss, violet flowers and a small crooked dead tree; cluster of ancient giant redwood trunks and dark layered leaf canopy forming a dense irregular forest island with roots exposed. Full cutout silhouettes of each entire landform visible, no square bases, no rectangular ground slabs, no floating islands, realistic natural proportions in cartoon style. Each is a whole place with grounded materials and rich detail.",
+    "surfaces": "Flat TOP-DOWN overhead 2x2 material atlas, four equal quadrants, full bleed edge to edge with NO magenta, NO borders or gutters. Top-left: natural mossy heath ground, low olive fern leaves, fine golden grass, scattered pale tiny stone fragments, irregular patches of richer dark soil, subtle hand-inked detail and large-scale variation. Top-right: worn tan earth, tiny weeds, foot traffic, dust, occasional partially buried broken flagstone fragments, natural dirt path surface. Bottom-left: shallow jade wetland ground, muddy streaks, tiny puddles, round gravel and pale sedge, no large plants. Bottom-right: timeworn uneven grey-green stone courtyard paving half consumed by moss, many differently shaped broken slabs, weeds and cracks, NO geometric regular rows. All muted, no bold spots, no shadows of unseen large objects. These are four flat terrain MATERIALS with exquisite illustrated fine detail, no perspective, no paths drawn across the atlas, no scene composition."
+  },
+  "parameters": {
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "enhance_prompt": false,
+    "image_urls": [
+      "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/ffaa4140-d4af-4972-93e0-4798616e7619.png"
+    ]
+  }
+}

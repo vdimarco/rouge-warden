@@ -44,9 +44,11 @@ export function createDialogue(U) {
     nx.textContent = '';
     sayH.shownAt = S.timers.now;
     boxVoice = { who, text: l.text, t0: S.timers.now, cut: null };
+    boxVoice.audio = S.audio?.speak?.(who, l.text);
   }
   function nextLine() {
     if (!sayH) return;
+    S.audio?.stopVoice?.();
     sayH.i++;
     boxVoice = null;
     if (sayH.i >= sayH.lines.length) { const h = sayH; sayH = null; typing = null; h.done = true; box.classList.add('hidden'); root.classList.remove('sayOn'); U.popModal('dialog'); }
@@ -54,7 +56,7 @@ export function createDialogue(U) {
   }
   function advance() {
     if (!sayH) return;
-    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; if (boxVoice) boxVoice.cut = S.timers.now; return; }
+    if (typing && typing.n < typing.text.length) { typing.n = typing.text.length; ln.textContent = typing.text; typing = null; if (boxVoice) boxVoice.cut = S.timers.now; S.audio?.stopVoice?.(); return; }
     U.blip('move');
     nextLine();
   }
@@ -64,12 +66,13 @@ export function createDialogue(U) {
   /* ---------------- subtitles ---------------- */
   function setSubs(who, text, speaker) {
     subVoice = { who: speaker ?? who, text: String(text), t0: S.timers.now, until: null };
+    subVoice.audio = S.audio?.speak?.(subVoice.who, String(text));
     const name = U.whoName(who);
     subsEl.innerHTML = name ? `<b class="${U.isCrew(who) ? 'crew' : ''}">${esc(name)}</b> ${esc(text)}` : esc(text);
     subsEl.classList.remove('hidden');
   }
   const subsDur = (text) => Math.max(1.6, 0.7 + String(text).length * 0.045);
-  function showSubsLine() { const l = U.lineOf(subsH.lines[subsH.i]); setSubs(l.who, l.text); subsH.until = S.timers.now + subsDur(l.text); subVoice.until = subsH.until; subsUntil = 0; }
+  function showSubsLine() { const l = U.lineOf(subsH.lines[subsH.i]); setSubs(l.who, l.text); subsH.until = S.timers.now + Math.max(subsDur(l.text), (subVoice.audio?.duration || 0) + 0.15); subVoice.until = subsH.until; subsUntil = 0; }
   function nextSubs() { if (!subsH) return; subsH.i++; if (subsH.i >= subsH.lines.length) { subsH.done = true; subsH = null; subsEl.classList.add('hidden'); subVoice = null; } else showSubsLine(); }
 
   function say(lines, o = {}) {
@@ -90,8 +93,8 @@ export function createDialogue(U) {
   // speaker: who says it when the subtitle shows no name (a cine line: the line's own speaker)
   function subs(who, text, dur, speaker) {
     if (subsH) { subsH.done = true; subsH = null; }
-    if (!text) { subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; return; }
-    setSubs(who, text, speaker); subsUntil = S.timers.now + (dur ?? subsDur(text)); subVoice.until = subsUntil;
+    if (!text) { S.audio?.stopVoice?.(); subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; return; }
+    setSubs(who, text, speaker); subsUntil = S.timers.now + Math.max(dur ?? subsDur(text), (subVoice.audio?.duration || 0) + 0.15); subVoice.until = subsUntil;
   }
 
   /* ---------------- choices ---------------- */
@@ -150,8 +153,8 @@ export function createDialogue(U) {
       }
       // the box waits for input (▼) once the words are typed and the speaker has finished saying them
       if (sayH && !typing) nx.textContent = speaking(boxVoice) ? '' : sayH.i + 1 < sayH.lines.length ? '▼' : '■';
-      if (subsH && t >= subsH.until) nextSubs();
-      if (subsUntil && t >= subsUntil) { subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; }
+      if (subsH && t >= subsH.until && (!subVoice?.audio || subVoice.audio.done)) nextSubs();
+      if (subsUntil && t >= subsUntil && (!subVoice?.audio || subVoice.audio.done)) { subsEl.classList.add('hidden'); subsUntil = 0; subVoice = null; }
     },
     advanceAll() { while (sayH) nextLine(); while (subsH) nextSubs(); if (choiceH) pick(0); },
     get voices() { const out = []; if (boxVoice && sayH) out.push(boxVoice); if (subVoice && !subsEl.classList.contains('hidden')) out.push(subVoice); return out; },
@@ -159,6 +162,7 @@ export function createDialogue(U) {
     boxes() { const out = []; for (const [n, e] of [['subs', subsEl]]) { const r = U.box(e); if (r) out.push([n, r]); } return out; },
     reset() {
       if (sayH) { sayH.done = true; sayH = null; } if (subsH) { subsH.done = true; subsH = null; } if (choiceH) { choiceH.done = true; choiceH = null; }
+      S.audio?.stopVoice?.();
       typing = null; subsUntil = 0; boxVoice = null; subVoice = null; root.classList.remove('sayOn');
       box.classList.add('hidden'); subsEl.classList.add('hidden'); chEl.classList.add('hidden');
     },

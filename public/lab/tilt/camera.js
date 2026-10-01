@@ -80,8 +80,12 @@ export function updateCamera(camera, run, dt = 1 / 60, options = {}) {
     const safeH = Math.max(40, halfH - 48 / camera.scale);
     camera.x = clamp(camera.x, ball.x - safeW, ball.x + safeW);
     camera.y = clamp(camera.y, ball.y - safeH, ball.y + safeH);
-    camera.x = halfW * 2 >= bounds.width ? bounds.width / 2 : clamp(camera.x, halfW - 65, bounds.width - halfW + 65);
-    camera.y = halfH * 2 >= bounds.height ? bounds.height / 2 : clamp(camera.y, halfH - 75, bounds.height - halfH + 75);
+    // Open space extends beyond the engine's layout coordinates. Its camera
+    // follows the active system without revealing where other sectors are stored.
+    if (!run.table.openSpace) {
+      camera.x = halfW * 2 >= bounds.width ? bounds.width / 2 : clamp(camera.x, halfW - 65, bounds.width - halfW + 65);
+      camera.y = halfH * 2 >= bounds.height ? bounds.height / 2 : clamp(camera.y, halfH - 75, bounds.height - halfH + 75);
+    }
     // At the outer world edge, keeping the ball clear of the HUD takes priority.
     camera.x = clamp(camera.x, ball.x - safeW, ball.x + safeW);
     camera.y = clamp(camera.y, ball.y - safeH, ball.y + safeH);

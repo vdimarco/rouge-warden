@@ -1,0 +1,61 @@
+{
+  "provider": "Higgsfield API",
+  "model": "marketing-studio/image",
+  "jobs": {
+    "landmarks": {
+      "request_id": "c439a78c-b008-40b1-b16e-6dc26eb010af",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/feeba38b-bcd8-4674-ab49-7fef1d7e643a.png"
+        }
+      ]
+    },
+    "botanicals": {
+      "request_id": "8ac08693-540d-4535-a4a8-21d539da5e87",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/40ae2784-4131-4f73-a04a-110a64a98fe0.png"
+        }
+      ]
+    },
+    "mothman": {
+      "request_id": "889a78bd-b400-4031-b2b5-b4197e446b52",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/98cc0bf3-2971-4ce9-b562-fc41d6ed824f.png"
+        }
+      ]
+    },
+    "nessie": {
+      "request_id": "5637190d-c071-4ec9-974a-edaf4df73b35",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/dca201a7-53e3-4f2d-9719-5b3b6252c108.png"
+        }
+      ]
+    },
+    "baba": {
+      "request_id": "692c6cbd-45cb-4d7a-a71a-b62ea4a19f91",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/d6f4f8b5-a7de-457b-a90d-90c78ceaa22f.png"
+        }
+      ]
+    },
+    "devil": {
+      "request_id": "962567d0-5eb7-45bd-a4e1-3d8f5226520a",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/aaf54d27-c286-4970-b677-bdaddffc82aa.png"
+        }
+      ]
+    }
+  },
+  "recipe": "higgsfield/monster-motion-assets.json"
+}

@@ -11,7 +11,30 @@ not through the Higgsfield app or its MCP connector.
    Git ignores `.env.local`. Do not put the key anywhere else.
 3. Run `npm install`.
 
+The tools also accept `HIGGSFIELD_API_KEY` (key ID) and `HIGGSFIELD_API_SECRET`
+(secret), matching the server-only variables configured in Vercel. A combined
+`key-id:key-secret` value in `HIGGSFIELD_API_KEY` also works. `HF_CREDENTIALS`
+takes precedence when populated. Do not use a `NEXT_PUBLIC_` prefix.
+
+Vercel variables are available to deployments, not automatically to these local
+CLI tools. Run the tools in an environment with those variables securely injected,
+or use an authenticated Vercel CLI to pull them to the git-ignored `.env.local`.
+Adding Vercel variables alone does not run asset generation; this static game has
+no deployed generation endpoint.
+
 ## Commands
+
+The Monster Mash style comparison is at `/tidebreak/styles/`. Three concepts were
+generated through the direct API on 2026-09-30 using `marketing-studio/image`.
+`monster-styles.json` preserves the shared composition, each style prompt and the
+generation parameters. The gallery's `sources.json` records the request IDs and
+source URLs. These are custom Ghibli-, Pixar-, and Rick and Morty-inspired prompts,
+not named provider presets or screenshots of the game's current renderer.
+
+The generation used a temporary preview-only server function with hashed bearer
+authentication, a two-hour expiry and three fixed upstream idempotency keys. It
+was removed after the images completed. No generation credentials were downloaded
+or committed, and the gallery contains only static assets.
 
 - `npm run models [-- <filter>]` lists the API's models (free). The API makes images and video only.
   It has no 3D models.

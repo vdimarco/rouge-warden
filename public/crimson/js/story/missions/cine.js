@@ -404,8 +404,11 @@ export function createCine(S, K) {
     if (S.look.cineQuality) S.look.cineQuality(true);
     if (!def.arena) stepOut();
     r.soundLoops = [];
+    if (S.audio.beginCinematic) S.audio.cue(null);
+    const soundStart = S.audio.beginCinematic?.();
+    while (soundStart && !soundStart.ready && !r.skip) yield null;
     if (def.id === 'c0' || def.id === 'i0') {
-      S.audio.cue('night');
+      S.audio.cue(S.audio.beginCinematic ? null : 'night');
       r.soundLoops.push(S.audio.loop('creek', { level: 0.45 }), S.audio.loop('crickets', { level: 0.35 }));
     }
     K.log('cine', def.id, 'start');
@@ -414,6 +417,10 @@ export function createCine(S, K) {
       for (;;) {
         if (r.skip) break;
         const now = S.timers.now, dt = Math.max(0, now - last); last = now;
+        // Hold the next line and its camera cut until the current recording ends.
+        const nextLine = r.sorted.lines[r.next.lines];
+        const nextSay = r.sorted.actors.slice(r.next.actors).find(e => e.do === 'say');
+        if (S.audio.voice && !S.audio.voice.done && ((nextLine && nextLine.at <= r.t + dt) || (nextSay && nextSay.at <= r.t + dt) || r.t + dt >= def.dur)) { yield null; continue; }
         if (r.hold) { if (K.auto) S.ui.advanceAll(); if (!r.hold.done) { yield null; continue; } r.hold = null; }
         if (r.film) {
           if (!r.film.done) { if (r.def.id === 'c0' && S.film.active && !r.morphSound) r.morphSound = S.audio.loop('gabeMorph'); if (K.auto) S.film.skip(); yield null; continue; }
@@ -459,7 +466,8 @@ export function createCine(S, K) {
     r.done = true;
     if (r.morphSound) r.morphSound.stop(0.1);
     for (const h of r.soundLoops || []) h.stop(0.25);
-    if (r.def.id === 'c0' || r.def.id === 'i0') S.audio.cue('auto');
+    S.audio.endCinematic?.();
+    if (S.audio.beginCinematic || r.def.id === 'c0' || r.def.id === 'i0') S.audio.cue('auto');
     try {
       if (r.hold && !r.hold.done) S.ui.advanceAll();
       if (r.film && !r.film.done) S.film.skip();

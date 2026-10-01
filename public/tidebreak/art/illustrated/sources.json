@@ -1,0 +1,54 @@
+{
+  "provider": "Higgsfield direct API",
+  "model": "marketing-studio/image",
+  "reference": "../../styles/rick-and-morty.webp",
+  "recipe": "higgsfield/monster-reference-assets.json",
+  "processing": "Chroma-key magenta matte, two-pixel edge despill, per-cell alpha-bound trim, downsample to at most 760 x 900 and WebP quality 91. Gameplay is independently rendered; the concept screenshot is not used as a backdrop.",
+  "jobs": {
+    "scenery": {
+      "request_id": "a94e4f60-4a0c-4c14-8105-a6f53cac4715",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/43b73191-997e-4556-a209-fd372d12c8d7.png"
+        }
+      ]
+    },
+    "heroes": {
+      "request_id": "ffea139d-3f28-4509-b36e-ba57d889fc02",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/8532e655-5f76-426b-962a-f3eb8c3269d4.png"
+        }
+      ]
+    },
+    "units": {
+      "request_id": "37304ab8-ecbd-4722-b097-4b7389cd3eef",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/b920e78e-fca6-4962-9f73-d3aa7a1cf953.png"
+        }
+      ]
+    },
+    "abilities": {
+      "request_id": "1fba882b-da94-405b-ba18-017d9914b2d1",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/81b73112-7ebf-42ac-a5a9-2e2166e04ac2.png"
+        }
+      ]
+    },
+    "bridge": {
+      "request_id": "f1fe5223-aaa7-4e33-968b-e476785fc6ec",
+      "status": "completed",
+      "images": [
+        {
+          "url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/68e3305e-532b-4c9a-bc1c-3fa55b91a275.png"
+        }
+      ]
+    }
+  }
+}

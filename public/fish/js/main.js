@@ -12,6 +12,7 @@ import { createRodCues } from "./rod-cues.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
+import { HangingLure } from "./line-motion.js";
 import { CAST, castParams, Flight } from "./cast.js";
 import { Rises, LakeSim, rodTip, sizeRank } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
@@ -630,7 +631,8 @@ function release(t, late = false) {
   G.lastRelease = { t, theta: s.theta, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
   // hand tremor alone reaches 20 to 40 deg/s: a motion release needs a real swing
   const minSpeed = sensing() ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
-  if (fwd < minSpeed) {
+  const forwardTravel = Math.max(G.backMax, pk.maxTheta) - s.theta;
+  if (fwd < minSpeed || (sensing() && (forwardTravel < 8 || s.omega > 60))) {
     // no swing: nothing flies. Start again with no fuss
     resetCast(G.input === "motion" ? "Swing the phone forward. Lift your thumb as it tips." : "Drag down. Then flick up and let go.");
     return;
@@ -651,7 +653,7 @@ function release(t, late = false) {
   G.cast = params;
   G.cast.late = late;
   // physics uses the real rod geometry; world.tip() is the drawn, camera-held rod
-  G.flight = new Flight(rodTip(clamp(s.theta, -10, 170), params.yaw, 0, G.place.stand.rod), params);
+  G.flight = new Flight(rodTip(clamp(s.theta, 0, 85), params.yaw, 0, G.place.stand.rod), params);
   G.step = "flight";
   G.casts++;
   if (G.mode === "derby") G.castsLeft--;
@@ -1128,6 +1130,8 @@ addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused)
 }
 
 /* ---------------- per-frame: the cast ---------------- */
+const hangingLure = new HangingLure();
+let castFlex = 0, castFlexVelocity = 0;
 function castUpdate(dt) {
   const t = now();
   const p = Motion.pose;
@@ -1156,9 +1160,17 @@ function castUpdate(dt) {
     if (!sensing() && strokeEnded(p, t)) { Sound.setSwish(0); G.pin = null; release(t, true); return; }
   } else Sound.setSwish(0);
 
+  const flexTarget = G.step === "flight" ? 0 : clamp(Math.abs(p.omega || 0) / 1600, 0, 0.38);
+  const flexDt = Math.min(dt, 0.05), flexSteps = Math.max(1, Math.ceil(flexDt * 120));
+  for (let i = 0; i < flexSteps; i++) {
+    const h = flexDt / flexSteps;
+    castFlexVelocity += ((flexTarget - castFlex) * 150 - castFlexVelocity * 14) * h;
+    castFlex += castFlexVelocity * h;
+  }
   let tip;
   if (G.step === "flight" && G.flight) {
-    tip = world.setRod({ theta: clamp(theta, -10, 170), yaw, visible: true });
+    hangingLure.reset();
+    tip = world.setRod({ theta: clamp(theta, -10, 170), yaw, bend: Math.max(0, castFlex), visible: true });
     const r = G.flight.step(dt, !!(G.pin && G.pin.feather));
     Sound.setSpool(r.spool || 0);
     reelPanel.set({ spool: (r.spool || 0) / 0.6 });
@@ -1181,9 +1193,10 @@ function castUpdate(dt) {
     return;
   }
   // ready, open, pinned, loaded: the lure hangs under the tip
-  tip = world.setRod({ theta: clamp(theta, -10, 170), yaw, bend: 0, visible: true });
-  world.setLure({ x: tip.x, y: tip.y - 0.28 - G.drop, z: tip.z, visible: true, spin: 0 });
-  world.setLine({ from: tip, to: { x: tip.x, y: tip.y - 0.28 - G.drop, z: tip.z }, slack: 0, visible: true });
+  tip = world.setRod({ theta: clamp(theta, -10, 170), yaw, bend: Math.max(0, castFlex), visible: true });
+  const hanging = hangingLure.step(tip, 0.28 + G.drop, dt);
+  world.setLure({ ...hanging, visible: true, spin: 0 });
+  world.setLine({ from: tip, to: hanging, slack: 0, visible: true });
   world.setView({ mode: "cast", yaw, portrait: G.layout === "tall-cast" });
   world.setAim({ yaw, visible: G.step === "ready" || G.step === "open" || G.step === "pinned" || G.step === "loaded" });
   castPrompt();

@@ -163,17 +163,17 @@ const COMPOSITE = /* glsl */`
     // Comic print: stepped colour, purple shadows, halftone dots and offset cyan/magenta ink.
     // This is isolated to the COMIC look, so ordinary play retains its own grade.
     if (uComic > 0.) {
-      vec3 printed = floor(clamp(col, 0., 1.) * 7. + 0.5) / 7.;
+      vec3 printed = mix(col, floor(clamp(col, 0., 1.) * 12. + 0.5) / 12., 0.25);
       float shade = 1. - smoothstep(0.12, 0.65, lum(printed));
       printed = mix(printed, printed * vec3(0.8, 0.55, 1.15) + vec3(0.07, 0.015, 0.12), shade * 0.7);
       vec2 cell = fract(vUv * uRes / 5.) - 0.5;
       float dotInk = 1. - smoothstep(0.11, 0.2, length(cell));
-      printed *= 1. - dotInk * shade * 0.28;
-      vec2 reg = px * vec2(2., 1.);
+      printed *= 1. - dotInk * shade * 0.12;
+      vec2 reg = px * vec2(0.65, 0.35);
       float cyan = abs(lum(tex(uv + reg)) - L);
       float magenta = abs(lum(tex(uv - reg)) - L);
-      printed += vec3(0.03, 0.65, 0.85) * smoothstep(0.045, 0.2, cyan) * 0.55;
-      printed += vec3(0.9, 0.03, 0.45) * smoothstep(0.045, 0.2, magenta) * 0.55;
+      printed += vec3(0.03, 0.65, 0.85) * smoothstep(0.045, 0.2, cyan) * 0.18;
+      printed += vec3(0.9, 0.03, 0.45) * smoothstep(0.045, 0.2, magenta) * 0.18;
       col = mix(col, printed, uComic);
     }
     // the sand attack: ink smears in from the edges
