@@ -3,10 +3,14 @@
 //
 // Assumptions (also listed on the PR):
 // - Tie odd chip goes to the earliest seat in order player, Bram, Fennel.
-// - No side pots. Short bets and calls pay min(amount, stack); critters pay full.
-// - The short stack can still win the whole pot. Ante is capped the same way.
+// - Ante is min(2, stack). Bets and calls cap at the stack and the button shows
+//   the real amount, with "(all-in)" when it takes the rest of the stack.
+// - No side pots. If the player is all-in, each critter's pot total is capped
+//   at the player's contribution. The excess is dropped, not paid out.
 // - A call is a correct read only on a sole win. A fold is correct only if the
-//   player's rank is strictly worse than the best opponent still in.
+//   player's rank is strictly worse. A tie is not a read, call or fold.
+// - Below 4 reads the rating is "Too few reads". At 4 or more: Sharp is 80%
+//   or higher, Good is 60 to 79%, Rookie is under 60%.
 // - ?fast=1 skips waits. It does not change the deck, tells, or the log.
 
 const SEATS = ["player", "bram", "fennel"];
@@ -29,10 +33,10 @@ function utcSeed(d = new Date()) {
   return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
 }
 function parseSeed() {
-  if (!params.has("seed")) return { seed: utcSeed(), daily: true };
+  if (!params.has("seed")) return { seed: utcSeed(), daily: true, bad: false };
   const n = Number(params.get("seed"));
-  if (!Number.isFinite(n)) return { seed: utcSeed(), daily: true };
-  return { seed: n >>> 0, daily: false };
+  if (!Number.isFinite(n)) return { seed: utcSeed(), daily: true, bad: true };
+  return { seed: n >>> 0, daily: false, bad: false };
 }
 function parseHands() {
   if (!params.has("hands")) return 10;
@@ -41,7 +45,7 @@ function parseHands() {
   return Math.min(n, 50);
 }
 
-const { seed, daily } = parseSeed();
+const { seed, daily, bad } = parseSeed();
 const handCount = parseHands();
 if (FAST) document.documentElement.classList.add("fast");
 
@@ -85,9 +89,14 @@ const flash = $("#flash");
 const buttons = {};
 for (const b of document.querySelectorAll("#actions button")) buttons[b.dataset.act] = b;
 
-const seedLabel = daily ? `Daily #${seed}` : `Seed #${seed}`;
+const seedLabel = daily ? `Daily UTC #${seed}` : `Seed #${seed}`;
 dailyEl.textContent = seedLabel;
 startDaily.textContent = seedLabel;
+if (bad) {
+  const warn = $("#seed-warn");
+  warn.hidden = false;
+  warn.textContent = "Bad seed, using daily";
+}
 document.documentElement.dataset.phase = "start";
 
 function wait(ms) {
@@ -119,41 +128,82 @@ function sync() {
 }
 function renderStatus() {
   stackEl.textContent = `${stack} chips`;
-  const shown = Math.min(handsDone + 1, handCount);
+  const ended = document.documentElement.dataset.phase === "end";
+  const shown = ended ? handsDone : Math.min(handsDone + 1, handCount);
   handEl.textContent = `Hand ${shown}/${handCount}`;
   readsEl.textContent = `Reads ${api.reads.correct}/${api.reads.total}`;
   sync();
 }
 function rating(correct, total) {
-  if (total <= 0) return "Rookie";
+  if (total < 4) return "Too few reads";
   const pct = correct / total;
-  if (total >= 6 && pct >= 0.8) return "Sharp";
-  if (pct >= 0.6 && pct < 0.8) return "Good";
+  if (pct >= 0.8) return "Sharp";
+  if (pct >= 0.6) return "Good";
   return "Rookie";
 }
 
 function artUrl(file) {
   return new URL("./assets/" + file, import.meta.url).href;
 }
+
+// One probe of the painted pack, then a per-file cache. A miss is not requested again.
+const ART = new Map();
+let packOk = null;
+const packWaiters = [];
+
+function settlePack(ok) {
+  if (packOk !== null) return;
+  packOk = ok;
+  const waiting = packWaiters.splice(0);
+  for (const fn of waiting) fn(ok);
+  loadSfx();
+}
+function whenPack(fn) {
+  if (packOk !== null) fn(packOk);
+  else packWaiters.push(fn);
+}
+function bindArt(img, url, onDone) {
+  const state = ART.get(url);
+  if (state === "miss") {
+    img.classList.remove("ok");
+    if (onDone) onDone(false);
+    return;
+  }
+  if (state === "ok") {
+    if (img.getAttribute("src") !== url) img.src = url;
+    img.classList.add("ok");
+    if (onDone) onDone(true);
+    return;
+  }
+  if (state === "pending") return;
+  ART.set(url, "pending");
+  const finish = (ok) => {
+    if (ART.get(url) !== "pending") return;
+    ART.set(url, ok ? "ok" : "miss");
+    if (ok) img.classList.add("ok");
+    else {
+      img.classList.remove("ok");
+      img.removeAttribute("src");
+    }
+    if (onDone) onDone(ok);
+  };
+  img.addEventListener("load", () => finish(true), { once: true });
+  img.addEventListener("error", () => finish(false), { once: true });
+  img.src = url;
+}
 function mountArt() {
   const bg = $("#tablebg");
-  bg.addEventListener("load", () => bg.classList.add("ok"));
-  bg.addEventListener("error", () => bg.classList.remove("ok"));
-  bg.src = artUrl("table_bg.webp");
-  for (const img of document.querySelectorAll("[data-art]")) {
-    img.addEventListener("load", () => img.classList.add("ok"));
-    img.addEventListener("error", () => img.classList.remove("ok"));
-    img.src = artUrl(img.dataset.art);
-  }
-  const chips = new Image();
-  chips.onload = () => document.documentElement.classList.add("has-chips");
-  chips.src = artUrl("chips.webp");
-  for (const who of ["bram", "fennel"]) {
-    for (const state of STATES) {
-      const probe = new Image();
-      probe.src = artUrl(`${who}_face_${state}.webp`);
+  bindArt(bg, artUrl("table_bg.webp"), (ok) => {
+    settlePack(ok);
+    if (!ok) return;
+    for (const img of document.querySelectorAll("[data-art]")) {
+      bindArt(img, artUrl(img.dataset.art));
     }
-  }
+    const chips = new Image();
+    bindArt(chips, artUrl("chips.webp"), (chipsOk) => {
+      if (chipsOk) document.documentElement.classList.add("has-chips");
+    });
+  });
 }
 
 const INK = "#1B1B1B";
@@ -192,9 +242,18 @@ function applyFace(who, state) {
   crit.querySelector(".face-svg").innerHTML = FACES[state];
   const img = crit.querySelector(".face-img");
   img.classList.remove("ok");
-  img.onload = () => img.classList.add("ok");
-  img.onerror = () => img.classList.remove("ok");
-  img.src = artUrl(`${who}_face_${state}.webp`);
+  const url = artUrl(`${who}_face_${state}.webp`);
+  whenPack((ok) => {
+    if (!ok) return;
+    const cached = ART.get(url);
+    if (cached === "ok") {
+      if (img.getAttribute("src") !== url) img.src = url;
+      img.classList.add("ok");
+      return;
+    }
+    if (cached === "miss" || cached === "pending") return;
+    bindArt(img, url);
+  });
   crit.classList.add("showface");
 }
 
@@ -312,15 +371,23 @@ function choosePlayer(kind, betKind) {
       btn.disabled = false;
       btn.onclick = null;
     }
+    const stakeHtml = (title, amount) => {
+      if (amount === stack) return `<span>${title} ${amount} (all-in)</span>`;
+      return `<span>${title}</span><small>${amount}</small>`;
+    };
+    for (const act of ["check", "small", "big", "call", "fold"]) buttons[act].classList.remove("allin");
     buttons.check.innerHTML = "<span>Check</span>";
     const smallN = Math.min(SMALL, stack);
     const bigN = Math.min(BIG, stack);
-    buttons.small.innerHTML = `<span>Small</span><small>${smallN}</small>`;
-    buttons.big.innerHTML = `<span>Big</span><small>${bigN}</small>`;
+    buttons.small.innerHTML = stakeHtml("Small", smallN);
+    buttons.big.innerHTML = stakeHtml("Big", bigN);
+    if (smallN === stack) buttons.small.classList.add("allin");
+    if (bigN === stack) buttons.big.classList.add("allin");
     buttons.small.disabled = stack <= 0;
     buttons.big.disabled = stack <= 0;
     const callN = Math.min(betKind === "big" ? BIG : SMALL, stack);
-    buttons.call.innerHTML = `<span>Call</span><small>${callN}</small>`;
+    buttons.call.innerHTML = stakeHtml("Call", callN);
+    if (callN === stack) buttons.call.classList.add("allin");
     buttons.fold.innerHTML = "<span>Fold</span>";
     say("Your turn");
     setPhase("act");
@@ -354,8 +421,23 @@ let master = null;
 let muted = false;
 const buffers = {};
 let amb = null;
+let sfxStarted = false;
 const SFX = ["deal", "tap", "bet_small", "bet_big", "call", "fold", "flip", "win", "win_big", "lose", "end", "amb_cabin"];
 
+function loadSfx() {
+  if (sfxStarted || !ctx || packOk !== true) return;
+  sfxStarted = true;
+  for (const name of SFX) {
+    fetch(artUrl(name + ".mp3")).then(async (res) => {
+      if (!res.ok || !ctx) return;
+      try {
+        const raw = await res.arrayBuffer();
+        buffers[name] = await ctx.decodeAudioData(raw);
+        if (name === "amb_cabin") startAmbience();
+      } catch (e) { /* missing or undecodable */ }
+    }).catch(() => {});
+  }
+}
 function setupAudio() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
@@ -367,16 +449,7 @@ function setupAudio() {
   master = ctx.createGain();
   master.gain.value = muted ? 0 : 1;
   master.connect(ctx.destination);
-  for (const name of SFX) {
-    fetch(artUrl(name + ".mp3")).then(async (res) => {
-      if (!res.ok || !ctx) return;
-      try {
-        const raw = await res.arrayBuffer();
-        buffers[name] = await ctx.decodeAudioData(raw);
-        if (name === "amb_cabin") startAmbience();
-      } catch (e) { /* missing or undecodable */ }
-    }).catch(() => {});
-  }
+  loadSfx();
 }
 function startAmbience() {
   if (!ctx || !buffers.amb_cabin || amb) return;
@@ -420,6 +493,7 @@ function resetGame() {
   api.log.length = 0;
   clearTable();
   renderPot({ player: 0, bram: 0, fennel: 0 });
+  setPhase("deal");
   renderStatus();
   say("");
   hideActions();
@@ -448,8 +522,8 @@ async function playHand(h) {
   const flicked = { bram: false, fennel: false };
 
   clearTable();
-  renderStatus();
   setPhase("deal");
+  renderStatus();
   say("");
   const commit = (who, amount) => {
     if (who === "player") {
@@ -590,7 +664,13 @@ async function playHand(h) {
   const still = SEATS.filter((s) => inHand.has(s));
   const best = Math.max(...still.map((s) => cards[s].rank));
   const winners = SEATS.filter((s) => inHand.has(s) && cards[s].rank === best);
-  const pot = contrib.player + contrib.bram + contrib.fennel;
+  const playerAllIn = stack === 0;
+  const inPot = {
+    player: contrib.player,
+    bram: playerAllIn ? Math.min(contrib.bram, contrib.player) : contrib.bram,
+    fennel: playerAllIn ? Math.min(contrib.fennel, contrib.player) : contrib.fennel,
+  };
+  const pot = inPot.player + inPot.bram + inPot.fennel;
   const payouts = { player: 0, bram: 0, fennel: 0 };
   const base = Math.floor(pot / winners.length);
   let rem = pot - base * winners.length;
@@ -602,13 +682,14 @@ async function playHand(h) {
 
   const playerCalled = actions.some((a) => a.who === "player" && a.act === "call");
   const playerFolded = actions.some((a) => a.who === "player" && a.act === "fold");
+  const endedTie = winners.length > 1;
+  const liveOpps = ["bram", "fennel"].filter((s) => inHand.has(s));
+  const bestOpp = liveOpps.length ? Math.max(...liveOpps.map((s) => cards[s].rank)) : null;
+  const wouldTie = playerFolded && bestOpp !== null && cards.player.rank === bestOpp;
   let read = null;
-  if (playerCalled) {
-    read = { correct: winners.length === 1 && winners[0] === "player" };
-  } else if (playerFolded) {
-    const opps = ["bram", "fennel"].filter((s) => inHand.has(s));
-    const bestOpp = opps.length ? Math.max(...opps.map((s) => cards[s].rank)) : 99;
-    read = { correct: cards.player.rank < bestOpp };
+  if ((playerCalled || playerFolded) && !endedTie && !wouldTie) {
+    if (playerCalled) read = { correct: winners.length === 1 && winners[0] === "player" };
+    else read = { correct: bestOpp === null || cards.player.rank < bestOpp };
   }
 
   const entry = {
@@ -636,7 +717,7 @@ async function playHand(h) {
     if (read.correct) api.reads.correct++;
   }
   renderStatus();
-  renderPot(contrib);
+  renderPot(inPot);
 
   const gained = payouts.player > contrib.player;
   const share = winners.includes("player") && payouts.player > 0;
@@ -644,7 +725,8 @@ async function playHand(h) {
   if (winners.length > 1) say("Split pot");
   else if (winners[0] === "player") say("You take the pot");
   else if (playerFolded && read && read.correct) say("Right fold");
-  else if (playerFolded) say("Wrong fold");
+  else if (playerFolded && read) say("Wrong fold");
+  else if (playerFolded) say("Tie");
   else say(`${nameOf(winners[0])} takes it`);
   if (share && betKind === "big" && winners.length === 1) {
     table.classList.add("shake");
