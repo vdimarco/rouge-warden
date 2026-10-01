@@ -1,6 +1,7 @@
 import { SIZE, PATHS, BASES, PORTALS, CAMPS } from './world.js';
 import { sceneryRandom, laneDistance } from './scenery.js';
 import { riverSample, riverOutline, shoreRibbon } from './river.js';
+import { paintBaseCourt } from './bases.js';
 const TAU = Math.PI * 2;
 const texture = (image, column, row, scale = 600) => {
   const c = document.createElement('canvas'); c.width = c.height = scale;
@@ -116,7 +117,7 @@ export function paintGround(tiles, scene, surfaces) {
     const x=p.x+(rand()-.5)*130,y=p.y+(rand()-.5)*90;if(laneDistance({x,y})<110)continue;
     c.strokeStyle='#bec19172';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x-4,y-8-rand()*12);c.stroke();
   }
-  for(const [i,p] of BASES.entries()){c.strokeStyle=i?'#96799e6b':'#9ad4b66b';c.lineWidth=6;c.beginPath();c.ellipse(p.x,p.y,170,150,0,0,TAU);c.stroke();}
+  for (const [team, p] of BASES.entries()) paintBaseCourt(c, p, team);
   if(scene.phase){c.fillStyle='#1b435e23';c.fillRect(0,0,SIZE,SIZE);}
   return canvas;
 }

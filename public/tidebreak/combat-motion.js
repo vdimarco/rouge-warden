@@ -4,12 +4,12 @@ export function attackPose(e, time) {
   const casting = Number.isFinite(e.castStarted) && time - e.castStarted < .56 && e.castStarted >= (e.attackStarted ?? -1);
   const start = casting ? e.castStarted : e.attackStarted;
   if (!Number.isFinite(start)) return null;
-  const age = time - start, duration = casting ? .56 : .46;
+  const age = time - start, duration = casting ? .56 : (e.attackDuration || .46);
   if (age < 0 || age >= duration) return null;
-  const windup = .12, strike = .22;
+  const windup = casting ? .12 : (e.attackWindup || .12), strike = windup + .10;
   const stage = age < windup ? 0 : age < strike ? 1 : 2;
   const power = age < windup ? -Math.sin(age / windup * Math.PI / 2) * .28 : age < strike ? 1 : Math.pow(1 - (age - strike) / (duration - strike), 2);
-  return { stage, age, power, casting, duration, angle: casting ? e.castFacing : e.attackFacing };
+  return { stage, age, power, casting, duration, variant: casting ? 0 : (e.attackVariant || 0), angle: casting ? e.castFacing : e.attackFacing };
 }
 
 export function drawCombatEffect(renderer, f) {
@@ -21,7 +21,8 @@ export function drawCombatEffect(renderer, f) {
   if (f.type === 'strike') {
     const angle = Math.atan2(b.y - a.y, b.x - a.x), x = b.x, y = b.y;
     // The strike and damage share the same simulation event and world position.
-    c.translate(x, y); c.rotate(angle); c.globalAlpha = Math.max(0, 1 - age);
+    c.translate(x, y); c.rotate(angle + (f.variant === 1 ? -.9 : f.variant === 2 ? .65 : 0));
+    if (f.variant === 2) c.scale(1.3, 1.3); c.globalAlpha = Math.max(0, 1 - age);
     c.strokeStyle = color; c.fillStyle = color;
     if (f.hero === 1) {
       for (let j = 0; j < 2; j++) { c.beginPath(); c.ellipse(-8 + age * 12, (j ? 1 : -1) * size * .16, size * (.2 + age * .35), size * .22, j ? .6 : -.6, j ? 0 : Math.PI, j ? Math.PI : TAU); c.lineWidth = (1 - age) * 8 + 1; c.stroke(); }
@@ -32,6 +33,8 @@ export function drawCombatEffect(renderer, f) {
       const cuts = f.hero === 3 ? 3 : 2;
       for (let i = 0; i < cuts; i++) { c.beginPath(); const dy = (i - (cuts - 1) / 2) * 9; c.moveTo(-size * .55, -size * .4 + dy); c.quadraticCurveTo(size * .6, -size * .05 + dy, -size * .1, size * .55 + dy); c.lineWidth = 8 * (1 - age) + 1; c.stroke(); c.strokeStyle = '#fffde5'; c.lineWidth = 2 * (1 - age); c.stroke(); c.strokeStyle = color; }
     }
+    if (f.variant === 1) { c.strokeStyle = color; c.lineWidth = 3 * (1 - age); c.beginPath(); c.arc(0, 0, size * (.3 + age * .3), -.6, 4); c.stroke(); }
+    if (f.variant === 2) { c.strokeStyle = '#fff7d1'; c.lineWidth = 4 * (1 - age); c.beginPath(); c.ellipse(0, 0, size * (.15 + age * .65), size * (.1 + age * .3), 0, 0, TAU); c.stroke(); }
     // Directional fragments travel away from contact, with short bright cores.
     for (let j = 0; j < 9; j++) {
       const theta = j * 2.399 + (f.hero || 0), travel = size * (.12 + age * .85), px = Math.cos(theta) * travel, py = Math.sin(theta) * travel * .7;

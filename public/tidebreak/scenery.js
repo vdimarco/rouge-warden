@@ -85,5 +85,5 @@ export function makeScenery(seed, phase) {
     }
   }
   for (let i = 0; i < 220; i++) patches.push({ x: rand() * SIZE, y: rand() * SIZE, r: 90 + rand() * 270, hue: rand(), angle: rand() * Math.PI });
-  return { props, patches, districts: DISTRICTS, seed, phase, river: riverGeometry(seed) };
+  return { props: props.filter(p => p.solid || !BASES.some(b => distance(p, b) < 590)), patches, districts: DISTRICTS, seed, phase, river: riverGeometry(seed) };
 }
