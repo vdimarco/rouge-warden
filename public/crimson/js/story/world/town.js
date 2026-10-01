@@ -11,6 +11,7 @@ import { toonRamp } from '../../render.js';
 import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
 import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
+import { finishFleetLot, FLEET_BAYS } from './fleet-lot.js';
 
 const lin = (v) => Math.pow(v, 2.2);
 export const ATLAS = 1024;
@@ -177,6 +178,7 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   const geos = new Map();
   const geo = (district) => { let g = geos.get(district); if (!g) geos.set(district, (g = new Geo())); return g; };
   const box = (g, x, y, z, w, h, d, yaw, col, o) => g.box(x, y, z, w, h, d, yaw, col, o);
+  let fleetSurface = null;
   const lamps = []; // street lamp heads (glow at night)
 
   /* buildings */
@@ -269,7 +271,8 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   yield; staticVehicleGeometry('whitevan'); yield; staticVehicleGeometry('jeep'); yield;
   { // Canyon Fleet: a row of identical white 15-passenger vans (the white van's own body, parked)
     const g = geo('fleet'), p = PLACES.canyon_fleet;
-    for (let k = 0; k < 8; k++) { const x = p.x - 17 + k * 4.8, z = p.z + 4, y = parked(g, 'whitevan', x, z, Math.PI); colliders.addBox({ x, z, w: 2.05, d: 6, yaw: Math.PI, y0: y - 1, top: y + 2.6, tag: 'parked' }); }
+    fleetSurface = finishFleetLot({ THREE, root, g, height, colliders, p, ramp: toonRamp });
+    for (const b of FLEET_BAYS) { const x = p.x + b.x, z = p.z + b.z, y = parked(g, 'whitevan', x, z, b.yaw); colliders.addBox({ x, z, w: 2.05, d: 6, yaw: Math.PI, y0: y - 1, top: y + 2.6, tag: 'parked' }); }
     const y = height(p.x - 24, p.z - 14); box(geo('west'), p.x - 24, y - 1, p.z - 14, 0.3, 6, 0.3, 0, [0.45, 0.45, 0.45]); box(geo('west'), p.x - 24, y + 5, p.z - 14, 5.4, 1.2, 0.2, Math.PI, WHITE, { uv: { front: signUV('fleet'), back: signUV('fleet') } });
   }
   yield;
@@ -436,7 +439,7 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   const districts = {};
   for (const [name, g] of geos) { const m = new THREE.Mesh(g.build(THREE), material); m.name = `town_${name}`; m.castShadow = true; m.receiveShadow = true; m.userData.kind = 'town'; root.add(m); districts[name] = m; }
   // the parked lots are small: each is its own mesh, drawn only within LOT_VIEW m of the camera
-  const LOT_VIEW = 300, lots = ['fleet', 'sunburst'].map((k) => districts[k]).filter(Boolean);
+  const LOT_VIEW = 300, lots = [...['fleet', 'sunburst'].map((k) => districts[k]), fleetSurface].filter(Boolean);
   for (const m of lots) { m.userData.managed = true; m.geometry.computeBoundingSphere(); }
 
   /* the GLB models: the A-frame cabin, the kayak and the outhouses */
@@ -518,7 +521,7 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     // night: 0 day .. 1 night. Windows and lamps glow; the ranch floodlights burn while it has power.
     update(night, t) {
       if (outhouseCull && S.camera) outhouseCull(S.camera);
-      if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = S.camera.position.distanceTo(b.center) - b.radius < LOT_VIEW; }
+      if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = S.camera.position.distanceTo(m.localToWorld(b.center.clone())) - b.radius < LOT_VIEW; }
       material.emissiveIntensity = night * 0.9;
       lampMat.color.setRGB(0.23 + night * 0.9, 0.21 + night * 0.72, 0.2 + night * 0.46);
       const lit = ranchOn ? 1 : 0;

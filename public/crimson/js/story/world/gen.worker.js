@@ -218,6 +218,15 @@ export function generate(seed = 51, progress = () => {}) {
     const edge = lotDist(turnout, x, z);
     if (edge < 18) H[k] = lerp(H[k], turnoutY, smooth(18, 6, edge));
   });
+  // Level the fleet bays across their width. The entrance retains the graded
+  // road profile, which joins the parking deck at the driveway endpoint.
+  const fleet = LOTS.find(l => l.x === -620 && l.z === 172);
+  const fleetY = heightAt(H, fleet.x, 170);
+  const fleetProfile = Array.from({ length: W }, (_, j) => heightAt(H, fleet.x, gx(j)));
+  forNear(fleet.x, fleet.z, 55, (k, d, x, z) => {
+    const edge = lotDist(fleet, x, z);
+    if (edge < 16) H[k] = lerp(H[k], z >= 170 ? fleetY : fleetProfile[Math.round((z + HALF) / CELL)], smooth(16, 6, edge));
+  });
   progress(0.5);
   // buildings stand on flat pads at the height of their front
   for (const b of BUILDINGS) {
