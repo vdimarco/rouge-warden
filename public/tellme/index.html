@@ -27,14 +27,15 @@
           </div>
           <div class="layer layer-face">
             <img alt="" class="face-img">
-            <svg class="face-svg" viewBox="0 0 120 100" aria-hidden="true"></svg>
+            <svg class="face-svg" viewBox="0 0 384 384" aria-hidden="true"></svg>
           </div>
           <div class="layer layer-tail">
             <img alt="" data-art="fennel_tail.webp">
-            <i class="ph tail-ph"></i>
+            <div class="ph tail-ph"></div>
           </div>
           <div class="ccard"></div>
         </div>
+        <p class="bubble" hidden></p>
       </article>
       <article class="critter bram" data-who="bram">
         <div class="name">Bram</div>
@@ -48,14 +49,15 @@
           </div>
           <div class="layer layer-face">
             <img alt="" class="face-img">
-            <svg class="face-svg" viewBox="0 0 120 100" aria-hidden="true"></svg>
+            <svg class="face-svg" viewBox="0 0 384 384" aria-hidden="true"></svg>
           </div>
           <div class="layer layer-tail">
             <img alt="" data-art="bram_tail.webp">
-            <i class="ph tail-ph"></i>
+            <div class="ph tail-ph"></div>
           </div>
           <div class="ccard"></div>
         </div>
+        <p class="bubble" hidden></p>
       </article>
     </div>
     <div id="middle">
@@ -91,6 +93,7 @@
       </div>
     </div>
   </div>
+  <button id="chat" type="button" aria-pressed="true">Chat on</button>
   <button id="mute" type="button" aria-pressed="false">Sound</button>
   <div id="start">
     <div class="panel">
@@ -109,6 +112,7 @@
       <p id="end-reads"></p>
       <p id="end-rate"></p>
       <p id="end-hands"></p>
+      <p id="end-line" class="end-bubble" hidden><span class="who"></span><span class="txt"></span></p>
       <button id="again" type="button">Play again with same seed</button>
     </div>
   </div>
