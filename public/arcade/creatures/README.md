@@ -18,7 +18,7 @@ bank.draw(ctx, creature.id, { x: 200, y: 300, height: 100,
 
 Roles are `lane`, `siege`, `neutral`, `boss`, `aquatic` and `any`. Selection is deterministic and independent of the game's combat random stream. Games choose hit points, damage, movement rules, rewards and encounter locations. `provokeNeutral` and `neutralIntent` provide reusable retaliation and return-to-home intent. Units need `id`, `hp`, `x`, `y`, `homeX`, `homeY`, `aggro`, `aggroUntil` and `leash` fields.
 
-The player honors frame durations, loops, eight directions and each sheet's ground pivot. Call `retain(activeIds)` to release inactive decoded pages beyond the eight-creature cache budget. Visible creatures remain resident. `draw` returns `null` while an export loads or fails, so each game can use its existing art. `stats()` exposes loading failures. Page assets are shared between actors. The MOBA loads only creatures it draws and keeps its hero artwork.
+The player honors frame durations, loops, eight directions and each sheet's ground pivot. Pass an optional `duration` for action or hit states to fit a game's attack and hit timing. Call `retain(activeIds)` to release inactive decoded pages beyond the eight-creature cache budget. Visible creatures remain resident. `draw` returns `null` while an export loads or fails, so each game can use its existing art. `stats()` exposes loading failures. Page assets are shared between actors. The MOBA loads only creatures it draws and keeps its hero artwork.
 
 ## Regenerate
 
