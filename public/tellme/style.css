@@ -410,6 +410,12 @@ html.has-chips .chip.red {
 }
 .pitch { margin: 0 0 8px; font-size: 18px; }
 #start-daily, #end-extra, #end-hands { margin: 0 0 12px; font-size: 15px; opacity: .85; }
+#seed-warn {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #F0B48A;
+}
 #end-stack { margin: 4px 0; font-size: 36px; font-variant-numeric: tabular-nums; }
 #end-reads { margin: 0; font-size: 20px; }
 #end-rate {
@@ -420,6 +426,8 @@ html.has-chips .chip.red {
 #end-rate[data-rate="Sharp"] { color: var(--amber); }
 #end-rate[data-rate="Good"] { color: var(--cream); }
 #end-rate[data-rate="Rookie"] { color: #E7C7B4; }
+#end-rate[data-rate="Too few reads"] { color: #E7C7B4; }
+#actions button.allin { font-size: 15px; }
 #start-btn, #again {
   width: 100%;
   min-height: 56px;
@@ -455,4 +463,51 @@ html.fast *, html.fast *::before, html.fast *::after {
   animation-duration: 1ms !important;
   animation-delay: 0ms !important;
   transition-duration: 1ms !important;
+}
+
+/* Landscape phones: keep the player card beside the critters and above the note. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; }
+  #table {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 132px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "critters middle"
+      "bottom bottom";
+  }
+  #critters {
+    grid-area: critters;
+    flex: none;
+    height: auto;
+    min-height: 0;
+    padding: 48px 8px 6px;
+    align-items: center;
+    overflow: hidden;
+  }
+  .sprite {
+    width: auto;
+    height: min(150px, 46vh);
+    max-height: 100%;
+  }
+  .ccard { width: 40px; height: 56px; }
+  #middle {
+    grid-area: middle;
+    flex: none;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
+    padding: 48px 16px 6px 8px;
+  }
+  .card-3d { width: 52px; height: 72px; }
+  #bottom {
+    grid-area: bottom;
+    flex: none;
+    padding: 4px 12px 8px;
+    gap: 4px;
+  }
+  #note { min-height: 20px; font-size: 15px; }
+  #actions { min-height: 48px; }
+  #actions button { min-height: 48px; }
 }
