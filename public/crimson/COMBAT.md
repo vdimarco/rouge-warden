@@ -14,3 +14,5 @@ On foot, select **1** fists, **2** pistol, **3** Golden Eagle, **4** AK-47, **5*
 Ammo is finite for each session; reloading transfers reserve ammo into the magazine. Bear spray is nonlethal and briefly staggers nearby officers. Guns and spray cannot shoot through terrain or building colliders. Named companions remain protected.
 
 Armed police give a warning before firing. Dodge or find solid cover. Patrols accelerate, brake and corner harder than normal SUVs, but still collide and take damage. Helicopter rotor sound fades with distance and respects pause/audio settings.
+
+After side activities unlock (after Dawn Patrol), visit the Midgley turnout and start **Where We Met Gabe**. Follow the cairn-marked canyon trail to the meeting place, then hike back up. The trail remains accessible outside the mission.

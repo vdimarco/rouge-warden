@@ -18,6 +18,7 @@ import { toonRamp } from '../../render.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { toHour } from '../../core/clock.js';
 import { FAIL } from './vm.js';
+import { CANYON_TRAIL } from '../world/canyon-trail.js';
 
 const idx = (id) => CHAPTER_ORDER.indexOf(id);
 const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -57,6 +58,17 @@ export function createRoam(S, K) {
     hunt('hunt_bell', 'Bell Rock', 'bell_cairn', 'bell_rock', 62, 12);
     hunt('hunt_cathedral', 'Cathedral Rock', 'red_rock_crossing', 'cathedral', 62, -10);
     hunt('hunt_snoopy', 'Snoopy Rock', 'mask_mayhem', 'snoopy_rock', 60, 6);
+    side.hunt_gabe_canyon = {
+      id: 'hunt_gabe_canyon', title: 'Where We Met Gabe', side: 'hunt',
+      at: { x: CANYON_TRAIL[0][0], z: CANYON_TRAIL[0][1] }, glyph: '歩', giverLabel: 'GABE’S CANYON',
+      steps: [
+        { type: 'card', kind: 'title', title: 'WHERE WE MET GABE', sub: 'Follow the trail beneath Midgley Bridge.', dur: 3 },
+        ...CANYON_TRAIL.slice(1).map(([x, z]) => ({ type: 'goto', to: { x, z }, r: 4, mode: 'foot', objective: 'Follow the switchbacks to the canyon meeting place.' })),
+        { type: 'card', kind: 'title', title: 'UNDER THE BRIDGE', sub: 'This is where we first met Gabe. Before the chase. Before everything.', dur: 5 },
+        ...CANYON_TRAIL.slice(0, -1).reverse().map(([x, z]) => ({ type: 'goto', to: { x, z }, r: 4, mode: 'foot', objective: 'Hike back up to the turnout.' })),
+      ],
+      onPass: { flags: { gabeCanyonVisited: true } },
+    };
     side.built = true;
   }
   function trial(id, title, from, to, pace) {

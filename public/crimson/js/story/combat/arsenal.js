@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { LOADOUT, GUNS, raySphere, reloadMagazine } from './arsenal-data.js';
 import { WEAPONS } from './playermoves.js';
+import { aimWeapon } from '../cast/weapon-aim.js';
 
 export function createArsenal(K) {
   const { S } = K;
@@ -8,7 +9,6 @@ export function createArsenal(K) {
   let cooldown = 0, reload = 0, reloading = null, hitTime = 0, shots = 0, policeShots = 0;
   const random = S.rng('arsenal');
   const direction = new THREE.Vector3(), center = new THREE.Vector3();
-  const localRotation = new THREE.Quaternion(), aimRotation = new THREE.Quaternion(), forward = new THREE.Vector3(0, 0, 1);
   const panel = document.createElement('div'); panel.className = 'sArsenal';
   panel.innerHTML = '<strong></strong><span></span><div><button type="button" aria-label="Next weapon">B · WEAPON</button><button type="button" aria-label="Reload">T · RELOAD</button></div>';
   document.body.append(panel);
@@ -155,8 +155,7 @@ export function createArsenal(K) {
       const prop = S.hero.actor?.props?.[S.hero.weapon];
       if (prop?.parent) {
         S.camera.getWorldDirection(direction);
-        prop.parent.getWorldQuaternion(localRotation).invert(); aimRotation.setFromUnitVectors(forward, direction);
-        prop.quaternion.copy(localRotation).multiply(aimRotation);
+        aimWeapon(S.hero.actor, prop, direction, S.hero.weapon);
       }
     }
   }, 90);
