@@ -34,13 +34,13 @@ export const JOURNEY = {
     clock: { free: 5.2, derby: 6, end: 21, wrap: 5 }, when: "at dawn", kick: "CEDAR RIVER", newDay: "A new day on Cedar River.",
     ranks: [[0, "SKUNKED"], [0.01, "RIVER ROOKIE"], [7, "BANK WALKER"], [17, "POOL READER"], [31, "RIVER PRO"], [48, "CEDAR RIVER CHAMPION"]],
     blurb: "Fast water. The current takes your lure. Salmon run down the river.", gear: "A long rod and 20 lb line.",
-    tip: "The current swings your lure. Fish take it at the end of the swing.",
+    tip: "The current runs left, toward the logjam. Cast to the right.",
     hints: ["People say an old salmon with a hooked jaw holds in the deep pool.", null, "It runs down the river. Let it go, then pump it back."] },
   sea: { name: "Gull Rock", short: "Sea", level: "Very hard", goalKg: null, bigKg: 10,
     clock: { free: 5.5, derby: 18, end: 21, wrap: 5 }, when: "at dawn or dusk", kick: "GULL ROCK", newDay: "A new day at Gull Rock.",
     ranks: [[0, "SKUNKED"], [0.01, "SEA ROOKIE"], [8, "ROCK HOPPER"], [20, "TIDE READER"], [36, "SEA PRO"], [55, "GULL ROCK CHAMPION"]],
     blurb: "The open sea, from the end of a stone wall. Big fish, long runs, rocks at your feet.", gear: "A sea rod and 30 lb line.",
-    tip: "Sea fish run far. When the spool is almost empty, tighten the drag.",
+    tip: "Some fish dive for the rocks at your feet. Hold the rod up. A giant tuna can empty your spool.",
     hints: ["People talk of a tuna as big as a man, far out past the rock.", null, "It runs a long way. Do not let the spool go empty."] },
 };
 // an unknown id (an old or broken save) gives Loon Lake
@@ -73,7 +73,8 @@ export function rankFor(id, kg) {
 }
 // The goal of this place, in words. "" at the last place, which opens nothing.
 // kind: "title" (the start screen), "remind" (the toast at mode start and the pause summary), "close" (a fish of 70% to
-// 100% of the goal), "card" (the locked card of the next place).
+// 100% of the goal), "card" (the locked card of the next place), "next" (the start screen, when the goal is at another
+// place than the one you are at).
 export function goalText(id, kind = "title") {
   const J = journeyOf(id), nx = nextPlace(id);
   if (J.goalKg == null || !nx) return "";
@@ -81,6 +82,7 @@ export function goalText(id, kind = "title") {
   if (kind === "remind") return "Goal: land a fish of " + kg + " or more. It opens " + to + ".";
   if (kind === "close") return "Close! Land a fish of " + kg + " or more to open " + to + ".";
   if (kind === "card") return "To open: land a fish of " + kg + " or more at " + J.name + ".";
+  if (kind === "next") return "Next: land " + kg + " or more at " + J.name + " to open " + to + ".";
   return "Land a fish of " + kg + " or more here to open " + to + ".";
 }
 // the fish that opened place id. kind: "toast" (an old save, on the first load) or "results" (the derby results card)
@@ -137,3 +139,4 @@ export function revealText(sp, big = false) {
   if (big) return "It is a huge " + sp.name + "!";
   return "It is " + (/^[aeiou]/i.test(sp.name) ? "an " : "a ") + sp.name + "!";
 }
+

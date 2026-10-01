@@ -124,7 +124,7 @@ button { font: inherit; color: inherit; }
 @keyframes hum { 50% { opacity: 0.85; } }
 .osd { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end; gap: 4%; align-items: center; padding: 6% 4%; font-family: var(--pixel); text-align: center; pointer-events: none; }
 .osd p { margin: 0; font-size: calc(var(--h) * 0.019); line-height: 1.5; color: #fff; text-shadow: 2px 2px 0 #000, 0 0 6px rgba(0, 0, 0, 0.9); }
-.osd .hi { position: absolute; top: 6%; color: var(--gold); background: rgba(0, 0, 0, 0.6); padding: 2px 5px; }
+.osd .hi { position: absolute; top: 6%; color: var(--gold); background: rgba(0, 0, 0, 0.6); padding: 2px 5px; text-wrap: balance; }
 .cab.broken .osd { justify-content: center; }
 .osd .press { font-size: calc(var(--h) * 0.022); background: rgba(0, 0, 0, 0.55); padding: 3px 6px; animation: blink 1s infinite steps(1); }
 .cab.credit .osd .press { color: var(--cyan); }
@@ -285,8 +285,8 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
-      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In: Loon Lake">
-        <div class="marquee"><div><b>REEL IT IN</b><small>LOON LAKE</small></div></div>
+      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In">
+        <div class="marquee"><div><b>REEL IT IN</b><small>4 PLACES</small></div></div>
         <div class="bezel"><div class="screen">
           <img src="arcade/fish.webp" alt="">
           <img class="art2" src="arcade/fish-catch.webp" alt="">
@@ -961,5 +961,6 @@ pick(1, true);
 </script>
 </body>
 </html>
+
 
 

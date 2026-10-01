@@ -22,10 +22,10 @@ const LOGS = (() => {
   }
   return out;
 })();
-// for the rub test a log is a row of short posts, 0.6 m apart: these are the river's snags
+// for the rub test a log is a row of short posts, 0.6 m apart: these are the river's snags (each knows the ends of its log)
 const LOGPOSTS = LOGS.flatMap((l) => {
-  const n = Math.ceil(Math.hypot(l.bx - l.ax, l.bz - l.az) / 0.6);
-  return Array.from({ length: n + 1 }, (_, i) => ({ x: l.ax + (l.bx - l.ax) * i / n, z: l.az + (l.bz - l.az) * i / n, r: l.r, top: l.top, kind: "logs" }));
+  const n = Math.ceil(Math.hypot(l.bx - l.ax, l.bz - l.az) / 0.6), ends = [[l.ax, l.az], [l.bx, l.bz]];
+  return Array.from({ length: n + 1 }, (_, i) => ({ x: l.ax + (l.bx - l.ax) * i / n, z: l.az + (l.bz - l.az) * i / n, r: l.r, top: l.top, kind: "logs", ends }));
 });
 const snagNear = snagGrid(LOGPOSTS, 6);
 
@@ -109,3 +109,4 @@ export const river = {
   props: { rocks: ROCKS, lilies: NONE, reeds: REEDS, stumps: NONE, logs: LOGS, boulders: BOULDERS },
   features: { nearZ, farZ, pool: POOL, eddy: EDDY },
 };
+

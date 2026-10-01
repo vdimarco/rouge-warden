@@ -126,7 +126,7 @@ export const SPECIES = [
     look: { shape: "cod", back: "#5a5a3a", body: "#a09a6a", belly: "#eeeadc", fins: "#7a7450", accent: "#4a4428", pattern: "spots", barbels: 1 },
     blurb: "A heavy fish of the deep channel, with a whisker on its chin. It holds on the bottom, so pump it up." },
   { id: "bigblue", name: "Big Blue", article: "", kg: [60, 110], trophy: 160, cm: [150, 200], rarity: 0, legend: true, zones: {}, depth: [1, 30], hours: [[5, 8, 1], [18, 21, 1]],
-    bite: "slammer", lure: [1.2, 2.4], fight: { power: 8, stamina: 13.5, run: 0.9, shake: 0.2, jump: 0, dive: 0.7, speed: 6.5, sulk: 0.3, charge: 0.3, last: 1, lastR: 12, first: "run", runLen: 2.5, floor: 0.1, hold: 1.7, rubT: 4 },
+    bite: "slammer", lure: [1.2, 2.4], fight: { power: 8, stamina: 13.5, run: 0.9, shake: 0.2, jump: 0, dive: 0.7, speed: 7.3, sulk: 0.3, charge: 0.3, last: 1, lastR: 12, first: "run", runLen: 2.5, floor: 0.1, hold: 1.7, rubT: 4 },
     boss: { phases: [
       { name: "It runs! Let it go. Hold the rod up.", first: "run", len: 13, moves: { run: 1, dive: 0.4, sulk: 0, charge: 0 } },
       { at: 0.6, rest: 5, refill: 0.1, name: "It circles deep. Pump it up!", first: "sulk", moves: { sulk: 0.9, dive: 0.8, run: 0.4 } },
@@ -135,7 +135,7 @@ export const SPECIES = [
     blurb: "The legend of Gull Rock. A bluefin tuna as big as a man. It rises in a gold ring far out, at dawn and dusk." },
   // ---- Cedar River ----
   { id: "steelhead", name: "Steelhead", kg: [1.5, 5.5], trophy: 9, cm: [50, 80], rarity: 1, zones: {}, depth: [0.5, 4], hours: [[5, 9, 1.4], [17, 21, 1.3]],
-    bite: "soft", window: 0.7, lure: [0.3, 1.0], fight: { power: 24, stamina: 17.6, run: 0.7, shake: 0.3, jump: 0.6, dive: 0.2, speed: 4.0, walk: 0.5, charge: 0.4, last: 0.5, first: "jump", runLen: 1.4, down: true },
+    bite: "soft", window: 0.7, lure: [0.3, 1.0], fight: { power: 24, stamina: 16.6, run: 0.7, shake: 0.3, jump: 0.6, dive: 0.2, speed: 4.0, walk: 0.5, charge: 0.4, last: 0.5, first: "jump", runLen: 1.4, down: true },
     look: { shape: "trout", back: "#4a5a58", body: "#c8ccc0", belly: "#f4f2ea", fins: "#8a8a80", accent: "#e0708a", pattern: "stripe" },
     blurb: "A trout that went to sea and came back. It jumps again and again. Keep the rod low when it jumps." },
   { id: "chinook", name: "Chinook Salmon", kg: [5, 16], trophy: 26, cm: [70, 110], rarity: 0.55, zones: {}, depth: [1.5, 8], hours: [[5, 9, 1.3], [17, 21, 1.3]],
@@ -151,7 +151,7 @@ export const SPECIES = [
     look: { shape: "trout", back: "#2e4a30", body: "#6a7a4a", belly: "#e87a3a", fins: "#d8603a", accent: "#e8d890", pattern: "spots" },
     blurb: "A small, bright trout with an orange belly. It lives near the banks and in the slow water." },
   { id: "hookjaw", name: "Old Hookjaw", article: "", kg: [20, 30], trophy: 38, cm: [115, 135], rarity: 0, legend: true, zones: {}, depth: [2, 8], hours: [[5, 8.5, 1]],
-    bite: "slammer", lure: [0.4, 1.2], fight: { power: 17, stamina: 15, run: 0.9, shake: 0.6, jump: 0.2, dive: 0.5, speed: 4.0, last: 1, lastR: 12, first: "run", runLen: 2.2, deep: true, down: true, hold: 2, rubT: 1.4 },
+    bite: "slammer", lure: [0.4, 1.2], fight: { power: 17, stamina: 16.2, run: 0.9, shake: 0.6, jump: 0.2, dive: 0.5, speed: 4.0, last: 1, lastR: 12, first: "run", runLen: 2.2, deep: true, down: true, hold: 2, rubT: 1.4 },
     boss: { phases: [
       { name: "It jumps! Keep the rod low.", first: "walk", moves: { walk: 0.8, jump: 0.5, run: 0.6, thrash: 0 } },
       { at: 0.6, rest: 4, refill: 0.25, name: "It runs down the river! Steer it off the logs!", first: "cover", runLen: 2.5, moves: { run: 1, dive: 0.4, charge: 0.3 } },
@@ -174,3 +174,4 @@ export function lengthFor(sp, kg) {
   const t = (Math.cbrt(kg) - Math.cbrt(k0)) / (Math.cbrt(k1) - Math.cbrt(k0) || 1);
   return Math.round(c0 + (c1 - c0) * t);
 }
+

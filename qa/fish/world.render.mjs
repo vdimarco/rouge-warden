@@ -4,7 +4,9 @@
 // It serves public/ itself and injects a test page at /fish/__world.html, so nothing test-only lives in public/.
 // The page takes ?q=low|high and ?place=loon|stumps|river|sea. Checks:
 //  - frame checks (not too dark, not blank, no black areas, not blown out) on every scene of every place
-//  - the phone budget at low quality: the reel scene at 76k triangles and 22 draw calls at most, the catch at 24 calls, for every place
+//  - the phone budget at low quality: the reel scene at 76k triangles and 22 draw calls at most, the catch at 24 calls, for every place;
+//    also the plain retrieve (lure, line, a follower and a gold ring), where a gold ring adds no draw call
+//  - a short portrait phone (375 x 667) with the catch card over the bottom half: every legend, and a usual catch, fit in the free top part
 //  - Stump Bay at night (23.0) is not too dark; the legend of each place fits the catch view (the 2 m tuna too), portrait and landscape
 //  - loon -> stumps -> river -> sea -> loon leaks no more than 5% of the geometries and textures; the setPlace times are logged
 import { createRequire } from "module";
@@ -177,12 +179,29 @@ const reel = ({ hour, fish, follower }) => {
   W.setFish({ ...f, jump: 0.42 });
   W.update(1 / 30);
 };
-const catchView = ({ id, kg, portrait, hour, photo, inset }) => {
+const catchView = ({ id, kg, portrait, hour, photo, inset, bottom }) => {
   W.setHour(hour); W.setFish(null); W.setFollower(null); W.setRings([]); W.setAim({ visible: false }); W.setLure({ visible: false }); W.setLine({ visible: false });
   W.setRod({ visible: false });
-  W.setView({ mode: "catch", portrait, inset: inset || 0 });
+  W.setView({ mode: "catch", portrait, inset: inset || 0, bottom: bottom || 0 });
   W.showCatch(id, kg, { photo });
   step(60);
+  // for the picture: a shade over the part that the card covers
+  document.getElementById("cardShade")?.remove();
+  if (bottom) { const d = document.createElement("div"); d.id = "cardShade"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;height:" + bottom * 100 + "%;background:rgba(9,34,41,.85);border-top:2px solid #e8b64a"; document.body.appendChild(d); }
+};
+// the plain retrieve: the lure on the water, the line to it, a gold ring (or an ordinary one) in the lake and a fish following. No fish on the line
+const retrieve = ({ hour, follower, gold }) => {
+  W.setHour(hour); W.hideCatch(); W.setFish(null); W.setAim({ visible: false });
+  W.setRings([{ x: 11, z: -24, gold: false }, { x: -7, z: -36, gold }]);
+  W.setView({ mode: "reel", look: { x: 2, y: 0, z: -13 } });
+  const L = { x: 2, y: 0, z: -13 };
+  for (let i = 0; i < 90; i++) {
+    W.setFollower(follower ? { id: follower, x: -1.6, y: -0.5, z: -7.2, heading: 0.3, len: 0.45 } : null);
+    const tip = W.setRod({ theta: 40, yaw: 8, steer: 0.1, bend: 0.15, visible: true });
+    W.setLure({ ...L, visible: true, spin: 0.5 });
+    W.setLine({ from: tip, to: L, slack: 0.2 });
+    W.update(1 / 30);
+  }
 };
 
 // what each place shows: its derby hour, a fish and a follower that exist in it, its legend (the biggest catch), other catches
@@ -197,10 +216,10 @@ const IDS = Object.keys(SCENES).filter((id) => !PLACES_ONLY.length || PLACES_ONL
 const budget = { reel: { tris: 76000, calls: 22 }, catch: { calls: 24 } };
 
 // does the legend fit the catch view? lo and hi are the corners of the box round it, in screen units (-1..1 is the whole view)
-function fitsOrFail(name, lid, f, freeRight) {
+function fitsOrFail(name, lid, f, freeRight, freeBottom = -1) {
   if (!f) { fail(`${name}: no catch to measure`); return; }
-  console.log(`${name}: the ${lid} spans x ${f.lo[0].toFixed(2)}..${f.hi[0].toFixed(2)}, y ${f.lo[1].toFixed(2)}..${f.hi[1].toFixed(2)} of a view that is -1..${freeRight.toFixed(2)} wide and -1..1 high; lowest point ${f.ymin.toFixed(2)} m above the water`);
-  if (f.lo[0] < -1 || f.hi[0] > freeRight + 0.02 || f.lo[1] < -1 || f.hi[1] > 1) fail(`${name}: the ${lid} does not fit the view`);
+  console.log(`${name}: the ${lid} spans x ${f.lo[0].toFixed(2)}..${f.hi[0].toFixed(2)}, y ${f.lo[1].toFixed(2)}..${f.hi[1].toFixed(2)} of a view that is -1..${freeRight.toFixed(2)} wide and ${freeBottom.toFixed(2)}..1 high; lowest point ${f.ymin.toFixed(2)} m above the water`);
+  if (f.lo[0] < -1 || f.hi[0] > freeRight + 0.02 || f.lo[1] < freeBottom || f.hi[1] > 1) fail(`${name}: the ${lid} does not fit the view`);
   if (f.ymin < 0.15) fail(`${name}: the ${lid} hangs down into the water (${f.ymin.toFixed(2)} m)`);
 }
 
@@ -245,6 +264,41 @@ try {
       }
       await ctx.close();
     }
+  }
+  // a short portrait phone with the catch card over the bottom half (main.js sends the share of the height the card covers): the fish and its board
+  // fit in the free top part. The legend, its trophy weight and a usual catch of each place. In screen units the free part is -1 + 2 * share .. 1
+  for (const id of IDS) {
+    const S = SCENES[id];
+    const [lid, lkg] = S.legend;
+    const share = 0.5, freeBottom = -1 + 2 * share;
+    const { ctx, page } = await open(375, 667, "high", id);
+    for (const [fid, kg, tag] of [[lid, lkg, "legend"], [lid, S.trophy, "trophy"], [S.catches[0][0], S.catches[0][1], "usual"]]) {
+      await shot(page, `${id}-catch-card-${tag}`, catchView, { id: fid, kg, portrait: true, hour: S.hour, bottom: share });
+      if (wanted(`${id}-catch-card-${tag}`)) fitsOrFail(`${id} ${tag} on 375 x 667 with the card over the bottom half`, fid, await page.evaluate(() => window.fits()), 1, freeBottom);
+    }
+    // the view offset follows the share, is capped at 0.62, and only the catch view has one
+    if (id === "loon" && wanted("card-offset")) {
+      const r = await page.evaluate(({ id, kg }) => {
+        const H = innerHeight, bad = [], off = () => (W.camera.view && W.camera.view.enabled ? W.camera.view.offsetY / H : 0);
+        const at = (view) => { W.setView(view); step(2); return off(); };
+        W.hideCatch(); W.showCatch(id, kg);
+        const half = at({ mode: "catch", portrait: true, bottom: 0.5 });
+        if (Math.abs(half - 0.25) > 1e-6) bad.push("a card over half the height should shift the picture by 0.25 of the height, not " + half.toFixed(3));
+        const capped = at({ mode: "catch", portrait: true, bottom: 0.9 });
+        if (Math.abs(capped - 0.31) > 1e-6) bad.push("a share of 0.9 should be capped at 0.62 (shift 0.31), not " + capped.toFixed(3));
+        step(60);
+        const f = window.fits();
+        if (!f || f.lo[1] < -1 + 2 * 0.62 || f.hi[1] > 1) bad.push("with the cap the catch should sit in the top 38% of the view");
+        const cast = at({ mode: "cast", portrait: true, bottom: 0.5 });
+        if (cast !== 0) bad.push("the cast view has no card, but is shifted by " + cast.toFixed(3));
+        const none = at({ mode: "catch", portrait: true, bottom: 0 });
+        if (none !== 0) bad.push("no card over the bottom, but the picture is shifted by " + none.toFixed(3));
+        return { bad, half, capped };
+      }, { id: lid, kg: lkg });
+      for (const b of r.bad) fail("card offset: " + b);
+      console.log(`card offset: shift ${r.half.toFixed(3)} of the height for a share of 0.5, ${r.capped.toFixed(3)} for 0.9 (capped)`);
+    }
+    await ctx.close();
   }
   // the API holds up: every species and junk builds, junk rides the line, quality switches both ways
   if (wanted("api")) {
@@ -292,6 +346,13 @@ try {
     const kl = await shot(page, `${id}-low-catch-legend`, catchView, { id: S.legend[0], kg: S.legend[1], portrait: false, hour: S.hour });
     for (const s of [t, r, c]) if (s && (s.info.calls > budget.reel.calls || s.info.tris > budget.reel.tris)) fail(`${id}: low quality over the reel budget: ${s.info.calls} calls, ${s.info.tris} tris (at most ${budget.reel.calls} calls, ${budget.reel.tris} tris)`);
     for (const s of [k, kl]) if (s && s.info.calls > budget.catch.calls) fail(`${id}: low quality catch over budget: ${s.info.calls} calls (at most ${budget.catch.calls})`);
+    // the plain retrieve: the lure on the water, the line, a follower and a gold ring in the lake. The ring's glow sprite is hidden in the reel
+    // (the water ring and the sparkles still show it), so Loon Lake stays inside the 22 draw calls at the hours where the glow made it 23
+    for (const hr of id === "loon" ? [S.hour, 6.5] : [S.hour]) {
+      const g = await shot(page, `${id}-low-retrieve-${String(hr).replace(".", "_")}`, retrieve, { hour: hr, follower: S.follower, gold: true });
+      if (g && (g.info.calls > budget.reel.calls || g.info.tris > budget.reel.tris)) fail(`${id}: low quality retrieve with a gold ring over the reel budget at ${hr} h: ${g.info.calls} calls, ${g.info.tris} tris (at most ${budget.reel.calls} calls, ${budget.reel.tris} tris)`);
+      if (g) console.log(`INFO ${id} low: retrieve with a gold ring at ${hr} h ${g.info.calls} calls ${g.info.tris} tris`);
+    }
     if (r) console.log(`INFO ${id} low: reel ${r.info.calls} calls ${r.info.tris} tris; catch ${k && k.info.calls} calls; legend catch ${kl && kl.info.calls} calls`);
     await ctx.close();
   }
@@ -361,3 +422,4 @@ const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallbac
 if (bad.length) { fail("console errors:\n  " + bad.join("\n  ")); }
 console.log(failed ? "world.render: FAILED" : `world.render: OK (${results.length} shots in ${SHOTS})`);
 process.exit(failed ? 1 : 0);
+

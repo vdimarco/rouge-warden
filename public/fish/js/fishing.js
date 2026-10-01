@@ -20,7 +20,7 @@ export const FISHING = {
     rings: [8, 45], legend: { id: "golden", hours: [[5, 8], [18, 21]], ring: [40, 50], zone: null }, fish: fromSpecies(LOON_IDS),
     cover: { largemouth: ["weeds", "pads"], pike: ["weeds", "pads"], smallmouth: ["rocks"], golden: ["pads", "weeds"] },
     coverAt: { weeds: { at: [{ x: -26, z: -16 }], rub: "zone", zones: ["weeds"] }, pads: { at: [{ x: -26, z: -16 }], rub: "zone", zones: ["pads"] }, rocks: { at: [{ x: 50, z: -22 }], rub: "zone", zones: ["rocks"] } } },
-  stumps: { gear: { g: 2, spool: 150, line: "20 lb braid", rubT: 1.5 }, goodZones: ["timber", "pads", "channel", "lane"], junkR: 10, junk: ["boot"],
+  stumps: { gear: { g: 2, spool: 150, line: "20 lb braid", rubT: 1.1 }, goodZones: ["timber", "pads", "channel", "lane"], junkR: 10, junk: ["boot"],
     rings: [10, 45], legend: { id: "whiskers", hours: [[20.5, 24]], ring: [30, 45], zone: "channel" },
     fish: { pumpkinseed: { rarity: 0.5, zones: { pads: 2, flat: 1 } }, largemouth: { rarity: 1, zones: { timber: 4, pads: 3, lane: 1.2, channel: 0.8 }, depth: [0.5, 5] },
       crappie: { zones: { timber: 4, lane: 1 } }, bowfin: { zones: { pads: 3, timber: 1.5, flat: 1 } }, gar: { zones: { flat: 4, open: 1.5, pads: 1 } },
@@ -34,7 +34,7 @@ export const FISHING = {
       browntrout: { zones: { logs: 4, eddy: 2, pocket: 2, bank: 1 } }, brooktrout: { rarity: 1.2, zones: { bank: 3, eddy: 3, riffle: 2, run: 1.2 } } },
     cover: { steelhead: ["logs"], chinook: ["logs"], browntrout: ["logs"], hookjaw: ["logs"] },
     coverAt: { logs: { at: [{ x: -37, z: -13 }], rub: "snag" } } },
-  sea: { gear: { g: 3, spool: 110, line: "30 lb line", rubT: 3 }, goodZones: ["wall", "ledge", "channel", "bar"], junkR: 10, junk: ["boot"],
+  sea: { gear: { g: 3, spool: 100, line: "30 lb line", rubT: 1.2 }, goodZones: ["wall", "ledge", "channel", "bar"], junkR: 10, junk: ["boot"],
     rings: [20, 50], legend: { id: "bigblue", hours: [[5, 8], [18, 21]], ring: [40, 50], zone: "channel" },
     fish: { mackerel: { rarity: 0.5, zones: { sand: 2, channel: 2.5, open: 2, bar: 1 } }, pollock: { zones: { ledge: 3, wall: 2.5, channel: 1.5, sand: 1 } },
       striper: { zones: { wall: 3, bar: 3, ledge: 2, sand: 1 } }, bluefish: { zones: { channel: 3, open: 2, bar: 2, sand: 1 } },
@@ -49,3 +49,4 @@ export const fishingOf = (p) => FISHING[typeof p === "string" ? p : p && p.id] |
 export function ecology(id) { const t = fishingOf(id).fish; return SPECIES.filter((s) => !s.legend && t[s.id]).map((s) => [s, { zones: t[s.id].zones, rarity: t[s.id].rarity ?? s.rarity, depth: t[s.id].depth || s.depth, hours: t[s.id].hours || s.hours }]); }
 // every id that can come up here: its fish, its legend, its junk (the world builds these, and frees the rest)
 export function placeSpecies(id) { const F = fishingOf(id); return [...ecology(id).map(([s]) => s.id), F.legend.id, ...F.junk]; }
+

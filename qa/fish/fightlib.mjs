@@ -136,7 +136,7 @@ export class Player {
       } else if (this.sulk) {
         this.target = 40; this.rate = 90; crank = 2;
       } else if (v.beaten && v.move !== "surge" && v.tfrac < S.dragFrac * 0.8 && v.slip < 0.15) {
-        // the gauge says TIRED and the prompt says "It is tired. Reel it in.": a steady crank, rod at 60
+        // the gauge says TIRED and the prompt says "It is tired. Reel steadily.": a steady crank, rod at 60
         this.target = 60; this.rate = 90; crank = 3;
       } else if (v.slip > 0.15 && flaw === "grinder") {
         crank = 2.4; this.target = 72; this.rate = 150; this.pump = "up";
@@ -212,6 +212,8 @@ export function runCast({ place, policy, seed, spot, species = null, hour = 12, 
   const out = {
     chosen: !!sim.plan, id: sim.plan ? sim.plan.id : null, kg: sim.plan ? sim.plan.kg : 0, struck: false, hooked: false, nibbled: false, yankedEarly: false,
     fightT: 0, maxT: 0, minT: Infinity, maxLine: 0, maxRub: 0, outcome: "", moves: {}, events: {}, zeroStamT: 0, phases: [], holdT: [], lightT: 0,
+    dryT: 0, sunkT: 0, // s the fish is where it cannot be: over land or behind the angler, and below the bed
+    noSideT: 0,        // s the rub prompt is up on a log and says no way to steer
   };
   let events = [], holdStart = null;
   for (let t = 0; t < LIMIT; t += DT) {
@@ -239,6 +241,11 @@ export function runCast({ place, policy, seed, spot, species = null, hour = 12, 
       out.maxT = Math.max(out.maxT, S.tension);
       if (S.fightT > 1) out.minT = Math.min(out.minT, S.tension);
       if (f && f.stamina <= 0.01) out.zeroStamT += DT;
+      if (S.rub > 0.15 && S.rubKind === "logs" && S.rubSide === 0) out.noSideT += DT;
+      if (f && !sim.plan.junk) {
+        if (!sim.swim(f.x, f.z)) out.dryT += DT;
+        if (-f.y > sim.pl.depth(f.x, f.z) + 0.05) out.sunkT += DT;
+      }
       // a legend's rest: how long it lasts, and how long the line is light during it
       if (f && f.move === "hold") {
         if (holdStart === null) holdStart = t;
@@ -275,3 +282,4 @@ export function spotsFor(place, eco, n, seed, legend = null) {
   }
   return out;
 }
+

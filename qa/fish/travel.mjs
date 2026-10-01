@@ -116,9 +116,13 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     await budget("Stump Bay");
 
     // the other two places, then home
+    const TIP = { river: "The current runs left, toward the logjam. Cast to the right.", sea: "Some fish dive for the rocks at your feet. Hold the rod up. A giant tuna can empty your spool." };
     for (const id of ["river", "sea"]) {
       const r = await go(id);
       check(r.arrival, `${NAME[id]}: the first visit shows the arrival card`);
+      // the tip says only what happens: the river runs left, to the logjam; at the wall some fish dive for the rocks
+      const tip = await page.textContent("#atip");
+      check(tip === TIP[id], `${NAME[id]}: the arrival tip (${tip})`);
       await sleep(350);
       await page.click("#aStart");
       await page.waitForSelector("#title:not([hidden])");
@@ -187,3 +191,4 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
 if (skipped.length) console.log("\n" + skipped.length + " check(s) skipped: " + skipped.map((s) => s.split(" (")[0]).join("; "));
 console.log(fails.length ? "\n" + fails.length + " failed" : "\nall passed");
 process.exit(fails.length ? 1 : 0);
+

@@ -337,14 +337,14 @@ After each cast you see the distance and how the release went. Rings on the wate
 - Turn the crank with your thumb to reel. The first turn snaps the bail shut, like a real reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
 - A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: snap the phone up to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
 - Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. Each move has one right answer, and the game names it:
-  - A fish that **shakes its head**: hold the rod up and keep the line tight.
+  - A fish that **shakes its head**: hold the rod up, and reel in any slack.
   - A fish that **jumps**, or jumps again and again (a tail walk): lower the rod.
   - A fish that **swims at you**: reel fast, or the line goes slack and it throws the hook.
   - A fish that **holds on the bottom**: pump it up. Tip the phone up slowly, then reel as you lower it.
   - A fish that **runs for cover**: tilt the phone left or right like a steering wheel, and turn it away from the weeds, the stumps, the logs, or the rocks.
 - The red band on the gauge is the **rub meter**. It fills when the line touches a stump, a log, a rock, or the weeds, and the line is cut when it is full. Steer the fish away, or lift the rod over low rocks.
 - Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag. At Gull Rock the spool can empty on a long run: tighten the drag.
-- A legend fights in three stages and rests between them, so your arm rests too.
+- A legend fights in three stages and rests between them, so your arm rests too. In a rest the fish cannot be landed, and the line is safe whatever you do.
 - When the fish is tired and close to the dock, tip the phone up and hold it to lift the fish out.
 
 **Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the press on the reel, the release of your thumb, and the crank. The other cues come through sound and pictures there.
@@ -355,8 +355,8 @@ After each cast you see the distance and how the release went. Rings on the wate
 | --- | --- | --- | --- |
 | Loon Lake | (open from the start) | A calm lake. It teaches the moves. Line: 10 lb. | Golden Loon Bass |
 | Stump Bay | A 3.5 kg fish at Loon Lake | A flooded forest at dusk, then night. The line rubs on stumps, so you steer fish out. Catfish bite in the dark. Line: 20 lb braid. | Old Whiskers, a giant catfish |
-| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current swings your lure, and salmon run down the river toward a logjam. Line: 20 lb. | Old Hookjaw, an old salmon |
-| Gull Rock | An 8 kg fish at Cedar River | The open sea, from the end of a stone wall. Long runs can empty your spool, and fish dive for the rocks at your feet. Line: 30 lb. | Big Blue, a tuna as big as a man |
+| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current runs left and swings your lure, and salmon run down the river toward a logjam, so cast to the right. Line: 20 lb. | Old Hookjaw, an old salmon |
+| Gull Rock | An 8 kg fish at Cedar River | The open sea, from the end of a stone wall. A giant tuna can empty your spool, and some fish dive for the rocks at your feet. Line: 30 lb. | Big Blue, a tuna as big as a man |
 
 An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is open. Add `?open` to the URL to open every place for that visit only.
 
@@ -557,4 +557,5 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 ## Cottage Brawl platform fighter
 
 The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
+
 

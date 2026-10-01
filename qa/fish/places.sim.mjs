@@ -53,7 +53,7 @@ function runJob({ pid, spId, pol, n }) {
     const s = spots[i % spots.length];
     const ring = legend ? { x: s.x, z: s.z, ttl: 20, species: sp.id, gold: true } : null;
     const o = runCast({ place, policy: pol, seed: i + 1, spot: s, species: sp.id, hour: hourOf(pid, sp), ring });
-    out.push({ kg: o.kg, hooked: o.hooked, struck: o.struck, outcome: o.outcome, fightT: o.fightT, zeroStamT: o.zeroStamT, phases: o.phases, holdT: o.holdT, lightT: o.lightT, maxLine: o.maxLine, maxRub: o.maxRub });
+    out.push({ kg: o.kg, hooked: o.hooked, struck: o.struck, outcome: o.outcome, fightT: o.fightT, zeroStamT: o.zeroStamT, phases: o.phases, holdT: o.holdT, lightT: o.lightT, maxLine: o.maxLine, maxRub: o.maxRub, dryT: o.dryT, sunkT: o.sunkT, noSideT: o.noSideT });
   }
   return out;
 }
@@ -236,6 +236,19 @@ async function main() {
     check(three.length > 0 && rests.length >= three.length * 0.9, `${L.id}: a fight that reaches phase 3 has 2 rests of 3 s or more with the line light for 2 s or more (${pct(rests.length, three.length)} of ${three.length})`);
   }
 
+  // hooked fish stay in the water: never over dry land or behind the angler, never below the bed
+  for (const pid of PLACE_IDS) {
+    const all = jobs.filter((j) => j.pid === pid).flatMap((j) => results[j.id]);
+    const dry = all.reduce((a, o) => a + o.dryT, 0), sunk = all.reduce((a, o) => a + o.sunkT, 0);
+    check(dry === 0 && sunk === 0, `${pid}: hooked fish stay in the water (${dry.toFixed(1)} s over land or behind the angler, ${sunk.toFixed(1)} s below the bed, in ${all.length} fights)`);
+  }
+
+  // the prompt for a log on the line always says which way to steer (a log across the line: toward its nearer end)
+  {
+    const all = jobs.filter((j) => j.pid === "river").flatMap((j) => results[j.id]), t = all.reduce((a, o) => a + o.noSideT, 0);
+    check(t === 0, `river: the log rub prompt always has a side to steer (${t.toFixed(1)} s without one, in ${all.length} fights)`);
+  }
+
   /* ---------------- rings, junk, determinism, bad input: every place ---------------- */
 
   console.log("\nRings, junk and robustness (every place)");
@@ -287,3 +300,4 @@ async function main() {
   console.log(fails.length ? `${fails.length} target(s) missed` : "All place fight targets met");
   process.exit(fails.length ? 1 : 0);
 }
+

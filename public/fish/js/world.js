@@ -312,9 +312,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     camera.fov = C.fov;
     camera.aspect = S.w / S.h;
     camera.near = S.view.mode === "catch" ? 0.05 : 0.08;
-    // the catch card covers the right part of a wide view: shift the picture so the fish sits in the free part
-    const inset = S.view.mode === "catch" ? S.view.inset || 0 : 0;
-    if (inset > 0) camera.setViewOffset(S.w, S.h, S.w * inset / 2, 0, S.w, S.h);
+    // the catch card covers the right part of a wide view, or the bottom of a tall one: shift the picture so the fish sits in the free part
+    const inset = S.view.mode === "catch" ? S.view.inset || 0 : 0, bottom = S.view.mode === "catch" ? S.view.bottom || 0 : 0;
+    if (inset > 0 || bottom > 0) camera.setViewOffset(S.w, S.h, S.w * inset / 2, S.h * bottom / 2, S.w, S.h);
     else if (camera.view && camera.view.enabled) camera.clearViewOffset();
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
@@ -563,10 +563,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     const { W, H } = T;
     const aspect = S.w * (1 - (S.view.inset || 0)) / S.h;
     const d0 = clamp(Math.max(W, H) * 1.3, 0.42, 1.5);
-    const needV = (w, h, d) => Math.max(2 * Math.atan(w / 0.72 / 2 / d / aspect), 2 * Math.atan(h / 0.78 / 2 / d)) / DEG;
+    const fb = 1 - (S.view.bottom || 0);   // the part of the height that the card leaves free
+    const needV = (w, h, d) => Math.max(2 * Math.atan(w / 0.72 / 2 / d / aspect), 2 * Math.atan(h / 0.78 / fb / 2 / d)) / DEG;
     T.fov = clamp(needV(W, H, d0), 14, 78);
     const tv = Math.tan(T.fov * DEG / 2);
-    T.dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / 2 / tv);
+    T.dist = Math.max(d0, W / 0.72 / 2 / (tv * aspect), H / 0.78 / fb / 2 / tv);
     // a big fish (or a narrow view) puts the fish far out: hold it flatter, so it does not sink into the stand or the water
     const floor = Math.max(0, PL.stand.dock.deck) + H / 2 + 0.25;
     T.pitch = clamp(Math.asin(clamp((floor - CATCH_CAM.y) / T.dist, -1, 1)), CATCH_PITCH, -8 * DEG);
@@ -627,7 +628,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // gold rings glow and throw up sparkles
     halos.forEach((h, i) => {
       const r = S.rings[i];
-      h.visible = !!(r && r.gold) && firstPerson();
+      h.visible = !!(r && r.gold) && firstPerson() && S.view.mode !== "reel";   // in the reel the ring shader and sparkles show it: one draw call less
       if (!h.visible) return;
       const d = Math.hypot(r.x - camera.position.x, r.z - camera.position.z);
       const s = (1.6 + d * 0.035) * (0.85 + 0.15 * Math.sin(S.clock * 3 + i));
@@ -730,10 +731,12 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       sky.material.defines.OCT = low ? 3 : 5; sky.material.needsUpdate = true;
       water.material.defines.LOW = low ? 1 : 0; water.material.needsUpdate = true;
     },
-    // inset: the part of the width (from the right) that a card covers, for the catch view
-    setView({ mode = "cast", yaw = 0, look = null, portrait = false, inset = 0 } = {}) {
-      const refit = inset !== (S.view.inset || 0);
-      S.view = { mode, yaw, look, portrait, inset };
+    // inset: the part of the width (from the right) that a card covers, for the catch view.
+    // bottom: the part of the height (from the bottom) that a card covers, on a tall view (at most 0.62)
+    setView({ mode = "cast", yaw = 0, look = null, portrait = false, inset = 0, bottom = 0 } = {}) {
+      bottom = clamp(bottom || 0, 0, 0.62);
+      const refit = inset !== (S.view.inset || 0) || bottom !== (S.view.bottom || 0);
+      S.view = { mode, yaw, look, portrait, inset, bottom };
       if (refit) fitTrophy();
     },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
@@ -842,3 +845,4 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   if (artStyle.value) E.loadStorySky().then(render);
   return world;
 }
+
