@@ -499,9 +499,12 @@ export function buildWater(low, place, look) {
           float brush = vnoise(vec2(p.x * .48 + uTime * .025, p.y * 2.8 + uTime * .10 + sin(p.x * .36) * .18));
           float mass = vnoise(vec2(p.x * .065, p.y * .32 - uTime * .035));
           float wash = smoothstep(.32, .39, mass) * .11 + smoothstep(.59, .66, mass) * .10;
-          vec3 lakePaint = body * (.99 + wash);
-          float reflection = smoothstep(.15, .8, fres) * .45;
-          col = mix(lakePaint, mix(uForest, uHorizon, .66), reflection);
+          // A pronounced jade depth gradient, lit by the existing day/night palette.
+          float daylight = clamp(uSunVis, 0.0, 1.0);
+          vec3 jade = mix(vec3(.13, .43, .32), vec3(.012, .105, .095), smoothstep(.4, 9.0, depth));
+          vec3 lakePaint = mix(body, jade, .78 * daylight) * (.94 + wash);
+          float reflection = smoothstep(.12, .85, fres) * .72;
+          col = mix(lakePaint, refl, reflection);
           // Reflected boughs are soft painted bars, without mirror-like glare.
           col = mix(col, treeCol * vec3(.85, 1.12, 1.13), shore * (.16 + .17 * step(.49, brush)));
           float dash = smoothstep(.57, .62, brush) * (1. - smoothstep(.67, .73, brush));
@@ -512,27 +515,29 @@ export function buildWater(low, place, look) {
             // The painted tile supplies brush detail. Subtle distortion carries
             // the wind/current, while gameplay ripples and wakes remain live.
             vec2 paintUV = pf * vec2(.045, .045) + vec2(uTime * .0007, uTime * .00035);
-            paintUV += g * .018;
+            paintUV += g * .085;
             paintUV += vec2(sin(p.y * .24 + uTime * .32), sin(p.x * .17 - uTime * .23)) * .002;
             vec3 paint = texture2D(uWaterPaint, paintUV).rgb;
             vec3 drift = texture2D(uWaterPaint, paintUV * .61 + vec2(.37, -.21) - vec2(uTime * .0004, 0.)).rgb;
             paint = mix(paint, drift, .28);
             paint *= clamp(body / vec3(.24, .50, .49), vec3(.07), vec3(1.35));
-            col = mix(col, paint, .38);
+            col = mix(col, paint, .12);
           }
           spec = min(spec, .3) * smoothstep(.52, .67, brush);
         }
         // Pond reference: slow cellular light under the surface, strongest
         // in shallow water. World-space scale and footprint fade prevent shimmer.
-        vec2 cq = pf * .72 + g * .32;
-        cq += vec2(sin(cq.y * .8 + uTime * .19), cos(cq.x * .7 - uTime * .16)) * .32;
+        vec2 cq = pf * .46 + g * 1.4;
+        cq += vec2(sin(cq.y * .8 + uTime * .32), cos(cq.x * .7 - uTime * .27)) * .48;
         float ca = vnoise(cq + vec2(uTime * .075, uTime * .045));
         float cb = vnoise(cq * 1.21 + vec2(3.7, 8.2) - vec2(uTime * .05, uTime * .065));
         float bandWidth = max(.028, fwidth(ca - cb) * 1.5);
         float lightNet = 1.0 - smoothstep(bandWidth, bandWidth + .055, abs(ca - cb));
-        float clearDepth = exp(-depth * .34) * smoothstep(.04, .55, depth);
-        float netVisibility = clearDepth * (1.0 - fres) * uSunVis * (1.0 - smoothstep(.15, .8, fp));
-        col += vec3(.55, .78, .62) * lightNet * netVisibility * .14;
+        float clearDepth = exp(-depth * .12) * smoothstep(.04, .55, depth);
+        float netVisibility = clearDepth * (1.0 - fres) * uSunVis * (1.0 - smoothstep(.35, 1.6, fp));
+        // Dark troughs and bright moving contours give the water readable volume.
+        col *= 1.0 - lightNet * netVisibility * .12;
+        col += vec3(.48, .86, .60) * lightNet * netVisibility * .52;
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
         col += goldGlow;
@@ -553,7 +558,7 @@ export function buildWater(low, place, look) {
         float alpha = clamp(mix(0.25, 1.0, smoothstep(0.0, 5.0, depth)) + fres * 0.7 + spec + foam * 0.3 + length(goldGlow), 0.0, 1.0);
         // Let the shallow bed show through the painted surface. Deep water
         // and grazing angles keep their opacity and reflected shore.
-        float paintedAlpha = clamp(.36 + .60 * smoothstep(.2, 5.0, depth) + fres * .6 + foam * .2 + spec + length(goldGlow), 0.0, 1.0);
+        float paintedAlpha = clamp(.18 + .80 * smoothstep(.3, 7.0, depth) + fres * .6 + foam * .2 + spec + length(goldGlow), 0.0, 1.0);
         alpha = mix(alpha, paintedAlpha, uArtStyle);
         alpha *= edge;
         col += uFoam * (1.0 - smoothstep(0.05, 0.45, depth + (vnoise(p * 0.6 + uTime * 0.2) - 0.5) * 0.25)) * 0.35 * edge;
