@@ -36,9 +36,10 @@ try {
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Monster Mash/);
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     await page.locator('#play').click();
-    await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().time > 3 && (await import('/tidebreak/main.js')).snapshot().graphics.creatures.loaded > 0);
+    await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
+    await page.waitForFunction(() => window.__mobaSnapshot().time > 3 && window.__mobaSnapshot().graphics.creatures.loaded > 0);
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
-    assert(before.running); assert.equal(before.graphics.creatures.failed, 0);
+    assert(before.running); assert(before.time > 3); assert(before.graphics.creatures.loaded > 0); assert.equal(before.graphics.creatures.failed, 0);
     await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(after.player.x > before.player.x, 'movement stays live with procedural creatures');
