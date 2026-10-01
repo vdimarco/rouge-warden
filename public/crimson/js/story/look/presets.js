@@ -38,7 +38,7 @@ export const PRESETS = Object.freeze({
   NIGHT,
   COMIC: merge(NIGHT, {
     comic: 1, ink: 0, exposure: 1.05, sat: 1.25, grade: [1.08, 0.94, 1.16], lift: 0.04,
-    edge: 0.7, grain: 0.18, scratch: 0, vig: 0.65, bloomThresh: 0.8, bloomGain: 0.45,
+    edge: 0.32, grain: 0.08, scratch: 0, vig: 0.45, bloomThresh: 0.8, bloomGain: 0.45,
     fog: { color: 0x211139, near: 12, far: 300 },
     sky: { top: 0x170826, horizon: 0x572653, tint: [1.1, 0.6, 1.4], bright: 1.15, stars: 1 },
     key: { color: 0xffcc83, int: 2.4 }, fill: { color: 0x74e6ff, int: 1.0 },

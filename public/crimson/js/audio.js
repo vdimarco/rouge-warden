@@ -14,6 +14,11 @@ export const Audio = {
     if (this.ctx) { this.ctx.resume(); return; }
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const ctx = this.ctx = new C();
+    // Chapter links can create a suspended context before the first gesture.
+    // Resume that same context when the player touches the game or presses a key.
+    const unlock = () => { if (ctx.state === 'suspended') ctx.resume().catch(() => {}); };
+    window.addEventListener('pointerdown', unlock, { capture: true });
+    window.addEventListener('keydown', unlock, { capture: true });
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
     this.master = ctx.createGain(); this.master.gain.value = 0.8;
     this.master.connect(comp); comp.connect(ctx.destination);
@@ -81,6 +86,8 @@ export const Audio = {
     if (!this.ctx || !def) return { set() {}, stop() {}, silent: true };
     const out = this.route(opts);
     const h = def(this.ctx, out, opts) || { set() {}, stop() {} };
+    // Ambient builders start at zero; apply the requested starting level.
+    if (h.set) h.set(opts);
     const stop = h.stop;
     h.stop = (fade = 0.25) => { if (h.stopped) return; h.stopped = true; const t = this.ctx.currentTime; out.gain.setTargetAtTime(0, t, Math.max(0.01, fade / 3)); if (stop) stop.call(h, fade); }; // the loop's own stop ends its sources after the fade
     const set = h.set;
@@ -175,4 +182,3 @@ export const Audio = {
     }
   },
 };
-
