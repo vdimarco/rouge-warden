@@ -405,7 +405,7 @@ export function createCine(S, K) {
     if (!def.arena) stepOut();
     r.soundLoops = [];
     if (S.audio.beginCinematic) S.audio.cue(null);
-    const soundStart = S.audio.beginCinematic?.();
+    const soundStart = S.audio.beginCinematic?.(def.id);
     while (soundStart && !soundStart.ready && !r.skip) yield null;
     if (def.id === 'c0' || def.id === 'i0') {
       S.audio.cue(S.audio.beginCinematic ? null : 'night');
@@ -522,3 +522,4 @@ export function createCine(S, K) {
   };
   return { P, stop() { if (run) { run.skip = true; finish(run, true); } } };
 }
+
