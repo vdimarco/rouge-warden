@@ -23,7 +23,9 @@ try {
     page.on('response', r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
     await page.goto(origin + '/arcade/creatures/');
     assert.match(await page.title(), /Creature Field Guide/); assert.equal(await page.locator('.card').count(), 18);
-    await page.waitForFunction(() => window.creatureGallery?.().ready === 18);
+    await page.waitForFunction(() => { const s = window.creatureGallery?.(); return s && s.ready + s.failed === 18; });
+    console.log(name, JSON.stringify(await page.evaluate(() => window.creatureGallery())), errors);
+    await page.screenshot({ path: path.join(shots, `${name}-gallery-loaded.png`), fullPage: true });
     assert.equal((await page.evaluate(() => window.creatureGallery())).failed, 0);
     await page.getByRole('button', { name: 'Walk', exact: true }).click();
     assert.equal((await page.evaluate(() => window.creatureGallery())).state, 'walk');

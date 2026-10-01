@@ -117,7 +117,7 @@ export class Renderer {
     const creatureState = e.hit > 0 ? 'hit' : e.attackAnim > 0 ? 'action' : e.moving ? 'walk' : 'idle';
     const creatureTime = creatureState === 'action' ? s.time - (e.attackStarted ?? s.time) : creatureState === 'hit' ? .16 - e.hit : time + e.id * .17;
     const anchor = this.project(x, y, jump);
-    const creatureBox = e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime }) : null;
+    const creatureBox = e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime, duration: creatureState === 'action' ? e.attackDuration : creatureState === 'hit' ? .16 : undefined }) : null;
     const box = creatureBox || (e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 }));
     if (!box) return; this.hitBoxes.push({ ...box, id: e.id, team: e.team });
     if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp') {
