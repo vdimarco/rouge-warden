@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import fs from "fs";
 import path from "path";
-import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS } from "../../public/breakthrough2/model.js";
+import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge } from "../../public/breakthrough2/model.js";
 import { scripted, randomPolicy, greedyClean } from "./policies.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -211,7 +211,19 @@ try {
   check(EVENTS.length >= 12, `${EVENTS.length} events`);
   const raw = IDEAS.find((idea) => idea.id === "enzymes").effect.emissions;
   check(raw < IDEA_CLAMP.emissions[0], `enzymes raw emissions ${raw} sit outside the clamp`);
-  check(clampEffect({ emissions: raw, ecology: 30, trust: 9, warming: 3 }).emissions === -6, "enzymes emissions clamp to -6");
+  check(clampEffect({ emissions: raw, ecology: 30, trust: 9, warming: 3 }).emissions === -8, "enzymes emissions clamp to -8");
+  check(IDEA_CLAMP.trust[0] === -1 && IDEA_CLAMP.trust[1] === 1, "trust idea clamp is -1 to 1");
+  check(IDEA_CLAMP.emissions[0] === -8 && IDEA_CLAMP.emissions[1] === 3, "emissions idea clamp is -8 to 3");
+  const assembly = IDEAS.find((idea) => idea.id === "assembly");
+  check(assembly.effect.trust === 5 && assembly.cost.political === 1, "Trust Assembly still costs 1 political for a raw +5 trust");
+  check(clampEffect(assembly.effect).trust === 1, "Trust Assembly trust clamps to +1");
+  const dropped = clampEffect({ trust: NaN, emissions: Infinity, prosperity: Number.NEGATIVE_INFINITY, ecology: 2 });
+  check(dropped.ecology === 2 && !("trust" in dropped) && !("emissions" in dropped) && !("prosperity" in dropped), "clampEffect drops NaN and Infinity");
+  check(judge({ trust: 40, political: 1.5, warming: 1.4, prosperity: 70, ecology: 70, energy: 40, emissions: 40 }) === "fractured", "political under 2 is Fractured");
+  check(judge({ trust: 28, political: 8, warming: 1.4, prosperity: 70, ecology: 70, energy: 40, emissions: 40 }) === "fractured", "trust at 28 is still Fractured");
+  check(judge({ trust: 40, political: 2, warming: 2.0, prosperity: 49, ecology: 41, energy: 70, emissions: 80 }) === "managed", "warming at 2.0 and prosperity under 50 leaves Hot Growth for Managed");
+  check(judge({ trust: 40, political: 2, warming: 2.0, prosperity: 50, ecology: 41, energy: 70, emissions: 80 }) === "hotgrowth", "prosperity at 50 stays Hot Growth when the other Managed gates miss");
+  check(judge({ trust: 40, political: 2, warming: 2.3, prosperity: 45, ecology: 41, energy: 70, emissions: 80 }) === "hotgrowth", "warming above 2.0 does not use the new Managed rule");
 
   console.log("\ntitle and first load");
   const boot = await open(browser, base + "?seed=123&fast=1");
@@ -314,7 +326,7 @@ try {
   const clamped = await lab.page.evaluate(() => window.__test.clampEffect({
     emissions: -40, ecology: 30, trust: 9, warming: 5,
   }));
-  check(clamped.emissions === -6 && clamped.ecology === 6 && clamped.trust === 5 && clamped.warming === 0, "clampEffect trims an oversized idea");
+  check(clamped.emissions === -8 && clamped.ecology === 6 && clamped.trust === 1 && clamped.warming === 0, "clampEffect trims an oversized idea");
   const affordable = shownIdeas.find((idea) => idea.affordable);
   check(!!affordable, "an opening idea is affordable");
   if (affordable) {
@@ -361,6 +373,13 @@ try {
     ecology: 22, emissions: 102, energy: 86, prosperity: 30, trust: 24, warming: 2.62,
   }));
   await shoot(maps.page, "breakthrough2-map-degraded");
+  const nanDrop = await maps.page.evaluate(() => {
+    const before = window.__test.state();
+    window.__test.tweak({ trust: NaN, warming: Infinity, emissions: -Infinity });
+    const after = window.__test.state();
+    return before.trust === after.trust && before.warming === after.warming && before.emissions === after.emissions;
+  });
+  check(nanDrop, "tweak drops NaN and Infinity");
   check(maps.errors.length === 0 && maps.net404.length === 0 && maps.off.length === 0, "map probe added no errors, 404s, or off-origin calls");
   await maps.close();
 

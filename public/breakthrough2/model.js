@@ -39,11 +39,11 @@ export const PARAMS = {
 };
 
 export const IDEA_CLAMP = {
-  emissions: [-6, 6],
+  emissions: [-8, 3],
   energy: [-6, 6],
   prosperity: [-4, 4],
   ecology: [-4, 6],
-  trust: [-4, 5],
+  trust: [-1, 1],
   capital: [-3, 3],
   research: [-2, 2],
   political: [-2, 2],
@@ -116,7 +116,7 @@ export function clampEffect(effect) {
   const out = {};
   for (const [key, value] of Object.entries(effect || {})) {
     const range = IDEA_CLAMP[key];
-    if (!range || typeof value !== "number") continue;
+    if (!range || typeof value !== "number" || !Number.isFinite(value)) continue;
     out[key] = clamp(value, range[0], range[1]);
   }
   return out;
@@ -354,7 +354,7 @@ export function endingName(id) {
 
 export function judge(state) {
   // Priority is fixed. Hot Growth is only the remainder, so it cannot swallow a sharper ending.
-  if (state.trust <= 28) return "fractured";
+  if (state.trust <= 28 || state.political < 2) return "fractured";
   if (state.warming >= 2.08 && state.prosperity <= 44) return "emergency";
   if (
     state.warming <= 2.02 &&
@@ -368,12 +368,13 @@ export function judge(state) {
     return "regeneration";
   }
   if (
-    state.warming <= 2.18 &&
+    state.warming <= 2.10 &&
     state.prosperity >= 40 &&
     state.trust >= 33 &&
     state.ecology >= 42 &&
     state.emissions <= 72
   ) return "managed";
+  if (state.warming <= 2.0 && state.prosperity < 50) return "managed";
   return "hotgrowth";
 }
 
@@ -411,7 +412,7 @@ function writeMeter(state, key, value) {
 
 function addMeters(state, effect) {
   for (const [key, value] of Object.entries(effect || {})) {
-    if (!(key in BOUNDS) || typeof value !== "number" || value === 0) continue;
+    if (!(key in BOUNDS) || typeof value !== "number" || !Number.isFinite(value) || value === 0) continue;
     writeMeter(state, key, state[key] + value);
   }
 }
@@ -532,7 +533,7 @@ function worldStep(state, owned, years) {
   const ecoBefore = state.ecology;
   writeMeter(state, "ecology", state.ecology + dEco);
 
-  let dTrust = 0;
+  let dTrust = 0.2;
   if (state.warming > PARAMS.trustHeatAt) dTrust -= (state.warming - PARAMS.trustHeatAt) * PARAMS.trustHeat * y;
   if (state.prosperity < PARAMS.trustPoorAt) dTrust -= PARAMS.trustPoor * y;
   if (state.energy < 44 && state.prosperity > 56 && state.warming < 1.9) dTrust += PARAMS.trustHeal * y;
@@ -783,7 +784,7 @@ export function createRun(seed) {
 
   function tweak(partial) {
     for (const [key, value] of Object.entries(partial || {})) {
-      if (key in BOUNDS && typeof value === "number") writeMeter(state, key, value);
+      if (key in BOUNDS && typeof value === "number" && Number.isFinite(value)) writeMeter(state, key, value);
     }
     rememberPeak();
     return publicState();

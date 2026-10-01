@@ -77,10 +77,11 @@ console.log(means(random));
 console.log(line(greedy));
 console.log(means(greedy));
 console.log("");
-console.log("targets (random, seeds 1-500):");
-console.log("  Hot Growth <= 45%");
-console.log("  Fractured + Long Emergency 15-25%");
-console.log("  Managed Transition 20-30%");
+console.log("targets (seeds 1-500):");
+console.log("  random Hot Growth <= 42%");
+console.log("  random Managed 30-33%");
+console.log("  random Fractured + Long Emergency 15-25%");
+console.log("  greedy-clean Hot Growth < 2%");
 console.log("  Regeneration 3-6%");
 console.log("  Abundance 1-3%");
 console.log("  greedy-clean Abundance >= 15%");
@@ -90,11 +91,13 @@ const fail = random.pct("fractured") + random.pct("emergency");
 const managed = random.pct("managed");
 const regen = random.pct("regeneration");
 const abundance = random.pct("abundance");
+const greedyHot = greedy.pct("hotgrowth");
 const greedyAbundance = greedy.pct("abundance");
 const checks = [
-  ["hot growth <= 45", hot <= 45],
+  ["hot growth <= 42", hot <= 42],
+  ["managed 30-33", managed >= 30 && managed <= 33],
   ["fractured + emergency 15-25", fail >= 15 && fail <= 25],
-  ["managed 20-30", managed >= 20 && managed <= 30],
+  ["greedy-clean hot growth < 2", greedyHot < 2],
   ["regeneration 3-6", regen >= 3 && regen <= 6],
   ["abundance 1-3", abundance >= 1 && abundance <= 3],
   ["greedy abundance >= 15", greedyAbundance >= 15],
