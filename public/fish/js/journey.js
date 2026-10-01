@@ -139,3 +139,4 @@ export function revealText(sp, big = false) {
   if (big) return "It is a huge " + sp.name + "!";
   return "It is " + (/^[aeiou]/i.test(sp.name) ? "an " : "a ") + sp.name + "!";
 }
+

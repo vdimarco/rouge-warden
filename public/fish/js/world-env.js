@@ -2,6 +2,9 @@
 // loon, a road, a wall with a lighthouse, a logjam). Every mesh is built here in code from the place's map (places/*.js),
 // so the fish logic and the picture share one map. What each place looks like is in world-look.js.
 import * as THREE from "three";
+import { artStyle, storyMaterial } from "./art-style.js";
+import { cartoonGeometry } from "./cartoon-models.js";
+import { paintedTrees } from "./painted-forest.js";
 import { rng, noise, capsule } from "./places/util.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -11,6 +14,10 @@ export const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); r
 // Uniforms that many materials share: the clock and the colours of the hour (world.js sets them).
 export const U = {
   uTime: { value: 0 },
+  uSkyPaint: { value: null },
+  uSkyPaintReady: { value: 0 },
+  uWaterPaint: { value: null },
+  uWaterPaintReady: { value: 0 },
   uSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uSunCol: { value: new THREE.Color(1, 1, 1) },
   uSunVis: { value: 1 },
@@ -30,6 +37,47 @@ export const U = {
   uFoam: { value: new THREE.Color() },
 };
 
+// One local sky texture, requested only for the optional style. A failed image leaves
+// the procedural sky active. Switching again can retry; completed loads are reused.
+let storySkyLoad = null;
+export function loadStorySky() {
+  if (U.uSkyPaintReady.value) return Promise.resolve();
+  if (storySkyLoad) return storySkyLoad;
+  storySkyLoad = new Promise((resolve) => {
+    new THREE.TextureLoader().load(new URL("../art/ghibli-sky.webp", import.meta.url).href, (texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      // atan wraps at the rear: implicit mip derivatives otherwise draw a seam there.
+      texture.generateMipmaps = false;
+      texture.minFilter = texture.magFilter = THREE.LinearFilter;
+      texture.colorSpace = THREE.NoColorSpace;
+      U.uSkyPaint.value = texture;
+      U.uSkyPaintReady.value = 1;
+      resolve();
+    }, undefined, () => { storySkyLoad = null; resolve(); });
+  });
+  return storySkyLoad;
+}
+
+let waterPaintLoad = null;
+export function loadPaintedWater() {
+  if (U.uWaterPaintReady.value) return Promise.resolve(true);
+  if (waterPaintLoad) return waterPaintLoad;
+  waterPaintLoad = new Promise(resolve => {
+    let settled = false;
+    const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); waterPaintLoad = null; resolve(ok); };
+    const timer = setTimeout(() => finish(false), 8000);
+    new THREE.TextureLoader().load(new URL("../art/fal-lake-water.webp", import.meta.url).href, texture => {
+      if (settled) { texture.dispose(); return; }
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.anisotropy = 4;
+      U.uWaterPaint.value = texture; U.uWaterPaintReady.value = 1;
+      finish(true);
+    }, undefined, () => finish(false));
+  });
+  return waterPaintLoad;
+}
+
 // Small hash noise without sin(), so it stays stable in mediump on phones.
 export const NOISE_GLSL = /* glsl */ `
 float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
@@ -48,13 +96,23 @@ vec3 vnoised(vec2 p) {
 // The sky colour in a direction. The water uses it too, for its reflection.
 export const SKY_GLSL = /* glsl */ `
 uniform vec3 uZenith, uHorizon, uGlow, uSunDir, uSunCol, uFogCol;
-uniform float uNight;
+uniform float uNight, uArtStyle, uSkyPaintReady;
+uniform sampler2D uSkyPaint;
 vec3 skyColor(vec3 d) {
   float y = max(d.y, 0.0);
   vec3 c = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.85, y), 0.6));
   float s = max(dot(d, uSunDir), 0.0);
   float low = 1.0 - smoothstep(0.0, 0.55, y);
   c += uGlow * (pow(s, 3.0) * 0.42 * low + pow(s, 24.0) * 0.5 + pow(s, 200.0) * 0.6);
+  if (uArtStyle > 0.5 && uSkyPaintReady > 0.5) {
+    vec2 uv = vec2(atan(d.x, -d.z) / 6.2831853 + 0.5, 0.08 + sqrt(y) * 0.86);
+    vec3 paper = texture2D(uSkyPaint, uv).rgb;
+    // Fold the edge sample into the opposite edge for a soft panoramic seam.
+    float seam = smoothstep(0.46, 0.5, abs(uv.x - 0.5));
+    paper = mix(paper, texture2D(uSkyPaint, vec2(1.0 - uv.x, uv.y)).rgb, seam * 0.5);
+    paper *= mix(uHorizon * 1.1, vec3(1.0), smoothstep(0.0, 0.65, y));
+    c = mix(c, paper, 0.88 * (1.0 - uNight) * smoothstep(0.0, 0.09, y));
+  }
   return c;
 }
 `;
@@ -96,7 +154,7 @@ export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = fals
         if (vWP.y < -0.02) {
           vec2 cq = vWP.xz * 1.3;
           float c1 = vnoise(cq + vec2(uTime * 0.35, uTime * 0.2)), c2 = vnoise(cq * 1.4 - vec2(uTime * 0.25, uTime * 0.31));
-          float net = pow(1.0 - abs(c1 - c2) * 2.2, 6.0);
+          float net = pow(max(0.0, 1.0 - abs(c1 - c2) * 2.2), 6.0);
           diffuseColor.rgb += net * 0.32 * uSunVis * smoothstep(-3.5, -0.2, vWP.y) * vec3(1.0, 0.96, 0.8);
           diffuseColor.rgb *= mix(1.0, 0.72, smoothstep(0.0, -4.0, vWP.y));
         }` : ""}
@@ -107,7 +165,7 @@ export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = fals
       }`);
   };
   mat.customProgramCacheKey = () => "fishpaint" + strokes + "_" + scale + "_" + sway + "_" + caustics + (wet ? "_wet" : "") + key;
-  return mat;
+  return storyMaterial(mat);
 }
 
 /* ---------------- geometry helpers ---------------- */
@@ -149,7 +207,7 @@ export const M4 = () => new THREE.Matrix4();
 
 export function buildSky(low) {
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uMoon: U.uMoon, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
+    uniforms: { uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady, uArtStyle: artStyle, uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uMoon: U.uMoon, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     defines: { OCT: low ? 3 : 5 },
     vertexShader: /* glsl */ `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
@@ -169,8 +227,10 @@ export function buildSky(low) {
           vec2 uv = d.xz / (d.y + 0.14);
           uv = vec2(uv.x * 0.9 + uv.y * 0.25, uv.y * 2.1) * 0.9 + vec2(uTime * 0.006, uTime * 0.002);
           float n = fbm(uv);
-          float body = smoothstep(0.5, 0.74, n) * smoothstep(0.0, 0.2, d.y);
+          float body = smoothstep(mix(0.5, 0.42, uArtStyle), mix(0.74, 0.60, uArtStyle), n) * smoothstep(0.0, 0.2, d.y);
+          body *= 1.0 - uArtStyle * uSkyPaintReady * 0.97;
           float thick = smoothstep(0.58, 0.95, n);
+          thick = mix(thick, floor(thick * 4.0 + 0.5) / 4.0, uArtStyle * 0.55);
           float toward = pow(max(s, 0.0), 4.0);
           vec3 cc = mix(uCloudLit, uCloudShade, thick * 0.75);
           cc += uGlow * (toward * 0.8 + 0.12) * (1.0 - thick * 0.5);
@@ -268,6 +328,8 @@ export const RIPPLES = 16, RINGS = 6;
 // setWaterPlace sets, so a change of place needs no new shader.
 export function buildWater(low, place, look) {
   const u = {
+    uArtStyle: artStyle, uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady,
+    uWaterPaint: U.uWaterPaint, uWaterPaintReady: U.uWaterPaintReady,
     uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight,
     uFogNear: U.uFogNear, uFogFar: U.uFogFar, uForest: U.uForest, uDeep: U.uDeep, uShallow: U.uShallow, uFoam: U.uFoam, uSunVis: U.uSunVis,
     uDepth: { value: null }, uBox: { value: new THREE.Vector4() },
@@ -287,7 +349,7 @@ export function buildWater(low, place, look) {
       precision highp float;
       uniform float uTime, uFogNear, uFogFar, uSunVis;
       uniform vec3 uForest, uDeep, uShallow, uFoam;
-      uniform sampler2D uDepth; uniform vec4 uBox;
+      uniform sampler2D uDepth, uWaterPaint; uniform float uWaterPaintReady; uniform vec4 uBox;
       uniform vec4 uShoreC, uShoreP, uIsle[2]; uniform float uSwell, uCur; uniform vec2 uFlow;
       uniform vec4 uRip[RIPPLES];
       uniform vec4 uRing[RINGS];
@@ -431,6 +493,46 @@ export function buildWater(low, place, look) {
         spec += pow(sd, 40.0) * step(0.96, hash12(floor(gq) + floor(uTime * 7.0))) * smoothstep(0.32, 0.08, length(fract(gq) - 0.5)) * 2.2 * s4;
         #endif
         spec *= uSunVis * (1.0 - shore);
+        if (uArtStyle > 0.5) {
+          // Cel-painted water: broad colour shapes and horizontal strokes.
+          // Game rings, wakes, and the aiming dots still draw above this paint.
+          float brush = vnoise(vec2(p.x * .48 + uTime * .025, p.y * 2.8 + uTime * .10 + sin(p.x * .36) * .18));
+          float mass = vnoise(vec2(p.x * .065, p.y * .32 - uTime * .035));
+          float wash = smoothstep(.32, .39, mass) * .11 + smoothstep(.59, .66, mass) * .10;
+          vec3 lakePaint = body * (.99 + wash);
+          float reflection = smoothstep(.15, .8, fres) * .45;
+          col = mix(lakePaint, mix(uForest, uHorizon, .66), reflection);
+          // Reflected boughs are soft painted bars, without mirror-like glare.
+          col = mix(col, treeCol * vec3(.85, 1.12, 1.13), shore * (.16 + .17 * step(.49, brush)));
+          float dash = smoothstep(.57, .62, brush) * (1. - smoothstep(.67, .73, brush));
+          col = mix(col, uFoam, dash * .19 * (1. - smoothstep(.5, 2., fp)));
+          float grain = hash12(floor(p * 17.));
+          col *= .988 + grain * .024;
+          if (uWaterPaintReady > .5) {
+            // The painted tile supplies brush detail. Subtle distortion carries
+            // the wind/current, while gameplay ripples and wakes remain live.
+            vec2 paintUV = pf * vec2(.045, .045) + vec2(uTime * .0007, uTime * .00035);
+            paintUV += g * .018;
+            paintUV += vec2(sin(p.y * .24 + uTime * .32), sin(p.x * .17 - uTime * .23)) * .002;
+            vec3 paint = texture2D(uWaterPaint, paintUV).rgb;
+            vec3 drift = texture2D(uWaterPaint, paintUV * .61 + vec2(.37, -.21) - vec2(uTime * .0004, 0.)).rgb;
+            paint = mix(paint, drift, .28);
+            paint *= clamp(body / vec3(.24, .50, .49), vec3(.07), vec3(1.35));
+            col = mix(col, paint, .38);
+          }
+          spec = min(spec, .3) * smoothstep(.52, .67, brush);
+        }
+        // Pond reference: slow cellular light under the surface, strongest
+        // in shallow water. World-space scale and footprint fade prevent shimmer.
+        vec2 cq = pf * .72 + g * .32;
+        cq += vec2(sin(cq.y * .8 + uTime * .19), cos(cq.x * .7 - uTime * .16)) * .32;
+        float ca = vnoise(cq + vec2(uTime * .075, uTime * .045));
+        float cb = vnoise(cq * 1.21 + vec2(3.7, 8.2) - vec2(uTime * .05, uTime * .065));
+        float bandWidth = max(.028, fwidth(ca - cb) * 1.5);
+        float lightNet = 1.0 - smoothstep(bandWidth, bandWidth + .055, abs(ca - cb));
+        float clearDepth = exp(-depth * .34) * smoothstep(.04, .55, depth);
+        float netVisibility = clearDepth * (1.0 - fres) * uSunVis * (1.0 - smoothstep(.15, .8, fp));
+        col += vec3(.55, .78, .62) * lightNet * netVisibility * .14;
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
         col += goldGlow;
@@ -449,6 +551,10 @@ export function buildWater(low, place, look) {
         // soft edge at the shore
         float edge = smoothstep(0.02, 0.35, depth);
         float alpha = clamp(mix(0.25, 1.0, smoothstep(0.0, 5.0, depth)) + fres * 0.7 + spec + foam * 0.3 + length(goldGlow), 0.0, 1.0);
+        // Let the shallow bed show through the painted surface. Deep water
+        // and grazing angles keep their opacity and reflected shore.
+        float paintedAlpha = clamp(.36 + .60 * smoothstep(.2, 5.0, depth) + fres * .6 + foam * .2 + spec + length(goldGlow), 0.0, 1.0);
+        alpha = mix(alpha, paintedAlpha, uArtStyle);
         alpha *= edge;
         col += uFoam * (1.0 - smoothstep(0.05, 0.45, depth + (vnoise(p * 0.6 + uTime * 0.2) - 0.5) * 0.25)) * 0.35 * edge;
         float fg = smoothstep(uFogNear, uFogFar, dist);
@@ -521,6 +627,32 @@ function farPineGeo(low) {
   return bake(g, { colorFn: (x, y) => mix3(hex("#26462c"), hex("#4a7a40"), y) });
 }
 
+// Soft, rounded canopies use a small mesh shared by all instances. The far
+// forest uses one crown per tree to keep the phone's triangle count low.
+function storyTreeGeo(low, broad = false, far = false, pale = null) {
+  const asset = cartoonGeometry(far ? "tree_far" : "tree_" + (broad ? "leaf" : "pine") + (low ? "_low" : "_high"));
+  if (asset) {
+    if (pale) {
+      const c = asset.attributes.color, p = asset.attributes.position;
+      for (let i = 0; i < c.count; i++) if (p.getY(i) > .4) { const v = .65 + p.getY(i) * .3; c.setXYZ(i, v, v, v * .91); }
+    }
+    return asset;
+  }
+  const parts = [];
+  const crowns = far ? [[0, 0.56, 0, low ? 0.44 : 0.31, 0.48, low ? 0.43 : 0.30]] : low
+    ? [[0, 0.60, 0, broad ? 0.36 : 0.48, 0.42, broad ? 0.34 : 0.45]] : broad
+    ? [[-0.12, 0.59, 0, 0.30, 0.32, 0.31], [0.15, 0.69, 0.02, 0.31, 0.33, 0.29]]
+    : [[0, 0.41, 0, 0.34, 0.28, 0.32], [0.02, 0.71, 0.01, 0.24, 0.31, 0.23]];
+  const lo = hex(pale ? pale.lo : "#346e55"), hi = hex(pale ? pale.hi : "#99b95f");
+  for (const [x, y, z, sx, sy, sz] of crowns) {
+    const g = new THREE.SphereGeometry(1, low ? (far ? 4 : 5) : 8, low ? (far ? 2 : 3) : (far ? 3 : 4));
+    g.scale(sx, sy, sz); g.translate(x, y, z);
+    parts.push(bake(g, { colorFn: (x, y) => mix3(lo, hi, smooth(0.2, 1, y)) }));
+  }
+  if (!far) parts.push(bake(new THREE.CylinderGeometry(0.035, 0.055, 0.48, low ? 3 : 5, 1, low), { matrix: M4().makeTranslation(0, 0.24, 0), color: hex("#8b6642") }));
+  return merge(parts);
+}
+
 // Where the trees stand, from the place's look: near trees (pines and leafy ones) on a jittered grid where the forest
 // mask says so, and small far cones on the hills. Sorted in a shuffled order so "low" can draw only the first part and still look even.
 function treeSpots(place, look) {
@@ -568,15 +700,27 @@ function instanced(geo, mat, spots, max, tint) {
   return m;
 }
 
-export function buildTrees(low, place, look) {
-  const S = treeSpots(place, look), T = look.trees, caps = low ? T.caps.low : T.caps.high;
+export function buildTrees(low, place, look, style = "ghibli") {
+  const cartoon = style === "ghibli";
+  const S = treeSpots(place, look), T = look.trees;
+  if (cartoon) {
+    const g = new THREE.Group(), caps = low ? T.caps.low : T.caps.high;
+    const kinds = ["pine", "leaf", "far"], spots = [S.near, S.leafy, S.far];
+    for (let i = 0; i < 3; i++) {
+      const mesh = paintedTrees(spots[i], caps[i], kinds[i], U, i === 1 ? T.leafy.tint : T.pineTint, rng(77 + i));
+      if (mesh) g.add(mesh);
+    }
+    if (g.children.length) return g;
+  }
+  // Broader crowns cover the same forest with fewer instances on phones.
+  const caps = low ? T.caps.low.map((n, i) => Math.floor(n * (cartoon ? [0.4, 1, 0.5][i] : 1))) : T.caps.high;
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.9, scale: 1.4, sway: 0.012, key: "tree" });
   const leafMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.2, scale: 2.2, sway: 0.02, key: "leaf" });
   const farMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.8, scale: 0.6, key: "far" });
   const g = new THREE.Group();
-  if (caps[0] && S.near.length) g.add(instanced(pineGeo(low), mat, S.near, caps[0], T.pineTint));
-  if (caps[1] && S.leafy.length) g.add(instanced(leafyGeo(low, T.leafy.geo), leafMat, S.leafy, caps[1], T.leafy.tint));
-  if (caps[2] && S.far.length) g.add(instanced(farPineGeo(low), farMat, S.far, caps[2], T.pineTint));
+  if (caps[0] && S.near.length) g.add(instanced(cartoon ? storyTreeGeo(low) : pineGeo(low), mat, S.near, caps[0], T.pineTint));
+  if (caps[1] && S.leafy.length) g.add(instanced(cartoon ? storyTreeGeo(low, true, false, T.leafy.geo) : leafyGeo(low, T.leafy.geo), leafMat, S.leafy, caps[1], T.leafy.tint));
+  if (caps[2] && S.far.length) g.add(instanced(cartoon ? storyTreeGeo(low, false, true) : farPineGeo(low), farMat, S.far, caps[2], T.pineTint));
   return g;
 }
 
@@ -655,7 +799,7 @@ export function buildPads(low, place, look) {
   }
   parts.push(bake(new THREE.SphereGeometry(0.035, 6, 4), { matrix: M4().makeTranslation(0, 0.03, 0), color: hex("#f2c230") }));
   const fl = LILIES.filter((l) => l.flower);
-  const flowers = new THREE.InstancedMesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }), fl.length);
+  const flowers = new THREE.InstancedMesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })), fl.length);
   fl.forEach((l, i) => { mx.compose(new THREE.Vector3(l.x + 0.1, 0.05, l.z), q.setFromAxisAngle(up, l.rot), new THREE.Vector3(1.5, 1.5, 1.5)); flowers.setMatrixAt(i, mx); });
   flowers.frustumCulled = false;
   group.add(flowers);
@@ -757,6 +901,13 @@ export function buildDock(place) {
 export function buildCottage(place, look) {
   const parts = [], ground = (x, z) => look.ground(x, z, place);
   const x0 = -9, z0 = 34, y0 = Math.max(0.5, ground(x0, z0)) - 0.2;
+  const story = artStyle.value ? cartoonGeometry("cottage") : null;
+  if (story) {
+    story.rotateY(Math.PI); story.translate(x0, y0, z0);
+    const canoe = new THREE.SphereGeometry(1, 12, 6); canoe.scale(.45, .22, 2.4);
+    const boat = bake(canoe, { matrix: M4().makeRotationY(.4).setPosition(6, Math.max(.3, ground(6, 22)) + .15, 22), color: hex("#d77a48") });
+    return new THREE.Mesh(merge([story, boat]), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: .5, scale: 3, key: "cartoon-cottage" }));
+  }
   const box = (w, h, d, x, y, z, c) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().makeTranslation(x0 + x, y0 + y, z0 + z), color: c }));
   box(8, 3, 6, 0, 1.5, 0, hex("#7a5236"));
   box(8.2, 0.3, 6.2, 0, 0.1, 0, hex("#5a4a3a"));
@@ -777,6 +928,8 @@ export function buildCottage(place, look) {
 /* ---------------- the loon ---------------- */
 
 export function buildLoon() {
+  const story = artStyle.value ? cartoonGeometry("loon") : null;
+  if (story) { const m = new THREE.Mesh(story, storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }))); m.scale.setScalar(1.25); return m; }
   const parts = [], r = rng(8);
   const black = hex("#15181a"), white = hex("#e8ece8"), dk = hex("#243030");
   const body = new THREE.SphereGeometry(1, 18, 10);
@@ -793,7 +946,7 @@ export function buildLoon() {
   const tail = new THREE.ConeGeometry(0.06, 0.12, 6);
   tail.rotateX(Math.PI / 2);
   parts.push(bake(tail, { matrix: M4().makeTranslation(0, 0.03, 0.44), color: black }));
-  const m = new THREE.Mesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const m = new THREE.Mesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })));
   m.scale.setScalar(1.25);
   return m;
 }

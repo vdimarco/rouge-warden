@@ -191,3 +191,4 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
 if (skipped.length) console.log("\n" + skipped.length + " check(s) skipped: " + skipped.map((s) => s.split(" (")[0]).join("; "));
 console.log(fails.length ? "\n" + fails.length + " failed" : "\nall passed");
 process.exit(fails.length ? 1 : 0);
+

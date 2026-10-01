@@ -300,3 +300,4 @@ async function main() {
   console.log(fails.length ? `${fails.length} target(s) missed` : "All place fight targets met");
   process.exit(fails.length ? 1 : 0);
 }
+

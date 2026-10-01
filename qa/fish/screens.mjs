@@ -831,3 +831,4 @@ const stand = async (page) => {
 
 console.log(fails.length ? "\n" + fails.length + " failed" : "\nall passed");
 process.exit(fails.length ? 1 : 0);
+

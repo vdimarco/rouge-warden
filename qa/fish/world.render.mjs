@@ -422,3 +422,4 @@ const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallbac
 if (bad.length) { fail("console errors:\n  " + bad.join("\n  ")); }
 console.log(failed ? "world.render: FAILED" : `world.render: OK (${results.length} shots in ${SHOTS})`);
 process.exit(failed ? 1 : 0);
+

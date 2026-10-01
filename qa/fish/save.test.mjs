@@ -61,12 +61,22 @@ function placesOk(s) {
   return s.places.loon && s.places.loon.open === 1 && ORDER.includes(s.place) && s.places[s.place] && s.places[s.place].open === 1;
 }
 
+/* ---------------- art style preferences ---------------- */
+section("Art style preferences");
+check(loadSave(null).artStyle === "ghibli", "new saves default to Ghibli");
+check(loadSave({ casts: 12 }).artStyle === "ghibli", "old saves without a style default to Ghibli");
+check(loadSave(text(loadSave({ artStyle: "original" }))).artStyle === "original", "an explicit Original choice survives reload");
+const styled = loadSave({ artStyle: "ghibli", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
+check(loadSave(text(styled)).artStyle === "ghibli", "Ghibli survives a save and reload");
+check(styled.casts === 12 && styled.journal.perch.n === 2, "the art preference keeps fishing progress");
+check(loadSave({ artStyle: "unknown" }).artStyle === "ghibli", "an unknown art style falls back to Ghibli");
+
 /* ---------------- 1. today's saves ---------------- */
 section("1. today's saves load as before");
 {
   check(SAVE_KEY === "fish.v1", "the save key stays fish.v1");
   const b = blank();
-  check(same(without(b, "place", "places"), todayLoad(null)) && b.place === "loon" && same(b.places, {}), "blank() is today's new save plus place: \"loon\" and places: {}");
+  check(same(without(b, "place", "places", "artStyle", "reelSide"), todayLoad(null)) && b.place === "loon" && same(b.places, {}), "blank() is today's new save plus art style, reel side and places");
   const fresh = loadSave(null);
   check(same(without(fresh, "places"), without(blank(), "places")) && same(fresh.places, { loon: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0 } }),
     "no save: a new save at Loon Lake, with only Loon Lake open");
@@ -86,7 +96,7 @@ section("1. today's saves load as before");
     let got = null;
     try { got = loadSave(raw); } catch (e) { bad.push(name + " threw " + e.message); continue; }
     const want = todayLoad(typeof raw === "string" ? todayRead(raw) : raw);
-    if (same(without(got, "place", "places"), want)) ok++; else bad.push(name);
+    if (same(without(got, "place", "places", "artStyle", "reelSide"), want)) ok++; else bad.push(name);
     if (placesOk(got) && got.place === "loon") well++; else bad.push(name + " (places)");
   }
   check(ok === CASES.length && well === CASES.length, `${CASES.length} corrupt saves load with today's values, at Loon Lake${bad.length ? ": " + bad.join(", ") : ""}`);
@@ -121,7 +131,7 @@ section("1. today's saves load as before");
     const before = structuredClone(s);
     let got;
     try { got = loadSave(pick([true, false]) ? s : JSON.stringify(s)); } catch (e) { thrown++; continue; }
-    if (same(without(loadSave(s), "place", "places"), todayLoad(s)) && same(without(loadSave(JSON.stringify(s)), "place", "places"), todayLoad(JSON.parse(JSON.stringify(s))))) agree++;
+    if (same(without(loadSave(s), "place", "places", "artStyle", "reelSide"), todayLoad(s)) && same(without(loadSave(JSON.stringify(s)), "place", "places", "artStyle", "reelSide"), todayLoad(JSON.parse(JSON.stringify(s))))) agree++;
     if (placesOk(got)) formed++;
     if (got.place !== "loon") away++;
     if (isOpen(got, "stumps")) opened++;
@@ -145,7 +155,7 @@ const OLD = {
 {
   const s = loadSave(JSON.stringify(OLD));
   check(same(s.journal, OLD.journal), "the journal is kept: perch, walleye and the golden bass");
-  check(same(without(s, "place", "places"), OLD), "every old value is kept (derbyBest 8.4, biggest walleye 3.6, counts, settings, seen)");
+  check(same(without(s, "place", "places", "artStyle", "reelSide"), OLD), "every old value is kept (derbyBest 8.4, biggest walleye 3.6, counts, settings, seen)");
   check(same(s.places.loon, { open: 1, d: 8.4, kg: 3.6, id: "walleye", n: 7, lg: 3 }), `places.loon is d 8.4, kg 3.6, walleye, n 7, lg 3: ${text(s.places.loon)}`);
   check(isOpen(s, "stumps") && s.places.stumps.open === 1, "a 3.6 kg fish opens Stump Bay");
   check(!isOpen(s, "river") && !isOpen(s, "sea"), "Cedar River and Gull Rock stay closed");
@@ -330,3 +340,4 @@ section("5. journey.js");
 
 console.log(fails.length ? `\n${fails.length} of ${passes + fails.length} checks failed` : `\nAll ${passes} checks passed`);
 process.exit(fails.length ? 1 : 0);
+

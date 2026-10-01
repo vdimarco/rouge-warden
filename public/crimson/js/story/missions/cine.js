@@ -369,7 +369,7 @@ export function createCine(S, K) {
       if (kind === 'lines') {
         const text = S.content.line(e.line);
         if (e.block) { run.hold = S.ui.say([{ who: e.who, line: e.line }], { block: true }); if (K.auto) S.ui.advanceAll(); }
-        else S.ui.subs(e.who, text, undefined, e.who || lineWho(e.line)); // (the line's speaker talks, even with no name shown)
+        else S.ui.subs(e.who, text, Math.min(e.dur ?? Math.max(1.6, 0.7 + String(text).length * 0.045), Math.max(0.1, run.def.dur - run.t)), e.who || lineWho(e.line)); // (the line's speaker talks, even with no name shown)
       } else if (kind === 'looks') { S.look.set(e.set, { dur: e.dur ?? 1 }); }
       else if (kind === 'cards') { run.card = S.ui.card(e.kind || 'title', { title: e.title, sub: e.sub, kanji: e.kanji, n: e.n, dur: e.dur }); }
       else if (kind === 'fx') { fxAt(e); }
@@ -403,16 +403,29 @@ export function createCine(S, K) {
     if (def.look) S.look.set(def.look, { dur: 0 });
     if (S.look.cineQuality) S.look.cineQuality(true);
     if (!def.arena) stepOut();
+    r.soundLoops = [];
+    if (S.audio.beginCinematic) S.audio.cue(null);
+    const soundStart = S.audio.beginCinematic?.();
+    while (soundStart && !soundStart.ready && !r.skip) yield null;
+    if (def.id === 'c0' || def.id === 'i0') {
+      S.audio.cue(S.audio.beginCinematic ? null : 'night');
+      r.soundLoops.push(S.audio.loop('creek', { level: 0.45 }), S.audio.loop('crickets', { level: 0.35 }));
+    }
     K.log('cine', def.id, 'start');
     let last = S.timers.now;
     try {
       for (;;) {
         if (r.skip) break;
         const now = S.timers.now, dt = Math.max(0, now - last); last = now;
+        // Hold the next line and its camera cut until the current recording ends.
+        const nextLine = r.sorted.lines[r.next.lines];
+        const nextSay = r.sorted.actors.slice(r.next.actors).find(e => e.do === 'say');
+        if (S.audio.voice && !S.audio.voice.done && ((nextLine && nextLine.at <= r.t + dt) || (nextSay && nextSay.at <= r.t + dt) || r.t + dt >= def.dur)) { yield null; continue; }
         if (r.hold) { if (K.auto) S.ui.advanceAll(); if (!r.hold.done) { yield null; continue; } r.hold = null; }
         if (r.film) {
-          if (!r.film.done) { if (K.auto) S.film.skip(); yield null; continue; }
+          if (!r.film.done) { if (r.def.id === 'c0' && S.film.active && !r.morphSound) r.morphSound = S.audio.loop('gabeMorph'); if (K.auto) S.film.skip(); yield null; continue; }
           if (!r.film.played && S.look && S.look.base) S.look.base.flash = 1; // the engine's white flash stands in
+          if (r.morphSound) { r.morphSound.stop(0.15); r.morphSound = null; }
           r.film = null;
         }
         r.t += dt;
@@ -451,6 +464,10 @@ export function createCine(S, K) {
   function finish(r, aborted = false) {
     if (r.done) return;
     r.done = true;
+    if (r.morphSound) r.morphSound.stop(0.1);
+    for (const h of r.soundLoops || []) h.stop(0.25);
+    S.audio.endCinematic?.();
+    if (S.audio.beginCinematic || r.def.id === 'c0' || r.def.id === 'i0') S.audio.cue('auto');
     try {
       if (r.hold && !r.hold.done) S.ui.advanceAll();
       if (r.film && !r.film.done) S.film.skip();

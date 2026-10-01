@@ -282,3 +282,4 @@ export function spotsFor(place, eco, n, seed, legend = null) {
   }
   return out;
 }
+

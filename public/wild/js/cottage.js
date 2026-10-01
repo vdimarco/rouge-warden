@@ -1,5 +1,6 @@
 // Reference-guided Higgsfield artwork on real relief geometry, with a furnished veranda.
 import * as THREE from 'three';
+import { cartoonMaterial } from './cartoon.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -26,7 +27,7 @@ function mergeStatic(root) {
 
 export function paintedCottage(tex = {}) {
   const root = new THREE.Group();
-  const material = (color, map, extra = {}) => new THREE.MeshStandardMaterial({ color, map: map || null, roughness: .92, metalness: 0, ...extra });
+  const material = (color, map, extra = {}) => cartoonMaterial({ color, map: map || null, ...extra });
   const tile = (source, x = 1, y = 1) => {
     if (!source) return null;
     const t = source.clone(); t.repeat.set(x, y); t.needsUpdate = true; return t;
@@ -36,7 +37,7 @@ export function paintedCottage(tex = {}) {
   const roof = material(tex.shingles ? 0xffffff : 0x6f8174, tile(tex.shingles, 3, 2));
   const fabric = material(tex.linen ? 0xffffff : 0xc3bda5, tex.linen);
   const dark = material(0x625442), honey = material(0xc5a052), rose = material(0xbe9b8d);
-  const ceramic = material(0xeee4ca, null, { roughness: .45 });
+  const ceramic = material(0xeee4ca, null);
   const facade = material(tex.facade ? 0xffffff : 0x83b3a4, tex.facade, { emissive: 0xffffff, emissiveMap: tex.facade || null, emissiveIntensity: tex.facade ? .08 : 0 });
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); root.add(m); return m; };
   const b = (w,h,d,m,x,y,z) => add(new THREE.BoxGeometry(w,h,d),m,x,y,z);
@@ -116,7 +117,7 @@ export function paintedCottage(tex = {}) {
   for(const x of [-4.65,4.65]) {
     add(new THREE.CylinderGeometry(.27,.18,.42,20),material(0xb87953),x,.63,5.72);
     if(tex.leaves) {
-      const leaves=new THREE.MeshStandardMaterial({map:tex.leaves,alphaTest:.65,side:THREE.DoubleSide,roughness:1});
+      const leaves=cartoonMaterial({map:tex.leaves,alphaTest:.65,side:THREE.DoubleSide});
       for(let i=0;i<3;i++) add(new THREE.PlaneGeometry(.8,.9),leaves,x,1.15,5.72).rotation.y=i*Math.PI/3;
     }
   }

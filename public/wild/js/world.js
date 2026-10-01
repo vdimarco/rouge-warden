@@ -1,5 +1,6 @@
 // The world: one big valley around Loon Lake. Terrain, water, sky, clouds, grass, trees, rocks, and the places to find.
 import * as THREE from "three";
+import { cartoonMaterial, cartoonRamp } from "./cartoon.js";
 import { mergeGeometries as mergeTextured } from "three/addons/utils/BufferGeometryUtils.js";
 import { rng, simplex, fbm, clamp, lerp, smooth } from "./noise.js";
 import * as M from "./models.js";
@@ -94,7 +95,7 @@ export function splat(mat, tex) {
           detail = mix(detail, dt, wd);
           detail = mix(detail, sa, ws);
           detail = mix(detail, rk, wr);
-          diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.8 * fade);
+          diffuseColor.rgb *= mix(vec3(1.0), clamp(detail, 0.4, 1.8), 0.32 * fade);
         }
       }`);
   };
@@ -364,7 +365,7 @@ export class World {
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: M.softGradientMap() }), { strokes: 1.2, lakebed: true }), this.tex);
+    const mat = splat(paint(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: cartoonRamp() }), { strokes: 1.2, lakebed: true }), this.tex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -974,8 +975,10 @@ export class World {
     };
     const foliage = () => {
       if (!this.tex.leaves) { const m=this.swayMaterial(0xffffff); m.vertexColors=true; return m; }
-      const m=new THREE.MeshLambertMaterial({map:this.tex.leaves,alphaTest:.65,side:THREE.DoubleSide,emissive:0xffffff,emissiveMap:this.tex.leaves,emissiveIntensity:.12});
+      const m=cartoonMaterial({map:this.tex.leaves,alphaTest:.65,side:THREE.DoubleSide,emissive:0xffffff,emissiveMap:this.tex.leaves,emissiveIntensity:.025});
+      const pigment=m.onBeforeCompile;
       m.onBeforeCompile = sh => {
+        pigment(sh);
         sh.uniforms.uTime=SHARED.uTime;
         sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
           #ifdef USE_INSTANCING
@@ -983,7 +986,7 @@ export class World {
           transformed.x+=sin(uTime+phase+position.y*.6)*max(position.y-2.0,0.0)*.025;
           #endif`);
       };
-      m.customProgramCacheKey=()=> 'painted-leaf-cards';return m;
+      m.customProgramCacheKey=()=> 'cartoon-leaf-cards';return m;
     };
     const canopyMat=foliage(), pineMat=foliage();
     mk(trunkGeo, trunkGeo, M.toon(0x7a5238), round);

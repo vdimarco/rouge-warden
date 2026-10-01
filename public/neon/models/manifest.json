@@ -1,0 +1,33 @@
+{
+  "provider": "404-gen + fal",
+  "assets": [
+    {
+      "id": "ronin",
+      "status": "ready",
+      "taskId": "60d0bbdd-4402-4747-8596-60f45017f080",
+      "url": "./models/ronin.glb",
+      "bytes": 2315712,
+      "triangles": 39784
+    },
+    {
+      "id": "ronin-toon",
+      "status": "ready",
+      "provider": "fal",
+      "endpoint": "fal-ai/trellis-2",
+      "taskId": "01a0f3c4-59cb-7822-82b5-fe8c1def865f",
+      "url": "./models/ronin-toon.glb",
+      "bytes": 1091780,
+      "triangles": 17282
+    },
+    {
+      "id": "grove",
+      "status": "ready",
+      "provider": "fal",
+      "endpoint": "fal-ai/trellis-2",
+      "taskId": "01a0f3c6-1b35-7fa2-8eb7-9c387e58ed22",
+      "url": "./models/grove.glb",
+      "bytes": 1385548,
+      "triangles": 9932
+    }
+  ]
+}

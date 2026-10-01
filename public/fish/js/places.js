@@ -32,3 +32,4 @@ export const PLACE_IDS = ["loon", "stumps", "river", "sea"];
 export const PLACES = { loon, stumps, river, sea };
 // an unknown id (an old or broken save) gives Loon Lake
 export const getPlace = (id) => (PLACE_IDS.includes(id) ? PLACES[id] : PLACES.loon);
+

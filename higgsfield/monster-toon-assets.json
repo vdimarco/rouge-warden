@@ -1,0 +1,15 @@
+{
+  "model": "marketing-studio/image",
+  "common": "Create a production-ready 2D terrain texture atlas for the attached original folklore MOBA game, using its Rick and Morty-inspired bold dark outlines and flat cel-shaded adult cartoon visual style. This is a technical texture sheet, NOT a scene or screenshot. Exactly four equally sized square texture tiles arranged in a precise 2 by 2 grid. No gutters, no borders, no labels, no text, no objects, no UI, no horizon, no perspective, no gradients, no dramatic lighting. Every tile is an orthographic straight-down view. Top-left: muted grey brown woodland dirt with sparse small stones and thin black cracks. Top-right: dark muted olive mossy forest grass, stylized angular leaf tufts, sparse tiny violet flowers, simple hand-inked details. Bottom-left: flat vibrant cyan creek water, simplified chunky aqua ripple shapes edged by dark teal ink, no banks or land. Bottom-right: dense irregular grey warm cobblestone paving with bold very dark cracks and a little moss, dozens of medium-small uneven cartoon stones with flat two-tone shading. All four textures are seamless within their own quadrants, filled completely edge to edge. Preserve the reference palette: muted moss and teal forest, grey stones, bright cyan water, tiny violet accents. Crisp 2D animation ink lines with restrained detail and clear readable shapes. Deliver only the square atlas.",
+  "styles": {
+    "terrain": "Make the four quadrants exactly aligned at the horizontal and vertical midpoints, each tile visually separate with no divider lines. The reference image provides style only; do not recreate its composition or creatures."
+  },
+  "parameters": {
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "enhance_prompt": false,
+    "image_urls": [
+      "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/ffaa4140-d4af-4972-93e0-4798616e7619.png"
+    ]
+  }
+}

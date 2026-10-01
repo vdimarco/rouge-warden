@@ -1,0 +1,33 @@
+name: Swing browser QA
+on:
+  pull_request:
+    paths: ['public/vr/**', 'qa/vr/**', '.github/workflows/swing-browser.yml']
+  push:
+    branches: [main]
+    paths: ['public/vr/**', 'qa/vr/**', '.github/workflows/swing-browser.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  city-and-one-thumb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs
+      - name: Compile city shaders and exercise one-thumb play
+        run: node qa/vr/mobile.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-phone-and-landscape
+          path: test-results/swing
+          retention-days: 14

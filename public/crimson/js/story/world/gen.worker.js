@@ -210,6 +210,23 @@ export function generate(seed = 51, progress = () => {}) {
 
   // roads: profiles graded to the limits, then the ground cut and filled to them
   const profiles = gradeRoads(net, H, CF);
+  // Keep the entire turnout flat after road grading. A coarse canyon cell
+  // must not protrude through the asphalt at the lot's rotated corners.
+  const turnout = LOTS.find((l) => l.x === 396 && l.z === -585);
+  const turnoutY = heightAt(H, turnout.x, turnout.z);
+  forNear(turnout.x, turnout.z, 48, (k, d, x, z) => {
+    const edge = lotDist(turnout, x, z);
+    if (edge < 18) H[k] = lerp(H[k], turnoutY, smooth(18, 6, edge));
+  });
+  // Level the fleet bays across their width. The entrance retains the graded
+  // road profile, which joins the parking deck at the driveway endpoint.
+  const fleet = LOTS.find(l => l.x === -620 && l.z === 172);
+  const fleetY = heightAt(H, fleet.x, 170);
+  const fleetProfile = Array.from({ length: W }, (_, j) => heightAt(H, fleet.x, gx(j)));
+  forNear(fleet.x, fleet.z, 55, (k, d, x, z) => {
+    const edge = lotDist(fleet, x, z);
+    if (edge < 16) H[k] = lerp(H[k], z >= 170 ? fleetY : fleetProfile[Math.round((z + HALF) / CELL)], smooth(16, 6, edge));
+  });
   progress(0.5);
   // buildings stand on flat pads at the height of their front
   for (const b of BUILDINGS) {
@@ -700,20 +717,28 @@ function simplexCache(seed) { let s = simplexMemo.get(seed); if (!s) simplexMemo
 // whose centre falls in it. Returns transferable arrays and the bounds.
 export function buildTile(ctx, ti, tj, lod) {
   const { H, col, rock, rocks } = ctx;
-  const step = [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
+  // Preserve the turnout and canyon approaches even in establishing shots.
+  const nearBridge = ti === 3 && tj === 1;
+  const step = nearBridge ? [0.5, 1, 2][lod] : [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
   const mine = rocks.filter((r) => Math.floor((r.f.x + HALF) / 400) === ti && Math.floor((r.f.z + HALF) / 400) === tj).map((r) => (lod === 0 ? r.hi : r.lo));
   let rv = 0, ri = 0; for (const m of mine) { rv += m.pos.length / 3; ri += m.idx.length; }
   const total = nv + 4 * (n + 1) + rv;
   const pos = new Float32Array(total * 3), nrm = new Float32Array(total * 3), cl = new Uint8Array(total * 3), rk = new Uint8Array(total);
   const idx = total > 65535 ? new Uint32Array(n * n * 6 + 4 * n * 6 + ri) : new Uint16Array(n * n * 6 + 4 * n * 6 + ri);
   let minY = Infinity, maxY = -Infinity;
-  const hAt = (i, j) => H[clamp(j, 0, N) * W + clamp(i, 0, N)];
+  const hAt = (i, j) => heightAt(H, gx(clamp(i, 0, N)), gx(clamp(j, 0, N)));
+  const sample = (arr, i, j, stride = 1, channel = 0) => {
+    const a = Math.floor(i), b = Math.floor(j), u = i - a, v = j - b;
+    const get = (x, z) => arr[(clamp(z, 0, N) * W + clamp(x, 0, N)) * stride + channel];
+    return lerp(lerp(get(a, b), get(a + 1, b), u), lerp(get(a, b + 1), get(a + 1, b + 1), u), v);
+  };
   for (let b = 0; b <= n; b++) for (let a = 0; a <= n; a++) {
-    const i = i0 + a * step, j = j0 + b * step, k = j * W + i, v = b * (n + 1) + a, h = H[k];
+    const i = i0 + a * step, j = j0 + b * step, v = b * (n + 1) + a, h = hAt(i, j);
     pos[v * 3] = gx(i); pos[v * 3 + 1] = h; pos[v * 3 + 2] = gx(j);
     const nx = hAt(i - step, j) - hAt(i + step, j), nz = hAt(i, j - step) - hAt(i, j + step), ny = 2 * step * CELL, l = hypot(nx, ny, nz);
     nrm[v * 3] = nx / l; nrm[v * 3 + 1] = ny / l; nrm[v * 3 + 2] = nz / l;
-    cl[v * 3] = col[k * 3]; cl[v * 3 + 1] = col[k * 3 + 1]; cl[v * 3 + 2] = col[k * 3 + 2]; rk[v] = rock[k];
+    for (let c = 0; c < 3; c++) cl[v * 3 + c] = sample(col, i, j, 3, c);
+    rk[v] = sample(rock, i, j);
     if (h < minY) minY = h; if (h > maxY) maxY = h;
   }
   let t = 0;

@@ -174,3 +174,4 @@ export function lengthFor(sp, kg) {
   const t = (Math.cbrt(kg) - Math.cbrt(k0)) / (Math.cbrt(k1) - Math.cbrt(k0) || 1);
   return Math.round(c0 + (c1 - c0) * t);
 }
+

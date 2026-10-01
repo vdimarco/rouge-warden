@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e0482c">
-<title>In Full Swing: a VR game for Meta Quest</title>
+<title>In Full Swing: one-hand city swinging</title>
 <meta name="description" content="Swing through the city at sunset on plunger ropes. Plunge twelve rooftop clogs and flush the Porcelain King. A VR game for Meta Quest 3.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/vr/">
@@ -132,6 +132,21 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
 @media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 2vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 48px; } }
 @media (max-width: 420px) { .btn { padding: 10px 16px; letter-spacing: 0.1em; } .kicker { letter-spacing: 0.2em; } }
 @media (prefers-reduced-motion: reduce) { .logo, .rope .swing { animation: none; } .btn, .load, .load .track i { transition: none; } }
+
+#phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
+#phoneControls[hidden] { display:none; }
+#phoneControls button { pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; color:#fff6df; background:#111d2dd9; border:1px solid #e1bc7444; border-radius:24px; min-height:44px; padding:10px 16px; font:600 14px sans-serif; }
+.phone-top { display:flex; justify-content:center; gap:8px; padding:max(12px,env(safe-area-inset-top)) 8px 0; }
+.phone-crosshair { position:absolute; left:50%; top:50%; width:18px; height:18px; border:2px solid #fff8; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 8px #0006; transition:border-color .12s,box-shadow .12s; }
+.target-ready .phone-crosshair { border-color:#95ffc8; box-shadow:0 0 16px #5fffbf66; }
+.phone-bottom { position:absolute; bottom:max(18px,env(safe-area-inset-bottom)); left:max(16px,env(safe-area-inset-left)); right:max(16px,env(safe-area-inset-right)); display:flex; flex-direction:column; align-items:center; gap:8px; }
+.phone-hint { margin:0; max-width:320px; padding:8px 14px; text-align:center; color:#fff6df; background:#101c2daa; border-radius:14px; font:14px/1.4 sans-serif; }
+#phoneControls [data-action="throw"] { width:min(280px,85vw); min-height:76px; background:linear-gradient(135deg,#f9d995,#d79d4c); color:#172536; font:bold 24px sans-serif; box-shadow:0 8px 30px #0004,inset 0 1px #fff8; }
+#phoneControls [data-action="throw"] span { display:block; font:12px sans-serif; margin-top:4px; opacity:.8; }
+#phoneControls [data-action="throw"].held { background:linear-gradient(135deg,#b6f1dc,#60c3b5); }
+.phone-bottom small { color:#fff9; font:11px sans-serif; text-shadow:0 1px 4px #000; }
+#view canvas { touch-action:none; }
+@media (max-height:480px) { .phone-bottom { left:auto; width:260px; bottom:12px; } .phone-hint { font-size:12px; } #phoneControls [data-action="throw"] { width:220px; min-height:64px; } .phone-bottom small { display:none; } }
 </style>
 </head>
 <body data-mode="title">
@@ -139,7 +154,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
 
 <main id="title">
   <header class="logo">
-    <p class="kicker"><i></i><span>A Cottage Arcade machine for Meta Quest</span><i></i></p>
+    <p class="kicker"><i></i><span>A Cottage Arcade machine for phone &amp; Quest</span><i></i></p>
     <h1 aria-label="In Full Swing"><span class="l1">IN FULL</span> <span class="l2" data-t="SWING">SWING</span></h1>
     <svg class="rope" viewBox="0 0 560 70" aria-hidden="true">
       <g class="swing">
@@ -169,7 +184,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
       </div>
     </nav>
     <p class="note" id="note" role="status" hidden></p>
-    <p class="note" id="touchNote" hidden>Open this page on a Quest or a computer.</p>
+    <p class="note" id="touchNote" hidden>Point and tap Swing. Auto-jump and pulling are on. Tap a building to switch ropes.</p>
     <p class="note" id="noXR" hidden>This browser has no VR. You can play on this screen.</p>
     <p class="note hint" id="installHint" hidden>Install it from the browser menu to launch it straight into the headset.</p>
     <div class="load" id="load" role="progressbar" aria-label="Building the city" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">

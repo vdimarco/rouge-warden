@@ -26,7 +26,7 @@ const FLAGS = {
   room: ROOMS.includes(QS.get("room")) ? QS.get("room") : "office_small",
   pwa: QS.get("source") === "pwa",
 };
-const TOUCH_ONLY = !matchMedia("(any-pointer: fine)").matches && (navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches);
+const TOUCH_ONLY = navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------------- save and settings ---------------- */
@@ -222,7 +222,7 @@ function beginIntro(mode) {
   P.events.length = 0;
   ropes.setMode("special");
   portal.begin(mode, !save.intro);
-  if (FLAGS.skipintro) portal.skip();
+  if (FLAGS.skipintro || (mode === "desktop" && D.mobile.enabled)) portal.skip();
 }
 // Portal done: the body starts where the head is, on the start roof. The rig does not move.
 function handOff() {
@@ -239,6 +239,12 @@ function handOff() {
   // stepped off the roof in the real room: fade and start on the roof proper
   const tb = city.topBelow(hx, S.y + 0.1, hz, 0.25);
   if (!tb || tb.y < S.y - 0.5) fadeMove(S.x, S.y, S.z);
+  if (G.mode === "desktop" && D.mobile.enabled) {
+    const R = city.goldRing, dx = R.x - P.pos.x, dz = R.z - P.pos.z;
+    G.rigYaw = Math.atan2(-dx, -dz);
+    D.level(Math.atan2(R.y - P.pos.y - COMFORT.standingHead, Math.hypot(dx, dz)));
+    syncRig();
+  }
   const first = !save.intro;
   save.intro = true;
   gameStarted = true;
@@ -259,7 +265,7 @@ function fadeMove(x, y, z) {
     return ui.fade(0, 0.4, look);
   }).catch((e) => { respawning = false; console.error(e); });
 }
-function respawn() { const L = P.lastSafe, s = city.nearestSafe(L.x, L.y, L.z); fadeMove(s.x, s.y, s.z); }
+function respawn() { D.mobile.reset(); const L = P.lastSafe, s = city.nearestSafe(L.x, L.y, L.z); fadeMove(s.x, s.y, s.z); }
 function travel(s) { if (s && Number.isFinite(s.x)) fadeMove(s.x, s.y, s.z); }
 
 function syncPauseState() {
@@ -267,6 +273,7 @@ function syncPauseState() {
   else if (!ui.paused && G.state === "paused") { G.state = G.pausedFrom || "play"; onResume(); }
 }
 function onPause() {
+  D.mobile.reset();
   ropes.setMode("special");
   if (G.mode === "ar") setWorldVisible(false); // passthrough around the pause panel and the diorama
   audio.duck(true);
@@ -295,6 +302,7 @@ let starting = false;
 function onSessionStart(session) {
   G.mode = X.mode;
   lastMode = G.mode;
+  settings.easySwing = false;
   compiledXR = false;
   D.active = false;
   hideTitle();
@@ -343,6 +351,7 @@ function startDesktop() {
   lastMode = "desktop";
   hideTitle();
   D.active = true;
+  settings.easySwing = D.mobile.enabled;
   D.level();
   D.lock();
   flatCamera(75);
@@ -478,6 +487,13 @@ function couple(inp) {
 function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
+    // A tap on a new building switches anchors without a separate release step.
+    if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
+      const next = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
+      if (next?.valid && !ui.blocking(i)) shoot(i, h, next);
+      else D.mobile.miss(true);
+      continue;
+    }
     if (!h.connected || r.state !== "idle") {
       // "toggle" hold (a pause option): the next press lets go instead of the trigger opening
       if (r.state !== "idle" && h.triggerDown && settings.hold === "toggle") toggled[i] = false;
@@ -486,6 +502,7 @@ function aimAndFire(dt, inp) {
     }
     const a = (lastAim[i] = ropes.aim(i, h.aimPos, h.aimDir, P.vel));
     const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked;
+    if (inp.easySwing && i === 1) D.mobile.target(ok, false);
     if (h.triggerDown && !blocked) {
       if (ok) shoot(i, h, a); else fireWait[i] = SWING.fireHold;
     } else if (fireWait[i] > 0) {
@@ -498,11 +515,18 @@ function aimAndFire(dt, inp) {
 function shoot(i, h, a) {
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
+  if (G.input.easySwing && P.onGround) {
+    // Launch only after a valid attach target is found. A miss never jumps off a roof.
+    G.input.jumpDown = true;
+    const dx = a.x - P.pos.x, dz = a.z - P.pos.z, d = Math.hypot(dx, dz);
+    if (d > .01) { P.vel.x += dx / d * 5; P.vel.z += dz / d * 5; }
+  }
   audio.sfx("fire", { pos: h.aimPos });
   haptic(i, 0.2, 20);
   pushRing({ type: "fire", side: i, target: { tag: a.tag, id: a.id } });
 }
 function dryFire(i, h) {
+  if (G.input.easySwing && i === 1) D.mobile.miss();
   ropes.dryFire(i, h.aimPos, h.aimDir);
   audio.sfx("dry", { pos: h.aimPos });
   haptic(i, 0.15, 30);
@@ -530,8 +554,10 @@ function physics(dt, inp) {
     rotY(G.rigYaw, src.velRel.x, src.velRel.z, T);
     o.velRel.x = T.x; o.velRel.y = src.velRel.y; o.velRel.z = T.z;
     o.yank = airYank ? Math.max(src.yank, 2.5) : src.yank;
-    o.grip = src.grip;
-    o.holding = (settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0;
+    const r = P.ropes[i];
+    const autoPull = inp.easySwing && i === 1 && src.holding && r.state === "attached" && r.len > 14 && !r.sticky && r.tension < .65;
+    o.grip = Math.max(src.grip, autoPull ? .72 : 0);
+    o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0;
     o.reeling = false;
   }
   const wasGround = P.onGround;
@@ -568,7 +594,7 @@ function feedback(ev) {
     case "splash": audio.sfx("splash"); respawn(); break;
     case "oob": respawn(); break;
     case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); break;
-    case "snap": audio.sfx("snap", { pos: r.anchor }); break;
+    case "snap": if (G.input.easySwing && i === 1) D.mobile.miss(); audio.sfx("snap", { pos: r.anchor }); break;
   }
 }
 
@@ -747,7 +773,7 @@ function wireTitle() {
     audio.init();
     audioStarted = true;
     note("");
-    if (mode === "desktop") startDesktop(); else startXR(mode);
+    if (mode === "desktop") { D.mobile.start(); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
@@ -769,7 +795,7 @@ function wireTitle() {
       saveNow();
     });
   }
-  if (TOUCH_ONLY) { $("#playFlat").hidden = true; $("#touchNote").hidden = false; }
+  if (TOUCH_ONLY) { $("#playFlat").textContent = "PLAY ON PHONE"; $("#touchNote").hidden = false; }
   const quest = /OculusBrowser|Quest/i.test(navigator.userAgent);
   if (quest && !matchMedia("(display-mode: standalone)").matches) $("#installHint").hidden = false;
   X.supported.then(({ vr, ar }) => {
@@ -780,7 +806,7 @@ function wireTitle() {
     G.supported = { vr, ar };
   });
   // flat play: a click on the city while paused goes back to play
-  renderer.domElement.addEventListener("mousedown", () => {
+  renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
     if (G.state === "paused") { ui.closePause(); D.lock(); }
     else if (!D.locked) D.lock();

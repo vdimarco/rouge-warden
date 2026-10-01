@@ -7,7 +7,7 @@ import { PALETTE } from './palette.js';
 const C = PALETTE;
 // the base every preset starts from: the arena's post values, a night sky and no lights
 const BASE = {
-  ink: 1, crimsonKey: 1, exposure: 1, grade: [1, 1, 1], lift: 0, sat: 1, edge: 0.55, grain: 1, scratch: 1, memory: 0, vig: 1.2,
+  comic: 0, ink: 1, crimsonKey: 1, exposure: 1, grade: [1, 1, 1], lift: 0, sat: 1, edge: 0.55, grain: 1, scratch: 1, memory: 0, vig: 1.2,
   bloomThresh: 0.92, bloomGain: 1, hotColor: 0, hueNeon: 1, neonBoost: 1, hangover: 0, smear: 0, dissolve: 0.08, dissolveUp: 0, skyEdge: 1,
   // fog: colour, near and far (m); view 0 caps far at the tier's day view distance, 1 at the night one (C8)
   fog: { color: C.fogNight, near: 4, far: 260, view: 1 },
@@ -36,6 +36,14 @@ export const PRESETS = Object.freeze({
   MEMORY: merge(DAY, { grade: [1.12, 1.03, 0.86], lift: 0.05, sat: 0.92, memory: 1, vig: 1.35, grain: 0.8, scratch: 0.5, bloomThresh: 0.72, bloomGain: 0.7,
     fog: { color: C.fogMemory }, sky: { tint: [1.06, 1.0, 0.9] } }),
   NIGHT,
+  COMIC: merge(NIGHT, {
+    comic: 1, ink: 0, exposure: 1.05, sat: 1.25, grade: [1.08, 0.94, 1.16], lift: 0.04,
+    edge: 0.32, grain: 0.08, scratch: 0, vig: 0.45, bloomThresh: 0.8, bloomGain: 0.45,
+    fog: { color: 0x211139, near: 12, far: 300 },
+    sky: { top: 0x170826, horizon: 0x572653, tint: [1.1, 0.6, 1.4], bright: 1.15, stars: 1 },
+    key: { color: 0xffcc83, int: 2.4 }, fill: { color: 0x74e6ff, int: 1.0 },
+    hemi: { sky: 0xe06dcb, ground: 0x301b5e, int: 0.75 }, ramp: [45, 100, 190, 255],
+  }),
   MEMORY_NIGHT: merge(NIGHT, { memory: 1, vig: 1.35, grain: 1.2, scratch: 1.2, bloomGain: 1.15 }),
   // the halfway looks of the clock: colour with ink creeping in through the shadows
   DUSK: merge(DAY, { ink: 0.15, skyEdge: 0.5, exposure: 1.25, grade: [1.14, 0.94, 0.82], sat: 1.12, edge: 0.4, grain: 0.6, scratch: 0.2, vig: 1.0, bloomThresh: 0.72, bloomGain: 0.6, dissolve: 0.22,

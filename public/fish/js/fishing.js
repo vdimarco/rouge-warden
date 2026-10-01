@@ -49,3 +49,4 @@ export const fishingOf = (p) => FISHING[typeof p === "string" ? p : p && p.id] |
 export function ecology(id) { const t = fishingOf(id).fish; return SPECIES.filter((s) => !s.legend && t[s.id]).map((s) => [s, { zones: t[s.id].zones, rarity: t[s.id].rarity ?? s.rarity, depth: t[s.id].depth || s.depth, hours: t[s.id].hours || s.hours }]); }
 // every id that can come up here: its fish, its legend, its junk (the world builds these, and frees the rest)
 export function placeSpecies(id) { const F = fishingOf(id); return [...ecology(id).map(([s]) => s.id), F.legend.id, ...F.junk]; }
+

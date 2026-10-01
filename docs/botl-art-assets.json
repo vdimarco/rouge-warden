@@ -6,8 +6,8 @@
   "assets": [
     {
       "file": "public/wild/tex/cottage-facade.webp",
-      "bytes": 970306,
-      "sha256": "f52de2e0a71af89458f43ef1562762adee96a375eca2ca0c79fbaa9b4e44daed"
+      "bytes": 346210,
+      "sha256": "f8b10adf7a1a8d4a6ad9e8fd60daf24310eed504cc9f685cd37dd74b50f01c48"
     },
     {
       "file": "public/wild/tex/cottage-siding.webp",
@@ -44,5 +44,6 @@
       "bytes": 484858,
       "sha256": "fef7ed4ff3ed414a6b406eff2187decbfdd58f88a887bf7ed4ffe66c01166e7f"
     }
-  ]
+  ],
+  "facade_restyle_job": "d3e7d219-c53a-4807-9083-c85e35c81085"
 }

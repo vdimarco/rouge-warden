@@ -60,6 +60,13 @@ vec3 skyColor(vec3 d) {
   c = mix(c, c * vec3(0.9, 0.8, 1.04) + vec3(0.02, 0.0, 0.06), (1.0 - toward) * (1.0 - smoothstep(0.0, 0.7, y)) * 0.75);
   float s = max(dot(d, uSunDir), 0.0);
   c += uGlow * (pow(s, 6.0) * 0.32 + pow(s, 48.0) * 0.4) * (1.0 - 0.5 * smoothstep(0.0, 0.5, y));
+  // Broad cloud banks give the skyline scale, with a warm sunward rim.
+  // Two noise samples avoid a full-screen volumetric pass on phone and headset GPUs.
+  vec2 cloudUV = d.xz / max(d.y + 0.22, 0.08) * 1.4;
+  float cloud = vnoise(cloudUV) * 0.7 + vnoise(cloudUV * 2.8 + 9.1) * 0.3;
+  float bank = smoothstep(0.48, 0.7, cloud) * smoothstep(0.015, 0.18, d.y);
+  vec3 cloudCol = mix(uSkyMid * 0.83, uSkyHor * 0.8 + uGlow * 0.35, toward);
+  c = mix(c, cloudCol, bank * 0.65);
   return c;
 }
 // In the sun or in a shadow, from the map's shadow height over the point: 1 in the sun, 0 in shade, soft at the edge.
@@ -104,7 +111,7 @@ uniform vec3 uFog;
 uniform sampler2D uMap;
 uniform vec4 uMapBox;
 varying vec4 vFog;
-${COMMON.slice(COMMON.indexOf("// The golden-hour sky"), COMMON.indexOf("// Sun (lambert)"))}
+${COMMON.slice(COMMON.indexOf("float hash12"), COMMON.indexOf("// Sun (lambert)"))}
 ${COMMON.slice(COMMON.indexOf("float fogAmount"), COMMON.indexOf("vec3 fogMix"))}
 float sunVisV(vec3 p) {
   vec2 uv = (p.xz - uMapBox.xy) * uMapBox.zw;
@@ -262,7 +269,15 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     // up close: frames, glazing bars, sills and lintels, lamps and curtains in the rooms
     vec2 wl = (f - wr.xy) / (wr.zw - wr.xy);
     vec2 px = fq / (wr.zw - wr.xy);
-    float lamp = 0.72 + 0.4 * wl.y;
+    // View-dependent room depth. Recessed walls and a ceiling slide behind the pane
+    // as the player swings past, without adding geometry or draw calls.
+    vec3 tangent = vec3(N.z, 0.0, -N.x);
+    vec2 roomShift = vec2(dot(V, tangent), V.y) / max(dot(V, N), 0.25) * 0.16;
+    vec2 backUV = (wl - 0.5) * 0.72 + 0.5 - roomShift;
+    float backWall = box2(backUV, vec4(0.08, 0.08, 0.92, 0.92), max(px, vec2(0.008)));
+    float roomDepth = mix(0.42, 1.0, backWall);
+    float ceiling = smoothstep(0.76, 0.94, backUV.y);
+    float lamp = (0.72 + 0.4 * wl.y) * roomDepth * (1.0 - ceiling * 0.28);
     float curtain = step(0.6, fract(r * 31.7)) * (bar(wl.x, 0.0, 0.18 + 0.2 * fract(r * 7.9), px.x) + bar(wl.x, 1.0, 0.12 + 0.2 * fract(r * 3.3), px.x));
     vec3 roomNear = lit > 0.5 ? warm * lamp * (1.0 - 0.45 * clamp(curtain, 0.0, 1.0)) + vec3(0.2, 0.08, 0.06) * clamp(curtain, 0.0, 1.0) * lit : dark * (0.8 + 0.6 * wl.y);
     if (glassy && lit > 0.5) roomNear = mix(roomNear, vec3(0.62, 0.6, 0.56) * 0.7, step(0.72, wl.y) * step(0.5, fract(r * 5.1)));
@@ -439,8 +454,11 @@ void main() {
     float fl = fract(az * 24.0 / 6.2832);
     float ffw = fwidth(az * 24.0 / 6.2832);
     float flute = mix(0.5, smoothstep(0.1, 0.5, abs(fl - 0.5)), 1.0 - smoothstep(0.2, 0.6, ffw));
-    vec3 alb = vec3(0.78, 0.74, 0.68) * (0.92 + 0.1 * flute) * (0.94 + 0.08 * vnoise(vec2(az * 3.0, vW.y * 0.05)));
+    vec3 alb = vec3(0.86, 0.83, 0.76) * (0.92 + 0.1 * flute) * (0.94 + 0.08 * vnoise(vec2(az * 3.0, vW.y * 0.05)));
+    // Three vertical elevator ribbons emphasize the tower's height.
+    float lift = aaLine(fract((az - .3) * 3.0 / 6.2832) - .5, .022, fwidth(az * 3.0 / 6.2832));
     col = shade(alb, N, vis);
+    col = mix(col, skyColor(reflect(-V, N)) * .65 + vec3(.08,.16,.19), lift * .85);
   } else if (k == 11) {
     // the pod's concrete, with a dark reveal line every few metres
     float rv = aaLine(fract(vW.y / 4.0) - 0.5, 0.03, fwidth(vW.y / 4.0));
@@ -457,7 +475,7 @@ void main() {
     float fres = 0.12 + 0.88 * pow(1.0 - max(dot(N, V), 0.0), 4.0);
     float pulse = 0.75 + 0.25 * sin(uTime * 3.0);
     vec3 glow = mix(vec3(1.0, 0.76, 0.46), vec3(0.35, 1.0, 0.25) * pulse, uKing);
-    vec3 inter = glow * (0.75 + 0.25 * uFinale + 0.4 * uKing);
+    vec3 inter = mix(vec3(.12,.23,.28), glow * .76, .42 + .18 * sin(az * 13.0)) * (1.0 + 0.25 * uFinale + 0.4 * uKing);
     col = mix(inter * (1.0 - fres) + skyColor(R) * fres * 0.8, vec3(0.2, 0.2, 0.22), mull * 0.85 + floorLine * 0.6);
   } else if (k == 13) {
     // collars and the deck: metal, with a ring of warm lights on the rim
@@ -472,6 +490,8 @@ void main() {
     float bq = vW.y / 6.0, bfw = fwidth(bq);
     float band = mix(0.5, smoothstep(0.5 - bfw, 0.5 + bfw, fract(bq)), 1.0 - smoothstep(0.2, 0.5, bfw)) * step(330.0, vW.y);
     col = shade(mix(vec3(0.58, 0.58, 0.6), vec3(0.75, 0.16, 0.12), band), N, vis);
+  } else if (k == 15) {
+    col = shade(vec3(.12,.16,.18), N, vis) + skyColor(reflect(-V,N)) * .15;
   } else if (k == 16 || k == 17) {
     // the Dome: pale roof panels on ribs, arched openings round the base
     float a = atan(vW.z - uDome.y, vW.x - uDome.x);
@@ -1642,12 +1662,13 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---------------- 4. the Needle, the Dome, the expressway ---------------- */
   const beacons = [];
   const lb = Buf({ aKind: 1 }, 16384);
+  const needleBuffer = Buf({ aKind: 1 }, 16384);
   // the King's perch: a gold plinth on the pod roof, on the side that faces the start (known before the build)
   const perchR = 9.5, perchA = Math.atan2(S0.z - N0.z, S0.x - N0.x);
   perch.x = N0.x + Math.cos(perchA) * perchR; perch.z = N0.z + Math.sin(perchA) * perchR; perch.y = N0.podY1 + 1.1;
   perch.yaw = Math.atan2(-(S0.x - perch.x), -(S0.z - perch.z));
   function buildNeedle(part) {
-    const b = lb;
+    const b = needleBuffer;
     const N = N0, R = N.shaftR;
     if (part === 2) { needleLegs(b, N, R); return; }
     const dr = N.deck.r, dy = N.deck.y;
@@ -1673,9 +1694,18 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // the pod: a wall, the window band, a sloped top, the roof the King sits on; the antenna; the perch
   function needlePod(b, N, dr, dy) {
     const pr = N.podR, p0 = N.podY0, p1 = N.podY1;
-    lathe(b, [[dr - 0.35, dy, 11], [pr, p0 + 0.2, 11], [pr + 0.3, p0 + 3, 11], [pr + 0.3, p0 + 7, 12], [pr + 0.3, p0 + 17, 11], [pr + 0.3, p1 - 2.5, 11], [pr - 1, p1, 11], [4, p1, 11], [3.4, p1 + 0.6, 14]], 48, N.x, N.z);
-    // the antenna: a mast to 322, a thin spike to the top
-    lathe(b, [[3.4, p1 + 0.6, 14], [3.2, 322, 14], [1.5, 322.4, 14], [1.4, N.top - 2, 14], [0.25, N.top, 14]], 16, N.x, N.z);
+    // A tapered observation saucer with two continuous glazing bands and a thin crown.
+    lathe(b, [[N.shaftR, dy - 5, 11], [pr - 2, p0 + .2, 11],
+      [pr + .3, p0 + 3, 13], [pr + .3, p0 + 3.6, 12], [pr + .3, p0 + 9, 12],
+      [pr + .65, p0 + 9.3, 13], [pr + .65, p0 + 10.1, 13],
+      [pr + .1, p0 + 10.5, 12], [pr - .6, p0 + 17.5, 12],
+      [pr - 1, p0 + 18.2, 13], [pr - 2.5, p1 - 1, 11],
+      [pr - 4.5, p1, 11], [4, p1, 11], [3.4, p1 + .6, 14]], 96, N.x, N.z);
+    // Upper SkyPod, steel mast shoulders and the red-white broadcast antenna.
+    lathe(b, [[3.4, p1 + .6, 10], [3.0, 310, 10], [5.8, 311.5, 13],
+      [6.2, 313, 12], [6.2, 315.2, 12], [5.4, 316, 13],
+      [2.7, 317, 14], [2.3, 325, 14], [1.5, 326, 14],
+      [1.05, N.top - 4, 14], [.22, N.top, 14]], 48, N.x, N.z);
     lathe(b, [[5.2, p1, 21], [5.2, p1 + 0.6, 21], [4.6, p1 + 1.1, 21], [0, p1 + 1.1, 21]], 24, perch.x, perch.z);
     for (const y of [300, 322.6, 341, N.top + 0.3]) beacons.push([N.x, y, N.z, 1.4]);
   }
@@ -1685,8 +1715,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
       const a = (j / 3) * Math.PI * 2 + 0.3, ca = Math.cos(a), sa = Math.sin(a), th = 0.8;
       const px = -sa * th, pz = ca * th; // across the leg
       const P = (r, y, side) => [N.x + ca * r + px * side, y, N.z + sa * r + pz * side];
-      const top = 150, rOut = (y) => R + 4.5 * Math.pow(1 - y / top, 1.3);
-      const steps = 6;
+      const top = N.deck.y - 9, rOut = (y) => R + 8.5 * Math.pow(1 - y / top, 1.7);
+      const steps = 18;
       for (let s = 0; s < steps; s++) {
         const ya = (s / steps) * top, yb = ((s + 1) / steps) * top, ra = rOut(ya), rb = rOut(yb);
         const nOut = [ca, (ra - rb) / (yb - ya), sa], l = Math.hypot(...nOut);
@@ -1695,6 +1725,48 @@ export function createCityView(renderer, scene, city, opts = {}) {
         quad(b, [P(ra, ya, -1), P(R - 0.5, ya, -1), P(R - 0.5, yb, -1), P(rb, yb, -1)], [sa, 0, -ca], { aKind: [10] });
       }
     }
+  }
+  // Higgsfield 3D Jutsu revision 2. Batch its semantic parts into our landmark
+  // shader, preserving sunset reflections, fog and a single draw call.
+  async function loadTower(fallback) {
+    try {
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const gltf = await new GLTFLoader().loadAsync(new URL("../models/cn-tower.glb", import.meta.url).href);
+      gltf.scene.updateMatrixWorld(true);
+      const b = Buf({ aKind: 1 }, 16384), N = N0;
+      const levels = [[0,0],[325,N.deck.y-9],[340,N.podY0],[361,N.podY1],[505,322],[553,N.top]];
+      const height = y => {
+        let i=1; while(i<levels.length-1 && y>levels[i][0]) i++;
+        const [a,u]=levels[i-1], [z,v]=levels[i]; return u+(v-u)*(y-a)/(z-a);
+      };
+      gltf.scene.traverse(o => {
+        if (!o.isMesh) return;
+        const g=o.geometry.clone().applyMatrix4(o.matrixWorld), p=g.attributes.position;
+        for(let i=0;i<p.count;i++) {
+          const y=p.getY(i);
+          const scale=/Tapered_central/.test(o.name) && y<=325 ? N.shaftR/Math.max(.001,Math.hypot(p.getX(i),p.getZ(i))) : N.podR/22;
+          p.setXYZ(i,N.x+p.getX(i)*scale,height(y),N.z+p.getZ(i)*scale);
+        }
+        g.computeVertexNormals();
+        const name=o.material.name;
+        const kind=/Antenna_band/i.test(o.name)?14:/glass/i.test(name)?12:/graphite/i.test(name)?15:/red/i.test(name)?14:/aluminum/i.test(name)?13:10;
+        const normals=g.attributes.normal, offset=b.v;
+        reserve(b,p.count,g.index?g.index.count:p.count);
+        for(let i=0;i<p.count;i++) {
+          const v=vtx(b,p.getX(i),p.getY(i),p.getZ(i),normals.getX(i),normals.getY(i),normals.getZ(i));
+          b.x.aKind.a[v]=kind;
+        }
+        for(let i=0;i<(g.index?g.index.count:p.count);i++) b.i[b.ni++]=offset+(g.index?g.index.getX(i):i);
+        g.dispose();o.geometry.dispose();o.material.dispose();
+      });
+      if(!b.v) throw new Error("CN Tower model contains no mesh");
+      // Playable collar ledges, deck and King's perch retain their collision dimensions.
+      for(const C of N.collars) lathe(b,[[N.shaftR-.1,C.y-.75,13],[C.r,C.y-.75,13],[C.r,C.y+.75,13],[N.shaftR-.1,C.y+.75,13]],32,N.x,N.z);
+      lathe(b,[[N.shaftR,N.deck.y-1,13],[N.deck.r,N.deck.y-1,13],[N.deck.r,N.deck.y,13],[N.shaftR,N.deck.y,13]],64,N.x,N.z);
+      lathe(b,[[5.2,N.podY1,21],[5.2,N.podY1+.6,21],[4.6,N.podY1+1.1,21],[0,N.podY1+1.1,21]],24,perch.x,perch.z);
+      const mesh=add(new THREE.Mesh(finish(b),landMat));mesh.name="CN Tower Higgsfield";
+      root.remove(fallback);staticTris-=fallback.userData.tris;info.meshes--;fallback.geometry.dispose();
+    } catch(error) { console.warn("CN Tower model unavailable; retaining built-in tower",error); }
   }
   // the Dome: a ribbed half-shell, arches round its foot
   function buildDome() {
@@ -1719,6 +1791,9 @@ export function createCityView(renderer, scene, city, opts = {}) {
       return;
     }
     if (part === 2) {
+      const fallback = add(new THREE.Mesh(finish(needleBuffer), landMat));
+      fallback.name = "CN Tower fallback";
+      loadTower(fallback);
       const m = new THREE.Mesh(finish(b), landMat);
       m.frustumCulled = false;
       add(m, 0);

@@ -202,3 +202,4 @@ console.log("\nRobustness");
 
 console.log(fails.length ? `\n${fails.length} check(s) failed` : "\nAll place map checks passed");
 process.exit(fails.length ? 1 : 0);
+

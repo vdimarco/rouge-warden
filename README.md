@@ -6,7 +6,7 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rogue at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
@@ -182,9 +182,9 @@ On a phone, the left thumb moves, and pulling down on the stick while you hit in
 
 The game fits the screen on desktop and phone. Menus never shrink their text: a menu too tall for the screen flows into two columns, and on a narrow phone it scrolls inside the screen.
 
-## Crimson Rouge
+## Crimson Rogue
 
-Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
+Crimson Rogue is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
 
 - **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
 - **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab (he hauls you over his head and throws you) or his bear call: he pulls out a PVC pipe and roars down it, and neon sound rings blow you off your feet. Dodge through both.
@@ -252,7 +252,7 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 
 Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The Legend of Zelda: Breath of the Wild, with a soft, hand-painted look like a Studio Ghibli film. The Porcelain King clogged Loon Lake. His sludge took Gabe, Christian, and Ryu, and gave them red eyes. You wake up at the cottage and go get them back.
 
-- **A painted lakeside world.** Higgsfield-generated cottage, wood, linen, roof, foliage, sky and meadow artwork is mapped onto real 3D geometry. Raised window frames, a shingled roof, curved furniture and an open pergola catch the sunlight. Leaf clusters sway on instanced trees, while the painted sky yields to sunset, night and the King’s storm. Imported models retain surface maps, and nearby textures stay sharp. The cottage remains a solid, climbable building. Asset provenance and rendering notes are in [docs/botl-art.md](docs/botl-art.md).
+- **A painted lakeside world.** Higgsfield-generated cottage, wood, linen, roof, foliage, sky and meadow artwork is mapped onto real 3D geometry. Raised window frames, a shingled roof, curved furniture and an open pergola catch the sunlight. Leaf clusters sway on instanced trees, while the painted sky yields to sunset, night and the King’s storm. Characters, cottage and foliage share soft cel shading, warm directional sunlight and cool skylight; simpler ground color shapes and drawn outlines give the game a cartoon aesthetic. The cottage remains a solid, climbable building. Asset provenance and rendering notes are in [docs/botl-art.md](docs/botl-art.md).
 - **Go anywhere.** The valley is about 1.6 km across: the cottage on the south shore, the pine forest to the west, the meadows to the east, and the mountains to the north. A short dock at the cottage has a kayak tied to it. Paddle it out to Clog Island.
 - **Climb anything.** Walk into a cliff, a tower, or a building, and you grab on. You climb hand over hand in pulls, lean into rock faces, and pull yourself up over the top edge. Climbing uses stamina.
 - **Glide.** Jump, then jump again in the air to open a beach umbrella. A campfire under you pushes you up.
@@ -421,14 +421,14 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/plungerd/art/` | The painted ground, walls, critters, props, guns, shots, and effects. Each file also comes at half size (`.sd.webp`) for phones |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
-| `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rouge: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
-| `public/crimson/js/` | Crimson Rouge modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
+| `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rogue: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
+| `public/crimson/js/` | Crimson Rogue modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
 | `public/crimson/models/` | The ronin, Gabe, and the bear: textured, rigged, with their clips |
-| `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
+| `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rogue |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
-| `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
-| `public/crimson/js/story/` | Crimson Rouge story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
-| `qa/crimson/` | Playwright tests for Crimson Rouge (see below) |
+| `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rogue |
+| `public/crimson/js/story/` | Crimson Rogue story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
+| `qa/crimson/` | Playwright tests for Crimson Rogue (see below) |
 | `higgsfield/` | Command-line tools that run Higgsfield API models. The key stays in a git-ignored `.env.local` |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, its hero cards, and the Painted-mode pixel sprites (`pxcrew*.webp` for the crew, `px_*.webp` walk, walk, and attack strips for the critters and bosses) |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
@@ -460,7 +460,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
 
-### Crimson Rouge tests
+### Crimson Rogue tests
 
 Serve `public/` (for example `python3 -m http.server 8765 --directory public`), set `CRIMSON_URL=http://127.0.0.1:8765/crimson/`, then run each script with Node from the repo root. Each one exits with code 1 when something fails.
 
@@ -553,3 +553,9 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 `api/warden.js` signs in to AI Gateway with the project's Vercel OIDC token, so the repo holds no API key. To use a gateway key instead, set `AI_GATEWAY_API_KEY`. To pin a model, set `JEV_MODEL` (the default is `typesafe-ai/jev`).
 
 `/api/warden` is public and spends AI Gateway credits. It accepts calls only from `*.vercel.app` origins and caps the request size. For stronger protection, add a rate-limit rule in the Vercel Firewall.
+
+## Cottage Brawl platform fighter
+
+The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
+
+
