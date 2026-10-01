@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3E9D6">
+<link rel="icon" href="data:,">
+<title>Breakthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand">
+      <p class="kicker" id="turn-label">Turn 1 of 12</p>
+      <h1>Breakthrough</h1>
+    </div>
+    <div class="top-actions">
+      <p id="seedline">Seed</p>
+      <button type="button" id="help" aria-label="How to play">?</button>
+    </div>
+  </header>
+  <div id="mapwrap">
+    <canvas id="map" width="900" height="525" aria-hidden="true"></canvas>
+    <p id="yearchip">2026</p>
+    <div id="flash" hidden>
+      <p id="flash-year"></p>
+      <p id="flash-line"></p>
+    </div>
+  </div>
+  <section id="hud" aria-label="World meters">
+    <div id="warm">
+      <span id="warm-now">1.4° now</span>
+      <span id="warm-chase">Chasing 2.2°</span>
+      <span id="warm-proj">2.4° by 2100</span>
+    </div>
+    <div id="meters">
+      <div class="meter" data-k="emissions"><span>Emissions</span><i></i><b class="num">0</b></div>
+      <div class="meter" data-k="energy"><span>Energy</span><i></i><b class="num">0</b></div>
+      <div class="meter" data-k="prosperity"><span>Prosperity</span><i></i><b class="num">0</b></div>
+      <div class="meter" data-k="ecology"><span>Ecology</span><i></i><b class="num">0</b></div>
+      <div class="meter" data-k="trust"><span>Trust</span><i></i><b class="num">0</b></div>
+    </div>
+    <p id="resources">Cap 0 · Lab 0 · Pol 0 · Ind 0</p>
+  </section>
+  <section id="sheet">
+    <div id="news" hidden>
+      <h2 id="news-title"></h2>
+      <p id="news-text"></p>
+      <div id="news-options"></div>
+    </div>
+    <div id="hand" aria-label="Breakthroughs"></div>
+    <div id="lab">
+      <div class="lab-head">
+        <h2>Idea Lab</h2>
+        <p id="lab-note"></p>
+      </div>
+      <div id="ideas"></div>
+    </div>
+    <button type="button" id="pass" data-choice="pass">Hold steady</button>
+    <p id="note" aria-live="polite"></p>
+  </section>
+  <div id="title">
+    <p class="kicker">2026 to 2100</p>
+    <h2>Breakthrough</h2>
+    <p class="lede">Steward a century. One card a turn. The heat arrives late.</p>
+    <button type="button" id="start">Begin the century</button>
+    <button type="button" id="howto-open" class="ghost">How to play</button>
+    <p id="title-seed"></p>
+    <p id="seed-warn" hidden>Bad seed, using random</p>
+  </div>
+  <div id="howto" hidden>
+    <div class="panel">
+      <h2>How to play</h2>
+      <p>Twelve turns carry the world from 2026 to 2100. A step can be 6 years or 10. The longer step moves the climate more.</p>
+      <p>Each turn, play one breakthrough. Three are dealt, plus the Idea Lab when it is open.</p>
+      <p>Warming chases a target set by emissions and the land. It does not jump to the target. You always see the heat now and the heat projected for 2100.</p>
+      <p>Costly energy drags prosperity and stirs resistance. Growth pushes emissions unless you break that link. A living landscape stores carbon. Low trust softens a law and raises its political price.</p>
+      <p>The Idea Lab is one wild card every three turns. There is no reroll. A card you cannot pay for stays dim.</p>
+      <p>The run ends in an alternate history, with the timeline of what you chose.</p>
+      <button type="button" id="howto-close">Close</button>
+    </div>
+  </div>
+  <div id="ending" hidden>
+    <p class="kicker" id="end-kicker">2100</p>
+    <h2 id="end-name"></h2>
+    <p id="end-blurb"></p>
+    <p id="end-stats"></p>
+    <p id="end-seed"></p>
+    <ol id="timeline"></ol>
+    <button type="button" id="again">Play again</button>
+  </div>
+</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>
