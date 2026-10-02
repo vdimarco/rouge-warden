@@ -1,0 +1,5 @@
+- [x] Add painted atlases for all twelve heroes.
+- [x] Match the supplied spellbook and bound all sheets to the viewport.
+- [x] Add real direct-upgrade buttons with separate cast input.
+- [x] Verify skill rules, artwork coverage and browser interactions.
+- [x] Review and archive canonical requirements.
