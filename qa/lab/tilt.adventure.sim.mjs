@@ -212,14 +212,15 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 {
   for (const seed of [1, 8, 21]) {
     const run = createAdventure(seed), events = {};
-    let farthest = 0;
-    for (let i = 0; i < 240 * 120; i++) {
+    let farthest = 0, playTicks = 0;
+    for (let i = 0; i < 360 * 120; i++) {
       if (run.phase === 'ready') launchAdventure(run, 0.75);
       if (run.phase === 'upgrade') chooseUpgrade(run, run.lives < 3 ? 'shield' : 'pulse');
       if (run.phase === 'play') {
         const b = run.world.ball, s = currentSector(run);
-        for (const side of [-1, 1]) setFlip(run.world, side, b.y < s.y + 360 && b.vy < 100 && i % 36 < 16);
+        for (const side of [-1, 1]) setFlip(run.world, side, b.y < s.y + 360 && b.vy < 100 && playTicks % 36 < 16);
         if (run.pulseCooldown <= 0) pulseAdventure(run);
+        playTicks++;
       }
       updateAdventure(run);
       const b = run.world.ball;

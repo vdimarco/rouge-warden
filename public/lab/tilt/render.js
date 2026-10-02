@@ -1,9 +1,10 @@
 import { createCamera, updateCamera, worldToScreen, screenToWorld, clamp } from './camera.js';
 import { F } from './physics.js';
-import { FIELD_DURATION, FIELD_RADIUS } from './adventure.js';
+import { FIELD_DURATION, FIELD_RADIUS, RALLY_POWER } from './adventure.js';
 import { sampleTransit, visibleSectorIds, galaxyNode, transitEase } from './transit.js';
 import { makeGalaxyTexture, makeOrbitDust } from './cosmic-textures.js';
 import { projectWarpRing } from './warp-surf.js';
+import { asteroidPose } from './asteroids.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
@@ -98,7 +99,7 @@ export function createRenderer(canvas, minimap) {
   const dust = new Map();
   let galaxyTexture = null;
   let width = 1, height = 1, dpr = 1, mapW = 156, mapH = 116;
-  let lastWorld = null, reducedMotion = false, lastFlight = null;
+  let lastWorld = null, reducedMotion = false, lastFlight = null, lastClock = null;
   const stars = Array.from({ length: 680 }, (_, i) => ({ x: rand(i * 3 + 1) * 4200 - 300, y: rand(i * 3 + 2) * 3400 - 300, r: 0.6 + rand(i * 3 + 3) * 1.7, a: 0.17 + rand(i * 7) * 0.55 }));
 
   function resize() {
@@ -155,6 +156,21 @@ export function createRenderer(canvas, minimap) {
     const x = event.x ?? run?.world?.ball?.x ?? 0;
     const y = event.y ?? run?.world?.ball?.y ?? 0;
     const fieldEvent = type === 'field-deploy' || type === 'field-expire';
+    const rallyEvent = ['strike', 'asteroid-break', 'return'].includes(type);
+    if (rallyEvent && !reducedMotion) {
+      const returning = type === 'return';
+      const blade = returning && run?.world?.flippers?.find(f => f.sector === run.sectorIndex && f.side === event.side);
+      const fx = blade ? blade.px + Math.cos(blade.th) * blade.len * .6 : x;
+      const fy = blade ? blade.py + 42 : y;
+      const smash = type === 'asteroid-break', color = returning ? '#9debdc' : '#ffdc96';
+      rings.push({ x: fx, y: fy, age: 0, life: smash ? .48 : .36, r: smash ? 100 : 52, color });
+      if (!returning) for (let i = 0; i < (smash ? 18 : 7); i++) {
+        const angle = rand(i + x + y) * TAU, speed = 95 + rand(i * 7 + x) * (smash ? 310 : 140);
+        particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          age: 0, life: .3 + rand(i + y) * .45, color: i % 3 ? '#eeb66e' : '#fff0c0',
+          size: smash ? 2 + rand(i + x) * 3.2 : 1.8, shard: smash, angle });
+      }
+    }
     const color = fieldEvent ? FIELD_COLORS[event.kind] || FIELD_COLORS.pull : type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
     const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy'].includes(type);
     if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
@@ -325,9 +341,41 @@ export function createRenderer(canvas, minimap) {
     if (active && (planet.kind === 'repel' || planet.kind === 'tide')) label(planet.kind === 'repel' ? 'REPULSION' : 'GRAVITY TIDE', x, y - r - 34, color, 10);
   }
 
-  function asteroid(b, index, color) {
-    if (!visible(b.x, b.y, b.r * 1.3)) return;
-    g.save(); g.translate(b.x, b.y); g.rotate((rand(index * 13) - .5) * .9);
+  function asteroid(b, index) {
+    if (b.active === false && !(b.warningRemaining > 0)) return;
+    if (!visible(b.x, b.y, b.r + 80)) return;
+    const scale = Math.max(.65, camera.scale);
+    if (b.active === false) {
+      // Hollow brackets announce a future body. Never show a solid mineral or
+      // include this ghost in the collision forecast before it becomes active.
+      g.save(); g.translate(b.x, b.y); g.strokeStyle = '#ffd098';
+      g.lineWidth = 1.3 / scale; g.globalAlpha = .72;
+      g.setLineDash([4 / scale, 6 / scale]); circle(g, 0, 0, b.r + 7); g.stroke(); g.setLineDash([]);
+      for (let i = 0; i < 4; i++) {
+        const angle = i * Math.PI / 2 + Math.PI / 4;
+        g.beginPath(); g.arc(0, 0, b.r + 15, angle - .2, angle + .2); g.stroke();
+      }
+      g.beginPath(); g.moveTo(0, -5 / scale); g.lineTo(0, 7 / scale); g.stroke();
+      circle(g, 0, -10 / scale, 1.4 / scale); g.fillStyle = '#ffd098'; g.fill();
+      g.restore(); return;
+    }
+    g.save(); g.translate(b.x, b.y);
+    const speed = Math.hypot(b.vx || 0, b.vy || 0);
+    if (b.dynamic && !reducedMotion && speed > 8) {
+      const nx = b.vx / speed, ny = b.vy / speed;
+      const length = Math.min(50, 12 + speed * .32);
+      g.strokeStyle = '#bed2df'; g.lineWidth = 1 / scale; g.lineCap = 'round';
+      for (let lane = -1; lane <= 1; lane++) {
+        const offset = lane * b.r * .43, back = b.r * .9;
+        g.globalAlpha = lane ? .15 : .26;
+        g.beginPath(); g.moveTo(-nx * back - ny * offset, -ny * back + nx * offset);
+        g.lineTo(-nx * (back + length * (lane ? .65 : 1)) - ny * offset,
+          -ny * (back + length * (lane ? .65 : 1)) + nx * offset); g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    const spin = b.dynamic && !reducedMotion ? (b.pathTime || 0) * (.13 + rand(index) * .12) * (index % 2 ? -1 : 1) : 0;
+    g.rotate((rand(index * 13) - .5) * .9 + spin);
     if (assets.organic) {
       organicSprite(['stone', 'iron', 'ice'][index % 3], 0, 0, b.r * 1.03);
       g.restore(); return;
@@ -475,10 +523,27 @@ export function createRenderer(canvas, minimap) {
 
   function flippers(run) {
     for (const f of run.world.flippers || []) {
-      if (f.sector !== run.sectorIndex || !visible(f.px, f.py, f.len + 30)) continue;
+      if (f.sector !== run.sectorIndex || !visible(f.px, f.py, f.len + 90)) continue;
       const tx = f.px + Math.cos(f.th) * f.len, ty = f.py + Math.sin(f.th) * f.len;
       const nx = -Math.sin(f.th), ny = Math.cos(f.th);
       g.save(); g.globalAlpha = 1;
+      const receiving = run.phase === 'play' && run.rally?.returning && run.rally.side === f.side;
+      if (receiving) {
+        const x = f.px + Math.cos(f.rest) * f.len * .6;
+        const scale = Math.max(.7, camera.scale);
+        // A short approach cue points at the actual receiving blade. No line
+        // claims the ball must follow a fixed path through the moving field.
+        g.strokeStyle = '#a3f1da'; g.lineWidth = 1.8 / scale; g.lineCap = 'round';
+        for (let i = 0; i < 3; i++) {
+          const y = f.py + 80 + i * 38, reach = (9 - i) / scale;
+          g.globalAlpha = .75 - i * .2;
+          g.beginPath(); g.moveTo(x - reach, y + reach * .55); g.lineTo(x, y - reach * .55);
+          g.lineTo(x + reach, y + reach * .55); g.stroke();
+        }
+        g.globalAlpha = .18; g.lineWidth = f.r1 * 2 + 18;
+        g.beginPath(); g.moveTo(f.px, f.py); g.lineTo(tx, ty); g.stroke();
+        g.globalAlpha = 1;
+      }
       // A gravity scoop curls under the physical paddle and guides the ball up.
       // Its motion uses physics time so Pause freezes the complete recovery cue.
       if (f.reverseFx > 0) {
@@ -585,8 +650,8 @@ export function createRenderer(canvas, minimap) {
     // later player inputs change the path, so this remains a short local guide.
     const dt = Math.min(0.025, 30 / speed), points = [];
     const isActive = object => !run.table.isActive || run.table.isActive(object);
-    const circles = [...run.table.posts, ...run.table.bumpers].filter(c => isActive(c)
-      && Math.hypot(c.x - ball.x, c.y - ball.y) < 850 + c.r);
+    const circles = [...run.table.posts, ...run.table.bumpers].filter(c => isActive(c) && c.active !== false
+      && Math.hypot(c.x - ball.x, c.y - ball.y) < 950 + c.r);
     const walls = run.table.walls.filter(s => isActive(s) && s.enabled !== false && (!s.drop || s.drop.up));
     const flippers = run.world.flippers.filter(isActive), maxSpeed = run.table.maxSpeed ?? F.V_MAX;
     const distanceToSegment = (x, y, ax, ay, bx, by) => {
@@ -612,7 +677,14 @@ export function createRenderer(canvas, minimap) {
       if (magnitude > maxSpeed) { probe.vx *= maxSpeed / magnitude; probe.vy *= maxSpeed / magnitude; }
       probe.x += probe.vx * dt; probe.y += probe.vy * dt;
       probe.vx *= 1 - F.ROLL_DAMP * dt; probe.vy *= 1 - F.ROLL_DAMP * dt;
-      const hitBody = circles.some(c => distanceToSegment(c.x, c.y, previous.x, previous.y, probe.x, probe.y) < c.r + 13.5);
+      const hitBody = circles.some(c => {
+        if (!c.asteroid || !c.dynamic) return distanceToSegment(c.x, c.y, previous.x, previous.y, probe.x, probe.y) < c.r + 13.5;
+        // Sweep in the rock's frame at each future interval. Testing its
+        // current position would draw a false path through a crossing asteroid.
+        const before = asteroidPose(c, i * dt), after = asteroidPose(c, (i + 1) * dt);
+        return distanceToSegment(0, 0, previous.x - before.x, previous.y - before.y,
+          probe.x - after.x, probe.y - after.y) < c.r + 13.5;
+      });
       const hitWall = walls.some(s => {
         const a = point(s.a), b = point(s.b);
         return distanceToSegment(probe.x, probe.y, a[0], a[1], b[0], b[1]) < 14
@@ -633,6 +705,7 @@ export function createRenderer(canvas, minimap) {
   function drawBall(run, dt, charge) {
     const b = run.world.ball, r = 13.5;
     const moving = ['play', 'flight'].includes(run.phase);
+    const powered = run.phase === 'play' && run.rally?.powerRemaining > 0;
     if (moving && !reducedMotion) {
       const previous = trail.at(-1);
       if (!previous || Math.hypot(previous.x - b.x, previous.y - b.y) > 7) trail.push({ x: b.x, y: b.y, age: 0 });
@@ -645,16 +718,26 @@ export function createRenderer(canvas, minimap) {
       for (let i = 1; i <= trail.length; i++) {
         if (i < trail.length && Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y) <= 180) continue;
         plasmaRibbon(g, trail.slice(start, i), { width: r * 1.05, taper: 'comet', core: 2.1,
-          color: '#83e9fa', rim: '#798aec', alpha: .82, clock: run.clock || 0, grains: 0 });
+          color: powered ? '#ffdfa1' : '#83e9fa', rim: powered ? '#e88c55' : '#798aec',
+          alpha: powered ? .95 : .82, clock: run.clock || 0, grains: 0 });
         start = i;
       }
     }
     const aura = g.createRadialGradient(b.x, b.y, r * 0.3, b.x, b.y, r * 3.5);
-    aura.addColorStop(0, '#f7ffffaa'); aura.addColorStop(0.25, '#99eaff70'); aura.addColorStop(1, '#6dcfff00');
+    aura.addColorStop(0, powered ? '#fff4d0cc' : '#f7ffffaa');
+    aura.addColorStop(0.25, powered ? '#ffc46d90' : '#99eaff70'); aura.addColorStop(1, powered ? '#f9a14c00' : '#6dcfff00');
     g.fillStyle = aura; circle(g, b.x, b.y, r * 3.5); g.fill();
     const sphere = g.createRadialGradient(b.x - r * 0.35, b.y + r * 0.35, r * 0.1, b.x, b.y, r * 1.06);
     sphere.addColorStop(0, '#ffffff'); sphere.addColorStop(0.35, '#dcf9ff'); sphere.addColorStop(0.7, '#7eabbf'); sphere.addColorStop(1, '#214c72');
     g.fillStyle = sphere; circle(g, b.x, b.y, r); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 1.4; g.stroke();
+    if (powered) {
+      const radius = r + 8 / Math.max(.65, camera.scale);
+      g.strokeStyle = '#ffc98745'; g.lineWidth = 1.3 / Math.max(.65, camera.scale);
+      circle(g, b.x, b.y, radius); g.stroke();
+      g.strokeStyle = '#ffe9b2'; g.lineWidth = 2 / Math.max(.65, camera.scale);
+      g.beginPath(); g.arc(b.x, b.y, radius, Math.PI / 2,
+        Math.PI / 2 + TAU * clamp(run.rally.powerRemaining / RALLY_POWER, 0, 1)); g.stroke();
+    }
     if (run.phase === 'ready' && charge > 0) {
       circle(g, b.x, b.y, 28 + charge * 9); g.strokeStyle = '#ffe9a9'; g.lineWidth = 3;
       g.beginPath(); g.arc(b.x, b.y, 28 + charge * 9, -Math.PI / 2, -Math.PI / 2 + charge * TAU); g.stroke();
@@ -667,7 +750,11 @@ export function createRenderer(canvas, minimap) {
       if (p.age >= p.life) { particles.splice(i, 1); continue; }
       p.x += p.vx * dt; p.y += p.vy * dt;
       g.globalAlpha = 1 - p.age / p.life; g.fillStyle = p.color;
-      circle(g, p.x, p.y, p.size); g.fill();
+      if (p.shard) {
+        g.save(); g.translate(p.x, p.y); g.rotate(p.angle + p.age * 2);
+        g.beginPath(); g.moveTo(-p.size, -p.size * .4); g.lineTo(p.size * 1.4, 0);
+        g.lineTo(-p.size * .3, p.size * .7); g.closePath(); g.fill(); g.restore();
+      } else { circle(g, p.x, p.y, p.size); g.fill(); }
     }
     for (let i = rings.length - 1; i >= 0; i--) {
       const p = rings[i]; p.age += dt;
@@ -1060,7 +1147,15 @@ export function createRenderer(canvas, minimap) {
     if (!run?.world?.ball || !run?.table) return;
     const elapsed = clamp(dt, 0, 0.08);
     reducedMotion = Boolean(options.reducedMotion);
-    if (lastWorld !== run.world) { trail.length = 0; particles.length = 0; rings.length = 0; lastWorld = run.world; }
+    if (lastWorld !== run.world) {
+      trail.length = 0; particles.length = 0; rings.length = 0;
+      lastWorld = run.world; lastClock = run.clock || 0;
+    }
+    // Effect ages share the simulation clock. Menus, Pause and field placement
+    // cannot advance a burst or leave its tail drifting behind a frozen ball.
+    const effectElapsed = options.freezeCamera ? 0 : clamp((run.clock || 0) - (lastClock ?? run.clock ?? 0), 0, .08);
+    lastClock = run.clock || 0;
+    if (reducedMotion) { trail.length = 0; particles.length = 0; }
     if (!options.freezeCamera || !camera.initialized || camera.world !== run.world) {
       updateCamera(camera, run, elapsed, options);
     } else {
@@ -1119,7 +1214,7 @@ export function createRenderer(canvas, minimap) {
       if (!timeline) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
       for (let i = 0; i < run.table.bumpers.length; i++) {
         const bumper = run.table.bumpers[i];
-        if (bumper.sector === sectorIndex && !bumper.relay) asteroid(bumper, i, '#adbad1');
+        if (bumper.sector === sectorIndex && !bumper.relay) asteroid(bumper, i);
       }
       rails(run.table, sectorIndex, clock);
       flippers(renderRun);
@@ -1127,9 +1222,9 @@ export function createRenderer(canvas, minimap) {
         if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);
         if (options.fieldAim) temporaryField(options.fieldAim, clock, true);
         trajectory(run, options.charge || 0, options.fieldAim);
-        effects(options.freezeCamera ? 0 : elapsed);
+        effects(effectElapsed);
       }
-      drawBall(renderRun, options.freezeCamera || timeline ? 0 : elapsed, options.charge || 0);
+      drawBall(renderRun, timeline ? 0 : effectElapsed, options.charge || 0);
       g.restore();
     }
     if (timeline) {

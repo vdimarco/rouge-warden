@@ -1,6 +1,7 @@
 // Celestial expedition: open orbital fields use Full Tilt's steel-ball/flipper solver.
 // Positions are world coordinates with y up. This module has no browser dependencies.
 import { makeWorld, step, serve, setFlip, H } from './physics.js';
+import { prepareAsteroids, breakAsteroid, advanceAsteroids, resetAsteroids } from './asteroids.js';
 import { TRANSIT_DURATION, REDUCED_TRANSIT_DURATION } from './transit.js';
 import { createWarpSurf, setWarpSurfAim, clearWarpSurfAim, stepWarpSurf, settleWarpSurf } from './warp-surf.js';
 
@@ -24,6 +25,9 @@ const segment = (a, b, extra = {}) => ({ a, b, e: 0.48, ...extra });
 const emit = (run, type, extra = {}) => (run._updating ? run.events : run._pendingEvents).push({ type, x: run.world.ball.x, y: run.world.ball.y, ...extra });
 export const currentSector = (run) => run.sectors[run.sectorIndex];
 export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
+export const RALLY_FLIGHT = 4.5;
+export const RALLY_POWER = 4;
+export const PULSE_IMPULSE = 420;
 export const FIELD_CAPACITY = 3;
 export const FIELD_DURATION = 5;
 export const FIELD_RADIUS = 340;
@@ -49,7 +53,7 @@ export function canDeployGravityWell(run, x, y, kind = 'pull') {
       !Number.isFinite(x) || !Number.isFinite(y) || (kind !== 'pull' && kind !== 'push')) return false;
   const s = currentSector(run), p = s.planet, distance = Math.hypot(x - p.x, y - p.y);
   if (distance > 700 || distance < p.r + 28) return false;
-  return !run.table.bumpers.some(body => body.sector === s.id && body.asteroid &&
+  return !run.table.bumpers.some(body => body.sector === s.id && body.asteroid && body.active !== false &&
     Math.hypot(x - body.x, y - body.y) < body.r + 24);
 }
 
@@ -126,7 +130,11 @@ export function createAdventure(seed = 1) {
     combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
     _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false,
     orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100, tilt: { x: 0, y: 0 },
-    fieldCharges: 1, gravityWell: null };
+    fieldCharges: 1, gravityWell: null,
+    rally: { age: 0, returning: false, side: seed % 2 ? -1 : 1, powerRemaining: 0, multiplier: 1, shots: 0, lastStrike: -100 } };
+  prepareAsteroids(table, sectors);
+  table.advanceDynamic = (dt, events) => advanceAsteroids(table.bumpers, run.sectorIndex, run.world.ball, dt, events);
+  table.breakDynamic = rock => run.rally.powerRemaining > 0 && breakAsteroid(rock);
   // Other systems stay visible but are reached through their jump gates.
   table.isActive = object => object.sector === run.sectorIndex;
   table.reverseScoop = { enabled: () => run.phase === 'play', centerX: f => run.sectors[f.sector].x,
@@ -161,6 +169,20 @@ export function createAdventure(seed = 1) {
       const drift = 230 * clamp((p.r + 105 - d) / 70, 0, 1) * s.orbitDirection * field;
       ax -= ny * drift; ay += nx * drift;
     }
+    // A rally has a short orbital arc, then a smooth descending approach. The
+    // current stops below the blade so a missed timing still costs a ball.
+    const rallyAge = run.rally.age + elapsed;
+    if (rallyAge > RALLY_FLIGHT && ball.y > s.y + 180) {
+      const blend = smooth(clamp((rallyAge - RALLY_FLIGHT) / .8, 0, 1));
+      const side = run.rally.returning ? run.rally.side : (ball.x < s.x ? -1 : 1);
+      const clearance = smooth(clamp((ball.y - s.y - 400) / 220, 0, 1));
+      const targetX = s.x + side * (75 + 190 * clearance);
+      const targetVy = -clamp(360 + (ball.y - s.y - 350) * .5, 360, 720);
+      const returnX = clamp((targetX - ball.x) * 7 - (ball.vx || 0) * 4, -2200, 2200);
+      const returnY = clamp((targetVy - (ball.vy || 0)) * 3.8, -2300, 2300);
+      ax = ax * (1 - blend) + returnX * blend;
+      ay = ay * (1 - blend) + returnY * blend;
+    }
     const magnitude = Math.hypot(ax, ay);
     if (magnitude > 6800) { ax *= 6800 / magnitude; ay *= 6800 / magnitude; }
     const selectedWell = overrideWell === undefined ? run.gravityWell : overrideWell;
@@ -185,6 +207,8 @@ export function createAdventure(seed = 1) {
 }
 
 function checkpoint(run) {
+  resetRally(run);
+  resetAsteroids(run.table.bumpers, run.sectorIndex);
   clearGravityWell(run, 'checkpoint');
   const sector = currentSector(run);
   run.table.launch = { ...sector.station };
@@ -194,12 +218,21 @@ function checkpoint(run) {
   run._orbitAngle = null; run._orbitTravel = 0;
 }
 
+function resetRally(run) {
+  Object.assign(run.rally, { age: 0, returning: false, powerRemaining: 0, multiplier: 1, shots: 0, lastStrike: -100 });
+}
+function freshFlight(run, side) {
+  run.rally.age = 0; run.rally.returning = false;
+  if (side) run.rally.side = side;
+}
+
 export function launchAdventure(run, power = 0.75) {
   if (run.phase !== 'ready') return false;
   const b = run.world.ball, s = currentSector(run);
   b.live = true; b.lane = false;
   const velocity = run.table.launchVelocity(power);
   b.vx = velocity.x; b.vy = velocity.y;
+  freshFlight(run);
   run.phase = 'play'; run.saveUntil = run.clock + 10 + run._shieldLevel * 3;
   run._still = 0;
   emit(run, 'launch', { sector: s.id });
@@ -214,12 +247,13 @@ export function pulseAdventure(run, dx = 0) {
   const target = (targets.length ? targets : [s.gate]).reduce((a, t) =>
     Math.hypot(t.x - b.x, t.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? t : a);
   let tx = target.x - b.x, ty = target.y - b.y;
-  const distance = Math.max(1, Math.hypot(tx, ty)), speed = Math.min(1800, 1420 * boost);
-  const travel = Math.min(0.55, distance / speed), acceleration = run.table.gravity(b);
-  tx -= acceleration.x * travel * travel * 0.45; ty -= acceleration.y * travel * travel * 0.45;
+  const distance = Math.max(1, Math.hypot(tx, ty));
   tx += clamp(dx, -1, 1) * distance * 0.65;
   const length = Math.max(1, Math.hypot(tx, ty));
-  b.vx = tx / length * speed; b.vy = ty / length * speed;
+  const impulse = Math.min(560, PULSE_IMPULSE * boost);
+  b.vx += tx / length * impulse; b.vy += ty / length * impulse;
+  const speed = Math.hypot(b.vx, b.vy);
+  if (speed > run.table.maxSpeed) { b.vx *= run.table.maxSpeed / speed; b.vy *= run.table.maxSpeed / speed; }
   run.pulseCooldown = Math.max(0.9, 2.5 * 0.8 ** run._pulseLevel);
   emit(run, 'pulse');
   return true;
@@ -273,6 +307,7 @@ export function skipAdventureFlight(run) {
 }
 
 function drain(run) {
+  resetRally(run);
   clearGravityWell(run, 'drain');
   run.drainCount++;
   if (run.clock < run.saveUntil && !run.saved) {
@@ -302,6 +337,14 @@ function tick(run) {
     return;
   }
   if (run.phase !== 'play') return;
+  run.rally.age += H;
+  run.rally.powerRemaining = Math.max(0, run.rally.powerRemaining - H);
+  if (run.rally.age >= RALLY_FLIGHT && !run.rally.returning) {
+    run.rally.returning = true;
+    const offset = run.world.ball.x - currentSector(run).x;
+    run.rally.side = Math.abs(offset) > 35 ? Math.sign(offset) : -run.rally.side;
+    emit(run, 'return', { side: run.rally.side });
+  }
   if (run.gravityWell) {
     run.gravityWell.remaining = Math.max(0, run.gravityWell.remaining - H);
     if (run.gravityWell.remaining < 1e-9) clearGravityWell(run, 'expired');
@@ -311,7 +354,13 @@ function tick(run) {
   const sector = currentSector(run), b = run.world.ball;
   for (const e of collisions) {
     if (e.k === 'drain') { drain(run); return; }
-    if (e.k === 'bumper') {
+    if (e.k === 'asteroid-break') {
+      const points = 250 * run.rally.multiplier;
+      run.score += points;
+      emit(run, 'asteroid-break', { id: e.id, x: e.x, y: e.y, points, multiplier: run.rally.multiplier });
+    } else if (e.k === 'asteroid-warning') emit(run, 'asteroid-warning', { id: e.id, x: e.x, y: e.y, duration: e.duration });
+    else if (e.k === 'asteroid') emit(run, 'bumper', { id: e.id, x: e.x, y: e.y });
+    else if (e.k === 'bumper') {
       const relay = sector.relays.find(r => r.id === e.id);
       run.combo = run.clock - run.lastHit < 2.4 ? Math.min(8, run.combo + 1) : 1;
       run.lastHit = run.clock;
@@ -326,12 +375,24 @@ function tick(run) {
           sector.gate.open = true; run.score += 1500; emit(run, 'gate', { x: sector.gate.x, y: sector.gate.y });
         }
       } else emit(run, 'bumper', { id: e.id });
-    } else if (e.k === 'flipper') emit(run, 'flipper', { side: e.side });
-    else if (e.k === 'reverse') emit(run, 'reverse', { side: e.side, x: e.x, y: e.y });
+    } else if (e.k === 'flipper') {
+      emit(run, 'flipper', { side: e.side, powered: e.powered });
+      if (e.powered && run.clock - run.rally.lastStrike > .15) {
+        freshFlight(run, e.side);
+        run.rally.lastStrike = run.clock; run.rally.shots++;
+        run.rally.multiplier = Math.min(3, run.rally.shots);
+        run.rally.powerRemaining = RALLY_POWER;
+        emit(run, 'strike', { side: e.side, multiplier: run.rally.multiplier, duration: RALLY_POWER });
+      }
+    } else if (e.k === 'reverse') {
+      freshFlight(run, e.side);
+      emit(run, 'reverse', { side: e.side, x: e.x, y: e.y });
+    }
   }
   if (sector.gate.open && Math.hypot(b.x - sector.gate.x, b.y - sector.gate.y) < sector.gate.r) {
     sector.cleared = true; run.score += 3000; b.vx = 0; b.vy = 0;
     run.phase = run.sectorIndex === run.sectors.length - 1 ? 'won' : 'upgrade';
+    resetRally(run);
     clearGravityWell(run, run.phase === 'won' ? 'won' : 'sector');
     emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id });
     return;

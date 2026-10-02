@@ -56,7 +56,7 @@
     <div class="menu-content">
       <h1 id="menu-title">Full Tilt<span class="title-star" aria-hidden="true">✦</span></h1>
       <p class="menu-subtitle">A pinball voyage.</p>
-      <p class="menu-pitch">Curve around planets and use their gravity to reach the relays. Open a black-hole gate, leave orbit, and cross the galaxy to a new world.</p>
+      <p class="menu-pitch">Time your flips, smash drifting asteroids, and bend shots around planets. Catch the return, build your rally, and open a gate to the next world.</p>
       <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
       <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
       <div class="motion-controls menu-motion">
@@ -68,10 +68,10 @@
         <p id="motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
       </div>
       <div class="flight-guide" aria-label="How to play">
-        <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Press either side. Below a flipper, tap again to scoop the ball back up.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Time a strike to power your ball. Below a flipper, release and tap again to scoop.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">↑</span><p><strong>Launch</strong>Hold to charge. Release to fly.</p></div>
-        <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Bend your flight toward the next relay.</p></div>
-        <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Explore</strong>Hit 3 relays. Enter the jump gate.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Nudge your course. Keep your momentum in mind.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Smash</strong>Powered shots break asteroids. Hit 3 relays to open the gate.</p></div>
       </div>
       <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim. During warp, drag through two rings to earn another charge.</p>
       <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> pause</p>
@@ -81,7 +81,7 @@
   <section id="pause-panel" class="overlay panel-overlay" aria-labelledby="pause-title" hidden>
     <div class="dialog-card">
       <h2 id="pause-title">Take your time.</h2>
-      <p class="panel-description">Below a flipper? Release, then tap its button again for a reverse scoop. During warp, drag or use WASD to steer through the rings.</p>
+      <p class="panel-description">Let the ball come to a flipper, then tap to power your shot and smash asteroids. Keep a rally going for more points. Below a flipper? Release and tap again to scoop. During warp, drag or use WASD to steer.</p>
       <div class="motion-controls pause-motion">
         <div class="motion-actions">
           <button id="pause-motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="pause-motion-status">Enable tilt</button>
@@ -144,7 +144,10 @@
   <div id="controls" aria-label="Pinball controls">
     <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper" aria-keyshortcuts="Z"><span class="flipper-arrow" aria-hidden="true">↗</span><span class="flip-label">LEFT FLIPPER</span><kbd>Z</kbd></button>
     <div class="center-controls">
-      <span id="field-status">Relays and orbits earn field charges</span>
+      <div class="control-readouts">
+        <span id="rally-status" data-state="ready">Time your flips. Smash drifting asteroids.</span>
+        <span id="field-status">Relays and orbits earn field charges</span>
+      </div>
       <button id="launch-button" class="launch-button" type="button" aria-keyshortcuts="Space"><span aria-hidden="true">↑</span> Launch</button>
       <button id="pulse-button" class="pulse-button" type="button" aria-keyshortcuts="C A D"><span aria-hidden="true">◎</span> Pulse</button>
       <button id="field-button" class="field-button" type="button" aria-keyshortcuts="F" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>

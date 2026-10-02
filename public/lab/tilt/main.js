@@ -31,6 +31,8 @@ function sound(kind, strength = 1) {
   Sfx.play((e,t) => {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
     if (kind === 'reverse') { tone(e,t,{f:95,f2:620,dur:.28,peak:.12,wave:'sine',send:.35}); hiss(e,t,{type:'bandpass',f:400,f2:1500,dur:.2,peak:.05}); return; }
+    if (kind === 'strike') { tone(e,t,{f:190,f2:760,dur:.18,peak:.11,wave:'triangle',send:.25}); return; }
+    if (kind === 'asteroid-break') { hiss(e,t,{type:'lowpass',f:1400,f2:180,dur:.25,peak:.1}); tone(e,t,{f:105,f2:42,dur:.17,peak:.09,wave:'triangle'}); return; }
     if (kind === 'warp-ring') { tone(e,t,{f:520,f2:1040,dur:.22,peak:.13,wave:'sine',send:.45}); tone(e,t+.07,{f:1560,dur:.22,peak:.05,send:.4}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
     if (kind === 'field-deploy') { tone(e,t,{f:110,f2:330,dur:.65,peak:.12,wave:'sine',send:.5}); hiss(e,t,{type:'bandpass',f:350,f2:1300,dur:.45,peak:.065}); return; }
@@ -153,7 +155,7 @@ function newRun() {
   $('hud').hidden=false; document.body.classList.add('playing');
   resumeMotion(); motion.recenter();
   renderer.resize(); syncHud();
-  announce('Release Launch to fly. Use Pulse to aim through gravity.');
+  announce('Launch, then time your flips. Powered shots smash asteroids.');
   canvas.focus({preventScroll:true});
 }
 function pause() {
@@ -226,22 +228,43 @@ function syncHud() {
   const well = run.gravityWell;
   $('field-status').textContent = well ? `${well.kind === 'push' ? 'Push' : 'Pull'} field · ${well.remaining.toFixed(1)}s` : 'Relays and orbits earn field charges';
   $('field-status').dataset.active = String(!!well);
+  $('field-status').hidden = !well && run.phase === 'play';
+  const rally = run.rally, status = $('rally-status');
+  status.hidden = !['ready','play'].includes(run.phase);
+  status.dataset.state = run.phase === 'ready' ? 'ready' : rally?.returning ? 'return' : rally?.powerRemaining > 0 ? 'powered' : 'flight';
+  status.textContent = run.phase === 'ready' ? 'Time your flips. Smash drifting asteroids.'
+    : rally?.returning ? `Returning · ready your ${rally.side < 0 ? 'left' : 'right'} flipper`
+    : rally?.powerRemaining > 0 ? `POWER SHOT ×${rally.multiplier} · ${rally.powerRemaining.toFixed(1)}s`
+    : 'Hit the relays · prepare for the return';
   const inTransit = run.phase === 'flight';
   document.body.classList.toggle('in-transit', inTransit);
   $('controls').hidden = inTransit;
   $('transit-panel').hidden = !inTransit || mode !== 'play';
-  for (const [side,id] of [[-1,'left-flip'],[1,'right-flip']]) {
-    const button = $(id), scoop = mode === 'play' && run.phase === 'play' && canReverseScoop(run.world,side);
-    button.disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
-    button.classList.toggle('scoop-ready', scoop);
-    button.querySelector('.flip-label').textContent = scoop ? 'REVERSE FLIP' : side < 0 ? 'LEFT FLIPPER' : 'RIGHT FLIPPER';
-    button.querySelector('.flipper-arrow').textContent = scoop ? '⤴' : side < 0 ? '↗' : '↖';
-  }
+  paintFlipperGuidance();
   if (run.phase!==oldPhase) {
     oldPhase=run.phase;
     if(run.phase==='upgrade')showUpgrades();
     else if(run.phase==='won'||run.phase==='over')showEnd();
     else if(run.phase==='ready' && mode==='play')announce('Ready to launch');
+  }
+}
+
+function paintFlipperGuidance() {
+  for (const [side,id] of [[-1,'left-flip'],[1,'right-flip']]) {
+    const button = $(id), scoop = mode === 'play' && run.phase === 'play' && canReverseScoop(run.world,side);
+    button.disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
+    const blade = run.world.flippers.find(f => f.sector === run.sectorIndex && f.side === side), ball = run.world.ball;
+    const along = blade ? (ball.x - blade.px) * -side : -1;
+    const incoming = mode === 'play' && run.phase === 'play' && ball.live && !scoop && blade && !blade.held
+      && along > 8 && along < blade.len + 20 && ball.y > blade.py + 5 && ball.y < blade.py + 100 && ball.vy < 80;
+    const shot = incoming && ball.y < blade.py + 55;
+    button.classList.toggle('scoop-ready', scoop);
+    button.classList.toggle('shot-ready', !!shot);
+    const label = button.querySelector('.flip-label'), arrow = button.querySelector('.flipper-arrow');
+    const text = scoop ? 'REVERSE FLIP' : shot ? 'FLIP NOW' : incoming ? 'INCOMING' : side < 0 ? 'LEFT FLIPPER' : 'RIGHT FLIPPER';
+    const symbol = scoop ? '⤴' : side < 0 ? '↗' : '↖';
+    if (label.textContent !== text) label.textContent = text;
+    if (arrow.textContent !== symbol) arrow.textContent = symbol;
   }
 }
 
@@ -450,10 +473,13 @@ startLoop({h:H,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse'].includes(kind))sound(kind);
+    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse','strike','asteroid-break'].includes(kind))sound(kind);
     const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
     if(kind === 'reverse')announce('Reverse flip');
+    if(kind === 'strike')announce(`Power shot ×${event.multiplier} · smash an asteroid`);
+    if(kind === 'asteroid-break')announce(`Asteroid smashed · +${event.points}`);
+    if(kind === 'return')announce(`Incoming ball. Ready your ${event.side < 0 ? 'left' : 'right'} flipper.`);
     if(kind === 'warp-ring' && event.hit)sound('warp-ring');
     if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
     if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
@@ -470,6 +496,7 @@ startLoop({h:H,step:()=>{
   if(musicActive)scoreClock+=Math.min(dt,.1);
   spaceMusic.update({ active: musicActive, clock: scoreClock, sector: run.sectorIndex, phase: run.phase, reducedMotion });
   paintTransit();
+  if(mode!=='title')paintFlipperGuidance();
   if((hudClock-=dt)<=0){hudClock=.1;if(mode!=='title')syncHud();}
   if(performance.now()>messageUntil)$('message').classList.remove('visible');
 }});

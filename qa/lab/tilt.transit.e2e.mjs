@@ -22,15 +22,22 @@ async function reachGate(page) {
     }
     const launch = page.locator('#launch-button'), pulse = page.locator('#pulse-button');
     if (await launch.isVisible()) {
-      await page.keyboard.down('z'); await page.keyboard.down('x');
+      await page.keyboard.up('z'); await page.keyboard.up('x');
       await launch.click();
     }
+    // Read the same approach cues shown to the player. Fresh strikes matter now;
+    // keeping both blades raised indefinitely no longer proves natural progress.
+    const flips = await page.evaluate(() => ['left-flip', 'right-flip'].map((id, i) => {
+      const button = document.getElementById(id);
+      return !button.disabled && (button.classList.contains('scoop-ready') || button.querySelector('.flip-label').textContent === 'FLIP NOW') ? ['z', 'x'][i] : null;
+    }).filter(Boolean));
+    for (const key of flips) await page.keyboard.press(key, { delay: 65 });
     // A checkpoint can hide Pulse between observation and action. Its ordinary keyboard
     // shortcut safely follows the current phase instead of waiting for a vanished button.
-    else if (await pulse.isVisible() && await pulse.isEnabled()) await page.keyboard.press('c');
+    if (await pulse.isVisible() && await pulse.isEnabled()) await page.keyboard.press('c');
     await sleep(70);
   }
-  throw new Error('Natural launch/Pulse route did not reach a gate in 90 seconds');
+  throw new Error('Natural launch/timed-flip/Pulse route did not reach a gate in 90 seconds');
 }
 async function watchStages(page) {
   await page.evaluate(() => {
