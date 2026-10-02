@@ -1,7 +1,0 @@
-- [ ] Add eight heroes and art.
-- [ ] Implement and test distinct spells and basic attacks.
-- [ ] Build roster filters and selected hero move previews.
-- [ ] Build skill selection and rank detail screen.
-- [ ] Improve HUD readability while retaining the corner ultimate.
-- [ ] Verify deterministic suites and browser interactions.
-- [ ] Archive specs, merge and verify deployment.

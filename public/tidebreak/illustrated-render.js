@@ -117,7 +117,7 @@ export class Renderer {
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
     if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
     if(e.omen?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.strokeStyle='#d0b4ff';c.lineWidth=2;c.beginPath();c.ellipse(p.x,p.y,12,6,0,0,TAU);c.stroke();c.fillStyle='#f3dcff';c.beginPath();c.arc(p.x,p.y,3,0,TAU);c.fill();c.restore();}
-    if(e.bleed?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.fillStyle='#ff7965';c.beginPath();c.moveTo(p.x,p.y-8);c.quadraticCurveTo(p.x+11,p.y+7,p.x,p.y+8);c.quadraticCurveTo(p.x-11,p.y+7,p.x,p.y-8);c.fill();c.restore();}
+    if(e.bleed?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.fillStyle=e.bleed.type==='poison'?'#a9df83':e.bleed.type==='fire'?'#ffc16d':'#ff7965';c.beginPath();c.moveTo(p.x,p.y-8);c.quadraticCurveTo(p.x+11,p.y+7,p.x,p.y+8);c.quadraticCurveTo(p.x-11,p.y+7,p.x,p.y-8);c.fill();c.restore();}
     if (player(s).target === e.id) this.ring(x, y, e.radius + 28, '#e8c48f', .9);
     const moving = e.moving && !pose, gait = Math.sin(time * (hero && e.hero === 2 ? 8 : 11) + e.id);
     const creatureState = e.hit > 0 ? 'hit' : e.attackAnim > 0 ? 'action' : e.moving ? 'walk' : 'idle';
@@ -130,7 +130,7 @@ export class Renderer {
       const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = creatureBox ? { x: anchor.x, y: box.y - 9 } : this.project(x, y, height + jump + 9);
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
       c.fillStyle = TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
-      if (e.stun > 0 || e.fear > 0) { c.fillStyle = '#ffe3a0'; c.textAlign = 'center'; c.font = '700 11px Barlow'; c.fillText(e.fear > 0 ? 'FEARED' : 'ROOTED', a.x, a.y - 5); }
+      if (e.stun > 0 || e.fear > 0 || e.silencedUntil>s.time) { c.fillStyle = '#ffe3a0'; c.textAlign = 'center'; c.font = '700 11px Barlow'; c.fillText(e.fear > 0 ? 'FEARED' : e.stun>0?(e.snaredUntil>s.time?'ROOTED':'STUNNED'):'SILENCED', a.x, a.y - 5); }
     }
   }
   drawAtmosphere(s, time) {
