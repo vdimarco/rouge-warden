@@ -1,0 +1,20 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+const result=await build({entryPoints:['lib/game/shadows.ts'],bundle:true,write:false,format:'esm',platform:'node'});
+const {alphaFootprint,SpriteShadows}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+const pixels=(w,h,points)=>{const data=new Uint8ClampedArray(w*h*4);for(const [x,y,a=255] of points)data[(y*w+x)*4+3]=a;return data};
+test('transparent art has no footprint',()=>assert.equal(alphaFootprint(new Uint8ClampedArray(400),10,10),null));
+test('two separated feet anchor between their visible bases',()=>{const base=alphaFootprint(pixels(20,20,[[4,18],[5,18],[14,18],[15,18]]),20,20);assert.equal(base.x,.5);assert.equal(base.y,.95)});
+test('a low-opacity stray pixel does not move the base',()=>{const base=alphaFootprint(pixels(20,20,[[8,16],[9,16],[10,16],[11,16],[1,19,12]]),20,20);assert.equal(base.x,.5);assert.equal(base.y,.85)});
+test('an isolated opaque pixel below a broad base is ignored',()=>{const points=Array.from({length:60},(_,i)=>[i+20,90]);points.push([50,99]);const base=alphaFootprint(pixels(100,100,points),100,100);assert.equal(base.y,.91)});
+test('loaded poses cache their masks separately; unloaded art is skipped',()=>{
+ let scans=0,created=0;const masks=[];
+ globalThis.document={createElement(){created++;const canvas={width:0,height:0,getContext:()=>({drawImage(){},clearRect(){},fillRect(){},getImageData(){scans++;return {data:pixels(128,128,[[55,120],[56,120],[70,120],[71,120]])}}})};masks.push(canvas);return canvas}};
+ const matrices=[],drawn=[];const context={save(){},restore(){},translate(){},transform(...args){matrices.push(args)},drawImage(im){drawn.push(im)}};
+ const shadows=new SpriteShadows(),a={complete:true,naturalWidth:256,naturalHeight:256},b={...a};
+ shadows.draw(context,{complete:false}, {x:0,y:0},'isometric',82,34);assert.equal(scans,0);
+ shadows.draw(context,a,{x:0,y:0},'isometric',82,34);const first=matrices[0][0];
+ shadows.draw(context,a,{x:0,y:0},'isometric',82,34,true);assert.equal(matrices[2][0],-first);assert.equal(scans,1);assert.equal(created,2);assert.equal(drawn[0],drawn[2]);
+ shadows.draw(context,b,{x:0,y:0},'top-down',82,34);assert.equal(scans,2);assert.equal(created,4);assert.notEqual(drawn[0],drawn[4]);
+});
