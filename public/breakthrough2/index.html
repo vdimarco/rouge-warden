@@ -34,16 +34,33 @@
       <span id="warm-chase">Chasing 2.2°</span>
       <span id="warm-proj">2.4° by 2100</span>
     </div>
+    <div id="path" aria-label="Warming trajectory">
+      <div id="path-copy">
+        <p id="path-ending">Path opens with the century</p>
+        <p id="path-tip">The mark is the 2.0° tip</p>
+      </div>
+      <canvas id="path-chart" width="360" height="64" aria-hidden="true"></canvas>
+      <p id="stockline"></p>
+    </div>
     <div id="meters">
-      <div class="meter" data-k="emissions"><span>Emissions</span><i></i><b class="num">0</b></div>
-      <div class="meter" data-k="energy"><span>Energy</span><i></i><b class="num">0</b></div>
-      <div class="meter" data-k="prosperity"><span>Prosperity</span><i></i><b class="num">0</b></div>
-      <div class="meter" data-k="ecology"><span>Ecology</span><i></i><b class="num">0</b></div>
-      <div class="meter" data-k="trust"><span>Trust</span><i></i><b class="num">0</b></div>
+      <div class="meter" data-k="emissions"><span>Emissions</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="energy"><span>Energy</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="prosperity"><span>Prosperity</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="ecology"><span>Ecology</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="trust"><span>Trust</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
     </div>
     <p id="resources">Cap 0 · Lab 0 · Pol 0 · Ind 0</p>
   </section>
   <section id="sheet">
+    <section id="signals" aria-label="Indicators">
+      <h2>Signals</h2>
+      <p id="quiet-note">Quiet paths. Future news stays out.</p>
+      <p id="ledger"></p>
+      <div id="pressures"></div>
+      <div id="outlook"></div>
+      <h2 class="sub">Turn history</h2>
+      <ol id="journal"></ol>
+    </section>
     <div id="news" hidden>
       <h2 id="news-title"></h2>
       <p id="news-text"></p>
@@ -75,6 +92,7 @@
       <p>Twelve turns carry the world from 2026 to 2100. A step can be 6 years or 10. The longer step moves the climate more.</p>
       <p>Each turn, play one breakthrough. Three are dealt, plus the Idea Lab when it is open.</p>
       <p>Warming chases a target set by emissions and the land. It does not jump to the target. You always see the heat now and the heat projected for 2100.</p>
+      <p>The path draws the heat so far and the line if you hold. The shade is seven quiet policies: hold, cut, grow, restore, power, trust, or the first card you can pay. Future news is not in that band. The mark is 2.0°, where heat starts to drag prosperity.</p>
       <p>Costly energy drags prosperity and stirs resistance. Growth pushes emissions unless you break that link. A living landscape stores carbon. Low trust softens a law and raises its political price.</p>
       <p>The Idea Lab is one wild card every three turns. There is no reroll. A card you cannot pay for stays dim.</p>
       <p>The run ends in an alternate history, with the timeline of what you chose.</p>
