@@ -26,16 +26,18 @@ const box = (x, y, z) => new THREE.BoxGeometry(x, y, z);
 const MAKE = {
   pistol() {
     const group = new THREE.Group();
+    const muzzle = new THREE.Object3D(); muzzle.name = 'muzzle'; muzzle.position.set(0, 0.13, 0.22); group.add(muzzle);
     group.add(mesh(box(0.07, 0.11, 0.28), toon(0x30363c), 0, 0.13, 0.08));
     group.add(mesh(box(0.06, 0.16, 0.08), toon(0x171c20), 0, 0.025, 0));
     return group;
   },
   goldenEagle() {
-    const group = MAKE.pistol(); group.scale.setScalar(1.25);
-    group.children[0].material = toon(0xe5b83b); return group;
+    const group = new THREE.Group(), body = MAKE.pistol(); body.scale.setScalar(1.25);
+    body.children.find(child => child.isMesh).material = toon(0xe5b83b); group.add(body); return group;
   },
   ak47() {
     const group = MAKE.pistol();
+    group.getObjectByName('muzzle').position.z = 0.585;
     group.add(mesh(box(0.065, 0.065, 0.55), toon(0x24292c), 0, 0.13, 0.31));
     group.add(mesh(box(0.09, 0.1, 0.22), toon(0x88502a), 0, 0.13, -0.17));
     group.add(mesh(box(0.05, 0.2, 0.09), toon(0x252a30), 0, -0.015, 0.18));
@@ -43,6 +45,7 @@ const MAKE = {
   },
   bearSpray() {
     const group = new THREE.Group();
+    const muzzle = new THREE.Object3D(); muzzle.name = 'muzzle'; muzzle.position.set(0, 0.19, 0.0555); group.add(muzzle);
     group.add(mesh(cyl(0.055, 0.055, 0.22, 10), toon(0xe87b25), 0, 0.065, 0));
     group.add(mesh(box(0.06, 0.045, 0.075), toon(0x222222), 0, 0.19, 0.018)); return group;
   },

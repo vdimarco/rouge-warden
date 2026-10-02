@@ -58,14 +58,21 @@ export function createArsenal(K) {
     hitTime = 0.22; K.sfx('hit', target.pos);
   }
   function fire(spec) {
-    const hero = S.hero, origin = hero.pos.clone().add(new THREE.Vector3(0, 1.35, 0));
+    const hero = S.hero, chest = hero.pos.clone().add(new THREE.Vector3(0, 1.35, 0)), origin = chest.clone();
     S.camera.getWorldDirection(direction);
+    K.drawWeapon(true);
+    const prop = hero.actor?.props?.[hero.weapon];
+    if (prop) {
+      aimWeapon(hero.actor, prop, direction, hero.weapon);
+      prop.getObjectByName('muzzle')?.getWorldPosition(origin);
+    }
+    const muzzleBlocked = blocked(chest, origin);
     const spread = spec.spread * (S.input.held('parry') ? 0.3 : 1);
     direction.x += (random() - 0.5) * spread; direction.y += (random() - 0.5) * spread; direction.z += (random() - 0.5) * spread; direction.normalize();
     hero.face = Math.atan2(direction.x, direction.z);
     const end = S.camera.position.clone().addScaledVector(direction, spec.range);
     let nearest = spec.range, victim = null;
-    for (const target of targets()) {
+    for (const target of muzzleBlocked ? [] : targets()) {
       center.copy(target.pos); center.y += 1;
       if (spec.spray) {
         const offset = center.clone().sub(origin), distance = offset.length();
@@ -78,7 +85,8 @@ export function createArsenal(K) {
     if (victim) { end.copy(victim.pos); end.y += 1; damage(victim, spec); }
     else { const wall = S.world.colliders.raycast(origin, end); if (wall != null) end.lerpVectors(origin, end, Math.max(0, wall)); }
     if (spec.spray) end.copy(origin).addScaledVector(direction, spec.range);
-    tracer(origin, end, spec.spray); K.sfx(spec.spray ? 'bearSpray' : hero.weapon, origin);
+    if (!muzzleBlocked) tracer(origin, end, spec.spray);
+    K.sfx(spec.spray ? 'bearSpray' : hero.weapon, origin);
     K.cam.pitch -= spec.recoil; K.cam.shake = Math.max(K.cam.shake, spec.recoil * 3);
     K.drawWeapon(true); shots++; S.cast.crowd.scatter(hero.pos.x, hero.pos.z, 25);
     if (!spec.spray && !victim) S.bus.emit('pedestrianCrime', { fatal: false, pos: hero.pos.clone() });
@@ -148,14 +156,14 @@ export function createArsenal(K) {
     panel.querySelector('span').textContent = current ? reload ? `RELOADING ${reload.toFixed(1)}s` : `${current.loaded} / ${current.reserve} · ${aimHint}` : 'J COMBO · K HEAVY · F BLOCK';
     reticle.classList.toggle('hit', hitTime > 0); reticle.classList.toggle('aim', S.input.held('parry'));
   });
-  S.register('anim', () => {
+  S.register('anim', (cdt, rdt) => {
     if (S.mode !== 'play' || S.freeze || S.cine?.active || S.hero?.mode !== 'foot' || !GUNS[S.hero.weapon]) return;
     if (['move', 'guard'].includes(S.hero.state)) {
       K.drawWeapon(true);
       const prop = S.hero.actor?.props?.[S.hero.weapon];
       if (prop?.parent) {
         S.camera.getWorldDirection(direction);
-        aimWeapon(S.hero.actor, prop, direction, S.hero.weapon);
+        aimWeapon(S.hero.actor, prop, direction, S.hero.weapon, rdt);
       }
     }
   }, 90);

@@ -5,6 +5,7 @@ const axis = new THREE.Vector3(), bend = new THREE.Vector3(), elbow = new THREE.
 const current = new THREE.Vector3(), desired = new THREE.Vector3();
 const world = new THREE.Quaternion(), parent = new THREE.Quaternion(), turn = new THREE.Quaternion();
 const target = new THREE.Vector3(), aim = new THREE.Quaternion(), forward = new THREE.Vector3(0, 0, 1);
+const aimedDirection = new THREE.Vector3();
 
 function orient(bone, child, point) {
   bone.getWorldPosition(start); child.getWorldPosition(end);
@@ -33,15 +34,19 @@ function reach(actor, side, point) {
   orient(lower, hand, point);
 }
 
-export function aimWeapon(actor, prop, direction, weapon) {
+export function aimWeapon(actor, prop, direction, weapon, dt = 0) {
   const hand = actor?.bone?.('RightHand'), shoulder = actor?.bone?.('RightArm');
   if (!hand || !shoulder || prop.parent !== hand) return;
   actor.root.updateWorldMatrix(true, true);
   const grip = prop.userData.aimGrip || (prop.userData.aimGrip = prop.quaternion.clone());
-  shoulder.getWorldPosition(target);
-  target.addScaledVector(direction, 0.43); target.y -= 0.12;
-  reach(actor, 'Right', target);
   aim.setFromUnitVectors(forward, direction);
+  const previous = prop.userData.aimWorld || (prop.userData.aimWorld = aim.clone());
+  if (dt > 0) previous.slerp(aim, -Math.expm1(-24 * Math.min(dt, 0.1)));
+  else previous.copy(aim);
+  aim.copy(previous); aimedDirection.copy(forward).applyQuaternion(aim);
+  shoulder.getWorldPosition(target);
+  target.addScaledVector(aimedDirection, 0.43); target.y -= 0.12;
+  reach(actor, 'Right', target);
   hand.parent.getWorldQuaternion(parent).invert();
   hand.quaternion.copy(parent).multiply(aim).multiply(turn.copy(grip).invert());
   hand.updateWorldMatrix(false, true);
