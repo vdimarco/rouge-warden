@@ -16,11 +16,15 @@
         "prompt": "Seamless looping idle animation of this exact hand-painted friendly green lake serpent Nessie, full body in the same position, gentle neck sway, tiny flipper flutter and breathing, maintain identical face and shape. Static camera. Keep a plain dark navy background, no landscape, no additions, no text. Starts and ends at identical pose. Keep entire character within original frame, preserve vivid green colors and painterly style."
       },
       "videoURL": "https://v3b.fal.media/files/b/0aacd13a/outBP-CIK8xOzJSIfaq5l_minimax-h3.mp4",
-      "bytes": 323652,
-      "frames": 30,
+      "bytes": 272754,
+      "frames": 24,
       "width": 120,
       "height": 208,
-      "uniqueFrames": 30
+      "uniqueFrames": 24,
+      "trimSeconds": {
+        "start": 0.3,
+        "end": 2.7
+      }
     },
     {
       "slug": "mothman",
@@ -34,11 +38,15 @@
         "prompt": "Seamless idle animation of the single central dark blue owl-moth creature with huge red eyes in this hand-painted source. subtle wing flutter and soft breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
       },
       "videoURL": "https://v3b.fal.media/files/b/0aacd14f/kl2kNrT8LLx5w6buGS_nS_minimax-h3.mp4",
-      "bytes": 419759,
-      "frames": 30,
+      "bytes": 344876,
+      "frames": 24,
       "width": 120,
       "height": 208,
-      "uniqueFrames": 30
+      "uniqueFrames": 24,
+      "trimSeconds": {
+        "start": 0.3,
+        "end": 2.7
+      }
     },
     {
       "slug": "baba",
@@ -52,11 +60,15 @@
         "prompt": "Seamless idle animation of the single central purple-roofed witch hut on chicken legs in this hand-painted source. gently rocking hut and alternating tiny leg shifts, warm windows flickering. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
       },
       "videoURL": "https://v3b.fal.media/files/b/0aacd14f/r5IWuzX4im7MT0v21HrjX_minimax-h3.mp4",
-      "bytes": 384712,
-      "frames": 30,
+      "bytes": 322247,
+      "frames": 24,
       "width": 125,
       "height": 208,
-      "uniqueFrames": 30
+      "uniqueFrames": 24,
+      "trimSeconds": {
+        "start": 0.3,
+        "end": 2.7
+      }
     },
     {
       "slug": "devil",
@@ -70,11 +82,15 @@
         "prompt": "Seamless idle animation of the single central red winged Jersey Devil in this hand-painted source. wings flexing gently, tail swishing, breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
       },
       "videoURL": "https://v3b.fal.media/files/b/0aacd150/JtiCdpMH4PJj9cU4SW2V2_minimax-h3.mp4",
-      "bytes": 391452,
-      "frames": 30,
+      "bytes": 342305,
+      "frames": 24,
       "width": 136,
       "height": 208,
-      "uniqueFrames": 30
+      "uniqueFrames": 24,
+      "trimSeconds": {
+        "start": 0.3,
+        "end": 2.7
+      }
     },
     {
       "slug": "kraken",

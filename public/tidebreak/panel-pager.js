@@ -5,7 +5,7 @@ export function paginatePanel(content) {
   stage.className='panel-pages';navigation.className='panel-pagination';navigation.setAttribute('aria-label','Panel pages');
   navigation.innerHTML='<button aria-label="Previous panel page">‹</button><output aria-live="polite"></output><button aria-label="Next panel page">›</button>';
   content.replaceChildren(stage,navigation);
-  const available=stage.clientHeight,blocks=[];
+  let available=stage.clientHeight;const blocks=[];
   function unpack(node){
     stage.replaceChildren(node);
     if(node.scrollHeight>available&&node.children.length&&['DIV','UL','OL','DL','SECTION'].includes(node.tagName)){
@@ -17,9 +17,20 @@ export function paginatePanel(content) {
     }else blocks.push(node);
   }
   source.forEach(unpack);stage.replaceChildren();
-  const pages=[];let page=document.createElement('section');page.className='panel-page';stage.append(page);pages.push(page);
-  for(const block of blocks){page.append(block);if(page.scrollHeight>available&&page.children.length>1){block.remove();page.hidden=true;page=document.createElement('section');page.className='panel-page';page.append(block);stage.append(page);pages.push(page);}}
-  let current=0;const [previous,next]=navigation.querySelectorAll('button'),status=navigation.querySelector('output');
+  const [previous,next]=navigation.querySelectorAll('button'),status=navigation.querySelector('output');
+  let pages=[],current=0,lastWidth=content.clientWidth,lastHeight=content.clientHeight;
   const show=()=>{pages.forEach((p,i)=>p.hidden=i!==current);previous.disabled=current===0;next.disabled=current===pages.length-1;status.textContent=`${current+1} / ${pages.length}`;navigation.hidden=pages.length<2;};
-  previous.onclick=()=>{current=Math.max(0,current-1);show();};next.onclick=()=>{current=Math.min(pages.length-1,current+1);show();};show();
+  function layout(){
+    available=stage.clientHeight;stage.replaceChildren();pages=[];
+    let page=document.createElement('section');page.className='panel-page';stage.append(page);pages.push(page);
+    for(const block of blocks){page.append(block);if(page.scrollHeight>available&&page.children.length>1){block.remove();page.hidden=true;page=document.createElement('section');page.className='panel-page';page.append(block);stage.append(page);pages.push(page);}}
+    current=Math.min(current,pages.length-1);show();
+  }
+  previous.onclick=()=>{current=Math.max(0,current-1);show();};next.onclick=()=>{current=Math.min(pages.length-1,current+1);show();};layout();
+  const observer=new ResizeObserver(()=>{
+    if(!content.isConnected||!stage.isConnected){observer.disconnect();return;}
+    if(lastWidth===content.clientWidth&&lastHeight===content.clientHeight)return;
+    lastWidth=content.clientWidth;lastHeight=content.clientHeight;available=stage.clientHeight;
+    const existing=blocks.splice(0);existing.forEach(unpack);layout();
+  });observer.observe(content);
 }
