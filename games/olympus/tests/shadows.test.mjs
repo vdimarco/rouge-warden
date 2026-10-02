@@ -17,4 +17,6 @@ test('loaded poses cache their masks separately; unloaded art is skipped',()=>{
  shadows.draw(context,a,{x:0,y:0},'isometric',82,34);const first=matrices[0][0];
  shadows.draw(context,a,{x:0,y:0},'isometric',82,34,true);assert.equal(matrices[2][0],-first);assert.equal(scans,1);assert.equal(created,2);assert.equal(drawn[0],drawn[2]);
  shadows.draw(context,b,{x:0,y:0},'top-down',82,34);assert.equal(scans,2);assert.equal(created,4);assert.notEqual(drawn[0],drawn[4]);
+ // Both cameras must retain enough projected area for a readable silhouette.
+ for(const m of [matrices[0],matrices[4]])assert.ok(Math.abs(m[0]*m[3]-m[1]*m[2])>.15);
 });

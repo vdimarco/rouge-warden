@@ -29,7 +29,7 @@ export class SpriteShadows {
   const fx=(mask.foot.x-.5)*iw,fy=(mask.foot.y-.5)*ih,cos=Math.cos(rotation),sin=Math.sin(rotation),mirror=flip?-1:1;
   const a=cos*mirror*sx,b=sin*mirror*sx,cc=-sin*sy,d=cos*sy;
   const baseX=a*fx+cc*fy,baseY=b*fx+d*fy;
-  const light=project({x:1,y:.2},view),n=Math.hypot(light.x,light.y),lx=light.x/n,ly=light.y/n;
+  const light=project({x:1,y:.65},view),n=Math.hypot(light.x,light.y),lx=light.x/n,ly=light.y/n;
   const lift=Math.max(hover,height-baseY),anchor={x:foot.x+baseX+lx*lift*.45,y:foot.y+Math.max(0,baseY-height)+ly*lift*.45};
   c.save();c.globalAlpha=opacity/(1+lift*.035);c.translate(anchor.x,anchor.y);
   // The vertical sprite silhouette lays down along the light; the base stays anchored.
