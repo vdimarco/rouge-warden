@@ -2,6 +2,7 @@
 // Positions are world coordinates with y up. This module has no browser dependencies.
 import { makeWorld, step, serve, setFlip, H } from './physics.js';
 import { TRANSIT_DURATION, REDUCED_TRANSIT_DURATION } from './transit.js';
+import { createWarpSurf, setWarpSurfAim, clearWarpSurfAim, stepWarpSurf, settleWarpSurf } from './warp-surf.js';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const NAMES = ['Lunar Harbor', 'Amber Belt', 'Jade Observatory', 'Violet Reach', 'Solar Forge', 'The Star Engine'];
@@ -234,15 +235,30 @@ export function chooseUpgrade(run, id, { reducedMotion = false } = {}) {
   if (!to) return false;
   const b = run.world.ball;
   run.flight = { from: { x: b.x, y: b.y }, to: { ...to.station }, fromSector: from.id, toSector: to.id,
-    progress: 0, duration: reducedMotion ? REDUCED_TRANSIT_DURATION : TRANSIT_DURATION };
+    progress: 0, duration: reducedMotion ? REDUCED_TRANSIT_DURATION : TRANSIT_DURATION,
+    surf: createWarpSurf(run.seed, from.id, to.id, { reducedMotion }) };
   run.phase = 'flight';
   setFlip(run.world, -1, false); setFlip(run.world, 1, false);
   emit(run, 'depart');
   return true;
 }
 
+export function setWarpAim(run, x, y) {
+  if (run.phase !== 'flight' || !run.flight) return false;
+  return setWarpSurfAim(run.flight.surf, x, y);
+}
+
+export function clearWarpAim(run) {
+  return clearWarpSurfAim(run.flight?.surf);
+}
+
 function arrive(run) {
-  const destination = run.flight.toSector;
+  const destination = run.flight.toSector, surf = run.flight.surf;
+  if (settleWarpSurf(surf)) {
+    const amount = Math.min(1, Math.max(0, FIELD_CAPACITY - run.fieldCharges));
+    run.fieldCharges += amount;
+    emit(run, 'warp-bonus', { hits: surf.hits, amount, charges: run.fieldCharges, reducedMotion: surf.reducedMotion });
+  }
   run.sectorIndex = destination;
   currentSector(run).visited = true;
   run.flight = null; run.saved = false; run.pulseCooldown = 0;
@@ -272,7 +288,12 @@ function tick(run) {
   run.pulseCooldown = Math.max(0, run.pulseCooldown - H);
   if (run.phase === 'flight') {
     const f = run.flight, b = run.world.ball;
+    const previousProgress = f.progress;
     f.progress = Math.min(1, f.progress + H / f.duration);
+    for (const event of stepWarpSurf(f.surf, previousProgress, f.progress, H)) {
+      run.score += event.points;
+      emit(run, event.type, event);
+    }
     const t = f.progress, smooth = t * t * (3 - 2 * t);
     b.x = f.from.x + (f.to.x - f.from.x) * smooth;
     b.y = f.from.y + (f.to.y - f.from.y) * smooth + Math.sin(t * Math.PI) * 170;

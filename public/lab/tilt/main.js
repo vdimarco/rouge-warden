@@ -1,5 +1,5 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY, setWarpAim, clearWarpAim } from './adventure.js';
 import { createTiltControl } from './motion.js';
 import { setFlip, canReverseScoop, H } from './physics.js';
 import { createRenderer } from './render.js';
@@ -17,6 +17,8 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let run = createAdventure(), mode = 'title', oldPhase = '', hudClock = 0, messageUntil = 0;
 let chargeStart = null, chargeOwner = null, charge = 0, mapReturn = 'play', scoreClock = 0;
 let fieldAim = null, fieldPointer = null, fieldKind = 'pull';
+let warpPointer = null;
+const warpKeys = new Set();
 const fingers = new Map(), keys = new Set(), activations = new Set();
 const motion = createTiltControl({ onChange: paintMotion });
 const FLIPS = { z: -1, x: 1 };
@@ -28,6 +30,7 @@ function sound(kind, strength = 1) {
   Sfx.play((e,t) => {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
     if (kind === 'reverse') { tone(e,t,{f:95,f2:620,dur:.28,peak:.12,wave:'sine',send:.35}); hiss(e,t,{type:'bandpass',f:400,f2:1500,dur:.2,peak:.05}); return; }
+    if (kind === 'warp-ring') { tone(e,t,{f:520,f2:1040,dur:.22,peak:.13,wave:'sine',send:.45}); tone(e,t+.07,{f:1560,dur:.22,peak:.05,send:.4}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
     if (kind === 'field-deploy') { tone(e,t,{f:110,f2:330,dur:.65,peak:.12,wave:'sine',send:.5}); hiss(e,t,{type:'bandpass',f:350,f2:1300,dur:.45,peak:.065}); return; }
     if (kind === 'pulse' || kind === 'launch') { hiss(e,t,{type:'bandpass',f:250,f2:1800,dur:.3,peak:.1}); tone(e,t,{f:140,f2:520,dur:.22,peak:.1}); return; }
@@ -66,6 +69,9 @@ async function toggleMotion() {
 function suspendMotion() { motion.suspend(); setAdventureTilt(run); }
 function resumeMotion() { if (run.phase === 'flight') motion.suspend(); else motion.resume(); setAdventureTilt(run); }
 function releaseControls() {
+  const pointer = warpPointer?.id;
+  warpPointer = null; warpKeys.clear(); clearWarpAim(run);
+  if (pointer != null && canvas.hasPointerCapture(pointer)) canvas.releasePointerCapture(pointer);
   fingers.clear(); keys.clear(); activations.clear(); chargeStart = null; chargeOwner = null; charge = 0; fieldPointer = null;
   setFlip(run.world,-1,false); setFlip(run.world,1,false);
   $('left-flip').classList.remove('held'); $('right-flip').classList.remove('held');
@@ -234,10 +240,31 @@ function syncHud() {
 }
 
 const TRANSIT_LABELS = { departure: 'Leaving orbit', galaxy: 'Crossing the galaxy', horizon: 'Entering the event horizon', tunnel: 'Through the singularity', arrival: 'Arriving in a new world' };
+function canSteerWarp() { return mode === 'play' && run.phase === 'flight' && run.flight?.surf?.enabled; }
+function advanceWarpInput() {
+  if (!canSteerWarp() || !warpKeys.size) return;
+  const surf = run.flight.surf;
+  const x = Number(warpKeys.has('d')) - Number(warpKeys.has('a'));
+  const y = Number(warpKeys.has('s')) - Number(warpKeys.has('w'));
+  const length = Math.max(1, Math.hypot(x,y));
+  setWarpAim(run, surf.target.x + x / length * H * 1.9, surf.target.y + y / length * H * 1.9);
+}
 function paintTransit() {
   if (!run.flight || run.phase !== 'flight') return;
   const flight = run.flight, phase = sampleTransit(flight.progress, reducedMotion).phase;
   const destination = run.sectors[flight.toSector];
+  const surf = flight.surf;
+  $('warp-readout').hidden = !surf?.enabled;
+  $('transit-panel').classList.toggle('has-surf', !!surf?.enabled);
+  if (surf?.enabled) {
+    const passed = surf.rings.filter(r=>r.status !== 'pending').length;
+    const count = `${surf.hits} / ${surf.rings.length} rings`;
+    if ($('warp-count').textContent !== count) $('warp-count').textContent = count;
+    $('warp-count').dataset.hits = String(surf.hits);
+    $('warp-readout').dataset.complete = String(surf.hits >= 2);
+    const help = surf.hits >= 2 ? (run.fieldCharges < FIELD_CAPACITY ? 'Gravity charge earned' : 'Bonus points earned · fields full') : passed === surf.rings.length ? 'Next world ahead' : matchMedia('(pointer: coarse)').matches ? 'Drag to steer · 2 rings earn a field' : 'Drag or WASD to steer · 2 rings earn a field';
+    if ($('warp-help').textContent !== help) $('warp-help').textContent = help;
+  }
   const stage = TRANSIT_LABELS[phase] || 'Crossing the galaxy';
   if ($('transit-stage').textContent !== stage) $('transit-stage').textContent = stage;
   if ($('transit-title').textContent !== destination.name) $('transit-title').textContent = destination.name;
@@ -320,6 +347,12 @@ for(const side of [-1,1]){
 }
 canvas.tabIndex=0;
 canvas.addEventListener('pointerdown',e=>{
+  if (canSteerWarp()) {
+    if (warpPointer !== null) return;
+    e.preventDefault(); Sfx.init(); warpKeys.clear(); clearWarpAim(run);
+    warpPointer = { id:e.pointerId, x:e.clientX, y:e.clientY, aimX:run.flight.surf.pilot.x, aimY:run.flight.surf.pilot.y };
+    canvas.setPointerCapture(e.pointerId); return;
+  }
   if (mode === 'field') {
     e.preventDefault(); if(fieldPointer !== null)return;
     fieldPointer = e.pointerId; canvas.setPointerCapture(e.pointerId);
@@ -328,12 +361,22 @@ canvas.addEventListener('pointerdown',e=>{
   holdFlip(e,e.clientX<innerWidth/2?-1:1,canvas);
 });
 canvas.addEventListener('pointermove',e=>{
+  if (canSteerWarp() && e.pointerId === warpPointer?.id) {
+    e.preventDefault();
+    const scale = 2.1 / Math.max(200, Math.min(innerWidth,innerHeight));
+    setWarpAim(run, warpPointer.aimX + (e.clientX-warpPointer.x)*scale, warpPointer.aimY + (e.clientY-warpPointer.y)*scale); return;
+  }
   if(mode === 'field' && e.pointerId === fieldPointer) { e.preventDefault(); moveFieldAim(renderer.toWorld(e.clientX,e.clientY)); }
 });
 $('launch-button').addEventListener('pointerdown',e=>{if(!startCharge(e.pointerId))return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);fingers.set(e.pointerId,'launch');});
 $('launch-button').addEventListener('click',e=>{if(e.detail===0 && run.phase==='ready'){if(startCharge('activation'))endCharge(false,'activation');}});
 $('pulse-button').addEventListener('click',()=>pulse());
 function pointerEnd(e,cancel=false){
+  if(e.pointerId === warpPointer?.id) {
+    warpPointer=null; clearWarpAim(run);
+    if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+    return;
+  }
   if(e.pointerId === fieldPointer) {
     fieldPointer = null;
     if(cancel)cancelField(); else if(mode === 'field') { moveFieldAim(renderer.toWorld(e.clientX,e.clientY)); placeField(); }
@@ -344,6 +387,9 @@ function pointerEnd(e,cancel=false){
 }
 window.addEventListener('pointerup',e=>pointerEnd(e));
 window.addEventListener('pointercancel',e=>pointerEnd(e,true));
+canvas.addEventListener('lostpointercapture',e=>{
+  if(e.pointerId === warpPointer?.id){warpPointer=null;clearWarpAim(run);}
+});
 window.addEventListener('keydown',e=>{
   if(e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
   const key=keyName(e);
@@ -363,9 +409,13 @@ window.addEventListener('keydown',e=>{
   if(mode==='play' && run.phase==='flight' && key==='e'){
     e.preventDefault();if(!e.repeat)$('skip-transit').click();return;
   }
+  if(canSteerWarp() && ['w','a','s','d'].includes(key)){
+    if(e.target.closest('button,a') || warpPointer !== null || (e.repeat && !warpKeys.has(key)))return;
+    e.preventDefault(); warpKeys.add(key); return;
+  }
   if(mode!=='play'||['upgrade','flight','over','won'].includes(run.phase))return;
   if([' ','enter'].includes(key)&&e.target.closest('button,a'))return;
-  if(key in FLIPS){e.preventDefault();keys.add(key);updateFlips();}
+  if(key in FLIPS){e.preventDefault();if(e.repeat&&!keys.has(key))return;keys.add(key);updateFlips();}
   else if(key===' '){e.preventDefault();if(!e.repeat)startCharge('space');}
   else if(key==='c'){e.preventDefault();if(!e.repeat)pulse();}
   else if(key==='a'){e.preventDefault();if(!e.repeat)pulse(-1);}
@@ -373,16 +423,18 @@ window.addEventListener('keydown',e=>{
   else if(key==='r'){e.preventDefault();if(!e.repeat)showMap();}
   else if(key==='f'&&!e.repeat){e.preventDefault();beginField();}
 });
-window.addEventListener('keyup',e=>{const key=keyName(e);keys.delete(key);updateFlips();if(key===' ')endCharge(false,'space');});
+window.addEventListener('keyup',e=>{const key=keyName(e);if(warpKeys.delete(key)&&!warpKeys.size)clearWarpAim(run);keys.delete(key);updateFlips();if(key===' ')endCharge(false,'space');});
 window.addEventListener('blur',()=>{cancelField();releaseControls();if(mode==='play')pause();});
 window.addEventListener('resize',()=>{cancelField();releaseControls();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelField();releaseControls();if(mode==='play')pause();}});
 
 startLoop({h:H,step:()=>{
   if(mode!=='play')return;
+  advanceWarpInput();
   const tilt = ['ready','play'].includes(run.phase) ? motion.sample(H) : { x: 0, y: 0 };
   setAdventureTilt(run, tilt.x, tilt.y);
   updateAdventure(run,H);
+  const warpBonus = run.events.find(event => event.type === 'warp-bonus');
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
@@ -390,10 +442,12 @@ startLoop({h:H,step:()=>{
     const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
     if(kind === 'reverse')announce('Reverse flip');
+    if(kind === 'warp-ring' && event.hit)sound('warp-ring');
     if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
     if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
     if(kind === 'arrive') { releaseControls(); resumeMotion(); syncHud(); }
   }
+  if(warpBonus)announce(warpBonus.amount ? `Warp reward · +${warpBonus.amount} gravity charge` : 'Warp complete · field charges full');
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
 },draw:(_,dt)=>{
   if(chargeStart!=null){charge=Math.min(1,(performance.now()-chargeStart)/1200);$('launch-button').style.setProperty('--charge',charge);}

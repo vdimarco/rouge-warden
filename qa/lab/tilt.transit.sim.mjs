@@ -40,7 +40,8 @@ for (const reducedMotion of [false, true]) {
   for (let i = 0; i < 4; i++) arrivals += updateAdventure(run).filter(e => e.type === 'arrive').length;
   assert.equal(arrivals, 1, 'Natural arrival emits exactly once');
   assert.equal(run.sectorIndex, 1); assert.equal(run.phase, 'ready');
-  assert.equal(run.fieldCharges, carried, 'Travel preserves earned field charges');
+  assert.equal(run.fieldCharges, Math.min(3, carried + (reducedMotion ? 1 : 0)),
+    'Travel preserves earned fields and calm travel awards its accessible charge');
   assert.equal(run.flight, null);
   assert.deepEqual([run.world.ball.x, run.world.ball.y], [currentSector(run).station.x, currentSector(run).station.y]);
   assert.equal(skipAdventureFlight(run), false, 'Skip cannot run again after arrival');
