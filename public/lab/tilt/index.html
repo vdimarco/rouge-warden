@@ -9,6 +9,7 @@
   <title>Full Tilt · A pinball voyage</title>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/lab/tilt/adventure.css">
+  <link rel="stylesheet" href="/lab/tilt/upgrade.css">
 </head>
 <body>
   <canvas id="view" aria-label="Space pinball adventure. Use the on-screen controls or Z and X for flippers, Space to launch, C to pulse, F for a gravity field, R for the map, and Escape to pause."></canvas>
@@ -95,13 +96,19 @@
     </div>
   </section>
 
-  <section id="upgrade-panel" class="overlay panel-overlay" aria-labelledby="upgrade-title" hidden>
-    <div class="dialog-card upgrade-card">
-      <p class="eyebrow">JUMP GATE REACHED</p>
-      <h2 id="upgrade-title">Choose your upgrade.</h2>
-      <p id="upgrade-detail" class="panel-description">Carry a new power into the next sector.</p>
-      <div id="upgrade-options" class="upgrade-options"></div>
-      <p class="panel-footnote">Each choice lasts for this voyage.</p>
+  <section id="upgrade-panel" class="overlay celestial-overlay" role="dialog" aria-modal="true" aria-labelledby="upgrade-title" aria-describedby="upgrade-detail" hidden>
+    <div class="upgrade-console">
+      <svg class="console-frame" viewBox="0 0 1080 600" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M20 1H1060L1079 20V580L1060 599H20L1 580V20Z"/><path d="M22 6H1058L1074 22V578L1058 594H22L6 578V22Z"/></svg>
+      <div class="upgrade-rail">
+        <p class="upgrade-status"><span aria-hidden="true"></span>JUMP GATE REACHED</p>
+        <p class="upgrade-route"><span id="upgrade-from"></span><svg viewBox="0 0 32 16" aria-hidden="true" focusable="false"><path d="M1 8h28m-7-6 7 6-7 6"/></svg><span id="upgrade-to"></span></p>
+      </div>
+      <div class="upgrade-heading">
+        <div><h2 id="upgrade-title">Choose your upgrade.</h2><p id="upgrade-detail">Fit one module before the next jump.</p></div>
+        <svg class="upgrade-compass" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="20"/><path d="M50 3v94M3 50h94"/><path class="compass-star" d="m50 42 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/></svg>
+      </div>
+      <div id="upgrade-options" class="upgrade-modules" role="group" aria-label="Choose one upgrade"></div>
+      <p class="upgrade-footnote">Each choice lasts for this voyage.</p>
     </div>
   </section>
 

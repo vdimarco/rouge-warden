@@ -8,6 +8,7 @@ import { Sfx, tone, hiss } from '../kit/sfx.js';
 import { sampleTransit } from './transit.js';
 import { createTransitAudio } from './transit-audio.js';
 import { createSpaceMusic } from './space-music.js';
+import { upgradeEmblem } from './upgrade-emblems.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), renderer = createRenderer(canvas, $('mini-map'));
@@ -181,14 +182,19 @@ function showMap() {
 function closeMap() { $('map-panel').hidden=true; document.body.classList.remove('showing-map'); mode=mapReturn; if(mode==='play')resumeMotion(); canvas.focus({preventScroll:true}); }
 function showUpgrades() {
   releaseControls(); suspendMotion(); $('upgrade-panel').hidden=false;
-  $('upgrade-detail').textContent=`${currentSector(run).name} complete. Choose what you carry into the next sector.`;
+  $('upgrade-from').textContent=currentSector(run).name;
+  $('upgrade-to').textContent=run.sectors[run.sectorIndex + 1]?.name || 'Voyage complete';
   $('upgrade-options').replaceChildren(...availableUpgrades(run).map((item,index)=>{
-    const button=document.createElement('button');button.type='button';
+    const button=document.createElement('button');button.type='button';button.className='upgrade-module';button.dataset.module=item.id;
     button.setAttribute('aria-keyshortcuts', String(index + 1));
-    const name=document.createElement('strong');name.textContent=item.name;
-    const shortcut=document.createElement('kbd');shortcut.className='upgrade-key';shortcut.textContent=String(index + 1);name.prepend(shortcut,document.createTextNode(' '));
-    const desc=document.createElement('span');desc.textContent=item.description;
-    button.append(name,desc);
+    const emblem=document.createElement('span');emblem.className='upgrade-emblem';emblem.innerHTML=upgradeEmblem(item.id);
+    const copy=document.createElement('span');copy.className='upgrade-copy';
+    const name=document.createElement('strong');name.className='upgrade-name';name.id=`upgrade-name-${item.id}`;name.textContent=item.name;
+    const shortcut=document.createElement('kbd');shortcut.className='upgrade-key';shortcut.setAttribute('aria-hidden','true');shortcut.textContent=String(index + 1);
+    const desc=document.createElement('span');desc.className='upgrade-description';desc.id=`upgrade-description-${item.id}`;desc.textContent=item.description;
+    const action=document.createElement('span');action.className='upgrade-action';action.setAttribute('aria-hidden','true');action.innerHTML='Install &amp; jump <svg viewBox="0 0 20 20" focusable="false"><path d="M4 16 16 4M5 4h11v11"/></svg>';
+    button.setAttribute('aria-labelledby',name.id);button.setAttribute('aria-describedby',desc.id);
+    copy.append(shortcut,name,desc,action);button.append(emblem,copy);
     button.addEventListener('click',()=>{
       if(chooseUpgrade(run,item.id,{reducedMotion})!==false){ $('upgrade-panel').hidden=true; releaseControls(); suspendMotion(); $('message').classList.remove('visible'); messageUntil=0; sound('upgrade'); canvas.focus({preventScroll:true}); syncHud(); }
     });return button;
@@ -395,6 +401,12 @@ window.addEventListener('keydown',e=>{
   const key=keyName(e);
   if(key==='escape'){if(e.repeat)return;if(mode==='field')cancelField();else if(mode==='map')closeMap();else if(mode==='pause')resume();else pause();return;}
   if(mode==='map' && key==='r'){e.preventDefault();if(!e.repeat)closeMap();return;}
+  if(mode==='play' && run.phase==='upgrade' && key==='tab'){
+    const options=[...$('upgrade-options').querySelectorAll('button')];
+    const index=options.indexOf(document.activeElement);
+    const next=index < 0 ? (e.shiftKey ? options.length - 1 : 0) : (index + (e.shiftKey ? options.length - 1 : 1)) % options.length;
+    e.preventDefault();options[next]?.focus();return;
+  }
   if(mode === 'field') {
     if(['w','a','s','d'].includes(key)) {
       e.preventDefault(); moveFieldAim({ x: fieldAim.x + (key === 'd' ? 45 : key === 'a' ? -45 : 0), y: fieldAim.y + (key === 'w' ? 45 : key === 's' ? -45 : 0) });
