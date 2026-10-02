@@ -7,6 +7,8 @@ import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
 import { skillIcon } from './skill-icons.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
+import { spellbookHTML, spellDetail } from './spellbook.js';
+import { rosterHTML, heroPreviewHTML, ROLES } from './roster.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
 let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, castQueue, recallQueue = false, target = 0, moveId = null, moveOrigin, skillId = null, skillOrigin, skillSlot = null, lastAttack = 0, portalQueue = false, waypoint = null;
@@ -27,6 +29,8 @@ function choose(kind) {
   selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('hero-role').textContent = h.role; $('hero-note').textContent = h.note;
   $('hero-art').src = `./art/illustrated/${h.slug}-front.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
   document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
+  $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(kind);$('hero-spell-note').textContent=h.note;
+  document.querySelectorAll('[data-hero-spell]').forEach(b=>b.onclick=()=>{$('hero-spell-note').textContent=spellDetail(kind,+b.dataset.heroSpell).description;document.querySelectorAll('[data-hero-spell]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));});
 }
 function start() {
   sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
@@ -39,13 +43,11 @@ function start() {
 }
 function learnSkills() {
   if (!running || resultShown) return;
-  const p=player(state);
+  const p=player(state);let selectedSpell=p.skillRanks.findIndex((r,i)=>canLearn(p,i));if(selectedSpell<0)selectedSpell=0;
   const show=()=>{
-    sheet(`<h2>Shape your legend</h2><p class="training-summary">${HEROES[p.hero].name} · Level ${p.level} · ${p.skillPoints} skill point${p.skillPoints===1?'':'s'}</p><div class="skill-training">${KITS[p.hero].map((a,i)=>{
-      const rank=p.skillRanks[i], gate=rankGate(i,rank), ready=canLearn(p,i), max=i===3?3:4;
-      return `<article><div class="training-icon">${skillIcon(a.icon)}</div><div><h3>${a.name}${i===3?' <small>ULTIMATE</small>':''}</h3><p>${a.description}</p><small>Rank ${rank}/${max} · ${Math.round(cooldownFor({...p,skillRanks:p.skillRanks.map((v,j)=>j===i?Math.max(1,v):v)},i))}s cooldown${rank<max?` · Next rank: level ${gate}`:' · Fully trained'}</small><button data-train="${i}" ${ready?'':'disabled'}>${ready?(rank?'Upgrade':'Learn'):rank>=max?'Max rank':p.level<gate?`Requires level ${gate}`:'Earn a skill point'}</button></div></article>`;
-    }).join('')}</div><button id="back-skills" class="primary">Back to the hunt</button>`);
-    document.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>{const i=+b.dataset.train;if(trainSkill(p,i)){announce(state,`${KITS[p.hero][i].name} · Rank ${p.skillRanks[i]}`,'Spell trained. Return to the hunt.');sound.tone(780,.16);updateUI();show();}});
+    sheet(spellbookHTML(p,selectedSpell));$('sheet').classList.add('spellbook-sheet');
+    document.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{selectedSpell=+b.dataset.preview;show();document.querySelector(`[data-preview="${selectedSpell}"]`).focus({preventScroll:true});});
+    $('train-selected').onclick=()=>{if(trainSkill(p,selectedSpell)){const text=`${KITS[p.hero][selectedSpell].name} · Rank ${p.skillRanks[selectedSpell]}`;announce(state,text,'Spell trained. Return to the hunt.');sound.tone(780,.16);updateUI();show();$('training-feedback').textContent=`Learned ${KITS[p.hero][selectedSpell].name}, rank ${p.skillRanks[selectedSpell]}.`;document.querySelector(`[data-preview="${selectedSpell}"]`).focus({preventScroll:true});}};
     $('back-skills').onclick=closeSheet;
   };show();
 }
@@ -112,7 +114,10 @@ $('inventory').onclick = shop; $('quick-buy').onclick = () => { const id = $('qu
 $('map-button').onclick = map; $('portal').onclick = () => { if (running && !paused) portalQueue = true; }; $('play').onclick = start; $('pause').onclick = pause; $('how').onclick = how; $('shop').onclick = shop; $('recall').onclick = () => { if (running && !paused) recallQueue = true; }; $('close-sheet').onclick = closeSheet; $('coach-close').onclick = () => $('coach').hidden = true;
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
-document.querySelectorAll('[data-hero]').forEach(b => b.onclick = () => choose(+b.dataset.hero));
+let rosterFilter='All';
+function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selected,rosterFilter);$('roster-count').textContent=`${document.querySelectorAll('[data-hero]').length} legends`;document.querySelectorAll('[data-hero]').forEach(b=>b.onclick=()=>choose(+b.dataset.hero)); }
+$('role-filters').innerHTML=ROLES.map(role=>`<button data-role="${role}" aria-pressed="${role==='All'}">${role}</button>`).join('');
+document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 const joy = $('joystick');
 function moveStick(e) { if (e.pointerId !== moveId) return; const x = e.clientX - moveOrigin.x, y = e.clientY - moveOrigin.y, d = Math.max(1, Math.hypot(x, y) / 38); movement.x = x / d / 38; movement.y = y / d / 38; $('thumb').style.transform = `translate(${movement.x * 29}px,${movement.y * 29}px)`; }
 joy.addEventListener('pointerdown', e => { if (!running || paused || moveId !== null) return; e.preventDefault(); sound.start(); $('coach').hidden = true; moveId = e.pointerId; moveOrigin = { x: e.clientX, y: e.clientY }; joy.classList.add('active'); joy.setPointerCapture(e.pointerId); moveStick(e); });

@@ -4,7 +4,7 @@ import { canLearn, rankGate, trainBot, xpForLevel, cooldownFor, KITS } from '../
 const isolated=(hero=0)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,gold:0,nextShop:Infinity});return {s,p};};
 const foe=(s,x,y)=>{const t={id:200+s.units.length,kind:'minion',team:1,x,y,radius:16,hp:10000,maxHp:10000,damage:0,speed:0,attackCd:100,lane:1,shield:0,stun:0,slow:0,fear:0,armor:0,lastHit:0};s.units.push(t);return t;};
 const advance=(s,t)=>{for(let i=0;i<t*20;i++)step(s,{attack:false},.05);};
-for(let hero=0;hero<4;hero++){
+for(let hero=0;hero<HEROES.length;hero++){
  const {s,p}=isolated(hero);assert.equal(KITS[hero].length,4);assert.deepEqual(p.skillRanks,[0,0,0,0]);assert.equal(p.skillPoints,1);
  for(let slot=0;slot<4;slot++)assert.equal(cast(s,p,slot),false,'unlearned spells never cast');
  assert.equal(trainSkill(p,3),false);assert.equal(trainSkill(p,-1),false);assert.equal(trainSkill(p,4),false);
@@ -16,7 +16,7 @@ for(let hero=0;hero<4;hero++){
 {
  const {s,p}=isolated();p.xp=xpForLevel(1)-18;const t=foe(s,p.x,p.y-90);t.hp=1;damage(s,p,t,1);assert.equal(p.level,2);assert.equal(p.skillPoints,2,'level up grants exactly one point');
 }
-for(let hero=0;hero<4;hero++){
+for(let hero=0;hero<HEROES.length;hero++){
  const {p}=isolated(hero);for(let level=1;level<=18;level++){if(level>1)p.skillPoints++;p.level=level;trainBot(p);p.skillRanks.forEach((rank,slot)=>{if(rank)assert(rankGate(slot,rank-1)<=level);});}assert.deepEqual(p.skillRanks,[4,4,4,3]);
 }
 {
@@ -35,4 +35,4 @@ for(let hero=0;hero<4;hero++){
  const {s,p}=isolated(3);p.skillRanks=[1,1,1,1];const t=foe(s,2400,2630);p.target=t.id;cast(s,p,2,{x:0,y:-1});assert(t.bleed);assert(p.pursuitUntil>s.time);cast(s,p,1);assert.equal(t.fear,2.2,'shriek amplifies on bleeding targets');const hp=t.hp;advance(s,.9);assert(t.hp<hp,'bleed persists after slash');
  p.hp-=400;const health=p.hp;cast(s,p,3);damage(s,p,t,100,'attack');assert.equal(p.hp,health+30,'frenzy retains 30% life steal');
 }
-console.log('PASS: four learnable kits, all rank gates, point accounting, death, bot training, XP, cooldown scaling and each hero combination.');
+console.log(`PASS: ${HEROES.length} learnable kits, all rank gates, point accounting, death, bot training, XP, cooldown scaling and original hero combinations.`);

@@ -59,4 +59,4 @@ for (let seed = 1; seed <= 3; seed++) for (let kind = 0; kind < HEROES.length; k
   summaries.push({ seed, creature: HEROES[kind].name, winner: s.winner, seconds: Math.round(s.time), kills: s.score.reduce((a,b)=>a+b,0), maxUnits: max });
 }
 const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 85, { autopilot: true }); advance(b, 85, { autopilot: true }); assert.deepEqual(a.units, b.units);
-console.log('PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, all four kits, items, portals, respawn, interrupted return, objectives, deterministic replay and 12 complete matches.');console.table(summaries);
+console.log(`PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, items, portals, respawn, interrupted return, objectives, deterministic replay and ${summaries.length} complete matches.`);console.table(summaries);
