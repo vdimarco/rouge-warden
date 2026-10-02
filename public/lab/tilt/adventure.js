@@ -128,6 +128,8 @@ export function createAdventure(seed = 1) {
     fieldCharges: 1, gravityWell: null };
   // Other systems stay visible but are reached through their jump gates.
   table.isActive = object => object.sector === run.sectorIndex;
+  table.reverseScoop = { enabled: () => run.phase === 'play', centerX: f => run.sectors[f.sector].x,
+    depth: 154, cooldown: 0.8, impulse: 1080 };
   table.launchVelocity = (power = 0.75) => ({
     x: (run.seed % 2 ? -1 : 1) * (320 + run.sectorIndex * 12),
     y: 1020 + clamp(power, 0.35, 1) * 350,
@@ -140,7 +142,7 @@ export function createAdventure(seed = 1) {
     const dx = p.x - ball.x, dy = p.y - ball.y, d = Math.hypot(dx, dy), inv = 1 / Math.max(1, d);
     const nx = dx * inv, ny = dy * inv;
     const dockX = clamp((s.dockRadius - Math.abs(ball.x - s.x)) / 90, 0, 1);
-    const dockY = clamp((s.y + 370 - ball.y) / 110, 0, 1) * clamp((ball.y - s.y + 20) / 90, 0, 1);
+    const dockY = clamp((s.y + 370 - ball.y) / 110, 0, 1) * clamp((ball.y - s.y + 95) / 60, 0, 1);
     const dock = dockX * dockY, field = 1 - dock;
     const force = Math.min(3300, p.mass / (d * d + 145 * 145)) * p.strength;
     let ax = nx * force * field, ay = ny * force * field - 800 * dock;
@@ -171,7 +173,9 @@ export function createAdventure(seed = 1) {
   table.gravity = ball => table.gravityAt(ball);
   table.isDrain = b => {
     const s = currentSector(run);
-    return Math.abs(b.x - s.x) < 104 && b.y < s.y + 100 && b.y > s.y + 40 && b.vy < 0;
+    // Leave room below the flipper tips for one deliberate reverse-scoop press.
+    // Sideways flight remains open space; missed dock shots still spend a life.
+    return Math.abs(b.x - s.x) < 104 && b.y < s.y + 4 && b.y > s.y - 60 && b.vy < 0;
   };
   table.leaveLane = () => true;
   run.world = makeWorld(table);
@@ -302,6 +306,7 @@ function tick(run) {
         }
       } else emit(run, 'bumper', { id: e.id });
     } else if (e.k === 'flipper') emit(run, 'flipper', { side: e.side });
+    else if (e.k === 'reverse') emit(run, 'reverse', { side: e.side, x: e.x, y: e.y });
   }
   if (sector.gate.open && Math.hypot(b.x - sector.gate.x, b.y - sector.gate.y) < sector.gate.r) {
     sector.cleared = true; run.score += 3000; b.vx = 0; b.vy = 0;

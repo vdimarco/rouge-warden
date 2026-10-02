@@ -35,8 +35,9 @@ export function makeWorld(table, { kickers = true } = {}) {
   return {
     table, grid, cell, cols, rows, kickers,
     ball: { x: table.launch.x, y: table.launch.y, vx: 0, vy: 0, live: false, lane: true },
-    flippers: table.flippers.map((f) => ({ ...f, th: f.rest, om: 0, held: false, dir: f.side < 0 ? 1 : -1, sd: 0 })),
-    t: 0, escapes: 0, tunnels: 0, laneHit: -1,
+    flippers: table.flippers.map((f) => ({ ...f, th: f.rest, om: 0, held: false, dir: f.side < 0 ? 1 : -1, sd: 0,
+      reverseFx: 0, reverseUntil: 0 })),
+    t: 0, escapes: 0, tunnels: 0, laneHit: -1, reverseScoop: null, _inputEvents: [],
   };
 }
 
@@ -46,6 +47,7 @@ const tip = (f) => [f.px + f.len * Math.cos(f.th), f.py + f.len * Math.sin(f.th)
 function moveFlippers(w, hs) {
   let moving = false;
   for (const f of w.flippers) {
+    f.reverseFx = Math.max(0, f.reverseFx - hs / 0.45);
     const target = f.held ? f.dir * F.UP : -f.dir * F.DOWN;
     const dv = target - f.om, a = F.MOTOR * hs;
     f.om += dv > a ? a : dv < -a ? -a : dv;
@@ -156,6 +158,8 @@ function collideFlippers(w, ev) {
 export function step(w, ev = null) {
   const b = w.ball;
   w.t += H;
+  if (ev) ev.push(...w._inputEvents);
+  w._inputEvents.length = 0;
   if (b.lane && !b.live) { moveFlippers(w, H); return; }
   const v = Math.hypot(b.vx, b.vy);
   const flipMoving = w.flippers.some((f) => Math.abs(f.om) > 0.5 || f.held !== (f.th === f.up));
@@ -164,6 +168,7 @@ export function step(w, ev = null) {
   const hs = H / n;
   for (let i = 0; i < n; i++) {
     moveFlippers(w, hs);
+    advanceReverseScoop(w, hs);
     const px = b.x, py = b.y;
     if (w.table.gravity) {
       const a = w.table.gravity(b, w);
@@ -190,12 +195,70 @@ export function step(w, ev = null) {
   if (b.live && (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY && b.x < 455)) { b.live = false; if (ev) ev.push({ k: "drain" }); }
 }
 
-export function setFlip(w, side, held) { for (const f of w.flippers) if (f.side === side) f.held = !!held; }
+// This rescue is opt-in. The classic table retains only its physical flippers.
+// A scoop travels under the tip into the dock's center gap before turning upward;
+// the ball remains subject to the regular collision solver throughout the move.
+function reverseFlipper(w, side) {
+  return w.flippers.find(f => f.side === side && (!w.table.isActive || w.table.isActive(f)));
+}
+
+export function canReverseScoop(w, side) {
+  const config = w.table.reverseScoop, b = w.ball, f = reverseFlipper(w, side);
+  if (!config || !f || f.held || !b.live || b.lane || w.reverseScoop || w.t < f.reverseUntil ||
+      (config.enabled && !config.enabled()) || !Number.isFinite(b.x + b.y + b.vx + b.vy) || b.vy > 200) return false;
+  const centerX = config.centerX(f), inward = -f.side;
+  if ((b.x - f.px) * inward < -18 || (centerX - b.x) * inward < -5) return false;
+  // Use the resting blade for the ceiling, even while a released blade is falling.
+  // A normal shot above either flipper must never trigger the underside assist.
+  const u = Math.max(0, Math.min(1, (b.x - f.px) / (Math.cos(f.rest) * f.len)));
+  const roof = f.py + Math.sin(f.rest) * f.len * u - R - 10;
+  return b.y < roof && b.y > f.py - config.depth;
+}
+
+function beginReverseScoop(w, f) {
+  const config = w.table.reverseScoop, b = w.ball, centerX = config.centerX(f);
+  const dx = centerX - b.x, speed = 740;
+  f.reverseFx = 1; f.reverseUntil = w.t + config.cooldown;
+  w.reverseScoop = { centerX, side: f.side, remaining: 0.35, launch: config.impulse };
+  if (Math.abs(dx) <= 6) {
+    b.vx = 0; b.vy = Math.max(config.impulse, b.vy);
+    w.reverseScoop = null;
+  } else {
+    // Aim below both tips. The inward impulse gets the ball to the turn in 0.2 s.
+    const travel = Math.abs(dx) / speed;
+    b.vx = Math.sign(dx) * speed;
+    b.vy = Math.min(0, (Math.min(b.y, f.py - 94) - b.y) / travel);
+  }
+  w._inputEvents.push({ k: 'reverse', side: f.side, x: b.x, y: b.y });
+}
+
+function advanceReverseScoop(w, hs) {
+  const scoop = w.reverseScoop;
+  if (!scoop) return;
+  const b = w.ball;
+  scoop.remaining -= hs;
+  if (!b.live || scoop.remaining <= 0) { w.reverseScoop = null; return; }
+  // The brief field supports the ball against local dock gravity while drawing
+  // it inward. This also makes a press near the drain useful instead of too late.
+  b.vy += 800 * hs;
+  if (Math.abs(scoop.centerX - b.x) <= Math.max(6, Math.abs(b.vx) * hs)) {
+    b.vx *= 0.02; b.vy = Math.max(scoop.launch, b.vy);
+    w.reverseScoop = null;
+  }
+}
+
+export function setFlip(w, side, held) {
+  const down = !!held, f = reverseFlipper(w, side);
+  if (down && f && !f.held && canReverseScoop(w, side)) beginReverseScoop(w, f);
+  for (const flipper of w.flippers) if (flipper.side === side) flipper.held = down;
+}
 
 // Put a ball on the plunger.
 export function serve(w) {
   const b = w.ball, L = w.table.launch;
   b.x = L.x; b.y = L.y; b.vx = 0; b.vy = 0; b.live = false; b.lane = true;
+  w.reverseScoop = null; w._inputEvents.length = 0;
+  for (const f of w.flippers) { f.reverseFx = 0; f.reverseUntil = 0; }
 }
 // How hard the plunger shoots for a pull of d (0..1). The spring is soft at first: the middle half of the pull sends
 // the ball just over the top, where it falls into the top lanes, one lane after the other. The last quarter is for

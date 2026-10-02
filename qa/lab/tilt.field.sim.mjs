@@ -169,7 +169,7 @@ const deploy = (run, kind = 'pull') => {
     launchAdventure(run); run.saveUntil = 0;
     if (lastLife) run.lives = 1;
     assert(deploy(run));
-    place(run, s.x, s.y + 99, 0, -100);
+    place(run, s.x, s.y + 3, 0, -100);
     const events = updateAdventure(run);
     assert.equal(run.gravityWell, null, 'draining clears the field before the next checkpoint');
     assert.equal(run.fieldCharges, 0, 'draining does not refill the inventory');
@@ -201,3 +201,4 @@ const deploy = (run, kind = 'pull') => {
 }
 
 console.log('PASS temporary gravity field simulation');
+

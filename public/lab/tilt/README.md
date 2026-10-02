@@ -8,7 +8,9 @@ The field uses luminous mineral cores, varied asteroid surfaces, diffuse orbital
 
 Press either screen half or the marked flipper pads to flip at the dock. Z and X control the left and right flippers. Hold Launch or Space, then release. Pulse (C) bends a shot toward an uncharged relay in any direction; A/D steer sideways. R opens or closes the map, and Escape pauses or resumes. Upgrade choices use 1/2/3, and E skips a jump. All game shortcuts sit on the left side of the keyboard. A short projected path helps you read the gravity curve. Relays open a jump gate. Enter it to choose an upgrade and fly to the next sector. The Star Engine's cores each need two hits.
 
-**Travel between worlds:** after choosing an upgrade, the camera leaves the current orbit, turns through a galaxy view, dives into a black hole, and arrives at the next dock. A jump lasts 6.6 seconds. The galaxy shows symbolic route markers; it never exposes adjacent playfields. **Skip jump** goes straight to the same destination. Pause, a hidden tab, and lost focus stop travel and its sound. Touch controls and phone tilt stay suspended until arrival. Devices with reduced motion enabled use a 1.1-second fade with no camera rotation or streaks. The destination stays at the dock until the player launches.
+**Reverse scoop:** when the ball falls below a flipper, release and tap that flipper again. Its control turns gold while a scoop is in reach. A short gravity curl guides the ball up through the center of the dock. A fresh press is required, with a brief cooldown. Missing the recovery area still costs a ball. Z/X and the touch controls use the same action.
+
+**Travel between worlds:** after choosing an upgrade, the camera leaves the current orbit, turns through a galaxy view, dives into a black hole from a spacecraft cockpit, and arrives at the next dock. Depth-projected stars stream past the windshield as speed builds, with slow nebula motion behind them and a gentle glow on arrival. A jump lasts 6.6 seconds. The galaxy shows symbolic route markers; it never exposes adjacent playfields. **Skip jump** goes straight to the same destination. Pause, a hidden tab, and lost focus stop travel and its sound. Touch controls and phone tilt stay suspended until arrival. Devices with reduced motion enabled use a 1.1-second fade with no camera rotation or streaks. The destination stays at the dock until the player launches.
 
 For optional phone steering, hold the phone comfortably and tap **Enable tilt** on the start screen or in Pause. Allow motion access if asked. Tilting gently nudges the ball toward the lowered edge of the screen. The force is smoothed and capped at 80 world units/s², one tenth of the dock's pull, including diagonal tilts. Planetary gravity remains the main force. The shot preview includes the same nudge. Pause includes a toggle and **Recenter tilt**. Returning to play or rotating the screen sets a fresh center. Tilt starts off each page load; denied permission or missing sensors leave all touch controls usable.
 
@@ -33,7 +35,7 @@ Planets use strong, softened radial forces. Open flight has no uniform downward 
 - `main.js`: touch/keyboard controls, sound, pause, route and upgrade UI.
 - `motion.js`: opt-in device orientation, permission handling, screen-relative calibration, dead zone and smoothing. Sensor readings stay in the page and are not stored or sent.
 - `assets/provenance.json`: original celestial art prompts, sources and crop bounds, about 613 KB.
-- `art/transit/event-horizon.webp`: original generated black-hole plate, about 285 KB. Its companion provenance file records the provider and prompt. Camera motion, lens effects and the crystalline tunnel run in the renderer, with no video download or playback dependency.
+- `art/transit/event-horizon.webp`: original generated black-hole plate, about 285 KB. Its companion provenance file records the provider and prompt. Camera motion, lens effects and the cockpit warp run in the renderer, with no video download or playback dependency.
 
 ## Checks
 
@@ -46,6 +48,7 @@ node qa/lab/tilt.camera.sim.mjs
 node qa/lab/tilt.motion.sim.mjs
 node qa/lab/tilt.field.sim.mjs
 node qa/lab/tilt.transit.sim.mjs
+node qa/lab/tilt.reverse.sim.mjs
 ```
 
 The classic physics suite covers high-speed shots, catch/pass skills, energy and two simulated hours without a trapped ball. Adventure tests cover actual relay collisions, upgrades, checkpoints and a bot that clears all six sectors. Camera tests cover 3,314 cases across seven screen sizes.
@@ -60,3 +63,4 @@ The classic physics suite covers high-speed shots, catch/pass skills, energy and
 ## Design reference
 
 Pinball Spire's public game description informed the combination of pinball, exploration and abilities: https://store.steampowered.com/app/2601940/Pinball_Spire/. Full Tilt uses its own space setting, graphics, world and game code.
+

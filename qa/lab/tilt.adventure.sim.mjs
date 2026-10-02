@@ -192,17 +192,17 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 {
   const run = createAdventure(1), s = currentSector(run);
   launchAdventure(run);
-  place(run, s.x + 450, s.y + 99, 0, -100);
+  place(run, s.x + 450, s.y + 3, 0, -100);
   advance(run, 0.2);
   assert.equal(run.phase, 'play', 'passing below the dock off to one side is safe space');
   assert.equal(run.lives, 3);
   strike(run, s.relays[0]);
-  place(run, s.x, s.y + 99, 0, -100);
+  place(run, s.x, s.y + 3, 0, -100);
   updateAdventure(run);
   assert.equal(run.lives, 3); assert.equal(run.phase, 'ready');
   assert(s.relays[0].hit, 'checkpoint preserves earned relay progress');
   launchAdventure(run); run.saveUntil = 0;
-  place(run, s.x, s.y + 99, 0, -100);
+  place(run, s.x, s.y + 3, 0, -100);
   updateAdventure(run);
   assert.equal(run.lives, 2); assert.equal(run.phase, 'ready');
   assert.equal(run.world.ball.x, s.station.x);
@@ -248,3 +248,4 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   console.log('ok: classic table retains its original downward gravity');
 }
 console.log('tilt.adventure.sim: all passed');
+

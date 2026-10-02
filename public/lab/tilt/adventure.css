@@ -150,6 +150,8 @@ body.playing #controls { display: flex; }
 .flipper-arrow { color: var(--cyan); font-size: 26px; line-height: 1; }
 .flipper-button:active, .flipper-button.active, .flipper-button.held { background: #8be6d5; border-color: #cefff0; color: #0b2630; box-shadow: 0 0 28px #8be6d543; }
 .flipper-button:active .flipper-arrow, .flipper-button.active .flipper-arrow, .flipper-button.held .flipper-arrow { color: #0c302f; }
+.flipper-button.scoop-ready { border-color: #f2cf88; background: linear-gradient(#453728ef, #1b2532ed); color: #fff0c6; box-shadow: 0 0 22px #ffd38632; }
+.flipper-button.scoop-ready .flipper-arrow { color: #ffe0a0; }
 .center-controls { position: relative; display: flex; gap: 8px; }
 .center-controls button { min-height: 49px; min-width: 92px; padding: 9px 16px; border-radius: 8px; background: #102736e6; border: 1px solid #8be6d548; font-size: 12px; font-weight: 550; }
 .center-controls button > span { margin-right: 7px; font-size: 18px; vertical-align: -1px; }
