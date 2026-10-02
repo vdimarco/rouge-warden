@@ -24,3 +24,6 @@
 @media(min-width:700px){.abilities{right:24px;bottom:calc(68px + env(safe-area-inset-bottom))}#joystick{bottom:85px}.health{bottom:66px}}
 @media(max-width:370px){.abilities{width:200px;height:196px;right:8px;transform:none}.abilities .ability{width:56px;height:56px}.abilities .surge{left:66px;top:32px}.abilities .ult{width:80px;height:80px}.ability svg{inset:9px;width:34px;height:34px}.ability.ult svg{inset:13px;width:48px;height:48px}.ability span{font-size:8px}.abilities .signature{bottom:10px}#skill-points{width:152px}#joystick{bottom:83px}.health{bottom:64px}}
 @media(max-height:520px) and (min-width:600px){.abilities{right:16px;bottom:42px;height:186px;width:205px;transform:none}.abilities .surge{left:68px;top:22px}.abilities .ult{width:80px;height:80px}.ability.ult svg{inset:12px;width:50px;height:50px}.abilities .signature{bottom:5px}#skill-points{top:-41px;min-height:34px}#joystick{bottom:46px}.health{bottom:29px}#auto-status{bottom:-30px}}
+
+#coach{width:190px;bottom:calc(330px + env(safe-area-inset-bottom))}
+@media(max-height:520px) and (min-width:600px){#coach{bottom:135px;left:140px;width:220px}}
