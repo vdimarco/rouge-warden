@@ -161,11 +161,11 @@ dialog::backdrop{background:rgba(24,32,26,.55)}
 .revealPanel p{margin:0;font-size:16px;line-height:1.5}
 .revealAdvisor{margin-top:12px;background:transparent;border:0;padding:0}
 .reveal .primary{margin-top:14px;width:100%}
-.end-screen{position:relative;background:#b7c2ae;padding:0 16px 48px}
-.endArt{position:fixed;z-index:0;left:0;right:0;top:calc(58px + var(--sat));bottom:0}
+.end-screen{position:relative;background:#cfc6b2;padding:0 16px 48px}
+.endArt{position:relative;z-index:0;height:48vh;min-height:260px;margin:0 -16px;overflow:hidden;background:#b7a88a}
 .endCard{
-  position:relative;z-index:2;width:min(820px,100%);margin:28px auto;
-  padding:28px 28px 24px;border-radius:28px;background:rgba(251,246,234,.92);
+  position:relative;z-index:2;width:min(820px,100%);margin:-56px auto 0;
+  padding:28px 28px 24px;border-radius:28px;background:rgba(251,246,234,.94);
   box-shadow:var(--shadow);border-top:8px solid var(--sun)
 }
 .end-screen[data-ending="abundance"] .endCard{border-top-color:#e2b15a}
