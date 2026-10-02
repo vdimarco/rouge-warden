@@ -458,10 +458,18 @@ export function buildBody(donor, id, variant = 0) {
     const dir = wr.clone().sub(el).normalize();
     const side = new THREE.Vector3().crossVectors(dir, V3(0, 0, 1)).normalize();
     const hand = [];
-    for (const [d, wdt, th] of [[0, 3.3, 2.6], [3, 4.4, 2.6], [8, 4.5, 2.3], [13, 3.8, 1.9], [16.5, 2.2, 1.3]]) {
-      hand.push({ c: wr.clone().addScaledVector(dir, d), t: dir, side, rx: th, rz: wdt, w: d < 2 ? W2(`${S}ForeArm`, `${S}Hand`, 0.7) : W1(`${S}Hand`), uv: skinC });
+    for (const [d, wdt, th] of [[0, 3.3, 2.6], [3, 4.4, 2.4], [7, 4.3, 2], [9, 3.8, 1.7]]) {
+      hand.push({ c: wr.clone().addScaledVector(dir, d), t: dir, side, rx: wdt, rz: th, w: d < 2 ? W2(`${S}ForeArm`, `${S}Hand`, 0.7) : W1(`${S}Hand`), uv: skinC });
     }
     tube(G, hand, 8, { capB: true });
+    for (const [finger, length] of [5.6, 7.4, 8, 6.8].entries()) {
+      const base = wr.clone().addScaledVector(dir, 8).addScaledVector(side, (finger - 1.5) * 2);
+      const rings = [0, 0.5, 1].map(fraction => ({
+        c: base.clone().addScaledVector(dir, length * fraction).add(V3(0, 0, 1.2 * fraction * fraction)),
+        t: dir, side, rx: 0.9 - 0.22 * fraction, rz: 1.05 - 0.3 * fraction, w: W1(`${S}Hand`), uv: skinC,
+      }));
+      tube(G, rings, 6, { capB: true });
+    }
     // the thumb, forward of the palm
     const tb = wr.clone().addScaledVector(dir, 4).add(V3(0, 0, 3.2));
     tube(G, [{ c: tb, t: dir.clone().add(V3(0, 0, 0.5)).normalize(), rx: 1.3, rz: 1.3, w: W1(`${S}Hand`), uv: skinC },
