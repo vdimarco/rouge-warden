@@ -62,7 +62,7 @@
         <p id="motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
       </div>
       <div class="flight-guide" aria-label="How to play">
-        <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Press either side to flip at the dock.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Press either side. Below a flipper, tap again to scoop the ball back up.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">↑</span><p><strong>Launch</strong>Hold to charge. Release to fly.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Bend your flight toward the next relay.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Explore</strong>Hit 3 relays. Enter the jump gate.</p></div>
@@ -75,7 +75,7 @@
   <section id="pause-panel" class="overlay panel-overlay" aria-labelledby="pause-title" hidden>
     <div class="dialog-card">
       <h2 id="pause-title">Take your time.</h2>
-      <p class="panel-description">Your voyage will be here when you are ready.</p>
+      <p class="panel-description">Below a flipper? Release, then tap its button again for a reverse scoop.</p>
       <div class="motion-controls pause-motion">
         <div class="motion-actions">
           <button id="pause-motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="pause-motion-status">Enable tilt</button>
@@ -130,14 +130,14 @@
   </section>
 
   <div id="controls" aria-label="Pinball controls">
-    <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper" aria-keyshortcuts="Z"><span class="flipper-arrow" aria-hidden="true">↗</span><span>LEFT FLIPPER</span><kbd>Z</kbd></button>
+    <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper" aria-keyshortcuts="Z"><span class="flipper-arrow" aria-hidden="true">↗</span><span class="flip-label">LEFT FLIPPER</span><kbd>Z</kbd></button>
     <div class="center-controls">
       <span id="field-status">Relays and orbits earn field charges</span>
       <button id="launch-button" class="launch-button" type="button" aria-keyshortcuts="Space"><span aria-hidden="true">↑</span> Launch</button>
       <button id="pulse-button" class="pulse-button" type="button" aria-keyshortcuts="C A D"><span aria-hidden="true">◎</span> Pulse</button>
       <button id="field-button" class="field-button" type="button" aria-keyshortcuts="F" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>
     </div>
-    <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper" aria-keyshortcuts="X"><kbd>X</kbd><span>RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
+    <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper" aria-keyshortcuts="X"><kbd>X</kbd><span class="flip-label">RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
   </div>
   <script type="module" src="/lab/tilt/main.js"></script>
 </body>

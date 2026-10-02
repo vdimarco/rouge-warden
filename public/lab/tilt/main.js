@@ -1,7 +1,7 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
 import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY } from './adventure.js';
 import { createTiltControl } from './motion.js';
-import { setFlip, H } from './physics.js';
+import { setFlip, canReverseScoop, H } from './physics.js';
 import { createRenderer } from './render.js';
 import { startLoop } from '../kit/loop.js';
 import { Sfx, tone, hiss } from '../kit/sfx.js';
@@ -27,6 +27,7 @@ try { best = Number(localStorage.getItem('tilt.voyage.best')) || 0; } catch { /*
 function sound(kind, strength = 1) {
   Sfx.play((e,t) => {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
+    if (kind === 'reverse') { tone(e,t,{f:95,f2:620,dur:.28,peak:.12,wave:'sine',send:.35}); hiss(e,t,{type:'bandpass',f:400,f2:1500,dur:.2,peak:.05}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
     if (kind === 'field-deploy') { tone(e,t,{f:110,f2:330,dur:.65,peak:.12,wave:'sine',send:.5}); hiss(e,t,{type:'bandpass',f:350,f2:1300,dur:.45,peak:.065}); return; }
     if (kind === 'pulse' || kind === 'launch') { hiss(e,t,{type:'bandpass',f:250,f2:1800,dur:.3,peak:.1}); tone(e,t,{f:140,f2:520,dur:.22,peak:.1}); return; }
@@ -217,7 +218,13 @@ function syncHud() {
   document.body.classList.toggle('in-transit', inTransit);
   $('controls').hidden = inTransit;
   $('transit-panel').hidden = !inTransit || mode !== 'play';
-  for (const id of ['left-flip','right-flip']) $(id).disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
+  for (const [side,id] of [[-1,'left-flip'],[1,'right-flip']]) {
+    const button = $(id), scoop = mode === 'play' && run.phase === 'play' && canReverseScoop(run.world,side);
+    button.disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
+    button.classList.toggle('scoop-ready', scoop);
+    button.querySelector('.flip-label').textContent = scoop ? 'REVERSE FLIP' : side < 0 ? 'LEFT FLIPPER' : 'RIGHT FLIPPER';
+    button.querySelector('.flipper-arrow').textContent = scoop ? '⤴' : side < 0 ? '↗' : '↖';
+  }
   if (run.phase!==oldPhase) {
     oldPhase=run.phase;
     if(run.phase==='upgrade')showUpgrades();
@@ -379,9 +386,10 @@ startLoop({h:H,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge'].includes(kind))sound(kind);
+    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse'].includes(kind))sound(kind);
     const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
+    if(kind === 'reverse')announce('Reverse flip');
     if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
     if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
     if(kind === 'arrive') { releaseControls(); resumeMotion(); syncHud(); }

@@ -1,0 +1,6 @@
+- [x] Inspect Full Tilt and define recovery behavior.
+- [x] Implement recovery physics and drain timing.
+- [x] Add a visible cue and concise control guidance.
+- [x] Verify recovery, missed shots, held input, and normal shots.
+- [x] Check desktop and mobile layouts and interactions.
+- [x] Review and archive specifications.

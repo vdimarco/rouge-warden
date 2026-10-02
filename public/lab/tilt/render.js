@@ -405,6 +405,21 @@ export function createRenderer(canvas, minimap) {
       const tx = f.px + Math.cos(f.th) * f.len, ty = f.py + Math.sin(f.th) * f.len;
       const nx = -Math.sin(f.th), ny = Math.cos(f.th);
       g.save(); g.globalAlpha = 1;
+      // A gravity scoop curls under the physical paddle and guides the ball up.
+      // Its motion uses physics time so Pause freezes the complete recovery cue.
+      if (f.reverseFx > 0) {
+        const fade = f.reverseFx, progress = 1 - fade, reach = f.len * .94;
+        g.save(); g.globalAlpha = fade; g.lineCap = 'round';
+        g.strokeStyle = '#ffd78b'; g.lineWidth = 5;
+        g.beginPath();
+        g.moveTo(f.px - f.side * 12, f.py - 18);
+        g.bezierCurveTo(f.px - f.side * reach * .1, f.py - 136,
+          f.px - f.side * reach * 1.35, f.py - 152,
+          f.px - f.side * reach, f.py - 5 + progress * 80);
+        g.stroke();
+        g.globalAlpha = fade * .22; g.lineWidth = 20; g.stroke();
+        g.restore();
+      }
       g.strokeStyle = '#060c15'; g.lineWidth = f.r1 * 2 + 7; g.lineCap = 'round';
       g.beginPath(); g.moveTo(f.px, f.py); g.lineTo(tx, ty); g.stroke();
       g.beginPath();
@@ -687,6 +702,109 @@ export function createRenderer(canvas, minimap) {
     galaxyChart(mg, run, mapW, mapH);
   }
 
+  // A fixed pool gives stars real perspective depth. Every layer samples the
+  // same travelled distance, so pausing freezes the whole flight exactly.
+  const warpStars = Array.from({ length: 480 }, (_, i) => {
+    const angle = rand(i * 7 + 919) * TAU;
+    const radius = 0.018 + Math.sqrt(rand(i * 11 + 823)) * 1.38;
+    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius,
+      z: rand(i * 5 + 73), size: 0.45 + rand(i * 3 + 41) * 0.85,
+      color: i % 13 === 0 ? '#ffe2b4' : i % 5 === 0 ? '#91baff' : '#c8f2ff' };
+  });
+
+  function flightStars(p, alpha, centerX, centerY) {
+    if (alpha <= 0) return;
+    const travel = Math.max(0, p - 0.26);
+    const distance = travel * 0.22 + travel * travel * travel * 19;
+    const acceleration = transitEase((p - 0.37) / 0.35);
+    const braking = 1 - transitEase((p - 0.86) / 0.10);
+    // Tail length follows the derivative of distance, giving each star a
+    // continuous point-to-streak change as the ship accelerates.
+    const shutter = (0.22 + 57 * travel * travel) * 0.008 * braking;
+    const focal = Math.min(width, height) * (0.72 - acceleration * 0.18);
+    const roll = Math.sin(travel * 6) * 0.032, cos = Math.cos(roll), sin = Math.sin(roll);
+    const count = width < 700 ? 320 : warpStars.length;
+    g.save(); g.globalCompositeOperation = 'screen'; g.lineCap = 'round';
+    for (let i = 0; i < count; i++) {
+      const star = warpStars[i];
+      const z = 0.055 + ((star.z - distance) % 1 + 1) % 1;
+      const x = star.x * cos - star.y * sin, y = star.x * sin + star.y * cos;
+      const sx = centerX + x * focal / z, sy = centerY + y * focal / z;
+      const farZ = z + shutter * (0.55 + star.size);
+      const tx = centerX + x * focal / farZ, ty = centerY + y * focal / farZ;
+      if ((sx < -30 && tx < -30) || (sx > width + 30 && tx > width + 30) ||
+          (sy < -30 && ty < -30) || (sy > height + 30 && ty > height + 30)) continue;
+      const emerge = clamp((1.055 - z) * 5, 0, 1);
+      const glow = alpha * emerge * (0.38 + Math.min(1, 0.24 / z) * 0.62);
+      const thickness = Math.min(2.8, star.size * (0.35 + 0.30 / z));
+      g.strokeStyle = star.color;
+      if (i % 5 === 0 && acceleration > 0.25) {
+        g.globalAlpha = glow * 0.18; g.lineWidth = thickness * 5;
+        g.beginPath(); g.moveTo(tx, ty); g.lineTo(sx, sy); g.stroke();
+      }
+      g.globalAlpha = glow; g.lineWidth = thickness;
+      g.beginPath(); g.moveTo(tx, ty); g.lineTo(sx, sy); g.stroke();
+      if (shutter < 0.015 || i % 8 === 0) {
+        g.fillStyle = '#eefaff'; circle(g, sx, sy, Math.min(1.7, thickness * 0.65)); g.fill();
+      }
+    }
+    g.restore();
+  }
+
+  // The canopy stays close to the viewer while the galaxy moves past it. Its
+  // narrow silhouette leaves the scene and the HTML skip control unobstructed.
+  function flightCockpit(p, alpha, centerX, centerY) {
+    if (alpha <= 0) return;
+    const speed = transitEase((p - 0.38) / 0.35) * (1 - transitEase((p - 0.87) / 0.09));
+    const unit = Math.min(width, height);
+    g.save(); g.globalAlpha = alpha;
+    const material = g.createLinearGradient(0, height * 0.7, 0, height);
+    material.addColorStop(0, '#081520'); material.addColorStop(0.7, '#050b13'); material.addColorStop(1, '#01040a');
+    g.fillStyle = material;
+    g.beginPath(); g.moveTo(0, height * 0.66); g.lineTo(width * 0.07, height * 0.81);
+    g.quadraticCurveTo(width * 0.14, height * 0.92, width * 0.30, height * 0.966);
+    g.quadraticCurveTo(width * 0.5, height * 0.985, width * 0.70, height * 0.966);
+    g.quadraticCurveTo(width * 0.86, height * 0.92, width * 0.93, height * 0.81);
+    g.lineTo(width, height * 0.66); g.lineTo(width, height); g.lineTo(0, height); g.closePath(); g.fill();
+    g.strokeStyle = '#79c7df'; g.globalAlpha = alpha * (0.24 + speed * 0.25); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(0, height * 0.66); g.lineTo(width * 0.07, height * 0.81);
+    g.quadraticCurveTo(width * 0.14, height * 0.92, width * 0.30, height * 0.966);
+    g.quadraticCurveTo(width * 0.5, height * 0.985, width * 0.70, height * 0.966);
+    g.quadraticCurveTo(width * 0.86, height * 0.92, width * 0.93, height * 0.81);
+    g.lineTo(width, height * 0.66); g.stroke();
+    // Slim upper canopy ribs and their inner reflections establish the glass.
+    for (let side = -1; side <= 1; side += 2) {
+      const edgeX = side < 0 ? 0 : width;
+      g.globalAlpha = alpha * 0.88; g.strokeStyle = '#030812'; g.lineWidth = unit * 0.025;
+      g.beginPath(); g.moveTo(edgeX, height * 0.18);
+      g.quadraticCurveTo(width * (0.5 + side * 0.46), height * 0.035, width * (0.5 + side * 0.24), -8); g.stroke();
+      g.globalAlpha = alpha * 0.3; g.strokeStyle = '#6aa1bb'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(edgeX - side * unit * 0.014, height * 0.18);
+      g.quadraticCurveTo(width * (0.5 + side * 0.445), height * 0.042, width * (0.5 + side * 0.235), 0); g.stroke();
+      // Paired illuminated strips are fixed to the dashboard, not the tunnel.
+      const panelX = side < 0 ? width * 0.045 : width * 0.955;
+      g.save(); g.translate(panelX, height * 0.942); g.rotate(side * -0.23);
+      const panelWidth = Math.min(width * 0.14, 110);
+      g.globalAlpha = alpha * 0.75; g.fillStyle = '#0c2935'; g.fillRect(side < 0 ? 0 : -panelWidth, 0, panelWidth, 2);
+      g.fillStyle = '#99dce8';
+      for (let i = 0; i < 11; i++) {
+        g.globalAlpha = alpha * (i / 11 < speed ? 0.6 : 0.13);
+        const x = side < 0 ? i * panelWidth / 11 : -(i + 1) * panelWidth / 11;
+        g.fillRect(x, 6, Math.max(1, panelWidth / 11 - 3), i % 3 === 0 ? 6 : 3);
+      }
+      g.restore();
+    }
+    // A restrained projected navigation sight is anchored to the windshield.
+    const aim = unit * 0.065;
+    g.globalAlpha = alpha * 0.24; g.strokeStyle = '#9fdfe6'; g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(centerX - aim * 1.3, centerY); g.lineTo(centerX - aim, centerY);
+    g.moveTo(centerX + aim, centerY); g.lineTo(centerX + aim * 1.3, centerY);
+    g.moveTo(centerX, centerY - aim * 1.3); g.lineTo(centerX, centerY - aim);
+    g.stroke();
+    g.restore();
+  }
+
   function cinematicTransit(run, timeline) {
     const { progress: p, galaxy, horizon, tunnel } = timeline;
     if (timeline.reducedMotion) {
@@ -700,26 +818,25 @@ export function createRenderer(canvas, minimap) {
       galaxyChart(g, run, width, height, { full: true, orbit: -0.32 + p * 1.2, transit: timeline });
       g.restore();
     }
-    const centerX = width * (0.50 + Math.sin(p * 5) * 0.018);
-    const centerY = height * 0.46;
+    const centerX = width * (0.5 + Math.sin((p - 0.26) * 5) * 0.014);
+    const centerY = height * (0.455 - Math.sin((p - 0.26) * 3) * 0.01);
+    const flightAlpha = transitEase((p - 0.29) / 0.10) * (1 - transitEase((p - 0.87) / 0.10));
     if (horizon > 0) {
       g.save(); g.globalAlpha = horizon;
       g.fillStyle = '#02040b'; g.fillRect(0, 0, width, height);
       const dive = transitEase((p - 0.43) / 0.29);
       if (assets.horizon) {
-        const img = assets.horizon, scale = Math.max(width / img.width, height / img.height) * (1.06 + dive * 1.55);
-        g.save(); g.translate(centerX, centerY); g.rotate(-0.10 + dive * 0.28);
+        const img = assets.horizon, scale = Math.max(width / img.width, height / img.height) * (1.02 + dive * dive * 2.3);
+        g.save(); g.translate(centerX, centerY); g.rotate(-0.035 + dive * 0.07);
         g.drawImage(img, -img.width * scale / 2, -img.height * scale / 2, img.width * scale, img.height * scale); g.restore();
-      }
-      if (!assets.horizon) {
-        // Generated art already contains its lens and core. Draw this complete
-        // procedural fallback only when that plate is unavailable.
-        const radius = Math.min(width, height) * (0.13 + dive * 0.60);
+      } else {
+        // The procedural horizon preserves the approach if its art is offline.
+        const radius = Math.min(width, height) * (0.13 + dive * dive * 0.92);
         const glow = g.createRadialGradient(centerX, centerY, radius * 0.45, centerX, centerY, radius * 2.7);
         glow.addColorStop(0, '#02040c00'); glow.addColorStop(0.34, '#ffc78128');
         glow.addColorStop(0.54, '#de7d3b20'); glow.addColorStop(0.78, '#568dd511'); glow.addColorStop(1, '#03040b00');
         g.fillStyle = glow; g.fillRect(0, 0, width, height);
-        g.save(); g.translate(centerX, centerY); g.rotate(-0.17 + dive * 0.46);
+        g.save(); g.translate(centerX, centerY); g.rotate(-0.12 + dive * 0.1);
         g.globalCompositeOperation = 'screen';
         for (let i = 0; i < 14; i++) {
           const spread = 1 + i * 0.085;
@@ -737,62 +854,62 @@ export function createRenderer(canvas, minimap) {
         g.beginPath(); g.arc(0, 0, radius * 1.023, 0.10, Math.PI * 0.87); g.stroke();
         g.restore();
       }
-
       g.restore();
     }
     if (tunnel > 0) {
       g.save();
-      const u = transitEase((p - 0.65) / 0.27);
       const glow = g.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height) * 0.85);
-      glow.addColorStop(0, '#02040b'); glow.addColorStop(0.08, '#081124'); glow.addColorStop(0.3, '#182040'); glow.addColorStop(0.64, '#123248'); glow.addColorStop(1, '#050b19');
-      g.globalAlpha = tunnel * (1 - transitEase((p - 0.87) / 0.11));
-      g.fillStyle = glow; g.fillRect(0, 0, width, height);
-      g.globalCompositeOperation = 'screen'; g.lineCap = 'round';
-      const count = width < 700 ? 115 : 170, reach = Math.hypot(width, height) * 0.75;
-      for (let i = 0; i < count; i++) {
-        const angle = rand(i + 921) * TAU + u * 0.25;
-        const depth = (rand(i * 5 + 29) + p * (2.2 + rand(i + 41) * 0.8)) % 1;
-        const radius = 12 + Math.pow(depth, 2.6) * reach;
-        const length = (12 + depth * depth * reach * 0.30) * tunnel;
+      glow.addColorStop(0, '#071421'); glow.addColorStop(0.12, '#0a192e');
+      glow.addColorStop(0.4, '#102741'); glow.addColorStop(0.7, '#09132a'); glow.addColorStop(1, '#020711');
+      g.globalAlpha = tunnel; g.fillStyle = glow; g.fillRect(0, 0, width, height);
+      // Broad dust clouds provide scale behind the much faster foreground stars.
+      if (assets.nebula) {
+        const img = assets.nebula;
+        const zoom = 1.20 + transitEase((p - 0.62) / 0.29) * 1.6;
+        const scale = Math.max(width / img.width, height / img.height) * zoom;
+        g.globalAlpha = tunnel * 0.5; g.globalCompositeOperation = 'screen';
+        g.drawImage(img, centerX - img.width * scale * 0.49, centerY - img.height * scale * 0.46, img.width * scale, img.height * scale);
+      }
+      // The galactic dust lane fills peripheral vision as it slips past the
+      // ship. It reuses the chart's cached texture, so this costs one image draw.
+      if (galaxyTexture) {
+        const sweep = transitEase((p - 0.62) / 0.28);
+        const size = Math.max(width, height) * (1.75 + sweep * 1.4);
+        g.save(); g.translate(centerX, centerY); g.rotate(-0.38);
+        g.globalAlpha = tunnel * 0.27; g.globalCompositeOperation = 'screen';
+        g.drawImage(galaxyTexture, -size * 0.42, -size * 0.45, size, size * 0.85);
+        g.restore();
+      }
+      // Thin bowed filaments share the stars' vanishing point, like distant
+      // nebula strands being stretched by the drive. No opaque tunnel walls.
+      g.globalCompositeOperation = 'screen'; g.strokeStyle = '#73c5ea';
+      const reach = Math.hypot(width, height), advance = Math.max(0, p - 0.62);
+      for (let i = 0; i < 16; i++) {
+        const angle = i / 16 * TAU + 0.18;
         const dx = Math.cos(angle), dy = Math.sin(angle);
-        g.globalAlpha = tunnel * (0.15 + depth * 0.65);
-        g.strokeStyle = i % 7 === 0 ? '#ffc88d' : i % 3 === 0 ? '#8bb2ff' : '#b8edff';
-        g.lineWidth = 0.6 + depth * (i % 9 === 0 ? 2 : 0.8);
-        g.beginPath(); g.moveTo(centerX + dx * radius, centerY + dy * radius);
-        g.lineTo(centerX + dx * (radius + length), centerY + dy * (radius + length)); g.stroke();
+        g.globalAlpha = tunnel * (i % 3 === 0 ? 0.12 : 0.055); g.lineWidth = i % 3 === 0 ? 2 : 0.7;
+        g.beginPath(); g.moveTo(centerX + dx * 16, centerY + dy * 16);
+        g.bezierCurveTo(centerX + dx * reach * 0.16 - dy * advance * reach * 0.17,
+          centerY + dy * reach * 0.16 + dx * advance * reach * 0.17,
+          centerX + dx * reach * 0.42, centerY + dy * reach * 0.42,
+          centerX + dx * reach, centerY + dy * reach); g.stroke();
       }
-      // Sparse crystalline frames form a folded interior, with fine connecting
-      // filaments. Depth advances continuously; the far/near ends fade in place.
-      let previousFrame = null;
-      const folds = Array.from({ length: 7 }, (_, i) => (i / 7 + p * 0.85) % 1).sort((a, b) => a - b);
-      for (const depth of folds) {
-        const radius = 12 + depth * depth * reach * 1.4, turn = -0.22 + depth * 0.13;
-        const cos = Math.cos(turn), sin = Math.sin(turn);
-        const corners = [[-1.25, -0.76], [1.05, -0.92], [1.26, 0.76], [-1.06, 0.92]].map(([x, y]) =>
-          ({ x: centerX + (x * cos - y * sin) * radius, y: centerY + (x * sin + y * cos) * radius }));
-        g.globalAlpha = tunnel * Math.sin(depth * Math.PI) * 0.13;
-        g.strokeStyle = depth > 0.5 ? '#b6e6f2' : '#d6b69f'; g.lineWidth = 0.7 + depth * 0.5;
-        g.beginPath(); corners.forEach((point, i) => i ? g.lineTo(point.x, point.y) : g.moveTo(point.x, point.y)); g.closePath(); g.stroke();
-        if (previousFrame) {
-          g.globalAlpha *= 0.8;
-          g.beginPath(); corners.forEach((point, i) => { g.moveTo(previousFrame[i].x, previousFrame[i].y); g.lineTo(point.x, point.y); }); g.stroke();
-        }
-        previousFrame = corners;
-      }
-      // Curved wavefronts convey depth through the wormhole without flashing.
-      g.globalAlpha = tunnel * 0.13; g.strokeStyle = '#a2d9ff'; g.lineWidth = 1.2;
-      for (let i = 0; i < 5; i++) {
-        const depth = (i / 5 + p * 1.2) % 1, radius = 16 + depth * depth * reach;
-        g.beginPath(); g.ellipse(centerX, centerY, radius, radius * 0.72, u * 0.28, 0, TAU); g.stroke();
+      // A single broad exit glow grows during braking, avoiding a flash cut.
+      const arrival = transitEase((p - 0.82) / 0.10);
+      if (arrival > 0) {
+        const exit = g.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(width, height) * (0.1 + arrival * 0.55));
+        exit.addColorStop(0, '#c5f4ff88'); exit.addColorStop(0.20, '#66cdeb38'); exit.addColorStop(1, '#3b82be00');
+        g.globalAlpha = tunnel * arrival; g.fillStyle = exit; g.fillRect(0, 0, width, height);
       }
       g.restore();
     }
-    // Soft edge shading remains stable while speed grows toward the vanishing point.
+    flightStars(p, flightAlpha, centerX, centerY);
     g.save();
-    const edge = g.createRadialGradient(width / 2, height * 0.47, Math.min(width, height) * 0.15, width / 2, height * 0.47, Math.max(width, height) * 0.74);
+    const edge = g.createRadialGradient(centerX, centerY, Math.min(width, height) * 0.23, centerX, centerY, Math.max(width, height) * 0.76);
     edge.addColorStop(0, '#01030a00'); edge.addColorStop(1, '#01030acd');
-    g.fillStyle = edge; g.globalAlpha = Math.max(galaxy, horizon, tunnel) * 0.75; g.fillRect(0, 0, width, height);
+    g.fillStyle = edge; g.globalAlpha = Math.max(galaxy, horizon, tunnel) * 0.63; g.fillRect(0, 0, width, height);
     g.restore();
+    flightCockpit(p, flightAlpha, centerX, centerY);
   }
 
   function draw(run, dt = 1 / 60, options = {}) {

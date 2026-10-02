@@ -1,0 +1,5 @@
+- [x] Inspect the existing renderer and define the forward-flight direction.
+- [x] Implement cockpit framing and depth-based star motion.
+- [x] Inspect all travel stages in portrait, landscape and desktop.
+- [x] Verify pause, skip, arrival and reduced motion.
+- [x] Review and archive specifications.
