@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import fs from "fs";
 import path from "path";
-import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge, readIndicators } from "../../public/breakthrough2/model.js";
+import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge, readIndicators, PATHWAYS, PATH_NEED } from "../../public/breakthrough2/model.js";
 import { scripted, randomPolicy, greedyClean } from "./policies.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -206,10 +206,11 @@ function tally(policyFor) {
   const counts = Object.fromEntries(ENDINGS.map((ending) => [ending.id, 0]));
   for (let seed = 1; seed <= 50; seed += 1) {
     const run = createRun(seed);
+    const policy = policyFor(seed);
     let guard = 0;
     while (run.state().phase !== "end") {
       const offers = run.offers();
-      const id = policyFor(seed)(offers, run.state());
+      const id = policy(offers, run.state());
       const result = run.choose(id);
       if (!result.ok) run.choose("pass");
       guard += 1;
@@ -599,6 +600,141 @@ try {
   check(calm.errors.length === 0, calm.errors.length ? calm.errors.join("; ") : "reduced motion run is clean");
   await calm.close();
 
+  console.log("\npathways and energy race");
+  const paths = await open(browser, base + "?seed=123&fast=1");
+  await paths.page.locator("#start").tap();
+  await paths.page.waitForFunction(() => window.__test.state().ui === "play");
+  let pathGuard = 0;
+  while ((await paths.page.evaluate(() => window.__test.state().phase)) === "event" && pathGuard < 4) {
+    const offers = await paths.page.evaluate(() => window.__test.offers());
+    await paths.page.evaluate((id) => window.__test.choose(id), scripted(offers));
+    pathGuard += 1;
+  }
+  check((await paths.page.evaluate(() => window.__test.state().phase)) === "act", "pathways open on an action turn");
+  const pathMeta = await paths.page.evaluate(() => {
+    const offers = window.__test.offers();
+    const race = window.__test.indicators().race;
+    return {
+      n: offers.pathways.length,
+      names: offers.pathways.map((item) => item.name),
+      tips: offers.pathways.map((item) => `${item.tip} ${item.stallText}`),
+      status: document.getElementById("race-status").textContent,
+      fossil: document.getElementById("race-fossil").textContent,
+      summary: race.summary,
+      fossilLabel: race.fossilLabel,
+      demand: document.getElementById("race-demand-n").textContent,
+      met: document.getElementById("race-met-n").textContent,
+    };
+  });
+  check(pathMeta.n === 6, `six pathways (${pathMeta.n})`);
+  check(pathMeta.names.join("|") === PATHWAYS.map((item) => item.name).join("|"), "pathway names match the model");
+  check(pathMeta.tips.every((tip) => /stall/.test(tip) && tip.length < 180), "each pathway has a short stall tooltip");
+  check(pathMeta.status === pathMeta.summary, `race status "${pathMeta.status}"`);
+  check(pathMeta.fossil === pathMeta.fossilLabel, `fossil line "${pathMeta.fossil}"`);
+  check(pathMeta.demand === "0.6" || Number(pathMeta.demand) > 0, `demand reads ${pathMeta.demand}`);
+  check(Number(pathMeta.met) >= 0, `clean plus efficiency reads ${pathMeta.met}`);
+  await paths.page.locator("#pathways").evaluate((el) => el.scrollIntoView({ block: "start" }));
+  const investBox = await reach(paths.page.locator("#pathways button.invest").first());
+  check(investBox.h >= 44 && investBox.w >= 44 && investBox.visibleH >= 44, `invest target ${Math.round(investBox.w)}x${Math.round(investBox.h)}`);
+  const copy = await paths.page.locator("body").textContent();
+  check(!/[\u2014\u2013]/.test(copy), "pathway screens have no em or en dashes");
+  check(!/shit time|kids are going to have/i.test(copy), "the fatalistic kids line is gone");
+  check(!/inevitable war|scripted war/i.test(copy) || /not a scripted war/.test(copy), "endings are not framed as inevitable war");
+  const context = await paths.page.locator("#end-context").textContent();
+  const helpAll = await paths.page.locator("#howto").textContent();
+  check(/UNEP Emissions Gap/.test(context) && /IPCC AR6 WGII/.test(context) && /not a result of this run/.test(context), "ending context names UNEP and IPCC as context");
+  check(/medium confidence/.test(context) && /does not say climate change automatically causes wars/.test(context), "IPCC conflict line is medium confidence and not automatic");
+  check(/2\.8°C/.test(helpAll) && /849 TWh/.test(helpAll) && /887 TWh/.test(helpAll), "how to play keeps the UNEP and Ember context");
+  check(/quiet policies/.test(helpAll) && /Grids and long-duration storage/.test(helpAll), "how to play explains the race gate");
+  await shoot(paths.page, "breakthrough2-pathways-390");
+  const panelFile = path.join(SHOTS, "breakthrough2-pathways-panel.png");
+  await paths.page.locator("#pathways").screenshot({ path: panelFile });
+  const panelSize = pngSize(panelFile);
+  check(panelSize.w >= 320 && panelSize.w <= 390 && panelSize.h > 240, `pathways panel ${panelSize.w}x${panelSize.h}`);
+  check(paths.errors.length === 0 && paths.net404.length === 0 && paths.off.length === 0, "pathways view stayed clean");
+  await paths.close();
+
+  const moment = await open(browser, base + "?seed=1&fast=1");
+  await moment.page.evaluate(() => window.__test.start());
+  await moment.page.waitForFunction(() => window.__test.state().ui === "play");
+  const beforeOutlook = await moment.page.evaluate(() => window.__test.indicators().outlook.map((row) => row.n).join(","));
+  let broke = null;
+  for (let i = 0; i < 40 && !broke; i += 1) {
+    const step = await moment.page.evaluate(() => {
+      const state = window.__test.state();
+      if (state.phase === "end") return { stop: true };
+      const offers = window.__test.offers();
+      let id = "pass";
+      if (offers.event && offers.event.options) {
+        const option = offers.event.options.find((item) => item.affordable !== false) || offers.event.options[0];
+        id = option.id;
+      } else {
+        const path = offers.pathways.find((item) => item.key === "grids" && item.affordable && !item.done);
+        if (path) id = path.id;
+      }
+      return { stop: false, result: window.__test.choose(id) };
+    });
+    if (step.stop) break;
+    if (step.result && step.result.breakthrough) broke = step.result.breakthrough;
+  }
+  check(!!broke && broke.line === "Grids reach scale. Less clean power is curtailed.", `breakthrough line "${broke ? broke.line : ""}"`);
+  check(await moment.page.locator("#break").isVisible(), "breakthrough moment is on screen");
+  const breakName = await moment.page.locator("#break-name").innerText();
+  check(breakName === "Grids", `breakthrough name "${breakName}"`);
+  const afterRace = await moment.page.evaluate(() => {
+    const ind = window.__test.indicators();
+    return { serve: ind.race.serve, progress: window.__test.state().pathways.grids, outlook: ind.outlook.map((row) => row.n).join(",") };
+  });
+  check(afterRace.progress === PATH_NEED, `grids progress ${afterRace.progress}`);
+  check(afterRace.outlook !== beforeOutlook, "ending bars move after a pathway breakthrough");
+  await shoot(moment.page, "breakthrough2-breakthrough-390");
+  check(moment.errors.length === 0 && moment.net404.length === 0, "breakthrough run stayed clean");
+  await moment.close();
+
+  const cool = await open(browser, base + "?seed=4&fast=1", null, { reduce: true });
+  await cool.page.evaluate(() => window.__test.start());
+  await cool.page.waitForFunction(() => window.__test.state().ui === "play");
+  let removal = null;
+  for (let i = 0; i < 30 && !removal; i += 1) {
+    const step = await cool.page.evaluate(() => {
+      const offers = window.__test.offers();
+      let id = "pass";
+      if (offers.event && offers.event.options) {
+        const option = offers.event.options.find((item) => item.affordable !== false) || offers.event.options[0];
+        id = option.id;
+      } else {
+        const path = offers.pathways.find((item) => item.key === "removal" && item.affordable && !item.done);
+        if (path) id = path.id;
+      }
+      return window.__test.choose(id);
+    });
+    if (step && step.breakthrough) removal = step;
+  }
+  const cooled = await cool.page.evaluate(() => ({
+    state: window.__test.state(),
+    log: window.__test.log(),
+    ind: window.__test.indicators(),
+  }));
+  const stripped = readIndicators({
+    ...cooled.state,
+    pathways: { aviation: 0, shipping: 0, heavy: 0, storage: 0, grids: 0, removal: 0 },
+  }, cooled.log);
+  const warmWith = cooled.ind.forward.at(-1).warming;
+  const warmWithout = stripped.forward.at(-1).warming;
+  check(!!removal, "carbon removal can break through");
+  check(warmWith < warmWithout, `removal forward warming ${warmWith} is under ${warmWithout}`);
+  check(JSON.stringify(cooled.ind) === JSON.stringify(readIndicators(cooled.state, cooled.log)), "removal indicators match the model");
+  const motionCss = await cool.page.evaluate(() => ({
+    reduce: document.documentElement.dataset.reduce,
+    motion: window.__test.motion(),
+    animation: getComputedStyle(document.getElementById("break")).animationName,
+    visible: !document.getElementById("break").hidden,
+  }));
+  check(motionCss.reduce === "1" && motionCss.motion === false && motionCss.visible, "reduced motion still shows the breakthrough");
+  check(motionCss.animation === "none", `breakthrough animation is ${motionCss.animation}`);
+  check(cool.errors.length === 0, cool.errors.length ? cool.errors.join("; ") : "reduced motion pathway run is clean");
+  await cool.close();
+
   console.log("\nseeds 1 to 50");
   const randomCounts = tally((seed) => randomPolicy(seed));
   const randomAgain = tally((seed) => randomPolicy(seed));
@@ -612,6 +748,58 @@ try {
   check(randomSum === 50 && greedySum === 50, "50 seeded runs each finish");
   check(JSON.stringify(randomCounts) === JSON.stringify(randomAgain), "seed 1 to 50 random tally is stable");
   check(order.filter((id) => randomCounts[id] > 0).length >= 3, "random seeds 1 to 50 reach more than two endings");
+
+  console.log("\nending mix card");
+  const beforeMix = {
+    random: { fractured: 63, emergency: 63, abundance: 6, regeneration: 21, managed: 159, hotgrowth: 188 },
+    greedy: { fractured: 2, emergency: 0, abundance: 174, regeneration: 117, managed: 202, hotgrowth: 5 },
+  };
+  function mixCounts(policyFor) {
+    const counts = Object.fromEntries(ENDINGS.map((ending) => [ending.id, 0]));
+    for (let seed = 1; seed <= 500; seed += 1) {
+    const run = createRun(seed);
+    const policy = policyFor(seed);
+    let guard = 0;
+    while (run.state().phase !== "end") {
+      const offers = run.offers();
+      const id = policy(offers, run.state());
+      const result = run.choose(id);
+      if (!result.ok) run.choose("pass");
+        guard += 1;
+        if (guard > 80) break;
+      }
+      counts[run.ending()] += 1;
+    }
+    return counts;
+  }
+  const afterRandom = mixCounts((seed) => randomPolicy(seed));
+  const afterGreedy = mixCounts(() => greedyClean);
+  check(JSON.stringify(afterRandom) === JSON.stringify(beforeMix.random), "random ending mix is unchanged by pathways");
+  const mixPage = await open(browser, "about:blank");
+  const ids = ENDINGS.map((ending) => ending.id);
+  const cell = (counts, id) => `${counts[id]} (${(counts[id] / 5).toFixed(1)}%)`;
+  const row = (label, counts) => `<tr><th>${label}</th>${ids.map((id) => `<td>${cell(counts, id)}</td>`).join("")}</tr>`;
+  await mixPage.page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body { margin: 0; width: 390px; font: 12px/1.35 "DM Sans", sans-serif; color: #2B2A33; background: #F3E9D6; }
+    h1 { font-size: 18px; margin: 12px 12px 4px; }
+    p { margin: 0 12px 8px; }
+    table { width: 366px; margin: 0 12px 12px; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid rgba(43,42,51,0.15); padding: 4px 2px; text-align: right; font-size: 11px; }
+    th:first-child, td:first-child { text-align: left; }
+  </style></head><body>
+    <h1>Ending mix, seeds 1 to 500</h1>
+    <p>Before is this branch's parent game. After includes the energy race. Random play never invests in pathways.</p>
+    <table>
+      <tr><th></th>${ids.map((id) => `<th>${id.slice(0, 4)}</th>`).join("")}</tr>
+      ${row("Random before", beforeMix.random)}
+      ${row("Random after", afterRandom)}
+      ${row("Greedy before", beforeMix.greedy)}
+      ${row("Greedy after", afterGreedy)}
+    </table>
+    <p>The random fractured plus long emergency share stays 25.2%, the same miss already on main. Greedy abundance moves from 174 to ${afterGreedy.abundance}.</p>
+  </body></html>`);
+  await shoot(mixPage.page, "breakthrough2-ending-mix", 390, 844);
+  await mixPage.close();
 
   await runA.close();
   await runB.close();

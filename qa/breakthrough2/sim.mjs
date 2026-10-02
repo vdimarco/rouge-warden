@@ -1,8 +1,8 @@
 // Headless BREAKTHROUGH balance harness.
 //   node qa/breakthrough2/sim.mjs
 //   node qa/breakthrough2/sim.mjs 500
-import { createRun, ENDINGS, lagAlpha, readIndicators, advanceWorld, spanYears, round2, TIP_LEVEL, OUTLOOK_POLICIES } from "../../public/breakthrough2/model.js";
-import { greedyClean, randomPolicy } from "./policies.mjs";
+import { createRun, ENDINGS, lagAlpha, readIndicators, advanceWorld, spanYears, round2, TIP_LEVEL, OUTLOOK_POLICIES, energyRace, serveFactor, emptyPathways, openingMeters, PATHWAYS, BREAKTHROUGH_EFFECT, PATH_NEED } from "../../public/breakthrough2/model.js";
+import { greedyClean, randomPolicy, pathwayFocus } from "./policies.mjs";
 
 const N = Number(process.argv[2] || 500);
 const IDS = ENDINGS.map((ending) => ending.id);
@@ -166,3 +166,116 @@ if (missed) {
 } else {
   console.log("\nall bands met");
 }
+
+function pathwayMechanics() {
+  const problems = [];
+  const plain = emptyPathways();
+  const storageOnly = { ...plain, storage: PATH_NEED };
+  const both = { ...plain, storage: PATH_NEED, grids: PATH_NEED };
+  if (serveFactor(storageOnly) !== serveFactor(plain)) problems.push("storage alone raises the clean cap");
+  if (!(serveFactor(both) > serveFactor(plain))) problems.push("grids and storage together do not raise serve");
+  if (serveFactor(both) > 1) problems.push("serve factor exceeds 1");
+  const owned = ["solar", "wind", "nuclear", "geothermal"];
+  const open = openingMeters();
+  const baseRace = energyRace(open, owned, 6, plain);
+  const boosted = energyRace(open, owned, 6, both);
+  if (!(boosted.clean > baseRace.clean)) problems.push("boosted clean additions are not higher");
+  if (!(boosted.curtailed < baseRace.curtailed)) problems.push("boosted curtailment is not lower");
+  const idle = energyRace(open, [], 6, plain);
+  if (idle.winning || !(idle.fossil > 0)) problems.push("the opening race is already won");
+  const left = openingMeters();
+  const right = openingMeters();
+  advanceWorld(left, [], 6, plain);
+  advanceWorld(right, [], 6, { ...plain, aviation: PATH_NEED, removal: PATH_NEED });
+  if (!(right.emissions < left.emissions)) problems.push("aviation and removal do not cut emissions");
+  if (right.warming > left.warming) problems.push("pathway warming rose");
+  for (const effect of Object.values(BREAKTHROUGH_EFFECT)) {
+    for (const value of Object.values(effect)) {
+      if (Math.abs(value) > 4) problems.push(`breakthrough effect ${value} is outside the bound`);
+    }
+  }
+  const blob = JSON.stringify(PATHWAYS) + ENDINGS.map((ending) => ending.blurb).join("\n");
+  if (/[\u2014\u2013]/.test(blob)) problems.push("pathway or ending copy has an em or en dash");
+  if (/war/i.test(ENDINGS.map((ending) => ending.blurb).join(" "))) problems.push("an ending blurb mentions war");
+  const run = createRun(4);
+  let guard = 0;
+  while (run.state().phase !== "end" && run.state().pathways.removal < PATH_NEED && guard < 30) {
+    const offers = run.offers();
+    let id = "pass";
+    if (offers.event && offers.event.options) {
+      const option = offers.event.options.find((item) => item.affordable !== false) || offers.event.options[0];
+      id = option.id;
+    } else {
+      const path = offers.pathways.find((item) => item.key === "removal" && item.affordable && !item.done);
+      if (path) id = path.id;
+    }
+    const result = run.choose(id);
+    if (!result.ok && id !== "pass") run.choose("pass");
+    guard += 1;
+  }
+  const state = run.state();
+  if (state.pathways.removal > PATH_NEED) problems.push("removal progress exceeded the cap");
+  const withPath = readIndicators(state, run.log());
+  const stripped = readIndicators({ ...state, pathways: plain }, run.log());
+  const warmA = withPath.forward.at(-1).warming;
+  const warmB = stripped.forward.at(-1).warming;
+  if (!(warmA < warmB)) problems.push(`removal path does not cool the forward line (${warmA} vs ${warmB})`);
+  const again = createRun(4);
+  let guard2 = 0;
+  while (again.state().phase !== "end" && again.state().pathways.removal < PATH_NEED && guard2 < 30) {
+    const offers = again.offers();
+    let id = "pass";
+    if (offers.event && offers.event.options) {
+      const option = offers.event.options.find((item) => item.affordable !== false) || offers.event.options[0];
+      id = option.id;
+    } else {
+      const path = offers.pathways.find((item) => item.key === "removal" && item.affordable && !item.done);
+      if (path) id = path.id;
+    }
+    const result = again.choose(id);
+    if (!result.ok && id !== "pass") again.choose("pass");
+    guard2 += 1;
+  }
+  if (JSON.stringify(run.log()) !== JSON.stringify(again.log())) problems.push("pathway invest is not replay stable");
+  console.log("");
+  console.log(`pathways: serve ${serveFactor(plain)} to ${serveFactor(both)}, removal forward ${warmB} to ${warmA}`);
+  if (problems.length) {
+    for (const problem of problems) console.log(`MISS ${problem}`);
+    process.exitCode = 1;
+  } else {
+    console.log("pathway mechanics hold");
+  }
+}
+
+pathwayMechanics();
+
+console.log("");
+console.log(`pathway focus, seeds 1-${Math.min(N, 200)} (invest, then greedy-clean):`);
+const focusN = Math.min(N, 200);
+const pooled = Object.fromEntries(IDS.map((id) => [id, 0]));
+for (const spec of PATHWAYS) {
+  const runs = [];
+  for (let seed = 1; seed <= focusN; seed += 1) runs.push(play(seed, pathwayFocus(spec.key)));
+  const summary = summarize(spec.key, runs);
+  console.log(line(summary));
+  let breaks = 0;
+  for (const run of runs) {
+    pooled[run.ending()] += 1;
+    if (run.state().pathways[spec.key] >= PATH_NEED) breaks += 1;
+  }
+  const top = Math.max(...IDS.map((id) => summary.pct(id)));
+  const present = IDS.filter((id) => summary.counts[id] > 0).length;
+  const focusChecks = [
+    [`${spec.key} breakthroughs in at least 70%`, breaks >= focusN * 0.7],
+    [`${spec.key} top ending ${top.toFixed(1)}% is at most 80`, top <= 80],
+    [`${spec.key} reaches at least 4 endings`, present >= 4],
+  ];
+  for (const [label, ok] of focusChecks) {
+    console.log(`${ok ? "ok  " : "MISS"} ${label} (${breaks} scaled, ${present} endings)`);
+    if (!ok) process.exitCode = 1;
+  }
+}
+const pooledPresent = IDS.filter((id) => pooled[id] > 0).length;
+console.log(`${pooledPresent === IDS.length ? "ok  " : "MISS"} pathway runs together still reach every ending`);
+if (pooledPresent !== IDS.length) process.exitCode = 1;
+console.log("  pooled " + IDS.map((id) => `${id} ${pooled[id]}`).join("  "));
