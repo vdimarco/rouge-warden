@@ -206,10 +206,11 @@ function tally(policyFor) {
   const counts = Object.fromEntries(ENDINGS.map((ending) => [ending.id, 0]));
   for (let seed = 1; seed <= 50; seed += 1) {
     const run = createRun(seed);
+    const policy = policyFor(seed);
     let guard = 0;
     while (run.state().phase !== "end") {
       const offers = run.offers();
-      const id = policyFor(seed)(offers, run.state());
+      const id = policy(offers, run.state());
       const result = run.choose(id);
       if (!result.ok) run.choose("pass");
       guard += 1;
@@ -646,6 +647,10 @@ try {
   check(/2\.8°C/.test(helpAll) && /849 TWh/.test(helpAll) && /887 TWh/.test(helpAll), "how to play keeps the UNEP and Ember context");
   check(/quiet policies/.test(helpAll) && /Grids and long-duration storage/.test(helpAll), "how to play explains the race gate");
   await shoot(paths.page, "breakthrough2-pathways-390");
+  const panelFile = path.join(SHOTS, "breakthrough2-pathways-panel.png");
+  await paths.page.locator("#pathways").screenshot({ path: panelFile });
+  const panelSize = pngSize(panelFile);
+  check(panelSize.w >= 320 && panelSize.w <= 390 && panelSize.h > 240, `pathways panel ${panelSize.w}x${panelSize.h}`);
   check(paths.errors.length === 0 && paths.net404.length === 0 && paths.off.length === 0, "pathways view stayed clean");
   await paths.close();
 
@@ -752,13 +757,14 @@ try {
   function mixCounts(policyFor) {
     const counts = Object.fromEntries(ENDINGS.map((ending) => [ending.id, 0]));
     for (let seed = 1; seed <= 500; seed += 1) {
-      const run = createRun(seed);
-      let guard = 0;
-      while (run.state().phase !== "end") {
-        const offers = run.offers();
-        const id = policyFor(seed)(offers, run.state());
-        const result = run.choose(id);
-        if (!result.ok) run.choose("pass");
+    const run = createRun(seed);
+    const policy = policyFor(seed);
+    let guard = 0;
+    while (run.state().phase !== "end") {
+      const offers = run.offers();
+      const id = policy(offers, run.state());
+      const result = run.choose(id);
+      if (!result.ok) run.choose("pass");
         guard += 1;
         if (guard > 80) break;
       }
