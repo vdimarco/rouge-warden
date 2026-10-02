@@ -14,42 +14,31 @@
   <header class="topbar">
     <a href="/" class="back">← Arcade</a>
     <div class="brand">BREAKTHROUGH</div>
-    <button id="soundBtn" class="iconBtn" aria-label="Toggle sound">♪</button>
+    <button id="soundBtn" class="iconBtn" type="button" aria-label="Toggle sound">♪</button>
   </header>
 
   <main>
     <section id="titleScreen" class="screen title-screen">
-      <div class="sky">
-        <div class="sun"></div>
-        <div class="mountains far"></div>
-        <div class="mountains near"></div>
-        <div class="city">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <div class="wind w1"></div><div class="wind w2"></div><div class="wind w3"></div>
+      <div class="sky" aria-hidden="true">
+        <canvas id="titleCanvas"></canvas>
       </div>
       <div class="titleCard">
         <p class="eyebrow">2026 → 2100</p>
         <h1>Invent a future<br>worth reaching.</h1>
         <p class="lede">Build breakthroughs, survive shocks, and bend humanity's climate trajectory in a run that lasts under 30 minutes.</p>
-        <button id="startBtn" class="primary">Begin a new timeline</button>
+        <button id="startBtn" class="primary" type="button">Begin a new timeline</button>
         <p id="seedNote" class="seedNote hidden" role="status"></p>
         <p class="micro">12 turns · deterministic seeds · one-handed mobile play</p>
       </div>
     </section>
 
     <section id="gameScreen" class="screen game-screen hidden">
-      <div class="world" id="world">
-        <div class="worldSky"></div>
-        <div class="worldSun"></div>
-        <div class="cloud c1"></div><div class="cloud c2"></div>
-        <div class="ridge r1"></div><div class="ridge r2"></div>
-        <div class="forest" id="forest"></div>
-        <div class="settlement" id="settlement"></div>
-        <div class="infrastructure" id="infrastructure"></div>
-        <div class="smog" id="smog"></div>
-        <div class="worldOverlay"></div>
-        <div class="year" id="year">2026</div>
+      <div class="world" id="world" data-state="damaged">
+        <canvas id="worldCanvas" aria-hidden="true"></canvas>
+        <div class="yearBlock">
+          <div class="year" id="year">2026</div>
+          <p class="worldState" id="worldState">Damaged</p>
+        </div>
         <div class="tempBadge"><span id="warming">+2.8°C</span><small>2100 path</small></div>
       </div>
 
@@ -76,36 +65,75 @@
       </div>
 
       <section class="decisionPanel">
+        <div class="advisor" id="advisor">
+          <div class="portrait" id="advisorPortrait"></div>
+          <div>
+            <b id="advisorName">Systems Scientist</b>
+            <p id="advisorLine"></p>
+          </div>
+        </div>
         <div id="eventBanner" class="eventBanner hidden"></div>
         <div id="cards" class="cards"></div>
         <div class="footerActions">
-          <button id="ideaBtn" class="secondary">Idea Lab</button>
-          <button id="timelineBtn" class="secondary">Timeline</button>
+          <button id="ideaBtn" class="secondary" type="button">Idea Lab</button>
+          <button id="timelineBtn" class="secondary" type="button">Timeline</button>
         </div>
       </section>
     </section>
 
-    <section id="endScreen" class="screen end-screen hidden">
-      <div class="endArt" id="endArt"></div>
+    <section id="endScreen" class="screen end-screen hidden" data-ending="abundance">
+      <div class="endArt" id="endArt">
+        <canvas id="endCanvas" aria-hidden="true"></canvas>
+      </div>
       <div class="endCard">
         <p class="eyebrow">YOUR 21ST CENTURY</p>
+        <p class="endWorld" id="endWorld"></p>
         <h2 id="endingTitle">The Age of Abundance</h2>
+        <p class="endHero"><b id="endWarm">+1.60°C</b><span>warming by 2100</span></p>
         <p id="endingCopy"></p>
         <div id="endStats" class="endStats"></div>
-        <div>
-          <h3>Breakthroughs</h3>
-          <div id="breakthroughList" class="chips"></div>
-        </div>
-        <button id="againBtn" class="primary">Start another timeline</button>
+        <h3>Major breakthroughs</h3>
+        <div id="majorList" class="chips"></div>
+        <h3>Deployed work</h3>
+        <div id="breakthroughList" class="chips"></div>
+        <h3>Visual timeline</h3>
+        <div id="yearRail" class="yearRail"></div>
+        <ol id="endTimeline" class="history"></ol>
+        <button id="againBtn" class="primary" type="button">Start another timeline</button>
       </div>
     </section>
   </main>
 
+  <div id="reveal" class="reveal hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="revealTitle">
+    <div class="revealBloom" aria-hidden="true"></div>
+    <div class="revealParticles" aria-hidden="true">
+      <i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i>
+      <i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i>
+      <i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i>
+    </div>
+    <div class="revealStage">
+      <p class="eyebrow" id="revealKicker">Meta-breakthrough</p>
+      <h2 id="revealTitle">PLANETARY GRID</h2>
+      <div class="revealPanel">
+        <p id="revealCopy"></p>
+        <div class="advisor revealAdvisor">
+          <div class="portrait" id="revealPortrait"></div>
+          <div>
+            <b id="revealWho"></b>
+            <p id="revealLine"></p>
+          </div>
+        </div>
+        <button id="revealDismiss" class="primary" type="button">Continue the century</button>
+      </div>
+    </div>
+  </div>
+
   <dialog id="modal">
-    <button class="modalClose" id="modalClose">×</button>
+    <button class="modalClose" id="modalClose" type="button" aria-label="Close">×</button>
     <div id="modalBody"></div>
   </dialog>
 </div>
+<script src="./scene.js"></script>
 <script src="./game.js"></script>
 </body>
 </html>

@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="Drop a token into 21 game machines, including Threadwake, Foldwild, Storm Choir, and Heartship. Free in your browser.">
+<meta name="description" content="Drop a token into 23 game machines, including BREAKTHROUGH, Threadwake, Foldwild, Storm Choir, and Heartship. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Explore 21 arcade machines, from living landscapes and folding rivers to lake adventures and pinball. Free in your browser.">
+<meta property="og:description" content="Explore 23 arcade machines, from BREAKTHROUGH's climate century to living landscapes, lake adventures, and pinball. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -90,6 +90,12 @@ button { font: inherit; color: inherit; }
 .cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
 .cab.tidebreak { --c1: #154b54; --c2: #a6f2d5; --glow: rgba(100, 240, 220, 0.45); }
 .cab.vr { --c1: #4a1f5c; --c2: #ff8a3a; --glow: rgba(255, 138, 58, 0.5); }
+.cab.breakthrough { --c1: #3e5c44; --c2: #f0c56a; --glow: rgba(232, 176, 84, 0.62); }
+.cab.breakthrough .marquee {
+  background: radial-gradient(ellipse at 50% 30%, #fff8e4, #f0c56a 46%, #c4843a 100%);
+}
+.cab.breakthrough .marquee b { font-size: calc(var(--h) * 0.03); letter-spacing: 0.01em; }
+.cab.breakthrough .screen { background: #d7ebe3; }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
@@ -294,6 +300,16 @@ button { font: inherit; color: inherit; }
         </div></div>
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
+      </article>
+      <article class="cab breakthrough" data-game="breakthrough" data-url="/breakthrough/" aria-label="BREAKTHROUGH: a climate-future strategy game">
+        <div class="marquee"><div><b>BREAKTHROUGH</b><small>2026 → 2100</small></div></div>
+        <div class="bezel"><div class="screen">
+          <canvas class="mini-game" data-scene="breakthrough" width="240" height="198" aria-hidden="true"></canvas>
+          <div class="osd"><p class="hi">12 TURNS · ONE CENTURY</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
       <article class="cab tidebreak" data-game="tidebreak" data-url="/tidebreak/" aria-label="Monster Mash: folklore realm MOBA">
@@ -798,6 +814,44 @@ for (const cv of $$(".mini-game")) {
       }
       g.fillStyle = "#56d9ef"; g.fillRect(97, 140, 46, 24);
       g.strokeStyle = "#ffe79e"; g.lineWidth = 3; g.strokeRect(80 + Math.floor((t % 3) * 2) * 16, 73, 16, 18);
+    } else if (scene === "breakthrough") {
+      const sky = g.createLinearGradient(0, 0, 0, 198);
+      sky.addColorStop(0, "#d7ebe4");
+      sky.addColorStop(0.55, "#8fb4ae");
+      sky.addColorStop(1, "#e7d3a4");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, 240, 198);
+      g.fillStyle = "#f2c56b";
+      g.beginPath(); g.arc(176, 40, 16, 0, 7); g.fill();
+      g.fillStyle = "rgba(255,252,245,.8)";
+      const cx = (28 + t * 16) % 280 - 24;
+      g.beginPath(); g.ellipse(cx, 34, 22, 8, 0, 0, 7); g.ellipse(cx + 16, 32, 14, 7, 0, 0, 7); g.fill();
+      g.fillStyle = "#8eae9c";
+      g.beginPath(); g.moveTo(0, 118); g.lineTo(36, 74); g.lineTo(78, 104); g.lineTo(118, 62); g.lineTo(168, 100); g.lineTo(210, 70); g.lineTo(240, 104); g.lineTo(240, 198); g.lineTo(0, 198); g.fill();
+      g.fillStyle = "#5e7d64";
+      g.beginPath(); g.moveTo(0, 146); g.lineTo(46, 108); g.lineTo(96, 136); g.lineTo(148, 102); g.lineTo(198, 134); g.lineTo(240, 112); g.lineTo(240, 198); g.lineTo(0, 198); g.fill();
+      g.fillStyle = "#5f9c96";
+      g.fillRect(0, 148, 240, 18);
+      g.strokeStyle = "rgba(255,255,240,.55)"; g.lineWidth = 1.5;
+      g.beginPath();
+      for (let x = 0; x <= 240; x += 8) {
+        const y = 156 + Math.sin(x * 0.08 + t * 3) * 1.6;
+        if (x) g.lineTo(x, y); else g.moveTo(x, y);
+      }
+      g.stroke();
+      g.fillStyle = "#3f6a45";
+      for (let i = 0; i < 8; i++) { g.beginPath(); g.ellipse(16 + i * 16, 146 + Math.sin(t * 1.4 + i) * 1.2, 8, 12, 0, 0, 7); g.fill(); }
+      g.fillStyle = "#f3ead6";
+      [[146, 124, 14, 28], [162, 112, 16, 40], [180, 128, 12, 24], [194, 116, 18, 36]].forEach(([x, y, w, h]) => g.fillRect(x, y, w, h));
+      g.fillStyle = "rgba(255,196,110,.8)";
+      for (let i = 0; i < 6; i++) g.fillRect(168 + (i % 3) * 8, 122 + Math.floor(i / 3) * 10, 3, 3);
+      g.strokeStyle = "#f7f1e4"; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(78, 146); g.lineTo(78, 104); g.stroke();
+      g.save(); g.translate(78, 104); g.rotate(t * 2.2);
+      g.fillStyle = "#f7f1e4";
+      for (let b = 0; b < 3; b++) { g.rotate((Math.PI * 2) / 3); g.fillRect(-1.6, -16, 3.2, 16); }
+      g.restore();
+      g.fillStyle = "#e7b45a"; g.beginPath(); g.arc(78, 104, 3, 0, 7); g.fill();
     } else {
       g.fillStyle = scene === "plunge" ? "#63a3b5" : "#297687";
       g.fillRect(0, scene === "plunge" ? 94 : 0, 240, 198);
