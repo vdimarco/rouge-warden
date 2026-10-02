@@ -193,7 +193,7 @@ function frame(now) {
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
-  renderer?.draw(state, dt, !running, aim ? renderer.screenDirection(aim.x, aim.y) : null, waypoint);
+  if(running)renderer?.draw(state, dt, false, aim ? renderer.screenDirection(aim.x, aim.y) : null, waypoint);
   requestAnimationFrame(frame);
 }
 loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').textContent = 'Start the hunt'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').textContent = 'Veil unavailable'; });
