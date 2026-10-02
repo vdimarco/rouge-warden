@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./illustrated.css">
   <link rel="stylesheet" href="./abilities.css">
   <link rel="stylesheet" href="./legend-ui.css">
+  <link rel="stylesheet" href="./spellbook-reference.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Monster Mash battlefield"></canvas>
@@ -36,6 +37,10 @@
         <button class="ability surge" data-skill="1"><span>DREAD</span><b></b><kbd>E</kbd><em class="ranks"></em></button>
         <button class="ability signature" data-skill="2"><span>OMEN</span><b></b><kbd>C</kbd><em class="ranks"></em></button>
         <button class="ability ult" data-skill="3"><span>BLACKOUT</span><b>LV 6</b><kbd>R</kbd><em class="ranks"></em></button>
+        <button class="ability-upgrade upgrade-dash" data-upgrade="0" hidden aria-label="Learn first ability">+</button>
+        <button class="ability-upgrade upgrade-surge" data-upgrade="1" hidden aria-label="Learn second ability">+</button>
+        <button class="ability-upgrade upgrade-signature" data-upgrade="2" hidden aria-label="Learn third ability">+</button>
+        <button class="ability-upgrade upgrade-ult" data-upgrade="3" hidden aria-label="Learn ultimate">+</button>
         <output id="auto-status" aria-label="Automatic attack status">AUTO · READY</output>
       </div>
       <div class="health"><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="xp-fill"></i></div></div>
