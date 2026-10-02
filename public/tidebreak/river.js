@@ -1,4 +1,5 @@
-const LENGTH = 4800, STEP = 12, cache = new Map();
+import { SIZE, MAP_SCALE } from './arena.js';
+const LENGTH = SIZE, STEP = 12, cache = new Map();
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const random = seed => () => {
   seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -16,11 +17,11 @@ export function riverGeometry(seed = 49) {
   seed >>>= 0; if (cache.has(seed)) return cache.get(seed);
   const rand = random(seed ^ 0x42a67d), phase = rand() * Math.PI * 2;
   const knots = [[0, 2330], [570, 2400], [1160, 2180], [1660, 2070], [1990, 1985], [2420, 2150], [2960, 2110], [3540, 2340], [4110, 2110], [4620, 1810], [4800, 1840]]
-    .map(([x, y]) => ({ x, y: y + (rand() - .5) * (x > 1700 && x < 2600 ? 90 : 210), width: 65 + rand() * 47 }));
+    .map(([x, y]) => ({ x: x * MAP_SCALE, y: (y + (rand() - .5) * (x > 1700 && x < 2600 ? 90 : 210)) * MAP_SCALE, width: (65 + rand() * 47) * MAP_SCALE }));
   const pools = [
     { x: 1000 + rand() * 340, radius: 210 + rand() * 110, extra: 45 + rand() * 34 },
     { x: 3070 + rand() * 430, radius: 250 + rand() * 100, extra: 44 + rand() * 35 },
-  ];
+  ].map(p => ({ x: p.x * MAP_SCALE, radius: p.radius * MAP_SCALE, extra: p.extra * MAP_SCALE }));
   // Local erosion pockets have independent sizes and positions on each bank.
   const pockets = Array.from({ length: 18 }, (_, i) => ({
     x: 140 + rand() * (LENGTH - 280), radius: 65 + rand() * 160,
@@ -33,7 +34,8 @@ export function riverGeometry(seed = 49) {
     return limit * Math.tanh(depth / limit);
   };
   const samples = [];
-  for (let x = 0; x <= LENGTH; x += STEP) {
+  for (let sample = 0; sample <= Math.ceil(LENGTH / STEP); sample++) {
+    const x = Math.min(LENGTH, sample * STEP);
     const y = spline(knots, x, 'y'), width = spline(knots, x, 'width') + pools.reduce((n, p) => n + Math.exp(-(((x - p.x) / p.radius) ** 2)) * p.extra, 0);
     // Independent banks make bends, coves and sand shelves asymmetric.
     const north = y - erosion(x, 0) - width * (.86 + Math.sin(x * .0043 + phase) * .13) - Math.sin(x * .021 + phase) * 7;
@@ -49,9 +51,9 @@ export function riverGeometry(seed = 49) {
   return river;
 }
 export function riverSample(x, seed = 49) {
-  const { samples } = riverGeometry(seed), at = clamp(x / STEP, 0, samples.length - 1), i = Math.floor(at), t = at - i;
-  const a = samples[i], b = samples[Math.min(i + 1, samples.length - 1)];
-  return { x, y: a.y + (b.y - a.y) * t, north: a.north + (b.north - a.north) * t, south: a.south + (b.south - a.south) * t, slope: (b.y - a.y) / STEP };
+  const { samples } = riverGeometry(seed), i = clamp(Math.floor(x / STEP), 0, samples.length - 2);
+  const a = samples[i], b = samples[i + 1], span = b.x - a.x, t = clamp((x - a.x) / span, 0, 1);
+  return { x, y: a.y + (b.y - a.y) * t, north: a.north + (b.north - a.north) * t, south: a.south + (b.south - a.south) * t, slope: (b.y - a.y) / span };
 }
 export const creekCenter = (x, seed = 49) => riverSample(x, seed).y;
 export function outsideRiver(p, seed = 49) { const bank = riverSample(p.x, seed); return Math.max(bank.north - p.y, p.y - bank.south); }

@@ -1,6 +1,7 @@
+import { structureProtected } from './objectives.js';
 import { CreatureBank } from '../arcade/creatures/player.js';
 import { player, HEROES } from './sim.js';
-import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, visibleTo, concealed, distance, clamp } from './world.js';
+import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, CENTER, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
 import { attackPose, drawCombatEffect, drawSkillZone } from './combat-motion.js';
@@ -22,7 +23,7 @@ export class Renderer {
   constructor(canvas, mini, art) {
     this.creatures = new CreatureBank();
     this.canvas = canvas; this.ctx = canvas.getContext('2d', { alpha: false }); this.mini = mini; this.art = art;
-    this.cam = { x: 2400, y: 2870 }; this.visible = new Set(); this.frames = 0; this.menuTime = 0; this.hitBoxes = [];
+    this.cam = { x: CENTER.x, y: CENTER.y + 600 }; this.visible = new Set(); this.frames = 0; this.menuTime = 0; this.hitBoxes = [];
     this.tiles = Array.from({ length: 4 }, (_, i) => { const tileSize = i === 3 ? 220 : 300, c = surface(tileSize), size = art.ground.width / 2; c.getContext('2d').drawImage(art.ground, i % 2 * size + 12, Math.floor(i / 2) * size + 12, size - 24, size - 24, 0, 0, tileSize, tileSize); return c; });
     this.sceneSeed = null; this.scenes = []; this.grounds = []; this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; this.shakeX = this.shakeY = 0; this.lastPoses = []; this.resize();
   }
@@ -34,8 +35,8 @@ export class Renderer {
   resize() {
     this.width = innerWidth; this.height = innerHeight; this.dpr = Math.min(devicePixelRatio || 1, 2);
     this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr;
-    this.scale = Math.min(this.width / 1040, this.height / 1840);
-    this.anchor = this.height < 520 ? .76 : .86;
+    this.scale = Math.min(this.width / 1200, this.height / 1680);
+    this.anchor = this.height < 520 ? .70 : .78;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); this.ctx.imageSmoothingEnabled = true;
   }
   project(x, y, height = 0) { return { x: (x - this.cam.x) * this.scale + this.width / 2 + this.shakeX, y: (y - this.cam.y) * this.scale * .88 + this.height * this.anchor - height * this.scale + this.shakeY }; }
@@ -57,7 +58,9 @@ export class Renderer {
   }
   draw(s, dt, menu = false, aim = null, waypoint = null) {
     const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
-    this.cam.x += (p.x - this.cam.x) * Math.min(1, dt * 8); this.cam.y += (p.y - this.cam.y) * Math.min(1, dt * 8);
+    const focus = p.order?.type === 'attack' ? s.units.find(e => e.id === p.order.target) : p.order?.type === 'move' ? p.order : null;
+    const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx,dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
+    this.cam.x += (p.x + dx / length * lead - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping;
     // Keep the complete camera footprint inside the landscape at each viewport.
     const halfW = Math.min(SIZE / 2, this.width / this.scale / 2), top = this.height * this.anchor / (this.scale * .88), bottom = this.height * (1 - this.anchor) / (this.scale * .88);
     this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
@@ -98,7 +101,7 @@ export class Renderer {
   drawUnit(s, e, time) {
     const c = this.ctx, hero = e.kind === 'hero', tower = e.kind === 'tower' || e.kind === 'core';
     let name = tower ? e.team ? 'tower-enemy' : 'tower-ally' : e.team === 1 ? 'wisp-enemy' : 'wisp-ally';
-    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
+    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : e.tier === 1 ? 315 : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
     if (e.creatureId) {
       const screen = this.project(e.x, e.y), extent = height * this.scale * 3;
       if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
@@ -115,6 +118,7 @@ export class Renderer {
     if (hero && e.hero === 3 && pose) jump += Math.max(0, swing) * 27;
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
+    if (e.kind === 'tower' && e.tier === 1) { this.ring(x,y,78,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
     if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
@@ -131,7 +135,8 @@ export class Renderer {
     if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp') {
       const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = creatureBox ? { x: anchor.x, y: box.y - 9 } : this.project(x, y, height + jump + 9);
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
-      c.fillStyle = TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
+      c.fillStyle = structureProtected(s,e) ? '#9693aa' : TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
+      if (e.kind === 'tower') { c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?'INNER · PROTECTED':e.tier===1?'INNER WARD':'OUTER WARD',a.x,a.y-6); }
       if (e.stun > 0 || e.fear > 0 || e.silencedUntil>s.time) { c.fillStyle = '#ffe3a0'; c.textAlign = 'center'; c.font = '700 11px Barlow'; c.fillText(e.fear > 0 ? 'FEARED' : e.stun>0?(e.snaredUntil>s.time?'ROOTED':'STUNNED'):'SILENCED', a.x, a.y - 5); }
     }
   }
@@ -171,11 +176,11 @@ export class Renderer {
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
       const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
-      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
+      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,(e.tier===1?10:7)*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
       else { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (e.player ? 4 : e.kind === 'hero' ? 2.5 : 1) * scale, 0, TAU); m.fill(); if (e.player) { m.strokeStyle = '#8de7b9'; m.lineWidth = 2; m.beginPath(); m.arc(x, y, 7 * scale, 0, TAU); m.stroke(); } }
     }
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(LANES[1][3].x,LANES[1][3].y).x - this.project(LANES[1][1].x,LANES[1][1].y).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }

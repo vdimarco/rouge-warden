@@ -1,14 +1,15 @@
 // Geometry is shared by movement, targeting, fog, the minimap and the renderer.
 import { creekCenter, insideRiver } from './river.js';
-export const SIZE = 4800;
+import { SIZE, MAP_SCALE, CENTER, arenaPoint } from './arena.js';
+export { SIZE, MAP_SCALE, CENTER } from './arena.js';
 export const LIMIT = 360;
 export const SHIFT = 40;
-export const BASES = [{ x: 2400, y: 4000 }, { x: 2400, y: 800 }];
+export const BASES = [arenaPoint(2400, 4000), arenaPoint(2400, 800)];
 // Strategic anchors remain stable; the shared sampled tracks wind between them.
 export const LANES = [
-  [BASES[0], { x: 1060, y: 3530 }, { x: 690, y: 2410 }, { x: 1110, y: 1280 }, BASES[1]],
-  [BASES[0], { x: 2400, y: 3260 }, { x: 2400, y: 2400 }, { x: 2400, y: 1540 }, BASES[1]],
-  [BASES[0], { x: 3630, y: 3500 }, { x: 4060, y: 2580 }, { x: 3750, y: 1250 }, BASES[1]],
+  [BASES[0], arenaPoint(1060, 3530), arenaPoint(690, 2410), arenaPoint(1110, 1280), BASES[1]],
+  [BASES[0], arenaPoint(2400, 3260), arenaPoint(2400, 2400), arenaPoint(2400, 1540), BASES[1]],
+  [BASES[0], arenaPoint(3630, 3500), arenaPoint(4060, 2580), arenaPoint(3750, 1250), BASES[1]],
 ];
 // Catmull-Rom centerlines are consumed by movement, terrain and the minimap.
 function track(knots) {
@@ -23,14 +24,19 @@ function track(knots) {
   }
   result.push(knots.at(-1)); return result;
 }
-export const PATHS = LANES.map((lane, i) => track(i === 1 ? [lane[0], { x: 2250, y: 3850 }, lane[1], { x: 2550, y: 2820 }, lane[2], { x: 2260, y: 1960 }, lane[3], { x: 2530, y: 1030 }, lane[4]] : lane));
+export const PATHS = LANES.map((lane, i) => track(i === 1 ? [lane[0], arenaPoint(2250, 3850), lane[1], arenaPoint(2550, 2820), lane[2], arenaPoint(2260, 1960), lane[3], arenaPoint(2530, 1030), lane[4]] : lane));
 export function closestTrack(p, path) {
   let best = Infinity, index = 0;
   for (let i = 0; i < path.length; i++) { const d = Math.hypot(p.x - path[i].x, p.y - path[i].y); if (d < best) { best = d; index = i; } }
   return index;
 }
-export const PORTALS = [{ x: 1300, y: 3270, to: 3 }, { x: 3500, y: 3270, to: 2 }, { x: 1300, y: 1530, to: 1 }, { x: 3500, y: 1530, to: 0 }];
-export const CAMPS = [{ x: 1480, y: 2440 }, { x: 3320, y: 2360 }, { x: 1220, y: 2970 }, { x: 3580, y: 1830 }];
+export const TOWER_POSITIONS = [0, 1].map(team => LANES.map((lane, laneIndex) => {
+  const path = team ? [...PATHS[laneIndex]].reverse() : PATHS[laneIndex];
+  const outer = lane[team ? 3 : 1], index = closestTrack(outer, path);
+  return [outer, path[Math.max(1, Math.round(index * .48))]];
+}));
+export const PORTALS = [{ x: 1300, y: 3270, to: 3 }, { x: 3500, y: 3270, to: 2 }, { x: 1300, y: 1530, to: 1 }, { x: 3500, y: 1530, to: 0 }].map(p => ({ ...p, ...arenaPoint(p.x, p.y) }));
+export const CAMPS = [{ x: 1480, y: 2440 }, { x: 3320, y: 2360 }, { x: 1220, y: 2970 }, { x: 3580, y: 1830 }].map(p => arenaPoint(p.x, p.y));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 // Broad town blocks become smaller groves. Lanes stay open in both realms.
@@ -51,13 +57,14 @@ export const COVER = [
   { x: 390, y: 3100, w: 220, h: 310, town: 'cliff-ridge', woods: 'cliff-ridge', height: 450, biome: 'heath' },
   { x: 2890, y: 3510, w: 260, h: 190, town: 'house-b', woods: 'juniper', height: 390, biome: 'village' },
 ];
+COVER.forEach(b => Object.assign(b, { ...arenaPoint(b.x, b.y), w: b.w * MAP_SCALE, h: b.h * MAP_SCALE }));
 export const OBSTACLES = [0, 1].map(phase => COVER.map((b, id) => ({ ...b, w: b.w * (phase ? .58 : 1), h: b.h * (phase ? .58 : 1), id })));
 export const BRUSH = [
   [1110, 2190], [1120, 2700], [3690, 2610], [3680, 2100],
   [2160, 1900], [2640, 2900], [2140, 2820], [2660, 1980],
   [1550, 3270], [3250, 1530], [1550, 1530], [3250, 3270],
-].map(([x, y]) => ({ x, y, radius: 150 }));
-export const RIVER = y => 2400 + Math.sin((y - 500) / 480) * 430;
+].map(([x, y]) => ({ ...arenaPoint(x, y), radius: 150 * MAP_SCALE }));
+export const RIVER = y => CENTER.x + Math.sin((y - 500 * MAP_SCALE) / (480 * MAP_SCALE)) * 430 * MAP_SCALE;
 export const CREEK = creekCenter;
 export function inWater(e, s) { return insideRiver(e, s?.seed ?? 49); }
 export function inBrush(s, e) { return s.phase === 1 && BRUSH.some(b => distance(b, e) < b.radius); }

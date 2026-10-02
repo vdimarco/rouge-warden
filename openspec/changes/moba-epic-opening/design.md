@@ -1,0 +1,9 @@
+# Design
+
+The requested Fal generation was rejected before it started. Use the existing painted abbey and hero assets for the moonlit stage; keep Fal environment and concept generation pending in a separate change. No generated concept fidelity is claimed. Midnight teal, ivory type, antique gold borders, selected-hero color for active controls. Preserve existing hero sprites and painted spell art.
+
+Opening screen: compact title band; a large hero stage beside native hero details; a roster with role filters; a footer in its own grid row. On phones the feature stacks above a separately scrollable roster. Avoid footer overlap by reserving its height rather than covering the roster with a sticky panel. All twelve heroes stay accessible. A short landscape screen can scroll the feature and roster independently.
+
+Use lightweight CSS atmosphere and reduced-motion support. Native text and controls remain separate from generated art. The spellbook keeps its supplied-image layout; shared borders, dialog chrome and previews can receive the same finish. Existing mouse attack orders and HUD upgrade controls stay active.
+
+Arena: centralize the 6400-unit size and scale authored world anchors by 4/3. Keep hero speed and body size stable. Place inner towers along the existing curved paths and exclude their footprints from scenery. Guard damage and target selection at the simulation boundary. An inner tower opens after its same-lane outer tower falls; the core opens after one complete lane falls. Map destinations issue real orders. Start behind the allied outer tower; smoothly lead the camera toward the active order. Increase minion speed to 240 to retain six-minute match pacing.

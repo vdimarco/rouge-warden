@@ -1,4 +1,5 @@
-import { SIZE, PATHS, BASES, PORTALS, CAMPS, OBSTACLES, distance } from './world.js';
+import { MAP_SCALE, arenaPoint } from './arena.js';
+import { SIZE, PATHS, BASES, PORTALS, CAMPS, OBSTACLES, CENTER, TOWER_POSITIONS, distance } from './world.js';
 import { outsideRiver, riverSample, riverGeometry } from './river.js';
 export const LANDFORMS = ['cliff-ridge', 'root-arch', 'ruin-yard', 'mill-yard', 'rock-shelf', 'forest-island'];
 export const LANDMARKS = ['observatory', 'mill', 'market', 'abbey', 'hollow-log', 'greenhouse', 'shrine', 'ivy-wall', 'pier'];
@@ -24,6 +25,7 @@ export const DISTRICTS = [
   { name: 'Briarwood', x: 3180, y: 2980, rx: 1090, ry: 1160, angle: -.4, material: 0, color: '#385958', plants: ['forest-island','pines','juniper','ferns','mushrooms','hollow-log'] },
   { name: 'Splitstone Rise', x: 3420, y: 1450, rx: 820, ry: 950, angle: .4, material: 0, color: '#979976', plants: ['boulders','birches','juniper','branch'] },
 ];
+DISTRICTS.forEach(d => Object.assign(d, { ...arenaPoint(d.x, d.y), rx: d.rx * MAP_SCALE, ry: d.ry * MAP_SCALE }));
 export function districtAt(p) { return DISTRICTS.reduce((best, d) => {
   const n = ((p.x - d.x) / d.rx) ** 2 + ((p.y - d.y) / d.ry) ** 2;
   return n < best.n ? { d, n } : best;
@@ -31,7 +33,7 @@ export function districtAt(p) { return DISTRICTS.reduce((best, d) => {
 export function makeScenery(seed, phase) {
   const rand = sceneryRandom(seed ^ 0x718ac), props = [], patches = [];
   const pick = a => a[Math.floor(rand() * a.length)];
-  const anchors = [...BASES, ...PORTALS, ...CAMPS, { x: 2400, y: 2400 }];
+  const anchors = [...BASES, ...PORTALS, ...CAMPS, CENTER, ...TOWER_POSITIONS.flat(2)];
   const blocked = p => OBSTACLES[phase].some(b => Math.abs(p.x - b.x) < b.w / 2 + 28 && Math.abs(p.y - b.y) < b.h / 2 + 28);
   for (const b of OBSTACLES[phase]) {
     const name = phase ? b.woods : b.town, foot = b.y + b.h * .35;
@@ -45,8 +47,8 @@ export function makeScenery(seed, phase) {
   }
   // A village yard is framed by varied buildings; the north remains broken ruins.
   for (const [name,x,y,h] of [['shrine',1850,3820,310],['ivy-wall',1970,1390,270],['abbey',1870,1950,330],['house-b',1780,3540,355],['pier',1270,2510,210]]) {
-    const p = {x,y}; if (laneDistance(p) < 190 || blocked(p)) continue;
-    props.push({ name: phase && name.startsWith('house') ? 'hollow-log' : name, x, y, height: h, flip: false, biome: districtAt(p).name });
+    const p = arenaPoint(x,y); if (laneDistance(p) < 190 || blocked(p)) continue;
+    props.push({ name: phase && name.startsWith('house') ? 'hollow-log' : name, ...p, height: h, flip: false, biome: districtAt(p).name });
   }
   // Coherent groves use clusters with clearings. Distant canopy closes the world edge.
   const groves = [
@@ -54,7 +56,8 @@ export function makeScenery(seed, phase) {
     [2860,3900,280], [3540,4400,370], [4540,3970,380], [4520,1790,410],
     [3630,550,280], [3120,1980,180], [1970,2840,200], [2950,3240,240],
   ];
-  for (const [gx,gy,radius] of groves) {
+  for (const raw of groves) {
+    const [gx,gy,radius] = raw.map(n => n * MAP_SCALE);
     const grove = districtAt({x:gx,y:gy});
     for (let j = 0; j < 13; j++) {
       const angle = rand() * Math.PI * 2, radiusAt = Math.sqrt(rand()) * radius, p = { x: gx + Math.cos(angle) * radiusAt, y: gy + Math.sin(angle) * radiusAt };
@@ -64,7 +67,7 @@ export function makeScenery(seed, phase) {
     }
   }
   // Infill has a deliberately varied scale; large blank lawns never form a grid.
-  for (let i = 0; i < 1900; i++) {
+  for (let i = 0; i < 2600; i++) {
     const p = { x: 180 + rand() * (SIZE - 360), y: 180 + rand() * (SIZE - 360) }, d = laneDistance(p), water = outsideRiver(p, seed);
     if (d < 175 || water < 35 || blocked(p) || anchors.some(a => distance(p,a) < 170) || props.some(q=>distance(p,q)<85)) continue;
     const district = districtAt(p), name = water < 150 ? pick(['reeds','reeds','boulders','ferns']) : pick(district.plants);
