@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import fs from "fs";
 import path from "path";
-import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge } from "../../public/breakthrough2/model.js";
+import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge, readIndicators } from "../../public/breakthrough2/model.js";
 import { scripted, randomPolicy, greedyClean } from "./policies.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -70,7 +70,7 @@ function pngSize(file) {
   return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20), bytes: buf.length };
 }
 
-async function open(browser, url, size) {
+async function open(browser, url, size, options) {
   const width = size?.width || 390;
   const height = size?.height || 844;
   const ctx = await browser.newContext({
@@ -78,6 +78,7 @@ async function open(browser, url, size) {
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 1,
+    reducedMotion: options?.reduce ? "reduce" : "no-preference",
   });
   const page = await ctx.newPage();
   page.setDefaultTimeout(20000);
@@ -522,6 +523,81 @@ try {
   check(redraw.cards !== opening.cards || redraw.event !== opening.event, "play again without ?seed changes the first hand or event");
   check(loose.errors.length === 0, loose.errors.length ? loose.errors.join("; ") : "play again run is clean");
   await loose.close();
+
+  console.log("\ntrajectory and indicators");
+  const pathRun = await open(browser, base + "?seed=123&fast=1");
+  await pathRun.page.locator("#start").tap();
+  await pathRun.page.waitForFunction(() => window.__test.state().ui === "play");
+  check(await pathRun.page.evaluate(() => window.__test.motion() === false), "fast=1 skips motion");
+  const openingInd = await pathRun.page.evaluate(() => window.__test.indicators());
+  const nodeOpen = createRun(123);
+  const nodeOpeningInd = readIndicators(nodeOpen.state(), nodeOpen.log());
+  check(JSON.stringify(openingInd) === JSON.stringify(nodeOpeningInd), "turn 1 indicators match the model");
+  check(openingInd.forward.length === 12, `twelve forward steps at the open (${openingInd.forward.length})`);
+  check(openingInd.forward.every((point) => point.lo <= point.warming && point.warming <= point.hi), "the band wraps the hold path");
+  check(openingInd.outlook.reduce((sum, row) => sum + row.n, 0) === openingInd.outlookTotal, "ending bars sum to the quiet paths");
+  const chartBox = await pathRun.page.locator("#path-chart").boundingBox();
+  check(!!chartBox && chartBox.width > 200 && chartBox.height >= 40, `path chart ${chartBox ? Math.round(chartBox.width) + "x" + Math.round(chartBox.height) : "missing"}`);
+  check(await pathRun.page.locator(".spark").count() === 5, "five meter sparklines");
+  check(await pathRun.page.locator(".delta").count() === 5, "five meter deltas");
+  const pathWords = await pathRun.page.locator("body").innerText();
+  check(!/[\u2014\u2013]/.test(pathWords), "no em or en dashes once the path is up");
+  const helpPath = await pathRun.page.locator("#howto").textContent();
+  check(/quiet policies/.test(helpPath) && /2\.0°/.test(helpPath), "how to play explains the path and the 2.0° mark");
+  const chosen = [];
+  for (let i = 0; i < 4; i += 1) {
+    const offers = await pathRun.page.evaluate(() => window.__test.offers());
+    const id = scripted(offers);
+    chosen.push(id);
+    await pathRun.page.evaluate((choice) => window.__test.choose(choice), id);
+  }
+  const playedInd = await pathRun.page.evaluate(() => window.__test.indicators());
+  const nodePlayed = createRun(123);
+  for (const id of chosen) nodePlayed.choose(id);
+  const nodePlayedInd = readIndicators(nodePlayed.state(), nodePlayed.log());
+  check(JSON.stringify(playedInd) === JSON.stringify(nodePlayedInd), "indicators match the model after four turns");
+  check(playedInd.history.length > openingInd.history.length, "history grows after turns");
+  const heading = await pathRun.page.locator("#path-ending").innerText();
+  const tip = await pathRun.page.locator("#path-tip").innerText();
+  check(heading === `Heading toward ${playedInd.heading.name}`, `heading reads "${heading}"`);
+  const tipOk = playedInd.tip.crossed
+    ? (playedInd.tip.already ? tip === `Past the 2.0° tip since ${playedInd.tip.year}` : tip === `Crosses 2.0° around ${playedInd.tip.year}`)
+    : tip === "Holds under the 2.0° tip";
+  check(tipOk, `tip reads "${tip}"`);
+  const stock = await pathRun.page.locator("#stockline").innerText();
+  check(stock.includes(`Stock ${playedInd.stock.warming.toFixed(1)}°`) && stock.includes("lag"), `stock line "${stock}"`);
+  const ledger = await pathRun.page.locator("#ledger").innerText();
+  check(ledger.startsWith("Stacks ") && ledger.includes("Land sink"), `ledger "${ledger}"`);
+  check(await pathRun.page.locator("#outlook .outlook").count() === 6, "six ending bars");
+  const journal = await pathRun.page.locator("#journal").innerText();
+  const lastTurn = nodePlayed.log().at(-1);
+  check(journal.includes(lastTurn.pick.name) && journal.includes(String(lastTurn.year)), `turn history lists ${lastTurn.year} ${lastTurn.pick.name}`);
+  const ink = await pathRun.page.evaluate(() => {
+    const chart = document.getElementById("path-chart");
+    const data = chart.getContext("2d").getImageData(0, 0, chart.width, chart.height).data;
+    let n = 0;
+    for (let i = 3; i < data.length; i += 16) if (data[i] > 8) n += 1;
+    return n;
+  });
+  check(ink > 20, `trajectory canvas has ${ink} ink samples`);
+  await shoot(pathRun.page, "breakthrough2-trajectory-390");
+  await pathRun.page.locator("#journal").scrollIntoViewIfNeeded();
+  await shoot(pathRun.page, "breakthrough2-indicators-390");
+  check(pathRun.errors.length === 0 && pathRun.net404.length === 0 && pathRun.off.length === 0, "trajectory run stayed on origin without errors");
+  await pathRun.close();
+
+  const calm = await open(browser, base + "?seed=123", null, { reduce: true });
+  await calm.page.evaluate(() => window.__test.start());
+  await calm.page.waitForFunction(() => window.__test.state().ui === "play");
+  const calmState = await calm.page.evaluate(() => ({
+    motion: window.__test.motion(),
+    reduce: document.documentElement.dataset.reduce,
+    heading: document.getElementById("path-ending").textContent,
+  }));
+  check(calmState.motion === false && calmState.reduce === "1", "reduced motion skips tweens and drift");
+  check(calmState.heading.startsWith("Heading toward "), `reduced motion still names the heading (${calmState.heading})`);
+  check(calm.errors.length === 0, calm.errors.length ? calm.errors.join("; ") : "reduced motion run is clean");
+  await calm.close();
 
   console.log("\nseeds 1 to 50");
   const randomCounts = tally((seed) => randomPolicy(seed));

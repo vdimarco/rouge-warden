@@ -247,16 +247,18 @@ function paintSeaLevel(ctx, w, h, warming) {
   ctx.fillRect(0, y - h * 0.03, w, h);
 }
 
-function paintSmog(ctx, view, w, h) {
+function paintSmog(ctx, view, w, h, t) {
   const alpha = clamp((view.emissions - 42) / 90, 0, 0.62);
   if (alpha <= 0.02) return;
+  const time = t || 0;
   for (const region of REGIONS) {
     const local = localOf(view, region);
     const extra = clamp((local.emissions - 40) / 80, 0, 1);
-    const grd = ctx.createRadialGradient(
-      region.cx * w, (region.cy + 0.08) * h, 4,
-      region.cx * w, (region.cy + 0.08) * h, region.rx * w * 0.9,
-    );
+    const drift = (Math.sin(time * 0.45 + region.phase) - Math.sin(region.phase)) * w * 0.025;
+    const lift = (Math.cos(time * 0.32 + region.phase) - Math.cos(region.phase)) * h * 0.015;
+    const cx = region.cx * w + drift;
+    const cy = (region.cy + 0.08) * h + lift;
+    const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, region.rx * w * 0.9);
     grd.addColorStop(0, `rgba(90, 86, 80, ${alpha * extra})`);
     grd.addColorStop(1, "rgba(90, 86, 80, 0)");
     ctx.fillStyle = grd;
@@ -264,25 +266,43 @@ function paintSmog(ctx, view, w, h) {
   }
 }
 
-function drawSlot(ctx, images, slot, w, h, paint) {
-  const img = images && images[slot];
-  if (img) ctx.drawImage(img, 0, 0, w, h);
-  else paint();
+function paintShimmer(ctx, w, h, warming, t) {
+  if (!t) return;
+  const rise = clamp((warming - 1.2) / 1.7, 0, 1);
+  const y = h * (0.78 - rise * 0.2) + Math.sin(t * 1.35) * h * 0.008;
+  ctx.fillStyle = `rgba(232, 244, 246, ${0.08 + rise * 0.06})`;
+  ctx.fillRect(0, y, w, Math.max(1.5, h * 0.012));
 }
 
-export function paintWorld(canvas, view, images) {
+function paintPulse(ctx, w, h, pulse) {
+  if (pulse <= 0.02) return;
+  const r = (0.16 + (1 - pulse) * 0.5) * Math.min(w, h);
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(181, 71, 46, ${0.38 * pulse})`;
+  ctx.lineWidth = Math.max(2, w * 0.006);
+  ctx.arc(w * 0.5, h * 0.46, r, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+let baseKey = "";
+let baseCanvas = null;
+
+function baseLayer(world, w, h, images) {
+  const art = images ? Object.keys(images).length : 0;
+  const key = [
+    w, h, art,
+    world.warming.toFixed(3),
+    world.emissions.toFixed(2),
+    world.energy.toFixed(2),
+    world.prosperity.toFixed(2),
+    world.ecology.toFixed(2),
+    world.trust.toFixed(2),
+  ].join("|");
+  if (baseKey === key && baseCanvas) return baseCanvas;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d");
-  const w = canvas.width;
-  const h = canvas.height;
-  const world = {
-    warming: view.warming,
-    emissions: view.emissions,
-    energy: view.energy,
-    prosperity: view.prosperity,
-    ecology: view.ecology,
-    trust: view.trust,
-  };
-  ctx.clearRect(0, 0, w, h);
   drawSlot(ctx, images, "world-base", w, h, () => {
     paintPaper(ctx, w, h);
     for (const region of REGIONS) paintLand(ctx, region, w, h, world.ecology + region.eco);
@@ -298,8 +318,38 @@ export function paintWorld(canvas, view, images) {
     drawSlot(ctx, images, `${region.id}-power-${power}`, w, h, () => paintPower(ctx, region, w, h, power));
   }
   drawSlot(ctx, images, "sea-level", w, h, () => paintSeaLevel(ctx, w, h, world.warming));
-  drawSlot(ctx, images, "smog", w, h, () => paintSmog(ctx, world, w, h));
   if (!images || !images["world-base"]) ctx.drawImage(grainLayer(w, h), 0, 0);
+  baseCanvas = canvas;
+  baseKey = key;
+  return canvas;
+}
+
+function drawSlot(ctx, images, slot, w, h, paint) {
+  const img = images && images[slot];
+  if (img) ctx.drawImage(img, 0, 0, w, h);
+  else paint();
+}
+
+export function paintWorld(canvas, view, images, frame) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  if (w < 2 || h < 2) return;
+  const world = {
+    warming: view.warming,
+    emissions: view.emissions,
+    energy: view.energy,
+    prosperity: view.prosperity,
+    ecology: view.ecology,
+    trust: view.trust,
+  };
+  const time = frame && frame.t ? frame.t : 0;
+  const pulse = frame && frame.pulse ? frame.pulse : 0;
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(baseLayer(world, w, h, images), 0, 0);
+  drawSlot(ctx, images, "smog", w, h, () => paintSmog(ctx, world, w, h, time));
+  paintShimmer(ctx, w, h, world.warming, time);
+  paintPulse(ctx, w, h, pulse);
 }
 
 export const PREVIEW = {

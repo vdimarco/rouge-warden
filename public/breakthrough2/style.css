@@ -118,8 +118,9 @@ h1, h2, .brand h1, #title h2, #ending h2, #flash-year {
 
 #mapwrap {
   position: relative;
-  height: 45%;
-  min-height: 220px;
+  height: 26vh;
+  min-height: 132px;
+  max-height: 220px;
   overflow: hidden;
   border-top: 1px solid rgba(43, 42, 51, 0.08);
   border-bottom: 1px solid rgba(43, 42, 51, 0.12);
@@ -155,7 +156,28 @@ h1, h2, .brand h1, #title h2, #ending h2, #flash-year {
 }
 html[data-fast="1"] #flash { animation: none; }
 
-#hud { padding: 8px 12px 4px; }
+#hud { padding: 6px 12px 4px; min-width: 0; }
+#path { min-width: 0; margin-top: 2px; }
+#path-copy p { margin: 0; font-size: 12px; font-weight: 700; line-height: 1.25; }
+#path-ending { color: var(--ink); }
+#path-tip { color: var(--ember); font-weight: 600; }
+#path-chart {
+  width: 100%;
+  height: 64px;
+  display: block;
+  margin-top: 2px;
+}
+#path-chart.tick { animation: chartTick 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes chartTick {
+  from { opacity: 0.45; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+#stockline {
+  margin: 1px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
 #warm {
   display: flex;
   justify-content: space-between;
@@ -172,7 +194,7 @@ html[data-fast="1"] #flash { animation: none; }
   gap: 6px;
   margin-top: 6px;
 }
-.meter span {
+.meter > span:first-child {
   display: block;
   min-height: 2.4em;
   font-size: 11px;
@@ -194,10 +216,103 @@ html[data-fast="1"] #flash { animation: none; }
 .meter i b {
   display: block;
   height: 100%;
-  width: 0;
+  width: 100%;
   border-radius: inherit;
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.meter b.num { display: block; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.meter:nth-child(2) i b { transition-delay: 40ms; }
+.meter:nth-child(3) i b { transition-delay: 80ms; }
+.meter:nth-child(4) i b { transition-delay: 120ms; }
+.meter:nth-child(5) i b { transition-delay: 160ms; }
+.spark { width: 100%; height: 16px; display: block; margin-top: 2px; }
+.meter .read {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px;
+  min-height: 0;
+  text-transform: none;
+  color: inherit;
+}
+.meter b.num { display: block; font-size: 12px; font-weight: 700; margin-top: 0; }
+.delta { font-style: normal; font-size: 11px; font-weight: 700; color: var(--smog); }
+.delta.good { color: var(--forest); }
+.delta.bad { color: var(--ember); }
+#signals { min-width: 0; }
+#signals h2, #signals h2.sub {
+  font-family: "DM Sans", "Gill Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sea);
+  margin: 0 0 4px;
+}
+#quiet-note, #ledger {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+#pressures { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.pressure {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(43, 42, 51, 0.06);
+}
+.pressure.up { color: var(--forest); }
+.pressure.down { color: var(--ember); }
+#signals .muted { margin: 0; font-size: 12px; font-weight: 600; color: var(--smog); }
+#outlook {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  margin-bottom: 6px;
+}
+.outlook { min-width: 0; }
+.outlook .name {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.outlook i {
+  display: block;
+  height: 6px;
+  margin-top: 2px;
+  border-radius: 99px;
+  background: rgba(43, 42, 51, 0.1);
+  overflow: hidden;
+}
+.outlook i b {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--sea);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.outlook.heading .name { color: var(--ember); }
+.outlook.heading i b { background: var(--ember); }
+.outlook em { font-style: normal; font-size: 11px; font-weight: 700; }
+#journal {
+  margin: 0;
+  padding: 0 0 0 16px;
+  max-height: 88px;
+  overflow: auto;
+}
+#journal li { margin: 0 0 4px; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+
+@media (min-width: 380px) {
+  #outlook { grid-template-columns: 1fr 1fr 1fr; }
+}
+
 .meter[data-k="emissions"] i b { background: var(--ember); }
 .meter[data-k="energy"] i b { background: var(--ochre); }
 .meter[data-k="prosperity"] i b { background: var(--gold); }
@@ -248,6 +363,17 @@ html[data-fast="1"] #flash { animation: none; }
   border-radius: 14px;
   padding: 8px 10px 10px;
   box-shadow: 0 6px 0 rgba(43, 42, 51, 0.05);
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: cardIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card:nth-child(2) { animation-delay: 40ms; }
+.card:nth-child(3) { animation-delay: 80ms; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.card:active, .option:active, #pass:active, #start:active, #again:active {
+  transform: scale(0.98);
 }
 .card .lane {
   font-size: 11px;
@@ -310,6 +436,18 @@ html[data-fast="1"] #flash { animation: none; }
   justify-content: flex-end;
   padding: 28px 20px 32px;
   gap: 10px;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#title.leaving, #ending.leaving, #howto.leaving {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+#ending:not([hidden]) { animation: sheetIn 460ms cubic-bezier(0.22, 1, 0.36, 1); }
+#howto:not([hidden]) .panel { animation: sheetIn 360ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
 #title {
   justify-content: flex-end;
@@ -353,7 +491,7 @@ html[data-fast="1"] #flash { animation: none; }
     border-radius: 18px;
   }
   #top, #seed-warn { grid-column: 1 / -1; }
-  #mapwrap { grid-column: 1; grid-row: 3; height: auto; min-height: 0; }
+  #mapwrap { grid-column: 1; grid-row: 3; height: auto; min-height: 0; max-height: none; }
   #hud { grid-column: 1; grid-row: 4; }
   #sheet { grid-column: 2; grid-row: 3 / span 2; }
   #title, #howto, #ending { border-radius: 18px; }
@@ -362,6 +500,32 @@ html[data-fast="1"] #flash { animation: none; }
 @media (max-width: 360px) {
   #top, #hud, #sheet { padding-left: 8px; padding-right: 8px; }
   #meters { gap: 4px; }
+}
+
+@media (max-height: 600px) and (orientation: portrait) {
+  #mapwrap { height: 128px; min-height: 120px; max-height: 128px; }
+  #path-chart { height: 52px; }
+  .spark { height: 12px; }
+}
+
+html[data-fast="1"] *,
+html[data-fast="1"] *::before,
+html[data-fast="1"] *::after,
+html[data-reduce="1"] *,
+html[data-reduce="1"] *::before,
+html[data-reduce="1"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:active, .option:active, #pass:active, #start:active, #again:active { transform: none; }
 }
 
 /* Short landscape: map on the left, the hand in a scrolling column on the right. */
@@ -381,7 +545,11 @@ html[data-fast="1"] #flash { animation: none; }
     grid-row: 2;
     height: auto;
     min-height: 0;
+    max-height: none;
   }
+  #path-chart { height: 44px; }
+  .spark { height: 12px; }
+  #stockline, #path-copy p { font-size: 11px; }
   #hud { grid-column: 1; grid-row: 3; }
   #sheet {
     grid-column: 2;

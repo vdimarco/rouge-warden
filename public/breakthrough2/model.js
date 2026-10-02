@@ -382,7 +382,7 @@ const cardsById = new Map(CARDS.map((card) => [card.id, card]));
 const ideasById = new Map(IDEAS.map((idea) => [idea.id, idea]));
 const eventsById = new Map(EVENTS.map((event) => [event.id, event]));
 
-function blankState() {
+export function openingMeters() {
   return {
     capital: 7,
     research: 5,
@@ -395,6 +395,10 @@ function blankState() {
     ecology: 49,
     warming: 1.4,
   };
+}
+
+function blankState() {
+  return openingMeters();
 }
 
 function snapshot(state) {
@@ -511,40 +515,100 @@ function worldStep(state, owned, years) {
 
   const beforePros = state.prosperity;
   let dPros = PARAMS.prosBase * y;
-  dPros += (58 - state.energy) * PARAMS.prosEnergy * y;
-  if (state.warming > PARAMS.prosHeatAt) dPros -= (state.warming - PARAMS.prosHeatAt) * PARAMS.prosHeat * y;
+  const energyPros = (58 - state.energy) * PARAMS.prosEnergy * y;
+  dPros += energyPros;
+  let heatPros = 0;
+  if (state.warming > PARAMS.prosHeatAt) {
+    const drag = (state.warming - PARAMS.prosHeatAt) * PARAMS.prosHeat * y;
+    heatPros = -drag;
+    dPros -= drag;
+  }
   writeMeter(state, "prosperity", state.prosperity + dPros);
   if (state.energy > 60 && state.prosperity < beforePros - 0.3) notes.push("Costly energy drags prosperity.");
   if (state.energy < 42 && state.prosperity > beforePros + 0.3) notes.push("Cheap power lifts prosperity.");
 
   const beforeEm = state.emissions;
   let dEm = Math.max(0, state.prosperity - PARAMS.growthFloor) * PARAMS.growthEmissions * (1 - dec) * y;
+  const growthPush = dEm;
+  let richPush = 0;
   if (state.prosperity > PARAMS.richLeakAt) {
-    dEm += (state.prosperity - PARAMS.richLeakAt) * PARAMS.richLeak * (1 - dec) * y;
+    richPush = (state.prosperity - PARAMS.richLeakAt) * PARAMS.richLeak * (1 - dec) * y;
+    dEm += richPush;
+  }
+  let industryPush = 0;
+  if (state.industry > PARAMS.industryLeakAt) {
+    industryPush = (state.industry - PARAMS.industryLeakAt) * PARAMS.industryLeak * (1 - dec) * y;
+    dEm += industryPush;
+  }
+  let fullEm = Math.max(0, state.prosperity - PARAMS.growthFloor) * PARAMS.growthEmissions * y;
+  if (state.prosperity > PARAMS.richLeakAt) {
+    fullEm += (state.prosperity - PARAMS.richLeakAt) * PARAMS.richLeak * y;
   }
   if (state.industry > PARAMS.industryLeakAt) {
-    dEm += (state.industry - PARAMS.industryLeakAt) * PARAMS.industryLeak * (1 - dec) * y;
+    fullEm += (state.industry - PARAMS.industryLeakAt) * PARAMS.industryLeak * y;
   }
   writeMeter(state, "emissions", state.emissions + dEm);
   if (state.emissions > beforeEm + 0.3 && dec < 0.45) notes.push("Growth pushes emissions up.");
 
   let dEco = -PARAMS.ecoDrift * y;
-  if (state.warming > PARAMS.ecoHeatAt) dEco -= (state.warming - PARAMS.ecoHeatAt) * PARAMS.ecoHeat * y;
+  let heatEco = 0;
+  if (state.warming > PARAMS.ecoHeatAt) {
+    const drag = (state.warming - PARAMS.ecoHeatAt) * PARAMS.ecoHeat * y;
+    heatEco = -drag;
+    dEco -= drag;
+  }
   const ecoBefore = state.ecology;
   writeMeter(state, "ecology", state.ecology + dEco);
 
   let dTrust = 0.2;
-  if (state.warming > PARAMS.trustHeatAt) dTrust -= (state.warming - PARAMS.trustHeatAt) * PARAMS.trustHeat * y;
-  if (state.prosperity < PARAMS.trustPoorAt) dTrust -= PARAMS.trustPoor * y;
-  if (state.energy < 44 && state.prosperity > 56 && state.warming < 1.9) dTrust += PARAMS.trustHeal * y;
+  let heatTrust = 0;
+  let poorTrust = 0;
+  let healTrust = 0;
+  if (state.warming > PARAMS.trustHeatAt) {
+    const drag = (state.warming - PARAMS.trustHeatAt) * PARAMS.trustHeat * y;
+    heatTrust = -drag;
+    dTrust -= drag;
+  }
+  if (state.prosperity < PARAMS.trustPoorAt) {
+    poorTrust = -PARAMS.trustPoor * y;
+    dTrust -= PARAMS.trustPoor * y;
+  }
+  if (state.energy < 44 && state.prosperity > 56 && state.warming < 1.9) {
+    healTrust = PARAMS.trustHeal * y;
+    dTrust += healTrust;
+  }
   writeMeter(state, "trust", state.trust + dTrust);
 
   const eq = equilibrium(state.emissions, state.ecology);
   const warmed = round2(clamp(stepWarming(state.warming, eq, years), 0, 6));
   if (state.ecology < 42 && warmed > state.warming + 0.01) notes.push("A thin landscape stores less carbon.");
   else if (state.ecology > 68 && eq < equilibrium(state.emissions, ecoBefore)) notes.push("Healthy land slows the heat.");
+  const landSink = (state.ecology - 50) * PARAMS.eqPerEcology;
   state.warming = warmed;
-  return { notes: notes.slice(0, 2), decoupling: round2(dec), clean };
+  return {
+    notes: notes.slice(0, 2),
+    decoupling: round2(dec),
+    clean,
+    flows: {
+      energyPros: round2(energyPros),
+      heatPros: round2(heatPros),
+      growthPush: round2(growthPush),
+      richPush: round2(richPush),
+      industryPush: round2(industryPush),
+      added: round2(fullEm),
+      avoided: round2(fullEm - dEm),
+      heatEco: round2(heatEco),
+      heatTrust: round2(heatTrust),
+      poorTrust: round2(poorTrust),
+      healTrust: round2(healTrust),
+      landSink: round2(landSink),
+      decoupling: round2(dec),
+    },
+  };
+}
+
+export function advanceWorld(state, owned, years) {
+  return worldStep(state, owned, years);
 }
 
 function derived(state, year) {
@@ -830,6 +894,289 @@ export function createRun(seed) {
     log: () => log.map((entry) => JSON.parse(JSON.stringify(entry))),
     ending: () => ending,
     tweak,
+  };
+}
+
+export const OUTLOOK_POLICIES = ["hold", "cut", "grow", "restore", "power", "trust", "alpha"];
+export const TIP_LEVEL = PARAMS.prosHeatAt;
+
+const POINT_KEYS = ["warming", "emissions", "energy", "prosperity", "ecology", "trust"];
+
+function shadowState(state) {
+  const out = openingMeters();
+  for (const key of Object.keys(out)) {
+    if (typeof state[key] === "number" && Number.isFinite(state[key])) out[key] = state[key];
+  }
+  return out;
+}
+
+function meterPoint(i, year, src) {
+  const out = { i, year };
+  for (const key of POINT_KEYS) out[key] = src[key];
+  return out;
+}
+
+function metersDiffer(a, b) {
+  return POINT_KEYS.some((key) => a[key] !== b[key]);
+}
+
+function historyPoints(state, log) {
+  const open = openingMeters();
+  const points = [];
+  if (!log.length) {
+    if (metersDiffer(state, open)) points.push(meterPoint(0, YEARS[0], open));
+    const nowI = points.length ? 0.4 : 0;
+    points.push(meterPoint(nowI, state.year, state));
+    return points;
+  }
+  if (metersDiffer(open, log[0].before)) points.push(meterPoint(0, YEARS[0], open));
+  const decisionI = points.length ? 0.4 : 0;
+  points.push(meterPoint(decisionI, log[0].year, log[0].before));
+  for (const entry of log) {
+    points.push(meterPoint(entry.turn, Math.min(2100, entry.year + entry.span), entry.after));
+  }
+  const last = log[log.length - 1];
+  if (state.phase !== "end" && metersDiffer(state, last.after)) {
+    points.push(meterPoint(state.turnIndex + 0.4, state.year, state));
+  }
+  return points;
+}
+
+function policyScore(card, state, policy) {
+  const fx = scaledEffect(card, state);
+  if (policy === "cut") return -(fx.emissions || 0);
+  if (policy === "grow") return (fx.prosperity || 0) * 2 + (fx.emissions || 0);
+  if (policy === "restore") return fx.ecology || 0;
+  if (policy === "power") return -(fx.energy || 0);
+  if (policy === "trust") return fx.trust || 0;
+  return 0;
+}
+
+function choosePolicyCard(state, owned, policy) {
+  const options = [];
+  for (const card of CARDS) {
+    if (owned.includes(card.id)) continue;
+    if (!canAfford(pricedCost(card, state), state)) continue;
+    options.push(card);
+  }
+  if (!options.length) return null;
+  if (policy === "alpha") {
+    options.sort((a, b) => a.id.localeCompare(b.id));
+    return options[0];
+  }
+  let best = options[0];
+  let bestScore = policyScore(best, state, policy);
+  for (let i = 1; i < options.length; i += 1) {
+    const card = options[i];
+    const score = policyScore(card, state, policy);
+    if (score > bestScore + 1e-9 || (Math.abs(score - bestScore) <= 1e-9 && card.id < best.id)) {
+      best = card;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+function applyProjectedCard(state, owned, fired, card) {
+  const cost = pricedCost(card, state);
+  if (!canAfford(cost, state)) return false;
+  pay(state, cost);
+  addMeters(state, scaledEffect(card, state));
+  owned.push(card.id);
+  for (const syn of SYNERGIES) {
+    if (fired.includes(syn.id)) continue;
+    if (!syn.parts.every((part) => owned.includes(part))) continue;
+    fired.push(syn.id);
+    addMeters(state, syn.effect);
+  }
+  return true;
+}
+
+export function simulatePolicy(state, policy) {
+  const turnIndex = state.phase === "end" ? TURN_COUNT : state.turnIndex;
+  const sim = shadowState(state);
+  const owned = (state.owned || []).slice();
+  const fired = (state.synergies || []).slice();
+  const points = [];
+  if (turnIndex >= TURN_COUNT) {
+    return { points, ending: state.ending || judge(sim), final: sim };
+  }
+  for (let t = turnIndex; t < TURN_COUNT; t += 1) {
+    if (policy !== "hold") {
+      const card = choosePolicyCard(sim, owned, policy);
+      if (card) applyProjectedCard(sim, owned, fired, card);
+    }
+    const years = spanYears(t);
+    worldStep(sim, owned, years);
+    const startYear = YEARS[t] || 2100;
+    points.push(meterPoint(t + 1, Math.min(2100, startYear + years), sim));
+  }
+  return { points, ending: judge(sim), final: sim };
+}
+
+function findCrossing(series, level) {
+  for (let i = 0; i < series.length; i += 1) {
+    if (series[i].warming + 1e-9 < level) continue;
+    if (i === 0) return { year: series[0].year, i: series[0].i };
+    const prev = series[i - 1];
+    const cur = series[i];
+    const span = cur.warming - prev.warming;
+    const u = span === 0 ? 1 : (level - prev.warming) / span;
+    const uu = Math.max(0, Math.min(1, u));
+    return {
+      year: Math.round(prev.year + (cur.year - prev.year) * uu),
+      i: prev.i + (cur.i - prev.i) * uu,
+    };
+  }
+  return null;
+}
+
+function meterDeltas(state, log) {
+  const from = log && log.length ? log[log.length - 1].before : openingMeters();
+  const out = {};
+  for (const key of POINT_KEYS) out[key] = round2(state[key] - from[key]);
+  return out;
+}
+
+function emptyFlows() {
+  return {
+    energyPros: 0,
+    heatPros: 0,
+    growthPush: 0,
+    richPush: 0,
+    industryPush: 0,
+    added: 0,
+    avoided: 0,
+    heatEco: 0,
+    heatTrust: 0,
+    poorTrust: 0,
+    healTrust: 0,
+    landSink: 0,
+    decoupling: 0,
+  };
+}
+
+function stepReadout(state, owned, years) {
+  if (!(years > 0)) {
+    const dec = Math.min(PARAMS.decCap, tagCount(owned, cardsById, "decouple") * PARAMS.decPerCard);
+    const flows = emptyFlows();
+    flows.landSink = round2((state.ecology - 50) * PARAMS.eqPerEcology);
+    flows.decoupling = round2(dec);
+    return { before: shadowState(state), after: shadowState(state), flows, net: 0 };
+  }
+  const before = shadowState(state);
+  const after = shadowState(state);
+  const step = worldStep(after, owned, years);
+  return {
+    before,
+    after,
+    flows: step.flows,
+    net: round2(after.emissions - before.emissions),
+  };
+}
+
+function pressureRows(flows) {
+  const rows = [
+    { id: "energy-prosperity", from: "Energy", to: "Prosperity", value: flows.energyPros },
+    { id: "heat-prosperity", from: "Heat", to: "Prosperity", value: flows.heatPros },
+    { id: "prosperity-emissions", from: "Prosperity", to: "Emissions", value: round2(flows.growthPush + flows.richPush) },
+    { id: "industry-emissions", from: "Industry", to: "Emissions", value: flows.industryPush },
+    { id: "land-heat", from: "Land", to: "Heat", value: round2(-flows.landSink) },
+    { id: "heat-ecology", from: "Heat", to: "Ecology", value: flows.heatEco },
+    { id: "heat-trust", from: "Heat", to: "Trust", value: flows.heatTrust },
+    { id: "prosperity-trust", from: "Prosperity", to: "Trust", value: round2(flows.poorTrust + flows.healTrust) },
+  ];
+  return rows
+    .filter((row) => Math.abs(row.value) >= 0.05)
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value) || a.id.localeCompare(b.id))
+    .slice(0, 6);
+}
+
+export function readIndicators(state, log) {
+  const history = historyPoints(state, log || []);
+  const owned = state.owned || [];
+  const years = state.phase === "end" ? 0 : (state.span || spanYears(state.turnIndex || 0));
+  const paths = {};
+  for (const policy of OUTLOOK_POLICIES) paths[policy] = simulatePolicy(state, policy);
+  const hold = paths.hold.points;
+  const forward = hold.map((point, index) => {
+    let lo = point.warming;
+    let hi = point.warming;
+    for (const policy of OUTLOOK_POLICIES) {
+      const sample = paths[policy].points[index];
+      if (!sample) continue;
+      if (sample.warming < lo) lo = sample.warming;
+      if (sample.warming > hi) hi = sample.warming;
+    }
+    return {
+      i: point.i,
+      year: point.year,
+      warming: point.warming,
+      lo,
+      hi,
+      emissions: point.emissions,
+      energy: point.energy,
+      prosperity: point.prosperity,
+      ecology: point.ecology,
+      trust: point.trust,
+    };
+  });
+  const series = history.concat(hold);
+  const hit = findCrossing(series, TIP_LEVEL);
+  const realized = history[history.length - 1];
+  const already = !!(realized && realized.warming + 1e-9 >= TIP_LEVEL);
+  const tip = {
+    level: TIP_LEVEL,
+    crossed: !!hit,
+    already,
+    year: hit ? hit.year : null,
+    i: hit ? hit.i : null,
+  };
+  const counts = Object.fromEntries(ENDINGS.map((ending) => [ending.id, 0]));
+  if (state.phase === "end" && state.ending) {
+    counts[state.ending] = OUTLOOK_POLICIES.length;
+  } else {
+    for (const policy of OUTLOOK_POLICIES) {
+      const id = paths[policy].ending;
+      if (id in counts) counts[id] += 1;
+    }
+  }
+  const outlook = ENDINGS.map((ending) => ({
+    id: ending.id,
+    name: ending.name,
+    n: counts[ending.id],
+    share: counts[ending.id] / OUTLOOK_POLICIES.length,
+  }));
+  const step = stepReadout(state, owned, years);
+  const eq = equilibrium(state.emissions, state.ecology);
+  const alpha = years > 0 ? lagAlpha(years) : 0;
+  const gap = eq - state.warming;
+  const headingId = state.phase === "end" && state.ending ? state.ending : paths.hold.ending;
+  return {
+    history,
+    forward,
+    heading: { id: headingId, name: endingName(headingId) },
+    tip,
+    deltas: meterDeltas(state, log || []),
+    stock: {
+      warming: state.warming,
+      target: eq,
+      gap: round2(gap),
+      alpha: round2(alpha),
+      closes: round2(gap * alpha),
+      years,
+    },
+    ledger: {
+      added: step.flows.added,
+      avoided: step.flows.avoided,
+      net: step.net,
+      sink: step.flows.landSink,
+      decoupling: step.flows.decoupling,
+    },
+    pressures: years > 0 ? pressureRows(step.flows) : [],
+    outlook,
+    outlookTotal: OUTLOOK_POLICIES.length,
+    quiet: true,
   };
 }
 

@@ -1,7 +1,7 @@
 // Headless BREAKTHROUGH balance harness.
 //   node qa/breakthrough2/sim.mjs
 //   node qa/breakthrough2/sim.mjs 500
-import { createRun, ENDINGS, lagAlpha } from "../../public/breakthrough2/model.js";
+import { createRun, ENDINGS, lagAlpha, readIndicators, advanceWorld, spanYears, round2, TIP_LEVEL, OUTLOOK_POLICIES } from "../../public/breakthrough2/model.js";
 import { greedyClean, randomPolicy } from "./policies.mjs";
 
 const N = Number(process.argv[2] || 500);
@@ -58,6 +58,61 @@ function means(summary) {
   const keys = ["warming", "emissions", "energy", "prosperity", "ecology", "trust"];
   return "  avg " + keys.map((key) => `${key} ${summary.avg(key).toFixed(2)}`).join("  ");
 }
+
+function checkIndicators() {
+  const run = createRun(123);
+  const state = run.state();
+  const ind = readIndicators(state, run.log());
+  const again = readIndicators(state, run.log());
+  const problems = [];
+  if (JSON.stringify(ind) !== JSON.stringify(again)) problems.push("indicators are not stable");
+  const sim = {
+    capital: state.capital,
+    research: state.research,
+    political: state.political,
+    industry: state.industry,
+    trust: state.trust,
+    emissions: state.emissions,
+    energy: state.energy,
+    prosperity: state.prosperity,
+    ecology: state.ecology,
+    warming: state.warming,
+  };
+  const owned = state.owned.slice();
+  for (let i = 0; i < ind.forward.length; i += 1) {
+    advanceWorld(sim, owned, spanYears(state.turnIndex + i));
+    const point = ind.forward[i];
+    if (sim.warming !== point.warming || sim.emissions !== point.emissions || sim.ecology !== point.ecology) {
+      problems.push(`hold step ${i} diverges from advanceWorld`);
+      break;
+    }
+    if (point.lo - 1e-9 > point.warming || point.warming > point.hi + 1e-9) {
+      problems.push(`band misses the hold path at ${point.year}`);
+      break;
+    }
+  }
+  const sum = ind.outlook.reduce((total, row) => total + row.n, 0);
+  if (sum !== OUTLOOK_POLICIES.length || ind.outlookTotal !== OUTLOOK_POLICIES.length) {
+    problems.push(`outlook sums to ${sum}`);
+  }
+  if (ind.tip.level !== TIP_LEVEL) problems.push("tip level is not the prosperity heat line");
+  if (ind.stock.alpha !== round2(lagAlpha(state.span))) problems.push("lag alpha does not match this step");
+  if (!ind.history.length || ind.history[0].year !== 2026) problems.push("history does not start at 2026");
+  if (ind.heading.id !== "emergency" && ind.heading.id !== "managed" && !ENDINGS.some((ending) => ending.id === ind.heading.id)) {
+    problems.push("heading is not an ending");
+  }
+  if (!ENDINGS.some((ending) => ending.id === ind.heading.id)) problems.push(`unknown heading ${ind.heading.id}`);
+  console.log("");
+  console.log(`indicators seed 123: heading ${ind.heading.id}, tip ${ind.tip.crossed ? ind.tip.year : "under"}, outlook ${sum}`);
+  if (problems.length) {
+    for (const problem of problems) console.log(`MISS ${problem}`);
+    process.exitCode = 1;
+  } else {
+    console.log("indicators match the live world step");
+  }
+}
+
+checkIndicators();
 
 const randomRuns = [];
 const greedyRuns = [];

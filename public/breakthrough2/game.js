@@ -6,6 +6,7 @@ import {
   TURN_COUNT,
   clampEffect,
   createRun,
+  readIndicators,
 } from "./model.js";
 import { PREVIEW, paintWorld } from "./map.js";
 
@@ -119,8 +120,52 @@ let shown = null;
 
 if (fast) document.documentElement.dataset.fast = "1";
 
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+function motionOn() {
+  return !fast && !reduceMotion.matches;
+}
+function syncReduce() {
+  document.documentElement.dataset.reduce = reduceMotion.matches ? "1" : "";
+}
+syncReduce();
+if (reduceMotion.addEventListener) reduceMotion.addEventListener("change", () => {
+  syncReduce();
+  if (motionOn()) startDrift();
+  else {
+    driftOn = false;
+    pulse = 0;
+    paintShown();
+  }
+});
+
+const SPARK_COLOR = {
+  emissions: "#B5472E",
+  energy: "#C98B3C",
+  prosperity: "#E8B94A",
+  ecology: "#5E8C61",
+  trust: "#3E7C8F",
+};
+const SHORT_ENDING = {
+  fractured: "Fractured",
+  emergency: "Emergency",
+  abundance: "Abundance",
+  regeneration: "Regen",
+  managed: "Managed",
+  hotgrowth: "Hot growth",
+};
+
 const canvas = $("map");
 const mapwrap = $("mapwrap");
+let clock = 0;
+let pulse = 0;
+let driftOn = false;
+let mapFrom = null;
+let mapTarget = null;
+let mapT0 = 0;
+let seenEvent = "";
+let chartSig = "";
+const shownNum = new Map();
+const tweenToken = new Map();
 
 function pairs(obj, labels) {
   const bits = [];
@@ -171,15 +216,70 @@ function cardButton(offer) {
   return btn;
 }
 
-function fitCanvas() {
-  const rect = mapwrap.getBoundingClientRect();
+function fitCanvas(node) {
+  const rect = node.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = Math.max(2, Math.round(rect.width * dpr));
-  const h = Math.max(2, Math.round(rect.height * dpr));
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
+  const w = Math.max(2, Math.round((rect.width || node.clientWidth || 2) * dpr));
+  const h = Math.max(2, Math.round((rect.height || node.clientHeight || 2) * dpr));
+  if (node.width !== w || node.height !== h) {
+    node.width = w;
+    node.height = h;
   }
+  return dpr;
+}
+
+function easeOutCubic(u) {
+  return 1 - (1 - u) ** 3;
+}
+
+function tweenNumber(node, key, value, format, delay) {
+  if (!node) return;
+  const next = Number(value);
+  const prev = shownNum.has(key) ? shownNum.get(key) : next;
+  shownNum.set(key, next);
+  const token = (tweenToken.get(key) || 0) + 1;
+  tweenToken.set(key, token);
+  if (!motionOn() || !Number.isFinite(prev) || prev === next) {
+    node.textContent = format(next);
+    return;
+  }
+  const t0 = performance.now() + (delay || 0);
+  const step = (now) => {
+    if (tweenToken.get(key) !== token) return;
+    const raw = (now - t0) / 480;
+    const u = Math.max(0, Math.min(1, raw));
+    node.textContent = format(prev + (next - prev) * easeOutCubic(u));
+    if (raw < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function paintDelta(node, key, value) {
+  if (!node) return;
+  node.className = "delta";
+  if (!Number.isFinite(value) || Math.abs(value) < 0.05) {
+    node.textContent = "·";
+    return;
+  }
+  const up = value > 0;
+  const badUp = key === "emissions" || key === "energy";
+  node.classList.add(up ? "up" : "down", (up !== badUp) ? "good" : "bad");
+  const mag = Math.abs(value) >= 1 ? String(Math.abs(Math.round(value))) : Math.abs(value).toFixed(1);
+  node.textContent = `${up ? "↑" : "↓"}${mag}`;
+}
+
+function headingLine(ind, phase) {
+  if (!ind) return "Path opens with the century";
+  if (phase === "end") return `Ended in ${ind.heading.name}`;
+  return `Heading toward ${ind.heading.name}`;
+}
+
+function tipLine(ind) {
+  if (!ind) return "The mark is the 2.0° tip";
+  const tip = ind.tip;
+  if (!tip.crossed) return "Holds under the 2.0° tip";
+  if (tip.already) return `Past the 2.0° tip since ${tip.year}`;
+  return `Crosses 2.0° around ${tip.year}`;
 }
 
 function viewOf(state) {
@@ -195,47 +295,248 @@ function viewOf(state) {
 }
 
 function paintShown() {
-  fitCanvas();
-  paintWorld(canvas, shown || PREVIEW, artImages);
+  fitCanvas(canvas);
+  paintWorld(canvas, shown || PREVIEW, artImages, {
+    t: motionOn() ? clock : 0,
+    pulse: motionOn() ? pulse : 0,
+  });
+}
+
+function startDrift() {
+  if (driftOn || !motionOn()) return;
+  driftOn = true;
+  let last = performance.now();
+  const loop = (now) => {
+    if (!motionOn() || document.hidden) {
+      driftOn = false;
+      return;
+    }
+    const dt = Math.min(48, now - last);
+    last = now;
+    clock = now * 0.001;
+    if (pulse > 0) pulse *= Math.pow(0.9, dt / 16.7);
+    if (mapFrom && mapTarget) {
+      const u = Math.min(1, (now - mapT0) / 700);
+      const e = u * u * (3 - 2 * u);
+      const next = {};
+      for (const key of Object.keys(mapTarget)) {
+        next[key] = mapFrom[key] + (mapTarget[key] - mapFrom[key]) * e;
+      }
+      shown = next;
+      if (u >= 1) {
+        shown = { ...mapTarget };
+        mapFrom = null;
+      }
+    }
+    paintShown();
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 
 function showMap(state, animate) {
-  const target = viewOf(state);
+  mapTarget = viewOf(state);
   mapToken += 1;
-  const token = mapToken;
-  if (fast || !animate || !shown) {
-    shown = target;
+  if (!motionOn() || !animate || !shown) {
+    shown = { ...mapTarget };
+    mapFrom = null;
     paintShown();
+    if (motionOn()) startDrift();
     return;
   }
-  const from = { ...shown };
-  const t0 = performance.now();
-  const step = (now) => {
-    if (token !== mapToken) return;
-    const u = Math.min(1, (now - t0) / 700);
-    const e = u * u * (3 - 2 * u);
-    const next = {};
-    for (const key of Object.keys(target)) next[key] = from[key] + (target[key] - from[key]) * e;
-    shown = next;
-    paintShown();
-    if (u < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
+  mapFrom = { ...shown };
+  mapT0 = performance.now();
+  startDrift();
 }
 
-function renderMeters(state) {
+function seriesRange(values) {
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1 };
+  if (max - min < 0.3) {
+    const mid = (max + min) / 2;
+    min = mid - 0.15;
+    max = mid + 0.15;
+  }
+  return { min, max };
+}
+
+function paintSpark(node, ind, key) {
+  if (!node) return;
+  const dpr = fitCanvas(node);
+  const ctx = node.getContext("2d");
+  const w = node.width;
+  const h = node.height;
+  ctx.clearRect(0, 0, w, h);
+  if (!ind || !ind.history.length) return;
+  const past = ind.history.map((point) => ({ i: point.i, v: point[key] }));
+  const future = ind.forward.map((point) => ({ i: point.i, v: point[key] }));
+  const all = past.concat(future);
+  const range = seriesRange(all.map((point) => point.v));
+  const xOf = (i) => (i / TURN_COUNT) * (w - 2) + 1;
+  const yOf = (v) => (1 - (v - range.min) / (range.max - range.min)) * (h - 2) + 1;
+  ctx.lineWidth = Math.max(1, dpr);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = SPARK_COLOR[key] || "#2B2A33";
+  ctx.beginPath();
+  past.forEach((point, index) => {
+    const x = xOf(point.i);
+    const y = yOf(point.v);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  if (!future.length) return;
+  ctx.setLineDash([3 * dpr, 2 * dpr]);
+  ctx.beginPath();
+  const last = past[past.length - 1];
+  ctx.moveTo(xOf(last.i), yOf(last.v));
+  for (const point of future) ctx.lineTo(xOf(point.i), yOf(point.v));
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function paintTrajectory(ind) {
+  const node = $("path-chart");
+  const dpr = fitCanvas(node);
+  const ctx = node.getContext("2d");
+  const w = node.width;
+  const h = node.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = `600 ${10 * dpr}px "DM Sans", sans-serif`;
+  if (!ind || !ind.history.length) {
+    ctx.fillStyle = "#8A8378";
+    ctx.fillText("Path opens with the century", 8 * dpr, h * 0.55);
+    return;
+  }
+  const history = ind.history;
+  const forward = ind.forward;
+  const level = ind.tip.level;
+  const samples = [level];
+  for (const point of history) samples.push(point.warming);
+  for (const point of forward) samples.push(point.warming, point.lo, point.hi);
+  const range = seriesRange(samples);
+  const pad = Math.max(0.08, (range.max - range.min) * 0.08);
+  const min = range.min - pad;
+  const max = range.max + pad;
+  const plotL = 4 * dpr;
+  const plotR = w - 4 * dpr;
+  const plotT = 12 * dpr;
+  const plotB = h - 14 * dpr;
+  const xOf = (i) => plotL + (Math.max(0, Math.min(TURN_COUNT, i)) / TURN_COUNT) * (plotR - plotL);
+  const yOf = (v) => plotT + (max - v) / (max - min) * (plotB - plotT);
+  const yTip = yOf(level);
+  ctx.save();
+  ctx.strokeStyle = "rgba(181, 71, 46, 0.9)";
+  ctx.setLineDash([4 * dpr, 3 * dpr]);
+  ctx.lineWidth = dpr;
+  ctx.beginPath();
+  ctx.moveTo(plotL, yTip);
+  ctx.lineTo(plotR, yTip);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#B5472E";
+  ctx.font = `700 ${10 * dpr}px "DM Sans", sans-serif`;
+  ctx.fillText("2.0°", plotL, Math.max(10 * dpr, yTip - 3 * dpr));
+
+  const now = history[history.length - 1];
+  if (forward.length) {
+    ctx.beginPath();
+    ctx.moveTo(xOf(now.i), yOf(now.warming));
+    for (const point of forward) ctx.lineTo(xOf(point.i), yOf(point.hi));
+    for (let k = forward.length - 1; k >= 0; k -= 1) ctx.lineTo(xOf(forward[k].i), yOf(forward[k].lo));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(62, 124, 143, 0.22)";
+    ctx.fill();
+  }
+  if (history.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(xOf(history[0].i), plotB);
+    for (const point of history) ctx.lineTo(xOf(point.i), yOf(point.warming));
+    ctx.lineTo(xOf(now.i), plotB);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(181, 71, 46, 0.14)";
+    ctx.fill();
+  }
+  ctx.beginPath();
+  history.forEach((point, index) => {
+    const x = xOf(point.i);
+    const y = yOf(point.warming);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = "#B5472E";
+  ctx.lineWidth = 2 * dpr;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
+  if (forward.length) {
+    ctx.beginPath();
+    ctx.moveTo(xOf(now.i), yOf(now.warming));
+    for (const point of forward) ctx.lineTo(xOf(point.i), yOf(point.warming));
+    ctx.strokeStyle = "#3E7C8F";
+    ctx.setLineDash([5 * dpr, 4 * dpr]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.beginPath();
+  ctx.fillStyle = "#F3E9D6";
+  ctx.strokeStyle = "#B5472E";
+  ctx.lineWidth = 2 * dpr;
+  ctx.arc(xOf(now.i), yOf(now.warming), 3.5 * dpr, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  if (ind.tip.crossed && ind.tip.i != null) {
+    const x = xOf(ind.tip.i);
+    const y = yTip;
+    ctx.beginPath();
+    ctx.fillStyle = "#E8B94A";
+    ctx.moveTo(x, y - 5 * dpr);
+    ctx.lineTo(x + 4.5 * dpr, y);
+    ctx.lineTo(x, y + 5 * dpr);
+    ctx.lineTo(x - 4.5 * dpr, y);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = "#8A8378";
+  ctx.font = `600 ${10 * dpr}px "DM Sans", sans-serif`;
+  ctx.textAlign = "left";
+  ctx.fillText(String(history[0].year), plotL, h - 2 * dpr);
+  ctx.textAlign = "right";
+  ctx.fillText("2100", plotR, h - 2 * dpr);
+  ctx.restore();
+}
+
+function renderMeters(state, ind) {
+  let index = 0;
   for (const node of document.querySelectorAll(".meter")) {
     const key = node.dataset.k;
     const value = state ? state[key] : PREVIEW[key];
     const bar = node.querySelector("i");
-    bar.replaceChildren();
-    const fill = document.createElement("b");
-    fill.style.width = `${Math.max(0, Math.min(100, value))}%`;
-    bar.append(fill);
-    node.querySelector(".num").textContent = String(Math.round(value));
+    let fill = bar.querySelector("b");
+    if (!fill) {
+      fill = document.createElement("b");
+      fill.className = "fill";
+      bar.append(fill);
+    }
+    const portion = Math.max(0, Math.min(1, value / 100));
+    if (!fill.dataset.ready) {
+      fill.dataset.ready = "1";
+      fill.style.setProperty("--p", motionOn() ? "0" : String(portion));
+      if (motionOn()) {
+        requestAnimationFrame(() => fill.style.setProperty("--p", String(portion)));
+      }
+    } else {
+      fill.style.setProperty("--p", String(portion));
+    }
+    tweenNumber(node.querySelector(".num"), key, value, (n) => String(Math.round(n)), 40 + index * 40);
+    paintDelta(node.querySelector(".delta"), key, ind ? ind.deltas[key] : 0);
+    paintSpark(node.querySelector(".spark"), ind, key);
+    index += 1;
   }
   if (!state) {
-    $("warm-now").textContent = `${PREVIEW.warming.toFixed(1)}° now`;
+    tweenNumber($("warm-now"), "warming", PREVIEW.warming, (n) => `${n.toFixed(1)}° now`, 0);
     $("warm-chase").textContent = "Chasing the century";
     $("warm-proj").textContent = "2100 still open";
     $("resources").textContent = "Cap 7 · Lab 5 · Pol 4 · Ind 4";
@@ -243,15 +544,88 @@ function renderMeters(state) {
     $("yearchip").textContent = "2026";
     return;
   }
-  $("warm-now").textContent = `${state.warming.toFixed(1)}° now`;
-  $("warm-chase").textContent = `Chasing ${state.equilibrium.toFixed(1)}°`;
-  $("warm-proj").textContent = `${state.projected.toFixed(1)}° by 2100`;
+  tweenNumber($("warm-now"), "warming", state.warming, (n) => `${n.toFixed(1)}° now`, 0);
+  tweenNumber($("warm-chase"), "eq", state.equilibrium, (n) => `Chasing ${n.toFixed(1)}°`, 40);
+  tweenNumber($("warm-proj"), "proj", state.projected, (n) => `${n.toFixed(1)}° by 2100`, 80);
   $("resources").textContent = `Cap ${state.capital} · Lab ${state.research} · Pol ${state.political} · Ind ${state.industry}`;
   $("turn-label").textContent = state.phase === "end"
     ? "2100"
     : `Turn ${state.turn} of ${TURN_COUNT}`;
   const span = state.span === 10 ? "10 year step" : `${state.span} year step`;
   $("yearchip").textContent = state.phase === "end" ? "2100" : `${state.year} · ${span}`;
+}
+
+function renderSignals(state, ind) {
+  const head = headingLine(ind, state && state.phase);
+  const tip = tipLine(ind);
+  $("path-ending").textContent = head;
+  $("path-tip").textContent = tip;
+  $("path").setAttribute("aria-label", `${head}. ${tip}`);
+  const sig = ind
+    ? `${ind.history.length}:${ind.forward.length}:${ind.history[ind.history.length - 1].warming}:${ind.heading.id}:${ind.tip.i}`
+    : "title";
+  if (sig !== chartSig) {
+    chartSig = sig;
+    const chart = $("path-chart");
+    if (motionOn()) {
+      chart.classList.remove("tick");
+      void chart.offsetWidth;
+      chart.classList.add("tick");
+    }
+  }
+  paintTrajectory(ind);
+  if (!ind) {
+    $("stockline").textContent = "";
+    $("ledger").textContent = "";
+    $("pressures").replaceChildren();
+    $("outlook").replaceChildren();
+    $("journal").replaceChildren();
+    return;
+  }
+  const move = ind.stock.closes;
+  const sign = move > 0 ? "+" : "";
+  const pct = Math.round(ind.stock.alpha * 100);
+  $("stockline").textContent = `Stock ${ind.stock.warming.toFixed(1)}° · target ${ind.stock.target.toFixed(1)}° · lag ${pct}% · ${sign}${move.toFixed(2)}° this step`;
+  const led = ind.ledger;
+  const signed = (n) => `${n > 0 ? "+" : ""}${n.toFixed(2)}`;
+  $("ledger").textContent = `Stacks ${signed(led.added)} · Avoided ${signed(led.avoided)} · Net ${signed(led.net)} · Land sink ${signed(led.sink)}°`;
+  const pressures = $("pressures");
+  pressures.replaceChildren();
+  if (!ind.pressures.length) {
+    pressures.append(el("p", "muted", "No strong pressure this step."));
+  } else {
+    for (const row of ind.pressures) {
+      const up = row.value > 0;
+      const chip = el("span", up ? "pressure up" : "pressure down");
+      chip.textContent = `${row.from} → ${row.to} ${up ? "↑" : "↓"}${Math.abs(row.value).toFixed(2)}`;
+      pressures.append(chip);
+    }
+  }
+  const outlook = $("outlook");
+  outlook.replaceChildren();
+  for (const row of ind.outlook) {
+    const item = el("div", row.id === ind.heading.id ? "outlook heading" : "outlook");
+    item.append(el("span", "name", SHORT_ENDING[row.id] || row.name));
+    const bar = document.createElement("i");
+    const fill = document.createElement("b");
+    fill.style.setProperty("--p", String(Math.max(0, Math.min(1, row.share))));
+    bar.append(fill);
+    item.append(bar);
+    item.append(el("em", "", `${Math.round(row.share * 100)}%`));
+    outlook.append(item);
+  }
+  const journal = $("journal");
+  journal.replaceChildren();
+  const entries = run ? run.log() : [];
+  if (!entries.length) {
+    journal.append(el("li", "", "No turns yet."));
+    return;
+  }
+  for (const entry of entries) {
+    const eventBit = entry.event ? ` ${entry.event.name}.` : "";
+    const syn = entry.synergies.length ? ` ${entry.synergies.join(", ")}.` : "";
+    journal.append(el("li", "", `${entry.year} ${entry.pick.name}.${eventBit}${syn} ${entry.after.warming.toFixed(1)}°`));
+  }
 }
 
 function renderOffers() {
@@ -301,15 +675,49 @@ function renderOffers() {
   }
 }
 
+function notePulse(offers) {
+  const id = offers && offers.event ? offers.event.id : "";
+  if (id && id !== seenEvent) {
+    seenEvent = id;
+    pulse = 1;
+    if (motionOn()) startDrift();
+  }
+  if (!id) seenEvent = "";
+}
+
 function render(animateMap) {
   const state = run ? run.state() : null;
+  const ind = state && ui !== "title" ? readIndicators(state, run.log()) : null;
   $("seedline").textContent = `Seed ${seed}`;
   $("title-seed").textContent = `Seed ${seed}`;
   $("seed-warn").hidden = !badSeed;
-  renderMeters(state);
+  renderMeters(state, ind);
+  renderSignals(state, ind);
   renderOffers();
+  if (run && ui === "play") notePulse(run.offers());
   showMap(state, animateMap);
   document.documentElement.dataset.phase = state ? state.phase : "title";
+}
+
+function dismiss(id) {
+  const node = $(id);
+  if (!node || node.hidden) return;
+  if (!motionOn()) {
+    node.hidden = true;
+    node.classList.remove("leaving");
+    return;
+  }
+  if (node.classList.contains("leaving")) return;
+  node.classList.add("leaving");
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    node.hidden = true;
+    node.classList.remove("leaving");
+  };
+  node.addEventListener("transitionend", finish, { once: true });
+  setTimeout(finish, 520);
 }
 
 function showFlash(entry) {
@@ -385,6 +793,7 @@ function choose(id) {
     return result;
   }
   $("note").textContent = "";
+  pulse = 1;
   const state = run.state();
   render(result.resolved !== "event");
   if (state.phase === "end") {
@@ -409,12 +818,14 @@ function startGame(next) {
   $("flash").hidden = true;
   run = createRun(seed);
   ui = "play";
-  $("title").hidden = true;
+  seenEvent = "";
+  chartSig = "";
   $("ending").hidden = true;
-  $("howto").hidden = true;
+  $("ending").classList.remove("leaving");
   $("note").textContent = "";
-  shown = null;
-  render(false);
+  dismiss("title");
+  dismiss("howto");
+  render(motionOn());
   return { ok: true, seed };
 }
 
@@ -449,6 +860,17 @@ $("howto-close").addEventListener("click", closeHelp);
 
 window.addEventListener("resize", () => {
   paintShown();
+  if (run && ui !== "title") {
+    const ind = readIndicators(run.state(), run.log());
+    paintTrajectory(ind);
+    for (const node of document.querySelectorAll(".meter")) {
+      paintSpark(node.querySelector(".spark"), ind, node.dataset.k);
+    }
+  }
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && motionOn()) startDrift();
 });
 
 const exposeTest = params.get("test") === "1" || params.get("fast") === "1" || params.has("seed");
@@ -490,6 +912,11 @@ if (exposeTest) {
     clampEffect,
     ideaClamp: IDEA_CLAMP,
     cardCount: CARDS.length,
+    indicators() {
+      if (!run || ui === "title") return null;
+      return readIndicators(run.state(), run.log());
+    },
+    motion: () => motionOn(),
   };
 }
 
