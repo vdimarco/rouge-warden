@@ -1,0 +1,3 @@
+- [ ] Compensate movement and walking intensity for camera projection.
+- [ ] Verify direction, speed, analog strength, upgrades, and layouts; build the game.
+- [ ] Check deployed controls, update the canonical spec, and archive the change.
