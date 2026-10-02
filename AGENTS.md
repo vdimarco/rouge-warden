@@ -19,3 +19,18 @@ The repository includes a portable workflow skill. This does not mean the OpenSp
 When CLI setup is needed, check the current [installation guide](https://openspec.dev/docs/installation), verify the required Node.js version, and initialize at the repository root with `openspec init --tools codex`. Review generated files before saving them. Preserve this file and other custom instructions.
 
 Use the generated skills for the installed version. Agent commands such as `$openspec-propose` run in the assistant, while `openspec` CLI commands run in the terminal. Consult `openspec --help` and the [CLI reference](https://openspec.dev/docs/cli) for supported flags. If the CLI is unavailable, create the Markdown artifacts directly and report which validation could not run.
+
+## Cursor Cloud specific instructions
+
+The Cottage Arcade is static files in `public/`. There is no root package. `install` refreshes the lockfiles that local checks use, then links Playwright so QA scripts can require it:
+
+- `npm ci --prefix qa/browser`, then `npx playwright install --with-deps chromium` in that directory
+- `npm ci --prefix games/olympus`
+- `npm ci --prefix higgsfield`
+- `node_modules/playwright` and `node_modules/playwright-core` point at `qa/browser/node_modules`
+
+`start` serves the site at http://127.0.0.1:8765/ with `python3 -m http.server 8765 --bind 0.0.0.0 --directory public` when that port is not already responding. Keyboard play on the arcade: arrow keys pick a cabinet, 5 drops a token, 1 or Enter starts the game.
+
+- Pinball browser checks need the server: `npm run test:pinball --prefix qa/browser`. Physics only: `node qa/lab/tilt.sim.mjs`.
+- Olympus: `npm test --prefix games/olympus`. After editing that game, rebuild the committed bundle with `npm run build --prefix games/olympus`.
+- Higgsfield typecheck: `npm run typecheck --prefix higgsfield`. Generation needs `HF_CREDENTIALS` in `higgsfield/.env.local`. The arcade plays without that key. `/api/warden` is a Vercel function and is not part of this static server; games use their local stand-in.
