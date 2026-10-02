@@ -447,7 +447,7 @@ $("#changeBtn").onclick = () => {
 };
 
 /* ---------------- the machines ---------------- */
-const cabs = $(".cab");
+const cabs = $$(".cab");
 const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
@@ -467,7 +467,7 @@ for (const group of GROUPS) {
   });
   machinePicker.appendChild(optgroup);
 }
-const sectionBtns = $(".section-nav button[data-section]");
+const sectionBtns = $$(".section-nav button[data-section]");
 sectionBtns.forEach((button) => {
   button.onclick = () => {
     const i = cabs.findIndex((cab) => {
