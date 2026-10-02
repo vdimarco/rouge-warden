@@ -574,6 +574,7 @@ function renderSignals(state, ind) {
     }
   }
   paintTrajectory(ind);
+  paintRace(ind);
   if (!ind) {
     $("stockline").textContent = "";
     $("ledger").textContent = "";
@@ -624,7 +625,10 @@ function renderSignals(state, ind) {
   for (const entry of entries) {
     const eventBit = entry.event ? ` ${entry.event.name}.` : "";
     const syn = entry.synergies.length ? ` ${entry.synergies.join(", ")}.` : "";
-    journal.append(el("li", "", `${entry.year} ${entry.pick.name}.${eventBit}${syn} ${entry.after.warming.toFixed(1)}°`));
+    const pathBit = entry.pathway
+      ? (entry.pathway.breakthrough ? " Breakthrough." : entry.pathway.stalled ? " Stalled." : " Advanced.")
+      : "";
+    journal.append(el("li", "", `${entry.year} ${entry.pick.name}.${eventBit}${pathBit}${syn} ${entry.after.warming.toFixed(1)}°`));
   }
 }
 
@@ -638,6 +642,7 @@ function renderOffers() {
     news.hidden = true;
     $("lab-note").textContent = "Opens when the century begins.";
     $("pass").hidden = true;
+    renderPathways(null);
     return;
   }
   const offers = run.offers();
@@ -666,6 +671,7 @@ function renderOffers() {
     news.hidden = true;
   }
   for (const card of offers.cards) hand.append(cardButton(card));
+  renderPathways(offers);
   if (offers.lab.ready) {
     $("lab-note").textContent = "One wild card. No reroll.";
     for (const idea of offers.ideas) ideas.append(cardButton(idea));
@@ -720,6 +726,122 @@ function dismiss(id) {
   setTimeout(finish, 520);
 }
 
+function makeRing(progress, need) {
+  const svg = document.createElementNS(SVGNS, "svg");
+  svg.setAttribute("viewBox", "0 0 36 36");
+  svg.setAttribute("class", "ring");
+  svg.setAttribute("aria-hidden", "true");
+  const c = (2 * Math.PI * RING_R).toFixed(2);
+  for (const cls of ["track", "value"]) {
+    const circle = document.createElementNS(SVGNS, "circle");
+    circle.setAttribute("cx", "18");
+    circle.setAttribute("cy", "18");
+    circle.setAttribute("r", String(RING_R));
+    circle.setAttribute("class", cls);
+    if (cls === "value") {
+      circle.style.setProperty("--c", c);
+      circle.style.setProperty("--p", String(Math.max(0, Math.min(1, progress / need))));
+    }
+    svg.append(circle);
+  }
+  return svg;
+}
+
+function pathRow(spec) {
+  const row = el("article", "path");
+  row.dataset.key = spec.key;
+  const box = el("div", "ringbox");
+  box.append(makeRing(spec.progress, spec.need));
+  const pips = el("span", "pips");
+  for (let i = 0; i < 3; i += 1) pips.append(el("i", ""));
+  box.append(pips);
+  row.append(box);
+  const copy = el("div", "pathcopy");
+  copy.append(el("strong", "", ""));
+  copy.append(el("span", "stage", ""));
+  copy.append(el("p", "tip", ""));
+  copy.append(el("p", "stall", ""));
+  row.append(copy);
+  const btn = el("button", "invest");
+  btn.type = "button";
+  row.append(btn);
+  return row;
+}
+
+function updatePathRow(row, spec) {
+  row.classList.toggle("broke", !!spec.done);
+  const ring = row.querySelector(".ring .value");
+  if (ring) ring.style.setProperty("--p", String(Math.max(0, Math.min(1, spec.progress / spec.need))));
+  const pipNodes = row.querySelectorAll(".pips i");
+  spec.pips.forEach((pip, i) => {
+    pipNodes[i].className = pip === "wait" ? "" : pip;
+  });
+  row.querySelector("strong").textContent = spec.name;
+  row.querySelector(".stage").textContent = STAGE_LABEL[spec.stage] || spec.stage;
+  row.querySelector(".tip").textContent = spec.tip;
+  row.querySelector(".stall").textContent = spec.stallText;
+  const btn = row.querySelector("button");
+  btn.classList.toggle("dim", !spec.affordable && !spec.done);
+  if (spec.done) {
+    btn.textContent = "Done";
+    btn.disabled = true;
+    btn.removeAttribute("data-choice");
+    btn.removeAttribute("aria-disabled");
+  } else {
+    btn.textContent = "Invest";
+    btn.disabled = false;
+    btn.dataset.choice = spec.id;
+    btn.setAttribute("aria-label", `Invest in ${spec.name}`);
+    if (spec.affordable) btn.removeAttribute("aria-disabled");
+    else btn.setAttribute("aria-disabled", "true");
+  }
+  row.title = `${spec.text} ${spec.tip} ${spec.stallText}`;
+}
+
+function renderPathways(offers) {
+  const root = $("pathways");
+  const list = offers && offers.pathways;
+  if (!list || !list.length) {
+    root.hidden = true;
+    return;
+  }
+  root.hidden = false;
+  if (root.dataset.built !== "1") {
+    root.dataset.built = "1";
+    root.append(el("h2", "", "Pathways"));
+    root.append(el("p", "path-lead", "Six tracks for the hard parts of net zero. One step a turn. They share the same limited resources as a card."));
+    root.append(el("div", "path-rows"));
+  }
+  const rows = root.querySelector(".path-rows");
+  if (rows.children.length !== list.length) {
+    rows.replaceChildren(...list.map(pathRow));
+  }
+  list.forEach((spec, i) => updatePathRow(rows.children[i], spec));
+}
+
+function paintRace(ind) {
+  const race = ind && ind.race;
+  const node = $("race");
+  if (!race || !(race.years > 0)) {
+    node.hidden = true;
+    return;
+  }
+  node.hidden = false;
+  $("race-status").textContent = race.summary;
+  const scale = Math.max(race.demand, race.met, 0.2);
+  $("race-demand").style.setProperty("--p", String(Math.max(0, Math.min(1, race.demand / scale))));
+  $("race-met").style.setProperty("--p", String(Math.max(0, Math.min(1, race.met / scale))));
+  $("race-demand-n").textContent = race.demand.toFixed(1);
+  $("race-met-n").textContent = race.met.toFixed(1);
+  const fossil = $("race-fossil");
+  fossil.textContent = race.fossilLabel;
+  fossil.className = race.fossilDown ? "down" : race.fossil > 0.02 ? "up" : "";
+  $("race-curtail").textContent = race.curtailed >= 0.05
+    ? `Curtailment ${race.curtailed.toFixed(1)}. Clean supply the wires cannot take.`
+    : "No meaningful curtailment this step.";
+  node.setAttribute("aria-label", `${race.summary} ${race.fossilLabel}`);
+}
+
 function showFlash(entry) {
   if (!entry) return;
   const arrived = Math.min(2100, entry.year + entry.span);
@@ -742,12 +864,47 @@ function showFlash(entry) {
   }, 680);
 }
 
+function showBreakthrough(info, entry) {
+  if (!info) return;
+  $("break-name").textContent = info.name;
+  $("break-line").textContent = info.line;
+  const arrived = entry ? Math.min(2100, entry.year + entry.span) : "";
+  $("break-year").textContent = arrived ? String(arrived) : "";
+  const node = $("break");
+  node.hidden = false;
+  node.classList.toggle("moment", motionOn());
+  clearTimeout(flashTimer);
+  if (fast) {
+    busy = false;
+    return;
+  }
+  busy = motionOn();
+  flashTimer = setTimeout(() => {
+    node.hidden = true;
+    node.classList.remove("moment");
+    busy = false;
+  }, motionOn() ? 900 : 700);
+}
+
 function showEnding() {
+  $("break").hidden = true;
   const state = run.state();
   const info = ENDINGS.find((item) => item.id === state.ending) || ENDINGS[ENDINGS.length - 1];
   $("end-name").textContent = info.name;
   $("end-blurb").textContent = info.blurb;
   $("end-kicker").textContent = "2100";
+  const scaled = Object.entries(state.pathways || []).filter(([, n]) => n >= 3).map(([key]) => key);
+  const names = {
+    aviation: "Aviation fuels",
+    shipping: "Shipping fuels",
+    heavy: "Heavy industry",
+    storage: "Long-duration storage",
+    grids: "Grids",
+    removal: "Carbon removal",
+  };
+  $("end-paths").textContent = scaled.length
+    ? `At scale: ${scaled.map((key) => names[key] || key).join(", ")}.`
+    : "No pathway reached scale.";
   $("end-stats").textContent = `${state.warming.toFixed(1)}° now · peak ${state.peak.toFixed(1)}° · prosperity ${Math.round(state.prosperity)} · ecology ${Math.round(state.ecology)} · trust ${Math.round(state.trust)}`;
   $("end-seed").textContent = `Seed ${seed}`;
   const list = $("timeline");
@@ -758,8 +915,11 @@ function showEnding() {
     strong.textContent = String(entry.year);
     const eventBit = entry.event ? ` ${entry.event.name}.` : "";
     const syn = entry.synergies.length ? ` ${entry.synergies.join(", ")}.` : "";
+    const pathBit = entry.pathway
+      ? (entry.pathway.breakthrough ? " Breakthrough." : entry.pathway.stalled ? " Stalled." : " Advanced.")
+      : "";
     li.append(strong);
-    li.append(` ${entry.pick.name}.${eventBit}${syn} ${entry.after.warming.toFixed(1)}°`);
+    li.append(` ${entry.pick.name}.${eventBit}${pathBit}${syn} ${entry.after.warming.toFixed(1)}°`);
     list.append(li);
   }
   $("ending").hidden = false;
@@ -774,11 +934,23 @@ const REFUSAL = {
   ended: "The century is already written.",
   title: "Begin the century first.",
   busy: "The year is still turning.",
+  done: "That pathway is already at scale.",
 };
+
+const STAGE_LABEL = {
+  ready: "Research",
+  pilot: "Pilot",
+  scale: "Scale",
+  breakthrough: "Breakthrough",
+};
+const SVGNS = "http://www.w3.org/2000/svg";
+const RING_R = 14;
 
 function choose(id) {
   if (!run || ui !== "play") return { ok: false, reason: "title" };
   if (busy) return { ok: false, reason: "busy" };
+  $("break").hidden = true;
+  $("break").classList.remove("moment");
   const before = run.state().turn;
   const result = run.choose(id);
   if (!result.ok) {
@@ -800,7 +972,8 @@ function choose(id) {
     showEnding();
     return result;
   }
-  if (result.resolved !== "event" && state.turn !== before) showFlash(run.log().at(-1));
+  if (result.breakthrough) showBreakthrough(result.breakthrough, run.log().at(-1));
+  else if (result.resolved !== "event" && state.turn !== before) showFlash(run.log().at(-1));
   return result;
 }
 

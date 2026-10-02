@@ -89,14 +89,15 @@ export function stepWarming(warming, eq, years) {
   return warming + (eq - warming) * lagAlpha(years);
 }
 
-export function equilibrium(emissions, ecology) {
+export function equilibrium(emissions, ecology, sinkAdd = 0) {
   const raw = PARAMS.eqBase + emissions * PARAMS.eqPerEmission;
-  const sink = (ecology - 50) * PARAMS.eqPerEcology;
+  const extra = typeof sinkAdd === "number" && Number.isFinite(sinkAdd) ? sinkAdd : 0;
+  const sink = (ecology - 50) * PARAMS.eqPerEcology + extra;
   return clamp(round2(raw - sink), 0.4, 5);
 }
 
-export function projectWarming(warming, emissions, ecology, year) {
-  const eq = equilibrium(emissions, ecology);
+export function projectWarming(warming, emissions, ecology, year, sinkAdd = 0) {
+  const eq = equilibrium(emissions, ecology, sinkAdd);
   const left = Math.max(0, 2100 - year);
   return round2(stepWarming(warming, eq, left));
 }
@@ -257,6 +258,113 @@ export const IDEAS = [
     text: "Store power or pay. A rule, not a gadget." },
 ];
 
+// Technology pathways. Progress is clamped to PATH_NEED. One step per turn.
+// RACE weights are a game index for one 6 year step, not terawatt-hours.
+export const PATH_NEED = 3;
+
+export const RACE = {
+  demandBase: 0.62,
+  demandPros: 0.01,
+  cleanPer: 0.28,
+  serveBase: 0.58,
+  policyRetire: 0.1,
+  politRetire: 0.03,
+  politRetireAt: 3,
+  energyRetire: 0.005,
+  energyRetireAt: 58,
+  winCut: 0.2,
+  winCap: 0.24,
+  retireCut: 0.1,
+  retireCap: 0.14,
+  unlockCut: 0.5,
+  unlockCap: 0.45,
+  energyEase: 0.1,
+  energyCap: 0.18,
+  hardAviation: 0.7,
+  hardShipping: 0.65,
+  removalEm: 0.55,
+  removalSink: 0.04,
+  heavyLeak: 0.06,
+  stepCap: 1.35,
+};
+
+const RACE_ELECTRIFY = { ev: 0.3, heatpump: 0.14, steel: 0.22 };
+const RACE_EFFICIENCY = { heatpump: 0.2, ev: 0.1, cement: 0.16, recycle: 0.16, steel: 0.12 };
+
+export const PATHWAYS = [
+  { key: "aviation", name: "Aviation fuels", stall: 0.3, cost: { research: 2, capital: 1 },
+    text: "New fuels for planes. Cuts a hard-to-abate slice of emissions.",
+    tip: "One step a turn. The cut is real and limited. It does not zero aviation.",
+    line: "Aviation fuels reach scale. Hard-to-abate emissions step down." },
+  { key: "shipping", name: "Shipping fuels", stall: 0.25, cost: { capital: 2, industry: 1 },
+    text: "Cleaner fuel for ships. Cuts the hard-to-abate slice from freight.",
+    tip: "One step a turn. The cut is real and limited. It does not zero shipping.",
+    line: "Shipping fuels reach scale. Freight emissions step down." },
+  { key: "heavy", name: "Heavy industry", stall: 0.25, cost: { capital: 2, industry: 1, research: 1 },
+    text: "Cuts carbon from steel, cement, and chemical stacks.",
+    tip: "One step a turn. Process change is slow. The stack cut stays bounded.",
+    line: "Heavy industry reaches scale. Industrial stacks ease." },
+  { key: "storage", name: "Long-duration storage", stall: 0.2, cost: { research: 2, capital: 1 },
+    text: "Holds clean power across days, so less of it is wasted.",
+    tip: "Full clean-power gain needs grids at pilot too. Until then, extra supply is curtailed.",
+    line: "Long-duration storage reaches scale. More clean power can be kept." },
+  { key: "grids", name: "Grids", stall: 0.2, cost: { capital: 2, political: 1 },
+    text: "Moves spare clean power to where demand actually is.",
+    tip: "Full clean-power gain needs long-duration storage at pilot too.",
+    line: "Grids reach scale. Less clean power is curtailed." },
+  { key: "removal", name: "Carbon removal", stall: 0.3, cost: { capital: 2, research: 1 },
+    text: "Pulls carbon back out and gives the land sink more room.",
+    tip: "One step a turn. Removal is slow and costly. It does not replace cutting emissions.",
+    line: "Carbon removal reaches scale. Removal and the land sink both rise." },
+];
+
+export const BREAKTHROUGH_EFFECT = {
+  aviation: { emissions: -4 },
+  shipping: { emissions: -3 },
+  heavy: { emissions: -3 },
+  storage: { energy: -2 },
+  grids: { energy: -2, prosperity: 1 },
+  removal: { emissions: -2, ecology: 3 },
+};
+
+const STALL_WORDS = { 0.2: "1 in 5", 0.25: "1 in 4", 0.3: "3 in 10" };
+
+export function stallText(rate) {
+  const phrase = STALL_WORDS[rate] || `${Math.round(rate * 100)} in 100`;
+  return `${phrase} tries stall. You still pay.`;
+}
+
+export function emptyPathways() {
+  const out = {};
+  for (const spec of PATHWAYS) out[spec.key] = 0;
+  return out;
+}
+
+export function pathStrength(progress) {
+  const p = typeof progress === "number" && Number.isFinite(progress) ? progress : 0;
+  if (p >= PATH_NEED) return 1;
+  if (p >= 2) return 0.7;
+  if (p >= 1) return 0.35;
+  return 0;
+}
+
+export function pathStage(progress) {
+  const p = typeof progress === "number" && Number.isFinite(progress) ? progress : 0;
+  if (p >= PATH_NEED) return "breakthrough";
+  if (p >= 2) return "scale";
+  if (p >= 1) return "pilot";
+  return "ready";
+}
+
+export function stagePips(progress) {
+  const p = typeof progress === "number" && Number.isFinite(progress) ? Math.max(0, progress) : 0;
+  return [0, 1, 2].map((i) => {
+    if (p > i) return "done";
+    if (p === i && p < PATH_NEED) return "active";
+    return "wait";
+  });
+}
+
 function reefEffect(state) {
   if (state.warming >= 1.75) return { ecology: -4, trust: -1, prosperity: -1 };
   return { ecology: 1 };
@@ -332,17 +440,17 @@ export const EVENTS = [
 
 export const ENDINGS = [
   { id: "fractured", name: "Fractured World",
-    blurb: "Trust ran out. The plans were real, and nobody would stand still for them." },
+    blurb: "Trust ran out while heat and food stress pressed on strains that were already there. The plans were real, and people would not stand together for them." },
   { id: "emergency", name: "Long Emergency",
-    blurb: "The heat kept climbing and the surplus did not. People got by, and then they did not." },
+    blurb: "Heat, thin harvests, and worn infrastructure arrived together. The surplus did not cover the damage. Those stresses were serious. They were not a script." },
   { id: "abundance", name: "Abundance",
-    blurb: "Clean power, a living landscape, and enough to share. It took most of the century." },
+    blurb: "Clean power, a living landscape, and enough to share. The race turned. It took most of the century, and nothing in the early years guaranteed it." },
   { id: "regeneration", name: "Regeneration Century",
-    blurb: "The land led. Forests, soil, and coasts did the slow work the stacks would not." },
+    blurb: "The land led. Forests, soil, and coasts did the slow work beside cuts in the stacks. The century bent because those pieces held together." },
   { id: "managed", name: "Managed Transition",
-    blurb: "The worst was headed off. Not a garden, not a wreck. A world that held." },
+    blurb: "The worst of the risk was headed off. Not a garden, and not a wreck. A world that held because the cuts, the wires, and the trust kept pace." },
   { id: "hotgrowth", name: "Hot Growth Era",
-    blurb: "The markets roared and the ice did not care. Rich, and late." },
+    blurb: "Markets ran ahead of the heat stock. People were richer, and the risk was higher. That bill was not written in advance." },
 ];
 
 const ENDING_IDS = ENDINGS.map((e) => e.id);
@@ -381,6 +489,7 @@ export function judge(state) {
 const cardsById = new Map(CARDS.map((card) => [card.id, card]));
 const ideasById = new Map(IDEAS.map((idea) => [idea.id, idea]));
 const eventsById = new Map(EVENTS.map((event) => [event.id, event]));
+const pathwaysById = new Map(PATHWAYS.map((spec) => [spec.key, spec]));
 
 export function openingMeters() {
   return {
@@ -498,10 +607,129 @@ export function synergyProgress(cardId, ownedIds, firedIds) {
   return { completes, advances, names, value: completes * 4 + advances * 1.6 };
 }
 
-function worldStep(state, owned, years) {
+export function pathwayVector(state) {
+  const out = emptyPathways();
+  const src = state && state.pathways;
+  if (!src) return out;
+  for (const key of Object.keys(out)) {
+    const value = src[key];
+    if (typeof value === "number" && Number.isFinite(value)) out[key] = clamp(value, 0, PATH_NEED);
+  }
+  return out;
+}
+
+function pathStageIndex(progress) {
+  const p = typeof progress === "number" && Number.isFinite(progress) ? progress : 0;
+  if (p >= PATH_NEED) return 3;
+  if (p >= 2) return 2;
+  if (p >= 1) return 1;
+  return 0;
+}
+
+export function serveFactor(pathways) {
+  const src = pathways || emptyPathways();
+  const storage = pathStageIndex(src.storage);
+  const grids = pathStageIndex(src.grids);
+  let serve = RACE.serveBase;
+  // Pilot complete on both tracks is the gate. One track alone does not raise the cap.
+  if (storage >= 2 && grids >= 2) {
+    serve += 0.12 * Math.min(storage, grids) + 0.03 * (storage + grids);
+  }
+  return clamp(round2(serve), RACE.serveBase, 1);
+}
+
+function removalSink(pathways) {
+  return round2(pathStrength((pathways || emptyPathways()).removal) * RACE.removalSink);
+}
+
+export function energyRace(state, owned, years, pathways) {
+  const paths = pathways || emptyPathways();
+  const serve = serveFactor(paths);
+  if (!(years > 0)) {
+    return {
+      demand: 0, clean: 0, cleanBase: 0, efficiency: 0, met: 0, retire: 0, fossil: 0,
+      curtailed: 0, serve, winning: false, fossilDown: false, years: 0,
+      summary: "No step left in the race.",
+      fossilLabel: "Fossil generation flat",
+    };
+  }
   const y = years / 6;
+  const ownedSet = new Set(owned || []);
+  let electrify = 0;
+  for (const [id, weight] of Object.entries(RACE_ELECTRIFY)) {
+    if (ownedSet.has(id)) electrify += weight;
+  }
+  let efficiencyRaw = 0;
+  for (const [id, weight] of Object.entries(RACE_EFFICIENCY)) {
+    if (ownedSet.has(id)) efficiencyRaw += weight;
+  }
+  const cleanN = tagCount(owned || [], cardsById, "clean");
+  const policyN = tagCount(owned || [], cardsById, "policy");
+  const demand = (RACE.demandBase + Math.max(0, state.prosperity - PARAMS.growthFloor) * RACE.demandPros + electrify) * y;
+  const efficiency = efficiencyRaw * y;
+  const potential = cleanN * RACE.cleanPer * y;
+  const cleanBase = potential * RACE.serveBase;
+  const clean = potential * serve;
+  const met = clean + efficiency;
+  const regulation = clamp((state.political - RACE.politRetireAt) * RACE.politRetire, 0, 0.22);
+  const economics = state.energy < RACE.energyRetireAt
+    ? clamp((RACE.energyRetireAt - state.energy) * RACE.energyRetire, 0, 0.28)
+    : 0;
+  const retire = (policyN * RACE.policyRetire + regulation + economics) * y;
+  const fossil = round2(demand - met - retire);
+  const demandOut = round2(demand);
+  const metOut = round2(met);
+  const fossilDown = fossil < -0.02;
+  const winning = metOut + 1e-9 >= demandOut && fossilDown;
+  let summary;
+  if (winning) summary = "Clean additions plus efficiency exceed demand, and fossil generation is falling.";
+  else if (metOut + 1e-9 >= demandOut) summary = "Clean additions plus efficiency cover new demand. Fossil plants are not leaving fast enough.";
+  else summary = "Demand growth is ahead of clean additions plus efficiency.";
+  return {
+    demand: demandOut,
+    clean: round2(clean),
+    cleanBase: round2(cleanBase),
+    efficiency: round2(efficiency),
+    met: metOut,
+    retire: round2(retire),
+    fossil,
+    curtailed: round2(Math.max(0, potential - clean)),
+    serve,
+    winning,
+    fossilDown,
+    years,
+    summary,
+    fossilLabel: fossilDown ? "Fossil generation down" : fossil > 0.02 ? "Fossil generation up" : "Fossil generation flat",
+  };
+}
+
+function raceEffect(race, pathways) {
+  const paths = pathways || emptyPathways();
+  const y = race.years > 0 ? race.years / 6 : 0;
+  let cut = 0;
+  if (race.met > race.demand) cut += Math.min(RACE.winCap, (race.met - race.demand) * RACE.winCut);
+  if (race.fossil < 0) cut += Math.min(RACE.retireCap, -race.fossil * RACE.retireCut);
+  const unlocked = Math.max(0, race.clean - race.cleanBase);
+  cut += Math.min(RACE.unlockCap, unlocked * RACE.unlockCut);
+  cut += pathStrength(paths.aviation) * RACE.hardAviation * y;
+  cut += pathStrength(paths.shipping) * RACE.hardShipping * y;
+  cut += pathStrength(paths.removal) * RACE.removalEm * y;
+  cut = Math.min(RACE.stepCap, cut);
+  let energy = 0;
+  if (race.met > race.demand) energy = -Math.min(RACE.energyCap, (race.met - race.demand) * RACE.energyEase);
+  return {
+    emissions: cut ? round2(-cut) : 0,
+    energy: energy ? round2(energy) : 0,
+    sinkAdd: removalSink(paths),
+  };
+}
+
+function worldStep(state, owned, years, pathways) {
+  const y = years / 6;
+  const paths = pathwayVector({ pathways });
   const clean = tagCount(owned, cardsById, "clean");
   const dec = Math.min(PARAMS.decCap, tagCount(owned, cardsById, "decouple") * PARAMS.decPerCard);
+  const leak = PARAMS.industryLeak - pathStrength(paths.heavy) * RACE.heavyLeak;
   const notes = [];
 
   let pol = PARAMS.income.political;
@@ -537,7 +765,7 @@ function worldStep(state, owned, years) {
   }
   let industryPush = 0;
   if (state.industry > PARAMS.industryLeakAt) {
-    industryPush = (state.industry - PARAMS.industryLeakAt) * PARAMS.industryLeak * (1 - dec) * y;
+    industryPush = (state.industry - PARAMS.industryLeakAt) * leak * (1 - dec) * y;
     dEm += industryPush;
   }
   let fullEm = Math.max(0, state.prosperity - PARAMS.growthFloor) * PARAMS.growthEmissions * y;
@@ -548,6 +776,10 @@ function worldStep(state, owned, years) {
     fullEm += (state.industry - PARAMS.industryLeakAt) * PARAMS.industryLeak * y;
   }
   writeMeter(state, "emissions", state.emissions + dEm);
+  const race = energyRace(state, owned, years, paths);
+  const nudge = raceEffect(race, paths);
+  if (nudge.emissions) writeMeter(state, "emissions", state.emissions + nudge.emissions);
+  if (nudge.energy) writeMeter(state, "energy", state.energy + nudge.energy);
   if (state.emissions > beforeEm + 0.3 && dec < 0.45) notes.push("Growth pushes emissions up.");
 
   let dEco = -PARAMS.ecoDrift * y;
@@ -579,11 +811,12 @@ function worldStep(state, owned, years) {
   }
   writeMeter(state, "trust", state.trust + dTrust);
 
-  const eq = equilibrium(state.emissions, state.ecology);
+  const sinkAdd = nudge.sinkAdd;
+  const eq = equilibrium(state.emissions, state.ecology, sinkAdd);
   const warmed = round2(clamp(stepWarming(state.warming, eq, years), 0, 6));
   if (state.ecology < 42 && warmed > state.warming + 0.01) notes.push("A thin landscape stores less carbon.");
-  else if (state.ecology > 68 && eq < equilibrium(state.emissions, ecoBefore)) notes.push("Healthy land slows the heat.");
-  const landSink = (state.ecology - 50) * PARAMS.eqPerEcology;
+  else if (state.ecology > 68 && eq < equilibrium(state.emissions, ecoBefore, sinkAdd)) notes.push("Healthy land slows the heat.");
+  const landSink = (state.ecology - 50) * PARAMS.eqPerEcology + sinkAdd;
   state.warming = warmed;
   return {
     notes: notes.slice(0, 2),
@@ -603,19 +836,23 @@ function worldStep(state, owned, years) {
       healTrust: round2(healTrust),
       landSink: round2(landSink),
       decoupling: round2(dec),
+      raceNudge: nudge.emissions,
+      sinkAdd,
+      race,
     },
   };
 }
 
-export function advanceWorld(state, owned, years) {
-  return worldStep(state, owned, years);
+export function advanceWorld(state, owned, years, pathways) {
+  return worldStep(state, owned, years, pathways);
 }
 
-function derived(state, year) {
-  const eq = equilibrium(state.emissions, state.ecology);
+function derived(state, year, pathways) {
+  const sinkAdd = removalSink(pathways);
+  const eq = equilibrium(state.emissions, state.ecology, sinkAdd);
   return {
     equilibrium: eq,
-    projected: projectWarming(state.warming, state.emissions, state.ecology, year),
+    projected: projectWarming(state.warming, state.emissions, state.ecology, year, sinkAdd),
   };
 }
 
@@ -624,6 +861,7 @@ export function createRun(seed) {
   const state = blankState();
   const owned = [];
   const fired = [];
+  const pathways = emptyPathways();
   const log = [];
   const eventQueue = shuffle(EVENTS.map((event) => event.id), rng);
   let turnIndex = 0;
@@ -737,6 +975,26 @@ export function createRun(seed) {
       lab: { ready, turnsLeft: Math.max(0, labLock - turnIndex) },
       event,
       canPass: phase === "act",
+      pathways: PATHWAYS.map((spec) => {
+        const progress = pathways[spec.key];
+        const done = progress >= PATH_NEED;
+        return {
+          id: `path:${spec.key}`,
+          key: spec.key,
+          name: spec.name,
+          text: spec.text,
+          tip: spec.tip,
+          stallText: stallText(spec.stall),
+          cost: { ...spec.cost },
+          progress,
+          need: PATH_NEED,
+          stage: pathStage(progress),
+          pips: stagePips(progress),
+          done,
+          strength: pathStrength(progress),
+          affordable: !done && phase === "act" && canAfford(spec.cost, state),
+        };
+      }),
     };
   }
 
@@ -774,6 +1032,14 @@ export function createRun(seed) {
       phase = "act";
       return { ok: true, resolved: "event" };
     }
+    if (typeof id === "string" && id.startsWith("path:")) {
+      const key = id.slice(5);
+      const spec = pathwaysById.get(key);
+      if (!spec) return { ok: false, reason: "unknown" };
+      if (pathways[key] >= PATH_NEED) return { ok: false, reason: "done" };
+      if (!canAfford(spec.cost, state)) return { ok: false, reason: "afford" };
+      return commitPick({ id, name: spec.name, kind: "path", key });
+    }
     if (id === "pass") return commitPick({ id: "pass", name: "Hold steady", kind: "pass" });
     if (ideasById.has(id)) {
       if (turnIndex < labLock) return { ok: false, reason: "cooldown" };
@@ -795,6 +1061,7 @@ export function createRun(seed) {
     const before = snapshot(state);
     const notes = [];
     const sparked = [];
+    let pathLog = null;
     if (pick.kind === "card") {
       const card = cardsById.get(pick.id);
       const cost = pricedCost(card, state);
@@ -816,13 +1083,37 @@ export function createRun(seed) {
       addMeters(state, applied);
       ideaOffer = [];
       labLock = turnIndex + 3;
+    } else if (pick.kind === "path") {
+      const spec = pathwaysById.get(pick.key);
+      pay(state, spec.cost);
+      const stalled = rng() < spec.stall;
+      let breakthrough = false;
+      if (!stalled) {
+        pathways[pick.key] = Math.min(PATH_NEED, pathways[pick.key] + 1);
+        const now = pathways[pick.key];
+        if (now >= PATH_NEED) {
+          breakthrough = true;
+          addMeters(state, BREAKTHROUGH_EFFECT[pick.key]);
+          notes.push(spec.line);
+        } else if (now === 1) notes.push(`${spec.name} enters pilot.`);
+        else if (now === 2) notes.push(`${spec.name} enters scale.`);
+        else notes.push(`${spec.name} advances.`);
+      } else notes.push(`${spec.name} stalls. The cost is spent.`);
+      pathLog = {
+        id: pick.id,
+        key: pick.key,
+        stalled,
+        progress: pathways[pick.key],
+        breakthrough,
+        line: spec.line,
+      };
     } else {
       notes.push("You hold steady.");
     }
-    const step = worldStep(state, owned, span);
+    const step = worldStep(state, owned, span, pathways);
     rememberPeak();
     const afterYear = Math.min(2100, year + span);
-    const view = derived(state, afterYear);
+      const view = derived(state, afterYear, pathways);
     log.push({
       turn: turnIndex + 1,
       year,
@@ -834,6 +1125,7 @@ export function createRun(seed) {
         effect: autoEvent.effect,
       } : null,
       pick: { id: pick.id, name: pick.name, kind: pick.kind },
+      pathway: pathLog,
       synergies: sparked.slice(),
       before,
       after: snapshot(state),
@@ -843,7 +1135,10 @@ export function createRun(seed) {
     });
     turnIndex += 1;
     if (!finishIfNeeded()) beginTurn();
-    return { ok: true };
+    const breakthrough = pathLog && pathLog.breakthrough
+      ? { id: pathLog.id, key: pathLog.key, name: pick.name, line: pathLog.line }
+      : null;
+    return { ok: true, breakthrough };
   }
 
   function tweak(partial) {
@@ -856,7 +1151,7 @@ export function createRun(seed) {
 
   function publicState() {
     const year = phase === "end" ? 2100 : YEARS[Math.min(turnIndex, YEARS.length - 1)];
-    const view = derived(state, year);
+    const view = derived(state, year, pathways);
     return {
       seed,
       phase,
@@ -879,6 +1174,7 @@ export function createRun(seed) {
       projected: view.projected,
       owned: owned.slice(),
       synergies: fired.slice(),
+      pathways: { ...pathways },
       lab: { ready: turnIndex >= labLock && phase !== "end", turnsLeft: Math.max(0, labLock - turnIndex) },
       ending,
       endingName: ending ? endingName(ending) : null,
@@ -997,6 +1293,7 @@ export function simulatePolicy(state, policy) {
   const sim = shadowState(state);
   const owned = (state.owned || []).slice();
   const fired = (state.synergies || []).slice();
+  const pathways = pathwayVector(state);
   const points = [];
   if (turnIndex >= TURN_COUNT) {
     return { points, ending: state.ending || judge(sim), final: sim };
@@ -1007,7 +1304,7 @@ export function simulatePolicy(state, policy) {
       if (card) applyProjectedCard(sim, owned, fired, card);
     }
     const years = spanYears(t);
-    worldStep(sim, owned, years);
+    worldStep(sim, owned, years, pathways);
     const startYear = YEARS[t] || 2100;
     points.push(meterPoint(t + 1, Math.min(2100, startYear + years), sim));
   }
@@ -1053,20 +1350,26 @@ function emptyFlows() {
     healTrust: 0,
     landSink: 0,
     decoupling: 0,
+    raceNudge: 0,
+    sinkAdd: 0,
+    race: null,
   };
 }
 
-function stepReadout(state, owned, years) {
+function stepReadout(state, owned, years, pathways) {
+  const paths = pathways || pathwayVector(state);
   if (!(years > 0)) {
     const dec = Math.min(PARAMS.decCap, tagCount(owned, cardsById, "decouple") * PARAMS.decPerCard);
     const flows = emptyFlows();
-    flows.landSink = round2((state.ecology - 50) * PARAMS.eqPerEcology);
+    flows.sinkAdd = removalSink(paths);
+    flows.landSink = round2((state.ecology - 50) * PARAMS.eqPerEcology + flows.sinkAdd);
     flows.decoupling = round2(dec);
+    flows.race = energyRace(state, owned, 0, paths);
     return { before: shadowState(state), after: shadowState(state), flows, net: 0 };
   }
   const before = shadowState(state);
   const after = shadowState(state);
-  const step = worldStep(after, owned, years);
+  const step = worldStep(after, owned, years, paths);
   return {
     before,
     after,
@@ -1095,6 +1398,7 @@ function pressureRows(flows) {
 export function readIndicators(state, log) {
   const history = historyPoints(state, log || []);
   const owned = state.owned || [];
+  const pathways = pathwayVector(state);
   const years = state.phase === "end" ? 0 : (state.span || spanYears(state.turnIndex || 0));
   const paths = {};
   for (const policy of OUTLOOK_POLICIES) paths[policy] = simulatePolicy(state, policy);
@@ -1147,8 +1451,8 @@ export function readIndicators(state, log) {
     n: counts[ending.id],
     share: counts[ending.id] / OUTLOOK_POLICIES.length,
   }));
-  const step = stepReadout(state, owned, years);
-  const eq = equilibrium(state.emissions, state.ecology);
+  const step = stepReadout(state, owned, years, pathways);
+  const eq = equilibrium(state.emissions, state.ecology, removalSink(pathways));
   const alpha = years > 0 ? lagAlpha(years) : 0;
   const gap = eq - state.warming;
   const headingId = state.phase === "end" && state.ending ? state.ending : paths.hold.ending;
@@ -1177,6 +1481,8 @@ export function readIndicators(state, log) {
     outlook,
     outlookTotal: OUTLOOK_POLICIES.length,
     quiet: true,
+    race: step.flows.race,
+    pathways,
   };
 }
 

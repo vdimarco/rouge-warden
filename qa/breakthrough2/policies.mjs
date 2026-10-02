@@ -77,6 +77,22 @@ export function randomPolicy(seed) {
   };
 }
 
+export function pathwayFocus(key) {
+  return function pick(offers, state) {
+    if (offers.event && offers.event.options) return greedyClean(offers, state);
+    const path = (offers.pathways || []).find((item) => item.key === key && item.affordable && !item.done);
+    if (path) {
+      const cost = path.cost || {};
+      const reserve = state.capital - (cost.capital || 0) >= 1
+        && state.research - (cost.research || 0) >= 0
+        && state.political - (cost.political || 0) >= 1
+        && state.industry - (cost.industry || 0) >= 0;
+      if (reserve) return path.id;
+    }
+    return greedyClean(offers, state);
+  };
+}
+
 export function scripted(offers) {
   if (offers.event && offers.event.options) {
     const option = offers.event.options.find((item) => item.affordable !== false) || offers.event.options[0];
