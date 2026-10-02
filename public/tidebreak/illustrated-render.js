@@ -6,13 +6,15 @@ import { paintGround } from './paint-ground.js';
 import { attackPose, drawCombatEffect, drawSkillZone } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
 import { BASE_STYLES, drawBaseCore } from './bases.js';
+import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
   const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap((h,i) => i>=4?[h.slug+'-front']:[h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
-  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
+  const imported=await Promise.all([...new Set(MARKETPLACE_SPRITES.map(s=>s.file))].map(async file=>['marketplace-'+file,await load('./art/magicpixel/'+file).catch(()=>null)]));
+  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])),...Object.fromEntries(imported), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
 // An orthographic 2.5D stage: separate illustrated objects, depth sorting, camera
 // tracking and world-space effects. The concept screenshot is never a backdrop.
@@ -118,12 +120,12 @@ export class Renderer {
     if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
     if(e.omen?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.strokeStyle='#d0b4ff';c.lineWidth=2;c.beginPath();c.ellipse(p.x,p.y,12,6,0,0,TAU);c.stroke();c.fillStyle='#f3dcff';c.beginPath();c.arc(p.x,p.y,3,0,TAU);c.fill();c.restore();}
     if(e.bleed?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.fillStyle=e.bleed.type==='poison'?'#a9df83':e.bleed.type==='fire'?'#ffc16d':'#ff7965';c.beginPath();c.moveTo(p.x,p.y-8);c.quadraticCurveTo(p.x+11,p.y+7,p.x,p.y+8);c.quadraticCurveTo(p.x-11,p.y+7,p.x,p.y-8);c.fill();c.restore();}
-    if (player(s).target === e.id) this.ring(x, y, e.radius + 28, '#e8c48f', .9);
+    if (player(s).target === e.id) {this.ring(x,y,e.radius+28,'#e8c48f',.9,3);this.ring(x,y,e.radius+40+Math.sin(time*5)*5,'#ffe6a8',.6,2);}
     const moving = e.moving && !pose, gait = Math.sin(time * (hero && e.hero === 2 ? 8 : 11) + e.id);
     const creatureState = e.hit > 0 ? 'hit' : e.attackAnim > 0 ? 'action' : e.moving ? 'walk' : 'idle';
     const creatureTime = creatureState === 'action' ? s.time - (e.attackStarted ?? s.time) : creatureState === 'hit' ? .16 - e.hit : time + e.id * .17;
     const anchor = this.project(x, y, jump);
-    const creatureBox = e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime, duration: creatureState === 'action' ? e.attackDuration : creatureState === 'hit' ? .16 : undefined }) : null;
+    const creatureBox = drawMarketplaceSprite(this,e,anchor,time)||(e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime, duration: creatureState === 'action' ? e.attackDuration : creatureState === 'hit' ? .16 : undefined }) : null);
     const box = creatureBox || (e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 }));
     if (!box) return; this.hitBoxes.push({ ...box, id: e.id, team: e.team });
     if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp') {

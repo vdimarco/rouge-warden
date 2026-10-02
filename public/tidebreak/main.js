@@ -1,6 +1,6 @@
 import { market, inventoryHTML } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
-import { createMatch, step, player, HEROES, trainSkill, announce, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
+import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
 import { loadArt, Renderer } from './illustrated-render.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
@@ -11,11 +11,11 @@ import { spellbookHTML, spellDetail } from './spellbook.js';
 import { rosterHTML, heroPreviewHTML, ROLES } from './roster.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
-let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, castQueue, recallQueue = false, target = 0, moveId = null, moveOrigin, skillId = null, skillOrigin, skillSlot = null, lastAttack = 0, portalQueue = false, waypoint = null;
+let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, orderQueue, castQueue, recallQueue = false, target = 0, moveId = null, moveOrigin, skillId = null, skillOrigin, skillSlot = null, lastAttack = 0, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
-function resetInput() { keys.clear(); movement.x = movement.y = 0; moveId = skillId = null; castQueue = undefined; recallQueue = portalQueue = false; aim = null; skillSlot = null; $('thumb').style.transform = ''; }
+function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; moveId = skillId = null; castQueue = undefined; recallQueue = portalQueue = false; aim = null; skillSlot = null; $('thumb').style.transform = ''; }
 function closeSheet() { $('sheet').close(); paused = false; resetInput(); last = performance.now(); }
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); }
 function pause() {
@@ -66,7 +66,7 @@ upgradeButtons.forEach(b=>{
 
 function how() {
   const h = HEROES[selected];
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Targets are chosen automatically. Tap an enemy only to override focus.</li><li>Tap a skill for aim assist, or drag to aim and release. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -119,7 +119,7 @@ function updateUI() {
   $('portal').hidden = distance(p, gate) >= 180 && p.portalCd <= 0;
   $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : 'Jump across the map';
   const focus = state.units.find(e => e.id === p.target && e.hp > 0);
-  $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : focus ? `AUTO ${p.attackVariant + 1 || 1}/3 · ${BASIC_ATTACKS[p.hero][p.attackVariant || 0]}` : 'AUTO · READY';
+  $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : p.order?.type==='attack' && focus ? `${distance(p,focus)>p.range+focus.radius?'APPROACH':'ATTACK'} · ${focus.name} · ${p.attackVariant+1||1}/3` : p.order?.type==='move' ? 'MOVING · CLICK ENEMY TO ATTACK' : focus ? `AUTO ${p.attackVariant + 1 || 1}/3 · ${BASIC_ATTACKS[p.hero][p.attackVariant || 0]}` : 'AUTO · CLICK ENEMY TO ATTACK';
   $('auto-status').classList.toggle('engaged', !!focus);
   if (waypoint && distance(p, waypoint) < 110) waypoint = null;
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : state.towers[1] < 3 ? 'Their rift is exposed. Push with your wisps.' : state.objective ? 'Wild Hunt is awake in the center' : 'Break a wardstone. Open their rift.';
@@ -146,13 +146,22 @@ skillButtons.forEach(b => {
   b.addEventListener('pointerup', e => { if (e.pointerId !== skillId) return; castQueue = { slot: skillSlot, aim }; skillId = null; skillSlot = null; aim = null; });
   for (const event of ['pointercancel', 'lostpointercapture']) b.addEventListener(event, e => { if (e.pointerId === skillId) { skillId = null; skillSlot = null; aim = null; } });
 });
-$('battle').addEventListener('pointerdown', e => { if (!running || paused) return; const point = renderer.world(e.clientX, e.clientY); const picked = renderer.pick(state, e.clientX, e.clientY); if (picked) { target = picked; return; } const hit = state.units.filter(u => u.team !== 0 && u.hp > 0 && distance(u, point) < 90 && visibleTo(state, 0, u)).sort((a, b) => distance(a, point) - distance(b, point))[0]; if (hit) target = hit.id; });
+$('battle').addEventListener('pointerdown', e => {
+  if (!running || paused || player(state).hp<=0 || (e.button!==0&&e.button!==2)) return;
+  e.preventDefault();sound.start();$('coach').hidden=true;
+  const point=renderer.world(e.clientX,e.clientY),picked=renderer.pick(state,e.clientX,e.clientY);
+  const hit=state.units.find(u=>u.id===picked&&u.team!==0&&u.hp>0&&visibleTo(state,0,u))||state.units.filter(u=>u.team!==0&&u.hp>0&&distance(u,point)<Math.max(55,u.radius)&&visibleTo(state,0,u)).sort((a,b)=>distance(a,point)-distance(b,point))[0];
+  target=0;orderQueue=hit?{type:'attack',target:hit.id}:e.pointerType==='mouse'?{type:'move',...point}:{type:'stop'};
+});
+$('battle').addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else pause(); return; }
   if (!running || paused || e.repeat) return;
   const key = e.key.toLowerCase(); keys.add(key);
   if(key==='k'){learnSkills();return;}
+  if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
+  if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;}
   const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, aim: null };
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
@@ -167,7 +176,7 @@ function frame(now) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       const p = player(state), command = castQueue; castQueue = undefined;
-      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, cast: command?.slot, aim: command?.aim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false;
+      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim: command?.aim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false; orderQueue=undefined;
       const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y; if (input.aim) input.aim = renderer.screenDirection(input.aim.x, input.aim.y);
       const before = command ? p.cd[command.slot] : 0; step(state, input);
       if (command && p.cd[command.slot] > before) sound.skill(command.slot);
