@@ -3,6 +3,7 @@ import { F } from './physics.js';
 import { FIELD_DURATION, FIELD_RADIUS } from './adventure.js';
 import { sampleTransit, visibleSectorIds, galaxyNode, transitEase } from './transit.js';
 import { makeGalaxyTexture, makeOrbitDust } from './cosmic-textures.js';
+import { projectWarpRing } from './warp-surf.js';
 
 const TAU = Math.PI * 2;
 const SPRITES = { ice: [5,132,436,421], amber: [396,143,489,391], violet: [837,133,414,422], asteroid: [14,681,425,420], portal: [808,673,437,434] };
@@ -12,6 +13,79 @@ const FIELD_COLORS = { pull: '#79f5ed', push: '#e8a5ff', invalid: '#ff9b82' };
 const rand = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 const point = (p) => Array.isArray(p) ? p : [p.x, p.y];
 const circle = (g, x, y, radius) => { g.beginPath(); g.arc(x, y, Math.max(0, radius), 0, TAU); };
+
+// The bright spine follows the supplied geometry exactly. Only its translucent
+// sheath bends, so a decorative current never moves a collision or aim cue.
+// All work is bounded by the caller's short polyline; no blur/filter passes.
+function plasmaRibbon(g, points, { width = 12, alpha = 1, color = '#65d9f4', rim = '#6979e8',
+  clock = 0, phase = 0, core = 1.2, taper = 'ends', grains = 2, braid = true } = {}) {
+  if (points.length < 2 || alpha <= 0) return;
+  const path = [], last = points.length - 1;
+  const closed = Math.hypot(points[last].x - points[0].x, points[last].y - points[0].y) < .1;
+  let length = 0;
+  for (let i = 0; i <= last; i++) {
+    if (i) length += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    const before = points[Math.max(0, i - 1)], after = points[Math.min(last, i + 1)];
+    const d = Math.hypot(after.x - before.x, after.y - before.y) || 1;
+    path.push({ ...points[i], length, nx: -(after.y - before.y) / d, ny: (after.x - before.x) / d });
+  }
+  if (length < .01) return;
+  for (const p of path) {
+    p.t = p.length / length;
+    p.envelope = closed ? 1 : taper === 'comet' ? p.t ** .8 : taper === 'guide' ? (1 - p.t) ** .7 : .18 + .82 * Math.sin(p.t * Math.PI) ** .55;
+  }
+  const spine = () => {
+    g.beginPath(); g.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i <= last; i++) g.lineTo(path[i].x, path[i].y);
+  };
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+  const from = path[0], to = path[last];
+  const gradientStart = closed ? { x: Math.min(...path.map(p => p.x)), y: Math.min(...path.map(p => p.y)) } : from;
+  const gradientEnd = closed ? { x: Math.max(...path.map(p => p.x)), y: Math.max(...path.map(p => p.y)) } : to;
+  const energy = g.createLinearGradient(gradientStart.x, gradientStart.y, gradientEnd.x + .01, gradientEnd.y + .01);
+  energy.addColorStop(0, taper === 'comet' ? `${rim}00` : `${rim}30`);
+  energy.addColorStop(.34, `${rim}8a`); energy.addColorStop(.72, `${color}9c`);
+  energy.addColorStop(1, taper === 'guide' ? `${color}00` : `${color}45`);
+  g.fillStyle = energy; g.globalAlpha = alpha * .55;
+  g.beginPath();
+  for (let i = 0; i <= last; i++) {
+    const p = path[i], spread = width * p.envelope;
+    const x = p.x + p.nx * spread, y = p.y + p.ny * spread;
+    if (i) g.lineTo(x, y); else g.moveTo(x, y);
+  }
+  for (let i = last; i >= 0; i--) {
+    const p = path[i], spread = width * p.envelope;
+    g.lineTo(p.x - p.nx * spread, p.y - p.ny * spread);
+  }
+  g.closePath(); g.fill();
+  g.globalAlpha = alpha * .21; g.strokeStyle = color; g.lineWidth = core * 4; spine(); g.stroke();
+  if (braid) for (let strand = 0; strand < 2; strand++) {
+    g.globalAlpha = alpha * (strand ? .35 : .48); g.strokeStyle = strand ? rim : color;
+    g.lineWidth = Math.max(.5, core * .7); g.beginPath();
+    for (let i = 0; i <= last; i++) {
+      const p = path[i];
+      const wave = Math.sin(p.t * Math.PI * (closed ? 6 : 5) + clock * 2.2 + phase + strand * Math.PI);
+      const shift = wave * width * .53 * (closed ? 1 : Math.sin(p.t * Math.PI)) * p.envelope;
+      const x = p.x + p.nx * shift, y = p.y + p.ny * shift;
+      if (i) g.lineTo(x, y); else g.moveTo(x, y);
+    }
+    g.stroke();
+  }
+  const light = g.createLinearGradient(gradientStart.x, gradientStart.y, gradientEnd.x + .01, gradientEnd.y + .01);
+  light.addColorStop(0, taper === 'comet' ? '#d9faff00' : `${color}88`);
+  light.addColorStop(.45, '#e0faff'); light.addColorStop(1, taper === 'guide' ? '#d9faff00' : '#b1edf6');
+  g.globalAlpha = alpha * .9; g.strokeStyle = light; g.lineWidth = core; spine(); g.stroke();
+  g.fillStyle = '#e4fcff';
+  for (let grain = 0; grain < grains; grain++) {
+    const at = ((clock * .24 + phase * .17 + grain / grains) % 1 + 1) % 1;
+    const distance = at * length;
+    const index = Math.max(1, path.findIndex(p => p.length >= distance));
+    const a = path[index - 1], b = path[index], t = (distance - a.length) / (b.length - a.length || 1);
+    g.globalAlpha = alpha * Math.sin(at * Math.PI) * .85;
+    circle(g, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, core * 1.1); g.fill();
+  }
+  g.restore();
+}
 
 export function createRenderer(canvas, minimap) {
   const g = canvas.getContext('2d', { alpha: false });
@@ -160,15 +234,16 @@ export function createRenderer(canvas, minimap) {
       const start = lane * 2.39 + room.id * 0.6 + phase;
       const distance = p.r + 95 + lane * (radius - p.r - 65) / 5;
       const span = 0.66 + lane * 0.12;
-      for (let part = 0; part < 3; part++) {
-        g.strokeStyle = color;
-        g.globalAlpha = (active ? 0.11 + proximity * 0.09 : 0.055) * [0.35, 1, 0.45][part];
-        g.lineWidth = (active ? 1.2 : 0.8) / Math.max(0.65, camera.scale);
-        g.beginPath();
-        g.ellipse(p.x, p.y, distance, distance * 0.96, lane * 0.14,
-          start + part * span / 3, start + (part + 1) * span / 3);
-        g.stroke();
-      }
+      const tilt = lane * .14, c = Math.cos(tilt), s = Math.sin(tilt);
+      const points = Array.from({ length: 21 }, (_, i) => {
+        const angle = start + i / 20 * span;
+        const x = Math.cos(angle) * distance, y = Math.sin(angle) * distance * .96;
+        return { x: p.x + x * c - y * s, y: p.y + x * s + y * c };
+      });
+      plasmaRibbon(g, points, { width: 8, color, rim: '#647dab',
+        alpha: active ? .15 + proximity * .12 : .07,
+        core: 1 / Math.max(.65, camera.scale), clock: reducedMotion ? 0 : clock * .22,
+        phase: lane, grains: reducedMotion ? 0 : 1 });
     }
     if (active && typeof run.table.gravity === 'function') {
       // Short moving wisps follow the same acceleration used by the ball.
@@ -370,32 +445,31 @@ export function createRenderer(canvas, minimap) {
     if (active) label(open ? 'ENTER BLACK HOLE' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 38, open ? '#f5e8cf' : '#a6afb7', 11);
   }
 
-  function rails(table, sectorIndex) {
+  function rails(table, sectorIndex, clock = 0) {
     g.lineCap = 'round'; g.lineJoin = 'round';
     const segments = table.walls.filter((s) => {
       if (s.sector !== sectorIndex || s.enabled === false || (s.drop && !s.drop.up)) return false;
       const a = point(s.a), b = point(s.b);
       return visible((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.hypot(a[0] - b[0], a[1] - b[1]) / 2 + 15);
     });
-    g.save(); g.globalAlpha = 1;
-    for (let pass = 0; pass < 3; pass++) {
-      g.lineWidth = [13, 5, 1.4][pass];
-      g.strokeStyle = ['#070f17', '#536477', '#d2ba82'][pass];
-      g.beginPath();
-      for (const s of segments) {
-        const a = point(s.a), b = point(s.b); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
-      }
-      g.stroke();
-    }
-    g.restore();
-    for (const s of segments) {
-      if (!s.sling && !s.kick) continue;
+    for (let i = 0; i < segments.length; i++) {
+      const s = segments[i], active = s.sling || s.kick;
       const a = point(s.a), b = point(s.b);
-      g.strokeStyle = '#9beff5'; g.lineWidth = 3; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+      const samples = Array.from({ length: 19 }, (_, n) => ({
+        x: a[0] + (b[0] - a[0]) * n / 18, y: a[1] + (b[1] - a[1]) * n / 18,
+      }));
+      // This dark underlay distinguishes a solid rail from free gravity wisps.
+      g.save(); g.strokeStyle = '#04101bd9'; g.lineWidth = 8;
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.restore();
+      plasmaRibbon(g, samples, { width: active ? 15 : 10, core: active ? 2.1 : 1.55,
+        color: active ? '#ffd693' : '#73e3f2', rim: active ? '#a385db' : '#627ee0',
+        clock: reducedMotion ? 0 : clock, phase: i * .71, grains: reducedMotion ? 0 : 2 });
     }
     for (const p of table.posts || []) {
       if (p.sector !== sectorIndex || p.planet || !visible(p.x, p.y, p.r + 10)) continue;
-      circle(g, p.x, p.y, p.r); g.fillStyle = '#7c8d9d'; g.fill(); g.strokeStyle = '#e1d5b5'; g.lineWidth = 1.5; g.stroke();
+      const core = g.createRadialGradient(p.x - p.r * .3, p.y + p.r * .3, 0, p.x, p.y, p.r * 1.2);
+      core.addColorStop(0, '#d8f6ef'); core.addColorStop(.35, '#598694'); core.addColorStop(1, '#102533');
+      circle(g, p.x, p.y, p.r); g.fillStyle = core; g.fill(); g.strokeStyle = '#a6e7ef'; g.lineWidth = 1; g.stroke();
     }
   }
 
@@ -549,19 +623,11 @@ export function createRenderer(canvas, minimap) {
       if (hitBody || hitWall || hitFlipper || run.table.isDrain?.(probe)) break;
       points.push({ x: probe.x, y: probe.y });
     }
-    g.save();
-    for (let i = 1; i < points.length; i++) {
-      const a = points[i - 1], b = points[i], fade = 1 - i / 24;
-      const color = previewWell ? FIELD_COLORS[previewWell.kind] || FIELD_COLORS.pull : '#c9f4ff';
-      g.globalAlpha = fade * (previewWell ? 0.62 : 0.27); g.strokeStyle = color;
-      g.lineWidth = (previewWell ? 1.5 : 1) / Math.max(0.55, camera.scale);
-      g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
-      if (i % 3 === 0) {
-        g.globalAlpha = fade * 0.6; g.fillStyle = previewWell ? color : '#dffaff';
-        circle(g, b.x, b.y, Math.max(2.1, 1.15 / camera.scale)); g.fill();
-      }
-    }
-    g.restore();
+    const color = previewWell ? FIELD_COLORS[previewWell.kind] || FIELD_COLORS.pull : '#b2eafb';
+    plasmaRibbon(g, points, { width: 7 / Math.max(.65, camera.scale), taper: 'guide',
+      alpha: previewWell ? .72 : .43, core: 1.1 / Math.max(.55, camera.scale),
+      color, rim: previewWell ? '#978ce0' : '#668fce',
+      clock: reducedMotion ? 0 : run.clock || 0, grains: reducedMotion ? 0 : 3 });
   }
 
   function drawBall(run, dt, charge) {
@@ -574,14 +640,14 @@ export function createRenderer(canvas, minimap) {
     for (const p of trail) p.age += dt;
     while (trail.length && (trail[0].age > 0.25 || trail.length > 26)) trail.shift();
     if (trail.length > 1) {
-      g.lineCap = 'round';
-      for (let i = 1; i < trail.length; i++) {
-        const p = trail[i], previous = trail[i - 1], strength = clamp(1 - p.age / 0.25, 0, 1);
-        if (Math.hypot(p.x - previous.x, p.y - previous.y) > 180) continue;
-        g.globalAlpha = strength * 0.65; g.strokeStyle = '#8ce8ff'; g.lineWidth = r * strength * 1.45;
-        g.beginPath(); g.moveTo(previous.x, previous.y); g.lineTo(p.x, p.y); g.stroke();
+      // Split at recalls rather than painting a false streak across the field.
+      let start = 0;
+      for (let i = 1; i <= trail.length; i++) {
+        if (i < trail.length && Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y) <= 180) continue;
+        plasmaRibbon(g, trail.slice(start, i), { width: r * 1.05, taper: 'comet', core: 2.1,
+          color: '#83e9fa', rim: '#798aec', alpha: .82, clock: run.clock || 0, grains: 0 });
+        start = i;
       }
-      g.globalAlpha = 1;
     }
     const aura = g.createRadialGradient(b.x, b.y, r * 0.3, b.x, b.y, r * 3.5);
     aura.addColorStop(0, '#f7ffffaa'); aura.addColorStop(0.25, '#99eaff70'); aura.addColorStop(1, '#6dcfff00');
@@ -712,7 +778,7 @@ export function createRenderer(canvas, minimap) {
       color: i % 13 === 0 ? '#ffe2b4' : i % 5 === 0 ? '#91baff' : '#c8f2ff' };
   });
 
-  function flightStars(p, alpha, centerX, centerY) {
+  function flightStars(p, alpha, centerX, centerY, pilot = { x: 0, y: 0 }) {
     if (alpha <= 0) return;
     const travel = Math.max(0, p - 0.26);
     const distance = travel * 0.22 + travel * travel * travel * 19;
@@ -728,7 +794,8 @@ export function createRenderer(canvas, minimap) {
     for (let i = 0; i < count; i++) {
       const star = warpStars[i];
       const z = 0.055 + ((star.z - distance) % 1 + 1) % 1;
-      const x = star.x * cos - star.y * sin, y = star.x * sin + star.y * cos;
+      const x = star.x * cos - star.y * sin - pilot.x * .09;
+      const y = star.x * sin + star.y * cos - pilot.y * .09;
       const sx = centerX + x * focal / z, sy = centerY + y * focal / z;
       const farZ = z + shutter * (0.55 + star.size);
       const tx = centerX + x * focal / farZ, ty = centerY + y * focal / farZ;
@@ -805,6 +872,78 @@ export function createRenderer(canvas, minimap) {
     g.restore();
   }
 
+  function warpTargets(run, p, alpha) {
+    const surf = run.flight?.surf;
+    if (!surf?.enabled || alpha <= 0) return;
+    const unit = Math.min(width, height), centerX = width / 2, centerY = height / 2;
+    const pending = surf.rings.filter(ring => ring.status === 'pending');
+    const next = pending[0];
+    // Paint far to near. The projected aperture uses exactly the same pilot
+    // coordinates and radius as the crossing check in the simulation model.
+    for (const ring of [...surf.rings].reverse()) {
+      const projected = projectWarpRing(ring, surf, p, width, height);
+      if (!projected.visible) continue;
+      const { x, y, radius } = projected;
+      if (x + radius < -30 || y + radius < -30 || x - radius > width + 30 || y - radius > height + 30) continue;
+      const imminent = ring === next;
+      const aligned = Math.hypot(ring.x - surf.pilot.x, ring.y - surf.pilot.y) <= ring.radius;
+      const opacity = alpha * (imminent ? .94 : .56);
+      const color = imminent && aligned ? '#b7ffe3' : '#ffd493';
+      const points = Array.from({ length: 65 }, (_, i) => {
+        const angle = i / 64 * TAU;
+        return { x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius };
+      });
+      g.save(); g.globalAlpha = opacity * .75; g.strokeStyle = '#030911'; g.lineWidth = 5;
+      circle(g, x, y, radius); g.stroke(); g.restore();
+      plasmaRibbon(g, points, { width: Math.min(9, Math.max(3, radius * .07)), core: Math.min(2.8, 1 + radius * .004),
+        alpha: opacity, color, rim: '#de945d', clock: p * 6.6, phase: ring.id * 1.3, grains: 0 });
+      g.save(); g.globalAlpha = opacity * .8; g.strokeStyle = '#fff0d5'; g.lineWidth = 1;
+      // Warm knots circulate on the rim while the opening stays transparent.
+      for (let i = 0; i < 4; i++) {
+        const angle = i * TAU / 4 + p * 1.4 + ring.id;
+        g.beginPath(); g.arc(x, y, radius, angle, angle + .12); g.stroke();
+      }
+      if (radius < unit * .45) {
+        g.globalAlpha = alpha * (imminent ? .96 : .8);
+        g.fillStyle = '#ffeac7'; g.font = '600 11px "Trebuchet MS", sans-serif'; g.textAlign = 'center';
+        const text = String(ring.id + 1).padStart(2, '0');
+        g.strokeStyle = '#020610'; g.lineWidth = 3.5; g.strokeText(text, x, y - radius - 10);
+        g.fillText(text, x, y - radius - 10);
+      }
+      g.restore();
+    }
+    // A collected ring gives a soft peripheral gleam. Misses simply fade;
+    // neither result flashes the screen or hides the next opening.
+    const recentHit = surf.rings.find(ring => ring.status === 'hit' && p >= ring.crossing && p - ring.crossing < .055);
+    if (recentHit) {
+      const fade = 1 - (p - recentHit.crossing) / .055;
+      const glow = g.createRadialGradient(centerX, centerY, unit * .23, centerX, centerY, Math.max(width, height) * .7);
+      glow.addColorStop(0, '#74ffd800'); glow.addColorStop(.7, '#7af4c81c'); glow.addColorStop(1, '#c0ffe561');
+      g.save(); g.globalAlpha = alpha * fade; g.fillStyle = glow; g.fillRect(0, 0, width, height); g.restore();
+    }
+    const aligned = next && Math.hypot(next.x - surf.pilot.x, next.y - surf.pilot.y) <= next.radius;
+    g.save(); g.globalAlpha = alpha * .95; g.strokeStyle = aligned ? '#b7ffe3' : '#f3e5cd';
+    g.lineWidth = 1.2; g.fillStyle = '#e9faff';
+    const r = 9;
+    for (let i = 0; i < 4; i++) {
+      const angle = Math.PI * .25 + i * Math.PI / 2;
+      g.beginPath(); g.arc(centerX, centerY, r, angle, angle + Math.PI * .25); g.stroke();
+    }
+    circle(g, centerX, centerY, 1.8); g.fill();
+    if (next) {
+      // A short outer needle points towards the opening without moving the
+      // aim point itself. Length shrinks as the pilot enters its aperture.
+      const dx = next.x - surf.pilot.x, dy = next.y - surf.pilot.y;
+      const distance = Math.hypot(dx, dy), angle = Math.atan2(dy, dx);
+      if (distance > next.radius) {
+        g.globalAlpha *= .65; g.beginPath();
+        g.moveTo(centerX + Math.cos(angle) * 17, centerY + Math.sin(angle) * 17);
+        g.lineTo(centerX + Math.cos(angle) * 26, centerY + Math.sin(angle) * 26); g.stroke();
+      }
+    }
+    g.restore();
+  }
+
   function cinematicTransit(run, timeline) {
     const { progress: p, galaxy, horizon, tunnel } = timeline;
     if (timeline.reducedMotion) {
@@ -818,8 +957,10 @@ export function createRenderer(canvas, minimap) {
       galaxyChart(g, run, width, height, { full: true, orbit: -0.32 + p * 1.2, transit: timeline });
       g.restore();
     }
-    const centerX = width * (0.5 + Math.sin((p - 0.26) * 5) * 0.014);
-    const centerY = height * (0.455 - Math.sin((p - 0.26) * 3) * 0.01);
+    const pilot = run.flight?.surf?.pilot || { x: 0, y: 0 };
+    const unit = Math.min(width, height);
+    const centerX = width / 2 - pilot.x * unit * .035;
+    const centerY = height / 2 - pilot.y * unit * .035;
     const flightAlpha = transitEase((p - 0.29) / 0.10) * (1 - transitEase((p - 0.87) / 0.10));
     if (horizon > 0) {
       g.save(); g.globalAlpha = horizon;
@@ -882,17 +1023,19 @@ export function createRenderer(canvas, minimap) {
       }
       // Thin bowed filaments share the stars' vanishing point, like distant
       // nebula strands being stretched by the drive. No opaque tunnel walls.
-      g.globalCompositeOperation = 'screen'; g.strokeStyle = '#73c5ea';
+      g.globalCompositeOperation = 'screen';
       const reach = Math.hypot(width, height), advance = Math.max(0, p - 0.62);
-      for (let i = 0; i < 16; i++) {
-        const angle = i / 16 * TAU + 0.18;
+      for (let i = 0; i < 12; i++) {
+        const angle = i / 12 * TAU + .18 + Math.sin(i * 3.1) * .09;
         const dx = Math.cos(angle), dy = Math.sin(angle);
-        g.globalAlpha = tunnel * (i % 3 === 0 ? 0.12 : 0.055); g.lineWidth = i % 3 === 0 ? 2 : 0.7;
-        g.beginPath(); g.moveTo(centerX + dx * 16, centerY + dy * 16);
-        g.bezierCurveTo(centerX + dx * reach * 0.16 - dy * advance * reach * 0.17,
-          centerY + dy * reach * 0.16 + dx * advance * reach * 0.17,
-          centerX + dx * reach * 0.42, centerY + dy * reach * 0.42,
-          centerX + dx * reach, centerY + dy * reach); g.stroke();
+        const points = Array.from({ length: 25 }, (_, n) => {
+          const t = n / 24, distance = 25 + t * t * reach;
+          const bow = Math.sin(t * Math.PI) * advance * reach * (.10 + rand(i + 217) * .11);
+          return { x: centerX + dx * distance - dy * bow, y: centerY + dy * distance + dx * bow };
+        });
+        plasmaRibbon(g, points, { width: 4 + (i % 3) * 3, core: i % 3 === 0 ? 1.2 : .7,
+          alpha: tunnel * (i % 3 === 0 ? .28 : .13), color: i % 4 === 0 ? '#c3bafb' : '#79d3ef', rim: '#7888dc',
+          clock: p * 16, phase: i, taper: 'comet', grains: 1 });
       }
       // A single broad exit glow grows during braking, avoiding a flash cut.
       const arrival = transitEase((p - 0.82) / 0.10);
@@ -903,13 +1046,14 @@ export function createRenderer(canvas, minimap) {
       }
       g.restore();
     }
-    flightStars(p, flightAlpha, centerX, centerY);
+    flightStars(p, flightAlpha, centerX, centerY, pilot);
     g.save();
     const edge = g.createRadialGradient(centerX, centerY, Math.min(width, height) * 0.23, centerX, centerY, Math.max(width, height) * 0.76);
     edge.addColorStop(0, '#01030a00'); edge.addColorStop(1, '#01030acd');
     g.fillStyle = edge; g.globalAlpha = Math.max(galaxy, horizon, tunnel) * 0.63; g.fillRect(0, 0, width, height);
     g.restore();
-    flightCockpit(p, flightAlpha, centerX, centerY);
+    flightCockpit(p, flightAlpha, width / 2, height / 2);
+    warpTargets(run, p, flightAlpha);
   }
 
   function draw(run, dt = 1 / 60, options = {}) {
@@ -977,7 +1121,7 @@ export function createRenderer(canvas, minimap) {
         const bumper = run.table.bumpers[i];
         if (bumper.sector === sectorIndex && !bumper.relay) asteroid(bumper, i, '#adbad1');
       }
-      rails(run.table, sectorIndex);
+      rails(run.table, sectorIndex, clock);
       flippers(renderRun);
       if (!timeline) {
         if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);

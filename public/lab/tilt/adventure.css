@@ -54,6 +54,23 @@ button:disabled { cursor: default; opacity: .45; }
 #transit-progress span { display: block; height: 100%; background: #f4dca5; transform: scaleX(0); transform-origin: left; }
 #skip-transit { position: absolute; right: max(22px, env(safe-area-inset-right)); bottom: calc(22px + var(--safe-bottom)); min-height: 44px; padding: 10px 16px; border: 1px solid #eed3a945; border-radius: 4px; background: #06111bc9; color: #e6d9c4; font-size: 12px; pointer-events: auto; }
 #skip-transit span { margin-left: 14px; }
+#warp-readout { position: absolute; top: calc(76px + var(--safe-top)); left: max(22px, env(safe-area-inset-left)); right: 22px; text-align: left; text-shadow: 0 2px 14px #000; }
+.warp-label { display: block; font-size: 9px; letter-spacing: .2em; color: #a0cedb; }
+#warp-count { display: block; margin-top: 5px; font-size: clamp(18px, 3vw, 25px); font-weight: 500; color: #ffe2a0; }
+#warp-help { margin: 7px 0 0; color: #dcf0f5; font-size: 11px; line-height: 1.45; }
+#warp-readout[data-complete="true"] #warp-count { color: #a1f4d7; }
+.has-surf .transit-caption { bottom: max(85px, 11vh); }
+.has-surf #transit-title { font-size: clamp(24px, 4vw, 38px); }
+.has-surf #transit-stage { margin-bottom: 7px; }
+.has-surf #transit-route { margin: 8px 0 12px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #warp-readout { top: 22px; left: 22px; right: auto; max-width: 240px; }
+  #warp-help { max-width: 155px; font-size: 10px; }
+  .has-surf .transit-caption { bottom: 22px; left: 155px; right: 155px; }
+  .has-surf #transit-title { font-size: 22px; }
+  .has-surf #transit-stage { margin-bottom: 4px; }
+  .has-surf #transit-route { margin: 4px 0 8px; font-size: 10px; }
+}
 body.in-transit #controls, body.in-transit #message, body.in-transit .mini-map-wrap, body.in-transit .hud-brand, body.in-transit #objective, body.in-transit .readout, body.in-transit #map-button, body.in-transit #fullscreen-button { display: none; }
 body.in-transit #hud { justify-content: flex-end; z-index: 10; background: none; }
 body.in-transit .hud-actions button { background: #06111b99; }

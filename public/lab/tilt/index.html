@@ -35,6 +35,11 @@
   <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <section id="transit-panel" aria-label="Travel to the next zone" hidden>
+    <div id="warp-readout" hidden>
+      <span class="warp-label">WARP SURF</span>
+      <strong id="warp-count" aria-live="polite" aria-atomic="true">0 / 3 rings</strong>
+      <p id="warp-help">Drag to steer · 2 rings earn a field</p>
+    </div>
     <div class="transit-caption">
       <p id="transit-stage">Leaving orbit</p>
       <h2 id="transit-title">Beyond the horizon</h2>
@@ -67,7 +72,7 @@
         <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Bend your flight toward the next relay.</p></div>
         <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Explore</strong>Hit 3 relays. Enter the jump gate.</p></div>
       </div>
-      <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim.</p>
+      <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim. During warp, drag through two rings to earn another charge.</p>
       <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> pause</p>
     </div>
   </section>
@@ -75,7 +80,7 @@
   <section id="pause-panel" class="overlay panel-overlay" aria-labelledby="pause-title" hidden>
     <div class="dialog-card">
       <h2 id="pause-title">Take your time.</h2>
-      <p class="panel-description">Below a flipper? Release, then tap its button again for a reverse scoop.</p>
+      <p class="panel-description">Below a flipper? Release, then tap its button again for a reverse scoop. During warp, drag or use WASD to steer through the rings.</p>
       <div class="motion-controls pause-motion">
         <div class="motion-actions">
           <button id="pause-motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="pause-motion-status">Enable tilt</button>

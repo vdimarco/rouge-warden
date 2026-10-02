@@ -54,6 +54,7 @@ jobs:
           node qa/lab/tilt.field.sim.mjs
           node qa/lab/tilt.transit.sim.mjs
           node qa/lab/tilt.reverse.sim.mjs
+          node qa/lab/tilt.warp.sim.mjs
       - name: Browser interactions and responsive layout
         run: npm run test:pinball --prefix qa/browser
         env:
@@ -65,4 +66,3 @@ jobs:
           path: test-results/pinball
           if-no-files-found: warn
           retention-days: 14
-
