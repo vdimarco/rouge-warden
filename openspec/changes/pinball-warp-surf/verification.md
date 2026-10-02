@@ -10,4 +10,4 @@ OpenSpec CLI was unavailable. Requirement and scenario structure was checked dir
 
 Fal account readiness and model schema/pricing checks passed after credits were added. One fal-ai/nano-banana-pro 1K 3:2 image request stalled for 1502 seconds and returned an abort without a request ID or result. Read-only recovery searches returned no assets. The billing outcome is unknown. Fal artwork integration remains pending and no duplicate generation was attempted.
 
-Production deployment remains pending.
+PR #128 merged as 759cb801c3d5f035935577a32a776253931ed747 after GitHub Pinball browser QA passed. Vercel reported READY for that exact commit on https://warden-alpha-wheat.vercel.app/lab/tilt/. Live HTML, main.js, render.js and warp-surf.js returned HTTP 200 and the new feature markers.
