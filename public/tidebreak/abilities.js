@@ -1,3 +1,4 @@
+import { NEW_HEROES } from './legends.js';
 // One definition for training, HUD, help and deterministic rules.
 const skill = (name, label, icon, cooldown, description) => ({ name, label, icon, cooldown, description });
 export const KITS = [
@@ -17,6 +18,7 @@ export const KITS = [
    skill('Hell shriek','SHRIEK','shriek',11,'Terrify nearby enemies. Bleeding foes flee longer, giving you time to chase.'),
    skill('Rending claws','REND','claws',12,'Slash a cone in front of you and cause bleeding for four seconds. Gain a burst of pursuit speed.'),
    skill('Blood moon','BLOOD MOON','bloodmoon',32,'Enter a frenzy for eight seconds: faster attacks, faster movement and 30% life steal. Gain a shield for the brawl.')],
+  ...NEW_HEROES.map(h=>h.kit),
 ];
 export const MAX_LEVEL = 18;
 export const xpForLevel = level => 60 + level * 25;

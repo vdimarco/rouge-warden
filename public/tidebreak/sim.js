@@ -7,12 +7,15 @@ import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../
 import { KITS, MAX_LEVEL, xpForLevel, trainSkill, trainBot, cooldownFor } from './abilities.js';
 export { trainSkill } from './abilities.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
+import { NEW_HEROES } from './legends.js';
+import { castLegend, tickLegendZone } from './legend-rules.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
   { name: 'Baba Yaga', slug: 'baba', role: 'Walking fortress', note: 'Your hut has legs. Your traps have teeth.', hp: 1820, speed: 285, range: 360, damage: 94, rate: .8, color: '#edc47c', sprite: 2 },
   { name: 'Jersey Devil', slug: 'devil', role: 'Relentless chaser', note: 'Leap into a brawl. Feed on the fear.', hp: 1690, speed: 365, range: 140, damage: 143, rate: .68, color: '#f6a086', sprite: 3 },
-].map((h,i) => ({ ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
+ ...NEW_HEROES,
+].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
   const e = { id: s.nextId++, hp: 100, maxHp: 100, radius: 22, speed: 0, range: 100, damage: 10, rate: 1, attackCd: 0, hit: 0, shield: 0, stun: 0, slow: 0, fear: 0, lastHit: -100, revealedUntil: -1, facing: -Math.PI / 2, ...data };
@@ -20,7 +23,7 @@ function add(s, data) {
 }
 function hero(s, team, kind, lane, human = false) {
   const h = HEROES[kind], front = LANES[lane][2], toward = team ? -1 : 1;
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[kind].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 export function createMatch(kind = 0, seed = 49) {
   const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
@@ -29,8 +32,8 @@ export function createMatch(kind = 0, seed = 49) {
     for (let lane = 0; lane < 3; lane++) add(s, { kind: 'tower', name: 'Wardstone', team, lane, ...LANES[lane][team ? 3 : 1], hp: 3100, maxHp: 3100, radius: 42, range: 360, damage: 180, rate: 1.05, sprite: 6 });
   }
   const p = hero(s, 0, kind, 1, true); s.playerId = p.id;
-  hero(s, 0, (kind + 1) % 4, 0); hero(s, 0, (kind + 2) % 4, 2);
-  for (let lane = 0; lane < 3; lane++) hero(s, 1, (Math.floor(s.random() * 4) + lane) % 4, lane);
+  hero(s, 0, (kind + 1) % HEROES.length, 0); hero(s, 0, (kind + 2) % HEROES.length, 2);
+  for (let lane = 0; lane < 3; lane++) hero(s, 1, (Math.floor(s.random() * HEROES.length) + lane) % HEROES.length, lane);
   for (const e of s.units) if (e.kind === 'hero' && !e.player) trainBot(e);
   announce(s, 'Choose your first spell', 'You have one skill point. Basic attacks are always ready.');
   return s;
@@ -68,6 +71,8 @@ export function damage(s, source, target, amount, kind = 'spell') {
   const absorbed = Math.min(target.shield, amount * shieldMultiplier); target.shield -= absorbed; amount -= absorbed / shieldMultiplier;
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (source.player) s.stats.damage += actual;
+  if(source.hp>0&&target.soulThread?.source===source.id&&target.soulThread.until>s.time)heal(s,source,actual*.25);
+  if(target.hp>0&&target.guardUntil>s.time&&kind==='attack'&&source.hp>0&&source.id!==target.id)damage(s,target,source,(actual+absorbed/shieldMultiplier)*.2,'reflect');
   if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
   if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
   if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (t.kind === 'tower' && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
@@ -86,10 +91,11 @@ export function damage(s, source, target, amount, kind = 'spell') {
     }
   }
   if (target.hp > 0) return actual;
+  if(target.rebirthUntil>s.time){target.rebirthUntil=0;target.hp=target.maxHp*.35;target.shield=140;target.stun=target.fear=target.slow=0;target.bleed=target.burn=null;area(s,target,target,330,260*(target.rebirthStrength||1));burst(s,target.x,target.y,'#ffc16d',330,'ultimate');return actual;}
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
-    target.burn = null; target.bleed = null; target.omen = null; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
+    target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (source.kind === 'hero') source.kills++; }
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (source.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
@@ -181,9 +187,10 @@ function area(s, e, center, radius, amount, status = {}) {
   }
 }
 export function cast(s, e, slot, aim) {
-  if (e.kind !== 'hero' || ![0,1,2,3].includes(slot) || !e.skillRanks[slot] || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.cd[slot] > 0 || s.winner !== null) return false;
+  if (e.kind !== 'hero' || ![0,1,2,3].includes(slot) || !e.skillRanks[slot] || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.silencedUntil > s.time || e.cd[slot] > 0 || s.winner !== null) return false;
   const target = s.units.find(t => t.id === e.target && hostile(s,e,t) && canSee(s,e,t) && distance(e,t) < 540 && lineOfSight(s,e,t)) || nearest(s,e,540,true);
   if (slot === 2 && e.hero === 0 && (!target || ['core','tower'].includes(target.kind))) return false;
+  if (slot === 2 && e.hero === 8 && (!target || ['core','tower'].includes(target.kind))) return false;
   const angle = aim && Math.hypot(aim.x,aim.y) > .1 ? Math.atan2(aim.y,aim.x) : target ? Math.atan2(target.y-e.y,target.x-e.x) : e.facing;
   const rank = e.skillRanks[slot], strength = 1 + (rank-1)*.28;
   e.recall = 0; e.cd[slot] = cooldownFor(e,slot); e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.castFacing = angle; e.itemState.empowered = s.time+5;
@@ -197,6 +204,7 @@ export function cast(s, e, slot, aim) {
   const cone = (range,width,hit) => { for (const t of s.units) if (hostile(s,e,t) && distance(e,t)<range+t.radius && lineOfSight(s,e,t)) {
     const a=Math.atan2(t.y-e.y,t.x-e.x), delta=Math.atan2(Math.sin(a-angle),Math.cos(a-angle)); if(Math.abs(delta)<=width) hit(t,a);
   }};
+  if(e.hero>=4) return castLegend({s,e,slot,aim,target,angle,rank,strength,origin,color,fx,cone,damage,heal,area,hostile});
   if (slot === 0) {
     const length=[490,410,330,460][e.hero]+(rank-1)*25;
     e.x+=Math.cos(angle)*length; e.y+=Math.sin(angle)*length; resolveBody(s,e);
@@ -293,6 +301,7 @@ function terrainEffects(s, dt) {
     z.life-=dt;z.tick-=dt;const source=s.units.find(e=>e.id===z.source);
     if(!source||z.life<=0||s.time<(z.armed||0)||z.tick>0)continue;
     z.tick=z.type==='stomp'?.8:.6;
+    if(z.legend){tickLegendZone({s,z,source,damage,heal,hostile});continue;}
     if(z.type==='stomp') {if(z.pulses>=3)continue;z.radius=210+z.pulses*80;z.pulses++;area(s,source,z,z.radius,z.amount,{stun:.45});s.effects.push({...z,type:'spell',hero:2,slot:3,life:.65,maxLife:.65});}
     else for(const t of s.units) if(t.hp>0&&distance(t,z)<z.radius+t.radius&&lineOfSight(s,z,t)) {
       if(hostile(s,source,t)) {
@@ -409,4 +418,3 @@ export function step(s, input = {}, dt = 1 / 60) {
     const a = value(0), b = value(1); finish(s, a === b ? -1 : a > b ? 0 : 1, 'Six minutes. The team with more ward and rift health wins.');
   }
 }
-

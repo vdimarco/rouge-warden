@@ -76,7 +76,7 @@ export function sellItem(e, slot, base) {
   e.gold += Math.floor(ITEM[id].cost * .7); e.inventory.splice(slot, 1); recalculate(e, base); return true;
 }
 export function nextItem(e) {
-  const build = BUILDS.find(b => b.id === e.build) || BUILDS[e.hero];
+  const build = BUILDS.find(b => b.id === e.build) || BUILDS[e.hero % BUILDS.length];
   const allowed = id => !hasItem(e, id) && !(ITEM[id].tier === 3 && e.inventory.some(v => ITEM[v].tier === 3));
   return (e.goal && allowed(e.goal) ? e.goal : build.order.find(allowed)) || null;
 }

@@ -10,7 +10,7 @@ const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
-  const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap(h => [h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
+  const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap((h,i) => i>=4?[h.slug+'-front']:[h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
   return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
@@ -101,10 +101,10 @@ export class Renderer {
       const screen = this.project(e.x, e.y), extent = height * this.scale * 3;
       if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
     }
-    if (hero) { name = HEROES[e.hero].slug + (Math.sin(e.facing) > .2 ? '-front' : '-back'); height = e.player ? [365, 475, 360, 390][e.hero] : [285, 345, 290, 320][e.hero]; }
+    if (hero) { name = HEROES[e.hero].slug + (e.hero>=4||Math.sin(e.facing)>.2?'-front':'-back'); height = HEROES[e.hero].height*(e.player?1:.77); }
     const pose = hero ? attackPose(e, s.time) : null;
     const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
-    if (pose) { name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`; this.lastPoses.push({ id: e.id, hero: e.hero, stage: pose.stage, asset: name }); }
+    if (pose) { if(e.hero<4)name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`; this.lastPoses.push({ id: e.id, hero: e.hero, stage: pose.stage, asset: name }); }
     let x = e.x, y = e.y, jump = 0;
     if (e.motion) { const t = Math.min(1, (s.time - e.motion.start) / e.motion.duration), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
     const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
@@ -177,4 +177,3 @@ export class Renderer {
   }
   stats() { return { renderer: 'Illustrated 2.5D', creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }
-
