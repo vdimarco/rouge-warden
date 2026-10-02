@@ -4,6 +4,6 @@ Keep the moonlit painted folklore direction, cream serif names and gold selectio
 
 Generate short idle loops from existing portrait references through Fal, encode actual multi-frame looping GIFs, and retain WebP fallback art for reduced motion or asset failures. Record source recipes and validate dimensions, frame counts and download budget.
 
-Movement and skill pointers remain independent. Plus buttons activate on their own pointer release, including non-primary touch pointers, with captured pointer cancellation and keyboard activation. A cast or upgrade must not clear the joystick state. Modal panels intentionally pause play and clear movement.
+Movement and skill pointers remain independent. HUD utility buttons and plus buttons activate on their own pointer release, including non-primary touch pointers, with captured pointer cancellation and keyboard activation. A cast or upgrade must not clear the joystick state. Modal panels intentionally pause play and clear movement.
 
 Check selection and live controls in the available browser. Check 320x568, 360x640, 390x844, 768x1024, 844x390 and desktop containment with the available supported tooling; report any unavailable physical touch or viewport checks explicitly. Validate multi-pointer sequences in a focused DOM event harness and preserve gameplay regression tests.

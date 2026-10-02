@@ -57,7 +57,7 @@ function learnSkills() {
     $('back-skills').onclick=closeSheet;
   };show();
 }
-$('skill-points').onclick=learnSkills;
+pointerAction($('skill-points'),learnSkills,()=>running&&!paused&&!resultShown);
 const upgradeButtons=[...document.querySelectorAll('[data-upgrade]')];
 upgradeButtons.forEach(b=>pointerAction(b,()=>{
   const p=player(state),slot=+b.dataset.upgrade;
@@ -131,8 +131,11 @@ function updateUI() {
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
   if (state.time > 18) $('coach').hidden = true;
 }
-$('inventory').onclick = shop; $('quick-buy').onclick = () => { const id = $('quick-buy').dataset.item; if (id && buy(state, id)) { sound.tone(660, .16); updateUI(); } };
-$('map-button').onclick = map; $('portal').onclick = () => { if (running && !paused) portalQueue = true; }; $('play').onclick = start; $('pause').onclick = pause; $('how').onclick = how; $('shop').onclick = shop; $('recall').onclick = () => { if (running && !paused) recallQueue = true; }; $('close-sheet').onclick = closeSheet; $('coach-close').onclick = () => $('coach').hidden = true;
+const hudReady=()=>running&&!paused&&!resultShown;
+pointerAction($('inventory'),shop,hudReady);
+pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.tone(660,.16);updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
+for(const [id,action] of [['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
+$('play').onclick=start;$('how').onclick=how;$('close-sheet').onclick=closeSheet;
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
 let rosterFilter='All';

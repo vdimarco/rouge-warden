@@ -7,3 +7,5 @@
 - All qa/tidebreak/*.test.mjs suites passed, including new real GIF integrity checks and actual shared pointer-handler sequences for all twelve heroes: non-primary training, aimed casting, held movement, cancellation, out-of-bounds release and keyboard activation.
 - Responsive CSS uses 3/4/5 cards, zero-minimum viewport rows, safe-area padding, compact portrait/landscape rules and measured dialog pages. Physical phone touch, orientation changes and phone-sized rendered layouts could not be exercised with the available browser API. They remain device validation limits; no claim of physical phone verification is made.
 - OpenSpec CLI is unavailable. Proposal, design, tasks and capability scenarios were checked manually, and canonical requirements were updated.
+
+- The same pointer-release handler is used for Return, Rift Jump, map, market, quick buy, pause and spellbook HUD actions so second-touch activation is consistent. Modal actions deliberately pause and reset movement.
