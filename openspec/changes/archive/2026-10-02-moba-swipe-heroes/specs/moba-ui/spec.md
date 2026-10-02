@@ -1,11 +1,4 @@
-# Monster Mash opening UI
-
-### Requirement: Epic opening scene
-The opening screen SHALL show a painted moonlit folklore stage, a prominent selected hero, role filters, spell previews and the existing match facts.
-
-#### Scenario: Select a legend
-- **WHEN** the player selects any of the twelve heroes or changes a role filter
-- **THEN** the selected state, hero name, portrait, stats and four spells update correctly and all matching heroes remain reachable.
+## MODIFIED Requirements
 
 ### Requirement: Contained opening layout
 The opening and game panels SHALL fit the current viewport without vertical scrolling. The hero lineup SHALL show three cards below 600px wide, four below 1000px, and five on wider screens. Footer actions SHALL remain visible with safe-area insets.
@@ -22,29 +15,7 @@ The opening and game panels SHALL fit the current viewport without vertical scro
 - **WHEN** the player opens selection or a game panel at 320x568, 360x640, 390x844 or 844x390
 - **THEN** the content uses compact rows or pages and all actions remain reachable without a vertical scroll.
 
-
-#### Scenario: Enter and leave a match
-- **WHEN** the player previews a spell, starts a match, trains a skill and returns to hero selection
-- **THEN** the existing preview, learning and game controls work with the new UI.
-
-#### Scenario: Reduce motion or lose background art
-- **WHEN** reduced motion is requested or the painted backdrop cannot load
-- **THEN** decorative motion stops and the native selection controls remain legible and usable.
-
-### Requirement: Fal cinematic opening artwork
-The opening screen SHALL use a Fal-generated cinematic folklore environment while preserving native controls.
-
-#### Scenario: Use generated art
-- **WHEN** approved Fal artwork is integrated
-- **THEN** the moonlit hero stage remains readable with all selection and Start controls reachable at supported viewports.
-
-#### Scenario: Load without artwork
-- **WHEN** the generated background is unavailable
-- **THEN** the native hero preview, roster and Start controls remain readable and usable on the dark fallback.
-
-#### Scenario: Enter and return
-- **WHEN** a player selects a hero, previews a spell, starts and returns to selection
-- **THEN** the cinematic stage preserves the existing selection, learning and game controls.
+## ADDED Requirements
 
 ### Requirement: Animated hero portraits
 The lineup SHALL display actual animated GIF idle loops for all twelve heroes, preserving the existing identity and static artwork fallback.
