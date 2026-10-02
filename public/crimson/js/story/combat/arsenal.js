@@ -5,7 +5,8 @@ import { aimWeapon } from '../cast/weapon-aim.js';
 
 export function createArsenal(K) {
   const { S } = K;
-  const ammo = {}, effects = [];
+  const ammo = {}, effects = [], drops = [];
+  let dropSeq = 0;
   let cooldown = 0, reload = 0, reloading = null, hitTime = 0, shots = 0, policeShots = 0;
   const random = S.rng('arsenal');
   const direction = new THREE.Vector3(), center = new THREE.Vector3();
@@ -102,12 +103,37 @@ export function createArsenal(K) {
     if (!spec || reload || !current.reserve || current.loaded === spec.magazine) return;
     reload = spec.reload; reloading = id; K.sfx('reload', S.hero.pos);
   }
+  function removeDrop(drop) {
+    S.interact.remove(drop.id); drop.object.removeFromParent();
+    drop.object.traverse(o => { if (o.isMesh && !o.geometry.userData.shared) o.geometry.dispose(); });
+    const index = drops.indexOf(drop); if (index >= 0) drops.splice(index, 1);
+  }
+  S.combat.on('down', foe => {
+    if (!foe.lawUnit || foe.gunDropped) return;
+    foe.gunDropped = true;
+    const held = foe.a?.props?.pistol, at = foe.pos.clone(); at.y += 1.1;
+    if (held) held.getWorldPosition(at);
+    S.cast.props.detach(foe.a, 'pistol');
+    const object = S.cast.props.make('pistol'); object.position.copy(at); S.world.group.add(object);
+    const drop = { id: `police-gun:${++dropSeq}`, object, t: 0, ground: S.world.surface(at.x, at.z, foe.pos.y + 1), vy: 1.5, landed: false };
+    drops.push(drop);
+    S.interact.add({ id: drop.id, tag: 'police-guns', label: 'TAKE PISTOL', mode: 'foot', r: 2.2, prio: 3,
+      pos: () => object.position, when: () => drop.landed && S.world.visible,
+      act: () => {
+        if (!drop.landed || !drops.includes(drop)) return;
+        ammo.pistol.reserve = Math.min(GUNS.pistol.reserve, ammo.pistol.reserve + GUNS.pistol.magazine);
+        reloadMagazine(ammo.pistol, GUNS.pistol.magazine); equip('pistol');
+        K.sfx('pickup', object.position); removeDrop(drop);
+      },
+    });
+  });
   function reset() {
+    for (const drop of drops.slice()) removeDrop(drop);
     for (const [id, spec] of Object.entries(GUNS)) ammo[id] = { loaded: spec.magazine, reserve: spec.reserve };
     for (const effect of effects) { effect.object.removeFromParent(); effect.object.geometry.dispose(); effect.object.material.dispose(); }
     effects.length = 0; cooldown = reload = hitTime = shots = policeShots = 0; reloading = null;
   }
-  S.arsenal = { ammo, equip, beginReload, get ranged() { return !!GUNS[S.hero.weapon]; }, get reload() { return reload; }, get shots() { return shots; }, get policeShots() { return policeShots; } };
+  S.arsenal = { ammo, drops, equip, beginReload, get ranged() { return !!GUNS[S.hero.weapon]; }, get reload() { return reload; }, get shots() { return shots; }, get policeShots() { return policeShots; } };
   S.register('control', (dt) => {
     if (!S.hero || !S.world.visible || S.lockControl || S.cine?.active) return;
     cooldown = Math.max(0, cooldown - dt); hitTime = Math.max(0, hitTime - dt);
@@ -125,13 +151,24 @@ export function createArsenal(K) {
     }
   }, -5);
   S.register('combat', (dt) => {
+    for (const drop of drops.slice()) {
+      drop.t += dt;
+      if (drop.t > 120) { removeDrop(drop); continue; }
+      if (!drop.landed) {
+        drop.vy -= 12 * dt; drop.object.position.y += drop.vy * dt;
+        drop.object.rotation.set(0.3, drop.t * 4, Math.min(Math.PI / 2, drop.t * 5));
+        if (drop.object.position.y <= drop.ground + .055) {
+          drop.object.position.y = drop.ground + .055; drop.object.rotation.set(0, drop.t * 4, Math.PI / 2); drop.landed = true;
+        }
+      }
+    }
     for (const effect of effects.slice()) {
       effect.life -= dt;
       if (effect.life <= 0) { effect.object.removeFromParent(); effect.object.geometry.dispose(); effect.object.material.dispose(); effects.splice(effects.indexOf(effect), 1); }
     }
     if (S.lockControl || S.cine?.active || !S.world.visible || S.hero.hp <= 0) return;
     for (const foe of K.enemies) {
-      if (!foe.lawUnit || foe.downed || foe.gone || foe.tied || !foe.alert || foe.returnToVehicle) continue;
+      if (!foe.lawUnit || foe.downed || foe.gone || foe.tied || foe.carjacked || !foe.alert || foe.returnToVehicle) continue;
       const from = foe.pos.clone(); from.y += 1.4;
       const to = S.hero.pos.clone(); to.y += 1.2;
       const distance = from.distanceTo(to);

@@ -246,7 +246,7 @@ export function createFoes(K) {
 
   /* ---------------- the brain and the body (updateBoss, per enemy) ---------------- */
   function update(f, dt) {
-    if (f.gone) return;
+    if (f.gone || f.carjacked) return;
     if (f.returnToVehicle && !f.downed && !f.tied) {
       const destination = f.returnToVehicle;
       const distance = flatDist(f.pos, destination);

@@ -28,7 +28,9 @@ try {
     assert.ok(prompt?.endsWith(':driver'), `${kind} driver prompt`);
     if (touch) { await step(page, .2); await page.locator('#st_use').tap({ timeout: 5000 }); }
     else await page.keyboard.press('e');
-    await step(page, .8);
+    await step(page, .4);
+    assert.ok(await page.evaluate(() => stolen.view.doors.driver.pivot && stolen.view.doors.driver.k > .9 && !!__crimson.story.S.drive.anim), `${kind} opens its door during the pull`);
+    assert.ok((await stepUntil(page, () => !__crimson.story.S.drive.anim, { maxSec: 4 })).ok);
     assert.ok(await page.evaluate(() => {
       const S = __crimson.story.S;
       return S.drive.riding === stolen && S.drive.heroSeat === 0 && oldDriver.stopped && !stolen.controller && stolen.seats[0] === 'hero';
@@ -69,7 +71,7 @@ try {
     return { riding: S.drive.riding === stolen, retained: S.vehicles.list.includes(stolen), traffic: stolen.traffic, kinematic: stolen.kinematic, view: !!stolen.view, id: stolen.id === id, tint: stolen.tint === tint, damage: stolen.damage };
   });
   assert.deepEqual(traffic, { riding: true, retained: true, traffic: false, kinematic: false, view: true, id: true, tint: true, damage: 42 });
-  await step(page, 1);
+  assert.ok((await stepUntil(page, () => !__crimson.story.S.drive.anim, { maxSec: 4 })).ok);
   await page.keyboard.down('w'); await step(page, 1); await page.keyboard.up('w');
   assert.ok(await page.evaluate(() => stolen.speed > 1));
   assert.ok(await page.evaluate(() => {

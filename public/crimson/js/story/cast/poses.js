@@ -16,6 +16,12 @@ const cyc = (sp, o) => TAU / strideRate(sp); // one stride cycle in seconds
 // name -> { dur, loop, keys, pose(t) }. The locomotion cycles are one stride long at a set speed; the
 // driver in locomotion.js does any other speed live.
 export const LIB = {
+  carjack: { dur: 1.5, keys: 25, once: true, pose: t => {
+    const pull = Math.sin(Math.min(1, t / 1.5) * Math.PI);
+    return { torso: { x: .3 - .55 * pull, y: -.3 * pull }, head: { x: -.1 },
+      arms: [{ x: -1.1 + .6 * pull, out: .15 }, { x: -1.1 + .5 * pull, out: .1 }], elbows: [.2 + pull, .2 + pull],
+      legs: [{ x: -.15, out: .15 }, { x: .15, out: .1 }], knees: [.25, .15] };
+  } },
   aim: { dur: 2, keys: 9, pose: (time) => ({ torso: { x: 0.04, y: -0.08 }, head: { y: 0.08 },
     arms: [{ x: -0.9, out: 0.08 }, { x: -0.95, out: 0.06 }], elbows: [0.35, 0.12 + 0.02 * breath(time)], level: 0 }) },
   tumble: { dur: 0.7, keys: 19, pose: (time) => {

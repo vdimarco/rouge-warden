@@ -37,13 +37,17 @@ export function createLaw(S) {
     context.font = '16px sans-serif'; context.fillText('SEDONA • COUNTY', 128, 75);
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-    const group = new THREE.Group();
+    const panels = [];
     for (const side of [-1, 1]) {
       const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.56), material);
-      panel.position.set(side * 1.012, 1.05, 0.2); panel.rotation.y = side * Math.PI / 2; group.add(panel);
+      panel.position.set(side * 1.012, .94, .5); panel.rotation.y = side * Math.PI / 2;
+      panel.scale.set(.65, .65, 1);
+      const pivot = vehicle.view.doors[side > 0 ? 'driver' : 'passenger'].pivot;
+      if (pivot) { panel.position.sub(pivot.position); pivot.add(panel); }
+      else vehicle.view.chassis.add(panel);
+      panels.push(panel);
     }
-    vehicle.view.chassis.add(group);
-    return () => { texture.dispose(); disposeObject(group); };
+    return () => { texture.dispose(); panels.forEach(disposeObject); };
   }
   function spawnUnit() {
     const focus = target()?.pos; if (!focus) return;
@@ -146,7 +150,7 @@ export function createLaw(S) {
       const vehicle = unit.vehicle;
       if (vehicle.gone && !unit.deputy) continue;
       const officer = unit.deputy;
-      const disabled = officer && (officer.downed || officer.tied || officer.gone);
+      const disabled = officer && (officer.downed || officer.tied || officer.gone || officer.carjacked);
       const sight = !disabled && (!!officer || !unit.stolen) && visible(officer ? officer.pos : vehicle.pos, suspect.pos, 100);
       seen ||= sight;
       const distance = vehicle.pos.distanceTo(suspect.pos);

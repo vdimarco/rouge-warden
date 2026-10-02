@@ -6,7 +6,7 @@
 // - story bodies frustum-cull with a padded bounding sphere (arena actors keep their own settings)
 // - past the tier's budget of full actors (10 / 6 / 4), the farthest also lose their hull and step at 10 Hz
 // - on Q1 and Q0 the heavy GLB bodies (over 8k triangles) draw no hull at all
-// - a heavy body (a GLB of 8k triangles or more, not the hero's) draws a coarse copy of its mesh beyond
+// - a high-poly body (a GLB of 10k triangles or more, not the hero's) draws a coarse copy of its mesh beyond
 //   the tier's body distance (5 / 8 / 14 m), or beyond 3.5 m when past the nearest 2 / 2 / 4 heavy bodies
 //   or the budget of full actors: the same skinned vertices,
 //   about a third of the triangles (a fight's five gang bodies cost 78k triangles in full)
@@ -114,7 +114,8 @@ export function createLod(S) {
       const heavyOff = q < 2 && a.heavy && e.kind !== 'arena';
       setHull(a, !over && !heavyOff && e.d <= lim);
       if (cine) { if (a.coarseOn) setCoarse(a, false); }
-      else if (a.heavy && e.kind !== 'arena' && !(S.hero && S.hero.actor === a)) {
+      // The ~8k NPC assets are already reduced offline; preserve their textured silhouettes.
+      else if (a.meshTris >= 10000 && e.kind !== 'arena' && !(S.hero && S.hero.actor === a)) {
         const near = LOD.body[qi], full = heavyN++ < LOD.bodyFull[qi];
         setCoarse(a, (over || !full) && e.d > LOD.bodyMin || e.d > (a.coarseOn ? near : near + 1));
       } else if (a.coarseOn) setCoarse(a, false);

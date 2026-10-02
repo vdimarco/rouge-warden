@@ -33,7 +33,7 @@ export const CORE_CAST = Object.freeze([...CREW_IDS, 'gabe']); // S.ready waits 
 export const BODY_URL = Object.freeze({
   tanktop: '/wild/models/crew1.glb', fifty: '/wild/models/crew2.glb', shades: '/wild/models/crew3.glb', newbalance: '/wild/models/crew4.glb', redjersey: '/wild/models/crew5.glb',
   christian: '/wild/models/christian.glb', ryu: '/wild/models/ryu.glb',
-  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: null, civB: null, sheriff: null, police: null,
+  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: 'models/civA.glb', civB: 'models/civB.glb', sheriff: 'models/sheriff.glb', police: 'models/police.glb',
 });
 export const DONOR_RIG = '/wild/models/crew4.glb'; // the skeleton code-built bodies clone (A1)
 // Dialogue portraits. A missing file shows the glyph card instead (A3). Dana has none, by design.

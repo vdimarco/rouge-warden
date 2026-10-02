@@ -45,7 +45,7 @@ export const COSTUME_CHAPTERS = Object.freeze(['c0', 'i0', 'i1', 'i2', 'f3', 'i3
 // with a darker tint; the gang variants are the gang GLB with tints. A GLB that fails to load falls back to
 // the code-built body of bodygen.js.
 const GLB_OF = (id) => BODY_URL[id] || (id === 'boone' ? BODY_URL.gang : null);
-const GLB_HEIGHT = { vance: 1.70, voss: 1.83, rattler: 1.78, gang: 1.85, boone: 1.85 * 1.12 };
+const GLB_HEIGHT = { police: 1.8, sheriff: 1.8, civA: 1.8, civB: 1.7, vance: 1.70, voss: 1.83, rattler: 1.78, gang: 1.85, boone: 1.85 * 1.12 };
 const GLB_TINT = { boone: [0x8c8680], gang: [0xffffff, 0xd8d2cc, 0xc4ccd4, 0xb0a89e] };
 const TINT = { tanktop: 0xb8b2aa, fifty: 0xc8c2b8, shades: 0x6e6a66, newbalance: 0xa09a92, redjersey: 0x8a3a38, gabe: 0x5a4a3a, vance: 0x2c3a52, voss: 0xd8d0c0, rattler: 0x4a5a70, boone: 0x3a3a3a, gang: 0x2a2a2c, civA: 0x9a8a7a, civB: 0x7a8a9a, christian: 0xa8a098, ryu: 0x989088, ronin: 0x888888, bear: 0x3a3028 };
 
@@ -170,7 +170,7 @@ class Figure {
     for (const [name, bone, o] of re) { this.cast.props.detach(this, name); this.cast.props.attach(this, name, bone, o); }
     if (this.drainK) this.cast.drain(this, this.drainK);
     if (this.inkK) this.cast.inkShadow(this, this.inkK);
-    this.lodHidden = false; this.hullOn = undefined; this.hulls = body.hulls; this.heavy = (info.tris || 0) >= 8000;
+    this.lodHidden = false; this.hullOn = undefined; this.hulls = body.hulls; this.meshTris = info.tris || 0; this.heavy = this.meshTris >= 8000;
   }
   dispose() {
     for (const n of Object.keys(this.props)) this.cast.props.detach(this, n);
