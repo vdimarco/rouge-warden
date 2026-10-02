@@ -136,7 +136,7 @@ $('map-button').onclick = map; $('portal').onclick = () => { if (running && !pau
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
 let rosterFilter='All';
-function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selected,rosterFilter);$('roster-count').textContent=`${document.querySelectorAll('[data-hero]').length} legends`;document.querySelectorAll('[data-hero]').forEach(b=>b.onclick=()=>choose(+b.dataset.hero)); }
+function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selected,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'legend':'legends'}`;document.querySelectorAll('[data-hero]').forEach(b=>b.onclick=()=>choose(+b.dataset.hero)); }
 $('role-filters').innerHTML=ROLES.map(role=>`<button data-role="${role}" aria-pressed="${role==='All'}">${role}</button>`).join('');
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 const joy = $('joystick');
