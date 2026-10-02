@@ -148,13 +148,27 @@ for (const size of [
       await page.keyboard.press('e');
     } else await page.locator('#deploy-field').click();
     await until(page, () => document.getElementById('field-status').dataset.active === 'true', null, 3000);
-    R.check(await page.locator('#field-placement').isHidden() && await held(page) === 0, 'Deployment closes aim and leaves flippers released');
+    // Freeze at the observed active-field boundary. Capturing a screenshot first
+    // can let a returning ball drain and clear the field before Pause is pressed.
+    // Read each deployment assertion before the public Pause button changes it.
+    const deployed = await page.evaluate(() => {
+      const status = document.getElementById('field-status');
+      const before = {
+        active: status.dataset.active === 'true', text: status.textContent,
+        aimHidden: document.getElementById('field-placement').hidden,
+        held: document.querySelectorAll('.flipper-button.held').length,
+        fieldDisabled: document.getElementById('field-button').disabled,
+      };
+      document.getElementById('pause-button').click();
+      return before;
+    });
+    R.check(deployed.active && await page.locator('#pause-panel').isVisible(), 'Pause starts while the field is still active');
+    R.check(deployed.aimHidden && deployed.held === 0, 'Deployment closes aim and leaves flippers released');
     R.check(await fieldChange(page) === -1, 'A successful placement spends exactly one charge before later rewards');
-    R.check(await page.locator('#field-button').isDisabled(), 'An active field prevents a second deployment');
-    R.check(new RegExp('^' + (size.kind === 'push' ? 'Push' : 'Pull') + ' field · [0-5]\\.\\ds$').test(await page.locator('#field-status').textContent()), 'The active kind and remaining time are visible');
-    await shot(page, 'tilt-field-' + size.name + '-deployed');
-    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    R.check(deployed.fieldDisabled, 'An active field prevents a second deployment');
+    R.check(new RegExp('^' + (size.kind === 'push' ? 'Push' : 'Pull') + ' field · [0-5]\\.\\ds$').test(deployed.text), 'The active kind and remaining time are visible');
     const frozen = await page.locator('#field-status').textContent();
+    await shot(page, 'tilt-field-' + size.name + '-paused');
     await sleep(350);
     R.check(await active(page) === 'true' && await page.locator('#field-status').textContent() === frozen, 'Pause preserves the active field and its remaining time');
     await page.getByRole('button', { name: 'Resume voyage', exact: true }).click();

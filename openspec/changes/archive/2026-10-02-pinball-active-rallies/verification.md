@@ -24,8 +24,14 @@ The Browser plugin was not available, so checks used the existing Playwright wor
 - Hollow amber warnings are visually distinct from live mineral bodies. A powered ball retains its gold duration ring with reduced motion; extra streaks and fragments are suppressed.
 - Repeated paused frames and reduced-motion frames were pixel-identical in the focused renderer fixture. No browser runtime errors occurred.
 - Initial portrait screenshots showed a one-pixel overlap between the long rally readout and flipper controls. Raising the readout by 13 pixels leaves a visible 12-pixel gap. All 34 affected portrait checks passed on rerun.
-- A total of 382 browser assertions and three layout scenarios passed: 139 new rally checks, 78 reverse, 74 field, 35 standard controls and 56 transit checks. Desktop 1280×800, portrait 390×844 and landscape 844×390 all reached the first gate naturally through public launch, Pulse and the visible flipper timing cues. No private state or fixed seed was used for this progression test.
+- A total of 385 browser assertions and three layout scenarios passed: 139 new rally checks, 78 reverse, 77 field, 35 standard controls and 56 transit checks. Desktop 1280×800, portrait 390×844 and landscape 844×390 all reached the first gate naturally through public launch, Pulse and the visible flipper timing cues. No private state or fixed seed was used for this progression test.
 - Screenshots were inspected for powered shots, smash feedback, reentry warnings and returning balls. Test fixtures separately verified both keyboard sides, real touch input, one-time power rewards, pause/map/field freezes, restart and reduced motion. No application errors were observed.
+
+## CI timing correction
+
+The first CI run passed all simulations, standard controls, layouts and motion, then failed one existing portrait field-pause assertion. That test captured a screenshot before pressing Pause. A controlled 2.2-second delay reproduced the failure: the field was initially active with 4.7 seconds remaining, but the ball drained before Pause, leaving a ready-to-launch checkpoint and no active field. The test was observing a legitimate drain, not timer advancement during pause.
+
+The field test now captures deployment state and activates the public Pause control at the first active-field boundary. Its assertions still require the field to exist, retain exactly the same remaining time while paused, spend one charge, disable repeat deployment and resume normally. This removes screenshot timing from the behavior under test; gameplay code is unchanged. All 77 field checks passed after the correction, including three new explicit active-at-pause assertions.
 
 ## Limits
 
