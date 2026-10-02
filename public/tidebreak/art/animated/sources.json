@@ -1,0 +1,224 @@
+{
+  "provider": "fal",
+  "endpoint": "minimax/h3-max/image-to-video",
+  "estimatedGenerationCostUSD": 1.08,
+  "encoding": "GIF89a, 10 fps, max dimension 208 px, 96 colors, infinite loop; video background retained",
+  "heroes": [
+    {
+      "slug": "nessie",
+      "requestId": "01a0fead-023c-7aa0-9e0a-3f56ab946d1c",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/nessie-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/nessie-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless looping idle animation of this exact hand-painted friendly green lake serpent Nessie, full body in the same position, gentle neck sway, tiny flipper flutter and breathing, maintain identical face and shape. Static camera. Keep a plain dark navy background, no landscape, no additions, no text. Starts and ends at identical pose. Keep entire character within original frame, preserve vivid green colors and painterly style."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd13a/outBP-CIK8xOzJSIfaq5l_minimax-h3.mp4",
+      "bytes": 323652,
+      "frames": 30,
+      "width": 120,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "mothman",
+      "requestId": "01a0feb0-38c6-7581-84a8-dba8d77370c4",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/mothman-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/mothman-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central dark blue owl-moth creature with huge red eyes in this hand-painted source. subtle wing flutter and soft breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd14f/kl2kNrT8LLx5w6buGS_nS_minimax-h3.mp4",
+      "bytes": 419759,
+      "frames": 30,
+      "width": 120,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "baba",
+      "requestId": "01a0feb0-3dd3-7522-ac7c-71c9608b6337",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/baba-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/baba-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central purple-roofed witch hut on chicken legs in this hand-painted source. gently rocking hut and alternating tiny leg shifts, warm windows flickering. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd14f/r5IWuzX4im7MT0v21HrjX_minimax-h3.mp4",
+      "bytes": 384712,
+      "frames": 30,
+      "width": 125,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "devil",
+      "requestId": "01a0feb0-433f-7b02-b4cf-d78be3820873",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/devil-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/devil-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central red winged Jersey Devil in this hand-painted source. wings flexing gently, tail swishing, breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/JtiCdpMH4PJj9cU4SW2V2_minimax-h3.mp4",
+      "bytes": 391452,
+      "frames": 30,
+      "width": 136,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "kraken",
+      "requestId": "01a0feb0-4b0b-79f3-b3ce-c7f2b59c94d3",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/kraken-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/kraken-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central purple sea kraken in this hand-painted source. tentacles slowly curling and unfurling independently. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/AFpISbUiHhkro3jbMeJOR_minimax-h3.mp4",
+      "bytes": 653277,
+      "frames": 30,
+      "width": 208,
+      "height": 195,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "wendigo",
+      "requestId": "01a0feb0-51ec-7cc2-bce1-258b92bc02c4",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/wendigo-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/wendigo-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central white icy antlered Wendigo in this hand-painted source. soft breathing, antlers still, cold blue mist gently drifting. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/1IqSniUiw9xMNMMRXa00a_minimax-h3.mp4",
+      "bytes": 524918,
+      "frames": 30,
+      "width": 173,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "kitsune",
+      "requestId": "01a0feb0-57d9-7f00-ba55-0ae8c3bd9d13",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/kitsune-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/kitsune-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central orange spirit fox Kitsune in this hand-painted source. ears twitching and large tails softly fanning. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/6v_-AbClE2YkG3njnRPc4_minimax-h3.mp4",
+      "bytes": 613237,
+      "frames": 30,
+      "width": 208,
+      "height": 195,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "golem",
+      "requestId": "01a0feb0-6534-7802-84e9-1ee1724b2ea7",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/golem-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/golem-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central stone golem with green glow in this hand-painted source. slow heavy breathing, subtle green runes pulsing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/TY7XHpAHD4eHwID_77Rn8_minimax-h3.mp4",
+      "bytes": 527286,
+      "frames": 30,
+      "width": 195,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "banshee",
+      "requestId": "01a0feb0-5ff1-7251-a8d7-0a31249b9f89",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/banshee-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/banshee-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central ghostly violet Banshee in this hand-painted source. hair and spectral dress gently flowing, floating subtly. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd150/ZUZTxS5Qf_OX8PrsP_L3E_minimax-h3.mp4",
+      "bytes": 388743,
+      "frames": 30,
+      "width": 195,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "phoenix",
+      "requestId": "01a0feb0-6bec-7a53-bc25-c40e03e09ca5",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/phoenix-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/phoenix-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central golden flame phoenix in this hand-painted source. gentle wing flex, flame feathers softly flickering. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd151/1lggnxiHoo4PDqI5UNZNM_minimax-h3.mp4",
+      "bytes": 654612,
+      "frames": 30,
+      "width": 208,
+      "height": 195,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "dryad",
+      "requestId": "01a0feb0-70eb-7753-9436-eda1ec2f3c9c",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/dryad-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/dryad-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central green woodland Dryad in this hand-painted source. leaves gently rustling, hair flowing, breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd151/tXsSiXRCjfMB3RKWn1v8h_minimax-h3.mp4",
+      "bytes": 483026,
+      "frames": 30,
+      "width": 173,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "gorgon",
+      "requestId": "01a0feb0-78f2-7ef2-8dae-39a1af8cab50",
+      "input": {
+        "image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/gorgon-front.webp",
+        "end_image_url": "https://warden-alpha-wheat.vercel.app/tidebreak/art/illustrated/gorgon-front.webp",
+        "duration": 3,
+        "resolution": "480P",
+        "prompt_expansion_mode": "disabled",
+        "prompt": "Seamless idle animation of the single central green snake-haired Gorgon in this hand-painted source. snake hair gently swaying independently, soft breathing. Keep exact face, body, proportions, colors and painterly style. Entire character stays in frame. Static camera, no zoom. Plain dark navy background. No extra characters, no scenery, no lettering. Disregard any tiny edge fragment from neighboring portraits. Start and end at identical original pose."
+      },
+      "videoURL": "https://v3b.fal.media/files/b/0aacd151/ybokG2Y034mnxezjQeJ87_minimax-h3.mp4",
+      "bytes": 450720,
+      "frames": 30,
+      "width": 173,
+      "height": 208,
+      "uniqueFrames": 30
+    }
+  ]
+}
