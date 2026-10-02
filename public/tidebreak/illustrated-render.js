@@ -1,3 +1,4 @@
+import { CreatureBank } from '../arcade/creatures/player.js';
 import { player, HEROES } from './sim.js';
 import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
@@ -17,6 +18,7 @@ export async function loadArt() {
 // tracking and world-space effects. The concept screenshot is never a backdrop.
 export class Renderer {
   constructor(canvas, mini, art) {
+    this.creatures = new CreatureBank();
     this.canvas = canvas; this.ctx = canvas.getContext('2d', { alpha: false }); this.mini = mini; this.art = art;
     this.cam = { x: 2400, y: 2870 }; this.visible = new Set(); this.frames = 0; this.menuTime = 0; this.hitBoxes = [];
     this.tiles = Array.from({ length: 4 }, (_, i) => { const tileSize = i === 3 ? 220 : 300, c = surface(tileSize), size = art.ground.width / 2; c.getContext('2d').drawImage(art.ground, i % 2 * size + 12, Math.floor(i / 2) * size + 12, size - 24, size - 24, 0, 0, tileSize, tileSize); return c; });
@@ -77,6 +79,7 @@ export class Renderer {
         this.drawAsset(prop.name, prop.x, prop.y, prop.height, { alpha: overlap && prop.height > 180 ? .28 : 1, flip: prop.flip, tilt: prop.sway && !this.reducedMotion ? Math.sin(time * 1.4 + prop.x * .01) * .012 : 0 });
       } });
     }
+    this.creatures.retain(s.units.filter(e => e.hp > 0 && (menu || this.visible.has(e.id))).map(e => e.creatureId).filter(Boolean));
     for (const e of s.units) if (e.hp > 0 && (menu || this.visible.has(e.id))) drawList.push({ depth: e.y, draw: () => this.drawUnit(s, e, time) });
     drawList.sort((a, b) => a.depth - b.depth); for (const entry of drawList) entry.draw();
     for (const f of s.effects) drawCombatEffect(this, f);
@@ -94,6 +97,10 @@ export class Renderer {
     const c = this.ctx, hero = e.kind === 'hero', tower = e.kind === 'tower' || e.kind === 'core';
     let name = tower ? e.team ? 'tower-enemy' : 'tower-ally' : e.team === 1 ? 'wisp-enemy' : 'wisp-ally';
     let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
+    if (e.creatureId) {
+      const screen = this.project(e.x, e.y), extent = height * this.scale * 3;
+      if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
+    }
     if (hero) { name = HEROES[e.hero].slug + (Math.sin(e.facing) > .2 ? '-front' : '-back'); height = e.player ? [365, 475, 360, 390][e.hero] : [285, 345, 290, 320][e.hero]; }
     const pose = hero ? attackPose(e, s.time) : null;
     const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
@@ -107,12 +114,18 @@ export class Renderer {
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
+    if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
+    if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
     if (player(s).target === e.id) this.ring(x, y, e.radius + 28, '#e8c48f', .9);
     const moving = e.moving && !pose, gait = Math.sin(time * (hero && e.hero === 2 ? 8 : 11) + e.id);
-    const box = e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 });
+    const creatureState = e.hit > 0 ? 'hit' : e.attackAnim > 0 ? 'action' : e.moving ? 'walk' : 'idle';
+    const creatureTime = creatureState === 'action' ? s.time - (e.attackStarted ?? s.time) : creatureState === 'hit' ? .16 - e.hit : time + e.id * .17;
+    const anchor = this.project(x, y, jump);
+    const creatureBox = e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime, duration: creatureState === 'action' ? e.attackDuration : creatureState === 'hit' ? .16 : undefined }) : null;
+    const box = creatureBox || (e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 }));
     if (!box) return; this.hitBoxes.push({ ...box, id: e.id, team: e.team });
-    if (tower || hero || e.hp < e.maxHp || e.kind === 'minion') {
-      const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = this.project(x, y, height + jump + 9);
+    if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp') {
+      const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = creatureBox ? { x: anchor.x, y: box.y - 9 } : this.project(x, y, height + jump + 9);
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
       c.fillStyle = TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
       if (e.stun > 0 || e.fear > 0) { c.fillStyle = '#ffe3a0'; c.textAlign = 'center'; c.font = '700 11px Barlow'; c.fillText(e.fear > 0 ? 'FEARED' : 'ROOTED', a.x, a.y - 5); }
@@ -160,5 +173,6 @@ export class Renderer {
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(2400, 1540).x - this.project(2400, 3260).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }
+

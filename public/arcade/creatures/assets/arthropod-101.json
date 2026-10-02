@@ -1,0 +1,1831 @@
+{
+  "format": "ppc.spritesheet",
+  "formatVersion": 1,
+  "generatorVersion": 2,
+  "framework": "Procedural Pixel Creatures 1.0.0",
+  "creature": {
+    "name": "Velox",
+    "family": "arthropod",
+    "contentId": "80a1d66c18d689b7"
+  },
+  "frameWidth": 72,
+  "frameHeight": 61,
+  "originX": 36,
+  "originY": 40,
+  "originNote": "Pixel inside each frame that sits on the creature\u0027s ground point; place it at the entity position.",
+  "cameraElevationDeg": 30,
+  "pages": [
+    {
+      "file": "arthropod-101.png",
+      "width": 864,
+      "height": 1952
+    }
+  ],
+  "palette": [
+    "#060000",
+    "#310200",
+    "#561f0e",
+    "#774833",
+    "#946a51",
+    "#a98e7a",
+    "#694d2f",
+    "#846c51",
+    "#93836b",
+    "#340000",
+    "#51180a",
+    "#622f1d",
+    "#281c18",
+    "#3a2d28",
+    "#574640",
+    "#796c65",
+    "#795d3e",
+    "#928281",
+    "#c2b4b0",
+    "#e5dcd5",
+    "#f8f2ec",
+    "#050100",
+    "#320c00",
+    "#5c2501",
+    "#7b4e2e",
+    "#98704f",
+    "#0a0d13",
+    "#282e37",
+    "#48515b",
+    "#78828b",
+    "#a9b3b9",
+    "#eae8e1",
+    "#52151c",
+    "#8f2f36",
+    "#bbafa0",
+    "#ece8db",
+    "#d3514e",
+    "#ff9779",
+    "#ffd2bd",
+    "#f9f7ee",
+    "#db7153",
+    "#ffaf98",
+    "#ffe9dd"
+  ],
+  "clips": [
+    {
+      "name": "idle_E",
+      "state": "idle",
+      "direction": 0,
+      "directionName": "E",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 0,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_NE",
+      "state": "idle",
+      "direction": 1,
+      "directionName": "NE",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 61,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_N",
+      "state": "idle",
+      "direction": 2,
+      "directionName": "N",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 122,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_NW",
+      "state": "idle",
+      "direction": 3,
+      "directionName": "NW",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 183,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_W",
+      "state": "idle",
+      "direction": 4,
+      "directionName": "W",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 244,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_SW",
+      "state": "idle",
+      "direction": 5,
+      "directionName": "SW",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 305,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_S",
+      "state": "idle",
+      "direction": 6,
+      "directionName": "S",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 366,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "idle_SE",
+      "state": "idle",
+      "direction": 7,
+      "directionName": "SE",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 12,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 432,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 504,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 576,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 648,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 720,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 792,
+          "y": 427,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_E",
+      "state": "walk",
+      "direction": 0,
+      "directionName": "E",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": 36.3782,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 488,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 488,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 488,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 488,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_NE",
+      "state": "walk",
+      "direction": 1,
+      "directionName": "NE",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": 25.7233,
+        "screenVelocityY": -12.8616
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 549,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 549,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 549,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 549,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_N",
+      "state": "walk",
+      "direction": 2,
+      "directionName": "N",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": 0,
+        "screenVelocityY": -18.1891
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 610,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 610,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 610,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 610,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_NW",
+      "state": "walk",
+      "direction": 3,
+      "directionName": "NW",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": -25.7233,
+        "screenVelocityY": -12.8616
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 671,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 671,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 671,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 671,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_W",
+      "state": "walk",
+      "direction": 4,
+      "directionName": "W",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": -36.3782,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 732,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 732,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 732,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 732,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_SW",
+      "state": "walk",
+      "direction": 5,
+      "directionName": "SW",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": -25.7233,
+        "screenVelocityY": 12.8616
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 793,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 793,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 793,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 793,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_S",
+      "state": "walk",
+      "direction": 6,
+      "directionName": "S",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": -0,
+        "screenVelocityY": 18.1891
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 854,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 854,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 854,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 854,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "walk_SE",
+      "state": "walk",
+      "direction": 7,
+      "directionName": "SE",
+      "loop": true,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 36.3782,
+        "screenVelocityX": 25.7233,
+        "screenVelocityY": 12.8616
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 915,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 915,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 915,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 915,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_E",
+      "state": "action",
+      "direction": 0,
+      "directionName": "E",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 976,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_NE",
+      "state": "action",
+      "direction": 1,
+      "directionName": "NE",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1037,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_N",
+      "state": "action",
+      "direction": 2,
+      "directionName": "N",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1098,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_NW",
+      "state": "action",
+      "direction": 3,
+      "directionName": "NW",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1159,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_W",
+      "state": "action",
+      "direction": 4,
+      "directionName": "W",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1220,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_SW",
+      "state": "action",
+      "direction": 5,
+      "directionName": "SW",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1281,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_S",
+      "state": "action",
+      "direction": 6,
+      "directionName": "S",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1342,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "action_SE",
+      "state": "action",
+      "direction": 7,
+      "directionName": "SE",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 6,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 288,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 360,
+          "y": 1403,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_E",
+      "state": "hit",
+      "direction": 0,
+      "directionName": "E",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1464,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1464,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1464,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1464,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_NE",
+      "state": "hit",
+      "direction": 1,
+      "directionName": "NE",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1525,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1525,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1525,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1525,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_N",
+      "state": "hit",
+      "direction": 2,
+      "directionName": "N",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1586,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1586,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1586,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1586,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_NW",
+      "state": "hit",
+      "direction": 3,
+      "directionName": "NW",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1647,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1647,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1647,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1647,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_W",
+      "state": "hit",
+      "direction": 4,
+      "directionName": "W",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": -0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1708,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1708,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1708,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1708,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_SW",
+      "state": "hit",
+      "direction": 5,
+      "directionName": "SW",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1769,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1769,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1769,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1769,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_S",
+      "state": "hit",
+      "direction": 6,
+      "directionName": "S",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": -0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1830,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1830,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1830,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1830,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    },
+    {
+      "name": "hit_SE",
+      "state": "hit",
+      "direction": 7,
+      "directionName": "SE",
+      "loop": false,
+      "fps": 6,
+      "frameCount": 4,
+      "rootMotion": {
+        "groundSpeed": 0,
+        "screenVelocityX": 0,
+        "screenVelocityY": 0
+      },
+      "frames": [
+        {
+          "x": 0,
+          "y": 1891,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 72,
+          "y": 1891,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 144,
+          "y": 1891,
+          "page": 0,
+          "durationMs": 167
+        },
+        {
+          "x": 216,
+          "y": 1891,
+          "page": 0,
+          "durationMs": 167
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+name: Shared creatures browser QA
+on:
+  push:
+    branches: ['codex/shared-procedural-creatures']
+    paths: ['public/arcade/creatures/**', 'public/tidebreak/**', 'qa/creatures/**', 'qa/tidebreak/creatures.test.mjs', '.github/workflows/creature-browser.yml']
+  pull_request:
+    paths: ['public/arcade/creatures/**', 'public/tidebreak/**', 'qa/creatures/**', 'qa/tidebreak/creatures.test.mjs']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Verify exports, neutral behavior and full matches
+        run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/sim.test.mjs
+      - name: Verify creature display and controls at three viewport sizes
+        run: node qa/creatures/browser.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/creatures
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: creatures-phone-landscape-desktop
+          path: test-results/creatures
+          retention-days: 14

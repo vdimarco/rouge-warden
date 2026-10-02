@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Creature Field Guide · Cottage Arcade</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#10292a;color:#eee7c6;font:16px system-ui,sans-serif}main{max-width:1250px;margin:auto;padding:32px 18px}h1{font:clamp(30px,5vw,52px) Georgia,serif;margin:8px 0 12px}p{max-width:700px;line-height:1.6;color:#bac7ae}a{color:#dcc38c}.tools{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0;position:sticky;top:0;background:#10292aee;padding:12px 0;z-index:1}button{border:1px solid #53674e;background:#243d35;color:#eee7c6;padding:10px 16px;border-radius:24px;font:inherit;cursor:pointer}button[aria-pressed=true]{background:#dcc38c;color:#10292a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.card{border:1px solid #435b48;border-radius:18px;background:radial-gradient(ellipse at 50% 60%,#45624a,#1d3a32 75%);overflow:hidden;text-align:center}.card canvas{display:block;width:100%;height:160px}.card h2{font:18px Georgia,serif;margin:0 0 8px;text-transform:capitalize}.card small{display:block;margin-bottom:18px;color:#b6c4a6}#status{min-height:26px;color:#dcc38c}footer{margin-top:32px;font-size:13px}
+  </style>
+</head>
+<body><main>
+  <a href="/">Cottage Arcade</a><h1>Creature Field Guide</h1>
+  <p>Eighteen creatures from nine families. These animated exports share one player across the arcade. The MOBA uses them in lane waves and neutral camps.</p>
+  <a href="/tidebreak/">Play Monster Mash ↗</a>
+  <div class="tools" role="group" aria-label="Animation preview"><button data-state="idle" aria-pressed="true">Rest</button><button data-state="walk" aria-pressed="false">Walk</button><button data-state="action" aria-pressed="false">Attack</button><button data-state="hit" aria-pressed="false">Hit</button><button id="turn">Turn ↻</button></div>
+  <p id="status" role="status">Loading creatures…</p><div class="grid" id="creatures"></div>
+  <footer>Generated with <a href="https://github.com/idlerunner00/procedural-pixel-creatures">Procedural Pixel Creatures</a> by idlerunner00. <a href="./LICENSE">MIT license</a> · <a href="./THIRD_PARTY_NOTICES.md">Credits</a></footer>
+  <script type="module">
+    import { CREATURES } from './catalog.js';
+    import { CreatureBank } from './player.js';
+    const bank = new CreatureBank({ limit: 18 }), cards = [], root = document.querySelector('#creatures');
+    let state = 'idle', facing = Math.PI / 2, start = performance.now(), ready = 0;
+    for (const creature of CREATURES) {
+      const card = document.createElement('section'); card.className = 'card';
+      card.innerHTML = `<canvas width="320" height="320" aria-label="${creature.family} animation"></canvas><h2>${creature.family}</h2><small>Seed ${creature.seed}</small>`;
+      root.append(card); cards.push({ creature, ctx: card.querySelector('canvas').getContext('2d') });
+      bank.load(creature.id).then(asset => { if (asset) ready++; document.querySelector('#status').textContent = `${ready} / ${CREATURES.length} ready${bank.failed ? ' · Some exports could not load. Reload to retry.' : ''}`; });
+    }
+    document.querySelectorAll('[data-state]').forEach(button => button.onclick = () => { state = button.dataset.state; start = performance.now(); document.querySelectorAll('[data-state]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); });
+    document.querySelector('#turn').onclick = () => { facing -= Math.PI / 4; };
+    function frame(now) {
+      const elapsed = (now - start) / 1000;
+      for (const { creature, ctx } of cards) {
+        ctx.clearRect(0, 0, 320, 320); ctx.fillStyle = '#071c2440'; ctx.beginPath(); ctx.ellipse(160, 260, 72, 13, 0, 0, Math.PI * 2); ctx.fill();
+        bank.draw(ctx, creature.id, { x: 160, y: 260, height: 170, state, facing, elapsed: ['action', 'hit'].includes(state) ? elapsed % 2 : elapsed });
+      }
+      requestAnimationFrame(frame);
+    }
+    window.creatureGallery = () => ({ state, facing, ready, ...bank.stats() });
+    requestAnimationFrame(frame);
+  </script>
+</main></body></html>
