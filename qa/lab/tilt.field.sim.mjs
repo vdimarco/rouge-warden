@@ -122,10 +122,13 @@ const deploy = (run, kind = 'pull') => {
   assert.equal(run.gravityWell.remaining, remaining, 'paused frames do not spend field time');
   advance(run, FIELD_DURATION - .5 - H);
   assert(run.gravityWell?.remaining > 0, 'the field lasts through the penultimate gameplay step');
+  // Rally gravity now evolves during these five seconds. Compare expiry with
+  // the same next-step gravity minus the well, rather than the launch-time field.
+  const expectedAfterExpiry = run.table.gravityAt(sample, H, null);
   const events = updateAdventure(run);
   assert.equal(run.gravityWell, null);
   assert(events.some(e => e.type === 'field-expire' && e.reason === 'expired'));
-  assert.deepEqual(run.table.gravity(sample), baseline, 'expiry restores the exact existing planet and tilt force');
+  assert(distance(run.table.gravity(sample), expectedAfterExpiry) < 1e-8, 'expiry restores the current planet, rally and tilt force');
   assert.equal(deploy(run), false, 'expiry does not refund the spent charge');
   console.log('ok: five gameplay seconds, pause-safe lifetime and exact baseline gravity after expiry');
 }

@@ -31,9 +31,9 @@ export function makeWorld(table, { kickers = true } = {}) {
     put({ kind: "seg", s }, Math.min(s.a[0], s.b[0]), Math.min(s.a[1], s.b[1]), Math.max(s.a[0], s.b[0]), Math.max(s.a[1], s.b[1]));
   }
   for (const p of table.posts) put({ kind: "circle", c: p }, p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r);
-  for (const b of table.bumpers) put({ kind: "circle", c: b, bumper: true }, b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r);
+  for (const b of table.bumpers) if (!b.dynamic) put({ kind: "circle", c: b, bumper: true }, b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r);
   return {
-    table, grid, cell, cols, rows, kickers,
+    table, grid, cell, cols, rows, kickers, dynamicBodies: table.bumpers.filter(body => body.dynamic),
     ball: { x: table.launch.x, y: table.launch.y, vx: 0, vy: 0, live: false, lane: true },
     flippers: table.flippers.map((f) => ({ ...f, th: f.rest, om: 0, held: false, dir: f.side < 0 ? 1 : -1, sd: 0,
       reverseFx: 0, reverseUntil: 0 })),
@@ -124,6 +124,26 @@ function collideStatic(w, ev) {
   }
 }
 
+// Moving hazards are few and bypass the immutable grid. Resolve in the body's
+// frame, so a passing rock cannot tunnel or act like a powered static bumper.
+function collideDynamic(w, ev) {
+  const b = w.ball;
+  for (const c of w.dynamicBodies) {
+    if (!c.active || (w.table.isActive && !w.table.isActive(c))) continue;
+    const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), radius = R + c.r;
+    if (d >= radius) continue;
+    const nx = d > 1e-8 ? dx / d : 1, ny = d > 1e-8 ? dy / d : 0;
+    const inward = -((b.vx - c.vx) * nx + (b.vy - c.vy) * ny);
+    if (inward > 0 && w.table.breakDynamic?.(c)) {
+      ev?.push({ k: 'asteroid-break', id: c.id, x: c.x, y: c.y, v: inward });
+      continue;
+    }
+    b.x = c.x + nx * (radius + .01); b.y = c.y + ny * (radius + .01);
+    const vin = bounce(b, nx, ny, c.e ?? .55, c.vx, c.vy, .025);
+    if (vin > 0) ev?.push({ k: 'asteroid', id: c.id, x: c.x, y: c.y, v: vin });
+  }
+}
+
 function collideFlippers(w, ev) {
   const b = w.ball;
   for (const f of w.flippers) {
@@ -150,7 +170,9 @@ function collideFlippers(w, ev) {
     const e = Math.abs(f.om) > 0.5 ? F.E_MOVING : F.E_HELD;
     const vin = bounce(b, nx, ny, e, sx, sy, F.FRICTION);
     f.sd = (dx * (b.y - f.py) - dy * (b.x - f.px)) / f.len;
-    if (vin > 150 && ev) ev.push({ k: "flipper", side: f.side, v: vin });
+    if (vin > 150 && ev) ev.push({ k: "flipper", side: f.side, v: vin,
+      powered: f.held && f.om * f.dir > .5 && sy > 80 && b.vy > 300,
+      motorSpeed: f.om, vy: b.vy });
   }
 }
 
@@ -168,6 +190,7 @@ export function step(w, ev = null) {
   const hs = H / n;
   for (let i = 0; i < n; i++) {
     moveFlippers(w, hs);
+    w.table.advanceDynamic?.(hs, ev);
     advanceReverseScoop(w, hs);
     const px = b.x, py = b.y;
     if (w.table.gravity) {
@@ -176,6 +199,7 @@ export function step(w, ev = null) {
     } else b.vy -= F.G * hs;
     b.x += b.vx * hs; b.y += b.vy * hs;
     collideStatic(w, ev);
+    collideDynamic(w, ev);
     collideFlippers(w, ev);
     if (!w.table.openSpace && !inside(w.table.outline, b.x, b.y)) { w.escapes++; b.x = px; b.y = py; b.vx *= -0.5; b.vy *= -0.5; }
   }

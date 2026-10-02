@@ -28,7 +28,7 @@ concurrency:
 jobs:
   chromium:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,6 +55,7 @@ jobs:
           node qa/lab/tilt.transit.sim.mjs
           node qa/lab/tilt.reverse.sim.mjs
           node qa/lab/tilt.warp.sim.mjs
+          node qa/lab/tilt.rallies.sim.mjs
       - name: Browser interactions and responsive layout
         run: npm run test:pinball --prefix qa/browser
         env:

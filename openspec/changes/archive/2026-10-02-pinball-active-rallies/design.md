@@ -1,0 +1,8 @@
+# Design
+
+- Preserve the 120 Hz physical solver and open planetary space. After a short free-flight window, blend a bounded return force toward an approach beside the dock. Do not teleport the ball or secretly award a save. A fresh physical moving-flipper strike or reverse scoop starts another flight; Pulse does not restart it. Show the return state and approaching flipper.
+- Change Pulse from a complete target-directed velocity replacement to a bounded impulse. It remains useful for course correction but cannot substitute for repeated flipper play.
+- Move existing seeded asteroids within safe paths away from planets, relays, gates and the dock. Handle them outside the static collision grid, with relative surface velocity and substeps. Normal collisions dissipate rather than inject bumper energy. Powered strikes destroy rocks once and grant bounded points. Limit active bodies; no colliding fragments.
+- A real upward motor strike, not a held blade or button press in empty space, powers the ball temporarily and starts/increments a capped rally multiplier. Reverse scoop preserves recovery but does not farm the strike reward. Drain/checkpoint clears rally power. Timers advance only in active gameplay.
+- Use existing mineral artwork, code-rendered movement cues, amber impact fragments, a powered ball ring and compact HUD text. Reduced motion keeps the real hazard positions and necessary warning cues while suppressing decorative streaks and particles.
+- Check baseline against no-input, pulse-only and timed-flipper policies over fixed seeds. Verify movement, relative collisions, one-shot destruction, delayed reentry safety, pause/reset and classic physics. Test rendered controls at desktop, portrait and landscape sizes.

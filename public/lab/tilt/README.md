@@ -6,7 +6,11 @@ The field uses luminous mineral cores, varied asteroid surfaces, diffuse orbital
 
 ## Play
 
-Press either screen half or the marked flipper pads to flip at the dock. Z and X control the left and right flippers. Hold Launch or Space, then release. Pulse (C) bends a shot toward an uncharged relay in any direction; A/D steer sideways. R opens or closes the map, and Escape pauses or resumes. Upgrade choices use 1/2/3, and E skips a jump. All game shortcuts sit on the left side of the keyboard. A short projected path helps you read the gravity curve. Relays open a jump gate. Enter it to choose an upgrade and fly to the next sector. The Star Engine's cores each need two hits.
+Press either screen half or the marked flipper pads to flip at the dock. Z and X control the left and right flippers. Hold Launch or Space, then release. Pulse (C) adds a course correction toward an uncharged relay; it preserves incoming momentum, and A/D bias the correction sideways. R opens or closes the map, and Escape pauses or resumes. Upgrade choices use 1/2/3, and E skips a jump. All game shortcuts sit on the left side of the keyboard. A short projected path helps you read the gravity curve. Relays open a jump gate. Enter it to choose an upgrade and fly to the next sector. The Star Engine's cores each need two hits.
+
+**Active rallies:** after a short orbital flight, a return current brings the ball toward a flipper. Watch the incoming cue, then tap as the ball reaches the blade. A moving strike powers the ball for four seconds and builds a multiplier up to ×3. Holding a flipper or flipping empty space grants no power. Pulse never restarts the return clock. Missed returns still cost a heart; a reverse scoop can recover the ball and start a new flight.
+
+**Drifting asteroids:** rocks now move through the orbital field and deflect ordinary shots without a bumper kick. Hit one with a powered ball to smash it for bonus points. A hollow amber warning marks a rock's return before it becomes solid; reentry waits if the ball would overlap. Rock fragments are visual only. The ball's amber ring and the Power Shot readout show how long you can still smash.
 
 **Celestial upgrade console:** after reaching a jump gate, choose Quick pulse, Hull repair or Comet drive from the ship’s instrument bays. The console shows your route to the next sector. Tap a module or press 1/2/3 to install it and jump. Tab cycles through the choices. The orbital emblems and text remain sharp at every size; portrait phones use compact rows.
 
@@ -23,11 +27,12 @@ For optional phone steering, hold the phone comfortably and tap **Enable tilt** 
 **Music:** an original, evolving space score combines wide synth chords, a deep bass with a phone-audible octave, glassy motifs and filtered air. Harmony and texture change over time and between sectors. Sound defaults on for Full Tilt, independent of other arcade games. The menu and HUD sound buttons stay in sync, and an explicit mute is saved as `tilt.voyage.sound`. Music starts after Start voyage, fades out for field aiming, the map and Pause, and gives way to the black-hole jump sound before returning at the next dock. Hidden tabs stay silent. The score is synthesized locally with Web Audio and needs no audio download.
 
 
-Planets use strong, softened radial forces. Open flight has no uniform downward pull. A local field guides returning shots through the launch dock, which has only short flipper guides. A broad return current curves distant shots back toward the active system without a hard boundary. The six sectors vary their target layouts and gravity: attraction, denser asteroid belts, changing tides, repulsion, stronger attraction, and the final core. A half-orbit earns a 750-point bonus. Progress within the current sector survives a lost ball. An early launch shield and a rescue impulse for a stalled comet prevent avoidable dead ends.
+Planets use strong, softened radial forces during free flight. After the free-flight window, a bounded return force guides the ball toward a blade at the launch dock, which has only short flipper guides. A broad outer current curves distant shots back toward the active system without a hard boundary. The six sectors vary their target layouts and gravity: attraction, denser asteroid belts, changing tides, repulsion, stronger attraction, and the final core. A half-orbit earns a 750-point bonus. Progress within the current sector survives a lost ball. An early launch shield and a rescue impulse for a stalled comet prevent avoidable dead ends.
 
 ## Implementation
 
 - `adventure.js`: seeded geometry, progression, upgrades, gravity and checkpoint recovery.
+- `asteroids.js`: deterministic moving paths, shatter/respawn lifecycle and shared future-position sampling.
 - `physics.js`: the existing 120 Hz capsule-flipper solver, with optional table gravity/drain, active-sector, speed-limit and open-space hooks. The classic geometry and regression suite remain available for solver checks.
 - `camera.js`: a pure camera model with velocity lead, viewport guards and flipper framing.
 - `transit.js`: shared travel timing, camera stages and isolated-sector visibility.
@@ -55,9 +60,12 @@ node qa/lab/tilt.field.sim.mjs
 node qa/lab/tilt.transit.sim.mjs
 node qa/lab/tilt.reverse.sim.mjs
 node qa/lab/tilt.warp.sim.mjs
+node qa/lab/tilt.rallies.sim.mjs
 ```
 
 The classic physics suite covers high-speed shots, catch/pass skills, energy and two simulated hours without a trapped ball. Adventure tests cover actual relay collisions, upgrades, checkpoints and a bot that clears all six sectors. Camera tests cover 3,314 cases across seven screen sizes.
+
+`qa/lab/tilt.rallies.sim.mjs` compares active and Pulse-only policies, checks repeatable safe asteroid paths, genuine motor-strike rewards and returning flight. `qa/lab/tilt.rallies.e2e.mjs` checks real Z/X and touch input, the shot/readout cues, smash and reentry, pause/map/field freezes and reduced motion on desktop, portrait and landscape. The transit browser test follows the visible flipper cues to reach a gate through ordinary play.
 
 `qa/lab/tilt.e2e.mjs` contains browser checks for the public controls. `qa/lab/tilt.motion.e2e.mjs` uses a virtual phone sensor to check permission, calibration, rotation, pause, denied access and missing hardware through the public UI. Use the existing `qa/lab/lib.mjs` server configuration to run them. Physical phone tests remain useful for the native permission prompt, sensor feel, touch latency and sustained frame rate.
 

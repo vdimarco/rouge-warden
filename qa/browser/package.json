@@ -2,7 +2,7 @@
   "name": "warden-browser-qa",
   "private": true,
   "scripts": {
-    "test:pinball": "NODE_PATH=./node_modules node ../lab/tilt.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.layout.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.motion.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.field.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.transit.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.reverse.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.warp.e2e.mjs"
+    "test:pinball": "NODE_PATH=./node_modules node ../lab/tilt.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.layout.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.motion.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.field.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.transit.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.reverse.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.rallies.e2e.mjs && NODE_PATH=./node_modules node ../lab/tilt.warp.e2e.mjs"
   },
   "devDependencies": { "playwright": "1.51.1" }
 }
