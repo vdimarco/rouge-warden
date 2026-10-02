@@ -91,7 +91,8 @@ function updateUI() {
 
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
-  dom.notice.style.opacity = fresh ? '1' : '0'; if (fresh && dom.notice.dataset.time !== String(msg.time)) { dom.notice.replaceChildren(); const b = document.createElement('b'), small = document.createElement('small'); b.textContent = msg.title; small.textContent = msg.detail; dom.notice.append(b, small); dom.notice.dataset.time = msg.time; }
+  const noticeKey = msg && JSON.stringify([msg.time, msg.title, msg.detail]);
+  dom.notice.style.opacity = fresh ? '1' : '0'; if (fresh && dom.notice.dataset.message !== noticeKey) { dom.notice.replaceChildren(); const b = document.createElement('b'), small = document.createElement('small'); b.textContent = msg.title; small.textContent = msg.detail; dom.notice.append(b, small); dom.notice.dataset.message = noticeKey; }
   const until = Math.ceil(SHIFT - state.time % SHIFT), gate = [...PORTALS].sort((a, b) => distance(p, a) - distance(p, b))[0];
   $('realm').textContent = state.phase ? 'DEEP WOODS' : 'MIDNIGHT TOWN';
   $('realm-count').textContent = `${state.phase ? 'Town returns' : 'Woods arrive'} in ${until}s`;
@@ -163,4 +164,3 @@ loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art);
 choose(selected);
 // A read-only snapshot supports the existing arcade's QA tooling.
 export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd], inventory: [...player(state).inventory] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer, graphics: renderer?.stats() });
-
