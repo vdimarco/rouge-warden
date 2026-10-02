@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createMatch, player, step, cast, damage, buy, portal, HEROES, SIZE, LIMIT } from '../../public/tidebreak/sim.js';
 import { LANES, PATHS, PORTALS, OBSTACLES, BRUSH, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance } from '../../public/tidebreak/world.js';
 const advance = (s, seconds, input = {}) => { for (let i = 0; i < seconds * 20; i++) step(s, input, .05); };
-const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800 }); Object.assign(foe, { x: 2400, y: 2650 }); return { s, p, foe }; };
+const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800 }); Object.assign(foe, { x: 2400, y: 2650 }); return { s, p, foe }; };
 assert.equal((SIZE / 1600) ** 2, 9, 'arena has nine times the original area');
 for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.length; i++) assert.ok(lineOfSight({ phase }, lane[i - 1], lane[i]), 'every lane stays open through realm changes');
 {
@@ -25,7 +25,7 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
 }
 {
   const { s, p, foe } = duel(); p.x = 1170; p.y = 1850; foe.x = 1690; foe.y = 1850; p.range = 700; const hp = foe.hp; step(s, {}, .05); assert.equal(foe.hp, hp, 'auto attack cannot shoot through a building');
-  assert.equal(cast(s, p, 2), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > 1650, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
+  assert.equal(cast(s, p, 3), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > 1650, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
   p.gold = 800; const atk = p.damage; assert.equal(buy(s, 'nightfang'), true); assert.equal(p.damage, atk + 48); assert.equal(buy(s, 'nightfang'), false);
 }
 {
@@ -34,10 +34,10 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
 }
 {
   const { s, p, foe } = duel(2); cast(s, p, 1, { x: 0, y: -1 }); assert.equal(s.traps.length, 1); Object.assign(foe, { x: s.traps[0].x, y: s.traps[0].y }); const hp = foe.hp; advance(s, .6); assert.ok(foe.hp < hp); assert.ok(foe.stun > 0, 'Baba Yaga traps root enemies');
-  p.level = 3; cast(s, p, 2); assert.ok(s.zones.some(z => z.type === 'stomp'));
+  p.level = 6; p.skillRanks[3]=1; cast(s, p, 3); assert.ok(s.zones.some(z => z.type === 'stomp'));
 }
 {
-  const { s, p, foe } = duel(3); cast(s, p, 1); assert.ok(foe.fear > 0); p.level = 3; cast(s, p, 2); assert.ok(p.frenzy > s.time); p.hp -= 400; const hp = p.hp; damage(s, p, foe, 100); assert.equal(p.hp, hp + 30, 'Devil frenzy grants life steal');
+  const { s, p, foe } = duel(3); cast(s, p, 1); assert.ok(foe.fear > 0); p.level = 6; p.skillRanks[3]=1; cast(s, p, 3); assert.ok(p.frenzy > s.time); p.hp -= 400; const hp = p.hp; damage(s, p, foe, 100); assert.equal(p.hp, hp + 30, 'Devil frenzy grants life steal');
 }
 {
   const { s, p, foe } = duel(); assert.equal(portal(s), false); Object.assign(p, PORTALS[0]); assert.equal(portal(s), true); assert.equal(p.x, PORTALS[3].x); assert.equal(p.y, PORTALS[3].y); assert.equal(portal(s), false); assert.equal(s.stats.portals, 1);

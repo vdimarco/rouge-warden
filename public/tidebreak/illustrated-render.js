@@ -3,7 +3,7 @@ import { player, HEROES } from './sim.js';
 import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
-import { attackPose, drawCombatEffect } from './combat-motion.js';
+import { attackPose, drawCombatEffect, drawSkillZone } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
 import { BASE_STYLES, drawBaseCore } from './bases.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
@@ -67,7 +67,7 @@ export class Renderer {
     for (const b of this.bridges) this.drawAsset('bridge', b.x + b.dx * b.span * .43, b.y + b.dy * b.span * .43, b.span, { tilt: -Math.atan2(b.dx, b.dy * .88) });
     for (const gate of PORTALS) { this.ring(gate.x, gate.y, 95, '#79e1d2', .65 + Math.sin(time * 3) * .15, 3); this.ring(gate.x, gate.y, 70, '#88e8bf', .45); }
     if (s.phase) for (const b of BRUSH) { this.ring(b.x, b.y, b.radius, '#a7c794', .4); }
-    for (const z of s.zones) this.ring(z.x, z.y, z.radius * (.95 + Math.sin(time * 3) * .025), z.type === 'water' ? '#8febd9' : '#efd48c', .5, 5);
+    for (const z of s.zones) drawSkillZone(this,z,time);
     for (const t of s.traps) if (t.team === 0 || distance(p, t) < 110) this.ring(t.x, t.y, 70, TEAM[t.team], .65);
     const drawList = [];
     for (const prop of this.scenes[s.phase].props) {
@@ -116,6 +116,8 @@ export class Renderer {
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
     if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
+    if(e.omen?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.strokeStyle='#d0b4ff';c.lineWidth=2;c.beginPath();c.ellipse(p.x,p.y,12,6,0,0,TAU);c.stroke();c.fillStyle='#f3dcff';c.beginPath();c.arc(p.x,p.y,3,0,TAU);c.fill();c.restore();}
+    if(e.bleed?.until>s.time){const p=this.project(x,y,height+jump+32);c.save();c.fillStyle='#ff7965';c.beginPath();c.moveTo(p.x,p.y-8);c.quadraticCurveTo(p.x+11,p.y+7,p.x,p.y+8);c.quadraticCurveTo(p.x-11,p.y+7,p.x,p.y-8);c.fill();c.restore();}
     if (player(s).target === e.id) this.ring(x, y, e.radius + 28, '#e8c48f', .9);
     const moving = e.moving && !pose, gait = Math.sin(time * (hero && e.hero === 2 ? 8 : 11) + e.id);
     const creatureState = e.hit > 0 ? 'hit' : e.attackAnim > 0 ? 'action' : e.moving ? 'walk' : 'idle';

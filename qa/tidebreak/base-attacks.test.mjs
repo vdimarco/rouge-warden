@@ -44,7 +44,7 @@ assert.notEqual(BASE_STYLES[0].asset,BASE_STYLES[1].asset);
 console.log('PASS: all four three-hit sequences, contact timing, average damage, pause/miss/target/stun/death resets and shared base healing boundary.');
 
 for (let kind = 0; kind < 4; kind++) {
-  const {s,p}=duel(kind);step(s,{},1/120);const x=p.x;
+  const {s,p}=duel(kind);p.skillRanks=[1,1,1,0];step(s,{},1/120);const x=p.x;
   step(s,{x:1,cast:1},.05);assert(p.x>x,'movement remains available during a basic attack');
   assert(p.cd[1]>0,'existing skills remain available during a basic attack');
 }

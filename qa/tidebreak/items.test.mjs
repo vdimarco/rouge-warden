@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget } from '../../public/tidebreak/sim.js';
 import { quote, recalculate, nextPurchase, nextItem, ITEMS, hasItem, synergies } from '../../public/tidebreak/items.js';
-const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800, gold: 9999 }); Object.assign(foe, { x: 2400, y: 2660, gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
+const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800, gold: 9999 }); Object.assign(foe, { x: 2400, y: 2660, gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
 {
  const { s, p } = duel(); p.gold = 780; const hp = p.hp;
  assert.ok(buy(s, 'bone')); assert.ok(buy(s, 'feather')); assert.equal(quote(p, 'nightfang').cost, 420);
@@ -30,7 +30,7 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
 }
 {
  const { s, p, foe } = duel(); buy(s, 'nightfang'); cast(s, p, 1); const hp = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(hp - foe.hp >= p.damage + 65, 'spellblade empowers next basic attack');
- buy(s, 'hunter'); p.cd = [4, 3, 10]; damage(s, p, foe, 9999, 'attack'); assert.equal(p.cd[0], 0); assert.equal(p.cd[2], 7);
+ buy(s, 'hunter'); p.cd = [4, 3, 0, 10]; damage(s, p, foe, 9999, 'attack'); assert.equal(p.cd[0], 0); assert.equal(p.cd[3], 7);
 }
 {
  const { s, p, foe } = duel(); buy(s, 'thorn'); buy(s, 'storm'); const other = { ...foe, id: 88, x: foe.x + 90, itemState: {}, inventory: [], hp: 1000, maxHp: 1000 }; s.units.push(other); p.itemState.hits = 2; const before = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(before - foe.hp >= p.damage + Math.min(160, foe.maxHp * .03)); assert.ok(other.hp < 1000, 'lightning reaches another foe');
@@ -67,9 +67,9 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
  foe.stun = 0; for (let i=0;i<3;i++) damage(s,p,foe,1); assert.equal(foe.stun, 0, 'winter root has a per-target cooldown');
 }
 {
- const { s, p } = duel(0); buy(s, 'worldroot'); p.level = 3;
+ const { s, p } = duel(0); buy(s, 'worldroot'); p.level = 6; p.skillRanks[3]=1;
  const ally = { ...p, id: 93, player: false, x: p.x + 100, shield: 0, itemState: {}, inventory: [] }; s.units.push(ally);
- cast(s, p, 2); assert.equal(ally.shield, p.maxHp * .15); assert.equal(p.speed, HEROES[0].speed - 20);
+ cast(s, p, 3); assert.equal(ally.shield, p.maxHp * .15); assert.equal(p.speed, HEROES[0].speed - 20);
 }
 {
  const { s, p, foe } = duel(); buy(s, 'inferno'); buy(s, 'frost');
