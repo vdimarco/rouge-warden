@@ -147,7 +147,7 @@ export function createLaw(S) {
       if (vehicle.gone && !unit.deputy) continue;
       const officer = unit.deputy;
       const disabled = officer && (officer.downed || officer.tied || officer.gone);
-      const sight = !disabled && visible(officer ? officer.pos : vehicle.pos, suspect.pos, 100);
+      const sight = !disabled && (!!officer || !unit.stolen) && visible(officer ? officer.pos : vehicle.pos, suspect.pos, 100);
       seen ||= sight;
       const distance = vehicle.pos.distanceTo(suspect.pos);
       held ||= !officer && !unit.stolen && sight && !!S.drive.riding && distance < 12 && Math.abs(suspect.speed) < 2 && Math.abs(vehicle.speed) < 5;

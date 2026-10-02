@@ -50,6 +50,8 @@ const turn = Math.abs(Math.atan2(Math.sin(d1 - d0), Math.cos(d1 - d0)));
 check(turn > 0.15, `a drag on the right turns the camera (${turn.toFixed(2)} rad)`);
 
 /* ---------------- 2: USE only with a prompt ---------------- */
+// The rental cars now have entry prompts; test empty ground away from the lot.
+await T(() => __crimson.story.S.hero.place(-650, 120)); await step(page, 0.1);
 let b = await buttons();
 check(!b.includes("use"), `no USE without a prompt (${b.join(", ")})`);
 await T(() => __crimson.story.S.ui.prompt("OPEN", "use")); await step(page, 0.1);

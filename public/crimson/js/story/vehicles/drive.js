@@ -32,15 +32,17 @@ export function createDrive(S, V) {
     enter(v, seat = 0, o = {}) {
       if (!v || !S.hero) return false;
       if (D.riding === v) return true;
-      if (D.riding || v.wrecked || v.traffic) return false;
-      if (v.lawUnit && !v.lawUnit.deputy && !v.lawUnit.stolen) return false;
+      if (D.riding || v.wrecked || v.gone) return false;
       seat = clamp(seat | 0, 0, v.seats.length - 1);
       if (v.seats[seat] && v.seats[seat] !== 'hero') {
-        if (seat === 0) return false;
-        const free = v.seats.findIndex((x, i) => i > 0 && !x);
-        if (free < 0) return false;
-        seat = free;
+        if (seat === 0) { D.unseat(v.seats[0]); v.seats[0] = null; }
+        else {
+          const free = v.seats.findIndex((x, i) => i > 0 && !x);
+          if (free < 0) return false;
+          seat = free;
+        }
       }
+      if (v.traffic) V.claim(v);
       const door = o.door || doorFor(v, seat);
       D.riding = v; D.heroSeat = seat; v.seats[seat] = 'hero';
       if (seat === 0) { v.driven = true; if (v.controller && v.controller.stop) v.controller.stop(); }
