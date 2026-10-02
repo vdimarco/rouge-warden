@@ -65,7 +65,11 @@ for (const size of [
     await shot(page, 'tilt-transit-' + size.name + '-map');
     await page.getByRole('button', { name: 'Close map', exact: true }).click();
     await reachGate(page);
-    R.check((await page.locator('#upgrade-detail').textContent()).includes('Lunar Harbor complete'), 'Normal play reaches the first gate and offers an upgrade');
+    R.check(await page.locator('#upgrade-panel').isVisible()
+      && (await page.locator('#upgrade-from').textContent()) === 'Lunar Harbor'
+      && (await page.locator('#upgrade-to').textContent()) === 'Amber Belt'
+      && (await page.locator('#upgrade-options button').count()) === 3,
+    'Normal play reaches the first gate and offers three upgrades on the correct route');
     await watchStages(page);
     await page.keyboard.press('1');
     await page.locator('#transit-panel').waitFor({ state: 'visible' });

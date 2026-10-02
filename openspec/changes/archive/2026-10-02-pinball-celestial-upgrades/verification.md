@@ -4,7 +4,7 @@ The upgrade console passed 160 functional and layout checks plus seven accessibi
 
 Viewports: 1280x800 desktop, 390x844 portrait, 844x390 landscape, 320x568 small portrait and 568x320 small landscape. A 1586x992 screenshot matches the concept's native dimensions. All three upgrade effects were checked by mouse/touch and keys1/2/3. Pause after installing freezes transit and ignores further upgrade shortcuts. Resume and skip reach the next dock once. First-choice focus, Tab/Shift+Tab wrapping, meaningful button names, hidden touch-only shortcut badges, route text and reduced-motion transitions passed. No page/script errors were observed. The Full Tilt page identity and nonblank console were verified, with no framework error overlay.
 
-Syntax checks passed for main.js and upgrade-emblems.js. The gameplay model and physics are unchanged. No new persistent test suite was needed for this reversible UI redesign; the existing repository CI remains the release gate. Physical phone latency, hardware audio and non-Chromium rendering were not checked. OpenSpec CLI is unavailable, so requirement/scenario structure was reviewed directly.
+Syntax checks passed for main.js and upgrade-emblems.js. The gameplay model and physics are unchanged. No new persistent test suite was needed for this reversible UI redesign; the existing repository CI remains the release gate. Its transit test originally asserted the old combined subtitle; it now verifies the visible console, source/destination fields and all three choices on the same real gameplay path. Physical phone latency, hardware audio and non-Chromium rendering were not checked. OpenSpec CLI is unavailable, so requirement/scenario structure was reviewed directly.
 
 ## Concept fidelity
 
