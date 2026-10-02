@@ -8,6 +8,6 @@ export class Sound {
   }
   tick(time) { if (time < this.next) return; this.next = time + .48; const notes = [146.83, 220, 293.66, 349.23, 293.66, 220, 174.61, 130.81]; this.tone(notes[this.note++ % notes.length], .9, .009, 'triangle'); }
   hit(variant = 0) { this.tone([340, 430, 220][variant], [.11, .14, .21][variant], variant === 2 ? .027 : .018, 'triangle', [105, 160, 65][variant]); }
-  skill(slot) { this.tone([240, 440, 110][slot], .38, .04, 'sine', [800, 180, 520][slot]); }
+  skill(slot) { this.tone([240, 440, 330, 110][slot], .38, .04, 'sine', [800, 180, 620, 520][slot]); }
   toggle() { this.on = !this.on; try { localStorage.setItem('tidebreak.sound', this.on ? 'on' : 'off'); } catch {} return this.on; }
 }

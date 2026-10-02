@@ -1,9 +1,11 @@
 import { market, inventoryHTML } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
-import { createMatch, step, player, HEROES, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
+import { createMatch, step, player, HEROES, trainSkill, announce, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
 import { loadArt, Renderer } from './illustrated-render.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
+import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
+import { skillIcon } from './skill-icons.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
@@ -16,7 +18,7 @@ function closeSheet() { $('sheet').close(); paused = false; resetInput(); last =
 function sheet(html) { $('sheet').classList.remove('market'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); }
 function pause() {
   if (!running || resultShown) return;
-  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">WASD or arrows to move · Q / E / R skills · F rift · M map · B return · Esc pause</p>');
+  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">WASD or arrows to move · Q / E / C / R skills · K spellbook · F rift · M map · B return · Esc pause</p>');
   $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
 function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = createMatch(selected); sound.next = 0; }
@@ -29,15 +31,29 @@ function choose(kind) {
 function start() {
   sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
-  for (let i = 0; i < 3; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
+  for (let i = 0; i < 4; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
-  const icons = selected === 1 ? ['wave', 'whirlpool', 'ghosts'] : selected === 0 ? ['wings', 'ghosts', 'wings'] : selected === 2 ? ['stomp', 'ghosts', 'stomp'] : ['devil', 'wings', 'devil'];
-  skillButtons.forEach((b, i) => b.style.backgroundImage = `url(./art/illustrated/ability-${icons[i]}.webp)`);
-  updateUI();
+  $('controls').style.setProperty('--hero-color',HEROES[selected].color);
+  skillButtons.forEach((b,i)=> {b.style.backgroundImage='none';b.querySelector('svg')?.remove();b.insertAdjacentHTML('afterbegin',skillIcon(KITS[selected][i].icon));});
+  updateUI(); learnSkills();
 }
+function learnSkills() {
+  if (!running || resultShown) return;
+  const p=player(state);
+  const show=()=>{
+    sheet(`<h2>Shape your legend</h2><p class="training-summary">${HEROES[p.hero].name} · Level ${p.level} · ${p.skillPoints} skill point${p.skillPoints===1?'':'s'}</p><div class="skill-training">${KITS[p.hero].map((a,i)=>{
+      const rank=p.skillRanks[i], gate=rankGate(i,rank), ready=canLearn(p,i), max=i===3?3:4;
+      return `<article><div class="training-icon">${skillIcon(a.icon)}</div><div><h3>${a.name}${i===3?' <small>ULTIMATE</small>':''}</h3><p>${a.description}</p><small>Rank ${rank}/${max} · ${Math.round(cooldownFor({...p,skillRanks:p.skillRanks.map((v,j)=>j===i?Math.max(1,v):v)},i))}s cooldown${rank<max?` · Next rank: level ${gate}`:' · Fully trained'}</small><button data-train="${i}" ${ready?'':'disabled'}>${ready?(rank?'Upgrade':'Learn'):rank>=max?'Max rank':p.level<gate?`Requires level ${gate}`:'Earn a skill point'}</button></div></article>`;
+    }).join('')}</div><button id="back-skills" class="primary">Back to the hunt</button>`);
+    document.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>{const i=+b.dataset.train;if(trainSkill(p,i)){announce(state,`${KITS[p.hero][i].name} · Rank ${p.skillRanks[i]}`,'Spell trained. Return to the hunt.');sound.tone(780,.16);updateUI();show();}});
+    $('back-skills').onclick=closeSheet;
+  };show();
+}
+$('skill-points').onclick=learnSkills;
+
 function how() {
   const h = HEROES[selected];
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Targets are chosen automatically. Tap an enemy only to override focus.</li><li>Tap a skill for aim assist, or drag to aim and release. Your ultimate unlocks at level 3.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / R skills · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Destroy a wardstone to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Targets are chosen automatically. Tap an enemy only to override focus.</li><li>Tap a skill for aim assist, or drag to aim and release. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Use the skill-point button to learn or upgrade. Your three-hit basic attacks always work.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to set a direction marker.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -58,10 +74,21 @@ function result() {
 function updateUI() {
   const p = player(state), remain = Math.max(0, Math.ceil(LIMIT - state.time));
   dom.clock.textContent = `${String(Math.floor(remain / 60)).padStart(2, '0')}:${String(remain % 60).padStart(2, '0')}`;
-  $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${p.xp / (p.level * 100) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
+  $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${(p.level === MAX_LEVEL ? 1 : p.xp / xpForLevel(p.level)) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
   const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
   const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').title = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete'; $('quick-buy').textContent = next ? '+' : '·'; $('quick-buy').setAttribute('aria-label', $('quick-buy').title);
-  skillButtons.forEach((b, i) => { const locked = i === 2 && p.level < 3; b.querySelector('b').textContent = locked ? 'LV 3' : p.cd[i] > 0 ? Math.ceil(p.cd[i]) : ''; b.querySelector('b').classList.toggle('locked', locked); b.setAttribute('aria-disabled', String(locked || p.cd[i] > 0 || p.hp <= 0)); });
+  skillButtons.forEach((b,i)=>{
+    const rank=p.skillRanks[i],locked=!rank;
+    b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):p.cd[i]>0?Math.ceil(p.cd[i]):'';
+    b.querySelector('b').classList.toggle('locked',locked);
+    b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',canLearn(p,i));
+    b.setAttribute('aria-disabled',String(locked||p.cd[i]>0||p.hp<=0));
+    b.setAttribute('aria-label',`${KITS[p.hero][i].name}. ${locked?'Unlearned':`Rank ${rank}`}. ${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}${KITS[p.hero][i].description}`);
+    const ranks=b.querySelector('.ranks'); if(ranks.dataset.rank!==String(rank)){ranks.innerHTML=Array.from({length:i===3?3:4},(_,j)=>`<i class="${j<rank?'filled':''}"></i>`).join('');ranks.dataset.rank=rank;}
+  });
+  $('skill-points').textContent=p.skillPoints&&p.skillRanks.some((_,i)=>canLearn(p,i))?`+ ${p.skillPoints} SKILL POINT${p.skillPoints===1?'':'S'}`:'SPELLBOOK';
+  $('skill-points').classList.toggle('ready',p.skillPoints>0&&p.skillRanks.some((_,i)=>canLearn(p,i)));
+
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
   dom.notice.style.opacity = fresh ? '1' : '0'; if (fresh && dom.notice.dataset.time !== String(msg.time)) { dom.notice.replaceChildren(); const b = document.createElement('b'), small = document.createElement('small'); b.textContent = msg.title; small.textContent = msg.detail; dom.notice.append(b, small); dom.notice.dataset.time = msg.time; }
@@ -92,7 +119,7 @@ joy.addEventListener('pointermove', moveStick);
 for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEventListener(type, e => { if (e.pointerId !== moveId) return; moveId = null; movement.x = movement.y = 0; $('thumb').style.transform = ''; joy.classList.remove('active'); });
 skillButtons.forEach(b => {
   // Native keyboard and assistive activation do not send a pointer sequence.
-  b.addEventListener('click', e => { if (e.detail === 0 && running && !paused) { sound.start(); castQueue = { slot: +b.dataset.skill, aim: null }; } });
+  b.addEventListener('click', e => { if (e.detail === 0 && running && !paused && b.getAttribute('aria-disabled') !== 'true') { sound.start(); castQueue = { slot: +b.dataset.skill, aim: null }; } });
   b.addEventListener('pointerdown', e => { if (!running || paused || skillId !== null || b.getAttribute('aria-disabled') === 'true') return; e.preventDefault(); sound.start(); skillId = e.pointerId; skillSlot = +b.dataset.skill; skillOrigin = { x: e.clientX, y: e.clientY }; aim = null; b.setPointerCapture(e.pointerId); });
   b.addEventListener('pointermove', e => { if (e.pointerId !== skillId) return; const x = e.clientX - skillOrigin.x, y = e.clientY - skillOrigin.y; aim = Math.hypot(x, y) > 12 ? { x, y } : null; });
   b.addEventListener('pointerup', e => { if (e.pointerId !== skillId) return; castQueue = { slot: skillSlot, aim }; skillId = null; skillSlot = null; aim = null; });
@@ -104,7 +131,8 @@ window.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else pause(); return; }
   if (!running || paused || e.repeat) return;
   const key = e.key.toLowerCase(); keys.add(key);
-  const slot = ['q', 'e', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, aim: null };
+  if(key==='k'){learnSkills();return;}
+  const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, aim: null };
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));

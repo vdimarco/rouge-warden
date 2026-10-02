@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./toon.css">
   <link rel="stylesheet" href="./illustrated.css">
+  <link rel="stylesheet" href="./abilities.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Monster Mash battlefield"></canvas>
@@ -29,9 +30,11 @@
     <div id="controls">
       <div id="joystick" role="group" aria-label="Movement pad"><span class="stick-arrows"></span><span id="thumb"></span><small>MOVE</small></div>
       <div class="abilities">
-        <button class="ability dash" data-skill="0" aria-label="Dash. Drag to aim, release to cast"><svg viewBox="0 0 40 40"><path d="m9 29 12-19 2 11 9-7-12 19-1-11z"/></svg><span>DASH</span><b></b><kbd>Q</kbd></button>
-        <button class="ability surge" data-skill="1" aria-label="Surge. Release to cast"><svg viewBox="0 0 40 40"><path d="M32 17c-8-15-28-3-23 9 4 10 19 8 20-2 1-8-11-12-15-5-3 5 4 10 7 6"/></svg><span>SURGE</span><b></b><kbd>E</kbd></button>
-        <button class="ability ult" data-skill="2" aria-label="Ultimate. Unlocks at level three"><svg viewBox="0 0 40 40"><path d="m20 4 4 12 12 4-12 4-4 12-4-12-12-4 12-4z"/></svg><span>ULT</span><b>LV 3</b><kbd>R</kbd></button>
+        <button id="skill-points" aria-label="Learn or upgrade abilities">+ 1 SKILL POINT</button>
+        <button class="ability dash" data-skill="0"><span>FLIGHT</span><b></b><kbd>Q</kbd><em class="ranks"></em></button>
+        <button class="ability surge" data-skill="1"><span>DREAD</span><b></b><kbd>E</kbd><em class="ranks"></em></button>
+        <button class="ability signature" data-skill="2"><span>OMEN</span><b></b><kbd>C</kbd><em class="ranks"></em></button>
+        <button class="ability ult" data-skill="3"><span>BLACKOUT</span><b>LV 6</b><kbd>R</kbd><em class="ranks"></em></button>
         <output id="auto-status" aria-label="Automatic attack status">AUTO · READY</output>
       </div>
       <div class="health"><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="xp-fill"></i></div></div>
