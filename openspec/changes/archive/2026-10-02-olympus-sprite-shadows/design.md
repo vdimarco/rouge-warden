@@ -1,0 +1,4 @@
+# Design
+Cache a tinted alpha mask and a lower-edge contact mask per loaded sprite image. Scan alpha once to find its base, ignoring isolated low-alpha pixels. Project the silhouette along a shared world light direction. Reuse the actor's animation frame, facing, tilt and squash/stretch; vary shadow length and strength for floating shades, low serpents, tall trees and raised ruins. Apply the camera projection to the light direction. Draw all shadows before attack warnings and upright sprites. Source artwork remains intact.
+
+Verify synthetic alpha footprints, movement regressions, portrait/landscape renders in each view and realm, loaded and unloaded assets, animation/facing/death, and a dense scene. Confirm the live arena and camera switch before merge. OpenSpec CLI is unavailable; inspect Markdown structure. Physical phone testing remains manual.
