@@ -1,6 +1,6 @@
 // Deterministic Monster Mash rules. Rendering and input are separate.
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
-import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
+import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, TOWER_POSITIONS, CENTER, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 import { ATTACK_TIMINGS } from './basic-attacks.js';
 import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../arcade/creatures/catalog.js';
@@ -10,6 +10,7 @@ import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
 import { NEW_HEROES } from './legends.js';
 import { castLegend, tickLegendZone } from './legend-rules.js';
 import { followOrder } from './navigation.js';
+import { structureProtected, LANE_NAMES } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
@@ -24,14 +25,17 @@ function add(s, data) {
   s.units.push(e); return e;
 }
 function hero(s, team, kind, lane, human = false) {
-  const h = HEROES[kind], front = LANES[lane][2], toward = team ? -1 : 1;
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 470, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  const h = HEROES[kind], front = TOWER_POSITIONS[team][lane][0], toward = team ? -1 : 1;
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 180, hp: h.hp, maxHp: h.hp, speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 export function createMatch(kind = 0, seed = 49) {
-  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [3, 3], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
+  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [6, 6], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
     add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
-    for (let lane = 0; lane < 3; lane++) add(s, { kind: 'tower', name: 'Wardstone', team, lane, ...LANES[lane][team ? 3 : 1], hp: 3100, maxHp: 3100, radius: 42, range: 360, damage: 180, rate: 1.05, sprite: 6 });
+    for (let lane = 0; lane < 3; lane++) for (let tier = 0; tier < 2; tier++) {
+      const hp = tier ? 3400 : 2700;
+      add(s, { kind: 'tower', name: `${tier ? 'Inner' : 'Outer'} ward · ${LANE_NAMES[lane]}`, team, lane, tier, ...TOWER_POSITIONS[team][lane][tier], hp, maxHp: hp, radius: 42, range: tier ? 390 : 360, damage: tier ? 195 : 180, rate: 1.05, sprite: 6 });
+    }
   }
   const p = hero(s, 0, kind, 1, true); s.playerId = p.id;
   hero(s, 0, (kind + 1) % HEROES.length, 0); hero(s, 0, (kind + 2) % HEROES.length, 2);
@@ -56,7 +60,7 @@ function finish(s, winner, reason) { s.winner = winner; s.reason = reason; annou
 export function heal(s, e, amount) { if (e.hp <= 0) return; e.hp = Math.min(e.maxHp, e.hp + amount * (e.woundedUntil > s.time ? .55 : 1)); }
 export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
-  if (target.kind === 'core' && s.towers[target.team] === 3) { if (source.player && s.time - (s.lockTip || -10) > 4) { announce(s, 'Rift protected', 'Destroy any enemy wardstone first.'); s.lockTip = s.time; } return; }
+  if (structureProtected(s, target)) { if (source.player && s.time - (s.lockTip ?? -10) > 4) { announce(s, target.kind === 'core' ? 'Rift protected' : 'Inner ward protected', target.kind === 'core' ? 'Break both towers on one lane.' : 'Break this lane’s outer ward first.'); s.lockTip = s.time; } return; }
   if (target.kind === 'hero' && target.respawn > 0) return;
   if (target.kind === 'camp') {
     if (target.leash) return;
@@ -103,7 +107,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     else if (source.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
   } else if (target.kind === 'tower') {
     s.towers[target.team]--; reward(s, source.team, 150, 180); if (source.team === 0) s.stats.towers++;
-    announce(s, target.team === 1 ? 'Enemy ward broken' : 'Our ward has fallen', 'The elder rift is now vulnerable.');
+    announce(s, target.team === 1 ? 'Enemy ward broken' : 'Our ward has fallen', target.tier === 0 ? `${LANE_NAMES[target.lane]} inner ward is now vulnerable.` : 'Both wards are down. The elder rift is vulnerable.');
   } else if (target.kind === 'core') finish(s, 1 - target.team, 'The enemy elder rift was destroyed.');
   else if (target.kind === 'boss') {
     reward(s, source.team, 190, 160); s.objectiveAt = s.time + 65; s.objective = null;
@@ -117,7 +121,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', '+110 embers · Healing · 18 seconds of haste'); }
   } else if (source.team >= 0) reward(s, source.team, target.kind === 'leviathan' ? 120 : 18, target.kind === 'leviathan' ? 100 : 12);
 }
-function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.team && !(b.kind === 'core' && s.towers[b.team] === 3) && (b.team !== -1 || a.kind === 'hero' || a.team === -1); }
+function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.team && !structureProtected(s, b) && (b.team !== -1 || a.kind === 'hero' || a.team === -1); }
 export function cancelOrder(e) { e.order=null;e.orderRoute=null;e.target=0; }
 export function commandOrder(s,e,command) {
   cancelOrder(e);
@@ -278,7 +282,7 @@ function spawnWave(s) {
   s.wave++;
   for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) for (let i = 0; i < 3; i++) {
     const front = LANES[lane][2], base = s.wave === 1 ? { x: front.x, y: front.y + (team ? -1 : 1) * 370 } : BASES[team], siege = i === 2 && s.wave % 3 === 0;
-    add(s, { kind: 'minion', team, lane, x: base.x + (i - 1) * 32, y: base.y + (team ? 1 : -1) * i * 28, waypoint: s.wave === 1 ? 2 : 1, hp: siege ? 780 : 390, maxHp: siege ? 780 : 390, damage: siege ? 88 : 45, rate: 1, range: siege ? 270 : 95, speed: 205, radius: 16, sprite: team ? 5 : 4, siege, creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege ? 'siege' : 'lane').id });
+    add(s, { kind: 'minion', team, lane, x: base.x + (i - 1) * 32, y: base.y + (team ? 1 : -1) * i * 28, waypoint: s.wave === 1 ? 2 : 1, hp: siege ? 780 : 390, maxHp: siege ? 780 : 390, damage: siege ? 88 : 45, rate: 1, range: siege ? 270 : 95, speed: 240, radius: 16, sprite: team ? 5 : 4, siege, creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege ? 'siege' : 'lane').id });
   }
 }
 function followLane(s, e, dt) {
@@ -343,7 +347,7 @@ export function step(s, input = {}, dt = 1 / 60) {
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
   if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += 14; }
   if (!s.objective && s.time >= s.objectiveAt) {
-    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, x: 2400, y: 2400, homeX: 2400, homeY: 2400, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
+    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, ...CENTER, homeX: CENTER.x, homeY: CENTER.y, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
     s.objective = boss.id; announce(s, 'The Wild Hunt awakens', 'Slay the great beast. It will fight for your team.');
   }
   for (let i = 0; i < CAMPS.length; i++) if (s.time >= s.campTimers[i] && !s.units.some(e => e.kind === 'camp' && e.camp === i && e.hp > 0)) {

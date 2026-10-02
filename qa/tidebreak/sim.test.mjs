@@ -1,31 +1,36 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, step, cast, damage, buy, portal, HEROES, SIZE, LIMIT } from '../../public/tidebreak/sim.js';
+import { arenaPoint } from '../../public/tidebreak/arena.js';
 import { LANES, PATHS, PORTALS, OBSTACLES, BRUSH, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance } from '../../public/tidebreak/world.js';
 const advance = (s, seconds, input = {}) => { for (let i = 0; i < seconds * 20; i++) step(s, input, .05); };
 const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800 }); Object.assign(foe, { x: 2400, y: 2650 }); return { s, p, foe }; };
-assert.equal((SIZE / 1600) ** 2, 9, 'arena has nine times the original area');
+assert.equal(SIZE, 6400, 'arena is expanded to 6400 units');
+assert.equal((SIZE / 1600) ** 2, 16, 'arena has sixteen times the original area');
 for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.length; i++) assert.ok(lineOfSight({ phase }, lane[i - 1], lane[i]), 'every lane stays open through realm changes');
 {
   const s = createMatch(), p = player(s), core = s.units.find(e => e.kind === 'core' && e.team === 1);
   damage(s, p, core, 9999); assert.equal(core.hp, core.maxHp);
-  damage(s, p, s.units.find(e => e.kind === 'tower' && e.team === 1), 9999); assert.equal(s.towers[1], 2);
-  damage(s, p, core, 9999); assert.equal(s.winner, 0);
+  const outer=s.units.find(e=>e.kind==='tower'&&e.team===1&&e.lane===1&&e.tier===0),inner=s.units.find(e=>e.kind==='tower'&&e.team===1&&e.lane===1&&e.tier===1);
+  damage(s,p,inner,9999);assert.equal(inner.hp,inner.maxHp,'inner ward stays protected');
+  damage(s,p,outer,9999);assert.equal(s.towers[1],5);
+  damage(s,p,core,9999);assert.equal(core.hp,core.maxHp,'core still protected after outer tower falls');
+  damage(s,p,inner,9999);assert.equal(s.towers[1],4);damage(s,p,core,9999);assert.equal(s.winner,0);
 }
 {
-  const s = createMatch(), a = { x: 1600, y: 1600 }, b = { x: 1600, y: 2100 };
+  const s = createMatch(), a = arenaPoint(1600,1600), b = arenaPoint(1600,2100);
   assert.equal(lineOfSight(s, a, b), false, 'city blocks obstruct attacks and sight');
   s.time = 40; assert.equal(shiftWorld(s), true); assert.equal(lineOfSight(s, a, b), true, 'forest opens a route beside the smaller grove');
-  const p = player(s); p.x = 1600; p.y = 1850; s.time = 80; shiftWorld(s); const r = OBSTACLES[0][0]; assert.ok(Math.abs(p.x - r.x) >= r.w / 2 + p.radius || Math.abs(p.y - r.y) >= r.h / 2 + p.radius, 'realm changes eject bodies from new obstacles');
+  const p = player(s); Object.assign(p,arenaPoint(1600,1850)); s.time = 80; shiftWorld(s); const r = OBSTACLES[0][0]; assert.ok(Math.abs(p.x - r.x) >= r.w / 2 + p.radius || Math.abs(p.y - r.y) >= r.h / 2 + p.radius, 'realm changes eject bodies from new obstacles');
 }
 {
-  const { s, p, foe } = duel(); s.phase = 1; s.time = 42; Object.assign(p, BRUSH[0]); p.radius = 22; Object.assign(foe, { x: p.x + 180, y: p.y });
+  const { s, p, foe } = duel(); s.phase = 1; s.time = 42; Object.assign(p, BRUSH[0]); p.radius = 22; Object.assign(foe, { x: p.x + BRUSH[0].radius + 30, y: p.y });
   assert.equal(canSee(s, foe, p), false); assert.equal(visibleTo(s, 1, p), false, 'enemy team cannot track a hidden creature');
   p.revealedUntil = s.time + 2; assert.equal(canSee(s, foe, p), true, 'attacking or taking damage reveals cover');
-  p.revealedUntil = -1; p.range = 220; const hp = foe.hp; foe.gold = 0; foe.nextShop = 9999; foe.stun = 2; advance(s, .2); assert.ok(hp - foe.hp >= p.damage * 1.75); assert.equal(s.stats.ambushes, 1); assert.equal(canSee(s, foe, p), true, 'ambush reveals the attacker');
+  p.revealedUntil = -1; p.range = BRUSH[0].radius + 70; const hp = foe.hp; foe.gold = 0; foe.nextShop = 9999; foe.stun = 2; advance(s, .2); assert.ok(hp - foe.hp >= p.damage * 1.75); assert.equal(s.stats.ambushes, 1); assert.equal(canSee(s, foe, p), true, 'ambush reveals the attacker');
 }
 {
-  const { s, p, foe } = duel(); p.x = 1170; p.y = 1850; foe.x = 1690; foe.y = 1850; p.range = 700; const hp = foe.hp; step(s, {}, .05); assert.equal(foe.hp, hp, 'auto attack cannot shoot through a building');
-  assert.equal(cast(s, p, 3), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > 1650, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
+  const { s, p, foe } = duel(); Object.assign(p,arenaPoint(1170,1850)); Object.assign(foe,arenaPoint(1690,1850)); p.range = 900; const hp = foe.hp; step(s, {}, .05); assert.equal(foe.hp, hp, 'auto attack cannot shoot through a building');
+  assert.equal(cast(s, p, 3), false); assert.equal(cast(s, p, 0, { x: 1, y: 0 }), true); assert.ok(p.x > arenaPoint(1170,1850).x+480, 'Mothman flies across the building'); assert.equal(cast(s, p, 0), false);
   p.gold = 800; const atk = p.damage; assert.equal(buy(s, 'nightfang'), true); assert.equal(p.damage, atk + 48); assert.equal(buy(s, 'nightfang'), false);
 }
 {
@@ -55,7 +60,7 @@ for (let seed = 1; seed <= 3; seed++) for (let kind = 0; kind < HEROES.length; k
     step(s, { autopilot: true }, .05); max = Math.max(max, s.units.length); phases.add(s.phase);
     assert.ok(s.units.every(e => Number.isFinite(e.x + e.y + e.hp) && e.hp >= 0 && e.hp <= e.maxHp && e.x >= 180 && e.x <= SIZE - 180));
   }
-  assert.notEqual(s.winner, null); assert.equal(phases.size, 2); assert.ok(max < 150); assert.ok(s.score[0] + s.score[1] > 4, 'matches produce creature fights'); assert.ok(s.towers.some(t => t < 3), 'waves reach and damage the wards');
+  assert.notEqual(s.winner, null); assert.equal(phases.size, 2); assert.ok(max < 150); assert.ok(s.score[0] + s.score[1] > 4, 'matches produce creature fights'); assert.ok(s.towers.some(t => t < 6), 'waves reach and damage the wards');
   summaries.push({ seed, creature: HEROES[kind].name, winner: s.winner, seconds: Math.round(s.time), kills: s.score.reduce((a,b)=>a+b,0), maxUnits: max });
 }
 const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 85, { autopilot: true }); advance(b, 85, { autopilot: true }); assert.deepEqual(a.units, b.units);

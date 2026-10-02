@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { riverGeometry, riverSample, riverCrossings, insideRiver } from '../../public/tidebreak/river.js';
-import { PATHS, inWater } from '../../public/tidebreak/world.js';
+import { PATHS, inWater, SIZE, CENTER, MAP_SCALE } from '../../public/tidebreak/world.js';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
 
 for (const seed of [1, 49, 91822, 0xffffffff]) {
   const river = riverGeometry(seed), same = riverGeometry(seed);
+  assert.equal(river.samples.at(-1).x,SIZE,'water covers the full expanded arena');
   assert.deepEqual(river, same); assert.notDeepEqual(river.samples, riverGeometry(seed + 1).samples);
   const ys = river.samples.map(p => p.y), widths = river.samples.map(p => p.south - p.north);
   assert(Math.max(...ys) - Math.min(...ys) > 400, 'route has broad meanders');
   assert(Math.max(...widths) - Math.min(...widths) > 75, 'pools and narrows vary width');
   for (const p of river.samples) {
-    assert(p.north < p.y && p.south > p.y && p.north > 1400 && p.south < 2900);
+    assert(p.north < p.y && p.south > p.y && p.north > 1400 * MAP_SCALE && p.south < 2900 * MAP_SCALE);
     assert(insideRiver({ x: p.x, y: p.y }, seed));
     assert(!insideRiver({ x: p.x, y: p.north - 1 }, seed));
     assert(!insideRiver({ x: p.x, y: p.south + 1 }, seed));
@@ -34,8 +35,8 @@ for (let seed = 0; seed < 128; seed++) {
 // Measure real movement on a wide, unobstructed part of the central crossing.
 const measure = y => {
   const s = createMatch(1, 49), p = player(s); s.units = [p]; s.nextWave = s.objectiveAt = Infinity; s.campTimers = [Infinity, Infinity];
-  p.x = 2400; p.y = y; p.revealedUntil = 10;
-  step(s, { x: 1, attack: false }, .05); return p.x - 2400;
+  p.x = CENTER.x; p.y = y; p.revealedUntil = 10;
+  step(s, { x: 1, attack: false }, .05); return p.x - CENTER.x;
 };
-assert(Math.abs(measure(riverSample(2400, 49).y) / measure(3100) - 1.4) < .001, 'water bonus follows the new channel');
+assert(Math.abs(measure(riverSample(CENTER.x, 49).y) / measure(CENTER.y+700) - 1.4) < .001, 'water bonus follows the new channel');
 console.log('PASS: river seed replay/variation, meanders, variable width, shared water boundaries, three aligned crossings and actual Nessie speed bonus.');
