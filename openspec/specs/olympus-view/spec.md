@@ -18,11 +18,15 @@ Olympus SHALL default to isometric and offer a saved top-down alternative on tit
 - **THEN** the chosen view is restored if storage is available, and unavailable storage does not prevent play
 
 ### Requirement: Grounded depth and screen controls
-The renderer SHALL project the ground, keep sprites upright, depth-sort scenery and actors, and preserve screen-aligned controls.
+The renderer SHALL project the ground, keep sprites upright, depth-sort scenery and actors, and preserve screen-aligned controls with equal visible movement speed in all directions.
 
-#### Scenario: Isometric movement
-- **WHEN** the player drags right, down, left or up, or presses the matching direction key
-- **THEN** movement follows that screen direction and diagonal input does not exceed the normal world movement speed
+#### Scenario: Directional movement
+- **WHEN** the player drags or presses direction keys horizontally, vertically or diagonally in either view
+- **THEN** movement follows that screen direction at the same visible speed for equal input strength, without a keyboard diagonal speed boost
+
+#### Scenario: Analog movement and upgrades
+- **WHEN** the player changes joystick strength or gains Hermes speed upgrades
+- **THEN** visible travel speed and walking intensity scale consistently across directions, while isometric horizontal pace and top-down pace remain unchanged
 
 #### Scenario: Combat readability
 - **WHEN** enemies attack among scenery in either view
