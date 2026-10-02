@@ -1,12 +1,12 @@
 /* Painted spellbook measured against the user's supplied reference. */
 dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
-.spellbook-sheet{width:min(84vw,1280px);height:min(80dvh,850px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:0;overflow:hidden;border:1px solid #c4a46b;border-radius:18px;background:radial-gradient(ellipse at 65% 26%,#11383a50,transparent 55%),#071b22;box-shadow:0 0 0 1px #8a7549,0 20px 80px #0008}
+.spellbook-sheet{width:min(84vw,1280px);height:min(86dvh,850px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:0;overflow:hidden;border:1px solid #c4a46b;border-radius:18px;background:radial-gradient(ellipse at 65% 26%,#11383a50,transparent 55%),#071b22;box-shadow:0 0 0 1px #8a7549,0 20px 80px #0008}
 .spellbook-sheet::backdrop{background:#03101840;backdrop-filter:blur(2px)}
 .spellbook-sheet #sheet-content{height:100%;min-height:0}
 .spellbook{box-sizing:border-box;height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:18px 26px 0;font-family:Georgia,'Times New Roman',serif;position:relative}
 .spellbook::before,.spellbook::after{content:'';position:absolute;width:19px;height:19px;border:1px solid #c4a46b;border-radius:50%;pointer-events:none;opacity:.8}.spellbook::before{top:7px;left:7px}.spellbook::after{bottom:7px;left:7px}
 .spellbook-heading{padding:0 58px 14px 0;margin:0 0 14px;gap:16px;min-width:0;border-color:#8ca99d35;min-height:94px}
-.spellbook-heading>img{width:82px;height:90px;flex:none;object-fit:contain}
+.spellbook-heading>img{width:96px;height:90px;flex:none;object-fit:contain}
 .spellbook-heading h2{font:700 clamp(26px,2.5vw,39px)/1.14 Georgia,serif;color:#f3e5c8;white-space:normal}
 .spellbook-heading p{font:19px/1.3 Georgia,serif;color:#d6c09b;margin-top:4px}
 .point-count{font:700 25px/1.3 Georgia,serif;gap:7px;color:#d8b36d;align-self:center;flex:none;white-space:nowrap}.point-count span{font:inherit}.point-count .gold-star{font-size:27px;margin-right:6px}
@@ -24,13 +24,13 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
 .ultimate-row:not([aria-pressed=true]){opacity:.67}
 .spell-detail{min-height:0;display:flex;flex-direction:column;padding-left:24px;border-color:#81a69830;overflow:hidden}
 .spell-detail-scroll{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0 3px 4px 0}
-.spell-visual{width:clamp(130px,19dvh,205px);max-width:100%;height:auto;aspect-ratio:1;margin:-8px auto -10px;mask-image:radial-gradient(ellipse at center,#000 43%,#000b 64%,transparent 76%);background-color:transparent}
+.spell-visual{width:clamp(145px,25dvh,260px);max-width:100%;height:auto;aspect-ratio:1;margin:-8px auto -10px;mask-image:radial-gradient(ellipse at center,#000 43%,#000b 64%,transparent 76%);background-color:transparent}
 .spell-detail h3{font:700 clamp(26px,2.6vw,40px)/1.1 Georgia,serif;margin:6px 0 10px;color:#f4e6c9}
 .spell-detail .spell-description{font:clamp(16px,1.55vw,22px)/1.3 Georgia,serif;color:#efe4d0;margin:0 0 12px}
 .spell-tags{font:700 16px/1.2 Georgia,serif;padding:5px 11px;border:1px solid #6d9a8980;border-radius:6px;background:#133c3d80;color:var(--hero-color)}
 .spell-stats{font:17px/1.3 Georgia,serif;gap:8px;margin:14px 0 6px;color:#e1d3b4;align-items:start}.spell-stats b{font:inherit;color:#f3e6ca}.spell-stats small{font:12px/1.3 Georgia,serif;margin-top:3px}.spell-stats>span{position:relative}.spell-stats svg{width:25px;height:25px;vertical-align:middle;margin-right:6px;color:#c0b99b;flex:none}.cooldown-stat{display:flex;align-items:start}
 .rank-track{margin:13px 0 6px;padding:0 24px}.rank-track::before{left:34px;right:34px;top:11px;height:4px;background:#365653}.rank-track li{font:14px/1.2 Georgia,serif;gap:7px}.rank-track i{width:25px;height:25px;border-color:#5b7b74;background:#0b2730}.rank-track .next i{border-color:#edce7c;box-shadow:0 0 12px #d9d17a60}.rank-track .next span{color:#edce7c;font-weight:700}
-.spell-tips{font:12px/1.4 Georgia,serif;color:#b8cabb;margin:9px 0 0}.spell-tips summary{cursor:pointer;min-height:26px;display:list-item;color:#c7c5a9}.spell-detail .upgrade-note,.spell-detail .combo-note{font:13px/1.4 Georgia,serif}
+.spell-tips{font:12px/1.4 Georgia,serif;color:#b8cabb;margin:5px 0 0}.spell-tips summary{cursor:pointer;min-height:26px;display:list-item;color:#c7c5a9}.spell-detail .upgrade-note,.spell-detail .combo-note{font:13px/1.4 Georgia,serif}
 .spell-learn-action{flex:none;padding-top:7px}.spell-detail .primary{font:700 20px/1.2 Georgia,serif;min-height:53px;letter-spacing:0;text-transform:none;background:linear-gradient(100deg,#d9b85d,#eed69a 60%,#b8974e);border:1px solid #ebd898;color:#192021;box-shadow:inset 0 1px 1px #fff2b68a;margin:0}.spell-detail .primary span{margin-right:9px}.spell-detail .primary:disabled{background:#173035;border-color:#6d8074;color:#b4bba8}
 .training-feedback{font:12px/1.2 Georgia,serif!important;min-height:14px;margin:4px 0 0!important}
 .spellbook-footer{position:static;margin:14px -26px 0;padding:14px 26px;min-height:69px;gap:15px;background:#071920c9;border-color:#8ba49d45;border-radius:0 0 17px 17px}
@@ -46,3 +46,7 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
 @media(max-width:370px){.upgrade-dash{top:37px}.upgrade-surge{left:99px;top:69px}.upgrade-signature{left:33px;bottom:0}.upgrade-ult{right:-4px;bottom:-4px}.abilities{right:12px}#joystick{left:10px;width:88px;height:88px}#thumb{left:21px;top:21px}.health{left:10px;width:95px}}
 @media(max-height:520px) and (min-width:600px){.upgrade-surge{left:106px;top:65px}.upgrade-signature{bottom:-5px}.upgrade-ult{right:-6px;bottom:-6px}}
 @media(prefers-reduced-motion:reduce){.spellbook *, .ability-upgrade{scroll-behavior:auto;transition:none}}
+/* Retire the old four-hero landscape menu grid. */
+#menu .intro{display:block}
+
+.training-feedback:empty{display:none}
