@@ -50,3 +50,5 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
 #menu .intro{display:block}
 
 .training-feedback:empty{display:none}
+
+#auto-status{max-width:205px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}

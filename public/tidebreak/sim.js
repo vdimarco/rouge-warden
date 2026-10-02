@@ -1,6 +1,6 @@
 // Deterministic Monster Mash rules. Rendering and input are separate.
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
-import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, lineOfSight, inWater, concealed } from './world.js';
+import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 import { ATTACK_TIMINGS } from './basic-attacks.js';
 import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../arcade/creatures/catalog.js';
@@ -9,6 +9,8 @@ export { trainSkill } from './abilities.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
 import { NEW_HEROES } from './legends.js';
 import { castLegend, tickLegendZone } from './legend-rules.js';
+import { followOrder } from './navigation.js';
+import { campSprite } from './marketplace-sprites.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
@@ -116,6 +118,18 @@ export function damage(s, source, target, amount, kind = 'spell') {
   } else if (source.team >= 0) reward(s, source.team, target.kind === 'leviathan' ? 120 : 18, target.kind === 'leviathan' ? 100 : 12);
 }
 function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.team && !(b.kind === 'core' && s.towers[b.team] === 3) && (b.team !== -1 || a.kind === 'hero' || a.team === -1); }
+export function cancelOrder(e) { e.order=null;e.orderRoute=null;e.target=0; }
+export function commandOrder(s,e,command) {
+  cancelOrder(e);
+  if(e.hp<=0)return false;
+  if(command?.type==='attack'){
+    const t=s.units.find(u=>u.id===command.target);
+    if(!t||!hostile(s,e,t)||!visibleTo(s,e.team,t)||(t.kind==='camp'&&t.leash))return false;
+    e.order={type:'attack',target:t.id};e.target=t.id;if(e.pendingAttack?.target!==t.id)e.pendingAttack=null;
+  }else if(command?.type==='move'&&Number.isFinite(command.x)&&Number.isFinite(command.y)){const point={x:command.x,y:command.y,radius:e.radius};resolveBody(s,point);e.order={type:'move',x:point.x,y:point.y};}
+  else return false;
+  e.recall=0;return true;
+}
 function nearest(s, a, range, preferHero = false) {
   let best = null, score = Infinity;
   for (const b of s.units) {
@@ -336,7 +350,8 @@ export function step(s, input = {}, dt = 1 / 60) {
     const roll = s.campRolls[i]++, key = `camp:${i}:${roll}`, creature = chooseCreature(s.seed, key, 'neutral');
     const spot = { x: CAMPS[i].x + creatureHash(s.seed, key + ':x') % 121 - 60, y: CAMPS[i].y + creatureHash(s.seed, key + ':y') % 121 - 60, radius: 30 };
     resolveBody(s, spot);
-    add(s, { kind: 'camp', name: `${creature.family[0].toUpperCase() + creature.family.slice(1)} guardian`, team: -1, camp: i, ...spot, homeX: spot.x, homeY: spot.y, hp: 960, maxHp: 960, damage: 55, range: 170, speed: 120, rate: 1.1, sprite: i ? 9 : 10, creatureId: creature.id, aggro: 0, aggroUntil: 0 });
+    const artwork=campSprite(i,roll);
+    add(s, { kind: 'camp', name: artwork.name, marketplaceSprite:artwork.id, team: -1, camp: i, ...spot, homeX: spot.x, homeY: spot.y, hp: 960, maxHp: 960, damage: 55, range: 170, speed: 120, rate: 1.1, sprite: i ? 9 : 10, creatureId: creature.id, aggro: 0, aggroUntil: 0 });
   }
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
@@ -348,7 +363,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       if(!e.player||input.autopilot)trainBot(e);
       if ((!e.player || input.autopilot) && s.time >= (e.nextShop || 0)) { const id = nextPurchase(e); if (id) buy(s, id, e); e.nextShop = s.time + 2; }
       if (e.hp <= 0) {
-        e.respawn -= dt;
+        cancelOrder(e);e.respawn -= dt;
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp; e.shield = 140; e.waypoint = 1; e.cd = [0,0,0,Math.min(6,e.cd[3])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
@@ -360,7 +375,9 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.stun > 0) continue;
       if (e.fear > 0) { move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
       if (!e.player || input.autopilot) { bot(s, e, dt); continue; }
+      if(input.order)commandOrder(s,e,input.order);
       const dx = input.x || 0, dy = input.y || 0, moving = Math.hypot(dx, dy) > .12;
+      if(moving||input.stop||input.recall||input.portal)cancelOrder(e);
       if (moving) {
         const mag = Math.max(1, Math.hypot(dx, dy)), sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
         const speed = e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
@@ -374,7 +391,18 @@ export function step(s, input = {}, dt = 1 / 60) {
       }
       if (input.cast !== undefined) cast(s, e, input.cast, input.aim);
       if (!e.recall) {
-        const t = autoTarget(s, e, input.target); e.target = t?.id || 0;
+        let ordered=null;
+        if(e.order?.type==='attack'){
+          ordered=s.units.find(t=>t.id===e.order.target&&hostile(s,e,t)&&visibleTo(s,e.team,t)&&!(t.kind==='camp'&&t.leash));
+          if(!ordered)cancelOrder(e);
+        }
+        if(e.order){
+          const destination=ordered||e.order;
+          const inRange=ordered&&distance(e,ordered)<=e.range+ordered.radius-8&&lineOfSight(s,e,ordered);
+          if(!inRange){const next=followOrder(s,e,destination,dt);if(next)move(s,e,next.x,next.y,dt,e.speed*(e.slow>0?.52:1)*(e.hero===1&&inWater(e,s)?1.4:1));}
+          if(e.order.type==='move'&&distance(e,e.order)<10)cancelOrder(e);
+        }
+        const t = ordered||autoTarget(s, e, input.target); e.target = t?.id || 0;
         if (input.attack !== false) attack(s, e, t);
       }
     } else {

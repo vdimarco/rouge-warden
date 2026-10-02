@@ -1,0 +1,5 @@
+- [x] Implement attack orders, pursuit and cancellation.
+- [x] Add mouse selection and visible feedback.
+- [x] Export and integrate available MagicPixel neutral sprites.
+- [x] Check simulation scenarios and rendered mouse interactions.
+- [x] Update canonical requirements and prepare the verified release for merge.
