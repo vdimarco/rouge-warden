@@ -1,0 +1,146 @@
+/* The celestial deck is a UI surface. Names and effects stay live text. */
+.celestial-overlay {
+  --deck-ink: #f5ecd8;
+  --deck-brass: #b79259;
+  --deck-light: #b9eada;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(42px, var(--safe-top)) max(24px, env(safe-area-inset-right)) max(42px, var(--safe-bottom)) max(24px, env(safe-area-inset-left));
+  background: #030c16 url('./art/upgrade/celestial-cockpit.webp') center center / cover no-repeat;
+  color: var(--deck-ink);
+  isolation: isolate;
+}
+.upgrade-console {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(100%, 1080px);
+  margin: auto 0;
+  padding: 0 30px;
+  background: linear-gradient(115deg, #021014f5, #020e15ed 65%, #020b11fa);
+  clip-path: polygon(2% 0,98% 0,100% 3.3%,100% 96.7%,98% 100%,2% 100%,0 96.7%,0 3.3%);
+  box-shadow: 0 20px 80px #000a;
+}
+.console-frame { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--deck-brass); stroke-width: 1; pointer-events: none; }
+.console-frame path { vector-effect: non-scaling-stroke; }
+.console-frame path + path { opacity: .48; }
+.upgrade-rail { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; border-bottom: 1px solid #b7925975; }
+.upgrade-status { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--deck-light); font: 500 10px/1.4 'Avenir Next', Avenir, 'Segoe UI', sans-serif; letter-spacing: .24em; }
+.upgrade-status > span { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #bbffdf; box-shadow: 0 0 12px #8fffe88c; }
+.upgrade-route { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 0; font: 400 15px/1.4 Georgia, 'Times New Roman', serif; letter-spacing: .04em; text-align: right; }
+.upgrade-route svg { width: 25px; height: 16px; flex: 0 0 auto; stroke: var(--deck-brass); stroke-width: 1; fill: none; }
+.upgrade-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 27px 12px 23px; }
+.upgrade-heading h2 { font: 400 clamp(32px,4vw,48px)/1.1 Georgia, 'Times New Roman', serif; letter-spacing: -.035em; color: var(--deck-ink); }
+#upgrade-detail { margin: 10px 0 0; font-size: 15px; line-height: 1.5; letter-spacing: .025em; color: #b9c4c7; }
+.upgrade-compass { flex: 0 0 auto; width: 82px; height: 82px; fill: none; stroke: var(--deck-brass); stroke-width: .8; opacity: .85; }
+.upgrade-compass .compass-star { fill: var(--deck-ink); stroke: none; }
+.upgrade-modules { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); padding: 12px 0; border-top: 1px solid var(--deck-brass); border-bottom: 1px solid #b7925999; }
+.upgrade-module { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 18px 23px; background: transparent; border: 1px solid transparent; border-radius: 0; color: var(--deck-ink); text-align: center; transition: background .2s, border-color .2s, box-shadow .2s; }
+.upgrade-module + .upgrade-module::before { content: ''; position: absolute; top: 5px; bottom: 5px; left: -2px; border-left: 1px solid #b7925980; }
+.upgrade-module:focus-visible { outline: 2px solid var(--deck-light); outline-offset: -3px; background: #9de7d70b; box-shadow: inset 0 0 26px #93dbc70a; }
+@media (hover: hover) { .upgrade-module:hover { border-color: #b9eada9c; background: #9de7d70b; }.upgrade-module:hover .upgrade-action svg { transform: translate(2px,-2px); } }
+.upgrade-module:active { background: #aeeed41e; }
+.upgrade-emblem { display: grid; place-items: center; width: 100%; height: 169px; pointer-events: none; }
+.upgrade-emblem > svg { display: block; width: min(100%,255px); height: 100%; }
+.upgrade-copy { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; }
+.upgrade-module .upgrade-key { margin: 3px 0 11px; padding: 3px 7px; border: 1px solid #b79259c4; border-radius: 6px; background: transparent; color: var(--deck-ink); font: 400 16px/1.2 Georgia, serif; box-shadow: none; }
+.upgrade-name { display: block; font: 400 28px/1.12 Georgia, 'Times New Roman', serif; letter-spacing: -.02em; color: var(--deck-ink); }
+.upgrade-description { display: block; max-width: 240px; margin-top: 12px; color: #c3ced0; font-size: 14px; line-height: 1.6; letter-spacing: .01em; text-wrap: pretty; }
+.upgrade-action { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: auto; padding-top: 21px; color: var(--deck-light); font: 400 17px/1.4 Georgia, 'Times New Roman', serif; letter-spacing: .04em; }
+.upgrade-action svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.1; transition: transform .2s; }
+.upgrade-footnote { margin: 0; padding: 15px 0 17px; text-align: center; color: #9fadb6; font-size: 11px; line-height: 1.5; letter-spacing: .08em; }
+@media (max-width: 650px) and (orientation: portrait) {
+  .celestial-overlay { padding: max(22px,var(--safe-top)) max(14px,env(safe-area-inset-right)) max(22px,var(--safe-bottom)) max(14px,env(safe-area-inset-left)); }
+  .upgrade-console { padding: 0 18px; }
+  .upgrade-rail { align-items: flex-start; flex-direction: column; justify-content: center; gap: 9px; padding: 17px 1px 14px; }
+  .upgrade-status { font-size: 8px; letter-spacing: .20em; gap: 9px; }
+  .upgrade-route { font-size: 13px; gap: 8px; text-align: left; }
+  .upgrade-route svg { width: 21px; }
+  .upgrade-heading { padding: 22px 1px 19px; gap: 6px; }
+  .upgrade-heading h2 { font-size: 32px; max-width: 245px; }
+  #upgrade-detail { font-size: 12px; line-height: 1.5; margin-top: 9px; max-width: 220px; }
+  .upgrade-compass { width: 42px; height: 42px; }
+  .upgrade-modules { grid-template-columns: 1fr; padding: 6px 0; }
+  .upgrade-module { flex-direction: row; padding: 17px 3px; gap: 8px; text-align: left; }
+  .upgrade-module + .upgrade-module::before { inset: -1px 4px auto; border-left: 0; border-top: 1px solid #b792595e; }
+  .upgrade-emblem { width: 91px; height: 100px; flex: 0 0 91px; }
+  .upgrade-copy { align-items: flex-start; }
+  .upgrade-name { font-size: 23px; }
+  .upgrade-module .upgrade-key { position: absolute; top: 10px; left: 7px; margin: 0; padding: 1px 4px; font-size: 10px; }
+  .upgrade-description { font-size: 12px; line-height: 1.55; margin-top: 6px; }
+  .upgrade-action { font-size: 13px; padding-top: 10px; gap: 4px; }
+  .upgrade-action svg { width: 13px; height: 13px; }
+  .upgrade-footnote { padding: 13px 0 16px; font-size: 9px; letter-spacing: .04em; }
+}
+@media (max-width: 360px) and (orientation: portrait) {
+  .celestial-overlay { padding: max(12px,var(--safe-top)) max(10px,env(safe-area-inset-right)) max(12px,var(--safe-bottom)) max(10px,env(safe-area-inset-left)); }
+  .upgrade-console { padding: 0 13px; }
+  .upgrade-rail { padding: 12px 0 10px; gap: 6px; }
+  .upgrade-heading { padding: 16px 1px; }
+  .upgrade-heading h2 { font-size: 29px; }
+  .upgrade-compass { display: none; }
+  .upgrade-module { padding: 11px 3px; gap: 6px; }
+  .upgrade-emblem { width: 66px; flex-basis: 66px; height: 84px; }
+  .upgrade-name { font-size: 21px; }
+  .upgrade-description { font-size: 11px; }
+  .upgrade-action { padding-top: 7px; font-size: 12px; }
+}
+@media (orientation: landscape) and (max-height: 620px) {
+  .celestial-overlay { padding: max(13px,var(--safe-top)) max(27px,env(safe-area-inset-right)) max(13px,var(--safe-bottom)) max(27px,env(safe-area-inset-left)); }
+  .upgrade-console { padding: 0 18px; }
+  .upgrade-rail { min-height: 35px; gap: 8px; }
+  .upgrade-status { font-size: 8px; gap: 8px; letter-spacing: .16em; }
+  .upgrade-route { font-size: 12px; gap: 8px; }
+  .upgrade-heading { padding: 12px 6px 13px; }
+  .upgrade-heading h2 { font-size: 30px; }
+  #upgrade-detail { font-size: 12px; margin-top: 5px; }
+  .upgrade-compass { width: 49px; height: 49px; }
+  .upgrade-modules { padding: 5px 0; }
+  .upgrade-module { padding: 0 11px 10px; }
+  .upgrade-emblem { height: 68px; }
+  .upgrade-module .upgrade-key { position: absolute; top: 7px; right: 8px; margin: 0; padding: 1px 4px; font-size: 10px; }
+  .upgrade-name { font-size: 22px; }
+  .upgrade-description { max-width: 235px; font-size: 11px; line-height: 1.5; margin-top: 7px; }
+  .upgrade-action { font-size: 13px; padding-top: 10px; }
+  .upgrade-action svg { width: 13px; height: 13px; }
+  .upgrade-footnote { padding: 8px 0 10px; font-size: 9px; }
+}
+@media (orientation: landscape) and (max-height: 350px) {
+  .celestial-overlay { padding: max(10px,var(--safe-top)) max(16px,env(safe-area-inset-right)) max(10px,var(--safe-bottom)) max(16px,env(safe-area-inset-left)); }
+  .upgrade-console { padding: 0 14px; }
+  .upgrade-rail { min-height: 31px; }
+  .upgrade-status { font-size: 7px; letter-spacing: .1em; }
+  .upgrade-route { font-size: 10px; gap: 5px; }
+  .upgrade-heading { padding: 10px 3px; }
+  .upgrade-heading h2 { font-size: 26px; }
+  #upgrade-detail { font-size: 10px; margin-top: 4px; }
+  .upgrade-compass { width: 34px; height: 34px; }
+  .upgrade-emblem { height: 50px; }
+  .upgrade-name { font-size: 18px; }
+  .upgrade-description { font-size: 10px; margin-top: 5px; }
+  .upgrade-action { padding-top: 7px; font-size: 12px; }
+}
+@media (pointer: coarse) { .upgrade-module .upgrade-key { display: none; } }
+@media (prefers-reduced-motion: reduce) { .upgrade-module, .upgrade-action svg { transition: none; } }
+@media (min-width: 1100px) and (min-height: 700px) {
+  .upgrade-console { width: min(84vw,1340px); padding: 0 clamp(30px,2.7vw,43px); }
+  .upgrade-rail { min-height: clamp(52px,3.7vw,59px); }
+  .upgrade-status { font-size: clamp(10px,.8vw,13px); }
+  .upgrade-route { font-size: clamp(15px,1.2vw,19px); }
+  .upgrade-heading { padding: clamp(27px,2vw,32px) 12px clamp(23px,1.8vw,28px); }
+  .upgrade-heading h2 { font-size: clamp(48px,3.8vw,60px); }
+  #upgrade-detail { font-size: clamp(15px,1.35vw,21px); }
+  .upgrade-compass { width: clamp(82px,6.7vw,106px); height: clamp(82px,6.7vw,106px); }
+  .upgrade-emblem { height: clamp(169px,13.8vw,219px); }
+  .upgrade-emblem > svg { width: min(100%,315px); }
+  .upgrade-module .upgrade-key { font-size: clamp(16px,1.4vw,22px); }
+  .upgrade-name { font-size: clamp(28px,2.2vw,35px); }
+  .upgrade-description { font-size: clamp(14px,1.13vw,18px); max-width: 300px; }
+  .upgrade-action { font-size: clamp(17px,1.35vw,21px); }
+  .upgrade-footnote { font-size: clamp(11px,1vw,15px); }
+}
+@media (max-width: 360px) and (orientation: portrait) {
+  .upgrade-heading { padding: 12px 1px; }
+  .upgrade-module { padding-top: 8px; padding-bottom: 8px; }
+  .upgrade-footnote { padding: 9px 0 11px; }
+}
