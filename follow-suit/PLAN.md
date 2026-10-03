@@ -62,6 +62,7 @@ Stop after the preview deploy and wait for the go-ahead.
 - `src/engine/money.ts`, `src/engine/money.test.ts`: table pay, unused chains and the power-of-ten bonus.
 - `src/engine/shop.ts`, `src/engine/shop.test.ts`: offers, rarity weights, prices, rerolls, buy, sell and move.
 - `src/engine/run.ts`, `src/engine/run.test.ts`: 8 stops, 3 tables each, shop after each clear, win and loss.
+- `src/engine/solver.ts`, `src/engine/solver.test.ts`: the best legal chain for a hand. This moved here from milestone 5, because the run check plans its chains with it.
 - `src/ui/StartScreen.tsx`: New run and a seed field.
 - `src/ui/StopIntro.tsx`: the stop number and the host for that stop.
 - `src/ui/HostBanner.tsx`: the host rule under the top bar.
@@ -70,23 +71,35 @@ Stop after the preview deploy and wait for the go-ahead.
 - `src/ui/StampPicker.tsx`: the deck picker that applies a stamp.
 - `src/ui/DeckView.tsx`: every card in the run deck, grouped by suit.
 - `src/ui/RunEnd.tsx`: win or loss, stop reached, best chain, seed and New run.
-- `qa/run.e2e.mjs`: a Playwright check of a run through a shop and a host table.
+- `src/ui/Sheet.tsx`: the bottom panel that the 8 picker, charm details, deck view and stamp picker share.
+- `src/ui/ClearedPanel.tsx`: the pay for a cleared table, then Open the shop. It replaces `TableEnd.tsx`.
+- `qa/lib.mjs`: the parts that the browser checks share.
+- `qa/run.e2e.ts`: a Playwright check of a full run. It plans with the engine, plays on screen and compares the two after each tap.
 
 ## Milestone 4: feel
 
-- `src/ui/reveal.ts`: turns the scoring steps into a timed sequence, about 180 ms for each card.
-- `src/ui/ScoreReveal.tsx`: card points above each card, Mult bumps, the ring circle and the flash.
-- `src/ui/CountUp.tsx`: counts the table total up to its new value.
-- `src/ui/audio.ts`: Web Audio notes on a major scale, coin sounds and the mute state.
-- `src/ui/useReducedMotion.ts`: swaps the circle move for a fade.
-- `qa/feel.e2e.mjs`: checks the reveal order, the mute toggle and reduced motion.
+- `src/ui/reveal.ts`, `src/ui/reveal.test.ts`: turn the scoring steps into timed beats, about 180 ms for each card, and place the ring cards on an ellipse.
+- `src/ui/useReveal.ts`, `src/ui/useReveal.test.tsx`: run the beats, play the sounds, count the total up and commit the new run state at the end.
+- `src/ui/ChainArea.tsx`: card points above each card, Mult bumps and flashes, the ring loop or fade, and the chain score.
+- `src/ui/music.ts`: pitches on the major scale.
+- `src/ui/audio.ts`: Web Audio notes, the ring chord, coin sounds and the mute state.
+- `src/ui/SoundToggle.tsx`: the mute toggle in the top bar.
+- `src/ui/useReducedMotion.ts`: swaps the ring move for a fade.
+- `qa/feel.e2e.mjs`: checks the reveal order and timing, the notes, the mute toggle, reduced motion and the ring layout.
 
 ## Milestone 5: balance
 
-- `src/engine/solver.ts`, `src/engine/solver.test.ts`: the best legal chain for a hand, by depth-first search.
-- `scripts/simulate.ts`: plays 1,000 seeds with no charms and no redraws and reports the clear rate of each table in stops 1 to 3.
+- `scripts/simulate.ts`: plays 1,000 seeds with no charms and no redraws and reports the clear rate of each table in stops 1 to 3. `--calibrate` reports the 3-chain totals for each kind of table, and `--buy-charms` tries a player who buys charms.
 - `BALANCE.md`: the simulator report and the final targets.
-- `src/config.ts`: the tuned targets.
+- `src/config.ts`: the tuned targets and host scales.
+
+## After the milestones: the arcade machine
+
+- `vite.config.ts`: the arcade build mode, which writes `public/follow-suit/`.
+- `src/ui/arcade.ts` and `src/ui/ArcadeLinks.tsx`: the Switch game button and the Arcade link.
+- `src/ui/best.ts`: the best chain save that the machine shows.
+- `qa/arcade.e2e.mjs` and `qa/cabinet-art.mjs`: the arcade check and the machine art.
+- Outside this folder: the machine in `public/index.html`, its entry in `public/arcade/switch.js`, its art in `public/arcade/follow-suit.webp`, and the arcade checks in `qa/arcade/`.
 
 ## Checks for each milestone
 

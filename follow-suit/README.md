@@ -20,15 +20,34 @@ npm run build       # production build in dist/
 npm run check       # all three
 ```
 
+## Balance
+
+`npm run simulate` plays 1,000 seeds with no charms and no redraws, with the best chain for each hand, and prints a Markdown report. `BALANCE.md` holds the report and explains the tuned targets.
+
 ## Check it in a browser
 
-`npm run qa` builds the app, serves `dist/` and plays one table by touch in Chromium at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow. Screenshots go to `qa/out/`.
+`npm run qa` builds the app, serves `dist/` and runs three checks in Chromium with touch input:
+
+- `qa/table.e2e.mjs` plays one table at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow.
+- `qa/feel.e2e.mjs` checks the score reveal: the order and timing of the points, the Mult bumps, the scale notes and the ring chord, the count-up, the mute toggle and the reduced-motion fade. An `AudioContext` spy records each note's pitch, so the check needs no speakers.
+- `qa/run.e2e.ts` plays a full run. It picks a seed whose run clears a table with a power-of-ten bonus and counts one coin sound for each bonus dollar. It plans each step with the engine, plays it on screen and compares the screen with the engine after each tap. It visits the start screen, stop intros, tables, a host table, shops, the deck view, a stamp picker and the run end screen, and checks each layout at the 4 sizes.
+
+Screenshots go to `qa/out/`.
 
 The check uses `playwright-core`, which does not download a browser:
 
 - If Playwright has no Chromium on your computer, run `npx playwright-core install chromium` once.
 - To use another Chromium binary, set `CHROMIUM_PATH` to its path.
-- To check a deployed copy, set `BASE_URL` and run `npm run qa:url`.
+- To check a deployed copy, set `BASE_URL` and run `npm run qa:url`. For a preview behind Vercel Authentication, set `BASE_URL` to a share link with `?_vercel_share=`. The checks open it once and keep its access cookie.
+
+## The Cottage Arcade
+
+The Cottage Arcade at the root of this repository serves its own copy of the game at `/follow-suit/`. That copy is committed in `public/follow-suit/`.
+
+- After you change the game, run `npm run build:arcade` to rebuild that copy. It uses the base path `/follow-suit/` and loads the arcade's `quiet.js` and `switch.js`. Its start screen and run end screen show Switch game and Arcade.
+- `npm run qa:arcade` rebuilds the copy, serves `public/` and checks it: the arcade scripts, the two buttons at the 4 phone sizes, the switcher, the best chain save and the line on the machine. To check a running arcade server, set `BASE_URL` to its `/follow-suit/` address and run `node qa/arcade.e2e.mjs`.
+- The game saves the best chain score of all runs in this browser, under `follow-suit:best-chain`. The Follow Suit machine shows it as BEST CHAIN.
+- `node qa/cabinet-art.mjs` makes the machine art, `public/arcade/follow-suit.webp`, from the 360 ring on seed K7QX2M. Run `npm run build` first, or set `BASE_URL`.
 
 ## Deploy to Vercel
 

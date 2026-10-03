@@ -28,17 +28,19 @@ export const CONFIG = {
     stops: 8,
     tablesPerStop: 3,
     startMoney: 4,
-    // Base target for each stop.
-    baseTargets: [150, 400, 1_000, 2_500, 6_000, 14_000, 30_000, 60_000],
+    // Base target for each stop. Tuned in milestone 5: see BALANCE.md. The brief started at
+    // 150, 400, 1,000, 2,500, 6,000, 14,000, 30,000 and 60,000.
+    baseTargets: [150, 300, 750, 1_875, 4_500, 10_500, 22_500, 45_000],
     // The table target is the base times this scale. The third table is the host table.
     tableScale: [1, 1.5, 2],
-    // The host table target is also multiplied by the host's own scale.
+    // The host table target is also multiplied by the host's own scale. Each started at 1. The
+    // scales put every host table at stop 2 at about the same clear rate: see BALANCE.md.
     hostScale: {
-      purist: 1,
-      zebra: 1,
-      climber: 1,
-      miser: 1,
-      jeweler: 1,
+      purist: 0.18,
+      zebra: 0.12,
+      climber: 0.19,
+      miser: 0.48,
+      jeweler: 0.23,
     },
   },
 
@@ -80,6 +82,40 @@ export const CONFIG = {
 
   stamps: {
     minDeckSize: 20,
+  },
+
+  // The score reveal after Play chain. Times are in milliseconds.
+  feel: {
+    cardMs: 180,
+    cardCharmMs: 150,
+    switchMs: 170,
+    endCharmMs: 340,
+    ringMs: 760,
+    multiplyMs: 440,
+    hostMs: 600,
+    scoreHoldMs: 450,
+    countUpMs: 650,
+    coinGapMs: 150,
+    // The ring is an ellipse around the chain row, in px.
+    ringRadiusXPerCard: 22,
+    ringRadiusXMin: 70,
+    ringRadiusXMax: 148,
+    ringRadiusY: 34,
+    ringRadiusYShort: 15,
+    ringBackScale: 0.86,
+    ringFrontScale: 1.04,
+  },
+
+  sound: {
+    // G4. Each chain starts at the root, and each switch moves one step up the major scale.
+    rootHz: 392,
+    majorScale: [0, 2, 4, 5, 7, 9, 11],
+    noteMs: 420,
+    ringChordSteps: [7, 9, 11],
+    ringNoteGapMs: 70,
+    coinHz: [1568, 2093],
+    coinNoteMs: 70,
+    volume: 0.16,
   },
 
   seed: {

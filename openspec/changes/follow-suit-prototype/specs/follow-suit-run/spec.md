@@ -4,8 +4,8 @@
 A run SHALL have 8 stops of 3 tables, and the third table of each stop SHALL have a host. The first table target SHALL be the stop base, the second SHALL be 1.5 times the base and the host table SHALL be 2 times the base times that host's scale.
 
 #### Scenario: Stop 1 targets
-- **WHEN** a run starts with the starting targets
-- **THEN** stop 1 asks for 150, then 225, then 300
+- **WHEN** a run starts and stop 1 has The Purist, whose scale is 0.18
+- **THEN** stop 1 asks for 150, then 225, then 54
 
 #### Scenario: Next host
 - **WHEN** a stop starts
@@ -14,6 +14,13 @@ A run SHALL have 8 stops of 3 tables, and the third table of each stop SHALL hav
 #### Scenario: Win
 - **WHEN** the player clears the host table of stop 8
 - **THEN** the run end screen shows a win
+
+### Requirement: Tuned targets
+The base targets and host scales SHALL let a simulated player with no charms and no redraws, who plays the best chain for each hand, clear stop 1 on at least 90% of seeds and stop 2 on about half of them.
+
+#### Scenario: Simulator report
+- **WHEN** `npm run simulate` plays 1,000 seeds
+- **THEN** the report shows at least 90% of seeds clearing stop 1 and between 40% and 60% clearing stop 2
 
 ### Requirement: Hosts
 A host table SHALL add the host's limit on top of the follow rules, and a card SHALL pass both. The seed SHALL pick the hosts, and no host SHALL appear twice until all 5 have appeared.

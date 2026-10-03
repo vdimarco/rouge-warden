@@ -27,6 +27,7 @@ The Cottage Arcade is static files in `public/`. There is no root package. `inst
 - `npm ci --prefix qa/browser`, then `npx playwright install --with-deps chromium` in that directory
 - `npm ci --prefix games/olympus`
 - `npm ci --prefix higgsfield`
+- `npm ci --prefix follow-suit`
 - `node_modules/playwright` and `node_modules/playwright-core` point at `qa/browser/node_modules`
 
 `start` serves the site at http://127.0.0.1:8765/ with `python3 -m http.server 8765 --bind 0.0.0.0 --directory public` when that port is not already responding. Keyboard play on the arcade: arrow keys pick a cabinet, 5 drops a token, 1 or Enter starts the game.
@@ -35,4 +36,5 @@ The Cottage Arcade is static files in `public/`. There is no root package. `inst
 - Primordia: `node qa/primordia/lenia.test.mjs`. Browser checks need the server: `NODE_PATH=qa/browser/node_modules node qa/primordia/smoke.e2e.mjs`.
 - Watch call: `npm ci --prefix voice`, then `node qa/voice/call.test.mjs`.
 - Olympus: `npm test --prefix games/olympus`. After editing that game, rebuild the committed bundle with `npm run build --prefix games/olympus`.
+- Follow Suit: `npm run check --prefix follow-suit`. Browser checks: `npm run qa --prefix follow-suit` and `npm run qa:arcade --prefix follow-suit`. After editing that game, rebuild the arcade copy in `public/follow-suit/` with `npm run build:arcade --prefix follow-suit`.
 - Higgsfield typecheck: `npm run typecheck --prefix higgsfield`. Generation needs `HF_CREDENTIALS` in `higgsfield/.env.local`. The arcade plays without that key. `/api/warden` is a Vercel function and is not part of this static server; games use their local stand-in.
