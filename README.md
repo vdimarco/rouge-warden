@@ -403,8 +403,9 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 1. Save the `list_sessions` result (your own sessions, limit 50) to a file.
 2. Read the live page with the Artifact tool, which saves it to a file.
-3. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
-4. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
+3. Save the pull request list (all states) to a file: `gh api "repos/<owner>/<repo>/pulls?state=all&per_page=100"`, one call per page. A pull request that was squash-merged leaves its branch ahead of main, so only the list can tell that the work tree is merged.
+4. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --prs <pull request file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
+5. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
 
 | Agent state | When |
 | --- | --- |
