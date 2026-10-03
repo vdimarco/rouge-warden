@@ -1,0 +1,24 @@
+# The Hermes side of the watch voice relay. Merge this into ~/.hermes/config.yaml
+# (keep your other platforms), then run: hermes gateway restart
+platforms:
+  webhook:
+    enabled: true
+    extra:
+      port: 8644
+      routes:
+        watch:
+          events: ["watch.voice"]
+          # The same value as HERMES_WEBHOOK_SECRET in Vercel. Make one with: openssl rand -hex 32
+          secret: "PASTE-YOUR-SECRET-HERE"
+          prompt: |
+            Voice command from my Fitbit watch, sent through Alexa: "{text}"
+            Alexa often mishears names and code words, so read it generously.
+            Handle it the same way you handle my Telegram messages.
+            Reply in one or two short sentences. I read the reply on the watch.
+          # Without a chat_id, Hermes uses your Telegram home channel (/sethome in that chat).
+          deliver: "telegram"
+          # Writes the reply into that chat's session, so a voice reply from the watch has the context.
+          mirror_to_session: true
+          # Webhook runs get web tools only. These toolsets let a watch command start Claude Code or Codex.
+          # Only requests signed with the secret above reach this route.
+          toolsets: ["terminal", "file", "web", "skills", "delegation"]
