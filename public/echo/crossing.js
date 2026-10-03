@@ -7,17 +7,33 @@ const LEAD = .045;         // more path behind the loon, so the first chick sits
 const TRAIL = (MAX_CHICKS+2)*GAP+LEAD;
 export const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 export const distance = (a,b) => Math.hypot(a.x-b.x,(a.y-b.y)*1.65);
-// Seeded numbers. The same seed gives the same clutches and boats in every browser.
+// Seeded numbers. The same seed gives the same lake, clutches and boats in every browser.
 export const hash = text => {let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193);}return h>>>0;};
 export function seeded(seed) {let s=seed>>>0;return ()=>{s=(s+0x6d2b79f5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+// Lake #1 is 1 January 2026, and each day has the next lake. The page gives the date at the cottage, so the whole crew swims the same lake.
+export const lakeNumber = day => {const [y,m,d]=String(day).split('-').map(Number);return Math.max(1,Math.round((Date.UTC(y,m-1,d)-Date.UTC(2026,0,1))/864e5)+1||1);};
+export const lakeSeed = n => hash(`loon-echo-lake-${n}`);
+export const clock = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+// The line to share, for example "Lake #278 · 3 clutches · 21 home · 2:14".
+export const shareLine = (r,lake) => `Lake #${lake} · ${r.clutch} ${r.clutch===1?'clutch':'clutches'} · ${r.saved} home · ${clock(r.elapsed)}`;
+const START = {x:.5, y:.28};
+// The seed sets the lake: two to four rocks, six fish and three boat lanes. Rocks keep clear of the start and of each other,
+// so the loon can always swim between them.
+function makeLake(seed) {
+  const random=seeded(hash(`${seed}:lake`)),rocks=[],fish=[],count=2+Math.floor(random()*3);
+  for(let i=0;i<500&&rocks.length<count;i++){const p={x:.25+random()*.5,y:.41+random()*.33};if(distance(p,START)>.22&&rocks.every(o=>distance(o,p)>.27))rocks.push(p);}
+  for(let gap=.16;fish.length<6;gap*=.85)for(let i=0;i<300&&fish.length<6;i++){const p={x:.16+random()*.68,y:.36+random()*.44,cooldown:0};if(rocks.every(o=>distance(o,p)>ROCK+.05)&&fish.every(o=>distance(o,p)>gap))fish.push(p);}
+  // one lane in each band, so the lanes never crowd; the first two (the lanes of clutch 1) change from lake to lake
+  const lanes=[.42,.58,.74].map(y=>y+(random()-.5)*.06);
+  for(let i=2;i>0;i--){const j=Math.floor(random()*(i+1));[lanes[i],lanes[j]]=[lanes[j],lanes[i]];}
+  return {rocks,fish,lanes};
+}
 const newEel=(x,y)=>({x,y,angle:0,active:false,stun:0,phase:'hunt',timer:4,aim:{x:.5,y:.5},trail:[]});
 export function createRun(seed = 1) {
-  const eel=newEel(.84,.79),r={seed:seed>>>0,elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,trail:[{x:.5,y:.28,angle:0,d:0}],
+  const eel=newEel(.84,.79),r={seed:seed>>>0,elapsed:0,x:START.x,y:START.y,target:{...START},angle:0,trail:[{...START,angle:0,d:0}],
     flock:[],saved:0,home:0,clutch:1,score:0,trips:0,biggest:0,hearts:3,invincible:0,call:0,cooldown:0,bump:0,
     breath:3,diving:false,exhausted:false,deposit:0,ended:false,cause:'',events:[],chicks:[],
-    rocks:[{x:.34,y:.47},{x:.68,y:.51},{x:.46,y:.69}],
-    fish:[[.2,.46],[.78,.47],[.2,.75],[.79,.77],[.46,.58],[.62,.4]].map(([x,y])=>({x,y,cooldown:0})),
-    lanes:[.43,.62,.76],boats:[],boatTimer:9,boatCount:0,eel,eels:[eel]};
+    ...makeLake(seed>>>0),boats:[],boatTimer:9,boatCount:0,eel,eels:[eel]};
   r.chicks=hatch(r);return r;
 }
 // Eight chicks hatch at spots from the seed. The spots keep clear of the nest, the rocks and each other.

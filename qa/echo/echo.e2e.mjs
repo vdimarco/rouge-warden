@@ -36,7 +36,8 @@ const bank = (page) => page.evaluate((STEP) => {
 
 async function flow(name, view) {
   R.section(`${name} (${view.width}×${view.height})`);
-  const { page, errors, close } = await open("../echo/", view);
+  const { page, ctx, errors, close } = await open("../echo/", view);
+  await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.waitForFunction(() => window.__echo && document.getElementById("start"));
   await shot(page, `echo-${name}-menu`);
 
@@ -45,6 +46,16 @@ async function flow(name, view) {
   await until(page, () => __echo.run && !__echo.run.ended && !document.getElementById("controls").hidden);
   R.check(Date.now() - t0 < 2000, `Play starts a run in under 2 s (${Date.now() - t0} ms)`);
   await page.evaluate(() => __echo.manual(true));
+
+  // Today's lake: the date at the cottage sets the lake number, and the number sets the lake.
+  const today = await page.evaluate(async () => {
+    const m = await import("/echo/crossing.js"), r = __echo.run;
+    const p = {}; for (const x of new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date())) p[x.type] = x.value;
+    const n = m.lakeNumber(`${p.year}-${p.month}-${p.day}`), want = m.createRun(m.lakeSeed(n));
+    return { n, label: document.getElementById("lake-label").textContent, card: document.getElementById("today").textContent, same: JSON.stringify([r.rocks, r.fish, r.lanes]) === JSON.stringify([want.rocks, want.fish, want.lanes]) };
+  });
+  R.check(today.label === `LAKE #${today.n}` && today.card === `TODAY: LAKE #${today.n}`, `the HUD and the start card name today's lake (${today.label})`);
+  R.check(today.same, `the run swims lake #${today.n}: its rocks, fish and boat lanes come from that lake's seed`);
 
   // The pause button must not cover HONK or DIVE, and all three must be on the screen.
   const boxes = await page.evaluate(() => ["call", "dive", "pause"].map((id) => { const b = document.getElementById(id).getBoundingClientRect(); return { id, l: b.left, t: b.top, r: b.right, b: b.bottom }; }));
@@ -106,6 +117,12 @@ async function flow(name, view) {
   R.check(/A BOAT ENDED THE RESCUE/.test(card), "the end card names what ended the run");
   R.check(/\b5 deliveries\b/.test(card), `the end card counts the deliveries (${(card.match(/\d+ deliver\w+/) || [""])[0]})`);
   R.check(/Clutch 3: \d of 8 home/.test(card), "the end card shows how close the next clutch was");
+  const line = await page.evaluate(() => document.getElementById("share-line").textContent.replace(/\u00a0/g, " "));
+  R.check(new RegExp(`^Lake #${today.n} · 3 clutches · 22 home · \\d+:\\d\\d$`).test(line), `the end card shows the share line ("${line}")`);
+  await page.click("#copy");
+  await until(page, () => /COPIED|SELECT/.test(document.getElementById("copy").textContent));
+  const copied = await page.evaluate(async () => ({ button: document.getElementById("copy").textContent, text: await navigator.clipboard.readText().catch(() => "") }));
+  R.check(copied.button === "COPIED" && copied.text.includes(line) && copied.text.includes(`/echo/#lake=${today.n}`), `COPY puts the line and a link to the lake on the clipboard (${JSON.stringify(copied.text)})`);
   await shot(page, `echo-${name}-end`);
   const t1 = Date.now();
   await page.click("#again");
@@ -116,9 +133,21 @@ async function flow(name, view) {
   await endRun();
   const one = await page.evaluate(() => document.getElementById("panel").innerText);
   R.check(/\b1 delivery\b/.test(one), `one bank shows "1 delivery" (${(one.match(/\d+ deliver\w+/) || [""])[0]})`);
+  R.check(/^Lake #\d+ · 1 clutch · 1 home · 0:\d\d$/.test(await page.evaluate(() => document.getElementById("share-line").textContent.replace(/\u00a0/g, " "))), "the share line says \"1 clutch\" for one clutch");
 
   await close();
-  return errors;
+
+  // A shared link opens the same lake on another day.
+  const linked = await open("../echo/", { ...view, hash: "#lake=12" });
+  await linked.page.waitForFunction(() => window.__echo);
+  await linked.page.click("#start");
+  const twelve = await linked.page.evaluate(async () => {
+    const m = await import("/echo/crossing.js"), want = m.createRun(m.lakeSeed(12)), r = __echo.run;
+    return { label: document.getElementById("lake-label").textContent, card: document.getElementById("today").textContent, same: JSON.stringify([r.rocks, r.fish, r.lanes, r.chicks.map((c) => [c.x, c.y])]) === JSON.stringify([want.rocks, want.fish, want.lanes, want.chicks.map((c) => [c.x, c.y])]) };
+  });
+  R.check(twelve.label === "LAKE #12" && twelve.card === "LAKE #12" && twelve.same, `a #lake=12 link opens lake #12 (${twelve.label}, same lake: ${twelve.same})`);
+  await linked.close();
+  return [...errors, ...linked.errors];
 }
 
 const errors = [...await flow("phone", PHONE), ...await flow("desk", DESK)];

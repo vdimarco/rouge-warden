@@ -2,6 +2,8 @@
 
 A free-swimming rescue game at `/echo` and `/echo/`. Swim around the lake to collect chicks. They follow you in a line. Lead the line back to the nest, and choose when to bank it. A small group is safe, but a bigger group scores more: `100 × group²`. Each bank restores one energy, up to three.
 
+Each day has its own lake. The date at the cottage in Ontario sets the lake number (Lake #1 is 1 January 2026), and the number sets the rocks (two to four), the six fish, the three boat lanes and the chick spots of every clutch. So the whole crew swims the same lake each day. A link with `#lake=N` opens lake N. The end card shows a line such as "Lake #278 · 3 clutches · 21 home · 2:14", and COPY puts it on the clipboard with your score and a link to the lake.
+
 The run has no last level. When all eight chicks of a clutch are home, the nest is full. You get all your energy back, and the next clutch hatches at new spots. Each clutch makes the lake more dangerous. The eel swims faster, reaches further and rests less between lunges. A second eel joins at clutch 3, and one more comes every three clutches, up to six. Boats come more often, use a third lane from clutch 2, and cross in pairs from clutch 4. The run ends when your energy is gone.
 
 - Click or tap a point, drag, or use the arrows or WASD to swim. The line keeps its spacing when you stop or honk. The loon has a light ring, so you can find it at a glance.

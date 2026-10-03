@@ -11,7 +11,7 @@
 
 .panel{background:#153e3bf5;border:3px solid #15272d;border-radius:35px 22px 39px 19px;box-shadow:6px 8px 0 #071e25aa,inset 0 0 0 2px #b6df8244}.panel h1{color:#c9f58a;text-shadow:3px 3px 0 #17282a,-1px -1px 0 #17282a;font-family:Trebuchet MS,system-ui,sans-serif;transform:rotate(-3deg);letter-spacing:-.07em}.panel .lede{color:#e8d8ae}.eyebrow{color:#b0e3b4}.panel button,#call{background:#c6ee89;border:3px solid #192e30;border-radius:16px 24px 15px 23px;box-shadow:3px 4px 0 #092b2f}.panel button:hover,#call:not(:disabled):hover{background:#def7a9}.panel button:active,#call:active{transform:translateY(2px)}#hud{max-width:680px;margin:auto}#hud strong{color:#e6edc8}progress::-webkit-progress-value{background:#bde981}progress::-moz-progress-bar{background:#bde981}.result{color:#c9f58a}
 
-#call{min-width:218px;white-space:nowrap;font-size:13px}#call:disabled{border-width:3px}#call.active:disabled{color:#163a32;border-color:#193930;background:#c7f4ba}@media(max-width:480px){#flock{font-size:17px}}
+.share{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;margin:14px 0 2px;padding:10px 12px;border:2px dashed #b6df8270;border-radius:14px;background:#0d2c29d9}.share span{font:800 14px system-ui;color:#fff0be;user-select:all}.share b{white-space:nowrap}.panel .share button{width:auto;margin:0;min-height:36px;padding:6px 16px;font-size:13px;background:#a4e4ed;border-radius:12px 16px 12px 15px}#call{min-width:218px;white-space:nowrap;font-size:13px}#call:disabled{border-width:3px}#call.active:disabled{color:#163a32;border-color:#193930;background:#c7f4ba}@media(max-width:480px){#flock{font-size:17px}}
 
 #controls{width:min(84vw,350px);bottom:calc(env(safe-area-inset-bottom) + 36px)}.action-row{display:flex;gap:12px}.action-row button{flex:1;min-width:0!important;padding:0 8px!important;white-space:nowrap;touch-action:manipulation;min-height:48px;font:800 14px system-ui}#dive{color:#143e43;background:#a4e4ed;border:3px solid #192e30;border-radius:23px 16px 23px 15px;box-shadow:3px 4px 0 #092b2f}#dive.active{background:#f6d58a}#dive:disabled{opacity:.55}.breath-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#113739df;border-radius:8px;margin-bottom:8px}.breath-row span{white-space:nowrap;font:800 10px system-ui;letter-spacing:.04em;color:#c9eced}.breath-row progress{height:7px}#breath::-webkit-progress-value{background:#91e0ed}#breath::-moz-progress-bar{background:#91e0ed}#route{width:min(42vw,230px)}#chapter{font-size:11px!important}#message{top:calc(env(safe-area-inset-top) + 80px);font-size:12px;width:min(88vw,460px)}@media(max-width:480px){#hud{gap:8px}#hearts{font-size:17px!important}#flock{font-size:18px}#controls{bottom:calc(env(safe-area-inset-bottom) + 35px)}.panel p{font-size:14px}.panel .lede{font-size:18px}}
 </style>
@@ -19,14 +19,14 @@
 <body>
 <canvas id="game" aria-label="Loon Echo rescue lake. Click or drag to swim freely. Arrow keys or WASD steer; Space dives; E honks."></canvas>
 <div id="ui">
-  <div id="hud"><div><span id="clutch-label">CLUTCH 1</span><strong id="flock">0 / 8 home</strong></div><div id="route"><span>RESCUE RUN</span><strong id="chapter">8 to rescue</strong><progress id="progress" max="8" value="0" aria-label="Chicks of this clutch at the nest"></progress></div><div><span>ENERGY</span><strong id="hearts" aria-label="3 energy">♥ ♥ ♥</strong></div></div>
+  <div id="hud"><div><span id="clutch-label">CLUTCH 1</span><strong id="flock">0 / 8 home</strong></div><div id="route"><span id="lake-label">LAKE #1</span><strong id="chapter">8 to rescue</strong><progress id="progress" max="8" value="0" aria-label="Chicks of this clutch at the nest"></progress></div><div><span>ENERGY</span><strong id="hearts" aria-label="3 energy">♥ ♥ ♥</strong></div></div>
   <div id="message" role="status" aria-live="polite"></div>
   <div class="panel" id="panel">
-    <span class="eyebrow">SAME LAKE. WRONG DIMENSION.</span><h1>LOON<br>ECHO</h1>
+    <span class="eyebrow" id="today">TODAY: LAKE #1</span><h1>LOON<br>ECHO</h1>
     <p class="lede">The eel wants your little weirdos.</p>
-    <p><b>Swim anywhere.</b> Collect chicks, then bring them to the safe nest. Bank a few now—or risk a bigger flock for a bigger bonus.</p>
-    <p><b>DIVE</b> under rocks and boats. <b>HONK</b> to gather nearby chicks and stun the eel. Keep an eye on your breath!</p>
-    <button id="start">LET’S STEAL THEM BACK</button><p class="small">Click / drag or WASD / arrows to swim<br>Space: dive / surface · E: honk</p>
+    <p><b>Swim anywhere.</b> Chicks follow you in a line. Lead them to the nest. A bigger group scores more: 100 × group².</p>
+    <p>A full nest hatches the next clutch, and the lake gets more dangerous. <b>DIVE</b> under boats and eels. <b>HONK</b> to call near chicks and stop the eel.</p>
+    <button id="start">LET’S STEAL THEM BACK</button><p class="small">The whole crew swims the same lake today.<br>Click / drag or WASD / arrows to swim<br>Space: dive / surface · E: honk · P: pause</p>
   </div>
   <div id="controls" hidden><div class="breath-row"><span id="breath-label">DIVE BREATH</span><progress id="breath" max="3" value="3" aria-label="Remaining dive breath"></progress></div><div class="action-row"><button id="call">HONK</button><button id="dive">DIVE ↓</button><button id="pause" hidden aria-label="Pause rescue">Ⅱ</button></div><small>E · HONK &nbsp; &nbsp; SPACE · DIVE / SURFACE &nbsp; &nbsp; P · PAUSE</small></div>
   <nav><a href="/lab/">← Lab</a><a href="/">Arcade</a></nav>

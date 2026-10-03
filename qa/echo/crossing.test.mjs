@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRun,step,callFlock,toggleDive,birdPosition,distance,danger,HOME,ROCK,GAP} from '../../public/echo/crossing.js';
+import {createRun,step,callFlock,toggleDive,birdPosition,distance,danger,lakeNumber,lakeSeed,shareLine,HOME,ROCK,GAP} from '../../public/echo/crossing.js';
 const advance=(r,seconds)=>{for(let t=0;t<seconds;t+=.01){step(r,.01);r.events.length=0;}};
 const quiet=()=>{const r=createRun();r.rocks=[];r.boatTimer=999;r.eel.active=true;r.eel.stun=999;return r;};
 const carry=(r,n)=>{r.flock=[];for(let i=0;i<n;i++){r.chicks[i].state='following';r.flock.push(i);}};
@@ -108,6 +108,44 @@ test('the eels take turns, so two strikes never come at once',()=>{
 });
 test('map seeds preserve eight recoverable chicks and bounded movement',()=>{
  for(const seed of [1,7,42,1000]){const r=quiet();const map=createRun(seed);assert.equal(map.chicks.length,8);assert.ok(map.chicks.every(c=>c.x>=.1&&c.x<=.9));r.target={x:99,y:-99};advance(r,8);assert.ok(r.x<=.9&&r.y>=.19);assert.ok(distance(r,HOME)>=0);}
+});
+const lakeOf=r=>JSON.stringify({rocks:r.rocks,fish:r.fish,lanes:r.lanes,chicks:r.chicks.map(c=>[c.x,c.y])});
+const fillNest=r=>{carry(r,8);r.x=HOME.x;r.y=HOME.y;r.target={...HOME};r.eels.forEach(e=>{e.active=false;e.stun=1e9;});r.boatTimer=1e9;advance(r,.7);};
+test('the same seed gives the same lake: rocks, fish, boat lanes and chick spots',()=>{
+ for(const seed of [lakeSeed(1),lakeSeed(276),7]){
+  const a=createRun(seed),b=createRun(seed);assert.equal(lakeOf(a),lakeOf(b));
+  fillNest(a);fillNest(b);assert.equal(a.clutch,2);assert.equal(lakeOf(a),lakeOf(b),'the next clutch hatches at the same spots');
+ }
+ const play=seed=>{const r=createRun(seed);for(let i=0;i<4000;i++){if(i%300===0)r.target={x:.2+(i%7)*.1,y:.3+(i%5)*.1};step(r,.01);r.events.length=0;}
+  return JSON.stringify({x:r.x,y:r.y,boats:r.boats,eels:r.eels.map(e=>[e.x,e.y,e.phase]),hearts:r.hearts});};
+ assert.equal(play(lakeSeed(5)),play(lakeSeed(5)),'the same seed and the same moves give the same run, boats and eels too');
+ const lakes=new Set(),rocks=new Set();for(let n=1;n<=100;n++){const r=createRun(lakeSeed(n));lakes.add(lakeOf(r));rocks.add(r.rocks.length);}
+ assert.equal(lakes.size,100,'each of 100 days has its own lake');assert.deepEqual([...rocks].sort(),[2,3,4],'a lake has two to four rocks');
+});
+test('across 100 seeds every chick is reachable and none sits in a rock',()=>{
+ const reach=(seed,spot)=>{const s=createRun(seed);s.eel.stun=1e9;s.boatTimer=1e9;s.chicks.forEach(c=>c.state='saved');s.x=HOME.x;s.y=HOME.y;s.target={x:spot.x,y:spot.y};
+  for(let t=0;t<8;t+=.02){step(s,.02);s.events.length=0;if(distance(s,spot)<.065)return true;}return false;};
+ for(let n=1;n<=100;n++){
+  const seed=lakeSeed(n),r=createRun(seed);
+  assert.ok(r.rocks.length>=2&&r.rocks.length<=4,`lake ${n}: two to four rocks`);
+  assert.ok(r.fish.length===6&&r.fish.every(f=>r.rocks.every(k=>distance(f,k)>ROCK)),`lake ${n}: six fish, none in a rock`);
+  assert.ok(r.lanes.length===3&&[...r.lanes].sort().every((y,i,a)=>!i||y-a[i-1]>.09),`lake ${n}: three boat lanes, well apart`);
+  for(let clutch=1;clutch<=3;clutch++){
+   assert.equal(r.clutch,clutch);assert.equal(r.chicks.length,8);
+   for(const c of r.chicks){
+    assert.ok(r.rocks.every(k=>distance(c,k)>ROCK+.04),`lake ${n}, clutch ${clutch}: chick ${c.id} sits clear of every rock`);
+    assert.ok(c.x>=.1&&c.x<=.9&&c.y>=.19&&c.y<=.82,`lake ${n}, clutch ${clutch}: chick ${c.id} is in the swim area`);
+    assert.ok(reach(seed,c),`lake ${n}, clutch ${clutch}: the loon swims from the nest to chick ${c.id}`);
+   }
+   fillNest(r);
+  }
+ }
+});
+test('lake numbers count days from 1 January 2026, and the share line reads well',()=>{
+ assert.equal(lakeNumber('2026-01-01'),1);assert.equal(lakeNumber('2026-10-03'),276);assert.equal(lakeNumber('2027-01-01'),366);assert.equal(lakeNumber('not a day'),1);
+ assert.notEqual(lakeSeed(276),lakeSeed(277));
+ const r=quiet();r.clutch=3;r.saved=21;r.elapsed=134.6;assert.equal(shareLine(r,278),'Lake #278 · 3 clutches · 21 home · 2:14');
+ r.clutch=1;r.saved=5;r.elapsed=59.9;assert.equal(shareLine(r,9),'Lake #9 · 1 clutch · 5 home · 0:59');
 });
 test('boats warn before moving and hit surface birds, not submerged birds',()=>{
  const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.boats=[{x:r.x,y:r.y,direction:1,age:0}];step(r,.01);assert.equal(r.hearts,3);

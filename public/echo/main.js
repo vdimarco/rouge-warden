@@ -1,4 +1,4 @@
-import { MAX_CHICKS, HOME, createRun, step, callFlock, toggleDive, birdPosition, clamp } from './crossing.js';
+import { MAX_CHICKS, HOME, createRun, step, callFlock, toggleDive, birdPosition, clamp, lakeNumber, lakeSeed, shareLine } from './crossing.js';
 const $=s=>document.querySelector(s), canvas=$('#game'),ctx=canvas.getContext('2d');
 const panel=$('#panel'),call=$('#call'),dive=$('#dive'),controls=$('#controls'),pauseButton=$('#pause'),message=$('#message');
 const art={};
@@ -13,7 +13,16 @@ function tone(freq=500,len=.12,type='sine',gain=.045,tag=''){
   try{audio??=new AudioContext();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.65,audio.currentTime+len);g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+len);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+len);}catch{}
 }
 function notice(text,len=4){message.textContent=text;noticeUntil=(run?.elapsed||0)+len;}
-function start(){run=createRun(Math.floor(Math.random()*0xffffffff));paused=false;pointer=null;keys.clear();particles=[];ripples=[];wobble=[];cues=[];banner=null;hatchAt=9;celebration=null;hops=[];floats=[];outro=null;shake=0;panel.hidden=true;controls.hidden=false;pauseButton.hidden=false;pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause rescue');last=performance.now();tone(680,.3);audio?.resume().catch(()=>{});notice('Swim to a golden chick. Then lead it back to the nest.',7);updateHud();}
+// Today's lake comes from the date at the cottage in Ontario, so the whole crew swims the same lake. A link with #lake=N opens lake N.
+function cottageDay(d=new Date()){
+  try{const p={};for(const x of new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d))p[x.type]=x.value;if(p.year&&p.month&&p.day)return `${p.year}-${p.month}-${p.day}`;}catch{}
+  return d.toISOString().slice(0,10);
+}
+let lake=1;
+function pickLake(){const linked=Number((location.hash.match(/lake=(\d{1,6})\b/)||[])[1]);lake=linked>0?linked:lakeNumber(cottageDay());
+  $('#today').textContent=linked>0?`LAKE #${lake}`:`TODAY: LAKE #${lake}`;$('#lake-label').textContent=`LAKE #${lake}`;}
+pickLake();addEventListener('hashchange',pickLake);
+function start(){run=createRun(lakeSeed(lake));paused=false;pointer=null;keys.clear();particles=[];ripples=[];wobble=[];cues=[];banner=null;hatchAt=9;celebration=null;hops=[];floats=[];outro=null;shake=0;panel.hidden=true;controls.hidden=false;pauseButton.hidden=false;pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause rescue');last=performance.now();tone(680,.3);audio?.resume().catch(()=>{});notice('Swim to a golden chick. Then lead it back to the nest.',7);updateHud();}
 $('#start').onclick=start;
 function gather(){if(run&&!paused&&callFlock(run)){tone(880,.4,'triangle');consumeEvents();updateHud();}}
 function submerge(){if(run&&!paused&&toggleDive(run)){tone(run.diving?180:550,.2);consumeEvents();updateHud();}}
@@ -38,12 +47,23 @@ function togglePause(force){
 }
 pauseButton.onclick=()=>togglePause();addEventListener('blur',()=>togglePause(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)togglePause(true);});
 const CAUSE={eel:'THE EEL GOT THE LAST BITE',boat:'A BOAT ENDED THE RESCUE'};
-const clock=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+// Copies the result line and a link to this lake. If the page may not write to the clipboard, the line is selected for a manual copy.
+async function copyResult(button){
+  const text=`Loon Echo · ${shareLine(run,lake)} · ${run.score.toLocaleString('en-US')} points\n${location.origin}${location.pathname}#lake=${lake}`;
+  let ok=false;
+  try{await navigator.clipboard.writeText(text);ok=true;}catch{}
+  if(!ok)try{const area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.cssText='position:fixed;opacity:0';document.body.append(area);area.select();ok=document.execCommand('copy');area.remove();}catch{}
+  if(!ok){const range=document.createRange();range.selectNodeContents($('#share-line'));getSelection().removeAllRanges();getSelection().addRange(range);}
+  button.textContent=ok?'COPIED':'SELECT AND COPY';tone(ok?990:300,.15,'triangle',.04,'copy');
+}
 function finish(){
   let best=0,before=0;try{before=Number(localStorage.getItem('loon-echo-rescue-best'))||0;best=Math.max(before,run.score);localStorage.setItem('loon-echo-rescue-best',String(best));}catch{best=run.score;}
-  const left=MAX_CHICKS-run.home,close=run.score>before?(before?'A new best.':'Your first score.'):`${(before-run.score).toLocaleString()} short of your best.`;
-  panel.innerHTML=`<span class="eyebrow">${CAUSE[run.cause]||'OUT OF ENERGY'}</span><h1>${run.saved} CHICKS<br>HOME.</h1><div class="result">${run.score.toLocaleString()}</div><p>points · ${close} Best ${best.toLocaleString()}</p><p>Clutch ${run.clutch}: ${run.home} of 8 home. ${left} more would hatch clutch ${run.clutch+1}.</p><p class="small">${run.trips} deliver${run.trips===1?'y':'ies'} · biggest group ${run.biggest} · ${clock(run.elapsed)}<br>A bigger group scores more: 100 × group².</p><button id="again">SWIM AGAIN</button>`;
-  panel.hidden=false;controls.hidden=true;pauseButton.hidden=true;message.textContent='';$('#again').onclick=start;
+  const n=v=>v.toLocaleString('en-US'),left=MAX_CHICKS-run.home;
+  const close=!before?'Your first run.':run.score>before?'A new best.':run.score===before?'You matched your best.':`${n(before-run.score)} short of your best (${n(best)}).`;
+  panel.innerHTML=`<span class="eyebrow">${CAUSE[run.cause]||'OUT OF ENERGY'}</span><h1>${run.saved} CHICKS<br>HOME.</h1><div class="result">${n(run.score)}</div><p>points · ${close}</p><p>Clutch ${run.clutch}: ${run.home} of 8 home. ${left} more would hatch clutch ${run.clutch+1}.</p>`+
+    `<div class="share"><span id="share-line">${shareLine(run,lake).split(' · ').map(s=>`<b>${s}</b>`).join('&nbsp;· ')}</span><button id="copy" type="button" aria-label="Copy your result and a link to this lake">COPY</button></div>`+
+    `<p class="small">${run.trips} deliver${run.trips===1?'y':'ies'} · biggest group ${run.biggest}. A bigger group scores more: 100 × group².</p><button id="again">SWIM AGAIN</button>`;
+  panel.hidden=false;controls.hidden=true;pauseButton.hidden=true;message.textContent='';$('#again').onclick=start;$('#copy').onclick=e=>copyResult(e.currentTarget);
 }
 // Sounds and pictures that come a little later, in game order. They run from the frame clock, so a pause holds them.
 function cue(delay,fn){cues.push({delay,fn});}
