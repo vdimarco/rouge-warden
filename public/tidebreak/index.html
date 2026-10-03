@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d1820">
-  <meta name="description" content="Shore of the Ancients. Choose from twelve folklore legends, master four-skill kits, and fight in a shifting 3v3 arena.">
+  <meta name="description" content="Shore of the Ancients. Choose from sixteen heroes, master four-skill kits, and fight in a shifting 3v3 arena.">
   <meta property="og:title" content="Shore of the Ancients | Cottage Arcade">
-  <meta property="og:description" content="Twelve legends. Forty-eight skills. A painted battle shore that shifts between town, river, and deep woods.">
+  <meta property="og:description" content="Ancient waters. New legends. Choose your hero and fight for the shore.">
   <meta property="og:image" content="/tidebreak/art/shore-ancients-hero.webp">
   <title>Shore of the Ancients · Cottage Arcade</title>
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
@@ -19,6 +19,9 @@
   <link rel="preload" as="image" href="./art/illustrated/opening-citadel.webp">
   <link rel="stylesheet" href="./opening.css">
   <link rel="stylesheet" href="./viewport.css">
+  <link rel="preload" as="image" href="./art/reference/shore-scene.webp">
+  <link rel="preload" as="image" href="./art/reference/tidewarden.webp">
+  <link rel="stylesheet" href="./selection-reference.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
@@ -49,18 +52,22 @@
       <div class="health"><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="mana-fill"></i><span id="mana-text" aria-label="Mana"></span><i id="xp-fill"></i></div></div>
     </div>
   </div>
-  <main id="menu" class="overlay">
+  <main id="menu" class="overlay reference-selection">
     <div class="intro">
-      <div class="roster-heading"><div class="title-lockup"><svg class="title-sigil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="24"/><path d="M32 3v10m0 38v10M3 32h10m38 0h10M16 16l7 7m18 18 7 7M16 48l7-7m18-18 7-7M32 20l10 12-10 12-10-12z"/></svg><div><h1>Shore of the Ancients</h1><p>Legends rise. Tides decide.</p></div></div><span class="match-format">3v3 with bots · Shifting shores · 6 min</span></div>
+      <div class="roster-heading"><h1 class="shore-wordmark"><span class="sr-only">Shore of the Ancients</span></h1><p class="ancient-motto">Ancient<br>waters.<br>New<br>legends.</p></div>
+      <nav class="selection-nav" aria-label="Shore navigation"><div class="selection-tabs"><button data-menu-tab="play">Play</button><button data-menu-tab="heroes" aria-current="page">Heroes</button><button data-menu-tab="realms">Realms</button><button data-menu-tab="lore">Lore</button><button data-menu-tab="shop">Shop</button></div><div class="selection-account"><button id="hero-profile" class="icon-button" aria-label="Your match record"><img src="./art/ui/two-shadows.svg" alt=""></button><button id="hero-settings" class="icon-button" aria-label="Game settings"><img src="./art/ui/cog.svg" alt=""></button><button id="tidecaller-profile"><span class="profile-portrait" aria-hidden="true"></span><span>Tidecaller<small id="profile-record">Ready to play</small></span></button></div></nav>
       <div class="roster-layout"><section class="hero-feature" aria-label="Selected hero">
-      <div class="hero-stage"><picture id="hero-picture"><source id="hero-animation" srcset="./art/animated/nessie-idle.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)"><img id="hero-art" src="./art/illustrated/nessie-front.webp" alt="Nessie, the river bruiser" decoding="async"></picture></div>
-      <div class="hero-copy"><h2 id="hero-name">Nessie</h2><span id="hero-role">River bruiser</span><p id="hero-note">Dive through the river. Pull the fight to you.</p><div id="hero-spell-note" aria-live="polite"></div></div>
+      <div class="hero-stage"><picture id="hero-picture"><img id="hero-art" src="./art/reference/tidewarden.webp" alt="Tidewarden, the unyielding deep" decoding="async"></picture></div>
+      <div class="hero-copy"><div class="hero-title"><img class="hero-sigil" src="./art/ui/trident.svg" alt=""><h2 id="hero-name">Tidewarden</h2></div><span id="hero-role">The unyielding deep</span><p id="hero-note">He stands where the world ends, and the next one begins. The tide obeys, and none escape its call.</p><div id="hero-tags"></div></div>
       <div id="hero-preview"></div>
-      </section><section class="roster-browser" aria-label="Hero roster"><div class="roster-title"><h2>The legends</h2><div class="lineup-navigation"><span id="roster-count">12 legends</span><button id="hero-prev" aria-label="Previous hero">‹</button><span id="lineup-position" aria-live="polite">2 / 12</span><button id="hero-next" aria-label="Next hero">›</button></div></div><div id="role-filters" role="group" aria-label="Filter heroes by attribute or role"></div><div id="hero-picks" class="hero-picks" role="group" aria-label="Choose a creature. Swipe left or right" tabindex="0"></div></section></div>
+      <div id="hero-spell-note" aria-live="polite"></div>
+      </section><section class="roster-browser" aria-label="Hero roster"><div class="roster-title"><h2 class="sr-only">Choose your hero</h2><div class="lineup-navigation"><span id="roster-count">16 heroes</span><button id="hero-prev" aria-label="Previous hero"><img src="./art/ui/chevron-left.svg" alt=""></button><span id="lineup-position" aria-live="polite">1 / 16</span><button id="hero-next" aria-label="Next hero"><img src="./art/ui/chevron-right.svg" alt=""></button></div></div><div id="role-filters" role="group" aria-label="Filter heroes by role"></div><div id="hero-picks" class="hero-picks" role="group" aria-label="Choose a hero" tabindex="0"></div></section></div>
+      <p class="shore-secret">Some secrets<br>should stay beneath<br>the waves.<span></span></p><p class="shore-memory">“The ocean<br>remembers<br>all things.”</p>
       <div class="roster-footer">
-      <div class="start-action"><button id="play" class="primary" disabled>Opening the veil…</button><span id="ready-legend">Nessie · River bruiser</span></div>
+      <a class="arcade-brand" href="/" aria-label="Cottage Arcade"><span class="brand-source" aria-hidden="true"></span><span class="arcade-motto">Play together.<br>Somewhere brighter.</span></a>
+      <div class="start-action"><button id="play" class="primary" disabled><img src="./art/ui/trident.svg" alt=""><span>Opening the shore…</span><img src="./art/ui/chevron-right.svg" alt=""></button><span id="ready-legend" class="sr-only">Tidewarden</span></div>
       <p id="load-error" role="alert" hidden>Art could not load. Check your connection and <button onclick="location.reload()">try again</button>.</p>
-      <div class="menu-links"><button id="how">How to play</button><button data-switch>Switch game</button><button id="sound-menu">Sound on</button></div>
+      <div class="menu-links"><button data-switch><kbd>Esc</kbd> Back</button><button id="how"><kbd>F</kbd> Hero details</button><button id="sound-menu">Sound on</button></div>
       </div>
     </div>
   </main>

@@ -10,7 +10,8 @@ import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './
 import { skillIcon } from './skill-icons.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, ROLES } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, ROLES, ROLE_ICONS, SELECTION_KEYS } from './roster.js';
+import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers } from './pointer-action.js';
 import { paginatePanel } from './panel-pager.js';
@@ -20,7 +21,8 @@ import { followUpFeedback } from './combat-feedback.js';
 import { spellBlocked } from './combat-state.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
-let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
+let selectedIdentity=0;
+let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
@@ -43,20 +45,33 @@ function pause() {
   sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · M map · B return · Esc pause</p>');
   $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
-function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = createMatch(selected); sound.next = 0; lineup.refresh(); }
+function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
 function updateSound() { $('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
-function choose(kind) {
-  selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('ready-legend').textContent = `${h.name} · ${h.role}`; $('hero-role').textContent = `${h.attribute} · ${h.role}`; $('hero-note').textContent = h.note;
-  $('hero-animation').srcset = `./art/animated/${h.slug}-idle.gif`; $('hero-art').src = `./art/illustrated/${h.slug}-front.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
-  document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
-  $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(kind);const spellNote=$('hero-spell-note');spellNote.innerHTML='<strong>Skills</strong><span>Hover a skill to preview it. Tap for full details.</span>';spellNote.hidden=false;
-  const explainSkill=slot=>{const a=spellDetail(kind,slot);spellNote.innerHTML=`<strong>${a.name}</strong><span>${a.description}</span><small>${a.tags} · ${a.cooldown}s cooldown · ${slot===3?'Ultimate at level 6':'Q / E / C skill'}</small>`;};
-  document.querySelectorAll('[data-hero-spell]').forEach(b=>{const slot=+b.dataset.heroSpell;b.onpointerenter=()=>explainSkill(slot);b.onfocus=()=>explainSkill(slot);b.onclick=()=>{const a=spellDetail(kind,slot);explainSkill(slot);sheet(`<h2>${a.name}</h2><div class="selection-spell-art">${heroPreviewHTML(kind).match(/<div class="hero-move-preview"[\s\S]*/)[0]}</div><p>${a.description}</p><p class="keyhint">${a.tags} · ${a.cooldown}s cooldown<br>${slot===3?'Ultimate: levels 6, 12, 18':'Basic ranks: levels 1, 3, 5, 7'}</p><button id="back-preview" class="primary">Back to legends</button>`);document.querySelectorAll('.selection-spell-art [data-hero-spell]').forEach(v=>v.onclick=()=>{closeSheet();document.querySelector(`#hero-preview [data-hero-spell="${v.dataset.heroSpell}"]`).click();});$('back-preview').onclick=closeSheet;};});
+function choose(identityId) {
+  const h=HERO_IDENTITIES[identityId];if(!h)return;
+  selectedIdentity=identityId;selected=h.kit;
+  $('hero-name').textContent=h.name;$('ready-legend').textContent=`${h.name} · ${h.subtitle}`;$('hero-role').textContent=h.subtitle;$('hero-note').textContent=h.note;
+  $('hero-tags').innerHTML=h.tags.map(tag=>`<span>${tag}</span>`).join('');
+  $('hero-art').src=`./art/reference/${h.slug}.webp`;$('hero-art').alt=`${h.name}, ${h.subtitle}`;
+  document.querySelectorAll('[data-hero]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.hero===identityId)));
+  $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(identityId);
+  const spellNote=$('hero-spell-note');spellNote.hidden=false;
+  const explainSkill=slot=>{
+    const a=identitySkill(identityId,slot),cost=manaCost({hero:h.kit,skillRanks:[1,1,1,1]},slot);
+    document.querySelectorAll('#hero-preview [data-hero-spell]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.heroSpell===slot)));
+    spellNote.innerHTML=`${selectionSpellArt(identityId,slot,'detail-spell-art')}<strong>${a.name}</strong><kbd class="detail-key">${SELECTION_KEYS[slot]}</kbd><div class="detail-copy"><span>${a.description}</span><small>${a.tags}<br>Cooldown: ${a.cooldown}s<br>Mana cost: ${cost}${slot===3?'<br>Unlocks at level 6':''}</small></div>`;
+  };
+  document.querySelectorAll('#hero-preview [data-hero-spell]').forEach(b=>{const slot=+b.dataset.heroSpell;b.onpointerenter=()=>explainSkill(slot);b.onfocus=()=>explainSkill(slot);b.onclick=()=>{
+    const a=identitySkill(identityId,slot);explainSkill(slot);
+    sheet(`<h2>${a.name}</h2><div class="selection-spell-art">${heroPreviewHTML(identityId)}</div><p>${a.description}</p><p class="keyhint">${a.tags} · ${a.cooldown}s cooldown<br>${slot===3?'Ultimate: levels 6, 12, 18':'Basic ranks: levels 1, 3, 5, 7'}</p><button id="back-preview" class="primary">Back to heroes</button>`);
+    document.querySelectorAll('.selection-spell-art [data-hero-spell]').forEach(v=>v.onclick=()=>{closeSheet();document.querySelector(`#hero-preview [data-hero-spell="${v.dataset.heroSpell}"]`).click();});$('back-preview').onclick=closeSheet;
+  });
+  explainSkill(1);
 }
 function start() {
-  sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
+  sound.start(); sound.next = 0; state = assignIdentities(createMatch(selected, Date.now() >>> 0),selectedIdentity); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
-  for (let i = 0; i < 4; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
+  for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
   $('controls').style.setProperty('--hero-color',HEROES[selected].color);
   skillButtons.forEach((b,i)=> {b.style.backgroundImage='none';b.querySelector('svg')?.remove();b.insertAdjacentHTML('afterbegin',skillIcon(KITS[selected][i].icon));});
@@ -69,7 +84,7 @@ function learnSkills() {
     sheet(spellbookHTML(p,selectedSpell,detailTab));$('sheet').classList.add('spellbook-sheet');
     document.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{selectedSpell=+b.dataset.preview;detailTab='overview';show();document.querySelector(`[data-preview="${selectedSpell}"]`).focus({preventScroll:true});});
     document.querySelectorAll('[data-spell-tab]').forEach(b=>b.onclick=()=>{detailTab=b.dataset.spellTab;show();document.querySelector(`[data-spell-tab="${detailTab}"]`).focus({preventScroll:true});});
-    $('train-selected').onclick=()=>{if(trainSkill(p,selectedSpell)){const text=`${KITS[p.hero][selectedSpell].name} · Rank ${p.skillRanks[selectedSpell]}`;announce(state,text,'Spell trained. Return to the hunt.');sound.tone(780,.16);updateUI();show();$('training-feedback').textContent=`Learned ${KITS[p.hero][selectedSpell].name}, rank ${p.skillRanks[selectedSpell]}.`;document.querySelector(`[data-preview="${selectedSpell}"]`).focus({preventScroll:true});}};
+    $('train-selected').onclick=()=>{if(trainSkill(p,selectedSpell)){const name=identitySkill(selectedIdentity,selectedSpell).name,text=`${name} · Rank ${p.skillRanks[selectedSpell]}`;announce(state,text,'Spell trained. Return to the hunt.');sound.tone(780,.16);updateUI();show();$('training-feedback').textContent=`Learned ${name}, rank ${p.skillRanks[selectedSpell]}.`;document.querySelector(`[data-preview="${selectedSpell}"]`).focus({preventScroll:true});}};
     $('back-skills').onclick=closeSheet;
   };show();
 }
@@ -78,12 +93,12 @@ const upgradeButtons=[...document.querySelectorAll('[data-upgrade]')];
 upgradeButtons.forEach(b=>pointerAction(b,()=>{
   const p=player(state),slot=+b.dataset.upgrade;
   if(!trainSkill(p,slot))return;
-  announce(state,`${KITS[p.hero][slot].name} · Rank ${p.skillRanks[slot]}`,'Ability upgraded.');
+  announce(state,`${identitySkill(selectedIdentity,slot).name} · Rank ${p.skillRanks[slot]}`,'Ability upgraded.');
   sound.tone(780,.16);updateUI();
 },()=>running&&!paused&&!resultShown&&!b.disabled));
 
 function how() {
-  const h = HEROES[selected];
+  const h = {...HEROES[selected],...HERO_IDENTITIES[selectedIdentity],descriptions:[0,1,2,3].map(i=>identitySkill(selectedIdentity,i).description)};
   sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
@@ -124,7 +139,8 @@ function updateUI() {
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
     b.setAttribute('aria-disabled',String(locked||!returnReady&&(p.cd[i]>0||empty)||blocked));
-    b.setAttribute('aria-label',`${returnReady?'Return to decoy':KITS[p.hero][i].name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${KITS[p.hero][i].description}`);
+    const move=identitySkill(selectedIdentity,i);
+    b.setAttribute('aria-label',`${returnReady?'Return to decoy':move.name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${move.description}`);
     if(blockedLabel)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Temporarily unavailable: ${blockedLabel.toLowerCase()}.`);
     b.classList.toggle('combo-ready',followUp?.slot===i);b.dataset.combo=followUp?.slot===i?followUp.bonus:'';
     if(followUp?.slot===i)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Combo ready. ${followUp.label}.`);
@@ -134,7 +150,7 @@ function updateUI() {
   $('skill-points').classList.toggle('ready',p.skillPoints>0&&p.skillRanks.some((_,i)=>canLearn(p,i)));
   upgradeButtons.forEach((b,i)=>{
     const eligible=canLearn(p,i);b.hidden=!eligible;b.disabled=!eligible;
-    b.setAttribute('aria-label',`${p.skillRanks[i]?'Upgrade':'Learn'} ${KITS[p.hero][i].name} to rank ${p.skillRanks[i]+1} · 1 skill point`);
+    b.setAttribute('aria-label',`${p.skillRanks[i]?'Upgrade':'Learn'} ${identitySkill(selectedIdentity,i).name} to rank ${p.skillRanks[i]+1} · 1 skill point`);
   });
 
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
@@ -161,13 +177,30 @@ const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
 pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.tone(660,.16);updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
 for(const [id,action] of [['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
-$('play').onclick=start;$('how').onclick=how;$('close-sheet').onclick=closeSheet;
+function heroDetails(){
+  const h=HERO_IDENTITIES[selectedIdentity];
+  sheet(`<h2>${h.name}</h2><p>${h.subtitle}</p><p>${h.note}</p>${[0,1,2,3].map(i=>{const a=identitySkill(selectedIdentity,i);return `<h3>${SELECTION_KEYS[i]} · ${a.name}</h3><p>${a.description}</p><p class="keyhint">${a.cooldown}s cooldown · ${manaCost({hero:h.kit,skillRanks:[1,1,1,1]},i)} mana${i===3?' · Unlocks at level 6':''}</p>`;}).join('')}<button id="details-back" class="primary">Back to heroes</button>`);
+  $('details-back').onclick=closeSheet;
+}
+function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
+function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
+function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+$('play').onclick=start;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
+$('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
+document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
+  const tab=b.dataset.menuTab;
+  if(tab==='play'){if(!$('play').disabled)start();return;}
+  if(tab==='heroes'){document.querySelector(`[data-hero="${selectedIdentity}"]`)?.focus();return;}
+  if(tab==='lore'){heroDetails();return;}
+  if(tab==='realms'){selectionPanel('The shifting realms','<p>Midnight Town and Deep Woods alternate every 40 seconds. Buildings and trees change the paths and block sight.</p><p>Use glowing brush for concealment. Rift gates cross the map. Clear spirit camps for embers, healing and haste, then contest the Wild Hunt in the center.</p>');return;}
+  selectionPanel('The Night Market','<p>Earn embers in battle and spend them in the Night Market. Combine components into six items, choose a build and forge one relic.</p><p>Open the market during a match to inspect items and buy upgrades.</p>');
+});
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
 let rosterFilter='All';
-const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selected,choose});
-function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selected,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'legend':'legends'}`;lineup.refresh(); }
-$('role-filters').innerHTML=ROLES.map(role=>`<button data-role="${role}" aria-pressed="${role==='All'}">${role}</button>`).join('');
+const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
+function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
+$('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><img src="./art/ui/${ROLE_ICONS[i]}.svg" alt="">${role}</button>`).join('');
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 movementControl=movementPointer($('joystick'),{movement,thumb:$('thumb'),enabled:()=>running&&!paused,onStart:()=>{sound.start();$('coach').hidden=true;}});
 abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=value,onStatus:updateAimStatus,onCast:command=>castQueue=command});
@@ -183,7 +216,8 @@ $('battle').addEventListener('pointerdown', e => {
 $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
-  if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else pause(); return; }
+  if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else if(!running)window.GameSwitch?.open();else pause();return; }
+  if(!running&&!$('sheet').open&&!e.repeat&&e.key.toLowerCase()==='f'){e.preventDefault();heroDetails();return;}
   if (!running || paused || e.repeat) return;
   const key = e.key.toLowerCase(); keys.add(key);
   if(key==='k'){learnSkills();return;}
@@ -219,8 +253,8 @@ function frame(now) {
   if(running)renderer?.draw(state, dt, false, aim&&renderer?skillAimPreview(state,player(state),aim.slot,dragSkillAim(player(state),aim.slot,aim,(x,y)=>renderer.screenDirection(x,y))):null, waypoint);
   requestAnimationFrame(frame);
 }
-loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').textContent = 'Start the hunt'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').textContent = 'Veil unavailable'; });
+loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
-choose(selected);
+choose(selectedIdentity);
 // A read-only snapshot supports the existing arcade's QA tooling.
 export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd], inventory: [...player(state).inventory] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer, graphics: renderer?.stats() });

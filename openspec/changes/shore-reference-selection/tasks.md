@@ -1,0 +1,8 @@
+- [x] Inspect the supplied reference, existing roster, controls and specs.
+- [x] Confirm the sixteen reference hero identities with the user.
+- [ ] Prepare clean stage art and source-matched hero assets.
+- [ ] Implement the reference layout and responsive versions.
+- [ ] Carry selected identity through battle and spell inspection.
+- [ ] Verify all identities, filters, hover/tap and Start behavior.
+- [ ] Compare browser screenshots with the reference and fix material differences.
+- [ ] Publish a reviewable branch and preview.
