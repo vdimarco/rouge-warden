@@ -6,9 +6,9 @@
 - [ ] Foldwild and Season Thief.
 - [ ] Storm Choir and Heartship.
 - [ ] Full Tilt.
-- [ ] Neon Ronin, and its broken tests.
+- [x] Neon Ronin, and its broken tests.
 - [ ] Loon Echo.
-- [ ] Take the Plunge.
+- [x] Take the Plunge.
 - [ ] Up the Creek.
 - [ ] README, the Lab page cards and `docs/lab-fun.md`.
 - [ ] Run every lab, neon, echo and pinball test on the merged branch, and check the preview.

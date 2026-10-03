@@ -23,6 +23,14 @@ The race and the reply use stamps that the link codec already has: `b=` holds th
 
 The Settle preview copies the game's tank rule and blast word for word, and `qa/lab/rules.drift.mjs` checks the copy, as it already does for the sand rules. A drag during Settle writes into the preview only, so the layer's strokes stay as painted.
 
+## Neon Ronin
+
+The duel was fair only if you could see it, so attacks now start only when the attacker is on screen, and touch play turns the view toward the attacker. The duel and the circuits take their random numbers from a seed, which makes the tests repeat and gives the crew a daily duel. The guard bar is the single rule for openings: a parry fills it at once, a block adds 1 and a dodge adds 2. In touch mode only a guard pressed in the last 0.6 s counts as a parry, so holding guard all the time is a block. The broken tests now load every module that the game imports.
+
+## Take the Plunge
+
+The sim stays exact (only + − × ÷ and sqrt), so ghosts still replay on every device. The bed loss moved from every step of contact to once per touch, and a thud now keeps most of the speed. Ghost links are version 2, and a version 1 link opens its lakes with a note. The dive cue runs the same prediction as the dotted path, twice: for a hold now and for a hold 0.25 s later, so a slow thumb still rips.
+
 ## The other games
 
 Each game's own section is added here when its work lands.
