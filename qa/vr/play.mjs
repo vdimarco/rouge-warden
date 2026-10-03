@@ -488,6 +488,9 @@ try {
 
   check(page.errors.length === 0, "no page errors during the whole run", page.errors);
 
+  // the flat page is done: close it, or it keeps drawing the city on the same four cores and starves the emulator run below
+  await page.context().close();
+
   /* ---------------- one short run under the Quest emulator ---------------- */
   const vr = await newPage({ width: 480, height: 270, clock: true });
   await open(vr, "?emulate&skipintro");
