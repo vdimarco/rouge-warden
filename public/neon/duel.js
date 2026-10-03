@@ -1,4 +1,6 @@
 // Combat rules are independent from rendering and motion sensors.
+// A seeded generator (mulberry32) makes a duel repeatable: the same seed gives the same attacks.
+export function seededRandom(seed=1){let s=seed>>>0;return()=>{s=s+0x6D2B79F5>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 export class Duel {
   constructor(level=1,random=Math.random){
     this.random=random;this.level=level;this.active=null;this.gap=.6;this.finished=false;

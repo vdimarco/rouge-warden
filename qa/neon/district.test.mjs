@@ -1,11 +1,15 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../../',import.meta.url)).replace(/\/$/,'');
-const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,{style:{setProperty(){}},addEventListener(){},setPointerCapture(){},getBoundingClientRect:()=>({left:0,top:0,width:104,height:104})});return elements.get(id)};
-globalThis.innerWidth=390;globalThis.innerHeight=844;globalThis.devicePixelRatio=1;
-globalThis.document={body:{prepend(){}},getElementById:el,createElement:()=>({getContext:()=>new Proxy({},{get:()=>()=>{}})})};globalThis.addEventListener=()=>{};
+const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,{style:{setProperty(){}},dataset:{},addEventListener(){},setPointerCapture(){},prepend(){},getBoundingClientRect:()=>({left:0,top:0,width:104,height:104})});return elements.get(id)};
+const listeners={};
+globalThis.innerWidth=390;globalThis.innerHeight=844;globalThis.devicePixelRatio=1;globalThis.window=globalThis;globalThis.screen={orientation:{angle:0}};
+// The texture loader asks for an image element. This one never loads, so the scene keeps its plain colours.
+globalThis.document={body:{prepend(){}},getElementById:el,createElement:()=>({getContext:()=>new Proxy({},{get:()=>()=>{}})}),createElementNS:()=>({addEventListener(){},removeEventListener(){}})};globalThis.addEventListener=(n,f)=>(listeners[n]??=[]).push(f);
 let src=fs.readFileSync(root+'/public/neon/district.js','utf8');
 src=src.replace("import * as THREE from '../crimson/lib/three.module.min.js';",`import * as Real from 'file://${root}/public/crimson/lib/three.module.min.js';const THREE={...Real,WebGLRenderer:class{constructor(){this.domElement={}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld();c.updateMatrixWorld()}}};`);
+// A data: URL cannot resolve relative imports, so they point at the files on disk.
+src=src.replace(/from '\.\/([\w-]+\.js)'/g,`from 'file://${root}/public/neon/$1'`);
 const {District}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 const d=new District();const enemy={boss:false,phase:'windup',timer:1,period:1.5,dir:0,hit:0};
 assert.ok(d.batchStats.before>100);assert.ok(d.batchStats.after<60);assert.ok(d.batchStats.after<d.batchStats.before/5);assert.equal(d.collides(-14,-13),true);assert.equal(d.collides(0,0),false);
@@ -13,8 +17,10 @@ d.placeEnemy(enemy);assert.equal(d.canStrike(),false);d.keys.add('KeyW');for(let
 d.yaw=Math.PI;assert.equal(d.canStrike(),false);d.update(.02,false,enemy);assert.equal(d.keys.size,0);assert.equal(d.move.x,0);
 d.reset();d.position.set(-8,1.65,-13);d.keys.add('KeyA');for(let i=0;i<100;i++)d.update(.04,true,enemy);assert.equal(d.collides(d.position.x,d.position.z),false);
 let pickups=0;d.onPickup=()=>pickups++;d.position.set(-23,1.65,5);d.clearInput();d.update(.02,true,enemy);assert.equal(pickups,1);d.update(.02,true,enemy);assert.equal(pickups,1);
-innerWidth=844;innerHeight=390;d.resize();assert.equal(d.camera.aspect,844/390);
-const colors=Object.values(d.materials).map(m=>m.color.getHex());d.setStyle('rick-morty');assert.equal(d.portal.visible,true);assert.equal(d.ink.visible,true);assert.equal(d.alienEyes.visible,true);d.setStyle('ghibli');assert.deepEqual(Object.values(d.materials).map(m=>m.color.getHex()),colors);assert.equal(d.portal.visible,false);
+// A browser resize event updates the shared viewport first; the camera then follows it.
+innerWidth=844;innerHeight=390;listeners.resize.forEach(f=>f());d.resize();assert.equal(d.camera.aspect,844/390);
+// The Portal Badlands style swaps in the alien biome and its walls. The courtyard comes back unchanged.
+const colors=Object.values(d.materials).map(m=>m.color.getHex());d.setStyle('rick-morty');assert.equal(d.alienWorld.root.visible,true);assert.equal(d.solids,d.alienWorld.solids);assert.ok(d.cityScenery.every(m=>!m.visible));assert.equal(d.portal.visible,false);d.setStyle('ghibli');assert.deepEqual(Object.values(d.materials).map(m=>m.color.getHex()),colors);assert.equal(d.alienWorld.root.visible,false);assert.equal(d.solids,d.citySolids);assert.ok(d.cityScenery.filter(m=>m!==d.ink).every(m=>m.visible));
 function travel(hz){d.reset();d.actor.visible=false;d.keys.add('KeyW');for(let i=0;i<hz;i++)d.update(1/hz,true,null);return 8-d.position.z}
 assert.ok(Math.abs(travel(60)-10.5)<.001);assert.ok(Math.abs(travel(30)-travel(60))<.001);assert.ok(Math.abs(travel(15)-travel(60))<.001);
 d.reset();d.actor.visible=false;d.position.set(-8,1.65,-13);d.keys.add('KeyA');for(let i=0;i<20;i++)d.update(.1,true,null);assert.equal(d.collides(d.position.x,d.position.z),false);

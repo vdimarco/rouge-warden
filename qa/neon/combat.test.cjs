@@ -2,13 +2,34 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-function boot(districtClass=null){
- const elements=new Map(),events={};
- const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
- const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',onclick:null,addEventListener(){},setPointerCapture(){},getContext:()=>ctx});return elements.get(id)};
- const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
- s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8').replace("import { Duel } from './duel.js';",fs.readFileSync('public/neon/duel.js','utf8').replace('export class Duel','class Duel')).replace("import { District } from './district.js';",districtClass||"class District {constructor(){throw Error('No WebGL in unit test')}}"),s);
- return {run:code=>vm.runInContext(code,s),events,elements};
+const path=require('node:path');
+// game.js is an ES module. The tests need its top-level state, so the harness turns it into one
+// script. Each imported module runs in its own function scope and returns its exports.
+// three.js is not loaded: the fixed-view game and drawAlienBackdrop do not use it.
+function bundle(districtClass){
+ const dir='public/neon',done=new Set();let out='const __mod={};\n';
+ const imports=(src,from)=>src.replace(/^import\s+(?:\*\s+as\s+(\w+)|\{([^}]*)\})\s+from\s+'([^']+)';?/gm,(_,star,names,spec)=>{
+  const key=spec.includes('three.module')?'three':path.posix.join(path.posix.dirname(from),spec);
+  if(key!=='three'&&!key.endsWith('/district.js'))load(key);
+  return star?`const ${star}=__mod[${JSON.stringify(key)}];`:`const {${names.replace(/\s+as\s+/g,':')}}=__mod[${JSON.stringify(key)}];`;
+ });
+ function load(file){
+  if(done.has(file))return;done.add(file);const names=[];
+  let src=imports(fs.readFileSync(file,'utf8'),file);
+  src=src.replace(/^export\s+(async\s+function|function|class|const|let)\s+(\w+)/gm,(_,kind,name)=>{names.push(name);return `${kind} ${name}`});
+  out+=`__mod[${JSON.stringify(file)}]=(function(){${src}\nreturn {${names.join(',')}}})();\n`;
+ }
+ out+=`__mod['three']={};__mod[${JSON.stringify(dir+'/district.js')}]=(function(){${districtClass||"class District {constructor(){throw Error('No WebGL in unit test')}}"}\nreturn {District}})();\n`;
+ const game=imports(fs.readFileSync(dir+'/game.js','utf8'),dir+'/game.js');
+ return out+game;
+}
+function boot(districtClass=null,extra={}){
+ const elements=new Map(),events={},timers=[];
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}}),measureText:()=>({width:40})},{get:(o,k)=>o[k]??(()=>{})});
+ const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:false,textContent:'',innerHTML:'',value:'',onclick:null,style:{setProperty(){}},dataset:{},classList:{toggle(){},add(){},remove(){},contains:()=>false},addEventListener(){},setPointerCapture(){},getContext:()=>ctx,getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),select(){},focus(){}});return elements.get(id)};
+ const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[],body:{classList:{toggle(){},add(){},remove(){},contains:()=>false}}},matchMedia:()=>({matches:false}),addEventListener:(n,f)=>events[n]=f,dispatchEvent(){},requestAnimationFrame(){},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true,...extra};
+ s.window=s;vm.createContext(s);vm.runInContext(bundle(districtClass),s);
+ return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
 }
 test('direction, cooldown, parry, chip damage and pause',()=>{
  const {run}=boot();run('start();enemy.dir=0');
@@ -60,9 +81,14 @@ test('permission denial, null samples and landscape calibration preserve touch f
  events.deviceorientation({alpha:null,beta:null,gamma:null});assert.equal(run('raw'),null);
  run('now+=40');events.deviceorientation({alpha:359,beta:55,gamma:10});
  run('now+=40');events.deviceorientation({alpha:0,beta:55,gamma:10});assert.ok(run('sword.speed<30'));
- run('resize()');assert.equal(run('raw'),null);
+ // The layout stays locked during play, so a resize keeps the grip and causes no false swing.
+ const grip=run('raw');run('resize()');assert.equal(run('raw'),grip);assert.ok(run('base!==null'));
+ run('now+=40');events.deviceorientation({alpha:0,beta:55,gamma:10});assert.ok(run('sword.speed<30'));
  await elements.get('motion').onclick();run('enemy.dir=0;cooldown=0');
- elements.get('world').onpointerdown({pointerId:1,clientX:20,clientY:300});elements.get('world').onpointermove({pointerId:1,clientX:200,clientY:300});assert.equal(run('enemy.hp'),1);
+ // The layout stays locked at its start angle and the screen is now turned 90 degrees,
+ // so a swipe down the physical screen is a horizontal cut in the game.
+ assert.equal(run('viewport.angle'),90);
+ elements.get('world').onpointerdown({pointerId:1,clientX:195,clientY:250});elements.get('world').onpointermove({pointerId:1,clientX:195,clientY:430});assert.equal(run('enemy.hp'),1);
 });
 test('render path runs at portrait and landscape sizes',()=>{const {run}=boot();run('start();draw();innerWidth=844;innerHeight=390;resize();draw()')});
 
