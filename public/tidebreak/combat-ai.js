@@ -9,7 +9,7 @@ export function combatDecision(s,e){
  const ready=slot=>e.skillRanks[slot]&&e.cd[slot]<=0&&canAfford(e,slot)&&s.time>=(e.thinkAt||0);
  const zone=threateningZones(s,e)[0];
  const warning=s.units.find(t=>t.team!==e.team&&t.castIntent&&canSee(s,e,t)&&insideWarning(e,t.castIntent.shape,35))?.castIntent;
- const danger=zone||warning?.shape;
+ const danger=zone?.type==='sunray'?{...zone,shape:'cone',width:.13}:zone||warning?.shape;
  if(danger){
   const a=danger.shape==='cone'?danger.angle+(Math.sin(Math.atan2(e.y-danger.y,e.x-danger.x)-danger.angle)>=0?1:-1)*Math.PI/2:Math.atan2(e.y-danger.y,e.x-danger.x);
   return {mode:'evade',move:{x:e.x+Math.cos(a)*320,y:e.y+Math.sin(a)*320}};
@@ -26,7 +26,7 @@ export function combatDecision(s,e){
  let target=candidates.sort((a,b)=>score(a)-score(b)||a.id-b.id)[0];
  if(!target){const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);if(boss&&e.lane===1&&hurt>.6&&distance(e,boss)<700)target=boss;}
  const injured=allies.find(t=>t.hp<t.maxHp*.7);
- if(!target){if(e.hero===10&&injured&&ready(2))return {mode:'support',slot:2,aim:{x:1,y:0}};return {mode:'lane'};}
+ if(!target){if(e.hero===10&&injured&&!injured.bloom&&ready(2))return {mode:'support',slot:2,aim:{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}};return {mode:'lane'};}
  const d=distance(e,target),aim={x:target.x-e.x,y:target.y-e.y,distance:d},combat=target.kind==='hero',near=heroes.filter(t=>distance(e,t)<420).length;
  let slot;
  const choose=(i,condition=true)=>{if(slot===undefined&&condition&&ready(i))slot=i;};
@@ -40,8 +40,8 @@ export function combatDecision(s,e){
   case 6:choose(2,target.spiritUntil>s.time&&d<470);choose(1,d<420);choose(3,combat&&d<300&&target.spiritUntil>s.time);break;
   case 7:choose(2,combat&&(hurt<.7||outnumbered));choose(3,combat&&d<410&&(target.stun>0||near>=2));choose(1,d<490);choose(0,combat&&d>280&&d<570&&!outnumbered);break;
   case 8:choose(2,combat&&d<500&&!target.soulThread);choose(1,d<520);choose(3,combat&&d<360);break;
-  case 9:choose(3,combat&&hurt<.5);choose(2,d<320&&(target.bleed?.type==='fire'||injured));choose(1,d<400);break;
-  case 10:choose(2,!!injured);choose(0,d<480&&!s.units.some(t=>t.owner===e.id&&t.hp>0));choose(3,combat&&d<380&&(near>=2||!!injured));choose(1,d<480);break;
+  case 9:choose(3,combat&&hurt<.5);choose(2,d<600&&target.bleed?.type==='fire'&&!s.zones.some(z=>z.type==='sunray'&&z.source===e.id&&z.life>0));choose(1,d<400);break;
+  case 10:choose(2,!!injured&&!injured.bloom);choose(0,d<480&&!s.units.some(t=>t.owner===e.id&&t.hp>0));choose(3,combat&&d<380&&(near>=2||!!injured));choose(1,d<480);break;
   case 11:choose(0,(e.slow>0||e.bleed?.until>s.time||hurt<.65)&&combat);choose(3,combat&&d<350&&target.bleed?.type==='poison');choose(2,d<340);choose(1,d<420);break;
  }
  if(slot===undefined&&combat&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&target.hp<target.maxHp*.7)choose(0);
@@ -50,5 +50,5 @@ export function combatDecision(s,e){
  let point;
  if(e.range>250&&combat&&d<e.range*.7&&e.attackCd>.12){const a=Math.atan2(e.y-target.y,e.x-target.x);point={x:e.x+Math.cos(a)*260,y:e.y+Math.sin(a)*260};}
  else if(d>e.range*.9+target.radius)point=target;
- return {mode:'fight',target,move:point,slot,aim};
+ return {mode:'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:aim};
 }

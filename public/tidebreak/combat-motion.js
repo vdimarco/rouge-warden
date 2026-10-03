@@ -93,7 +93,9 @@ export function drawCombatEffect(renderer, f) {
 export function drawSkillZone(r,z,time){
   const c=r.ctx,p=r.project(z.x,z.y,8),radius=z.radius*r.scale;
   c.save();c.translate(p.x,p.y);c.scale(1,.64);c.lineWidth=2.5;
-  if(z.legend){
+  if(z.type==='sunray'){
+    c.rotate(z.angle);c.strokeStyle='#fff4bd';c.shadowColor='#ffb653';c.shadowBlur=16;c.lineWidth=12+Math.sin(time*12)*3;c.globalAlpha=.55;c.beginPath();c.moveTo(0,0);c.lineTo(radius,0);c.stroke();c.shadowBlur=0;c.lineWidth=3;c.globalAlpha=.95;c.stroke();
+  }else if(z.legend){
     const color=COLORS[z.hero];c.strokeStyle=color+'99';c.fillStyle=color+'18';c.setLineDash(time<(z.armed||0)?[6,7]:[]);c.beginPath();c.arc(0,0,radius,0,TAU);c.fill();c.stroke();c.setLineDash([]);c.globalAlpha=.45;drawLegendSpell(c,z.hero,z.type==='decoy'?0:3,radius*.8,(time*.3)%1,color);
   }else if(z.type==='witchfire'){
     const warning=time<z.armed;c.strokeStyle=warning?'#edb3ff':'#ffb075';c.fillStyle=warning?'#a346c41a':'#b34d4b35';
@@ -104,6 +106,14 @@ export function drawSkillZone(r,z,time){
     for(let arm=0;arm<3;arm++){c.beginPath();for(let j=0;j<60;j++){const t=j/60,a=t*TAU*1.5-time*2+arm*TAU/3,rr=radius*t;j?c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):c.moveTo(0,0);}c.stroke();}
   }else{c.strokeStyle=z.type==='water'?'#8febd999':'#efd48c88';c.beginPath();c.arc(0,0,radius,0,TAU);c.stroke();}
   c.restore();
+}
+export function drawSkillMissile(r,m,time){
+ const c=r.ctx,p=r.project(m.x,m.y,70),color=m.type==='venom'?'#a9dfb7':m.type==='spirit'?'#c5bdff':'#ffba83';
+ c.save();c.translate(p.x,p.y);c.strokeStyle=color;c.fillStyle=color;c.shadowColor=color;c.shadowBlur=12;
+ if(m.type==='spirit'){c.beginPath();c.ellipse(0,0,6,10,Math.sin(time*8)*.3,0,TAU);c.fill();c.fillStyle='#142332';c.fillRect(-3,-3,2,2);c.fillRect(1,-3,2,2);}
+ else if(m.type==='venom'){c.lineWidth=3;c.beginPath();c.moveTo(-13,4);c.bezierCurveTo(-8,-7,6,7,11,-3);c.stroke();c.beginPath();c.arc(12,-3,4,0,TAU);c.fill();}
+ else {c.beginPath();c.moveTo(-6,5);c.quadraticCurveTo(-7,-2,0,-14);c.quadraticCurveTo(1,-3,6,-6);c.quadraticCurveTo(10,8,-6,5);c.fill();}
+ c.restore();
 }
 function drawLegendSpell(c,hero,slot,radius,age,color){
  c.strokeStyle=color;c.fillStyle=color;

@@ -4,7 +4,7 @@ import { player, HEROES } from './sim.js';
 import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, CENTER, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
-import { attackPose, drawCombatEffect, drawSkillZone, drawCastWarning } from './combat-motion.js';
+import { attackPose, drawCombatEffect, drawSkillZone, drawCastWarning, drawSkillMissile } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
 import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
@@ -92,6 +92,7 @@ export class Renderer {
       const a=this.project(e.x,e.y,HEROES[e.hero].height*.77+32);c.save();c.font='700 12px Barlow';c.textAlign='center';c.strokeStyle='#101c27';c.lineWidth=3;c.strokeText(HEROES[e.hero].skills[e.castIntent.slot],a.x,a.y);c.fillStyle=e.team===p.team?'#bdebd9':'#ffad90';c.fillText(HEROES[e.hero].skills[e.castIntent.slot],a.x,a.y);c.restore();
     }
     for (const f of s.effects) drawCombatEffect(this, f);
+    for(const m of s.missiles)if(m.team===0||visibleTo(s,0,m))drawSkillMissile(this,m,time);
     this.drawAtmosphere(s, time);
     if (!menu && p.hp > 0) {
       if (p.recall) this.ring(p.x, p.y, 85 + Math.sin(time * 8) * 10, '#d6ffec', .8);

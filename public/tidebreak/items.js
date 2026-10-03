@@ -1,4 +1,5 @@
 import { manaCapacity } from './combat-rules.js';
+import { classGrowth } from './hero-classes.js';
 // Recipes, derived stats and build orders are shared by the player and bots.
 const item = (id, name, cost, category, stats, text, recipe = []) => ({ id, name, cost, category, stats, text, recipe });
 export const ITEMS = [
@@ -60,13 +61,15 @@ export function quote(e, id) {
 export function recalculate(e, base) {
   const stats = { attack: 0, attackSpeed: 0, power: 0, armor: 0, health: 0, haste: 0, speed: 0, regen: 0, lifesteal: 0 };
   for (const id of e.inventory || []) for (const [key, value] of Object.entries(ITEM[id].stats)) stats[key] += value;
-  e.maxHp = base.hp + (e.level - 1) * 110 + stats.health;
+  const growth=classGrowth(base,e.level);
+  e.attribute=base.attribute;e.manaRegen=growth.manaRegen;
+  e.maxHp = base.hp + (e.level - 1) * 110 + stats.health + growth.health;
   e.maxMana=manaCapacity(base,e.level);e.mana=Math.min(e.mana??e.maxMana,e.maxMana);
   e.hp = Math.min(e.hp, e.maxHp); // Purchases never refill health; selling cannot generate healing.
   e.damage = base.damage + (e.level - 1) * 13 + stats.attack;
-  e.rate = base.rate / (1 + stats.attackSpeed / 100);
+  e.rate = base.rate / (1 + (stats.attackSpeed+growth.attackSpeed) / 100);
   e.speed = base.speed + stats.speed; e.haste = 100 / (100 + stats.haste);
-  e.power = stats.power; e.armor = stats.armor; e.regen = stats.regen; e.lifesteal = stats.lifesteal / 100;
+  e.power = stats.power+growth.power; e.armor = stats.armor+growth.armor; e.regen = stats.regen+growth.regen; e.lifesteal = stats.lifesteal / 100;
 }
 export function purchase(e, id, base) {
   const q = quote(e, id); if (!q.possible) return false;
