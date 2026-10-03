@@ -3,8 +3,10 @@
 // the wall bursts, and a sphere of city sweeps out round you until you stand on the start roof.
 // The city shows only through stencil masks: the hole, then the growing sphere. Everything that belongs to the room
 // draws only where the mask is not set, so the room is replaced by the city and never fights it in the depth buffer.
+// It is all drawn like the key art: thick ink cracks with dots, flat colour in three bands, ink outlines round the shards.
 import * as THREE from "three";
 import { COLORS, GAME } from "./config.js";
+import { GLSL, INK, outlineOf } from "./comic.js";
 import { fire, release } from "./physics.js";
 
 const DEG = Math.PI / 180;
@@ -31,6 +33,7 @@ const WALL = { min: 1.5, max: 4, far: 5.5, tight: 0.9, off: 60 * DEG, ahead: 2.2
 const HOLE = { w: INTRO.holeWidth, h: 1.7, n: 15 };
 const DECAL = { size: 2.3, px: 1024 };
 const ROOM = { w: 4.4, d: 4.2, h: 2.7 }; // the cottage room of VR and flat play
+const INK_CSS = "#" + INK.toString(16).padStart(6, "0");
 
 /* ---------------- generators: the hole and its cracks ---------------- */
 // A jagged star-shaped polygon (a squarish ellipse whose radius alternates long and short), in wall metres (x right, y up).
@@ -92,9 +95,9 @@ function crackTexture(lines) {
       }
     }
   };
-  stroke("rgb(0,0,255)", 5, 0, 0, 9);
-  stroke("rgb(0,255,0)", 1.9, 1.5, 1.5, 0);
-  stroke("rgb(255,0,0)", 1, 0, 0, 0);
+  stroke("rgb(0,0,255)", 8, 0, 0, 9);
+  stroke("rgb(0,255,0)", 4.4, 0, 0, 0); // the pale plaster chips round the ink
+  stroke("rgb(255,0,0)", 2.6, 0, 0, 0); // the thick ink line
   c.filter = "none";
   const tex = new THREE.CanvasTexture(cv);
   tex.anisotropy = 4;
@@ -105,6 +108,9 @@ function crackTexture(lines) {
 const NOISE = `
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }`;
+// The comic chunks: dots, ink, cel bands and posterising, all anchored in the room's own metres (never in screen space).
+const COMIC = `const vec3 INKV = vec3(${((INK >> 16) & 255) / 255}, ${((INK >> 8) & 255) / 255}, ${(INK & 255) / 255});
+${GLSL.posterize}${GLSL.halftone}${GLSL.ink}${GLSL.toon}`;
 // Room things draw only where the mask is not set: the hole and the reveal sphere replace them with the city.
 function roomStencil(m) {
   m.stencilWrite = true; m.stencilRef = 1; m.stencilFunc = THREE.NotEqualStencilFunc;
@@ -117,12 +123,13 @@ function maskMaterial() {
 }
 const VERT_UV = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 
-// The crack: it grows outward from the middle, the dark lines seep green and glow warm as the hole is about to open.
+// The crack: it grows outward from the middle. Thick ink lines with pale plaster chips beside them and a screen of dots round
+// them, like a comic; the lines seep sludge green and glow hot as the hole is about to open.
 function decalMaterial(tex) {
   return roomStencil(new THREE.ShaderMaterial({
     uniforms: { uMap: { value: tex }, uGrow: { value: 0 }, uSeep: { value: 0 }, uPulse: { value: 0 } },
     vertexShader: VERT_UV,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       uniform sampler2D uMap; uniform float uGrow, uSeep, uPulse; varying vec2 vUv;
       void main() {
         vec3 t = texture2D(uMap, vUv).rgb;
@@ -130,34 +137,38 @@ function decalMaterial(tex) {
         float n = vn(vUv * 11.0) * 0.16 + vn(vUv * 31.0) * 0.06;
         float grow = uGrow * 1.25;
         float reveal = 1.0 - smoothstep(grow - 0.1, grow, d + n);
-        float front = smoothstep(grow - 0.2, grow - 0.03, d + n) * reveal;
-        float core = t.r * reveal, rim = t.g * reveal, halo = t.b * reveal;
-        vec3 dust = vec3(0.74, 0.7, 0.64), dark = vec3(0.06, 0.045, 0.045), wet = vec3(0.4, 0.55, 0.1), lit = vec3(1.0, 0.62, 0.26);
-        vec3 col = mix(dust, vec3(1.0, 0.96, 0.88), rim * 0.6);
-        vec3 line = mix(dark, wet, clamp(uSeep, 0.0, 1.0) * (0.4 + 0.6 * vn(vUv * 60.0)));
-        line = mix(line, lit, clamp(uPulse, 0.0, 1.0) * (0.5 + 0.5 * core));
-        col = mix(col, line, core);
-        col += wet * front * core * 0.5;
-        float a = clamp(core * 0.96 + rim * 0.34 + halo * 0.3, 0.0, 1.0);
-        gl_FragColor = vec4(col, a);
+        float core = smoothstep(0.35, 0.65, t.r) * reveal;
+        float rim = smoothstep(0.35, 0.65, t.g) * reveal * (1.0 - core);
+        float halo = t.b * reveal * (1.0 - core) * (1.0 - rim);
+        float dots = comicDots(vUv * ${DECAL.size.toFixed(2)}, 0.045, 0.62) * smoothstep(0.06, 0.45, halo);
+        vec3 chip = mix(vec3(1.0, 0.96, 0.85), vec3(1.0, 0.8, 0.25), clamp(uPulse, 0.0, 1.0) * 0.9);
+        vec3 line = mix(INKV, vec3(0.1, 0.26, 0.06), clamp(uSeep, 0.0, 1.0) * 0.55 * (0.35 + 0.65 * vn(vUv * 60.0)));
+        vec3 col = mix(chip, line, core);
+        col = mix(col, vec3(0.16, 0.09, 0.3), dots * (1.0 - core) * (1.0 - rim));
+        gl_FragColor = vec4(col, max(max(core, rim * 0.97), dots * 0.6));
       }`,
     transparent: true, depthWrite: false, depthTest: true, side: THREE.DoubleSide,
   }));
 }
-// The torn plaster round the hole (a strip from the hole edge to 14 cm out) and the tunnel through the wall's thickness.
+// The torn plaster round the hole (a strip from the hole edge to 14 cm out) and the tunnel through the wall's thickness:
+// an ink edge, a shade band with dots, cream plaster, and an inked, jagged outer edge.
 function rimMaterial() {
   return roomStencil(new THREE.ShaderMaterial({
     uniforms: { uOpen: { value: 0 } },
     vertexShader: `attribute float aRim; varying float vRim; varying vec2 vP; void main() { vRim = aRim; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       uniform float uOpen; varying float vRim; varying vec2 vP;
       void main() {
         float n = vn(vP * 22.0) * 0.6 + vn(vP * 70.0) * 0.4;
         float t = clamp(vRim + (n - 0.5) * 0.7, 0.0, 1.0);
-        vec3 plaster = vec3(0.8, 0.77, 0.7) * (0.9 + 0.2 * n), deep = vec3(0.11, 0.085, 0.075);
-        vec3 col = mix(deep, plaster, smoothstep(0.05, 0.6, t));
-        col += vec3(1.0, 0.58, 0.26) * (1.0 - smoothstep(0.0, 0.3, vRim)) * 0.55 * uOpen;
-        gl_FragColor = vec4(col, (1.0 - smoothstep(0.6, 1.0, t)) * clamp(uOpen * 4.0, 0.0, 1.0));
+        float dots = comicDots(vP, 0.04, 0.55);
+        float inEdge = comicStep(0.10, t), plaster = comicStep(0.34, t), outer = comicStep(0.64, t), gone = comicStep(0.72, t);
+        vec3 col = mix(INKV, vec3(0.62, 0.56, 0.8), inEdge);
+        col = mix(col, vec3(0.16, 0.09, 0.3), dots * inEdge * (1.0 - plaster) * 0.5);
+        col = mix(col, vec3(0.99, 0.94, 0.82), plaster);
+        col = mix(col, vec3(1.0, 0.82, 0.3), (inEdge - comicStep(0.17, t)) * uOpen * 0.9); // sunset light on the edge of the hole
+        col = mix(col, INKV, outer);
+        gl_FragColor = vec4(col, (1.0 - gone) * clamp(uOpen * 4.0, 0.0, 1.0));
       }`,
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
   }));
@@ -166,25 +177,26 @@ function tunnelMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: {},
     vertexShader: `attribute float aTun; varying float vTun; varying vec3 vW; varying vec2 vP; void main() { vTun = aTun; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vP = position.xy; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       varying float vTun; varying vec3 vW; varying vec2 vP;
       void main() {
         vec3 n = normalize(cross(dFdx(vW), dFdy(vW)));
-        float lit = 0.4 + 0.6 * max(dot(n, normalize(vec3(0.25, 0.75, 0.55))), 0.0);
-        float g = vn(vP * 30.0 + vTun * 5.0);
-        vec3 base = mix(vec3(0.74, 0.71, 0.65), vec3(0.3, 0.25, 0.22), smoothstep(0.0, 0.9, vTun)) * (0.85 + 0.3 * g);
-        vec3 col = base * lit + vec3(1.0, 0.62, 0.3) * vTun * 0.2;
+        float b = comicBand(max(dot(n, normalize(vec3(0.25, 0.75, 0.55))), 0.0) * 0.9 + 0.1, 0.3, 0.62);
+        vec3 base = mix(vec3(0.95, 0.9, 0.78), vec3(0.45, 0.35, 0.5), smoothstep(0.0, 0.9, vTun));
+        vec3 col = comicCelX(base, b, vec3(1.05, 0.98, 0.85), vec3(0.04, 0.02, 0.0));
+        col = mix(col, vec3(0.16, 0.09, 0.3), comicDots(vP, 0.04, 0.5) * (1.0 - clamp(b - 1.0, 0.0, 1.0)) * 0.5);
         gl_FragColor = vec4(col, 1.0);
       }`,
     side: THREE.DoubleSide,
   });
 }
-// Sludge running down the wall: a thin trail with a round drop at its head. Each strip is a quad with its own start and speed.
+// Sludge running down the wall: a flat lime trail with a round drop at its head, an ink edge and one hard glint. Each strip is a
+// quad with its own start and speed.
 function dripMaterial() {
   return roomStencil(new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 } },
     vertexShader: `attribute vec4 aDrip; attribute vec2 aQ; varying vec2 vQ; varying vec4 vD; void main() { vQ = aQ; vD = aDrip; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       uniform float uT; varying vec2 vQ; varying vec4 vD;
       // vD: x start time, y strip length, z speed, w half width. vQ: x across (-1..1), y along (0 at the start, 1 at the end)
       void main() {
@@ -198,53 +210,56 @@ function dripMaterial() {
         float side = abs(vQ.x) / w;
         if (side > 1.0) discard;
         float rnd = sqrt(max(0.0, 1.0 - side * side));
-        vec3 base = mix(vec3(0.24, 0.31, 0.07), vec3(0.42, 0.55, 0.12), rnd);
-        float spec = pow(max(0.0, rnd - 0.35), 4.0) * 0.9 * (0.6 + 0.4 * vn(vec2(along * 20.0, 1.0)));
-        vec3 col = base * (0.75 + 0.4 * (1.0 - vQ.x * 0.5)) + vec3(0.95, 1.0, 0.7) * spec;
-        gl_FragColor = vec4(col, smoothstep(1.0, 0.85, side));
+        vec3 col = mix(vec3(0.3, 0.55, 0.1), vec3(0.55, 0.9, 0.17), comicStep(0.4, rnd));
+        col = mix(col, vec3(0.85, 1.0, 0.55), comicStep(0.86, rnd + 0.06 * vn(vec2(along * 20.0, 1.0))) * step(0.3, side + bulb) * 0.9);
+        col = mix(col, INKV, comicStep(0.7, side));
+        gl_FragColor = vec4(col, 1.0);
       }`,
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
   }));
 }
-// The floor puddle: an uneven dark green pool that grows, reflects the sunset in a fake fresnel, and rings where a drop lands.
+// The floor puddle: an uneven pool that grows, in three flat greens with an ink edge and dots in its deep middle, a hard sunset
+// streak in it, and cream rings where a drop lands.
 function puddleMaterial() {
   return roomStencil(new THREE.ShaderMaterial({
     uniforms: { uSize: { value: 0 }, uT: { value: 0 }, uRip: { value: [new THREE.Vector3(9, 9, -9), new THREE.Vector3(9, 9, -9), new THREE.Vector3(9, 9, -9), new THREE.Vector3(9, 9, -9)] } },
     vertexShader: `varying vec2 vP; void main() { vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       uniform float uSize, uT; uniform vec3 uRip[4]; varying vec2 vP;
       void main() {
         vec2 q = vP / vec2(0.62, 0.5);
         float ang = atan(q.y, q.x), r = length(q);
         float edge = uSize * (0.78 + 0.28 * vn(vec2(ang * 1.6 + 3.0, 1.3)) + 0.12 * sin(ang * 5.0 + 1.0));
         if (r > edge) discard;
-        float a = 1.0 - smoothstep(edge - 0.1, edge, r);
         float ring = 0.0;
         for (int i = 0; i < 4; i++) { float age = uT - uRip[i].z; float d = length(vP - uRip[i].xy); ring += smoothstep(0.02, 0.0, abs(d - age * 0.35)) * smoothstep(1.4, 0.0, age) * step(0.0, age); }
         float fres = pow(1.0 - clamp(r / max(edge, 0.001), 0.0, 1.0), 0.6);
-        vec3 deep = vec3(0.09, 0.13, 0.03), glow = vec3(0.34, 0.5, 0.09), sunset = vec3(1.0, 0.62, 0.3);
-        vec3 col = mix(glow, deep, fres * 0.85) + sunset * (0.16 + 0.5 * ring) * (0.4 + 0.6 * vn(vP * 9.0 + uT * 0.2));
-        gl_FragColor = vec4(col, a * 0.93);
+        vec3 col = mix(mix(vec3(0.55, 0.9, 0.17), vec3(0.3, 0.6, 0.1), comicStep(0.3, fres)), vec3(0.14, 0.32, 0.06), comicStep(0.68, fres));
+        col = mix(col, vec3(0.16, 0.09, 0.3), comicDots(vP, 0.05, 0.5) * comicStep(0.68, fres) * 0.55);
+        col = mix(col, vec3(1.0, 0.78, 0.32), comicStep(0.74, vn(vP * 9.0 + uT * 0.2)) * comicStep(0.3, fres) * 0.55);
+        col = mix(col, vec3(1.0, 0.97, 0.85), clamp(ring, 0.0, 1.0));
+        col = mix(col, INKV, 1.0 - comicStep(0.05, edge - r));
+        gl_FragColor = vec4(col, 1.0);
       }`,
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
   }));
 }
-// Chunks of wall: flat-shaded shards, one draw for all of them. A per-instance colour, and a warm rim from the hole.
+// Chunks of wall: flat-shaded shards, one draw for all of them, in three cel bands, each with an ink outline twin.
 function chunkMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: { uL: { value: new THREE.Vector3(0.3, 0.8, 0.5).normalize() } },
     vertexShader: `attribute vec3 aCol; varying vec3 vC; varying vec3 vW; void main() { vC = aCol; vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
     fragmentShader: `
+      ${COMIC}
       uniform vec3 uL; varying vec3 vC; varying vec3 vW;
       void main() {
         vec3 n = normalize(cross(dFdx(vW), dFdy(vW)));
-        float lit = 0.6 + 0.5 * max(dot(n, uL), 0.0);
-        float back = pow(max(dot(n, vec3(0.0, 0.0, -1.0)), 0.0), 2.0);
-        gl_FragColor = vec4(vC * lit * vec3(1.0, 0.95, 0.88) + vec3(1.0, 0.55, 0.22) * back * 0.2, 1.0);
+        float b = comicBand(max(dot(n, uL), 0.0), 0.22, 0.62);
+        gl_FragColor = vec4(comicCel(vC, b), 1.0);
       }`,
   });
 }
-// Dust: soft round puffs that face you, one draw for all of them.
+// Dust: lumpy cartoon puffs that face you, one draw for all of them: an ink outline, cream with a shade side and dots.
 function dustMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: {},
@@ -256,42 +271,41 @@ function dustMaterial() {
         mv.xy += position.xy * s;
         gl_Position = projectionMatrix * mv;
       }`,
-    fragmentShader: `${NOISE}
+    fragmentShader: `${NOISE}${COMIC}
       varying vec2 vQ; varying float vA;
       void main() {
-        float r = length(vQ);
-        if (r > 1.0) discard;
-        float n = vn(vQ * 3.0 + vA * 7.0);
-        float a = (1.0 - smoothstep(0.2, 1.0, r * (0.85 + 0.3 * n))) * vA;
-        vec3 col = mix(vec3(0.62, 0.58, 0.52), vec3(1.0, 0.76, 0.46), 0.35 + 0.35 * n);
-        gl_FragColor = vec4(col, a);
+        float r = length(vQ), ang = atan(vQ.y, vQ.x);
+        float rs = 0.72 + 0.1 * sin(ang * 5.0 + vA * 9.0) + 0.05 * sin(ang * 9.0 + vA * 31.0);
+        float px = max(fwidth(vQ.x), fwidth(vQ.y)), aa = px * 0.8, iw = clamp(px * 1.8, 0.08, 0.35);
+        float sd = r - rs;
+        float fill = 1.0 - smoothstep(-aa, aa, sd), ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
+        float side = dot(vQ, vec2(0.55, -0.75));
+        vec3 col = mix(vec3(0.98, 0.92, 0.8), vec3(0.62, 0.56, 0.78), max(comicStep(0.12, side), comicDots(vQ * 2.2, 0.2, 0.5) * 0.5 * smoothstep(-0.2, 0.3, side)));
+        gl_FragColor = vec4(mix(INKV, col, fill), ink * min(1.0, vA * 2.4));
       }`,
     transparent: true, depthWrite: false,
   });
 }
-// A plain light patch that adds to what is behind it (the sunset spilling through the hole onto the floor).
+// A flat light patch that adds to what is behind it (the sunset spilling through the hole onto the floor): three bands, hard-edged.
 function spillTexture() {
   const cv = document.createElement("canvas"); cv.width = 128; cv.height = 256;
   const c = cv.getContext("2d");
-  const g = c.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, "rgba(255,170,90,0.95)"); g.addColorStop(0.35, "rgba(255,140,60,0.4)"); g.addColorStop(1, "rgba(255,120,40,0)");
-  c.fillStyle = g; c.fillRect(0, 0, 128, 256);
-  // narrow the far end: a soft trapezoid
+  for (const [y0, y1, a] of [[0, 92, 0.9], [92, 168, 0.5], [168, 256, 0.24]]) { c.fillStyle = "rgba(255,170,70," + a + ")"; c.fillRect(0, y0, 128, y1 - y0); }
+  // narrow the far end: a trapezoid with straight sides
   c.globalCompositeOperation = "destination-in";
-  const m = c.createLinearGradient(0, 0, 128, 0);
-  m.addColorStop(0, "rgba(0,0,0,0)"); m.addColorStop(0.2, "rgba(0,0,0,1)"); m.addColorStop(0.8, "rgba(0,0,0,1)"); m.addColorStop(1, "rgba(0,0,0,0)");
-  c.fillStyle = m; c.fillRect(0, 0, 128, 256);
+  c.fillStyle = "#000"; c.beginPath(); c.moveTo(6, 0); c.lineTo(122, 0); c.lineTo(100, 256); c.lineTo(28, 256); c.closePath(); c.fill();
   return new THREE.CanvasTexture(cv);
 }
-// A chevron for the floor arrow.
+// A chevron for the floor arrow: yellow with a thick ink outline.
 function arrowTexture() {
   const cv = document.createElement("canvas"); cv.width = cv.height = 256;
   const c = cv.getContext("2d");
   for (let i = 0; i < 3; i++) {
     const y = 40 + i * 62;
     c.beginPath(); c.moveTo(28, y + 46); c.lineTo(128, y); c.lineTo(228, y + 46); c.lineTo(228, y + 78); c.lineTo(128, y + 32); c.lineTo(28, y + 78); c.closePath();
-    c.fillStyle = "rgba(255,244,216," + (0.95 - i * 0.25) + ")"; c.fill();
-    c.lineWidth = 6; c.strokeStyle = "rgba(255,138,58," + (0.9 - i * 0.25) + ")"; c.stroke();
+    c.globalAlpha = 0.95 - i * 0.25;
+    c.fillStyle = "#ffd84a"; c.fill();
+    c.lineWidth = 11; c.lineJoin = "round"; c.strokeStyle = INK_CSS; c.stroke();
   }
   return new THREE.CanvasTexture(cv);
 }
@@ -485,6 +499,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     cg.setAttribute("aCol", col);
     fx.chunks = new THREE.InstancedMesh(cg, fx.mats.chunk, NCH);
     fx.chunks.name = "portal:chunks"; fx.chunks.frustumCulled = false; fx.chunks.count = 0; fx.chunks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    fx.chunks.add(outlineOf(fx.chunks, { width: 0.012, px: 2 })); // the ink line round each shard
     root.add(fx.chunks);
     // dust
     const dg = new THREE.PlaneGeometry(1, 1);
@@ -522,7 +537,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   function clearWall() {
     for (const c of wallG.children.slice()) {
       c.removeFromParent();
-      c.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+      c.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.userData && o.material.userData.comicInk) o.material.dispose(); });
     }
     if (fx.crackTex) { fx.crackTex.dispose(); fx.crackTex = null; }
     fx.decal = fx.holeG = fx.mask = fx.rim = fx.tunnel = fx.drips = fx.puddle = fx.spill = fx.room = fx.drops = null;
@@ -596,70 +611,71 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
 
   /* ---------------- the cottage room (VR and flat screen) ---------------- */
   // Built round the crack wall in wall space (x right, y up, z into the room): wood panelling, a window, a toilet that gurgles,
-  // a rug. Everything is code and one baked texture per surface, and every part draws only where the mask is not set.
+  // a rug. Everything is code and one flat-colour texture per surface with thick ink lines, shaded in three cel bands with dots,
+  // and every part draws only where the mask is not set.
   const mkCanvas = (w, h) => { const cv = document.createElement("canvas"); cv.width = w; cv.height = h; return [cv, cv.getContext("2d")]; };
   const tex2 = (cv, wrap) => { const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; if (wrap) t.wrapS = t.wrapT = THREE.RepeatWrapping; renderer.initTexture(t); return t; };
+  const ink = (c, w = 6) => { c.lineWidth = w; c.strokeStyle = INK_CSS; c.lineJoin = "round"; c.lineCap = "round"; };
   function wallpaperTexture() {
     const [cv, c] = mkCanvas(512, 1024), rand = rng(3);
-    c.fillStyle = "#dccb9f"; c.fillRect(0, 0, 512, 1024);
-    for (let x = 0; x < 512; x += 64) { c.fillStyle = "rgba(150,118,66,0.16)"; c.fillRect(x, 0, 22, 1024); c.fillStyle = "rgba(255,246,214,0.22)"; c.fillRect(x + 30, 0, 5, 1024); }
-    // little green sprigs between the stripes
+    c.fillStyle = "#f6dfa8"; c.fillRect(0, 0, 512, 1024);
+    for (let x = 0; x < 512; x += 64) { c.fillStyle = "#efba5c"; c.fillRect(x, 0, 24, 1024); }
+    // little green sprigs between the stripes, each with an ink outline
     for (let y = 40; y < 600; y += 70) for (let x = 32; x < 512; x += 64) {
-      c.fillStyle = "rgba(96,120,60,0.55)"; c.beginPath(); c.ellipse(x + (y % 140 ? 16 : 0), y, 5, 9, 0.6, 0, 7); c.fill();
-      c.beginPath(); c.ellipse(x + 8 + (y % 140 ? 16 : 0), y + 4, 4, 7, -0.7, 0, 7); c.fill();
+      const ox = x + (y % 140 ? 16 : 0);
+      for (const [dx, dy, rot] of [[0, 0, 0.6], [8, 4, -0.7]]) {
+        c.beginPath(); c.ellipse(ox + dx, y + dy, 5, 9, rot, 0, 7); c.fillStyle = "#7ab83a"; c.fill(); ink(c, 3); c.stroke();
+      }
     }
-    // the panelling: vertical boards with grooves and grain
+    // the panelling: vertical boards, flat brown, with thick ink grooves and a few grain strokes
     const top = 640;
     for (let i = 0; i < 5; i++) {
-      const x = i * 102.4, tone = 120 + rand() * 26;
-      c.fillStyle = `rgb(${tone + 24},${tone - 20},${tone - 66})`; c.fillRect(x, top, 102.4, 1024 - top);
-      for (let k = 0; k < 26; k++) { c.strokeStyle = `rgba(60,34,12,${0.05 + rand() * 0.1})`; c.lineWidth = 1 + rand() * 2; c.beginPath(); const gx = x + 8 + rand() * 86; c.moveTo(gx, top); c.bezierCurveTo(gx + (rand() - 0.5) * 12, top + 120, gx + (rand() - 0.5) * 12, top + 260, gx + (rand() - 0.5) * 8, 1024); c.stroke(); }
-      c.fillStyle = "rgba(30,16,6,0.55)"; c.fillRect(x - 2, top, 5, 1024 - top);
-      c.fillStyle = "rgba(255,200,130,0.16)"; c.fillRect(x + 3, top, 3, 1024 - top);
+      const x = i * 102.4;
+      c.fillStyle = i % 2 ? "#b8632f" : "#c4703a"; c.fillRect(x, top, 102.4, 1024 - top);
+      for (let k = 0; k < 4; k++) { ink(c, 3); c.strokeStyle = "#7a3e1c"; c.beginPath(); const gx = x + 14 + rand() * 76, gy = top + 40 + rand() * 260; c.moveTo(gx, gy); c.bezierCurveTo(gx + 8, gy + 40, gx - 8, gy + 90, gx + 4, gy + 130); c.stroke(); }
+      c.fillStyle = INK_CSS; c.fillRect(x - 3, top, 7, 1024 - top);
     }
-    // rail, baseboard, crown
-    c.fillStyle = "#4e3016"; c.fillRect(0, top - 26, 512, 30); c.fillStyle = "#b07a3a"; c.fillRect(0, top - 26, 512, 6); c.fillStyle = "rgba(0,0,0,0.35)"; c.fillRect(0, top + 4, 512, 10);
-    c.fillStyle = "#3f2810"; c.fillRect(0, 980, 512, 44); c.fillStyle = "#8a5c2c"; c.fillRect(0, 980, 512, 5);
-    c.fillStyle = "#efe4c4"; c.fillRect(0, 0, 512, 34); c.fillStyle = "rgba(0,0,0,0.18)"; c.fillRect(0, 34, 512, 8);
+    // rail, baseboard, crown: flat bands between ink lines
+    c.fillStyle = "#7a3e1c"; c.fillRect(0, top - 26, 512, 30);
+    c.fillStyle = INK_CSS; c.fillRect(0, top - 30, 512, 6); c.fillRect(0, top + 2, 512, 6);
+    c.fillStyle = "#5a2e14"; c.fillRect(0, 980, 512, 44); c.fillStyle = INK_CSS; c.fillRect(0, 976, 512, 8);
+    c.fillStyle = "#fff4d8"; c.fillRect(0, 0, 512, 34); c.fillStyle = INK_CSS; c.fillRect(0, 32, 512, 7);
     return tex2(cv, true);
   }
   function plankTexture() {
     const [cv, c] = mkCanvas(512, 512), rand = rng(5);
     for (let i = 0; i < 8; i++) {
-      const y = i * 64, tone = 118 + rand() * 30;
-      c.fillStyle = `rgb(${tone + 30},${tone - 12},${tone - 60})`; c.fillRect(0, y, 512, 64);
-      for (let k = 0; k < 22; k++) { c.strokeStyle = `rgba(70,38,14,${0.06 + rand() * 0.1})`; c.lineWidth = 1 + rand() * 2; c.beginPath(); const gy = y + 6 + rand() * 52; c.moveTo(0, gy); c.bezierCurveTo(170, gy + (rand() - 0.5) * 8, 340, gy + (rand() - 0.5) * 8, 512, gy + (rand() - 0.5) * 6); c.stroke(); }
-      c.fillStyle = "rgba(30,14,4,0.6)"; c.fillRect(0, y, 512, 3);
-      const j = rand() * 400 + 40; c.fillRect(j, y, 3, 64);
+      const y = i * 64;
+      c.fillStyle = i % 2 ? "#b8632f" : "#c9773f"; c.fillRect(0, y, 512, 64);
+      for (let k = 0; k < 3; k++) { ink(c, 3); c.strokeStyle = "#7a3e1c"; c.beginPath(); const gx = rand() * 380, gy = y + 12 + rand() * 40; c.moveTo(gx, gy); c.bezierCurveTo(gx + 40, gy - 4, gx + 80, gy + 5, gx + 130, gy); c.stroke(); }
+      c.fillStyle = INK_CSS; c.fillRect(0, y, 512, 6);
+      const j = rand() * 400 + 40; c.fillRect(j, y, 6, 64);
     }
     return tex2(cv, true);
   }
   function rugTexture() {
     const [cv, c] = mkCanvas(512, 340);
     c.fillStyle = "#7a2418"; c.fillRect(0, 0, 512, 340);
-    c.fillStyle = "#e9d7a6"; c.fillRect(22, 22, 468, 296);
-    c.strokeStyle = "#b04a2a"; c.lineWidth = 8; c.strokeRect(38, 38, 436, 264);
-    for (let i = 0; i < 5; i++) { c.save(); c.translate(96 + i * 80, 170); c.rotate(Math.PI / 4); c.fillStyle = i % 2 ? "#b04a2a" : "#2c5a5a"; c.fillRect(-26, -26, 52, 52); c.strokeStyle = "#7a2418"; c.lineWidth = 4; c.strokeRect(-26, -26, 52, 52); c.restore(); }
-    for (let x = 0; x < 512; x += 16) { c.fillStyle = "#f0e4c0"; c.fillRect(x, 0, 8, 10); c.fillRect(x, 330, 8, 10); }
-    for (let i = 0; i < 1400; i++) { c.fillStyle = `rgba(${rand255()},${rand255()},${rand255()},0.05)`; c.fillRect(Math.random() * 512, Math.random() * 340, 2, 2); }
+    c.fillStyle = "#f3e3ae"; c.fillRect(22, 22, 468, 296);
+    ink(c, 8); c.strokeStyle = "#b04a2a"; c.strokeRect(38, 38, 436, 264);
+    for (let i = 0; i < 5; i++) { c.save(); c.translate(96 + i * 80, 170); c.rotate(Math.PI / 4); c.fillStyle = i % 2 ? "#e0482c" : "#2c8a8a"; c.fillRect(-26, -26, 52, 52); ink(c, 5); c.stroke(); c.strokeRect(-26, -26, 52, 52); c.restore(); }
+    for (let x = 0; x < 512; x += 16) { c.fillStyle = "#f3e3ae"; c.fillRect(x, 0, 8, 10); c.fillRect(x, 330, 8, 10); }
+    ink(c, 8); c.strokeRect(4, 4, 504, 332);
     return tex2(cv, false);
   }
-  const rand255 = () => (Math.random() * 255) | 0;
-  // The window: a golden-hour sky with a far tree line, a warm sun, a white frame with a cross of bars.
+  // The window: a flat sunset in hard bands (violet, magenta, orange, gold), a yellow sun with an ink ring, a far tree line in ink
+  // and a cream frame with a cross of bars, all outlined.
   function windowTexture() {
     const [cv, c] = mkCanvas(384, 448);
-    const g = c.createLinearGradient(0, 0, 0, 448);
-    g.addColorStop(0, "#39508f"); g.addColorStop(0.5, "#e58a52"); g.addColorStop(0.82, "#ffc27a"); g.addColorStop(1, "#ffdca0");
-    c.fillStyle = g; c.fillRect(0, 0, 384, 448);
-    const sun = c.createRadialGradient(280, 330, 4, 280, 330, 150);
-    sun.addColorStop(0, "rgba(255,250,220,1)"); sun.addColorStop(0.15, "rgba(255,226,150,0.85)"); sun.addColorStop(1, "rgba(255,170,90,0)");
-    c.fillStyle = sun; c.fillRect(0, 0, 384, 448);
-    c.fillStyle = "rgba(255,255,255,0.35)"; for (const [x, y, w] of [[60, 120, 120], [210, 80, 100], [120, 210, 150]]) { c.beginPath(); c.ellipse(x, y, w / 2, 9, 0, 0, 7); c.fill(); }
-    c.fillStyle = "#2a1c26"; c.beginPath(); c.moveTo(0, 410);
+    for (const [y0, y1, col] of [[0, 90, "#4a2a8a"], [90, 170, "#d8457a"], [170, 262, "#ff7a2a"], [262, 340, "#ffb32a"], [340, 448, "#ffd84a"]]) { c.fillStyle = col; c.fillRect(0, y0, 384, y1 - y0); }
+    c.beginPath(); c.arc(280, 330, 64, 0, 7); c.fillStyle = "#fff08a"; c.fill(); ink(c, 6); c.stroke();
+    for (const [x, y, w] of [[60, 120, 120], [210, 80, 100], [120, 210, 150]]) { c.beginPath(); c.ellipse(x, y, w / 2, 11, 0, 0, 7); c.fillStyle = "#ffd6e6"; c.fill(); ink(c, 4); c.stroke(); }
+    c.fillStyle = INK_CSS; c.beginPath(); c.moveTo(0, 410);
     for (let x = 0; x <= 384; x += 16) c.lineTo(x, 392 - ((x * 7) % 23) - (x % 48 ? 0 : 12)); c.lineTo(384, 448); c.lineTo(0, 448); c.fill();
-    c.strokeStyle = "#f4ecd8"; c.lineWidth = 22; c.strokeRect(11, 11, 362, 426);
+    c.strokeStyle = "#fff4d8"; c.lineWidth = 22; c.strokeRect(11, 11, 362, 426);
     c.lineWidth = 12; c.beginPath(); c.moveTo(192, 0); c.lineTo(192, 448); c.moveTo(0, 224); c.lineTo(384, 224); c.stroke();
-    c.strokeStyle = "rgba(0,0,0,0.25)"; c.lineWidth = 3; c.strokeRect(22, 22, 340, 404);
+    ink(c, 5); c.strokeRect(1, 1, 382, 446); c.strokeRect(22, 22, 340, 404);
+    c.beginPath(); c.moveTo(186, 22); c.lineTo(186, 426); c.moveTo(198, 22); c.lineTo(198, 426); c.moveTo(22, 218); c.lineTo(362, 218); c.moveTo(22, 230); c.lineTo(362, 230); c.stroke();
     return tex2(cv, false);
   }
   // Soft baked shading for a wall or floor: darker in the corners and toward the ceiling and floor.
@@ -671,22 +687,58 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   }
   const tileUV = (geo, sx, sy) => { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * sx, uv.getY(i) * sy); return geo; };
   const litMats = [];
-  // A lit material for the toilet and the lamp: shaded by a light direction (world space) that follows the room.
+  // A lit material for the toilet and the lamp: three cel bands from a light direction (world space) that follows the room, with
+  // dots in the shade that stay on the object.
   const litMat = (k, color) => mat("lit:" + k, () => {
     const m = roomStencil(new THREE.ShaderMaterial({
       uniforms: { uC: { value: new THREE.Color(color) }, uL: { value: new THREE.Vector3(0, 1, 0) } },
-      vertexShader: `varying vec3 vN; void main() { vN = mat3(modelMatrix) * normal; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `uniform vec3 uC, uL; varying vec3 vN; void main() { vec3 n = normalize(vN); float l = 0.5 + 0.5 * dot(n, uL); gl_FragColor = vec4(uC * (0.5 + 0.62 * l * l) + vec3(1.0, 0.6, 0.3) * 0.1 * max(dot(n, -uL), 0.0), 1.0); }`,
+      vertexShader: `varying vec3 vN; varying vec3 vP; void main() { vN = mat3(modelMatrix) * normal; vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `${COMIC}
+        uniform vec3 uC, uL; varying vec3 vN; varying vec3 vP;
+        void main() {
+          vec3 n = normalize(vN);
+          if (!gl_FrontFacing) n = -n;
+          float b = comicBand(0.5 + 0.5 * dot(n, uL), 0.45, 0.74);
+          vec3 col = comicCelX(uC, b, vec3(1.18, 1.02, 0.82), vec3(0.05, 0.03, 0.0));
+          col = mix(col, vec3(0.16, 0.09, 0.3), comicDots(vP.xz + vP.yy * 0.7, 0.03, 0.5) * (1.0 - clamp(b - 1.0, 0.0, 1.0)) * 0.45);
+          gl_FragColor = vec4(col, 1.0);
+        }`,
       side: THREE.DoubleSide,
     }));
     litMats.push(m);
     return m;
   });
+  // The surfaces of the room: the flat-colour texture, lit by the baked per-vertex shade (corners and edges darker) cut into three
+  // cel bands, with dots in the shade band that sit on the wall in its own metres.
+  const roomSurface = (k, o) => mat("rs:" + k, () => roomStencil(new THREE.ShaderMaterial({
+    uniforms: { uMap: { value: o.map || null }, uTint: { value: new THREE.Color(o.color || 0xffffff) }, uHas: { value: o.map ? 1 : 0 } },
+    vertexColors: true,
+    vertexShader: `varying vec2 vUv; varying float vK; varying vec2 vP; void main() { vUv = uv; vK = color.r; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `${COMIC}
+      uniform sampler2D uMap; uniform vec3 uTint; uniform float uHas; varying vec2 vUv; varying float vK; varying vec2 vP;
+      void main() {
+        vec3 tex = uHas > 0.5 ? texture2D(uMap, vUv).rgb : uTint;
+        float b = comicBand(vK, 0.62, 0.84);
+        vec3 col = comicCelX(tex, b, vec3(1.0, 0.98, 0.92), vec3(0.03, 0.02, 0.0));
+        col = mix(col, vec3(0.16, 0.09, 0.3), comicDots(vP, 0.05, 0.55) * (1.0 - clamp(b - 1.0, 0.0, 1.0)) * 0.5);
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  })));
+  // Thin ink boxes along the 12 edges of the room, one instanced draw: the corner lines of a comic panel.
+  function edgeLines(W, D, H, y0, t, material) {
+    const list = [], yc = y0 + H / 2;
+    for (const sx of [-1, 1]) list.push([sx * W / 2, yc, 0.004, t, H, t], [sx * W / 2, yc, D, t, H, t], [sx * W / 2, y0, D / 2, t, t, D], [sx * W / 2, y0 + H, D / 2, t, t, D]);
+    for (const yy of [y0, y0 + H]) list.push([0, yy, 0.004, W, t, t], [0, yy, D, W, t, t]);
+    const m = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material, list.length), M = new THREE.Matrix4();
+    list.forEach((e, i) => m.setMatrixAt(i, M.makeScale(e[3], e[4], e[5]).setPosition(e[0], e[1], e[2])));
+    m.name = "portal:edges"; m.frustumCulled = false;
+    return m;
+  }
   function buildRoom(fl) {
     const g = new THREE.Group(); g.name = "portal:room";
     const W = ROOM.w, D = ROOM.d, H = ROOM.h, y0 = -fl;
     const basic = (k, o) => mat("room:" + k, () => roomStencil(new THREE.MeshBasicMaterial({ fog: false, toneMapped: false, ...o })));
-    const wallMat = basic("wall", { map: tx("paper", wallpaperTexture), vertexColors: true });
+    const wallMat = roomSurface("wall", { map: tx("paper", wallpaperTexture) });
     const wallGeo = (w) => {
       const geo = shade(new THREE.PlaneGeometry(w, H, 14, 8), (u, v) => 0.96 - 0.3 * Math.exp(-Math.min(u, 1 - u) * 9 * (W / w)) - 0.22 * (1 - sstep(0, 0.16, v)) - 0.16 * sstep(0.86, 1, v));
       return tileUV(geo, w / 1.35, 1);
@@ -696,8 +748,8 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const left = new THREE.Mesh(wallGeo(D), wallMat); left.position.set(-W / 2, y0 + H / 2, D / 2); left.rotation.y = Math.PI / 2;
     const right = new THREE.Mesh(wallGeo(D), wallMat); right.position.set(W / 2, y0 + H / 2, D / 2); right.rotation.y = -Math.PI / 2;
     const floorGeo = tileUV(shade(new THREE.PlaneGeometry(W, D, 12, 12), (u, v) => 0.98 - 0.4 * Math.exp(-Math.min(u, 1 - u) * 7) - 0.4 * Math.exp(-Math.min(v, 1 - v) * 7)), W / 1.0, D / 1.0);
-    const floor = new THREE.Mesh(floorGeo, basic("floor", { map: tx("planks", plankTexture), vertexColors: true })); floor.rotation.x = -Math.PI / 2; floor.position.set(0, y0, D / 2);
-    const ceil = new THREE.Mesh(shade(new THREE.PlaneGeometry(W, D, 6, 6), (u, v) => 0.86 - 0.18 * Math.exp(-Math.min(u, 1 - u) * 8)), basic("ceil", { color: 0xefe4c4, vertexColors: true })); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, y0 + H, D / 2);
+    const floor = new THREE.Mesh(floorGeo, roomSurface("floor", { map: tx("planks", plankTexture) })); floor.rotation.x = -Math.PI / 2; floor.position.set(0, y0, D / 2);
+    const ceil = new THREE.Mesh(shade(new THREE.PlaneGeometry(W, D, 6, 6), (u, v) => 0.86 - 0.18 * Math.exp(-Math.min(u, 1 - u) * 8)), roomSurface("ceil", { color: 0xf6ecc8 })); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, y0 + H, D / 2);
     // the window in the left wall, its light on the floor
     const win = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.35), basic("window", { map: tx("window", windowTexture) })); win.position.set(-W / 2 + 0.006, y0 + 1.55, 1.55); win.rotation.y = Math.PI / 2;
     const shaft = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.4), basic("shaft", { map: tx("spill", () => { const t = spillTexture(); renderer.initTexture(t); return t; }), transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, side: THREE.DoubleSide }));
@@ -708,7 +760,8 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const shadeM = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.2, 20, 1, true), litMat("lamp", 0x8a4a2a)); shadeM.position.set(0, y0 + H - 0.34, D / 2);
     const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.4, 5), basic("cord", { color: 0x2a1c14 })); cord.position.set(0, y0 + H - 0.2, D / 2);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), basic("bulb", { color: 0xffe2a8 })); bulb.position.set(0, y0 + H - 0.42, D / 2);
-    g.add(front, back, left, right, floor, ceil, win, shaft, rug, shadeM, cord, bulb);
+    const edges = edgeLines(W, D, H, y0, 0.03, basic("ink", { color: INK }));
+    g.add(front, back, left, right, floor, ceil, win, shaft, rug, shadeM, cord, bulb, edges);
     // the toilet: a lathe bowl (stretched into an oval), a seat ring, a lid on a hinge, a tank with a gold handle
     const T = new THREE.Group(); T.position.set(1.4, y0, 0.36);
     const porcelain = litMat("porcelain", COLORS.porcelain), goldM = litMat("gold", COLORS.gold), sludgeM = litMat("sludge", 0x6a8a1e);
@@ -726,6 +779,8 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const glow = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), basic("glow", { color: 0x9cff3a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
     glow.rotation.x = -Math.PI / 2; glow.scale.set(1, 1.32, 1); glow.position.set(0, 0.5, 0.12); glow.renderOrder = 6;
     T.add(bowl, seat, lidPivot, tank, tankTop, handle, knob, ooze, glow);
+    // an ink outline round each solid part of the toilet and the lamp shade (they draw only where the mask is not set, too)
+    for (const m of [bowl, seat, lid, tank, tankTop, handle, knob, shadeM]) { const h = outlineOf(m, { width: 0.007, px: 2 }); roomStencil(h.material); m.add(h); }
     g.add(T);
     fx.room = { g, toilet: T, lid: lidPivot, glow, ooze, fl };
     wallG.add(g);

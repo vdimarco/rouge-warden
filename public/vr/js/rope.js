@@ -1,8 +1,9 @@
 // In Full Swing: the plunger ropes you see (spec §8). Aim assist and the two reticles, the cups in flight and stuck to
 // walls, the dry fire, and both ropes in one instanced draw. physics.js owns what a rope does; this module only reads
-// P.ropes. It also exports the small shading kit that hands.js shares (golden-hour light for props, the cup model).
+// P.ropes. It also exports the comic prop kit that hands.js and game.js share: cel light in three bands, ink hulls, the cup model.
 import * as THREE from "three";
 import { SWING, GAME, COLORS, SUN_DIR } from "./config.js";
+import { GLSL, INK, inkK, syncInk, smoothNormals } from "./comic.js";
 
 const DEG = Math.PI / 180;
 const RANGE = SWING.ropeRange * SWING.rangeGrace; // the real reach: 10 % past the reticle's filled range
@@ -10,7 +11,7 @@ const FAR = 400; // the exact ray looks this far, so a wall out of reach still g
 const RET_TAN = Math.tan(0.75 * DEG); // reticles are 1.5° across wherever they land
 const MAX_SEG = 16; // rope segments per rope
 const ROPE_R = 0.012;
-const MIN_W = Math.tan(0.04 * DEG).toFixed(6); // a far rope never gets thinner than about 0.08° (a pixel or two)
+const MIN_W = Math.tan(0.1 * DEG).toFixed(6); // a far rope never gets thinner than about 0.2° (three pixels), inside its ink line
 const CUP_TAN = Math.tan(0.35 * DEG); // a far cup keeps its rim about 0.7° across, so you can see where it stuck
 const CUP_RIM = 0.037, STUB_END = 0.095; // the cup model: rim radius, and where the rope ties on behind the stub
 const RINGS = [1 / 3, 2 / 3, 1], PER_RING = 8; // the cone search: 24 rays
@@ -26,31 +27,75 @@ const sideOf = (s) => (s === 1 || s === "right" ? 1 : 0);
 export const rgb = (hex) => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
 const glv = (hex) => { const c = rgb(hex); return `vec3(${c[0].toFixed(4)}, ${c[1].toFixed(4)}, ${c[2].toFixed(4)})`; };
 
-// One light model for every small prop: the low sun, a warm-and-blue hemisphere, a sky reflection for metal and a
-// warm rim. It matches the city's fake shading, so ropes and launchers sit in the same golden hour.
+// One comic light model for every small prop, so a plunger in your hand and a toilet on a roof read like the key art: the
+// low sun cut into three bands (shade toward blue-violet, lit toward orange, a step 1-2 px wide), metal as a hard sky and
+// ground reflection, one flat highlight and Ben-Day dots in the shade. Same call as before: shadeProp(base, N, V, metal, gloss).
 export const PROP_GLSL = `
 const vec3 SUN = vec3(${SUN_DIR.x.toFixed(5)}, ${SUN_DIR.y.toFixed(5)}, ${SUN_DIR.z.toFixed(5)});
 const vec3 SUN_C = ${glv(0xffd6a6)};
 const vec3 SKY_T = ${glv(COLORS.skyTop)};
 const vec3 SKY_M = ${glv(COLORS.skyMid)};
 const vec3 SKY_H = ${glv(COLORS.skyHorizon)};
+const vec3 INKV = ${glv(INK)};
 vec3 skyEnv(vec3 d) {
   if (d.y >= 0.0) return mix(mix(SKY_H, SKY_M, smoothstep(0.02, 0.3, d.y)), SKY_T, smoothstep(0.25, 0.95, d.y));
   return mix(SKY_H * 0.5, vec3(0.16, 0.11, 0.11), smoothstep(0.0, 0.35, -d.y));
 }
-vec3 shadeProp(vec3 base, vec3 N, vec3 V, float metal, float gloss) {
-  float ndl = max(dot(N, SUN), 0.0);
-  // warm bounce from the roofs below, a soft violet sky above, and a little light from where you look, so a prop in
-  // your hand never turns into a black shape against the sun
-  vec3 hemi = mix(vec3(0.40, 0.29, 0.26), vec3(0.60, 0.58, 0.68), N.y * 0.5 + 0.5) + 0.16 * max(dot(N, V), 0.0);
-  vec3 col = base * (hemi + SUN_C * ndl * 1.05);
-  vec3 env = skyEnv(reflect(-V, N));
-  col = mix(col, base * (env * 1.1 + SUN_C * ndl * 0.45 + 0.08), metal);
-  float sp = pow(max(dot(N, normalize(SUN + V)), 0.0), mix(10.0, 80.0, gloss)) * gloss;
-  col += SUN_C * sp * mix(0.45, 1.5, metal) * mix(vec3(1.0), base + 0.25, metal);
-  float fr = pow(1.0 - max(dot(N, V), 0.0), 4.0);
-  return col + env * fr * (0.10 + 0.35 * metal);
-}`;
+${GLSL.toon}${GLSL.halftone}
+// World (or model) anchored dots for a prop: P a position, N its normal, cell the pitch in metres (0 = none). It takes
+// derivatives, so call it once at the top of main, outside every branch.
+float propDots(vec3 P, vec3 N, float cell) {
+  vec3 an = abs(N);
+  vec2 p = an.y > max(an.x, an.z) ? P.xz : (an.x > an.z ? P.zy : P.xy);
+  return comicDots(p, max(cell, 1e-4), 0.5) * step(1e-4, cell);
+}
+vec3 shadePropX(vec3 base, vec3 N, vec3 V, float metal, float gloss, float dots) {
+  // a little light from where you look, so a prop in your hand is never a black shape against the sun
+  float l = max(comicLight(N, SUN), 0.3 * max(dot(N, V), 0.0));
+  float b = comicBand(l, 0.14, 0.5);
+  vec3 col = comicCel(base, b);
+  // metal: the sky in the top half of the reflection and the dark roofs in the bottom, cut hard
+  vec3 R = reflect(-V, N);
+  vec3 mc = comicCelX(base, mix(0.5, 2.0, comicStep(0.0, R.y)), vec3(1.35, 1.12, 0.8), vec3(0.12, 0.07, 0.0));
+  col = mix(col, mc, metal);
+  // one flat highlight where the sun glints
+  float sp = comicStep(mix(0.992, 0.93, gloss), dot(N, normalize(SUN + V))) * step(0.1, gloss);
+  col = mix(col, mix(vec3(1.0, 0.97, 0.88), base * 1.3 + 0.35, metal * 0.7), sp * (0.55 + 0.4 * gloss));
+  // dots in the shade, ink violet
+  float dw = b < 1.0 ? mix(1.0, 0.45, b) : mix(0.45, 0.0, clamp(b - 1.0, 0.0, 1.0)); // full in the shade, half in the mid band, none in the light
+  col = mix(col, vec3(0.10, 0.05, 0.22), dots * dw * 0.5 * (1.0 - metal * 0.5));
+  return col;
+}
+vec3 shadeProp(vec3 base, vec3 N, vec3 V, float metal, float gloss) { return shadePropX(base, N, V, metal, gloss, 0.0); }`;
+
+/* ---------------- ink hulls for the props ---------------- */
+// An outline twin is a second draw of the same geometry: back faces only, every vertex pushed out along its welded normal
+// (attribute aOutline, see comic.js smoothNormals) by max(width, px * radians-per-pixel * distance), so the line stays about px
+// pixels wide from a hand's length to the far end of the city. The vertex shader of the fill carries the twin as an
+// #ifdef HULL branch, so instancing, spin and size rules are written once.
+export const INK_GLSL = glv(INK);
+export const HULL_HEAD = "uniform float uInkW, uInkPx, uInkK;";
+export const hullPush = (wp, wn) => `${wp} += normalize(${wn}) * max(uInkW, uInkPx * uInkK * distance(${wp}, cameraPosition));`;
+// a ShaderMaterial for a twin: opts.vertexShader is the fill's, compiled with HULL; opts.fragmentShader defaults to flat ink
+export function hullMaterial(o) {
+  return new THREE.ShaderMaterial({
+    vertexShader: o.vertexShader,
+    fragmentShader: o.fragmentShader || `void main() { gl_FragColor = vec4(${INK_GLSL}, 1.0); }`,
+    uniforms: { uInkW: { value: o.width == null ? 0.01 : o.width }, uInkPx: { value: o.px == null ? 2 : o.px }, uInkK: inkK, ...(o.uniforms || {}) },
+    defines: { HULL: 1, ...(o.defines || {}) },
+    side: THREE.BackSide,
+  });
+}
+// The twin of a Mesh or an InstancedMesh: same geometry, same instance matrices, the hull material.
+export function inkTwin(mesh, material) {
+  const out = mesh.isInstancedMesh ? new THREE.InstancedMesh(mesh.geometry, material, mesh.count) : new THREE.Mesh(mesh.geometry, material);
+  if (mesh.isInstancedMesh) out.instanceMatrix = mesh.instanceMatrix;
+  out.frustumCulled = mesh.frustumCulled;
+  out.renderOrder = mesh.renderOrder;
+  out.name = (mesh.name || "mesh") + ":outline";
+  out.onBeforeRender = (renderer, scene, camera) => { syncInk(renderer, camera); if (out.isInstancedMesh) out.count = mesh.count; };
+  return out;
+}
 
 // Collects low-poly parts into one geometry: position, normal, aCol (colour) and aInfo (part, glow, heart, material).
 // Materials: 0 wood, 1 brass, 2 rubber, 3 lamp, 4 rope, 5 dark iron.
@@ -124,10 +169,9 @@ export function createRopes(scene, city, settings) {
   const ropeGeo = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true).translate(0, 0.5, 0);
   const segAttr = new THREE.InstancedBufferAttribute(new Float32Array(MAX_SEG * 2 * 3), 3).setUsage(THREE.DynamicDrawUsage);
   ropeGeo.setAttribute("aSeg", segAttr);
-  const ropeMat = new THREE.ShaderMaterial({
-    uniforms: { uStripe: { value: 0 } },
-    vertexShader: `
+  const ropeVS = `
       attribute vec3 aSeg; // x: metres of rope from the cup to this segment's start, y: segment length
+      ${HULL_HEAD}
       varying vec3 vW; varying vec3 vN; varying float vS; varying float vA;
       void main() {
         mat4 m = modelMatrix * instanceMatrix;
@@ -136,27 +180,36 @@ export function createRopes(scene, city, settings) {
         // real thickness up close; far away it widens a little so it never breaks up into flickering pixels
         float r = max(${ROPE_R.toFixed(4)}, distance(axis, cameraPosition) * ${MIN_W});
         vW = axis + rad * r;
+        #ifdef HULL
+        ${hullPush("vW", "rad")}
+        #endif
         vN = rad;
         vS = aSeg.x + position.y * aSeg.y;
         vA = atan(position.x, position.z);
         gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
-      }`,
+      }`;
+  const ropeMat = new THREE.ShaderMaterial({
+    uniforms: { uStripe: { value: 0 } },
+    vertexShader: ropeVS.replace(HULL_HEAD, ""),
     fragmentShader: `
       uniform float uStripe;
       varying vec3 vW; varying vec3 vN; varying float vS; varying float vA;
       ${PROP_GLSL}
       void main() {
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
-        // three hemp strands twist round the rope, one turn every 7 cm; far away they blend to their average
+        // three hemp strands twist round the rope, one turn every 7 cm; each seam is an ink dash. Far away the dashes blend
+        // into the rope's own tone, so it never shimmers
         float ph = vS * 14.0 + vA * 0.159155;
         float f = fract(ph * 3.0), w = fwidth(ph * 3.0), far = clamp(w * 1.6 - 0.2, 0.0, 1.0);
-        float strand = smoothstep(0.0, 0.22 + w, f) * smoothstep(1.0, 0.7 - w, f);
-        vec3 base = ${glv(COLORS.rope)} * mix(mix(0.55, 1.08, strand), 0.86, far);
+        float seam = (1.0 - smoothstep(0.0, 0.17 + w, f)) * (1.0 - far);
+        vec3 base = ${glv(0xf1e2b4)};
         // the Loonie unlock: one strand turns gold
         float g = fract(ph);
         float gold = uStripe * smoothstep(0.02, 0.06 + w, g) * smoothstep(0.34, 0.30 - w, g) * (1.0 - far * 0.6);
         base = mix(base, ${glv(COLORS.gold)}, gold);
-        gl_FragColor = vec4(shadeProp(base, N, V, gold * 0.8, 0.15 + 0.6 * gold), 1.0);
+        vec3 col = shadeProp(base, N, V, gold * 0.8, 0.3 * gold);
+        col = mix(col, vec3(0.20, 0.10, 0.24), seam * 0.8);
+        gl_FragColor = vec4(col, 1.0);
       }`,
   });
   const ropeMesh = new THREE.InstancedMesh(ropeGeo, ropeMat, MAX_SEG * 2);
@@ -165,21 +218,31 @@ export function createRopes(scene, city, settings) {
   ropeMesh.frustumCulled = false; // the segments move every frame
   ropeMesh.count = 0;
   ropeMesh.visible = false; // until update() has something to draw
+  ropeMesh.add(inkTwin(ropeMesh, hullMaterial({ vertexShader: ropeVS, width: 0.0022, px: 1.7 })));
   scene.add(ropeMesh);
 
   const cupGeo = addCup(partsBuilder(), new THREE.Matrix4()).build();
-  const cupMat = new THREE.ShaderMaterial({
-    uniforms: { uGold: { value: 0 } },
-    side: THREE.DoubleSide,
-    vertexShader: `
+  smoothNormals(cupGeo);
+  const cupVS = `
       attribute vec3 aCol; attribute vec4 aInfo;
+      #ifdef HULL
+      attribute vec3 aOutline;
+      #endif
+      ${HULL_HEAD}
       varying vec3 vW; varying vec3 vN; varying vec3 vC; varying float vM;
       void main() {
         mat4 m = modelMatrix * instanceMatrix;
         vec4 w = m * vec4(position, 1.0);
         vW = w.xyz; vN = normalize(mat3(m) * normal); vC = aCol; vM = aInfo.w;
+        #ifdef HULL
+        ${hullPush("w.xyz", "mat3(m) * aOutline")}
+        #endif
         gl_Position = projectionMatrix * viewMatrix * w;
-      }`,
+      }`;
+  const cupMat = new THREE.ShaderMaterial({
+    uniforms: { uGold: { value: 0 } },
+    side: THREE.DoubleSide,
+    vertexShader: cupVS.replace(HULL_HEAD, ""),
     fragmentShader: `
       uniform float uGold;
       varying vec3 vW; varying vec3 vN; varying vec3 vC; varying float vM;
@@ -187,8 +250,8 @@ export function createRopes(scene, city, settings) {
       void main() {
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
         if (!gl_FrontFacing) N = -N;
-        vec3 base = vC; float metal = 0.0, gloss = 0.25;
-        if (vM > 1.5 && vM < 2.5) { gloss = 0.55; if (uGold > 0.5) { base = ${glv(COLORS.gold)}; metal = 1.0; gloss = 0.9; } }
+        vec3 base = vC; float metal = 0.0, gloss = 0.3;
+        if (vM > 1.5 && vM < 2.5) { gloss = 0.6; if (uGold > 0.5) { base = ${glv(COLORS.gold)}; metal = 1.0; gloss = 0.9; } }
         else if (vM > 0.5 && vM < 1.5) { metal = 1.0; gloss = 0.8; }
         gl_FragColor = vec4(shadeProp(base, N, V, metal, gloss), 1.0);
       }`,
@@ -199,10 +262,12 @@ export function createRopes(scene, city, settings) {
   cupMesh.frustumCulled = false;
   cupMesh.count = 0;
   cupMesh.visible = false;
+  cupMesh.add(inkTwin(cupMesh, hullMaterial({ vertexShader: cupVS, width: 0.0016, px: 1.8 })));
   scene.add(cupMesh);
 
-  // Reticles: a billboard ring that faces your head. Filled (ring + dot) when you can hit it, a thin hollow ring
-  // when it is out of reach, green on a clog, a pipe or the crack. A small tick on the hand's side tells them apart.
+  // Reticles: a comic target mark that faces your head, 1.5° across. Yellow with a thick ink edge: a ring, four ticks and a
+  // dot when you can hit it; a dashed ring when it is out of reach; sludge green with points on a clog, a pipe or the crack.
+  // A small nub on the hand's side tells the two hands apart.
   const retGeo = new THREE.PlaneGeometry(2, 2);
   const retAttr = new THREE.InstancedBufferAttribute(new Float32Array(2 * 4), 4).setUsage(THREE.DynamicDrawUsage);
   retGeo.setAttribute("aRet", retAttr);
@@ -217,22 +282,32 @@ export function createRopes(scene, city, settings) {
       }`,
     fragmentShader: `
       varying vec2 vP; varying vec4 vR;
-      float band(float r, float a, float b, float aa) { return smoothstep(a - aa, a + aa, r) * (1.0 - smoothstep(b - aa, b + aa, r)); }
+      // signed distance to a box with its middle at c and half sizes h (negative inside)
+      float sdBox(vec2 p, vec2 c, vec2 h) { vec2 q = abs(p - c) - h; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0); }
       void main() {
-        float r = length(vP), aa = fwidth(r) * 0.9;
-        float fill = vR.x;
-        float ring = band(r, mix(0.78, 0.64, fill), 0.93, aa);
-        float dotv = fill * (1.0 - smoothstep(0.27 - aa, 0.27 + aa, r));
-        float tick = step(0.0, vP.x * vR.y) * band(abs(vP.x), 0.4, 0.66, aa) * (1.0 - smoothstep(0.09 - aa, 0.09 + aa, abs(vP.y)));
-        float shape = max(max(ring, dotv), tick);
-        // a dark edge so the ring reads against a bright sky as well as a dark wall
-        float halo = max(band(r, mix(0.68, 0.54, fill), 1.0, aa * 2.0), fill * (1.0 - smoothstep(0.36, 0.4, r)));
-        halo = max(halo, step(0.0, vP.x * vR.y) * band(abs(vP.x), 0.34, 0.72, aa) * (1.0 - smoothstep(0.15, 0.17, abs(vP.y))));
-        vec3 light = mix(${glv(0xfff3dc)}, ${glv(COLORS.sludgeGlow)}, vR.z);
-        vec3 col = mix(${glv(0x1a1014)}, light, shape);
-        float a = max(shape, halo * 0.62) * vR.w;
-        if (a < 0.003) discard;
-        gl_FragColor = vec4(col, a);
+        float px = max(fwidth(vP.x), fwidth(vP.y)), aa = px * 0.8;
+        float r = length(vP), ang = atan(vP.y, vP.x);
+        float fill = vR.x, spec = vR.z;
+        // the ring; a clog's ring grows eight points, a hollow one is dashed
+        float spike = pow(abs(cos(ang * 4.0)), 8.0) * spec;
+        float dRing = max(r - (0.80 + 0.17 * spike), 0.58 - r);
+        float dash = step(0.5, fract(ang * 1.2732 + 0.25));
+        dRing = mix(abs(r - 0.70) - 0.06 + (1.0 - dash) * 0.4, dRing, fill);
+        // four ticks and the dot
+        vec2 a = abs(vP);
+        float dTick = min(sdBox(a, vec2(0.40, 0.0), vec2(0.19, 0.055)), sdBox(a, vec2(0.0, 0.40), vec2(0.055, 0.19)));
+        float dDot = r - 0.15;
+        float dNub = length(vP - vec2(vR.y * 0.9, 0.0)) - 0.075;
+        float sd = min(dRing, dNub);
+        sd = min(sd, mix(1.0, min(dTick, dDot), fill));
+        float w = max(0.085, px * 1.7);
+        float shape = 1.0 - smoothstep(-aa, aa, sd);
+        float ink = 1.0 - smoothstep(w - aa, w + aa, sd);
+        vec3 light = mix(${glv(0xffd84a)}, ${glv(COLORS.sludgeGlow)}, spec);
+        vec3 col = mix(${INK_GLSL}, light, shape);
+        float alpha = ink * vR.w;
+        if (alpha < 0.003) discard;
+        gl_FragColor = vec4(col, alpha);
       }`,
   });
   const retMesh = new THREE.InstancedMesh(retGeo, retMat, 2);

@@ -111,12 +111,15 @@ try {
   check(boot.vis && boot.info.started, "the game starts at the hand-off: the game root shows");
   check(boot.p.clogsTotal === 12 && boot.p.looniesTotal === 80 && boot.p.king === "sleeping" && boot.p.hearts === GAME.king.hearts && boot.p.clogs === 0 && boot.p.loonies === 0 && boot.p.bank === 0, "progress starts at 0/12 clogs, 0/80 Loonies, bank 0, the King asleep, 3 hearts", boot.p);
   check(boot.p.tutorial === 0 && boot.hearts === 3, "a first run starts the tutorial at step 0, and the launchers show 3 hearts", { t: boot.p.tutorial, hearts: boot.hearts });
+  // the comic look gives some things an ink outline twin (named "...:outline", a second draw of the same shape): the budgets
+  // count the things themselves, and the twins are counted apart, at most one per thing
   const meshes = await ev(page, () => {
-    const cnt = (o) => { let n = 0; o.traverse((x) => { if (x.isMesh) n++; }); return n; };
-    const m = G.game.meshes;
-    return { clogs: cnt(m.toilets) + cnt(m.fountains) + cnt(m.particles), coins: cnt(m.coins), rings: cnt(m.rings), beacons: cnt(m.beacons), king: cnt(m.king) + cnt(m.ball) + cnt(m.pipes), draws: G.game.info().draws };
+    const cnt = (o) => { let n = 0; o.traverse((x) => { if (x.isMesh && !/:outline$/.test(x.name)) n++; }); return n; };
+    const m = G.game.meshes, tw = m.outlines.map((o) => o.name);
+    return { clogs: cnt(m.toilets) + cnt(m.fountains) + cnt(m.particles), coins: cnt(m.coins), rings: cnt(m.rings), beacons: cnt(m.beacons), king: cnt(m.king) + cnt(m.ball) + cnt(m.pipes), twins: tw, draws: G.game.info().draws };
   });
   check(meshes.clogs <= 4 && meshes.coins === 1 && meshes.rings === 1 && meshes.beacons === 1 && meshes.king <= 3, "the draw budgets hold: clogs 3 of 4, coins 1, rings 1, beacons 1, the King 3 of 3", meshes);
+  check(meshes.twins.length <= 6 && new Set(meshes.twins).size === meshes.twins.length && meshes.twins.includes("toilets:outline") && meshes.twins.includes("loonies:outline"), "the ink outline twins are few: toilets, Loonies, pipes, the ball and the King, one each", meshes.twins);
   check(boot.info.model === "glb" && boot.info.king.visible, "the King is on the Needle from the start, built from king.glb", { model: boot.info.model, visible: boot.info.king.visible });
   const sleepy = await ev(page, () => { __b.step(150); return { g: G.game.info(), pos: G.game.meshes.king.position.toArray(), zzz: G.game.meshes.particles.visible }; });
   const perch = await ev(page, () => ({ x: G.view.perch.x, y: G.view.perch.y, z: G.view.perch.z }));

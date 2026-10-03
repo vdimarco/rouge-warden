@@ -1,9 +1,12 @@
 // In Full Swing: the interface (spec §10). Text panels on canvas textures (subtitles, toasts, the wrist HUD, the pause
 // menu, the map, the stance question, the credits), the laser pointer, the fade, the city map on your table, and on a
-// flat screen a DOM HUD and Esc menu in the 2D page style. Panels follow you lazily and are never head-locked.
+// flat screen a DOM HUD and Esc menu. All of it is drawn like the comic title page: paper caption boxes with thick ink
+// borders and hard drop shadows, speech balloons for the Cottage, Bangers lettering. Panels follow you lazily and are never head-locked.
 import * as THREE from "three";
-import { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, SWING } from "./config.js";
+import * as CONFIG from "./config.js";
+import { PAL } from "./comic.js";
 
+const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, SWING } = CONFIG;
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -12,18 +15,20 @@ const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 
 /* ---------------- look ---------------- */
 // The colours and faces of the 2D page (index.html), so the headset panels and the flat-screen menu feel like one game.
-const C = { plum: "#1a1020", plum2: "#2a1830", cream: "#fff4d8", gold: "#ffc27a", orange: "#ff8a3a", red: "#e0482c", ember: "#7a2418", sludge: hex(COLORS.sludgeGlow), blue: hex(COLORS.clean), coin: hex(COLORS.gold) };
+const C = { ink: hex(PAL.ink), paper: "#fff9ea", cream: "#fff4d8", yellow: "#ffd84a", gold: "#ffb32a", orange: "#ff7a2a", red: "#e0482c", magenta: "#d8457a", violet: "#3b2380", sludge: "#9cff3a", blue: hex(COLORS.clean), coin: "#f2c14e", dots: "rgba(216,69,122,0.5)" };
 const F_UI = '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif';
-const F_LOGO = '"Bungee", "Arial Black", Impact, system-ui, sans-serif';
+const F_LOGO = '"Bangers", Impact, "Arial Black", system-ui, sans-serif'; // the comic lettering
 const RO = { hud: 996, panel: 995, laser: 997, dim: 994, fade: 1001 }; // render orders: panels above the world, the fade over everything
+const TILT = { sub: -0.9, toast: 1.1, modal: -0.7, hud: 2.2, tip: 1.4 }; // degrees a panel is turned, like the boxes of a page
 
 /* ---------------- placement numbers ---------------- */
-const SUB = { dist: 1.4, drop: 12 * DEG, width: 1.5, wpx: 1500, hpx: 210, dead: 20 * DEG, settle: 7 * DEG, rate: 2.2 }; // subtitles: 1.4 m ahead, 12° below eye level
-const TOAST = { drop: 3 * DEG, width: 1.0, wpx: 1000, hpx: 120, secs: 2.4 };
+const SUB = { dist: 1.4, drop: 12 * DEG, width: 1.5, wpx: 1500, hpx: 260, dead: 20 * DEG, settle: 7 * DEG, rate: 2.2 }; // subtitles: 1.4 m ahead, 12° below eye level
+const TOAST = { drop: 3 * DEG, width: 1.0, wpx: 1000, hpx: 130, secs: 2.4 };
 const MENU = { dist: 1.1, drop: 0.05, dead: 38 * DEG, settle: 12 * DEG, rate: 2.5, slack: 0.45 };
 const HUDP = { w: 0.2, wpx: 512, hpx: 344, upPad: 0.11, upHand: 0.1, show: 0.55, hide: 0.3, poke: 0.014, arm: 0.03, hover: 0.05 };
 const PIN_SNAP = 0.03; // the laser snaps to a map pin within 3 cm
 const STANCE_SECS = 6;
+const SHADOW = 12; // the hard drop shadow of a card, in canvas pixels
 
 /* ---------------- canvas drawing ---------------- */
 function rr(ctx, x, y, w, h, r) {
@@ -34,6 +39,7 @@ function rr(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 function font(px, weight = 700, face = F_UI) { return weight + " " + px + "px " + face; }
+const spacing = (ctx, px) => { if ("letterSpacing" in ctx) ctx.letterSpacing = px + "px"; };
 // Splits text into lines no wider than maxW.
 function wrapText(ctx, text, maxW) {
   const out = [];
@@ -47,27 +53,65 @@ function wrapText(ctx, text, maxW) {
   }
   return out;
 }
-// A soft plum card with a gold edge: the base of every panel.
-function card(ctx, w, h, r = 40) {
-  const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, C.plum2); g.addColorStop(1, C.plum);
-  rr(ctx, 3, 3, w - 6, h - 6, r);
-  ctx.fillStyle = g; ctx.fill();
-  ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,194,122,0.7)"; ctx.stroke();
-  rr(ctx, 12, 12, w - 24, h - 24, r - 8);
-  ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,194,122,0.16)"; ctx.stroke();
+// Ben-Day dots over a rectangle: a screen of dots that thin out toward the far corner, like the caption boxes on the title page.
+function dotsIn(ctx, x, y, w, h, corner = "tr", col = C.dots, pitch = 15) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.fillStyle = col;
+  const cx = corner[1] === "r" ? x + w : x, cy = corner[0] === "b" ? y + h : y, reach = Math.min(Math.max(w, h), 260);
+  for (let gy = 0; gy * pitch < reach; gy++) for (let gx = 0; gx * pitch < reach; gx++) {
+    const px = cx + (corner[1] === "r" ? -1 : 1) * (gx * pitch + (gy % 2) * pitch / 2), py = cy + (corner[0] === "b" ? -1 : 1) * gy * pitch * 0.87;
+    const t = 1 - Math.hypot(gx * pitch, gy * pitch) / reach;
+    if (t <= 0.05) continue;
+    ctx.beginPath(); ctx.arc(px, py, 1.2 + t * 4.2, 0, 7); ctx.fill();
+  }
+  ctx.restore();
 }
+// A comic caption box: an ink shadow, paper, dots in one corner and a thick ink border. (x, y, w, h) is the box itself.
+function box(ctx, x, y, w, h, o = {}) {
+  const sh = o.shadow == null ? SHADOW : o.shadow;
+  if (sh) { ctx.fillStyle = C.ink; ctx.fillRect(x + sh, y + sh, w, h); }
+  ctx.fillStyle = o.fill || C.paper; ctx.fillRect(x, y, w, h);
+  if (o.dots !== false) dotsIn(ctx, x, y, w, h, o.corner || "tr", o.dotCol || C.dots);
+  ctx.lineWidth = o.border || 10; ctx.strokeStyle = C.ink; ctx.lineJoin = "miter"; ctx.strokeRect(x, y, w, h);
+}
+// The card under every page and the HUD: a caption box with room left for its shadow.
+function card(ctx, w, h, o = {}) {
+  const m = 6, sh = o.shadow == null ? SHADOW : o.shadow;
+  box(ctx, m, m, w - m * 2 - sh, h - m * 2 - sh, { border: o.border || 10, shadow: sh, fill: o.fill });
+}
+// The page title: a yellow caption box, turned a little, in Bangers.
 function heading(ctx, text, x, y, size = 56) {
-  ctx.font = font(size, 400, F_LOGO); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillText(text, x + 3, y + 4);
-  ctx.fillStyle = C.gold; ctx.fillText(text, x, y);
+  text = String(text).toUpperCase();
+  ctx.font = font(size, 400, F_LOGO); spacing(ctx, 3); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  const bw = ctx.measureText(text).width + size * 0.8, bh = size * 1.16, bx = x - 8, by = y - bh / 2 - 2;
+  ctx.save();
+  ctx.translate(bx + bw / 2, y); ctx.rotate(-0.024); ctx.translate(-(bx + bw / 2), -y);
+  ctx.fillStyle = C.ink; ctx.fillRect(bx + 8, by + 8, bw, bh);
+  ctx.fillStyle = C.yellow; ctx.fillRect(bx, by, bw, bh);
+  ctx.lineWidth = 7; ctx.strokeStyle = C.ink; ctx.strokeRect(bx, by, bw, bh);
+  ctx.fillStyle = C.ink; ctx.fillText(text, bx + size * 0.4, y + size * 0.05);
+  ctx.restore();
+  spacing(ctx, 0);
 }
-// The icons the HUD shares with the pause and map pages.
+// A speech balloon for the Cottage: a white rounded body with a thick ink border and a tail toward the lower left.
+function balloon(ctx, x, y, w, h, tailX) {
+  const r = Math.min(h / 2, 72);
+  ctx.lineWidth = 9; ctx.strokeStyle = C.ink; ctx.lineJoin = "round"; ctx.fillStyle = "#fffdf5";
+  rr(ctx, x, y, w, h, r); ctx.fill(); ctx.stroke();
+  const ty = y + h;
+  ctx.beginPath(); ctx.moveTo(tailX - 34, ty - 5); ctx.lineTo(tailX - 84, ty + 52); ctx.lineTo(tailX + 22, ty - 5); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // wipe the border where the tail joins the body
+  ctx.fillStyle = "#fffdf5"; ctx.fillRect(tailX - 30, ty - 13, 48, 15);
+}
+// The icons the HUD shares with the pause and map pages: flat colour with an ink outline.
 function iconCoin(ctx, x, y, r) {
   ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = C.coin; ctx.fill();
-  ctx.lineWidth = r * 0.14; ctx.strokeStyle = "#a8741c"; ctx.stroke();
-  ctx.beginPath(); ctx.arc(x, y, r * 0.66, 0, 7); ctx.lineWidth = r * 0.08; ctx.stroke();
-  ctx.fillStyle = "#a8741c"; ctx.font = font(r * 1.05, 800, F_UI); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("L", x, y + r * 0.06);
+  ctx.lineWidth = r * 0.2; ctx.strokeStyle = C.ink; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, r * 0.62, 0, 7); ctx.lineWidth = r * 0.09; ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.font = font(r * 1.05, 400, F_LOGO); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("L", x, y + r * 0.08);
+  ctx.beginPath(); ctx.arc(x - r * 0.5, y - r * 0.5, r * 0.13, 0, 7); ctx.fillStyle = "#fff4d8"; ctx.fill();
 }
 function iconDrop(ctx, x, y, r, col = C.sludge) {
   ctx.beginPath();
@@ -76,8 +120,8 @@ function iconDrop(ctx, x, y, r, col = C.sludge) {
   ctx.arc(x, y + r * 0.3, r, 0, Math.PI);
   ctx.bezierCurveTo(x - r, y - r * 0.2, x - r * 0.2, y - r * 0.6, x, y - r * 1.25);
   ctx.closePath(); ctx.fillStyle = col; ctx.fill();
-  ctx.lineWidth = r * 0.12; ctx.strokeStyle = "rgba(20,30,0,0.55)"; ctx.stroke();
-  ctx.beginPath(); ctx.arc(x - r * 0.35, y + r * 0.1, r * 0.2, 0, 7); ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.fill();
+  ctx.lineWidth = r * 0.22; ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x - r * 0.35, y + r * 0.1, r * 0.2, 0, 7); ctx.fillStyle = "#fff9ea"; ctx.fill();
 }
 function iconHeart(ctx, x, y, r, on) {
   ctx.beginPath();
@@ -85,21 +129,23 @@ function iconHeart(ctx, x, y, r, on) {
   ctx.bezierCurveTo(x - r * 1.6, y - r * 0.1, x - r * 0.9, y - r * 1.3, x, y - r * 0.4);
   ctx.bezierCurveTo(x + r * 0.9, y - r * 1.3, x + r * 1.6, y - r * 0.1, x, y + r * 0.9);
   ctx.closePath();
-  ctx.fillStyle = on ? "#ff4a5a" : "rgba(255,244,216,0.14)"; ctx.fill();
-  ctx.lineWidth = r * 0.12; ctx.strokeStyle = on ? "#7a1020" : "rgba(255,244,216,0.3)"; ctx.stroke();
+  ctx.fillStyle = on ? "#ff3a4a" : "#d9cfb8"; ctx.fill();
+  ctx.lineWidth = r * 0.24; ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.stroke();
+  if (on) { ctx.beginPath(); ctx.arc(x - r * 0.55, y - r * 0.3, r * 0.17, 0, 7); ctx.fillStyle = "#fff4d8"; ctx.fill(); }
 }
 function iconTick(ctx, x, y, r, col = C.blue) {
   ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = col; ctx.fill();
+  ctx.lineWidth = r * 0.16; ctx.strokeStyle = C.ink; ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x - r * 0.5, y + r * 0.05); ctx.lineTo(x - r * 0.12, y + r * 0.42); ctx.lineTo(x + r * 0.55, y - r * 0.38);
-  ctx.lineWidth = r * 0.24; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = C.plum; ctx.stroke();
+  ctx.lineWidth = r * 0.28; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.stroke();
 }
 function iconMenu(ctx, x, y, r) {
-  ctx.lineCap = "round"; ctx.strokeStyle = C.cream; ctx.lineWidth = r * 0.16;
+  ctx.lineCap = "round"; ctx.strokeStyle = C.ink; ctx.lineWidth = r * 0.2;
   for (const k of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(x - r * 0.42, y + k * r * 0.34); ctx.lineTo(x + r * 0.42, y + k * r * 0.34); ctx.stroke(); }
 }
 function iconArrow(ctx, x, y, r, dir) {
   ctx.beginPath(); ctx.moveTo(x + dir * r * 0.5, y - r * 0.6); ctx.lineTo(x - dir * r * 0.5, y); ctx.lineTo(x + dir * r * 0.5, y + r * 0.6);
-  ctx.lineWidth = r * 0.24; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = C.cream; ctx.stroke();
+  ctx.lineWidth = r * 0.3; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.stroke();
 }
 
 /* ---------------- pages: the pause menu, the comfort options, the confirm, the stance question, the credits ---------------- */
@@ -171,10 +217,16 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     if (!p.uploaded) { renderer.initTexture(p.tex); p.uploaded = true; }
     p.dirty = false;
   }
-  // The fonts load from /vr/fonts; when they arrive every panel draws again with them.
-  if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(font(40)), document.fonts.load(font(40, 400, F_LOGO))]).then(() => { for (const p of panelList) p.dirty = true; }).catch(() => {});
-  }
+  // The fonts load from /vr/fonts before any panel is drawn with them; when they arrive every panel draws again. Bangers is the
+  // comic lettering: it comes through the FontFace API from its own file, so a headset page needs no other site.
+  const redrawAll = () => { for (const p of panelList) p.dirty = true; };
+  try {
+    if (document.fonts && typeof FontFace !== "undefined") {
+      const bangers = new FontFace("Bangers", "url(" + new URL("../fonts/bangers-400.woff2", import.meta.url).href + ")", { weight: "400" });
+      bangers.load().then((f) => { document.fonts.add(f); redrawAll(); }).catch(() => {});
+      Promise.all([document.fonts.load(font(40, 700)), document.fonts.load(font(40, 800))]).then(redrawAll).catch(() => {});
+    }
+  } catch (e) { /* no font loading here: the fallback faces draw the panels */ }
 
   // A ray against a panel: the pixel it hits, or false. o and d are world space, d has unit length.
   const HIT = { px: 0, py: 0, t: 0 };
@@ -259,26 +311,31 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     const c = Math.cos(drop);
     return out.set(HD.pos.x - Math.sin(yaw) * dist * c, HD.pos.y - Math.sin(drop) * dist, HD.pos.z - Math.cos(yaw) * dist * c);
   }
-  const face = (mesh, pos) => { mesh.position.copy(pos); mesh.lookAt(HD.pos); };
+  // the panel stands at pos, turned to your head and then a degree or two off level, like the boxes of a page
+  const face = (mesh, pos, tilt = 0) => { mesh.position.copy(pos); mesh.lookAt(HD.pos); if (tilt) mesh.rotateZ(tilt * DEG); };
 
   const sub = { text: "", t: 0, a: 0, p: null };
   const toasts = [];
   const toast = { text: "", t: 0, a: 0, p: null };
-  // The subtitle and toast panels draw one rounded line box round their text.
-  function textPanel(p, text, size, maxW) {
+  // The subtitle is a speech balloon (the Cottage is talking) and the toast a yellow caption box, both lettered in Bangers.
+  function textPanel(p, text, size, maxW, kind) {
     p.text = text; p.dirty = true;
     p.paint = (q) => {
-      const c = q.ctx;
-      c.font = font(size, 700); c.textAlign = "center"; c.textBaseline = "middle";
-      const lines = wrapText(c, p.text, maxW), lh = size * 1.18;
+      const c = q.ctx, up = String(p.text).toUpperCase();
+      c.font = font(size, 400, F_LOGO); spacing(c, 2); c.textAlign = "center"; c.textBaseline = "middle";
+      const lines = wrapText(c, up, maxW), lh = size * 1.12;
       const tw = Math.min(maxW, Math.max(...lines.map((l) => c.measureText(l).width)));
-      const bw = tw + size * 1.4, bh = lines.length * lh + size * 0.7, x = (q.wpx - bw) / 2, y = (q.hpx - bh) / 2;
-      rr(c, x, y, bw, bh, Math.min(bh / 2, 46));
-      c.fillStyle = "rgba(26,16,32,0.8)"; c.fill();
-      c.lineWidth = 3; c.strokeStyle = "rgba(255,194,122,0.55)"; c.stroke();
-      c.fillStyle = C.cream; c.shadowColor = "rgba(0,0,0,0.5)"; c.shadowBlur = 6;
-      lines.forEach((l, i) => c.fillText(l, q.wpx / 2, y + size * 0.35 + lh * (i + 0.5)));
-      c.shadowBlur = 0;
+      const padX = size * 0.75, padY = size * 0.42, bw = tw + padX * 2, bh = lines.length * lh + padY * 2;
+      if (kind === "balloon") {
+        const x = (q.wpx - bw) / 2, y = Math.max(14, (q.hpx - 66 - bh) / 2);
+        balloon(c, x, y, bw, bh, x + Math.min(bw * 0.28, 330));
+        c.fillStyle = C.ink; lines.forEach((l, i) => c.fillText(l, q.wpx / 2, y + padY + lh * (i + 0.5) + size * 0.04));
+      } else {
+        const x = (q.wpx - bw - SHADOW) / 2, y = (q.hpx - bh - SHADOW) / 2;
+        box(c, x, y, bw, bh, { fill: C.yellow, border: 8, shadow: 10, dotCol: "rgba(255,122,42,0.55)" });
+        c.fillStyle = C.ink; lines.forEach((l, i) => c.fillText(l, x + bw / 2, y + padY + lh * (i + 0.5) + size * 0.04));
+      }
+      spacing(c, 0);
     };
   }
   function say(text, secs = 4) {
@@ -290,7 +347,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   function sayLine(group, i, kind) {
     const k = kind || (inp && inp.kind) || "controller";
-    const table = k === "hand" ? LINES_HANDS : k === "mouse" || k === "desktop" ? LINES_DESKTOP : LINES;
+    // a phone gets its own lines when config.js has them; a gamepad and the mouse read the desktop lines
+    const table = k === "hand" ? LINES_HANDS : k === "touch" ? (CONFIG.LINES_TOUCH || LINES_DESKTOP) : k === "mouse" || k === "desktop" || k === "pad" ? LINES_DESKTOP : LINES;
     const line = table[group] && table[group][i];
     if (line) say(line, 6);
     return line || null;
@@ -316,17 +374,17 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     if (sub.a > 0.001) {
       if (!sub.p) sub.p = makePanel("subtitle", SUB.wpx, SUB.hpx, SUB.width);
       const p = sub.p;
-      if (p.text !== sub.text) textPanel(p, sub.text, 60, SUB.wpx - 220);
+      if (p.text !== sub.text) textPanel(p, sub.text, 64, SUB.wpx - 240, "balloon");
       if (p.dirty) repaint(p);
-      ahead(V1, follow.yaw, SUB.dist, SUB.drop); face(p.mesh, V1);
+      ahead(V1, follow.yaw, SUB.dist, SUB.drop); face(p.mesh, V1, TILT.sub);
       p.mat.opacity = sub.a; p.mesh.visible = true;
     } else if (sub.p) sub.p.mesh.visible = false;
     if (toast.a > 0.001 && toast.text) {
       if (!toast.p) toast.p = makePanel("toast", TOAST.wpx, TOAST.hpx, TOAST.width);
       const p = toast.p;
-      if (p.text !== toast.text) textPanel(p, toast.text, 52, TOAST.wpx - 160);
+      if (p.text !== toast.text) textPanel(p, toast.text, 54, TOAST.wpx - 170, "caption");
       if (p.dirty) repaint(p);
-      ahead(V1, follow.yaw, SUB.dist * 0.92, TOAST.drop); face(p.mesh, V1);
+      ahead(V1, follow.yaw, SUB.dist * 0.92, TOAST.drop); face(p.mesh, V1, TILT.toast);
       p.mat.opacity = toast.a; p.mesh.visible = true;
     } else if (toast.p) toast.p.mesh.visible = false;
   }
@@ -399,18 +457,18 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     }
     return Math.ceil(h - LAY.gap + LAY.pad);
   }
-  // Draws one page and records its widgets.
+  // Draws one page and records its widgets: paper, the title box, ink text, comic buttons.
   function paintPage(p, def) {
     const c = p.ctx, w = p.wpx, h = p.hpx;
     p.rects.length = 0;
     card(c, w, h);
-    heading(c, def.title, LAY.pad, LAY.pad + 34, 56);
+    heading(c, def.title, LAY.pad, LAY.pad + 34, 58);
     let y = LAY.pad + LAY.title;
-    if (def.sub) { c.font = font(34, 600); c.fillStyle = "rgba(255,244,216,0.8)"; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(def.sub, LAY.pad, y - 40); y += 6; }
-    const inner = w - LAY.pad * 2;
+    if (def.sub) { c.font = font(36, 700); c.fillStyle = C.ink; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(def.sub, LAY.pad, y - 40); y += 6; }
+    const inner = w - LAY.pad * 2 - SHADOW;
     for (const r of def.rows) {
       if (r.text != null) {
-        c.font = font(r.small ? LAY.small : LAY.text, 500); c.fillStyle = r.small ? "rgba(255,244,216,0.75)" : C.cream; c.textAlign = "left"; c.textBaseline = "middle";
+        c.font = font(r.small ? LAY.small : LAY.text, r.small ? 600 : 700); c.fillStyle = r.small ? "rgba(20,10,24,0.72)" : C.ink; c.textAlign = "left"; c.textBaseline = "middle";
         const lh = r.small ? 42 : 52;
         for (const line of wrapText(c, r.text, inner)) { c.fillText(line, LAY.pad, y + lh / 2); y += lh; }
         y += 8 + LAY.gap;
@@ -420,29 +478,29 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         y += LAY.row + LAY.gap;
       } else if (r.seg) {
         const s = r.seg, n = s.opts.length, ox = LAY.pad + LAY.label, bw = (inner - LAY.label - LAY.gap * (n - 1)) / n;
-        c.font = font(40, 700); c.fillStyle = C.cream; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(s.label, LAY.pad, y + (LAY.row - 8) / 2);
+        c.font = font(38, 800); spacing(c, 2); c.fillStyle = C.ink; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(s.label.toUpperCase(), LAY.pad, y + (LAY.row - 8) / 2, LAY.label - 20);
+        spacing(c, 0);
         s.opts.forEach(([val, lab], i) => paintButton(p, { id: s.id + ":" + val, label: lab, kind: String(s.value) === val ? "on" : "normal" }, ox + i * (bw + LAY.gap), y, bw, LAY.row - 8));
         y += LAY.row + LAY.gap;
       }
     }
   }
-  // One button: primary (orange), on (a picked option), danger, or normal; lit while hovered and darker while pressed.
+  // One button, like the title page's: a paper box with a thick ink border and a hard shadow. Primary is yellow with orange dots,
+  // "on" (a picked option) is orange, danger red, and normal cream. A hovered one lifts off the page; a pressed one sinks into it.
   function paintButton(p, b, x, y, w, h) {
     const c = p.ctx, hv = p.hover === b.id, dn = p.down === b.id;
     p.rects.push({ id: b.id, x, y, w, h, label: b.label });
-    rr(c, x, y, w, h, h / 2);
-    if (b.kind === "primary" || b.kind === "on") {
-      const g = c.createLinearGradient(0, y, 0, y + h);
-      if (dn) { g.addColorStop(0, "#e07a24"); g.addColorStop(1, "#a8281a"); } else if (hv) { g.addColorStop(0, "#ffd07e"); g.addColorStop(0.45, "#ff9a4c"); g.addColorStop(1, "#ea5634"); } else { g.addColorStop(0, "#ffbd62"); g.addColorStop(0.45, "#ff8a3a"); g.addColorStop(1, C.red); }
-      c.fillStyle = g; c.fill(); c.lineWidth = 3; c.strokeStyle = "#fff0c8"; c.stroke();
-      c.fillStyle = "#2a0f00";
-    } else {
-      c.fillStyle = dn ? "rgba(255,138,58,0.5)" : hv ? "rgba(255,138,58,0.26)" : "rgba(255,244,216,0.07)"; c.fill();
-      c.lineWidth = hv || dn ? 4 : 3; c.strokeStyle = b.kind === "danger" ? (hv ? "#ff7a5a" : "rgba(224,72,44,0.8)") : hv ? C.orange : "rgba(255,244,216,0.32)"; c.stroke();
-      c.fillStyle = C.cream;
-    }
-    c.font = font(Math.min(44, h * 0.5), 800); c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillText(String(b.label).toUpperCase(), x + w / 2, y + h / 2 + 2, w - 24);
+    const dx = dn ? 5 : hv ? -2 : 0, sh = dn ? 2 : hv ? 10 : 7;
+    let fill = C.cream, ink = C.ink, dot = null;
+    if (b.kind === "primary") { fill = hv ? "#ffe883" : C.yellow; dot = "rgba(255,122,42,0.75)"; }
+    else if (b.kind === "on") { fill = hv ? "#ffb04a" : "#ff9a2a"; dot = "rgba(255,244,216,0.55)"; }
+    else if (b.kind === "danger") { fill = hv ? "#f0603c" : C.red; ink = C.ink; }
+    else if (hv) fill = "#ffe883";
+    box(c, x + dx, y + dx, w - 7, h - 7, { fill, shadow: sh, border: b.kind === "primary" || b.kind === "on" ? 9 : 7, dots: !!dot, dotCol: dot || C.dots });
+    c.font = font(Math.min(48, h * 0.56), 400, F_LOGO); spacing(c, 3); c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillStyle = b.kind === "danger" ? "#fff9ea" : ink;
+    c.fillText(String(b.label).toUpperCase(), x + dx + (w - 7) / 2, y + dx + (h - 7) / 2 + 3, w - 40);
+    spacing(c, 0);
   }
 
   // The modal panel of a page. Its height follows the page, so a page with a row more is a taller panel.
@@ -494,7 +552,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         anchor.pos.lerp(V1, 1 - Math.exp(-dt * MENU.rate));
       }
     }
-    face(cur.mesh, anchor.pos);
+    face(cur.mesh, anchor.pos, TILT.modal);
   }
 
   /* ---------------- the wrist HUD ---------------- */
@@ -510,8 +568,14 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     // the compass arrow is a small mesh, so it turns without drawing the texture again
     const s = new THREE.Shape();
     s.moveTo(0, 0.027); s.lineTo(0.019, -0.017); s.lineTo(0, -0.008); s.lineTo(-0.019, -0.017); s.closePath();
-    hud.arrow = new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshBasicMaterial({ color: 0xffc27a, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false }));
-    hud.arrow.renderOrder = RO.hud + 1; hud.arrow.frustumCulled = false; hud.arrow.position.set(ARROW_XY[0], ARROW_XY[1], 0.001);
+    const flat = (col) => new THREE.MeshBasicMaterial({ color: col, transparent: true, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+    hud.arrow = new THREE.Mesh(new THREE.ShapeGeometry(s), flat(0xe0482c));
+    hud.arrow.renderOrder = RO.hud + 2; hud.arrow.frustumCulled = false; hud.arrow.position.set(ARROW_XY[0], ARROW_XY[1], 0.001);
+    // the ink outline: the same arrow, bigger, behind (it turns and hides with the red one)
+    const ink = new THREE.Mesh(new THREE.ShapeGeometry(s), flat(PAL.ink));
+    ink.scale.setScalar(1.4); ink.position.z = -0.0004; ink.renderOrder = RO.hud + 1; ink.frustumCulled = false;
+    hud.arrow.scale.setScalar(0.7); // it fits inside the compass ring, ink line and all
+    hud.arrow.add(ink); hud.arrow.userData.ink = ink;
     p.mesh.add(hud.arrow);
     return p;
   }
@@ -520,55 +584,52 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   function paintHud(q) {
     const c = q.ctx, w = q.wpx, h = q.hpx, pg = prog || NOPROG;
     q.rects.length = 0;
-    rr(c, 3, 3, w - 6, h - 6, 40);
-    c.fillStyle = "rgba(26,16,32,0.88)"; c.fill();
-    c.lineWidth = 5; c.strokeStyle = "rgba(255,194,122,0.75)"; c.stroke();
+    card(c, w, h, { shadow: 10 });
     // Loonies and the bank
     iconCoin(c, 58, 66, 30);
     c.textAlign = "left"; c.textBaseline = "middle";
-    c.font = font(70, 800); c.fillStyle = C.cream; c.fillText(String(pg.loonies), 100, 68);
+    c.font = font(76, 400, F_LOGO); c.fillStyle = C.ink; c.fillText(String(pg.loonies), 100, 68);
     const lw = c.measureText(String(pg.loonies)).width;
-    c.font = font(40, 600); c.fillStyle = "rgba(255,244,216,0.6)"; c.fillText("/" + pg.looniesTotal, 104 + lw, 76);
-    c.font = font(34, 700); c.fillStyle = C.gold; c.fillText("BANK " + pg.bank, 100, 122);
+    c.font = font(42, 700); c.fillStyle = "rgba(20,10,24,0.6)"; c.fillText("/" + pg.looniesTotal, 104 + lw, 78);
+    c.font = font(34, 400, F_LOGO); spacing(c, 2); c.fillStyle = C.magenta; c.fillText("BANK " + pg.bank, 100, 122); spacing(c, 0);
     // clogs
     iconDrop(c, 292, 66, 24);
-    c.font = font(70, 800); c.fillStyle = C.cream; c.fillText(String(pg.clogs), 326, 68);
+    c.font = font(76, 400, F_LOGO); c.fillStyle = C.ink; c.fillText(String(pg.clogs), 326, 68);
     const cw = c.measureText(String(pg.clogs)).width;
-    c.font = font(40, 600); c.fillStyle = "rgba(255,244,216,0.6)"; c.fillText("/" + pg.clogsTotal, 330 + cw, 76);
+    c.font = font(42, 700); c.fillStyle = "rgba(20,10,24,0.6)"; c.fillText("/" + pg.clogsTotal, 330 + cw, 78);
     // the compass ring (the arrow is a mesh on top) and its distance
-    c.beginPath(); c.arc(452, 92, 48, 0, 7); c.fillStyle = "rgba(255,244,216,0.07)"; c.fill(); c.lineWidth = 3; c.strokeStyle = "rgba(255,194,122,0.5)"; c.stroke();
-    if (hud.dist > 0) { c.font = font(30, 700); c.textAlign = "center"; c.fillStyle = C.gold; c.fillText(hud.dist >= 1000 ? (hud.dist / 1000).toFixed(1) + " km" : Math.round(hud.dist / 5) * 5 + " m", 452, 158); }
+    c.beginPath(); c.arc(452, 92, 48, 0, 7); c.fillStyle = C.cream; c.fill(); c.lineWidth = 6; c.strokeStyle = C.ink; c.stroke();
+    if (hud.dist > 0) { c.font = font(32, 400, F_LOGO); spacing(c, 1); c.textAlign = "center"; c.fillStyle = C.ink; c.fillText(hud.dist >= 1000 ? (hud.dist / 1000).toFixed(1) + " km" : Math.round(hud.dist / 5) * 5 + " m", 452, 158); spacing(c, 0); }
     // the middle row: hearts while the King is awake, the trial timer during a trial
     c.textAlign = "left";
     if (pg.trial) {
-      c.font = font(48, 800); c.fillStyle = C.orange; c.fillText(pg.trial.time.toFixed(1) + " s", 34, 176);
-      c.font = font(32, 700); c.fillStyle = "rgba(255,244,216,0.8)"; c.fillText("RING " + (pg.trial.ring + 1), 190, 178);
+      c.font = font(56, 400, F_LOGO); c.fillStyle = C.red; c.fillText(pg.trial.time.toFixed(1) + " s", 34, 176);
+      c.font = font(34, 400, F_LOGO); spacing(c, 2); c.fillStyle = C.ink; c.fillText("RING " + (pg.trial.ring + 1), 210, 180); spacing(c, 0);
     } else if (pg.king === "awake") {
       for (let i = 0; i < GAME.king.hearts; i++) iconHeart(c, 62 + i * 68, 176, 24, i < pg.hearts);
     }
     // the buttons
-    const by = 240;
-    hudButton(q, "hud:menu", 18, by, 96, 96, 48, () => iconMenu(c, 66, by + 48, 42));
+    const by = 234;
+    hudButton(q, "hud:menu", 18, by, 96, 84, 8, () => iconMenu(c, 66, by + 42, 40));
     let x = 128;
     if (handMode()) {
-      hudButton(q, "hud:left", x, by, 92, 96, 26, () => iconArrow(c, x + 46, by + 48, 40, 1));
+      hudButton(q, "hud:left", x, by, 92, 84, 8, () => iconArrow(c, x + 46, by + 42, 38, 1));
       x += 102;
-      hudButton(q, "hud:right", x, by, 92, 96, 26, () => iconArrow(c, x + 46, by + 48, 40, -1));
+      hudButton(q, "hud:right", x, by, 92, 84, 8, () => iconArrow(c, x + 46, by + 42, 38, -1));
       x += 102;
     }
     if (canSkip()) {
-      const sw = w - 22 - Math.max(x, 350);
-      hudButton(q, "hud:skip", w - 22 - sw, by, sw, 96, 48, null, "SKIP");
+      const sw = w - 30 - Math.max(x, 350);
+      hudButton(q, "hud:skip", w - 30 - sw, by, sw, 84, 8, null, "SKIP");
     }
   }
   function hudButton(q, id, x, y, w, h, r, icon, label) {
     const c = q.ctx, hv = q.hover === id, dn = q.down === id;
     q.rects.push({ id, x, y, w, h, label: label || id });
-    rr(c, x, y, w, h, r);
-    c.fillStyle = dn ? "rgba(255,138,58,0.6)" : hv ? "rgba(255,138,58,0.32)" : "rgba(255,244,216,0.09)"; c.fill();
-    c.lineWidth = hv || dn ? 5 : 3; c.strokeStyle = hv || dn ? C.orange : "rgba(255,244,216,0.35)"; c.stroke();
+    const dx = dn ? 4 : hv ? -2 : 0, sh = dn ? 1 : hv ? 8 : 6;
+    box(c, x + dx, y + dx, w - 6, h - 6, { fill: dn ? "#ff9a2a" : hv ? "#ffe883" : C.yellow, shadow: sh, border: 6, dots: false });
     if (icon) icon();
-    if (label) { c.font = font(40, 800); c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = C.cream; c.fillText(label, x + w / 2, y + h / 2 + 2); }
+    if (label) { c.font = font(46, 400, F_LOGO); spacing(c, 3); c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = C.ink; c.fillText(label, x + dx + (w - 6) / 2, y + dx + (h - 6) / 2 + 3); spacing(c, 0); }
   }
   // The nearest clog that is still clogged, refreshed twice a second from the game's target list (or the King, once they are all clear).
   function nearestTarget() {
@@ -634,7 +695,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     const p = hudPanel();
     // follow the wrist a little softly, so a shaky hand does not shake the numbers
     if (!hud.init) { hud.pos.copy(hudPose.want); hud.init = true; } else hud.pos.lerp(hudPose.want, 1 - Math.exp(-dt * 28));
-    p.mesh.position.copy(hud.pos); p.mesh.lookAt(HD.pos);
+    p.mesh.position.copy(hud.pos); p.mesh.lookAt(HD.pos); p.mesh.rotateZ(TILT.hud * DEG);
     // the compass to the nearest clog, relative to where you look
     const tg = nearestTarget();
     if (tg && Pl) {
@@ -652,7 +713,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     }
     p.hover = hud.hover; p.down = hud.down;
     if (p.dirty) repaint(p);
-    p.mat.opacity = hud.a; hud.arrow.material.opacity = hud.a;
+    p.mat.opacity = hud.a; hud.arrow.material.opacity = hud.a; hud.arrow.userData.ink.material.opacity = hud.a;
     p.mesh.visible = true;
     hudTouch(dt, side, p);
   }
@@ -902,24 +963,24 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     const make = (draw) => {
       const cv = document.createElement("canvas"); cv.width = cv.height = 128;
       const c = cv.getContext("2d");
-      c.beginPath(); c.arc(64, 64, 58, 0, 7); c.fillStyle = "rgba(26,16,32,0.94)"; c.fill();
+      c.beginPath(); c.arc(64, 64, 58, 0, 7); c.fillStyle = C.paper; c.fill(); c.lineWidth = 8; c.strokeStyle = C.ink; c.stroke();
       draw(c);
       const t = new THREE.CanvasTexture(cv); t.anisotropy = 4;
       renderer.initTexture(t);
       return t;
     };
-    const ring = (c, col) => { c.beginPath(); c.arc(64, 64, 54, 0, 7); c.lineWidth = 9; c.strokeStyle = col; c.stroke(); };
+    const ring = (c, col) => { c.beginPath(); c.arc(64, 64, 45, 0, 7); c.lineWidth = 8; c.strokeStyle = col; c.stroke(); };
     map.sprites = {
       drop: make((c) => { ring(c, C.sludge); iconDrop(c, 64, 66, 24, C.sludge); }),
       tick: make((c) => { ring(c, C.blue); iconTick(c, 64, 64, 30, C.blue); }),
       king: make((c) => {
         ring(c, C.coin);
         c.beginPath(); c.moveTo(34, 84); c.lineTo(30, 48); c.lineTo(48, 64); c.lineTo(64, 40); c.lineTo(80, 64); c.lineTo(98, 48); c.lineTo(94, 84); c.closePath();
-        c.fillStyle = C.coin; c.fill(); c.lineWidth = 4; c.strokeStyle = "#a8741c"; c.stroke();
+        c.fillStyle = C.coin; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke();
       }),
-      trial: make((c) => { ring(c, C.orange); c.beginPath(); c.arc(64, 64, 24, 0, 7); c.lineWidth = 10; c.strokeStyle = C.orange; c.stroke(); c.beginPath(); c.arc(64, 64, 7, 0, 7); c.fillStyle = C.cream; c.fill(); }),
-      start: make((c) => { ring(c, C.cream); c.beginPath(); c.moveTo(30, 68); c.lineTo(64, 36); c.lineTo(98, 68); c.lineTo(88, 68); c.lineTo(88, 92); c.lineTo(40, 92); c.lineTo(40, 68); c.closePath(); c.fillStyle = C.cream; c.fill(); }),
-      spot: make((c) => { ring(c, C.gold); c.beginPath(); c.moveTo(64, 34); c.lineTo(88, 64); c.lineTo(64, 94); c.lineTo(40, 64); c.closePath(); c.fillStyle = C.gold; c.fill(); }),
+      trial: make((c) => { ring(c, C.orange); c.beginPath(); c.arc(64, 64, 22, 0, 7); c.lineWidth = 10; c.strokeStyle = C.orange; c.stroke(); c.beginPath(); c.arc(64, 64, 8, 0, 7); c.fillStyle = C.ink; c.fill(); }),
+      start: make((c) => { ring(c, C.magenta); c.beginPath(); c.moveTo(30, 68); c.lineTo(64, 36); c.lineTo(98, 68); c.lineTo(88, 68); c.lineTo(88, 92); c.lineTo(40, 92); c.lineTo(40, 68); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
+      spot: make((c) => { ring(c, C.gold); c.beginPath(); c.moveTo(64, 34); c.lineTo(88, 64); c.lineTo(64, 94); c.lineTo(40, 64); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
     };
     return map.sprites;
   }
@@ -1092,7 +1153,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     const text = p.name;
     if (q.text !== text) {
       q.text = text;
-      q.paint = (c2) => { const c = c2.ctx; rr(c, 4, 4, c2.wpx - 8, c2.hpx - 8, 40); c.fillStyle = "rgba(26,16,32,0.92)"; c.fill(); c.lineWidth = 4; c.strokeStyle = "rgba(255,194,122,0.7)"; c.stroke(); c.font = font(46, 800); c.fillStyle = C.cream; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(text, c2.wpx / 2, c2.hpx / 2 + 2, c2.wpx - 40); };
+      q.paint = (c2) => { const c = c2.ctx; box(c, 8, 8, c2.wpx - 8 - 16, c2.hpx - 8 - 16, { fill: C.yellow, border: 7, shadow: 8, dots: false }); c.font = font(52, 400, F_LOGO); spacing(c, 2); c.fillStyle = C.ink; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(text.toUpperCase(), c2.wpx / 2 - 4, c2.hpx / 2 - 2, c2.wpx - 60); spacing(c, 0); };
       repaint(q);
     }
     q.mesh.visible = true;
@@ -1102,7 +1163,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     if (!q || !q.mesh.visible || map.hover < 0 || !map.pins[map.hover]) return;
     map.pins[map.hover].sprite.getWorldPosition(V1);
     V1.y += map.size * 0.09;
-    q.mesh.position.copy(V1); q.mesh.lookAt(HD.pos);
+    q.mesh.position.copy(V1); q.mesh.lookAt(HD.pos); q.mesh.rotateZ(TILT.tip * DEG);
   }
   function travelToId(id) {
     const pin = map.pins.find((p) => p.spot && String(p.spot.id) === String(id));
@@ -1112,43 +1173,67 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   const fadeTo = (to, secs, look) => U.fade(to, secs, look);
 
-  /* ---------------- the flat screen: a DOM HUD and Esc menu in the 2D page style ---------------- */
-  // Styles reuse the page's own variables and .btn look (index.html), so the menu belongs to the same game as the title.
+  /* ---------------- the flat screen: a DOM HUD and Esc menu in the comic title page's style ---------------- */
+  // Styles reuse the page's own variables (index.html), each with a fallback, so the menu belongs to the same game as the title:
+  // yellow and cream caption boxes with thick ink borders, hard drop shadows, a little tilt, Bangers lettering, dots.
   const CSS = `
-.fs-hud{position:fixed;inset:0;z-index:12;pointer-events:none;display:none;font:700 20px/1.1 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);letter-spacing:.04em;color:var(--cream,#fff4d8)}
+.fs-hud{position:fixed;inset:0;z-index:12;pointer-events:none;display:none;font:400 22px/1.1 var(--comic,"Bangers",Impact,"Arial Black",system-ui,sans-serif);letter-spacing:.05em;color:var(--ink,#140a18)}
 body[data-mode="desktop"] .fs-hud{display:block}
-.fs-cross{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid rgba(255,244,216,.85);border-radius:50%;box-shadow:0 0 0 1px rgba(26,16,32,.55),0 0 8px rgba(26,16,32,.5)}
-.fs-cross::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:var(--gold,#ffc27a)}
-.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:96vw}
-.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 6px 12px;border-radius:999px;background:rgba(26,16,32,.72);border:1px solid rgba(255,194,122,.45)}
-.fs-pill b{font:400 24px/1 var(--logo,"Bungee","Arial Black",Impact,sans-serif)}
-.fs-pill small{font-size:18px;opacity:.65}
-.fs-pill em{font-style:normal;font-size:16px;letter-spacing:.14em;color:var(--gold,#ffc27a)}
-.fs-coin{width:22px;height:22px;border-radius:50%;background:#f2c14e;border:3px solid #a8741c;box-sizing:border-box}
-.fs-drop{width:14px;height:18px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:#9cff3a;border:2px solid rgba(20,30,0,.55);box-sizing:border-box}
-.fs-heart{color:#ff4a5a;font-size:22px;margin:0 1px}.fs-heart.off{color:rgba(255,244,216,.22)}
-.fs-compass svg{width:26px;height:26px;fill:var(--gold,#ffc27a);transition:transform .08s linear}
-.fs-time b{color:var(--orange,#ff8a3a)}
-.fs-sub,.fs-toast{position:absolute;left:50%;transform:translateX(-50%);margin:0;max-width:min(900px,92vw);text-align:center;opacity:0;transition:opacity .25s;border-radius:14px;background:rgba(26,16,32,.8);border:1px solid rgba(255,194,122,.5)}
-.fs-sub{bottom:12vh;padding:10px 22px;font-size:clamp(20px,2.5vw,30px)}
-.fs-toast{bottom:calc(12vh + 64px);padding:6px 18px;font-size:clamp(17px,2vw,22px);color:var(--gold,#ffc27a)}
+.fs-cross{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:4px solid var(--yellow,#ffd84a);box-shadow:0 0 0 2.5px var(--ink,#140a18),inset 0 0 0 2.5px var(--ink,#140a18);background:radial-gradient(circle,var(--yellow,#ffd84a) 0 2.5px,var(--ink,#140a18) 2.5px 5.5px,transparent 6px)}
+.fs-cross i{position:absolute;background:var(--yellow,#ffd84a);box-shadow:0 0 0 2px var(--ink,#140a18)}
+.fs-cross i:nth-child(1){left:50%;top:-14px;width:4px;height:9px;margin-left:-2px}
+.fs-cross i:nth-child(2){left:50%;bottom:-14px;width:4px;height:9px;margin-left:-2px}
+.fs-cross i:nth-child(3){top:50%;left:-14px;height:4px;width:9px;margin-top:-2px}
+.fs-cross i:nth-child(4){top:50%;right:-14px;height:4px;width:9px;margin-top:-2px}
+.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:96vw}
+.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);transform:rotate(-1.4deg)}
+.fs-pill:nth-child(2){transform:rotate(1deg);background:var(--cream,#fff4d8)}
+.fs-pill:nth-child(3){transform:rotate(-0.6deg)}
+.fs-pill:nth-child(n+4){transform:rotate(1.2deg)}
+.fs-pill b{font:400 30px/1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif)}
+.fs-pill small{font:700 21px/1 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);opacity:.6}
+.fs-pill em{font-style:normal;font-size:21px;letter-spacing:.1em;color:var(--magenta,#d8457a)}
+.fs-coin{width:24px;height:24px;border-radius:50%;background:#f2c14e;border:3px solid var(--ink,#140a18);box-sizing:border-box}
+.fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:#9cff3a;border:3px solid var(--ink,#140a18);box-sizing:border-box}
+.fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
+.fs-compass svg{width:28px;height:28px;fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
+.fs-time b{color:var(--red,#e0482c)}
+.fs-sub,.fs-toast{position:absolute;left:50%;margin:0;max-width:min(880px,90vw);text-align:center;opacity:0;transition:opacity .25s;text-transform:uppercase}
+.fs-sub{bottom:calc(12vh + 6px);transform:translateX(-50%) rotate(-0.5deg);padding:10px 28px 6px;font:400 clamp(24px,2.9vw,36px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.05em;color:var(--ink,#140a18);background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:30px}
+.fs-sub::before,.fs-sub::after{content:"";position:absolute;border-style:solid;border-color:transparent;border-bottom-width:0}
+.fs-sub::before{left:20%;bottom:-27px;border-width:27px 4px 0 24px;border-top-color:var(--ink,#140a18);border-right-color:transparent}
+.fs-sub::after{left:calc(20% + 4px);bottom:-19px;border-width:22px 2px 0 17px;border-top-color:#fffdf5}
+.fs-toast{bottom:calc(12vh + 96px);transform:translateX(-50%) rotate(1deg);padding:6px 22px 3px;font:400 clamp(20px,2.3vw,28px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;color:var(--ink,#140a18);background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:5px 5px 0 var(--ink,#140a18)}
 .fs-sub.on,.fs-toast.on{opacity:1}
-.fs-menu{width:min(660px,calc(100vw - 32px))}
-.fs-menu .fs-row{display:flex;gap:10px;margin:12px 0}
-.fs-menu .fs-row .btn{flex:1;min-height:50px;padding:8px 14px;font-size:18px}
-.fs-menu .btn.danger{border-color:var(--red,#e0482c)}
-.fs-menu .btn[aria-pressed=true]{background:linear-gradient(180deg,#ffbd62,#ff8a3a 45%,var(--red,#e0482c));color:#2a0f00;border-color:#fff0c8}
-.fs-menu .fs-seg{display:flex;align-items:center;gap:12px;margin:12px 0}
-.fs-menu .fs-seg>span{flex:0 0 36%;font-weight:800;font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold,#ffc27a)}
-.fs-menu .fs-seg>div{display:flex;flex:1;gap:6px}
-.fs-menu .fs-seg .btn{flex:1;min-height:42px;padding:6px 8px;font-size:16px;letter-spacing:.08em}
+dialog.fs-menu{width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 28px);padding:20px 24px 20px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);color:var(--ink,#140a18);box-shadow:10px 10px 0 var(--ink,#140a18);overflow:auto;font:600 19px/1.3 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);color-scheme:light}
+dialog.fs-menu::before{content:"";position:absolute;right:0;top:0;width:46%;height:150px;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);pointer-events:none}
+dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,216,74,.2) 0 1.3px,rgba(255,216,74,0) 1.9px) 0 0/9px 9px,rgba(20,10,24,.78)}
+.fs-menu>*{position:relative}
+.fs-menu h2,.fs-map h2{display:inline-block;margin:0 0 10px;padding:6px 18px 3px;background:var(--yellow,#ffd84a);border:4px solid var(--ink,#140a18);box-shadow:5px 5px 0 var(--ink,#140a18);transform:rotate(-1.4deg);font:400 clamp(28px,3.8vw,40px)/1.05 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;color:var(--ink,#140a18);text-transform:uppercase}
+.fs-menu .lead{margin:0 0 14px;font-weight:700;font-size:19px}
+.fs-menu .btn,.fs-map .btn{--tilt:-.8deg;min-height:52px;padding:8px 14px 5px;border:4px solid var(--ink,#140a18);border-radius:3px;background:var(--cream,#fff4d8);color:var(--ink,#140a18);font:400 clamp(19px,2.1vw,23px)/1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--ink,#140a18);transform:rotate(var(--tilt));transition:transform .1s,box-shadow .1s,background .12s}
+.fs-menu .btn:hover,.fs-map .btn:hover{background:#ffe883;transform:rotate(var(--tilt)) translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink,#140a18)}
+.fs-menu .btn:active,.fs-map .btn:active{transform:rotate(var(--tilt)) translate(4px,4px);box-shadow:1px 1px 0 var(--ink,#140a18)}
+.fs-menu .btn.primary{background:linear-gradient(180deg,#ffe867 0%,rgba(255,232,103,0) 62%),radial-gradient(circle at 50% 50%,rgba(255,122,42,.85) 0 1.4px,rgba(255,122,42,0) 2px) 0 0/6px 6px,var(--yellow,#ffd84a);border-width:5px;box-shadow:6px 6px 0 var(--ink,#140a18)}
+.fs-menu .btn.danger{background:var(--red,#e0482c);color:#fff9ea}
+.fs-menu .btn[aria-pressed=true]{background:#ff9a2a;border-width:5px;transform:rotate(-.6deg)}
+.fs-menu .fs-row{display:flex;gap:14px;margin:14px 0}
+.fs-menu .fs-row .btn{flex:1}
+.fs-menu .fs-row .btn:nth-child(2){--tilt:.7deg}
+.fs-menu .fs-seg{display:flex;align-items:center;gap:12px;margin:14px 0}
+.fs-menu .fs-seg>span{flex:0 0 34%;font-weight:800;font-size:19px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink,#140a18)}
+.fs-menu .fs-seg>div{display:flex;flex:1;gap:8px}
+.fs-menu .fs-seg .btn{flex:1;min-height:44px;padding:6px 8px 3px;font-size:18px;letter-spacing:.06em}
 .fs-menu p{margin:10px 0;line-height:1.35}.fs-menu p.small{opacity:.78;font-size:17px}
-.fs-map{position:fixed;left:16px;top:16px;z-index:14;width:min(330px,82vw);max-height:calc(100dvh - 32px);overflow:auto;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,var(--plum2,#2a1830),var(--plum,#1a1020));border:2px solid rgba(255,194,122,.6);color:var(--cream,#fff4d8);font:500 18px/1.35 var(--ui,"Barlow Condensed",system-ui,sans-serif)}
-.fs-map h2{margin:0 0 4px;font:400 26px/1.1 var(--logo,"Bungee","Arial Black",sans-serif);color:var(--gold,#ffc27a)}
-.fs-map p{margin:0 0 10px;font-size:16px;opacity:.85}
-.fs-map .btn{display:block;width:100%;margin:6px 0;min-height:42px;padding:6px 12px;font-size:16px;text-align:left;letter-spacing:.06em}
-.fs-tip{position:fixed;z-index:15;pointer-events:none;padding:6px 12px;border-radius:10px;background:rgba(26,16,32,.94);border:1px solid rgba(255,194,122,.65);color:var(--cream,#fff4d8);font:800 17px/1.2 var(--ui,"Barlow Condensed",system-ui,sans-serif);letter-spacing:.06em}
-@media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}}`;
+.fs-map{position:fixed;left:16px;top:16px;z-index:14;width:min(330px,82vw);max-height:calc(100dvh - 32px);overflow:auto;padding:14px 16px 16px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);box-shadow:8px 8px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:600 18px/1.3 var(--ui,"Barlow Condensed",system-ui,sans-serif)}
+.fs-map h2{font-size:28px;margin-bottom:8px}
+.fs-map p{margin:0 0 10px;font-size:17px;font-weight:700}
+.fs-map .btn{display:block;width:100%;margin:8px 0;min-height:42px;padding:6px 12px 3px;font-size:18px;text-align:left;box-shadow:4px 4px 0 var(--ink,#140a18)}
+.fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
+@media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
+@media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{bottom:calc(9vh + 6px);font-size:22px}.fs-toast{bottom:calc(9vh + 84px)}
+dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
+@media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}.fs-menu .btn,.fs-map .btn{transition:none}}`;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const dh = { loon: -1, bank: -1, clog: -1, hearts: -2, trial: "", dist: -1, ang: 999, king: "" };
   function domBuild() {
@@ -1157,7 +1242,7 @@ body[data-mode="desktop"] .fs-hud{display:block}
     const st = el("style"); st.textContent = CSS; document.head.appendChild(st);
     dom.hud = el("div", "fs-hud"); dom.hud.id = "fsHud";
     dom.hud.innerHTML =
-      '<div class="fs-cross"></div><div class="fs-top">' +
+      '<div class="fs-cross"><i></i><i></i><i></i><i></i></div><div class="fs-top">' +
       '<div class="fs-pill" title="Loonies"><i class="fs-coin"></i><b data-k="loon">0</b><small data-k="loonT">/80</small><em data-k="bank">BANK 0</em></div>' +
       '<div class="fs-pill" title="Clogs"><i class="fs-drop"></i><b data-k="clog">0</b><small data-k="clogT">/12</small></div>' +
       '<div class="fs-pill fs-time" data-k="trialBox" hidden><b data-k="trial">0.0</b><small>s</small></div>' +

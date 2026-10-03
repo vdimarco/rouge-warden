@@ -9,7 +9,7 @@ const CACHE = PREFIX + VERSION;
 /* ---------------- the app shell ---------------- */
 // Paths are relative to this file (/vr/). Keep JS in step with the files in js/: pwa.mjs fails when one is missing on
 // disk or when a file in js/ is not listed here.
-const JS = ["config.js", "main.js", "xr.js", "desktop.js", "city.js", "physics.js", "cityview.js", "rope.js", "hands.js", "comfort.js", "game.js", "audio.js", "ui.js", "portal.js", "comic.js", "fx.js"];
+const JS = ["config.js", "main.js", "xr.js", "desktop.js", "city.js", "physics.js", "cityview.js", "rope.js", "hands.js", "comfort.js", "game.js", "audio.js", "ui.js", "portal.js", "comic.js", "fx.js", "hero.js", "flatcam.js"];
 const LIB = ["three.module.min.js", "three.core.min.js", "addons/loaders/GLTFLoader.js", "addons/utils/BufferGeometryUtils.js", "addons/utils/SkeletonUtils.js"];
 const PRECACHE = [
   "./index.html",
@@ -31,6 +31,7 @@ const PRECACHE = [
   ...JS.map((f) => "./js/" + f),
   ...LIB.map((f) => "./lib/" + f),
   "/wild/models/king.glb",
+  "/wild/models/crew5.glb",
 ];
 const INDEX = new URL("./index.html", self.location.href).href;
 

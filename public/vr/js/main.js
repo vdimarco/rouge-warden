@@ -16,6 +16,8 @@ import { createUI } from "./ui.js";
 import { createPortal } from "./portal.js";
 import { createAudio } from "./audio.js";
 import { createFX } from "./fx.js";
+import { createHero } from "./hero.js";
+import { createFlatCam } from "./flatcam.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -83,7 +85,7 @@ function saveNow() {
 const G = (window.G = {
   version: VERSION, mode: "title", state: "title", ready: false, flags: FLAGS,
   renderer: null, scene: null, camera: null, rig: null, rigYaw: 0, bodyLocal: { x: 0, z: 0 }, prevHeadLocal: new THREE.Vector3(), seatedOffset: 0,
-  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null,
+  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null, hero: null, flatcam: null,
   save, settings, frame: 0, time: 0, dt: 0, viewDone: false, titleShows: 0, held: false,
   placeRig, saveNow, setWorldVisible, haptic, test: null,
 });
@@ -104,7 +106,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal, fx;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -147,6 +149,8 @@ function createWorld() {
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
+  hero = G.hero = createHero(scene, renderer); // flat play: the hero and the chase camera (hidden and unused in XR)
+  flatcam = G.flatcam = createFlatCam(camera, city);
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
@@ -251,6 +255,7 @@ function handOff() {
   G.bodyLocal.x = inp.head.local.pos.x; G.bodyLocal.z = inp.head.local.pos.z;
   ropes.setMode("all");
   if (G.state === "paused") G.pausedFrom = "play"; else G.state = "play";
+  if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
   // stepped off the roof in the real room: fade and start on the roof proper
   const tb = city.topBelow(hx, S.y + 0.1, hz, 0.25);
@@ -313,6 +318,7 @@ function onSessionStart(session) {
   lastMode = G.mode;
   compiledXR = false;
   D.active = false;
+  flatView(false);
   hideTitle();
   if (FLAGS.pwa) {
     // no click on a PWA launch: wake the audio on the first trigger or grip press
@@ -350,6 +356,7 @@ function onSessionEnd() {
   if (ropes) ropes.setVisible(false); // the attract camera flies the city, not your last rope
   renderer.setClearColor(COLORS.fog, 1);
   audio.duck(false);
+  flatView(false);
   flatCamera(70);
   showTitle(true);
 }
@@ -363,6 +370,7 @@ function startDesktop() {
   D.lock();
   flatCamera(75);
   enterPlay("desktop");
+  flatView(true);
 }
 // Pause menu Exit: end the session (the title comes back with RE-ENTER), or leave flat play.
 function exitPlay() {
@@ -374,6 +382,7 @@ function exitPlay() {
   D.unlock();
   ropes.setVisible(false);
   G.mode = "title"; G.state = "title";
+  flatView(false);
   flatCamera(70);
   showTitle(true);
 }
@@ -388,6 +397,75 @@ function flatCamera(fov) {
   camera.aspect = innerWidth / innerHeight;
   camera.near = PERF.cameraNear; camera.far = PERF.cameraFar;
   camera.updateProjectionMatrix();
+}
+
+/* ---------------- the third-person view (flat play) ---------------- */
+// Flat play shows the hero and a chase camera (flatcam.js). The camera is a child of the scene there, placed in world
+// coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
+// The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
+let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "";
+const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
+const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
+function flatView(on) {
+  if (!hero || on === flatOn) return;
+  flatOn = on;
+  flatcam.active = on;
+  if (on) {
+    scene.add(camera);
+    const intro = G.state === "intro";
+    flatcam.reset(G.rigYaw, intro ? 0 : undefined, intro);
+    if (!intro) hero.setYaw(G.rigYaw);
+    hero.setVisible(true);
+    lastPitchIn = 0; flatDy = 0; // startDesktop has just levelled the input's pitch
+    if (!document.getElementById("flatview-css")) {
+      // the crosshair of the first-person view would sit on the hero's neck; the target reticle marks the aim instead
+      const st = document.createElement("style");
+      st.id = "flatview-css";
+      st.textContent = 'body[data-view="third"] .fs-cross { display: none; }';
+      document.head.appendChild(st);
+    }
+  } else {
+    rig.add(camera);
+    camera.position.set(0, 0, 0); camera.quaternion.identity();
+    hero.setVisible(false);
+    viewAttr = ""; delete document.body.dataset.view;
+  }
+}
+// After the input is read: the camera's pitch is the view, so the head and the aim rays follow it. The input's own pitch
+// only brings the change (flatDy).
+function flatInput(inp) {
+  flatcam.restore(); // the input wrote the camera as the head; put the view back
+  flatDy += inp.pitch - lastPitchIn; lastPitchIn = inp.pitch;
+  const p = flatcam.pitch;
+  inp.pitch = p;
+  inp.head.local.quat.setFromEuler(FLAT_E.set(p, 0, 0));
+  for (const h of inp.hands) h.aimLocal.dir.set(0, Math.sin(p), -Math.cos(p));
+}
+// The hero's pose and the camera, once the body has moved. In play the camera owns the yaw (it may turn toward your travel).
+function flatFrame(dt, inp, yawDelta) {
+  if (!flatOn || isXR()) return;
+  const play = G.state === "play";
+  const key = flatcam.takeKey();
+  if (play && (inp.viewDown || key)) flatcam.toggle();
+  flatcam.setYaw(G.rigYaw - (play ? yawDelta : 0));
+  FLAT_LOOK.dx = (play ? yawDelta : 0) + ov.lookX;
+  FLAT_LOOK.dy = (G.state === "paused" ? 0 : flatDy) + ov.lookY;
+  ov.lookX = ov.lookY = 0; flatDy = 0;
+  FLAT_FLAGS.swinging = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+  FLAT_FLAGS.forceFirst = G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro");
+  hero.setVisible(!shot);
+  hero.update(dt, P, ropes, inp);
+  flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
+  // body[data-view] tells the page (the crosshair, the touch buttons) which view is on
+  const va = flatcam.opacity < 0.5 ? "first" : "third";
+  if (va !== viewAttr) document.body.dataset.view = viewAttr = va;
+  if (play && G.rigYaw !== flatcam.yaw) { G.rigYaw = flatcam.yaw; syncRig(); toWorld(inp); }
+}
+// The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
+function viewHead(inp) {
+  if (!flatOn) return inp.head;
+  FLAT_VIEW.pos = camera.position; FLAT_VIEW.quat = camera.quaternion;
+  return FLAT_VIEW;
 }
 
 /* ---------------- the frame (spec §6, 14 steps) ---------------- */
@@ -409,6 +487,7 @@ function tick(dt, frame, time) {
   if (G.mode === "title") { tickTitle(dt); return; }
   // 2. input
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
+  if (flatOn && !isXR()) flatInput(inp);
   // 3. test overrides
   applyOverrides(inp);
   // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
@@ -607,7 +686,7 @@ const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.V
 let whooshAt = -99, whooshArmed = true;
 // on the line from the head through the hand's muzzle, 1.7 m from the head
 function wordAtHand(name, i) {
-  const hp = G.input.head.pos, t = hands.tip(i);
+  const hp = G.input.head.pos, t = TIPS[i] || hands.tip(i);
   FXD.set(t.x - hp.x, t.y - hp.y, t.z - hp.z);
   const l = FXD.length();
   if (l < 1e-3) return;
@@ -640,11 +719,15 @@ function wordAtBump(ev) {
 function after(dt, inp, yawDelta) {
   buildView();
   const inPlay = G.state === "play";
+  flatFrame(dt, inp, yawDelta); // flat play: the hero's pose, then the chase camera
+  const vh = viewHead(inp);
   hands.update(inp, P, dt);
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
+  // third person: the ropes leave the hero's own hands (the old muzzles stay for first person)
+  if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
-  view.update(dt, G.time, inp.head.pos);
+  view.update(dt, G.time, vh.pos);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
   const speed = Math.sqrt(P.vel.x * P.vel.x + P.vel.y * P.vel.y + P.vel.z * P.vel.z);
   // WHOOSH: once as you cross 20 m/s, 14 m ahead along your path, at most every 4 s
@@ -653,7 +736,7 @@ function after(dt, inp, yawDelta) {
     const hp = inp.head.pos, k = 14 / speed;
     fx.word("WHOOSH", FXP.set(hp.x + P.vel.x * k, hp.y + P.vel.y * k + 1.2, hp.z + P.vel.z * k), { vel: P.vel, scale: 1.3 });
   } else if (speed < 17) whooshArmed = true;
-  fx.update(dt, inp.head.pos, inp.head.quat);
+  fx.update(dt, vh.pos, vh.quat);
   if (dt > 0) {
     const k = 1 - Math.exp(-dt / 0.05);
     accelV.x += ((P.vel.x - prevVel.x) / dt - accelV.x) * k; accelV.y += ((P.vel.y - prevVel.y) / dt - accelV.y) * k; accelV.z += ((P.vel.z - prevVel.z) / dt - accelV.z) * k;
@@ -673,11 +756,11 @@ function after(dt, inp, yawDelta) {
     if (inside !== headInside && !respawning) { headInside = inside; ui.fade(inside ? 1 : 0, 0.1, G.mode === "ar" ? "room" : "fog"); }
   }
   // desktop: a wider view at speed (75° plus up to 12° from 15 to 35 m/s)
-  if (G.mode === "desktop" && !shot) {
+  if (G.mode === "desktop" && !shot && !flatOn) { // (the flat camera sets its own field of view)
     const want = 75 + 12 * clamp((speed - 15) / 20, 0, 1);
     if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * (1 - Math.exp(-dt * 4)); camera.updateProjectionMatrix(); }
   }
-  audio.setListener(inp.head.pos, inp.head.quat);
+  audio.setListener(vh.pos, vh.quat);
   audio.setWind(inPlay ? speed : 0, P.pos.y);
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = r.state === "attached";
@@ -771,6 +854,7 @@ function setShot(name) {
   if (diorama) { diorama.removeFromParent(); diorama = null; }
   if (viewShotBefore) { setWorldVisible(viewShotBefore.world); renderer.setClearColor(COLORS.fog, 1); viewShotBefore = null; }
   shot = name ? shotPose(name) : null;
+  if (hero && flatOn) hero.setVisible(!shot); // a named shot is the city, not the hero (flatFrame keeps it in step)
   if (!shot) return null;
   if (shot.diorama) {
     viewShotBefore = { world: worldVisible };
@@ -869,7 +953,7 @@ function wireTitle() {
 }
 
 /* ---------------- test overrides and G.test (spec §12) ---------------- */
-const ov = { press: [null, null], grip: [null, null], yank: [0, 0], aim: [null, null] };
+const ov = { press: [null, null], grip: [null, null], yank: [0, 0], aim: [null, null], lookX: 0, lookY: 0 };
 const ovOn = [false, false], ovGrip = [false, false];
 function applyOverrides(inp) {
   const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
@@ -950,6 +1034,10 @@ G.test = {
   uiPress(id) { if (ui && ui.press) ui.press(id); },
   reality: () => (comfort && comfort.realityInfo ? comfort.realityInfo() : { planes: X.planes.size, meshes: X.meshes.size, maxFade: 0 }),
   camera: (name) => setShot(name),
+  // flat play: turn the view by dx (yaw, left is +) and dy (pitch, up is +) radians at the next frame, like a mouse move
+  look(dx = 0, dy = 0) { ov.lookX += +dx || 0; ov.lookY += +dy || 0; },
+  // flat play: where the camera is and what the hero does ({ on: false } everywhere else)
+  flat: () => (flatcam && flatOn ? { on: true, camera: v3(camera.position), quat: q4(camera.quaternion), fov: camera.fov, ...flatcam.info(), forward: v3(flatcam.forward), hero: hero.info() } : { on: false }),
   renderInfo: () => ({ ...lastInfo }),
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };
