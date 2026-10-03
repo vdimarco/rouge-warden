@@ -469,7 +469,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
 
   /* -- rings: the trial's next three, the tutorial's gold ring, two pass flashes and the three start pads, one draw -- */
   const ringGeoB = partsBuilder();
-  ringGeoB.add(new THREE.TorusGeometry(1, 0.06, 8, 44), new THREE.Matrix4(), 0xffffff, [0, 0, 0, 0]);
+  ringGeoB.add(new THREE.TorusGeometry(1, 0.085, 8, 44), new THREE.Matrix4(), 0xffffff, [0, 0, 0, 0]);
   ringGeoB.add(new THREE.CircleGeometry(0.94, 40), new THREE.Matrix4(), 0xffffff, [1, 0, 0, 0]);
   const ringMat = mat({
     ...blendPre, side: THREE.DoubleSide,
@@ -490,7 +490,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         if (aInfo.x < 0.5) {
           // the tube stays at least a few pixels thick from far away
           vec2 dir = normalize(position.xy + vec2(1e-6));
-          float k = max(1.0, dist * 0.0055 / (0.06 * sc));
+          float k = max(1.0, dist * 0.0055 / (0.085 * sc));
           p = vec3(dir, 0.0) + (position - vec3(dir, 0.0)) * k;
         }
         p *= sc;
@@ -525,7 +525,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
           // the disc: a light of dots that fills the ring, and fills up while you stand on a pad
           add = 1.0;
           col = c;
-          a = (st > 3.5 && st < 5.5) ? 0.16 + 0.5 * vS.z : (st < 2.5 ? 0.16 : 0.1);
+          a = (st > 3.5 && st < 5.5) ? 0.3 + 0.5 * vS.z : (st < 2.5 ? 0.16 : 0.1);
           if (st > 5.5) a = 0.3 * (1.0 - vS.y / 0.5);
           a *= 0.15 + 2.2 * dots;
         } else if (st > 5.5) a = 1.0 - vS.y / 0.5;
