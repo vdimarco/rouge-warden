@@ -33,7 +33,19 @@ try {
     await page.getByRole('button', { name: 'Turn', exact: false }).click();
     assert.equal((await page.evaluate(() => window.creatureGallery())).facing, Math.PI / 4);
     await page.screenshot({ path: path.join(shots, `${name}-creatures.png`), fullPage: true });
-    await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Monster Mash/);
+    await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
+    await page.locator('#menu').waitFor();
+    const selectState = await page.evaluate(() => {
+      const ids=['hero-picks','hero-art','hero-preview','hero-spell-note','play'];
+      const box = id => {
+        const el=document.getElementById(id), r=el?.getBoundingClientRect();
+        return r ? {x:r.x,y:r.y,w:r.width,h:r.height,visible:r.width>0&&r.height>0&&r.bottom>0&&r.right>0&&r.top<innerHeight&&r.left<innerWidth} : null;
+      };
+      return Object.fromEntries(ids.map(id=>[id,box(id)]));
+    });
+    console.log(name,'selection',JSON.stringify(selectState));
+    assert(Object.values(selectState).every(v=>v?.visible), 'hero selection essentials stay visible');
+    await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     await page.locator('#play').click();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
