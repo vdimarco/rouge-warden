@@ -1612,8 +1612,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const ox = sdx / Math.abs(sdz), ds = MAP.cell / Math.abs(sdz), drop = ds * SHADOW_TAN;
   let shadowRow = rowFirst;
   const fo = Math.floor(ox), ft = ox - fo;
-  // Rows up to the end of slice `slice`. It stops early once 2 ms have gone by (then it returns false and the build
-  // calls it again); under a stopped test clock the slice size alone bounds it.
+  // Rows up to the end of slice `slice`. It stops early once 2 ms have gone by (then it returns the part of the slice
+  // that is done, and the build calls it again); under a stopped test clock the slice size alone bounds it.
   let shadowDone = 0;
   function buildShadowRows(slice, per) {
     const nx = MAP.nx, t0 = performance.now(), want = Math.min(MAP.nz, (slice + 1) * per);
@@ -1629,7 +1629,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
         S[row + i] = s > 0 ? s : 0;
       }
     }
-    return shadowDone >= want;
+    // at least 4 rows a call, so the part done always grows and the loading bar moves on
+    return shadowDone >= want || (shadowDone - slice * per) / (want - slice * per);
   }
   // the map goes to the GPU once, when every row is done
   // A 1-2-1 blur softens the shadow edges first (without it a shadow line on a wall steps with the 4 m cells). It
@@ -2358,7 +2359,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   for (let i = 0; i < 7; i++) unit("far", 0.3, () => buildFar(i), true);
   for (const c of chunksSorted) if (!c.start) chunkUnits(c);
   const total = units.reduce((s, u) => s + u.weight, 0);
-  let next = 0, doneW = 0;
+  let next = 0, doneW = 0, partW = 0; // partW: the done part of a unit that takes more than one call
 
   /* ---------------- the diorama ---------------- */
   const dioramas = [];
@@ -2402,13 +2403,14 @@ export function createCityView(renderer, scene, city, opts = {}) {
         const u = units[next];
         stats.last.push(u.name);
         const tu = performance.now();
-        const more = u.fn() === false;
+        // a unit returns false or the part it has done (0 to 1) when it needs another call
+        const r = u.fn(), more = r === false || (typeof r === "number" && r < 1);
         stats.units[u.name] = Math.max(stats.units[u.name] || 0, performance.now() - tu);
-        if (!more) { doneW += u.weight; next++; }
+        if (!more) { doneW += u.weight; next++; partW = 0; } else if (typeof r === "number") partW = u.weight * r;
         // past half the budget, a new unit could overrun it: leave it for the next frame
         if (performance.now() - t0 > budgetMs * 0.5) break;
       }
-      V.progress = next >= units.length ? 1 : doneW / total;
+      V.progress = next >= units.length ? 1 : (doneW + partW) / total;
       if (!V.startReady) V.startReady = units.every((u, i) => i < next || !u.start);
       info.tris = staticTris + instTris();
       const ms = performance.now() - t0;
