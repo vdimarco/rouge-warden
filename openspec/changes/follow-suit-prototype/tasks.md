@@ -24,10 +24,10 @@
 
 ## Milestone 4: feel
 
-- [ ] Replay the scoring steps at about 180 ms for each card, with points above each card.
-- [ ] Bump Mult and play a scale note on each switch. Move ring cards into a circle and flash the Mult change.
-- [ ] Count the table total up. Play one coin sound for each power-of-ten dollar.
-- [ ] Add the mute toggle and the reduced-motion fade. Commit.
+- [x] Replay the scoring steps at about 180 ms for each card, with points above each card.
+- [x] Bump Mult and play a scale note on each switch. Move ring cards into a circle and flash the Mult change.
+- [x] Count the table total up. Play one coin sound for each power-of-ten dollar.
+- [x] Add the mute toggle and the reduced-motion fade. Commit.
 
 ## Milestone 5: balance
 

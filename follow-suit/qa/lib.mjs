@@ -66,7 +66,7 @@ export async function startSession() {
         console.log(`ok    ${name}`);
       } catch (error) {
         results.push({ name, ok: false });
-        console.log(`FAIL  ${name}\n      ${String(error?.stack ?? error).split('\n').slice(0, 6).join('\n      ')}`);
+        console.log(`FAIL  ${name}\n      ${String(error?.stack ?? error).split("\n").slice(0, 24).join('\n      ')}`);
       }
     },
 

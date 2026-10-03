@@ -26,6 +26,7 @@ const testText = (page, id) => page.textContent(`[data-testid="${id}"]`);
 const chainLength = async (page) => Number(await page.getAttribute('[data-testid="chain"]', 'data-length'));
 const tapCard = (page, code) => page.tap(`[data-testid="hand"] [data-card="${code}"]`);
 const button = (page, name) => page.getByRole('button', { name, exact: false });
+const settle = (page) => page.waitForFunction(() => !document.querySelector('[data-revealing="true"]'), null, { timeout: 15_000 });
 
 async function expectLegal(page, expected) {
   assert.deepEqual(await legalCodes(page), [...expected].sort());
@@ -166,6 +167,7 @@ await check('three weak chains end the run on the run end screen', async () => {
     const [first] = (await hand(page)).filter((card) => card.legal && !card.code.startsWith('8'));
     await tapCard(page, first.code);
     await button(page, 'Play chain').tap();
+    await settle(page);
   }
   const end = page.getByTestId('run-end');
   await end.waitFor();

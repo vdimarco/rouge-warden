@@ -78,12 +78,14 @@ Stop after the preview deploy and wait for the go-ahead.
 
 ## Milestone 4: feel
 
-- `src/ui/reveal.ts`: turns the scoring steps into a timed sequence, about 180 ms for each card.
-- `src/ui/ScoreReveal.tsx`: card points above each card, Mult bumps, the ring circle and the flash.
-- `src/ui/CountUp.tsx`: counts the table total up to its new value.
-- `src/ui/audio.ts`: Web Audio notes on a major scale, coin sounds and the mute state.
-- `src/ui/useReducedMotion.ts`: swaps the circle move for a fade.
-- `qa/feel.e2e.mjs`: checks the reveal order, the mute toggle and reduced motion.
+- `src/ui/reveal.ts`, `src/ui/reveal.test.ts`: turn the scoring steps into timed beats, about 180 ms for each card, and place the ring cards on an ellipse.
+- `src/ui/useReveal.ts`, `src/ui/useReveal.test.tsx`: run the beats, play the sounds, count the total up and commit the new run state at the end.
+- `src/ui/ChainArea.tsx`: card points above each card, Mult bumps and flashes, the ring loop or fade, and the chain score.
+- `src/ui/music.ts`: pitches on the major scale.
+- `src/ui/audio.ts`: Web Audio notes, the ring chord, coin sounds and the mute state.
+- `src/ui/SoundToggle.tsx`: the mute toggle in the top bar.
+- `src/ui/useReducedMotion.ts`: swaps the ring move for a fade.
+- `qa/feel.e2e.mjs`: checks the reveal order and timing, the notes, the mute toggle, reduced motion and the ring layout.
 
 ## Milestone 5: balance
 

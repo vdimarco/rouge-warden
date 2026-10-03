@@ -179,7 +179,12 @@ async function waitText(page: Page, id: string, expected: string) {
   );
 }
 
+async function settle(page: Page) {
+  await page.waitForFunction(() => !document.querySelector('[data-revealing="true"]'), null, { timeout: 15_000 });
+}
+
 async function expectTable(page: Page, run: RunState) {
+  await settle(page);
   const table = run.table!;
   await waitText(page, 'total', table.total.toLocaleString('en-US'));
   assert.equal(await text(page, 'target'), table.target.toLocaleString('en-US'));
@@ -282,6 +287,7 @@ await check(`a full run on seed ${seed} matches the engine at every step`, async
         }
         await page.getByRole('button', { name: 'Play chain' }).tap();
         mirror = runPlay(mirror);
+        await settle(page);
         if (mirror.phase === 'table') await expectTable(page, mirror);
         if (mirror.phase === 'cleared') {
           await page.getByTestId('cleared-panel').waitFor();

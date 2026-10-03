@@ -82,6 +82,40 @@ export const CONFIG = {
     minDeckSize: 20,
   },
 
+  // The score reveal after Play chain. Times are in milliseconds.
+  feel: {
+    cardMs: 180,
+    cardCharmMs: 150,
+    switchMs: 170,
+    endCharmMs: 340,
+    ringMs: 760,
+    multiplyMs: 440,
+    hostMs: 600,
+    scoreHoldMs: 450,
+    countUpMs: 650,
+    coinGapMs: 150,
+    // The ring is an ellipse around the chain row, in px.
+    ringRadiusXPerCard: 22,
+    ringRadiusXMin: 70,
+    ringRadiusXMax: 148,
+    ringRadiusY: 34,
+    ringRadiusYShort: 15,
+    ringBackScale: 0.86,
+    ringFrontScale: 1.04,
+  },
+
+  sound: {
+    // G4. Each chain starts at the root, and each switch moves one step up the major scale.
+    rootHz: 392,
+    majorScale: [0, 2, 4, 5, 7, 9, 11],
+    noteMs: 420,
+    ringChordSteps: [7, 9, 11],
+    ringNoteGapMs: 70,
+    coinHz: [1568, 2093],
+    coinNoteMs: 70,
+    volume: 0.16,
+  },
+
   seed: {
     length: 6,
     // No 0, O, 1, I or L, because they look alike.

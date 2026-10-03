@@ -25,8 +25,11 @@ import { ClearedPanel } from './ClearedPanel';
 import { DeckView } from './DeckView';
 import { Hand, type HandMode } from './Hand';
 import { HostBanner } from './HostBanner';
+import { SoundToggle } from './SoundToggle';
 import { SuitPicker } from './SuitPicker';
 import { TopBar } from './TopBar';
+import { useReducedMotion } from './useReducedMotion';
+import { useReveal } from './useReveal';
 
 interface TableScreenProps {
   run: RunState;
@@ -43,13 +46,15 @@ export function TableScreen({ run, onChange, onOpenShop }: TableScreenProps) {
   const [shakeId, setShakeId] = useState<string | null>(null);
   const [charmSlot, setCharmSlot] = useState<SlotId | null>(null);
   const [deckOpen, setDeckOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const { revealing, start: startReveal, view } = useReveal(onChange);
 
   const legalIds = useMemo(() => legalCardIds(table, run.charms), [table, run.charms]);
   const chainIds = useMemo(() => new Set(table.chain.map((link) => link.card.id)), [table.chain]);
   const preview = useMemo(() => previewChain(table.chain), [table.chain]);
 
   function tapCard(card: Card) {
-    if (table.status !== 'playing') return;
+    if (table.status !== 'playing' || revealing) return;
     if (mode === 'redraw') {
       setSelected((current) => {
         const next = new Set(current);
@@ -86,23 +91,25 @@ export function TableScreen({ run, onChange, onOpenShop }: TableScreenProps) {
   }
 
   return (
-    <div className="screen table-screen">
+    <div className={`screen table-screen${revealing ? ' is-revealing' : ''}`} data-revealing={revealing}>
       <TopBar
         stop={table.stop}
         tableIndex={table.tableIndex}
         target={table.target}
-        total={table.total}
-        money={run.money}
+        total={view?.total ?? table.total}
+        money={view?.money ?? run.money}
         chainsLeft={table.chainsLeft}
         redrawsLeft={table.redrawsLeft}
         seed={run.seed}
         deckSize={run.deck.length}
         onDeck={() => setDeckOpen(true)}
-      />
+      >
+        <SoundToggle />
+      </TopBar>
 
       {table.host !== null && <HostBanner host={table.host} />}
 
-      <CharmBoard charms={run.charms} onTap={setCharmSlot} />
+      <CharmBoard charms={run.charms} lit={view?.lit} onTap={(slot) => !revealing && setCharmSlot(slot)} />
 
       <ChainArea
         chain={table.chain}
@@ -111,6 +118,8 @@ export function TableScreen({ run, onChange, onOpenShop }: TableScreenProps) {
         lastPlay={table.lastPlay}
         rules={rules}
         hint={mode === 'redraw' ? 'Tap cards to discard, then Confirm.' : undefined}
+        reveal={view}
+        reducedMotion={reducedMotion}
       />
 
       <Hand
@@ -127,13 +136,13 @@ export function TableScreen({ run, onChange, onOpenShop }: TableScreenProps) {
 
       <ActionBar
         mode={mode}
-        canUndo={table.status === 'playing' && table.chain.length > 0}
-        canPlay={canPlay(table)}
-        canRedraw={canRedraw(table)}
+        canUndo={!revealing && table.status === 'playing' && table.chain.length > 0}
+        canPlay={!revealing && canPlay(table)}
+        canRedraw={!revealing && canRedraw(table)}
         redrawsLeft={table.redrawsLeft}
         selectedCount={selected.size}
         onUndo={() => onChange(runUndo(run))}
-        onPlay={() => onChange(runPlay(run))}
+        onPlay={() => startReveal(run, runPlay(run))}
         onRedraw={() => setMode('redraw')}
         onConfirm={confirmRedraw}
         onCancel={leaveRedraw}

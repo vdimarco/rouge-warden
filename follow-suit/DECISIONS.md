@@ -71,3 +71,14 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 44. **A lost table.** The run end screen opens at once. It shows which table ended the run and its total.
 45. **Start screen.** The page opens on a start screen with New run and a seed field. `?seed=` in the address skips it.
 
+## Milestone 4: feel
+
+46. **Switch notes.** The first switch of a chain plays the root of a G major scale. Each later switch plays the next step up. A chain with no switch plays no note.
+47. **Ring sound.** A soft chord plays when a ring closes: the root, the third and the fifth, an octave above the root. The brief names no ring sound, but the ring is the signature moment.
+48. **Ring shape.** The chain cards move onto an ellipse around the chain row, so the ring reads as a loop of cards on the table. Short screens use a flatter ellipse.
+49. **Reduced motion.** The cards stay in place and a gold ring outline fades in around them. Points fade in and out without rising, and nothing grows or shakes.
+50. **Coins.** After the total counts up, one coin plays for each power-of-ten dollar, and the money rises by $1 with each coin. The rest of the pay shows on the clear panel.
+51. **During the reveal.** Cards and buttons do nothing until the reveal ends. The screen shows the run as it was until then, so the new hand appears only after the score.
+52. **Mute.** The mute setting stays in this browser's storage. A private window can forget it.
+53. **Timing.** Each card takes 180 ms. A charm on a card takes 150 ms, a switch 170 ms, a charm at the end of the chain 340 ms and the ring 760 ms. The chain score holds for 450 ms, and the total counts up in 650 ms.
+
