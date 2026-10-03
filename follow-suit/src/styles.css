@@ -620,6 +620,19 @@ b.red {
   width: 100%;
 }
 
+/* Switch game and Arcade, in the arcade copy only */
+.arcade-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.arcade-links .btn {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
 /* ---------- Sheets: the 8 picker and the table end ---------- */
 
 .sheet-backdrop {

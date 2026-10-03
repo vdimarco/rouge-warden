@@ -19,6 +19,7 @@ import {
   type Suit,
 } from '../engine';
 import { ActionBar } from './ActionBar';
+import { recordBestChain } from './best';
 import { ChainArea } from './ChainArea';
 import { CharmBoard, CharmSheet } from './CharmBoard';
 import { ClearedPanel } from './ClearedPanel';
@@ -142,7 +143,11 @@ export function TableScreen({ run, onChange, onOpenShop }: TableScreenProps) {
         redrawsLeft={table.redrawsLeft}
         selectedCount={selected.size}
         onUndo={() => onChange(runUndo(run))}
-        onPlay={() => startReveal(run, runPlay(run))}
+        onPlay={() => {
+          const next = runPlay(run);
+          recordBestChain(next.bestChain);
+          startReveal(run, next);
+        }}
         onRedraw={() => setMode('redraw')}
         onConfirm={confirmRedraw}
         onCancel={leaveRedraw}

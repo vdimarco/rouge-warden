@@ -1,6 +1,6 @@
 // Shared parts of the browser checks: the server, the browser, phone pages, layout measures and results.
 //
-// BASE_URL      check a deployed copy instead of serving dist/. A Vercel share link
+// BASE_URL      check a deployed copy instead of serving dist/ (or public/ for the arcade check). A Vercel share link
 //               (?_vercel_share=...) also works: the checks open it once to get the access cookie.
 // CHROMIUM_PATH use a Chromium binary that Playwright did not install
 // CHROMIUM_ARGS extra launch flags, separated by spaces
@@ -13,6 +13,7 @@ import { chromium } from 'playwright-core';
 export const HERE = fileURLToPath(new URL('.', import.meta.url));
 export const OUT = join(HERE, 'out');
 export const DIST = join(HERE, '..', 'dist');
+export const PUBLIC = join(HERE, '..', '..', 'public');
 mkdirSync(OUT, { recursive: true });
 
 export const PHONES = [
@@ -22,14 +23,26 @@ export const PHONES = [
   [430, 932],
 ];
 
-/** Serves dist/ unless BASE_URL is set, and launches Chromium. */
-export async function startSession() {
+/**
+ * Serves dist/ unless BASE_URL is set, and launches Chromium. With arcade: true it serves the whole arcade from
+ * public/ instead, and the base address is the arcade copy of the game at /follow-suit/.
+ */
+export async function startSession({ arcade = false } = {}) {
   let server = null;
   let base = process.env.BASE_URL;
   if (!base) {
     const { preview } = await import('vite');
-    server = await preview({ root: join(HERE, '..'), logLevel: 'silent', preview: { host: '127.0.0.1', port: 4180 } });
-    base = server.resolvedUrls.local[0];
+    server = arcade
+      ? await preview({
+          configFile: false,
+          root: PUBLIC,
+          appType: 'mpa',
+          logLevel: 'silent',
+          build: { outDir: '.' },
+          preview: { host: '127.0.0.1', port: 4181 },
+        })
+      : await preview({ root: join(HERE, '..'), logLevel: 'silent', preview: { host: '127.0.0.1', port: 4180 } });
+    base = server.resolvedUrls.local[0] + (arcade ? 'follow-suit/' : '');
   }
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,

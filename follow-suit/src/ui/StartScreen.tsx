@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { normalizeSeed } from '../engine';
+import { ArcadeLinks } from './ArcadeLinks';
 import { randomSeed } from './seed';
 
 /** New run, or a run from a seed. */
@@ -49,6 +50,7 @@ export function StartScreen({ onStart }: { onStart: (seed: string) => void }) {
             Play seed
           </button>
         </form>
+        <ArcadeLinks />
       </div>
     </div>
   );

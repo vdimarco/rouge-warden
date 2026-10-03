@@ -175,6 +175,9 @@ await check('three weak chains end the run on the run end screen', async () => {
   assert.match(await end.textContent(), /The run ends/);
   assert.equal(await testText(page, 'stop-reached'), '1 of 8');
   assert.equal(await testText(page, 'end-seed'), SEED);
+  // Only the arcade copy, which loads the arcade's quiet.js, shows Switch game and Arcade.
+  const inArcade = await page.evaluate(() => Boolean(window.__quiet));
+  assert.equal(await page.getByTestId('arcade-links').count(), inArcade ? 1 : 0);
   await shot(page, 'table-06-lost');
   await button(page, 'New run').tap();
   await page.getByTestId('start').waitFor();

@@ -1,5 +1,6 @@
 import { CONFIG } from '../config';
 import { isHostTable, type RunState } from '../engine';
+import { ArcadeLinks } from './ArcadeLinks';
 import { formatNumber } from './text';
 
 /** Win or loss, the stop reached, the best chain, the seed and New run. */
@@ -40,6 +41,7 @@ export function RunEnd({ run, onNewRun }: { run: RunState; onNewRun: () => void 
         <button type="button" className="btn primary wide" onClick={onNewRun}>
           New run
         </button>
+        <ArcadeLinks />
       </div>
     </div>
   );

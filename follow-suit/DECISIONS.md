@@ -88,3 +88,10 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 55. **Host scales.** Each host scale puts that host's table at stop 2 near the 25th percentile of its 3-chain totals, so each host is about as hard as the others there. The brief sets no rule for host difficulty.
 56. **Later stops.** Stops 3 to 8 keep the brief's curve from stop 2 on, scaled by the same 0.75 as stop 2. No simulated player reaches them often enough to tune them.
 
+## The Cottage Arcade
+
+57. **Arcade copy.** `npm run build:arcade` builds the game for the arcade, with the base path `/follow-suit/` and the arcade's `quiet.js` and `switch.js`. The standalone build loads neither script, because the Vercel project `follow-suit` has no `/arcade/` folder.
+58. **Arcade buttons.** Switch game and Arcade show on the start screen and the run end screen of the arcade copy. During a run, the browser back button goes to the arcade.
+59. **Best chain save.** When the player plays a chain, the game saves the best chain score of all runs in `follow-suit:best-chain`. The machine shows it. The run end screen still shows the best chain of that run.
+60. **Machine group.** The machine joins the Strategy group with BREAKTHROUGH, because both are turn-based games of planning. The Lab group holds early prototypes and toys.
+

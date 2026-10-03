@@ -93,6 +93,14 @@ Stop after the preview deploy and wait for the go-ahead.
 - `BALANCE.md`: the simulator report and the final targets.
 - `src/config.ts`: the tuned targets and host scales.
 
+## After the milestones: the arcade machine
+
+- `vite.config.ts`: the arcade build mode, which writes `public/follow-suit/`.
+- `src/ui/arcade.ts` and `src/ui/ArcadeLinks.tsx`: the Switch game button and the Arcade link.
+- `src/ui/best.ts`: the best chain save that the machine shows.
+- `qa/arcade.e2e.mjs` and `qa/cabinet-art.mjs`: the arcade check and the machine art.
+- Outside this folder: the machine in `public/index.html`, its entry in `public/arcade/switch.js`, its art in `public/arcade/follow-suit.webp`, and the arcade checks in `qa/arcade/`.
+
 ## Checks for each milestone
 
 - `npm test`: all Vitest tests pass.
