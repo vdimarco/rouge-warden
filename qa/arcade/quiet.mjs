@@ -42,9 +42,9 @@ function check(name, ok, detail = "") {
 /* ------------------------------------------------------------------ 1. the scan */
 // pages that make sound but must not load quiet.js, with the reason
 const ALLOW = {
-  "vr/index.html": "In Full Swing has its own session-aware sound: audio.suspend() when the XR session is hidden. quiet.js could suspend it in an immersive session, where some headset browsers report the page as hidden.",
+  "vr/index.html": "In Full Swing has its own sound control: audio.suspend() when the XR session is hidden, and (on the phone, outside a headset session) when the page is hidden. quiet.js could suspend it in an immersive session, where some headset browsers report the page as hidden.",
 };
-const AUDIO = /\b(?:webkit)?AudioContext\b|new\s+Audio\s*\(|<audio\b|createElement\(\s*["']audio["']\s*\)/;
+const AUDIO = /\b(?:webkit)?AudioContext\b|new\s+Audio\s*\(|<audio\b|createElement\(\s*["']audio["']\s*\)|<video\b(?![^>]*\bmuted)|speechSynthesis|w\.soundcloud\.com/;
 function pagesUnder(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -375,6 +375,8 @@ const PAGES = [
   { id: "neon", path: "/neon/", boot: () => !!document.querySelector("#start"), start: click("#start"), sound: "ctx" },
   { id: "olympus", path: "/olympus/", start: click('button[aria-label="Enable audio"]'), sound: "ctx" },
   { id: "tellme", path: "/tellme/", start: click("#start-btn"), sound: "ctx" },
+  // In Full Swing does not load quiet.js. Its own code stops the sound on visibilitychange when it is played flat on a phone (not on pagehide, not in a headset).
+  { id: "vr", path: "/vr/", start: click("#playFlat"), sound: "ctx", slow: true, own: true, only: ["emulate", "real"] },
   { id: "tidebreak", path: "/tidebreak/", boot: () => { const b = document.querySelector("#play"); return b && !b.disabled; }, start: click("#play"), sound: "ctx" },
 ];
 // pages that make no sound at all (and so do not load quiet.js): they must never make a context or play anything
@@ -413,7 +415,7 @@ async function cycle(P, driver, { policy, modes }) {
     for (let i = 0; !started && P.again && s0.ctxs.length === 0 && i < 6; i++) { await P.start(t); [started, s0] = await waitFor(t, want, 6000); }
     c("sound starts", started, brief(s0) + (t.errors.length ? " | " + t.errors.join(" | ") : ""));
     if (!started) return;
-    if (!OLD) c("quiet.js is loaded", (await state()).quiet, "window.__quiet is missing");
+    if (!OLD && !P.own) c("quiet.js is loaded", (await state()).quiet, "window.__quiet is missing");
     let first = true;
     for (const mode of modes) {
       const tag = modes.length > 1 ? ` (${mode})` : "";
@@ -431,10 +433,11 @@ async function cycle(P, driver, { policy, modes }) {
       }
       const [silent, s1] = await waitFor(t, quiet, 5000);
       c("silent when hidden" + tag, silent, brief(s1));
-      await t.eval(() => window.__qaPoke());
+      // a page with its own sound control (own: true) is not poked: it has no guard that blocks a raw resume() from outside
+      if (!P.own) await t.eval(() => window.__qaPoke());
       await sleep(3000);
       const [still, s2] = await waitFor(t, quiet, 500);
-      c("still silent after a poke and 3 s" + tag, still, brief(s2));
+      c((P.own ? "still silent after 3 s" : "still silent after a poke and 3 s") + tag, still, brief(s2));
       if (P.music && first) {
         const a = await state();
         await sleep(2000);
@@ -488,7 +491,10 @@ async function pages() {
   }
   console.log("\n== pages: sound, hidden, visible again");
   try {
-    if (!SKIP.includes("pages")) for (const P of todo) for (const r of runs) if (launched[r.driver + r.policy]) await cycle(P, launched[r.driver + r.policy], r);
+    if (!SKIP.includes("pages")) for (const P of todo) for (const r of runs) {
+      const modes = P.only ? r.modes.filter((m) => P.only.includes(m)) : r.modes; // a page can be tested in only some of the ways
+      if (modes.length && launched[r.driver + r.policy]) await cycle(P, launched[r.driver + r.policy], { ...r, modes });
+    }
     // pages that never make sound
     if (!ONLY && !SKIP.includes("silent")) for (const [id, p] of SILENT) {
       const drv = launched["pwopen"] || Object.values(launched).find(Boolean);
@@ -687,6 +693,18 @@ const UNITS = [
     w.pause(); await __until(() => playing() === false);
     __qaHide(true); await __sleep(400); __qaHide(false); await __sleep(600);
     out.push(["a song the visitor paused stays paused", playing() === false, String(playing())]);
+    return out;
+  } },
+  { name: "a SoundCloud script that loads after the page is hidden", html: UNIT_HTML().replace("<body>", `<body><iframe id="song" title="song" src="https://w.soundcloud.com/player/?url=x&auto_play=true"></iframe>`), run: async () => {
+    const out = [];
+    out.push(["the song plays", await __until(() => __qa.sc === true, 6000), String(__qa.sc)]);
+    __qaHide(true);
+    // on a slow phone SoundCloud's script arrives after the page was hidden: nothing could be paused at the hide
+    await __sleep(800);
+    const s = document.createElement("script"); s.src = "https://w.soundcloud.com/player/api.js"; document.head.append(s);
+    out.push(["the song is paused once the script has loaded", await __until(() => __qa.sc === false, 8000), String(__qa.sc)]);
+    __qaHide(false);
+    out.push(["and plays when visible", await __until(() => __qa.sc === true, 6000), String(__qa.sc)]);
     return out;
   } },
 ];

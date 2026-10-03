@@ -132,6 +132,10 @@
   const songs = [];
   let songTimer = 0;
   function hushSongs() {
+    // Ask again every second while hidden. A game can start a song while hidden (when it changes song, or when SoundCloud's
+    // script loads late on a slow phone), and a widget cannot be stopped from doing it. The timer starts before any check
+    // for the player, so a player that appears later is still found.
+    if (!songTimer) songTimer = setInterval(() => { if (hidden()) hushSongs(); else stopSongs(); }, 1000);
     const SC = window.SC, frames = document.querySelectorAll('iframe[src^="https://w.soundcloud.com/"]');
     if (!SC || typeof SC.Widget !== "function" || !frames.length) return;
     for (const f of frames) safe(() => {
@@ -139,8 +143,6 @@
       // the answer comes later: by then the page may be visible again
       w.isPaused((paused) => safe(() => { if (!paused && hidden()) { if (songs.indexOf(w) < 0) songs.push(w); w.pause(); } }));
     });
-    // a game can start a song again while hidden (when it changes song), and a widget cannot be stopped from doing it: ask again
-    if (!songTimer) songTimer = setInterval(() => { if (hidden()) hushSongs(); else stopSongs(); }, 1000);
   }
   function stopSongs() { clearInterval(songTimer); songTimer = 0; }
   function wakeSongs() {
@@ -177,4 +179,6 @@
       media() { const out = []; for (const e of medias) { const m = e.ref.deref(); if (m) out.push({ paused: m.paused, heldByQuiet: e.mine }); } return out; },
     }),
   }));
+  // a page that opens in a background tab gets no hide event, so start guarding at once
+  if (hidden()) hush();
 })();

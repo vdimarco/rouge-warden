@@ -11,7 +11,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const PUB = path.join(ROOT, "public");
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
 const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are taken without it
-const PARTS = (process.env.PARTS || "walk,layout,switcher,saves").split(","); // run only some of the browser parts while you work on the page
+const PARTS = (process.env.PARTS || "walk,layout,switcher,saves,credits").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
@@ -78,6 +78,20 @@ check(new Set(machineUrls).size === machineUrls.length, "no two machines open th
 check(new Set(switchIds).size === switchIds.length, "switch.js GAMES has no repeated id");
 for (const u of machineUrls) check(switchUrls.includes(u), `machine ${u} is in switch.js, so every game menu can jump to it`);
 for (const u of switchUrls) check(machineUrls.includes(u), `switch.js entry ${u} has a machine`);
+
+// a machine and its switcher entry must be the same game: the same id and the same name. A swapped address or a game that was
+// renamed on one side only fails here, and the walk below could not see it (it trusts each machine's own address).
+{
+  const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0];
+  const entries = [...gamesText.matchAll(/\{\s*id:\s*"([^"]+)",\s*name:\s*"([^"]+)"[^\n]*?url:\s*"([^"]+)"/g)].map((m) => ({ id: m[1], name: m[2], url: m[3] }));
+  const norm = (t) => t.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").trim().toLowerCase();
+  for (const m of html.matchAll(/<article class="cab[^"]*"[^>]*?data-game="([^"]+)"[^>]*?data-url="([^"]+)"[\s\S]*?<div class="marquee">[\s\S]*?<b>([^<]*)<\/b>/g)) {
+    const [, game, url, title] = m, e = entries.find((x) => x.url === url);
+    if (!e) continue; // the check above already reports a missing entry
+    check(e.id === game, `machine ${url} (data-game "${game}") and its switcher entry (id "${e.id}") have the same id`);
+    check(norm(e.name) === norm(title), `machine ${url} is called "${title}" and its switcher entry is called "${e.name}"`);
+  }
+}
 
 // the art: every picture in a machine and in the switcher exists, and the pictures this change added stay small
 const imgs = [...html.matchAll(/<article class="cab[\s\S]*?<\/article>/g)].flatMap((m) => [...m[0].matchAll(/<img[^>]*\ssrc="([^"]+)"/g)].map((x) => x[1]));
@@ -302,6 +316,40 @@ if (chromium) {
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);
     check(moved.length === 0, `a real save changes no other machine's line${moved.length ? " (changed: " + moved.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}`);
     check(errors.length === 0, "real saves: no page errors" + (errors.length ? ": " + errors.join("; ") : ""));
+    await ctx.close();
+  }
+
+  /* ----- Crimson Rogue's end card lists the games of the switcher: its buttons must stay in the window however long the list is ----- */
+  for (const [width, height] of PARTS.includes("credits") ? [[360, 740], [390, 844], [1280, 720]] : []) {
+    // not open(): that helper stops every page change to a game, and this part loads one
+    const mobile = width < 800;
+    const ctx = await browser.newContext({ viewport: { width, height }, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
+    const page = await ctx.newPage(), errors = [];
+    page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+    await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
+    // the game needs three.js from a CDN: serve the copy that is in the repo
+    await page.route("https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", (r) => r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(path.join(PUB, "crimson/lib/three.module.min.js")) }));
+    await page.route("https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/**", (r) => {
+      const f = path.join(PUB, "crimson/lib/addons", r.request().url().split("/examples/jsm/")[1].split("?")[0]);
+      if (fs.existsSync(f)) r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(f) }); else r.continue();
+    });
+    await page.goto(BASE + "crimson/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(2500);
+    const res = await page.evaluate(async () => {
+      const m = await import("/crimson/js/credits.js");
+      let clk = 1000;
+      m.rollCredits({ crew: [{ name: "Ann", perk: "" }, { name: "Bo", perk: "" }], pick: 0, stats: { time: 120, parries: 3, deaths: 0 }, touch: innerWidth < 800, now: () => clk, onAgain() {} });
+      await new Promise((r) => setTimeout(r, 300));
+      clk = 1000 + 1500 + 200000; // the roll has run to its end
+      await new Promise((r) => setTimeout(r, 2500));
+      const box = (e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
+      return { tiles: document.querySelectorAll("#roll .game").length, again: box(document.querySelector("#creditsAgain")), arcade: box(document.querySelector("#roll .again a")), vh: innerHeight };
+    });
+    const tag = `${width}x${height}`;
+    check(res.tiles >= 8, `${tag}: the end card of Crimson Rogue lists the other games (${res.tiles} tiles)`);
+    check(res.again.top >= 0 && res.again.bottom <= res.vh, `${tag}: at the end of the credits the play-again button is in the window (${Math.round(res.again.top)} to ${Math.round(res.again.bottom)} of ${res.vh})`);
+    check(res.arcade.top >= 0 && res.arcade.bottom <= res.vh, `${tag}: and so is the arcade link (${Math.round(res.arcade.top)} to ${Math.round(res.arcade.bottom)} of ${res.vh})`);
+    check(errors.length === 0, `${tag}: no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
     await ctx.close();
   }
   await browser.close();

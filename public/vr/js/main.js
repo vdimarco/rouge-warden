@@ -946,7 +946,11 @@ async function boot() {
   renderer.setAnimationLoop(loop);
   addEventListener("resize", onResize);
   addEventListener("pagehide", saveNow);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) saveNow();
+    // on the phone (flat) the page itself hides; in a headset session the XR visibility callback above does this
+    if (!isXR()) { if (document.hidden) audio.suspend(); else if (audioStarted) audio.resume(); }
+  });
 
   // PWA launch (spec §6): the icon tap is the user activation, so ask for the session before building the city
   let launched = false;

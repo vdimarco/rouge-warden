@@ -96,6 +96,7 @@ h1, h2, .brand h1, #title h2, #ending h2, #flash-year {
 }
 #top h1 { font-size: 22px; line-height: 1; }
 .top-actions { display: flex; align-items: center; gap: 8px; }
+#home { white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; font-size: 12px; font-weight: 700; color: var(--ink); text-decoration: none; }
 #seedline { margin: 0; font-size: 12px; font-weight: 600; color: var(--smog); }
 #help {
   width: 44px;
