@@ -1,6 +1,6 @@
 import { District } from './district.js';
 import { drawAlienBackdrop } from './alien-world.js';
-import { Duel } from './duel.js';
+import { Duel,PARRY_WINDOW } from './duel.js';
 import { MouseSword,MouseLook } from './mouse-sword.js';
 import { viewport,viewportPoint,lockViewport,unlockViewport } from './viewport.js';
 import { orientationQuaternion,motionFrame } from './motion-frame.js';
@@ -50,15 +50,19 @@ function duelSwing(dx,dy){
   if(result.kind==='hit'||result.kind==='kill'){if(powered)charge=0;charge=Math.min(100,charge+10);burstParticles(target().x,target().y,'#d6ffb4');tone(280,.12);say(result.kind==='kill'?'OPPONENT DOWN':'CLEAN STRIKE');if(result.kind==='kill'){chainKill(200);kills++;if(duel.finished)finishDuel();else{enemy=district.chooseFighter(null);say(`${duel.fighters.filter(f=>f.hp>0).length} OPPONENTS LEFT`)}}}
   else{burstParticles(target().x,target().y,'#ffe8a1',12);tone(820,.06,'square',.025);say(result.kind==='break'?'GUARD BROKEN · STRIKE':'BLADES CLASH · PARRY TO OPEN')}
 }
+// A guard that goes down within this window before impact is a parry. Upgrades widen it.
+const parryWindow=()=>(gyro?PARRY_WINDOW.gyro:PARRY_WINDOW.touch)+windowBonus;
 function updateDuel(dt){
   if(gyro&&!raw)return;enemy=district.chooseFighter(duel.active)||enemy;
   const active=duel.active;let blocked=false;
   if(active){const selected=enemy;district.selectFighter(active);enemy=active;blocked=gyro?bladeBlocks():guard;enemy=selected;district.selectFighter(selected)}
-  if(blocked&&!duelWasBlocked)duelGuardAt=time;duelWasBlocked=blocked;
-  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.fighterDistance(f)<3.6,defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<.28+windowBonus}),event:(kind,f)=>{
+  // A touch guard counts from the press. A gyro guard counts from the frame the blade first covers the cut.
+  if(blocked&&!duelWasBlocked)duelGuardAt=gyro?time:guardAt;duelWasBlocked=blocked;
+  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.fighterDistance(f)<3.6,defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<parryWindow()}),event:(kind,f)=>{
     if(kind==='damage'){health-=f.boss?18:12;flash=.22;combo=0;chainClock=0;tone(65,.15);say('HIT · MATCH THE NEXT BLADE');if(health<=0)gameOver()}
-    if(kind==='parry'||kind==='block'){charge=Math.min(100,charge+(kind==='parry'?18:8));score+=kind==='parry'?40:10;tone(kind==='parry'?920:560,.09);burstParticles(target().x,target().y,'#ffe9ae',16);say(f.phase==='open'?'GUARD BROKEN · STRIKE':kind==='parry'?'PARRY · GUARD WEAKENED':'BLADE BLOCK')}
-    if(kind==='evade'){charge=Math.min(100,charge+8);say('DODGED · COUNTER NOW')}
+    if(kind==='parry'||kind==='block'){charge=Math.min(100,charge+(kind==='parry'?18:8));score+=kind==='parry'?40:10;tone(kind==='parry'?920:560,.09);burstParticles(target().x,target().y,'#ffe9ae',16);say(kind==='parry'?'PARRY · CUT NOW':f.phase==='open'?'GUARD BROKEN · STRIKE':'BLOCKED · GUARD WEAKENED')}
+    if(kind==='evade'){charge=Math.min(100,charge+8);say(f.phase==='open'?'GUARD BROKEN · STRIKE':'DODGED · GUARD WEAKENED')}
+    if(kind==='whiff')say('OUT OF REACH · STEP IN');
   }});
   if(gyro)guard=blocked;
   setText('objective',`ROUND ${wave} · ${duel.fighters.filter(f=>f.hp>0).length}/${duel.fighters.length} opponents`);

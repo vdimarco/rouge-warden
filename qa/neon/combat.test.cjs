@@ -31,6 +31,10 @@ function boot(districtClass=null,extra={}){
  s.window=s;vm.createContext(s);vm.runInContext(bundle(districtClass),s);
  return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
 }
+// A stand-in for the 3D district: every fighter stands 2 m away, in front of the player.
+const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}lunge(){this.lunged=true}}`;
+// Runs the game loop for a number of seconds in small steps, as frames would.
+const step=(run,seconds,dt=1/60)=>run(`for(let i=0;i<${Math.round(seconds/dt)};i++)update(${dt})`);
 test('direction, cooldown, parry, chip damage and pause',()=>{
  const {run}=boot();run('start();enemy.dir=0');
  assert.equal(run('slash(0,100);enemy.hp'),2);
@@ -109,7 +113,7 @@ test('twisting the handle never cuts; blade depth changes its visible length',as
 
 
 test('duel guard, exposed health damage, progression and widescreen fallback',async()=>{
- const {run,elements}=boot(`class District {constructor(){this.drones=[];this.dash=0;this.collected=0;this.assetsRequested=true}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}lunge(){this.lunged=true}}`);
+ const {run,elements}=boot(DISTRICT);
  run('start();enemy.dir=0;slash(0,100)');assert.equal(run('enemy.hp'),6);assert.ok(run('enemy.posture>0'));assert.equal(run('district.lunged'),true);
  run('duel.open(enemy);cooldown=0;slash(100,0)');assert.equal(run('enemy.hp'),4);assert.equal(run('enemy.phase'),'recover');
  run('cooldown=0;slash(100,0)');assert.equal(run('enemy.hp'),4);
@@ -118,4 +122,15 @@ test('duel guard, exposed health damage, progression and widescreen fallback',as
  run('wave=3;spawn();resume()');assert.equal(run('duel.fighters.length'),2);
  run('pause();const savedHP=enemy.hp;update(20)');assert.equal(run('enemy.hp===savedHP'),true);
  await elements.get('wideStart').onclick();assert.match(elements.get('wideHelp').textContent,/Rotate/);
+});
+
+test('a touch guard is a parry only in the last 0.6 s before impact; held longer, it is a block',()=>{
+ for(const [early,phase,posture] of [[.8,'recover',1],[.4,'open',4]]){
+  const {run}=boot(DISTRICT);run('start()');
+  // One cut, by hand, that lands in 1.2 s.
+  run("duel.active=enemy;enemy.phase='windup';enemy.attack='cut';enemy.period=1.2;enemy.timer=1.2");
+  step(run,1.2-early);run('setGuard(true)');step(run,early+.02);
+  assert.equal(run('enemy.phase'),phase,`guard pressed ${early} s before impact`);assert.equal(run('enemy.posture'),posture);
+  assert.equal(run('health'),100);
+ }
 });
