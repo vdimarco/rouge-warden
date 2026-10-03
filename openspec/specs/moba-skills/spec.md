@@ -19,13 +19,19 @@ Heroes SHALL begin with one point and no learned spells; each level SHALL grant 
 - **WHEN** an eligible rank is trained
 - **THEN** its cooldown or potency improves; training at the wrong level or without points has no effect.
 ### Requirement: Distinct folklore kits
-Each hero SHALL have three basic spells and one ultimate with different tactical behavior and visible cues.
-#### Scenario: Combine signature spells
-- **WHEN** Mothman strikes an omen, Nessie knocks a wet enemy back, Baba burns a rooted enemy or Devil fears a bleeding enemy
-- **THEN** the corresponding hero gains the advertised bonus and its thematic effect is shown.
-#### Scenario: Finish a match
-- **WHEN** all twelve heroes play full seeded bot matches
-- **THEN** matches finish, ranks stay valid, entities stay finite and existing item, lane, attack and neutral rules continue to work.
+Each of twelve heroes SHALL have four named active abilities, including one level-gated ultimate, with a different mechanic per slot and a hero-specific combination. Shared damage or healing primitives SHALL support different tactical behavior and visible cues.
+#### Scenario: Use specialised attacks
+- **WHEN** Kitsune casts foxfire, Banshee calls spirits or Gorgon spits venom
+- **THEN** seeking bolts, returning spirits or non-repeating bouncing venom follow their distinct rules and display their travel.
+#### Scenario: Use specialised fields
+- **WHEN** Wendigo casts Whiteout or Phoenix casts Sun ray
+- **THEN** the storm follows Wendigo and the beam follows Phoenix while movement and other controls remain available.
+#### Scenario: Support allies
+- **WHEN** Dryad casts Bloom or her brambles catch enemies
+- **THEN** one selected nearby ally gains healing and mana over time, or roots spread once to nearby unhit enemies.
+#### Scenario: Complete a match
+- **WHEN** every hero plays seeded full matches
+- **THEN** matches finish with finite entities, valid ranks and working lane, item and independent pointer rules.
 
 ### Requirement: Readable selection and rank detail
 The spellbook SHALL pause the hunt, show four selectable skills, and show the selected move's description, combination hint, current rank, cooldown and level requirements. Spending a point SHALL require the explicit Learn or Upgrade action.
