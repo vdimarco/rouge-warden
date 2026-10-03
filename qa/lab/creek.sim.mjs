@@ -192,11 +192,16 @@ section("Capsize and reset");
         const hx = s.x + k * Math.sin(s.psi), hy = s.y + k * Math.cos(s.psi);
         if (rv.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + C.HULL_R)) open = false;
       }
+      // and clear water for 9 m ahead, so you have a moment to start
+      for (const k of [4.5, 6.5, 9]) {
+        const hx = s.x + k * Math.sin(s.psi), hy = s.y + k * Math.cos(s.psi);
+        if (rv.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + 1)) open = false;
+      }
       if (Math.abs((s.x - rv.c(s.y)) / rv.b(s.y)) > 0.7 || sideways > 0.01 || Math.hypot(s.vx, s.vy) > 0) open = false;
     }
   }
   check(spots.every((y) => y >= 185 && y <= 200), `a swim at 200 m puts you back in between 185 and 200 m (${Math.min(...spots).toFixed(0)} to ${Math.max(...spots).toFixed(0)} m)`);
-  check(open, "there you sit still in open water, clear of the rocks, the bow downstream");
+  check(open, "there you sit still in open water, clear of the rocks for 9 m ahead, the bow downstream");
 }
 
 /* ---------------- 6. fair capsizes ---------------- */
@@ -234,6 +239,7 @@ section("Fair capsizes");
   const fair = leads.filter((l) => l >= 0.3).length, med = leads.slice().sort((a, b) => a - b)[leads.length >> 1];
   check(leads.length >= 20, `fast unbraced crossings still tip you (${leads.length} capsizes)`);
   check(fair >= 0.85 * leads.length, `${Math.round((100 * fair) / leads.length)}% of capsizes are warned at least 0.3 s ahead (median ${med.toFixed(2)} s; 12% and 0.16 s before)`);
+  check(Math.min(...leads) >= 0.3, `even the shortest warning comes ${Math.min(...leads).toFixed(2)} s ahead (0.07 s before)`);
   check(saved >= 0.5 * warned, `a brace 0.25 s after the warning saves ${saved} of ${warned} warned crossings`);
 }
 

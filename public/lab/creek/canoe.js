@@ -21,6 +21,8 @@ export const C = {
   RIGHT_K: 7, ROLL_C: 3, LEAN_K: 6, LEAN_MAX: 15 * D2R, TRIP: 2.6, TRIP_LEAN: 0.35,
   CAPSIZE: 50 * D2R,
   WARN_AHEAD: 0.4, WARN_OFF: 42 * D2R,         // warn when the roll 0.4 s ahead passes CAPSIZE; stop under 42°
+  WARN_DEEP: 36 * D2R,                         // and warn while the roll is past 36°,
+  WARN_OUT: 29 * D2R, WARN_OUT_V: 10 * D2R,    // or past 29° and rolling over at more than 10°/s
   ROLL_CAP_AT: 30 * D2R, ROLL_RATE: 1.2,       // past 30° the hull rolls over no faster than 1.2 rad/s
   HULL_R: 0.45,                                // the hull's half beam, for rocks and banks
   ROCK_SLIDE: 4,                               // m/s² along a rock's side while you touch it
@@ -128,10 +130,14 @@ export function step(c, river, ev = null) {
   if (Math.abs(c.phi) > C.ROLL_CAP_AT && c.dphi * Math.sign(c.phi) > C.ROLL_RATE) c.dphi = Math.sign(c.phi) * C.ROLL_RATE;
   c.phi += c.dphi * H;
   if (Math.abs(c.phi) > C.CAPSIZE) { capsize(c, ev); return; }
-  // the warning: the roll 0.4 s ahead passes 50°. It stays on until the roll ahead is back under 42°
-  const ahead = c.phi + C.WARN_AHEAD * c.dphi, side = Math.sign(ahead);
-  if (Math.abs(ahead) > C.CAPSIZE && c.warn !== side) { c.warn = side; if (ev) ev.push({ k: "tip", side }); }
-  else if (c.warn && (Math.abs(ahead) < C.WARN_OFF || side !== c.warn)) c.warn = 0;
+  // The warning: the roll 0.4 s ahead passes 50°, or the roll is past 36°, or past 29° and still going over. From 29°
+  // at the capped rate the roll needs 0.3 s to reach 50°, so every capsize gets 0.3 s of warning. It stays on until
+  // the roll ahead is back under 42° and the roll is safe.
+  const ahead = c.phi + C.WARN_AHEAD * c.dphi;
+  const deep = Math.abs(c.phi) > C.WARN_DEEP || (Math.abs(c.phi) > C.WARN_OUT && c.dphi * Math.sign(c.phi) > C.WARN_OUT_V);
+  const side = Math.sign(deep ? c.phi : ahead);
+  if ((Math.abs(ahead) > C.CAPSIZE || deep) && c.warn !== side) { c.warn = side; if (ev) ev.push({ k: "tip", side }); }
+  else if (c.warn && ((Math.abs(ahead) < C.WARN_OFF && !deep) || side !== c.warn)) c.warn = 0;
 
   collide(c, river, ev);
   // pinned on a rock: the current swings the hull round until it lies with the flow and slides off
@@ -261,12 +267,13 @@ export function putIn(river, x, y) {
   const d = river.lip(x, y), f = {};
   if (d > -13 && d < 4) y -= 13 + d;
   const y0 = Math.max(START, y), n0 = clamp((x - river.c(y0)) / river.b(y0), -0.6, 0.6);
+  // strict: the hull well clear of rocks and eddies, and clear water for 9 m ahead, so you have a moment to start
   const open = (px, py, strict) => {
     const [tx, ty] = river.tan(py);
-    for (const s of [-2.3, 0, 2.3]) {
+    for (const s of strict ? [-2.3, 0, 2.3, 4.5, 6.5, 9] : [-2.3, 0, 2.3]) {
       const hx = px + s * tx, hy = py + s * ty;
-      if (river.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + (strict ? 1.5 : 0.6))) return false;
-      if (strict && river.flow(hx, hy, f).e > 0.05) return false;
+      if (river.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + (strict ? (s > 2.3 ? 2 : 1.5) : 0.6))) return false;
+      if (strict && s <= 2.3 && river.flow(hx, hy, f).e > 0.05) return false;
     }
     return true;
   };
