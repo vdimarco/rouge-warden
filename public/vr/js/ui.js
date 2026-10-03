@@ -464,7 +464,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     card(c, w, h);
     heading(c, def.title, LAY.pad, LAY.pad + 34, 58);
     let y = LAY.pad + LAY.title;
-    if (def.sub) { c.font = font(36, 700); c.fillStyle = C.ink; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(def.sub, LAY.pad, y - 40); y += 6; }
+    // the line under the title sits in the 46 px that pageHeight keeps for it, clear of the title box and its shadow
+    if (def.sub) { c.font = font(36, 700); c.fillStyle = C.ink; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(def.sub, LAY.pad, y + 14); y += 46; }
     const inner = w - LAY.pad * 2 - SHADOW;
     for (const r of def.rows) {
       if (r.text != null) {
