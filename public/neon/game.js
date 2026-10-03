@@ -45,6 +45,8 @@ function finishDuel(){
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{options[+b.dataset.choice][2]();spawn();resume()});
 }
 function duelSwing(dx,dy){
+  // A cut goes to an open guard in reach first, even while another fighter winds up.
+  const victim=district.strikeTarget(enemy);if(victim!==enemy){enemy=victim;district.selectFighter(victim)}
   district.lunge();cooldown=.32;const horizontal=Math.abs(dx)>=Math.abs(dy);trails.push({horizontal,life:.22,blade:gyro?swordSegment():mouseSword.active?mouseSword.blade(W,H):null});tone(160,.08);
   if(!district.canStrike())return;const powered=charge>=100;const result=duel.swing(enemy,horizontal?0:1,powered?3:Math.min(3,damage+1));
   if(result.kind==='hit'||result.kind==='kill'){if(powered)charge=0;charge=Math.min(100,charge+10);burstParticles(target().x,target().y,'#d6ffb4');tone(280,.12);say(result.kind==='kill'?'OPPONENT DOWN':'CLEAN STRIKE');if(result.kind==='kill'){chainKill(200);kills++;if(duel.finished)finishDuel();else{enemy=district.chooseFighter(null);say(`${duel.fighters.filter(f=>f.hp>0).length} OPPONENTS LEFT`)}}}
@@ -58,7 +60,9 @@ function updateDuel(dt){
   if(active){const selected=enemy;district.selectFighter(active);enemy=active;blocked=gyro?bladeBlocks():guard;enemy=selected;district.selectFighter(selected)}
   // A touch guard counts from the press. A gyro guard counts from the frame the blade first covers the cut.
   if(blocked&&!duelWasBlocked)duelGuardAt=gyro?time:guardAt;duelWasBlocked=blocked;
-  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.fighterDistance(f)<3.6,defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<parryWindow()}),event:(kind,f)=>{
+  // Soft lock-on on touch screens. The phone's gyro and the mouse steer the view themselves.
+  if(!gyro&&!desktop)district.assist(active,enemy,dt);
+  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.canEngage(f),defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<parryWindow()}),event:(kind,f)=>{
     if(kind==='damage'){health-=f.boss?18:12;flash=.22;combo=0;chainClock=0;tone(65,.15);say('HIT · MATCH THE NEXT BLADE');if(health<=0)gameOver()}
     if(kind==='parry'||kind==='block'){charge=Math.min(100,charge+(kind==='parry'?18:8));score+=kind==='parry'?40:10;tone(kind==='parry'?920:560,.09);burstParticles(target().x,target().y,'#ffe9ae',16);say(kind==='parry'?'PARRY · CUT NOW':f.phase==='open'?'GUARD BROKEN · STRIKE':'BLOCKED · GUARD WEAKENED')}
     if(kind==='evade'){charge=Math.min(100,charge+8);say(f.phase==='open'?'GUARD BROKEN · STRIKE':'DODGED · GUARD WEAKENED')}
@@ -295,6 +299,12 @@ function drawThreats(){
   }
   if(killFlash>0){ctx.strokeStyle='#caff54';ctx.lineWidth=3;const x=W/2,y=H*.45;for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])line(x+a*8,y+b*8,x+a*18,y+b*18,'#caff54',3)}
   if(district.dash>0){for(let i=0;i<8;i++){const a=i*Math.PI/4;line(W/2+Math.cos(a)*W*.42,H/2+Math.sin(a)*H*.42,W/2+Math.cos(a)*W*.49,H/2+Math.sin(a)*H*.49,'#d3ffffaa',2)}}
+  // Every open guard in view says CUT NOW, not only the chosen fighter's.
+  for(const c of district.crowd||[]){const f=c.fighter;if(f.hp<=0||f.phase!=='open'||f===enemy||!district.inView(f,0))continue;const q=district.target(c.mesh);ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#caff54';ctx.fillText('CUT NOW',q.x,q.y-74)}
+  // Arrows at the screen edge point to fighters outside the view. A red, pulsing arrow is an attack.
+  let left=0,right=0;
+  for(const c of district.crowd||[]){const f=c.fighter;if(f.hp<=0||district.inView(f,0))continue;const side=district.bearing(c.mesh.position)>0?-1:1,row=side<0?left++:right++,warn=f.phase==='windup';
+    ctx.save();ctx.translate(side<0?16:W-16,H*.42+row*36);ctx.scale(side*(warn?1.35:1),warn?1.35:1);ctx.globalAlpha=warn?.65+.35*Math.sin(time*20):.9;ctx.fillStyle=warn?'#ff3d63':f.phase==='open'?'#caff54':'#ffd288';ctx.strokeStyle='#172127';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(6,0);ctx.lineTo(-10,-12);ctx.lineTo(-5,0);ctx.lineTo(-10,12);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
 }
 
 function draw(){ctx.save();if(!district&&gyro){ctx.translate(W/2,H/2);ctx.rotate(-motionRoll);const c=Math.abs(Math.cos(motionRoll)),s=Math.abs(Math.sin(motionRoll)),cover=Math.max(c+s*H/W,c+s*W/H);ctx.scale(cover,cover);ctx.translate(-W/2,-H/2)}if(district){ctx.clearRect(0,0,W,H)}else if(visualStyle==='rick-morty'){if(ready(art['alien-sky'])){const im=art['alien-sky'];ctx.drawImage(im,im.naturalWidth*.17,im.naturalHeight*.06,im.naturalWidth*.66,im.naturalHeight*.88,0,0,W,H)}else drawAlienBackdrop(ctx,W,H,time)}else if(ready(art.street)){drawStreet()}else{ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}

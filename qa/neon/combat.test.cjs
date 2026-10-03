@@ -32,7 +32,7 @@ function boot(districtClass=null,extra={}){
  return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
 }
 // A stand-in for the 3D district: every fighter stands 2 m away, in front of the player.
-const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}lunge(){this.lunged=true}}`;
+const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.lookedAt=-9;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}aimMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}strikeTarget(f){return f}inView(){return true}canEngage(){return true}bearing(){return 0}assist(active,chosen){this.assisted=active||chosen}lunge(){this.lunged=true}}`;
 // Runs the game loop for a number of seconds in small steps, as frames would.
 const step=(run,seconds,dt=1/60)=>run(`for(let i=0;i<${Math.round(seconds/dt)};i++)update(${dt})`);
 test('direction, cooldown, parry, chip damage and pause',()=>{
@@ -133,4 +133,14 @@ test('a touch guard is a parry only in the last 0.6 s before impact; held longer
   assert.equal(run('enemy.phase'),phase,`guard pressed ${early} s before impact`);assert.equal(run('enemy.posture'),posture);
   assert.equal(run('health'),100);
  }
+});
+
+test('the lock-on turns the view only on a touch screen without the gyro',async()=>{
+ const touch=boot(DISTRICT);touch.run('start()');step(touch.run,.1);assert.equal(touch.run('district.assisted===enemy'),true);
+ // A mouse steers the view itself.
+ const mouse=boot(DISTRICT,{matchMedia:()=>({matches:true})});mouse.run('start()');step(mouse.run,.1);assert.equal(mouse.run('district.assisted'),undefined);
+ // So does the phone in gyro mode.
+ const phone=boot(DISTRICT);phone.run('start()');await phone.elements.get('motion').onclick();
+ for(let i=0;i<3;i++){phone.run('now+=40');phone.events.deviceorientation({alpha:0,beta:0,gamma:0})}
+ step(phone.run,.1);assert.equal(phone.run('gyro&&!!raw'),true);assert.equal(phone.run('district.assisted'),undefined);
 });

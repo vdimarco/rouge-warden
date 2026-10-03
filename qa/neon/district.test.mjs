@@ -1,16 +1,6 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-import {fileURLToPath} from 'node:url';
-const root=fileURLToPath(new URL('../../',import.meta.url)).replace(/\/$/,'');
-const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,{style:{setProperty(){}},dataset:{},addEventListener(){},setPointerCapture(){},prepend(){},getBoundingClientRect:()=>({left:0,top:0,width:104,height:104})});return elements.get(id)};
-const listeners={};
-globalThis.innerWidth=390;globalThis.innerHeight=844;globalThis.devicePixelRatio=1;globalThis.window=globalThis;globalThis.screen={orientation:{angle:0}};
-// The texture loader asks for an image element. This one never loads, so the scene keeps its plain colours.
-globalThis.document={body:{prepend(){}},getElementById:el,createElement:()=>({getContext:()=>new Proxy({},{get:()=>()=>{}})}),createElementNS:()=>({addEventListener(){},removeEventListener(){}})};globalThis.addEventListener=(n,f)=>(listeners[n]??=[]).push(f);
-let src=fs.readFileSync(root+'/public/neon/district.js','utf8');
-src=src.replace("import * as THREE from '../crimson/lib/three.module.min.js';",`import * as Real from 'file://${root}/public/crimson/lib/three.module.min.js';const THREE={...Real,WebGLRenderer:class{constructor(){this.domElement={}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld();c.updateMatrixWorld()}}};`);
-// A data: URL cannot resolve relative imports, so they point at the files on disk.
-src=src.replace(/from '\.\/([\w-]+\.js)'/g,`from 'file://${root}/public/neon/$1'`);
-const {District}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
+import assert from 'node:assert/strict';
+import {loadDistrict,listeners} from './node-district.mjs';
+const District=await loadDistrict();
 const d=new District();const enemy={boss:false,phase:'windup',timer:1,period:1.5,dir:0,hit:0};
 assert.ok(d.batchStats.before>100);assert.ok(d.batchStats.after<60);assert.ok(d.batchStats.after<d.batchStats.before/5);assert.equal(d.collides(-14,-13),true);assert.equal(d.collides(0,0),false);
 d.placeEnemy(enemy);assert.equal(d.canStrike(),false);d.keys.add('KeyW');for(let i=0;i<10;i++)d.update(.04,true,enemy);assert.ok(d.position.z<8);assert.equal(d.canStrike(),true);
@@ -45,3 +35,31 @@ console.log('PASS: patrol cap, attack windup, dash immunity/cooldown, cleave, re
 
 // Full groups preserve arm animation, select living targets, and retire old encounters.
 const fsquad=[{id:0,hp:6,phase:'guard',period:1,dir:0},{id:1,hp:6,phase:'windup',period:1,timer:.5,dir:1}];d.reset();d.beginEncounter(fsquad);assert.equal(d.crowd.length,2);assert.ok(d.crowd.every(c=>c.arm&&c.legs.every(Boolean)));d.update(.05,true,fsquad[0]);assert.ok(d.crowd[1].arm.rotation.x<-.35);fsquad[0].hp=0;assert.equal(d.chooseFighter(null),fsquad[1]);d.update(.05,true,fsquad[1]);assert.equal(d.crowd[0].mesh.visible,false);const retired=d.crowd.map(c=>c.mesh);d.beginEncounter([{id:2,hp:6,phase:'guard'}]);assert.ok(retired.every(m=>!d.scene.children.includes(m)));
+
+// The duel stays in view: a view test, a soft lock-on and circling that stays near the middle of the view.
+const portrait=()=>{innerWidth=390;innerHeight=844;listeners.resize.forEach(f=>f());d.resize()};
+const solo=(x,z,phase='guard')=>{const f={id:9,hp:6,max:6,phase,attack:'cut',dir:0,hit:0,period:1,timer:1,posture:0};d.reset();d.setStyle('rick-morty');d.position.set(0,1.65,8);d.beginEncounter([f]);d.crowd[0].mesh.position.set(x,0,z);return f};
+const ahead=a=>[-3*Math.sin(a),8-3*Math.cos(a)];
+portrait();let f=solo(...ahead(0));
+assert.ok(Math.abs(d.bearing(d.crowd[0].mesh.position))<1e-9);assert.equal(d.inView(f),true);assert.equal(d.canEngage(f),true);
+// A portrait phone sees about 17 degrees to each side. A fighter 30 degrees to the left is off screen.
+assert.ok(d.halfView()>.27&&d.halfView()<.33,`half view ${d.halfView()}`);
+f=solo(...ahead(.52));assert.ok(Math.abs(d.bearing(d.crowd[0].mesh.position)-.52)<.01);assert.equal(d.inView(f),false);assert.equal(d.canEngage(f),false);
+// The lock-on turns toward that fighter. During a windup it is centered within a second.
+for(let i=0;i<30;i++)d.turnToward(f,1/30,7,0);assert.ok(Math.abs(d.bearing(d.crowd[0].mesh.position))<.035);assert.equal(d.inView(f),true);
+// A drag on the look pad pauses the lock-on for a moment.
+f=solo(...ahead(.52));d.lookedAt=d.clock;const yaw=d.yaw;d.assist(f,f,1/30);assert.equal(d.yaw,yaw);d.lookedAt=d.clock-1;d.assist(f,f,1/30);assert.ok(d.yaw>yaw);
+// Behind the player, a fighter is never in view.
+f=solo(...ahead(Math.PI));assert.equal(d.inView(f),false);
+// In guard, a fighter circles but stays inside the band: in view for ten seconds while the player stands still.
+f=solo(...ahead(0));let worst=0;for(let i=0;i<300;i++){d.update(1/30,true,f,false);worst=Math.max(worst,Math.abs(d.bearing(d.crowd[0].mesh.position)))}
+assert.ok(worst<=.26+.03,`circled out to ${(worst*180/Math.PI).toFixed(1)} degrees`);assert.equal(d.inView(f,0),true);
+// A fighter that starts far to the side circles back toward the middle of the view.
+for(const side of [1.2,-1.2]){f=solo(...ahead(side));for(let i=0;i<90;i++)d.update(1/30,true,f,false);assert.ok(Math.abs(d.bearing(d.crowd[0].mesh.position))<1.2-.4,`a fighter at ${side} rad did not come back`)}
+// A fighter that ends up too close is not frozen there: it steps back out to fighting range.
+f=solo(...ahead(0));d.crowd[0].mesh.position.set(0,0,7.5);for(let i=0;i<30;i++)d.update(1/30,true,f,false);assert.ok(d.fighterDistance(f)>1.1,`still ${d.fighterDistance(f).toFixed(2)} m away`);
+// A cut goes to an open guard in reach, even when another fighter is the chosen target.
+const pair=[{id:0,hp:6,max:6,phase:'windup',attack:'cut',dir:0,hit:0,period:1,timer:1,posture:0},{id:1,hp:6,max:6,phase:'open',attack:'cut',dir:0,hit:0,period:1,timer:1,posture:4}];
+d.reset();d.position.set(0,1.65,8);d.beginEncounter(pair);d.crowd[0].mesh.position.set(-.8,0,5.5);d.crowd[1].mesh.position.set(.8,0,5.5);
+assert.equal(d.strikeTarget(pair[0]),pair[1]);pair[1].phase='guard';assert.equal(d.strikeTarget(pair[0]),pair[0]);
+console.log('PASS: view test, lock-on, look-pad priority, circling that stays in view, step back and cut target.');
