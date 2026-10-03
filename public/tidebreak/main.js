@@ -10,7 +10,7 @@ import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './
 import { skillIcon } from './skill-icons.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, selectionSpellArt, ROLES, ROLE_ICONS, SELECTION_KEYS } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers } from './pointer-action.js';
@@ -46,7 +46,7 @@ function pause() {
   $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
 function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
-function updateSound() { $('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
+function updateSound() { if($('sound-menu'))$('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
 function choose(identityId) {
   const h=HERO_IDENTITIES[identityId];if(!h)return;
   selectedIdentity=identityId;selected=h.kit;
@@ -197,11 +197,11 @@ document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
   selectionPanel('The Night Market','<p>Earn embers in battle and spend them in the Night Market. Combine components into six items, choose a build and forge one relic.</p><p>Open the market during a match to inspect items and buy upgrades.</p>');
 });
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
-$('sound-menu').onclick = () => { sound.start(); sound.toggle(); updateSound(); }; updateSound();
+$('select-key').onclick=()=>{if(!$('play').disabled)start();};updateSound();
 let rosterFilter='All';
 const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
 function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
-$('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><img src="./art/ui/${ROLE_ICONS[i]}.svg" alt="">${role}</button>`).join('');
+$('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><span class="role-icon" style="--role-x:${[42,117,194,272,347,429][i]}" aria-hidden="true"></span>${role}</button>`).join('');
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 movementControl=movementPointer($('joystick'),{movement,thumb:$('thumb'),enabled:()=>running&&!paused,onStart:()=>{sound.start();$('coach').hidden=true;}});
 abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=value,onStatus:updateAimStatus,onCast:command=>castQueue=command});
