@@ -4,7 +4,7 @@
 // stern) spins it; its side drag is far larger than its drag along the keel, so it tracks. Strokes, J-strokes,
 // back strokes and braces act on it the way a paddle does: a stroke on the right pushes it ahead and turns the bow left.
 // No DOM here: the Node tests import it.
-import { FINISH } from "./river.js";
+import { FINISH, START } from "./river.js";
 
 const D2R = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -18,21 +18,25 @@ export const C = {
   J_YAW: 0.6, J_T: 0.15, J_CUT: 0.12,                // a J-stroke: the turn back, and the push it costs
   BRACE_DRAG: 0.8, BRACE_YAW: 0.35, BRACE_LEAN: 22 * D2R, BRACE_K: 20, BRACE_C: 6,
   RIGHT_K: 7, ROLL_C: 3, LEAN_K: 6, LEAN_MAX: 15 * D2R, TRIP: 2.6, TRIP_LEAN: 0.35,
-  CAPSIZE: 50 * D2R, TIP_WARN: 35 * D2R,
+  CAPSIZE: 50 * D2R,
+  WARN_AHEAD: 0.4, WARN_OFF: 42 * D2R,         // warn when the roll 0.4 s ahead passes CAPSIZE; stop under 42°
+  ROLL_CAP_AT: 30 * D2R, ROLL_RATE: 1.2,       // past 30° the hull rolls over no faster than 1.2 rad/s
   HULL_R: 0.45,                                // the hull's half beam, for rocks and banks
   ROCK_SLIDE: 4,                               // m/s² along a rock's side while you touch it
+  KNOCK: 0.3,                                  // m/s into a rock or a bank that counts as a knock
   SWIM: 1.8,                                   // seconds from a capsize to the reset
+  SWIM_BACK: 4,                                // metres upstream of the swim where you climb back in
   EDDY_E: 0.6, EDDY_REL: 0.7, EDDY_GROUND: 1.3, EDDY_COS: Math.cos(70 * D2R), EDDY_HOLD: 0.4,
   EDDY_GRAB: 1.0,                              // per second, at the core of an eddy
 };
 
 export function newCanoe(river, at = null) {
-  const y = at ? at.y : 6, x = at ? at.x : river.c(y);
+  const y = at ? at.y : START, x = at ? at.x : river.c(y);
   const [tx, ty] = river.tan(y);
   return {
     x, y, vx: 0, vy: 0, psi: at && at.psi != null ? at.psi : Math.atan2(tx, ty), om: 0, phi: 0, dphi: 0,
-    t: 0, lean: 0, brace: 0, pushes: [], turns: [],
-    swim: 0, swims: 0, caught: new Set(), lastEddy: null, inEddy: null, eddyT: 0, touching: false, pinT: 0,
+    t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0,
+    swim: 0, swims: 0, swimX: 0, swimY: 0, caught: new Set(), lastEddy: null, inEddy: null, eddyT: 0, touching: false, pinT: 0,
     miss: {}, done: false, strokes: 0, js: 0, braces: 0, rocks: 0,
   };
 }
@@ -107,10 +111,14 @@ export function step(c, river, ev = null) {
   let rollA = -C.RIGHT_K * Math.sin((Math.PI * c.phi) / C.CAPSIZE) - C.ROLL_C * c.dphi + C.LEAN_K * (leanT - c.phi) + trip;
   if (c.brace && c.brace * c.phi > C.BRACE_LEAN) rollA -= c.brace * (C.BRACE_K * (c.brace * c.phi - C.BRACE_LEAN) + C.BRACE_C * c.brace * c.dphi);
   c.dphi += rollA * H;
+  // past 30° the hull rolls on no faster than ROLL_RATE, so the warning comes in time to brace
+  if (Math.abs(c.phi) > C.ROLL_CAP_AT && c.dphi * Math.sign(c.phi) > C.ROLL_RATE) c.dphi = Math.sign(c.phi) * C.ROLL_RATE;
   c.phi += c.dphi * H;
   if (Math.abs(c.phi) > C.CAPSIZE) { capsize(c, ev); return; }
-  if (ev && Math.abs(c.phi) > C.TIP_WARN && !c.tipping) ev.push({ k: "tip", side: Math.sign(c.phi) });
-  c.tipping = Math.abs(c.phi) > C.TIP_WARN;
+  // the warning: the roll 0.4 s ahead passes 50°. It stays on until the roll ahead is back under 42°
+  const ahead = c.phi + C.WARN_AHEAD * c.dphi, side = Math.sign(ahead);
+  if (Math.abs(ahead) > C.CAPSIZE && c.warn !== side) { c.warn = side; if (ev) ev.push({ k: "tip", side }); }
+  else if (c.warn && (Math.abs(ahead) < C.WARN_OFF || side !== c.warn)) c.warn = 0;
 
   collide(c, river, ev);
   // pinned on a rock: the current swings the hull round until it lies with the flow and slides off
@@ -156,7 +164,8 @@ function collide(c, river, ev) {
       if (d >= min || d < 1e-6) continue;
       c.touching = true;
       const nx = dx / d, ny = dy / d;
-      if (contact(c, s, nx, ny, min - d, sp, cp)) { c.rocks++; if (ev && c.hitV > 0.3) ev.push({ k: "rock", v: c.hitV }); }
+      // a knock counts (and sounds) only when the hull hits; a hull that rests on the rock does not count
+      if (contact(c, s, nx, ny, min - d, sp, cp) && c.hitV > C.KNOCK) { c.rocks++; if (ev) ev.push({ k: "rock", v: c.hitV }); }
       // the water carries the hull round the rock, downstream, so a touch never becomes a trap
       let tx = -ny, ty = nx;
       if (tx * q.tx + ty * q.ty < 0) { tx = -tx; ty = -ty; }
@@ -166,7 +175,7 @@ function collide(c, river, ev) {
     const cy = river.c(py), by = river.b(py), n = (px - cy) / by;
     if (Math.abs(n) > 0.97) {
       const side = Math.sign(n), [tx, ty] = river.tan(py);
-      if (contact(c, s, -side * ty, side * tx, (Math.abs(n) - 0.97) * by, sp, cp) && ev && c.hitV > 0.3) ev.push({ k: "bank", v: c.hitV });
+      if (contact(c, s, -side * ty, side * tx, (Math.abs(n) - 0.97) * by, sp, cp) && ev && c.hitV > C.KNOCK) ev.push({ k: "bank", v: c.hitV });
     }
   }
 }
@@ -185,24 +194,48 @@ function contact(c, s, nx, ny, pen, sp, cp) {
 function capsize(c, ev) {
   c.swim = C.SWIM;
   c.swims++;
+  c.swimX = c.x; c.swimY = c.y;
+  c.warn = 0;
   c.pushes.length = 0; c.turns.length = 0;
   if (ev) ev.push({ k: "capsize", side: Math.sign(c.phi) });
 }
 
-// back in the last eddy you caught (or at the top), still, the bow upstream in an eddy
+// back in the canoe a few metres upstream of the swim, so you can try the same move again: still, the bow downstream
 function reset(c, river, ev) {
-  const q = c.lastEddy;
-  if (q) {
-    c.x = q.ex; c.y = q.ey;
-    c.psi = Math.atan2(-q.tx, -q.ty);
-  } else {
-    c.y = 6; c.x = river.c(6);
-    const [tx, ty] = river.tan(6);
-    c.psi = Math.atan2(tx, ty);
-  }
-  c.vx = 0; c.vy = 0; c.om = 0; c.phi = 0; c.dphi = 0; c.brace = 0; c.lean = 0;
+  const p = putIn(river, c.swimX, c.swimY - C.SWIM_BACK);
+  c.x = p.x; c.y = p.y;
+  const [tx, ty] = river.tan(p.y);
+  c.psi = Math.atan2(tx, ty);
+  c.vx = 0; c.vy = 0; c.om = 0; c.phi = 0; c.dphi = 0; c.brace = 0; c.lean = 0; c.warn = 0;
   c.inEddy = null; c.eddyT = 0;
   if (ev) ev.push({ k: "reset" });
+}
+
+// The open water nearest to (x, y), at y or a little upstream of it: well inside the banks, with the whole hull clear
+// of the rocks, and out of the eddies. Never above the put-in.
+export function putIn(river, x, y) {
+  const f = {}, y0 = Math.max(START, y), n0 = clamp((x - river.c(y0)) / river.b(y0), -0.6, 0.6);
+  const open = (px, py, strict) => {
+    const [tx, ty] = river.tan(py);
+    for (const s of [-2.3, 0, 2.3]) {
+      const hx = px + s * tx, hy = py + s * ty;
+      if (river.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + (strict ? 1.5 : 0.6))) return false;
+      if (strict && river.flow(hx, hy, f).e > 0.05) return false;
+    }
+    return true;
+  };
+  for (const strict of [true, false]) {
+    for (let dy = 0; dy <= (strict ? 8 : 11); dy++) {
+      const py = Math.max(START, y0 - dy);
+      for (const dn of [0, 0.15, -0.15, 0.3, -0.3, 0.45, -0.45, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2]) {
+        const n = n0 + dn;
+        if (Math.abs(n) > 0.65) continue;
+        const px = river.c(py) + n * river.b(py);
+        if (open(px, py, strict)) return { x: px, y: py };
+      }
+    }
+  }
+  return { x: river.c(y0), y: y0 };
 }
 
 // how close you came to the eddies you missed: the smallest distance, or null

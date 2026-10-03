@@ -1,7 +1,8 @@
 // Checks the river and the canoe of Up the Creek with no browser: node qa/lab/creek.sim.mjs
 // Strokes turn the right way, J-strokes hold a line, eddies turn the water back, a fast crossing with no brace tips
 // you and a brace keeps you up, eddies can be caught, a river can be run, and nothing ends inside a rock or a bank.
-// Exit code 1 on failure.
+// "Rocks hit" counts knocks, a swim puts you back a few metres upstream, and a capsize comes after a warning that
+// leaves time to brace. Exit code 1 on failure.
 import { makeRiver, FINISH } from "../../public/lab/creek/river.js";
 import { newCanoe, act, step, H, C, closestMiss } from "../../public/lab/creek/canoe.js";
 
@@ -140,6 +141,11 @@ section("Running the river");
   const sOnly = seeds.map((s) => run(s, strokesOnly));
   check(sOnly.every((x) => x.c.caught.size <= 1), `strokes with no steering catch at most one eddy (${sOnly.map((x) => x.c.caught.size).join(", ")})`);
   const all = runs.concat(sOnly);
+  // "Rocks hit" on the end card counts the knocks you hear, not the steps the hull rests on a rock. The middle-follower
+  // on #s=5 saw "Rocks hit 548" for 18 knocks before.
+  const knocks = all.map((x) => x.ev.filter((e) => e.k === "rock").length);
+  check(all.every((x, i) => x.c.rocks === knocks[i]), "every knock you hear counts once on the end card, and nothing else counts");
+  check(runs.every((x) => x.c.rocks <= 40), `a paddler who follows the middle hits a rock ${runs.map((x) => x.c.rocks).join(", ")} times`);
   check(all.every((x) => x.nan === 0), "no NaN");
   check(all.every((x) => x.inside === 0), "the canoe never ends a step inside a rock");
   check(all.every((x) => x.outside === 0), "the canoe never ends a step outside the banks");
@@ -157,6 +163,65 @@ section("Capsize and reset");
   let t = 0;
   while (c.swim > 0 && t < 5) { step(c, r, ev); t += H; }
   check(ev.some((e) => e.k === "reset") && c.phi === 0 && t < 2, `you are back in the canoe in ${t.toFixed(1)} s`);
+  // a swim at 200 m puts you back a few metres upstream, in open water, the bow downstream (it was 6 m before)
+  const spots = [];
+  let open = true;
+  for (const seed of [3, 7, 11, 23, 42, 99]) {
+    const rv = makeRiver(seed);
+    for (const n of [-0.5, 0, 0.5]) {
+      const y = 200, x = rv.c(y) + n * rv.b(y), s = newCanoe(rv, { x, y, psi: Math.atan2(...rv.tan(y)) }), e2 = [];
+      s.caught.add(rv.targets[0].id); s.lastEddy = rv.targets[0];   // an eddy caught far upstream does not pull you back
+      s.phi = C.CAPSIZE + 0.01;
+      for (let i = 0; i < 120 * 3 && !e2.some((q) => q.k === "reset"); i++) step(s, rv, e2);
+      spots.push(s.y);
+      const [tx, ty] = rv.tan(s.y), sideways = Math.abs(Math.sin(s.psi) * ty - Math.cos(s.psi) * tx);
+      for (const k of [-2.3, 0, 2.3]) {
+        const hx = s.x + k * Math.sin(s.psi), hy = s.y + k * Math.cos(s.psi);
+        if (rv.rocks.some((q) => Math.hypot(q.x - hx, q.y - hy) < q.R + C.HULL_R)) open = false;
+      }
+      if (Math.abs((s.x - rv.c(s.y)) / rv.b(s.y)) > 0.7 || sideways > 0.01 || Math.hypot(s.vx, s.vy) > 0) open = false;
+    }
+  }
+  check(spots.every((y) => y >= 185 && y <= 200), `a swim at 200 m puts you back in between 185 and 200 m (${Math.min(...spots).toFixed(0)} to ${Math.max(...spots).toFixed(0)} m)`);
+  check(open, "there you sit still in open water, clear of the rocks, the bow downstream");
+}
+
+/* ---------------- 6. fair capsizes ---------------- */
+// The eddy-line set: fast unbraced crossings into every eddy worth catching, from both sides, at 1, 2 and 3 m/s.
+// The warning ("tip": the roll 0.4 s ahead passes 50°) must come at least 0.3 s before the capsize.
+section("Fair capsizes");
+{
+  function crossing(r, q, side, drive, late) {
+    const down = Math.atan2(q.tx, q.ty), k = side * (q.hw + 1.5), s = q.sc - q.hl * 0.5;
+    const x = q.x + s * q.tx + k * q.ty, y = q.y + s * q.ty - k * q.tx, psi = down - side * (55 / R2D);
+    const c = newCanoe(r, { x, y, psi }), f = r.flow(x, y), ev = [];
+    c.vx = f.vx + Math.sin(psi) * drive; c.vy = f.vy + Math.cos(psi) * drive;
+    let warn = null;
+    for (let i = 0; i < 120 * 4; i++) {
+      // a player who braces on the low side 0.25 s after the warning
+      if (late && warn != null && c.t - warn >= 0.25 && !c.brace) c.brace = Math.sign(c.phi) || 1;
+      ev.length = 0;
+      step(c, r, ev);
+      if (warn == null && ev.some((e) => e.k === "tip")) warn = c.t;
+      if (ev.some((e) => e.k === "capsize")) return { cap: true, warn, lead: warn == null ? 0 : c.t - warn };
+    }
+    return { cap: false, warn };
+  }
+  const leads = [];
+  let warned = 0, saved = 0;
+  for (const seed of [3, 7, 11, 23, 42, 99]) {
+    const r = makeRiver(seed);
+    for (const q of r.targets) for (const side of [-1, 1]) for (const drive of [1, 2, 3]) {
+      const a = crossing(r, q, side, drive, false);
+      if (a.cap) leads.push(a.lead);
+      const b = crossing(r, q, side, drive, true);
+      if (b.warn != null) { warned++; if (!b.cap) saved++; }
+    }
+  }
+  const fair = leads.filter((l) => l >= 0.3).length, med = leads.slice().sort((a, b) => a - b)[leads.length >> 1];
+  check(leads.length >= 20, `fast unbraced crossings still tip you (${leads.length} capsizes)`);
+  check(fair >= 0.85 * leads.length, `${Math.round((100 * fair) / leads.length)}% of capsizes are warned at least 0.3 s ahead (median ${med.toFixed(2)} s; 12% and 0.16 s before)`);
+  check(saved >= 0.5 * warned, `a brace 0.25 s after the warning saves ${saved} of ${warned} warned crossings`);
 }
 
 console.log(`\ncreek.sim: ${fails.length ? fails.length + " failed" : "all passed"}`);

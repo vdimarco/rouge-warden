@@ -142,8 +142,9 @@ function happen(e) {
     }
     case "rock": Sfx.play(sndRock, e.v); buzz("bump", 1); shake = Math.min(1, 0.3 + e.v * 0.2); break;
     case "bank": Sfx.play(sndBank); break;
-    case "tip": buzz("tick"); break;
-    case "capsize": Sfx.play((en, t) => splashSound(en, t, 1)); buzz("jolt"); toast("Swim! Back to your last eddy."); shake = 1; S.act("swim"); break;
+    // the roll 0.4 s ahead passes 50°: a rising whoop on that side, a wobble in the hand, and the red edge
+    case "tip": Sfx.play(sndTip, e.side); buzz("thrash"); tickT = 0.12; break;
+    case "capsize": Sfx.play((en, t) => splashSound(en, t, 1)); buzz("jolt"); toast("Swim. Back in a few metres up."); shake = 1; S.act("swim"); break;
     case "finish": finish(); break;
   }
 }
@@ -160,6 +161,10 @@ function sndEddy(e, t) {
   if (canoe.caught.size % 3 === 1) loonTremolo(e, t + 0.5, { gain: 0.12, dur: 1, send: 0.9 });
 }
 function sndTick(e, t) { tone(e, t, { f: 1800, dur: 0.02, peak: 0.05 }); }
+function sndTip(e, t, side = 0) {
+  tone(e, t, { f: 420, f2: 780, glide: 0.2, dur: 0.24, peak: 0.12, wave: "square", lp: 1600, pan: side * 0.6 });
+  hiss(e, t, { type: "lowpass", f: 700, dur: 0.22, peak: 0.1, pan: side * 0.6 });
+}
 let tickT = 0;
 const fl = {};
 function sounds(dt) {
@@ -171,8 +176,8 @@ function sounds(dt) {
   const sp = Math.sin(canoe.psi), cp = Math.cos(canoe.psi), ahead = river.flow(canoe.x + sp * 3.8, canoe.y + cp * 3.8);
   const seam = play && canoe.swim <= 0 && fl.vx * ahead.vx + fl.vy * ahead.vy < -0.1 ? 1 : 0;
   Sfx.bed("gurgle", "pink", "bandpass", 900, 7).set(seam * 0.3, 700 + 400 * Math.random(), 0.05);
-  // ticks while you tip past 35°
-  if (play && Math.abs(canoe.phi) > C.TIP_WARN && canoe.swim <= 0) {
+  // ticks while the capsize warning is on
+  if (play && canoe.warn && canoe.swim <= 0) {
     tickT -= dt;
     if (tickT <= 0) { tickT = 0.12; Sfx.play(sndTick); }
   }
@@ -437,6 +442,13 @@ function boat() {
     g.fillStyle = `rgba(0,0,0,${clamp(Math.abs(roll) * 0.8, 0, 0.5)})`;
     g.beginPath(); g.ellipse(Math.sign(roll) * 0.25, 0, 0.2, 2, 0, 0, Math.PI * 2); g.fill();
   }
+  // the capsize warning: the low gunwale flashes red
+  if (c.warn) {
+    const s = c.warn;
+    g.strokeStyle = `rgba(255,70,50,${0.65 + 0.35 * Math.sin(clock * 30)})`;
+    g.lineWidth = 0.16; g.lineCap = "round";
+    g.beginPath(); g.moveTo(0, 2.3); g.quadraticCurveTo(s * 0.52, 1.1, s * 0.44, 0); g.quadraticCurveTo(s * 0.52, -1.1, 0, -2.3); g.stroke();
+  }
   g.restore();
   // the paddler
   g.fillStyle = "#2f4f6f";
@@ -479,16 +491,23 @@ function hull(out, inside) {
   g.strokeStyle = "rgba(60,30,20,0.8)"; g.lineWidth = 0.05;
   for (const y of [0.9, -0.9]) { g.beginPath(); g.moveTo(-0.36, y); g.lineTo(0.36, y); g.stroke(); }
 }
-// a red edge on the side you are tipping toward, past 35°
+// While the capsize warning is on: a red edge on the side you tip toward, and "Brace" there. It grows as you tip.
 function warnEdge() {
-  const r = canoe.phi;
-  if (Math.abs(r) < C.TIP_WARN || canoe.swim > 0 || phase !== "play") return;
-  const a = clamp((Math.abs(r) - C.TIP_WARN) / (C.CAPSIZE - C.TIP_WARN), 0, 1) * 0.7 + 0.2;
-  const right = r > 0, w = W * 0.25;
+  if (!canoe.warn || canoe.swim > 0 || phase !== "play") return;
+  const a = clamp(Math.abs(canoe.phi) / C.CAPSIZE, 0, 1) * 0.55 + 0.3 + 0.1 * Math.sin(clock * 30);
+  const right = canoe.warn > 0, w = W * 0.25;
   const gr = g.createLinearGradient(right ? W : 0, 0, right ? W - w : w, 0);
   gr.addColorStop(0, `rgba(230,50,40,${a})`); gr.addColorStop(1, "rgba(230,50,40,0)");
   g.fillStyle = gr;
   g.fillRect(right ? W - w : 0, 0, w, Hh);
+  const fs = Math.round(22 * DPR);
+  g.font = `800 ${fs}px system-ui, sans-serif`;
+  g.textAlign = right ? "right" : "left";
+  g.textBaseline = "middle";
+  g.fillStyle = "#fff3ea";
+  g.shadowColor = "rgba(90,0,0,0.8)"; g.shadowBlur = 8 * DPR;
+  g.fillText(right ? "Brace ▶" : "◀ Brace", right ? W - 14 * DPR : 14 * DPR, Hh * 0.6);
+  g.shadowBlur = 0;
 }
 let hudLast = "";
 function hudText() {
@@ -511,6 +530,8 @@ window.QA = {
   paddle,
   act: (a) => doAction(a, "qa"),
   step(n = 1) { for (let i = 0; i < n; i++) tick(); },
+  // put the camera on the canoe at once (after a test moves the canoe)
+  snap() { cam.init = false; },
   begin,
   finish() { canoe.swim = 0; canoe.y = FINISH + 0.1; canoe.x = river.c(canoe.y); canoe.phi = 0; canoe.dphi = 0; },
 };

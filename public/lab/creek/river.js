@@ -11,6 +11,7 @@ export const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1
 export const LENGTH = 360;          // metres of river
 export const RAPID = [100, 310];    // where the fast water runs
 export const FINISH = 345;
+export const START = 6;             // the put-in
 
 // opts.still: no current at all (for tests of the canoe alone); opts.rocks: place these rocks instead
 export function makeRiver(seed, opts = {}) {
