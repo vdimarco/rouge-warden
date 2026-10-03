@@ -127,7 +127,7 @@ One night of skeeters, in the style of Vampire Survivors. The cottage fights for
 
 ## 6. The toys in the lab
 
-The lab is at `/lab/`. It is not in the arcade, and the arcade's game switcher does not list it. Each toy has only the core move.
+The lab is at `/lab/`. The arcade has a Lab machine for it and a machine for each toy, and the game switcher lists them. Each toy has only the core move.
 
 | Toy | Path | The question for the crew |
 | --- | --- | --- |
