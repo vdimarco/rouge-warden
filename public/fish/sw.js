@@ -3,7 +3,7 @@
 // VERSION is "<app version>+<hash of the cached files>". After you change any cached file, run: node play/fish/stamp-sw.mjs
 // It rewrites the hash. qa/fish/pwa.mjs fails when the hash is old. A new VERSION makes a new cache, and the old one goes on the next launch.
 
-const VERSION = "1.0.0+d991433d83";
+const VERSION = "1.0.0+d378c06bcc";
 const PREFIX = "reelitin-";
 const CACHE = PREFIX + VERSION;
 
@@ -50,11 +50,13 @@ self.addEventListener("install", (e) => {
   // no-cache: ask the server if the copy in the browser's own cache is current, so a new version never keeps a stale file
   const req = (u) => new Request(u, { cache: "no-cache" });
   e.waitUntil((async () => {
+    // a changed sw.js can keep the same VERSION: then this cache is the one that the running worker serves, and a failed install must not delete it
+    const fresh = !(await caches.has(CACHE));
     const cache = await caches.open(CACHE);
     try {
       await cache.addAll(PRECACHE.map(req));
     } catch (err) {
-      await caches.delete(CACHE); // all or nothing: a half-filled cache must never serve the game
+      if (fresh) await caches.delete(CACHE); // all or nothing: a half-filled cache must never serve the game
       throw err;
     }
     await Promise.all(OPTIONAL.map((u) => cache.add(req(u)).catch(() => { /* best effort */ })));

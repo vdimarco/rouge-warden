@@ -173,6 +173,7 @@ await test("sw.js is a classic worker with the right names", async (ok) => {
   ok(/if \(req\.method !== "GET"/.test(w.src) && /url\.origin !== self\.location\.origin\) return/.test(w.src), "sw.js must leave other origins and other methods alone");
   ok(/ignoreSearch: nav/.test(w.src), "navigations are not matched without their query");
   ok(/if \(!old\.length\) await self\.clients\.claim\(\)/.test(w.src), "clients.claim must run on the first install only");
+  ok(/const fresh = !\(await caches\.has\(CACHE\)\);/.test(w.src) && /if \(fresh\) await caches\.delete\(CACHE\)/.test(w.src), "a failed install must delete only a cache that it made (a changed sw.js with the same VERSION would delete the cache that is in use)");
 });
 await test("the cached files equal the files on disk", async (ok) => {
   const w = stamp.worker, req = w.required, opt = w.optional, all = [...req, ...opt];
@@ -241,14 +242,16 @@ if (STATIC_ONLY) {
 
 const { chromium } = createRequire(import.meta.url)("playwright");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".glb": "model/gltf-binary", ".mp4": "video/mp4", ".woff2": "font/woff2", ".svg": "image/svg+xml", ".css": "text/css", ".ico": "image/x-icon", ".md": "text/plain", ".txt": "text/plain" };
-// a static server with Range support. override: site path to a Buffer, so a test can serve a changed file. log: every request.
-const override = new Map(), log = [];
+// a static server with Range support. override: site path to a Buffer, so a test can serve a changed file. fail: site paths that answer 503.
+// log: every request.
+const override = new Map(), fail = new Set(), log = [];
 const sockets = new Set();
 const server = http.createServer(async (req, res) => {
   const p = decodeURIComponent(new URL(req.url, "http://x").pathname);
   log.push(req.method + " " + p + (req.headers.range ? " " + req.headers.range : ""));
   let file = path.join(PUB, p.endsWith("/") ? p + "index.html" : p);
   if (!file.startsWith(PUB)) { res.writeHead(403); return res.end(); }
+  if (fail.has(p)) { res.writeHead(503); return res.end("down"); }
   try {
     let body = override.get(p.endsWith("/") ? p + "index.html" : p);
     if (!body) body = await readFile(file);
@@ -394,7 +397,7 @@ try {
       await until(page, () => !document.querySelector("#setupNote").hidden);
       const denied = await page.textContent("#setupNote");
       if (app) {
-        ok(/touch and hold the app icon/i.test(denied) && /Motion sensors/.test(denied) && /App info/.test(denied) && !/iPhone|Safari|browser|this page/i.test(denied), "app text for denied sensors is: " + denied);
+        ok(/touch and hold the app icon/i.test(denied) && /App info/.test(denied) && /Manage space/.test(denied) && /allow Motion sensors/.test(denied) && !/iPhone|Safari|browser|this page/i.test(denied), "app text for denied sensors is: " + denied);
       } else ok(denied === PLAIN.denied, "plain text for denied sensors changed: " + denied);
       await tap(page, "#useTouch");
       await until(page, () => FISH.G.phase === "cast");
@@ -597,7 +600,7 @@ try {
     await tap(page, "#setBtn");
     await until(page, () => !document.querySelector("#settings").hidden);
     ok((await vis(page, "#resetBtn")) && !(await vis(page, "#resetAsk")), "Settings: Reset progress is not on its own at first");
-    await page.click("#resetBtn");
+    await tap(page, "#resetBtn");   // tap(): the double-tap guard swallows a click in the first 300 ms of a screen
     ok((await vis(page, "#resetAsk")) && !(await vis(page, "#resetBtn")), "Settings: the question did not appear");
     ok(/cannot undo/i.test(await page.textContent("#resetAsk")), "the question does not say that it cannot be undone");
     await page.click("#resetNo");
@@ -814,6 +817,31 @@ try {
     ok(JSON.stringify(after.keys.sort()) === JSON.stringify(["other-game", "reelitin-1.0.1+aaaaaaaaaa"]), "caches after the next launch: " + JSON.stringify(after.keys));
     ok(!after.waiting, "a worker is still waiting");
     override.clear();
+    await ctx.close();
+  });
+  await test("a failed update install keeps the cache that is in use", async (ok) => {
+    override.clear(); fail.clear();
+    const ctx = await newContext({ serviceWorkers: "allow" });
+    const page = await openPage(ctx, "/fish/?source=pwa");
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 120000 });
+    const v1 = "reelitin-" + stamp.current;
+    const size = () => page.evaluate(async (k) => ((await caches.has(k)) ? (await (await caches.open(k)).keys()).length : -1), v1);
+    const before = await size();
+    ok(before === stamp.paths.length, "the first install cached " + before + " files, want " + stamp.paths.length);
+    // sw.js changes but VERSION stays (nothing it caches changed), and the server cannot send one cached file
+    override.set("/fish/sw.js", Buffer.from((await readFile(path.join(FISH, "sw.js"), "utf8")) + "\n// changed, same VERSION\n"));
+    fail.add("/fish/js/pull.js");
+    const state = await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const done = new Promise((res) => reg.addEventListener("updatefound", () => { const w = reg.installing; w.addEventListener("statechange", () => { if (w.state === "redundant" || w.state === "installed") res(w.state); }); }));
+      await reg.update().catch(() => {});
+      return Promise.race([done, new Promise((r) => setTimeout(() => r("no install in 30 s"), 30000))]);
+    });
+    ok(state === "redundant", "the new worker's install ended as " + state + ", want redundant (a file failed)");
+    ok((await size()) === before, "the cache in use holds " + (await size()) + " files after the failed install, want " + before);
+    const served = await page.evaluate(async () => (await fetch("/fish/js/pull.js")).status);
+    ok(served === 200, "the old worker could not serve /fish/js/pull.js after the failed install (status " + served + "): the game would not start offline");
+    fail.clear(); override.clear();
     await ctx.close();
   });
 } finally {

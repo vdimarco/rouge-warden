@@ -46,7 +46,7 @@ In app mode the notes SHALL name the phone and Android, not the browser and Safa
 
 #### Scenario: Sensors are off
 - **WHEN** the player taps Use motion and the sensors are denied, in app mode
-- **THEN** the note says the sensors are off for this app and tells the player to touch and hold the app icon, tap App info, open Site settings and allow Motion sensors, and offers touch play
+- **THEN** the note says the sensors are off for this app and tells the player to touch and hold the app icon, tap App info, open Storage, tap Manage space and allow Motion sensors, and offers touch play
 
 #### Scenario: The lake cannot draw
 - **WHEN** WebGL is not available, in app mode

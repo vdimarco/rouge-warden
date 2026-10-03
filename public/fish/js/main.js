@@ -37,9 +37,10 @@ const OPEN_ALL = QS.has("open");
 // App mode: the Play app and the installed web app. The script in the head of index.html decides; the page then has no link to the arcade.
 const APP = !!document.documentElement.dataset.app;
 // In the app the words name the phone and Android, not the browser and Safari. The Android route to the site settings is UNCONFIRMED (no device test yet):
-// the Bubblewrap project opens the site settings from App info (manageSpaceActivity). Change this one line if the route differs.
+// the Bubblewrap template sets manageSpaceActivity (enableSiteSettingsShortcut, on by default), so App info, Storage, Manage space should open Chrome's
+// site settings. The labels differ between Android versions and phones. Change the `denied` line if a device shows another route.
 const APP_TEXT = {
-  denied: "The motion sensors are off for this app. To turn them on, touch and hold the app icon and tap App info. Then open Site settings and allow Motion sensors. You can play with touch now.",
+  denied: "The motion sensors are off for this app. Touch and hold the app icon and tap App info. Open Storage and tap Manage space. Then allow Motion sensors. You can play with touch now.",
   blocked: "Motion is blocked for this app.",
   buzz: "This phone cannot buzz.",
   turned: "The touch was cut off. Try the cast again.",

@@ -55,6 +55,6 @@ The Privacy row opens a short card inside the game, so a fight is never lost by 
 
 ## Risks
 
-- The word "Site settings" in the sensor note may not match the real route on Android. It sits in one line of `main.js`.
+- UNCONFIRMED: the route in the sensor note (App info, Storage, Manage space). The Bubblewrap template adds `manageSpaceActivity` when `enableSiteSettingsShortcut` is on (the default), and that activity opens Chrome's site settings. The Android change must keep that setting on. The labels differ between Android versions and phones. The route is one line of `main.js` (`APP_TEXT.denied`).
 - Chrome may skip the entry that the Back handler puts back, if it counts that push as made without a tap. Then Back closes the app. A device test settles it.
 - The clips are cached once. A clip that failed on the first install stays missing until the next `VERSION`. The guide falls back to its drawing, and the pull-back demo shows its poster.
