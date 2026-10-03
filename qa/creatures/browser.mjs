@@ -50,7 +50,7 @@ try {
       const rect = el => el.getBoundingClientRect();
       const inside = (r, p) => r.width>0&&r.height>0&&r.left>=p.left-1&&r.right<=p.right+1&&r.top>=p.top-1&&r.bottom<=p.bottom+1;
       const viewport = {left:0,top:0,right:innerWidth,bottom:innerHeight};
-      const footer = [...document.querySelectorAll('.roster-footer button')].map(rect);
+      const footer = [...document.querySelectorAll('#play, .roster-footer .menu-links button')].map(rect);
       const overlaps = (a, b) => Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
       const hero = rect(document.querySelector('.hero-feature'));
       const roster = rect(document.querySelector('#hero-picks'));
