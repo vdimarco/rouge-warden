@@ -27,7 +27,7 @@ function boot(districtClass=null,extra={}){
  const elements=new Map(),events={},timers=[];
  const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}}),measureText:()=>({width:40})},{get:(o,k)=>o[k]??(()=>{})});
  const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:false,textContent:'',innerHTML:'',value:'',onclick:null,style:{setProperty(){}},dataset:{},classList:{toggle(){},add(){},remove(){},contains:()=>false},addEventListener(){},setPointerCapture(){},getContext:()=>ctx,getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),select(){},focus(){}});return elements.get(id)};
- const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[],body:{classList:{toggle(){},add(){},remove(){},contains:()=>false}}},matchMedia:()=>({matches:false}),addEventListener:(n,f)=>events[n]=f,dispatchEvent(){},requestAnimationFrame(){},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true,...extra};
+ const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[],body:{classList:{toggle(){},add(){},remove(){},contains:()=>false}}},matchMedia:()=>({matches:false}),addEventListener:(n,f)=>events[n]=f,dispatchEvent(){},requestAnimationFrame(){},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true,URLSearchParams,...extra};
  s.window=s;vm.createContext(s);vm.runInContext(bundle(districtClass),s);
  return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
 }
@@ -212,5 +212,29 @@ test('the menu leads with the title, one line and both play buttons; the rest wa
  const {elements}=boot(DISTRICT),html=elements.get('panel').innerHTML,howto=html.indexOf('<details');
  assert.ok(howto>0);for(const id of ['gyroStart','start'])assert.ok(html.indexOf(`id="${id}"`)>0&&html.indexOf(`id="${id}"`)<howto,`${id} comes before How to play`);
  for(const word of ['Mouse.','WASD','Space','Tablet.','wideStart'])assert.ok(html.indexOf(word)>howto,`${word} waits behind How to play`);
- const words=html.slice(0,howto).replace(/<[^>]+>/g,' ').split(/\s+/).filter(w=>/\w/.test(w));assert.ok(words.length<=24,`${words.length} words before How to play`);
+ const words=html.slice(0,howto).replace(/<[^>]+>/g,' ').split(/\s+/).filter(w=>/\w/.test(w));assert.ok(words.length<=30,`${words.length} words before How to play`);
+ assert.match(html,/Daily duel \d{4}-\d\d-\d\d/);
+});
+
+// A browser store that keeps what the game saves.
+const memoryStore=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v))}};
+test('the same daily seed gives the same attacks and the same circuits in the game',()=>{
+ const play=(extra={})=>{const {run,elements}=boot(DISTRICT,extra),attacks=[];run('start()');
+  for(let i=0;i<60*20;i++){const before=run('duel.active');run('update(1/60)');const a=run("duel.active&&duel.active.phase==='windup'?duel.active.attack+duel.active.dir+duel.active.period.toFixed(3):''");if(a&&!before)attacks.push(a)}
+  run('finishDuel()');const offer=[...elements.get('panel').innerHTML.matchAll(/<strong>([^<]+)<\/strong>/g)].map(m=>m[1]);return {attacks,offer}};
+ const a=play(),b=play(),other=play({location:{search:'?seed=friend',origin:'',pathname:'/neon/'}});
+ assert.ok(a.attacks.length>=5);assert.deepEqual(a.attacks,b.attacks);assert.deepEqual(a.offer,b.offer);assert.equal(a.offer.length,3);
+ assert.ok(other.attacks.join()!==a.attacks.join()||other.offer.join()!==a.offer.join(),'another seed gives another duel');
+});
+
+test('the end card shows how close the run came, today\'s best and a line to share',async()=>{
+ let copied=null;const {run,elements}=boot(DISTRICT,{localStorage:memoryStore(),navigator:{clipboard:{writeText:async t=>{copied=t}}}});
+ run('start();wave=2;spawn();resume();enemy.hp=3;gameOver()');let card=elements.get('panel').innerHTML;
+ assert.match(card,/<h2>Round 2<\/h2>/);assert.match(card,/Ronin at 3\/6 HP · Today's best: round 2/);assert.match(card,/width:50%/);assert.match(card,/RUN IT BACK/);
+ const share=card.match(/id="shareLine"[^>]*value="([^"]+)"/)[1];assert.match(share,/Round 2 · Ronin at 3\/6 HP/);assert.match(share,/\?seed=\d{4}-\d\d-\d\d/);
+ await elements.get('copy').onclick();await new Promise(r=>setImmediate(r));assert.match(copied,/Round 2 · Ronin at 3\/6 HP/);
+ // A shorter run later the same day keeps the best round. A captain and a group read as such.
+ run('start();wave=4;spawn();resume();enemy.hp=3;gameOver()');card=elements.get('panel').innerHTML;
+ assert.match(card,/<h2>Round 4<\/h2>/);assert.match(card,/0 of 2 down · Captain at 3\/10 HP · Today's best: round 4/);
+ run('start();gameOver()');assert.match(elements.get('panel').innerHTML,/Today's best: round 4/);
 });

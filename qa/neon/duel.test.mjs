@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {Duel,seededRandom,seedFrom,dayKey,draw,PARRY_WINDOW} from '../../public/neon/duel.js';
+import {test} from 'node:test';import assert from 'node:assert/strict';import {Duel,seededRandom,seedFrom,dayKey,pick,PARRY_WINDOW} from '../../public/neon/duel.js';
 test('guard stops health damage; each opening allows only one hit',()=>{const d=new Duel(),f=d.fighters[0];for(let i=0;i<5;i++)d.swing(f,0);assert.equal(f.hp,6);d.open(f);assert.equal(d.swing(f,0,99).damage,3);assert.equal(f.hp,3);d.swing(f,1,99);assert.equal(f.hp,3);assert.equal(d.finished,false)});
 test('one parry opens the guard at once, and a miss deals damage',()=>{const d=new Duel(1,seededRandom(4)),f=d.fighters[0];let mode='parry',events=[],attacks=[];const ctx={canAttack:()=>true,defense:()=>({inRange:true,blocked:mode==='parry',perfect:true}),event:(k,x)=>{events.push(k);if(k==='windup')attacks.push(x.attack)}};for(let i=0;i<60&&f.phase!=='open';i++)d.update(.1,ctx);assert.ok(!attacks.includes('sweep'),'this seed must not start with a sweep, which no guard can stop');assert.equal(f.phase,'open');assert.deepEqual(events,['windup','parry']);assert.equal(f.hp,6);assert.equal(d.swing(f,0,2).kind,'hit');assert.equal(f.hp,4);mode='miss';for(let i=0;i<35;i++)d.update(.1,ctx);assert.ok(events.includes('damage'))});
 test('groups progress and share one attack slot, with every fighter getting a turn',()=>{assert.equal(new Duel(1).fighters.length,1);assert.equal(new Duel(3).fighters.length,2);assert.equal(new Duel(5).fighters.length,3);assert.equal(new Duel(99).fighters.length,5);const d=new Duel(5),turns=new Set();for(let i=0;i<250;i++){d.update(.1,{canAttack:()=>true,defense:()=>({inRange:true,dashing:true}),event:(k,f)=>{if(k==='windup')turns.add(f.id)}});assert.ok(d.fighters.filter(f=>f.phase==='windup').length<=1)}assert.equal(turns.size,3)});
@@ -33,6 +33,6 @@ test('the same seed gives the same attacks and the same circuits',()=>{
  const a=attacks(seedFrom('2026-10-03',5)),b=attacks(seedFrom('2026-10-03',5)),c=attacks(seedFrom('2026-10-04',5));
  assert.ok(a.length>10);assert.deepEqual(a,b);assert.notDeepEqual(a,c);
  const circuits=['Edge amplifier','Time crystal','Repair pulse','Vampire circuit','Capacitor'],seed=seedFrom('2026-10-03',2,'circuits');
- const picks=draw(circuits,3,seededRandom(seed));assert.deepEqual(draw(circuits,3,seededRandom(seed)),picks);assert.equal(new Set(picks).size,3);
+ const picks=pick(circuits,3,seededRandom(seed));assert.deepEqual(pick(circuits,3,seededRandom(seed)),picks);assert.equal(new Set(picks).size,3);
  assert.notEqual(seedFrom('2026-10-03',2),seedFrom('2026-10-03',3));assert.equal(dayKey(new Date(2026,9,3,23,59)),'2026-10-03');
 });

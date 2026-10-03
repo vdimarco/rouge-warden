@@ -6,7 +6,7 @@ export function seedFrom(text,...parts){let h=2166136261;for(const c of [String(
 // The local date as YYYY-MM-DD. Everyone who plays on the same day meets the same duels.
 export function dayKey(date=new Date()){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
 // Picks count items without repeats. The same random sequence gives the same picks.
-export function draw(items,count,random=Math.random){const pool=[...items],out=[];while(out.length<count&&pool.length)out.push(pool.splice(Math.floor(random()*pool.length),1)[0]);return out}
+export function pick(items,count,random=Math.random){const pool=[...items],out=[];while(out.length<count&&pool.length)out.push(pool.splice(Math.floor(random()*pool.length),1)[0]);return out}
 // A guard that goes down this many seconds or less before impact is a parry.
 // A touch guard is one button, so its window is wider than for a blade set with the gyro.
 export const PARRY_WINDOW={touch:.6,gyro:.28};
