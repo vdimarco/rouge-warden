@@ -738,6 +738,8 @@ function holdUi() {
     g.strokeStyle = c.holding ? "#f0b848" : "rgba(240,184,72,0.5)";
     g.beginPath(); g.arc(sx, sy, R, -Math.PI / 2, -Math.PI / 2 + fill * Math.PI * 2); g.stroke();
   }
+  // while the capsize warning is on, "Brace" is the only word on the screen
+  if (c.warn) return;
   if (!c.eddyBow) { const [tx, ty] = river.tan(c.y); turnArrow(-tx, -ty, "Face upstream"); }
   else if (!c.eddySlow) arrowLabel("Sit still", sx, sy - R * 1.28 - 12 * DPR);
 }
@@ -768,7 +770,7 @@ function arrowLabel(text, x, y) {
 // Coming to the ledge more than 30° off straight: the arrow shows the turn to line up with the drop.
 function lineUpUi() {
   const c = canoe, L = river.ledge, d = river.lip(c.x, c.y);
-  if (phase !== "play" || c.swim > 0 || d < -18 || d > -0.5 || Math.abs(wrap(c.psi - Math.atan2(L.tx, L.ty))) <= C.BOOF_OFF) return;
+  if (phase !== "play" || c.swim > 0 || c.warn || d < -18 || d > -0.5 || Math.abs(wrap(c.psi - Math.atan2(L.tx, L.ty))) <= C.BOOF_OFF) return;
   turnArrow(L.tx, L.ty, "Line up");
 }
 // Lost: out of the eddies with the bow more than 90° off downstream for 0.8 s. An arrow at the edge of the screen
@@ -781,7 +783,7 @@ function lostStep() {
   lostT = c.swim <= 0 && off && river.flow(c.x, c.y, lf).e < 0.3 ? lostT + H : 0;
 }
 function lostUi() {
-  if (phase !== "play" || lostT <= 0.8) return;
+  if (phase !== "play" || lostT <= 0.8 || canoe.warn) return;
   const c = canoe, [tx, ty] = river.tan(c.y);
   const [sx, sy] = toScreen(c.x, c.y), [ex, ey] = toScreen(c.x + tx, c.y + ty), a = Math.atan2(ey - sy, ex - sx);
   const ca = Math.cos(a), sa = Math.sin(a), m = 46 * DPR, top = 150 * DPR;
