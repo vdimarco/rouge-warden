@@ -5,10 +5,10 @@
 - [x] Threadwake and Borrowed Bodies.
 - [x] Foldwild and Season Thief.
 - [x] Storm Choir and Heartship.
-- [ ] Full Tilt.
+- [x] Full Tilt.
 - [x] Neon Ronin, and its broken tests.
 - [x] Loon Echo.
 - [x] Take the Plunge.
 - [x] Up the Creek.
-- [ ] README, the Lab page cards and `docs/lab-fun.md`.
+- [x] README, the Lab page cards and `docs/lab-fun.md`.
 - [ ] Run every lab, neon, echo and pinball test on the merged branch, and check the preview.
