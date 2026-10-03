@@ -48,7 +48,7 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 
 /* the room: a dark wall, and the classic arcade carpet on the floor */
-.room { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden;
+.room { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden; overflow: clip;
   background: radial-gradient(ellipse 80% 55% at 50% 0%, #2a1248 0%, rgba(20, 8, 40, 0.6) 45%, transparent 75%), linear-gradient(#0d0820, #07050f 62%); }
 .floor { position: absolute; left: -30%; right: -30%; bottom: -8%; height: 42%; transform-origin: 50% 0; transform: perspective(700px) rotateX(58deg); opacity: 0.9;
   background-color: #120a2a;
@@ -103,7 +103,7 @@ button { font: inherit; color: inherit; }
 }
 .cab.breakthrough .marquee b { font-size: calc(var(--h) * 0.03); letter-spacing: 0.01em; }
 .cab.breakthrough .screen { background: #d7ebe3; }
-/* The Lab and its toys, with Neon Ronin, Loon Echo and Tell Me, which the Lab page lists too */
+/* The Lab and its toys, with Neon Ronin and Loon Echo (the Lab page lists both) and Tell Me (a Lab-group game that the Lab page does not list) */
 .cab.lab { --c1: #17414c; --c2: #f0b848; --glow: rgba(240, 184, 72, 0.5); }
 .cab.worlds { --c1: #477d62; --c2: #c7e5ac; --glow: rgba(199, 229, 172, 0.45); }
 .cab.neon { --c1: #512771; --c2: #caff54; --glow: rgba(202, 255, 84, 0.45); }
@@ -615,7 +615,7 @@ function pick(i, quiet) {
   const groupCabs = currentGroup ? cabs.filter((cab) => currentGroup.games.includes(cab.dataset.game)) : cabs;
   const groupPos = groupCabs.indexOf(cabs[sel]) + 1;
   $("#machineCount").textContent = currentGroup ? currentGroup.label.toUpperCase() + " · " + groupPos + " / " + groupCabs.length : (sel + 1) + " / " + cabs.length;
-  sectionBtns.forEach((button) => button.classList.toggle("on", currentGroup && button.dataset.section === currentGroup.id));
+  sectionBtns.forEach((button) => button.classList.toggle("on", !!currentGroup && button.dataset.section === currentGroup.id));
   cabs.forEach((c, k) => c.classList.toggle("on", k === sel));
   // on a phone the row slides so the chosen machine is centered
   const row = $("#row");
@@ -656,6 +656,8 @@ function pick(i, quiet) {
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
+// tabbing to a machine brings it to the middle (a mouse click on a side machine is left alone)
+cabs.forEach((c, k) => c.addEventListener("focusin", (e) => { if (sel !== k && e.target.matches(":focus-visible")) pick(k, true); }));
 cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); }));
 $("#prevBtn").onclick = () => pick(sel - 1);
 $("#nextBtn").onclick = () => pick(sel + 1);
@@ -814,14 +816,14 @@ addEventListener("keydown", (e) => {
 
 /* ---------------- attract mode ---------------- */
 // high scores from the games, kept in this browser
-{
+try {
   const gp = store.get("plungerd.meta.v1", null), dd = store.get("plungerd.drain.v1", null);
   $(".hi", cabs[0]).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
   const ds = store.get("plungerd.drain.scores.v1", null), top = Array.isArray(ds) && ds[0];
   const wd = store.get("plungerd.wild.v1", null), wc = $(".cab.wild");
   if (wc) $(".hi", wc).textContent = wd && wd.intro ? (wd.done ? "KING FLUSHED" : "BLIGHTS " + (wd.bosses || []).filter((b) => b !== "king").length + "/3") + " · LOONIES " + (wd.loonies || []).length + "/30" : "HI-SCORE: NONE YET";
   $(".hi", cabs[1]).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
-}
+} catch (e) { /* a save that cannot be read leaves the plain lines */ }
 // Get Plunger'd flips between its title and its bosses
 setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle("flip"); }, 3200);
 // Each new cabinet has its own animated attract screen.
@@ -1062,15 +1064,15 @@ for (const cv of $$(".mini-game")) {
 }
 // Crimson Rogue flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimson"]')).classList.toggle("flip"); }, 4100);
-{
+try {
   const cr = store.get("crimson.best.v1", null);
   $(".hi", $('.cab[data-game="crimson"]')).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
-}
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
 
-{
+try {
  const best = store.get("olympus-legacy-v2", null);
  $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
-}
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);

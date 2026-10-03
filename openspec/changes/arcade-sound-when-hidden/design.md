@@ -12,6 +12,8 @@
 
 **The VR page.** A headset browser may report the page as hidden during an immersive session, so `quiet.js` stays out. In flat mode on a phone, the page's own `visibilitychange` handler suspends and resumes `audio`.
 
+**One-shot sounds.** A sound that a game starts on a suspended context waits there and plays when the context wakes. A game that starts sounds from a timer SHOULD NOT start them while the page is hidden. Tell Me checks `document.hidden` for this.
+
 **Safe by design.** The script never throws and never logs. It works when `AudioContext` does not exist. A second copy does nothing. `window.__quiet` is read-only and exists for tests.
 
 **Test.** `qa/arcade/quiet.mjs` has four parts: a scan of the pages, unit pages for the script, the game pages started the way a player starts them, and a silent-page check. It hides pages four ways: a page-level `visibilitychange`, `pagehide` then `pageshow`, a second tab on top (plain Chromium over CDP), and a page freeze.

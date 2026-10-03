@@ -592,10 +592,22 @@ const UNITS = [
     out.push(["and it runs when visible (the page asked for it)", await __until(() => d.state === "running"), d.state]);
     return out;
   } },
+  { name: "a context the game suspended stays suspended when the page returns, and resume() is held while hidden", run: async () => {
+    const out = [], c = new AudioContext(), d = new AudioContext();
+    await c.resume(); await d.resume(); await c.suspend(); // the game put c to sleep itself
+    __qaHide(true); await __sleep(300);
+    await c.resume(); await d.resume(); await __sleep(300); // the game asks for sound while hidden
+    out.push(["resume() while hidden changes nothing", c.state === "suspended" && d.state === "suspended", c.state + "," + d.state]);
+    __qaHide(false); await __sleep(600);
+    out.push(["after the return the one quiet stopped runs", d.state === "running", d.state]);
+    out.push(["the one the game stopped stays stopped", c.state === "suspended", c.state]);
+    return out;
+  } },
   { name: "many short-lived contexts", run: async () => {
     const out = [];
     for (let i = 0; i < 40; i++) { const c = new AudioContext(); const o = c.createOscillator(); o.connect(c.destination); o.start(); o.stop(c.currentTime + 0.01); await c.close(); }
-    out.push(["closed contexts are forgotten", __quiet.contexts().length <= 33, String(__quiet.contexts().length)]);
+    // tracked is read before contexts(), which prunes the closed ones itself
+    out.push(["closed contexts are forgotten", __quiet.tracked <= 33, String(__quiet.tracked)]);
     const keep = [new AudioContext(), new AudioContext()];
     await Promise.all(keep.map((c) => c.resume()));
     __qaHide(true); await __sleep(400);

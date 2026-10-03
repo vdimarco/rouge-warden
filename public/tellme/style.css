@@ -78,15 +78,18 @@ button { font-family: inherit; touch-action: manipulation; }
   letter-spacing: .02em;
 }
 #home {
-  margin-left: 14px;
-  min-height: 44px;
+  position: absolute;
+  top: 8px;
+  right: 100px;
+  z-index: 40;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   font-size: 14px;
   font-weight: 700;
   color: inherit;
   text-decoration: none;
-  opacity: .8;
+  opacity: .85;
 }
 #mute {
   position: absolute;

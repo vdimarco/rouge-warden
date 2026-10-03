@@ -11,7 +11,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const PUB = path.join(ROOT, "public");
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
 const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are taken without it
-const PARTS = (process.env.PARTS || "walk,layout,switcher,saves,credits").split(","); // run only some of the browser parts while you work on the page
+const PARTS = (process.env.PARTS || "walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
@@ -85,12 +85,15 @@ for (const u of switchUrls) check(machineUrls.includes(u), `switch.js entry ${u}
   const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0];
   const entries = [...gamesText.matchAll(/\{\s*id:\s*"([^"]+)",\s*name:\s*"([^"]+)"[^\n]*?url:\s*"([^"]+)"/g)].map((m) => ({ id: m[1], name: m[2], url: m[3] }));
   const norm = (t) => t.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").trim().toLowerCase();
+  let matched = 0;
   for (const m of html.matchAll(/<article class="cab[^"]*"[^>]*?data-game="([^"]+)"[^>]*?data-url="([^"]+)"[\s\S]*?<div class="marquee">[\s\S]*?<b>([^<]*)<\/b>/g)) {
+    matched++;
     const [, game, url, title] = m, e = entries.find((x) => x.url === url);
     if (!e) continue; // the check above already reports a missing entry
     check(e.id === game, `machine ${url} (data-game "${game}") and its switcher entry (id "${e.id}") have the same id`);
     check(norm(e.name) === norm(title), `machine ${url} is called "${title}" and its switcher entry is called "${e.name}"`);
   }
+  check(matched === machineUrls.length, `the id and name check saw ${matched} of ${machineUrls.length} machines (an article needs data-game, then data-url, then a marquee <b>)`);
 }
 
 // the art: every picture in a machine and in the switcher exists, and the pictures this change added stay small
@@ -110,14 +113,14 @@ let chromium;
 try { ({ chromium } = createRequire(import.meta.url)("playwright")); } catch (e) { check(false, "Playwright is not found (set NODE_PATH=$(npm root -g))"); finish(); }
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
 
-// a new page with the errors collected. The only thing allowed to fail to load is quiet.js, which comes from another change.
+// a new page with the errors collected. The only thing allowed to fail to load is the Google font.
 async function open(browser, { width, height, store = {}, mobile = width < 800 }) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: mobile ? 2 : 1, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   const page = await ctx.newPage();
   const errors = [], moves = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
-  page.on("response", (r) => { if (r.status() >= 400 && !/\/arcade\/quiet\.js$|fonts\.g/.test(r.url())) errors.push(r.status() + " " + r.url()); });
+  page.on("response", (r) => { if (r.status() >= 400 && !/fonts\.g/.test(r.url())) errors.push(r.status() + " " + r.url()); });
   await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
   // a page change to a game is stopped and noted; the arcade stays where it is
   await page.route((u) => u.origin === new URL(BASE).origin && u.pathname !== new URL(BASE).pathname && /\/$/.test(u.pathname), (r) => {
@@ -351,6 +354,75 @@ if (chromium) {
     check(res.arcade.top >= 0 && res.arcade.bottom <= res.vh, `${tag}: and so is the arcade link (${Math.round(res.arcade.top)} to ${Math.round(res.arcade.bottom)} of ${res.vh})`);
     check(errors.length === 0, `${tag}: no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
     await ctx.close();
+  }
+
+  /* ----- keyboard: tabbing through the machines keeps the focused control in the window ----- */
+  for (const [width, height] of PARTS.includes("focus") ? [[390, 844], [1280, 720]] : []) {
+    const { ctx, page, errors } = await open(browser, { width, height });
+    await settle(page);
+    let outside = 0, stops = 0, seen = new Set();
+    for (let i = 0; i < 70; i++) {
+      await page.keyboard.press("Tab");
+      // the row slides to the new machine: wait until the focused control stops moving
+      for (let k = 0, prev = null; k < 30; k++) {
+        const x = await page.evaluate(() => Math.round(document.activeElement.getBoundingClientRect().left * 10));
+        if (x === prev) break;
+        prev = x;
+        await page.waitForTimeout(100);
+      }
+      const r = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(); const cab = a.closest(".cab"); return { left: b.left, right: b.right, vw: innerWidth, game: cab ? cab.dataset.game : "", on: cab ? cab.classList.contains("on") : true, scroll: document.querySelector(".room").scrollLeft }; });
+      stops++;
+      if (r.game) seen.add(r.game);
+      if (r.left < -1 || r.right > r.vw + 1 || r.scroll !== 0 || !r.on) outside++;
+    }
+    check(outside === 0, `${width}x${height}: after each of ${stops} Tab presses the focused control is in the window, and its machine is the chosen one (${outside} not)`);
+    check(seen.size >= 3, `${width}x${height}: Tab reached controls of ${seen.size} different machines`);
+    check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
+    await ctx.close();
+  }
+
+  /* ----- Tell Me and BREAKTHROUGH show a link back to the arcade, also over their start and end cards ----- */
+  if (PARTS.includes("backlinks")) {
+    const plain = async (width, height) => {
+      // not open(): that helper stops every page change to a game, and this part loads one
+      const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 800, hasTouch: width < 800 });
+      const page = await ctx.newPage(), errors = [];
+      page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+      await page.route("https://fonts.g*/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
+      return { ctx, page, errors };
+    };
+    // is the middle of the link what a finger would hit?
+    const hit = (page, sel) => page.evaluate((q) => { const a = document.querySelector(q); if (!a) return { ok: false, w: 0, h: 0, inside: false }; const r = a.getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { ok: e === a || a.contains(e), w: r.width, h: r.height, inside: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }; }, sel);
+    const back = [
+      { game: "tellme", states: [["the start card", "#home", () => {}], ["the end card", "#home", () => { document.getElementById("start").hidden = true; document.getElementById("end").hidden = false; }]] },
+      { game: "breakthrough2", states: [["the title card", "#title-home", () => {}], ["the ending card", "#end-home", () => { document.getElementById("title").hidden = true; document.getElementById("ending").hidden = false; }]] },
+    ];
+    for (const b of back) for (const [width, height] of [[360, 740], [1280, 720]]) {
+      const { ctx, page, errors } = await plain(width, height);
+      await page.goto(BASE + b.game + "/", { waitUntil: "load" });
+      await page.waitForTimeout(1500);
+      for (const [name, sel, prepare] of b.states) {
+        await page.evaluate(prepare);
+        const h = await hit(page, sel);
+        check(h.ok && h.inside && h.w >= 44 && h.h >= 44, `${b.game} ${width}x${height}: over ${name} the arcade link can be tapped (${Math.round(h.w)}x${Math.round(h.h)}, hit ${h.ok}, in window ${h.inside})`);
+      }
+      const last = b.states[b.states.length - 1][1];
+      // a link that something covers cannot be clicked: that is a failed check, not a crash
+      const went = page.waitForURL((u) => u.pathname === "/", { timeout: 8000 }).then(() => true, () => false);
+      await page.click(last, { timeout: 4000 }).catch(() => {});
+      check(await went, `${b.game} ${width}x${height}: a tap on the arcade link goes to the arcade`);
+      check(errors.length === 0, `${b.game} ${width}x${height}: no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
+      await ctx.close();
+    }
+    // Breakthrough 2: the help button keeps its size on a narrow phone
+    for (const width of [320, 360, 375]) {
+      const { ctx, page } = await plain(width, 700);
+      await page.goto(BASE + "breakthrough2/", { waitUntil: "load" });
+      await page.waitForTimeout(1200);
+      const h = await page.evaluate(() => { const r = document.getElementById("help").getBoundingClientRect(); return { w: r.width, right: r.right, vw: innerWidth }; });
+      check(h.w >= 44 && h.right <= h.vw, `breakthrough2 ${width}px wide: the help button is ${Math.round(h.w)} wide and ends at ${Math.round(h.right)} of ${h.vw}`);
+      await ctx.close();
+    }
   }
   await browser.close();
 }

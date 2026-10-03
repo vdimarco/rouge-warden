@@ -10,6 +10,12 @@
 
 **The switcher finds the current game by the longest matching address.** `/lab/worlds/` is Small Worlds and `/lab/` is The Lab. An entry with `credits: false` stays off Crimson Rogue's end card. The four Lab toys use it, because the Lab tile covers them.
 
-**Crimson Rogue's end card.** When the last block is taller than the window, the roll stops with its bottom edge in view, so FIGHT AGAIN and ARCADE stay on screen.
+**Crimson Rogue's end card.** The list of games has a maximum height of the window less 230 pixels and scrolls inside the card. The roll still stops with its bottom edge in view when the card is taller than the window, as a safeguard.
+
+**Back links.** In Tell Me the link sits next to the sound button, above the start and end cards. In BREAKTHROUGH the cards cover the header, so each card has its own link, and the header keeps one for play.
+
+**Keyboard.** The machine row is clipped (`overflow: clip`), so focus cannot scroll it sideways. A control that gets focus from the keyboard makes its machine the chosen one.
+
+**Older high-score blocks** are wrapped in `try`/`catch`, so a save of the wrong type cannot stop the rest of the page script.
 
 **The test reads the files and then drives the page.** `qa/arcade/machines.mjs` scans `public/`, compares every machine with its switcher entry (same id, same name), and then walks to each machine, drops a token and presses START. It stops the page change and reads where the page was going, so it never loads a game. Anything it lets pass without a machine must be in a list with a reason.

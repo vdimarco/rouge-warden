@@ -175,6 +175,7 @@
   safe(() => Object.defineProperty(window, "__quiet", {
     value: Object.freeze({
       get hidden() { return hidden(); },
+      get tracked() { return ctxs.length; },
       contexts() { const out = []; eachCtx((e, c) => out.push({ state: c.state, suspendedByQuiet: e.mine })); return out; },
       media() { const out = []; for (const e of medias) { const m = e.ref.deref(); if (m) out.push({ paused: m.paused, heldByQuiet: e.mine }); } return out; },
     }),
