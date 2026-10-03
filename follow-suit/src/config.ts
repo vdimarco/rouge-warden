@@ -118,6 +118,16 @@ export const CONFIG = {
     volume: 0.16,
   },
 
+  // The how-to-play explainer. Times are in milliseconds.
+  explainer: {
+    // Build a chain, suit or rank, 8s are wild, Value and Mult, close a ring, beat the target, win the run.
+    sceneMs: [6_500, 7_500, 7_000, 8_000, 6_500, 7_000, 8_000],
+    // With reduced motion a card fades in at its new place over this time instead of travelling there.
+    fadeMs: 220,
+    // A frame that comes later than this (a hidden tab, a slow phone) moves the clock by this much only.
+    maxFrameMs: 100,
+  },
+
   seed: {
     length: 6,
     // No 0, O, 1, I or L, because they look alike.

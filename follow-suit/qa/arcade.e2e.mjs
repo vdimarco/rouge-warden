@@ -71,6 +71,12 @@ for (const [width, height] of PHONES) {
     await page.goto(session.base);
     await page.getByTestId('start').waitFor();
     await expectGoodLayout(page, 'start screen');
+    // The start screen has the most to show in the arcade copy: none of it may hide above the window or below the buttons.
+    const body = await page.evaluate(() => {
+      const start = document.querySelector('.start-body');
+      return { hidden: start.scrollHeight - start.clientHeight, titleTop: start.querySelector('.title').getBoundingClientRect().top };
+    });
+    assert.ok(body.titleTop >= 0 && body.hidden <= 1, `start screen: the title starts at ${body.titleTop} px, and ${body.hidden} px are hidden`);
     await expectArcadeLink(page, 'start screen');
     assert.ok(await button(page, 'Switch game').isVisible());
     await shot(page, `arcade-start-${width}x${height}`);

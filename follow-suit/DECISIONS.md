@@ -95,3 +95,12 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 59. **Best chain save.** When the player plays a chain, the game saves the best chain score of all runs in `follow-suit:best-chain`. The machine shows it. The run end screen still shows the best chain of that run.
 60. **Machine group.** The machine joins the Strategy group with BREAKTHROUGH, because both are turn-based games of planning. The Lab group holds early prototypes and toys.
 
+## How to play
+
+61. **Built from the game.** The explainer draws the game's own CSS cards and counters, and the engine builds and scores every chain in it. It uses no video or image file. A video would break the rule of no image files and would go stale when the rules or the look change.
+62. **When it opens.** It opens by itself on a first visit. A seed link skips it, because a seed link is for a player who knows the game. Closing it, or reaching its end card, stores `follow-suit:intro-seen`. Blocked storage counts as seen, so the explainer does not open on every visit.
+63. **Ways in.** The start screen and each stop intro have a How to play button. The table screen has none, because its top bar is full on a 360 px phone. A player can open it at the start of the next stop.
+64. **Pace.** The scenes play by themselves, from 6.5 to 8 seconds each, with a bar for each scene. Back, Next and Skip are always there, and a finger held on the animation pauses it.
+65. **Reduced motion.** A card fades in at its new place and never travels. Points fade without rising, and the counters do not grow.
+66. **The rules list stays.** The start screen keeps its list of rules for players who read, and the end card of the explainer has a shorter list.
+

@@ -101,6 +101,15 @@ Stop after the preview deploy and wait for the go-ahead.
 - `qa/arcade.e2e.mjs` and `qa/cabinet-art.mjs`: the arcade check and the machine art.
 - Outside this folder: the machine in `public/index.html`, its entry in `public/arcade/switch.js`, its art in `public/arcade/follow-suit.webp`, and the arcade checks in `qa/arcade/`.
 
+## After the milestones: the how-to-play explainer
+
+- `src/ui/explainer/story.ts`: the chains and numbers of the 7 scenes, built and scored by the engine.
+- `src/ui/explainer/motion.ts`: key poses, eases, reduced motion and the scene clock.
+- `src/ui/explainer/scenes.tsx`: the drawing of each scene at a time.
+- `src/ui/explainer/Explainer.tsx` and `useSceneClock.ts`: the screen, its controls and its sound cues.
+- `src/ui/explainer/seen.ts`: the key that stops it from opening by itself again.
+- `qa/explainer.e2e.mjs`: the browser check.
+
 ## Checks for each milestone
 
 - `npm test`: all Vitest tests pass.

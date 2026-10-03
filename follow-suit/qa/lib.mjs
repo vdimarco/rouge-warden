@@ -58,16 +58,29 @@ export async function startSession({ arcade = false } = {}) {
     browser,
     errors,
 
-    /** A page with a phone-sized screen and touch input. */
+    /**
+     * A page with a phone-sized screen and touch input. The explainer opens by itself only on a first visit, so the
+     * page counts it as seen unless introSeen is false.
+     */
     async phone(width = 390, height = 844, options = {}) {
+      const { introSeen = true, ...contextOptions } = options;
       const context = await browser.newContext({
         viewport: { width, height },
         deviceScaleFactor: 2,
         isMobile: true,
         hasTouch: true,
         ...(storageState ? { storageState } : {}),
-        ...options,
+        ...contextOptions,
       });
+      if (introSeen) {
+        await context.addInitScript(() => {
+          try {
+            window.localStorage.setItem('follow-suit:intro-seen', '1');
+          } catch {
+            // A page without storage opens the start screen anyway.
+          }
+        });
+      }
       const page = await context.newPage();
       page.on('console', (message) => {
         if (message.type() === 'error') errors.push(`${width}x${height}: ${message.text()}`);
