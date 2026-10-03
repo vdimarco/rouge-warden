@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRun,step,callFlock,toggleDive,birdPosition,distance,HOME,ROCK,GAP} from '../../public/echo/crossing.js';
+import {createRun,step,callFlock,toggleDive,birdPosition,distance,danger,HOME,ROCK,GAP} from '../../public/echo/crossing.js';
 const advance=(r,seconds)=>{for(let t=0;t<seconds;t+=.01){step(r,.01);r.events.length=0;}};
 const quiet=()=>{const r=createRun();r.rocks=[];r.boatTimer=999;r.eel.active=true;r.eel.stun=999;return r;};
 const carry=(r,n)=>{r.flock=[];for(let i=0;i<n;i++){r.chicks[i].state='following';r.flock.push(i);}};
+const lunge=(e,at)=>{e.stun=0;e.phase='lunge';e.timer=.5;e.x=at.x;e.y=at.y;e.aim={x:at.x,y:at.y};};
 test('movement works on both axes; flock follows the path with delay',()=>{
  const r=quiet();carry(r,2);r.target={x:.8,y:.6};advance(r,.3);
  assert.ok(r.x>.5&&r.y>.28);const b=birdPosition(r,2);assert.equal(b.x,.5);assert.equal(b.y,.28);
@@ -49,7 +50,7 @@ test('a target inside a rock stops the loon at the rim; surfacing in a rock push
 test('a honk or a hit never leaves a chick inside a rock',()=>{
  const r=quiet();r.rocks=[{x:.5,y:.45}];r.y=.36;r.target={x:r.x,y:r.y};r.chicks[0].x=.5;r.chicks[0].y=.53;callFlock(r);advance(r,1);
  assert.ok(distance(r.chicks[0],r.rocks[0])>ROCK-1e-9,'a honk pulls the chick only to the rim');
- const h=quiet();h.rocks=[{x:.5,y:.45}];h.x=.41;h.y=.38;h.target={x:h.x,y:h.y};carry(h,2);h.eel.stun=0;h.eel.x=h.x;h.eel.y=h.y;h.eel.aim={x:h.x,y:h.y};step(h,.01);
+ const h=quiet();h.rocks=[{x:.5,y:.45}];h.x=.41;h.y=.38;h.target={x:h.x,y:h.y};carry(h,2);lunge(h.eel,h);step(h,.01);
  assert.equal(h.hearts,2);assert.ok(h.chicks.slice(0,2).every(c=>c.state==='waiting'&&distance(c,h.rocks[0])>ROCK-1e-9),'scattered chicks land outside the rock');
 });
 test('honk stuns a nearby eel, gathers chicks, and cannot be spammed or used submerged',()=>{
@@ -57,10 +58,18 @@ test('honk stuns a nearby eel, gathers chicks, and cannot be spammed or used sub
  assert.equal(callFlock(r),true);assert.equal(r.eel.stun,2.4);assert.equal(callFlock(r),false);advance(r,.8);assert.ok(r.flock.includes(0));
  advance(r,7);toggleDive(r);assert.equal(callFlock(r),false);
 });
-test('eel hit scatters recoverable chicks and grants damage grace',()=>{
- const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.trail=[{x:r.x,y:r.y,angle:0,d:0}];carry(r,3);r.eel.stun=0;r.eel.x=r.x;r.eel.y=r.y;r.eel.aim={x:r.x,y:r.y};step(r,.01);
+test('an eel lunge costs energy, scatters recoverable chicks, and grants damage grace',()=>{
+ const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.trail=[{x:r.x,y:r.y,angle:0,d:0}];carry(r,3);lunge(r.eel,r);step(r,.01);
  assert.equal(r.hearts,2);assert.equal(r.flock.length,1);assert.equal(r.chicks.filter(c=>c.state==='waiting').length,7);
  step(r,.01);assert.equal(r.hearts,2);assert.ok(r.chicks[2].lock>0);
+});
+test('a hunting eel that touches the line takes one chick and costs no energy',()=>{
+ const r=quiet();r.x=.3;r.y=.5;r.target={x:.8,y:.5};advance(r,1.5);carry(r,3);
+ const tail=birdPosition(r,3);r.eel.stun=0;r.eel.timer=9;r.eel.x=tail.x;r.eel.y=tail.y;r.eel.aim={...tail};step(r,.01);
+ assert.equal(r.hearts,3,'a nip costs no energy');assert.deepEqual(r.flock,[0,1],'the eel takes the chick it touches');assert.ok(r.events.some(e=>e.kind==='nip'));
+ assert.equal(r.chicks[2].state,'waiting');assert.ok(r.chicks[2].lock>0);assert.ok(r.eel.stun>0,'the eel rests after a nip');
+ const loon=quiet();loon.y=.5;loon.target={x:loon.x,y:loon.y};loon.eel.stun=0;loon.eel.timer=9;loon.eel.x=loon.x;loon.eel.y=loon.y;loon.eel.aim={x:loon.x,y:loon.y};advance(loon,.5);
+ assert.equal(loon.hearts,3,'a hunting eel cannot hurt the loon; only a warned lunge can');
 });
 test('diving breaks eel targeting; nest protects the family',()=>{
  const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.eel.stun=0;r.eel.x=.7;r.eel.y=.65;r.eel.aim={x:.6,y:.6};r.eel.timer=2;toggleDive(r);step(r,.01);
@@ -71,10 +80,31 @@ test('submerged snacks add points and reduce honk cooldown only once',()=>{
  const r=quiet();r.fish=[{x:r.x,y:r.y,cooldown:0}];r.cooldown=5;toggleDive(r);step(r,.01);
  assert.equal(r.score,25);assert.ok(r.cooldown<3.01);step(r,.01);assert.equal(r.score,25);
 });
-test('all eight delivered wins; exhaustion loses; ended runs cannot change',()=>{
- const r=quiet();carry(r,8);r.x=HOME.x;r.y=HOME.y;r.target={...HOME};advance(r,.7);assert.equal(r.won,true);assert.equal(r.saved,8);
- const score=r.score;advance(r,1);assert.equal(r.score,score);assert.equal(callFlock(r),false);assert.equal(toggleDive(r),false);
- const tired=quiet();tired.hearts=1;tired.y=.5;tired.target={x:tired.x,y:tired.y};tired.boats=[{x:tired.x,y:tired.y,direction:1,age:1.6}];step(tired,.01);assert.equal(tired.ended,true);assert.equal(tired.won,false);
+test('a full nest hatches the next clutch; only zero energy ends the run; ended runs cannot change',()=>{
+ const r=quiet();const first=r.chicks.map(c=>[c.x,c.y]);carry(r,8);r.x=HOME.x;r.y=HOME.y;r.target={...HOME};r.hearts=1;
+ for(let t=0;t<.7;t+=.01)step(r,.01);
+ assert.equal(r.ended,false,'a full nest does not end the run');assert.equal(r.saved,8);assert.equal(r.clutch,2);assert.equal(r.home,0);
+ assert.equal(r.score,6400,'the bank bonus stays 100 × 8²');assert.equal(r.hearts,3,'a full nest restores all energy');assert.ok(r.events.some(e=>e.kind==='clutch'&&e.clutch===2));
+ assert.equal(r.chicks.length,8);assert.ok(r.chicks.every(c=>c.state==='waiting'));assert.notDeepEqual(r.chicks.map(c=>[c.x,c.y]),first,'the next clutch hatches at new spots');
+ carry(r,5);r.x=HOME.x;r.y=HOME.y;r.target={...HOME};advance(r,.7);assert.equal(r.score,6400+2500,'clutch 2 keeps the n² bonus');assert.equal(r.home,5);
+ const tired=quiet();tired.hearts=1;tired.y=.5;tired.target={x:tired.x,y:tired.y};tired.boats=[{x:tired.x,y:tired.y,direction:1,age:1.6}];step(tired,.01);
+ assert.equal(tired.ended,true);assert.ok(tired.events.some(e=>e.kind==='end'&&e.cause==='boat'));
+ const score=tired.score;advance(tired,1);assert.equal(tired.score,score);assert.equal(callFlock(tired),false);assert.equal(toggleDive(tired),false);
+});
+test('each clutch raises the danger, a second eel joins at clutch 3, and every strike keeps its warning',()=>{
+ const r=quiet(),levels=[danger(r)];
+ for(let k=2;k<=4;k++){carry(r,8);r.x=HOME.x;r.y=HOME.y;r.target={...HOME};advance(r,.7);assert.equal(r.clutch,k);levels.push(danger(r));if(k===2)assert.equal(r.eels.length,1);}
+ for(let k=1;k<levels.length;k++){const a=levels[k-1],b=levels[k];assert.ok(b.hunt>a.hunt&&b.rest<a.rest&&b.lunge>a.lunge&&b.boatGap<a.boatGap,`clutch ${k+1} is more dangerous than clutch ${k}`);}
+ assert.equal(levels[1].lanes,3,'boats use a third lane from clutch 2');assert.ok(levels[3].pairs>0,'boats come in pairs from clutch 4');
+ assert.equal(r.eels.length,2,'clutch 3 brings a second eel');assert.ok(r.eels[1].active&&r.eels[1].stun>0,'the new eel wakes up slowly');
+ for(let clutch=1;clutch<=60;clutch++)assert.ok(danger({clutch}).windup>=.3,`clutch ${clutch}: a strike comes at least 0.3 s after its warning`);
+ assert.ok(danger({clutch:60}).eels<=6,'at most six eels');
+});
+test('the eels take turns, so two strikes never come at once',()=>{
+ const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.eel.stun=0;r.eel.timer=0;r.eel.x=.62;r.eel.y=.5;
+ r.eels.push({...r.eel,x:.38,y:.5,aim:{x:.5,y:.5},trail:[]});let most=0;
+ for(let t=0;t<4;t+=.01){step(r,.01);r.events.length=0;most=Math.max(most,r.eels.filter(e=>e.phase!=='hunt').length);r.invincible=1;}
+ assert.equal(most,1,'only one eel winds up or lunges at a time');
 });
 test('map seeds preserve eight recoverable chicks and bounded movement',()=>{
  for(const seed of [1,7,42,1000]){const r=quiet();const map=createRun(seed);assert.equal(map.chicks.length,8);assert.ok(map.chicks.every(c=>c.x>=.1&&c.x<=.9));r.target={x:99,y:-99};advance(r,8);assert.ok(r.x<=.9&&r.y>=.19);assert.ok(distance(r,HOME)>=0);}
@@ -88,9 +118,9 @@ test('eel locks its lunge direction during the warning instead of tracking an un
  const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.eel.stun=0;r.eel.x=.65;r.eel.y=.5;r.eel.timer=0;step(r,.01);
  assert.equal(r.eel.phase,'windup');const aim={...r.eel.aim};r.target={x:.25,y:.7};advance(r,.4);assert.deepEqual(r.eel.aim,aim);assert.equal(r.hearts,3);
 });
-test('a full rescue is achievable using movement, dives, and honks with all hazards enabled',()=>{
+test('the first clutch can be brought home using movement, dives, and honks with all hazards enabled',()=>{
  const r=createRun(42);let targetId=null;
- for(let i=0;i<10000&&!r.ended;i++){
+ for(let i=0;i<10000&&!r.ended&&r.clutch===1;i++){
    if(r.flock.length){targetId=null;r.target={...HOME};}
    else{if(targetId===null||r.chicks[targetId].state!=='waiting')targetId=r.chicks.filter(c=>c.state==='waiting').sort((a,b)=>distance(r,a)-distance(r,b))[0]?.id??null;if(targetId!==null)r.target={x:r.chicks[targetId].x,y:r.chicks[targetId].y};}
    const rock=r.rocks.some(o=>distance(r,o)<.15),enemy=distance(r,r.eel)<.22;
@@ -98,7 +128,7 @@ test('a full rescue is achievable using movement, dives, and honks with all haza
    if((rock||enemy)&&r.breath>1.3&&!r.diving&&!r.exhausted)toggleDive(r);
    if(r.diving&&!rock&&!enemy&&distance(r,r.target)<.12)toggleDive(r);
    step(r,.01);r.events.length=0;
-   assert.equal(r.chicks.filter(c=>c.state==='waiting').length+r.flock.length+r.saved,8);
+   assert.equal(r.chicks.filter(c=>c.state==='waiting').length+r.flock.length+r.home,8);
  }
- assert.equal(r.won,true);assert.equal(r.saved,8);assert.ok(r.hearts>0);assert.ok(r.elapsed<100);
+ assert.equal(r.clutch,2);assert.equal(r.saved,8);assert.ok(r.hearts>0);assert.ok(r.elapsed<100);
 });

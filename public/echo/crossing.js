@@ -7,18 +7,34 @@ const LEAD = .045;         // more path behind the loon, so the first chick sits
 const TRAIL = (MAX_CHICKS+2)*GAP+LEAD;
 export const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 export const distance = (a,b) => Math.hypot(a.x-b.x,(a.y-b.y)*1.65);
-const spots = [[.5,.38],[.23,.35],[.77,.36],[.18,.59],[.82,.66],[.32,.78],[.64,.78],[.57,.56]];
+// Seeded numbers. The same seed gives the same clutches and boats in every browser.
+export const hash = text => {let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193);}return h>>>0;};
+export function seeded(seed) {let s=seed>>>0;return ()=>{s=(s+0x6d2b79f5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+const newEel=(x,y)=>({x,y,angle:0,active:false,stun:0,phase:'hunt',timer:4,aim:{x:.5,y:.5},trail:[]});
 export function createRun(seed = 1) {
-  let n=seed>>>0;
-  const random=()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};
-  return {elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,trail:[{x:.5,y:.28,angle:0,d:0}],
-    flock:[],saved:0,score:0,trips:0,hearts:3,invincible:0,call:0,cooldown:0,bump:0,
-    breath:3,diving:false,exhausted:false,deposit:0,ended:false,won:false,events:[],
-    chicks:spots.map(([x,y],id)=>({id,x:clamp(x+(id?random()-.5:0)*.07,.13,.87),y:y+(id?random()-.5:0)*.03,state:'waiting',lock:0})),
+  const eel=newEel(.84,.79),r={seed:seed>>>0,elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,trail:[{x:.5,y:.28,angle:0,d:0}],
+    flock:[],saved:0,home:0,clutch:1,score:0,trips:0,biggest:0,hearts:3,invincible:0,call:0,cooldown:0,bump:0,
+    breath:3,diving:false,exhausted:false,deposit:0,ended:false,cause:'',events:[],chicks:[],
     rocks:[{x:.34,y:.47},{x:.68,y:.51},{x:.46,y:.69}],
     fish:[[.2,.46],[.78,.47],[.2,.75],[.79,.77],[.46,.58],[.62,.4]].map(([x,y])=>({x,y,cooldown:0})),
-    boats:[],boatTimer:9,
-    eel:{x:.84,y:.79,angle:0,active:false,stun:0,phase:'hunt',timer:4,aim:{x:.5,y:.5},trail:[]}};
+    lanes:[.43,.62,.76],boats:[],boatTimer:9,boatCount:0,eel,eels:[eel]};
+  r.chicks=hatch(r);return r;
+}
+// Eight chicks hatch at spots from the seed. The spots keep clear of the nest, the rocks and each other.
+function hatch(r) {
+  const random=seeded(hash(`${r.seed}:clutch:${r.clutch}`)),spots=[];
+  for(let gap=.11;spots.length<MAX_CHICKS;gap*=.85)for(let i=0;i<300&&spots.length<MAX_CHICKS;i++){
+    const p={x:.14+random()*.72,y:.33+random()*.47};
+    if(distance(p,HOME)>.2&&r.rocks.every(o=>distance(o,p)>ROCK+.05)&&spots.every(o=>distance(o,p)>gap))spots.push(p);
+  }
+  return spots.map(({x,y},id)=>({id,x,y,state:'waiting',lock:r.clutch>1?.6:0}));
+}
+// Each clutch makes the lake more dangerous: a faster eel that rests less between lunges, a second eel from clutch 3
+// and one more every three clutches (six at most), a third boat lane from clutch 2, boats more often, and boats in pairs from clutch 4.
+export function danger(r) {
+  const k=r.clutch-1;
+  return {hunt:.135+Math.min(.09,k*.012),rest:Math.max(1.1,4-k*.35),reach:Math.min(.62,.42+k*.025),lunge:Math.min(1,.66+k*.04),windup:Math.max(.55,.85-Math.max(0,k-5)*.04),
+    eels:Math.min(6,1+Math.floor(r.clutch/3)),lanes:r.clutch>=2?3:2,boatGap:Math.max(2,11-k*.9),boatSpeed:Math.min(.5,.27+k*.025),pairs:r.clutch>=10?1:r.clutch>=4?.5:0};
 }
 // Bird i sits LEAD+i*GAP back along the path of the loon (bird 0 is the loon). The line keeps its spacing when the loon stops or honks.
 export function birdPosition(r,i) {
@@ -38,15 +54,15 @@ function extendTrail(r) {
 export function callFlock(r) {
   if(r.ended||r.cooldown>0||r.diving)return false;
   r.call=2; r.cooldown=7;
-  if(r.eel.active&&distance(r,r.eel)<.38){r.eel.stun=2.4;r.eel.phase='hunt';r.eel.timer=3;}
-  r.events.push({kind:'call',text:'HONK! Nearby chicks follow. The eel is startled.'});return true;
+  for(const e of r.eels)if(e.active&&distance(r,e)<.38){e.stun=2.4;e.phase='hunt';e.timer=3;}
+  r.events.push({kind:'call',text:'HONK. Near chicks swim to you. A near eel stops for a moment.'});return true;
 }
 export function toggleDive(r) {
   if(r.ended)return false;
   if(r.diving){r.diving=false;return true;}
   if(r.exhausted||r.breath<.8)return false;
   r.diving=true;r.call=0;
-  r.events.push({kind:'dive',text:'Hidden! Slip under rocks and boats. Watch your breath.'});return true;
+  r.events.push({kind:'dive',text:'You are under the water. Rocks, boats and eels pass over you. Watch your breath.'});return true;
 }
 function move(o,target,speed,dt) {
   const dx=target.x-o.x,dy=(target.y-o.y)*1.65,d=Math.hypot(dx,dy);
@@ -86,42 +102,72 @@ function swim(r,dt) {
 }
 function damage(r,source) {
   if(r.invincible||r.diving||distance(r,HOME)<.105)return;
-  r.hearts--;r.invincible=2.2;r.deposit=0;
+  r.hearts--;r.invincible=2.2;r.deposit=0;r.cause=source;
   const ids=r.flock.splice(-Math.min(2,r.flock.length));
   ids.forEach((id,i)=>{const c=r.chicks[id];c.state='waiting';c.x=clamp(r.x+(i?-.09:.09),.12,.88);c.y=clamp(r.y+.07,.3,.8);c.lock=1.8;r.rocks.forEach(rock=>pushOut(c,rock,r));});
   r.events.push({kind:'hit',source,text:ids.length?'The line broke. Your chicks wait near you. Go back for them.':source==='eel'?'The eel bit you. HONK to stun it, or DIVE to get away.':'A boat hit you. Dive under boats, or wait for them to pass.'});
 }
-function updateEel(r,dt) {
-  const e=r.eel;
+// The first eel hunts the tail of the line. The second eel goes for the nearest bird. The eels take turns to strike.
+function updateEel(r,e,index,dt) {
   if(!e.active&&(r.flock.length>0||r.elapsed>12)) {
     e.active=true;e.stun=2;
-    r.events.push({kind:'warning',text:r.flock.length?'Something heard the chicks. Bring them to the nest!':'The eel is awake. Keep moving once you leave the nest!'});
+    r.events.push({kind:'warning',text:r.flock.length?'Something heard the chicks. Bring them to the nest.':'The eel is awake. Keep moving when you leave the nest.'});
   }
   if(!e.active)return;
   e.stun=Math.max(0,e.stun-dt);
   if(e.stun)return;
-  const tail=birdPosition(r,r.flock.length);
-  const safe=distance(r,HOME)<.14;
+  const d=danger(r),safe=distance(r,HOME)<.14;
+  let prey=birdPosition(r,r.flock.length);
+  if(index)for(let i=0;i<r.flock.length;i++){const p=birdPosition(r,i);if(distance(e,p)<distance(e,prey))prey=p;}
   e.timer-=dt;
   if(e.phase==='hunt') {
-    if(!r.diving&&!safe)e.aim={x:tail.x,y:tail.y};
-    if(safe)e.aim={x:.5+Math.sin(r.elapsed*.3)*.28,y:.55};
-    move(e,e.aim,.135+Math.min(.045,r.saved*.006)+r.flock.length*.006,dt);
-    if(e.timer<=0&&!r.diving&&!safe&&distance(e,tail)<.42){e.phase='windup';e.timer=.85;e.aim={x:tail.x,y:tail.y};r.events.push({kind:'warning',text:'The eel is winding up—turn, HONK, or DIVE!'});}
+    if(!r.diving&&!safe)e.aim={x:prey.x,y:prey.y};
+    if(safe)e.aim={x:.5+Math.sin(r.elapsed*.3+index*2.4)*.28,y:.55+index*.14};
+    move(e,e.aim,d.hunt+Math.min(.045,r.home*.006)+r.flock.length*.006,dt);
+    if(e.timer<=0&&!r.diving&&!safe&&distance(e,prey)<d.reach&&!r.eels.some(o=>o!==e&&o.phase!=='hunt')){e.phase='windup';e.timer=d.windup;e.aim={x:prey.x,y:prey.y};r.events.push({kind:'warning',text:'The eel is about to strike. Turn, HONK or DIVE.'});}
   } else if(e.phase==='windup') {
     if(e.timer<=0){e.phase='lunge';e.timer=.65;}
   } else {
-    move(e,e.aim,.66,dt);
-    if(e.timer<=0){e.phase='hunt';e.timer=4;e.stun=.65;}
+    move(e,e.aim,d.lunge,dt);
+    if(e.timer<=0){e.phase='hunt';e.timer=d.rest;e.stun=.65;}
   }
   e.trail.push({x:e.x,y:e.y});if(e.trail.length>26)e.trail.shift();
-  if(!r.diving&&!safe)for(let i=r.flock.length;i>=0;i--){if(distance(e,birdPosition(r,i))<.058){damage(r,'eel');e.stun=1.5;break;}}
+  if(r.diving||safe||e.phase==='windup')return;
+  // Only a lunge costs energy, and it always comes after the warning. A touch while the eel hunts takes one chick from the line.
+  for(let i=r.flock.length;i>=0;i--){if(distance(e,birdPosition(r,i))>=.058)continue;
+    if(e.phase==='lunge'){damage(r,'eel');e.stun=1.5;}else if(i)nip(r,e,i);
+    break;}
+}
+function nip(r,e,i) {
+  const spot=birdPosition(r,i),c=r.chicks[r.flock.splice(i-1,1)[0]];
+  c.state='waiting';c.x=clamp(spot.x,.12,.88);c.y=clamp(spot.y,.3,.8);c.lock=1.8;r.rocks.forEach(rock=>pushOut(c,rock,r));
+  e.stun=1.2;r.deposit=0;
+  r.events.push({kind:'nip',x:c.x,y:c.y,text:'The eel took a chick from your line. Go back for it.'});
+}
+// Banks the whole line for 100 × group². A full nest hatches the next clutch.
+function bank(r) {
+  const count=r.flock.length,points=count*count*100,spots=r.flock.map((id,i)=>birdPosition(r,i+1)),healed=r.hearts<3;
+  r.saved+=count;r.home+=count;r.trips++;r.score+=points;r.biggest=Math.max(r.biggest,count);
+  r.flock.forEach(id=>r.chicks[id].state='saved');r.flock=[];r.deposit=0;r.hearts=Math.min(3,r.hearts+1);
+  const full=r.home>=MAX_CHICKS;
+  r.events.push({kind:'bank',count,points,full,spots,text:`${count} home. +${points.toLocaleString('en-US')}.${healed?' +1 energy.':''}${full?'':` ${MAX_CHICKS-r.home} still need you.`}`});
+  if(full)nextClutch(r);
+}
+const CLUTCH_NEWS=['','','The eel is faster now, and boats use a third lane.','A second eel wakes up. It goes for the nearest bird.','Boats now cross in pairs.'];
+function nextClutch(r) {
+  r.clutch++;r.home=0;r.chicks=hatch(r);r.hearts=3;
+  while(r.eels.length<danger(r).eels){
+    const room=p=>Math.min(distance(p,r),...r.eels.map(e=>distance(p,e)));
+    const spot=[{x:.16,y:.79},{x:.84,y:.79},{x:.16,y:.5},{x:.84,y:.5},{x:.5,y:.81},{x:.16,y:.65}].sort((a,b)=>room(b)-room(a))[0],e=newEel(spot.x,spot.y);
+    e.active=true;e.stun=2.5;r.eels.push(e);r.events.push({kind:'eel',x:e.x,y:e.y});
+  }
+  r.events.push({kind:'clutch',clutch:r.clutch,text:`Clutch ${r.clutch} hatched. ${CLUTCH_NEWS[r.clutch]||'The eels are faster again.'}`});
 }
 export function step(r,dt) {
   if(r.ended)return;
   dt=clamp(dt,0,.05);r.elapsed+=dt;
   r.invincible=Math.max(0,r.invincible-dt);r.call=Math.max(0,r.call-dt);r.cooldown=Math.max(0,r.cooldown-dt);r.bump=Math.max(0,r.bump-dt);
-  if(r.diving){r.breath=Math.max(0,r.breath-dt);if(r.breath===0){r.diving=false;r.exhausted=true;r.events.push({kind:'surface',text:'Out of breath! Stay on the surface to refill.'});}}
+  if(r.diving){r.breath=Math.max(0,r.breath-dt);if(r.breath===0){r.diving=false;r.exhausted=true;r.events.push({kind:'surface',text:'Out of breath. Stay on the surface to fill up again.'});}}
   else{r.breath=Math.min(3,r.breath+dt*.8);if(r.breath>=1.2)r.exhausted=false;}
   r.target.x=clamp(r.target.x,.1,.9);r.target.y=clamp(r.target.y,.19,.82);
   swim(r,dt);
@@ -130,22 +176,23 @@ export function step(r,dt) {
     c.lock=Math.max(0,c.lock-dt);
     if(c.state!=='waiting'||c.lock||r.diving)continue;
     if(r.call&&distance(r,c)<.3){move(c,r,.27,dt);r.rocks.forEach(rock=>pushOut(c,rock,r));}
-    if(distance(r,c)<.065){c.state='following';r.flock.push(c.id);r.events.push({kind:'rescue',text:r.flock.length===1?'One aboard! Bank it at the nest—or risk a bigger flock.':`${r.flock.length} following. Bigger deliveries earn bigger bonuses!`});}
+    if(distance(r,c)<.065){c.state='following';r.flock.push(c.id);r.events.push({kind:'rescue',x:c.x,y:c.y,text:r.flock.length===1?'One chick follows you. Bank it at the nest, or risk a longer line.':`${r.flock.length} follow you. A bigger group scores more: 100 × ${r.flock.length}² = ${(r.flock.length**2*100).toLocaleString('en-US')}.`});}
   }
-  for(const f of r.fish){f.cooldown=Math.max(0,f.cooldown-dt);if(!f.cooldown&&r.diving&&distance(r,f)<.065){f.cooldown=14;r.score+=25;r.cooldown=Math.max(0,r.cooldown-2);r.events.push({kind:'fish',text:'Snack! +25 points. HONK recharges faster.'});}}
+  for(const f of r.fish){f.cooldown=Math.max(0,f.cooldown-dt);if(!f.cooldown&&r.diving&&distance(r,f)<.065){f.cooldown=14;r.score+=25;r.cooldown=Math.max(0,r.cooldown-2);r.events.push({kind:'fish',x:f.x,y:f.y,text:'Fish snack. +25 points, and HONK is ready sooner.'});}}
   if(distance(r,HOME)<.11&&!r.diving&&r.flock.length){
     r.deposit+=dt;
-    if(r.deposit>=.65){const count=r.flock.length;r.saved+=count;r.trips++;r.score+=count*count*100;
-      r.flock.forEach(id=>r.chicks[id].state='saved');r.flock=[];r.deposit=0;r.hearts=Math.min(3,r.hearts+1);
-      r.events.push({kind:'bank',text:`${count} home safe! +${count*count*100}. Energy restored. ${MAX_CHICKS-r.saved} still need you.`});}
+    if(r.deposit>=.65)bank(r);
   } else r.deposit=0;
   r.boatTimer-=dt;
-  if(r.boatTimer<=0){const direction=r.trips%2?1:-1;r.boats.push({x:direction>0?-.16:1.16,y:.43+(Math.floor(r.elapsed/9)%2)*.19,direction,age:0});r.boatTimer=Math.max(6.5,12-r.saved*.5);r.events.push({kind:'warning',text:'Boat crossing! Dive underneath or let it pass.'});}
-  for(const b of r.boats){b.age+=dt;if(b.age>1.5)b.x+=b.direction*dt*.27;
+  if(r.boatTimer<=0){
+    const d=danger(r),random=seeded(hash(`${r.seed}:boat:${r.boatCount++}`)),lanes=r.lanes.slice(0,d.lanes),lane=Math.floor(random()*lanes.length),direction=random()<.5?1:-1;
+    r.boats.push({x:direction>0?-.16:1.16,y:lanes[lane],direction,age:0,speed:d.boatSpeed});
+    if(random()<d.pairs)r.boats.push({x:direction>0?1.16:-.16,y:lanes[(lane+1+Math.floor(random()*(lanes.length-1)))%lanes.length],direction:-direction,age:0,speed:d.boatSpeed});
+    r.boatTimer=Math.max(3,d.boatGap-r.home*.35);r.events.push({kind:'warning',text:'A boat is coming. Dive under it, or let it pass.'});
+  }
+  for(const b of r.boats){b.age+=dt;if(b.age>1.5)b.x+=b.direction*dt*(b.speed||.27);
     if(!r.diving&&b.age>1.5)for(let i=0;i<=r.flock.length;i++){const p=birdPosition(r,i);if(Math.abs(b.x-p.x)<.1&&Math.abs(b.y-p.y)<.033){damage(r,'boat');break;}}}
-  r.boats=r.boats.filter(b=>b.age<7);
-  updateEel(r,dt);
-  if(r.hearts<=0||r.saved===MAX_CHICKS){r.ended=true;r.won=r.saved===MAX_CHICKS;
-    if(r.won)r.score+=Math.max(0,Math.round(180-r.elapsed))*10;
-    r.events.push({kind:'end'});}
+  r.boats=r.boats.filter(b=>b.age<1.5||Math.abs(b.x-.5)<.7);
+  r.eels.forEach((e,i)=>updateEel(r,e,i,dt));
+  if(r.hearts<=0){r.ended=true;r.events.push({kind:'end',cause:r.cause});}
 }
