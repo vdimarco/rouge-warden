@@ -1,10 +1,10 @@
 # Blade duels
 
-The 3D game now uses `duel.js` for health, guard and attack timing. Each fighter begins with at least six health. Closed guards stop health damage. Changing cut angle applies guard pressure, steady blocks add pressure, and two closely spaced perfect parries break guard. Each opening allows one clean strike (normally two damage, capped at three with upgrades or overdrive). Surviving opponents recover and require another exchange.
+The 3D game now uses `duel.js` for health, guard and attack timing. Each fighter begins with at least six health. Closed guards stop health damage. A parry breaks the guard at once. A block adds 1 to the guard bar and a timed dodge adds 2; at 4 the guard breaks. Changing cut angle also applies guard pressure. Each opening allows one clean strike (normally two damage, capped at three with upgrades or overdrive). Surviving opponents recover and require another exchange.
 
-Rounds 1–2 use one swordsman, 3–4 use two, 5–6 use three, 7–8 use four, and later rounds cap at five. One opponent commits to an attack at a time; the others move into range and take turns. Captains appear every fourth round with extra health. The old fixed-view fallback retains its prior combat rules.
+Rounds 1–2 use one swordsman, 3–4 use two, 5–6 use three, 7–8 use four, and later rounds cap at five. One opponent commits to an attack at a time, and only when it is in reach and on screen. The others circle inside the view and take turns. Captains appear every fourth round with extra health. The old fixed-view fallback retains its prior combat rules.
 
-The new health and guard bars show when to defend and when to strike. The same phone controls move the blade and view. Dashing avoids a committed attack. Tablet widescreen controls remain available.
+The new health and guard bars show when to defend and when to strike. The same phone controls move the blade and view. A timed dash avoids a committed attack and weakens the guard. Stepping out of reach avoids it too, but the guard stays whole. Tablet widescreen controls remain available.
 
 ## 404 Gen asset pipeline
 
@@ -18,6 +18,6 @@ No 404 Gen generation was submitted in this update because the execution environ
 
 ## Validation
 
-`node --test qa/neon/combat.test.cjs qa/neon/district.test.mjs qa/neon/duel.test.mjs`
+`node --test qa/neon/combat.test.cjs qa/neon/district.test.mjs qa/neon/duel.test.mjs qa/neon/onscreen.test.mjs`
 
-Fourteen tests pass. They cover multi-hit health, closed guards, perfect parries, turn scheduling, group progression, whole-group victory, sensor calibration, scene crowd setup/retirement, collision and tablet fullscreen fallback. GPU rendering is mocked. Real tablet visuals, generated-model appearance and physical motion feel remain unverified.
+29 tests pass. README.md lists what each file covers. GPU rendering is mocked in Node. `qa/neon/neon.e2e.mjs` drives the real page in Chromium. Real tablet visuals, generated-model appearance and physical motion feel remain unverified.
