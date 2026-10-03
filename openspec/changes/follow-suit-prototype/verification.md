@@ -37,7 +37,8 @@
 
 - `npm run check` in `follow-suit/`: the typecheck passes, 233 tests in 14 files pass and the production build succeeds.
 - `npm run qa` passes 24 checks against the local build: 11 table checks, 10 feel checks and 3 run checks.
-- The Vercel preview `follow-suit-ld9nfy334-vdimarcos-projects.vercel.app` builds commit eeaa0c2, the milestone 5 build. Vercel Authentication protects it. With a share link in `BASE_URL`, `npm run qa:url` passes 23 checks against it. The build file check runs only on a local build.
+- PR #159 merged milestones 1 and 2 into `main`. The commits for milestones 3 to 5 moved onto the new `main` with no change to the Follow Suit files.
+- The Vercel preview `follow-suit-kgtmr0v9j-vdimarcos-projects.vercel.app` builds commit 614448d from that branch. Vercel Authentication protects it. With a share link in `BASE_URL`, `npm run qa:url` passes 23 checks against it. The build file check runs only on a local build.
 - `openspec validate follow-suit-prototype --type change --strict` reports the change as valid. OpenSpec 1.14.0 ran through npx without `openspec init`.
 
 ## Not checked yet
