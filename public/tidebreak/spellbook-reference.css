@@ -78,3 +78,7 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
  .ability-upgrade{width:32px;height:32px;font-size:22px}
  .upgrade-dash{right:-5px;top:32px}.upgrade-surge{left:86px;top:54px}.upgrade-signature{left:26px;bottom:-1px}.upgrade-ult{right:-5px;bottom:-3px}
 }
+
+
+/* In-match upgrades now use the full spell icon. Keep legacy plus controls out of the HUD. */
+.ability-upgrade{display:none!important}
