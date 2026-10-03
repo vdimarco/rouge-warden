@@ -32,3 +32,11 @@ Neutral special attacks SHALL show their actual affected shape, lock aim and pro
 #### Scenario: React and cooperate
 - **WHEN** a bot sees a new warning or a contestable objective with allied support
 - **THEN** its warning response begins after a bounded delay, and its team can approach the shared objective without overriding a needed retreat.
+
+
+### Requirement: Punishable commitments
+A committed non-defensive attack SHALL leave a brief recovery after resolution so that successfully dodging or baiting the attack creates a real counterattack opportunity. Defensive and instant abilities SHALL not inherit this added commitment.
+
+#### Scenario: Punish a whiff
+- **WHEN** a player leaves the warned area of a committed attack before it resolves
+- **THEN** the attack misses and the caster remains in recovery long enough for the defender to begin a counteraction before the caster fully resets.
