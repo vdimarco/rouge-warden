@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d1820">
-  <meta name="description" content="Monster Mash. Choose from twelve folklore heroes, learn unique spells and fight in a shifting 3v3 arena.">
-  <meta property="og:title" content="Monster Mash | Cottage Arcade">
-  <meta property="og:description" content="Twelve legends. Forty-eight spells. A painted folklore arena that shifts between town and deep woods.">
-  <meta property="og:image" content="/tidebreak/art/mothman.webp">
-  <title>Monster Mash · Cottage Arcade</title>
+  <meta name="description" content="Shore of the Ancients. Choose from twelve folklore legends, master four-skill kits, and fight in a shifting 3v3 arena.">
+  <meta property="og:title" content="Shore of the Ancients | Cottage Arcade">
+  <meta property="og:description" content="Twelve legends. Forty-eight skills. A painted battle shore that shifts between town, river, and deep woods.">
+  <meta property="og:image" content="/tidebreak/art/shore-ancients-hero.webp">
+  <title>Shore of the Ancients · Cottage Arcade</title>
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./toon.css">
@@ -21,9 +21,9 @@
   <link rel="stylesheet" href="./viewport.css">
 </head>
 <body>
-  <canvas id="battle" aria-label="Monster Mash battlefield"></canvas>
+  <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
   <div id="hud" hidden>
-    <header><span class="wordmark">MONSTER<br>MASH</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><button id="pause" class="pause" aria-label="Pause game"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button></header>
+    <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><button id="pause" class="pause" aria-label="Pause game"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button></header>
     <button id="map-button" aria-label="Open arena map"><canvas id="minimap" width="180" height="180"></canvas><small>MAP ↗</small></button>
     <div id="objective"><b id="realm">MIDNIGHT TOWN</b><span id="realm-count">Woods arrive in 40s</span><div class="realm-track"><i id="realm-fill"></i></div><span id="objective-sub">Break the outer ward, then the inner ward.</span></div>
     <button id="recall" class="utility">RETURN <small>Heal at home</small></button>
@@ -51,7 +51,7 @@
   </div>
   <main id="menu" class="overlay">
     <div class="intro">
-      <div class="roster-heading"><div class="title-lockup"><svg class="title-sigil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="24"/><path d="M32 3v10m0 38v10M3 32h10m38 0h10M16 16l7 7m18 18 7 7M16 48l7-7m18-18 7-7M32 20l10 12-10 12-10-12z"/></svg><div><h1>Monster Mash</h1><p>Choose your legend.</p></div></div><span class="match-format">3v3 with bots · Shifting realms · 6 min</span></div>
+      <div class="roster-heading"><div class="title-lockup"><svg class="title-sigil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="24"/><path d="M32 3v10m0 38v10M3 32h10m38 0h10M16 16l7 7m18 18 7 7M16 48l7-7m18-18 7-7M32 20l10 12-10 12-10-12z"/></svg><div><h1>Shore of the Ancients</h1><p>Legends rise. Tides decide.</p></div></div><span class="match-format">3v3 with bots · Shifting shores · 6 min</span></div>
       <div class="roster-layout"><section class="hero-feature" aria-label="Selected hero">
       <div class="hero-stage"><picture id="hero-picture"><source id="hero-animation" srcset="./art/animated/nessie-idle.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)"><img id="hero-art" src="./art/illustrated/nessie-front.webp" alt="Nessie, the river bruiser" decoding="async"></picture></div>
       <div class="hero-copy"><h2 id="hero-name">Nessie</h2><span id="hero-role">River bruiser</span><p id="hero-note">Dive through the river. Pull the fight to you.</p></div>
