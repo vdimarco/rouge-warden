@@ -121,7 +121,7 @@ function checkTwa(t, web) {
 const twa = await readJSON("play/fish/twa-manifest.json");
 const webPath = path.join(ROOT, "public/fish/manifest.webmanifest");
 const webReal = (await exists(webPath)) ? JSON.parse(await readFile(webPath, "utf8")) : null;
-// a web manifest in the shape that the web package makes, for the checks that need one when the real one is not in the tree
+// a web manifest in the shape that the web side makes, for the checks that need one when the real one is not in the tree
 const WEB = { name: "Reel It In", scope: "/fish/", start_url: "/fish/?source=pwa", display: "standalone", orientation: "portrait", theme_color: "#0d2f38", background_color: "#0d2f38",
   icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }, { src: "icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }] };
 
@@ -134,7 +134,7 @@ await test("twa-manifest.json", async (ok) => {
       if (await exists(file)) { const s = pngSize(await readFile(file)); ok(s && s.w >= 512 && s.h >= 512, k + " is smaller than the 512 px that Bubblewrap needs"); }
       else ok(false, k + " " + new URL(twa[k]).pathname + " is missing on disk");
     }
-  } else info("public/fish/manifest.webmanifest is not in this tree (the web package makes it): the checks against it ran on a stand-in, and the icon files were not checked");
+  } else info("public/fish/manifest.webmanifest is not in this tree (the web side makes it): the checks against it ran on a stand-in, and the icon files were not checked");
 });
 await test("twa-manifest.json checks can fail", async (ok) => {
   for (const p of checkTwa(twa, WEB)) ok(false, "the stand-in web manifest differs from twa-manifest.json: " + p);
@@ -709,7 +709,9 @@ function checkWorkflow(text) {
   const node = find(/^actions\/setup-node@/), java = find(/^actions\/setup-java@/), up = find(/^actions\/upload-artifact@/);
   if (!node || String(node.with["node-version"]) !== "22") bad.push("Node 22 is not set up");
   if (!java || java.with.distribution !== "temurin" || String(java.with["java-version"]) !== "17") bad.push("Temurin 17 is not set up");
-  if (!find(/^actions\/checkout@/)) bad.push("no checkout");
+  const checkout = find(/^actions\/checkout@/);
+  if (!checkout) bad.push("no checkout");
+  else if (!checkout.with || checkout.with["persist-credentials"] !== false) bad.push("checkout must set persist-credentials: false (the token stays out of .git/config)");
   const write = steps.find((s) => s.run && /base64 -d/.test(s.run));
   if (!write) bad.push("no step writes the keystore from the secret");
   else {
@@ -752,8 +754,9 @@ await test("play-aab.yml checks can fail", async (ok) => {
     ["a push trigger", sub("on:\n  workflow_dispatch:", "on:\n  push:\n    branches: [main]\n  workflow_dispatch:"), /not valid YAML|only on workflow_dispatch/],
     ["a push trigger in block form", sub("on:\n  workflow_dispatch:", "on:\n  push:\n    branches:\n      - main\n  workflow_dispatch:"), /only on workflow_dispatch/],
     ["write permission", sub("contents: read", "contents: write"), /permissions/],
-    ["an action on a branch", sub("actions/checkout@v4", "actions/checkout@main"), /not pinned/],
-    ["an action on a full tag", sub("actions/checkout@v4", "actions/checkout@v4.1.1"), /not pinned/],
+    ["an action on a branch", sub("actions/checkout@v7", "actions/checkout@main"), /not pinned/],
+    ["an action on a full tag", sub("actions/checkout@v7", "actions/checkout@v7.0.1"), /not pinned/],
+    ["checkout keeps the token", sub("persist-credentials: false", "persist-credentials: true"), /persist-credentials/],
     ["echo of a secret", sub("run: rm -f", 'run: echo "$BUBBLEWRAP_KEYSTORE_PASSWORD"; rm -f'), /may print a secret/],
     ["echo of a secret expression", sub("      - name: Delete the upload keystore", '      - run: echo ${{ secrets.PLAY_UPLOAD_KEYSTORE_PASSWORD }}\n      - name: Delete the upload keystore'), /may print a secret|secret is used/],
     ["a secret in a run step", sub('printf \'%s\' "$KEYSTORE_B64"', "printf '%s' \"${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}\""), /secret is used|expression/],

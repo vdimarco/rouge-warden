@@ -2,7 +2,7 @@
 
 ## The app
 
-The app is a Trusted Web Activity (TWA). Chrome shows the page at `https://<host>/fish/?source=play` with no URL bar, if the site lists the app's signing key in `/.well-known/assetlinks.json` (Digital Asset Links). The app holds no game files. A service worker on the site (the web package) keeps the game on the phone. The app has no permission: Chrome owns the motion sensors, the buzz and the screen wake lock. The fallback when Chrome is old is a Custom Tab (`fallbackType: customtabs`). The web view fallback would add the INTERNET permission and a second code path, so it is off.
+The app is a Trusted Web Activity (TWA). Chrome shows the page at `https://<host>/fish/?source=play` with no URL bar, if the site lists the app's signing key in `/.well-known/assetlinks.json` (Digital Asset Links). The app holds no game files. A service worker on the site (the web side) keeps the game on the phone. The app has no permission: Chrome owns the motion sensors, the buzz and the screen wake lock. The fallback when Chrome is old is a Custom Tab (`fallbackType: customtabs`). The web view fallback would add the INTERNET permission and a second code path, so it is off.
 
 Upstream `@bubblewrap/cli` 1.25.0 is the generator. Meta's fork (`@meta-quest/bubblewrap-cli` 1.24.1, used by `quest/`) and `quest/patch-android.mjs` force SDK 34 and add Meta-only fields. Google Play needs API 36 since 2026-08-31, and 1.25.0 generates 36 by itself. The fork is not reused.
 
@@ -63,7 +63,7 @@ The first version of the script, like `quest/build-apk.sh`, ran `sdkmanager --li
 
 `assetlinks.json` is one list for the whole host. Each Android app has its own entry. Google reads the whole file, and **a malformed fingerprint anywhere makes the whole file invalid**. The live file has such a value today: the Quest entry holds `REPLACE_WITH_YOUR_SHA256_FINGERPRINT`. Google answers `ERROR_CODE_MALFORMED_CONTENT` for the host (checked on 2026-10-03). Until the Quest owner replaces it, the fish app fails verification as well.
 
-The brief forbids a change to that entry, because `qa/vr/pwa.mjs` checks it. So:
+The owner's instructions forbid a change to that entry, because `qa/vr/pwa.mjs` checks it. So:
 
 - The tool never adds a placeholder for the fish app, and refuses one.
 - The tool warns about any malformed value in the file in every run, and the test prints the same warning. The warning says that the owner of that app must replace the value.
@@ -75,13 +75,13 @@ The tool treats the entry as a list of trusted keys. `--upload` puts a key first
 
 ## The workflow
 
-It runs only on `workflow_dispatch`, with the permission `contents: read`. The first step checks that the secrets are not empty, before any download. The keystore goes to `$RUNNER_TEMP` with `umask 077`, and its path goes to later steps through `$GITHUB_ENV`. Secrets reach steps through `env` only, so a secret is never inside a script text. The workflow uses `printf`, not `echo`, and never `set -x`. A last step that always runs deletes the key file. It builds with `--local`, so the icons and the web manifest in the bundle come from the commit that the run built. It uploads the bundle and the fingerprint file for 7 days. Actions are pinned to major tags (`@v4`). It runs `node qa/fish/play.mjs` first.
+It runs only on `workflow_dispatch`, with the permission `contents: read`. The first step checks that the secrets are not empty, before any download. The keystore goes to `$RUNNER_TEMP` with `umask 077`, and its path goes to later steps through `$GITHUB_ENV`. Secrets reach steps through `env` only, so a secret is never inside a script text. The workflow uses `printf`, not `echo`, and never `set -x`. A last step that always runs deletes the key file. It builds with `--local`, so the icons and the web manifest in the bundle come from the commit that the run built. It uploads the bundle and the fingerprint file for 7 days. The actions are pinned to major tags: `actions/checkout@v7` (with `persist-credentials: false`, so the token stays out of `.git/config`), `actions/setup-node@v7`, `actions/setup-java@v6` and `actions/upload-artifact@v7`. These were the newest majors on 2026-10-03 (`git ls-remote --tags`), and their `action.yml` files have the inputs that the workflow uses. They run on Node 24. The other workflows of the repo use `@v4`, which runs on Node 20. The workflow has not run on GitHub, so the new majors are UNCONFIRMED. It runs `node qa/fish/play.mjs` first.
 
 ## The test
 
-`qa/fish/play.mjs` has no dependency and needs no network. Each check is a function that returns a list of problems. The test runs it on the real file, and then on broken copies from a table. A check that does not report its broken copy fails the test. The workflow file is read with a small YAML reader written for the subset it uses (checked against PyYAML once, by hand). The bundle manifest fixture is built with a small protobuf encoder, so no binary file is in git. The test also runs the command lines (`assetlinks.mjs`, `patch-android.mjs`, `verify-output.mjs`, and `build-aab.sh --help` and its refusals) on a scratch folder.
+`qa/fish/play.mjs` has no dependency and needs no network. Each check is a function that returns a list of problems. The test runs it on the real file, and then on broken copies from a table. A check that does not report its broken copy fails the test. The workflow file is read with a small YAML reader written for the subset it uses (PyYAML 6.0.1 reads the workflow with the same steps). The bundle manifest fixture is built with a small protobuf encoder, so no binary file is in git. The test also runs the command lines (`assetlinks.mjs`, `patch-android.mjs`, `verify-output.mjs`, and `build-aab.sh --help` and its refusals) on a scratch folder.
 
-## What this change needs from the web package
+## What this change needs from the web side
 
 - `public/fish/manifest.webmanifest` with scope `/fish/`, the same theme and background colour, orientation `portrait`, and icons `icons/icon-512.png` and `icons/maskable-512.png` (512 px or more, PNG). The test compares them with `twa-manifest.json` as soon as the file exists.
 - `public/fish/privacy.html` for the Play forms, and the service worker, the self-hosted three.js and fonts, so that the game starts offline.
@@ -114,15 +114,17 @@ DEVICE (needs a phone; none was available):
 
 The full table is in `play/fish/README.md`.
 
-Risks: Maven Central may answer HTTP 429 (seen in the sandbox; the script retries). Downloads are pinned by version, not by checksum. Bubblewrap puts the passwords on a command line for a moment. The host is part of the app.
+Risks: Maven Central may answer HTTP 429 (seen in the sandbox on most cold builds; the script retries). Bubblewrap's template lists the retired JCenter repository, which still redirects to Maven Central today. If it stops, the build fails with "Could not resolve" lines that name `jcenter.bintray.com`. The fix is to replace `jcenter()` with `mavenCentral()` in `patch-android.mjs`. Downloads are pinned by version, not by checksum. Bubblewrap puts the passwords on a command line for a moment. The host is part of the app.
 
-## Deviations from the brief
+## Deviations from the instructions
 
 - `--debug-key` output names carry `-DEBUGKEY` (for example `reelitin-1.0.0-1-DEBUGKEY.aab`), so nobody uploads one by mistake.
 - The script accepts the licenses of the four packages only, not all seven (see above).
 - `PLAY_PUBLIC` (default `public`) tells `--local` which site files to serve. It lets a test use stand-in files.
-- `verify-output.mjs` is a file that the brief did not list. It holds the output checks so that the test can run them on fixtures.
+- `verify-output.mjs` is a file that the instructions did not list. It holds the output checks so that the test can run them on fixtures.
 - The workflow always builds with `--local` and has one input, `note`.
+- The actions are pinned to the newest majors (v7, v7, v6, v7), not to `@v4` like the other workflows of the repo. v4 runs on Node 20, which reached end of life in April 2026. UNCONFIRMED: the date when GitHub stops running Node 20 actions. A major tag is still what the owner asked for.
+- `assetlinks.mjs` also accepts a fingerprint in lower case or without colons, and writes it in the strict upper-case form. It refuses a placeholder, a wrong length and a value with fewer than 8 different bytes.
 - `vercel.json` is unchanged. The `Content-Type` rule for `assetlinks.json` is already there.
 - `android.suppressUnsupportedCompileSdk` is not set. The build needs no such flag: Android Gradle Plugin 8.9.1 built with compileSdk 36 and printed no warning about it.
 

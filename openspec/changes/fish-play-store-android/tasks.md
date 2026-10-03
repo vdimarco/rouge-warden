@@ -47,12 +47,12 @@
 
 ## Build record (sandbox, 2026-10-03)
 
-The record is below, in the order of the runs. See also `design.md`.
+Everything below was run in a disposable Linux sandbox. Nothing ran on a phone, and the GitHub workflow did not run.
 
 ### Setup
 
-- Linux 6.18 x86_64 sandbox, Node 22.22.2. The system JDK is 21.0.10, which the script rejected, so it downloaded Temurin 17.0.11+9.
-- Stand-in site files for `--local` (made with a few lines of node, in a scratch folder, not in git): a web manifest and three solid-colour PNG icons (192 px, 512 px, 512 px maskable). The app icons in these builds are solid squares for that reason. The real manifest and icons belong to the web package and were not in this tree.
+- Linux 6.18 x86_64, Node 22.22.2. The system JDK is 21.0.10, which the script rejects, so it downloads Temurin 17.0.11+9.
+- Stand-in site files for `--local` (made with a few lines of node in a scratch folder, not in git): a web manifest and three solid-colour PNG icons (192 px, 512 px, 512 px maskable). The app icons of these builds are solid squares for that reason. A later build used the real manifest and icons of the web side (see run 6).
 - I accepted the Android SDK license in this disposable sandbox only to build, with `ACCEPT_ANDROID_SDK_LICENSES=yes`. The owner accepts it on their own computer, or by running the workflow. `sdkmanager` accepted one license, `android-sdk-license`, for the four packages.
 
 ### Versions that were used
@@ -67,26 +67,32 @@ The record is below, in the order of the runs. See also `design.md`.
 | Android Gradle Plugin | 8.9.1 |
 | `androidbrowserhelper` | 2.6.2 |
 
-### Runs
+### What the first builds showed (all fixed)
+
+- Maven Central answers HTTP 429 to the shared address of the sandbox, most often on a cold Gradle cache. The script now tries the build up to four times, 10 s apart.
+- The permission check read `android.permission.DUMP` as a request. It is the `android:permission` guard on AndroidX's `ProfileInstallReceiver`. The check now reads the protobuf manifest of the bundle and looks at `uses-permission` elements only.
+- `aapt2 dump badging` prints `minSdkVersion`, not `sdkVersion`, for this app. The check reads both.
+- `sdkmanager --licenses` (as in `quest/build-apk.sh`) accepts seven licenses, among them licenses for products the build does not use. The script now installs the four packages and accepts the license of those only.
+
+### Runs of the final script
 
 | Run | Result |
 |---|---|
-| 1. Tools downloads only (JDK, CLI, command-line tools), no license flag | Stopped at the license step, as designed. 21 s |
-| 2. First build, `--local --debug-key` | Gradle failed: Maven Central answered HTTP 429 for many POMs. The run showed the need for a retry |
-| 3. Same command again | The build worked. The check then failed twice: it read `android.permission.DUMP` (a guard on AndroidX's `ProfileInstallReceiver`) as a permission, and it looked for `sdkVersion` where aapt2 prints `minSdkVersion`. Both fixed (protobuf reader, both keys) |
-| 4. Same command, with the fixes | Passed. 41 s with the tools and the Gradle cache warm |
-| 5. Cold run in an empty tools folder, `--local --debug-key` | Passed on the third of three tries (429 on the first two). 3 min 24 s in all, including the downloads. `play/.tools` is 1.8 GB: `cli` 169 MB, `jdk17` 317 MB, `android-sdk` 611 MB, `gradle-home` 672 MB |
-| 6. A real key, made by the script through a pseudo-terminal (`script`), then the build | Passed. The key file got mode 600. The password prompts did not echo |
-| 7. The workflow's steps in a shell: key from a base64 value into a temporary folder, no terminal, passwords from the environment, an empty `BUBBLEWRAP_KEY_PASSWORD`, `build-aab.sh --local --out DIR`, the summary lines | Passed. 58 s. The password text appears nowhere in the log |
-| 8. Refusals | Passed: a key inside the repo (relative, absolute, symlink), no key and no terminal, a wrong password, a password with `$`, an Android debug key, a copy of the script's debug key, a 1024-bit key |
-| 9. `gradlew assembleRelease --rerun-tasks` by hand | BUILD SUCCESSFUL in 31 s, and no warning about compileSdk 36, so `android.suppressUnsupportedCompileSdk` is not needed |
+| 1. Cold: empty tools folder, `--local --debug-key`, stand-in site files | Passed. 201 s in all, including the downloads. The first Gradle try failed with HTTP 429, and the second passed. The tools folder was 1.8 GB |
+| 2. `gradlew assembleRelease --rerun-tasks` by hand, to see the Gradle warnings that Bubblewrap hides | BUILD SUCCESSFUL in 33 s. No warning about compileSdk 36, so `android.suppressUnsupportedCompileSdk` is not needed |
+| 3. A real (not debug) key, made by the script in a pseudo-terminal (`script`), then the build | Passed. The key file got mode 600. The prompts did not echo, and the password is not in the log |
+| 4. The `run:` blocks of `.github/workflows/play-aab.yml`, read with PyYAML and run in order with the shell flags of GitHub (key from a base64 value into a temporary folder, no terminal, passwords from the environment, an empty `BUBBLEWRAP_KEY_PASSWORD`, `build-aab.sh --local --out DIR`, the summary lines, the cleanup) | Passed. The build step took 68 s. No secret value appears in any output. The key file is gone at the end. The actions (`uses:`) did not run |
+| 5. Refusals, each with a message and no build: no key and no terminal, no password and no terminal, a wrong password, a short password, a password with `$`, an alias with a space, an Android debug key, a copy of the script's own debug key, a 1024-bit key | All refused. The three cases of a key inside the repo (relative path, absolute path, symlink) are in `qa/fish/play.mjs` |
+| 6. Dry-run merge of this branch with the `play-web` branch (`git merge-tree`, no worktree touched), then `node qa/fish/play.mjs` and a warm `--local --debug-key` build on that tree | No merge conflict. The test passed with the real `public/fish/manifest.webmanifest`, and the build passed in 47 s. The AAB was 2,017,468 bytes and the APK 1,916,381 bytes with the real icons |
+| 7. `NODE_PATH=/opt/node22/lib/node_modules node qa/vr/pwa.mjs` (the Quest checks of `assetlinks.json` and `vercel.json`) | Passed |
+| 8. `node play/fish/assetlinks.mjs --check` against the live host | Exit 1, as expected: `ERROR_CODE_MALFORMED_CONTENT` for `REPLACE_WITH_YOUR_SHA256_FINGERPRINT`, 0 statements |
 
-### Outputs
+### Outputs (run 1, stand-in icons)
 
 | File | Size |
 |---|---|
-| `reelitin-1.0.0-1.aab` | 934,428 bytes (it varies by a few bytes from run to run, because of the signature time) |
-| `reelitin-1.0.0-1.apk` | 835,037 bytes, 454 files |
+| `reelitin-1.0.0-1-DEBUGKEY.aab` | 934,453 bytes (it varies by a few bytes from run to run, because of the signature time) |
+| `reelitin-1.0.0-1-DEBUGKEY.apk` | 835,037 bytes, 454 files |
 
 `aapt2 dump badging` of the APK (the label lines for 60 locales and the density list are left out):
 
@@ -107,4 +113,4 @@ supports-any-density: 'true'
 
 The one permission is AndroidX's internal `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` of the app's own package, a signature-level permission that asks the user for nothing. The bundle manifest (protobuf) has the same single `uses-permission`, `uses-sdk` 24 and 36, `appCategory=game`, `allowBackup=false`, and an `autoVerify` link filter with `pathPrefix=/fish/`. `aapt2 dump resources` shows `launchUrl` `https://warden-alpha-wheat.vercel.app/fish/?source=play`, `orientation` `portrait`, `fallbackType` `customtabs`, `enableNotification` `false`, and `webManifestUrl` on the live host although the build used `--local`.
 
-`apksigner verify --verbose --print-certs --min-sdk-version 24` of the debug-key APK: `Verifies`, v1 false, v2 true, v3 true, one signer, RSA 2048, SHA-256 digest `76647cb467a09211605c0e6f67cf949772c37f14f99ffa8012b8124603cb641c`. `zipalign -c -P 16 -v 4`: `Verification successful`. `jarsigner -verify` of the bundle: `jar verified`. The SHA-256 of the throwaway debug key, in the format `assetlinks.json` uses, was `76:64:7C:B4:67:A0:92:11:60:5C:0E:6F:67:CF:94:97:72:C3:7F:14:F9:9F:FA:80:12:B8:12:46:03:CB:64:1C`. The sandbox keys are test keys. Nobody must put them in `assetlinks.json`.
+`apksigner verify --verbose --print-certs --min-sdk-version 24` of the debug-key APK: `Verifies`, v1 false, v2 true, v3 true, one signer, RSA 2048, certificate SHA-256 digest `976d57086c78daedc2da3767ff4be6aa088c232e30ba0ccbc69380f9a5466dd1`. `zipalign -c -P 16 -v 4`: `Verification successful`. `jarsigner -verify` of the bundle: `jar verified` (with the usual note that the signature has no timestamp). The SHA-256 of the throwaway debug key, in the format `assetlinks.json` uses, was `97:6D:57:08:6C:78:DA:ED:C2:DA:37:67:FF:4B:E6:AA:08:8C:23:2E:30:BA:0C:CB:C6:93:80:F9:A5:46:6D:D1`. The sandbox keys are test keys. Nobody must put them in `assetlinks.json`.

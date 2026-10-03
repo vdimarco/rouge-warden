@@ -1,6 +1,6 @@
 # play/fish/: put Reel It In on Google Play
 
-This folder turns the phone fishing game at `/fish/` into its own Android app. The app is a Trusted Web Activity (TWA). It opens `https://warden-alpha-wheat.vercel.app/fish/?source=play` in Chrome with no URL bar. The app has no link to the rest of the arcade, and it asks for no Android permission. The game files are not inside the app. The service worker (`public/fish/sw.js`, made by the web package) keeps a copy on the phone, so the game also starts with no network after the first start.
+This folder turns the phone fishing game at `/fish/` into its own Android app. The app is a Trusted Web Activity (TWA). It opens `https://warden-alpha-wheat.vercel.app/fish/?source=play` in Chrome with no URL bar. The app has no link to the rest of the arcade, and it asks for no Android permission. The game files are not inside the app. The service worker (`public/fish/sw.js`, made by the web side) keeps a copy on the phone, so the game also starts with no network after the first start.
 
 The folder holds the scripts for the Android side: the app settings, the build, the signing checks, and the Digital Asset Links tool. This guide lists every step from a new Play account to a live app, in order. Read it once before you start.
 
@@ -160,7 +160,7 @@ Open **Policy and programs, App content** (the menu names change from time to ti
 
 | Form | Answer |
 |---|---|
-| Privacy policy | `https://warden-alpha-wheat.vercel.app/fish/privacy.html` (the web package makes the page) |
+| Privacy policy | `https://warden-alpha-wheat.vercel.app/fish/privacy.html` (the web side makes the page) |
 | Ads | No, the app has no ads |
 | App access | All functions are available without login or special access. Give no test credentials |
 | Advertising ID | The app does not use it. The app has no `AD_ID` permission |
@@ -254,13 +254,15 @@ I make no promise about Google's review. The reviewer should see the game start 
 
 ## Updates
 
-**You need a new bundle when** you change `twa-manifest.json` or the Android project. Examples: the app name, the icons (the build copies `icon-512.png` and `maskable-512.png` into the app), the colours, the start URL, the display mode, the orientation, the minimum SDK, the host, the package id, or the version. Also build again when Google raises the required target SDK: the next increase is **UNCONFIRMED** (the yearly pattern points at API 37 around 2027-08-31, but that is a guess from a blog, not a date from Google). To release:
+**You need a new bundle when** you change `twa-manifest.json` or the Android project. Examples: the app name, the icons (the build copies `icon-512.png` and `maskable-512.png` into the app), the colours, the start URL, the display mode, the orientation, the minimum SDK, the host, the package id, or the version.
+
+Also build again when Google raises the required target SDK. The next increase is **UNCONFIRMED**. The yearly pattern points at API 37 around 2027-08-31, but that is a guess from a blog, not a date from Google. To release:
 
 1. Raise `appVersionCode` by 1 in `twa-manifest.json`. Change `appVersion` and `appVersionName` together for a visible version. `qa/fish/play.mjs` checks that they agree.
 2. Build with the same upload key (Step 3).
 3. Upload the bundle to a track in Play Console.
 
-**You do not need a new bundle when** you change the website: anything under `public/fish/` (the code, the art, the privacy page, the manifest). The service worker fetches the new files, and the app shows them on the next launch after the worker updates. The web package keeps a version stamp for the worker (`stamp-sw.mjs`): run it after you change a precached file, as that script says, so that the worker sees a new version. The first start after an update can still show the old copy once.
+**You do not need a new bundle when** you change the website: anything under `public/fish/` (the code, the art, the privacy page, the manifest). The service worker fetches the new files, and the app shows them on the next launch after the worker updates. The web side keeps a version stamp for the worker (`stamp-sw.mjs`): run it after you change a precached file, as that script says, so that the worker sees a new version. The first start after an update can still show the old copy once.
 
 ## Read the log with adb
 
@@ -301,7 +303,7 @@ Nobody has done these checks. Do them on a real phone with the app that you inst
 | [ ] | No gyro | An old phone, a tablet or a Chromebook | The game falls back to touch |
 | [ ] | Wake lock | Fish for 5 minutes with no touch on other screens | The screen stays on |
 | [ ] | Vibration | Fish with the volume on | The phone buzzes on the strike and the catch |
-| [ ] | Back button | Press Back on the title, in play, in a menu and on a result card | As the web package designed: close menu, pause, or go to the title. One more Back leaves the app |
+| [ ] | Back button | Press Back on the title, in play, in a menu and on a result card | As the web side designed: close menu, pause, or go to the title. One more Back leaves the app |
 | [ ] | Insets and cutout | A phone with a punch-hole camera, Android 15 and 16 | Nothing hides under the camera or the gesture bar. The crank is not on the Home swipe |
 | [ ] | Background | Leave the app for 10 minutes, then return | The lake still draws. The pause menu shows |
 | [ ] | Offline start | Open the app once online. Turn on airplane mode. Close the app. Open it again | The game starts and the art loads |
@@ -324,8 +326,8 @@ Nobody has done these checks. Do them on a real phone with the app that you inst
 | `patch-android.mjs` | Stops the build unless Bubblewrap generates SDK 36. Adds `appCategory="game"` and `allowBackup="false"`. `build-aab.sh` runs it |
 | `verify-output.mjs` | Checks the built APK and bundle against `twa-manifest.json`: ids, versions, SDK levels, permissions, launch URL, links. `build-aab.sh` runs it |
 | `assetlinks.mjs` | Adds, removes, prints and checks the Digital Asset Links entry of the app in `public/.well-known/assetlinks.json` |
-| `make-icons.mjs` | Draws the icons `public/fish/icons/icon-192.png`, `icon-512.png` and `maskable-512.png`. Made by the web package |
-| `stamp-sw.mjs` | Stamps the service-worker version from the precache list. Made by the web package |
+| `make-icons.mjs` | Draws the icons `public/fish/icons/icon-192.png`, `icon-512.png` and `maskable-512.png`. Part of the web side |
+| `stamp-sw.mjs` | Stamps the service-worker version from the precache list. Part of the web side |
 | `README.md` | This guide |
 | `android/` | The generated Android project (git ignores it) |
 | `dist/` | The outputs of a build: `.aab`, `.apk`, `.fingerprint.txt` (git ignores it) |
@@ -341,11 +343,11 @@ Files outside this folder:
 | `vercel.json` | Sends `assetlinks.json` with `Content-Type: application/json` |
 | `qa/fish/play.mjs` | The test of everything above (node only, no network): `node qa/fish/play.mjs` |
 | `openspec/changes/fish-play-store-android/` | The requirements, the design and the build record |
-| `public/fish/manifest.webmanifest`, `sw.js`, `privacy.html`, `icons/` | The web side. The web package makes them |
+| `public/fish/manifest.webmanifest`, `sw.js`, `privacy.html`, `icons/` | The web files of the app. They belong to the web side, not to this folder |
 
 ## Owner decisions
 
-The brief fixed these values. Each one lives in one place. Change it there.
+The owner chose these values before the build. Each one lives in one place. Change it there.
 
 | Decision | Default | Where to change it |
 |---|---|---|
@@ -374,10 +376,11 @@ The brief fixed these values. Each one lives in one place. Change it there.
 
 - **The domain is fixed.** The host, the package id and the upload key are part of the app. Choose the final domain before the first upload. If it changes, change the host in `twa-manifest.json`, serve `assetlinks.json` on the new host, build and upload a new bundle.
 - **The first start needs the network.** The app has no game files. After one online start, the service worker serves the game.
-- **No link to the arcade.** The app handles links to `https://<host>/fish/` only (`verify-output.mjs` checks the filter). The web package hides the arcade links inside the app.
+- **No link to the arcade.** The app handles links to `https://<host>/fish/` only (`verify-output.mjs` checks the filter). The web side hides the arcade links inside the app.
 - **A failed asset-links check** shows a URL bar or crashes the app. Which of the two happens on a current Chrome is **UNCONFIRMED**.
 - **The practical floor for Chrome** is about version 89 (import maps, WebGL, wake lock). **UNCONFIRMED**
 - **Downloads are not checksummed.** The script downloads the JDK, the command-line tools and the npm package from their official hosts over HTTPS, and it pins versions, not hashes.
 - **The password goes through a shell.** Bubblewrap puts the password on the command line of `jarsigner` and `apksigner` for a moment. On your own computer that is fine. On a shared computer, another user could see it with `ps`.
+- **The build depends on two outside services.** Maven Central sometimes answers HTTP 429, and the script then tries again. Bubblewrap's template also lists JCenter, a retired repository that still redirects to Maven Central today. If that redirect stops, the build fails with "Could not resolve" lines that name `jcenter.bintray.com`. Then replace `jcenter()` with `mavenCentral()` in `patch-android.mjs`. **UNCONFIRMED**: nobody knows when, or if, the redirect will stop.
 - **Bubblewrap regenerates the project.** `bubblewrap update` removes the patch. `build-aab.sh` always patches again. If you run Bubblewrap by hand, run `node play/fish/patch-android.mjs` after it.
 - **Nothing here is proven on a device.** See the [DEVICE checklist](#device-checklist).

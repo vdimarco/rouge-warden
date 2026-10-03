@@ -16,7 +16,7 @@ The web side (the web manifest, the service worker, the self-hosted three.js and
 
 ## Out of scope
 
-- Any file under `public/fish/` (the web package makes them) and `play/fish/make-icons.mjs` and `play/fish/stamp-sw.mjs`.
+- Any file under `public/fish/` (the web side makes them) and `play/fish/make-icons.mjs` and `play/fish/stamp-sw.mjs`.
 - The Meta Quest app. This change does not touch `quest/`. Its placeholder fingerprint in `assetlinks.json` stays, and the tools warn about it (see the design).
 - The Play listing texts and graphics, the account, the upload to the Console, and any promise about Google's review.
 - A custom domain. The host is one value per file type, so the owner can move before the first upload.
