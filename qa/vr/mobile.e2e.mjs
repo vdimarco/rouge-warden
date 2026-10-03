@@ -48,24 +48,29 @@ try {
  assert(first&&first.valid&&!(first.ny>.7&&first.y<first.head-.3),'the first swing aim is not the roof under the hero '+JSON.stringify(first));
  console.log('PASS phone camera settles to the chase view and the first aim is not the floor');
  await page.locator('[data-action=throw]').click();
- const launch=await page.evaluate(()=>{G.test.step(1/60,36);return {s:G.test.state(),v:G.P.vel,ground:G.P.onGround};});
+ const launch=await page.evaluate(()=>{G.test.step(1/60,36);return {s:G.test.state(),v:G.P.vel,ground:G.P.onGround,roof:G.city.start.y};});
  assert.equal(launch.s.ropes[1].state,'attached');assert.equal(launch.ground,false);assert(launch.v.y>0,'auto-jump and pull lift the player');
+ // The chase view looks down at the hero. The button must still pick a building up and ahead, not the roof under the hero's feet.
+ assert(launch.s.ropes[1].anchor.y>launch.roof+5,'the SWING button anchors on a building above the roof, not on the roof '+JSON.stringify(launch.s.ropes[1].anchor));
  console.log('PASS one tap attaches and automatically jumps',JSON.stringify(launch.v));
  await page.screenshot({path:out+'/phone.png'});
  await page.locator('[data-action=throw]').click();
  const release=await page.evaluate(()=>{G.test.step(1/60,1);return {r:G.P.ropes[1].state,s:Math.hypot(G.P.vel.x,G.P.vel.y,G.P.vel.z)};});
  assert.equal(release.r,'idle');assert(release.s>2,'release keeps momentum');console.log('PASS tap to release keeps speed');
- // Real screen-space targeting: place the gold ring at a projected pixel and tap it.
+ // Real screen-space targeting: the chase view looks down at the hero, so look up at the gold ring, then tap its pixel. The rope
+ // must land on the ring, not on whatever sits at the middle of the screen.
  const target=await page.evaluate(()=>{
   const S=G.city.start,R=G.city.goldRing;G.test.teleport(S.x,S.y,S.z);G.test.aimAt(1,null);G.desktop.mobile.reset();
-  G.rigYaw=Math.atan2(-(R.x-S.x),-(R.z-S.z));G.test.step(1/60,2);G.camera.updateMatrixWorld(true);
+  G.rigYaw=Math.atan2(-(R.x-S.x),-(R.z-S.z));G.test.look(0,.45);G.test.step(1/60,30);G.camera.updateMatrixWorld(true);
   const v=new G.camera.position.constructor(R.x,R.y,R.z).project(G.camera);
-  return {x:(v.x*.5+.5)*innerWidth,y:(.5-v.y*.5)*innerHeight};
+  return {x:(v.x*.5+.5)*innerWidth,y:(.5-v.y*.5)*innerHeight,ndcY:v.y};
  });
  assert(target.y>60&&target.y<600,'target is inside canvas');
  await page.mouse.click(target.x,target.y);
  await page.evaluate(()=>G.test.step(1/60,30));
- assert.equal(await page.evaluate(()=>G.P.ropes[1].state),'attached');console.log('PASS tap a visible building to aim and fire');
+ const ring=await page.evaluate(()=>{const s=G.test.state().ropes[1],R=G.city.goldRing;return {state:s.state,d:Math.hypot(s.anchor.x-R.x,s.anchor.y-R.y,s.anchor.z-R.z)};});
+ assert(ring.state==='attached'&&ring.d<6,'tap a visible building to aim and fire: the rope lands on the gold ring '+JSON.stringify({...ring,ndcY:target.ndcY}));console.log('PASS tap a visible building to aim and fire');
+ await page.evaluate(()=>G.test.look(0,-.45)); // back to the chase pitch
  await page.evaluate(()=>{const s=G.P.pos;G.test.aimAt(1,s.x,s.y+1000,s.z);});
  await page.mouse.click(100,200);await page.evaluate(()=>G.test.step(1/60,2));
  assert.equal(await page.evaluate(()=>G.P.ropes[1].state),'attached');console.log('PASS invalid retarget keeps the current rope');
@@ -83,13 +88,15 @@ try {
  const pick=skip=>page.evaluate(skip=>{
   const c=G.city,cam=G.camera,V3=cam.position.constructor,f=Math.tan(cam.fov*Math.PI/360),h0=G.test.state().head,cen=G.test.aim(1),found=[];
   cam.updateMatrixWorld(true);
-  if(cen)skip=skip.concat(cen.id);
-  for(let a=.5;a<=.85;a+=.05)for(const sx of [1,-1])for(let ny=-.2;ny<=.5;ny+=.1){
-   const nx=sx*a,d=new V3(nx*f*cam.aspect,ny*f,-1).normalize().applyQuaternion(cam.quaternion);
-   const h=c.raycast(cam.position.x,cam.position.y,cam.position.z,d.x,d.y,d.z,90,{});
+  const ray=(nx,ny,far)=>{const d=new V3(nx*f*cam.aspect,ny*f,-1).normalize().applyQuaternion(cam.quaternion);return c.raycast(cam.position.x,cam.position.y,cam.position.z,d.x,d.y,d.z,far,{});};
+  // the buildings a centre aim could take (the rope aim now, and what the middle pixel shows) are not the one to tap
+  const mid=ray(0,0,400);
+  skip=skip.concat(cen?[cen.id]:[],mid&&mid.collider?[mid.collider.id]:[]);
+  for(let a=.4;a<=.9;a+=.05)for(const sx of [1,-1])for(let ny=-.3;ny<=.7;ny+=.1){
+   const nx=sx*a,h=ray(nx,ny,90);
    if(!h||h.collider.tag!=='building'||skip.includes(h.collider.id)||Math.abs(h.ny)>.5||h.y<h0.y+4)continue;
    const dx=h.x-h0.x,dy=h.y-h0.y,dz=h.z-h0.z,l=Math.hypot(dx,dy,dz);
-   if(l<25||l>75)continue;
+   if(l<20||l>80)continue;
    const g=c.raycast(h0.x,h0.y,h0.z,dx/l,dy/l,dz/l,l+2,{});
    if(!g||g.collider.id!==h.collider.id)continue;
    const px=(nx*.5+.5)*innerWidth,py=(.5-ny*.5)*innerHeight;
@@ -111,7 +118,8 @@ try {
  };
  const tp=await tapFrom('third person');console.log('PASS tap a building off the screen centre in third person',JSON.stringify({nx:+tp.nx.toFixed(2),ny:+tp.ny.toFixed(2),id:tp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
- const t2=await pick([tp.id]);assert(t2,'a second building is in view');
+ const cur=await page.evaluate(()=>G.test.state().ropes[1].id);
+ const t2=await pick([tp.id,cur]);assert(t2,'a second building is in view');
  await page.mouse.click(t2.px,t2.py);await page.evaluate(()=>G.test.step(1/60,45));
  const sw=await page.evaluate(()=>{const s=G.test.state().ropes[1];return {state:s.state,id:s.id};});
  assert(sw.state==='attached'&&sw.id===t2.id,'a tap on another building switches the rope to it '+JSON.stringify({want:t2.id,got:sw}));

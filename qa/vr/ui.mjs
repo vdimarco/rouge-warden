@@ -59,6 +59,13 @@ try {
   u = await uiInfo(page);
   const hudPos = u.hud.local;
   check(u.hud.visible && hudPos && Math.hypot(hudPos.x - LP[0], hudPos.y - LP[1], hudPos.z - LP[2]) < 0.25, "the wrist HUD shows over the left wrist when the wrist turns toward the head", { hud: u.hud, wrist: LP });
+  // The compass arrow and its ink outline stay inside the ring. The ring's inner edge is 45 px of a 512 px card that is 0.2 m wide.
+  const cmp = await page.evaluate(() => {
+    const m = G.scene.getObjectByName("ui:hud"), a = m && m.children.find((c) => c.userData && c.userData.ink), ink = a && a.userData.ink;
+    const reach = (mesh, k) => { const q = mesh.geometry.attributes.position; let r = 0; for (let i = 0; i < q.count; i++) r = Math.max(r, Math.hypot(q.getX(i), q.getY(i))); return r * k; };
+    return a ? { fill: reach(a, a.scale.x), ink: reach(ink, a.scale.x * ink.scale.x), inner: (45 * 0.2) / 512 } : null;
+  });
+  check(cmp && cmp.ink <= cmp.inner && cmp.fill >= cmp.inner * 0.6, "the compass arrow and its ink outline fit inside the ring, and the arrow is still big enough to read", cmp);
   const hs = await page.evaluate(() => ({ visible: G.ui.hudVisible, shown: G.ui.hudShown }));
   check(hs.visible === true && hs.shown > 0.05, "ui.hudVisible and ui.hudShown say the HUD is up (the tutorial reads them)", hs);
   check(["hud:menu"].every((id) => btnOf(u, id)) && !btnOf(u, "hud:left"), "the HUD has the round Menu button, and no turn arrows with controllers", u.buttons.map((b) => b.id));
@@ -228,6 +235,24 @@ try {
   await frames(page, 4);
   u = await uiInfo(page);
   check(u.toast.text === "5 Loonies" && u.toast.active, "a toast shows", u.toast);
+  // The four unlock toasts run to two lines in the Bangers lettering. The caption box, with its ink border and its drop shadow, has to
+  // sit inside the panel's canvas: the top and the bottom row of the centre column stay clear.
+  await page.evaluate(() => G.test.hold(true));
+  await step(page, 3);
+  const fits = [];
+  for (const text of ["Loonie bank 30. Your ropes have a gold stripe.", "Loonie bank 60. Your plunger cups are gold.", "Loonie bank 100. You have the Golden Plunger.", "Loonie bank 140. Every flush has fireworks.", "5 Loonies"]) {
+    await page.evaluate((t) => G.ui.toast(t), text);
+    await step(page, 0.5);
+    fits.push({ text, ...(await page.evaluate(() => {
+      const cv = G.scene.getObjectByName("ui:toast").material.map.image, col = cv.getContext("2d").getImageData(Math.floor(cv.width / 2), 0, 1, cv.height).data;
+      let first = -1, last = -1;
+      for (let y = 0; y < cv.height; y++) if (col[y * 4 + 3] > 8) { if (first < 0) first = y; last = y; }
+      return { h: cv.height, first, last };
+    })) });
+    await step(page, 2.6);
+  }
+  await page.evaluate(() => G.test.hold(false));
+  check(fits.every((f) => f.first > 0 && f.last < f.h - 1), "a toast's caption box, border and shadow fit inside its canvas (the two-line unlock toasts too)", fits);
 
   /* ---- the credits ---- */
   await page.evaluate(() => G.ui.showCredits());
@@ -394,6 +419,20 @@ try {
     return { hud: !!hud, shown: hud && getComputedStyle(hud).display !== "none", cross: !!q(".fs-cross"), loon: q("[data-k=loon]") && q("[data-k=loon]").textContent, clog: q("[data-k=clog]") && q("[data-k=clog]").textContent, timer: q("[data-k=trialBox]") && q("[data-k=trialBox]").hidden, hearts: q("[data-k=heartBox]") && q("[data-k=heartBox]").hidden };
   });
   check(dom.hud && dom.shown && dom.cross && dom.loon === "0" && dom.clog === "0" && dom.timer && dom.hearts, "the flat screen has a DOM HUD: crosshair, Loonies, clogs (the timer and hearts wait)", dom);
+  // The hero's colour map is uploaded as the model loads (renderer.initTexture) and stays uploaded. A second hero in a scene that nobody
+  // draws shows what the load itself leaves on the GPU; then one draw must not upload the map again.
+  const hm = await page.evaluate(async () => {
+    const T = await import("three"), { createHero } = await import("./js/hero.js");
+    const sc = new T.Scene(), h = createHero(sc, G.renderer), R = G.renderer;
+    for (let i = 0; i < 1200 && h.model === "loading"; i++) await new Promise((r) => setTimeout(r, 50));
+    const map = h.meshes.body && h.meshes.body.material.map;
+    const gpu = () => { const q = map && R.properties.get(map); return q && q.__webglTexture ? q.__webglTexture : null; };
+    const h0 = gpu(), n0 = R.info.memory.textures;
+    h.setVisible(true);
+    R.render(sc, G.camera);
+    return { model: h.model, map: !!map, size: map && map.image ? map.image.width : 0, uploaded: !!h0, same: !!h0 && gpu() === h0, newTextures: R.info.memory.textures - n0 };
+  });
+  check(hm.model === "glb" && hm.map && hm.uploaded && hm.same && hm.newTextures === 0, "the hero's colour map is on the GPU as soon as the model loads, and the first draw does not upload it again", hm);
   await page.evaluate(() => { G.test.clearClog(0); G.test.step(1 / 60, 3); });
   const clog = await page.evaluate(() => document.querySelector("[data-k=clog]").textContent);
   check(clog === "1", "the HUD counts a flushed clog", clog);

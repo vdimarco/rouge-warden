@@ -112,7 +112,7 @@ export const COLORS = {
 };
 
 /* ---------------- the Cottage talks ---------------- */
-// LINES_HANDS and LINES_DESKTOP keep the same keys and order, so ui.sayLine(group, i, kind) can pick the right words.
+// LINES_HANDS, LINES_DESKTOP and LINES_TOUCH keep the same keys and order, so ui.sayLine(group, i, kind) can pick the right words.
 export const LINES = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room."],
   tutorial: ["Shoot the gold ring. Hold the trigger.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Squeeze the grip to reel in.", "Pull back hard to yank.", "Push the right stick to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
@@ -128,5 +128,11 @@ export const LINES_HANDS = {
 export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room."],
   tutorial: ["Aim at the gold ring. Hold a mouse button.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to turn.", "Your score is at the top of the screen.", "That green light is a clog. Plunge it."],
+  clog: LINES.clog, king: LINES.king, splash: LINES.splash,
+};
+// One-thumb phone play: the SWING / LET GO button, a tap on a building, a drag to look. The jump and the pull are automatic.
+export const LINES_TOUCH = {
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack. The plunger flies.", "Now pull your phone back to yank.", "Clear the space around you.", "Give yourself some room."],
+  tutorial: ["Drag to find the gold ring. Tap SWING.", "Swing out. Tap LET GO at the bottom.", "Tap a new building before you land.", "Stay on the rope. It pulls you in.", "Pull your phone back to yank.", "Drag the screen to turn.", "Your score is at the top of the screen.", "That green light is a clog. Plunge it."],
   clog: LINES.clog, king: LINES.king, splash: LINES.splash,
 };

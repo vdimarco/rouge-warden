@@ -255,17 +255,17 @@ function handOff() {
   G.bodyLocal.x = inp.head.local.pos.x; G.bodyLocal.z = inp.head.local.pos.z;
   ropes.setMode("all");
   if (G.state === "paused") G.pausedFrom = "play"; else G.state = "play";
+  // phone: start facing the gold ring and with the motion aim centred. Only the yaw turns: the view keeps its chase pitch (the aim
+  // comes from the view, see flatInput), so the camera never tips up into the roof
+  if (G.mode === "desktop" && D.mobile.enabled) {
+    G.rigYaw = Math.atan2(-(city.goldRing.x - P.pos.x), -(city.goldRing.z - P.pos.z));
+    D.mobile.reset();
+  }
   if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
   // stepped off the roof in the real room: fade and start on the roof proper
   const tb = city.topBelow(hx, S.y + 0.1, hz, 0.25);
   if (!tb || tb.y < S.y - 0.5) fadeMove(S.x, S.y, S.z);
-  if (G.mode === "desktop" && D.mobile.enabled) {
-    const R = city.goldRing, dx = R.x - P.pos.x, dz = R.z - P.pos.z;
-    G.rigYaw = Math.atan2(-dx, -dz);
-    D.level(Math.atan2(R.y - P.pos.y - COMFORT.standingHead, Math.hypot(dx, dz)));
-    syncRig();
-  }
   const first = !save.intro;
   save.intro = true;
   gameStarted = true;
@@ -440,15 +440,49 @@ function flatView(on) {
     viewAttr = ""; delete document.body.dataset.view;
   }
 }
-// After the input is read: the camera's pitch is the view, so the head and the aim rays follow it. The input's own pitch
-// only brings the change (flatDy).
+// The world direction the head aims along for a screen position (NDC x and y; 0, 0 is the middle): toward the point where that
+// pixel's ray from the camera lands, so the rope goes where the view shows. The head is not where the camera is (the chase camera
+// sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. In third person a view of
+// only ground (a roof or street below the head, or water) is no anchor, and the default view looks down at the hero's feet: the
+// aim then goes ahead along that bearing, AIM_UP above the horizon. Result in AIM_D.
+const AIM_FAR = 400, AIM_UP = (20 * Math.PI) / 180;
+const AIM_D = new THREE.Vector3(), AIM_HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
+function viewAim(nx, ny, hx, hy, hz, third) {
+  const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
+  AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
+  const h = city.raycast(c.x, c.y, c.z, AIM_D.x, AIM_D.y, AIM_D.z, AIM_FAR, AIM_HIT);
+  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 : AIM_D.y < 0)) {
+    const l = Math.hypot(AIM_D.x, AIM_D.z) || 1, k = Math.cos(AIM_UP);
+    return AIM_D.set((AIM_D.x / l) * k, Math.sin(AIM_UP), (AIM_D.z / l) * k);
+  }
+  const tx = h ? h.x : c.x + AIM_D.x * AIM_FAR, ty = h ? h.y : c.y + AIM_D.y * AIM_FAR, tz = h ? h.z : c.z + AIM_D.z * AIM_FAR;
+  AIM_D.set(tx - hx, ty - hy, tz - hz);
+  return AIM_D.lengthSq() > 1e-6 ? AIM_D.normalize() : AIM_D.set(0, 0, -1).applyQuaternion(camera.quaternion);
+}
+// After the input is read: the camera's pitch is the view, so the head, the muzzles and the aim rays follow it. The input's own
+// pitch only brings the change (flatDy). A phone tap aims through its own pixel for the frame it fires (inp.phoneAim).
+const FLAT_Q = new THREE.Quaternion(), XAXIS = new THREE.Vector3(1, 0, 0);
 function flatInput(inp) {
   flatcam.restore(); // the input wrote the camera as the head; put the view back
-  flatDy += inp.pitch - lastPitchIn; lastPitchIn = inp.pitch;
-  const p = flatcam.pitch;
-  inp.pitch = p;
+  flatDy += inp.pitch - lastPitchIn;
+  const p = flatcam.pitch, hp = inp.head.local.pos;
+  // the input built the muzzles at its own pitch: turn them about the head to the view's, so they stay low in the first-person view
+  FLAT_Q.setFromAxisAngle(XAXIS, p - inp.pitch);
+  for (const h of inp.hands) { h.gripLocal.pos.sub(hp).applyQuaternion(FLAT_Q).add(hp); h.gripLocal.quat.premultiply(FLAT_Q); }
+  // the input follows the view, so its own pitch limits never hold the camera back
+  D.setPitch(p);
+  lastPitchIn = inp.pitch = p;
   inp.head.local.quat.setFromEuler(FLAT_E.set(p, 0, 0));
-  for (const h of inp.hands) h.aimLocal.dir.set(0, Math.sin(p), -Math.cos(p));
+  const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
+  const hx = R.x + hp.x * c + hp.z * s, hy = R.y + hp.y, hz = R.z - hp.x * s + hp.z * c; // the head in the world (toWorld, which runs next)
+  const third = flatcam.opacity > 0.5, tap = inp.phoneAim;
+  viewAim(0, 0, hx, hy, hz, third);
+  rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
+  inp.hands[0].aimLocal.dir.set(T.x, AIM_D.y, T.z);
+  if (!tap) { inp.hands[1].aimLocal.dir.copy(inp.hands[0].aimLocal.dir); return; }
+  viewAim(tap.x, tap.y, hx, hy, hz, third);
+  rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
+  inp.hands[1].aimLocal.dir.set(T.x, AIM_D.y, T.z);
 }
 // The hero's pose and the camera, once the body has moved. In play the camera owns the yaw (it may turn toward your travel).
 function flatFrame(dt, inp, yawDelta) {
