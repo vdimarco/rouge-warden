@@ -132,9 +132,10 @@ function tick() {
 function happen(e) {
   switch (e.k) {
     case "eddy": {
-      const q = river.rocks.find((r) => r.id === e.id);
-      rings.push({ x: q.ex, y: q.ey, t: 0 });
-      toast(`Eddy! ${canoe.caught.size} of ${river.targets.length}`);
+      // a gold ring and sparks from the canoe, two notes and a loon, a thump in the hand
+      rings.push({ x: canoe.x, y: canoe.y, t: 0 });
+      sparkle(canoe.x, canoe.y);
+      toast(`Eddy ${canoe.caught.size} of ${river.targets.length}`);
       Sfx.play(sndEddy);
       buzz("thump");
       S.act("eddy");
@@ -216,6 +217,7 @@ function begin(m) {
   touches.clear();
   foam.length = 0;
   rings.length = 0;
+  sparks.length = 0;
   phase = "play";
   hud.hidden = false;
   S.play(); S.run();
@@ -270,6 +272,11 @@ function setWorld() {
   const k = cam.k, s = Math.sin(cam.psi), c = Math.cos(cam.psi), ox = W / 2 + (shake ? (Math.random() - 0.5) * shake * 10 * DPR : 0), oy = Hh * 0.6;
   g.setTransform(k * c, -k * s, -k * s, -k * c, ox - k * (c * cam.x - s * cam.y), oy + k * (s * cam.x + c * cam.y));
 }
+// a point in the world on the screen, in canvas pixels (the same transform as setWorld, with no shake)
+function toScreen(x, y) {
+  const k = cam.k, s = Math.sin(cam.psi), c = Math.cos(cam.psi), dx = x - cam.x, dy = y - cam.y;
+  return [W / 2 + k * (c * dx - s * dy), Hh * 0.6 - k * (s * dx + c * dy)];
+}
 // the world box the screen shows (a little generous)
 function visible() {
   const s = Math.sin(cam.psi), c = Math.cos(cam.psi), k = cam.k, ox = W / 2, oy = Hh * 0.6;
@@ -301,6 +308,7 @@ function draw(alpha, dt) {
   effects(dt);
   boat();
   g.setTransform(1, 0, 0, 1, 0, 0);
+  holdUi();
   warnEdge();
   hudText();
   sounds(dt);
@@ -341,9 +349,10 @@ function eddies(vis) {
     g.fillStyle = got ? "rgba(240,190,80,0.18)" : "rgba(10,40,48,0.45)";
     g.fill();
     if (target) {
+      const here = canoe.eddyQ === q;
       g.setLineDash([0.5, 0.5]);
-      g.lineWidth = 0.12;
-      g.strokeStyle = got ? "rgba(255,210,110,0.9)" : "rgba(220,240,240,0.35)";
+      g.lineWidth = here ? 0.2 : 0.12;
+      g.strokeStyle = got ? "rgba(255,210,110,0.9)" : here ? "rgba(255,236,190,0.85)" : "rgba(220,240,240,0.35)";
       g.stroke();
       g.setLineDash([]);
     }
@@ -399,7 +408,24 @@ function spray(side, power) {
     sprays.push({ x: canoe.x + side * rx * 0.9 - sp * 0.3, y: canoe.y + side * ry * 0.9 - cp * 0.3, vx: Math.cos(a) * s + side * rx, vy: Math.sin(a) * s + side * ry, t: 0 });
   }
 }
+// gold sparks when you catch an eddy
+const sparks = [];
+function sparkle(x, y) {
+  for (let i = 0; i < 30; i++) {
+    const a = (i / 30) * Math.PI * 2 + Math.random() * 0.2, s = 4 + Math.random() * 5;
+    sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, max: 0.8 + Math.random() * 0.5 });
+  }
+}
 function effects(dt) {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const p = sparks[i];
+    p.t += dt;
+    if (p.t > p.max) { sparks.splice(i, 1); continue; }
+    const k = Math.exp(-dt * 3);
+    p.vx *= k; p.vy *= k; p.x += p.vx * dt; p.y += p.vy * dt;
+    g.fillStyle = `rgba(255,214,110,${1 - p.t / p.max})`;
+    g.beginPath(); g.arc(p.x, p.y, 0.22 * (1 - 0.5 * (p.t / p.max)), 0, Math.PI * 2); g.fill();
+  }
   for (let i = sprays.length - 1; i >= 0; i--) {
     const p = sprays[i];
     p.t += dt;
@@ -491,6 +517,49 @@ function hull(out, inside) {
   g.strokeStyle = "rgba(60,30,20,0.8)"; g.lineWidth = 0.05;
   for (const y of [0.9, -0.9]) { g.beginPath(); g.moveTo(-0.36, y); g.lineTo(0.36, y); g.stroke(); }
 }
+// In an eddy you can still catch: a ring round the canoe that fills over EDDY_HOLD while you hold the catch, with a
+// rising note at each quarter. When the bow points the wrong way, an arrow shows the turn to upstream.
+let holdNote = 0;
+const HOLD_NOTES = [392, 440, 494, 587];
+function sndHold(e, t, f) { tone(e, t, { f, dur: 0.1, peak: 0.08, wave: "triangle", send: 0.25 }); }
+function holdFill() { const c = canoe; return c.eddyQ && c.inEddy === c.eddyQ ? clamp(c.eddyT / C.EDDY_HOLD, 0, 1) : 0; }
+function holdUi() {
+  const c = canoe;
+  if (!c.eddyQ || c.swim > 0 || phase !== "play") { holdNote = 0; return; }
+  const fill = holdFill(), [sx, sy] = toScreen(c.x, c.y), R = 3.1 * cam.k;
+  if (!c.holding && fill < 0.01) holdNote = 0;
+  if (c.holding && holdNote < Math.min(4, Math.floor(fill * 4) + 1)) Sfx.play(sndHold, HOLD_NOTES[holdNote++]);
+  g.lineCap = "round";
+  g.lineWidth = 5 * DPR;
+  g.strokeStyle = "rgba(240,248,250,0.22)";
+  g.beginPath(); g.arc(sx, sy, R, 0, Math.PI * 2); g.stroke();
+  if (fill > 0) {
+    g.strokeStyle = c.holding ? "#f0b848" : "rgba(240,184,72,0.5)";
+    g.beginPath(); g.arc(sx, sy, R, -Math.PI / 2, -Math.PI / 2 + fill * Math.PI * 2); g.stroke();
+  }
+  let label = "";
+  if (!c.eddyBow) {
+    // the bow and upstream on the screen; a turn to the right is clockwise there
+    const [tx, ty] = river.tan(c.y), [bx, by] = toScreen(c.x + Math.sin(c.psi), c.y + Math.cos(c.psi)), [ux, uy] = toScreen(c.x - tx, c.y - ty);
+    const a0 = Math.atan2(by - sy, bx - sx), turn = wrap(Math.atan2(uy - sy, ux - sx) - a0), a1 = a0 + turn, r = R * 1.28;
+    g.strokeStyle = "#ffe7a8"; g.fillStyle = "#ffe7a8"; g.lineWidth = 6 * DPR;
+    g.beginPath(); g.arc(sx, sy, r, a0, a1, turn < 0); g.stroke();
+    const hx = sx + r * Math.cos(a1), hy = sy + r * Math.sin(a1), d = a1 + Math.sign(turn) * Math.PI / 2, hs = 16 * DPR;
+    g.beginPath();
+    g.moveTo(hx + Math.cos(d) * hs, hy + Math.sin(d) * hs);
+    g.lineTo(hx + Math.cos(d + 2.4) * hs * 0.8, hy + Math.sin(d + 2.4) * hs * 0.8);
+    g.lineTo(hx + Math.cos(d - 2.4) * hs * 0.8, hy + Math.sin(d - 2.4) * hs * 0.8);
+    g.closePath(); g.fill();
+    label = "Face upstream";
+  } else if (!c.eddySlow) label = "Sit still";
+  if (label) {
+    g.font = `800 ${Math.round(17 * DPR)}px system-ui, sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "bottom";
+    g.fillStyle = "#fff6dc"; g.shadowColor = "rgba(0,20,25,0.9)"; g.shadowBlur = 6 * DPR;
+    g.fillText(label, sx, sy - R * 1.28 - 12 * DPR);
+    g.shadowBlur = 0;
+  }
+}
 // While the capsize warning is on: a red edge on the side you tip toward, and "Brace" there. It grows as you tip.
 function warnEdge() {
   if (!canoe.warn || canoe.swim > 0 || phase !== "play") return;
@@ -532,6 +601,8 @@ window.QA = {
   step(n = 1) { for (let i = 0; i < n; i++) tick(); },
   // put the camera on the canoe at once (after a test moves the canoe)
   snap() { cam.init = false; },
+  // the eddy you sit in, as the ring shows it: how full, and what the catch still needs
+  get hold() { const c = canoe; return { id: c.eddyQ ? c.eddyQ.id : null, fill: holdFill(), bow: c.eddyBow, slow: c.eddySlow, holding: c.holding, caught: c.caught.size }; },
   begin,
   finish() { canoe.swim = 0; canoe.y = FINISH + 0.1; canoe.x = river.c(canoe.y); canoe.phi = 0; canoe.dphi = 0; },
 };

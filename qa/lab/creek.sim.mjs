@@ -224,5 +224,54 @@ section("Fair capsizes");
   check(saved >= 0.5 * warned, `a brace 0.25 s after the warning saves ${saved} of ${warned} warned crossings`);
 }
 
+/* ---------------- 7. eddies you can read, and no trap ---------------- */
+section("Eddies");
+{
+  // in each target eddy, the bow downstream, strokes on both sides at full power: out past the eddy's tail in 10 s?
+  let n = 0, out = 0;
+  for (const seed of [3, 7, 11, 23, 42, 99, 5, 13]) {
+    const r = makeRiver(seed);
+    for (const q of r.targets) {
+      const c = newCanoe(r, { x: q.ex, y: q.ey, psi: Math.atan2(q.tx, q.ty) });
+      let last = -9, alt = 1, free = false;
+      while (c.t < 10 && !free) {
+        if (c.t - last > 0.5) { last = c.t; alt = -alt; act(c, { type: "stroke", side: alt, power: 1.2 }); }
+        step(c, r);
+        free = (c.x - q.x) * q.tx + (c.y - q.y) * q.ty > q.sc + q.hl + 1;
+      }
+      n++; if (free) out++;
+    }
+  }
+  check(out >= 0.9 * n, `a canoe that faces downstream in an eddy paddles out within 10 s in ${out} of ${n} eddies (48% before)`);
+
+  // what the ring shows: sit in an eddy core and drift with its water
+  const r = makeRiver(7), q = r.targets[2];
+  const sit = (psi, secs) => {
+    const c = newCanoe(r, { x: q.ex, y: q.ey, psi }), f = r.flow(q.ex, q.ey), ev = [], seen = [];
+    c.vx = f.vx; c.vy = f.vy;
+    for (let i = 0; i < 120 * secs && !ev.some((e) => e.k === "eddy"); i++) { step(c, r, ev); seen.push({ q: c.eddyQ, bow: c.eddyBow, holding: c.holding, t: c.eddyT }); }
+    return { c, ev, seen };
+  };
+  const down = sit(Math.atan2(q.tx, q.ty), 2), up = sit(Math.atan2(-q.tx, -q.ty), 2);
+  check(!down.ev.some((e) => e.k === "eddy") && down.seen.some((s) => s.q === q && !s.bow), "with the bow downstream there is no catch, and the page is told the bow is wrong");
+  const t = up.c.t, filling = up.seen.filter((s) => s.holding).map((s) => s.t);
+  check(up.ev.some((e) => e.k === "eddy") && t < C.EDDY_HOLD + 0.2 && filling.every((v, i) => i === 0 || v > filling[i - 1]),
+    `with the bow upstream the hold fills and the eddy is caught in ${t.toFixed(2)} s`);
+  check(up.c.eddyQ === null, "a caught eddy shows no ring");
+
+  // an eddy behind a rock in slow water is not a target, and sitting in it does not count
+  let others = 0, counted = 0;
+  for (const seed of [3, 7, 11, 23, 42, 99, 5, 13, 17, 21, 31, 2026]) {
+    const rv = makeRiver(seed);
+    for (const o of rv.rocks.filter((x) => !x.target)) {
+      const c = newCanoe(rv, { x: o.ex, y: o.ey, psi: Math.atan2(-o.tx, -o.ty) }), f = rv.flow(o.ex, o.ey), ev = [];
+      c.vx = f.vx; c.vy = f.vy;
+      for (let i = 0; i < 240; i++) step(c, rv, ev);
+      others++; if (ev.some((e) => e.k === "eddy") || c.caught.size) counted++;
+    }
+  }
+  check(others > 0 && counted === 0, `an eddy that is not a target never counts (${others} tried; all ${others} counted before)`);
+}
+
 console.log(`\ncreek.sim: ${fails.length ? fails.length + " failed" : "all passed"}`);
 process.exit(fails.length ? 1 : 0);

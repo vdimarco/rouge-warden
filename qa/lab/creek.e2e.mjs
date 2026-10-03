@@ -2,7 +2,8 @@
 // 1. A phone paddle: a virtual phone sends real orientation and motion events. The first stroke teaches the grip, a
 //    rock tipped to the right is a stroke on the right (the bow turns left), and a hard tilt held still braces.
 // 2. Thumbs on a phone: drag down on the right half to stroke there.
-// 3. Keys on a computer: D strokes on the right, C braces. The end card says how the run went.
+// 3. Catching an eddy: the ring is empty while the bow points downstream, and it fills while you hold the catch.
+// 4. Keys on a computer: D strokes on the right, C braces. The end card says how the run went.
 // SHOTS=<folder> saves screenshots. Exit code 1 on failure.
 import { open, until, pointer, drag, shot, sleep, report, PHONE, DESK } from "./lib.mjs";
 
@@ -85,6 +86,41 @@ R.section("Thumbs on a phone");
   await pointer(page, "pointerup", PHONE.width * 0.25, PHONE.height * 0.5);
   await sleep(100);
   R.check(await page.evaluate(() => QA.c.brace === 0), "lifting it ends the brace");
+  for (const e of errors) R.check(false, e);
+  await close();
+}
+
+R.section("Catching an eddy");
+{
+  const { page, errors, close } = await open("creek/", { ...PHONE, hash: "#s=7" });
+  await page.waitForSelector(".card.start .go");
+  await page.click(".card.start .go");
+  await until(page, () => QA.phase === "play" || QA.phase === "calibrate", null, 10000);
+  if (await page.evaluate(() => QA.phase === "calibrate")) await page.click("#calibSkip");
+  await until(page, () => QA.phase === "play");
+  // sit in the core of an eddy worth catching and drift with its water: first the bow downstream, then upstream.
+  // All in one call, in game time, so a busy machine does not change the result.
+  const r = await page.evaluate(() => {
+    const river = QA.river, q = river.targets[2], c = QA.c, out = { fills: [] };
+    const sit = (psi) => {
+      c.x = q.ex; c.y = q.ey; c.psi = psi; c.om = 0; c.phi = 0; c.dphi = 0; c.pushes.length = 0; c.turns.length = 0;
+      const f = river.flow(c.x, c.y); c.vx = f.vx; c.vy = f.vy; c.eddyT = 0; c.inEddy = null;
+    };
+    sit(Math.atan2(q.tx, q.ty));
+    QA.step(3);
+    out.wrong = QA.hold;
+    sit(Math.atan2(-q.tx, -q.ty));
+    for (let i = 0; i < 90 && QA.hold.caught === 0; i++) { QA.step(1); out.fills.push(QA.hold.fill); }
+    out.caught = QA.hold.caught;
+    QA.snap();
+    return out;
+  });
+  R.check(r.wrong.id != null && r.wrong.bow === false && r.wrong.fill === 0, "in an eddy with the bow downstream, the ring is empty and the page shows the turn to upstream");
+  const f = r.fills.slice(0, -1), top = Math.max(...f);
+  R.check(f.length > 30 && f.every((v, i) => i === 0 || v >= f[i - 1]) && top > 0.9, `with the bow upstream the ring fills to ${Math.round(top * 100)}% in ${f.length} steps`);
+  await sleep(300);
+  R.check(r.caught === 1 && /Eddies 1\//.test(await page.textContent("#hEddies")), "then the eddy is caught, and the count goes up");
+  await shot(page, "creek-phone-eddy");
   for (const e of errors) R.check(false, e);
   await close();
 }

@@ -96,6 +96,7 @@ export function makeRiver(seed, opts = {}) {
 
   // the eddies worth catching: behind rocks in fast water
   const targets = rocks.filter((q) => q.U >= 1.5);
+  for (const q of rocks) q.target = q.U >= 1.5;
 
   return { seed, rocks, targets, c, dc, b, V, tan, flow, eddyAt, bank: (y) => [c(y) - b(y), c(y) + b(y)] };
 }

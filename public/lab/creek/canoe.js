@@ -27,7 +27,8 @@ export const C = {
   SWIM: 1.8,                                   // seconds from a capsize to the reset
   SWIM_BACK: 4,                                // metres upstream of the swim where you climb back in
   EDDY_E: 0.6, EDDY_REL: 0.7, EDDY_GROUND: 1.3, EDDY_COS: Math.cos(70 * D2R), EDDY_HOLD: 0.4,
-  EDDY_GRAB: 1.0,                              // per second, at the core of an eddy
+  EDDY_GRAB: 0.5,                              // per second, at the core of an eddy. At 1.0 it held a canoe that faced
+                                               // downstream and paddled hard
 };
 
 export function newCanoe(river, at = null) {
@@ -37,6 +38,7 @@ export function newCanoe(river, at = null) {
     x, y, vx: 0, vy: 0, psi: at && at.psi != null ? at.psi : Math.atan2(tx, ty), om: 0, phi: 0, dphi: 0,
     t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0,
     swim: 0, swims: 0, swimX: 0, swimY: 0, caught: new Set(), lastEddy: null, inEddy: null, eddyT: 0, touching: false, pinT: 0,
+    eddyQ: null, eddyBow: false, eddySlow: false, holding: false,
     miss: {}, done: false, strokes: 0, js: 0, braces: 0, rocks: 0,
   };
 }
@@ -131,16 +133,22 @@ export function step(c, river, ev = null) {
     }
   } else c.pinT = 0;
 
-  // an eddy caught: deep in it, drifting with its water, the bow pointing upstream, for half a second
+  // an eddy caught: deep in an eddy worth catching, drifting with its water, the bow pointing upstream, for 0.4 s
   const q = eMid > C.EDDY_E ? river.eddyAt(c.x, c.y) : null;
   const rel = Math.hypot(c.vx - uxMid, c.vy - uyMid), ground = Math.hypot(c.vx, c.vy);
   const [tx, ty] = river.tan(c.y);
   const upstream = -(fx * tx + fy * ty);
-  if (q && rel < C.EDDY_REL && ground < C.EDDY_GROUND && upstream > C.EDDY_COS) {
+  // for the page: the eddy you sit in that you can still catch, and what the catch needs
+  c.eddyQ = q && q.target && !c.caught.has(q.id) ? q : null;
+  c.eddyBow = upstream > C.EDDY_COS;
+  c.eddySlow = rel < C.EDDY_REL && ground < C.EDDY_GROUND;
+  c.holding = !!c.eddyQ && c.eddyBow && c.eddySlow;
+  if (q && c.eddySlow && c.eddyBow) {
     if (c.inEddy === q) c.eddyT += H; else { c.inEddy = q; c.eddyT = 0; }
-    if (c.eddyT >= C.EDDY_HOLD && !c.caught.has(q.id)) {
+    if (c.eddyT >= C.EDDY_HOLD && q.target && !c.caught.has(q.id)) {
       c.caught.add(q.id);
       c.lastEddy = q;
+      c.eddyQ = null; c.holding = false;
       if (ev) ev.push({ k: "eddy", id: q.id });
     }
   } else if (!q) { c.inEddy = null; c.eddyT = 0; }
@@ -195,7 +203,7 @@ function capsize(c, ev) {
   c.swim = C.SWIM;
   c.swims++;
   c.swimX = c.x; c.swimY = c.y;
-  c.warn = 0;
+  c.warn = 0; c.eddyQ = null; c.holding = false;
   c.pushes.length = 0; c.turns.length = 0;
   if (ev) ev.push({ k: "capsize", side: Math.sign(c.phi) });
 }
