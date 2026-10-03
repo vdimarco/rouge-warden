@@ -1,0 +1,14 @@
+- [x] Review the twelve lab games against the bar, with bots, sims and phone-sized play.
+- [x] Small Worlds shell: outro, best on the card, a sound for a loss, a daily world, and feedback helpers.
+- [x] Replace `qa/lab/hidden.mjs` with `qa/lab/links.mjs`.
+- [x] House Rules: phone fit, races and replies, the death card, tanks in Settle, and remix.
+- [ ] Threadwake and Borrowed Bodies.
+- [ ] Foldwild and Season Thief.
+- [ ] Storm Choir and Heartship.
+- [ ] Full Tilt.
+- [ ] Neon Ronin, and its broken tests.
+- [ ] Loon Echo.
+- [ ] Take the Plunge.
+- [ ] Up the Creek.
+- [ ] README, the Lab page cards and `docs/lab-fun.md`.
+- [ ] Run every lab, neon, echo and pinball test on the merged branch, and check the preview.
