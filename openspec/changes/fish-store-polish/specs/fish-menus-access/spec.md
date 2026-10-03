@@ -8,7 +8,7 @@ The title's main button SHALL be "Go fishing" (free fishing). "Derby: 10 casts" 
 - **THEN** free fishing starts.
 
 ### Requirement: Painted style name
-The art style that was called "Ghibli" SHALL show as "Painted" everywhere on screen. A save that holds the old value SHALL keep its choice.
+The art style that was called "Ghibli" SHALL be "Painted" on screen, in its stored value, and in its file names. A save that holds the old value SHALL load as "Painted". No file in the app bundle SHALL contain the word "ghibli".
 
 #### Scenario: Old save
 - **WHEN** a save with the old style value loads
@@ -44,6 +44,10 @@ Every screen SHALL fit at 390x844, 360x640, 430x932, 844x390, 820x1180, and 1280
 
 ### Requirement: Reachable and readable controls
 Tap targets SHALL be at least 44 px. The drag buttons SHALL sit near the reel thumb. "Reel side: Left" SHALL mirror the reel controls, not only the crank. Text over the sky or water SHALL have a backing or a shadow that gives a 4.5:1 contrast.
+
+#### Scenario: Touch play
+- **WHEN** the player plays with touch
+- **THEN** the crank is on the left, so the left thumb reels and the right thumb works the rod, and the Reel side note says it applies to motion play.
 
 #### Scenario: Left-handed player
 - **WHEN** the player sets "Reel side: Left" at 390x844

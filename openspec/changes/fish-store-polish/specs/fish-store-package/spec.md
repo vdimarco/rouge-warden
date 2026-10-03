@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Capacitor project
-`apps/fish/` SHALL hold a Capacitor 8 project for iOS and Android with the app ID, the display name "Reel It In", portrait lock, a hidden status bar, a full-screen layout that keeps the safe areas, and only the plugins the game uses.
+`apps/fish/` SHALL hold a Capacitor 8 project for iOS and Android with the app ID, the display name "Reel It In", portrait lock, a hidden status bar, a full-screen layout that keeps the safe areas, and only the plugins the game uses. iOS SHALL target iPhone only, from iOS 16.4 (the first version with import maps). Android SHALL use minSdk 24, targetSdk 36, the game app category, and the VIBRATE permission.
 
 #### Scenario: Android debug build
 - **WHEN** a developer runs the documented build steps on a machine with the Android SDK
@@ -9,7 +9,7 @@
 
 #### Scenario: iOS project
 - **WHEN** a developer opens the iOS project on a Mac with Xcode
-- **THEN** the project has portrait lock, a motion usage text, the app icon, and the splash screen set.
+- **THEN** the project targets iPhone from iOS 16.4, has portrait lock, a privacy manifest that declares no tracking and no collected data, the app icon, and the splash screen set. It has no motion usage text, because the web view grants motion itself.
 
 ### Requirement: Self-contained web bundle
 A build script SHALL copy `public/fish/` into `apps/fish/www/`, set the store build flag, and drop the files the app does not use (the arcade script and unused art). The bundle SHALL reference no other host and no root path outside itself.
@@ -25,8 +25,15 @@ The app SHALL have its own icon and splash screen made from the game's art, at e
 - **WHEN** the asset step runs
 - **THEN** the iOS 1024 px icon and the Android adaptive icon layers exist with no transparency in the iOS icon.
 
+### Requirement: Crank clear of system gestures
+The crank SHALL NOT trigger the system back or home gestures.
+
+#### Scenario: Fast crank near the edge
+- **WHEN** the player turns the crank 50 times fast in the app
+- **THEN** neither Android back nor iOS home fires. (This needs a real phone.)
+
 ### Requirement: Privacy policy and listing
-The repo SHALL hold a privacy policy page that the game shows offline and the web serves, and the store listing text: name, subtitle, short and full descriptions, keywords, category, age rating answers, the data safety answers, and the screenshot list.
+The repo SHALL hold a privacy policy page that the game shows offline and the web serves, and the store listing text: the store name "Reel It In: Lake Fishing" (the plain name is taken), subtitle, short and full descriptions, keywords, category, age rating answers, the data safety answers, and the screenshot list.
 
 #### Scenario: Data safety
 - **WHEN** a reviewer reads the privacy policy

@@ -8,7 +8,7 @@ When the spool starts to slip, cranking SHALL NOT break the line for about 0.5 s
 - **THEN** the median time from the first slip to a snap is 0.5 s or more, and a player who keeps cranking through the run still snaps the line.
 
 ### Requirement: Fair jumps in Easy mode
-In Easy mode, a jump SHALL take 0.2 s longer to rise, so a player who lowers the rod on the cue keeps the fish. Hard mode keeps today's timing.
+In Easy mode, a jump SHALL take 0.2 s longer to rise, so a player who lowers the rod on the cue keeps the fish. Hard mode and legends keep today's timing.
 
 #### Scenario: Casual player at Cedar River
 - **WHEN** the casual scripted player fights steelhead in Easy mode

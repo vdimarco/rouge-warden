@@ -31,6 +31,8 @@ Out of scope: new species, new places, lure or gear choices (they change the bal
 
 ## Owner decisions, with the default this change uses
 
-- Store name and bundle ID. Default: the display name "Reel It In" and the placeholder ID `com.cottagearcade.reelitin`. Change the ID to a domain the owner controls before the first upload.
-- The "Ghibli" art style. Default: it becomes "Painted" on screen, because a store app must not use another studio's trademark. Old saves keep their choice.
+- Store name and bundle ID. "Reel It In" is already taken on both stores. Default: the store name "Reel It In: Lake Fishing", the name "Reel It In" under the icon, and the placeholder ID `com.cottagearcade.reelitin`. Change the ID to a domain the owner controls before the first upload, because it cannot change later.
+- Devices. Default: iPhone only from iOS 16.4, Android from version 7 (API 24), portrait only, free, with no ads and no purchases.
+- The "Ghibli" art style. Default: it becomes "Painted" on screen, in its stored value, and in its file names, because a store app must not use another studio's trademark. Old saves keep their look.
+- Touch play. Default: the crank goes on the left, so the right thumb works the rod.
 - Gentle music. Default: none. The game keeps its sound beds and adds short stingers.

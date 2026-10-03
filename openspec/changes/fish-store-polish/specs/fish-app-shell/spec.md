@@ -18,9 +18,9 @@ A store build SHALL show only the parts of the game that belong to the app. The 
 ### Requirement: App copy
 The store build SHALL use copy that fits an app. It SHALL NOT tell the player about Safari, site settings, a browser, or "free in your browser".
 
-#### Scenario: Motion denied in the app
-- **WHEN** the player denies motion in the store build
-- **THEN** the game says "Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now." and touch play starts.
+#### Scenario: Motion unavailable in the app
+- **WHEN** the motion sensors give no data in the store build
+- **THEN** the game says "Motion is off. You can play with touch." and touch play starts. The app grants motion itself, so the copy never sends the player to a settings screen.
 
 ### Requirement: Android back button
 The back button SHALL close the top screen or pause the game. It SHALL NOT close the app during play.
