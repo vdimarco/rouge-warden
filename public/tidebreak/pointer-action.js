@@ -1,7 +1,7 @@
 // A second touch is not guaranteed to dispatch click. Activate its own captured release.
 export function pointerAction(button, action, enabled=()=>!button.disabled) {
   let pointer=null,origin;
-  button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture(pointer);});
+  button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture?.(pointer);});
   button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),slop=e.pointerType==='touch'?22:8,inside=e.clientX>=rect.left-slop&&e.clientX<=rect.right+slop&&e.clientY>=rect.top-slop&&e.clientY<=rect.bottom+slop,travel=Math.hypot(e.clientX-origin.x,e.clientY-origin.y);pointer=null;if(inside&&enabled()&&travel<(e.pointerType==='touch'?60:28))action();});
   for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)pointer=null;});
   button.addEventListener('click',e=>{if(e.detail===0&&enabled())action();});
