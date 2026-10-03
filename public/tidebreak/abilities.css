@@ -150,3 +150,53 @@
  .abilities .ult{width:63px;height:63px}
  #skill-points{width:118px;min-height:33px;top:-36px}
 }
+
+
+/* Smaller visual footprint without shrinking the usable touch target. */
+.abilities{width:162px;height:142px;right:max(6px,env(safe-area-inset-right));bottom:calc(47px + env(safe-area-inset-bottom))}
+.abilities .ability{width:58px;height:58px;border:0;background:transparent;box-shadow:none;overflow:visible;touch-action:none}
+.abilities .dash{top:0;right:0}
+.abilities .surge{top:21px;left:51px}
+.abilities .signature{left:0;bottom:6px}
+.abilities .ult{width:72px;height:72px;right:0;bottom:0;border:0;background:transparent;box-shadow:none}
+.ability .hud-spell-art{inset:7px;border-radius:11px;border:1px solid #77bfd0a8;box-shadow:inset 0 0 0 2px #041018,0 3px 9px #0009,0 0 10px color-mix(in srgb,var(--hero-color) 18%,transparent);filter:saturate(1.18) contrast(1.1)}
+.ability.ult .hud-spell-art{inset:8px;border-radius:14px;border:2px solid var(--hero-color)}
+.ability b:not(:empty){inset:7px;border-radius:11px;font-size:15px}
+.ability.ult b:not(:empty){inset:8px;border-radius:14px}
+.ability span{display:none}
+.ability kbd{top:6px;right:6px;font-size:8px;padding:2px 3px}
+.ranks{bottom:8px}
+.mana-cost{display:none}
+#skill-points{top:-35px;width:108px;min-height:31px;padding:4px 7px;font-size:8px;letter-spacing:.5px;touch-action:manipulation}
+#skill-points.ready{transform:none}
+
+/* Direct + overlays: no extra HUD footprint and each control owns its own touch pointer. */
+.ability-upgrade[hidden]{display:none!important}
+.ability-upgrade:not([hidden]){display:grid!important;z-index:10;width:30px;height:30px;padding:0;place-items:center;border:2px solid #fff0b4;border-radius:50%;background:linear-gradient(#f5d77e,#b98e35);box-shadow:0 3px 9px #000b,0 0 10px #ffd86a4f;color:#07131a;font:900 21px/1 Arial,sans-serif;touch-action:manipulation;pointer-events:auto}
+.upgrade-dash{right:-2px;top:1px}
+.upgrade-surge{left:80px;top:22px}
+.upgrade-signature{left:31px;bottom:2px}
+.upgrade-ult{right:-2px;bottom:0}
+.abilities.upgrade-mode .ability-upgrade:not([hidden]){transform:scale(1.08)}
+
+@media(max-width:390px){
+ .abilities{width:154px;height:136px;right:4px}
+ .abilities .ability{width:56px;height:56px}
+ .abilities .surge{left:48px;top:20px}
+ .abilities .ult{width:69px;height:69px}
+ .ability .hud-spell-art{inset:7px}
+ .ability.ult .hud-spell-art{inset:8px}
+ #skill-points{width:102px;min-height:30px;top:-34px}
+ .ability-upgrade:not([hidden]){width:28px;height:28px;font-size:20px}
+ .upgrade-surge{left:75px;top:21px}
+ .upgrade-signature{left:29px}
+}
+@media(max-height:520px) and (min-width:600px){
+ .abilities{width:150px;height:128px;right:6px;bottom:24px}
+ .abilities .ability{width:53px;height:53px}
+ .abilities .surge{left:47px;top:17px}
+ .abilities .signature{bottom:3px}
+ .abilities .ult{width:66px;height:66px}
+ #skill-points{width:100px;min-height:29px;top:-32px}
+ .ability-upgrade:not([hidden]){width:27px;height:27px;font-size:19px}
+}

@@ -171,7 +171,7 @@ function updateUI() {
   $('skill-points').classList.toggle('ready',upgradeReady);
   if(!upgradeReady)document.querySelector('.abilities')?.classList.remove('upgrade-mode');
   upgradeButtons.forEach((b,i)=>{
-    const eligible=canLearn(p,i);b.hidden=true;b.disabled=!eligible;
+    const eligible=canLearn(p,i);b.hidden=!eligible;b.disabled=!eligible;
     b.setAttribute('aria-label',`${p.skillRanks[i]?'Upgrade':'Learn'} ${identitySkill(selectedIdentity,i).name} to rank ${p.skillRanks[i]+1} · 1 skill point`);
   });
 

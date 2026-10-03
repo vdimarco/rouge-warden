@@ -82,3 +82,8 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
 
 /* In-match upgrades now use the full spell icon. Keep legacy plus controls out of the HUD. */
 .ability-upgrade{display:none!important}
+
+
+/* Combat HUD may expose the direct upgrade controls. */
+.abilities .ability-upgrade[hidden]{display:none!important}
+.abilities .ability-upgrade:not([hidden]){display:grid!important}
