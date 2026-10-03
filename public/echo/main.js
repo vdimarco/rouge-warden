@@ -22,7 +22,7 @@ let lake=1;
 function pickLake(){const linked=Number((location.hash.match(/lake=(\d{1,6})\b/)||[])[1]);lake=linked>0?linked:lakeNumber(cottageDay());
   $('#today').textContent=linked>0?`LAKE #${lake}`:`TODAY: LAKE #${lake}`;$('#lake-label').textContent=`LAKE #${lake}`;}
 pickLake();addEventListener('hashchange',pickLake);
-function start(){run=createRun(lakeSeed(lake));paused=false;pointer=null;keys.clear();particles=[];ripples=[];wobble=[];cues=[];banner=null;hatchAt=9;celebration=null;hops=[];floats=[];outro=null;shake=0;panel.hidden=true;controls.hidden=false;pauseButton.hidden=false;pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause rescue');last=performance.now();tone(680,.3);audio?.resume().catch(()=>{});notice('Swim to a golden chick. Then lead it back to the nest.',7);updateHud();}
+function start(){run=createRun(lakeSeed(lake));run.lake=lake;paused=false;pointer=null;keys.clear();particles=[];ripples=[];wobble=[];cues=[];banner=null;hatchAt=9;celebration=null;hops=[];floats=[];outro=null;shake=0;panel.hidden=true;controls.hidden=false;pauseButton.hidden=false;pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause rescue');last=performance.now();tone(680,.3);audio?.resume().catch(()=>{});notice('Swim to a golden chick. Then lead it back to the nest.',7);updateHud();}
 $('#start').onclick=start;
 // A honk or a dive that cannot happen now (cooldown, no breath, under water) gets a short dull tone.
 function gather(){if(!run||paused||run.ended)return;if(callFlock(run)){tone(880,.4,'triangle');consumeEvents();updateHud();}else tone(140,.08,'square',.025,'nope');}
@@ -50,7 +50,7 @@ pauseButton.onclick=()=>togglePause();addEventListener('blur',()=>togglePause(tr
 const CAUSE={eel:'THE EEL GOT THE LAST BITE',boat:'A BOAT ENDED THE RESCUE'};
 // Copies the result line and a link to this lake. If the page may not write to the clipboard, the line is selected for a manual copy.
 async function copyResult(button){
-  const text=`Loon Echo · ${shareLine(run,lake)} · ${run.score.toLocaleString('en-US')} points\n${location.origin}${location.pathname}#lake=${lake}`;
+  const text=`Loon Echo · ${shareLine(run,run.lake)} · ${run.score.toLocaleString('en-US')} points\n${location.origin}${location.pathname}#lake=${run.lake}`;
   let ok=false;
   try{await navigator.clipboard.writeText(text);ok=true;}catch{}
   if(!ok)try{const area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.cssText='position:fixed;opacity:0';document.body.append(area);area.select();ok=document.execCommand('copy');area.remove();}catch{}
@@ -62,9 +62,10 @@ function finish(){
   const n=v=>v.toLocaleString('en-US'),left=MAX_CHICKS-run.home;
   const close=!before?'Your first run.':run.score>before?'A new best.':run.score===before?'You matched your best.':`${n(before-run.score)} short of your best (${n(best)}).`;
   panel.innerHTML=`<span class="eyebrow">${CAUSE[run.cause]||'OUT OF ENERGY'}</span><h1>${run.saved} CHICKS<br>HOME.</h1><div class="result">${n(run.score)}</div><p>points · ${close}</p><p>Clutch ${run.clutch}: ${run.home} of 8 home. ${left} more would hatch clutch ${run.clutch+1}.</p>`+
-    `<div class="share"><span id="share-line">${shareLine(run,lake).split(' · ').map(s=>`<b>${s}</b>`).join('&nbsp;· ')}</span><button id="copy" type="button" aria-label="Copy your result and a link to this lake">COPY</button></div>`+
+    `<div class="share"><span id="share-line">${shareLine(run,run.lake).split(' · ').map(s=>`<b>${s}</b>`).join('&nbsp;· ')}</span><button id="copy" type="button" aria-label="Copy your result and a link to this lake">COPY</button></div>`+
     `<button id="again">SWIM AGAIN</button><p class="small">${run.trips} deliver${run.trips===1?'y':'ies'} · biggest group ${run.biggest}. A bigger group scores more: 100 × group².</p>`;
   panel.hidden=false;controls.hidden=true;pauseButton.hidden=true;message.textContent='';$('#again').onclick=start;$('#copy').onclick=e=>copyResult(e.currentTarget);
+  cue(.6,()=>$('#again').focus({preventScroll:true}));// then Enter or Space starts again; the wait stops a late Space press from skipping the card
 }
 // Sounds and pictures that come a little later, in game order. They run from the frame clock, so a pause holds them.
 function cue(delay,fn){cues.push({delay,fn});}
@@ -194,7 +195,7 @@ function render(ts){
     for(const p of particles){ctx.globalAlpha=Math.max(0,Math.min(1,p.life));ellipse(px(p.x),p.y*H,p.size||3,p.size||3,p.color,null);}ctx.globalAlpha=1;
     for(const w of ripples){ctx.globalAlpha=Math.max(0,w.life);ctx.strokeStyle=w.color;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(px(w.x),w.y*H,P*(.02+(1-w.life)*.06),P*(.012+(1-w.life)*.036),0,0,7);ctx.stroke();}ctx.globalAlpha=1;
     if(celebration){const c=celebration,pop=1+Math.max(0,.25-c.t)*1.6,w=Math.min(P*.8,300),y=(HOME.y+.142)*H;
-      ctx.globalAlpha=.62*Math.min(1,(c.dur-c.t)*4);ctx.fillStyle='#08201f';ctx.beginPath();ctx.roundRect(px(.5)-w/2,y-H*.058,w,H*.098,18);ctx.fill();ctx.globalAlpha=1;// a dark pill keeps the numbers clear of the hopping chicks
+      ctx.globalAlpha=.62*Math.min(1,(c.dur-c.t)*4);ctx.fillStyle='#08201f';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(px(.5)-w/2,y-H*.058,w,H*.098,18);else ctx.rect(px(.5)-w/2,y-H*.058,w,H*.098);ctx.fill();ctx.globalAlpha=1;// a dark pill keeps the numbers clear of the hopping chicks
       label(c.text,.5,HOME.y+.125,'#fff3a6',Math.round(Math.min(34,P*.085)*pop));label(`+${c.shown.toLocaleString()}`,.5,HOME.y+.17,'#c9f58a',Math.round(Math.min(24,P*.06)));}
     for(const f of floats){ctx.globalAlpha=Math.min(1,f.life*2);label(f.text,.5,HOME.y+.11-(1-f.life)*.05,'#fff3a6',Math.round(Math.min(22,P*.055)));ctx.globalAlpha=1;}
     if(outro){ctx.fillStyle=`rgba(3,14,22,${Math.min(.5,outro.t*.6).toFixed(3)})`;ctx.fillRect(offset,0,P,H);}

@@ -134,6 +134,11 @@ async function flow(name, view) {
   const one = await page.evaluate(() => document.getElementById("panel").innerText);
   R.check(/\b1 delivery\b/.test(one), `one bank shows "1 delivery" (${(one.match(/\d+ deliver\w+/) || [""])[0]})`);
   R.check(/^Lake #\d+ · 1 clutch · 1 home · 0:\d\d$/.test(await page.evaluate(() => document.getElementById("share-line").textContent.replace(/\u00a0/g, " "))), "the share line says \"1 clutch\" for one clutch");
+  await page.evaluate(() => __echo.advance(.7));
+  const focused = await page.evaluate(() => document.activeElement?.id);
+  await page.keyboard.press(" ");
+  await until(page, () => document.getElementById("panel").hidden && __echo.run && !__echo.run.ended, null, 5000).catch(() => {});
+  R.check(focused === "again" && await page.evaluate(() => document.getElementById("panel").hidden && !__echo.run.ended), `SWIM AGAIN takes the focus, so Space or Enter starts again (focus on #${focused})`);
 
   await close();
 
