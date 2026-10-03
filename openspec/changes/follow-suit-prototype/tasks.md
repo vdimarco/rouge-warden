@@ -9,10 +9,10 @@
 
 ## Milestone 2: one table
 
-- [ ] Write table tests: deal, legal cards, add, undo, play, refill, redraw, clear and lose.
-- [ ] Write the table engine until the tests pass.
-- [ ] Build the table screen: top bar, chain area, hand, action bar, 8 picker, redraw mode and the clear or lose panel.
-- [ ] Check one table in Chromium at 390 by 844 with touch.
+- [x] Write table tests: deal, legal cards, add, undo, play, refill, redraw, clear and lose.
+- [x] Write the table engine until the tests pass.
+- [x] Build the table screen: top bar, chain area, hand, action bar, 8 picker, redraw mode and the clear or lose panel.
+- [x] Check one table in Chromium at 390 by 844 with touch.
 - [ ] Deploy a Vercel preview, post the URL and wait for the go-ahead. Commit.
 
 ## Milestone 3: full run

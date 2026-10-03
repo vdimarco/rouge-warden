@@ -25,6 +25,14 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 
 ## Seeds
 
-13. **Seed format.** A seed has 6 characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ`. These leave out 0, O, 1, I and L, which look alike. Seed input ignores case and spaces.
+13. **Seed format.** A new seed has 6 characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ`. These leave out 0, O, 1, I and L, which look alike. A typed seed can be any text. Seed input ignores case and spaces.
 14. **Seed source.** A new run takes its seed from the browser's random source. After that, every random choice in the run comes from the one seeded generator.
 15. **Generator.** The generator is mulberry32. The seed text is hashed to a 32-bit start state. The run state stores the current state as one number, so a saved run continues the same sequence.
+16. **Seed in the address.** `?seed=K7QX2M` in the page address starts from that seed. The browser checks use it to get a known hand.
+
+## Milestone 2
+
+17. **One table.** Milestone 2 plays the first table of stop 1: target 150, the starting $4 and no charms. New table starts another first table with a new seed.
+18. **Targets.** Each target is rounded to a whole number, so the money check for powers of ten never meets a fraction.
+19. **Dimmed cards.** A tap on a dimmed card shakes it and changes nothing. Screen readers hear the card as unavailable.
+20. **The 8 picker.** Cancel closes the picker and leaves the chain as it was. A tap outside the picker does the same.

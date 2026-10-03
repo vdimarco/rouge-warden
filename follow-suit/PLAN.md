@@ -47,7 +47,8 @@ Tests:
 - `src/ui/ActionBar.tsx`: Undo, Play chain and Redraw, then Confirm and Cancel in redraw mode.
 - `src/ui/SuitPicker.tsx`: the 4 suit buttons for an 8.
 - `src/ui/TableEnd.tsx`: the clear or lose panel.
-- `src/ui/seed.ts`: makes a new random seed for a new table.
+- `src/ui/seed.ts`: makes a new random seed, or reads `?seed=` from the page address.
+- `src/ui/text.ts`: card names and number formats for labels.
 - `qa/table.e2e.mjs`: a Playwright check of one table at 390 by 844 with touch.
 - `vercel.json`: static build settings.
 
