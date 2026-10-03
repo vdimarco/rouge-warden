@@ -213,6 +213,12 @@ try {
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0)), initialRank + 1);
     await page.locator('#back-skills').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false);
+    const hudIcons=await page.locator('.abilities .ability .hud-spell-art').evaluateAll(icons=>icons.map(el=>{
+      const s=getComputedStyle(el),r=el.getBoundingClientRect();
+      return {background:s.backgroundImage,display:s.display,opacity:Number(s.opacity),width:r.width,height:r.height,transform:s.transform};
+    }));
+    assert.equal(hudIcons.length,4,'four HUD ability icons render');
+    assert(hudIcons.every(icon=>icon.background!=='none'&&icon.display!=='none'&&icon.opacity>.35&&icon.width>=40&&icon.height>=40&&icon.transform==='none'),'HUD ability icons render painted art with usable geometry');
     await page.waitForFunction(() => window.__mobaSnapshot().time > 3 && window.__mobaSnapshot().graphics.creatures.loaded > 0);
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(before.running); assert(before.time > 3); assert(before.graphics.creatures.loaded > 0); assert.equal(before.graphics.creatures.failed, 0);
