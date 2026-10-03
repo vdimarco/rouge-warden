@@ -14,6 +14,8 @@
 .ability b:not(:empty){position:absolute;inset:0;display:grid;place-items:center;background:#07121ec9;font-size:21px;border-radius:50%;color:#e8e7d3}
 .ability b.locked{font-size:12px;letter-spacing:1px;color:#b7b7a9}
 .ability.unlearned svg{opacity:.32;filter:none}.ability[aria-disabled=true]{filter:none;opacity:.85}
+.ability.combo-ready{border-color:#fff0b2;box-shadow:inset 0 0 0 3px #07161d,0 0 0 2px #fff0b24d,0 3px 8px #071018}
+.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 5px;border:1px solid #a39564;border-radius:4px;background:#10232af5;color:#fff0b2;font-size:9px;font-weight:700;line-height:12px;white-space:nowrap;pointer-events:none}
 .ability.trainable{border-color:#e6d58c}.ability kbd{display:block;top:5px;right:7px;font-size:9px;color:#d8dbbb;background:#0d1b23;border:0}
 .ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#050f16;border:1px solid #6e776d;border-radius:1px}.ranks i.filled{background:var(--hero-color);border-color:var(--hero-color)}
 #auto-status{bottom:-39px;font-size:8px;max-width:155px;pointer-events:none}

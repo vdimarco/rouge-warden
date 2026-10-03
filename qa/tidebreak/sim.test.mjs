@@ -38,7 +38,7 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
   p.x = 2400; p.y = 2800; foe.x = 2400; foe.y = 2440; cast(s, p, 1, { x: 0, y: -1 }); assert.ok(distance(p, foe) < 110, 'Nessie pulls enemies into bite range');
 }
 {
-  const { s, p, foe } = duel(2); cast(s, p, 1, { x: 0, y: -1 }); assert.equal(s.traps.length, 1); Object.assign(foe, { x: s.traps[0].x, y: s.traps[0].y }); const hp = foe.hp; advance(s, .6); assert.ok(foe.hp < hp); assert.ok(foe.stun > 0, 'Baba Yaga traps root enemies');
+  const { s, p, foe } = duel(2); cast(s, p, 1, { x: 0, y: -1 }); assert.equal(s.traps.length, 1); Object.assign(foe, { x: s.traps[0].x, y: s.traps[0].y }); const hp = foe.hp; advance(s, .6); assert.ok(foe.hp < hp); assert.ok(foe.snaredUntil > s.time, 'Baba Yaga traps root enemies');
   p.level = 6; p.skillRanks[3]=1; cast(s, p, 3); assert.ok(s.zones.some(z => z.type === 'stomp'));
 }
 {

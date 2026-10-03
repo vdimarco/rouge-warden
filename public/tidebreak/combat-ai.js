@@ -1,4 +1,4 @@
-import { BASES, distance, canSee, lineOfSight } from './world.js';
+import { BASES, distance, canSee, visibleTo, lineOfSight } from './world.js';
 import { structureProtected } from './objectives.js';
 import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from './combat-rules.js';
 
@@ -7,11 +7,23 @@ export function combatDecision(s,e){
  const enemies=s.units.filter(t=>t.hp>0&&t.team!==e.team&&t.team>=0&&!structureProtected(s,t)&&distance(e,t)<850&&canSee(s,e,t)&&lineOfSight(s,e,t));
  const heroes=enemies.filter(t=>t.kind==='hero'),allies=s.units.filter(t=>t.kind==='hero'&&t.team===e.team&&t.hp>0&&distance(e,t)<650);
  const ready=slot=>e.skillRanks[slot]&&e.cd[slot]<=0&&canAfford(e,slot)&&s.time>=(e.thinkAt||0);
- const zone=threateningZones(s,e)[0];
- const warning=s.units.find(t=>t.team!==e.team&&t.castIntent&&canSee(s,e,t)&&insideWarning(e,t.castIntent.shape,35))?.castIntent;
- const danger=zone?.type==='sunray'?{...zone,shape:'cone',width:.13}:zone||warning?.shape;
+ const zones=threateningZones(s,e),zone=zones.find(z=>!(z.armed>s.time)),armedWarning=zones.find(z=>z.armed>s.time);
+ const caster=s.units.find(t=>t.team!==e.team&&(t.castIntent||t.specialIntent)&&canSee(s,e,t)&&insideWarning(e,(t.castIntent||t.specialIntent).shape,35));
+ const warning=caster&&(caster.castIntent||caster.specialIntent);
+ const warningShape=armedWarning?{...armedWarning,shape:armedWarning.type==='sunray'?'cone':'circle',width:.13}:warning?.shape;
+ let reacted=false;
+ if(warningShape){
+  const source=armedWarning?.source??caster?.id??0;
+  const key=armedWarning?`ground:${source}:${armedWarning.type}:${armedWarning.armed}:${armedWarning.x}:${armedWarning.y}`:`cast:${source}:${warning.start}:${warning.at}`;
+  if(e.warningReaction?.key!==key)e.warningReaction={key,at:s.time+.18+((e.id*17+source*13)%13)*.01};
+  reacted=s.time>=e.warningReaction.at;
+ }else e.warningReaction=null;
+ // Active ground remains urgent. Pending ground, casts and neutral specials
+ // share the same bounded perception delay until their damage becomes active.
+ const danger=zone?.type==='sunray'?{...zone,shape:'cone',width:.13}:zone||(reacted&&warningShape);
  if(danger){
-  const a=danger.shape==='cone'?danger.angle+(Math.sin(Math.atan2(e.y-danger.y,e.x-danger.x)-danger.angle)>=0?1:-1)*Math.PI/2:Math.atan2(e.y-danger.y,e.x-danger.x);
+  const origin=danger.targetId&&caster?caster:danger;
+  const a=danger.shape==='cone'?danger.angle+(Math.sin(Math.atan2(e.y-danger.y,e.x-danger.x)-danger.angle)>=0?1:-1)*Math.PI/2:Math.atan2(e.y-origin.y,e.x-origin.x);
   return {mode:'evade',move:{x:e.x+Math.cos(a)*320,y:e.y+Math.sin(a)*320}};
  }
  const outnumbered=heroes.length>allies.length, hurt=e.hp/e.maxHp;
@@ -25,7 +37,19 @@ export function combatDecision(s,e){
  const score=t=>distance(e,t)+(t.kind==='hero'?-190+(t.hp/t.maxHp)*100:0)+(t.kind==='minion'&&t.hp<=e.damage*1.15?-400:0)+(e.target===t.id?-35:0);
  let target=candidates.sort((a,b)=>score(a)-score(b)||a.id-b.id)[0];
  if(!target){const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);if(boss&&e.lane===1&&hurt>.6&&distance(e,boss)<700)target=boss;}
- const injured=allies.find(t=>t.hp<t.maxHp*.7);
+ const injured=allies.filter(t=>t.hp<t.maxHp*.7&&distance(e,t)<480).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id)[0];
+ // A nearby injured ally creates a protection opportunity for front-line kits.
+ // It changes target choice; each hero still uses its own control/attack rules.
+ const endangered=allies.filter(t=>t.id!==e.id&&t.hp<t.maxHp*.58&&distance(e,t)<500).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id)[0];
+ if(endangered&&[1,7].includes(e.hero)&&hurt>.55){
+  const attacker=heroes.filter(t=>distance(t,endangered)<Math.max(300,t.range+80)).sort((a,b)=>distance(a,endangered)-distance(b,endangered)||a.id-b.id)[0];
+  if(attacker)target=attacker;
+ }
+ const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);
+ const team=s.units.filter(t=>t.kind==='hero'&&t.team===e.team&&t.hp>0);
+ const support=boss&&team.some(t=>t.id!==e.id&&t.hp/t.maxHp>.55&&distance(t,boss)<1600&&distance(t,e)<1700);
+ const rally=boss&&hurt>.72&&support&&distance(e,boss)<1900&&visibleTo(s,e.team,boss)&&!heroes.some(t=>distance(e,t)<500)&&!endangered;
+ if(rally)target=boss;
  if(!target){if(e.hero===10&&injured&&!injured.bloom&&ready(2))return {mode:'support',slot:2,aim:{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}};return {mode:'lane'};}
  const d=distance(e,target),aim={x:target.x-e.x,y:target.y-e.y,distance:d},combat=target.kind==='hero',near=heroes.filter(t=>distance(e,t)<420).length;
  let slot;
@@ -50,5 +74,5 @@ export function combatDecision(s,e){
  let point;
  if(e.range>250&&combat&&d<e.range*.7&&e.attackCd>.12){const a=Math.atan2(e.y-target.y,e.x-target.x);point={x:e.x+Math.cos(a)*260,y:e.y+Math.sin(a)*260};}
  else if(d>e.range*.9+target.radius)point=target;
- return {mode:'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:aim};
+ return {mode:rally?'objective':'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:aim};
 }
