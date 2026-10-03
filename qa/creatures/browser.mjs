@@ -80,6 +80,7 @@ try {
         cards:cards.filter(r=>r.width>=48&&r.height>=44).length>=4,
         columns:new Set(cards.map(r=>Math.round(r.left))).size===4,
         allCardsFit:[...document.querySelectorAll('#hero-picks button')].every(el=>inside(rect(el),roster)),
+        captions:[...document.querySelectorAll('#hero-picks .hero-card-name')].every(el=>el.scrollWidth<=el.clientWidth+2),
       };
     });
     console.log(name,'selection controls',JSON.stringify(controlsFit));
@@ -89,6 +90,7 @@ try {
     assert(controlsFit.filters, 'all six role controls fit');
     assert(controlsFit.cards, 'at least one row of four usable hero cards fits');
     assert(controlsFit.columns, 'the roster uses four columns');
+    assert(controlsFit.captions, 'all sixteen native hero captions fit their cards');
     if (name === 'desktop') assert(controlsFit.allCardsFit, 'all sixteen portraits fit the desktop roster');
     if (name === 'small-phone' || name === 'landscape') {
       const portrait=page.locator('#hero-picks [data-hero="4"] .reference-portrait');
