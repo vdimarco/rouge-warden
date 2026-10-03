@@ -1,4 +1,4 @@
-# Shore of the Ancients opening UI
+## ADDED Requirements
 
 ### Requirement: Reference opening scene
 The opening SHALL match the supplied Shore reference composition at 1536x864 with a framed four-column hero roster, cinematic selected-hero artwork, a right skill panel, gold wordmark and cyan selection feedback. Native controls SHALL remain functional over the artwork.
@@ -46,17 +46,20 @@ The screen SHALL keep the Play action, hero selection and skill inspection usabl
 - **WHEN** a long hero name is selected near 1000px width or the desktop viewport is short
 - **THEN** the name, skills, description and footer remain legible and fit without overlapping essential controls.
 
-### Requirement: Independent movement and ability touches
-A held movement touch SHALL remain active while a second touch casts or upgrades an ability.
+## REMOVED Requirements
 
-#### Scenario: Spend a point while moving
-- **WHEN** the player holds the pad and taps an eligible plus with a second finger
-- **THEN** exactly one point is spent, the correct rank increases and movement continues until the movement finger is released or cancelled.
+### Requirement: Epic opening scene
+**Reason:** The supplied Shore reference replaces the folklore opening composition and unframed lineup.
+**Migration:** Use Reference opening scene for the framed roster and cinematic hero stage.
 
-#### Scenario: Cast while moving
-- **WHEN** the player holds the pad and aims or taps a learned ability with another finger
-- **THEN** the cast uses the ability finger and releasing it does not stop movement.
+### Requirement: Contained opening layout
+**Reason:** A four-column roster with contained vertical travel replaces the horizontal carousel.
+**Migration:** Use Contained reference layout for keyboard, touch, safe areas and supported sizes.
 
-#### Scenario: Cancel a touch
-- **WHEN** a captured ability or upgrade pointer is cancelled
-- **THEN** it does not cast or train and the unrelated movement pointer remains active.
+### Requirement: Fal cinematic opening artwork
+**Reason:** The new source-matched shore scene replaces the moonlit folklore backdrop.
+**Migration:** Use Reference opening scene for artwork, native controls and fallback behavior.
+
+### Requirement: Animated hero portraits
+**Reason:** The supplied framed portrait atlas and new stage sprites replace the twelve animated lineup portraits.
+**Migration:** Use the sixteen reference identity artworks, with reduced decorative motion and battle-art fallback.

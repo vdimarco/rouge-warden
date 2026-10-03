@@ -1,4 +1,4 @@
-# Shore of the Ancients hero roster
+## ADDED Requirements
 
 ### Requirement: Twelve combat archetypes
 The game SHALL preserve twelve tested combat archetypes with distinct statistics, basic attacks and four learned spells. Bots SHALL use the full set of archetypes. Display identities SHALL not change spell dispatch, mana, cooldowns, rank gates or combat randomness.
@@ -26,6 +26,8 @@ The selection SHALL offer Tidewarden, Embersong, Voidcaller, Stoneheart, Skyreav
 - **WHEN** an identity's battle sprite cannot load
 - **THEN** the original archetype sprite is used and combat remains available.
 
+## MODIFIED Requirements
+
 ### Requirement: Attributes and role filters
 Every combat archetype SHALL have Strength, Agility or Intelligence as its primary attribute. The reference selection SHALL filter identities by All, Carry, Bruiser, Mage, Support or Initiator. The selected identity SHALL remain in the preview when a filter excludes its card.
 
@@ -37,8 +39,8 @@ Every combat archetype SHALL have Strength, Agility or Intelligence as its prima
 - **WHEN** a player previews any identity
 - **THEN** its four skills and accessible attribute, attack type and health details come from its assigned combat archetype.
 
-### Requirement: Attribute growth
-Class growth SHALL change derived combat stats on each level and SHALL not compound when equipment is recalculated.
-#### Scenario: Gain a level
-- **WHEN** a hero gains a level
-- **THEN** Strength gains extra health and regeneration, Agility gains attack speed and armor, or Intelligence gains spell power and mana; item effects and learned ranks remain valid.
+## REMOVED Requirements
+
+### Requirement: Twelve playable heroes
+**Reason:** The reference selection now exposes sixteen visual identities over the existing twelve combat archetypes.
+**Migration:** Use Twelve combat archetypes for combat behavior and Sixteen reference hero identities for selection, naming and artwork.

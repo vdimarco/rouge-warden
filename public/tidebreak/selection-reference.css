@@ -112,3 +112,6 @@
 @media(min-width:1000px) and (max-width:1199px){#menu .selection-tabs{gap:16px}#menu .selection-tabs button{font-size:10px;letter-spacing:2px}#menu .selection-account{gap:10px}#menu #tidecaller-profile{display:none}#menu .hero-copy h2{font-size:22px;letter-spacing:1px}#menu .hero-title{gap:10px}#menu .hero-sigil{width:26px;height:36px}#menu .hero-copy>span{margin-left:36px;font-size:10px;letter-spacing:1px}#menu .hero-copy p,#menu #hero-tags{margin-left:36px}#menu .start-action{width:37%;right:2%}#menu .roster-footer #play{font-size:12px;letter-spacing:.6px}#menu .roster-footer .menu-links{right:2%;width:37%}}
 
 @media(max-width:360px){#menu .roster-footer #play{font-size:11px;letter-spacing:.5px}}
+
+@media(max-width:1199px){#menu .hero-picks button>span.hero-card-name{font:500 9px/1 Barlow,Arial,sans-serif;letter-spacing:0}#menu #role-filters button{font-size:8px;letter-spacing:0}}
+@media(min-width:1000px) and (max-width:1199px){#menu .arcade-motto,#menu .shore-memory{display:none}}
