@@ -2,7 +2,7 @@
 export function pointerAction(button, action, enabled=()=>!button.disabled) {
   let pointer=null,origin;
   button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture(pointer);});
-  button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),inside=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;pointer=null;if(inside&&enabled()&&Math.hypot(e.clientX-origin.x,e.clientY-origin.y)<24)action();});
+  button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),pad=18,inside=e.clientX>=rect.left-pad&&e.clientX<=rect.right+pad&&e.clientY>=rect.top-pad&&e.clientY<=rect.bottom+pad;pointer=null;if(inside&&enabled()&&Math.hypot(e.clientX-origin.x,e.clientY-origin.y)<44)action();});
   for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)pointer=null;});
   button.addEventListener('click',e=>{if(e.detail===0&&enabled())action();});
 }
@@ -22,7 +22,7 @@ export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=(
   const reset=()=>{pointer=null;slot=null;aim=null;aimed=cancelled=false;onAim(null);onStatus(null);};
   const update=e=>{
     const x=e.clientX-origin.x,y=e.clientY-origin.y,drag=Math.hypot(x,y);
-    aimed ||= drag>12;
+    aimed ||= drag>18;
     cancelled=aimed&&Math.hypot(e.clientX-center.x,e.clientY-center.y)<=center.cancelRadius;
     aim=aimed&&!cancelled?{x,y}:null;
     onAim(aim?{...aim,slot}:null);
