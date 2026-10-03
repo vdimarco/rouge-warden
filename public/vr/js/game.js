@@ -1380,6 +1380,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   /* ---------------- the tutorial ---------------- */
   const tut = { step: -1, t: 0, rep: 0, pulse: 0, reel: 0, lt: [-1, -1], yaw0: 0, head0: 0, hud: 0, ready: false };
   const yawOf = (q) => Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y));
+  const phonePlay = () => !!(typeof window !== "undefined" && window.G && window.G.input && window.G.input.easySwing);
   function tutBegin(step) {
     tut.step = step; progress.tutorial = step;
     tut.t = tut.rep = tut.pulse = tut.reel = tut.hud = 0; tut.lt[0] = tut.lt[1] = -1; tut.ready = false;
@@ -1410,7 +1411,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       case 0: if (ev.type === "attach" && P.ropes[ev.side].anchor.y - (P.pos.y + P.chest) >= 10) tutNext(); break;
       case 1: if (ev.type === "detach" && ev.speed >= 8) tutNext(); break;
       case 2: if (ev.type === "attach" && !P.onGround) tutNext(); break;
-      case 4: if (ev.type === "yank" && ev.target && !SPECIAL[ev.target.tag]) tutNext(); break;
+      // on a phone there is no yank: a fast auto-release teaches the chain instead
+      case 4: if ((ev.type === "yank" && ev.target && !SPECIAL[ev.target.tag]) || (phonePlay() && ev.type === "detach" && ev.speed >= 15)) tutNext(); break;
     }
   }
   function tutUpdate(dt, input) {
