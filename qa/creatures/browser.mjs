@@ -33,7 +33,7 @@ try {
     await page.getByRole('button', { name: 'Turn', exact: false }).click();
     assert.equal((await page.evaluate(() => window.creatureGallery())).facing, Math.PI / 4);
     await page.screenshot({ path: path.join(shots, `${name}-creatures.png`), fullPage: true });
-    await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Monster Mash/);
+    await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     await page.locator('#play').click();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
