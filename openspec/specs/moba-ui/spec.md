@@ -1,61 +1,50 @@
-# Monster Mash opening UI
+# Shore of the Ancients opening UI
 
-### Requirement: Epic opening scene
-The opening screen SHALL show a painted moonlit folklore stage, a prominent selected hero, role filters, spell previews and the existing match facts.
+### Requirement: Reference opening scene
+The opening SHALL match the supplied Shore reference composition at 1536x864 with a framed four-column hero roster, cinematic selected-hero artwork, a right skill panel, gold wordmark and cyan selection feedback. Native controls SHALL remain functional over the artwork.
 
-#### Scenario: Select a legend
-- **WHEN** the player selects any of the twelve heroes or changes a role filter
-- **THEN** the selected state, hero name, portrait, stats and four spells update correctly and all matching heroes remain reachable.
+#### Scenario: Select a reference hero
+- **WHEN** the player selects any of the sixteen heroes
+- **THEN** the selected card, stage art, name, roles and four skill previews update together.
 
-#### Scenario: Browse unframed heroes
-- **WHEN** the player views or selects a hero in the opening lineup
-- **THEN** the portraits appear without card borders, filled card backgrounds or a decorative portrait frame; a highlighted and underlined name identifies selection and keyboard focus remains visible.
+#### Scenario: Inspect a skill
+- **WHEN** a skill receives hover, focus or a tap
+- **THEN** its actual effect, cooldown and mana information appear, and the player can return to selection.
 
-### Requirement: Contained opening layout
-The opening and game panels SHALL fit the current viewport without vertical scrolling. The hero lineup SHALL show three cards below 600px wide, four below 1000px, and five on wider screens. Footer actions SHALL remain visible with safe-area insets.
+#### Scenario: Use the selection navigation
+- **WHEN** the player opens hero details, realms, lore, the market explanation, the match record or settings
+- **THEN** the matching panel opens and the player can return to hero selection without starting a match.
 
-#### Scenario: Browse by swipe
-- **WHEN** the player swipes left or right through the lineup
-- **THEN** the centered hero becomes selected and its name, portrait, stats and four spells update; all twelve heroes remain reachable.
+#### Scenario: Reduce motion or lose stage art
+- **WHEN** reduced motion is requested or cinematic stage art cannot load
+- **THEN** decorative motion stops or the dark fallback is shown, while native selection controls stay usable.
 
-#### Scenario: Select without a swipe
-- **WHEN** the player taps a hero, uses a lineup arrow or presses a keyboard arrow
-- **THEN** the requested hero is centered and selected without moving the page vertically.
+### Requirement: Contained reference layout
+The screen SHALL keep the Play action, hero selection and skill inspection usable at 1536x864, 390x844, 320x568 and 844x390. Roster scroll SHALL remain within its panel. Footer actions, skill buttons, key labels and the description SHALL fit without overlap. Safe areas SHALL preserve reachable actions.
 
-#### Scenario: Compact viewport
-- **WHEN** the player opens selection or a game panel at 320x568, 360x640, 390x844 or 844x390
-- **THEN** the content uses compact rows or pages and all actions remain reachable without a vertical scroll.
+#### Scenario: Use a compact screen
+- **WHEN** a supported phone or landscape size is used
+- **THEN** persistent controls fit the viewport without overlap, and all sixteen heroes remain reachable.
 
+#### Scenario: Browse the desktop roster
+- **WHEN** the player opens selection at 1536x864
+- **THEN** all sixteen framed portraits appear in four columns and four rows in the left panel, which occupies approximately 32% of the viewport width.
 
-#### Scenario: Enter and leave a match
-- **WHEN** the player previews a spell, starts a match, trains a skill and returns to hero selection
-- **THEN** the existing preview, learning and game controls work with the new UI.
+#### Scenario: Swipe a portrait
+- **WHEN** the player swipes vertically from a portrait on a compact screen
+- **THEN** the roster scrolls within its panel and the Play action remains visible.
 
-#### Scenario: Reduce motion or lose background art
-- **WHEN** reduced motion is requested or the painted backdrop cannot load
-- **THEN** decorative motion stops and the native selection controls remain legible and usable.
+#### Scenario: Use the keyboard
+- **WHEN** the player uses arrow keys, Home or End within the roster
+- **THEN** the requested grid entry is selected, focused and revealed within the roster without moving the page.
 
-### Requirement: Fal cinematic opening artwork
-The opening screen SHALL use a Fal-generated cinematic folklore environment while preserving native controls.
+#### Scenario: Start or activate a focused action
+- **WHEN** the player uses Play or Enter to start from hero selection
+- **THEN** the selected identity starts the match and opens its spellbook; Enter on another focused control activates that control's own action.
 
-#### Scenario: Use generated art
-- **WHEN** approved Fal artwork is integrated
-- **THEN** the moonlit hero stage remains readable with all selection and Start controls reachable at supported viewports.
-
-#### Scenario: Load without artwork
-- **WHEN** the generated background is unavailable
-- **THEN** the native hero preview, roster and Start controls remain readable and usable on the dark fallback.
-
-#### Scenario: Enter and return
-- **WHEN** a player selects a hero, previews a spell, starts and returns to selection
-- **THEN** the cinematic stage preserves the existing selection, learning and game controls.
-
-### Requirement: Animated hero portraits
-The lineup SHALL display actual animated GIF idle loops for all twelve heroes, preserving the existing identity and static artwork fallback.
-
-#### Scenario: Reduce motion or lose a GIF
-- **WHEN** reduced motion is requested or an animated portrait fails to load
-- **THEN** the original static portrait is shown and selection remains usable.
+#### Scenario: Keep long titles and short desktop actions usable
+- **WHEN** a long hero name is selected near 1000px width or the desktop viewport is short
+- **THEN** the name, skills, description and footer remain legible and fit without overlapping essential controls.
 
 ### Requirement: Independent movement and ability touches
 A held movement touch SHALL remain active while a second touch casts or upgrades an ability.

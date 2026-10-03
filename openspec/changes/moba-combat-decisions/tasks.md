@@ -5,6 +5,7 @@
 - [x] Display combo marks, expiry and result-specific feedback.
 - [x] Add bounded bot reactions, team opportunities and neutral specials.
 - [x] Run affected regression and seeded full-match checks.
+- [ ] Playtest new committed-cast recovery for dodge/punish rhythm.
 - [ ] Check rendered desktop, portrait and landscape controls and console health.
 - [ ] Review canonical specs and archive completed change.
 

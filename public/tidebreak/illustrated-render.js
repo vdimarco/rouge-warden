@@ -9,6 +9,7 @@ import { riverSample, riverCrossings, riverGeometry, riverOutline } from './rive
 import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
+import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
@@ -16,7 +17,8 @@ export async function loadArt() {
   const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap((h,i) => i>=4?[h.slug+'-front']:[h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
   const imported=await Promise.all([...new Set(MARKETPLACE_SPRITES.map(s=>s.file))].map(async file=>['marketplace-'+file,await load('./art/magicpixel/'+file).catch(()=>null)]));
-  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])),...Object.fromEntries(imported), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
+  const identities=await Promise.all(HERO_IDENTITIES.map(async h=>['reference-'+h.slug,await load(`./art/reference/${h.slug}.webp`).catch(()=>null)]));
+  return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])),...Object.fromEntries(imported),...Object.fromEntries(identities), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
 // An orthographic 2.5D stage: separate illustrated objects, depth sorting, camera
 // tracking and world-space effects. The concept screenshot is never a backdrop.
@@ -92,7 +94,7 @@ export class Renderer {
       const intent=e.castIntent||e.specialIntent;
       if(intent){
         if(e.specialIntent)this.drawWarning(intent,s.time,'#ffc17a');else drawCastWarning(this,intent,s.time,e.team===p.team);
-        const a=this.project(e.x,e.y,(HEROES[e.hero]?.height||325)*.77+32),label=intent.label||HEROES[e.hero]?.skills[intent.slot];
+        const identity=identityFor(e),a=this.project(e.x,e.y,(HEROES[e.hero]?.height||325)*.77+32),label=identity&&Number.isInteger(intent.slot)?identitySkill(identity.id,intent.slot).name:intent.label||HEROES[e.hero]?.skills[intent.slot];
         if(label){c.save();c.font='700 11px Barlow';c.textAlign='center';c.strokeStyle='#101c27';c.lineWidth=3;c.strokeText(label,a.x,a.y);c.fillStyle=e.specialIntent?'#ffd09a':e.team===p.team?'#bdebd9':'#ffad90';c.fillText(label,a.x,a.y);c.restore();}
       }
       const exposed=e.exposedUntil>s.time,recovery=e.recoveryUntil>s.time;
@@ -128,7 +130,10 @@ export class Renderer {
     if (hero) { name = HEROES[e.hero].slug + (e.hero>=4||Math.sin(e.facing)>.2?'-front':'-back'); height = HEROES[e.hero].height*(e.player?1:.77); }
     const pose = hero ? attackPose(e, s.time) : null;
     const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
-    if (pose) { if(e.hero<4)name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`; this.lastPoses.push({ id: e.id, hero: e.hero, stage: pose.stage, asset: name }); }
+    if (pose && e.hero<4) name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`;
+    const baseAsset=name,identity=hero?identityFor(e):null,identityAsset=identity&&`reference-${identity.slug}`;
+    if (identityAsset&&this.art[identityAsset]) name=identityAsset;
+    if (pose) this.lastPoses.push({ id: e.id, hero: e.hero, identity: identity?.id, stage: pose.stage, asset: baseAsset, renderAsset: name });
     let x = e.x, y = e.y, jump = 0;
     if (e.motion) { const t = Math.min(1, (s.time - e.motion.start) / e.motion.duration), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
     const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;

@@ -12,7 +12,11 @@ const WINDUPS = [
 export function castTiming(e,slot,bot=false) {
  const defensive = slot===0 || slot===2&&[7,10].includes(e.hero) || slot===3&&[3,9].includes(e.hero);
  const windup = defensive ? 0 : bot ? (slot===3?.7:.5) : WINDUPS[e.hero]?.[slot] || 0;
- return {windup,recovery:windup>0 ? (slot===3?.22:.16) : 0};
+ // Major attacks should create a real answer window. The tell gives the defender
+ // time to dodge; the recovery gives them time to punish a miss instead of
+ // immediately resetting into another action.
+ const recovery = windup<=0 ? 0 : slot===3 ? .34 : windup>=.3 ? .26 : .22;
+ return {windup,recovery};
 }
 
 export function emitCombatFeedback(s,source,target,type,label='') {

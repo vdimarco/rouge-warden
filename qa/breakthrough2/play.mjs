@@ -271,6 +271,15 @@ try {
   await boot.page.waitForFunction(() => !document.getElementById("howto").hidden);
   const helpText = await boot.page.locator("#howto").innerText();
   check(/10 year step|6 years or 10/.test(helpText) && /Idea Lab/.test(helpText), "how to play explains lag and the lab");
+  check(await boot.page.locator(".help-scene").count() === 6, "how to play has six scenes");
+  const stageBox = await boot.page.locator(".help-stage").boundingBox();
+  check(stageBox && stageBox.width >= 280 && stageBox.height >= 120, `how to stage ${stageBox ? Math.round(stageBox.width) + "x" + Math.round(stageBox.height) : "missing"}`);
+  const still = await boot.page.locator(".help-scene.is-on .heat").evaluate((node) => getComputedStyle(node).animationName);
+  check(still === "none", `fast=1 holds the how to scene still (${still})`);
+  await boot.page.locator(".help-dot").nth(4).tap();
+  check(await boot.page.locator(".help-scene.is-on").getAttribute("data-scene") === "race", "a how to dot opens the race");
+  const dotBox = await boot.page.locator(".help-dot").first().boundingBox();
+  check(dotBox.height >= 44 && dotBox.width >= 44, `how to dot ${Math.round(dotBox.width)}x${Math.round(dotBox.height)}`);
   const closeBox = await boot.page.locator("#howto-close").boundingBox();
   check(closeBox.height >= 44, "how to play close button is at least 44px");
   await boot.page.locator("#howto-close").tap();
@@ -333,6 +342,13 @@ try {
   const slowPlay = await playChoose(slow.page, played.ids);
   check(slowPlay.ok && JSON.stringify(slowPlay.log) === JSON.stringify(played.log), "fast off keeps the same log");
   check(slow.errors.length === 0, slow.errors.length ? slow.errors.join("; ") : "no console errors in the slow run");
+  await slow.page.evaluate(() => document.getElementById("help").click());
+  await slow.page.waitForFunction(() => !document.getElementById("howto").hidden);
+  const moving = await slow.page.locator(".help-scene.is-on .year-token").evaluate((node) => getComputedStyle(node).animationName);
+  check(moving === "help-hop", `how to scene animates (${moving})`);
+  const beforeStep = await slow.page.locator("#help-step").innerText();
+  await slow.page.waitForFunction((prev) => document.getElementById("help-step").textContent !== prev, beforeStep, { timeout: 8000 });
+  check(await slow.page.locator("#help-step").innerText() !== beforeStep, "how to play advances on its own");
 
   console.log("\nother seed");
   const other = await open(browser, base + "?seed=7&fast=1");

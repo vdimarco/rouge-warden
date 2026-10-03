@@ -35,3 +35,12 @@ Vertical look SHALL reveal the sky on foot and while driving. Nearby helicopters
 - **THEN** firing/reload stop advancing, effects remain bounded, and session exit removes effects/audio
 - **WHEN** desktop and landscape touch layouts are tested
 - **THEN** weapon controls and ammunition remain visible without blocking existing movement controls
+
+
+### Requirement: Reward readable openings
+Enemy recoil, recovery and stagger SHALL create an explicit punish opportunity. A hit during that state SHALL have stronger damage/posture payoff than the same hit against a neutral enemy, with a clear feedback cue.
+
+#### Scenario: Punish recovery
+- **WHEN** the player attacks an enemy during recoil, recovery or stagger
+- **THEN** the hit deals bonus damage and posture pressure and shows an opening-hit cue
+- **AND** a heavy attack earns a larger opening bonus than a light attack.

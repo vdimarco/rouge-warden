@@ -4,6 +4,7 @@
 - [x] Integrate melee feedback, armed police and upgraded patrol physics.
 - [x] Add skyward camera look and rotor audio.
 - [x] Verify rule tests, browser interactions, screenshots and regressions.
+- [ ] Playtest opening-hit damage/posture rewards and heavy-attack risk/reward.
 - [ ] Validate with OpenSpec CLI and archive when available.
 
 ## Validation

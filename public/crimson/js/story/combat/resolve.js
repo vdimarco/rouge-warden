@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { TUNE } from '../../moves.js';
 import { angDiff, angleTo, flatDist, breakPosture } from './fighter.js';
-import { WEAPONS } from './playermoves.js';
+import { WEAPONS, openingReward } from './playermoves.js';
 
 const GOD = new URLSearchParams(location.search).has('god');
 
@@ -121,12 +121,21 @@ export function createResolve(K) {
     if (H.atk.name === 'deathblow') { deathblow(f, at); return; }
     // a clone of ink bursts at one touch
     if (f.clone) { K.foes.vanish(f, true); return; }
-    const open = f.state === 'recover' || f.state === 'recoil' || f.state === 'stagger';
-    const dmg = s.dmg * w.dmg * H.stats.dmg * (open ? 1.25 : 1);
+    const opening = openingReward(f.state, H.atk.name);
+    // Reading a whiff, recoil or stagger should pay off immediately. Heavy attacks
+    // get the largest damage reward; a deflect-created recoil keeps its stronger
+    // pre-existing posture payoff.
+    const dmg = s.dmg * w.dmg * H.stats.dmg * opening.damage;
     f.hp -= dmg;
     if (f.lawUnit) S.bus.emit('pedestrianCrime', { fatal: f.hp <= 0, pos: f.pos.clone() });
-    f.posture = Math.min(f.maxPosture, f.posture + s.post * w.post * TUNE.postureGain * (f.state === 'recoil' ? 1.6 : 1) * (f.postureK || 1));
+    f.posture = Math.min(f.maxPosture, f.posture + s.post * w.post * TUNE.postureGain * opening.posture * (f.postureK || 1));
     f.postureT = 0; f.flinch = 1;
+    if (opening.open && first) {
+      K.toast('OPENING HIT');
+      K.flash(0.16);
+      S.hitstop = Math.max(S.hitstop, H.atk.name === 'heavy' ? 0.12 : 0.075);
+      K.emit('opening', { f, move: H.atk.name });
+    }
     K.sfx(H.weapon === 'fists' ? 'hit' : 'cut', f.pos);
     if (first) {
       S.hitstop = Math.max(S.hitstop, H.atk.name === 'heavy' ? 0.09 : 0.05);
