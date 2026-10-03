@@ -41,8 +41,8 @@ for (const u of urls) {
   check(same && g.tris <= 16000 && !ext.length, `${u}: 24 Meshy bones, ${g.tris} triangles, no Draco/meshopt/Basis`);
 }
 const models = readdirSync(PUB + "crimson/models").sort();
-// H1 overrides A5: the rigged Vance, Voss, Rattler and gang GLBs are the only new character GLBs
-check(JSON.stringify(models) === JSON.stringify(["bear.glb", "gabe.glb", "gang.glb", "rattler.glb", "ronin.glb", "vance.glb", "voss.glb"]), `only the H1 character GLBs are new: models/ holds ${models.join(", ")}`);
+// Approved character assets, including the fal-generated NPCs.
+check(JSON.stringify(models) === JSON.stringify(["bear.glb", "civA.glb", "civB.glb", "gabe.glb", "gang.glb", "police.glb", "rattler.glb", "ronin.glb", "sheriff.glb", "vance.glb", "voss.glb"]), `only the approved character GLBs are present: models/ holds ${models.join(", ")}`);
 check(!existsSync(PUB + "crimson/anim/anim.glb"), "no anim.glb (A5)");
 for (const n of ["vance", "voss", "rattler"]) check(existsSync(PUB + `crimson/art/portraits/${n}.webp`), `portrait art/portraits/${n}.webp exists (A3)`);
 // no timers for flow in the package (G2)
@@ -117,11 +117,12 @@ const pal = await page.evaluate(async () => {
 check(!pal.bad.length, `the ${pal.n} body colours pass the neon test${pal.bad.length ? ": " + pal.bad.slice(0, 4).join(", ") : ""}`);
 check(pal.stripes.length && pal.stripes.every((k) => /(gang|rattler|boone)\d\.(jacket|vest)\.stripe$/.test(k)), `the only neon on a body is the gang's hi-vis stripe (${pal.stripes.length})`);
 
-// D1: posed height against the source body, the idle band, NaN, Hips x/z, drift
+// D1: original body proportions match the source. The new NPC proportions, poses and
+// grounding are checked separately in npc-interactions.mjs.
 const EXTREME = ["gabe:fly", "gabe:flykick", "ronin:down", "ronin:knock", "ronin:rollc", "ronin:roll", "ronin:db", "ronin:thrust", "ronin:dead", "ronin:drink", "ronin:sip", "gabe:grab", "gabe:taunt", "gabe:call"];
 const d1 = await page.evaluate((EXTREME) => {
   const S = __crimson.story.S, C = S.test.cast;
-  const bodies = ["tanktop", "fifty", "shades", "newbalance", "redjersey", "gabe", "vance", "voss", "rattler", "boone", "gang", "civA", "civB", "christian", "ryu"];
+  const bodies = ["tanktop", "fifty", "shades", "newbalance", "redjersey", "gabe", "vance", "voss", "rattler", "boone", "gang", "christian", "ryu"];
   const names = C.clipNames("newbalance");
   const sets = { ronin: names.filter((n) => n.startsWith("ronin:")), gabe: names.filter((n) => n.startsWith("gabe:")), bear: names.filter((n) => n.startsWith("bear:")) };
   const res = { worst: 0, worstAt: "", strictBad: [], extremeBad: [], nan: [], drift: [], band: [], clips: 0, frames: 0 };
@@ -147,7 +148,7 @@ const d1 = await page.evaluate((EXTREME) => {
   }
   return res;
 }, EXTREME);
-check(!d1.strictBad.length, `D1: ${d1.clips} retargeted clips on 15 bodies (${d1.frames} frames) within +-0.03 of the source body${d1.strictBad.length ? ": " + d1.strictBad.slice(0, 6).join(", ") : ""}`);
+check(!d1.strictBad.length, `D1: ${d1.clips} retargeted clips on 13 original bodies (${d1.frames} frames) within +-0.03 of the source body${d1.strictBad.length ? ": " + d1.strictBad.slice(0, 6).join(", ") : ""}`);
 check(!d1.extremeBad.length, `D1: the extreme poses (knockdowns, rolls, the flying kick, the bear set) within +-0.05; worst ${d1.worst.toFixed(3)} (${d1.worstAt})${d1.extremeBad.length ? ": " + d1.extremeBad.slice(0, 6).join(", ") : ""}`);
 check(!d1.band.length, `the retargeted idles sit in 0.86-0.93 of bind height on every body${d1.band.length ? ": " + d1.band.slice(0, 6).join(", ") : ""}`);
 check(!d1.nan.length, `no NaN in any track${d1.nan.length ? ": " + d1.nan.slice(0, 4).join(", ") : ""}`);

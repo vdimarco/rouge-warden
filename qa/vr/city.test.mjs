@@ -221,7 +221,7 @@ section("Landmarks");
   const has = (f) => nd.some(f);
   check(N.x === W.x && N.z === W.z && N.shaftR === 7 && N.podY0 === 262 && N.podY1 === 286 && N.podR === 19 && N.top === 360, "the Needle stands at x -90, z 225: shaft 7, pod 262-286 r 19, top 360");
   check(has((c) => c.type === "cyl" && c.r === 7 && c.y0 === 0 && c.y1 === 262), "shaft collider");
-  check(N.collars.length === 4 && N.collars.every((k) => k.r === 11 && has((c) => c.r === 11 && c.y1 - c.y0 === 1.5 && Math.abs((c.y0 + c.y1) / 2 - k.y) < 1e-9)), "4 collars at 60, 110, 160, 210, r 11, 1.5 m tall");
+  check(N.collars.length === 4 && N.collars.every((k) => k.r === 7.4 && has((c) => c.r === 7.4 && c.y1 - c.y0 === 1.5 && Math.abs((c.y0 + c.y1) / 2 - k.y) < 1e-9)), "4 collars at 60, 110, 160, 210, r 7.4, 1.5 m tall (slim shaft ledges)");
   check(N.deck.y === 262 && N.deck.r === 22 && has((c) => c.r === 22 && c.y0 === 261 && c.y1 === 262), "the deck: r 22, y 261-262");
   check(has((c) => c.r === 19 && c.y0 === 262 && c.y1 === 286), "pod collider");
   check(has((c) => c.y1 === 360 && c.y0 >= 286), "antenna collider up to 360");

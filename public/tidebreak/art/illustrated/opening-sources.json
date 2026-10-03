@@ -1,0 +1,101 @@
+{
+  "provider": "fal.ai",
+  "endpoint_id": "fal-ai/nano-banana-pro",
+  "background": {
+    "status": "completed",
+    "request_id": "01a0fe77-3812-74a0-924f-02d28c608ab8",
+    "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe77-3812-74a0-924f-02d28c608ab8/status",
+    "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe77-3812-74a0-924f-02d28c608ab8",
+    "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe77-3812-74a0-924f-02d28c608ab8/cancel",
+    "recipe": {
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "input": {
+        "prompt": "Epic hand-painted cinematic folklore MOBA hero selection ENVIRONMENT BACKGROUND ONLY. Wide 16:9 landscape, entire image edge-to-edge. Midnight teal, desaturated blue-green, old ivory moonlight, tiny antique-gold window lights. A towering ruined gothic citadel on a distant ridge in the UPPER CENTER-LEFT, deep layered pine forest silhouettes, mountain peaks and low rolling lake mist. An enormous softly glowing moon in the upper LEFT, veiled clouds, atmospheric perspective and rich painterly ink-and-watercolor detail matching illustrated storybook folklore sprites. Foreground: empty dark stone terrace on the lower LEFT quarter at the lake edge, a very subtle ancient circular summoning rune laid in stone, no beam of light, ready to place a hero cutout. Strong cinematic depth and dramatic silhouette, mysterious and epic rather than horror. COMPOSITION FOR READABLE UI: left third is scenic hero stage; MIDDLE and RIGHT two thirds must remain dark and quiet with broad shadow and mist, no bright details or strong edges behind UI. Outer edges framed by a few slender trees and broken stone, not an obstruction. Keep bottom 15% dark and simple for a footer. No creatures, no characters, no portraits, no interface, no panels, no buttons, NO TEXT, no lettering, no logo, no watermark. A finished premium game background, not a design mockup.",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "num_images": 1,
+        "output_format": "webp"
+      },
+      "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+    },
+    "result": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0aaccfda/CZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp",
+          "content_type": "image/webp",
+          "file_name": "CZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp",
+          "file_size": null,
+          "width": 2752,
+          "height": 1536
+        }
+      ],
+      "description": ""
+    },
+    "media": [
+      {
+        "url": "https://v3b.fal.media/files/b/0aaccfda/CZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp",
+        "json_path": "result.images[0].url",
+        "content_type": "image/webp",
+        "file_name": "CZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp"
+      }
+    ],
+    "display_hint": "Present completed media to the user. Forward attached image content blocks to the host's image display helper (for example, image(block)); do not stringify image blocks as text. For Markdown previews use previews[].preview_url, and separately link original_url as the full-resolution file. If no preview is available, show a clearly labeled original-file link. Do not claim a preview rendered unless it is visible. Video, audio and 3D URLs are original result files, not queue URLs.",
+    "previews": [
+      {
+        "original_url": "https://v3b.fal.media/files/b/0aaccfda/CZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp",
+        "preview_url": "https://refinery.fal.media/url/https%3A%2F%2Fv3b.fal.media%2Ffiles%2Fb%2F0aaccfda%2FCZslFfOtUUEbjtLFlYMHP_K2OLIA80.webp/tr:w-768,h-768,c-at_max,q-75/preview.webp",
+        "mime_type": "image/webp",
+        "max_dimension": 768
+      }
+    ]
+  },
+  "concept": {
+    "status": "completed",
+    "request_id": "01a0fe75-dc37-70c3-8d6e-e155ce8d9d44",
+    "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe75-dc37-70c3-8d6e-e155ce8d9d44/status",
+    "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe75-dc37-70c3-8d6e-e155ce8d9d44",
+    "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a0fe75-dc37-70c3-8d6e-e155ce8d9d44/cancel",
+    "recipe": {
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "input": {
+        "prompt": "Complete finished desktop game hero-selection screen concept for MONSTER MASH, epic hand-painted folklore MOBA. 16:9 landscape. This is a readable designed UI reference, not a poster. Deep midnight teal and old ivory with restrained antique gold hairline rules. Large 'Monster Mash' serif title top left; 'Choose your legend.' underneath. Small top right '3v3 with bots · Shifting realms · 6 min'. Background cinematic moonlit ruined gothic citadel overlooking a misty forest lake, luminous distant windows, foreground dark. The selected hero is Nessie, friendly but formidable green long-necked lake monster with tiny webbed fins, watercolor ink-cutout style, huge on the LEFT third on a subtle circular gold summoning platform. MID third native UI: Nessie headline, RIVER BRUISER accent, one line description, health 2200, attack Melee, play style Tactical; four compact painted spell buttons with names Loch dive, Undertow, Tailbreaker, Maelstrom. RIGHT third: 'The legends' heading, seven small role filters and three-column four-row roster of twelve small illustrated folklore creatures with labels Mothman, Nessie, Baba Yaga, Jersey Devil, Kraken, Wendigo, Kitsune, Stone Golem, Banshee, Phoenix, Dryad, Gorgon. Footer separate reserved row, gold 'START THE HUNT' button left, small How to play / Switch game / Sound on controls right. The roster cards do not overlap the footer. Low-noise background behind text and cards. Premium painterly high fantasy atmosphere, dramatic visual depth, crisp readable interface, consistent native typography. No phone mockup, no device frame, no watermark.",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "num_images": 1,
+        "output_format": "webp"
+      },
+      "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+    },
+    "result": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0aaccfd1/KyavuXYUvYdm5pDE5IF5I_V7egssPS.webp",
+          "content_type": "image/webp",
+          "file_name": "KyavuXYUvYdm5pDE5IF5I_V7egssPS.webp",
+          "file_size": null,
+          "width": 2752,
+          "height": 1536
+        }
+      ],
+      "description": ""
+    },
+    "media": [
+      {
+        "url": "https://v3b.fal.media/files/b/0aaccfd1/KyavuXYUvYdm5pDE5IF5I_V7egssPS.webp",
+        "json_path": "result.images[0].url",
+        "content_type": "image/webp",
+        "file_name": "KyavuXYUvYdm5pDE5IF5I_V7egssPS.webp"
+      }
+    ],
+    "display_hint": "Present completed media to the user. Forward attached image content blocks to the host's image display helper (for example, image(block)); do not stringify image blocks as text. For Markdown previews use previews[].preview_url, and separately link original_url as the full-resolution file. If no preview is available, show a clearly labeled original-file link. Do not claim a preview rendered unless it is visible. Video, audio and 3D URLs are original result files, not queue URLs.",
+    "previews": [
+      {
+        "original_url": "https://v3b.fal.media/files/b/0aaccfd1/KyavuXYUvYdm5pDE5IF5I_V7egssPS.webp",
+        "preview_url": "https://refinery.fal.media/url/https%3A%2F%2Fv3b.fal.media%2Ffiles%2Fb%2F0aaccfd1%2FKyavuXYUvYdm5pDE5IF5I_V7egssPS.webp/tr:w-768,h-768,c-at_max,q-75/preview.webp",
+        "mime_type": "image/webp",
+        "max_dimension": 768
+      }
+    ]
+  },
+  "implementation": "Only the environment is used as a CSS backdrop. Hero portraits, labels, roster cards, spell previews and controls are native. Original WebP retained without modification."
+}

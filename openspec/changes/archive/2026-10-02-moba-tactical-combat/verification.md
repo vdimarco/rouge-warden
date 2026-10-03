@@ -1,0 +1,9 @@
+# Verification
+
+- All thirteen deterministic test files pass, including the new tactical combat suite. Thirty-six complete matches pass for all twelve heroes with three seeds. Matches produce fights and tower damage, finish within the limit, keep at most 61 entities, preserve finite unit state and replay deterministically.
+- New checks cover mana costs and failed casts for every hero, regeneration and home recovery, respawn, local XP and finishing gold, growing tower hits and reset, guardian attacks/heals/expiry, decoy return at zero mana, chase trails, timed travel, cleanse reduction, bot mark combinations, avoidance, fixed-aim misses and stun interruption.
+- Existing skills, items, targeting, neutral camps, attack sequences, GIF integrity and independent pointer controls pass. JavaScript syntax and git diff checks pass.
+- Desktop Chrome preview at 1363x936: Dryad first-skill text and progression show summon behavior and 80 mana; HUD plus trains without a modal; summoning spends 80 mana and shows the guardian. Bramble bind spends its cost while an attack order continues. Mana and skill controls remain inside the viewport and page overflow is zero. A lane push loses health and dies under pressure; rank training remains available during respawn. Kitsune shows BACK and 0 MP after Fox step, and a second tap returns while the base cooldown stays active. No application errors or warnings were captured.
+- Browser inspection verifies the HUD and special skills. Warning shapes and dodge/interruption rules are checked in simulation; a live warning frame has not yet been captured. Physical phone multi-touch and rendered phone layouts remain unverified.
+- OpenSpec CLI is unavailable. Proposal, design, tasks, capability deltas and current specs were reviewed manually.
+- Production must be verified against the merged commit before the delivery response.

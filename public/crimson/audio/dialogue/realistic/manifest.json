@@ -1,0 +1,1686 @@
+{
+  "version": 2,
+  "model": "elevenlabs/tts/eleven-v4",
+  "entries": [
+    {
+      "who": "gabe",
+      "text": "Nice swing.",
+      "src": "audio/dialogue/realistic/c0.swing.gabe.mp3",
+      "voice": "Bill",
+      "duration": 0.936
+    },
+    {
+      "who": "tanktop",
+      "text": "Gabe? Big guy?",
+      "src": "audio/dialogue/realistic/c0.gabe.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.44
+    },
+    {
+      "who": "fifty",
+      "text": "Gabe? Is that you?",
+      "src": "audio/dialogue/realistic/c0.gabe.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.512
+    },
+    {
+      "who": "shades",
+      "text": "Gabe? No way.",
+      "src": "audio/dialogue/realistic/c0.gabe.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.836
+    },
+    {
+      "who": "newbalance",
+      "text": "Gabe? Are you okay?",
+      "src": "audio/dialogue/realistic/c0.gabe.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.476
+    },
+    {
+      "who": "gabe",
+      "text": "Hey, buddy. Long time.",
+      "src": "audio/dialogue/realistic/c0.buddy.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.8
+    },
+    {
+      "who": "redjersey",
+      "text": "Gabe? Buddy?",
+      "src": "audio/dialogue/realistic/c0.gabe.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.296
+    },
+    {
+      "who": "fifty",
+      "text": "Seven months of what?",
+      "src": "audio/dialogue/realistic/i0.what.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.404
+    },
+    {
+      "who": "gabe",
+      "text": "Get down. Now.",
+      "src": "audio/dialogue/realistic/c0.down.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.404
+    },
+    {
+      "who": "voice",
+      "text": "The van's here. Where's the Bear?",
+      "src": "audio/dialogue/realistic/c0.voice.voice.mp3",
+      "voice": "George",
+      "duration": 1.98
+    },
+    {
+      "who": "gabe",
+      "text": "You first.",
+      "src": "audio/dialogue/realistic/i0.first.gabe.mp3",
+      "voice": "Bill",
+      "duration": 0.72
+    },
+    {
+      "who": "gabe",
+      "text": "You just cost me seven months.",
+      "src": "audio/dialogue/realistic/i0.cost.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.124
+    },
+    {
+      "who": "gabe",
+      "text": "Why are five grown men dressed as samurai under Midgley Bridge?",
+      "src": "audio/dialogue/realistic/i0.why.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.284
+    },
+    {
+      "who": "gabe",
+      "text": "At three in the morning.",
+      "src": "audio/dialogue/realistic/i0.three.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.26
+    },
+    {
+      "who": "tanktop",
+      "text": "In our defense, it was very dark. And you were very hairy.",
+      "src": "audio/dialogue/realistic/i0.dark.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 4.32
+    },
+    {
+      "who": "fifty",
+      "text": "Ronin.",
+      "src": "audio/dialogue/realistic/i0.ronin.fifty.mp3",
+      "voice": "Eric",
+      "duration": 0.504
+    },
+    {
+      "who": "tanktop",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "src": "audio/dialogue/realistic/i0.vo.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 3.708
+    },
+    {
+      "who": "newbalance",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "src": "audio/dialogue/realistic/i0.vo.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 4.068
+    },
+    {
+      "who": "shades",
+      "text": "Okay. So. You're wondering how we got here. Fair.",
+      "src": "audio/dialogue/realistic/i0.vo.shades.mp3",
+      "voice": "Callum",
+      "duration": 4.248
+    },
+    {
+      "who": "redjersey",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "src": "audio/dialogue/realistic/i0.vo.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.78
+    },
+    {
+      "who": "fifty",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "src": "audio/dialogue/realistic/i0.vo.fifty.mp3",
+      "voice": "Eric",
+      "duration": 3.744
+    },
+    {
+      "who": "newbalance",
+      "text": "It was the last one.",
+      "src": "audio/dialogue/realistic/f1.last.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.116
+    },
+    {
+      "who": "clerk",
+      "text": "Fifteen-passenger van. We took the back seats out. It seats ten.",
+      "src": "audio/dialogue/realistic/f1.seats.clerk.mp3",
+      "voice": "Will",
+      "duration": 4.212
+    },
+    {
+      "who": "tanktop",
+      "text": "It's a whale.",
+      "src": "audio/dialogue/realistic/f1.whale.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 0.9
+    },
+    {
+      "who": "newbalance",
+      "text": "Gas first. Then Uptown. I have a list.",
+      "src": "audio/dialogue/realistic/f1.fuel.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.348
+    },
+    {
+      "who": "rattler",
+      "text": "Nice van.",
+      "src": "audio/dialogue/realistic/f1.nice.rattler.mp3",
+      "voice": "George",
+      "duration": 0.792
+    },
+    {
+      "who": "redjersey",
+      "text": "Twins!",
+      "src": "audio/dialogue/realistic/f1.twins.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 0.72
+    },
+    {
+      "who": "shades",
+      "text": "What's in the box?",
+      "src": "audio/dialogue/realistic/f1.box.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.26
+    },
+    {
+      "who": "fifty",
+      "text": "Saturday stuff. Don't open it.",
+      "src": "audio/dialogue/realistic/f1.boxNo.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.34
+    },
+    {
+      "who": "fifty",
+      "text": "For the toast. There were fifty-one.",
+      "src": "audio/dialogue/realistic/f1.toast.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.268
+    },
+    {
+      "who": "redjersey",
+      "text": "Kazoos! Why are there kazoos?",
+      "src": "audio/dialogue/realistic/f1.kazoos.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.484
+    },
+    {
+      "who": "fifty",
+      "text": "Gabe used to hike here. He sent one photo. Three years ago.",
+      "src": "audio/dialogue/realistic/f1.bridge.fifty.mp3",
+      "voice": "Eric",
+      "duration": 3.888
+    },
+    {
+      "who": "fifty",
+      "text": "Still no answer, Gabe.",
+      "src": "audio/dialogue/realistic/f1.card.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.404
+    },
+    {
+      "who": "gabe",
+      "text": "From Canyon Fleet? On 89A?",
+      "src": "audio/dialogue/realistic/i1.fleet.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.664
+    },
+    {
+      "who": "gabe",
+      "text": "Keep going.",
+      "src": "audio/dialogue/realistic/i1.keep.gabe.mp3",
+      "voice": "Bill",
+      "duration": 0.72
+    },
+    {
+      "who": "redjersey",
+      "text": "New phone. Three test shots. Then we ride.",
+      "src": "audio/dialogue/realistic/f2.phone.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.988
+    },
+    {
+      "who": "gabe",
+      "text": "Welcome to Sunburst Jeep Tours. Keep your hands in the... oh no.",
+      "src": "audio/dialogue/realistic/f2.welcome.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.752
+    },
+    {
+      "who": "redjersey",
+      "text": "I'm filming the whole ride. For the group chat.",
+      "src": "audio/dialogue/realistic/f2.film.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.484
+    },
+    {
+      "who": "gabe",
+      "text": "Tour first. Talk later.",
+      "src": "audio/dialogue/realistic/f2.later.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.944
+    },
+    {
+      "who": "fifty",
+      "text": "You didn't send the card back.",
+      "src": "audio/dialogue/realistic/f2.card.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.512
+    },
+    {
+      "who": "gabe",
+      "text": "Race you down. Loser buys the tacos.",
+      "src": "audio/dialogue/realistic/f2.race.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.448
+    },
+    {
+      "who": "gabe",
+      "text": "You filmed me. Delete it.",
+      "src": "audio/dialogue/realistic/i2.delete.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.98
+    },
+    {
+      "who": "redjersey",
+      "text": "Hey! Why did you stop?",
+      "src": "audio/dialogue/realistic/f2.stop.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.62
+    },
+    {
+      "who": "gabe",
+      "text": "Sorry. Something came up.",
+      "src": "audio/dialogue/realistic/f2.sorry.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.728
+    },
+    {
+      "who": "redjersey",
+      "text": "I didn't post it. I promise.",
+      "src": "audio/dialogue/realistic/i2.post.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.98
+    },
+    {
+      "who": "shades",
+      "text": "We look ridiculous.",
+      "src": "audio/dialogue/realistic/f3.silly.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.512
+    },
+    {
+      "who": "fifty",
+      "text": "Costumes stay on till Sunday. House rules.",
+      "src": "audio/dialogue/realistic/f3.rules.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.772
+    },
+    {
+      "who": "tanktop",
+      "text": "We look amazing.",
+      "src": "audio/dialogue/realistic/f3.great.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.368
+    },
+    {
+      "who": "shades",
+      "text": "He moved the eight ball. I saw it.",
+      "src": "audio/dialogue/realistic/f3.cheat.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.304
+    },
+    {
+      "who": "rattler",
+      "text": "You calling me a cheat, samurai?",
+      "src": "audio/dialogue/realistic/f3.samurai.rattler.mp3",
+      "voice": "George",
+      "duration": 1.872
+    },
+    {
+      "who": "fifty",
+      "text": "Hey! My ring!",
+      "src": "audio/dialogue/realistic/f3.ring.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.26
+    },
+    {
+      "who": "rattler",
+      "text": "Get them.",
+      "src": "audio/dialogue/realistic/f3.get.rattler.mp3",
+      "voice": "George",
+      "duration": 0.54
+    },
+    {
+      "who": "newbalance",
+      "text": "I had two sodas. I'm driving.",
+      "src": "audio/dialogue/realistic/f3.fob.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.376
+    },
+    {
+      "who": "fifty",
+      "text": "He took my ring.",
+      "src": "audio/dialogue/realistic/i3.ring.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.152
+    },
+    {
+      "who": "gabe",
+      "text": "Then we'll get it back.",
+      "src": "audio/dialogue/realistic/i3.back.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.44
+    },
+    {
+      "who": "gabe",
+      "text": "You fought Rattler Pruitt. With foam swords.",
+      "src": "audio/dialogue/realistic/i3.foam.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.42
+    },
+    {
+      "who": "fifty",
+      "text": "My head. Where is everybody?",
+      "src": "audio/dialogue/realistic/f4.head.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.304
+    },
+    {
+      "who": "newbalance",
+      "text": "I forgot the parking brake. I never forget the parking brake.",
+      "src": "audio/dialogue/realistic/f4.creek.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.96
+    },
+    {
+      "who": "fifty",
+      "text": "Leave it. Look around.",
+      "src": "audio/dialogue/realistic/f4.leave.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.62
+    },
+    {
+      "who": "shades",
+      "text": "We don't have fuzzy dice.",
+      "src": "audio/dialogue/realistic/f4.dice.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.728
+    },
+    {
+      "who": "tanktop",
+      "text": "The bumper fell off.",
+      "src": "audio/dialogue/realistic/f4.bumper.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.152
+    },
+    {
+      "who": "newbalance",
+      "text": "This tag says 4471. Ours was 4417.",
+      "src": "audio/dialogue/realistic/f4.tag.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 4.968
+    },
+    {
+      "who": "tanktop",
+      "text": "A steel box. Heavy. Locked.",
+      "src": "audio/dialogue/realistic/f4.box.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.844
+    },
+    {
+      "who": "shades",
+      "text": "A flash photo. That's Gabe. On a ledge. In neon.",
+      "src": "audio/dialogue/realistic/f4.flash.shades.mp3",
+      "voice": "Callum",
+      "duration": 4.5
+    },
+    {
+      "who": "fifty",
+      "text": "Red Jersey is gone. His last photos show the Uptown clock.",
+      "src": "audio/dialogue/realistic/f4.rj.fifty.mp3",
+      "voice": "Eric",
+      "duration": 4.104
+    },
+    {
+      "who": "fifty",
+      "text": "Then a bridge rail over the creek.",
+      "src": "audio/dialogue/realistic/f4.rail.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.908
+    },
+    {
+      "who": "shades",
+      "text": "Found him. He is hugging a flamingo.",
+      "src": "audio/dialogue/realistic/f4.found.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.7
+    },
+    {
+      "who": "redjersey",
+      "text": "I saw the sunrise. It was very important.",
+      "src": "audio/dialogue/realistic/f4.sunrise.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.88
+    },
+    {
+      "who": "shades",
+      "text": "BEAR at the bridge. He's with them.",
+      "src": "audio/dialogue/realistic/f4.theory.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.376
+    },
+    {
+      "who": "fifty",
+      "text": "Then I want to hear him say it. The first is tonight.",
+      "src": "audio/dialogue/realistic/f4.first.fifty.mp3",
+      "voice": "Eric",
+      "duration": 3.348
+    },
+    {
+      "who": "newbalance",
+      "text": "We should call the police.",
+      "src": "audio/dialogue/realistic/f4.police.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.224
+    },
+    {
+      "who": "voice",
+      "text": "Box isn't in the van.",
+      "src": "audio/dialogue/realistic/i4.box.voice.mp3",
+      "voice": "George",
+      "duration": 1.512
+    },
+    {
+      "who": "shades",
+      "text": "That's our van. So what are we driving?",
+      "src": "audio/dialogue/realistic/f5.ours.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.06
+    },
+    {
+      "who": "newbalance",
+      "text": "Pickup and a black SUV. They want the box.",
+      "src": "audio/dialogue/realistic/f5.lose.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.312
+    },
+    {
+      "who": "redjersey",
+      "text": "BRING IT BACK. Bring what back?",
+      "src": "audio/dialogue/realistic/f5.soap.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.16
+    },
+    {
+      "who": "tanktop",
+      "text": "The hot tub cover. Nobody looks there.",
+      "src": "audio/dialogue/realistic/f5.hide.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.52
+    },
+    {
+      "who": "fifty",
+      "text": "Midgley lot. We wait. We see who comes.",
+      "src": "audio/dialogue/realistic/f5.lot.fifty.mp3",
+      "voice": "Eric",
+      "duration": 3.276
+    },
+    {
+      "who": "redjersey",
+      "text": "Was that a bear?",
+      "src": "audio/dialogue/realistic/f5.roar.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.044
+    },
+    {
+      "who": "newbalance",
+      "text": "Someone's up on that ledge.",
+      "src": "audio/dialogue/realistic/f5.figure.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.62
+    },
+    {
+      "who": "tanktop",
+      "text": "He's taking pictures of our van.",
+      "src": "audio/dialogue/realistic/f5.flash.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.764
+    },
+    {
+      "who": "shades",
+      "text": "Got him. Neon. On the Perch.",
+      "src": "audio/dialogue/realistic/f5.shot.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.916
+    },
+    {
+      "who": "gabe",
+      "text": "Get back in your van and drive away.",
+      "src": "audio/dialogue/realistic/f5.drive.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.304
+    },
+    {
+      "who": "shades",
+      "text": "Not until you tell us about the Bear.",
+      "src": "audio/dialogue/realistic/f5.bear.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.196
+    },
+    {
+      "who": "fifty",
+      "text": "Not until you tell us about the Bear.",
+      "src": "audio/dialogue/realistic/f5.bear.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.908
+    },
+    {
+      "who": "tanktop",
+      "text": "Not until you tell us about the Bear, pal.",
+      "src": "audio/dialogue/realistic/f5.bear.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.232
+    },
+    {
+      "who": "newbalance",
+      "text": "Not until you tell us about the Bear.",
+      "src": "audio/dialogue/realistic/f5.bear.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.088
+    },
+    {
+      "who": "gabe",
+      "text": "They'll come back for that box. And for you.",
+      "src": "audio/dialogue/realistic/i5.back.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.808
+    },
+    {
+      "who": "voice",
+      "text": "Leave it. Find the box.",
+      "src": "audio/dialogue/realistic/i5.leave.voice.mp3",
+      "voice": "George",
+      "duration": 1.872
+    },
+    {
+      "who": "redjersey",
+      "text": "Not until you tell us about the Bear.",
+      "src": "audio/dialogue/realistic/f5.bear.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.908
+    },
+    {
+      "who": "gabe",
+      "text": "I am the Bear.",
+      "src": "audio/dialogue/realistic/f5.iam.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.152
+    },
+    {
+      "who": "tanktop",
+      "text": "Is this where you say sorry for the bear thing?",
+      "src": "audio/dialogue/realistic/i5.sorry.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.448
+    },
+    {
+      "who": "gabe",
+      "text": "You hit me with a foam sword for ten minutes.",
+      "src": "audio/dialogue/realistic/i5.foam.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.132
+    },
+    {
+      "who": "newbalance",
+      "text": "It felt longer.",
+      "src": "audio/dialogue/realistic/i5.longer.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.188
+    },
+    {
+      "who": "tanktop",
+      "text": "It felt longer.",
+      "src": "audio/dialogue/realistic/i5.longer.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.116
+    },
+    {
+      "who": "fifty",
+      "text": "It felt longer.",
+      "src": "audio/dialogue/realistic/i5.longer.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.152
+    },
+    {
+      "who": "shades",
+      "text": "It felt longer.",
+      "src": "audio/dialogue/realistic/i5.longer.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.332
+    },
+    {
+      "who": "redjersey",
+      "text": "It felt longer.",
+      "src": "audio/dialogue/realistic/i5.longer.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.116
+    },
+    {
+      "who": "newbalance",
+      "text": "I've been up twenty-two hours. You drive.",
+      "src": "audio/dialogue/realistic/p1.drive.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.916
+    },
+    {
+      "who": "shades",
+      "text": "You're the careful one, New Balance. You drive.",
+      "src": "audio/dialogue/realistic/p1.driveNB.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.7
+    },
+    {
+      "who": "tanktop",
+      "text": "Talk, big guy. We are listening.",
+      "src": "audio/dialogue/realistic/p1.start.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.16
+    },
+    {
+      "who": "fifty",
+      "text": "Start at the start, Gabe. All of it.",
+      "src": "audio/dialogue/realistic/p1.start.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.448
+    },
+    {
+      "who": "newbalance",
+      "text": "Slowly, Gabe. From the start.",
+      "src": "audio/dialogue/realistic/p1.start.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.304
+    },
+    {
+      "who": "shades",
+      "text": "Start talking, Gabe. All of it.",
+      "src": "audio/dialogue/realistic/p1.start.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.376
+    },
+    {
+      "who": "redjersey",
+      "text": "Okay. Story time. From the start.",
+      "src": "audio/dialogue/realistic/p1.start.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.52
+    },
+    {
+      "who": "gabe",
+      "text": "Sunline Staffing posts job ads. Resort work. Good pay.",
+      "src": "audio/dialogue/realistic/p1.g1.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.608
+    },
+    {
+      "who": "gabe",
+      "text": "People come. Sunline takes their phones and IDs. For safekeeping.",
+      "src": "audio/dialogue/realistic/p1.g2.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.608
+    },
+    {
+      "who": "gabe",
+      "text": "The vans move people on the first of the month. At night.",
+      "src": "audio/dialogue/realistic/p1.g4.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.348
+    },
+    {
+      "who": "gabe",
+      "text": "Then they work at a ranch up FR 9. Nobody pays them.",
+      "src": "audio/dialogue/realistic/p1.g3.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.852
+    },
+    {
+      "who": "gabe",
+      "text": "Two photos. Same minute. Wrong people.",
+      "src": "audio/dialogue/realistic/p1.wall.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.24
+    },
+    {
+      "who": "gabe",
+      "text": "Once a month I meet an FBI agent. She says, 'Not enough yet.'",
+      "src": "audio/dialogue/realistic/p1.g5.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.716
+    },
+    {
+      "who": "gabe",
+      "text": "So drivers see me on 89A at night. And so they know the Bear is watching.",
+      "src": "audio/dialogue/realistic/p1.neon.gabe.mp3",
+      "voice": "Bill",
+      "duration": 5.796
+    },
+    {
+      "who": "gabe",
+      "text": "I drove jeep tours past that lot every first of the month.",
+      "src": "audio/dialogue/realistic/p1.why1.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.42
+    },
+    {
+      "who": "gabe",
+      "text": "Your wedding is on the first. I can't leave the bridge on the first.",
+      "src": "audio/dialogue/realistic/p1.card.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.996
+    },
+    {
+      "who": "gabe",
+      "text": "Same vans. Same hour. I started writing plates down.",
+      "src": "audio/dialogue/realistic/p1.why2.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.176
+    },
+    {
+      "who": "tanktop",
+      "text": "Bolt cutters. Stand back.",
+      "src": "audio/dialogue/realistic/p1.cut.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.8
+    },
+    {
+      "who": "shades",
+      "text": "IDs. Ten of them. And a note.",
+      "src": "audio/dialogue/realistic/p1.ids.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.988
+    },
+    {
+      "who": "gabe",
+      "text": "Ten. They're alive. And they're asking.",
+      "src": "audio/dialogue/realistic/p1.ten.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.456
+    },
+    {
+      "who": "fifty",
+      "text": "New plan.",
+      "src": "audio/dialogue/realistic/p1.plan.fifty.mp3",
+      "voice": "Eric",
+      "duration": 0.576
+    },
+    {
+      "who": "shades",
+      "text": "I was wrong about you. I'm working on it.",
+      "src": "audio/dialogue/realistic/p1.wrong.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.096
+    },
+    {
+      "who": "gabe",
+      "text": "Hit things with it. Only bad things.",
+      "src": "audio/dialogue/realistic/p1.staff.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.808
+    },
+    {
+      "who": "vance",
+      "text": "Gabe. You brought five samurai.",
+      "src": "audio/dialogue/realistic/p2.five.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.808
+    },
+    {
+      "who": "tanktop",
+      "text": "You turned into a bear.",
+      "src": "audio/dialogue/realistic/p1.bear.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.512
+    },
+    {
+      "who": "gabe",
+      "text": "Sedona does that. Drink more water.",
+      "src": "audio/dialogue/realistic/p1.water.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.7
+    },
+    {
+      "who": "vance",
+      "text": "I need a face, a place, and a date.",
+      "src": "audio/dialogue/realistic/p2.need.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.664
+    },
+    {
+      "who": "vance",
+      "text": "Photos. From far away. Then you call me. You do not play hero.",
+      "src": "audio/dialogue/realistic/p2.how.vance.mp3",
+      "voice": "Sarah",
+      "duration": 5.652
+    },
+    {
+      "who": "tanktop",
+      "text": "What if we play hero a little?",
+      "src": "audio/dialogue/realistic/p2.hero.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.656
+    },
+    {
+      "who": "vance",
+      "text": "The people they hold are not a story for your party.",
+      "src": "audio/dialogue/realistic/p2.rule1.vance.mp3",
+      "voice": "Sarah",
+      "duration": 3.204
+    },
+    {
+      "who": "vance",
+      "text": "Then I arrest you a little.",
+      "src": "audio/dialogue/realistic/p2.arrest.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.196
+    },
+    {
+      "who": "vance",
+      "text": "They are people who want to go home.",
+      "src": "audio/dialogue/realistic/p2.rule2.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.196
+    },
+    {
+      "who": "shades",
+      "text": "Red Jersey goes in for the open call. We watch from the van.",
+      "src": "audio/dialogue/realistic/p3.plan.shades.mp3",
+      "voice": "Callum",
+      "duration": 4.176
+    },
+    {
+      "who": "vance",
+      "text": "You call me first. Every time.",
+      "src": "audio/dialogue/realistic/p2.call.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.556
+    },
+    {
+      "who": "vance",
+      "text": "It's theirs? Keep driving it. To them, you're one of theirs.",
+      "src": "audio/dialogue/realistic/p2.van.vance.mp3",
+      "voice": "Sarah",
+      "duration": 4.104
+    },
+    {
+      "who": "clerk",
+      "text": "Leave your phone and your ID with us.",
+      "src": "audio/dialogue/realistic/p3.clerk.clerk.mp3",
+      "voice": "Will",
+      "duration": 2.268
+    },
+    {
+      "who": "redjersey",
+      "text": "I'll keep my phone.",
+      "src": "audio/dialogue/realistic/p3.keep.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 0.9
+    },
+    {
+      "who": "gabe",
+      "text": "White hat. Cane. That's Voss.",
+      "src": "audio/dialogue/realistic/p3.here.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.808
+    },
+    {
+      "who": "voss",
+      "text": "How many this month?",
+      "src": "audio/dialogue/realistic/p3.how.voss.mp3",
+      "voice": "Daniel",
+      "duration": 1.116
+    },
+    {
+      "who": "gang",
+      "text": "Four.",
+      "src": "audio/dialogue/realistic/p3.four.gang.mp3",
+      "voice": "Charlie",
+      "duration": 0.288
+    },
+    {
+      "who": "voss",
+      "text": "Good. Labor is our biggest cost.",
+      "src": "audio/dialogue/realistic/p3.cost.voss.mp3",
+      "voice": "Daniel",
+      "duration": 2.772
+    },
+    {
+      "who": "gabe",
+      "text": "Stay back. He checks his mirrors. He's done this for years.",
+      "src": "audio/dialogue/realistic/p4.tail.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.392
+    },
+    {
+      "who": "shades",
+      "text": "Face. Clear. He never stops smiling.",
+      "src": "audio/dialogue/realistic/p3.got.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.672
+    },
+    {
+      "who": "redjersey",
+      "text": "He's turning onto FR 9.",
+      "src": "audio/dialogue/realistic/p4.turn.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.728
+    },
+    {
+      "who": "newbalance",
+      "text": "Park at the turnout. We walk from here.",
+      "src": "audio/dialogue/realistic/p4.park.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.448
+    },
+    {
+      "who": "shades",
+      "text": "Hart Ranch. No trespassing. That is half a place.",
+      "src": "audio/dialogue/realistic/p4.sign.shades.mp3",
+      "voice": "Callum",
+      "duration": 4.104
+    },
+    {
+      "who": "gabe",
+      "text": "Take the pipe. People run from bears.",
+      "src": "audio/dialogue/realistic/p5.pipe.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.988
+    },
+    {
+      "who": "shades",
+      "text": "Long lens. From up here I can read the padlock.",
+      "src": "audio/dialogue/realistic/p5.lens.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.744
+    },
+    {
+      "who": "gabe",
+      "text": "Ridge trail. Quiet feet. We watch from the top.",
+      "src": "audio/dialogue/realistic/p5.hike.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.104
+    },
+    {
+      "who": "gabe",
+      "text": "Bunkhouse door. Van plates. A guard. The generator shed.",
+      "src": "audio/dialogue/realistic/p5.list.gabe.mp3",
+      "voice": "Bill",
+      "duration": 5.04
+    },
+    {
+      "who": "gabe",
+      "text": "Flashlight. Coming up the trail. Get low.",
+      "src": "audio/dialogue/realistic/p5.patrol.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.844
+    },
+    {
+      "who": "fifty",
+      "text": "I thought getting married meant the end of this.",
+      "src": "audio/dialogue/realistic/p6.end.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.304
+    },
+    {
+      "who": "shades",
+      "text": "Their routes are in the photos now.",
+      "src": "audio/dialogue/realistic/p5.marks.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.728
+    },
+    {
+      "who": "newbalance",
+      "text": "It seats ten.",
+      "src": "audio/dialogue/realistic/p6.ten.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 1.008
+    },
+    {
+      "who": "tanktop",
+      "text": "This never ends. It just needs a bigger van.",
+      "src": "audio/dialogue/realistic/p6.never.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.952
+    },
+    {
+      "who": "redjersey",
+      "text": "Can I post this?",
+      "src": "audio/dialogue/realistic/p6.post.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 1.008
+    },
+    {
+      "who": "fifty",
+      "text": "That was my grandpa's.",
+      "src": "audio/dialogue/realistic/p6.ring.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.188
+    },
+    {
+      "who": "rattler",
+      "text": "I want my van, my box, and my Bear.",
+      "src": "audio/dialogue/realistic/p6.want.rattler.mp3",
+      "voice": "George",
+      "duration": 2.988
+    },
+    {
+      "who": "tanktop",
+      "text": "Losers weepers.",
+      "src": "audio/dialogue/realistic/p6.weepers.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.26
+    },
+    {
+      "who": "rattler",
+      "text": "Finders keepers.",
+      "src": "audio/dialogue/realistic/p6.keepers.rattler.mp3",
+      "voice": "George",
+      "duration": 1.08
+    },
+    {
+      "who": "vance",
+      "text": "I said photos.",
+      "src": "audio/dialogue/realistic/p6.photos.vance.mp3",
+      "voice": "Sarah",
+      "duration": 1.368
+    },
+    {
+      "who": "vance",
+      "text": "That is a date. Good work. Now go to bed.",
+      "src": "audio/dialogue/realistic/p6.bed.vance.mp3",
+      "voice": "Sarah",
+      "duration": 3.492
+    },
+    {
+      "who": "redjersey",
+      "text": "Everybody says you feel something up here.",
+      "src": "audio/dialogue/realistic/p7.view.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.7
+    },
+    {
+      "who": "vance",
+      "text": "And a key to a white van. Your van, I think. I keep it for now.",
+      "src": "audio/dialogue/realistic/p6.key.vance.mp3",
+      "voice": "Sarah",
+      "duration": 5.076
+    },
+    {
+      "who": "fifty",
+      "text": "Will you be my best man?",
+      "src": "audio/dialogue/realistic/p7.best.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.296
+    },
+    {
+      "who": "gabe",
+      "text": "Ask me when this is over.",
+      "src": "audio/dialogue/realistic/p7.ask.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.476
+    },
+    {
+      "who": "vance",
+      "text": "Voss knows we have Rattler. He is moving everyone tonight. Early.",
+      "src": "audio/dialogue/realistic/p7.call1.vance.mp3",
+      "voice": "Sarah",
+      "duration": 4.608
+    },
+    {
+      "who": "redjersey",
+      "text": "Group photo. Ten second timer. Run!",
+      "src": "audio/dialogue/realistic/p7.photo.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.592
+    },
+    {
+      "who": "vance",
+      "text": "The judge signs at eight a.m. My agents move now.",
+      "src": "audio/dialogue/realistic/p7.call2.vance.mp3",
+      "voice": "Sarah",
+      "duration": 3.888
+    },
+    {
+      "who": "newbalance",
+      "text": "So we don't go near the ranch. We go near the road.",
+      "src": "audio/dialogue/realistic/p7.road.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.348
+    },
+    {
+      "who": "vance",
+      "text": "I need eyes on the road. Watch it. Do not go near that ranch.",
+      "src": "audio/dialogue/realistic/p7.call3.vance.mp3",
+      "voice": "Sarah",
+      "duration": 4.284
+    },
+    {
+      "who": "gabe",
+      "text": "Sunline van at pump four. You're a gang van too. Park beside it.",
+      "src": "audio/dialogue/realistic/p8.van.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.608
+    },
+    {
+      "who": "redjersey",
+      "text": "Take it. It has eleven thousand followers.",
+      "src": "audio/dialogue/realistic/p8.take.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.808
+    },
+    {
+      "who": "shades",
+      "text": "Wheel well. Tape. Done.",
+      "src": "audio/dialogue/realistic/p8.plant.shades.mp3",
+      "voice": "Callum",
+      "duration": 2.34
+    },
+    {
+      "who": "vance",
+      "text": "I see it too. We watch it together.",
+      "src": "audio/dialogue/realistic/p8.call.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.448
+    },
+    {
+      "who": "newbalance",
+      "text": "The convoy is a dot on the map now.",
+      "src": "audio/dialogue/realistic/p8.dot.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.16
+    },
+    {
+      "who": "vance",
+      "text": "Your van. Try not to hit anything.",
+      "src": "audio/dialogue/realistic/p9.whale.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.52
+    },
+    {
+      "who": "radio",
+      "text": "The convoy is moving. SUV, one white van, one pickup.",
+      "src": "audio/dialogue/realistic/p9.moves.radio.mp3",
+      "voice": "Will",
+      "duration": 4.788
+    },
+    {
+      "who": "newbalance",
+      "text": "Trash bags on the windows. One mirror. She is beautiful.",
+      "src": "audio/dialogue/realistic/p9.bags.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 4.608
+    },
+    {
+      "who": "newbalance",
+      "text": "Careful isn't the same as scared.",
+      "src": "audio/dialogue/realistic/p9.careful.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.376
+    },
+    {
+      "who": "redjersey",
+      "text": "Gabe's jeep. On the bridge. Sideways.",
+      "src": "audio/dialogue/realistic/p9.jeep.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.276
+    },
+    {
+      "who": "shades",
+      "text": "The pickup is out. Only the van and the SUV now.",
+      "src": "audio/dialogue/realistic/p9.pickup.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.384
+    },
+    {
+      "who": "shades",
+      "text": "The SUV is turning back. Let him go. The van matters.",
+      "src": "audio/dialogue/realistic/p9.uturn.shades.mp3",
+      "voice": "Callum",
+      "duration": 4.176
+    },
+    {
+      "who": "newbalance",
+      "text": "Follow it in. Slow. Like parking.",
+      "src": "audio/dialogue/realistic/p9.follow.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.096
+    },
+    {
+      "who": "dana",
+      "text": "I am Dana. I wrote the note.",
+      "src": "audio/dialogue/realistic/p9.dana1.dana.mp3",
+      "voice": "Laura",
+      "duration": 2.052
+    },
+    {
+      "who": "tanktop",
+      "text": "The driver is running!",
+      "src": "audio/dialogue/realistic/p9.runs.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 1.296
+    },
+    {
+      "who": "tanktop",
+      "text": "Hey. You're okay. We're friends of the Bear.",
+      "src": "audio/dialogue/realistic/p9.hey.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.844
+    },
+    {
+      "who": "vance",
+      "text": "My team is minutes out. Watch the ranch road. Stay out of sight.",
+      "src": "audio/dialogue/realistic/p9.radio.vance.mp3",
+      "voice": "Sarah",
+      "duration": 4.392
+    },
+    {
+      "who": "newbalance",
+      "text": "Voss's SUV just went up FR 9. He is moving them now.",
+      "src": "audio/dialogue/realistic/p10.suv.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 5.22
+    },
+    {
+      "who": "gabe",
+      "text": "I will drive them to Vance. Go.",
+      "src": "audio/dialogue/realistic/p9.gabe.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.052
+    },
+    {
+      "who": "dana",
+      "text": "There are six more at the ranch. He's going back for them.",
+      "src": "audio/dialogue/realistic/p9.dana2.dana.mp3",
+      "voice": "Laura",
+      "duration": 3.096
+    },
+    {
+      "who": "fifty",
+      "text": "Vance is minutes out. They could be gone in minutes.",
+      "src": "audio/dialogue/realistic/p10.now.fifty.mp3",
+      "voice": "Eric",
+      "duration": 3.348
+    },
+    {
+      "who": "redjersey",
+      "text": "Lights out.",
+      "src": "audio/dialogue/realistic/p10.dark.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 0.612
+    },
+    {
+      "who": "shades",
+      "text": "We keep them safe till she gets here. Ridge route.",
+      "src": "audio/dialogue/realistic/p10.go.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.168
+    },
+    {
+      "who": "gabe",
+      "text": "The generator shed. Cut it, and they see half as far.",
+      "src": "audio/dialogue/realistic/p10.gen.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.636
+    },
+    {
+      "who": "voss",
+      "text": "You boys are a long way from home.",
+      "src": "audio/dialogue/realistic/p11.long.voss.mp3",
+      "voice": "Daniel",
+      "duration": 2.16
+    },
+    {
+      "who": "boone",
+      "text": "Somebody get the lights.",
+      "src": "audio/dialogue/realistic/p10.boone.boone.mp3",
+      "voice": "Liam",
+      "duration": 1.188
+    },
+    {
+      "who": "newbalance",
+      "text": "The Whale is at the gate. Engine's running.",
+      "src": "audio/dialogue/realistic/p10.whale.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 2.628
+    },
+    {
+      "who": "shades",
+      "text": "Boone had the keys.",
+      "src": "audio/dialogue/realistic/p10.keys.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.332
+    },
+    {
+      "who": "tanktop",
+      "text": "Strong is easy. Gentle is the hard part.",
+      "src": "audio/dialogue/realistic/p10.gentle.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 3.096
+    },
+    {
+      "who": "fifty",
+      "text": "We move when I wave. Cover to cover.",
+      "src": "audio/dialogue/realistic/p10.signal.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.52
+    },
+    {
+      "who": "shades",
+      "text": "Headlights. That's Voss.",
+      "src": "audio/dialogue/realistic/p10.lightsOn.shades.mp3",
+      "voice": "Callum",
+      "duration": 1.944
+    },
+    {
+      "who": "tanktop",
+      "text": "Hey. Dana sent us. You're safe. Nobody has to hurry.",
+      "src": "audio/dialogue/realistic/p10.safe.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 4.14
+    },
+    {
+      "who": "tanktop",
+      "text": "So are they.",
+      "src": "audio/dialogue/realistic/p11.so.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 0.756
+    },
+    {
+      "who": "fifty",
+      "text": "So are they.",
+      "src": "audio/dialogue/realistic/p11.so.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.008
+    },
+    {
+      "who": "newbalance",
+      "text": "So are they.",
+      "src": "audio/dialogue/realistic/p11.so.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 0.756
+    },
+    {
+      "who": "redjersey",
+      "text": "So are they.",
+      "src": "audio/dialogue/realistic/p11.so.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 0.756
+    },
+    {
+      "who": "shades",
+      "text": "So are they.",
+      "src": "audio/dialogue/realistic/p11.so.shades.mp3",
+      "voice": "Callum",
+      "duration": 0.828
+    },
+    {
+      "who": "fifty",
+      "text": "They wrote a note.",
+      "src": "audio/dialogue/realistic/p11.note.fifty.mp3",
+      "voice": "Eric",
+      "duration": 0.936
+    },
+    {
+      "who": "voss",
+      "text": "They signed a contract.",
+      "src": "audio/dialogue/realistic/p11.contract.voss.mp3",
+      "voice": "Daniel",
+      "duration": 1.404
+    },
+    {
+      "who": "voss",
+      "text": "You can't prove a thing.",
+      "src": "audio/dialogue/realistic/p11.prove.voss.mp3",
+      "voice": "Daniel",
+      "duration": 1.656
+    },
+    {
+      "who": "shades",
+      "text": "Gabe has four hundred photos. I have forty.",
+      "src": "audio/dialogue/realistic/p11.photos.shades.mp3",
+      "voice": "Callum",
+      "duration": 3.6
+    },
+    {
+      "who": "newbalance",
+      "text": "You drive. I'll stay. Nobody touches anybody.",
+      "src": "audio/dialogue/realistic/p11.guardNB.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.672
+    },
+    {
+      "who": "tanktop",
+      "text": "I'll stay. Nobody touches anybody.",
+      "src": "audio/dialogue/realistic/p11.guard.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 2.664
+    },
+    {
+      "who": "newbalance",
+      "text": "Six in the back. Four of us. Every seat is full.",
+      "src": "audio/dialogue/realistic/p12.seats.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 3.6
+    },
+    {
+      "who": "passenger",
+      "text": "Thank you.",
+      "src": "audio/dialogue/realistic/p12.thanks.passenger.mp3",
+      "voice": "Laura",
+      "duration": 0.54
+    },
+    {
+      "who": "vance",
+      "text": "Pickup at the junction. We have it. Keep driving.",
+      "src": "audio/dialogue/realistic/p12.radio.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.916
+    },
+    {
+      "who": "fifty",
+      "text": "Drive smooth. Nobody needs another bump tonight.",
+      "src": "audio/dialogue/realistic/p12.slow.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.916
+    },
+    {
+      "who": "vance",
+      "text": "I told you not to go near that ranch.",
+      "src": "audio/dialogue/realistic/p12.told.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.556
+    },
+    {
+      "who": "gabe",
+      "text": "They didn't go near it. They went in it.",
+      "src": "audio/dialogue/realistic/p12.in.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.88
+    },
+    {
+      "who": "vance",
+      "text": "You watched. You called. You kept them safe till we got there.",
+      "src": "audio/dialogue/realistic/p12.thank.vance.mp3",
+      "voice": "Sarah",
+      "duration": 4.464
+    },
+    {
+      "who": "vance",
+      "text": "Next time, you wait for us.",
+      "src": "audio/dialogue/realistic/p12.wait.vance.mp3",
+      "voice": "Sarah",
+      "duration": 2.16
+    },
+    {
+      "who": "vance",
+      "text": "Same time next month, Gabe?",
+      "src": "audio/dialogue/realistic/p12.month.vance.mp3",
+      "voice": "Sarah",
+      "duration": 1.368
+    },
+    {
+      "who": "gabe",
+      "text": "Next month, the first is a wedding.",
+      "src": "audio/dialogue/realistic/p12.wedding.gabe.mp3",
+      "voice": "Bill",
+      "duration": 2.376
+    },
+    {
+      "who": "fifty",
+      "text": "Best man holds the ring.",
+      "src": "audio/dialogue/realistic/p12.ring.fifty.mp3",
+      "voice": "Eric",
+      "duration": 1.404
+    },
+    {
+      "who": "gabe",
+      "text": "Ring. Still here. I checked forty times.",
+      "src": "audio/dialogue/realistic/e1.ringOn.gabe.mp3",
+      "voice": "Bill",
+      "duration": 3.528
+    },
+    {
+      "who": "tanktop",
+      "text": "We'd find it.",
+      "src": "audio/dialogue/realistic/p12.find.tanktop.mp3",
+      "voice": "Brian",
+      "duration": 0.612
+    },
+    {
+      "who": "gabe",
+      "text": "I did this alone for seven months. I don't have to anymore.",
+      "src": "audio/dialogue/realistic/e1.alone.gabe.mp3",
+      "voice": "Bill",
+      "duration": 4.032
+    },
+    {
+      "who": "gabe",
+      "text": "Then I'd better not lose it.",
+      "src": "audio/dialogue/realistic/p12.lose.gabe.mp3",
+      "voice": "Bill",
+      "duration": 1.836
+    },
+    {
+      "who": "redjersey",
+      "text": "Last one. Kasa hats on. Ten second timer.",
+      "src": "audio/dialogue/realistic/e1.photo.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.24
+    },
+    {
+      "who": "newbalance",
+      "text": "Ten seats.",
+      "src": "audio/dialogue/realistic/e1.ten.newbalance.mp3",
+      "voice": "Roger",
+      "duration": 0.9
+    },
+    {
+      "who": "redjersey",
+      "text": "Not posting it. Some things are just for us.",
+      "src": "audio/dialogue/realistic/e1.post.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.06
+    },
+    {
+      "who": "guide",
+      "text": "Sunburst Jeep Tours time trial. Beat the clock to the bottom.",
+      "src": "audio/dialogue/realistic/side.trialJeep.guide.mp3",
+      "voice": "Charlie",
+      "duration": 3.708
+    },
+    {
+      "who": "fifty",
+      "text": "The plan was never the point. You were.",
+      "src": "audio/dialogue/realistic/e1.plan.fifty.mp3",
+      "voice": "Eric",
+      "duration": 2.628
+    },
+    {
+      "who": "guide",
+      "text": "Canyon run. Bridge to Slide Rock. The clock is running.",
+      "src": "audio/dialogue/realistic/side.trialCanyon.guide.mp3",
+      "voice": "Charlie",
+      "duration": 3.96
+    },
+    {
+      "who": "redjersey",
+      "text": "Photo hunt. Three Uptown shots for the album.",
+      "src": "audio/dialogue/realistic/side.huntUptown.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.52
+    },
+    {
+      "who": "redjersey",
+      "text": "Photo hunt. The canyon from three good spots.",
+      "src": "audio/dialogue/realistic/side.huntCanyon.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.096
+    },
+    {
+      "who": "guide",
+      "text": "Nice driving. Your time is on the board.",
+      "src": "audio/dialogue/realistic/side.trialDone.guide.mp3",
+      "voice": "Charlie",
+      "duration": 2.376
+    },
+    {
+      "who": "redjersey",
+      "text": "Photo hunt. Three famous rocks. Get them all in frame.",
+      "src": "audio/dialogue/realistic/side.huntRocks.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 3.384
+    },
+    {
+      "who": "redjersey",
+      "text": "Album done. Not posting it. Probably.",
+      "src": "audio/dialogue/realistic/side.huntDone.redjersey.mp3",
+      "voice": "Chris",
+      "duration": 2.916
+    },
+    {
+      "who": "all",
+      "text": "Ronin.",
+      "src": "audio/dialogue/realistic/f3.ronin.all.mp3",
+      "voice": "Eric + Brian + Callum",
+      "duration": 0.648
+    },
+    {
+      "who": "all",
+      "text": "We know.",
+      "src": "audio/dialogue/realistic/p6.know.all.mp3",
+      "voice": "Eric + Brian + Callum",
+      "duration": 0.684
+    },
+    {
+      "who": "all",
+      "text": "No.",
+      "src": "audio/dialogue/realistic/p6.no.all.mp3",
+      "voice": "Eric + Brian + Callum",
+      "duration": 0.576
+    }
+  ]
+}

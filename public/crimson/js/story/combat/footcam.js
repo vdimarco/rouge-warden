@@ -36,7 +36,7 @@ export function createFootcam(K) {
     if (K.lock && S.input.device !== 'key' && Math.abs(lk.x) > 0.9) { if (!cam.rsHeld) { cam.rsHeld = true; K.tokens.lockCycle(lk.x > 0 ? 1 : -1); } }
     else if (Math.abs(lk.x) < 0.4) cam.rsHeld = false;
     const lock = K.lock && !K.lock.downed && !K.lock.gone ? K.lock : null;
-    if (!lock) { cam.yaw -= lk.x * 2.6 * rdt; cam.pitch = clamp(cam.pitch + lk.y * 1.6 * rdt, -0.3, 0.9); }
+    if (!lock) { cam.yaw -= lk.x * 2.6 * rdt; cam.pitch = clamp(cam.pitch + lk.y * 1.6 * rdt, -1.25, 1.1); }
     if (Math.abs(lk.x) > 0.05 || Math.abs(lk.y) > 0.05) cam.idle = 0; else cam.idle += rdt;
     if (lock) {
       cam.yaw += angDiff(cam.yaw, angleTo(H.pos, lock.pos)) * Math.min(1, rdt * 5);
@@ -65,12 +65,12 @@ export function createFootcam(K) {
     if (!cam.init) { cam.pos.copy(want); cam.look.copy(pivot); cam.init = true; }
     else cam.pos.lerp(want, 1 - Math.exp(-rdt * 12));
     if (lock) tgt.copy(pivot).addScaledVector(a3.set(rx, 0, rz), 0.35).lerp(a3.set(lock.pos.x, lock.pos.y + 1.4 + (lock.air || 0), lock.pos.z), 0.45);
-    else tgt.set(pivot.x + fx * 4 + rx * 0.4, pivot.y - Math.sin(cam.pitch) * 2.2 + 0.2, pivot.z + fz * 4 + rz * 0.4);
+    else tgt.set(pivot.x + fx * 4 + rx * 0.4, pivot.y - Math.tan(cam.pitch) * 5 + 0.2, pivot.z + fz * 4 + rz * 0.4);
     cam.look.lerp(tgt, 1 - Math.exp(-rdt * 10));
     S.camera.position.copy(cam.pos);
     if (cam.shake > 0) S.camera.position.add(a3.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).multiplyScalar(cam.shake * 0.07));
     S.camera.lookAt(cam.look);
-    const fov = damp(S.camera.fov, 55 - cam.punch * 9, 14, rdt);
+    const fov = damp(S.camera.fov, (S.arsenal?.ranged && S.input.held('parry') ? 42 : 55) - cam.punch * 9, 14, rdt);
     if (Math.abs(fov - S.camera.fov) > 1e-3) { S.camera.fov = fov; S.camera.updateProjectionMatrix(); }
   }
   S.cameras.add('foot', CAMERA_PRIO.foot, active, (rdt) => update(rdt));

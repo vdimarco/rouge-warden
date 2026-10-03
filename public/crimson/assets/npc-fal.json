@@ -1,0 +1,102 @@
+{
+  "police": {
+    "endpoint": "meshy/v7.1/text-to-3d",
+    "request_id": "01a0fcf2-8f7a-7550-9cb6-a514109af3ff",
+    "input": {
+      "prompt": "Full body stylized realistic adult male Arizona municipal police officer, navy short sleeve uniform shirt with chest pockets and small silver badge, navy trousers, black duty belt with empty holster, black boots. Short dark hair, expressive sculpted face, natural human proportions, distinct fingers. Clean game character, warm hand-painted diffuse colors, readable clothing folds, no weapon, no base, no accessories in hands. Symmetrical T pose, arms straight out, feet apart, palms down, facing forward.",
+      "mode": "full",
+      "model_type": "standard",
+      "target_polycount": 8000,
+      "topology": "triangle",
+      "should_remesh": true,
+      "pose_mode": "t-pose",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.8,
+      "enable_pbr": false,
+      "seed": 5102
+    },
+    "glb": "https://v3b.fal.media/files/b/0aacc603/V2sTADj-ssGyjliSZ-BwU_rigged_character.glb",
+    "preview": "https://v3b.fal.media/files/b/0aacc5fd/8YGlyeb0QwxMYxl9VG2H7_preview.png",
+    "local": "../models/police.glb",
+    "bytes": 1180008,
+    "sha256": "59601142f394567cf98a00b40633278f7cde36b100742a60774200be7b7b7584",
+    "triangles": 8335,
+    "optimization": "Embedded diffuse texture resized to maximum 1024x1024, JPEG quality 88. Geometry, skin weights, UVs and all 24 joints preserved.",
+    "integration": "Existing procedural clips and held props; BODY_URL loads this asset with procedural fallback. Natural body proportions are tested against their own bind pose. No runtime fal request."
+  },
+  "sheriff": {
+    "endpoint": "meshy/v7.1/text-to-3d",
+    "request_id": "01a0fcf2-964d-75b3-9b81-32805d4705c2",
+    "input": {
+      "prompt": "Full body stylized realistic adult male Arizona county sheriff deputy, tan short sleeve uniform shirt with star badge and pockets, dark olive trousers, brown duty belt with empty holster, dark boots, tan cowboy hat. Mature weathered face, short mustache, distinct fingers, natural human proportions. Clean game character, warm hand-painted diffuse colors, readable cloth folds. No weapon, no base, empty hands. Symmetrical T pose, arms straight out, feet apart, palms down, facing forward.",
+      "mode": "full",
+      "model_type": "standard",
+      "target_polycount": 8000,
+      "topology": "triangle",
+      "should_remesh": true,
+      "pose_mode": "t-pose",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.8,
+      "enable_pbr": false,
+      "seed": 5102
+    },
+    "glb": "https://v3b.fal.media/files/b/0aacc5f8/425v0bvfSwlWhAbd037x__rigged_character.glb",
+    "preview": "https://v3b.fal.media/files/b/0aacc5f6/MlqgxHhQ-gU7HxDRea-b7_preview.png",
+    "local": "../models/sheriff.glb",
+    "bytes": 1119828,
+    "sha256": "e1880cea3f4d5fcbe10ad1991371e42dea5ba115d318235aec6a2fcdd2dfd03f",
+    "triangles": 8305,
+    "optimization": "Embedded diffuse texture resized to maximum 1024x1024, JPEG quality 88. Geometry, skin weights, UVs and all 24 joints preserved.",
+    "integration": "Existing procedural clips and held props; BODY_URL loads this asset with procedural fallback. Natural body proportions are tested against their own bind pose. No runtime fal request."
+  },
+  "civA": {
+    "endpoint": "meshy/v7.1/text-to-3d",
+    "request_id": "01a0fcf2-9b5e-7143-9893-e283d4e1142c",
+    "input": {
+      "prompt": "Full body stylized realistic adult male southwestern town pedestrian, rust red plaid open-collar short sleeve shirt, faded blue jeans, brown walking shoes. Friendly expressive sculpted face, medium tan skin, short dark brown hair, natural human proportions, distinct fingers. Clean game character, warm hand-painted diffuse colors, readable clothing seams and folds, subtle fabric texture. No hat, no backpack, no props, no base, empty hands. Symmetrical T pose, arms straight out, feet apart, palms down, facing forward.",
+      "mode": "full",
+      "model_type": "standard",
+      "target_polycount": 8000,
+      "topology": "triangle",
+      "should_remesh": true,
+      "pose_mode": "t-pose",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.8,
+      "enable_pbr": false,
+      "seed": 5102
+    },
+    "glb": "https://v3b.fal.media/files/b/0aacc606/OMnmi6Fw0R-bFKFP_bEi5_rigged_character.glb",
+    "preview": "https://v3b.fal.media/files/b/0aacc600/lGMaX6Vxh9EmrdMcv8lsm_preview.png",
+    "local": "../models/civA.glb",
+    "bytes": 1267908,
+    "sha256": "2a08df5ab12c479a7eeaa05dc84258d364f6cb8107c27fc4a0057b3f5cac1507",
+    "triangles": 8322,
+    "optimization": "Embedded diffuse texture resized to maximum 1024x1024, JPEG quality 88. Geometry, skin weights, UVs and all 24 joints preserved.",
+    "integration": "Existing procedural clips and held props; BODY_URL loads this asset with procedural fallback. Natural body proportions are tested against their own bind pose. No runtime fal request."
+  },
+  "civB": {
+    "endpoint": "meshy/v7.1/text-to-3d",
+    "request_id": "01a0fcf2-a040-7c70-87af-61da48b3e3d6",
+    "input": {
+      "prompt": "Full body stylized realistic adult female southwestern town pedestrian, muted teal short sleeve button shirt, sand beige trousers, dark walking shoes. Friendly expressive sculpted face, warm brown skin, short dark curly hair, natural adult human proportions, distinct fingers. Clean game character, warm hand-painted diffuse colors, readable clothing seams and folds, subtle fabric texture. No bag, no props, no base, empty hands. Symmetrical T pose, arms straight out, feet apart, palms down, facing forward.",
+      "mode": "full",
+      "model_type": "standard",
+      "target_polycount": 8000,
+      "topology": "triangle",
+      "should_remesh": true,
+      "pose_mode": "t-pose",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.7,
+      "enable_pbr": false,
+      "seed": 5102
+    },
+    "glb": "https://v3b.fal.media/files/b/0aacc5f9/A_j9uLOfsLWO_JLVIGGWz_rigged_character.glb",
+    "preview": "https://v3b.fal.media/files/b/0aacc5f6/6eoTSLpC9f2C_-EP3oeQa_preview.png",
+    "local": "../models/civB.glb",
+    "bytes": 1094248,
+    "sha256": "c727c61d26baa1d498a1a77e8dfe90e18c77e7042cc706417cf7b2d5d92b6be5",
+    "triangles": 8333,
+    "optimization": "Embedded diffuse texture resized to maximum 1024x1024, JPEG quality 88. Geometry, skin weights, UVs and all 24 joints preserved.",
+    "integration": "Existing procedural clips and held props; BODY_URL loads this asset with procedural fallback. Natural body proportions are tested against their own bind pose. No runtime fal request."
+  }
+}

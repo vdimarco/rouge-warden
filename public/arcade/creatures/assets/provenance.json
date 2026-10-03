@@ -1,0 +1,22 @@
+{
+  "source": "https://github.com/idlerunner00/procedural-pixel-creatures",
+  "commit": "24d26df10e9f0d369f1caf5b6ba0e8e724ec0888",
+  "generatorVersion": 2,
+  "frameworkVersion": "1.0.0",
+  "families": [
+    "quadruped",
+    "biped",
+    "reptile",
+    "arthropod",
+    "winged",
+    "serpent",
+    "aquatic",
+    "amorphous",
+    "plantfolk"
+  ],
+  "seeds": [
+    101,
+    202
+  ],
+  "fps": 6
+}

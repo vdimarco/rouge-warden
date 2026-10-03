@@ -30,10 +30,43 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
   <header>
     <a href="/">◀ Arcade</a>
     <h1>The Lab</h1>
-    <p>Toys for new games. Each toy has only the core move, with no art and no menus. If you want another go without anyone asking, the toy has passed. Tell the crew your time.</p>
+    <p>Early prototypes and experiments live here so the main arcade stays focused. Each build tests a core move, control scheme, or game loop. Expect rough edges and fast changes.</p>
   </header>
 
   <section class="toys">
+    <article class="toy">
+      <h2>Small Worlds</h2>
+      <p class="pitch">Six little worlds. Six different ways to play with motion, time, wind and life.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Pull through Threadwake, fold rivers in Foldwild, and guide a flock in Storm Choir.</li>
+        <li>Switch lives in Borrowed Bodies, shape a garden in Season Thief, and pulse through Heartship.</li>
+      </ul>
+      <p class="time">Made for touch. Each world has a goal, a restart, and a new route to try.</p>
+      <a class="play" href="/lab/worlds/">Explore all six</a>
+    </article>
+    <article class="toy">
+      <h2>Neon Ronin</h2>
+      <p class="pitch">A blade of light in a city that hunts you. Survive an endless series of cyberpunk duels.</p>
+      <h3>Play</h3>
+      <ul><li>Swipe along the bright line, or enable gyro and use small wrist turns.</li><li>Time your guard to parry. Build overdrive to slow combat.</li></ul>
+      <p class="time">Choose a new circuit after each district. Your best score stays in this browser.</p>
+      <a class="play" href="/neon/">Play Neon Ronin</a>
+    </article>
+
+    <article class="toy">
+      <h2>Loon Echo</h2>
+      <p class="pitch">An eel wants your little weirdos. Swim anywhere, rescue chicks, and bank them at the nest.</p>
+      <h3>Play</h3>
+      <ul>
+        <li>Click / drag or use WASD / arrows to swim freely. Your rescued chicks follow your path.</li>
+        <li>Space dives under obstacles; E honks to gather chicks and stun the eel.</li>
+      </ul>
+      <h3>Try this</h3>
+      <ul><li>Risk a bigger flock for a bigger delivery bonus—or bank a small group to restore energy.</li><li>Bait the eel’s lunge, dive away, and circle back for scattered chicks.</li></ul>
+      <p class="time">Rescue all eight. No countdown. Your best score stays in this browser.</p>
+      <a class="play" href="/echo/">Play Loon Echo</a>
+    </article>
     <article class="toy" data-toy="plunge">
       <h2>Take the Plunge</h2>
       <p class="pitch">You are a loon, and winter is coming. Dive into the lakes for speed and fly south.</p>
@@ -70,17 +103,16 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
 
     <article class="toy" data-toy="tilt">
       <h2>Full Tilt</h2>
-      <p class="pitch">A bare pinball table. The question is the flippers: do they feel like a real machine?</p>
+      <p class="pitch">Open-space pinball across six star systems. Curve around planets and ride their gravity through asteroid belts.</p>
       <h3>Play</h3>
       <ul>
-        <li>Hold the left or right half of the screen to flip. To launch, slide a finger down on the right half and let go.</li>
-        <li>Keys: Z and / flip. Hold Space to pull the plunger. Jolt the phone, or push A or L, to nudge.</li>
+        <li>Press the left or right side to flip. Hold Launch, then release. Use Pulse to steer toward a relay.</li>
+        <li>Keys: Z and / flip. Space launches. Up pulses. Esc pauses.</li>
       </ul>
       <h3>Try this</h3>
       <ul>
-        <li>Cradle the ball on a raised flipper, then pass it across with a quick tap.</li>
-        <li>Launch softly into the green top lane for a skill shot.</li>
-        <li>Nudge a ball back from the outlane. Nudge too hard and it tilts.</li>
+        <li>Light each relay, then shoot through the jump gate to choose an upgrade.</li>
+        <li>Use a planet’s pull to bend your shot. Cleared relays stay lit if you lose a ball.</li>
       </ul>
       <p class="time"></p>
       <a class="play" href="/lab/tilt/">Play</a>
@@ -108,7 +140,7 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
 </main>
 <script type="module">
 import { readStats, fmtTime } from "/lab/kit/stats.js";
-for (const card of document.querySelectorAll(".toy")) {
+for (const card of document.querySelectorAll(".toy[data-toy]")) {
   const s = readStats(card.dataset.toy);
   card.querySelector(".time").textContent = s.ms > 0 ? `Your time: ${fmtTime(s.ms)}, ${s.runs} ${s.runs === 1 ? "run" : "runs"}.` : "Not played yet in this browser.";
 }

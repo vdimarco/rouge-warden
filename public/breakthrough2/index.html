@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3E9D6">
+<link rel="icon" href="data:,">
+<title>Breakthrough</title>
+<link rel="stylesheet" href="style.css">
+<link rel="art-manifest" href="art/manifest.json">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand">
+      <p class="kicker" id="turn-label">Turn 1 of 12</p>
+      <h1>Breakthrough</h1>
+    </div>
+    <div class="top-actions">
+      <p id="seedline">Seed</p>
+      <button type="button" id="help" aria-label="How to play">?</button>
+    </div>
+  </header>
+  <div id="mapwrap">
+    <canvas id="map" width="900" height="525" aria-hidden="true"></canvas>
+    <p id="yearchip">2026</p>
+    <div id="flash" hidden>
+      <p id="flash-year"></p>
+      <p id="flash-line"></p>
+    </div>
+  </div>
+  <section id="hud" aria-label="World meters">
+    <div id="warm">
+      <span id="warm-now">1.4° now</span>
+      <span id="warm-chase">Chasing 2.2°</span>
+      <span id="warm-proj">2.4° by 2100</span>
+    </div>
+    <div id="path" aria-label="Warming trajectory">
+      <div id="path-copy">
+        <p id="path-ending">Path opens with the century</p>
+        <p id="path-tip">The mark is the 2.0° tip</p>
+      </div>
+      <canvas id="path-chart" width="360" height="64" aria-hidden="true"></canvas>
+      <p id="stockline"></p>
+    </div>
+    <div id="race" hidden aria-label="Energy race">
+      <p id="race-status"></p>
+      <div class="race-row"><span>Demand</span><i><b id="race-demand"></b></i><em id="race-demand-n"></em></div>
+      <div class="race-row"><span>Clean + eff.</span><i><b id="race-met"></b></i><em id="race-met-n"></em></div>
+      <p id="race-fossil"></p>
+      <p id="race-curtail"></p>
+      <p id="race-note">These bars are a game index for this step, not terawatt-hours.</p>
+      <p id="race-context">Real-world context, not this run. Ember reports that in 2025 electricity demand rose by 849 TWh while low-carbon generation rose by 887 TWh, so fossil generation edged down.</p>
+    </div>
+    <div id="meters">
+      <div class="meter" data-k="emissions"><span>Emissions</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="energy"><span>Energy</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="prosperity"><span>Prosperity</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="ecology"><span>Ecology</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+      <div class="meter" data-k="trust"><span>Trust</span><i></i><canvas class="spark" width="64" height="16" aria-hidden="true"></canvas><span class="read"><b class="num">0</b><em class="delta"></em></span></div>
+    </div>
+    <p id="resources">Cap 0 · Lab 0 · Pol 0 · Ind 0</p>
+  </section>
+  <section id="sheet">
+    <section id="signals" aria-label="Indicators">
+      <h2>Signals</h2>
+      <p id="quiet-note">Quiet paths. Future news stays out. Pathways already started stay in the line.</p>
+      <p id="ledger"></p>
+      <div id="pressures"></div>
+      <div id="outlook"></div>
+      <h2 class="sub">Turn history</h2>
+      <ol id="journal"></ol>
+    </section>
+    <div id="news" hidden>
+      <h2 id="news-title"></h2>
+      <p id="news-text"></p>
+      <div id="news-options"></div>
+    </div>
+    <div id="hand" aria-label="Breakthroughs"></div>
+    <section id="pathways" aria-label="Technology pathways" hidden></section>
+    <div id="lab">
+      <div class="lab-head">
+        <h2>Idea Lab</h2>
+        <p id="lab-note"></p>
+      </div>
+      <div id="ideas"></div>
+    </div>
+    <button type="button" id="pass" data-choice="pass">Hold steady</button>
+    <p id="note" aria-live="polite"></p>
+  </section>
+  <div id="title">
+    <p class="kicker">2026 to 2100</p>
+    <h2>Breakthrough</h2>
+    <p class="lede">Steward a century. The risks are serious. The outcome is not written yet.</p>
+    <button type="button" id="start">Begin the century</button>
+    <button type="button" id="howto-open" class="ghost">How to play</button>
+    <p id="title-seed"></p>
+    <p id="seed-warn" hidden>Bad seed, using random</p>
+  </div>
+  <div id="howto" hidden>
+    <div class="panel help-panel">
+      <div class="help-head">
+        <h2>How to play</h2>
+        <p id="help-step">1 of 6</p>
+      </div>
+      <div class="help-stage" id="help-stage">
+        <figure class="help-scene is-on" data-scene="century">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <text x="16" y="18" fill="#2B2A33" font-size="12" font-weight="700">2026</text>
+            <text x="268" y="18" fill="#2B2A33" font-size="12" font-weight="700">2100</text>
+            <path class="heat" d="M16 78 C48 76 70 74 96 70 C130 64 150 66 176 54 C206 40 230 46 250 30 C276 16 292 22 304 14" fill="none" stroke="#B5472E" stroke-width="3" stroke-linecap="round"/>
+            <g fill="#2B2A33">
+              <rect x="16" y="86" width="3" height="10" rx="1"/>
+              <rect x="42" y="86" width="3" height="10" rx="1"/>
+              <rect x="68" y="86" width="3" height="10" rx="1"/>
+              <rect x="94" y="86" width="3" height="10" rx="1"/>
+              <rect x="120" y="86" width="3" height="10" rx="1"/>
+              <rect x="146" y="86" width="3" height="10" rx="1"/>
+              <rect x="172" y="86" width="3" height="10" rx="1"/>
+              <rect x="198" y="86" width="3" height="10" rx="1"/>
+              <rect x="224" y="86" width="3" height="10" rx="1"/>
+              <rect x="250" y="78" width="3" height="18" rx="1"/>
+              <rect x="276" y="78" width="3" height="18" rx="1"/>
+              <rect x="302" y="86" width="3" height="10" rx="1"/>
+            </g>
+            <circle class="year-token" cx="16" cy="84" r="6" fill="#E8B94A" stroke="#2B2A33" stroke-width="1.5"/>
+          </svg>
+          <figcaption>Twelve turns, 2026 to 2100. A step can be 6 years or 10.</figcaption>
+        </figure>
+        <figure class="help-scene" data-scene="turn">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <g class="deal">
+              <rect x="18" y="22" width="84" height="54" rx="8" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+              <rect x="28" y="32" width="36" height="6" rx="3" fill="#3E7C8F"/>
+              <rect x="118" y="14" width="84" height="62" rx="8" fill="#fffaf1" stroke="#2B2A33" stroke-width="2"/>
+              <rect x="128" y="26" width="36" height="6" rx="3" fill="#5E8C61"/>
+              <rect x="218" y="22" width="84" height="54" rx="8" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+              <rect x="228" y="32" width="36" height="6" rx="3" fill="#C98B3C"/>
+            </g>
+            <g class="pips" fill="#2B2A33">
+              <circle cx="46" cy="96" r="5"/>
+              <circle cx="70" cy="96" r="5" fill="#E8B94A" stroke="#2B2A33" stroke-width="1.5"/>
+              <circle cx="94" cy="96" r="5" fill="none" stroke="#2B2A33" stroke-width="1.5"/>
+            </g>
+            <text x="112" y="100" fill="#2B2A33" font-size="11" font-weight="700">pathway</text>
+            <rect x="210" y="86" width="92" height="20" rx="10" fill="none" stroke="#2B2A33" stroke-width="1.5"/>
+            <text x="228" y="100" fill="#2B2A33" font-size="11" font-weight="700">Hold</text>
+          </svg>
+          <figcaption>One card, one pathway, or hold. The Idea Lab is the wild card.</figcaption>
+        </figure>
+        <figure class="help-scene" data-scene="lag">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <text x="58" y="16" fill="#2B2A33" font-size="12" font-weight="700">Now</text>
+            <text x="196" y="16" fill="#2B2A33" font-size="12" font-weight="700">2100</text>
+            <rect x="70" y="24" width="22" height="72" rx="11" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+            <rect class="merc now" x="74" y="46" width="14" height="46" rx="7" fill="#B5472E"/>
+            <rect x="208" y="24" width="22" height="72" rx="11" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+            <rect class="merc goal" x="212" y="32" width="14" height="60" rx="7" fill="#C98B3C"/>
+          </svg>
+          <figcaption>Heat now chases the 2100 target. It does not jump.</figcaption>
+        </figure>
+        <figure class="help-scene" data-scene="path">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <path class="band" d="M16 78 C70 74 90 70 130 62 C170 52 190 48 230 40 L230 58 C190 66 170 70 130 76 C90 82 70 84 16 88 Z" fill="#3E7C8F" opacity="0.28"/>
+            <path class="heat" d="M16 80 C70 76 100 72 140 64 C180 54 210 50 304 36" fill="none" stroke="#2B2A33" stroke-width="3" stroke-linecap="round"/>
+            <line x1="16" y1="28" x2="304" y2="28" stroke="#B5472E" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <text x="16" y="22" fill="#B5472E" font-size="12" font-weight="700">2.0°</text>
+          </svg>
+          <figcaption>The hold line, the shade of quiet policies, and the 2.0° mark.</figcaption>
+        </figure>
+        <figure class="help-scene" data-scene="race">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <text x="16" y="36" fill="#2B2A33" font-size="11" font-weight="700">Demand</text>
+            <text x="16" y="68" fill="#2B2A33" font-size="11" font-weight="700">Clean</text>
+            <rect x="78" y="24" width="210" height="16" rx="8" fill="#efe2c8"/>
+            <rect class="bar demand" x="78" y="24" width="150" height="16" rx="8" fill="#B5472E"/>
+            <rect x="78" y="56" width="210" height="16" rx="8" fill="#efe2c8"/>
+            <rect class="bar clean" x="78" y="56" width="188" height="16" rx="8" fill="#5E8C61"/>
+            <g class="smoke">
+              <circle cx="286" cy="92" r="6" fill="#8A8378"/>
+              <circle cx="298" cy="84" r="5" fill="#8A8378"/>
+            </g>
+            <rect x="292" y="96" width="10" height="10" fill="#2B2A33"/>
+          </svg>
+          <figcaption>Clean supply plus efficiency against rising demand.</figcaption>
+        </figure>
+        <figure class="help-scene" data-scene="stages">
+          <svg viewBox="0 0 320 112" aria-hidden="true">
+            <rect width="320" height="112" fill="#f4ead8"/>
+            <line x1="48" y1="48" x2="272" y2="48" stroke="#2B2A33" stroke-width="2"/>
+            <circle cx="48" cy="48" r="14" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+            <circle cx="160" cy="48" r="14" fill="#fffaf1" stroke="#2B2A33" stroke-width="1.5"/>
+            <circle cx="272" cy="48" r="14" fill="#5E8C61" stroke="#2B2A33" stroke-width="1.5"/>
+            <circle class="walker" cx="48" cy="48" r="6" fill="#E8B94A" stroke="#2B2A33" stroke-width="1.5"/>
+            <text x="24" y="84" fill="#2B2A33" font-size="11" font-weight="700">Research</text>
+            <text x="142" y="84" fill="#2B2A33" font-size="11" font-weight="700">Pilot</text>
+            <text x="252" y="84" fill="#2B2A33" font-size="11" font-weight="700">Scale</text>
+          </svg>
+          <figcaption>Research, pilot, scale. A stall still costs the turn.</figcaption>
+        </figure>
+      </div>
+      <div class="help-nav" role="tablist" aria-label="How to play scenes">
+        <button type="button" class="help-dot is-on" data-help="0" role="tab" aria-selected="true" aria-label="The century"></button>
+        <button type="button" class="help-dot" data-help="1" role="tab" aria-selected="false" aria-label="Your turn"></button>
+        <button type="button" class="help-dot" data-help="2" role="tab" aria-selected="false" aria-label="Heat lag"></button>
+        <button type="button" class="help-dot" data-help="3" role="tab" aria-selected="false" aria-label="The path"></button>
+        <button type="button" class="help-dot" data-help="4" role="tab" aria-selected="false" aria-label="The energy race"></button>
+        <button type="button" class="help-dot" data-help="5" role="tab" aria-selected="false" aria-label="Pathways"></button>
+      </div>
+      <div class="help-notes">
+      <p>Twelve turns carry the world from 2026 to 2100. A step can be 6 years or 10. The longer step moves the climate more.</p>
+      <p>Each turn, play one breakthrough, invest in one technology pathway, or hold. Three cards are dealt, plus the Idea Lab when it is open. A pathway takes the whole turn and spends the same limited resources.</p>
+      <p>Warming chases a target set by emissions and the land. It does not jump to the target. You always see the heat now and the heat projected for 2100.</p>
+      <p>The path draws the heat so far and the line if you hold. The shade is seven quiet policies: hold, cut, grow, restore, power, trust, or the first card you can pay. Future news is not in that band. Pathways you already started stay in the line. The mark is 2.0°, where heat starts to drag prosperity.</p>
+      <p>The energy race runs every step. Demand grows with the economy, electrification, and new loads such as AI. Clean supply is solar, wind, nuclear, storage, and grids. Efficiency in buildings, vehicles, and industry lowers how much new generation you need. Rules, a political surplus, and cheaper clean power retire fossil plants. You are ahead when clean additions plus efficiency exceed demand and fossil generation is falling. Grids and long-duration storage both need to be through pilot before more of that clean supply counts. Otherwise some of it is curtailed.</p>
+      <p>Aviation fuels and shipping fuels cut hard-to-abate emissions. Heavy industry cuts industrial stacks. Carbon removal raises removal and the land sink. Each pathway moves through research, pilot, and scale. Some tries stall, and you still pay. Effects stay bounded. The heat is still a stock with lag.</p>
+      <p>Costly energy drags prosperity and stirs resistance. Growth pushes emissions unless you break that link. A living landscape stores carbon. Low trust softens a law and raises its political price.</p>
+      <p>The Idea Lab is one wild card every three turns. There is no reroll. A card you cannot pay for stays dim.</p>
+      <p>Real-world context, not a score from this game. Under current policies, the UNEP Emissions Gap report estimates roughly 2.8°C of warming this century. That implies materially higher risks from heat, flooding, food disruption, migration, infrastructure damage, and other stresses that can pile up. The IPCC AR6 WGII finds that climate change can increase conditions associated with violent conflict, particularly where poverty, weak government, food insecurity, and existing tensions are already present. It rates that link medium confidence. It does not say climate change automatically causes wars. The outcome is not predetermined.</p>
+      <p>Ember reports that in 2025 electricity demand rose by 849 TWh while low-carbon generation rose by 887 TWh, so fossil generation edged down. That is context for the race, not a figure this game produces.</p>
+      <p>The run ends in an alternate history, with the timeline of what you chose. A hard ending is interacting stress, not a scripted war.</p>
+      </div>
+      <button type="button" id="howto-close">Close</button>
+    </div>
+  </div>
+  <div id="break" hidden>
+    <div class="break-card">
+      <p class="kicker">Breakthrough</p>
+      <svg class="break-ring" viewBox="0 0 72 72" aria-hidden="true">
+        <circle cx="36" cy="36" r="28" class="track"></circle>
+        <circle cx="36" cy="36" r="28" class="value"></circle>
+      </svg>
+      <p id="break-year"></p>
+      <h2 id="break-name"></h2>
+      <p id="break-line"></p>
+    </div>
+  </div>
+  <div id="ending" hidden>
+    <p class="kicker" id="end-kicker">2100</p>
+    <h2 id="end-name"></h2>
+    <p id="end-blurb"></p>
+    <p id="end-paths"></p>
+    <p id="end-context" class="context">Real-world context, not a result of this run. Under current policies, the UNEP Emissions Gap report estimates roughly 2.8°C of warming this century. That implies materially higher risks from heat, flooding, food disruption, migration, infrastructure damage, and other stresses that can pile up. The IPCC AR6 WGII finds that climate change can increase conditions associated with violent conflict, particularly where poverty, weak government, food insecurity, and existing tensions are already present. It rates that link medium confidence. It does not say climate change automatically causes wars. The outcome is not predetermined.</p>
+    <p id="end-stats"></p>
+    <p id="end-seed"></p>
+    <ol id="timeline"></ol>
+    <button type="button" id="again">Play again</button>
+  </div>
+</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>

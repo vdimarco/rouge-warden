@@ -26,14 +26,14 @@ export const CAMERA_PRIO = Object.freeze({ cine: 100, photo: 90, drive: 50, foot
 export const SAVE_KEY = 'crimson.story.v1';
 
 export const CREW_IDS = Object.freeze(['tanktop', 'fifty', 'shades', 'newbalance', 'redjersey']); // CREW index order
-export const CAST_IDS = Object.freeze([...CREW_IDS, 'gabe', 'vance', 'voss', 'rattler', 'boone', 'gang', 'civA', 'civB', 'christian', 'ryu', 'ronin', 'bear']);
+export const CAST_IDS = Object.freeze([...CREW_IDS, 'gabe', 'vance', 'voss', 'rattler', 'boone', 'gang', 'civA', 'civB', 'sheriff', 'police', 'christian', 'ryu', 'ronin', 'bear']);
 export const ARENA_CAST = Object.freeze(['ronin', 'gabe', 'bear']); // registered arena actors: hidden, never disposed (B9)
 export const CORE_CAST = Object.freeze([...CREW_IDS, 'gabe']); // S.ready waits for S.cast.preload(CORE_CAST) (B2)
 // Bodies. null means code-built by cast/bodygen.js (A1) or an arena actor. GLBs load by absolute path.
 export const BODY_URL = Object.freeze({
   tanktop: '/wild/models/crew1.glb', fifty: '/wild/models/crew2.glb', shades: '/wild/models/crew3.glb', newbalance: '/wild/models/crew4.glb', redjersey: '/wild/models/crew5.glb',
   christian: '/wild/models/christian.glb', ryu: '/wild/models/ryu.glb',
-  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: null, civB: null,
+  gabe: null, ronin: null, bear: null, vance: 'models/vance.glb', voss: 'models/voss.glb', rattler: 'models/rattler.glb', boone: null, gang: 'models/gang.glb', civA: 'models/civA.glb', civB: 'models/civB.glb', sheriff: 'models/sheriff.glb', police: 'models/police.glb',
 });
 export const DONOR_RIG = '/wild/models/crew4.glb'; // the skeleton code-built bodies clone (A1)
 // Dialogue portraits. A missing file shows the glyph card instead (A3). Dana has none, by design.
@@ -44,10 +44,10 @@ export const PORTRAITS = Object.freeze({
 export const GLYPHS = Object.freeze({ tanktop: '力', fifty: '命', shades: '影', newbalance: '风', redjersey: '速', gabe: '熊', vance: '法', voss: '笑', rattler: '蛇' });
 export const FOE_IDS = Object.freeze(['driver', 'guard', 'boone', 'rattler', 'voss', 'legend']);
 export const LEGEND_IDS = Object.freeze(['javelina', 'vulture', 'gila', 'tarantula']); // E9: 'legend' foes, one per cairn
-export const WEAPON_IDS = Object.freeze(['fists', 'foamKatana', 'cue', 'stool', 'staff']);
+export const WEAPON_IDS = Object.freeze(['fists', 'foamKatana', 'cue', 'stool', 'staff', 'pistol', 'goldenEagle', 'ak47', 'katana', 'baseballBat', 'bearSpray']);
 export const ABILITIES = Object.freeze(['bearCall']);
 export const EVIDENCE = Object.freeze(['face', 'place', 'date', 'link']);
-export const LOOKS = Object.freeze(['ARENA', 'DAY', 'DUSK', 'NIGHT', 'DAWN', 'MEMORY', 'MEMORY_NIGHT', 'INTERIOR', 'HANGOVER', 'VORTEX', 'DEEP_INK']);
+export const LOOKS = Object.freeze(['ARENA', 'COMIC', 'DAY', 'DUSK', 'NIGHT', 'DAWN', 'MEMORY', 'MEMORY_NIGHT', 'INTERIOR', 'HANGOVER', 'VORTEX', 'DEEP_INK']);
 export const STEP_TYPES = Object.freeze(['cine', 'talk', 'card', 'goto', 'drive', 'enter', 'exit', 'wait', 'stakeout', 'photo', 'tail', 'lose', 'chase', 'race', 'fight', 'defend', 'stealth', 'interact', 'escort', 'collect', 'choice', 'set', 'script']);
 export const CHAPTER_ORDER = Object.freeze(['c0', 'i0', 'f1', 'i1', 'f2', 'i2', 'f3', 'i3', 'f4', 'i4', 'f5', 'i5', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'e1']);
 export const COLD_OPEN = Object.freeze(['c0', 'i0']); // never saved as the resume point: CONTINUE starts at f1 or later
@@ -55,7 +55,7 @@ export const VEHICLE_KINDS = Object.freeze(['van', 'jeep', 'suv', 'suv_fbi', 'pi
 export const VAN_LOOKS = Object.freeze(['noBumper', 'tapedWindows', 'noMirror', 'justMarried']);
 export const SURFACES = Object.freeze(['asphalt', 'dirt', 'rock', 'sand', 'water', 'scrub']);
 export const CARD_KINDS = Object.freeze(['chapter', 'time', 'title', 'text', 'pass', 'fail', 'error', 'loading']);
-export const INPUT_ACTIONS = Object.freeze(['move', 'look', 'light', 'heavy', 'parry', 'dodge', 'canteen', 'lock', 'use', 'crouch', 'camera', 'bearcall', 'map', 'pause', 'music', 'gas', 'brake', 'handbrake', 'horn', 'lookback', 'exit', 'skip', 'shutter', 'zoom']);
+export const INPUT_ACTIONS = Object.freeze(['move', 'look', 'light', 'heavy', 'parry', 'dodge', 'sprint', 'canteen', 'lock', 'use', 'crouch', 'camera', 'bearcall', 'map', 'pause', 'music', 'gas', 'brake', 'handbrake', 'horn', 'lookback', 'exit', 'skip', 'shutter', 'zoom', 'weaponNext', 'reload', 'weapon1', 'weapon2', 'weapon3', 'weapon4', 'weapon5', 'weapon6', 'weapon7']);
 export const INPUT_CONTEXTS = Object.freeze(['foot', 'drive', 'photo', 'menu', 'cine']);
 export const TOUCH_SETS = Object.freeze(['combat', 'explore', 'drive', 'photo', 'menu', 'none']);
 // Events on S.bus. 'start' {reason, chapter, mission, step, save}; 'exit'; 'preload' stage ('story'|'transform'|'begin');

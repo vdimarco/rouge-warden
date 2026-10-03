@@ -432,6 +432,9 @@ void main() {
     float bq = vW.y / 6.0, bfw = fwidth(bq);
     float bnd = mix(0.5, smoothstep(0.5 - bfw, 0.5 + bfw, fract(bq)), 1.0 - smoothstep(0.2, 0.5, bfw)) * step(330.0, vW.y);
     alb = mix(vec3(0.5, 0.5, 0.62), vec3(0.85, 0.16, 0.12), bnd);
+  } else if (k == 15) {
+    // the tower model's graphite steel (Higgsfield 3D): dark violet-grey, so its ink lines read
+    alb = vec3(0.16, 0.18, 0.24);
   } else if (k == 16 || k == 17) {
     // the Dome: pale lilac panels on inked ribs, dark arches round the base
     float a = atan(vW.z - uDome.y, vW.x - uDome.x);
@@ -1669,12 +1672,13 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---------------- 4. the Needle, the Dome, the expressway ---------------- */
   const beacons = [];
   const lb = Buf({ aKind: 1 }, 16384);
+  const needleBuffer = Buf({ aKind: 1 }, 16384);
   // the King's perch: a gold plinth on the pod roof, on the side that faces the start (known before the build)
   const perchR = 9.5, perchA = Math.atan2(S0.z - N0.z, S0.x - N0.x);
   perch.x = N0.x + Math.cos(perchA) * perchR; perch.z = N0.z + Math.sin(perchA) * perchR; perch.y = N0.podY1 + 1.1;
   perch.yaw = Math.atan2(-(S0.x - perch.x), -(S0.z - perch.z));
   function buildNeedle(part) {
-    const b = lb;
+    const b = needleBuffer;
     const N = N0, R = N.shaftR;
     if (part === 2) { needleLegs(b, N, R); return; }
     const dr = N.deck.r, dy = N.deck.y;
@@ -1700,9 +1704,18 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // the pod: a wall, the window band, a sloped top, the roof the King sits on; the antenna; the perch
   function needlePod(b, N, dr, dy) {
     const pr = N.podR, p0 = N.podY0, p1 = N.podY1;
-    lathe(b, [[dr - 0.35, dy, 11], [pr, p0 + 0.2, 11], [pr + 0.3, p0 + 3, 11], [pr + 0.3, p0 + 7, 12], [pr + 0.3, p0 + 17, 11], [pr + 0.3, p1 - 2.5, 11], [pr - 1, p1, 11], [4, p1, 11], [3.4, p1 + 0.6, 14]], 48, N.x, N.z);
-    // the antenna: a mast to 322, a thin spike to the top
-    lathe(b, [[3.4, p1 + 0.6, 14], [3.2, 322, 14], [1.5, 322.4, 14], [1.4, N.top - 2, 14], [0.25, N.top, 14]], 16, N.x, N.z);
+    // A tapered observation saucer with two continuous glazing bands and a thin crown.
+    lathe(b, [[N.shaftR, dy - 5, 11], [pr - 2, p0 + .2, 11],
+      [pr + .3, p0 + 3, 13], [pr + .3, p0 + 3.6, 12], [pr + .3, p0 + 9, 12],
+      [pr + .65, p0 + 9.3, 13], [pr + .65, p0 + 10.1, 13],
+      [pr + .1, p0 + 10.5, 12], [pr - .6, p0 + 17.5, 12],
+      [pr - 1, p0 + 18.2, 13], [pr - 2.5, p1 - 1, 11],
+      [pr - 4.5, p1, 11], [4, p1, 11], [3.4, p1 + .6, 14]], 96, N.x, N.z);
+    // Upper SkyPod, steel mast shoulders and the red-white broadcast antenna.
+    lathe(b, [[3.4, p1 + .6, 10], [3.0, 310, 10], [5.8, 311.5, 13],
+      [6.2, 313, 12], [6.2, 315.2, 12], [5.4, 316, 13],
+      [2.7, 317, 14], [2.3, 325, 14], [1.5, 326, 14],
+      [1.05, N.top - 4, 14], [.22, N.top, 14]], 48, N.x, N.z);
     lathe(b, [[5.2, p1, 21], [5.2, p1 + 0.6, 21], [4.6, p1 + 1.1, 21], [0, p1 + 1.1, 21]], 24, perch.x, perch.z);
     for (const y of [300, 322.6, 341, N.top + 0.3]) beacons.push([N.x, y, N.z, 1.4]);
   }
@@ -1712,8 +1725,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
       const a = (j / 3) * Math.PI * 2 + 0.3, ca = Math.cos(a), sa = Math.sin(a), th = 0.8;
       const px = -sa * th, pz = ca * th; // across the leg
       const P = (r, y, side) => [N.x + ca * r + px * side, y, N.z + sa * r + pz * side];
-      const top = 150, rOut = (y) => R + 4.5 * Math.pow(1 - y / top, 1.3);
-      const steps = 6;
+      const top = N.deck.y - 9, rOut = (y) => R + 8.5 * Math.pow(1 - y / top, 1.7);
+      const steps = 18;
       for (let s = 0; s < steps; s++) {
         const ya = (s / steps) * top, yb = ((s + 1) / steps) * top, ra = rOut(ya), rb = rOut(yb);
         const nOut = [ca, (ra - rb) / (yb - ya), sa], l = Math.hypot(...nOut);
@@ -1722,6 +1735,48 @@ export function createCityView(renderer, scene, city, opts = {}) {
         quad(b, [P(ra, ya, -1), P(R - 0.5, ya, -1), P(R - 0.5, yb, -1), P(rb, yb, -1)], [sa, 0, -ca], { aKind: [10] });
       }
     }
+  }
+  // Higgsfield 3D Jutsu revision 2. Batch its semantic parts into our landmark
+  // shader, preserving sunset reflections, fog and a single draw call.
+  async function loadTower(fallback) {
+    try {
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const gltf = await new GLTFLoader().loadAsync(new URL("../models/cn-tower.glb", import.meta.url).href);
+      gltf.scene.updateMatrixWorld(true);
+      const b = Buf({ aKind: 1 }, 16384), N = N0;
+      const levels = [[0,0],[325,N.deck.y-9],[340,N.podY0],[361,N.podY1],[505,322],[553,N.top]];
+      const height = y => {
+        let i=1; while(i<levels.length-1 && y>levels[i][0]) i++;
+        const [a,u]=levels[i-1], [z,v]=levels[i]; return u+(v-u)*(y-a)/(z-a);
+      };
+      gltf.scene.traverse(o => {
+        if (!o.isMesh) return;
+        const g=o.geometry.clone().applyMatrix4(o.matrixWorld), p=g.attributes.position;
+        for(let i=0;i<p.count;i++) {
+          const y=p.getY(i);
+          const scale=/Tapered_central/.test(o.name) && y<=325 ? N.shaftR/Math.max(.001,Math.hypot(p.getX(i),p.getZ(i))) : N.podR/22;
+          p.setXYZ(i,N.x+p.getX(i)*scale,height(y),N.z+p.getZ(i)*scale);
+        }
+        g.computeVertexNormals();
+        const name=o.material.name;
+        const kind=/Antenna_band/i.test(o.name)?14:/glass/i.test(name)?12:/graphite/i.test(name)?15:/red/i.test(name)?14:/aluminum/i.test(name)?13:10;
+        const normals=g.attributes.normal, offset=b.v;
+        reserve(b,p.count,g.index?g.index.count:p.count);
+        for(let i=0;i<p.count;i++) {
+          const v=vtx(b,p.getX(i),p.getY(i),p.getZ(i),normals.getX(i),normals.getY(i),normals.getZ(i));
+          b.x.aKind.a[v]=kind;
+        }
+        for(let i=0;i<(g.index?g.index.count:p.count);i++) b.i[b.ni++]=offset+(g.index?g.index.getX(i):i);
+        g.dispose();o.geometry.dispose();o.material.dispose();
+      });
+      if(!b.v) throw new Error("CN Tower model contains no mesh");
+      // Playable collar ledges, deck and King's perch retain their collision dimensions.
+      for(const C of N.collars) lathe(b,[[N.shaftR-.1,C.y-.75,13],[C.r,C.y-.75,13],[C.r,C.y+.75,13],[N.shaftR-.1,C.y+.75,13]],32,N.x,N.z);
+      lathe(b,[[N.shaftR,N.deck.y-1,13],[N.deck.r,N.deck.y-1,13],[N.deck.r,N.deck.y,13],[N.shaftR,N.deck.y,13]],64,N.x,N.z);
+      lathe(b,[[5.2,N.podY1,21],[5.2,N.podY1+.6,21],[4.6,N.podY1+1.1,21],[0,N.podY1+1.1,21]],24,perch.x,perch.z);
+      const mesh=add(new THREE.Mesh(finish(b),landMat));mesh.name="CN Tower Higgsfield";
+      root.remove(fallback);staticTris-=fallback.userData.tris;info.meshes--;fallback.geometry.dispose();
+    } catch(error) { console.warn("CN Tower model unavailable; retaining built-in tower",error); }
   }
   // the Dome: a ribbed half-shell, arches round its foot
   function buildDome() {
@@ -1758,6 +1813,9 @@ export function createCityView(renderer, scene, city, opts = {}) {
       return;
     }
     if (part === 2) {
+      const fallback = add(new THREE.Mesh(finish(needleBuffer), landMat));
+      fallback.name = "CN Tower fallback";
+      loadTower(fallback);
       const m = new THREE.Mesh(finish(b), landMat);
       m.frustumCulled = false;
       add(m, 0);

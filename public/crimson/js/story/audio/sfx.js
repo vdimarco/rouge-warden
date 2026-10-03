@@ -11,8 +11,35 @@ export function defineAll(A) {
   if (A.defs.horn) return; // once per page
   const tone = (t, type, f0, f1, peak, dec, a, out) => A.tone(t, type, f0, f1, peak, dec, a, out);
   const hit = (t, type, freq, q, peak, dec, sweep, out) => A.noiseHit(t, type, freq, q, peak, dec, sweep, out);
+  for (const [name, pitch, gain, decay] of [['pistol', 160, 0.35, 0.16], ['goldenEagle', 95, 0.5, 0.24], ['ak47', 210, 0.28, 0.11]]) {
+    A.define(name, (context, time, output) => {
+      hit(time, 'highpass', 900, 0.7, gain, decay, 0, output);
+      tone(time, 'triangle', pitch, 45, gain, decay, 0.002, output);
+    });
+  }
+  A.define('bearSpray', (context, time, output) => hit(time, 'bandpass', 2400, 0.6, 0.18, 0.22, 0, output));
+  A.define('reload', (context, time, output) => {
+    hit(time, 'highpass', 1600, 0.8, 0.1, 0.05, 0, output);
+    hit(time + 0.22, 'highpass', 2100, 0.8, 0.13, 0.06, 0, output);
+  });
   const noiseSrc = (ctx, t, dur) => { const s = ctx.createBufferSource(); s.buffer = A.noise; s.loop = true; s.start(t, Math.random() * 1.5); if (dur) s.stop(t + dur); return s; };
   const env = (g, t, a, peak, hold, rel) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel); };
+  for (const name of ['siren', 'helicopter']) A.defineLoop(name, (context, output) => {
+    const voice = context.createOscillator(), modulator = context.createOscillator();
+    const depth = context.createGain(), volume = context.createGain();
+    const air = name === 'helicopter';
+    voice.type = air ? 'triangle' : 'sine'; voice.frequency.value = air ? 65 : 750;
+    modulator.frequency.value = air ? 19 : 0.8; depth.gain.value = air ? 38 : 300;
+    volume.gain.value = 0;
+    const pulse = context.createGain(); pulse.gain.value = air ? 0.6 : 1;
+    modulator.connect(depth); depth.connect(voice.frequency); voice.connect(pulse); pulse.connect(volume); volume.connect(output);
+    const pulseDepth = context.createGain(); pulseDepth.gain.value = air ? 0.38 : 0; modulator.connect(pulseDepth); pulseDepth.connect(pulse.gain);
+    voice.start(); modulator.start();
+    return {
+      set(options) { volume.gain.setTargetAtTime(Math.max(0, Math.min(1, options.level ?? 0)) * (air ? 0.45 : 0.09), context.currentTime, 0.15); },
+      stop(fade = 0.2) { volume.gain.setTargetAtTime(0, context.currentTime, Math.max(0.01, fade / 3)); voice.stop(context.currentTime + fade + 0.1); modulator.stop(context.currentTime + fade + 0.1); },
+    };
+  });
 
   // the van's horn: two reedy tones a third apart
   A.define('horn', (ctx, t, out, o) => {
@@ -88,6 +115,27 @@ export function defineAll(A) {
   A.define('radio', (ctx, t, out) => { hit(t, 'bandpass', 1800, 0.6, 0.25, 0.3, 900, out); tone(t + 0.3, 'square', 1200, 900, 0.05, 0.06, 0.002, out); });
   // a light touch between vehicles (the protected van's bump meter)
   A.define('bump', (ctx, t, out, o) => { const k = o.hard ? 1 : 0.5; hit(t, 'lowpass', 260, 1, 0.9 * k, 0.2, 0, out); tone(t, 'sine', 70, 35, 0.7 * k, 0.25, 0.003, out); hit(t, 'bandpass', 1500, 1.5, 0.3 * k, 0.08, 0, out); });
+
+  // A six-second transformation bed. Its handle lets the cine stop it on skip or film failure.
+  A.defineLoop('gabeMorph', (ctx, out) => {
+    const nodes = [], start = ctx.currentTime;
+    const note = (delay, f0, f1, level, duration, type = 'sine') => {
+      const x = ctx.createOscillator(), g = ctx.createGain(), t = start + delay;
+      x.type = type; x.frequency.setValueAtTime(f0, t); x.frequency.exponentialRampToValueAtTime(f1, t + duration);
+      env(g, t, 0.025, level, duration * 0.55, duration * 0.45); x.connect(g); g.connect(out);
+      x.start(t); x.stop(t + duration + 0.1); nodes.push(x);
+    };
+    note(0, 72, 32, 0.35, 1.2); // collapse of the bear's mass
+    for (let i = 0; i < 5; i++) note(0.45 + i * 0.48, 180 + i * 65, 70, 0.07, 0.5, 'triangle');
+    const n = noiseSrc(ctx, start, 6.7), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.frequency.setValueAtTime(180, start); f.frequency.exponentialRampToValueAtTime(2800, start + 2.8); f.frequency.exponentialRampToValueAtTime(240, start + 5.8);
+    env(g, start, 1.2, 0.16, 2.6, 2.5); n.connect(f); f.connect(g); g.connect(out); nodes.push(n);
+    note(3.2, 95, 42, 0.3, 0.7); // landing on the sandstone
+    for (const [i, f0] of [294, 440, 587].entries()) note(4.4 + i * 0.15, f0, f0, 0.065, 1.7);
+    return { set() {}, stop(fade = 0.2) { for (const x of nodes) { try { x.stop(ctx.currentTime + fade + 0.02); } catch (e) { /* already ended */ } } } };
+  });
+  A.define('cineWhoosh', (ctx, t, out) => hit(t, 'bandpass', 250, 0.7, 0.16, 0.38, 2200, out));
+  A.define('cineTraffic', (ctx, t, out) => { tone(t, 'triangle', 85, 52, 0.1, 2.4, 0.3, out); hit(t, 'lowpass', 700, 0.6, 0.12, 2.3, 220, out); });
 
   /* ---------------- loops ---------------- */
   // the engine: two detuned saws through a lowpass that opens with rpm and throttle

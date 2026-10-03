@@ -11,7 +11,7 @@ const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export function createDriveCam(S, D) {
-  const C = { yaw: 0, orbit: 0, idle: 9, pitch: 0, dist: 8.5, dcol: 8.5, fov: 60, init: false, blend: 1, shake: 0, from: new THREE.Vector3(), fromLook: new THREE.Vector3() };
+  const C = { yaw: 0, orbit: 0, elevation: 0, idle: 9, pitch: 0, dist: 8.5, dcol: 8.5, fov: 60, init: false, blend: 1, shake: 0, from: new THREE.Vector3(), fromLook: new THREE.Vector3() };
   const pos = new THREE.Vector3(), look = new THREE.Vector3(), want = new THREE.Vector3(), pivot = new THREE.Vector3();
   const active = () => !!D.riding && S.world.visible && S.hero && (S.hero.mode === 'drive' || S.hero.mode === 'passenger');
   function update(rdt, raw) {
@@ -19,7 +19,7 @@ export function createDriveCam(S, D) {
     const cam = S.camera;
     if (!C.init) {
       // start from wherever the camera was and blend into the chase view over 0.7 s
-      C.init = true; C.yaw = v.yaw; C.orbit = 0; C.idle = 9; C.dist = 8.5; C.dcol = 8.5; C.pitch = v.susp.slopeP; C.fov = cam.fov;
+      C.init = true; C.yaw = v.yaw; C.orbit = 0; C.elevation = 0; C.idle = 9; C.dist = 8.5; C.dcol = 8.5; C.pitch = v.susp.slopeP; C.fov = cam.fov;
       C.from.copy(cam.position); cam.getWorldDirection(C.fromLook).multiplyScalar(10).add(cam.position); C.blend = 0;
     }
     // heading: the van's, pulled toward its travel in a slide (0.3 s lag), else 0.15 s
@@ -30,6 +30,7 @@ export function createDriveCam(S, D) {
     const lk = S.input.axis('look');
     if (Math.abs(lk.x) > 0.05 || Math.abs(lk.y) > 0.05) { C.orbit = wrap(C.orbit - lk.x * 2.6 * dt); C.idle = 0; } else C.idle += dt;
     if (C.idle > 1.5) C.orbit *= Math.exp(-dt * 3);
+    C.elevation = clamp(C.elevation - lk.y * 1.6 * dt, -0.6, 1.3);
     const back = S.input.held('lookback') ? Math.PI : 0;
     const yaw = C.yaw + C.orbit + back;
     C.pitch += (v.susp.slopeP - C.pitch) * (1 - Math.exp(-dt * 3));
@@ -52,6 +53,7 @@ export function createDriveCam(S, D) {
     // look a little ahead of the van, along where it is going
     const vf = Math.sin(v.yaw), vz = Math.cos(v.yaw), ahead = back ? -6 : 6;
     look.set(v.pos.x + (back ? -vf : vf) * Math.abs(ahead) + v.vel.x * 0.12, v.pos.y + 1.3 + (up - 3) * 0.6 + Math.sin(v.susp.slopeP) * 6, v.pos.z + (back ? -vz : vz) * Math.abs(ahead) + v.vel.z * 0.12);
+    if (Math.abs(C.elevation) > 0.01 || Math.abs(C.orbit) > 0.01) look.set(pos.x + fx * 20, pos.y + Math.tan(C.elevation) * 20, pos.z + fz * 20);
     // a knock shakes it
     if (S.time - v.contactT < 0.05 && v.lastImpact > 3) C.shake = Math.min(0.5, v.lastImpact * 0.03);
     C.shake = Math.max(0, C.shake - dt * 1.5);

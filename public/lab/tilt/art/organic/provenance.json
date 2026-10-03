@@ -1,0 +1,22 @@
+{
+  "created_at": "2026-09-30",
+  "tool": "OpenAI built-in image_gen.imagegen",
+  "file": "mineral-sprites.webp",
+  "source_file": "exec-ff91bc1f-61df-4d06-b82c-0ab650da31e1.png",
+  "width": 1254,
+  "height": 1254,
+  "transparent": true,
+  "processing": "Full-image PNG to WebP encoding, quality 85. No art edits. Sprite bounds were measured from the source alpha channel.",
+  "sprite_regions": {
+    "stone": [57, 60, 529, 528],
+    "iron": [676, 69, 527, 522],
+    "ice": [69, 665, 524, 523],
+    "core": [677, 671, 522, 518]
+  },
+  "prompt": "Create a production-ready transparent PNG sprite atlas for a cinematic mobile space pinball adventure. Square canvas, precise 2 by 2 layout of four isolated objects on fully transparent alpha. Each object centered in its equal cell, with generous transparent margins (at least 15 percent per side of each cell). No contact shadows, no grid lines, no text, no background, no UI. Upper-left cell: natural irregular roughly round grey asteroid, dark graphite craters and rough fractured stone, cinematic moon geology, subtle cool rim lighting. Upper-right cell: different lumpy roughly round iron meteor, russet and charcoal mineral surface, a few fine warm copper glowing fissures, rugged pitted silhouette. Lower-left cell: different near-round icy comet fragment, translucent blue-grey ice on dark stone, fractured facets and frosty veins, subtle blue-white glints, asymmetrical rough edge. Lower-right cell: collectible stellar seed, a roughly spherical pale-gold luminous core inside a naturally irregular translucent grey-cyan mineral shell, fine organic fissures, looks like a beautiful alien mineral formed in deep space, a soft restrained gold light inside, no surrounding manufactured ring or halo, no symbol. Consistent soft directional light from upper left, dark lower-right shading, premium physically textured space art, realistic natural objects with clear silhouettes at 50 to 90 pixels game scale. Each fills about 70 percent of its cell, all objects have roughly circular overall bounds appropriate for spherical collision shapes. The four objects must remain fully isolated with no shared glow or overlapping parts. Make surfaces rich and organic. No metal frames, machinery, geometric target markers, star symbols, hard circular outlines, logos, scenery or labels.",
+  "prior_attempt": {
+    "provider": "fal",
+    "endpoint": "openai/gpt-image-2",
+    "status": "Submission tool did not return after 523 seconds. No request ID or result received; service submission status unknown. Not resubmitted."
+  }
+}

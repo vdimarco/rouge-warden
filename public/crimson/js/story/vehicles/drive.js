@@ -1,7 +1,8 @@
 // js/story/vehicles/drive.js : S.drive, the hero in vehicles (design 4.1).
 // - Getting in: E within 3.2 m of a door (S.interact 'GET IN' at the driver's and the passenger's door).
 //   The hero steps to the door (or snaps there when something is in the way), the door opens, and 0.6 s
-//   later the hero sits in S0 (sitDrive) or S1 (sitPass). From the passenger door with nobody driving,
+//   later the hero sits in S0 (sitDrive) or S1 (sitPass). An occupied driver seat adds a 1.5 s pull/throw.
+//   From the passenger door with nobody driving,
 //   the hero slides over and drives.
 // - Getting out: E again, only below 4 m/s ("Slow down to get out."). The landing spot is a ring search
 //   (16 angles x 3 radii) around the seat's door, then the other doors, clear of every collider, vehicle,
@@ -23,7 +24,7 @@ const SEAT_LIFT = 0.34;
 
 export function createDrive(S, V) {
   const seated = new Map(); // actor -> { v, i }
-  const doorAnims = [];
+  const doorAnims = [], ejected = [];
   const wp = new THREE.Vector3(), wq = new THREE.Quaternion(), tmpV = new THREE.Vector3();
   const D = {
     riding: null, heroSeat: -1, anim: null, auto: null, autoGas: false,
@@ -32,23 +33,40 @@ export function createDrive(S, V) {
     enter(v, seat = 0, o = {}) {
       if (!v || !S.hero) return false;
       if (D.riding === v) return true;
-      if (D.riding || v.wrecked || v.traffic) return false;
+      if (D.riding || v.wrecked || v.gone) return false;
       seat = clamp(seat | 0, 0, v.seats.length - 1);
+      const occupant = seat === 0 && (v.seats[0] || (v.traffic && 'driver'));
+      const ground = occupant && landingSpot(v, 'driver');
+      if (occupant && !ground) return false;
       if (v.seats[seat] && v.seats[seat] !== 'hero') {
-        if (seat === 0) return false;
-        const free = v.seats.findIndex((x, i) => i > 0 && !x);
-        if (free < 0) return false;
-        seat = free;
+        if (seat === 0) { D.unseat(v.seats[0], { keep: true }); v.seats[0] = null; }
+        else {
+          const free = v.seats.findIndex((x, i) => i > 0 && !x);
+          if (free < 0) return false;
+          seat = free;
+        }
       }
-      const door = o.door || doorFor(v, seat);
+      if (v.traffic) V.claim(v);
+      const door = occupant ? 'driver' : o.door || doorFor(v, seat);
       D.riding = v; D.heroSeat = seat; v.seats[seat] = 'hero';
       if (seat === 0) { v.driven = true; if (v.controller && v.controller.stop) v.controller.stop(); }
       S.hero.setMode(seat === 0 ? 'drive' : 'passenger');
       const a = S.hero.actor, dp = v.doorPoint(door), hp = S.hero.pos;
       const far = Math.hypot(dp.x - hp.x, dp.z - hp.z) > 4 || blocked(hp, dp);
-      D.anim = { type: 'enter', t: 0, dur: ENTER, v, door, from: far ? dp.clone() : hp.clone() };
+      let jack = null;
+      if (occupant) {
+        const unit = v.lawUnit;
+        const foe = unit && S.combat.spawn('driver', { pos: ground, cast: unit.sheriff ? 'sheriff' : 'police', group: unit.group });
+        const actor = foe ? foe.a : occupant.root ? occupant : S.cast.spawn('civA', { pos: ground });
+        if (foe) { unit.deputy = foe; foe.lawUnit = unit; foe.carjacked = true; S.cast.props.attach(actor, 'pistol'); }
+        sitStill(actor); S.cast.pose(actor, 'sitDrive', 1); actor.visible = true; place(actor, v, 0);
+        jack = { actor, foe, v, temporary: !foe && !occupant.root, t: 0, ground: new THREE.Vector3(ground.x, ground.y, ground.z), from: actor.root.position.clone(), thrown: false };
+        ejected.push(jack);
+        if (a) { S.cast.pose(a, 'sitDrive', 0); a.play('lib:carjack', { restart: true, fade: .08 }); }
+      }
+      D.anim = { type: 'enter', t: 0, dur: ENTER + (jack ? 1.5 : 0), v, door, jack, from: far ? dp.clone() : hp.clone() };
       if (a) a.visible = true;
-      openDoor(v, door, ENTER + 0.25);
+      openDoor(v, door, D.anim.dur + 0.25);
       if (S.audio) S.audio.sfx(door === 'slide' ? 'doorSlide' : 'doorOpen', { at: v.pos });
       v.emit('enter', { who: 'hero', seat });
       return true;
@@ -60,6 +78,7 @@ export function createDrive(S, V) {
       const first = o.door || doorFor(v, D.heroSeat);
       const spot = landingSpot(v, first);
       if (!spot) { if (S.ui && S.ui.toast) S.ui.toast('No room to get out here.'); return null; }
+      for (const j of [...ejected]) if (j.v === v && j.t < 1.5) finishEjection(j);
       const seat = D.heroSeat;
       v.seats[seat] = null; D.riding = null; D.heroSeat = -1; D.anim = null;
       if (D.auto && D.auto.v === v) { D.auto.stop(); D.auto = null; }
@@ -100,6 +119,7 @@ export function createDrive(S, V) {
       v.emit('unseat', { actor, seat: i });
     },
     seatsOf: (v) => (v ? v.seats : []),
+    landingSpot,
     // the hero's vehicle drives itself along `route` (points, a place id or {x,z}); off gives control back
     autopilot(on, route) {
       if (D.auto) { D.auto.stop(); D.auto = null; }
@@ -110,6 +130,7 @@ export function createDrive(S, V) {
       return D.auto;
     },
     get seated() { return seated; },
+    ejected,
   };
   const nearestMarker = () => { const m = S.markers3d && S.markers3d.list && S.markers3d.list[0]; return m ? { x: m.x, z: m.z } : null; };
   function doorFor(v, seat) {
@@ -205,12 +226,36 @@ export function createDrive(S, V) {
       if (d.v.view) d.v.view.setDoor(d.name, open * open * (3 - 2 * open));
       if (t >= e) { if (d.v.view) d.v.view.setDoor(d.name, 0); doorAnims.splice(k, 1); if (d.v === D.riding && S.audio) S.audio.sfx('doorClose', { at: d.v.pos }); }
     }
+    for (const j of [...ejected]) {
+      j.t += rdt;
+      if (j.foe?.gone || j.foe?.downed) { finishEjection(j); continue; }
+      const a = j.actor;
+      if (j.t < .25) place(a, j.v, 0);
+      else if (j.t < 1.5) {
+        const k = clamp((j.t - .25) / .6, 0, 1);
+        a.root.position.copy(j.from).lerp(j.ground, k);
+        if (j.t >= .85) {
+          if (!j.thrown) { j.thrown = true; S.cast.pose(a, 'sitDrive', 0); a.play('lib:knock', { restart: true, loop: false, speed: 2.2, fade: .15 }); }
+          a.root.position.y += Math.sin((j.t - .85) / .65 * Math.PI) * .2;
+        }
+        a.root.rotation.set(0, Math.atan2(j.ground.x - j.v.pos.x, j.ground.z - j.v.pos.z) + Math.PI, 0);
+      } else if (j.t < 4) {
+        a.root.position.copy(j.ground); sitStill(a); a.play('lib:knocked', { fade: .12 });
+        if (j.foe) j.foe.pos.copy(j.ground);
+      } else if (!j.temporary || j.t > 20) finishEjection(j);
+    }
     const v = D.riding, a = S.hero && S.hero.actor;
     if (v && D.anim) {
       const A = D.anim; A.t += rdt;
-      const k = clamp(A.t / A.dur, 0, 1), dp = v.doorPoint(A.door);
-      if (a && a.root) {
-        if (k < 0.45) { const q = k / 0.45; a.root.position.set(A.from.x + (dp.x - A.from.x) * q, A.from.y + (dp.y - A.from.y) * q, A.from.z + (dp.z - A.from.z) * q); a.root.rotation.set(0, Math.atan2(v.pos.x - dp.x, v.pos.z - dp.z), 0); }
+      const k = clamp((A.t - (A.jack ? 1.5 : 0)) / ENTER, 0, 1), dp = v.doorPoint(A.door);
+      if (A.jack && A.t < 1.5 && a) {
+        const reach = clamp(A.t / .25, 0, 1);
+        a.root.position.copy(A.from).lerp(dp, reach);
+        a.root.rotation.set(0, Math.atan2(v.pos.x - dp.x, v.pos.z - dp.z), 0);
+        sitStill(a); a.play('lib:carjack', { fade: .08 });
+      } else if (a && a.root) {
+        const from = A.jack ? dp : A.from;
+        if (k < 0.45) { const q = k / 0.45; a.root.position.set(from.x + (dp.x - from.x) * q, from.y + (dp.y - from.y) * q, from.z + (dp.z - from.z) * q); a.root.rotation.set(0, Math.atan2(v.pos.x - dp.x, v.pos.z - dp.z), 0); }
         else { place(a, v, D.heroSeat); const q = 1 - (k - 0.45) / 0.55; a.root.position.lerp(dp, q * q); }
         a.visible = true;
       }
@@ -227,13 +272,25 @@ export function createDrive(S, V) {
     // the hero is where the vehicle is (regions, audio, traffic and the look follow)
     if (v && S.hero) { S.hero.pos.set(v.pos.x, v.pos.y, v.pos.z); S.hero.face = v.yaw; S.focus.copy(v.pos); }
   }
+  function finishEjection(j) {
+    if (j.temporary) S.cast.despawn(j.actor);
+    else if (!j.foe?.gone && !j.actor.disposed) {
+      j.actor.root.position.copy(j.ground); if (!j.foe?.downed) S.cast.pose(j.actor, 'sitDrive', 0);
+      if (!j.foe?.downed) j.actor.play('idle', { fade: .5 });
+      if (j.foe) { j.foe.carjacked = false; j.foe.pos.copy(j.ground); if (!j.foe.downed) { j.foe.state = 'recover'; j.foe.t = 0; } }
+    }
+    ejected.splice(ejected.indexOf(j), 1);
+  }
   function reset() {
+    for (const j of [...ejected]) finishEjection(j);
+    for (const d of doorAnims) d.v.view?.setDoor(d.name, 0);
     if (D.auto) D.auto.stop();
     D.riding = null; D.heroSeat = -1; D.anim = null; D.auto = null;
     seated.clear(); doorAnims.length = 0;
   }
   // the vehicle is going away: the hero steps out wherever there is room, seated actors come out
   function release(v) {
+    for (const j of [...ejected]) if (j.v === v) finishEjection(j);
     if (D.riding === v) {
       const spot = landingSpot(v, doorFor(v, D.heroSeat)) || { x: v.pos.x + 3, y: v.pos.y, z: v.pos.z };
       v.seats[D.heroSeat] = null; D.riding = null; D.heroSeat = -1; D.anim = null;

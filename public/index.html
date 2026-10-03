@@ -8,11 +8,11 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="The Cottage Arcade. Drop a token into Get Plunger'd, Down the Drain, Crimson Rouge, Breath of the Lake, Reel It In, or In Full Swing, a VR game for Meta Quest. Free in your browser.">
+<meta name="description" content="Play 11 Cottage Arcade games, grouped by style, with early prototypes collected in The Lab. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Drop a token into six machines, from Get Plunger'd to In Full Swing, a VR game for Meta Quest. Free in your browser.">
+<meta property="og:description" content="Explore 11 arcade games across Cottage, Action, and Strategy collections, plus early prototypes in The Lab. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
@@ -32,7 +32,7 @@
   --neon: "Monoton", "Bungee", Impact, sans-serif;
   --display: "Bungee", Impact, sans-serif;
   /* a cabinet's height; every part of it scales from this */
-  --h: min(68dvh, 60vw, 600px);
+  --h: min(64dvh, 60vw, 600px);
   --w: calc(var(--h) * 0.46);
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
@@ -61,6 +61,12 @@ button { font: inherit; color: inherit; }
   text-shadow: 0 0 4px #fff, 0 0 12px var(--pink), 0 0 26px var(--pink), 0 0 52px var(--pink); }
 .sign h1 .dead { animation: flick 7s infinite steps(1); }
 .sign p { margin: 0.5vh 0 0; font-family: var(--pixel); font-size: clamp(8px, 1.3vw, 12px); letter-spacing: 0.2em; color: #d6fcff; text-shadow: 0 0 6px var(--cyan), 0 0 14px var(--cyan); }
+.section-nav { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 0.8vh; flex-wrap: wrap; }
+.section-nav button, .section-nav a { min-height: 28px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(20,12,36,.72); color: var(--muted); font: 8px/1 var(--pixel); letter-spacing: .04em; text-decoration: none; cursor: pointer; }
+.section-nav button.on { color: #07050f; background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px rgba(63,240,255,.42); }
+.section-nav a { color: var(--gold); border-color: rgba(255,207,74,.42); }
+.section-nav button:hover, .section-nav a:hover { color: #fff; border-color: rgba(255,255,255,.4); }
+
 @keyframes flick { 0%, 100% { opacity: 1; } 71% { opacity: 0.25; text-shadow: none; } 72% { opacity: 1; } 74% { opacity: 0.3; text-shadow: none; } 75% { opacity: 1; } }
 
 /* the row of cabinets */
@@ -82,11 +88,20 @@ button { font: inherit; color: inherit; }
 .cab:not(.broken) { cursor: pointer; }
 .cab:not(.broken):hover .marquee { filter: brightness(1.15); }
 .cab.drain { --c1: #1e6a9a; --c2: #3ff0ff; --glow: rgba(63, 240, 255, 0.45); }
+.cab.olympus { --c1:#124442; --c2:#edc06b; --glow:rgba(237,192,107,.4); }
+.cab.olympus .screen img.art2 { object-fit:contain; object-position:center; }
 .cab.crimson { --c1: #7a0a10; --c2: #ff2a2a; --glow: rgba(255, 30, 30, 0.45); }
 .cab.wild { --c1: #3a7a4a; --c2: #bfe8ff; --glow: rgba(150, 220, 255, 0.45); }
 .cab.wild .marquee b { font-size: calc(var(--h) * 0.032); }
 .cab.fish { --c1: #1d5566; --c2: #ffb04a; --glow: rgba(255, 170, 80, 0.45); }
+.cab.tidebreak { --c1: #082f4a; --c2: #7de9ff; --glow: rgba(76, 203, 255, 0.55); }
 .cab.vr { --c1: #4a1f5c; --c2: #ff8a3a; --glow: rgba(255, 138, 58, 0.5); }
+.cab.breakthrough { --c1: #3e5c44; --c2: #f0c56a; --glow: rgba(232, 176, 84, 0.62); }
+.cab.breakthrough .marquee {
+  background: radial-gradient(ellipse at 50% 30%, #fff8e4, #f0c56a 46%, #c4843a 100%);
+}
+.cab.breakthrough .marquee b { font-size: calc(var(--h) * 0.03); letter-spacing: 0.01em; }
+.cab.breakthrough .screen { background: #d7ebe3; }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
@@ -121,7 +136,7 @@ button { font: inherit; color: inherit; }
 @keyframes hum { 50% { opacity: 0.85; } }
 .osd { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end; gap: 4%; align-items: center; padding: 6% 4%; font-family: var(--pixel); text-align: center; pointer-events: none; }
 .osd p { margin: 0; font-size: calc(var(--h) * 0.019); line-height: 1.5; color: #fff; text-shadow: 2px 2px 0 #000, 0 0 6px rgba(0, 0, 0, 0.9); }
-.osd .hi { position: absolute; top: 6%; color: var(--gold); background: rgba(0, 0, 0, 0.6); padding: 2px 5px; }
+.osd .hi { position: absolute; top: 6%; color: var(--gold); background: rgba(0, 0, 0, 0.6); padding: 2px 5px; text-wrap: balance; }
 .cab.broken .osd { justify-content: center; }
 .osd .press { font-size: calc(var(--h) * 0.022); background: rgba(0, 0, 0, 0.55); padding: 3px 6px; animation: blink 1s infinite steps(1); }
 .cab.credit .osd .press { color: var(--cyan); }
@@ -181,6 +196,8 @@ button { font: inherit; color: inherit; }
 /* the power-on: the chosen screen grows to fill the window, then the game loads */
 .boot { position: fixed; z-index: 80; overflow: hidden; background: #000; border-radius: 12% / 14%; transition: all 0.55s cubic-bezier(0.7, 0, 0.3, 1); }
 .boot img, .boot canvas { width: 100%; height: 100%; object-fit: cover; }
+/* Each Small Worlds machine shows its own panel of the shared illustrated atlas. */
+.screen img.world-art { position: absolute; inset: auto; top: 50%; left: calc(var(--col) * -100%); width: 300%; height: auto; max-width: none; transform: translateY(calc(-25% - var(--row) * 50%)); }
 .boot.full { border-radius: 0; }
 .boot .line { position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #fff; box-shadow: 0 0 20px #fff; transform: scaleX(0); }
 .boot.full .line { animation: crt 0.5s 0.5s forwards; }
@@ -191,13 +208,18 @@ button { font: inherit; color: inherit; }
 
 /* phones: one cabinet at a time, with arrows */
 @media (max-width: 760px), (max-aspect-ratio: 5/6) {
-  :root { --h: min(67dvh, 165vw, 600px); }
+  :root { --h: min(63dvh, 165vw, 600px); }
   .row { gap: 12vw; }
   .cab { filter: none; transform: none; }
   .help .keys { display: none; }
 }
 @media (max-height: 520px) { .sign p { display: none; } .help { display: none; } .purse { min-height: 44px; padding: 4px 10px; } }
 @media (prefers-reduced-motion: reduce) { .sign h1 .dead, .screen::after, .osd .press, .cab .start, .slot span, .change.want { animation: none !important; } .row, .boot { transition: none; } }
+.cab.extra .marquee b { font-size: calc(var(--h) * 0.032); }
+.machine-picker { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 9px; color: var(--muted); }
+.machine-picker select { min-height: 44px; max-width: 190px; padding: 8px; border: 1px solid #5b4e78; border-radius: 8px; color: var(--ink); background: #140c24; font: 13px system-ui, sans-serif; }
+@media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .machine-picker { flex-basis: 100%; justify-content: center; } }
+@media (max-height: 520px) { .machine-picker { flex-basis: auto; } }
 </style>
 </head>
 <body>
@@ -206,64 +228,69 @@ button { font: inherit; color: inherit; }
   <header class="sign">
     <h1>COTTAGE <span class="dead">A</span>RCADE</h1>
     <p>DROP A TOKEN · PRESS START · OPEN LATE</p>
+    <nav class="section-nav" aria-label="Game collections">
+      <button type="button" data-section="cottage">COTTAGE</button>
+      <button type="button" data-section="action">ACTION</button>
+      <button type="button" data-section="strategy">STRATEGY</button>
+      <a href="/lab/">LAB ↗</a>
+    </nav>
   </header>
 
   <main class="stage" id="stage">
     <button class="nav prev" id="prevBtn" type="button" aria-label="Previous machine">◀</button>
     <div class="row" id="row">
       <article class="cab" data-game="plungerd" data-url="/plungerd/" aria-label="Get Plunger'd: Cottage Brawl">
-        <div class="marquee"><div><b>GET PLUNGER'D</b><small>COTTAGE BRAWL</small></div></div>
-        <div class="bezel"><div class="screen">
-          <img src="arcade/plungerd.webp" alt="">
-          <img class="art2" src="arcade/plungerd-bosses.webp" alt="">
-          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-        </div></div>
-        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Get Plunger'd"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Get Plunger'd"><i></i><span>25¢</span></button></div>
-        <div class="kick"></div>
+      <div class="marquee"><div><b>GET PLUNGER'D</b><small>COTTAGE BRAWL</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/plungerd.webp" alt="">
+      <img class="art2" src="arcade/plungerd-bosses.webp" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Get Plunger'd"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Get Plunger'd"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
       <article class="cab drain" data-game="drain" data-url="/fall/" aria-label="Get Plunger'd: Down the Drain">
-        <div class="marquee"><div><b>DOWN THE DRAIN</b><small>GET PLUNGER'D</small></div></div>
-        <div class="bezel"><div class="screen">
-          <canvas class="px" id="sand" width="120" height="99"></canvas>
-          <div class="title">DOWN<br>THE<br>DRAIN</div>
-          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-        </div></div>
-        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button></div>
-        <div class="kick"></div>
+      <div class="marquee"><div><b>DOWN THE DRAIN</b><small>GET PLUNGER'D</small></div></div>
+      <div class="bezel"><div class="screen">
+      <canvas class="px" id="sand" width="120" height="99"></canvas>
+      <div class="title">DOWN<br>THE<br>DRAIN</div>
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Down the Drain"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
-      <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rouge">
-        <div class="marquee"><div><b>CRIMSON ROUGE</b><small>紅の月の下で</small></div></div>
-        <div class="bezel"><div class="screen">
-          <img src="crimson/art/keyart2.webp" alt="">
-          <img class="art2" src="crimson/art/bear.webp" alt="">
-          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-        </div></div>
-        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rouge"><i></i><span>25¢</span></button></div>
-        <div class="kick"></div>
+      <article class="cab" data-game="brawl" data-url="/brawl/" aria-label="Cottage Brawl: platform fighter">
+      <div class="marquee"><div><b>COTTAGE BRAWL</b><small>8 FIGHTERS · ONE DOCK</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="/brawl/art/hero-chaos.webp" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Cottage Brawl"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Cottage Brawl"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
       <article class="cab wild" data-game="wild" data-url="/wild/" aria-label="Get Plunger'd: Breath of the Lake">
-        <div class="marquee"><div><b>BREATH OF THE LAKE</b><small>GET PLUNGER'D</small></div></div>
-        <div class="bezel"><div class="screen">
-          <img src="arcade/wild.webp" alt="">
-          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-        </div></div>
-        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
-        <div class="kick"></div>
+      <div class="marquee"><div><b>BREATH OF THE LAKE</b><small>GET PLUNGER'D</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/wild.webp" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Breath of the Lake"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
-      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In: Loon Lake">
-        <div class="marquee"><div><b>REEL IT IN</b><small>LOON LAKE</small></div></div>
-        <div class="bezel"><div class="screen">
-          <img src="arcade/fish.webp" alt="">
-          <img class="art2" src="arcade/fish-catch.webp" alt="">
-          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-        </div></div>
-        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-        <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
-        <div class="kick"></div>
+      <article class="cab fish" data-game="fish" data-url="/fish/" aria-label="Reel It In">
+      <div class="marquee"><div><b>REEL IT IN</b><small>4 PLACES</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/fish.webp" alt="">
+      <img class="art2" src="arcade/fish-catch.webp" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Reel It In"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
       <article class="cab vr" data-game="vr" data-url="/vr/" aria-label="In Full Swing: a VR game for Meta Quest">
         <div class="marquee"><div><b>IN FULL SWING</b><small>META QUEST VR</small></div></div>
@@ -277,11 +304,72 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
+      <article class="cab olympus" data-game="olympus" data-url="/olympus/" aria-label="Olympus: Last Flame">
+      <div class="marquee"><div><b>OLYMPUS</b><small>LAST FLAME</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="olympus/art/asphodel.webp" alt="">
+      <img class="art2" src="olympus/art/hero-8.png" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Olympus: Last Flame"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab crimson" data-game="crimson" data-url="/crimson/" aria-label="Crimson Rogue">
+      <div class="marquee"><div><b>CRIMSON ROGUE</b><small>紅の月の下で</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="crimson/art/keyart2.webp" alt="">
+      <img class="art2" src="crimson/art/bear.webp" alt="">
+      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Crimson Rogue"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Crimson Rogue"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab tidebreak" data-game="tidebreak" data-url="/tidebreak/" aria-label="Shore of the Ancients: 3v3 folklore MOBA">
+      <div class="marquee"><div><b>SHORE OF THE ANCIENTS</b><small>LEGENDS RISE · TIDES DECIDE</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="tidebreak/art/shore-ancients-hero.webp" alt="Shore of the Ancients battle shore">
+      <div class="osd"><p class="hi">3 VS 3 · SHIFTING REALMS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Shore of the Ancients"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Shore of the Ancients"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra moonwell" data-game="moonwell" data-url="/moonwell/" aria-label="Moonwell: endless pinball dungeons" style="--c1: #23475f; --c2: #edc779; --glow: #edc77970">
+      <div class="marquee"><div><b>MOONWELL</b><small>ENDLESS PINBALL DUNGEONS</small></div></div>
+      <div class="bezel"><div class="screen"><img src="/moonwell/assets/moon-islands.png" alt="Moonlit islands with golden pinball rails">
+      <div class="osd"><p class="hi">OPEN THE MOON PORTAL</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra primordia" data-game="primordia" data-url="/primordia/" aria-label="Primordia: a Lenia arcade" style="--c1: #10393f; --c2: #3ff0e0; --glow: rgba(63, 240, 224, 0.45)">
+      <div class="marquee"><div><b>PRIMORDIA</b><small>A LENIA ARCADE</small></div></div>
+      <div class="bezel"><div class="screen"><img src="arcade/primordia.webp" alt="Glowing Orbium creatures and a red hunter in a living dish">
+      <div class="osd"><p class="hi">EAT OR BE EATEN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Primordia"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Primordia"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab breakthrough" data-game="breakthrough" data-url="/breakthrough2/" aria-label="BREAKTHROUGH: a climate-future strategy game">
+      <div class="marquee"><div><b>BREAKTHROUGH</b><small>2026 → 2100</small></div></div>
+      <div class="bezel"><div class="screen">
+      <canvas class="mini-game" data-scene="breakthrough" width="240" height="198" aria-hidden="true"></canvas>
+      <div class="osd"><p class="hi">12 TURNS · ONE CENTURY</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
 
   <footer class="tray">
+    <label class="machine-picker">MACHINE <select id="machinePicker" aria-label="Choose a game machine"></select><span id="machineCount" aria-live="polite"></span></label>
     <div class="purse"><span class="label">TOKENS</span><div class="stack" id="stack" aria-label="Your tokens. Drag one into a coin slot."></div><span class="count" id="count">0</span></div>
     <button class="change" id="changeBtn" type="button">CHANGE<br>MACHINE</button>
     <p class="help"><span class="keys"><b>◀ ▶</b> pick a machine · <b>5</b> drops a token · <b>1</b> or <b>Enter</b> plays<br></span>Click a machine to play it, or drop a token in by hand.</p>
@@ -370,6 +458,36 @@ $("#changeBtn").onclick = () => {
 
 /* ---------------- the machines ---------------- */
 const cabs = $$(".cab");
+const machinePicker = $("#machinePicker");
+const GROUPS = [
+  { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia"] },
+  { id: "strategy", label: "Strategy", games: ["breakthrough"] },
+];
+const gameGroup = new Map(GROUPS.flatMap((group) => group.games.map((game) => [game, group])));
+for (const group of GROUPS) {
+  const optgroup = document.createElement("optgroup");
+  optgroup.label = group.label;
+  cabs.forEach((cab, index) => {
+    if (!group.games.includes(cab.dataset.game)) return;
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = $(".marquee b", cab).textContent;
+    optgroup.appendChild(option);
+  });
+  machinePicker.appendChild(optgroup);
+}
+const sectionBtns = $$(".section-nav button[data-section]");
+sectionBtns.forEach((button) => {
+  button.onclick = () => {
+    const i = cabs.findIndex((cab) => {
+      const group = gameGroup.get(cab.dataset.game);
+      return group && group.id === button.dataset.section;
+    });
+    if (i >= 0) pick(i);
+  };
+});
+machinePicker.onchange = () => pick(Number(machinePicker.value));
 let sel = 1;
 const credits = {};
 // the sliding row: always on phones, and on any screen where the machines do not all fit side by side
@@ -385,6 +503,12 @@ const carousel = () => $("#stage").classList.contains("slide");
 const rowX = (i) => $("#stage").clientWidth / 2 - (cabs[i].offsetLeft + cabs[i].offsetWidth / 2);
 function pick(i, quiet) {
   sel = (i + cabs.length) % cabs.length;
+  machinePicker.value = String(sel);
+  const currentGroup = gameGroup.get(cabs[sel].dataset.game);
+  const groupCabs = currentGroup ? cabs.filter((cab) => currentGroup.games.includes(cab.dataset.game)) : cabs;
+  const groupPos = groupCabs.indexOf(cabs[sel]) + 1;
+  $("#machineCount").textContent = currentGroup ? currentGroup.label.toUpperCase() + " · " + groupPos + " / " + groupCabs.length : (sel + 1) + " / " + cabs.length;
+  sectionBtns.forEach((button) => button.classList.toggle("on", currentGroup && button.dataset.section === currentGroup.id));
   cabs.forEach((c, k) => c.classList.toggle("on", k === sel));
   // on a phone the row slides so the chosen machine is centered
   const row = $("#row");
@@ -515,7 +639,15 @@ function boot(c) {
   b.className = "boot";
   Object.assign(b.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
   const art = $("img, canvas", scr);
-  if (art.tagName === "IMG") { const im = document.createElement("img"); im.src = art.src; im.alt = ""; b.appendChild(im); }
+  if (art.tagName === "IMG" && art.classList.contains("world-art") && art.naturalWidth) {
+    // Isolate this atlas panel before it expands to fill a portrait screen.
+    const cv = document.createElement("canvas"), w = art.naturalWidth / 3, h = art.naturalHeight / 2;
+    cv.width = w; cv.height = h;
+    const col = Number(art.style.getPropertyValue("--col")), row = Number(art.style.getPropertyValue("--row"));
+    cv.getContext("2d").drawImage(art, col * w, row * h, w, h, 0, 0, w, h);
+    b.appendChild(cv);
+  }
+  else if (art.tagName === "IMG") { const im = document.createElement("img"); im.src = art.src; im.alt = ""; b.appendChild(im); }
   else { const cv = document.createElement("canvas"); cv.width = art.width; cv.height = art.height; cv.getContext("2d").drawImage(art, 0, 0); cv.style.imageRendering = "pixelated"; b.appendChild(cv); }
   b.insertAdjacentHTML("beforeend", "<i class='line'></i><div class='msg'>LOADING…</div>");
   document.body.appendChild(b);
@@ -565,7 +697,7 @@ addEventListener("pointercancel", endDrag);
 
 /* ---------------- keys, the MAME way: 5 is a coin, 1 is start ---------------- */
 addEventListener("keydown", (e) => {
-  if (e.repeat) return;
+  if (e.repeat || e.target.closest("select, input, textarea")) return;
   const k = e.key;
   if (k === "ArrowLeft" || k === "a") { pick(sel - 1); e.preventDefault(); }
   else if (k === "ArrowRight" || k === "d") { pick(sel + 1); e.preventDefault(); }
@@ -585,6 +717,113 @@ addEventListener("keydown", (e) => {
 }
 // Get Plunger'd flips between its title and its bosses
 setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle("flip"); }, 3200);
+// Each new cabinet has its own animated attract screen.
+for (const cv of $$(".mini-game")) {
+  const g = cv.getContext("2d"), scene = cv.dataset.scene;
+  const line = (x1, y1, x2, y2, color, width = 2) => {
+    g.strokeStyle = color; g.lineWidth = width;
+    g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+  };
+  const dot = (x, y, r, color) => { g.fillStyle = color; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+  function draw(t) {
+    g.fillStyle = scene === "creek" ? "#12363b" : "#0c132c";
+    g.fillRect(0, 0, 240, 198);
+    if (scene === "neon") {
+      for (let i = 0; i < 12; i++) {
+        const h = 22 + (i * 31 % 70);
+        g.fillStyle = "#2d204d"; g.fillRect(i * 22, 105 - h, 18, h);
+        line(i * 22, 105 - h, i * 22 + 16, 105 - h, "#c33baa");
+      }
+      for (let i = -4; i < 5; i++) line(120 + i * 9, 105, 120 + i * 60, 198, "#344775");
+      g.fillStyle = "#384560"; g.fillRect(97, 76, 46, 56);
+      dot(120, 65, 18, "#30354a"); line(108, 64, 132, 64, "#fc68ce", 4);
+      const sway = Math.sin(t * 2) * 12;
+      line(69, 140, 167 + sway, 37, "#61faff", 7);
+      line(69, 140, 167 + sway, 37, "#edffff", 2);
+    } else if (scene === "tilt") {
+      g.strokeStyle = "#9d64ef"; g.lineWidth = 4; g.strokeRect(24, 14, 192, 172);
+      for (const [x,y] of [[80,62],[160,62],[120,98]]) { dot(x,y,16,"#63296d"); dot(x,y,10,"#ff8ddb"); }
+      line(64,160,109,174 + Math.sin(t * 3) * 8,"#56edfc",9);
+      line(176,160,131,174 - Math.sin(t * 3) * 8,"#56edfc",9);
+      dot(120 + Math.sin(t * 2) * 60, 60 + Math.abs(Math.sin(t * 2.7)) * 90, 6, "#fff6d5");
+    } else if (scene === "rules") {
+      for (let y = 0; y < 11; y++) for (let x = 0; x < 15; x++) {
+        g.fillStyle = y < 4 ? "#162844" : (x + y) % 4 ? "#ad864e" : "#615365";
+        if (y > 5 && x > 5 && x < 10) g.fillStyle = "#152035";
+        g.fillRect(x * 16, y * 18, 15, 17);
+      }
+      g.fillStyle = "#56d9ef"; g.fillRect(97, 140, 46, 24);
+      g.strokeStyle = "#ffe79e"; g.lineWidth = 3; g.strokeRect(80 + Math.floor((t % 3) * 2) * 16, 73, 16, 18);
+    } else if (scene === "breakthrough") {
+      const sky = g.createLinearGradient(0, 0, 0, 198);
+      sky.addColorStop(0, "#d7ebe4");
+      sky.addColorStop(0.55, "#8fb4ae");
+      sky.addColorStop(1, "#e7d3a4");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, 240, 198);
+      g.fillStyle = "#f2c56b";
+      g.beginPath(); g.arc(176, 40, 16, 0, 7); g.fill();
+      g.fillStyle = "rgba(255,252,245,.8)";
+      const cx = (28 + t * 16) % 280 - 24;
+      g.beginPath(); g.ellipse(cx, 34, 22, 8, 0, 0, 7); g.ellipse(cx + 16, 32, 14, 7, 0, 0, 7); g.fill();
+      g.fillStyle = "#8eae9c";
+      g.beginPath(); g.moveTo(0, 118); g.lineTo(36, 74); g.lineTo(78, 104); g.lineTo(118, 62); g.lineTo(168, 100); g.lineTo(210, 70); g.lineTo(240, 104); g.lineTo(240, 198); g.lineTo(0, 198); g.fill();
+      g.fillStyle = "#5e7d64";
+      g.beginPath(); g.moveTo(0, 146); g.lineTo(46, 108); g.lineTo(96, 136); g.lineTo(148, 102); g.lineTo(198, 134); g.lineTo(240, 112); g.lineTo(240, 198); g.lineTo(0, 198); g.fill();
+      g.fillStyle = "#5f9c96";
+      g.fillRect(0, 148, 240, 18);
+      g.strokeStyle = "rgba(255,255,240,.55)"; g.lineWidth = 1.5;
+      g.beginPath();
+      for (let x = 0; x <= 240; x += 8) {
+        const y = 156 + Math.sin(x * 0.08 + t * 3) * 1.6;
+        if (x) g.lineTo(x, y); else g.moveTo(x, y);
+      }
+      g.stroke();
+      g.fillStyle = "#3f6a45";
+      for (let i = 0; i < 8; i++) { g.beginPath(); g.ellipse(16 + i * 16, 146 + Math.sin(t * 1.4 + i) * 1.2, 8, 12, 0, 0, 7); g.fill(); }
+      g.fillStyle = "#f3ead6";
+      [[146, 124, 14, 28], [162, 112, 16, 40], [180, 128, 12, 24], [194, 116, 18, 36]].forEach(([x, y, w, h]) => g.fillRect(x, y, w, h));
+      g.fillStyle = "rgba(255,196,110,.8)";
+      for (let i = 0; i < 6; i++) g.fillRect(168 + (i % 3) * 8, 122 + Math.floor(i / 3) * 10, 3, 3);
+      g.strokeStyle = "#f7f1e4"; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(78, 146); g.lineTo(78, 104); g.stroke();
+      g.save(); g.translate(78, 104); g.rotate(t * 2.2);
+      g.fillStyle = "#f7f1e4";
+      for (let b = 0; b < 3; b++) { g.rotate((Math.PI * 2) / 3); g.fillRect(-1.6, -16, 3.2, 16); }
+      g.restore();
+      g.fillStyle = "#e7b45a"; g.beginPath(); g.arc(78, 104, 3, 0, 7); g.fill();
+    } else {
+      g.fillStyle = scene === "plunge" ? "#63a3b5" : "#297687";
+      g.fillRect(0, scene === "plunge" ? 94 : 0, 240, 198);
+      for (let i = 0; i < 12; i++) {
+        const y = (i * 22 + t * 32) % 198;
+        line(15 + i * 17 % 190, y, 40 + i * 17 % 190, y, "#85d8db", 2);
+      }
+      if (scene === "plunge") {
+        dot(192, 40, 19, "#ffd37d");
+        const y = 73 + Math.sin(t * 1.8) * 30;
+        line(77, y - 8, 120, y + 9, "#e8f7f2", 7); line(120,y + 9,162,y - 8,"#e8f7f2",7);
+        dot(123,y + 6,9,"#172940");
+      } else {
+        g.fillStyle = "#203e38"; g.fillRect(0,0,36,198); g.fillRect(204,0,36,198);
+        dot(61, (t * 23) % 240 - 20, 17, "#647d7c"); dot(182, (t * 23 + 112) % 240 - 20, 21, "#647d7c");
+        g.fillStyle = "#dfa95d"; g.beginPath(); g.ellipse(120,100,15,48,.15,0,7); g.fill();
+        dot(120,91,9,"#314457"); line(113,103,151 + Math.sin(t * 3) * 8,120,"#ffe9b7",5);
+      }
+    }
+  }
+  draw(0);
+  let last = 0;
+  (function loop(now) {
+    requestAnimationFrame(loop);
+    if (reduceMotion || document.hidden || now - last < 66 || !cv.closest(".cab").classList.contains("on")) return;
+    last = now; draw(now / 1000);
+  })(0);
+}
+{
+  const best = store.get("neon-best", 0);
+  if (Number.isFinite(best) && best > 0) $(".hi", $(".cab.neon")).textContent = "BEST " + best.toLocaleString();
+}
 // Down the Drain pours sand and water on its tiny screen, like the game
 {
   const cv = $("#sand"), cx = cv.getContext("2d"), W = cv.width, H = cv.height;
@@ -631,13 +870,21 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
 // Reel It In: the derby best and the biggest fish; its screen flips between the lake and a catch
 {
   const fs = store.get("fish.v1", null), fc = $(".cab.fish");
-  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS" };
+  const NAMES = { pumpkinseed: "PUMPKINSEED", perch: "PERCH", rockbass: "ROCK BASS", smallmouth: "SMALLMOUTH", largemouth: "LARGEMOUTH", walleye: "WALLEYE", pike: "PIKE", laketrout: "LAKE TROUT", muskie: "MUSKIE", golden: "GOLDEN BASS",
+    crappie: "CRAPPIE", bowfin: "BOWFIN", gar: "GAR", catfish: "CATFISH", whiskers: "WHISKERS", mackerel: "MACKEREL", pollock: "POLLOCK", striper: "STRIPER", bluefish: "BLUEFISH", cod: "COD", bigblue: "BIG BLUE",
+    steelhead: "STEELHEAD", chinook: "CHINOOK", browntrout: "BROWN TROUT", brooktrout: "BROOK TROUT", hookjaw: "HOOKJAW" };
   const kg = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + " KG";
   if (fc) {
-    // one stat, so the line stays short: the derby best, else the biggest fish
+    // one stat, so the line stays short: all four legends, else the places open with the biggest fish, else the derby best
     const n = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
-    $(".hi", fc).textContent = fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest)
-      : fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "HI-SCORE: NONE YET";
+    const big = fs && fs.biggest && n(fs.biggest.kg) > 0 ? (NAMES[fs.biggest.id] || "FISH") + " " + kg(fs.biggest.kg) : "";
+    const has = (id) => !!(fs && fs.journal && fs.journal[id] && n(fs.journal[id].n) > 0);
+    const legends = ["golden", "whiskers", "hookjaw", "bigblue"].filter(has).length;
+    // Loon Lake is always open; the others when the save says so
+    const open = 1 + ["stumps", "river", "sea"].filter((id) => fs && fs.places && fs.places[id] && (fs.places[id].open === 1 || fs.places[id].open === true)).length;
+    $(".hi", fc).textContent = legends === 4 ? "ALL 4 LEGENDS" + (big ? " · " + big : "")
+      : open > 1 && big ? "PLACES " + open + "/4 · " + big
+      : fs && n(fs.derbyBest) > 0 ? "DERBY BEST " + kg(fs.derbyBest) : big || "HI-SCORE: NONE YET";
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
@@ -742,16 +989,27 @@ setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle
     (function loop(now) { requestAnimationFrame(loop); if (reduceMotion || document.hidden || now - last < 33) return; last = now; t += 1 / 30; draw(t); })(0);
   }
 }
-// Crimson Rouge flips between the standoff and the grizzly
-setInterval(() => { if (!document.hidden) $(".screen", cabs[2]).classList.toggle("flip"); }, 4100);
+// Crimson Rogue flips between the standoff and the grizzly
+setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimson"]')).classList.toggle("flip"); }, 4100);
 {
   const cr = store.get("crimson.best.v1", null);
-  $(".hi", cabs[2]).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
+  $(".hi", $('.cab[data-game="crimson"]')).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
 }
 
+{
+ const best = store.get("olympus-legacy-v2", null);
+ $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
+}
+{
+  const best = store.get("primordia.best", 0);
+  if (Number.isFinite(best) && best > 0) $(".hi", $('.cab[data-game="primordia"]')).textContent = "BEST " + best.toLocaleString();
+}
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);
 </script>
 </body>
 </html>
+
+
+

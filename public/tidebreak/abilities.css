@@ -1,0 +1,31 @@
+/* A thumb fan: the ultimate is the corner anchor, three spells orbit it. */
+#controls{bottom:0;height:300px}
+#joystick{bottom:calc(87px + env(safe-area-inset-bottom))}
+.health{bottom:calc(65px + env(safe-area-inset-bottom))}
+.abilities{right:14px;bottom:calc(57px + env(safe-area-inset-bottom));width:220px;height:210px;transform:none}
+.abilities .ability{width:62px;height:62px;background:radial-gradient(circle at 38% 25%,#33444b,#132229 70%);border:2px solid #9c9884;box-shadow:inset 0 0 0 3px #07161d,0 3px 8px #071018;filter:none;overflow:visible;color:var(--hero-color,#91f4df)}
+.abilities .dash{top:0;right:1px;left:auto;bottom:auto}
+.abilities .surge{top:32px;left:75px;right:auto;bottom:auto}
+.abilities .signature{top:auto;bottom:12px;left:0;right:auto}
+.abilities .ult{top:auto;bottom:0;right:0;left:auto;width:88px;height:88px;border:3px solid var(--hero-color,#91f4df);background:radial-gradient(circle at 35% 25%,#35464d,#091721 76%);box-shadow:inset 0 0 0 4px #07151c,0 0 18px #07151c}
+.ability svg{display:block;position:absolute;inset:11px;width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px currentColor)}
+.ability.ult svg{inset:16px;width:50px;height:50px}
+.ability span{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);width:max-content;max-width:100px;color:#f1e8c7;opacity:1;font-size:9px;letter-spacing:.5px;line-height:12px;text-shadow:0 1px 3px #050c12}
+.ability b:not(:empty){position:absolute;inset:0;display:grid;place-items:center;background:#07121ec9;font-size:21px;border-radius:50%;color:#e8e7d3}
+.ability b.locked{font-size:12px;letter-spacing:1px;color:#b7b7a9}
+.ability.unlearned svg{opacity:.32;filter:none}.ability[aria-disabled=true]{filter:none;opacity:.85}
+.ability.combo-ready{border-color:#fff0b2;box-shadow:inset 0 0 0 3px #07161d,0 0 0 2px #fff0b24d,0 3px 8px #071018}
+.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 5px;border:1px solid #a39564;border-radius:4px;background:#10232af5;color:#fff0b2;font-size:9px;font-weight:700;line-height:12px;white-space:nowrap;pointer-events:none}
+.ability.trainable{border-color:#e6d58c}.ability kbd{display:block;top:5px;right:7px;font-size:9px;color:#d8dbbb;background:#0d1b23;border:0}
+.ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#050f16;border:1px solid #6e776d;border-radius:1px}.ranks i.filled{background:var(--hero-color);border-color:var(--hero-color)}
+#auto-status{bottom:-39px;font-size:8px;max-width:155px;pointer-events:none}
+#skill-points{position:absolute;right:0;top:-46px;min-height:36px;width:166px;padding:7px 10px;border:1px solid #8c9984;border-radius:6px;background:#112129ed;color:#d4dec2;font-size:11px;letter-spacing:1px;font-weight:bold}
+#skill-points.ready{background:#403c24f2;color:#ffe9a1;border-color:#e1c978;box-shadow:0 0 12px #f0ce6540}
+.ability:focus-visible,#skill-points:focus-visible{outline:3px solid #fff0ac;outline-offset:4px}
+.training-summary{color:#e8d89e}.skill-training{display:grid;gap:12px}.skill-training article{display:flex;align-items:flex-start;gap:13px;padding:14px;background:#192b31;border:1px solid #718473;border-radius:10px}.skill-training h3{margin:0 0 6px;font-size:18px;color:#f1e2b3}.skill-training h3 small{font-size:9px;color:#a0d9c7}.skill-training p{margin:0 0 8px;font-size:13px;line-height:1.5}.skill-training small{font-size:11px;color:#adc6ba}.skill-training button{display:block;min-height:40px;margin-top:10px;padding:8px 18px;border:1px solid #d4c47f;border-radius:5px;background:#b8c679;color:#162420;font-size:13px;font-weight:bold}.skill-training button:disabled{background:#283b3f;color:#9daca5;border-color:#586c68}.training-icon{width:40px;min-width:40px;color:#c5eed0}.training-icon svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(min-width:700px){.abilities{right:24px;bottom:calc(68px + env(safe-area-inset-bottom))}#joystick{bottom:85px}.health{bottom:66px}}
+@media(max-width:370px){.abilities{width:200px;height:196px;right:8px;transform:none}.abilities .ability{width:56px;height:56px}.abilities .surge{left:66px;top:32px}.abilities .ult{width:80px;height:80px}.ability svg{inset:9px;width:34px;height:34px}.ability.ult svg{inset:13px;width:48px;height:48px}.ability span{font-size:8px}.abilities .signature{bottom:10px}#skill-points{width:152px}#joystick{bottom:83px}.health{bottom:64px}}
+@media(max-height:520px) and (min-width:600px){.abilities{right:16px;bottom:42px;height:186px;width:205px;transform:none}.abilities .surge{left:68px;top:22px}.abilities .ult{width:80px;height:80px}.ability.ult svg{inset:12px;width:50px;height:50px}.abilities .signature{bottom:5px}#skill-points{top:-41px;min-height:34px}#joystick{bottom:46px}.health{bottom:29px}#auto-status{bottom:-30px}}
+
+#coach{width:190px;bottom:calc(330px + env(safe-area-inset-bottom))}
+@media(max-height:520px) and (min-width:600px){#coach{bottom:135px;left:140px;width:220px}}

@@ -16,6 +16,23 @@ const cyc = (sp, o) => TAU / strideRate(sp); // one stride cycle in seconds
 // name -> { dur, loop, keys, pose(t) }. The locomotion cycles are one stride long at a set speed; the
 // driver in locomotion.js does any other speed live.
 export const LIB = {
+  carjack: { dur: 1.5, keys: 25, once: true, pose: t => {
+    const pull = Math.sin(Math.min(1, t / 1.5) * Math.PI);
+    return { torso: { x: .3 - .55 * pull, y: -.3 * pull }, head: { x: -.1 },
+      arms: [{ x: -1.1 + .6 * pull, out: .15 }, { x: -1.1 + .5 * pull, out: .1 }], elbows: [.2 + pull, .2 + pull],
+      legs: [{ x: -.15, out: .15 }, { x: .15, out: .1 }], knees: [.25, .15] };
+  } },
+  aim: { dur: 2, keys: 9, pose: (time) => ({ torso: { x: 0.04, y: -0.08 }, head: { y: 0.08 },
+    arms: [{ x: -0.9, out: 0.08 }, { x: -0.95, out: 0.06 }], elbows: [0.35, 0.12 + 0.02 * breath(time)], level: 0 }) },
+  tumble: { dur: 0.7, keys: 19, pose: (time) => {
+    const wave = Math.sin(time / 0.7 * TAU);
+    return { hips: { h: 0.4 }, torso: { x: 0.3 * wave, z: 0.2 }, head: { x: -0.25, y: wave * 0.4 },
+      arms: [{ x: -1.8 + wave, out: 1.1 }, { x: -0.7 - wave, out: 1.3 }], elbows: [0.5, 1.2],
+      legs: [{ x: -0.6 + wave * 0.6, out: 0.4 }, { x: 0.3 - wave * 0.6, out: 0.2 }], knees: [0.8, 1.5], level: 0 };
+  } },
+  dead: { dur: 1, keys: 2, pose: () => ({ hips: { x: -1.52, h: 0.13 }, torso: { z: 0.12 }, head: { y: 0.6 },
+    arms: [{ x: 0.2, out: 1 }, { x: 0.1, out: 0.5 }], elbows: [0.1, 0.7],
+    legs: [{ x: -0.1, out: 0.15 }, { x: -0.2, out: 0.3 }], knees: [0.1, 0.4], level: 0 }) },
   idle: { dur: 4, keys: 17, pose: stand },
   walk: { dur: cyc(1.4), keys: 25, pose: (t, d) => stride(t / d * TAU, 1.4) },
   jog: { dur: cyc(3.2), keys: 21, pose: (t, d) => stride(t / d * TAU, 3.2) },
@@ -25,7 +42,7 @@ export const LIB = {
   crouch: { dur: 3, keys: 13, pose: (t) => ({ hips: { x: 0.05 }, torso: { x: 0.5 + 0.02 * breath(t, 3) }, head: { x: -0.35 }, legs: [{ x: -0.95, out: 0.12 }, { x: -0.55, out: 0.1 }], knees: [1.75, 1.45], arms: [{ x: -0.35, out: 0.12 }, { x: -0.5, out: 0.1 }], elbows: [0.9, 1.0] }) },
   // seated: thighs level (-1.45 rad as in wild), shins down, arms forward to the wheel
   sitDrive: { dur: 4, keys: 9, pose: (t) => ({ hips: { seat: true, x: -0.08 }, torso: { x: -0.06 + 0.01 * breath(t) }, head: { x: 0.08 }, legs: [{ x: -1.45, out: 0.08 }, { x: -1.4, out: 0.06 }], knees: [1.35, 1.2], arms: [{ x: -0.85, out: 0.14 }, { x: -0.85, out: 0.14 }], elbows: [0.9, 0.9], level: 0.9 }) },
-  sitPass: { dur: 4, keys: 9, pose: (t) => ({ hips: { seat: true, x: -0.12 }, torso: { x: -0.1 + 0.012 * breath(t) }, head: { x: 0.05, y: 0.15 * Math.sin(t / 4 * TAU) }, legs: [{ x: -1.4, out: 0.12 }, { x: -1.45, out: 0.1 }], knees: [1.4, 1.45], arms: [{ x: -0.25, out: 0.1 }, { x: -0.3, out: 0.1 }], elbows: [1.1, 1.0], level: 0.9 }) },
+  sitPass: { dur: 4, keys: 9, pose: (t) => ({ hips: { seat: true, x: -0.12 }, torso: { x: -0.1 + 0.012 * breath(t) }, head: { x: 0.05, y: 0.15 * Math.sin(t / 4 * TAU) }, legs: [{ x: -1.4, out: 0.12 }, { x: -1.45, out: 0.1 }], knees: [1.4, 1.45], arms: [{ x: 0.02, out: 0.06 }, { x: 0.02, out: 0.06 }], elbows: [0.15, 0.15], level: 0.9 }) },
   sit: { dur: 4, keys: 9, pose: (t) => ({ hips: { seat: true, x: -0.05 }, torso: { x: 0.08 + 0.012 * breath(t) }, head: { x: 0.08 }, legs: [{ x: -1.5, out: 0.14 }, { x: -1.5, out: 0.12 }], knees: [1.5, 1.5], arms: [{ x: -0.35, out: 0.08 }, { x: -0.35, out: 0.08 }], elbows: [1.2, 1.2], level: 0.95 }) },
   // one knee down, the other foot flat (Gabe's yield, Tank Top at the van door)
   kneel: { dur: 4, keys: 9, pose: (t) => ({ hips: { x: 0.05 }, torso: { x: 0.25 + 0.015 * breath(t) }, head: { x: 0.35 }, legs: [{ x: -1.45, out: 0.08 }, { x: 0.1, out: 0.04 }], knees: [1.5, 1.65], feet: [0, 0.9], arms: [{ x: -0.55, out: 0.02 }, { x: -0.1, out: 0.1 }], elbows: [1.2, 0.35] }) },

@@ -1,0 +1,6 @@
+# Design
+Four stable slots: Q movement, E control, C signature skill, R ultimate. Movement keeps WASD. Begin at level 1 with one unspent point and four unlearned abilities; basic attacks always work. Basic ranks require hero levels 1/3/5/7, ultimate ranks 6/12/18. Each level grants a point; cap hero level at 18. XP thresholds are tuned to the six-minute arena. Bots allocate the same points under the same gates.
+
+A thumb fan anchors the large ultimate in the bottom-right. The three smaller moves arc from its left to above it. A skill-point button opens a paused training sheet with names, descriptions, ranks, cooldowns and requirements. Casting never spends a point. Every hero has its own icons and readable thematic effects. Preserve touch drag-to-aim, native button activation and keyboard controls.
+
+Mothman: flight, directional dread feathers, an omen consumed by an ambush, blackout. Nessie: a wake, directional pull, knockback that stuns wet foes, a pulling/healing maelstrom. Baba Yaga: shielded hop, trap, delayed witchfire with extra damage on trapped enemies, three expanding stomps. Devil: leap, fear amplified on bleeding foes, directional bleed claws with pursuit haste, lifesteal frenzy.

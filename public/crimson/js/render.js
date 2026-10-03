@@ -54,7 +54,7 @@ const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 export const POST_DEFAULTS = Object.freeze({
   uInk: 1, uKey: 0, uExposure: 1, uGrade: [1, 1, 1], uLift: 0, uSat: 1, uEdge: 0.55, uGrain: 1, uScratch: 1,
   uMemory: 0, uDissolve: 0, uDissolveUp: 0, uBloomThresh: 0.92, uBloomGain: 1, uHueNeon: 1, uHangover: 0, uSmear: 0,
-  uDebugKey: 0, uHotColor: 0, uSkyEdge: 1, uVig: 1.2,
+  uComic: 0, uDebugKey: 0, uHotColor: 0, uSkyEdge: 1, uVig: 1.2,
 });
 
 // bright pass: neon and anything hot, already in ink colors. The story may colour the hot part, move its
@@ -90,7 +90,7 @@ const blur = pass(/* glsl */`
 const COMPOSITE = /* glsl */`
   uniform sampler2D tScene, tBloomA, tBloomB; uniform vec2 uRes; uniform float uTime, uFlash, uHurt, uGrey, uVig, uNeonBoost;
   uniform float uInk, uKey, uExposure, uLift, uSat, uEdge, uGrain, uScratch, uMemory, uDissolve, uDissolveUp, uBloomGain;
-  uniform float uHueNeon, uHangover, uSmear, uDebugKey, uSkyEdge; uniform vec3 uGrade;
+  uniform float uHueNeon, uHangover, uSmear, uDebugKey, uSkyEdge, uComic; uniform vec3 uGrade;
   varying vec2 vUv;
   vec3 tex(vec2 uv){ return disp(texture2D(tScene, uv).rgb); }
   // the ACES filmic curve (Narkowicz fit), on linear colour
@@ -160,6 +160,22 @@ const COMPOSITE = /* glsl */`
     float sx = floor(uv.x * uRes.x / 1.5);
     col += step(0.9978, hash(vec2(sx, floor(uTime * 14.)))) * 0.14 * uScratch * step(0.3, hash(vec2(floor(uv.y * 30.), sx)));
     col *= 1. - dot(d, d) * uVig * 0.6;
+    // Comic print: stepped colour, purple shadows, halftone dots and offset cyan/magenta ink.
+    // This is isolated to the COMIC look, so ordinary play retains its own grade.
+    if (uComic > 0.) {
+      vec3 printed = mix(col, floor(clamp(col, 0., 1.) * 12. + 0.5) / 12., 0.25);
+      float shade = 1. - smoothstep(0.12, 0.65, lum(printed));
+      printed = mix(printed, printed * vec3(0.8, 0.55, 1.15) + vec3(0.07, 0.015, 0.12), shade * 0.7);
+      vec2 cell = fract(vUv * uRes / 5.) - 0.5;
+      float dotInk = 1. - smoothstep(0.11, 0.2, length(cell));
+      printed *= 1. - dotInk * shade * 0.12;
+      vec2 reg = px * vec2(0.65, 0.35);
+      float cyan = abs(lum(tex(uv + reg)) - L);
+      float magenta = abs(lum(tex(uv - reg)) - L);
+      printed += vec3(0.03, 0.65, 0.85) * smoothstep(0.045, 0.2, cyan) * 0.18;
+      printed += vec3(0.9, 0.03, 0.45) * smoothstep(0.045, 0.2, magenta) * 0.18;
+      col = mix(col, printed, uComic);
+    }
     // the sand attack: ink smears in from the edges
     if (uSmear > 0.) col = mix(col, vec3(0.02), uSmear * smoothstep(0.35, 0.7, noise(vUv * vec2(7., 4.) + vec2(uTime * 0.15, 0.)) * 0.6 + length(d) * 0.7));
     col = mix(col, vec3(0.42, 0.62, 0.02) * (0.3 + L), uHurt * smoothstep(0.15, 0.75, length(d)));

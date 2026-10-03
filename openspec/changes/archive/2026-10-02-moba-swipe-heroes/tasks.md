@@ -1,0 +1,6 @@
+- [x] Integrate twelve animated GIF portraits and static/reduced-motion fallbacks.
+- [x] Implement responsive three/four/five hero swipe selection, clicks and keyboard arrows.
+- [x] Contain selection, spell inspection and other panels without vertical scrolling.
+- [x] Support non-primary upgrade taps while movement remains held.
+- [x] Validate motion files, gesture behavior, viewport layouts and gameplay regressions.
+- [x] Record browser/device limits and archive the completed implementation specs.

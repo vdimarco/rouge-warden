@@ -1,0 +1,317 @@
+[
+  {
+    "text": "Nice swing.",
+    "who": "gabe",
+    "src": "audio/dialogue/c0.swing.mp3"
+  },
+  {
+    "text": "Gabe?",
+    "who": "pick",
+    "src": "audio/dialogue/c0.gabe.mp3"
+  },
+  {
+    "text": "Gabe? Big guy?",
+    "who": "tanktop",
+    "src": "audio/dialogue/c0.gabe.tanktop.mp3"
+  },
+  {
+    "text": "Gabe? Is that you?",
+    "who": "fifty",
+    "src": "audio/dialogue/c0.gabe.fifty.mp3"
+  },
+  {
+    "text": "Gabe? No way.",
+    "who": "shades",
+    "src": "audio/dialogue/c0.gabe.shades.mp3"
+  },
+  {
+    "text": "Gabe? Are you okay?",
+    "who": "newbalance",
+    "src": "audio/dialogue/c0.gabe.newbalance.mp3"
+  },
+  {
+    "text": "Gabe? Buddy?",
+    "who": "redjersey",
+    "src": "audio/dialogue/c0.gabe.redjersey.mp3"
+  },
+  {
+    "text": "Hey, buddy. Long time.",
+    "who": "gabe",
+    "src": "audio/dialogue/c0.buddy.mp3"
+  },
+  {
+    "text": "Get down. Now.",
+    "who": "gabe",
+    "src": "audio/dialogue/c0.down.mp3"
+  },
+  {
+    "text": "The van's here. Where's the Bear?",
+    "who": "voice",
+    "src": "audio/dialogue/c0.voice.mp3"
+  },
+  {
+    "text": "You just cost me seven months.",
+    "who": "gabe",
+    "src": "audio/dialogue/i0.cost.mp3"
+  },
+  {
+    "text": "Seven months of what?",
+    "who": "fifty",
+    "src": "audio/dialogue/i0.what.mp3"
+  },
+  {
+    "text": "You first.",
+    "who": "gabe",
+    "src": "audio/dialogue/i0.first.mp3"
+  },
+  {
+    "text": "Why are five grown men dressed as samurai under Midgley Bridge?",
+    "who": "gabe",
+    "src": "audio/dialogue/i0.why.mp3"
+  },
+  {
+    "text": "At three in the morning.",
+    "who": "gabe",
+    "src": "audio/dialogue/i0.three.mp3"
+  },
+  {
+    "text": "Ronin.",
+    "who": "fifty",
+    "src": "audio/dialogue/i0.ronin.mp3"
+  },
+  {
+    "text": "In our defense, it was very dark. And you were very hairy.",
+    "who": "tanktop",
+    "src": "audio/dialogue/i0.dark.mp3"
+  },
+  {
+    "text": "Okay. So. You're probably wondering how we got here.",
+    "who": "pick",
+    "src": "audio/dialogue/i0.vo.mp3"
+  },
+  {
+    "text": "Okay. So. You're wondering how we got here. Fair.",
+    "who": "shades",
+    "src": "audio/dialogue/i0.vo.shades.mp3"
+  },
+  {
+    "text": "From Canyon Fleet? On 89A?",
+    "who": "gabe",
+    "src": "audio/dialogue/i1.fleet.mp3"
+  },
+  {
+    "text": "Keep going.",
+    "who": "gabe",
+    "src": "audio/dialogue/i1.keep.mp3"
+  },
+  {
+    "text": "You filmed me. Delete it.",
+    "who": "gabe",
+    "src": "audio/dialogue/i2.delete.mp3"
+  },
+  {
+    "text": "I didn't post it. I promise.",
+    "who": "redjersey",
+    "src": "audio/dialogue/i2.post.mp3"
+  },
+  {
+    "text": "You fought Rattler Pruitt. With foam swords.",
+    "who": "gabe",
+    "src": "audio/dialogue/i3.foam.mp3"
+  },
+  {
+    "text": "He took my ring.",
+    "who": "fifty",
+    "src": "audio/dialogue/i3.ring.mp3"
+  },
+  {
+    "text": "Then we'll get it back.",
+    "who": "gabe",
+    "src": "audio/dialogue/i3.back.mp3"
+  },
+  {
+    "text": "Box isn't in the van.",
+    "who": "voice",
+    "src": "audio/dialogue/i4.box.mp3"
+  },
+  {
+    "text": "Leave it. Find the box.",
+    "who": "voice",
+    "src": "audio/dialogue/i5.leave.mp3"
+  },
+  {
+    "text": "They'll come back for that box. And for you.",
+    "who": "gabe",
+    "src": "audio/dialogue/i5.back.mp3"
+  },
+  {
+    "text": "Is this where you say sorry for the bear thing?",
+    "who": "tanktop",
+    "src": "audio/dialogue/i5.sorry.mp3"
+  },
+  {
+    "text": "You hit me with a foam sword for ten minutes.",
+    "who": "gabe",
+    "src": "audio/dialogue/i5.foam.mp3"
+  },
+  {
+    "text": "It felt longer.",
+    "who": "pick",
+    "src": "audio/dialogue/i5.longer.mp3"
+  },
+  {
+    "text": "He moved the eight ball. I saw it.",
+    "who": "shades",
+    "src": "audio/dialogue/f3.cheat.mp3"
+  },
+  {
+    "text": "You calling me a cheat, samurai?",
+    "who": "rattler",
+    "src": "audio/dialogue/f3.samurai.mp3"
+  },
+  {
+    "text": "Ronin.",
+    "who": "all",
+    "src": "audio/dialogue/f3.ronin.mp3"
+  },
+  {
+    "text": "Hey! My ring!",
+    "who": "fifty",
+    "src": "audio/dialogue/f3.ring.mp3"
+  },
+  {
+    "text": "Get them.",
+    "who": "rattler",
+    "src": "audio/dialogue/f3.get.mp3"
+  },
+  {
+    "text": "I had two sodas. I'm driving.",
+    "who": "newbalance",
+    "src": "audio/dialogue/f3.fob.mp3"
+  },
+  {
+    "text": "Get back in your van and drive away.",
+    "who": "gabe",
+    "src": "audio/dialogue/f5.drive.mp3"
+  },
+  {
+    "text": "Not until you tell us about the Bear.",
+    "who": "pick",
+    "src": "audio/dialogue/f5.bear.mp3"
+  },
+  {
+    "text": "Not until you tell us about the Bear, pal.",
+    "who": "pick",
+    "src": "audio/dialogue/f5.bear.tanktop.mp3"
+  },
+  {
+    "text": "I am the Bear.",
+    "who": "gabe",
+    "src": "audio/dialogue/f5.iam.mp3"
+  },
+  {
+    "text": "Two photos. Same minute. Wrong people.",
+    "who": "gabe",
+    "src": "audio/dialogue/p1.wall.mp3"
+  },
+  {
+    "text": "So drivers see me on 89A at night. And so they know the Bear is watching.",
+    "who": "gabe",
+    "src": "audio/dialogue/p1.neon.mp3"
+  },
+  {
+    "text": "I drove jeep tours past that lot every first of the month.",
+    "who": "gabe",
+    "src": "audio/dialogue/p1.why1.mp3"
+  },
+  {
+    "text": "Same vans. Same hour. I started writing plates down.",
+    "who": "gabe",
+    "src": "audio/dialogue/p1.why2.mp3"
+  },
+  {
+    "text": "Your wedding is on the first. I can't leave the bridge on the first.",
+    "who": "gabe",
+    "src": "audio/dialogue/p1.card.mp3"
+  },
+  {
+    "text": "Hey. You're okay. We're friends of the Bear.",
+    "who": "tanktop",
+    "src": "audio/dialogue/p9.hey.mp3"
+  },
+  {
+    "text": "I am Dana. I wrote the note.",
+    "who": "dana",
+    "src": "audio/dialogue/p9.dana1.mp3"
+  },
+  {
+    "text": "There are six more at the ranch. He's going back for them.",
+    "who": "dana",
+    "src": "audio/dialogue/p9.dana2.mp3"
+  },
+  {
+    "text": "Strong is easy. Gentle is the hard part.",
+    "who": "tanktop",
+    "src": "audio/dialogue/p10.gentle.mp3"
+  },
+  {
+    "text": "Hey. Dana sent us. You're safe. Nobody has to hurry.",
+    "who": "tanktop",
+    "src": "audio/dialogue/p10.safe.mp3"
+  },
+  {
+    "text": "I told you not to go near that ranch.",
+    "who": "vance",
+    "src": "audio/dialogue/p12.told.mp3"
+  },
+  {
+    "text": "They didn't go near it. They went in it.",
+    "who": "gabe",
+    "src": "audio/dialogue/p12.in.mp3"
+  },
+  {
+    "text": "Next time, you wait for us.",
+    "who": "vance",
+    "src": "audio/dialogue/p12.wait.mp3"
+  },
+  {
+    "text": "You watched. You called. You kept them safe till we got there.",
+    "who": "vance",
+    "src": "audio/dialogue/p12.thank.mp3"
+  },
+  {
+    "text": "Same time next month, Gabe?",
+    "who": "vance",
+    "src": "audio/dialogue/p12.month.mp3"
+  },
+  {
+    "text": "Next month, the first is a wedding.",
+    "who": "gabe",
+    "src": "audio/dialogue/p12.wedding.mp3"
+  },
+  {
+    "text": "Best man holds the ring.",
+    "who": "fifty",
+    "src": "audio/dialogue/p12.ring.mp3"
+  },
+  {
+    "text": "Then I'd better not lose it.",
+    "who": "gabe",
+    "src": "audio/dialogue/p12.lose.mp3"
+  },
+  {
+    "text": "We'd find it.",
+    "who": "tanktop",
+    "src": "audio/dialogue/p12.find.mp3"
+  },
+  {
+    "text": "I did this alone for seven months. I don't have to anymore.",
+    "who": "gabe",
+    "src": "audio/dialogue/e1.alone.mp3"
+  },
+  {
+    "text": "Ring. Still here. I checked forty times.",
+    "who": "gabe",
+    "src": "audio/dialogue/e1.ringOn.mp3"
+  }
+]

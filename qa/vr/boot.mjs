@@ -28,7 +28,7 @@ try {
       mode: G.mode, state: G.state, version: G.version, three: !!G.renderer && G.renderer.xr.enabled,
     };
   });
-  check(t.title && t.h1 === "IN FULL SWING" && t.kicker === "A Cottage Arcade machine for Meta Quest", "the title shows the logo and the kicker", t);
+  check(t.title && t.h1 === "IN FULL SWING" && t.kicker === "A Cottage Arcade machine for phone & Quest", "the title shows the logo and the kicker", t);
   check(t.flat && t.how && t.comfort && t.sw && t.canvas, "PLAY ON THIS SCREEN, HOW TO PLAY, COMFORT and SWITCH GAME show over the live canvas", t);
   check(t.mode === "title" && t.state === "title", "G starts in the title state", t);
 

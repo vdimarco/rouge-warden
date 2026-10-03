@@ -1,0 +1,10 @@
+{
+  "provider": "MagicPixel marketplace",
+  "acquisition": "Free Add to library listings. Public transparent PNGs linked on marketplace pages; browser editor export did not produce a download.",
+  "licensePage": "https://magicpixel.art/tos",
+  "licenseBasis": "Marketplace section grants buyers a non-exclusive license to use acquired assets in their own projects. These listings offered Add to library with no charge.",
+  "assets": [
+    {"file":"possessed-ogre.png","listing":"https://magicpixel.art/marketplace/possessed-ogre-ace3fe20-37e4-4da1-b03f-7f106fe6ee74","source":"https://sddsilidjhvtvejzvolx.supabase.co/storage/v1/object/public/pixel-art/marketplace/ace3fe20-37e4-4da1-b03f-7f106fe6ee74/ace3fe20-37e4-4da1-b03f-7f106fe6ee74.png?t=1787067641211","layout":"512x512 transparent PNG"},
+    {"file":"undead-rpg.png","listing":"https://magicpixel.art/marketplace/undead-rpg-characters-906bd8fd-dddc-4ae2-afdb-c06cf7eb88d0","source":"https://sddsilidjhvtvejzvolx.supabase.co/storage/v1/object/public/pixel-art/marketplace/906bd8fd-dddc-4ae2-afdb-c06cf7eb88d0/906bd8fd-dddc-4ae2-afdb-c06cf7eb88d0.png?t=1790184442955","layout":"1024x1024 atlas, 512x512 quadrants; knight top-left, mage top-right, archer bottom-left"}
+  ]
+}

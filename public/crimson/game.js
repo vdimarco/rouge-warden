@@ -1,4 +1,4 @@
-// Crimson Rouge: a third-person boss fight in the ink-dark hills of Sedona.
+// Crimson Rogue: a third-person boss fight in the ink-dark hills of Sedona.
 // One of the cottage crew, as a ronin, against Gabe the mountain man, who turns into a grizzly.
 // Black-and-white ink; the only color is Gabe's neon, and neon means danger.
 import * as THREE from 'three';
@@ -791,6 +791,8 @@ function showCard(title, sub, kanji) {
   hud.card.className = ''; void hud.card.offsetWidth; hud.card.className = 'show';
 }
 // the film of Gabe turning into the bear; returns false when it cannot play, so the scene runs in the engine alone
+const TRANSFORM_CLIP = 'clips/gabe-transform-fal.mp4';
+let cutsceneTimeout;
 function playCutscene() {
   if (!introVid.src || introVid.readyState < 2) return false;
   game.state = 'cutscene';
@@ -798,11 +800,17 @@ function playCutscene() {
   Music.loud(false);
   introVid.currentTime = 0; introVid.muted = false; introVid.volume = 1;
   introVid.onended = endCutscene;
+  introVid.onerror = endCutscene;
+  // Bound a stalled stream so the bear fight always resumes.
+  clearTimeout(cutsceneTimeout);
+  cutsceneTimeout = setTimeout(endCutscene, 12000);
   introVid.play().catch(() => { introVid.muted = true; introVid.play().catch(endCutscene); });
   return true;
 }
 function endCutscene() {
   if (game.state !== 'cutscene') return;
+  clearTimeout(cutsceneTimeout);
+  introVid.onended = null; introVid.onerror = null;
   introVid.pause(); $('intro').classList.add('hidden');
   game.state = 'fight'; boss.cutDone = true;
   Music.loud(true);
@@ -1249,7 +1257,7 @@ function showTitle() {
   setArenaVisible(true); setBridgeSilhouette(false);
   camera.fov = 52; camera.zoom = 1; camera.updateProjectionMatrix();
   const u = post.m.uniforms; u.uFlash.value = 0; u.uHurt.value = 0; u.uGrey.value = 0; u.uNeonBoost.value = 1;
-  if (introVid.src && !/clips\/intro\.mp4$/.test(introVid.src)) loadClip(introVid, 'clips/intro.mp4', () => {}); // a story film took the player
+  if (introVid.getAttribute('src') !== TRANSFORM_CLIP) loadClip(introVid, TRANSFORM_CLIP, () => {}); // a story film took the player
   makePlayer(); makeBoss();
   for (const id of ['end']) $(id).classList.remove('show');
   for (const id of ['pause', 'intro', 'storyBoot', 'credits']) $(id).classList.add('hidden');
@@ -1283,7 +1291,7 @@ function autostart() {
   else if (Q.has('story')) startGame('story');
 }
 function loadClip(v, src, onReady) { v.src = src; v.addEventListener('loadeddata', onReady, { once: true }); v.addEventListener('error', () => v.removeAttribute('src'), { once: true }); v.load(); }
-loadClip(introVid, 'clips/intro.mp4', () => {});
+loadClip(introVid, TRANSFORM_CLIP, () => {});
 crewRow();
 // the song starts on the first tap or key press anywhere (browsers block sound before that)
 if (Music.enabled) {
@@ -1378,3 +1386,4 @@ window.__crimson = {
   get depth() { return [camera.near, camera.far]; }, get focusMode() { return focusMode; },
   get player() { return player; }, get boss() { return boss; }, get actors() { return { ronin, gabe, bear, katana }; },
 };
+

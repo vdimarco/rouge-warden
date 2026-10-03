@@ -1,0 +1,15 @@
+{
+  "generator": "Built-in image_gen",
+  "date": "2026-10-02",
+  "asset": "celestial-cockpit.webp",
+  "dimensions": [
+    1586,
+    992
+  ],
+  "bytes": 185280,
+  "source": "exec-1bd6f558-a0ed-4083-b228-8da923821bfe.png",
+  "reference": "exec-49e84fe2-844e-4ed9-8b42-884ce071a5b1.png",
+  "purpose": "Text-free backdrop behind the code-native upgrade console",
+  "prompt": "Standalone celestial observatory spacecraft cockpit background. Remove the foreground UI and all text; retain dark midnight-blue starfield, a distant warm spiral galaxy at upper right, partial planet at far left, black metallic window frame with warm brass inlays near the edges and a lower navigation deck. Quiet central70percent for HTML controls. No text, logos, symbols, UI, numbers or central rectangular screen. Landscape8:5.",
+  "processing": "RGB WebP conversion at quality86; no content edits."
+}
