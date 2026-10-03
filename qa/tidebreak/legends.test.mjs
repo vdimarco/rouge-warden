@@ -21,10 +21,10 @@ assert.equal((rosterHTML(0).match(/data-hero=/g)||[]).length,12);assert.equal((r
  const {s,p}=setup(5),t=foe(s,p,{chillUntil:10});cast(s,p,1);assert(t.stun>0);p.hp-=500;const hp=p.hp;cast(s,p,2);assert(p.hp>hp,'Wendigo feeds');
 }
 {
- const {s,p}=setup(6),t=foe(s,p);cast(s,p,1);advance(s,.4);assert(t.spiritUntil>s.time);const hp=t.hp;cast(s,p,2);advance(s,.6);assert(hp-t.hp>=320);assert(t.stun>0);cast(s,p,3);const zone=s.zones.find(z=>z.type==='ninelights');advance(s,5.5);assert.equal(zone.pulses,9);
+ const {s,p}=setup(6),t=foe(s,p);cast(s,p,1);advance(s,.4);assert(t.spiritUntil>s.time);const hp=t.hp;cast(s,p,2);advance(s,.6);assert(hp-t.hp>=320);assert(t.snaredUntil>s.time);cast(s,p,3);const zone=s.zones.find(z=>z.type==='ninelights');advance(s,5.5);assert.equal(zone.pulses,9);
 }
 {
- const {s,p}=setup(7),t=foe(s,p);cast(s,p,2);const hp=t.hp;damage(s,t,p,100,'attack');assert(t.hp<hp);p.cd[3]=0;const before=t.hp;cast(s,p,3);advance(s,.6);assert.equal(t.hp,before,'Worldbreaker warns');advance(s,.3);assert(t.hp<before);assert(t.stun>0);
+ const {s,p}=setup(7),t=foe(s,p);cast(s,p,2);const hp=t.hp;damage(s,t,p,100,'attack');assert(t.hp<hp);p.cd[3]=0;const before=t.hp;cast(s,p,3);advance(s,.6);assert.equal(t.hp,before,'Worldbreaker warns');advance(s,.3);assert(t.hp<before);assert(t.snaredUntil>s.time);
 }
 {
  const {s,p}=setup(8),t=foe(s,p,{kind:'hero',hero:0,cd:[0,0,0,0],skillRanks:[1,0,0,0],itemState:{},inventory:[]});cast(s,p,1);assert(t.silencedUntil>s.time);assert.equal(cast(s,t,0),false);p.hp-=500;const hp=p.hp;cast(s,p,2);damage(s,p,t,100);assert(p.hp>hp,'Soul thread drains');
@@ -33,7 +33,7 @@ assert.equal((rosterHTML(0).match(/data-hero=/g)||[]).length,12);assert.equal((r
  const {s,p}=setup(9),t=foe(s,p);cast(s,p,1);assert.equal(t.bleed.type,'fire');const hp=t.hp;cast(s,p,2);advance(s,.6);assert(hp-t.hp>100);assert(t.bleed,'Sun ray amplifies a burning target');cast(s,p,3);damage(s,t,p,99999);assert.equal(p.hp,p.maxHp*.35);assert.equal(p.deaths,0);damage(s,t,p,99999);assert.equal(p.hp,0,'Last ember works once');
 }
 {
- const {s,p}=setup(10);p.hp-=500;const hp=p.hp;cast(s,p,2);assert(p.hp>hp);assert(p.bloom);advance(s,2);const t=foe(s,p);cast(s,p,3);advance(s,.1);assert(t.stun>0);assert(p.hp>hp+250,'Grove heals');
+ const {s,p}=setup(10);p.hp-=500;const hp=p.hp;cast(s,p,2);assert(p.hp>hp);assert(p.bloom);advance(s,2);const t=foe(s,p);cast(s,p,3);advance(s,.1);assert(t.snaredUntil>s.time);assert(p.hp>hp+250,'Grove heals');
 }
 {
  const {s,p}=setup(11),t=foe(s,p);p.bleed={type:'poison',until:5};p.slow=2;cast(s,p,0,{x:1,y:0});assert.equal(p.bleed,null);assert.equal(p.slow,0);p.x=2400;p.y=2800;cast(s,p,1,{x:0,y:-1});advance(s,.4);assert.equal(t.bleed.type,'poison');cast(s,p,2,{x:0,y:-1});assert(t.stun>0);t.stun=0;t.facing=-Math.PI/2;p.cd[2]=0;cast(s,p,2,{x:0,y:-1});assert.equal(t.stun,0,'Gaze checks enemy facing');cast(s,p,3);advance(s,1.5);assert(t.stun>0,'Garden stuns every third pulse');
