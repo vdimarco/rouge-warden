@@ -44,7 +44,7 @@ function pause() {
   sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · M map · B return · Esc pause</p>');
   $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
-function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
+function menu() { autoPaused = false; autoPauseNote.hidden = true; closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
 function updateSound() { if($('sound-menu'))$('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
 function choose(identityId) {
   const h=HERO_IDENTITIES[identityId];if(!h)return;
@@ -267,8 +267,26 @@ window.addEventListener('keydown', e => {
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { resetInput(); if (running && !paused && !resultShown) pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetInput(); if (running && !paused && !resultShown) pause(); } });
+// Leaving the window holds the match; a returning mouse resumes it. Touch players tap to resume.
+let autoPaused = false, lastPointer = 'mouse';
+const autoPauseNote = document.createElement('button'); autoPauseNote.id = 'auto-pause'; autoPauseNote.hidden = true; $('hud').append(autoPauseNote);
+function autoPause() {
+  if (!running || resultShown || $('sheet').open || autoPaused) return;
+  resetInput(); paused = true; autoPaused = true; autoPauseNote.hidden = false;
+  autoPauseNote.innerHTML = lastPointer === 'mouse' ? '<b>Paused</b><small>Move the mouse back to keep playing</small>' : '<b>Paused</b><small>Tap to keep playing</small>';
+}
+function autoResume() {
+  if (!autoPaused || document.hidden) return;
+  autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) { paused = false; last = performance.now(); }
+}
+window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; }, true);
+window.addEventListener('mouseout', e => { if (!e.relatedTarget && lastPointer === 'mouse') autoPause(); });
+document.documentElement.addEventListener('mouseenter', () => { if (lastPointer === 'mouse') autoResume(); });
+window.addEventListener('mousemove', () => { if (autoPaused && lastPointer === 'mouse' && document.hasFocus()) autoResume(); }, { passive: true });
+autoPauseNote.addEventListener('click', autoResume);
+window.addEventListener('blur', autoPause);
+window.addEventListener('focus', () => { if (lastPointer === 'mouse') autoResume(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
 window.addEventListener('resize', () => { resetInput(); renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
