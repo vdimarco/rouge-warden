@@ -2,6 +2,6 @@ import { HEROES } from './sim.js';
 import { KITS } from './abilities.js';
 import { spellArtHTML } from './spell-art.js';
 import { CLASSES, matchesHero } from './hero-classes.js';
-export const ROLES=['All','Strength','Agility','Intelligence','Ranged','Support','Assassin','Fighter','Tank','Mage','Controller'];
+export const ROLES=['All','Fighter','Tank','Mage','Support','Assassin','Controller'];
 export const rosterHTML=(selected,filter='All')=>HEROES.map((h,i)=>({h,i})).filter(({h})=>matchesHero(h,filter)).map(({h,i})=>`<button data-hero="${i}" aria-pressed="${i===selected}" style="--hero-color:${h.color}"><picture class="hero-card-portrait"><img src="./art/illustrated/${h.slug}-front.webp" alt="" decoding="async"></picture><span>${h.name}<small>${h.attribute} · ${h.attackType}${h.category==='Support'?' · Support':''}</small></span></button>`).join('');
 export const heroPreviewHTML=i=>`<dl class="hero-stats"><div><dt>Health</dt><dd>${HEROES[i].hp}</dd></div><div><dt>Attack</dt><dd>${HEROES[i].attackType}</dd></div><div title="${CLASSES[HEROES[i].attribute].note}"><dt>Attribute</dt><dd>${HEROES[i].attribute}</dd></div></dl><p class="class-growth">${CLASSES[HEROES[i].attribute].note}</p><div class="hero-move-preview" aria-label="${HEROES[i].name} spells">${KITS[i].map((a,slot)=>`<button data-hero-spell="${slot}" aria-label="${a.name}. ${a.description}" title="${a.name}: ${a.description}">${spellArtHTML(i,slot,'preview-spell-art')}<span>${a.name}<small>${slot===3?'Ultimate · Level 6':['Q','E','C'][slot]}</small></span></button>`).join('')}</div>`;
