@@ -87,3 +87,25 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
 /* Mouse aiming spans the world; touch camera zones must not steal its input. */
 .mouse-mode #lookPad,.mouse-mode #walkStick{display:none!important;pointer-events:none}
 .mouse-mode #world{cursor:crosshair}
+
+/* Menu: on a phone, the title, one line and both play buttons fit the first screen. */
+#panel .pitch{font-size:15px;line-height:1.45;margin:0 0 6px;color:#eef3dc}
+#panel .best{font-size:12px;margin:12px 0 0;text-align:center;color:#d9e4cf}
+.howto{margin-top:14px;border-top:1px solid #ffffff2b}
+.howto summary{min-height:44px;line-height:44px;text-align:center;cursor:pointer;list-style:none;font-size:12px;letter-spacing:2px;color:#f0e6c8}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::after{content:'+';font-size:16px;margin-left:8px}.howto[open] summary::after{content:'−'}
+#panel .howto p{font-size:12px;line-height:1.5;margin:8px 0}.howto b{color:#e6dfad}
+[data-style="rick-morty"] .howto b{color:#bdff52}
+@container game (min-aspect-ratio:1/1){
+ #panel .menu-play{grid-column:2;grid-row:2 / span 2;align-self:center}
+ #panel .menu-more{grid-column:1 / -1}
+ #panel .close-line,#panel .close-bar,#panel .run-line,#panel .share,#panel #retry{grid-column:1 / -1}
+}
+
+/* End card: how close the run came, and a line to share. */
+#panel .close-line{font-size:16px;font-weight:700;color:#fff6dc;margin:0 0 10px}
+.close-bar{height:8px;border-radius:4px;background:#ffffff26;overflow:hidden;margin:0 0 12px}.close-bar i{display:block;height:100%;background:#bdff52}
+#panel .run-line{font-size:12px;margin:0 0 4px}
+.share{display:flex;gap:8px;margin-top:10px}.share input{flex:1;min-width:0;min-height:44px;padding:0 10px;border-radius:6px;border:1px solid #90aa98;background:#1e3637;color:#f6eaca;font:12px system-ui}.share button{width:auto;margin:0;padding:10px 14px}
+[data-style="rick-morty"] .share input{background:#454157;border:2px solid #202e38}

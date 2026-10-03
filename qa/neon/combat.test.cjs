@@ -2,14 +2,43 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-function boot(districtClass=null){
- const elements=new Map(),events={};
- const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
- const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',onclick:null,addEventListener(){},setPointerCapture(){},getContext:()=>ctx});return elements.get(id)};
- const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[]},addEventListener:(n,f)=>events[n]=f,requestAnimationFrame(){},setTimeout:()=>1,clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true};
- s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync('public/neon/game.js','utf8').replace("import { Duel } from './duel.js';",fs.readFileSync('public/neon/duel.js','utf8').replace('export class Duel','class Duel')).replace("import { District } from './district.js';",districtClass||"class District {constructor(){throw Error('No WebGL in unit test')}}"),s);
- return {run:code=>vm.runInContext(code,s),events,elements};
+const path=require('node:path');
+// game.js is an ES module. The tests need its top-level state, so the harness turns it into one
+// script. Each imported module runs in its own function scope and returns its exports.
+// three.js is not loaded: the fixed-view game and drawAlienBackdrop do not use it.
+function bundle(districtClass){
+ const dir='public/neon',done=new Set();let out='const __mod={};\n';
+ const imports=(src,from)=>src.replace(/^import\s+(?:\*\s+as\s+(\w+)|\{([^}]*)\})\s+from\s+'([^']+)';?/gm,(_,star,names,spec)=>{
+  const key=spec.includes('three.module')?'three':path.posix.join(path.posix.dirname(from),spec);
+  if(key!=='three'&&!key.endsWith('/district.js'))load(key);
+  return star?`const ${star}=__mod[${JSON.stringify(key)}];`:`const {${names.replace(/\s+as\s+/g,':')}}=__mod[${JSON.stringify(key)}];`;
+ });
+ function load(file){
+  if(done.has(file))return;done.add(file);const names=[];
+  let src=imports(fs.readFileSync(file,'utf8'),file);
+  src=src.replace(/^export\s+(async\s+function|function|class|const|let)\s+(\w+)/gm,(_,kind,name)=>{names.push(name);return `${kind} ${name}`});
+  out+=`__mod[${JSON.stringify(file)}]=(function(){${src}\nreturn {${names.join(',')}}})();\n`;
+ }
+ out+=`__mod['three']={};__mod[${JSON.stringify(dir+'/district.js')}]=(function(){${districtClass||"class District {constructor(){throw Error('No WebGL in unit test')}}"}\nreturn {District}})();\n`;
+ const game=imports(fs.readFileSync(dir+'/game.js','utf8'),dir+'/game.js');
+ return out+game;
 }
+function boot(districtClass=null,extra={}){
+ const elements=new Map(),events={},timers=[];
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}}),measureText:()=>({width:40})},{get:(o,k)=>o[k]??(()=>{})});
+ const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:false,textContent:'',innerHTML:'',value:'',onclick:null,style:{setProperty(){}},dataset:{},classList:{toggle(){},add(){},remove(){},contains:()=>false},addEventListener(){},setPointerCapture(){},getContext:()=>ctx,getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),select(){},focus(){}});return elements.get(id)};
+ const s={Image:class{constructor(){this.complete=false;this.naturalWidth=0;this.naturalHeight=0}},console:{...console,warn(){}},Math,Number,innerWidth:390,innerHeight:844,devicePixelRatio:2,performance:{now:()=>s.now},now:1000,screen:{orientation:{angle:0}},localStorage:{getItem:()=>0,setItem(){}},document:{getElementById:element,addEventListener(){},querySelectorAll:()=>[],body:{classList:{toggle(){},add(){},remove(){},contains:()=>false}}},matchMedia:()=>({matches:false}),addEventListener:(n,f)=>events[n]=f,dispatchEvent(){},requestAnimationFrame(){},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){},DeviceMotionEvent:function(){},DeviceOrientationEvent:function(){},isSecureContext:true,URLSearchParams,...extra};
+ s.window=s;vm.createContext(s);vm.runInContext(bundle(districtClass),s);
+ return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
+}
+// A stand-in for the 3D district: every fighter stands 2 m away, in front of the player.
+const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.lookedAt=-9;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}update(){}endMotionView(){}beginMotionView(){}aimMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}strikeTarget(f){return f}inView(){return true}canEngage(){return true}bearing(){return 0}assist(active,chosen){this.assisted=active||chosen}lunge(){this.lunged=true}}`;
+// A recording audio context and vibration motor. They run inside the game, so they can read its clock.
+const RECORDER=`var __log=[];navigator.vibrate=ms=>{__log.push({what:'buzz',t:time,ms});return true};
+audio=(()=>{const param=v=>({value:v,setValueAtTime(x){this.value=x},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},setTargetAtTime(){},cancelScheduledValues(){}});
+return {currentTime:0,destination:{},resume:()=>Promise.resolve(),createOscillator(){const o={type:'sine',frequency:param(440),connect:n=>n,start(){__log.push({what:'sound',t:time,o})},stop(){}};return o},createGain(){return {gain:param(1),connect:n=>n}}}})();`;
+// Runs the game loop for a number of seconds in small steps, as frames would.
+const step=(run,seconds,dt=1/60)=>run(`for(let i=0;i<${Math.round(seconds/dt)};i++)update(${dt})`);
 test('direction, cooldown, parry, chip damage and pause',()=>{
  const {run}=boot();run('start();enemy.dir=0');
  assert.equal(run('slash(0,100);enemy.hp'),2);
@@ -60,9 +89,14 @@ test('permission denial, null samples and landscape calibration preserve touch f
  events.deviceorientation({alpha:null,beta:null,gamma:null});assert.equal(run('raw'),null);
  run('now+=40');events.deviceorientation({alpha:359,beta:55,gamma:10});
  run('now+=40');events.deviceorientation({alpha:0,beta:55,gamma:10});assert.ok(run('sword.speed<30'));
- run('resize()');assert.equal(run('raw'),null);
+ // The layout stays locked during play, so a resize keeps the grip and causes no false swing.
+ const grip=run('raw');run('resize()');assert.equal(run('raw'),grip);assert.ok(run('base!==null'));
+ run('now+=40');events.deviceorientation({alpha:0,beta:55,gamma:10});assert.ok(run('sword.speed<30'));
  await elements.get('motion').onclick();run('enemy.dir=0;cooldown=0');
- elements.get('world').onpointerdown({pointerId:1,clientX:20,clientY:300});elements.get('world').onpointermove({pointerId:1,clientX:200,clientY:300});assert.equal(run('enemy.hp'),1);
+ // The layout stays locked at its start angle and the screen is now turned 90 degrees,
+ // so a swipe down the physical screen is a horizontal cut in the game.
+ assert.equal(run('viewport.angle'),90);
+ elements.get('world').onpointerdown({pointerId:1,clientX:195,clientY:250});elements.get('world').onpointermove({pointerId:1,clientX:195,clientY:430});assert.equal(run('enemy.hp'),1);
 });
 test('render path runs at portrait and landscape sizes',()=>{const {run}=boot();run('start();draw();innerWidth=844;innerHeight=390;resize();draw()')});
 
@@ -83,7 +117,7 @@ test('twisting the handle never cuts; blade depth changes its visible length',as
 
 
 test('duel guard, exposed health damage, progression and widescreen fallback',async()=>{
- const {run,elements}=boot(`class District {constructor(){this.drones=[];this.dash=0;this.collected=0;this.assetsRequested=true}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}lunge(){this.lunged=true}}`);
+ const {run,elements}=boot(DISTRICT);
  run('start();enemy.dir=0;slash(0,100)');assert.equal(run('enemy.hp'),6);assert.ok(run('enemy.posture>0'));assert.equal(run('district.lunged'),true);
  run('duel.open(enemy);cooldown=0;slash(100,0)');assert.equal(run('enemy.hp'),4);assert.equal(run('enemy.phase'),'recover');
  run('cooldown=0;slash(100,0)');assert.equal(run('enemy.hp'),4);
@@ -92,4 +126,115 @@ test('duel guard, exposed health damage, progression and widescreen fallback',as
  run('wave=3;spawn();resume()');assert.equal(run('duel.fighters.length'),2);
  run('pause();const savedHP=enemy.hp;update(20)');assert.equal(run('enemy.hp===savedHP'),true);
  await elements.get('wideStart').onclick();assert.match(elements.get('wideHelp').textContent,/Rotate/);
+});
+
+test('a touch guard is a parry only in the last 0.6 s before impact; held longer, it is a block',()=>{
+ for(const [early,phase,posture] of [[.8,'recover',1],[.4,'open',4]]){
+  const {run}=boot(DISTRICT);run('start()');
+  // One cut, by hand, that lands in 1.2 s.
+  run("duel.active=enemy;enemy.phase='windup';enemy.attack='cut';enemy.period=1.2;enemy.timer=1.2");
+  step(run,1.2-early);run('setGuard(true)');step(run,early+.02);
+  assert.equal(run('enemy.phase'),phase,`guard pressed ${early} s before impact`);assert.equal(run('enemy.posture'),posture);
+  assert.equal(run('health'),100);
+ }
+});
+
+test('the lock-on turns the view only on a touch screen without the gyro',async()=>{
+ const touch=boot(DISTRICT);touch.run('start()');step(touch.run,.1);assert.equal(touch.run('district.assisted===enemy'),true);
+ // A mouse steers the view itself.
+ const mouse=boot(DISTRICT,{matchMedia:()=>({matches:true})});mouse.run('start()');step(mouse.run,.1);assert.equal(mouse.run('district.assisted'),undefined);
+ // So does the phone in gyro mode.
+ const phone=boot(DISTRICT);phone.run('start()');await phone.elements.get('motion').onclick();
+ for(let i=0;i<3;i++){phone.run('now+=40');phone.events.deviceorientation({alpha:0,beta:0,gamma:0})}
+ step(phone.run,.1);assert.equal(phone.run('gyro&&!!raw'),true);assert.equal(phone.run('district.assisted'),undefined);
+});
+
+test('every blow is announced at least 0.3 s ahead: a rising tone, a pulsing screen edge and a buzz',()=>{
+ const {run}=boot(DISTRICT,{navigator:{}});run(RECORDER+'start()');
+ let windupFrames=0;const gaps=[];
+ // A player who never defends, so every attack lands.
+ for(let i=0;i<60*60&&run('state')==='play';i++){
+  const hp=run('health');run('update(1/60)');
+  if(run("duel.active?.phase==='windup'")){windupFrames++;
+   assert.ok(run("!!warn&&warn.f===duel.active&&__log.some(e=>e.what==='sound'&&e.o===warn.o)"),'the windup tone plays');
+   assert.ok(run('!!warning()'),'the screen edge pulses');}
+  // The warning buzz is 20 ms. A blow that lands buzzes longer.
+  if(run('health')<hp)gaps.push(run("time-__log.filter(e=>e.what==='buzz'&&e.ms===20).at(-1).t"));
+ }
+ assert.ok(gaps.length>=8,`only ${gaps.length} blows landed`);assert.ok(windupFrames>gaps.length*30);
+ assert.ok(gaps.every(g=>g>=.3),`a blow came ${Math.min(...gaps).toFixed(2)} s after its buzz`);
+ // The tone stops when the blade lands.
+ assert.equal(run('warn'),null);
+});
+
+test('a parry stops the blow dead, slows time, rings like metal and bursts into sparks',()=>{
+ const {run}=boot(DISTRICT,{navigator:{}});run(RECORDER+'start()');
+ run("duel.active=enemy;enemy.phase='windup';enemy.attack='cut';enemy.period=1;enemy.timer=1");
+ step(run,.7);run('setGuard(true)');for(let i=0;i<40&&run('enemy.phase')!=='open';i++)run('update(1/60)');
+ assert.equal(run('enemy.phase'),'open');
+ assert.ok(run('Math.abs(freeze-.08)<1e-9'));assert.ok(run('slow')>.45);assert.ok(run('rings.length')>0);assert.ok(run('shine')>0);assert.ok(run('district.focus')>0);
+ // The ring of steel: bright partials above 1 kHz.
+ assert.ok(run("__log.filter(e=>e.what==='sound'&&e.o.type==='sine'&&e.o.frequency.value>1000).length")>=2);
+ // The hit-stop holds the duel still for 80 ms. Then the ronin moves at half speed.
+ const t0=run('enemy.timer');run('tick(.05,false)');run('tick(.05,false)');assert.equal(run('enemy.timer'),t0);
+ run('tick(.05,false)');assert.ok(Math.abs(t0-run('enemy.timer')-.025)<1e-9);
+});
+
+test('a short sensor stall keeps the gyro; with no signal at all, the game pauses before touch takes over',async()=>{
+ const {run,events,elements,timers}=boot(DISTRICT);run('start()');await elements.get('motion').onclick();
+ const pose=()=>{run('now+=40');events.deviceorientation({alpha:0,beta:0,gamma:0})};pose();pose();pose();
+ // A 400 ms stall, as on a busy phone, clears the grip until the next sample. The 3 s check then fires.
+ run('now+=400');events.deviceorientation({alpha:0,beta:0,gamma:0});assert.equal(run('raw'),null);
+ timers.filter(t=>t.ms===3000).forEach(t=>t.f());assert.equal(run('gyro'),true);assert.equal(run('state'),'play');
+ const quiet=boot(DISTRICT);quiet.run('start()');await quiet.elements.get('motion').onclick();
+ quiet.timers.filter(t=>t.ms===3000).forEach(t=>t.f());
+ assert.equal(quiet.run('gyro'),false);assert.equal(quiet.run('state'),'pause');assert.match(quiet.elements.get('panel').innerHTML,/NO MOTION SIGNAL/);
+});
+
+test('hints name the controls the player has, and never Space on a touch screen',()=>{
+ const hints=(extra={})=>{const {run}=boot(DISTRICT,extra),seen=new Set();run('start()');
+  for(const attack of ['cut','overhead','lunge','sweep','delayed'])for(const dir of [0,1]){run(`duel.active=enemy;enemy.phase='windup';enemy.attack='${attack}';enemy.dir=${dir};enemy.period=1;enemy.timer=1;update(1/60)`);seen.add(run("$('hint').textContent"))}
+  run('duel.active=null;duel.open(enemy);update(1/60)');seen.add(run("$('hint').textContent"));return [...seen]};
+ const touch=hints();
+ for(const h of touch)assert.ok(!/space|key|click|upright|sideways/i.test(h),`touch hint: ${h}`);
+ for(const want of [/^HOLD GUARD AS THE BLADE FALLS$/,/PUSH STICK TO DODGE/,/WAIT, THEN HOLD GUARD/,/CUT NOW/])assert.ok(touch.some(h=>want.test(h)),`no touch hint matches ${want}`);
+ const mouse=hints({matchMedia:()=>({matches:true})});
+ assert.ok(mouse.some(h=>/SPACE TO ROLL/.test(h)));assert.ok(mouse.some(h=>/RIGHT-CLICK AS THE BLADE FALLS/.test(h)));
+});
+
+test('the HUD, the objective and the end card all count rounds',()=>{
+ const html=fs.readFileSync('public/neon/index.html','utf8');assert.match(html,/<small>ROUND<\/small><b id="wave">/);assert.ok(!/>[^<]*District|DISTRICT/.test(html));
+ const {run,elements}=boot(DISTRICT);run('start()');step(run,.1);assert.match(elements.get('objective').textContent,/^ROUND 1 /);
+ run('gameOver()');assert.match(elements.get('panel').innerHTML,/Round 1/);assert.ok(!/district/i.test(elements.get('panel').innerHTML));
+});
+
+test('the menu leads with the title, one line and both play buttons; the rest waits behind How to play',()=>{
+ const {elements}=boot(DISTRICT),html=elements.get('panel').innerHTML,howto=html.indexOf('<details');
+ assert.ok(howto>0);for(const id of ['gyroStart','start'])assert.ok(html.indexOf(`id="${id}"`)>0&&html.indexOf(`id="${id}"`)<howto,`${id} comes before How to play`);
+ for(const word of ['Mouse.','WASD','Space','Tablet.','wideStart'])assert.ok(html.indexOf(word)>howto,`${word} waits behind How to play`);
+ const words=html.slice(0,howto).replace(/<[^>]+>/g,' ').split(/\s+/).filter(w=>/\w/.test(w));assert.ok(words.length<=30,`${words.length} words before How to play`);
+ assert.match(html,/Daily duel \d{4}-\d\d-\d\d/);
+});
+
+// A browser store that keeps what the game saves.
+const memoryStore=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v))}};
+test('the same daily seed gives the same attacks and the same circuits in the game',()=>{
+ const play=(extra={})=>{const {run,elements}=boot(DISTRICT,extra),attacks=[];run('start()');
+  for(let i=0;i<60*20;i++){const before=run('duel.active');run('update(1/60)');const a=run("duel.active&&duel.active.phase==='windup'?duel.active.attack+duel.active.dir+duel.active.period.toFixed(3):''");if(a&&!before)attacks.push(a)}
+  run('finishDuel()');const offer=[...elements.get('panel').innerHTML.matchAll(/<strong>([^<]+)<\/strong>/g)].map(m=>m[1]);return {attacks,offer}};
+ const a=play(),b=play(),other=play({location:{search:'?seed=friend',origin:'',pathname:'/neon/'}});
+ assert.ok(a.attacks.length>=5);assert.deepEqual(a.attacks,b.attacks);assert.deepEqual(a.offer,b.offer);assert.equal(a.offer.length,3);
+ assert.ok(other.attacks.join()!==a.attacks.join()||other.offer.join()!==a.offer.join(),'another seed gives another duel');
+});
+
+test('the end card shows how close the run came, today\'s best and a line to share',async()=>{
+ let copied=null;const {run,elements}=boot(DISTRICT,{localStorage:memoryStore(),navigator:{clipboard:{writeText:async t=>{copied=t}}}});
+ run('start();wave=2;spawn();resume();enemy.hp=3;gameOver()');let card=elements.get('panel').innerHTML;
+ assert.match(card,/<h2>Round 2<\/h2>/);assert.match(card,/Ronin at 3\/6 HP · Today's best: round 2/);assert.match(card,/width:50%/);assert.match(card,/RUN IT BACK/);
+ const share=card.match(/id="shareLine"[^>]*value="([^"]+)"/)[1];assert.match(share,/Round 2 · Ronin at 3\/6 HP/);assert.match(share,/\?seed=\d{4}-\d\d-\d\d/);
+ await elements.get('copy').onclick();await new Promise(r=>setImmediate(r));assert.match(copied,/Round 2 · Ronin at 3\/6 HP/);
+ // A shorter run later the same day keeps the best round. A captain and a group read as such.
+ run('start();wave=4;spawn();resume();enemy.hp=3;gameOver()');card=elements.get('panel').innerHTML;
+ assert.match(card,/<h2>Round 4<\/h2>/);assert.match(card,/0 of 2 down · Captain at 3\/10 HP · Today's best: round 4/);
+ run('start();gameOver()');assert.match(elements.get('panel').innerHTML,/Today's best: round 4/);
 });
