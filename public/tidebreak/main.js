@@ -9,7 +9,7 @@ import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, selectionSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from './pointer-action.js';
@@ -76,7 +76,7 @@ function start() {
   $('controls').style.setProperty('--hero-color',HEROES[selected].color);
   skillButtons.forEach((b,i)=> {
     b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
-    b.insertAdjacentHTML('afterbegin',selectionSpellArt(selectedIdentity,i,'hud-spell-art'));
+    b.insertAdjacentHTML('afterbegin',hudSpellArt(selectedIdentity,i,'hud-spell-art'));
   });
   updateUI(); learnSkills();
 }
