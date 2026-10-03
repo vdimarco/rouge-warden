@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createMatch,player,cast,requestCast,step,damage} from '../../public/tidebreak/sim.js';
 import {attackTiming} from '../../public/tidebreak/basic-attacks.js';
 import {CENTER} from '../../public/tidebreak/world.js';
+import {castTiming} from '../../public/tidebreak/combat-state.js';
 
 const setup=(hero=4)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,level:6,skillRanks:[1,1,1,1],nextShop:Infinity,power:0});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:900+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-120,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,...extra};s.units.push(t);p.target=t.id;return t;};
@@ -25,7 +26,7 @@ const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds
  assert(requestCast(s,p,2,{x:0,y:-1,distance:300}));const intent=p.castIntent;assert.equal(p.mana,mana);assert.equal(p.cd[2],0);assert.equal(t.hp,health);
  const x=p.x;advance(s,.15,{x:1,attack:false});assert.equal(p.x,x,'committed aim holds its origin');assert.equal(p.castIntent.aim.y,-1);
  t.x+=700;advance(s,.28);assert.equal(p.castIntent,null);assert.equal(t.hp,health,'moving outside locked aim avoids the lance');assert(p.cd[2]>0);assert(p.mana<mana);assert(p.recoveryUntil>s.time);
- assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');advance(s,.2);assert(requestCast(s,p,0),'quick defense resumes after recovery');
+ assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');advance(s,.2);assert.equal(requestCast(s,p,0),false,'extended punish window remains active');advance(s,.07);assert(requestCast(s,p,0),'quick defense resumes after recovery');
 }
 for(const status of ['stun','fear','silencedUntil']){
  const {s,p}=setup(4);foe(s,p);const mana=p.mana;assert(requestCast(s,p,2,{x:0,y:-1}));p[status]=1;advance(s,.02);
@@ -50,7 +51,7 @@ for(const hero of [0,8]){
  assert(requestCast(s,p,2,{x:1,y:0,distance:250},{bot:true}));assert.equal(p.castIntent.shape.targetId,a.id);
  a.y+=160;b.y=p.y;advance(s,.15);assert.equal(p.castIntent.shape.y,a.y,'targeted warning follows its selected creature');
  advance(s,.4);assert(hero===0?a.omen:a.soulThread);assert.equal(hero===0?b.omen:b.soulThread,undefined,'a crossing creature cannot steal the targeted cast');
- advance(s,.2);p.cd[2]=0;const mana=p.mana;assert(requestCast(s,p,2,{x:250,y:160,distance:Math.hypot(250,160)},{bot:true}));
+ advance(s,.27);p.cd[2]=0;const mana=p.mana;assert(requestCast(s,p,2,{x:250,y:160,distance:Math.hypot(250,160)},{bot:true}));
  a.x+=700;advance(s,.55);assert.equal(p.cd[2],0);assert(p.mana>=mana,'leaving target range cancels without spending resources');
 }
 {
@@ -68,4 +69,10 @@ for(const hero of [0,8]){
  assert.equal([0,1,2].reduce((n,v)=>n+attackTiming(heavy,v).damage,0),3,'three-hit mean damage stays intact');
  const speed={...heavy,rate:.12,frenzy:2};assert(attackTiming(speed,2,1).windup<speed.rate*.48,'haste keeps impact before the next attack');assert(attackTiming(heavy,2,3).windup>.3);
 }
-console.log('PASS: independent controls, responsive root answers, locked-aim commitment, interruption costs, manual target failure, result feedback, neutral dodge/opening lifecycle and hero attack rhythms.');
+{
+ const regular=castTiming({hero:4},2), ultimate=castTiming({hero:4},3), defensive=castTiming({hero:7},2);
+ assert.equal(regular.recovery,.26,'longer committed cast gets a punish window');
+ assert.equal(ultimate.recovery,.34,'ultimate has the longest punish window');
+ assert.equal(defensive.recovery,0,'defensive cast remains immediate');
+}
+console.log('PASS: independent controls, responsive root answers, locked-aim commitment, interruption costs, manual target failure, result feedback, neutral dodge/opening lifecycle, punish windows and hero attack rhythms.');
