@@ -1,11 +1,12 @@
 // Checks the city view's budgets (spec §9): the incremental build (start-view chunks first, a cap per call by time and
 // by count, V.progress), the real time of every V.build call, and the draw calls and triangles per view at every
-// named camera shot, on the title and in flat play. Prints the numbers.
+// named camera shot, on the title and in flat play (the ink outline twins of the trees, cars and landmarks count).
+// It also checks that the comic art is loaded and that its textures stay a handful. Prints the numbers.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/perf.mjs
-import { checker, watchdog, newPage, open, close, waitFor, waitState, enterXR, freeze, frames } from "./lib.mjs";
+import { checker, watchdog, newPage, open, close, waitFor, waitState, freeze, frames } from "./lib.mjs";
 
 const { check, done } = checker("perf");
-watchdog(14 * 60 * 1000, "perf");
+watchdog(20 * 60 * 1000, "perf");
 const SHOTS = ["start", "needle", "canyon", "harbour", "aerial", "street"];
 
 // Wraps V.build before its first call (main keeps its own reference to the view object, so the wrapper must be
@@ -75,6 +76,13 @@ try {
   check(B.startAt > 0 && B.startAt < B.doneAt && B.progress[B.startAt - 1] < 0.7, "the start view is ready first (at " + (B.progress[B.startAt - 1] * 100).toFixed(0) + " % of the build)", { startAt: B.startAt, doneAt: B.doneAt });
   check(page.errors.length === 0, "no errors while the city builds", page.errors);
 
+  /* ---------------- the art and its textures ---------------- */
+  await waitFor(page, () => G.view.art && G.view.art.loaded, null, 120000);
+  const mem = await page.evaluate(() => ({ art: G.view.art, textures: G.renderer.info.memory.textures, geometries: G.renderer.info.memory.geometries }));
+  console.log("INFO: art " + JSON.stringify(mem.art) + ", " + mem.textures + " textures and " + mem.geometries + " geometries on the GPU");
+  check(mem.art.sky && mem.art.windows, "the comic art (sky strip, window atlas) is loaded and uploaded", mem);
+  check(mem.textures <= 16, "the art keeps the texture count small (" + mem.textures + " textures)", mem);
+
   /* ---------------- budgets per view, on the title ---------------- */
   const t = await measure(page, SHOTS.concat(["diorama"]));
   for (const n of SHOTS) console.log("INFO: title  " + n.padEnd(8) + " " + String(t[n].calls).padStart(4) + " draws " + String(t[n].tris).padStart(8) + " triangles");
@@ -84,9 +92,13 @@ try {
   check(t.diorama.calls <= PERF.drawsPerViewMax && t.diorama.tris <= PERF.trisPerViewMax, "the diorama stays within the budget", t.diorama);
 
   /* ---------------- the same shots in flat play (the game, ropes and hands draw too) ---------------- */
-  await enterXR(page, "desktop");
+  // the click starts the intro, which compiles the room and hand-off programs: minutes on a loaded software renderer, so click
+  // from the page (no auto-wait) and give the state change a long time
+  await page.waitForSelector("#playFlat:not([hidden]):not([disabled])", { timeout: 120000 });
+  await page.evaluate(() => document.querySelector("#playFlat").click());
+  await waitFor(page, () => G.mode === "desktop", null, 600000);
   await page.evaluate(() => G.test.skipIntro());
-  await waitState(page, { mode: "desktop", state: "play" }, 60000);
+  await waitState(page, { mode: "desktop", state: "play" }, 600000);
   const p = await measure(page, SHOTS);
   for (const n of SHOTS) console.log("INFO: play   " + n.padEnd(8) + " " + String(p[n].calls).padStart(4) + " draws " + String(p[n].tris).padStart(8) + " triangles");
   check(SHOTS.every((n) => p[n].calls <= PERF.drawsPerViewMax && p[n].tris <= PERF.trisPerViewMax), "in flat play every shot stays within the budget too", p);

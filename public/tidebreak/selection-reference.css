@@ -115,3 +115,5 @@
 
 @media(max-width:1199px){#menu .hero-picks button>span.hero-card-name{font:500 9px/1 Barlow,Arial,sans-serif;letter-spacing:0}#menu #role-filters button{font-size:8px;letter-spacing:0}}
 @media(min-width:1000px) and (max-width:1199px){#menu .arcade-motto,#menu .shore-memory{display:none}}
+
+#menu .fal-tidewarden-spell,#menu .fal-identity-spell{background-size:200% 200%!important;background-repeat:no-repeat!important}

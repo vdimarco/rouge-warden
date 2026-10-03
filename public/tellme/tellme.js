@@ -464,7 +464,7 @@ function startAmbience() {
   amb = src;
 }
 function sfx(name, rate = 1) {
-  if (!ctx || !buffers[name]) return;
+  if (!ctx || !buffers[name] || document.hidden) return;
   const src = ctx.createBufferSource();
   src.buffer = buffers[name];
   src.playbackRate.value = rate;

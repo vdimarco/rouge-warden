@@ -1,7 +1,8 @@
 // Checks comfort under IWER (an emulated Meta Quest 3): the vignette (speed, acceleration and smooth turning raise it,
-// it holds and falls back; its shape and render state), presets, seated play and calibrate, and in mixed reality the
-// reality fade from the room (SEM living_room: planes and meshes, near a wall, the middle of the room, the seated
-// rules, the blend) and the safety bubble when there is no room data.
+// it holds and falls back; its shape and render state), the comic speed lines (they grow from 14 to 30 m/s, follow the
+// setting, use only the direction on their sphere, and never touch the middle 50 degrees of the view), presets, seated
+// play and calibrate, and in mixed reality the reality fade from the room (SEM living_room: planes and meshes, near a wall,
+// the middle of the room, the seated rules, the blend) and the safety bubble when there is no room data.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/comfort.mjs   (SHOTS=<dir> saves pictures)
 import {
   checker, watchdog, newPage, open, close, state, waitState, waitFor, enterXR, freeze, frames, run, controller, head, recenter, lookQuat, shot,
@@ -19,6 +20,7 @@ try {
   await waitState(page, { state: "play" }, 60000);
   await freeze(page);
   await frames(page, 2);
+  check((await page.evaluate(() => G.settings.speedLines)) === true, "speedLines is on by default");
 
   // drive C.update by hand with the loop held: 20 ms steps
   const vig = await page.evaluate(() => {
@@ -81,10 +83,11 @@ try {
 
   // presets: the comfort radio (as on the title) sets the caps, the vignette, turning and aim
   const pre = await page.evaluate(() => {
-    const pick = (v) => { const r = document.querySelector("input[name=preset][value=" + v + "]"); r.checked = true; r.dispatchEvent(new Event("change")); return { preset: G.settings.preset, vignette: G.settings.vignette, turn: G.settings.turn, aim: G.settings.aim, speedCap: G.P.speedCap, fallCap: G.P.fallCap, minFov: G.comfort.info().minFov }; };
+    const pick = (v) => { const r = document.querySelector("input[name=preset][value=" + v + "]"); r.checked = true; r.dispatchEvent(new Event("change")); return { preset: G.settings.preset, vignette: G.settings.vignette, turn: G.settings.turn, aim: G.settings.aim, speedLines: G.settings.speedLines, speedCap: G.P.speedCap, fallCap: G.P.fallCap, minFov: G.comfort.info().minFov }; };
     const out = { comfortable: pick("comfortable"), intense: pick("intense"), moderate: pick("moderate") };
+    G.settings.speedLines = false; // the desktop preset must leave the headset's own choice alone
     G.comfort.applyPreset("desktop");
-    out.desktop = { preset: G.settings.preset, vignette: G.settings.vignette, aim: G.settings.aim };
+    out.desktop = { preset: G.settings.preset, vignette: G.settings.vignette, aim: G.settings.aim, speedLines: G.settings.speedLines };
     G.comfort.applyPreset("moderate");
     // intense has no vignette at all, however fast you go
     G.test.hold(true);
@@ -100,6 +103,41 @@ try {
   check(pre.intense.speedCap === 35 && pre.intense.fallCap === 35 && pre.intense.vignette === "off" && pre.intense.turn === "smooth" && !pre.intenseVig.visible && pre.intenseVig.alpha === 0, "the intense preset: caps 35, no vignette, smooth turning", { intense: pre.intense, vig: pre.intenseVig });
   check(pre.moderate.speedCap === 26 && pre.moderate.fallCap === 26 && pre.moderate.minFov === 75 && pre.moderate.preset === "moderate", "the moderate preset: caps 26, vignette medium (75°)", pre.moderate);
   check(pre.desktop.preset === "moderate" && pre.desktop.vignette === "off" && pre.desktop.aim === "high", "the desktop preset sets the flat-screen feel but is never saved as the choice", pre.desktop);
+  check(pre.comfortable.speedLines === false && pre.moderate.speedLines === true && pre.intense.speedLines === true && pre.desktop.speedLines === false, "the presets set speedLines: off for comfortable, on for moderate and intense, and the desktop preset leaves it alone", { c: pre.comfortable.speedLines, m: pre.moderate.speedLines, i: pre.intense.speedLines, d: pre.desktop.speedLines });
+  await frames(page, 2);
+
+  /* ---- the comic speed lines: they grow from 14 to 30 m/s and follow the setting ---- */
+  const sl = await page.evaluate(() => {
+    G.test.hold(true);
+    const C = G.comfort, out = {};
+    C.applyPreset("moderate");
+    const go = (n, s) => { for (let i = 0; i < n; i++) C.update(0.02, { vel: { x: 0, y: 0, z: -(s.speed || 0) }, speed: 0, accel: 0, yawRate: 0, snapped: false, play: true, ar: false, mode: "xr", ...s }); return C.info().lines; };
+    go(100, {}); // the real swing above left some lines behind: let them go
+    out.rest = go(20, {});
+    out.slow = go(100, { speed: 12 });
+    out.mid = go(100, { speed: 22 });
+    out.fast = go(100, { speed: 30 });
+    out.paused = go(100, { speed: 30, play: false });
+    out.fast2 = go(100, { speed: 30 });
+    C.settings.speedLines = false;
+    out.off = go(100, { speed: 30 });
+    C.settings.speedLines = true;
+    go(100, {});
+    const m = C.meshes.speedLines, mat = m.material;
+    out.mesh = { parent: m.parent === G.camera, side: mat.side, depthTest: mat.depthTest, depthWrite: mat.depthWrite, transparent: mat.transparent, order: m.renderOrder, culled: m.frustumCulled, raw: !!mat.isRawShaderMaterial, r: m.geometry.parameters.radius, vigOrder: C.meshes.vignette.renderOrder };
+    out.src = { vertex: mat.vertexShader, fragment: mat.fragmentShader };
+    go(100, {});
+    G.test.hold(false);
+    return out;
+  });
+  check(sl.rest.amount === 0 && !sl.rest.visible && sl.slow.amount === 0 && !sl.slow.visible, "no speed lines at rest or at 12 m/s (they start at 14)", { rest: sl.rest, slow: sl.slow });
+  check(near(sl.mid.amount, 0.5, 0.01) && sl.mid.visible && near(sl.fast.amount, 1, 0.01), "they grow with speed: half at 22 m/s, full at 30 m/s", { mid: sl.mid, fast: sl.fast });
+  check(sl.paused.amount === 0 && !sl.paused.visible && near(sl.fast2.amount, 1, 0.01), "outside play (a pause, the intro) there are none, and they come back", { paused: sl.paused, again: sl.fast2 });
+  check(sl.off.amount === 0 && !sl.off.visible && !sl.off.on, "settings.speedLines = false turns them off at any speed", sl.off);
+  check(sl.mesh.parent && sl.mesh.side === 1 && !sl.mesh.depthTest && !sl.mesh.depthWrite && sl.mesh.transparent && sl.mesh.order === 998 && sl.mesh.order < sl.mesh.vigOrder && !sl.mesh.culled && !sl.mesh.raw && sl.mesh.r < 1, "the lines are an inward sphere on the camera under the vignette (BackSide, no depth, renderOrder 998, ShaderMaterial)", sl.mesh);
+  // both eyes must see the same lines: the shader may only use the direction on its own sphere and uniforms
+  const shaderText = sl.src.vertex + sl.src.fragment;
+  check(!/gl_FragCoord|modelMatrix|viewMatrix|cameraPosition|resolution|gl_ViewID/.test(shaderText) && /varying vec3 vP/.test(shaderText) && /normalize\(vP\)/.test(shaderText), "the lines come from the direction on their sphere only (no screen position, no world position), so both eyes agree", shaderText.length);
   await frames(page, 2);
 
   // seated: calibrate stores the head height, and the view rises so the head stands at 1.65 m
@@ -127,6 +165,39 @@ try {
   check(page.errors.length === 0, "no errors in VR", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the VR run threw", e.stack || String(e)); }
+
+/* ================= flat screen: the speed lines never touch the middle 50 degrees ================= */
+try {
+  const page = await newPage({ width: 480, height: 270 });
+  await open(page, "?skipintro");
+  await enterXR(page, "desktop");
+  await page.evaluate(() => G.test.skipIntro());
+  await waitState(page, { mode: "desktop", state: "play" }, 120000);
+  // freeze the world (the loop still draws), then draw the same view with the lines off and on. The vignette is off on the flat screen.
+  const g = await page.evaluate(() => {
+    G.test.hold(true);
+    const cam = G.camera, aspect = cam.aspect, th = Math.tan((cam.fov * Math.PI) / 360), pts = [];
+    for (let j = 0; j < 11; j++) for (let i = 0; i < 17; i++) {
+      const nx = -0.97 + (i / 16) * 1.94, ny = -0.97 + (j / 10) * 1.94;
+      pts.push({ fx: (nx + 1) / 2, fy: (1 - ny) / 2, deg: (Math.atan(Math.hypot(nx * aspect * th, ny * th)) * 180) / Math.PI });
+    }
+    return { pts, fov: cam.fov, aspect, vignette: G.settings.vignette };
+  });
+  const draw = (on) => page.evaluate(({ on, grid }) => {
+    const C = G.comfort;
+    C.settings.speedLines = on;
+    for (let i = 0; i < 120; i++) C.update(0.02, { vel: { x: 0, y: 0, z: -30 }, speed: 30, accel: 0, yawRate: 0, snapped: false, play: true, ar: false, mode: "desktop" });
+    return G.test.sample(grid);
+  }, { on, grid: g.pts.map((p) => [p.fx, p.fy]) });
+  const off = await draw(false), on = await draw(true);
+  const diff = g.pts.map((p, i) => Math.abs(on[i][0] - off[i][0]) + Math.abs(on[i][1] - off[i][1]) + Math.abs(on[i][2] - off[i][2]));
+  const inner = g.pts.map((p, i) => ({ deg: p.deg, d: diff[i] })).filter((q) => q.deg <= 24.5);
+  const outer = g.pts.map((p, i) => ({ deg: p.deg, d: diff[i] })).filter((q) => q.deg >= 30);
+  check(g.vignette === "off" && inner.length >= 20 && inner.every((q) => q.d <= 2), "in the middle 50 degrees (" + inner.length + " sample points within 24.5 degrees of where you look) no pixel changes with the lines on", { vignette: g.vignette, worst: Math.max(...inner.map((q) => q.d)) });
+  check(outer.length >= 40 && outer.filter((q) => q.d > 40).length >= 3, "farther out the streaks show: " + outer.filter((q) => q.d > 40).length + " of " + outer.length + " sample points past 30 degrees change", { fov: g.fov, aspect: g.aspect });
+  check(page.errors.length === 0, "no errors on the flat screen", page.errors);
+  await page.context().close();
+} catch (e) { check(false, "the speed-line pixel run threw", e.stack || String(e)); }
 
 /* ================= AR with a room: the reality fade ================= */
 try {

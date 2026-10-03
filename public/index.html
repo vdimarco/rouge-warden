@@ -8,17 +8,18 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Cottage Arcade</title>
-<meta name="description" content="Play 11 Cottage Arcade games, grouped by style, with early prototypes collected in The Lab. Free in your browser.">
+<meta name="description" content="Play Cottage Arcade games, grouped by style, with early prototypes and toys in The Lab. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
 <meta property="og:title" content="Cottage Arcade">
-<meta property="og:description" content="Explore 11 arcade games across Cottage, Action, and Strategy collections, plus early prototypes in The Lab. Free in your browser.">
+<meta property="og:description" content="Explore arcade games across Cottage, Action, and Strategy collections, plus early prototypes and toys in The Lab. Free in your browser.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Monoton&family=Press+Start+2P&family=Bungee&display=swap" rel="stylesheet">
+<script src="/arcade/quiet.js"></script>
 <style>
 :root {
   --bg: #07050f;
@@ -47,7 +48,7 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 
 /* the room: a dark wall, and the classic arcade carpet on the floor */
-.room { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden;
+.room { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden; overflow: clip;
   background: radial-gradient(ellipse 80% 55% at 50% 0%, #2a1248 0%, rgba(20, 8, 40, 0.6) 45%, transparent 75%), linear-gradient(#0d0820, #07050f 62%); }
 .floor { position: absolute; left: -30%; right: -30%; bottom: -8%; height: 42%; transform-origin: 50% 0; transform: perspective(700px) rotateX(58deg); opacity: 0.9;
   background-color: #120a2a;
@@ -102,6 +103,16 @@ button { font: inherit; color: inherit; }
 }
 .cab.breakthrough .marquee b { font-size: calc(var(--h) * 0.03); letter-spacing: 0.01em; }
 .cab.breakthrough .screen { background: #d7ebe3; }
+/* The Lab and its toys, with Neon Ronin and Loon Echo (the Lab page lists both) and Tell Me (a Lab-group game that the Lab page does not list) */
+.cab.lab { --c1: #17414c; --c2: #f0b848; --glow: rgba(240, 184, 72, 0.5); }
+.cab.worlds { --c1: #477d62; --c2: #c7e5ac; --glow: rgba(199, 229, 172, 0.45); }
+.cab.neon { --c1: #512771; --c2: #caff54; --glow: rgba(202, 255, 84, 0.45); }
+.cab.echo { --c1: #287c79; --c2: #9ff2de; --glow: rgba(159, 242, 222, 0.45); }
+.cab.tellme { --c1: #24503d; --c2: #f4e4bd; --glow: rgba(244, 228, 189, 0.45); }
+.cab.plunge { --c1: #23598c; --c2: #ffce7e; --glow: rgba(255, 206, 126, 0.45); }
+.cab.creek { --c1: #256856; --c2: #92e8ce; --glow: rgba(146, 232, 206, 0.45); }
+.cab.tilt { --c1: #66328c; --c2: #f5a6e5; --glow: rgba(245, 166, 229, 0.45); }
+.cab.rules { --c1: #93632e; --c2: #ffd56b; --glow: rgba(255, 213, 107, 0.45); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
@@ -216,6 +227,8 @@ button { font: inherit; color: inherit; }
 @media (max-height: 520px) { .sign p { display: none; } .help { display: none; } .purse { min-height: 44px; padding: 4px 10px; } }
 @media (prefers-reduced-motion: reduce) { .sign h1 .dead, .screen::after, .osd .press, .cab .start, .slot span, .change.want { animation: none !important; } .row, .boot { transition: none; } }
 .cab.extra .marquee b { font-size: calc(var(--h) * 0.032); }
+.screen canvas.lenia-screen { opacity: 0; transition: opacity 0.6s; }
+.cab.live .screen canvas.lenia-screen { opacity: 1; }
 .machine-picker { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 9px; color: var(--muted); }
 .machine-picker select { min-height: 44px; max-width: 190px; padding: 8px; border: 1px solid #5b4e78; border-radius: 8px; color: var(--ink); background: #140c24; font: 13px system-ui, sans-serif; }
 @media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .machine-picker { flex-basis: 100%; justify-content: center; } }
@@ -293,15 +306,16 @@ button { font: inherit; color: inherit; }
       <div class="kick"></div>
       </article>
       <article class="cab vr" data-game="vr" data-url="/vr/" aria-label="In Full Swing: a VR game for Meta Quest">
-      <div class="marquee"><div><b>IN FULL SWING</b><small>META QUEST VR</small></div></div>
-      <div class="bezel"><div class="screen">
-      <canvas id="swing" width="240" height="198"></canvas>
-      <span class="vrtag">VR</span>
-      <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-      </div></div>
-      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-      <div class="door"><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button></div>
-      <div class="kick"></div>
+        <div class="marquee"><div><b>IN FULL SWING</b><small>META QUEST VR</small></div></div>
+        <div class="bezel"><div class="screen">
+          <img src="arcade/vr.webp" alt="">
+          <canvas class="art2" id="swing" width="240" height="198"></canvas>
+          <span class="vrtag">VR</span>
+          <div class="osd"><p class="hi"></p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+        </div></div>
+        <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+        <div class="door"><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button></div>
+        <div class="kick"></div>
       </article>
       <article class="cab olympus" data-game="olympus" data-url="/olympus/" aria-label="Olympus: Last Flame">
       <div class="marquee"><div><b>OLYMPUS</b><small>LAST FLAME</small></div></div>
@@ -347,6 +361,7 @@ button { font: inherit; color: inherit; }
       <article class="cab extra primordia" data-game="primordia" data-url="/primordia/" aria-label="Primordia: a Lenia arcade" style="--c1: #10393f; --c2: #3ff0e0; --glow: rgba(63, 240, 224, 0.45)">
       <div class="marquee"><div><b>PRIMORDIA</b><small>A LENIA ARCADE</small></div></div>
       <div class="bezel"><div class="screen"><img src="arcade/primordia.webp" alt="Glowing Orbium creatures and a red hunter in a living dish">
+      <canvas class="lenia-screen" width="240" height="198" aria-hidden="true"></canvas>
       <div class="osd"><p class="hi">EAT OR BE EATEN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
@@ -361,6 +376,96 @@ button { font: inherit; color: inherit; }
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into BREAKTHROUGH"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab lab" data-game="lab" data-url="/lab/" aria-label="The Lab: early prototypes and toys">
+      <div class="marquee"><div><b>THE LAB</b><small>EARLY PROTOTYPES</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/lab.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">TRY THE NEW TOYS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into The Lab"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into The Lab"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra worlds" data-game="worlds" data-url="/lab/worlds/" aria-label="Small Worlds: six little worlds to play with">
+      <div class="marquee"><div><b>SMALL WORLDS</b><small>SIX WAYS TO PLAY</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/worlds.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">SIX LITTLE WORLDS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Small Worlds"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Small Worlds"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab neon" data-game="neon" data-url="/neon/" aria-label="Neon Ronin: sword duels in a neon city">
+      <div class="marquee"><div><b>NEON RONIN</b><small>GYRO SWORD FIGHTING</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/neon.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">PARRY · CUT · REPEAT</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Neon Ronin"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Neon Ronin"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab echo" data-game="echo" data-url="/echo/" aria-label="Loon Echo: rescue the flock from the eel">
+      <div class="marquee"><div><b>LOON ECHO</b><small>BRING THE FAMILY HOME</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/echo.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">RESCUE THE FLOCK</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Loon Echo"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Loon Echo"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab tellme" data-game="tellme" data-url="/tellme/" aria-label="Tell Me: a card game against two critters">
+      <div class="marquee"><div><b>TELL ME</b><small>ONE CARD · TEN HANDS</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/tellme.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">READ THE CRITTERS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Tell Me"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Tell Me"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra plunge" data-game="plunge" data-url="/lab/plunge/" aria-label="Take the Plunge: a loon dives for speed">
+      <div class="marquee"><div><b>TAKE THE PLUNGE</b><small>DIVE · GLIDE · FLY SOUTH</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/plunge.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">CATCH THE NEXT LAKE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Take the Plunge"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Take the Plunge"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra creek" data-game="creek" data-url="/lab/creek/" aria-label="Up the Creek: your phone is the canoe paddle">
+      <div class="marquee"><div><b>UP THE CREEK</b><small>YOUR PHONE IS THE PADDLE</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/creek.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">RIDE THE RAPIDS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Up the Creek"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Up the Creek"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab tilt" data-game="tilt" data-url="/lab/tilt/" aria-label="Full Tilt: a pinball voyage through the stars">
+      <div class="marquee"><div><b>FULL TILT</b><small>A PINBALL VOYAGE</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/tilt.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">EXPLORE THE STARS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Full Tilt"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Full Tilt"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
+      <article class="cab extra rules" data-game="rules" data-url="/lab/rules/" aria-label="House Rules: build a Down the Drain layer">
+      <div class="marquee"><div><b>HOUSE RULES</b><small>BUILD A WORLD · PLAY IT</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/rules.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">MAKE YOUR OWN RULES</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into House Rules"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into House Rules"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
     </div>
@@ -462,6 +567,7 @@ const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough"] },
+  { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];
 const gameGroup = new Map(GROUPS.flatMap((group) => group.games.map((game) => [game, group])));
 for (const group of GROUPS) {
@@ -475,6 +581,21 @@ for (const group of GROUPS) {
     optgroup.appendChild(option);
   });
   machinePicker.appendChild(optgroup);
+}
+// a machine that no group names still shows in the picker, so none is ever out of reach
+{
+  const loose = cabs.map((cab, index) => [cab, index]).filter(([cab]) => !gameGroup.has(cab.dataset.game));
+  if (loose.length) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = "More";
+    for (const [cab, index] of loose) {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = $(".marquee b", cab).textContent;
+      optgroup.appendChild(option);
+    }
+    machinePicker.appendChild(optgroup);
+  }
 }
 const sectionBtns = $$(".section-nav button[data-section]");
 sectionBtns.forEach((button) => {
@@ -507,7 +628,7 @@ function pick(i, quiet) {
   const groupCabs = currentGroup ? cabs.filter((cab) => currentGroup.games.includes(cab.dataset.game)) : cabs;
   const groupPos = groupCabs.indexOf(cabs[sel]) + 1;
   $("#machineCount").textContent = currentGroup ? currentGroup.label.toUpperCase() + " · " + groupPos + " / " + groupCabs.length : (sel + 1) + " / " + cabs.length;
-  sectionBtns.forEach((button) => button.classList.toggle("on", currentGroup && button.dataset.section === currentGroup.id));
+  sectionBtns.forEach((button) => button.classList.toggle("on", !!currentGroup && button.dataset.section === currentGroup.id));
   cabs.forEach((c, k) => c.classList.toggle("on", k === sel));
   // on a phone the row slides so the chosen machine is centered
   const row = $("#row");
@@ -548,6 +669,8 @@ function pick(i, quiet) {
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
+// tabbing to a machine brings it to the middle (a mouse click on a side machine is left alone)
+cabs.forEach((c, k) => c.addEventListener("focusin", (e) => { if (sel !== k && e.target.matches(":focus-visible")) pick(k, true); }));
 cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); }));
 $("#prevBtn").onclick = () => pick(sel - 1);
 $("#nextBtn").onclick = () => pick(sel + 1);
@@ -706,14 +829,14 @@ addEventListener("keydown", (e) => {
 
 /* ---------------- attract mode ---------------- */
 // high scores from the games, kept in this browser
-{
+try {
   const gp = store.get("plungerd.meta.v1", null), dd = store.get("plungerd.drain.v1", null);
   $(".hi", cabs[0]).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
   const ds = store.get("plungerd.drain.scores.v1", null), top = Array.isArray(ds) && ds[0];
   const wd = store.get("plungerd.wild.v1", null), wc = $(".cab.wild");
   if (wc) $(".hi", wc).textContent = wd && wd.intro ? (wd.done ? "KING FLUSHED" : "BLIGHTS " + (wd.bosses || []).filter((b) => b !== "king").length + "/3") + " · LOONIES " + (wd.loonies || []).length + "/30" : "HI-SCORE: NONE YET";
   $(".hi", cabs[1]).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
-}
+} catch (e) { /* a save that cannot be read leaves the plain lines */ }
 // Get Plunger'd flips between its title and its bosses
 setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle("flip"); }, 3200);
 // Each new cabinet has its own animated attract screen.
@@ -819,9 +942,24 @@ for (const cv of $$(".mini-game")) {
     last = now; draw(now / 1000);
   })(0);
 }
+// The Lab and the games it lists: each hi-score line reads that game's own save. A missing or junk value keeps the plain line from the page.
 {
-  const best = store.get("neon-best", 0);
-  if (Number.isFinite(best) && best > 0) $(".hi", $(".cab.neon")).textContent = "BEST " + best.toLocaleString();
+  const n = (v) => (typeof v === "number" && isFinite(v) && v > 0 ? v : 0);
+  const hi = (game, text) => { const c = $('.cab[data-game="' + game + '"]'); if (c && text) $(".hi", c).textContent = text; };
+  const stat = (toy) => { const v = store.get("lab.stats." + toy, null); return v && typeof v === "object" ? v : {}; };
+  const neon = n(store.get("neon-best", 0)), echo = n(store.get("loon-echo-rescue-best", 0)), tilt = n(store.get("tilt.voyage.best", 0)), plunge = n(stat("plunge").best);
+  hi("neon", neon && "BEST " + neon.toLocaleString());
+  hi("echo", echo && "BEST " + echo.toLocaleString());
+  hi("tilt", tilt && "BEST " + tilt.toLocaleString());
+  hi("plunge", plunge && "BEST " + Math.round(plunge).toLocaleString() + " M");
+  hi("creek", n(stat("creek").runs) && "RUNS " + n(stat("creek").runs));
+  const cl = store.get("lab.rules.clears", null), clears = cl && typeof cl === "object" && !Array.isArray(cl) ? Object.values(cl).filter((v) => typeof v === "number").length : 0;
+  hi("rules", clears && "CLEARS " + clears);
+  // the Lab page counts play time for four toys (Full Tilt keeps only its best), Small Worlds keeps a best for each of its six worlds
+  const done = ["threadwake", "foldwild", "stormchoir", "borrowed", "season", "heartship"].filter((id) => n(store.get("small-worlds-best-" + id, 0))).length;
+  hi("worlds", done && "WORLDS DONE " + done + "/6");
+  const tried = [n(stat("plunge").ms), n(stat("creek").ms), n(stat("rules").ms), tilt].filter(Boolean).length;
+  hi("lab", tried && "TOYS TRIED " + tried + "/4");
 }
 // Down the Drain pours sand and water on its tiny screen, like the game
 {
@@ -887,71 +1025,138 @@ for (const cv of $$(".mini-game")) {
     setInterval(() => { if (!document.hidden) $(".screen", fc).classList.toggle("flip"); }, 3600);
   }
 }
-// In Full Swing: a skyline at sunset, the Needle, and a friend swinging on a plunger rope
+// In Full Swing: the screen shows the key art, and flips to a small comic-book animation of it: a skyline at sunset, the
+// Needle with the Porcelain King, and a friend swinging on a plunger rope. The static part is drawn once, the swing every frame.
 {
   const vc = $(".cab.vr"), cv = $("#swing");
   if (vc && cv) {
     const sv = store.get("plungerd.vr.v1", null), n = sv && Array.isArray(sv.clogs) ? sv.clogs.length : 0;
     $(".hi", vc).textContent = sv && sv.king ? "THE KING IS FLUSHED" : n ? "CLOGS " + n + "/12" : "PUT ON YOUR HEADSET";
-    const g = cv.getContext("2d"), W = cv.width, H = cv.height, sea = H * 0.8;
+    setInterval(() => { if (!document.hidden) $(".screen", vc).classList.toggle("flip"); }, 3400);
+    const g = cv.getContext("2d"), W = cv.width, H = cv.height, sea = Math.round(H * 0.8);
+    const INK = "#140a18", GOLD = "#ffd84a", WARM = "#ff9a4a", GREEN = "#9cff3a";
     // the skyline is fixed, so build it once from a seeded random
     let seed = 11;
     const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const nx = Math.round(W * 0.66), sunX = Math.round(W * 0.9), anchor = { x: Math.round(W * 0.27), y: sea - 104 };
     const towers = [];
     for (let x = -4; x < W;) {
-      const w = 12 + rnd() * 20, core = Math.exp(-(((x - W * 0.62) / (W * 0.22)) ** 2)), h = 18 + rnd() * 30 + core * 80;
+      const w = 12 + rnd() * 20, core = Math.exp(-(((x - W * 0.36) / (W * 0.24)) ** 2)), h = 18 + rnd() * 30 + core * 74;
+      if (Math.abs(x + w / 2 - nx) < 10) { x += w + 2; continue; }
       const lit = [];
-      for (let wy = sea - h + 5; wy < sea - 4; wy += 5) for (let wx = x + 3; wx < x + w - 3; wx += 4) if (rnd() < 0.45) lit.push(wx, wy);
-      towers.push({ x, w, h, lit });
+      for (let wy = sea - h + 5; wy < sea - 4; wy += 5) for (let wx = x + 3; wx < x + w - 3; wx += 4) if (rnd() < 0.5) lit.push(wx, wy, rnd() < 0.3);
+      towers.push({ x, w, h, lit, clog: h > 40 && rnd() < 0.3 });
       x += w + 1 + rnd() * 3;
     }
-    const nx = W * 0.2, anchor = { x: W * 0.46, y: sea - 96 };
-    function draw(t) {
-      const sky = g.createLinearGradient(0, 0, 0, sea);
-      sky.addColorStop(0, "#2c3f78"); sky.addColorStop(0.55, "#d97a4a"); sky.addColorStop(1, "#ffc27a");
-      g.fillStyle = sky; g.fillRect(0, 0, W, sea);
-      g.fillStyle = "#fff1c8"; g.beginPath(); g.arc(W * 0.12, sea - 16, 11, 0, 7); g.fill();
-      // the Needle: shaft, pod and antenna, with a blinking light on top
-      g.fillStyle = "#3a2440"; g.fillRect(nx - 3, sea - 150, 6, 150); g.fillRect(nx - 10, sea - 124, 20, 9); g.fillRect(nx - 1, sea - 186, 2, 36);
-      g.fillStyle = (t * 2) % 2 < 1 ? "#ff3a2a" : "#6a2030"; g.fillRect(nx - 1, sea - 188, 2, 2);
-      for (const b of towers) {
-        g.fillStyle = "#35223f"; g.fillRect(b.x, sea - b.h, b.w, b.h);
-        g.fillStyle = "#ffcf7a";
-        for (let i = 0; i < b.lit.length; i += 2) g.fillRect(b.lit[i], b.lit[i + 1], 2, 2);
+    // ink outline: a thick ink stroke under the colour
+    const inked = (c, path, lw, col) => { c.lineJoin = "round"; c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = lw + 2.4; path(); c.stroke(); c.strokeStyle = col; c.lineWidth = lw; path(); c.stroke(); };
+    const bg = document.createElement("canvas");
+    bg.width = W; bg.height = H;
+    {
+      const b = bg.getContext("2d");
+      // sky: violet, magenta, orange, yellow, then the Ben-Day dots (ink-violet, small toward the horizon)
+      const sky = b.createLinearGradient(0, 0, 0, sea);
+      sky.addColorStop(0, "#3b2380"); sky.addColorStop(0.38, "#d8457a"); sky.addColorStop(0.72, "#ff7a2a"); sky.addColorStop(1, GOLD);
+      b.fillStyle = sky; b.fillRect(0, 0, W, sea);
+      b.fillStyle = "rgba(59, 35, 128, 0.5)";
+      for (let y = 1, row = 0; y < sea * 0.7; y += 3, row++) for (let x = (row & 1) * 1.5; x < W; x += 3) { const r = 1.05 * (1 - y / (sea * 0.7)); if (r > 0.2) { b.beginPath(); b.arc(x, y, r, 0, 7); b.fill(); } }
+      // cloud streaks, inked
+      for (const [cx, cy, l, t] of [[30, 30, 70, -0.12], [120, 22, 60, 0.1], [178, 52, 66, -0.08], [60, 68, 54, 0.06]]) {
+        const path = () => { b.beginPath(); b.moveTo(cx - l / 2, cy); b.quadraticCurveTo(cx, cy - 8 + t * 40, cx + l / 2, cy + t * 30); };
+        inked(b, path, 2.4, "rgba(216, 69, 122, 0.85)");
       }
-      // the lake, with the sun and the lights mirrored in it
-      const lake = g.createLinearGradient(0, sea, 0, H);
-      lake.addColorStop(0, "#c7784a"); lake.addColorStop(1, "#2f3d6a");
-      g.fillStyle = lake; g.fillRect(0, sea, W, H - sea);
-      g.fillStyle = "rgba(255, 230, 170, 0.6)";
-      for (let k = 0; k < 6; k++) g.fillRect(W * 0.12 - 9 + Math.sin(t * 3 + k) * 3, sea + 3 + k * 6, 18 - k * 2, 2);
-      // the swing: a rope from a roof, a friend at the end, and a red cup stuck to the tower
-      const a = Math.sin(t * 1.7) * 0.8, len = 70, px = anchor.x + Math.sin(a) * len, py = anchor.y + Math.cos(a) * len;
-      g.strokeStyle = "#d8b872"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(anchor.x, anchor.y); g.lineTo(px, py); g.stroke();
-      g.fillStyle = "#d2202a"; g.fillRect(anchor.x - 3, anchor.y - 3, 6, 4);
-      g.fillStyle = "#1b1020"; g.fillRect(px - 3, py, 6, 9); g.fillRect(px - 2, py - 5, 4, 4);
-      g.fillRect(px - 3 + Math.sin(t * 3.4) * 2, py + 9, 2, 6); g.fillRect(px + 1 - Math.sin(t * 3.4) * 2, py + 9, 2, 6);
+      // the sun, low, with a hard ink edge
+      const glow = b.createRadialGradient(sunX, sea - 8, 4, sunX, sea - 8, 44);
+      glow.addColorStop(0, "rgba(255, 216, 74, 0.7)"); glow.addColorStop(1, "rgba(255, 216, 74, 0)");
+      b.fillStyle = glow; b.fillRect(sunX - 46, sea - 54, 92, 60);
+      b.fillStyle = GOLD; b.strokeStyle = INK; b.lineWidth = 2; b.beginPath(); b.arc(sunX, sea - 8, 12, 0, 7); b.fill(); b.stroke();
+      // the lake: violet bands, inked wave strokes, and a Ben-Day fade at the shore
+      const lake = b.createLinearGradient(0, sea, 0, H);
+      lake.addColorStop(0, "#9a3f86"); lake.addColorStop(1, "#2f2a70");
+      b.fillStyle = lake; b.fillRect(0, sea, W, H - sea);
+      b.strokeStyle = "rgba(20, 10, 24, 0.55)"; b.lineWidth = 1;
+      for (let y = sea + 5; y < H; y += 6) { b.beginPath(); for (let x = (y * 7) % 19; x < W; x += 19) { b.moveTo(x, y); b.lineTo(x + 8, y); } b.stroke(); }
+      // towers: a violet shadow body, a warm rim on the sun side, ink edges, lit windows
+      for (const t of towers) {
+        b.fillStyle = "#2a2058"; b.fillRect(t.x, sea - t.h, t.w, t.h);
+        b.fillStyle = "#1f3f6e"; b.fillRect(t.x + t.w * 0.55, sea - t.h, t.w * 0.45, t.h);
+        b.fillStyle = WARM; b.fillRect(t.x, sea - t.h, 2, t.h);
+        b.strokeStyle = INK; b.lineWidth = 1.6; b.strokeRect(t.x, sea - t.h, t.w, t.h);
+        for (let i = 0; i < t.lit.length; i += 3) { b.fillStyle = t.lit[i + 2] ? "#ffb32a" : "#ffcf5a"; b.fillRect(t.lit[i], t.lit[i + 1], 2, 2); }
+        if (t.clog) {
+          // a green-beamed toilet on the roof, like the clogs in the game
+          b.fillStyle = "rgba(156, 255, 58, 0.5)"; b.fillRect(t.x + t.w / 2 - 1, sea - t.h - 34, 2, 34);
+          b.fillStyle = "#f4f1ea"; b.strokeStyle = INK; b.lineWidth = 1.2; b.fillRect(t.x + t.w / 2 - 3, sea - t.h - 5, 6, 5); b.strokeRect(t.x + t.w / 2 - 3, sea - t.h - 5, 6, 5);
+          b.fillStyle = GREEN; b.fillRect(t.x + t.w / 2 - 3, sea - t.h, 6, 3);
+        }
+      }
+      // the Needle: a tapered shaft, the pod ring, and the Porcelain King on top with a crown
+      const shaft = () => { b.beginPath(); b.moveTo(nx - 3.4, sea); b.lineTo(nx - 1.4, sea - 118); b.lineTo(nx + 1.4, sea - 118); b.lineTo(nx + 3.4, sea); b.closePath(); };
+      b.fillStyle = "#3a2a6a"; shaft(); b.fill(); b.fillStyle = "#1f3f6e"; b.fillRect(nx, sea - 118, 2, 118); b.strokeStyle = INK; b.lineWidth = 1.6; shaft(); b.stroke();
+      b.fillStyle = GREEN; b.fillRect(nx - 1, sea - 112, 2, 40); b.fillRect(nx + 1, sea - 90, 1.5, 24);
+      b.fillStyle = "#c9c2dc"; b.strokeStyle = INK; b.lineWidth = 1.6;
+      b.beginPath(); b.ellipse(nx, sea - 121, 11, 4.4, 0, 0, 7); b.fill(); b.stroke();
+      b.fillStyle = "#ffcf5a"; b.fillRect(nx - 7, sea - 122, 14, 2);
+      b.fillStyle = "#f4f1ea"; b.beginPath(); b.rect(nx - 6, sea - 140, 12, 15); b.fill(); b.stroke();
+      b.fillStyle = "#b9b0d8"; b.fillRect(nx + 2, sea - 139, 3, 13);
+      b.fillStyle = GOLD; b.beginPath(); b.moveTo(nx - 6, sea - 140); b.lineTo(nx - 7, sea - 148); b.lineTo(nx - 3, sea - 144); b.lineTo(nx, sea - 150); b.lineTo(nx + 3, sea - 144); b.lineTo(nx + 7, sea - 148); b.lineTo(nx + 6, sea - 140); b.closePath(); b.fill(); b.stroke();
+      b.strokeStyle = INK; b.lineWidth = 1.4; b.beginPath(); b.moveTo(nx - 5, sea - 134); b.lineTo(nx - 1, sea - 132); b.moveTo(nx + 5, sea - 134); b.lineTo(nx + 1, sea - 132); b.stroke();
     }
     let t = 0, last = 0;
+    function draw(t) {
+      g.drawImage(bg, 0, 0);
+      // the King's eyes pulse green
+      g.fillStyle = "rgba(156, 255, 58, " + (0.65 + 0.35 * Math.sin(t * 4)) + ")";
+      g.fillRect(nx - 4.4, sea - 133.6, 2.6, 2); g.fillRect(nx + 1.8, sea - 133.6, 2.6, 2);
+      // the sun's road on the lake glitters
+      g.fillStyle = "rgba(255, 226, 120, 0.85)";
+      for (let k = 0; k < 7; k++) g.fillRect(sunX - 10 + k * 0.5 + Math.sin(t * 2.5 + k * 1.7) * 4, sea + 3 + k * 5, 19 - k * 2, 1.6);
+      // the swing: a rope from a roof, a friend at the end, and a red cup stuck to the tower, all inked
+      const a = Math.sin(t * 1.7) * 0.8, len = 70, px = anchor.x + Math.sin(a) * len, py = anchor.y + Math.cos(a) * len;
+      inked(g, () => { g.beginPath(); g.moveTo(anchor.x, anchor.y); g.lineTo(px, py - 4); }, 1.6, "#d8b872");
+      g.fillStyle = "#d2202a"; g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.ellipse(anchor.x, anchor.y - 1, 4, 3, 0, 0, 7); g.fill(); g.stroke();
+      const sw = Math.sin(t * 3.4) * 2.4, lean = Math.sin(a) * 3;
+      // legs (blue jeans), body (red shirt), head and hair, an arm up to the rope
+      inked(g, () => { g.beginPath(); g.moveTo(px - 1.5 + lean, py + 5); g.lineTo(px - 2.6 - sw + lean, py + 14); g.moveTo(px + 1.5 + lean, py + 5); g.lineTo(px + 2.6 + sw + lean, py + 14); }, 2.4, "#1f3f6e");
+      inked(g, () => { g.beginPath(); g.moveTo(px + lean * 0.5, py - 2); g.lineTo(px + lean, py + 6); }, 4.2, "#d2202a");
+      inked(g, () => { g.beginPath(); g.moveTo(px + lean * 0.4, py - 1); g.lineTo(px, py - 4); }, 1.8, "#d2202a");
+      g.fillStyle = "#3a2418"; g.strokeStyle = INK; g.lineWidth = 1.3; g.beginPath(); g.arc(px + lean * 0.2, py - 6.4, 2.8, 0, 7); g.fill(); g.stroke();
+    }
     draw(0);
     (function loop(now) { requestAnimationFrame(loop); if (reduceMotion || document.hidden || now - last < 33) return; last = now; t += 1 / 30; draw(t); })(0);
   }
 }
 // Crimson Rogue flips between the standoff and the grizzly
 setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimson"]')).classList.toggle("flip"); }, 4100);
-{
+try {
   const cr = store.get("crimson.best.v1", null);
   $(".hi", $('.cab[data-game="crimson"]')).textContent = cr && cr.time ? "BEST " + Math.floor(cr.time / 60) + ":" + String(cr.time % 60).padStart(2, "0") + " · " + cr.name.toUpperCase() : "GABE IS UNBEATEN";
-}
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
 
-{
+try {
  const best = store.get("olympus-legacy-v2", null);
  $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
-}
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
+// Primordia's screen runs a real Lenia dish while its cabinet is selected
 {
+  const cab = $('.cab[data-game="primordia"]'), cv = cab && $(".lenia-screen", cab);
+  let dish = null, loading = false, was = false;
+  if (cv && !reduceMotion) (function loop(now) {
+    requestAnimationFrame(loop);
+    const on = !document.hidden && cab.classList.contains("on");
+    if (!on) { if (was && dish) dish.pause(); was = false; return; }
+    was = true;
+    if (!dish) {
+      if (!loading) { loading = true; import("/primordia/attract.js").then((m) => { dish = m.mountAttract(cv); cab.classList.add("live"); }).catch(() => {}); }
+      return;
+    }
+    dish.frame(now);
+  })(0);
+}
+try {
   const best = store.get("primordia.best", 0);
   if (Number.isFinite(best) && best > 0) $(".hi", $('.cab[data-game="primordia"]')).textContent = "BEST " + best.toLocaleString();
-}
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);
