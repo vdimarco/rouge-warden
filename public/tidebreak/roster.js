@@ -10,7 +10,7 @@ const portrait=(id)=>{
 };
 export const rosterHTML=(selected,filter='All')=>HERO_IDENTITIES.filter(h=>filter==='All'||h.filters.includes(filter)).map(h=>`<button data-hero="${h.id}" aria-pressed="${h.id===selected}" aria-label="Select ${h.name}" style="--hero-color:${h.color}">${portrait(h.id)}<span class="hero-card-name">${h.name}</span></button>`).join('');
 export function selectionSpellArt(identity,slot,className=''){
- if(identity===0)return `<span class="painted-spell reference-spell ${className}" style="--spell-x:${[1116,1216,1316,1416][slot]}" aria-hidden="true"></span>`;
+ if(identity===0)return `<span class="painted-spell fal-spell ${className}" style="background-image:url('https://v3b.fal.media/files/b/0aacec9c/mTK3Bywrsvs_4iRGH9nJm_RuxIUFzP.webp');background-position:${['0% 0%','100% 0%','0% 100%','100% 100%'][slot]}" aria-hidden="true"></span>`;
  return spellArtHTML(HERO_IDENTITIES[identity].kit,slot,className);
 }
 export function heroPreviewHTML(identity,activeSlot=1){
