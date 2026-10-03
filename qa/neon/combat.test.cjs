@@ -179,3 +179,38 @@ test('a parry stops the blow dead, slows time, rings like metal and bursts into 
  const t0=run('enemy.timer');run('tick(.05,false)');run('tick(.05,false)');assert.equal(run('enemy.timer'),t0);
  run('tick(.05,false)');assert.ok(Math.abs(t0-run('enemy.timer')-.025)<1e-9);
 });
+
+test('a short sensor stall keeps the gyro; with no signal at all, the game pauses before touch takes over',async()=>{
+ const {run,events,elements,timers}=boot(DISTRICT);run('start()');await elements.get('motion').onclick();
+ const pose=()=>{run('now+=40');events.deviceorientation({alpha:0,beta:0,gamma:0})};pose();pose();pose();
+ // A 400 ms stall, as on a busy phone, clears the grip until the next sample. The 3 s check then fires.
+ run('now+=400');events.deviceorientation({alpha:0,beta:0,gamma:0});assert.equal(run('raw'),null);
+ timers.filter(t=>t.ms===3000).forEach(t=>t.f());assert.equal(run('gyro'),true);assert.equal(run('state'),'play');
+ const quiet=boot(DISTRICT);quiet.run('start()');await quiet.elements.get('motion').onclick();
+ quiet.timers.filter(t=>t.ms===3000).forEach(t=>t.f());
+ assert.equal(quiet.run('gyro'),false);assert.equal(quiet.run('state'),'pause');assert.match(quiet.elements.get('panel').innerHTML,/NO MOTION SIGNAL/);
+});
+
+test('hints name the controls the player has, and never Space on a touch screen',()=>{
+ const hints=(extra={})=>{const {run}=boot(DISTRICT,extra),seen=new Set();run('start()');
+  for(const attack of ['cut','overhead','lunge','sweep','delayed'])for(const dir of [0,1]){run(`duel.active=enemy;enemy.phase='windup';enemy.attack='${attack}';enemy.dir=${dir};enemy.period=1;enemy.timer=1;update(1/60)`);seen.add(run("$('hint').textContent"))}
+  run('duel.active=null;duel.open(enemy);update(1/60)');seen.add(run("$('hint').textContent"));return [...seen]};
+ const touch=hints();
+ for(const h of touch)assert.ok(!/space|key|click|upright|sideways/i.test(h),`touch hint: ${h}`);
+ for(const want of [/^HOLD GUARD AS THE BLADE FALLS$/,/PUSH STICK TO DODGE/,/WAIT, THEN HOLD GUARD/,/CUT NOW/])assert.ok(touch.some(h=>want.test(h)),`no touch hint matches ${want}`);
+ const mouse=hints({matchMedia:()=>({matches:true})});
+ assert.ok(mouse.some(h=>/SPACE TO ROLL/.test(h)));assert.ok(mouse.some(h=>/RIGHT-CLICK AS THE BLADE FALLS/.test(h)));
+});
+
+test('the HUD, the objective and the end card all count rounds',()=>{
+ const html=fs.readFileSync('public/neon/index.html','utf8');assert.match(html,/<small>ROUND<\/small><b id="wave">/);assert.ok(!/>[^<]*District|DISTRICT/.test(html));
+ const {run,elements}=boot(DISTRICT);run('start()');step(run,.1);assert.match(elements.get('objective').textContent,/^ROUND 1 /);
+ run('gameOver()');assert.match(elements.get('panel').innerHTML,/Round 1/);assert.ok(!/district/i.test(elements.get('panel').innerHTML));
+});
+
+test('the menu leads with the title, one line and both play buttons; the rest waits behind How to play',()=>{
+ const {elements}=boot(DISTRICT),html=elements.get('panel').innerHTML,howto=html.indexOf('<details');
+ assert.ok(howto>0);for(const id of ['gyroStart','start'])assert.ok(html.indexOf(`id="${id}"`)>0&&html.indexOf(`id="${id}"`)<howto,`${id} comes before How to play`);
+ for(const word of ['Mouse.','WASD','Space','Tablet.','wideStart'])assert.ok(html.indexOf(word)>howto,`${word} waits behind How to play`);
+ const words=html.slice(0,howto).replace(/<[^>]+>/g,' ').split(/\s+/).filter(w=>/\w/.test(w));assert.ok(words.length<=24,`${words.length} words before How to play`);
+});

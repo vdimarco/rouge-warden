@@ -87,3 +87,17 @@ h1 span{color:#e6dfad}.eyebrow{color:#e7c793}.primary{background:#e5dfac;color:#
 /* Mouse aiming spans the world; touch camera zones must not steal its input. */
 .mouse-mode #lookPad,.mouse-mode #walkStick{display:none!important;pointer-events:none}
 .mouse-mode #world{cursor:crosshair}
+
+/* Menu: on a phone, the title, one line and both play buttons fit the first screen. */
+#panel .pitch{font-size:15px;line-height:1.45;margin:0 0 6px;color:#eef3dc}
+#panel .best{font-size:12px;margin:12px 0 0;text-align:center;color:#d9e4cf}
+.howto{margin-top:14px;border-top:1px solid #ffffff2b}
+.howto summary{min-height:44px;line-height:44px;text-align:center;cursor:pointer;list-style:none;font-size:12px;letter-spacing:2px;color:#f0e6c8}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::after{content:'+';font-size:16px;margin-left:8px}.howto[open] summary::after{content:'−'}
+#panel .howto p{font-size:12px;line-height:1.5;margin:8px 0}.howto b{color:#e6dfad}
+[data-style="rick-morty"] .howto b{color:#bdff52}
+@container game (min-aspect-ratio:1/1){
+ #panel .menu-play{grid-column:2;grid-row:2 / span 2;align-self:center}
+ #panel .menu-more{grid-column:1 / -1}
+}
