@@ -8,6 +8,12 @@ Focused scenarios cover independent root/stun/silence/disarm behavior; cursor co
 
 `node --check` passes for main, simulation and renderer. `git diff --check` passes. No dependencies or art were added by this combat change. The branch includes the concurrent `main` update that renamed the game to Shore of the Ancients and polished its selection art.
 
+## Combat-fun follow-up QA
+
+GitHub Actions run 37129321686 passed on commit `40634656b4ac8ba99584cc81f15900be1f7c5d6a`. The focused check ran JavaScript syntax validation, `git diff --check`, `qa/tidebreak/combat-decisions.test.mjs`, `qa/tidebreak/tactical-combat.test.mjs`, and the Crimson opening-reward unit suite. The Shore tests now explicitly verify the 0.26 s committed-cast recovery, the 0.34 s ultimate recovery, zero added recovery for defensive casts, and bot/player recast blocking until the recovery expires.
+
+The Vercel preview for the validated gameplay head returned HTTP 200 for `/tidebreak/`. This verifies deployment and route availability only; it is not a rendered interaction check. The viewport, multi-touch, visual clarity and subjective timing playtests listed below remain open.
+
 ## Rendered checks blocked
 
 The intended flow is `/tidebreak/` → learn Baba Yaga's ground skill → aim/cast or cancel while moving → observe correct mana, cooldown and aim cues on desktop and touch layouts.
