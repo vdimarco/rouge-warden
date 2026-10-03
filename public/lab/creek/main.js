@@ -156,7 +156,7 @@ function happen(e) {
     case "rock": Sfx.play(sndRock, e.v); buzz("bump", 1); shake = Math.min(1, 0.3 + e.v * 0.2); break;
     case "bank": Sfx.play(sndBank); break;
     case "jam": Sfx.play(sndJam, e.v); buzz("bump", 0.8); shake = Math.min(1, 0.3 + e.v * 0.2); break;
-    // the roll 0.4 s ahead passes 50°: a rising whoop on that side, a wobble in the hand, and the red edge
+    // the capsize warning comes on (canoe.js): a rising whoop on that side, a wobble in the hand, and the red edge
     case "tip": Sfx.play(sndTip, e.side); buzz("thrash"); tickT = 0.12; break;
     case "capsize": Sfx.play((en, t) => splashSound(en, t, 1)); buzz("jolt"); toast("Swim. Back in a few metres up."); shake = 1; S.act("swim"); break;
     case "boof": boofStart(e.clean); S.act(e.clean ? "clean boof" : "boof"); break;
@@ -301,7 +301,7 @@ function finish() {
 }
 
 /* ---------------- drawing: from above, turned with the canoe ---------------- */
-let W = 1, Hh = 1, DPR = 1, shake = 0, clock = 0;
+let W = 1, Hh = 1, DPR = 1, shake = 0, clock = 0, wclock = 0;
 fitCanvas(canvas, (w, h, r) => { W = w; Hh = h; DPR = r; });
 const cam = { x: 0, y: 0, psi: 0, k: 20, init: false };
 const foam = [], rings = [], sprays = [];
@@ -341,7 +341,9 @@ function visible() {
 
 const hash = (a, b) => { const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
 function draw(alpha, dt) {
-  clock += dt;
+  // clock is real time; wclock and wdt are the world's time, which slows with the slow motion of a boof
+  const wdt = dt * timeScale;
+  clock += dt; wclock += wdt;
   shake = Math.max(0, shake - dt * 3);
   view(dt);
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -354,12 +356,12 @@ function draw(alpha, dt) {
   logJam(vis);
   ledgeWater(vis);
   eddies(vis);
-  foamFlow(vis, dt);
+  foamFlow(vis, wdt);
   rocks(vis);
   finishLine(vis);
-  effects(dt);
+  effects(wdt);
   boat();
-  mistFx(vis, dt);
+  mistFx(vis, wdt);
   g.setTransform(1, 0, 0, 1, 0, 0);
   rainbow(dt);
   slowStep(dt);
@@ -554,7 +556,7 @@ function ledgeWater(vis) {
   g.fillStyle = gr; lipBand(-12, 0, w); g.fill();
   g.fillStyle = "rgba(0,12,18,0.5)"; lipBand(0, 0.7, w); g.fill();
   for (let i = 0; i < 90; i++) {
-    const u = (hash(i, 1) * 2 - 1) * w, d = 0.5 + ((hash(i, 2) + clock * (0.25 + 0.2 * hash(i, 4))) % 1) * 5, r = 0.35 + 0.55 * hash(i, 3);
+    const u = (hash(i, 1) * 2 - 1) * w, d = 0.5 + ((hash(i, 2) + wclock * (0.25 + 0.2 * hash(i, 4))) % 1) * 5, r = 0.35 + 0.55 * hash(i, 3);
     g.fillStyle = `rgba(238,248,250,${0.6 * (1 - (d - 0.5) / 5)})`;
     g.beginPath(); g.arc(L.x + d * L.tx + u * ax, L.y + d * L.ty + u * ay, r, 0, Math.PI * 2); g.fill();
   }
@@ -571,7 +573,7 @@ function mistFx(vis, dt) {
   }
   for (let i = mist.length - 1; i >= 0; i--) {
     const p = mist[i];
-    p.t += dt * (slowT > 0 ? 0.35 : 1);
+    p.t += dt;
     if (p.t > p.max) { mist.splice(i, 1); continue; }
     p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 0.4;
     const k = p.t / p.max;
