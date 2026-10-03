@@ -23,6 +23,7 @@ const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
 let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, screenMovementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
+let autoPaused=false;
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
@@ -267,8 +268,19 @@ window.addEventListener('keydown', e => {
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { resetInput(); if (running && !paused && !resultShown) pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetInput(); if (running && !paused && !resultShown) pause(); } });
+const autoPause=()=>{
+  if(!running||paused||resultShown||$('sheet').open)return;
+  autoPaused=true;paused=true;resetInput();
+};
+const autoResume=()=>{
+  if(!autoPaused||!running||resultShown||$('sheet').open)return;
+  autoPaused=false;paused=false;last=performance.now();
+};
+document.documentElement.addEventListener('mouseleave',autoPause);
+document.documentElement.addEventListener('mouseenter',autoResume);
+window.addEventListener('blur',autoPause);
+window.addEventListener('focus',autoResume);
+document.addEventListener('visibilitychange',()=>document.hidden?autoPause():autoResume());
 window.addEventListener('resize', () => { resetInput(); renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
