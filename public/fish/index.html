@@ -3,25 +3,45 @@
 <head>
 <meta charset="utf-8">
 <script src="/arcade/quiet.js"></script>
+<script>
+// App mode: the Play app (a Trusted Web Activity) and the installed web app. It sets <html data-app="1">, and the page then drops every link to the arcade.
+// On when the address has source=play or source=pwa or app=1, the window is an app window, or the app was opened from Android. app=0 turns it off.
+// The answer lives in sessionStorage. localStorage would be shared with Chrome, and the website must keep its arcade links.
+(function () {
+  var on = false, q;
+  try { q = new URLSearchParams(location.search); } catch (e) { q = { get: function () { return null; } }; }
+  var src = q.get("source"), flag = q.get("app");
+  try {
+    if (flag === "0") sessionStorage.removeItem("fish.app");
+    else if (flag === "1" || src === "play" || src === "pwa" || (document.referrer || "").indexOf("android-app://") === 0 || matchMedia("(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)").matches) { on = true; sessionStorage.setItem("fish.app", "1"); }
+    else on = sessionStorage.getItem("fish.app") === "1";
+  } catch (e) { on = flag !== "0" && (flag === "1" || src === "play" || src === "pwa"); }
+  if (on) document.documentElement.dataset.app = "1";
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d2f38">
-<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Reel It In</title>
 <link rel="stylesheet" href="guide.css">
-<meta name="description" content="Your phone is the rod and the reel. Hold the line with your thumb, whip the phone to cast, and crank to reel in. Free in your browser.">
+<meta name="description" content="Your phone is the rod and the reel. Hold the line with your thumb, whip the phone to cast, and crank to reel in. Free to play.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/fish/">
 <meta property="og:title" content="Reel It In">
 <meta property="og:description" content="Your phone is the rod and the reel. Whip it to cast. Crank to reel in.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/arcade/fish.webp">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/nunito-var-latin.woff2">
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
 <style>
+/* The fonts are part of the page, so the game starts with no network. Nunito is one variable file; three faces point at it, so weight 700 still renders as 800, as it did with Google Fonts. */
+@font-face { font-family: "Alfa Slab One"; font-style: normal; font-weight: 400; font-display: swap; src: url("./fonts/alfa-slab-one-400-latin.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 600; font-display: swap; src: url("./fonts/nunito-var-latin.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 800; font-display: swap; src: url("./fonts/nunito-var-latin.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 900; font-display: swap; src: url("./fonts/nunito-var-latin.woff2") format("woff2"); }
 :root {
   --ink: #f6efd9; --muted: #b9c9c4; --deep: #0d2f38; --deep2: #134451; --glass: rgba(9, 34, 41, 0.78); --line: rgba(246, 239, 217, 0.18);
   --red: #e0453a; --brass: #e8b64a; --green: #7ac84a; --amber: #f0a52a; --danger: #ff5a4a;
@@ -31,6 +51,8 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* App mode (see the script in the head): no link leaves the game */
+html[data-app] .arcade-only { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--deep); color: var(--ink); font-family: var(--body); font-weight: 800;
   touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
 body { position: fixed; inset: 0; }
@@ -340,9 +362,10 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
         <button type="button" class="btn" id="freeBtn">Free fishing</button>
         <div class="row2"><button type="button" class="btn" id="placesBtn">Places<span class="newtag" id="placesNew" hidden>NEW</span></button><button type="button" class="btn" id="journalBtn">Journal</button></div>
         <div class="row2"><button type="button" class="btn" id="helpBtn">How to play</button><button type="button" class="btn alt" id="setBtn">Settings</button></div>
-        <div class="row2"><button type="button" class="btn alt" data-switch>Switch game</button><a class="btn alt" href="/">Back to the arcade</a></div>
+        <div class="row2 arcade-only"><button type="button" class="btn alt" data-switch>Switch game</button><a class="btn alt" href="/">Back to the arcade</a></div>
       </nav>
       <p class="best" id="tbest"></p>
+      <p class="legal"><a href="privacy.html">Privacy</a></p>
     </div>
   </section>
 
@@ -435,8 +458,31 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
         <label><span>Reel side<small>Choose which hand turns the reel.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
         <label><span>Art style</span><select id="optArtStyle"><option value="original">Original</option><option value="ghibli">Ghibli</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
+        <button type="button" class="setrow" id="privacyBtn"><span>Privacy<small>What the game keeps on this phone.</small></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button type="button" class="setrow" id="resetBtn"><span>Reset progress<small>Delete your fish, records and settings.</small></span></button>
       </div>
-      <div class="btns"><button type="button" class="btn" data-fullscreen hidden>Fullscreen</button><button type="button" class="btn go" data-close>Done</button></div>
+      <div class="warn" id="resetAsk" hidden>
+        <p>Delete all your fish, records and settings on this phone? You cannot undo this.</p>
+        <div class="btns"><button type="button" class="btn alt" id="resetNo">Keep them</button><button type="button" class="btn go" id="resetYes">Delete</button></div>
+      </div>
+      <div class="btns"><button type="button" class="btn arcade-only" data-fullscreen hidden>Fullscreen</button><button type="button" class="btn go" data-close>Done</button></div>
+    </div>
+  </section>
+
+  <!-- privacy: the short version. The full page is on the title screen, so a fight is never lost by leaving the game -->
+  <section class="screen dim" id="privacy" hidden>
+    <div class="card">
+      <h2>Privacy</h2>
+      <ul class="plain">
+        <li>The game has no account, no ads and no analytics.</li>
+        <li>Your fish, records and settings stay on this phone. The game sends them to nobody.</li>
+        <li>The motion sensors work on the phone only. Their data never leaves it.</li>
+        <li>The game can buzz the phone and keep the screen on while you fish.</li>
+        <li>The web host keeps normal server logs: your IP address, your browser and the time.</li>
+        <li>To delete your data, use Reset progress in Settings.</li>
+      </ul>
+      <p>You can read the full policy on the title screen.</p>
+      <div class="btns"><button type="button" class="btn go" id="privacyDone">Done</button></div>
     </div>
   </section>
 
@@ -450,9 +496,9 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
         <button type="button" class="btn" id="pHelp">How to play</button>
         <button type="button" class="btn" id="pJournal">Journal</button>
         <button type="button" class="btn" id="pSet">Settings</button>
-        <button type="button" class="btn" data-fullscreen hidden>Fullscreen</button>
+        <button type="button" class="btn arcade-only" data-fullscreen hidden>Fullscreen</button>
         <button type="button" class="btn alt" id="quitBtn">Quit to the title</button>
-        <button type="button" class="btn alt" data-switch>Switch game</button>
+        <button type="button" class="btn alt arcade-only" data-switch>Switch game</button>
       </div>
     </div>
   </section>
@@ -487,7 +533,21 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 
   <div id="dbg" hidden></div>
 </div>
-<script src="/arcade/switch.js"></script>
+<script>
+// The game switcher is for the website. In app mode it is not loaded, and the page keeps no link to the arcade.
+if (!document.documentElement.dataset.app) (function () { var s = document.createElement("script"); s.src = "/arcade/switch.js"; document.body.appendChild(s); })();
+</script>
+<script>
+// The service worker (sw.js) keeps the game in Cache Storage, so it starts with no network. It waits until the title shows, so it does not compete with the first load. ?nosw turns it off.
+(function () {
+  if (!("serviceWorker" in navigator) || /[?&]nosw(?:[=&]|$)/.test(location.search)) return;
+  var title = document.getElementById("title");
+  function register() { navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function () { /* the game works without it */ }); }
+  if (!title.hidden) return register();
+  var watch = new MutationObserver(function () { if (!title.hidden) { watch.disconnect(); register(); } });
+  watch.observe(title, { attributes: true, attributeFilter: ["hidden"] });
+})();
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

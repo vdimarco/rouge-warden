@@ -1,0 +1,21 @@
+name: Reel It In app files
+on:
+  pull_request:
+    paths: ['public/fish/**', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
+  push:
+    branches: [main]
+    paths: ['public/fish/**', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Manifest, icons, cached files, VERSION stamp, no other origin, privacy page. Node only: no browser.
+      - run: node qa/fish/pwa.mjs --static

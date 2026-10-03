@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134451"/><stop offset="1" stop-color="#0d2f38"/></linearGradient>
+    <radialGradient id="glow" cx="0.4" cy="0.3" r="0.5"><stop offset="0" stop-color="#9fd2dc" stop-opacity="0.28"/><stop offset="1" stop-color="#9fd2dc" stop-opacity="0"/></radialGradient>
+    <linearGradient id="deepen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134451" stop-opacity="0"/><stop offset="1" stop-color="#0d2f38" stop-opacity="0.9"/></linearGradient>
+  <clipPath id="rr"><rect width="512" height="512" rx="112"/></clipPath></defs><rect width="512" height="512" rx="112" fill="url(#sky)"/><rect width="512" height="512" rx="112" fill="url(#glow)"/><g clip-path="url(#rr)"><g transform="translate(0 0) scale(1)">
+    <path d="M388 282 V248" stroke="#0d2f38" stroke-width="24" stroke-linecap="round"/>
+    <path d="M388 282 V248" stroke="#f6efd9" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="388" cy="352" r="70" fill="#f6efd9"/>
+    <path d="M318 352 A70 70 0 0 1 458 352 Z" fill="#e0453a"/>
+    <circle cx="388" cy="352" r="70" fill="none" stroke="#0d2f38" stroke-width="24"/>
+    <path d="M318 352 H458" stroke="#0d2f38" stroke-width="14"/>
+    
+    <path d="M-380 396 Q-320 374 -260 396 T-140 396 T-20 396 T100 396 T220 396 T340 396 T460 396 T580 396 T700 396 T820 396 T940 396 V1000 H-380 Z" fill="#2f7f92"/>
+    <path d="M-380 396 Q-320 374 -260 396 T-140 396 T-20 396 T100 396 T220 396 T340 396 T460 396 T580 396 T700 396 T820 396 T940 396 V1000 H-380 Z" fill="url(#deepen)"/>
+    <path d="M-380 396 Q-320 374 -260 396 T-140 396 T-20 396 T100 396 T220 396 T340 396 T460 396 T580 396 T700 396 T820 396 T940 396" fill="none" stroke="#9fd2dc" stroke-width="11" stroke-linecap="round"/>
+    <g transform="translate(232 196) rotate(-28)">
+    <g stroke="#0d2f38" stroke-width="24" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M-104 -12 C-130 -30 -160 -56 -190 -72 C-180 -40 -168 -20 -164 0 C-168 20 -180 40 -190 72 C-160 56 -130 30 -104 12 Z" fill="#e0453a"/>
+      <path d="M-34 -68 C-22 -108 10 -128 54 -132 C48 -104 56 -84 80 -64 Z" fill="#e0453a"/>
+      
+      <path d="M170 4 C142 -46 82 -80 10 -78 C-50 -76 -90 -40 -112 -12 L-112 12 C-90 44 -50 72 10 70 C82 70 142 46 170 4 Z" fill="#e8b64a"/>
+    </g>
+    <clipPath id="fishBody"><path d="M170 4 C142 -46 82 -80 10 -78 C-50 -76 -90 -40 -112 -12 L-112 12 C-90 44 -50 72 10 70 C82 70 142 46 170 4 Z"/></clipPath>
+    <path d="M178 4 C100 40 0 32 -120 6 V90 H178 Z" fill="#f6efd9" clip-path="url(#fishBody)"/>
+    <path d="M170 4 C142 -46 82 -80 10 -78 C-50 -76 -90 -40 -112 -12 L-112 12 C-90 44 -50 72 10 70 C82 70 142 46 170 4 Z" fill="none" stroke="#0d2f38" stroke-width="24" stroke-linejoin="round"/>
+    <path d="M98 -50 C62 -20 62 28 98 56" fill="none" stroke="#0d2f38" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="126" cy="-20" r="24" fill="#f6efd9" stroke="#0d2f38" stroke-width="11"/>
+    <circle cx="131" cy="-19" r="11" fill="#0d2f38"/>
+    </g></g></g></svg>

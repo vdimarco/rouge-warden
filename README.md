@@ -374,11 +374,22 @@ An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is 
 
 **Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag. E also opens and closes the bail, but you never need it.
 
-**Phones and rotation.** The game stays upright on the phone. If the browser turns the page anyway (rotation lock off, or a big steering tilt), the game turns the picture back. On Android the game goes full screen and locks the page upright. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
+**Phones and rotation.** The game stays upright on the phone. If the browser turns the page anyway (rotation lock off, or a big steering tilt), the game turns the picture back. Full screen is your choice: tap **Fullscreen** in Settings or in the pause menu, and during motion play on Android the game then locks the page upright. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
 
 **Safety.** Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you.
 
 The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
+
+### Reel It In as an app
+
+Reel It In also runs as an app on its own, with no link to the rest of the arcade. The Android app for Google Play shows this page; its build files are in `play/`. Everything the page needs is in `public/fish/`: three.js (`lib/`), the fonts (`fonts/`), the icons (`icons/`), `manifest.webmanifest`, `sw.js`, and `privacy.html`. Nothing loads from another origin. The one file from outside the folder is `/arcade/quiet.js` (same site), which stops the sound of a hidden page.
+
+- **App mode.** The page runs in app mode when its address has `source=play` or `source=pwa` (or `app=1`), when the window is an app window (installed, full screen, or minimal), or when Android opened it. Add `app=0` to turn it off. In app mode the page hides the Switch game buttons, the Back to the arcade link and both Fullscreen buttons (every element with the class `arcade-only`), does not load `/arcade/switch.js`, shows the name of the place alone above the title, and uses words for a phone and for Android. The answer lives in `sessionStorage`, never in `localStorage`: Chrome shares `localStorage` between the app and the website, and the website must keep its arcade links.
+- **Back button.** In app mode, after the first tap, the page adds one history entry, so Back does not close the app by chance. Back closes a card, pauses a cast or a fight, or resumes. The catch card and the trips ignore it, and the results go to the title. On the title, the first Back says "Press Back again to leave", and the second Back closes the app.
+- **Offline.** After the first visit the game starts with no network. `sw.js` keeps the page, the scripts, three.js, the fonts, the icons, and the art in Cache Storage, and answers from there first. The clips are best effort: a clip that fails to load does not stop the install. A video asks for parts of a file, and the worker answers those from the cache too. A new version waits until the app closes, and takes over at the next launch. Add `?nosw` to skip the worker.
+- **The stamp rule.** `VERSION` in `sw.js` is `1.0.0+` and ten hex digits of a hash of the cached files. After you change any cached file (the page, the styles, `js/`, `lib/`, `fonts/`, `icons/`, the art, the clips, the manifest, `privacy.html`, or `/arcade/quiet.js`), run `node play/fish/stamp-sw.mjs`, and commit the new line. Without it, players keep the old files. The first number is the app version: change it by hand when you ship a build.
+- **Storage and privacy.** Settings has **Privacy**, a short card inside the game, and **Reset progress**, which asks first, then removes `fish.v1`, `fish.haptics` and `reel-it-in-guide-v1`, keeps `arcade.sound` (the whole arcade shares it), and loads the title again. The title links to `privacy.html`. In app mode the page asks the browser to keep its storage (`navigator.storage.persist()`) once, after the first tap. Before the first upload, replace `OWNER_CONTACT_EMAIL` in `privacy.html`.
+- **Icons.** `NODE_PATH=$(npm root -g) node play/fish/make-icons.mjs` draws the icons in `public/fish/icons/` (add `--preview sheet.png` for a look at them in launcher sizes).
 
 ## The lab
 
@@ -453,6 +464,9 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
 | `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
+| `public/fish/manifest.webmanifest`, `sw.js`, `privacy.html` | Reel It In as an app: the web manifest, the service worker that keeps the game for offline play, and the privacy policy |
+| `public/fish/lib/`, `fonts/`, `icons/` | Three.js r170 and its licence, the two fonts and their licences, and the app icons |
+| `play/fish/` | `make-icons.mjs` draws the Reel It In icons. `stamp-sw.mjs` writes the version of `sw.js` from the files it caches |
 | `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `places.js` and `places/` (the four maps: height, depth, zones, current, snags), `lake.js` (the map of the place you are at), `species.js` (the 26 fish and the junk), `fishing.js` (who lives where, the gear, the cover, and the legend at each place), `journey.js` (the trail of places, goals, ranks, and text), `save.js` (the save file), `world.js`, `world-look.js` and `world-*.js` (the 3D places and the fish bodies), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
@@ -536,6 +550,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
 | `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
 | `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
+| `qa/fish/pwa.mjs` | Reel It In as an app: the manifest and the icon sizes, that the files in `sw.js` are the files on disk, that `VERSION` follows them, that nothing loads from another origin, the privacy page, app mode on and off, the Back button, Reset progress, the privacy card, the service worker (control, an offline start that plays to the first cast, a 206 for a video Range, an update that replaces the old cache). `--static` runs the checks that need no browser, and the workflow `.github/workflows/fish-app.yml` runs them |
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 

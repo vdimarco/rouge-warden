@@ -14,7 +14,8 @@ export const SHOTS = process.env.SHOTS || "";
 export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "", save = null } = {}) {
   // WebGL runs on SwiftShader; the 2D canvases (the reel, the gauge) stay on the CPU, which is far faster than an emulated GPU
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"] });
-  const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true } : { viewport: { width, height }, ignoreHTTPSErrors: true });
+  // serviceWorkers "block": the page registers sw.js, and a worker would answer the requests that page.route() must see. qa/fish/pwa.mjs tests the worker.
+  const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true, serviceWorkers: "block" } : { viewport: { width, height }, ignoreHTTPSErrors: true, serviceWorkers: "block" });
   const page = await ctx.newPage();
   page.setDefaultTimeout(120000);
   const errors = [];

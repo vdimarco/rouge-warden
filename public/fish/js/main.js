@@ -34,6 +34,17 @@ const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
 // ?open opens every place for this page load. It is never saved.
 const OPEN_ALL = QS.has("open");
+// App mode: the Play app and the installed web app. The script in the head of index.html decides; the page then has no link to the arcade.
+const APP = !!document.documentElement.dataset.app;
+// In the app the words name the phone and Android, not the browser and Safari. The Android route to the site settings is UNCONFIRMED (no device test yet):
+// the Bubblewrap project opens the site settings from App info (manageSpaceActivity). Change this one line if the route differs.
+const APP_TEXT = {
+  denied: "The motion sensors are off for this app. To turn them on, touch and hold the app icon and tap App info. Then open Site settings and allow Motion sensors. You can play with touch now.",
+  blocked: "Motion is blocked for this app.",
+  buzz: "This phone cannot buzz.",
+  turned: "The touch was cut off. Try the cast again.",
+  noGL: "This phone cannot draw the lake.",
+};
 
 /* ---------------- saving ---------------- */
 // save.js reads and cleans the file; this is only the storage
@@ -42,7 +53,8 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage off */ } },
 };
 const save = loadSave(store.raw(SAVE_KEY));
-const persist = () => store.set(SAVE_KEY, save);
+let wiped = false;   // Reset progress has run: nothing writes the save again before the page loads anew
+const persist = () => { if (!wiped) store.set(SAVE_KEY, save); };
 const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
@@ -99,7 +111,7 @@ const ICON = {
 };
 
 /* ---------------- screens and messages ---------------- */
-const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results", "places", "travel", "arrive", "unlock"];
+const SCREENS = ["title", "setup", "help", "journal", "settings", "privacy", "pause", "catch", "results", "places", "travel", "arrive", "unlock"];
 let returnTo = null;
 let shownAt = 0, tapAt = -1e9, tapShown = false;
 function show(id) {
@@ -279,7 +291,7 @@ $("#useMotion").addEventListener("click", async () => {
   // "idle": the browser wants the question asked from a tap. Let them tap again
   if (st === "idle") { note.textContent = "Tap Use motion again."; return; }
   note.textContent = st === "denied"
-    ? "The motion sensors are off for this page. On an iPhone, close Safari fully (swipe it away), then open this page again and tap Allow. On Android, allow Motion sensors in the site settings. You can play with touch now."
+    ? (APP ? APP_TEXT.denied : "The motion sensors are off for this page. On an iPhone, close Safari fully (swipe it away), then open this page again and tap Allow. On Android, allow Motion sensors in the site settings. You can play with touch now.")
     : "This phone sends no motion data. You can play with touch.";
   $("#useMotion").hidden = true;
 });
@@ -359,7 +371,7 @@ function toTitle() {
   G.hour = startHour(G.place.id, "free");
   if (world) world.setHour(G.hour);
   Sound.setAmbience(true, G.hour);
-  $("#tkick").textContent = "GET PLUNGER'D · " + journeyOf(G.place.id).kick;
+  $("#tkick").textContent = (APP ? "" : "GET PLUNGER'D · ") + journeyOf(G.place.id).kick;
   $("#placesNew").hidden = !newPlaces(save).length;
   show("title");
   titleBest();
@@ -608,7 +620,7 @@ function unpinLine(e) {
   Haptics.mute(0);
   if (G.step !== "pinned" && G.step !== "loaded") return;
   // the browser took the touch away (often the page turning mid-swing): a fumble, not a cast
-  if (e.cancel) { Sound.sfx("slip"); resetCast(touchDevice ? "The screen turned. Turn on the rotation lock." : "The line slipped."); return; }
+  if (e.cancel) { Sound.sfx("slip"); resetCast(touchDevice ? (APP ? APP_TEXT.turned : "The screen turned. Turn on the rotation lock.") : "The line slipped."); return; }
   // with sensors, the exact input time of the lift matters; with a finger, the finger's own clock is the rod's clock
   release(sensing() ? e.t || now() : now());
 }
@@ -1008,13 +1020,14 @@ function syncSettings() {
   $("#optSound").checked = Sound.isOn();
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
-  $("#hapticNote").textContent = Haptics.kind === "none" ? "This browser cannot buzz." : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
+  $("#hapticNote").textContent = Haptics.kind === "none" ? (APP ? APP_TEXT.buzz : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
   $("#optAssist").checked = !!save.assist;
   $("#optInput").value = G.input === "motion" || save.input === "motion" ? "motion" : "touch";
   $("#optInput").disabled = !touchDevice || !Motion.available;
   $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : "Drag and flick on the screen.";
   $("#optQuality").value = save.quality;
   $("#optReelSide").value = save.reelSide;
+  $("#resetAsk").hidden = true; $("#resetBtn").hidden = false;
   syncArtStyle();
 }
 $("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
@@ -1031,7 +1044,7 @@ $("#optInput").addEventListener("change", async (e) => {
     const st = await Motion.request();
     if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
-    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? "Motion is blocked for this page." : "No motion data from this phone."); }
+    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? (APP ? APP_TEXT.blocked : "Motion is blocked for this page.") : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
   persist(); syncSettings(); relayout(true);
 });
@@ -1043,6 +1056,19 @@ function applyQuality() {
   G.stillDrawn = false;
   for (const w of [reelPanel, crank, rodPad, gauge]) if (w && w.resize) w.resize();
 }
+// The short privacy card opens inside the game, so a fight is never lost by leaving the page. returnTo stays as it is: Done goes back to Settings
+$("#privacyBtn").addEventListener("click", () => { Sound.sfx("ui"); show("privacy"); });
+$("#privacyDone").addEventListener("click", () => { Sound.sfx("uiBack"); syncSettings(); show("settings"); });
+// Reset progress asks first. It removes the save, the buzz switch and the guide switch, and keeps arcade.sound (the whole arcade shares it).
+// The page then loads anew, so no old state stays in memory, and the player lands on the title.
+const RESET_KEYS = [SAVE_KEY, "fish.haptics", "reel-it-in-guide-v1"];
+$("#resetBtn").addEventListener("click", () => { Sound.sfx("ui"); $("#resetBtn").hidden = true; $("#resetAsk").hidden = false; });
+$("#resetNo").addEventListener("click", () => { Sound.sfx("uiBack"); $("#resetAsk").hidden = true; $("#resetBtn").hidden = false; });
+$("#resetYes").addEventListener("click", () => {
+  wiped = true;
+  for (const k of RESET_KEYS) { try { localStorage.removeItem(k); } catch (e) { /* storage off */ } }
+  location.reload();
+});
 
 /* ---------------- pause ---------------- */
 function pause() {
@@ -1072,6 +1098,49 @@ document.addEventListener("visibilitychange", () => {
 // Safari: no pinch zoom
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
+/* ---------------- the Back button (app mode) ---------------- */
+// In the app the Back button would close it and drop a fight. So the page keeps one extra history entry. A Back press uses it up;
+// the page puts it back, then does what Escape does: closes a card, pauses, or resumes. The catch card and the trips ignore Back.
+// The results go to the title. On the title the first Back says so and leaves no entry, so the second Back closes the app.
+// The entry goes in after a tap: Chrome skips the entries that a page adds before any tap (its history manipulation rule).
+const back = { armed: !!(history.state && history.state.fish), timer: 0 };
+function armBack() {
+  if (!APP || back.armed) return;
+  try { history.pushState({ fish: 1 }, ""); back.armed = true; } catch (e) { /* no history: Back closes the app */ }
+}
+// Asks the browser to keep the save when it clears storage. Once, after the first tap.
+let askedPersist = false;
+function askPersist() {
+  if (askedPersist) return;
+  askedPersist = true;
+  try { const p = navigator.storage && navigator.storage.persist && navigator.storage.persist(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* not allowed */ }
+}
+// returns what Back did: "card", "overlay", "resume", "pause", "title", "warn" or "ignore"
+function backNow() {
+  if (!$("#privacy").hidden) { Sound.sfx("uiBack"); show("settings"); return "card"; }
+  const open = ["setup", "help", "journal", "settings", "places"].find((s) => !$("#" + s).hidden);
+  if (open) { Sound.sfx("uiBack"); if (open === "setup") setupThen = null; closeOverlay(); return "overlay"; }
+  if (G.paused) { resume(); return "resume"; }
+  if (!$("#title").hidden) {
+    toast("Press Back again to leave", 2200);
+    // the entry comes back when the words have gone, so a late Back warns again
+    clearTimeout(back.timer);
+    back.timer = setTimeout(armBack, 2400);
+    return "warn";
+  }
+  if (G.phase === "results" && !$("#results").hidden) { Sound.sfx("uiBack"); toTitle(); return "title"; }
+  if (G.phase === "cast" || G.phase === "reel" || G.phase === "lost") { Sound.sfx("ui"); pause(); return "pause"; }
+  return "ignore";
+}
+if (APP) {
+  addEventListener("pointerup", () => { armBack(); askPersist(); }, true);
+  addEventListener("popstate", () => {
+    if (!back.armed) return;
+    back.armed = false;
+    if (backNow() !== "warn") armBack();
+  });
+}
+
 /* ---------------- HUD ---------------- */
 // short: the HUD chip, which must fit beside the pause button and the clock on a narrow phone
 function hudText(short) {
@@ -1095,6 +1164,7 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
+  if (e.code === "Escape" && !$("#privacy").hidden) { Sound.sfx("uiBack"); show("settings"); return; }
   if (e.code === "Escape" && ["help", "journal", "settings", "places"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
   if (G.paused) return;
@@ -1559,7 +1629,11 @@ async function boot() {
     world = await createWorld($("#view"), { quality: quality(), place: G.place, style: save.artStyle });
   } catch (err) {
     console.error(err);
-    document.body.insertAdjacentHTML("beforeend", "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");
+    // the app also gets a button: the draw may work on a second try
+    document.body.insertAdjacentHTML("beforeend", APP
+      ? "<div style='position:fixed;inset:auto 0 36% 0;display:grid;justify-items:center;gap:16px;text-align:center;font:700 16px system-ui;color:#fff'><p style='margin:0'>" + APP_TEXT.noGL + "</p><button type='button' class='btn go' id='retryBtn' style='flex:none;min-width:160px'>Try again</button></div>"
+      : "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");
+    if (APP) $("#retryBtn").addEventListener("click", () => location.reload());
     return;
   }
   world.setHour(G.hour);
