@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createMatch,player,cast,requestCast,step,damage} from '../../public/tidebreak/sim.js';
 import {attackTiming} from '../../public/tidebreak/basic-attacks.js';
 import {CENTER} from '../../public/tidebreak/world.js';
+import {castTiming} from '../../public/tidebreak/combat-state.js';
 
 const setup=(hero=4)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,level:6,skillRanks:[1,1,1,1],nextShop:Infinity,power:0});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:900+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-120,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,...extra};s.units.push(t);p.target=t.id;return t;};
@@ -68,4 +69,10 @@ for(const hero of [0,8]){
  assert.equal([0,1,2].reduce((n,v)=>n+attackTiming(heavy,v).damage,0),3,'three-hit mean damage stays intact');
  const speed={...heavy,rate:.12,frenzy:2};assert(attackTiming(speed,2,1).windup<speed.rate*.48,'haste keeps impact before the next attack');assert(attackTiming(heavy,2,3).windup>.3);
 }
-console.log('PASS: independent controls, responsive root answers, locked-aim commitment, interruption costs, manual target failure, result feedback, neutral dodge/opening lifecycle and hero attack rhythms.');
+{
+ const regular=castTiming({hero:4},2), ultimate=castTiming({hero:4},3), defensive=castTiming({hero:7},2);
+ assert.equal(regular.recovery,.26,'longer committed cast gets a punish window');
+ assert.equal(ultimate.recovery,.34,'ultimate has the longest punish window');
+ assert.equal(defensive.recovery,0,'defensive cast remains immediate');
+}
+console.log('PASS: independent controls, responsive root answers, locked-aim commitment, interruption costs, manual target failure, result feedback, neutral dodge/opening lifecycle, punish windows and hero attack rhythms.');
