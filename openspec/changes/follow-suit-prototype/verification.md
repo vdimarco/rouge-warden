@@ -33,6 +33,13 @@
 - At stop 2 every host table clears between 71.5% and 79.0% of the time. `BALANCE.md` holds the reports and the method.
 - `qa/run.e2e.ts` passes with the tuned targets on seed QA0024. The run reaches stop 4 and loses there.
 
+## Close
+
+- `npm run check` in `follow-suit/`: the typecheck passes, 233 tests in 14 files pass and the production build succeeds.
+- `npm run qa` passes 24 checks against the local build: 11 table checks, 10 feel checks and 3 run checks.
+- The Vercel preview `follow-suit-ld9nfy334-vdimarcos-projects.vercel.app` builds commit eeaa0c2, the milestone 5 build. Vercel Authentication protects it. With a share link in `BASE_URL`, `npm run qa:url` passes 23 checks against it. The build file check runs only on a local build.
+- `openspec validate follow-suit-prototype --type change --strict` reports the change as valid. OpenSpec 1.14.0 ran through npx without `openspec init`.
+
 ## Not checked yet
 
 - A real phone with a thumb. Chromium emulates touch here.

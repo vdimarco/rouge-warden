@@ -38,7 +38,8 @@
 
 ## Close
 
-- [ ] All tests pass and the production build succeeds.
-- [ ] A Vercel preview URL is live.
+- [x] All tests pass and the production build succeeds.
+- [x] A Vercel preview URL is live.
 - [ ] A person plays a full run on a phone in portrait with one thumb.
-- [ ] Validate the specs and archive this change.
+- [x] Validate the change with the OpenSpec CLI.
+- [ ] Archive this change after the phone check.

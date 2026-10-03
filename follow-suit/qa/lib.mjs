@@ -1,6 +1,7 @@
 // Shared parts of the browser checks: the server, the browser, phone pages, layout measures and results.
 //
-// BASE_URL      check a deployed copy instead of serving dist/
+// BASE_URL      check a deployed copy instead of serving dist/. A Vercel share link
+//               (?_vercel_share=...) also works: the checks open it once to get the access cookie.
 // CHROMIUM_PATH use a Chromium binary that Playwright did not install
 // CHROMIUM_ARGS extra launch flags, separated by spaces
 
@@ -34,6 +35,8 @@ export async function startSession() {
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: (process.env.CHROMIUM_ARGS ?? '').split(' ').filter(Boolean),
   });
+  const storageState = await shareCookies(browser, base);
+  base = base.split('?')[0];
   const errors = [];
   const results = [];
 
@@ -49,6 +52,7 @@ export async function startSession() {
         deviceScaleFactor: 2,
         isMobile: true,
         hasTouch: true,
+        ...(storageState ? { storageState } : {}),
         ...options,
       });
       const page = await context.newPage();
@@ -79,6 +83,17 @@ export async function startSession() {
       return failed.length;
     },
   };
+}
+
+/** Opens a Vercel share link once and returns its access cookie, so new pages can open a protected preview. */
+async function shareCookies(browser, url) {
+  if (!new URL(url).searchParams.has('_vercel_share')) return null;
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(url);
+  const state = await context.storageState();
+  await context.close();
+  return state;
 }
 
 export async function shot(page, name) {

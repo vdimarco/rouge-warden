@@ -38,7 +38,7 @@ The check uses `playwright-core`, which does not download a browser:
 
 - If Playwright has no Chromium on your computer, run `npx playwright-core install chromium` once.
 - To use another Chromium binary, set `CHROMIUM_PATH` to its path.
-- To check a deployed copy, set `BASE_URL` and run `npm run qa:url`.
+- To check a deployed copy, set `BASE_URL` and run `npm run qa:url`. For a preview behind Vercel Authentication, set `BASE_URL` to a share link with `?_vercel_share=`. The checks open it once and keep its access cookie.
 
 ## Deploy to Vercel
 
