@@ -29,3 +29,46 @@
 
 #coach{width:190px;bottom:calc(330px + env(safe-area-inset-bottom))}
 @media(max-height:520px) and (min-width:600px){#coach{bottom:135px;left:140px;width:220px}}
+
+
+/* Thumb-first combat controls: large targets for simultaneous move + cast. */
+.abilities{width:252px;height:232px;right:max(12px,env(safe-area-inset-right));}
+.abilities .ability{width:72px;height:72px;padding:0;touch-action:none;overflow:visible;border-width:2px;background:#081925;box-shadow:inset 0 0 0 3px #071018,0 5px 16px #0008}
+.abilities .dash{top:0;right:2px}
+.abilities .surge{top:39px;left:86px}
+.abilities .signature{left:2px;bottom:17px}
+.abilities .ult{width:98px;height:98px;right:0;bottom:0;border-width:3px}
+.ability .hud-spell-art{position:absolute;inset:5px;display:block;border-radius:50%;background-size:200% 200%;background-repeat:no-repeat;overflow:hidden;filter:saturate(1.08) contrast(1.06);pointer-events:none}
+.ability.ult .hud-spell-art{inset:6px}
+.ability>svg{display:none!important}
+.ability span{bottom:-18px;max-width:116px;font-size:9px}
+.ability kbd{z-index:5;top:4px;right:6px;padding:2px 4px;border-radius:4px;background:#031018d9;color:#e8fbff;font-size:10px}
+.ability b:not(:empty){z-index:4;background:#05121dcc}
+.ranks{z-index:5;bottom:5px}
+.mana-cost{z-index:5}
+#skill-points{top:-58px;right:0;width:196px;min-height:48px;padding:9px 12px;border-radius:12px;touch-action:none;font-size:12px;box-shadow:0 5px 16px #0008}
+#skill-points.ready{transform:scale(1.03);box-shadow:0 0 0 2px #f0d58a55,0 6px 18px #0008,0 0 20px #f0ce6545}
+
+@media(max-width:430px){
+ .abilities{width:232px;height:216px;right:8px}
+ .abilities .ability{width:66px;height:66px}
+ .abilities .surge{left:78px;top:38px}
+ .abilities .signature{bottom:15px}
+ .abilities .ult{width:90px;height:90px}
+ #skill-points{width:184px;min-height:46px;top:-54px}
+}
+@media(max-width:370px){
+ .abilities{width:218px;height:205px;right:5px}
+ .abilities .ability{width:62px;height:62px}
+ .abilities .surge{left:72px;top:35px}
+ .abilities .ult{width:86px;height:86px}
+ #skill-points{width:170px;min-height:44px}
+}
+@media(max-height:520px) and (min-width:600px){
+ .abilities{width:226px;height:194px;right:12px;bottom:36px}
+ .abilities .ability{width:62px;height:62px}
+ .abilities .surge{left:75px;top:24px}
+ .abilities .signature{bottom:3px}
+ .abilities .ult{width:84px;height:84px}
+ #skill-points{width:176px;min-height:42px;top:-46px}
+}

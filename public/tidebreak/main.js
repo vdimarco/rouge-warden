@@ -7,7 +7,6 @@ import { loadArt, Renderer } from './illustrated-render.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
-import { skillIcon } from './skill-icons.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
 import { rosterHTML, heroPreviewHTML, selectionSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
@@ -75,7 +74,10 @@ function start() {
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
   $('controls').style.setProperty('--hero-color',HEROES[selected].color);
-  skillButtons.forEach((b,i)=> {b.style.backgroundImage='none';b.querySelector('svg')?.remove();b.insertAdjacentHTML('afterbegin',skillIcon(KITS[selected][i].icon));});
+  skillButtons.forEach((b,i)=> {
+    b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
+    b.insertAdjacentHTML('afterbegin',selectionSpellArt(selectedIdentity,i,'hud-spell-art'));
+  });
   updateUI(); learnSkills();
 }
 function learnSkills() {
