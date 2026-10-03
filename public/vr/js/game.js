@@ -327,7 +327,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         vec3 vel = vec3(cos(aRnd.y) * rk, 4.0 * H * (1.0 - 2.0 * t), sin(aRnd.y) * rk);
         vec3 dir = normalize(vel + vec3(1e-4));
         vec3 pp = position * s;
-        pp += dir * dot(pp, dir) * clamp(length(vel) * 0.1, 0.0, 1.3);
+        pp += dir * dot(pp, dir) * clamp(length(vel) * 0.05, 0.0, 0.6);
         vW = aBase + vec3(cos(aRnd.y) * r, y, sin(aRnd.y) * r) + pp;
         vN = normalize(normal + dir * dot(normal, dir) * -0.5);
         gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
