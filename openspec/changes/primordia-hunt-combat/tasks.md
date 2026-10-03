@@ -19,6 +19,6 @@
 - [x] Review the code adversarially and fix what it finds.
 - [x] Keep moves to each body's own tissue and keep a real tissue gap between bodies.
 - [x] How to play intro: scene script with a Node check, captions and callouts, first-PLAY and replay flow, phone layouts.
-- [ ] Browser smoke with the intro on desktop, phone portrait and phone landscape.
+- [x] Browser smoke with the intro on desktop, phone portrait and phone landscape.
 - [x] Measure balance with the bot against the acceptance targets; record the two misses and why the difficulty stays.
 - [ ] Validate and archive the specification.
