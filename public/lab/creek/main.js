@@ -1,9 +1,10 @@
 // Up the Creek: the page. The river and the canoe step at 120 Hz (river.js, canoe.js). You paddle with the phone
-// (paddle.js reads the pose from /fish/js/motion.js), with your thumbs (drag down on a side), or with keys. The view
-// looks down on the river and turns with the canoe, so its right side stays on the right of the screen.
+// (paddle.js reads the pose from /fish/js/motion.js), with your thumbs (drag down on the side you want to turn to), or
+// with keys. The view looks down on the river and turns with the canoe, so its right side stays on the right of the
+// screen.
 import { makeRiver, FINISH, START, JAM } from "./river.js";
 import { newCanoe, act, step, H, C, closestMiss } from "./canoe.js";
-import { createPaddle } from "./paddle.js";
+import { createPaddle, steer } from "./paddle.js";
 import { daySeed, hashParams } from "../kit/rng.js";
 import { startLoop, fitCanvas } from "../kit/loop.js";
 import { Sfx, hiss, tone, splash as splashSound, loonTremolo } from "../kit/sfx.js";
@@ -43,9 +44,11 @@ Motion.on((pose) => {
   if (mode === "motion") paddle.feed(pose);
 });
 
+let lastAct = null;
 function doAction(a, from) {
   if (a.type === "brace") { if (from === "motion") braceSide = a.on ? a.side : 0; if (a.on) Sfx.play(sndBrace); return; }
   act(canoe, a);
+  lastAct = { ...a, from };
   if (a.type === "stroke" || a.type === "back") {
     strokeAnim = { side: a.side, t: 0, back: a.type === "back", power: a.power ?? 1 };
     Sfx.play(sndStroke, a.power ?? 1);
@@ -55,7 +58,9 @@ function doAction(a, from) {
   } else if (a.type === "j") { Sfx.play(sndJ); S.act("j"); }
 }
 
-/* ---------------- thumbs: drag down on a side to stroke, hook out for a J, drag up to back-paddle, hold to brace ---------------- */
+/* ---------------- thumbs: drag down on the side you want to turn to, hook out for a J, drag up to back-paddle, hold to brace ---------------- */
+// The side you drag is the way the bow turns (paddle.js steer()): a new player expects that, and a bot that drags the
+// other way stalls near the top (qa/lab/creek.thumbs.mjs). The paddle then goes in on the other side, as it must.
 const touches = new Map();
 canvas.addEventListener("pointerdown", (e) => {
   if (onUi(e) || phase !== "play") return;
@@ -71,9 +76,9 @@ canvas.addEventListener("pointermove", (e) => {
   const v = Math.hypot(e.clientX - q.px, e.clientY - q.py) / Math.max(8, now - q.pt);   // px per ms
   q.px = e.clientX; q.py = e.clientY; q.pt = now;
   if (q.bracing) return;
-  if (!q.stroked && dy > 28) { q.stroked = true; doAction({ type: "stroke", side: q.side, power: clamp(v / 0.9, 0.35, 1.4) }, "touch"); }
-  else if (!q.stroked && dy < -28) { q.stroked = true; doAction({ type: "back", side: q.side, power: clamp(v / 0.9, 0.35, 1.2) }, "touch"); }
-  else if (q.stroked && !q.hooked && q.side * dx > 26 && dy > 20) { q.hooked = true; doAction({ type: "j", side: q.side, power: 1 }, "touch"); }
+  if (!q.stroked && dy > 28) { q.stroked = true; doAction(steer("stroke", q.side, clamp(v / 0.9, 0.35, 1.4)), "touch"); }
+  else if (!q.stroked && dy < -28) { q.stroked = true; doAction(steer("back", q.side, clamp(v / 0.9, 0.35, 1.2)), "touch"); }
+  else if (q.stroked && !q.hooked && q.side * dx > 26 && dy > 20) { q.hooked = true; doAction(steer("j", q.side, 1), "touch"); }
 });
 const lift = (e) => { const q = touches.get(e.pointerId); if (q && q.bracing) touchBrace = 0; touches.delete(e.pointerId); };
 window.addEventListener("pointerup", lift);
@@ -86,17 +91,20 @@ setInterval(() => {
   }
 }, 40);
 
-/* ---------------- keys ---------------- */
+/* ---------------- keys: A and D turn, W paddles straight, Q and E J-stroke, S backs, hold Z or C to brace ---------------- */
+// Like thumbs, a key turns the bow toward its side. W and S take turns on the two sides, so they go straight.
 const held = new Set();
+let wSide = 1, sSide = 1;
 window.addEventListener("keydown", (e) => {
   if (phase !== "play" || e.repeat) return;
   const k = e.key.toLowerCase();
-  const stroke = (side, j) => { doAction({ type: "stroke", side, power: 1 }, "key"); if (j) setTimeout(() => doAction({ type: "j", side, power: 1 }, "key"), 150); };
+  const stroke = (toward, j) => { doAction(steer("stroke", toward, 1), "key"); if (j) setTimeout(() => doAction(steer("j", toward, 1), "key"), 150); };
   if (k === "a" || k === "arrowleft") stroke(-1, false);
   else if (k === "d" || k === "arrowright") stroke(1, false);
+  else if (k === "w" || k === "arrowup") { wSide = -wSide; doAction({ type: "stroke", side: wSide, power: 1 }, "key"); }
   else if (k === "q") stroke(-1, true);
   else if (k === "e") stroke(1, true);
-  else if (k === "s" || k === "arrowdown") doAction({ type: "back", side: paddle.side, power: 1 }, "key");
+  else if (k === "s" || k === "arrowdown") { sSide = -sSide; doAction({ type: "back", side: sSide, power: 1 }, "key"); }
   else if (k === "z") { held.add("z"); keyBrace = -1; Sfx.play(sndBrace); }
   else if (k === "c") { held.add("c"); keyBrace = 1; Sfx.play(sndBrace); }
   else if (k === "r") begin();
@@ -203,14 +211,16 @@ restart.addEventListener("click", () => { if (phase === "play") begin(); });
 const prog = $("#prog"), progFill = prog.querySelector("i"), progMe = prog.querySelector("b");
 const along = (y) => clamp((y - START) / (FINISH - START), 0, 1) * 100;
 const dots = river.targets.map((q) => { const d = document.createElement("em"); d.style.left = along(q.ey).toFixed(1) + "%"; prog.append(d); return d; });
+// the start card says only what you need for your device; the game shows the rest when you need it
+const coarse = matchMedia("(pointer: coarse)").matches;
 const card = startCard({
   title: "Up the Creek",
-  pitch: "Your phone is the paddle. Run the rapid, and catch the eddies behind the rocks: the calm water where the river turns back.",
-  how: [
-    "<b>Phone:</b> tip it to a side and rock its top edge to stroke on that side. Twist at the end for a J-stroke. Tip it hard and hold it still to brace.",
-    "<b>Thumbs:</b> drag down on a side to stroke there, hook out at the end for a J, drag up to back-paddle, hold still to brace.",
-    "<b>Keys:</b> A and D stroke, Q and E J-stroke, S back, hold Z or C to brace.",
-    "A stroke on the right turns the bow left. Crossing into an eddy fast can tip you: brace as you cross.",
+  pitch: `${today ? "Today's river" : "A shared river"}. Run the rapid, and catch the eddies: the calm water behind the rocks.`,
+  how: coarse ? [
+    "<b>Thumbs:</b> drag down on the side you want to turn to. Hold a thumb still to brace.",
+    "<b>Phone:</b> tip it to a side and rock it like a paddle. Tip it hard and hold to brace.",
+  ] : [
+    "<b>Keys:</b> A and D turn, W paddles straight. Hold Z or C to brace.",
   ],
   button: "Paddle",
   motion: true,
@@ -244,7 +254,7 @@ function begin(m) {
   card.hide();
   endC.hide();
   cam.init = false;
-  if (mode === "touch" && matchMedia("(pointer: coarse)").matches) toast("Drag down on a side to paddle.", 2200);
+  if (mode === "touch") toast(coarse ? "Drag down on a side to turn that way." : "A and D turn. W paddles straight.", 2400);
 }
 function finish() {
   phase = "end";
@@ -703,6 +713,8 @@ window.QA = {
   snap() { cam.init = false; },
   // the eddy you sit in, as the ring shows it: how full, and what the catch still needs
   get hold() { const c = canoe; return { id: c.eddyQ ? c.eddyQ.id : null, fill: holdFill(), bow: c.eddyBow, slow: c.eddySlow, holding: c.holding, caught: c.caught.size }; },
+  // the last paddle action: {type, side, power, from}
+  get lastAct() { return lastAct; },
   // the arrow to downstream is on (or comes on with the next frame)
   get lost() { return phase === "play" && lostT > 0.8; },
   seed,

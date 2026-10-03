@@ -1,11 +1,11 @@
 // Drives Up the Creek in a real browser: NODE_PATH=$(npm root -g) node qa/lab/creek.e2e.mjs (serve public/ first)
 // 1. A phone paddle: a virtual phone sends real orientation and motion events. The first stroke teaches the grip, a
 //    rock tipped to the right is a stroke on the right (the bow turns left), and a hard tilt held still braces.
-// 2. Thumbs on a phone: drag down on the right half to stroke there.
+// 2. Thumbs on a phone: drag down on the side you want to turn to (the paddle goes in on the other side).
 // 3. Catching an eddy: the ring is empty while the bow points downstream, and it fills while you hold the catch.
 // 4. No lost runs: the log jam stops a canoe that paddles upstream and an arrow points downstream, Restart in the top
 //    bar starts again at once, and Share on the end card gives a link to today's river.
-// 5. Keys on a computer: D strokes on the right, C braces. The end card says how the run went.
+// 5. Keys on a computer: D turns the bow right, W paddles straight, C braces. The end card says how the run went.
 // SHOTS=<folder> saves screenshots. Exit code 1 on failure.
 import { open, until, pointer, drag, shot, sleep, report, PHONE, DESK, BASE } from "./lib.mjs";
 
@@ -76,11 +76,12 @@ R.section("Thumbs on a phone");
   const b = await page.evaluate(() => ({ n: QA.c.strokes, psi: QA.c.psi }));
   await drag(page, PHONE.width * 0.8, PHONE.height * 0.45, PHONE.width * 0.8, PHONE.height * 0.62, 160);
   await sleep(300);
-  const a = await page.evaluate(() => ({ n: QA.c.strokes, psi: QA.c.psi }));
-  R.check(a.n === b.n + 1 && a.psi < b.psi, "a drag down on the right half is a stroke on the right, and the bow turns left");
+  const a = await page.evaluate(() => ({ n: QA.c.strokes, psi: QA.c.psi, last: QA.lastAct }));
+  R.check(a.n === b.n + 1 && a.psi > b.psi && a.last.type === "stroke" && a.last.side === -1, "a drag down on the right half turns the bow right: the paddle goes in on the left");
   await drag(page, PHONE.width * 0.2, PHONE.height * 0.62, PHONE.width * 0.2, PHONE.height * 0.45, 160);
   await sleep(200);
-  R.check(await page.evaluate(() => QA.c.strokes) === a.n + 1, "a drag up is a back stroke");
+  const back = await page.evaluate(() => ({ n: QA.c.strokes, last: QA.lastAct }));
+  R.check(back.n === a.n + 1 && back.last.type === "back" && back.last.side === -1, "a drag up on the left half is a back stroke on the left, which turns the bow left");
   // hold still: a brace
   await pointer(page, "pointerdown", PHONE.width * 0.25, PHONE.height * 0.5);
   await sleep(400);
@@ -187,7 +188,11 @@ R.section("Keys on a computer");
   const b = await page.evaluate(() => QA.c.psi);
   await page.keyboard.press("d");
   await sleep(400);
-  R.check(await page.evaluate((b) => QA.c.strokes === 1 && QA.c.psi < b, b), "D is a stroke on the right, and the bow turns left");
+  R.check(await page.evaluate((b) => QA.c.strokes === 1 && QA.c.psi > b && QA.lastAct.side === -1, b), "D turns the bow right: the paddle goes in on the left");
+  await page.keyboard.press("w");
+  const w1 = await page.evaluate(() => QA.lastAct.side);
+  await page.keyboard.press("w");
+  R.check(await page.evaluate((w1) => QA.c.strokes === 3 && QA.lastAct.side === -w1, w1), "W paddles on each side in turn, so it goes straight");
   await page.keyboard.down("c");
   await sleep(100);
   R.check(await page.evaluate(() => QA.c.brace === 1), "holding C braces on the right");
