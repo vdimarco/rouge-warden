@@ -51,7 +51,7 @@ for(const hero of [0,8]){
  assert(requestCast(s,p,2,{x:1,y:0,distance:250},{bot:true}));assert.equal(p.castIntent.shape.targetId,a.id);
  a.y+=160;b.y=p.y;advance(s,.15);assert.equal(p.castIntent.shape.y,a.y,'targeted warning follows its selected creature');
  advance(s,.4);assert(hero===0?a.omen:a.soulThread);assert.equal(hero===0?b.omen:b.soulThread,undefined,'a crossing creature cannot steal the targeted cast');
- advance(s,.2);p.cd[2]=0;const mana=p.mana;assert(requestCast(s,p,2,{x:250,y:160,distance:Math.hypot(250,160)},{bot:true}));
+ advance(s,.27);p.cd[2]=0;const mana=p.mana;assert(requestCast(s,p,2,{x:250,y:160,distance:Math.hypot(250,160)},{bot:true}));
  a.x+=700;advance(s,.55);assert.equal(p.cd[2],0);assert(p.mana>=mana,'leaving target range cancels without spending resources');
 }
 {
