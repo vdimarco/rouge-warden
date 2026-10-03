@@ -37,7 +37,7 @@ function togglePause(force){
 pauseButton.onclick=()=>togglePause();addEventListener('blur',()=>togglePause(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)togglePause(true);});
 function finish(){
   let best=0;try{best=Number(localStorage.getItem('loon-echo-rescue-best'))||0;best=Math.max(best,run.score);localStorage.setItem('loon-echo-rescue-best',String(best));}catch{}
-  panel.innerHTML=`<span class="eyebrow">${run.won?'EVERY LITTLE WEIRDO ACCOUNTED FOR':'THE EEL HAD OTHER PLANS'}</span><h1>${run.won?'FAMILY<br>REUNION!':'RESCUE<br>INTERRUPTED.'}</h1><div class="result">${run.saved} / ${MAX_CHICKS}</div><p>chicks safe at the nest</p><p><b>${run.score.toLocaleString()} points</b> · ${Math.floor(run.elapsed)} seconds<br>${run.trips} deliveries · Best ${best.toLocaleString()}</p><p class="small">${run.won?'Try fewer trips for bigger delivery bonuses.':'Bank small groups to restore energy. Dive to escape; honk to stun the eel.'}</p><button id="again">RESCUE ANOTHER FAMILY</button>`;
+  panel.innerHTML=`<span class="eyebrow">${run.won?'EVERY LITTLE WEIRDO ACCOUNTED FOR':'THE EEL HAD OTHER PLANS'}</span><h1>${run.won?'FAMILY<br>REUNION!':'RESCUE<br>INTERRUPTED.'}</h1><div class="result">${run.saved} / ${MAX_CHICKS}</div><p>chicks safe at the nest</p><p><b>${run.score.toLocaleString()} points</b> · ${Math.floor(run.elapsed)} seconds<br>${run.trips} deliver${run.trips===1?'y':'ies'} · Best ${best.toLocaleString()}</p><p class="small">${run.won?'Try fewer trips for bigger delivery bonuses.':'Bank small groups to restore energy. Dive to escape; honk to stun the eel.'}</p><button id="again">RESCUE ANOTHER FAMILY</button>`;
   panel.hidden=false;controls.hidden=true;pauseButton.hidden=true;message.textContent='';$('#again').onclick=start;tone(run.won?920:190,.5,'triangle');
 }
 function consumeEvents(){for(const e of run.events.splice(0)){
@@ -53,7 +53,7 @@ function updateHud(){
   $('#progress').value=run.saved;$('#breath').value=run.breath;
   $('#breath-label').textContent=run.diving?`BREATH ${run.breath.toFixed(1)}s`:run.exhausted?'CATCH YOUR BREATH':'DIVE BREATH';
   dive.textContent=run.diving?'SURFACE ↑':'DIVE ↓';dive.classList.toggle('active',run.diving);dive.disabled=paused||(!run.diving&&(run.exhausted||run.breath<.8));
-  call.disabled=paused||run.diving||run.cooldown>0;call.classList.toggle('active',run.call>0);call.textContent=run.cooldown>0?`HONK ${Math.ceil(run.cooldown)}s`:'HONK!';
+  call.disabled=paused||run.diving||run.cooldown>0;call.classList.toggle('active',run.call>0);call.textContent=run.cooldown>0?`HONK ${Math.ceil(run.cooldown)}s`:'HONK';
   message.style.opacity=run.elapsed>noticeUntil?'0':'1';
 }
 function burst(x,y,color){for(let i=0;i<16;i++)particles.push({x,y,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.2,life:1,color});}
@@ -63,9 +63,14 @@ function ellipse(x,y,rx,ry,color,line='#162732'){ctx.beginPath();ctx.ellipse(x,y
 function sprite(name,x,y,width,angle=0){const img=art[name];if(!img.complete||!img.naturalWidth)return false;const height=width*img.height/img.width;ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.drawImage(img,-width/2,-height/2,width,height);ctx.restore();return true;}
 function label(text,x,y,color='#fff1b3',size=11){ctx.font=`800 ${size}px system-ui`;ctx.textAlign='center';ctx.fillStyle='#123135';ctx.lineWidth=4;ctx.strokeStyle='#123135';ctx.strokeText(text,px(x),y*H);ctx.fillStyle=color;ctx.fillText(text,px(x),y*H);}
 function bird(b,index,t,waiting=false){
-  const size=Math.min(index?27:28,P*(index?.063:.066)),sx=px(b.x),sy=b.y*H+Math.sin(t*7+index)*1.5;
+  const size=index?Math.min(23,P*.056):Math.min(30,P*.074),sx=px(b.x),sy=b.y*H+Math.sin(t*7+index)*1.5,angle=waiting?Math.sin(t*2)*.06:b.angle||0;
   ellipse(sx,sy+5,size*.7,size*.27,'#8becbd30',null);
-  if(!sprite(index?(index%2?'chick':'mint-chick'):'parent',sx,sy,size,waiting?Math.sin(t*2)*.06:b.angle||0))ellipse(sx,sy,size*.45,size*.6,index?'#efd774':'#b5dddd');
+  if(!index){// the loon gets a light ring that turns with it, so it stands out from the chicks
+    ctx.save();ctx.translate(sx,sy);ctx.rotate(angle);for(const [w,c] of [[6,'#0c2a30'],[2.5,'#f2ffe9']]){ctx.lineWidth=w;ctx.strokeStyle=c;ctx.beginPath();ctx.ellipse(0,0,size*.98,size*1.38,0,0,7);ctx.stroke();}ctx.restore();
+    ctx.shadowColor='#f2ffe9';ctx.shadowBlur=7;
+  }
+  if(!sprite(index?(index%2?'chick':'mint-chick'):'parent',sx,sy,size,angle))ellipse(sx,sy,size*.45,size*.6,index?'#efd774':'#b5dddd');
+  ctx.shadowBlur=0;
 }
 function drawBackground(t){
   ctx.fillStyle='#101e25';ctx.fillRect(0,0,W,H);const img=art.lake;
@@ -92,7 +97,7 @@ function drawWorld(t){
     ctx.strokeStyle='#ffe594';ctx.lineWidth=2;ctx.setLineDash([3,5]);ctx.beginPath();ctx.arc(px(c.x),c.y*H,Math.min(P*.052,24)+Math.sin(t*4+c.id)*2,0,7);ctx.stroke();ctx.setLineDash([]);bird(c,c.id+1,t,true);
   }
   for(const b of run.boats){
-    if(b.age<1.5){label('BOAT →',b.direction>0?.16:.84,b.y,'#ffc3ba',12);ctx.setLineDash([4,7]);ctx.strokeStyle='#efb5b680';ctx.beginPath();ctx.moveTo(px(.12),b.y*H);ctx.lineTo(px(.88),b.y*H);ctx.stroke();ctx.setLineDash([]);}
+    if(b.age<1.5){label(b.direction>0?'BOAT →':'← BOAT',b.direction>0?.16:.84,b.y,'#ffc3ba',12);ctx.setLineDash([4,7]);ctx.strokeStyle='#efb5b680';ctx.beginPath();ctx.moveTo(px(.12),b.y*H);ctx.lineTo(px(.88),b.y*H);ctx.stroke();ctx.setLineDash([]);}
     else{ctx.save();ctx.translate(px(b.x),b.y*H);ctx.scale(b.direction,1);sprite('boat',0,0,P*.23);ctx.restore();}
   }
   drawEel(t);

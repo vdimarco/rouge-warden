@@ -2,13 +2,16 @@
 export const MAX_CHICKS = 8;
 export const HOME = {x:.5, y:.205};
 export const ROCK = .075;  // a rock blocks the loon closer than this to its centre
+export const GAP = .062;   // the length of path between two birds in the line
+const LEAD = .045;         // more path behind the loon, so the first chick sits clear of its long body
+const TRAIL = (MAX_CHICKS+2)*GAP+LEAD;
 export const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 export const distance = (a,b) => Math.hypot(a.x-b.x,(a.y-b.y)*1.65);
 const spots = [[.5,.38],[.23,.35],[.77,.36],[.18,.59],[.82,.66],[.32,.78],[.64,.78],[.57,.56]];
 export function createRun(seed = 1) {
   let n=seed>>>0;
   const random=()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};
-  return {elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,history:[{t:0,x:.5,y:.28,angle:0}],
+  return {elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,trail:[{x:.5,y:.28,angle:0,d:0}],
     flock:[],saved:0,score:0,trips:0,hearts:3,invincible:0,call:0,cooldown:0,bump:0,
     breath:3,diving:false,exhausted:false,deposit:0,ended:false,won:false,events:[],
     chicks:spots.map(([x,y],id)=>({id,x:clamp(x+(id?random()-.5:0)*.07,.13,.87),y:y+(id?random()-.5:0)*.03,state:'waiting',lock:0})),
@@ -17,11 +20,20 @@ export function createRun(seed = 1) {
     boats:[],boatTimer:9,
     eel:{x:.84,y:.79,angle:0,active:false,stun:0,phase:'hunt',timer:4,aim:{x:.5,y:.5},trail:[]}};
 }
+// Bird i sits LEAD+i*GAP back along the path of the loon (bird 0 is the loon). The line keeps its spacing when the loon stops or honks.
 export function birdPosition(r,i) {
   if(!i)return {x:r.x,y:r.y,angle:r.angle};
-  const at=r.elapsed-i*(r.call>0?.08:.23);
-  for(let j=r.history.length-1;j>=0;j--)if(r.history[j].t<=at)return r.history[j];
-  return r.history[0];
+  const t=r.trail,last=t[t.length-1],head=last.d+distance(r,last),want=head-LEAD-i*GAP;
+  let b={x:r.x,y:r.y,angle:r.angle,d:head};
+  for(let j=t.length-1;j>=0;j--){const a=t[j];if(a.d<=want){const k=(want-a.d)/(b.d-a.d||1);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,angle:b.angle};}b=a;}
+  return {x:t[0].x,y:t[0].y,angle:t[0].angle};
+}
+// Adds a point to the path each time the loon swims a little way, and forgets the path behind the last bird.
+function extendTrail(r) {
+  const last=r.trail[r.trail.length-1],d=distance(r,last);
+  if(d<.004)return;
+  r.trail.push({x:r.x,y:r.y,angle:r.angle,d:last.d+d});
+  while(r.trail.length>2&&last.d+d-r.trail[1].d>TRAIL)r.trail.shift();
 }
 export function callFlock(r) {
   if(r.ended||r.cooldown>0||r.diving)return false;
@@ -113,8 +125,7 @@ export function step(r,dt) {
   else{r.breath=Math.min(3,r.breath+dt*.8);if(r.breath>=1.2)r.exhausted=false;}
   r.target.x=clamp(r.target.x,.1,.9);r.target.y=clamp(r.target.y,.19,.82);
   swim(r,dt);
-  r.history.push({t:r.elapsed,x:r.x,y:r.y,angle:r.angle});
-  while(r.history.length>1&&r.history[1].t<r.elapsed-3)r.history.shift();
+  extendTrail(r);
   for(const c of r.chicks){
     c.lock=Math.max(0,c.lock-dt);
     if(c.state!=='waiting'||c.lock||r.diving)continue;

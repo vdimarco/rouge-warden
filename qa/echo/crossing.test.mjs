@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRun,step,callFlock,toggleDive,birdPosition,distance,HOME,ROCK} from '../../public/echo/crossing.js';
+import {createRun,step,callFlock,toggleDive,birdPosition,distance,HOME,ROCK,GAP} from '../../public/echo/crossing.js';
 const advance=(r,seconds)=>{for(let t=0;t<seconds;t+=.01){step(r,.01);r.events.length=0;}};
 const quiet=()=>{const r=createRun();r.rocks=[];r.boatTimer=999;r.eel.active=true;r.eel.stun=999;return r;};
 const carry=(r,n)=>{r.flock=[];for(let i=0;i<n;i++){r.chicks[i].state='following';r.flock.push(i);}};
@@ -8,6 +8,12 @@ test('movement works on both axes; flock follows the path with delay',()=>{
  const r=quiet();carry(r,2);r.target={x:.8,y:.6};advance(r,.3);
  assert.ok(r.x>.5&&r.y>.28);const b=birdPosition(r,2);assert.equal(b.x,.5);assert.equal(b.y,.28);
  advance(r,.8);assert.ok(birdPosition(r,2).y>.28);
+});
+test('the line keeps its spacing when the loon honks or stops, so the loon stays in sight',()=>{
+ const r=quiet();carry(r,3);r.target={x:.5,y:.75};advance(r,1.2);assert.equal(callFlock(r),true);advance(r,.6);
+ const gaps=()=>[1,2,3].map(i=>distance(birdPosition(r,i-1),birdPosition(r,i)));
+ assert.ok(r.call>0,'the honk is still on');assert.ok(gaps().every(g=>g>GAP*.95),`gaps during a honk: ${gaps().map(g=>g.toFixed(3))}`);
+ r.target={x:r.x,y:r.y};advance(r,3);assert.ok(gaps().every(g=>g>GAP*.95),`gaps at rest: ${gaps().map(g=>g.toFixed(3))}`);
 });
 test('surface pickups join once; underwater pickups cannot rescue chicks',()=>{
  const r=quiet();r.chicks[0].x=r.x;r.chicks[0].y=r.y;toggleDive(r);step(r,.01);assert.equal(r.flock.length,0);
@@ -52,7 +58,7 @@ test('honk stuns a nearby eel, gathers chicks, and cannot be spammed or used sub
  advance(r,7);toggleDive(r);assert.equal(callFlock(r),false);
 });
 test('eel hit scatters recoverable chicks and grants damage grace',()=>{
- const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.history=[{t:0,x:r.x,y:r.y,angle:0}];carry(r,3);r.eel.stun=0;r.eel.x=r.x;r.eel.y=r.y;r.eel.aim={x:r.x,y:r.y};step(r,.01);
+ const r=quiet();r.y=.5;r.target={x:r.x,y:r.y};r.trail=[{x:r.x,y:r.y,angle:0,d:0}];carry(r,3);r.eel.stun=0;r.eel.x=r.x;r.eel.y=r.y;r.eel.aim={x:r.x,y:r.y};step(r,.01);
  assert.equal(r.hearts,2);assert.equal(r.flock.length,1);assert.equal(r.chicks.filter(c=>c.state==='waiting').length,7);
  step(r,.01);assert.equal(r.hearts,2);assert.ok(r.chicks[2].lock>0);
 });
