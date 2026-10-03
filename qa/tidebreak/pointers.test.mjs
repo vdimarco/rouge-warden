@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { pointerAction, movementPointer, abilityPointers } from '../../public/tidebreak/pointer-action.js';
+import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from '../../public/tidebreak/pointer-action.js';
 import { createMatch, player, trainSkill, step } from '../../public/tidebreak/sim.js';
 class Control extends EventTarget {
   constructor(){super();this.style={};this.disabled=false;this.dataset={skill:'0'};this.attributes={};this.classList={add(){},remove(){}};}
@@ -37,3 +37,16 @@ for(let hero=0;hero<12;hero++){
  pad.send('pointerdown',8);pad.send('pointermove',8,88,50);controls.reset();skills.reset();assert.deepEqual(movement,{x:0,y:0});
 }
 console.log('All 12 heroes: concurrent movement, full-icon upgrades, aiming, cancellation and keyboard input pass.');
+
+{
+ const movement={x:0,y:0},surface=new Control(),taps=[];
+ const screen=screenMovementPointer(surface,{movement,enabled:()=>true,onStart(){},onDragStart(){},onTap:e=>taps.push([e.clientX,e.clientY])});
+ surface.send('pointerdown',21,20,20);surface.send('pointermove',21,65,20);
+ assert(movement.x>.95&&Math.abs(movement.y)<.01,'drag anywhere steers from its touch origin');
+ surface.send('pointerup',21,65,20);assert.deepEqual(movement,{x:0,y:0},'release stops anywhere-drag movement');
+ surface.send('pointerdown',22,40,40);surface.send('pointerup',22,44,43);
+ assert.deepEqual(taps.at(-1),[44,43],'short screen touch remains a tap');
+ surface.send('pointerdown',23,80,80);surface.send('pointercancel',23);assert.deepEqual(movement,{x:0,y:0},'cancel clears anywhere-drag movement');
+ screen.reset();
+}
+console.log('Anywhere-drag screen movement preserves taps and releases cleanly.');

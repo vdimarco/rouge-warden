@@ -16,6 +16,13 @@ export function selectionSpellArt(identity,slot,className=''){
  if(FAL_ATLASES.has(profile.slug))return `<span class="painted-spell fal-identity-spell ${className}" style="background-image:url('./art/spells/${profile.slug}-fal.webp');background-position:${FAL_POSITIONS[slot]}" aria-hidden="true"></span>`;
  return spellArtHTML(profile.kit,slot,className);
 }
+
+export function hudSpellArt(identity,slot,className=''){
+ const profile=HERO_IDENTITIES[identity],fallback=HEROES[profile.kit].slug;
+ const atlas=FAL_ATLASES.has(profile.slug)?`/tidebreak/art/spells/${profile.slug}-fal.webp`:`/tidebreak/art/spells/${fallback}-spells.webp`;
+ const col=slot%2,row=Math.floor(slot/2);
+ return `<span class="hud-atlas-crop ${className}" aria-hidden="true"><img src="${atlas}" alt="" style="--hud-col:${col};--hud-row:${row}"></span>`;
+}
 export function heroPreviewHTML(identity,activeSlot=1){
  const p=HERO_IDENTITIES[identity],h=HEROES[p.kit];
  return `<div class="hero-move-preview" aria-label="${p.name} skills">${p.skills.map((name,slot)=>{

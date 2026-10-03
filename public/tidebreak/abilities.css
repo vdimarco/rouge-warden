@@ -311,3 +311,52 @@
   .abilities .ult{width:84px;height:84px}
   #skill-points{width:158px;min-height:40px;top:-45px}
 }
+
+
+/* Keep painted spell art visible under lock, cooldown, mana and cast-state labels. */
+.ability .hud-spell-art{
+  display:block!important;
+  opacity:1!important;
+  background-color:#071722;
+  background-size:200% 200%!important;
+  background-repeat:no-repeat!important;
+}
+.ability.unlearned .hud-spell-art{opacity:.58!important;filter:saturate(.75) brightness(.72) contrast(1.08)}
+.ability b:not(:empty){
+  background:linear-gradient(180deg,#03101988,#031019b8)!important;
+  color:#fff!important;
+  text-shadow:0 2px 5px #000,0 0 8px #000!important;
+}
+.ability.control-blocked .hud-spell-art,.ability.mana-empty .hud-spell-art{opacity:.72!important}
+
+
+/* Robust combat spell art: crop a real atlas image instead of relying on background CSS. */
+.ability .hud-atlas-crop{
+  position:absolute;
+  inset:4px;
+  display:block;
+  overflow:hidden;
+  border-radius:15px;
+  border:2px solid #78d9e8b8;
+  background:#06131d;
+  box-shadow:inset 0 0 0 2px #031019,inset 0 0 18px #0005,0 4px 12px #000b,0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
+  pointer-events:none;
+  z-index:1;
+}
+.ability.ult .hud-atlas-crop{
+  inset:5px;
+  border-radius:20px;
+  border:3px solid var(--hero-color,#7eeaff);
+}
+.ability .hud-atlas-crop img{
+  position:absolute;
+  width:200%;
+  height:200%;
+  max-width:none;
+  left:calc(var(--hud-col) * -100%);
+  top:calc(var(--hud-row) * -100%);
+  object-fit:fill;
+  filter:saturate(1.22) contrast(1.1);
+  pointer-events:none;
+}
+.ability .hud-spell-art:not(.hud-atlas-crop){display:none!important}
