@@ -1,10 +1,10 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY, setWarpAim, clearWarpAim } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY, setWarpAim, clearWarpAim, forecastAdventureFlip, forecastLaunch, LAUNCH_MIN } from './adventure.js';
 import { createTiltControl } from './motion.js';
 import { setFlip, canReverseScoop, H } from './physics.js';
 import { createRenderer } from './render.js';
 import { startLoop } from '../kit/loop.js';
-import { Sfx, tone, hiss } from '../kit/sfx.js';
+import { Sfx, tone, hiss, osc, gain, route } from '../kit/sfx.js';
 import { sampleTransit } from './transit.js';
 import { createTransitAudio } from './transit-audio.js';
 import { createSpaceMusic } from './space-music.js';
@@ -26,12 +26,38 @@ const FLIPS = { z: -1, x: 1 };
 const keyName = e => e.key.toLowerCase();
 let best = 0;
 try { best = Number(localStorage.getItem('tilt.voyage.best')) || 0; } catch { /* private browsing */ }
+// One mapping turns the time a launch is held into its power. The launch, its bar and its
+// preview all use it. A tap gives LAUNCH_MIN; a hold of CHARGE_TIME gives full power.
+const CHARGE_TIME = 1100;
+const launchPower = held => LAUNCH_MIN + (1 - LAUNCH_MIN) * Math.min(1, Math.max(0, held) / CHARGE_TIME);
+const chargeFill = power => (power - LAUNCH_MIN) / (1 - LAUNCH_MIN);
+// After a touch launch, the Pulse button appears where Launch was. Its taps wait this long,
+// so the click that ends the launch touch cannot fire a pulse.
+const PULSE_GUARD = 400;
+let touchLaunchAt = -Infinity;
+const pulseGuarded = () => performance.now() - touchLaunchAt < PULSE_GUARD;
+// The approach cue shows on the flipper the ball will reach, from CUE_LEAD seconds before the
+// ideal press until the press. "FLIP NOW" lights for the last FLIP_NOW seconds.
+const CUE_LEAD = 0.9, FLIP_NOW = 0.2;
+let approach = null, cueTone = null, launchPlan = null, hitStop = 0, launched = false;
 
-function sound(kind, strength = 1) {
+function sound(kind, strength = 1, pan = 0) {
+  // A diagnostic event names each sound, so browser checks can hear the game without audio.
+  canvas.dispatchEvent(new CustomEvent('tilt-sound', { detail: kind }));
   Sfx.play((e,t) => {
     if (kind === 'flip') { tone(e,t,{f:145,f2:70,dur:.065,peak:.12}); return; }
     if (kind === 'reverse') { tone(e,t,{f:95,f2:620,dur:.28,peak:.12,wave:'sine',send:.35}); hiss(e,t,{type:'bandpass',f:400,f2:1500,dur:.2,peak:.05}); return; }
-    if (kind === 'strike') { tone(e,t,{f:190,f2:760,dur:.18,peak:.11,wave:'triangle',send:.25}); return; }
+    if (kind === 'strike' || kind === 'strike-good') { tone(e,t,{f:190,f2:760,dur:.18,peak:.11,wave:'triangle',send:.25,pan}); return; }
+    if (kind === 'strike-perfect') {
+      tone(e,t,{f:330,f2:1320,dur:.2,peak:.12,wave:'triangle',send:.35,pan}); tone(e,t+.04,{f:1980,dur:.32,peak:.05,wave:'sine',send:.5,pan});
+      hiss(e,t,{type:'highpass',f:3200,dur:.08,peak:.05,pan}); return;
+    }
+    if (kind === 'strike-late') { tone(e,t,{f:150,f2:96,dur:.16,peak:.11,wave:'triangle',lp:900,pan}); return; }
+    if (kind === 'rally-up') { [660,990].forEach((f,i) => tone(e,t+i*.06,{f,dur:.14,peak:.06,wave:'sine',send:.3})); return; }
+    if (kind === 'rally-break') { tone(e,t,{f:520,f2:170,dur:.34,peak:.08,wave:'sine',send:.2}); return; }
+    if (kind === 'return') { [784,587].forEach((f,i) => tone(e,t+i*.09,{f,dur:.2,peak:.06,wave:'sine',send:.4,pan})); return; }
+    if (kind === 'asteroid-warning') { [0,.16].forEach(d => tone(e,t+d,{f:118,f2:92,dur:.13,peak:.08,wave:'triangle',lp:700})); return; }
+    if (kind === 'skill') { [523,659,784,1047].forEach((f,i) => tone(e,t+i*.06,{f,dur:.24,peak:.07,wave:'sine',send:.45})); return; }
     if (kind === 'asteroid-break') { hiss(e,t,{type:'lowpass',f:1400,f2:180,dur:.25,peak:.1}); tone(e,t,{f:105,f2:42,dur:.17,peak:.09,wave:'triangle'}); return; }
     if (kind === 'warp-ring') { tone(e,t,{f:520,f2:1040,dur:.22,peak:.13,wave:'sine',send:.45}); tone(e,t+.07,{f:1560,dur:.22,peak:.05,send:.4}); return; }
     if (kind === 'drain') { tone(e,t,{f:180,f2:55,dur:.5,peak:.15,wave:'triangle'}); return; }
@@ -41,6 +67,29 @@ function sound(kind, strength = 1) {
     notes.forEach((f,i) => tone(e,t+i*.07,{f,dur:.21,peak:.075,wave:'sine',send:.25}));
   });
 }
+// A rising tone runs from the start of the approach cue to the ideal press. It pans to the
+// flipper side and ends on a bright tick. A changed forecast stops it early.
+function startCueTone(seconds, side) {
+  stopCueTone();
+  const handle = { stop: null };
+  cueTone = handle;
+  canvas.dispatchEvent(new CustomEvent('tilt-sound', { detail: 'cue' }));
+  Sfx.play((e,t) => {
+    const length = Math.max(.08, seconds), o = osc(e,'sine',300), level = gain(e,0);
+    o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(880,t+length);
+    level.gain.setValueAtTime(0,t); level.gain.linearRampToValueAtTime(.045,t+length*.85); level.gain.setTargetAtTime(0,t+length,.02);
+    o.connect(level); route(e,level,{pan:side*.45,send:.2}); o.start(t); o.stop(t+length+.2);
+    const tick = osc(e,'sine',1760), tickLevel = gain(e,0);
+    tickLevel.gain.setValueAtTime(0,t+length); tickLevel.gain.linearRampToValueAtTime(.05,t+length+.004); tickLevel.gain.setTargetAtTime(0,t+length+.004,.02);
+    tick.connect(tickLevel); route(e,tickLevel,{pan:side*.45}); tick.start(t+length); tick.stop(t+length+.15);
+    handle.stop = () => {
+      const now = e.ctx.currentTime;
+      for (const node of [level, tickLevel]) { node.gain.cancelScheduledValues(now); node.gain.setTargetAtTime(0,now,.015); }
+      for (const node of [o, tick]) { try { node.stop(now+.08); } catch { /* already stopped */ } }
+    };
+  });
+}
+function stopCueTone() { cueTone?.stop?.(); cueTone = null; }
 function announce(text) { if (!text) return; $('message').textContent = text; $('message').classList.add('visible'); messageUntil = performance.now() + 2400; }
 function paintMotion(state) {
   const active = state === 'on' || state === 'calibrating';
@@ -79,6 +128,7 @@ function releaseControls() {
   setFlip(run.world,-1,false); setFlip(run.world,1,false);
   $('left-flip').classList.remove('held'); $('right-flip').classList.remove('held');
   $('launch-button').style.setProperty('--charge',0);
+  launchPlan = null; stopCueTone();
 }
 function updateFlips() {
   for (const side of [-1,1]) {
@@ -90,17 +140,20 @@ function updateFlips() {
     $(side === -1 ? 'left-flip' : 'right-flip').classList.toggle('held',allowed);
   }
 }
-function startCharge(owner) { if(mode !== 'play' || run.phase !== 'ready' || chargeStart != null) return false; chargeOwner=owner; chargeStart=performance.now(); return true; }
-function endCharge(cancel=false,owner=chargeOwner) {
+function startCharge(owner) { if(mode !== 'play' || run.phase !== 'ready' || chargeStart != null) return false; Sfx.init(); chargeOwner=owner; chargeStart=performance.now(); return true; }
+function endCharge(cancel=false,owner=chargeOwner,pointerType='') {
   if(chargeStart == null || owner !== chargeOwner) return;
-  const power=Math.min(1,.55+(performance.now()-chargeStart)/1800);
-  chargeStart=null; chargeOwner=null; charge=0;
+  const power=launchPower(performance.now()-chargeStart);
+  chargeStart=null; chargeOwner=null; charge=0; launchPlan=null;
   $('launch-button').style.setProperty('--charge',0);
-  if(!cancel && mode==='play') launchAdventure(run,power);
+  if(!cancel && mode==='play' && launchAdventure(run,power)) {
+    launched = true; document.body.classList.remove('first-launch');
+    if(pointerType && pointerType !== 'mouse') { touchLaunchAt=performance.now(); setTimeout(syncHud,PULSE_GUARD+20); }
+  }
   syncHud();
 }
-function pulse(dx=0) {
-  if(mode !== 'play' || run.phase !== 'play') return;
+function pulse(dx=0,tap=false) {
+  if(mode !== 'play' || run.phase !== 'play' || (tap && pulseGuarded())) return;
   if(pulseAdventure(run,dx)) announce('Gravity pulse');
   syncHud();
 }
@@ -154,8 +207,9 @@ function newRun() {
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
   $('hud').hidden=false; document.body.classList.add('playing');
   resumeMotion(); motion.recenter();
+  document.body.classList.toggle('first-launch', !launched);
+  $('message').classList.remove('visible'); messageUntil = 0;
   renderer.resize(); syncHud();
-  announce('Launch, then time your flips. Powered shots smash asteroids.');
   canvas.focus({preventScroll:true});
 }
 function pause() {
@@ -203,22 +257,40 @@ function showUpgrades() {
   }));
   $('upgrade-options').querySelector('button')?.focus();
 }
+// The end card shows how close the run came: the worlds reached and the gap to the best score.
+// It reads the old best before it saves a new one.
 function showEnd() {
-  releaseControls(); suspendMotion(); best=Math.max(best,run.score);
+  releaseControls(); suspendMotion();
+  const previous=best, cleared=run.sectors.filter(s=>s.cleared).length;
+  best=Math.max(best,run.score);
   try{localStorage.setItem('tilt.voyage.best',String(best));}catch{/* private browsing */}
-  $('end-title').textContent=run.phase==='won'?'The stars are yours.':'A voyage to remember.';
-  $('end-detail').textContent=`${run.score.toLocaleString()} points · ${run.sectors.filter(s=>s.cleared).length} of ${run.sectors.length} sectors · Best ${best.toLocaleString()}`;
+  $('end-title').textContent=run.phase==='won'?'The stars are yours.':'Voyage over.';
+  $('end-score').textContent=run.score.toLocaleString();
+  const gap=previous-run.score;
+  $('end-best').textContent=run.score>previous?'New best':gap===0?'Equal to your best':`${gap.toLocaleString()} short of best`;
+  $('end-best').dataset.result=run.score>previous?'new':'short';
+  $('end-best').dataset.gap=String(Math.max(0,gap));
+  $('end-worlds').replaceChildren(...run.sectors.map((s,i)=>{
+    const mark=document.createElement('li');
+    mark.className=s.cleared?'cleared':i===run.sectorIndex?'reached':'';
+    mark.style.setProperty('--world-color',s.color);
+    mark.title=s.name;
+    return mark;
+  }));
+  $('end-worlds').setAttribute('aria-label',`${cleared} of ${run.sectors.length} worlds cleared`);
+  $('end-detail').textContent=`${cleared} of ${run.sectors.length} worlds · ${run.perfects} Perfect · best rally ${run.bestChain} in a row · best ${best.toLocaleString()}`;
   $('end-panel').hidden=false; $('again-button').focus();
 }
 function syncHud() {
   const sector=currentSector(run);
   $('sector-name').textContent=`${String(run.sectorIndex+1).padStart(2,'0')} / ${run.sectors.length} · ${sector.name}`;
-  $('objective').textContent=objective(run);
+  // At the dock the one line above the controls says what to do. The top line waits for play.
+  $('objective').textContent=run.phase==='ready'?'':objective(run);
   $('score').textContent=run.score.toLocaleString();
   $('lives').textContent=`${run.lives} ${run.lives===1?'heart':'hearts'}`;
   $('launch-button').hidden=run.phase!=='ready';
   $('pulse-button').hidden=run.phase==='ready';
-  $('pulse-button').disabled=mode!=='play' || run.phase!=='play' || run.pulseCooldown>0;
+  $('pulse-button').disabled=mode!=='play' || run.phase!=='play' || run.pulseCooldown>0 || pulseGuarded();
   $('pulse-button').textContent=run.pulseCooldown>0?`Pulse ${run.pulseCooldown.toFixed(1)}s`:'Pulse ◎';
   $('map-button').disabled=['upgrade','flight','won','over'].includes(run.phase);
   $('field-button').textContent = mode === 'field' ? 'Cancel' : `Field ${run.fieldCharges}`;
@@ -226,16 +298,19 @@ function syncHud() {
   $('field-button').setAttribute('aria-pressed', String(mode === 'field'));
   $('field-button').setAttribute('aria-label', mode === 'field' ? 'Cancel gravity field' : `Gravity field, ${run.fieldCharges} of ${FIELD_CAPACITY} charges`);
   const well = run.gravityWell;
-  $('field-status').textContent = well ? `${well.kind === 'push' ? 'Push' : 'Pull'} field · ${well.remaining.toFixed(1)}s` : 'Relays and orbits earn field charges';
+  $('field-status').textContent = well ? `${well.kind === 'push' ? 'Push' : 'Pull'} field · ${well.remaining.toFixed(1)}s` : 'Beacons and orbits earn field charges';
   $('field-status').dataset.active = String(!!well);
-  $('field-status').hidden = !well && run.phase === 'play';
+  $('field-status').hidden = !well;
   const rally = run.rally, status = $('rally-status');
+  const row = rally.chain ? ` · ${rally.chain} in a row` : '';
   status.hidden = !['ready','play'].includes(run.phase);
   status.dataset.state = run.phase === 'ready' ? 'ready' : rally?.returning ? 'return' : rally?.powerRemaining > 0 ? 'powered' : 'flight';
-  status.textContent = run.phase === 'ready' ? 'Time your flips. Smash drifting asteroids.'
+  status.dataset.multiplier = String(rally.multiplier);
+  const text = run.phase === 'ready' ? objective(run)
     : rally?.returning ? `Returning · ready your ${rally.side < 0 ? 'left' : 'right'} flipper`
-    : rally?.powerRemaining > 0 ? `POWER SHOT ×${rally.multiplier} · ${rally.powerRemaining.toFixed(1)}s`
-    : 'Hit the relays · prepare for the return';
+    : rally?.powerRemaining > 0 ? `Power shot ${rally.powerRemaining.toFixed(1)}s · rally ×${rally.multiplier}${row}`
+    : rally.chain ? `Rally ×${rally.multiplier}${row}` : 'Light the beacons · flip as the ring closes';
+  if (status.textContent !== text) status.textContent = text;
   const inTransit = run.phase === 'flight';
   document.body.classList.toggle('in-transit', inTransit);
   $('controls').hidden = inTransit;
@@ -245,23 +320,37 @@ function syncHud() {
     oldPhase=run.phase;
     if(run.phase==='upgrade')showUpgrades();
     else if(run.phase==='won'||run.phase==='over')showEnd();
-    else if(run.phase==='ready' && mode==='play')announce('Ready to launch');
   }
+}
+
+// The approach cue comes from a forecast with the same physics as play. It starts up to
+// CUE_LEAD seconds before the ideal press, with a rising tone, and ends at the press.
+function updateApproach() {
+  const forecast = mode === 'play' && run.phase === 'play' ? forecastAdventureFlip(run, 1.2) : null;
+  const cue = forecast && !forecast.held && forecast.ideal <= CUE_LEAD && forecast.ideal > -.06 ? forecast : null;
+  if (cue) {
+    const at = run.clock + cue.ideal;
+    if (!approach || approach.side !== cue.side || Math.abs(approach.at - at) > .12) {
+      startCueTone(Math.max(0, cue.ideal), cue.side);
+      approach = { ...cue, at, start: run.clock, lead: cue.ideal };
+    } else Object.assign(approach, cue, { at });
+  } else if (approach) { stopCueTone(); approach = null; }
+  // Diagnostics for browser checks: the cue side and the seconds until the ideal press.
+  canvas.dataset.cue = approach ? (approach.side < 0 ? 'left' : 'right') : 'none';
+  canvas.dataset.cueIn = approach ? approach.ideal.toFixed(3) : '';
 }
 
 function paintFlipperGuidance() {
   for (const [side,id] of [[-1,'left-flip'],[1,'right-flip']]) {
     const button = $(id), scoop = mode === 'play' && run.phase === 'play' && canReverseScoop(run.world,side);
     button.disabled = mode !== 'play' || !['ready','play'].includes(run.phase);
-    const blade = run.world.flippers.find(f => f.sector === run.sectorIndex && f.side === side), ball = run.world.ball;
-    const along = blade ? (ball.x - blade.px) * -side : -1;
-    const incoming = mode === 'play' && run.phase === 'play' && ball.live && !scoop && blade && !blade.held
-      && along > 8 && along < blade.len + 20 && ball.y > blade.py + 5 && ball.y < blade.py + 100 && ball.vy < 80;
-    const shot = incoming && ball.y < blade.py + 55;
+    const cue = approach && approach.side === side && !scoop ? approach : null;
+    const shot = cue && cue.ideal <= FLIP_NOW;
     button.classList.toggle('scoop-ready', scoop);
     button.classList.toggle('shot-ready', !!shot);
+    button.classList.toggle('incoming', !!cue && !shot);
     const label = button.querySelector('.flip-label'), arrow = button.querySelector('.flipper-arrow');
-    const text = scoop ? 'REVERSE FLIP' : shot ? 'FLIP NOW' : incoming ? 'INCOMING' : side < 0 ? 'LEFT FLIPPER' : 'RIGHT FLIPPER';
+    const text = scoop ? 'REVERSE FLIP' : shot ? 'FLIP NOW' : cue ? 'INCOMING' : side < 0 ? 'LEFT FLIPPER' : 'RIGHT FLIPPER';
     const symbol = scoop ? '⤴' : side < 0 ? '↗' : '↖';
     if (label.textContent !== text) label.textContent = text;
     if (arrow.textContent !== symbol) arrow.textContent = symbol;
@@ -387,6 +476,11 @@ canvas.addEventListener('pointerdown',e=>{
     fieldPointer = e.pointerId; canvas.setPointerCapture(e.pointerId);
     moveFieldAim(renderer.toWorld(e.clientX, e.clientY)); return;
   }
+  // At the dock a hold anywhere aims the launch, and letting go launches the ball.
+  if (mode === 'play' && run.phase === 'ready') {
+    if (startCharge(e.pointerId)) { e.preventDefault(); canvas.setPointerCapture(e.pointerId); fingers.set(e.pointerId,'launch'); }
+    return;
+  }
   holdFlip(e,e.clientX<innerWidth/2?-1:1,canvas);
 });
 canvas.addEventListener('pointermove',e=>{
@@ -399,7 +493,7 @@ canvas.addEventListener('pointermove',e=>{
 });
 $('launch-button').addEventListener('pointerdown',e=>{if(!startCharge(e.pointerId))return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);fingers.set(e.pointerId,'launch');});
 $('launch-button').addEventListener('click',e=>{if(e.detail===0 && run.phase==='ready'){if(startCharge('activation'))endCharge(false,'activation');}});
-$('pulse-button').addEventListener('click',()=>pulse());
+$('pulse-button').addEventListener('click',()=>pulse(0,true));
 function pointerEnd(e,cancel=false){
   if(e.pointerId === warpPointer?.id) {
     warpPointer=null; clearWarpAim(run);
@@ -412,7 +506,7 @@ function pointerEnd(e,cancel=false){
     return;
   }
   const action=fingers.get(e.pointerId);fingers.delete(e.pointerId);
-  if(action==='launch')endCharge(cancel,e.pointerId);else updateFlips();
+  if(action==='launch')endCharge(cancel,e.pointerId,e.pointerType||'touch');else updateFlips();
 }
 window.addEventListener('pointerup',e=>pointerEnd(e));
 window.addEventListener('pointercancel',e=>pointerEnd(e,true));
@@ -463,7 +557,7 @@ window.addEventListener('blur',()=>{cancelField();releaseControls();if(mode==='p
 window.addEventListener('resize',()=>{cancelField();releaseControls();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelField();releaseControls();if(mode==='play')pause();}});
 
-startLoop({h:H,step:()=>{
+startLoop({h:H,scale:()=>hitStop>0?0:1,step:()=>{
   if(mode!=='play')return;
   advanceWarpInput();
   const tilt = ['ready','play'].includes(run.phase) ? motion.sample(H) : { x: 0, y: 0 };
@@ -473,13 +567,21 @@ startLoop({h:H,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse','strike','asteroid-break'].includes(kind))sound(kind);
-    const messages={relay:event.complete===false?'Core charged once. Strike it again.':'Relay lit',gate:'Jump gate open. Shoot for the bright ring.',orbit:'Gravity slingshot! Bonus points.',save:'Launch shield saved your comet.',drain:'A heart lost. Your relays stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
+    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse','asteroid-break','asteroid-warning'].includes(kind))sound(kind);
+    const messages={relay:event.complete===false?'Beacon charged once. Hit it again.':`Beacon lit · +${(event.points||0).toLocaleString()}`,gate:'The gate is open. Shoot for the black hole.',orbit:'Gravity slingshot. Bonus points.',save:'The launch shield saved your comet.',drain:event.multiplier>1?`A heart lost. The rally ×${event.multiplier} ends.`:'A heart lost. Your beacons stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
+    if(kind === 'relay' && event.skill){ sound('skill'); announce(`Skill shot · ×2 · +${event.points.toLocaleString()}`); }
     if(kind === 'reverse')announce('Reverse flip');
-    if(kind === 'strike')announce(`Power shot ×${event.multiplier} · smash an asteroid`);
+    if(kind === 'strike'){
+      // Every flip gets a grade you can see and hear. A Perfect also holds the action for 50 ms.
+      sound('strike-'+event.grade,1,event.side*.4);
+      if(event.grade === 'perfect'){ hitStop=.05; if(!reducedMotion)renderer.kick?.(event.side); }
+      if(event.raised){ sound('rally-up'); announce(`Rally ×${event.multiplier}`); }
+      if(event.broken){ sound('rally-break'); announce('The row ends. Flip as the ring closes.'); }
+      stopCueTone();
+    }
     if(kind === 'asteroid-break')announce(`Asteroid smashed · +${event.points}`);
-    if(kind === 'return')announce(`Incoming ball. Ready your ${event.side < 0 ? 'left' : 'right'} flipper.`);
+    if(kind === 'return')sound('return',1,event.side*.4);
     if(kind === 'warp-ring' && event.hit)sound('warp-ring');
     if(kind === 'field-charge')announce(`Gravity charge gained · ${event.charges}/${FIELD_CAPACITY}`);
     if(kind === 'field-deploy')announce(`${event.kind === 'push' ? 'Push' : 'Pull'} field deployed · 5 seconds`);
@@ -488,9 +590,16 @@ startLoop({h:H,step:()=>{
   if(warpBonus)announce(warpBonus.amount ? `Warp reward · +${warpBonus.amount} gravity charge` : 'Warp complete · field charges full');
   if(['upgrade','won','over'].includes(run.phase)&&oldPhase!==run.phase)syncHud();
 },draw:(_,dt)=>{
-  if(chargeStart!=null){charge=Math.min(1,(performance.now()-chargeStart)/1200);$('launch-button').style.setProperty('--charge',charge);}
+  if(hitStop>0)hitStop=Math.max(0,hitStop-dt);
+  // The bar, the ring and the arc all show the power that a release now would give.
+  const power = chargeStart!=null ? launchPower(performance.now()-chargeStart) : LAUNCH_MIN;
+  charge = chargeStart!=null ? chargeFill(power) : 0;
+  if(chargeStart!=null)$('launch-button').style.setProperty('--charge',charge);
+  launchPlan = mode==='play' && run.phase==='ready' ? forecastLaunch(run,power) : null;
+  if(launchPlan)launchPlan.charging = chargeStart!=null;
+  updateApproach();
   const frozen = mode === 'field' || mode === 'pause';
-  renderer.draw(run,frozen ? 0 : dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:frozen});
+  renderer.draw(run,frozen ? 0 : dt,{overview:mode==='map',reducedMotion,charge,fieldAim,freezeCamera:frozen,launchPlan,approach,cueLead:CUE_LEAD});
   transitAudio.update(run.flight, mode === 'play' && run.phase === 'flight', reducedMotion);
   const musicActive = mode === 'play' && ['ready','play','upgrade'].includes(run.phase);
   if(musicActive)scoreClock+=Math.min(dt,.1);

@@ -132,7 +132,7 @@ for (const size of [...layouts, { name: 'desktop-right', ...DESK, side: 1 }]) {
     const powered = await read(page);
     R.check(powered.rally.shots === 1 && powered.rally.multiplier === 1 && powered.rally.powerRemaining > 0 && powered.ball.vy > 300,
       'The real moving-flipper strike launches an upward powered shot');
-    R.check(/POWER SHOT ×1/.test(await page.locator('#rally-status').textContent()), 'The HUD names power, multiplier and remaining time');
+    R.check(/^Power shot \d+\.\ds · rally ×1\b/.test(await page.locator('#rally-status').textContent()), 'The HUD names power, multiplier and remaining time');
     R.check(powered.events.filter(e => e.type === 'reverse').length === 0, 'An above-blade strike is not an underside rescue');
     if (!size.touch) await down(); // auto-repeat while the same key stays held
     await sleep(400);
@@ -169,8 +169,9 @@ for (const size of [...layouts, { name: 'desktop-right', ...DESK, side: 1 }]) {
     R.check(fresh.phase === 'ready' && fresh.rally.powerRemaining === 0 && fresh.rally.age === 0 && fresh.rally.shots === 0
       && fresh.rally.multiplier === 1 && fresh.rocks.every(r => r.active && r.warningRemaining === 0 && r.respawnRemaining === 0),
     'A new voyage clears power, multiplier, return state and hazard lifecycle');
-    R.check(await state(page) === 'ready' && /Time your flips/.test(await page.locator('#rally-status').textContent()),
-      'The dock shows the new gameplay guidance');
+    R.check(await state(page) === 'ready' && (await page.locator('#rally-status').textContent()) === 'Hold to aim. Let go to launch.'
+      && await page.locator('#field-status').isHidden() && (await page.locator('#objective').textContent()) === '',
+      'The dock shows one short line of guidance');
   } catch (error) {
     await shot(page, `tilt-rallies-${size.name}-failure`); R.check(false, error.stack || error.message);
   } finally {
