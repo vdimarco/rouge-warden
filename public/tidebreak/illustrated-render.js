@@ -4,7 +4,7 @@ import { player, HEROES } from './sim.js';
 import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, CENTER, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
 import { paintGround } from './paint-ground.js';
-import { attackPose, drawCombatEffect, drawSkillZone } from './combat-motion.js';
+import { attackPose, drawCombatEffect, drawSkillZone, drawCastWarning } from './combat-motion.js';
 import { riverSample, riverCrossings, riverGeometry, riverOutline } from './river.js';
 import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
@@ -87,6 +87,7 @@ export class Renderer {
     this.creatures.retain(s.units.filter(e => e.hp > 0 && (menu || this.visible.has(e.id))).map(e => e.creatureId).filter(Boolean));
     for (const e of s.units) if (e.hp > 0 && (menu || this.visible.has(e.id))) drawList.push({ depth: e.y, draw: () => this.drawUnit(s, e, time) });
     drawList.sort((a, b) => a.depth - b.depth); for (const entry of drawList) entry.draw();
+    for(const e of s.units)if(e.castIntent&&e.hp>0&&this.visible.has(e.id))drawCastWarning(this,e.castIntent,s.time,e.team===p.team);
     for (const f of s.effects) drawCombatEffect(this, f);
     this.drawAtmosphere(s, time);
     if (!menu && p.hp > 0) {
@@ -119,6 +120,7 @@ export class Renderer {
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
     if (e.kind === 'tower' && e.tier === 1) { this.ring(x,y,78,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
+    if(e.kind==='tower'&&e.team!==player(s).team&&!structureProtected(s,e)&&distance(e,player(s))<e.range+250)this.ring(x,y,e.range,e.towerTarget===player(s).id?'#ff8f75':'#dcb075',.65,2);
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
     if (e.creatureId && e.team >= 0) this.ring(x, y, e.radius + 12, TEAM[e.team], .7);
@@ -132,10 +134,11 @@ export class Renderer {
     const creatureBox = drawMarketplaceSprite(this,e,anchor,time)||(e.creatureId ? this.creatures.draw(c, e.creatureId, { x: anchor.x, y: anchor.y, height: height * this.scale, facing: e.facing, state: creatureState, elapsed: creatureTime, duration: creatureState === 'action' ? e.attackDuration : creatureState === 'hit' ? .16 : undefined }) : null);
     const box = creatureBox || (e.kind === 'core' ? drawBaseCore(this, e, time) : this.drawAsset(name, x, y, height, { jump, time, alpha: concealed(s, e) ? .45 : 1, flip: hero && Math.cos(direction) < -.35, bob: tower ? 0 : moving ? -Math.abs(gait) * 4 : Math.sin(time * 3 + e.id) * 1.1, tilt: tower ? 0 : (moving ? gait * .035 : 0) + swing * (e.hero === 2 ? -.07 : .035), stretchX: pose ? 1 + Math.max(0, swing) * .035 : 1, stretchY: pose ? 1 - Math.max(0, swing) * .025 : 1, wave: hero && e.hero === 1 && !pose ? (e.moving ? 8 : 2) : 0 }));
     if (!box) return; this.hitBoxes.push({ ...box, id: e.id, team: e.team });
-    if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp') {
+    if (tower || hero || e.hp < e.maxHp || e.kind === 'minion' || e.kind === 'camp' || e.kind==='summon') {
       const width = tower ? 50 : hero ? e.player ? 58 : 40 : 15, a = creatureBox ? { x: anchor.x, y: box.y - 9 } : this.project(x, y, height + jump + 9);
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
       c.fillStyle = structureProtected(s,e) ? '#9693aa' : TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
+      if(hero){c.fillStyle='#407caf';c.fillRect(a.x-width/2,a.y+6,width*e.mana/e.maxMana,2);}
       if (e.kind === 'tower') { c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?'INNER · PROTECTED':e.tier===1?'INNER WARD':'OUTER WARD',a.x,a.y-6); }
       if (e.stun > 0 || e.fear > 0 || e.silencedUntil>s.time) { c.fillStyle = '#ffe3a0'; c.textAlign = 'center'; c.font = '700 11px Barlow'; c.fillText(e.fear > 0 ? 'FEARED' : e.stun>0?(e.snaredUntil>s.time?'ROOTED':'STUNNED'):'SILENCED', a.x, a.y - 5); }
     }

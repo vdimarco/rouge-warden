@@ -58,6 +58,11 @@ html,body{height:100dvh;overflow:hidden}
 @media(prefers-reduced-motion:reduce){#menu *{animation:none!important;transition:none!important}}
 
 /* Each spell has three short information pages and a persistent learning action. */
+.health #mana-fill{top:auto;bottom:-11px;height:7px;background:#468bc5;width:98%;box-shadow:0 0 0 1px #071a28}
+.health #mana-text{top:calc(100% + 2px);bottom:auto;line-height:8px;font-size:8px;color:#ecf5ff;height:9px}
+.health #xp-fill{bottom:-15px}
+.abilities .mana-cost{position:absolute;bottom:9px;left:0;right:0;font:8px Barlow;color:#bedfff;text-align:center;text-shadow:0 1px 2px #071a28;pointer-events:none}
+.ability.mana-empty{border-color:#629ac5}.ability.mana-empty b{font-size:11px}.ability.return-ready{border-color:#ffc783}.ability.return-ready b{font-size:13px}
 .spell-list,.spell-detail-scroll,.spellbook-layout{overflow:hidden}
 .spell-row{min-height:0}
 .spell-info-tabs{display:flex;flex:none;gap:5px;margin-bottom:7px}
