@@ -19,7 +19,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true });
 try {
   for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390]]) {
-    const page = await browser.newPage({ viewport: { width, height } }), errors = [], loadedAssets = new Set();
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: name !== 'desktop' }), errors = [], loadedAssets = new Set();
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
     page.on('response', r => { if (r.url().startsWith(origin)) { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); else loadedAssets.add(new URL(r.url()).pathname); } });
@@ -69,10 +69,13 @@ try {
       const roster = rect(document.querySelector('#hero-picks'));
       const cards = [...document.querySelectorAll('#hero-picks button')].map(rect).filter(r=>inside(r,roster));
       const spells = [...document.querySelectorAll('#hero-preview [data-hero-spell]')].map(rect);
+      const spellKeys = [...document.querySelectorAll('#hero-preview [data-hero-spell] kbd')].map(rect);
+      const spellNote = rect(document.querySelector('#hero-spell-note'));
       const filters = [...document.querySelectorAll('#role-filters button')].map(rect);
       return {
         footer:footer.every(r=>inside(r,viewport))&&footer.every((r,i)=>footer.slice(i+1).every(other=>!overlaps(r,other))),
         spells:spells.length===4&&spells.every(r=>inside(r,viewport))&&spells.every((r,i)=>spells.slice(i+1).every(other=>!overlaps(r,other))),
+        description:spells.every(r=>!overlaps(r,spellNote))&&spellKeys.every(r=>inside(r,viewport)&&!overlaps(r,spellNote)),
         filters:filters.length===6&&filters.every(r=>inside(r,viewport)),
         cards:cards.filter(r=>r.width>=48&&r.height>=44).length>=4,
         columns:new Set(cards.map(r=>Math.round(r.left))).size===4,
@@ -82,10 +85,36 @@ try {
     console.log(name,'selection controls',JSON.stringify(controlsFit));
     assert(controlsFit.footer, 'Start and menu links fit without overlapping');
     assert(controlsFit.spells, 'four skill buttons fit without overlapping');
+    assert(controlsFit.description, 'skill buttons and key labels stay clear of the description');
     assert(controlsFit.filters, 'all six role controls fit');
     assert(controlsFit.cards, 'at least one row of four usable hero cards fits');
     assert(controlsFit.columns, 'the roster uses four columns');
     if (name === 'desktop') assert(controlsFit.allCardsFit, 'all sixteen portraits fit the desktop roster');
+    if (name === 'small-phone' || name === 'landscape') {
+      const portrait=page.locator('#hero-picks [data-hero="4"] .reference-portrait');
+      await portrait.scrollIntoViewIfNeeded();
+      const cardBox=await portrait.boundingBox(),rosterBox=await page.locator('#hero-picks').boundingBox();
+      const beforeScroll=await page.locator('#hero-picks').evaluate(el=>el.scrollTop);
+      assert(await page.locator('#hero-picks').evaluate(el=>el.scrollHeight>el.clientHeight+15), 'compact roster supports vertical travel');
+      const x=cardBox.x+cardBox.width*.5,startY=Math.min(cardBox.y+cardBox.height*.7,rosterBox.y+rosterBox.height-12),endY=Math.max(rosterBox.y+8,startY-85);
+      assert(startY-endY>=35, 'the swipe starts on a visible portrait');
+      const touch=await page.context().newCDPSession(page);
+      try {
+        await touch.send('Input.dispatchTouchEvent', {type:'touchStart',touchPoints:[{x,y:startY,id:1,radiusX:4,radiusY:4,force:1}]});
+        for (let move=1;move<=8;move++) {
+          await touch.send('Input.dispatchTouchEvent', {type:'touchMove',touchPoints:[{x,y:startY+(endY-startY)*move/8,id:1,radiusX:4,radiusY:4,force:1}]});
+          await page.waitForTimeout(35);
+        }
+        await touch.send('Input.dispatchTouchEvent', {type:'touchEnd',touchPoints:[]});
+      } finally { await touch.detach(); }
+      await page.waitForFunction(before=>document.querySelector('#hero-picks').scrollTop>before+10,beforeScroll);
+      assert((await page.locator('#hero-picks').evaluate(el=>el.scrollTop))>beforeScroll+10, 'a finger swipe on a portrait scrolls the roster');
+      await page.screenshot({ path:path.join(shots,`${name}-shore-roster-swipe.png`) });
+      await page.locator('#hero-picks').focus();
+      await page.keyboard.press('Home');
+      assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
+      assert((await page.locator('#hero-picks').evaluate(el=>el.scrollTop))<=2, 'Home returns to the first roster row');
+    }
     for (const identity of HERO_IDENTITIES) {
       await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
       assert.equal(await page.locator('#hero-name').textContent(), identity.name);

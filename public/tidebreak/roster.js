@@ -13,10 +13,10 @@ export function selectionSpellArt(identity,slot,className=''){
  if(identity===0)return `<span class="painted-spell reference-spell ${className}" style="--spell-x:${[1116,1216,1316,1416][slot]}" aria-hidden="true"></span>`;
  return spellArtHTML(HERO_IDENTITIES[identity].kit,slot,className);
 }
-export function heroPreviewHTML(identity){
+export function heroPreviewHTML(identity,activeSlot=1){
  const p=HERO_IDENTITIES[identity],h=HEROES[p.kit];
  return `<div class="hero-move-preview" aria-label="${p.name} skills">${p.skills.map((name,slot)=>{
  const a=identitySkill(identity,slot);
- return `<button data-hero-spell="${slot}" aria-label="${name}. ${a.description}" aria-pressed="${slot===1}" title="${name}: ${a.description}">${selectionSpellArt(identity,slot,'preview-spell-art')}<span>${name}</span><kbd>${SELECTION_KEYS[slot]}</kbd></button>`;
+ return `<button data-hero-spell="${slot}" aria-label="${name}. ${a.description}" aria-pressed="${slot===activeSlot}" title="${name}: ${a.description}">${selectionSpellArt(identity,slot,'preview-spell-art')}<span>${name}</span><kbd>${SELECTION_KEYS[slot]}</kbd></button>`;
  }).join('')}</div><span class="sr-only">${h.attribute}, ${h.attackType}, ${h.hp} health</span>`;
 }
