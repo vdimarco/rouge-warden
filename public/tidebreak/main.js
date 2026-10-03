@@ -65,6 +65,7 @@ function choose(identityId) {
     const a=identitySkill(identityId,slot);explainSkill(slot);
     sheet(`<h2>${a.name}</h2><div class="selection-spell-art">${heroPreviewHTML(identityId)}</div><p>${a.description}</p><p class="keyhint">${a.tags} · ${a.cooldown}s cooldown<br>${slot===3?'Ultimate: levels 6, 12, 18':'Basic ranks: levels 1, 3, 5, 7'}</p><button id="back-preview" class="primary">Back to heroes</button>`);
     document.querySelectorAll('.selection-spell-art [data-hero-spell]').forEach(v=>v.onclick=()=>{closeSheet();document.querySelector(`#hero-preview [data-hero-spell="${v.dataset.heroSpell}"]`).click();});$('back-preview').onclick=closeSheet;
+  };
   });
   explainSkill(1);
 }
