@@ -8,7 +8,7 @@ Six reviewers played each game on a 390×844 phone screen and on a desktop, read
 
 - The Small Worlds shell: an outro before the result card, the best score on the card, a daily world, and more feedback helpers for the games.
 - Each game: fix the bugs from the review, then make the changes that add the most fun for the effort. A game's core move, look and controls stay; the changes sharpen the move, the feedback and the reason to play again.
-- Tests: each change gets a sim or browser check. `qa/lab/hidden.mjs` becomes `qa/lab/links.mjs`, because the arcade now links to the lab.
+- Tests: each change gets a sim or browser check. A new `qa/lab/links.mjs` checks that every link from the arcade and the Lab page opens a page that exists.
 - Docs: the README, the Lab page cards and a fun audit of the lab.
 
 ## Out of scope

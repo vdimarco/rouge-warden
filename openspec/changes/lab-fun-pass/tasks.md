@@ -1,6 +1,6 @@
 - [x] Review the twelve lab games against the bar, with bots, sims and phone-sized play.
 - [x] Small Worlds shell: outro, best on the card, a sound for a loss, a daily world, and feedback helpers.
-- [x] Replace `qa/lab/hidden.mjs` with `qa/lab/links.mjs`.
+- [x] Add `qa/lab/links.mjs`, and keep main's rewrite of `qa/lab/hidden.mjs`.
 - [x] House Rules: phone fit, races and replies, the death card, tanks in Settle, and remix.
 - [ ] Threadwake and Borrowed Bodies.
 - [ ] Foldwild and Season Thief.
