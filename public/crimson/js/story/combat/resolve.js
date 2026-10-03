@@ -122,11 +122,20 @@ export function createResolve(K) {
     // a clone of ink bursts at one touch
     if (f.clone) { K.foes.vanish(f, true); return; }
     const open = f.state === 'recover' || f.state === 'recoil' || f.state === 'stagger';
-    const dmg = s.dmg * w.dmg * H.stats.dmg * (open ? 1.25 : 1);
+    // Reading a whiff, recoil or stagger should pay off immediately. Heavy attacks
+    // get the largest reward because the player is accepting the most commitment.
+    const openingK = H.atk.name === 'heavy' ? 1.55 : 1.4;
+    const dmg = s.dmg * w.dmg * H.stats.dmg * (open ? openingK : 1);
     f.hp -= dmg;
     if (f.lawUnit) S.bus.emit('pedestrianCrime', { fatal: f.hp <= 0, pos: f.pos.clone() });
-    f.posture = Math.min(f.maxPosture, f.posture + s.post * w.post * TUNE.postureGain * (f.state === 'recoil' ? 1.6 : 1) * (f.postureK || 1));
+    f.posture = Math.min(f.maxPosture, f.posture + s.post * w.post * TUNE.postureGain * (open ? 1.45 : 1) * (f.postureK || 1));
     f.postureT = 0; f.flinch = 1;
+    if (open && first) {
+      K.toast('OPENING HIT');
+      K.flash(0.16);
+      S.hitstop = Math.max(S.hitstop, H.atk.name === 'heavy' ? 0.12 : 0.075);
+      K.emit('opening', { f, move: H.atk.name });
+    }
     K.sfx(H.weapon === 'fists' ? 'hit' : 'cut', f.pos);
     if (first) {
       S.hitstop = Math.max(S.hitstop, H.atk.name === 'heavy' ? 0.09 : 0.05);
