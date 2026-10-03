@@ -91,27 +91,32 @@ function learnSkills() {
     $('back-skills').onclick=closeSheet;
   };show();
 }
+const abilityCluster=document.querySelector('.abilities');
+function trainFromHUD(slot){
+  const p=player(state);
+  if(!canLearn(p,slot)||!trainSkill(p,slot))return false;
+  abilityCluster.classList.remove('upgrade-mode');
+  const name=identitySkill(selectedIdentity,slot).name;
+  announce(state,`${name} · Rank ${p.skillRanks[slot]}`,'Ability upgraded while movement stays active.');
+  sound.tone(780,.16);updateUI();
+  return true;
+}
 pointerAction($('skill-points'),()=>{
   const p=player(state),eligible=p.skillRanks.map((_,i)=>i).filter(i=>canLearn(p,i));
   if(p.skillPoints>0&&eligible.length){
-    const cluster=document.querySelector('.abilities');
-    cluster.classList.toggle('upgrade-mode');
-    announce(state,cluster.classList.contains('upgrade-mode')?'Choose a skill':'Upgrade controls hidden',cluster.classList.contains('upgrade-mode')?'Tap a + beside the ability you want. Keep moving while you upgrade.':'Tap the skill-point button to show upgrades again.');
+    abilityCluster.classList.toggle('upgrade-mode');
+    announce(state,abilityCluster.classList.contains('upgrade-mode')?'Choose a skill':'Upgrade mode off',abilityCluster.classList.contains('upgrade-mode')?'Tap the full ability icon to spend the point. You can keep moving.':'Tap the point button when you want to upgrade.');
+    updateUI();
     return;
   }
   learnSkills();
 },()=>running&&!paused&&!resultShown);
 const upgradeButtons=[...document.querySelectorAll('[data-upgrade]')];
-upgradeButtons.forEach(b=>pointerAction(b,()=>{
-  const p=player(state),slot=+b.dataset.upgrade;
-  if(!trainSkill(p,slot))return;
-  announce(state,`${identitySkill(selectedIdentity,slot).name} · Rank ${p.skillRanks[slot]}`,'Ability upgraded.');
-  sound.tone(780,.16);updateUI();
-},()=>running&&!paused&&!resultShown&&!b.disabled));
+upgradeButtons.forEach(b=>pointerAction(b,()=>trainFromHUD(+b.dataset.upgrade),()=>running&&!paused&&!resultShown&&!b.disabled));
 
 function how() {
   const h = {...HEROES[selected],...HERO_IDENTITIES[selectedIdentity],descriptions:[0,1,2,3].map(i=>identitySkill(selectedIdentity,i).description)};
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -141,18 +146,21 @@ function updateUI() {
   const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
   const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').title = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete'; $('quick-buy').textContent = next ? '+' : '·'; $('quick-buy').setAttribute('aria-label', $('quick-buy').title);
   const followUp=followUpFeedback(state,p,{visible:renderer?.visible});
+  const upgradeMode=abilityCluster.classList.contains('upgrade-mode');
   skillButtons.forEach((b,i)=>{
-    const rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady,blocked=spellBlocked(state,p,i)||!!p.castIntent||p.recoveryUntil>state.time;
+    const eligible=canLearn(p,i),rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady,blocked=spellBlocked(state,p,i)||!!p.castIntent||p.recoveryUntil>state.time;
     const blockedLabel=p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
     b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):blocked?blockedLabel:returnReady?'BACK':p.cd[i]>0?Math.ceil(p.cd[i]):empty?'MANA':'';
     b.querySelector('b').classList.toggle('locked',locked);
-    b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',canLearn(p,i));
+    b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',eligible);
+    b.classList.toggle('upgrade-target',upgradeMode&&eligible);
     b.classList.toggle('control-blocked',blocked&&!locked);
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
-    b.setAttribute('aria-disabled',String(locked||!returnReady&&(p.cd[i]>0||empty)||blocked));
+    const combatDisabled=locked||!returnReady&&(p.cd[i]>0||empty)||blocked;
+    b.setAttribute('aria-disabled',String(upgradeMode&&eligible?false:combatDisabled));
     const move=identitySkill(selectedIdentity,i);
-    b.setAttribute('aria-label',`${returnReady?'Return to decoy':move.name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${move.description}`);
+    b.setAttribute('aria-label',upgradeMode&&eligible?`Spend one skill point on ${move.name}. Current rank ${rank}.`:`${returnReady?'Return to decoy':move.name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${move.description}`);
     if(blockedLabel)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Temporarily unavailable: ${blockedLabel.toLowerCase()}.`);
     b.classList.toggle('combo-ready',followUp?.slot===i);b.dataset.combo=followUp?.slot===i?followUp.bonus:'';
     if(followUp?.slot===i)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Combo ready. ${followUp.label}.`);
@@ -163,7 +171,7 @@ function updateUI() {
   $('skill-points').classList.toggle('ready',upgradeReady);
   if(!upgradeReady)document.querySelector('.abilities')?.classList.remove('upgrade-mode');
   upgradeButtons.forEach((b,i)=>{
-    const eligible=canLearn(p,i);b.hidden=!eligible;b.disabled=!eligible;
+    const eligible=canLearn(p,i);b.hidden=true;b.disabled=!eligible;
     b.setAttribute('aria-label',`${p.skillRanks[i]?'Upgrade':'Learn'} ${identitySkill(selectedIdentity,i).name} to rank ${p.skillRanks[i]+1} · 1 skill point`);
   });
 
@@ -217,7 +225,10 @@ function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,ros
 $('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><span class="role-icon" style="--role-x:${[42,117,194,272,347,429][i]}" aria-hidden="true"></span>${role}</button>`).join('');
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 movementControl=movementPointer($('joystick'),{movement,thumb:$('thumb'),enabled:()=>running&&!paused,onStart:()=>{sound.start();$('coach').hidden=true;}});
-abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=value,onStatus:updateAimStatus,onCast:command=>castQueue=command});
+abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=abilityCluster.classList.contains('upgrade-mode')?null:value,onStatus:status=>updateAimStatus(abilityCluster.classList.contains('upgrade-mode')?null:status),onCast:command=>{
+  if(abilityCluster.classList.contains('upgrade-mode')&&trainFromHUD(command.slot))return;
+  castQueue=command;
+}});
 $('battle').addEventListener('pointerdown', e => {
   if (!running || paused || player(state).hp<=0 || (e.button!==0&&e.button!==2)) return;
   e.preventDefault();sound.start();$('coach').hidden=true;

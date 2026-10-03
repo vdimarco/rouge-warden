@@ -115,3 +115,38 @@
  .abilities .ult{width:68px;height:68px}
  #skill-points{width:136px;min-height:36px;top:-39px}
 }
+
+
+/* Final compact HUD pass: the visible buttons stay small; pointer slop supplies touch comfort. */
+.abilities{width:180px;height:160px;right:max(8px,env(safe-area-inset-right));bottom:calc(51px + env(safe-area-inset-bottom))}
+.abilities .ability{width:54px;height:54px}
+.abilities .dash{top:0;right:0}
+.abilities .surge{top:26px;left:62px}
+.abilities .signature{left:0;bottom:10px}
+.abilities .ult{width:70px;height:70px;right:0;bottom:0}
+.ability .hud-spell-art{inset:3px;border-radius:13px}
+.ability.ult .hud-spell-art{inset:4px;border-radius:17px}
+.ability span{bottom:-14px;max-width:88px;font-size:7px;line-height:9px}
+#skill-points{top:-40px;width:128px;min-height:36px;padding:5px 9px;font-size:9px}
+.abilities.upgrade-mode .ability{opacity:.5;filter:saturate(.7)}
+.abilities.upgrade-mode .ability.upgrade-target{opacity:1;filter:none;border-color:#ffe5a0;box-shadow:0 0 0 3px #ffe5a02f,0 0 18px #ffd77055,inset 0 0 0 2px #041018}
+.abilities.upgrade-mode .ability.upgrade-target::before{content:'+';position:absolute;z-index:8;right:-6px;top:-7px;width:23px;height:23px;display:grid;place-items:center;border:2px solid #ffe8a7;border-radius:50%;background:#d0a84f;color:#08131a;font:900 18px/18px Arial,sans-serif;box-shadow:0 2px 8px #0008;pointer-events:none}
+.ability-upgrade{display:none!important}
+#skill-points,.ability{touch-action:none}
+
+@media(max-width:390px){
+ .abilities{width:170px;height:152px;right:5px}
+ .abilities .ability{width:51px;height:51px}
+ .abilities .surge{left:59px;top:25px}
+ .abilities .signature{bottom:9px}
+ .abilities .ult{width:66px;height:66px}
+ #skill-points{width:120px;min-height:34px;top:-38px}
+}
+@media(max-height:520px) and (min-width:600px){
+ .abilities{width:166px;height:142px;right:8px;bottom:27px}
+ .abilities .ability{width:48px;height:48px}
+ .abilities .surge{left:57px;top:20px}
+ .abilities .signature{bottom:4px}
+ .abilities .ult{width:63px;height:63px}
+ #skill-points{width:118px;min-height:33px;top:-36px}
+}
