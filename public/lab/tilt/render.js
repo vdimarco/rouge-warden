@@ -195,8 +195,8 @@ export function createRenderer(canvas, minimap) {
       }
     }
     const color = fieldEvent ? FIELD_COLORS[event.kind] || FIELD_COLORS.pull : type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
-    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy'].includes(type);
-    if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
+    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy', 'magnet'].includes(type);
+    if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue', 'magnet'].includes(type)) {
       rings.push({ x, y, age: 0, life: fieldEvent ? 0.55 : large ? 0.8 : 0.35, r: fieldEvent ? FIELD_RADIUS - 15 : large ? 220 : 75, inward: type === 'field-expire', color: type === 'relay' ? '#fff2b0' : color });
       if (!reducedMotion) {
         const count = large ? 26 : type === 'relay' ? 19 : 9;
@@ -841,11 +841,13 @@ export function createRenderer(canvas, minimap) {
   }
 
   function orbitDust(room) {
-    if (!dust.has(room.id)) dust.set(room.id, makeOrbitDust(room.id, room.color));
+    // The dust belongs to the world, which a seed can place at any step of the route.
+    const key = room.world ?? room.id;
+    if (!dust.has(key)) dust.set(key, makeOrbitDust(key, room.color));
     const diameter = room.gravityRadius * 2.7;
     if (!visible(room.planet.x, room.planet.y, diameter / 2)) return;
     g.save(); g.globalAlpha = .70;
-    g.drawImage(dust.get(room.id), room.planet.x - diameter / 2, room.planet.y - diameter / 2, diameter, diameter);
+    g.drawImage(dust.get(key), room.planet.x - diameter / 2, room.planet.y - diameter / 2, diameter, diameter);
     g.restore();
   }
 
@@ -1287,7 +1289,7 @@ export function createRenderer(canvas, minimap) {
       const clock = run.clock || 0, color = room.color || PALETTE[sectorIndex % 6];
       orbitDust(room);
       gravityField(room, renderRun, !timeline, clock);
-      planet(room.planet, sectorIndex, color, clock, !timeline, renderRun.world.ball);
+      planet(room.planet, room.world ?? sectorIndex, color, clock, !timeline, renderRun.world.ball);
       gate(room, clock, !timeline);
       // The skill beacon shows its mark at the dock and while a launch can still score it.
       const skillOpen = !timeline && (renderRun.phase === 'ready' || !!run.skill?.armed);

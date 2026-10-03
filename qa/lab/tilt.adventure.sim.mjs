@@ -1,10 +1,12 @@
 // Focused, deterministic adventure checks. Run: node qa/lab/tilt.adventure.sim.mjs
 import assert from 'node:assert/strict';
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, currentSector } from '../../public/lab/tilt/adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, availableUpgrades, currentSector,
+  skipAdventureFlight, dailySeed, dayKey, WORLD_LAYOUTS } from '../../public/lab/tilt/adventure.js';
 import { makeWorld, step, setFlip, H } from '../../public/lab/tilt/physics.js';
 import { makeTable, BALL_R } from '../../public/lab/tilt/table.js';
 
 function advance(run, seconds) { for (let i = 0; i < Math.round(seconds / H); i++) updateAdventure(run); }
+function advanceEvents(run, seconds) { const events = []; for (let i = 0; i < Math.round(seconds / H); i++) events.push(...updateAdventure(run)); return events; }
 function place(run, x, y, vx = 0, vy = 0) {
   Object.assign(run.world.ball, { x, y, vx, vy, live: true, lane: false });
   for (const f of run.world.flippers) f.sd = 0;
@@ -28,10 +30,11 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const below = run.table.gravity({ x: p.x, y: p.y - 220 });
   assert(above.y < -100 && below.y > 100, 'the planet pulls vertically from above and below');
   assert(run.table.gravity(s.station).y < -300, 'local dock gravity supports the flippers');
-  run.sectorIndex = 3;
+  // The seed orders the middle worlds, so find each field by its kind.
+  run.sectorIndex = run.sectors.findIndex(sector => sector.planet.kind === 'repel');
   const repeller = currentSector(run).planet;
   assert(run.table.gravity({ x: repeller.x + 220, y: repeller.y }).x > 0, 'Violet Reach pushes outward');
-  run.sectorIndex = 2;
+  run.sectorIndex = run.sectors.findIndex(sector => sector.planet.kind === 'tide');
   const tide = currentSector(run).planet;
   run.clock = 0; const early = run.table.gravity({ x: tide.x + 220, y: tide.y });
   run.clock = 2; const later = run.table.gravity({ x: tide.x + 220, y: tide.y });
@@ -40,7 +43,10 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 {
-  const run = createAdventure(8), control = createAdventure(8), p = currentSector(run).planet;
+  // The flight passes beside the planet. The seed picks the layout, so this check uses the first
+  // layout of the first world, which has no beacon on that path.
+  const open = { layouts: WORLD_LAYOUTS.map((list, world) => world === 0 ? [list[0]] : list) };
+  const run = createAdventure(8, open), control = createAdventure(8, open), p = currentSector(run).planet;
   const start = { x: p.x - 230, y: p.y };
   place(run, start.x, start.y, 0, 600);
   place(control, start.x, start.y, 0, 600);
@@ -243,6 +249,107 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     console.log(`ok: seed ${seed} physical bot finished six sectors in ${run.clock.toFixed(1)} s; ${events.flipper || 0} flipper hits, ${events.relay} relay charges, ${events.orbit || 0} orbits, no boundary clamps or rescue burns`);
   }
   assert(orbits > 0, 'real flights earn the orbit bonus');
+}
+
+{
+  // Seeded voyages: Lunar Harbor opens and the Star Engine ends every voyage. The seed orders the
+  // four worlds between them and picks one tested layout for each world.
+  const orders = new Set(), picks = new Set();
+  for (let seed = 1; seed <= 80; seed++) {
+    const run = createAdventure(seed), order = run.sectors.map(s => s.world);
+    assert.equal(order[0], 0); assert.equal(order[5], 5);
+    assert.deepEqual(order.slice(1, 5).sort(), [1, 2, 3, 4], 'the middle four worlds are each visited once');
+    orders.add(order.join(''));
+    for (const s of run.sectors) {
+      const layout = WORLD_LAYOUTS[s.world][s.layout];
+      picks.add(`${s.world}:${s.layout}`);
+      assert.deepEqual(s.relays.map(r => [r.x - s.x, r.y - s.y]), layout.relays, 'a world uses one of its tested layouts');
+      assert.equal(s.relays.filter(r => r.skill).length, 1);
+      assert.equal(s.relays.every(r => r.required === (s.world === 5 ? 2 : 1)), true, 'only the Star Engine needs two hits per beacon');
+    }
+  }
+  const layouts = WORLD_LAYOUTS.reduce((sum, list) => sum + list.length, 0);
+  assert(orders.size >= 20, 'near seeds give many world orders');
+  assert.equal(picks.size, layouts, 'every tested layout appears in some voyage');
+  assert(WORLD_LAYOUTS.every(list => list.length >= 3), 'every world has at least three layouts');
+  // One seed per local calendar day, so the crew flies the same voyage on the same day.
+  const day = '2026-10-03', voyage = run => JSON.stringify({ order: run.sectors.map(s => [s.world, s.layout]),
+    bodies: run.table.bumpers.map(b => [b.id, b.x, b.y, b.r]), offers: availableUpgrades(run).map(u => u.id) });
+  assert.equal(dayKey(new Date(2026, 9, 3, 0, 1)), day); assert.equal(dayKey(new Date(2026, 9, 3, 23, 59)), day);
+  assert.equal(dailySeed(new Date(2026, 9, 3, 23, 59)), dailySeed(day), 'the seed follows the local calendar day');
+  assert.equal(voyage(createAdventure(dailySeed(day))), voyage(createAdventure(dailySeed(day))), 'one date always gives the same voyage');
+  assert.notEqual(dailySeed('2026-10-04'), dailySeed(day), 'the next day gives a new seed');
+  const week = new Set(Array.from({ length: 7 }, (_, i) => voyage(createAdventure(dailySeed(`2026-10-0${i + 1}`)))));
+  assert.equal(week.size, 7, 'each day of a week has its own voyage');
+  console.log(`ok: ${orders.size} world orders in 80 seeds, all ${layouts} tested layouts used, and one voyage per calendar day`);
+}
+
+{
+  // Each gate offers three different upgrades from a pool of six. The seed and the world set them.
+  const pool = new Set(availableUpgrades().map(u => u.id)), seen = new Set();
+  assert.equal(pool.size, 6);
+  for (let seed = 1; seed <= 40; seed++) for (let sector = 0; sector < 5; sector++) {
+    const run = createAdventure(seed); run.sectorIndex = sector;
+    const offer = availableUpgrades(run).map(u => u.id);
+    assert.equal(new Set(offer).size, 3, 'three different choices');
+    assert(offer.every(id => pool.has(id)));
+    assert.deepEqual(availableUpgrades(createAdventure(seed)).map(u => u.id), availableUpgrades(createAdventure(seed)).map(u => u.id));
+    offer.forEach(id => seen.add(id));
+    run.lives = 1;
+    assert(availableUpgrades(run).some(u => u.id === 'shield'), 'Hull repair is offered on the last heart');
+  }
+  assert.equal(seen.size, 6, 'every upgrade can be offered');
+  // Long flippers: 12% longer blades in every world, once. The gap between the tips stays wider
+  // than the ball, so a ball can still fall between them.
+  const run = createAdventure(8), length = run.world.flippers[0].len;
+  for (const expected of [1.12, 1.12]) {
+    run.phase = 'upgrade'; assert(chooseUpgrade(run, 'long')); skipAdventureFlight(run);
+    assert(run.world.flippers.every(f => Math.abs(f.len - length * expected) < 1e-9), 'long flippers lengthen every blade');
+  }
+  assert(!availableUpgrades(run).some(u => u.id === 'long'), 'a full upgrade is not offered again');
+  const [left, right] = run.world.flippers.filter(f => f.sector === run.sectorIndex).sort((a, b) => a.side - b.side);
+  const gap = (right.px + Math.cos(right.rest) * right.len) - (left.px + Math.cos(left.rest) * left.len) - left.r2 - right.r2;
+  assert(gap > 2 * BALL_R + 4, `the gap between long blades (${gap.toFixed(1)}) is wider than the ball`);
+  // Magnet save: once in each world, a lost ball goes back up and no heart is lost.
+  const saved = createAdventure(8);
+  saved.phase = 'upgrade'; chooseUpgrade(saved, 'magnet'); skipAdventureFlight(saved);
+  for (const lost of [false, true]) {
+    const s = currentSector(saved);
+    if (saved.phase === 'ready') launchAdventure(saved);
+    saved.saveUntil = 0; place(saved, s.x, s.y + 3, 0, -100);
+    const events = advanceEvents(saved, H);
+    if (!lost) {
+      assert(events.some(e => e.type === 'magnet') && saved.lives === 3 && saved.phase === 'play' && saved.world.ball.vy > 500,
+        'the magnet throws a lost ball back up');
+    } else assert(events.some(e => e.type === 'drain') && saved.lives === 2, 'the magnet works once in each world');
+  }
+  saved.phase = 'upgrade'; chooseUpgrade(saved, 'pulse'); skipAdventureFlight(saved);
+  assert.equal(saved._magnets, 1, 'the magnet is ready again in the next world');
+  console.log('ok: three seeded upgrade choices from six; long flippers and magnet save change play');
+}
+
+{
+  // The simple physical bot from the block above finishes 50 seeded voyages.
+  const times = [];
+  for (let seed = 101; seed <= 150; seed++) {
+    const run = createAdventure(seed);
+    let playTicks = 0;
+    for (let i = 0; i < 360 * 120 && run.phase !== 'won' && run.phase !== 'over'; i++) {
+      if (run.phase === 'ready') launchAdventure(run, 0.75);
+      if (run.phase === 'upgrade') chooseUpgrade(run, run.lives < 3 ? 'shield' : 'pulse');
+      if (run.phase === 'play') {
+        const b = run.world.ball, s = currentSector(run);
+        for (const side of [-1, 1]) setFlip(run.world, side, b.y < s.y + 360 && b.vy < 100 && playTicks % 36 < 16);
+        if (run.pulseCooldown <= 0) pulseAdventure(run);
+        playTicks++;
+      }
+      updateAdventure(run);
+    }
+    assert.equal(run.phase, 'won', `seed ${seed}: the simple physical bot finishes the voyage within six minutes`);
+    times.push(run.clock);
+  }
+  times.sort((a, b) => a - b);
+  console.log(`ok: the simple physical bot finished 50 of 50 seeded voyages; median ${times[25].toFixed(0)} s, slowest ${times[49].toFixed(0)} s`);
 }
 
 // Default tables retain the original gravity and launcher behavior after adding optional hooks.

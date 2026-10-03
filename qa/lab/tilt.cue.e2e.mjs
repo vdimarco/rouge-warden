@@ -147,13 +147,15 @@ async function playToEnd(page) {
   return page.evaluate(() => ({ title: document.getElementById('end-title').textContent, score: Number(document.getElementById('end-score').textContent.replace(/,/g, '')),
     best: document.getElementById('end-best').textContent, gap: Number(document.getElementById('end-best').dataset.gap),
     worlds: document.querySelectorAll('#end-worlds li').length, reached: document.querySelectorAll('#end-worlds li.reached, #end-worlds li.cleared').length,
-    detail: document.getElementById('end-detail').textContent, stored: Number(localStorage.getItem('tilt.voyage.best')) }));
+    detail: document.getElementById('end-detail').textContent, stored: Number(localStorage.getItem('tilt.voyage.best')),
+    share: document.getElementById('share-line').textContent }));
 }
-for (const size of [{ name: 'phone-portrait', ...PHONE }, { name: 'desktop', ...DESK }]) {
+for (const size of [{ name: 'phone-portrait', ...PHONE }, { name: 'desktop', ...DESK }, { name: 'phone-landscape', width: 844, height: 390, touch: true }]) {
   R.section(`${size.name}: the end card says how close the run came`);
   const init = () => { if (!sessionStorage.getItem('qa-best')) { localStorage.setItem('tilt.voyage.best', '50000'); sessionStorage.setItem('qa-best', '1'); } };
-  const { page, errors, close } = await open('tilt/', { ...size, init });
+  const { page, ctx, errors, close } = await open('tilt/', { ...size, init });
   try {
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
     await manualLoop(page, { score: { score: 12000, lives: 1 } });
     await page.getByRole('button', { name: 'Start voyage', exact: true }).click();
     const end = await playToEnd(page);
@@ -163,6 +165,12 @@ for (const size of [{ name: 'phone-portrait', ...PHONE }, { name: 'desktop', ...
     R.check(end.stored === 50000, 'A lower score keeps the stored best');
     R.check(end.worlds === 6 && end.reached >= 1, 'The end card shows six world markers and the world reached');
     R.check(/Perfect/.test(end.detail) && /best rally \d+ in a row/.test(end.detail), 'The end card shows the Perfect count and the best rally');
+    const day = await page.evaluate(() => { const d = new Date(); return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+    const cleared = Number(/^(\d) of 6 worlds/.exec(end.detail)?.[1]);
+    R.check(end.share === `Full Tilt ${day} · ${cleared}/6 · ${end.score.toLocaleString('en-US')}`, `The share line names today's voyage: "${end.share}"`);
+    await page.locator('#share-button').click();
+    await until(page, () => document.getElementById('share-button').textContent === 'Copied', null, 3000);
+    R.check(await page.evaluate(() => navigator.clipboard.readText()) === end.share, 'Copy result puts the share line on the clipboard');
     await shot(page, `tilt-cue-${size.name}-end-short`);
     await page.unroute('**/tilt/adventure.js');
     await manualLoop(page, { score: { score: 61000, lives: 1 } });

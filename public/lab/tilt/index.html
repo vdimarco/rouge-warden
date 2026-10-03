@@ -60,6 +60,7 @@
       <p class="menu-pitch">Flip as the ring closes. Light three beacons in each world, then dive through the black hole.</p>
       <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
       <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
+      <p class="voyage-choice"><span id="voyage-day">Today's voyage</span> <span aria-hidden="true">·</span> <button id="random-button" class="text-button" type="button">Random voyage</button></p>
       <div class="motion-controls menu-motion">
         <div class="motion-actions">
           <button id="motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="motion-status">Enable tilt</button>
@@ -117,13 +118,18 @@
   </section>
 
   <section id="end-panel" class="overlay panel-overlay" aria-labelledby="end-title" hidden>
-    <div class="dialog-card">
-      <h2 id="end-title">Voyage complete.</h2>
-      <ol id="end-worlds" class="end-worlds" aria-label="Worlds cleared"></ol>
-      <p class="end-score"><strong id="end-score">0</strong><span id="end-best"></span></p>
-      <p id="end-detail" class="panel-description"></p>
-      <button id="again-button" class="primary-button" type="button">Fly again <span aria-hidden="true">↗</span></button>
-      <a class="quiet-link" href="/">Return to arcade</a>
+    <div class="dialog-card end-card">
+      <div class="end-summary">
+        <h2 id="end-title">Voyage complete.</h2>
+        <ol id="end-worlds" class="end-worlds" aria-label="Worlds cleared"></ol>
+        <p class="end-score"><strong id="end-score">0</strong><span id="end-best"></span></p>
+        <p id="end-detail" class="panel-description"></p>
+      </div>
+      <div class="end-actions">
+        <div class="share-row"><p id="share-line"></p><button id="share-button" class="secondary-button" type="button">Copy result</button></div>
+        <button id="again-button" class="primary-button" type="button">Fly again <span aria-hidden="true">↗</span></button>
+        <a class="quiet-link" href="/">Return to arcade</a>
+      </div>
     </div>
   </section>
 

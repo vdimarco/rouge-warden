@@ -1,5 +1,5 @@
 // Full Tilt: a pinball voyage. Gameplay stays in world coordinates in either orientation.
-import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY, setWarpAim, clearWarpAim, forecastAdventureFlip, forecastLaunch, LAUNCH_MIN } from './adventure.js';
+import { createAdventure, updateAdventure, launchAdventure, pulseAdventure, chooseUpgrade, skipAdventureFlight, availableUpgrades, objective, currentSector, setAdventureTilt, canDeployGravityWell, deployGravityWell, FIELD_CAPACITY, setWarpAim, clearWarpAim, forecastAdventureFlip, forecastLaunch, LAUNCH_MIN, dailySeed, dayKey } from './adventure.js';
 import { createTiltControl } from './motion.js';
 import { setFlip, canReverseScoop, H } from './physics.js';
 import { createRenderer } from './render.js';
@@ -40,6 +40,10 @@ const pulseGuarded = () => performance.now() - touchLaunchAt < PULSE_GUARD;
 // ideal press until the press. "FLIP NOW" lights for the last FLIP_NOW seconds.
 const CUE_LEAD = 0.9, FLIP_NOW = 0.2;
 let approach = null, cueTone = null, launchPlan = null, hitStop = 0, launched = false;
+// Start voyage flies today's voyage: one seed per day, the same for everyone. Random voyage
+// picks a new seed. Fly again and a restart repeat the same voyage.
+let voyage = { seed: dailySeed(), daily: true, day: dayKey() };
+const randomSeed = () => ((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0) || 1;
 
 function sound(kind, strength = 1, pan = 0) {
   // A diagnostic event names each sound, so browser checks can hear the game without audio.
@@ -57,6 +61,7 @@ function sound(kind, strength = 1, pan = 0) {
     if (kind === 'rally-break') { tone(e,t,{f:520,f2:170,dur:.34,peak:.08,wave:'sine',send:.2}); return; }
     if (kind === 'return') { [784,587].forEach((f,i) => tone(e,t+i*.09,{f,dur:.2,peak:.06,wave:'sine',send:.4,pan})); return; }
     if (kind === 'asteroid-warning') { [0,.16].forEach(d => tone(e,t+d,{f:118,f2:92,dur:.13,peak:.08,wave:'triangle',lp:700})); return; }
+    if (kind === 'magnet') { tone(e,t,{f:70,f2:240,dur:.4,peak:.12,wave:'triangle',send:.3}); hiss(e,t+.05,{type:'bandpass',f:600,f2:2400,dur:.3,peak:.05}); return; }
     if (kind === 'skill') { [523,659,784,1047].forEach((f,i) => tone(e,t+i*.06,{f,dur:.24,peak:.07,wave:'sine',send:.45})); return; }
     if (kind === 'asteroid-break') { hiss(e,t,{type:'lowpass',f:1400,f2:180,dur:.25,peak:.1}); tone(e,t,{f:105,f2:42,dur:.17,peak:.09,wave:'triangle'}); return; }
     if (kind === 'warp-ring') { tone(e,t,{f:520,f2:1040,dur:.22,peak:.13,wave:'sine',send:.45}); tone(e,t+.07,{f:1560,dur:.22,peak:.05,send:.4}); return; }
@@ -197,11 +202,12 @@ function placeField() {
   }
   cancelField(); canvas.focus({preventScroll:true});
 }
-function newRun() {
+function newRun(next = voyage) {
   cancelField();
   transitAudio.stop();
   spaceMusic.stop();
-  Sfx.init(); releaseControls(); run=createAdventure((Date.now() ^ Math.floor(Math.random()*0xffffffff)) >>> 0); mode='play'; oldPhase=''; scoreClock=0;
+  voyage = next;
+  Sfx.init(); releaseControls(); run=createAdventure(voyage.seed); mode='play'; oldPhase=''; scoreClock=0;
   document.body.classList.remove('showing-map');
   $('pause-button').textContent='Pause';
   for(const id of ['menu','pause-panel','upgrade-panel','end-panel','map-panel']) $(id).hidden=true;
@@ -279,6 +285,10 @@ function showEnd() {
   }));
   $('end-worlds').setAttribute('aria-label',`${cleared} of ${run.sectors.length} worlds cleared`);
   $('end-detail').textContent=`${cleared} of ${run.sectors.length} worlds · ${run.perfects} Perfect · best rally ${run.bestChain} in a row · best ${best.toLocaleString()}`;
+  // A line to share: today's date or the voyage code, the worlds cleared and the score.
+  const name=voyage.daily?voyage.day.slice(5):`#${voyage.seed.toString(16).toUpperCase().padStart(8,'0')}`;
+  $('share-line').textContent=`Full Tilt ${name} · ${cleared}/${run.sectors.length} · ${run.score.toLocaleString('en-US')}`;
+  $('share-button').textContent='Copy result';
   $('end-panel').hidden=false; $('again-button').focus();
 }
 function syncHud() {
@@ -398,7 +408,9 @@ $('skip-transit').addEventListener('click',()=>{
   transitAudio.stop(); releaseControls(); resumeMotion(); syncHud(); canvas.focus({preventScroll:true});
 });
 
-$('play-button').addEventListener('click',newRun);
+$('play-button').addEventListener('click',()=>newRun({ seed: dailySeed(), daily: true, day: dayKey() }));
+$('random-button').addEventListener('click',()=>newRun({ seed: randomSeed(), daily: false }));
+$('voyage-day').textContent=`Today's voyage · ${dayKey().slice(5)}`;
 $('field-button').addEventListener('click',beginField);
 $('cancel-field').addEventListener('click',cancelField);
 $('deploy-field').addEventListener('click',placeField);
@@ -410,8 +422,22 @@ $('recenter-motion-button').addEventListener('click',()=>{
   $('pause-motion-status').textContent='Hold comfortably when you resume. Tilt will center on that position.';
 });
 paintMotion(motion.state);
-$('again-button').addEventListener('click',newRun);
-$('restart-button').addEventListener('click',newRun);
+$('again-button').addEventListener('click',()=>newRun());
+$('restart-button').addEventListener('click',()=>newRun());
+$('share-button').addEventListener('click',async()=>{
+  const text=$('share-line').textContent, button=$('share-button');
+  let copied=false;
+  try { await navigator.clipboard.writeText(text); copied=true; }
+  catch {
+    // Older browsers: copy from a hidden text field.
+    const field=document.createElement('textarea'); field.value=text; field.setAttribute('readonly',''); field.style.position='fixed'; field.style.opacity='0';
+    document.body.append(field); field.select();
+    try { copied=document.execCommand('copy'); } catch { copied=false; }
+    field.remove();
+  }
+  button.textContent=copied?'Copied':'Select the line to copy it';
+  setTimeout(()=>{button.textContent='Copy result';},2200);
+});
 $('pause-button').addEventListener('click',()=>mode==='pause'?resume():pause());
 $('resume-button').addEventListener('click',resume);
 $('map-button').addEventListener('click',showMap);
@@ -567,8 +593,8 @@ startLoop({h:H,scale:()=>hitStop>0?0:1,step:()=>{
   for(const event of run.events){
     renderer.onEvent?.(event,run);
     const kind=event.k||event.type;
-    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse','asteroid-break','asteroid-warning'].includes(kind))sound(kind);
-    const messages={relay:event.complete===false?'Beacon charged once. Hit it again.':`Beacon lit · +${(event.points||0).toLocaleString()}`,gate:'The gate is open. Shoot for the black hole.',orbit:'Gravity slingshot. Bonus points.',save:'The launch shield saved your comet.',drain:event.multiplier>1?`A heart lost. The rally ×${event.multiplier} ends.`:'A heart lost. Your beacons stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
+    if(['relay','bumper','gate','drain','save','pulse','orbit','field-deploy','field-charge','reverse','asteroid-break','asteroid-warning','magnet'].includes(kind))sound(kind);
+    const messages={relay:event.complete===false?'Beacon charged once. Hit it again.':`Beacon lit · +${(event.points||0).toLocaleString()}`,gate:'The gate is open. Shoot for the black hole.',orbit:'Gravity slingshot. Bonus points.',save:'The launch shield saved your comet.',drain:event.multiplier>1?`A heart lost. The rally ×${event.multiplier} ends.`:'A heart lost. Your beacons stay lit.',recall:'Comet recovered. Ready at the dock.',rescue:'A small boost keeps your comet moving.',magnet:'Magnet save. The ball goes back up.',arrive:currentSector(run).descriptor || 'New sector. Your progress is safe here.'};
     if(event.message || messages[kind])announce(event.message || messages[kind]);
     if(kind === 'relay' && event.skill){ sound('skill'); announce(`Skill shot · ×2 · +${event.points.toLocaleString()}`); }
     if(kind === 'reverse')announce('Reverse flip');
