@@ -29,3 +29,40 @@
 
 #coach{width:190px;bottom:calc(330px + env(safe-area-inset-bottom))}
 @media(max-height:520px) and (min-width:600px){#coach{bottom:135px;left:140px;width:220px}}
+
+
+/* Mobile combat controls: large, forgiving targets that work while the left thumb is moving. */
+.abilities{width:274px;height:246px;right:max(10px,env(safe-area-inset-right));bottom:calc(42px + env(safe-area-inset-bottom))}
+.abilities .ability{width:78px;height:78px;padding:0;border-width:2px;overflow:visible;background:#071822;border-color:#6a8f98;box-shadow:inset 0 0 0 3px #020b10,0 5px 14px #0009}
+.abilities .dash{top:0;right:4px}.abilities .surge{top:34px;left:88px}.abilities .signature{bottom:16px;left:4px}.abilities .ult{width:104px;height:104px;right:0;bottom:0;border-width:3px}
+.ability .hud-spell-art{position:absolute;inset:4px;display:block;border-radius:50%;background-size:200% 200%;background-repeat:no-repeat;filter:saturate(1.14) contrast(1.06);box-shadow:inset 0 0 18px #0008}
+.ability.ult .hud-spell-art{inset:5px}
+.ability svg{display:none!important}
+.ability span{bottom:-19px;font-size:10px;max-width:120px;padding:2px 5px;background:#031019e8;border-radius:4px}
+.ability kbd{display:grid!important;place-items:center;z-index:8;top:4px;right:5px;min-width:20px;height:20px;padding:0 4px;border:1px solid #b9eefa80;border-radius:4px;background:#021017e8;color:#eafdff;font-size:10px}
+.ability b:not(:empty){z-index:7;background:#021018b8;backdrop-filter:blur(1px)}
+.ranks{z-index:8;bottom:5px}
+.ability.combo-ready{box-shadow:inset 0 0 0 3px #020b10,0 0 0 3px #fff0b255,0 5px 16px #0009}
+.ability.trainable{border-color:#ffe58d;box-shadow:inset 0 0 0 3px #020b10,0 0 18px #ffd65b75,0 5px 14px #0009}
+#skill-points{top:-58px;right:0;width:196px;min-height:50px;padding:9px 12px;border-radius:12px;border:2px solid #8aa7a8;background:#071b24f2;color:#eaf8f1;font-size:12px;box-shadow:0 6px 18px #0007}
+#skill-points.ready{background:linear-gradient(180deg,#79652b,#413619);border-color:#ffe88c;color:#fff5c6;box-shadow:0 0 22px #ffd96766,0 6px 18px #0007}
+.ability-upgrade{position:absolute!important;z-index:12!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;border:3px solid #fff3ad!important;border-radius:50%!important;background:#a37816!important;color:white!important;font:900 25px/1 Barlow,Arial,sans-serif!important;box-shadow:0 0 0 3px #071018,0 0 18px #ffe479b0!important}
+.upgrade-dash{top:-9px!important;right:-7px!important}.upgrade-surge{top:23px!important;left:72px!important}.upgrade-signature{bottom:57px!important;left:-8px!important}.upgrade-ult{bottom:82px!important;right:-9px!important}
+#skill-aim-status{right:0!important;width:250px!important}
+@media(max-width:430px){
+  .abilities{width:252px;height:228px;right:6px;bottom:calc(38px + env(safe-area-inset-bottom))}
+  .abilities .ability{width:72px;height:72px}.abilities .ult{width:96px;height:96px}
+  .abilities .surge{left:80px;top:31px}.abilities .signature{bottom:14px}
+  #skill-points{width:182px;min-height:48px;top:-55px}
+}
+@media(max-width:370px){
+  .abilities{width:230px;height:210px;right:4px}
+  .abilities .ability{width:66px;height:66px}.abilities .ult{width:90px;height:90px}
+  .abilities .surge{left:72px;top:28px}
+  #skill-points{width:168px;font-size:11px}
+}
+@media(max-height:520px) and (min-width:600px){
+  .abilities{width:248px;height:188px;right:10px;bottom:24px}
+  .abilities .ability{width:66px;height:66px}.abilities .dash{top:0}.abilities .surge{left:80px;top:20px}.abilities .signature{left:10px;bottom:2px}.abilities .ult{width:88px;height:88px;bottom:0}
+  #skill-points{width:178px;min-height:42px;top:-43px}
+}
