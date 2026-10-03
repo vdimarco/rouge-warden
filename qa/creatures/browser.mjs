@@ -39,12 +39,32 @@ try {
       const ids=['hero-picks','hero-art','hero-preview','hero-spell-note','play'];
       const box = id => {
         const el=document.getElementById(id), r=el?.getBoundingClientRect();
-        return r ? {x:r.x,y:r.y,w:r.width,h:r.height,visible:r.width>0&&r.height>0&&r.bottom>0&&r.right>0&&r.top<innerHeight&&r.left<innerWidth} : null;
+        return r ? {x:r.x,y:r.y,w:r.width,h:r.height,visible:r.width>0&&r.height>0&&r.top>=-1&&r.left>=-1&&r.bottom<=innerHeight+1&&r.right<=innerWidth+1} : null;
       };
       return Object.fromEntries(ids.map(id=>[id,box(id)]));
     });
     console.log(name,'selection',JSON.stringify(selectState));
     assert(Object.values(selectState).every(v=>v?.visible), 'hero selection essentials stay visible');
+    assert(selectState['hero-picks'].w >= width * .35, 'roster has enough room to browse heroes');
+    const controlsFit = await page.evaluate(() => {
+      const rect = el => el.getBoundingClientRect();
+      const inside = (r, p) => r.width>0&&r.height>0&&r.left>=p.left-1&&r.right<=p.right+1&&r.top>=p.top-1&&r.bottom<=p.bottom+1;
+      const viewport = {left:0,top:0,right:innerWidth,bottom:innerHeight};
+      const footer = [...document.querySelectorAll('#play, .roster-footer .menu-links button')].map(rect);
+      const overlaps = (a, b) => Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
+      const hero = rect(document.querySelector('.hero-feature'));
+      const roster = rect(document.querySelector('#hero-picks'));
+      const cards = [...document.querySelectorAll('#hero-picks button')].map(rect).filter(r=>inside(r,roster));
+      return {
+        footer:footer.every(r=>inside(r,viewport))&&footer.every((r,i)=>footer.slice(i+1).every(other=>!overlaps(r,other))),
+        spells:[...document.querySelectorAll('[data-hero-spell]')].every(el=>inside(rect(el),hero)),
+        cards:cards.filter(r=>r.width>=60).length>=3,
+      };
+    });
+    console.log(name,'selection controls',JSON.stringify(controlsFit));
+    assert(controlsFit.footer, 'Start and menu links fit without overlapping');
+    assert(controlsFit.spells, 'all four skill buttons fit the selected hero panel');
+    assert(controlsFit.cards, 'at least three usable hero cards fit the roster');
     await page.locator('[data-hero-spell="1"]').hover();
     assert.match(await page.locator('#hero-spell-note').innerText(), /Undertow/);
     const noteFits = await page.locator('#hero-spell-note').evaluate(el => {
