@@ -149,7 +149,8 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   assert(run.events.some(e => e.type === 'pulse'), 'input events reach the next update');
   advance(run, 2.6);
   assert.equal(run.pulseCooldown, 0);
-  const relay = s.relays[0];
+  // The launch arc can light a relay, so aim at one that is still dark.
+  const relay = s.relays.find(r => !r.hit);
   place(run, relay.x, relay.y + 140);
   assert(pulseAdventure(run));
   assert(run.world.ball.vy < -100, 'a pulse can aim down toward a relay in open space');
@@ -210,6 +211,9 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 {
+  // Orbits now last 2.5 s and end at a lit relay, so one run can pass with no half-orbit.
+  // The three runs together must still earn the orbit bonus, and each run counts it exactly.
+  let orbits = 0;
   for (const seed of [1, 8, 21]) {
     const run = createAdventure(seed), events = {};
     let farthest = 0, playTicks = 0;
@@ -232,11 +236,13 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     assert(farthest < 1200, 'soft gravity keeps an ordinary run in range'); assert.equal(run.world.escapes, 0);
     assert.equal(events.rescue || 0, 0, 'the bot completes without a stalled-ball rescue');
     assert(events.pulse > 0, 'the run uses gravity pulses');
-    assert(events.orbit > 0 && run.orbitCount === events.orbit, 'a real flight earns an orbit bonus');
+    assert.equal(run.orbitCount, events.orbit || 0, 'each orbit bonus is counted once');
+    orbits += run.orbitCount;
     assert.equal(run.phase, 'won', `seed ${seed}: a simple physical bot can finish the sixth sector`);
     assert.equal(run.relaysHit, 18);
-    console.log(`ok: seed ${seed} physical bot finished six sectors in ${run.clock.toFixed(1)} s; ${events.flipper || 0} flipper hits, ${events.relay} relay charges, ${events.orbit} orbits, no boundary clamps or rescue burns`);
+    console.log(`ok: seed ${seed} physical bot finished six sectors in ${run.clock.toFixed(1)} s; ${events.flipper || 0} flipper hits, ${events.relay} relay charges, ${events.orbit || 0} orbits, no boundary clamps or rescue burns`);
   }
+  assert(orbits > 0, 'real flights earn the orbit bonus');
 }
 
 // Default tables retain the original gravity and launcher behavior after adding optional hooks.
