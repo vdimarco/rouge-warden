@@ -22,7 +22,12 @@ npm run check       # all three
 
 ## Check it in a browser
 
-`npm run qa` builds the app, serves `dist/` and plays one table by touch in Chromium at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow. Screenshots go to `qa/out/`.
+`npm run qa` builds the app, serves `dist/` and runs two checks in Chromium with touch input:
+
+- `qa/table.e2e.mjs` plays one table at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow.
+- `qa/run.e2e.ts` plays a full run. It plans each step with the engine, plays it on screen and compares the screen with the engine after each tap. It visits the start screen, stop intros, tables, a host table, shops, the deck view, a stamp picker and the run end screen, and checks each layout at the 4 sizes.
+
+Screenshots go to `qa/out/`.
 
 The check uses `playwright-core`, which does not download a browser:
 

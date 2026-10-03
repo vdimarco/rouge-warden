@@ -85,9 +85,15 @@ button {
 
 .topbar-row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+}
+
+.where-block {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
 }
 
 .where {
@@ -100,10 +106,41 @@ button {
 }
 
 .seed {
+  overflow: hidden;
   font-size: 12px;
   color: var(--ink-faint);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+
+.icon-btn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.icon-btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.icon-btn b {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
 }
 
 .money {
@@ -736,20 +773,659 @@ b.red {
   }
 }
 
+/* ---------- Host banner and charm board ---------- */
+
+.host-banner {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #2a2213;
+  background: linear-gradient(90deg, #f0d48d, #e6c06b);
+  border-radius: 10px;
+}
+
+.host-banner b {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 14px;
+}
+
+.charm-board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.slot {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 4px 3px;
+  font-size: 11.5px;
+  line-height: 1.15;
+  color: var(--ink);
+  text-align: center;
+  background: var(--panel);
+  border: 1px dashed rgba(244, 239, 227, 0.22);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: box-shadow 160ms ease, background 160ms ease, transform 120ms ease;
+}
+
+.slot.filled {
+  background: rgba(244, 239, 227, 0.12);
+  border-style: solid;
+  border-color: rgba(233, 196, 106, 0.5);
+}
+
+.slot.selected {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+.slot.lit {
+  background: rgba(233, 196, 106, 0.42);
+  box-shadow: 0 0 14px rgba(233, 196, 106, 0.8);
+}
+
+.slot:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.slot-head {
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.slot-head.red {
+  color: #f08a7d;
+}
+
+.table-slot .slot-head {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.slot-name {
+  font-weight: 650;
+}
+
+.slot.empty .slot-name {
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+
+.slot-stacks {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--sheet-ink);
+  background: var(--mult);
+  border-radius: 8px;
+}
+
+.charm-meta {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: rgba(23, 48, 42, 0.75);
+}
+
+.rarity {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.rarity.uncommon {
+  color: #2f6aa3;
+}
+
+.rarity.rare {
+  color: #8a4fc4;
+}
+
+.charm-text {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* ---------- Sheets: tall panels, notes and the deck grid ---------- */
+
+.sheet.tall {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 16px);
+}
+
+.sheet-scroll {
+  flex: 1;
+  min-height: 0;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 10px var(--gutter) 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet-note {
+  margin: -6px 0 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  color: rgba(23, 48, 42, 0.8);
+}
+
+.sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.deck-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.deck-suit-head {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.deck-suit-head .red {
+  color: var(--red);
+}
+
+.deck-count {
+  margin-left: 4px;
+  font-weight: 500;
+  color: rgba(23, 48, 42, 0.6);
+}
+
+.deck-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.deck-card {
+  display: block;
+  width: 44px;
+  height: 60px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 7px;
+}
+
+button.deck-card {
+  cursor: pointer;
+}
+
+.deck-card .mini {
+  width: 100%;
+  height: 100%;
+  animation: none;
+}
+
+.deck-card.picked .mini {
+  box-shadow: 0 0 0 3px var(--gold), var(--card-shadow);
+  transform: translateY(-3px);
+}
+
+.deck-card:focus-visible {
+  outline: 3px solid var(--sheet-ink);
+  outline-offset: 2px;
+}
+
+.stamp-step {
+  margin: 0 0 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.stamp-preview {
+  min-height: 20px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.suit-grid + .sheet-scroll {
+  margin-top: 10px;
+}
+
+.suit-btn.chosen {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+.payout {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+}
+
+.payout div {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 12px;
+  font-size: 15px;
+  background: rgba(23, 48, 42, 0.06);
+  border-radius: 9px;
+}
+
+.payout dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.payout .sum {
+  font-weight: 750;
+  background: rgba(233, 196, 106, 0.35);
+}
+
+/* ---------- Start, stop intro and run end ---------- */
+
+.start-screen,
+.intro-screen,
+.end-screen {
+  justify-content: space-between;
+}
+
+.start-body,
+.intro-body,
+.end-body {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.title {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.lead {
+  margin: 0;
+  font-size: 17px;
+  text-align: center;
+  color: var(--ink-dim);
+}
+
+.rules {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 14px 16px 14px 32px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 14px;
+}
+
+.start-actions {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0 max(16px, env(safe-area-inset-bottom));
+}
+
+.seed-form {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.seed-label {
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.seed-input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+}
+
+.seed-input:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.intro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding-top: 10px;
+}
+
+.intro-kicker {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+
+.intro-title {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 30px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.host-card {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+  color: #2a2213;
+  background: linear-gradient(160deg, #f4dc9c, #e6c06b);
+  border-radius: 14px;
+}
+
+.targets {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.targets li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 15px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 11px;
+}
+
+.targets b {
+  font-variant-numeric: tabular-nums;
+}
+
+.targets .host-target {
+  border-color: rgba(233, 196, 106, 0.6);
+}
+
+.actions.single {
+  grid-template-columns: 1fr;
+}
+
+.end-screen .end-title {
+  margin: 0;
+  font-size: 38px;
+  text-align: center;
+}
+
+.end-screen .end-title.won {
+  color: #9fe0b5;
+}
+
+.end-screen .end-title.lost {
+  color: #f2a594;
+}
+
+.end-screen .end-line {
+  margin: 0;
+  color: var(--ink-dim);
+}
+
+.end-screen .end-stats div {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+}
+
+.end-screen .end-stats dd {
+  font-size: 18px;
+}
+
+/* ---------- Shop ---------- */
+
+.shop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.shop-title {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.shop-body {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 8px var(--gutter);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.payout-line {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gold);
+}
+
+.section-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.shop-section .charm-board {
+  margin-top: 0;
+}
+
+.slot-details {
+  margin-top: 10px;
+  padding: 12px;
+  color: var(--sheet-ink);
+  background: var(--sheet);
+  border-radius: 14px;
+}
+
+.slot-details .hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.row-actions .btn {
+  flex: 1;
+  color: var(--sheet-ink);
+  background: rgba(23, 48, 42, 0.08);
+  border-color: rgba(23, 48, 42, 0.16);
+}
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.offer {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 10px;
+  color: var(--sheet-ink);
+  background: var(--sheet);
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.offer.stamp {
+  background: #e9eef0;
+}
+
+.offer.sold {
+  opacity: 0.45;
+}
+
+.offer-name {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 18px;
+}
+
+.offer-meta {
+  margin: 2px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(23, 48, 42, 0.65);
+}
+
+.offer-text {
+  flex: 1;
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.offer-why {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #8c3b2e;
+}
+
+.btn.buy {
+  min-height: 46px;
+  color: var(--ink);
+  background: var(--sheet-ink);
+  border: 0;
+}
+
+.btn.buy:disabled {
+  opacity: 0.35;
+}
+
+.shop-actions {
+  grid-template-columns: 1fr 1.4fr;
+}
+
 /* ---------- Short screens ---------- */
 
-@media (max-height: 700px) {
+@media (max-height: 760px) {
   .topbar {
     gap: 6px;
     padding-top: 6px;
   }
 
+  .stat {
+    padding: 3px 4px 4px;
+  }
+
+  .stat-label {
+    font-size: 9.5px;
+  }
+
   .stat-value {
-    font-size: 16px;
+    font-size: 15px;
+  }
+
+  .host-banner {
+    margin-top: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+  }
+
+  .charm-board {
+    margin-top: 6px;
+  }
+
+  .slot {
+    min-height: 46px;
+    font-size: 11px;
+  }
+
+  .chain-area {
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  .chain-row {
+    min-height: 52px;
+  }
+
+  .mini {
+    width: 34px;
+    height: 48px;
+  }
+
+  .mini .r {
+    font-size: 15px;
+  }
+
+  .num {
+    min-width: 72px;
+    padding: 3px 10px 5px;
+  }
+
+  .num-figure {
+    font-size: 21px;
+  }
+
+  .chain-foot {
+    min-height: 18px;
+    font-size: 13px;
   }
 
   .hand {
     gap: 10px 8px;
+    padding-top: 10px;
   }
 
   .card-btn,
@@ -757,8 +1433,8 @@ b.red {
     aspect-ratio: 5 / 6.3;
   }
 
-  .num-figure {
-    font-size: 22px;
+  .actions {
+    padding-top: 8px;
   }
 }
 

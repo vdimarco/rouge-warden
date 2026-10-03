@@ -36,3 +36,38 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 18. **Targets.** Each target is rounded to a whole number, so the money check for powers of ten never meets a fraction.
 19. **Dimmed cards.** A tap on a dimmed card shakes it and changes nothing. Screen readers hear the card as unavailable.
 20. **The 8 picker.** Cancel closes the picker and leaves the chain as it was. A tap outside the picker does the same.
+
+## Milestone 3: hosts
+
+21. **Host order.** The seed shuffles all 5 hosts for stops 1 to 5, and shuffles them again for stops 6 to 8. A host can appear at stop 5 and again at stop 6.
+22. **The Purist.** A card that names no suit must have the current suit. An 8 must name the current suit, except when it starts the chain, because a first card has no current suit to keep.
+23. **The Zebra.** Colors are printed colors, for 8s too. An 8 that names hearts is still black if it is a club, and the next card must be red.
+24. **The Climber.** Each card must have a higher rank than the previous card. An equal rank does not follow. An A is the highest rank.
+25. **The Miser.** An 8 is a plain card. It follows only by suit or rank, names no suit and keeps its printed suit for charms and switches. Lucky Eight still counts it, because it is still an 8.
+26. **The Jeweler.** A chain that is not a ring scores 0: its Mult is multiplied by 0 in a last step. Money from charms in that chain is still paid.
+
+## Milestone 3: charms and money
+
+27. **Turncoat and Bridge.** The normal follow rules come first, so a charm follow is spent only when no normal rule fits. Turncoat compares the printed colors of the card and the previous card. Undo gives the charm follow back. A host limit still applies to a charm follow.
+28. **One table charm.** The table slot holds one charm, so Turncoat never meets Bridge, and Knot never meets Tidy.
+29. **Crown.** Face cards are J, Q and K.
+30. **Spiral.** The gain belongs to the charm. A ring adds 1 to it after the chain scores, so the next chain gets it. Selling Spiral loses the gain.
+31. **Charm money.** Pawnbroker and Ledger pay when the chain is played, before the table pay.
+32. **Live numbers.** The chain area and the ring marker use the base rules only. Knot, Hinge and the other charms show in the play animation.
+33. **Suit charm slots.** There are 4 suit charms and 4 suit slots, and the shop never offers a charm the player owns. So a suit charm always has a free slot. A new suit charm goes to the first empty suit slot in the order ♠ ♥ ♣ ♦. The player can move it in the shop.
+34. **Moving charms.** In the shop the player taps a suit charm, then another suit slot. If that slot has a charm, the two swap.
+35. **Selling.** Charms sell only in the shop, as the brief lists Sell there.
+
+## Milestone 3: shop, stamps and flow
+
+36. **Rerolls.** A reroll replaces all 4 offers, also the ones already bought.
+37. **Stamp offers.** The 2 stamp offers are 2 different stamps.
+38. **Rarity.** If no charm of a rarity is left to offer, that rarity drops out of the weights.
+39. **Stamp payment.** The player pays when they tap Use in the deck picker. Cancel costs nothing. A Burn Stamp with the deck at 20 cards stays in the shop, but it cannot be bought.
+40. **Copy Stamp.** The two picks must be different cards. The first pick gives its rank.
+41. **The run deck.** Stamps change the run deck. Each table shuffles the whole run deck again.
+42. **After a clear.** A panel shows the pay for the table, then the player opens the shop.
+43. **The last table.** The host table of stop 8 wins the run at once. No shop opens after it.
+44. **A lost table.** The run end screen opens at once. It shows which table ended the run and its total.
+45. **Start screen.** The page opens on a start screen with New run and a seed field. `?seed=` in the address skips it.
+

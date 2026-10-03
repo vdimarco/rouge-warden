@@ -62,6 +62,7 @@ Stop after the preview deploy and wait for the go-ahead.
 - `src/engine/money.ts`, `src/engine/money.test.ts`: table pay, unused chains and the power-of-ten bonus.
 - `src/engine/shop.ts`, `src/engine/shop.test.ts`: offers, rarity weights, prices, rerolls, buy, sell and move.
 - `src/engine/run.ts`, `src/engine/run.test.ts`: 8 stops, 3 tables each, shop after each clear, win and loss.
+- `src/engine/solver.ts`, `src/engine/solver.test.ts`: the best legal chain for a hand. This moved here from milestone 5, because the run check plans its chains with it.
 - `src/ui/StartScreen.tsx`: New run and a seed field.
 - `src/ui/StopIntro.tsx`: the stop number and the host for that stop.
 - `src/ui/HostBanner.tsx`: the host rule under the top bar.
@@ -70,7 +71,10 @@ Stop after the preview deploy and wait for the go-ahead.
 - `src/ui/StampPicker.tsx`: the deck picker that applies a stamp.
 - `src/ui/DeckView.tsx`: every card in the run deck, grouped by suit.
 - `src/ui/RunEnd.tsx`: win or loss, stop reached, best chain, seed and New run.
-- `qa/run.e2e.mjs`: a Playwright check of a run through a shop and a host table.
+- `src/ui/Sheet.tsx`: the bottom panel that the 8 picker, charm details, deck view and stamp picker share.
+- `src/ui/ClearedPanel.tsx`: the pay for a cleared table, then Open the shop. It replaces `TableEnd.tsx`.
+- `qa/lib.mjs`: the parts that the browser checks share.
+- `qa/run.e2e.ts`: a Playwright check of a full run. It plans with the engine, plays on screen and compares the two after each tap.
 
 ## Milestone 4: feel
 
@@ -83,7 +87,6 @@ Stop after the preview deploy and wait for the go-ahead.
 
 ## Milestone 5: balance
 
-- `src/engine/solver.ts`, `src/engine/solver.test.ts`: the best legal chain for a hand, by depth-first search.
 - `scripts/simulate.ts`: plays 1,000 seeds with no charms and no redraws and reports the clear rate of each table in stops 1 to 3.
 - `BALANCE.md`: the simulator report and the final targets.
 - `src/config.ts`: the tuned targets.

@@ -28,6 +28,7 @@ function dealt(seed: string): TableState {
 function table(hand: string, draw = '', overrides: Partial<TableState> = {}): TableState {
   return {
     ...SETUP,
+    host: null,
     hand: sortCards(cards(hand)),
     drawPile: draw ? cards(draw) : [],
     discard: [],

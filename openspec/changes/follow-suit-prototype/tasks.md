@@ -14,13 +14,13 @@
 - [x] Build the table screen: top bar, chain area, hand, action bar, 8 picker, redraw mode and the clear or lose panel.
 - [x] Check one table in Chromium at 390 by 844 with touch.
 - [x] Deploy a Vercel preview and post the URL. Commit.
-- [ ] Get the user's go-ahead for milestone 3.
+- [x] Get the user's go-ahead for milestone 3.
 
 ## Milestone 3: full run
 
-- [ ] Write tests for each host, each charm, each stamp, money, the shop and the run flow. Then write the code.
-- [ ] Build the start screen, stop intro, host banner, charm board, shop, stamp picker, deck view and run end screen.
-- [ ] Check a run through a shop and a host table in Chromium. Commit.
+- [x] Write tests for each host, each charm, each stamp, money, the shop and the run flow. Then write the code.
+- [x] Build the start screen, stop intro, host banner, charm board, shop, stamp picker, deck view and run end screen.
+- [x] Check a run through a shop and a host table in Chromium. Commit.
 
 ## Milestone 4: feel
 
@@ -31,7 +31,7 @@
 
 ## Milestone 5: balance
 
-- [ ] Write the solver and its tests.
+- [x] Write the solver and its tests. (Done in milestone 3 for the run check.)
 - [ ] Write `scripts/simulate.ts` and run 1,000 seeds with no charms and no redraws.
 - [ ] Tune the targets until stop 1 clears at least 90% of the time and stop 2 about half the time.
 - [ ] Write `BALANCE.md`. Commit.

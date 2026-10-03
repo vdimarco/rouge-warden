@@ -1,5 +1,6 @@
 import {
   currentSuit,
+  eightsAreWild,
   needsNamedSuit,
   SUIT_NAMES,
   SUIT_SYMBOLS,
@@ -7,6 +8,7 @@ import {
   type ChainLink,
   type ChainPreview,
   type PlayedChain,
+  type Rules,
 } from '../engine';
 import { MiniCard } from './CardFace';
 import { formatNumber } from './text';
@@ -16,11 +18,12 @@ interface ChainAreaProps {
   preview: ChainPreview;
   ringMult: number;
   lastPlay: PlayedChain | null;
+  rules: Rules;
   /** Shown in place of the empty-chain message, for example in redraw mode. */
   hint?: string;
 }
 
-export function ChainArea({ chain, preview, ringMult, lastPlay, hint }: ChainAreaProps) {
+export function ChainArea({ chain, preview, ringMult, lastPlay, rules, hint }: ChainAreaProps) {
   const suit = currentSuit(chain);
   return (
     <section className="chain-area" aria-label="Chain">
@@ -30,7 +33,9 @@ export function ChainArea({ chain, preview, ringMult, lastPlay, hint }: ChainAre
             {hint ?? 'Tap any card to start a chain.'}
           </p>
         ) : (
-          chain.map((link) => <MiniCard key={link.card.id} link={link} named={needsNamedSuit(link.card)} />)
+          chain.map((link) => (
+            <MiniCard key={link.card.id} card={link.card} named={needsNamedSuit(link.card, rules) ? link.suit : null} />
+          ))
         )}
       </div>
 
@@ -76,7 +81,9 @@ export function ChainArea({ chain, preview, ringMult, lastPlay, hint }: ChainAre
             {lastPlay.result.ring ? ' with a ring' : ''}
           </span>
         ) : (
-          <span className="rule-hint">Follow by suit or by rank. 8s are wild.</span>
+          <span className="rule-hint">
+            Follow by suit or by rank. {eightsAreWild(rules) ? '8s are wild.' : '8s are not wild here.'}
+          </span>
         )}
       </div>
     </section>
