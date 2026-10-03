@@ -411,9 +411,9 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | Idle | A branch has commits that are not in main, and nobody works on it now |
 | Done | The work is in main, or the session is finished |
 
-## Watch voice relay
+## Watch call
 
-`/api/alexa` lets the owner talk to their Hermes agent from a Fitbit Sense 2. A private Alexa skill sends what you say on the watch to the endpoint. The endpoint checks that Amazon signed the request for the owner's skill and account, then posts the words to a Hermes webhook route. Hermes answers in Telegram. The arcade does not use it. Setup and use are in `voice/README.md`.
+`voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
 
 ## Files
 
@@ -457,8 +457,8 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
-| `api/alexa.mjs`, `voice/` | The watch voice relay: the Alexa endpoint, the skill model, the Hermes route and a test sender (see [Watch voice relay](#watch-voice-relay)) |
-| `qa/alexa/` | Tests for the watch voice relay |
+| `voice/` | The watch call: the call script, the call server, a Hermes skill and the setup guide (see [Watch call](#watch-call)) |
+| `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
 | `vercel.json` | Serves `public/` with no build step |
@@ -555,9 +555,9 @@ Set `LAB_URL` to test another address, and `SHOTS` to a folder to save screensho
 
 Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git repo with branches, pull request refs and a local worktree, runs `studio/refresh.mjs` on it with made-up sessions, and checks the agents, the work trees, the cabinets and the feed. Then it opens the page in Chromium at desktop and phone width. The browser part needs Playwright (`NODE_PATH=$(npm root -g)`). It exits with code 1 when something fails.
 
-### Watch voice relay tests
+### Watch call tests
 
-Run `node qa/alexa/relay.test.mjs` from the repo root. It needs `openssl`, which makes a throwaway certificate chain. The tests sign Alexa requests, send them through the relay to a stand-in Hermes server, and check the spoken answers. Forged certificate chains, changed bodies and old timestamps must get HTTP 400. Amazon's 2023 signing chain in `qa/alexa/echo-api-cert-12.pem` must pass Node's CA store on a date when it was valid. The script exits with code 1 when something fails.
+Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
 
 ## Jev and cost
 

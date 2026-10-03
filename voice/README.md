@@ -1,98 +1,82 @@
-# Watch voice relay
+# Watch call
 
-Speak to Hermes from a Fitbit Sense 2. Hold the watch button and say "ask my hermes to tell codex to run the tests". Alexa sends the words to `/api/alexa` in this Vercel project. The endpoint checks the request and sends the words to a webhook route on your Hermes gateway. Hermes does the work and sends its answer to your Telegram chat.
+Talk to Hermes, and through Hermes to Claude Code, Codex and your other agents, on a Fitbit Sense 2. The watch cannot run your own apps, but it can answer phone calls with its speaker and microphone. So Hermes calls your phone through Twilio, you answer on the watch, and you talk.
 
-On Android, the Telegram answer shows on the watch. Tap it, then tap the microphone to reply by voice (60 characters at most). An iPhone shows the answer on the watch, but cannot reply from it.
+1. `node voice/call.mjs "why"` asks Twilio to ring your phone. Hermes can run it when you ask for a call, and an agent can run it when it needs you.
+2. You answer on the watch. Twilio turns your speech into text and opens a WebSocket to the call server.
+3. The call server sends the text to the Hermes API server and streams the answer back. Twilio speaks it through the watch.
 
 | File | What it does |
 | --- | --- |
-| `api/alexa.mjs` | The Vercel function that Alexa calls |
-| `voice/alexa-relay.mjs` | Checks the Alexa request and sends the words to Hermes |
-| `voice/alexa-skill.json` | The Alexa skill model: the name "my hermes" and the phrases it knows |
-| `voice/hermes-route.yaml` | The Hermes webhook route that receives the words |
-| `voice/hermes-test.mjs` | Sends one signed command to Hermes, with no watch or Alexa |
-| `qa/alexa/relay.test.mjs` | The tests: `node qa/alexa/relay.test.mjs` (needs openssl) |
+| `voice/call.mjs` | Rings your phone |
+| `voice/call-server.mjs` | Connects the call to Hermes. Runs on the computer that runs Hermes |
+| `voice/watch-call.mjs` | Shared code: settings, Twilio signatures, call tokens, the Hermes stream |
+| `voice/.env.example` | The settings. Copy it to `voice/.env` |
+| `voice/hermes-skill/watch-call/` | A Hermes skill, so Hermes calls you when you ask |
+| `qa/voice/call.test.mjs` | The tests: `node qa/voice/call.test.mjs` |
 
 ## Set up
 
-You need an Amazon developer account that uses the same Amazon account as Alexa on your watch. You also need a Hermes gateway that already talks to you in Telegram.
+You need a Twilio account with a phone number that can make calls, and a Hermes gateway on a computer that stays on.
 
-### 1. Make a shared secret
+### 1. Answer calls on the watch
 
-1. Run `openssl rand -hex 32`.
-2. Keep the result. Hermes and Vercel use the same secret.
+1. In the Google Health app, set up calls for the Sense 2. The phone pairs with the watch a second time, for calls.
+2. Call your phone from another phone. Answer on the watch to make sure that you hear the caller.
 
-### 2. Add the route to Hermes
+### 2. Turn on the Hermes API server
 
-1. Copy the `webhook` part of `voice/hermes-route.yaml` into `~/.hermes/config.yaml`. Keep your other platforms.
-2. Put the secret on the `secret` line.
-3. In Telegram, send `/sethome` to Hermes in the chat that must get the answers.
-4. Run `hermes gateway restart`.
-5. Make port 8644 on the Hermes computer reachable over HTTPS. For example, run `tailscale funnel 8644`, or use a Cloudflare tunnel. A quick Cloudflare tunnel gets a new address each time it starts, so use a named tunnel or Tailscale for a fixed address.
-6. Run this test from the repo, with your address and secret:
+1. Run `openssl rand -hex 32` and keep the result.
+2. Add these lines to `~/.hermes/.env`:
 
    ```sh
-   HERMES_WEBHOOK_URL=https://your-host/webhooks/watch HERMES_WEBHOOK_SECRET=your-secret node voice/hermes-test.mjs "say hello"
+   API_SERVER_ENABLED=true
+   API_SERVER_KEY=the-result-from-step-1
    ```
 
-   The script prints `202` and `Sent: say hello`. Hermes sends a message to your Telegram chat.
+3. Run `hermes gateway restart`. Hermes refuses a key shorter than 16 characters.
 
-### 3. Make the Alexa skill
+### 3. Start the call server
 
-1. Open the [Alexa developer console](https://developer.amazon.com/alexa/console/ask) and create a skill. Select a custom model and "Provision your own" for the backend. Start from scratch.
-2. Open the JSON Editor of the interaction model. Paste all of `voice/alexa-skill.json`. Save, then build the model.
-3. Open Endpoint and select HTTPS. For the default region, type `https://warden-alpha-wheat.vercel.app/api/alexa`.
-4. For the certificate, select "My development endpoint is a sub-domain of a domain that has a wildcard certificate from a certificate authority". Save.
-5. Copy the skill ID. It starts with `amzn1.ask.skill.`
-6. Open Test and set skill testing to Development. Do not publish the skill.
+Do these steps on the computer that runs Hermes.
 
-### 4. Set the Vercel variables
+1. Run `npm ci --prefix voice`.
+2. Copy `voice/.env.example` to `voice/.env` and fill it in. `HERMES_API_KEY` is the key from step 2.
+3. Give the call server a public HTTPS address. With Tailscale, run `tailscale funnel --bg 8650`. Put the address it shows in `CALL_PUBLIC_URL`.
+4. Run `node voice/call-server.mjs`. Keep it running, for example as a service.
 
-1. In the Vercel project `warden`, add these variables for Production:
+### 4. Test a call
 
-   | Variable | Value |
-   | --- | --- |
-   | `ALEXA_SKILL_ID` | The skill ID |
-   | `HERMES_WEBHOOK_URL` | `https://your-host/webhooks/watch` |
-   | `HERMES_WEBHOOK_SECRET` | The secret |
+1. Run `node voice/call.mjs "This is a test call."`.
+2. The watch rings within a few seconds. Answer it.
+3. Say "What are my agents doing?". Hermes answers through the watch.
 
-2. Redeploy production. A variable changes only new deployments.
-3. Open `https://warden-alpha-wheat.vercel.app/api/alexa`. Make sure that it shows `"skill":true` and `"hermes":true`.
+If the call does not connect, read the call server's output. Lines start with `call:`. A Twilio trial account calls only numbers that you verified in Twilio.
 
-### 5. Add your Alexa user ID
+### 5. Let Hermes call you
 
-1. Hold the watch button and say "ask my hermes to say hello". Alexa says "Almost ready".
-2. In the Vercel logs for `/api/alexa`, find `add this user ID to ALEXA_USER_IDS` and copy the ID after it.
-3. Set `ALEXA_USER_IDS` to that ID. To allow more accounts, separate the IDs with commas.
-4. Redeploy production.
+1. Copy `voice/hermes-skill/watch-call` to `~/.hermes/skills/watch-call`.
+2. If the repository is not in `~/rouge-warden`, change the path in the skill's `SKILL.md`.
+3. Tell Hermes "call me" in Telegram. On Android, you can say it from the watch: reply by voice to any Hermes message.
+
+To have an agent call you when it waits for you, run a line like this next to it:
+
+```sh
+herdr agent wait codex --until blocked && node voice/call.mjs "Codex is waiting for your answer."
+```
 
 ## Use
 
-Hold the watch button, then say a command:
-
-- "ask my hermes to tell codex to run the tests"
-- "ask my hermes what's claude doing"
-- "ask my hermes to check the build"
-- "ask my hermes to send claude open a pull request"
-
-After "ask my hermes" (or "ask my hermes to"), start with one of these words: tell, ask, have, check, what, what's, how, how's, is, are, did, can, run, fix, send, say, message or relay. Alexa says "Sent:" and the words it heard. Hermes answers in Telegram.
-
-| Alexa says | What to do |
-| --- | --- |
-| Sent: ... | Nothing. Hermes has the command. |
-| Almost ready ... | Do step 5. |
-| This relay is set up for a different Amazon account. | Add this account's user ID to `ALEXA_USER_IDS`. |
-| Hermes rejected the signature ... | Use the same secret in Vercel and in the Hermes route. |
-| Hermes ignored it ... | Make sure that the route's `events` list has `watch.voice`. |
-| Hermes has no route at that address. | Make sure that `HERMES_WEBHOOK_URL` ends with `/webhooks/watch`. |
-| I couldn't reach Hermes. | Start the gateway or the tunnel. |
-| There was a problem with the requested skill's response | The endpoint refused the request. Read the Vercel log lines that start with `alexa:`. |
+- Save the Twilio number as a contact named Hermes. Then the watch shows who is calling.
+- Talk normally. To stop a long answer, start to speak. Hermes stops and listens.
+- Hang up when you are done. If Hermes is in the middle of a step, it finishes. Ask about the result on the next call.
+- Every call continues one Hermes conversation, `watch-call`. To start a new one, change `HERMES_CONVERSATION`.
 
 ## Security and limits
 
-- The endpoint checks Amazon's signature, the skill ID and your Alexa user ID before it sends anything to Hermes.
-- Only the endpoint and Hermes know the route secret. The route gives watch commands the terminal, so Hermes can start Claude Code or Codex. To allow web tools only, remove the `toolsets` line.
-- Alexa mishears names and code words. Do not approve destructive actions by voice.
-- Amazon processes everything you say to Alexa.
-- Alexa waits 8 seconds at most, so the endpoint does not wait for the answer from Hermes. The answer always goes to Telegram.
-- Google removed Google Assistant from Fitbit watches in 2025. If Google also removes Alexa, this relay stops working.
+- The call server accepts a WebSocket only with Twilio's signature for its address, and a session only with a one-time token from `call.mjs`. A token expires 10 minutes after the call is placed.
+- `call.mjs` calls only `OWNER_PHONE_NUMBER`.
+- The Hermes API server stays on 127.0.0.1. Only the call server's port is public.
+- Anyone who answers your phone can talk to Hermes, with all of its tools.
+- Twilio charges for each minute of a call, and for the speech service.
+- People near you hear Hermes through the watch speaker.

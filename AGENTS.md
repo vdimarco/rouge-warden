@@ -33,5 +33,6 @@ The Cottage Arcade is static files in `public/`. There is no root package. `inst
 
 - Pinball browser checks need the server: `npm run test:pinball --prefix qa/browser`. Physics only: `node qa/lab/tilt.sim.mjs`.
 - Primordia: `node qa/primordia/lenia.test.mjs`. Browser checks need the server: `NODE_PATH=qa/browser/node_modules node qa/primordia/smoke.e2e.mjs`.
+- Watch call: `npm ci --prefix voice`, then `node qa/voice/call.test.mjs`.
 - Olympus: `npm test --prefix games/olympus`. After editing that game, rebuild the committed bundle with `npm run build --prefix games/olympus`.
 - Higgsfield typecheck: `npm run typecheck --prefix higgsfield`. Generation needs `HF_CREDENTIALS` in `higgsfield/.env.local`. The arcade plays without that key. `/api/warden` is a Vercel function and is not part of this static server; games use their local stand-in.
