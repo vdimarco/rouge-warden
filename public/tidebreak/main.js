@@ -23,6 +23,7 @@ const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
 let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, screenMovementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
+let autoPaused=false;
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
@@ -37,10 +38,11 @@ function updateAimStatus(status){
   skillButtons.forEach((b,i)=>{b.classList.toggle('aiming',status?.slot===i);b.classList.toggle('aim-cancelled',status?.slot===i&&status.cancelled);});
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
-function closeSheet() { $('sheet').close(); paused = false; resetInput(); last = performance.now(); }
+function closeSheet() { $('sheet').close(); autoPaused=false; paused = false; resetInput(); last = performance.now(); }
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet'))paginatePanel($('sheet-content'));}); }
 function pause() {
   if (!running || resultShown) return;
+  autoPaused=false;
   sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · M map · B return · Esc pause</p>');
   $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
 }
@@ -69,7 +71,7 @@ function choose(identityId) {
   explainSkill(1);
 }
 function start() {
-  sound.start(); sound.next = 0; state = assignIdentities(createMatch(selected, Date.now() >>> 0),selectedIdentity); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
+  sound.start(); sound.next = 0; state = assignIdentities(createMatch(selected, Date.now() >>> 0),selectedIdentity); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; autoPaused=false; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -267,8 +269,19 @@ window.addEventListener('keydown', e => {
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { resetInput(); if (running && !paused && !resultShown) pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetInput(); if (running && !paused && !resultShown) pause(); } });
+const autoPause=()=>{
+  if(!running||paused||resultShown||$('sheet').open)return;
+  autoPaused=true;paused=true;resetInput();
+};
+const autoResume=()=>{
+  if(!autoPaused||!running||resultShown||$('sheet').open)return;
+  autoPaused=false;paused=false;last=performance.now();
+};
+document.documentElement.addEventListener('mouseleave',autoPause);
+document.documentElement.addEventListener('mouseenter',autoResume);
+window.addEventListener('blur',autoPause);
+window.addEventListener('focus',autoResume);
+document.addEventListener('visibilitychange',()=>document.hidden?autoPause():autoResume());
 window.addEventListener('resize', () => { resetInput(); renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
