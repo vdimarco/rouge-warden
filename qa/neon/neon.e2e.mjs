@@ -31,7 +31,8 @@ R.section("A phone: the first screen and touch play");
     R.check(r.inside, `${id} is fully on the first screen (${r.top} to ${r.bottom} px of ${PHONE.height})`);
     R.check(r.clear, `nothing covers ${id}`);
   }
-  R.check(await page.evaluate(() => { const howto = document.querySelector("#panel details"); return !!howto && !howto.open && [...howto.querySelectorAll("p")].every((p) => p.getBoundingClientRect().height === 0); }),
+  // A closed details element skips its content, but getBoundingClientRect() still lays it out, so ask what shows.
+  R.check(await page.evaluate(() => { const howto = document.querySelector("#panel details"); return !!howto && !howto.open && [...howto.querySelectorAll("p")].every((p) => !p.checkVisibility()); }),
     "desktop and tablet help wait, closed, behind How to play");
   R.check(await page.evaluate(() => [...document.querySelectorAll("#hud small")].map((s) => s.textContent).join() === "INTEGRITY,ROUND,SCORE"), "the HUD counts ROUND, as the objective does");
 
