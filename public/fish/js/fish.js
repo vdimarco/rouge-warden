@@ -25,7 +25,10 @@ export const REEL = {
   ROD_RATING: 30,        // N: the load that bends the rod fully (for drawing)
   SPOOL_M: 0.06,         // kg: spool inertia at the line, so a sudden spike overshoots the drag for a moment
   SPOOL_B: 2,            // N per m/s: the drag washers pull a little harder the faster they slip
-  GRIND_N: 7.5,          // N per rev/s: cranking while the drag slips adds this much tension
+  GRIND_N: 7.5,          // N per rev/s: cranking while the drag slips adds this much tension...
+  GRIND_RAMP: 0.6,       // ...but the drag gives first: the moment the spool slips the grind lets go, and it builds back over
+                         // this many s of slipping. A player who stops reeling within that time never snaps the line by it
+  GRIND_CAP: 0.85,       // × break: cranking never locks the spool harder than this, so the drag always slips before a break
   SLACK_N: 1,            // N: below this the line is slack
   ADDED_MASS: 1.5,       // a fish moves water with it: its mass feels this much heavier
   TOW: 0.5,              // a fish led toward you head-first drags this much less than one that swims
@@ -45,6 +48,7 @@ export const REEL = {
   JUMP_MAX: 0.8,         // ...up to this per jump
   JUMP_LOW: 32,          // deg: a rod below this counts as low for a jump...
   JUMP_HIGH: 58,         // ...and above this as high
+  EASY_RISE: 0.2,        // s: in easy mode a jump takes this much longer to rise, so a rod lowered on the cue is down in time
   SELF_HOOK_HOLD: 1.4,   // a fish that hooked itself throws the hook this much more easily
   LAND_R: 3.5,           // m from the dock end to land a fish
   LAND_STAMINA: 0.3,     // tired enough to land below this
@@ -61,7 +65,8 @@ export const REEL = {
   NEAR_D: 8, FAR_D: 40,  // ...close in (NEAR_D m) it tires in full, so it still fights as you bring it in
   BEATEN: 0.12,          // below this stamina a fish rolls up and comes in on its side...
   BEATEN_TOW: 0.15,      // ...and drags this much less...
-  BEATEN_THRUST: 0.5,    // ...and swims this much less hard
+  BEATEN_THRUST: 0.5,    // ...and swims this much less hard. It starts no tricks (a jump, a tail walk, a charge, a shake or
+  BEATEN_THROW: 0.3,     // a thrash), and a long slack throws the hook this much less often
   GRACE_T: 0.8,          // s after the hook set with no grind: the drag just slips ("Fish on! Let it run.")
   OPEN_T: 1,             // s after the hook set: the rod is still high from the pull, so the first leap...
   OPEN_JUMP: 0.4,        // ...throws the hook only this often
@@ -140,6 +145,8 @@ export const BITE = {
   RING_BOOST: 0.5,       // a rising fish is a feeding fish: bigger
 };
 
+// the moves a beaten fish no longer starts
+const TRICKS = ["shake", "jump", "walk", "charge", "thrash"];
 const MOVE_FORCE = { run: 1, surge: 1.35, shake: 0.35, dive: 0.8, swim: 0.45, rest: 0.15, jump: 1, charge: 1.1, sulk: 0.5, thrash: 0.4, hold: 0.1, turn: 0.4 };
 const ZERO = Object.freeze({ x: 0, z: 0 });
 
@@ -213,6 +220,13 @@ function likeSpeed(sp, s) {
   if (s < lo) return 0.45 + 0.55 * s / lo;
   if (s <= hi) return 1;
   return Math.max(0.12, 1 - (s - hi) / (1.5 * hi));
+}
+
+// A brand-new player's first cast in the water (main.js): a sure bite from a small, easy fish of Loon Lake, a pumpkinseed
+// in the pads and the weeds and by the dock, a perch anywhere else. Pass it to LakeSim as its test hooks (species, kg, bite)
+export function firstBite(zn, r = Math.random) {
+  const id = zn === "pads" || zn === "weeds" || zn === "dock" ? "pumpkinseed" : "perch", [a, b] = byId(id).kg;
+  return { species: id, kg: Math.round((a + (Math.min(b, 0.45) - a) * (0.3 + 0.5 * r())) * 100) / 100, bite: true };
 }
 
 /* ---------------- rising fish: the rings you cast at ---------------- */
@@ -334,10 +348,12 @@ export class LakeSim {
       cover: null,     // { side, steer, kind } while the fish runs for cover: steer this way to turn it
       boss: null,      // { n, of, name, at: [stamina where the next phases start] } for a legend
       flow: { x: 0, z: 0 }, // the current at the lure (m/s)
+      slackT: 0,       // s the line has been slack in the fight (the gauge says SLACK, the prompt says to reel)
+      cause: "",       // why the line snapped: "grind" (cranked into the drag) | "rodlow" | "drag" (set too heavy) | "shake" | ""
     };
     this.events = [];
     this.theta = 45; this.crank = 0;
-    this.slackT = 0; this.slackCool = 0; this.slipOffT = 9; this.spool = 0;
+    this.slackT = 0; this.slackCool = 0; this.slipOffT = 9; this.spool = 0; this.slipT = 0;
     this.bottom = { x: NaN, z: NaN, d: this.water };
     this.plan = this.choose(o);
     this.ap = this.plan ? { stage: "wait", t: this.plan.notice, interest: 0, nib: 0, nibbled: false, pauseT: 0, movedT: 9, pauseRolled: false, bored: 0 } : null;
@@ -674,7 +690,15 @@ export class LakeSim {
   // pick the fish's next move from what the species likes to do and how tired it is
   nextMove() {
     const f = this.state.fish, F = this.F, R = this.R, fi = F.moves ? Object.assign({}, this.plan.sp.fight, F.moves) : this.plan.sp.fight, s = f.stamina, r = this.r;
-    if (F.nextJump) { F.nextJump = false; return this.startMove("jump"); }
+    // a beaten fish (TIRED, in its last stage) has no tricks left: it only swims, runs, dives, sulks and rests
+    const boss = this.plan.sp.boss, beaten = s < R.BEATEN && (!boss || F.bossPhase === boss.phases.length - 1);
+    if (F.nextJump) {
+      F.nextJump = false;
+      if (!beaten) return this.startMove("jump");
+      // (it was in a tail walk: the walk is over)
+      F.walkLeft = 0;
+      if (F.walking) { F.walking = false; this.emit("walkEnd"); }
+    }
     const dd = Math.hypot(f.x, f.z), dpt = this.depthAt(f.x, f.z);
     const w = [
       ["run", fi.run * (0.3 + s) * 1.4],
@@ -687,7 +711,7 @@ export class LakeSim {
       ["sulk", fi.sulk && dpt > R.SULK_MIN_D ? fi.sulk * (0.5 + 0.5 * (1 - s)) : 0],
       ["walk", fi.walk && F.jumpCool <= 0 && s >= 0.2 ? fi.walk * (0.3 + 0.9 * s) : 0],
       ["thrash", fi.thrash ? fi.thrash * (0.4 + 0.6 * s) : 0],
-    ].filter(([m, x]) => x > 0 && (m !== F.lastMove || m === "swim" || m === "rest"));
+    ].filter(([m, x]) => x > 0 && !(beaten && TRICKS.includes(m)) && (m !== F.lastMove || m === "swim" || m === "rest"));
     this.startMove(pickW(w, r));
   }
 
@@ -779,7 +803,8 @@ export class LakeSim {
     } else if (m === "jump") {
       // it swims up hard, then leaps; in a tail walk the leaps are lower and quicker
       const dpt = Math.max(0, -f.y), walk = F.walkLeft > 0 || F.walking;
-      F.jumpPh = { rise: 0.3 + Math.min(0.35, dpt * 0.1), air: walk ? 0.45 + r() * 0.2 : 0.55 + r() * 0.3 + 0.1 * f.len, t: 0, y0: f.y, top: (walk ? 0.25 : 0.35) + (walk ? 0.25 : 0.35) * Math.min(1.5, f.len), open: S.fightT < R.OPEN_T };
+      const rise = 0.3 + Math.min(0.35, dpt * 0.1) + (this.easy && !this.plan.sp.legend ? R.EASY_RISE : 0);
+      F.jumpPh = { rise, air: walk ? 0.45 + r() * 0.2 : 0.55 + r() * 0.3 + 0.1 * f.len, t: 0, y0: f.y, top: (walk ? 0.25 : 0.35) + (walk ? 0.25 : 0.35) * Math.min(1.5, f.len), open: S.fightT < R.OPEN_T };
       F.moveLen = F.jumpPh.rise + F.jumpPh.air + 0.35;
       F.risk = 0; F.riskW = 0;
       F.jumpCool = 3.5;
@@ -872,9 +897,14 @@ export class LakeSim {
 
     /* the reel: the spool slips when the line pulls harder than the drag; cranking into a slipping drag grinds */
     const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN) * (1 + 0.35 * I.pull);
-    // for the first moments after the hook set the drag just slips ("Fish on! Let it run."): no grind yet.
+    // A locked spool winches the fish in, grind and all. The moment it slips (a run starts), the grind lets go and builds
+    // back over GRIND_RAMP s of slipping; slipT runs down 4 times as fast while the spool holds, so each new run starts
+    // afresh. And the grind never locks the spool past GRIND_CAP of the break. So the drag gives before the line breaks.
+    // For the first moments after the hook set the drag just slips ("Fish on! Let it run."): no grind yet.
     // A resting legend has no grind either: winding while it hangs there is safe
-    const thr = S.dragN + (f.move === "hold" ? 0 : R.GRIND_N * I.crank * smooth(R.GRACE_T, R.GRACE_T + 0.4, S.fightT));
+    this.slipT = this.spool > 0.15 ? this.slipT + h : Math.max(0, this.slipT - 4 * h);
+    const ramp = this.slipT > 0 ? smooth(0, R.GRIND_RAMP, this.slipT) : 1;
+    const thr = Math.min(S.dragN + (f.move === "hold" ? 0 : R.GRIND_N * I.crank * smooth(R.GRACE_T, R.GRACE_T + 0.4, S.fightT) * ramp), Math.max(S.dragN, R.GRIND_CAP * S.breakN));
     if (this.spool > 0 || ten > thr) {
       this.spool += (ten - thr - R.SPOOL_B * this.spool) / R.SPOOL_M * h;
       if (this.spool < 0) this.spool = 0;
@@ -886,7 +916,11 @@ export class LakeSim {
     if (this.spool > 0 && ten > thr) ten = Math.max(ten, thr);
     S.tension = ten;
     S.slip = this.spool;
-    if (ten > S.breakN) return this.lose("snap", "snap", { reason: "snap" });
+    if (ten > S.breakN) {
+      // what would have saved the line, for the loss line: stop cranking, hold the rod up (a high rod bends), a lighter drag
+      S.cause = I.crank > 0.3 ? "grind" : stiff > 0.5 ? "rodlow" : S.dragN >= R.DRAG_N[2] ? "drag" : shaking ? "shake" : "";
+      return this.lose("snap", "snap", { reason: "snap", cause: S.cause });
+    }
     // the spool runs out: a long run takes all the line
     S.spoolFrac = S.lineOut / R.SPOOL_MAX;
     if (S.spoolFrac >= 1) return this.lose("spooled", "snap", { reason: "spooled" });
@@ -1181,7 +1215,7 @@ export class LakeSim {
 
     // a slack line lets the fish shake the hook out (a legend at rest cannot: its line is meant to go light)
     if (f.move !== "hold" && (this.slackT > 2.5 && this.slackT - h <= 2.5 || this.slackT > 4 && ((this.slackT - 2.5) % 1.5) < h)) {
-      if (r() < R.THROW_LONG * F.hold) return this.lose("thrown", "thrown", { slack: true });
+      if (r() < R.THROW_LONG * F.hold * (S.beaten ? R.BEATEN_THROW : 1)) return this.lose("thrown", "thrown", { slack: true });
     }
     if ((f.move === "shake" || f.move === "thrash" || f.move === "jump") && !F.moveThrowRolled && F.moveSlackT > 0.9) {
       F.moveThrowRolled = true;
@@ -1294,6 +1328,7 @@ export class LakeSim {
     } else S.depth = Math.max(0, -S.lure.y);
     const fl = this.flowAt(S.lure.x, S.lure.z);
     S.flow = { x: fl.x, z: fl.z };
+    S.slackT = S.phase === "fight" || S.phase === "land" ? this.slackT : 0;
     if (S.phase === "fight" || S.phase === "land") {
       S.slack = this.slackT > 0.12;
       // one alert per real slack line (it has been slack a while: the fish can throw the hook), not per flicker

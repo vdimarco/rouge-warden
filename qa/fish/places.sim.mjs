@@ -1,6 +1,6 @@
 // The fights of all four places: node qa/fish/places.sim.mjs   (N=60 casts per fish and player, about a minute)
 // Every fish is fished at ITS place with ITS gear by scripted players (qa/fish/fightlib.mjs): a skilled player, a casual one,
-// and players that each break one rule of good play. A legend is cast into its gold ring. It prints land and loss rates, fight
+// a novice (a first-time player, slower still: a measurement with low floors), and players that each break one rule of good play. A legend is cast into its gold ring. It prints land and loss rates, fight
 // times, and the dead tow, then checks the targets of plan section 3.5. Exit code 1 if a target is missed.
 // Handy while tuning:  PLACES=sea SP=bigblue POL=skilled N=30 node qa/fish/places.sim.mjs
 //                      TRACE=sea:bigblue:7:skilled node qa/fish/places.sim.mjs   (one cast, frame by frame; SPARK=1 for a picture)
@@ -53,7 +53,7 @@ function runJob({ pid, spId, pol, n }) {
     const s = spots[i % spots.length];
     const ring = legend ? { x: s.x, z: s.z, ttl: 20, species: sp.id, gold: true } : null;
     const o = runCast({ place, policy: pol, seed: i + 1, spot: s, species: sp.id, hour: hourOf(pid, sp), ring });
-    out.push({ kg: o.kg, hooked: o.hooked, struck: o.struck, outcome: o.outcome, fightT: o.fightT, zeroStamT: o.zeroStamT, phases: o.phases, holdT: o.holdT, lightT: o.lightT, maxLine: o.maxLine, maxRub: o.maxRub, dryT: o.dryT, sunkT: o.sunkT, noSideT: o.noSideT });
+    out.push({ kg: o.kg, hooked: o.hooked, struck: o.struck, outcome: o.outcome, fightT: o.fightT, zeroStamT: o.zeroStamT, phases: o.phases, holdT: o.holdT, lightT: o.lightT, maxLine: o.maxLine, maxRub: o.maxRub, dryT: o.dryT, sunkT: o.sunkT, noSideT: o.noSideT, slipFor: o.slipFor, beatenTricks: o.beatenTricks });
   }
   return out;
 }
@@ -77,7 +77,7 @@ async function main() {
   const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); };
   const places = process.env.PLACES ? process.env.PLACES.split(",") : PLACE_IDS;
   const only = process.env.SP ? process.env.SP.split(",") : null;
-  const pols = process.env.POL ? process.env.POL.split(",") : ["skilled", "casual", ...FLAWS];
+  const pols = process.env.POL ? process.env.POL.split(",") : ["skilled", "casual", "novice", ...FLAWS];
 
   /* ---------------- run every job on a pool of workers ---------------- */
   const jobs = [];
@@ -161,8 +161,19 @@ async function main() {
   }
   // land rates
   const small = (sp) => sp.kg[1] < 1.3; // panfish and small fish
-  const LEG = { skilled: { golden: [80, 97], whiskers: [65, 88], hookjaw: [60, 88], bigblue: [55, 82] }, casual: { golden: [45, 70], whiskers: [40, 65], hookjaw: [35, 65], bigblue: [30, 60] } };
+  // The bands were moved in the store polish (openspec fish-store-polish, the fight package). Three fair changes took away the
+  // ways a legend was lost with no chance to answer: the drag now gives for 0.5 s before cranking can snap the line (it
+  // snapped 0.07 s after the slip), a beaten legend starts no tricks and seldom throws the hook on a slack line (it was lost
+  // after TIRED showed), and the head-shake prompt now says to keep reeling slowly (the players do), so a shake no longer
+  // hides slack line. Easy mode's longer jump rise is kept off for legends. With those, the casual player lands about 3 in 4
+  // legends instead of about half, and a skilled one Old Hookjaw and Big Blue more often: so the casual tops rose to 85% and
+  // the skilled tops of Old Hookjaw and Big Blue to 97% and 90%. The floors did not move. (Before: casual golden 45-70,
+  // whiskers 40-65, hookjaw 35-65, bigblue 30-60; skilled hookjaw 60-88, bigblue 55-82.)
+  const LEG = { skilled: { golden: [80, 97], whiskers: [65, 88], hookjaw: [60, 97], bigblue: [55, 90] }, casual: { golden: [45, 85], whiskers: [40, 85], hookjaw: [35, 85], bigblue: [30, 85] } };
   const OVERALL = { loon: 92, stumps: 88, river: 86, sea: 85 };
+  // the novice's floors, the legend left out. Measured in the store polish (94 / 91 / 89 / 91% at N=60) and set about 10
+  // points lower: they are there to catch a change that a first-time player could not live with, not to tune by
+  const NOVICE = { loon: 85, stumps: 80, river: 78, sea: 80 };
   for (const pid of PLACE_IDS) {
     const all = fishOf(pid), plain = all.filter((x) => !x.legend);
     for (const { sp } of plain) {
@@ -177,6 +188,33 @@ async function main() {
     for (const pol of ["skilled", "casual"]) {
       const s = tally(get(pid, L.id, pol)), [a, b] = LEG[pol][L.id], r = 100 * rate(s.landed, s.hooked);
       check(r >= a && r <= b, `${L.id}: the ${pol} player lands ${a}-${b}% (${pct(s.landed, s.hooked)} of ${s.hooked})`);
+    }
+  }
+  // easy mode gives a jump 0.2 s more to rise: a casual player who lowers the rod on the cue keeps the steelhead
+  {
+    const c = tally(get("river", "steelhead", "casual"));
+    check(c.hooked >= N * 0.5 && rate(c.landed, c.hooked) >= 0.7, `river steelhead: the casual player lands 70% or more in easy mode (${pct(c.landed, c.hooked)} of ${c.hooked})`);
+  }
+  // the drag gives before the line breaks: a slow player who is still cranking when a run starts seldom snaps the line
+  // (fight.sim times the snaps of a player who never stops cranking)
+  {
+    const lists = PLACE_IDS.flatMap((pid) => fishOf(pid).flatMap(({ sp }) => ["casual", "novice"].map((pol) => get(pid, sp.id, pol) || [])));
+    const hooked = lists.flat().filter((o) => o.hooked), snaps = hooked.filter((o) => o.slipFor != null);
+    check(snaps.length <= 0.02 * hooked.length, `the casual and novice players snap 2% or less of their fish (${pct(snaps.length, hooked.length)}: ${snaps.length} of ${hooked.length}; median slip before the snap ${snaps.length ? median(snaps.map((o) => o.slipFor)).toFixed(2) : "-"} s)`);
+  }
+  // a beaten fish (TIRED, in its last stage) starts no trick move: no jump, tail walk, charge, shake or thrash
+  {
+    const all = jobs.flatMap((j) => results[j.id]), n = all.reduce((a, o) => a + o.beatenTricks, 0);
+    const legs = PLACE_IDS.flatMap((pid) => ["skilled", "casual"].flatMap((pol) => get(pid, fishOf(pid).find((x) => x.legend).sp.id, pol)));
+    check(n === 0 && legs.length > 0, `a beaten fish starts no trick move (${n} in ${all.length} fights, ${legs.length} of them legends)`);
+  }
+  // the novice: a first-time player (slow to react, misses two warnings in five, no side pressure). A measurement first:
+  // the floors only catch a game that a new player could not play at all
+  if (pols.includes("novice")) {
+    for (const pid of PLACE_IDS) {
+      const plain = fishOf(pid).filter((x) => !x.legend), nv = merge(plain.map(({ sp }) => get(pid, sp.id, "novice")));
+      const need = NOVICE[pid];
+      check(100 * rate(nv.landed, nv.hooked) >= need, `${pid}: the novice lands ${need}% or more of the fish here, the legend left out (${pct(nv.landed, nv.hooked)} of ${nv.hooked})`);
     }
   }
   // the flaw players
