@@ -1,5 +1,11 @@
 const TAU = Math.PI * 2;
 const COLORS = ['#bbacf6', '#91f4df', '#ffd699', '#ff9989','#b99aef','#a4dfff','#ffba83','#c3d990','#c5bdff','#ffc16d','#96e0ac','#a9dfb7'];
+export function drawCastWarning(r,intent,time,allied=false){
+ const c=r.ctx,w=intent.shape,p=r.project(w.x,w.y),radius=w.radius*r.scale,progress=Math.max(0,Math.min(1,(time-intent.start)/(intent.at-intent.start)));
+ c.save();c.translate(p.x,p.y);c.scale(1,.88);c.strokeStyle=allied?'#a3ead3':'#ff8f75';c.fillStyle=allied?'#76dfb91c':'#ff57392e';c.lineWidth=2.5;c.setLineDash([6,4]);
+ const path=()=>{c.beginPath();if(w.shape==='cone'&&w.width<Math.PI){c.moveTo(0,0);c.arc(0,0,radius,w.angle-w.width,w.angle+w.width);c.closePath();}else c.arc(0,0,radius,0,TAU);};
+ path();c.fill();c.stroke();c.setLineDash([]);c.globalAlpha=.8;c.lineWidth=3;c.beginPath();c.arc(0,0,Math.max(7,radius*.13),-Math.PI/2,-Math.PI/2+TAU*progress);c.stroke();c.restore();
+}
 export function attackPose(e, time) {
   const casting = Number.isFinite(e.castStarted) && time - e.castStarted < .56 && e.castStarted >= (e.attackStarted ?? -1);
   const start = casting ? e.castStarted : e.attackStarted;

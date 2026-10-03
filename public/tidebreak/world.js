@@ -102,6 +102,7 @@ export function resolveBody(s, e) {
   }
 }
 export function move(s, e, x, y, dt, speed = e.speed) {
+  if(e.chaseUntil>s.time)speed*=1.4;
   const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy);
   if (d < 2) return;
   const n = Math.min(d, speed * dt), old = { x: e.x, y: e.y };
@@ -115,4 +116,3 @@ export function shiftWorld(s) {
   for (const e of s.units) if (e.speed && e.hp > 0) resolveBody(s, e);
   return true;
 }
-

@@ -1,3 +1,4 @@
+import { manaCapacity } from './combat-rules.js';
 // Recipes, derived stats and build orders are shared by the player and bots.
 const item = (id, name, cost, category, stats, text, recipe = []) => ({ id, name, cost, category, stats, text, recipe });
 export const ITEMS = [
@@ -60,6 +61,7 @@ export function recalculate(e, base) {
   const stats = { attack: 0, attackSpeed: 0, power: 0, armor: 0, health: 0, haste: 0, speed: 0, regen: 0, lifesteal: 0 };
   for (const id of e.inventory || []) for (const [key, value] of Object.entries(ITEM[id].stats)) stats[key] += value;
   e.maxHp = base.hp + (e.level - 1) * 110 + stats.health;
+  e.maxMana=manaCapacity(base,e.level);e.mana=Math.min(e.mana??e.maxMana,e.maxMana);
   e.hp = Math.min(e.hp, e.maxHp); // Purchases never refill health; selling cannot generate healing.
   e.damage = base.damage + (e.level - 1) * 13 + stats.attack;
   e.rate = base.rate / (1 + stats.attackSpeed / 100);
