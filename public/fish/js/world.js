@@ -14,6 +14,7 @@ import { loadPaintedForest } from "./painted-forest.js";
 import * as Fish from "./world-fish.js";
 import { fishMesh as makeFish, JUNK_LEN } from "./world-fish.js";
 import { Spray, followerShadow, fireflies as makeFireflies, Gulls, boardMesh, BOARD_LENGTHS } from "./world-fx.js";
+import { createRenderScale } from "./render-scale.js";
 
 export { fishMesh } from "./world-fish.js";
 
@@ -59,9 +60,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   // shader error checks are synchronous GL calls on each program's first draw: only in ?debug
   renderer.debug.checkShaderErrors = /[?&]debug\b/.test(location.search);
-  // dynamic resolution: when frames run long the render scale drops, and it creeps back when there is room
-  let resScale = 1, ftAvg = 16.7, ftHold = 0;
-  const ratio = () => Math.max(0.6, Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high) * resScale);
+  // dynamic resolution: when frames run long for a while the render scale steps down, and when they are fast again it
+  // steps back up (render-scale.js)
+  const res = createRenderScale();
+  const ratio = () => Math.max(0.6, Math.min(window.devicePixelRatio || 1, low ? WORLD.DPR.low : WORLD.DPR.high) * res.scale);
   renderer.setPixelRatio(ratio());
   renderer.domElement.style.display = "block";
   container.appendChild(renderer.domElement);
@@ -724,7 +726,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       const nl = q === "low";
       if (nl === low) return;
       low = nl;
-      resScale = 1;
+      res.reset();
       renderer.setPixelRatio(ratio());
       renderer.setSize(S.w, S.h);
       buildEnv();
@@ -782,7 +784,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     update, render,
     info() {
       const m = renderer.info.memory;
-      return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +resScale.toFixed(2), mem: { geometries: m.geometries, textures: m.textures } };
+      return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +res.scale.toFixed(2), mem: { geometries: m.geometries, textures: m.textures } };
     },
     place: () => PL,
     // one trip at a time: a second call waits for the first
@@ -791,14 +793,15 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       travel = trip.catch(() => {});
       return trip;
     },
-    // main.js reports each frame's time in ms: long frames lower the render scale, short ones raise it again
+    // main.js reports the time of each frame that drew the lake, in ms: slow frames for a while lower the render scale,
+    // fast ones raise it again
     frameTime(ms) {
-      if (!(ms > 0) || ms > 250 || document.hidden) return;
-      ftAvg += (ms - ftAvg) * 0.05;
-      if ((ftHold -= ms) > 0) return;
-      if (ftAvg > 22 && resScale > 0.6) { resScale = Math.max(0.6, resScale * 0.85); renderer.setPixelRatio(ratio()); ftHold = 1500; }
-      else if (ftAvg < 14 && resScale < 1) { resScale = Math.min(1, resScale * 1.08); renderer.setPixelRatio(ratio()); ftHold = 4000; }
+      if (document.hidden || renderer.getContext().isContextLost()) return;
+      if (res.frame(ms)) renderer.setPixelRatio(ratio());
     },
+    // fn("lost") when the GL context is lost, fn("restored") when it is back and the shaders are warm again
+    onContext(fn) { ctxFn = fn; },
+    get lost() { return renderer.getContext().isContextLost(); },
     // upload a fish's painted skin before it is needed: the sim picks the fish at the landing, seconds before the strike
     prepareFish(id) {
       const m = getFish(id);
@@ -836,6 +839,16 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     scene.remove(warmBoard);
     extras.forEach((o) => { o.visible = false; });
   }
+
+  // A lost GL context (iOS can drop it while the app is in the background, or the GPU resets): three keeps the scene and
+  // uploads it again when the context comes back. Warm the shaders again then, so the first strike after it does not
+  // stutter. main.js pauses on the loss, and draws again after the warm-up
+  let ctxFn = null;
+  renderer.domElement.addEventListener("webglcontextlost", () => { if (ctxFn) ctxFn("lost"); });
+  renderer.domElement.addEventListener("webglcontextrestored", async () => {
+    try { await warmUp(); } catch (e) { /* draw on first use instead */ }
+    if (ctxFn) ctxFn("restored");
+  });
 
   setHour(12);
   const rect = container.getBoundingClientRect();
