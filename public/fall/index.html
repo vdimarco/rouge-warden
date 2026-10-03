@@ -5457,8 +5457,8 @@ const UI = (() => {
     set("flaskText", "text", "🌭 " + run.flasks);
     set("flaskN", "text", String(run.flasks));
     const left = Math.ceil((Game.fastT || 0) - Game.levelT);
-    set("fastText", "text", left > 0 ? "⏱ " + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") : "⏱ 0:00");
-    $("#fastText").classList.toggle("gone", left <= 0);
+    set("fastText", "text", Custom.on ? Custom.api.clock(Game.levelT) : left > 0 ? "⏱ " + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") : "⏱ 0:00");
+    $("#fastText").classList.toggle("gone", Custom.on ? Custom.api.late(Game.levelT) : left <= 0);
     if ($("#curseText").hidden === run.curse > 0) $("#curseText").hidden = !(run.curse > 0);
     if (run.curse > 0) set("curseText", "text", "☠ " + run.curse);
     // the hotbar: one card per wand, with its spells and the next one to cast
@@ -6157,7 +6157,7 @@ async function enterDepth(first, pre) {
   UI.hideBanner();
   UI.voice(plan.line);
   Game.state = "play";
-  if (first) UI.hint(matchMedia("(pointer: coarse)").matches ? "Tap Hit to swing. Roll through attacks. Drag the right side to shoot." : "Left click hits, right click shoots, Shift rolls, F digs.", 5000);
+  if (first && !(Custom.on && Custom.api.runs > 1)) UI.hint(matchMedia("(pointer: coarse)").matches ? "Tap Hit to swing. Roll through attacks. Drag the right side to shoot." : "Left click hits, right click shoots, Shift rolls, F digs.", 5000);
 }
 
 let reaching = false;
@@ -6196,7 +6196,7 @@ async function die(cause) {
   run.over = true;
   Game.state = "dead";
   Input.clear();
-  if (Custom.on) { const p = Game.player; if (p) World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); Custom.api.died(causeName(cause), startRun); return; }
+  if (Custom.on) { const p = Game.player; if (p) { World.spill(p.x + 2, p.y + 5, BLOOD, 24, 4); addFx(p.x + 2, p.y + 5, 0xd0485f, 20); } Custom.api.died(causeName(cause), startRun, Math.max(Game.bestY, p ? p.y : 0) / (Game.level.exitY - 10), Game.levelT); return; }
   const m = Memory.data;
   const prevKiller = m.lastDeath;
   m.lastDeath = cause;
