@@ -4,3 +4,8 @@ Use a separate arsenal controller with data-driven ranged weapons and existing m
 # Movement and visibility follow-up
 
 Map both Shift keys to an unbuffered sprint action, retaining stamina, crouch and existing dodge-hold sprint. Keep guard/aim on F and right mouse. Delay daytime fog onset to 55% of the existing quality-tier-clamped fog range, blended out for night presets; preserve fog far/culling limits and geometry budgets.
+
+
+# Combat-fun follow-up
+
+Preserve the existing parry, dodge, posture and weapon systems. Make enemy recovery states strategically valuable instead of merely visual: opening hits receive a 1.4x damage multiplier and 1.45x posture multiplier, while heavy opening hits receive 1.55x damage. Show a short OPENING HIT cue so the player can connect the read with the reward.
