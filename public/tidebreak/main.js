@@ -33,7 +33,7 @@ function pause() {
 function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = createMatch(selected); sound.next = 0; lineup.refresh(); }
 function updateSound() { $('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
 function choose(kind) {
-  selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('ready-legend').textContent = `${h.name} · ${h.role}`; $('hero-role').textContent = h.role; $('hero-note').textContent = h.note;
+  selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('ready-legend').textContent = `${h.name} · ${h.role}`; $('hero-role').textContent = `${h.attribute} · ${h.role}`; $('hero-note').textContent = h.note;
   $('hero-animation').srcset = `./art/animated/${h.slug}-idle.gif`; $('hero-art').src = `./art/illustrated/${h.slug}-front.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
   document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
   $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(kind);$('hero-spell-note').textContent='';$('hero-spell-note').hidden=true;

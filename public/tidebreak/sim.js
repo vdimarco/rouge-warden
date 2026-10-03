@@ -8,6 +8,8 @@ import { KITS, MAX_LEVEL, xpForLevel, trainSkill, trainBot, cooldownFor } from '
 export { trainSkill } from './abilities.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from './bases.js';
 import { NEW_HEROES } from './legends.js';
+import { heroClass } from './hero-classes.js';
+import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
@@ -20,7 +22,7 @@ export const HEROES = [
   { name: 'Baba Yaga', slug: 'baba', role: 'Walking fortress', note: 'Your hut has legs. Your traps have teeth.', hp: 1820, speed: 285, range: 360, damage: 94, rate: .8, color: '#edc47c', sprite: 2 },
   { name: 'Jersey Devil', slug: 'devil', role: 'Relentless chaser', note: 'Leap into a brawl. Feed on the fear.', hp: 1690, speed: 365, range: 140, damage: 143, rate: .68, color: '#f6a086', sprite: 3 },
  ...NEW_HEROES,
-].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
+].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
   const e = { id: s.nextId++, hp: 100, maxHp: 100, radius: 22, speed: 0, range: 100, damage: 10, rate: 1, attackCd: 0, hit: 0, shield: 0, stun: 0, slow: 0, fear: 0, lastHit: -100, revealedUntil: -1, facing: -Math.PI / 2, ...data };
@@ -28,10 +30,10 @@ function add(s, data) {
 }
 function hero(s, team, kind, lane, human = false) {
   const h = HEROES[kind], front = TOWER_POSITIONS[team][lane][0], toward = team ? -1 : 1;
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 180, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 180, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 export function createMatch(kind = 0, seed = 49) {
-  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [6, 6], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
+  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], missiles: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [6, 6], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
     add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
     for (let lane = 0; lane < 3; lane++) for (let tier = 0; tier < 2; tier++) {
@@ -105,7 +107,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
-    target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
+    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (credit?.kind === 'hero') credit.kills++; }
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (credit?.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
@@ -161,7 +163,7 @@ export function autoTarget(s, e, manual = 0) {
   return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
 function attack(s, e, t) {
-  if (!t || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
+  if (!t || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
   if (e.kind === 'hero') {
     if (e.comboTarget !== t.id || s.time > (e.comboUntil || 0)) e.comboNext = 0;
     e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
@@ -181,7 +183,7 @@ function resolveAttack(s, e) {
   const pending = e.pendingAttack; if (!pending || s.time < pending.at) return;
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) { e.comboNext = 0; e.comboUntil = 0; return; }
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) { e.comboNext = 0; e.comboUntil = 0; return; }
   if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   if(e.kind==='tower'&&t.kind==='hero'){e.towerHits=e.towerTarget===t.id&&e.towerUntil>s.time?(e.towerHits||0)+1:1;e.towerTarget=t.id;e.towerUntil=s.time+2;}
   damage(s, e, t, pending.amount, 'attack');
@@ -339,6 +341,7 @@ function resolveIntent(s,e){
 function terrainEffects(s, dt) {
   for (const z of s.zones) {
     z.life-=dt;z.tick-=dt;const source=s.units.find(e=>e.id===z.source);
+    if(z.follow&&source){z.x=source.x;z.y=source.y;if(source.hp<=0||z.type==='sunray'&&(source.stun>0||source.fear>0||source.silencedUntil>s.time))z.life=0;}
     if(!source||z.life<=0||s.time<(z.armed||0)||z.tick>0)continue;
     z.tick=z.type==='stomp'?.8:.6;
     if(z.legend){tickLegendZone({s,z,source,damage,heal,hostile});continue;}
@@ -379,6 +382,7 @@ export function step(s, input = {}, dt = 1 / 60) {
     const artwork=campSprite(i,roll);
     add(s, { kind: 'camp', name: artwork.name, marketplaceSprite:artwork.id, team: -1, camp: i, ...spot, homeX: spot.x, homeY: spot.y, hp: 960, maxHp: 960, damage: 55, range: 170, speed: 120, rate: 1.1, sprite: i ? 9 : 10, creatureId: creature.id, aggro: 0, aggroUntil: 0 });
   }
+  tickSkillEvents(s,dt,{damage,heal,hostile});
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
     for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt);
@@ -399,7 +403,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       }
       if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * .24 * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
-      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:6+e.level*.35));
+      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:6+e.level*.35+(e.manaRegen||0)));
       e.shield = Math.max(0, e.shield - dt * 13);
       if (concealed(s, e)) e.ambushReady = true;
       else if (e.cloak <= s.time && !concealed(s, e)) e.ambushReady = false;
