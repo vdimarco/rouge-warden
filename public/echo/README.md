@@ -10,6 +10,8 @@ The run has no last level. When all eight chicks of a clutch are home, the nest 
 - An eel hunts your line. If it touches a chick, it takes that chick out of the line and drops it on the lake. That costs no energy, but you must go back for the chick. When the eel is near enough, it winds up: a dashed line, a "!" and a tone show where it will strike. The warning lasts 0.85 s in the first clutches and never less than 0.55 s. Only the lunge costs energy. The eels take turns, so two strikes never come at once. Eels stay away from the nest.
 - Rocks block the loon at the surface and do no damage. If you aim behind a rock, the loon slides round the rim toward the target, with a soft bonk. A target inside a rock stops the loon at the rim.
 - Boat lanes flash for 1.5 s before a boat crosses. A boat hit or an eel lunge costs one energy and scatters up to two chicks from the line. They stay on the lake for rescue. Chicks at the nest stay safe.
+- The banked chicks hop into the nest one by one. A bank of four or more is a big moment: the lake goes to slow motion for at least 0.6 s, each chick lands on the next note of a rising scale, and "+100 × n²" counts up. Eight at once also sets off fireworks.
+- When your energy is gone, the loon spins down, the lake dims and three notes fall. Then the end card shows your score against your best, and how many more chicks would have hatched the next clutch.
 - Fish under the water give points and shorten the honk cooldown. The best score stays in local storage.
 - Pause with P, Escape, or the button. Switching away pauses automatically. Blocked storage or audio does not stop play.
 
@@ -19,3 +21,4 @@ Serve `public/` with a static server. `crossing.js` holds the run logic, with no
 
 - `node --test qa/echo/crossing.test.mjs` checks the run logic.
 - `node qa/echo/echo.sim.mjs` lets four bots play 200 seeded runs each, and checks the run length and the score spread.
+- `LAB_URL=http://localhost:8787/lab/ NODE_PATH=$(npm root -g) node qa/echo/echo.e2e.mjs` plays the game in a browser at a phone size and a desktop size. It stops the frame clock and moves game time by hand through `window.__echo`, so a slow machine gives the same result. Set `SHOTS=<folder>` to save screenshots.
