@@ -22,6 +22,10 @@ import { byId } from "./species.js";
 import { fishingOf, ecology, placeSpecies } from "./fishing.js";
 import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText } from "./journey.js";
 import { SAVE_KEY, loadSave, placeRec, recordCatch, legendStep, recordDerby } from "./save.js";
+import { Native } from "./native.js";
+
+// every module is in: the bar on the boot screen moves on (index.html shows that screen until the title is ready)
+if (window.fishBoot) fishBoot.step(0.4);
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -36,13 +40,28 @@ const DEBUG = QS.has("debug");
 const OPEN_ALL = QS.has("open");
 
 /* ---------------- saving ---------------- */
-// save.js reads and cleans the file; this is only the storage
+// save.js reads and cleans the file; this is only the storage. In the app the save also goes to native storage
+// (Preferences), because the phone can clear the web view's storage
 const store = {
   raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage off */ } },
+  set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } Native.prefs.set(k, json); },
 };
-const save = loadSave(store.raw(SAVE_KEY));
+// the two switches that live outside the save (haptics.js and audio.js keep them): mirrored when the app goes away
+const SWITCHES = ["fish.haptics", "arcade.sound"];
+const mirrorSwitches = () => { for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
+// The app found no save in web storage: wait at most 400 ms for the native copy, and put it back with the switches
+async function restoreNative() {
+  const keys = [SAVE_KEY, ...SWITCHES];
+  const got = await Promise.race([Promise.all(keys.map((k) => Native.prefs.get(k))), new Promise((r) => setTimeout(() => r([]), 400))]);
+  const [raw, hx, sound] = got;
+  if (hx != null && store.raw("fish.haptics") == null) Haptics.setEnabled(hx !== "false");
+  if (sound != null && store.raw("arcade.sound") == null && (sound !== "false") !== Sound.isOn()) Sound.toggle();
+  return raw || null;
+}
+const restored = store.raw(SAVE_KEY) == null && Native.isNative ? await restoreNative() : null;
+const save = loadSave(restored || store.raw(SAVE_KEY));
 const persist = () => store.set(SAVE_KEY, save);
+if (restored) persist();
 const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
@@ -278,6 +297,16 @@ $("#useMotion").addEventListener("click", async () => {
   note.hidden = false;
   // "idle": the browser wants the question asked from a tap. Let them tap again
   if (st === "idle") { note.textContent = "Tap Use motion again."; return; }
+  // the app: no browser steps to follow. Say where to turn it on, and play with touch now
+  if (st === "denied" && Native.isStore) {
+    note.hidden = true;
+    G.input = "touch"; save.input = "touch"; persist();
+    show(null);
+    const f = setupThen; setupThen = null; if (f) f();
+    // after the start, so the goal reminder does not cover it
+    toast("Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now.", 5200);
+    return;
+  }
   note.textContent = st === "denied"
     ? "The motion sensors are off for this page. On an iPhone, close Safari fully (swipe it away), then open this page again and tap Allow. On Android, allow Motion sensors in the site settings. You can play with touch now."
     : "This phone sends no motion data. You can play with touch.";
@@ -333,12 +362,14 @@ syncFullscreen();
 // wakeBusy: a request is on its way. begin() and startMode() both ask in the same tick, and the second must not start a lock that nothing releases
 let wake = null, wakeBusy = false;
 async function keepAwake() {
+  // the app keeps the screen on with its own plugin (a web view may have no wake lock)
+  if (document.visibilityState === "visible") Native.keepAwake(true);
   if (!("wakeLock" in navigator) || wake || wakeBusy || document.visibilityState !== "visible") return;
   wakeBusy = true;
   try { const lock = await navigator.wakeLock.request("screen"); wake = lock; lock.addEventListener("release", () => { if (wake === lock) wake = null; }); } catch (e) { wake = null; } finally { wakeBusy = false; }
 }
 // a phone left paused on the table must be free to sleep
-function releaseAwake() { if (wake) { wake.release().catch(() => {}); wake = null; } }
+function releaseAwake() { Native.keepAwake(false); if (wake) { wake.release().catch(() => {}); wake = null; } }
 
 /* ---------------- title ---------------- */
 // leave the play screens: the state of the session is gone, the lake is empty
@@ -359,7 +390,8 @@ function toTitle() {
   G.hour = startHour(G.place.id, "free");
   if (world) world.setHour(G.hour);
   Sound.setAmbience(true, G.hour);
-  $("#tkick").textContent = "GET PLUNGER'D · " + journeyOf(G.place.id).kick;
+  // the arcade's name is for the web arcade only: the app shows the place alone
+  $("#tkick").textContent = (Native.isStore ? "" : "GET PLUNGER'D · ") + journeyOf(G.place.id).kick;
   $("#placesNew").hidden = !newPlaces(save).length;
   show("title");
   titleBest();
@@ -1008,7 +1040,7 @@ function syncSettings() {
   $("#optSound").checked = Sound.isOn();
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
-  $("#hapticNote").textContent = Haptics.kind === "none" ? "This browser cannot buzz." : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
+  $("#hapticNote").textContent = Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
   $("#optAssist").checked = !!save.assist;
   $("#optInput").value = G.input === "motion" || save.input === "motion" ? "motion" : "touch";
   $("#optInput").disabled = !touchDevice || !Motion.available;
@@ -1031,7 +1063,7 @@ $("#optInput").addEventListener("change", async (e) => {
     const st = await Motion.request();
     if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
-    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? "Motion is blocked for this page." : "No motion data from this phone."); }
+    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? (Native.isStore ? "Motion is off for Reel It In." : "Motion is blocked for this page.") : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
   persist(); syncSettings(); relayout(true);
 });
@@ -1065,10 +1097,38 @@ $("#quitBtn").addEventListener("click", () => { G.paused = false; Sound.sfx("uiB
 $("#pHelp").addEventListener("click", () => overlay("help"));
 $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journal"); });
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
+// the page or the app goes away: play pauses, the loops and the buzz stop
+function away() { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); mirrorSwitches(); }
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); }
+  if (document.hidden) away();
   else if (!G.paused && G.phase !== "title" && G.phase !== "results") keepAwake();
 });
+// The app has its own pause and resume (Android may not hide the page). The lake goes quiet in the background and
+// sounds again when the app comes back; play stays paused until Resume
+Native.onPause(() => { away(); Sound.setAmbience(false); });
+Native.onResume(() => {
+  Sound.init(); Sound.setAmbience(true, G.hour);
+  if (!G.paused && G.phase !== "title" && G.phase !== "results" && G.phase !== "boot") keepAwake();
+});
+
+/* ---------------- Android back ---------------- */
+// Like Escape, and more: back closes the top screen, or pauses play and resumes it. On the catch card, the results and
+// the cards of a new place it presses the main button. It never closes the app during play: on the title the app goes
+// to the background. While a place loads it does nothing
+function back() {
+  const open = (s) => !$("#" + s).hidden;
+  if (traveling) return;
+  if (window.GameSwitch && GameSwitch.isOpen) { GameSwitch.close(); return; }
+  if (["help", "journal", "settings", "places"].some(open)) { Sound.sfx("uiBack"); closeOverlay(); return; }
+  if (open("setup")) { Sound.sfx("uiBack"); setupThen = null; closeOverlay(); return; }
+  if (G.paused) { resume(); return; }
+  if (G.phase === "cast" || G.phase === "reel" || G.phase === "lost") { Sound.sfx("ui"); pause(); return; }
+  const top = SCREENS.find((s) => s !== "title" && s !== "travel" && open(s));
+  const go = top && $("#" + top + " .btn.go:not([hidden])");
+  if (go) { go.click(); return; }
+  if (G.phase === "title" || G.phase === "boot") Native.minimize();
+}
+Native.onBack(back);
 // Safari: no pinch zoom
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
@@ -1425,7 +1485,8 @@ function handleEvent(e) {
     case "walkEnd": G.walk = false; break;
     case "thrash": Haptics.thrash(); Sound.sfx("splash", 0.4); world.splash(fx, fz, 0.4); break;
     case "turned": toast("You turned it!", 1800); break;
-    case "lastrun": Haptics.jolt(); break;
+    // its own warning: the snap buzz would say the line broke, and its silence would hide the drag
+    case "lastrun": Haptics.surge(); break;
     case "phase": toast(e.name, 2200); Sound.sfx("record"); Haptics.phase(); break;
     case "spool": Sound.sfx("slip"); Haptics.bump(0.8); break;
     case "snap":
@@ -1453,12 +1514,22 @@ function reasonText(r) {
 }
 
 /* ---------------- the loop ---------------- */
-let last = now(), fpsAcc = 0, fpsN = 0;
+let last = now(), fpsAcc = 0, fpsN = 0, drew = false;
+// An opaque screen covers the lake: a dimmed card, or the title with its painted picture. Read again only when the
+// screen or the art style changes
+let coverKey = "", coverTitle = false;
+function covered() {
+  if (document.querySelector(".screen.dim:not([hidden])")) return true;
+  const key = (document.body.dataset.screen || "") + "|" + (document.body.dataset.artStyle || "");
+  if (key !== coverKey) { coverKey = key; const t = $("#title"); coverTitle = !t.hidden && /url\(/.test(getComputedStyle(t).backgroundImage); }
+  return coverTitle;
+}
 function frame() {
   requestAnimationFrame(frame);
   const t = now();
   let dt = (t - last) / 1000;
-  if (world && world.frameTime) world.frameTime(t - last);
+  // the render scale reads only the frames that drew the lake: a frame under a still screen costs nothing
+  if (world && world.frameTime && drew) world.frameTime(t - last);
   last = t;
   if (!(dt > 0)) dt = 0.016;
   G.frame++;
@@ -1473,9 +1544,11 @@ function frame() {
     pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
-  // under the pause menu and the dimmed screens the lake stands still: draw it once, then let the GPU rest
-  const still = G.paused || !!document.querySelector(".screen.dim:not([hidden])");
-  if (!still || !G.stillDrawn) { world.update(dt); world.render(); }
+  // under the pause menu, the dimmed screens and the painted title the lake stands still: draw it once, then let the
+  // GPU rest. A lost GL context draws nothing until it is back
+  const still = G.paused || G.ctxLost || covered();
+  drew = !still || !G.stillDrawn;
+  if (drew) { world.update(dt); world.render(); }
   G.stillDrawn = still;
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
     paused: still, cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
@@ -1550,8 +1623,30 @@ function debug() {
   ].filter(Boolean).join("\n");
 }
 
+/* ---------------- the GL context ---------------- */
+// The context went away (the app was in the background, the GPU reset): play pauses, and nothing draws until it is
+// back. Then the lake draws again, also under the pause screen. A context still lost 4 s after the page shows gets the
+// boot card, with Try again
+let ctxT = 0;
+function onContext(kind) {
+  clearTimeout(ctxT);
+  if (kind === "lost") {
+    G.ctxLost = true;
+    pause();
+    const check = () => { if (!G.ctxLost) return; if (document.hidden) ctxT = setTimeout(check, 4000); else if (window.fishBoot) fishBoot.fail("gpu"); };
+    ctxT = setTimeout(check, 4000);
+    return;
+  }
+  G.ctxLost = false;
+  G.stillDrawn = false;
+  if (window.fishBoot && $("#boot").dataset.kind === "gpu" && !$("#boot").hidden) fishBoot.done();
+}
+const hasGL = () => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } };
+
 /* ---------------- boot ---------------- */
 async function boot() {
+  // the app: the whole screen is the lake
+  Native.hideStatusBar();
   try {
     REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
     // the map first: the world builds the place the map is set to
@@ -1559,9 +1654,12 @@ async function boot() {
     world = await createWorld($("#view"), { quality: quality(), place: G.place, style: save.artStyle });
   } catch (err) {
     console.error(err);
-    document.body.insertAdjacentHTML("beforeend", "<p style='position:fixed;inset:auto 0 40% 0;text-align:center;font:700 16px system-ui;color:#fff'>This browser cannot draw the lake (WebGL is off).</p>");
+    // the boot screen says what went wrong (no WebGL, or something else), with Try again
+    if (window.fishBoot) fishBoot.fail(hasGL() ? "load" : "webgl");
     return;
   }
+  if (window.fishBoot) fishBoot.step(0.9);
+  world.onContext(onContext);
   world.setHour(G.hour);
   Sound.setPlace(G.place.id);
   reelPanel = new ReelPanel($("#reelBox"), { toLocal, hand: "right", area: game, direct: true });
@@ -1623,6 +1721,9 @@ async function boot() {
     get gauge() { return gauge; }, Sound, Haptics,
   };
   toTitle();
+  // the title is ready: the boot screen and the app's splash screen go
+  if (window.fishBoot) fishBoot.done();
+  Native.hideSplash();
   // an old save that already holds a big fish: tell the player which place it opened, once
   const told = untoldOpens(save);
   if (told.length) {
@@ -1634,5 +1735,5 @@ async function boot() {
   addEventListener("pointerup", () => { Sound.init(); if (G.phase === "title") Sound.setAmbience(true, G.hour); }, { once: true });
   requestAnimationFrame(frame);
 }
-boot();
+boot().catch((err) => { console.error(err); if (window.fishBoot) fishBoot.fail("load"); });
 
