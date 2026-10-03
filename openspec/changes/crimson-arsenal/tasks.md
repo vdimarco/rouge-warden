@@ -9,9 +9,10 @@
 
 ## Validation
 
+- Focused combat-fun QA: GitHub Actions run 37129321686 passes JavaScript syntax, whitespace, both Shore combat suites and the Crimson opening-reward unit suite. The Crimson unit check verifies neutral hits stay 1×, recovery light hits use 1.4× damage / 1.45× posture, heavy openings use 1.55× damage, and deflect-created recoil retains the prior 1.6× posture reward. The Vercel preview route `/crimson/` returns HTTP 200; this is deployment/route validation, not a new rendered playtest.
 - Follow-up: local Playwright desktop check passes both Shift keys starting/releasing sprint, F retaining guard, and daytime Q1 fog beginning at 385m with its existing 700m far limit. Screenshot: `/tmp/crimson-clear-hills.png`. Eight existing rule tests and diff whitespace check pass. Browser plugin not available; physical keyboard/mobile visual follow-up not tested.
 
-- `node qa/crimson/arsenal.test.mjs`: three tests pass for loadout roles, ray hits/misses, finite ammo and patrol-only tuning. Existing `wanted.test.mjs`: five pass.
+- `node qa/crimson/arsenal.test.mjs`: four tests pass for loadout roles, ray hits/misses, finite ammo and patrol-only tuning. Existing `wanted.test.mjs`: five pass.
 - `CRIMSON_CHROMIUM=/usr/bin/chromium NODE_PATH=./qa/browser/node_modules node --max-old-space-size=512 qa/crimson/arsenal.mjs`: desktop 1280×720 and landscape touch 844×390 pass. Checks cover actual number/J/T controls, each firearm, automatic fire, empty magazine, reload and pause, solid cover, civilian damage/crime, nonlethal spray, melee props, officer warning/fire/cover, upward cameras, actual helicopter visibility and touch selection/fire/reload. No browser errors.
 - Existing `wanted.mjs` and `street-fights.mjs` both pass after integration, including sheriff arrest, escape, theft ownership and returning officers.
 - Screenshots inspected for weapon HUD/aim pose, touch controls and normal-camera helicopter visibility. Rotor synthesis tested with OfflineAudioContext and nonzero RMS output; this is not a subjective listening test. Physical phone, physical gamepad, subjective audio and hardware frame-rate testing remain unverified.
