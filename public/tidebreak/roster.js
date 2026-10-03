@@ -1,7 +1,22 @@
 import { HEROES } from './sim.js';
-import { KITS } from './abilities.js';
 import { spellArtHTML } from './spell-art.js';
-import { CLASSES, matchesHero } from './hero-classes.js';
-export const ROLES=['All','Strength','Agility','Intelligence','Ranged','Support','Assassin','Fighter','Tank','Mage','Controller'];
-export const rosterHTML=(selected,filter='All')=>HEROES.map((h,i)=>({h,i})).filter(({h})=>matchesHero(h,filter)).map(({h,i})=>`<button data-hero="${i}" aria-pressed="${i===selected}" style="--hero-color:${h.color}"><picture class="hero-card-portrait"><img src="./art/illustrated/${h.slug}-front.webp" alt="" decoding="async"></picture><span>${h.name}<small>${h.attribute} · ${h.attackType}${h.category==='Support'?' · Support':''}</small></span></button>`).join('');
-export const heroPreviewHTML=i=>`<dl class="hero-stats"><div><dt>Health</dt><dd>${HEROES[i].hp}</dd></div><div><dt>Attack</dt><dd>${HEROES[i].attackType}</dd></div><div title="${CLASSES[HEROES[i].attribute].note}"><dt>Attribute</dt><dd>${HEROES[i].attribute}</dd></div></dl><p class="class-growth">${CLASSES[HEROES[i].attribute].note}</p><div class="hero-move-preview" aria-label="${HEROES[i].name} spells">${KITS[i].map((a,slot)=>`<button data-hero-spell="${slot}" aria-label="${a.name}. ${a.description}" title="${a.name}: ${a.description}">${spellArtHTML(i,slot,'preview-spell-art')}<span>${a.name}<small>${slot===3?'Ultimate · Level 6':['Q','E','C'][slot]}</small></span></button>`).join('')}</div>`;
+import { HERO_IDENTITIES, identitySkill } from './hero-identities.js';
+export const ROLES=['All','Carry','Bruiser','Mage','Support','Initiator'];
+export const ROLE_ICONS=['trident','crossed-swords','shield','fire','holy-grail','water-drop'];
+export const SELECTION_KEYS=['Q','E','C','R'];
+const portrait=(id)=>{
+ const x=[17,129,243,361][id%4],y=[253,379,501,623][Math.floor(id/4)];
+ return `<span class="reference-portrait" style="--portrait-x:${x};--portrait-y:${y}" aria-hidden="true"></span>`;
+};
+export const rosterHTML=(selected,filter='All')=>HERO_IDENTITIES.filter(h=>filter==='All'||h.filters.includes(filter)).map(h=>`<button data-hero="${h.id}" aria-pressed="${h.id===selected}" aria-label="Select ${h.name}" style="--hero-color:${h.color}">${portrait(h.id)}<span class="hero-card-name">${h.name}</span></button>`).join('');
+export function selectionSpellArt(identity,slot,className=''){
+ if(identity===0)return `<span class="painted-spell reference-spell ${className}" style="--spell-x:${[1116,1216,1316,1416][slot]}" aria-hidden="true"></span>`;
+ return spellArtHTML(HERO_IDENTITIES[identity].kit,slot,className);
+}
+export function heroPreviewHTML(identity,activeSlot=1){
+ const p=HERO_IDENTITIES[identity],h=HEROES[p.kit];
+ return `<div class="hero-move-preview" aria-label="${p.name} skills">${p.skills.map((name,slot)=>{
+ const a=identitySkill(identity,slot);
+ return `<button data-hero-spell="${slot}" aria-label="${name}. ${a.description}" aria-pressed="${slot===activeSlot}" title="${name}: ${a.description}">${selectionSpellArt(identity,slot,'preview-spell-art')}<span>${name}</span><kbd>${SELECTION_KEYS[slot]}</kbd></button>`;
+ }).join('')}</div><span class="sr-only">${h.attribute}, ${h.attackType}, ${h.hp} health</span>`;
+}

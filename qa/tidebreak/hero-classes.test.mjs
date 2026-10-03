@@ -3,6 +3,7 @@ import {createMatch,player,cast,step,damage,HEROES} from '../../public/tidebreak
 import {recalculate} from '../../public/tidebreak/items.js';
 import {KITS} from '../../public/tidebreak/abilities.js';
 import {rosterHTML,heroPreviewHTML,ROLES} from '../../public/tidebreak/roster.js';
+import {HERO_IDENTITIES} from '../../public/tidebreak/hero-identities.js';
 const setup=hero=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,skillRanks:[1,1,1,1],level:6,nextShop:Infinity});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:100+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-170,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,itemState:{},inventory:[],hero:0,player:true,level:1,mana:420,maxMana:420,cd:[100,100,100,100],skillRanks:[0,0,0,0],skillPoints:0,gold:0,nextShop:Infinity,portalCd:0,respawn:0,regen:0,haste:1,...extra};s.units.push(t);p.target=t.id;return t;};
 const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds*100);i++)step(s,input,.01);};
@@ -11,9 +12,9 @@ for(const h of HEROES)assert.equal(h.skills.length,4);
 assert.deepEqual(HEROES.filter(h=>h.attribute==='Strength').map(h=>h.slug),['nessie','wendigo','golem']);
 assert.deepEqual(HEROES.filter(h=>h.attribute==='Agility').map(h=>h.slug),['mothman','devil','kitsune','gorgon']);
 assert.equal(HEROES.filter(h=>h.attribute==='Intelligence').length,5);
-for(const filter of ['Strength','Agility','Intelligence','Ranged','Support']){
+for(const filter of ['Carry','Bruiser','Mage','Support','Initiator']){
  assert(ROLES.includes(filter));const ids=[...rosterHTML(0,filter).matchAll(/data-hero="(\d+)"/g)].map(m=>+m[1]);assert(ids.length);
- for(const id of ids){const h=HEROES[id];assert(filter===h.attribute||filter===h.attackType||filter===h.category);assert(heroPreviewHTML(id).includes(h.attribute));assert.equal((heroPreviewHTML(id).match(/data-hero-spell=/g)||[]).length,4);}
+ for(const id of ids){const identity=HERO_IDENTITIES[id],h=HEROES[identity.kit];assert(identity.filters.includes(filter));assert(heroPreviewHTML(id).includes(h.attribute));assert.equal((heroPreviewHTML(id).match(/data-hero-spell=/g)||[]).length,4);}
 }
 for(let hero=0;hero<12;hero++){
  const {p}=setup(hero),h=HEROES[hero];p.level=1;recalculate(p,h);const before={hp:p.maxHp,mana:p.maxMana,rate:p.rate,armor:p.armor,power:p.power,regen:p.regen};

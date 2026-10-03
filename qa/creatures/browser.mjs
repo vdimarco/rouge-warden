@@ -3,9 +3,10 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { HERO_IDENTITIES, identitySkill } from '../../public/tidebreak/hero-identities.js';
 const require = createRequire(import.meta.url), { chromium } = require('playwright');
 const root = path.resolve('public'), shots = process.env.SHOTS || '/tmp/creature-browser'; fs.mkdirSync(shots, { recursive: true });
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   let file = path.resolve(root, '.' + pathname);
@@ -17,11 +18,11 @@ const server = http.createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true });
 try {
-  for (const [name, width, height] of [['phone', 390, 844], ['landscape', 844, 390], ['desktop', 1440, 900]]) {
-    const page = await browser.newPage({ viewport: { width, height } }), errors = [];
+  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
-    page.on('response', r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+    page.on('response', r => { if (r.url().startsWith(origin)) { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); else loadedAssets.add(new URL(r.url()).pathname); } });
     await page.goto(origin + '/arcade/creatures/');
     assert.match(await page.title(), /Creature Field Guide/); assert.equal(await page.locator('.card').count(), 18);
     await page.waitForFunction(() => { const s = window.creatureGallery?.(); return s && s.ready + s.failed === 18; });
@@ -35,8 +36,17 @@ try {
     await page.screenshot({ path: path.join(shots, `${name}-creatures.png`), fullPage: true });
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#menu').waitFor();
+    await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
+    await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
+    await page.evaluate(async () => { await document.fonts.ready; });
+    await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
+    assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
+    const portraitBackgrounds=await page.locator('#hero-picks .reference-portrait').evaluateAll(portraits=>portraits.map(el=>getComputedStyle(el).backgroundImage));
+    assert.equal(portraitBackgrounds.length, 16);
+    assert(portraitBackgrounds.every(background=>/^url\(.+reference-source\.png/.test(background)&&!background.includes('gradient')), 'all sixteen portraits show the source artwork');
     const selectState = await page.evaluate(() => {
-      const ids=['hero-picks','hero-art','hero-preview','hero-spell-note','play'];
+      // The stage illustration can overscan. Selection controls must fit the viewport.
+      const ids=['hero-picks','role-filters','hero-name','hero-preview','hero-spell-note','play'];
       const box = id => {
         const el=document.getElementById(id), r=el?.getBoundingClientRect();
         return r ? {x:r.x,y:r.y,w:r.width,h:r.height,visible:r.width>0&&r.height>0&&r.top>=-1&&r.left>=-1&&r.bottom<=innerHeight+1&&r.right<=innerWidth+1} : null;
@@ -45,39 +55,157 @@ try {
     });
     console.log(name,'selection',JSON.stringify(selectState));
     assert(Object.values(selectState).every(v=>v?.visible), 'hero selection essentials stay visible');
-    assert(selectState['hero-picks'].w >= width * .35, 'roster has enough room to browse heroes');
+    assert(selectState['hero-picks'].w >= width * (width >= 600 ? .27 : .8), 'four-column roster has room to browse heroes');
+    if (name === 'desktop') {
+      const roster = await page.locator('.roster-browser').boundingBox();
+      assert(Math.abs(roster.width / width - .32) <= .01, 'desktop roster follows the reference width');
+    }
     const controlsFit = await page.evaluate(() => {
       const rect = el => el.getBoundingClientRect();
       const inside = (r, p) => r.width>0&&r.height>0&&r.left>=p.left-1&&r.right<=p.right+1&&r.top>=p.top-1&&r.bottom<=p.bottom+1;
       const viewport = {left:0,top:0,right:innerWidth,bottom:innerHeight};
       const footer = [...document.querySelectorAll('#play, .roster-footer .menu-links button')].map(rect);
       const overlaps = (a, b) => Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
-      const hero = rect(document.querySelector('.hero-feature'));
       const roster = rect(document.querySelector('#hero-picks'));
       const cards = [...document.querySelectorAll('#hero-picks button')].map(rect).filter(r=>inside(r,roster));
+      const spells = [...document.querySelectorAll('#hero-preview [data-hero-spell]')].map(rect);
+      const spellKeys = [...document.querySelectorAll('#hero-preview [data-hero-spell] kbd')].map(rect);
+      const spellNote = rect(document.querySelector('#hero-spell-note'));
+      const filters = [...document.querySelectorAll('#role-filters button')].map(rect);
       return {
         footer:footer.every(r=>inside(r,viewport))&&footer.every((r,i)=>footer.slice(i+1).every(other=>!overlaps(r,other))),
-        spells:[...document.querySelectorAll('[data-hero-spell]')].every(el=>inside(rect(el),hero)),
-        cards:cards.filter(r=>r.width>=60).length>=3,
+        spells:spells.length===4&&spells.every(r=>inside(r,viewport))&&spells.every((r,i)=>spells.slice(i+1).every(other=>!overlaps(r,other))),
+        description:spells.every(r=>!overlaps(r,spellNote))&&spellKeys.every(r=>inside(r,viewport)&&!overlaps(r,spellNote)),
+        filters:filters.length===6&&filters.every(r=>inside(r,viewport)),
+        cards:cards.filter(r=>r.width>=48&&r.height>=44).length>=4,
+        columns:new Set(cards.map(r=>Math.round(r.left))).size===4,
+        allCardsFit:[...document.querySelectorAll('#hero-picks button')].every(el=>inside(rect(el),roster)),
       };
     });
     console.log(name,'selection controls',JSON.stringify(controlsFit));
     assert(controlsFit.footer, 'Start and menu links fit without overlapping');
-    assert(controlsFit.spells, 'all four skill buttons fit the selected hero panel');
-    assert(controlsFit.cards, 'at least three usable hero cards fit the roster');
+    assert(controlsFit.spells, 'four skill buttons fit without overlapping');
+    assert(controlsFit.description, 'skill buttons and key labels stay clear of the description');
+    assert(controlsFit.filters, 'all six role controls fit');
+    assert(controlsFit.cards, 'at least one row of four usable hero cards fits');
+    assert(controlsFit.columns, 'the roster uses four columns');
+    if (name === 'desktop') assert(controlsFit.allCardsFit, 'all sixteen portraits fit the desktop roster');
+    if (name === 'small-phone' || name === 'landscape') {
+      const portrait=page.locator('#hero-picks [data-hero="4"] .reference-portrait');
+      await portrait.scrollIntoViewIfNeeded();
+      const cardBox=await portrait.boundingBox(),rosterBox=await page.locator('#hero-picks').boundingBox();
+      const beforeScroll=await page.locator('#hero-picks').evaluate(el=>el.scrollTop);
+      assert(await page.locator('#hero-picks').evaluate(el=>el.scrollHeight>el.clientHeight+15), 'compact roster supports vertical travel');
+      const x=cardBox.x+cardBox.width*.5,startY=Math.min(cardBox.y+cardBox.height*.7,rosterBox.y+rosterBox.height-12),endY=Math.max(rosterBox.y+8,startY-85);
+      assert(startY-endY>=35, 'the swipe starts on a visible portrait');
+      const touch=await page.context().newCDPSession(page);
+      try {
+        await touch.send('Input.dispatchTouchEvent', {type:'touchStart',touchPoints:[{x,y:startY,id:1,radiusX:4,radiusY:4,force:1}]});
+        for (let move=1;move<=8;move++) {
+          await touch.send('Input.dispatchTouchEvent', {type:'touchMove',touchPoints:[{x,y:startY+(endY-startY)*move/8,id:1,radiusX:4,radiusY:4,force:1}]});
+          await page.waitForTimeout(35);
+        }
+        await touch.send('Input.dispatchTouchEvent', {type:'touchEnd',touchPoints:[]});
+      } finally { await touch.detach(); }
+      await page.waitForFunction(before=>document.querySelector('#hero-picks').scrollTop>before+10,beforeScroll);
+      assert((await page.locator('#hero-picks').evaluate(el=>el.scrollTop))>beforeScroll+10, 'a finger swipe on a portrait scrolls the roster');
+      await page.screenshot({ path:path.join(shots,`${name}-shore-roster-swipe.png`) });
+      await page.locator('#hero-picks').focus();
+      await page.keyboard.press('Home');
+      assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
+      assert((await page.locator('#hero-picks').evaluate(el=>el.scrollTop))<=2, 'Home returns to the first roster row');
+    }
+    for (const identity of HERO_IDENTITIES) {
+      await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
+      assert.equal(await page.locator('#hero-name').textContent(), identity.name);
+      assert(await page.locator('#hero-name').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth+1&&el.scrollWidth<=el.clientWidth+2;}), `${identity.name} title fits at ${width}x${height}`);
+      assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
+      assert.equal(await page.locator('#hero-note').textContent(), identity.note);
+      assert.equal(await page.locator('#hero-picks [aria-pressed="true"]').getAttribute('data-hero'), String(identity.id));
+      assert.equal(await page.locator('#hero-art').getAttribute('src'), `./art/reference/${identity.slug}.webp`);
+      await page.waitForFunction(slug => { const image=document.querySelector('#hero-art'); return image.src.endsWith(`/reference/${slug}.webp`)&&image.complete&&image.naturalWidth>0; }, identity.slug);
+      assert.deepEqual(await page.locator('#hero-tags span').allTextContents(), [...identity.tags]);
+      for (let slot=0;slot<4;slot++) {
+        const button=page.locator(`#hero-preview [data-hero-spell="${slot}"]`), move=identitySkill(identity.id,slot);
+        assert.equal(await button.getAttribute('title'), `${move.name}: ${move.description}`);
+        assert.equal(await button.locator('kbd').innerText(), ['Q','E','C','R'][slot]);
+      }
+      assert.match(await page.locator('#hero-spell-note').textContent(), new RegExp(identity.skills[1]));
+    }
+    for (const role of ['Carry','Bruiser','Mage','Support','Initiator','All']) {
+      await page.locator(`#role-filters [data-role="${role}"]`).click();
+      const expected=HERO_IDENTITIES.filter(h=>role==='All'||h.filters.includes(role)).map(h=>String(h.id));
+      const actual=await page.locator('#hero-picks [data-hero]').evaluateAll(cards=>cards.map(card=>card.dataset.hero));
+      assert.deepEqual(actual, expected, `${role} shows the correct heroes`);
+      assert.equal(await page.locator(`#role-filters [data-role="${role}"]`).getAttribute('aria-pressed'), 'true');
+      await page.locator('#hero-picks [data-hero]').first().click();
+      assert.equal(await page.locator('#hero-name').textContent(), HERO_IDENTITIES[Number(expected[0])].name);
+    }
+    await page.locator('#hero-picks [data-hero="0"]').focus();
+    for (const [key,identity] of [['ArrowRight',1],['ArrowDown',5],['ArrowLeft',4],['ArrowUp',0],['End',15],['Home',0]]) {
+      await page.keyboard.press(key);
+      assert.equal(await page.locator('#hero-name').textContent(), HERO_IDENTITIES[identity].name, `${key} selects the correct grid neighbor`);
+      assert.equal(await page.locator('#hero-picks [data-hero]:focus').getAttribute('data-hero'), String(identity));
+    }
     await page.locator('[data-hero-spell="1"]').hover();
-    assert.match(await page.locator('#hero-spell-note').innerText(), /Undertow/);
+    assert.match(await page.locator('#hero-spell-note').textContent(), /Rising Current/);
+    assert.match(await page.locator('#hero-spell-note').textContent(), /Pull enemies in a cone/);
     const noteFits = await page.locator('#hero-spell-note').evaluate(el => {
       const r=el.getBoundingClientRect(), f=el.closest('.hero-feature').getBoundingClientRect();
       return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1;
     });
     assert(noteFits, 'hover description fits the selected hero panel');
+    await page.locator('#hero-preview [data-hero-spell="1"]').click();
+    assert.equal(await page.locator('#sheet h2').textContent(), 'Rising Current');
+    await page.locator('#sheet .panel-pages').waitFor();
+    const backToHeroes=page.getByRole('button', { name: 'Back to heroes', exact:true });
+    let descriptionSeen=(await page.locator('#sheet-content').innerText()).includes('Pull enemies in a cone');
+    for (let panelPage=0;!(await backToHeroes.isVisible())&&panelPage<12;panelPage++) {
+      const nextPage=page.getByRole('button', { name:'Next panel page', exact:true });
+      assert(await nextPage.isEnabled(), 'skill details keep the return action reachable');
+      await nextPage.click();
+      descriptionSeen ||= (await page.locator('#sheet-content').innerText()).includes('Pull enemies in a cone');
+    }
+    assert(descriptionSeen, 'tapping a skill exposes its description');
+    await backToHeroes.click();
+    assert.equal(await page.locator('#sheet').isVisible(), false);
+    await page.keyboard.press('f');
+    assert.equal(await page.locator('#sheet h2').textContent(), 'Tidewarden');
+    assert.equal(await page.locator('#sheet h3').count(), 4);
+    assert.match(await page.locator('#sheet-content').textContent(), /Q · Tidal Cleave/);
+    await page.keyboard.press('Escape');
+    for (const [selector,title] of [['#hero-profile','Tidecaller'],['[data-menu-tab="realms"]','The shifting realms'],['[data-menu-tab="lore"]','Tidewarden'],...(name==='desktop'?[['[data-menu-tab="shop"]','The Night Market']]:[])]) {
+      await page.locator(selector).click();
+      assert.equal(await page.locator('#sheet h2').textContent(), title);
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#sheet').isVisible(), false);
+    }
+    await page.locator('#hero-settings').click();
+    assert.equal(await page.locator('#sheet h2').textContent(), 'Game settings');
+    const soundSetting=page.locator('#selection-sound'),originalSound=await soundSetting.innerText();
+    await soundSetting.click();
+    assert.notEqual(await soundSetting.innerText(), originalSound);
+    await soundSetting.click();
+    assert.equal(await soundSetting.innerText(), originalSound);
+    await page.keyboard.press('Escape');
+    await page.locator('[data-menu-tab="heroes"]').click();
+    assert.equal(await page.locator('#hero-picks [data-hero]:focus').getAttribute('data-hero'), '0');
+    await page.waitForFunction(() => document.querySelector('#hero-art').complete&&document.querySelector('#hero-art').naturalWidth>0);
+    assert(loadedAssets.has('/tidebreak/art/reference/reference-source.png'), 'source portrait and logo artwork loads');
+    assert(loadedAssets.has('/tidebreak/art/reference/shore-scene.webp'), 'clean shore scene artwork loads');
+    assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /reference-source\.png/);
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
-    await page.locator('#play').click();
+    if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
+    else await page.locator('#play').click();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
     // Starting a match opens the spellbook and pauses play until training is done.
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), true);
+    assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.identity), 0);
+    assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.hero), 1);
+    assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.name), 'Tidewarden');
+    assert.match(await page.locator('.spellbook-heading').textContent(), /Tidewarden/);
+    assert.match(await page.locator('#train-selected').textContent(), /Learn Tidal Cleave/);
     const initialRank = await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0));
     await page.locator('#train-selected').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0)), initialRank + 1);
@@ -93,7 +221,7 @@ try {
     await page.locator('#pause').click(); assert(await page.locator('#sheet').isVisible());
     await page.getByRole('button', { name: 'Keep playing' }).click(); assert(!(await page.locator('#sheet').isVisible()));
     await page.screenshot({ path: path.join(shots, `${name}-moba.png`) });
-    assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; walk and turn; MOBA creature sprites load; move, pause and resume; no asset or page errors.`);
+    assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; MOBA creature sprites, movement, pause and resume; no asset or page errors.`);
     await page.close();
   }
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
