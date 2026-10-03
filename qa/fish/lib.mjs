@@ -10,7 +10,8 @@ export const URL = process.env.FISH_URL || "http://localhost:8765/fish/";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const SHOTS = process.env.SHOTS || "";
 
-export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "" } = {}) {
+// save: a save file (an object) to start with, put in localStorage on the first load only (clear must be on)
+export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "", save = null } = {}) {
   // WebGL runs on SwiftShader; the 2D canvases (the reel, the gauge) stay on the CPU, which is far faster than an emulated GPU
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"] });
   const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true } : { viewport: { width, height }, ignoreHTTPSErrors: true });
@@ -21,7 +22,7 @@ export async function open({ width = 390, height = 844, touch = true, phone = tr
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|ERR_TOO_MANY|ERR_CERT/.test(m.text())) errors.push("console: " + m.text()); });
   await page.route("**/three.module.min.js", (r) => r.fulfill({ path: path.join(ROOT, "public/crimson/lib/three.module.min.js"), contentType: "application/javascript" }));
   await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
-  if (clear) await page.addInitScript(() => { if (!sessionStorage.getItem("qa-kept")) { localStorage.clear(); sessionStorage.setItem("qa-kept", "1"); } });
+  if (clear) await page.addInitScript((save) => { if (!sessionStorage.getItem("qa-kept")) { localStorage.clear(); if (save) localStorage.setItem("fish.v1", JSON.stringify(save)); sessionStorage.setItem("qa-kept", "1"); } }, save);
   if (phone) await page.addInitScript(installPhone);
   await page.goto(URL + query);
   await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });

@@ -1,0 +1,47 @@
+{
+  "generator": "Built-in image_gen",
+  "art_direction": "Hand-painted folklore creature, ink contours, gouache shading, transparent full-body cutout",
+  "prompt_template": "One full-body creature in a three-quarter front view. Entire silhouette. Rich watercolor and gouache. Dark ink contours. Top-left lighting. No text, UI, landscape or other creatures. True transparency.",
+  "heroes": [
+    {
+      "slug": "kraken",
+      "subject": "a compact teal-violet sea kraken with an expressive octopus head, six curled tentacles, barnacle armor and one long raised tentacle, full creature, readable heavy silhouette",
+      "asset": "kraken-front.webp"
+    },
+    {
+      "slug": "wendigo",
+      "subject": "a tall lean white-blue antlered forest monster, fur and ice crystals, long claws, hollow pale face and cyan eyes, threatening folklore creature",
+      "asset": "wendigo-front.webp"
+    },
+    {
+      "slug": "kitsune",
+      "subject": "a graceful ivory fox spirit with nine flame-tipped orange tails, red forehead markings and teal scarf, fox animal anatomy, lively pose",
+      "asset": "kitsune-front.webp"
+    },
+    {
+      "slug": "golem",
+      "subject": "a massive moss-covered stone golem, broad basalt shoulders, tree-root joints, one emerald rune in chest, heavy rectangular hands",
+      "asset": "golem-front.webp"
+    },
+    {
+      "slug": "banshee",
+      "subject": "a silver-haired ghost in a flowing torn indigo dress, teal spectral hands, dramatic open mouth, wisps instead of feet, eerie expressive silhouette",
+      "asset": "banshee-front.webp"
+    },
+    {
+      "slug": "phoenix",
+      "subject": "a majestic orange-gold phoenix with wide curved wings, flame crown and long crimson feather tail, fiery bird anatomy, compact readable silhouette",
+      "asset": "phoenix-front.webp"
+    },
+    {
+      "slug": "dryad",
+      "subject": "a slender tree spirit with leafy emerald hair, bark limbs, flower crown, a twisted wooden staff and pale mint glow, fantasy woodland guardian",
+      "asset": "dryad-front.webp"
+    },
+    {
+      "slug": "gorgon",
+      "subject": "a jade-scaled gorgon with living serpents for hair, a coiled serpent lower body and golden bracers, expressive stern face and yellow eyes",
+      "asset": "gorgon-front.webp"
+    }
+  ]
+}

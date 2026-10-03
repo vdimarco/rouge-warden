@@ -342,7 +342,7 @@ function mirror(b, s, W, y, z, cl, k = 1) {
   m.box(a0, a1, y + h * 0.4, y + h * 0.55, z - 0.02, z + 0.02, cl);
   m.box(h0, h1, y, y + h, z - d, z + d, cl);
 }
-// A door on a side or end plane. Hero vans: a slab that swings on its own pivot, over a dark opening in the
+// A door on a side or end plane. Drivable vehicles: a slab that swings on its own pivot, over a dark opening in the
 // body; otherwise the door stays shut in the body, framed by a dark gap. holes(D) draws the door's own
 // pieces (window, handle, stripe) into D = {p, t} and returns their outlines. Returns the body's hole.
 function door(x, name, pl, outline, holes, body = true, gap = 0.012) {
@@ -589,13 +589,17 @@ function jeepBody(x) {
   const wi = W - 0.06, yf = 0.66;
   for (const s of [1, -1]) {
     const pl = side(s, X), holes = [];
+    holes.push(door(x, s > 0 ? 'driver' : 'passenger', pl, rect(-.25, .83, .65, 1.005), D => {
+      const dh = [];
     // the Sunburst: a cream half sun and its rays on the tub sides, a stripe along the back
-    const sun = [...arc(0.28, 0.71, 0.15, 0, 180, lod ? 4 : 6)]; fill(t, pl, ccw(sun), cream); holes.push(ccw(sun));
+    const sun = [...arc(0.28, 0.71, 0.15, 0, 180, lod ? 4 : 6)]; fill(D.t, pl, ccw(sun), cream); dh.push(ccw(sun));
     for (const a of lod ? [30, 90, 150] : [22, 56, 90, 124, 158]) {
       const A = a * Math.PI / 180, cs = Math.cos(A), sn = Math.sin(A), w = 0.024;
       const ray = ccw([[0.28 + cs * 0.18 - sn * w, 0.71 + sn * 0.18 + cs * w], [0.28 + cs * 0.18 + sn * w, 0.71 + sn * 0.18 - cs * w], [0.28 + cs * 0.25, 0.71 + sn * 0.25]]);
-      fill(t, pl, ray, cream); holes.push(ray);
+      fill(D.t, pl, ray, cream); dh.push(ray);
     }
+      return dh;
+    }));
     const st = rect(-2.12, -0.48, 1.04, 1.1); fill(t, pl, st, cream); holes.push(st);
     p.face(Q, holes, pl.map, pl.n, P);
     // the inside of the wall, the rim along its top
@@ -658,7 +662,7 @@ function jeepBody(x) {
   { const pl = end(-2.22, -1); l.mark('tail', () => { for (const s of [1, -1]) boss(l, pl, s > 0 ? 0.6 : -0.74, s > 0 ? 0.74 : -0.6, 0.84, 1.0, 0.025, col('tailLight')); }); }
   return {
     seats: [[0.38, 0.8, 0.3], [-0.38, 0.8, 0.3], [0.37, 0.8, -0.86], [0, 0.8, -0.86], [-0.37, 0.8, -0.86], [0.37, 0.8, -1.6], [0, 0.8, -1.6], [-0.37, 0.8, -1.6]], recline: 0.26,
-    doors: { driver: { at: [1.55, 0.3], seat: 0 }, passenger: { at: [-1.55, 0.3], seat: 1 }, slide: { at: [-1.55, -1.3], seat: 2 }, rearL: { at: [0.5, -3.1], seat: 5 } },
+    doors: { driver: { at: [1.55, 0.3], seat: 0, hinge: [W, 0, .85], kind: 'swing', angle: -1.25 }, passenger: { at: [-1.55, 0.3], seat: 1, hinge: [-W, 0, .85], kind: 'swing', angle: 1.25 }, slide: { at: [-1.55, -1.3], seat: 2 }, rearL: { at: [0.5, -3.1], seat: 5 } },
     head: [[0.46, 0.92, 2.32], [-0.46, 0.92, 2.32]], tail: [[0.67, 0.92, -2.26], [-0.67, 0.92, -2.26]], roofY: yc,
     cabin: [{ x: 0.72, y: yc - 0.04, y0: yf, z0: -2.16, z1: 1.14 }], // (under the cage's rails, behind the screen)
   };
@@ -676,20 +680,22 @@ function carBody(x, d) {
   const low = [...sillPts(d.zBack + 0.05, d.zFront - 0.05, d.ys, AR), ...d.nose, ...d.deck, ...d.tail];
   const X = flat(W), Q = extrude(low, { X, c, edge: E });
   const yb = d.yBelt, yT = d.yTop;
-  // lower sides: door gaps, handles, strips (split at the gaps), the gang's neon
+  // Front panels and glass share a hinge; rear panels remain fixed.
   for (const s of [1, -1]) {
-    const pl = side(s, X), holes = [], ySeam0 = d.ys + (x.n ? 0.14 : 0.08);
+    const pl = side(s, X), holes = [], z0 = d.seams[1] + .03, z1 = d.seams[0] - .03;
+    const y0 = Math.max(d.ys + .14, archTop(AR, z0, c) + .05, archTop(AR, z1, c) + .05);
+    holes.push(door(x, s > 0 ? 'driver' : 'passenger', pl, rect(z0, z1, y0, yb - .02), D => {
+      const handle = rect(z0 + .08, z0 + .22, yb - .15, yb - .11);
+      fill(D.t, pl, handle, d.handleCl ?? chrome); return [handle];
+    }));
     for (const z of d.seams) {
-      const y0 = Math.max(ySeam0, archTop(AR, z, c) + 0.05), R = rect(z - 0.007, z + 0.007, y0, yb - 0.05);
-      if (R[2][1] - R[0][1] > 0.08) { fill(t, pl, R, dark); holes.push(R); }
+      const lo = Math.max(d.ys + .08, archTop(AR, z, c) + .05), R = rect(z - .007, z + .007, lo, yb - .05);
+      if (R[2][1] - R[0][1] > .08) { fill(t, pl, R, dark); holes.push(R); }
     }
-    for (const z of d.handles) { const R = rect(z - 0.07, z + 0.07, yb - 0.15, yb - 0.11); fill(t, pl, R, d.handleCl ?? chrome); holes.push(R); }
-    if (!lod) for (const [z0, z1, y0, y1, cl] of d.strips || []) {
-      let a = z0;
-      const cuts = d.seams.filter((z) => z > z0 && z < z1).sort((m, n) => m - n);
-      for (const z of [...cuts, null]) { const b = z === null ? z1 : z - 0.022; if (b - a > 0.05) { const R = rect(a, b, y0, y1); fill(t, pl, R, cl); holes.push(R); } if (z !== null) a = z + 0.022; }
+    for (const z of d.handles.filter(z => z + .07 < z0 || z - .07 > z1)) {
+      const R = rect(z - .07, z + .07, yb - .15, yb - .11); fill(t, pl, R, d.handleCl ?? chrome); holes.push(R);
     }
-    if (x.n) { const R = rect(-0.85, 0.95, d.ys + 0.065, d.ys + 0.095); fill(x.n, pl, R, WHITE); holes.push(R); }
+    if (x.n) { const R = rect(-.85, .95, d.ys + .065, d.ys + .095); fill(x.n, pl, R, WHITE); holes.push(R); }
     p.face(Q, holes, pl.map, pl.n, P);
   }
   // the greenhouse
@@ -707,7 +713,7 @@ function carBody(x, d) {
     for (let i = 0; i + 1 < cuts.length; i++) {
       const a = cuts[i][1], b = cuts[i + 1][0];
       const Wq = [[a ?? zr(g0), g0], [b ?? zf(g0), g0], [b ?? zf(g1), g1], [a ?? zr(g1), g1]];
-      holes.push(win(t, pl, Wq, 0.028, rubber, { tint }));
+      holes.push(i === cuts.length - 2 ? door(x, s > 0 ? 'driver' : 'passenger', pl, outset(Wq, .02), D => [win(D.t, pl, Wq, .028, rubber, { tint })]) : win(t, pl, Wq, .028, rubber, { tint }));
     }
     (d.pillarTrim ? t : p).face(GQ, holes, pl.map, pl.n, d.pillarTrim ? trim : P);
   }
@@ -742,7 +748,7 @@ function carBody(x, d) {
   const sy = d.seatY ?? d.ys + 0.3, fz = (d.cabF + d.cabB) / 2 + 0.55, bz = (d.cabF + d.cabB) / 2 - 0.45;
   return {
     seats: d.seats || [[0.4, sy, fz], [-0.4, sy, fz], [0.45, sy, bz], [0, sy, bz], [-0.45, sy, bz], [0.45, sy, bz - 0.72], [-0.45, sy, bz - 0.72]],
-    doors: { driver: { at: [W + 0.8, fz], seat: 0 }, passenger: { at: [-W - 0.8, fz], seat: 1 }, slide: { at: [-W - 0.8, bz], seat: 2 }, rearL: { at: [0, d.zBack - 0.9], seat: 3 } },
+    doors: { driver: { at: [W + 0.8, fz], seat: 0, hinge: [W, 0, d.seams[0]], kind: 'swing', angle: -1.25 }, passenger: { at: [-W - 0.8, fz], seat: 1, hinge: [-W, 0, d.seams[0]], kind: 'swing', angle: 1.25 }, slide: { at: [-W - 0.8, bz], seat: 2 }, rearL: { at: [0, d.zBack - 0.9], seat: 3 } },
     head: [[(d.head[0] + d.head[1]) / 2, (d.head[2] + d.head[3]) / 2, d.zNose + 0.03], [-(d.head[0] + d.head[1]) / 2, (d.head[2] + d.head[3]) / 2, d.zNose + 0.03]],
     tail: [[(d.tailL[0] + d.tailL[1]) / 2, (d.tailL[2] + d.tailL[3]) / 2, d.zTail - 0.03], [-(d.tailL[0] + d.tailL[1]) / 2, (d.tailL[2] + d.tailL[3]) / 2, d.zTail - 0.03]], roofY: yT,
     // the cabin at head height: inside the greenhouse's glass
@@ -848,7 +854,7 @@ function rvBody(x) {
   { const [A, B, Cc, D] = bandQuad(cab, cab.findIndex((q) => q[2] === 'g'), CX, cc); pane(t, A, B, Cc, D, 0.06, 0.05, 0.03, rubber, norm3([0, 0.46, 0.84])); }
   for (const s of [1, -1]) {
     const pl = side(s, CX);
-    const h = door({ ...x, openable: false }, 'cab', pl, [[2.28, 1.2], [3.26, 1.2], [3.26, 1.89], [zA(2.18) - 0.12, 2.18], [2.28, 2.18]], (D) => {
+    const h = door(x, s > 0 ? 'driver' : 'passenger', pl, [[2.28, 1.2], [3.26, 1.2], [3.26, 1.89], [zA(2.18) - 0.12, 2.18], [2.28, 2.18]], (D) => {
       const w = [win(D.t, pl, [[2.36, 1.52], [3.18, 1.52], [zA(2.1) - 0.2, 2.1], [2.36, 2.1]], 0.035, rubber)];
       const hd = rect(2.36, 2.5, 1.36, 1.4); fill(D.t, pl, hd, dark); w.push(hd);
       return w;
@@ -881,7 +887,7 @@ function rvBody(x) {
   t.hexa((sx, sy, sz) => [sx * (sy > 0 ? 0.36 : 0.42), sy > 0 ? 3.46 : 3.2, sz > 0 ? (sy > 0 ? -0.66 : -0.6) : (sy > 0 ? -1.34 : -1.4)], shade(col('signCream'), 0.92), { ny: true }); // air conditioner
   return {
     seats: [[0.5, 0.82, 3.1], [-0.5, 0.82, 3.1], [0.6, 0.95, 1.5], [-0.6, 0.95, 1.5], [0.6, 0.95, -1.5], [-0.6, 0.95, -1.5]],
-    doors: { driver: { at: [W + 0.8, 3.3], seat: 0 }, passenger: { at: [-W - 0.8, 3.3], seat: 1 }, slide: { at: [-W - 0.8, -0.2], seat: 2 }, rearL: { at: [0, -5.3], seat: 3 } },
+    doors: { driver: { at: [W + 0.8, 3.3], seat: 0, hinge: [CW, 0, 3.3], kind: 'swing', angle: -1.25 }, passenger: { at: [-W - 0.8, 3.3], seat: 1, hinge: [-CW, 0, 3.3], kind: 'swing', angle: 1.25 }, slide: { at: [-W - 0.8, -0.2], seat: 2 }, rearL: { at: [0, -5.3], seat: 3 } },
     head: [[0.77, 0.99, 4.5], [-0.77, 0.99, 4.5]], tail: [[1.08, 1.25, -4.52], [-1.08, 1.25, -4.52]], roofY: 3.2,
     cabin: [{ x: CW - cc - 0.02, y: 2.24, y0: 0.52, z0: 2.08, z1: zA(2.0) }, { x: W - c - 0.04, y: 3.16, y0: 0.6, z0: -4.4, z1: 2.1 }], // the cab under the bunk; the house
   };
@@ -915,7 +921,7 @@ export function createVehicleMesh(kind, o = {}) {
   const chassis = new THREE.Group(); chassis.name = 'chassis'; obj.add(chassis); // pitch, roll and bounce ride here
   const body = new Build(), lens = new Build(), key = kind === 'van' ? new Build() : null;
   const gang = o.gang ?? sp.gang, neon = gang ? new Build() : null, bar = kind === 'suv_fbi' ? new Build() : null;
-  const openable = kind === 'van' || kind === 'whitevan';
+  const openable = true;
   const doorB = {}, doorK = {};
   const x = {
     p: body, t: body, l: lens, k: key, n: neon, bar, paint: paintRGB(kind, o.tint), lod: 0, openable, hero: true,
@@ -941,7 +947,7 @@ export function createVehicleMesh(kind, o = {}) {
     for (const s of [1, -1]) { const pl = side(s, flat(W)); fill(h, pl, hp.map((q) => [q[0], q[1]]), WHITE); }
     const hull = new THREE.Mesh(h.hullGeometry(), m.hull); hull.name = 'outline'; hull.castShadow = false; chassis.add(hull);
   }
-  // doors (van and white van): each on its own pivot
+  // Openable doors: each on its own pivot
   const doors = {};
   for (const [name, d] of Object.entries(info.doors)) {
     const rec = { name, ...d, k: 0, want: 0, pivot: null };
@@ -957,7 +963,7 @@ export function createVehicleMesh(kind, o = {}) {
   }
   // separate small parts for the looks
   const parts = {};
-  if (openable) {
+  if (kind === 'van' || kind === 'whitevan') {
     const b = new Build(); vanBumperF(b, 0);
     parts.bumper = new THREE.Mesh(b.geometry(), m.body); parts.bumper.name = 'bumper'; parts.bumper.castShadow = true; chassis.add(parts.bumper);
     const mb = new Build(); vanMirror(mb, 1);

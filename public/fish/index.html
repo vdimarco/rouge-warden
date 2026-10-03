@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d2f38">
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>Reel It In: Loon Lake</title>
+<title>Reel It In</title>
+<link rel="stylesheet" href="guide.css">
 <meta name="description" content="Your phone is the rod and the reel. Hold the line with your thumb, whip the phone to cast, and crank to reel in. Free in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://warden-alpha-wheat.vercel.app/fish/">
-<meta property="og:title" content="Reel It In: Loon Lake">
+<meta property="og:title" content="Reel It In">
 <meta property="og:description" content="Your phone is the rod and the reel. Whip it to cast. Crank to reel in.">
 <meta property="og:image" content="https://warden-alpha-wheat.vercel.app/arcade/fish.webp">
 <meta name="twitter:card" content="summary_large_image">
@@ -40,21 +42,22 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #view { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #9cc7d4; overflow: hidden; }
 #view canvas { display: block; width: 100%; height: 100%; }
 
-/* ---------- layouts ----------
-   tall-cast: the lake on top, the reel below.   wide-cast: the lake, the reel on the right.
-   reel: the lake fills the screen, crank on the right, gauge and rod pad on the left.   tall-reel: touch play on an upright phone. */
+/* ---------- full-screen lake, direct rod controls ---------- */
 #castUI, #reelUI { position: absolute; inset: 0; pointer-events: none; }
 #castUI > *, #reelUI > * { pointer-events: auto; }
-#reelBox { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; transition: height 0.35s cubic-bezier(.2, .8, .2, 1); }
-.flying #reelBox { height: 28%; }
-#game.l-tall-cast #view { height: 54%; transition: height 0.35s cubic-bezier(.2, .8, .2, 1); }
-#game.l-tall-cast.flying #view { height: 72%; }
-#game.l-wide-cast #reelBox { left: auto; top: 0; width: min(38%, 440px); height: 100%; }
-#game.l-wide-cast #view { width: calc(100% - min(38%, 440px)); }
+/* Transparent touch areas sit over the rod rendered in the lake. */
+#reelBox, #padBox { position: absolute; left: calc(75% - 64px); top: calc(70% - 80px); width: 128px; height: 160px; cursor: grab; }
+#reelBox:active, #padBox:active { cursor: grabbing; }
+#reelBox canvas, #padBox canvas { display: none; }
 
-#crankBox { position: absolute; right: calc(var(--sar) + 30px); bottom: calc(var(--sab) + 12px); width: min(44vmin, 250px); height: min(44vmin, 250px); }
-#padBox { position: absolute; left: calc(var(--sal) + 30px); bottom: calc(var(--sab) + 12px); width: min(40vmin, 220px); height: min(52vmin, 280px); }
+#crankBox { position: absolute; right: calc(var(--sar) + 16px); bottom: calc(var(--sab) + 12px); width: min(34vmin, 160px); height: min(34vmin, 160px); }
+
+#game[data-reel-side="left"] #crankBox { left: calc(var(--sal) + 16px); right: auto; }
+
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
+#pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40vw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
+#pullStrength b { display: block; height: 5px; margin-top: 6px; border-radius: 4px; background: #ffffff26; overflow: hidden; }
+#pullStrength i { display: block; height: 100%; background: #95eac5; transform: scaleX(0); transform-origin: left; }
 #game.motion #padBox { display: none; }
 #dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
 #game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
@@ -62,21 +65,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #dragBar button { position: relative; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
 #dragBar button::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 #dragBar b { min-width: 64px; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
-/* tall reel (an upright phone): lake on top, controls below */
-#game.l-tall-reel #view { height: 58%; }
-#game.l-tall-reel #crankBox { width: min(46vw, 230px); height: min(46vw, 230px); }
-#game.l-tall-reel #padBox { width: min(36vw, 200px); height: min(38cqh, 280px); }
-#game.l-reel #padBox { height: min(40vmin, 220px); }
+/* Compact reel controls float over the lake. The rod stays clear on the right. */
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
-#game.l-tall-reel #dragBar { top: auto; bottom: calc(var(--sab) + min(38cqh, 280px) + 18px); }
-/* motion on an upright phone: no rod pad (the phone is the rod), so a bigger crank under the thumb, the drag bar low on the left */
-#game.l-tall-reel.motion #view { height: 62%; }
-#game.l-tall-reel.motion #crankBox { width: min(64vw, calc(38cqh - 64px - var(--sab)), 290px); height: min(64vw, calc(38cqh - 64px - var(--sab)), 290px); }
-/* the drag bar sits at the top of the controls band, clear of the crank's box (which would take its taps) */
-#game.l-tall-reel.motion #dragBar { top: calc(62% + 8px); bottom: auto; }
-/* touch: the rod pad is on the left, so the drag bar goes right, above the crank */
-#game.l-tall-reel.touch #dragBar { top: calc(58% + 8px); bottom: auto; left: auto; right: calc(var(--sar) + 10px); }
-#game.l-tall-reel.motion #toast { bottom: calc(38% + 12px); }
+#game.l-tall-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 60px); }
+#game.l-tall-reel #toast { bottom: calc(var(--sab) + 16px); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -103,19 +95,19 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
 @keyframes hot { to { transform: scale(1.06); } }
 #game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
-#game.l-wide-cast #prompt, #game.l-wide-cast #report, #game.l-wide-cast #toast { left: calc((100% - min(38%, 440px)) / 2); }
-#game.l-wide-cast #prompt { width: min(calc(100% - min(38%, 440px) - 24px), 560px); }
+
+
 /* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
 #game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
 /* the tall reel: the prompt goes under the gauge, the toast above the controls */
-#game.l-tall-reel #prompt { top: calc(var(--sat) + 60px + min(30vmin, 150px)); }
-#game.l-tall-reel #toast { bottom: calc(42% + 12px); }
+#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + min(30vmin, 150px)); }
+
 
 /* the cast report after a landing */
 #report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
 /* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake */
 #report { width: min(92%, 420px); }
-#game.l-tall-reel #report { top: calc(var(--sat) + 60px + min(30vmin, 150px) + 144px); }
+#game.l-tall-reel #report { top: calc(var(--sat) + 110px + min(30vmin, 150px) + 144px); }
 #game.l-tall-reel #report .dist { font-size: clamp(34px, 10vmin, 64px); }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 22px rgba(0, 0, 0, 0.35); }
 #report .dist small { font-size: 0.45em; }
@@ -127,12 +119,15 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* the strike flash */
 #flash { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 60, 40, 0.55)); }
+/* the photo of a trophy: a white camera flash, not the red strike frame */
+#flash.photo { background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8)); }
 #flash.go { animation: flash 0.7s ease-out; }
 @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 
 #toast { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: normal; text-align: center; width: max-content; max-width: min(92%, 420px); line-height: 1.3; }
 #toast.on { opacity: 1; }
-#game.l-tall-cast #toast { bottom: calc(46% + 12px); }
+body[data-screen="pause"] #toast, body[data-screen="settings"] #toast { z-index: 11; }
+
 
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: calc(var(--sat) + 16px) calc(var(--sar) + 16px) calc(var(--sab) + 16px) calc(var(--sal) + 16px); overflow-y: auto; }
@@ -145,6 +140,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .btn.go { background: var(--red); border-color: #ff9f94; color: #fff; box-shadow: 0 4px 0 #8a2018; }
 .btn.go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a2018; }
 .btn.alt { background: transparent; }
+#pause .card, #settings .card { max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); overflow-y: auto; touch-action: pan-y; }
 
 /* title */
 #title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
@@ -158,20 +154,44 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #title nav { display: grid; gap: 9px; width: 100%; }
 #title nav .btn { width: 100%; }
 #title .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-#title .best { margin: 12px 0 0; text-align: center; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; min-height: 1em; }
+#title .row2 .btn { padding-left: 8px; padding-right: 8px; font-size: 14px; letter-spacing: 0; }
+/* a toast on the title (an old save opened a place) goes at the top, clear of the menu and the best lines */
+body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-index: 12; }
+#title .best { margin: 12px 0 0; text-align: center; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; min-height: 1em; white-space: pre-line; line-height: 1.4; }
+#title .btn { position: relative; }
+.newtag { position: absolute; top: -8px; right: -3px; padding: 2px 8px; border-radius: 999px; background: var(--brass); color: #2a1a00; font-size: 11px; letter-spacing: 0.1em; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
 /* a short wide game (a phone held sideways, or turned by main.js): the logo left, the menu right, two-column pause */
 @container (orientation: landscape) and (max-height: 520px) {
   #title { place-items: center end; padding-right: calc(var(--sar) + 24px); }
   #title .logo { left: 0; right: auto; width: 55%; top: 50%; transform: translateY(-50%); }
   #title > div:not(.logo) { width: min(40cqw, 320px); }
-  #pause .btns { display: grid; grid-template-columns: 1fr 1fr; }
+  body[data-screen="title"] #toast { left: 27.5%; max-width: 50%; }
+  #title { padding-top: calc(var(--sat) + 8px); padding-bottom: calc(var(--sab) + 8px); }
+  #title nav { gap: 6px; }
+  #title .best { margin-top: 6px; font-size: 12px; line-height: 1.3; }
+  #pause .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   #pause .btns .go { grid-column: 1 / -1; }
-  #rlist { max-height: 22cqh; }
+  #pause .card { padding: 12px 20px; }
+  #pause h2 { font-size: 22px; margin-bottom: 4px; }
+  #pause p { margin-bottom: 4px; font-size: 14px; line-height: 1.3; }
+  #pause .btn { min-height: 40px; padding: 6px 12px; }
+  #results #rlist { max-height: 22cqh; }
   #results .card { padding: 14px 20px; }
   #results h2 { font-size: 22px; margin-bottom: 2px; }
   #results .big { font-size: 36px; }
   #rbest { margin: 0; }
   #results .btns { margin-top: 8px; }
+  /* the journal and the places are lists in a short card: less chrome, more list */
+  #journal .card, .card.places { padding: 12px 16px; }
+  #journal h2, .card.places h2 { font-size: 22px; margin-bottom: 4px; }
+  #journal #jlist { max-height: 36cqh; }
+  #journal p { margin-bottom: 6px; font-size: 14px; }
+  .tabs.chips { margin-bottom: 6px; }
+  .tabs.chips button { min-height: 34px; }
+  #journal .btns, .card.places .btns { margin-top: 8px; }
+  .card p.psub { display: none; }
+  .card.places .btn { min-height: 40px; padding: 8px 16px; }
+  .card p.pfoot { margin: 6px 0 0; }
 }
 
 /* setup, help, journal, results, pause */
@@ -182,10 +202,17 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .warn { padding: 10px 12px; border-radius: 10px; background: rgba(240, 165, 42, 0.14); border: 1px solid rgba(240, 165, 42, 0.5); font-weight: 700; line-height: 1.4; }
 .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 #help .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
-#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
+/* the fade under the list says that more follows. A spacer after the last row keeps that row clear of the fade */
+#help .steps::after { content: ""; height: 14px; }
 #help .btns { flex: none; }
 .tabs button { flex: 1; min-height: 44px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
 .tabs button[aria-selected="true"] { background: var(--deep2); border-color: var(--brass); color: var(--brass); }
+.tabs.chips { gap: 5px; }
+.tabs.chips button { min-height: 40px; padding: 6px 2px; font-size: 13px; }
+.tabs.chips button.lock { opacity: 0.55; border-style: dashed; }
+.jnote { grid-column: 1 / -1; padding: 14px 10px; text-align: center; color: var(--muted); font-weight: 700; }
+.jfish.legend { grid-column: 1 / -1; border-color: rgba(232, 182, 74, 0.55); }
 #jlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; max-height: min(58cqh, 520px); overflow-y: auto; padding-right: 2px; }
 .jfish { padding: 9px 10px; border-radius: 10px; background: var(--deep2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; }
 .jfish b { display: block; font-size: 14px; }
@@ -199,6 +226,37 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 .set input[type="checkbox"] { flex: none; width: 22px; height: 22px; accent-color: var(--red); }
 .set select { font: inherit; padding: 6px; border-radius: 8px; background: var(--deep); color: var(--ink); border: 1px solid var(--line); }
 
+/* the places: a trail of four cards, joined by a dotted line */
+.kicker { font-size: 12px; letter-spacing: 0.3em; color: var(--brass); margin-bottom: 4px; }
+.card.mid { text-align: center; }
+.card.places { width: min(100%, 480px); display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
+.card.places h2 { margin-bottom: 2px; }
+.card p.psub { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+#plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.pcard { position: relative; display: grid; grid-template-columns: 46px 1fr; gap: 12px; padding: 12px; border-radius: 14px; background: var(--deep2); border: 1px solid var(--line); }
+.pcard:not(:last-child)::after { content: ""; position: absolute; left: 33px; top: 58px; bottom: -22px; border-left: 3px dotted rgba(246, 239, 217, 0.35); }
+.pcard.here { border-color: var(--brass); }
+.pcard.locked { background: rgba(19, 68, 81, 0.55); }
+.pcard.locked .ic { opacity: 0.55; }
+.pcard .ic { position: relative; z-index: 1; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: #0a2a33; border: 2px solid var(--line); }
+.pcard.here .ic { border-color: var(--brass); }
+.pcard .ic svg { width: 36px; height: 36px; }
+.pcard h3 { margin: 0; font-family: var(--slab); font-weight: 400; font-size: 19px; line-height: 1.2; }
+.pcard .lvl { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-family: var(--body); font-weight: 800; font-size: 11px; letter-spacing: 0.08em; vertical-align: 2px; }
+.pcard p { margin: 5px 0 0; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: #dfe9e5; }
+.pcard .facts { display: grid; gap: 1px; margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.pcard .btn { width: 100%; min-height: 42px; margin-top: 8px; padding: 8px 14px; font-size: 15px; }
+.pcard.locked p { color: var(--muted); }
+.pfoot { margin: 10px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
+.card p.pfoot { margin: 10px 0 0; }
+.card.mid .btns { justify-content: center; }
+#travel .wheel { width: 46px; height: 46px; margin: 4px auto 14px; border-radius: 50%; border: 5px solid rgba(246, 239, 217, 0.2); border-top-color: var(--brass); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#arrive .gear { color: var(--brass); }
+#unlock h2 { margin-top: 6px; }
+.unlockline { text-align: center; color: var(--brass); }
+#results .kicker { text-align: center; }
+
 /* the catch card */
 #catch { place-items: end center; padding-bottom: calc(var(--sab) + 16px); }
 #catch .card { text-align: center; }
@@ -209,6 +267,14 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #catch .kg { font-family: var(--slab); font-size: 44px; line-height: 1.05; color: var(--brass); }
 #catch .kg small { font-size: 18px; color: var(--ink); }
 #catch p { font-size: 14px; margin: 8px 0 0; }
+#catch .sizeline { margin-top: 6px; font-size: 14px; color: var(--brass); }
+#catch .oldrec { font-size: 13px; color: var(--muted); }
+#catch .sizeline:empty, #catch .oldrec:empty, #catch .cap:empty { display: none; }
+#catch .card { transition: opacity 0.35s, transform 0.4s cubic-bezier(.2, .8, .2, 1); }
+/* the photo beat: the fish shows alone first, then the card slides up */
+#catch.wait .card { opacity: 0; transform: translateY(36px); pointer-events: none; }
+#catch .card.photo { border: 5px solid #f6efd9; }
+#catch .cap { margin-top: 8px; font-size: 12px; letter-spacing: 0.16em; color: var(--muted); }
 #game.l-reel #catch { place-items: center end; padding-right: calc(var(--sar) + 16px); }
 #game.l-reel #catch .card { width: min(46%, 380px); }
 
@@ -222,24 +288,27 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #dbg { position: absolute; right: 6px; bottom: 6px; z-index: 50; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); font: 11px/1.35 ui-monospace, monospace; white-space: pre; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #reelUI > * { animation: none; } }
 </style>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div id="game" class="l-tall-cast" data-switch-host>
   <div id="view"></div>
 
   <div id="castUI" hidden>
-    <div id="reelBox"></div>
+    <div id="reelBox" aria-label="Hold the rod, drag down, then flick up to cast"></div>
   </div>
 
   <div id="reelUI" hidden>
     <div id="gaugeBox"></div>
+    <div id="pullStrength" hidden><span>Tip back as you reel</span><b><i></i></b></div>
     <div id="dragBar"><button type="button" id="dragDown" aria-label="Less drag">−</button><b id="dragName">DRAG: MED</b><button type="button" id="dragUp" aria-label="More drag">+</button></div>
-    <div id="padBox"></div>
+    <div id="padBox" aria-label="Drag the rod to raise, lower, or steer it"></div>
     <div id="crankBox"></div>
   </div>
 
   <div id="hud" hidden>
     <button type="button" class="icon" id="pauseBtn" aria-label="Pause">II</button>
+    <button type="button" class="icon" id="guideToggle" aria-label="Hide animated guide" aria-expanded="true" data-nopin>?</button>
     <span class="chip" id="modeChip"></span>
     <span class="grow"></span>
     <span class="chip" id="clock"></span>
@@ -253,17 +322,25 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
   <!-- title -->
   <section class="screen" id="title" hidden>
     <div class="logo">
-      <div class="kick">GET PLUNGER'D · LOON LAKE</div>
+      <div class="kick" id="tkick">GET PLUNGER'D · LOON LAKE</div>
       <h1><span>REEL</span><span>IT IN</span></h1>
       <div class="sub">YOUR PHONE IS THE ROD</div>
     </div>
-    <div>
+    <div class="title-menu">
+      <div class="art-picker" role="group" aria-labelledby="artLabel">
+        <span class="art-label" id="artLabel">Art style</span>
+        <div class="art-options">
+          <button type="button" data-art="original" aria-pressed="false">Original</button>
+          <button type="button" data-art="ghibli" aria-pressed="true">Ghibli</button>
+        </div>
+        <p class="art-note" id="artNote" aria-live="polite">Cartoon models and painted skies</p>
+      </div>
       <nav id="tmenu">
         <button type="button" class="btn go" id="derbyBtn">Derby: 10 casts</button>
         <button type="button" class="btn" id="freeBtn">Free fishing</button>
-        <div class="row2"><button type="button" class="btn" id="journalBtn">Journal</button><button type="button" class="btn" id="helpBtn">How to play</button></div>
-        <div class="row2"><button type="button" class="btn alt" id="setBtn">Settings</button><button type="button" class="btn alt" data-switch>Switch game</button></div>
-        <a class="btn alt" href="/">Back to the arcade</a>
+        <div class="row2"><button type="button" class="btn" id="placesBtn">Places<span class="newtag" id="placesNew" hidden>NEW</span></button><button type="button" class="btn" id="journalBtn">Journal</button></div>
+        <div class="row2"><button type="button" class="btn" id="helpBtn">How to play</button><button type="button" class="btn alt" id="setBtn">Settings</button></div>
+        <div class="row2"><button type="button" class="btn alt" data-switch>Switch game</button><a class="btn alt" href="/">Back to the arcade</a></div>
       </nav>
       <p class="best" id="tbest"></p>
     </div>
@@ -287,7 +364,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
       <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="m">Motion</button><button type="button" role="tab" aria-selected="false" data-tab="t">Touch and mouse</button></div>
       <ol class="steps" id="helpM"></ol>
       <ol class="steps" id="helpT" hidden></ol>
-      <div class="btns"><button type="button" class="btn go" data-close>Got it</button></div>
+      <div id="pullDemo" hidden>
+        <video id="pullDemoVideo" src="clips/pull-back-demo.mp4" poster="clips/pull-back-poster.webp" controls muted playsinline preload="none" controlslist="nofullscreen noremoteplayback" disablepictureinpicture aria-label="How to add reel strength by tipping the phone back"></video>
+      </div>
+      <div class="btns"><button type="button" class="btn" id="watchPullDemo">Watch pull-back demo</button><button type="button" class="btn go" data-close>Got it</button></div>
     </div>
   </section>
 
@@ -295,9 +375,51 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
   <section class="screen dim" id="journal" hidden>
     <div class="card" style="width:min(100%,620px)">
       <h2>Journal</h2>
+      <div class="tabs chips" id="jtabs" role="tablist"></div>
       <p id="jsum"></p>
       <div id="jlist"></div>
       <div class="btns"><button type="button" class="btn go" data-close>Close</button></div>
+    </div>
+  </section>
+
+  <!-- the places: a trail of four cards -->
+  <section class="screen dim" id="places" hidden>
+    <div class="card places">
+      <h2>Places</h2>
+      <p class="psub">Land a big fish to open the next place.</p>
+      <ol id="plist"></ol>
+      <p class="pfoot" id="pfoot"></p>
+      <div class="btns"><button type="button" class="btn go" data-close>Close</button></div>
+    </div>
+  </section>
+
+  <!-- on the way to another place -->
+  <section class="screen dim" id="travel" hidden>
+    <div class="card mid">
+      <div class="wheel" aria-hidden="true"></div>
+      <h2 id="travelTxt">On the way.</h2>
+    </div>
+  </section>
+
+  <!-- the first visit to a place -->
+  <section class="screen dim" id="arrive" hidden>
+    <div class="card">
+      <div class="kicker" id="akick"></div>
+      <h2 id="aname"></h2>
+      <p id="ablurb"></p>
+      <p class="gear" id="agear"></p>
+      <p id="atip"></p>
+      <div class="btns"><button type="button" class="btn go" id="aStart">Start</button></div>
+    </div>
+  </section>
+
+  <!-- a fish opened the next place -->
+  <section class="screen dim" id="unlock" hidden>
+    <div class="card mid">
+      <div class="badges"><span class="badge new">NEW PLACE</span></div>
+      <h2 id="uname"></h2>
+      <p id="ublurb"></p>
+      <div class="btns"><button type="button" class="btn alt" id="uStay">Stay here</button><button type="button" class="btn go" id="uGo">Go there</button></div>
     </div>
   </section>
 
@@ -310,9 +432,11 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
         <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
         <label><span>Easy mode<small>Softens bad casts. Gives you more time to set the hook.</small></span><input type="checkbox" id="optAssist"></label>
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
+        <label><span>Reel side<small>Choose which hand turns the reel.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
+        <label><span>Art style</span><select id="optArtStyle"><option value="original">Original</option><option value="ghibli">Ghibli</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
       </div>
-      <div class="btns"><button type="button" class="btn go" data-close>Done</button></div>
+      <div class="btns"><button type="button" class="btn" data-fullscreen hidden>Fullscreen</button><button type="button" class="btn go" data-close>Done</button></div>
     </div>
   </section>
 
@@ -320,12 +444,13 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
   <section class="screen dim" id="pause" hidden>
     <div class="card">
       <h2>Paused</h2>
-      <p id="pauseSum"></p>
+      <p id="pauseSum" style="white-space:pre-line"></p>
       <div class="btns" style="flex-direction:column">
         <button type="button" class="btn go" id="resumeBtn">Resume</button>
         <button type="button" class="btn" id="pHelp">How to play</button>
         <button type="button" class="btn" id="pJournal">Journal</button>
         <button type="button" class="btn" id="pSet">Settings</button>
+        <button type="button" class="btn" data-fullscreen hidden>Fullscreen</button>
         <button type="button" class="btn alt" id="quitBtn">Quit to the title</button>
         <button type="button" class="btn alt" data-switch>Switch game</button>
       </div>
@@ -338,7 +463,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
       <div class="badges" id="cbadges"></div>
       <h2 id="cname"></h2>
       <div class="kg" id="ckg"></div>
+      <div class="sizeline" id="csize"></div>
+      <div class="oldrec" id="cold"></div>
       <p id="cblurb"></p>
+      <div class="cap" id="ccap"></div>
       <div class="btns"><button type="button" class="btn go" id="catchGo">Cast again</button></div>
     </div>
   </section>
@@ -346,12 +474,14 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
   <!-- derby results -->
   <section class="screen dim" id="results" hidden>
     <div class="card">
+      <div class="kicker" id="rkick"></div>
       <h2>Derby over</h2>
       <div class="big" id="rtotal"></div>
       <div class="rank" id="rrank"></div>
       <ul id="rlist"></ul>
       <p id="rbest" style="text-align:center"></p>
-      <div class="btns"><button type="button" class="btn alt" id="rMenu">Title</button><button type="button" class="btn go" id="rAgain">Fish again</button></div>
+      <p id="runlock" class="unlockline" hidden></p>
+      <div class="btns"><button type="button" class="btn alt" id="rMenu">Title</button><button type="button" class="btn alt" id="rGo" hidden>Go there</button><button type="button" class="btn go" id="rAgain">Fish again</button></div>
     </div>
   </section>
 
@@ -361,3 +491,4 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
+

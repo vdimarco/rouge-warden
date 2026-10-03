@@ -10,13 +10,13 @@
 //   damage += max(0, |v.n| - 3) * 2.2. Vehicle against vehicle (collidePair) trades mass impulses, spins
 //   a car hit in the rear quarter (PIT) and applies the protected-vehicle rules.
 import * as THREE from 'three';
-import { specOf, G, AIR_G, DAMAGE, CONTACT, OFFROAD, steerMax } from './specs.js';
+import { specOf, PATROL_TUNE, G, AIR_G, DAMAGE, CONTACT, OFFROAD, steerMax } from './specs.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const tmpN = new THREE.Vector3();
 
 export function createVehicle(S, id, kind, o, view) {
-  const sp = specOf(kind), half = { w: sp.size.w / 2, l: sp.size.l / 2 };
+  const sp = o.patrol ? { ...specOf(kind), ...PATROL_TUNE } : specOf(kind), half = { w: sp.size.w / 2, l: sp.size.l / 2 };
   const own = new Map();
   const v = {
     id, kind, spec: sp, view, obj: view ? view.obj : null,
@@ -27,7 +27,7 @@ export function createVehicle(S, id, kind, o, view) {
     seats: new Array(sp.seats).fill(null), lights: false, siren: false, look: { ...(o.look || {}) },
     hw: half.w, hd: half.l, h: sp.size.h, mass: sp.mass, inertia: sp.mass * (sp.size.w ** 2 + sp.size.l ** 2) / 12,
     airborne: false, grounded: true, surface: 'asphalt', slip: 0, water: 0, drowned: false,
-    kinematic: false, traffic: !!o.traffic, mission: !o.traffic, controller: null, rolling: false, enterable: !!(o.player || o.enterable),
+    kinematic: false, traffic: !!o.traffic, mission: !o.traffic, controller: null, rolling: false, enterable: true,
     wheelsY: [0, 0, 0, 0], wheelsRaw: [0, 0, 0, 0], hanging: 0, vy: 0, spin: 0, spinT: 0, contactT: 0,
     susp: { pitch: 0, roll: 0, lift: 0, vp: 0, vr: 0, vl: 0, slopeP: 0, slopeR: 0 },
     stage: 0, fxT: 0, hornT: 0, lastHit: new Map(), accel: 0, latAcc: 0,
@@ -54,13 +54,13 @@ export function createVehicle(S, id, kind, o, view) {
       const d = doorInfo(side), p = toWorld(d.at[0], d.at[1]);
       return new THREE.Vector3(p[0], S.world.surface(p[0], p[1], v.pos.y + 1.5), p[1]);
     },
-    setLook(lk = {}) { Object.assign(v.look, lk); if (view) view.setLook(v.look); },
+    setLook(lk = {}) { Object.assign(v.look, lk); if (v.view) v.view.setLook(v.look); },
     on(evt, fn) { if (!own.has(evt)) own.set(evt, []); own.get(evt).push(fn); return () => { const a = own.get(evt), i = a.indexOf(fn); if (i >= 0) a.splice(i, 1); }; },
     emit(evt, d = {}) { for (const f of (own.get(evt) || []).slice()) f(d); if (v.hooks) v.hooks(evt, { v, ...d }); },
     toWorld, toLocal, footprint,
   };
   const doorInfo = (side) => {
-    const doors = view ? view.info.doors : null;
+    const doors = v.view ? v.view.info.doors : null;
     const name = side === 'rear' ? 'rearL' : side;
     if (doors && doors[name]) return doors[name];
     const s = side === 'passenger' || side === 'slide' ? -1 : 1, z = side === 'rear' ? -half.l - 0.9 : side === 'slide' ? -0.4 : half.l * 0.3;
@@ -124,7 +124,7 @@ export function stepVehicle(S, v, h) {
   const onGround = !v.airborne;
   // steering: the wheels turn toward the input at steerRate; the widest angle narrows with speed
   const want = -steer * steerMax(sp, vf);
-  const ds = want - v.steerAngle, rate = sp.steerRate * h;
+  const ds = want - v.steerAngle, rate = sp.steerRate * (steer === 0 ? 2 : 1) * h;
   v.steerAngle += clamp(ds, -rate, rate);
   // along the vehicle
   let a = 0;

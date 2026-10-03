@@ -119,7 +119,9 @@ await step(page, 3);
 
 /* 5. a cine line (it names no speaker; the line's own speaker talks): I1 under the bridge, Gabe */
 const cine = await page.evaluate(() => {
+  // This deterministic animation test uses simulation time. Real audio clocks are tested in cinematic-sound.mjs.
   const S = __crimson.story.S;
+  S.audio.beginCinematic = () => ({ ready: true }); S.audio.speak = () => null;
   window.__qaOn = null;
   window.__cine = S.cine.play("i1");
   const out = []; let gabe = null;

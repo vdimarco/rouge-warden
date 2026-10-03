@@ -2,19 +2,13 @@
 // S.traffic, S.drivers and S.test.van.
 // - S.vehicles.spawn(kind, {pos | place, yaw, tint, look, protect, bumpLimit, maxSpeed, maxContact, seats,
 //   player, gang, enterable}) -> Vehicle. player:true makes it S.vehicles.player (the crew's van); the
-//   player's vehicle (and any enterable one) gets 'GET IN' at its driver's and passenger's doors.
+//   cars all get 'GET IN' at their driver's and passenger's doors.
 // - Protected vehicles (P9): a touch under 4 m/s is a bump ('bump'); a hit at maxSpeed (6) or more, or more
 //   than bumpLimit (3) bumps, emits 'hitProtected'. maxContact (E4: 1 m/s for the van with people in it)
 //   makes any contact faster than that a 'hitProtected'.
 // - Physics: 1/120 s substeps on the story's rdt (never the combat dt, so hitstop leaves vehicles alone),
 //   up to 8 a frame. Vehicles within 60 m of the hero or in a mission get full physics; ambient traffic
 //   farther out moves kinematically on its lane (C7).
-// - People: every 'ai' tick CAST and COMBAT push soft circles {x, z, r, dive(dir), id?} into
-//   S.vehicles.people; physics reads them and empties the list. Anyone in a vehicle's path (the next 2 s)
-//   above 3 m/s is asked to dive clear (dir: a unit {x, z} away from the path); if dive() returns false,
-//   or it is too late, they are a soft wall: the vehicle stops 1.5 m short. No damage, no push, nobody hit.
-//   dive() may be called again on later ticks while the person is still in the path; it must be idempotent.
-//   S.vehicles.sweeps lists each moving vehicle's path ahead {v, x, z, dx, dz, len, hw, speed} for dodging.
 // - Events (per vehicle with v.on, or every vehicle with S.vehicles.on, which adds {v}): 'hit' {other,
 //   speed}, 'bump' {by, speed, bumps}, 'hitProtected' {by, speed, reason}, 'wrecked', plus 'enter', 'exit',
 //   'seat', 'unseat', 'land', 'pit', 'horn', 'noticed', 'raceDone', 'drowned'.
@@ -26,6 +20,8 @@ import { createDrive } from './drive.js';
 import { createDriveCam } from './drivecam.js';
 import { createTraffic } from './traffic.js';
 import { createDrivers } from './drivers.js';
+import { pedestrianContact } from './pedestrian-impact.js';
+import { createLaw } from './law.js';
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
@@ -46,11 +42,18 @@ export function init(S) {
     all() { if (dirty) { allArr = list.concat(traffic ? traffic.api.cars : []); dirty = false; } return allArr; },
     make(kind, o = {}) { // a vehicle with no mesh of its own (traffic draws with instances)
       const v = createVehicle(S, `t${++seq}`, kind, { ...o, traffic: true }, null);
-      v.hooks = emitG; dirty = true; return v;
+      v.hooks = emitG; addDoors(v); dirty = true; return v;
     },
-    drop(v) { dirty = true; if (v.controller && v.controller.stop) v.controller.stop(); drive.release(v); },
+    drop(v) { S.interact.remove(`getin:${v.id}:driver`); S.interact.remove(`getin:${v.id}:passenger`); dirty = true; if (v.controller && v.controller.stop) v.controller.stop(); drive.release(v); },
     alive: (v) => list.includes(v) || (traffic && traffic.api.cars.includes(v)),
     park(v) { const c = v.controls; c.throttle = 0; c.brake = 1; c.steer = 0; c.handbrake = Math.abs(v.speed) < 0.5; c.reverse = false; },
+    claim(v) {
+      const view = createVehicleMesh(v.kind, { tint: v.tint, gang: v.gang, look: v.look });
+      traffic.remove(v);
+      v.gone = false; v.traffic = false; v.kinematic = false; v.tr = null; v.handle = null;
+      v.view = view; v.obj = view.obj; view.obj.rotation.order = 'YXZ'; root.add(view.obj);
+      list.push(v); dirty = true; addDoors(v); sync(v, 0);
+    },
     qa: null,
     drivers: null,
   };
@@ -77,7 +80,7 @@ export function init(S) {
     return v;
   }
   function addDoors(v) {
-    const can = () => !drive.api.riding && !v.wrecked && Math.abs(v.speed) < 3 && S.world.visible && v.enterable;
+    const can = () => !drive.api.riding && !v.wrecked && Math.abs(v.speed) < 3 && S.world.visible && !v.gone;
     const at = (door) => () => v.doorPoint(door);
     S.interact.add({ id: `getin:${v.id}:driver`, tag: 'vehicles', label: 'GET IN', r: 3.2, mode: 'foot', pos: at('driver'), when: can, act: () => drive.api.enter(v, 0, { door: 'driver' }) });
     S.interact.add({ id: `getin:${v.id}:passenger`, tag: 'vehicles', label: v.seats[0] ? 'RIDE' : 'GET IN', r: 3.2, mode: 'foot', pos: at('passenger'), when: can,
@@ -101,6 +104,25 @@ export function init(S) {
   S.traffic = traffic.api;
   S.drivers = drivers.api;
 
+  const parkedPrompts = new Set();
+  function parkedDoors() {
+    for (const p of S.world.parkedCars || []) {
+      if (parkedPrompts.has(p)) continue;
+      parkedPrompts.add(p);
+      for (const side of [-1, 1]) S.interact.add({
+        id: `parked:${p.id}:${side}`, tag: 'parked-vehicles', label: 'GET IN', r: 3.2, mode: 'foot',
+        pos: { x: p.x + Math.cos(p.yaw) * side * 1.8, y: p.y, z: p.z - Math.sin(p.yaw) * side * 1.8 },
+        when: () => !p.taken && !S.drive.riding && S.world.visible,
+        act: () => {
+          if (p.taken || S.drive.riding) return;
+          const v = spawn(p.kind, { pos: p, yaw: p.yaw });
+          if (S.drive.enter(v, 0, { door: side > 0 ? 'driver' : 'passenger' })) p.take();
+          else despawn(v);
+        },
+      });
+    }
+  }
+
   /* ---------------- people in the road */
   const asked = new Map(); // person key -> { t, ok }
   function collectPeople() {
@@ -117,6 +139,7 @@ export function init(S) {
       const sp = v.speed, as = Math.abs(sp); if (as < 0.3 || !P.length) continue;
       const dir = sp > 0 ? 1 : -1;
       for (const p of P) {
+        if (p.dead || (p.hit && S.drive.riding === v && S.drive.heroSeat === 0)) continue;
         const [lx, lz] = v.toLocal(p.x, p.z), r = p.r ?? 0.4;
         if (Math.abs(lx) > v.hw + r + 0.35) continue;
         const along = dir * lz - v.hd - r;
@@ -176,7 +199,12 @@ export function init(S) {
     const P = collectPeople();
     planPeople(phys, P);
     for (let k = 0; k < n; k++) {
-      for (const v of phys) { softStop(v); stepVehicle(S, v, h); }
+      for (const v of phys) {
+        softStop(v); stepVehicle(S, v, h);
+        if (S.drive.riding === v && S.drive.heroSeat === 0) {
+          for (const person of P) if (pedestrianContact(v, person)) person.hit(v);
+        }
+      }
       for (let i = 0; i < phys.length; i++) for (let j = i + 1; j < phys.length; j++) collidePair(S, phys[i], phys[j]);
     }
     // the paths ahead, for anyone who wants to get out of the way
@@ -190,7 +218,7 @@ export function init(S) {
   }, 0);
 
   // ai: drivers, then traffic (after CAST and COMBAT pushed this tick's people)
-  S.register('ai', (cdt, rdt) => { if (!S.world.ready) return; drivers.update(rdt); traffic.update(rdt); }, 50);
+  S.register('ai', (cdt, rdt) => { if (!S.world.ready) return; parkedDoors(); drivers.update(rdt); traffic.update(rdt); }, 50);
 
   /* ---------------- the look of it: meshes, lamps, smoke, sound */
   const night = () => (S.day && S.day.night) || (S.look && S.look.active && S.look.ink > 0.6);
@@ -291,6 +319,8 @@ export function init(S) {
     drivers.clear(); traffic.clear(); drive.reset(); cam.reset();
     for (const v of [...list]) despawn(v);
     S.vehicles.player = null; S.vehicles.sweeps.length = 0; S.vehicles.people.length = 0;
+    for (const p of parkedPrompts) p.reset();
+    parkedPrompts.clear(); S.interact.clear('parked-vehicles');
     asked.clear(); V.qa = null; drive.api.autoGas = false; dirty = true; root.visible = false;
   }
   S.bus.on('start', () => { clearAll(); traffic.api.setDensity(1); });
@@ -315,4 +345,5 @@ export function init(S) {
     landingSpot: (v, door) => drive.landingSpot(v, door),
     specs: (kind) => specOf(kind), looks: VAN_LOOKS,
   };
+  createLaw(S);
 }

@@ -21,6 +21,12 @@ const base = { build: 1, h: 1.78, f: false, skin: C.skin2, hair: { style: 'short
   shoes: C.boots, sole: C.tire, hat: null, glasses: null, bolo: false, face: { smile: 0.2, brows: 1 }, glow: 0 };
 const V = (o) => Object.freeze({ ...base, ...o, face: { ...base.face, ...(o.face || {}) } });
 export const BODIES = {
+  police: [V({ h: 1.81, build: 1.06, skin: C.skin2, hair: { style: 'short', color: C.hairBrown },
+    shirt: 0x24394e, sleeves: 'long', pants: 0x182636, shoes: C.boots, belt: 0x181818,
+    glasses: C.sunglasses, face: { smile: 0, brows: 1.1 } })],
+  sheriff: [V({ h: 1.84, build: 1.1, skin: C.skin3, hair: { style: 'short', color: C.hairBrown }, moustache: C.hairBrown,
+    shirt: 0xc4ae79, sleeves: 'long', pants: 0x344737, shoes: C.boots, belt: 0x30251e,
+    hat: { kind: 'cowboy', color: C.cowboyHat, band: C.woodDark }, glasses: C.sunglasses, face: { smile: 0, brows: 1.2 } })],
   // FBI Special Agent Nora Vance: navy suit, white shirt, hair up
   vance: [V({ f: true, h: 1.72, build: 0.9, skin: C.skin3, hair: { style: 'bun', color: C.hairBlack }, shirt: C.shirtWhite, sleeves: 'long', jacket: { color: C.fbiNavy }, pants: C.fbiNavy, shoes: C.shirtBlack, face: { smile: 0, brows: 1.2, lashes: true } })],
   // Harlan Voss, the Smiling Man: cream suit, bolo tie, pale hat, always smiling
@@ -83,12 +89,29 @@ function paintFace(g, F, s) {
   const sk = new THREE.Color(s.skin), dark = '#1a1210', shade = '#' + sk.clone().multiplyScalar(0.72).getHexString();
   const hairC = '#' + new THREE.Color(s.hair.color).getHexString(), br = s.face.brows;
   g.lineCap = 'round';
+  if (s === BODIES.sheriff[0] || BODIES.civA.includes(s) || BODIES.civB.includes(s)) {
+    const contour = g.createRadialGradient(X(0.48), Y(0.43), 3, X(0.5), Y(0.5), F.s * 0.48);
+    contour.addColorStop(0, 'rgba(255,235,210,0.16)'); contour.addColorStop(0.6, 'rgba(90,45,30,0)'); contour.addColorStop(1, 'rgba(70,30,20,0.3)');
+    g.fillStyle = contour; g.fillRect(F.x, F.y, F.s, F.s);
+    for (const side of [-1, 1]) {
+      g.fillStyle = 'rgba(110,47,38,0.16)'; g.beginPath(); g.ellipse(X(0.5 + side * 0.2), Y(0.59), 5, 3, 0, 0, Math.PI * 2); g.fill();
+    }
+  }
   // brows
   g.strokeStyle = s.hair.style === 'bald' ? shade : hairC; g.lineWidth = 2.2 * br;
   for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(X(0.5 + sd * 0.07), Y(0.4 - 0.01 * br)); g.lineTo(X(0.5 + sd * 0.19), Y(0.39 + (s.face.smile > 0.8 ? -0.01 : 0.01) * br)); g.stroke(); }
   // eyes: dark almonds (sunglasses are geometry, drawn over)
   g.fillStyle = dark;
   for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(X(0.5 + sd * 0.13), Y(0.47), 2.6, s.face.smile > 0.8 ? 1.2 : 1.9, 0, 0, Math.PI * 2); g.fill(); }
+  if (BODIES.civA.includes(s) || BODIES.civB.includes(s) || s === BODIES.sheriff[0]) {
+    for (const side of [-1, 1]) {
+      const eyeX = X(0.5 + side * 0.13), eyeY = Y(0.47);
+      g.fillStyle = '#e2dcd2'; g.beginPath(); g.ellipse(eyeX, eyeY, 2.1, 1.15, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = s.skin === C.skin1 ? '#647c80' : '#684631'; g.beginPath(); g.arc(eyeX, eyeY, 1.05, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#181515'; g.beginPath(); g.arc(eyeX, eyeY, 0.55, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff6df'; g.fillRect(eyeX - 0.55, eyeY - 0.6, 0.55, 0.55);
+    }
+  }
   if (s.face.lashes) { g.strokeStyle = dark; g.lineWidth = 1; for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(X(0.5 + sd * 0.17), Y(0.46)); g.lineTo(X(0.5 + sd * 0.2), Y(0.445)); g.stroke(); } }
   // nose: a soft shadow
   g.strokeStyle = shade; g.lineWidth = 1.6;
@@ -294,7 +317,9 @@ export function buildBody(donor, id, variant = 0) {
     const u = front ? u0 : (u0 < 0.5 ? 0.02 : 0.98), v = Math.min(0.98, Math.max(0.02, v0));
     return [(F.x + u * F.s) / AT, (F.y + v * F.s) / AT];
   };
-  ellipsoid(G, hc, hr.x, hr.y, hr.z, (p) => (p.y < J.Head.y + 2 ? W2('neck', 'Head', 0.8) : W1('Head')), faceUV, { lat: 10, lon: 14 });
+  // The face and its talking mouth share the Head bone so head turns keep
+  // the lips attached. More rings soften the silhouette in close-ups.
+  ellipsoid(G, hc, hr.x, hr.y, hr.z, () => W1('Head'), faceUV, { lat: 20, lon: 28 });
   // ears
   for (const sd of [-1, 1]) ellipsoid(G, V3(hc.x + sd * (hr.x - 0.5), hc.y - 1, hc.z - 1), 1.3, 3, 2.2, W1('Head'), () => skinC, { lat: 4, lon: 6 });
   const headTop = hc.y + hr.y;
@@ -433,10 +458,18 @@ export function buildBody(donor, id, variant = 0) {
     const dir = wr.clone().sub(el).normalize();
     const side = new THREE.Vector3().crossVectors(dir, V3(0, 0, 1)).normalize();
     const hand = [];
-    for (const [d, wdt, th] of [[0, 3.3, 2.6], [3, 4.4, 2.6], [8, 4.5, 2.3], [13, 3.8, 1.9], [16.5, 2.2, 1.3]]) {
-      hand.push({ c: wr.clone().addScaledVector(dir, d), t: dir, side, rx: th, rz: wdt, w: d < 2 ? W2(`${S}ForeArm`, `${S}Hand`, 0.7) : W1(`${S}Hand`), uv: skinC });
+    for (const [d, wdt, th] of [[0, 3.3, 2.6], [3, 4.4, 2.4], [7, 4.3, 2], [9, 3.8, 1.7]]) {
+      hand.push({ c: wr.clone().addScaledVector(dir, d), t: dir, side, rx: wdt, rz: th, w: d < 2 ? W2(`${S}ForeArm`, `${S}Hand`, 0.7) : W1(`${S}Hand`), uv: skinC });
     }
     tube(G, hand, 8, { capB: true });
+    for (const [finger, length] of [5.6, 7.4, 8, 6.8].entries()) {
+      const base = wr.clone().addScaledVector(dir, 8).addScaledVector(side, (finger - 1.5) * 2);
+      const rings = [0, 0.5, 1].map(fraction => ({
+        c: base.clone().addScaledVector(dir, length * fraction).add(V3(0, 0, 1.2 * fraction * fraction)),
+        t: dir, side, rx: 0.9 - 0.22 * fraction, rz: 1.05 - 0.3 * fraction, w: W1(`${S}Hand`), uv: skinC,
+      }));
+      tube(G, rings, 6, { capB: true });
+    }
     // the thumb, forward of the palm
     const tb = wr.clone().addScaledVector(dir, 4).add(V3(0, 0, 3.2));
     tube(G, [{ c: tb, t: dir.clone().add(V3(0, 0, 0.5)).normalize(), rx: 1.3, rz: 1.3, w: W1(`${S}Hand`), uv: skinC },
@@ -508,8 +541,23 @@ export function buildBody(donor, id, variant = 0) {
   root.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(order));
   // the painted mouth (paintFace: v 0.725 of the face) in rig space, for the talking mouth (talk.js)
-  const my = hc.y - 0.5 - (0.725 - 0.5) * hr.y * 2.1, mz = hc.z + hr.z * Math.sqrt(Math.max(0, 1 - ((my - hc.y) / hr.y) ** 2));
-  const mouth = { x: hc.x - J.Hips.x, y: my - geo.boundingBox.min.y, z: mz - J.Hips.z + 0.1, w: 3.8 };
+  const mouthV = 0.735 + 0.01 * spec.face.smile;
+  const my = hc.y - 0.5 - (mouthV - 0.5) * hr.y * 2.1;
+  // Intersect the actual triangles at the painted lip centre. The ideal
+  // ellipsoid sits in front of the mesh and made the mouth float.
+  let mz = -Infinity;
+  const P = geo.attributes.position, I = geo.index;
+  for (let k = 0; k < I.count; k += 3) {
+    const a = I.getX(k), b = I.getX(k + 1), c = I.getX(k + 2);
+    const ax = P.getX(a), ay = P.getY(a), bx = P.getX(b), by = P.getY(b), cx = P.getX(c), cy = P.getY(c);
+    const den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(den) < 1e-8) continue;
+    const u = ((by - cy) * (hc.x - cx) + (cx - bx) * (my - cy)) / den;
+    const v = ((cy - ay) * (hc.x - cx) + (ax - cx) * (my - cy)) / den;
+    if (u >= 0 && v >= 0 && u + v <= 1) mz = Math.max(mz, u * P.getZ(a) + v * P.getZ(b) + (1 - u - v) * P.getZ(c));
+  }
+  if (!Number.isFinite(mz)) mz = hc.z + hr.z;
+  const mouth = { x: hc.x - J.Hips.x, y: my - geo.boundingBox.min.y, z: mz - J.Hips.z + 0.08, w: 4.8 };
   root.userData = { id, variant, spec, tris: geo.index.count / 3, headTop, hatTop, mouth, bodyHeight: (headTop - Math.min(0, geo.boundingBox.min.y)) * 0.01, glow: spec.glow, height: spec.h };
   return { scene: root, animations: [], url: `code:${id}:${variant}`, built: true };
 }

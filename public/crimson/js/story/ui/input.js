@@ -21,21 +21,21 @@ const MOUSE_RAD = 0.0024, TOUCH_RAD = 0.0065; // the arena's mouse and drag feel
 const NAV = { KeyW: ['up'], ArrowUp: ['up'], KeyS: ['down'], ArrowDown: ['down'], KeyA: ['left'], ArrowLeft: ['left'], KeyD: ['right'], ArrowRight: ['right'] };
 const KEYS = {
   all: { Escape: ['pause', 'back'], KeyP: ['pause'], KeyN: ['music'] },
-  foot: { ...NAV, KeyJ: ['light'], KeyK: ['heavy'], KeyQ: ['heavy'], ShiftLeft: ['parry'], ShiftRight: ['parry'], KeyF: ['parry'], Space: ['dodge', 'skip'],
-    KeyR: ['canteen'], Tab: ['lock'], KeyE: ['use', 'exit'], Enter: ['use', 'skip'], KeyX: ['crouch'], KeyC: ['crouch'], ControlLeft: ['crouch'],
+  foot: { ...NAV, KeyJ: ['light'], KeyK: ['heavy'], KeyQ: ['heavy'], ShiftLeft: ['sprint'], ShiftRight: ['sprint'], KeyF: ['parry'], Space: ['dodge', 'skip'],
+    KeyR: ['canteen'], KeyT: ['reload'], KeyB: ['weaponNext'], Digit1: ['weapon1'], Digit2: ['weapon2'], Digit3: ['weapon3'], Digit4: ['weapon4'], Digit5: ['weapon5'], Digit6: ['weapon6'], Digit7: ['weapon7'], Tab: ['lock'], KeyE: ['use', 'exit'], Enter: ['use', 'skip'], KeyX: ['crouch'], KeyC: ['crouch'], ControlLeft: ['crouch'],
     KeyV: ['camera'], KeyG: ['bearcall'], KeyM: ['map'] },
   drive: { KeyW: ['gas', 'up'], ArrowUp: ['gas', 'up'], KeyS: ['brake', 'down'], ArrowDown: ['brake', 'down'], KeyA: ['left'], ArrowLeft: ['left'], KeyD: ['right'], ArrowRight: ['right'],
     Space: ['handbrake', 'skip'], KeyH: ['horn'], KeyC: ['lookback'], KeyE: ['exit', 'use'], Enter: ['use', 'skip'], KeyV: ['camera'], KeyM: ['map'] },
-  photo: { ...NAV, Space: ['shutter'], Enter: ['shutter'], KeyE: ['zoomIn'], KeyQ: ['zoomOut'], Equal: ['zoomIn'], Minus: ['zoomOut'], KeyV: ['camera', 'back'], KeyM: ['map'] },
+  photo: { ...NAV, Space: ['shutter'], Enter: ['shutter'], KeyE: ['zoomIn'], KeyQ: ['zoomOut'], Equal: ['zoomIn'], Minus: ['zoomOut'], KeyV: ['camera'], KeyM: ['map'] },
   menu: { ...NAV, Enter: ['use', 'skip'], Space: ['use', 'skip'], KeyE: ['use', 'skip'], Backspace: ['back'], KeyM: ['map'], Tab: ['right'], Equal: ['zoomIn'], Minus: ['zoomOut'] },
   cine: { Space: ['skip', 'use'], Enter: ['skip', 'use'], KeyE: ['skip', 'use'] },
 };
 // standard gamepad: button index -> actions, per context
 const PAD = {
   all: { 9: ['pause'] },
-  foot: { 0: ['dodge', 'skip'], 1: ['back'], 2: ['canteen'], 3: ['use', 'exit'], 4: ['parry'], 5: ['light'], 6: ['parry'], 7: ['heavy'], 8: ['map'], 10: ['crouch'], 11: ['lock'], 12: ['bearcall', 'up'], 13: ['camera', 'down'], 14: ['left'], 15: ['right'] },
+  foot: { 0: ['dodge', 'skip'], 1: ['back'], 2: ['canteen'], 3: ['use', 'exit'], 4: ['parry'], 5: ['light'], 6: ['parry'], 7: ['heavy'], 8: ['map'], 10: ['crouch'], 11: ['lock'], 12: ['bearcall', 'up'], 13: ['camera', 'down'], 14: ['weaponNext'], 15: ['reload'] },
   drive: { 0: ['handbrake'], 3: ['exit', 'use'], 6: ['brake'], 7: ['gas'], 8: ['map'], 10: ['horn'], 11: ['lookback'], 13: ['camera'] },
-  photo: { 0: ['shutter'], 1: ['camera', 'back'], 4: ['zoomOut'], 5: ['zoomIn'], 6: ['zoomOut'], 7: ['zoomIn'], 13: ['camera'] },
+  photo: { 0: ['shutter'], 1: ['back'], 4: ['zoomOut'], 5: ['zoomIn'], 6: ['zoomOut'], 7: ['zoomIn'], 13: ['camera'] },
   menu: { 0: ['use', 'skip'], 1: ['back'], 3: ['use'], 4: ['zoomOut'], 5: ['zoomIn'], 8: ['map'], 12: ['up'], 13: ['down'], 14: ['left'], 15: ['right'] },
   cine: { 0: ['skip', 'use'], 1: ['skip'] },
 };
@@ -111,7 +111,7 @@ export function createInput(S) {
       const code = e.code; if (!code) return;
       I.device = 'key';
       if ((code === 'Tab' || code === 'Space' || code.startsWith('Arrow')) && e.preventDefault) e.preventDefault();
-      if (down) { keyHeld.add(code); keyHits.add(code); } else keyHeld.delete(code);
+      if (down) { if (!keyHeld.has(code)) keyHits.add(code); keyHeld.add(code); } else keyHeld.delete(code);
     },
     pad(p) { padFed = true; readPad(p); },
     // QA: {action: true|false} holds or releases; {move|look|steer|zoom: {x, y}} sets an axis
@@ -133,6 +133,10 @@ export function createInput(S) {
       for (const k of keyHits) add(hits, actsOf(KEYMAP, ctx, k));
       if (pad) padPrev.forEach((on, i) => { if (on) add(held, actsOf(PADMAP, ctx, i)); });
       for (const i of padHits) add(hits, actsOf(PADMAP, ctx, i));
+      if (ctx === 'foot' && S.arsenal?.ranged) {
+        if (padPrev[7]) { held.delete('heavy'); held.add('light'); }
+        if (padHits.has(7)) { hits.delete('heavy'); hits.add('light'); }
+      }
       for (const b of mouse.held) add(held, actsOf(MOUSE, ctx, b));
       for (const b of mouse.hits) add(hits, actsOf(MOUSE, ctx, b));
       for (const a of touch.held) held.add(a);

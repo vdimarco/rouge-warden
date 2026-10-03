@@ -1,0 +1,69 @@
+name: Pinball browser QA
+on:
+  pull_request:
+    paths:
+      - 'public/lab/tilt/**'
+      - 'public/lab/kit/**'
+      - 'public/fish/js/**'
+      - 'qa/lab/**'
+      - 'qa/fish/lib.mjs'
+      - 'qa/browser/**'
+      - '.github/workflows/pinball-browser.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public/lab/tilt/**'
+      - 'public/lab/kit/**'
+      - 'public/fish/js/**'
+      - 'qa/lab/**'
+      - 'qa/fish/lib.mjs'
+      - 'qa/browser/**'
+      - '.github/workflows/pinball-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pinball-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 8765 --directory public > /tmp/pinball-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8765/lab/tilt/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/pinball-server.log
+          exit 1
+      - name: Physics simulation
+        run: |
+          node qa/lab/tilt.sim.mjs
+          node qa/lab/tilt.adventure.sim.mjs
+          node qa/lab/tilt.camera.sim.mjs
+          node qa/lab/tilt.motion.sim.mjs
+          node qa/lab/tilt.field.sim.mjs
+          node qa/lab/tilt.transit.sim.mjs
+          node qa/lab/tilt.reverse.sim.mjs
+          node qa/lab/tilt.warp.sim.mjs
+          node qa/lab/tilt.rallies.sim.mjs
+      - name: Browser interactions and responsive layout
+        run: npm run test:pinball --prefix qa/browser
+        env:
+          SHOTS: ${{ github.workspace }}/test-results/pinball
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pinball-screenshots
+          path: test-results/pinball
+          if-no-files-found: warn
+          retention-days: 14

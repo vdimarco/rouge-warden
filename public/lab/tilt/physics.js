@@ -31,12 +31,13 @@ export function makeWorld(table, { kickers = true } = {}) {
     put({ kind: "seg", s }, Math.min(s.a[0], s.b[0]), Math.min(s.a[1], s.b[1]), Math.max(s.a[0], s.b[0]), Math.max(s.a[1], s.b[1]));
   }
   for (const p of table.posts) put({ kind: "circle", c: p }, p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r);
-  for (const b of table.bumpers) put({ kind: "circle", c: b, bumper: true }, b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r);
+  for (const b of table.bumpers) if (!b.dynamic) put({ kind: "circle", c: b, bumper: true }, b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r);
   return {
-    table, grid, cell, cols, rows, kickers,
+    table, grid, cell, cols, rows, kickers, dynamicBodies: table.bumpers.filter(body => body.dynamic),
     ball: { x: table.launch.x, y: table.launch.y, vx: 0, vy: 0, live: false, lane: true },
-    flippers: table.flippers.map((f) => ({ ...f, th: f.rest, om: 0, held: false, dir: f.side < 0 ? 1 : -1, sd: 0 })),
-    t: 0, escapes: 0, tunnels: 0, laneHit: -1,
+    flippers: table.flippers.map((f) => ({ ...f, th: f.rest, om: 0, held: false, dir: f.side < 0 ? 1 : -1, sd: 0,
+      reverseFx: 0, reverseUntil: 0 })),
+    t: 0, escapes: 0, tunnels: 0, laneHit: -1, reverseScoop: null, _inputEvents: [],
   };
 }
 
@@ -46,6 +47,7 @@ const tip = (f) => [f.px + f.len * Math.cos(f.th), f.py + f.len * Math.sin(f.th)
 function moveFlippers(w, hs) {
   let moving = false;
   for (const f of w.flippers) {
+    f.reverseFx = Math.max(0, f.reverseFx - hs / 0.45);
     const target = f.held ? f.dir * F.UP : -f.dir * F.DOWN;
     const dv = target - f.om, a = F.MOTOR * hs;
     f.om += dv > a ? a : dv < -a ? -a : dv;
@@ -80,6 +82,8 @@ function collideStatic(w, ev) {
   for (const it of w.grid[cy * w.cols + cx]) {
     if (it.kind === "seg") {
       const s = it.s;
+      if (s.enabled === false) continue;
+      if (w.table.isActive && !w.table.isActive(s)) continue;
       if (s.drop && !s.drop.up) continue;
       const ax = s.a[0], ay = s.a[1], dx = s.b[0] - ax, dy = s.b[1] - ay;
       let u = ((b.x - ax) * dx + (b.y - ay) * dy) / s.len2;
@@ -102,7 +106,9 @@ function collideStatic(w, ev) {
         else if (ev && vin > 250) ev.push({ k: "wall", v: vin });
       }
     } else {
-      const c = it.c, dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), min = R + c.r;
+      const c = it.c;
+      if (w.table.isActive && !w.table.isActive(c)) continue;
+      const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), min = R + c.r;
       if (d >= min || d < 1e-6) continue;
       const nx = dx / d, ny = dy / d;
       b.x = c.x + nx * min; b.y = c.y + ny * min;
@@ -118,9 +124,30 @@ function collideStatic(w, ev) {
   }
 }
 
+// Moving hazards are few and bypass the immutable grid. Resolve in the body's
+// frame, so a passing rock cannot tunnel or act like a powered static bumper.
+function collideDynamic(w, ev) {
+  const b = w.ball;
+  for (const c of w.dynamicBodies) {
+    if (!c.active || (w.table.isActive && !w.table.isActive(c))) continue;
+    const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy), radius = R + c.r;
+    if (d >= radius) continue;
+    const nx = d > 1e-8 ? dx / d : 1, ny = d > 1e-8 ? dy / d : 0;
+    const inward = -((b.vx - c.vx) * nx + (b.vy - c.vy) * ny);
+    if (inward > 0 && w.table.breakDynamic?.(c)) {
+      ev?.push({ k: 'asteroid-break', id: c.id, x: c.x, y: c.y, v: inward });
+      continue;
+    }
+    b.x = c.x + nx * (radius + .01); b.y = c.y + ny * (radius + .01);
+    const vin = bounce(b, nx, ny, c.e ?? .55, c.vx, c.vy, .025);
+    if (vin > 0) ev?.push({ k: 'asteroid', id: c.id, x: c.x, y: c.y, v: vin });
+  }
+}
+
 function collideFlippers(w, ev) {
   const b = w.ball;
   for (const f of w.flippers) {
+    if (w.table.isActive && !w.table.isActive(f)) continue;
     const [tx, ty] = tip(f), dx = tx - f.px, dy = ty - f.py, L2 = f.len * f.len;
     let u = ((b.x - f.px) * dx + (b.y - f.py) * dy) / L2;
     const side = (dx * (b.y - f.py) - dy * (b.x - f.px)) / f.len;   // + left of the axis, - right of it
@@ -143,7 +170,9 @@ function collideFlippers(w, ev) {
     const e = Math.abs(f.om) > 0.5 ? F.E_MOVING : F.E_HELD;
     const vin = bounce(b, nx, ny, e, sx, sy, F.FRICTION);
     f.sd = (dx * (b.y - f.py) - dy * (b.x - f.px)) / f.len;
-    if (vin > 150 && ev) ev.push({ k: "flipper", side: f.side, v: vin });
+    if (vin > 150 && ev) ev.push({ k: "flipper", side: f.side, v: vin,
+      powered: f.held && f.om * f.dir > .5 && sy > 80 && b.vy > 300,
+      motorSpeed: f.om, vy: b.vy });
   }
 }
 
@@ -151,6 +180,8 @@ function collideFlippers(w, ev) {
 export function step(w, ev = null) {
   const b = w.ball;
   w.t += H;
+  if (ev) ev.push(...w._inputEvents);
+  w._inputEvents.length = 0;
   if (b.lane && !b.live) { moveFlippers(w, H); return; }
   const v = Math.hypot(b.vx, b.vy);
   const flipMoving = w.flippers.some((f) => Math.abs(f.om) > 0.5 || f.held !== (f.th === f.up));
@@ -159,34 +190,99 @@ export function step(w, ev = null) {
   const hs = H / n;
   for (let i = 0; i < n; i++) {
     moveFlippers(w, hs);
+    w.table.advanceDynamic?.(hs, ev);
+    advanceReverseScoop(w, hs);
     const px = b.x, py = b.y;
-    b.vy -= F.G * hs;
+    if (w.table.gravity) {
+      const a = w.table.gravity(b, w);
+      b.vx += a.x * hs; b.vy += a.y * hs;
+    } else b.vy -= F.G * hs;
     b.x += b.vx * hs; b.y += b.vy * hs;
     collideStatic(w, ev);
+    collideDynamic(w, ev);
     collideFlippers(w, ev);
-    if (!inside(w.table.outline, b.x, b.y)) { w.escapes++; b.x = px; b.y = py; b.vx *= -0.5; b.vy *= -0.5; }
+    if (!w.table.openSpace && !inside(w.table.outline, b.x, b.y)) { w.escapes++; b.x = px; b.y = py; b.vx *= -0.5; b.vy *= -0.5; }
   }
   // a little rolling drag, and a speed limit that keeps the substeps honest
   const k = 1 - F.ROLL_DAMP * H;
   b.vx *= k; b.vy *= k;
   const s = Math.hypot(b.vx, b.vy);
-  if (s > F.V_MAX) { b.vx *= F.V_MAX / s; b.vy *= F.V_MAX / s; }
+  const maxSpeed = w.table.maxSpeed ?? F.V_MAX;
+  if (s > maxSpeed) { b.vx *= maxSpeed / s; b.vy *= maxSpeed / s; }
   // out of the shooter lane and into play
-  if (b.lane && b.x < 455 && b.y > 700) b.lane = false;
+  if (b.lane && (w.table.leaveLane ? w.table.leaveLane(b) : b.x < 455 && b.y > 700)) b.lane = false;
   // the top lanes
   for (const L of w.table.lanes) {
     if (Math.abs(b.x - L.x) < 16 && Math.abs(b.y - L.y) < 22) { if (w.laneHit !== L.id) { w.laneHit = L.id; if (ev) ev.push({ k: "lane", id: L.id }); } }
   }
   if (w.laneHit >= 0 && Math.abs(b.y - w.table.lanes[w.laneHit].y) > 40) w.laneHit = -1;
-  if (b.live && b.y < w.table.drainY && b.x < 455) { b.live = false; if (ev) ev.push({ k: "drain" }); }
+  if (b.live && (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY && b.x < 455)) { b.live = false; if (ev) ev.push({ k: "drain" }); }
 }
 
-export function setFlip(w, side, held) { for (const f of w.flippers) if (f.side === side) f.held = !!held; }
+// This rescue is opt-in. The classic table retains only its physical flippers.
+// A scoop travels under the tip into the dock's center gap before turning upward;
+// the ball remains subject to the regular collision solver throughout the move.
+function reverseFlipper(w, side) {
+  return w.flippers.find(f => f.side === side && (!w.table.isActive || w.table.isActive(f)));
+}
+
+export function canReverseScoop(w, side) {
+  const config = w.table.reverseScoop, b = w.ball, f = reverseFlipper(w, side);
+  if (!config || !f || f.held || !b.live || b.lane || w.reverseScoop || w.t < f.reverseUntil ||
+      (config.enabled && !config.enabled()) || !Number.isFinite(b.x + b.y + b.vx + b.vy) || b.vy > 200) return false;
+  const centerX = config.centerX(f), inward = -f.side;
+  if ((b.x - f.px) * inward < -18 || (centerX - b.x) * inward < -5) return false;
+  // Use the resting blade for the ceiling, even while a released blade is falling.
+  // A normal shot above either flipper must never trigger the underside assist.
+  const u = Math.max(0, Math.min(1, (b.x - f.px) / (Math.cos(f.rest) * f.len)));
+  const roof = f.py + Math.sin(f.rest) * f.len * u - R - 10;
+  return b.y < roof && b.y > f.py - config.depth;
+}
+
+function beginReverseScoop(w, f) {
+  const config = w.table.reverseScoop, b = w.ball, centerX = config.centerX(f);
+  const dx = centerX - b.x, speed = 740;
+  f.reverseFx = 1; f.reverseUntil = w.t + config.cooldown;
+  w.reverseScoop = { centerX, side: f.side, remaining: 0.35, launch: config.impulse };
+  if (Math.abs(dx) <= 6) {
+    b.vx = 0; b.vy = Math.max(config.impulse, b.vy);
+    w.reverseScoop = null;
+  } else {
+    // Aim below both tips. The inward impulse gets the ball to the turn in 0.2 s.
+    const travel = Math.abs(dx) / speed;
+    b.vx = Math.sign(dx) * speed;
+    b.vy = Math.min(0, (Math.min(b.y, f.py - 94) - b.y) / travel);
+  }
+  w._inputEvents.push({ k: 'reverse', side: f.side, x: b.x, y: b.y });
+}
+
+function advanceReverseScoop(w, hs) {
+  const scoop = w.reverseScoop;
+  if (!scoop) return;
+  const b = w.ball;
+  scoop.remaining -= hs;
+  if (!b.live || scoop.remaining <= 0) { w.reverseScoop = null; return; }
+  // The brief field supports the ball against local dock gravity while drawing
+  // it inward. This also makes a press near the drain useful instead of too late.
+  b.vy += 800 * hs;
+  if (Math.abs(scoop.centerX - b.x) <= Math.max(6, Math.abs(b.vx) * hs)) {
+    b.vx *= 0.02; b.vy = Math.max(scoop.launch, b.vy);
+    w.reverseScoop = null;
+  }
+}
+
+export function setFlip(w, side, held) {
+  const down = !!held, f = reverseFlipper(w, side);
+  if (down && f && !f.held && canReverseScoop(w, side)) beginReverseScoop(w, f);
+  for (const flipper of w.flippers) if (flipper.side === side) flipper.held = down;
+}
 
 // Put a ball on the plunger.
 export function serve(w) {
   const b = w.ball, L = w.table.launch;
   b.x = L.x; b.y = L.y; b.vx = 0; b.vy = 0; b.live = false; b.lane = true;
+  w.reverseScoop = null; w._inputEvents.length = 0;
+  for (const f of w.flippers) { f.reverseFx = 0; f.reverseUntil = 0; }
 }
 // How hard the plunger shoots for a pull of d (0..1). The spring is soft at first: the middle half of the pull sends
 // the ball just over the top, where it falls into the top lanes, one lane after the other. The last quarter is for

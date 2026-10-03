@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Primordia · A Lenia Arcade</title>
+<meta name="description" content="Swim through a living Lenia dish. Eat the glowing life, dodge the red hunters, then fill your Frenzy and eat them back.">
+<meta name="theme-color" content="#04030a">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+<canvas id="fx" aria-label="The living dish"></canvas>
+
+<header class="hud" id="hud" hidden>
+  <a class="back" href="/" aria-label="Back to the Cottage Arcade">◂ Arcade</a>
+  <div class="meters">
+    <div class="meter light" title="Light: your life. Eat to refill it."><span class="lab">LIGHT</span><i><b id="lightBar"></b></i></div>
+    <div class="meter frenzy" id="frenzyMeter" title="Frenzy: fill it by eating, then hunt the hunters."><span class="lab">FRENZY</span><i><b id="frenzyBar"></b></i></div>
+  </div>
+  <div class="epoch"><span id="epochLabel">EPOCH I</span><i><b id="epochBar"></b></i></div>
+  <div class="scorebox"><span class="combo" id="combo"></span><span class="score" id="score">0</span></div>
+  <div class="tools">
+    <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
+    <button id="soundBtn" type="button" aria-label="Sound on">♪</button>
+  </div>
+</header>
+
+<div class="banner" id="banner" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<div class="touch" id="touch" hidden>
+  <div class="stick" id="stick"><i></i></div>
+  <button class="tbtn dash" id="dashBtn" type="button" aria-label="Dash">DASH</button>
+  <button class="tbtn fz" id="frenzyBtn" type="button" aria-label="Frenzy">FRENZY</button>
+</div>
+
+<section class="screen title" id="titleScreen">
+  <div class="panel">
+    <p class="kicker">A LENIA ARCADE</p>
+    <h1 class="logo">PRIMORDIA</h1>
+    <p class="tag">Eat the glowing life. Dodge the red hunters. Fill your Frenzy, then eat them back.</p>
+    <button class="go" id="playBtn" type="button">PLAY <small>Enter</small></button>
+    <dl class="keys">
+      <div><dt>Swim</dt><dd>Mouse · WASD · Arrows · Stick</dd></div>
+      <div><dt>Dash</dt><dd>Space · Click · Ⓐ</dd></div>
+      <div><dt>Frenzy</dt><dd>Shift · Right-click · Ⓑ</dd></div>
+    </dl>
+    <p class="best" id="bestLine"></p>
+    <div class="bestiary" id="bestiary" aria-label="Species you have met"></div>
+    <p class="credit">Every creature here is alive. They run on <a href="https://chakazul.github.io/Lenia/JavaScript/Lenia.html" target="_blank" rel="noopener">Lenia</a>, Bert Chan's continuous cellular automaton.</p>
+  </div>
+</section>
+
+<section class="screen mutate" id="mutateScreen" hidden>
+  <div class="panel wide">
+    <p class="kicker" id="mutateKicker">EPOCH I SURVIVED</p>
+    <h2>Choose a mutation</h2>
+    <div class="cards" id="cards"></div>
+    <p class="hint">Press 1, 2 or 3 · or tap a card</p>
+  </div>
+</section>
+
+<section class="screen pause" id="pauseScreen" hidden>
+  <div class="panel">
+    <h2>Paused</h2>
+    <div class="row">
+      <button class="go" id="resumeBtn" type="button">Resume</button>
+      <button class="ghost" id="restartBtn" type="button">Restart</button>
+      <button class="ghost" id="quitBtn" type="button">Title</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen over" id="overScreen" hidden>
+  <div class="panel">
+    <p class="kicker">YOUR LIGHT WENT OUT</p>
+    <h2 class="dissolved">DISSOLVED</h2>
+    <p class="final" id="finalScore">0</p>
+    <p class="newbest" id="newBest" hidden>NEW BEST</p>
+    <dl class="stats" id="stats"></dl>
+    <div class="row">
+      <button class="go" id="againBtn" type="button">AGAIN <small>Enter</small></button>
+      <button class="ghost" id="titleBtn" type="button">Title</button>
+    </div>
+  </div>
+</section>
+
+<div class="nogl" id="nogl" hidden>Your browser has no WebGL2, so the dish uses a simpler look.</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>

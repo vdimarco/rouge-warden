@@ -1264,8 +1264,9 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     dom.menu = el("dialog", "fs-menu"); dom.menu.id = "fsMenu";
     dom.menu.addEventListener("cancel", (e) => e.preventDefault()); // Esc goes through the game's own key, so it toggles once
     // on the pause page a click that misses the buttons goes back to play, like a click on the city (main takes it from there)
-    dom.menu.addEventListener("mousedown", (e) => {
-      if (dom.name === "pause" && !e.target.closest("button")) renderer.domElement.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    // (main listens for pointerdown, so mouse, pen and touch all count)
+    dom.menu.addEventListener("pointerdown", (e) => {
+      if (dom.name === "pause" && !e.target.closest("button")) renderer.domElement.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: e.pointerId, pointerType: e.pointerType }));
     });
     document.body.appendChild(dom.menu);
     dom.map = el("div", "fs-map"); dom.map.id = "fsMap"; dom.map.hidden = true;

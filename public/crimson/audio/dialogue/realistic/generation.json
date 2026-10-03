@@ -1,0 +1,4058 @@
+{
+  "provider": "fal.ai",
+  "endpoint": "elevenlabs/tts/eleven-v4",
+  "profiles": {
+    "gabe": "Bill",
+    "tanktop": "Brian",
+    "fifty": "Eric",
+    "shades": "Callum",
+    "newbalance": "Roger",
+    "redjersey": "Chris",
+    "voss": "Daniel",
+    "rattler": "George",
+    "boone": "Liam",
+    "clerk": "Will",
+    "gang": "Charlie",
+    "voice": "George",
+    "radio": "Will",
+    "guide": "Charlie",
+    "vance": "Sarah",
+    "dana": "Laura",
+    "passenger": "Laura"
+  },
+  "results": [
+    {
+      "id": "c0.swing.gabe",
+      "who": "gabe",
+      "text": "Nice swing.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.swing.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b4/79V-CgKtQwCosk9hHe_Yt_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f808-e638-7fe0-8419-344cc47fbcf0"
+    },
+    {
+      "id": "c0.gabe.tanktop",
+      "who": "tanktop",
+      "text": "Gabe? Big guy?",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.gabe.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/QpdE4LusvAJuDsxI-j2tk_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 27630
+      },
+      "timestamps": null,
+      "request_id": "01a0f808-eb89-74a1-ba4a-058511db0000"
+    },
+    {
+      "id": "c0.gabe.fifty",
+      "who": "fifty",
+      "text": "Gabe? Is that you?",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.gabe.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/Bag-qJ1zupluqtvyoCFZg_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f808-f2c5-78d2-9c48-c5c1b0fcd6c7"
+    },
+    {
+      "id": "c0.gabe.shades",
+      "who": "shades",
+      "text": "Gabe? No way.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.gabe.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/oUnPkdbONkdbG2Imd22k__output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f808-f932-7fc0-a2fc-55da23022bdd"
+    },
+    {
+      "id": "c0.gabe.newbalance",
+      "who": "newbalance",
+      "text": "Gabe? Are you okay?",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.gabe.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/aPqO0CLpQL83Tfw3VbleH_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-0055-7af0-838a-122414fa4eda"
+    },
+    {
+      "id": "c0.buddy.gabe",
+      "who": "gabe",
+      "text": "Hey, buddy. Long time.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.buddy.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/Y_wQkBPF6pMVeyBsSh6zj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-0794-7cc2-87f7-527914f32cfc"
+    },
+    {
+      "id": "c0.gabe.redjersey",
+      "who": "redjersey",
+      "text": "Gabe? Buddy?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.gabe.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b6/NIk6VgdZNMnNFeXnuXnzE_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 25122
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-1388-78f1-9290-f0a0f92b7261"
+    },
+    {
+      "id": "i0.what.fifty",
+      "who": "fifty",
+      "text": "Seven months of what?",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.what.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b6/eQ29RBtXS_SfqAFOtWHlu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-1fd5-7f60-a11b-850f85b0b207"
+    },
+    {
+      "id": "c0.down.gabe",
+      "who": "gabe",
+      "text": "Get down. Now.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.down.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b5/AKvhQuCYoJVFui9E1XUhR_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-0d6c-7283-b600-0cb5ae18e496"
+    },
+    {
+      "id": "c0.voice.voice",
+      "who": "voice",
+      "text": "The van's here. Where's the Bear?",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/c0.voice.voice.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b6/1pvgfaRx37wuJJi5blBQG_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 37661
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-198a-75e0-80b2-1fd825385d7d"
+    },
+    {
+      "id": "i0.first.gabe",
+      "who": "gabe",
+      "text": "You first.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.first.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b6/Mg-xlPQWEPWMeYa8Y_gqY_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 19689
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-2551-7e53-aace-643c6cb16506"
+    },
+    {
+      "id": "i0.cost.gabe",
+      "who": "gabe",
+      "text": "You just cost me seven months.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.cost.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b6/B71XCgs_ZJvlgDTonAFw3_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 38915
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-2bd0-7ce3-9ae1-d8807423b87d"
+    },
+    {
+      "id": "i0.why.gabe",
+      "who": "gabe",
+      "text": "Why are five grown men dressed as samurai under Midgley Bridge?",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.why.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b7/Djju1vQgSae1NNdhgi8_Z_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 73605
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-482b-7002-ad3f-02455216d9f5"
+    },
+    {
+      "id": "i0.three.gabe",
+      "who": "gabe",
+      "text": "At three in the morning.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.three.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b7/C3m7rtImPwYwNOiz1Zp3b_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-5817-7d52-a073-fdd01e539082"
+    },
+    {
+      "id": "i0.dark.tanktop",
+      "who": "tanktop",
+      "text": "In our defense, it was very dark. And you were very hairy.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.dark.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b8/j8haWR9qEh4KJnDXjFJKy_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 74859
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-6e3f-77d2-91f5-12caf9cceefc"
+    },
+    {
+      "id": "i0.ronin.fifty",
+      "who": "fifty",
+      "text": "Ronin.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.ronin.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b8/mj1ADO6KG96hzOwFGqMvb_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-5f38-7173-9f5d-3954cf80920d"
+    },
+    {
+      "id": "i0.vo.tanktop",
+      "who": "tanktop",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.vo.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b8/U6uAwBRmFkedGJriAnBBR_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 64828
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-7c9d-77a0-929b-e856a06d7ff7"
+    },
+    {
+      "id": "i0.vo.newbalance",
+      "who": "newbalance",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.vo.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b9/I5bI-g_4NC-Fy3NFYeT96_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 69844
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-9667-7ca1-947b-57482394daec"
+    },
+    {
+      "id": "i0.vo.shades",
+      "who": "shades",
+      "text": "Okay. So. You're wondering how we got here. Fair.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.vo.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b9/xzKh2YFWobV9Le62TCEJe_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-902a-7632-836c-28b3f0477aae"
+    },
+    {
+      "id": "i0.vo.redjersey",
+      "who": "redjersey",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.vo.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b9/vefKmxiI6ed4heVhviIc5_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 66082
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-9c54-7b63-86ac-ade71f3abb42"
+    },
+    {
+      "id": "i0.vo.fifty",
+      "who": "fifty",
+      "text": "Okay. So. You're probably wondering how we got here.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/i0.vo.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5b9/PfVei-SzmeR9CfJIQXIr3_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 64828
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-88e7-7423-b385-2947431a9f79"
+    },
+    {
+      "id": "f1.last.newbalance",
+      "who": "newbalance",
+      "text": "It was the last one.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.last.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ba/gnJi2vb9WSC8lfmLw9BBm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-cac4-7482-9364-fd4c981139bc"
+    },
+    {
+      "id": "f1.seats.clerk",
+      "who": "clerk",
+      "text": "Fifteen-passenger van. We took the back seats out. It seats ten.",
+      "voice": "Will",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.seats.clerk.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ba/nu_jVD3YDgh2BmciTMAby_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-baf1-7002-9619-b20c08893d1d"
+    },
+    {
+      "id": "f1.whale.tanktop",
+      "who": "tanktop",
+      "text": "It's a whale.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.whale.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bb/etYRMn6BydoyTahIiV2an_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 19689
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-db0f-71c3-9964-f8b62ada422c"
+    },
+    {
+      "id": "f1.fuel.newbalance",
+      "who": "newbalance",
+      "text": "Gas first. Then Uptown. I have a list.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.fuel.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bb/-oJW2H_3OkjAxki8np1Oc_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-dbbb-74b1-b485-601f957c7bb3"
+    },
+    {
+      "id": "f1.nice.rattler",
+      "who": "rattler",
+      "text": "Nice van.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.nice.rattler.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bb/LolQl69pj5j6ltsE1tGPk_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-e523-7490-8795-4269a6b5638d"
+    },
+    {
+      "id": "f1.twins.redjersey",
+      "who": "redjersey",
+      "text": "Twins!",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.twins.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bb/F2ULM2MV_n7xrQg6LrJXo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 18435
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-ef8c-75e0-9045-bbe80d7afba0"
+    },
+    {
+      "id": "f1.box.shades",
+      "who": "shades",
+      "text": "What's in the box?",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.box.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bc/n54KA44busjTZRYV1NFVy_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 25122
+      },
+      "timestamps": null,
+      "request_id": "01a0f809-faa1-7f33-bc66-b44e4ccc70ab"
+    },
+    {
+      "id": "f1.boxNo.fifty",
+      "who": "fifty",
+      "text": "Saturday stuff. Don't open it.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.boxNo.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bc/jQvE5F7MdpoNVGp9EaYpj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-03eb-7a01-9736-8fd5c36037de"
+    },
+    {
+      "id": "f1.toast.fifty",
+      "who": "fifty",
+      "text": "For the toast. There were fifty-one.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.toast.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bd/0YYxy_mHedfi-zqYCSwy0_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-29a6-7623-b382-3ac8087d8684"
+    },
+    {
+      "id": "f1.kazoos.redjersey",
+      "who": "redjersey",
+      "text": "Kazoos! Why are there kazoos?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.kazoos.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bd/5EUfHlfXeDa6r19qNAIOj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-2276-7b51-93e2-549c5dfce83c"
+    },
+    {
+      "id": "f1.bridge.fifty",
+      "who": "fifty",
+      "text": "Gabe used to hike here. He sent one photo. Three years ago.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.bridge.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bd/e5ruwjrxzL3n0Js1OeV-t_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 68590
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-3330-7f30-b624-64a0adb43f96"
+    },
+    {
+      "id": "f1.card.fifty",
+      "who": "fifty",
+      "text": "Still no answer, Gabe.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f1.card.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bd/MtAnqfPlEU0uzqInWOxFo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 30138
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-3caf-7c40-8a54-98f738ac0fb9"
+    },
+    {
+      "id": "i1.fleet.gabe",
+      "who": "gabe",
+      "text": "From Canyon Fleet? On 89A?",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i1.fleet.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5be/tXVzOeWBSgTrJCFe7HV6O_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-486e-76f3-af69-a8bff4ceee5a"
+    },
+    {
+      "id": "i1.keep.gabe",
+      "who": "gabe",
+      "text": "Keep going.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i1.keep.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5be/Rxsxku8fVjVpExbvEM4zH_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 18435
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-4d6f-7742-8369-6399ee002a24"
+    },
+    {
+      "id": "f2.phone.redjersey",
+      "who": "redjersey",
+      "text": "New phone. Three test shots. Then we ride.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.phone.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5be/SxA9wfkIosaljDXrDikoR_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-58ca-77e3-94a2-e44afe62a24c"
+    },
+    {
+      "id": "f2.welcome.gabe",
+      "who": "gabe",
+      "text": "Welcome to Sunburst Jeep Tours. Keep your hands in the... oh no.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.welcome.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5be/1q4pbUdlvMuQAD3pbGbgF_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 84054
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-61a9-7a70-98b3-51e500ad334f"
+    },
+    {
+      "id": "f2.film.redjersey",
+      "who": "redjersey",
+      "text": "I'm filming the whole ride. For the group chat.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.film.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bf/t1NHS_lbT9f7bDVLbZ-Yq_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 45602
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-7996-7fd2-832d-bcabada6d863"
+    },
+    {
+      "id": "f2.later.gabe",
+      "who": "gabe",
+      "text": "Tour first. Talk later.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.later.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bf/1TB_vO395snIaRm2vtgcx_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 36407
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-7351-7d41-8abb-6a252fbc8174"
+    },
+    {
+      "id": "f2.card.fifty",
+      "who": "fifty",
+      "text": "You didn't send the card back.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.card.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5be/iB40O-HwHpSYjOIdpWfnj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 30138
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-6805-7133-92c4-52c64dbba567"
+    },
+    {
+      "id": "f2.race.gabe",
+      "who": "gabe",
+      "text": "Race you down. Loser buys the tacos.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.race.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bf/yHE8yn0z9sFHFdy1jufZE_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-8467-7773-9b00-17e05136262e"
+    },
+    {
+      "id": "i2.delete.gabe",
+      "who": "gabe",
+      "text": "You filmed me. Delete it.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i2.delete.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c0/DXVJCf-HV9Yo9YnOptEkq_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 37661
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-a2df-72f2-9c81-8195d17838a9"
+    },
+    {
+      "id": "f2.stop.redjersey",
+      "who": "redjersey",
+      "text": "Hey! Why did you stop?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.stop.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5bf/XzsYpOD3n5r2_9auhan8c_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-925b-7e30-995b-9f2504fda34b"
+    },
+    {
+      "id": "f2.sorry.gabe",
+      "who": "gabe",
+      "text": "Sorry. Something came up.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f2.sorry.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c0/DUbZtvnSzVl-OxoZ0fq6l_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-9865-70b0-8566-9ff198e7124a"
+    },
+    {
+      "id": "i2.post.redjersey",
+      "who": "redjersey",
+      "text": "I didn't post it. I promise.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/i2.post.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c0/SqOq4hVR9RhbET_fw4tEs_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 36407
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-b1f8-7fb0-9ac6-2de09f52d7f5"
+    },
+    {
+      "id": "f3.silly.shades",
+      "who": "shades",
+      "text": "We look ridiculous.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.silly.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c1/XPuZbH-DihX79LojiAhfJ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 30138
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-ce08-7051-99e6-0509ca47c59f"
+    },
+    {
+      "id": "f3.rules.fifty",
+      "who": "fifty",
+      "text": "Costumes stay on till Sunday. House rules.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.rules.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c1/R8Qk9OmQsQCyql0zYwKuo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-c11d-7550-b84e-24493a2195d8"
+    },
+    {
+      "id": "f3.great.tanktop",
+      "who": "tanktop",
+      "text": "We look amazing.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.great.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c1/_LOIrIVDSRgbrX268xMnt_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 27630
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-dd91-7f03-a7fa-14659b71e56c"
+    },
+    {
+      "id": "f3.cheat.shades",
+      "who": "shades",
+      "text": "He moved the eight ball. I saw it.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.cheat.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c1/Jbz6FH4Yw0r2okvwfpN8m_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-e405-7ec1-8c19-7d9983ca3983"
+    },
+    {
+      "id": "f3.samurai.rattler",
+      "who": "rattler",
+      "text": "You calling me a cheat, samurai?",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.samurai.rattler.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c2/Id82AdKitpiAuRwq1OxiH_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 35153
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-f114-7941-a3b2-9774bf1b4c5c"
+    },
+    {
+      "id": "f3.ronin.fifty",
+      "who": "fifty",
+      "text": "Ronin.",
+      "voice": "Eric",
+      "group": true,
+      "src": "audio/dialogue/realistic/f3.ronin.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c2/RUo4NDqSlE72PXo2FjImK_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80a-f8bd-7023-bf8a-2822f6071534"
+    },
+    {
+      "id": "f3.ronin.tanktop",
+      "who": "tanktop",
+      "text": "Ronin.",
+      "voice": "Brian",
+      "group": true,
+      "src": "audio/dialogue/realistic/f3.ronin.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c2/YJTwh9GOwNUh-Z6CTgopO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-0162-79d1-b28b-692272ee1a96"
+    },
+    {
+      "id": "f3.ronin.shades",
+      "who": "shades",
+      "text": "Ronin.",
+      "voice": "Callum",
+      "group": true,
+      "src": "audio/dialogue/realistic/f3.ronin.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c3/XdIZtM_JLRBbtrjlGnOrO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 15927
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-0cc2-7cd0-a30e-b501dc6291c0"
+    },
+    {
+      "id": "f3.ring.fifty",
+      "who": "fifty",
+      "text": "Hey! My ring!",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.ring.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c3/4E5XbEIqQCEdmnKwJCMX9_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 25122
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-1676-7b91-be56-a01e49ad8b51"
+    },
+    {
+      "id": "f3.get.rattler",
+      "who": "rattler",
+      "text": "Get them.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.get.rattler.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c3/1_3H5mOP9iTMxMhfgN4FT_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 14673
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-1c16-72d3-90c2-60db8c854369"
+    },
+    {
+      "id": "f3.fob.newbalance",
+      "who": "newbalance",
+      "text": "I had two sodas. I'm driving.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f3.fob.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c3/7XBKMq_xerz4flCGlSB94_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-22b0-7f32-bb35-950fcee53aff"
+    },
+    {
+      "id": "i3.ring.fifty",
+      "who": "fifty",
+      "text": "He took my ring.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/i3.ring.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c4/HpwOtTbTNrfv9AzR_eToi_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 26376
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-37d8-7a42-9214-746eeb9ccd66"
+    },
+    {
+      "id": "i3.back.gabe",
+      "who": "gabe",
+      "text": "Then we'll get it back.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i3.back.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c4/rKG-Vi4OINDEI57_66b28_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-3d61-7313-9e78-7c1dddaf5584"
+    },
+    {
+      "id": "i3.foam.gabe",
+      "who": "gabe",
+      "text": "You fought Rattler Pruitt. With foam swords.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i3.foam.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c3/7Fy2N-Hdqxyy1vfEXQaZ2_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-28eb-7e13-96d5-50f53e88a8c0"
+    },
+    {
+      "id": "f4.head.fifty",
+      "who": "fifty",
+      "text": "My head. Where is everybody?",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.head.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c4/3pbgIpSflPBLkmaT7wMNd_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-4933-7693-ac7d-0612269ccf0c"
+    },
+    {
+      "id": "f4.creek.newbalance",
+      "who": "newbalance",
+      "text": "I forgot the parking brake. I never forget the parking brake.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.creek.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c4/f7TRBqiHkbEvoHermLc83_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 69844
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-52c8-7111-810b-18393fd834a2"
+    },
+    {
+      "id": "f4.leave.fifty",
+      "who": "fifty",
+      "text": "Leave it. Look around.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.leave.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c5/Tjm9Ot5Re65S57SIbJfp6_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-6a1a-73a0-8365-be60a498ee26"
+    },
+    {
+      "id": "f4.dice.shades",
+      "who": "shades",
+      "text": "We don't have fuzzy dice.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.dice.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c5/kZYpAwhAxh_aRtzmVfHOq_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 32645
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-6abc-7cc0-b59f-77a7eaf00edc"
+    },
+    {
+      "id": "f4.bumper.tanktop",
+      "who": "tanktop",
+      "text": "The bumper fell off.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.bumper.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c5/WnW4rP1wkJL8zkKnaPAvl_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 25122
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-5d6a-7180-bacb-788eed51231c"
+    },
+    {
+      "id": "f4.tag.newbalance",
+      "who": "newbalance",
+      "text": "This tag says 4471. Ours was 4417.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.tag.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c6/e_a4DXVxkTPN1Qaus1i2q_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 84054
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-7f71-70c3-8d8b-ac14888a874f"
+    },
+    {
+      "id": "f4.box.tanktop",
+      "who": "tanktop",
+      "text": "A steel box. Heavy. Locked.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.box.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c6/rMZove_gDuBN1jeoZZdb8_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 50618
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-8738-75c2-a097-401a49f16a4e"
+    },
+    {
+      "id": "f4.flash.shades",
+      "who": "shades",
+      "text": "A flash photo. That's Gabe. On a ledge. In neon.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.flash.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c6/4XqWPmcF5ILCksaweLVzR_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 78621
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-8ca4-7ce0-9677-49f9608b3bb3"
+    },
+    {
+      "id": "f4.rj.fifty",
+      "who": "fifty",
+      "text": "Red Jersey is gone. His last photos show the Uptown clock.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.rj.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c6/K-yHB-NGs4QKwpjAXmj_v_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-9b3c-7e03-9a1f-0557a7a36e58"
+    },
+    {
+      "id": "f4.rail.fifty",
+      "who": "fifty",
+      "text": "Then a bridge rail over the creek.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.rail.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c7/262qS9dFUoQbF1fXgzhaL_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 36407
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-a610-7651-8756-ed53c6b9164f"
+    },
+    {
+      "id": "f4.found.shades",
+      "who": "shades",
+      "text": "Found him. He is hugging a flamingo.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.found.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c7/Y4jLjfLA6A8AAG0hUTT4l_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-b13a-7452-bf15-2b10975fe6da"
+    },
+    {
+      "id": "f4.sunrise.redjersey",
+      "who": "redjersey",
+      "text": "I saw the sunrise. It was very important.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.sunrise.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c7/ocRoZpZLnU4CKRZvYC-uh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 51871
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-b6e9-7612-afe4-e43c21cec415"
+    },
+    {
+      "id": "f4.theory.shades",
+      "who": "shades",
+      "text": "BEAR at the bridge. He's with them.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.theory.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c7/5j06Fr0EtuuE3rBYbSsAH_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-c4af-7432-813d-20f2c1de95b1"
+    },
+    {
+      "id": "f4.first.fifty",
+      "who": "fifty",
+      "text": "Then I want to hear him say it. The first is tonight.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.first.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c8/asCQ3WGyV5OgDg2NDewFd_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-d6fe-79f3-bee1-0120e88d8993"
+    },
+    {
+      "id": "f4.police.newbalance",
+      "who": "newbalance",
+      "text": "We should call the police.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f4.police.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c8/M64zNU1nGcxAPbbg9wjxu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 26376
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-d20d-7b82-845a-8db5874a90f1"
+    },
+    {
+      "id": "i4.box.voice",
+      "who": "voice",
+      "text": "Box isn't in the van.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/i4.box.voice.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c8/DcENfifO8QWALlJ7OKiNw_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-dc9b-7983-b1a3-36e2230c2a7c"
+    },
+    {
+      "id": "f5.ours.shades",
+      "who": "shades",
+      "text": "That's our van. So what are we driving?",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.ours.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c8/bTq0eODDyBqT2DycGMkyr_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-e1cb-77c1-a5a6-5fa138d46749"
+    },
+    {
+      "id": "f5.lose.newbalance",
+      "who": "newbalance",
+      "text": "Pickup and a black SUV. They want the box.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.lose.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c9/4Qa5Fz9KQx8QsgB5rQuLM_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-f582-73e0-a6a6-771254626f03"
+    },
+    {
+      "id": "f5.soap.redjersey",
+      "who": "redjersey",
+      "text": "BRING IT BACK. Bring what back?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.soap.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c8/DGVty7Y7X80KDUZSIeDFi_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-f0ad-74e1-9acf-b2a81c2fb160"
+    },
+    {
+      "id": "f5.hide.tanktop",
+      "who": "tanktop",
+      "text": "The hot tub cover. Nobody looks there.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.hide.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c9/4oY8lGtBmYq_emO_5LBXp_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 46856
+      },
+      "timestamps": null,
+      "request_id": "01a0f80b-fa4b-7c42-bae7-8e9b9f4a7313"
+    },
+    {
+      "id": "f5.lot.fifty",
+      "who": "fifty",
+      "text": "Midgley lot. We wait. We see who comes.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.lot.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c9/rVuXDjqgPtF89gdyUhJxS_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-09a6-74c3-ba0b-bda5f1293197"
+    },
+    {
+      "id": "f5.roar.redjersey",
+      "who": "redjersey",
+      "text": "Was that a bear?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.roar.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c9/c1ObH-IKHW4DASfblSVEJ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-0e63-7140-8362-675959c3d4d6"
+    },
+    {
+      "id": "f5.figure.newbalance",
+      "who": "newbalance",
+      "text": "Someone's up on that ledge.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.figure.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5c9/8r32MbsQJFHJ7MDWRVy91_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-0f59-76b0-aa1c-dd93796674cf"
+    },
+    {
+      "id": "f5.flash.tanktop",
+      "who": "tanktop",
+      "text": "He's taking pictures of our van.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.flash.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ca/F72fWDfliEl8xPAP3u9F4_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-1bd7-7983-aee0-92bc1c8b0483"
+    },
+    {
+      "id": "f5.shot.shades",
+      "who": "shades",
+      "text": "Got him. Neon. On the Perch.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.shot.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ca/gpv7ScrdaRFCidehkYzQ5_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 50618
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-24ad-7651-b044-1e24b05736e8"
+    },
+    {
+      "id": "f5.drive.gabe",
+      "who": "gabe",
+      "text": "Get back in your van and drive away.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.drive.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ca/4dv6k9FPFnr1xbZDnasLS_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-3cac-7ce0-8899-43bfdd955d97"
+    },
+    {
+      "id": "f5.bear.shades",
+      "who": "shades",
+      "text": "Not until you tell us about the Bear.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.bear.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cb/M_409EJq5T96JxD7y_5iu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-555c-7550-9afe-eaf64f3e4b0b"
+    },
+    {
+      "id": "f5.bear.fifty",
+      "who": "fifty",
+      "text": "Not until you tell us about the Bear.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.bear.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cb/l9iUuRq8m0VtJbaoaSVaL_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 35153
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-4c87-7302-b9a6-0817d1988b9a"
+    },
+    {
+      "id": "f5.bear.tanktop",
+      "who": "tanktop",
+      "text": "Not until you tell us about the Bear, pal.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.bear.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cb/aR9CppRKNvZnz2AaxokaF_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-46e8-7070-a35e-96afffcb64d4"
+    },
+    {
+      "id": "f5.bear.newbalance",
+      "who": "newbalance",
+      "text": "Not until you tell us about the Bear.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.bear.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cc/9ipejX1NBBFxHN0dh4idb_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 38915
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-6c19-7733-bfa4-25dd1dab50f6"
+    },
+    {
+      "id": "i5.back.gabe",
+      "who": "gabe",
+      "text": "They'll come back for that box. And for you.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.back.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cd/_LSr3nkAbemVi_mWC5YF0_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 50618
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-a296-7630-9b90-849e7d84f89a"
+    },
+    {
+      "id": "i5.leave.voice",
+      "who": "voice",
+      "text": "Leave it. Find the box.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.leave.voice.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cd/0mgJpyPA-L6uZehfMt88d_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 35153
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-950b-7482-ba28-bbbf429a8cc9"
+    },
+    {
+      "id": "f5.bear.redjersey",
+      "who": "redjersey",
+      "text": "Not until you tell us about the Bear.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.bear.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cc/FX_sP9GvxW44omjosIQVe_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 36407
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-762d-7ca3-be56-fda5c3bf1923"
+    },
+    {
+      "id": "f5.iam.gabe",
+      "who": "gabe",
+      "text": "I am the Bear.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/f5.iam.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cc/X_MWmCyEhWXTTu2Y7jtMP_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 26376
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-7d5b-7ae1-94d4-a95eef64dcfd"
+    },
+    {
+      "id": "i5.sorry.tanktop",
+      "who": "tanktop",
+      "text": "Is this where you say sorry for the bear thing?",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.sorry.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cd/6kKrHQLEQJmgrxQ4eoEaP_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-b0be-78b2-8710-0d4c01637f0e"
+    },
+    {
+      "id": "i5.foam.gabe",
+      "who": "gabe",
+      "text": "You hit me with a foam sword for ten minutes.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.foam.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ce/A0EWS92TJp2TwMBdueWxV_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 55633
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-c738-7b51-849c-1ece87fcdd8e"
+    },
+    {
+      "id": "i5.longer.newbalance",
+      "who": "newbalance",
+      "text": "It felt longer.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.longer.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cf/jWZM3HOmNUJtGNc_Xz3yF_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-ebe1-7821-b711-3a12665df418"
+    },
+    {
+      "id": "i5.longer.tanktop",
+      "who": "tanktop",
+      "text": "It felt longer.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.longer.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ce/Pz-LPey4TDkPAOS6YHQQ7_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-cfea-7512-9e5d-1b7dec550136"
+    },
+    {
+      "id": "i5.longer.fifty",
+      "who": "fifty",
+      "text": "It felt longer.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.longer.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ce/S9h0e18b8ORU_PO2mVle0_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-d9b9-7e21-b4e4-a59757ca7099"
+    },
+    {
+      "id": "i5.longer.shades",
+      "who": "shades",
+      "text": "It felt longer.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.longer.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cf/GiGkJckXtbVXJt7WYZisa_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-e2ca-7d53-8b0f-34992169634b"
+    },
+    {
+      "id": "i5.longer.redjersey",
+      "who": "redjersey",
+      "text": "It felt longer.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/i5.longer.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5cf/-CdbpF6BDcSPU2IaIKvVQ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80c-fba3-7320-87eb-69be82d98c18"
+    },
+    {
+      "id": "p1.drive.newbalance",
+      "who": "newbalance",
+      "text": "I've been up twenty-two hours. You drive.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.drive.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d0/7WsR8Qv03iU2S6sq47BTc_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-151c-7690-bd05-6e54d29fb7b2"
+    },
+    {
+      "id": "p1.driveNB.shades",
+      "who": "shades",
+      "text": "You're the careful one, New Balance. You drive.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.driveNB.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d0/WmDG6-NwlCSTqc5aJqsBC_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-2135-78f0-aec1-332712f543c5"
+    },
+    {
+      "id": "p1.start.tanktop",
+      "who": "tanktop",
+      "text": "Talk, big guy. We are listening.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.start.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d0/qdyk7sBI9WAo0S6OCi6EO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-2923-7ca2-930b-dd249eb797f4"
+    },
+    {
+      "id": "p1.start.fifty",
+      "who": "fifty",
+      "text": "Start at the start, Gabe. All of it.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.start.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d1/qzPCaDccwkNBF31W8et3o_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-33d7-7650-952a-79e705103c7f"
+    },
+    {
+      "id": "p1.start.newbalance",
+      "who": "newbalance",
+      "text": "Slowly, Gabe. From the start.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.start.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d1/f_M6RsKmjyRjb3fU53Cqj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-4172-7900-a076-df9327216837"
+    },
+    {
+      "id": "p1.start.shades",
+      "who": "shades",
+      "text": "Start talking, Gabe. All of it.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.start.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d1/QtszbjEKhWSv-h8GCjPzc_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-3aa9-7952-a151-f34c6dbd12f7"
+    },
+    {
+      "id": "p1.start.redjersey",
+      "who": "redjersey",
+      "text": "Okay. Story time. From the start.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.start.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d1/0B2wOV7vHSD8xzLRJatHD_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 46856
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-4e5e-7de1-857f-972dcbc75287"
+    },
+    {
+      "id": "p1.g1.gabe",
+      "who": "gabe",
+      "text": "Sunline Staffing posts job ads. Resort work. Good pay.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.g1.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d2/A1ib5K_c57YG8Kg9NrEsB_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 78621
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-5842-7ef3-abea-b0910fc2b819"
+    },
+    {
+      "id": "p1.g2.gabe",
+      "who": "gabe",
+      "text": "People come. Sunline takes their phones and IDs. For safekeeping.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.g2.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d2/wdYwubxz_u2VrY9g_ldwo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 79875
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-63fd-7832-bcd4-e2b42255f4ac"
+    },
+    {
+      "id": "p1.g4.gabe",
+      "who": "gabe",
+      "text": "The vans move people on the first of the month. At night.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.g4.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d2/sIJ2Ax6HXspskHkxAPK9K_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-7198-78b3-af37-a82225e29ee3"
+    },
+    {
+      "id": "p1.g3.gabe",
+      "who": "gabe",
+      "text": "Then they work at a ranch up FR 9. Nobody pays them.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.g3.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d2/CCAvxSaBxv8tKmNdqP3jU_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 66082
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-6b6d-7423-a16f-5da04898f751"
+    },
+    {
+      "id": "p1.wall.gabe",
+      "who": "gabe",
+      "text": "Two photos. Same minute. Wrong people.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.wall.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d3/14QdSPAyCOggBIdSOZwqh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 56887
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-89e1-7da0-97ed-46c89062f5cd"
+    },
+    {
+      "id": "p1.g5.gabe",
+      "who": "gabe",
+      "text": "Once a month I meet an FBI agent. She says, 'Not enough yet.'",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.g5.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d3/iyeuS688VrKP0TiWE8Z5D_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 82382
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-7c04-7f83-ba3f-c710039f1b14"
+    },
+    {
+      "id": "p1.neon.gabe",
+      "who": "gabe",
+      "text": "So drivers see me on 89A at night. And so they know the Bear is watching.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.neon.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d3/7594vWb1s_vdZP9GmYrG7_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 97847
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-8f33-7d70-a404-0724a55b1bfb"
+    },
+    {
+      "id": "p1.why1.gabe",
+      "who": "gabe",
+      "text": "I drove jeep tours past that lot every first of the month.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.why1.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d3/j6IpfwzY7IEfmVaU6lCQD_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-9840-7162-9eb6-286ad42ed878"
+    },
+    {
+      "id": "p1.card.gabe",
+      "who": "gabe",
+      "text": "Your wedding is on the first. I can't leave the bridge on the first.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.card.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d4/X1z98X8jwYeJc79vYtfa1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 69844
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-afce-7d52-8244-614038138c66"
+    },
+    {
+      "id": "p1.why2.gabe",
+      "who": "gabe",
+      "text": "Same vans. Same hour. I started writing plates down.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.why2.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d4/LleiBxPHQnkBvRhGbII7X_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-a606-7ad3-9810-f3e120fdf50d"
+    },
+    {
+      "id": "p1.cut.tanktop",
+      "who": "tanktop",
+      "text": "Bolt cutters. Stand back.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.cut.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d4/eUUAIRJBsoXlMwukIGRYM_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 33899
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-b588-73b2-9d14-2d6eedb3ab37"
+    },
+    {
+      "id": "p1.ids.shades",
+      "who": "shades",
+      "text": "IDs. Ten of them. And a note.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.ids.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d4/DxWhEa1q_6WKexbNahnl__output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-c643-7830-bd30-ca1a0acf7deb"
+    },
+    {
+      "id": "p1.ten.gabe",
+      "who": "gabe",
+      "text": "Ten. They're alive. And they're asking.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.ten.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d5/Z9Ouyvt2d_qdSOZqluqeE_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 60649
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-d185-79b2-a4fb-1d8397ff79f0"
+    },
+    {
+      "id": "p1.plan.fifty",
+      "who": "fifty",
+      "text": "New plan.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.plan.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d5/S1Zdr2P9gfCob2DL8HH2q_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-d757-7163-869f-e2d873376b34"
+    },
+    {
+      "id": "p1.wrong.shades",
+      "who": "shades",
+      "text": "I was wrong about you. I'm working on it.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.wrong.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d5/Hf6FnDAFlsFtEjGnAI8Qo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-eca9-77a3-a726-8db0274eed16"
+    },
+    {
+      "id": "p1.staff.gabe",
+      "who": "gabe",
+      "text": "Hit things with it. Only bad things.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.staff.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/yL8REqlHbqh6Z7LO1LUZ6_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 50618
+      },
+      "timestamps": null,
+      "request_id": "01a0f80d-f766-7ae3-a480-a15ab89fc703"
+    },
+    {
+      "id": "p2.ronin.fifty",
+      "who": "fifty",
+      "text": "Ronin.",
+      "voice": "Eric",
+      "group": true,
+      "src": "audio/dialogue/realistic/p2.ronin.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/wxhFPtrSu48YnY0IkO-8a_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-0b36-74c0-b758-7d84b0599765"
+    },
+    {
+      "id": "p2.five.vance",
+      "who": "vance",
+      "text": "Gabe. You brought five samurai.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.five.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/Jd3heaxYS8DBmzxi9OxVR_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-05e0-7273-b543-9d9bddfc9611"
+    },
+    {
+      "id": "p1.bear.tanktop",
+      "who": "tanktop",
+      "text": "You turned into a bear.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.bear.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/vtTbEjBgsJ136a_azuCqG_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 30138
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-0363-7580-894a-b4559bc0ddae"
+    },
+    {
+      "id": "p1.water.gabe",
+      "who": "gabe",
+      "text": "Sedona does that. Drink more water.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p1.water.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/kw6THKt8R3DlMYR4BmBOP_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-08f6-72d0-99c6-95b504862cb9"
+    },
+    {
+      "id": "p2.ronin.shades",
+      "who": "shades",
+      "text": "Ronin.",
+      "voice": "Callum",
+      "group": true,
+      "src": "audio/dialogue/realistic/p2.ronin.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d7/cTOTxwG65PKTlGB9iPMYi_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 15927
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-21a5-7ac2-b74d-9dae398ceba5"
+    },
+    {
+      "id": "p2.ronin.tanktop",
+      "who": "tanktop",
+      "text": "Ronin.",
+      "voice": "Brian",
+      "group": true,
+      "src": "audio/dialogue/realistic/p2.ronin.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d6/m5yCRer7BTniQ2kfwY1SV_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-1a6c-7e42-b926-14fc876c8c23"
+    },
+    {
+      "id": "p2.need.vance",
+      "who": "vance",
+      "text": "I need a face, a place, and a date.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.need.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d7/fZuvYGJA1lhP8C-YMDek7_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-2847-75d2-99ce-5e2524f82902"
+    },
+    {
+      "id": "p2.how.vance",
+      "who": "vance",
+      "text": "Photos. From far away. Then you call me. You do not play hero.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.how.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d7/yQuazkDaemSiAJ-rEcMb4_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 95339
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-3845-7843-a5f5-27e1b12c53f7"
+    },
+    {
+      "id": "p2.hero.tanktop",
+      "who": "tanktop",
+      "text": "What if we play hero a little?",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.hero.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d7/mhna6CNzvDcdKEdn-WHO5_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 32645
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-3e04-78c2-8e1d-feb658c68745"
+    },
+    {
+      "id": "p2.rule1.vance",
+      "who": "vance",
+      "text": "The people they hold are not a story for your party.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.rule1.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d8/yYrpEhY5bEtCnIgZy4G88_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 55633
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-545a-7fa0-9760-259dface2790"
+    },
+    {
+      "id": "p2.arrest.vance",
+      "who": "vance",
+      "text": "Then I arrest you a little.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.arrest.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d8/Q7coMtF6n8vIu1L6tIYvZ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-44b4-7e32-971a-b4023963d8a2"
+    },
+    {
+      "id": "p2.rule2.vance",
+      "who": "vance",
+      "text": "They are people who want to go home.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.rule2.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d8/k9lBgSI3ibeJWgH-_NKoo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-5995-7a72-baa8-cd5538d53a04"
+    },
+    {
+      "id": "p3.plan.shades",
+      "who": "shades",
+      "text": "Red Jersey goes in for the open call. We watch from the van.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.plan.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d9/DDcU6_iwyRDrlItw80Vwb_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-74a6-7f81-8599-6ebd69edca12"
+    },
+    {
+      "id": "p2.call.vance",
+      "who": "vance",
+      "text": "You call me first. Every time.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.call.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d9/9L_pTKg30RGLt-GFPsWOm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 45602
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-6f17-7111-8b54-9c2b52f69895"
+    },
+    {
+      "id": "p2.van.vance",
+      "who": "vance",
+      "text": "It's theirs? Keep driving it. To them, you're one of theirs.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p2.van.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d9/znRZBGCQvfHNeqPz6vQfu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 71098
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-69c5-75d2-83d8-dcbfd344dde7"
+    },
+    {
+      "id": "p3.clerk.clerk",
+      "who": "clerk",
+      "text": "Leave your phone and your ID with us.",
+      "voice": "Will",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.clerk.clerk.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d9/fJ_B9n5oaUrNyABdHvSUi_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-8325-7032-b6e3-ad70284eb2da"
+    },
+    {
+      "id": "p3.keep.redjersey",
+      "who": "redjersey",
+      "text": "I'll keep my phone.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.keep.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5d9/2oK672qzLgL9s9q927REO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 20942
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-8d0f-7be1-a45d-86693db84c6a"
+    },
+    {
+      "id": "p3.here.gabe",
+      "who": "gabe",
+      "text": "White hat. Cane. That's Voss.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.here.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5da/fMG5DJEh2tVfMv5ctU-T1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 50618
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-9701-7b91-b49b-8c7c724aeeef"
+    },
+    {
+      "id": "p3.how.voss",
+      "who": "voss",
+      "text": "How many this month?",
+      "voice": "Daniel",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.how.voss.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5da/WhZRrxkZnYtrq94VzoEuO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-a119-7302-af79-5a3392960175"
+    },
+    {
+      "id": "p3.four.gang",
+      "who": "gang",
+      "text": "Four.",
+      "voice": "Charlie",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.four.gang.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5da/8g5zJehQGmKjUgBZQpTjF_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 14673
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-b103-7cc1-a26e-7bc8ec7d9e1e"
+    },
+    {
+      "id": "p3.cost.voss",
+      "who": "voss",
+      "text": "Good. Labor is our biggest cost.",
+      "voice": "Daniel",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.cost.voss.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5db/wPXcVhO8Bm8ZH-UhTpkGv_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-bba4-7dc2-87c6-4bd93a3cd296"
+    },
+    {
+      "id": "p4.tail.gabe",
+      "who": "gabe",
+      "text": "Stay back. He checks his mirrors. He's done this for years.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p4.tail.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5db/R8kO9bi7KOE7g_1Lsxfid_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 74859
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-c6c5-7f80-990a-b0b3ec92a494"
+    },
+    {
+      "id": "p3.got.shades",
+      "who": "shades",
+      "text": "Face. Clear. He never stops smiling.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p3.got.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5db/LkhHaE78WgB-_BoUCXeCn_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 63574
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-c241-7e40-a2d7-caac568e8170"
+    },
+    {
+      "id": "p4.turn.redjersey",
+      "who": "redjersey",
+      "text": "He's turning onto FR 9.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p4.turn.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5db/mrI0uJILKgu8RO0v9zBqo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 35153
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-d6a3-7ae3-a234-dca210f0ed76"
+    },
+    {
+      "id": "p4.park.newbalance",
+      "who": "newbalance",
+      "text": "Park at the turnout. We walk from here.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p4.park.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dc/WKwsMiJEUWWl7HE2ErM1x_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-dc81-7c12-932e-02e57d7598a8"
+    },
+    {
+      "id": "p4.sign.shades",
+      "who": "shades",
+      "text": "Hart Ranch. No trespassing. That is half a place.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p4.sign.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dc/yTzYMZKSgXR3g9Ng99z4M_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 69844
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-e586-72d1-b010-e71c7e4e3378"
+    },
+    {
+      "id": "p5.pipe.gabe",
+      "who": "gabe",
+      "text": "Take the pipe. People run from bears.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.pipe.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dc/n95OmviNEWFB4-FClKyvN_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-eef6-7951-939b-b52d3f89df0e"
+    },
+    {
+      "id": "p5.lens.shades",
+      "who": "shades",
+      "text": "Long lens. From up here I can read the padlock.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.lens.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dd/VYvWLcGhLHlPZKtfqAr56_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 64828
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-0732-7d91-9f75-d3ca39935eee"
+    },
+    {
+      "id": "p5.hike.gabe",
+      "who": "gabe",
+      "text": "Ridge trail. Quiet feet. We watch from the top.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.hike.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dc/swLUJuiTZ7ywAniBmkkWO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f80e-fd4a-7a03-a04b-af392df1ec1d"
+    },
+    {
+      "id": "p5.list.gabe",
+      "who": "gabe",
+      "text": "Bunkhouse door. Van plates. A guard. The generator shed.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.list.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dd/ofivumTGqheamPcb283UO_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 86562
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-141f-79f1-968b-3e94148912cd"
+    },
+    {
+      "id": "p5.patrol.gabe",
+      "who": "gabe",
+      "text": "Flashlight. Coming up the trail. Get low.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.patrol.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5dd/sa7ImwZNQgmxqfGtlDPAh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-23c8-70d1-a19a-595ba928f9fe"
+    },
+    {
+      "id": "p6.end.fifty",
+      "who": "fifty",
+      "text": "I thought getting married meant the end of this.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.end.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5de/TYtsZTmAqVF-0cI6Yem9V_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 41422
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-4211-71b3-aa0f-9ba3fb412b3c"
+    },
+    {
+      "id": "p5.marks.shades",
+      "who": "shades",
+      "text": "Their routes are in the photos now.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p5.marks.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5de/58nk_RIPIBMyH6GfIoK6D_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 32645
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-3367-7803-ae36-b0b101c083d5"
+    },
+    {
+      "id": "p6.ten.newbalance",
+      "who": "newbalance",
+      "text": "It seats ten.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.ten.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5df/198IdVvD7RzNwzV6MDYEb_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 20942
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-58c9-7ee0-9ff0-e57596580806"
+    },
+    {
+      "id": "p6.never.tanktop",
+      "who": "tanktop",
+      "text": "This never ends. It just needs a bigger van.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.never.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5df/-bt0LTmt_SsqEIMoGT6Bd_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-535a-72f1-abbb-0911f02e3fdf"
+    },
+    {
+      "id": "p6.know.fifty",
+      "who": "fifty",
+      "text": "We know.",
+      "voice": "Eric",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.know.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5df/fkjPuCKPcFvilNqksYQ_i_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-6473-7772-b7f4-5f0d511c9946"
+    },
+    {
+      "id": "p6.know.shades",
+      "who": "shades",
+      "text": "We know.",
+      "voice": "Callum",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.know.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5df/0065AQrW9lcTeUfcd8sMy_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 15927
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-71ac-7ad3-acc0-0ae4651cc6bf"
+    },
+    {
+      "id": "p6.know.tanktop",
+      "who": "tanktop",
+      "text": "We know.",
+      "voice": "Brian",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.know.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5df/wj_gdLixE9JWZIHqGLq_X_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-6f82-7de1-bc89-467329f951be"
+    },
+    {
+      "id": "p6.post.redjersey",
+      "who": "redjersey",
+      "text": "Can I post this?",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.post.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e0/aK1UskpMCfM0368niMipa_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-7ac4-7623-a10c-104d821b846b"
+    },
+    {
+      "id": "p6.no.fifty",
+      "who": "fifty",
+      "text": "No.",
+      "voice": "Eric",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.no.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e0/LXOXGSslzuNxIwcMVtGK-_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-8694-7b12-917f-dda4b269a0b1"
+    },
+    {
+      "id": "p6.no.tanktop",
+      "who": "tanktop",
+      "text": "No.",
+      "voice": "Brian",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.no.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e0/4N7AwZXZtFrcLc3Ur4aGY_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 14673
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-933d-7b72-859a-f1ee39408042"
+    },
+    {
+      "id": "p6.ring.fifty",
+      "who": "fifty",
+      "text": "That was my grandpa's.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.ring.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e1/6qh2QmRl7ABuf7d9X5pmf_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-b354-7951-a542-6f22eae01779"
+    },
+    {
+      "id": "p6.want.rattler",
+      "who": "rattler",
+      "text": "I want my van, my box, and my Bear.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.want.rattler.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e1/iOG4AY1X3CX4EhU44Hz1t_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-a9b7-71c2-a1b7-ebf668b9d2b6"
+    },
+    {
+      "id": "p6.no.shades",
+      "who": "shades",
+      "text": "No.",
+      "voice": "Callum",
+      "group": true,
+      "src": "audio/dialogue/realistic/p6.no.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e1/DkVG_yfBesz572HDoWWJE_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 14673
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-a081-7fe1-ac8e-24adf08e94db"
+    },
+    {
+      "id": "p6.weepers.tanktop",
+      "who": "tanktop",
+      "text": "Losers weepers.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.weepers.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e2/3juIVy81ZLAKqw1REPRDz_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 25122
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-c7d9-7ad0-9aee-f223c29a5926"
+    },
+    {
+      "id": "p6.keepers.rattler",
+      "who": "rattler",
+      "text": "Finders keepers.",
+      "voice": "George",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.keepers.rattler.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e1/Ezd_0TuQDjN4okf_WBLOT_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-be01-7a70-84f8-06593cf60fed"
+    },
+    {
+      "id": "p6.photos.vance",
+      "who": "vance",
+      "text": "I said photos.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.photos.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e2/DLl83CemuTez4OlgWbIKa_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 26376
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-d131-75b1-9b7d-889f5bfaff3f"
+    },
+    {
+      "id": "p6.bed.vance",
+      "who": "vance",
+      "text": "That is a date. Good work. Now go to bed.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.bed.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e2/kdphBCMIjfCF37QasCB50_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-e687-7201-8d5c-93ff769ad090"
+    },
+    {
+      "id": "p7.view.redjersey",
+      "who": "redjersey",
+      "text": "Everybody says you feel something up here.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.view.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e3/ucm5VeTbE3smwbF7i_feE_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-f0af-7f42-9600-95e8b3f83169"
+    },
+    {
+      "id": "p6.key.vance",
+      "who": "vance",
+      "text": "And a key to a white van. Your van, I think. I keep it for now.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p6.key.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e2/ipjtv1rnpWaNDN_bXWoJd_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 86562
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-dbfd-7511-9e5a-72eac1835776"
+    },
+    {
+      "id": "p7.best.fifty",
+      "who": "fifty",
+      "text": "Will you be my best man?",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.best.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e3/16RUmTmO-jStT0j72bvtS_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f80f-ff51-7d01-b527-89111843b009"
+    },
+    {
+      "id": "p7.ask.gabe",
+      "who": "gabe",
+      "text": "Ask me when this is over.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.ask.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e3/RNpwGDczNME9c4MnSaXAL_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-0cb6-78a2-9aa3-70964716533f"
+    },
+    {
+      "id": "p7.call1.vance",
+      "who": "vance",
+      "text": "Voss knows we have Rattler. He is moving everyone tonight. Early.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.call1.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e4/n7_8NNxugzvHOYZYw6GFm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 78621
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-2564-7af3-915b-98c74fc16f3c"
+    },
+    {
+      "id": "p7.photo.redjersey",
+      "who": "redjersey",
+      "text": "Group photo. Ten second timer. Run!",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.photo.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e4/1zV5bL1rdkk1gf9qcFZMo_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-1ab7-7671-8117-ab63598901e0"
+    },
+    {
+      "id": "p7.call2.vance",
+      "who": "vance",
+      "text": "The judge signs at eight a.m. My agents move now.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.call2.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e4/nkwi7fmROadkX1AbU2cvu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 67336
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-2e63-7273-905c-95977ec41459"
+    },
+    {
+      "id": "p7.road.newbalance",
+      "who": "newbalance",
+      "text": "So we don't go near the ranch. We go near the road.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.road.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e5/vU1a_70V7u-9TCyPNsP4N_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-493c-7001-8d33-32120e58752f"
+    },
+    {
+      "id": "p7.call3.vance",
+      "who": "vance",
+      "text": "I need eyes on the road. Watch it. Do not go near that ranch.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p7.call3.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e5/ygz1NPQHjhxdeA9Z-15s1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 73605
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-3aad-7ab3-a3be-69f9cf4cabac"
+    },
+    {
+      "id": "p8.van.gabe",
+      "who": "gabe",
+      "text": "Sunline van at pump four. You're a gang van too. Park beside it.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p8.van.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e5/5VSC6ht8zuaX3yAuSSKra_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 79875
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-3c4f-7141-b3b5-02213d5b96e8"
+    },
+    {
+      "id": "p8.take.redjersey",
+      "who": "redjersey",
+      "text": "Take it. It has eleven thousand followers.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p8.take.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e5/l3-J2WfKaz3dqaLp3gVOf_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-4e4a-7d50-aa21-9e231015083f"
+    },
+    {
+      "id": "p8.plant.shades",
+      "who": "shades",
+      "text": "Wheel well. Tape. Done.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p8.plant.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e5/cpTw_HdptEjoWyGHiUnVH_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 41422
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-5550-7c42-b6db-c9d333d7188e"
+    },
+    {
+      "id": "p8.call.vance",
+      "who": "vance",
+      "text": "I see it too. We watch it together.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p8.call.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e6/kXTVz72yQjyIPKf9-cGtL_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-70d2-7ae2-adb9-1c5ef2c00749"
+    },
+    {
+      "id": "p8.dot.newbalance",
+      "who": "newbalance",
+      "text": "The convoy is a dot on the map now.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p8.dot.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e6/ERikw2GsAQ3lqdvBJiahS_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-69d4-7590-ad96-33f67ec2e00e"
+    },
+    {
+      "id": "p9.whale.vance",
+      "who": "vance",
+      "text": "Your van. Try not to hit anything.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.whale.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e6/v_iXKsb2Gf5n4W0HltTn6_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 45602
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-7d16-7600-81a5-d06c98be489d"
+    },
+    {
+      "id": "p9.moves.radio",
+      "who": "radio",
+      "text": "The convoy is moving. SUV, one white van, one pickup.",
+      "voice": "Will",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.moves.radio.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e7/Th6FM2RIb6zdMe1P73Y_j_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 84054
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-9130-7973-980f-cfae7bee0d2b"
+    },
+    {
+      "id": "p9.bags.newbalance",
+      "who": "newbalance",
+      "text": "Trash bags on the windows. One mirror. She is beautiful.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.bags.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e7/c09Qx0K0JHTOMMZk8lyGu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 78621
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-8a82-7963-b379-2d00421df280"
+    },
+    {
+      "id": "p9.careful.newbalance",
+      "who": "newbalance",
+      "text": "Careful isn't the same as scared.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.careful.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e7/d0Eza-Ologtr60Lq-TLjM_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-98ea-7d42-8445-3f7c8fa254e3"
+    },
+    {
+      "id": "p9.jeep.redjersey",
+      "who": "redjersey",
+      "text": "Gabe's jeep. On the bridge. Sideways.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.jeep.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e8/zKAVzESKrOcjfq0rii_Wn_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 56887
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-b219-7642-aa53-37c32e4f4b4b"
+    },
+    {
+      "id": "p9.pickup.shades",
+      "who": "shades",
+      "text": "The pickup is out. Only the van and the SUV now.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.pickup.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e7/GkvI1fnZzXBdTmoi5UC0R_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-a7ac-79a3-aac9-9e41a6fa14e3"
+    },
+    {
+      "id": "p9.uturn.shades",
+      "who": "shades",
+      "text": "The SUV is turning back. Let him go. The van matters.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.uturn.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e8/EwzEhRr06BR-yzjT9zxA3_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 72351
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-bb5b-7903-a156-3cd724f2fb4f"
+    },
+    {
+      "id": "p9.follow.newbalance",
+      "who": "newbalance",
+      "text": "Follow it in. Slow. Like parking.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.follow.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e8/k-3ef_vajAHCUSeyvArYm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-c22e-7d91-aa45-c8da836ed9d8"
+    },
+    {
+      "id": "p9.dana1.dana",
+      "who": "dana",
+      "text": "I am Dana. I wrote the note.",
+      "voice": "Laura",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.dana1.dana.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e9/d0_LEuGuqbauO116mI5PQ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 38915
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-e174-7840-83a8-4c8d6a0e6290"
+    },
+    {
+      "id": "p9.runs.tanktop",
+      "who": "tanktop",
+      "text": "The driver is running!",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.runs.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e8/AFQKiU5VeVwJOa9Rssxc8_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 26376
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-d142-7e73-8b60-501159018d07"
+    },
+    {
+      "id": "p9.hey.tanktop",
+      "who": "tanktop",
+      "text": "Hey. You're okay. We're friends of the Bear.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.hey.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e9/-TmSFIEZXRZFPpBzYgBjG_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-dad2-79e2-8ba0-77c054ffc7b7"
+    },
+    {
+      "id": "p9.radio.vance",
+      "who": "vance",
+      "text": "My team is minutes out. Watch the ranch road. Stay out of sight.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.radio.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ea/9NLhvZdjzEvgnRgJuF22o_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 74859
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-0286-7b20-bd6b-1c1a8e76bd6c"
+    },
+    {
+      "id": "p10.suv.newbalance",
+      "who": "newbalance",
+      "text": "Voss's SUV just went up FR 9. He is moving them now.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.suv.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ea/ECeM1dJ2SSWXrGCsE6YZI_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 87816
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-0855-7d91-b755-be899eaba895"
+    },
+    {
+      "id": "p9.gabe.gabe",
+      "who": "gabe",
+      "text": "I will drive them to Vance. Go.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.gabe.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e9/k7K-8V4PAJW_w0_ZFyZKP_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 38915
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-fc56-7760-9764-ed8c227227bc"
+    },
+    {
+      "id": "p9.dana2.dana",
+      "who": "dana",
+      "text": "There are six more at the ranch. He's going back for them.",
+      "voice": "Laura",
+      "group": false,
+      "src": "audio/dialogue/realistic/p9.dana2.dana.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5e9/tfdzF4fw2mshO5u9t4Gny_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f810-ed25-7aa3-8828-cf56843a38ac"
+    },
+    {
+      "id": "p10.now.fifty",
+      "who": "fifty",
+      "text": "Vance is minutes out. They could be gone in minutes.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.now.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ea/qafmWLJgJqZ3UfA5RajX8_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-0f8a-7ba0-a315-ecd5f0123e23"
+    },
+    {
+      "id": "p10.dark.redjersey",
+      "who": "redjersey",
+      "text": "Lights out.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.dark.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5eb/DDF9DbXawovyHqQRFQ8xF_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-2b46-78f3-a5d1-e44aab4e859a"
+    },
+    {
+      "id": "p10.go.shades",
+      "who": "shades",
+      "text": "We keep them safe till she gets here. Ridge route.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.go.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ea/HSBFeRf6P_FLENICTRR-1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 55633
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-1d46-7191-917f-b5d5ee57660f"
+    },
+    {
+      "id": "p10.gen.gabe",
+      "who": "gabe",
+      "text": "The generator shed. Cut it, and they see half as far.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.gen.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5eb/Zy9TQoDxDtYjQWnX5TR0J_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 63574
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-2454-7641-b9ee-c752d643b4f8"
+    },
+    {
+      "id": "p11.long.voss",
+      "who": "voss",
+      "text": "You boys are a long way from home.",
+      "voice": "Daniel",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.long.voss.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ed/2PpU-Exag8XGbZlz_TZGT_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 40169
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-7a7d-7143-87e1-28c3f25941e0"
+    },
+    {
+      "id": "p10.boone.boone",
+      "who": "boone",
+      "text": "Somebody get the lights.",
+      "voice": "Liam",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.boone.boone.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5eb/XNIObeB2cocHyJM1bQwYx_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 23868
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-3250-73d0-97c9-dde11a28021a"
+    },
+    {
+      "id": "p10.whale.newbalance",
+      "who": "newbalance",
+      "text": "The Whale is at the gate. Engine's running.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.whale.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ec/93y2NhxNv1lQIrxfsQEUm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 48110
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-6764-77e3-b89b-75f71aceeb3d"
+    },
+    {
+      "id": "p10.keys.shades",
+      "who": "shades",
+      "text": "Boone had the keys.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.keys.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5eb/I3qHhBRI4HjhsoagQj1WJ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 28884
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-4a42-7fa2-9245-fd33bbbcf6d7"
+    },
+    {
+      "id": "p10.gentle.tanktop",
+      "who": "tanktop",
+      "text": "Strong is easy. Gentle is the hard part.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.gentle.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ec/g6vkTyECmnZM4G3Low9dQ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 56887
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-50b3-7d41-9670-59fbe92fb838"
+    },
+    {
+      "id": "p10.signal.fifty",
+      "who": "fifty",
+      "text": "We move when I wave. Cover to cover.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.signal.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ec/_AXh93zzpsvzpu0mHd_G4_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 44348
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-6cba-7f33-a9dd-7492092f400d"
+    },
+    {
+      "id": "p10.lightsOn.shades",
+      "who": "shades",
+      "text": "Headlights. That's Voss.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.lightsOn.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ed/MjktdZfspJCuJSyix38_J_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 36407
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-72bd-7d52-b068-b32e41f5feb6"
+    },
+    {
+      "id": "p10.safe.tanktop",
+      "who": "tanktop",
+      "text": "Hey. Dana sent us. You're safe. Nobody has to hurry.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p10.safe.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ec/-zZ9nG75odxCyl2J5haRc_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 73605
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-5732-73f1-ac45-a4eff0e954f7"
+    },
+    {
+      "id": "p11.so.tanktop",
+      "who": "tanktop",
+      "text": "So are they.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.so.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ed/M8k7tEvoBxQsiGkARedWc_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-8945-7922-9f5f-dcd69e5d6f24"
+    },
+    {
+      "id": "p11.so.fifty",
+      "who": "fifty",
+      "text": "So are they.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.so.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ee/6OR8QOu0abph_umKyqXfz_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-a3e3-72d0-8329-c35373d13eaa"
+    },
+    {
+      "id": "p11.so.newbalance",
+      "who": "newbalance",
+      "text": "So are they.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.so.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ef/tiI135V1PSvJ_qTmHHmZv_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-d347-7440-b88d-24957f8d7a5b"
+    },
+    {
+      "id": "p11.so.redjersey",
+      "who": "redjersey",
+      "text": "So are they.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.so.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ef/X46pfkjq9177wbabxLQp1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 17181
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-d587-7e72-9713-fabbf7a6a61e"
+    },
+    {
+      "id": "p11.so.shades",
+      "who": "shades",
+      "text": "So are they.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.so.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5ef/7htxyvFpAfBPKgoqO0SSb_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 18435
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-cc24-7a11-8c09-2416027900b7"
+    },
+    {
+      "id": "p11.note.fifty",
+      "who": "fifty",
+      "text": "They wrote a note.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.note.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f0/kh2_mnpatrRTBZH3BMfSl_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 22614
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-06cb-7e82-a9e6-a4bce25d9d79"
+    },
+    {
+      "id": "p11.contract.voss",
+      "who": "voss",
+      "text": "They signed a contract.",
+      "voice": "Daniel",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.contract.voss.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f0/uPAJJT5FBfHD4gLoFZ2Bm_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 27630
+      },
+      "timestamps": null,
+      "request_id": "01a0f811-f7aa-7123-b7a9-956637549484"
+    },
+    {
+      "id": "p11.prove.voss",
+      "who": "voss",
+      "text": "You can't prove a thing.",
+      "voice": "Daniel",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.prove.voss.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f1/I3hMICLQUHcPm6mRaRb9E_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 31391
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-104f-7573-b260-6e56ac763be8"
+    },
+    {
+      "id": "p11.photos.shades",
+      "who": "shades",
+      "text": "Gabe has four hundred photos. I have forty.",
+      "voice": "Callum",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.photos.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f1/dmqlLzmfzw_Bz5Aqggxho_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 61902
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-1aef-7243-aa2f-fc867d263630"
+    },
+    {
+      "id": "p11.guardNB.newbalance",
+      "who": "newbalance",
+      "text": "You drive. I'll stay. Nobody touches anybody.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.guardNB.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f1/x_cphT6SKe_f2Wc6rYlqJ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 64828
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-251c-7ee1-b94c-c85d4f81104e"
+    },
+    {
+      "id": "p11.guard.tanktop",
+      "who": "tanktop",
+      "text": "I'll stay. Nobody touches anybody.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p11.guard.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f1/iTEOsIwApyRRNHfE_Ffc1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 49364
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-206c-7330-8724-b4de532d1bb3"
+    },
+    {
+      "id": "p12.seats.newbalance",
+      "who": "newbalance",
+      "text": "Six in the back. Four of us. Every seat is full.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.seats.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f1/6Io62Cs3wu_73hbav-ppQ_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 63574
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-2c90-7090-a076-b52cb4ec75b5"
+    },
+    {
+      "id": "p12.thanks.passenger",
+      "who": "passenger",
+      "text": "Thank you.",
+      "voice": "Laura",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.thanks.passenger.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f2/kFTBHaRrbVGOFWrSnpZiW_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 14673
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-4071-7393-81bb-5b2f017a3ea9"
+    },
+    {
+      "id": "p12.radio.vance",
+      "who": "vance",
+      "text": "Pickup at the junction. We have it. Keep driving.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.radio.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f2/pzO1mSOWfamh2Ogr1gdAu_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 51871
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-4b14-7b43-a820-afca64e84b62"
+    },
+    {
+      "id": "p12.slow.fifty",
+      "who": "fifty",
+      "text": "Drive smooth. Nobody needs another bump tonight.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.slow.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f2/8UoBRbbiPeGHFO3iaz7Dy_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 51871
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-38ce-7530-b73d-d9e264d6e163"
+    },
+    {
+      "id": "p12.told.vance",
+      "who": "vance",
+      "text": "I told you not to go near that ranch.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.told.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f2/KkIc5Dl4Ag0L3S7jUWiwh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 45602
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-5102-75f1-9c1d-2a1c2b648722"
+    },
+    {
+      "id": "p12.in.gabe",
+      "who": "gabe",
+      "text": "They didn't go near it. They went in it.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.in.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f2/YI_y6sHlKeLyO-dS-TBng_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 51871
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-596e-7aa0-87e0-e785fa4b939d"
+    },
+    {
+      "id": "p12.thank.vance",
+      "who": "vance",
+      "text": "You watched. You called. You kept them safe till we got there.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.thank.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f3/b06oCucmVYVabQ0lnPB69_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 76113
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-6fdc-7201-ad70-68dcab877e51"
+    },
+    {
+      "id": "p12.wait.vance",
+      "who": "vance",
+      "text": "Next time, you wait for us.",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.wait.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f3/VMvTdoPUlNwq2M-FQ1n4H_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 38915
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-6702-7de0-ad99-bb6fd19ac865"
+    },
+    {
+      "id": "p12.month.vance",
+      "who": "vance",
+      "text": "Same time next month, Gabe?",
+      "voice": "Sarah",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.month.vance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f3/Ipw7Otvf5TNVYS2K1L2Zd_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 27630
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-7a97-7e60-8fff-f5ec7b251ee5"
+    },
+    {
+      "id": "p12.wedding.gabe",
+      "who": "gabe",
+      "text": "Next month, the first is a wedding.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.wedding.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f4/bKKDuUaTesmzxnRmELw5U_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-8a50-7b10-8879-eed72461d6c6"
+    },
+    {
+      "id": "p12.ring.fifty",
+      "who": "fifty",
+      "text": "Best man holds the ring.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.ring.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f4/PGcD3s3pGcPB-_fffYsKK_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 30138
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-9618-76f0-8bd1-ce501f29044a"
+    },
+    {
+      "id": "e1.ringOn.gabe",
+      "who": "gabe",
+      "text": "Ring. Still here. I checked forty times.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.ringOn.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f5/yfFa5BeQbK69hvAp2TTIh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 61902
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-af51-7b72-b08d-5899451c94f9"
+    },
+    {
+      "id": "p12.find.tanktop",
+      "who": "tanktop",
+      "text": "We'd find it.",
+      "voice": "Brian",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.find.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f4/DCL5zQrybqNvicLYNKeEz_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 18435
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-93c9-7aa2-87a4-138356db8cd2"
+    },
+    {
+      "id": "e1.alone.gabe",
+      "who": "gabe",
+      "text": "I did this alone for seven months. I don't have to anymore.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.alone.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f4/uVg7zRwlijoPOZDk2v-ue_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 69844
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-a65d-7ea0-838c-edde9fc3a0b3"
+    },
+    {
+      "id": "p12.lose.gabe",
+      "who": "gabe",
+      "text": "Then I'd better not lose it.",
+      "voice": "Bill",
+      "group": false,
+      "src": "audio/dialogue/realistic/p12.lose.gabe.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f4/_fOWIyHMZLqqRkQXuAUrh_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 37661
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-9b9c-7e03-b2dc-ef65243d5fac"
+    },
+    {
+      "id": "e1.photo.redjersey",
+      "who": "redjersey",
+      "text": "Last one. Kasa hats on. Ten second timer.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.photo.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f5/z10mWlNj5ypy9EEky6G4O_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 58141
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-b959-72c3-8f10-db2f5f9587c8"
+    },
+    {
+      "id": "e1.ten.newbalance",
+      "who": "newbalance",
+      "text": "Ten seats.",
+      "voice": "Roger",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.ten.newbalance.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f5/2XIFUhpNfROLIZH3LRih1_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 19689
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-c1ec-7ac1-b45e-c7c4954ab47e"
+    },
+    {
+      "id": "e1.know.fifty",
+      "who": "fifty",
+      "text": "We know.",
+      "voice": "Eric",
+      "group": true,
+      "src": "audio/dialogue/realistic/e1.know.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f5/LLQ3QcP7W-YjJrdvUIK0d_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-cf0a-7792-8d0e-48d545100334"
+    },
+    {
+      "id": "e1.know.shades",
+      "who": "shades",
+      "text": "We know.",
+      "voice": "Callum",
+      "group": true,
+      "src": "audio/dialogue/realistic/e1.know.shades.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f6/lCaA8MFngenc15VLHwJ0U_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 15927
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-e8eb-7f21-b9ed-3eaf905520e3"
+    },
+    {
+      "id": "e1.post.redjersey",
+      "who": "redjersey",
+      "text": "Not posting it. Some things are just for us.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.post.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f7/inxtLFyG2ar87hnHmD4cx_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-03f6-7342-b1ed-1cef8127f983"
+    },
+    {
+      "id": "e1.know.tanktop",
+      "who": "tanktop",
+      "text": "We know.",
+      "voice": "Brian",
+      "group": true,
+      "src": "audio/dialogue/realistic/e1.know.tanktop.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f6/IvE0WLhdLmbfEeuxl98pK_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 13419
+      },
+      "timestamps": null,
+      "request_id": "01a0f812-db18-7d50-b812-74e010b75eeb"
+    },
+    {
+      "id": "side.trialJeep.guide",
+      "who": "guide",
+      "text": "Sunburst Jeep Tours time trial. Beat the clock to the bottom.",
+      "voice": "Charlie",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.trialJeep.guide.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f9/gzFPiDEe8Or99yMZhJndj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 64828
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-5e55-72c2-bf8f-b639cea4860b"
+    },
+    {
+      "id": "e1.plan.fifty",
+      "who": "fifty",
+      "text": "The plan was never the point. You were.",
+      "voice": "Eric",
+      "group": false,
+      "src": "audio/dialogue/realistic/e1.plan.fifty.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f9/FROtWYY2eIJzYSqVgkOLj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 46856
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-4c95-74c0-be6b-4d363d7a4387"
+    },
+    {
+      "id": "side.trialCanyon.guide",
+      "who": "guide",
+      "text": "Canyon run. Bridge to Slide Rock. The clock is running.",
+      "voice": "Charlie",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.trialCanyon.guide.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5f9/rZSFF-QxxqpedOBxc-dcI_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 71098
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-67a2-7781-9dba-d539e95a67c6"
+    },
+    {
+      "id": "side.huntUptown.redjersey",
+      "who": "redjersey",
+      "text": "Photo hunt. Three Uptown shots for the album.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.huntUptown.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5fa/nIEKff6qy1E_RXggS5CRp_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 46856
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-777a-7802-a855-d3eb3912e98a"
+    },
+    {
+      "id": "side.huntCanyon.redjersey",
+      "who": "redjersey",
+      "text": "Photo hunt. The canyon from three good spots.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.huntCanyon.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5fa/G-Dmgt8a9p6Isr0PR4ER3_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 54379
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-8287-77e2-a260-3d4fb36ccafd"
+    },
+    {
+      "id": "side.trialDone.guide",
+      "who": "guide",
+      "text": "Nice driving. Your time is on the board.",
+      "voice": "Charlie",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.trialDone.guide.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5fa/B4azZCcXJOK7tsctK6tIj_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 43094
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-7046-78d0-93c6-82e85ee9df25"
+    },
+    {
+      "id": "side.huntRocks.redjersey",
+      "who": "redjersey",
+      "text": "Photo hunt. Three famous rocks. Get them all in frame.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.huntRocks.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5fb/rcfE9JHSF1N5RocP4YW5t_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 59395
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-b343-7291-83b7-d44315bf06d7"
+    },
+    {
+      "id": "side.huntDone.redjersey",
+      "who": "redjersey",
+      "text": "Album done. Not posting it. Probably.",
+      "voice": "Chris",
+      "group": false,
+      "src": "audio/dialogue/realistic/side.huntDone.redjersey.mp3",
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aaca5fc/GI-fFReJDZwqRqNPBimJe_output.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "output.mp3",
+        "file_size": 53125
+      },
+      "timestamps": null,
+      "request_id": "01a0f813-cf93-7c63-808f-92343828cb1b"
+    }
+  ],
+  "encoding": "mono MP3, 32000 Hz, 64 kbit/s, -19 LUFS, peak -2 dBTP; short edge silence trimmed"
+}

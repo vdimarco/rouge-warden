@@ -22,10 +22,16 @@ export function createFilm({ video = null, screen = null, now = () => performanc
     if (screen) screen.classList.add('hidden');
   }
   function step(h) {
-    if (h.state !== 'wait') return;
+    if (h.state === 'done') return;
+    if (h.failed) { finish(h, false); return; }
+    if (h.state === 'playing') {
+      if (now() - h.started > h.limit) finish(h, false);
+      return;
+    }
     if (h.failed || now() - h.t0 > h.wait) { finish(h, false); return; }
     if (video.readyState < 2) return;
-    h.state = 'playing';
+    h.state = 'playing'; h.started = now();
+    h.limit = Number.isFinite(video.duration) ? video.duration + 5 : 20;
     if (screen) screen.classList.remove('hidden');
     video.currentTime = 0; video.muted = false; video.volume = 1;
     video.onended = () => finish(h, true);

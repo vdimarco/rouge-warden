@@ -437,7 +437,7 @@ export function buildBoard({ prev = {}, sessions = null, git, now, repo, prs = n
     const files = open ? b.files : b.merges.flatMap((m) => m.files);
     return {
       branch: b.name, kind: kindOf(b.name),
-      state: b.localOnly ? "local" : open ? "open" : b.merges.length || (pr && pr.state === "merged") ? "merged" : "even",
+      state: b.localOnly ? "local" : pr && pr.state === "merged" && !(b.unpushed > 0) ? "merged" : open ? "open" : b.merges.length || (pr && pr.state === "merged") ? "merged" : "even",
       ahead: b.ahead, behind: b.behind, head: b.head, date: b.date, subject: b.subject, author: b.author, since: b.since,
       games: gamesOf(files, dirToId), pr: pr ? pick(pr, ["number", "state", "draft"]) : null,
       mergedAt: b.merges.length ? b.merges[0].date : null, local: b.local || null, unpushed: b.unpushed || 0,

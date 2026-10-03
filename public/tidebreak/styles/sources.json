@@ -1,0 +1,27 @@
+{
+  "provider": "Higgsfield API",
+  "model": "marketing-studio/image",
+  "created": "2026-09-30",
+  "purpose": "Art direction comparison; concept images, not playable-renderer screenshots. Custom style prompts, not named API presets.",
+  "recipes": "higgsfield/monster-styles.json",
+  "styles": {
+    "ghibli": {
+      "request_id": "e778f5f5-6d12-4ad2-ace0-5cd4f5f6f820",
+      "status": "completed",
+      "source_url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/2bb5b4c5-16d0-4886-b25e-0295b42f8e28.png",
+      "asset": "/tidebreak/styles/ghibli.webp"
+    },
+    "pixar": {
+      "request_id": "984d56ea-0657-4298-9c8a-25352fdac416",
+      "status": "completed",
+      "source_url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/2d4a551e-16ea-4c27-a737-f5aaef690946.png",
+      "asset": "/tidebreak/styles/pixar.webp"
+    },
+    "rick-and-morty": {
+      "request_id": "8aee6b22-178d-488a-ba86-2ec55c77ed68",
+      "status": "completed",
+      "source_url": "https://d3u0tzju9qaucj.cloudfront.net/9bafc0d2-aa9a-49d1-a1fe-2ed6c7f9e872/ffaa4140-d4af-4972-93e0-4798616e7619.png",
+      "asset": "/tidebreak/styles/rick-and-morty.webp"
+    }
+  }
+}

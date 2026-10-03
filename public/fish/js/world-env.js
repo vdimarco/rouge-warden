@@ -1,7 +1,11 @@
-// The lake around the dock: sky, water, land, trees, rocks, pads, reeds, the dock and a loon.
-// Every mesh is built here in code from lake.js, so the fish logic and the picture share one map.
+// The world around the stand: sky, water, land, trees, rocks, pads, reeds and the props of each place (the dock and a
+// loon, a road, a wall with a lighthouse, a logjam). Every mesh is built here in code from the place's map (places/*.js),
+// so the fish logic and the picture share one map. What each place looks like is in world-look.js.
 import * as THREE from "three";
-import * as L from "./lake.js";
+import { artStyle, storyMaterial } from "./art-style.js";
+import { cartoonGeometry } from "./cartoon-models.js";
+import { paintedTrees } from "./painted-forest.js";
+import { rng, noise, capsule } from "./places/util.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -10,6 +14,10 @@ export const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); r
 // Uniforms that many materials share: the clock and the colours of the hour (world.js sets them).
 export const U = {
   uTime: { value: 0 },
+  uSkyPaint: { value: null },
+  uSkyPaintReady: { value: 0 },
+  uWaterPaint: { value: null },
+  uWaterPaintReady: { value: 0 },
   uSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uSunCol: { value: new THREE.Color(1, 1, 1) },
   uSunVis: { value: 1 },
@@ -20,6 +28,7 @@ export const U = {
   uFogNear: { value: 120 },
   uFogFar: { value: 900 },
   uNight: { value: 0 },
+  uMoon: { value: 0 },
   uCloudLit: { value: new THREE.Color() },
   uCloudShade: { value: new THREE.Color() },
   uForest: { value: new THREE.Color() },
@@ -27,6 +36,47 @@ export const U = {
   uShallow: { value: new THREE.Color() },
   uFoam: { value: new THREE.Color() },
 };
+
+// One local sky texture, requested only for the optional style. A failed image leaves
+// the procedural sky active. Switching again can retry; completed loads are reused.
+let storySkyLoad = null;
+export function loadStorySky() {
+  if (U.uSkyPaintReady.value) return Promise.resolve();
+  if (storySkyLoad) return storySkyLoad;
+  storySkyLoad = new Promise((resolve) => {
+    new THREE.TextureLoader().load(new URL("../art/ghibli-sky.webp", import.meta.url).href, (texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      // atan wraps at the rear: implicit mip derivatives otherwise draw a seam there.
+      texture.generateMipmaps = false;
+      texture.minFilter = texture.magFilter = THREE.LinearFilter;
+      texture.colorSpace = THREE.NoColorSpace;
+      U.uSkyPaint.value = texture;
+      U.uSkyPaintReady.value = 1;
+      resolve();
+    }, undefined, () => { storySkyLoad = null; resolve(); });
+  });
+  return storySkyLoad;
+}
+
+let waterPaintLoad = null;
+export function loadPaintedWater() {
+  if (U.uWaterPaintReady.value) return Promise.resolve(true);
+  if (waterPaintLoad) return waterPaintLoad;
+  waterPaintLoad = new Promise(resolve => {
+    let settled = false;
+    const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); waterPaintLoad = null; resolve(ok); };
+    const timer = setTimeout(() => finish(false), 8000);
+    new THREE.TextureLoader().load(new URL("../art/fal-lake-water.webp", import.meta.url).href, texture => {
+      if (settled) { texture.dispose(); return; }
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.anisotropy = 4;
+      U.uWaterPaint.value = texture; U.uWaterPaintReady.value = 1;
+      finish(true);
+    }, undefined, () => finish(false));
+  });
+  return waterPaintLoad;
+}
 
 // Small hash noise without sin(), so it stays stable in mediump on phones.
 export const NOISE_GLSL = /* glsl */ `
@@ -46,13 +96,23 @@ vec3 vnoised(vec2 p) {
 // The sky colour in a direction. The water uses it too, for its reflection.
 export const SKY_GLSL = /* glsl */ `
 uniform vec3 uZenith, uHorizon, uGlow, uSunDir, uSunCol, uFogCol;
-uniform float uNight;
+uniform float uNight, uArtStyle, uSkyPaintReady;
+uniform sampler2D uSkyPaint;
 vec3 skyColor(vec3 d) {
   float y = max(d.y, 0.0);
   vec3 c = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.85, y), 0.6));
   float s = max(dot(d, uSunDir), 0.0);
   float low = 1.0 - smoothstep(0.0, 0.55, y);
   c += uGlow * (pow(s, 3.0) * 0.42 * low + pow(s, 24.0) * 0.5 + pow(s, 200.0) * 0.6);
+  if (uArtStyle > 0.5 && uSkyPaintReady > 0.5) {
+    vec2 uv = vec2(atan(d.x, -d.z) / 6.2831853 + 0.5, 0.08 + sqrt(y) * 0.86);
+    vec3 paper = texture2D(uSkyPaint, uv).rgb;
+    // Fold the edge sample into the opposite edge for a soft panoramic seam.
+    float seam = smoothstep(0.46, 0.5, abs(uv.x - 0.5));
+    paper = mix(paper, texture2D(uSkyPaint, vec2(1.0 - uv.x, uv.y)).rgb, seam * 0.5);
+    paper *= mix(uHorizon * 1.1, vec3(1.0), smoothstep(0.0, 0.65, y));
+    c = mix(c, paper, 0.88 * (1.0 - uNight) * smoothstep(0.0, 0.09, y));
+  }
   return c;
 }
 `;
@@ -60,7 +120,7 @@ vec3 skyColor(vec3 d) {
 /* ---------------- materials ---------------- */
 
 // A painted look for lit materials: world-space brush strokes, warm dabs, optional wind sway and water caustics.
-export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = false, key = "" } = {}) {
+export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = false, wet = false, key = "" } = {}) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = U.uTime;
     sh.uniforms.uSunVis = U.uSunVis;
@@ -94,14 +154,18 @@ export function painted(mat, { strokes = 1, scale = 1, sway = 0, caustics = fals
         if (vWP.y < -0.02) {
           vec2 cq = vWP.xz * 1.3;
           float c1 = vnoise(cq + vec2(uTime * 0.35, uTime * 0.2)), c2 = vnoise(cq * 1.4 - vec2(uTime * 0.25, uTime * 0.31));
-          float net = pow(1.0 - abs(c1 - c2) * 2.2, 6.0);
+          float net = pow(max(0.0, 1.0 - abs(c1 - c2) * 2.2), 6.0);
           diffuseColor.rgb += net * 0.32 * uSunVis * smoothstep(-3.5, -0.2, vWP.y) * vec3(1.0, 0.96, 0.8);
           diffuseColor.rgb *= mix(1.0, 0.72, smoothstep(0.0, -4.0, vWP.y));
         }` : ""}
+        ${wet ? `
+        // posts and stumps: green and dark where they stand in the water, bleached above it
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.5, 0.66, 0.42), smoothstep(0.45, -0.05, vWP.y));
+        diffuseColor.rgb *= mix(1.0, 0.6, smoothstep(0.0, -1.2, vWP.y));` : ""}
       }`);
   };
-  mat.customProgramCacheKey = () => "fishpaint" + strokes + "_" + scale + "_" + sway + "_" + caustics + key;
-  return mat;
+  mat.customProgramCacheKey = () => "fishpaint" + strokes + "_" + scale + "_" + sway + "_" + caustics + (wet ? "_wet" : "") + key;
+  return storyMaterial(mat);
 }
 
 /* ---------------- geometry helpers ---------------- */
@@ -135,20 +199,20 @@ export function merge(list) {
   return out;
 }
 export const hex = (h) => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
-const mix3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-const mul3 = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
-const M4 = () => new THREE.Matrix4();
+export const mix3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+export const mul3 = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+export const M4 = () => new THREE.Matrix4();
 
 /* ---------------- sky ---------------- */
 
 export function buildSky(low) {
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
+    uniforms: { uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady, uArtStyle: artStyle, uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight, uMoon: U.uMoon, uCloudLit: U.uCloudLit, uCloudShade: U.uCloudShade },
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     defines: { OCT: low ? 3 : 5 },
     vertexShader: /* glsl */ `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
     fragmentShader: /* glsl */ `
-      uniform float uTime; uniform vec3 uCloudLit, uCloudShade; varying vec3 vDir;
+      uniform float uTime, uMoon; uniform vec3 uCloudLit, uCloudShade; varying vec3 vDir;
       ${SKY_GLSL}
       ${NOISE_GLSL}
       float fbm(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < OCT; i++) { s += a * vnoise(p); p = p * 2.07 + vec2(17.1, 3.7); a *= 0.5; } return s; }
@@ -156,15 +220,17 @@ export function buildSky(low) {
         vec3 d = normalize(vDir);
         vec3 col = skyColor(d);
         float s = dot(d, uSunDir);
-        // the sun: a soft disc with a bright core
-        col += uSunCol * (smoothstep(0.9986, 0.9994, s) * 1.6 + smoothstep(0.990, 0.9994, s) * 0.25) * (1.0 - uNight);
+        // the sun: a soft disc with a bright core (at night the moon takes its place, and its disc shows)
+        col += uSunCol * (smoothstep(0.9986, 0.9994, s) * 1.6 + smoothstep(0.990, 0.9994, s) * 0.25) * clamp(1.0 - uNight + uMoon, 0.0, 1.0);
         // soft painted clouds on a high flat layer, lit from the sun side
         if (d.y > 0.0) {
           vec2 uv = d.xz / (d.y + 0.14);
           uv = vec2(uv.x * 0.9 + uv.y * 0.25, uv.y * 2.1) * 0.9 + vec2(uTime * 0.006, uTime * 0.002);
           float n = fbm(uv);
-          float body = smoothstep(0.5, 0.74, n) * smoothstep(0.0, 0.2, d.y);
+          float body = smoothstep(mix(0.5, 0.42, uArtStyle), mix(0.74, 0.60, uArtStyle), n) * smoothstep(0.0, 0.2, d.y);
+          body *= 1.0 - uArtStyle * uSkyPaintReady * 0.97;
           float thick = smoothstep(0.58, 0.95, n);
+          thick = mix(thick, floor(thick * 4.0 + 0.5) / 4.0, uArtStyle * 0.55);
           float toward = pow(max(s, 0.0), 4.0);
           vec3 cc = mix(uCloudLit, uCloudShade, thick * 0.75);
           cc += uGlow * (toward * 0.8 + 0.12) * (1.0 - thick * 0.5);
@@ -187,76 +253,15 @@ export function buildSky(low) {
 
 /* ---------------- ground ---------------- */
 
-// How far out a point is from the middle of the bay: 1 is about the shore line.
-export const bayE = (x, z) => Math.hypot((x - 5) / 140, (z + 95) / 115);
-// The ground: lake.js near the dock and in the water. Beyond the reach of a cast the shore rises gently into
-// rolling far hills instead (lake.js climbs steeply, which reads as a wall from the dock). Only the picture uses this.
-export function ground(x, z) {
-  const h = L.height(x, z);
-  if (h <= 0) return h;
-  const e = bayE(x, z);
-  if (e < 1) return h;  // the point and Clog Island
-  const r = e - 1;  // bayE is already the square root of lake.js's bay()
-  let v = 0.4 + r * 13 + 2.5 * L.noise(x / 17, z / 17) * smooth(0, 0.05, r);
-  v += smooth(0.2, 1.6, r) * (5 + 18 * (0.5 + 0.5 * L.noise(x / 170 + 4, z / 170 - 2)) + 5 * L.noise(x / 55, z / 55));
-  v = Math.max(0.15, v);
-  return lerp(h, v, smooth(55, 95, Math.hypot(x, z - 10)));
-}
-// Where the forest grows (0..1): the same mask colours the ground and places the trees.
-export function forest(x, z) {
-  const e = bayE(x, z);
-  let f = 0.55 + 0.45 * L.noise(x / 26 + 7, z / 26 - 3) + 0.2 * L.noise(x / 9, z / 9);
-  if (Math.abs(x) < 18 && z > 14 && z < 70) f -= 1.2 * (1 - smooth(10, 18, Math.abs(x)));   // the cottage lawn
-  if (L.pointDist(x, z) < 0) f -= 0.9 * (1 - smooth(3, 13, Math.hypot(x - L.POINT.bx, z - L.POINT.bz))); // bare rock at the tip
-  if (L.islandDist(x, z) < 0) f = 0.9;
-  if (e > 1.5) f = Math.max(f, 0.75);
-  return clamp(f, 0, 1);
-}
-
-const PAL = {
-  sand: hex("#d9c28c"), wet: hex("#a8956a"), bed1: hex("#b5a47a"), bed2: hex("#7c7a52"), bed3: hex("#3e4a36"), weed: hex("#46602f"),
-  grass: hex("#8fa650"), meadow: hex("#a8b45c"), forest: hex("#34502a"), far: hex("#3a5a34"), granite: hex("#bcaea6"), graniteDk: hex("#7c7672"), lichen: hex("#a3a672"),
-};
-
-function groundColor(x, z, h, ny) {
-  const n1 = L.noise(x / 7.3, z / 7.3), n2 = L.noise(x / 2.1 + 3, z / 2.1);
-  if (h < 0) {
-    const d = -h;
-    let c = d < 1.2 ? mix3(PAL.sand, PAL.bed1, smooth(0.1, 1.2, d)) : d < 5 ? mix3(PAL.bed1, PAL.bed2, smooth(1.2, 5, d)) : mix3(PAL.bed2, PAL.bed3, smooth(5, 14, d));
-    const inWeeds = x > L.WEEDS.x0 && x < L.WEEDS.x1 && z > L.WEEDS.z0 && z < L.WEEDS.z1;
-    if (inWeeds && d > 0.5) c = mix3(c, PAL.weed, clamp(0.55 + 0.5 * n1, 0, 1));
-    if (L.pointDist(x, z) < 12 || L.islandDist(x, z) < 8) c = mix3(c, PAL.graniteDk, clamp(0.5 + n1, 0, 0.8));
-    return mul3(c, 1 + 0.06 * n1);
-  }
-  const e = bayE(x, z), rocky = L.pointDist(x, z) < 1.5 || (L.islandDist(x, z) < 0 && L.islandDist(x, z) > -3);
-  if (h < 0.75) {
-    let c = mix3(PAL.wet, PAL.sand, smooth(0.15, 0.6, h));
-    if (rocky) c = mix3(PAL.granite, PAL.graniteDk, 0.5 + 0.5 * n2);
-    return mul3(c, 1 + 0.08 * n2);
-  }
-  let c = mix3(PAL.grass, PAL.meadow, clamp(0.5 + n1, 0, 1));
-  c = mix3(c, PAL.forest, forest(x, z) * 0.9);
-  if (rocky) {
-    // Canadian Shield: pale pink-grey granite ledges, dark seams, lichen and grass in the hollows, forest behind
-    const seam = Math.abs(L.noise(x / 3.1 + 9, z / 1.3)) < 0.08 ? 0.55 : 0;
-    let r = mix3(PAL.granite, PAL.graniteDk, clamp(0.25 + 0.5 * n2, 0, 1) * 0.6 + seam);
-    r = mix3(r, PAL.lichen, clamp(n1 * 0.9, 0, 0.45));
-    r = mix3(r, PAL.grass, clamp(0.1 + L.noise(x / 5, z / 5) * 0.9, 0, 0.7));
-    c = mix3(r, c, clamp(forest(x, z) - 0.3, 0, 1) * 0.8);
-  }
-  if (ny < 0.72) c = mix3(c, mix3(PAL.granite, PAL.graniteDk, 0.4 + 0.4 * n2), smooth(0.72, 0.5, ny) * 0.8);
-  if (e > 1.5) {
-    // far hills read as forest canopy: dark with lighter crowns
-    const crown = L.noise(x / 11, z / 11), big = L.noise(x / 70, z / 70);
-    c = mix3(c, mul3(PAL.far, 0.9 + 0.3 * crown + 0.12 * big), smooth(1.5, 1.8, e));
-  }
-  return mul3(c, 1 + 0.07 * n2);
-}
-
-// Grid lines: even steps over the bay, growing steps out to the far hills.
-function axis(a, b, step, fa, fb) {
+// Grid lines: even steps over the place, growing steps out to the far hills. With a grade the steps are finer near the
+// angler (grade(d, step) is the step at distance d), so the stand and the shore at your feet are not blocky.
+function axis(a, b, step, fa, fb, grade) {
   const out = [];
-  for (let v = a; v <= b + 1e-6; v += step) out.push(v);
+  if (grade) {
+    out.push(0);
+    for (let v = 0; v < b - 1e-6;) { v += grade(v, step); out.push(Math.min(v, b)); }
+    for (let v = 0; v > a + 1e-6;) { v -= grade(-v, step); out.unshift(Math.max(v, a)); }
+  } else for (let v = a; v <= b + 1e-6; v += step) out.push(v);
   let s = step, v = out[0];
   while (v > fa) { s *= 1.3; v = Math.max(fa, v - s); out.unshift(v); }
   s = step; v = out[out.length - 1];
@@ -264,13 +269,13 @@ function axis(a, b, step, fa, fb) {
   return out;
 }
 
-export function buildTerrain(low) {
-  const step = low ? 4.4 : 2.8;
-  const xs = axis(-175, 190, step, -620, 640), zs = axis(-255, 55, step, -700, 380);
+export function buildTerrain(low, place, look) {
+  const T = look.terrain, step = low ? T.step.low : T.step.high;
+  const xs = axis(T.x[0], T.x[1], step, T.far.x[0], T.far.x[1], T.grade), zs = axis(T.z[0], T.z[1], step, T.far.z[0], T.far.z[1], T.grade);
   const nx = xs.length, nz = zs.length;
   const pos = new Float32Array(nx * nz * 3), col = new Float32Array(nx * nz * 3);
   const H = new Float32Array(nx * nz);
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) H[j * nx + i] = ground(xs[i], zs[j]);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) H[j * nx + i] = look.ground(xs[i], zs[j], place);
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const k = j * nx + i, x = xs[i], z = zs[j], h = H[k];
     pos[k * 3] = x; pos[k * 3 + 1] = h; pos[k * 3 + 2] = z;
@@ -278,7 +283,7 @@ export function buildTerrain(low) {
     const i0 = Math.max(0, i - 1), i1 = Math.min(nx - 1, i + 1), j0 = Math.max(0, j - 1), j1 = Math.min(nz - 1, j + 1);
     const dx = (H[j * nx + i1] - H[j * nx + i0]) / (xs[i1] - xs[i0] || 1), dz = (H[j1 * nx + i] - H[j0 * nx + i]) / (zs[j1] - zs[j0] || 1);
     const ny = 1 / Math.sqrt(1 + dx * dx + dz * dz);
-    const c = groundColor(x, z, h, ny);
+    const c = look.paint(x, z, h, ny, place);
     col[k * 3] = c[0]; col[k * 3 + 1] = c[1]; col[k * 3 + 2] = c[2];
   }
   const idx = new (nx * nz > 65535 ? Uint32Array : Uint16Array)((nx - 1) * (nz - 1) * 6);
@@ -300,32 +305,39 @@ export function terrainMaterial(low) {
 
 /* ---------------- water ---------------- */
 
-// The lake depth baked into a small texture, so the water can tint its shallows.
-export const DEPTH_BOX = { x0: -150, z0: -235, w: 310, h: 280 };
-function depthTexture() {
-  const N = 256, data = new Uint8Array(N * N * 4);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const x = DEPTH_BOX.x0 + ((i + 0.5) / N) * DEPTH_BOX.w, z = DEPTH_BOX.z0 + ((j + 0.5) / N) * DEPTH_BOX.h;
-    const h = L.height(x, z), k = (j * N + i) * 4;
+// The depth of the water baked into a small texture, so the water can tint its shallows. Red: depth (0..25 m).
+// Green: land. Blue: how fast the current runs (0..1.5 m/s), for the foam on a river.
+export function depthTexture(place, look) {
+  const B = look.depthBox, nx = B.nx, nz = B.nz, data = new Uint8Array(nx * nz * 4);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const x = B.x0 + ((i + 0.5) / nx) * B.w, z = B.z0 + ((j + 0.5) / nz) * B.h;
+    const h = look.ground(x, z, place), k = (j * nx + i) * 4;
     data[k] = Math.round(clamp(-h / 25, 0, 1) * 255);
     data[k + 1] = h > 0 ? 255 : 0;
+    if (look.flow && h < 0) { const f = place.flow(x, z); data[k + 2] = Math.round(clamp(Math.hypot(f.x, f.z) / 1.5, 0, 1) * 255); }
     data[k + 3] = 255;
   }
-  const t = new THREE.DataTexture(data, N, N, THREE.RGBAFormat);
+  const t = new THREE.DataTexture(data, nx, nz, THREE.RGBAFormat);
   t.magFilter = t.minFilter = THREE.LinearFilter;
   t.needsUpdate = true;
   return t;
 }
 
 export const RIPPLES = 16, RINGS = 6;
-export function buildWater(low) {
+// The water plane. Where the shore is, how tall the waves are and how the current runs are uniforms that
+// setWaterPlace sets, so a change of place needs no new shader.
+export function buildWater(low, place, look) {
   const u = {
+    uArtStyle: artStyle, uSkyPaint: U.uSkyPaint, uSkyPaintReady: U.uSkyPaintReady,
+    uWaterPaint: U.uWaterPaint, uWaterPaintReady: U.uWaterPaintReady,
     uTime: U.uTime, uZenith: U.uZenith, uHorizon: U.uHorizon, uGlow: U.uGlow, uSunDir: U.uSunDir, uSunCol: U.uSunCol, uFogCol: U.uFogCol, uNight: U.uNight,
     uFogNear: U.uFogNear, uFogFar: U.uFogFar, uForest: U.uForest, uDeep: U.uDeep, uShallow: U.uShallow, uFoam: U.uFoam, uSunVis: U.uSunVis,
-    uDepth: { value: depthTexture() }, uBox: { value: new THREE.Vector4(DEPTH_BOX.x0, DEPTH_BOX.z0, 1 / DEPTH_BOX.w, 1 / DEPTH_BOX.h) },
+    uDepth: { value: null }, uBox: { value: new THREE.Vector4() },
+    uShoreC: { value: new THREE.Vector4() }, uShoreP: { value: new THREE.Vector4() }, uIsle: { value: [new THREE.Vector4(), new THREE.Vector4()] },
+    uSwell: { value: 1 }, uFlow: { value: new THREE.Vector2() }, uCur: { value: 0 },
     uRip: { value: Array.from({ length: RIPPLES }, () => new THREE.Vector4(0, 0, -99, 0)) },
     uRing: { value: Array.from({ length: RINGS }, () => new THREE.Vector4(0, 0, 0, 0)) },
-    uAim: { value: new THREE.Vector4(0, -1, 0, 0) },
+    uAim: { value: new THREE.Vector4(0, -1, 0, -0.6) },
     uLoon: { value: new THREE.Vector4(0, 0, 0, 0) },
     uLure: { value: new THREE.Vector4(0, 0, 0, 0) },
   };
@@ -337,7 +349,8 @@ export function buildWater(low) {
       precision highp float;
       uniform float uTime, uFogNear, uFogFar, uSunVis;
       uniform vec3 uForest, uDeep, uShallow, uFoam;
-      uniform sampler2D uDepth; uniform vec4 uBox;
+      uniform sampler2D uDepth, uWaterPaint; uniform float uWaterPaintReady; uniform vec4 uBox;
+      uniform vec4 uShoreC, uShoreP, uIsle[2]; uniform float uSwell, uCur; uniform vec2 uFlow;
       uniform vec4 uRip[RIPPLES];
       uniform vec4 uRing[RINGS];
       uniform vec4 uAim, uLoon, uLure;
@@ -356,26 +369,30 @@ export function buildWater(low) {
         float v = exp(-arm * arm / (w * w)) * exp(-back / len) * step(a, 0.25);
         return (v + exp(-dot(q, q) * 6.0) * 0.6) * min(sp * 1.5, 1.0);
       }
-      // how tall the far shore (or Clog Island) looks from p, looking along d: tan of its elevation, and how far it is
+      // how tall the far shore (or an island) looks from p, looking along d: tan of its elevation, and how far it is.
+      // The shore is an ellipse uShoreC (x, z, rx, rz) with trees uShoreP.x tall; the island is round hills uIsle (x, z, r squared, height x)
       float shoreEl(vec2 p, vec2 d, out float t) {
-        vec2 o = (p - vec2(5.0, -95.0)) / vec2(140.0, 115.0), v = d / vec2(140.0, 115.0);
+        vec2 o = (p - uShoreC.xy) / uShoreC.zw, v = d / uShoreC.zw;
         float a = dot(v, v), b = dot(o, v), c = dot(o, o) - 1.0;
         t = (-b + sqrt(max(b * b - a * c, 0.0))) / a;
-        // the shore forest: a ragged line of pine tops
+        // the shore forest: a ragged line of tree tops
         float az = atan(d.x, -d.y);
-        float tips = abs(fract(az * 28.0) - 0.5) * 2.0;
-        float el = (15.0 + 5.0 * vnoise(vec2(az * 11.0, 2.0)) - 5.0 * tips) / max(t, 1.0);
-        // Clog Island: a low hill under tall pines, by how far off its middle the ray passes
-        vec2 oc = p - vec2(34.0, -128.0);
-        float bi = dot(oc, d), off2 = dot(oc, oc) - bi * bi, di = 225.0 - off2;
-        if (di > 0.0 && bi < 0.0) {
-          float ti = -bi - sqrt(di), k = sqrt(max(1.0 - off2 / 225.0, 0.0));
-          float lat = sqrt(max(off2, 0.0)) * sign(oc.x * d.y - oc.y * d.x);
-          float pine = 1.0 - abs(fract(lat * 0.2 + 0.3) - 0.5) * 2.0;
-          float hgt = 8.0 * k + 14.0 * pow(k, 0.35) * (0.45 + 0.55 * pine);
-          if (ti < t) { el = max(el, hgt / max(ti, 1.0)); t = ti; }
+        float tips = abs(fract(az * uShoreP.w) - 0.5) * 2.0;
+        float el = (uShoreP.x + uShoreP.z * vnoise(vec2(az * 11.0, 2.0)) - uShoreP.z * tips) / max(t, 1.0);
+        // islands: a low hill under tall trees, by how far off its middle the ray passes
+        for (int n = 0; n < 2; n++) {
+          vec4 I = uIsle[n];
+          vec2 oc = p - I.xy;
+          float bi = dot(oc, d), off2 = dot(oc, oc) - bi * bi, di = I.z - off2;
+          if (di > 0.0 && bi < 0.0) {
+            float ti = -bi - sqrt(di), k = sqrt(max(1.0 - off2 / I.z, 0.0));
+            float lat = sqrt(max(off2, 0.0)) * sign(oc.x * d.y - oc.y * d.x);
+            float pine = 1.0 - abs(fract(lat * 0.2 + 0.3) - 0.5) * 2.0;
+            float hgt = (8.0 * k + 14.0 * pow(k, 0.35) * (0.45 + 0.55 * pine)) * I.w;
+            if (ti < t) { el = max(el, hgt / max(ti, 1.0)); t = ti; }
+          }
         }
-        return max(el, 0.045);
+        return max(el, uShoreP.y);
       }
       void main() {
         vec2 p = vW.xz;
@@ -385,19 +402,22 @@ export function buildWater(low) {
         // how much lake one pixel covers here: small waves fade out before they can shimmer
         vec2 fw = fwidth(p);
         float fp = max(fw.x, fw.y) * 0.8;
-        float depth = texture2D(uDepth, (p - uBox.xy) * uBox.zw).r * 25.0;
+        vec4 dtx = texture2D(uDepth, (p - uBox.xy) * uBox.zw);
+        float depth = dtx.r * 25.0;
         vec2 g = vec2(0.0);
         float keep = 0.0;
         float s1 = 1.0 - smoothstep(0.8, 4.0, fp);
-        g += (swell(p, vec2(0.83, 0.56), 0.55, 1.3, 0.05) + swell(p, vec2(0.28, 0.96), 0.9, 1.8, 0.03)) * s1;
-        g += swell(p, vec2(-0.6, 0.8), 1.7, 2.6, 0.012) * (1.0 - smoothstep(0.3, 1.4, fp));
+        g += (swell(p, vec2(0.83, 0.56), 0.55, 1.3, 0.05) + swell(p, vec2(0.28, 0.96), 0.9, 1.8, 0.03)) * s1 * uSwell;
+        g += swell(p, vec2(-0.6, 0.8), 1.7, 2.6, 0.012) * (1.0 - smoothstep(0.3, 1.4, fp)) * uSwell;
         float s2 = 1.0 - smoothstep(0.2, 0.9, fp);
-        g += vnoised(p * 0.7 + vec2(uTime * 0.18, uTime * 0.11)).yz * 0.075 * s2;
+        // a river carries its small ripples downstream: one speed for the whole water
+        vec2 pf = p - uFlow * uTime;
+        g += vnoised(pf * 0.7 + vec2(uTime * 0.18, uTime * 0.11)).yz * 0.075 * s2;
         keep = s2;
         #if LOW == 0
         float s3 = 1.0 - smoothstep(0.06, 0.32, fp), s4 = 1.0 - smoothstep(0.025, 0.12, fp);
-        g += vnoised(p * 2.3 - vec2(uTime * 0.31, -uTime * 0.23)).yz * 0.045 * s3;
-        g += vnoised(p * 6.1 + vec2(uTime * 0.6, uTime * 0.2)).yz * 0.025 * s4;
+        g += vnoised(pf * 2.3 - vec2(uTime * 0.31, -uTime * 0.23)).yz * 0.045 * s3;
+        g += vnoised(pf * 6.1 + vec2(uTime * 0.6, uTime * 0.2)).yz * 0.025 * s4;
         keep = (s2 + s3) * 0.5;
         #endif
         // one-shot ripples: a short train of rings running out
@@ -439,6 +459,13 @@ export function buildWater(low) {
           }
         }
         foam += wake(p, uLoon, 3.0, fw) * 0.4 + wake(p, uLure, 1.4, fw) * 0.35;
+        #if LOW == 0
+        // white streaks where a river runs fast over shallows (the blue channel of the depth texture is the current)
+        if (uCur > 0.0) {
+          float streak = vnoise(vec2(pf.x * 0.8, p.y * 3.2));
+          foam += smoothstep(0.6, 0.85, streak) * smoothstep(0.45, 0.8, dtx.b) * (1.0 - smoothstep(0.4, 1.8, depth)) * uCur * (1.0 - smoothstep(0.3, 1.2, fp));
+        }
+        #endif
         vec3 N = normalize(vec3(-g.x, 1.0, -g.y));
         float ndv = max(dot(N, V), 0.0);
         float fres = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);
@@ -466,12 +493,57 @@ export function buildWater(low) {
         spec += pow(sd, 40.0) * step(0.96, hash12(floor(gq) + floor(uTime * 7.0))) * smoothstep(0.32, 0.08, length(fract(gq) - 0.5)) * 2.2 * s4;
         #endif
         spec *= uSunVis * (1.0 - shore);
+        if (uArtStyle > 0.5) {
+          // Cel-painted water: broad colour shapes and horizontal strokes.
+          // Game rings, wakes, and the aiming dots still draw above this paint.
+          float brush = vnoise(vec2(p.x * .48 + uTime * .025, p.y * 2.8 + uTime * .10 + sin(p.x * .36) * .18));
+          float mass = vnoise(vec2(p.x * .065, p.y * .32 - uTime * .035));
+          float wash = smoothstep(.32, .39, mass) * .11 + smoothstep(.59, .66, mass) * .10;
+          // A pronounced jade depth gradient, lit by the existing day/night palette.
+          float daylight = clamp(uSunVis, 0.0, 1.0);
+          vec3 jade = mix(vec3(.13, .43, .32), vec3(.012, .105, .095), smoothstep(.4, 9.0, depth));
+          vec3 lakePaint = mix(body, jade, .78 * daylight) * (.94 + wash);
+          float reflection = smoothstep(.12, .85, fres) * .72;
+          col = mix(lakePaint, refl, reflection);
+          // Reflected boughs are soft painted bars, without mirror-like glare.
+          col = mix(col, treeCol * vec3(.85, 1.12, 1.13), shore * (.16 + .17 * step(.49, brush)));
+          float dash = smoothstep(.57, .62, brush) * (1. - smoothstep(.67, .73, brush));
+          col = mix(col, uFoam, dash * .19 * (1. - smoothstep(.5, 2., fp)));
+          float grain = hash12(floor(p * 17.));
+          col *= .988 + grain * .024;
+          if (uWaterPaintReady > .5) {
+            // The painted tile supplies brush detail. Subtle distortion carries
+            // the wind/current, while gameplay ripples and wakes remain live.
+            vec2 paintUV = pf * vec2(.045, .045) + vec2(uTime * .0007, uTime * .00035);
+            paintUV += g * .085;
+            paintUV += vec2(sin(p.y * .24 + uTime * .32), sin(p.x * .17 - uTime * .23)) * .002;
+            vec3 paint = texture2D(uWaterPaint, paintUV).rgb;
+            vec3 drift = texture2D(uWaterPaint, paintUV * .61 + vec2(.37, -.21) - vec2(uTime * .0004, 0.)).rgb;
+            paint = mix(paint, drift, .28);
+            paint *= clamp(body / vec3(.24, .50, .49), vec3(.07), vec3(1.35));
+            col = mix(col, paint, .12);
+          }
+          spec = min(spec, .3) * smoothstep(.52, .67, brush);
+        }
+        // Pond reference: slow cellular light under the surface, strongest
+        // in shallow water. World-space scale and footprint fade prevent shimmer.
+        vec2 cq = pf * .46 + g * 1.4;
+        cq += vec2(sin(cq.y * .8 + uTime * .32), cos(cq.x * .7 - uTime * .27)) * .48;
+        float ca = vnoise(cq + vec2(uTime * .075, uTime * .045));
+        float cb = vnoise(cq * 1.21 + vec2(3.7, 8.2) - vec2(uTime * .05, uTime * .065));
+        float bandWidth = max(.028, fwidth(ca - cb) * 1.5);
+        float lightNet = 1.0 - smoothstep(bandWidth, bandWidth + .055, abs(ca - cb));
+        float clearDepth = exp(-depth * .12) * smoothstep(.04, .55, depth);
+        float netVisibility = clearDepth * (1.0 - fres) * uSunVis * (1.0 - smoothstep(.35, 1.6, fp));
+        // Dark troughs and bright moving contours give the water readable volume.
+        col *= 1.0 - lightNet * netVisibility * .12;
+        col += vec3(.48, .86, .60) * lightNet * netVisibility * .52;
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
         col += goldGlow;
         // the aim: a dotted line on the water from the dock end
         if (uAim.z > 0.01) {
-          vec2 dir = uAim.xy, q = p - vec2(0.0, -0.6);
+          vec2 dir = uAim.xy, q = p - vec2(0.0, uAim.w);
           float ta = dot(q, dir), sa = dot(q, vec2(-dir.y, dir.x));
           if (ta > 3.0 && ta < 14.0) {
             float cell = (fract(ta / 0.8) - 0.5) * 0.8;
@@ -484,6 +556,10 @@ export function buildWater(low) {
         // soft edge at the shore
         float edge = smoothstep(0.02, 0.35, depth);
         float alpha = clamp(mix(0.25, 1.0, smoothstep(0.0, 5.0, depth)) + fres * 0.7 + spec + foam * 0.3 + length(goldGlow), 0.0, 1.0);
+        // Let the shallow bed show through the painted surface. Deep water
+        // and grazing angles keep their opacity and reflected shore.
+        float paintedAlpha = clamp(.18 + .80 * smoothstep(.3, 7.0, depth) + fres * .6 + foam * .2 + spec + length(goldGlow), 0.0, 1.0);
+        alpha = mix(alpha, paintedAlpha, uArtStyle);
         alpha *= edge;
         col += uFoam * (1.0 - smoothstep(0.05, 0.45, depth + (vnoise(p * 0.6 + uTime * 0.2) - 0.5) * 0.25)) * 0.35 * edge;
         float fg = smoothstep(uFogNear, uFogFar, dist);
@@ -492,13 +568,33 @@ export function buildWater(low) {
         gl_FragColor = vec4(col, alpha);
       }`,
   });
-  const geo = new THREE.PlaneGeometry(DEPTH_BOX.w, DEPTH_BOX.h, 1, 1);
-  geo.rotateX(-Math.PI / 2);
-  geo.translate(DEPTH_BOX.x0 + DEPTH_BOX.w / 2, 0, DEPTH_BOX.z0 + DEPTH_BOX.h / 2);
-  const water = new THREE.Mesh(geo, mat);
+  const water = new THREE.Mesh(new THREE.BufferGeometry(), mat);
   water.renderOrder = 5;
   water.frustumCulled = false;
+  setWaterPlace(water, u, place, look);
   return { water, u };
+}
+
+// Point the water at a place: its depth texture, plane, shore, waves and current.
+export function setWaterPlace(water, u, place, look) {
+  if (u.uDepth.value) u.uDepth.value.dispose();
+  u.uDepth.value = depthTexture(place, look);
+  const B = look.depthBox, W = look.water || B;
+  u.uBox.value.set(B.x0, B.z0, 1 / B.w, 1 / B.h);
+  const S = look.shore, c = S.c;
+  u.uShoreC.value.set(c.x, c.z, c.rx, c.rz);
+  u.uShoreP.value.set(S.treeH, S.minEl, S.amp, S.tips);
+  for (let i = 0; i < 2; i++) { const I = S.isles[i]; u.uIsle.value[i].set(I ? I.x : 0, I ? I.z : 0, I ? I.r * I.r : 0, I ? I.h : 1); }
+  u.uSwell.value = look.swell;
+  u.uFlow.value.set(look.flow ? look.flow.x : 0, look.flow ? look.flow.z : 0);
+  u.uCur.value = look.flow ? look.flow.foam : 0;
+  const stand = place.stand.dock;
+  u.uAim.value.w = stand.z0;
+  const geo = new THREE.PlaneGeometry(W.w, W.h, 1, 1);
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(W.x0 + W.w / 2, 0, W.z0 + W.h / 2);
+  if (water.geometry) water.geometry.dispose();
+  water.geometry = geo;
 }
 
 /* ---------------- trees ---------------- */
@@ -507,7 +603,7 @@ function pineGeo(low) {
   const parts = [];
   const seg = low ? 5 : 7, tiers = low ? [[0.3, 0.12, 0.6], [0.2, 0.46, 0.54]] : [[0.3, 0.1, 0.46], [0.24, 0.32, 0.42], [0.16, 0.54, 0.46]];
   const dark = hex("#24442a"), mid = hex("#3a6838"), tipC = hex("#6a9a48");
-  const r = L.rng(5);
+  const r = rng(5);
   for (const [rad, y0, h] of tiers) {
     const g = new THREE.ConeGeometry(rad, h, seg, 1, true);
     // a ragged skirt: each outer vertex at its own radius
@@ -519,13 +615,13 @@ function pineGeo(low) {
   if (!low) parts.push(bake(new THREE.CylinderGeometry(0.018, 0.03, 0.2, 4, 1, true), { matrix: M4().makeTranslation(0, 0.1, 0), color: hex("#4a3626") }));
   return merge(parts);
 }
-function leafyGeo(low) {
+function leafyGeo(low, pale) {
   const parts = [];
   const g = new THREE.IcosahedronGeometry(0.34, low ? 0 : 1);
-  const p = g.attributes.position, r = L.rng(9);
+  const p = g.attributes.position, r = rng(9);
   for (let i = 0; i < p.count; i++) { const k = 0.85 + r() * 0.3; p.setXYZ(i, p.getX(i) * k, p.getY(i) * k * 1.15, p.getZ(i) * k); }
   g.computeVertexNormals();
-  const lo = hex("#46652c"), hi = hex("#8fae4c");
+  const lo = hex(pale ? pale.lo : "#46652c"), hi = hex(pale ? pale.hi : "#8fae4c");
   parts.push(bake(g, { matrix: M4().makeTranslation(0, 0.62, 0), colorFn: (x, y) => mix3(lo, hi, smooth(0.35, 1.0, y)) }));
   parts.push(bake(new THREE.CylinderGeometry(0.02, 0.035, 0.36, 4, 1, true), { matrix: M4().makeTranslation(0, 0.18, 0), color: hex("#d8d2c0") }));
   return merge(parts);
@@ -536,30 +632,57 @@ function farPineGeo(low) {
   return bake(g, { colorFn: (x, y) => mix3(hex("#26462c"), hex("#4a7a40"), y) });
 }
 
-// Where the trees stand. Sorted in a shuffled order so "low" can draw only the first part and still look even.
-function treeSpots() {
-  const r = L.rng(404);
+// Soft, rounded canopies use a small mesh shared by all instances. The far
+// forest uses one crown per tree to keep the phone's triangle count low.
+function storyTreeGeo(low, broad = false, far = false, pale = null) {
+  const asset = cartoonGeometry(far ? "tree_far" : "tree_" + (broad ? "leaf" : "pine") + (low ? "_low" : "_high"));
+  if (asset) {
+    if (pale) {
+      const c = asset.attributes.color, p = asset.attributes.position;
+      for (let i = 0; i < c.count; i++) if (p.getY(i) > .4) { const v = .65 + p.getY(i) * .3; c.setXYZ(i, v, v, v * .91); }
+    }
+    return asset;
+  }
+  const parts = [];
+  const crowns = far ? [[0, 0.56, 0, low ? 0.44 : 0.31, 0.48, low ? 0.43 : 0.30]] : low
+    ? [[0, 0.60, 0, broad ? 0.36 : 0.48, 0.42, broad ? 0.34 : 0.45]] : broad
+    ? [[-0.12, 0.59, 0, 0.30, 0.32, 0.31], [0.15, 0.69, 0.02, 0.31, 0.33, 0.29]]
+    : [[0, 0.41, 0, 0.34, 0.28, 0.32], [0.02, 0.71, 0.01, 0.24, 0.31, 0.23]];
+  const lo = hex(pale ? pale.lo : "#346e55"), hi = hex(pale ? pale.hi : "#99b95f");
+  for (const [x, y, z, sx, sy, sz] of crowns) {
+    const g = new THREE.SphereGeometry(1, low ? (far ? 4 : 5) : 8, low ? (far ? 2 : 3) : (far ? 3 : 4));
+    g.scale(sx, sy, sz); g.translate(x, y, z);
+    parts.push(bake(g, { colorFn: (x, y) => mix3(lo, hi, smooth(0.2, 1, y)) }));
+  }
+  if (!far) parts.push(bake(new THREE.CylinderGeometry(0.035, 0.055, 0.48, low ? 3 : 5, 1, low), { matrix: M4().makeTranslation(0, 0.24, 0), color: hex("#8b6642") }));
+  return merge(parts);
+}
+
+// Where the trees stand, from the place's look: near trees (pines and leafy ones) on a jittered grid where the forest
+// mask says so, and small far cones on the hills. Sorted in a shuffled order so "low" can draw only the first part and still look even.
+function treeSpots(place, look) {
+  const T = look.trees, G = (x, z) => look.ground(x, z, place);
+  const r = rng(T.seed);
   const near = [], leafy = [], far = [];
-  for (let gx = -230; gx < 250; gx += 4.6) for (let gz = -310; gz < 90; gz += 4.6) {
-    const x = gx + (r() - 0.5) * 4, z = gz + (r() - 0.5) * 4;
-    const e = bayE(x, z);
-    if (e > 1.62) continue;
-    const h = ground(x, z);
-    if (h < 0.9 || L.onDock(x, z)) continue;
-    const f = forest(x, z);
+  const N = T.near, Lf = T.leafy, Fr = T.far;
+  for (let gx = N.x[0]; gx < N.x[1]; gx += N.step) for (let gz = N.z[0]; gz < N.z[1]; gz += N.step) {
+    const x = gx + (r() - 0.5) * N.jit, z = gz + (r() - 0.5) * N.jit;
+    if (!N.ok(x, z, place)) continue;
+    const h = G(x, z);
+    if (h < 0.9 || place.onStand(x, z)) continue;
+    const f = look.forest(x, z, place);
     if (r() > f * 0.95) continue;
     const s = 0.8 + r() * 0.5;
-    if (r() < 0.2 + 0.12 * L.noise(x / 40, z / 40) && L.islandDist(x, z) > 0) leafy.push({ x, y: h - 0.2, z, s: 8 + r() * 5, rot: r() * 6.28 });
-    else near.push({ x, y: h - 0.3, z, s: (10 + r() * 9) * s, rot: r() * 6.28 });
+    if (r() < Lf.p(x, z) && Lf.ok(x, z, place)) leafy.push({ x, y: h - 0.2, z, s: Lf.size[0] + r() * Lf.size[1], rot: r() * 6.28 });
+    else near.push({ x, y: h - 0.3, z, s: (N.size[0] + r() * N.size[1]) * s, rot: r() * 6.28 });
   }
   // the far hills: small cones, mostly where the camera looks (north, east and west)
-  for (let gx = -560; gx < 580; gx += 7.5) for (let gz = -640; gz < 160; gz += 7.5) {
-    const x = gx + (r() - 0.5) * 7, z = gz + (r() - 0.5) * 7;
-    const e = bayE(x, z);
-    if (e < 1.58 || e > 3.9) continue;
-    if (z > 60 && e > 1.9) continue;
-    if (r() > 0.78) continue;
-    far.push({ x, y: ground(x, z) - 0.5, z, s: 9 + r() * 7, rot: r() * 6.28 });
+  if (Fr) for (let gx = Fr.x[0]; gx < Fr.x[1]; gx += Fr.step) for (let gz = Fr.z[0]; gz < Fr.z[1]; gz += Fr.step) {
+    const x = gx + (r() - 0.5) * Fr.jit, z = gz + (r() - 0.5) * Fr.jit;
+    if (!Fr.ok(x, z, place)) continue;
+    if (Fr.minH != null && G(x, z) < Fr.minH) continue;
+    if (r() > Fr.keep) continue;
+    far.push({ x, y: G(x, z) - 0.5, z, s: Fr.size[0] + r() * Fr.size[1], rot: r() * 6.28 });
   }
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
   return { near: shuffle(near), leafy: shuffle(leafy), far: shuffle(far) };
@@ -568,7 +691,7 @@ function treeSpots() {
 function instanced(geo, mat, spots, max, tint) {
   const n = Math.min(spots.length, max);
   const m = new THREE.InstancedMesh(geo, mat, n);
-  const mx = M4(), q = new THREE.Quaternion(), c = new THREE.Color(), r = L.rng(77);
+  const mx = M4(), q = new THREE.Quaternion(), c = new THREE.Color(), r = rng(77);
   for (let i = 0; i < n; i++) {
     const t = spots[i];
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.rot);
@@ -582,41 +705,59 @@ function instanced(geo, mat, spots, max, tint) {
   return m;
 }
 
-export function buildTrees(low) {
-  const S = treeSpots();
+export function buildTrees(low, place, look, style = "ghibli") {
+  const cartoon = style === "ghibli";
+  const S = treeSpots(place, look), T = look.trees;
+  if (cartoon) {
+    const g = new THREE.Group(), caps = low ? T.caps.low : T.caps.high;
+    const kinds = ["pine", "leaf", "far"], spots = [S.near, S.leafy, S.far];
+    for (let i = 0; i < 3; i++) {
+      const mesh = paintedTrees(spots[i], caps[i], kinds[i], U, i === 1 ? T.leafy.tint : T.pineTint, rng(77 + i));
+      if (mesh) g.add(mesh);
+    }
+    if (g.children.length) return g;
+  }
+  // Broader crowns cover the same forest with fewer instances on phones.
+  const caps = low ? T.caps.low.map((n, i) => Math.floor(n * (cartoon ? [0.4, 1, 0.5][i] : 1))) : T.caps.high;
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.9, scale: 1.4, sway: 0.012, key: "tree" });
   const leafMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.2, scale: 2.2, sway: 0.02, key: "leaf" });
   const farMat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.8, scale: 0.6, key: "far" });
   const g = new THREE.Group();
-  const pineTint = (r) => { const k = 0.8 + r() * 0.35, b = r(); return [k * (0.95 + b * 0.1), k, k * (0.9 + (1 - b) * 0.2)]; };
-  g.add(instanced(pineGeo(low), mat, S.near, low ? 1100 : 2300, pineTint));
-  g.add(instanced(leafyGeo(low), leafMat, S.leafy, low ? 260 : 560, (r) => { const t = r(); return t < 0.15 ? [1.25, 1.0, 0.62] : [0.85 + t * 0.3, 0.9 + t * 0.2, 0.85]; }));
-  g.add(instanced(farPineGeo(low), farMat, S.far, low ? 2600 : 5200, pineTint));
+  if (caps[0] && S.near.length) g.add(instanced(cartoon ? storyTreeGeo(low) : pineGeo(low), mat, S.near, caps[0], T.pineTint));
+  if (caps[1] && S.leafy.length) g.add(instanced(cartoon ? storyTreeGeo(low, true, false, T.leafy.geo) : leafyGeo(low, T.leafy.geo), leafMat, S.leafy, caps[1], T.leafy.tint));
+  if (caps[2] && S.far.length) g.add(instanced(cartoon ? storyTreeGeo(low, false, true) : farPineGeo(low), farMat, S.far, caps[2], T.pineTint));
   return g;
 }
 
 /* ---------------- rocks, pads, reeds ---------------- */
 
-export function buildRocks() {
+// Rocks: the place's rocks, and where the look asks for them the boulders of a river and the granite of Loon Lake's shores.
+export function buildRocks(place, look) {
   const g = new THREE.IcosahedronGeometry(1, 1);
-  const p = g.attributes.position, r = L.rng(21);
+  const p = g.attributes.position, r = rng(21);
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const k = 1 + 0.22 * L.noise(x * 1.7 + 3, z * 1.7 + y * 1.3) + 0.08 * (r() - 0.5);
+    const k = 1 + 0.22 * noise(x * 1.7 + 3, z * 1.7 + y * 1.3) + 0.08 * (r() - 0.5);
     p.setXYZ(i, x * k, y * k * (y < 0 ? 0.7 : 1), z * k);
   }
   g.computeVertexNormals();
-  const geo = bake(g, { colorFn: (x, y, z) => { const t = L.noise(x * 2 + 1, z * 2 + y); return y > 0.45 && t > 0.1 ? hex("#a8a66a") : mix3(hex("#8e7f78"), hex("#c2aa9c"), clamp(0.5 + t, 0, 1)); } });
-  const spots = L.ROCKS.map((k) => ({ x: k.x, z: k.z, r: k.r, top: k.top }));
+  const geo = bake(g, { colorFn: (x, y, z) => { const t = noise(x * 2 + 1, z * 2 + y); return y > 0.45 && t > 0.1 ? hex("#a8a66a") : mix3(hex("#8e7f78"), hex("#c2aa9c"), clamp(0.5 + t, 0, 1)); } });
+  const spots = place.props.rocks.map((k) => ({ x: k.x, z: k.z, r: k.r, top: k.top }));
+  // boulders stand in the current, a little taller than the stones
+  if (look.props.includes("boulders")) for (const b of place.props.boulders) spots.push({ x: b.x, z: b.z, r: b.r * 1.15, top: 0.5 + 0.3 * b.r });
+  const rr = rng(88);
   // granite on the point and the island shore, above the water
-  const rr = L.rng(88);
-  for (let i = 0; spots.length < L.ROCKS.length + 60 && i < 4000; i++) {
-    const onIsland = rr() < 0.3;
-    const x = onIsland ? L.ISLAND.x + (rr() - 0.5) * 40 : L.POINT.bx - 4 + rr() * 60, z = onIsland ? L.ISLAND.z + (rr() - 0.5) * 40 : L.POINT.bz - 14 + rr() * 26;
-    const d = onIsland ? L.islandDist(x, z) : L.pointDist(x, z), h = L.height(x, z);
-    if (d > 0.5 || d < -5 || h < 0) continue;
-    spots.push({ x, z, r: 0.5 + rr() * 1.3, top: h + 0.3 + rr() * 0.6 });
+  if (look.props.includes("granite")) {
+    const F = place.features, n = spots.length;
+    for (let i = 0; spots.length < n + 60 && i < 4000; i++) {
+      const onIsland = rr() < 0.3;
+      const x = onIsland ? F.island.x + (rr() - 0.5) * 40 : F.point.bx - 4 + rr() * 60, z = onIsland ? F.island.z + (rr() - 0.5) * 40 : F.point.bz - 14 + rr() * 26;
+      const d = onIsland ? Math.hypot(x - F.island.x, z - F.island.z) - F.island.r : capsule(x, z, F.point), h = place.height(x, z);
+      if (d > 0.5 || d < -5 || h < 0) continue;
+      spots.push({ x, z, r: 0.5 + rr() * 1.3, top: h + 0.3 + rr() * 0.6 });
+    }
   }
+  if (!spots.length) return null;
   const m = new THREE.InstancedMesh(geo, painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.2, scale: 3, key: "rock" }), spots.length);
   const mx = M4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   spots.forEach((s, i) => {
@@ -630,7 +771,7 @@ export function buildRocks() {
   return m;
 }
 
-export function buildPads(low) {
+export function buildPads(low, place, look) {
   const group = new THREE.Group();
   const g = new THREE.CircleGeometry(1, low ? 9 : 14, 0.3, Math.PI * 2 - 0.6);
   g.rotateX(-Math.PI / 2);
@@ -639,9 +780,10 @@ export function buildPads(low) {
   g.computeVertexNormals();
   const geo = bake(g, { colorFn: (x, y, z) => mix3(hex("#8fb04a"), hex("#4f7a30"), Math.hypot(x, z)) });
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1, scale: 4, key: "pad" });
-  const pads = new THREE.InstancedMesh(geo, mat, L.LILIES.length);
-  const mx = M4(), q = new THREE.Quaternion(), c = new THREE.Color(), r = L.rng(3), up = new THREE.Vector3(0, 1, 0);
-  L.LILIES.forEach((l, i) => {
+  const LILIES = place.props.lilies;
+  const pads = new THREE.InstancedMesh(geo, mat, LILIES.length);
+  const mx = M4(), q = new THREE.Quaternion(), c = new THREE.Color(), r = rng(3), up = new THREE.Vector3(0, 1, 0);
+  LILIES.forEach((l, i) => {
     q.setFromAxisAngle(up, l.rot);
     mx.compose(new THREE.Vector3(l.x, 0.035, l.z), q, new THREE.Vector3(l.r, 1, l.r));
     pads.setMatrixAt(i, mx);
@@ -661,17 +803,17 @@ export function buildPads(low) {
     parts.push(bake(pet, { colorFn: (x, y) => mix3(hex("#f0d4e0"), hex("#fffaf2"), clamp(y * 12, 0, 1)) }));
   }
   parts.push(bake(new THREE.SphereGeometry(0.035, 6, 4), { matrix: M4().makeTranslation(0, 0.03, 0), color: hex("#f2c230") }));
-  const fl = L.LILIES.filter((l) => l.flower);
-  const flowers = new THREE.InstancedMesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }), fl.length);
+  const fl = LILIES.filter((l) => l.flower);
+  const flowers = new THREE.InstancedMesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })), fl.length);
   fl.forEach((l, i) => { mx.compose(new THREE.Vector3(l.x + 0.1, 0.05, l.z), q.setFromAxisAngle(up, l.rot), new THREE.Vector3(1.5, 1.5, 1.5)); flowers.setMatrixAt(i, mx); });
   flowers.frustumCulled = false;
   group.add(flowers);
   return group;
 }
 
-export function buildReeds(low) {
-  const r = L.rng(19), stalks = [], tails = [];
-  for (const c of L.REEDS) {
+export function buildReeds(low, place, look) {
+  const r = rng(19), stalks = [], tails = [];
+  for (const c of place.props.reeds) {
     for (let i = 0; i < c.n; i++) {
       const a = r() * 6.28, d = Math.sqrt(r()) * 0.7;
       const s = { x: c.x + Math.cos(a) * d, z: c.z + Math.sin(a) * d, h: c.h * (0.7 + r() * 0.5), rot: r() * 6.28, lean: (r() - 0.5) * 0.25 };
@@ -695,6 +837,7 @@ export function buildReeds(low) {
     return g;
   };
   const mat = painted(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), { strokes: 0.6, scale: 3, sway: 0.09, key: "reed" });
+  if (look.reedTint) mat.color.setRGB(look.reedTint[0], look.reedTint[1], look.reedTint[2]);   // dry autumn reeds
   const grp = new THREE.Group();
   const mx = M4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const fill = (geo, list) => {
@@ -714,8 +857,8 @@ export function buildReeds(low) {
 
 /* ---------------- the dock ---------------- */
 
-export function buildDock() {
-  const D = L.DOCK, parts = [], r = L.rng(61);
+export function buildDock(place) {
+  const D = place.stand.dock, parts = [], r = rng(61);
   const box = (w, h, d, x, y, z, c, ry = 0) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().makeRotationY(ry).setPosition(x, y, z), color: c }));
   const wood = [hex("#a39277"), hex("#8e7e66"), hex("#b3a184"), hex("#978467")];
   // deck planks across the dock
@@ -729,7 +872,7 @@ export function buildDock() {
   box(D.x1 - D.x0 + 0.08, 0.2, 0.04, 0, D.deck - 0.1, D.z0 - 0.02, hex("#7d6d55"));
   // posts down to the lake bottom, dark and green where they stay wet
   for (let z = D.z0 + 0.15; z < D.z1 - 2; z += 2.8) for (const x of [D.x0 - 0.08, D.x1 + 0.08]) {
-    const bot = Math.min(L.height(x, z), 0) - 0.3, top = D.deck + 0.12, h = top - bot;
+    const bot = Math.min(place.height(x, z), 0) - 0.3, top = D.deck + 0.12, h = top - bot;
     const g = new THREE.CylinderGeometry(0.1, 0.11, h, 7);
     parts.push(bake(g, { matrix: M4().makeTranslation(x, (top + bot) / 2, z), colorFn: (px, py) => { const y = py; return y < 0.05 ? mix3(hex("#3a4a2a"), hex("#2a3322"), smooth(0, -1, y)) : y < 0.25 ? hex("#5a5a44") : hex("#8a7a60"); } }));
   }
@@ -760,9 +903,16 @@ export function buildDock() {
 }
 
 // A little cottage on the south shore, behind the dock: only the title camera ever sees it.
-export function buildCottage() {
-  const parts = [];
+export function buildCottage(place, look) {
+  const parts = [], ground = (x, z) => look.ground(x, z, place);
   const x0 = -9, z0 = 34, y0 = Math.max(0.5, ground(x0, z0)) - 0.2;
+  const story = artStyle.value ? cartoonGeometry("cottage") : null;
+  if (story) {
+    story.rotateY(Math.PI); story.translate(x0, y0, z0);
+    const canoe = new THREE.SphereGeometry(1, 12, 6); canoe.scale(.45, .22, 2.4);
+    const boat = bake(canoe, { matrix: M4().makeRotationY(.4).setPosition(6, Math.max(.3, ground(6, 22)) + .15, 22), color: hex("#d77a48") });
+    return new THREE.Mesh(merge([story, boat]), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: .5, scale: 3, key: "cartoon-cottage" }));
+  }
   const box = (w, h, d, x, y, z, c) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().makeTranslation(x0 + x, y0 + y, z0 + z), color: c }));
   box(8, 3, 6, 0, 1.5, 0, hex("#7a5236"));
   box(8.2, 0.3, 6.2, 0, 0.1, 0, hex("#5a4a3a"));
@@ -783,7 +933,9 @@ export function buildCottage() {
 /* ---------------- the loon ---------------- */
 
 export function buildLoon() {
-  const parts = [], r = L.rng(8);
+  const story = artStyle.value ? cartoonGeometry("loon") : null;
+  if (story) { const m = new THREE.Mesh(story, storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }))); m.scale.setScalar(1.25); return m; }
+  const parts = [], r = rng(8);
   const black = hex("#15181a"), white = hex("#e8ece8"), dk = hex("#243030");
   const body = new THREE.SphereGeometry(1, 18, 10);
   body.scale(0.19, 0.12, 0.44);
@@ -799,7 +951,142 @@ export function buildLoon() {
   const tail = new THREE.ConeGeometry(0.06, 0.12, 6);
   tail.rotateX(Math.PI / 2);
   parts.push(bake(tail, { matrix: M4().makeTranslation(0, 0.03, 0.44), color: black }));
-  const m = new THREE.Mesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const m = new THREE.Mesh(merge(parts), storyMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })));
   m.scale.setScalar(1.25);
   return m;
+}
+
+/* ---------------- the props of the other places ---------------- */
+
+// Stump Bay: the end of the old road. An asphalt slab down into the water, curbs, painted lines, cracks, and a
+// striped barrier across each side of the road end (the middle stays open for the angler).
+export function buildRoad(place) {
+  const D = place.stand.dock, parts = [], r = rng(62);
+  const W = D.x1 - D.x0, len = D.z1 - D.z0, mid = (D.z0 + D.z1) / 2, top = D.deck;
+  const box = (w, h, d, x, y, z, c) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().setPosition(x, y, z), color: c }));
+  const flat = (w, d, x, z, c, ry = 0) => { const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); parts.push(bake(g, { matrix: M4().makeRotationY(ry).setPosition(x, top + 0.006, z), color: c })); };
+  box(W, top + 2.4, len, 0, (top - 2.4) / 2, mid, hex("#4a4d52"));
+  for (const s of [-1, 1]) box(0.3, 0.14, len, s * (W / 2 - 0.15), top + 0.07, mid, hex("#8c8a82"));
+  for (let z = 3; z < D.z1 - 4; z += 6) flat(0.16, 2.4, 0, z, hex("#d8b840"));
+  for (const s of [-1, 1]) flat(0.12, len - 0.6, s * (W / 2 - 0.65), mid, hex("#d8d6cc"));
+  for (let i = 0; i < 8; i++) flat(0.4 + r() * 1.6, 0.06 + r() * 0.1, (r() - 0.5) * (W - 1), 1 + r() * 50, hex("#2c2e32"), (r() - 0.5) * 0.8);
+  // the barrier: two posts and two striped rails
+  for (const s of [-1, 1]) {
+    box(0.16, 1.15, 0.16, s * 3.25, top + 0.575, D.z0 + 0.3, hex("#e2ded2"));
+    for (let k = 0; k < 4; k++) box(0.5, 0.2, 0.05, s * (3.25 - 0.45 - k * 0.5), top + 0.9, D.z0 + 0.3, k % 2 ? hex("#e2ded2") : hex("#c8302a"));
+  }
+  const m = new THREE.Mesh(merge(parts), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.7, scale: 6, key: "road" }));
+  m.renderOrder = 1;
+  return m;
+}
+
+// Stump Bay: stumps and dead trees, one shape drawn 120 times. A flared foot on the bottom, a trunk, a broken top.
+// The trunk goes down to the bed, so the part below the surface shows through the water.
+export function buildStumps(place) {
+  const list = place.props.stumps, seg = 6, r = rng(64);
+  const ring = (y, rad, jag) => Array.from({ length: seg }, (_, i) => { const a = (i / seg) * Math.PI * 2; return [Math.cos(a) * rad * (1 + (r() - 0.5) * 0.18), y - (jag ? r() * jag : 0), Math.sin(a) * rad * (1 + (r() - 0.5) * 0.18)]; });
+  const rings = [ring(0, 1.5, 0), ring(0.16, 1.0, 0), ring(1, 0.82, 0.07)];
+  const pos = [], col = [];
+  const put = (v, c) => { pos.push(v[0], v[1], v[2]); col.push(c[0], c[1], c[2]); };
+  const bark = hex("#9a8a72"), foot = hex("#4a4638"), fresh = hex("#c8b898");
+  for (let b = 0; b < 2; b++) for (let i = 0; i < seg; i++) {
+    const a = rings[b][i], c = rings[b][(i + 1) % seg], d = rings[b + 1][i], e = rings[b + 1][(i + 1) % seg];
+    const ca = b ? mix3(bark, fresh, 0.15 * (i % 2)) : foot, cd = b ? mix3(bark, fresh, 0.35) : bark;
+    put(a, ca); put(d, cd); put(c, ca); put(c, ca); put(d, cd); put(e, cd);
+  }
+  const t = rings[2];
+  for (let i = 1; i < seg - 1; i++) { put(t[0], fresh); put(t[i + 1], fresh); put(t[i], fresh); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  const m = new THREE.InstancedMesh(g, painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.1, scale: 4, wet: true, key: "stump" }), list.length);
+  const mx = M4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color();
+  list.forEach((s, i) => {
+    const bed = Math.max(1.6, place.depth(s.x, s.z));
+    e.set(s.tall ? (r() - 0.5) * 0.1 : 0, r() * 6.28, s.tall ? (r() - 0.5) * 0.1 : 0);
+    q.setFromEuler(e);
+    mx.compose(new THREE.Vector3(s.x, -bed, s.z), q, new THREE.Vector3(s.r, s.top + bed, s.r));
+    m.setMatrixAt(i, mx);
+    const k = 0.8 + r() * 0.5, dark = r() < 0.2 ? 0.65 : 1;
+    m.setColorAt(i, c.setRGB(k * dark, k * dark * 0.98, k * dark * 0.94));
+  });
+  m.frustumCulled = false;
+  return m;
+}
+
+// Gull Rock: the top of the granite wall (cap blocks near the end, a plain slab behind) and the lighthouse on the headland.
+export function buildWall(place, look) {
+  const D = place.stand.dock, F = place.features, parts = [], r = rng(65);
+  const W = D.x1 - D.x0, bottom = -3.4, cap = 0.3, rows = 12, bl = 2.2;
+  const box = (w, h, d, x, y, z, c, ry = 0, rx = 0) => parts.push(bake(new THREE.BoxGeometry(w, h, d), { matrix: M4().makeRotationY(ry).premultiply(M4().makeRotationX(rx)).setPosition(x, y, z), color: c }));
+  const stone = [hex("#a8a49c"), hex("#b4b0a6"), hex("#9c9890"), hex("#aaa69c")];
+  // the body of the wall, and behind the cap blocks a plain top
+  const zEnd = D.z0 + rows * bl;
+  box(W + 0.2, D.deck - cap - bottom, zEnd - D.z0, 0, (D.deck - cap + bottom) / 2, (D.z0 + zEnd) / 2, hex("#6c6864"));
+  box(W + 0.2, D.deck - bottom, D.z1 - zEnd, 0, (D.deck + bottom) / 2, (zEnd + D.z1) / 2, hex("#8c8880"));
+  // cap blocks: two columns, twelve rows, each a little different
+  for (let i = 0; i < rows; i++) for (const cx of [-bl / 2, bl / 2]) {
+    const h = cap + r() * 0.04, c = mul3(stone[(r() * 4) | 0], 0.92 + r() * 0.16);
+    box(bl - 0.07, h, bl - 0.07, cx + (r() - 0.5) * 0.03, D.deck - cap + h / 2, D.z0 + (i + 0.5) * bl + (r() - 0.5) * 0.03, c, (r() - 0.5) * 0.03);
+  }
+  // the lighthouse: a white tower with red bands, a gallery, a lantern, a roof and a keeper's house
+  const lx = F.light.x, lz = F.light.z, ly = look.ground(lx, lz, place) - 0.5;
+  const cyl = (rt, rb, h, sides, y, c, open = false, x = lx, z = lz) => parts.push(bake(new THREE.CylinderGeometry(rt, rb, h, sides, 1, open), { matrix: M4().setPosition(x, ly + y, z), colorFn: (px, py) => c(py - ly - y) }));
+  const white = hex("#ece8dc"), red = hex("#b83a2e");
+  const TH = 22;
+  cyl(1.7, 2.6, TH, 10, TH / 2, () => white, true);
+  // the red bands are short tubes a little wider than the tower there
+  for (const [u0, u1] of [[0.3, 0.46], [0.62, 0.78]]) {
+    const rAt = (u) => 2.6 + (1.7 - 2.6) * u + 0.04;
+    cyl(rAt(u1), rAt(u0), (u1 - u0) * TH, 10, ((u0 + u1) / 2) * TH, () => red, true);
+  }
+  cyl(2.5, 2.5, 0.4, 8, TH + 0.2, () => hex("#3a3a3c"));
+  cyl(1.1, 1.1, 2.0, 8, TH + 1.4, () => hex("#f4e8a8"), true);
+  cyl(0.02, 1.7, 1.5, 8, TH + 3.15, () => red, true);
+  box(6, 3.4, 4.4, lx + 5.5, ly + 1.7, lz + 1, hex("#e2dccc"));
+  parts.push(bake(new THREE.CylinderGeometry(0.02, 4, 1.8, 4, 1, true), { matrix: M4().makeRotationY(Math.PI / 4).scale(new THREE.Vector3(1.06, 1, 0.78)).setPosition(lx + 5.5, ly + 4.3, lz + 1), color: hex("#6a4a3a") }));
+  const m = new THREE.Mesh(merge(parts), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 0.8, scale: 3, key: "wall" }));
+  m.frustumCulled = false;
+  m.renderOrder = 1;
+  return m;
+}
+
+// Cedar River: the logjam. Each log is a short six-sided trunk lying in the water; some have a root ball.
+export function buildLogjam(place) {
+  const parts = [];
+  const wood = [hex("#8a7e6c"), hex("#75695a"), hex("#9a8e7a")];
+  place.props.logs.forEach((l, i) => {
+    const dx = l.bx - l.ax, dz = l.bz - l.az, len = Math.hypot(dx, dz), phi = Math.atan2(dz, dx);
+    const c = wood[i % 3], y = l.top - l.r * 0.9;
+    const g = new THREE.CylinderGeometry(l.r * 0.85, l.r * 1.05, len, 6, 1);
+    g.rotateZ(Math.PI / 2);
+    parts.push(bake(g, { matrix: M4().makeRotationY(-phi).setPosition((l.ax + l.bx) / 2, y, (l.az + l.bz) / 2), colorFn: (px, py) => mul3(c, 0.85 + 0.3 * smooth(-l.r, l.r, py - y)) }));
+    if (i % 2 === 0) {
+      const ball = new THREE.IcosahedronGeometry(l.r * 1.5, 0);
+      ball.scale(1, 0.8, 1);
+      parts.push(bake(ball, { matrix: M4().setPosition(l.ax, y + l.r * 0.2, l.az), color: mul3(c, 0.7) }));
+    }
+  });
+  const m = new THREE.Mesh(merge(parts), painted(new THREE.MeshLambertMaterial({ vertexColors: true }), { strokes: 1.2, scale: 4, wet: true, key: "logs" }));
+  m.frustumCulled = false;
+  return m;
+}
+
+// The props of a place that do not change with the quality (the look lists them). The loon is returned apart: it swims.
+export function buildProps(place, look) {
+  const group = new THREE.Group();
+  let loon = null;
+  const add = (m) => { if (m) group.add(m); return m; };
+  for (const name of look.props) {
+    if (name === "rocks") add(buildRocks(place, look));
+    else if (name === "dock") add(buildDock(place));
+    else if (name === "cottage") add(buildCottage(place, look));
+    else if (name === "loon") loon = add(buildLoon());
+    else if (name === "road") add(buildRoad(place));
+    else if (name === "stumps") add(buildStumps(place));
+    else if (name === "wall") add(buildWall(place, look));
+    else if (name === "logjam") add(buildLogjam(place));
+  }
+  return { group, loon };
 }

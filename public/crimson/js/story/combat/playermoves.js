@@ -29,6 +29,12 @@ STOOL.l1 = STOOL.heavy;
 // dmg and post are multipliers on the move; reach replaces the move's reach where given; uses: hits
 // before it breaks (Infinity for good). prop: the S.cast prop in the right hand.
 export const WEAPONS = Object.freeze({
+  pistol: { id: 'pistol', name: 'PISTOL', ranged: true, prop: 'pistol', set: FISTS, uses: Infinity },
+  goldenEagle: { id: 'goldenEagle', name: 'GOLDEN EAGLE', ranged: true, prop: 'goldenEagle', set: FISTS, uses: Infinity },
+  ak47: { id: 'ak47', name: 'AK-47', ranged: true, prop: 'ak47', set: FISTS, uses: Infinity },
+  bearSpray: { id: 'bearSpray', name: 'BEAR SPRAY', ranged: true, prop: 'bearSpray', set: FISTS, uses: Infinity },
+  katana: { id: 'katana', name: 'KATANA', dmg: 1.7, post: 1.3, reach: 2.8, uses: Infinity, prop: 'katana', set: BLADE },
+  baseballBat: { id: 'baseballBat', name: 'BASEBALL BAT', dmg: 1.2, post: 2, reach: 2.3, uses: Infinity, prop: 'baseballBat', set: BLADE },
   fists: { id: 'fists', name: 'FISTS', dmg: 0.7, post: 1.0, reach: null, uses: Infinity, prop: null, set: FISTS },
   foamKatana: { id: 'foamKatana', name: 'FOAM KATANA', dmg: 0.6, post: 1.2, reach: null, uses: Infinity, prop: 'foamKatana', set: BLADE },
   cue: { id: 'cue', name: 'POOL CUE', dmg: 0.9, post: 1.0, reach: 2.6, uses: 12, prop: 'cue', set: BLADE, breaks: 'The cue breaks.' },
@@ -40,6 +46,17 @@ export function moveOf(weaponId, name) {
   const w = WEAPONS[weaponId] || WEAPONS.fists, m = w.set[name] || w.set.l1;
   return w.reach && m.dmg ? { ...m, reach: Math.max(m.reach, w.reach) } : m;
 }
+// Reward a good read without flattening the existing deflect -> recoil payoff.
+export function openingReward(state, moveName) {
+  const open = state === 'recover' || state === 'recoil' || state === 'stagger';
+  if (!open) return { open: false, damage: 1, posture: 1 };
+  return {
+    open: true,
+    damage: moveName === 'heavy' ? 1.55 : 1.4,
+    posture: state === 'recoil' ? 1.6 : 1.45,
+  };
+}
+
 // the canteen: the ronin's sip (heals TUNE.heal)
 export const SIP = { clip: 'ronin:sip', speed: 2.0, heal: TUNE.heal, at: 0.8, dur: 1.3 };
 // the roll

@@ -1,30 +1,160 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="robots" content="noindex">
-<meta name="theme-color" content="#0b0f1c">
-<title>Full Tilt · The Lab</title>
-<link rel="icon" href="/favicon.ico">
-<link rel="stylesheet" href="/lab/kit/lab.css">
-<style>
-body.toy { background: #0b0f1c; }
-/* the score panel: over the table on a tall screen, beside it on a wide one (main.js lays the table out to match) */
-.dmd { position: fixed; left: 50%; top: calc(var(--sat) + 46px); transform: translateX(-50%); z-index: 4; pointer-events: none; width: min(calc(100vw - 24px), 380px); padding: 4px 12px 5px; border-radius: 10px; background: #120804; border: 2px solid #2b170b; box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8); font: 700 12px/1.15 ui-monospace, "Courier New", monospace; color: #ff9b2f; text-shadow: 0 0 6px rgba(255, 140, 40, 0.8); letter-spacing: 0.08em; }
-.dmd[hidden] { display: none; }
-.dmd .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.dmd .score { font-size: 24px; letter-spacing: 0.05em; }
-.dmd .msg { min-height: 1.15em; color: #ffd07a; text-align: center; }
-@media (orientation: landscape) { .dmd { left: 16px; top: calc(var(--sat) + 52px); transform: none; width: 240px; } }
-</style>
+  <meta charset="utf-8">
+  <script src="/arcade/quiet.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#050c19">
+  <meta name="description" content="A pinball voyage through six cosmic worlds. Follow the ball through vast star fields, bend gravity, and choose upgrades for your voyage.">
+  <title>Full Tilt · A pinball voyage</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/lab/tilt/adventure.css">
+  <link rel="stylesheet" href="/lab/tilt/upgrade.css">
 </head>
-<body class="toy">
-<canvas class="view" id="view" aria-label="Full Tilt"></canvas>
-<div class="dmd" id="dmd" hidden>
-  <div class="row"><span id="dBall">BALL 1</span><span class="score" id="dScore">0</span><span id="dMult">X1</span></div>
-  <div class="msg" id="dMsg"></div>
-</div>
-<script type="module" src="./main.js"></script>
+<body>
+  <canvas id="view" aria-label="Space pinball adventure. Use the on-screen controls or Z and X for flippers, Space to launch, C to pulse, F for a gravity field, R for the map, and Escape to pause."></canvas>
+
+  <header id="hud" hidden>
+    <div class="hud-brand">
+      <a class="arcade-link" href="/" aria-label="Return to the arcade"><span aria-hidden="true">↖</span> Arcade</a>
+      <div class="hud-title">FULL TILT<span id="sector-name">Departure</span></div>
+    </div>
+    <p id="objective">Light all three relays to open the jump gate.</p>
+    <div class="hud-right">
+      <div class="readout"><span class="readout-label">SCORE</span><strong id="score">0</strong></div>
+      <div class="readout lives-readout"><span class="readout-label">HULL</span><strong id="lives">3</strong></div>
+      <nav class="hud-actions" aria-label="Game options">
+        <button id="map-button" type="button" aria-controls="map-panel" aria-keyshortcuts="R">Map</button>
+        <button id="pause-button" type="button" aria-controls="pause-panel" aria-keyshortcuts="Escape">Pause</button>
+        <button id="sound-button" type="button" aria-pressed="true">Sound on</button>
+        <button id="fullscreen-button" type="button">Full screen</button>
+      </nav>
+    </div>
+    <div class="mini-map-wrap"><span class="mini-map-label">VOYAGE MAP</span><canvas id="mini-map" width="240" height="100" aria-label="Map of the current sector"></canvas></div>
+  </header>
+
+  <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <section id="transit-panel" aria-label="Travel to the next zone" hidden>
+    <div id="warp-readout" hidden>
+      <span class="warp-label">WARP SURF</span>
+      <strong id="warp-count" aria-live="polite" aria-atomic="true">0 / 3 rings</strong>
+      <p id="warp-help">Drag to steer · 2 rings earn a field</p>
+    </div>
+    <div class="transit-caption">
+      <p id="transit-stage">Leaving orbit</p>
+      <h2 id="transit-title">Beyond the horizon</h2>
+      <p id="transit-route"></p>
+      <div id="transit-progress" role="progressbar" aria-label="Jump progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+    </div>
+    <button id="skip-transit" type="button" aria-keyshortcuts="E">Skip jump <kbd class="desktop-key">E</kbd> <span aria-hidden="true">↗</span></button>
+  </section>
+
+  <section id="menu" class="overlay menu-overlay" aria-labelledby="menu-title">
+    <div class="menu-sky" aria-hidden="true"><div class="menu-orbit orbit-one"></div><div class="menu-orbit orbit-two"></div><div class="menu-planet"></div><div class="menu-moon"></div></div>
+    <a class="menu-back arcade-link" href="/"><span aria-hidden="true">↖</span> Back to arcade</a>
+    <div class="menu-content">
+      <h1 id="menu-title">Full Tilt<span class="title-star" aria-hidden="true">✦</span></h1>
+      <p class="menu-subtitle">A pinball voyage.</p>
+      <p class="menu-pitch">Time your flips, smash drifting asteroids, and bend shots around planets. Catch the return, build your rally, and open a gate to the next world.</p>
+      <div class="voyage-facts"><span>6 worlds to explore</span><span>New upgrades each jump</span></div>
+      <button id="play-button" class="primary-button" type="button">Start voyage <span aria-hidden="true">↗</span></button>
+      <div class="motion-controls menu-motion">
+        <div class="motion-actions">
+          <button id="motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="motion-status">Enable tilt</button>
+          <button id="menu-sound-button" class="motion-button" type="button" aria-pressed="true" aria-describedby="music-status">Sound on</button>
+        </div>
+        <p id="music-status" class="motion-status">Space music starts with your voyage.</p>
+        <p id="motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
+      </div>
+      <div class="flight-guide" aria-label="How to play">
+        <div><span class="guide-symbol" aria-hidden="true">↗ ↖</span><p><strong>Flip</strong>Time a strike to power your ball. Below a flipper, release and tap again to scoop.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">↑</span><p><strong>Launch</strong>Hold to charge. Release to fly.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">◎</span><p><strong>Pulse</strong>Nudge your course. Keep your momentum in mind.</p></div>
+        <div><span class="guide-symbol" aria-hidden="true">✦</span><p><strong>Smash</strong>Powered shots break asteroids. Hit 3 relays to open the gate.</p></div>
+      </div>
+      <p class="field-guide">Earn gravity charges from relays and orbits. Tap <strong>Field</strong>, choose Pull or Push, then place a five-second field in space. Play pauses while you aim. During warp, drag through two rings to earn another charge.</p>
+      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch <span>·</span> <kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse <span>·</span> <kbd>F</kbd> field <span>·</span> <kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> pause</p>
+    </div>
+  </section>
+
+  <section id="pause-panel" class="overlay panel-overlay" aria-labelledby="pause-title" hidden>
+    <div class="dialog-card">
+      <h2 id="pause-title">Take your time.</h2>
+      <p class="panel-description">Let the ball come to a flipper, then tap to power your shot and smash asteroids. Keep a rally going for more points. Below a flipper? Release and tap again to scoop. During warp, drag or use WASD to steer.</p>
+      <div class="motion-controls pause-motion">
+        <div class="motion-actions">
+          <button id="pause-motion-button" class="motion-button" type="button" aria-pressed="false" aria-describedby="pause-motion-status">Enable tilt</button>
+          <button id="recenter-motion-button" class="motion-button" type="button" hidden>Recenter tilt</button>
+        </div>
+        <p id="pause-motion-status" class="motion-status" role="status">Optional: hold your phone comfortably, then enable a gentle gravity nudge.</p>
+      </div>
+      <button id="resume-button" class="primary-button" type="button">Resume voyage <span aria-hidden="true">↗</span></button>
+      <button id="restart-button" class="secondary-button" type="button">Start a new voyage</button>
+      <p class="keyboard-hint"><kbd>Z</kbd> <kbd>X</kbd> flippers <span>·</span> <kbd>Space</kbd> launch<br><kbd>C</kbd> pulse <span>·</span> <kbd>A</kbd> <kbd>D</kbd> steer pulse<br><kbd>F</kbd> field <span>·</span> <kbd>WASD</kbd> aim <span>·</span> <kbd>Q</kbd> Pull/Push <span>·</span> <kbd>E</kbd> place<br><kbd>R</kbd> map <span>·</span> <kbd>Esc</kbd> resume<br><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> upgrade <span>·</span> <kbd>E</kbd> skip jump</p>
+      <a class="quiet-link" href="/">Return to arcade</a>
+    </div>
+  </section>
+
+  <section id="upgrade-panel" class="overlay celestial-overlay" role="dialog" aria-modal="true" aria-labelledby="upgrade-title" aria-describedby="upgrade-detail" hidden>
+    <div class="upgrade-console">
+      <svg class="console-frame" viewBox="0 0 1080 600" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M20 1H1060L1079 20V580L1060 599H20L1 580V20Z"/><path d="M22 6H1058L1074 22V578L1058 594H22L6 578V22Z"/></svg>
+      <div class="upgrade-rail">
+        <p class="upgrade-status"><span aria-hidden="true"></span>JUMP GATE REACHED</p>
+        <p class="upgrade-route"><span id="upgrade-from"></span><svg viewBox="0 0 32 16" aria-hidden="true" focusable="false"><path d="M1 8h28m-7-6 7 6-7 6"/></svg><span id="upgrade-to"></span></p>
+      </div>
+      <div class="upgrade-heading">
+        <div><h2 id="upgrade-title">Choose your upgrade.</h2><p id="upgrade-detail">Fit one module before the next jump.</p></div>
+        <svg class="upgrade-compass" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="20"/><path d="M50 3v94M3 50h94"/><path class="compass-star" d="m50 42 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/></svg>
+      </div>
+      <div id="upgrade-options" class="upgrade-modules" role="group" aria-label="Choose one upgrade"></div>
+      <p class="upgrade-footnote">Each choice lasts for this voyage.</p>
+    </div>
+  </section>
+
+  <section id="end-panel" class="overlay panel-overlay" aria-labelledby="end-title" hidden>
+    <div class="dialog-card">
+      <h2 id="end-title">Voyage complete.</h2>
+      <p id="end-detail" class="panel-description"></p>
+      <button id="again-button" class="primary-button" type="button">Fly again <span aria-hidden="true">↗</span></button>
+      <a class="quiet-link" href="/">Return to arcade</a>
+    </div>
+  </section>
+
+  <section id="map-panel" class="overlay map-overlay" aria-labelledby="map-title" hidden>
+    <div class="dialog-card route-card">
+      <div class="panel-heading"><div><p class="eyebrow">THE CELESTIAL VOYAGE</p><h2 id="map-title">Across the stars.</h2><p id="map-progress">0 of 6 worlds explored</p></div><button id="close-map" class="icon-button" type="button" aria-label="Close map">✕</button></div>
+      <ul id="route-list" class="route-list"></ul>
+      <p class="map-footnote">Open each gate to reach the next world.</p>
+    </div>
+  </section>
+
+  <section id="field-placement" aria-label="Place a gravity field" hidden>
+    <p id="field-aim-help" role="status">Time paused. Tap space to place, or drag and release.</p>
+    <div class="field-tools">
+      <div class="field-kinds" role="group" aria-label="Field direction">
+        <button id="field-pull" type="button" aria-pressed="true">Pull</button>
+        <button id="field-push" type="button" aria-pressed="false">Push</button>
+      </div>
+      <button id="deploy-field" type="button" aria-keyshortcuts="E">Place here <kbd class="desktop-key">E</kbd></button>
+      <button id="cancel-field" type="button" aria-keyshortcuts="F Escape">Cancel <kbd class="desktop-key">F</kbd></button>
+    </div>
+  </section>
+
+  <div id="controls" aria-label="Pinball controls">
+    <button id="left-flip" class="flipper-button" type="button" aria-label="Left flipper" aria-keyshortcuts="Z"><span class="flipper-arrow" aria-hidden="true">↗</span><span class="flip-label">LEFT FLIPPER</span><kbd>Z</kbd></button>
+    <div class="center-controls">
+      <div class="control-readouts">
+        <span id="rally-status" data-state="ready">Time your flips. Smash drifting asteroids.</span>
+        <span id="field-status">Relays and orbits earn field charges</span>
+      </div>
+      <button id="launch-button" class="launch-button" type="button" aria-keyshortcuts="Space"><span aria-hidden="true">↑</span> Launch</button>
+      <button id="pulse-button" class="pulse-button" type="button" aria-keyshortcuts="C A D"><span aria-hidden="true">◎</span> Pulse</button>
+      <button id="field-button" class="field-button" type="button" aria-keyshortcuts="F" aria-pressed="false" aria-controls="field-placement" disabled>Field 1</button>
+    </div>
+    <button id="right-flip" class="flipper-button" type="button" aria-label="Right flipper" aria-keyshortcuts="X"><kbd>X</kbd><span class="flip-label">RIGHT FLIPPER</span><span class="flipper-arrow" aria-hidden="true">↖</span></button>
+  </div>
+  <script type="module" src="/lab/tilt/main.js"></script>
 </body>
 </html>

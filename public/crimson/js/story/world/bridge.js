@@ -3,17 +3,19 @@
 // deck is a walk:true box (the Midgley deck's top is y 62) and each rail a segment collider.
 // bridgeSilhouette() returns a low-poly near-black copy for far views in world scenes.
 import { Geo } from './town.js';
+import { CANYON_TRAIL } from './canyon-trail.js';
 
 const STEEL = [0.44, 0.47, 0.48], CONCRETE = [0.62, 0.6, 0.56], DECK = [0.5, 0.49, 0.47], RAIL = [0.7, 0.7, 0.68];
 
 // Midgley in its own frame: u along the deck from the south end (0) to the north end (L), v across, y up
 function midgleyGeo(THREE, L, deckY, groundAt, lod = 0) {
   const g = new Geo();
-  const span0 = 16, span1 = L - 16, crown = deckY - 1.6, spring = deckY - 27, half = (span1 - span0) / 2, mid = (span0 + span1) / 2;
+  const span0 = 16, span1 = L - 16, crown = deckY - 4.2, spring = deckY - 27, half = (span1 - span0) / 2, mid = (span0 + span1) / 2;
   const archY = (u) => crown - (crown - spring) * Math.pow((u - mid) / half, 2);
   const sides = lod ? 4 : 7;
   // the deck slab, its edge girders and the road surface
   g.box(L / 2, deckY - 1.25, 0, 9.2, 1.25, L, Math.PI / 2, DECK, { top: [0.3, 0.3, 0.31] });
+  for (const lateral of [-0.16, 0.16]) g.box(L / 2, deckY + 0.015, lateral, 0.1, 0.01, L, Math.PI / 2, [0.8, 0.48, 0.16]);
   for (const v of [-4.1, 4.1]) g.box(L / 2, deckY - 2.1, v, 0.5, 0.9, L, Math.PI / 2, STEEL);
   // two arch ribs, each two chords tied by struts
   for (const v of [-3.2, 3.2]) {
@@ -42,6 +44,28 @@ function midgleyGeo(THREE, L, deckY, groundAt, lod = 0) {
 export function createBridges(S, { THREE, group, colliders, material, bridges, height }) {
   const root = new THREE.Group(); root.name = 'bridges'; group.add(root);
   const out = [];
+  const trail = new Geo();
+  for (let index = 1; index < CANYON_TRAIL.length; index++) {
+    const start = CANYON_TRAIL[index - 1], end = CANYON_TRAIL[index];
+    const dx = end[0] - start[0], dz = end[1] - start[1], length = Math.hypot(dx, dz), count = Math.ceil(length);
+    const vertex = (fraction, side) => {
+      const x = start[0] + dx * fraction - dz / length * side, z = start[1] + dz * fraction + dx / length * side;
+      return [x, height(x, z) + 0.09, z];
+    };
+    for (let part = 0; part < count; part++) trail.quad(vertex(part / count, -1.4), vertex(part / count, 1.4), vertex((part + 1) / count, 1.4), vertex((part + 1) / count, -1.4), [0.64, 0.43, 0.26]);
+  }
+  for (const [index, point] of CANYON_TRAIL.entries()) {
+    const x = point[0] + 6, z = point[1], base = height(x, z);
+    for (let tier = 0; tier < 3; tier++) trail.box(x, base + tier * 0.22, z, 0.7 - tier * 0.16, 0.23, 0.6 - tier * 0.12, index * 0.6 + tier, [0.58, 0.4, 0.29]);
+  }
+  const clearing = CANYON_TRAIL[CANYON_TRAIL.length - 1];
+  for (const offset of [-7, 7]) {
+    const x = clearing[0] + offset, z = clearing[1] + 5, base = height(x, z);
+    trail.box(x, base, z, 2.8, 0.7, 1.3, offset * 0.1, [0.62, 0.34, 0.2]);
+    colliders.addCircle(x, z, 1.1, { tag: 'canyon-rock' });
+  }
+  const trailMesh = new THREE.Mesh(trail.build(THREE), material);
+  trailMesh.name = 'canyon-trail-markers'; trailMesh.castShadow = true; trailMesh.receiveShadow = true; root.add(trailMesh);
   for (const b of bridges) {
     const dx = b.bx - b.ax, dz = b.bz - b.az, L = Math.hypot(dx, dz), yaw = Math.atan2(dx, dz); // +u runs along (dx, dz)
     // frame: u along the deck, v across (to the left of +u), y up

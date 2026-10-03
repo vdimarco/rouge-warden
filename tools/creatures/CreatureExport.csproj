@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UpstreamRoot Condition="'$(UpstreamRoot)' == ''">../../.cache/procedural-pixel-creatures</UpstreamRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamRoot)/addons/procedural_creatures/Core/**/*.cs" LinkBase="Core" />
+    <Compile Include="$(UpstreamRoot)/addons/procedural_creatures_plantfolk/Core/**/*.cs" LinkBase="Plantfolk" />
+  </ItemGroup>
+</Project>

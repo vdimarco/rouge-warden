@@ -1,13 +1,11 @@
 // js/story/cast/crowd.js : townsfolk and followers (CAST spec 9).
 // Crowd: pedestrians on sidewalk lines in Uptown, West Sedona, the diner and the trailheads. They walk, stand,
 // look at their phones and photograph the buttes. Counts follow the tier (12 / 6 / 3, times setDensity);
-// only ambient people scale with the tier (C2). They scatter from fights, and each tick they put a soft
-// circle into S.vehicles.people with a dive() that sidesteps for 0.4 s (false when both sides are blocked,
-// so the vehicle treats the person as a soft wall). Nobody is ever hit.
 // Followers: friends that keep a slot behind the hero, and board or leave a van with a short fade.
 import * as THREE from 'three';
 import { PLACES } from '../world/places.js';
 import { ROADS, WALKS, smoothLine } from '../world/roads.js';
+import { impactDamage, stepTumble } from '../vehicles/pedestrian-impact.js';
 
 const TAU = Math.PI * 2;
 export const CROWD_COUNT = Object.freeze([3, 6, 12]);
@@ -86,6 +84,8 @@ export function createCrowd(S, cast) {
     const id = rand() < 0.5 ? 'civA' : 'civB';
     const a = cast.spawn(id, { pos: { x: v2.x, z: v2.y }, variant: Math.floor(rand() * 6), crowd: true });
     const p = { a, ln, s, dir: rand() < 0.5 ? 1 : -1, speed: 1.05 + rand() * 0.45, state: 'walk', t: 2 + rand() * 8, flee: 0, fleeDir: new THREE.Vector2(), dive: null, pos: new THREE.Vector3(v2.x, 0, v2.y), face: 0 };
+    p.hp = 100; p.hitAt = -Infinity; p.dead = false;
+    a.play('lib:idle', { at: rand() * 4, speed: 0.85 + rand() * 0.3 });
     p.pos.y = S.world.surface(p.pos.x, p.pos.z);
     if (ln.kind === 'view') { p.state = rand() < 0.5 ? 'photo' : 'stand'; p.t = 4 + rand() * 6; }
     peds.push(p);
@@ -100,19 +100,89 @@ export function createCrowd(S, cast) {
     else if (st === 'photo') a.play('lib:photo', { fade: 0.4 });
     else a.play('lib:idle', { fade: 0.4 });
   }
+  function hit(p, source) {
+    if (p.dead || S.time - p.hitAt < (source.cooldown ?? 0.8)) return false;
+    p.hitAt = S.time;
+    const speed = source.vel ? Math.hypot(source.vel.x, source.vel.z) : source.speed;
+    const damage = source.impactDamage ?? impactDamage(Math.abs(speed));
+    if (damage <= 0) return false;
+    p.hp = Math.max(0, p.hp - damage);
+    const direction = source.vel || { x: Math.sin(source.face), z: Math.cos(source.face) };
+    const length = Math.hypot(direction.x, direction.z) || 1;
+    scatter(p.pos.x, p.pos.z, 35);
+    S.bus.emit('pedestrianCrime', { fatal: p.hp === 0, pos: p.pos.clone() });
+    S.audio?.sfx('bump', { at: p.pos, hard: true });
+    if (p.hp > 0) {
+      p.flinch = 0.35; p.a.move(0);
+      p.a.play('gabe:hit', { loop: false, fade: 0.05, restart: true });
+      return true;
+    }
+    p.dead = true; p.state = 'dead'; p.dive = null;
+    if (p.circle) p.circle.dead = true;
+    p.a.move(0);
+    p.a.play('lib:tumble', { fade: 0.04, restart: true });
+    const force = Math.min(20, Math.max(4, Math.abs(speed) * 0.75));
+    p.tumble = { pos: p.pos, vx: direction.x / length * force, vz: direction.z / length * force,
+      vy: 5 + Math.min(7, Math.abs(speed) * 0.24), age: 0, bounces: 0, spin: (rand() < 0.5 ? -1 : 1) * (5 + rand() * 4) };
+    S.ctx?.fx?.dust({ ...p.pos, groundY: p.pos.y }, 10, 1.8);
+    return true;
+  }
+  function strike(hero, attack, damage) {
+    let hits = 0;
+    for (const person of peds) {
+      if (person.dead || attack.cleave.has(person)) continue;
+      const dx = person.pos.x - hero.pos.x, dz = person.pos.z - hero.pos.z;
+      const angle = Math.atan2(Math.sin(Math.atan2(dx, dz) - hero.face), Math.cos(Math.atan2(dx, dz) - hero.face));
+      if (Math.hypot(dx, dz) > attack.spec.reach + 0.35 || Math.abs(angle) > attack.spec.arc || Math.abs(person.pos.y - hero.pos.y) > 1.5) continue;
+      attack.cleave.add(person);
+      if (hit(person, { impactDamage: damage, speed: 8, face: hero.face })) hits++;
+    }
+    return hits;
+  }
   function update(rdt, focus) {
     const W = S.world;
     if (!W || !W.ready || !W.visible || !focus) { if (peds.length) clear(); return; }
     const want = Math.round(CROWD_COUNT[Math.max(0, Math.min(2, S.q ?? 2))] * density);
     // keep the count: drop people far from the focus, add new ones near it (at most one a second)
-    for (const p of peds.slice()) if (Math.hypot(p.pos.x - focus.x, p.pos.z - focus.z) > 300 || peds.length > want) remove(p);
+    for (const p of peds.slice()) if ((p.dead && p.tumble.age >= 14) || Math.hypot(p.pos.x - focus.x, p.pos.z - focus.z) > 300 || peds.length > want) remove(p);
     spawnCD -= rdt;
     if (peds.length < want && spawnCD <= 0) { spawnCD = 1; spawnOne(focus); }
     const people = S.vehicles && S.vehicles.people;
     for (const p of peds) {
       const a = p.a;
+      if (p.dead) {
+        const body = p.tumble;
+        if (stepTumble(body, Math.min(rdt, 0.05), (x, z) => W.surface(x, z, p.pos.y + 2))) {
+          S.ctx?.fx?.dust({ ...p.pos, groundY: W.surface(p.pos.x, p.pos.z) }, 6, 1.2);
+          S.audio?.sfx('bump', { at: p.pos, gain: 0.4 });
+        }
+        if (W.colliders?.resolveCircle) W.colliders.resolveCircle(p.pos, 0.3, p.pos.y);
+        if (!body.settled && (body.vy !== 0 || Math.hypot(body.vx, body.vz) > 0.3)) {
+          a.root.rotation.x += body.spin * rdt;
+          a.root.rotation.z += body.spin * 0.37 * rdt;
+        } else {
+          a.root.rotation.x = 0; a.root.rotation.z = 0;
+          if (!body.settled) { body.settled = true; a.play('lib:dead', { fade: 0.25 }); }
+          p.pos.y = W.surface(p.pos.x, p.pos.z, p.pos.y + 2);
+        }
+        a.root.position.copy(p.pos);
+        a.root.scale.setScalar(body.age > 12 ? Math.max(0, (14 - body.age) / 2) : 1);
+        continue;
+      }
+      const car = S.drive?.riding;
+      if (car && Math.abs(car.speed) > 5 && !p.flee && !p.dive) {
+        const distance = Math.hypot(p.pos.x - car.pos.x, p.pos.z - car.pos.z);
+        if (distance < 9 && distance > 3) {
+          p.flee = 3; p.state = 'flee';
+          p.fleeDir.set((p.pos.x - car.pos.x) / distance, (p.pos.z - car.pos.z) / distance);
+          a.play('lib:idle', { fade: 0.1 });
+        }
+      }
       let sp = 0;
-      if (p.dive) { // the sidestep: 0.4 s, then back to what they were doing
+      if (p.flinch > 0) {
+        p.flinch -= rdt;
+        if (p.flinch <= 0) a.play('lib:idle', { fade: 0.15 });
+      } else if (p.dive) { // the sidestep: 0.4 s, then back to what they were doing
         p.dive.t += rdt; const k = Math.min(1, p.dive.t / 0.4), e = k * k * (3 - 2 * k);
         p.pos.x = p.dive.x0 + (p.dive.x1 - p.dive.x0) * e; p.pos.z = p.dive.z0 + (p.dive.z1 - p.dive.z0) * e;
         sp = 3.5 * (1 - k);
@@ -149,9 +219,10 @@ export function createCrowd(S, cast) {
       let dy = p.face - a.root.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       a.root.rotation.y += dy * Math.min(1, rdt * 8);
       a.move(sp);
-      if (people) people.push(p.circle || (p.circle = { x: 0, z: 0, r: 0.35, crowd: true, cast: true, dive: (dir) => dive(p, dir) }));
-      if (p.circle) { p.circle.x = p.pos.x; p.circle.z = p.pos.z; }
+      if (people) people.push(p.circle || (p.circle = { x: 0, z: 0, y: 0, r: 0.35, crowd: true, cast: true, dive: (dir) => dive(p, dir), hit: (vehicle) => hit(p, vehicle) }));
+      if (p.circle) { p.circle.x = p.pos.x; p.circle.z = p.pos.z; p.circle.y = p.pos.y; }
     }
+    for (const person of peds.slice()) if (person.dead && person.tumble.age >= 14) remove(person);
   }
   // dir: {x, z} the way to step (a vehicle's side); the other side is tried when that one is blocked
   function dive(p, dir) {
@@ -169,6 +240,7 @@ export function createCrowd(S, cast) {
   }
   function scatter(x, z, r) {
     for (const p of peds) {
+      if (p.dead) continue;
       const dx = p.pos.x - x, dz = p.pos.z - z, d = Math.hypot(dx, dz);
       if (d > r) continue;
       p.flee = 3 + rand() * 2; p.fleeDir.set(d > 0.01 ? dx / d : 1, d > 0.01 ? dz / d : 0);
@@ -177,7 +249,7 @@ export function createCrowd(S, cast) {
   }
   function clear() { for (const p of peds.slice()) remove(p); }
   return {
-    update, scatter, clear,
+    update, scatter, clear, hit, strike,
     setDensity(k) { density = Math.max(0, Math.min(2, +k || 0)); },
     get density() { return density; }, get list() { return peds; }, lines: LINES,
   };

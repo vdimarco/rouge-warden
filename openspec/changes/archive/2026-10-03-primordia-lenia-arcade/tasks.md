@@ -1,0 +1,12 @@
+- [x] Study the reference Lenia page and decode Orbium and the max-fleet hunters from its catalogue.
+- [x] Build the two-channel FFT Lenia core and check gliding, survival and collisions in Node.
+- [x] Keep the dish playable: agar for prey blooms, quorum toxin for blooms and red tides.
+- [x] Make hunters stalk the player and flee in Frenzy with whole-body advection; keep hunters apart.
+- [x] Implement the game rules: eating, devours, combos, light, Frenzy, spawns with warnings, golden prey, epochs, mutations, Leviathan.
+- [x] Render the dish with a WebGL2 shader and a Canvas 2D fallback; draw the player, particles and labels.
+- [x] Add synthesized music and effects.
+- [x] Add title, mutation, pause and game-over screens, HUD, tips, bestiary and saved best score.
+- [x] Support mouse, keyboard, touch and gamepad; landscape and portrait dishes.
+- [x] Add the arcade cabinet with a frame from the game.
+- [x] Node tests for Lenia behaviour and game rules; Playwright smoke test for desktop and phone.
+- [x] Validate and archive the specification.

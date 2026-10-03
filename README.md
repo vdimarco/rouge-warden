@@ -6,16 +6,20 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rouge at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Every game has a machine. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Cottage Brawl at `/brawl/`, Breath of the Lake at `/wild/`, Reel It In at `/fish/`, In Full Swing at `/vr/`, Olympus at `/olympus/`, Crimson Rogue at `/crimson/`, Shore of the Ancients at `/tidebreak/`, Moonwell at `/moonwell/`, and BREAKTHROUGH at `/breakthrough2/`. The lab has machines too: The Lab (`/lab/`), Small Worlds (`/lab/worlds/`), Neon Ronin (`/neon/`), Loon Echo (`/echo/`), Tell Me (`/tellme/`), and the four lab toys, Take the Plunge, Up the Creek, Full Tilt and House Rules. The older BREAKTHROUGH page at `/breakthrough/` has no machine: the machine opens `/breakthrough2/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
+- The machines stand in four groups: Cottage, Action, Strategy and Lab. The pills under the sign jump to a group, and the list under the machines names every machine. The pills show Cottage, Action and Strategy; **LAB ↗** goes straight to the lab page. New machines go at the end of the row, because the page counts them in order. Add the game to a group in the `GROUPS` list in `public/index.html`, or it shows under **More**.
+- A machine's screen is a picture from the real game, saved as a WebP file in `public/arcade/` (480 pixels wide, under 60 KB), or a small canvas. The line on the screen reads that game's own save in your browser. A missing or broken save keeps the plain line.
 - The ◀ ▶ arrows at the sides switch machines on every screen. You can also swipe, drag with the mouse, or use the scroll wheel or a trackpad. On a phone, and on any screen too narrow for the whole row, you see one machine at a time in the middle, and the row slides.
-- Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
+- Every game's menu has a **Switch game** button. It lists every game that has a machine, marks the one you are playing, and jumps straight to another game or back to the arcade. The two buttons at the bottom stay in view while you scroll the list. The list lives in `public/arcade/switch.js`. When one game's address starts with another's (`/lab/worlds/` and `/lab/`), the longer one is the game you are playing. Only some game menus have the button so far. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
+
+Sound stops when a page is hidden. On a phone, a tab you leave, a browser you minimise, or a locked screen can keep playing music. `public/arcade/quiet.js` stops it for every game. It keeps track of every `AudioContext`, `<audio>`, and `<video>` that a page makes, and of the SoundCloud songs in Get Plunger'd and Crimson Rogue. When the page is hidden, it suspends them. When the page is visible again, it starts only what it stopped, and a game that suspends its own sound keeps control of it. Each game page that makes sound loads it first in `<head>`: `<script src="/arcade/quiet.js"></script>`. A new game must do the same. In Full Swing (`/vr/`) does not load it. Its own code stops the sound when a headset session is hidden, and when the page is hidden on a phone. To test it, serve `public/` and run `node qa/arcade/quiet.mjs`. It fails when a page with sound does not load the script first. It also opens each game, hides the page, and checks that the sound stops and comes back.
 
 ## Play
 
@@ -182,9 +186,9 @@ On a phone, the left thumb moves, and pulling down on the stick while you hit in
 
 The game fits the screen on desktop and phone. Menus never shrink their text: a menu too tall for the screen flows into two columns, and on a narrow phone it scrolls inside the screen.
 
-## Crimson Rouge
+## Crimson Rogue
 
-Crimson Rouge is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
+Crimson Rogue is a third-person 3D boss fight at `/crimson/`, in the spirit of Black Myth: Wukong and Sekiro. One of the crew, dressed as a ronin, meets Gabe the mountain man at night in the red-rock hills of Sedona. The whole world is black-and-white ink wash. Only Gabe's neon track suit has color, and neon means danger: a fist, foot, or claw glows neon just before it lands.
 
 - **Pick a friend.** Tank Top hits 20% harder, Fifty-One has 20% more life, Shades has a wider parry window, New Balance dodges for less ki, and Red Jersey moves 12% faster. All five fight as the same ronin for now.
 - **Gabe, the mountain man.** A boxer in a neon track suit. He throws jab-cross combos, a lunging roundhouse kick, and a cartwheel into a flying kick. He slips your swings and counters. A neon 危 means a grab (he hauls you over his head and throws you) or his bear call: he pulls out a PVC pipe and roars down it, and neon sound rings blow you off your feet. Dodge through both.
@@ -252,6 +256,7 @@ The game uses Three.js r170 (in `public/crimson/lib/`) with no build step. Add `
 
 Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The Legend of Zelda: Breath of the Wild, with a soft, hand-painted look like a Studio Ghibli film. The Porcelain King clogged Loon Lake. His sludge took Gabe, Christian, and Ryu, and gave them red eyes. You wake up at the cottage and go get them back.
 
+- **A painted lakeside world.** Higgsfield-generated cottage, wood, linen, roof, foliage, sky and meadow artwork is mapped onto real 3D geometry. Raised window frames, a shingled roof, curved furniture and an open pergola catch the sunlight. Leaf clusters sway on instanced trees, while the painted sky yields to sunset, night and the King’s storm. Characters, cottage and foliage share soft cel shading, warm directional sunlight and cool skylight; simpler ground color shapes and drawn outlines give the game a cartoon aesthetic. The cottage remains a solid, climbable building. Asset provenance and rendering notes are in [docs/botl-art.md](docs/botl-art.md).
 - **Go anywhere.** The valley is about 1.6 km across: the cottage on the south shore, the pine forest to the west, the meadows to the east, and the mountains to the north. A short dock at the cottage has a kayak tied to it. Paddle it out to Clog Island.
 - **Climb anything.** Walk into a cliff, a tower, or a building, and you grab on. You climb hand over hand in pulls, lean into rock faces, and pull yourself up over the top edge. Climbing uses stamina.
 - **Glide.** Jump, then jump again in the air to open a beach umbrella. A campfire under you pushes you up.
@@ -312,7 +317,7 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 
 ## Reel It In
 
-Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake. Your phone is the rod and the reel: you cast it and reel it with real moves.
+Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake, and later at three more places. Your phone is the rod and the reel: you cast it and reel it with real moves.
 
 **Hold the phone upright the whole time.** Its top edge is the rod, for the cast and for the reel. You never turn it sideways.
 
@@ -335,15 +340,35 @@ After each cast you see the distance and how the release went. Rings on the wate
 
 - Turn the crank with your thumb to reel. The first turn snaps the bail shut, like a real reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
 - A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: snap the phone up to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
-- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. When a fish jumps, lower the rod or it throws the hook. Tilt the phone left or right like a steering wheel to swing the rod and turn a running fish away from the weeds and the rocks.
-- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag.
+- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. Each move has one right answer, and the game names it:
+  - A fish that **shakes its head**: hold the rod up, and reel in any slack.
+  - A fish that **jumps**, or jumps again and again (a tail walk): lower the rod.
+  - A fish that **swims at you**: reel fast, or the line goes slack and it throws the hook.
+  - A fish that **holds on the bottom**: pump it up. Tip the phone up slowly, then reel as you lower it.
+  - A fish that **runs for cover**: tilt the phone left or right like a steering wheel, and turn it away from the weeds, the stumps, the logs, or the rocks.
+- The red band on the gauge is the **rub meter**. It fills when the line touches a stump, a log, a rock, or the weeds, and the line is cut when it is full. Steer the fish away, or lift the rod over low rocks.
+- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag. At Gull Rock the spool can empty on a long run: tighten the drag.
+- A legend fights in three stages and rests between them, so your arm rests too. In a rest the fish cannot be landed, and the line is safe whatever you do.
 - When the fish is tired and close to the dock, tip the phone up and hold it to lift the fish out.
 
 **Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the press on the reel, the release of your thumb, and the crank. The other cues come through sound and pictures there.
 
-**The fish.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+**Places.** Land a big fish to open the next place. Each place has its own look, its own gear, its own derby and best score, its own tab in the Journal, and its own legend.
 
-**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about 40 seconds for a muskie, so your arm does not tire.
+| Place | You open it with | What is different | Legend |
+| --- | --- | --- | --- |
+| Loon Lake | (open from the start) | A calm lake. It teaches the moves. Line: 10 lb. | Golden Loon Bass |
+| Stump Bay | A 3.5 kg fish at Loon Lake | A flooded forest at dusk, then night. The line rubs on stumps, so you steer fish out. Catfish bite in the dark. Line: 20 lb braid. | Old Whiskers, a giant catfish |
+| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current runs left and swings your lure, and salmon run down the river toward a logjam, so cast to the right. Line: 20 lb. | Old Hookjaw, an old salmon |
+| Gull Rock | An 8 kg fish at Cedar River | The open sea, from the end of a stone wall. A giant tuna can empty your spool, and some fish dive for the rocks at your feet. Line: 30 lb. | Big Blue, a tuna as big as a man |
+
+An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is open. Add `?open` to the URL to open every place for that visit only.
+
+**The fish at Loon Lake.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+
+**The other places have 16 more fish.** Stump Bay has Black Crappie, Bowfin, Longnose Gar, Channel Catfish, and Old Whiskers. Cedar River has Steelhead, Chinook Salmon, Brown Trout, Brook Trout, and Old Hookjaw. Gull Rock has Atlantic Mackerel, Pollock, Striped Bass, Bluefish, Atlantic Cod, and Big Blue. Each fights its own way. Fish are bigger than before: a usual catch is about 2 kg at Loon Lake, and long casts find the biggest ones. The catch card says how big your fish is for its kind, and a very big one gets a TROPHY badge and a photo.
+
+**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal has a tab for each place. It keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about a minute for a legend, and a legend rests between its stages, so your arm does not tire.
 
 **Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
 
@@ -357,7 +382,7 @@ The lake, the dock, the rod, the lure, and the fish are all built in code with t
 
 ## The lab
 
-The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade does not show the lab, and the game switcher does not list it. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
+The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
 
 Each toy starts with a card that says what to try. The lab page shows how long you played each toy. Only your browser keeps these times. Tell the crew your times, and whether you wanted another go.
 
@@ -378,8 +403,9 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 1. Save the `list_sessions` result (your own sessions, limit 50) to a file.
 2. Read the live page with the Artifact tool, which saves it to a file.
-3. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
-4. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
+3. Save the pull request list (all states) to a file: `gh api "repos/<owner>/<repo>/pulls?state=all&per_page=100"`, one call per page. A pull request that was squash-merged leaves its branch ahead of main, so only the list can tell that the work tree is merged.
+4. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --prs <pull request file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
+5. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
 
 | Agent state | When |
 | --- | --- |
@@ -394,20 +420,21 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | Path | What it does |
 | --- | --- |
 | `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
-| `public/arcade/` | The art on the arcade screens, and `switch.js`, the game switcher every game's menu opens |
+| `public/arcade/` | The art on the arcade screens, `switch.js` (the game switcher every game's menu opens), and `quiet.js` (stops the sound of a hidden page) |
+| `qa/arcade/` | The tests that every game has a machine, and that sound stops when a page is hidden (see below) |
 | `public/plungerd/index.html` | The page for Get Plunger'd |
 | `public/plungerd/app.js` | The game script. The crew, the boss sheets, and the cover art are inside the file |
 | `public/plungerd/art/` | The painted ground, walls, critters, props, guns, shots, and effects. Each file also comes at half size (`.sd.webp`) for phones |
 | `public/og.jpg` | The share image |
 | `public/fall/index.html` | Down the Drain: the falling-sand simulation, the guns, the critters, and the Cottage's questions, in one file with no libraries |
-| `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rouge: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
-| `public/crimson/js/` | Crimson Rouge modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
+| `public/crimson/index.html`, `public/crimson/game.js` | Crimson Rogue: the page, the HUD, and the fight: moves, boss AI, camera, and flow |
+| `public/crimson/js/` | Crimson Rogue modules: the ink renderer, the Sedona world, effects, sound, and the character loader |
 | `public/crimson/models/` | The ronin, Gabe, and the bear: textured, rigged, with their clips |
-| `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rouge |
+| `public/crimson/art/`, `public/crimson/clips/` | The title art, the character portraits, and the clips for Crimson Rogue |
 | `public/crimson/audio/` | The credits music, rendered from the score in `js/credits.js` |
-| `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rouge |
-| `public/crimson/js/story/` | Crimson Rouge story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
-| `qa/crimson/` | Playwright tests for Crimson Rouge (see below) |
+| `public/crimson/lib/` | Three.js r170 and its glTF loader, used only by Crimson Rogue |
+| `public/crimson/js/story/` | Crimson Rogue story mode (Ten Seats): the world, cast, vehicles, missions, UI and chapter content |
+| `qa/crimson/` | Playwright tests for Crimson Rogue (see below) |
 | `higgsfield/` | Command-line tools that run Higgsfield API models. The key stays in a git-ignored `.env.local` |
 | `public/fall/art/` | The crew and boss pictures for Down the Drain, its pixel-art title picture, its hero cards, and the Painted-mode pixel sprites (`pxcrew*.webp` for the crew, `px_*.webp` walk, walk, and attack strips for the critters and bosses) |
 | `public/fall/tex/` | The Painted textures for Down the Drain: 64×64 material tiles and 128×128 back walls, one texel for each world cell |
@@ -417,7 +444,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
 | `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
-| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `lake.js` (the lake map), `species.js` (the fish and the junk), `world.js` and `world-*.js` (the 3D lake), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
+| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `places.js` and `places/` (the four maps: height, depth, zones, current, snags), `lake.js` (the map of the place you are at), `species.js` (the 26 fish and the junk), `fishing.js` (who lives where, the gear, the cover, and the legend at each place), `journey.js` (the trail of places, goals, ranks, and text), `save.js` (the save file), `world.js`, `world-look.js` and `world-*.js` (the 3D places and the fish bodies), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
@@ -439,7 +466,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 The QA scripts open `file:///home/claude/plungerd.html`. Change that path to `public/plungerd/index.html` before you run them.
 
-### Crimson Rouge tests
+### Crimson Rogue tests
 
 Serve `public/` (for example `python3 -m http.server 8765 --directory public`), set `CRIMSON_URL=http://127.0.0.1:8765/crimson/`, then run each script with Node from the repo root. Each one exits with code 1 when something fails.
 
@@ -465,6 +492,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `fuzz.mjs [runs] [steps]` | A bot mashes random buttons all over the map. After every step: no NaN, never under the ground or inside a building, never out of the world, hearts and stamina in range. |
 | `stress.mjs` | Runs, rolls, and jumps into every building from 12 sides. Climbs and lets go. Jumps and glides off every tower. Climbs 40 cliffs. Swims under the dock. Paddles the kayak all over the lake, hops out, and climbs back in. Fishes at every spot with random buttons. Watches for the hero or the camera getting stuck or going inside things. |
 | `flows.mjs` | Damaged save files, double clicks on New game, dying during a conversation, menus on top of menus, travel during a boss fight, catching a fish, moving or getting hit while fishing, travel from the kayak, a whole day and night, window resizing, and a graphics reset. |
+| `art.mjs` | Generated asset loading, UVs and texture color spaces, cottage batching and roof height, day/night transitions, mobile viewport, and a playable fallback when all generated artwork fails to download. Set `SHOTS` for screenshots. |
 | `render.mjs` | Draws the game at every graphics setting, by day, at sunset, and at night. No shader errors, and the picture is never blank, washed out, or black. |
 | `adventure.mjs` | Every weapon and its combo, the modifiers, the double-damage last hit, throwing and picking up, the Frisbee coming back, a full pouch, the chests (four in each land), the camp cooler lock, all five side quests, Chip's bigger pouch, the two mini-bosses, and that a save with all of this loads again. |
 | `king.mjs` | A bot fights the whole Porcelain King fight with the normal controls. All three rounds happen, plunging works, the sludge wall keeps you on the court, and after the fight or a death everything is put back. |
@@ -484,13 +512,30 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
 | `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
 | `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
-| `qa/fish/fight.sim.mjs` | Thousands of fights with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also bite rates by zone and the weights |
+| `qa/fish/fight.sim.mjs` | Thousands of fights at Loon Lake with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also the fight times, bite rates by zone, and the weights |
+| `qa/fish/places.sim.mjs` | Fights at all four places with skilled, casual and flawed players: median fight times, land rates, the legends' three stages and rests, the rub meter, the spool, and the dead-tow time. Uses `fightlib.mjs` |
+| `qa/fish/size.test.mjs` | The weight mix at each place (median, small and big shares, long casts against short casts), and the size rank of every species |
+| `qa/fish/places.map.mjs` | The four maps: zone shares, the stand, the current, the snags, the speed of `height()`, and that Loon Lake is unchanged |
+| `qa/fish/save.test.mjs` | The save file: old saves, junk values, the move of an old save to the places, and a stable round trip |
+| `qa/fish/journey.sim.mjs` | How many casts a novice and a good player need to open each place, the derby ranks, and that each goal is a fair size |
+| `qa/fish/screens.mjs` | The prompts in their order, the loss lines, the catch card, the unlock cards, the results, the journal, and the cabinet line, with staged fights |
+| `qa/fish/travel.mjs` | Travel between the places: the cards, the draw call and triangle limits at each place, and that memory does not grow over a loop of trips |
+| `qa/fish/fish.render.mjs` | Every fish and junk builds with 3 draw calls, stays within the triangle limit, shows in the catch view, and frees its textures |
 | `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
 | `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
 | `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
-| `qa/fish/world.render.mjs` | The lake at every hour and in every view, each fish, the trophy view, and the draw call and triangle limits |
+| `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
+
+### Arcade tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`walk`, `layout`, `switcher`, `saves`, `credits`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/arcade/machines.mjs` | Every game folder in `public/` (and every toy folder in `public/lab/`) has a machine and a place in `switch.js`, and the pictures are there. Then, at 390×844 and 1280×720, the arrows walk to every machine, a token goes in (dragged, tapped, or with key 5), START or key 1 or Enter picks the right address, and the page has no errors. It also checks the last machine by key and by swipe at seven window sizes, that no machine is clipped or overlapped, that the game switcher shows every game, marks the right one for each address, and keeps its exit buttons in reach, and that a junk save never breaks a screen line. A game with no machine must be in the `ALLOW` list in the script, with the reason. Each machine and its switcher entry must have the same id and the same name. The end card of Crimson Rogue, which lists the games of the switcher, keeps its buttons in the window at 360×740, 390×844 and 1280×720. |
+| `qa/arcade/quiet.mjs` | Every page that makes sound loads `quiet.js` first (the scan). The script itself, on small test pages: contexts, media, SoundCloud songs, speech, `interrupted` contexts, a page with no `AudioContext`, and a script that loads twice. Then every game page, started the way a player starts it: the sound runs, goes silent when the page is hidden (even when the page pokes at its sound, and after 3 s), and runs again when the page is visible. It hides pages four ways: a page-level `visibilitychange`, `pagehide` then `pageshow`, a second tab on top, and a page freeze. A full run takes about 25 minutes. `--old` shows which pages are loud without the script. |
 
 ### Lab tests
 
@@ -498,7 +543,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 
 | Script | What it checks |
 | --- | --- |
-| `qa/lab/hidden.mjs` | The arcade and the game switcher never mention the lab, and every lab page asks search engines not to index it |
+| `qa/lab/hidden.mjs` | The arcade has a Lab machine and a link to the lab, the game switcher lists the lab, and every lab page asks search engines not to index it |
 | `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, winter follows its curve, and a good flyer goes at least twice as far as a random one |
 | `qa/lab/plunge.e2e.mjs` | Take the Plunge on a phone and on a computer: hold and let go, a dive, winter at the end, Again, and a ghost link |
 | `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a brace keeps you up where a fast crossing tips you, eddies can be caught, and a simple paddler gets down most rivers |
@@ -523,3 +568,9 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 `api/warden.js` signs in to AI Gateway with the project's Vercel OIDC token, so the repo holds no API key. To use a gateway key instead, set `AI_GATEWAY_API_KEY`. To pin a model, set `JEV_MODEL` (the default is `typesafe-ai/jev`).
 
 `/api/warden` is public and spends AI Gateway credits. It accepts calls only from `*.vercel.app` origins and caps the request size. For stronger protection, add a rate-limit rule in the Vercel Firewall.
+
+## Cottage Brawl platform fighter
+
+The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
+
+

@@ -155,6 +155,7 @@ export function init(S) {
   const W = S.world = {
     ready: false, progress: 0, SCALE: WORLD.SCALE, HALF: WORLD.HALF, group,
     get visible() { return group.visible; },
+    get parkedCars() { return parts.town?.parkedCars || []; },
     // terrain only: the exact height of the terrain triangles
     height(x, z) { return H ? heightAt(H, x, z) : 0; },
     normal(x, z, out = new THREE.Vector3()) { const e = 1.5; return out.set(W.height(x - e, z) - W.height(x + e, z), 2 * e, W.height(x, z - e) - W.height(x, z + e)).normalize(); },

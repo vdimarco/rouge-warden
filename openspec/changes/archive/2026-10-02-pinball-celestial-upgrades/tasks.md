@@ -1,0 +1,5 @@
+- [x] Inspect the existing menu and define the celestial direction and copy.
+- [x] Create and inspect the complete console concept.
+- [x] Implement the responsive console and module buttons.
+- [x] Verify all choices, keyboard/focus, pause, reduced motion and viewport fit.
+- [x] Review canonical requirements and archive the completed UI change.

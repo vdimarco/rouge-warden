@@ -7,6 +7,7 @@
 // the combat dt: hitstop and slow motion reach only this), anim (the weapon trail), hud (suspicion eyes,
 // the prompt's hold ring). Flow runs on S.timers and S.co only.
 import * as THREE from 'three';
+import { createArsenal } from './arsenal.js';
 import { Trail } from '../../fx.js';
 import { WEAPON_IDS, CREW_IDS } from '../types.js';
 import { TUNE } from '../../moves.js';
@@ -255,6 +256,7 @@ export function init(S) {
   });
 
   /* ---------------- QA ---------------- */
+  createArsenal(K);
   const attacking = () => K.enemies.filter((f) => !f.boss && f.state === 'attack').length;
   S.test.combat = {
     get enemies() { return K.enemies; },

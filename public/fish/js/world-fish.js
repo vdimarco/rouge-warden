@@ -1,6 +1,8 @@
 // Fish and junk, built in code from species.js: a lofted body per look.shape, the pattern painted into a small
 // canvas texture, fins with rays, glassy eyes. Every mesh is 1 unit long (nose at -z); the caller scales it by length.
+// A fish is 3 draw calls: body (a hooked jaw is part of it), eyes, fins (barbels are part of them).
 import * as THREE from "three";
+import { storyMaterial } from "./art-style.js";
 import { byId } from "./species.js";
 import { bake, merge, hex, clamp, lerp, smooth } from "./world-env.js";
 
@@ -19,26 +21,58 @@ const FORM = {
     dorsal: [{ z0: 0.15, z1: 0.31, h: 0.075 }], anal: [{ z0: 0.17, z1: 0.31, h: 0.06 }], pec: 0.07 },
   trout: { top: 0.094, bot: 0.086, wid: 0.068, peak: 0.42, ped: 0.26, zp: 0.3, nose: 0.3, eye: 0.021, eyeT: 0.09, tailH: 0.115, fork: 0.1,
     dorsal: [{ z0: -0.07, z1: 0.09, h: 0.085 }, { z0: 0.2, z1: 0.25, h: 0.022, adipose: true }], anal: [{ z0: 0.13, z1: 0.24, h: 0.065 }], pec: 0.085 },
+  // The big-water shapes. Fin options: n = ray points along the edge, valley = how deep between them (of h), rake = tip swept
+  // back (a sickle fin), adipose = the small fat fin. Body options: beak = the front t fraction is a thin jaw, flatHead = a wide,
+  // low head, cone = how sharp the nose is (default 0.8, more is pointier), eyeC = the eye's height on the head (0 side .. 1 top,
+  // default 0.34), finlets = [z0, z1, h, n] little fins on the tail root, top and belly. Tail options: fork < 0 = a round tail,
+  // crescent = how hollow the back edge is (default 0.6), lunate = where the front edge bends.
+  tuna: { top: 0.14, bot: 0.13, wid: 0.1, peak: 0.42, ped: 0.12, zp: 0.36, nose: 0.16, cone: 1.25, eye: 0.019, eyeT: 0.085, tailH: 0.18, fork: 0.09, crescent: 1, lunate: 0.4, eyeC: 0.12,
+    dorsal: [{ z0: -0.14, z1: -0.02, h: 0.085, rake: 0.8 }, { z0: 0.05, z1: 0.14, h: 0.11, rake: 1 }], anal: [{ z0: 0.09, z1: 0.17, h: 0.09, rake: 1 }],
+    finlets: [0.18, 0.335, 0.036, 6], pec: 0.15 },
+  cod: { top: 0.12, bot: 0.11, wid: 0.075, peak: 0.34, ped: 0.22, zp: 0.3, nose: 0.4, eye: 0.03, eyeT: 0.09, tailH: 0.11, fork: -0.01,
+    dorsal: [{ z0: -0.27, z1: -0.13, h: 0.075 }, { z0: -0.1, z1: 0.05, h: 0.08 }, { z0: 0.08, z1: 0.22, h: 0.065 }],
+    anal: [{ z0: -0.02, z1: 0.11, h: 0.07 }, { z0: 0.13, z1: 0.24, h: 0.06 }], pec: 0.1 },
+  striper: { top: 0.115, bot: 0.1, wid: 0.07, peak: 0.4, ped: 0.24, zp: 0.3, nose: 0.34, eye: 0.022, eyeT: 0.1, tailH: 0.105, fork: 0.06,
+    dorsal: [{ z0: -0.17, z1: 0.0, h: 0.085, n: 10 }, { z0: 0.07, z1: 0.23, h: 0.08 }], anal: [{ z0: 0.09, z1: 0.24, h: 0.07, n: 3 }], pec: 0.1 },
+  salmon: { top: 0.115, bot: 0.1, wid: 0.075, peak: 0.42, ped: 0.26, zp: 0.3, nose: 0.3, eye: 0.021, eyeT: 0.09, tailH: 0.115, fork: 0.07,
+    dorsal: [{ z0: -0.08, z1: 0.08, h: 0.09 }, { z0: 0.2, z1: 0.25, h: 0.024, adipose: true }], anal: [{ z0: 0.12, z1: 0.24, h: 0.07, n: 4 }], pec: 0.09 },
+  catfish: { top: 0.1, bot: 0.1, wid: 0.09, peak: 0.3, ped: 0.3, zp: 0.3, nose: 0.55, eye: 0.014, eyeT: 0.1, tailH: 0.105, fork: 0.09, flatHead: true,
+    dorsal: [{ z0: -0.24, z1: -0.14, h: 0.1 }, { z0: 0.2, z1: 0.26, h: 0.03, adipose: true }], anal: [{ z0: 0.0, z1: 0.24, h: 0.07, n: 14 }], pec: 0.11 },
+  gar: { top: 0.055, bot: 0.05, wid: 0.045, peak: 0.55, ped: 0.4, zp: 0.36, nose: 0.9, eye: 0.015, eyeT: 0.3, tailH: 0.07, fork: -0.02, beak: 0.28,
+    dorsal: [{ z0: 0.17, z1: 0.32, h: 0.06 }], anal: [{ z0: 0.17, z1: 0.31, h: 0.05 }], pec: 0.06 },
+  bowfin: { top: 0.1, bot: 0.09, wid: 0.075, peak: 0.35, ped: 0.35, zp: 0.34, nose: 0.38, eye: 0.02, eyeT: 0.1, tailH: 0.1, fork: -0.03,
+    dorsal: [{ z0: -0.1, z1: 0.3, h: 0.065, n: 26, valley: 0.8 }], anal: [{ z0: 0.12, z1: 0.2, h: 0.04 }], pec: 0.09 },
 };
 export const FORMS = FORM;
+// the form for a species: the shape, with the girth (body depth x) from its look
+function formOf(sp) {
+  const lk = sp.look, F = FORM[lk.shape] || FORM.bass, g = lk.girth || 1;
+  return g === 1 && !lk.kype && !lk.barbels ? F : { ...F, top: F.top * g, bot: F.bot * g, wid: F.wid * (0.4 + 0.6 * g), kype: !!lk.kype, barbels: lk.barbels || 0 };
+}
 
 // the body outline: grows from a blunt nose to the deepest point, then thins to the tail root
-function env(t, pk, nose, ped) {
-  if (t < pk) return nose + (1 - nose) * Math.sin((t / pk) * Math.PI / 2) ** 0.8;
+function env(t, pk, nose, ped, cone = 0.8) {
+  if (t < pk) return nose + (1 - nose) * Math.sin((t / pk) * Math.PI / 2) ** cone;
   const u = (t - pk) / (1 - pk);
   return ped + (1 - ped) * (0.5 + 0.5 * Math.cos(u * Math.PI));
 }
 function profile(F, t) {
-  let top = F.top * env(t, F.peak, F.nose, F.ped), bot = F.bot * env(t, Math.min(0.8, F.peak + 0.1), F.nose * 0.9, F.ped * 1.05);
-  let wid = F.wid * env(t, Math.max(0.2, F.peak - 0.12), Math.min(1, F.nose * 1.5), F.ped * 0.55);
+  let top = F.top * env(t, F.peak, F.nose, F.ped, F.cone), bot = F.bot * env(t, Math.min(0.8, F.peak + 0.1), F.nose * 0.9, F.ped * 1.05, F.cone);
+  let wid = F.wid * env(t, Math.max(0.2, F.peak - 0.12), Math.min(1, F.nose * 1.5), F.ped * 0.55, F.cone);
   if (F.snout) { const k = smooth(0, 0.24, t); top *= 0.42 + 0.58 * k; bot *= 0.55 + 0.45 * k; wid *= 0.78 + 0.22 * k; }
+  if (F.beak) { const k = 0.3 + 0.7 * smooth(F.beak * 0.72, F.beak * 1.2, t); top *= k; bot *= k; wid *= k; }
+  if (F.kype) top *= 0.75 + 0.25 * smooth(0, 0.16, t);
+  if (F.flatHead) { const k = smooth(0.16, 0.4, t); top *= 0.5 + 0.5 * k; wid *= 1.22 - 0.22 * k; }
   return { top, bot, wid, z: -0.5 + t * (F.zp + 0.5) };
 }
 const tAt = (F, z) => clamp((z + 0.5) / (F.zp + 0.5), 0, 1);
 
 /* ---------------- the painted skin ---------------- */
 
-const texCache = new Map();
+// where the gill cover and the mouth end on the skin (0..1 along the body), by shape
+const GILL = { pike: 0.2, sunfish: 0.24, tuna: 0.21, cod: 0.22, salmon: 0.21, catfish: 0.23, gar: 0.38, bowfin: 0.22, striper: 0.22 };
+const MOUTH = { bass: 0.13, pike: 0.16, walleye: 0.1, sunfish: 0.04, tuna: 0.09, cod: 0.11, striper: 0.12, salmon: 0.09, catfish: 0.12, gar: 0.27, bowfin: 0.1 };
+const texCache = new Map(), eyeCache = new Map(), storySkins = new Map();
 function skinTexture(sp) {
   if (texCache.has(sp.id)) return texCache.get(sp.id);
   const W = 512, H = 192, cv = document.createElement("canvas");
@@ -55,7 +89,18 @@ function skinTexture(sp) {
   const soft = (a) => { x.filter = a ? "blur(" + a + "px)" : "none"; };
   // patterns
   const p = lk.pattern;
-  if (p === "bars") {
+  if (p === "bars" && shape === "tuna") {
+    // mackerel: dark wavy lines down the blue back, fading out before the belly
+    soft(1);
+    x.strokeStyle = lk.accent; x.lineWidth = 3.4; x.lineCap = "round";
+    for (let i = 0; i < 21; i++) {
+      const u0 = 0.2 + i * 0.038 + rnd() * 0.006;
+      x.globalAlpha = 0.8; x.beginPath();
+      for (let k = 0; k <= 12; k++) { const v = 0.03 + k / 12 * 0.4, u = u0 + v * 0.05 + Math.sin(k * 1.25 + i * 2.1) * 0.011; k ? x.lineTo(U(u), V(v)) : x.moveTo(U(u), V(v)); }
+      x.stroke();
+    }
+    soft(0); x.globalAlpha = 1;
+  } else if (p === "bars") {
     const n = shape === "perch" ? 7 : shape === "pike" ? 11 : 10, faint = shape === "bass";
     soft(faint ? 3 : 1.5);
     for (let i = 0; i < n; i++) {
@@ -69,12 +114,42 @@ function skinTexture(sp) {
     }
     soft(0); x.globalAlpha = 1;
     if (shape === "bass") for (let i = 0; i < 3; i++) { x.strokeStyle = "rgba(60,40,20,0.6)"; x.lineWidth = 4; x.beginPath(); x.moveTo(U(0.1), V(0.32 + i * 0.07)); x.lineTo(U(0.2), V(0.36 + i * 0.1)); x.stroke(); }
+  } else if (p === "lines") {
+    // striped bass: 7 dark lines along the flank, from the gill to the tail root
+    soft(1); x.strokeStyle = lk.accent; x.lineCap = "round";
+    for (let i = 0; i < 7; i++) {
+      const v = 0.25 + i * 0.066;
+      x.globalAlpha = 0.95 - i * 0.03; x.lineWidth = 4.6 - i * 0.2;
+      x.beginPath();
+      for (let k = 0; k <= 30; k++) { const u = 0.22 + k / 30 * 0.76, w = v + Math.sin(k * 0.55 + i * 1.9) * 0.004 - (u - 0.22) * 0.05; k ? x.lineTo(U(u), V(w)) : x.moveTo(U(u), V(w)); }
+      x.stroke();
+    }
+    soft(0); x.globalAlpha = 1;
+  } else if (p === "redspots") {
+    // brown trout: black spots on the back, red spots with a pale ring on the flank
+    for (let i = 0; i < 110; i++) blob(0.12 + rnd() * 0.86, 0.06 + rnd() * 0.36, 0.0035 + rnd() * 0.0035, 0.01 + rnd() * 0.01, lk.accent, 0.85);
+    for (let i = 0; i < 48; i++) { const u = 0.24 + rnd() * 0.73, v = 0.3 + rnd() * 0.28; blob(u, v, 0.0105, 0.028, "#d4e0ea", 0.85); blob(u, v, 0.0062, 0.017, "#d0341f", 1); }
   } else if (p === "spots" && shape === "sunfish") {
     for (let i = 0; i < 110; i++) { const u = 0.15 + rnd() * 0.8, v = 0.12 + rnd() * 0.6; blob(u, v, 0.008 + rnd() * 0.006, 0.02 + rnd() * 0.012, rnd() < 0.6 ? "#e8962e" : "#5aa0a0", 0.75); }
     x.strokeStyle = "rgba(80,190,210,0.85)"; x.lineWidth = 3;
     for (let i = 0; i < 4; i++) { x.beginPath(); for (let k = 0; k <= 10; k++) { const u = 0.02 + k * 0.02, v = 0.34 + i * 0.1 + Math.sin(k * 1.3 + i) * 0.025; k ? x.lineTo(U(u), V(v)) : x.moveTo(U(u), V(v)); } x.stroke(); }
   } else if (p === "spots") {
-    for (let i = 0; i < 360; i++) { const u = rnd(), v = rnd() * 0.72; if (v > 0.55 && rnd() < 0.6) continue; blob(u, v, 0.004 + rnd() * 0.005, 0.012 + rnd() * 0.014, lk.accent, 0.85); }
+    // gar: big spots, mostly on the back half; catfish: small and sparse; the rest: many small ones
+    const n = shape === "gar" ? 80 : shape === "catfish" ? 120 : 360, k = shape === "gar" ? 1.7 : shape === "catfish" ? 0.75 : 1, u0 = shape === "gar" ? 0.3 : 0;
+    for (let i = 0; i < n; i++) { const u = u0 + rnd() * (1 - u0), v = rnd() * 0.72; if (v > 0.55 && rnd() < 0.6) continue; blob(u, v, (0.004 + rnd() * 0.005) * k, (0.012 + rnd() * 0.014) * k, lk.accent, 0.85); }
+  } else if (p === "mottled" && shape === "sunfish") {
+    // crappie: silver, with ragged black blotches and specks, thickest on the back
+    soft(1.5);
+    for (let i = 0; i < 44; i++) { const v = Math.pow(rnd(), 1.3) * 0.62; blob(0.16 + rnd() * 0.82, v, 0.008 + rnd() * 0.018, 0.02 + rnd() * 0.05, lk.accent, 0.5 + rnd() * 0.35, (rnd() - 0.5) * 0.9); }
+    soft(0);
+    for (let i = 0; i < 140; i++) blob(0.14 + rnd() * 0.84, rnd() * 0.7, 0.003 + rnd() * 0.003, 0.009 + rnd() * 0.009, lk.accent, 0.7);
+  } else if (p === "mottled" && (shape === "bowfin" || shape === "catfish")) {
+    // big soft blotches, darker on the back; the bowfin gets a net of pale gaps
+    soft(3);
+    for (let i = 0; i < 46; i++) blob(0.16 + rnd() * 0.84, rnd() * 0.5, 0.02 + rnd() * 0.035, 0.05 + rnd() * 0.09, i % 3 ? "#1c2010" : lk.body, 0.34 + rnd() * 0.2, (rnd() - 0.5) * 0.6);
+    soft(1.5);
+    for (let i = 0; i < 60; i++) blob(0.18 + rnd() * 0.8, 0.1 + rnd() * 0.5, 0.008 + rnd() * 0.01, 0.02 + rnd() * 0.03, "#141808", 0.3);
+    soft(0);
   } else if (p === "mottled" && shape === "walleye") {
     soft(4);
     for (let i = 0; i < 6; i++) blob(0.28 + i * 0.12, 0.1, 0.04, 0.18, "#2e3016", 0.55, 0.2);
@@ -114,24 +189,50 @@ function skinTexture(sp) {
   for (let v = 0.06; v < 0.9; v += 0.04) for (let u = 0.2 + (Math.round(v * 25) % 2) * 0.008; u < 1; u += 0.016) { x.beginPath(); x.arc(U(u), V(v), 3.2, -1.2, 1.2); x.stroke(); }
   x.globalAlpha = 1;
   // lateral line, gill cover, mouth
-  x.strokeStyle = "rgba(20,20,10,0.35)"; x.lineWidth = 2;
-  x.beginPath(); x.moveTo(U(0.22), V(0.3)); x.quadraticCurveTo(U(0.6), V(0.24), U(1), V(0.4)); x.stroke();
+  const gill = GILL[shape] || 0.23;
+  // the cod's lateral line is pale; every other fish has a dark one
+  x.strokeStyle = shape === "cod" ? "rgba(245,245,225,0.7)" : "rgba(20,20,10,0.35)"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(U(gill > 0.3 ? gill - 0.01 : 0.22), V(0.3)); x.quadraticCurveTo(U(0.6), V(0.24), U(1), V(0.4)); x.stroke();
   x.strokeStyle = "rgba(20,15,10,0.45)"; x.lineWidth = 3;
-  const gill = shape === "pike" ? 0.2 : shape === "sunfish" ? 0.24 : 0.23;
   x.beginPath(); x.moveTo(U(gill - 0.02), V(0.1)); x.quadraticCurveTo(U(gill + 0.035), V(0.45), U(gill - 0.03), V(0.85)); x.stroke();
-  const mouth = shape === "bass" ? 0.13 : shape === "pike" ? 0.16 : shape === "walleye" ? 0.1 : shape === "sunfish" ? 0.04 : 0.07;
+  const mouth = MOUTH[shape] ?? 0.07;
   x.strokeStyle = "rgba(25,15,10,0.8)"; x.lineWidth = 4;
   x.beginPath(); x.moveTo(U(0), V(0.5)); x.quadraticCurveTo(U(mouth * 0.5), V(0.53), U(mouth), V(0.56)); x.stroke();
   // head: darker top, and the pumpkinseed's black ear flap with its red spot
   const hd = x.createLinearGradient(0, 0, U(0.3), 0);
   hd.addColorStop(0, "rgba(0,0,0,0.18)"); hd.addColorStop(1, "rgba(0,0,0,0)");
   x.fillStyle = hd; x.fillRect(0, 0, U(0.3), V(0.45));
-  if (shape === "sunfish") { blob(gill + 0.005, 0.36, 0.022, 0.07, "#141410", 1); blob(gill + 0.018, 0.36, 0.009, 0.032, lk.accent, 1); }
-  if (sp.id === "walleye") { x.fillStyle = "rgba(255,255,255,0.8)"; x.fillRect(U(0.93), V(0.82), U(0.07), V(0.18)); }
+  if (shape === "sunfish" && p === "spots") { blob(gill + 0.005, 0.36, 0.022, 0.07, "#141410", 1); blob(gill + 0.018, 0.36, 0.009, 0.032, lk.accent, 1); }
+  if (shape === "walleye") { x.fillStyle = "rgba(255,255,255,0.8)"; x.fillRect(U(0.93), V(0.82), U(0.07), V(0.18)); }
+  // the bowfin's false eye at the tail root
+  if (shape === "bowfin") { blob(0.945, 0.26, 0.026, 0.07, "#e69a2a", 0.95); blob(0.945, 0.26, 0.016, 0.043, "#0e0e08", 1); }
   const t = new THREE.CanvasTexture(cv);
   t.anisotropy = 4;
   texCache.set(sp.id, t);
   return t;
+}
+
+// Simple painted markings keep each species recognizable in the cartoon style.
+function storySkin(sp) {
+  if (storySkins.has(sp.id)) return storySkins.get(sp.id);
+  const cv = document.createElement("canvas"); cv.width = 256; cv.height = 128;
+  const x = cv.getContext("2d"), l = sp.look;
+  x.fillStyle = l.body; x.fillRect(0, 0, 256, 128);
+  x.fillStyle = l.back; x.fillRect(0, 0, 256, 28);
+  x.fillStyle = l.belly; x.beginPath(); x.moveTo(0, 96); x.quadraticCurveTo(128, 72, 256, 100); x.lineTo(256, 128); x.lineTo(0, 128); x.fill();
+  x.fillStyle = l.accent; x.globalAlpha = 0.70;
+  if (l.pattern === "bars") {
+    for (let i = 0; i < 6; i++) { const u = 75 + i * 28; x.beginPath(); x.moveTo(u, 22); x.lineTo(u + 13, 22); x.quadraticCurveTo(u + 18, 47, u + 5, 80); x.quadraticCurveTo(u - 3, 46, u, 22); x.fill(); }
+  } else if (l.pattern === "stripe" || l.pattern === "lines") {
+    x.fillRect(60, 56, 196, 10); if (l.pattern === "lines") { x.fillRect(68, 38, 188, 5); x.fillRect(65, 77, 191, 5); }
+  } else if (l.pattern !== "plain" && l.pattern !== "gold") {
+    for (let i = 0; i < 15; i++) { x.beginPath(); x.ellipse(75 + (i * 37) % 170, 34 + (i * 19) % 45, l.pattern === "beans" ? 7 : 4, 5, -0.25, 0, Math.PI * 2); x.fill(); }
+  }
+  x.globalAlpha = 1; x.strokeStyle = "#344237"; x.lineCap = "round"; x.lineWidth = 3;
+  const gill = (GILL[l.shape] || 0.22) * 256, mouth = (MOUTH[l.shape] || 0.1) * 256;
+  x.beginPath(); x.moveTo(gill, 32); x.quadraticCurveTo(gill + 13, 62, gill - 2, 93); x.stroke();
+  x.beginPath(); x.moveTo(0, 66); x.quadraticCurveTo(mouth * 0.5, 80, mouth, 68); x.stroke();
+  const texture = new THREE.CanvasTexture(cv); storySkins.set(sp.id, texture); return texture;
 }
 
 // fin rays: pale lines from the base to the edge, the edge a little see-through
@@ -149,16 +250,17 @@ function finTexture() {
   return finTex;
 }
 
+const eyeKey = (sp) => (sp.look.iris || "#d0a038") + (sp.look.eyeshine ? "g" : "");
 function eyeTexture(iris, glassy) {
-  const key = "eye" + iris + glassy;
-  if (texCache.has(key)) return texCache.get(key);
+  const key = iris + (glassy ? "g" : "");
+  if (eyeCache.has(key)) return eyeCache.get(key);
   const cv = document.createElement("canvas"); cv.width = 8; cv.height = 64;
   const x = cv.getContext("2d");
   const g = x.createLinearGradient(0, 0, 0, 64);
   g.addColorStop(0, glassy ? "#6a7070" : "#050505"); g.addColorStop(0.2, glassy ? "#6a7070" : "#050505"); g.addColorStop(0.23, iris); g.addColorStop(0.42, iris); g.addColorStop(0.5, "#3a3020"); g.addColorStop(1, "#2a2418");
   x.fillStyle = g; x.fillRect(0, 0, 8, 64);
   const t = new THREE.CanvasTexture(cv);
-  texCache.set(key, t);
+  eyeCache.set(key, t);
   return t;
 }
 
@@ -189,7 +291,7 @@ export function fx(mat, u, { wag = true } = {}) {
       #include <opaque_fragment>`);
   };
   mat.customProgramCacheKey = () => "fishfx" + (wag ? 1 : 0);
-  return mat;
+  return storyMaterial(mat);
 }
 
 /* ---------------- fish ---------------- */
@@ -212,6 +314,22 @@ function loft(F, NT, NA) {
   for (let i = 0; i < NT; i++) for (let a = 0; a < NA; a++) {
     const p = i * row + a, q = p + row;
     idx.push(p, p + 1, q, p + 1, q + 1, q);
+  }
+  // a hooked lower jaw (the salmon's kype): a bent, tapering tube that grows out of the chin and turns up
+  if (F.kype) {
+    const path = [[0, -0.02, -0.45], [0, -0.027, -0.495], [0, -0.03, -0.522], [0, -0.021, -0.538], [0, -0.003, -0.538]], rad = [0.024, 0.021, 0.017, 0.011, 0.004], S = 6;
+    path.forEach((c, i) => {
+      const a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)];
+      let ty = b[1] - a[1], tz = b[2] - a[2]; const l = Math.hypot(ty, tz); ty /= l; tz /= l;
+      // the ring lies in the plane across the path: one axis is x, the other is perpendicular to the path in y-z
+      for (let k = 0; k <= S; k++) {
+        const ang = (k / S) * Math.PI * 2, cx = Math.cos(ang) * rad[i], cn = Math.sin(ang) * rad[i];
+        pos.push(cx, c[1] + -tz * cn, c[2] + ty * cn);
+        uv.push(0.05, 0.5);
+      }
+    });
+    const base = (NT + 1) * row;
+    for (let i = 0; i < path.length - 1; i++) for (let k = 0; k < S; k++) { const p = base + i * (S + 1) + k, q = p + S + 1; idx.push(p, p + 1, q, p + 1, q + 1, q); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
@@ -258,12 +376,15 @@ function finsGeo(F, sp) {
     const out = [], span = d.z1 - d.z0, base = (z) => (up ? topAt(z) - 0.006 : -botAt(z) + 0.006), s = up ? 1 : -1;
     for (let k = 0; k <= 6; k++) { const z = d.z0 + (k / 6) * span; out.push([z, base(z)]); }
     const edge = [];
-    if (d.adipose) { for (let k = 6; k >= 0; k--) { const u = k / 6, z = d.z0 + u * span; edge.push([z + 0.01, base(z) + s * d.h * Math.sin(u * Math.PI) ** 0.7]); } }
+    if (d.rake) {
+      // a sickle fin: tall at the front, the tip swept back, a hollow trailing edge
+      for (let k = 8; k >= 0; k--) { const u = k / 8; edge.push([d.z0 + u * span + d.h * d.rake * (1 - u), base(d.z0 + u * span) + s * d.h * (1 - u) ** 1.7]); }
+    } else if (d.adipose) { for (let k = 6; k >= 0; k--) { const u = k / 6, z = d.z0 + u * span; edge.push([z + 0.01, base(z) + s * d.h * Math.sin(u * Math.PI) ** 0.7]); } }
     else if (d.n) {
       for (let k = d.n; k >= 0; k--) {
         const u = k / d.n, z = d.z0 + u * span, hh = d.h * (0.55 + 0.45 * Math.sin(Math.min(1, u * 1.4 + 0.15) * Math.PI) ** 0.6);
         edge.push([z + d.h * 0.25, base(z) + s * hh]);
-        if (k > 0) { const zm = z - span / d.n * 0.5; edge.push([zm + d.h * 0.15, base(zm) + s * hh * 0.62]); }
+        if (k > 0) { const zm = z - span / d.n * 0.5; edge.push([zm + d.h * 0.15, base(zm) + s * hh * (d.valley ?? 0.62)]); }
       }
     } else {
       for (let k = 8; k >= 0; k--) { const u = k / 8, z = d.z0 + u * span; edge.push([z + d.h * 0.35 * u, base(z) + s * d.h * (Math.sin(u * Math.PI * 0.9 + 0.2) ** 0.55) * (1 - 0.3 * u)]); }
@@ -274,14 +395,22 @@ function finsGeo(F, sp) {
   for (const d of F.dorsal) along(d, true);
   for (const d of F.anal) along(d, false);
   // the tail fin
-  const zp = F.zp - 0.02, hp = topAt(F.zp) * 0.9, bp = botAt(F.zp) * 0.9, H = F.tailH, fk = F.fork;
+  // a forked tail has its tips at the end and the notch in front of them; a round tail (fork < 0) has its middle at the end
+  const zp = F.zp - 0.02, hp = topAt(F.zp) * 0.9, bp = botAt(F.zp) * 0.9, H = F.tailH, fk = F.fork, zt = 0.5 + Math.min(0, fk);
   const tail = [[zp, hp]];
   const curve = (a, b, c, n, outArr) => { for (let k = 1; k <= n; k++) { const t = k / n; outArr.push([(1 - t) ** 2 * a[0] + 2 * (1 - t) * t * b[0] + t * t * c[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * b[1] + t * t * c[1]]); } };
-  curve([zp, hp], [0.42, H * 0.55], [0.5, H], 5, tail);
-  curve([0.5, H], [0.5 - fk * 0.6, H * 0.3], [0.5 - fk, 0], 4, tail);
-  curve([0.5 - fk, 0], [0.5 - fk * 0.6, -H * 0.3], [0.5, -H * 0.95], 4, tail);
-  curve([0.5, -H * 0.95], [0.42, -H * 0.55], [zp, -bp], 5, tail);
-  parts.push(flatFin(tail, (z, y) => [clamp((y + H) / (2 * H), 0, 1), clamp((z - zp) / (0.5 - zp), 0, 1)], (z, y) => (sp.id === "walleye" && y < -H * 0.55 && z > 0.44 ? acc : fin)));
+  const lunate = F.lunate ?? 0.42;
+  curve([zp, hp], [lunate, H * 0.55], [zt, H], 5, tail);
+  const cr = F.crescent ?? 0.6;
+  curve([zt, H], [zt - fk * cr, H * 0.3], [zt - fk, 0], 4, tail);
+  curve([zt - fk, 0], [zt - fk * cr, -H * 0.3], [zt, -H * 0.95], 4, tail);
+  curve([zt, -H * 0.95], [lunate, -H * 0.55], [zp, -bp], 5, tail);
+  parts.push(flatFin(tail, (z, y) => [clamp((y + H) / (2 * H), 0, 1), clamp((z - zp) / (0.5 - zp), 0, 1)], (z, y) => (sp.look.shape === "walleye" && y < -H * 0.55 && z > 0.44 ? acc : fin)));
+  // finlets: a row of little fins on the tail root, top and belly
+  if (F.finlets) {
+    const [z0, z1, h, n] = F.finlets;
+    along({ z0, z1, h, n, valley: 0.15 }, true); along({ z0, z1, h, n, valley: 0.15 }, false);
+  }
   // paired fins: pectorals behind the gill, pelvics under the belly, turned out from the body
   const pair = (z, y, len, wid, yaw, roll) => {
     const out = [[0, 0.012], [len * 0.55, wid * 0.55], [len, wid * 0.12], [len * 0.9, -wid * 0.35], [len * 0.4, -wid * 0.3], [0, -0.012]];
@@ -298,12 +427,70 @@ function finsGeo(F, sp) {
   const zPec = -0.5 + (F.eyeT + 0.13) * (F.zp + 0.5), pb = profile(F, tAt(F, zPec));
   pair(zPec, -pb.bot * 0.35, F.pec * 0.8, F.pec * 0.4, 0.85, 0.35);
   pair(zPec + 0.07, -pb.bot * 0.97, F.pec * 0.6, F.pec * 0.28, 0.35, 1.25);
+  for (const b of barbelGeos(F, lerpc(fin, acc, 0.3), lerpc(bel, fin, 0.25))) parts.push(b);
   const g = merge(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; return q; }));
   return g;
 }
 
+const lerpc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+
+// Barbels (a catfish has 8, a cod has 1): thin curved strips that hang from the mouth, 12 triangles each. Each path is a
+// few points (x, y, z) from the root inside the head out to the tip; a strip is wide across the side view and tapers to the tip.
+// The long ones on the upper lip are dark like the fins; the ones under the chin are pale like the belly.
+function barbelGeos(F, dark, pale) {
+  const n = F.barbels || 0;
+  if (!n) return [];
+  const list = [];
+  if (n === 1) list.push({ path: [[0, -0.05, -0.44], [0, -0.078, -0.462], [0, -0.1, -0.446], [0, -0.115, -0.42]], col: pale, w: 0.0075 });
+  else {
+    // a pair at a time: long ones from the corners of the mouth, then the chin, the nose, and the outer chin
+    const pairs = [
+      (s) => ({ path: [[s * 0.05, -0.012, -0.45], [s * 0.086, -0.018, -0.5], [s * 0.118, -0.05, -0.48], [s * 0.128, -0.1, -0.43], [s * 0.128, -0.14, -0.375]], col: dark, w: 0.009 }),
+      (s) => ({ path: [[s * 0.03, -0.045, -0.46], [s * 0.04, -0.07, -0.484], [s * 0.046, -0.1, -0.47], [s * 0.048, -0.128, -0.45]], col: pale, w: 0.0075 }),
+      (s) => ({ path: [[s * 0.03, 0.014, -0.47], [s * 0.05, 0.034, -0.506], [s * 0.078, 0.045, -0.494], [s * 0.098, 0.036, -0.46]], col: dark, w: 0.007 }),
+      (s) => ({ path: [[s * 0.065, -0.038, -0.435], [s * 0.078, -0.062, -0.452], [s * 0.086, -0.09, -0.428], [s * 0.086, -0.115, -0.4]], col: pale, w: 0.0075 }),
+    ];
+    for (const mk of pairs) for (const s of [-1, 1]) list.push(mk(s));
+  }
+  return list.slice(0, n).map((b) => ribbon(smoothPath(b.path, 6), b.w, b.w * 0.22, b.col));
+}
+// A Catmull-Rom curve through the points, as n + 1 points
+function smoothPath(c, n) {
+  const out = [], m = c.length - 1;
+  for (let i = 0; i <= n; i++) {
+    const u = (i / n) * m, k = Math.min(m - 1, Math.floor(u)), t = u - k;
+    const P = (j) => c[clamp(j, 0, m)];
+    const p0 = P(k - 1), p1 = P(k), p2 = P(k + 1), p3 = P(k + 2);
+    out.push([0, 1, 2].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t * t + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * t * t * t)));
+  }
+  return out;
+}
+
+// A strip along a path, always wide across the side view, tapering to the tip.
+function ribbon(path, w0, w1, col) {
+  const pos = [], nrm = [], uvs = [], cols = [], m = path.length - 1;
+  const at = path.map((c, i) => {
+    const a = path[Math.max(0, i - 1)], b = path[Math.min(m, i + 1)];
+    let t = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    // width direction: across the tangent and the x axis, so the strip faces the side
+    let w = [0, t[2], -t[1]]; const l = Math.hypot(w[0], w[1], w[2]) || 1;
+    w = [w[0] / l, w[1] / l, w[2] / l];
+    const hw = lerp(w0, w1, i / m);
+    return [[c[0] + w[0] * hw, c[1] + w[1] * hw, c[2] + w[2] * hw], [c[0] - w[0] * hw, c[1] - w[1] * hw, c[2] - w[2] * hw]];
+  });
+  const side = path[m][0] < 0 ? -1 : 1;
+  const tri = (a, b, c) => { for (const v of [a, b, c]) { pos.push(...v); nrm.push(side, 0, 0); uvs.push(0.04, 0.03); cols.push(col[0], col[1], col[2]); } };
+  for (let i = 0; i < m; i++) { const [a, b] = at[i], [c, d] = at[i + 1]; tri(a, b, c); tri(b, d, c); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+  return g;
+}
+
 function eyesGeo(F) {
-  const t = F.eyeT, pr = profile(F, t), c = 0.34, s = Math.sqrt(1 - c * c);
+  const t = F.eyeT, pr = profile(F, t), c = F.eyeC ?? 0.34, s = Math.sqrt(1 - c * c);
   const y = pr.top * c, x = pr.wid * s * (1 - 0.28 * c * c) - F.eye * 0.3;
   const parts = [];
   for (const side of [-1, 1]) {
@@ -321,12 +508,22 @@ function eyesGeo(F) {
   return out;
 }
 
+// geometry made once per species id (a released species is built again the next time it is asked for)
 const geoCache = new Map();
 function fishParts(sp) {
   if (geoCache.has(sp.id)) return geoCache.get(sp.id);
-  const F = FORM[sp.look.shape] || FORM.bass;
+  const F = formOf(sp);
   const g = { body: loft(F, 26, 18), fins: finsGeo(F, sp), eyes: eyesGeo(F) };
-  for (const k in g) g[k].computeBoundingSphere();
+  const C = { ...F, top: F.top * 1.28, bot: F.bot * 1.3, wid: F.wid * 1.45, eye: F.eye * 1.75 };
+  const cartoon = { body: loft(C, 26, 18), eyes: eyesGeo(C), fins: g.fins.clone().scale(1.45, 1.28, 1) };
+  for (const k in g) {
+    g[k].setAttribute("storyPosition", cartoon[k].attributes.position.clone());
+    g[k].setAttribute("storyNormal", cartoon[k].attributes.normal.clone());
+    g[k].computeBoundingSphere(); cartoon[k].computeBoundingSphere();
+    g[k].boundingSphere.union(cartoon[k].boundingSphere);
+    g[k].boundingSphere.radius *= 1.1; // include swimming motion around both silhouettes
+    cartoon[k].dispose();
+  }
   geoCache.set(sp.id, g);
   return g;
 }
@@ -337,8 +534,12 @@ function buildFish(sp) {
   const body = fx(new THREE.MeshPhongMaterial({ map: skinTexture(sp), shininess: gold ? 80 : 45, specular: gold ? 0x806020 : 0x383838, emissive: gold ? 0x6a4a08 : 0x000000, transparent: true }), u);
   const fins = fx(new THREE.MeshPhongMaterial({ map: finTexture(), vertexColors: true, shininess: 20, specular: 0x222222, side: THREE.DoubleSide, transparent: true, depthWrite: false, alphaTest: 0.02, emissive: gold ? 0x4a3400 : 0x000000 }), u);
   fins.userData.fin = true;
-  const iris = sp.id === "walleye" ? "#d6dcc4" : lk.accent && (sp.id === "rockbass" || sp.id === "smallmouth") ? lk.accent : sp.id === "pumpkinseed" ? "#b8502a" : gold ? "#c86a10" : "#d0a038";
-  const eyes = fx(new THREE.MeshPhongMaterial({ map: eyeTexture(iris, sp.id === "walleye"), shininess: 120, specular: 0xffffff, transparent: true, emissive: sp.id === "walleye" ? 0x1a1e14 : 0 }), u);
+  // flat sheets: one pass is enough, so a fish is 3 draw calls (three.js draws a see-through, double-sided material twice)
+  fins.forceSinglePass = true;
+  // the eye: look.iris is the colour; look.eyeshine gives a pale, glassy eye that catches the light in the dark
+  const eyes = fx(new THREE.MeshPhongMaterial({ map: eyeTexture(lk.iris || "#d0a038", !!lk.eyeshine), shininess: 120, specular: 0xffffff, transparent: true, emissive: lk.eyeshine ? 0x1a1e14 : 0 }), u);
+  for (const m of [body, fins, eyes]) m.userData.storyMorph = true;
+  body.userData.storyMap = storySkin(sp);
   const grp = new THREE.Group();
   const mb = new THREE.Mesh(G.body, body), mf = new THREE.Mesh(G.fins, fins), me = new THREE.Mesh(G.eyes, eyes);
   mb.renderOrder = 10; me.renderOrder = 11; mf.renderOrder = 12;
@@ -349,8 +550,9 @@ function buildFish(sp) {
 
 /* ---------------- junk ---------------- */
 
-function buildJunk(j) {
-  const u = fxUniforms(), parts = [], M = () => new THREE.Matrix4();
+function junkGeo(j) {
+  if (geoCache.has(j.id)) return geoCache.get(j.id).body;
+  const parts = [], M = () => new THREE.Matrix4();
   const body = hex(j.look.body), acc = hex(j.look.accent);
   if (j.look.shape === "boot") {
     // an old leather boot, toe forward (-z), about 0.3 m long
@@ -378,8 +580,13 @@ function buildJunk(j) {
     parts.push(bake(d, { colorFn: (x, y, z) => { const r = Math.hypot(x, z); return y > 0.012 && ((r > 0.085 && r < 0.1) || r < 0.03) ? acc : body; } }));
   }
   const g = merge(parts);
+  geoCache.set(j.id, { body: g });
+  return g;
+}
+function buildJunk(j) {
+  const u = fxUniforms();
   const mat = fx(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 50, specular: 0x333333, transparent: true, side: THREE.DoubleSide }), u, { wag: false });
-  const m = new THREE.Mesh(g, mat);
+  const m = new THREE.Mesh(junkGeo(j), mat);
   m.renderOrder = 10;
   const grp = new THREE.Group();
   grp.add(m);
@@ -394,4 +601,29 @@ export function fishMesh(id) {
   const sp = byId(id);
   if (!sp) return null;
   return sp.look.shape === "boot" || sp.look.shape === "plunger" || sp.look.shape === "frisbee" ? buildJunk(sp) : buildFish(sp);
+}
+
+// Frees the GPU memory and the cached skins and geometry of every species that is not in keepIds (species ids, junk ids
+// included). world.setPlace calls it with the fish of the new place. Meshes already made keep working: three.js uploads
+// their textures and buffers again if they are drawn, but the caller should drop the ones it no longer needs.
+// Returns how many skins, geometries and eye textures it freed.
+export function releaseFish(keepIds = []) {
+  const keep = new Set(keepIds), out = { skins: 0, geometries: 0, eyes: 0 };
+  for (const [id, g] of geoCache) {
+    if (keep.has(id)) continue;
+    for (const k in g) { g[k].dispose(); out.geometries++; }
+    geoCache.delete(id);
+  }
+  for (const [id, t] of texCache) {
+    if (keep.has(id)) continue;
+    t.dispose(); texCache.delete(id); out.skins++;
+  }
+  for (const [id, t] of storySkins) if (!keep.has(id)) { t.dispose(); storySkins.delete(id); }
+  // an eye texture is shared by the species with the same iris, so it stays while one of them is kept
+  const eyes = new Set();
+  for (const id of keep) { const sp = byId(id); if (sp && sp.look && !JUNK_LEN[id]) eyes.add(eyeKey(sp)); }
+  for (const [k, t] of eyeCache) if (!eyes.has(k)) { t.dispose(); eyeCache.delete(k); out.eyes++; }
+  // the fin ray texture is shared by every fish: it goes only when nothing is kept
+  if (!keep.size && finTex) { finTex.dispose(); finTex = null; }
+  return out;
 }

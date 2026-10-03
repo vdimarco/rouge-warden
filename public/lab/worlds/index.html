@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="/arcade/quiet.js"></script>
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#09151a">
+  <meta name="description" content="Six small worlds to play with one thumb. Pull a living landscape, fold a river, conduct a storm, and more.">
+  <title>Small Worlds · Cottage Arcade</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="./worlds.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button id="worlds-button" class="quiet" aria-haspopup="dialog"><span aria-hidden="true">▦</span> Worlds</button>
+      <a class="wordmark" href="/lab/">Small Worlds</a>
+      <div class="tools"><button id="sound-button" class="quiet" aria-pressed="true">Sound on</button><button id="pause-button" class="quiet" disabled>Pause</button></div>
+    </header>
+    <main class="workspace">
+      <aside class="shelf" aria-label="Pick a world">
+        <p class="shelf-intro">A little wonder.<br>A different way to play.</p>
+        <nav id="desktop-worlds"></nav>
+        <a class="back-link" href="/lab/">All arcade experiments <span aria-hidden="true">↗</span></a>
+      </aside>
+      <section class="player" aria-label="Game player">
+        <div class="game-heading"><div><p id="game-number">01 / 06</p><h1 id="game-name">Threadwake</h1></div><output id="metric" aria-live="off"></output></div>
+        <div id="stage" class="stage">
+          <canvas id="game" width="420" height="680" tabindex="0" aria-label="Interactive game. Use touch or a mouse; controls are explained before play."></canvas>
+          <div id="intro" class="screen-overlay">
+            <div class="intro-content"><p class="chapter" id="game-feeling">Find your flow</p><h2 id="intro-name">Threadwake</h2><p id="pitch" class="pitch"></p><div class="how"><p id="controls"></p><p id="goal"></p></div><button id="start-button" class="primary">Play Threadwake <span aria-hidden="true">↗</span></button><p id="best" class="small"></p></div>
+          </div>
+          <div id="paused" class="screen-overlay solid" hidden><div class="dialog-content"><h2>Take your time.</h2><p>Your world is waiting.</p><button id="resume-button" class="primary">Keep playing</button><button id="pause-restart" class="secondary">Start again</button></div></div>
+          <div id="result" class="screen-overlay solid" hidden><div class="dialog-content"><p class="chapter" id="result-label">A small discovery</p><h2 id="result-title"></h2><p id="result-detail"></p><p id="result-score" class="score"></p><button id="retry-button" class="primary">Play this world again</button><button id="next-button" class="secondary">Try the next game</button><button id="new-seed-button" class="text-button">A different world</button></div></div>
+        </div>
+        <footer class="game-footer"><p id="status" role="status">Choose Play to begin.</p><div class="footer-actions"><button id="restart-button" class="text-button" disabled>Restart</button><button id="share-button" class="text-button">Share</button><button id="help-button" class="text-button">How to play</button></div></footer>
+      </section>
+      <aside class="about-world"><p id="world-summary"></p><span id="world-style"></span><p class="note">Six playable ideas.<br>Follow your curiosity.</p></aside>
+    </main>
+    <dialog id="picker"><div class="picker-top"><h2>Pick a world</h2><button id="close-picker" class="quiet">Close</button></div><div id="mobile-worlds"></div><a class="back-link" href="/lab/">Back to the Lab</a></dialog>
+    <dialog id="help"><h2 id="help-title"></h2><p id="help-controls"></p><p id="help-goal"></p><button id="close-help" class="primary">Got it</button></dialog>
+    <div id="toast" role="status" hidden></div>
+  </div>
+  <script type="module" src="./worlds.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14231C">
+<link rel="icon" href="data:,">
+<title>Tell Me</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="table">
+    <img id="tablebg" alt="">
+    <div id="glow"></div>
+    <header id="topbar"><h1>Tell Me</h1></header>
+    <div id="critters">
+      <article class="critter fennel" data-who="fennel">
+        <div class="name">Fennel</div>
+        <div class="sprite">
+          <div class="layer layer-body">
+            <img alt="" data-art="fennel_body.webp">
+            <div class="ph body-ph">
+              <i class="ear left"></i><i class="ear right"></i>
+              <i class="head"></i><i class="muzzle"></i><i class="torso"></i>
+            </div>
+          </div>
+          <div class="layer layer-face">
+            <img alt="" class="face-img">
+            <svg class="face-svg" viewBox="0 0 120 100" aria-hidden="true"></svg>
+          </div>
+          <div class="layer layer-tail">
+            <img alt="" data-art="fennel_tail.webp">
+            <i class="ph tail-ph"></i>
+          </div>
+          <div class="ccard"></div>
+        </div>
+      </article>
+      <article class="critter bram" data-who="bram">
+        <div class="name">Bram</div>
+        <div class="sprite">
+          <div class="layer layer-body">
+            <img alt="" data-art="bram_body.webp">
+            <div class="ph body-ph">
+              <i class="ear left"></i><i class="ear right"></i>
+              <i class="head"></i><i class="stripe"></i><i class="muzzle"></i><i class="torso"></i>
+            </div>
+          </div>
+          <div class="layer layer-face">
+            <img alt="" class="face-img">
+            <svg class="face-svg" viewBox="0 0 120 100" aria-hidden="true"></svg>
+          </div>
+          <div class="layer layer-tail">
+            <img alt="" data-art="bram_tail.webp">
+            <i class="ph tail-ph"></i>
+          </div>
+          <div class="ccard"></div>
+        </div>
+      </article>
+    </div>
+    <div id="middle">
+      <div id="pot">
+        <div id="pot-chips"></div>
+        <div id="pot-count">0</div>
+      </div>
+      <div id="player-card" class="card-3d">
+        <div class="card-inner">
+          <div class="card-face card-back"></div>
+          <div class="card-face card-front"></div>
+        </div>
+      </div>
+    </div>
+    <div id="bottom">
+      <p id="note" aria-live="polite"></p>
+      <div id="actions">
+        <button type="button" data-act="check" hidden>Check</button>
+        <button type="button" data-act="small" hidden>Small</button>
+        <button type="button" data-act="big" hidden>Big</button>
+        <button type="button" data-act="call" hidden>Call</button>
+        <button type="button" data-act="fold" hidden>Fold</button>
+      </div>
+      <div id="status">
+        <div class="col">
+          <div id="stack">100 chips</div>
+          <div id="reads">Reads 0/0</div>
+        </div>
+        <div class="col right">
+          <div id="handnum">Hand 1/10</div>
+          <div id="daily"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button id="mute" type="button" aria-pressed="false">Sound</button>
+  <a id="home" href="/">◀ Arcade</a>
+  <div id="start">
+    <div class="panel">
+      <h2>Tell Me</h2>
+      <p class="pitch">One card. You can't see yours.</p>
+      <p id="start-daily"></p>
+      <p id="seed-warn" hidden></p>
+      <button id="start-btn" type="button">Tap to start</button>
+    </div>
+  </div>
+  <div id="end" hidden>
+    <div class="panel">
+      <h2>Tell Me</h2>
+      <p id="end-extra"></p>
+      <p id="end-stack"></p>
+      <p id="end-reads"></p>
+      <p id="end-rate"></p>
+      <p id="end-hands"></p>
+      <button id="again" type="button">Play again with same seed</button>
+    </div>
+  </div>
+  <div id="flash"></div>
+</div>
+<script type="module" src="tellme.js"></script>
+</body>
+</html>

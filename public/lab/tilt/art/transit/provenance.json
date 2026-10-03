@@ -1,0 +1,18 @@
+{
+  "asset": "event-horizon.webp",
+  "created_at": "2026-09-30",
+  "provider": "OpenAI built-in image generation",
+  "generation_reference": "exec-60308225-2d5f-4c3e-a259-3571def74718",
+  "source_file": "exec-60308225-2d5f-4c3e-a259-3571def74718.png",
+  "derived": {
+    "format": "webp",
+    "width": 1254,
+    "height": 1254,
+    "quality": 83,
+    "bytes": 285166,
+    "sha256": "f8375301ff15f1736949b566c0bf6961685894a21f212a3fed6f26298407de03"
+  },
+  "prompt": "Use case: stylized-concept. Asset type: original mobile space game cinematic black-hole transit background plate. One square image. A breathtaking deep-space black hole seen from an approaching probe. Photorealistic premium science-fiction cinema VFX, physically legible gravitational lensing, rich resolved detail, immense cosmic scale. Pure black circular event horizon at image center with a thin white-gold photon ring. Luminous accretion disk across the hole on a shallow diagonal, far side gravitationally bent into a luminous arch above the sphere. Thousands of intricate turbulent gold, copper and icy cyan plasma filaments with depth and dense fine texture. Controlled white-hot highlights, silky volumetric light, natural film contrast, restrained bloom. Tiny stars arc through the gravity lens. Deep blue-black space, violet and teal nebula dust, distant star clusters. Crop-safe for portrait and landscape mobile screens. Original environment with cinematic cosmic awe and hints of crystalline filaments. No spacecraft, people, foreground planets, UI, text, borders or logos. Fully opaque black hole; dark outer edges.",
+  "source_notes": "Original generated environment for Full Tilt; no third-party reference image used. Higgsfield was checked but had zero available credits. A Fal nano-banana-pro request timed out without a request ID, so its outcome was unknown and it was not repeated. This delivered asset is from a separately authorized built-in image generation fallback.",
+  "license_notes": "AI-generated original project asset. No third-party stock source or separate stock license."
+}

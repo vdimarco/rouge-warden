@@ -5,12 +5,13 @@
 // A-frame (the wild cabin.glb) with its deck, hot tub and kayak, Gabe's code-built Airstream, trailhead
 // outhouses (wild outhouse.glb, instanced, only those in view written each frame) and the Hart Ranch with its gate
 // and floodlights. The parked fleet vans and tour jeeps are the vehicles package's own bodies, set flat on
-// their four wheels, each lot its own mesh drawn only near the camera.
+// their four wheels, individually removable when taken and drawn only near the camera.
 // Also exports Geo, the small geometry builder the bridge and the interiors use.
 import { toonRamp } from '../../render.js';
 import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
 import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
+import { finishFleetLot, FLEET_BAYS } from './fleet-lot.js';
 
 const lin = (v) => Math.pow(v, 2.2);
 export const ATLAS = 1024;
@@ -174,9 +175,10 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   const atlas = paintAtlas(THREE);
   const material = new THREE.MeshToonMaterial({ vertexColors: true, map: atlas.map, emissiveMap: atlas.glow, emissive: 0xffffff, emissiveIntensity: 0, gradientMap: toonRamp });
   const R = mulberry(51 * 31);
-  const geos = new Map();
+  const geos = new Map(), parkedCars = [];
   const geo = (district) => { let g = geos.get(district); if (!g) geos.set(district, (g = new Geo())); return g; };
   const box = (g, x, y, z, w, h, d, yaw, col, o) => g.box(x, y, z, w, h, d, yaw, col, o);
+  let fleetSurface = null;
   const lamps = []; // street lamp heads (glow at night)
 
   /* buildings */
@@ -269,13 +271,14 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   yield; staticVehicleGeometry('whitevan'); yield; staticVehicleGeometry('jeep'); yield;
   { // Canyon Fleet: a row of identical white 15-passenger vans (the white van's own body, parked)
     const g = geo('fleet'), p = PLACES.canyon_fleet;
-    for (let k = 0; k < 8; k++) { const x = p.x - 17 + k * 4.8, z = p.z + 4, y = parked(g, 'whitevan', x, z, Math.PI); colliders.addBox({ x, z, w: 2.05, d: 6, yaw: Math.PI, y0: y - 1, top: y + 2.6, tag: 'parked' }); }
+    fleetSurface = finishFleetLot({ THREE, root, g, height, colliders, p, ramp: toonRamp });
+    for (const b of FLEET_BAYS) parked('whitevan', p.x + b.x, p.z + b.z, b.yaw);
     const y = height(p.x - 24, p.z - 14); box(geo('west'), p.x - 24, y - 1, p.z - 14, 0.3, 6, 0.3, 0, [0.45, 0.45, 0.45]); box(geo('west'), p.x - 24, y + 5, p.z - 14, 5.4, 1.2, 0.2, Math.PI, WHITE, { uv: { front: signUV('fleet'), back: signUV('fleet') } });
   }
   yield;
   { // Sunburst Jeep Tours: tangerine open jeeps at the depot
-    const g = geo('sunburst'), jy = UPTOWN_OUT + Math.PI; // noses to the street
-    for (let k = 0; k < 3; k++) { const [x, z] = up(0.645 + k * 0.016, 16), y = parked(g, 'jeep', x, z, jy); colliders.addBox({ x, z, w: 1.8, d: 4, yaw: jy, y0: y - 1, top: y + 2, tag: 'parked' }); }
+    const jy = UPTOWN_OUT + Math.PI; // noses to the street
+    for (let k = 0; k < 3; k++) { const [x, z] = up(0.645 + k * 0.016, 16); parked('jeep', x, z, jy); }
   }
   yield;
   // street lamps along Uptown and the Y; the Uptown clock
@@ -289,6 +292,35 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   { const g = geo('uptown'), r = net.byId.a89u; for (let s = upWalk.s0 + 19; s < upWalk.s1 - 4; s += 52) { const p = at(r, s), rx = -Math.cos(p.yaw), rz = Math.sin(p.yaw), x = p.x + rx * 6.0, z = p.z + rz * 6.0, y = height(x, z); box(g, x, y, z, 1.8, 0.5, 0.5, p.yaw + Math.PI / 2, [0.45, 0.3, 0.2]); box(g, x - rz * 3, y, z + rx * 3, 0.8, 0.7, 0.8, p.yaw, [0.62, 0.38, 0.26], { top: [0.3, 0.36, 0.32] }); } }
   { // the Midgley lot: picnic tables, a trash can, the trailhead board
     const g = geo('canyon'), p = PLACES.midgley_lot;
+    // Painted bays and sandstone edging frame the small scenic turnout.
+    const yaw = 0.2, c = Math.cos(yaw), sn = Math.sin(yaw);
+    const local = (lx, lz) => [396 + lx * c + lz * sn, -585 - lx * sn + lz * c];
+    const mark = (lx, lz, w, d, col) => {
+      const [x, z] = local(lx, lz);
+      box(g, x, height(x, z) + 0.045, z, w, 0.025, d, yaw, col);
+    };
+    for (let i = -3; i <= 3; i++) {
+      mark(i * 3.4, -6.5, 0.12, 5.4, [0.88, 0.84, 0.69]);
+      if (i < 3) mark(i * 3.4 + 1.7, -8.5, 1.9, 0.25, [0.63, 0.51, 0.38]);
+    }
+    for (const side of [-1, 1]) for (let j = 0; j < 9; j++) {
+      const [x, z] = local(side * 15.4, -8 + j * 2);
+      const y = height(x, z);
+      box(g, x, y - 0.1, z, 0.65, 0.42, 1.85, yaw, [0.62, 0.34, 0.23], { top: [0.78, 0.52, 0.35] });
+    }
+    // Native planting islands outside the drive aisle, with layered sandstone blocks.
+    for (const [lx, lz] of [[-19, -8], [-19, 1], [18, -9], [18, 8]]) {
+      const [x, z] = local(lx, lz), y = height(x, z);
+      for (let k = 0; k < 3; k++) box(g, x + k * 0.25, y + k * 0.32, z, 2.2 - k * 0.45, 0.35, 1.6 - k * 0.3, yaw + k * 0.3, [0.64 + k * 0.04, 0.35 + k * 0.03, 0.23]);
+      colliders.addCircle(x, z, 1.3, { tag: 'rock' });
+      for (let k = 0; k < 5; k++) {
+        const a = k * 1.26, bx = x + Math.sin(a) * 2, bz = z + Math.cos(a) * 2, by = height(bx, bz);
+        g.cyl([bx, by, bz], [bx + Math.sin(a) * 0.45, by + 0.8, bz + Math.cos(a) * 0.45], 0.12, 0.015, 4, [0.34, 0.39, 0.25]);
+      }
+    }
+    lampAt(g, p.x - 16, p.z + 9, 1.1);
+    lampAt(g, p.x + 16, p.z + 9, -1.1);
+
     for (const [dx, dz] of [[-12, 8], [-6, 12], [10, 10]]) { const x = p.x + dx, z = p.z + dz, y = height(x, z); picnic(g, x, y, z, R() * 3); colliders.addBox({ x, z, w: 2, d: 1.8, y0: y - 1, top: y + 0.8, tag: 'table' }); }
     const x = p.x - 14, z = p.z - 6, y = height(x, z); box(g, x, y - 0.5, z, 0.2, 2.6, 0.2, 0, TRIM); box(g, x + 1.4, y - 0.5, z, 0.2, 2.6, 0.2, 0, TRIM); box(g, x + 0.7, y + 1.1, z, 1.8, 1, 0.12, 0.6, WHITE, { uv: { front: signUV('trail') } });
   }
@@ -406,8 +438,8 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   // one mesh per district
   const districts = {};
   for (const [name, g] of geos) { const m = new THREE.Mesh(g.build(THREE), material); m.name = `town_${name}`; m.castShadow = true; m.receiveShadow = true; m.userData.kind = 'town'; root.add(m); districts[name] = m; }
-  // the parked lots are small: each is its own mesh, drawn only within LOT_VIEW m of the camera
-  const LOT_VIEW = 300, lots = ['fleet', 'sunburst'].map((k) => districts[k]).filter(Boolean);
+  // Parked cars and lot surfaces are drawn only within LOT_VIEW m of the camera.
+  const LOT_VIEW = 300, lots = [districts.fleet, ...parkedCars.map(p => districts[p.id]), fleetSurface].filter(Boolean);
   for (const m of lots) { m.userData.managed = true; m.geometry.computeBoundingSphere(); }
 
   /* the GLB models: the A-frame cabin, the kayak and the outhouses */
@@ -453,8 +485,9 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
 
   function poolTexture(T) { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,240,210,0.55)'); gr.addColorStop(0.5, 'rgba(255,230,190,0.22)'); gr.addColorStop(1, 'rgba(255,220,180,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t; }
   // a parked vehicle (the vehicles package's low-detail body) on its four wheels: the ground under each wheel
-  // sets its height, pitch and roll. Returns the height at its centre.
-  function parked(g, kind, x, z, yaw) {
+  // sets its height, pitch and roll. Keep each body and collider removable for theft.
+  function parked(kind, x, z, yaw) {
+    const id = `parked${parkedCars.length}`, g = geo(id);
     const c = Math.cos(yaw), s = Math.sin(yaw), W = wheelSpots(kind);
     const h = W.map(([lx, lz]) => height(x + lx * c + lz * s, z - lx * s + lz * c)); // front left, front right, rear left, rear right
     const hx = W[0][0], hz = (W[0][1] - W[2][1]) / 2;
@@ -462,7 +495,13 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     const y = (h[0] + h[1] + h[2] + h[3]) / 4;
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitch, yaw, roll, 'YXZ')), new THREE.Vector3(1, 1, 1));
     g.baked(staticVehicleGeometry(kind), m);
-    return y;
+    const bounds = { x, z, yaw, w: kind === 'whitevan' ? 2.05 : 1.8, d: kind === 'whitevan' ? 6 : 4, y0: y - 1, top: y + (kind === 'whitevan' ? 2.6 : 2), tag: 'parked' };
+    let collider = colliders.addBox(bounds);
+    const car = { id, kind, x, y, z, yaw, taken: false,
+      take() { car.taken = true; colliders.remove(collider); collider = null; districts[id].visible = false; },
+      reset() { if (!car.taken) return; car.taken = false; collider = colliders.addBox(bounds); },
+    };
+    parkedCars.push(car);
   }
   function picnic(g, x, y, z, yaw) {
     const W = [0.5, 0.38, 0.26];
@@ -485,11 +524,11 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     bunkDoor, floods,
   };
   return {
-    root, material, districts, glb, pumps: pumpPoints, ranch: ranchApi, atlas, hotTub,
+    root, material, districts, glb, parkedCars, pumps: pumpPoints, ranch: ranchApi, atlas, hotTub,
     // night: 0 day .. 1 night. Windows and lamps glow; the ranch floodlights burn while it has power.
     update(night, t) {
       if (outhouseCull && S.camera) outhouseCull(S.camera);
-      if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = S.camera.position.distanceTo(b.center) - b.radius < LOT_VIEW; }
+      if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = !parkedCars.some(p => p.taken && districts[p.id] === m) && S.camera.position.distanceTo(m.localToWorld(b.center.clone())) - b.radius < LOT_VIEW; }
       material.emissiveIntensity = night * 0.9;
       lampMat.color.setRGB(0.23 + night * 0.9, 0.21 + night * 0.72, 0.2 + night * 0.46);
       const lit = ranchOn ? 1 : 0;

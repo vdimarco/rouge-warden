@@ -278,7 +278,7 @@ export function createDrivers(S, V) {
         }
       } else if (!o.ram && d < 20) speed = Math.max(0, ts + (d - 12) * 0.5);
       if (o.max != null) speed = Math.min(speed, o.max);
-      follow(h, speed, { stopEnd: false, aimX, aimZ, latA: 6, ignore: target });
+      follow(h, speed, { stopEnd: false, aimX, aimZ, latA: o.latA ?? 6, decel: o.decel, ignore: target });
     };
     return h;
   }

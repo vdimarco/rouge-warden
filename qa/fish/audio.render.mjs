@@ -39,9 +39,41 @@ const ok = (msg) => console.log("ok    " + msg);
   try {
     const r = Sound.init();
     for (const n of Sound._names.sfx) Sound.sfx(n, 0.5);
-    Sound.setSwish(1); Sound.setSpool(20); Sound.setReel(2); Sound.setDrag(1); Sound.setTension(0.8); Sound.setAmbience(true, 6); Sound.stopLoops();
+    Sound.setSwish(1); Sound.setSpool(20); Sound.setReel(2); Sound.setDrag(1); Sound.setTension(0.8); Sound.setGrind(0.6);
+    for (const id of ["loon", "stumps", "river", "sea", "nowhere", undefined]) Sound.setPlace(id);
+    Sound.setAmbience(true, 6); Sound.stopLoops();
     if (r !== false) fail("node: init() should return false"); else ok("node: loads and every call is a no-op");
   } catch (e) { fail("node: threw " + e.message); }
+  // who sings where (plain numbers, no audio needed): loons at Loon Lake only, frogs and crickets at Stump Bay, the river
+  // rushes, the sea breaks
+  const M = Sound._mix, why = [];
+  const old = (h) => ({
+    birds: smoothStep(5.2, 6, h) * (1 - smoothStep(19, 20.2, h)) * (0.45 + 0.55 * Math.exp(-Math.pow((h - 7) / 1.6, 2))),
+    bugs: Math.max(smoothStep(18.8, 20.2, h), 1 - smoothStep(5, 5.8, h)),
+    wind: 0.3 + 0.5 * Math.exp(-Math.pow((h - 14) / 3, 2)),
+    loons: h < 8.5 || h > 18.3 ? 1 : 0.35,
+  });
+  function smoothStep(a, b, v) { const x = Math.min(1, Math.max(0, (v - a) / (b - a))); return x * x * (3 - 2 * x); }
+  for (let h = 4; h <= 24; h += 0.25) {
+    const L = M(h, "loon"), D = M(h), O = old(h);
+    for (const k of ["birds", "bugs", "wind", "loons"]) if (Math.abs(L[k] - O[k]) > 1e-12 || Math.abs(D[k] - O[k]) > 1e-12) why.push(`Loon Lake ${k} at ${h} differs from before`);
+    if (!(L.loons > 0)) why.push("no loons at Loon Lake at " + h);
+    if (L.rush !== 0 || L.surf !== 0 || L.lap !== 1) why.push("Loon Lake has a river or a sea in it");
+    for (const id of ["stumps", "river", "sea", "nowhere"]) {
+      const m = M(h, id);
+      if (id !== "nowhere" && m.loons !== 0) why.push(id + " has loons at " + h);
+      if (id === "nowhere" && m.loons !== L.loons) why.push("an unknown place is not Loon Lake");
+      if ((id === "river") !== (m.rush > 0)) why.push("the rush is not at the river only (" + id + ", " + h + ")");
+      if ((id === "sea") !== (m.surf > 0)) why.push("the surf is not at the sea only (" + id + ", " + h + ")");
+      for (const [k, v] of Object.entries(m)) if (!Number.isFinite(v) || v < 0) why.push(`${id} ${k} at ${h} is ${v}`);
+    }
+  }
+  // Stump Bay: heavier frogs and crickets after 20 than at 19, and the frogs call more often
+  const s19 = M(19, "stumps"), s21 = M(21.5, "stumps");
+  if (!(s21.frogs > s19.frogs && s21.bugs > s19.bugs && s21.frogGap < 0.5 * s19.frogGap)) why.push("Stump Bay is not busier with frogs and crickets at night");
+  if (!(s21.bugs > 0.9 && s21.frogs > 0.9)) why.push("Stump Bay at 21:30 is not full of frogs and crickets");
+  if (M(6, "sea").birds !== 0 || M(13, "sea").bugs !== 0) why.push("the sea has crickets or birds in it");
+  if (why.length) fail("mix: " + why.slice(0, 6).join("; ")); else ok("mix: loons at Loon Lake only, Loon Lake unchanged, frogs and crickets heavy after 20 at Stump Bay, the river and the sea have their own water");
 }
 
 /* ---------- 2. the browser ---------- */
@@ -159,6 +191,13 @@ window.analyse = async (name, seconds, opts = {}, want = {}) => {
   }
   return res;
 };
+// the loudness over time: the rms of each win-second slice
+window.envelope = async (name, seconds, opts = {}, win = 0.5) => {
+  const buf = await renderOffline(name, seconds, opts);
+  const sr = buf.sampleRate, L = buf.getChannelData(0), R = buf.getChannelData(1), n = Math.floor(win * sr), out = [];
+  for (let s = 0; s + n <= L.length; s += n) { let a = 0; for (let i = s; i < s + n; i++) a += (L[i] * L[i] + R[i] * R[i]) / 2; out.push(Math.sqrt(a / n)); }
+  return out;
+};
 window.ready = true;
 </script>`;
 
@@ -194,11 +233,11 @@ try {
     ["slip", null, 1.5, 0.1, 0.8], ["load", null, 1.5, 0.15, 0.9], ["release", null, 1, 0.02, 0.4],
     ["splash", 0.15, 2.5, 0.1, 1.5], ["splash", 0.5, 2.5, 0.15, 1.8], ["splash", 1, 3, 0.3, 2.2], ["plop", null, 1.5, 0.03, 0.6],
     ["nibble", 0.2, 1.2, 0.03, 0.6], ["nibble", 0.9, 1.2, 0.05, 0.7], ["strike", null, 2.5, 0.2, 1.8], ["hookset", null, 1.5, 0.1, 0.8],
-    ["miss", null, 2, 0.15, 1.2], ["jump", 0.3, 4, 0.7, 3], ["jump", 1, 4, 0.8, 3.2], ["snap", null, 3, 0.3, 2],
+    ["miss", null, 2, 0.15, 1.2], ["jump", 0.3, 4, 0.7, 3], ["jump", 1, 4, 0.8, 3.2], ["snap", null, 3, 0.3, 2], ["creak", null, 2, 0.3, 1.5], ["shutter", null, 1, 0.05, 0.5],
     ["thrown", null, 2.5, 0.3, 1.8], ["landed", null, 4, 0.8, 3.5], ["record", null, 5, 1.5, 4], ["junk", null, 2.5, 0.2, 1.8],
     ["loon", 0.1, 8, 2.5, 6.8], ["loon", 0.9, 8, 0.8, 6], ["loonWail", null, 8, 2.5, 6.8], ["loonTremolo", null, 5, 0.8, 4],
   ];
-  const SAVE = new Set(["bailOpen", "bailClose", "splash@1", "strike", "jump@1", "snap", "landed", "record", "junk", "loonWail", "loonTremolo", "nibble@0.9"]);
+  const SAVE = new Set(["bailOpen", "bailClose", "splash@1", "strike", "jump@1", "snap", "landed", "record", "junk", "loonWail", "loonTremolo", "nibble@0.9", "creak", "shutter"]);
   fs.mkdirSync(OUT, { recursive: true });
   const names = await page.evaluate(() => Sound._names);
   const tested = new Set(ONE.map((o) => o[0]));
@@ -242,6 +281,7 @@ try {
     reel: { secs: 4.6, segs: [[0.5, 1.4], [1.7, 2.7], [3.05, 3.2], [3.3, 3.95], [4.4, 4.6]], rates: [9.6, 20.8, 0, 32] },
     drag: { secs: 4.2, segs: [[0.4, 1.1], [1.4, 2.3], [2.6, 3.5], [3.9, 4.2]], rates: [18.75, 75, 210] },
     tension: { secs: 4, segs: [[0.5, 1.2], [2.6, 3.4], [3.8, 4]] },
+    grind: { secs: 4, segs: [[0.5, 1.2], [2.6, 3.4], [3.8, 4]] },
   };
   const segRow = (s) => `[${s.s}-${s.e}s rms ${s.rms.toFixed(3)} peak ${s.peak.toFixed(3)} rate ${s.rate.toFixed(1)} Hz centroid ${Math.round(s.centroid)} Hz]`;
   for (const [name, L] of Object.entries(LOOPS)) {
@@ -274,6 +314,12 @@ try {
       if (S[3].rms > 0.002) why.push("does not go quiet at 0");
     }
     if (name === "tension") { if (!(S[1].rms > 2 * S[0].rms)) why.push("more load is not louder"); if (S[2].rms > 0.002) why.push("does not go quiet at 0"); }
+    // the rub: a scratch that grows louder, brighter and quicker as the meter fills, and stops when it is empty
+    if (name === "grind") {
+      if (!(S[1].rms > 2 * S[0].rms)) why.push("a fuller rub meter is not louder");
+      if (!(S[1].centroid > S[0].centroid)) why.push("a fuller rub meter is not brighter");
+      if (S[2].rms > 0.002) why.push("does not go quiet at 0");
+    }
     if (why.length) fail(name + ": " + why.join("; ")); else ok(name);
     wav(path.join(OUT, "loop-" + name + ".wav"), r.wav);
   }
@@ -297,6 +343,55 @@ try {
     wav(path.join(OUT, "lake-" + key + ".wav"), r.wav);
   }
   if (!(lake.dusk.band > 4 * lake.noon.band)) fail("crickets: no more 4.2-4.9 kHz energy at dusk than at noon"); else ok("crickets sing at dusk, not at noon");
+
+  /* ---------- the places: each has its own bed, and the loons call at Loon Lake only ---------- */
+  console.log("\nthe places:");
+  const PL = [["loon", 6.2], ["stumps", 21.5], ["river", 6], ["sea", 6]], bed = {};
+  for (const [id, hour] of PL) {
+    const opts = { hour, place: id, loonAt: 1.5 };
+    const r = await page.evaluate(([o, w]) => analyse("ambience", 12, o, w), [opts, { band: [4200, 4900], segs: [[1.5, 4.5], [6, 9], [9, 12]], wav: true }]);
+    const raw = await page.evaluate(([o]) => analyse("ambience", 12, { ...o, raw: true }), [opts]);
+    // the same place with its first loon call put later (5 s): the two renders use the same random numbers
+    const late = await page.evaluate(([o, w]) => analyse("ambience", 12, { ...o, loonAt: 5 }, w), [opts, { segs: [[1.5, 4.5], [6, 9], [9, 12]] }]);
+    r.rawPeak = raw.peak; r.name = "place " + id;
+    bed[id] = r;
+    console.log("      " + row(r) + `  centroid of the last 3 s ${Math.round(r.segs[2].centroid)} Hz`);
+    const why = [];
+    if (r.bad) why.push("non-finite samples");
+    if (r.rms < 0.004 || r.segs[2].rms < 0.003) why.push("silent");
+    if (r.peak >= 1 || r.overs || raw.peak >= 1) why.push("clips");
+    const same = [0, 1, 2].every((i) => Math.abs(r.segs[i].rms - late.segs[i].rms) <= 1e-6 * Math.max(r.segs[i].rms, 1e-9));
+    if (id === "loon" && !(Math.abs(r.segs[0].rms - late.segs[0].rms) > 0.1 * late.segs[0].rms)) why.push("no loon call at Loon Lake");
+    if (id !== "loon" && !same) why.push("a call is scheduled that only Loon Lake has (a loon?)");
+    if (why.length) fail("place " + id + ": " + why.join("; ")); else ok("place " + id + (id === "loon" ? ": the loon calls" : ": no loons"));
+    wav(path.join(OUT, "place-" + id + ".wav"), r.wav);
+  }
+  // Stump Bay at 21:30 is all crickets and frogs (the cricket band is the same one the lake check uses)
+  if (!(bed.stumps.band > 4 * lake.noon.band)) fail("Stump Bay at night: no more 4.2-4.9 kHz energy than the lake at noon"); else ok("Stump Bay at night: the crickets sing");
+  // the river rushes: steady water, mostly low (a lowpass at 900 Hz), there for the whole render and louder than the lake
+  {
+    const low = { band: [60, 900], segs: [[9, 12]] };
+    const rv = await page.evaluate(([o, w]) => analyse("ambience", 12, o, w), [{ hour: 6, place: "river", loonAt: 500 }, low]);
+    const lk = await page.evaluate(([o, w]) => analyse("ambience", 12, o, w), [{ hour: 6, place: "loon", loonAt: 500 }, low]);
+    console.log(`      river: ${(100 * rv.segs[0].band).toFixed(0)}% of its sound is under 900 Hz, rms ${rv.segs[0].rms.toFixed(3)} (Loon Lake at dawn: ${(100 * lk.segs[0].band).toFixed(0)}%, rms ${lk.segs[0].rms.toFixed(3)})`);
+    if (!(rv.segs[0].band > 0.6 && rv.segs[0].band > lk.segs[0].band && rv.segs[0].rms > lk.segs[0].rms)) fail("the river does not rush: low, steady and louder than the lake"); else ok("the river rushes: mostly under 900 Hz and louder than the lake");
+  }
+  // the surf swells and falls: waves of 6 to 10 s
+  {
+    const env = await page.evaluate(() => envelope("ambience", 48, { hour: 6, place: "sea" }, 0.5));
+    const depth = (a) => Math.max(...a.slice(4)) / Math.min(...a.slice(4));
+    // the strongest wave period of the loudness, from a DFT over the 48 s (bins are 1/48 Hz apart)
+    const mean = env.reduce((a, b) => a + b, 0) / env.length;
+    let best = 0, period = 0;
+    for (let k = 2; k <= 30; k++) {
+      let re = 0, im = 0;
+      env.forEach((v, i) => { const a = (2 * Math.PI * k * i) / env.length; re += (v - mean) * Math.cos(a); im += (v - mean) * Math.sin(a); });
+      const m = Math.hypot(re, im);
+      if (m > best) { best = m; period = 48 / k; }
+    }
+    console.log(`      surf: loudness swings ${depth(env).toFixed(2)}x, strongest wave every ${period.toFixed(1)} s`);
+    if (!(depth(env) > 1.5 && period >= 5.5 && period <= 11)) fail("the surf does not swell in waves of 6 to 10 s"); else ok("the surf swells and falls in waves of 6 to 10 s");
+  }
 
   /* ---------- everything at once: no clipping, and what it costs ---------- */
   console.log("\neverything at once:");
@@ -323,9 +418,17 @@ try {
     for (const n of S._names.sfx) S.sfx(n, 0.6);
     await frames(150, (i) => {
       const k = i / 150;
-      S.setSwish(Math.sin(k * 9) ** 2); S.setSpool(30 * (1 - k)); S.setReel(3 * k); S.setDrag(k > 0.5 ? 2 : 0); S.setTension(k);
+      S.setSwish(Math.sin(k * 9) ** 2); S.setSpool(30 * (1 - k)); S.setReel(3 * k); S.setDrag(k > 0.5 ? 2 : 0); S.setTension(k); S.setGrind(k > 0.3 ? k : 0);
       listen();
     });
+    // the player travels: each place builds its bed the first time, and the river and the surf plug in
+    out.beds = {};
+    for (const [id, h] of [["river", 6], ["sea", 6], ["stumps", 21.5], ["loon", 6.2]]) {
+      S.setPlace(id); S.setAmbience(true, h);
+      await new Promise((r) => setTimeout(r, 120));
+      const A = e.amb;
+      out.beds[id] = { rush: !!A.rushLive, surf: !!A.surfLive, place: A.place };
+    }
     out.loud = loud;
     // stopLoops() once, as the pause does, then no more calls: the loops must unplug themselves
     S.stopLoops();
@@ -344,6 +447,7 @@ try {
   if (!lv.init || lv.state !== "running") fail("live: the AudioContext did not start");
   else if (!(lv.loud > 0.02)) fail("live: nothing came out of the master bus");
   else if (lv.parked.length) fail("live: loops still plugged in after 2 s of silence: " + lv.parked.join(", "));
+  else if (!(lv.beds.river.rush && !lv.beds.river.surf && lv.beds.sea.surf && lv.beds.stumps.place === "stumps" && lv.beds.loon.place === "loon")) fail("live: the beds of the places: " + JSON.stringify(lv.beds));
   else if (lv.off !== false || lv.stored !== "false" || lv.on !== true || lv.stored2 !== "true") fail("live: the arcade.sound switch");
   else ok("live: the context runs, sounds reach the output, silent loops unplug, the switch toggles and saves");
 

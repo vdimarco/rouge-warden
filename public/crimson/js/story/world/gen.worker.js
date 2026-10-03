@@ -8,6 +8,7 @@ import { simplex, fbm, clamp, lerp, smooth } from '../../core/noise.js';
 import { CREEK, POOLS, WASH, WASH_HW, PADS, BUILDINGS, KAZOOS, CAIRNS, STRIPS } from './places.js';
 import { buildNetwork, project, at, LOTS, smoothLine, STREET_TREES } from './roads.js';
 import { FORMATIONS, buildFormation } from './rocks.js';
+import { CANYON_TRAIL, trailSample } from './canyon-trail.js';
 
 export const N = 400, CELL = 5, HALF = 1000, W = N + 1;
 export const TGRID = 250, TCELL = 8; // surface types
@@ -210,6 +211,31 @@ export function generate(seed = 51, progress = () => {}) {
 
   // roads: profiles graded to the limits, then the ground cut and filled to them
   const profiles = gradeRoads(net, H, CF);
+  // Keep the entire turnout flat after road grading. A coarse canyon cell
+  // must not protrude through the asphalt at the lot's rotated corners.
+  const turnout = LOTS.find((l) => l.x === 396 && l.z === -585);
+  const turnoutY = heightAt(H, turnout.x, turnout.z);
+  forNear(turnout.x, turnout.z, 48, (k, d, x, z) => {
+    const edge = lotDist(turnout, x, z);
+    if (edge < 18) H[k] = lerp(H[k], turnoutY, smooth(18, 6, edge));
+  });
+  // Level the fleet bays across their width. The entrance retains the graded
+  // road profile, which joins the parking deck at the driveway endpoint.
+  const fleet = LOTS.find(l => l.x === -620 && l.z === 172);
+  const fleetY = heightAt(H, fleet.x, 170);
+  const fleetProfile = Array.from({ length: W }, (_, j) => heightAt(H, fleet.x, gx(j)));
+  forNear(fleet.x, fleet.z, 55, (k, d, x, z) => {
+    const edge = lotDist(fleet, x, z);
+    if (edge < 16) H[k] = lerp(H[k], z >= 170 ? fleetY : fleetProfile[Math.round((z + HALF) / CELL)], smooth(16, 6, edge));
+  });
+  const trailStart = CANYON_TRAIL[0], trailEnd = CANYON_TRAIL[CANYON_TRAIL.length - 1];
+  const trailTop = heightAt(H, ...trailStart), trailBottom = heightAt(H, ...trailEnd);
+  forNear(377, -548, 90, (index, distance, x, z) => {
+    const sample = trailSample(x, z);
+    if (sample.distance > 12) return;
+    const level = lerp(trailTop, trailBottom, sample.along / sample.length);
+    H[index] = lerp(H[index], level, smooth(12, 8, sample.distance));
+  });
   progress(0.5);
   // buildings stand on flat pads at the height of their front
   for (const b of BUILDINGS) {
@@ -257,6 +283,10 @@ export function generate(seed = 51, progress = () => {}) {
     const sand = Math.max(WF.D[k] < Infinity ? smooth(WASH_HW + 4, WASH_HW - 2, WF.D[k]) : 0, cd < Infinity ? smooth(hw + 9, hw + 2, cd) : 0);
     r = lerp(r, 0.76, sand); g = lerp(g, 0.62, sand); b = lerp(b, 0.47, sand);
     if (cd < hw + 1) { const st = smooth(hw + 1, hw - 1, cd); r = lerp(r, 0.42, st); g = lerp(g, 0.39, st); b = lerp(b, 0.36, st); }
+    if (x > 300 && x < 428 && z > -605 && z < -490) {
+      const path = 1 - smooth(2.5, 5, trailSample(x, z).distance);
+      r = lerp(r, 0.73, path); g = lerp(g, 0.5, path); b = lerp(b, 0.3, path);
+    }
     const lum = 1 + v2 * 0.05;
     col[k * 3] = Math.pow(clamp(r * lum, 0, 1), 2.2) * 255 + 0.5; col[k * 3 + 1] = Math.pow(clamp(g * lum, 0, 1), 2.2) * 255 + 0.5; col[k * 3 + 2] = Math.pow(clamp(b * lum, 0, 1), 2.2) * 255 + 0.5;
     rock[k] = clamp(Math.max(smooth(0.8, 0.58, ny), rockK[k] * smooth(0.55, 0.8, ny) * 0.6, rockK[k] * smooth(0.9, 0.7, ny)), 0, 1) * 255;
@@ -456,6 +486,8 @@ function roadMask(net) {
     box(Math.min(a.x, b.x) - R, Math.min(a.z, b.z) - R, Math.max(a.x, b.x) + R, Math.max(a.z, b.z) + R, (x, z, k) => {
       const t = ((x - a.x) * dx + (z - a.z) * dz) / L2, tc = t < 0 ? 0 : t > 1 ? 1 : t;
       const d = hypot(x - a.x - dx * tc, z - a.z - dz * tc);
+      const along = r.cum[s] + L * tc;
+      if (r.spans.some(span => along > span.s0 + 1 && along < span.s1 - 1)) return;
       if (d - r.hw < best[k]) {
         best[k] = d - r.hw;
         const side = (x - a.x) * dz - (z - a.z) * dx > 0 ? -1 : 1, ph = (r.cum[s] + L * tc) / 12 * Math.PI * 2;
@@ -637,6 +669,7 @@ function scatterFlora(seed, H, types, mask, ground, lotIds, net, CF, rockK, rock
   const oldUptown = legacyUptownMask(net);
   const inFoot = (b, x, z, m) => { const c = Math.cos(b.yaw), s = Math.sin(b.yaw), lx = (x - b.x) * c - (z - b.z) * s, lz = (x - b.x) * s + (z - b.z) * c; return Math.abs(lx) < b.w / 2 + m && Math.abs(lz) < b.d / 2 + m; };
   const blocked = (x, z) => {
+    if (x > 300 && x < 430 && z > -605 && z < -490 && trailSample(x, z).distance < 5) return 2;
     // not on or beside a road (2.5 m), a lot (2 m) or a sidewalk (1.5 m)
     const mi = clamp(Math.floor((x + HALF) / MPX), 0, MASK - 1), mj = clamp(Math.floor((z + HALF) / MPX), 0, MASK - 1), mk = (mj * MASK + mi) * 4;
     const id = mask[mk + 1], lot = LOTS[lotIds[mk >> 2] - 1], lotD = fromHalf(ground[mk + 1]), was = oldUptown(x, z);
@@ -700,20 +733,28 @@ function simplexCache(seed) { let s = simplexMemo.get(seed); if (!s) simplexMemo
 // whose centre falls in it. Returns transferable arrays and the bounds.
 export function buildTile(ctx, ti, tj, lod) {
   const { H, col, rock, rocks } = ctx;
-  const step = [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
+  // Preserve the turnout and canyon approaches even in establishing shots.
+  const nearBridge = ti === 3 && tj === 1;
+  const step = nearBridge ? [0.5, 1, 2][lod] : [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
   const mine = rocks.filter((r) => Math.floor((r.f.x + HALF) / 400) === ti && Math.floor((r.f.z + HALF) / 400) === tj).map((r) => (lod === 0 ? r.hi : r.lo));
   let rv = 0, ri = 0; for (const m of mine) { rv += m.pos.length / 3; ri += m.idx.length; }
   const total = nv + 4 * (n + 1) + rv;
   const pos = new Float32Array(total * 3), nrm = new Float32Array(total * 3), cl = new Uint8Array(total * 3), rk = new Uint8Array(total);
   const idx = total > 65535 ? new Uint32Array(n * n * 6 + 4 * n * 6 + ri) : new Uint16Array(n * n * 6 + 4 * n * 6 + ri);
   let minY = Infinity, maxY = -Infinity;
-  const hAt = (i, j) => H[clamp(j, 0, N) * W + clamp(i, 0, N)];
+  const hAt = (i, j) => heightAt(H, gx(clamp(i, 0, N)), gx(clamp(j, 0, N)));
+  const sample = (arr, i, j, stride = 1, channel = 0) => {
+    const a = Math.floor(i), b = Math.floor(j), u = i - a, v = j - b;
+    const get = (x, z) => arr[(clamp(z, 0, N) * W + clamp(x, 0, N)) * stride + channel];
+    return lerp(lerp(get(a, b), get(a + 1, b), u), lerp(get(a, b + 1), get(a + 1, b + 1), u), v);
+  };
   for (let b = 0; b <= n; b++) for (let a = 0; a <= n; a++) {
-    const i = i0 + a * step, j = j0 + b * step, k = j * W + i, v = b * (n + 1) + a, h = H[k];
+    const i = i0 + a * step, j = j0 + b * step, v = b * (n + 1) + a, h = hAt(i, j);
     pos[v * 3] = gx(i); pos[v * 3 + 1] = h; pos[v * 3 + 2] = gx(j);
     const nx = hAt(i - step, j) - hAt(i + step, j), nz = hAt(i, j - step) - hAt(i, j + step), ny = 2 * step * CELL, l = hypot(nx, ny, nz);
     nrm[v * 3] = nx / l; nrm[v * 3 + 1] = ny / l; nrm[v * 3 + 2] = nz / l;
-    cl[v * 3] = col[k * 3]; cl[v * 3 + 1] = col[k * 3 + 1]; cl[v * 3 + 2] = col[k * 3 + 2]; rk[v] = rock[k];
+    for (let c = 0; c < 3; c++) cl[v * 3 + c] = sample(col, i, j, 3, c);
+    rk[v] = sample(rock, i, j);
     if (h < minY) minY = h; if (h > maxY) maxY = h;
   }
   let t = 0;

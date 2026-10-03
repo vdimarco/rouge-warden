@@ -17,7 +17,7 @@ import { createBoard } from './board.js';
 
 // what each action is called on each device (prompts, hints, the controls page)
 export const KEY_LABELS = {
-  key: { use: 'E', exit: 'E', light: 'J', heavy: 'K', parry: 'Shift', dodge: 'Space', canteen: 'R', lock: 'Tab', crouch: 'X', camera: 'V', bearcall: 'G', map: 'M', pause: 'Esc', music: 'N',
+  key: { use: 'E', exit: 'E', light: 'J', heavy: 'K', parry: 'F', sprint: 'Shift', dodge: 'Space', canteen: 'R', lock: 'Tab', crouch: 'X', camera: 'V', bearcall: 'G', map: 'M', pause: 'Esc', music: 'N',
     horn: 'H', handbrake: 'Space', lookback: 'C', gas: 'W', brake: 'S', steer: 'A D', move: 'WASD', look: 'Mouse', shutter: 'Space', zoom: 'Q E', skip: 'Space', back: 'Esc' },
   pad: { use: 'Y', exit: 'Y', light: 'RB', heavy: 'RT', parry: 'LB', dodge: 'A', canteen: 'X', lock: 'R3', crouch: 'L3', camera: '▼', bearcall: '▲', map: 'Back', pause: 'Start', music: '', horn: 'L3',
     handbrake: 'A', lookback: 'R3', gas: 'RT', brake: 'LT', steer: 'LS', move: 'LS', look: 'RS', shutter: 'A', zoom: 'LB RB', skip: 'A', back: 'B' },

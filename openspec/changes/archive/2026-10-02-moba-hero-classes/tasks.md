@@ -1,0 +1,5 @@
+- [x] Implement class metadata, growth, selection previews and filters.
+- [x] Implement and document four distinct active skills per hero.
+- [x] Verify mechanics, resources, items, pointer input and seeded full matches.
+- [x] Check selection and skill inspection in the browser; record phone limits.
+- [x] Update canonical specs, archive the completed implementation and prepare the tested change for merge and production verification.

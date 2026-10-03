@@ -7,7 +7,7 @@
 // top: top speed on asphalt; offTop: top speed off the road (rock, sand, scrub); dirtTop: on dirt roads
 // accel: full-throttle acceleration at rest (it tapers to 0 at top); brake: braking; reverse: top in reverse
 // drag: aerodynamic drag, a = drag * v^2; roll: rolling resistance (m/s^2)
-// steer: the widest wheel angle at rest (rad); it narrows with speed: steer / (1 + v / steerV)
+// steer: the widest wheel angle at rest (rad); it narrows with speed: steer / (1 + 0.65 * v / steerV)
 // steerRate: how fast the wheels turn (rad/s)
 // grip: the sideways grip by surface (m/s^2 of cornering before the tyres slide)
 // seats: seat count; shown: how many seats show their occupant (tinted glass hides the rest)
@@ -18,47 +18,48 @@ export const AIR_G = 18; // arcade gravity while airborne (design 4.1)
 export const SUBSTEP = 1 / 120; // fixed physics substep
 export const MAX_SUBSTEPS = 8;
 
-const grip = (asphalt, dirt, off) => Object.freeze({ asphalt, dirt, rock: off + 0.5, sand: off - 0.6, scrub: off, water: 2.2 });
+const grip = (asphalt, dirt, off) => Object.freeze({ asphalt: asphalt * 1.4, dirt: dirt * 1.4, rock: (off + 0.5) * 1.4, sand: (off - 0.6) * 1.4, scrub: off * 1.4, water: 2.2 });
+export const PATROL_TUNE = Object.freeze({ top: 46, offTop: 27, dirtTop: 35, accel: 7.4, brake: 16.875, drag: 0.0025, steerV: 15, steerRate: 3.8, grip: grip(12.5, 8, 6.8) });
 
 export const SPECS = Object.freeze({
   van: Object.freeze({
     label: 'the Whale', mass: 3200, size: { w: 2.05, h: 2.6, l: 6.0 }, wheelbase: 3.9, track: 1.72, wheelR: 0.38, wheelW: 0.26,
-    top: 28, offTop: 18, dirtTop: 22, accel: 3.6, brake: 9, reverse: 7, drag: 0.0045, roll: 0.15,
+    top: 28, offTop: 18, dirtTop: 22, accel: 3.6, brake: 11.25, reverse: 7, drag: 0.0045, roll: 0.15,
     steer: 0.55, steerV: 9, steerRate: 2.2, grip: grip(7.5, 5, 4.5), seats: 10, shown: 2, gang: false,
   }),
   whitevan: Object.freeze({
     label: 'white van', mass: 3200, size: { w: 2.05, h: 2.4, l: 6.0 }, wheelbase: 3.9, track: 1.72, wheelR: 0.38, wheelW: 0.26,
-    top: 28, offTop: 18, dirtTop: 22, accel: 3.6, brake: 9, reverse: 7, drag: 0.0045, roll: 0.15,
+    top: 28, offTop: 18, dirtTop: 22, accel: 3.6, brake: 11.25, reverse: 7, drag: 0.0045, roll: 0.15,
     steer: 0.55, steerV: 9, steerRate: 2.2, grip: grip(7.5, 5, 4.5), seats: 10, shown: 2, gang: false,
   }),
   jeep: Object.freeze({
     label: 'tour jeep', mass: 1500, size: { w: 1.86, h: 2.05, l: 4.6 }, wheelbase: 2.9, track: 1.56, wheelR: 0.42, wheelW: 0.3,
-    top: 30, offTop: 22, dirtTop: 27, accel: 4.4, brake: 9.5, reverse: 7, drag: 0.005, roll: 0.14,
+    top: 30, offTop: 22, dirtTop: 27, accel: 4.4, brake: 11.875, reverse: 7, drag: 0.005, roll: 0.14,
     steer: 0.6, steerV: 10, steerRate: 2.6, grip: grip(7.8, 6, 5.2), seats: 8, shown: 8, gang: false,
   }),
   suv: Object.freeze({
     label: 'black SUV', mass: 2500, size: { w: 2.0, h: 1.95, l: 5.1 }, wheelbase: 3.0, track: 1.7, wheelR: 0.4, wheelW: 0.28,
-    top: 34, offTop: 20, dirtTop: 25, accel: 4.6, brake: 9.5, reverse: 7, drag: 0.004, roll: 0.14,
+    top: 34, offTop: 20, dirtTop: 25, accel: 4.6, brake: 11.875, reverse: 7, drag: 0.004, roll: 0.14,
     steer: 0.56, steerV: 10, steerRate: 2.4, grip: grip(8, 5.2, 4.6), seats: 7, shown: 2, gang: true,
   }),
   suv_fbi: Object.freeze({
     label: 'FBI SUV', mass: 2500, size: { w: 2.0, h: 2.05, l: 5.1 }, wheelbase: 3.0, track: 1.7, wheelR: 0.4, wheelW: 0.28,
-    top: 36, offTop: 20, dirtTop: 26, accel: 4.8, brake: 9.8, reverse: 7, drag: 0.004, roll: 0.14,
+    top: 36, offTop: 20, dirtTop: 26, accel: 4.8, brake: 12.25, reverse: 7, drag: 0.004, roll: 0.14,
     steer: 0.56, steerV: 10, steerRate: 2.4, grip: grip(8.2, 5.4, 4.6), seats: 5, shown: 2, gang: false,
   }),
   pickup: Object.freeze({
     label: 'pickup', mass: 2300, size: { w: 2.0, h: 1.9, l: 5.6 }, wheelbase: 3.4, track: 1.72, wheelR: 0.4, wheelW: 0.28,
-    top: 32, offTop: 21, dirtTop: 25, accel: 4.2, brake: 9.2, reverse: 7, drag: 0.0045, roll: 0.14,
+    top: 32, offTop: 21, dirtTop: 25, accel: 4.2, brake: 11.5, reverse: 7, drag: 0.0045, roll: 0.14,
     steer: 0.55, steerV: 10, steerRate: 2.3, grip: grip(7.6, 5.4, 4.8), seats: 3, shown: 2, gang: false,
   }),
   sedan: Object.freeze({
     label: 'sedan', mass: 1400, size: { w: 1.82, h: 1.45, l: 4.6 }, wheelbase: 2.7, track: 1.55, wheelR: 0.33, wheelW: 0.22,
-    top: 36, offTop: 16, dirtTop: 22, accel: 4.8, brake: 10, reverse: 7, drag: 0.0035, roll: 0.12,
+    top: 36, offTop: 16, dirtTop: 22, accel: 4.8, brake: 12.5, reverse: 7, drag: 0.0035, roll: 0.12,
     steer: 0.58, steerV: 11, steerRate: 2.6, grip: grip(8.4, 4.8, 4), seats: 5, shown: 0, gang: false,
   }),
   rv: Object.freeze({
     label: 'RV', mass: 6000, size: { w: 2.5, h: 3.3, l: 9.0 }, wheelbase: 5.4, track: 2.05, wheelR: 0.48, wheelW: 0.32,
-    top: 25, offTop: 12, dirtTop: 18, accel: 2.3, brake: 7, reverse: 5, drag: 0.0033, roll: 0.18,
+    top: 25, offTop: 12, dirtTop: 18, accel: 2.3, brake: 8.75, reverse: 5, drag: 0.0033, roll: 0.18,
     steer: 0.5, steerV: 8, steerRate: 1.8, grip: grip(6.5, 4.4, 3.6), seats: 6, shown: 2, gang: false,
   }),
 });
@@ -94,4 +95,4 @@ export const TRAFFIC = Object.freeze({
 
 export const specOf = (kind) => SPECS[kind] || SPECS.sedan;
 // the widest wheel angle at speed v
-export const steerMax = (sp, v) => sp.steer / (1 + Math.abs(v) / sp.steerV);
+export const steerMax = (sp, v) => sp.steer / (1 + 0.65 * Math.abs(v) / sp.steerV);

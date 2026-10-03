@@ -22,7 +22,8 @@ function check(name, fn) {
     assert.equal(Haptics.kind, "none");
     assert.equal(Haptics.enabled, true);
     Haptics.unlock(); Haptics.tick(); Haptics.bail(); Haptics.bail(true); Haptics.bump(0.4); Haptics.thump(); Haptics.hookset();
-    Haptics.jolt(); Haptics.land(); Haptics.splash(0.5); Haptics.load(); Haptics.setTension(0.9, 1, true); Haptics.setCrank(2);
+    Haptics.jolt(); Haptics.land(); Haptics.land(2); Haptics.splash(0.5); Haptics.load(); Haptics.setTension(0.9, 1, true); Haptics.setCrank(2);
+    Haptics.throb(); Haptics.rub(0.8); Haptics.thrash(); Haptics.charge(); Haptics.phase();
     Haptics.mute(100); Haptics.mute(0); Haptics.stop();
     assert.equal(Haptics.attachPad({}), null);
     assert.equal(Haptics.attachCrank({}, { toLocal: (x, y) => ({ x, y }) }), null);
@@ -306,6 +307,81 @@ check("every pattern is short and odd-length, with pulses of 6 ms or more", () =
   assert.ok(calls.length >= 14);
 });
 
+/* ---------- the new fights: sulk, rub, thrash, charge, a boss stage, and a big landing ---------- */
+check("throb: one lub-dub a second, however often the game calls it", () => {
+  fresh();
+  run(5000, () => H.throb());
+  const list = pulses();
+  console.log(`      ${list.length} throbs in 5 s, every ${mean(intervals(list)).toFixed(0)} ms, pattern ${JSON.stringify(list[0].p)}`);
+  assert.ok(list.length >= 5 && list.length <= 6, "throbs " + list.length);
+  assert.ok(Math.abs(mean(intervals(list)) - 1000) < 40, "interval " + mean(intervals(list)));
+  assert.deepEqual(list[0].p, [34, 70, 20]);
+  // it does not run when the player turned the buzz off
+  fresh(); H.setEnabled(false); run(2000, () => H.throb()); assert.equal(calls.length, 0); H.setEnabled(true);
+});
+
+check("rub: a scratchy double click that comes quicker as the meter fills, and stops at 0", () => {
+  const rates = [], widths = [];
+  for (const lv of [0.1, 0.4, 0.7, 1]) {
+    fresh();
+    run(3000, () => H.rub(lv));
+    const list = pulses(), iv = mean(intervals(list));
+    rates.push(list.length / 3); widths.push(list[0].p[0]);
+    console.log(`      rub ${lv}: ${(list.length / 3).toFixed(1)} clicks/s, interval ${iv.toFixed(0)} ms, ${JSON.stringify(list[0].p)}`);
+    assert.ok(list.every((c) => c.p.length === 3), "double clicks");
+    assert.ok(maxInWindow(list) <= 26, "the continuous budget");
+    assert.ok(longestBuzz(list) <= 1600, "one long buzz");
+  }
+  for (let i = 1; i < rates.length; i++) assert.ok(rates[i] > rates[i - 1], "rate did not rise: " + rates.join(", "));
+  for (let i = 1; i < widths.length; i++) assert.ok(widths[i] >= widths[i - 1], "clicks did not grow: " + widths.join(", "));
+  // a meter that empties: no more buzz
+  fresh(); run(1000, () => H.rub(0.6)); const n = calls.length; run(1000, () => H.rub(0)); assert.equal(calls.length, n, "rub(0) buzzed");
+  // the scratch is not a metronome
+  fresh(); run(4000, () => H.rub(0.5));
+  const iv = intervals(pulses()); assert.ok(Math.max(...iv) - Math.min(...iv) > 10, "the intervals never vary");
+});
+
+check("rub, throb and the tension train share the motor without breaking the call limit", () => {
+  fresh();
+  let f = 0;
+  run(6000, () => { f++; H.setTension(0.7, 0, true); H.rub(f % 240 < 150 ? 0.9 : 0); H.throb(); H.setCrank(2); });
+  console.log(`      ${calls.length} calls in 6 s, busiest second ${maxInWindow(calls)}`);
+  assert.ok(maxInWindow(calls) <= 30);
+  assert.ok(longestBuzz(calls) <= 1600);
+});
+
+check("thrash is three bumps at 8 Hz, charge two light bumps, a boss stage one 300 ms buzz", () => {
+  fresh();
+  assert.equal(H.thrash(), true);
+  assert.deepEqual(calls[0].p, [14, 111, 14, 111, 14]);
+  assert.ok(Math.abs(lenMs(calls[0].p) - 264) <= 1);
+  T += 500; assert.equal(H.charge(), true); assert.deepEqual(calls[1].p, [10, 100, 10]);
+  T += 500; assert.equal(H.phase(), true); assert.deepEqual(calls[2].p, [300]);
+  // a nibble does not cut the boss buzz; a snap does
+  T += 50; assert.equal(H.bump(0.5), false, "a bump cut the stage buzz");
+  T += 10; assert.equal(H.jolt(), true);
+});
+
+check("land(): a trophy shakes longer than a fish, and a legend longest", () => {
+  const len = [];
+  for (const lv of [0, 1, 2]) { fresh(); assert.equal(H.land(lv), true); len.push(lenMs(calls[0].p)); }
+  console.log("      land 0/1/2: " + len.join(" / ") + " ms");
+  assert.ok(len[1] > len[0] && len[2] > len[1] && len[0] === 250);
+  assert.deepEqual(calls.at(-1).p, [60, 50, 60, 50, 60, 50, 250, 100, 400]);
+  // no argument, or nonsense: a plain fish
+  fresh(); H.land(); assert.equal(lenMs(calls[0].p), 250);
+  fresh(); H.land(NaN); assert.equal(lenMs(calls[0].p), 250);
+  fresh(); H.land(9); assert.equal(lenMs(calls[0].p), len[2]);
+});
+
+check("the new patterns are short, odd-length, with pulses of 6 ms or more", () => {
+  fresh();
+  H.throb(); T += 1100; H.throb(); T += 500; H.thrash(); T += 500; H.charge(); T += 500; H.phase(); T += 500; H.land(1); T += 1000; H.land(2); T += 1000;
+  run(1000, () => H.rub(1));
+  const bad = calls.filter((c) => Array.isArray(c.p) && (c.p.length > 9 || c.p.length % 2 === 0 || c.p.some((v, i) => i % 2 === 0 && v < 6)));
+  assert.equal(bad.length, 0, JSON.stringify(bad));
+});
+
 /* ---------- 3. the iPhone pads, in a real page (Chromium with the platform forced to "ios") ---------- */
 await iosPads();
 
@@ -468,6 +544,15 @@ async function iosPads() {
     // the legacy path (iOS before 26.5) runs without errors, and never takes focus
     const legacy = await page.evaluate(() => { Haptics.unlock(); Haptics.thump(); Haptics.bail(); const l = document.querySelector("label[for=fishHxLegacy]"); return { rig: !!l, focus: document.activeElement === document.body }; });
     check("iPhone pads: the old label.click() path builds its hidden switch and leaves focus alone", () => { assert.equal(legacy.rig, true); assert.equal(legacy.focus, true); });
+    // a bigger fish gets more taps: 2, 3 and 5, 120 ms apart
+    const taps = await page.evaluate(async () => {
+      const l = document.querySelector("label[for=fishHxLegacy]"), out = [];
+      let n = 0;
+      l.addEventListener("click", () => { n++; }, true);
+      for (const lv of [0, 1, 2]) { n = 0; await new Promise((r) => setTimeout(r, 300)); Haptics.land(lv); await new Promise((r) => setTimeout(r, 800)); out.push(n); }
+      return out;
+    });
+    check("iPhone pads: a fish lands with 2 taps, a trophy with 3, a legend with 5", () => assert.deepEqual(taps, [2, 3, 5]));
     check("iPhone pads: no console errors", () => assert.deepEqual(errors, []));
   } finally {
     await browser.close();
