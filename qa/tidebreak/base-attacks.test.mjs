@@ -46,6 +46,7 @@ console.log('PASS: all four three-hit sequences, contact timing, average damage,
 for (let kind = 0; kind < 4; kind++) {
   const {s,p}=duel(kind);p.skillRanks=[1,1,1,0];step(s,{},1/120);const x=p.x;
   step(s,{x:1,cast:1},.05);assert(p.x>x,'movement remains available during a basic attack');
-  assert(p.cd[1]>0,'existing skills remain available during a basic attack');
+  assert(p.cd[1]>0||p.castIntent?.slot===1,'existing skills can start during a basic attack');
+  for(let i=0;i<80;i++)step(s,{attack:false},.01);assert(p.cd[1]>0,'the accepted spell resolves after its preparation');
 }
 console.log('PASS: movement and skill casting remain available in all four attack kits.');

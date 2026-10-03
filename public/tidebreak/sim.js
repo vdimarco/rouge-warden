@@ -2,7 +2,7 @@
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
 import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, TOWER_POSITIONS, CENTER, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
 export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
-import { ATTACK_TIMINGS } from './basic-attacks.js';
+import { ATTACK_TIMINGS, attackTiming } from './basic-attacks.js';
 import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../arcade/creatures/catalog.js';
 import { KITS, MAX_LEVEL, xpForLevel, trainSkill, trainBot, cooldownFor } from './abilities.js';
 export { trainSkill } from './abilities.js';
@@ -16,6 +16,8 @@ import { combatDecision } from './combat-ai.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, LANE_NAMES } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
+import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
+import { tickEncounter } from './encounters.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
@@ -72,6 +74,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (source.team >= 0) provokeNeutral(target, source, s.time);
   }
   if (kind === 'spell') amount += (source.power || 0) * .55;
+  if(['boss','camp'].includes(target.kind)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
@@ -81,6 +84,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     target.shield += 220; target.itemState.mirror = s.time + 20; burst(s, target.x, target.y, '#b9c9ff', 105);
   }
   const absorbed = Math.min(target.shield, amount * shieldMultiplier); target.shield -= absorbed; amount -= absorbed / shieldMultiplier;
+  if(absorbed>0&&target.shield<=0)emitCombatFeedback(s,source,target,'shield-break','SHIELD BROKEN');
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (credit?.player) s.stats.damage += actual;
   if(source.hp>0&&target.soulThread?.source===source.id&&target.soulThread.until>s.time)heal(s,source,actual*.25);
@@ -98,12 +102,13 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (hasItem(source, 'winter')) {
       target.frostMarks ||= {}; const mark = target.frostMarks[source.id] ||= { count: 0, until: 0, ready: 0 };
       if (s.time >= mark.ready) { mark.count = (s.time <= mark.until ? mark.count : 0) + 1; mark.until = s.time + 5;
-        if (mark.count >= 3) { target.stun = Math.max(target.stun, 1); mark.count = 0; mark.ready = s.time + 10; burst(s, target.x, target.y, '#b9e8ff', 130); }
+        if (mark.count >= 3) { target.snaredUntil = Math.max(target.snaredUntil||0, s.time+1); mark.count = 0; mark.ready = s.time + 10; burst(s, target.x, target.y, '#b9e8ff', 130); }
       }
     }
   }
   if (target.hp > 0) return actual;
-  if(target.rebirthUntil>s.time){target.rebirthUntil=0;target.hp=target.maxHp*.35;target.shield=140;target.stun=target.fear=target.slow=0;target.bleed=target.burn=null;area(s,target,target,330,260*(target.rebirthStrength||1));burst(s,target.x,target.y,'#ffc16d',330,'ultimate');return actual;}
+  if(target.rebirthUntil>s.time){target.rebirthUntil=0;target.hp=target.maxHp*.35;target.shield=140;target.stun=target.fear=target.slow=0;target.snaredUntil=target.silencedUntil=target.disarmedUntil=0;target.bleed=target.burn=null;area(s,target,target,330,260*(target.rebirthStrength||1));burst(s,target.x,target.y,'#ffc16d',330,'ultimate');return actual;}
+  emitCombatFeedback(s,source,target,'kill',target.kind==='hero'?'BANISHED':'DEFEATED');
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
@@ -163,12 +168,12 @@ export function autoTarget(s, e, manual = 0) {
   return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
 function attack(s, e, t) {
-  if (!t || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
+  if (!t || e.castIntent || e.recoveryUntil>s.time || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
   if (e.kind === 'hero') {
     if (e.comboTarget !== t.id || s.time > (e.comboUntil || 0)) e.comboNext = 0;
     e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
   }
-  const timing = ATTACK_TIMINGS[e.attackVariant || 0];
+  const timing = e.kind==='hero'?attackTiming(e,e.attackVariant||0,s.time):ATTACK_TIMINGS[e.attackVariant||0];
   e.attackWindup = e.kind === 'hero' ? timing.windup : .12;
   e.attackDuration = e.kind === 'hero' ? timing.duration : .46;
   e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
@@ -189,6 +194,7 @@ function resolveAttack(s, e) {
   damage(s, e, t, pending.amount, 'attack');
   if (e.hero === 0 && t.omen?.source === e.id && t.omen.until > s.time) {
     const omen = t.omen; t.omen = null; if (t.hp > 0) damage(s,e,t,omen.amount);
+    emitCombatFeedback(s,e,t,'combo','OMEN');
     e.cloak = s.time + 1.2; e.revealedUntil = -1; e.ambushReady = true;
     s.effects.push({x:t.x,y:t.y,type:'spell',hero:0,slot:2,angle:e.facing,radius:180,life:.7,maxLife:.7});
   }
@@ -215,11 +221,33 @@ function area(s, e, center, radius, amount, status = {}) {
     if (!['tower', 'core'].includes(t.kind)) Object.assign(t, status, status.fear ? { fearX: e.x, fearY: e.y } : {});
   }
 }
-export function cast(s, e, slot, aim) {
-  if (e.kind !== 'hero' || ![0,1,2,3].includes(slot) || !e.skillRanks[slot] || e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.silencedUntil > s.time || s.winner !== null) return false;
+export function castTarget(s,e,slot,aim) {
+  if(slot===2&&[0,8].includes(e.hero)&&Number.isFinite(aim?.distance)){
+    const length=Math.min(540,Math.max(0,aim.distance)),angle=Math.atan2(aim.y,aim.x),point={x:e.x+Math.cos(angle)*length,y:e.y+Math.sin(angle)*length};
+    return s.units.filter(t=>!['tower','core'].includes(t.kind)&&hostile(s,e,t)&&canSee(s,e,t)&&distance(e,t)<540&&lineOfSight(s,e,t)&&distance(t,point)<Math.max(140,(t.radius||0)+55)).sort((a,b)=>distance(a,point)-distance(b,point)||a.id-b.id)[0]||null;
+  }
+  return s.units.find(t=>t.id===e.target&&hostile(s,e,t)&&canSee(s,e,t)&&distance(e,t)<540&&lineOfSight(s,e,t))||nearest(s,e,540,true);
+}
+export function requestCast(s,e,slot,aim,{bot=false}={}) {
+  if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null||e.castIntent||e.recoveryUntil>s.time)return false;
+  if(slot===0&&canReturn(s,e))return cast(s,e,slot,aim);
+  if(e.cd[slot]>0||!canAfford(e,slot))return false;
+  const target=castTarget(s,e,slot,aim);
+  if(slot===2&&[0,8].includes(e.hero)&&(!target||['tower','core'].includes(target.kind)))return false;
+  const timing=castTiming(e,slot,bot);
+  if(!timing.windup)return cast(s,e,slot,aim);
+  const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):target?Math.atan2(target.y-e.y,target.x-e.x):e.facing;
+  const locked={x:Math.cos(angle),y:Math.sin(angle),distance:aim?.distance??(target?distance(e,target):undefined)};
+  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:spellShape(e,slot,locked);
+  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape};
+  e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
+  return true;
+}
+export function cast(s, e, slot, aim, {lockedTarget}={}) {
+  if (e.kind !== 'hero' || ![0,1,2,3].includes(slot) || !e.skillRanks[slot] || spellBlocked(s,e,slot) || s.winner !== null) return false;
   if(slot===0&&canReturn(s,e)){const from={x:e.x,y:e.y},anchor=e.returnAnchor;e.x=anchor.x;e.y=anchor.y;resolveBody(s,e);e.returnAnchor=null;e.recall=0;e.motion={...from,start:s.time,duration:.25,arc:65};burst(s,e.x,e.y,'#ffba83',180);return true;}
   if(e.cd[slot]>0||!canAfford(e,slot))return false;
-  const target = s.units.find(t => t.id === e.target && hostile(s,e,t) && canSee(s,e,t) && distance(e,t) < 540 && lineOfSight(s,e,t)) || nearest(s,e,540,true);
+  const target = lockedTarget || castTarget(s,e,slot,aim);
   if (slot === 2 && e.hero === 0 && (!target || ['core','tower'].includes(target.kind))) return false;
   if (slot === 2 && e.hero === 8 && (!target || ['core','tower'].includes(target.kind))) return false;
   const angle = aim && Math.hypot(aim.x,aim.y) > .1 ? Math.atan2(aim.y,aim.x) : target ? Math.atan2(target.y-e.y,target.x-e.x) : e.facing;
@@ -253,7 +281,7 @@ export function cast(s, e, slot, aim) {
     if(e.hero===3) for(const t of s.units) if(hostile(s,e,t)&&distance(e,t)<300&&lineOfSight(s,e,t)) {damage(s,e,t,145*strength);if(!['core','tower'].includes(t.kind)) {t.fear=t.bleed?.until>s.time?2.2:1.1;t.fearX=e.x;t.fearY=e.y;}}
   } else if(slot===2) {
     if(e.hero===0) {target.omen={source:e.id,until:s.time+5+rank,amount:170*strength};target.revealedUntil=s.time+5+rank;fx(target,160);}
-    if(e.hero===1) {fx(origin,350);cone(350,1.25,(t,a)=>{const wet=t.wetUntil>s.time||inWater(t,s);damage(s,e,t,220*strength);if(!['core','tower'].includes(t.kind)){t.x+=Math.cos(a)*220;t.y+=Math.sin(a)*220;if(wet)t.stun=.8+rank*.15;resolveBody(s,t);}});}
+    if(e.hero===1) {fx(origin,350);cone(350,1.25,(t,a)=>{const wet=t.wetUntil>s.time||inWater(t,s);damage(s,e,t,220*strength);if(!['core','tower'].includes(t.kind)){t.x+=Math.cos(a)*220;t.y+=Math.sin(a)*220;if(wet){t.stun=.8+rank*.15;emitCombatFeedback(s,e,t,'combo','WET STUN');}resolveBody(s,t);}});}
     if(e.hero===2) {const point=aim?{x:e.x+Math.cos(angle)*Math.min(380,aim.distance??380),y:e.y+Math.sin(angle)*Math.min(380,aim.distance??380)}:target?{x:target.x,y:target.y}:{x:e.x+Math.cos(angle)*380,y:e.y+Math.sin(angle)*380};point.x=clamp(point.x,180,SIZE-180);point.y=clamp(point.y,180,SIZE-180);s.zones.push({...point,source:e.id,team:e.team,rank,radius:190,life:4.7,tick:.7,armed:s.time+.7,type:'witchfire',amount:80*strength});fx(point,190);s.effects.push({...origin,tx:point.x,ty:point.y,type:'mortar',hero:2,life:.7,maxLife:.7,color});}
     if(e.hero===3) {fx(origin,310);cone(310,1,t=>{damage(s,e,t,130*strength);if(!['core','tower'].includes(t.kind))t.bleed={source:e.id,until:s.time+4,tick:s.time+.8,amount:36*strength};});e.pursuitUntil=s.time+3;}
   } else {
@@ -266,7 +294,7 @@ export function cast(s, e, slot, aim) {
   return true;
 }
 export function portal(s, e = player(s)) {
-  if (e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.portalCd > 0 || s.winner !== null) return false;
+  if (e.hp <= 0 || e.stun > 0 || e.fear > 0 || rooted(s,e) || e.castIntent || e.recoveryUntil>s.time || e.portalCd > 0 || s.winner !== null) return false;
   const gate = PORTALS.find(g => distance(e, g) < 150); if (!gate) return false;
   const to = PORTALS[gate.to]; burst(s, e.x, e.y, '#c1f4ed', 180, 'ultimate'); e.x = to.x; e.y = to.y; e.portalCd = 10; e.recall = 0; resolveBody(s, e); burst(s, e.x, e.y, '#c1f4ed', 180);
   if (e.player) { s.stats.portals++; announce(s, 'Through the looking glass', 'You crossed the map. Find your ambush.'); } return true;
@@ -306,7 +334,7 @@ function followLane(s, e, dt) {
 
 }
 function bot(s, e, dt) {
-  if(e.castIntent)return;
+  if(e.castIntent||e.recoveryUntil>s.time)return;
   const intent=combatDecision(s,e);e.botMode=intent.mode;
   e.retreat=intent.mode==='retreat';
   if(intent.mode==='retreat'){
@@ -314,13 +342,7 @@ function bot(s, e, dt) {
   }else e.botRecall=0;
   if(intent.target)e.target=intent.target.id;
   if(intent.slot!==undefined){
-    const defensive=intent.slot===0||intent.slot===2&&[7,10].includes(e.hero)||intent.slot===3&&[3,9].includes(e.hero);
-    if(defensive)cast(s,e,intent.slot,intent.aim);
-    else {
-      const delay=intent.slot===3?.7:.5;
-      e.castIntent={slot:intent.slot,aim:intent.aim,target:intent.target?.id,at:s.time+delay,start:s.time,shape:spellShape(e,intent.slot,intent.aim)};
-      e.facing=Math.atan2(intent.aim.y,intent.aim.x);e.revealedUntil=s.time+delay+1;
-    }
+    requestCast(s,e,intent.slot,intent.aim,{bot:true});
     e.thinkAt=s.time+1.1;
   }
   if(e.castIntent)return;
@@ -330,13 +352,13 @@ function bot(s, e, dt) {
 }
 function resolveIntent(s,e){
  const intent=e.castIntent;if(!intent)return;
- if(e.hp<=0||e.stun>0||e.fear>0||e.silencedUntil>s.time){e.castIntent=null;return;}
+ if(spellBlocked(s,e,intent.slot)||intent.origin&&distance(e,intent.origin)>8){e.castIntent=null;if(e.hp>0)emitCombatFeedback(s,e,e,'interrupt','INTERRUPTED');return;}
+ const t=s.units.find(t=>t.id===intent.target);
+ if(intent.shape.targetId&&t){intent.shape.x=t.x;intent.shape.y=t.y;}
  if(s.time<intent.at)return;
  e.castIntent=null;
- const t=s.units.find(t=>t.id===intent.target);
- if(intent.target&&(!t||t.hp<=0||!canSee(s,e,t)||!lineOfSight(s,e,t)))return;
- if(intent.slot===2&&[0,8].includes(e.hero)&&(!t||distance(e,t)>=540))return;
- e.target=intent.target||0;cast(s,e,intent.slot,intent.aim);
+ if(intent.slot===2&&[0,8].includes(e.hero)&&(!t||t.hp<=0||!canSee(s,e,t)||!lineOfSight(s,e,t)||distance(e,t)>=540))return;
+ e.target=intent.target||0;if(cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}))e.recoveryUntil=s.time+(intent.recovery||0);
 }
 function terrainEffects(s, dt) {
   for (const z of s.zones) {
@@ -350,6 +372,7 @@ function terrainEffects(s, dt) {
       if(hostile(s,source,t)) {
         const rooted=t.snaredUntil>s.time;
         damage(s,source,t,(z.amount||38)*(z.type==='witchfire'&&rooted?1.6:1));
+        if(z.type==='witchfire'&&rooted){z.comboHitIds||=[];if(!z.comboHitIds.includes(t.id)){z.comboHitIds.push(t.id);emitCombatFeedback(s,source,t,'combo','ROOT BONUS');}}
         if(!['core','tower'].includes(t.kind)) {t.slow=1;if(z.type==='water'||z.type==='maelstrom')t.wetUntil=s.time+2;
           if(z.type==='maelstrom'){const d=distance(t,z);if(d>45){t.x+=(z.x-t.x)/d*24;t.y+=(z.y-t.y)/d*24;resolveBody(s,t);}}
         }
@@ -360,7 +383,7 @@ function terrainEffects(s, dt) {
   for (const t of s.traps) {
     t.life -= dt; if (s.time < t.armed) continue;
     const source = s.units.find(e => e.id === t.source), enemy = s.units.find(e => e.hp > 0 && e.team !== t.team && e.team >= 0 && !['core', 'tower'].includes(e.kind) && distance(e, t) < 95);
-    if (source && enemy) { area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{stun:1.4,snaredUntil:s.time+2.5}); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
+    if (source && enemy) { area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5}); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
   }
   s.traps = s.traps.filter(t => t.life > 0);
 }
@@ -410,7 +433,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       resolveIntent(s,e);
       if (e.stun > 0) {e.travel=null;continue;}
       if (e.fear > 0) {e.travel=null; move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
-      if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)cast(s,e,input.cast,input.aim);continue;}
+      if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestCast(s,e,input.cast,input.aim);continue;}
       if (!e.player || input.autopilot) { bot(s, e, dt); continue; }
       if(input.order)commandOrder(s,e,input.order);
       const dx = input.x || 0, dy = input.y || 0, moving = Math.hypot(dx, dy) > .12;
@@ -426,7 +449,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (moving || s.time - e.lastHit < .2) e.recall = 0;
         else { e.recall -= dt; if (e.recall <= 0) { Object.assign(e, BASES[0]); burst(s, e.x, e.y, '#e4f5ac', 180); } }
       }
-      if (input.cast !== undefined) cast(s, e, input.cast, input.aim);
+      if (input.cast !== undefined) requestCast(s, e, input.cast, input.aim);
       if (!e.recall) {
         let ordered=null;
         if(e.order?.type==='attack'){
@@ -443,8 +466,8 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (input.attack !== false) attack(s, e, t);
       }
     } else {
-      if (e.hp <= 0 || e.stun > 0) continue;
-      if (e.fear > 0 && e.speed > 0) { move(s, e, e.x + e.x - e.fearX, e.y + e.y - e.fearY, dt); continue; }
+      if (e.hp <= 0 || e.stun > 0) {e.specialIntent=null;e.exposedUntil=0;continue;}
+      if (e.fear > 0) {e.specialIntent=null;e.exposedUntil=0;e.nextSpecial=Math.max(e.nextSpecial||0,s.time+1.5);if(e.speed>0)move(s, e, e.x + e.x - e.fearX, e.y + e.y - e.fearY, dt);continue;}
       if (e.kind === 'tower' || e.kind === 'core') {
         const tracked=s.units.find(t=>t.id===e.towerTarget);
         if(!tracked||tracked.hp<=0||distance(e,tracked)>e.range||!canSee(s,e,tracked)){e.towerTarget=0;e.towerHits=0;e.towerUntil=0;}
@@ -457,17 +480,19 @@ export function step(s, input = {}, dt = 1 / 60) {
         // Neutral guardians retaliate against the attacker. Auto attacks leave resting camps alone.
         const t = s.units.find(u => u.id === e.aggro), intent = neutralIntent(e, t, s.time);
         if (intent.mode === 'return' || intent.mode === 'reset') {
-          e.leash = true; e.pendingAttack = null; e.attackAnim = 0;
+          e.leash = true; e.pendingAttack = null; e.attackAnim = 0;e.specialIntent=null;e.exposedUntil=0;
           move(s, e, intent.x, intent.y, dt, e.speed * 1.5);
           e.hp = Math.min(e.maxHp, e.hp + dt * 240);
           if (intent.mode === 'reset') { e.leash = false; e.aggro = 0; e.aggroUntil = 0; e.hp = e.maxHp; }
         } else if (intent.mode === 'fight') {
+          if(tickEncounter(s,e,dt,{damage}))continue;
           attack(s, e, t); if (distance(e, t) > e.range) move(s, e, intent.x, intent.y, dt, e.speed * (e.slow > 0 ? .52 : 1));
         }
       } else if (e.team === -1) {
         const home = { x: e.homeX, y: e.homeY }, t = nearest(s, e, 330);
         if (distance(e, home) > 390) e.leash = true;
-        if (e.leash) { move(s, e, home.x, home.y, dt, e.speed * 1.5); e.hp = Math.min(e.maxHp, e.hp + dt * 150); if (distance(e, home) < 20) e.leash = false; }
+        if (e.leash) { e.specialIntent=null;e.exposedUntil=0;move(s, e, home.x, home.y, dt, e.speed * 1.5); e.hp = Math.min(e.maxHp, e.hp + dt * 150); if (distance(e, home) < 20) e.leash = false; }
+        else if(tickEncounter(s,e,dt,{damage}))continue;
         else if (t) { attack(s, e, t); if (distance(e, t) > e.range) move(s, e, t.x, t.y, dt); }
         else move(s, e, home.x, home.y, dt);
       } else {

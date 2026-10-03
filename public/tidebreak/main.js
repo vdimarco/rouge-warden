@@ -15,13 +15,26 @@ import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers } from './pointer-action.js';
 import { paginatePanel } from './panel-pager.js';
 import { manaCost, canAfford, canReturn } from './combat-rules.js';
+import { cursorSkillAim, dragSkillAim, skillAimPreview } from './skill-aim.js';
+import { followUpFeedback } from './combat-feedback.js';
+import { spellBlocked } from './combat-state.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
-let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, abilityControl, lastAttack = 0, portalQueue = false, waypoint = null;
+let state = createMatch(), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
+const skillControlsStyle=document.createElement('link');skillControlsStyle.rel='stylesheet';skillControlsStyle.href=new URL('./skill-controls.css',import.meta.url).href;document.head.append(skillControlsStyle);
+const aimStatus=document.createElement('output');aimStatus.id='skill-aim-status';aimStatus.setAttribute('role','status');aimStatus.setAttribute('aria-live','polite');aimStatus.hidden=true;$('skill-points').before(aimStatus);
+skillButtons.forEach(b=>b.setAttribute('aria-describedby','skill-aim-status'));
+function updateAimStatus(status){
+  aimStatus.hidden=!status;
+  const text=status?.cancelled?'Release to cancel.':status?'Release to cast. Return to center to cancel.':'';
+  if(aimStatus.textContent!==text)aimStatus.textContent=text;
+  aimStatus.classList.toggle('cancelled',!!status?.cancelled);
+  skillButtons.forEach((b,i)=>{b.classList.toggle('aiming',status?.slot===i);b.classList.toggle('aim-cancelled',status?.slot===i&&status.cancelled);});
+}
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
 function closeSheet() { $('sheet').close(); paused = false; resetInput(); last = performance.now(); }
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet'))paginatePanel($('sheet-content'));}); }
@@ -36,11 +49,12 @@ function choose(kind) {
   selected = kind; const h = HEROES[kind]; $('hero-name').textContent = h.name; $('ready-legend').textContent = `${h.name} · ${h.role}`; $('hero-role').textContent = `${h.attribute} · ${h.role}`; $('hero-note').textContent = h.note;
   $('hero-animation').srcset = `./art/animated/${h.slug}-idle.gif`; $('hero-art').src = `./art/illustrated/${h.slug}-front.webp`; $('hero-art').alt = `${h.name}, ${h.role}`;
   document.querySelectorAll('[data-hero]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hero === kind)));
-  $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(kind);$('hero-spell-note').textContent='';$('hero-spell-note').hidden=true;
-  document.querySelectorAll('[data-hero-spell]').forEach(b=>b.onclick=()=>{const slot=+b.dataset.heroSpell,a=spellDetail(kind,slot);sheet(`<h2>${a.name}</h2><div class="selection-spell-art">${heroPreviewHTML(kind).match(/<div class="hero-move-preview"[\s\S]*/)[0]}</div><p>${a.description}</p><p class="keyhint">${a.tags} · ${a.cooldown}s cooldown<br>${slot===3?'Ultimate: levels 6, 12, 18':'Basic ranks: levels 1, 3, 5, 7'}</p><button id="back-preview" class="primary">Back to legends</button>`);document.querySelectorAll('.selection-spell-art [data-hero-spell]').forEach(v=>v.onclick=()=>{closeSheet();document.querySelector(`#hero-preview [data-hero-spell="${v.dataset.heroSpell}"]`).click();});$('back-preview').onclick=closeSheet;});
+  $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(kind);const spellNote=$('hero-spell-note');spellNote.innerHTML='<strong>Skills</strong><span>Hover a skill to preview it. Tap for full details.</span>';spellNote.hidden=false;
+  const explainSkill=slot=>{const a=spellDetail(kind,slot);spellNote.innerHTML=`<strong>${a.name}</strong><span>${a.description}</span><small>${a.tags} · ${a.cooldown}s cooldown · ${slot===3?'Ultimate at level 6':'Q / E / C skill'}</small>`;};
+  document.querySelectorAll('[data-hero-spell]').forEach(b=>{const slot=+b.dataset.heroSpell;b.onpointerenter=()=>explainSkill(slot);b.onfocus=()=>explainSkill(slot);b.onclick=()=>{const a=spellDetail(kind,slot);explainSkill(slot);sheet(`<h2>${a.name}</h2><div class="selection-spell-art">${heroPreviewHTML(kind).match(/<div class="hero-move-preview"[\s\S]*/)[0]}</div><p>${a.description}</p><p class="keyhint">${a.tags} · ${a.cooldown}s cooldown<br>${slot===3?'Ultimate: levels 6, 12, 18':'Basic ranks: levels 1, 3, 5, 7'}</p><button id="back-preview" class="primary">Back to legends</button>`);document.querySelectorAll('.selection-spell-art [data-hero-spell]').forEach(v=>v.onclick=()=>{closeSheet();document.querySelector(`#hero-preview [data-hero-spell="${v.dataset.heroSpell}"]`).click();});$('back-preview').onclick=closeSheet;};});
 }
 function start() {
-  sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; last = performance.now(); resetInput();
+  sound.start(); sound.next = 0; state = createMatch(selected, Date.now() >>> 0); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { skillButtons[i].setAttribute('title', HEROES[selected].skills[i]); skillButtons[i].setAttribute('aria-label', HEROES[selected].skills[i] + '. ' + HEROES[selected].descriptions[i]); skillButtons[i].querySelector('span').textContent = HEROES[selected].labels[i]; }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -70,7 +84,7 @@ upgradeButtons.forEach(b=>pointerAction(b,()=>{
 
 function how() {
   const h = HEROES[selected];
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Move with the left pad. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. Tap the plus beside a move to learn or upgrade it. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -99,15 +113,21 @@ function updateUI() {
   $('mana-fill').style.width=`${p.mana/p.maxMana*98}%`;$('mana-text').textContent=`${Math.floor(p.mana)} / ${p.maxMana}`;$('mana-text').setAttribute('aria-label',`Mana ${Math.floor(p.mana)} of ${p.maxMana}`);
   const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
   const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').title = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete'; $('quick-buy').textContent = next ? '+' : '·'; $('quick-buy').setAttribute('aria-label', $('quick-buy').title);
+  const followUp=followUpFeedback(state,p,{visible:renderer?.visible});
   skillButtons.forEach((b,i)=>{
-    const rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady;
-    b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):returnReady?'BACK':p.cd[i]>0?Math.ceil(p.cd[i]):empty?'MANA':'';
+    const rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady,blocked=spellBlocked(state,p,i)||!!p.castIntent||p.recoveryUntil>state.time;
+    const blockedLabel=p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
+    b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):blocked?blockedLabel:returnReady?'BACK':p.cd[i]>0?Math.ceil(p.cd[i]):empty?'MANA':'';
     b.querySelector('b').classList.toggle('locked',locked);
     b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',canLearn(p,i));
+    b.classList.toggle('control-blocked',blocked&&!locked);
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
-    b.setAttribute('aria-disabled',String(locked||!returnReady&&(p.cd[i]>0||empty)||p.hp<=0));
+    b.setAttribute('aria-disabled',String(locked||!returnReady&&(p.cd[i]>0||empty)||blocked));
     b.setAttribute('aria-label',`${returnReady?'Return to decoy':KITS[p.hero][i].name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${KITS[p.hero][i].description}`);
+    if(blockedLabel)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Temporarily unavailable: ${blockedLabel.toLowerCase()}.`);
+    b.classList.toggle('combo-ready',followUp?.slot===i);b.dataset.combo=followUp?.slot===i?followUp.bonus:'';
+    if(followUp?.slot===i)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Combo ready. ${followUp.label}.`);
     const ranks=b.querySelector('.ranks'); if(ranks.dataset.rank!==String(rank)){ranks.innerHTML=Array.from({length:i===3?3:4},(_,j)=>`<i class="${j<rank?'filled':''}"></i>`).join('');ranks.dataset.rank=rank;}
   });
   $('skill-points').textContent=p.skillPoints&&p.skillRanks.some((_,i)=>canLearn(p,i))?`+ ${p.skillPoints} SKILL POINT${p.skillPoints===1?'':'S'}`:'SPELLBOOK';
@@ -150,16 +170,17 @@ function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selected,rosterFilte
 $('role-filters').innerHTML=ROLES.map(role=>`<button data-role="${role}" aria-pressed="${role==='All'}">${role}</button>`).join('');
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{rosterFilter=b.dataset.role;document.querySelectorAll('[data-role]').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));showRoster();});showRoster();
 movementControl=movementPointer($('joystick'),{movement,thumb:$('thumb'),enabled:()=>running&&!paused,onStart:()=>{sound.start();$('coach').hidden=true;}});
-abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=value,onCast:command=>castQueue=command});
+abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=value,onStatus:updateAimStatus,onCast:command=>castQueue=command});
 $('battle').addEventListener('pointerdown', e => {
   if (!running || paused || player(state).hp<=0 || (e.button!==0&&e.button!==2)) return;
   e.preventDefault();sound.start();$('coach').hidden=true;
+  if(e.pointerType==='mouse')cursor={x:e.clientX,y:e.clientY};
   const point=renderer.world(e.clientX,e.clientY),picked=renderer.pick(state,e.clientX,e.clientY);
   const hit=state.units.find(u=>u.id===picked&&u.team!==0&&u.hp>0&&visibleTo(state,0,u))||state.units.filter(u=>u.team!==0&&u.hp>0&&distance(u,point)<Math.max(55,u.radius)&&visibleTo(state,0,u)).sort((a,b)=>distance(a,point)-distance(b,point))[0];
   if(hit&&structureProtected(state,hit)){announce(state,hit.kind==='core'?'Rift protected':'Inner ward protected',hit.kind==='core'?'Clear both towers on one lane.':'Break this lane’s outer ward first.');return;}
   target=0;orderQueue=hit?{type:'attack',target:hit.id}:e.pointerType==='mouse'?{type:'move',...point}:{type:'stop'};
 });
-$('battle').addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
+$('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else pause(); return; }
@@ -168,7 +189,7 @@ window.addEventListener('keydown', e => {
   if(key==='k'){learnSkills();return;}
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
   if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;}
-  const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, aim: null };
+  const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, worldPoint:cursor&&renderer?renderer.world(cursor.x,cursor.y):null, aim:null };
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -182,19 +203,20 @@ function frame(now) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       const p = player(state), command = castQueue; castQueue = undefined;
-      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim: command?.aim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false; orderQueue=undefined;
-      const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y; if (input.aim) input.aim = renderer.screenDirection(input.aim.x, input.aim.y);
-      const before = command ? p.cd[command.slot] : 0;
+      const castAim=command?.worldPoint?cursorSkillAim(p,command.slot,command.worldPoint):command?.aim?dragSkillAim(p,command.slot,command.aim,(x,y)=>renderer.screenDirection(x,y)):null;
+      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim:castAim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false; orderQueue=undefined;
+      const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y;
       if(command&&p.skillRanks[command.slot]&&!canAfford(p,command.slot)&&!(command.slot===0&&canReturn(state,p))&&state.time>(state.manaTip||-2)+1){announce(state,`Need ${manaCost(p,command.slot)} mana`,'Mana returns over time. Your home court restores it faster.');state.manaTip=state.time;}
       step(state, input);
-      if (command && p.cd[command.slot] > before) sound.skill(command.slot);
-      if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant); lastAttack = p.lastBasicHit; }
+      if(Number.isFinite(p.castStarted)&&p.castStarted>lastCast){sound.skill(p.castSlot,p.hero);lastCast=p.castStarted;}
+      sound.syncFeedback(state,p);
+      if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant,p.hero); lastAttack = p.lastBasicHit; }
       accumulator -= 1 / 60;
     }
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
-  if(running)renderer?.draw(state, dt, false, aim ? renderer.screenDirection(aim.x, aim.y) : null, waypoint);
+  if(running)renderer?.draw(state, dt, false, aim&&renderer?skillAimPreview(state,player(state),aim.slot,dragSkillAim(player(state),aim.slot,aim,(x,y)=>renderer.screenDirection(x,y))):null, waypoint);
   requestAnimationFrame(frame);
 }
 loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').textContent = 'Start the hunt'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').textContent = 'Veil unavailable'; });

@@ -1,5 +1,6 @@
 import { SIZE, clamp, distance, lineOfSight, resolveBody, move } from './world.js';
 import { launchSkill } from './skill-events.js';
+import { emitCombatFeedback } from './combat-state.js';
 const body=t=>!['core','tower'].includes(t.kind);
 export function castLegend(c){
  const {s,e,slot,aim,target,angle,rank,strength,origin,fx,cone,damage,heal,area}=c;
@@ -32,13 +33,13 @@ export function castLegend(c){
  switch(e.hero){
   case 4:
    if(slot===1)cone(450,.8,(t,a)=>{damage(s,e,t,185*strength);if(body(t)){t.brineUntil=s.time+5;t.stun=.45+rank*.1;t.x-=Math.cos(a)*180;t.y-=Math.sin(a)*180;resolveBody(s,t);}});
-   if(slot===2)cone(550,.28,t=>{const marked=t.brineUntil>s.time;damage(s,e,t,(marked?340:205)*strength);if(t.kind==='hero'){const drained=Math.min(t.mana||0,(marked?65:35)*strength);t.mana-=drained;e.mana=Math.min(e.maxMana,e.mana+drained);}});
+   if(slot===2)cone(550,.28,t=>{const marked=t.brineUntil>s.time;damage(s,e,t,(marked?340:205)*strength);if(marked)emitCombatFeedback(s,e,t,'combo','BRINE LANCE');if(t.kind==='hero'){const drained=Math.min(t.mana||0,(marked?65:35)*strength);t.mana-=drained;e.mana=Math.min(e.maxMana,e.mana+drained);}});
    if(slot===3)zone('abyss',origin,410,6,55*strength);
    break;
   case 5:
    if(slot===1)area(s,e,e,310,190*strength,{slow:2+rank*.2});
    if(slot===1)for(const t of s.units)if(t.team!==e.team&&t.hp>0&&body(t)&&distance(e,t)<310+t.radius&&lineOfSight(s,e,t)){if(t.chillUntil>s.time)t.stun=1;t.chillUntil=s.time+4+rank*.3;}
-   if(slot===2)cone(280,1,t=>{const amount=(170+(t.chillUntil>s.time?Math.min(160,(t.maxHp-t.hp)*.12):0))*strength;damage(s,e,t,amount);heal(s,e,75*strength);});
+   if(slot===2)cone(280,1,t=>{const marked=t.chillUntil>s.time;const amount=(170+(marked?Math.min(160,(t.maxHp-t.hp)*.12):0))*strength;damage(s,e,t,amount);if(marked)emitCombatFeedback(s,e,t,'combo','FROST BITE');heal(s,e,75*strength);});
    if(slot===3){e.shield+=220*strength;e.sightUntil=s.time+7;zone('blizzard',origin,420,7,52*strength,{follow:true});}
    break;
   case 6:
@@ -78,7 +79,7 @@ export function tickHeroMechanic({s,e,dt,damage,heal,hostile}){
   e.trailAt=s.time+.3;s.zones.push({x:e.x,y:e.y,type:'frost',legend:true,source:e.id,team:e.team,hero:5,rank:e.skillRanks[0],radius:95,life:2.2,amount:25*e.chaseStrength,tick:0,pulses:0});
  }
  const travel=e.travel;if(!travel)return false;
- if(e.stun>0||e.fear>0){e.travel=null;return false;}
+ if(e.stun>0||e.fear>0||e.snaredUntil>s.time){e.travel=null;return false;}
  const progress=Math.min(1,(s.time-travel.start)/travel.duration),curve=e.hero===9?Math.sin(progress*Math.PI)*150:0;
  const point={x:clamp(travel.x+Math.cos(travel.angle)*travel.length*progress-Math.sin(travel.angle)*curve,180,SIZE-180),y:clamp(travel.y+Math.sin(travel.angle)*travel.length*progress+Math.cos(travel.angle)*curve,180,SIZE-180)};
  if(e.hero===7)move(s,e,point.x,point.y,dt,travel.length/travel.duration*1.1);
@@ -105,7 +106,7 @@ export function tickLegendZone({s,z,source,damage,heal,hostile}){
   if(z.type==='rootrelay'&&z.hitIds.includes(t.id))continue;
   if(hostile(s,source,t)){
    let amount=z.amount;
-   if(z.type==='spiritknot'&&t.spiritUntil>s.time){amount*=1.6;t.spiritUntil=0;}
+   if(z.type==='spiritknot'&&t.spiritUntil>s.time){amount*=1.6;t.spiritUntil=0;emitCombatFeedback(s,source,t,'combo','SPIRIT BIND');}
    if(z.type==='ninelights'&&t.spiritUntil>s.time)amount*=1.5;
    if(z.type==='garden'&&t.bleed?.type==='poison'&&t.bleed.until>s.time)amount*=1.5;
    if(z.type==='sunray'){amount+=Math.min(100,t.maxHp*.018)*z.strength;if(t.bleed?.type==='fire'&&t.bleed.until>s.time||t.burn?.until>s.time)amount*=1.5;}
@@ -114,10 +115,10 @@ export function tickLegendZone({s,z,source,damage,heal,hostile}){
     if(['ink','frost','blizzard','garden','cinders','abyss'].includes(z.type))t.slow=1;
     if(['frost','blizzard'].includes(z.type))t.chillUntil=s.time+3;
     if(z.type==='abyss'){t.brineUntil=s.time+3;t.stun=Math.max(t.stun,.22);}
-    if(z.type==='spiritknot'){t.stun=1+(z.rank-1)*.15;t.snaredUntil=s.time+t.stun;}
-    if(z.type==='worldbreaker'){t.stun=2;t.snaredUntil=s.time+2;}
-    if(['brambles','rootrelay'].includes(z.type)){t.stun=1+(z.rank-1)*.2;t.snaredUntil=s.time+t.stun;hitIds.push(t.id);}
-    if(z.type==='grove'&&z.pulses===1){t.stun=1;t.snaredUntil=s.time+1;}
+    if(z.type==='spiritknot')t.snaredUntil=Math.max(t.snaredUntil||0,s.time+1+(z.rank-1)*.15);
+    if(z.type==='worldbreaker')t.snaredUntil=Math.max(t.snaredUntil||0,s.time+2);
+    if(['brambles','rootrelay'].includes(z.type)){t.snaredUntil=Math.max(t.snaredUntil||0,s.time+1+(z.rank-1)*.2);hitIds.push(t.id);}
+    if(z.type==='grove'&&z.pulses===1)t.snaredUntil=Math.max(t.snaredUntil||0,s.time+1);
     if(z.type==='garden'&&z.pulses%3===0)t.stun=Math.max(t.stun,1.2);
     if(z.type==='abyss'){const d=distance(t,z);if(d>65){t.x+=(z.x-t.x)/d*35;t.y+=(z.y-t.y)/d*35;resolveBody(s,t);}}
    }

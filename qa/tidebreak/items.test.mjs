@@ -63,8 +63,8 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
 }
 {
  const { s, p, foe } = duel(2); buy(s, 'winter'); foe.stun = 0;
- damage(s, p, foe, 1); damage(s, p, foe, 1); assert.equal(foe.stun, 0); damage(s, p, foe, 1); assert.equal(foe.stun, 1);
- foe.stun = 0; for (let i=0;i<3;i++) damage(s,p,foe,1); assert.equal(foe.stun, 0, 'winter root has a per-target cooldown');
+ damage(s, p, foe, 1); damage(s, p, foe, 1); assert.equal(foe.stun, 0); damage(s, p, foe, 1); assert.equal(foe.snaredUntil, s.time+1);assert.equal(foe.stun,0,'winter root permits responses');
+ foe.snaredUntil = 0; for (let i=0;i<3;i++) damage(s,p,foe,1); assert.equal(foe.snaredUntil, 0, 'winter root has a per-target cooldown');
 }
 {
  const { s, p } = duel(0); buy(s, 'worldroot'); p.level = 6; p.skillRanks[3]=1;

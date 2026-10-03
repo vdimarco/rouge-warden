@@ -102,6 +102,8 @@ export function resolveBody(s, e) {
   }
 }
 export function move(s, e, x, y, dt, speed = e.speed) {
+  if(e.snaredUntil>s.time || e.castIntent)return;
+  if(e.recoveryUntil>s.time)speed*=.55;
   if(e.chaseUntil>s.time)speed*=1.4;
   const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy);
   if (d < 2) return;

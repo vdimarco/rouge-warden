@@ -17,15 +17,23 @@ export function movementPointer(pad,{movement,thumb,enabled,onStart}) {
   return {reset};
 }
 
-export function abilityPointers(buttons,{enabled,onStart,onAim,onCast}) {
-  let pointer=null,origin,slot,aim=null;
-  const reset=()=>{pointer=null;slot=null;aim=null;onAim(null);};
+export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=()=>{}}) {
+  let pointer=null,origin,center,slot,aim=null,aimed=false,cancelled=false;
+  const reset=()=>{pointer=null;slot=null;aim=null;aimed=cancelled=false;onAim(null);onStatus(null);};
+  const update=e=>{
+    const x=e.clientX-origin.x,y=e.clientY-origin.y,drag=Math.hypot(x,y);
+    aimed ||= drag>12;
+    cancelled=aimed&&Math.hypot(e.clientX-center.x,e.clientY-center.y)<=center.cancelRadius;
+    aim=aimed&&!cancelled?{x,y}:null;
+    onAim(aim?{...aim,slot}:null);
+    onStatus(aimed?{slot,cancelled}:null);
+  };
   for(const button of buttons){
     const available=()=>enabled()&&button.getAttribute('aria-disabled')!=='true';
     button.addEventListener('click',e=>{if(e.detail===0&&available()){onStart();onCast({slot:+button.dataset.skill,aim:null});}});
-    button.addEventListener('pointerdown',e=>{if(pointer!==null||!available())return;e.preventDefault();onStart();pointer=e.pointerId;slot=+button.dataset.skill;origin={x:e.clientX,y:e.clientY};aim=null;onAim(null);button.setPointerCapture(pointer);});
-    button.addEventListener('pointermove',e=>{if(e.pointerId!==pointer)return;const x=e.clientX-origin.x,y=e.clientY-origin.y;aim=Math.hypot(x,y)>12?{x,y}:null;onAim(aim);});
-    button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;if(available())onCast({slot,aim});reset();});
+    button.addEventListener('pointerdown',e=>{if(pointer!==null||e.button!==0||!available())return;e.preventDefault();onStart();pointer=e.pointerId;slot=+button.dataset.skill;origin={x:e.clientX,y:e.clientY};const rect=button.getBoundingClientRect();center={x:(rect.left+rect.right)/2,y:(rect.top+rect.bottom)/2,cancelRadius:Math.min(rect.right-rect.left,rect.bottom-rect.top)*.27};aim=null;aimed=cancelled=false;onAim(null);onStatus(null);button.setPointerCapture(pointer);});
+    button.addEventListener('pointermove',e=>{if(e.pointerId===pointer)update(e);});
+    button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;update(e);if(available()&&!cancelled)onCast({slot,aim});reset();});
     for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
   }
   return {reset};
