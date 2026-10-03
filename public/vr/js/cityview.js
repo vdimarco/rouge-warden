@@ -1789,13 +1789,16 @@ export function createCityView(renderer, scene, city, opts = {}) {
     lathe(lb, dp, 64, D0.x, D0.z);
   }
   // the expressway: a deck on piers every 40 m, jersey barriers, on past the land into the haze
-  // the ink hull round the Needle, the Dome and the expressway: its own build unit, because welding the normals (so the hull
+  // the ink hull round the Needle, the Dome and the expressway: its own build units, because welding the normals (so the hull
   // stays closed at the hard edges) is a few ms of work
-  let landMesh = null, hullSteps = null;
-  function buildLandHull() {
+  let landMesh = null, hullSteps = null, hullDone = false;
+  function buildLandHull(last) {
+    if (hullDone) return;
     hullSteps = hullSteps || smoothNormalsSteps(landMesh.geometry);
-    // about 0.4 of the vertex count a call: a call that stops on the clock still moves on, and one that cannot finishes in 4
-    if (!hullSteps.step(Math.ceil(landMesh.geometry.attributes.position.count * 0.4))) return false;
+    // four units of about 0.4 of the vertex count each (the work is 1.4 of it), so a call that stops on the clock
+    // after one of them still moves the progress on; the last unit finishes whatever is left
+    if (!hullSteps.step(last ? Infinity : Math.ceil(landMesh.geometry.attributes.position.count * 0.4))) return;
+    hullDone = true;
     const hull = new THREE.Mesh(landMesh.geometry, landInk);
     hull.frustumCulled = false;
     hull.onBeforeRender = (r, sc, cam) => syncInk(r, cam);
@@ -2342,7 +2345,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   for (let i = 0; i < 3; i++) unit("needle", 0.5, () => buildNeedle(i), true);
   unit("dome", 0.5, buildDome, true);
   for (let i = 0; i < 3; i++) unit("xway", 0.4, () => { buildXway(i); if (i === 2) flushBeacons(); }, true);
-  unit("hull", 0.3, buildLandHull, true);
+  for (let i = 0; i < 4; i++) unit("hull", 0.075, () => buildLandHull(i === 3), true);
   unit("traffic", 0.5, trafficInit, true);
   for (let i = 0; i < 3; i++) unit("traffic", 0.5, () => trafficLanes(i), true);
   // chunks in parts of about 8 buildings; the last part makes the mesh. The far skyline comes after the start
