@@ -6,15 +6,17 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rogue at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Every game has a machine. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Cottage Brawl at `/brawl/`, Breath of the Lake at `/wild/`, Reel It In at `/fish/`, In Full Swing at `/vr/`, Olympus at `/olympus/`, Crimson Rogue at `/crimson/`, Monster Mash at `/tidebreak/`, Moonwell at `/moonwell/`, and BREAKTHROUGH at `/breakthrough2/`. The lab has machines too: The Lab (`/lab/`), Small Worlds (`/lab/worlds/`), Neon Ronin (`/neon/`), Loon Echo (`/echo/`), Tell Me (`/tellme/`), and the four lab toys, Take the Plunge, Up the Creek, Full Tilt and House Rules. The older BREAKTHROUGH page at `/breakthrough/` has no machine: the machine opens `/breakthrough2/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
+- The machines stand in four groups: Cottage, Action, Strategy and Lab. The pills under the sign jump to a group, and the list under the machines names every machine. The pills show Cottage, Action and Strategy; **LAB ↗** goes straight to the lab page. New machines go at the end of the row, because the page counts them in order. Add the game to a group in the `GROUPS` list in `public/index.html`, or it shows under **More**.
+- A machine's screen is a picture from the real game, saved as a WebP file in `public/arcade/` (480 pixels wide, under 60 KB), or a small canvas. The line on the screen reads that game's own save in your browser. A missing or broken save keeps the plain line.
 - The ◀ ▶ arrows at the sides switch machines on every screen. You can also swipe, drag with the mouse, or use the scroll wheel or a trackpad. On a phone, and on any screen too narrow for the whole row, you see one machine at a time in the middle, and the row slides.
-- Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
+- Every game's menu has a **Switch game** button. It lists every game that has a machine, marks the one you are playing, and jumps straight to another game or back to the arcade. The two buttons at the bottom stay in view while you scroll the list. The list lives in `public/arcade/switch.js`. When one game's address starts with another's (`/lab/worlds/` and `/lab/`), the longer one is the game you are playing. Only some game menus have the button so far. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
 
 ## Play
@@ -378,7 +380,7 @@ The lake, the dock, the rod, the lure, and the fish are all built in code with t
 
 ## The lab
 
-The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade does not show the lab, and the game switcher does not list it. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
+The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
 
 Each toy starts with a card that says what to try. The lab page shows how long you played each toy. Only your browser keeps these times. Tell the crew your times, and whether you wanted another go.
 
@@ -416,6 +418,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | --- | --- |
 | `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
 | `public/arcade/` | The art on the arcade screens, and `switch.js`, the game switcher every game's menu opens |
+| `qa/arcade/` | The test that every game has a machine (see below) |
 | `public/plungerd/index.html` | The page for Get Plunger'd |
 | `public/plungerd/app.js` | The game script. The crew, the boss sheets, and the cover art are inside the file |
 | `public/plungerd/art/` | The painted ground, walls, critters, props, guns, shots, and effects. Each file also comes at half size (`.sd.webp`) for phones |
@@ -522,13 +525,21 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 
+### Arcade tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`walk`, `layout`, `switcher`, `saves`) to run only some of the browser parts. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/arcade/machines.mjs` | Every game folder in `public/` (and every toy folder in `public/lab/`) has a machine and a place in `switch.js`, and the pictures are there. Then, at 390×844 and 1280×720, the arrows walk to every machine, a token goes in (dragged, tapped, or with key 5), START or key 1 or Enter picks the right address, and the page has no errors. It also checks the last machine by key and by swipe at seven window sizes, that no machine is clipped or overlapped, that the game switcher shows every game, marks the right one for each address, and keeps its exit buttons in reach, and that a junk save never breaks a screen line. A game with no machine must be in the `ALLOW` list in the script, with the reason. |
+
 ### Lab tests
 
 Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails.
 
 | Script | What it checks |
 | --- | --- |
-| `qa/lab/hidden.mjs` | The arcade and the game switcher never mention the lab, and every lab page asks search engines not to index it |
+| `qa/lab/hidden.mjs` | The arcade has a Lab machine and a link to the lab, the game switcher lists the lab, and every lab page asks search engines not to index it |
 | `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, winter follows its curve, and a good flyer goes at least twice as far as a random one |
 | `qa/lab/plunge.e2e.mjs` | Take the Plunge on a phone and on a computer: hold and let go, a dive, winter at the end, Again, and a ghost link |
 | `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a brace keeps you up where a fast crossing tips you, eddies can be caught, and a simple paddler gets down most rivers |

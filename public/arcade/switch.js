@@ -5,7 +5,7 @@
   const GAMES = [
     { id: "tidebreak", name: "Monster Mash", sub: "Folklore realm MOBA", url: "/tidebreak/", art: "/tidebreak/art/mothman.webp", color: "#d2e46d" },
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
-    { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/lab/worlds/assets/worlds-atlas.webp", color: "#c7e5ac" },
+    { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/arcade/worlds.webp", color: "#c7e5ac" },
     { id: "plungerd", name: "Get Plunger'd", sub: "Cottage Brawl", url: "/plungerd/", art: "/arcade/plungerd.webp", color: "#e6c35c" },
     { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/drain.webp", color: "#5fb8d0" },
     { id: "crimson", name: "Crimson Rogue", sub: "紅の月の下で", url: "/crimson/", art: "/crimson/art/keyart2.webp", color: "#d0485f" },
@@ -13,11 +13,24 @@
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
+    { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/olympus.webp", color: "#edc06b" },
+    { id: "moonwell", name: "Moonwell", sub: "Endless pinball dungeons", url: "/moonwell/", art: "/arcade/moonwell.webp", color: "#edc779" },
+    { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/breakthrough.webp", color: "#f0c56a" },
+    // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
+    { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/lab.webp", color: "#f0b848" },
+    { id: "neon", name: "Neon Ronin", sub: "Gyro sword duels", url: "/neon/", art: "/arcade/neon.webp", color: "#caff54" },
+    { id: "echo", name: "Loon Echo", sub: "Rescue the flock", url: "/echo/", art: "/arcade/echo.webp", color: "#9ff2de" },
+    { id: "tellme", name: "Tell Me", sub: "A card game with critters", url: "/tellme/", art: "/arcade/tellme.webp", color: "#f4e4bd" },
+    { id: "plunge", name: "Take the Plunge", sub: "Dive and fly south", url: "/lab/plunge/", art: "/arcade/plunge.webp", color: "#ffce7e" },
+    { id: "creek", name: "Up the Creek", sub: "Your phone is the paddle", url: "/lab/creek/", art: "/arcade/creek.webp", color: "#92e8ce" },
+    { id: "tilt", name: "Full Tilt", sub: "A pinball voyage", url: "/lab/tilt/", art: "/arcade/tilt.webp", color: "#f5a6e5" },
+    { id: "rules", name: "House Rules", sub: "Build a Down the Drain layer", url: "/lab/rules/", art: "/arcade/rules.webp", color: "#ffd56b" },
   ];
   // a game marked probe shows only when its page answers
   const live = {};
   for (const g of GAMES) if (g.probe) live[g.id] = fetch(g.url, { method: "HEAD", cache: "no-store" }).then((r) => r.ok, () => false);
-  const thisGame = () => (GAMES.find((g) => location.pathname.startsWith(g.url)) || {}).id;
+  // the longest matching address wins, so /lab/worlds/ is Small Worlds and not The Lab
+  const thisGame = () => (GAMES.filter((g) => location.pathname.startsWith(g.url)).sort((a, b) => b.url.length - a.url.length)[0] || {}).id;
   const css = `
 .gsw { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); background: rgba(5, 6, 10, 0.97); overflow-y: auto; overscroll-behavior: contain; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #eeeae2; cursor: default; }
 .gsw[hidden] { display: none; }
@@ -36,10 +49,11 @@
 .gsw-game.here img { opacity: 0.35; }
 .gsw-game.here b { color: #a8a498; }
 .gsw-game.here small::after { content: " · playing now"; color: #eeeae2; }
-.gsw-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+/* the list is long, so the two exits stay at the bottom of the window while you scroll */
+.gsw-row { position: sticky; bottom: calc(-1 * max(16px, env(safe-area-inset-bottom))); z-index: 1; display: flex; flex-wrap: wrap; gap: 10px; margin: 14px -16px 0; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); background: rgba(5, 6, 10, 0.97); box-shadow: 0 -12px 14px rgba(5, 6, 10, 0.9); }
 .gsw-row a, .gsw-row button { padding: 10px 16px; border-radius: 6px; border: 1px solid #4a5263; background: transparent; color: #eeeae2; font: inherit; cursor: pointer; text-decoration: none; }
 .gsw-row a:hover, .gsw-row button:hover { border-color: #eeeae2; }
-@media (max-width: 560px) { .gsw-list { grid-template-columns: minmax(0, 1fr); gap: 8px; } .gsw-game { flex-direction: row; align-items: center; } .gsw-game img { width: 42%; flex: none; } .gsw-game b { font-size: 16px; } }`;
+@media (max-width: 560px) { .gsw-list { grid-template-columns: minmax(0, 1fr); gap: 8px; } .gsw-game { flex-direction: row; align-items: center; } .gsw-game img { width: 42%; flex: none; } .gsw-game b { font-size: 16px; } .gsw-row a, .gsw-row button { padding: 10px 12px; font-size: 15px; } }`;
   let box = null, here = null;
   function build() {
     const st = document.createElement("style");
@@ -73,7 +87,9 @@
       a.href = g.id === here ? "#" : g.url;
       a.style.setProperty("--c", g.color);
       a.innerHTML = "<img alt=''><span><b></b><small></small></span>";
-      a.querySelector("img").src = g.art;
+      const img = a.querySelector("img");
+      img.loading = "lazy";
+      img.src = g.art;
       a.querySelector("b").textContent = g.name;
       a.querySelector("small").textContent = g.sub;
       if (g.id === here) a.onclick = (e) => { e.preventDefault(); close(); };
