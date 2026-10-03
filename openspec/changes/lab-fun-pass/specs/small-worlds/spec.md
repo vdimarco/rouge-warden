@@ -105,3 +105,53 @@ Season Thief SHALL show the result of a change while the player drags, and make 
 #### Scenario: The end card
 - **WHEN** the traveller reaches the haven
 - **THEN** the haven wakes, and the card shows the time used against par, for example "Used 5 time · par 4 · ★★☆"
+
+### Requirement: Storm Choir puts the storms in the way
+Storm Choir SHALL make the storms a threat to a flock that flies straight for the rings, and score each ring by how well the flock passes it.
+
+#### Scenario: A storm ahead
+- **WHEN** a storm drifts toward the flock
+- **THEN** it darkens and rumbles at least 0.3 s before it can touch a bird
+
+#### Scenario: A bird knocked out
+- **WHEN** a storm touches a bird
+- **THEN** the bird tumbles away with a low chord, and the player can catch it again within 2 s by moving the wind to it
+
+#### Scenario: Score a ring
+- **WHEN** the flock passes a ring
+- **THEN** the points grow with the birds through, how near the centre they pass and how fast the flock climbs, and centred passes in a row show "PERFECT ×n"
+
+#### Scenario: A dawn
+- **WHEN** the flock passes every sixth ring
+- **THEN** 2 s of slow motion show the forest in bloom while the six ring notes play as a chord, and the next set of rings is stormier
+
+#### Scenario: The end
+- **WHEN** fewer than 5 birds are left
+- **THEN** the run ends
+
+### Requirement: Heartship makes the beat the game
+Heartship SHALL play an audible beat, reward a pulse on the beat, and sail on until the hearts run out.
+
+#### Scenario: Hear the beat
+- **WHEN** the ship sails
+- **THEN** a lub and a dub at 110 Hz and 165 Hz play on every beat, and a ring closes on the heart
+
+#### Scenario: A pulse on the beat
+- **WHEN** the player releases a pulse on the beat
+- **THEN** it lands at once, a charged fin dashes two lanes, a shield lasts its full length, and the multiplier rises
+
+#### Scenario: A pulse off the beat
+- **WHEN** the player releases a pulse off the beat
+- **THEN** it is slow and weak, and a shield lasts a short time
+
+#### Scenario: Hazards ahead
+- **WHEN** a line of hazards comes toward the ship
+- **THEN** a rising tone plays 1 s before it arrives, the hazards scroll past the ship, and a last-moment dodge shows "CLOSE" with a short slow motion
+
+#### Scenario: Cancel
+- **WHEN** the player lets go on the heart
+- **THEN** no pulse is sent
+
+#### Scenario: An endless voyage
+- **WHEN** the ship sails on
+- **THEN** the tempo rises every 150 m, the score is metres times the multiplier, and the run ends when the hearts run out

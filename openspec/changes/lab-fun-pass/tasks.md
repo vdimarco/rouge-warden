@@ -4,7 +4,7 @@
 - [x] House Rules: phone fit, races and replies, the death card, tanks in Settle, and remix.
 - [x] Threadwake and Borrowed Bodies.
 - [x] Foldwild and Season Thief.
-- [ ] Storm Choir and Heartship.
+- [x] Storm Choir and Heartship.
 - [ ] Full Tilt.
 - [x] Neon Ronin, and its broken tests.
 - [x] Loon Echo.

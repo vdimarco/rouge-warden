@@ -65,7 +65,11 @@ Each game first got the bug fixes from its review, and then the changes that add
 
 **House Rules.** Every tool fits a phone, and a tap hits what you aim at. A friend races the maker's time on a live clock and can send a time back or remix the layer. The death card says how far down you got, and Settle shows propane tanks blow up. The Down the Drain side changes 4 lines, each behind `Custom.on`.
 
-**Storm Choir, Heartship and Full Tilt.** Their changes land later in this pass.
+**Storm Choir.** Storms now drift across the line between the rings and darken and rumble before they strike. A bird that a storm knocks out can be caught again within 2 s, and the flock is your health. Each ring scores by how near the centre the flock passes and how fast it climbs, and every sixth ring brings a dawn in slow motion. Before, a bot that flew straight at each ring got the top score of 5,800 on every seed, and a run lasted 25 s. Now a centred pass outscores one 50 px off on 12 of 12 seeds, a ring-chaser loses a bird in the first set on 16 of 20 seeds, and a good player's run lasts 100 to 362 s.
+
+**Heartship.** The beat is now a lub and a dub that a phone speaker can play, and a pulse on the beat is the skill: it lands at once, a charged fin dashes two lanes, and on-beat pulses in a row raise the multiplier. The voyage is endless, the tempo rises, and hazards scroll past the ship with a warning tone 1 s ahead. Before, every seed gave the same 41 s run and the top score of 2,040. Now a perfect bot sails past 2,000 m, and a bot that is 60 ms off the beat lasts 86 to 134 s.
+
+**Full Tilt.** Its changes land later in this pass.
 
 ## 4. What is still open
 

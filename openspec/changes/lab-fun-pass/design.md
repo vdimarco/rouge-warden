@@ -37,6 +37,8 @@ The sim stays exact (only + − × ÷ and sqrt), so ghosts still replay on every
 - Foldwild builds each sheet from a random path with decoys around it, and makes a new sheet if one starts joined. Spilled water starts again from the spring, so no sheet can trap the player.
 - Season Thief makes gardens from the seed and keeps only those that its own solver rates par 4 to 6, with at least two ways within 8 time and a rule that lowers par.
 - The work on Foldwild and Season Thief started before the shell changed, so those games call the new helpers only when they exist.
+- Storm Choir makes the flock the health: a ring needs 5 birds, a storm knocks birds out, and a quick catch saves them. Rings and storms come from the seed, and a dawn every sixth ring gives the run its peak and a harder next set.
+- Heartship scores metres times the multiplier, so sailing farther now pays, and a pulse on the beat is the skill. Once the tempo caps at 130 BPM, a perfect bot sails on, so runs end through timing errors.
 
 ## Loon Echo
 
