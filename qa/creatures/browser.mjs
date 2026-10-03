@@ -18,7 +18,7 @@ const server = http.createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true });
 try {
-  for (const [name, width, height] of [['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['desktop', 1536, 864]]) {
+  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390]]) {
     const page = await browser.newPage({ viewport: { width, height } }), errors = [], loadedAssets = new Set();
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
@@ -37,7 +37,13 @@ try {
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#menu').waitFor();
     await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
-    assert.equal(await page.locator('#hero-name').innerText(), 'Tidewarden');
+    await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
+    await page.evaluate(async () => { await document.fonts.ready; });
+    await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
+    assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
+    const portraitBackgrounds=await page.locator('#hero-picks .reference-portrait').evaluateAll(portraits=>portraits.map(el=>getComputedStyle(el).backgroundImage));
+    assert.equal(portraitBackgrounds.length, 16);
+    assert(portraitBackgrounds.every(background=>/^url\(.+reference-source\.png/.test(background)&&!background.includes('gradient')), 'all sixteen portraits show the source artwork');
     const selectState = await page.evaluate(() => {
       // The stage illustration can overscan. Selection controls must fit the viewport.
       const ids=['hero-picks','role-filters','hero-name','hero-preview','hero-spell-note','play'];
@@ -82,8 +88,8 @@ try {
     if (name === 'desktop') assert(controlsFit.allCardsFit, 'all sixteen portraits fit the desktop roster');
     for (const identity of HERO_IDENTITIES) {
       await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
-      assert.equal(await page.locator('#hero-name').innerText(), identity.name);
-      assert.equal(await page.locator('#hero-role').innerText(), identity.subtitle);
+      assert.equal(await page.locator('#hero-name').textContent(), identity.name);
+      assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
       assert.equal(await page.locator('#hero-note').textContent(), identity.note);
       assert.equal(await page.locator('#hero-picks [aria-pressed="true"]').getAttribute('data-hero'), String(identity.id));
       assert.equal(await page.locator('#hero-art').getAttribute('src'), `./art/reference/${identity.slug}.webp`);
@@ -94,7 +100,7 @@ try {
         assert.equal(await button.getAttribute('title'), `${move.name}: ${move.description}`);
         assert.equal(await button.locator('kbd').innerText(), ['Q','E','C','R'][slot]);
       }
-      assert.match(await page.locator('#hero-spell-note').innerText(), new RegExp(identity.skills[1]));
+      assert.match(await page.locator('#hero-spell-note').textContent(), new RegExp(identity.skills[1]));
     }
     for (const role of ['Carry','Bruiser','Mage','Support','Initiator','All']) {
       await page.locator(`#role-filters [data-role="${role}"]`).click();
@@ -103,17 +109,17 @@ try {
       assert.deepEqual(actual, expected, `${role} shows the correct heroes`);
       assert.equal(await page.locator(`#role-filters [data-role="${role}"]`).getAttribute('aria-pressed'), 'true');
       await page.locator('#hero-picks [data-hero]').first().click();
-      assert.equal(await page.locator('#hero-name').innerText(), HERO_IDENTITIES[Number(expected[0])].name);
+      assert.equal(await page.locator('#hero-name').textContent(), HERO_IDENTITIES[Number(expected[0])].name);
     }
     await page.locator('#hero-picks [data-hero="0"]').focus();
     for (const [key,identity] of [['ArrowRight',1],['ArrowDown',5],['ArrowLeft',4],['ArrowUp',0],['End',15],['Home',0]]) {
       await page.keyboard.press(key);
-      assert.equal(await page.locator('#hero-name').innerText(), HERO_IDENTITIES[identity].name, `${key} selects the correct grid neighbor`);
+      assert.equal(await page.locator('#hero-name').textContent(), HERO_IDENTITIES[identity].name, `${key} selects the correct grid neighbor`);
       assert.equal(await page.locator('#hero-picks [data-hero]:focus').getAttribute('data-hero'), String(identity));
     }
     await page.locator('[data-hero-spell="1"]').hover();
-    assert.match(await page.locator('#hero-spell-note').innerText(), /Rising Current/);
-    assert.match(await page.locator('#hero-spell-note').innerText(), /Pull enemies in a cone/);
+    assert.match(await page.locator('#hero-spell-note').textContent(), /Rising Current/);
+    assert.match(await page.locator('#hero-spell-note').textContent(), /Pull enemies in a cone/);
     const noteFits = await page.locator('#hero-spell-note').evaluate(el => {
       const r=el.getBoundingClientRect(), f=el.closest('.hero-feature').getBoundingClientRect();
       return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1;
@@ -168,8 +174,8 @@ try {
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.identity), 0);
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.hero), 1);
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.name), 'Tidewarden');
-    assert.match(await page.locator('.spellbook-heading').innerText(), /Tidewarden/);
-    assert.match(await page.locator('#train-selected').innerText(), /Learn Tidal Cleave/);
+    assert.match(await page.locator('.spellbook-heading').textContent(), /Tidewarden/);
+    assert.match(await page.locator('#train-selected').textContent(), /Learn Tidal Cleave/);
     const initialRank = await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0));
     await page.locator('#train-selected').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0)), initialRank + 1);
