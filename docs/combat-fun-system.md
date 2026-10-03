@@ -42,6 +42,7 @@ Changes in this pass:
 - Hitting a foe during recoil, recovery or stagger now deals a larger damage bonus.
 - Heavy attacks receive the largest opening bonus.
 - Opening hits also deal extra posture damage and show an explicit **OPENING HIT** cue.
+- Deflect-created recoil keeps its stronger existing 1.6× posture payoff; other openings use 1.45×.
 
 Playtest focus:
 - Do players start waiting for a whiff or deflect instead of mashing light attacks?
