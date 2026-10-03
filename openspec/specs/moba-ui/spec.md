@@ -7,6 +7,10 @@ The opening screen SHALL show a painted moonlit folklore stage, a prominent sele
 - **WHEN** the player selects any of the twelve heroes or changes a role filter
 - **THEN** the selected state, hero name, portrait, stats and four spells update correctly and all matching heroes remain reachable.
 
+#### Scenario: Browse unframed heroes
+- **WHEN** the player views or selects a hero in the opening lineup
+- **THEN** the portraits appear without card borders, filled card backgrounds or a decorative portrait frame; a highlighted and underlined name identifies selection and keyboard focus remains visible.
+
 ### Requirement: Contained opening layout
 The opening and game panels SHALL fit the current viewport without vertical scrolling. The hero lineup SHALL show three cards below 600px wide, four below 1000px, and five on wider screens. Footer actions SHALL remain visible with safe-area insets.
 
