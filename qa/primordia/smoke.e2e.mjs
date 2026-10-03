@@ -332,8 +332,21 @@ async function run(browser, name) {
   });
   if (!booted) { await ctx.close(); return finishRun(name, errors, overflows, t0); }
 
-  await check(name, "1b start (" + (touch ? "tap PLAY" : "Enter") + ")", async () => {
+  await check(name, "1b start (" + (touch ? "tap PLAY" : "Enter") + "): How to play runs first, Skip starts the run", async () => {
     if (touch) await tapEl(page, "#playBtn"); else await page.keyboard.press("Enter");
+    // a fresh browser sees the intro scenes before its first run
+    const i = await until(page, "window.__primordia.screen === 'intro'", { max: 6 });
+    expect(i.ok, "PLAY did not open the intro; screen=" + (await page.evaluate(() => window.__primordia.screen)));
+    const scene = await until(page, "window.__primordia.intro && window.__primordia.intro.k >= 1 && window.__primordia.intro.s.t > 1.2", { max: 400 });
+    expect(scene.ok, "the intro did not reach its first lesson");
+    const cap = await page.evaluate(() => ({ title: document.querySelector("#introTitle").getAttribute("aria-label"), keys: document.querySelector("#introKeys").textContent, id: window.__primordia.intro.scene.id }));
+    await shot("intro");
+    await noteOverflow("intro");
+    expect(cap.title && cap.keys, "intro caption missing: " + JSON.stringify(cap));
+    if (touch) await tapEl(page, "#introSkip"); else await page.keyboard.press("Escape");
+    const p = await until(page, "window.__primordia.screen === 'play'", { max: 6 });
+    expect(p.ok, "Skip did not start the run");
+    expect(await page.evaluate(() => localStorage.getItem("primordia.intro") === "true"), "the intro was not marked as seen");
     await frames(page, 2);
     await page.evaluate(harness);
     const st = await page.evaluate(() => {
@@ -346,7 +359,7 @@ async function run(browser, name) {
     if (name === "portrait") expect(st.w === 128 && st.h === 256, `portrait dish is ${st.w}x${st.h}`);
     else expect(st.w === 256 && st.h === 128, `dish is ${st.w}x${st.h}`);
     if (touch) expect(st.compact && st.caps.gliders === 3 && st.caps.bodies === 6, "touch caps " + JSON.stringify(st.caps));
-    return `dish ${st.w}x${st.h}, caps ${st.caps.gliders}/${st.caps.bodies}`;
+    return `intro scene "${cap.id}": ${cap.title}; dish ${st.w}x${st.h}, caps ${st.caps.gliders}/${st.caps.bodies}`;
   });
 
   await check(name, "1c steer (" + (touch ? "touch stick" : "mouse + WASD") + ")", async () => {
@@ -650,7 +663,8 @@ async function run(browser, name) {
     const unlabeled = cards.filter((c) => !(/^(BUILD|EXTRA)$/.test(c.kind || "") || c.duo === "DUO"));
     expect(unlabeled.length === 0, "cards without a kind label or DUO tag: " + unlabeled.map((c) => c.name).join(", "));
     expect(cards.some((c) => c.isDuo && c.duo === "DUO"), "no DUO card although both Chain Bloom parents are owned and duoNext is set: " + JSON.stringify(cards));
-    if (touch) await tapEl(page, "#cards .card >> nth=1"); else await page.keyboard.press("Digit2");
+    // the cards ignore taps for their first 0.4 s, so a dash press at the epoch end cannot pick one
+    if (touch) { await page.waitForTimeout(450); await tapEl(page, "#cards .card >> nth=1"); } else await page.keyboard.press("Digit2");
     const p = await until(page, "window.__primordia.screen === 'play' && g.epoch === 2 && g.state === 'play'", { max: 6 });
     const after = await page.evaluate(() => ({ ...window.__primordia.game.mut }));
     expect(p.ok, "card pick did not resume play in epoch II");
@@ -732,7 +746,7 @@ async function run(browser, name) {
       record(name, guardName, "SKIP", `inconclusive: the probe landed at ${d.probe.at} ms (screen then "${d.probe.screen}")`);
       if (d.probe.screen === "play") await page.evaluate(harness); else await retry(retryKey);
     } else if (d.probe.screen === "play") {
-      record(name, guardName, "WARN", `a synthetic ${touch ? "pointerdown on #overScreen" : "Enter keydown"} at ${d.probe.at} ms started a new run: the guard is 150 ms (game.js canRetry), design 6.6 asks for 0.6 s`);
+      record(name, guardName, "FAIL", `a synthetic ${touch ? "pointerdown on #overScreen" : "Enter keydown"} at ${d.probe.at} ms started a new run: design 6.6 asks for a 0.6 s guard`);
       await page.evaluate(harness);
     } else record(name, guardName, "ok", `ignored at ${d.probe.at} ms; then ` + (await retry(retryKey)));
   } catch (err) { record(name, guardName, "FAIL", String(err.message || err)); }

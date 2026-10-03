@@ -121,7 +121,7 @@ A hunter torn by 20% of its mass, parried, or caught by a Burst SHALL reel gold,
 - **THEN** it stops moving, stops stinging, glows gold with a ring and motes for about 1.6 seconds, and takes 1.5x damage
 
 #### Scenario: Glory Bite
-- **WHEN** the player's mouth touches a staggered hunter, or a new dash passes through it
+- **WHEN** the player's mouth touches a staggered hunter after the dash that staggered it has ended and the hunter has reeled for 0.25 seconds, or a new dash passes through it
 - **THEN** the hunter is devoured at once with a heavy hit, the player gains light, a dash charge and Burst meter, and its body breaks into live Orbium that glide away and fade after 6 seconds
 
 #### Scenario: Bleed out
@@ -179,6 +179,25 @@ Every third epoch a Leviathan SHALL arrive and change its attacks as the player 
 #### Scenario: Collapse
 - **WHEN** the third wing tears
 - **THEN** the Leviathan collapses for 2.5 seconds with a timer ring, and a Glory Bite in that window devours it for full light, a full Burst meter, three Remains and a guaranteed Duo offer
+
+### Requirement: How to play intro
+Primordia SHALL teach its moves with a short animated intro that plays scripted scenes on the real Lenia dish, with captions in plain words.
+
+#### Scenario: First PLAY
+- **WHEN** a player presses PLAY for the first time on a device
+- **THEN** the intro plays before the run: a title card, then one scene each for eating, dodging a lane, cutting, the Glory Bite, the parry and Burst, then an end card with PLAY and Watch again
+
+#### Scenario: Each lesson shows its move
+- **WHEN** an intro scene plays
+- **THEN** the player cell performs that scene's move with the game's own rules (a devoured prey, a lunge that misses, a cut that turns a hunter gold, a Glory Bite and a caught prey, a parry that starts Stasis, a Burst that catches at least two hunters), a ring and label mark the creatures it talks about, and the caption names the control for the current device
+
+#### Scenario: Skip and replay
+- **WHEN** a player presses Skip, Escape or gamepad B during the intro
+- **THEN** the intro ends, is marked as seen and the run starts (or the title returns, when the intro was opened from HOW TO PLAY); Next, Enter, a tap on the dish or gamepad A moves to the next scene; HOW TO PLAY or H on the title screen replays it
+
+#### Scenario: Intro layouts
+- **WHEN** the intro plays at 1280×720, 390×844 or 844×390
+- **THEN** the dish action stays on screen above the captions (beside them on the landscape phone), the Skip and Next buttons are at least 44 pixels tall, and the page has no horizontal scroll; with reduced motion the captions appear without motion
 
 ### Requirement: Combat feedback
 Every combat action SHALL read on screen and in sound at a phone's scale.

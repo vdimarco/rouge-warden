@@ -2,6 +2,8 @@
 
 A Lenia arcade game. You are a small glowing protist in a living dish. Eat the cyan Orbium gliders to keep your light up. Red hunters stalk you, wind up, show their lane, glint and lunge. Dash out of the lane, dash into the glint to parry and slow the dish, or dash across a body to cut it. A torn or parried hunter reels gold: swim into it for a Glory Bite, then catch the live prey it drops. Fighting fills a Burst that blasts every hunter near you.
 
+The first PLAY opens a short How to play intro: the same moves, played out on the real dish with captions. HOW TO PLAY (or H) on the title screen replays it.
+
 Every creature is a real pattern from Bert Chan's [Lenia](https://chakazul.github.io/Lenia/JavaScript/Lenia.html) catalogue, simulated live:
 
 - Prey: *Orbium unicaudatus* (R=13, bump4 kernel, growth gaus(0.15, 0.017)).
@@ -18,6 +20,7 @@ Every creature is a real pattern from Bert Chan's [Lenia](https://chakazul.githu
 - Dash, cut, parry: Space, Z, J or left click; gamepad A; DASH on touch. Two charges; eating refills one.
 - Burst: Shift, X, K, F or right click; gamepad B; BURST on touch, when it glows.
 - Pause: Escape or P. Mute: M. Restart after death: R or Enter, or tap.
+- Intro: Next, Enter, a tap on the dish or gamepad A for the next scene; Skip, Escape or gamepad B to leave.
 
 ## Files
 
@@ -25,6 +28,7 @@ Every creature is a real pattern from Bert Chan's [Lenia](https://chakazul.githu
 - `species.js`: the creature patterns in Lenia's zip encoding.
 - `core.js`: game rules with no DOM (`TUNE` holds every tuning value): the player, the hunters' state machine, damage, Burst, the wave director, the Leviathan, mutations.
 - `game.js`, `render.js`, `audio.js`: the browser shell, the WebGL2 dish shader and the Web Audio score.
+- `intro.js`: the How to play scenes. Each scene sets up the dish and steers the player with ordinary input; no DOM code.
 - `attract.js`: the small live dish on the arcade cabinet screen.
 
 ## Checks
@@ -32,6 +36,7 @@ Every creature is a real pattern from Bert Chan's [Lenia](https://chakazul.githu
 ```sh
 node qa/primordia/lenia.test.mjs          # Lenia behaviour and core rules
 node qa/primordia/combat.test.mjs         # the combat mechanics
+node qa/primordia/intro.test.mjs          # each intro scene shows its move
 node qa/primordia/bot.mjs 160 7 ref       # a bot plays a run (policies: ref, blind, idle, asap)
 NODE_PATH=qa/browser/node_modules node qa/primordia/smoke.e2e.mjs   # needs the static server on :8765
 ```

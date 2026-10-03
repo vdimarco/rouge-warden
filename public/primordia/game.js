@@ -4,6 +4,7 @@
 import { Game, MUTATIONS, SPECIES, SP, PREY_NAME, EPOCH_LENGTH, TUNE, wrap, wdelta } from "./core.js";
 import { FieldRenderer, FlatRenderer } from "./render.js";
 import { Sound } from "./audio.js";
+import { Intro, SCENES, INTRO_SEED } from "./intro.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -29,12 +30,15 @@ const ui = {
   waveDots: $$("#waveDots i"), waveLabel: $("#waveLabel"), pips: $$("#dashBtn .pips i"), burstBtn: $("#burstBtn"),
   score: $("#score"), combo: $("#combo"), banner: $("#banner"), tip: $("#tip"), touch: $("#touch"), stick: $("#stick"),
   title: $("#titleScreen"), mutate: $("#mutateScreen"), pause: $("#pauseScreen"), over: $("#overScreen"), cards: $("#cards"),
+  intro: $("#introScreen"), introDots: $("#introDots"), introKicker: $("#introKicker"), introTitle: $("#introTitle"),
+  introText: $("#introText"), introKeys: $("#introKeys"), introEnd: $("#introEnd"), introNext: $("#introNext"),
 };
 
 const view = { w: innerWidth, h: innerHeight, dpr: 1 };
 let rect = { x: 0, y: 0, w: 1, h: 1, s: 1 };
 let game = null;
-let screen = "title"; // title | play | mutate | pause | over
+let screen = "title"; // title | intro | play | mutate | pause | over
+let intro = null, introThen = "title"; // the How to play scenes, and where they lead
 const best = { score: store.get("primordia.best", 0), species: new Set(store.get("primordia.species", [PREY_NAME])) };
 const tips = store.get("primordia.tips", {});
 
@@ -46,12 +50,16 @@ function newGame(mode) {
   game.rand = Math.random;
   game.freezeScale = reduceMotion ? 0.5 : 1;
   game.reset(mode);
+  resetFx();
+  renderer.upload(game.world, "reset");
+  layout();
+}
+
+function resetFx() {
   particles.length = 0; popups.length = 0; trail.length = 0; arcs.length = 0; hits.length = 0; rings.length = 0;
   stasisEase = 0; cutCounts.clear();
   slowmo = 0; slowFactor = 1; shake = 0; flash = 0; kick.x = kick.y = 0; deathAt = 0;
   sound.hunting = false; sound.stasis(false); sound.endAllWindups();
-  renderer.upload(game.world, "reset");
-  layout();
 }
 
 function layout() {
@@ -61,6 +69,7 @@ function layout() {
   fieldCanvas.width = Math.round(view.w * glDpr); fieldCanvas.height = Math.round(view.h * glDpr);
   fxCanvas.width = Math.round(view.w * view.dpr); fxCanvas.height = Math.round(view.h * view.dpr);
   if (!game) return;
+  if (screen === "intro" && intro) { rect = introRect(); return; }
   const top = screen === "title" ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hud-h")) || 52;
   const pad = screen === "title" ? 0 : 8;
   const aw = view.w - pad * 2, ah = view.h - top - pad * 2;
@@ -68,6 +77,22 @@ function layout() {
   const s = screen === "title" ? Math.max(view.w / game.w, view.h / game.h) : Math.min(aw / game.w, ah / game.h);
   const w = game.w * s, h = game.h * s;
   rect = { x: (view.w - w) / 2, y: screen === "title" ? (view.h - h) / 2 : top + pad + (ah - h) / 2, w, h, s };
+}
+// The intro fits a 124 x 70 cell window around the action, between the top bar and the captions,
+// and pushes in slowly through each scene.
+function introRect() {
+  const top = view.h <= 520 && view.w > view.h ? 48 : 60;
+  const cap = ui.intro.querySelector(".intro-cap"), title = ui.intro.classList.contains("is-title");
+  // captions sit below the dish, or in a side panel on short landscape screens
+  const side = !title && cap && cap.offsetWidth < view.w * 0.7 ? cap.offsetWidth : 0;
+  const capH = title || side ? 0 : cap ? cap.offsetHeight : view.h * 0.32;
+  const aw = view.w - side - 16, ah = Math.max(120, view.h - top - capH);
+  const push = reduceMotion || !intro.s ? 1 : 1 + 0.06 * Math.min(1, intro.s.t / 6);
+  // portrait screens get a narrower window, so the creatures stay big enough to read
+  const cw = view.h > view.w ? 96 : 124, chh = view.h > view.w ? 56 : 70;
+  const s = Math.min(aw / cw, ah / chh) * push;
+  const cx = 128, cy = 64;
+  return { x: (view.w - side) / 2 - cx * s, y: top + ah / 2 - cy * s, w: game.w * s, h: game.h * s, s };
 }
 addEventListener("resize", () => {
   const [w, h] = dishSize();
@@ -94,7 +119,14 @@ addEventListener("keydown", (e) => {
   keys.add(e.code);
   sound.init();
   const k = e.code;
-  if (screen === "title" && ["Enter", "Digit1", "Numpad1", "Space"].includes(k)) { e.preventDefault(); startRun(); return; }
+  if (screen === "title" && ["Enter", "Digit1", "Numpad1", "Space"].includes(k)) { e.preventDefault(); play(); return; }
+  if (screen === "title" && k === "KeyH") { e.preventDefault(); startIntro("title"); return; }
+  if (screen === "intro") {
+    if (k === "Escape" || k === "KeyS") { e.preventDefault(); endIntro(); }
+    else if (["Enter", "Space", "ArrowRight", "KeyN"].includes(k)) { e.preventDefault(); introNext(); }
+    if (k === "KeyM") toggleSound();
+    return;
+  }
   if (screen === "over" && ["Enter", "Digit1", "Numpad1", "KeyR"].includes(k)) { e.preventDefault(); if (canRetry()) startRun(); return; }
   // Space is the dash key: on the game-over screen it does nothing, even on the focused AGAIN button
   if (screen === "over" && k === "Space") { e.preventDefault(); return; }
@@ -172,7 +204,8 @@ function pollPad() {
   if (pressed(14)) st.x = -1; if (pressed(15)) st.x = 1; if (pressed(12)) st.y = -1; if (pressed(13)) st.y = 1;
   const a = edge(0), b = edge(1) || edge(2) || edge(5), start = edge(9);
   const left = edge(14) || edge(4), right = edge(15);
-  if (screen === "title") { if (a || start) startRun(); return null; }
+  if (screen === "title") { if (a || start) play(); return null; }
+  if (screen === "intro") { if (start || b) endIntro(); else if (a) introNext(); return null; }
   if (screen === "over") { if ((a || start) && canRetry()) startRun(); return null; }
   if (screen === "mutate") { if (left) moveCard(-1); if (right || b) moveCard(1); if (a && canPick()) pickCard(cardSel); return null; }
   if (screen === "pause") { if (start || a) setPause(false); return null; }
@@ -204,9 +237,77 @@ function show(name) {
   ui.mutate.hidden = name !== "mutate";
   ui.pause.hidden = name !== "pause";
   ui.over.hidden = name !== "over";
-  ui.hud.hidden = name === "title";
+  ui.intro.hidden = name !== "intro";
+  ui.hud.hidden = name === "title" || name === "intro";
   ui.touch.hidden = !(touchMode && name === "play");
   document.body.classList.toggle("playing", name === "play" && !touchMode);
+  layout();
+}
+
+// PLAY: the first time, the How to play scenes run first
+function play() {
+  if (!store.get("primordia.intro", false)) startIntro("play");
+  else startRun();
+}
+
+function startIntro(then) {
+  sound.init();
+  introThen = then;
+  game = new Game(256, 128, INTRO_SEED);
+  game.freezeScale = reduceMotion ? 0.5 : 1;
+  resetFx();
+  hudCache = {};
+  intro = new Intro(game, { onScene: showScene });
+  ui.introDots.innerHTML = SCENES.slice(1, -1).map(() => "<i></i>").join("");
+  show("intro");
+  intro.start(0);
+  renderer.upload(game.world, "reset");
+  ui.banner.classList.remove("show"); ui.tip.classList.remove("show");
+}
+
+function endIntro() {
+  if (screen !== "intro") return;
+  store.set("primordia.intro", true);
+  intro = null;
+  if (introThen === "play") startRun();
+  else toTitle();
+}
+
+function introNext() {
+  if (!intro) return;
+  if (intro.scene.hold) { introThen = "play"; endIntro(); return; }
+  intro.next();
+}
+
+const LOGO = [[159, 255, 241], [63, 240, 224], [176, 108, 255], [255, 47, 116]];
+function logoColor(f) {
+  const x = Math.min(0.999, Math.max(0, f)) * (LOGO.length - 1), i = Math.floor(x), k = x - i;
+  return `rgb(${LOGO[i].map((v, j) => Math.round(v + (LOGO[i + 1][j] - v) * k)).join(",")})`;
+}
+
+// caption text for one scene; words animate in one by one (letters on the title card)
+function showScene(k, S) {
+  const el = ui.intro, title = S.id === "title";
+  el.classList.toggle("is-title", title);
+  ui.introKicker.textContent = S.kicker || "";
+  const parts = title ? [...S.title] : S.title.split(/(?<= )/);
+  // the logo letters run through the title screen's gradient, one color each
+  const tint = (i) => title ? `;color:${logoColor(i / Math.max(1, parts.length - 1))}` : "";
+  ui.introTitle.innerHTML = parts.map((w, i) => `<span class="w" style="--i:${i}${tint(i)}">${w}</span>`).join("");
+  ui.introTitle.setAttribute("aria-label", S.title);
+  ui.introText.textContent = S.text || "";
+  const keys = S.keys ? (touchMode ? S.keys.touch : S.keys.pc) : "";
+  ui.introKeys.innerHTML = keys ? keys.split(" · ").map((x) => `<kbd>${x}</kbd>`).join("") : "";
+  ui.introEnd.hidden = !S.hold;
+  ui.introNext.hidden = !!S.hold;
+  // restart the CSS animations
+  for (const n of [ui.introKicker, ui.introTitle, ui.introText, ui.introKeys]) { n.style.animation = "none"; void n.offsetWidth; n.style.animation = ""; }
+  ui.introDots.querySelectorAll("i").forEach((d, i) => {
+    d.classList.toggle("done", i < k - 1);
+    d.classList.toggle("on", i === k - 1);
+    d.style.setProperty("--dur", (S.min || 4) + "s");
+  });
+  if (S.hold) $("#introPlay").focus();
   layout();
 }
 
@@ -226,7 +327,13 @@ function setPause(on) {
   show(on ? "pause" : "play");
   if (on) $("#resumeBtn").focus();
 }
-$("#playBtn").onclick = startRun;
+$("#playBtn").onclick = play;
+$("#howBtn").onclick = () => startIntro("title");
+$("#introSkip").onclick = endIntro;
+$("#introNext").onclick = introNext;
+$("#introPlay").onclick = () => { introThen = "play"; endIntro(); };
+$("#introAgain").onclick = () => startIntro(introThen);
+$("#introStage").addEventListener("click", introNext);
 $("#againBtn").onclick = () => { if (canRetry()) startRun(); };
 $("#resumeBtn").onclick = () => setPause(false);
 $("#restartBtn").onclick = startRun;
@@ -310,6 +417,7 @@ function pickCard(i) {
 // ---------- banners and tips ----------
 let bannerTimer = 0;
 function banner(text, sub = "", color = "#e9fbf7") {
+  if (screen === "intro") return;
   const b = ui.banner;
   b.innerHTML = text + (sub ? `<small>${sub}</small>` : "");
   b.style.color = color;
@@ -321,13 +429,14 @@ function banner(text, sub = "", color = "#e9fbf7") {
 }
 let tipTimer = 0;
 function tip(html, ms = 4200) {
+  if (screen === "intro") return;
   ui.tip.innerHTML = html;
   ui.tip.classList.add("show");
   clearTimeout(tipTimer);
   tipTimer = setTimeout(() => ui.tip.classList.remove("show"), ms);
 }
 function showTipOnce(id, html) {
-  if (tips[id]) return;
+  if (tips[id] || screen === "intro") return;
   tips[id] = 1;
   store.set("primordia.tips", tips);
   tip(html);
@@ -731,6 +840,8 @@ function drawFx(t, dt) {
     });
   }
 
+  if (screen === "intro" && intro) drawCallouts(c, s, t);
+
   // nerve arcs between hunters
   for (let i = arcs.length - 1; i >= 0; i--) {
     const a = arcs[i], age = (now - a.at) / 250;
@@ -821,6 +932,40 @@ function drawFx(t, dt) {
   // dish frame
   c.strokeStyle = "rgba(120,255,230,0.14)"; c.lineWidth = 1;
   c.strokeRect(rect.x - 0.5, rect.y - 0.5, rect.w + 1, rect.h + 1);
+}
+
+// intro callouts: a ring that draws itself around a creature, a leader line and a label
+function drawCallouts(c, s, t) {
+  const now = intro.s ? intro.s.t : 0;
+  for (const k of intro.callouts()) {
+    const age = Math.max(0, now - (k.at || 0)), a = reduceMotion ? 1 : Math.min(1, age / 0.35);
+    const R = k.r ? Math.max(k.r * s, 14) : 0;
+    wrapped(k.x, k.y, (k.r || 0) + 40, (X, Y) => {
+      c.save();
+      c.strokeStyle = `rgba(${k.color},0.95)`; c.fillStyle = `rgb(${k.color})`; c.lineWidth = 3;
+      const breathe = reduceMotion ? 0 : 2 * Math.sin(t * 5);
+      if (R) { c.beginPath(); c.arc(X, Y, R + breathe, -Math.PI / 2, -Math.PI / 2 + a * Math.PI * 2); c.stroke(); }
+      const ex = X + (R + breathe) * 0.71, ey = Y - (R + breathe) * 0.71, lx = ex + 16, ly = ey - 16;
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex + (lx - ex) * a, ey + (ly - ey) * a); c.stroke();
+      if (a >= 1) {
+        c.font = "700 14px Space Grotesk, sans-serif"; c.textAlign = "left"; c.textBaseline = "middle";
+        const w = c.measureText(k.label).width + 16;
+        c.lineTo(lx + w, ly); c.stroke();
+        c.lineWidth = 4; c.strokeStyle = "rgba(0,0,0,0.7)";
+        c.strokeText(k.label, lx + 6, ly - 10); c.fillText(k.label, lx + 6, ly - 10);
+      }
+      if (k.arrow) {
+        const L = 34 * a, tx = X + k.arrow.x * (R + 6 + L), ty = Y + k.arrow.y * (R + 6 + L);
+        c.strokeStyle = `rgba(${k.color},0.95)`; c.lineWidth = 3;
+        c.beginPath(); c.moveTo(X + k.arrow.x * (R + 6), Y + k.arrow.y * (R + 6)); c.lineTo(tx, ty); c.stroke();
+        const ang = Math.atan2(k.arrow.y, k.arrow.x);
+        c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx - Math.cos(ang - 0.5) * 9, ty - Math.sin(ang - 0.5) * 9);
+        c.moveTo(tx, ty); c.lineTo(tx - Math.cos(ang + 0.5) * 9, ty - Math.sin(ang + 0.5) * 9); c.stroke();
+      }
+      c.restore();
+    });
+  }
 }
 
 function drawPlayer(c, t, s) {
@@ -943,11 +1088,15 @@ function frame(now) {
   let dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   const t = now / 1000;
-  if (screen === "play" || screen === "title" || screen === "over") {
-    readInput();
+  if (screen === "intro" && intro && intro.over) endIntro();
+  if (screen === "play" || screen === "title" || screen === "over" || screen === "intro") {
+    let inp = {}, scale = 1;
+    if (screen === "intro") { pollPad(); const f = intro.frame(dt); inp = f.input; scale = f.scale; rect = introRect(); }
+    else { readInput(); if (screen === "play") inp = input; }
     if (slowmo > 0 && game.hitstop <= 0) { slowmo -= dt; dt *= slowFactor; }
     const before = game.steps;
-    game.update(dt, screen === "play" ? input : {});
+    game.update(dt * scale, inp);
+    if (screen === "intro" && intro) intro.observe(game.events);
     input.dash = false; input.burst = false;
     if (game.steps !== before) renderer.upload(game.world, "step");
     else if (game.fieldDirty) renderer.upload(game.world, "reset");
@@ -999,5 +1148,5 @@ layout();
 toTitle();
 requestAnimationFrame((n) => { last = n; frame(n); });
 // let the browser QA reach in
-window.__primordia = { get game() { return game; }, get screen() { return screen; }, startRun, pickCard, setPause, TUNE };
+window.__primordia = { get game() { return game; }, get screen() { return screen; }, get intro() { return intro; }, startRun, startIntro, endIntro, pickCard, setPause, TUNE };
 window.__rect = () => rect;

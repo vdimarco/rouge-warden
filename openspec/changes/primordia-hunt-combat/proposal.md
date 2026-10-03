@@ -1,6 +1,6 @@
 # Primordia: The Hunt (combat overhaul)
 
-The user found Primordia "a bit boring" and asked to reference the mechanics of games with fun combat and apply them. They also asked for Primordia on the arcade cabinets; it already has one, so its screen now runs a live Lenia dish.
+The user found Primordia "a bit boring" and asked to reference the mechanics of games with fun combat and apply them. They also asked for Primordia on the arcade cabinets; it already has one, so its screen now runs a live Lenia dish. After trying the new build, the user said they did not understand the game and asked for a motion graphics intro, so the change adds How to play scenes on the real dish.
 
 A design workflow diagnosed the problem with bot runs. Hunters moved at 8-9 cells/s against the player's 31 and only stung on contact. About 70% of them dissolved on their own. The player had no attack outside Frenzy, and a bot that never fought scored as well as one that did.
 
@@ -15,6 +15,7 @@ References: Nuclear Throne snipers and Hollow Knight dashes (telegraphed lunge),
 - Rules in `public/primordia/core.js`; Lenia helpers in `lenia.js` (whole-cell `roll`, `blobExtent`, `blobShape`, densest cell per blob); Discutium and Circium in `species.js`.
 - Browser shell, shader marks and Stasis grade, sound cues, HUD (Burst meter, wave dots, dash pips) and touch layout.
 - The arcade cabinet screen runs Primordia's demo dish while selected.
+- A How to play intro (`intro.js`): scripted scenes on the real dish with animated captions, before the first run and from the title screen.
 - Node tests, bot policies with acceptance metrics, browser smoke for desktop, phone portrait and phone landscape.
 
 ## Out of scope

@@ -15,7 +15,10 @@
 - [x] Shader marks, hits, ring and Stasis grade; sound cues; HUD, touch layout and cards.
 - [x] Browser shell wiring, instant retry, tips.
 - [x] Live Lenia dish on the arcade cabinet screen.
-- [ ] Combat test suite, bot policies and metrics, browser smoke on desktop, phone portrait and phone landscape.
-- [ ] Review the code adversarially and fix what it finds.
-- [ ] Balance against the acceptance targets with the bot.
+- [x] Combat test suite, bot policies and metrics, browser smoke on desktop, phone portrait and phone landscape.
+- [x] Review the code adversarially and fix what it finds.
+- [x] Keep moves to each body's own tissue and keep a real tissue gap between bodies.
+- [x] How to play intro: scene script with a Node check, captions and callouts, first-PLAY and replay flow, phone layouts.
+- [ ] Browser smoke with the intro on desktop, phone portrait and phone landscape.
+- [x] Measure balance with the bot against the acceptance targets; record the two misses and why the difficulty stays.
 - [ ] Validate and archive the specification.
