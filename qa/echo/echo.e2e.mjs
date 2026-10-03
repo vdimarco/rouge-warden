@@ -1,6 +1,6 @@
 // Drives Loon Echo in a real browser at a phone size (touch) and a desktop size.
-// cd public && python3 -m http.server 8787, then:
-// LAB_URL=http://localhost:8787/lab/ NODE_PATH=$(npm root -g) node qa/echo/echo.e2e.mjs   (SHOTS=<folder> saves screenshots)
+// cd public && python3 -m http.server 8765, then:
+// LAB_URL=http://localhost:8765/lab/ NODE_PATH=$(npm root -g) node qa/echo/echo.e2e.mjs   (SHOTS=<folder> saves screenshots)
 // The test stops the frame clock and moves game time by hand (window.__echo.advance), so a slow machine gives the same result.
 import { open, until, shot, report, PHONE, DESK } from "../lab/lib.mjs";
 
