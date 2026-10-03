@@ -45,6 +45,13 @@ try {
     });
     console.log(name,'selection',JSON.stringify(selectState));
     assert(Object.values(selectState).every(v=>v?.visible), 'hero selection essentials stay visible');
+    await page.locator('[data-hero-spell="1"]').hover();
+    assert.match(await page.locator('#hero-spell-note').innerText(), /Undertow/);
+    const noteFits = await page.locator('#hero-spell-note').evaluate(el => {
+      const r=el.getBoundingClientRect(), f=el.closest('.hero-feature').getBoundingClientRect();
+      return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1;
+    });
+    assert(noteFits, 'hover description fits the selected hero panel');
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     await page.locator('#play').click();
