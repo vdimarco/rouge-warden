@@ -505,7 +505,7 @@ function boofStart(clean) {
   Sfx.muffle(0.3);
   Sfx.play(sndBoof);
   buzz("charge");
-  for (let i = 0; i < 22; i++) puff(canoe.x + (Math.random() - 0.5) * 6, canoe.y + Math.random() * 5, 1.4 + Math.random() * 1.4, 0.5);
+  for (let i = 0; i < 18; i++) puff(canoe.x + (Math.random() - 0.5) * 7, canoe.y + Math.random() * 5, 1.4 + Math.random() * 1.4, 0.3);
   toast(clean ? "Clean boof" : "Boof. Stroke at the lip to land clean.", 2200);
 }
 // real time, once a frame: the slow motion, and the landing at its end
@@ -555,7 +555,7 @@ function ledgeWater(vis) {
   gr.addColorStop(0, "rgba(6,34,44,0)"); gr.addColorStop(1, "rgba(6,34,44,0.6)");
   g.fillStyle = gr; lipBand(-12, 0, w); g.fill();
   g.fillStyle = "rgba(0,12,18,0.5)"; lipBand(0, 0.7, w); g.fill();
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 60; i++) {
     const u = (hash(i, 1) * 2 - 1) * w, d = 0.5 + ((hash(i, 2) + wclock * (0.25 + 0.2 * hash(i, 4))) % 1) * 5, r = 0.35 + 0.55 * hash(i, 3);
     g.fillStyle = `rgba(238,248,250,${0.6 * (1 - (d - 0.5) / 5)})`;
     g.beginPath(); g.arc(L.x + d * L.tx + u * ax, L.y + d * L.ty + u * ay, r, 0, Math.PI * 2); g.fill();
@@ -569,7 +569,7 @@ function mistFx(vis, dt) {
   const L = river.ledge;
   if (L.y > vis.y0 - 10 && L.y < vis.y1 + 10) {
     const w = river.b(L.y);
-    while (mist.length < 36) { const u = (Math.random() * 2 - 1) * w, d = 0.5 + Math.random() * 4; puff(L.x + d * L.tx + u * L.ty, L.y + d * L.ty - u * L.tx, 1.2 + Math.random() * 1.2, 0.35); }
+    while (mist.length < 16) { const u = (Math.random() * 2 - 1) * w, d = 0.5 + Math.random() * 4; puff(L.x + d * L.tx + u * L.ty, L.y + d * L.ty - u * L.tx, 1.4 + Math.random() * 1.2, 0.4); }
   }
   for (let i = mist.length - 1; i >= 0; i--) {
     const p = mist[i];
