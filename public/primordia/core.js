@@ -50,6 +50,8 @@ export const wdelta = (d, size) => { d = wrap(d, size); return d > size / 2 ? d 
 export class Game {
   constructor(w = 256, h = 128, seed = (Date.now() & 0xffffffff)) {
     this.w = w; this.h = h;
+    // the game is tuned for a 256x128 dish; smaller dishes (the arcade attract screen) scale down
+    this.area = (w * h) / (256 * 128);
     this.world = new World(w, h, GAME_RULES);
     this.rand = mulberry32(seed);
     this.events = [];
@@ -83,7 +85,7 @@ export class Game {
     this.offer = null;
     this.bloom = false; this.tide = false;
     // open with a handful of prey away from the centre
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < Math.max(3, Math.round(6 * this.area)); k++) {
       const p = this.findSpot(36, 30);
       this.world.stamp(this.world.A, ORB, p.x, p.y, this.rand() * Math.PI * 2, 1);
       this.prey.push({ x: p.x, y: p.y, size: 0 });
@@ -94,8 +96,8 @@ export class Game {
 
   // --- tuning that grows with the epoch ---
   simRate() { return Math.min(38, 22 * (1 + 0.065 * (this.epoch - 1))); }
-  preyTarget() { return Math.min(14, 6 + this.epoch); }
-  hunterTarget() { return this.mode === "demo" ? 2 : Math.min(4, 1 + Math.floor(this.epoch / 2)); }
+  preyTarget() { return Math.max(3, Math.round(Math.min(14, 6 + this.epoch) * this.area)); }
+  hunterTarget() { return this.mode === "demo" ? Math.max(1, Math.round(2 * this.area)) : Math.min(4, 1 + Math.floor(this.epoch / 2)); }
   hunger() { return 3.0 * (1 + 0.08 * (this.epoch - 1)) * (1 - 0.25 * this.mut.chloro); }
   mawRadius() { return 3.7 * (1 + 0.22 * this.mut.maw) * (this.frenzyT > 0 ? 1.55 : 1); }
   speed() { return 31 * (1 + 0.14 * this.mut.flagella); }
@@ -133,8 +135,8 @@ export class Game {
     this.updateSpawns(dt);
     // budgets: room for the hunters we expect, plus a little; prey blooms may grow larger, then starve
     const boss = this.hunters.some((e) => e.boss) ? 650 : 0;
-    this.world.limit.B = 420 + 380 * this.hunterTarget() + boss;
-    this.world.limit.A = 1300;
+    this.world.limit.B = (420 + 380 * this.hunterTarget() + boss) * Math.min(1, this.area * 1.4);
+    this.world.limit.A = 1300 * this.area;
     const tide = this.world.massB > this.world.limit.B * 1.05;
     if (tide && !this.tide) this.emit("tide");
     this.tide = tide;

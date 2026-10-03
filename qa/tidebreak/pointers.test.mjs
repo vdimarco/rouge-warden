@@ -9,11 +9,11 @@ class Control extends EventTarget {
   send(type,id,x=50,y=50,extra={}){const e=new Event(type,{cancelable:true});Object.assign(e,{pointerId:id,clientX:x,clientY:y,button:0,pointerType:'touch',isPrimary:id===1,...extra});this.dispatchEvent(e);}
 }
 for(let hero=0;hero<12;hero++){
- const state=createMatch(hero,42),p=player(state),movement={x:0,y:0},pad=new Control(),thumb=new Control(),plus=new Control(),spell=new Control(),casts=[],statuses=[],previews=[];
+ const state=createMatch(hero,42),p=player(state),movement={x:0,y:0},pad=new Control(),thumb=new Control(),plus=new Control(),spell=new Control(),casts=[],statuses=[],previews=[];let upgradeMode=false;
  state.units=[p];state.nextWave=state.objectiveAt=Infinity;state.campTimers=state.campTimers.map(()=>Infinity);
  const controls=movementPointer(pad,{movement,thumb,enabled:()=>true,onStart(){}});
  pointerAction(plus,()=>trainSkill(p,0),()=>p.skillPoints>0);
- const skills=abilityPointers([spell],{enabled:()=>true,onStart(){},onAim:aim=>previews.push(aim),onStatus:status=>statuses.push(status),onCast:cast=>casts.push(cast)});
+ const skills=abilityPointers([spell],{enabled:()=>true,onStart(){},onAim:aim=>previews.push(aim),onStatus:status=>statuses.push(status),onCast:cast=>{if(upgradeMode)trainSkill(p,cast.slot);else casts.push(cast);}});
  pad.send('pointerdown',1);pad.send('pointermove',1,88,50);assert.equal(movement.x,1);
  const before={x:p.x,y:p.y};step(state,{...movement},.05);assert(Math.hypot(p.x-before.x,p.y-before.y)>0,'held movement reaches simulation');
  plus.send('pointerdown',2);plus.send('pointerup',2);plus.send('click',2,50,50,{detail:1});
@@ -28,10 +28,12 @@ for(let hero=0;hero<12;hero++){
  spell.send('pointerdown',11);spell.send('pointermove',11,100,50);spell.send('pointermove',11,50,50);spell.send('pointermove',11,110,70);spell.send('pointerup',11,110,70);
  assert.deepEqual(casts.at(-1),{slot:0,aim:{x:60,y:20}},'dragging out of the cancel center resumes aiming');
  const count=casts.length;spell.send('pointerdown',12);spell.send('lostpointercapture',12);spell.send('pointerup',12);assert.equal(casts.length,count,'lost capture cancels without a cast');assert.equal(movement.x,1);
- p.skillPoints=1;p.level=3;plus.send('pointerdown',5);plus.send('pointercancel',5);plus.send('pointerup',5);assert.equal(p.skillRanks[0],1);assert.equal(movement.x,1);
- plus.send('pointerdown',6);plus.send('pointerup',6,150,50);assert.equal(p.skillRanks[0],1,'release outside does not train');
- plus.send('click',0,50,50,{detail:0});assert.equal(p.skillRanks[0],2,'keyboard trains once');
- pad.send('pointerup',7);assert.equal(movement.x,1,'unrelated pointer cannot release movement');pad.send('pointercancel',1);assert.deepEqual(movement,{x:0,y:0});
+ p.skillPoints=1;p.level=3;upgradeMode=true;spell.send('pointerdown',5);spell.send('pointerup',5);upgradeMode=false;
+ assert.equal(p.skillRanks[0],2,'full ability icon spends a point in upgrade mode');assert.equal(p.skillPoints,0);assert.equal(movement.x,1,'full-icon upgrade preserves held movement');
+ p.skillPoints=1;p.level=5;plus.send('pointerdown',6);plus.send('pointercancel',6);plus.send('pointerup',6);assert.equal(p.skillRanks[0],2);assert.equal(movement.x,1);
+ plus.send('pointerdown',7);plus.send('pointerup',7,150,50);assert.equal(p.skillRanks[0],2,'release outside does not train');
+ plus.send('click',0,50,50,{detail:0});assert.equal(p.skillRanks[0],3,'keyboard trains once');
+ pad.send('pointerup',17);assert.equal(movement.x,1,'unrelated pointer cannot release movement');pad.send('pointercancel',1);assert.deepEqual(movement,{x:0,y:0});
  pad.send('pointerdown',8);pad.send('pointermove',8,88,50);controls.reset();skills.reset();assert.deepEqual(movement,{x:0,y:0});
 }
-console.log('All 12 heroes: concurrent movement, non-primary training, aiming, cancellation and keyboard input pass.');
+console.log('All 12 heroes: concurrent movement, full-icon upgrades, aiming, cancellation and keyboard input pass.');

@@ -216,6 +216,8 @@ button { font: inherit; color: inherit; }
 @media (max-height: 520px) { .sign p { display: none; } .help { display: none; } .purse { min-height: 44px; padding: 4px 10px; } }
 @media (prefers-reduced-motion: reduce) { .sign h1 .dead, .screen::after, .osd .press, .cab .start, .slot span, .change.want { animation: none !important; } .row, .boot { transition: none; } }
 .cab.extra .marquee b { font-size: calc(var(--h) * 0.032); }
+.screen canvas.lenia-screen { opacity: 0; transition: opacity 0.6s; }
+.cab.live .screen canvas.lenia-screen { opacity: 1; }
 .machine-picker { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 9px; color: var(--muted); }
 .machine-picker select { min-height: 44px; max-width: 190px; padding: 8px; border: 1px solid #5b4e78; border-radius: 8px; color: var(--ink); background: #140c24; font: 13px system-ui, sans-serif; }
 @media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .machine-picker { flex-basis: 100%; justify-content: center; } }
@@ -348,6 +350,7 @@ button { font: inherit; color: inherit; }
       <article class="cab extra primordia" data-game="primordia" data-url="/primordia/" aria-label="Primordia: a Lenia arcade" style="--c1: #10393f; --c2: #3ff0e0; --glow: rgba(63, 240, 224, 0.45)">
       <div class="marquee"><div><b>PRIMORDIA</b><small>A LENIA ARCADE</small></div></div>
       <div class="bezel"><div class="screen"><img src="arcade/primordia.webp" alt="Glowing Orbium creatures and a red hunter in a living dish">
+      <canvas class="lenia-screen" width="240" height="198" aria-hidden="true"></canvas>
       <div class="osd"><p class="hi">EAT OR BE EATEN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
@@ -999,6 +1002,22 @@ setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="crimso
 {
  const best = store.get("olympus-legacy-v2", null);
  $(".hi", $('.cab[data-game="olympus"]')).textContent = best && best.best ? "BEST " + Math.floor(best.best / 60) + ":" + String(best.best % 60).padStart(2, "0") : "SURVIVE OLYMPUS";
+}
+// Primordia's screen runs a real Lenia dish while its cabinet is selected
+{
+  const cab = $('.cab[data-game="primordia"]'), cv = cab && $(".lenia-screen", cab);
+  let dish = null, loading = false, was = false;
+  if (cv && !reduceMotion) (function loop(now) {
+    requestAnimationFrame(loop);
+    const on = !document.hidden && cab.classList.contains("on");
+    if (!on) { if (was && dish) dish.pause(); was = false; return; }
+    was = true;
+    if (!dish) {
+      if (!loading) { loading = true; import("/primordia/attract.js").then((m) => { dish = m.mountAttract(cv); cab.classList.add("live"); }).catch(() => {}); }
+      return;
+    }
+    dish.frame(now);
+  })(0);
 }
 {
   const best = store.get("primordia.best", 0);

@@ -52,3 +52,38 @@ dialog{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh
 .training-feedback:empty{display:none}
 
 #auto-status{max-width:205px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+
+
+/* Larger touch targets for training while playing on a phone. */
+.ability-upgrade{width:46px;height:46px;font-size:31px;border-width:3px;touch-action:none;box-shadow:0 4px 11px #0009,0 0 0 3px #08151dcc}
+.upgrade-dash{right:-11px;top:48px}.upgrade-surge{left:118px;top:80px}.upgrade-signature{left:46px;bottom:-4px}.upgrade-ult{right:-10px;bottom:-9px}
+.spell-row{touch-action:manipulation}
+@media(max-width:700px){
+ .spell-list{gap:9px}
+ .spell-row{min-height:82px;padding:10px}
+ .spell-learn-action #train-selected{min-height:54px;font-size:16px}
+ .spellbook-footer .row-btn{min-height:50px}
+ .ability-upgrade{width:44px;height:44px}
+ .upgrade-dash{right:-8px;top:45px}.upgrade-surge{left:108px;top:76px}.upgrade-signature{left:41px;bottom:-2px}.upgrade-ult{right:-8px;bottom:-7px}
+}
+
+
+/* Compact direct upgrades remain independent of movement. */
+.ability-upgrade{width:34px;height:34px;font-size:23px;border-width:2px;touch-action:manipulation;transition:transform .12s,opacity .12s,filter .12s}
+.upgrade-dash{right:-6px;top:35px}.upgrade-surge{left:92px;top:58px}.upgrade-signature{left:28px;bottom:-2px}.upgrade-ult{right:-6px;bottom:-4px}
+.spell-row{touch-action:manipulation}
+@media(max-width:700px){
+ .spell-learn-action #train-selected{min-height:48px}
+ .spellbook-footer .row-btn{min-height:46px}
+ .ability-upgrade{width:32px;height:32px;font-size:22px}
+ .upgrade-dash{right:-5px;top:32px}.upgrade-surge{left:86px;top:54px}.upgrade-signature{left:26px;bottom:-1px}.upgrade-ult{right:-5px;bottom:-3px}
+}
+
+
+/* In-match upgrades now use the full spell icon. Keep legacy plus controls out of the HUD. */
+.ability-upgrade{display:none!important}
+
+
+/* Combat HUD may expose the direct upgrade controls. */
+.abilities .ability-upgrade[hidden]{display:none!important}
+.abilities .ability-upgrade:not([hidden]){display:grid!important}
