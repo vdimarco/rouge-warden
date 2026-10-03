@@ -218,7 +218,13 @@ $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else if(!running)window.GameSwitch?.open();else pause();return; }
-  if(!running&&!$('sheet').open&&!e.repeat&&e.key.toLowerCase()==='f'){e.preventDefault();heroDetails();return;}
+  if(!running&&!$('sheet').open&&!window.GameSwitch?.isOpen&&!e.repeat){
+    const inRoster=e.target instanceof Element&&e.target.closest('#hero-picks');
+    if(e.key==='Enter'&&(inRoster||e.target===document.body||e.target===document.documentElement)){
+      e.preventDefault();if(!$('play').disabled)start();return;
+    }
+    if(e.key.toLowerCase()==='f'){e.preventDefault();heroDetails();return;}
+  }
   if (!running || paused || e.repeat) return;
   const key = e.key.toLowerCase(); keys.add(key);
   if(key==='k'){learnSkills();return;}

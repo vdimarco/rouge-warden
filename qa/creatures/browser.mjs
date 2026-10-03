@@ -18,8 +18,8 @@ const server = http.createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true });
 try {
-  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390]]) {
-    const page = await browser.newPage({ viewport: { width, height }, hasTouch: name !== 'desktop' }), errors = [], loadedAssets = new Set();
+  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
     page.on('response', r => { if (r.url().startsWith(origin)) { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); else loadedAssets.add(new URL(r.url()).pathname); } });
@@ -118,6 +118,7 @@ try {
     for (const identity of HERO_IDENTITIES) {
       await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
       assert.equal(await page.locator('#hero-name').textContent(), identity.name);
+      assert(await page.locator('#hero-name').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth+1&&el.scrollWidth<=el.clientWidth+2;}), `${identity.name} title fits at ${width}x${height}`);
       assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
       assert.equal(await page.locator('#hero-note').textContent(), identity.note);
       assert.equal(await page.locator('#hero-picks [aria-pressed="true"]').getAttribute('data-hero'), String(identity.id));
@@ -195,7 +196,7 @@ try {
     assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /reference-source\.png/);
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
-    if (name==='desktop') { await page.locator('#play').focus(); await page.keyboard.press('Enter'); }
+    if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
     else await page.locator('#play').click();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
     // Starting a match opens the spellbook and pauses play until training is done.

@@ -2,7 +2,7 @@
 
 ## Supplied reference
 
-`reference-source.png` is the unmodified hero-selection reference supplied by the user on 3 October 2026. Its original dimensions are 1536 × 864. The interface uses CSS background windows into this image for the Shore of the Ancients wordmark, sixteen roster portraits, Tidewarden skill icons, Tidecaller avatar, and Arcade Cottage mark.
+`reference-source.png` is the unmodified hero-selection reference supplied by the user on 3 October 2026. Its original dimensions are 1536 × 864. The interface uses CSS background windows into this image for the Shore of the Ancients wordmark, sixteen roster portraits, Tidewarden skill icons, six role glyphs, hero title and Play trident marks, Tidecaller avatar, and Arcade Cottage mark.
 
 ## Generated artwork
 
