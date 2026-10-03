@@ -150,5 +150,22 @@ async function flow(name, view) {
   return [...errors, ...linked.errors];
 }
 
-const errors = [...await flow("phone", PHONE), ...await flow("desk", DESK)];
+// A small phone: the HUD keeps one line per column, and the whole end card fits on the screen.
+async function small(view) {
+  R.section(`small phone (${view.width}×${view.height})`);
+  const { page, errors, close } = await open("../echo/", view);
+  await page.waitForFunction(() => window.__echo);
+  await page.click("#start");
+  await page.evaluate(() => { __echo.manual(true); const r = __echo.run; for (let i = 0; i < 4; i++) { r.chicks[i].state = "following"; r.flock.push(i); } __echo.advance(.1); });
+  const hud = await page.evaluate(() => ["flock", "chapter", "hearts"].map((id) => { const el = document.getElementById(id); return el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight === "normal" ? parseFloat(getComputedStyle(el).fontSize) * 1.2 : getComputedStyle(el).lineHeight); }));
+  R.check(hud.every((lines) => lines < 1.6), `the HUD keeps one line per column (${hud.map((v) => v.toFixed(1)).join(", ")} lines)`);
+  await page.evaluate(() => { const r = __echo.run; r.hearts = 1; r.invincible = 0; r.boats = [{ x: r.x, y: r.y, direction: 1, age: 1.6, speed: .3 }]; __echo.advance(1.2); });
+  const card = await page.evaluate(() => { const p = document.getElementById("panel"), b = document.getElementById("again").getBoundingClientRect(); return { fits: p.scrollHeight <= p.clientHeight, again: b.bottom <= innerHeight && b.top >= 0 }; });
+  R.check(card.fits && card.again, "the whole end card fits, and SWIM AGAIN is on the screen");
+  await shot(page, `echo-small-end`);
+  await close();
+  return errors;
+}
+
+const errors = [...await flow("phone", PHONE), ...await flow("desk", DESK), ...await small({ width: 360, height: 640, touch: true })];
 R.done(errors);

@@ -169,15 +169,16 @@ function bank(r) {
   r.events.push({kind:'bank',count,points,full,spots,text:`${count} home. +${points.toLocaleString('en-US')}.${healed?' +1 energy.':''}${full?'':` ${MAX_CHICKS-r.home} still need you.`}`});
   if(full)nextClutch(r);
 }
-const CLUTCH_NEWS=['','','The eel is faster now, and boats use a third lane.','A second eel wakes up. It goes for the nearest bird.','Boats now cross in pairs.'];
+const CLUTCH_NEWS=['','','The eel is faster. Boats use a third lane.','A second eel hunts the nearest bird.','Boats now cross in pairs.'];
 function nextClutch(r) {
   r.clutch++;r.home=0;r.chicks=hatch(r);r.hearts=3;
+  const eels=r.eels.length;
   while(r.eels.length<danger(r).eels){
     const room=p=>Math.min(distance(p,r),...r.eels.map(e=>distance(p,e)));
     const spot=[{x:.16,y:.79},{x:.84,y:.79},{x:.16,y:.5},{x:.84,y:.5},{x:.5,y:.81},{x:.16,y:.65}].sort((a,b)=>room(b)-room(a))[0],e=newEel(spot.x,spot.y);
     e.active=true;e.stun=2.5;r.eels.push(e);r.events.push({kind:'eel',x:e.x,y:e.y});
   }
-  r.events.push({kind:'clutch',clutch:r.clutch,text:`Clutch ${r.clutch} hatched. ${CLUTCH_NEWS[r.clutch]||'The eels are faster again.'}`});
+  r.events.push({kind:'clutch',clutch:r.clutch,text:`Clutch ${r.clutch} hatched. ${CLUTCH_NEWS[r.clutch]||(r.eels.length>eels?'One more eel wakes up.':'The eels are faster again.')}`});
 }
 export function step(r,dt) {
   if(r.ended)return;

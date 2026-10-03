@@ -24,11 +24,12 @@ function pickLake(){const linked=Number((location.hash.match(/lake=(\d{1,6})\b/)
 pickLake();addEventListener('hashchange',pickLake);
 function start(){run=createRun(lakeSeed(lake));paused=false;pointer=null;keys.clear();particles=[];ripples=[];wobble=[];cues=[];banner=null;hatchAt=9;celebration=null;hops=[];floats=[];outro=null;shake=0;panel.hidden=true;controls.hidden=false;pauseButton.hidden=false;pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause rescue');last=performance.now();tone(680,.3);audio?.resume().catch(()=>{});notice('Swim to a golden chick. Then lead it back to the nest.',7);updateHud();}
 $('#start').onclick=start;
-function gather(){if(run&&!paused&&callFlock(run)){tone(880,.4,'triangle');consumeEvents();updateHud();}}
-function submerge(){if(run&&!paused&&toggleDive(run)){tone(run.diving?180:550,.2);consumeEvents();updateHud();}}
+// A honk or a dive that cannot happen now (cooldown, no breath, under water) gets a short dull tone.
+function gather(){if(!run||paused||run.ended)return;if(callFlock(run)){tone(880,.4,'triangle');consumeEvents();updateHud();}else tone(140,.08,'square',.025,'nope');}
+function submerge(){if(!run||paused||run.ended)return;if(toggleDive(run)){tone(run.diving?180:550,.2);consumeEvents();updateHud();}else tone(140,.08,'square',.025,'nope');}
 call.onclick=gather;dive.onclick=submerge;
 function steer(e){if(run&&!paused&&!run.ended)run.target={x:clamp((e.clientX-offset)/P,.1,.9),y:clamp(e.clientY/H,.19,.82)};}
-canvas.addEventListener('pointerdown',e=>{pointer=e.pointerId;canvas.setPointerCapture(e.pointerId);steer(e);});
+canvas.addEventListener('pointerdown',e=>{pointer=e.pointerId;canvas.setPointerCapture(e.pointerId);steer(e);if(run&&!paused&&!run.ended){ripple(run.target.x,run.target.y,'#cdf4c2');tone(620,.05,'sine',.015,'tap');}});
 canvas.addEventListener('pointermove',e=>{if(pointer===e.pointerId)steer(e);});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>pointer=null);
 addEventListener('keydown',e=>{
@@ -62,7 +63,7 @@ function finish(){
   const close=!before?'Your first run.':run.score>before?'A new best.':run.score===before?'You matched your best.':`${n(before-run.score)} short of your best (${n(best)}).`;
   panel.innerHTML=`<span class="eyebrow">${CAUSE[run.cause]||'OUT OF ENERGY'}</span><h1>${run.saved} CHICKS<br>HOME.</h1><div class="result">${n(run.score)}</div><p>points · ${close}</p><p>Clutch ${run.clutch}: ${run.home} of 8 home. ${left} more would hatch clutch ${run.clutch+1}.</p>`+
     `<div class="share"><span id="share-line">${shareLine(run,lake).split(' · ').map(s=>`<b>${s}</b>`).join('&nbsp;· ')}</span><button id="copy" type="button" aria-label="Copy your result and a link to this lake">COPY</button></div>`+
-    `<p class="small">${run.trips} deliver${run.trips===1?'y':'ies'} · biggest group ${run.biggest}. A bigger group scores more: 100 × group².</p><button id="again">SWIM AGAIN</button>`;
+    `<button id="again">SWIM AGAIN</button><p class="small">${run.trips} deliver${run.trips===1?'y':'ies'} · biggest group ${run.biggest}. A bigger group scores more: 100 × group².</p>`;
   panel.hidden=false;controls.hidden=true;pauseButton.hidden=true;message.textContent='';$('#again').onclick=start;$('#copy').onclick=e=>copyResult(e.currentTarget);
 }
 // Sounds and pictures that come a little later, in game order. They run from the frame clock, so a pause holds them.
@@ -87,7 +88,8 @@ function firework(i){
 }
 function consumeEvents(){for(const e of run.events.splice(0)){
   if(e.text)notice(e.text);
-  if(e.kind==='rescue'){tone(850,.2);burst(e.x,e.y,'#f8df7c');}
+  if(e.kind==='rescue'){tone(640+run.flock.length*70,.2);burst(e.x,e.y,'#f8df7c');}// the note rises as the line grows
+  if(e.kind==='surface'){tone(330,.12,'sine',.04);cue(.1,()=>tone(495,.2,'sine',.04));}
   if(e.kind==='fish'){tone(850,.2);burst(e.x,e.y,'#b4f4f0');}
   if(e.kind==='bank')bankMoment(e);
   if(e.kind==='hit'){tone(120,.2,'sawtooth');shake=.3;burst(run.x,run.y,'#edaaeb');}
@@ -102,7 +104,7 @@ function consumeEvents(){for(const e of run.events.splice(0)){
 function updateHud(){
   $('#clutch-label').textContent=`CLUTCH ${run.clutch}`;$('#flock').textContent=`${run.home} / 8 home`;
   const counting=celebration?celebration.points-celebration.shown:0;// the HUD score counts up with the big-bank moment
-  $('#chapter').textContent=`${run.flock.length?`${run.flock.length} in your line`:`${8-run.home} to rescue`} · ${(run.score-counting).toLocaleString()} pts`;
+  $('#chapter').textContent=`${run.flock.length?`${run.flock.length} in line`:`${8-run.home} to rescue`} · ${(run.score-counting).toLocaleString()} pts`;
   $('#hearts').textContent='♥ '.repeat(run.hearts)+'♡ '.repeat(3-run.hearts);$('#hearts').setAttribute('aria-label',`${run.hearts} energy`);
   $('#progress').value=run.home;$('#breath').value=run.breath;
   $('#breath-label').textContent=run.diving?`BREATH ${run.breath.toFixed(1)}s`:run.exhausted?'CATCH YOUR BREATH':'DIVE BREATH';
@@ -191,7 +193,9 @@ function render(ts){
     for(const h of hops){const k=h.delay>0?0:clamp(h.t/HOP,0,1);bird({x:h.x+(HOME.x-h.x)*k,y:h.y+(HOME.y-h.y)*k-Math.sin(k*Math.PI)*.07,angle:0},h.id,t,true,1-k*.3);}
     for(const p of particles){ctx.globalAlpha=Math.max(0,Math.min(1,p.life));ellipse(px(p.x),p.y*H,p.size||3,p.size||3,p.color,null);}ctx.globalAlpha=1;
     for(const w of ripples){ctx.globalAlpha=Math.max(0,w.life);ctx.strokeStyle=w.color;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(px(w.x),w.y*H,P*(.02+(1-w.life)*.06),P*(.012+(1-w.life)*.036),0,0,7);ctx.stroke();}ctx.globalAlpha=1;
-    if(celebration){const c=celebration,pop=1+Math.max(0,.25-c.t)*1.6;label(c.text,.5,HOME.y+.125,'#fff3a6',Math.round(Math.min(34,P*.085)*pop));label(`+${c.shown.toLocaleString()}`,.5,HOME.y+.17,'#c9f58a',Math.round(Math.min(24,P*.06)));}
+    if(celebration){const c=celebration,pop=1+Math.max(0,.25-c.t)*1.6,w=Math.min(P*.8,300),y=(HOME.y+.142)*H;
+      ctx.globalAlpha=.62*Math.min(1,(c.dur-c.t)*4);ctx.fillStyle='#08201f';ctx.beginPath();ctx.roundRect(px(.5)-w/2,y-H*.058,w,H*.098,18);ctx.fill();ctx.globalAlpha=1;// a dark pill keeps the numbers clear of the hopping chicks
+      label(c.text,.5,HOME.y+.125,'#fff3a6',Math.round(Math.min(34,P*.085)*pop));label(`+${c.shown.toLocaleString()}`,.5,HOME.y+.17,'#c9f58a',Math.round(Math.min(24,P*.06)));}
     for(const f of floats){ctx.globalAlpha=Math.min(1,f.life*2);label(f.text,.5,HOME.y+.11-(1-f.life)*.05,'#fff3a6',Math.round(Math.min(22,P*.055)));ctx.globalAlpha=1;}
     if(outro){ctx.fillStyle=`rgba(3,14,22,${Math.min(.5,outro.t*.6).toFixed(3)})`;ctx.fillRect(offset,0,P,H);}
     if(banner){ctx.globalAlpha=Math.min(1,banner.life*3);label(banner.text,.5,.47,'#c9f58a',Math.round(Math.min(46,P*.11)*(1.15-banner.life*.15)));ctx.globalAlpha=1;}
