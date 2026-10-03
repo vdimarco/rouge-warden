@@ -91,7 +91,16 @@ function learnSkills() {
     $('back-skills').onclick=closeSheet;
   };show();
 }
-pointerAction($('skill-points'),learnSkills,()=>running&&!paused&&!resultShown);
+pointerAction($('skill-points'),()=>{
+  const p=player(state),eligible=p.skillRanks.map((_,i)=>i).filter(i=>canLearn(p,i));
+  if(p.skillPoints>0&&eligible.length){
+    const cluster=document.querySelector('.abilities');
+    cluster.classList.toggle('upgrade-mode');
+    announce(state,cluster.classList.contains('upgrade-mode')?'Choose a skill':'Upgrade controls hidden',cluster.classList.contains('upgrade-mode')?'Tap a + beside the ability you want. Keep moving while you upgrade.':'Tap the skill-point button to show upgrades again.');
+    return;
+  }
+  learnSkills();
+},()=>running&&!paused&&!resultShown);
 const upgradeButtons=[...document.querySelectorAll('[data-upgrade]')];
 upgradeButtons.forEach(b=>pointerAction(b,()=>{
   const p=player(state),slot=+b.dataset.upgrade;
@@ -149,8 +158,10 @@ function updateUI() {
     if(followUp?.slot===i)b.setAttribute('aria-label',`${b.getAttribute('aria-label')} Combo ready. ${followUp.label}.`);
     const ranks=b.querySelector('.ranks'); if(ranks.dataset.rank!==String(rank)){ranks.innerHTML=Array.from({length:i===3?3:4},(_,j)=>`<i class="${j<rank?'filled':''}"></i>`).join('');ranks.dataset.rank=rank;}
   });
-  $('skill-points').textContent=p.skillPoints&&p.skillRanks.some((_,i)=>canLearn(p,i))?`+ ${p.skillPoints} SKILL POINT${p.skillPoints===1?'':'S'}`:'SPELLBOOK';
-  $('skill-points').classList.toggle('ready',p.skillPoints>0&&p.skillRanks.some((_,i)=>canLearn(p,i)));
+  const upgradeReady=p.skillPoints>0&&p.skillRanks.some((_,i)=>canLearn(p,i));
+  $('skill-points').textContent=upgradeReady?`+ ${p.skillPoints} POINT${p.skillPoints===1?'':'S'}`:'SPELLBOOK';
+  $('skill-points').classList.toggle('ready',upgradeReady);
+  if(!upgradeReady)document.querySelector('.abilities')?.classList.remove('upgrade-mode');
   upgradeButtons.forEach((b,i)=>{
     const eligible=canLearn(p,i);b.hidden=!eligible;b.disabled=!eligible;
     b.setAttribute('aria-label',`${p.skillRanks[i]?'Upgrade':'Learn'} ${identitySkill(selectedIdentity,i).name} to rank ${p.skillRanks[i]+1} · 1 skill point`);
