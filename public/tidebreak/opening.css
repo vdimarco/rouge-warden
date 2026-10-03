@@ -75,3 +75,476 @@ dialog:not(.spellbook-sheet):not(.market){background:linear-gradient(135deg,#173
 #hero-spell-note span{font:14px/1.4 Barlow,Arial,sans-serif;color:#d6dfd4}
 #hero-spell-note small{font:11px/1.35 Barlow,Arial,sans-serif;color:var(--hero-color);letter-spacing:.35px}
 @media(max-width:700px){#menu .hero-picks{grid-auto-rows:minmax(144px,1fr)}#menu .hero-picks button{min-height:144px}#hero-spell-note{font-size:13px}}
+
+
+/* Full interactive hero-select composition based on the Shore concept screen. */
+@media(min-width:1001px){
+  #menu{
+    padding:18px clamp(18px,2vw,34px) 16px;
+    background:#031018;
+  }
+  #menu::before{
+    background:
+      linear-gradient(90deg,#020a10f7 0%,#03121bd9 25%,#05192370 49%,#06151ccb 77%,#02090eea 100%),
+      linear-gradient(0deg,#02080df2 0%,transparent 35%,#02090fa8 100%),
+      url('./art/illustrated/opening-citadel.webp') center/cover no-repeat;
+  }
+  #menu .intro{
+    width:min(1880px,100%);
+    gap:12px;
+    grid-template-rows:auto minmax(0,1fr) auto;
+  }
+  .roster-heading{
+    min-height:96px;
+    padding:0 8px 10px;
+    border-bottom:1px solid #63d6ef42;
+    background:linear-gradient(90deg,#04151db5,transparent 58%);
+  }
+  .title-lockup{gap:14px}
+  .title-sigil{
+    width:72px;height:72px;
+    stroke:#70eaff;
+    filter:drop-shadow(0 0 18px #43dfff75);
+  }
+  #menu .roster-heading h1{
+    font:700 clamp(36px,3.2vw,58px)/.92 Georgia,serif;
+    max-width:560px;
+    color:#d9fbff;
+    text-shadow:0 0 28px #35cce766,0 4px 24px #000c;
+  }
+  .roster-heading p{
+    color:#79d9ed;
+    font-size:13px;
+    letter-spacing:5px;
+    text-transform:uppercase;
+  }
+  .roster-heading .match-format{
+    display:grid;
+    gap:8px;
+    max-width:330px;
+    color:#bdcbd4;
+    font:italic 14px/1.6 Georgia,serif;
+    letter-spacing:2px;
+    text-transform:uppercase;
+  }
+  .roster-heading .match-format small{
+    color:#66dced;
+    font:700 11px/1.3 Barlow,Arial,sans-serif;
+    letter-spacing:1.8px;
+    font-style:normal;
+  }
+
+  .roster-layout{
+    min-height:0;
+    grid-template-columns:minmax(410px,.92fr) minmax(0,2.08fr);
+    gap:0;
+    border:1px solid #72ddec38;
+    background:linear-gradient(90deg,#031018d9 0 28%,#06151c66 47%,#031017bf 100%);
+    box-shadow:0 24px 70px #0007,inset 0 0 60px #0dd7ef0a;
+    overflow:hidden;
+  }
+
+  .roster-browser{
+    grid-column:1;
+    grid-row:1;
+    padding:20px 18px 18px;
+    border:0;
+    border-right:1px solid #71ddec45;
+    background:linear-gradient(180deg,#04141dbf,#020b11dc);
+    grid-template-rows:auto auto minmax(0,1fr);
+  }
+  .roster-title{margin:0 0 12px}
+  .roster-title h2{
+    color:#e4fbff;
+    font:700 20px/1.15 Barlow,Arial,sans-serif;
+    letter-spacing:2px;
+    text-transform:uppercase;
+  }
+  .roster-title .lineup-navigation{color:#8ea8b2}
+  #role-filters{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    padding:0;
+    margin:0 0 14px;
+    border:1px solid #5bcde63d;
+    background:#020a10a8;
+    overflow:visible;
+  }
+  #role-filters button{
+    min-height:48px;
+    padding:7px 4px;
+    border:0;
+    border-right:1px solid #5bcde628;
+    border-radius:0;
+    color:#9fb4bd;
+    font:700 10px/1.1 Barlow,Arial,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+  }
+  #role-filters button[aria-pressed=true]{
+    color:#dfffff;
+    background:linear-gradient(180deg,#0b70854f,#062734cc);
+    box-shadow:inset 0 -2px #68e7ff,0 0 18px #42dbf02e;
+  }
+
+  #menu .hero-picks{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-auto-rows:minmax(142px,1fr);
+    gap:8px;
+    padding:2px;
+    overflow:auto;
+  }
+  #menu .hero-picks button{
+    min-height:142px;
+    border-color:#7dc6d442;
+    border-radius:1px;
+    background:#05141d;
+  }
+  #menu .hero-picks button::before{
+    background:linear-gradient(180deg,transparent 28%,#02090f33 48%,#02090ff2 86%);
+  }
+  #menu .hero-picks button>span{
+    padding:42px 7px 8px;
+    font-size:12px;
+    letter-spacing:.45px;
+    color:#e7f7f7;
+    background:linear-gradient(transparent,#02080edb 50%);
+  }
+  #menu .hero-picks button>span small{
+    margin-top:4px;
+    font-size:7.5px;
+    letter-spacing:.65px;
+    color:#8db7c0;
+  }
+  #menu .hero-picks button[aria-pressed=true]{
+    border-color:#78efff;
+    box-shadow:inset 0 0 0 1px #bff8ff,0 0 18px #4eddfb75;
+  }
+  #menu .hero-picks button[aria-pressed=true]::after{
+    width:8px;height:8px;
+    background:#a8f7ff;
+    box-shadow:0 0 12px #51e9ff;
+  }
+
+  .hero-feature{
+    grid-column:2;
+    grid-row:1;
+    display:grid;
+    grid-template-columns:minmax(380px,1.08fr) minmax(380px,.92fr);
+    grid-template-rows:auto auto minmax(0,1fr);
+    gap:12px 28px;
+    padding:24px 28px 18px;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 39% 56%,color-mix(in srgb,var(--hero-color) 18%,transparent),transparent 34%),
+      linear-gradient(90deg,transparent 0 55%,#020d14aa 69%,#02080ed9 100%);
+  }
+  .hero-feature::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(ellipse at 40% 82%,#64dcff18,transparent 36%),
+      linear-gradient(180deg,transparent 64%,#02090fba 100%);
+    z-index:0;
+  }
+  #menu .hero-stage{
+    grid-column:1;
+    grid-row:1/4;
+    min-height:0;
+    height:100%;
+    overflow:visible;
+    background:none;
+    z-index:1;
+  }
+  #menu .hero-stage::before{
+    inset:5% 4% 8%;
+    border:0;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--hero-color) 19%,transparent),transparent 58%),
+      radial-gradient(ellipse at 50% 85%,#71e6ff1d,transparent 48%);
+    box-shadow:none;
+    mask-image:none;
+  }
+  #menu .hero-stage::after{
+    bottom:4%;
+    left:6%;right:6%;
+    height:16%;
+    border-color:#72e4f24d;
+    background:radial-gradient(ellipse,#5fe8ff28,transparent 64%);
+    box-shadow:0 0 34px #42d9ff20;
+  }
+  #menu #hero-art{
+    height:100%;
+    max-height:none;
+    padding:2% 0 5%;
+    object-position:center bottom;
+    transform:scale(1.08);
+    filter:
+      drop-shadow(0 24px 26px #000c)
+      drop-shadow(0 0 26px color-mix(in srgb,var(--hero-color) 28%,transparent));
+  }
+
+  #menu .hero-copy{
+    grid-column:2;
+    grid-row:1;
+    align-self:end;
+    padding:0;
+    z-index:2;
+  }
+  #menu .hero-copy::before{
+    content:'SELECTED LEGEND';
+    display:block;
+    margin-bottom:9px;
+    color:#69e6f7;
+    font:700 10px/1 Barlow,Arial,sans-serif;
+    letter-spacing:2.5px;
+  }
+  #menu .hero-copy h2{
+    color:#effdff;
+    font:700 clamp(40px,3.3vw,62px)/.95 Georgia,serif;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    text-shadow:0 4px 26px #000d;
+  }
+  #menu .hero-copy>span{
+    display:inline-block;
+    margin-top:10px;
+    padding:6px 10px;
+    border:1px solid #64dcef54;
+    border-radius:999px;
+    background:#061a24c9;
+    color:#8beaff;
+    font-size:11px;
+    letter-spacing:1.5px;
+  }
+  #menu .hero-copy p{
+    max-width:520px;
+    margin-top:13px;
+    color:#cbd9dd;
+    font:italic 15px/1.45 Georgia,serif;
+  }
+
+  #hero-preview{
+    grid-column:2;
+    grid-row:2;
+    z-index:2;
+  }
+  .hero-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    padding:0;
+    margin:0 0 13px;
+    border:0;
+  }
+  .hero-stats div{
+    padding:9px 10px;
+    border:1px solid #6bcfe539;
+    background:#031018aa;
+  }
+  .hero-stats dt{color:#789ba7}
+  .hero-stats dd{
+    color:#d8f7fb;
+    font-size:16px;
+    margin-top:4px;
+  }
+  .class-growth{
+    margin:0 0 14px!important;
+    color:#8eabb4!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+  }
+  .hero-move-preview{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;
+  }
+  .hero-move-preview button{
+    min-height:104px;
+    padding:8px 7px 7px;
+    border-color:#69cfe344;
+    border-radius:1px;
+    background:linear-gradient(180deg,#082635ce,#031018e3);
+    align-items:center;
+    text-align:center;
+    color:#ecfcff;
+  }
+  .hero-move-preview button:hover,.hero-move-preview button:focus-visible{
+    transform:translateY(-3px);
+    border-color:#6ceaff;
+    background:linear-gradient(180deg,#0a5063d6,#04202cdf);
+    box-shadow:0 0 18px #4be2ff38;
+  }
+  .preview-spell-art{
+    width:58px;height:58px;
+    border-color:#74e6f56b;
+    box-shadow:inset 0 0 18px #44eaff12;
+  }
+  .hero-move-preview button>span{
+    width:100%;
+    font-size:10px;
+    line-height:1.1;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .hero-move-preview small{
+    color:#75d7e8;
+    font-size:8px;
+  }
+
+  #hero-spell-note{
+    grid-column:2;
+    grid-row:3;
+    align-self:start;
+    min-height:128px;
+    margin:0;
+    padding:15px 16px;
+    z-index:2;
+    border:1px solid #70dff052;
+    border-radius:5px;
+    background:linear-gradient(135deg,#061924ed,#020b12f2);
+    box-shadow:0 18px 40px #0005,inset 0 0 24px #3ce6ff09;
+  }
+  #hero-spell-note strong{
+    color:#e9fdff;
+    font-size:16px;
+    letter-spacing:.5px;
+  }
+  #hero-spell-note span{
+    color:#c2d5da;
+    font-size:13px;
+    line-height:1.45;
+  }
+  #hero-spell-note small{
+    color:#72dded;
+    font-size:10px;
+    letter-spacing:.6px;
+  }
+
+  .roster-footer{
+    min-height:72px;
+    padding:10px 8px 0;
+    border-top:1px solid #67d8ed3d;
+    background:linear-gradient(90deg,#031018b8,transparent 55%);
+  }
+  #menu .roster-footer .primary{
+    width:min(410px,34vw);
+    min-height:54px;
+    border:1px solid #8ff3ff;
+    border-radius:5px;
+    background:linear-gradient(180deg,#0b3948,#062530);
+    color:#e8fdff;
+    box-shadow:inset 0 0 0 1px #c3fbff33,0 0 24px #50e7ff35;
+    font-size:17px;
+    letter-spacing:2px;
+  }
+  #menu .roster-footer .primary:hover{
+    background:linear-gradient(180deg,#0e5669,#073442);
+    box-shadow:inset 0 0 0 1px #d5fdff55,0 0 32px #56eaff55;
+  }
+  #ready-legend{
+    color:#8bcbd5;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .roster-footer .menu-links button{
+    color:#9eb5bc;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+  }
+}
+
+/* Tablet keeps the same visual hierarchy with the roster below the hero. */
+@media(max-width:1000px) and (min-width:701px){
+  .roster-layout{
+    grid-template-columns:1fr;
+    grid-template-rows:minmax(420px,1.2fr) minmax(300px,.8fr);
+    gap:14px;
+    overflow:auto;
+  }
+  .hero-feature{
+    grid-column:1;grid-row:1;
+    grid-template-columns:minmax(280px,1fr) minmax(300px,.8fr);
+    padding:16px;
+    overflow:hidden;
+  }
+  .roster-browser{
+    grid-column:1;grid-row:2;
+    padding:14px 0 0;
+    border:0;
+    border-top:1px solid #63d6ef42;
+  }
+  #menu .hero-picks{
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    grid-auto-rows:132px;
+  }
+  #menu .hero-picks button{min-height:132px}
+  .hero-move-preview{grid-template-columns:repeat(4,1fr)}
+}
+
+/* Phone turns the same screen into a swipeable vertical hero select. */
+@media(max-width:700px){
+  #menu::before{
+    background:
+      linear-gradient(0deg,#02090ff2 0%,#05151dc7 52%,#02090fc9 100%),
+      url('./art/illustrated/opening-citadel.webp') 42% center/cover no-repeat;
+  }
+  .roster-heading .match-format{display:none}
+  .roster-layout{
+    grid-template-rows:minmax(360px,1.12fr) minmax(220px,.88fr);
+  }
+  .hero-feature{
+    grid-row:1;
+    grid-template-columns:minmax(120px,.72fr) minmax(0,1.28fr);
+    grid-template-rows:auto auto minmax(0,1fr);
+    padding:8px;
+    overflow:hidden;
+    background:linear-gradient(90deg,transparent,#021019a8);
+  }
+  #menu .hero-stage{grid-column:1;grid-row:1/4;min-height:0}
+  #menu #hero-art{height:100%;max-height:none;transform:scale(1.08);padding:4% 0 7%}
+  #menu .hero-copy{grid-column:2;grid-row:1}
+  #menu .hero-copy h2{font-size:29px;text-transform:uppercase}
+  #menu .hero-copy p{font:italic 12px/1.35 Georgia,serif}
+  #hero-preview{grid-column:2;grid-row:2}
+  .hero-stats{display:none}
+  .class-growth{display:none}
+  .hero-move-preview{grid-template-columns:repeat(4,1fr)}
+  .hero-move-preview button{
+    min-height:58px;
+    padding:4px;
+    flex-direction:column;
+  }
+  .preview-spell-art{width:34px;height:34px}
+  .hero-move-preview button>span{font-size:0}
+  .hero-move-preview small{font-size:7px}
+  #hero-spell-note{
+    grid-column:2;grid-row:3;
+    min-height:0;
+    padding:8px 9px;
+    overflow:auto;
+  }
+  #hero-spell-note strong{font-size:12px}
+  #hero-spell-note span{font-size:10px}
+  #hero-spell-note small{font-size:8px}
+
+  .roster-browser{grid-row:2}
+  #role-filters{
+    display:flex;
+    overflow-x:auto;
+    gap:4px;
+  }
+  #menu .hero-picks{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-auto-rows:118px;
+  }
+  #menu .hero-picks button{min-height:118px}
+  #menu .hero-picks button>span{font-size:11px;padding:34px 5px 7px}
+  #menu .hero-picks button>span small{display:none}
+}
