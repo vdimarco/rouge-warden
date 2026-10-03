@@ -1,0 +1,25 @@
+name: Combat Fun PR QA
+on:
+  push:
+    branches:
+      - feat/combat-fun-system
+jobs:
+  combat-fun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: |
+          node --check public/tidebreak/combat-state.js
+          node --check public/crimson/js/story/combat/playermoves.js
+          node --check public/crimson/js/story/combat/resolve.js
+          git diff --check HEAD^ HEAD
+      - name: Shore combat decisions
+        run: node qa/tidebreak/combat-decisions.test.mjs
+      - name: Shore tactical combat
+        run: node qa/tidebreak/tactical-combat.test.mjs
+      - name: Crimson opening rewards
+        run: node --test qa/crimson/arsenal.test.mjs
