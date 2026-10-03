@@ -136,6 +136,8 @@ if (reduceMotion.addEventListener) reduceMotion.addEventListener("change", () =>
     pulse = 0;
     paintShown();
   }
+  if (motionOn()) startHelpMotion();
+  else stopHelpMotion();
 });
 
 const SPARK_COLOR = {
@@ -1013,11 +1015,46 @@ function playAgain() {
   return startGame();
 }
 
+let helpIndex = 0;
+let helpTimer = 0;
+
+function showHelpScene(index) {
+  const scenes = [...document.querySelectorAll("#howto .help-scene")];
+  if (!scenes.length) return;
+  helpIndex = (index + scenes.length) % scenes.length;
+  scenes.forEach((scene, i) => {
+    const on = i === helpIndex;
+    scene.classList.toggle("is-on", on);
+    scene.setAttribute("aria-hidden", on ? "false" : "true");
+  });
+  document.querySelectorAll("#howto .help-dot").forEach((dot, i) => {
+    const on = i === helpIndex;
+    dot.classList.toggle("is-on", on);
+    dot.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  const step = $("help-step");
+  if (step) step.textContent = `${helpIndex + 1} of ${scenes.length}`;
+}
+
+function stopHelpMotion() {
+  clearInterval(helpTimer);
+  helpTimer = 0;
+}
+
+function startHelpMotion() {
+  stopHelpMotion();
+  if (!motionOn() || $("howto").hidden) return;
+  helpTimer = setInterval(() => showHelpScene(helpIndex + 1), 4600);
+}
+
 function openHelp() {
   $("howto").hidden = false;
+  showHelpScene(helpIndex);
+  startHelpMotion();
 }
 function closeHelp() {
   $("howto").hidden = true;
+  stopHelpMotion();
 }
 
 $("sheet").addEventListener("click", (event) => {
@@ -1030,6 +1067,16 @@ $("again").addEventListener("click", () => playAgain());
 $("help").addEventListener("click", openHelp);
 $("howto-open").addEventListener("click", openHelp);
 $("howto-close").addEventListener("click", closeHelp);
+$("help-stage").addEventListener("click", () => {
+  showHelpScene(helpIndex + 1);
+  startHelpMotion();
+});
+$("howto").addEventListener("click", (event) => {
+  const dot = event.target.closest(".help-dot");
+  if (!dot) return;
+  showHelpScene(Number(dot.dataset.help));
+  startHelpMotion();
+});
 
 window.addEventListener("resize", () => {
   paintShown();
