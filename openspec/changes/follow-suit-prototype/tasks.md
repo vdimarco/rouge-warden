@@ -32,9 +32,9 @@
 ## Milestone 5: balance
 
 - [x] Write the solver and its tests. (Done in milestone 3 for the run check.)
-- [ ] Write `scripts/simulate.ts` and run 1,000 seeds with no charms and no redraws.
-- [ ] Tune the targets until stop 1 clears at least 90% of the time and stop 2 about half the time.
-- [ ] Write `BALANCE.md`. Commit.
+- [x] Write `scripts/simulate.ts` and run 1,000 seeds with no charms and no redraws.
+- [x] Tune the targets until stop 1 clears at least 90% of the time and stop 2 about half the time.
+- [x] Write `BALANCE.md`. Commit.
 
 ## Close
 

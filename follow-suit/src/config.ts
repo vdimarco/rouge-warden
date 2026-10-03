@@ -28,17 +28,19 @@ export const CONFIG = {
     stops: 8,
     tablesPerStop: 3,
     startMoney: 4,
-    // Base target for each stop.
-    baseTargets: [150, 400, 1_000, 2_500, 6_000, 14_000, 30_000, 60_000],
+    // Base target for each stop. Tuned in milestone 5: see BALANCE.md. The brief started at
+    // 150, 400, 1,000, 2,500, 6,000, 14,000, 30,000 and 60,000.
+    baseTargets: [150, 300, 750, 1_875, 4_500, 10_500, 22_500, 45_000],
     // The table target is the base times this scale. The third table is the host table.
     tableScale: [1, 1.5, 2],
-    // The host table target is also multiplied by the host's own scale.
+    // The host table target is also multiplied by the host's own scale. Each started at 1. The
+    // scales put every host table at stop 2 at about the same clear rate: see BALANCE.md.
     hostScale: {
-      purist: 1,
-      zebra: 1,
-      climber: 1,
-      miser: 1,
-      jeweler: 1,
+      purist: 0.18,
+      zebra: 0.12,
+      climber: 0.19,
+      miser: 0.48,
+      jeweler: 0.23,
     },
   },
 

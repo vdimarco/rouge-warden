@@ -89,9 +89,9 @@ Stop after the preview deploy and wait for the go-ahead.
 
 ## Milestone 5: balance
 
-- `scripts/simulate.ts`: plays 1,000 seeds with no charms and no redraws and reports the clear rate of each table in stops 1 to 3.
+- `scripts/simulate.ts`: plays 1,000 seeds with no charms and no redraws and reports the clear rate of each table in stops 1 to 3. `--calibrate` reports the 3-chain totals for each kind of table, and `--buy-charms` tries a player who buys charms.
 - `BALANCE.md`: the simulator report and the final targets.
-- `src/config.ts`: the tuned targets.
+- `src/config.ts`: the tuned targets and host scales.
 
 ## Checks for each milestone
 

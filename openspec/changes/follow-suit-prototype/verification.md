@@ -24,7 +24,14 @@
 
 - `npm test`: 232 tests pass. `src/ui/reveal.test.ts` checks the beat order, 180 ms for each card, the scale steps for switches, the coin beats and the ring ellipse. `src/ui/useReveal.test.tsx` runs the reveal hook in jsdom with fake timers: switch notes 0 then 1, one ring chord, two coins for a clear at 252 against a target of 1, a total that counts through middle values, and the new run state only at the end.
 - `qa/feel.e2e.mjs` passes 10 checks in Chromium. On seed K7QX2M the 360 ring shows +6, +6, +1 Mult, +7, +7, +1 Mult, +8, +1 Mult and +11 above the cards, then Ring ×2, with cards about 180 ms apart. Mult shows 1, 2, 3, 4, then 8. The spy hears 392, 440.01 and 493.89 Hz for the 3 switches and a chord at 784, 987.78 and 1174.66 Hz. The total counts up through middle values to 360. Mute silences every note and survives a reload. With reduced motion the cards stay in one line under a fading gold ring. The ring loop stays clear of the hand and the charm board at all 4 phone sizes.
-- 300 policy runs on seeds QA0001 to QA0300 never cleared a table with a power-of-ten bonus, so the browser check cannot reach the coins. The hook test covers them.
+- With the starting targets, 300 policy runs never cleared a table with a power-of-ten bonus. After the milestone 5 tuning, the run check finds seed QA0024, which clears a table with a bonus, and counts one coin tone for each bonus dollar in Chromium. The hook test also covers the coins.
+
+## Milestone 5
+
+- `npm run simulate` plays seeds SIM0001 to SIM1000 with no charms and no redraws. With the brief's starting targets only 26.3% clear stop 1 and 0.3% clear stop 2, because the host tables stop most runs.
+- After tuning, 91.7% clear stop 1 and 48.9% clear stop 2. Seeds BAL0001 to BAL1000 give 92.8% and 48.6%, and TUN0001 to TUN1000 give 92.8% and 48.2%.
+- At stop 2 every host table clears between 71.5% and 79.0% of the time. `BALANCE.md` holds the reports and the method.
+- `qa/run.e2e.ts` passes with the tuned targets on seed QA0024. The run reaches stop 4 and loses there.
 
 ## Not checked yet
 

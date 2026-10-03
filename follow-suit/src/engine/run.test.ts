@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CONFIG } from '../config';
 import { sortCards } from './cards';
 import {
   beginTable,
@@ -108,14 +109,16 @@ describe('tables and targets', () => {
   it('starts the first table with the stop 1 base target and no host', () => {
     const run = beginTable(newRun(SEED));
     expect(run.phase).toBe('table');
-    expect(run.table!.target).toBe(150);
+    expect(run.table!.target).toBe(CONFIG.run.baseTargets[0]);
     expect(run.table!.host).toBeNull();
     expect(run.table!.hand).toHaveLength(8);
   });
 
   it('lists the 3 targets of a stop', () => {
-    expect(stopTargets(1, 'purist')).toEqual([150, 225, 300]);
-    expect(stopTargets(2, 'zebra')).toEqual([400, 600, 800]);
+    const [b1, b2] = CONFIG.run.baseTargets;
+    const { purist, zebra } = CONFIG.run.hostScale;
+    expect(stopTargets(1, 'purist')).toEqual([b1, Math.round(b1 * 1.5), Math.round(b1 * 2 * purist)]);
+    expect(stopTargets(2, 'zebra')).toEqual([b2, Math.round(b2 * 1.5), Math.round(b2 * 2 * zebra)]);
   });
 
   it('puts the stop host at the third table', () => {
@@ -124,7 +127,7 @@ describe('tables and targets', () => {
     run = leaveShop(openShop(clearTable(run)));
     expect(run.tableIndex).toBe(2);
     expect(run.table!.host).toBe(run.hosts[0]);
-    expect(run.table!.target).toBe(300);
+    expect(run.table!.target).toBe(Math.round(CONFIG.run.baseTargets[0] * 2 * CONFIG.run.hostScale[run.hosts[0]]));
     expect(runRules(run)).toEqual({ host: run.hosts[0], tableCharm: null });
   });
 
@@ -153,7 +156,7 @@ describe('clearing and losing', () => {
     expect(run.phase).toBe('intro');
     expect(run.stop).toBe(2);
     expect(run.tableIndex).toBe(0);
-    expect(beginTable(run).table!.target).toBe(400);
+    expect(beginTable(run).table!.target).toBe(CONFIG.run.baseTargets[1]);
   });
 
   it('wins the run when the host table of stop 8 clears, with no shop after it', () => {

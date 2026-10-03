@@ -82,3 +82,9 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 52. **Mute.** The mute setting stays in this browser's storage. A private window can forget it.
 53. **Timing.** Each card takes 180 ms. A charm on a card takes 150 ms, a switch 170 ms, a charm at the end of the chain 340 ms and the ring 760 ms. The chain score holds for 450 ms, and the total counts up in 650 ms.
 
+## Milestone 5: balance
+
+54. **What the simulator plays.** It opens each shop and leaves at once, so the generator moves the same way as in a real run and later deals match the seed.
+55. **Host scales.** Each host scale puts that host's table at stop 2 near the 25th percentile of its 3-chain totals, so each host is about as hard as the others there. The brief sets no rule for host difficulty.
+56. **Later stops.** Stops 3 to 8 keep the brief's curve from stop 2 on, scaled by the same 0.75 as stop 2. No simulated player reaches them often enough to tune them.
+

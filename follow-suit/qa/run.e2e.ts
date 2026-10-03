@@ -126,14 +126,19 @@ function shopSteps(run: RunState, visit: number): Step[] {
   return steps;
 }
 
-/** Plays the policy on the engine to the end of the run. */
-function plan(seed: string): { steps: Step[]; end: RunState } {
+/** Plays the policy on the engine to the end of the run. Notes the first clear with a power-of-ten bonus. */
+function plan(seed: string): { steps: Step[]; end: RunState; bonusStep: number | null } {
   let run = newRun(seed);
   const steps: Step[] = [];
   let visits = 0;
+  let bonusStep: number | null = null;
   const push = (step: Step) => {
     steps.push(step);
     run = apply(run, step);
+    const cleared = run.phase === 'cleared' || run.phase === 'won';
+    if (step.kind === 'chain' && cleared && run.lastPayout!.powerOfTen > 0 && bonusStep === null) {
+      bonusStep = steps.length - 1;
+    }
   };
   while (run.phase !== 'won' && run.phase !== 'lost') {
     if (run.phase === 'intro') push({ kind: 'begin' });
@@ -151,23 +156,35 @@ function plan(seed: string): { steps: Step[]; end: RunState } {
       });
     }
   }
-  return { steps, end: run };
+  return { steps, end: run, bonusStep };
 }
 
-function findSeed(): { seed: string; steps: Step[]; end: RunState } {
-  for (let i = 1; i <= 500; i += 1) {
+/** The first seed whose run reaches stop 2 through 3 shops and clears a table with a power-of-ten bonus. */
+function findSeed(): { seed: string; steps: Step[]; end: RunState; bonusStep: number | null } {
+  for (let i = 1; i <= 1_000; i += 1) {
     const seed = `QA${String(i).padStart(4, '0')}`;
     const result = plan(seed);
     const usedShops = result.steps.filter((s) => s.kind === 'openShop').length;
-    if (result.end.stop >= 2 && usedShops >= 3) return { seed, ...result };
+    if (result.end.stop >= 2 && usedShops >= 3 && result.bonusStep !== null) return { seed, ...result };
   }
-  throw new Error('No seed in QA0001 to QA0500 reaches stop 2');
+  throw new Error('No seed in QA0001 to QA1000 reaches stop 2 with a power-of-ten clear');
 }
 
 const session = await startSession();
 const { check } = session;
-const { seed, steps, end } = findSeed();
-console.log(`seed ${seed}: ${steps.length} steps, the run ends ${end.phase} at stop ${end.stop}`);
+const { seed, steps, end, bonusStep } = findSeed();
+console.log(`seed ${seed}: ${steps.length} steps, a power-of-ten clear at step ${bonusStep}, the run ends ${end.phase} at stop ${end.stop}`);
+
+/** Records each oscillator's wave and pitch, so the check can count coin sounds without speakers. */
+function audioSpy() {
+  const w = window as unknown as { __notes: { hz: number; type: string }[] };
+  w.__notes = [];
+  const start = OscillatorNode.prototype.start;
+  OscillatorNode.prototype.start = function (this: OscillatorNode, ...args: [number?]) {
+    w.__notes.push({ hz: this.frequency.value, type: this.type });
+    return start.apply(this, args);
+  };
+}
 
 const text = (page: Page, id: string) => page.textContent(`[data-testid="${id}"]`);
 
@@ -239,13 +256,15 @@ await check('the start screen starts a run from a typed seed', async () => {
 
 await check(`a full run on seed ${seed} matches the engine at every step`, async () => {
   const page = await session.phone();
+  await page.addInitScript(audioSpy);
   await page.goto(`${session.base}?seed=${seed}`);
   let mirror = newRun(seed);
+  let checkedCoins = false;
   let checkedHost = false;
   let checkedShop = false;
   let checkedCharmSheet = false;
 
-  for (const step of steps) {
+  for (const [stepIndex, step] of steps.entries()) {
     switch (step.kind) {
       case 'begin': {
         await page.getByTestId('stop-intro').waitFor();
@@ -285,9 +304,18 @@ await check(`a full run on seed ${seed} matches the engine at every step`, async
           assert.equal(await page.getAttribute('[data-testid="ring"]', 'data-on'), String(preview.ring));
           await expectTable(page, mirror);
         }
+        await page.evaluate(() => {
+          (window as unknown as { __notes: unknown[] }).__notes = [];
+        });
         await page.getByRole('button', { name: 'Play chain' }).tap();
         mirror = runPlay(mirror);
         await settle(page);
+        if (stepIndex === bonusStep) {
+          const notes = await page.evaluate(() => (window as unknown as { __notes: { hz: number; type: string }[] }).__notes);
+          const coins = notes.filter((n) => n.type === 'square' && Math.abs(n.hz - 1568) < 1).length;
+          assert.equal(coins, mirror.lastPayout!.powerOfTen, 'one coin sound for each power-of-ten dollar');
+          checkedCoins = true;
+        }
         if (mirror.phase === 'table') await expectTable(page, mirror);
         if (mirror.phase === 'cleared') {
           await page.getByTestId('cleared-panel').waitFor();
@@ -375,6 +403,7 @@ await check(`a full run on seed ${seed} matches the engine at every step`, async
     }
   }
   assert.ok(checkedHost, 'the run must reach a host table');
+  assert.ok(checkedCoins, 'the run must clear a table with a power-of-ten bonus');
   assert.equal(mirror.phase, end.phase);
   await page.getByRole('button', { name: 'New run' }).tap();
   await page.getByTestId('start').waitFor();

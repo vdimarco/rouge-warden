@@ -56,16 +56,23 @@ function labels(list: readonly Card[]): string[] {
 }
 
 describe('targets', () => {
+  const base = CONFIG.run.baseTargets;
+
   it('uses the stop base, 1.5 times the base, then 2 times the base', () => {
-    expect([0, 1, 2].map((t) => tableTarget(1, t))).toEqual([150, 225, 300]);
-    expect([0, 1, 2].map((t) => tableTarget(8, t))).toEqual([60_000, 90_000, 120_000]);
+    expect([0, 1, 2].map((t) => tableTarget(1, t))).toEqual([base[0], Math.round(base[0] * 1.5), base[0] * 2]);
+    expect([0, 1, 2].map((t) => tableTarget(8, t))).toEqual([base[7], Math.round(base[7] * 1.5), base[7] * 2]);
   });
 
   it('multiplies only the host table by the host scale and rounds to whole numbers', () => {
-    expect(tableTarget(2, 1, 1.5)).toBe(600);
-    expect(tableTarget(2, 2, 1.25)).toBe(1_000);
-    expect(tableTarget(1, 2, 1.1)).toBe(330);
+    expect(tableTarget(2, 1, 1.5)).toBe(Math.round(base[1] * 1.5));
+    expect(tableTarget(2, 2, 1.25)).toBe(Math.round(base[1] * 2 * 1.25));
+    expect(tableTarget(1, 2, 0.123)).toBe(Math.round(base[0] * 2 * 0.123));
     expect(Number.isInteger(tableTarget(3, 1, 1))).toBe(true);
+  });
+
+  it('keeps 8 base targets that rise from stop to stop', () => {
+    expect(base).toHaveLength(8);
+    for (let i = 1; i < base.length; i += 1) expect(base[i]).toBeGreaterThan(base[i - 1]);
   });
 });
 
@@ -83,7 +90,7 @@ describe('dealing', () => {
     expect(state.chainsLeft).toBe(3);
     expect(state.redrawsLeft).toBe(2);
     expect(state.total).toBe(0);
-    expect(state.target).toBe(150);
+    expect(state.target).toBe(SETUP.target);
     expect(state.status).toBe('playing');
     expect(state.chain).toEqual([]);
   });

@@ -20,13 +20,17 @@ npm run build       # production build in dist/
 npm run check       # all three
 ```
 
+## Balance
+
+`npm run simulate` plays 1,000 seeds with no charms and no redraws, with the best chain for each hand, and prints a Markdown report. `BALANCE.md` holds the report and explains the tuned targets.
+
 ## Check it in a browser
 
 `npm run qa` builds the app, serves `dist/` and runs two checks in Chromium with touch input:
 
 - `qa/table.e2e.mjs` plays one table at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow.
 - `qa/feel.e2e.mjs` checks the score reveal: the order and timing of the points, the Mult bumps, the scale notes and the ring chord, the count-up, the mute toggle and the reduced-motion fade. An `AudioContext` spy records each note's pitch, so the check needs no speakers.
-- `qa/run.e2e.ts` plays a full run. It plans each step with the engine, plays it on screen and compares the screen with the engine after each tap. It visits the start screen, stop intros, tables, a host table, shops, the deck view, a stamp picker and the run end screen, and checks each layout at the 4 sizes.
+- `qa/run.e2e.ts` plays a full run. It picks a seed whose run clears a table with a power-of-ten bonus and counts one coin sound for each bonus dollar. It plans each step with the engine, plays it on screen and compares the screen with the engine after each tap. It visits the start screen, stop intros, tables, a host table, shops, the deck view, a stamp picker and the run end screen, and checks each layout at the 4 sizes.
 
 Screenshots go to `qa/out/`.
 
