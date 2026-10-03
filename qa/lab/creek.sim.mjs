@@ -151,6 +151,16 @@ section("Running the river");
   check(all.every((x) => x.outside === 0), "the canoe never ends a step outside the banks");
   const miss = closestMiss(runs[0].c, runs[0].r);
   check(miss == null || (miss.d >= 0 && miss.index >= 0), "the end card can say how close you came to an eddy you missed");
+  // no dead pool at the start: the first eddy worth catching comes up fast (24 s to its zone before)
+  const near = [], level = [];
+  for (const seed of seeds) {
+    const r = makeRiver(seed), c = newCanoe(r), p = follower(r), q = r.targets[0];
+    let tz = null;
+    while (c.y < q.y && c.t < 60) { for (const a of p(c)) act(c, a); step(c, r); if (tz == null && c.y >= q.y - 15) tz = c.t; }
+    near.push(tz ?? 99); level.push(c.t);
+  }
+  check(near.every((t) => t <= 12) && level.every((t) => t <= 12),
+    `a paddler who follows the middle reaches the first eddy worth catching within 12 s: 15 m above its rock in ${Math.max(...near).toFixed(0)} s at most, level with it in ${Math.max(...level).toFixed(0)} s at most`);
 }
 
 /* ---------------- 5. capsize and reset ---------------- */
@@ -259,10 +269,12 @@ section("Eddies");
     `with the bow upstream the hold fills and the eddy is caught in ${t.toFixed(2)} s`);
   check(up.c.eddyQ === null, "a caught eddy shows no ring");
 
-  // an eddy behind a rock in slow water is not a target, and sitting in it does not count
+  // an eddy behind a rock in slow water (in the pool at the put-in, and in the pool at the foot) is not a target, and
+  // sitting in it does not count
   let others = 0, counted = 0;
-  for (const seed of [3, 7, 11, 23, 42, 99, 5, 13, 17, 21, 31, 2026]) {
-    const rv = makeRiver(seed);
+  for (const seed of [3, 7, 11, 23, 42, 99]) {
+    const plain = makeRiver(seed), at = (y, n) => ({ x: plain.c(y) + n * plain.b(y), y, R: 1.4 });
+    const rv = makeRiver(seed, { rocks: [at(16, 0.3), at(FINISH - 6, -0.3)] });
     for (const o of rv.rocks.filter((x) => !x.target)) {
       const c = newCanoe(rv, { x: o.ex, y: o.ey, psi: Math.atan2(-o.tx, -o.ty) }), f = rv.flow(o.ex, o.ey), ev = [];
       c.vx = f.vx; c.vy = f.vy;
@@ -270,7 +282,7 @@ section("Eddies");
       others++; if (ev.some((e) => e.k === "eddy") || c.caught.size) counted++;
     }
   }
-  check(others > 0 && counted === 0, `an eddy that is not a target never counts (${others} tried; all ${others} counted before)`);
+  check(others > 0 && counted === 0, `an eddy that is not a target never counts (${others} tried; before, such an eddy counted)`);
 }
 
 console.log(`\ncreek.sim: ${fails.length ? fails.length + " failed" : "all passed"}`);

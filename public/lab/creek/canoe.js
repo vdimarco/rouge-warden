@@ -27,8 +27,9 @@ export const C = {
   SWIM: 1.8,                                   // seconds from a capsize to the reset
   SWIM_BACK: 4,                                // metres upstream of the swim where you climb back in
   EDDY_E: 0.6, EDDY_REL: 0.7, EDDY_GROUND: 1.3, EDDY_COS: Math.cos(70 * D2R), EDDY_HOLD: 0.4,
-  EDDY_GRAB: 0.5,                              // per second, at the core of an eddy. At 1.0 it held a canoe that faced
-                                               // downstream and paddled hard
+  EDDY_GRAB: 1.0,                              // per second, at the core of an eddy
+  PEEL: 0.4, PEEL_T: 0.8,                      // the share of the grab left for 0.8 s after a stroke with the bow
+                                               // downstream. With no peel, the grab held a canoe that paddled hard.
 };
 
 export function newCanoe(river, at = null) {
@@ -36,7 +37,7 @@ export function newCanoe(river, at = null) {
   const [tx, ty] = river.tan(y);
   return {
     x, y, vx: 0, vy: 0, psi: at && at.psi != null ? at.psi : Math.atan2(tx, ty), om: 0, phi: 0, dphi: 0,
-    t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0,
+    t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0, strokeT: -9,
     swim: 0, swims: 0, swimX: 0, swimY: 0, caught: new Set(), lastEddy: null, inEddy: null, eddyT: 0, touching: false, pinT: 0,
     eddyQ: null, eddyBow: false, eddySlow: false, holding: false,
     miss: {}, done: false, strokes: 0, js: 0, braces: 0, rocks: 0,
@@ -47,6 +48,7 @@ export function newCanoe(river, at = null) {
 export function act(c, a) {
   if (c.swim > 0 || c.done) return;
   const P = clamp(a.power ?? 1, 0, 1.4), s = a.side < 0 ? -1 : 1;
+  c.strokeT = c.t;
   if (a.type === "stroke" || a.type === "back") {
     const dir = a.type === "back" ? -1 : 1;
     c.pushes.push({ a: (dir * C.STROKE_V * P) / C.STROKE_T, t: C.STROKE_T });
@@ -97,9 +99,11 @@ export function step(c, river, ev = null) {
   aF -= brake;
   c.vx += (aLat * rx + aF * fx) * H;
   c.vy += (aLat * ry + aF * fy) * H;
-  // an eddy grabs you: its boils and swirl drag the boat toward the speed of its water
+  // An eddy grabs you: its boils and swirl drag the boat toward the speed of its water. It holds a canoe that sits
+  // still or faces upstream. Paddle with the bow downstream and most of the grab lets go: you peel out.
   if (eMid > 0) {
-    const g = C.EDDY_GRAB * eMid * eMid * H;
+    const [dx, dy] = river.tan(c.y), peel = c.t - c.strokeT < C.PEEL_T && fx * dx + fy * dy > 0;
+    const g = C.EDDY_GRAB * (peel ? C.PEEL : 1) * eMid * eMid * H;
     c.vx -= g * (c.vx - uxMid); c.vy -= g * (c.vy - uyMid);
     c.om *= 1 - 0.5 * g;
   }
