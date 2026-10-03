@@ -386,10 +386,15 @@ The lab at `/lab/` holds toys. A toy is a small build that tests the core move o
 
 Each toy starts with a card that says what to try. The lab page shows how long you played each toy. Only your browser keeps these times. Tell the crew your times, and whether you wanted another go.
 
-- **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A steep entry keeps your speed, and a flat one belly-flops. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
-- **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle. Rock the top edge to take a stroke on the side you tip to. Twist at the end of the stroke for a J-stroke. Tilt hard and hold still to brace. Catch the eddies behind the rocks on the way down. Thumbs and keys work too.
-- **Full Tilt** (`/lab/tilt/`). A bare pinball table. Hold the halves of the screen to flip, slide down on the right half to pull the plunger, and jolt the phone to nudge. The ball bounces off a flipper at the flipper's own speed where they touch, so you can cradle, pass and catch as on a real machine. A soft launch drops the ball into a top lane. The green lane is the skill shot.
-- **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own sand and water rules. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew.
+- **Small Worlds** (`/lab/worlds/`). Six small canvas games on one page, each on today's seed. Swing and let go in Threadwake, throw a spark from body to body in Borrowed Bodies, lead a river home in Foldwild, bend the seasons in Season Thief, guide a flock in Storm Choir, and pulse through Heartship. When a world ends, the scene keeps moving for a moment, and then the card says how close you came to your best.
+- **Neon Ronin** (`/neon/`). A sword duel in the Portal Badlands, with touch, gyro or a mouse. A ronin attacks only when you can see it, every windup warns with a tone, a red edge and a buzz, and a parry opens the guard at once. Every day brings a new duel.
+- **Loon Echo** (`/echo/`). Lead a line of chicks home past an eel and boats. Each full nest hatches a harder clutch, and a big bank gets slow motion. Every day brings a new lake.
+- **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A green cue says when a hold will rip, and the first burst of each run is a slow-motion peak. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
+- **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle: rock the top edge to stroke, twist for a J-stroke, and tilt and hold to brace. Thumbs and keys turn the way you press. Catch the eddies behind the rocks, heed the warning before a capsize, and boof the ledge at the bottom of today's river.
+- **Full Tilt** (`/lab/tilt/`). Open-space pinball across six star systems. Light the three relays in each world with the flippers, then shoot through the jump gate. A planet's pull bends your shot.
+- **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own rules, tanks included, and a drag while it runs pokes the preview. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew. A friend races your time on a live clock and can send a time back or remix the layer.
+
+The latest review of every lab game against the bar, and what changed, is in `docs/lab-fun.md`.
 
 A House Rules link opens Down the Drain at `/fall/#L=<code>`. The code holds the brush strokes, so a busy layer fits in 2,000 characters. With a layer in the link, the game gives you one life, no unlocks, no banked caps and neutral tuning, so everyone plays the same layer. It saves nothing to your memory, your tuning or the high scores. Every change this needs in `public/fall/index.html` sits behind `Custom.on`, which is off for any other link.
 
@@ -414,6 +419,10 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | Ready for review | The session stopped with work that is not in main, or a branch has an open pull request |
 | Idle | A branch has commits that are not in main, and nobody works on it now |
 | Done | The work is in main, or the session is finished |
+
+## Watch call
+
+`voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
 
 ## Files
 
@@ -458,6 +467,8 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
+| `voice/` | The watch call: the call script, the call server, a Hermes skill and the setup guide (see [Watch call](#watch-call)) |
+| `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
 | `vercel.json` | Serves `public/` with no build step |
@@ -544,24 +555,34 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | Script | What it checks |
 | --- | --- |
 | `qa/lab/hidden.mjs` | The arcade has a Lab machine and a link to the lab, the game switcher lists the lab, and every lab page asks search engines not to index it |
-| `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, winter follows its curve, and a good flyer goes at least twice as far as a random one |
+| `qa/lab/links.mjs` | Every game card on the Lab page and every game in the switcher opens a page that exists, and every picture in the switcher exists |
+| `qa/lab/worlds.e2e.mjs` | The Small Worlds shell with all six games on a phone: today's seed, a run with no page errors, the outro, and a result card that compares the score with your best |
+| `qa/lab/worlds.<game>.sim.mjs` | One sim for each Small Worlds game, run in Node with a stand-in shell: the seed sets the layout, a run can be lost, runs last 1 to 6 minutes, and a careful player beats a careless one |
+| `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, a skim on the lake bed costs speed once, the dive cue tells the truth, and a lake-diving bot lasts at least 60 s |
 | `qa/lab/plunge.e2e.mjs` | Take the Plunge on a phone and on a computer: hold and let go, a dive, winter at the end, Again, and a ghost link |
-| `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a brace keeps you up where a fast crossing tips you, eddies can be caught, and a simple paddler gets down most rivers |
+| `qa/lab/plunge.feel.e2e.mjs` | The dive cue and the amber line, the slow-motion burst, sunset and the northern lights, the winter pill, labels that stay on screen, and an old ghost link |
+| `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a warning comes at least 0.3 s before every capsize, a swim resets near the swim, no eddy traps the canoe, and the log jam and the ledge work |
 | `qa/lab/creek.paddle.test.mjs` | Made-up sensor data gives the right strokes, J-strokes, back strokes and braces, and a walk gives none |
-| `qa/lab/creek.e2e.mjs` | Up the Creek with a virtual phone that sends real sensor events, with thumbs, and with keys |
-| `qa/lab/tilt.sim.mjs` | Fast balls never pass through a wall or a flipper, the cradle, the tap pass and the live catch work, the ball never gains energy, a soft pull picks a top lane, and a bot plays two hours with no trapped ball |
-| `qa/lab/tilt.e2e.mjs` | Full Tilt with two thumbs, the plunger drag, jolts that nudge and tilt, and keys |
+| `qa/lab/creek.thumbs.mjs` | Bots that steer with thumbs: turning toward the side you press gets a simple player down every river |
+| `qa/lab/creek.e2e.mjs` | Up the Creek with a virtual phone that sends real sensor events, with thumbs and with keys: an eddy catch, the log jam with Restart and Share, and the ledge |
+| `qa/lab/tilt.*.mjs`, `npm run test:pinball --prefix qa/browser` | Full Tilt's sims and browser checks. CI runs them on every pull request that changes the lab (see `.github/workflows/pinball-browser.yml`) |
 | `qa/lab/rules.link.mjs` | 500 random layers survive their links, a busy layer fits, the clear stamp catches a changed link, junk links give nothing, and old links still build the same ground |
-| `qa/lab/rules.drift.mjs` | The copy of Down the Drain's sand rules in `sand.js`, and the sizes and ids in `layer.js`, still match the game |
-| `qa/lab/rules.e2e.mjs` | The House Rules editor on a phone and on a computer: dig, zoom, critters, Settle, the link meter, Test it, and Share after a clear |
-| `qa/lab/rules.drain.mjs` | A painted layer in Down the Drain: its ground, critters and drains, no tuning or unlocks, the clear, a death that saves nothing, and broken links |
-| `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with the House Rules hooks taken back out, play the same game with a seeded random and a fake clock |
+| `qa/lab/rules.drift.mjs` | The copies in `sand.js` of Down the Drain's sand rules, tank rule and blast, and the sizes and ids in `layer.js`, still match the game |
+| `qa/lab/rules.e2e.mjs` | The House Rules editor on a phone and on a computer: every tool on screen, dig, zoom, critters, Settle with a tank that blows, a drag during Settle, Test it, a name that keeps the clear, and remix |
+| `qa/lab/rules.drain.mjs` | A painted layer in Down the Drain: its ground, critters and drains, no tuning or unlocks, the race clock, the death card, Send your time, and broken links |
+| `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with every House Rules hook commit taken back out, play the same game with a seeded random and a fake clock |
+| `qa/neon/*.test.*` (run with `node --test`), `qa/neon/neon.e2e.mjs` | Neon Ronin: the duel rules with a seeded random, attacks that start on screen, a warning at least 0.3 s before every blow, the parry, the phone menu and hints, and the daily duel |
+| `qa/echo/crossing.test.mjs`, `qa/echo/echo.sim.mjs`, `qa/echo/echo.e2e.mjs` | Loon Echo: rocks that block, the chick line, clutch after clutch, warned strikes, the big bank, today's lake, and how long the reviewer's bots last |
 
 Set `LAB_URL` to test another address, and `SHOTS` to a folder to save screenshots.
 
 ### Studio tests
 
 Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git repo with branches, pull request refs and a local worktree, runs `studio/refresh.mjs` on it with made-up sessions, and checks the agents, the work trees, the cabinets and the feed. Then it opens the page in Chromium at desktop and phone width. The browser part needs Playwright (`NODE_PATH=$(npm root -g)`). It exits with code 1 when something fails.
+
+### Watch call tests
+
+Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
 
 ## Jev and cost
 

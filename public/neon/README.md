@@ -2,56 +2,64 @@
 
 Serve `public` and open `/neon/`. No build or external assets are required.
 
-## Phone sword controls
+## The duel
 
-Choose **Play with gyro** and allow motion access over HTTPS. Hold a comfortable grip for calibration. The phone acts as the hilt: its relative orientation moves and rotates the blade. Recenter sets the current grip as neutral. Rotation or resume also recalibrates.
+Each round is a sword duel against one to five ronin. Rounds 1 and 2 have one ronin, rounds 3 and 4 have two, and so on up to five. Every fourth round has a captain with more health.
 
-Catch the incoming cut across the blade: upright against a horizontal cut, sideways against a vertical cut. The dotted guide shows the blocking position. The actual blade segment must cover that position with the correct angle. A steady block stops damage; setting the blade just before impact parries and exposes the enemy.
+- A ronin attacks only when it is in reach and on screen. Only one ronin attacks at a time.
+- Each windup warns you three ways: a tone that rises until the blade lands, a red pulse at the screen edge, and a short buzz on phones that can vibrate. A sweep growls low and pulses amber.
+- A parry opens the ronin's guard at once. Time slows for half a second, the view leans in and the blades ring. Cut while CUT NOW shows.
+- A block adds 1 to the guard bar. A timed dodge adds 2. At 4 the guard breaks. No guard stops a sweep, so dodge it.
+- A cut against a closed guard also adds a little pressure. A cut goes to an open guard in reach first.
+- Overdrive charges from parries, blocks and cuts. A charged cut deals 3 damage and slows time.
 
-Swing through the opponent to cut. The projected blade must sweep through the opponent, and the phone must return to a slower movement before another cut can fire. A charged overdrive fires on the next successful cut. Guard and overdrive buttons are hidden in gyro mode.
+## Touch
 
-Use small wrist movements with a firm grip. The game pauses and returns to touch controls if sensor updates stop. Permission denial and missing sensor data also provide touch controls. Combat waits during calibration.
+Choose PLAY WITH TOUCH. Drag the left stick to run. Swipe across the screen to cut. Hold GUARD as the blade falls: a guard pressed in the last 0.6 s before impact is a parry, and a guard held longer is a block. Push the stick to its edge to dodge.
 
-## Touch and keyboard
+On a touch screen the view turns to the attacker during its windup, and gently to your target at other times. Drag the look pad on the right to look around. The lock-on waits for a moment after you drag. Arrows at the screen edge point to ronin out of view.
 
-Choose Play with touch, or switch from gyro in the settings. Swipe along the enemy's bright line. Hold Guard just before impact for a parry. Early touch guards reduce damage. Arrows cut; Space guards; E uses overdrive; Escape pauses.
+## Phone sword (gyro)
 
-## Open 3D district
+Choose PLAY WITH GYRO and allow motion access over HTTPS. Hold a comfortable grip for calibration. The phone acts as the hilt: its relative orientation moves and rotates the blade. Reset view sets the current grip as neutral. Resume also recalibrates. A rotation keeps the locked layout and your grip.
 
-The default WebGL scene is a walkable district with connected lanes, a market, a canal and bridges. Warm windows, rooftop plants, lanterns and cel-shaded buildings give the neon setting a softer illustrated look. It reuses the repository's standalone Three.js vendor module.
+Catch the incoming cut across the blade: upright against a horizontal cut, sideways against a vertical cut. The dotted guide shows the blocking position. Setting the blade in the last 0.28 s before impact parries. Swing through the opponent to cut. The phone must return to a slower movement before another cut can fire. Guard and overdrive buttons are hidden in gyro mode. The stick stays for dodges.
 
-Drag the left stick to walk and the right edge to look around. WASD also moves. Gyro continues to control the sword independently of the camera. Buildings stop movement. Sentinels approach in world space; combat requires proximity and facing the opponent. Spirit lights restore health and charge, then respawn after 30 seconds. The district has outer boundaries and is not an infinite world. Enemies use direct pursuit with collision sliding, so scenery can obstruct them.
+If the first sensor sample does not come within 3 s, the game pauses and switches to touch. A short stall in the sensor data never switches it. If samples stop during play, the game pauses and switches to touch. Combat waits during calibration.
 
-If WebGL initialization fails, the game identifies its fixed-view fallback and uses the existing photographic street, duelist and grip assets. These generated WebP assets are retained for compatibility.
+## Computer
 
-District clears offer random circuits. Health and speed rise with districts; every fifth district has enforcers. Best score saves locally at the end of a run. Audio starts on the play gesture and can be muted.
+Choose PLAY WITH MOUSE. Move the mouse to aim and turn. Click or drag to cut. Hold the right button to guard. WASD moves. Space rolls. E uses overdrive. Escape pauses.
 
-## Verification
+## The daily duel
 
-Run `node --test qa/neon/combat.test.cjs qa/neon/district.test.mjs` from the repository root. Eight combat tests exercise simulated sensor events and mock canvas rendering. The district test uses real Three.js scene and vector math with a mocked GPU renderer, covering movement, building collision, combat range/facing, pause input reset, collectible debounce and viewport resizing.
+Everyone who plays on the same day meets the same attacks and is offered the same circuits after each round. The seed is the local date. Add `?seed=<letters, digits, - or _>` to the address to replay another seed. The end card shows the round, how close you came (for example, "Captain at 3/9 HP"), your best round for this seed, and a line with a link to copy and share. Your best score and your best round for the seed stay in this browser.
 
-Browser execution is blocked by the build environment (`socket() failed: Operation not permitted`). Actual GPU rendering, mobile layout, performance and physical-device gyro feel still need playtesting.
+## Open 3D world
+
+The default WebGL scene is the Portal Badlands, an alien biome. The Cyber Ghibli style shows a walkable courtyard with lanes, a market, a canal and bridges. Choose the style in the menu. It reuses the repository's standalone Three.js module. Generated models load from `models/` when they are available, and the game keeps its built-in figures if they fail.
+
+If WebGL initialization fails, the game uses its fixed-view fallback with the photographic street, duelist and grip assets.
 
 ## Handle-pivot sword mapping
 
-The physical top edge of the phone defines the sword axis. Calibrate with the phone upright, screen toward you, in a comfortable grip. The on-screen sword pivots from the handle. Its fixed-length 3D direction is projected into the view, so forward/backward tilts change its visible length. Blocking tests intersection with the incoming cut path, including low horizontal guards.
+The physical top edge of the phone defines the sword axis. Calibrate with the phone upright, screen toward you, in a comfortable grip. The on-screen sword pivots from the handle. Its fixed-length 3D direction is projected into the view, so forward and backward tilts change its visible length. Blocking tests intersection with the incoming cut path, including low horizontal guards.
 
-Cut speed comes from blade-axis movement, not total phone rotation. Turning around the handle axis cannot score a cut. A cut needs at least 12 degrees of travel and contact with the target. A reversal rearms the swing, supporting backhand cuts; cooldown still limits repeated hits. Sensor discontinuities recalibrate. Phone orientation cannot measure reliable absolute hand translation or provide physical resistance.
+Cut speed comes from blade-axis movement, not total phone rotation. Turning around the handle axis cannot score a cut. A cut needs at least 12 degrees of travel and contact with the target. A reversal rearms the swing, so backhand cuts work. Sensor discontinuities recalibrate. Phone orientation cannot measure reliable absolute hand translation or provide physical resistance.
 
-Eight automated tests pass. Real-device feel remains unverified.
+## Verification
 
-## Fast movement and style selection
+From the repository root:
 
-The left stick now runs at 10.5 world units per second (previously 3.8). Analog stick distance controls speed; direction changes apply immediately. Movement checks collisions in steps of at most 0.15 units, including on slow frames. Simulation accepts up to 100 ms per frame to avoid slowing movement at 15–25 FPS. Longer stalls remain capped.
+`node --test qa/neon/combat.test.cjs qa/neon/district.test.mjs qa/neon/duel.test.mjs qa/neon/onscreen.test.mjs`
 
-Static scenery is merged by material: 978 meshes become 39 batches. Animated objects stay separate. Both render layers cap device pixel ratio at 1.25, WebGL MSAA is off, and the menu avoids backdrop blur. These lower render cost; actual phone frame rate is unmeasured.
+29 tests pass:
 
-Choose Cyber Ghibli or Rick and Morty in the start menu. The selection saves locally. Rick and Morty adds a violet sky, flat pastel colors, ink edges, a green portal and cartoon eyes to the 3D scene. The existing art style stays the default. Style changes restore the original material colors when switching back.
+- `combat.test.cjs` (19 tests) runs game.js and its modules in Node, with a stand-in for the 3D district. It covers touch and gyro cutting, blocking and calibration, the 0.6 s touch parry window, the lock-on, the warning before every blow, the parry hit-stop and slow motion, the gyro stall fix, the hints for each control, the ROUND wording, the menu, the daily seed and the end card.
+- `district.test.mjs` (one test file with many checks) builds the real Three.js scene with a stand-in for the GPU renderer. It covers movement, collision, the view test, the lock-on, circling that stays in view, and the cut target.
+- `duel.test.mjs` (7 tests) covers the duel rules: each defense, the warning time before every hit, groups, and the seed.
+- `onscreen.test.mjs` (2 tests) is a Node version of the off-screen check: a passive touch player in rounds 1, 3, 5 and 9 sees every windup start on screen, and a player who parries and dodges clears round 1 without a hit.
 
-The Rick and Morty option is a custom runtime style. Higgsfield's preset lookup did not resolve a matching entry. An environment art request was submitted with GPT Image 2 (job `c0a9c08a-97e4-4106-a00b-63e75395799c`), but result retrieval failed twice with a service error. No generated art is included in this change and the game does not depend on that job.
+`qa/neon/neon.e2e.mjs` drives the page in Chromium with Playwright. Serve `public/` first, then run `LAB_URL=http://localhost:8786/lab/ node qa/neon/neon.e2e.mjs`. It checks the phone menu at 390×844, touch play, gyro mode with a virtual phone, and the computer layout. `SHOTS=<folder>` saves screenshots.
 
-Nine Node tests pass. The district test also verifies batching, reversible style changes, equal travel at 15/30/60 Hz, and wall collision at running speed. GPU rendering is mocked.
-
-## Phone controls the view
-
-In gyro mode, phone rotation changes the camera as well as the sword. Sideways blade motion also turns the view. Camera response uses 45 ms smoothing, with pitch limited to keep the horizon stable. The right look pad is hidden while gyro is active; the left stick moves relative to the current view. Recenter preserves the current view and sets the present grip as neutral. Touch mode restores drag-to-look. Sensor loss and resume keep the existing calibration flow. Automated scene tests cover camera motion, recentering, angle wrap and pitch limits; physical-device feel remains unverified.
+Real-device feel, phone speakers and vibration still need playtesting on a phone.

@@ -1,0 +1,14 @@
+{
+  "name": "watch-call",
+  "private": true,
+  "type": "module",
+  "description": "Talk to Hermes through a Fitbit Sense 2: Twilio calls your phone and you answer on the watch",
+  "scripts": {
+    "start": "node call-server.mjs",
+    "call": "node call.mjs",
+    "test": "node ../qa/voice/call.test.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

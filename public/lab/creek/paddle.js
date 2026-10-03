@@ -10,6 +10,13 @@
 //   lean:   a gentle tilt leans the canoe.
 // Pure logic, no DOM: qa/lab/creek.paddle.test.mjs feeds it made-up and simulated sensor data.
 
+// Thumbs and keys steer: you press on the side you want the bow to turn toward. A forward stroke turns the bow away
+// from its own side, so it goes in on the other side, and so does the J after it. A back stroke turns the bow toward
+// its own side, so it stays on the side you press. (The phone stays a real paddle: see createPaddle.)
+export function steer(type, toward, power = 1) {
+  return { type, side: type === "back" ? toward : -toward, power };
+}
+
 export const PT = {
   SIDE_MIN: 0.15,        // |roll| that chooses a side
   START: 120,            // deg/s in the pull direction that starts a stroke

@@ -35,4 +35,5 @@ canvas.view { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 10
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 .hud { position: fixed; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; pointer-events: none; }
+.hud[hidden] { display: none; }
 .hud span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font: 700 14px/1 var(--body); white-space: nowrap; }

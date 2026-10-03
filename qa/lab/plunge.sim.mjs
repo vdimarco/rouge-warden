@@ -1,9 +1,11 @@
 // Checks the rules of Take the Plunge with no browser: node qa/lab/plunge.sim.mjs
 // Exact replays, ghost links, the entry classes, winter, and that skill matters: a scripted good flyer goes at least
-// twice as far as a random one, in runs of 1 to 6 minutes. Exit code 1 on failure.
-import { makeWorld, newState, step, predict, distance, speed, entryClass, wallSpeed, stateHash, H, T, AIR, WATER, LAKE, LAND } from "../../public/lab/plunge/sim.js";
-import { encodeGhost, decodeGhost, Tape, Recorder, replay } from "../../public/lab/plunge/ghost.js";
-import { mulberry, cottageDay } from "../../public/lab/kit/rng.js";
+// twice as far as a random one, in runs of 1 to 6 minutes. Also: a touch on a lake bed costs speed once, so a player
+// who dives at every lake flies on; the dive-now cue tells the truth; old ghost links say so; and the race with a ghost
+// is told against the distance it recorded. Exit code 1 on failure.
+import { makeWorld, newState, step, predict, diveCue, goodDive, lakeLeft, distance, speed, entryClass, wallSpeed, stateHash, H, T, ROOM, REACT, AIR, WATER, LAKE, LAND } from "../../public/lab/plunge/sim.js";
+import { encodeGhost, decodeGhost, oldGhost, raceLine, GHOST_V, Tape, Recorder, replay } from "../../public/lab/plunge/ghost.js";
+import { mulberry, cottageDay, toB64u, fromB64u } from "../../public/lab/kit/rng.js";
 
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); };
@@ -38,6 +40,18 @@ function random(seed) {
   const r = mulberry(seed ^ 0x5eed);
   let on = false;
   return (s) => { if (s.tick % 12 === 0 && r() < 0.25) on = !on; return on; };
+}
+// A new player who read "hold to dive": holds while a lake is under the loon or just ahead, and lets go under the water.
+const lakeDiver = () => (s, W) => s.mode === AIR && (W.isLake(s.x) || W.isLake(s.x + 15)) && s.y > -0.5;
+// A player who answers the dive-now cue 0.25 s late: when the cue lights, they hold from REACT steps later until the
+// water.
+function cueFollower() {
+  let at = -1;
+  return (s, W) => {
+    if (s.mode !== AIR) { at = -1; return false; }
+    if (at < 0 && diveCue(s, W)) at = s.tick + REACT;
+    return at >= 0 && s.tick >= at;
+  };
 }
 function fly(seed, bot, { maxS = 900, record = false } = {}) {
   const W = makeWorld(seed), s = newState(), rec = new Recorder();
@@ -158,7 +172,136 @@ section("Skill matters");
   check(ex.every((r) => r.badGround === 0) && rn.every((r) => r.badGround === 0), "nobody ends a step inside the land or under a lake bed");
 }
 
-/* ---------------- 6. no NaN ---------------- */
+/* ---------------- 6. no death spiral ---------------- */
+section("The lake bed and the thud");
+const SEEDS = [1, 2, 3, 42, 777, 2026, 9, 11, 12, 13, 100, 2000, 31337, 5, 6];
+const med = (a) => a.slice().sort((p, q) => p - q)[a.length >> 1];
+{
+  // a skim along the bed near the far shore: the loss comes once for the touch, not once for each step of it
+  const W = makeWorld(42);
+  let lake = W.find(200);
+  while (lake.kind !== LAKE) lake = W.find(lake.x1 + 0.01);
+  const s = newState({ x: lake.x1 - 12, y: W.ground(lake.x1 - 12) + 0.41, vx: 20, vy: -2, mode: WATER, under: 0.5 });
+  const v0 = speed(s), ev = [];
+  let contact = 0;
+  for (let i = 0; i < 36 && s.mode === WATER; i++) { step(s, W, true, ev); if (s.y <= W.ground(s.x) + 0.4 + 1e-9) contact++; }
+  const scrapes = ev.filter((e) => e.k === "scrape").length, kept = speed(s) / v0;
+  check(contact >= 24 && scrapes === 1 && kept >= T.K_BED - 0.01, `a ${(contact * H).toFixed(2)} s skim on the bed scrapes once and keeps ${Math.round(kept * 100)}% of the speed (it kept 5% when each step cost 8%)`);
+  // a new touch costs again
+  const b = newState({ x: (lake.x0 + lake.x1) / 2, y: -lake.depth * 0.5, vx: 4, vy: -14, mode: WATER, under: 0.5 }), ev2 = [];
+  let left = false;
+  for (let i = 0; i < 240 && b.mode === WATER; i++) {
+    step(b, W, true, ev2);
+    if (ev2.some((e) => e.k === "scrape") && !b.onBed && !left) { left = true; b.vy = -14; }
+    if (left && ev2.filter((e) => e.k === "scrape").length >= 2) break;
+  }
+  check(left && ev2.filter((e) => e.k === "scrape").length === 2, "the loon leaves the bed, dives at it again, and the second touch costs again");
+  // a thud bounces you up
+  const t = newState({ x: 0, y: 12, vx: 14, vy: -12 }), w5 = makeWorld(5), ev3 = [];
+  for (let i = 0; i < 240 && !ev3.some((e) => e.k === "thud"); i++) step(t, w5, false, ev3);
+  check(ev3.some((e) => e.k === "thud") && t.vy >= T.HOP_LAND, `a thud bounces the loon back up at ${t.vy.toFixed(1)} m/s (at least ${T.HOP_LAND})`);
+}
+{
+  // a new player who dives at every lake now flies on, and gets farther than one who does nothing
+  const runs = (bot) => SEEDS.map((sd) => {
+    const W = makeWorld(sd), s = newState(), b = bot(sd), ev = [];
+    let th30 = 0;
+    while (s.alive && s.tick < 900 * 120) { ev.length = 0; step(s, W, b(s, W), ev); if (s.tick <= 30 * 120) th30 += ev.filter((e) => e.k === "thud").length; }
+    return { d: distance(s), t: s.tick * H, th30 };
+  });
+  const lk = runs(lakeDiver), idle = runs(() => () => false);
+  const lkT = med(lk.map((r) => r.t)), lkD = med(lk.map((r) => r.d)), idD = med(idle.map((r) => r.d));
+  const th = lk.reduce((a, r) => a + r.th30, 0) / lk.length;
+  console.log("  lake-diver: " + lk.map((r) => `${r.d.toFixed(0)} m / ${r.t.toFixed(0)} s / ${r.th30} thuds`).join(", "));
+  console.log("  idle:       " + idle.map((r) => `${r.d.toFixed(0)} m`).join(", "));
+  check(lkT >= 60, `a player who dives at every lake flies for a median ${lkT.toFixed(0)} s (at least 60)`);
+  check(lkD >= 1.2 * idD, `and goes a median ${lkD.toFixed(0)} m, ${(lkD / idD).toFixed(2)} times the ${idD.toFixed(0)} m of a player who does nothing (at least 1.2)`);
+  check(th <= 10, `with ${th.toFixed(1)} thuds in the first 30 s (at most 10)`);
+}
+
+/* ---------------- 7. the dive-now cue and the line ---------------- */
+section("The dive-now cue and the line");
+{
+  // the cue tells the truth: every hold that starts 0.25 s after the cue lights rips, with room to swoop out
+  let holds = 0, good = 0;
+  const bad = [], dist = [], first = [];
+  for (const sd of SEEDS) {
+    const W = makeWorld(sd), s = newState(), bot = cueFollower(), ev = [];
+    let cueAt = -1;
+    const lake1 = W.segs[1] || W.find(40);
+    while (s.alive && s.tick < 900 * 120) {
+      if (cueAt < 0 && diveCue(s, W)) cueAt = s.tick;
+      const tuck = bot(s, W);
+      ev.length = 0;
+      step(s, W, tuck, ev);
+      for (const e of ev) if (e.k === "entry" && tuck) {
+        holds++;
+        const room = lakeLeft(W, e.x);
+        if (goodDive(e.cls, room)) good++; else bad.push(`seed ${sd} at ${e.x.toFixed(0)} m: ${e.cls}, ${room.toFixed(0)} m of lake`);
+      }
+    }
+    dist.push(distance(s));
+    // the first cue comes before the loon is over the first lake
+    const w = makeWorld(sd), f = newState();
+    while (f.tick < 600 && !diveCue(f, w)) step(f, w, false);
+    first.push({ sd, t: f.tick * H, x: f.x, ok: diveCue(f, w) && f.x < lake1.x0 });
+  }
+  check(holds > 100 && good === holds, `a player who answers the cue 0.25 s late rips with room on all ${holds} holds (${bad.slice(0, 3).join("; ") || "no misses"})`);
+  const lk = SEEDS.map((sd) => { const W = makeWorld(sd), s = newState(), b = lakeDiver(); while (s.alive && s.tick < 900 * 120) step(s, W, b(s, W)); return distance(s); });
+  check(med(dist) >= 1.5 * med(lk), `following the cue takes the median run to ${med(dist).toFixed(0)} m, against ${med(lk).toFixed(0)} m for diving at every lake`);
+  check(first.every((r) => r.ok), `on every seed the cue lights before the first lake (after ${med(first.map((r) => r.t)).toFixed(2)} s, at ${med(first.map((r) => r.x)).toFixed(0)} m)`);
+  // and it stays off while the loon climbs, and under the water
+  const W = makeWorld(3);
+  check(!diveCue(newState({ vy: 4 }), W) && !diveCue(newState({ mode: WATER, y: -3 }), W), "the cue stays off on a climb and under the water");
+}
+{
+  // the line: a rip that leaves less than ROOM metres of lake to swoop out is not a good dive (amber, not green)
+  const W = makeWorld(42);
+  let lake = W.find(200);
+  while (lake.kind !== LAKE || lake.x1 - lake.x0 < 80) lake = W.find(lake.x1 + 0.01);
+  const dive = (back) => predict(newState({ x: lake.x1 - back - 0.6, y: 1.2, vx: 12, vy: -24 }), W, true);
+  const near = dive(20), far = dive(60);
+  check(near.end === "perfect" && near.room > 18 && near.room < ROOM && !goodDive(near.end, near.room), `a perfect entry ${near.room.toFixed(1)} m before the far shore is not a good dive (less than ${ROOM} m to swoop)`);
+  check(far.end === "perfect" && far.room > ROOM && goodDive(far.end, far.room), `the same entry ${far.room.toFixed(1)} m before the far shore is a good dive`);
+}
+
+/* ---------------- 8. ghost links from an older version, and the race ---------------- */
+section("Old ghost links, and the race with a ghost");
+{
+  const r = fly(42, expert(), { maxS: 300 });
+  const code = encodeGhost({ seed: 42, flips: r.flips, ticks: r.s.tick, dist: distance(r.s), name: "abc" });
+  const b = fromB64u(code);
+  b[0] = GHOST_V - 1;
+  const old = toB64u(b);
+  const og = oldGhost(old);
+  check(decodeGhost(old) === null && !!og && og.v === GHOST_V - 1 && og.seed === 42 && og.name === "ABC" && near(og.dist, distance(r.s), 0.06),
+    `a link from version ${GHOST_V - 1} does not race, but it keeps its lakes, initials and ${og && og.dist} m`);
+  check(oldGhost(code) === null, "a link of this version is not an old ghost");
+  const rnd = mulberry(2);
+  let bad = 0;
+  for (let i = 0; i < 5000; i++) {
+    let s = "";
+    const n = Math.floor(rnd() * 60);
+    for (let k = 0; k < n; k++) s += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[Math.floor(rnd() * 64)];
+    if (oldGhost(s) !== null) bad++;
+  }
+  check(bad === 0, "5,000 junk links all read as no old ghost");
+}
+{
+  // The race: a long ghost, and a player who does nothing and is caught early. The ghost flies beside the player in
+  // step, as on the page, so it is still in the air when winter catches the player.
+  const r = fly(42, expert());
+  const g = decodeGhost(encodeGhost({ seed: 42, flips: r.flips, ticks: r.s.tick, dist: distance(r.s), name: "abc" }));
+  const W = makeWorld(42), s = newState(), gs = newState(), tape = new Tape(g.flips);
+  while (s.alive) { step(s, W, false); if (gs.alive) step(gs, W, tape.at(gs.tick + 1)); }
+  const d = distance(s), line = raceLine(d, g, gs);
+  const want = Math.round(g.dist - d).toLocaleString("en-CA") + " m", then = Math.round(distance(gs) - d).toLocaleString("en-CA") + " m";
+  check(gs.alive && line === `ABC's ghost flew ${want} farther.`, `caught at ${d.toFixed(0)} m against a ${g.dist} m ghost: "${line}" (where the ghost was then says ${then})`);
+  const won = raceLine(g.dist + 120, g, null);
+  check(won === "You beat ABC's ghost by 120 m.", `a longer run says "${won}"`);
+}
+
+/* ---------------- 9. no NaN ---------------- */
 section("1,000 random runs");
 {
   let nan = 0, total = 0;

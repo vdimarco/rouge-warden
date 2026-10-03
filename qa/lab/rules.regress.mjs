@@ -2,10 +2,13 @@
 // It plays public/fall/index.html as it is now, and the same file with the House Rules hooks taken back out, with the
 // same seeded random and a fake clock. It compares the world, the critters, the props, the player and the score after
 // the first layer settles, and again after 8 seconds of scripted play (walk, swing, dig down). A second run of the
-// file as it is now shows that the test repeats. Then it checks that every hunk of the hooks names Custom.
-// The hooks come from the commit that added "const Custom" to the file, so the test still works after a merge and
-// after other changes to the game. Set BASE_REF to compare with the file at some commit instead. Serve public/ first.
-// Exit code 1 on failure.
+// file as it is now shows that the test repeats. Then it checks that every hunk of every hook change names Custom,
+// and that all of them together stay small.
+// The hooks are every commit that adds or removes a line naming Custom in the file, from the commit that added
+// "const Custom" on. They come out newest first, so a later hook may change the lines of an earlier one. Changes to
+// the file that are not committed count as the newest hook change when every hunk of them names Custom. The test
+// still works after a merge and after other changes to the game. Set BASE_REF to compare with the file at some
+// commit instead. Serve public/ first. Exit code 1 on failure.
 import { execFileSync } from "child_process";
 import fs from "fs";
 import os from "os";
@@ -18,25 +21,37 @@ const R = report("rules.regress");
 const FILE = "public/fall/index.html";
 const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
 const NEW = fs.readFileSync(path.join(ROOT, FILE), "utf8");
-// the hooks: the change to the game file in the commit that added them
-const hookCommit = git("log", "-S", "const Custom = (() =>", "--format=%H", "--reverse", "--", FILE).trim().split("\n")[0];
-if (!hookCommit) { console.log("No commit adds the House Rules hooks to " + FILE + " (a shallow clone?). Set BASE_REF."); process.exit(1); }
-const HOOKS = git("diff", hookCommit + "^", hookCommit, "--", FILE);
+// the hooks: the first commit, the ones after it that touch a line naming Custom, newest first
+const firstHook = git("log", "-S", "const Custom = (() =>", "--format=%H", "--reverse", "--", FILE).trim().split("\n")[0];
+if (!firstHook) { console.log("No commit adds the House Rules hooks to " + FILE + " (a shallow clone?). Set BASE_REF."); process.exit(1); }
+const hookCommits = git("log", "-E", "-G", "(^|[^A-Za-z_])Custom([^A-Za-z_]|$)", "--format=%H", firstHook + "^..HEAD", "--", FILE).trim().split("\n").filter(Boolean);
+const changes = hookCommits.map((c) => ({ name: c.slice(0, 10), diff: git("diff", c + "^", c, "--", FILE), zero: git("diff", "-U0", c + "^", c, "--", FILE) }));
+// hunks of a diff, and the ones that do not name Custom
+const hunksOf = (diff) => diff.split(/\n(?=@@)/).slice(1);
+const unnamed = (diff) => hunksOf(diff).filter((hk) => !/\bCustom\b/.test(hk));
+{
+  const zero = git("diff", "-U0", "HEAD", "--", FILE);
+  if (zero && !unnamed(zero).length) changes.unshift({ name: "the changes not yet committed", diff: git("diff", "HEAD", "--", FILE), zero });
+  else if (zero) console.log("Note: " + FILE + " has changes that are not committed, and some do not name Custom. They stay in both files.");
+}
+console.log(`House Rules hook changes, newest first: ${changes.map((c) => c.name).join(", ")}`);
 let OLD, from;
 if (process.env.BASE_REF) {
   OLD = git("show", process.env.BASE_REF + ":" + FILE);
   from = "the file at " + process.env.BASE_REF;
 } else {
-  // the file as it is now, with the hooks taken back out
+  // the file as it is now, with the hooks taken back out, newest first
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "rules-regress-"));
   fs.mkdirSync(path.join(tmp, path.dirname(FILE)), { recursive: true });
   fs.writeFileSync(path.join(tmp, FILE), NEW);
-  fs.writeFileSync(path.join(tmp, "hooks.diff"), HOOKS);
-  try { execFileSync("git", ["apply", "-R", "hooks.diff"], { cwd: tmp, stdio: "pipe" }); }
-  catch (e) { console.log("The hooks no longer come out of " + FILE + " cleanly. Set BASE_REF to compare with a commit.\n" + String(e.stderr || e)); process.exit(1); }
+  for (const c of changes) {
+    fs.writeFileSync(path.join(tmp, "hooks.diff"), c.diff);
+    try { execFileSync("git", ["apply", "-R", "hooks.diff"], { cwd: tmp, stdio: "pipe" }); }
+    catch (e) { console.log(`The hooks of ${c.name} no longer come out of ${FILE} cleanly. Set BASE_REF to compare with a commit.\n` + String(e.stderr || e)); process.exit(1); }
+  }
   OLD = fs.readFileSync(path.join(tmp, FILE), "utf8");
   fs.rmSync(tmp, { recursive: true, force: true });
-  from = "the file now, less the hooks of " + hookCommit.slice(0, 10);
+  from = `the file now, less the hooks of ${changes.length} change${changes.length === 1 ? "" : "s"}`;
 }
 console.log(`comparing ${from} (${OLD.split("\n").length} lines) with the file now (${NEW.split("\n").length} lines)`);
 
@@ -125,12 +140,13 @@ R.check(!a.errors.length && !b.errors.length, `no page errors${a.errors.concat(b
 
 R.section("Every change names Custom");
 {
-  const diff = git("diff", "-U0", hookCommit + "^", hookCommit, "--", FILE);
-  const hunks = diff.split(/\n(?=@@)/).slice(1);
-  const bad = hunks.filter((hk) => !/Custom/.test(hk));
-  R.check(hunks.length > 0 && bad.length === 0, `${hunks.length} changed hunks, and each one names Custom${bad.length ? "; not: " + bad.map((x) => x.split("\n")[0]).join(", ") : ""}`);
-  const added = diff.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).length;
-  R.check(added <= 60, `the change to the game stays small (${added} lines added)`);
+  let added = 0;
+  for (const c of changes) {
+    const hunks = hunksOf(c.zero), bad = unnamed(c.zero);
+    R.check(hunks.length > 0 && bad.length === 0, `${c.name}: ${hunks.length} changed hunks, and each one names Custom${bad.length ? "; not: " + bad.map((x) => x.split("\n")[0]).join(", ") : ""}`);
+    added += c.zero.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).length;
+  }
+  R.check(changes.length > 0 && added <= 60, `all ${changes.length} hook changes to the game stay small (${added} lines added in all)`);
 }
 
 R.done();
