@@ -1,6 +1,7 @@
 // Free-swimming rescue simulation. No DOM, audio, or wall-clock dependencies.
 export const MAX_CHICKS = 8;
 export const HOME = {x:.5, y:.205};
+export const ROCK = .075;  // a rock blocks the loon closer than this to its centre
 export const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 export const distance = (a,b) => Math.hypot(a.x-b.x,(a.y-b.y)*1.65);
 const spots = [[.5,.38],[.23,.35],[.77,.36],[.18,.59],[.82,.66],[.32,.78],[.64,.78],[.57,.56]];
@@ -8,7 +9,7 @@ export function createRun(seed = 1) {
   let n=seed>>>0;
   const random=()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};
   return {elapsed:0,x:.5,y:.28,target:{x:.5,y:.28},angle:0,history:[{t:0,x:.5,y:.28,angle:0}],
-    flock:[],saved:0,score:0,trips:0,hearts:3,invincible:0,call:0,cooldown:0,
+    flock:[],saved:0,score:0,trips:0,hearts:3,invincible:0,call:0,cooldown:0,bump:0,
     breath:3,diving:false,exhausted:false,deposit:0,ended:false,won:false,events:[],
     chicks:spots.map(([x,y],id)=>({id,x:clamp(x+(id?random()-.5:0)*.07,.13,.87),y:y+(id?random()-.5:0)*.03,state:'waiting',lock:0})),
     rocks:[{x:.34,y:.47},{x:.68,y:.51},{x:.46,y:.69}],
@@ -41,12 +42,42 @@ function move(o,target,speed,dt) {
   const k=Math.min(d,speed*dt)/d;
   o.x+=dx*k;o.y+=dy*k/1.65;o.angle=Math.atan2(dy,dx)+Math.PI/2;
 }
+// Moves a point out of a rock to its rim. Returns true if the point was in the rock.
+function pushOut(o,rock,toward=o) {
+  let nx=o.x-rock.x,ny=(o.y-rock.y)*1.65,d=Math.hypot(nx,ny);
+  if(d>=ROCK)return false;
+  if(d<1e-6){nx=toward.x-rock.x;ny=(toward.y-rock.y)*1.65;d=Math.hypot(nx,ny);if(d<1e-6){nx=0;ny=-1;d=1;}}
+  o.x=rock.x+nx/d*ROCK;o.y=rock.y+ny/d*ROCK/1.65;return true;
+}
+// Rocks block the loon at the surface and do no damage. If the target is behind a rock, the loon slides along the rim toward it.
+function swim(r,dt) {
+  const speed=(r.diving?.36:.29)-Math.min(.045,r.flock.length*.006);
+  let goal=r.target,slide=null;
+  if(!r.diving)for(const rock of r.rocks){
+    const nx=r.x-rock.x,ny=(r.y-rock.y)*1.65,d=Math.hypot(nx,ny)||1e-9,gx=goal.x-r.x,gy=(goal.y-r.y)*1.65;
+    if(d>ROCK+.003||gx*nx+gy*ny>=0||distance(goal,rock)<ROCK)continue;
+    let tx=-ny/d,ty=nx/d,side=tx*(goal.x-rock.x)+ty*(goal.y-rock.y)*1.65;
+    if(Math.abs(side)<1e-6)side=tx*(.5-rock.x)+ty*(.5-rock.y)*1.65||tx||1;
+    if(side<0){tx=-tx;ty=-ty;}
+    goal={x:r.x+tx,y:r.y+ty/1.65};slide=rock;break;
+  }
+  move(r,goal,speed,dt);
+  if(r.diving)return;
+  r.rocks.forEach((rock,i)=>{
+    const inside=distance(r,rock)<ROCK;
+    if(!inside&&rock!==slide)return;
+    if(!r.bump)r.events.push({kind:'bonk',rock:i,x:r.x,y:r.y});
+    r.bump=.4;
+    if(!pushOut(r,rock,r.target)&&rock===slide){const d=distance(r,rock);r.x=rock.x+(r.x-rock.x)*ROCK/d;r.y=rock.y+(r.y-rock.y)*ROCK/d;}
+    if(distance(r.target,rock)<ROCK)r.target={x:r.x,y:r.y};
+  });
+}
 function damage(r,source) {
   if(r.invincible||r.diving||distance(r,HOME)<.105)return;
   r.hearts--;r.invincible=2.2;r.deposit=0;
   const ids=r.flock.splice(-Math.min(2,r.flock.length));
-  ids.forEach((id,i)=>{const c=r.chicks[id];c.state='waiting';c.x=clamp(r.x+(i?-.09:.09),.12,.88);c.y=clamp(r.y+.07,.3,.8);c.lock=1.8;});
-  r.events.push({kind:'hit',text:ids.length?'Scattered! Your chicks are still out there—go get them.':source==='eel'?'The eel got you! HONK to stun it, or DIVE to break pursuit.':'Ouch! Dive under obstacles or swim around.'});
+  ids.forEach((id,i)=>{const c=r.chicks[id];c.state='waiting';c.x=clamp(r.x+(i?-.09:.09),.12,.88);c.y=clamp(r.y+.07,.3,.8);c.lock=1.8;r.rocks.forEach(rock=>pushOut(c,rock,r));});
+  r.events.push({kind:'hit',source,text:ids.length?'The line broke. Your chicks wait near you. Go back for them.':source==='eel'?'The eel bit you. HONK to stun it, or DIVE to get away.':'A boat hit you. Dive under boats, or wait for them to pass.'});
 }
 function updateEel(r,dt) {
   const e=r.eel;
@@ -77,19 +108,17 @@ function updateEel(r,dt) {
 export function step(r,dt) {
   if(r.ended)return;
   dt=clamp(dt,0,.05);r.elapsed+=dt;
-  r.invincible=Math.max(0,r.invincible-dt);r.call=Math.max(0,r.call-dt);r.cooldown=Math.max(0,r.cooldown-dt);
+  r.invincible=Math.max(0,r.invincible-dt);r.call=Math.max(0,r.call-dt);r.cooldown=Math.max(0,r.cooldown-dt);r.bump=Math.max(0,r.bump-dt);
   if(r.diving){r.breath=Math.max(0,r.breath-dt);if(r.breath===0){r.diving=false;r.exhausted=true;r.events.push({kind:'surface',text:'Out of breath! Stay on the surface to refill.'});}}
   else{r.breath=Math.min(3,r.breath+dt*.8);if(r.breath>=1.2)r.exhausted=false;}
   r.target.x=clamp(r.target.x,.1,.9);r.target.y=clamp(r.target.y,.19,.82);
-  const previous={x:r.x,y:r.y};
-  move(r,r.target,(r.diving?.36:.29)-Math.min(.045,r.flock.length*.006),dt);
-  if(!r.diving)for(const rock of r.rocks)if(distance(r,rock)<.075){damage(r,'rock');r.x=previous.x;r.y=previous.y;break;}
+  swim(r,dt);
   r.history.push({t:r.elapsed,x:r.x,y:r.y,angle:r.angle});
   while(r.history.length>1&&r.history[1].t<r.elapsed-3)r.history.shift();
   for(const c of r.chicks){
     c.lock=Math.max(0,c.lock-dt);
     if(c.state!=='waiting'||c.lock||r.diving)continue;
-    if(r.call&&distance(r,c)<.3)move(c,r,.27,dt);
+    if(r.call&&distance(r,c)<.3){move(c,r,.27,dt);r.rocks.forEach(rock=>pushOut(c,rock,r));}
     if(distance(r,c)<.065){c.state='following';r.flock.push(c.id);r.events.push({kind:'rescue',text:r.flock.length===1?'One aboard! Bank it at the nest—or risk a bigger flock.':`${r.flock.length} following. Bigger deliveries earn bigger bonuses!`});}
   }
   for(const f of r.fish){f.cooldown=Math.max(0,f.cooldown-dt);if(!f.cooldown&&r.diving&&distance(r,f)<.065){f.cooldown=14;r.score+=25;r.cooldown=Math.max(0,r.cooldown-2);r.events.push({kind:'fish',text:'Snack! +25 points. HONK recharges faster.'});}}

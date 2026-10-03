@@ -6,7 +6,8 @@ A free-swimming rescue game at `/echo` and `/echo/`. Swim around the lake to col
 - DIVE (Space) is a toggle. Three seconds of breath let the whole flock pass under rocks and boats and break the eel's pursuit. Surface to rescue or deliver chicks. Empty breath forces surfacing and a short recovery before diving again.
 - HONK (E) gathers nearby chicks and stuns a nearby eel. It has a seven-second cooldown and cannot be used underwater.
 - The eel hunts the tail, then visibly winds up before lunging at a fixed location. Turning, diving, or honking gives an escape. It stays away from the nest.
-- Boat lanes flash before a boat crosses. Surface collisions cost energy; a hit scatters up to two carried chicks, which remain available for rescue. Delivered chicks stay safe.
+- Rocks block the loon at the surface and do no damage. If you aim behind a rock, the loon slides round the rim toward the target, with a soft bonk. A target inside a rock stops the loon at the rim.
+- Boat lanes flash before a boat crosses. A boat or eel hit costs one energy and scatters up to two carried chicks. They stay on the lake for rescue. Delivered chicks stay safe.
 - Underwater fish grant points and shorten the honk cooldown. Group deliveries score `100 × group size²`; completing a rescue also grants a speed bonus. The best score stays in local storage.
 - Pause with P, Escape, or the button. Switching away pauses automatically. Blocked storage/audio does not prevent play.
 
