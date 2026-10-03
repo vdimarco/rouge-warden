@@ -594,14 +594,15 @@ const UNITS = [
     return out;
   } },
   { name: "a context the game suspended stays suspended when the page returns, and resume() is held while hidden", run: async () => {
-    const out = [], c = new AudioContext(), d = new AudioContext();
-    await c.resume(); await d.resume(); await c.suspend(); // the game put c to sleep itself
+    const out = [], c = new AudioContext(), d = new AudioContext(), e = new AudioContext();
+    await c.resume(); await d.resume(); await e.resume(); await c.suspend(); // the game put c to sleep itself
     __qaHide(true); await __sleep(300);
-    await c.resume(); await d.resume(); await __sleep(300); // the game asks for sound while hidden
-    out.push(["resume() while hidden changes nothing", c.state === "suspended" && d.state === "suspended", c.state + "," + d.state]);
+    await d.resume(); await __sleep(300); // the game asks for sound from d while hidden
+    out.push(["resume() while hidden changes nothing", c.state === "suspended" && d.state === "suspended" && e.state === "suspended", [c.state, d.state, e.state].join()]);
     __qaHide(false); await __sleep(600);
-    out.push(["after the return the one quiet stopped runs", d.state === "running", d.state]);
-    out.push(["the one the game stopped stays stopped", c.state === "suspended", c.state]);
+    out.push(["the one quiet stopped runs again", e.state === "running", e.state]);
+    out.push(["the one the game asked for while hidden runs", d.state === "running", d.state]);
+    out.push(["the one the game stopped itself stays stopped", c.state === "suspended", c.state]);
     return out;
   } },
   { name: "many short-lived contexts", run: async () => {

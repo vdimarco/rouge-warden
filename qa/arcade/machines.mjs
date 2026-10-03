@@ -14,6 +14,7 @@ const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are tak
 const PARTS = (process.env.PARTS || "walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
+setTimeout(() => { console.log("  FAIL the run did not finish in 30 minutes"); process.exit(1); }, 30 * 60 * 1000).unref();
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
 
 /* ---------------- what is a game ---------------- */
@@ -143,8 +144,11 @@ async function settle(page) {
 const sel = (page) => page.evaluate(() => [...document.querySelectorAll(".cab")].findIndex((c) => c.classList.contains("on")));
 
 if (chromium) {
-  const browser = await chromium.launch({ args: ARGS });
+  let browser = await chromium.launch({ args: ARGS });
+  // a fresh browser for each part: a headless browser with a software GPU slows down over a long run and can stop answering mouse moves
+  const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS }); };
 
+  await relaunch();
   /* ----- walk to every machine, put a token in, start it, and see where it goes ----- */
   // four ways to play, so each machine is tried in more than one way across the two sizes
   const METHODS = ["drag a token, press START", "key 5, key 1", "key 5, Enter", "tap a slot, press START"];
@@ -205,6 +209,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- the last machine by keyboard and by swipe, and the layout at the sizes people use ----- */
   const SIZES = [[360, 740], [390, 844], [430, 932], [375, 667], [768, 1024], [1280, 720], [1920, 1080]];
   for (const [width, height] of PARTS.includes("layout") ? SIZES : []) {
@@ -257,6 +262,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- the game switcher: all games, the right one marked, tiles you can tap, and the exits in reach ----- */
   for (const [width, height] of PARTS.includes("switcher") ? [[360, 740], [1280, 720]] : []) {
     const tag = `${width}x${height}`;
@@ -289,6 +295,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
   const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship"];
@@ -322,6 +329,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- Crimson Rogue's end card lists the games of the switcher: its buttons must stay in the window however long the list is ----- */
   for (const [width, height] of PARTS.includes("credits") ? [[360, 740], [390, 844], [1280, 720]] : []) {
     // not open(): that helper stops every page change to a game, and this part loads one
@@ -356,6 +364,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- keyboard: tabbing through the machines keeps the focused control in the window ----- */
   for (const [width, height] of PARTS.includes("focus") ? [[390, 844], [1280, 720]] : []) {
     const { ctx, page, errors } = await open(browser, { width, height });
@@ -381,6 +390,7 @@ if (chromium) {
     await ctx.close();
   }
 
+  await relaunch();
   /* ----- Tell Me and BREAKTHROUGH show a link back to the arcade, also over their start and end cards ----- */
   if (PARTS.includes("backlinks")) {
     const plain = async (width, height) => {
