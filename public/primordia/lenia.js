@@ -237,6 +237,37 @@ export class World {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) field[wrapI(y0 + dy, h) * w + wrapI(x0 + dx, w)] = tmp[(dy + r) * n + dx + r];
   }
 
+  // Move everything inside a hard disc by whole cells (dx, dy). An exact copy, no blur: small and
+  // static bodies (Discutium, Circium) die under fractional advection but survive this.
+  roll(field, cx, cy, radius, dx, dy) { return this.rollMany([field], cx, cy, radius, dx, dy); }
+
+  rollMany(fields, cx, cy, radius, dx, dy) {
+    dx = Math.round(dx); dy = Math.round(dy);
+    if (!dx && !dy) return 0;
+    const { w, h } = this, r = Math.ceil(radius), n = 2 * r + 1, r2 = radius * radius;
+    const x0 = Math.round(cx), y0 = Math.round(cy);
+    if (!this.rollTmp || this.rollTmp.length < n * n) this.rollTmp = new Float32Array(n * n);
+    const tmp = this.rollTmp;
+    let moved = 0;
+    for (const f of fields) {
+      for (let oy = -r; oy <= r; oy++) for (let ox = -r; ox <= r; ox++) {
+        const k = (oy + r) * n + ox + r;
+        if (ox * ox + oy * oy > r2) { tmp[k] = 0; continue; }
+        const i = wrapI(y0 + oy, h) * w + wrapI(x0 + ox, w);
+        tmp[k] = f[i]; f[i] = 0;
+      }
+      for (let oy = -r; oy <= r; oy++) for (let ox = -r; ox <= r; ox++) {
+        if (ox * ox + oy * oy > r2) continue;
+        const v = tmp[(oy + r) * n + ox + r];
+        if (!v) continue;
+        const i = wrapI(y0 + oy + dy, h) * w + wrapI(x0 + ox + dx, w);
+        f[i] = Math.min(1, f[i] + v);
+        if (f === fields[0]) moved += v;
+      }
+    }
+    return moved;
+  }
+
   // Remove matter inside a soft disc. Returns the mass removed.
   drain(field, cx, cy, radius, rate) {
     const { w, h } = this;
@@ -281,23 +312,76 @@ export function findBlobs(field, w, h, threshold = 0.12, minMass = 4) {
   for (let s = 0; s < n; s++) {
     if (label[s] !== -1 || field[s] < threshold) continue;
     const id = blobs.length;
-    let top = 0, mass = 0, sx = 0, sy = 0, cnt = 0;
+    let top = 0, mass = 0, cnt = 0, maxI = s, maxV = 0;
     // accumulate positions on a circle so centroids survive wrap-around
     let cxs = 0, cxc = 0, cys = 0, cyc = 0;
     stack[top++] = s; label[s] = id;
     while (top) {
       const i = stack[--top], x = i % w, y = (i / w) | 0, v = field[i];
       mass += v; cnt++;
+      if (v > maxV) { maxV = v; maxI = i; }
       const ax = TAU * x / w, ay = TAU * y / h;
       cxs += Math.sin(ax) * v; cxc += Math.cos(ax) * v; cys += Math.sin(ay) * v; cyc += Math.cos(ay) * v;
-      const nb = [y * w + (x + 1) % w, y * w + (x - 1 + w) % w, ((y + 1) % h) * w + x, ((y - 1 + h) % h) * w + x];
-      for (const j of nb) if (label[j] === -1 && field[j] >= threshold) { label[j] = id; stack[top++] = j; }
+      const row = y * w;
+      let j = row + (x + 1 === w ? 0 : x + 1);
+      if (label[j] === -1 && field[j] >= threshold) { label[j] = id; stack[top++] = j; }
+      j = row + (x === 0 ? w - 1 : x - 1);
+      if (label[j] === -1 && field[j] >= threshold) { label[j] = id; stack[top++] = j; }
+      j = (y + 1 === h ? 0 : y + 1) * w + x;
+      if (label[j] === -1 && field[j] >= threshold) { label[j] = id; stack[top++] = j; }
+      j = (y === 0 ? h - 1 : y - 1) * w + x;
+      if (label[j] === -1 && field[j] >= threshold) { label[j] = id; stack[top++] = j; }
     }
-    sx = ((Math.atan2(cxs, cxc) / TAU) * w + w) % w;
-    sy = ((Math.atan2(cys, cyc) / TAU) * h + h) % h;
-    blobs.push({ id, mass, cells: cnt, x: sx, y: sy });
+    const sx = ((Math.atan2(cxs, cxc) / TAU) * w + w) % w;
+    const sy = ((Math.atan2(cys, cyc) / TAU) * h + h) % h;
+    blobs.push({ id, mass, cells: cnt, x: sx, y: sy, maxI, maxV });
   }
   return { blobs: blobs.filter((b) => b.mass >= minMass), label };
+}
+
+// Extent of one labelled blob along a direction u = (ux, uy) and its normal n = (-uy, ux),
+// measured from (cx, cy) with wrapped offsets. Used to draw and test a hunter's lunge lane.
+export function blobExtent(label, id, w, h, cx, cy, ux, uy) {
+  let back = 0, front = 0, left = 0, right = 0, any = false;
+  for (let i = 0; i < label.length; i++) {
+    if (label[i] !== id) continue;
+    let dx = (i % w) - cx, dy = ((i / w) | 0) - cy;
+    dx -= Math.round(dx / w) * w; dy -= Math.round(dy / h) * h;
+    const a = dx * ux + dy * uy, b = -dx * uy + dy * ux;
+    if (!any) { back = front = a; left = right = b; any = true; continue; }
+    if (a < back) back = a; if (a > front) front = a;
+    if (b < left) left = b; if (b > right) right = b;
+  }
+  return { back, front, left, right };
+}
+
+// Principal axis and wing tips of one labelled blob, from second moments of its cells.
+export function blobShape(label, id, w, h, cx, cy) {
+  let n = 0, sxx = 0, syy = 0, sxy = 0, mx = 0, my = 0;
+  const pts = [];
+  for (let i = 0; i < label.length; i++) {
+    if (label[i] !== id) continue;
+    let dx = (i % w) - cx, dy = ((i / w) | 0) - cy;
+    dx -= Math.round(dx / w) * w; dy -= Math.round(dy / h) * h;
+    pts.push(dx, dy); mx += dx; my += dy; n++;
+  }
+  if (!n) return { ux: 1, uy: 0, major: 0, minor: 0, tips: [{ x: cx, y: cy }, { x: cx, y: cy }] };
+  mx /= n; my /= n;
+  for (let k = 0; k < pts.length; k += 2) {
+    const dx = pts[k] - mx, dy = pts[k + 1] - my;
+    sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+  }
+  sxx /= n; syy /= n; sxy /= n;
+  const ang = 0.5 * Math.atan2(2 * sxy, sxx - syy), ux = Math.cos(ang), uy = Math.sin(ang);
+  const tr = sxx + syy, det = sxx * syy - sxy * sxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  let lo = Infinity, hi = -Infinity, loI = 0, hiI = 0;
+  for (let k = 0; k < pts.length; k += 2) {
+    const a = pts[k] * ux + pts[k + 1] * uy;
+    if (a < lo) { lo = a; loI = k; }
+    if (a > hi) { hi = a; hiI = k; }
+  }
+  const at = (k) => ({ x: ((cx + pts[k]) % w + w) % w, y: ((cy + pts[k + 1]) % h + h) % h });
+  return { ux, uy, major: Math.sqrt(tr / 2 + disc), minor: Math.sqrt(Math.max(0, tr / 2 - disc)), tips: [at(loI), at(hiI)] };
 }
 
 // Lenia "(zip)" cell strings: rows split by "/", runs of empty cells as "<count>.", values in 1/100.

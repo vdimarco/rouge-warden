@@ -1,0 +1,21 @@
+- [x] Diagnose why the game is boring with bot runs and instrumentation.
+- [x] Mine combat mechanics through five reference lenses, test feasibility in a Lenia lab, judge and synthesize one design.
+- [x] Lenia helpers: whole-cell roll, blob extent and shape, densest cell per blob.
+- [x] Add Discutium and Circium; measure their headings and masses.
+- [x] Foundations: persistent hunters, kept labels and owners, nearest tissue, tear and kill credit, hit-stop, Stasis clock.
+- [x] Telegraphed lunge with tokens, lane lock and cancel, glint, Exposed recover, lunge hits and grazes.
+- [x] Rend Dash with charges, cut cap, knockback and touch aim help.
+- [x] Stagger, Glory Bite, Remains and scars.
+- [x] Parry and Stasis.
+- [x] Burst replacing Frenzy.
+- [x] Director: waves, relax beats, encore, caps, eggs and hatching.
+- [x] Leviathan phases and collapse.
+- [x] Build cards, stat extras and Duos with offer rules.
+- [x] Keep hunters apart (hard separation with glide), refuse blocked spawns, burst fused bodies locally.
+- [x] Shader marks, hits, ring and Stasis grade; sound cues; HUD, touch layout and cards.
+- [x] Browser shell wiring, instant retry, tips.
+- [x] Live Lenia dish on the arcade cabinet screen.
+- [ ] Combat test suite, bot policies and metrics, browser smoke on desktop, phone portrait and phone landscape.
+- [ ] Review the code adversarially and fix what it finds.
+- [ ] Balance against the acceptance targets with the bot.
+- [ ] Validate and archive the specification.
