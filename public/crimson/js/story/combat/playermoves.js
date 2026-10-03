@@ -46,6 +46,17 @@ export function moveOf(weaponId, name) {
   const w = WEAPONS[weaponId] || WEAPONS.fists, m = w.set[name] || w.set.l1;
   return w.reach && m.dmg ? { ...m, reach: Math.max(m.reach, w.reach) } : m;
 }
+// Reward a good read without flattening the existing deflect -> recoil payoff.
+export function openingReward(state, moveName) {
+  const open = state === 'recover' || state === 'recoil' || state === 'stagger';
+  if (!open) return { open: false, damage: 1, posture: 1 };
+  return {
+    open: true,
+    damage: moveName === 'heavy' ? 1.55 : 1.4,
+    posture: state === 'recoil' ? 1.6 : 1.45,
+  };
+}
+
 // the canteen: the ronin's sip (heals TUNE.heal)
 export const SIP = { clip: 'ronin:sip', speed: 2.0, heal: TUNE.heal, at: 0.8, dur: 1.3 };
 // the roll
