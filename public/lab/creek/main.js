@@ -2,7 +2,7 @@
 // (paddle.js reads the pose from /fish/js/motion.js), with your thumbs (drag down on the side you want to turn to), or
 // with keys. The view looks down on the river and turns with the canoe, so its right side stays on the right of the
 // screen.
-import { makeRiver, FINISH, START, JAM } from "./river.js";
+import { makeRiver, FINISH, START, JAM, LEDGE } from "./river.js";
 import { newCanoe, act, step, H, C, closestMiss } from "./canoe.js";
 import { createPaddle, steer } from "./paddle.js";
 import { daySeed, hashParams } from "../kit/rng.js";
@@ -159,6 +159,8 @@ function happen(e) {
     // the roll 0.4 s ahead passes 50°: a rising whoop on that side, a wobble in the hand, and the red edge
     case "tip": Sfx.play(sndTip, e.side); buzz("thrash"); tickT = 0.12; break;
     case "capsize": Sfx.play((en, t) => splashSound(en, t, 1)); buzz("jolt"); toast("Swim. Back in a few metres up."); shake = 1; S.act("swim"); break;
+    case "boof": boofStart(e.clean); S.act(e.clean ? "clean boof" : "boof"); break;
+    case "crooked": Sfx.play(sndCrash); buzz("thump"); shake = 1; S.act("crooked"); break;
     case "finish": finish(); break;
   }
 }
@@ -169,6 +171,13 @@ function sndJ(e, t) { tone(e, t, { f: 1250, f2: 1650, dur: 0.07, peak: 0.035, wa
 function sndBrace(e, t) { hiss(e, t, { type: "lowpass", f: 950, dur: 0.12, peak: 0.2 }); tone(e, t, { f: 190, f2: 120, dur: 0.1, peak: 0.12 }); }
 function sndRock(e, t, v = 1) { tone(e, t, { f: 120, f2: 70, glide: 0.1, dur: 0.16, peak: 0.25 + 0.15 * Math.min(1, v) }); hiss(e, t, { type: "lowpass", f: 1400, dur: 0.1, peak: 0.12 }); }
 function sndBank(e, t) { hiss(e, t, { type: "lowpass", f: 600, dur: 0.18, peak: 0.12 }); }
+// the boof: a rush of air as the canoe leaves the lip, and a low beat
+function sndBoof(e, t) {
+  hiss(e, t, { type: "bandpass", f: 500, f2: 2400, sweep: 0.5, q: 0.7, dur: 0.7, peak: 0.16, att: 0.08 });
+  tone(e, t + 0.05, { f: 70, f2: 50, dur: 0.5, peak: 0.25 });
+}
+// a crooked drop: the hull slams into the foam on its side
+function sndCrash(e, t) { tone(e, t, { f: 95, f2: 55, glide: 0.15, dur: 0.3, peak: 0.32 }); hiss(e, t, { type: "lowpass", f: 1800, dur: 0.35, peak: 0.22 }); }
 // a hollow knock on wet logs
 function sndJam(e, t, v = 1) { tone(e, t, { f: 210, f2: 150, glide: 0.08, dur: 0.14, peak: 0.18 + 0.1 * Math.min(1, v), wave: "triangle" }); tone(e, t + 0.05, { f: 320, f2: 240, dur: 0.08, peak: 0.08, wave: "triangle" }); }
 function sndEddy(e, t) {
@@ -192,6 +201,9 @@ function sounds(dt) {
   const sp = Math.sin(canoe.psi), cp = Math.cos(canoe.psi), ahead = river.flow(canoe.x + sp * 3.8, canoe.y + cp * 3.8);
   const seam = play && canoe.swim <= 0 && fl.vx * ahead.vx + fl.vy * ahead.vy < -0.1 ? 1 : 0;
   Sfx.bed("gurgle", "pink", "bandpass", 900, 7).set(seam * 0.3, 700 + 400 * Math.random(), 0.05);
+  // the roar of the ledge: you hear it from 45 m away, louder as you come to the lip
+  const near = clamp(1 - Math.abs(river.lip(canoe.x, canoe.y)) / 45, 0, 1);
+  Sfx.bed("ledge", "pink", "lowpass", 500, 0.8).set(play ? 0.32 * near * near : 0, 260 + 520 * near, 0.3);
   // ticks while the capsize warning is on
   if (play && canoe.warn && canoe.swim <= 0) {
     tickT -= dt;
@@ -207,10 +219,11 @@ const restart = document.createElement("button");
 restart.type = "button"; restart.className = "restart"; restart.textContent = "↻ Restart"; restart.hidden = true;
 bar.insertBefore(restart, bar.querySelector(".snd"));
 restart.addEventListener("click", () => { if (phase === "play") begin(); });
-// the run from the put-in to the finish, with a dot for each eddy worth catching
+// the run from the put-in to the finish, with a dot for each eddy worth catching and a tick for the ledge
 const prog = $("#prog"), progFill = prog.querySelector("i"), progMe = prog.querySelector("b");
 const along = (y) => clamp((y - START) / (FINISH - START), 0, 1) * 100;
 const dots = river.targets.map((q) => { const d = document.createElement("em"); d.style.left = along(q.ey).toFixed(1) + "%"; prog.append(d); return d; });
+{ const u = document.createElement("u"); u.style.left = along(LEDGE).toFixed(1) + "%"; u.title = "The ledge"; prog.append(u); }
 // the start card says only what you need for your device; the game shows the rest when you need it
 const coarse = matchMedia("(pointer: coarse)").matches;
 const card = startCard({
@@ -250,6 +263,8 @@ function begin(m) {
   restart.hidden = false;
   hudLast = "";
   lostT = 0;
+  slowT = 0; timeScale = 1; rainbowA = 0; mist.length = 0;
+  Sfx.muffle(1);
   S.play(); S.run();
   card.hide();
   endC.hide();
@@ -279,6 +294,7 @@ function finish() {
       ["Strokes", String(canoe.strokes)],
       ["J-strokes", String(canoe.js)],
       ["Rocks hit", String(canoe.rocks)],
+      ["The ledge", { clean: "Clean boof", boof: "Boof", crooked: "Hard landing", swim: "Swim" }[canoe.ledge] || "-"],
       ["Paddled with", mode === "motion" ? "the phone" : "thumbs and keys"],
     ],
   }), 600);
@@ -293,7 +309,7 @@ const foam = [], rings = [], sprays = [];
 function view(dt) {
   const sp = Math.sin(canoe.psi), cp = Math.cos(canoe.psi);
   const tx = canoe.x + sp * 5, ty = canoe.y + cp * 5;
-  const k = Hh > W ? W / 22 : Math.min(W / 42, Hh / 24);
+  const k = (Hh > W ? W / 22 : Math.min(W / 42, Hh / 24)) * (1 + 0.15 * air());
   if (!cam.init) { cam.x = tx; cam.y = ty; cam.psi = canoe.psi; cam.k = k; cam.init = true; }
   const e = 1 - Math.exp(-dt / 0.5);
   cam.psi += wrap(canoe.psi - cam.psi) * e;
@@ -336,14 +352,19 @@ function draw(alpha, dt) {
   shore(vis);
   water(vis);
   logJam(vis);
+  ledgeWater(vis);
   eddies(vis);
   foamFlow(vis, dt);
   rocks(vis);
   finishLine(vis);
   effects(dt);
   boat();
+  mistFx(vis, dt);
   g.setTransform(1, 0, 0, 1, 0, 0);
+  rainbow(dt);
+  slowStep(dt);
   holdUi();
+  lineUpUi();
   lostUi();
   warnEdge();
   hudText();
@@ -470,6 +491,108 @@ function finishLine(vis) {
   const [L, R] = river.bank(FINISH);
   for (let x = L, i = 0; x < R; x += 0.8, i++) { g.fillStyle = i % 2 ? "#f3ecd8" : "#1b1b1b"; g.fillRect(x, FINISH - 0.3, 0.8, 0.6); }
 }
+/* ---------------- the ledge: the big moment of the run ---------------- */
+// A boof sends the canoe off the lip in slow motion (1.2 s at 0.3 speed): the sound goes dull, the canoe lifts, mist
+// bursts round it and a rainbow stands in the spray. Then it lands with a big splash and time runs again.
+const SLOW = 1.2;
+let slowT = 0, timeScale = 1, boofClean = false, rainbowA = 0;
+const mist = [];
+const air = () => (slowT > 0 ? Math.sin(Math.PI * clamp(1 - slowT / SLOW, 0, 1)) : 0);
+function boofStart(clean) {
+  slowT = SLOW; timeScale = 0.3; boofClean = clean; rainbowA = 1;
+  Sfx.muffle(0.3);
+  Sfx.play(sndBoof);
+  buzz("charge");
+  for (let i = 0; i < 22; i++) puff(canoe.x + (Math.random() - 0.5) * 6, canoe.y + Math.random() * 5, 1.4 + Math.random() * 1.4, 0.5);
+  toast(clean ? "Clean boof" : "Boof. Stroke at the lip to land clean.", 2200);
+}
+// real time, once a frame: the slow motion, and the landing at its end
+function slowStep(dt) {
+  if (slowT <= 0) return;
+  slowT -= dt;
+  timeScale = slowT > 0.25 ? 0.3 : 0.3 + 0.7 * clamp(1 - slowT / 0.25, 0, 1);
+  if (slowT > 0) return;
+  timeScale = 1;
+  Sfx.muffle(1);
+  Sfx.play((e, t) => splashSound(e, t, boofClean ? 0.7 : 1));
+  buzz("land", boofClean ? 1 : 2);
+  shake = boofClean ? 0.45 : 0.85;
+  spray(-1, 1.4); spray(1, 1.4);
+}
+function puff(x, y, r, a) { mist.push({ x, y, r, a, t: 0, max: 1.6 + Math.random() * 1.6, vx: (Math.random() - 0.5) * 0.6, vy: 0.4 + Math.random() * 0.5 }); }
+// a soft white disc, drawn once, for the mist
+const soft = document.createElement("canvas");
+soft.width = soft.height = 64;
+{
+  const sg = soft.getContext("2d"), rg = sg.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, "rgba(245,250,252,1)"); rg.addColorStop(0.45, "rgba(245,250,252,0.55)"); rg.addColorStop(1, "rgba(245,250,252,0)");
+  sg.fillStyle = rg; sg.fillRect(0, 0, 64, 64);
+}
+// the lip as a band across the river: from d0 to d1 metres past it, w metres to each side of the middle
+function lipBand(d0, d1, w) {
+  const L = river.ledge, ax = L.ty, ay = -L.tx;
+  g.beginPath();
+  g.moveTo(L.x + d0 * L.tx - w * ax, L.y + d0 * L.ty - w * ay);
+  g.lineTo(L.x + d0 * L.tx + w * ax, L.y + d0 * L.ty + w * ay);
+  g.lineTo(L.x + d1 * L.tx + w * ax, L.y + d1 * L.ty + w * ay);
+  g.lineTo(L.x + d1 * L.tx - w * ax, L.y + d1 * L.ty - w * ay);
+  g.closePath();
+}
+// glassy dark water speeding up to the lip, a bright lip line, the dark face of the drop, and white foam below it
+function ledgeWater(vis) {
+  const L = river.ledge;
+  if (L.y < vis.y0 - 20 || L.y > vis.y1 + 20) return;
+  const w = river.b(L.y) + 6, ax = L.ty, ay = -L.tx;
+  g.save();
+  g.beginPath();
+  for (let y = L.y - 18; y <= L.y + 14; y += 1) g.lineTo(river.c(y) - river.b(y), y);
+  for (let y = L.y + 14; y >= L.y - 18; y -= 1) g.lineTo(river.c(y) + river.b(y), y);
+  g.closePath();
+  g.clip();
+  const gr = g.createLinearGradient(L.x - 12 * L.tx, L.y - 12 * L.ty, L.x, L.y);
+  gr.addColorStop(0, "rgba(6,34,44,0)"); gr.addColorStop(1, "rgba(6,34,44,0.6)");
+  g.fillStyle = gr; lipBand(-12, 0, w); g.fill();
+  g.fillStyle = "rgba(0,12,18,0.5)"; lipBand(0, 0.7, w); g.fill();
+  for (let i = 0; i < 90; i++) {
+    const u = (hash(i, 1) * 2 - 1) * w, d = 0.5 + ((hash(i, 2) + clock * (0.25 + 0.2 * hash(i, 4))) % 1) * 5, r = 0.35 + 0.55 * hash(i, 3);
+    g.fillStyle = `rgba(238,248,250,${0.6 * (1 - (d - 0.5) / 5)})`;
+    g.beginPath(); g.arc(L.x + d * L.tx + u * ax, L.y + d * L.ty + u * ay, r, 0, Math.PI * 2); g.fill();
+  }
+  g.strokeStyle = "rgba(235,250,252,0.9)"; g.lineWidth = 0.22;
+  g.beginPath(); g.moveTo(L.x - w * ax, L.y - w * ay); g.lineTo(L.x + w * ax, L.y + w * ay); g.stroke();
+  g.restore();
+}
+// mist that drifts up off the foam, over everything on the water
+function mistFx(vis, dt) {
+  const L = river.ledge;
+  if (L.y > vis.y0 - 10 && L.y < vis.y1 + 10) {
+    const w = river.b(L.y);
+    while (mist.length < 36) { const u = (Math.random() * 2 - 1) * w, d = 0.5 + Math.random() * 4; puff(L.x + d * L.tx + u * L.ty, L.y + d * L.ty - u * L.tx, 1.2 + Math.random() * 1.2, 0.35); }
+  }
+  for (let i = mist.length - 1; i >= 0; i--) {
+    const p = mist[i];
+    p.t += dt * (slowT > 0 ? 0.35 : 1);
+    if (p.t > p.max) { mist.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 0.4;
+    const k = p.t / p.max;
+    g.globalAlpha = clamp(p.a * Math.min(1, k * 4) * (1 - k), 0, 1);
+    g.drawImage(soft, p.x - p.r, p.y - p.r, 2 * p.r, 2 * p.r);
+  }
+  g.globalAlpha = 1;
+}
+// a rainbow in the spray over the canoe, on the screen: bright in the slow motion, then it fades
+function rainbow(dt) {
+  if (rainbowA <= 0) return;
+  if (slowT <= 0) rainbowA = Math.max(0, rainbowA - dt / 1.8);
+  const [sx, sy] = toScreen(canoe.x, canoe.y), r0 = 6.4 * cam.k, bw = 0.34 * cam.k;
+  const cols = ["255,80,70", "255,160,60", "255,230,90", "110,220,110", "90,170,255", "120,110,240", "190,110,230"];
+  g.lineWidth = bw;
+  cols.forEach((c, i) => {
+    g.strokeStyle = `rgba(${c},${0.32 * rainbowA})`;
+    g.beginPath(); g.arc(sx, sy + 1.5 * cam.k, r0 - i * bw, Math.PI * 1.08, Math.PI * 1.92); g.stroke();
+  });
+}
+
 function spray(side, power) {
   const sp = Math.sin(canoe.psi), cp = Math.cos(canoe.psi), rx = cp, ry = -sp;
   for (let i = 0; i < 6 + power * 6; i++) {
@@ -527,6 +650,13 @@ function boat() {
     g.beginPath(); g.arc(1.1, -0.4, 0.24, 0, Math.PI * 2); g.fill();
     g.restore();
     return;
+  }
+  // in the air over the ledge: a shadow on the water below, and the canoe a little bigger (nearer the eye)
+  const up = air();
+  if (up > 0) {
+    g.fillStyle = `rgba(0,10,15,${0.4 * up})`;
+    g.beginPath(); g.ellipse(0.6 * up, -0.8 * up, 0.5, 2.3, 0, 0, Math.PI * 2); g.fill();
+    g.scale(1 + 0.25 * up, 1 + 0.25 * up);
   }
   // roll: the hull looks narrower, and the low side darker
   const roll = c.phi, squash = Math.cos(roll);
@@ -606,28 +736,38 @@ function holdUi() {
     g.strokeStyle = c.holding ? "#f0b848" : "rgba(240,184,72,0.5)";
     g.beginPath(); g.arc(sx, sy, R, -Math.PI / 2, -Math.PI / 2 + fill * Math.PI * 2); g.stroke();
   }
-  let label = "";
-  if (!c.eddyBow) {
-    // the bow and upstream on the screen; a turn to the right is clockwise there
-    const [tx, ty] = river.tan(c.y), [bx, by] = toScreen(c.x + Math.sin(c.psi), c.y + Math.cos(c.psi)), [ux, uy] = toScreen(c.x - tx, c.y - ty);
-    const a0 = Math.atan2(by - sy, bx - sx), turn = wrap(Math.atan2(uy - sy, ux - sx) - a0), a1 = a0 + turn, r = R * 1.28;
-    g.strokeStyle = "#ffe7a8"; g.fillStyle = "#ffe7a8"; g.lineWidth = 6 * DPR;
-    g.beginPath(); g.arc(sx, sy, r, a0, a1, turn < 0); g.stroke();
-    const hx = sx + r * Math.cos(a1), hy = sy + r * Math.sin(a1), d = a1 + Math.sign(turn) * Math.PI / 2, hs = 16 * DPR;
-    g.beginPath();
-    g.moveTo(hx + Math.cos(d) * hs, hy + Math.sin(d) * hs);
-    g.lineTo(hx + Math.cos(d + 2.4) * hs * 0.8, hy + Math.sin(d + 2.4) * hs * 0.8);
-    g.lineTo(hx + Math.cos(d - 2.4) * hs * 0.8, hy + Math.sin(d - 2.4) * hs * 0.8);
-    g.closePath(); g.fill();
-    label = "Face upstream";
-  } else if (!c.eddySlow) label = "Sit still";
-  if (label) {
-    g.font = `800 ${Math.round(17 * DPR)}px system-ui, sans-serif`;
-    g.textAlign = "center"; g.textBaseline = "bottom";
-    g.fillStyle = "#fff6dc"; g.shadowColor = "rgba(0,20,25,0.9)"; g.shadowBlur = 6 * DPR;
-    g.fillText(label, sx, sy - R * 1.28 - 12 * DPR);
-    g.shadowBlur = 0;
-  }
+  if (!c.eddyBow) { const [tx, ty] = river.tan(c.y); turnArrow(-tx, -ty, "Face upstream"); }
+  else if (!c.eddySlow) arrowLabel("Sit still", sx, sy - R * 1.28 - 12 * DPR);
+}
+// A curved arrow round the canoe, from the bow to the world direction (dx, dy), with a label above it. On the screen
+// the bow points up, and a turn to the right is clockwise.
+function turnArrow(dx, dy, label) {
+  const c = canoe, [sx, sy] = toScreen(c.x, c.y), r = 3.1 * cam.k * 1.28;
+  const [bx, by] = toScreen(c.x + Math.sin(c.psi), c.y + Math.cos(c.psi)), [ux, uy] = toScreen(c.x + dx, c.y + dy);
+  const a0 = Math.atan2(by - sy, bx - sx), turn = wrap(Math.atan2(uy - sy, ux - sx) - a0), a1 = a0 + turn;
+  g.lineCap = "round";
+  g.strokeStyle = "#ffe7a8"; g.fillStyle = "#ffe7a8"; g.lineWidth = 6 * DPR;
+  g.beginPath(); g.arc(sx, sy, r, a0, a1, turn < 0); g.stroke();
+  const hx = sx + r * Math.cos(a1), hy = sy + r * Math.sin(a1), d = a1 + Math.sign(turn) * Math.PI / 2, hs = 16 * DPR;
+  g.beginPath();
+  g.moveTo(hx + Math.cos(d) * hs, hy + Math.sin(d) * hs);
+  g.lineTo(hx + Math.cos(d + 2.4) * hs * 0.8, hy + Math.sin(d + 2.4) * hs * 0.8);
+  g.lineTo(hx + Math.cos(d - 2.4) * hs * 0.8, hy + Math.sin(d - 2.4) * hs * 0.8);
+  g.closePath(); g.fill();
+  arrowLabel(label, sx, sy - r - 12 * DPR);
+}
+function arrowLabel(text, x, y) {
+  g.font = `800 ${Math.round(17 * DPR)}px system-ui, sans-serif`;
+  g.textAlign = "center"; g.textBaseline = "bottom";
+  g.fillStyle = "#fff6dc"; g.shadowColor = "rgba(0,20,25,0.9)"; g.shadowBlur = 6 * DPR;
+  g.fillText(text, x, y);
+  g.shadowBlur = 0;
+}
+// Coming to the ledge more than 30° off straight: the arrow shows the turn to line up with the drop.
+function lineUpUi() {
+  const c = canoe, L = river.ledge, d = river.lip(c.x, c.y);
+  if (phase !== "play" || c.swim > 0 || d < -18 || d > -0.5 || Math.abs(wrap(c.psi - Math.atan2(L.tx, L.ty))) <= C.BOOF_OFF) return;
+  turnArrow(L.tx, L.ty, "Line up");
 }
 // Lost: out of the eddies with the bow more than 90° off downstream for 0.8 s. An arrow at the edge of the screen
 // points down the river.
@@ -697,7 +837,7 @@ function hudText() {
   });
 }
 
-startLoop({ step: tick, draw, h: H, maxSteps: 8 });
+startLoop({ step: tick, draw, h: H, maxSteps: 8, scale: () => timeScale });
 
 // hooks for the tests in qa/lab/
 window.QA = {
@@ -713,6 +853,9 @@ window.QA = {
   snap() { cam.init = false; },
   // the eddy you sit in, as the ring shows it: how full, and what the catch still needs
   get hold() { const c = canoe; return { id: c.eddyQ ? c.eddyQ.id : null, fill: holdFill(), bow: c.eddyBow, slow: c.eddySlow, holding: c.holding, caught: c.caught.size }; },
+  // the clock's speed (0.3 in the slow motion of a boof), and how the ledge went: clean, boof, crooked or swim
+  get slow() { return timeScale; },
+  get ledge() { return canoe.ledge; },
   // the last paddle action: {type, side, power, from}
   get lastAct() { return lastAct; },
   // the arrow to downstream is on (or comes on with the next frame)

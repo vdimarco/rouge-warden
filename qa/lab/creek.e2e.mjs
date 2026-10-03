@@ -5,7 +5,9 @@
 // 3. Catching an eddy: the ring is empty while the bow points downstream, and it fills while you hold the catch.
 // 4. No lost runs: the log jam stops a canoe that paddles upstream and an arrow points downstream, Restart in the top
 //    bar starts again at once, and Share on the end card gives a link to today's river.
-// 5. Keys on a computer: D turns the bow right, W paddles straight, C braces. The end card says how the run went.
+// 5. The ledge: a straight run is a boof in slow motion, and time runs again after it. A run 60° off rolls you over,
+//    after the warning.
+// 6. Keys on a computer: D turns the bow right, W paddles straight, C braces. The end card says how the run went.
 // SHOTS=<folder> saves screenshots. Exit code 1 on failure.
 import { open, until, pointer, drag, shot, sleep, report, PHONE, DESK, BASE } from "./lib.mjs";
 
@@ -173,6 +175,41 @@ R.section("No lost runs: the log jam, Restart and Share");
   await until(page, () => document.querySelector(".card.end .note").textContent.length > 0, null, 5000);
   const link = await page.evaluate(() => navigator.clipboard.readText());
   R.check(link === `${new URL(BASE).origin}/lab/creek/#s=${seed}`, `Share gives a link to this river (${link})`);
+  for (const e of errors) R.check(false, e);
+  await close();
+}
+
+R.section("The ledge");
+{
+  const { page, errors, close } = await open("creek/", { ...PHONE, hash: "#s=7" });
+  await page.waitForSelector(".card.start .go");
+  await page.click(".card.start .go");
+  await until(page, () => QA.phase === "play" || QA.phase === "calibrate", null, 10000);
+  if (await page.evaluate(() => QA.phase === "calibrate")) await page.click("#calibSkip");
+  await until(page, () => QA.phase === "play");
+  // 3 m above the lip, in the middle, moving with the water, at an angle; step game time until the lip
+  const put = (offDeg) => page.evaluate((offDeg) => {
+    const r = QA.river, L = r.ledge, c = QA.c;
+    c.x = L.x - 3 * L.tx; c.y = L.y - 3 * L.ty; c.psi = Math.atan2(L.tx, L.ty) + offDeg / 57.2958;
+    c.om = 0; c.phi = 0; c.dphi = 0; c.pushes.length = 0; c.turns.length = 0; c.ledge = null;
+    const f = r.flow(c.x, c.y); c.vx = f.vx; c.vy = f.vy;
+    QA.snap();
+    for (let i = 0; i < 240 && !QA.ledge; i++) QA.step(1);
+    return { ledge: QA.ledge, slow: QA.slow };
+  }, offDeg);
+  const boof = await put(0);
+  R.check(boof.ledge === "boof" && boof.slow < 0.5, `a straight run over the ledge is a boof, and time slows (x${boof.slow})`);
+  await sleep(350);
+  await shot(page, "creek-phone-boof");
+  await until(page, () => QA.slow === 1, null, 6000);
+  R.check(true, "then time runs again");
+  const crooked = await put(60);
+  const after = await page.evaluate(() => {
+    let warn = null;
+    for (let i = 0; i < 360 && QA.c.swim <= 0; i++) { QA.step(1); if (warn == null && QA.c.warn) warn = QA.c.t; }
+    return { swim: QA.c.swim > 0, lead: warn == null ? 0 : QA.c.t - warn };
+  });
+  R.check(crooked.ledge === "crooked" && after.swim && after.lead >= 0.3, `a run 60° off rolls you over, ${after.lead.toFixed(2)} s after the warning`);
   for (const e of errors) R.check(false, e);
   await close();
 }

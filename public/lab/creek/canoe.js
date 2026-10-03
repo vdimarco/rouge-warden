@@ -8,6 +8,7 @@ import { FINISH, START, JAM } from "./river.js";
 
 const D2R = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 export const H = 1 / 120;
 export const C = {
   PTS: [[2, 0.3], [0, 0.4], [-2, 0.3]],       // where the hull feels the water: [metres ahead of the middle, weight]
@@ -27,6 +28,9 @@ export const C = {
   SWIM: 1.8,                                   // seconds from a capsize to the reset
   SWIM_BACK: 4,                                // metres upstream of the swim where you climb back in
   EDDY_E: 0.6, EDDY_REL: 0.7, EDDY_GROUND: 1.3, EDDY_COS: Math.cos(70 * D2R), EDDY_HOLD: 0.4,
+  // the ledge: over the lip within 30° of straight is a boof, and a stroke in the last 0.4 s makes it a clean one.
+  // More crooked, the drop rolls the hull toward its downstream side for 0.45 s, harder the more crooked it is.
+  BOOF_OFF: 30 * D2R, BOOF_STROKE: 0.4, KICK: 40, KICK_T: 0.45,
   EDDY_GRAB: 1.0,                              // per second, at the core of an eddy
   PEEL: 0.4, PEEL_T: 0.8,                      // the share of the grab left for 0.8 s after a stroke with the bow
                                                // downstream. With no peel, the grab held a canoe that paddled hard.
@@ -37,7 +41,7 @@ export function newCanoe(river, at = null) {
   const [tx, ty] = river.tan(y);
   return {
     x, y, vx: 0, vy: 0, psi: at && at.psi != null ? at.psi : Math.atan2(tx, ty), om: 0, phi: 0, dphi: 0,
-    t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0, strokeT: -9,
+    t: 0, lean: 0, brace: 0, pushes: [], turns: [], warn: 0, strokeT: -9, kick: null, ledge: null, ledgeT: -9,
     swim: 0, swims: 0, swimX: 0, swimY: 0, caught: new Set(), lastEddy: null, inEddy: null, eddyT: 0, touching: false, pinT: 0,
     eddyQ: null, eddyBow: false, eddySlow: false, holding: false,
     miss: {}, done: false, strokes: 0, js: 0, braces: 0, rocks: 0,
@@ -109,13 +113,16 @@ export function step(c, river, ev = null) {
   }
   c.om += yawA * H;
   c.psi += c.om * H;
+  const lip0 = river.lip(c.x, c.y);
   c.x += c.vx * H;
   c.y += c.vy * H;
+  if (lip0 < 0 && river.lip(c.x, c.y) >= 0) overLip(c, river, ev);
 
   // roll: the hull rights itself up to 50°; sliding sideways over the water trips it, unless you lift the edge
   const trip = C.TRIP * wsMid * Math.abs(wsMid) * clamp(1 + Math.sign(wsMid) * (c.phi / C.TRIP_LEAN), 0, 1.8);
   let rollA = -C.RIGHT_K * Math.sin((Math.PI * c.phi) / C.CAPSIZE) - C.ROLL_C * c.dphi + C.LEAN_K * (leanT - c.phi) + trip;
   if (c.brace && c.brace * c.phi > C.BRACE_LEAN) rollA -= c.brace * (C.BRACE_K * (c.brace * c.phi - C.BRACE_LEAN) + C.BRACE_C * c.brace * c.dphi);
+  if (c.kick) { rollA += c.kick.a; if ((c.kick.t -= H) <= 0) c.kick = null; }
   c.dphi += rollA * H;
   // past 30° the hull rolls on no faster than ROLL_RATE, so the warning comes in time to brace
   if (Math.abs(c.phi) > C.ROLL_CAP_AT && c.dphi * Math.sign(c.phi) > C.ROLL_RATE) c.dphi = Math.sign(c.phi) * C.ROLL_RATE;
@@ -165,6 +172,26 @@ export function step(c, river, ev = null) {
   if (c.y >= FINISH) { c.done = true; if (ev) ev.push({ k: "finish" }); }
 }
 
+// Over the lip of the ledge. Straight: a boof, the moment the page slows time for. Crooked: the drop rolls you over
+// toward the downstream side, unless you brace there.
+function overLip(c, river, ev) {
+  const L = river.ledge, rel = wrap(c.psi - Math.atan2(L.tx, L.ty)), off = Math.abs(rel);
+  c.ledgeT = c.t;
+  if (off <= C.BOOF_OFF) {
+    const clean = c.t - c.strokeT < C.BOOF_STROKE;
+    c.ledge = clean ? "clean" : "boof";
+    // no stroke: the bow drops into the foam, and the canoe slows and wobbles
+    if (!clean) { c.vx *= 0.8; c.vy *= 0.8; c.dphi += (rel >= 0 ? -1 : 1) * 0.5; }
+    if (ev) ev.push({ k: "boof", clean, off });
+  } else {
+    // the side of the hull that faces downstream: the left one when the bow points right of the current
+    const side = rel > 0 ? -1 : 1;
+    c.kick = { a: side * C.KICK * (0.3 + (off - C.BOOF_OFF) / (60 * D2R)), t: C.KICK_T };
+    c.ledge = "crooked";
+    if (ev) ev.push({ k: "crooked", off, side });
+  }
+}
+
 function collide(c, river, ev) {
   const sp = Math.sin(c.psi), cp = Math.cos(c.psi);
   c.touching = false;
@@ -208,6 +235,8 @@ function contact(c, s, nx, ny, pen, sp, cp) {
 function capsize(c, ev) {
   c.swim = C.SWIM;
   c.swims++;
+  if (c.ledge && c.t - c.ledgeT < 2) c.ledge = "swim";
+  c.kick = null;
   c.swimX = c.x; c.swimY = c.y;
   c.warn = 0; c.eddyQ = null; c.holding = false;
   c.pushes.length = 0; c.turns.length = 0;
@@ -226,9 +255,12 @@ function reset(c, river, ev) {
 }
 
 // The open water nearest to (x, y), at y or a little upstream of it: well inside the banks, with the whole hull clear
-// of the rocks, and out of the eddies. Never above the put-in.
+// of the rocks, and out of the eddies. Never above the put-in, and never on the drop: a swim at the ledge puts you
+// back 13 m above its lip, so you can line up again.
 export function putIn(river, x, y) {
-  const f = {}, y0 = Math.max(START, y), n0 = clamp((x - river.c(y0)) / river.b(y0), -0.6, 0.6);
+  const d = river.lip(x, y), f = {};
+  if (d > -13 && d < 4) y -= 13 + d;
+  const y0 = Math.max(START, y), n0 = clamp((x - river.c(y0)) / river.b(y0), -0.6, 0.6);
   const open = (px, py, strict) => {
     const [tx, ty] = river.tan(py);
     for (const s of [-2.3, 0, 2.3]) {

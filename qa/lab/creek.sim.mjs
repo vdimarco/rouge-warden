@@ -2,7 +2,8 @@
 // Strokes turn the right way, J-strokes hold a line, eddies turn the water back, a fast crossing with no brace tips
 // you and a brace keeps you up, eddies can be caught, a river can be run, and nothing ends inside a rock or a bank.
 // "Rocks hit" counts knocks, a swim puts you back a few metres upstream, and a capsize comes after a warning that
-// leaves time to brace. Exit code 1 on failure.
+// leaves time to brace. A log jam stops you above the put-in, a canoe that paddles out of an eddy gets out, and the
+// first eddy comes up fast. Over the ledge, straight is a boof and crooked is a swim. Exit code 1 on failure.
 import { makeRiver, FINISH, JAM } from "../../public/lab/creek/river.js";
 import { newCanoe, act, step, H, C, closestMiss } from "../../public/lab/creek/canoe.js";
 
@@ -61,7 +62,8 @@ section("The river");
 
 /* ---------------- 3. eddy lines ---------------- */
 // Drive into the eddy behind rock q from one side, at `drive` m/s through the water, with or without a brace.
-// Once inside, stroke the bow round to face upstream, as a paddler would.
+// Once inside, stroke the bow round to face upstream, as a paddler would. A canoe that misses the eddy and drifts on
+// to the ledge at the foot of the rapid stops there: the ledge is tested on its own below.
 function entry(r, q, side, brace, drive) {
   const down = Math.atan2(q.tx, q.ty), k = side * (q.hw + 1.5), s = q.sc - q.hl * 0.5;
   const x = q.x + s * q.tx + k * q.ty, y = q.y + s * q.ty - k * q.tx, psi = down - side * (55 / R2D);
@@ -78,6 +80,7 @@ function entry(r, q, side, brace, drive) {
     step(c, r, ev);
     if (ev.some((e) => e.k === "capsize")) return "capsize";
     if (ev.some((e) => e.k === "eddy")) return "caught";
+    if (r.lip(c.x, c.y) > -2) return "neither";
   }
   return "neither";
 }
@@ -298,6 +301,41 @@ section("Eddies");
     }
   }
   check(others > 0 && counted === 0, `an eddy that is not a target never counts (${others} tried; before, such an eddy counted)`);
+}
+
+/* ---------------- 9. the ledge ---------------- */
+// From 3 m above the lip, in the middle, moving with the water: straight over is a boof, 60° off rolls you over.
+section("The ledge");
+{
+  const over = (seed, offDeg, { stroke = false, late = false } = {}) => {
+    const r = makeRiver(seed), L = r.ledge, ev = [];
+    const c = newCanoe(r, { x: L.x - 3 * L.tx, y: L.y - 3 * L.ty, psi: Math.atan2(L.tx, L.ty) + offDeg / R2D }), f = r.flow(c.x, c.y);
+    c.vx = f.vx; c.vy = f.vy;
+    let warn = null, cap = null, stroked = false;
+    for (let i = 0; i < 120 * 3 && cap == null; i++) {
+      if (stroke && !stroked && r.lip(c.x, c.y) > -1.2) { act(c, { type: "stroke", side: 1, power: 1 }); act(c, { type: "j", side: 1, power: 1 }); stroked = true; }
+      if (late && warn != null && c.t - warn >= 0.25 && !c.brace) c.brace = c.warn || Math.sign(c.phi) || 1;
+      const n = ev.length;
+      step(c, r, ev);
+      for (const e of ev.slice(n)) { if (e.k === "tip" && warn == null) warn = c.t; if (e.k === "capsize") cap = c.t; }
+    }
+    // after a swim, where you get back in
+    let back = null;
+    if (cap != null) { for (let i = 0; i < 120 * 3 && !ev.some((e) => e.k === "reset"); i++) step(c, r, ev); back = r.lip(c.x, c.y); }
+    return { ev, c, cap, lead: cap != null && warn != null ? cap - warn : 0, back };
+  };
+  const seeds = [3, 7, 11, 23, 42, 99];
+  const straight = seeds.map((s) => over(s, 0)), clean = seeds.map((s) => over(s, 0, { stroke: true }));
+  check(straight.every((o) => o.ev.some((e) => e.k === "boof") && o.cap == null), "a straight run over the ledge is a boof, and you stay up");
+  check(clean.every((o) => o.ev.some((e) => e.k === "boof" && e.clean)), "with a stroke at the lip it is a clean boof");
+  const crooked = seeds.flatMap((s) => [over(s, 60), over(s, -60)]);
+  check(crooked.every((o) => o.ev.some((e) => e.k === "crooked") && o.cap != null), "a run 60° off rolls you over");
+  check(crooked.every((o) => o.lead >= 0.3), `the warning comes at least 0.3 s before that swim (${Math.min(...crooked.map((o) => o.lead)).toFixed(2)} s at least)`);
+  const saved = seeds.flatMap((s) => [over(s, 60, { late: true }), over(s, -60, { late: true })]).filter((o) => o.cap == null).length;
+  check(saved >= 9, `a brace 0.25 s after the warning saves ${saved} of 12 of those runs`);
+  check(crooked.every((o) => o.back <= -12), `after a swim at the ledge you get back in above it, ${Math.min(...crooked.map((o) => -o.back)).toFixed(0)} m or more`);
+  const follow = seeds.map((s) => run(s, follower));
+  check(follow.every((x) => x.c.ledge === "boof" || x.c.ledge === "clean"), `a paddler who follows the middle boofs the ledge (${follow.map((x) => x.c.ledge).join(", ")})`);
 }
 
 console.log(`\ncreek.sim: ${fails.length ? fails.length + " failed" : "all passed"}`);

@@ -1,7 +1,8 @@
 // Up the Creek: the river. Metres; x runs across the river (right is + when you face downstream), y runs downstream.
 // A winding centerline and width, a current that is fastest in the middle, rocks that bend the flow around them, and
 // behind each rock an eddy: a pocket where the water turns back upstream. The edge of an eddy is the eddy line, a
-// narrow band where the water changes direction. No DOM here: the Node tests import it.
+// narrow band where the water changes direction. At the foot of the rapid the river pours over a ledge. No DOM here:
+// the Node tests import it.
 import { mulberry } from "../kit/rng.js";
 
 const TAU = Math.PI * 2;
@@ -13,7 +14,8 @@ export const RAPID = [40, 250];     // where the fast water runs: it starts to s
 export const FINISH = 285;
 export const START = 6;             // the put-in
 export const JAM = -10;             // a log jam across the river above the put-in: nobody paddles past it
-export const LEDGE = 254;           // the foot of the rapid: no rocks from 18 m above it to 12 m below it
+export const LEDGE = 254;           // a ledge across the river at the foot of the rapid: no rocks from 18 m above it
+                                    // to 12 m below it
 
 // opts.still: no current at all (for tests of the canoe alone); opts.rocks: place these rocks instead
 export function makeRiver(seed, opts = {}) {
@@ -26,6 +28,12 @@ export function makeRiver(seed, opts = {}) {
   const V = (y) => (opts.still ? 0 : 1.2 + 1.8 * (smoothstep(RAPID[0] - 20, RAPID[0] + 10, y) - smoothstep(RAPID[1] - 10, RAPID[1] + 25, y)));
   // the unit tangent of the centerline, pointing downstream
   const tan = (y) => { const d = dc(y), n = Math.sqrt(1 + d * d); return [d / n, 1 / n]; };
+  // The ledge: its lip is a line across the river, square to the current there. lip() is how far past the lip a point
+  // is, along the current (- above it). The water speeds up over the last 10 m to the lip, to half again as fast,
+  // and slows back down in the 6 m below it.
+  const [ltx, lty] = tan(LEDGE), lx = c(LEDGE);
+  const lip = (x, y) => (x - lx) * ltx + (y - LEDGE) * lty;
+  const pour = (d) => 1 + 0.5 * (smoothstep(-10, 0, d) - smoothstep(0, 6, d));
 
   const rocks = opts.rocks ? opts.rocks.map((q, i) => ({ id: i, ...q })) : [];
   if (!opts.rocks) {
@@ -61,7 +69,7 @@ export function makeRiver(seed, opts = {}) {
   function flow(x, y, out = {}) {
     const cy = c(y), by = b(y), n = (x - cy) / by;
     const [tx, ty] = tan(y);
-    const u0 = V(y) * Math.max(0, 1 - n ** 4);
+    const u0 = V(y) * Math.max(0, 1 - n ** 4) * pour(lip(x, y));
     let vx = u0 * tx, vy = u0 * ty, e = 0, rock = null;
     for (const q of rocks) {
       const dx = x - q.x, dy = y - q.y;
@@ -107,5 +115,5 @@ export function makeRiver(seed, opts = {}) {
   const targets = rocks.filter((q) => q.U >= 1.5);
   for (const q of rocks) q.target = q.U >= 1.5;
 
-  return { seed, rocks, targets, c, dc, b, V, tan, flow, eddyAt, bank: (y) => [c(y) - b(y), c(y) + b(y)] };
+  return { seed, rocks, targets, c, dc, b, V, tan, flow, eddyAt, lip, ledge: { x: lx, y: LEDGE, tx: ltx, ty: lty }, bank: (y) => [c(y) - b(y), c(y) + b(y)] };
 }
