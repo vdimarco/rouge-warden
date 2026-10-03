@@ -1025,7 +1025,15 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       return { x: hl.x - Math.sin(psi) * 1.0, y: 0.9, z: hl.z - Math.cos(psi) * 1.0, yaw: psi, size: 0.7, tilt: 0, plinth: true };
     }
     map.table = false;
-    if (isDesktopNow()) return { x: hl.x - Math.sin(psi) * 1.7, y: hl.y - 0.5, z: hl.z - Math.cos(psi) * 1.7, yaw: psi, size: 1.0, tilt: 24 * DEG, plinth: true };
+    if (isDesktopNow()) {
+      // flat play: in third person the camera hangs behind the hero, so the map stands 2 m in front of the camera (not of the head),
+      // a little to the right of the list of places
+      rig.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+      const cp = rig.worldToLocal(V2.setFromMatrixPosition(camera.matrixWorld));
+      const cf = V3.set(0, 0, -1).transformDirection(camera.matrixWorld).transformDirection(M1.copy(rig.matrixWorld).invert());
+      const cpsi = Math.atan2(-cf.x, -cf.z), sx = -Math.sin(cpsi), sz = -Math.cos(cpsi);
+      return { x: cp.x + sx * 2.0 - sz * 0.3, y: cp.y - 0.45, z: cp.z + sz * 2.0 + sx * 0.3, yaw: cpsi, size: 1.1, tilt: 24 * DEG, plinth: true };
+    }
     return { x: hl.x - Math.sin(psi) * 1.25, y: 0.9, z: hl.z - Math.cos(psi) * 1.25, yaw: psi, size: 1.0, tilt: 0, plinth: true };
   }
   function openMap() {

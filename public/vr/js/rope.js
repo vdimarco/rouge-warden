@@ -11,7 +11,7 @@ const FAR = 400; // the exact ray looks this far, so a wall out of reach still g
 const RET_TAN = Math.tan(0.75 * DEG); // reticles are 1.5° across wherever they land
 const MAX_SEG = 16; // rope segments per rope
 const ROPE_R = 0.012;
-const MIN_W = Math.tan(0.14 * DEG).toFixed(6); // a far rope never gets thinner than about 0.28° (4 px in the headset, 2 px on a flat screen), inside its ink line
+const MIN_W = Math.tan(0.14 * DEG).toFixed(6); // a far rope never gets thinner than about 0.28° (5 px in the headset), or 3 px on a flat screen where that would be 2, inside its ink line
 const CUP_TAN = Math.tan(0.35 * DEG); // a far cup keeps its rim about 0.7° across, so you can see where it stuck
 const CUP_RIM = 0.037, STUB_END = 0.095; // the cup model: rim radius, and where the rope ties on behind the stub
 const RINGS = [1 / 3, 2 / 3, 1], PER_RING = 8; // the cone search: 24 rays
@@ -178,7 +178,7 @@ export function createRopes(scene, city, settings) {
         vec3 axis = (m * vec4(0.0, position.y, 0.0, 1.0)).xyz;
         vec3 rad = normalize(mat3(m) * vec3(position.x, 0.0, position.z));
         // real thickness up close; far away it widens a little so it never breaks up into flickering pixels
-        float r = max(${ROPE_R.toFixed(4)}, distance(axis, cameraPosition) * ${MIN_W});
+        float r = max(${ROPE_R.toFixed(4)}, distance(axis, cameraPosition) * max(${MIN_W}, uInkK * 1.5));
         vW = axis + rad * r;
         #ifdef HULL
         ${hullPush("vW", "rad")}
@@ -189,8 +189,8 @@ export function createRopes(scene, city, settings) {
         gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
       }`;
   const ropeMat = new THREE.ShaderMaterial({
-    uniforms: { uStripe: { value: 0 } },
-    vertexShader: ropeVS.replace(HULL_HEAD, ""),
+    uniforms: { uStripe: { value: 0 }, uInkK: inkK },
+    vertexShader: ropeVS.replace(HULL_HEAD, "uniform float uInkK;"),
     fragmentShader: `
       uniform float uStripe;
       varying vec3 vW; varying vec3 vN; varying float vS; varying float vA;
@@ -218,6 +218,7 @@ export function createRopes(scene, city, settings) {
   ropeMesh.frustumCulled = false; // the segments move every frame
   ropeMesh.count = 0;
   ropeMesh.visible = false; // until update() has something to draw
+  ropeMesh.onBeforeRender = (renderer, sc, camera) => syncInk(renderer, camera); // (the rope's own width reads the pixel size too)
   ropeMesh.add(inkTwin(ropeMesh, hullMaterial({ vertexShader: ropeVS, width: 0.0022, px: 1.7 })));
   scene.add(ropeMesh);
 
