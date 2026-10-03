@@ -11,3 +11,6 @@ Bot Omen and Soul thread commits retain the selected creature and display a foll
 Bots must respond after a bounded delay and share objective opportunities under the same team rules. Neutral specials have explicit shapes, locked aim and recovery windows; they use existing collision and line-of-sight rules.
 
 Validate behavior with meaningful deterministic scenarios and existing seeded full-match suites. Use local Playwright because the Browser plugin is absent. Report physical-phone performance separately. OpenSpec CLI is unavailable; inspect delta format and scenario coverage directly instead of claiming CLI validation.
+
+
+Combat-fun follow-up: committed casts now separate the defender's two rewards. The warning is the dodge opportunity; the post-cast recovery is the punish opportunity. Regular committed casts use a 0.22-0.26 second recovery and ultimates use 0.34 seconds. Defensive/instant actions keep zero added recovery.
