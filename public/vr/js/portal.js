@@ -263,25 +263,27 @@ function chunkMaterial() {
 function dustMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: {},
-    vertexShader: `attribute float aA; varying vec2 vQ; varying float vA;
+    vertexShader: `attribute float aA; varying vec2 vQ; varying float vA; varying float vF;
       void main() {
         vQ = position.xy * 2.0; vA = aA;
         vec4 mv = modelViewMatrix * (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0));
+        // a puff that drifts to your face fades out, so a cartoon cloud never blocks the view
+        vF = smoothstep(0.8, 2.4, length(mv.xyz));
         float s = length(instanceMatrix[0].xyz);
         mv.xy += position.xy * s;
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `${NOISE}${COMIC}
-      varying vec2 vQ; varying float vA;
+      varying vec2 vQ; varying float vA; varying float vF;
       void main() {
         float r = length(vQ), ang = atan(vQ.y, vQ.x);
         float rs = 0.72 + 0.1 * sin(ang * 5.0 + vA * 9.0) + 0.05 * sin(ang * 9.0 + vA * 31.0);
-        float px = max(fwidth(vQ.x), fwidth(vQ.y)), aa = px * 0.8, iw = clamp(px * 1.8, 0.08, 0.35);
+        float px = max(fwidth(vQ.x), fwidth(vQ.y)), aa = px * 0.8, iw = clamp(px * 1.8, 0.08, 0.16);
         float sd = r - rs;
         float fill = 1.0 - smoothstep(-aa, aa, sd), ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
         float side = dot(vQ, vec2(0.55, -0.75));
         vec3 col = mix(vec3(0.98, 0.92, 0.8), vec3(0.62, 0.56, 0.78), max(comicStep(0.12, side), comicDots(vQ * 2.2, 0.2, 0.5) * 0.5 * smoothstep(-0.2, 0.3, side)));
-        gl_FragColor = vec4(mix(INKV, col, fill), ink * min(1.0, vA * 2.4));
+        gl_FragColor = vec4(mix(INKV, col, fill), ink * min(1.0, vA * 2.4) * vF);
       }`,
     transparent: true, depthWrite: false,
   });

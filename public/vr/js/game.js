@@ -24,7 +24,7 @@ const BOWL_Y = 1.3, BOWL_Z = 0.15; // the bowl's middle in the toilet's own fram
 const PIPE_S = 1.3; // a pipe on the pod is a third bigger than it needs to be, so it reads from 60 m
 const CUP_Y = 1.9; // a pump target sits in the bowl, this high over the roof (before the scale)
 const FOUNT = 24; // sludge blobs in each fountain
-const BEAM = { clog: [1.4, 140], king: [6, 260], pad: [2.2, 30] }; // beacon radius and height
+const BEAM = { clog: [1.4, 140], king: [3, 260], pad: [2.2, 30] }; // beacon radius and height
 const KING_BEAM = 12, PAD_BEAM = 13; // beacon slots (the clogs take 0-11)
 const RING_SLOT = 0, GOLD_SLOT = 3, FLASH_SLOT = 4, PAD_SLOT = 6; // ring slots: rings 0-2, the tutorial marker, 2 flashes, 3 pads
 const PAD_R = 1.5; // a trial pad: stand inside this radius
@@ -98,6 +98,9 @@ function toiletGeo(king, hull = false) {
     add(new THREE.SphereGeometry(0.22, 10, 8), place(-0.5, 1.55, 1.3, 0, 0, 0, 1, 0.6, 1), 0x6a8a1a, M_SLUDGE);
     add(new THREE.SphereGeometry(0.12, 8, 6), place(0.25, 1.15, 1.44, 0, 0, 0, 1, 2.6, 0.6), 0x6a8a1a, M_SLUDGE);
     add(new THREE.SphereGeometry(0.1, 8, 6), place(-0.5, 1.22, 1.36, 0, 0, 0, 1, 2.2, 0.6), 0x6a8a1a, M_SLUDGE);
+    // a wide tongue of goo over the front of the lip and a pool on the tiles, like the toilets of the cover that pour onto the roof
+    add(new THREE.SphereGeometry(0.2, 10, 8), place(0.05, 0.95, 1.37, 0, 0, 0, 1.15, 2.6, 0.5), 0x6a8a1a, M_SLUDGE);
+    for (const [x, z, sx, sz] of [[0.05, 1.55, 1.15, 0.8], [-0.95, 1.85, 0.6, 0.45], [1.0, 1.95, 0.55, 0.42], [-0.2, 2.0, 0.45, 0.3]]) add(new THREE.SphereGeometry(1, 14, 6), place(x, 0.16, z, 0, 0, 0, sx, 0.1, sz), 0x6a8a1a, M_SLUDGE);
   }
   if (king) {
     // a gold crown on the tank, glowing green eyes and heavy brows on its face, like the cover
@@ -140,8 +143,8 @@ function pipeGeo() {
 function coinGeo(hull = false) {
   const B = partsBuilder();
   const R = Math.PI / 2, add = (geo, m, hex, part) => B.add(geo, m, hex, [part, 0, 0, 0]);
-  add(new THREE.CylinderGeometry(COIN_R, COIN_R, 0.14, 11), place(0, 0, 0, R), COLORS.gold, 0);
-  if (!hull) add(new THREE.CylinderGeometry(COIN_R * 0.68, COIN_R * 0.68, 0.19, 11), place(0, 0, 0, R), 0xffdc7a, 1);
+  add(new THREE.CylinderGeometry(COIN_R, COIN_R, 0.14, 11), place(0, 0, 0, R), 0xf0aa24, 0);
+  if (!hull) add(new THREE.CylinderGeometry(COIN_R * 0.68, COIN_R * 0.68, 0.19, 11), place(0, 0, 0, R), 0xffd84a, 1);
   return B.build();
 }
 
@@ -378,10 +381,10 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         float fade = comicPoster(pow(1.0 - vY, 1.4) * smoothstep(0.0, 0.03, vY), 4.0);
         float body = mix(1.0, dots, smoothstep(0.3, 0.8, vY));
         // pale core, lime body, darker rim, cut hard
-        vec3 core = mix(vC, vec3(1.0, 1.0, 0.72), 0.65), edge = vC * vec3(0.5, 0.78, 0.42);
+        vec3 core = mix(vC, vec3(0.9, 1.0, 0.62), 0.7), edge = vC * vec3(0.42, 0.74, 0.3);
         vec3 col = mix(edge, mix(vC, core, comicStep(0.72, rim)), comicStep(0.26, rim));
-        float k = mix(0.22, 1.0, smoothstep(4.0, 45.0, distance(cameraPosition.xz, vAx))) * (1.0 - 0.75 * fogAmt(vW)) * vL; // thin near, hazy far
-        float a = fade * body * 0.7 * k;
+        float k = mix(0.14, 1.0, smoothstep(vRad * 2.0, vRad * 2.0 + 40.0, distance(cameraPosition.xz, vAx))) * (1.0 - 0.55 * fogAmt(vW)) * vL; // thin near, hazy far
+        float a = fade * body * 0.85 * k;
         float aInk = ink * min(1.0, fade * 1.3) * (1.0 - smoothstep(0.5, 0.85, vY)) * k;
         gl_FragColor = vec4(mix(col, INKV, ink), max(a, aInk * 0.9));
       }`,
@@ -443,9 +446,12 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       void main() {
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
         float crease = smoothstep(0.5, 0.9, length(fwidth(N))); // the inked edge of the raised middle
-        vec3 col = shadeProp(vC, N, V, 0.45, 0.3);
+        // gold in three flat bands: its shade goes to orange-brown (a violet shade would turn it grey) and its light to yellow
+        float b = comicBand(max(comicLight(N, SUN), 0.5 * max(dot(N, V), 0.0)), 0.14, 0.5);
+        vec3 sh = vC * vec3(0.66, 0.40, 0.26), mi = vC * vec3(0.96, 0.82, 0.58), li = vC * vec3(1.06, 1.08, 0.86) + vec3(0.0, 0.04, 0.05);
+        vec3 col = b < 1.0 ? mix(sh, mi, b) : mix(mi, li, b - 1.0);
         // a glint each time a face swings toward the sun: a hard white flash, small, so the coin stays gold
-        col = mix(col, vec3(1.0, 0.96, 0.8), comicStep(0.985, dot(N, normalize(SUN + V))) * 0.85);
+        col = mix(col, vec3(1.0, 0.97, 0.82), comicStep(0.985, dot(N, normalize(SUN + V))) * 0.9);
         col = mix(col, INKV, crease * 0.85);
         gl_FragColor = vec4(fogMix(col, vW, 0.5), 1.0);
       }`,
@@ -733,15 +739,15 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   scene.add(kingRig); // until start() he sits outside the hidden root, so the portal can show him through its hole
   const kingMats = [];
   let kingModel = "loading", stencilRef = null, mouthLocal = new THREE.Vector3(MOUTH[0] * H, MOUTH[1] * H, MOUTH[2] * H);
-  const kingUniforms = { uGlow: { value: 0 }, uFlash: { value: 0 }, uMap: { value: null } };
+  const kingUniforms = { uGlow: { value: 0 }, uFlash: { value: 0 }, uMap: { value: null }, uEC0: { value: new THREE.Vector3() }, uEC1: { value: new THREE.Vector3() }, uER: { value: new THREE.Vector3(1, 0, 0) }, uEU: { value: new THREE.Vector3(0, 1, 0) }, uEN: { value: new THREE.Vector3(0, 0, 1) }, uEHs: { value: 1 }, uEOn: { value: 0 } };
   const KING_VS = `
         #ifndef HAS_MAP
         attribute vec3 aCol; attribute vec4 aInfo;
         #endif
-        varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vUv; varying float vM;
+        varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vUv; varying float vM; varying vec3 vL; varying vec3 vNL;
         void main() {
           vec4 w = modelMatrix * vec4(position, 1.0);
-          vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vUv = uv; vC = vec3(1.0); vM = 0.0;
+          vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vUv = uv; vC = vec3(1.0); vM = 0.0; vL = position; vNL = normal;
           #ifndef HAS_MAP
           vC = aCol; vM = aInfo.w;
           #endif
@@ -777,7 +783,35 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       fragmentShader: `
         ${KIT}
         uniform float uGlow, uFlash; uniform sampler2D uMap;
-        varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vUv; varying float vM;
+        uniform vec3 uEC0, uEC1, uER, uEU, uEN; uniform float uEHs, uEOn;
+        varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vUv; varying float vM; varying vec3 vL; varying vec3 vNL;
+        // One eye, painted on the face at c (the model's own space): rgb and coverage. side turns it (the left eye one way, the right the other).
+        vec4 kingEye(vec3 c, float side, float on, float ndl) {
+          vec3 d = vL - c;
+          vec2 q = vec2(dot(d, uER), dot(d, uEU)) / uEHs;
+          float a = side * ${EYE.roll.toFixed(3)}, ca = cos(a), sa = sin(a);
+          vec2 p = vec2(ca * q.x + sa * q.y, -sa * q.x + ca * q.y);
+          float px = max(fwidth(p.x), fwidth(p.y)), aa = max(px * 0.8, 1e-4);
+          // an angry half-moon: an ellipse with its top cut flat, so the lid hangs low over the stare
+          float sd = (length(p / vec2(0.5, 0.4)) - 1.0) * 0.4;
+          sd = max(sd, p.y - mix(0.0, 0.12, on));
+          float fill = 1.0 - smoothstep(-aa, aa, sd);
+          float iw = clamp(px * 1.9, 0.02, 0.06);
+          float ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
+          float dc = (length((p - vec2(0.0, -0.1)) / vec2(0.3, 0.16)) - 1.0) * 0.16;
+          float core = 1.0 - smoothstep(-aa, aa, dc);
+          vec3 lime = mix(vec3(0.34, 0.4, 0.18), vec3(0.62, 1.0, 0.23) * (1.0 + 0.08 * sin(uTime * 6.0)), on);
+          vec3 eye = mix(lime, vec3(0.94, 1.0, 0.66), core * step(0.5, on));
+          // the halo: dots that thin out away from the eye, only while it is lit
+          float halo = comicDots(p * uEHs * 0.7, 0.28, 0.65 * (1.0 - smoothstep(0.0, 0.6, sd)) * on) * step(0.0, sd);
+          vec3 col = vec3(0.72, 1.0, 0.3);
+          float al = halo * 0.9;
+          col = mix(col, INKV, ink); al = max(al, ink);
+          col = mix(col, eye, fill); al = max(al, fill);
+          // only on the face: near its plane, turned the same way, inside the patch
+          float m = step(abs(dot(d, uEN)), uEHs * 0.5) * step(0.35, ndl) * step(max(abs(p.x), abs(p.y)), 1.3);
+          return vec4(col, al * m);
+        }
         void main() {
           vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
           if (!gl_FrontFacing) N = -N;
@@ -809,11 +843,16 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
           col = mix(col, INKV, crack * 0.9);
           // awake he glows sludge green: a green rim cut hard, and a tint on his lit side
           float glow = clamp(uGlow, 0.0, 1.0);
+          // the eyes (emissive: the light does not reach them)
+          float on = smoothstep(0.02, 0.3, uGlow), ndl = dot(normalize(vNL), uEN);
+          vec4 e0 = kingEye(uEC0, -1.0, on, ndl), e1 = kingEye(uEC1, 1.0, on, ndl);
           col = mix(col, g, comicStep(0.35, glow) * 0.16);
           col = mix(col, g, comicStep(0.72, 1.0 - ndv) * glow * 0.8);
           // the eyes and jewels: bright green with a pale core, brighter when he is awake
           vec3 glowc = mix(g, vec3(0.92, 1.0, 0.7), comicStep(0.55, ndv));
           col = mix(col, glowc * (0.8 + 0.2 * glow), eye);
+          col = mix(col, e0.rgb, e0.a * uEOn);
+          col = mix(col, e1.rgb, e1.a * uEOn);
           col = mix(col, vec3(1.0, 0.98, 0.9), uFlash);
           gl_FragColor = vec4(fogMix(col, vW, 0.4), 1.0);
         }`,
@@ -830,6 +869,40 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     findDeck();
     updateKingVisible();
   }
+  // His eyes are painted by the King's own shader (no extra draw): two lime almonds on the face where addEyes found it, over the painted
+  // ones. They are dull and heavy-lidded while he sleeps and wide, lit and haloed with dots when he wakes (uGlow).
+  const EYE = { cx: 0.12, sp: 1.52, y: 12.0, hs: 1.3, roll: 0.55 }; // metres on a 16 m King, measured on king.glb's face (hs: half size of the patch)
+  const RAYC = new THREE.Raycaster();
+  // A ray along his own z, from the front, finds the face at each eye; the patch takes that point and the surface's turn there. A model
+  // whose face is not found keeps its painted eyes (uEOn stays 0).
+  function addEyes(meshes) {
+    const k = H / 16, n = new THREE.Vector3(), nr = new THREE.Vector3(), inv = new THREE.Matrix4();
+    let ws = 1, hits = 0;
+    kingUniforms.uEN.value.set(0, 0, 0);
+    [-1, 1].forEach((side, i) => {
+      kingRig.updateMatrixWorld(true);
+      V1.set((EYE.cx + side * EYE.sp) * k, EYE.y * k, 40 * k).applyMatrix4(kingRig.matrixWorld);
+      V2.set(0, 0, -1).transformDirection(kingRig.matrixWorld);
+      RAYC.set(V1, V2); RAYC.near = 0; RAYC.far = 80 * k;
+      const h = RAYC.intersectObjects(meshes, false)[0];
+      if (!h) return;
+      inv.copy(kingRig.matrixWorld).invert();
+      nr.copy(h.face.normal).transformDirection(h.object.matrixWorld).transformDirection(inv);
+      if (nr.z < 0.3) return; // never sideways or backward: it is a face
+      (i ? kingUniforms.uEC1 : kingUniforms.uEC0).value.copy(h.object.worldToLocal(h.point.clone()));
+      n.copy(h.face.normal); kingUniforms.uEN.value.add(n);
+      ws = V3.setFromMatrixScale(h.object.matrixWorld).x || 1;
+      hits++;
+    });
+    if (hits < 2) return;
+    // the patch's frame in the model's own space: right and up along the face, the normal out of it
+    const N = kingUniforms.uEN.value.normalize(), R = kingUniforms.uER.value.crossVectors(UPV, N).normalize();
+    kingUniforms.uEU.value.crossVectors(N, R);
+    kingUniforms.uEHs.value = (EYE.hs * k) / ws;
+    kingUniforms.uEOn.value = 1;
+  }
+  const UPV = new THREE.Vector3(0, 1, 0);
+
   // The code-built King: a giant toilet with a crown, used when king.glb cannot load.
   function fallbackKing() {
     const g = toiletGeo(true), s = H / 3.5;
@@ -874,6 +947,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       // the mouth: over the middle of him, a little in front (he faces +z after the turn)
       const dims = new THREE.Box3().setFromObject(holder, true), sz = dims.getSize(new THREE.Vector3());
       useKingModel(holder, "glb", new THREE.Vector3(0, MOUTH[1] * H, Math.min(sz.z * 0.5, MOUTH[2] * H)));
+      addEyes(meshes);
     } catch (e) {
       console.info("king.glb did not load, using the built-in King:", e && e.message);
       fallbackKing();
@@ -1207,7 +1281,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   function ringPassed(r) {
     ringSet(FLASH_SLOT + flashHead, r.x, r.y, r.z, r.nx, r.ny, r.nz, r.r || GAME.ringRadius, 6, T);
     flashHead = (flashHead + 1) % 2;
-    sfx("ring", { x: r.x, y: r.y, z: r.z }, 1, 1 + 0.015 * trial.ring);
+    // (the ring ding has a 19 kHz overtone at pitch 1: past 1.14 it would cross the 22 kHz limit of a 44.1 kHz context)
+    sfx("ring", { x: r.x, y: r.y, z: r.z }, 1, 1 + 0.01 * Math.min(trial.ring, 14));
     haptic(0, 0.5, 40); haptic(1, 0.5, 40);
     trial.ring++;
     progress.trial.ring = trial.ring;
@@ -1250,7 +1325,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (best) { deck.x = best.x; deck.z = best.z; } else { deck.x = nd.x + (nd.podR + nd.deck.r) / 2; }
   }
   findDeck();
-  const kingBeamPlace = () => setBeam(KING_BEAM, perch.x, perch.y, perch.z, BEAM.king[0], BEAM.king[1], COLORS.sludgeGlow);
+  // the King's beacon rises from his crown, so it points at him and does not veil him
+  const kingBeamPlace = () => setBeam(KING_BEAM, perch.x, perch.y + H * 0.96, perch.z, BEAM.king[0], BEAM.king[1], COLORS.sludgeGlow);
 
   // one place for all King transforms
   function poseKing(dt) {

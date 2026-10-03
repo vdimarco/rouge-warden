@@ -11,7 +11,7 @@ const FAR = 400; // the exact ray looks this far, so a wall out of reach still g
 const RET_TAN = Math.tan(0.75 * DEG); // reticles are 1.5° across wherever they land
 const MAX_SEG = 16; // rope segments per rope
 const ROPE_R = 0.012;
-const MIN_W = Math.tan(0.1 * DEG).toFixed(6); // a far rope never gets thinner than about 0.2° (three pixels), inside its ink line
+const MIN_W = Math.tan(0.14 * DEG).toFixed(6); // a far rope never gets thinner than about 0.28° (4 px in the headset, 2 px on a flat screen), inside its ink line
 const CUP_TAN = Math.tan(0.35 * DEG); // a far cup keeps its rim about 0.7° across, so you can see where it stuck
 const CUP_RIM = 0.037, STUB_END = 0.095; // the cup model: rim radius, and where the rope ties on behind the stub
 const RINGS = [1 / 3, 2 / 3, 1], PER_RING = 8; // the cone search: 24 rays
