@@ -4,6 +4,7 @@
 //   BASE_URL=https://... npm run qa:url   runs the check against a deployed preview
 //
 // Set CHROMIUM_PATH to use a Chromium binary that Playwright did not install.
+// Set CHROMIUM_ARGS to pass extra launch flags, separated by spaces.
 // Screenshots go to qa/out/.
 
 import assert from 'node:assert/strict';
@@ -30,7 +31,10 @@ if (!base) {
 }
 base = base.replace(/\/?$/, '/');
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_PATH || undefined,
+  args: (process.env.CHROMIUM_ARGS ?? '').split(' ').filter(Boolean),
+});
 const errors = [];
 const results = [];
 
