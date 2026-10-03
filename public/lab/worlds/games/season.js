@@ -120,7 +120,7 @@ export default function createGame(api) {
     return `${GOALS[checkpoint]}${h.length ? ` Hint: ${h.join(', or ')}.` : ''}`;
   };
   function report() {
-    api.metric(`${checkpoint}/3 crossings · ${budget} time · par ${par}`);
+    api.metric(`${checkpoint}/3 crossed · ${budget} time`);
     api.status(message);
   }
   const popup = (x, y, text, color) => popups.push({ x, y, text, color, t: 0 });

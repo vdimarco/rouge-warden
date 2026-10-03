@@ -178,8 +178,8 @@ section("Par and stars");
     const f = P.log.finish; n++;
     if (f && f.score === 3 && f.unit === "stars" && f.win && f.detail.startsWith(`Used ${plan.cost} time · par ${plan.cost} · ★★★`)) threes++;
     if (seed === 2) {
-      check(P.log.metrics[P.log.metrics.length - 1].startsWith("3/3 crossings"), `the HUD is not stale at the end: "${P.log.metrics[P.log.metrics.length - 1]}"`);
-      check(f && !/[!—]/.test(f.title + f.detail), `the end card has no exclamation marks or long dashes: "${f && f.detail}"`);
+      check(P.log.metrics[P.log.metrics.length - 1].startsWith("3/3 crossed"), `the HUD is not stale at the end: "${P.log.metrics[P.log.metrics.length - 1]}"`);
+      check(f && !/[!\u2014]/.test(f.title + f.detail), `the end card has no exclamation marks or long dashes: "${f && f.detail}"`);
     }
   }
   check(threes === n, `the best plan makes par and gets three stars (${threes}/${n})`);

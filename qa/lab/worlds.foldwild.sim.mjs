@@ -249,7 +249,7 @@ section("The last ten seconds, the end, and the outro");
   const f = log.finish;
   check(f.score === 3 && f.unit === "paths" && f.win === true, `a run with 3 paths scores 3 paths (${f.score} ${f.unit})`);
   check(/3 paths/.test(f.detail) && /river joined/.test(f.detail), `the detail says how far the last river got: "${f.detail}"`);
-  check(!/[!—]/.test(f.title + f.detail), "the finish text has no exclamation marks or long dashes");
+  check(!/[!\u2014]/.test(f.title + f.detail), "the finish text has no exclamation marks or long dashes");
   const s0 = g.getState(), n0 = log.tones.length;
   for (let i = 0; i < 192; i++) { g.update(H / 2); log.t += H / 2; }
   const s1 = g.getState(), song = log.tones.slice(n0).filter((x) => x.d === 0.5);

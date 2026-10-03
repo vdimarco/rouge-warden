@@ -159,8 +159,9 @@ export default function createGame(api){
   function drawPanel(ctx,bd,t,seg,fine,live){
     const p=corner(bd,t.i),s=bd.size,cx=p.x+s/2,cy=p.y+s/2,squash=Math.sin(t.angle*Math.PI)*.12,nx=t.nudge?Math.sin(t.nudge*28)*5*t.nudge:0,isHeld=live&&held&&held.i===t.i;
     ctx.save();ctx.translate(cx+nx,cy);ctx.scale(1-squash,1);ctx.translate(-cx,-cy);
-    sheet(ctx,p.x+2,p.y+6,s,'rgba(0,0,0,.24)');
-    const paper=ctx.createLinearGradient(p.x,p.y,p.x+s,p.y+s);paper.addColorStop(0,(t.i+bd.k)%2?'#e4dfc1':'#efe7ca');paper.addColorStop(1,t.locked?'#a9a88a':'#bebd9e');sheet(ctx,p.x,p.y,s,paper);
+    // Far away, as in the outro, a flat fill stands in for the shadow and the gradient.
+    if(fine){sheet(ctx,p.x+2,p.y+6,s,'rgba(0,0,0,.24)');const paper=ctx.createLinearGradient(p.x,p.y,p.x+s,p.y+s);paper.addColorStop(0,(t.i+bd.k)%2?'#e4dfc1':'#efe7ca');paper.addColorStop(1,t.locked?'#a9a88a':'#bebd9e');sheet(ctx,p.x,p.y,s,paper);}
+    else sheet(ctx,p.x,p.y,s,(t.i+bd.k)%2?'#d9d4b6':'#e3dcbe');
     ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,s,s);ctx.clip();
     // Paper fibres, elevation rings and a fold line.
     if(fine){ctx.strokeStyle='rgba(114,128,104,.13)';ctx.lineWidth=.8;for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(cx+s*.25,cy-s*.2,s*(.18+j*.1),s*(.11+j*.07),-.4,0,TAU);ctx.stroke();}ctx.strokeStyle='rgba(112,108,79,.16)';ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+s,p.y+s);ctx.stroke();ctx.setLineDash([]);}
