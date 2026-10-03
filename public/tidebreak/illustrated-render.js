@@ -87,7 +87,10 @@ export class Renderer {
     this.creatures.retain(s.units.filter(e => e.hp > 0 && (menu || this.visible.has(e.id))).map(e => e.creatureId).filter(Boolean));
     for (const e of s.units) if (e.hp > 0 && (menu || this.visible.has(e.id))) drawList.push({ depth: e.y, draw: () => this.drawUnit(s, e, time) });
     drawList.sort((a, b) => a.depth - b.depth); for (const entry of drawList) entry.draw();
-    for(const e of s.units)if(e.castIntent&&e.hp>0&&this.visible.has(e.id))drawCastWarning(this,e.castIntent,s.time,e.team===p.team);
+    for(const e of s.units)if(e.castIntent&&e.hp>0&&this.visible.has(e.id)){
+      drawCastWarning(this,e.castIntent,s.time,e.team===p.team);
+      const a=this.project(e.x,e.y,HEROES[e.hero].height*.77+32);c.save();c.font='700 12px Barlow';c.textAlign='center';c.strokeStyle='#101c27';c.lineWidth=3;c.strokeText(HEROES[e.hero].skills[e.castIntent.slot],a.x,a.y);c.fillStyle=e.team===p.team?'#bdebd9':'#ffad90';c.fillText(HEROES[e.hero].skills[e.castIntent.slot],a.x,a.y);c.restore();
+    }
     for (const f of s.effects) drawCombatEffect(this, f);
     this.drawAtmosphere(s, time);
     if (!menu && p.hp > 0) {

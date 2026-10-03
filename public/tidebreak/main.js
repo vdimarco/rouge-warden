@@ -107,7 +107,7 @@ function updateUI() {
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
     b.setAttribute('aria-disabled',String(locked||!returnReady&&(p.cd[i]>0||empty)||p.hp<=0));
-    b.setAttribute('aria-label',`${returnReady?'Return to decoy':KITS[p.hero][i].name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost.':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${KITS[p.hero][i].description}`);
+    b.setAttribute('aria-label',`${returnReady?'Return to decoy':KITS[p.hero][i].name}. ${locked?'Unlearned':`Rank ${rank}`}. ${returnReady?'No mana cost. ':`${manaCost(p,i)} mana. ${empty?'Need more mana. ':''}${p.cd[i]>0?`${Math.ceil(p.cd[i])} seconds cooldown. `:''}`}${KITS[p.hero][i].description}`);
     const ranks=b.querySelector('.ranks'); if(ranks.dataset.rank!==String(rank)){ranks.innerHTML=Array.from({length:i===3?3:4},(_,j)=>`<i class="${j<rank?'filled':''}"></i>`).join('');ranks.dataset.rank=rank;}
   });
   $('skill-points').textContent=p.skillPoints&&p.skillRanks.some((_,i)=>canLearn(p,i))?`+ ${p.skillPoints} SKILL POINT${p.skillPoints===1?'':'S'}`:'SPELLBOOK';
