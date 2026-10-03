@@ -32,7 +32,11 @@ function boot(districtClass=null,extra={}){
  return {run:code=>vm.runInContext(code,s),events,elements,timers,sandbox:s};
 }
 // A stand-in for the 3D district: every fighter stands 2 m away, in front of the player.
-const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.lookedAt=-9;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}endMotionView(){}beginMotionView(){}aimMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}strikeTarget(f){return f}inView(){return true}canEngage(){return true}bearing(){return 0}assist(active,chosen){this.assisted=active||chosen}lunge(){this.lunged=true}}`;
+const DISTRICT=`class District {constructor(){this.drones=[];this.dash=0;this.evade=0;this.rollTime=0;this.collected=0;this.assetsRequested=true;this.clock=0;this.lookedAt=-9;this.yaw=0;this.pitch=0}setStyle(){}resize(){}reset(){}update(){}endMotionView(){}beginMotionView(){}aimMotionView(){}beginEncounter(f){this.fighters=f;this.selected=f[0]}chooseFighter(){return this.selected}selectFighter(f){this.selected=f}fighterDistance(){return 2}target(){return{x:195,y:400}}canStrike(){return true}strikeTarget(f){return f}inView(){return true}canEngage(){return true}bearing(){return 0}assist(active,chosen){this.assisted=active||chosen}lunge(){this.lunged=true}}`;
+// A recording audio context and vibration motor. They run inside the game, so they can read its clock.
+const RECORDER=`var __log=[];navigator.vibrate=ms=>{__log.push({what:'buzz',t:time,ms});return true};
+audio=(()=>{const param=v=>({value:v,setValueAtTime(x){this.value=x},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},setTargetAtTime(){},cancelScheduledValues(){}});
+return {currentTime:0,destination:{},resume:()=>Promise.resolve(),createOscillator(){const o={type:'sine',frequency:param(440),connect:n=>n,start(){__log.push({what:'sound',t:time,o})},stop(){}};return o},createGain(){return {gain:param(1),connect:n=>n}}}})();`;
 // Runs the game loop for a number of seconds in small steps, as frames would.
 const step=(run,seconds,dt=1/60)=>run(`for(let i=0;i<${Math.round(seconds/dt)};i++)update(${dt})`);
 test('direction, cooldown, parry, chip damage and pause',()=>{
@@ -143,4 +147,35 @@ test('the lock-on turns the view only on a touch screen without the gyro',async(
  const phone=boot(DISTRICT);phone.run('start()');await phone.elements.get('motion').onclick();
  for(let i=0;i<3;i++){phone.run('now+=40');phone.events.deviceorientation({alpha:0,beta:0,gamma:0})}
  step(phone.run,.1);assert.equal(phone.run('gyro&&!!raw'),true);assert.equal(phone.run('district.assisted'),undefined);
+});
+
+test('every blow is announced at least 0.3 s ahead: a rising tone, a pulsing screen edge and a buzz',()=>{
+ const {run}=boot(DISTRICT,{navigator:{}});run(RECORDER+'start()');
+ let windupFrames=0;const gaps=[];
+ // A player who never defends, so every attack lands.
+ for(let i=0;i<60*60&&run('state')==='play';i++){
+  const hp=run('health');run('update(1/60)');
+  if(run("duel.active?.phase==='windup'")){windupFrames++;
+   assert.ok(run("!!warn&&warn.f===duel.active&&__log.some(e=>e.what==='sound'&&e.o===warn.o)"),'the windup tone plays');
+   assert.ok(run('!!warning()'),'the screen edge pulses');}
+  // The warning buzz is 20 ms. A blow that lands buzzes longer.
+  if(run('health')<hp)gaps.push(run("time-__log.filter(e=>e.what==='buzz'&&e.ms===20).at(-1).t"));
+ }
+ assert.ok(gaps.length>=8,`only ${gaps.length} blows landed`);assert.ok(windupFrames>gaps.length*30);
+ assert.ok(gaps.every(g=>g>=.3),`a blow came ${Math.min(...gaps).toFixed(2)} s after its buzz`);
+ // The tone stops when the blade lands.
+ assert.equal(run('warn'),null);
+});
+
+test('a parry stops the blow dead, slows time, rings like metal and bursts into sparks',()=>{
+ const {run}=boot(DISTRICT,{navigator:{}});run(RECORDER+'start()');
+ run("duel.active=enemy;enemy.phase='windup';enemy.attack='cut';enemy.period=1;enemy.timer=1");
+ step(run,.7);run('setGuard(true)');for(let i=0;i<40&&run('enemy.phase')!=='open';i++)run('update(1/60)');
+ assert.equal(run('enemy.phase'),'open');
+ assert.ok(run('Math.abs(freeze-.08)<1e-9'));assert.ok(run('slow')>.45);assert.ok(run('rings.length')>0);assert.ok(run('shine')>0);assert.ok(run('district.focus')>0);
+ // The ring of steel: bright partials above 1 kHz.
+ assert.ok(run("__log.filter(e=>e.what==='sound'&&e.o.type==='sine'&&e.o.frequency.value>1000).length")>=2);
+ // The hit-stop holds the duel still for 80 ms. Then the ronin moves at half speed.
+ const t0=run('enemy.timer');run('tick(.05,false)');run('tick(.05,false)');assert.equal(run('enemy.timer'),t0);
+ run('tick(.05,false)');assert.ok(Math.abs(t0-run('enemy.timer')-.025)<1e-9);
 });

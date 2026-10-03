@@ -309,7 +309,8 @@ export class District {
     }
     for(const o of this.orbs){o.mesh.position.y=1.1+Math.sin(this.clock*2+o.x)*.12;o.mesh.rotation.y=this.clock}
     if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;this.alienWorld.update(this.clock);
-    const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5));if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
+    // focus: a short lean-in after a parry or an overdrive cut.
+    const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5))-(this.focus>0?10:0);this.focus=Math.max(0,(this.focus||0)-dt);if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
     this.camera.position.copy(this.position);const rollDip=this.rollTime>0?Math.sin(Math.PI*(1-this.rollTime/.34)):0;this.camera.position.y-=rollDip*.48;this.camera.rotation.set(this.pitch+rollDip*.08,this.yaw,this.roll,'YXZ');
     if(render)this.renderer.render(this.scene,this.camera);else this.camera.updateMatrixWorld();
   }
