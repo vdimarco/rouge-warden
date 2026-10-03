@@ -3,7 +3,7 @@
 // you and a brace keeps you up, eddies can be caught, a river can be run, and nothing ends inside a rock or a bank.
 // "Rocks hit" counts knocks, a swim puts you back a few metres upstream, and a capsize comes after a warning that
 // leaves time to brace. Exit code 1 on failure.
-import { makeRiver, FINISH } from "../../public/lab/creek/river.js";
+import { makeRiver, FINISH, JAM } from "../../public/lab/creek/river.js";
 import { newCanoe, act, step, H, C, closestMiss } from "../../public/lab/creek/canoe.js";
 
 const fails = [];
@@ -234,7 +234,22 @@ section("Fair capsizes");
   check(saved >= 0.5 * warned, `a brace 0.25 s after the warning saves ${saved} of ${warned} warned crossings`);
 }
 
-/* ---------------- 7. eddies you can read, and no trap ---------------- */
+/* ---------------- 7. the log jam above the put-in ---------------- */
+section("The log jam");
+{
+  // turn round at the put-in and paddle upstream hard for 60 s (before, this reached y = -170 m)
+  const ys = [];
+  for (const seed of [3, 7, 11, 23, 42, 99]) {
+    const r = makeRiver(seed), c = newCanoe(r), [tx, ty] = r.tan(c.y);
+    c.psi = Math.atan2(-tx, -ty);
+    let last = -9, alt = 1, minY = c.y;
+    while (c.t < 60) { if (c.t - last > 0.45) { last = c.t; alt = -alt; act(c, { type: "stroke", side: alt, power: 1.2 }); } step(c, r); minY = Math.min(minY, c.y); }
+    ys.push(minY);
+  }
+  check(ys.every((y) => y > JAM), `a canoe that paddles upstream stops at the log jam at y = ${JAM} m (it gets to ${Math.min(...ys).toFixed(1)} m)`);
+}
+
+/* ---------------- 8. eddies you can read, and no trap ---------------- */
 section("Eddies");
 {
   // in each target eddy, the bow downstream, strokes on both sides at full power: out past the eddy's tail in 10 s?

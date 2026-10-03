@@ -12,6 +12,7 @@ export const LENGTH = 300;          // metres of river
 export const RAPID = [40, 250];     // where the fast water runs: it starts to speed up 14 m below the put-in
 export const FINISH = 285;
 export const START = 6;             // the put-in
+export const JAM = -10;             // a log jam across the river above the put-in: nobody paddles past it
 export const LEDGE = 254;           // the foot of the rapid: no rocks from 18 m above it to 12 m below it
 
 // opts.still: no current at all (for tests of the canoe alone); opts.rocks: place these rocks instead

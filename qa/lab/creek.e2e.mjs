@@ -3,9 +3,11 @@
 //    rock tipped to the right is a stroke on the right (the bow turns left), and a hard tilt held still braces.
 // 2. Thumbs on a phone: drag down on the right half to stroke there.
 // 3. Catching an eddy: the ring is empty while the bow points downstream, and it fills while you hold the catch.
-// 4. Keys on a computer: D strokes on the right, C braces. The end card says how the run went.
+// 4. No lost runs: the log jam stops a canoe that paddles upstream and an arrow points downstream, Restart in the top
+//    bar starts again at once, and Share on the end card gives a link to today's river.
+// 5. Keys on a computer: D strokes on the right, C braces. The end card says how the run went.
 // SHOTS=<folder> saves screenshots. Exit code 1 on failure.
-import { open, until, pointer, drag, shot, sleep, report, PHONE, DESK } from "./lib.mjs";
+import { open, until, pointer, drag, shot, sleep, report, PHONE, DESK, BASE } from "./lib.mjs";
 
 const R = report("creek.e2e");
 
@@ -121,6 +123,55 @@ R.section("Catching an eddy");
   await sleep(300);
   R.check(r.caught === 1 && /Eddies 1\//.test(await page.textContent("#hEddies")), "then the eddy is caught, and the count goes up");
   await shot(page, "creek-phone-eddy");
+  for (const e of errors) R.check(false, e);
+  await close();
+}
+
+R.section("No lost runs: the log jam, Restart and Share");
+{
+  const { page, ctx, errors, close } = await open("creek/", PHONE);
+  await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(BASE).origin });
+  await page.waitForSelector(".card.start .go");
+  R.check(await page.isHidden(".labbar .restart"), "no Restart on the start card");
+  await page.click(".card.start .go");
+  await until(page, () => QA.phase === "play" || QA.phase === "calibrate", null, 10000);
+  if (await page.evaluate(() => QA.phase === "calibrate")) await page.click("#calibSkip");
+  await until(page, () => QA.phase === "play");
+  R.check(await page.isVisible(".labbar .restart"), "Restart shows in the top bar during a run");
+  // turn round at the put-in and paddle upstream for 60 s of game time
+  const up = await page.evaluate(() => {
+    const r = QA.river, c = QA.c, [tx, ty] = r.tan(c.y);
+    c.psi = Math.atan2(-tx, -ty); c.om = 0;
+    let last = -9, alt = 1, minY = c.y;
+    for (let i = 0; i < 120 * 60; i++) {
+      if (QA.c.t - last > 0.45) { last = QA.c.t; alt = -alt; QA.act({ type: "stroke", side: alt, power: 1.2 }); }
+      QA.step(1);
+      minY = Math.min(minY, QA.c.y);
+    }
+    QA.snap();
+    return { minY, lost: QA.lost };
+  });
+  R.check(up.minY > -15, `60 s of strokes upstream stop at the log jam (lowest y ${up.minY.toFixed(1)} m; -300 m before)`);
+  R.check(up.lost, "an arrow at the edge of the screen points downstream");
+  await sleep(200);
+  await shot(page, "creek-phone-jam");
+  // Restart, with a tap
+  const t0 = Date.now();
+  await page.click(".labbar .restart");
+  await until(page, () => QA.phase === "play" && QA.c.t < 0.5 && Math.abs(QA.c.y - 6) < 0.5 && !QA.lost, null, 5000);
+  const ms = Date.now() - t0;
+  R.check(ms < 2000, `Restart puts you back at the put-in in ${ms} ms`);
+  // the end card: today's river, and a link to it
+  const seed = await page.evaluate(() => QA.seed);
+  await page.evaluate(() => { QA.finish(); QA.step(2); });
+  await until(page, () => !document.querySelector(".card.end").hidden, null, 5000);
+  R.check(await page.isHidden(".labbar .restart"), "Restart hides on the end card");
+  R.check(/^Today's river: /.test(await page.textContent(".card.end .line")), "the end card says it was today's river");
+  await sleep(300);
+  await page.click(".card.end .share");
+  await until(page, () => document.querySelector(".card.end .note").textContent.length > 0, null, 5000);
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  R.check(link === `${new URL(BASE).origin}/lab/creek/#s=${seed}`, `Share gives a link to this river (${link})`);
   for (const e of errors) R.check(false, e);
   await close();
 }

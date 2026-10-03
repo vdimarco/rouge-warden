@@ -4,7 +4,7 @@
 // stern) spins it; its side drag is far larger than its drag along the keel, so it tracks. Strokes, J-strokes,
 // back strokes and braces act on it the way a paddle does: a stroke on the right pushes it ahead and turns the bow left.
 // No DOM here: the Node tests import it.
-import { FINISH, START } from "./river.js";
+import { FINISH, START, JAM } from "./river.js";
 
 const D2R = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -189,6 +189,8 @@ function collide(c, river, ev) {
       const side = Math.sign(n), [tx, ty] = river.tan(py);
       if (contact(c, s, -side * ty, side * tx, (Math.abs(n) - 0.97) * by, sp, cp) && ev && c.hitV > C.KNOCK) ev.push({ k: "bank", v: c.hitV });
     }
+    // the log jam above the put-in: a straight wall across the river at y = JAM
+    if (py < JAM + C.HULL_R && contact(c, s, 0, 1, JAM + C.HULL_R - py, sp, cp) && ev && c.hitV > C.KNOCK) ev.push({ k: "jam", v: c.hitV });
   }
 }
 // Push the hull point at s out along the normal (nx, ny). A blow off the middle spins the hull. True when it hit.
