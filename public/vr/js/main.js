@@ -15,6 +15,7 @@ import { createGame } from "./game.js";
 import { createUI } from "./ui.js";
 import { createPortal } from "./portal.js";
 import { createAudio } from "./audio.js";
+import { createFX } from "./fx.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -37,15 +38,15 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", hz: PERF.hz, foveation: PERF.foveation, music: true };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", best: {}, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
   const ints = (a) => (Array.isArray(a) ? [...new Set(a.filter((x) => Number.isInteger(x) && x >= 0))] : []);
   s.intro = raw.intro === true; s.tutorial = raw.tutorial === true;
-  s.clogs = ints(raw.clogs); s.loonies = ints(raw.loonies);
+  s.clogs = ints(raw.clogs); s.loonies = ints(raw.loonies); s.pipes = ints(raw.pipes);
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
@@ -62,18 +63,27 @@ function loadSave() {
   if (r.hold === "hold" || r.hold === "toggle") t.hold = r.hold;
   if (r.hz === 72 || r.hz === 90) t.hz = r.hz;
   if (Number.isFinite(r.foveation)) t.foveation = clamp(r.foveation, 0, 1);
-  for (const k of ["sound", "music", "stance"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
+  for (const k of ["sound", "music", "stance", "speedLines"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
   return s;
 }
 const save = loadSave();
 const settings = save.settings;
-function saveNow() { save.settings = settings; store.set(SAVE_KEY, save); }
+// While flat play borrows the "desktop" comfort preset (applyComfort), the save keeps the headset's own fields.
+let headsetComfort = null;
+function saveNow() {
+  save.settings = settings;
+  if (!headsetComfort) { store.set(SAVE_KEY, save); return; }
+  const now = { vignette: settings.vignette, turn: settings.turn, snap: settings.snap, aim: settings.aim };
+  Object.assign(settings, headsetComfort);
+  store.set(SAVE_KEY, save);
+  Object.assign(settings, now);
+}
 
 /* ---------------- G ---------------- */
 const G = (window.G = {
   version: VERSION, mode: "title", state: "title", ready: false, flags: FLAGS,
   renderer: null, scene: null, camera: null, rig: null, rigYaw: 0, bodyLocal: { x: 0, z: 0 }, prevHeadLocal: new THREE.Vector3(), seatedOffset: 0,
-  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null,
+  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null,
   save, settings, frame: 0, time: 0, dt: 0, viewDone: false, titleShows: 0, held: false,
   placeRig, saveNow, setWorldVisible, haptic, test: null,
 });
@@ -94,7 +104,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -136,6 +146,7 @@ function createWorld() {
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
+  fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
@@ -195,6 +206,7 @@ function setWorldVisible(v) {
   if (view) view.root.visible = worldVisible;
   if (game && game.root && gameStarted) game.root.visible = worldVisible;
   if (ropes) ropes.setVisible(worldVisible);
+  if (fx) fx.setVisible(worldVisible);
 }
 function haptic(side, intensity, ms) {
   if (!X || !X.session) return;
@@ -202,11 +214,15 @@ function haptic(side, intensity, ms) {
   if (h.connected) h.pulse(intensity, ms);
 }
 function showHands(v) { handsVisible = !!v; if (hands) hands.setVisible(handsVisible); }
-// A preset sets the vignette, turning, aim and the body's speed caps. Desktop play uses the "desktop" preset
-// without saving it as the player's choice.
+// A preset sets the body's speed caps. Its vignette, turning and aim fields are written when you pick the preset (the title
+// page or the pause menu) and are yours to change after that, so starting a session leaves them alone. Flat play borrows the
+// "desktop" preset and puts your headset fields back when it ends.
 function applyComfort(name) {
   const p = COMFORT.presets[name] || COMFORT.presets[COMFORT.defaultPreset];
-  comfort.applyPreset(name);
+  if (name === "desktop") {
+    if (!headsetComfort) headsetComfort = { vignette: settings.vignette, turn: settings.turn, snap: settings.snap, aim: settings.aim };
+    comfort.applyPreset(name);
+  } else if (headsetComfort) { Object.assign(settings, headsetComfort); headsetComfort = null; }
   P.speedCap = p.speedCap; P.fallCap = p.fallCap;
 }
 
@@ -404,6 +420,14 @@ function tick(dt, frame, time) {
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   // 3. test overrides
   applyOverrides(inp);
+  // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
+  // clock releases several frames at once
+  for (const h of inp.hands) {
+    if (h.triggerDown) pushRing({ type: "input", side: h.index, edge: "triggerDown", value: h.trigger });
+    if (h.triggerUp) pushRing({ type: "input", side: h.index, edge: "triggerUp", value: h.trigger });
+    if (h.gripDown) pushRing({ type: "input", side: h.index, edge: "gripDown", value: h.grip });
+    if (h.gripUp) pushRing({ type: "input", side: h.index, edge: "gripUp", value: h.grip });
+  }
   // 4. world poses from the current rig
   toWorld(inp);
   const hl = inp.head.local.pos;
@@ -524,6 +548,7 @@ function shoot(i, h, a) {
   audio.sfx("fire", { pos: h.aimPos });
   haptic(i, 0.2, 20);
   pushRing({ type: "fire", side: i, target: { tag: a.tag, id: a.id } });
+  wordAtHand("THWIP", i);
 }
 function dryFire(i, h) {
   if (G.input.easySwing && i === 1) D.mobile.miss();
@@ -587,15 +612,54 @@ function drainEvents() {
 function feedback(ev) {
   const i = ev.side === 1 || ev.side === "right" ? 1 : 0, r = P.ropes[i];
   switch (ev.type) {
-    case "attach": audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); break;
+    case "attach": audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal }); break;
     case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); break;
-    case "yank": audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40); break;
+    case "yank":
+      audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
+      if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
+      break;
     case "land": audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); break;
-    case "splash": audio.sfx("splash"); respawn(); break;
+    case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
     case "oob": respawn(); break;
-    case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); break;
+    case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); wordAtBump(ev); break;
     case "snap": if (G.input.easySwing && i === 1) D.mobile.miss(); audio.sfx("snap", { pos: r.anchor }); break;
   }
+}
+
+/* ---------------- comic words (fx.js) ---------------- */
+// fx.js skips a word closer than 1.2 m to the head, so the words for your own body go out along the line to the hand or
+// ahead of you, never on you. Sizes come from fx.js (8 to 12 degrees across); scale makes the big moments bigger.
+const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.Vector3(), FXQ = new THREE.Vector3();
+let whooshAt = -99, whooshArmed = true;
+// on the line from the head through the hand's muzzle, 1.7 m from the head
+function wordAtHand(name, i) {
+  const hp = G.input.head.pos, t = hands.tip(i);
+  FXD.set(t.x - hp.x, t.y - hp.y, t.z - hp.z);
+  const l = FXD.length();
+  if (l < 1e-3) return;
+  FXD.multiplyScalar(1.7 / l);
+  // 0.35 m outboard (away from the rope, which runs toward the middle of the view), and it keeps pace with you (vel),
+  // or a swing would leave it behind in 0.1 s
+  FXQ.set(i === 1 ? 0.35 : -0.35, 0, 0).applyQuaternion(G.input.head.quat);
+  fx.word(name, FXP.set(hp.x + FXD.x + FXQ.x, hp.y + FXD.y + 0.25, hp.z + FXD.z + FXQ.z), { vel: P.vel, scale: 1.5 });
+}
+// dist metres ahead of `from` along where the head looks (flat), and up metres higher
+function wordAhead(name, from, dist, up, scale) {
+  FXD.set(0, 0, -1).applyQuaternion(G.input.head.quat);
+  FXD.y = 0;
+  if (FXD.lengthSq() < 1e-4) FXD.set(0, 0, -1); else FXD.normalize();
+  fx.word(name, FXP.set(from.x + FXD.x * dist, from.y + up, from.z + FXD.z * dist), { scale });
+}
+// on the wall you hit, 1.3 m along it to the side you face, so it is not on top of your own head
+function wordAtBump(ev) {
+  const nx = ev.nx || 0, nz = ev.nz || 0, hp = G.input.head.pos, l = Math.sqrt(nx * nx + nz * nz);
+  const cx = P.pos.x - nx * 0.35, cy = P.pos.y + P.chest - (ev.ny || 0) * 0.35, cz = P.pos.z - nz * 0.35;
+  FXD.set(0, 0, -1).applyQuaternion(G.input.head.quat);
+  if (l < 0.3) { fx.word("BONK", FXP.set(hp.x + FXD.x * 1.6, hp.y + FXD.y * 1.6, hp.z + FXD.z * 1.6), { scale: 1.4 }); return; }
+  // a tangent along the wall (flat), turned to the side the head faces
+  let tx = nz / l, tz = -nx / l;
+  if (tx * FXD.x + tz * FXD.z < 0) { tx = -tx; tz = -tz; }
+  fx.word("BONK", FXP.set(cx + tx * 1.3, cy + 0.2, cz + tz * 1.3), { dir: { x: nx, y: 0, z: nz }, scale: 1.4 });
 }
 
 // 13. Everything that draws or sounds.
@@ -605,10 +669,17 @@ function after(dt, inp, yawDelta) {
   hands.update(inp, P, dt);
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
   ropes.update(dt, P, TIPS, G.time);
-  if (gameStarted) game.update(dt, G.time, P, inp);
+  game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   view.update(dt, G.time, inp.head.pos);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
   const speed = Math.sqrt(P.vel.x * P.vel.x + P.vel.y * P.vel.y + P.vel.z * P.vel.z);
+  // WHOOSH: once as you cross 20 m/s, 14 m ahead along your path, at most every 4 s
+  if (inPlay && speed >= 20 && whooshArmed && G.time - whooshAt >= 4) {
+    whooshAt = G.time; whooshArmed = false;
+    const hp = inp.head.pos, k = 14 / speed;
+    fx.word("WHOOSH", FXP.set(hp.x + P.vel.x * k, hp.y + P.vel.y * k + 1.2, hp.z + P.vel.z * k), { vel: P.vel, scale: 1.3 });
+  } else if (speed < 17) whooshArmed = true;
+  fx.update(dt, inp.head.pos, inp.head.quat);
   if (dt > 0) {
     const k = 1 - Math.exp(-dt / 0.05);
     accelV.x += ((P.vel.x - prevVel.x) / dt - accelV.x) * k; accelV.y += ((P.vel.y - prevVel.y) / dt - accelV.y) * k; accelV.z += ((P.vel.z - prevVel.z) / dt - accelV.z) * k;
@@ -644,7 +715,7 @@ function after(dt, inp, yawDelta) {
 }
 
 /* ---------------- the loop ---------------- */
-let lastTime = -1, fps = 60;
+let lastTime = -1, fps = 60, titleCompiled = false;
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
@@ -670,6 +741,13 @@ function render(frame) {
     // multiview programs differ from the flat ones: compile them now, with the XR target bound
     renderer.compile(scene, camera);
     compiledXR = true;
+  }
+  // The title covers the canvas with the key art (index.html sets data-art when it has loaded), so nothing behind it needs
+  // drawing: that saves a full city render on the headset's browser. Once the city is built, its programs compile once
+  // without a draw, so the first frame of play does not stall on them.
+  if (G.mode === "title" && !shot && !samples.length && !FLAGS.debug && document.documentElement.hasAttribute("data-art")) {
+    if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
+    return;
   }
   renderer.render(scene, camera);
   const info = renderer.info.render;

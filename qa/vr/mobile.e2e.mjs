@@ -57,7 +57,8 @@ try {
  await page.locator('[data-action=throw]').click();await page.evaluate(()=>G.test.step(1/60,30));
  assert.equal(await page.evaluate(()=>G.P.onGround),true);assert.equal(await page.locator('[data-action=throw]').getAttribute('aria-pressed'),'false');console.log('PASS miss stays on roof and resets action');
  await page.locator('[data-action=menu]').click();await page.evaluate(()=>G.test.step(1/60,1));assert.equal(await page.evaluate(()=>G.state),'paused');
- await page.locator('#view canvas').click({position:{x:100,y:450}});await page.evaluate(()=>G.test.step(1/60,2));assert.equal(await page.evaluate(()=>G.state),'play');console.log('PASS pause/resume');
+ // The pause menu covers the city on a phone, so its RESUME button goes back to play.
+ await page.locator('#fsMenu button[data-id=resume]').click();await page.evaluate(()=>G.test.step(1/60,2));assert.equal(await page.evaluate(()=>G.state),'play');console.log('PASS pause/resume');
  await page.evaluate(()=>{G.test.aimAt(1,null);G.test.camera('needle');});
  await page.setViewportSize({width:844,height:390});await page.screenshot({path:out+'/tower-landscape.png'});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);
