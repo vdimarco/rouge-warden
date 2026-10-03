@@ -165,15 +165,51 @@ function collideFlippers(w, ev) {
     else if (d < 1e-9) { const s = Math.sign(f.sd) || 1; nx = (s * -dy) / f.len; ny = (s * dx) / f.len; }
     else { nx /= d; ny /= d; }
     b.x = qx + nx * (R + rc + 0.01); b.y = qy + ny * (R + rc + 0.01);
+    // A touch that follows another within two frames continues one roll along the blade.
+    if (!(w.t - (f.touchLast ?? -1) <= 2 * H + 1e-9)) f.touchStart = w.t;
+    f.touchLast = w.t;
+    if (!f.held) f.restTouch = w.t;
     // the flipper's own speed where it touches the ball
     const sx = -f.om * (qy - f.py), sy = f.om * (qx - f.px);
     const e = Math.abs(f.om) > 0.5 ? F.E_MOVING : F.E_HELD;
     const vin = bounce(b, nx, ny, e, sx, sy, F.FRICTION);
     f.sd = (dx * (b.y - f.py) - dy * (b.x - f.px)) / f.len;
-    if (vin > 150 && ev) ev.push({ k: "flipper", side: f.side, v: vin,
-      powered: f.held && f.om * f.dir > .5 && sy > 80 && b.vy > 300,
-      motorSpeed: f.om, vy: b.vy });
+    w.onTouch?.(f, u, vin);
+    if (vin > 150 && ev) {
+      const powered = f.held && f.om * f.dir > .5 && sy > 80 && b.vy > 300;
+      const swing = (f.th - f.rest) / (f.up - f.rest), speed = Math.abs(f.om) / F.UP;
+      // A ball that rolled on the blade before the press has no swing to judge. A press that
+      // comes just after the ball landed on the resting blade is late.
+      const rolling = f.pressedAt - f.touchStart >= ROLL_TIME;
+      const landed = !rolling && f.pressedAt - f.restTouch >= 0 && f.pressedAt - f.restTouch < LANDED_TIME;
+      const grade = powered ? gradeContact({ u, swing, speed, rolling, landed }) : null;
+      if (powered && w.table.shotSpeed && !(b.capUntil > w.t)) {
+        b.cap = w.table.shotSpeed(grade, f); b.capUntil = w.t + SHOT_CAP_TIME;
+      }
+      ev.push({ k: "flipper", side: f.side, v: vin, powered, motorSpeed: f.om, vy: b.vy,
+        u, swing, speed, rolling, grade, timing: grade !== 'late' ? null : !rolling && !landed && swing > 0.92 ? 'early' : 'late' });
+    }
   }
+}
+
+// How long a ball must roll on a blade before a press counts as a rolling shot.
+export const ROLL_TIME = 0.06;
+// A press within this time after the ball lands on the resting blade is late.
+const LANDED_TIME = 0.12;
+// A shot speed set by the grade holds while the blade still pushes the ball.
+const SHOT_CAP_TIME = 0.08;
+
+// A powered contact gets a grade from where the ball meets the blade (u: 0 at the pivot,
+// 1 at the tip), how far the blade has swung (swing: 0 at rest, 1 at the stop) and how fast it
+// moves (speed: 1 at full motor speed). A blade at full speed in the middle of its swing makes
+// the clean hit. A press after the ball lands is late, and a very early press meets the ball at
+// the end of the swing. A rolling ball is judged by its place on the blade.
+export function gradeContact({ u = 0, swing = 0, speed = 0, rolling = false, landed = false } = {}) {
+  if (rolling) return u >= 0.32 && u <= 0.82 ? 'good' : 'late';
+  if (landed) return 'late';
+  if (speed >= 0.95 && u >= 0.22 && u <= 0.9 && swing >= 0.15 && swing <= 0.62) return 'perfect';
+  if (speed >= 0.7 && u >= 0.1 && u <= 0.96 && swing >= 0.05 && swing <= 0.92) return 'good';
+  return 'late';
 }
 
 // One frame of 1/120 s. ev (optional) collects what the ball hit.
@@ -207,7 +243,7 @@ export function step(w, ev = null) {
   const k = 1 - F.ROLL_DAMP * H;
   b.vx *= k; b.vy *= k;
   const s = Math.hypot(b.vx, b.vy);
-  const maxSpeed = w.table.maxSpeed ?? F.V_MAX;
+  const maxSpeed = Math.min(w.table.maxSpeed ?? F.V_MAX, b.capUntil > w.t && b.cap > 0 ? b.cap : Infinity);
   if (s > maxSpeed) { b.vx *= maxSpeed / s; b.vy *= maxSpeed / s; }
   // out of the shooter lane and into play
   if (b.lane && (w.table.leaveLane ? w.table.leaveLane(b) : b.x < 455 && b.y > 700)) b.lane = false;
@@ -217,6 +253,105 @@ export function step(w, ev = null) {
   }
   if (w.laneHit >= 0 && Math.abs(b.y - w.table.lanes[w.laneHit].y) > 40) w.laneHit = -1;
   if (b.live && (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY && b.x < 455)) { b.live = false; if (ev) ev.push({ k: "drain" }); }
+}
+
+// Forecasts a free flight from a given ball state: gravity, rails and fixed bodies, no blades.
+// It returns the first body the ball hits ({ id, time }), the first goal that goal(ball) names,
+// or the first id that blocked(ball, elapsed) names. It returns null for no hit within the horizon.
+// path, when given, collects the ball position at the end of each frame.
+export function forecastHit(w, start, horizon = 1.2, { gravity = w.table.gravity ? (ball) => w.table.gravity(ball, w) : null, goal = null, blocked = null, path = null } = {}) {
+  const sim = { ...w, ball: { ...start, live: true, lane: false }, flippers: [], tunnels: 0, escapes: 0 };
+  const b = sim.ball, ev = [];
+  if (!Number.isFinite(b.x + b.y + b.vx + b.vy)) return null;
+  for (let frame = 1; frame * H <= horizon + 1e-9; frame++) {
+    const elapsed = frame * H;
+    sim.t = w.t + elapsed;
+    const n = Math.max(2, Math.min(F.MAX_SUB, Math.ceil((Math.hypot(b.vx, b.vy) * H) / (0.4 * R))));
+    const hs = H / n;
+    for (let i = 0; i < n; i++) {
+      if (gravity) {
+        const a = gravity(b, elapsed);
+        b.vx += a.x * hs; b.vy += a.y * hs;
+      } else b.vy -= F.G * hs;
+      b.x += b.vx * hs; b.y += b.vy * hs;
+      ev.length = 0;
+      collideStatic(sim, ev);
+      const hit = ev.find((e) => e.k === 'bumper');
+      if (hit) return { id: hit.id, time: elapsed };
+      const reached = goal?.(b);
+      if (reached != null && reached !== false) return { id: reached, time: elapsed };
+    }
+    const k = 1 - F.ROLL_DAMP * H;
+    b.vx *= k; b.vy *= k;
+    const s = Math.hypot(b.vx, b.vy), maxSpeed = w.table.maxSpeed ?? F.V_MAX;
+    if (s > maxSpeed) { b.vx *= maxSpeed / s; b.vy *= maxSpeed / s; }
+    path?.push({ x: b.x, y: b.y });
+    if (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY) return null;
+    const stop = blocked?.(b, elapsed);
+    if (stop != null && stop !== false) return { id: stop, time: elapsed };
+  }
+  return null;
+}
+
+// The press that gives the clean hit comes this long before a falling ball lands on a resting blade.
+export const FLIP_LEAD = 0.045;
+// A ball that rolls onto a blade is best struck when it reaches this point on the blade.
+const ROLL_SPOT = 0.5;
+
+// Forecasts the next flip with no new input. It runs the same substeps, gravity, rails and blades
+// as step() on copies, so the real world never changes. gravity(ball, elapsed) gives the force a
+// given time ahead; blocked(ball, elapsed) can stop the forecast near a moving body. The result
+// is null when the ball hits a target, drains or reaches no blade within the horizon. Otherwise
+// it gives the blade side, the touch time, the ideal press time and the touch point, in seconds
+// from now.
+export function forecastFlip(w, horizon = 1.2, { gravity = w.table.gravity ? (ball) => w.table.gravity(ball, w) : null, blocked = null } = {}) {
+  const real = w.ball;
+  if (!real.live || real.lane || w.reverseScoop || !Number.isFinite(real.x + real.y + real.vx + real.vy)) return null;
+  const flippers = w.flippers.filter((f) => !w.table.isActive || w.table.isActive(f)).map((f) => ({ ...f }));
+  const sim = { ...w, ball: { ...real }, flippers, tunnels: 0, escapes: 0 };
+  const b = sim.ball, ev = [];
+  let touch = null, roll = null, elapsed = 0;
+  sim.onTouch = (f, u, vin) => {
+    if (touch) { if (f === touch.f && !roll && u >= ROLL_SPOT) roll = { time: elapsed, u, x: b.x, y: b.y }; return; }
+    touch = { f, u, vin, time: elapsed, x: b.x, y: b.y };
+    if (touch.vin <= 100 && u >= ROLL_SPOT) roll = { time: elapsed, u, x: b.x, y: b.y };
+  };
+  const result = () => {
+    const f = touch.f, impact = touch.vin > 100;
+    const at = impact ? touch : roll || touch;
+    return { side: f.side, held: f.held, impact, touch: touch.time, ideal: at.time - (impact ? FLIP_LEAD : H), u: at.u, x: at.x, y: at.y };
+  };
+  for (let frame = 1; frame * H <= horizon + 1e-9; frame++) {
+    elapsed = frame * H;
+    sim.t = w.t + elapsed;
+    const v = Math.hypot(b.vx, b.vy);
+    const flipMoving = sim.flippers.some((f) => Math.abs(f.om) > 0.5 || f.held !== (f.th === f.up));
+    let n = Math.ceil((v * H) / (0.4 * R));
+    n = Math.max(flipMoving ? 4 : 2, Math.min(F.MAX_SUB, n));
+    const hs = H / n;
+    for (let i = 0; i < n; i++) {
+      moveFlippers(sim, hs);
+      if (gravity) {
+        const a = gravity(b, elapsed);
+        b.vx += a.x * hs; b.vy += a.y * hs;
+      } else b.vy -= F.G * hs;
+      b.x += b.vx * hs; b.y += b.vy * hs;
+      ev.length = 0;
+      collideStatic(sim, ev);
+      if (ev.some((e) => e.k === 'bumper')) return touch ? result() : null;
+      collideFlippers(sim, null);
+      if (touch && (touch.vin > 100 || roll)) return result();
+    }
+    const k = 1 - F.ROLL_DAMP * H;
+    b.vx *= k; b.vy *= k;
+    const s = Math.hypot(b.vx, b.vy);
+    const maxSpeed = Math.min(w.table.maxSpeed ?? F.V_MAX, b.capUntil > sim.t && b.cap > 0 ? b.cap : Infinity);
+    if (s > maxSpeed) { b.vx *= maxSpeed / s; b.vy *= maxSpeed / s; }
+    if (touch && elapsed - touch.time > 2 * H && !(touch.f.touchLast >= sim.t - 2 * H)) return result();
+    if (w.table.isDrain ? w.table.isDrain(b) : b.y < w.table.drainY) return touch ? result() : null;
+    if (blocked?.(b, elapsed)) return touch ? result() : null;
+  }
+  return touch ? result() : null;
 }
 
 // This rescue is opt-in. The classic table retains only its physical flippers.
@@ -274,13 +409,16 @@ function advanceReverseScoop(w, hs) {
 export function setFlip(w, side, held) {
   const down = !!held, f = reverseFlipper(w, side);
   if (down && f && !f.held && canReverseScoop(w, side)) beginReverseScoop(w, f);
-  for (const flipper of w.flippers) if (flipper.side === side) flipper.held = down;
+  for (const flipper of w.flippers) if (flipper.side === side) {
+    if (down && !flipper.held) flipper.pressedAt = w.t;
+    flipper.held = down;
+  }
 }
 
 // Put a ball on the plunger.
 export function serve(w) {
   const b = w.ball, L = w.table.launch;
-  b.x = L.x; b.y = L.y; b.vx = 0; b.vy = 0; b.live = false; b.lane = true;
+  b.x = L.x; b.y = L.y; b.vx = 0; b.vy = 0; b.live = false; b.lane = true; b.capUntil = 0;
   w.reverseScoop = null; w._inputEvents.length = 0;
   for (const f of w.flippers) { f.reverseFx = 0; f.reverseUntil = 0; }
 }

@@ -94,6 +94,58 @@ const diagrams = {
   `,
 };
 
+Object.assign(diagrams, {
+  long: prefix => `
+    <g class="emblem-orbit">
+      <circle cx="120" cy="80" r="62" stroke-dasharray=".6 3" opacity=".5"/>
+      <path d="M120 8V24 M120 136V152" opacity=".6"/>
+      <circle cx="120" cy="20" r="1.8" fill="${ivory}" stroke="none"/>
+    </g>
+    <circle cx="120" cy="66" r="30" fill="url(#${prefix}-aura)" stroke="none"/>
+    <g stroke="${ivory}" stroke-width="1.3">
+      <path d="M40 76L107 112Q113 116 108 120Q104 123 98 120L34 87Q28 82 33 77Q37 73 40 76Z" fill="#061923" fill-opacity=".85"/>
+      <path d="M200 76L133 112Q127 116 132 120Q136 123 142 120L206 87Q212 82 207 77Q203 73 200 76Z" fill="#061923" fill-opacity=".85"/>
+    </g>
+    <g stroke="${mint}" opacity=".8">
+      <path d="M28 96L98 133 M92 128l7 5-8 2 M34 100l-6-4 8-2"/>
+      <path d="M212 96L142 133 M148 128l-7 5 8 2 M206 100l6-4-8-2"/>
+    </g>
+    <circle class="emblem-core" cx="120" cy="66" r="11" fill="url(#${prefix}-core)" stroke="${ivory}" stroke-width=".6"/>
+    ${star(60,40,3)}${star(182,42,3)}${star(120,146,2.4)}
+  `,
+  double: prefix => `
+    <g class="emblem-orbit">
+      <circle cx="120" cy="80" r="62" stroke-dasharray=".6 3" opacity=".55"/>
+      <ellipse cx="120" cy="80" rx="96" ry="28" transform="rotate(-14 120 80)" opacity=".5"/>
+      <circle cx="198" cy="58" r="2.6" fill="${ivory}" stroke="none"/>
+    </g>
+    <circle cx="120" cy="58" r="30" fill="url(#${prefix}-aura)" stroke="none"/>
+    <g stroke="${ivory}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M86 112L120 86L154 112"/>
+      <path d="M86 136L120 110L154 136" stroke="${mint}"/>
+    </g>
+    <path d="M120 78V30" stroke="url(#${prefix}-tail)" stroke-width="1.2"/>
+    <circle class="emblem-core" cx="120" cy="40" r="11" fill="url(#${prefix}-core)" stroke="${ivory}" stroke-width=".6"/>
+    ${star(70,58,3.4)}${star(170,58,3.4)}${star(120,150,2.4)}
+  `,
+  magnet: prefix => `
+    <g class="emblem-orbit">
+      <circle cx="120" cy="80" r="62" stroke-dasharray=".6 3" opacity=".55"/>
+      <path d="M120 8V22" opacity=".6"/>
+      <circle cx="58" cy="44" r="2" fill="${ivory}" stroke="none"/>
+    </g>
+    <circle cx="120" cy="46" r="28" fill="url(#${prefix}-aura)" stroke="none"/>
+    <path d="M90 82V112Q90 140 120 140Q150 140 150 112V82H134V112Q134 124 120 124Q106 124 106 112V82Z" fill="#061923" fill-opacity=".87" stroke="${ivory}" stroke-width="1.4"/>
+    <path d="M90 82H106V94H90Z M134 82H150V94H134Z" fill="${mint}" fill-opacity=".35" stroke="${mint}"/>
+    <g stroke="${mint}" opacity=".7">
+      <path d="M98 76Q98 56 112 50 M142 76Q142 56 128 50"/>
+      <path d="M84 74Q80 48 106 38 M156 74Q160 48 134 38" opacity=".6"/>
+    </g>
+    <circle class="emblem-core" cx="120" cy="44" r="11" fill="url(#${prefix}-core)" stroke="${ivory}" stroke-width=".6"/>
+    ${star(184,96,4)}${star(56,104,3)}${star(120,152,2.4)}
+  `,
+});
+
 export function upgradeEmblem(id) {
   return Object.hasOwn(diagrams, id) ? frame(id, diagrams[id]) : '';
 }

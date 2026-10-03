@@ -391,7 +391,7 @@ Each toy starts with a card that says what to try. The lab page shows how long y
 - **Loon Echo** (`/echo/`). Lead a line of chicks home past an eel and boats. Each full nest hatches a harder clutch, and a big bank gets slow motion. Every day brings a new lake.
 - **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A green cue says when a hold will rip, and the first burst of each run is a slow-motion peak. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
 - **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle: rock the top edge to stroke, twist for a J-stroke, and tilt and hold to brace. Thumbs and keys turn the way you press. Catch the eddies behind the rocks, heed the warning before a capsize, and boof the ledge at the bottom of today's river.
-- **Full Tilt** (`/lab/tilt/`). Open-space pinball across six star systems. Light the three relays in each world with the flippers, then shoot through the jump gate. A planet's pull bends your shot.
+- **Full Tilt** (`/lab/tilt/`). Pinball in open space across six worlds. Light the three beacons in each world, then shoot through the jump gate. A ring and a rising tone come up to 0.9 s before each flip, and each flip is Perfect, Good or Late. Clean flips in a row raise the multiplier, with no top. Hold to aim the launch, and light the gold beacon first for a skill shot that pays double. Start voyage flies the voyage of the day, so the crew flies the same worlds, and the end card says how close you came to your best.
 - **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own rules, tanks included, and a drag while it runs pokes the preview. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew. A friend races your time on a live clock and can send a time back or remix the layer.
 
 The latest review of every lab game against the bar, and what changed, is in `docs/lab-fun.md`.
@@ -458,7 +458,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
 | `public/lab/creek/` | Up the Creek: `river.js` (the river and its current), `canoe.js` (the canoe), `paddle.js` (reads strokes from the phone), and `main.js` |
-| `public/lab/tilt/` | Full Tilt: `table.js` (the table), `physics.js` (the ball and the flippers), and `main.js` |
+| `public/lab/tilt/` | Full Tilt: `adventure.js` (the voyage, the worlds and the rally), `physics.js` (the ball, the flippers and the flip forecast), `table.js` (the classic table), `render.js` and `main.js`. Its own README has the details |
 | `public/lab/rules/` | House Rules: `layer.js` (a layer as data, as a link, and as ground), `sand.js` (a copy of Down the Drain's sand rules, for the preview), `editor.js`, and `play.js` (the layer inside Down the Drain) |
 | `docs/game-ideas.md` | The bar for new games, eight ideas, ideas for every cabinet, and the toys in the lab |
 | `qa/lab/` | Tests for the lab (see below) |

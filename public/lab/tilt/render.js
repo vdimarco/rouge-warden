@@ -96,6 +96,10 @@ export function createRenderer(canvas, minimap) {
   const particles = [];
   const rings = [];
   const trail = [];
+  // Floating words and points in world space: a flip grade at the flipper, points at a target.
+  const popups = [];
+  // A short screen offset after a Perfect flip. It decays in about 0.15 s.
+  const shake = { x: 0, y: 0, time: 0 };
   const dust = new Map();
   let galaxyTexture = null;
   let width = 1, height = 1, dpr = 1, mapW = 156, mapH = 116;
@@ -150,11 +154,30 @@ export function createRenderer(canvas, minimap) {
     g.drawImage(assets.organic, ...rect, 0, 0, w, h); g.restore(); return true;
   }
 
+  const GRADE_STYLE = { perfect: ['PERFECT', '#ffe08a', 1.35], good: ['GOOD', '#9debdc', 1.1], late: ['LATE', '#e7a796', 1] };
+  function popup(text, x, y, color, size = 1, life = .9) {
+    popups.push({ text, x, y, color, size, age: 0, life });
+    if (popups.length > 12) popups.shift();
+  }
+  function kick(side = 0) {
+    shake.x = side * 7; shake.y = -6; shake.time = .16;
+  }
+
   function onEvent(event, run) {
     if (!event) return;
     const type = event.type || event.k;
     const x = event.x ?? run?.world?.ball?.x ?? 0;
     const y = event.y ?? run?.world?.ball?.y ?? 0;
+    if (type === 'strike') {
+      const [word, color, size] = GRADE_STYLE[event.grade] || GRADE_STYLE.good;
+      const blade = run?.world?.flippers?.find(f => f.sector === run.sectorIndex && f.side === event.side);
+      const text = event.grade === 'late' && event.timing === 'early' ? 'EARLY' : word;
+      popup(event.raised ? `${text} ×${event.multiplier}` : text, blade ? blade.px - blade.side * 45 : x, (blade?.py ?? y) + 70, color, size, event.grade === 'perfect' ? 1.1 : .85);
+    }
+    if (type === 'relay' && event.points) popup(event.skill ? `SKILL ×2 +${event.points.toLocaleString()}` : `+${event.points.toLocaleString()}`, x, y + 70, event.skill ? '#ffe08a' : '#fff2c4', event.skill ? 1.3 : 1.1, 1.2);
+    if (type === 'asteroid-break' && event.points) popup(`+${event.points}`, x, y + 45, '#ffd59a', .95);
+    if ((type === 'gate' || type === 'clear') && event.points) popup(`+${event.points.toLocaleString()}`, x, y + 110, '#ffe6b0', 1.3, 1.2);
+    if (type === 'orbit' && event.bonus) popup(`ORBIT +${event.bonus.toLocaleString()}`, x, y + 60, '#ffe6a6', 1);
     const fieldEvent = type === 'field-deploy' || type === 'field-expire';
     const rallyEvent = ['strike', 'asteroid-break', 'return'].includes(type);
     if (rallyEvent && !reducedMotion) {
@@ -172,8 +195,8 @@ export function createRenderer(canvas, minimap) {
       }
     }
     const color = fieldEvent ? FIELD_COLORS[event.kind] || FIELD_COLORS.pull : type === 'orbit' ? '#ffe6a6' : run?.sectors?.[run.sectorIndex]?.color || '#8deeff';
-    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy'].includes(type);
-    if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue'].includes(type)) {
+    const large = ['gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'orbit', 'field-deploy', 'magnet'].includes(type);
+    if (fieldEvent || ['relay', 'bumper', 'gate', 'clear', 'depart', 'arrive', 'won', 'pulse', 'save', 'recall', 'launch', 'orbit', 'rescue', 'magnet'].includes(type)) {
       rings.push({ x, y, age: 0, life: fieldEvent ? 0.55 : large ? 0.8 : 0.35, r: fieldEvent ? FIELD_RADIUS - 15 : large ? 220 : 75, inward: type === 'field-expire', color: type === 'relay' ? '#fff2b0' : color });
       if (!reducedMotion) {
         const count = large ? 26 : type === 'relay' ? 19 : 9;
@@ -404,54 +427,67 @@ export function createRenderer(canvas, minimap) {
     g.restore(); g.restore();
   }
 
-  function relay(b, color, clock) {
-    if (!visible(b.x, b.y, b.r * 3)) return;
-    const active = b.hit, t = reducedMotion ? 0 : clock;
-    const warmth = active ? '#ffe1a1' : '#afdff2';
+  // A relay is a beacon, not a rock: a round dark housing with a lamp. A dark beacon shows a
+  // hollow lamp and a slow ping that asks for a hit. A lit beacon burns gold with rays.
+  // The housing radius is the collider. The skill beacon has a turning gold ring and "×2".
+  function relay(b, color, clock, skillOpen = false) {
+    if (!visible(b.x, b.y, b.r * 3.4)) return;
+    const lit = b.hit, t = reducedMotion ? 0 : clock, scale = Math.max(.65, camera.scale);
+    const charged = b.required > 1 && b.hits > 0 && !lit;
     g.save(); g.translate(b.x, b.y);
-    const corona = g.createRadialGradient(0, 0, b.r * .22, 0, 0, b.r * 2.25);
-    corona.addColorStop(0, active ? '#ffce7780' : `${color}65`);
-    corona.addColorStop(.42, active ? '#e8a84a26' : `${color}20`); corona.addColorStop(1, '#00000000');
-    g.fillStyle = corona; circle(g, 0, 0, b.r * 2.25); g.fill();
-    // The luminous body is the collider. Wisps outside it are translucent gas.
-    const surface = g.createRadialGradient(-b.r * .3, b.r * .36, 0, 0, 0, b.r);
-    surface.addColorStop(0, active ? '#fff8d5' : '#e3f7ff');
-    surface.addColorStop(.22, active ? '#f8d185' : '#92c2d3');
-    surface.addColorStop(.62, active ? '#93623d' : '#375c72'); surface.addColorStop(1, '#0b1d2b');
-    if (assets.organic) {
-      g.save(); g.filter = active ? 'none' : 'saturate(.3) brightness(.86)';
-      organicSprite('core', 0, 0, b.r * 1.02); g.restore();
-    } else {
-      g.fillStyle = surface; circle(g, 0, 0, b.r); g.fill();
-      g.save(); circle(g, 0, 0, b.r); g.clip();
-      for (let i = 0; i < 12; i++) {
-        const angle = i * 2.399 + b.id, radius = b.r * (.2 + rand(i + b.id) * .6);
-        const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
-        g.strokeStyle = i % 3 ? '#b6ebec40' : '#fff7d768'; g.lineWidth = 1 + i % 3;
-        g.beginPath(); g.moveTo(x * .3, y * .3); g.quadraticCurveTo(x - y * .4, y + x * .4, x, y); g.stroke();
-      }
-      g.restore();
+    const corona = g.createRadialGradient(0, 0, b.r * .4, 0, 0, b.r * (lit ? 3.2 : 2.3));
+    corona.addColorStop(0, lit ? '#ffd27aa0' : `${color}50`);
+    corona.addColorStop(.45, lit ? '#f0a2402e' : `${color}14`); corona.addColorStop(1, '#00000000');
+    g.fillStyle = corona; circle(g, 0, 0, b.r * (lit ? 3.2 : 2.3)); g.fill();
+    if (!lit && !reducedMotion) {
+      // The ping grows from the housing and fades, once every 1.6 s.
+      const ping = (t / 1.6 + b.id * .37) % 1;
+      g.globalAlpha = (1 - ping) * .5; g.strokeStyle = color; g.lineWidth = 2 / scale;
+      circle(g, 0, 0, b.r * (1.05 + ping * .9)); g.stroke(); g.globalAlpha = 1;
     }
-    // Small, irregular plasma arcs retain a clear contact silhouette.
+    if (lit) {
+      g.strokeStyle = '#ffe3a0'; g.lineCap = 'round';
+      for (let i = 0; i < 8; i++) {
+        const angle = i * TAU / 8 + t * .25, inner = b.r * 1.12, outer = b.r * (1.5 + (i % 2) * .3);
+        g.globalAlpha = .55; g.lineWidth = (i % 2 ? 1.6 : 2.6) / scale;
+        g.beginPath(); g.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+        g.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer); g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    // Housing: a dark disc with a metal rim and four lens segments.
+    const housing = g.createRadialGradient(-b.r * .3, b.r * .3, 0, 0, 0, b.r);
+    housing.addColorStop(0, lit ? '#5a4127' : '#1b3346'); housing.addColorStop(1, lit ? '#2a1c10' : '#08131e');
+    g.fillStyle = housing; circle(g, 0, 0, b.r); g.fill();
+    g.strokeStyle = lit ? '#ffe2a6' : color; g.lineWidth = 3 / scale; g.globalAlpha = lit ? 1 : .9;
+    circle(g, 0, 0, b.r); g.stroke();
+    g.lineWidth = 2 / scale; g.globalAlpha = lit ? .9 : .55;
     for (let i = 0; i < 4; i++) {
-      const start = i * 1.7 + b.id * .73 + Math.sin(t * .28 + i) * .13;
-      g.strokeStyle = warmth; g.globalAlpha = active ? .56 : .30; g.lineWidth = 1.5;
-      g.beginPath(); g.arc(0, 0, b.r * (1.03 + i * .025), start, start + .45 + i * .11); g.stroke();
+      const start = i * TAU / 4 + .22 + (lit ? 0 : t * .15);
+      g.beginPath(); g.arc(0, 0, b.r * .78, start, start + TAU / 4 - .44); g.stroke();
     }
     g.globalAlpha = 1;
-    // Charged targets carry a small star. Double-charge cores keep two marks.
-    {
-      const glow = g.createRadialGradient(-b.r * .16, b.r * .16, 0, 0, 0, b.r * .7);
-      glow.addColorStop(0, active ? '#fffdecc0' : '#d7f8ffa0');
-      glow.addColorStop(.35, active ? '#ffedaf45' : '#74cfe542');
-      glow.addColorStop(1, active ? '#ffdc8000' : '#58bcdc00');
-      g.fillStyle = glow; circle(g, 0, 0, b.r * .7); g.fill();
+    // The lamp: hollow while dark, a bright gold core when lit.
+    if (lit || charged) {
+      const lamp = g.createRadialGradient(0, 0, 0, 0, 0, b.r * .55);
+      lamp.addColorStop(0, '#fffbe8'); lamp.addColorStop(.45, lit ? '#ffd77a' : '#bfe9ff'); lamp.addColorStop(1, lit ? '#e8913800' : '#6fc9ef00');
+      g.fillStyle = lamp; circle(g, 0, 0, b.r * .55); g.fill();
+    } else {
+      g.strokeStyle = '#d8f4ff'; g.lineWidth = 2 / scale; g.globalAlpha = .55 + .25 * Math.sin(t * 3 + b.id);
+      circle(g, 0, 0, b.r * .3); g.stroke(); g.globalAlpha = 1;
+      g.fillStyle = color; circle(g, 0, 0, b.r * .1); g.fill();
     }
     if (b.required > 1) for (let i = 0; i < b.required; i++) {
-      circle(g, (i - .5) * 12, -b.r - 12, 3.2);
-      g.fillStyle = i < b.hits ? '#fff0b1' : '#779ba1'; g.fill();
+      circle(g, (i - .5) * 14, -b.r - 13, 3.6);
+      g.fillStyle = i < b.hits ? '#fff0b1' : '#5e7c86'; g.fill();
+    }
+    if (skillOpen && !lit) {
+      g.strokeStyle = '#ffd889'; g.lineWidth = 2.4 / scale; g.setLineDash([9 / scale, 7 / scale]);
+      g.lineDashOffset = -t * 30 / scale;
+      circle(g, 0, 0, b.r * 1.55); g.stroke(); g.setLineDash([]);
     }
     g.restore();
+    if (skillOpen && !lit) label('SKILL ×2', b.x, b.y + b.r * 1.55 + 18, '#ffe3a0', 12);
   }
 
   function gate(room, clock, active) {
@@ -490,7 +526,8 @@ export function createRenderer(canvas, minimap) {
     g.globalAlpha = open ? .45 : .1; g.strokeStyle = '#ffe0b4'; g.lineWidth = 2;
     g.beginPath(); g.ellipse(0, 0, gate.r * 1.43, gate.r * .38, 0, Math.PI, TAU); g.stroke();
     g.restore();
-    if (active) label(open ? 'ENTER BLACK HOLE' : `${lit} / 3 RELAYS`, gate.x, gate.y - gate.r - 38, open ? '#f5e8cf' : '#a6afb7', 11);
+    // The label sits inside the dark gate, clear of the beacons around it.
+    if (active) label(open ? 'ENTER' : `${lit} / 3`, gate.x, gate.y, open ? '#f5e8cf' : '#a6afb7', 12);
   }
 
   function rails(table, sectorIndex, clock = 0) {
@@ -521,27 +558,26 @@ export function createRenderer(canvas, minimap) {
     }
   }
 
-  function flippers(run) {
+  function flippers(run, approach = null, cueLead = .9) {
     for (const f of run.world.flippers || []) {
       if (f.sector !== run.sectorIndex || !visible(f.px, f.py, f.len + 90)) continue;
       const tx = f.px + Math.cos(f.th) * f.len, ty = f.py + Math.sin(f.th) * f.len;
       const nx = -Math.sin(f.th), ny = Math.cos(f.th);
       g.save(); g.globalAlpha = 1;
-      const receiving = run.phase === 'play' && run.rally?.returning && run.rally.side === f.side;
-      if (receiving) {
-        const x = f.px + Math.cos(f.rest) * f.len * .6;
-        const scale = Math.max(.7, camera.scale);
-        // A short approach cue points at the actual receiving blade. No line
-        // claims the ball must follow a fixed path through the moving field.
-        g.strokeStyle = '#a3f1da'; g.lineWidth = 1.8 / scale; g.lineCap = 'round';
-        for (let i = 0; i < 3; i++) {
-          const y = f.py + 80 + i * 38, reach = (9 - i) / scale;
-          g.globalAlpha = .75 - i * .2;
-          g.beginPath(); g.moveTo(x - reach, y + reach * .55); g.lineTo(x, y - reach * .55);
-          g.lineTo(x + reach, y + reach * .55); g.stroke();
-        }
-        g.globalAlpha = .18; g.lineWidth = f.r1 * 2 + 18;
+      const cue = run.phase === 'play' && approach?.side === f.side ? approach : null;
+      if (cue) {
+        // The approach ring sits where the forecast says the ball meets the blade. It shrinks
+        // onto the target circle at the ideal press, and turns gold for the last 0.2 s.
+        const scale = Math.max(.6, camera.scale), p = clamp(1 - cue.ideal / cueLead, 0, 1);
+        const target = 13.5 + 9 / scale, ring = target + (70 / scale) * (1 - p) ** 1.2;
+        const gold = cue.ideal <= .2;
+        g.globalAlpha = .16 + .22 * p; g.strokeStyle = gold ? '#ffe29a' : '#9debdc';
+        g.lineCap = 'round'; g.lineWidth = f.r1 * 2 + 18;
         g.beginPath(); g.moveTo(f.px, f.py); g.lineTo(tx, ty); g.stroke();
+        g.globalAlpha = .7; g.lineWidth = 1.6 / scale; g.strokeStyle = '#fff2c9';
+        circle(g, cue.x, cue.y, target); g.stroke();
+        g.globalAlpha = .45 + .5 * p; g.lineWidth = (2.2 + 2.4 * p) / scale; g.strokeStyle = gold ? '#ffe29a' : '#a3f1da';
+        circle(g, cue.x, cue.y, ring); g.stroke();
         g.globalAlpha = 1;
       }
       // A gravity scoop curls under the physical paddle and guides the ball up.
@@ -638,11 +674,9 @@ export function createRenderer(canvas, minimap) {
     label(text, x, y - 45 / scale, color, 11);
   }
 
-  function trajectory(run, charge = 0, fieldAim = null) {
-    const charging = run.phase === 'ready' && charge > 0 && typeof run.table.launchVelocity === 'function';
-    if ((!charging && run.phase !== 'play') || camera.overview || typeof run.table.gravity !== 'function') return;
-    const launch = charging ? run.table.launchVelocity(charge) : null;
-    const ball = launch ? { ...run.world.ball, vx: launch.x, vy: launch.y } : run.world.ball;
+  function trajectory(run, fieldAim = null) {
+    if (run.phase !== 'play' || camera.overview || typeof run.table.gravity !== 'function') return;
+    const ball = run.world.ball;
     const speed = Math.hypot(ball.vx, ball.vy);
     if (speed < 90) return;
     const probe = { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy };
@@ -700,6 +734,46 @@ export function createRenderer(canvas, minimap) {
       alpha: previewWell ? .72 : .43, core: 1.1 / Math.max(.55, camera.scale),
       color, rim: previewWell ? '#978ce0' : '#668fce',
       clock: reducedMotion ? 0 : run.clock || 0, grains: reducedMotion ? 0 : 3 });
+  }
+
+  // The launch arc comes from the same forecast as the launch, so it shows the real shot.
+  // It ends at the first thing the ball meets, and a ring marks a beacon there.
+  function launchArc(run, plan) {
+    if (!plan || plan.path.length < 2 || camera.overview) return;
+    const scale = Math.max(.6, camera.scale), b = run.world.ball;
+    const color = plan.skill ? '#ffd889' : '#b2eafb', alpha = plan.charging ? .9 : .4;
+    g.save(); g.fillStyle = color;
+    let last = { x: b.x, y: b.y }, gap = 0;
+    for (const point of plan.path) {
+      gap += Math.hypot(point.x - last.x, point.y - last.y); last = point;
+      if (gap < 22 / scale) continue;
+      gap = 0;
+      g.globalAlpha = alpha; circle(g, point.x, point.y, (plan.charging ? 3.2 : 2.4) / scale); g.fill();
+    }
+    const relay = plan.relay;
+    if (relay && plan.charging) {
+      g.globalAlpha = .95; g.strokeStyle = color; g.lineWidth = 3 / scale;
+      circle(g, relay.x, relay.y, relay.r + 10 / scale); g.stroke();
+    }
+    g.restore();
+    if (relay && plan.charging && plan.skill) label('LET GO NOW', relay.x, relay.y - relay.r - 26, '#ffe3a0', 12);
+  }
+
+  function drawPopups(dt) {
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const p = popups[i]; p.age += dt;
+      if (p.age >= p.life) { popups.splice(i, 1); continue; }
+      const t = p.age / p.life, rise = 46 * transitEase(Math.min(1, t * 1.6));
+      g.save(); g.globalAlpha = t < .7 ? 1 : 1 - (t - .7) / .3;
+      if (!camera.overview && visible(p.x, p.y, 120)) {
+        g.translate(p.x, p.y + rise / Math.max(.6, camera.scale)); g.scale(1, -1);
+        const size = Math.round(15 * p.size) / Math.max(.6, camera.scale);
+        g.font = `800 ${size}px "Trebuchet MS", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.lineWidth = 4 / Math.max(.6, camera.scale); g.strokeStyle = '#030a14e0'; g.strokeText(p.text, 0, 0);
+        g.fillStyle = p.color; g.fillText(p.text, 0, 0);
+      }
+      g.restore();
+    }
   }
 
   function drawBall(run, dt, charge) {
@@ -767,11 +841,13 @@ export function createRenderer(canvas, minimap) {
   }
 
   function orbitDust(room) {
-    if (!dust.has(room.id)) dust.set(room.id, makeOrbitDust(room.id, room.color));
+    // The dust belongs to the world, which a seed can place at any step of the route.
+    const key = room.world ?? room.id;
+    if (!dust.has(key)) dust.set(key, makeOrbitDust(key, room.color));
     const diameter = room.gravityRadius * 2.7;
     if (!visible(room.planet.x, room.planet.y, diameter / 2)) return;
     g.save(); g.globalAlpha = .70;
-    g.drawImage(dust.get(room.id), room.planet.x - diameter / 2, room.planet.y - diameter / 2, diameter, diameter);
+    g.drawImage(dust.get(key), room.planet.x - diameter / 2, room.planet.y - diameter / 2, diameter, diameter);
     g.restore();
   }
 
@@ -1148,7 +1224,7 @@ export function createRenderer(canvas, minimap) {
     const elapsed = clamp(dt, 0, 0.08);
     reducedMotion = Boolean(options.reducedMotion);
     if (lastWorld !== run.world) {
-      trail.length = 0; particles.length = 0; rings.length = 0;
+      trail.length = 0; particles.length = 0; rings.length = 0; popups.length = 0;
       lastWorld = run.world; lastClock = run.clock || 0;
     }
     // Effect ages share the simulation clock. Menus, Pause and field placement
@@ -1173,7 +1249,7 @@ export function createRenderer(canvas, minimap) {
       canvas.dataset.visibleSector = visibleIds.length ? String(visibleIds[0]) : 'none';
     }
     if (lastFlight !== run.flight) {
-      trail.length = 0; particles.length = 0; rings.length = 0;
+      trail.length = 0; particles.length = 0; rings.length = 0; popups.length = 0;
       lastFlight = run.flight;
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1197,6 +1273,11 @@ export function createRenderer(canvas, minimap) {
         world: { ...run.world, ball: { ...run.world.ball,
           ...(timeline.visible === 'destination' ? run.flight.to : run.flight.from), vx: 0, vy: 0 } } } : run;
       g.save();
+      if (shake.time > 0) {
+        const k = shake.time / .16;
+        shake.time = Math.max(0, shake.time - elapsed);
+        g.translate(shake.x * k, shake.y * k);
+      }
       g.translate(width / 2, camera.centerY);
       g.rotate(camera.rotation || 0);
       g.scale(camera.scale, -camera.scale);
@@ -1208,23 +1289,26 @@ export function createRenderer(canvas, minimap) {
       const clock = run.clock || 0, color = room.color || PALETTE[sectorIndex % 6];
       orbitDust(room);
       gravityField(room, renderRun, !timeline, clock);
-      planet(room.planet, sectorIndex, color, clock, !timeline, renderRun.world.ball);
+      planet(room.planet, room.world ?? sectorIndex, color, clock, !timeline, renderRun.world.ball);
       gate(room, clock, !timeline);
-      for (const target of room.relays || []) relay(target, color, clock);
-      if (!timeline) label(room.name.toUpperCase(), room.x, room.y + room.h - 42, `${color}b0`, 12);
+      // The skill beacon shows its mark at the dock and while a launch can still score it.
+      const skillOpen = !timeline && (renderRun.phase === 'ready' || !!run.skill?.armed);
+      for (const target of room.relays || []) relay(target, color, clock, skillOpen && !!target.skill);
       for (let i = 0; i < run.table.bumpers.length; i++) {
         const bumper = run.table.bumpers[i];
         if (bumper.sector === sectorIndex && !bumper.relay) asteroid(bumper, i);
       }
       rails(run.table, sectorIndex, clock);
-      flippers(renderRun);
+      flippers(renderRun, timeline ? null : options.approach, options.cueLead);
       if (!timeline) {
         if (run.gravityWell?.remaining > 0) temporaryField(run.gravityWell, clock);
         if (options.fieldAim) temporaryField(options.fieldAim, clock, true);
-        trajectory(run, options.charge || 0, options.fieldAim);
+        if (run.phase === 'ready') launchArc(run, options.launchPlan);
+        else trajectory(run, options.fieldAim);
         effects(effectElapsed);
       }
       drawBall(renderRun, timeline ? 0 : effectElapsed, options.charge || 0);
+      if (!timeline) drawPopups(effectElapsed);
       g.restore();
     }
     if (timeline) {
@@ -1246,5 +1330,5 @@ export function createRenderer(canvas, minimap) {
     return { x: bounds.left + local.x * (bounds.width || width) / width, y: bounds.top + local.y * (bounds.height || height) / height };
   }
 
-  return { draw, resize, camera, loadAssets, onEvent, toWorld, toScreen, screenToWorld: toWorld, worldToScreen: (x, y) => worldToScreen(camera, x, y), destroy() { observer?.disconnect(); globalThis.removeEventListener?.('resize', resize); } };
+  return { draw, resize, camera, loadAssets, onEvent, kick, toWorld, toScreen, screenToWorld: toWorld, worldToScreen: (x, y) => worldToScreen(camera, x, y), destroy() { observer?.disconnect(); globalThis.removeEventListener?.('resize', resize); } };
 }

@@ -1,9 +1,4 @@
-# pinball-rallies
-
-## Purpose
-Full Tilt makes each flip count: the ball comes back for a timed flip, the flip gets a grade, and asteroids and the multiplier reward a clean rally.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Repeated player shots
 Full Tilt SHALL bring each shot back to a flipper after a short orbit, with continuous physical motion and a cue that comes in time for the flip.
@@ -21,19 +16,6 @@ Full Tilt SHALL bring each shot back to a flipper after a short orbit, with cont
 - **WHEN** the moving flipper strikes the ball upward
 - **THEN** the next free-flight window begins and the ball gets asteroid-breaking power for a short time
 - **AND** holding a blade or pressing it away from the ball gives no power or score
-
-### Requirement: Dynamic asteroid encounters
-Asteroids SHALL move on seeded bounded paths, deflect ordinary shots and break under a powered shot.
-
-#### Scenario: Smash and reentry
-- **WHEN** a powered ball collides with a live asteroid
-- **THEN** that asteroid disappears, emits one destruction reward and shows fragments
-- **AND** its return is warned in advance and delayed while its spawn would overlap the ball
-
-#### Scenario: Fair moving collisions
-- **WHEN** an ordinary ball hits a moving asteroid
-- **THEN** its bounce accounts for the rock's velocity without a bumper kick
-- **AND** inactive sectors, destroyed rocks and warning-only rocks do not collide
 
 ### Requirement: Skillful momentum
 Pulse SHALL bend the current velocity through a bounded impulse. Each powered flip SHALL get a grade, and clean flips in a row SHALL raise a rally multiplier that has no top.

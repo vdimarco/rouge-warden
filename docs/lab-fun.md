@@ -69,7 +69,7 @@ Each game first got the bug fixes from its review, and then the changes that add
 
 **Heartship.** The beat is now a lub and a dub that a phone speaker can play, and a pulse on the beat is the skill: it lands at once, a charged fin dashes two lanes, and on-beat pulses in a row raise the multiplier. The voyage is endless, the tempo rises, and hazards scroll past the ship with a warning tone 1 s ahead. Before, every seed gave the same 41 s run and the top score of 2,040. Now a perfect bot sails past 2,000 m, and a bot that is 60 ms off the beat lasts 86 to 134 s.
 
-**Full Tilt.** Its changes land later in this pass.
+**Full Tilt.** A ring and a rising tone now come up to 0.9 s before each flip, from the same physics as play. Each flip is Perfect, Good or Late, a clean flip can bend the shot toward a dark beacon, and clean flips in a row raise the multiplier, with no top. The orbit lasts 2.5 s, and a hit brings the ball straight back. A hold aims the launch, and a gold beacon pays double for a skill shot. Each day brings a new voyage from tested layouts, each gate offers three of six upgrades, and the end card says how close you came. Before, FLIP NOW lit 0.05 to 0.25 s before the ball arrived, a powered flip came 8 or 9 times a minute, and bots with ±30 ms and ±80 ms timing scored the same, 73.0k and 73.7k. Now the ±30 ms bot flips 16 times a minute and scores 50% more than the ±80 ms bot. It clears all six worlds on 24 of 24 seeds, and the ±80 ms bot on 20.
 
 ## 4. What is still open
 
