@@ -48,7 +48,8 @@ function newGame(mode) {
   game.reset(mode);
   particles.length = 0; popups.length = 0; trail.length = 0; arcs.length = 0; hits.length = 0; rings.length = 0;
   stasisEase = 0; cutCounts.clear();
-  sound.hunting = false; sound.stasis(false);
+  slowmo = 0; slowFactor = 1; shake = 0; flash = 0; kick.x = kick.y = 0; deathAt = 0;
+  sound.hunting = false; sound.stasis(false); sound.endAllWindups();
   renderer.upload(game.world, "reset");
   layout();
 }
@@ -82,8 +83,11 @@ let touchMode = false;
 const stick = { id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
 let padPrev = {};
 let overAt = 0; // when the game-over screen appeared; a restart needs a fresh press after it
+let mutateAt = 0; // when the cards appeared; the dash keys cannot pick a card at once
+let deathAt = 0; // when the player dissolved; the game-over screen follows 0.6 s later
 
-const canRetry = () => screen === "over" && performance.now() - overAt > 150;
+const canRetry = () => screen === "over" && performance.now() - overAt > 600;
+const canPick = () => screen === "mutate" && performance.now() - mutateAt > 400;
 
 addEventListener("keydown", (e) => {
   if (e.repeat && ["Space", "ShiftLeft", "ShiftRight", "KeyX", "KeyZ", "KeyR", "Enter"].includes(e.code)) { e.preventDefault(); return; }
@@ -92,12 +96,14 @@ addEventListener("keydown", (e) => {
   const k = e.code;
   if (screen === "title" && ["Enter", "Digit1", "Numpad1", "Space"].includes(k)) { e.preventDefault(); startRun(); return; }
   if (screen === "over" && ["Enter", "Digit1", "Numpad1", "KeyR"].includes(k)) { e.preventDefault(); if (canRetry()) startRun(); return; }
+  // Space is the dash key: on the game-over screen it does nothing, even on the focused AGAIN button
+  if (screen === "over" && k === "Space") { e.preventDefault(); return; }
   if (screen === "mutate") {
     const n = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[k];
     if (n !== undefined) { pickCard(n); return; }
     if (k === "ArrowLeft" || k === "ArrowUp") moveCard(-1);
     if (k === "ArrowRight" || k === "ArrowDown") moveCard(1);
-    if (k === "Enter" || k === "Space") { e.preventDefault(); pickCard(cardSel); }
+    if (k === "Enter" || k === "Space") { e.preventDefault(); if (canPick()) pickCard(cardSel); }
     return;
   }
   if (screen === "play") {
@@ -147,7 +153,7 @@ addEventListener("pointercancel", endStick);
 $("#dashBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); sound.init(); input.dash = true; });
 ui.burstBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); sound.init(); input.burst = true; });
 // tap anywhere on the game-over screen (outside its buttons) to swim again
-ui.over.addEventListener("pointerdown", (e) => { if (e.target.closest("button")) return; if (canRetry()) startRun(); });
+ui.over.addEventListener("click", (e) => { if (e.target.closest("button")) return; if (canRetry()) startRun(); });
 
 function setTouchMode(on) {
   touchMode = on;
@@ -168,7 +174,7 @@ function pollPad() {
   const left = edge(14) || edge(4), right = edge(15);
   if (screen === "title") { if (a || start) startRun(); return null; }
   if (screen === "over") { if ((a || start) && canRetry()) startRun(); return null; }
-  if (screen === "mutate") { if (left) moveCard(-1); if (right || b) moveCard(1); if (a) pickCard(cardSel); return null; }
+  if (screen === "mutate") { if (left) moveCard(-1); if (right || b) moveCard(1); if (a && canPick()) pickCard(cardSel); return null; }
   if (screen === "pause") { if (start || a) setPause(false); return null; }
   if (start) { setPause(true); return null; }
   if (a) input.dash = true;
@@ -221,7 +227,7 @@ function setPause(on) {
   if (on) $("#resumeBtn").focus();
 }
 $("#playBtn").onclick = startRun;
-$("#againBtn").onclick = startRun;
+$("#againBtn").onclick = () => { if (canRetry()) startRun(); };
 $("#resumeBtn").onclick = () => setPause(false);
 $("#restartBtn").onclick = startRun;
 $("#quitBtn").onclick = toTitle;
@@ -287,7 +293,7 @@ function showCards() {
     return `<button class="card${m.kind === "duo" ? " duo" : ""}" type="button" data-i="${i}"><span class="k">${i + 1}</span>${tag}<svg viewBox="0 0 44 44" aria-hidden="true">${ICONS[m.id] || ""}</svg>${kind}<b>${m.name}</b><p>${m.text}</p><span class="lvl">${"●".repeat(lvl + 1)}${"○".repeat(Math.max(0, max - lvl - 1))}</span></button>`;
   }).join("");
   ui.cards.querySelectorAll(".card").forEach((c) => {
-    c.onclick = () => pickCard(+c.dataset.i);
+    c.onclick = () => { if (canPick()) pickCard(+c.dataset.i); };
     c.onmouseenter = () => { cardSel = +c.dataset.i; markCard(); };
   });
   cardSel = 0;
@@ -350,7 +356,7 @@ function burst(x, y, n, color, speed = 20, life = 0.8, size = 1) {
 }
 // a cone of chunks along a direction
 function cone(x, y, dx, dy, n, color, spread = 0.44, v0 = 30, v1 = 60, life = 0.5) {
-  if (reduceMotion) n = Math.ceil(n / 3);
+  if (reduceMotion) return;
   const a0 = Math.atan2(dy, dx);
   for (let i = 0; i < n; i++) {
     const a = a0 + (Math.random() - 0.5) * spread, v = rnd(v0, v1);
@@ -418,16 +424,18 @@ function handleEvents() {
       case "refill": sound.refill(); break;
       case "windup": {
         const h = hunterById(e.id);
-        sound.windup(e.sec);
+        sound.windup(e.sec, e.id);
         if (h && h.nd < 40) showTipOnce("lane", "A hunter is about to lunge. Move out of its lane.");
         break;
       }
+      case "cancel": sound.endWindup(e.id); break;
       case "glint":
         sound.glint();
         if (lungesSeen >= 3) showTipOnce("parry", touchMode ? "Tap <kbd>DASH</kbd> at the flash to parry." : "Dash into the flash to parry.");
         break;
       case "lunge": {
         lungesSeen++;
+        sound.endWindup(e.id);
         sound.lunge();
         cone(e.x, e.y, -e.ux, -e.uy, 12, "#6a0f24", 0.9, 8, 20, 0.6);
         break;
@@ -459,17 +467,19 @@ function handleEvents() {
         break;
       }
       case "stagger":
+        sound.endWindup(e.id);
         sound.stagger(); addShake(4);
         popup(e.x, e.y - 6, e.boss ? "WING TORN" : "STAGGER", "#ffd86a", true);
         rings.push({ x: e.x, y: e.y, r0: 4, r1: 18, at: performance.now(), dur: 400, color: "255,216,106" });
         if (!e.boss) showTipOnce("glory", touchMode ? "Swim into the gold hunter to finish it." : "Bite the gold hunter to finish it.");
         break;
       case "parry":
+        sound.endWindup(e.id);
         sound.parry(); addKick(P.dashX, P.dashY, 5);
         if (!reduceMotion) burst(P.x, P.y, 30, "#b49cff", 40, 0.6, 1);
         popup(P.x, P.y - 6, "PARRY", "#d8c8ff", true);
         break;
-      case "stasis": sound.stasis(true); break;
+      case "stasis": sound.stasis(true); sound.endAllWindups(); break;
       case "stasisEnd": sound.stasis(false); break;
       case "burstReady":
         sound.burstReady();
@@ -529,18 +539,21 @@ function handleEvents() {
       case "tide": banner("RED TIDE", "Hunter tissue is spreading", "#ff5c8f"); break;
       case "comboEnd": if (e.combo >= 6) popup(P.x, P.y - 6, e.combo + " CHAIN", "#ffc94a", true); break;
       case "epochEnd":
-        sound.epoch(); sound.hunting = false; sound.stasis(false);
+        sound.epoch(); sound.hunting = false; sound.stasis(false); sound.endAllWindups();
         showCards();
         show("mutate");
+        mutateAt = performance.now();
         break;
       case "epochStart":
-        banner("EPOCH " + roman(e.epoch), e.mutation.name + " · the dish speeds up", "#b49cff");
+        // with nothing left to offer, the next epoch starts without the cards
+        if (screen === "mutate" && game.state === "play") show("play");
+        banner("EPOCH " + roman(e.epoch), (e.mutation ? e.mutation.name + " · " : "") + "the dish speeds up", "#b49cff");
         sound.tempo = 1 + (e.epoch - 1) * 0.05;
         break;
       case "death":
         sound.death(); sound.hunting = false; sound.stasis(false); addShake(12); flash = 0.4;
         burst(e.x, e.y, 90, "#c6fff4", 30, 1.6, 1.2);
-        setTimeout(gameOver, 600);
+        deathAt = performance.now();
         break;
     }
   }
@@ -582,7 +595,7 @@ function setHud(key, value, apply) { if (hudCache[key] !== value) { hudCache[key
 // a hunter's lunge lane: the true footprint its body will sweep
 function drawLane(c, e, t, s) {
   const locked = !!e.lane;
-  const L = e.lane || { ux: e.aimX || 1, uy: e.aimY || 0, L: 18, back: -8, front: 8, left: -8, right: 8, x0: e.x, y0: e.y };
+  const L = e.lane || { ux: e.aimX ?? 1, uy: e.aimY ?? 0, L: 18, back: -8, front: 8, left: -8, right: 8, x0: e.x, y0: e.y };
   const glint = e.glinted && (e.state === "windup" || e.state === "reaim");
   const lunging = e.state === "lunge";
   const len = L.front + L.L - L.back, wid = L.right - L.left;
@@ -666,7 +679,7 @@ function drawFx(t, dt) {
         c.fillStyle = g; c.beginPath(); c.arc(X, Y, R * 1.4, 0, Math.PI * 2); c.fill();
       });
       if (Math.random() < 0.3) particles.push({ x: e.x + rnd(-5, 5), y: e.y + rnd(-5, 5), vx: 0, vy: -6, life: 0.6, max: 0.6, color: "#ffe39a", size: 0.6, home: false });
-    } else if (e.remains && game.time > e.fadeAt - 1.5 && Math.floor(t * 8) % 2 === 0) {
+    } else if (e.remains && game.time > e.fadeAt - 1.5 && (reduceMotion || Math.floor(t * 8) % 2 === 0)) {
       wrapped(e.x, e.y, 14, (X, Y) => {
         c.strokeStyle = "rgba(127,255,240,0.6)"; c.lineWidth = 2;
         c.beginPath(); c.arc(X, Y, (e.size + 3) * s, 0, Math.PI * 2); c.stroke();
@@ -678,7 +691,7 @@ function drawFx(t, dt) {
   for (const e of game.hunters) {
     if (e.state === "windup" || e.state === "reaim" || e.state === "lunge") drawLane(c, e, t, s);
     if (e.state === "stagger" || e.state === "collapse") {
-      const gold = e.state === "collapse" ? 0.6 + 0.4 * Math.sin(t * 19) : 0.6 + 0.4 * Math.sin(t * 38);
+      const gold = reduceMotion ? 0.85 : e.state === "collapse" ? 0.6 + 0.4 * Math.sin(t * 19) : 0.6 + 0.4 * Math.sin(t * 38);
       const R = Math.max(game.reachOf(e) - 6, 8) * s;
       wrapped(e.x, e.y, 40, (X, Y) => {
         c.strokeStyle = `rgba(255,216,106,${gold})`; c.lineWidth = Math.max(3, 0.6 * s);
@@ -696,7 +709,7 @@ function drawFx(t, dt) {
     }
     if (e.egg) {
       const left = Math.max(0, (e.hatchAt ?? e.born + TUNE.egg.hatch) - game.time), frac = 1 - left / TUNE.egg.hatch;
-      const blink = e.cracked && Math.floor(t * 14) % 2 === 0;
+      const blink = e.cracked && (reduceMotion || Math.floor(t * 14) % 2 === 0);
       wrapped(e.x, e.y, 14, (X, Y) => {
         c.strokeStyle = blink ? "rgba(255,255,255,0.9)" : "rgba(255,170,200,0.55)"; c.lineWidth = 2;
         c.beginPath(); c.arc(X, Y, 9 * s, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); c.stroke();
@@ -932,13 +945,16 @@ function frame(now) {
   const t = now / 1000;
   if (screen === "play" || screen === "title" || screen === "over") {
     readInput();
-    if (slowmo > 0) { slowmo -= dt; dt *= slowFactor; }
+    if (slowmo > 0 && game.hitstop <= 0) { slowmo -= dt; dt *= slowFactor; }
     const before = game.steps;
     game.update(dt, screen === "play" ? input : {});
     input.dash = false; input.burst = false;
     if (game.steps !== before) renderer.upload(game.world, "step");
+    else if (game.fieldDirty) renderer.upload(game.world, "reset");
     else if (game.player.eating > 0.9 || game.burstT > 0 || game.player.dashT > 0) renderer.upload(game.world, "touch");
+    game.fieldDirty = false;
     handleEvents();
+    if (screen === "play" && deathAt && game.state === "over" && performance.now() - deathAt > 600) { deathAt = 0; gameOver(); }
     simTime += dt;
   } else {
     pollPad();
@@ -970,6 +986,7 @@ function frame(now) {
     hits: hits.filter((h) => nowMs - h.at < 70),
     stasis: stasisEase,
     ring,
+    calm: reduceMotion,
   });
   drawFx(t, dt);
   rect = r0;

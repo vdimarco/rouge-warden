@@ -23,6 +23,7 @@ uniform vec4 uMark[8]; // uv.x, uv.y, radius, code + progress (1 heat, 2 glint, 
 uniform vec4 uHit[8];  // uv.x, uv.y, radius, strength
 uniform vec4 uRing;    // uv.x, uv.y, radius, strength
 uniform float uStasis;
+uniform float uCalm; // 1 with reduced motion: steady tints, no pulses or flicker
 
 const float TAU = 6.2831853;
 const vec3 GOLD = vec3(1.0, 0.78, 0.25);
@@ -107,7 +108,7 @@ void main() {
     if (w <= 0.0) continue;
     float code = floor(m.w + 0.001), p = clamp(m.w - code, 0.0, 1.0);
     if (code == 1.0) { // windup: red heating toward white-red, 6 Hz pulse
-      float pulse = 0.5 + 0.5 * sin(uTime * 6.0 * TAU);
+      float pulse = mix(0.5 + 0.5 * sin(uTime * 6.0 * TAU), 0.5, uCalm);
       vec3 hot = mix(vec3(1.0, 0.2, 0.12), vec3(1.0, 0.88, 0.82), p * p);
       col = mix(col, hot * (0.7 + 0.45 * diff), w * (0.3 + 0.55 * p));
       col += hot * w * pulse * (0.08 + 0.3 * p);
@@ -115,7 +116,7 @@ void main() {
       col = mix(col, vec3(1.0, 0.97, 0.95), w * 0.85);
       col += vec3(0.4) * w;
     } else if (code == 3.0) { // stagger: gold rim, 6 Hz pulse
-      float pulse = 0.5 + 0.5 * sin(uTime * 6.0 * TAU);
+      float pulse = mix(0.5 + 0.5 * sin(uTime * 6.0 * TAU), 0.5, uCalm);
       col = mix(col, GOLD * (0.55 + 0.5 * diff), w * 0.3);
       col += GOLD * k * edge * (0.5 + 0.9 * pulse);
       pop = max(pop, w);
@@ -124,13 +125,13 @@ void main() {
       col = mix(col, vec3(l) * vec3(0.55, 0.75, 1.25) + vec3(0.0, 0.02, 0.06), w * 0.7);
       pop = max(pop, w);
     } else if (code == 5.0) { // collapse: whole body gold, 3 Hz pulse
-      float pulse = 0.5 + 0.5 * sin(uTime * 3.0 * TAU);
+      float pulse = mix(0.5 + 0.5 * sin(uTime * 3.0 * TAU), 0.5, uCalm);
       col = mix(col, GOLD * (0.6 + 0.5 * diff), w * (0.45 + 0.35 * pulse));
       col += GOLD * w * pulse * 0.25;
       pop = max(pop, w);
     } else if (code == 6.0) { // egg crack: fast flicker, quicker as it nears hatching
       // stepped rate (9, 13.5, 18 Hz): a rate that slides with p would scramble the phase at large uTime
-      float flick = step(0.5, fract(uTime * (9.0 + 4.5 * floor(p * 3.0))));
+      float flick = uCalm > 0.5 ? 0.5 : step(0.5, fract(uTime * (9.0 + 4.5 * floor(p * 3.0))));
       col += vec3(1.0, 0.65, 0.8) * w * flick * (0.25 + 0.5 * p);
     }
   }
@@ -202,7 +203,7 @@ export class FieldRenderer {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     this.u = {};
-    for (const name of ["uPrev", "uCur", "uMix", "uTime", "uFrenzy", "uHurt", "uFlash", "uTexel", "uPlayer", "uRect", "uMark", "uHit", "uRing", "uStasis"]) this.u[name] = gl.getUniformLocation(p, name);
+    for (const name of ["uPrev", "uCur", "uMix", "uTime", "uFrenzy", "uHurt", "uFlash", "uTexel", "uPlayer", "uRect", "uMark", "uHit", "uRing", "uStasis", "uCalm"]) this.u[name] = gl.getUniformLocation(p, name);
     this.tex = [this.makeTex(), this.makeTex()];
     this.size = [0, 0];
     this.marks = new Float32Array(32);
@@ -283,6 +284,7 @@ export class FieldRenderer {
     if (r && r.r > 0 && r.s > 0 && w) gl.uniform4f(this.u.uRing, r.x / w, r.y / h, r.r, Math.min(1, r.s));
     else gl.uniform4f(this.u.uRing, 0, 0, 0, 0);
     gl.uniform1f(this.u.uStasis, Math.min(1, Math.max(0, fx.stasis || 0)));
+    gl.uniform1f(this.u.uCalm, fx.calm ? 1 : 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 

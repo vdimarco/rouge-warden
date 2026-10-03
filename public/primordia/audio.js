@@ -241,12 +241,13 @@ export class Sound {
   // A hunter winds up: saw and sine rise from 220 to 880 Hz over `sec` as a low-pass opens.
   // Call it once per windup, not every frame. At most 3 voices; a new one stops the oldest.
   // A call within 50 ms of the last is skipped, so hunters that start together share one voice.
-  windup(sec) {
+  // `id` names the hunter; endWindup(id) stops the voice once no hunter that shares it still winds up.
+  windup(sec, id) {
     if (!this.ready()) return;
     const c = this.ctx, t = this.now(), d = Math.min(4, Math.max(0.1, Number(sec) || 0.6));
     this.winds = this.winds.filter((v) => v.end > t);
     const last = this.winds[this.winds.length - 1];
-    if (last && t - last.t0 < 0.05) return;
+    if (last && t - last.t0 < 0.05) { last.ids.add(id); return; }
     while (this.winds.length >= 3) this.cutVoice(this.winds.shift(), t);
     const lp = c.createBiquadFilter(), g = c.createGain(), oscs = [], vol = 0.05;
     lp.type = "lowpass"; lp.Q.value = 4;
@@ -261,7 +262,24 @@ export class Sound {
       o.connect(lp); o.start(t); o.stop(t + d + 0.1); oscs.push(o);
     }
     lp.connect(g).connect(this.master);
-    this.winds.push({ g, oscs, vol, t0: t, end: t + d + 0.1 });
+    this.winds.push({ g, oscs, vol, t0: t, end: t + d + 0.1, ids: new Set([id]) });
+  }
+  // The attack was called off, parried or launched: its rising cue stops.
+  endWindup(id) {
+    if (!this.ctx) return;
+    const t = this.now();
+    for (const v of this.winds) {
+      if (!v.ids.delete(id) || v.ids.size) continue;
+      if (v.end > t) this.cutVoice(v, t);
+    }
+    this.winds = this.winds.filter((v) => v.ids.size && v.end > t);
+  }
+  // Stasis stretches every windup; the glint cue marks the timing instead.
+  endAllWindups() {
+    if (!this.ctx) return;
+    const t = this.now();
+    for (const v of this.winds) if (v.end > t) this.cutVoice(v, t);
+    this.winds = [];
   }
   glint() {
     if (!this.ready()) return;

@@ -218,12 +218,15 @@ export class World {
 
   // Slide everything inside a disc by (vx, vy) cells, with a soft rim. Lenia rules do not care
   // where a creature sits, so a whole body moved a fraction of a cell keeps living.
-  advect(field, cx, cy, radius, vx, vy) {
+  // With `label` and `own`, cells labelled as another body are neither moved nor written, so a
+  // body that moves next to another never drags part of it along.
+  advect(field, cx, cy, radius, vx, vy, label, own) {
     const { w, h } = this;
     const r = Math.ceil(radius) + 1, n = 2 * r + 1;
     if (!this.tmp || this.tmp.length < n * n) this.tmp = new Float32Array(n * n);
     const tmp = this.tmp, x0 = Math.round(cx), y0 = Math.round(cy), inner = radius - 4;
-    const at = (x, y) => field[wrapI(Math.floor(y), h) * w + wrapI(Math.floor(x), w)];
+    const other = (i) => label && label[i] >= 0 && label[i] !== own;
+    const at = (x, y) => { const i = wrapI(Math.floor(y), h) * w + wrapI(Math.floor(x), w); return other(i) ? 0 : field[i]; };
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         const d = Math.hypot(dx + x0 - cx, dy + y0 - cy);
@@ -234,14 +237,17 @@ export class World {
           : at(x, y) * (1 - fx) * (1 - fy) + at(x + 1, y) * fx * (1 - fy) + at(x, y + 1) * (1 - fx) * fy + at(x + 1, y + 1) * fx * fy;
       }
     }
-    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) field[wrapI(y0 + dy, h) * w + wrapI(x0 + dx, w)] = tmp[(dy + r) * n + dx + r];
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const i = wrapI(y0 + dy, h) * w + wrapI(x0 + dx, w);
+      if (!other(i)) field[i] = tmp[(dy + r) * n + dx + r];
+    }
   }
 
   // Move everything inside a hard disc by whole cells (dx, dy). An exact copy, no blur: small and
   // static bodies (Discutium, Circium) die under fractional advection but survive this.
-  roll(field, cx, cy, radius, dx, dy) { return this.rollMany([field], cx, cy, radius, dx, dy); }
+  roll(field, cx, cy, radius, dx, dy, label, own) { return this.rollMany([field], cx, cy, radius, dx, dy, label, own); }
 
-  rollMany(fields, cx, cy, radius, dx, dy) {
+  rollMany(fields, cx, cy, radius, dx, dy, label, own) {
     dx = Math.round(dx); dy = Math.round(dy);
     if (!dx && !dy) return 0;
     const { w, h } = this, r = Math.ceil(radius), n = 2 * r + 1, r2 = radius * radius;
@@ -252,8 +258,8 @@ export class World {
     for (const f of fields) {
       for (let oy = -r; oy <= r; oy++) for (let ox = -r; ox <= r; ox++) {
         const k = (oy + r) * n + ox + r;
-        if (ox * ox + oy * oy > r2) { tmp[k] = 0; continue; }
         const i = wrapI(y0 + oy, h) * w + wrapI(x0 + ox, w);
+        if (ox * ox + oy * oy > r2 || (label && label[i] >= 0 && label[i] !== own)) { tmp[k] = 0; continue; }
         tmp[k] = f[i]; f[i] = 0;
       }
       for (let oy = -r; oy <= r; oy++) for (let ox = -r; ox <= r; ox++) {
@@ -261,6 +267,7 @@ export class World {
         const v = tmp[(oy + r) * n + ox + r];
         if (!v) continue;
         const i = wrapI(y0 + oy + dy, h) * w + wrapI(x0 + ox + dx, w);
+        if (label && label[i] >= 0 && label[i] !== own) continue;
         f[i] = Math.min(1, f[i] + v);
         if (f === fields[0]) moved += v;
       }

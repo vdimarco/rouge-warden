@@ -20,23 +20,23 @@ export const TUNE = {
   cutR: 4, cutRate: 0.5, cutSpacing: 1.5, cutCap: 0.22, kick: 5, kickBoss: 3,
   assist: { cone: 20, range: 26, bend: 12 },
   chase: { base: 0.10, perEpoch: 0.014, max: 0.20 }, swarmChase: 0.20, broodChase: 0.15, stalkClamp: 0.30, orbit: 0.06,
-  sepK: 0.30, sepRoom: 1.0,
+  sepK: 0.30, sepRoom: 1.0, sepGap: 16, sepHard: 0.5,
   trigger: { min: 6, max: 26 }, windupFloor: 0.45, glint: 0.20, lockAt: 0.5,
   crouch: { steps: 4, v: 0.2 }, holdGlide: 0.35,
   recoverSteps: 22, cooldown: { base: 70, perEpoch: 3, min: 45 },
   tokens: [0, 1, 1, 2, 2, 2, 3], leadFromEpoch: 5, lead: 0.25,
   lungeHit: 18, lungeIframes: 0.6, lungeShove: 50, lungeCapPerSec: 30, contactSting: 28,
   spawnGrace: 1.2, epochGrace: 3,
-  stagger: 0.20, tearHold: 1.2, tearDecay: 0.15, exposed: 1.5, staggerSteps: 36, staggerFloor: 1.2,
-  killCredit: 6, rupture: 1.3, ruptureWindow: 3, localCap: 1.35, trim: { r: 6, rate: 0.03 },
+  stagger: 0.20, gloryReel: 0.25, tearHold: 1.2, tearDecay: 0.15, exposed: 1.5, staggerSteps: 36, staggerFloor: 1.2,
+  killCredit: 6, bleedSteps: 3, rupture: 1.3, ruptureWindow: 3, localCap: 1.35, trim: { r: 6, rate: 0.03 },
   stasisScale: 0.3, stasisLadder: [1.5, 1.1, 0.8], stasisChain: 6, stasisHunger: 0.3,
-  burst: { r: 20, rate: 0.45, catch: 20, push: 40, kick: 6, kickSmall: 4, time: 4, perKill: 0.75, max: 8, score: 300 },
+  burst: { r: 20, rate: 0.45, catch: 20, push: 40, kick: 6, kickSmall: 4, time: 4, perKill: 0.75, max: 8, score: 300, bossBite: 0.5 },
   meter: { cut: 0.4, parry: 0.15, glory: 0.15, graze: 0.04, pop: 0.03, golden: 0.5 },
   freezeCap: 0.25,
-  budget: { k: 1.3, bossK: 1.6, pad: 300, cap: 2600 },
+  budget: { k: 1.3, bossK: 1.6, pad: 300, cap: 2600 }, fusedMass: 520,
   preyLight: [0.17, 0.15, 0.13], remains: { light: 12, fade: 6, max: 4 }, comboWindow: 3.0,
   caps: { desktop: { gliders: 4, swarm: 4, eggs: 4, bodies: 8 }, compact: { gliders: 3, swarm: 3, eggs: 3, bodies: 6 } },
-  egg: { hatch: 8, crack: 0.6, spacing: 24 },
+  egg: { hatch: 8, crack: 0.6, spacing: 24, body: 7 }, waveGap: 8,
   spawn: { min: 34, max: 48, arc: 120, warn: { arc: 1.2, swarm: 0.9, egg: 0.6, boss: 3.0 } },
 };
 
@@ -139,7 +139,7 @@ export class Game {
     };
     this.meter = 0; this.burstT = 0; this.ready = false;
     this.stasisT = 0; this.stasisChain = 0; this.lastParry = -99;
-    this.hitstop = 0; this.freezeLog = []; this.dashBuffer = 0;
+    this.hitstop = 0; this.freezeLog = []; this.dashBuffer = 0; this.burstBuffer = 0; this.fieldDirty = false;
     this.lungeLog = []; this.procLog = []; this.razorAt = -9;
     this.mut = Object.fromEntries(MUTATIONS.map((m) => [m.id, 0]));
     this.prey = []; this.hunters = []; this.pending = []; this.claims = [];
@@ -229,9 +229,15 @@ export class Game {
     if (this.hitstop > 0) {
       this.hitstop -= dt;
       if (input.dash) this.dashBuffer = 0.12;
+      if (input.burst) this.burstBuffer = 0.12;
       return;
     }
-    if (this.dashBuffer > 0) { this.dashBuffer -= dt; if (!input.dash) input = { ...input, dash: true }; this.dashBuffer = 0; }
+    // presses made during a freeze are kept until they can act, or for 0.12 s
+    if (this.dashBuffer > 0) {
+      if (this.player.dashT <= 0) { if (!input.dash) input = { ...input, dash: true }; this.dashBuffer = 0; }
+      else this.dashBuffer -= dt;
+    }
+    if (this.burstBuffer > 0) { this.burstBuffer = 0; if (!input.burst) input = { ...input, burst: true }; }
     this.time += dt;
     const P = this.player;
     if (this.state === "play") {
@@ -267,7 +273,7 @@ export class Game {
     if (this.simAcc > 1) this.simAcc = 0.99;
     // real-time timers
     if (this.comboTimer > 0) { this.comboTimer -= dt; if (this.comboTimer <= 0) { if (this.combo >= 3) this.emit("comboEnd", { combo: this.combo }); this.combo = 0; } }
-    if (this.burstT > 0) { this.burstT -= dt; if (this.burstT <= 0) { this.burstT = 0; this.emit("burstEnd"); } }
+    if (this.burstT > 0) { this.burstT -= dt; if (this.burstT <= 0) this.endBurst(); }
     if (this.stasisT > 0) { this.stasisT -= dt; if (this.stasisT <= 0) { this.stasisT = 0; this.emit("stasisEnd"); } }
     if (P.rally && this.time > P.rally.until) P.rally = null;
     const bloom = W.massA > 1400;
@@ -402,9 +408,15 @@ export class Game {
     if (P.dashT > 0 && P.iframes > 0) this.checkParry();
     this.checkLungeHits();
     if (this.burstT > 0) {
-      // the hunt: your maw eats hunter tissue
-      const ateB = W.drain(W.B, P.x, P.y, maw * 1.1, 1 - Math.exp(-9 * dt));
-      if (ateB > 0.03) { this.markBitten(this.hunters, P.x, P.y, maw * 1.1); this.gainHunter(ateB, P.x, P.y); }
+      // the hunt: your maw eats hunter tissue. The Leviathan cannot be eaten whole; bites tear its wings.
+      const r = maw * 1.1, boss = this.hunters.find((e) => e.boss && e.nd <= r + 1);
+      const b0 = boss ? this.massIn(boss, P.x, P.y, r) : 0;
+      const ateB = W.drain(W.B, P.x, P.y, r, 1 - Math.exp(-9 * dt));
+      if (ateB > 0.03) { this.markBitten(this.hunters.filter((e) => !e.boss), P.x, P.y, r); this.gainHunter(ateB, P.x, P.y); }
+      if (boss) {
+        const lost = b0 - this.massIn(boss, P.x, P.y, r);
+        if (lost > 0.3) this.tear(boss, lost * TUNE.burst.bossBite, "bite", P.x, P.y);
+      }
     } else {
       if (P.iframes <= 0) {
         const touch = W.probe(W.B, P.x, P.y, P.r);
@@ -482,6 +494,20 @@ export class Game {
     return best >= 0 ? this.ownerOf[best] : null;
   }
 
+  // hunter tissue of one body inside a disc
+  massIn(e, x, y, r) {
+    const L = this.labelB;
+    if (!L) return 0;
+    const { w, h } = this, B = this.world.B, rr = Math.ceil(r), x0 = Math.round(x), y0 = Math.round(y);
+    let m = 0;
+    for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      const i = wrap(y0 + dy, h) * w + wrap(x0 + dx, w);
+      if (L[i] === e.blob) m += B[i];
+    }
+    return m;
+  }
+
   // Drain a disc of hunter tissue and credit each owner with what it lost.
   drainCredit(x, y, r, rate, src) {
     const W = this.world, L = this.labelB, { w, h } = this;
@@ -492,6 +518,7 @@ export class Game {
       if (e) before.set(e, (before.get(e) || 0) + W.B[i]);
     }
     const taken = W.drain(W.B, x, y, r, rate);
+    this.fieldDirty = true;
     const hit = [];
     for (const [e, b0] of before) {
       let b1 = 0;
@@ -517,7 +544,7 @@ export class Game {
     const mult = e.exposed || e.state === "stagger" ? TUNE.exposed : 1;
     const frac = (mass / this.baseMass(e)) * mult;
     e.tear = (e.tear || 0) + frac;
-    e.cutAt = this.time; e.hitAt = this.time; e.lastCutX = x; e.lastCutY = y;
+    e.cutAt = this.time; e.hitAt = this.time; e.lastCutX = x; e.lastCutY = y; e.lastSrc = src;
     this.lastCut = { x, y, time: this.time, e };
     this.addMeter(TUNE.meter.cut * frac);
     this.score += Math.round(mass * 2 * this.multiplier());
@@ -561,7 +588,11 @@ export class Game {
       }
       const was = e.state;
       this.tear(e, taken, "cut", x, y);
-      if (e.state === "stagger" && was !== "stagger") { e.staggerDash = P.dashId; this.freeze(0.08, "stagger", e); }
+      // the dash that staggers or collapses a hunter cannot also bite it
+      if (e.state !== was && (e.state === "stagger" || e.state === "collapse")) {
+        e.staggerDash = P.dashId;
+        if (e.state === "stagger") this.freeze(0.08, "stagger", e);
+      }
     }
   }
 
@@ -583,9 +614,18 @@ export class Game {
 
   canGlory(e) { return !!e && ((e.state === "stagger" && !e.boss && !e.egg) || (e.boss && e.state === "collapse")); }
 
+  // A Glory Bite needs a new move: not in the dash that staggered or parried the hunter,
+  // and not before the hunter has reeled for a moment after that dash.
+  gloryOpen(e) {
+    const P = this.player;
+    if (!this.canGlory(e)) return false;
+    if (e.staggerDash !== P.dashId) return true;
+    return P.dashT <= 0 && this.time - e.stateAt >= TUNE.gloryReel;
+  }
+
   tryGlory(mx, my, maw) {
     const e = this.ownerAt(mx, my, maw + 1);
-    if (e && this.canGlory(e)) this.glory(e);
+    if (e && this.gloryOpen(e)) this.glory(e);
   }
 
   glory(e) {
@@ -684,12 +724,25 @@ export class Game {
     const P = this.player, B = TUNE.burst, W = this.world;
     this.meter = 0; this.ready = false;
     this.stats.bursts++;
+    // the hunt starts with the blast: no meter gains from the blast itself
+    this.burstT = B.time + this.mut.gorge;
+    this.burstCap = B.max + this.mut.gorge;
+    this.burstEcho = 0;
+    this.fieldDirty = true;
     const caught = this.hunters.filter((e) => e.nd <= B.catch && !e.egg);
     const eggs = this.hunters.filter((e) => e.egg && e.nd <= B.catch);
     // measure each caught hunter's share of the blast
     const before = new Map(caught.map((e) => [e, this.labelMass(e)]));
     W.drain(W.B, P.x, P.y, B.r, B.rate);
     for (const e of caught) {
+      // swarm bodies and small brood do not survive a Burst
+      if (!e.boss && (e.species === SP.DISC || (e.brood && this.motionOf(e) === "roll"))) {
+        if (this.labelB) this.wipe(W.B, this.labelB, e.blob);
+        this.hunters.splice(this.hunters.indexOf(e), 1);
+        this.releaseToken(e);
+        this.devour(e, "hunter", { how: "burst" });
+        continue;
+      }
       const lost = Math.max(0, before.get(e) - this.labelMass(e));
       if (e.state === "windup" || e.state === "lunge" || e.state === "reaim") this.cancelAttack(e);
       this.tear(e, Math.max(lost, 0.2 * this.baseMass(e)), "burst", e.nx, e.ny);
@@ -706,11 +759,20 @@ export class Game {
     const points = n ? B.score * n * n * this.multiplier() : 0;
     this.score += points;
     if (n) this.addCombo(n);
-    this.burstT = B.time + this.mut.gorge;
-    this.burstCap = B.max + this.mut.gorge;
-    this.burstEcho = 0;
     this.freeze(0.18, "burst");
     this.emit("burst", { x: P.x, y: P.y, caught: n, points });
+  }
+
+  endBurst() {
+    this.burstT = 0;
+    this.emit("burstEnd");
+    // Echo Burst fills the meter while the Burst runs; show it as ready now
+    if (this.meter >= 1 && !this.ready) { this.ready = true; this.emit("burstReady"); }
+    // a Burst that leaves no named hunter alive earns a relax beat
+    if (this.mode === "play" && this.player.alive && !this.hunters.some((e) => this.isNamed(e) && !e.egg)) {
+      this.director.relaxT = Math.max(this.director.relaxT, 5);
+      this.emit("relax", { t: 5 });
+    }
   }
 
   labelMass(e) {
@@ -765,7 +827,13 @@ export class Game {
       if (usedE.has(e)) continue;
       list.splice(i, 1);
       if (kind === "hunter") this.releaseToken(e);
-      if (now - e.bitAt < 0.5) this.devour(e, kind, { how: "burst" });
+      // a body whose densest cell now lies in another tracked body merged into it: no kill
+      const into = e.maxI !== undefined ? label[e.maxI] : -1;
+      const merged = kind === "hunter" && into >= 0 && blobs.some((b) => b.id === into && usedB.has(b));
+      if (merged) {
+        if (this.isNamed(e) && !e.parent && !e.egg && !list.some((o) => o.parent === e.id)) { this.stats.selfDeaths++; this.emit("selfDeath", { id: e.id, x: e.x, y: e.y }); }
+      } else if (kind === "hunter" && e.egg && now - e.bitAt < 0.5) this.creditEgg(e, "burst");
+      else if (now - e.bitAt < 0.5 && !e.boss) this.devour(e, kind, { how: "burst" });
       else if (kind === "hunter" && this.isNamed(e) && now - (e.cutAt ?? -99) < TUNE.killCredit) this.devour(e, kind, { how: "bleed" });
       else {
         if (kind === "hunter" && this.isNamed(e) && !e.egg) { this.stats.selfDeaths++; this.emit("selfDeath", { id: e.id, x: e.x, y: e.y }); }
@@ -785,12 +853,20 @@ export class Game {
         if (e.species === undefined && this.mode === "play") {
           // debris: a big piece cut off a hunter lives on as brood; small pieces dissolve
           const lc = this.lastCut;
-          if (b.mass >= 130 && lc && now - lc.time < 1 && this.dist(lc.x, lc.y, b.x, b.y) < 40) {
-            Object.assign(e, { brood: true, baseMass: b.mass, cutAt: lc.e.cutAt, tear: lc.e.tear || 0, name: "Brood", wave: lc.e.wave });
+          const piece = b.mass >= 130 && lc && now - lc.time < 1 && this.dist(lc.x, lc.y, b.x, b.y) < 40;
+          if (piece && b.mass <= TUNE.fusedMass && this.capRoom(SP.PARA)) {
+            Object.assign(e, { brood: true, baseMass: b.mass, parentMass: this.baseMass(lc.e), parent: lc.e.id, cutAt: lc.e.cutAt, tear: lc.e.tear || 0, name: "Brood", wave: lc.e.wave });
             this.emit("brood", { id: e.id, x: e.x, y: e.y });
-          } else if (b.mass < 130) {
+          } else if (b.mass < 130 || piece) {
+            // small pieces, and pieces with no room under the cap, dissolve
             this.wipe(field, label, b.id);
             this.emit("dissolve", { x: b.x, y: b.y });
+            continue;
+          } else if (b.mass > TUNE.fusedMass) {
+            // two bodies fused into one we cannot name: it bursts before it grows into a red tide
+            this.wipe(field, label, b.id);
+            this.stats.selfDeaths++;
+            this.emit("rupture", { id: e.id, x: b.x, y: b.y, fused: true });
             continue;
           }
         }
@@ -809,7 +885,8 @@ export class Game {
     const cut = kind === "prey" ? 0.42 : 0.5;
     for (let i = list.length - 1; i >= 0; i--) {
       const e = list[i];
-      if (now - e.bitAt < 0.35 && e.mass < e.peak * cut) {
+      if (now - e.bitAt < 0.35 && e.mass < e.peak * cut && !e.boss) {
+        if (e.egg) { this.popEgg(e, "burst"); continue; }
         this.wipe(field, label, e.blob);
         list.splice(i, 1);
         if (kind === "hunter") this.releaseToken(e);
@@ -817,15 +894,23 @@ export class Game {
         continue;
       }
       if (kind !== "hunter" || !this.isNamed(e) || e.egg) continue;
-      const base = this.baseMass(e), sinceCut = now - (e.cutAt ?? -99);
-      if (sinceCut < TUNE.killCredit && e.mass < e.peak * 0.5 && !e.boss) {
+      // brood measures swelling against the body it was cut from, so regrowth is not a rupture
+      const base = e.brood ? Math.max(this.baseMass(e), e.parentMass || 0) : this.baseMass(e), sinceCut = now - (e.cutAt ?? -99);
+      // a cut can split a body for a step or two; only a body that stays small has bled out
+      e.lowSteps = e.mass < e.peak * 0.5 ? (e.lowSteps || 0) + 1 : 0;
+      if (e.boss) {
+        // the Leviathan is never wiped by these rules; a swollen boss is trimmed at its densest cell
+        if (e.mass > base * TUNE.localCap && e.maxI !== undefined) W.drain(W.B, e.maxI % this.w, (e.maxI / this.w) | 0, TUNE.trim.r, e.mass > base * 1.8 ? 0.2 : TUNE.trim.rate);
+        continue;
+      }
+      if (sinceCut < TUNE.killCredit && e.lowSteps >= TUNE.bleedSteps) {
         this.wipe(field, label, e.blob); list.splice(i, 1); this.releaseToken(e);
         this.devour(e, kind, { how: "bleed" });
-      } else if (sinceCut < TUNE.ruptureWindow && e.mass > base * TUNE.rupture && !e.boss) {
+      } else if (sinceCut < TUNE.ruptureWindow && e.mass > base * TUNE.rupture && !e.brood) {
         this.wipe(field, label, e.blob); list.splice(i, 1); this.releaseToken(e);
         this.emit("rupture", { id: e.id, x: e.x, y: e.y });
         this.devour(e, kind, { how: "rupture" });
-      } else if (e.mass > base * 1.8 && !e.boss) {
+      } else if (e.mass > base * 1.8) {
         // two bodies fused: the swollen mass bursts before it can grow into a red tide
         this.wipe(field, label, e.blob); list.splice(i, 1); this.releaseToken(e);
         this.stats.selfDeaths++;
@@ -862,6 +947,7 @@ export class Game {
 
   wipe(field, label, id) {
     const { w, h } = this;
+    this.fieldDirty = true;
     for (let i = 0; i < label.length; i++) {
       if (label[i] !== id) continue;
       const x = i % w, y = (i / w) | 0;
@@ -872,6 +958,7 @@ export class Game {
   // --- the hunters' minds: one move per hunter per sim step ---
   steer() {
     const P = this.player, list = this.hunters;
+    const gaps = this.tissueGaps();
     for (const e of list) {
       const v = this.stepHunter(e);
       const mo = this.motionOf(e);
@@ -886,14 +973,21 @@ export class Game {
           // count the creature's own glide too: Lenia gliders drift 0.3 cells/step by themselves
           const nx = dx / d, ny = dy / d, closing = (v.x + (e.glideX || 0)) * nx + (v.y + (e.glideY || 0)) * ny;
           if (closing < 0) { v.x -= nx * closing; v.y -= ny * closing; }
-          const k = TUNE.sepK * (1 - d / room);
+          let k = TUNE.sepK * (1 - d / room);
+          // wings reach past the centroids: when the real tissue comes close, push hard
+          const gap = gaps.get(e.id < o.id ? e.id + ":" + o.id : o.id + ":" + e.id);
+          if (gap !== undefined && gap < TUNE.sepGap) k += TUNE.sepHard * (1 - Math.max(0, gap) / TUNE.sepGap);
           v.x += nx * k; v.y += ny * k;
         }
         // the chase was clamped in stepHunter; separation may add to it, within a safe ceiling
         const l = Math.hypot(v.x, v.y);
         if (l > 0.6) { v.x *= 0.6 / l; v.y *= 0.6 / l; }
       }
-      if (e.kick) { v.x += e.kick.x; v.y += e.kick.y; e.kick = null; }
+      if (e.kick) {
+        const k = this.safeKick(e, e.kick);
+        v.x += k.x; v.y += k.y; e.kick = null;
+        if (e.lane) { e.lane.x0 = wrap(e.lane.x0 + k.x, this.w); e.lane.y0 = wrap(e.lane.y0 + k.y, this.h); }
+      }
       e.appliedX = v.x; e.appliedY = v.y;
       this.moveBody(e, v.x, v.y);
     }
@@ -904,17 +998,70 @@ export class Game {
       if (d > 40 || d < 3) continue;
       p.pullX = (p.pullX || 0) + (dx / d) * 1.5; p.pullY = (p.pullY || 0) + (dy / d) * 1.5;
       const mx = Math.trunc(p.pullX), my = Math.trunc(p.pullY);
-      if (mx || my) { this.world.rollMany([this.world.A, this.world.N], p.x, p.y, 14, mx, my); p.pullX -= mx; p.pullY -= my; p.x = wrap(p.x + mx, this.w); p.y = wrap(p.y + my, this.h); }
+      if (mx || my) { this.world.roll(this.world.A, p.x, p.y, 14, mx, my); p.pullX -= mx; p.pullY -= my; p.x = wrap(p.x + mx, this.w); p.y = wrap(p.y + my, this.h); }
     }
+  }
+
+  // The tissue gap between each pair of nearby bodies, along the line between their centroids.
+  tissueGaps() {
+    const gaps = new Map(), L = this.labelB, list = this.hunters;
+    if (!L) return gaps;
+    const pairs = [];
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      if (this.dist(a.x, a.y, b.x, b.y) < (this.reachOf(a) + this.reachOf(b)) * TUNE.sepRoom) pairs.push([a, b]);
+    }
+    if (!pairs.length) return gaps;
+    const cells = new Map();
+    for (const [a, b] of pairs) { cells.set(a.blob, []); cells.set(b.blob, []); }
+    for (let i = 0; i < L.length; i++) { const c = L[i] >= 0 ? cells.get(L[i]) : undefined; if (c) c.push(i); }
+    const { w, h } = this;
+    // how far a body's tissue reaches from its centroid along (ux, uy)
+    const front = (e, ux, uy) => {
+      let f = 0;
+      for (const i of cells.get(e.blob)) {
+        const a = wdelta((i % w) - e.x, w) * ux + wdelta(((i / w) | 0) - e.y, h) * uy;
+        if (a > f) f = a;
+      }
+      return f;
+    };
+    for (const [a, b] of pairs) {
+      const dx = wdelta(b.x - a.x, w), dy = wdelta(b.y - a.y, h), d = Math.hypot(dx, dy) || 1;
+      const gap = d - front(a, dx / d, dy / d) - front(b, -dx / d, -dy / d);
+      gaps.set(a.id < b.id ? a.id + ":" + b.id : b.id + ":" + a.id, gap);
+    }
+    return gaps;
+  }
+
+  // Shorten a kick so the moved disc stays clear of eggs and the body does not close on another body.
+  safeKick(e, kick) {
+    let kx = kick.x, ky = kick.y;
+    for (const o of this.hunters) {
+      if (o === e) continue;
+      const dx = wdelta(e.x - o.x, this.w), dy = wdelta(e.y - o.y, this.h), d = Math.hypot(dx, dy) || 1;
+      if (o.egg) {
+        // the move disc grows with the kick; an egg inside it would be dragged along
+        const room = Math.max(0, d - this.reachOf(e) - TUNE.egg.body);
+        const l = Math.hypot(kx, ky);
+        if (l > room) { kx *= room / l; ky *= room / l; }
+        continue;
+      }
+      const nx = dx / d, ny = dy / d, closing = -(kx * nx + ky * ny);
+      const allowed = Math.max(0, d - (this.reachOf(e) + this.reachOf(o)) * TUNE.sepRoom);
+      if (closing > allowed) { kx += nx * (closing - allowed); ky += ny * (closing - allowed); }
+    }
+    return { x: kx, y: ky };
   }
 
   moveBody(e, vx, vy) {
     const W = this.world, l = Math.hypot(vx, vy), mo = this.motionOf(e);
     if (mo === "static" || l < 0.005) return;
-    if (mo === "smooth") { W.advect(W.B, e.x, e.y, this.reachOf(e) + Math.max(0, l - 1), vx, vy); return; }
+    // in play, a move only carries this body's own tissue (demo dishes keep the plain move)
+    const L = this.mode === "play" ? this.labelB : null;
+    if (mo === "smooth") { W.advect(W.B, e.x, e.y, this.reachOf(e) + Math.max(0, l - 1), vx, vy, L, e.blob); return; }
     e.ax = (e.ax || 0) + vx; e.ay = (e.ay || 0) + vy;
     const dx = Math.trunc(e.ax), dy = Math.trunc(e.ay);
-    if (dx || dy) { W.roll(W.B, e.x, e.y, this.reachOf(e), dx, dy); e.ax -= dx; e.ay -= dy; }
+    if (dx || dy) { W.roll(W.B, e.x, e.y, this.reachOf(e), dx, dy, L, e.blob); e.ax -= dx; e.ay -= dy; }
   }
 
   // velocity this step, in cells per step
@@ -960,7 +1107,10 @@ export class Game {
         if (e.windupTotal - e.steps <= TUNE.crouch.steps) { v.x -= u.x * TUNE.crouch.v; v.y -= u.y * TUNE.crouch.v; }
         if (!e.lane) { e.aimX = u.x; e.aimY = u.y; }
         if (!e.lane && e.steps <= e.windupTotal * (1 - TUNE.lockAt)) { this.lockLane(e); if (e.state !== "windup") break; }
-        if (!e.glinted && this.windupLeft(e) <= TUNE.glint) { e.glinted = true; this.emit("glint", { id: e.id, x: e.nx, y: e.ny }); }
+        // the glint shows while the parry window is open; Stasis can stretch the windup and close it again
+        const glint = this.windupLeft(e) <= TUNE.glint;
+        if (glint && !e.glintCue) { e.glintCue = true; this.emit("glint", { id: e.id, x: e.nx, y: e.ny }); }
+        e.glinted = glint;
         if (e.steps <= 0 && this.time - e.stateAt >= TUNE.windupFloor) this.beginLunge(e);
         break;
       }
@@ -1022,8 +1172,10 @@ export class Game {
   releaseToken(e) { e.token = false; }
 
   beginWindup(e) {
+    const P = this.player, dx = wdelta(P.x - e.x, this.w), dy = wdelta(P.y - e.y, this.h), d = Math.hypot(dx, dy) || 1;
     e.state = "windup"; e.windupTotal = this.windupStepsOf(e); e.steps = e.windupTotal;
-    e.stateAt = this.time; e.lane = null; e.glinted = false; e.cycle = (e.cycle || 0) + 1; e.exposed = false;
+    e.stateAt = this.time; e.lane = null; e.glinted = false; e.glintCue = false; e.cycle = (e.cycle || 0) + 1; e.exposed = false;
+    e.aimX = dx / d; e.aimY = dy / d;
     this.stats.lunges++;
     this.emit("windup", { id: e.id, x: e.nx, y: e.ny, sec: this.windupLeft(e) });
   }
@@ -1120,7 +1272,8 @@ export class Game {
   bossGate(e) {
     const W = this.world;
     this.releaseToken(e);
-    e.tear = 0; e.lane = null; e.second = false;
+    e.tear = 0; e.lane = null; e.second = false; e.staggerDash = -1;
+    this.fieldDirty = true;
     if (this.labelB) {
       const s = blobShape(this.labelB, e.blob, this.w, this.h, e.x, e.y);
       const cx = e.lastCutX ?? this.player.x, cy = e.lastCutY ?? this.player.y;
@@ -1152,13 +1305,15 @@ export class Game {
   // --- eggs ---
   updateEggs() {
     const now = this.time;
-    for (const e of this.hunters) {
+    for (const e of [...this.hunters]) {
       if (e.boss && e.phase === 3 && e.state !== "collapse" && now >= (e.nextEgg ?? Infinity) && (e.eggsLaid || 0) < 3) {
-        e.nextEgg = now + 5; e.eggsLaid = (e.eggsLaid || 0) + 1;
-        const g = Math.hypot(e.glideX || 0, e.glideY || 0) || 1;
-        const off = this.reachOf(e) + 12;
-        const bx = wrap(e.x - ((e.glideX || 0) / g) * off, this.w), by = wrap(e.y - ((e.glideY || 1) / g) * off, this.h);
-        if (this.capRoom(SP.EGG)) this.queueUnit(SP.EGG, { wave: e.wave, at: { x: bx, y: by } });
+        // lay behind the glide (or away from the player), just outside the boss's own clearance
+        let ux = -(e.glideX || 0), uy = -(e.glideY || 0), g = Math.hypot(ux, uy);
+        if (g < 0.02) { ux = wdelta(e.x - this.player.x, this.w); uy = wdelta(e.y - this.player.y, this.h); g = Math.hypot(ux, uy) || 1; }
+        const off = this.reachOf(e) + SPECIES[SP.EGG].reach + 6;
+        const at = { x: wrap(e.x + (ux / g) * off, this.w), y: wrap(e.y + (uy / g) * off, this.h) };
+        if (this.capRoom(SP.EGG) && this.queueUnit(SP.EGG, { wave: e.wave, at })) { e.eggsLaid = (e.eggsLaid || 0) + 1; e.nextEgg = now + 5; }
+        else e.nextEgg = now + 0.5;
       }
       if (!e.egg) continue;
       if (e.hatchAt === undefined) e.hatchAt = e.born + TUNE.egg.hatch;
@@ -1171,6 +1326,10 @@ export class Game {
     if (!this.hunters.includes(e)) return;
     if (this.labelB) this.wipe(this.world.B, this.labelB, e.blob);
     this.hunters.splice(this.hunters.indexOf(e), 1);
+    this.creditEgg(e, src);
+  }
+
+  creditEgg(e, src) {
     this.stats.eggs++;
     this.addMeter(TUNE.meter.pop);
     this.addCombo(1);
@@ -1249,7 +1408,7 @@ export class Game {
     if (e.boss) { this.duoNext = true; this.director.bossOut = false; }
     this.emit("devour", { kind, x: e.nx ?? e.x, y: e.ny ?? e.y, boss: !!e.boss, points, combo: this.combo, mult, name: e.name, how, species: e.species });
     // Spore Burst: a kill bursts at the corpse. Kills made by a proc only chain with Chain Bloom.
-    const fromProc = this.time - (e.procAt ?? -9) < 1;
+    const fromProc = how !== "glory" && e.lastSrc === "proc" && this.time - (e.procAt ?? -9) < 1;
     const depth = fromProc ? (e.procDepth || 0) + 1 : 0;
     if (this.mut.sporeburst && (!fromProc || this.mut.chainbloom)) this.procSpore(e.x, e.y, depth);
   }
@@ -1397,6 +1556,7 @@ export class Game {
     const add = (r) => { if (r === "egg") eggs++; else { gliders++; if (r === "swarm") swarm++; } };
     for (const e of this.hunters) if (e !== exclude) add(e.egg ? "egg" : e.species === SP.DISC ? "swarm" : "glider");
     for (const p of this.pending) if (p.kind === "hunter") add(SPECIES[p.species].role === "egg" ? "egg" : SPECIES[p.species].role === "swarm" ? "swarm" : "glider");
+    for (const k of this.claims) if (k.kind === "hunter") add(k.tags.egg ? "egg" : k.tags.swarm ? "swarm" : "glider");
     if (gliders + eggs >= c.bodies) return false;
     if (role === "egg") return eggs < c.eggs;
     if (role === "swarm" && swarm >= c.swarm) return false;
@@ -1458,10 +1618,11 @@ export class Game {
     const plan = this.wavePlan(this.epoch);
     const bossAlive = this.hunters.some((e) => e.boss) || this.pending.some((p) => p.boss) || this.claims.some((c) => c.tags.boss);
     if (D.bossOut && !bossAlive && !D.queue.some((q) => q.boss)) D.bossOut = false;
-    // flush units that waited for room
+    // flush units that waited for room; none arrive in a relax beat, and only the boss while it lives
     for (let i = 0; i < D.queue.length; i++) {
       const q = D.queue[i];
-      if (this.capRoom(q.species) && this.queueUnit(q.species, q)) { D.queue.splice(i, 1); i--; }
+      if (!q.boss && (D.relaxT > 0 || bossAlive)) continue;
+      if ((q.boss || this.capRoom(q.species)) && this.queueUnit(q.species, q)) { D.queue.splice(i, 1); i--; }
     }
     // waves
     for (let k = 0; k < 3; k++) {
@@ -1472,17 +1633,20 @@ export class Game {
       const prevClear = k === 0 || D.cleared[k - 1];
       const early = prevClear && D.clearAt !== undefined && this.epochTime >= D.clearAt + 5;
       if (this.epochTime < wv.at && !early) break;
+      // waves held back (by a living boss) keep a gap when they resume
+      if (this.epochTime < (D.lastWaveAt ?? -99) + TUNE.waveGap) break;
       if (D.relaxT > 0 && !early) break;
       if (bossAlive && !wv.units.includes("L")) break;
       this.spawnWave(wv, k);
-      D.spawned[k] = true;
+      D.spawned[k] = true; D.lastWaveAt = this.epochTime;
       D.wave = k + 1;
       break;
     }
     // clears
     for (let k = 0; k < 3; k++) {
       if (!D.spawned[k] || D.cleared[k]) continue;
-      const left = this.hunters.some((e) => e.wave === this.waveKey(k)) || this.pending.some((p) => p.wave === this.waveKey(k)) || D.queue.some((q) => q.wave === this.waveKey(k));
+      const key = this.waveKey(k);
+      const left = this.hunters.some((e) => e.wave === key) || this.pending.some((p) => p.wave === key) || D.queue.some((q) => q.wave === key) || this.claims.some((c) => c.kind === "hunter" && c.tags.wave === key);
       if (left) continue;
       D.cleared[k] = true; D.clearAt = this.epochTime;
       const bonus = 500 * this.epoch;
@@ -1576,6 +1740,8 @@ export class Game {
     if (this.stasisT > 0) { this.stasisT = 0; this.emit("stasisEnd"); }
     this.offer = this.makeOffer();
     this.emit("epochEnd", { epoch: this.epoch });
+    // nothing left to offer: the next epoch starts at once
+    if (!this.offer.length) this.nextEpoch(null);
   }
 
   makeOffer() {
@@ -1588,6 +1754,7 @@ export class Game {
     if (duos.length && (this.duoNext || this.rand() < 0.5)) offer.push(take(duos));
     const rest = MUTATIONS.filter((m) => m.kind !== "duo" && open(m) && !offer.includes(m));
     while (offer.length < 3 && rest.length) offer.push(take(rest));
+    while (offer.length < 3 && duos.length) offer.push(take(duos));
     this.duoNext = false;
     return offer;
   }
@@ -1597,16 +1764,22 @@ export class Game {
     const m = this.offer[i], P = this.player;
     this.mut[m.id]++;
     if (m.id === "heart") { P.maxLight += 25; P.light = P.maxLight; }
+    this.nextEpoch(m);
+    return true;
+  }
+
+  nextEpoch(m) {
+    const P = this.player;
     this.offer = null;
     this.epoch++;
     this.epochTime = 0;
     P.light = Math.min(P.maxLight, P.light + 30);
     P.charges = this.maxCharges(); P.chargeT = 0;
-    // a fresh epoch: new waves; the Leviathan carries over if it still lives
-    const D = this.director;
-    this.director = { wave: 0, spawned: [false, false, false], cleared: [false, false, false], relaxT: 0, queue: [], encoreCd: 0, bossOut: D.bossOut && this.hunters.some((e) => e.boss) };
+    // a fresh epoch: new waves; the Leviathan carries over if it still lives or still waits for room
+    const D = this.director, queue = D.queue.filter((q) => q.boss);
+    const bossOut = D.bossOut && (queue.length > 0 || this.hunters.some((e) => e.boss) || this.pending.some((p) => p.boss) || this.claims.some((c) => c.tags.boss));
+    this.director = { wave: 0, spawned: [false, false, false], cleared: [false, false, false], relaxT: 0, queue, encoreCd: 0, bossOut };
     this.state = "play";
     this.emit("epochStart", { epoch: this.epoch, mutation: m });
-    return true;
   }
 }
