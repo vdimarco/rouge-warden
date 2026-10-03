@@ -2,7 +2,7 @@
 html,body{height:100dvh;overflow:hidden}
 #menu{box-sizing:border-box;touch-action:pan-x;padding:18px clamp(12px,3vw,48px);padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
 #menu{padding-left:max(12px,3vw,env(safe-area-inset-left));padding-right:max(12px,3vw,env(safe-area-inset-right))}
-#menu .intro{gap:14px;max-height:none}
+#menu .intro{grid-template-columns:minmax(0,1fr);gap:14px;max-height:none}
 .roster-layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,.85fr);gap:12px}
 .hero-feature{grid-template-columns:minmax(0,.7fr) minmax(0,.7fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:22px;overflow:hidden;align-items:center}
 #menu .hero-stage{grid-row:1;grid-column:1;min-height:0;height:100%;align-self:stretch;background:none}
@@ -29,7 +29,7 @@ html,body{height:100dvh;overflow:hidden}
 #role-filters{padding:0;margin:0 0 7px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:pan-x}
 #role-filters button{min-height:32px;touch-action:pan-x}
 #role-filters{flex-wrap:nowrap;white-space:nowrap}#role-filters button{flex:none}
-#menu .hero-picks{--visible-heroes:5;--card-gap:12px;display:flex;gap:var(--card-gap);padding:3px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;touch-action:pan-x;position:relative;align-items:stretch;cursor:grab}
+#menu .hero-picks{--visible-heroes:5;--card-gap:12px;grid-column:1;display:flex;gap:var(--card-gap);padding:3px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;touch-action:pan-x;position:relative;align-items:stretch;cursor:grab}
 #menu .hero-picks:active{cursor:grabbing}
 #menu .hero-picks button{flex:0 0 calc((100% - (var(--visible-heroes) - 1)*var(--card-gap))/var(--visible-heroes));height:100%;min-height:0;scroll-snap-align:center;scroll-snap-stop:normal;touch-action:pan-x;padding:5px;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:4px;overflow:hidden;cursor:inherit;border:0;border-radius:0;background:none;box-shadow:none;outline:none;transition:color .2s}
 #menu .hero-picks button[aria-pressed=true]{border:0;background:none;box-shadow:none;color:#f4d698}
