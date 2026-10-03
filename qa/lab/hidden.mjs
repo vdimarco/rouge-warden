@@ -1,5 +1,6 @@
-// Checks that the lab stays out of the arcade: node qa/lab/hidden.mjs
-// The arcade page and the game switcher never link to /lab/, and every lab page asks search engines to skip it.
+// Checks that the arcade shows the lab, and that every lab page still asks search engines to skip it: node qa/lab/hidden.mjs
+// (The file keeps its old name. It used to check that the arcade never mentioned the lab; that rule is retired, because the arcade now has a Lab machine.)
+// The arcade page has a Lab machine and a link to the lab, the game switcher lists the lab, and every lab page has noindex.
 // No browser needed. Exit code 1 on failure.
 import fs from "fs";
 import path from "path";
@@ -10,7 +11,10 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); };
 
-for (const f of ["public/index.html", "public/arcade/switch.js"]) check(!/\/lab\b|lab\//.test(read(f)), `${f} does not mention the lab`);
+const arcade = read("public/index.html"), sw = read("public/arcade/switch.js");
+check(/<article class="cab[^"]*"[^>]*data-url="\/lab\/"/.test(arcade), "public/index.html has a machine that opens /lab/");
+check(/<a href="\/lab\/">/.test(arcade), "public/index.html has a link to /lab/");
+check(/url:\s*"\/lab\/"/.test(sw), "public/arcade/switch.js lists /lab/");
 
 const pages = [];
 const walk = (dir) => {
