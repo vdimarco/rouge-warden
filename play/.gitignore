@@ -1,0 +1,16 @@
+# Tools that build-aab.sh downloads (Bubblewrap CLI, JDK 17, Android SDK, Gradle cache, the throwaway debug key)
+.tools/
+# The Android project that Bubblewrap generates, and its build outputs
+android/
+build/
+dist/
+.gradle/
+manifest-checksum.txt
+local.properties
+# Signing keys and packages never go in git
+*.keystore
+*.jks
+*.p12
+*.apk
+*.aab
+*.idsig

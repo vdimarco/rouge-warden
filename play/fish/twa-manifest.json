@@ -1,0 +1,42 @@
+{
+  "packageId": "com.cottagearcade.reelitin",
+  "host": "warden-alpha-wheat.vercel.app",
+  "name": "Reel It In",
+  "launcherName": "Reel It In",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#0d2f38",
+  "themeColorDark": "#0d2f38",
+  "navigationColor": "#0d2f38",
+  "navigationColorDark": "#0d2f38",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#0d2f38",
+  "startUrl": "/fish/?source=play",
+  "fullScopeUrl": "https://warden-alpha-wheat.vercel.app/fish/",
+  "webManifestUrl": "https://warden-alpha-wheat.vercel.app/fish/manifest.webmanifest",
+  "iconUrl": "https://warden-alpha-wheat.vercel.app/fish/icons/icon-512.png",
+  "maskableIconUrl": "https://warden-alpha-wheat.vercel.app/fish/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": false,
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "minSdkVersion": 24,
+  "appVersion": "1.0.0",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "~/.android/reelitin-upload.keystore",
+    "alias": "reelitin"
+  },
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "fallbackType": "customtabs",
+  "generatorApp": "bubblewrap-cli",
+  "shortcuts": [],
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
