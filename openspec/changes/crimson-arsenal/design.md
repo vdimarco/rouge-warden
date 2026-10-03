@@ -8,4 +8,4 @@ Map both Shift keys to an unbuffered sprint action, retaining stamina, crouch an
 
 # Combat-fun follow-up
 
-Preserve the existing parry, dodge, posture and weapon systems. Make enemy recovery states strategically valuable instead of merely visual: opening hits receive a 1.4x damage multiplier and 1.45x posture multiplier, while heavy opening hits receive 1.55x damage. Show a short OPENING HIT cue so the player can connect the read with the reward.
+Preserve the existing parry, dodge, posture and weapon systems. Make enemy recovery states strategically valuable instead of merely visual: opening hits receive a 1.4x damage multiplier and 1.45x posture multiplier, while heavy opening hits receive 1.55x damage. Deflect-created recoil retains its existing 1.6x posture multiplier rather than being reduced by the broader opening rule. Show a short OPENING HIT cue so the player can connect the read with the reward.
