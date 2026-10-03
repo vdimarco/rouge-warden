@@ -15,6 +15,7 @@
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
     { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/olympus.webp", color: "#edc06b" },
     { id: "moonwell", name: "Moonwell", sub: "Endless pinball dungeons", url: "/moonwell/", art: "/arcade/moonwell.webp", color: "#edc779" },
+    { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/primordia.webp", color: "#3ff0e0" },
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/breakthrough.webp", color: "#f0c56a" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.

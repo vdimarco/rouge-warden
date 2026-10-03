@@ -291,7 +291,7 @@ if (chromium) {
 
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
-  const KEYS = ["neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship"];
+  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship"];
   const lines = (page) => page.$$eval(".cab", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
@@ -306,14 +306,14 @@ if (chromium) {
       await ctx.close();
     }
     const good = {
-      "neon-best": "12345", "loon-echo-rescue-best": "210", "tilt.voyage.best": "9800",
+      "primordia.best": "4200", "neon-best": "12345", "loon-echo-rescue-best": "210", "tilt.voyage.best": "9800",
       "lab.stats.plunge": JSON.stringify({ ms: 5000, runs: 2, best: 1234.4 }), "lab.stats.creek": JSON.stringify({ ms: 9000, runs: 3, best: 4000 }),
       "lab.stats.rules": JSON.stringify({ ms: 100, runs: 1 }), "lab.rules.clears": JSON.stringify({ a1: 40, b2: 95 }),
       "small-worlds-best-threadwake": "120", "small-worlds-best-heartship": "80",
     };
     const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: good });
     const got = await lines(page);
-    const want = { neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4" };
+    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4" };
     for (const [g, t] of Object.entries(want)) check(got[g] === t, `a real save shows on the ${g} machine: "${got[g]}" (want "${t}")`);
     // a save must change only its own machine's line
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);

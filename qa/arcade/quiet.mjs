@@ -373,6 +373,7 @@ const PAGES = [
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
   { id: "neon", path: "/neon/", boot: () => !!document.querySelector("#start"), start: click("#start"), sound: "ctx" },
+  { id: "primordia", path: "/primordia/", start: click("#playBtn"), sound: "ctx" },
   { id: "olympus", path: "/olympus/", start: click('button[aria-label="Enable audio"]'), sound: "ctx" },
   { id: "tellme", path: "/tellme/", start: click("#start-btn"), sound: "ctx" },
   // In Full Swing does not load quiet.js. Its own code stops the sound on visibilitychange when it is played flat on a phone (not on pagehide, not in a headset).
