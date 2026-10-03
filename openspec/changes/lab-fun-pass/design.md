@@ -31,6 +31,21 @@ The duel was fair only if you could see it, so attacks now start only when the a
 
 The sim stays exact (only + − × ÷ and sqrt), so ghosts still replay on every device. The bed loss moved from every step of contact to once per touch, and a thud now keeps most of the speed. Ghost links are version 2, and a version 1 link opens its lakes with a note. The dive cue runs the same prediction as the dotted path, twice: for a hold now and for a hold 0.25 s later, so a slow thumb still rips.
 
+## Small Worlds games
+
+- Threadwake and Borrowed Bodies are now climbs that can end, and each has its own move. Threadwake is a pendulum: the thread keeps its length, and the wings push a little on each downswing so a swing can grow, because a plain pendulum never rises above where it started. While the creature still rises from a flower it let go of, a hold skips that flower, so the old flower is not always the nearest. Borrowed Bodies adds the motion of the body to the throw, so each kind of body plays in a different way.
+- Foldwild builds each sheet from a random path with decoys around it, and makes a new sheet if one starts joined. Spilled water starts again from the spring, so no sheet can trap the player.
+- Season Thief makes gardens from the seed and keeps only those that its own solver rates par 4 to 6, with at least two ways within 8 time and a rule that lowers par.
+- The work on Foldwild and Season Thief started before the shell changed, so those games call the new helpers only when they exist.
+
+## Loon Echo
+
+The review counted 1,153 of 1,253 eel hits from plain contact, with no sound before them. So only the warned lunge costs energy, and a touch from a hunting eel takes back one chick. The eels take turns to strike, and every warning comes at least 0.55 s ahead. Chicks are spaced by path length, so a honk no longer piles them on the loon.
+
+## Up the Creek
+
+The review suggested a flat eddy grip of 0.5 to stop eddy traps. On the new river that cut braced catches to 16%, below the existing 20% check. Instead, an eddy holds the canoe unless the paddler strokes with the bow downstream. Touch and keys now turn toward the side that is pressed: a bot that steered that way finished 12 of 12 rivers, and the old mapping finished none. The phone keeps the real paddle sides. The rapid starts about 35 m below the put-in, and the river is 60 m shorter.
+
 ## The other games
 
 Each game's own section is added here when its work lands.

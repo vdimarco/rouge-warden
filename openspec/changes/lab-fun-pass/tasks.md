@@ -2,13 +2,13 @@
 - [x] Small Worlds shell: outro, best on the card, a sound for a loss, a daily world, and feedback helpers.
 - [x] Add `qa/lab/links.mjs`, and keep main's rewrite of `qa/lab/hidden.mjs`.
 - [x] House Rules: phone fit, races and replies, the death card, tanks in Settle, and remix.
-- [ ] Threadwake and Borrowed Bodies.
-- [ ] Foldwild and Season Thief.
+- [x] Threadwake and Borrowed Bodies.
+- [x] Foldwild and Season Thief.
 - [ ] Storm Choir and Heartship.
 - [ ] Full Tilt.
 - [x] Neon Ronin, and its broken tests.
-- [ ] Loon Echo.
+- [x] Loon Echo.
 - [x] Take the Plunge.
-- [ ] Up the Creek.
+- [x] Up the Creek.
 - [ ] README, the Lab page cards and `docs/lab-fun.md`.
 - [ ] Run every lab, neon, echo and pinball test on the merged branch, and check the preview.
