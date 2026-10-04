@@ -90,7 +90,7 @@ W A S D and the arrow keys SHALL walk on the ground and steer in the air. On a w
 - **THEN** the player climbs 3 m and then moves 3 m to the right along the wall
 
 ### Requirement: V, Tab and Esc
-V SHALL switch the view. Tab SHALL open the map, and Tab SHALL close it. M SHALL stay the mute key of `full-swing-rings-map-sound`. Esc SHALL pause, and SHALL close the pause or the map. Tab SHALL ask for the pointer lock again when it closes the map, and every resume (Esc, the pad's Start, the Resume button, a click) SHALL ask once. A browser may refuse a request that no click made, for example after Esc: that refusal SHALL NOT count against the click rule below, and the next click SHALL re-lock. While the game is paused, or while a dialog has focus, Tab, Space and the arrow keys SHALL keep their page meaning.
+V SHALL switch the view. Tab SHALL open the map, and Tab SHALL close it. M SHALL stay the mute key of `full-swing-rings-map-sound`. Esc SHALL pause, and SHALL close the pause or the map. Tab SHALL ask for the pointer lock again when it closes the map, and every resume (Esc, the pad's Start, the Resume button, a click) SHALL ask for it. A click that resumes also asks for itself, so it can ask twice. A browser may refuse a request that no click made, for example after Esc: that refusal SHALL NOT count against the click rule below, and the next click SHALL re-lock. While the game is paused, or while a dialog has focus, Tab, Space and the arrow keys SHALL keep their page meaning.
 
 #### Scenario: View
 - **WHEN** the player presses V, and holds it so that the key repeats

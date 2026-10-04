@@ -1,10 +1,10 @@
 name: Swing browser QA
 on:
   pull_request:
-    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', '.github/workflows/swing-browser.yml']
+    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', 'public/wild/models/king.glb', 'public/wild/models/crew5.glb', '.github/workflows/swing-browser.yml']
   push:
     branches: [main]
-    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', '.github/workflows/swing-browser.yml']
+    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', 'public/wild/models/king.glb', 'public/wild/models/crew5.glb', '.github/workflows/swing-browser.yml']
   workflow_dispatch:
 permissions:
   contents: read

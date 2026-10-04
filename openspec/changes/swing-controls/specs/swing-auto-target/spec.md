@@ -18,9 +18,13 @@ In flat play, the game SHALL pick one target for each swing. A target SHALL be a
 - **AND** it is not a roof, a floor or a roof antenna
 
 #### Scenario: Cost of one search
-- **WHEN** the picker runs one search
+- **WHEN** the picker runs one search with no rope out
 - **THEN** it casts at most 66 rays in tier 1, at most 700 rays in tier 2 and one ray in tier 3
 - **AND** the held target costs one ray each frame
+
+#### Scenario: Cost of one search with a rope out
+- **WHEN** the picker runs one search while a rope holds a building
+- **THEN** it casts at most 1,400 rays in tier 2 (the strict pass and the relaxed pass)
 
 #### Scenario: Tier 2 rate
 - **WHEN** the picker runs for 2 s of frames in a city where tier 1 finds nothing
