@@ -1295,6 +1295,7 @@ body.keyhints .fs-train{bottom:60px}
 body:has(#phoneControls:not([hidden])) .fs-train{display:none}
 body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:#fffdf5}
 body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission{display:none}
+body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}
 .fs-train-now b{display:none}.fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
 .fs-m-short{font:400 22px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase}
 /* a wide window with four score pills: the mission keeps its title and drops its next step */
