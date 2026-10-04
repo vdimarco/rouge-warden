@@ -7,6 +7,8 @@
 <script>
 try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) document.documentElement.dataset.build = "store"; } catch (e) { /* the web */ }
 try { document.documentElement.dataset.bootArt = (JSON.parse(localStorage.getItem("fish.v1")) || {}).artStyle === "original" ? "original" : "painted"; } catch (e) { document.documentElement.dataset.bootArt = "painted"; }
+// the painted title's picture loads during the boot, so the title shows whole
+if (document.documentElement.dataset.bootArt === "painted") document.head.appendChild(Object.assign(document.createElement("link"), { rel: "preload", as: "image", href: "art/film-lake.webp" }));
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d2f38">

@@ -100,6 +100,8 @@ async function landFish(page) {
     check(!!fr.boot0 && /REEL IT IN/.test(fr.boot0.text) && /Loading the lake\./.test(fr.boot0.text), "the boot screen says REEL IT IN and Loading the lake. (" + JSON.stringify(fr.boot0 && fr.boot0.text) + ")");
     check(!!fr.boot0 && fr.boot0.bar === "running", "the bar on the boot screen moves (" + (fr.boot0 && fr.boot0.bar) + ")");
     check((await page.evaluate(() => document.documentElement.dataset.bootArt)) === "painted", "a new player gets the boot screen of the painted style, like the title after it");
+    const pic = await page.evaluate(() => { const e = performance.getEntriesByType("resource").find((r) => /film-lake\.webp/.test(r.name)), t = window.__frames.find((f) => f[2]); return { end: e ? Math.round(e.responseEnd) : null, title: t ? t[0] : null }; });
+    check(pic.end != null && pic.title != null && pic.end <= pic.title + 100, "the painted title's picture loads during the boot (in at " + pic.end + " ms, the title at " + pic.title + " ms)");
     await sleep(600);
     check(await page.evaluate(() => document.getElementById("boot").hidden), "the boot screen is gone once the title shows");
     // the web build keeps the arcade parts
