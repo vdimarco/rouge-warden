@@ -65,3 +65,4 @@ The lead took the designer's recommendations. Each one is easy to change later.
 1. **The attach kick** is on for everyone on a computer and a pad, at 10 m/s to start (A3 tunes it from 0 to 12). The phone already has a kick.
 2. **Archiving.** `swing-hero-comic` and `full-swing-phone-and-climbing` stay open until their device checks run. This change stays open too (task J6).
 3. **If the first-time bot misses its gate,** agent A stops and reports the measured rates. The lead then decides between a lower gate and the phone's auto release for the first minute.
+4. **The kick of a swing off a wall** (task K1) stays along the view for now. A kick toward the anchor failed the first-time bot gates. A person checks the wall swing on a computer and a phone before it changes.
