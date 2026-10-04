@@ -4,7 +4,8 @@
 // mouse moved sideways while it holds aims. The rail shows beside the press, all of it on the screen. With the bail opened
 // first (the E key) the button held still is the same hold cast, and a press that moves down is the drag. The drag and
 // flick still casts, a press on a HUD button never casts, a click during the flight feathers the line, and a click during
-// the reel starts no cast. Exits with code 1 when something fails.
+// the reel starts no cast. The moves guide holds its first step still (no touch clip), and during the hold it says the
+// hold's words with MOUSE. Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
 const fails = [];
@@ -89,6 +90,38 @@ try {
   await sleep(800);
   const ready = await page.evaluate(() => [document.querySelector("#prompt .p1 span").textContent, document.querySelector("#prompt .p2").textContent]);
   check(ready[0] === "Hold the mouse button. Let go in the green." && /Drag sideways to aim/.test(ready[1]), `the cast prompt on a computer says how: "${ready.join(" / ")}"`);
+
+  // ---- the moves guide (on for a new player): on a computer its first step holds still, with no touch clip; during the
+  // hold cast it says what the prompt and the rod cue say, with MOUSE ----
+  const guideNow = () => page.evaluate(() => { const g = document.querySelector("#fishGuide"), v = g.querySelector("video"); return { shown: !g.hidden, count: g.querySelector(".guide-count").textContent, clip: !!v && (!v.paused || !v.hidden) }; });
+  const g0 = await guideNow();
+  await sleep(3000);
+  const g1 = await guideNow();
+  check(g0.shown && g0.count === "1 / 7" && g1.count === "1 / 7" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
+  await page.evaluate(() => window.__fresh());
+  const hg = await page.evaluate(async () => {
+    const G = FISH.G, wait = window.__wait, out = {};
+    const read = () => { const g = document.querySelector("#fishGuide"); return { prompt: document.querySelector("#prompt .p1 span").textContent, guide: g.hidden ? "" : g.querySelector(".guide-caption").textContent, count: g.querySelector(".guide-count").textContent, cue: document.querySelector("#rodCue").hidden ? "" : document.querySelector("#rodCue span").textContent }; };
+    window.__fire("pointerdown", 520, 520);
+    const tp = performance.now();
+    while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
+    // the rod's clock held in each step, so a slow frame can show it: read two frames after the prompt says it
+    for (const [step, said, ms] of [["pinned", "Keep holding.", () => 100], ["loaded", "Let go in the green.", () => (G.step === "loaded" ? 700 : 450)]]) {
+      const t0 = performance.now();
+      let f = 0;
+      while (performance.now() - t0 < 10000) {
+        if (G.pin && G.pin.key) G.pin.key = performance.now() - ms();
+        if (!f && G.step === step && read().prompt === said) f = G.frame;
+        if (f && G.frame >= f + 2) break;
+        await wait(5);
+      }
+      out[step] = { step: G.step, ...read() };
+    }
+    window.__fire("pointerup", 520, 520);
+    return out;
+  });
+  check(hg.pinned.guide === "Keep holding" && hg.pinned.cue === "Keep holding" && hg.pinned.count === "MOUSE" && hg.loaded.guide === "Let go in the green" && hg.loaded.cue === "Let go in the green" && hg.loaded.count === "MOUSE", `during a mouse hold the guide says what the prompt and the rod cue say, "Keep holding", then "Let go in the green", with MOUSE (${JSON.stringify(hg)})`);
+  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
 
   // ---- the hold cast, let go in the green ----
   const good = await tryHold(page, { ms: 780 });

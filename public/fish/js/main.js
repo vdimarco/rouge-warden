@@ -1040,12 +1040,14 @@ function beatDone() {
 }
 // A cast input in the beat after a cast: a press on the lake or the reel, a mouse click, Space, a thumb in motion play.
 // Once the words have been up SKIP_MS it ends the beat now, and the same press goes on into the new cast (G.skip: its
-// pointer id, or "key"; null for a press that goes no further). True when it did
+// pointer id, or "key"; null for a press that goes no further). A legend's first reveal that is due in the new cast plays
+// now instead, and the press goes no further. True when it ended the beat
 function skipBeat(id) {
   const kind = G.phase === "lost" ? G.beat : G.phase === "cast" && G.step === "ashore" ? "ashore" : "";
   if (!kind || G.paused || now() - G.outcomeAt < SKIP_MS[kind]) return false;
   G.skip = id;
   beatDone();
+  if (revealDue()) playReveal();
   return true;
 }
 
@@ -1104,6 +1106,8 @@ function caught(c) {
   // a big ring's fish is landed: the help for a short caster starts its count again
   if (L && L.big && G.dry) G.dry.n = 0;
   const day1 = junk ? null : recordDay(save, day, dg, dayHit(dg, ctx));
+  // a legend landed: its reveal never plays after this
+  if (sp && sp.legend) save.cuts[revealId(at)] = 1;
   persist();
   // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
   // day, the goals done, today's goal done. A goal done brings the record sting
@@ -1648,9 +1652,12 @@ addEventListener("keydown", (e) => {
     e.preventDefault();
     if (!G.cardWait && now() - shownAt >= CARD_KEY_MS) { G.skip = "key"; $("#catchGo").click(); }
   } else if (e.code === "Space" && skipBeat("key")) e.preventDefault();
+  // (a cast that started in this keydown, or in the frame before it, has had no frame to play a legend's first reveal: it
+  // plays now, in place of the Space cast)
+  if (e.code === "Space" && revealDue()) { e.preventDefault(); playReveal(); }
   // a cast from the keys: hold Space and the rod tips back, then swings forward; let go as it comes through. The arrow
   // keys aim. The rail stands beside the reel box (where a finger would press)
-  if (e.code === "Space" && G.phase === "cast" && !sensing() && !G.pin && (G.step === "ready" || G.step === "open")) {
+  if (e.code === "Space" && G.phase === "cast" && !cuts.playing && !sensing() && !G.pin && (G.step === "ready" || G.step === "open")) {
     e.preventDefault();
     const rb = $("#reelBox");
     pinLine({ id: "key", x: rb.offsetLeft + rb.offsetWidth / 2, y: rb.offsetTop + rb.offsetHeight / 2, t: now() });
@@ -2037,8 +2044,12 @@ function handleEvent(e) {
       const hs = !e.junk && byId(e.id || (s && s.fish && s.fish.id)), kg = s && s.fish ? s.fish.kg : 0;
       G.big = hs && kg > 0 && isBigFish(G.place.id, kg, sizeRank(hs, kg)) ? { at: now(), said: false } : null;
       G.walk = false;
-      // the legend of this place is on the line
-      if (hs && hs.legend && legendStep(save, G.place.id, 2)) persist();
+      // the legend of this place is on the line: its reveal is past, and never plays after this
+      if (hs && hs.legend) {
+        const rid = revealId(G.place.id), mark = !save.cuts[rid];
+        save.cuts[rid] = 1;
+        if (legendStep(save, G.place.id, 2) || mark) persist();
+      }
       break;
     }
     case "drag": sayBig(); break;
@@ -2101,6 +2112,9 @@ const cutSeen = (id) => !!save.cuts[id];
 function playCut(script, then, mark = true) {
   if (mark && script.id && !save.cuts[script.id]) { save.cuts[script.id] = 1; persist(); }
   prompt(""); hideReport();
+  // a press in progress (a mouse button held, a finger that has not dragged yet) is dropped: it never casts under the
+  // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here
+  if (reelPanel) { reelPanel._cancelAll(); reelPanel.set({ grab: "" }); }
   // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
   const T = $("#toast");
   if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null]); T.classList.remove("on"); }
@@ -2223,7 +2237,8 @@ function frame() {
   // no play while the GL context is lost (the lake would not show): play that starts or goes on then is paused
   if (G.ctxLost && !G.paused) pause();
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
-  guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice,
+  // (touch: false is the keys input, a computer. hold: the hold cast, as the rod cue has it)
+  guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice, hold: !!(G.pin && G.pin.key),
     pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
@@ -2371,7 +2386,8 @@ async function boot() {
     if (e.open && G.step === "ready") openBail("swipe");
     else if (!e.open && G.bail === "open" && G.step === "open") closeBail();
   });
-  reelPanel.on("pin", (e) => { if (!G.paused) pinLine(e); });
+  // (a press that takes the line while a cutscene plays is dropped, so none waits to take it after the cutscene)
+  reelPanel.on("pin", (e) => { if (cuts && cuts.playing) reelPanel._cancelAll(); else if (!G.paused) pinLine(e); });
   reelPanel.on("pinmove", (e) => {
     if (!G.pin || G.pin.feather || e.id !== G.pin.id) return;
     // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast (touchTheta in cast.js)
@@ -2385,7 +2401,7 @@ async function boot() {
   // for each pixel
   let aimFrom = 0;
   reelPanel.on("aim", (e) => {
-    if (G.paused || G.phase !== "cast" || sensing() || !["ready", "open", "pinned", "loaded"].includes(G.step)) return;
+    if (G.paused || (cuts && cuts.playing) || G.phase !== "cast" || sensing() || !["ready", "open", "pinned", "loaded"].includes(G.step)) return;
     if (e.start) aimFrom = G.aimYaw;
     G.aimYaw = clamp(aimFrom + e.dx * 0.2, -60, 60);
   });
@@ -2407,7 +2423,7 @@ async function boot() {
     const fight = !!(e.target.closest && e.target.closest("#reelUI"));
     if (!skipBeat(fight ? null : e.pointerId)) return;
     if (fight) e.stopPropagation();
-    else if (G.phase === "cast") castGrab();
+    else if (G.phase === "cast" && !cuts.playing) castGrab();
   }, true);
   const skipUp = (e) => { if (e.pointerId === G.skip) G.skip = null; };
   addEventListener("pointerup", skipUp, true);

@@ -21,6 +21,10 @@ The animated guide SHALL show on the first cast screen for a player who has not 
 - **WHEN** a new player reaches the first cast screen in motion or touch mode
 - **THEN** the guide shows its first step.
 
+#### Scenario: Fresh save on a computer
+- **WHEN** a new player reaches the first cast screen on a computer
+- **THEN** the guide shows its first step as a still picture, and it plays no touch clip.
+
 ### Requirement: Short help
 How to play SHALL open on the tab for the player's input. Each tab SHALL fit without a scroll at 390x844, and SHALL teach the rising rings. Fish moves SHALL sit behind a "Fish moves" row.
 
@@ -34,6 +38,10 @@ The prompt, the guide caption, and the rod cue SHALL use the same words for the 
 #### Scenario: Pump in motion mode
 - **WHEN** a fish holds on the bottom in motion mode
 - **THEN** the prompt sub, the guide caption, and the rod cue all say "Tip back as you reel."
+
+#### Scenario: Mouse hold cast
+- **WHEN** a player on a computer holds the mouse button to cast
+- **THEN** the prompt, the guide caption, and the rod cue say "Keep holding" while the rod tips back, then "Let go in the green", and the guide labels the move MOUSE.
 
 ### Requirement: Layouts that fit
 Every screen SHALL fit at 390x844, 360x640, 430x932, 844x390, 820x1180, and 1280x800 with no clipped text, no overlap, and its Close or Done button in view or in a scroll that shows it. The HUD chip SHALL show the full derby weight at 360 px.
