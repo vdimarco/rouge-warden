@@ -21,6 +21,7 @@ The owner asked for a last pass on Reel It In: easier to play, more fun, more po
 - **Goals:** a sure first bite, a goal assist for short casters, six goals at each place, a daily goal with a streak, a next-goal line, a rank ladder, and a sweet-cast streak.
 - **Feedback:** a hook-set hit, a camera punch on jumps, tiered fanfares, a new-place stinger, a count-up on the derby total, splashes you can see at range, and fixes to two buzz bugs.
 - **Menus and access:** "Go fishing" is the first button. The art picker moves to Settings, and the "Ghibli" style becomes "Painted". The guide shows for new players. How to play is short and opens on the right tab. Text size, calm effects, and a full left-handed mode are in Settings, with fixes for clipped and hard-to-reach controls.
+- **Cutscenes:** four short, skippable cutscenes drawn in the game's own scene: the opening at Loon Lake, the arrival at each new place, a legend's first reveal, and a legend landed, with a finale after the last legend. The owner asked for these during the work.
 - **Store package:** `apps/fish/` holds a Capacitor 8 project, a build script that makes a self-contained `www/`, the iOS and Android projects with portrait lock, icons, a splash screen, a privacy policy, and the store listing text.
 
 ## Scope

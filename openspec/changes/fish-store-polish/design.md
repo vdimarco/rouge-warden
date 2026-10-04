@@ -77,6 +77,15 @@ These come from the audit's sandbox runs. The sims set the final values.
 - Style names: on screen the "ghibli" value shows as "Painted". `normalizeStyle` accepts `painted` and `ghibli`, so old saves keep their look.
 - Larger text sets a `--ui-scale` on `#game`. Calm effects sets `data-calm`, and the CSS treats it like `prefers-reduced-motion`.
 
+## Cutscenes
+
+- `js/cutscenes.js` holds the scripts and the player. A script is a list of shots: camera position, look point, field of view, time, an optional event (a legend breach, a loon call), and a caption. The player eases the camera between keys and draws the live scene, so each place keeps its own look, light, and hour.
+- `world.js` gets one small hook, `world.cutCamera(fn | null)`: while a function is set, it gives the camera pose each frame in place of `camTarget()`. The reel camera, the punch, and the jump zoom stay as they are.
+- `main.js` starts a cutscene at four points: the first "Go fishing" on a fresh save, the first arrival at a place (before the arrival card), the first gold ring of a legend outside a fight, and the landing of a legend (before the catch card). While one plays, `step()` holds the sim, the clock, and the derby.
+- The save keeps `cuts`, a small set of seen ids, cleaned in `loadSave`. An old save marks as seen the arrivals of the places it already opened and the reveals of the legends it already found.
+- Calm effects and reduced motion: still shots with fades.
+- CSS in `cutscenes.css`: the bars, the caption, the Skip hint, and the fade.
+
 ## The app project
 
 - `apps/fish/` holds `package.json` (Capacitor 8.5 and the plugins), `capacitor.config.json`, `scripts/build-www.mjs`, `resources/` (icon and splash sources), the generated `ios/` and `android/` projects, `store/` (listing and data safety), and `README.md`.
