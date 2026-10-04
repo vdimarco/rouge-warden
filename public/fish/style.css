@@ -86,3 +86,16 @@ body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
 @keyframes rod-down { 50% { transform: translateY(10px); } }
 @keyframes rod-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { #rodCue *, #crankBox::after { animation: none !important; } }
+
+/* Settings rows that open a card or ask a question, the short privacy card, and the privacy link on the title. */
+.set .setrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--deep2); font-weight: 800; text-align: left; }
+.set .setrow small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; }
+.set .setrow .chev { flex: none; font-size: 30px; line-height: 1; color: var(--brass); }
+#resetAsk { margin-top: 10px; }
+#resetAsk p { margin: 0; color: var(--ink); }
+#resetAsk .btns { margin-top: 10px; }
+.card ul.plain { margin: 0 0 12px; padding-left: 20px; font-weight: 600; line-height: 1.45; color: #dfe9e5; }
+.card ul.plain li { margin: 0 0 6px; }
+#title .legal { margin: 2px 0 0; text-align: center; font-size: 12px; }
+#title .legal a { position: relative; display: inline-block; padding: 6px 14px; color: #e8f2ef; text-decoration: underline; text-underline-offset: 3px; text-shadow: 0 1px 3px #000; }
+#title .legal a::after { content: ""; position: absolute; inset: -10px 0; }
