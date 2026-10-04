@@ -56,6 +56,10 @@ export class Renderer {
     } else c.drawImage(im, -w / 2, -h, w, h);
     c.restore(); return { x: pos.x - w / 2, y: pos.y - h, w, h };
   }
+  // Screen-space pan in pixels; world motion follows the projection's squash.
+  panBy(px, py) { const f = this.freeCam ||= { x: this.cam.x, y: this.cam.y }; f.x += px / this.scale; f.y += py / (this.scale * .88); }
+  lookAt(x, y) { this.freeCam = { x, y }; }
+  recenter() { this.freeCam = null; }
   ring(x, y, radius, color, alpha = 1, line = 2) {
     const c = this.ctx, p = this.project(x, y); c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = line; c.beginPath(); c.ellipse(p.x, p.y, radius * this.scale, radius * this.scale * .55, 0, 0, TAU); c.stroke(); c.restore();
   }
@@ -63,10 +67,13 @@ export class Renderer {
     const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
     const focus = p.order?.type === 'attack' ? s.units.find(e => e.id === p.order.target) : p.order?.type === 'move' ? p.order : null;
     const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx,dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
-    this.cam.x += (p.x + dx / length * lead - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping;
+    // A free camera (edge scroll or minimap) holds its own target until the player recenters.
+    if (this.freeCam && !menu) { const k = 1 - Math.exp(-dt * 14); this.cam.x += (this.freeCam.x - this.cam.x) * k; this.cam.y += (this.freeCam.y - this.cam.y) * k; }
+    else { this.cam.x += (p.x + dx / length * lead - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping; }
     // Keep the complete camera footprint inside the landscape at each viewport.
     const halfW = Math.min(SIZE / 2, this.width / this.scale / 2), top = this.height * this.anchor / (this.scale * .88), bottom = this.height * (1 - this.anchor) / (this.scale * .88);
     this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
+    if (this.freeCam) { this.freeCam.x = clamp(this.freeCam.x, halfW, SIZE - halfW); this.freeCam.y = clamp(this.freeCam.y, top, SIZE - bottom); }
     const impact = this.reducedMotion ? 0 : Math.min(1, s.effects.filter(f => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250)).reduce((n, f) => Math.max(n, Math.max(0, f.life / f.maxLife - .55)), 0));
     this.shakeX = Math.sin(time * 103) * impact * 3; this.shakeY = Math.cos(time * 127) * impact * 2;
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);

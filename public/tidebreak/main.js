@@ -28,6 +28,16 @@ let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selecte
 const movement = { x: 0, y: 0 };
 let plan = null, draft = null, rallyQueue = null, rallyReadyAt = 0;
 const announcer = new Announcer(sound, $('hud')), teamChat = new TeamChat(sound, $('hud'));
+// Desktop camera: push the mouse to a screen edge to scroll, click the minimap to look, Space recenters.
+const EDGE = 26, EDGE_SPEED = 1500; let mouse = null, overMinimap = false, minimapDrag = null;
+const recenterButton = Object.assign(document.createElement('button'), { id: 'recenter', hidden: true, innerHTML: '⌖ Back to hero <kbd>Space</kbd>' });
+recenterButton.setAttribute('aria-label', 'Center the view on your hero'); $('hud').append(recenterButton);
+function recenter() { renderer?.recenter(); recenterButton.hidden = true; }
+function enterFullscreen() {
+  let wanted = true; try { wanted = localStorage.getItem('tidebreak.fullscreen') !== 'off'; } catch {}
+  const root = document.documentElement;
+  if (wanted && !document.fullscreenElement && root.requestFullscreen) root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+}
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
@@ -76,7 +86,7 @@ function choose(identityId) {
 // Play opens the draft board; the finished draft starts the match with that lineup.
 function startDraft() {
   if ($('play').disabled) return;
-  sound.start(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
+  enterFullscreen(); sound.start(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
   plan = draftPlan(selectedIdentity, Date.now() >>> 0); sound.setScene('draft'); sound.voiceClip('choose-your-character', .1);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   draft = runDraft($('draft'), plan, { sound, reduced, onDone: () => { $('draft').hidden = true; draft = null; start(); }, onBack: () => { $('draft').hidden = true; draft = null; $('menu').hidden = false; sound.setScene('menu'); } });
@@ -85,7 +95,7 @@ function startDraft() {
 function start() {
   sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
   state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
-  announcer.reset(state); teamChat.reset(state, plan); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
+  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -132,7 +142,7 @@ upgradeButtons.forEach(b=>pointerAction(b,()=>trainFromHUD(+b.dataset.upgrade),(
 
 function how() {
   const h = {...HEROES[selected],...HERO_IDENTITIES[selectedIdentity],descriptions:[0,1,2,3].map(i=>identitySkill(selectedIdentity,i).description)};
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Your two teammates and the enemy three are drafted before each match. Teammates call fights in chat and rotate to help. Press G or Rally to call them to you, or use Call team here on the map. Pings and hero markers show on the minimap; a red pulse marks a ward under attack.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">Sound: announcer kill calls by TripleSnail, recorded by Antti Saari (CC BY 3.0). Voice, impact and interface sounds by Kenney (CC0). Music (CC0): A Legend Will Rise by codemanu, Prepare to Fight by Basil, Unexplored by TAD and Bo Jingles, Determined Pursuit by Emma_MA, Victory Theme by cynicmusic, Lament of the War by Cethiel.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · G rally team · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Your two teammates and the enemy three are drafted before each match. Teammates call fights in chat and rotate to help. Press G or Rally to call them to you, or use Call team here on the map. Pings and hero markers show on the minimap; a red pulse marks a ward under attack.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">Sound: announcer kill calls by TripleSnail, recorded by Antti Saari (CC BY 3.0). Voice, impact and interface sounds by Kenney (CC0). Music (CC0): A Legend Will Rise by codemanu, Prepare to Fight by Basil, Unexplored by TAD and Bo Jingles, Determined Pursuit by Emma_MA, Victory Theme by cynicmusic, Lament of the War by Cethiel.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · G rally team · M map · B return · Esc pause<br>Mouse at a screen edge scrolls the view · Click the minimap to look there, right-click to move there · Space returns the view to your hero</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -216,6 +226,18 @@ function updateUI() {
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
 pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.coin();updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
+function minimapPoint(e){const r=$('minimap').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*SIZE,y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))*SIZE};}
+$('map-button').addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='mouse'||!hudReady())return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const point=minimapPoint(e);
+  if(e.button===2){if(player(state).hp>0){cancelOrder(player(state));target=0;orderQueue={type:'move',...point};waypoint=point;}return;}
+  if(e.button!==0)return;
+  minimapDrag=e.pointerId;$('map-button').setPointerCapture(e.pointerId);renderer?.lookAt(point.x,point.y);recenterButton.hidden=false;
+},{capture:true});
+$('map-button').addEventListener('pointermove',e=>{if(e.pointerId===minimapDrag){const point=minimapPoint(e);renderer?.lookAt(point.x,point.y);}});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])$('map-button').addEventListener(type,e=>{if(e.pointerId===minimapDrag)minimapDrag=null;});
+pointerAction(recenterButton,recenter,()=>hudReady());
 function callRally(point){
   const p=player(state);if(!running||paused||p.hp<=0||state.time<rallyReadyAt)return false;
   rallyQueue=point||true;rallyReadyAt=state.time+8;return true;
@@ -228,7 +250,7 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-voice" class="row-btn"></button><button id="selection-music" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};const v=$('selection-voice');v.textContent=sound.voiceOn?'Announcer voice on':'Announcer voice off';v.onclick=()=>{v.textContent=sound.toggleVoice()?'Announcer voice on':'Announcer voice off';};const mu=$('selection-music');mu.textContent=sound.musicOn?'Music on':'Music off';mu.onclick=()=>{sound.start();mu.textContent=sound.toggleMusic()?'Music on':'Music off';};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-voice" class="row-btn"></button><button id="selection-music" class="row-btn"></button><button id="selection-fullscreen" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};const v=$('selection-voice');v.textContent=sound.voiceOn?'Announcer voice on':'Announcer voice off';v.onclick=()=>{v.textContent=sound.toggleVoice()?'Announcer voice on':'Announcer voice off';};const mu=$('selection-music');mu.textContent=sound.musicOn?'Music on':'Music off';mu.onclick=()=>{sound.start();mu.textContent=sound.toggleMusic()?'Music on':'Music off';};const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';localStorage.setItem('tidebreak.fullscreen',on?'off':'on');}catch{}if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
 $('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
@@ -285,7 +307,7 @@ window.addEventListener('keydown', e => {
   const key = e.key.toLowerCase(); keys.add(key);
   if(key==='k'){learnSkills();return;}
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
-  if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;}
+  if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;recenter();}
   const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, worldPoint:cursor&&renderer?renderer.world(cursor.x,cursor.y):null, aim:null };
   if (key === 'g') callRally();
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
@@ -304,7 +326,9 @@ function autoResume() {
   autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) { paused = false; last = performance.now(); }
 }
 window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; }, true);
-window.addEventListener('mouseout', e => { if (!e.relatedTarget && lastPointer === 'mouse') autoPause(); });
+window.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; mouse = { x: e.clientX, y: e.clientY }; overMinimap = !!e.target.closest?.('#map-button'); }, { passive: true });
+document.documentElement.addEventListener('mouseleave', () => { mouse = null; });
+window.addEventListener('mouseout', e => { if (!e.relatedTarget) mouse = null; if (!e.relatedTarget && lastPointer === 'mouse') autoPause(); });
 document.documentElement.addEventListener('mouseenter', () => { if (lastPointer === 'mouse') autoResume(); });
 window.addEventListener('mousemove', () => { if (autoPaused && lastPointer === 'mouse' && document.hasFocus()) autoResume(); }, { passive: true });
 autoPauseNote.addEventListener('click', autoResume);
@@ -328,6 +352,10 @@ function frame(now) {
       sound.syncFeedback(state,p);
       if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant,p.hero); lastAttack = p.lastBasicHit; }
       accumulator -= 1 / 60;
+    }
+    if (renderer && mouse && !overMinimap && !minimapDrag && !$('sheet').open && document.hasFocus()) {
+      const vx = mouse.x < EDGE ? -1 : mouse.x > innerWidth - EDGE ? 1 : 0, vy = mouse.y < EDGE ? -1 : mouse.y > innerHeight - EDGE ? 1 : 0;
+      if (vx || vy) { renderer.panBy(vx * EDGE_SPEED * dt, vy * EDGE_SPEED * dt); recenterButton.hidden = false; }
     }
     if (renderer) { const span = Math.abs(renderer.world(renderer.width, 0).x - renderer.world(0, 0).x) / 2 || 1400; sound.setListener(renderer.cam.x, renderer.cam.y, span); }
     announcer.update(state, { playerId: state.playerId, visible: renderer?.visible }); teamChat.update(state);

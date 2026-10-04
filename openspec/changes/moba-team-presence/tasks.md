@@ -11,6 +11,8 @@
 - [x] Add regression tests and run all tidebreak suites.
 - [x] Check desktop, portrait and landscape layouts in a browser.
 - [x] Add a scene score: menu, draft, calm and battle match layers, victory and defeat.
+- [x] Add edge scrolling, minimap look, recenter and full screen at Play.
+- [x] Tighten the skill cluster around the ultimate.
 - [ ] Listen to the mix and the announcer voice on a real device with speakers.
 - [ ] Check real multitouch and phone performance on a physical phone.
 - [ ] Review canonical specs and archive this change after the device checks.

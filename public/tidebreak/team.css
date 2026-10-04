@@ -61,3 +61,34 @@
 @media(min-width:700px) and (min-height:521px){#team-chat{top:150px;left:20px}#kill-feed{top:156px;right:20px}#rally{left:30px;bottom:268px;width:72px;height:58px}#callout{top:30%}}
 @media(max-height:520px) and (min-width:600px){#team-chat{top:128px;width:250px}#team-chat li:nth-last-child(n+3){display:none}#kill-feed{top:92px;right:8px}#kill-feed li:nth-last-child(n+3){display:none}#rally{left:140px;bottom:30px;width:58px;height:46px}#callout{top:57%}#callout b{font-size:24px;letter-spacing:2px}#callout small{font-size:12px}}
 @media(max-width:600px){#team-chat{top:auto;bottom:calc(258px + env(safe-area-inset-bottom));width:min(200px,52vw)}#team-chat li{font-size:11px}#team-chat li:nth-last-child(n+4){display:none}#kill-feed{top:122px;right:8px}#kill-feed li{font-size:11px}#kill-feed li:nth-last-child(n+4){display:none}#callout{top:31%}}
+#recenter{position:absolute;left:50%;top:calc(58px + env(safe-area-inset-top));transform:translateX(-50%);z-index:8;padding:6px 12px;border:1px solid #e9d48d99;border-radius:8px;background:#0b1820e6;color:#f3e7c0;font:600 12px Barlow,sans-serif;letter-spacing:.5px;pointer-events:auto}
+#recenter[hidden]{display:none}#recenter kbd{margin-left:6px;padding:0 4px;border:1px solid #a99267;border-radius:3px;font-size:10px;color:#e9d48d}
+
+/* Skill cluster: the three skills sit on a tight arc around the ultimate. */
+.abilities{width:180px;height:180px}
+.abilities .dash{left:98px;top:8px;right:auto;bottom:auto}
+.abilities .surge{left:34px;top:34px;right:auto;bottom:auto}
+.abilities .signature{left:8px;top:98px;right:auto;bottom:auto}
+.abilities .ult{right:0;bottom:0;left:auto;top:auto}
+.upgrade-dash{right:4px!important;top:0!important;left:auto!important;bottom:auto!important}
+.upgrade-surge{left:88px!important;top:26px!important;right:auto!important;bottom:auto!important}
+.upgrade-signature{left:52px!important;top:auto!important;bottom:4px!important;right:auto!important}
+.upgrade-ult{right:-5px!important;bottom:2px!important;left:auto!important;top:auto!important}
+#skill-points{right:0;left:auto}
+@media(max-width:430px){
+  .abilities{width:170px;height:170px}
+  .abilities .dash{left:92px;top:7px}
+  .abilities .surge{left:32px;top:32px}
+  .abilities .signature{left:7px;top:92px}
+  .upgrade-dash{right:2px!important}
+  .upgrade-surge{left:82px!important;top:24px!important}
+  .upgrade-signature{left:48px!important}
+}
+@media(max-height:520px) and (min-width:600px){
+  .abilities{width:160px;height:160px}
+  .abilities .dash{left:87px;top:8px}
+  .abilities .surge{left:31px;top:31px}
+  .abilities .signature{left:8px;top:87px}
+  .upgrade-surge{left:78px!important;top:23px!important}
+  .upgrade-signature{left:46px!important}
+}

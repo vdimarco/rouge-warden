@@ -46,3 +46,17 @@ Each HUD skill button SHALL show its painted art for all sixteen heroes. Unlearn
 #### Scenario: Start a match
 - **WHEN** a match starts with any hero
 - **THEN** all four skill buttons show their art at full button size.
+
+### Requirement: Desktop camera control
+With a mouse, pushing the pointer to a screen edge SHALL scroll the view in that direction. A left click or drag on the minimap SHALL move the view there; a right click SHALL move the hero there. Space and a "Back to hero" button SHALL return the view to the hero. Touch players SHALL keep the tactical map on a minimap tap. Play SHALL enter full screen when the browser allows it, with a setting to turn this off.
+
+#### Scenario: Scroll to the left
+- **WHEN** the mouse rests at the left edge during a match
+- **THEN** the view scrolls left and "Back to hero" appears; Space returns the view to the hero.
+
+#### Scenario: Look through the minimap
+- **WHEN** the player clicks the top of the minimap
+- **THEN** the view moves to the enemy base and the tactical map does not open.
+
+### Requirement: Compact skill cluster
+The three skills SHALL sit on a tight arc around the ultimate at 1440x900, 390x844 and 844x390, with upgrade buttons beside their skills.

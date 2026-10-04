@@ -17,5 +17,8 @@ All 40 clips load with no 404s. In a full in-page match, first blood, double kil
 ## Music
 In local Chromium the menu played A Legend Will Rise, the draft played Prepare to Fight, the match played the calm and battle tracks together, and a forced loss stopped them and played the defeat lament. No 404s or console errors. The six CC0 tracks total 5.7 MB and stream only for their scene.
 
+## Camera and skills
+At 1440x900 the left edge scrolled the view and showed "Back to hero". A minimap click moved the view to the enemy base without opening the tactical map, and Space returned it. The skill arc was checked at all three sizes. The shared `browser` check passes on all six viewports.
+
 ## Not checked
 Speech was checked with a stubbed speech engine, so the real voice and the sound mix have not been heard. The headless browser cannot play audio to a listener. Physical phone touch and performance were not tested. OpenSpec CLI is not installed, so the change was checked by hand against the existing delta format.
