@@ -46,8 +46,8 @@ export function updateCamera(camera, run, dt = 1 / 60, options = {}) {
     targetScale = Math.min(targetScale, playHeight / (upperY - lowerY));
     targetY = (lowerY + upperY) / 2;
   }
-  // Show the first route and its gravity body before the player launches.
-  if (run.phase === 'ready' && room && Math.hypot(ball.x - station.x, ball.y - station.y) < 80 && !options.charge) {
+  // Show the whole world at the dock, also while the launch charges, so the arc and its target stay in view.
+  if (run.phase === 'ready' && room && Math.hypot(ball.x - station.x, ball.y - station.y) < 80) {
     targetScale = Math.min(width / (landscape ? 1450 : 1160), playHeight / (room.h + 80));
     targetX = room.x;
     targetY = room.y + room.h / 2;

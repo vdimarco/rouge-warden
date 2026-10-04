@@ -1,0 +1,26 @@
+- [x] Diagnose why the game is boring with bot runs and instrumentation.
+- [x] Mine combat mechanics through five reference lenses, test feasibility in a Lenia lab, judge and synthesize one design.
+- [x] Lenia helpers: whole-cell roll, blob extent and shape, densest cell per blob.
+- [x] Add Discutium and Circium; measure their headings and masses.
+- [x] Foundations: persistent hunters, kept labels and owners, nearest tissue, tear and kill credit, hit-stop, Stasis clock.
+- [x] Telegraphed lunge with tokens, lane lock and cancel, glint, Exposed recover, lunge hits and grazes.
+- [x] Rend Dash with charges, cut cap, knockback and touch aim help.
+- [x] Stagger, Glory Bite, Remains and scars.
+- [x] Parry and Stasis.
+- [x] Burst replacing Frenzy.
+- [x] Director: waves, relax beats, encore, caps, eggs and hatching.
+- [x] Leviathan phases and collapse.
+- [x] Build cards, stat extras and Duos with offer rules.
+- [x] Keep hunters apart (hard separation with glide), refuse blocked spawns, burst fused bodies locally.
+- [x] Shader marks, hits, ring and Stasis grade; sound cues; HUD, touch layout and cards.
+- [x] Browser shell wiring, instant retry, tips.
+- [x] Live Lenia dish on the arcade cabinet screen.
+- [x] Combat test suite, bot policies and metrics, browser smoke on desktop, phone portrait and phone landscape.
+- [x] Review the code adversarially and fix what it finds.
+- [x] Keep moves to each body's own tissue and keep a real tissue gap between bodies.
+- [x] How to play intro: scene script with a Node check, captions and callouts, first-PLAY and replay flow, phone layouts.
+- [x] Browser smoke with the intro on desktop, phone portrait and phone landscape.
+- [x] Fun pass: busier early waves, more attackers, path checks and flanking, hit and run swarms; close the last-frame bite and boss bleed leaks.
+- [x] Re-run the acceptance table and the browser smoke after the fun pass.
+- [x] Validate and archive the specification.
+- [x] Measure balance with the bot against the acceptance targets; record the two misses and why the difficulty stays.

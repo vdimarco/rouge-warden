@@ -3,9 +3,10 @@
 import { CONFIG } from '../config';
 import { sortCards } from './cards';
 import { addToChain, legalCards, undoChain } from './chain';
+import { EMPTY_SLOTS } from './charms';
 import type { Rng } from './rng';
 import { scoreChain, type ScoreResult } from './scoring';
-import type { Card, ChainLink, Suit } from './types';
+import type { Card, ChainLink, CharmSlots, HostId, Rules, Suit } from './types';
 
 export type TableStatus = 'playing' | 'cleared' | 'lost';
 
@@ -15,6 +16,8 @@ export interface TableSetup {
   /** 0 for the first table, 1 for the second, 2 for the host table. */
   readonly tableIndex: number;
   readonly target: number;
+  /** The host of a host table. Null at the other tables. */
+  readonly host?: HostId | null;
 }
 
 export interface PlayedChain {
@@ -24,7 +27,11 @@ export interface PlayedChain {
   readonly handSize: number;
 }
 
-export interface TableState extends TableSetup {
+export interface TableState {
+  readonly stop: number;
+  readonly tableIndex: number;
+  readonly target: number;
+  readonly host: HostId | null;
   /** The next card to draw is first. */
   readonly drawPile: readonly Card[];
   /** The whole hand, sorted. Cards in the chain in progress stay in this list. */
@@ -59,6 +66,7 @@ export function startTable(deck: readonly Card[], setup: TableSetup, rng: Rng): 
     stop: setup.stop,
     tableIndex: setup.tableIndex,
     target: setup.target,
+    host: setup.host ?? null,
     hand: sortCards(shuffled.slice(0, handSize)),
     drawPile: shuffled.slice(handSize),
     discard: [],
@@ -72,6 +80,11 @@ export function startTable(deck: readonly Card[], setup: TableSetup, rng: Rng): 
   };
 }
 
+/** The limits in play at this table: its host and the table charm. */
+export function tableRules(state: TableState, charms: CharmSlots = EMPTY_SLOTS): Rules {
+  return { host: state.host ?? null, tableCharm: charms.table?.id ?? null };
+}
+
 function inChain(state: TableState, cardId: string): boolean {
   return state.chain.some((link) => link.card.id === cardId);
 }
@@ -82,20 +95,26 @@ export function availableCards(state: TableState): Card[] {
 }
 
 /** Ids of the hand cards that can join the chain next. */
-export function legalCardIds(state: TableState): Set<string> {
+export function legalCardIds(state: TableState, charms: CharmSlots = EMPTY_SLOTS): Set<string> {
   if (state.status !== 'playing') return new Set();
-  return new Set(legalCards(state.chain, availableCards(state)).map((card) => card.id));
+  const cards = legalCards(state.chain, availableCards(state), tableRules(state, charms));
+  return new Set(cards.map((card) => card.id));
 }
 
 function assertPlaying(state: TableState): void {
   if (state.status !== 'playing') throw new Error(`The table is ${state.status}`);
 }
 
-export function addCard(state: TableState, cardId: string, namedSuit?: Suit): TableState {
+export function addCard(
+  state: TableState,
+  cardId: string,
+  namedSuit?: Suit,
+  charms: CharmSlots = EMPTY_SLOTS,
+): TableState {
   assertPlaying(state);
   const card = availableCards(state).find((c) => c.id === cardId);
   if (!card) throw new Error(`Card ${cardId} is not available in the hand`);
-  return { ...state, chain: addToChain(state.chain, card, namedSuit) };
+  return { ...state, chain: addToChain(state.chain, card, namedSuit, tableRules(state, charms)) };
 }
 
 export function undoCard(state: TableState): TableState {
@@ -114,10 +133,10 @@ function refill(hand: readonly Card[], drawPile: readonly Card[]): { hand: Card[
 }
 
 /** Scores the chain, discards it and refills the hand. Clears or loses the table when that is due. */
-export function playChain(state: TableState): TableState {
+export function playChain(state: TableState, charms: CharmSlots = EMPTY_SLOTS): TableState {
   if (!canPlay(state)) throw new Error('There is no chain to play');
 
-  const result = scoreChain(state.chain);
+  const result = scoreChain(state.chain, { host: state.host ?? null, charms, handSize: state.hand.length });
   const played = state.chain.map((link) => link.card);
   const kept = state.hand.filter((card) => !inChain(state, card.id));
   const { hand, drawPile } = refill(kept, state.drawPile);

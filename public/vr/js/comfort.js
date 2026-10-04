@@ -475,10 +475,11 @@ export function createComfort(camera, rig, settings) {
       const p = COMFORT.presets[name];
       if (!p) return false;
       settings.vignette = p.vignette; settings.turn = p.turn; settings.snap = p.snap; settings.aim = p.aim;
-      // flat play borrows the "desktop" preset: it leaves the headset's own speedLines choice alone (main restores only four fields)
-      if (name !== "desktop") settings.speedLines = p.speedLines ?? PRESET_LINES[name] ?? true;
-      if (name !== "desktop") settings.preset = name;
-      V.mode = name === "desktop" ? "desktop" : V.mode === "desktop" ? "xr" : V.mode;
+      // flat play borrows the "desktop" or "phone" preset: it leaves the headset's own speedLines choice alone (main restores only four fields)
+      const flat = name === "desktop" || name === "phone";
+      if (!flat) settings.speedLines = p.speedLines ?? PRESET_LINES[name] ?? true;
+      if (!flat) settings.preset = name;
+      V.mode = flat ? "desktop" : V.mode === "desktop" ? "xr" : V.mode;
       armed = true;
       return true;
     },

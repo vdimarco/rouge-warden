@@ -29,4 +29,4 @@ A calm card table for a solitaire pace: deep green-blue cloth, ivory cards with 
 
 ## Deploy
 
-The preview is a separate Vercel project named `follow-suit` in the `vdimarcos-projects` team. It builds the `follow-suit/` folder with the Vite preset from a pushed commit. It has no Git link, so pushes to the repository do not build it. The arcade project `warden` does not change. The first deploy became the project's production deploy at `follow-suit.vercel.app`, which is public. Each deployment URL needs a Vercel login.
+The preview is a separate Vercel project named `follow-suit` in the `vdimarcos-projects` team. It builds the `follow-suit/` folder with the Vite preset from a pushed commit. It has no Git link, so pushes to the repository do not build it. The arcade project `warden` does not change. The first deploy became the project's production deploy at `follow-suit.vercel.app`, which is public. Later deploys are previews, so that domain serves the milestone 2 build until someone promotes a newer deploy. Each deployment URL needs a Vercel login.

@@ -56,6 +56,7 @@ jobs:
           node qa/lab/tilt.reverse.sim.mjs
           node qa/lab/tilt.warp.sim.mjs
           node qa/lab/tilt.rallies.sim.mjs
+          node qa/lab/tilt.skill.sim.mjs
       - name: Browser interactions and responsive layout
         run: npm run test:pinball --prefix qa/browser
         env:

@@ -1,35 +1,70 @@
 // Chains: follow rules, 8s and named suits, switches and rings.
+// Host limits and the once-per-chain charm follows (Turncoat, Bridge) come in through `rules`.
 
 import { CONFIG } from '../config';
-import { SUITS } from './cards';
-import type { Card, ChainLink, FollowVia, Suit } from './types';
+import { cardColor, SUITS } from './cards';
+import type { Card, ChainLink, FollowVia, Rules, Suit } from './types';
+
+export const NO_RULES: Rules = { host: null, tableCharm: null };
 
 /** The suit that the next card must match, or null for an empty chain. */
 export function currentSuit(chain: readonly ChainLink[]): Suit | null {
   return chain.length === 0 ? null : chain[chain.length - 1].suit;
 }
 
-/** A wild card follows any card and names the next current suit. */
-export function isWild(card: Card): boolean {
-  return card.rank === CONFIG.cards.wildRank;
+/** A wild card follows any card and names the next current suit. Under The Miser, 8s are not wild. */
+export function isWild(card: Card, rules: Rules = NO_RULES): boolean {
+  return card.rank === CONFIG.cards.wildRank && eightsAreWild(rules);
 }
 
-export function needsNamedSuit(card: Card): boolean {
-  return isWild(card);
+/** True when 8s are wild under these rules. The Miser makes them plain cards. */
+export function eightsAreWild(rules: Rules = NO_RULES): boolean {
+  return rules.host !== 'miser';
+}
+
+export function needsNamedSuit(card: Card, rules: Rules = NO_RULES): boolean {
+  return isWild(card, rules);
 }
 
 /** The suits the player can name for this card. Empty when the card names no suit. */
-export function namedSuitOptions(_chain: readonly ChainLink[], card: Card): Suit[] {
-  return needsNamedSuit(card) ? [...SUITS] : [];
+export function namedSuitOptions(chain: readonly ChainLink[], card: Card, rules: Rules = NO_RULES): Suit[] {
+  if (!needsNamedSuit(card, rules)) return [];
+  const suit = currentSuit(chain);
+  if (rules.host === 'purist' && suit !== null) return [suit];
+  return [...SUITS];
 }
 
-/** How the card can follow the chain, or null if it cannot. */
-export function followVia(chain: readonly ChainLink[], card: Card): FollowVia | null {
+/** The host's limit between the previous card and the next one. A card must pass it and the follow rules. */
+function passesHost(last: ChainLink, card: Card, rules: Rules): boolean {
+  switch (rules.host) {
+    case 'purist':
+      // No switches: a card that names no suit must keep the current suit.
+      return isWild(card, rules) || card.suit === last.suit;
+    case 'zebra':
+      return cardColor(card) !== cardColor(last.card);
+    case 'climber':
+      return card.rank > last.card.rank;
+    default:
+      return true;
+  }
+}
+
+function used(chain: readonly ChainLink[], via: FollowVia): boolean {
+  return chain.some((link) => link.via === via);
+}
+
+/** How the card can follow the chain, or null if it cannot. The normal rules come before the charms. */
+export function followVia(chain: readonly ChainLink[], card: Card, rules: Rules = NO_RULES): FollowVia | null {
   if (chain.length === 0) return 'first';
   const last = chain[chain.length - 1];
+  if (!passesHost(last, card, rules)) return null;
   if (card.suit === last.suit) return 'suit';
   if (card.rank === last.card.rank) return 'rank';
-  if (isWild(card)) return 'eight';
+  if (isWild(card, rules)) return 'eight';
+  if (rules.tableCharm === 'turncoat' && !used(chain, 'turncoat') && cardColor(card) === cardColor(last.card)) {
+    return 'turncoat';
+  }
+  if (rules.tableCharm === 'bridge' && !used(chain, 'bridge') && card.rank === 14) return 'bridge';
   return null;
 }
 
@@ -37,25 +72,31 @@ function inChain(chain: readonly ChainLink[], card: Card): boolean {
   return chain.some((link) => link.card.id === card.id);
 }
 
-export function canFollow(chain: readonly ChainLink[], card: Card): boolean {
-  return !inChain(chain, card) && followVia(chain, card) !== null;
+export function canFollow(chain: readonly ChainLink[], card: Card, rules: Rules = NO_RULES): boolean {
+  return !inChain(chain, card) && followVia(chain, card, rules) !== null;
 }
 
 /** The cards that can join the chain next, in the order given. */
-export function legalCards(chain: readonly ChainLink[], cards: readonly Card[]): Card[] {
-  return cards.filter((card) => canFollow(chain, card));
+export function legalCards(chain: readonly ChainLink[], cards: readonly Card[], rules: Rules = NO_RULES): Card[] {
+  return cards.filter((card) => canFollow(chain, card, rules));
 }
 
 /** Adds a card to a new copy of the chain. Throws if the card cannot join. */
-export function addToChain(chain: readonly ChainLink[], card: Card, namedSuit?: Suit): ChainLink[] {
+export function addToChain(
+  chain: readonly ChainLink[],
+  card: Card,
+  namedSuit?: Suit,
+  rules: Rules = NO_RULES,
+): ChainLink[] {
   if (inChain(chain, card)) throw new Error(`Card ${card.id} is already in the chain`);
-  const via = followVia(chain, card);
+  const via = followVia(chain, card, rules);
   if (via === null) throw new Error(`Card ${card.id} cannot follow the chain`);
 
   let suit: Suit = card.suit;
-  if (needsNamedSuit(card)) {
-    if (namedSuit === undefined || !namedSuitOptions(chain, card).includes(namedSuit)) {
-      throw new Error(`Card ${card.id} needs one of these named suits: ${namedSuitOptions(chain, card).join(', ')}`);
+  if (needsNamedSuit(card, rules)) {
+    const options = namedSuitOptions(chain, card, rules);
+    if (namedSuit === undefined || !options.includes(namedSuit)) {
+      throw new Error(`Card ${card.id} needs one of these named suits: ${options.join(', ')}`);
     }
     suit = namedSuit;
   } else if (namedSuit !== undefined) {

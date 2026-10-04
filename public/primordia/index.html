@@ -5,7 +5,7 @@
 <script src="/arcade/quiet.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Primordia · A Lenia Arcade</title>
-<meta name="description" content="Swim through a living Lenia dish. Eat the glowing life, dodge the red hunters, then fill your Frenzy and eat them back.">
+<meta name="description" content="Swim through a living Lenia dish. Eat the glowing life, dash through the red hunters to cut them, and bite them while they reel.">
 <meta name="theme-color" content="#04030a">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
   <a class="back" href="/" aria-label="Back to the Cottage Arcade">◂ Arcade</a>
   <div class="meters">
     <div class="meter light" title="Light: your life. Eat to refill it."><span class="lab">LIGHT</span><i><b id="lightBar"></b></i></div>
-    <div class="meter frenzy" id="frenzyMeter" title="Frenzy: fill it by eating, then hunt the hunters."><span class="lab">FRENZY</span><i><b id="frenzyBar"></b></i></div>
+    <div class="meter burst" id="burstMeter" title="Burst: fill it by fighting, then blast nearby hunters."><span class="lab">BURST</span><i><b id="burstBar"></b></i></div>
   </div>
-  <div class="epoch"><span id="epochLabel">EPOCH I</span><i><b id="epochBar"></b></i></div>
+  <div class="epoch"><span id="epochLabel">EPOCH I</span><i><b id="epochBar"></b></i><span class="wave-dots" id="waveDots" aria-hidden="true"><i></i><i></i><i></i></span><div class="wave-label" id="waveLabel" aria-hidden="true"></div></div>
   <div class="scorebox"><span class="combo" id="combo"></span><span class="score" id="score">0</span></div>
   <div class="tools">
     <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
@@ -36,24 +36,48 @@
 
 <div class="touch" id="touch" hidden>
   <div class="stick" id="stick"><i></i></div>
-  <button class="tbtn dash" id="dashBtn" type="button" aria-label="Dash">DASH</button>
-  <button class="tbtn fz" id="frenzyBtn" type="button" aria-label="Frenzy">FRENZY</button>
+  <button class="tbtn dash" id="dashBtn" type="button" aria-label="Dash">DASH<span class="pips" aria-hidden="true"><i></i><i></i><i></i></span></button>
+  <button class="tbtn burst" id="burstBtn" type="button" aria-label="Burst">BURST</button>
 </div>
 
 <section class="screen title" id="titleScreen">
   <div class="panel">
     <p class="kicker">A LENIA ARCADE</p>
     <h1 class="logo">PRIMORDIA</h1>
-    <p class="tag">Eat the glowing life. Dodge the red hunters. Fill your Frenzy, then eat them back.</p>
-    <button class="go" id="playBtn" type="button">PLAY <small>Enter</small></button>
+    <p class="tag">Eat the glowing life. Cut down the red hunters. Bite them while they reel.</p>
+    <div class="row">
+      <button class="go" id="playBtn" type="button">PLAY <small>Enter</small></button>
+      <button class="ghost" id="howBtn" type="button">HOW TO PLAY <small>H</small></button>
+    </div>
     <dl class="keys">
       <div><dt>Swim</dt><dd>Mouse · WASD · Arrows · Stick</dd></div>
-      <div><dt>Dash</dt><dd>Space · Click · Ⓐ</dd></div>
-      <div><dt>Frenzy</dt><dd>Shift · Right-click · Ⓑ</dd></div>
+      <div><dt>Dash, cut, parry</dt><dd>Space · Click · Ⓐ</dd></div>
+      <div><dt>Burst</dt><dd>Shift · Right-click · Ⓑ</dd></div>
     </dl>
     <p class="best" id="bestLine"></p>
     <div class="bestiary" id="bestiary" aria-label="Species you have met"></div>
     <p class="credit">Every creature here is alive. They run on <a href="https://chakazul.github.io/Lenia/JavaScript/Lenia.html" target="_blank" rel="noopener">Lenia</a>, Bert Chan's continuous cellular automaton.</p>
+  </div>
+</section>
+
+<section class="intro" id="introScreen" hidden aria-label="How to play">
+  <div class="intro-top">
+    <div class="intro-dots" id="introDots" aria-hidden="true"></div>
+    <div class="intro-btns">
+      <button class="intro-skip" id="introNext" type="button">Next <span aria-hidden="true">▸</span></button>
+      <button class="intro-skip" id="introSkip" type="button">Skip <small>Esc</small></button>
+    </div>
+  </div>
+  <div class="intro-stage" id="introStage"></div>
+  <div class="intro-cap" id="introCap" aria-live="polite">
+    <p class="intro-kicker" id="introKicker"></p>
+    <h2 class="intro-title" id="introTitle"></h2>
+    <p class="intro-text" id="introText"></p>
+    <p class="intro-keys" id="introKeys"></p>
+    <div class="row intro-end" id="introEnd" hidden>
+      <button class="go" id="introPlay" type="button">PLAY <small>Enter</small></button>
+      <button class="ghost" id="introAgain" type="button">Watch again</button>
+    </div>
   </div>
 </section>
 
@@ -88,6 +112,7 @@
       <button class="go" id="againBtn" type="button">AGAIN <small>Enter</small></button>
       <button class="ghost" id="titleBtn" type="button">Title</button>
     </div>
+    <p class="hint" id="retryHint">Press R or Enter to swim again</p>
   </div>
 </section>
 
