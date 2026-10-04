@@ -116,6 +116,8 @@ export async function newPage({ width = 640, height = 360, clock = false, clear 
 }
 // open(page, flags) loads /vr/ with the flags ("?emulate&skipintro") and waits until G is ready.
 export async function open(page, flags = "", { wait = true } = {}) {
+  // the comic scenes (cutscene.js) stop the game for a while: a test plays none unless it asks for them with "cut"
+  if (!/(^|[?&])cut(&|$)/.test(flags)) flags = flags ? flags + (flags.endsWith("?") ? "" : "&") + "nocut" : "?nocut";
   const url = (await serve()) + (flags && !flags.startsWith("?") ? "?" + flags : flags);
   await page.goto(url);
   if (wait) await page.waitForFunction(() => window.G && window.G.ready, null, { timeout: 180000, polling: 100 });

@@ -1,0 +1,114 @@
+// Flat play: the comic scenes (cutscene.js). The opening tells why the Porcelain King sits on the Needle and gives the first
+// mission; a district's briefing, the King waking and the finale follow. Each panel is a shot of the live city in an inked frame
+// with a caption, a balloon pinned to its point or a title card. The game holds still and the HUD hides while a scene plays;
+// a press skips it. A screenshot of every panel goes to $SHOTS. Run from the repo root (the server is our own, see lib.mjs).
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { newPage, open, close, watchdog } from './lib.mjs';
+watchdog(900000, 'cutscene');
+const out = process.env.SHOTS || '/tmp/swing-qa'; await mkdir(out, { recursive: true });
+const page = await newPage({ width: 960, height: 540 });
+page.setDefaultTimeout(240000);
+await page.addInitScript(() => { window.AudioContext = window.webkitAudioContext = undefined; Object.defineProperty(navigator, 'getGamepads', { value: () => [] }); });
+try {
+  // a scene plays only on request in the tests (lib.mjs adds nocut otherwise): ?cut lets the save's first-run scene play too
+  await open(page, '?nosw&skipintro&cut'); await page.waitForFunction(() => G.viewDone);
+  await page.locator('#playFlat').click({ noWaitAfter: true }); await page.waitForFunction(() => G.state === 'play');
+  await page.evaluate(() => { G.test.hold(true); G.test.step(1 / 60, 30); });
+  const view = () => page.evaluate(() => {
+    const r = (s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+    return { cs: G.test.cutscene(), state: G.state, hud: getComputedStyle(document.querySelector('.fs-hud')).visibility, root: !document.querySelector('#cutscene').hidden, bal: r('#cutscene .cs-bal'), cap: r('#cutscene .cs-cap'), W: innerWidth, H: innerHeight };
+  });
+  const inside = (b, W, H) => !b || (b.l >= 0 && b.t >= 0 && b.r <= W && b.b <= H);
+
+  /* ---------------- the opening, panel by panel ---------------- */
+  const pos0 = await page.evaluate(() => ({ ...G.P.pos }));
+  await page.evaluate(() => { G.test.story('opening'); G.test.step(1 / 60, 2); });
+  const seen = [];
+  for (let k = 0; k < 5; k++) {
+    await page.evaluate(() => G.test.step(1 / 60, 60)); // a second into the panel
+    const v = await view();
+    seen.push(v);
+    await page.screenshot({ path: `${out}/cutscene-opening-${k + 1}.png` });
+    await page.evaluate((i) => { const c = G.test.cutscene(); const left = [5.5, 6, 5.5, 4.5, 3.2][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
+  }
+  const s0 = seen[0], s1 = seen[1];
+  assert(s0.cs.playing && s0.cs.name === 'opening' && s0.state === 'cutscene' && s0.root && s0.hud === 'hidden', 'the opening plays: the game holds still and the HUD hides: ' + JSON.stringify(s0));
+  assert(/Needle/.test(s0.cs.caption) && /water tower/i.test(s0.cs.caption), 'panel 1 says the Needle is the water tower: ' + s0.cs.caption);
+  assert(/Porcelain King/.test(s1.cs.caption) && /flush/i.test(s1.cs.balloon) && inside(s1.bal, s1.W, s1.H), 'panel 2 shows the King with his line, the balloon inside the screen: ' + JSON.stringify(s1.cs) + JSON.stringify(s1.bal));
+  assert(/twelve rooftop drains/i.test(seen[2].cs.caption), 'panel 3 tells of the twelve clogs: ' + seen[2].cs.caption);
+  assert(/plunger/i.test(seen[3].cs.caption) && /go/i.test(seen[3].cs.balloon), 'panel 4 shows the hero: ' + JSON.stringify(seen[3].cs));
+  assert(/Mission 1/i.test(seen[4].cs.title) && /clogs/i.test(seen[4].cs.title), 'panel 5 is the first mission card: ' + seen[4].cs.title);
+  assert(seen.every((v) => inside(v.cap, v.W, v.H)), 'every caption sits inside the screen');
+  const after = await page.evaluate(() => { G.test.step(1 / 60, 40); return { cs: G.test.cutscene(), state: G.state, hud: getComputedStyle(document.querySelector('.fs-hud')).visibility, pos: { ...G.P.pos }, seen: G.save.seen.opening }; });
+  assert(!after.cs.playing && after.state === 'play' && after.hud !== 'hidden' && after.seen === true, 'the opening ends by itself and play goes on with the HUD back: ' + JSON.stringify(after));
+  assert(Math.hypot(after.pos.x - pos0.x, after.pos.z - pos0.z) < 0.5, 'the hero held still through the scene');
+  console.log('PASS the opening: the Needle is the water tower, the King and his line, twelve clogs, the hero, Mission 1');
+
+  /* ---------------- a press skips ---------------- */
+  await page.evaluate(() => { G.test.story('king'); G.test.step(1 / 60, 3); });
+  const early = await page.evaluate(() => G.test.cutscene());
+  await page.keyboard.press('Space'); await page.evaluate(() => G.test.step(1 / 60, 2));
+  const k1 = await view();
+  assert(early.playing && early.name === 'king' && k1.cs.playing, 'a press in the first half second does not skip (the press that started play must not end the scene)');
+  await page.evaluate(() => G.test.step(1 / 60, 40));
+  await page.screenshot({ path: `${out}/cutscene-king.png` });
+  const kv = await view();
+  assert(/awake/i.test(kv.cs.caption) && /dare/i.test(kv.cs.balloon), 'the King scene: he is awake and dares you: ' + JSON.stringify(kv.cs));
+  await page.keyboard.press('Space'); await page.evaluate(() => G.test.step(1 / 60, 2));
+  const k2 = await view();
+  assert(!k2.cs.playing && k2.state === 'play' && !k2.root, 'Space skips the scene: ' + JSON.stringify(k2));
+  console.log('PASS Space skips a scene (not in its first half second)');
+
+  /* ---------------- a district's briefing, and the finale ---------------- */
+  await page.evaluate(() => { const c = G.city.clogs[3]; G.test.story('district', { id: 3, name: 'Market', left: 2, clog: { x: c.x, y: c.y, z: c.z } }); G.test.step(1 / 60, 60); });
+  const dv = await view();
+  assert(dv.cs.name === 'district' && /Market: 2 clogs/.test(dv.cs.caption) && /fish/i.test(dv.cs.caption), 'a district briefing names it, its clogs and a line about it: ' + dv.cs.caption);
+  await page.screenshot({ path: `${out}/cutscene-district.png` });
+  await page.evaluate(() => G.test.step(1 / 60, 240));
+  await page.evaluate(() => { G.test.story('finale'); G.test.step(1 / 60, 300); });
+  const fv = await view();
+  assert(fv.cs.name === 'finale' && /All clear/i.test(fv.cs.title), 'the finale ends on the all clear card: ' + JSON.stringify(fv.cs));
+  await page.screenshot({ path: `${out}/cutscene-finale.png` });
+  await page.evaluate(() => G.test.step(1 / 60, 240));
+  assert.equal((await view()).state, 'play');
+  console.log('PASS a district briefing and the finale');
+  assert.equal(page.errors.length, 0, JSON.stringify(page.errors));
+  console.log('PASS no runtime errors');
+  await page.context().close();
+
+  /* ---------------- a phone held upright: the panels fit, a tap skips ---------------- */
+  const ph = await newPage({ width: 390, height: 844 });
+  ph.setDefaultTimeout(240000);
+  await ph.addInitScript(() => {
+    window.AudioContext = window.webkitAudioContext = undefined;
+    Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 });
+    window.ontouchstart = null;
+    window.DeviceOrientationEvent = function () {}; window.DeviceMotionEvent = function () {};
+    window.DeviceOrientationEvent.requestPermission = () => Promise.resolve('denied');
+    window.DeviceMotionEvent.requestPermission = () => Promise.resolve('denied');
+  });
+  await open(ph, '?nosw&skipintro&cut'); await ph.waitForFunction(() => G.viewDone);
+  await ph.locator('#playFlat').click(); await ph.waitForFunction(() => G.state === 'play');
+  await ph.evaluate(() => { G.test.hold(true); G.test.step(1 / 60, 30); G.test.story('opening'); G.test.step(1 / 60, 2); });
+  const pv = [];
+  for (let k = 0; k < 2; k++) {
+    await ph.evaluate(() => G.test.step(1 / 60, 60));
+    pv.push(await ph.evaluate(() => {
+      const r = (s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+      return { cs: G.test.cutscene(), bal: r('#cutscene .cs-bal'), cap: r('#cutscene .cs-cap'), skip: r('#cutscene .cs-skip'), phone: getComputedStyle(document.querySelector('#phoneControls')).visibility, W: innerWidth, H: innerHeight, wide: document.documentElement.scrollWidth > innerWidth };
+    }));
+    await ph.screenshot({ path: `${out}/cutscene-phone-${k + 1}.png` });
+    await ph.evaluate((i) => { const c = G.test.cutscene(); const left = [5.5, 6][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
+  }
+  const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+  assert(pv.every((v) => inside(v.cap, v.W, v.H) && inside(v.bal, v.W, v.H) && !v.wide && v.phone === 'hidden'), 'on a phone held upright each caption and balloon sits inside the screen and the phone buttons hide: ' + JSON.stringify(pv));
+  assert(pv[1].bal && !hit(pv[1].bal, pv[1].cap) && !hit(pv[1].bal, pv[1].skip), 'on a phone the King\'s balloon keeps clear of the caption and the SKIP button: ' + JSON.stringify(pv[1]));
+  const box = pv[1].skip;
+  // a pointer press on SKIP, as a tap gives
+  await ph.mouse.click((box.l + box.r) / 2, (box.t + box.b) / 2); await ph.evaluate(() => G.test.step(1 / 60, 2));
+  const ps = await ph.evaluate(() => ({ cs: G.test.cutscene(), state: G.state }));
+  assert(!ps.cs.playing && ps.state === 'play', 'a tap on SKIP ends the scene on a phone: ' + JSON.stringify(ps));
+  assert.equal(ph.errors.length, 0, JSON.stringify(ph.errors));
+  console.log('PASS a phone held upright: the panels fit, the phone buttons hide, a tap skips');
+} finally { await close(); }
