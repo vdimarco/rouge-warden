@@ -1493,10 +1493,12 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     if (toast.a > 0.02 && k.toast.textContent !== toast.text) k.toast.textContent = toast.text;
     // the line and the toast sit under the score row, which wraps onto two rows on a narrow phone: place them from its real
     // bottom (the toast under the line while one shows), a few times a second, so they never cover the pills or the hero
+    const subOn = sub.a > 0.02;
+    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.lay = 0; } // at once on a new line or a new screen size
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
       const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + 10;
-      const toastTop = top + (sub.a > 0.02 ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
+      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
       if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
       if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }
     }

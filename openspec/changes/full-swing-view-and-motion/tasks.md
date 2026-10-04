@@ -8,5 +8,5 @@
 - [x] Music from the first minute; subtitles and toasts at the top, clear of the hero; phone layout check extended
 - [x] Version 1.6.1, APK code 6, motion file precached
 - [x] Validate with the OpenSpec CLI
-- [ ] Full qa/vr run
+- [x] qa/vr run: physics, city, mobile, hero, climb, phone-swing, mobile.e2e, rings-map, mouse-look, sound, ui, play, boot, fx, swing, pwa
 - [ ] Device checks not possible here: a real macOS cursor, Safari, Firefox, a phone, a Quest, sound by ear

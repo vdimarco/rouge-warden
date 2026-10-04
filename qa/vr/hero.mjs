@@ -22,6 +22,18 @@ async function install(page) {
         const gl = G.renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, b = new Uint8Array(4);
         return points.map(([x, y]) => { gl.readPixels(Math.min(w - 1, Math.max(0, Math.floor(w * x))), Math.min(h - 1, Math.max(0, Math.floor(h * (1 - y)))), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b); return [b[0], b[1], b[2], b[3]]; });
       },
+      // screen points (0-1, y down) on the hero's back: a grid 0.3 m across the view and from 1.0 to 1.45 m up, so it covers the
+      // jersey however far and high the camera sits
+      torso() {
+        const c = G.camera, h = G.test.state().pos, T = c.position.constructor, out = [];
+        c.updateMatrixWorld(true);
+        const r = new T().setFromMatrixColumn(c.matrixWorld, 0).setY(0).normalize();
+        for (let i = -2; i <= 2; i++) for (let k = 0; k < 6; k++) {
+          const v = new T(h.x + r.x * i * 0.08, h.y + 1.0 + k * 0.09, h.z + r.z * i * 0.08).project(c);
+          out.push([(v.x + 1) / 2, (1 - v.y) / 2]);
+        }
+        return out;
+      },
       // a spot on a lower roof, gap metres from the wall of the tier above it: { x, y, z, dx, dz } with (dx, dz) toward the wall
       wall(gap = 1.2) {
         const c = G.city;
@@ -100,17 +112,9 @@ try {
     check(Math.abs(f.dist - 4.5) < 0.15, "the spring arm is 4.5 m long at rest", f.dist);
   }
   // the hero draws: red jersey pixels near the hero's chest on screen
-  const px = await page.evaluate(async () => {
-    const T = G.camera.position.constructor, h = G.test.state().pos, c = G.camera;
-    const grid = [];
-    for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) {
-      const v = new T(h.x, h.y + 1.3, h.z).project(c);
-      grid.push([(v.x + 1) / 2 + a * 0.008, (1 - v.y) / 2 + b * 0.012]);
-    }
-    const on = __h.px(grid);
-    return on.filter(([r, g, b]) => r > 120 && r > g * 1.6 && r > b * 1.6).length;
-  });
-  check(px >= 6, "the hero is drawn (red jersey pixels at the chest)", px);
+  // the hero draws: red jersey pixels on its back
+  const px = await page.evaluate(() => __h.px(__h.torso()).filter(([r, g, b]) => r > 120 && r > g * 1.6 && r > b * 1.6).length);
+  check(px >= 6, "the hero is drawn (red jersey pixels on its back: " + px + " of 30)", px);
   const head = await page.evaluate(() => { const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
   // the hero stands in the lower middle of the view and the aim (the middle of the screen) is over its head
   check(Math.abs(head.x) < 0.2 && head.y > -0.35 && head.y < -0.03 && head.z < 1, "the hero's head is a little below the middle of the view, under the aim", head);
@@ -586,12 +590,8 @@ try {
   await step(page, 90);
   const fb = await page.evaluate(() => ({ model: G.hero.model, tris: G.hero.tris, vis: G.hero.root.visible }));
   check(fb.model === "built" && fb.vis && fb.tris > 500, "with no model file a code-built figure takes its place", fb);
-  const px2 = await page.evaluate(async () => {
-    const T = G.camera.position.constructor, h = G.test.state().pos, c = G.camera, grid = [];
-    for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) { const v = new T(h.x, h.y + 1.3, h.z).project(c); grid.push([(v.x + 1) / 2 + a * 0.008, (1 - v.y) / 2 + b * 0.012]); }
-    return __h.px(grid).filter(([r, g, b]) => r > 100 && r > g * 1.5 && r > b * 1.5).length;
-  });
-  check(px2 >= 6, "the built-in figure draws (red jersey)", px2);
+  const px2 = await page.evaluate(() => __h.px(__h.torso()).filter(([r, g, b]) => r > 100 && r > g * 1.5 && r > b * 1.5).length);
+  check(px2 >= 6, "the built-in figure draws (red jersey: " + px2 + " of 30)", px2);
   await shot(page, "hero-fallback");
   // the same poses drive it
   const t5 = await page.evaluate(() => { const s = G.city.start; G.test.teleport(s.x, s.y + 25, s.z); G.P.onGround = false; return __h.target(s.x, s.y + 25, s.z); });
