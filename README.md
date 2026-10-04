@@ -435,6 +435,10 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 `voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
 
+## Reel It In on Google Play
+
+`play/fish/` builds Reel It In as its own Android app for Google Play. The app is a Trusted Web Activity: it opens `/fish/?source=play` in Chrome with no URL bar, in portrait, with no Android permission and no link to the rest of the arcade. `play/fish/build-aab.sh` makes a signed Android App Bundle and an APK with upstream Bubblewrap 1.25.0 (target SDK 36). `play/fish/assetlinks.mjs` keeps the app's entry in `public/.well-known/assetlinks.json`. The manual workflow `.github/workflows/play-aab.yml` builds a bundle from secrets. The owner's step-by-step guide, from the Play account to the closed test, is in `play/fish/README.md`. Nobody has run the app on a phone yet, and the guide marks every item that nobody proved. The same assetlinks file still holds a placeholder for the Quest app. Until the Quest owner replaces it, Google rejects the whole file and no app of the host can pass the check.
+
 ## Files
 
 | Path | What it does |
@@ -547,6 +551,7 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/travel.mjs` | Travel between the places: the cards, the draw call and triangle limits at each place, and that memory does not grow over a loop of trips |
 | `qa/fish/fish.render.mjs` | Every fish and junk builds with 3 draw calls, stays within the triangle limit, shows in the catch view, and frees its textures |
 | `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
+| `qa/fish/play.mjs` | The Android side of the Google Play app, in node only (no server, no network, no browser, no Android tools): `play/fish/twa-manifest.json` against the web manifest, the Android patch and the output checks on fixtures, the Digital Asset Links tool and the shared file (the Quest placeholder prints a warning), `build-aab.sh` (pins, key rules, no password printed), the GitHub workflow (secrets, pinned actions, key deleted), the ignore rules, and the guide. Each check also runs on a broken input and must fail |
 | `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
 | `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
 | `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
