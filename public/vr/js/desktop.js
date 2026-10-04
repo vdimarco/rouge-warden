@@ -30,7 +30,7 @@ export function createDesktop(canvas, camera, settings) {
   for (const h of inp.hands) h.connected = true;
   inp.head.local.pos.set(0, COMFORT.standingHead, 0);
   const keys = new Set(), mouse = [false, false], pressed = [false, false], gripOn = [false, false], trig = [false, false];
-  const Q = { jump: false, menu: false, map: false, yank: false };
+  const Q = { jump: false, menu: false, map: false, yank: false, mute: false };
   const pad = { a: false, x: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   let dx = 0, dy = 0, pitch = 0, wheel = 0, skipMove = false, usingPad = false;
@@ -94,6 +94,10 @@ export function createDesktop(canvas, camera, settings) {
     if (k === "Tab") { e.preventDefault(); if (!e.repeat) Q.map = true; }
     if (k === "Space") { e.preventDefault(); if (!e.repeat) Q.jump = true; }
     if (k === "KeyF" && !e.repeat) Q.yank = true;
+    // M (the sound) by the letter on the key (AZERTY puts M where QWERTY has ;), or by its place when the key has no Latin
+    // letter; a punctuation key in that place (AZERTY's comma under KeyM) is not M
+    const key = e.key || "", byPlace = key.length !== 1 || /\p{L}/u.test(key);
+    if (!e.repeat && (/^m$/i.test(key) || (byPlace && k === "KeyM"))) Q.mute = true;
     if (k === "Escape" && !e.repeat) Q.menu = true;
     if (k.startsWith("Arrow")) e.preventDefault(); // the arrows move you, never the page
     keys.add(k);
@@ -131,7 +135,8 @@ export function createDesktop(canvas, camera, settings) {
       if (st && !pad.start) menu = true;
       pad.a = a; pad.x = x; pad.start = st;
     }
-    Q.jump = Q.menu = Q.map = Q.yank = false;
+    inp.muteDown = Q.mute;
+    Q.jump = Q.menu = Q.map = Q.yank = Q.mute = false;
     wheel = Math.max(0, wheel - dt);
     pitch = clamp(pitch + dp, -PITCH_MAX, PITCH_MAX);
     const ml = Math.hypot(mx, my);

@@ -310,7 +310,7 @@ function onResume() {
   Promise.resolve(ui.fade(1, 0, look)).then(() => ui.fade(0, 0.4, look)).catch(() => {});
   resumeGrace = 0.3;
   audio.duck(false);
-  if (G.mode === "desktop") D.lock();
+  if (G.mode === "desktop") { if (wantFs) goFullscreen(); D.lock(); }
 }
 
 /* ---------------- entering and leaving play ---------------- */
@@ -371,6 +371,20 @@ function onSessionEnd() {
   flatCamera(70);
   showTitle(true);
 }
+// Flat play fills the screen at once (the click allows it). Esc leaves full screen with the pointer lock; wantFs remembers that
+// flat play asked for it, so the click or key that resumes asks again. Leaving to the title leaves it. A browser without the
+// API (an iPhone) plays in the page as before.
+let wantFs = false;
+function goFullscreen() {
+  const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const p = fs.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { /* refused: play in the page */ }); } catch (e) { /* same */ }
+}
+function leaveFullscreen() {
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if (!exit || !(document.fullscreenElement || document.webkitFullscreenElement)) return;
+  try { const p = exit.call(document); if (p && p.catch) p.catch(() => {}); } catch (e) { /* already out */ }
+}
 function startDesktop() {
   if (!G.ready || X.session) return;
   G.mode = "desktop";
@@ -392,6 +406,7 @@ function exitPlay() {
   if (G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro")) resumable = false;
   D.active = false;
   D.unlock();
+  wantFs = false; leaveFullscreen();
   ropes.setVisible(false);
   G.mode = "title"; G.state = "title";
   flatView(false);
@@ -574,6 +589,14 @@ function tick(dt, frame, time) {
   // 7. menu and map
   if (inp.menuDown && (G.state === "play" || G.state === "intro" || G.state === "paused")) { if (ui.paused) ui.closePause(); else ui.openPause(); }
   if (inp.mapDown && G.state === "play") ui.openMap();
+  // M: the sound on or off (flat play)
+  if (inp.muteDown && G.mode === "desktop") {
+    audio.toggle(); saveNow();
+    ui.say(audio.isOn ? "Sound on." : "Sound off. Press M to turn it on.", 2.5);
+    if (audio.isOn) audio.sfx("ui");
+    if (G.soundLabel) G.soundLabel();
+    if (ui.paused && ui.refresh) ui.refresh(); // the pause menu's own Sound button shows the new state
+  }
   syncPauseState();
   const paused = G.state === "paused";
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
@@ -1108,12 +1131,25 @@ function wireTitle() {
     audio.init();
     audioStarted = true;
     note("");
-    if (mode === "desktop") { D.mobile.start(); startDesktop(); } else startXR(mode);
+    // a click you can hear, or a word on how to turn the sound on (it may be off from the arcade's speaker button); a toast,
+    // so the opening's own lines do not cover it
+    if (audio.isOn) audio.sfx("ui"); else setTimeout(() => ui.toast(mode === "desktop" && !D.mobile.enabled ? "Sound is off. Press M to turn it on." : "Sound is off. Turn it on in the pause menu."), 900);
+    if (mode === "desktop") { wantFs = true; goFullscreen(); D.mobile.start(); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
   $("#playFlat").addEventListener("click", () => enter("desktop"));
   $("#reenterBtn").addEventListener("click", () => enter(lastMode || "desktop"));
+  // SOUND on the title: the arcade's speaker button (or another game) may have turned it off for every game here
+  const soundBtn = $("#soundBtn");
+  const soundLabel = () => { soundBtn.textContent = "SOUND: " + (audio.isOn ? "ON" : "OFF"); soundBtn.setAttribute("aria-pressed", String(audio.isOn)); };
+  soundBtn.addEventListener("click", () => { audio.init(); audioStarted = true; audio.toggle(); saveNow(); soundLabel(); if (audio.isOn) audio.sfx("ui"); });
+  soundLabel();
+  G.soundLabel = soundLabel;
+  // a browser that stopped the sound gets it back on the next tap or key (both count as a user gesture)
+  const retry = () => { if (audioStarted && audio.stalled) audio.resume(); };
+  addEventListener("pointerdown", retry, true);
+  addEventListener("keydown", retry, true);
   for (const [btn, dlg] of [["#howBtn", "#how"], ["#comfortBtn", "#comfort"]]) {
     $(btn).addEventListener("click", () => { const d = $(dlg); if (d.showModal) d.showModal(); else d.setAttribute("open", ""); });
   }
@@ -1143,8 +1179,8 @@ function wireTitle() {
   // flat play: a click on the city while paused goes back to play
   renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
-    if (G.state === "paused") { ui.closePause(); D.lock(); }
-    else if (!D.locked) D.lock();
+    if (G.state === "paused") { if (wantFs) goFullscreen(); ui.closePause(); D.lock(); }
+    else if (!D.locked) { if (wantFs) goFullscreen(); D.lock(); }
   });
   D.onUnlock(() => { if (G.mode === "desktop" && (G.state === "play" || G.state === "intro")) { ui.openPause(); syncPauseState(); } });
   $("#version").textContent = "v" + VERSION;

@@ -636,6 +636,9 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   function nearestTarget() {
     const g = G().game;
     if (!g || !g.targets || !Pl) return null;
+    // in a trial the compass points to the next ring
+    const tr = g.progress && g.progress.trial;
+    if (tr && tr.next) return { kind: "ring", x: tr.next.x, y: tr.next.y, z: tr.next.z };
     if (frameN - hud.listAt > 30) { hud.list = g.targets() || []; hud.listAt = frameN; }
     let best = null, bd = Infinity;
     for (const t of hud.list) {
@@ -829,7 +832,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "map": openMap(); audio.sfx("ui"); return;
       case "comfort": showPage("comfort"); audio.sfx("ui"); return;
       case "back": if (map.on) closeMap(); showPage("pause"); audio.sfx("uiBack"); return;
-      case "sound": audio.toggle(); saveNow(); audio.sfx("ui"); showPage(modal); return;
+      case "sound": audio.toggle(); saveNow(); audio.sfx("ui"); if (G().soundLabel) G().soundLabel(); showPage(modal); return;
       case "music": audio.music(!audio.musicOn); settings.music = audio.musicOn; saveNow(); audio.sfx("ui"); showPage(modal); return;
       case "scan": scanRoom(); return;
       case "skip": audio.sfx("ui"); closePause(); if (skipFn) skipFn(); else emit(fns.skip); return;
@@ -1073,7 +1076,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     setWorldVisible(false);
     if (!isAR()) { map.prevClear = { c: renderer.getClearColor(new THREE.Color()).getHex(), a: renderer.getClearAlpha() }; renderer.setClearColor(0x1a1020, 1); }
     showPage("map");
-    if (isDesktopNow()) domMapList();
+    if (isDesktopNow()) { map.root.visible = false; domMapList(); } // flat play: the plan (domMapDraw), not the table model
   }
   function closeMap() {
     if (!map.on) return;
@@ -1207,6 +1210,9 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
 .fs-compass svg{width:28px;height:28px;fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
 .fs-time b{color:var(--red,#e0482c)}
+.fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
+.fs-flash.gold{box-shadow:inset 0 0 140px 50px rgba(255,200,70,.85)}
+@media (prefers-reduced-motion:reduce){.fs-flash{display:none}}
 .fs-sub,.fs-toast{position:absolute;left:50%;margin:0;max-width:min(880px,90vw);text-align:center;opacity:0;transition:opacity .25s;text-transform:uppercase}
 .fs-sub{bottom:calc(12vh + 6px);transform:translateX(-50%) rotate(-0.5deg);padding:10px 28px 6px;font:400 clamp(24px,2.9vw,36px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.05em;color:var(--ink,#140a18);background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:30px}
 .fs-sub::before,.fs-sub::after{content:"";position:absolute;border-style:solid;border-color:transparent;border-bottom-width:0}
@@ -1234,10 +1240,18 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 .fs-menu .fs-seg>div{display:flex;flex:1;gap:8px}
 .fs-menu .fs-seg .btn{flex:1;min-height:44px;padding:6px 8px 3px;font-size:18px;letter-spacing:.06em}
 .fs-menu p{margin:10px 0;line-height:1.35}.fs-menu p.small{opacity:.78;font-size:17px}
-.fs-map{position:fixed;left:16px;top:16px;z-index:14;width:min(330px,82vw);max-height:calc(100dvh - 32px);overflow:auto;padding:14px 16px 16px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);box-shadow:8px 8px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:600 18px/1.3 var(--ui,"Barlow Condensed",system-ui,sans-serif)}
-.fs-map h2{font-size:28px;margin-bottom:8px}
-.fs-map p{margin:0 0 10px;font-size:17px;font-weight:700}
+.fs-map{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));z-index:14;display:grid;grid-template-columns:minmax(0,1fr) min(300px,34vw);grid-template-rows:minmax(0,1fr);gap:12px;padding:12px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);box-shadow:8px 8px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:600 18px/1.3 var(--ui,"Barlow Condensed",system-ui,sans-serif)}
+.fs-map[hidden]{display:none}
+.fs-map-plan{position:relative;min-height:0;border:4px solid var(--ink,#140a18);border-radius:3px;overflow:hidden;background:#140a18}
+.fs-map-plan canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;touch-action:none}
+.fs-map-side{min-height:0;overflow:auto;display:flex;flex-direction:column}
+.fs-map h2{font-size:28px;margin-bottom:8px;align-self:flex-start}
+.fs-map p{margin:0 0 8px;font-size:17px;font-weight:700}
+.fs-map .fs-key{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:16px;font-weight:700}
+.fs-map .fs-key i{display:inline-block;width:16px;height:16px;border-radius:50%;border:4px solid currentColor;box-shadow:0 0 0 2px var(--ink,#140a18)}
 .fs-map .btn{display:block;width:100%;margin:8px 0;min-height:42px;padding:6px 12px 3px;font-size:18px;text-align:left;box-shadow:4px 4px 0 var(--ink,#140a18)}
+.fs-map-tip{position:absolute;left:0;top:0;pointer-events:none;padding:4px 10px 2px;border:3px solid var(--ink,#140a18);background:var(--yellow,#ffd84a);color:var(--ink,#140a18);box-shadow:3px 3px 0 var(--ink,#140a18);font:400 18px/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;white-space:nowrap;transform:translate(-50%,-140%)}
+@media (max-aspect-ratio:1/1){.fs-map{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}.fs-map-side{max-height:38dvh}.fs-map h2{font-size:24px}}
 .fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{bottom:calc(9vh + 6px);font-size:22px}.fs-toast{bottom:calc(9vh + 84px)}
@@ -1332,22 +1346,117 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     const first = dom.menu.querySelector("button.primary") || dom.menu.querySelector("button");
     if (first) first.focus({ preventScroll: true });
   }
+  // The flat-screen map: a plan of the city that fills the screen, with the places to travel to beside it. (The headset's
+  // map is a model on a table; on a monitor or a phone that model reads as a speck, so flat play hides it and draws this.)
   function domMapList() {
     domBuild();
     dom.map.textContent = "";
-    dom.map.appendChild(el("h2", null, "City map"));
-    dom.map.appendChild(el("p", null, "Click a pin, or pick a place. A green drop is a clog. A blue tick is a clean roof."));
+    const plan = el("div", "fs-map-plan"), cv = document.createElement("canvas"), tip = el("div", "fs-map-tip");
+    cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "City map. You are the white arrow. Pick a place in the list to go there.");
+    tip.hidden = true;
+    plan.append(cv, tip);
+    const side = el("div", "fs-map-side");
+    side.appendChild(el("h2", null, "City map"));
+    side.appendChild(el("p", null, isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there."));
+    const key = el("div", "fs-key");
+    for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
+      const dot = el("i"); dot.style.color = col; key.append(dot, el("span", null, txt));
+    }
+    side.appendChild(key);
     for (const p of map.pins) {
       if (!p.spot) continue;
       const b = el("button", "btn", p.name); b.type = "button"; b.dataset.id = "pin:" + p.spot.id;
       b.addEventListener("click", () => act("pin:" + p.spot.id));
-      b.addEventListener("pointerenter", () => setPinHover(map.pins.indexOf(p)));
-      b.addEventListener("pointerleave", () => setPinHover(-1));
-      dom.map.appendChild(b);
+      // a place in the list lights its pin on the plan (the plan's own name tag, not the headset table's)
+      b.addEventListener("pointerenter", () => showTip(map.pins.indexOf(p)));
+      b.addEventListener("pointerleave", () => showTip(-1));
+      b.addEventListener("focus", () => showTip(map.pins.indexOf(p)));
+      b.addEventListener("blur", () => showTip(-1));
+      side.appendChild(b);
     }
     const back = el("button", "btn", "Back"); back.type = "button"; back.dataset.id = "back";
     back.addEventListener("click", () => act("back"));
-    dom.map.appendChild(back);
+    side.appendChild(back);
+    dom.map.append(plan, side);
+    dom.mapCv = cv; dom.mapTip = tip; dom.mapPlan = plan;
+    // a pin under the pointer: its name; a click or tap on a pin you can travel to: go there
+    const pinAt = (ev) => {
+      const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, f = dom.mapXf;
+      if (!f) return -1;
+      let best = -1, bd = (isTouchNow() ? 26 : 16) ** 2;
+      map.pins.forEach((p, i) => { const d = (f.X(p.x) - x) ** 2 + (f.Z(p.z) - y) ** 2; if (d < bd) { bd = d; best = i; } });
+      return best;
+    };
+    cv.addEventListener("pointermove", (ev) => showTip(pinAt(ev)));
+    cv.addEventListener("pointerleave", () => showTip(-1));
+    // a click or tap on a pin you can travel to goes there; on any other pin it shows its name (a phone has no hover)
+    cv.addEventListener("click", (ev) => { const i = pinAt(ev); if (i >= 0 && map.pins[i].spot) act("pin:" + map.pins[i].spot.id); else showTip(i); });
+    requestAnimationFrame(domMapDraw);
+  }
+  let planHover = -1;
+  // The name tag of pin i on the plan (−1 hides it), kept inside the plan and under the pin when there is no room above.
+  function showTip(i) {
+    const tip = dom.mapTip, f = dom.mapXf;
+    if (!tip) return;
+    if (i !== planHover) { planHover = i; domMapDraw(); }
+    tip.hidden = i < 0 || !f;
+    if (tip.hidden) return;
+    const p = map.pins[i];
+    tip.textContent = p.name + (p.spot ? "" : " (fly there)");
+    const W = dom.mapPlan.clientWidth, w = tip.offsetWidth, h = tip.offsetHeight, x = f.X(p.x), z = f.Z(p.z);
+    tip.style.left = Math.min(Math.max(x, w / 2 + 4), W - w / 2 - 4) + "px";
+    tip.style.top = z + "px";
+    tip.style.transform = z < h * 1.4 + 4 ? "translate(-50%,40%)" : "translate(-50%,-140%)";
+  }
+  addEventListener("resize", () => { if (map.on) requestAnimationFrame(domMapDraw); });
+  const isTouchNow = () => matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+  // Buildings by height (low plum to tall gold), the lake, the Needle and the Dome, every pin, and you as an arrow.
+  function domMapDraw() {
+    const cv = dom.mapCv;
+    if (!cv || !map.on || !dom.map || dom.map.hidden) return;
+    const box = dom.mapPlan.getBoundingClientRect(), W = Math.max(120, box.width), H = Math.max(120, box.height), dpr = Math.min(2, window.devicePixelRatio || 1);
+    const x0 = B.minX - 16, x1 = B.maxX + 16, z0 = B.minZ - 16, z1 = city.shoreZ + 70;
+    const s = Math.min(W / (x1 - x0), H / (z1 - z0)), ox = (W - (x1 - x0) * s) / 2, oz = (H - (z1 - z0) * s) / 2;
+    const X = (x) => ox + (x - x0) * s, Z = (z) => oz + (z - z0) * s;
+    dom.mapXf = { X, Z, s };
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = "#2c1d36"; c.fillRect(X(x0), Z(z0), (x1 - x0) * s, (city.shoreZ - z0) * s);
+    c.fillStyle = "#2f5d7a"; c.fillRect(X(x0), Z(city.shoreZ), (x1 - x0) * s, (z1 - city.shoreZ) * s);
+    const RAMP = ["#4a3456", "#6a4a78", "#9a4f86", "#d8457a", "#ff7a2a", "#ffb32a"];
+    for (const b of city.buildings) {
+      const k = Math.min(RAMP.length - 1, Math.floor(clamp(b.roofY / 230, 0, 0.999) * RAMP.length));
+      c.fillStyle = RAMP[k];
+      for (const t of b.tiers) c.fillRect(X(t.minX), Z(t.minZ), Math.max(1, (t.maxX - t.minX) * s), Math.max(1, (t.maxZ - t.minZ) * s));
+    }
+    const circle = (x, z, r, fill, stroke) => { c.beginPath(); c.arc(X(x), Z(z), Math.max(2, r * s), 0, 7); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.lineWidth = 2; c.strokeStyle = stroke; c.stroke(); } };
+    if (city.dome) circle(city.dome.x, city.dome.z, city.dome.r, "#8a7aa0", "#140a18");
+    if (city.needle) circle(city.needle.x, city.needle.z, 19, "#c9c2d6", "#140a18");
+    // the pins: the same badges as the headset's map
+    const sp = pinSprites(), size = Math.round(clamp(s * 26, 20, 34));
+    map.pins.forEach((p, i) => {
+      const img = sp[p.kind] && sp[p.kind].image, px = X(p.x), pz = Z(p.z), sz = i === planHover ? size * 1.35 : size;
+      if (p.kind === "trial") { c.beginPath(); c.arc(px, pz, sz * 0.62, 0, 7); c.lineWidth = 3; c.strokeStyle = "#6cff73"; c.stroke(); }
+      if (img) c.drawImage(img, px - sz / 2, pz - sz / 2, sz, sz);
+    });
+    // you: a white arrow along where you look
+    if (Pl) {
+      const px = X(Pl.pos.x), pz = Z(Pl.pos.z), a = -(HD.yaw || 0), r = clamp(s * 14, 9, 16);
+      c.save(); c.translate(px, pz); c.rotate(a);
+      c.beginPath(); c.moveTo(0, -r); c.lineTo(r * 0.7, r * 0.75); c.lineTo(0, r * 0.35); c.lineTo(-r * 0.7, r * 0.75); c.closePath();
+      c.fillStyle = "#fff4d8"; c.fill(); c.lineWidth = 3; c.strokeStyle = "#140a18"; c.stroke();
+      c.restore();
+    }
+  }
+  // A short glow at the screen edges for a ring you fly through (flat play only; a headset gets the ring's own flash).
+  function domFlash(kind) {
+    if (!isDesktopNow() || !document.body.animate) return;
+    domBuild();
+    if (!dom.flash) { dom.flash = el("div", "fs-flash"); dom.hud.appendChild(dom.flash); }
+    dom.flash.className = "fs-flash " + (kind === "gold" ? "gold" : "green");
+    dom.flash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: kind === "gold" ? 900 : 380, easing: "ease-out" });
   }
   function domClose() {
     if (dom.menu && dom.menu.open) dom.menu.close();
@@ -1367,7 +1476,8 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
       dh.hearts = hs; k.heartBox.hidden = hs < 0; k.heartBox.textContent = "";
       for (let i = 0; i < GAME.king.hearts; i++) k.heartBox.appendChild(el("span", "fs-heart" + (i < hs ? "" : " off"), "♥"));
     }
-    const tr = pg.trial ? pg.trial.time.toFixed(1) : "";
+    // in a trial: the ring count and the time
+    const tr = pg.trial ? (pg.trial.total ? pg.trial.ring + "/" + pg.trial.total + " · " : "") + pg.trial.time.toFixed(1) : "";
     if (dh.trial !== tr) { dh.trial = tr; k.trialBox.hidden = !tr; if (tr) k.trial.textContent = tr; }
     const tg = nearestTarget();
     k.compassBox.hidden = !tg;
@@ -1438,7 +1548,9 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     get hudShown() { return hud.shownFor; },
     update,
     blocking: (side) => blocked[sideOf(side)],
-    say, sayLine, toast: toastSay,
+    say, sayLine, toast: toastSay, flash: domFlash,
+    // draw the open pause page again (main.js after M changes the sound)
+    refresh() { if (paused && modal === "pause") showPage("pause"); },
     fade(to, secs = 0.3, look = "black") {
       fade.look = look === "room" || look === "fog" ? look : "black";
       // a newer fade takes over: the older one is done at once, so nothing waits on it for ever
