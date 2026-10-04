@@ -1,6 +1,7 @@
 // Checks the third-person hero and the chase camera in flat play (js/hero.js, js/flatcam.js and their wiring in main.js): third
-// person by default, the camera behind and above, the pull-in near walls, V and first person, ropes from the hero's hands, the
-// poses, the model and the built-in fallback, the draw budget, the intro, and that the headset is untouched.
+// person by default, the camera behind and above (never below the head), the pull-in near walls, V and first person, ropes
+// from the hero's hands, the poses, the model and the built-in fallback, the draw budget, the intro, and that the headset is
+// untouched.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/hero.mjs
 import { start, newPage, open, close, enterXR, waitState, waitFor, state, checker, watchdog, shot, sleep } from "./lib.mjs";
 
@@ -90,10 +91,12 @@ try {
   check(f.on && !f.firstPerson, "flat play starts in third person", { on: f.on, fp: f.firstPerson });
   {
     const yaw = f.yaw, fw = { x: -Math.sin(yaw), z: -Math.cos(yaw) };
-    const rel = { x: f.camera.x - s.pos.x, y: f.camera.y - (s.pos.y + 1.25), z: f.camera.z - s.pos.z };
+    const rel = { x: f.camera.x - s.pos.x, y: f.camera.y - (s.pos.y + 1.65), z: f.camera.z - s.pos.z };
     const behind = -(rel.x * fw.x + rel.z * fw.z), side = Math.abs(rel.x * fw.z - rel.z * fw.x);
-    check(behind > 3.8 && behind < 4.8 && side < 0.05, "the camera sits 4.5 m behind the hero", { behind, side });
-    check(rel.y > 0.9 && rel.y < 2.2, "and about 1.2 m above the chest", rel);
+    check(behind > 3.8 && behind < 4.8 && side < 0.05, "the camera sits about 4.2 m behind the hero", { behind, side });
+    // above the hero, looking down at it (the player asked for a view from above, not from below)
+    check(rel.y > 1.5 && rel.y < 2.3, "and about 1.9 m above the eyes", rel);
+    check(Math.abs(f.pitch - (-20 * Math.PI) / 180) < 0.02, "the default view looks down 20 degrees", f.pitch);
     check(Math.abs(f.dist - 4.5) < 0.15, "the spring arm is 4.5 m long at rest", f.dist);
   }
   // the hero draws: red jersey pixels near the hero's chest on screen
@@ -109,7 +112,8 @@ try {
   });
   check(px >= 6, "the hero is drawn (red jersey pixels at the chest)", px);
   const head = await page.evaluate(() => { const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
-  check(Math.abs(head.x) < 0.2 && head.y > -0.3 && head.y < 0.6 && head.z < 1, "the camera looks at the hero (the head is near the middle of the view)", head);
+  // the hero stands in the lower middle of the view and the aim (the middle of the screen) is over its head
+  check(Math.abs(head.x) < 0.2 && head.y > -0.35 && head.y < -0.03 && head.z < 1, "the hero's head is a little below the middle of the view, under the aim", head);
   // the chase view looks down at the hero's feet: the default aim must not take the roof under them but a building up and ahead
   const da = await page.evaluate(() => { __h.step(2); const a = G.test.aim(1), h = G.test.state().head; return a && { valid: a.valid, ny: a.ny, x: a.x, y: a.y, z: a.z, dist: a.dist, headY: h.y }; });
   check(da && da.valid && !(da.ny > 0.7 && da.y < da.headY - 0.3) && da.y > da.headY, "the default aim from the chase view is a building up and ahead, not the roof under the hero", da);
@@ -124,10 +128,14 @@ try {
     const dy = wrapA(a.yaw - b.yaw), dp = a.pitch - b.pitch;
     check(Math.abs(dy - 0.44) < 0.03 && Math.abs(dp - 0.22) < 0.03, "a mouse move turns the view like a mouse (0.0022 rad per pixel)", { dy, dp });
     check(Math.abs(a.forward.y - Math.sin(a.pitch)) < 1e-6, "the camera looks along its yaw and pitch", a.forward);
-    // the pitch is limited to -60 to +70 degrees
+    // the pitch is limited to -60 to +22 degrees: the camera stays over the head, so looking further up would lose the hero
     await page.evaluate(() => { G.test.look(0, 3); });
     let c = await step(page, 3);
-    check(Math.abs(c.pitch - (70 * Math.PI) / 180) < 0.01, "the pitch stops at +70 degrees", c.pitch);
+    check(Math.abs(c.pitch - (22 * Math.PI) / 180) < 0.01, "the pitch stops at +22 degrees", c.pitch);
+    {
+      const s2 = await S(page), hd = await page.evaluate(() => { G.camera.updateMatrixWorld(true); const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
+      check(c.camera.y - (s2.pos.y + 1.65) > 0.45 && hd.y > -0.9 && Math.abs(hd.x) < 0.2 && hd.z < 1, "looking up as far as it goes, the camera is still over the head and the head is still in the view", { over: c.camera.y - (s2.pos.y + 1.65), head: hd, dist: c.dist });
+    }
     await page.evaluate(() => { G.test.look(0, -6); });
     c = await step(page, 3);
     check(Math.abs(c.pitch - (-60 * Math.PI) / 180) < 0.01, "and at -60 degrees", c.pitch);
@@ -195,7 +203,7 @@ try {
     const THREE = await import("three");
     const c = G.city, cam = new THREE.PerspectiveCamera(70, 1.78, 0.1, 4000), fc = createFlatCam(cam, c);
     const P = { pos: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 }, chest: 1.25 };
-    let n = 0, bad = 0, low = 0, minD = 99, first = null;
+    let n = 0, bad = 0, low = 0, under = 0, minD = 99, first = null;
     const spots = [];
     for (let i = 0; i < c.buildings.length; i += Math.max(1, Math.floor(c.buildings.length / 40))) {
       const b = c.buildings[i];
@@ -212,16 +220,44 @@ try {
         const q = cam.position;
         if (c.collideSphere(q.x, q.y, q.z, 0.12, {})) { bad++; if (!first) first = { x, y, z, k, p, cam: q.toArray() }; }
         if (q.y < 0.3 - 1e-6 && y < 5) low++;
+        if (q.y < y + 1.65 + 0.3) under++; // under the pivot over the head: the arm points down
         minD = Math.min(minD, fc.dist);
       }
     }
-    return { n, bad, low, minD, first };
+    return { n, bad, low, under, minD, first };
   });
   check(sweep.n > 3000 && sweep.bad === 0 && sweep.low === 0 && sweep.minD >= 0.34, "the camera is never inside a building or below the street (" + sweep.n + " views)", sweep);
+  check(sweep.under === 0, "and never below the hero's head, near a wall or not (" + sweep.n + " views)", sweep);
+  // in the open, every pitch the mouse allows: the camera stays over the head, follows the look down, comes down toward
+  // the head as you look up (and in, past level), and the head stays on the screen
+  const arc = await page.evaluate(async () => {
+    const { createFlatCam } = await import("/vr/js/flatcam.js");
+    const THREE = await import("three");
+    const cam = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 4000), fc = createFlatCam(cam, { raycast: () => null, collideSphere: () => false });
+    const P = { pos: { x: 0, y: 40, z: 0 }, vel: { x: 0, y: 0, z: 0 }, chest: 1.25 }, head = new THREE.Vector3(0, 41.65, 0), out = []; // G.hero.head stands about 1.65 m over the feet
+    for (let d = -60; d <= 22; d += 2) {
+      fc.reset(0, (d * Math.PI) / 180, false);
+      fc.update(0.016, P, null, { dx: 0, dy: 0 }, {});
+      cam.updateMatrixWorld(true);
+      const v = head.clone().project(cam);
+      out.push({ d, over: +(cam.position.y - 41.65).toFixed(3), arm: +fc.info().dist.toFixed(3), ny: +v.y.toFixed(2), y: cam.position.y, z: cam.position.z });
+    }
+    return out;
+  });
+  {
+    const bad = arc.filter((a) => a.over < 0.45 || a.ny < -0.9 || a.ny > -0.02), at = (d) => arc.find((a) => a.d === d);
+    const down = arc.filter((a) => a.d <= -20), up = arc.filter((a) => a.d >= -20);
+    const fallsUp = up.every((a, i) => i === 0 || (a.over < up[i - 1].over && a.arm <= up[i - 1].arm));
+    check(!bad.length && fallsUp && at(22).over < 0.6 && at(0).arm === 4.5 && at(22).arm < 4.2 && at(-60).over > 3.5 && down.every((a) => a.arm === 4.5 && a.ny > -0.2),
+      "at every pitch the camera is over the head and the head is on screen, under the middle; looking up brings it down toward the head and in", { bad, arc });
+    // no jerk at the default: 2 degrees either side of it move the camera about as far
+    const move = (a, b) => Math.hypot(a.y - b.y, a.z - b.z), below = move(at(-22), at(-20)), above = move(at(-20), at(-18));
+    check(above / below > 0.8 && above / below < 1.25, "the camera moves smoothly through the default pitch", { below, above });
+  }
 
   /* ---- V and first person ---- */
   await reset(page);
-  await step(page, 30);
+  const armTP = (await step(page, 30)).dist; // the arm at this pitch (looking up past level shortens it)
   await page.keyboard.press("KeyV");
   f = await step(page, 90);
   s = await S(page);
@@ -241,7 +277,7 @@ try {
   await step(page, 3);
   await page.keyboard.press("KeyV");
   f = await step(page, 90);
-  check(!f.firstPerson && f.blend === 1 && Math.abs(f.dist - 4.5) < 0.15, "V again returns to third person", { fp: f.firstPerson, blend: f.blend, dist: f.dist });
+  check(!f.firstPerson && f.blend === 1 && Math.abs(f.dist - armTP) < 0.15, "V again returns to third person", { fp: f.firstPerson, blend: f.blend, dist: f.dist, armTP });
   check(await page.evaluate(() => G.hero.root.visible), "and the hero shows again");
   check((await page.evaluate(() => document.body.dataset.view)) === "third", "body[data-view] says third");
   // the input edge (pad Y, the touch eye button) toggles too, and an edge together with the V key is one toggle
@@ -449,7 +485,8 @@ try {
   });
   check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away aims at that clog (" + lo.length + " views)", lo);
   // A clog on the hero's own roof, 14 to 24 m away, aimed low with nothing behind it: the ray runs a little down past the roof edge
-  // and hits nothing within 400 m. That is no ground near the hero, so the aim must stay on the clog.
+  // and hits nothing within 400 m. That is no ground near the hero, so the aim must stay on the clog. The ray aims 1.2 m up the
+  // clog (its middle is about 2.5 m up): the camera sits over the hero's head, and a ray to 0.8 m drops on to the roof behind.
   const same = await page.evaluate(() => {
     const C = G.city, out = [];
     for (const c of C.clogs) {
@@ -462,7 +499,7 @@ try {
         G.test.teleport(x, c.y, z);
         let yaw = Math.atan2(-(c.x - x), -(c.z - z)); G.rigYaw = yaw; G.flatcam.reset(yaw); __h.step(30);
         for (let j = 0; j < 4; j++) {
-          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 0.8 - p.y, uz = c.z - p.z;
+          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 1.2 - p.y, uz = c.z - p.z;
           yaw = Math.atan2(-ux, -uz); G.rigYaw = yaw; G.flatcam.reset(yaw, Math.asin(uy / Math.hypot(ux, uy, uz))); __h.step(2);
         }
         const p = G.camera.position, f = new p.constructor(0, 0, -1).applyQuaternion(G.camera.quaternion);
@@ -574,7 +611,7 @@ try {
   for (let i = 0; i < 60 && st !== "play"; i++) { await step(page, 20); st = (await S(page)).state; }
   check(st === "play", "the intro ends", st);
   g = await page.evaluate(() => { __h.step(150); return { f: G.test.flat(), vis: G.hero.root.visible }; });
-  check(g.f.blend === 1 && Math.abs(g.f.dist - 4.5) < 0.2 && g.vis && Math.abs(g.f.pitch - -0.27) < 0.05, "at the hand-off the camera pulls out to the chase view", { blend: g.f.blend, dist: g.f.dist, vis: g.vis, pitch: g.f.pitch });
+  check(g.f.blend === 1 && Math.abs(g.f.dist - 4.5) < 0.2 && g.vis && Math.abs(g.f.pitch - (-20 * Math.PI) / 180) < 0.05, "at the hand-off the camera pulls out to the chase view", { blend: g.f.blend, dist: g.f.dist, vis: g.vis, pitch: g.f.pitch });
   const errs3 = page.errors.filter((e) => !/Failed to load resource/i.test(e));
   check(errs3.length === 0, "no page errors in the intro", errs3);
   await page.context().close();
