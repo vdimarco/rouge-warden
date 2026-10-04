@@ -87,10 +87,41 @@ export const PHONE = {
   // directions (degrees) for one that is. With none, a close target in reach still catches.
   assist: { pitch: [28, 42, 56, 16], yaw: [0, -22, 22, -45, 45, -75, 75], near: 9, above: 3 },
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
+  buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
   fov: { base: 75, wide: 24, from: 12, to: 42 }, // the view widens by up to wide degrees over this speed range (m/s)
   lines: { from: 13, to: 34 }, // the phone's comic speed lines at the screen edges grow over this speed range (m/s)
 };
+
+/* ---------------- the auto target (flat play) ---------------- */
+// Flat play picks one building point for each swing (js/target.js). Start values: the first-time bots in qa/vr/target.test.mjs
+// tune them. Metres, seconds and degrees unless a name says radians.
+export const TARGET = {
+  rate: 0.05, rateWide: 0.2, // s between searches (tier 1, tier 2)
+  // the fan: azimuth each side of the bearing (the Aim assist setting picks one), elevation about the preferred one
+  fan: { az: { low: 21, med: 28, high: 35 }, azStep: 7, elSpan: 25, elStep: 10, elMin: 20, elMax: 75, screenX: 0.92 },
+  tier1: { min: 9, max: 80, above: 4 },
+  tier2: { min: 9, max: 88, above: 3, yaw: [0, -22, 22, -45, 45, -75, 75], pitch: [28, 42, 56, 16], cone: 24, ahead: 2, minSpeed: 4 }, // the old phone assist
+  tier3: { min: 9, max: 88, above: 3 },
+  lift: { base: 35, min: 35, max: 60, fall: 12, fallFrom: 3, fallTo: 15, top: 72 }, // preferred elevation, degrees
+  weight: { angle: 0.55, distance: 0.35, up: 0.25, ahead: 0.15, wall: 0.1 },
+  dist: { near: 25, far: 60, ramp: 25 }, // no distance penalty from near to far (m), then it grows to 1 over ramp
+  recent: { penalty: 0.6, count: 2, secs: 8 },
+  special: { enter: 22, leave: 28, range: 60, pipeFacing: 60, tap: 16, tapRange: 88, near: 35 },
+  ring: { bearing: 35, range: 80 }, // the gold ring in tutorial step 0
+  hold: { margin: 0.2, dwell: 0.2 }, // margin is SWING.targetSwitchMargin
+  bias: { steepHoriz: 0.34 }, // a tap ray with a smaller horizontal part gives no bias
+  cue: { from: 25, to: 60, drag: 0.5 }, // degrees past the bottom; s dragged on the ground
+  side: 6, // degrees: below this, the hands alternate
+  noneLine: 10, // s between the "No building" lines
+};
+// Mouse, keys and pad. attachSpeed is the kick on attach (m/s, 0 = off), hop is a jump toward the target from the ground (m/s,
+// 0 = off), wheel: one notch reels this long (s), and a stream reels at most cap s in any per s.
+export const DESKTOP = { attachSpeed: 10, hop: 0, wheel: { reel: 0.15, cap: 0.3, per: 0.5 } };
+export const PAD = { dead: 0.15, curve: 1.5, lookRate: Math.PI, trigger: { on: 0.5, off: 0.3 }, rumble: { attach: [0.3, 30], yank: [0.4, 40], pump: [0.6, 60] } };
+export const HINT = { seconds: 60 }; // the key hint strip shows for the first minute of an unfinished tutorial
+// The chase camera. They live here so the first-time bots and the game share them.
+export const FLATCAM = { followTau: 1.2, holdLook: 1.5, pitch0: -Math.asin(1.2 / 4.5), arm: 4.5, lift: 0.14, liftHold: 0.7, liftRate: 3, turnSecs: 0.4 };
 
 /* ---------------- comfort ---------------- */
 export const COMFORT = {
@@ -150,7 +181,8 @@ export const COLORS = {
 };
 
 /* ---------------- the Cottage talks ---------------- */
-// LINES_HANDS and LINES_DESKTOP keep the same keys and order, so ui.sayLine(group, i, kind) can pick the right words.
+// LINES_HANDS, LINES_DESKTOP, LINES_PAD and LINES_PHONE keep the same keys and order, so ui.sayLine(group, i, kind) can pick the
+// right words. The three flat tables also have a wall group: the first wall line.
 export const LINES = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room."],
   tutorial: ["Shoot the gold ring. Hold the trigger.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Squeeze the grip to reel in.", "Pull back hard to yank.", "Push the right stick to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
@@ -163,15 +195,27 @@ export const LINES_HANDS = {
   tutorial: ["Pinch at the gold ring. Keep pinching.", "Swing out. Open your fingers at the bottom.", "Pinch again before you land.", "Make a fist to reel in.", "Pull your hand back hard to yank.", "Tap the arrows on your wrist to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
   clog: LINES.clog, king: LINES.king, splash: LINES.splash,
 };
+// Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room."],
-  tutorial: ["Aim at the gold ring. Hold a mouse button.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to turn.", "Your score is at the top of the screen.", "That green light is a clog. Plunge it."],
-  clog: LINES.clog, king: LINES.king, splash: LINES.splash,
+  tutorial: ["Look at the gold ring. Hold the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
+  king: LINES.king, splash: LINES.splash,
+  wall: ["On the wall. W and S climb, A and D go along it. Space jumps off."],
+};
+// A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
+export const LINES_PAD = {
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room."],
+  tutorial: ["Look at the gold ring. Hold the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
+  king: LINES.king, splash: LINES.splash,
+  wall: ["On the wall. Push the left stick to climb. Press the bottom button to jump off."],
 };
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room."],
-  tutorial: ["Tap the gold ring to swing.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  tutorial: ["Tap SWING to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
+  wall: ["On the wall. Hold the arrows to climb. Tap JUMP to jump off."],
 };
