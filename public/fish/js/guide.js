@@ -212,7 +212,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
     panel.hidden = false;
     const view = game.querySelector("#view"), W = game.clientWidth, H = game.clientHeight;
     const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox", "pullStrength"]
-      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
+      // (a toast counts while it fades out too, so the panel never slides under it)
+      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on") || +getComputedStyle(el).opacity > 0.05)).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
     // the left edge: the HUD's own inset, which is 10 px past the safe area
