@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- the store build: inside the Capacitor app the page drops the arcade parts (the app build also writes this flag) -->
-<script>try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) document.documentElement.dataset.build = "store"; } catch (e) { /* the web */ }</script>
+<!-- the store build: inside the Capacitor app the page drops the arcade parts (the app build also writes this flag).
+     The boot screen takes the saved art style, so it hands over to the title it looks like -->
+<script>
+try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) document.documentElement.dataset.build = "store"; } catch (e) { /* the web */ }
+try { document.documentElement.dataset.bootArt = (JSON.parse(localStorage.getItem("fish.v1")) || {}).artStyle === "original" ? "original" : "painted"; } catch (e) { document.documentElement.dataset.bootArt = "painted"; }
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d2f38">
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
@@ -39,6 +43,11 @@
 #boot .boot-logo { font-family: var(--slab); font-size: clamp(48px, 15vmin, 110px); line-height: 0.92; color: #fff6dc; letter-spacing: 0.01em;
   text-shadow: 0 4px 0 var(--red), 0 8px 0 #7a1c14, 0 14px 26px rgba(0, 0, 0, 0.45); }
 #boot .boot-logo span { display: block; }
+/* the painted style (the default) has its own colours and a serif name on the title */
+html[data-boot-art="painted"] #boot { background: radial-gradient(ellipse at 50% 38%, #29584a, #163e38 72%); }
+html[data-boot-art="painted"] #boot .boot-logo { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -0.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, 0.45); }
+html[data-boot-art="painted"] #boot .card { background: rgba(20, 49, 40, 0.96); }
+html[data-boot-art="painted"] #boot .btn.go { background: #b45038; border-color: #f1bb89; box-shadow: 0 4px 0 #643527; }
 #boot .boot-bar { position: relative; width: min(60vw, 240px); height: 6px; border-radius: 3px; background: rgba(246, 239, 217, 0.16); overflow: hidden; }
 #boot .boot-bar b { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--boot, 0.08) * 100%); background: rgba(232, 182, 74, 0.45); transition: width 0.4s; }
 #boot .boot-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 40%; border-radius: 3px; background: var(--brass); animation: boot-run 1.1s ease-in-out infinite; }

@@ -99,6 +99,7 @@ async function landFish(page) {
     check(blank.length === 0, "no frame is blank before the title" + (blank.length ? " (" + blank.length + " blank, first at " + blank[0][0] + " ms)" : ""));
     check(!!fr.boot0 && /REEL IT IN/.test(fr.boot0.text) && /Loading the lake\./.test(fr.boot0.text), "the boot screen says REEL IT IN and Loading the lake. (" + JSON.stringify(fr.boot0 && fr.boot0.text) + ")");
     check(!!fr.boot0 && fr.boot0.bar === "running", "the bar on the boot screen moves (" + (fr.boot0 && fr.boot0.bar) + ")");
+    check((await page.evaluate(() => document.documentElement.dataset.bootArt)) === "painted", "a new player gets the boot screen of the painted style, like the title after it");
     await sleep(600);
     check(await page.evaluate(() => document.getElementById("boot").hidden), "the boot screen is gone once the title shows");
     // the web build keeps the arcade parts
@@ -149,10 +150,12 @@ async function landFish(page) {
 
 /* ---------- 2. slow fonts ---------- */
 {
+  // the Original style: its boot screen and title use the slab font, so both fonts are on the first screen
   const delayFonts = async (ctx) => ctx.route(/\/fonts\/.*\.woff2$/, async (r) => { await sleep(5000); r.continue().catch(() => {}); });
-  const { browser, page, errors } = await launch({ route: delayFonts, waitTitle: false });
+  const { browser, page, errors } = await launch({ route: delayFonts, waitTitle: false, save: { v: 1, artStyle: "original" } });
   try {
     await page.waitForSelector("#boot", { state: "attached" });
+    check((await page.evaluate(() => document.documentElement.dataset.bootArt)) === "original", "a player of the Original style gets its boot screen");
     await until(page, () => performance.getEntriesByName("first-contentful-paint").length > 0, null, 30000);
     const early = await page.evaluate(() => ({ fcp: Math.round(performance.getEntriesByName("first-contentful-paint")[0].startTime), nunito: document.fonts.check("800 16px Nunito"), slab: document.fonts.check("40px 'Alfa Slab One'"), now: Math.round(performance.now()) }));
     check(early.fcp < 3000 && !early.slab, "slow fonts: the boot screen paints at " + early.fcp + " ms, in a system font (the slab font is not in yet: " + !early.slab + ")");
@@ -242,7 +245,7 @@ function capStub(prefs) {
     check(t.build === "store" && t.kick === "LOON LAKE" && !t.sw, "store: the page is the store build, the kicker is the place alone, no switcher (" + JSON.stringify(t) + ")");
     check(!requests.some((u) => /\/arcade\/switch\.js/.test(u) || /\/wild\//.test(u)), "store: the arcade script is not loaded and nothing probes /wild/");
     check(tb.length === 6 && !tb.some((b) => /Switch game|arcade|Fullscreen/.test(b)), "store: the title has six controls (" + tb.join(" | ") + ")");
-    let c = await cap();
+    const c = await cap();
     check(c.calls.includes("SplashScreen.hide") && c.calls.includes("StatusBar.hide"), "store: the splash hides when the title is ready, and the status bar hides");
     check(["App.on:backButton", "App.on:pause", "App.on:resume"].every((n) => c.calls.includes(n)), "store: the game listens for back, pause and resume");
     check(!c.calls.includes("Preferences.get:fish.v1"), "store: with a save in web storage, the game does not wait for native storage");
@@ -296,11 +299,11 @@ function capStub(prefs) {
     check((await shown("pause")) && (await page.evaluate(() => __snd.includes("setAmbience:true"))), "the app comes back: still paused, the lake sounds again");
     await click(page, "#resumeBtn");
     check(!(await page.evaluate(() => FISH.G.paused)) && (await page.evaluate(() => __snd.includes("sfx:ui"))), "Resume plays on, with sound");
-    c = await cap();
-    check(c.calls.includes("Preferences.set:fish.v1") && c.prefs["fish.v1"] === (await page.evaluate(() => localStorage.getItem("fish.v1"))), "store: the save is mirrored to native storage");
 
-    // the catch card: back presses its main button
+    // the catch card (a catch always saves): the save goes to native storage too, and back presses the main button
     await landFish(page);
+    const mirror = await page.evaluate(() => ({ set: window.__cap.calls.includes("Preferences.set:fish.v1"), same: window.__cap.prefs["fish.v1"] === localStorage.getItem("fish.v1"), perch: /perch/.test(window.__cap.prefs["fish.v1"] || "") }));
+    check(mirror.set && mirror.same && mirror.perch, "store: the save, with the new catch, is mirrored to native storage (" + JSON.stringify(mirror) + ")");
     await back();
     await until(page, () => FISH.G.phase === "cast", null, 15000).catch(() => {});
     check(!(await shown("catch")) && (await page.evaluate(() => FISH.G.phase === "cast")), "back on the catch card casts again");
@@ -317,13 +320,25 @@ function capStub(prefs) {
     await page.evaluate(() => FISH.toTitle());
     await click(page, "#placesBtn");
     await page.waitForSelector("#places:not([hidden])");
-    const m0 = await count("App.minimizeApp");
+    // back is pressed from inside the page the moment the travel card shows: on a slow machine the place can build in
+    // one long task, and the card may be gone before a test poll sees it
+    await page.evaluate(() => {
+      const el = document.getElementById("travel");
+      window.__trip = null;
+      const mo = new MutationObserver(() => {
+        if (el.hidden || window.__trip) return;
+        const m0 = window.__cap.count("App.minimizeApp");
+        window.__cap.fire("backButton");
+        window.__trip = { screen: document.body.dataset.screen, travel: !el.hidden, minimized: window.__cap.count("App.minimizeApp") - m0 };
+        mo.disconnect();
+      });
+      mo.observe(el, { attributes: true, attributeFilter: ["hidden"] });
+    });
     await sleep(PAUSE);
     await page.click("#plist .pcard[data-place='stumps'] .btn");
-    await page.waitForSelector("#travel:not([hidden])");
-    await back();
-    check((await shown("travel")) && (await count("App.minimizeApp")) === m0, "back while a place loads does nothing");
     await page.waitForSelector("#arrive:not([hidden])", { timeout: 60000 });
+    const trip = await page.evaluate(() => window.__trip);
+    check(!!trip && trip.travel && trip.screen === "travel" && trip.minimized === 0, "back while a place loads does nothing (" + JSON.stringify(trip) + ")");
     await back();
     check((await shown("title")) && (await page.textContent("#tkick")) === "STUMP BAY", "back on the arrival card starts at the new place (" + (await page.textContent("#tkick")) + ")");
   } catch (e) { check(false, "exception in part 4: " + (e && e.stack)); }
