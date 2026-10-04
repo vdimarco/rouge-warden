@@ -251,9 +251,13 @@ async function shot(page, html, w, h, { alpha = false } = {}) {
 
 const page_ = (body) => `<!doctype html><html><head><style>html,body{margin:0;background:transparent;overflow:hidden}svg{display:block}</style></head><body>${body}</body></html>`;
 
+// alpha: false writes RGB with no alpha channel (the iOS icon, the splash, the feature graphic).
+// alpha: true keeps the transparency (the adaptive icon foreground).
+// alpha: "opaque" writes RGBA with every pixel fully opaque (the Google Play icon: Play asks for a 32-bit PNG).
 async function save(buf, file, { alpha = false } = {}) {
   let img = sharp(buf);
-  img = alpha ? img.ensureAlpha() : img.flatten({ background: C.deep }).removeAlpha();
+  img = alpha === true ? img.ensureAlpha() : img.flatten({ background: C.deep }).removeAlpha();
+  if (alpha === "opaque") img = img.ensureAlpha(1);
   await img.png({ compressionLevel: 9 }).toFile(file);
   const meta = await sharp(file).metadata();
   console.log(`  ${path.relative(APP, file)}  ${meta.width}x${meta.height}  ${meta.channels === 4 ? "RGBA" : "RGB"}  ${(fs.statSync(file).size / 1024).toFixed(0)} KB`);
@@ -273,6 +277,6 @@ await save(await shot(page, page_(adaptiveBackgroundSvg(1024)), 1024, 1024), pat
 const splash = await shot(page, splashHtml(2732, fontUrl), 2732, 2732);
 // one splash only: it is dark already, and a splash-dark.png would add a copy of every splash image to the app
 await save(splash, path.join(RES, "splash.png"));
-await save(await shot(page, page_(iconSvg(512)), 512, 512), path.join(GRAPHICS, "play-icon-512.png"));
+await save(await shot(page, page_(iconSvg(512)), 512, 512), path.join(GRAPHICS, "play-icon-512.png"), { alpha: "opaque" });
 await save(await shot(page, featureHtml(fontUrl), 1024, 500), path.join(GRAPHICS, "feature-graphic-1024x500.png"));
 await browser.close();
