@@ -75,7 +75,7 @@ function offsetLocal(cx, cy, el) {
 // A press on a control is not a pin. The invisible iOS haptic switches are the exception: they sit on top of the
 // reel and the crank on purpose, and their events bubble up to us.
 function isSwitch(e) { return e.tagName === "INPUT" && e.hasAttribute("switch"); }
-function blocked(target, stop) {
+export function blocked(target, stop) {
   for (let e = target; e && e !== stop && e.nodeType === 1; e = e.parentElement) {
     if (isSwitch(e) || (e.tagName === "LABEL" && e.querySelector("input[switch]"))) continue;
     if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL)$/.test(e.tagName)) return true;
