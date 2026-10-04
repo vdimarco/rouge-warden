@@ -51,7 +51,7 @@ Hunters SHALL stalk the player, then attack with a telegraphed lunge that is fas
 
 #### Scenario: Attackers at once
 - **WHEN** several hunters are in range
-- **THEN** at most one winds up at a time in Size I, two in Sizes II and III, and three from Size IV, a relay pair counts as one, and from Size III a lane locks where the player will be a quarter second later
+- **THEN** at most one winds up at a time in Size I, two in Sizes II and III, and three from Size IV, and from Size III a lane locks where the player will be a quarter second later
 
 #### Scenario: Lunge hit
 - **WHEN** a lunge reaches the player outside dash i-frames
@@ -119,7 +119,7 @@ A director SHALL send scripted waves of distinct hunter roles each size, with re
 - **THEN** its warnings appear outside the area the old dish shrank into whenever a clear spot 34 to 70 cells from the player exists there
 
 #### Scenario: Caps
-- **WHEN** a wave would exceed 4 gliders, 4 swarm bodies, 4 eggs, 8 bodies or 2 Heptapteryx (3, 3, 3, 6 and 2 on touch or portrait)
+- **WHEN** a wave would exceed 4 gliders, 4 swarm bodies, 4 eggs, 8 bodies or 1 common Heptapteryx (3, 3, 3, 6 and 1 on touch or portrait)
 - **THEN** the extra units wait in a queue until a slot frees
 
 ### Requirement: Leviathan phases
@@ -127,7 +127,7 @@ On every third size a full GROW bar SHALL summon a Leviathan that changes its at
 
 #### Scenario: Summon
 - **WHEN** the GROW bar fills in Size III, VI or IX
-- **THEN** the bar reads APEX, a LEVIATHAN banner says "Eat it to grow.", a giant Heptapteryx arrives after a 3-second warning with three phase pips, and other waves wait while it lives
+- **THEN** the bar reads APEX, no new wave arrives, the Leviathan waits until no other Hexapteryx or Heptapteryx is on the dish, then a LEVIATHAN banner says "Eat it to grow." and a giant Heptapteryx arrives after a 3-second warning with three phase pips
 
 #### Scenario: Wing tears
 - **WHEN** the player tears 20% of the Leviathan's mass, parries it or catches it in a Burst
@@ -169,7 +169,7 @@ Every combat action SHALL read on screen and in sound at a phone's scale.
 
 #### Scenario: Readability
 - **WHEN** the dish is drawn at about 3 pixels per cell on a 390-pixel-wide phone
-- **THEN** lane outlines, stagger rings, edible rings, the relay thread, the GROW bar and its notch, and dash pips are at least 3 pixels thick and the glint star is at least 14 pixels across
+- **THEN** lane outlines, stagger rings, edible rings, the GROW bar and its notch, and dash pips are at least 3 pixels thick and the glint star is at least 14 pixels across
 
 ## ADDED Requirements
 
@@ -205,11 +205,11 @@ When the GROW bar fills, the whole dish SHALL shrink into its middle quarter whi
 
 #### Scenario: Old hunters become food
 - **WHEN** the dish grows with hunters on it
-- **THEN** each lancer, swarm or brood body becomes one Orbium and each Hexapteryx or common Heptapteryx two, at most 6 in all, at least 28 cells apart and 16 cells from the player; golden prey stay golden; eggs disappear; other old prey turn into light for the player (2 each, at most 10)
+- **THEN** each lancer, swarm or brood body becomes one Orbium and each Hexapteryx or common Heptapteryx two, at most 6 in all, at least 28 cells apart and 16 cells from the player; golden prey stay golden; Remains dropped in the last 6 seconds come along as prey; eggs disappear; other old prey turn into light for the player (2 each, at most 10)
 
 #### Scenario: The converted prey live
 - **WHEN** play resumes after the dish grows
-- **THEN** at least 85% of the converted Orbium are still alive 100 dish steps later on the tested seeds, and the first time a species converts in a run its Orbium shows a FOOD label that names the hunter it was
+- **THEN** random prey wait 5 seconds before they restock, at least 85% of the converted Orbium are still alive 100 dish steps later on the tested seeds, and the first time a species converts in a run its Orbium shows a FOOD label that names the hunter it was for 3 seconds of play
 
 #### Scenario: No credit at the swap
 - **WHEN** the dish grows
@@ -238,9 +238,9 @@ Each size SHALL bring a bigger red arc with one new move, and an arc species tha
 - **WHEN** a Hexapteryx stalks in Size III
 - **THEN** it lays a Circium egg behind its glide 4 seconds after it arrives and then every 7 seconds, with at most 2 of its eggs alive and within the egg cap
 
-#### Scenario: Relay pair
-- **WHEN** two Heptapteryx arrive as a pair in Size IV
-- **THEN** they spawn on opposite sides of the player, hold one attack token between them, never wind up at the same time, and when one's lunge ends the other may wind up at once from its own side if its lane is clear
+#### Scenario: Fast strike
+- **WHEN** a Heptapteryx attacks in Size IV
+- **THEN** it winds up for 14 steps instead of 20 and lunges at 2.0 cells per step for 10 steps, like the Leviathan's last phase, and only one common Heptapteryx is on the dish at a time
 
 #### Scenario: New hunter banner
 - **WHEN** a size starts
@@ -252,4 +252,4 @@ Each size SHALL bring a bigger red arc with one new move, and an arc species tha
 
 #### Scenario: Deep dish
 - **WHEN** the run reaches Size V or later
-- **THEN** Heptapteryx stay the red arc with every move at once, waves come from a budget that grows with the size, and the Leviathan guards every third size
+- **THEN** Heptapteryx stay the red arc with every move at once (double strike, egg laying, fast strike), every wave brings one, the rest comes from a budget that grows with the size, and the Leviathan guards every third size

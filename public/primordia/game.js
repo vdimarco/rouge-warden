@@ -59,7 +59,7 @@ function resetFx() {
   particles.length = 0; popups.length = 0; trail.length = 0; arcs.length = 0; hits.length = 0; rings.length = 0;
   stasisEase = 0; cutCounts.clear();
   slowmo = 0; slowFactor = 1; shake = 0; flash = 0; kick.x = kick.y = 0; deathAt = 0;
-  husks.length = 0; seenFrom.clear(); grow.on = false; oldBoxAt = 0; cam.z = 1;
+  husks.length = 0; seenFrom.clear(); grow.on = false; oldBoxAt = 0; cam.z = 1; sound.tempo = 1;
   you.r = game ? game.player.r : TUNE.grow.base; you.bulge = 0;
   sound.hunting = false; sound.stasis(false); sound.endAllWindups();
 }
@@ -319,12 +319,12 @@ function startRun() {
   newGame("play");
   show("play");
   hudCache = {};
-  banner("EPOCH I", "Cut, bite, survive", "#9ffff1");
+  banner("SIZE I", tierOf(1).line, "#9ffff1");
   showTipOnce("eat", touchMode ? "Swim into the glowing cyan creatures to eat them." : "Swim into the glowing cyan creatures to eat them. Your mouse leads the way.");
 }
 
 function setPause(on) {
-  if (on && screen !== "play") return;
+  if (on && (screen !== "play" || game.state === "grow")) return;
   if (!on && screen !== "pause") return;
   show(on ? "pause" : "play");
   if (on) $("#resumeBtn").focus();
@@ -654,7 +654,7 @@ function handleEvents() {
         rings.push({ x: e.x, y: e.y, r0: 3, r1: 24, at: performance.now(), dur: 500, color: "255,216,106" });
         showTipOnce("outgrow", "You are bigger than the swarms now. Eat them.");
         break;
-      case "apex": banner("APEX", "Eat the Leviathan to grow.", "#ffd86a"); break;
+      case "apex": if (!game.pending.some((p) => p.boss)) banner("LEVIATHAN", "Clear the big hunters. Then eat it to grow.", "#ffd86a"); break;
       case "growStart":
         sound.growSwell(); flash = Math.max(flash, 0.12);
         grow.x = e.x; grow.y = e.y; grow.on = true;
@@ -683,7 +683,7 @@ function handleEvents() {
         // with nothing left to offer, the next size starts without the cards
         if (screen === "mutate" && game.state === "play") show("play");
         banner("SIZE " + roman(e.epoch), e.line || "", "#b49cff");
-        sound.tempo = 1 + (e.epoch - 1) * 0.05;
+        if (screen !== "intro") sound.tempo = 1 + (e.epoch - 1) * 0.05;
         break;
       case "death":
         sound.death(); sound.hunting = false; sound.stasis(false); addShake(12); flash = 0.4;
@@ -723,11 +723,13 @@ function zoomShell(e) {
     p.x = mapX(p.x); p.y = mapY(p.y);
     if (p.r) p.r /= 2;
     if (p.r0 !== undefined) { p.r0 /= 2; p.r1 /= 2; }
+    if (p.vx !== undefined) { p.vx /= 2; p.vy /= 2; }
+    if (p.size !== undefined) p.size /= 2;
   }
   for (const a of arcs) { a.x0 = mapX(a.x0); a.y0 = mapY(a.y0); a.x1 = mapX(a.x1); a.y1 = mapY(a.y1); }
   cutCounts.clear();
   you.r /= 2;
-  sound.growWhoosh(); sound.endAllWindups(); sound.hunting = false; sound.stasis(false);
+  sound.stasis(false); sound.endAllWindups(); sound.hunting = false; sound.growWhoosh();
   for (const q of e.eggs) burst(q.x, q.y, 8, "#ff8fb2", 10, 0.5, 0.6);
   // old prey turn into light that streams into you
   for (const q of e.motes) for (let k = 0; k < 4; k++) particles.push({ x: q.x + rnd(-2, 2), y: q.y + rnd(-2, 2), vx: rnd(-6, 6), vy: rnd(-6, 6), life: 1.4, max: 1.4, color: "#9ffff1", size: rnd(0.6, 1), home: true });
@@ -738,13 +740,13 @@ function zoomDone(e) {
     rings.push({ x: q.x, y: q.y, r0: 2, r1: 14, at: performance.now() + i * 60, dur: 400, color: "127,255,240" });
     sound.husk(i);
     if (q.golden) return;
-    // the first time a species comes back as food in a run, name it
-    const label = !seenFrom.has(q.from) ? "was " + q.from : "";
-    seenFrom.add(q.from);
-    husks.push({ x: q.x, y: q.y, from: q.from, label, at: performance.now() });
+    // the first time a species comes back as food in a run, name it (game time stands still on the cards)
+    const label = q.from && !seenFrom.has(q.from) ? "was " + q.from : "";
+    if (q.from) seenFrom.add(q.from);
+    husks.push({ x: q.x, y: q.y, from: q.from, label, at: game.time });
   });
   if (e.bonus) popup(game.player.x, game.player.y - 8, "SIZE " + roman(game.epoch) + "  +" + fmt(e.bonus), "#9ffff1", true);
-  oldBoxAt = performance.now();
+  oldBoxAt = game.time;
 }
 // camera and molt wave from the grow clock: the wave runs out from you, then the dish shrinks and pulls back
 function growView() {
@@ -752,7 +754,7 @@ function growView() {
   if (game.state !== "grow") { grow.on = false; return { z: 1, convert: null, fade: 0 }; }
   const ease = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
   let z = 1, convert = null, fade = 0;
-  if (t < G.begin) convert = { x: grow.x, y: grow.y, r: ease(t / G.begin) * 150, s: 1 };
+  if (t < G.begin) convert = { x: grow.x, y: grow.y, r: reduceMotion ? 9999 : ease(t / G.begin) * 150, s: 1 };
   else if (t < G.finish) {
     convert = { x: 0, y: 0, r: 9999, s: 1 };
     z = reduceMotion ? 1 : 0.5 * Math.pow(2, ease((t - G.begin) / (G.finish - G.begin)));
@@ -876,7 +878,7 @@ function drawFx(t, dt) {
   }
 
   // the old dish's edge: drawn while it shrinks, then it fades
-  const B = game.oldBox, boxAge = (now - oldBoxAt) / 1000;
+  const B = game.oldBox, boxAge = game.time - oldBoxAt;
   if (B && (game.state === "grow" ? game.growT >= TUNE.grow.seq.begin : oldBoxAt && boxAge < 1.5)) {
     c.strokeStyle = `rgba(127,255,240,${game.state === "grow" ? 0.55 : 0.55 * (1 - boxAge / 1.5)})`; c.lineWidth = 2; c.setLineDash([8, 6]);
     c.strokeRect(sx(B.x), sy(B.y), B.w * s, B.h * s); c.setLineDash([]);
@@ -890,9 +892,10 @@ function drawFx(t, dt) {
     });
   }
   for (let i = husks.length - 1; i >= 0; i--) {
-    const k = husks[i], age = (now - k.at) / 1000;
+    const k = husks[i], age = game.time - k.at;
     if (age > 3 || game.state !== "play") { if (age > 3) husks.splice(i, 1); continue; }
-    if (!k.label) continue;
+    // the intro points at them with its own callouts
+    if (!k.label || screen === "intro") continue;
     // follow the prey it became
     let near = null, nd = 24;
     for (const p of game.prey) if (p.converted) { const d = game.dist(p.x, p.y, k.x, k.y); if (d < nd) { nd = d; near = p; } }
@@ -910,17 +913,7 @@ function drawFx(t, dt) {
         c.beginPath(); c.arc(X, Y, Math.max(8, game.reachOf(e) - 5) * s, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
       });
     }
-    // a relay pair: a thin red thread joins the two
-    if (e.pair) {
-      const mate = game.hunters.find((o) => o !== e && o.pair === e.pair);
-      if (mate && e.id < mate.id) {
-        const dx = wdelta(mate.x - e.x, game.w), dy = wdelta(mate.y - e.y, game.h);
-        wrapped(e.x, e.y, Math.max(Math.abs(dx), Math.abs(dy)) + 10, (X, Y) => {
-          c.strokeStyle = "rgba(255,60,110,0.35)"; c.lineWidth = 3; c.setLineDash([2, 6]);
-          c.beginPath(); c.moveTo(X, Y); c.lineTo(X + dx * s, Y + dy * s); c.stroke(); c.setLineDash([]);
-        });
-      }
-    }
+
     if (e.state === "stagger" || e.state === "collapse") {
       const gold = reduceMotion ? 0.85 : e.state === "collapse" ? 0.6 + 0.4 * Math.sin(t * 19) : 0.6 + 0.4 * Math.sin(t * 38);
       const R = Math.max(game.reachOf(e) - 6, 8) * s;
@@ -978,6 +971,7 @@ function drawFx(t, dt) {
   for (let i = rings.length - 1; i >= 0; i--) {
     const r = rings[i], age = (now - r.at) / r.dur;
     if (age > 1) { rings.splice(i, 1); continue; }
+    if (age < 0) continue;
     const rad = (r.r0 + (r.r1 - r.r0) * age) * s;
     wrapped(r.x, r.y, r.r1 + 2, (X, Y) => {
       c.strokeStyle = `rgba(${r.color},${1 - age})`; c.lineWidth = 3;
@@ -1118,7 +1112,7 @@ function easeBody(dt) {
 function drawPlayer(c, t, s) {
   const P = game.player;
   const fr = game.burstT > 0;
-  const flick = P.iframes > 0 && P.dashT <= 0 && game.state !== "grow" && Math.floor(t * 30) % 2 === 0;
+  const flick = P.iframes > 0 && P.dashT <= 0 && game.state === "play" && Math.floor(t * 30) % 2 === 0;
   const R = you.r * s * 1.3 * (1 + you.bulge);
   const ang = Math.atan2(P.dirY, P.dirX);
   const chomp = P.eating > 0.05 ? 0.15 + 0.5 * Math.abs(Math.sin(t * 16)) : 0.12 + 0.06 * Math.sin(t * 3);

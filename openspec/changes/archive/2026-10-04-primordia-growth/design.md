@@ -1,6 +1,6 @@
 # Design: Eat to Grow
 
-Spine: the Food Chain design (8 from each of the fun, feasibility and coherence judges). Grafts: Lab 1's two-phase zoom recipe, centred on the player with a camera roll; the outward molt wave and the red-to-cyan crossfade while bodies are still big; outgrow at half the bar; two Orbium per heavy hunter; a relay pair for Size IV; Lab 2's colour rules. Dropped: new Lenia species, tamed hunters on channel B, synchronised pincers, shells, foragers, spillers, agar floors, a boss on every size, a feast state, and size penalties on speed or hunger.
+Spine: the Food Chain design (8 from each of the fun, feasibility and coherence judges). Grafts: Lab 1's two-phase zoom recipe, centred on the player with a camera roll; the outward molt wave and the red-to-cyan crossfade while bodies are still big; outgrow at half the bar; two Orbium per heavy hunter; a relay pair for Size IV (replaced by the fast strike, see Departures); Lab 2's colour rules. Dropped: new Lenia species, tamed hunters on channel B, synchronised pincers, shells, foragers, spillers, agar floors, a boss on every size, a feast state, and size penalties on speed or hunger.
 
 Internal names stay: `epoch` is the size index in code, so every per-epoch ramp keeps working. Player-facing text says SIZE.
 
@@ -9,6 +9,12 @@ Anything marked **ASSUMPTION** was not measured by either lab. Section 10 lists 
 
 ## Departures from the workflow design (found while building)
 
+- **Fast strike, not a relay pair, in Size IV.** QA ran the relay gate (section 10, test 15): two 67-cell Heptapteryx chasing one player fused within 25-60 s (5 fusions in 21 relay attacks; an unpaired control fused 11 times in 23 attacks), and the partner rarely found a spawn spot at 44 cells on the opposite side. So the fallback ships: one common Heptapteryx at a time (cap 1) with the Leviathan's phase-3 timings (windup 14, lunge 2.0 x 10). The same fusion risk made the apex Leviathan wait until no Hexapteryx or common Heptapteryx is on the dish, and a queued boss holds the waves.
+- **Prey refill after the zoom waits 5 s.** QA measured 72-73% of converted Orbium alive 100 steps after resuming, because the prey spawner restocked an empty dish at once with prey 22 cells from the husks; holding the spawner gave 95.5%.
+- **Outgrown swarms cancel their own glide** before they flee (a Lenia glider never turns, so a swarm facing the player kept drifting in at the planned 0.22 cells/step).
+- **The Leviathan's ripe delay is 0.4 s of game time.** The Glory Bite's freeze and slow motion stretch it to about 1.3 s of real time.
+- **A due golden Orbium may go one over the prey target**, and its timer resets only when it is queued. QA found the 12 s valve after 60 s ran 13-14 s on a full dish.
+- **Fresh Remains are carried as prey**, with no FOOD label (they were never a hunter).
 - **No torus roll.** The old dish maps about its own centre (`x' = w/4 + x/2`), the fallback that section 10 lists. The torus makes this physics-identical, the picture at 2x is still exact, and the renderer needs no camera offset. The player keeps their spot in the old dish instead of moving to the grid centre; converted prey are still placed around the player, and the first wave of a new size still arrives outside the old dish.
 
 ---
@@ -232,7 +238,7 @@ The ladder only goes up. Each size's headline arc is the next arc up, and an arc
 | I | Paraptera lancer (advect), Discutium swarm (roll), Circium eggs (static). Waves PD 2 s, PDD 12 s, PEE 24 s (unchanged) | None. Stalk, lane, glint, lunge; swarms hit and run; eggs hatch in 8 s | Orbium, golden Orbium, Remains; swarms and eggs after the notch | Red, heartbeat 5.0 rad/s | None |
 | II | Pentapteryx (advect), Discutium, eggs. Waves QD 4 s, DDDEE 14 s, QQD 26 s. No Paraptera | **Double strike.** After a lunge it re-aims for 6 steps and at least 0.25 s with a fresh lane and glint, then lunges again. Both glints can be parried | Orbium, golden, Remains, plus Size I's Paraptera and swarms as Orbium | Red, heartbeat 5.8, hot core from 0.56 | None |
 | III | Hexapteryx (advect), Discutium, eggs. Waves HDD 4 s, DDEE 14 s, HD 26 s. No Pentapteryx | **Egg layer.** While it stalks, it lays a Circium egg behind its glide 4 s after it arrives, then every 7 s, with at most 2 of its eggs alive | Orbium, golden, Remains, Size II's Pentapteryx and swarms as Orbium | Red, heartbeat 6.6, hot core from 0.52 | Leviathan (Heptapteryx, three phases, unchanged) summoned by the full bar |
-| IV | Heptapteryx as a common heavy (advect; unit T, max 2), Discutium, eggs. Waves TT (pair) 4 s, DDEE 15 s, TTD (pair) 28 s. No Hexapteryx | **Relay pair.** Two arrive on opposite sides and share one attack token. When one's lunge ends, the other may wind up at once with no cooldown, from its own side. A thin red thread joins them | Orbium, golden, Size III's Hexapteryx (2 each), brood, and the Leviathan's three Remains | Red, heartbeat 7.4, hot core from 0.48 | None |
+| IV | Heptapteryx as a common heavy (advect; unit T, max 1), Discutium, eggs. Waves TD 4 s, DDEE 15 s, TDD 28 s. No Hexapteryx | **Fast strike** (shipped in place of the relay pair, see Departures). Windup 14 steps, lunge 2.0 x 10, the Leviathan's phase 3 timings | Orbium, golden, Size III's Hexapteryx (2 each), brood, and the Leviathan's three Remains | Red, heartbeat 7.4, hot core from 0.48 | None |
 | V and up | Heptapteryx with all three moves, Discutium, eggs; waves from the budget generator (650 + 130 x size, cap 1700) over T, D and E | Every move at once | Last size's hunters as Orbium | Red, heartbeat 8.2, hot core from 0.44 (capped) | Leviathan on VI, IX, XII |
 
 **Size V and up breaks the never-return rule for the top rung only.** No bigger arc has been shown to work inside the game yet. The follow-up change in the cut list (Octapteryx by roll) would remove this exception. The banner says it plainly: "SIZE V / Every hunter uses every move now."
@@ -291,7 +297,7 @@ Lab 2 (color.mjs, CIELAB delta E, normal / deutan / protan): hunter red vs Orbiu
 - Notch: popup "BIGGER" at the player; tip "You are bigger than the swarms now. Eat them."
 - Apex: "LEVIATHAN" / "Eat it to grow." (replaces "Heptapteryx approaches").
 - Cards: kicker "YOU GREW · SIZE II"; the first time, the line "The dish grew. Old hunters are food now."
-- Size start: "SIZE II" / "New hunter: Pentapteryx. It strikes twice." Then "Hexapteryx. It lays eggs." and "Heptapteryx. Two of them take turns." From V: "Every hunter uses every move now."
+- Size start: "SIZE II" / "New hunter: Pentapteryx. It strikes twice." Then "Hexapteryx. It lays eggs." and "Heptapteryx. It strikes fast." From V: "Every hunter uses every move now."
 - Converted prey: a FOOD ring and label for 2 s after play resumes, the first time each species converts in a run, reading "was Paraptera" and so on (the intro's ring-and-label callout, moved into game.js). Every converted Orbium also gets a thin white dashed ring for 3 s.
 
 **Sound** (audio.js):
@@ -349,11 +355,11 @@ Each step lands with its tests from section 10 green before the next starts.
 8. **core.js: moves.**
    - `endLunge()`: `(e.boss && e.phase === 2) || e.double` takes the reaim path.
    - `updateEggs()`: a per-unit `e.layer` branch with `nextEgg`, first at 4 s, every 7 s, at most 2 own eggs alive, the same offset and caps as the boss.
-   - Relay: `e.pair` id set by `spawnWave` for paired waves; `canLunge()` counts a pair as one token and blocks a twin while its partner winds up, lunges or re-aims; `endLunge()` hands the token to the partner and zeroes its cooldown.
+   - Relay (not shipped, see Departures): `e.pair` id set by `spawnWave` for paired waves; `canLunge()` counts a pair as one token and blocks a twin while its partner winds up, lunges or re-aims; `endLunge()` hands the token to the partner and zeroes its cooldown.
 9. **render.js.** `uView`, `uConvert`, `uTier`, the Exposed retint, the player glow in world uv. FlatRenderer: no zoom; it uses the reduced-motion fade and blends B colour toward A colour by the convert strength.
 10. **game.js.**
     - `cam` state and transforms in `sx`, `sy` and `wrapped()`; handlers for `growStart`, `zoomBegin` and `zoomFinish` (map fx arrays, puffs, motes, pops, callouts).
-    - GROW HUD in `updateHud()`; edible rings and the relay thread in `drawFx()`; player radius easing in `drawPlayer()`; `buildMarks()` sends no marks in grow.
+    - GROW HUD in `updateHud()`; edible rings in `drawFx()`; player radius easing in `drawPlayer()`; `buildMarks()` sends no marks in grow.
     - Cards kicker, banners and tips; SIZE on results and best size; disable pause during grow; index.html and CSS for the bar notch and the silhouette slot.
 11. **audio.js.** `growChime(step)`, `notch()`, `heartbeat(on)`, `growSwell()`, `growWhoosh()` with the low-pass opening, `pluck(i)`.
 12. **intro.js.** `hush()` sets `growHold` except in the GROW scene; the new scene; `noCards`; the end card text; the intro camera widening in that scene.
@@ -389,7 +395,7 @@ New file `qa/primordia/growth.test.mjs`, with the same `setup()`, `tick()` and `
 12. **Never return.** Run Sizes II to IV with the director, encores and loop waves on: no earlier arc species is ever stamped.
 13. **Double strike.** A lone Pentapteryx re-aims after a completed lunge and lunges again. A parry on the second glint staggers it. A body placed in the second lane cancels the re-aim.
 14. **Egg layer.** Over 40 s, a Hexapteryx lays its first egg at about 4 s, then every 7 s, never has more than 2 of its eggs alive, and each egg's tissue gap to the mother is at least 9.8 cells when laid.
-15. **Relay gate.** A 200-attack stress run of Heptapteryx pairs with swarms, in landscape and portrait: 0 fusions, 0 red tides, never two windups in one pair at once, at most one token per pair. If it fails, ship the 0.3 s gap, then the fallback in section 5.
+15. **Relay gate.** A 200-attack stress run of Heptapteryx pairs with swarms, in landscape and portrait: 0 fusions, 0 red tides, never two windups in one pair at once, at most one token per pair. If it fails, ship the 0.3 s gap, then the fallback in section 5. (It failed; test 15 now checks the fast strike, the cap of one over 90 s of Size IV waves, and the apex Leviathan waiting for a heavy arc to leave.)
 16. **Common Heptapteryx.** It uses tokens, pays 1500 points and drops 2 Remains. The boss still pays 2500 and drops 3.
 
 Changes to existing tests:
@@ -429,7 +435,7 @@ Changes to existing tests:
 | The ripe rule yields converted hunters without a long wait | Converted-per-zoom and ripe-wait rows |
 | Two husks from one point place cleanly | Growth test 8 with a lone Hexapteryx |
 | Hexapteryx egg gap is safe | Growth test 14 |
-| Relay pairs never fuse | Growth test 15, the gate for Size IV |
+| Relay pairs never fuse | Growth test 15, the gate for Size IV (failed: the fast strike ships) |
 | The torus roll reads well and the swap is pixel exact | Smoke screenshots at 0.15, 0.39 and 0.41; fallback: no roll, map about the dish centre (`x' = w/4 + x/2`), which the torus makes physics-identical |
 | The red-to-cyan molt wave reads as cause and effect, and the half-resolution 2x picture is not too soft | Screenshots and one human look; fallback: 70 ms white flash at the swap |
 | Loop waves keep pressure without crowding | Uncontested and cap rows |

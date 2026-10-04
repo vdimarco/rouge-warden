@@ -822,7 +822,8 @@ function survivalRun(seed, w, h, { zooms = 3, spawner = true } = {}) {
   const out = [];
   for (let z = 0; z < zooms; z++) {
     const t0 = g.time;
-    go(g, 60 * 60, () => dodger(g), () => g.time - t0 < 16);
+    let preBlooms = 0; // the base rate: blooms in plain play before the zoom
+    go(g, 60 * 60, () => dodger(g), (ev) => { preBlooms += ev.filter((v) => v.type === "bloom").length; return g.time - t0 < 16; });
     g.growHold = false;
     if (g.isApex()) g.apexCalled = true;
     const named = g.hunters.filter((e) => g.isNamed(e) && !e.egg).length;
@@ -858,7 +859,7 @@ function survivalRun(seed, w, h, { zooms = 3, spawner = true } = {}) {
     if (!spawner) g.preyCd = 0;
     const tracked = husks.filter((p) => g.prey.includes(p)).length;
     go(g, 60 * 30, () => dodger(g), (ev) => { watch(ev); return g.time - tR < 12; });
-    out.push({ seed, orient: orient(g), size: g.epoch - 1, named, wait, converted: zb.converted, placed: zf.at.length, husks: husks.length, gold, tracked, eaten100, eaten, massB, blooms, tides, early, stamps });
+    out.push({ seed, orient: orient(g), size: g.epoch - 1, named, wait, converted: zb.converted, placed: zf.at.length, husks: husks.length, gold, tracked, eaten100, eaten, massB, blooms, preBlooms, tides, early, stamps });
   }
   return out;
 }
@@ -881,13 +882,16 @@ test(9, "Converted Orbium live on in play", () => {
   }
   const dirty = runs.filter((r) => r.massB !== 0);
   if (dirty.length) fails.push(`hunter tissue left after the swap: ${dirty.map((r) => fx(r.massB, 1)).join(",")}`);
-  const blooms = runs.reduce((a, r) => a + r.blooms, 0), tides = runs.reduce((a, r) => a + r.tides, 0);
-  if (blooms || tides) fails.push(`${blooms} blooms and ${tides} red tides in the 12 s after`);
+  // a bloom is a normal event (a prey feast), so the zoom only must not make it more frequent than plain play
+  const blooms = runs.reduce((a, r) => a + r.blooms, 0), preBlooms = runs.reduce((a, r) => a + r.preBlooms, 0), tides = runs.reduce((a, r) => a + r.tides, 0);
+  const rate = (n, s) => n / (runs.length * s);
+  if (rate(blooms, 12) > rate(preBlooms, 16)) fails.push(`${blooms} blooms in ${runs.length} windows of 12 s after the zoom, ${preBlooms} in ${runs.length} windows of 16 s before`);
+  if (tides) fails.push(`${tides} red tides in the 12 s after`);
   const early = runs.flatMap((r) => r.early);
   if (early.length) fails.push(`in the 2 s after resuming: ${early.join(",")}`);
   assert.equal(fails.length, 0, "GAME BUG: " + fails.join("; "));
   const waits = runs.map((r) => r.wait);
-  return `${runs.length} zooms (3 seeds x 2 orientations x 3), ${total} converted: ${alive} tracked + ${eaten} eaten after 100 steps (${fx((100 * (alive + eaten)) / total, 1)}%; tracked alone ${fx((100 * alive) / total, 1)}%); median ${median(runs.map((r) => r.placed))} placed per zoom; ripe wait median ${fx(median(waits), 2)} s, max ${fx(Math.max(...waits), 2)} s; massB 0; 0 blooms, 0 tides`;
+  return `${runs.length} zooms (3 seeds x 2 orientations x 3), ${total} converted: ${alive} tracked + ${eaten} eaten after 100 steps (${fx((100 * (alive + eaten)) / total, 1)}%; tracked alone ${fx((100 * alive) / total, 1)}%); median ${median(runs.map((r) => r.placed))} placed per zoom; ripe wait median ${fx(median(waits), 2)} s, max ${fx(Math.max(...waits), 2)} s; massB 0; ${blooms} blooms in 12 s windows after (${preBlooms} in 16 s windows before), 0 tides`;
 });
 
 test(10, "Cost per phase", () => {
@@ -1136,114 +1140,78 @@ function kiter(g, S) {
   return { target: { x: P.x + wdelta(S.anchor.x - P.x, g.w), y: P.y + wdelta(S.anchor.y - P.y, g.h) } };
 }
 
-// Follow relay pairs: windups of a paired hunter whose mate is alive, hand-offs, fusions and pair rules.
-function relayWatch(g) {
-  const key = (e) => e.pair || e.duo; // duo: a test-only tag for two unpaired Heptapteryx (the control)
-  const r = { attacks: 0, handoffs: 0, twoWind: 0, overlap: 0, twoTok: 0, trios: 0, tides: 0, fused: 0, merged: [], otherDeaths: 0, firstFusion: null };
-  const origTrack = g.track.bind(g);
-  g.track = (kind) => {
-    if (kind !== "hunter") return origTrack(kind);
-    const before = new Map(g.hunters.map((e) => [e.id, e])), mark = g.events.length;
-    origTrack(kind);
-    for (const v of g.events.slice(mark)) {
-      if (v.type !== "selfDeath") continue;
-      const e = before.get(v.id), lab = e && e.maxI !== undefined && g.labelB ? g.labelB[e.maxI] : -1, into = lab >= 0 ? g.ownerOf[lab] : null;
-      const nm = (o) => (o ? `${o.species !== undefined ? NAME[o.species] : "brood"}${key(o) ? " (" + key(o) + ")" : ""}` : "?");
-      if (into) { r.merged.push(`${nm(e)} into ${nm(into)} at ${fx(g.time, 1)} s`); r.firstFusion = r.firstFusion ?? g.time; } else r.otherDeaths++;
-    }
-  };
-  const lastEnd = new Map();
-  r.frame = (ev) => {
-    for (const v of ev) {
-      if (v.type === "windup") {
-        const e = g.hunters.find((o) => o.id === v.id), mate = e && key(e) ? g.hunters.find((o) => o !== e && key(o) === key(e)) : null;
-        if (mate) { r.attacks++; const le = lastEnd.get(key(e)); if (le && le.id === mate.id && g.time - le.t < 0.6) r.handoffs++; }
-      }
-      if (v.type === "recover") { const e = g.hunters.find((o) => o.id === v.id); if (e && key(e)) lastEnd.set(key(e), { id: e.id, t: g.time }); }
-      if (v.type === "tide") r.tides++;
-      if (v.type === "rupture" && v.fused) { r.fused++; r.firstFusion = r.firstFusion ?? g.time; }
-    }
-    const groups = new Map();
-    for (const e of g.hunters) if (key(e)) { if (!groups.has(key(e))) groups.set(key(e), []); groups.get(key(e)).push(e); }
-    for (const m of groups.values()) {
-      if (m.filter((e) => e.state === "windup").length > 1) r.twoWind++;
-      if (m.filter((e) => ["windup", "lunge", "reaim"].includes(e.state)).length > 1) r.overlap++;
-      if (m.filter((e) => e.token).length > 1) r.twoTok++;
-      if (m.length > 2) r.trios++;
-    }
-  };
-  return r;
+// The common Heptapteryx tissue on the dish, plus ones on their way (the Leviathan does not count).
+function heptaCount(g) {
+  const T = (o) => o && o.species === SP.HEPTA && !o.boss;
+  return g.hunters.filter(T).length + g.pending.filter((p) => p.kind === "hunter" && T(p)).length + g.claims.filter((c) => c.kind === "hunter" && T(c.tags)).length;
 }
 
-// Pairs of Heptapteryx stamped on clear spots 62 cells either side of a kiting player, swarms kept on the
-// dish, Size IV, until 100 attacks or 150 s. paired: a relay pair; otherwise two unpaired Heptapteryx.
-function relayStress(w, h, paired) {
-  const g = setup(15, { w, h }); g.epoch = 4;
-  const P = g.player, S = {}, r = relayWatch(g), key = (e) => e.pair || e.duo;
-  let pairs = 0;
-  const t0 = g.time;
-  go(g, 150 * 60, () => {
-    const members = g.hunters.filter(key), coming = g.claims.some((c) => c.kind === "hunter" && (c.tags.pair || c.tags.duo));
-    if (!coming && members.length < 2) {
-      if (g.labelB) for (const e of members) g.wipe(g.world.B, g.labelB, e.blob); // a broken pair leaves
-      // the first clear pair of spots 62 cells either side of the player, along the dish's long axis first
-      const free = (q) => g.clearAt(q.x, q.y, SPECIES[SP.HEPTA].reach) && g.world.probe(g.world.B, q.x, q.y, SPECIES[SP.HEPTA].reach) < 0.5;
-      for (let k = 0; k < 16 && !members.length; k++) {
-        const a0 = (h > w ? Math.PI / 2 : 0) + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 8);
-        const a = { x: wrap(P.x + Math.cos(a0) * 62, w), y: wrap(P.y + Math.sin(a0) * 62, h) }, b = { x: wrap(P.x - Math.cos(a0) * 62, w), y: wrap(P.y - Math.sin(a0) * 62, h) };
-        if (g.dist(a.x, a.y, b.x, b.y) < 100 || !free(a) || !free(b)) continue; // on the torus, steep angles wrap the two spots together
-        pairs++;
-        const tag = paired ? { pair: `stress${pairs}:pair` } : { duo: `duo${pairs}` };
-        for (const q of [a, b]) g.stampHunter(SP.HEPTA, q.x, q.y, g.angleToward(SP.HEPTA, q.x, q.y), { ...tag, wave: "relay" });
-        break;
-      }
-    }
-    const swarm = g.hunters.filter((e) => e.species === SP.DISC).length + g.pending.filter((p) => p.species === SP.DISC).length;
-    if (swarm < 2 && g.capRoom(SP.DISC)) g.queueUnit(SP.DISC, { wave: "swarm" });
-    return kiter(g, S);
-  }, (ev) => { r.frame(ev); return r.attacks < 100; });
-  return { orient: orient(g), pairs, t: g.time - t0, ...r };
-}
-
-test(15, "Relay gate", () => {
-  const notes = [], fails = [];
-  // A: the director's own pair (Size IV wave 1, "TT"): do both Heptapteryx reach the dish?
+test(15, "Fast strike, one Heptapteryx at a time, the apex waits", () => {
+  const notes = [];
+  // A: a fast Heptapteryx winds up for 14 steps and lunges 2.0 x 10; a plain one keeps its species values
+  for (const fast of [true, false]) {
+    const g = setup(15); g.epoch = 4;
+    const P = g.player; P.x = 128; P.y = 64;
+    const e = spawn(g, SP.HEPTA, 128, 18, undefined, fast ? { fast: true } : {});
+    assert.equal(!!e.fast, fast, "setup: fast tag");
+    e.token = true; g.beginWindup(e);
+    const s0 = g.steps, sp = SPECIES[SP.HEPTA];
+    const want = fast ? { w: 14, v: 2.0, s: 10 } : { w: sp.windup, v: sp.lunge.v, s: sp.lunge.steps };
+    const lv = g.lungeOf(e);
+    assert.deepEqual({ w: e.windupTotal, v: lv.v, s: lv.steps }, want, `GAME BUG: ${fast ? "a fast" : "a plain"} Heptapteryx`);
+    let lunge = null;
+    go(g, 120, {}, (ev) => { if (ev.some((v) => v.type === "lunge" && v.id === e.id)) { lunge = g.steps - s0; return false; } });
+    assert.ok(lunge !== null, "setup: no lunge in 2 s");
+    assert.ok(Math.abs(lunge - want.w) <= 1, `GAME BUG: ${fast ? "a fast" : "a plain"} windup took ${lunge} steps, want ${want.w}`);
+    notes.push(`${fast ? "fast" : "plain"}: windup ${lunge} steps, lunge ${lv.v} x ${lv.steps}`);
+  }
+  // B: the director in Size IV, 90 s with its loop waves: every common Heptapteryx is fast, one at a time, no fusion
   for (const [w, h] of ROTS) {
     const g = new Game(w, h, 150 + w, { touch: h > w });
     g.reset("play"); g.epoch = 4; g.growHold = true;
-    g.qa = { immortal: true, holdEpoch: true };
-    const S = {};
-    let both = null, queued = 0, warned = 0;
-    go(g, 30 * 60, () => kiter(g, S), (ev) => {
-      warned += ev.filter((v) => v.type === "warn" && v.name === "Heptapteryx").length;
-      const on = g.hunters.filter((e) => e.pair).length + g.pending.filter((p) => p.tags && p.tags.pair).length + g.claims.filter((c) => c.kind === "hunter" && c.tags.pair).length;
-      queued = Math.max(queued, g.director.queue.filter((q) => q.tags && q.tags.pair).length);
-      if (on >= 2 && both === null) both = g.epochTime;
-      return g.epochTime < 29;
+    g.qa = { immortal: true, holdEpoch: false };
+    const S = {}, ids = new Set();
+    let most = 0, first = null, slow = 0, fastWind = 0, fused = 0, tides = 0;
+    go(g, 90 * 60, () => kiter(g, S), (ev) => {
+      most = Math.max(most, heptaCount(g));
+      for (const e of g.hunters) if (e.species === SP.HEPTA && !e.boss && !ids.has(e.id)) { ids.add(e.id); first = first ?? g.epochTime; if (!e.fast) slow++; }
+      for (const v of ev) {
+        if (v.type === "windup") { const e = g.hunters.find((o) => o.id === v.id); if (e && e.fast) fastWind++; }
+        if (v.type === "rupture" && v.fused) fused++;
+        if (v.type === "tide") tides++;
+      }
     });
-    notes.push(`${orient(g)} director pair: ${both === null ? `never both on the dish in 25 s (${warned} warned, ${queued} pair unit${queued === 1 ? "" : "s"} stuck in the queue)` : `both by ${fx(both, 1)} s`}`);
-    if (both === null) fails.push(`${orient(g)}: the second Heptapteryx of a relay pair never left the director queue in 25 s. spawnWave() gives the pair spots ${44} cells on opposite sides of the player (at most 88 cells apart), but clearAt() needs ${fx(2 * SPECIES[SP.HEPTA].reach + 4, 1)} cells between two Heptapteryx, so the partner's spot is never clear`);
+    const o = orient(g);
+    assert.ok(first !== null, `GAME BUG: ${o}: no common Heptapteryx reached the dish in 90 s`);
+    assert.ok(most <= G.heptaCap, `GAME BUG: ${o}: ${most} common Heptapteryx at once, cap ${G.heptaCap}`);
+    assert.equal(slow, 0, `GAME BUG: ${o}: ${slow} of ${ids.size} director Heptapteryx came without the fast strike`);
+    assert.equal(fused, 0, `GAME BUG: ${o}: ${fused} fused ruptures`);
+    assert.equal(tides, 0, `GAME BUG: ${o}: ${tides} red tides`);
+    notes.push(`${o}: ${ids.size} Heptapteryx in 90 s (first at ${fx(first, 1)} s), at most ${most} at once, ${fastWind} fast windups, 0 fusions`);
   }
-  // B: the relay rules under stress: pairs stamped directly (the director cannot field them, see A)
-  const runs = ROTS.map(([w, h]) => relayStress(w, h, true));
-  for (const r of runs) console.log(`       ${r.orient} stress: ${r.attacks} relay attacks (${r.handoffs} hand-offs) in ${fx(r.t, 0)} s from ${r.pairs} pairs; fused ruptures ${r.fused}, merges ${r.merged.length}, other deaths ${r.otherDeaths}, tides ${r.tides}; two windups ${r.twoWind}, overlaps ${r.overlap}, two tokens ${r.twoTok}`);
-  for (const r of runs) {
-    if (r.fused || r.merged.length) fails.push(`${r.orient}: ${r.fused} fused ruptures and ${r.merged.length} merges in ${r.attacks} relay attacks, the first at ${fx(r.firstFusion, 1)} s (${r.merged.slice(0, 2).join("; ")})`);
-    if (r.tides) fails.push(`${r.orient}: ${r.tides} red tides`);
-    if (r.twoWind || r.overlap) fails.push(`${r.orient}: a pair wound up together on ${r.twoWind} frames, attacked together on ${r.overlap}`);
-    if (r.twoTok || r.trios) fails.push(`${r.orient}: two tokens in a pair on ${r.twoTok} frames, three members on ${r.trios}`);
+  // C: Size III: a full bar with a common Hexapteryx out keeps the Leviathan in the queue until it leaves
+  {
+    const g = setup(15); g.growHold = false; g.epoch = 3;
+    const P = g.player; P.x = 128; P.y = 110;
+    const hexa = spawn(g, SP.HEXA, 40, 30); hexa.cool = Infinity;
+    assert.ok(g.heavyOut(), "setup: heavyOut with a Hexapteryx on the dish");
+    fill(g);
+    assert.equal(evs(g, "apex").length, 1, "no apex event");
+    g.events.length = 0;
+    let early = 0;
+    go(g, 3 * 60, {}, () => { if (g.hunters.some((e) => e.boss) || g.pending.some((p) => p.boss) || g.claims.some((c) => c.tags.boss)) early++; });
+    assert.equal(early, 0, "GAME BUG: the Leviathan left the queue while a Hexapteryx was on the dish");
+    assert.equal(g.director.queue.filter((q) => q.boss).length, 1, "the Leviathan is not waiting in the queue");
+    assert.ok(g.bossPresent(), "GAME BUG: a queued Leviathan does not count as present, so the dish could grow");
+    g.wipe(g.world.B, g.labelB, hexa.blob);
+    let tBoss = null;
+    const t0 = g.time;
+    go(g, 8 * 60, {}, () => { if (g.hunters.some((e) => e.boss)) { tBoss = g.time - t0; return false; } });
+    assert.ok(tBoss !== null, "GAME BUG: the Leviathan never came after the Hexapteryx left");
+    assert.equal(bossCount(g), 1, "bosses after the wait");
+    notes.push(`apex held 3 s behind a Hexapteryx, Leviathan on the dish ${fx(tBoss, 1)} s after it left`);
   }
-  const total = runs.reduce((a, r) => a + r.attacks, 0);
-  if (runs.some((r) => r.fused || r.merged.length)) {
-    // control: the same stress with two unpaired Heptapteryx (no relay rules)
-    const ctl = ROTS.map(([w, h]) => relayStress(w, h, false));
-    for (const r of ctl) console.log(`       ${r.orient} control, unpaired: ${r.attacks} attacks with both alive in ${fx(r.t, 0)} s from ${r.pairs} duos; fused ruptures ${r.fused}, merges ${r.merged.length}, tides ${r.tides}`);
-    const cf = ctl.reduce((a, r) => a + r.fused + r.merged.length, 0);
-    fails.push(`control with two unpaired Heptapteryx (no relay rules): ${cf} fusions in ${ctl.reduce((a, r) => a + r.attacks, 0)} attacks${cf ? ", so the fusions come from two Heptapteryx hunting one player (the cap allows 2), not from the hand-off" : ""}`);
-  }
-  assert.equal(fails.length, 0, "GAME BUG: " + fails.join("; ") + `; ${total} relay attacks in all, gate needs 200 with 0 fusions`);
-  assert.ok(total >= 200, `setup: only ${total} relay attacks in ${fx(runs.reduce((a, r) => a + r.t, 0), 0)} s`);
-  return `${notes.join("; ")}; stress ${total} relay attacks, 0 fusions, 0 tides`;
+  return notes.join("; ");
 });
 
 test(16, "Common Heptapteryx and the Leviathan", () => {
@@ -1281,17 +1249,17 @@ test(16, "Common Heptapteryx and the Leviathan", () => {
     assert.equal(drops, want.n, `GAME BUG: ${boss ? "the Leviathan" : "a common Heptapteryx"} dropped ${drops} Remains`);
     notes.push(`${boss ? "Leviathan" : "common"}: ${dev.points} at x${dev.mult} (${dev.points / dev.mult} each), ${drops} Remains (${tracked} tracked 1.5 s later)`);
   }
-  // D: at most 2 common Heptapteryx, counting ones on their way; the Leviathan does not count
+  // D: at most 1 common Heptapteryx, counting ones on their way; the Leviathan does not count
   {
     const g = setup(16); g.epoch = 4;
     const T = (boss) => ({ kind: "hunter", species: SP.HEPTA, x: 0, y: 0, t: 99, total: 99, name: "Heptapteryx", boss, tags: {} });
     const room = [];
-    g.pending.push(T(false)); room.push(g.capRoom(SP.HEPTA));
+    room.push(g.capRoom(SP.HEPTA));
     g.pending.push(T(true)); room.push(g.capRoom(SP.HEPTA));
     g.claims.push({ kind: "hunter", x: 0, y: 0, at: g.time, tags: { species: SP.HEPTA, name: "Heptapteryx" } }); room.push(g.capRoom(SP.HEPTA));
-    assert.deepEqual(room, [true, true, false], "Heptapteryx room with 1 common, 1 common + boss, 2 common");
+    assert.deepEqual(room, [true, true, false], "Heptapteryx room with none, a boss only, 1 common on its way");
     assert.ok(g.capRoom(SP.DISC), "the Heptapteryx cap blocked a Discutium");
-    notes.push("cap: 2 common Heptapteryx (boss not counted)");
+    notes.push(`cap: ${G.heptaCap} common Heptapteryx (boss not counted)`);
   }
   return notes.join("; ");
 });

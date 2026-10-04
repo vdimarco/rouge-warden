@@ -326,9 +326,10 @@ export class FlatRenderer {
   upload(world) {
     const { w, h, A, B, N } = world;
     if (this.off.width !== w || this.off.height !== h) { this.off.width = w; this.off.height = h; this.img = this.octx.createImageData(w, h); }
-    const d = this.img.data;
+    const d = this.img.data, cv = this.convert ? 1 : 0;
     for (let i = 0, j = 0; i < w * h; i++, j += 4) {
-      const a = A[i], b = B[i], n = N[i];
+      // the molt wave: hunter tissue takes the prey colours (the flat path turns all of it at once)
+      const a = A[i] + B[i] * cv, b = B[i] * (1 - cv), n = N[i];
       d[j] = Math.min(255, 12 + b * 255 + a * 60);
       d[j + 1] = Math.min(255, 8 + n * 14 + a * 230 + b * 40);
       d[j + 2] = Math.min(255, 18 + n * 18 + a * 220 + b * 110);
@@ -338,6 +339,7 @@ export class FlatRenderer {
   }
   draw(rect, view, mix, time, fx) {
     // Stasis: grey the dish and tint it violet. The two opposite hue turns move only the sepia tint.
+    this.convert = !!(fx && fx.convert && fx.convert.s > 0);
     const s = Math.round(Math.min(1, Math.max(0, (fx && fx.stasis) || 0)) * 50) / 50;
     const filter = s > 0 ? `saturate(${1 - 0.6 * s}) hue-rotate(-210deg) sepia(${0.25 * s}) hue-rotate(210deg)` : "";
     if (filter !== this.filter) { this.filter = filter; this.canvas.style.filter = filter; }

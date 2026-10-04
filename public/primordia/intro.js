@@ -316,9 +316,10 @@ export const SCENES = [
     min: 6, max: 14, after: 1.0,
     setup(s) {
       const g = s.g;
-      cleanDish(g, 104, 66);
-      addPrey(g, 136, 60, 3.6);
-      g.stampHunter(SP.PARA, 176, 40, g.angleToward(SP.PARA, 176, 40));
+      cleanDish(g, 104, 62);
+      addPrey(g, 122, 86, 3.6);
+      // close enough to the centre to stay on a portrait phone, outside the 26-cell lunge range
+      g.stampHunter(SP.PARA, 150, 44, g.angleToward(SP.PARA, 150, 44));
       settle(g);
       s.v.h = named(g);
       if (s.v.h) s.v.h.cool = Infinity;
