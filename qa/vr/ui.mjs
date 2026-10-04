@@ -446,27 +446,34 @@ try {
   const subd = await page.evaluate(() => ({ sub: document.querySelector("[data-k=sub]").textContent, on: document.querySelector("[data-k=sub]").classList.contains("on"), toast: document.querySelector("[data-k=toast]").textContent }));
   check(subd.sub === "Aim high." && subd.on && subd.toast === "+5", "subtitles and toasts show in the page", subd);
   await shot(page, "ui-desktop-hud");
-  // sayLine reads the words for the input kind: the mouse and a gamepad the desktop lines, a phone the phone lines, hands their own
+  // sayLine reads the words for the input kind: the mouse the desktop lines, a gamepad the pad lines, a phone the phone lines, hands their own
   const kinds = await page.evaluate(async () => {
     const C = await import("./js/config.js");
     const say = (k) => G.ui.sayLine("tutorial", 3, k);
-    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantTouch: C.LINES_PHONE && C.LINES_PHONE.tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
+    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantPad: C.LINES_PAD && C.LINES_PAD.tutorial[3], wantTouch: C.LINES_PHONE && C.LINES_PHONE.tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
   });
-  check(kinds.mouse === kinds.want && kinds.pad === kinds.want && kinds.touch === kinds.wantTouch && kinds.hand === kinds.wantHand && kinds.controller === kinds.wantController, "sayLine picks the lines by input kind: mouse and pad read the desktop lines, touch the touch lines", kinds);
-  // config.js has the phone lines: the same keys, order and counts as the desktop lines, other words, and no em dashes
-  const touch = await page.evaluate(async () => {
-    const C = await import("./js/config.js"), T = C.LINES_PHONE, D = C.LINES_DESKTOP;
-    if (!T) return null;
-    const keys = Object.keys(D);
-    return {
+  check(kinds.mouse === kinds.want && kinds.pad === kinds.wantPad && kinds.pad !== kinds.want && kinds.touch === kinds.wantTouch && kinds.hand === kinds.wantHand && kinds.controller === kinds.wantController, "sayLine picks the lines by input kind: the mouse reads the desktop lines, a pad the pad lines, touch the touch lines", kinds);
+  // config.js has the phone lines and the pad lines: the same keys, order and counts as the desktop lines (with the wall group), other
+  // words, and no em dashes. The phone lines name no mouse, key, trigger, pinch or grip. The pad lines name no Shift, F, mouse button, RT or A.
+  const tables = await page.evaluate(async () => {
+    const C = await import("./js/config.js"), D = C.LINES_DESKTOP, keys = Object.keys(D);
+    const look = (T, bad) => !T ? null : {
       keys: Object.keys(T).join() === keys.join(),
       counts: keys.every((k) => Array.isArray(T[k]) && T[k].length === D[k].length),
       own: ["intro", "tutorial"].every((k) => T[k].some((l, i) => l !== D[k][i])),
-      mouseWords: [].concat(...Object.values(T)).filter((l) => /mouse|shift|press f|\bkey\b|trigger|pinch|grip/i.test(l)),
+      wall: Array.isArray(T.wall) && T.wall.length === 1 && T.wall[0].length > 10,
+      badWords: [].concat(...Object.values(T)).filter((l) => bad.test(l)),
       dash: [].concat(...Object.values(T)).filter((l) => /[–—]/.test(l)),
     };
+    return {
+      touch: look(C.LINES_PHONE, /mouse|shift|press f|\bkey\b|trigger|pinch|grip/i),
+      pad: look(C.LINES_PAD, /shift|press f\b|mouse|\bRT\b|\bLT\b|press a\b|\bR2\b|\bL2\b/i),
+      desk: look(D, /^$/), lineKeys: keys,
+    };
   });
-  check(touch && touch.keys && touch.counts && touch.own && touch.mouseWords.length === 0 && touch.dash.length === 0, "config.js has LINES_PHONE: the keys and order of LINES_DESKTOP, its own words for the phone, no mouse or em dash", touch);
+  const T = tables.touch, Pd = tables.pad;
+  check(T && T.keys && T.counts && T.own && T.wall && T.badWords.length === 0 && T.dash.length === 0, "config.js has LINES_PHONE: the keys and order of LINES_DESKTOP (with wall), its own words for the phone, no mouse or em dash", T);
+  check(Pd && Pd.keys && Pd.counts && Pd.own && Pd.wall && Pd.badWords.length === 0 && Pd.dash.length === 0 && tables.desk.dash.length === 0 && tables.lineKeys.includes("wall"), "config.js has LINES_PAD: the same keys, counts and wall group, its own words (right trigger, bumpers, sticks), no Shift, F or em dash", Pd);
   // Esc opens the menu (the game's own key), and the menu has the options
   await page.keyboard.press("Escape");
   await page.evaluate(() => G.test.step(1 / 60, 2));
@@ -475,7 +482,15 @@ try {
   await shot(page, "ui-desktop-menu");
   await page.click("#fsMenu button[data-id=comfort]");
   dm = await page.evaluate(() => ({ ids: [...document.querySelectorAll("#fsMenu button[data-id]")].map((b) => b.dataset.id), panel: G.test.ui().panel }));
+  dm.text = await page.evaluate(() => document.querySelector("#fsMenu").textContent);
   check(dm.panel === "comfort" && dm.ids.includes("aim:high") && dm.ids.includes("preset:intense") && !dm.ids.includes("vignette:high"), "Comfort shows the options that make sense on a flat screen (aim assist, the headset preset)", dm);
+  check(/Rope trigger/.test(dm.text) && /Release cue/.test(dm.text) && ["hold:hold", "hold:toggle", "cue:on", "cue:off"].every((i) => dm.ids.includes(i)), "the flat Comfort page shows the Rope trigger and Release cue rows", dm.ids);
+  await page.click("#fsMenu button[data-id='cue:off']");
+  await page.click("#fsMenu button[data-id='hold:toggle']");
+  const rows = await page.evaluate(() => ({ cue: G.settings.cue, hold: G.settings.hold, savedCue: JSON.parse(localStorage.getItem("plungerd.vr.v1")).settings.cue, pressed: document.querySelector("#fsMenu button[data-id='cue:off']").getAttribute("aria-pressed") }));
+  check(rows.cue === false && rows.hold === "toggle" && rows.savedCue === false && rows.pressed === "true", "the Release cue and Rope trigger rows change their settings and save them", rows);
+  await page.click("#fsMenu button[data-id='cue:on']");
+  await page.click("#fsMenu button[data-id='hold:hold']");
   await page.click("#fsMenu button[data-id='aim:low']");
   const aim = await page.evaluate(() => ({ aim: G.settings.aim, saved: JSON.parse(localStorage.getItem("plungerd.vr.v1")).settings.aim, pressed: document.querySelector("#fsMenu button[data-id='aim:low']").getAttribute("aria-pressed") }));
   // flat play borrows the desktop preset for the session: the save keeps the headset's own fields (medium aim assist)

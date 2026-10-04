@@ -43,6 +43,7 @@ function setup(seed = 1, { w = 256, h = 128, touch = false, clean = true } = {})
   const g = new Game(w, h, seed, { touch });
   g.reset("play");
   g.qa = { immortal: true, holdEpoch: clean };
+  g.growHold = true; // these rules run inside one size; growth.test.mjs covers growing
   if (clean) {
     g.world.clear();
     g.prey.length = 0; g.hunters.length = 0; g.claims.length = 0; g.pending.length = 0;
@@ -730,6 +731,7 @@ test(20, "Persistence", () => {
     const g = new Game(256, 128, seed);
     g.reset("play"); g.epoch = 4;
     g.qa = { immortal: true, holdEpoch: false };
+    g.growHold = true;
     const first = [];
     let purge = false, tides = 0;
     const s0 = g.steps;
@@ -955,6 +957,7 @@ test(27, "Wave table", () => {
   const g = new Game(256, 128, 27);
   g.reset("play");
   g.qa = { immortal: true, holdEpoch: false };
+  g.growHold = true;
   const P = g.player, caps = capsWatch(g, TUNE.caps.desktop), waves = [], warns = [], cleared = [], falseClear = [];
   while (g.epochTime < 39.5 && g.state === "play") {
     tick(g, {});
@@ -987,6 +990,7 @@ test(28, "Portrait caps", () => {
   const g = new Game(128, 256, 28, { touch: true });
   g.reset("play"); g.epoch = 5;
   g.qa = { immortal: true, holdEpoch: false };
+  g.growHold = true;
   assert.ok(g.compact);
   const caps = capsWatch(g, TUNE.caps.compact);
   // a dodging player keeps the spawn arc behind it moving, so the waves land

@@ -1,5 +1,5 @@
 // Moonwell: checks of the endless world. node qa/moonwell/world.test.mjs
-import { createWorld, ensure, trim, station, lastIndex, REGION, BALL_R as R, isShrine } from '../../public/moonwell/world.js';
+import { createWorld, ensure, trim, station, lastIndex, REGION, KEEP, BALL_R as R, isShrine } from '../../public/moonwell/world.js';
 import { surfaceY } from '../../public/moonwell/run.js';
 import { test, assert, report } from './check.mjs';
 
@@ -18,18 +18,23 @@ test('another seed gives other islands', () => {
   assert(same === 0, `${same} islands are the same`);
 });
 
-test('the level goes on: 1,000 islands, joined up, with the old ones dropped', () => {
+test('the level goes on: 1,000 islands, joined up, with the ones far behind dropped and walled off', () => {
   const w = createWorld(5);
   let prev = null, maxLen = 0;
   for (let k = 0; k < 1000; k++) {
     ensure(w, k + 3);
     trim(w, k);
     maxLen = Math.max(maxLen, w.list.length);
+    assert(w.first === Math.max(0, k - KEEP) && w.list[0].gate, `island ${k + 1}: the world does not keep ${KEEP} islands behind with a wall`);
     const s = station(w, k);
     assert(s, `island ${k + 1} missing`);
     for (const v of [s.x0, s.y0, s.cx, s.fy, s.x1, s.y1, s.P]) assert(Number.isFinite(v), `island ${k + 1} has a bad number`);
     assert(s.x0 < s.cx - s.P && s.cx + s.P < s.x1, `island ${k + 1}: the bowl does not fit between its ridges`);
-    assert(s.fy >= -200 && s.fy <= 200, `island ${k + 1}: floor ${s.fy} out of range`);
+    if (prev) {
+      const step = s.fy - prev.fy;
+      assert(step >= 40 && step <= 140, `island ${k + 1}: the floor steps ${step | 0}, not 40 to 140 down`);
+      assert(s.fy - s.y0 >= prev.fy - prev.y1 + 40, `island ${k + 1}: the ridge behind is not taller than the ridge ahead was`);
+    }
     assert(s.fy - s.y0 >= 139 && s.fy - s.y1 >= 199, `island ${k + 1}: a ridge is too low`);
     if (prev) {
       assert(prev.x1 === s.x0 && prev.y1 === s.y0, `island ${k + 1} does not join the one before`);
@@ -38,7 +43,7 @@ test('the level goes on: 1,000 islands, joined up, with the old ones dropped', (
     }
     prev = s;
   }
-  assert(maxLen <= 12, `the world kept ${maxLen} islands at once`);
+  assert(maxLen <= KEEP + 8, `the world kept ${maxLen} islands at once`);
 });
 
 test('every eighth island is a sealed shrine with a moonwell', () => {

@@ -19,7 +19,12 @@ const boxes = () => page.evaluate(() => {
   const hit = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   const buttons = [...document.querySelectorAll('.phone-top button')].map(r), pills = [...document.querySelectorAll('.fs-top .fs-pill')].filter((e) => !e.hidden).map(r);
   const sub = r(document.querySelector('.fs-sub')), bottom = r(document.querySelector('.phone-bottom'));
-  return { top: buttons.some((a) => pills.some((b) => hit(a, b))), sub: hit(sub, bottom), wide: document.documentElement.scrollWidth > innerWidth };
+  // the hero on the screen, from the head down to the feet
+  G.camera.updateMatrixWorld(true);
+  const px = (v) => { const p = v.clone().project(G.camera); return { x: ((p.x + 1) / 2) * innerWidth, y: ((1 - p.y) / 2) * innerHeight }; };
+  const hd = px(G.hero.head), ft = px(G.hero.head.clone().setY(G.P.pos.y));
+  const hero = { l: Math.min(hd.x, ft.x) - 30, r: Math.max(hd.x, ft.x) + 30, t: hd.y - 20, b: ft.y };
+  return { top: buttons.some((a) => pills.some((b) => hit(a, b))), sub: hit(sub, bottom) || buttons.some((a) => hit(sub, a)) || pills.some((a) => hit(sub, a)), hero: G.flatcam.opacity > 0.5 && hit(sub, hero), wide: document.documentElement.scrollWidth > innerWidth };
 });
 try {
   await open(page, '?nosw'); await page.waitForFunction(() => G.viewDone);
@@ -102,20 +107,21 @@ try {
   assert(words.every((w) => w && !/mouse|Shift|Press F|trigger/i.test(w)), 'phone tutorial lines: ' + JSON.stringify(words));
   console.log('PASS the phone tutorial says tap, not mouse or keys');
 
-  // The layout: the top buttons never cover the score pills, and a spoken line never sits under the SWING panel.
+  // The layout: the top buttons never cover the score pills, and a spoken line never sits under the SWING panel, the top
+  // buttons or the pills, nor over the hero.
   await page.evaluate(() => { G.ui.say('Tap the next building while you fly.', 6); G.test.step(1 / 60, 2); });
   let b = await boxes();
-  assert(!b.top && !b.sub && !b.wide, 'portrait layout: ' + JSON.stringify(b));
+  assert(!b.top && !b.sub && !b.hero && !b.wide, 'portrait layout: ' + JSON.stringify(b));
   await page.screenshot({ path: out + '/phone-swing.png' });
   await page.setViewportSize({ width: 844, height: 390 }); await page.evaluate(() => G.test.step(1 / 60, 2));
   b = await boxes();
-  assert(!b.top && !b.sub && !b.wide, 'landscape layout: ' + JSON.stringify(b));
+  assert(!b.top && !b.sub && !b.hero && !b.wide, 'landscape layout: ' + JSON.stringify(b));
   await page.screenshot({ path: out + '/phone-swing-landscape.png' });
   // a narrow phone (360 px): the top buttons stay on one row inside the screen
   await page.setViewportSize({ width: 360, height: 780 }); await page.evaluate(() => G.test.step(1 / 60, 2));
   const row = await page.evaluate(() => { const bs = [...document.querySelectorAll('.phone-top button')].map((b) => b.getBoundingClientRect()); return { tall: Math.max(...bs.map((r) => r.height)), left: Math.min(...bs.map((r) => r.left)), right: Math.max(...bs.map((r) => r.right)), w: innerWidth }; });
   b = await boxes();
   assert(row.tall <= 46 && row.left >= 0 && row.right <= row.w && !b.top && !b.wide, '360 px: one row of top buttons inside the screen: ' + JSON.stringify(row));
-  console.log('PASS portrait, landscape and a 360 px phone: the phone buttons cover neither the score nor the spoken lines');
+  console.log('PASS portrait, landscape and a 360 px phone: the phone buttons cover neither the score nor the spoken lines, and the lines keep off the hero');
   assert.equal(page.errors.length, 0, JSON.stringify(page.errors)); console.log('PASS no runtime errors');
 } finally { await close(); }

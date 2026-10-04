@@ -1,5 +1,8 @@
 # Olympus arena view
 
+## Purpose
+The Olympus arena opens in an isometric view. The player can switch to a top-down view on the title or pause screen, and the game remembers that choice. In both views, the hero moves at the same pace in every direction, and each sprite casts a floor shadow in its own shape.
+
 ## Requirements
 
 ### Requirement: Saved camera choice

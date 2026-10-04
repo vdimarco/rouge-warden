@@ -114,6 +114,7 @@ button { font: inherit; color: inherit; }
 .cab.tilt { --c1: #66328c; --c2: #f5a6e5; --glow: rgba(245, 166, 229, 0.45); }
 .cab.rules { --c1: #93632e; --c2: #ffd56b; --glow: rgba(255, 213, 107, 0.45); }
 .cab.follow-suit { --c1: #1f4b40; --c2: #e9c46a; --glow: rgba(233, 196, 106, 0.45); }
+.cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
@@ -479,6 +480,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: a whitewater treasure race">
+      <div class="marquee"><div><b>RIVER RUSH</b><small>THE GOLDEN KEY RUN</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/river-rush.webp" alt="A jungle raft racing through turquoise rapids toward a golden key" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">CLAIM THE TREASURE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -576,7 +587,7 @@ const cabs = $$(".cab");
 const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia"] },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];
@@ -1178,12 +1189,16 @@ try {
   const best = store.get("follow-suit:best-chain", 0);
   if (Number.isFinite(best) && best > 0) $(".hi", $('.cab[data-game="follow-suit"]')).textContent = "BEST CHAIN " + Math.round(best).toLocaleString();
 } catch (e) { /* a save that cannot be read leaves the plain line */ }
+// River Rush shares its browser-local winning score with its cabinet.
+try {
+  const best = store.get("river-rush-best", null);
+  if (best && Number.isFinite(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
+} catch (e) { /* a broken save leaves the plain line */ }
 drawTokens();
 cabs.forEach(showCredit);
 pick(1, true);
 </script>
 </body>
 </html>
-
 
 

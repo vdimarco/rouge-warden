@@ -89,6 +89,7 @@ export function createAudio() {
     nudge: () => hiss(0.2, { gain: 0.08, freq: 900, to: 300 }),
     clutch: () => { tone(988, 0.15, { type: 'square', gain: 0.05, cutoff: 4000 }); tone(1480, 0.2, { type: 'triangle', gain: 0.08, when: 0.05 }); },
     click: () => tone(880, 0.05, { type: 'triangle', gain: 0.05 }),
+    back: ({ up = false }) => { tone(up ? 523 : 659, 0.25, { type: 'triangle', gain: 0.07 }); tone(up ? 659 : 523, 0.3, { type: 'triangle', gain: 0.06, when: 0.08 }); },
   };
 
   // music: a lookahead scheduler, eighth notes at 92 bpm

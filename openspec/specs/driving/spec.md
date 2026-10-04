@@ -1,5 +1,10 @@
 # Crimson Rouge driving
 
+## Purpose
+Every vehicle in Crimson Rogue grips well on dry ground and stops in a short distance. The wheels straighten as soon as the player lets go of the steering. On the tour, Gabe drives his jeep to Schnebly Vista with the player as a passenger.
+
+## Requirements
+
 ### Requirement: Forgiving vehicle handling
 All drivable vehicle kinds SHALL provide stronger dry-surface cornering and braking, retain reduced water traction, and recenter steering promptly on release. Existing keyboard, touch and gamepad bindings SHALL remain available on desktop and phone layouts. Reverse, handbrake, collision damage and top-speed limits SHALL remain functional.
 

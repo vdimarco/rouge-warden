@@ -6,7 +6,7 @@ import * as THREE from "three";
 import * as CONFIG from "./config.js";
 import { PAL } from "./comic.js";
 
-const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PHONE, SWING } = CONFIG;
+const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PAD, LINES_PHONE, SWING } = CONFIG;
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -347,8 +347,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   function sayLine(group, i, kind) {
     const k = kind || (inp && inp.kind) || "controller";
-    // the phone (kind "touch", or main's easySwing input) reads the phone lines; a gamepad and the mouse read the desktop lines
-    const table = k === "hand" ? LINES_HANDS : k === "touch" || (inp && inp.easySwing) ? LINES_PHONE : k === "mouse" || k === "desktop" || k === "pad" ? LINES_DESKTOP : LINES;
+    // hands, then the phone (kind "touch", or main's easySwing input), then the mouse, then a game pad, then the controllers
+    const table = k === "hand" ? LINES_HANDS : k === "touch" || (inp && inp.easySwing) ? LINES_PHONE : k === "mouse" || k === "desktop" ? LINES_DESKTOP : k === "pad" ? LINES_PAD : LINES;
     const line = table[group] && table[group][i];
     if (line) say(line, 6);
     return line || null;
@@ -414,6 +414,11 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         rows.push(seg("turn", "Turning", [["30", "Snap 30"], ["45", "Snap 45"], ["90", "Snap 90"], ["smooth", "Smooth"]], TURN_VALUE(settings)));
       }
       rows.push(seg("aim", "Aim assist", [["low", "Low"], ["med", "Medium"], ["high", "High"]], settings.aim));
+      // a mouse and a pad hold the swing input to keep a rope, and the cue says when to let go. The phone lets go by itself: no rows
+      if (desk && !(inp && inp.easySwing)) {
+        rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
+        rows.push(seg("cue", "Release cue", [["on", "On"], ["off", "Off"]], settings.cue === false ? "off" : "on"));
+      }
       if (!desk) {
         rows.push(seg("hand", "Dominant hand", [["left", "Left"], ["right", "Right"]], settings.hand));
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
@@ -851,6 +856,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "aim": if (v in SWING.aimCone) settings.aim = v; break;
       case "hand": if (v === "left" || v === "right") { settings.hand = v; hud.init = false; } break;
       case "hold": if (v === "hold" || v === "toggle") settings.hold = v; break;
+      case "cue": if (v === "on" || v === "off") settings.cue = v === "on"; break;
       case "hz": settings.hz = +v === 90 ? 90 : 72; if (xr && xr.setFrameRate) Promise.resolve(xr.setFrameRate(settings.hz)).catch(() => {}); break;
       case "seated": {
         settings.seated = v === "on";
@@ -1213,12 +1219,12 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
 .fs-flash.gold{box-shadow:inset 0 0 140px 50px rgba(255,200,70,.85)}
 @media (prefers-reduced-motion:reduce){.fs-flash{display:none}}
-.fs-sub,.fs-toast{position:absolute;left:50%;margin:0;max-width:min(880px,90vw);text-align:center;opacity:0;transition:opacity .25s;text-transform:uppercase}
-.fs-sub{bottom:calc(12vh + 6px);transform:translateX(-50%) rotate(-0.5deg);padding:10px 28px 6px;font:400 clamp(24px,2.9vw,36px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.05em;color:var(--ink,#140a18);background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:30px}
+.fs-sub,.fs-toast{position:absolute;left:0;right:0;margin:0 auto;width:fit-content;max-width:min(880px,90vw);text-align:center;opacity:0;transition:opacity .25s;text-transform:uppercase}
+.fs-sub{top:var(--fs-sub-top,78px);transform:rotate(-0.5deg);padding:10px 28px 6px;font:400 clamp(24px,2.9vw,36px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.05em;color:var(--ink,#140a18);background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:30px}
 .fs-sub::before,.fs-sub::after{content:"";position:absolute;border-style:solid;border-color:transparent;border-bottom-width:0}
 .fs-sub::before{left:20%;bottom:-27px;border-width:27px 4px 0 24px;border-top-color:var(--ink,#140a18);border-right-color:transparent}
 .fs-sub::after{left:calc(20% + 4px);bottom:-19px;border-width:22px 2px 0 17px;border-top-color:#fffdf5}
-.fs-toast{bottom:calc(12vh + 96px);transform:translateX(-50%) rotate(1deg);padding:6px 22px 3px;font:400 clamp(20px,2.3vw,28px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;color:var(--ink,#140a18);background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:5px 5px 0 var(--ink,#140a18)}
+.fs-toast{top:var(--fs-toast-top,78px);transform:rotate(1deg);padding:6px 22px 3px;font:400 clamp(20px,2.3vw,28px)/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;color:var(--ink,#140a18);background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:5px 5px 0 var(--ink,#140a18)}
 .fs-sub.on,.fs-toast.on{opacity:1}
 dialog.fs-menu{width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 28px);padding:20px 24px 20px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);color:var(--ink,#140a18);box-shadow:10px 10px 0 var(--ink,#140a18);overflow:auto;font:600 19px/1.3 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);color-scheme:light}
 dialog.fs-menu::before{content:"";position:absolute;right:0;top:0;width:46%;height:150px;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);pointer-events:none}
@@ -1254,7 +1260,7 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 @media (max-aspect-ratio:1/1){.fs-map{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}.fs-map-side{max-height:38dvh}.fs-map h2{font-size:24px}}
 .fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
-@media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{bottom:calc(9vh + 6px);font-size:22px}.fs-toast{bottom:calc(9vh + 84px)}
+@media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
 @media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}.fs-menu .btn,.fs-map .btn{transition:none}}`;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -1491,6 +1497,17 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     if (sub.a > 0.02 && k.sub.textContent !== sub.text) k.sub.textContent = sub.text;
     k.toast.classList.toggle("on", toast.a > 0.02);
     if (toast.a > 0.02 && k.toast.textContent !== toast.text) k.toast.textContent = toast.text;
+    // the line and the toast sit under the score row, which wraps onto two rows on a narrow phone: place them from its real
+    // bottom (the toast under the line while one shows), a few times a second, so they never cover the pills or the hero
+    const subOn = sub.a > 0.02;
+    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.lay = 0; } // at once on a new line or a new screen size
+    if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
+      dh.lay = 0.1;
+      const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);
+      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
+      if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
+      if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }
+    }
     if (map.on) { map.root.updateMatrixWorld(true); tipPlace(); }
   }
 

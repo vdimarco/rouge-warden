@@ -1,0 +1,13 @@
+{
+  "menu-loop.mp4": {
+    "provider": "Higgsfield",
+    "model": "Seedance 2.5",
+    "jobId": "3f0e79a5-7404-4416-8cb1-f4bac2711326",
+    "date": "2026-10-04",
+    "reference": "Approved menu.png, matching start and end images",
+    "sourceResolution": "1920x1080",
+    "sourceDurationSeconds": 5.041667,
+    "productionEncoding": "1920x1080, 24fps, H.264 CRF21, silent, faststart",
+    "direction": "Locked camera; flowing rapids and waterfall, wind in flags, foliage and long hair, gentle raft and body motion. Preserve approved face, modest loincloth and composition; no generated text."
+  }
+}

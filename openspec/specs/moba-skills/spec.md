@@ -1,4 +1,10 @@
 # Monster Mash learned skills and thumb controls
+
+## Purpose
+Each hero in Shore of the Ancients has four spells on thumb buttons, with the ultimate in the bottom-right corner. Every level gives the hero one skill point to learn a spell or raise its rank. Players spend points in the spellbook or on the HUD.
+
+## Requirements
+
 ### Requirement: Four-button thumb fan
 The HUD SHALL anchor the ultimate at bottom-right, with three separate moves around it. All four SHALL show hero-specific names, iconography, learned ranks, cooldowns and lock states. Training SHALL be separate from casting.
 #### Scenario: Use supported screens

@@ -1,5 +1,8 @@
 # NPC interactions
 
+## Purpose
+In Crimson Rogue, a defeated police officer or sheriff's deputy drops a pistol that the player can pick up and use. To steal an occupied car, the player pulls the driver out and throws them onto the ground. Police and civilians appear as textured, animated 3D models.
+
 ## Requirements
 
 ### Requirement: Collectible police sidearms

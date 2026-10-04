@@ -1,7 +1,7 @@
 // Primordia browser shell: input, rendering, effects, menus and saved progress.
 // Game rules live in core.js; the Lenia dish lives in lenia.js.
 
-import { Game, MUTATIONS, SPECIES, SP, PREY_NAME, EPOCH_LENGTH, TUNE, wrap, wdelta } from "./core.js";
+import { Game, MUTATIONS, SPECIES, SP, PREY_NAME, TUNE, tierOf, wrap, wdelta } from "./core.js";
 import { FieldRenderer, FlatRenderer } from "./render.js";
 import { Sound } from "./audio.js";
 import { Intro, SCENES, INTRO_SEED } from "./intro.js";
@@ -27,7 +27,7 @@ sound.on = store.get("primordia.sound", true);
 
 const ui = {
   hud: $("#hud"), lightBar: $("#lightBar"), burstBar: $("#burstBar"), burstMeter: $("#burstMeter"), epochLabel: $("#epochLabel"), epochBar: $("#epochBar"),
-  waveDots: $$("#waveDots i"), waveLabel: $("#waveLabel"), pips: $$("#dashBtn .pips i"), burstBtn: $("#burstBtn"),
+  growBox: $("#growBox"), waveDots: $$("#waveDots i"), waveLabel: $("#waveLabel"), pips: $$("#dashBtn .pips i"), burstBtn: $("#burstBtn"),
   score: $("#score"), combo: $("#combo"), banner: $("#banner"), tip: $("#tip"), touch: $("#touch"), stick: $("#stick"),
   title: $("#titleScreen"), mutate: $("#mutateScreen"), pause: $("#pauseScreen"), over: $("#overScreen"), cards: $("#cards"),
   intro: $("#introScreen"), introDots: $("#introDots"), introKicker: $("#introKicker"), introTitle: $("#introTitle"),
@@ -39,7 +39,7 @@ let rect = { x: 0, y: 0, w: 1, h: 1, s: 1 };
 let game = null;
 let screen = "title"; // title | intro | play | mutate | pause | over
 let intro = null, introThen = "title"; // the How to play scenes, and where they lead
-const best = { score: store.get("primordia.best", 0), species: new Set(store.get("primordia.species", [PREY_NAME])) };
+const best = { score: store.get("primordia.best", 0), size: store.get("primordia.bestSize", 0), species: new Set(store.get("primordia.species", [PREY_NAME])) };
 const tips = store.get("primordia.tips", {});
 
 function dishSize() { return innerHeight > innerWidth * 1.15 ? [128, 256] : [256, 128]; }
@@ -59,6 +59,8 @@ function resetFx() {
   particles.length = 0; popups.length = 0; trail.length = 0; arcs.length = 0; hits.length = 0; rings.length = 0;
   stasisEase = 0; cutCounts.clear();
   slowmo = 0; slowFactor = 1; shake = 0; flash = 0; kick.x = kick.y = 0; deathAt = 0;
+  husks.length = 0; seenFrom.clear(); grow.on = false; oldBoxAt = 0; cam.z = 1; sound.tempo = 1;
+  you.r = game ? game.player.r : TUNE.grow.base; you.bulge = 0;
   sound.hunting = false; sound.stasis(false); sound.endAllWindups();
 }
 
@@ -317,12 +319,12 @@ function startRun() {
   newGame("play");
   show("play");
   hudCache = {};
-  banner("EPOCH I", "Cut, bite, survive", "#9ffff1");
+  banner("SIZE I", tierOf(1).line, "#9ffff1");
   showTipOnce("eat", touchMode ? "Swim into the glowing cyan creatures to eat them." : "Swim into the glowing cyan creatures to eat them. Your mouse leads the way.");
 }
 
 function setPause(on) {
-  if (on && screen !== "play") return;
+  if (on && (screen !== "play" || game.state === "grow")) return;
   if (!on && screen !== "pause") return;
   show(on ? "pause" : "play");
   if (on) $("#resumeBtn").focus();
@@ -362,7 +364,7 @@ function drawTitle() {
     $(".keys").innerHTML = "<div><dt>Swim</dt><dd>Drag anywhere</dd></div><div><dt>Dash, cut, parry</dt><dd>DASH button</dd></div><div><dt>Burst</dt><dd>BURST button, when it glows</dd></div>";
     $("#playBtn").innerHTML = "PLAY";
   }
-  $("#bestLine").textContent = best.score > 0 ? "BEST " + fmt(best.score) : "";
+  $("#bestLine").textContent = best.score > 0 ? "BEST " + fmt(best.score) + (best.size > 1 ? " · SIZE " + roman(best.size) : "") : "";
   const all = [PREY_NAME, ...SPECIES.map((s) => s.name)];
   $("#bestiary").innerHTML = all.map((n, i) => best.species.has(n)
     ? `<span class="${i ? "hunter" : "prey"}">${n}</span>`
@@ -392,7 +394,10 @@ const ICONS = {
 let cardSel = 0;
 function showCards() {
   const offer = game.offer || [];
-  $("#mutateKicker").textContent = "EPOCH " + roman(game.epoch) + " SURVIVED";
+  $("#mutateKicker").textContent = "YOU GREW · SIZE " + roman(game.epoch);
+  // the first time, say what just happened
+  $("#grewNote").hidden = !!tips.grewCards;
+  if (!tips.grewCards) { tips.grewCards = 1; store.set("primordia.tips", tips); }
   ui.cards.innerHTML = offer.map((m, i) => {
     const lvl = game.mut[m.id], max = MUTATIONS.find((x) => x.id === m.id).max;
     const kind = m.kind === "duo" ? "" : `<span class="kind">${m.kind === "build" ? "BUILD" : "EXTRA"}</span>`;
@@ -635,7 +640,27 @@ function handleEvents() {
         else rings.push({ x: e.x, y: e.y, r0: 2, r1: e.r || 6, at: performance.now(), dur: 300, color: e.kind === "spore" ? "255,201,74" : "255,143,178" });
         break;
       case "rally": popup(e.x, e.y - 5, "+" + Math.round(e.amount) + " LIGHT", "#9ffff1"); break;
-      case "warn": if (e.role !== "egg") sound.spawn(true); if (e.boss) banner("LEVIATHAN", "Heptapteryx approaches", "#ff5c8f"); break;
+      case "warn": if (e.role !== "egg") sound.spawn(true); if (e.boss) banner("LEVIATHAN", "Eat it to grow.", "#ff5c8f"); break;
+      case "grow":
+        popup(e.x, e.y - 5, "+" + e.n, "#7ffff0");
+        sound.growChime(Math.floor(e.g * 8));
+        you.bulge = Math.max(you.bulge, 0.12);
+        ui.growBox.classList.remove("gain"); void ui.growBox.offsetWidth; ui.growBox.classList.add("gain");
+        showTipOnce("grow", "Eating fills the GROW bar. Hunters fill it fastest.");
+        break;
+      case "notch":
+        popup(e.x, e.y - 7, "BIGGER", "#ffd86a", true);
+        sound.notch();
+        rings.push({ x: e.x, y: e.y, r0: 3, r1: 24, at: performance.now(), dur: 500, color: "255,216,106" });
+        showTipOnce("outgrow", "You are bigger than the swarms now. Eat them.");
+        break;
+      case "apex": if (!game.pending.some((p) => p.boss)) banner("LEVIATHAN", "Clear the big hunters. Then eat it to grow.", "#ffd86a"); break;
+      case "growStart":
+        sound.growSwell(); flash = Math.max(flash, 0.12);
+        grow.x = e.x; grow.y = e.y; grow.on = true;
+        break;
+      case "zoomBegin": zoomShell(e); break;
+      case "zoomFinish": zoomDone(e); break;
       case "spawn":
         if (e.kind === "prey") { if (e.golden) { sound.spawn(false); tip("A golden Orbium appeared. Catch it!", 2600); } }
         else {
@@ -648,16 +673,17 @@ function handleEvents() {
       case "tide": banner("RED TIDE", "Hunter tissue is spreading", "#ff5c8f"); break;
       case "comboEnd": if (e.combo >= 6) popup(P.x, P.y - 6, e.combo + " CHAIN", "#ffc94a", true); break;
       case "epochEnd":
+        if (screen === "intro") break;
         sound.epoch(); sound.hunting = false; sound.stasis(false); sound.endAllWindups();
         showCards();
         show("mutate");
         mutateAt = performance.now();
         break;
       case "epochStart":
-        // with nothing left to offer, the next epoch starts without the cards
+        // with nothing left to offer, the next size starts without the cards
         if (screen === "mutate" && game.state === "play") show("play");
-        banner("EPOCH " + roman(e.epoch), (e.mutation ? e.mutation.name + " · " : "") + "the dish speeds up", "#b49cff");
-        sound.tempo = 1 + (e.epoch - 1) * 0.05;
+        banner("SIZE " + roman(e.epoch), e.line || "", "#b49cff");
+        if (screen !== "intro") sound.tempo = 1 + (e.epoch - 1) * 0.05;
         break;
       case "death":
         sound.death(); sound.hunting = false; sound.stasis(false); addShake(12); flash = 0.4;
@@ -673,11 +699,12 @@ function gameOver() {
   if (screen !== "play") return;
   const s = game.score, isBest = s > best.score;
   if (isBest) { best.score = s; store.set("primordia.best", s); }
+  if (game.epoch > best.size) { best.size = game.epoch; store.set("primordia.bestSize", best.size); }
   $("#finalScore").textContent = fmt(s);
   $("#newBest").hidden = !isBest;
   const st = game.stats;
   $("#stats").innerHTML = [
-    ["EPOCH", roman(game.epoch)], ["HUNTERS EATEN", st.hunters], ["GLORY BITES", st.glory],
+    ["SIZE", roman(game.epoch)], ["HUNTERS EATEN", st.hunters], ["GLORY BITES", st.glory],
     ["PARRIES", st.parries], ["BEST CHAIN", st.bestCombo], ["BEST", fmt(best.score)],
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
   show("over");
@@ -685,9 +712,63 @@ function gameOver() {
   $("#againBtn").focus();
 }
 
+// ---------- the dish grows ----------
+// grow.on from growStart to the end of the cards; husks are the new prey that were hunters
+const grow = { on: false, x: 0, y: 0 }, husks = [], seenFrom = new Set();
+let oldBoxAt = 0;
+// old dish point -> grown dish point (core.mapPoint): the shell's own effects follow the world
+const mapX = (x) => wrap(game.w / 4 + x / 2, game.w), mapY = (y) => wrap(game.h / 4 + y / 2, game.h);
+function zoomShell(e) {
+  for (const list of [particles, popups, trail, hits, rings]) for (const p of list) {
+    p.x = mapX(p.x); p.y = mapY(p.y);
+    if (p.r) p.r /= 2;
+    if (p.r0 !== undefined) { p.r0 /= 2; p.r1 /= 2; }
+    if (p.vx !== undefined) { p.vx /= 2; p.vy /= 2; }
+    if (p.size !== undefined) p.size /= 2;
+  }
+  for (const a of arcs) { a.x0 = mapX(a.x0); a.y0 = mapY(a.y0); a.x1 = mapX(a.x1); a.y1 = mapY(a.y1); }
+  cutCounts.clear();
+  you.r /= 2;
+  sound.stasis(false); sound.endAllWindups(); sound.hunting = false; sound.growWhoosh();
+  for (const q of e.eggs) burst(q.x, q.y, 8, "#ff8fb2", 10, 0.5, 0.6);
+  // old prey turn into light that streams into you
+  for (const q of e.motes) for (let k = 0; k < 4; k++) particles.push({ x: q.x + rnd(-2, 2), y: q.y + rnd(-2, 2), vx: rnd(-6, 6), vy: rnd(-6, 6), life: 1.4, max: 1.4, color: "#9ffff1", size: rnd(0.6, 1), home: true });
+}
+function zoomDone(e) {
+  e.at.forEach((q, i) => {
+    burst(q.x, q.y, 18, q.golden ? "#ffd86a" : "#7ffff0", 18, 0.6, 1);
+    rings.push({ x: q.x, y: q.y, r0: 2, r1: 14, at: performance.now() + i * 60, dur: 400, color: "127,255,240" });
+    sound.husk(i);
+    if (q.golden) return;
+    // the first time a species comes back as food in a run, name it (game time stands still on the cards)
+    const label = q.from && !seenFrom.has(q.from) ? "was " + q.from : "";
+    if (q.from) seenFrom.add(q.from);
+    husks.push({ x: q.x, y: q.y, from: q.from, label, at: game.time });
+  });
+  if (e.bonus) popup(game.player.x, game.player.y - 8, "SIZE " + roman(game.epoch) + "  +" + fmt(e.bonus), "#9ffff1", true);
+  oldBoxAt = game.time;
+}
+// camera and molt wave from the grow clock: the wave runs out from you, then the dish shrinks and pulls back
+function growView() {
+  const G = TUNE.grow.seq, t = game.growT;
+  if (game.state !== "grow") { grow.on = false; return { z: 1, convert: null, fade: 0 }; }
+  const ease = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
+  let z = 1, convert = null, fade = 0;
+  if (t < G.begin) convert = { x: grow.x, y: grow.y, r: reduceMotion ? 9999 : ease(t / G.begin) * 150, s: 1 };
+  else if (t < G.finish) {
+    convert = { x: 0, y: 0, r: 9999, s: 1 };
+    z = reduceMotion ? 1 : 0.5 * Math.pow(2, ease((t - G.begin) / (G.finish - G.begin)));
+  }
+  // reduced motion: no pull-back; a short fade hides the swap instead
+  if (reduceMotion) fade = Math.max(0, 1 - Math.abs(t - G.begin) / 0.2) * 0.75;
+  return { z, convert, fade };
+}
+
 // ---------- drawing ----------
-function sx(x) { return rect.x + x * rect.s; }
-function sy(y) { return rect.y + y * rect.s; }
+// cam.z < 1 while the dish grows: the view shows the middle of the dish, larger
+const cam = { z: 1 };
+function sx(x) { return rect.x + rect.w / 2 + (x - game.w / 2) * rect.s / cam.z; }
+function sy(y) { return rect.y + rect.h / 2 + (y - game.h / 2) * rect.s / cam.z; }
 
 // draw fn at (x, y) and at the wrapped copies near the dish edges
 function wrapped(x, y, margin, fn) {
@@ -744,7 +825,7 @@ function drawLane(c, e, t, s) {
 }
 
 function drawFx(t, dt) {
-  const c = fx, s = rect.s, P = game.player, now = performance.now();
+  const c = fx, s = rect.s / cam.z, P = game.player, now = performance.now();
   c.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
   c.clearRect(0, 0, view.w, view.h);
   c.save();
@@ -796,9 +877,43 @@ function drawFx(t, dt) {
     }
   }
 
+  // the old dish's edge: drawn while it shrinks, then it fades
+  const B = game.oldBox, boxAge = game.time - oldBoxAt;
+  if (B && (game.state === "grow" ? game.growT >= TUNE.grow.seq.begin : oldBoxAt && boxAge < 1.5)) {
+    c.strokeStyle = `rgba(127,255,240,${game.state === "grow" ? 0.55 : 0.55 * (1 - boxAge / 1.5)})`; c.lineWidth = 2; c.setLineDash([8, 6]);
+    c.strokeRect(sx(B.x), sy(B.y), B.w * s, B.h * s); c.setLineDash([]);
+  }
+  // new prey that were hunters: a white dashed ring, and the first time a species turns, its old name
+  for (const p of game.prey) {
+    if (!p.converted || game.time - (p.born ?? -9) > 3) continue;
+    wrapped(p.x, p.y, 14, (X, Y) => {
+      c.strokeStyle = "rgba(255,255,255,0.7)"; c.lineWidth = 2; c.setLineDash([4, 5]);
+      c.beginPath(); c.arc(X, Y, ((p.size || 6) + 4) * s, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
+    });
+  }
+  for (let i = husks.length - 1; i >= 0; i--) {
+    const k = husks[i], age = game.time - k.at;
+    if (age > 3 || game.state !== "play") { if (age > 3) husks.splice(i, 1); continue; }
+    // the intro points at them with its own callouts
+    if (!k.label || screen === "intro") continue;
+    // follow the prey it became
+    let near = null, nd = 24;
+    for (const p of game.prey) if (p.converted) { const d = game.dist(p.x, p.y, k.x, k.y); if (d < nd) { nd = d; near = p; } }
+    if (near) { k.x = near.x; k.y = near.y; }
+    labelRing(c, k.x, k.y, ((near && near.size) || 6) + 5, "FOOD · " + k.label, "63,240,224", s);
+  }
+
   // hunters: lanes, stagger rings, egg timers, names, boss pips
   for (const e of game.hunters) {
     if (e.state === "windup" || e.state === "reaim" || e.state === "lunge") drawLane(c, e, t, s);
+    // outgrown: a gold dashed ring says "eat this"
+    if (game.edible(e)) {
+      wrapped(e.x, e.y, 30, (X, Y) => {
+        c.strokeStyle = "rgba(255,216,106,0.85)"; c.lineWidth = Math.max(3, 0.6 * s); c.setLineDash([5, 5]); c.lineDashOffset = -t * 20;
+        c.beginPath(); c.arc(X, Y, Math.max(8, game.reachOf(e) - 5) * s, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
+      });
+    }
+
     if (e.state === "stagger" || e.state === "collapse") {
       const gold = reduceMotion ? 0.85 : e.state === "collapse" ? 0.6 + 0.4 * Math.sin(t * 19) : 0.6 + 0.4 * Math.sin(t * 38);
       const R = Math.max(game.reachOf(e) - 6, 8) * s;
@@ -856,6 +971,7 @@ function drawFx(t, dt) {
   for (let i = rings.length - 1; i >= 0; i--) {
     const r = rings[i], age = (now - r.at) / r.dur;
     if (age > 1) { rings.splice(i, 1); continue; }
+    if (age < 0) continue;
     const rad = (r.r0 + (r.r1 - r.r0) * age) * s;
     wrapped(r.x, r.y, r.r1 + 2, (X, Y) => {
       c.strokeStyle = `rgba(${r.color},${1 - age})`; c.lineWidth = 3;
@@ -934,6 +1050,23 @@ function drawFx(t, dt) {
   c.strokeRect(rect.x - 0.5, rect.y - 0.5, rect.w + 1, rect.h + 1);
 }
 
+// a ring around a point with a leader line and a label, in dish cells
+function labelRing(c, x, y, r, text, color, s) {
+  wrapped(x, y, r + 40, (X, Y) => {
+    const R = Math.max(r * s, 14);
+    c.save();
+    c.strokeStyle = `rgba(${color},0.95)`; c.fillStyle = `rgb(${color})`; c.lineWidth = 3;
+    c.beginPath(); c.arc(X, Y, R, 0, Math.PI * 2); c.stroke();
+    const ex = X + R * 0.71, ey = Y - R * 0.71, lx = ex + 16, ly = ey - 16;
+    c.font = "700 14px Space Grotesk, sans-serif"; c.textAlign = "left"; c.textBaseline = "middle";
+    const w = c.measureText(text).width + 16;
+    c.lineWidth = 2; c.beginPath(); c.moveTo(ex, ey); c.lineTo(lx, ly); c.lineTo(lx + w, ly); c.stroke();
+    c.lineWidth = 4; c.strokeStyle = "rgba(0,0,0,0.7)";
+    c.strokeText(text, lx + 6, ly - 10); c.fillText(text, lx + 6, ly - 10);
+    c.restore();
+  });
+}
+
 // intro callouts: a ring that draws itself around a creature, a leader line and a label
 function drawCallouts(c, s, t) {
   const now = intro.s ? intro.s.t : 0;
@@ -968,11 +1101,19 @@ function drawCallouts(c, s, t) {
   }
 }
 
+// the drawn cell: eases toward the core radius; during the grow sequence it shrinks with the world
+const you = { r: TUNE.grow.base, bulge: 0 };
+function easeBody(dt) {
+  const P = game.player, hold = game.state === "grow" && game.growT < TUNE.grow.seq.finish;
+  if (!hold) you.r += (P.r - you.r) * Math.min(1, dt / 0.3);
+  you.bulge = Math.max(0, you.bulge - dt * 0.6);
+}
+
 function drawPlayer(c, t, s) {
   const P = game.player;
   const fr = game.burstT > 0;
-  const flick = P.iframes > 0 && P.dashT <= 0 && Math.floor(t * 30) % 2 === 0;
-  const R = P.r * s * 1.3;
+  const flick = P.iframes > 0 && P.dashT <= 0 && game.state === "play" && Math.floor(t * 30) % 2 === 0;
+  const R = you.r * s * 1.3 * (1 + you.bulge);
   const ang = Math.atan2(P.dirY, P.dirX);
   const chomp = P.eating > 0.05 ? 0.15 + 0.5 * Math.abs(Math.sin(t * 16)) : 0.12 + 0.06 * Math.sin(t * 3);
   const body = fr ? "#ffd86a" : P.hurt > 0.3 ? "#ffb0c4" : "#d8fff7";
@@ -1051,8 +1192,11 @@ function updateHud() {
     ui.burstMeter.classList.toggle("ready", v === "r"); ui.burstMeter.classList.toggle("on", v === "o");
     ui.burstBtn.classList.toggle("ready", v === "r");
   });
-  setHud("epoch", game.epoch, (v) => { ui.epochLabel.textContent = "EPOCH " + roman(v); });
-  setHud("eb", (1 - game.epochTime / EPOCH_LENGTH).toFixed(3), (v) => { ui.epochBar.style.transform = `scaleX(${Math.max(0, v)})`; });
+  const apex = game.isApex() && game.apexCalled && game.bossPresent();
+  setHud("epoch", game.epoch + (apex ? "a" : ""), () => { ui.epochLabel.textContent = (apex ? "APEX · SIZE " : "SIZE ") + roman(game.epoch); });
+  setHud("eb", game.gFrac().toFixed(3), (v) => { ui.epochBar.style.transform = `scaleX(${Math.max(0, Math.min(1, v))})`; });
+  setHud("full", game.gFrac() >= 1 || apex, (v) => ui.growBox.classList.toggle("full", v));
+  setHud("apex", apex, (v) => ui.growBox.classList.toggle("apex", v));
   setHud("waves", game.director.cleared.map(Number).join(""), (v) => { ui.waveDots.forEach((d, i) => d.classList.toggle("on", v[i] === "1")); });
   const max = game.maxCharges();
   setHud("pips", P.charges + "/" + max, () => { ui.pips.forEach((d, i) => { d.hidden = i >= max; d.classList.toggle("on", i < P.charges); }); });
@@ -1065,6 +1209,7 @@ function updateHud() {
 const MARK = { windup: 1, glint: 2, stagger: 3, exposed: 4, collapse: 5, crack: 6 };
 function buildMarks() {
   const out = [];
+  if (game.state === "grow") return out;
   const list = [...game.hunters].sort((a, b) => (a.nd ?? 1e9) - (b.nd ?? 1e9));
   for (const e of list) {
     let code = 0, p = 0;
@@ -1124,6 +1269,9 @@ function frame(now) {
   rect = { ...rect, x: rect.x + ox, y: rect.y + oy };
   const P = game.player;
   const nowMs = performance.now();
+  const gv = growView();
+  cam.z = gv.z;
+  easeBody(dt);
   const ringNow = rings.find((r) => r.shader && nowMs - r.at < r.dur);
   const ring = ringNow
     ? { x: ringNow.x, y: ringNow.y, r: ringNow.r1 * Math.min(1, (nowMs - ringNow.at) / ringNow.dur), s: 1 }
@@ -1136,8 +1284,11 @@ function frame(now) {
     stasis: stasisEase,
     ring,
     calm: reduceMotion,
+    zoom: cam.z, convert: gv.convert, tier: game.epoch,
   });
   drawFx(t, dt);
+  // reduced motion: a short fade covers the swap instead of the pull-back
+  if (gv.fade > 0) { fx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); fx.fillStyle = `rgba(4,3,10,${gv.fade})`; fx.fillRect(rect.x, rect.y, rect.w, rect.h); }
   rect = r0;
 }
 

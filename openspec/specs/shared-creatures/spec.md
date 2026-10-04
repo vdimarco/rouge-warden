@@ -1,5 +1,8 @@
 # Shared creatures specification
 
+## Purpose
+Shared creatures is a library of 18 generated pixel creatures that any Cottage Arcade game can use, with a field guide that shows each one in motion. Shore of the Ancients uses them for its lane waves, siege units, neutral camps and the Wild Hunt boss. Camp creatures leave the player alone until the player attacks them.
+
 ## Requirements
 
 ### Requirement: Shared original creature exports

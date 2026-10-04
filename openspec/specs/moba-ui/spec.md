@@ -1,5 +1,10 @@
 # Shore of the Ancients opening UI
 
+## Purpose
+The opening screen of Shore of the Ancients shows the hero roster beside the selected hero's art and skills. It works by touch or keyboard on phones and desktops. During a match, one finger can move the hero while another casts or upgrades a skill.
+
+## Requirements
+
 ### Requirement: Reference opening scene
 The opening SHALL match the supplied Shore reference composition at 1536x864 with a framed four-column hero roster, cinematic selected-hero artwork, a right skill panel, gold wordmark and cyan selection feedback. Native controls SHALL remain functional over the artwork.
 

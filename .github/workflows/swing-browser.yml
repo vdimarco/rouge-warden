@@ -1,10 +1,10 @@
 name: Swing browser QA
 on:
   pull_request:
-    paths: ['public/vr/**', 'qa/vr/**', '.github/workflows/swing-browser.yml']
+    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', 'public/wild/models/king.glb', 'public/wild/models/crew5.glb', '.github/workflows/swing-browser.yml']
   push:
     branches: [main]
-    paths: ['public/vr/**', 'qa/vr/**', '.github/workflows/swing-browser.yml']
+    paths: ['public/vr/**', 'qa/vr/**', 'quest/**', 'vercel.json', 'public/.well-known/**', 'public/wild/models/king.glb', 'public/wild/models/crew5.glb', '.github/workflows/swing-browser.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs
+      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
         env:
@@ -39,9 +39,65 @@ jobs:
         run: node qa/vr/sound.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: Desktop mouse look (lock before full screen, no-lock edge turn)
+        run: node qa/vr/mouse-look.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: swing-phone-and-landscape
           path: test-results/swing
+          retention-days: 14
+
+  flat-play:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Offline cache and versions
+        run: node qa/vr/pwa.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Mouse, keyboard and pad controls with the auto target
+        run: node qa/vr/flat.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Phone panel, marker and layouts
+        run: node qa/vr/phone-controls.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Wall climbing and antennas
+        run: node qa/vr/climb.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Boot, title and flat play
+        run: node qa/vr/boot.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Interface, words and menus
+        run: node qa/vr/ui.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Third-person hero and chase camera
+        run: node qa/vr/hero.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-flat-controls
+          path: test-results/flat
           retention-days: 14

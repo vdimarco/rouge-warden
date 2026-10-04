@@ -311,6 +311,40 @@ export class World {
   }
 
   clear() { this.A.fill(0); this.B.fill(0); this.N.fill(1); this.toxin.A = 0; this.toxin.B = 0; this.purge.A = false; this.purge.B = false; this.massA = 0; this.massB = 0; }
+
+  // The dish grows: every field shrinks to half scale into the middle quarter (a 2x2 mean per new
+  // cell, so new cell w/4 + X holds old cells 2X and 2X + 1). Outside it the dish is fresh: no tissue,
+  // full agar. Half-scale creatures cannot live, so the game wipes or replaces them afterwards.
+  zoomOut() {
+    const { w, h } = this, qw = w >> 2, qh = h >> 2;
+    if (!this.zoomTmp) this.zoomTmp = [new Float32Array(w * h), new Float32Array(w * h), new Float32Array(w * h)];
+    const [nA, nB, nN] = this.zoomTmp;
+    nA.fill(0); nB.fill(0); nN.fill(1);
+    const { A, B, N } = this;
+    for (let Y = 0; Y < h >> 1; Y++) {
+      const y0 = 2 * Y * w, y1 = y0 + w, row = (qh + Y) * w + qw;
+      for (let X = 0; X < w >> 1; X++) {
+        const a = y0 + 2 * X, b = y1 + 2 * X, j = row + X;
+        nA[j] = (A[a] + A[a + 1] + A[b] + A[b + 1]) / 4;
+        nB[j] = (B[a] + B[a + 1] + B[b] + B[b + 1]) / 4;
+        nN[j] = (N[a] + N[a + 1] + N[b] + N[b + 1]) / 4;
+      }
+    }
+    A.set(nA); B.set(nB); N.set(nN);
+    this.toxin.A = 0; this.toxin.B = 0; this.purge.A = false; this.purge.B = false;
+    let mA = 0, mB = 0;
+    for (let i = 0; i < A.length; i++) { mA += A[i]; mB += B[i]; }
+    this.massA = mA; this.massB = mB;
+  }
+
+  // set a field to v inside a disc
+  fillDisc(field, cx, cy, r, v) {
+    const { w, h } = this, rr = Math.ceil(r), x0 = Math.round(cx), y0 = Math.round(cy);
+    for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      field[wrapI(y0 + dy, h) * w + wrapI(x0 + dx, w)] = v;
+    }
+  }
 }
 
 // Connected regions above a threshold, with wrap-around. Returns blobs with mass and centroid.

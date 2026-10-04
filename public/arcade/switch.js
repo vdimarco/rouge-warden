@@ -18,6 +18,7 @@
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/primordia.webp", color: "#3ff0e0" },
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/breakthrough.webp", color: "#f0c56a" },
     { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/follow-suit.webp", color: "#e9c46a" },
+    { id: "river-rush", name: "River Rush", sub: "The golden key run", url: "/river-rush/", art: "/arcade/river-rush.webp", color: "#f9c65b" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
     { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/lab.webp", color: "#f0b848" },
@@ -115,5 +116,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
   window.GameSwitch = { open, close, wire, get isOpen() { return !!box && !box.hidden; }, GAMES };
 })();
-
 

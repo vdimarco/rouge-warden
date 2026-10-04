@@ -1,5 +1,10 @@
 # Shore of the Ancients hero roster
 
+## Purpose
+In Shore of the Ancients, the player picks one of sixteen heroes and can filter them by role. Each hero plays as one of twelve combat kits, and bots use the same kits. A hero's main attribute makes it stronger at each level.
+
+## Requirements
+
 ### Requirement: Twelve combat archetypes
 The game SHALL preserve twelve tested combat archetypes with distinct statistics, basic attacks and four learned spells. Bots SHALL use the full set of archetypes. Display identities SHALL not change spell dispatch, mana, cooldowns, rank gates or combat randomness.
 

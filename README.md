@@ -494,15 +494,15 @@ The pause card has **Resume**, **How to play**, **Journal**, **Settings** and **
 
 ## Moonwell
 
-Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an endless row of moonlit islands, and the screen scrolls with it. A pair of gold flippers guards the water gap at the bottom of each bowl. The left flipper shoots the pearl up and over the next ridge. The right flipper passes it back across the bowl. Flip near the tip for power: one good shot clears a ridge, and a late, sweet one can clear two. When the pearl crosses a ridge, a moon gate closes behind it, so the run only goes forward.
+Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an endless row of moonlit islands that step down toward the sea, and the screen scrolls with it. A pair of gold flippers guards the water gap at the bottom of each bowl. The left flipper shoots the pearl up and over the next ridge. Flip near the tip for power: one good shot clears a ridge, and a late, sweet one can clear two. The right flipper is softer and passes the pearl across the bowl. A hit near its tip sends the pearl back over the ridge behind, so you can go back for a star, a lantern or a rail you missed. A ridge pays only the first time you cross it.
 
-- **The islands** come from a seed and never end. Every eight islands make a region with its own look: Willow Meadow, Lantern Bridge, Lily Pond, Star Garden, Crystal Hollow and Cloud Isles. Ridges get taller, the gap gets wider and play gets a little faster as you go.
+- **The islands** come from a seed and never end. Every eight islands make a region with its own look: Willow Meadow, Lantern Bridge, Lily Pond, Star Garden, Crystal Hollow and Cloud Isles. Play is brisk from the start, and ridges get taller, the gap gets wider and play gets faster as you go. The game keeps the 40 islands behind you.
 - **In the air** are stars (an arc of stars shows the ideal shot), gold bumpers, lanterns to light with a pass, turning mills, gold rails that carry the pearl over two or three islands, moon portals, and a big pearl every ten islands for one more life.
 - **Scoring.** Ridges in a row raise the multiplier, up to x8, and a drain ends the streak. Stars, bumpers, lanterns and ridges fill the moon in the sky. A full moon starts Moonrise: 12 s of double points, stronger flippers and no drains. Long shots, swift clears and clutch saves pay extra.
-- **Shrines.** The last island of each region is a shrine with a sealed gate. Send the pearl into the moonwell and choose one of three charms, such as stronger flippers, one more pearl, a moon bridge for the next drain, or a star magnet.
-- **Pearls.** A run has three pearls. A lost pearl comes back in a moonbeam over the same bowl. The first three islands have a moon post between the flippers, so a new player cannot drain there.
+- **Shrines.** The last island of each region is a shrine with a sealed gate. Send the pearl into the moonwell and choose one of three charms, such as stronger flippers, one more pearl, a moon bridge for the next drain, or a star magnet. Then the seal opens, so you can come back this way.
+- **Pearls.** A run has three pearls. A lost pearl comes back in a moonbeam over the bowl where it was lost. The first three islands have a moon post between the flippers, so a new player cannot drain there.
 - **Controls.** Z, A or ← for the left flipper, X, D or → for the right one, C or ↑ to pulse the pearl up, Space to drop a pearl, Esc or P to pause and M to mute. On a phone, hold the left or right half of the screen. A gamepad uses its shoulder buttons. The first island shows you how.
-- **Your best** score and island stay in this browser. A flag stands on your furthest island, and the Moonwell machine shows the best run.
+- **Your best** score and furthest island stay in this browser. A flag stands on your furthest island, the head-up display shows it while you are behind it, and the Moonwell machine shows the best run.
 
 The islands are drawn in code. The bumper, portal, star, pearl and flipper sprites, and the far islands, come from the original Moonwell paintings (`qa/moonwell/sprites.sh` cuts them). A bot plays behind the title.
 
@@ -714,10 +714,10 @@ Run these from the repo root. The browser checks need `public/` served at http:/
 
 | Script | What it checks |
 | --- | --- |
-| `node qa/moonwell/world.test.mjs` | The same seed gives the same islands, 1,000 islands join up and the old ones are dropped, every eighth island is a shrine, rails and portals never skip a shrine, nothing sits in the ground, and the islands get harder |
-| `node qa/moonwell/play.test.mjs` | Drains, the moon post, a cradle, late and early flips, the right flipper's pass and the gate, no tunnelling, bumpers, the multiplier, long shots, Moonrise, rails, portals, shrines and charms, big pearls, the moonbeam and the end of a run, and a 15-minute run |
+| `node qa/moonwell/world.test.mjs` | The same seed gives the same islands, 1,000 islands join up and step down, 40 stay behind with a wall, every eighth island is a shrine, rails and portals never skip a shrine, nothing sits in the ground, and the islands get harder |
+| `node qa/moonwell/play.test.mjs` | Drains, the moon post, a cradle, late and early flips, the right flipper's pass, going back and a ridge that pays once, the wall 40 islands behind, the pace, no tunnelling, bumpers, the multiplier, long shots, Moonrise, rails, portals, shrines and charms, big pearls, the moonbeam and the end of a run, and a 15-minute run |
 | `node qa/moonwell/bot.mjs [runs] [skill] [minutes]` | Bots of a given skill play whole runs and report how far they get, where they drain, and what they meet |
-| `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera both ways, a trip back, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
 | `NODE_PATH=qa/browser/node_modules node qa/moonwell/cabinet-art.mjs` | Makes the machine art, `public/arcade/moonwell.webp`, from a frame of the real game |
 
 ### Arcade tests
@@ -780,3 +780,11 @@ Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It chec
 The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
 
 
+
+## River Rush
+
+River Rush is a whitewater treasure race at `/river-rush/`, with an Action cabinet and a shared game-switcher entry. Steer with A/D or the arrows, hold Space and release near the golden key to catch it, and hold E for two seconds to unlock the chest. Beat the rival into the marked left escape channel before the waterfall. Phones support dragging and separate touch buttons. Reaching reduces steering, rocks drain balance, and a rope recovers the player after a fall. Pause with Escape; best winning scores are saved on this browser and shown on the cabinet.
+
+Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; the static output is committed in `public/river-rush/`. Audio uses the arcade’s shared quieting script.
+
+The title scene now uses a Higgsfield-generated living version of the approved art, with a still fallback for reduced motion, data-saving and video errors. During play, flowing foam, paddle spray, raft rocking, reaching transitions and short action bursts add motion. Skim rocks for close-call combo points and charge, then press Shift or the touch Surge button for a 1.8-second speed burst that costs balance. Media provenance is in `games/river-rush/docs/media.json`; animation browser checks are in `qa/river-rush/animation.mjs`.
