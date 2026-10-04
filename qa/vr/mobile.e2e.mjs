@@ -31,9 +31,10 @@ try {
  // Aim at the guaranteed clear first-swing building, then press the real action button.
  assert.equal(await page.evaluate(()=>G.test.aim(1)?.valid),true,'first view has a usable swing target');
  await page.locator('[data-action=throw]').click();
- const launch=await page.evaluate(()=>{G.test.step(1/60,36);return {s:G.test.state(),v:G.P.vel,ground:G.P.onGround};});
- assert.equal(launch.s.ropes[1].state,'attached');assert.equal(launch.ground,false);assert(launch.v.y>0,'auto-jump and pull lift the player');
- console.log('PASS one tap attaches and automatically jumps',JSON.stringify(launch.v));
+ const launch=await page.evaluate(()=>{G.test.step(1/60,36);const v=G.P.vel;return {s:G.test.state(),v,speed:Math.hypot(v.x,v.y,v.z),ground:G.P.onGround,ev:G.test.events().map(e=>e.type)};});
+ // the rope catches with a speed kick, so 0.6 s later you are swinging fast (and may already be on the way down)
+ assert(launch.ev.includes('attach'));assert.equal(launch.ground,false);assert(launch.speed>10,'auto-jump and the speed kick swing the player fast: '+launch.speed);
+ console.log('PASS one tap attaches, jumps and swings fast',JSON.stringify(launch.v));
  await page.screenshot({path:out+'/phone.png'});
  await page.locator('[data-action=throw]').click();
  const release=await page.evaluate(()=>{G.test.step(1/60,1);return {r:G.P.ropes[1].state,s:Math.hypot(G.P.vel.x,G.P.vel.y,G.P.vel.z)};});
@@ -49,12 +50,13 @@ try {
  await page.mouse.click(target.x,target.y);
  await page.evaluate(()=>G.test.step(1/60,30));
  assert.equal(await page.evaluate(()=>G.P.ropes[1].state),'attached');console.log('PASS tap a visible building to aim and fire');
- await page.evaluate(()=>{const s=G.P.pos;G.test.aimAt(1,s.x,s.y+1000,s.z);});
+ // A real miss: nothing in reach anywhere (the tap assist would find a building otherwise), so the city answers no ray.
+ await page.evaluate(()=>{const s=G.P.pos;G.test.aimAt(1,s.x,s.y+1000,s.z);G.QA_ray=G.city.raycast;G.city.raycast=()=>null;});
  await page.mouse.click(100,200);await page.evaluate(()=>G.test.step(1/60,2));
- assert.equal(await page.evaluate(()=>G.P.ropes[1].state),'attached');console.log('PASS invalid retarget keeps the current rope');
+ assert.equal(await page.evaluate(()=>{G.city.raycast=G.QA_ray;return G.P.ropes[1].state;}),'attached');console.log('PASS invalid retarget keeps the current rope');
  // Miss must not auto-jump or leave the button latched.
- await page.evaluate(()=>{const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.desktop.mobile.reset();G.test.aimAt(1,s.x,s.y+1000,s.z);G.test.step(1/60,2);});
- await page.locator('[data-action=throw]').click();await page.evaluate(()=>G.test.step(1/60,30));
+ await page.evaluate(()=>{const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.desktop.mobile.reset();G.test.aimAt(1,s.x,s.y+1000,s.z);G.test.step(1/60,2);G.QA_ray=G.city.raycast;G.city.raycast=()=>null;});
+ await page.locator('[data-action=throw]').click();await page.evaluate(()=>{G.test.step(1/60,30);G.city.raycast=G.QA_ray;});
  assert.equal(await page.evaluate(()=>G.P.onGround),true);assert.equal(await page.locator('[data-action=throw]').getAttribute('aria-pressed'),'false');console.log('PASS miss stays on roof and resets action');
  await page.locator('[data-action=menu]').click();await page.evaluate(()=>G.test.step(1/60,1));assert.equal(await page.evaluate(()=>G.state),'paused');
  // The pause menu covers the city on a phone, so its RESUME button goes back to play.

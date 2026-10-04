@@ -2044,7 +2044,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
     const r = rng(b.seed + 31), T = b.tiers, t = T[T.length - 1], y = t.y1, k = KIND[b.kind] ?? 4;
     const w = t.maxX - t.minX, d = t.maxZ - t.minZ;
     if (w < 8 || d < 8) return;
-    const placed = [];
+    // the roof antennas come from the city (they are colliders a rope catches): the other props keep clear of them
+    const placed = (b.masts || []).map((m) => [m.x, m.z, 0.6]);
     const spot = (rad) => {
       for (let tries = 0; tries < 8; tries++) {
         const x = lerp(t.minX + 1.4 + rad, t.maxX - 1.4 - rad, r()), z = lerp(t.minZ + 1.4 + rad, t.maxZ - 1.4 - rad, r());
@@ -2075,16 +2076,13 @@ export function createCityView(renderer, scene, city, opts = {}) {
       const sr = lerp(1.9, 2.5, r());
       if (s) push(props.tower, { aP: [s[0], y, s[1], r() * 6.28], aS: [sr, lerp(2.4, 3.2, r()), sr, r()] });
     }
-    // masts with red lights on the tall ones
+    // masts with red lights on the tall ones (placed by the city, see city.js)
     if (tall) {
-      const n = 1 + Math.floor(r() * (b.roofY > 150 ? 3 : 2));
-      for (let i = 0; i < n; i++) {
-        const s = spot(0.6);
-        if (!s) continue;
-        const h = lerp(6, b.roofY > 180 ? 26 : 14, r());
-        push(props.mast, { aP: [s[0], y, s[1], r() * 6.28], aS: [lerp(1, 2.2, r()), h, lerp(1, 2.2, r()), r()] });
-        if (i === 0 && b.roofY > 150 && beacons.length < BEACON_MAX) beacons.push([s[0], y + h + 0.15, s[1], 0.35]);
-      }
+      const rm = rng(b.seed + 53);
+      (b.masts || []).forEach((m, i) => {
+        push(props.mast, { aP: [m.x, m.y, m.z, rm() * 6.28], aS: [lerp(1.6, 2.6, rm()), m.h, lerp(1.6, 2.6, rm()), rm()] });
+        if (i === 0 && b.roofY > 150 && beacons.length < BEACON_MAX) beacons.push([m.x, m.y + m.h + 0.15, m.z, 0.35]);
+      });
     }
     // roof gardens, and gardens on the setback terraces
     if ((b.district === 0 || b.district === 4 || b.district === 3) && r() < 0.35) {

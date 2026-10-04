@@ -344,6 +344,7 @@ function makeColliders(buildings) {
 // A uniform grid over x/z. Each cell lists the colliders whose footprint touches it, so a ray walks the cells it
 // crosses (2D DDA) and a sphere looks only at the cells under it.
 const CELL = 32;
+const MAST_R = 0.45; // a roof antenna's collider: wider than the drawn pole, so a rope finds it
 
 function makeQueries(cols) {
   const x0 = B.minX - 64, z0 = B.minZ - 64;
@@ -671,7 +672,7 @@ export function generate(seed = WORLD.seed) {
   const rnd = rng(seed);
   const { buildings, parks } = makeBuildings(rnd);
   const colliders = makeColliders(buildings);
-  const Q = makeQueries(colliders);
+  let Q = makeQueries(colliders); // rebuilt once the roof antennas are in (they keep clear of the spots chosen first)
   const N = NEEDLE;
   const OUT = { x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
   const topOf = (c) => (c.type === "box" ? c.maxY : c.y1);
@@ -852,6 +853,25 @@ export function generate(seed = WORLD.seed) {
   /* ---- queries ---- */
   const isWater = (x, z) => z > SHORE;
   const groundY = (x, z) => (z > SHORE ? -10 : 0); // the lake bed sits well under the surface, so you splash first
+  /* ---- roof antennas on the tall towers: thin poles a rope catches and you can climb (cityview draws these) ---- */
+  // One to three per roof over 60 m, 2.5 m in from the edges, 4 m apart, and 9 m from the start, the gold ring, every
+  // clog, trial start and safe spot on that roof.
+  const keep = [start, goldRing, ...clogs, ...trials.map((t) => t.start), ...safe];
+  for (const b of buildings) {
+    b.masts = [];
+    const t = b.tiers[b.tiers.length - 1], w = t.maxX - t.minX, d = t.maxZ - t.minZ;
+    if (b.roofY <= 60 || w < 8 || d < 8) continue;
+    const r = rng(b.seed + 97), n = 1 + Math.floor(r() * (b.roofY > 150 ? 3 : 2));
+    for (let tries = 0; b.masts.length < n && tries < 16; tries++) {
+      const x = r2(t.minX + 2.5 + (w - 5) * r()), z = r2(t.minZ + 2.5 + (d - 5) * r()), h = r2(6 + ((b.roofY > 180 ? 26 : 14) - 6) * r());
+      if (b.masts.some((m) => Math.hypot(m.x - x, m.z - z) < 4)) continue;
+      if (keep.some((k) => Math.abs((k.y ?? t.y1) - t.y1) < 6 && Math.hypot(k.x - x, k.z - z) < 9)) continue;
+      b.masts.push({ x, z, y: t.y1, h });
+      colliders.push({ type: "cyl", id: colliders.length, x, z, r: MAST_R, y0: t.y1, y1: r2(t.y1 + h), tag: "antenna", bid: b.id });
+    }
+  }
+  Q = makeQueries(colliders);
+
   const nearestSafe = (x, y, z) => {
     let best = safe[0], bd = Infinity;
     for (const s of safe) { const d = (s.x - x) ** 2 + (s.y - y) ** 2 + (s.z - z) ** 2; if (d < bd) { bd = d; best = s; } }

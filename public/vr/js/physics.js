@@ -47,6 +47,9 @@ export function createPlayer(city, cfg = SWING) {
     // internal: the part of vel the rope winch adds this step, time since the last reel/yank/stick input,
     // time in the air, bump cooldown, and the speed of the last step's move (for the tests)
     pullVel: v3(), quietT: 0, airT: 0, bumpCool: 0, stepSpeed: 0,
+    // wall climbing (only with cfg.climb): the wall you hold { nx, nz } or null, the time before you can grab again,
+    // and this step's chest contact with a wall
+    wall: null, wallCool: 0, touch: { on: false, nx: 0, nz: 0 },
   };
   settle(P);
   return P;
@@ -58,7 +61,7 @@ export function teleport(P, x, y, z) {
   P.vel.x = P.vel.y = P.vel.z = 0;
   P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
   for (const r of P.ropes) idle(r);
-  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0;
+  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0; P.wall = null; P.wallCool = 0;
   settle(P);
   P.events.push({ type: "respawn" });
 }
@@ -77,6 +80,7 @@ function settle(P) {
 // Shoot a cup from `from` at a target { x, y, z, nx, ny, nz, tag, id } (from ropes.aim). It lands after flyDur.
 export function fire(P, side, from, target) {
   const i = sideIndex(side), r = P.ropes[i], c = P.cfg;
+  if (P.wall) leaveWall(P, c.climb.ropeOff, "rope");
   if (r.state !== "idle") release(P, i);
   r.state = "flying";
   r.from.x = from.x; r.from.y = from.y; r.from.z = from.z;
@@ -95,6 +99,102 @@ export function release(P, side) {
   const r = P.ropes[sideIndex(side)], was = r.state;
   idle(r);
   if (was === "attached") P.events.push({ type: "detach", side: r.side, speed: len3(P.vel.x, P.vel.y, P.vel.z) });
+}
+
+/* ---------------- wall climbing ---------------- */
+// Hold on to the wall the chest touched: the ropes let go and the body stops.
+function grab(P) {
+  const t = P.touch, l = len2(t.nx, t.nz);
+  if (l < 1e-6) return;
+  for (const r of P.ropes) if (r.state !== "idle") release(P, r.side);
+  P.wall = { nx: t.nx / l, nz: t.nz / l };
+  P.vel.x = P.vel.y = P.vel.z = 0; P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+  P.onGround = false; P.ground = null; P.airT = 0;
+  P.events.push({ type: "cling", nx: P.wall.nx, nz: P.wall.nz });
+}
+// Let go of the wall with a push out from it and up (m/s).
+function leaveWall(P, push, why) {
+  const w = P.wall;
+  P.wall = null;
+  P.wallCool = P.cfg.climb.regrab;
+  P.vel.x = w.nx * push.out; P.vel.y = push.up; P.vel.z = w.nz * push.out;
+  P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+  P.events.push({ type: "unclimb", why });
+}
+// One step on the wall. inp.climb = { up, x, z }: up -1..1, and the sideways wish in world x, z (the view's right times
+// the stick). The body moves along the wall at climb.speed and keeps the chest sphere just off it. At the top it steps on
+// to the roof; at the bottom it stands; past a corner it stops.
+function climb(P, h, inp) {
+  const cc = P.cfg.climb, w = P.wall, pos = P.pos, city = P.city, rad = P.cfg.chestRadius;
+  if (inp && inp.jump) { leaveWall(P, cc.jump, "jump"); P.stepSpeed = 0; return; }
+  const cl = inp && inp.climb;
+  let up = cl ? clamp(cl.up || 0, -1, 1) : 0, side = cl ? clamp((cl.x || 0) * -w.nz + (cl.z || 0) * w.nx, -1, 1) : 0;
+  const l = len2(up, side);
+  if (l > 1) { up /= l; side /= l; }
+  const x0 = pos.x, y0 = pos.y, z0 = pos.z;
+  let nx = x0 + -w.nz * side * cc.speed * h, ny = y0 + up * cc.speed * h, nz = z0 + w.nx * side * cc.speed * h;
+  // a ceiling over the head on the way up (a deck, a ledge, a collar): swing out on to its outer face and climb on
+  if (up > 0 && city.collideSphere(nx, ny + cc.head, nz, cc.headR, SPH) && SPH.ny < -0.5) {
+    if (!aroundLip(P, nx, ny, nz)) { ny = y0; nx = x0; nz = z0; } else { P.stepSpeed = len3(pos.x - x0, pos.y - y0, pos.z - z0) / h; return; }
+  }
+  // the wall at the new chest height, straight in
+  const hit = city.raycast(nx, ny + P.chest, nz, -w.nx, 0, -w.nz, rad + cc.reach, HIT);
+  if (hit && Math.abs(hit.ny) < cc.wallY) {
+    // follow the surface (a round tower turns the normal), and keep the gap
+    const hl = len2(hit.nx, hit.nz);
+    w.nx = hit.nx / hl; w.nz = hit.nz / hl;
+    nx = hit.x + w.nx * (rad + cc.gap); nz = hit.z + w.nz * (rad + cc.gap);
+  } else if (up > 0) {
+    // past the top edge: step on to the roof if there is one close over the chest
+    const fx = nx - w.nx * (rad + cc.inset), fz = nz - w.nz * (rad + cc.inset);
+    const tb = city.topBelow(fx, ny + P.chest + cc.mantle, fz, FOOT_R);
+    if (tb && tb.y > ny - 0.5) {
+      pos.x = fx; pos.y = tb.y; pos.z = fz;
+      const col = tb.collider;
+      P.wall = null; P.wallCool = cc.regrab;
+      P.vel.x = P.vel.y = P.vel.z = 0;
+      P.onGround = true; P.ground = col;
+      P.lastSafe.x = pos.x; P.lastSafe.y = pos.y; P.lastSafe.z = pos.z;
+      P.stepSpeed = len3(pos.x - x0, pos.y - y0, pos.z - z0) / h;
+      P.events.push({ type: "mantle" });
+      return;
+    }
+    nx = x0; ny = y0; nz = z0; // an overhang: hold still
+  } else { nx = x0; nz = z0; } // a corner: no further sideways (down still works)
+  // climbing down, the feet reach a roof or the street below: stand there
+  const tb = city.topBelow(nx, y0 + 0.05, nz, FOOT_R);
+  let top = tb ? tb.y : -Infinity, col = tb ? tb.collider : null;
+  if (!city.isWater(nx, nz)) { const g = city.groundY(nx, nz); if (g > top) { top = g; col = null; } }
+  if (ny < top) ny = top;
+  if (up < 0 && ny <= top) {
+    ny = top;
+    P.wall = null; P.wallCool = cc.regrab;
+    P.onGround = true; P.ground = col;
+    P.events.push({ type: "unclimb", why: "ground" });
+  }
+  P.vel.x = (nx - x0) / h; P.vel.y = (ny - y0) / h; P.vel.z = (nz - z0) / h;
+  P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+  pos.x = nx; pos.y = ny; pos.z = nz;
+  P.stepSpeed = len3(P.vel.x, P.vel.y, P.vel.z);
+  P.airT = 0;
+}
+
+// Under an overhang: find its outer face straight out from the wall, a little over the chest, and hold on there.
+// False when there is none in reach or no room beside it.
+function aroundLip(P, x, y, z) {
+  const cc = P.cfg.climb, w = P.wall, city = P.city, rad = P.cfg.chestRadius, yc = y + P.chest + cc.lip;
+  const far = cc.lipReach;
+  const hit = city.raycast(x + w.nx * far, yc, z + w.nz * far, -w.nx, 0, -w.nz, far, HIT);
+  // the face must stand out past the wall you hold (which is rad + gap in from the body)
+  if (!hit || Math.abs(hit.ny) > cc.wallY || far - hit.t + rad + cc.gap < 0.1) return false;
+  const hl = len2(hit.nx, hit.nz), nx = hit.nx / hl, nz = hit.nz / hl;
+  const px = hit.x + nx * (rad + cc.gap), pz = hit.z + nz * (rad + cc.gap), py = yc - P.chest;
+  if (city.collideSphere(px, yc, pz, rad - 0.02) || city.collideSphere(px, py + cc.head, pz, cc.headR)) return false;
+  P.pos.x = px; P.pos.y = py; P.pos.z = pz;
+  w.nx = nx; w.nz = nz;
+  P.vel.x = P.vel.y = P.vel.z = 0;
+  P.events.push({ type: "lip" });
+  return true;
 }
 
 /* ---------------- ropes ---------------- */
@@ -223,6 +323,8 @@ export function step(P, h, inp) {
   P.yankCool[0] = Math.max(0, P.yankCool[0] - h);
   P.yankCool[1] = Math.max(0, P.yankCool[1] - h);
   P.bumpCool = Math.max(0, P.bumpCool - h);
+  P.wallCool = Math.max(0, P.wallCool - h);
+  P.touch.on = false;
   P.quietT += h;
   const mv = inp && inp.move, mx = mv ? mv.x || 0 : 0, mz = mv ? mv.z || 0 : 0, ml = len2(mx, mz);
   if (ml > 0.15) P.quietT = 0;
@@ -230,6 +332,7 @@ export function step(P, h, inp) {
   ropeInput(P, 0, hands ? hands[0] : null, h);
   ropeInput(P, 1, hands ? hands[1] : null, h);
   if (P.frozen) { P.pullVel.x = P.pullVel.y = P.pullVel.z = 0; P.stepSpeed = 0; return; }
+  if (P.wall) { climb(P, h, inp); return; }
   const attached = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
 
   /* ---- forces ---- */
@@ -302,6 +405,12 @@ export function step(P, h, inp) {
   wall(P, P.chest, c.chestRadius, vy);
   wall(P, 0.5, c.kneeRadius, vy);
 
+  /* ---- climbing: a wall the chest touched in the air, or walked into, holds you ---- */
+  if (c.climb && P.touch.on && P.wallCool <= 0 && !P.dead) {
+    const into = -(mx * P.touch.nx + mz * P.touch.nz);
+    if (!P.onGround || into > 0.5) { grab(P); return; }
+  }
+
   /* ---- a rope that runs through a wall for too long snaps ---- */
   C.x = pos.x; C.y = pos.y + P.chest; C.z = pos.z;
   for (const r of P.ropes) {
@@ -345,6 +454,8 @@ function wall(P, off, rad, vyMove) {
   if (!P.city.collideSphere(pos.x, pos.y + off, pos.z, rad, SPH)) return;
   pos.x = SPH.x; pos.y = SPH.y - off; pos.z = SPH.z;
   const nx = SPH.nx, ny = SPH.ny, nz = SPH.nz;
+  // the chest against a wall: climbing may grab it
+  if (off === P.chest && P.cfg.climb && Math.abs(ny) < P.cfg.climb.wallY) { P.touch.on = true; P.touch.nx = nx; P.touch.nz = nz; }
   const into = -((V.x + W.x) * nx + (V.y + W.y) * ny + (V.z + W.z) * nz);
   if (into > 0) {
     const vm = V.x * nx + V.y * ny + V.z * nz;
