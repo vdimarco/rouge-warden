@@ -1,6 +1,7 @@
-// The default art is a cartoon. Explicit Original selections remain available.
+// The default art is painted: cartoon models and painted skies. Explicit Original selections remain available.
+// Any other value is the painted style, so a save that holds the style's old name keeps its look.
 export const artStyle = { value: 1 };
-export const normalizeStyle = (style) => style === "original" ? "original" : "ghibli";
+export const normalizeStyle = (style) => style === "original" ? "original" : "painted";
 
 // Keep the existing wind, swimming and water tint while changing the drawing style.
 export function storyMaterial(material) {

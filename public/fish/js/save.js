@@ -20,7 +20,7 @@ import { DAILY, isDay, prevDay } from "./goals.js";
 export const SAVE_KEY = "fish.v1";
 const blankToday = () => ({ d: "", k: 0, n: 0, done: 0 });
 const blankDays = () => ({ n: 0, run: 0, best: 0, last: "" });
-export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {}, today: blankToday(), days: blankDays(), bestRun: 0 });
+export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "painted", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {}, today: blankToday(), days: blankDays(), bestRun: 0 });
 export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
@@ -76,7 +76,8 @@ export function loadSave(raw) {
   save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
   for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
   if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
-  if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "ghibli";
+  // the painted style (the default) is any value but "original": an old save keeps its look under the style's old name
+  if (save.artStyle !== "original") save.artStyle = "painted";
   if (save.reelSide !== "left") save.reelSide = "right";
   // a copy, so the new save shares nothing with what it was read from (an array of flags is no flags)
   save.seen = Array.isArray(save.seen) ? {} : { ...save.seen };
