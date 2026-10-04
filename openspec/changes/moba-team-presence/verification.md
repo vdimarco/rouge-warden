@@ -11,5 +11,8 @@ Local Playwright with the preinstalled Chromium (software GL) at 1440x900, 390x8
 - A full six-minute bot match in the page fired these calls in order with no console errors: first blood, the Wild Hunt, ward alarms by lane, enemy ward destroyed, our ward has fallen, killing spree, double kill, mega kill, unstoppable, wicked sick, shut down, and defeat. Chat lines came from both teammates.
 - HUD skill icons measure 54 to 62 px for every tested hero. The clock holds while the mouse is outside the window and runs after it returns.
 
+## Recorded clips
+All 40 clips load with no 404s. In a full in-page match, first blood, double kill, killing spree and the battle start played as recorded lines and no longer reached the speech engine. Lines without a clip (ward alarms, objectives) still use speech. `team-presence.test.mjs` checks that every multi-kill and streak name has a clip file.
+
 ## Not checked
 Speech was checked with a stubbed speech engine, so the real voice and the sound mix have not been heard. The headless browser cannot play audio to a listener. Physical phone touch and performance were not tested. OpenSpec CLI is not installed, so the change was checked by hand against the existing delta format.

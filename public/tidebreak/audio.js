@@ -1,12 +1,18 @@
 // Locally synthesized music, battle sound and announcer. Starts on a user gesture.
 // Mix: sources -> (sfx | music) bus -> compressor -> speakers, with a shared reverb send.
 const VOICE_KEY = 'tidebreak.voice';
+// Recorded clips (see audio/CREDITS.md). Each falls back to synthesis until it has loaded.
+export const CLIPS = {
+  announcer: ['first-blood', 'double-kill', 'triple-kill', 'mayhem', 'rampage', 'killing-spree', 'dominating', 'mega-kill', 'ownage', 'massacre', 'carnage', 'godlike', 'choose-your-character', 'prepare-yourself', 'fight', 'you-win', 'you-lose', 'flawless-victory', 'multi-kill', 'game-over'],
+  sfx: ['punch-1', 'punch-2', 'punch-heavy-1', 'punch-heavy-2', 'metal', 'metal-heavy', 'bell', 'crumble', 'plate-heavy', 'body-fall', 'wood-heavy', 'glass', 'coins', 'draw-blade', 'ui-tick', 'ui-confirmation', 'ui-select', 'ui-glass', 'ui-pluck', 'ui-error'],
+};
+const CLIP_BASE = new URL('./audio/', import.meta.url);
 export class Sound {
   constructor() {
     this.on = true; this.voiceOn = true;
     try { this.on = localStorage.getItem('tidebreak.sound') !== 'off'; this.voiceOn = localStorage.getItem(VOICE_KEY) !== 'off'; } catch {}
     this.context = null; this.note = 0; this.next = 0; this.beat = 0; this.intensity = 0;
-    this.listener = { x: 0, y: 0, span: 1400 }; this.lastAt = {};
+    this.listener = { x: 0, y: 0, span: 1400 }; this.lastAt = {}; this.buffers = new Map(); this.loading = false;
   }
   start() {
     try {
@@ -22,7 +28,21 @@ export class Sound {
         this.noiseBuffer = buffer;
       }
       this.context.resume().catch(() => {});
+      this.loadClips();
     } catch {}
+  }
+  loadClips() {
+    if (this.loading || !this.context || typeof fetch !== 'function') return; this.loading = true;
+    for (const [folder, names] of Object.entries(CLIPS)) for (const name of names)
+      fetch(new URL(`${folder}/${name}.mp3`, CLIP_BASE)).then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status)).then(data => this.context.decodeAudioData(data)).then(buffer => this.buffers.set(name, buffer)).catch(() => {});
+  }
+  // Plays a loaded clip and returns true; returns false so callers can synthesize instead.
+  clip(name, { gain = 1, pan = 0, rate = 1, delay = 0, reverb = 0, bus } = {}) {
+    const buffer = this.buffers.get(name); if (!this.ready || !buffer) return false;
+    const c = this.context, source = c.createBufferSource(), g = c.createGain();
+    source.buffer = buffer; source.playbackRate.value = rate; g.gain.value = gain;
+    source.connect(g); this.route(g, { pan, reverb, bus }); source.start(c.currentTime + delay);
+    return buffer.duration / rate;
   }
   impulse(seconds) {
     const c = this.context, n = Math.floor(c.sampleRate * seconds), b = c.createBuffer(2, n, c.sampleRate);
@@ -78,6 +98,7 @@ export class Sound {
     this.tone([340, 430, 220][variant] * pitch, [.11, .14, .21][variant], variant === 2 ? .03 : .02, hero === 7 ? 'sine' : 'triangle', [105, 160, 65][variant] * pitch);
     this.noise([.06, .07, .12][variant], variant === 2 ? .07 : .045, { freq: [2600, 2100, 1300][variant] * pitch, end: 500, q: 1.3 });
     if (variant === 2) this.tone(70, .2, .05, 'sine', 40);
+    this.clip(variant === 2 ? `punch-heavy-${1 + (hero % 2)}` : `punch-${1 + variant}`, { gain: variant === 2 ? .55 : .38, rate: .85 + pitch * .15 });
   }
   skill(slot, hero = 0) {
     const roots = [310, 145, 250, 190, 120, 420, 540, 95, 660, 330, 470, 175], root = roots[hero] || 310, interval = [1, 1.5, 1.25, .5][slot] || 1, type = [0, 3, 7, 11].includes(hero) ? 'triangle' : 'sine';
@@ -104,11 +125,11 @@ export class Sound {
   }
 
   // ---- Battlefield sounds at a world position.
-  worldHit(x, y, heavy = false) { const s = this.spatial(x, y); if (s.gain < .08) return; this.noise(heavy ? .12 : .06, (heavy ? .045 : .028) * s.gain, { freq: heavy ? 1400 : 2400, end: 500, q: 1.2, pan: s.pan }); this.tone(heavy ? 160 : 260, .1, .012 * s.gain, 'triangle', 90, 0, { pan: s.pan }); }
+  worldHit(x, y, heavy = false) { const s = this.spatial(x, y); if (s.gain < .08) return; this.clip(heavy ? 'punch-heavy-1' : Math.random() < .5 ? 'punch-1' : 'punch-2', { gain: .22 * s.gain, pan: s.pan, rate: .9 + Math.random() * .2 }); this.noise(heavy ? .12 : .06, (heavy ? .045 : .028) * s.gain, { freq: heavy ? 1400 : 2400, end: 500, q: 1.2, pan: s.pan }); this.tone(heavy ? 160 : 260, .1, .012 * s.gain, 'triangle', 90, 0, { pan: s.pan }); }
   worldCast(x, y, ultimate = false) { const s = this.spatial(x, y); if (s.gain < .08) return; this.noise(ultimate ? .5 : .28, .035 * s.gain, { freq: 500, end: ultimate ? 3200 : 2000, q: 2.2, pan: s.pan, reverb: .35 }); if (ultimate) this.tone(62, .6, .05 * s.gain, 'sine', 38, 0, { pan: s.pan }); }
   towerShot(x, y) { const s = this.spatial(x, y); if (s.gain < .1) return; this.tone(1180, .22, .02 * s.gain, 'sawtooth', 240, 0, { pan: s.pan, reverb: .3 }); this.noise(.16, .03 * s.gain, { freq: 3800, end: 900, q: 4, pan: s.pan }); }
   death(x, y, ally) {
-    const s = this.spatial(x, y);
+    const s = this.spatial(x, y); this.clip('body-fall', { gain: .7 * Math.max(.3, s.gain), pan: s.pan, rate: .8, reverb: .3 });
     this.tone(ally ? 220 : 196, .9, .05 * s.gain, 'triangle', ally ? 110 : 98, 0, { pan: s.pan, reverb: .6 });
     this.tone(ally ? 261.6 : 155.6, .9, .03 * s.gain, 'sine', null, .08, { pan: s.pan, reverb: .6 });
     this.noise(.6, .05 * s.gain, { freq: 900, end: 180, q: .8, pan: s.pan, reverb: .5 });
@@ -120,17 +141,19 @@ export class Sound {
     for (let i = 0; i < 3; i++) this.noise(.07, .03 * g, { freq: 2600 + i * 700, end: 900, q: 2.5, delay: i * .11 + Math.random() * .05, pan: s.pan, reverb: .5 });
     this.tone(180, .18, .01 * g, 'triangle', 120, .05, { pan: s.pan, reverb: .5 });
   }
-  structureFall(x, y) { const s = this.spatial(x, y), g = Math.max(.5, s.gain); this.noise(1.8, .12 * g, { type: 'lowpass', freq: 900, end: 60, pan: s.pan, reverb: .6, attack: .02 }); this.tone(48, 1.6, .1 * g, 'sine', 30, 0, { pan: s.pan }); for (let i = 0; i < 5; i++) this.noise(.1, .04 * g, { freq: 400 + i * 230, q: 3, delay: .2 + i * .17, pan: s.pan }); }
+  structureFall(x, y) { const s = this.spatial(x, y), g = Math.max(.5, s.gain); this.clip('crumble', { gain: .9 * g, pan: s.pan, rate: .7, reverb: .5 }); this.clip('plate-heavy', { gain: .6 * g, pan: s.pan, rate: .6, delay: .25, reverb: .5 }); this.noise(1.8, .12 * g, { type: 'lowpass', freq: 900, end: 60, pan: s.pan, reverb: .6, attack: .02 }); this.tone(48, 1.6, .1 * g, 'sine', 30, 0, { pan: s.pan }); for (let i = 0; i < 5; i++) this.noise(.1, .04 * g, { freq: 400 + i * 230, q: 3, delay: .2 + i * .17, pan: s.pan }); }
   alarm(enemy = false) { // A bronze bell, twice.
+    if (this.clip('bell', { gain: .8, rate: enemy ? .84 : .94, reverb: .5 })) { this.clip('bell', { gain: .6, rate: enemy ? .84 : .94, delay: .45, reverb: .5 }); return; }
     for (let i = 0; i < 2; i++) { const d = i * .42; [1, 2.76, 5.4].forEach((m, j) => this.tone((enemy ? 466 : 523) * m, 1.1 - j * .3, [.045, .02, .01][j], 'sine', null, d, { reverb: .55 })); }
   }
   ping(type, x, y) {
     const s = x === undefined ? { pan: 0 } : this.spatial(x, y);
     const notes = { fight: [880, 660], defend: [740, 554], rally: [660, 880, 1100], onmyway: [990, 1320], retreat: [520, 390] }[type] || [880];
+    if (this.clip('ui-glass', { gain: .5, pan: s.pan, rate: type === 'defend' ? .8 : type === 'retreat' ? .9 : 1.1, reverb: .3 })) return;
     notes.forEach((hz, i) => this.tone(hz, .16, .03, 'sine', null, i * .08, { pan: s.pan, reverb: .35 }));
   }
-  chat() { this.tone(1560, .06, .012, 'sine', 1900); this.tone(2080, .05, .008, 'sine', null, .045); }
-  coin() { this.tone(1320, .09, .02, 'square', null, 0); this.tone(1760, .16, .018, 'square', null, .06, { reverb: .3 }); }
+  chat() { if (this.clip('ui-pluck', { gain: .35, rate: 1.2 })) return; this.tone(1560, .06, .012, 'sine', 1900); this.tone(2080, .05, .008, 'sine', null, .045); }
+  coin() { if (this.clip('coins', { gain: .7 })) return; this.tone(1320, .09, .02, 'square', null, 0); this.tone(1760, .16, .018, 'square', null, .06, { reverb: .3 }); }
   levelUp() { this.chord([523, 659, 784, 1047], .7, .022, 'triangle', 0, { spread: .07 }); }
   portal() { this.noise(.9, .07, { freq: 300, end: 4000, q: 4, reverb: .6 }); this.tone(220, .9, .03, 'sine', 880, 0, { reverb: .6 }); }
   respawn() { this.chord([392, 587, 784], 1.1, .02, 'sine', 0, { spread: .1 }); this.noise(1.1, .03, { freq: 5000, q: 2, reverb: .7, attack: .5 }); }
@@ -141,8 +164,8 @@ export class Sound {
   defeat() { [[220, 261.6, 329.6], [196, 233, 293.7], [174.6, 207.7, 261.6]].forEach((c, i) => this.chord(c, i === 2 ? 2.6 : .7, .026, 'sine', i * .6)); this.tone(55, 3, .07, 'sine', 41, 1.2, { reverb: .7 }); }
 
   // ---- Draft.
-  draftHover() { this.tone(1240, .05, .012, 'sine', 1000); }
-  draftLock(team = 0) { this.tone(team ? 196 : 262, .5, .055, 'triangle', team ? 98 : 131, 0, { reverb: .5 }); this.noise(.3, .07, { freq: 1700, end: 300, q: 1.5, reverb: .4 }); this.tone(team ? 392 : 523, .5, .02, 'sine', null, .04, { reverb: .5 }); }
+  draftHover() { if (!this.clip('ui-tick', { gain: .45 })) this.tone(1240, .05, .012, 'sine', 1000); }
+  draftLock(team = 0) { this.clip('metal-heavy', { gain: .45, rate: team ? .7 : .85, reverb: .4 }); this.clip('ui-confirmation', { gain: .35, rate: team ? .8 : 1 }); this.tone(team ? 196 : 262, .5, .055, 'triangle', team ? 98 : 131, 0, { reverb: .5 }); this.noise(.3, .07, { freq: 1700, end: 300, q: 1.5, reverb: .4 }); this.tone(team ? 392 : 523, .5, .02, 'sine', null, .04, { reverb: .5 }); }
   draftHorn() { this.horn(); }
 
   // ---- Announcer: a stinger for each call, and a spoken line when available.
@@ -170,11 +193,21 @@ export class Sound {
     if (this.music && this.context) { const g = this.music.gain, t = this.context.currentTime; g.cancelScheduledValues(t); g.setTargetAtTime(.35, t, .05); u.onend = u.onerror = () => g.setTargetAtTime(1, this.context.currentTime, .3); }
     synth.speak(u); return true;
   }
-  announce(text, kind, { level = 2, priority = 1 } = {}) {
+  // Plays a recorded announcer line with the music ducked. Returns false if the clip is not loaded.
+  voiceClip(name, delay = 0) {
+    if (!this.voiceOn || !name) return false;
+    const length = this.clip(name, { gain: 1.25, delay, reverb: .18 }); if (!length) return false;
+    if (this.music) { const g = this.music.gain, t = this.context.currentTime + delay; g.cancelScheduledValues(t); g.setTargetAtTime(.3, t, .04); g.setTargetAtTime(1, t + length, .3); }
+    return true;
+  }
+  announce(text, kind, { level = 2, priority = 1, clip } = {}) {
     if (!this.ready) return;
     this.stingerLevel = level; this.stinger(kind);
-    setTimeout(() => this.say(text, { priority }), kind === 'first-blood' || kind === 'wipe' ? 260 : 120);
+    const delay = kind === 'first-blood' || kind === 'wipe' ? .26 : .12;
+    if (this.voiceClip(clip, delay)) return;
+    setTimeout(() => this.say(text, { priority }), delay * 1000);
   }
+  line(clip, text, delay = 0) { if (this.ready && !this.voiceClip(clip, delay)) setTimeout(() => this.say(text), delay * 1000); }
   silence() { try { window.speechSynthesis?.cancel(); } catch {} }
   toggle() { this.on = !this.on; try { localStorage.setItem('tidebreak.sound', this.on ? 'on' : 'off'); } catch {} if (!this.on) this.silence(); return this.on; }
   toggleVoice() { this.voiceOn = !this.voiceOn; try { localStorage.setItem(VOICE_KEY, this.voiceOn ? 'on' : 'off'); } catch {} if (!this.voiceOn) this.silence(); return this.voiceOn; }

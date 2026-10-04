@@ -2,10 +2,12 @@
 import { HERO_IDENTITIES } from './hero-identities.js';
 import { LANE_NAMES } from './objectives.js';
 
-const MULTI = [null, null, 'Double kill', 'Triple kill', 'Ultra kill', 'Rampage'];
-const STREAK = { 3: 'Killing spree', 4: 'Dominating', 5: 'Mega kill', 6: 'Unstoppable', 7: 'Wicked sick', 8: 'Monster kill', 9: 'Godlike' };
-export const streakName = n => n >= 10 ? 'Beyond godlike' : STREAK[n] || null;
+// Names follow the recorded announcer lines in audio/announcer.
+const MULTI = [null, null, 'Double kill', 'Triple kill', 'Mayhem', 'Rampage'];
+const STREAK = { 3: 'Killing spree', 4: 'Dominating', 5: 'Mega kill', 6: 'Ownage', 7: 'Massacre', 8: 'Carnage', 9: 'Godlike' };
+export const streakName = n => n >= 9 ? 'Godlike' : STREAK[n] || null;
 export const multiName = n => n >= 2 ? MULTI[Math.min(5, n)] : null;
+export const clipFor = title => title ? title.toLowerCase().replace(/\s+/g, '-') : null;
 export const heroColor = unit => HERO_IDENTITIES[unit?.identity]?.color || (unit?.team ? '#ff917c' : '#abf8b2');
 const unitName = (s, id) => s.units.find(u => u.id === id)?.name || 'A ward';
 
@@ -14,12 +16,12 @@ export function killCall(entry, s, playerId) {
   const killer = s.units.find(u => u.id === entry.killer), victim = s.units.find(u => u.id === entry.victim);
   const ours = entry.killerTeam === 0, detail = `${killer?.name || 'The wards'} banished ${victim?.name || 'a hero'}`;
   const byPlayer = killer?.id === playerId;
-  if (entry.firstBlood) return { title: 'First blood', voice: 'First blood!', kind: 'first-blood', big: true, ours, detail };
+  if (entry.firstBlood) return { title: 'First blood', voice: 'First blood!', clip: 'first-blood', kind: 'first-blood', big: true, ours, detail };
   if (entry.teamWipe) return { title: ours ? 'Wiped them out' : 'Our team has fallen', voice: ours ? 'Team wipe! They are all banished.' : 'Your team has fallen.', kind: 'wipe', big: true, ours, detail };
   const multi = multiName(entry.multi), streak = streakName(entry.streak);
-  if (multi) return { title: multi, voice: `${multi}!`, kind: 'multi', level: entry.multi, big: true, ours, detail: byPlayer ? 'You' : killer?.name };
+  if (multi) return { title: multi, voice: `${multi}!`, clip: clipFor(multi), kind: 'multi', level: entry.multi, big: true, ours, detail: byPlayer ? 'You' : killer?.name };
   if (entry.shutdown) return { title: 'Shut down', voice: 'Shut down!', kind: 'shutdown', big: true, ours, detail: `${victim?.name}'s ${entry.shutdown}-kill streak ends` };
-  if (streak) return { title: streak, voice: `${streak}!`, kind: 'streak', level: Math.min(8, entry.streak - 1), big: true, ours, detail: byPlayer ? 'You' : killer?.name };
+  if (streak) return { title: streak, voice: `${streak}!`, clip: clipFor(streak), kind: 'streak', level: Math.min(8, entry.streak - 1), big: true, ours, detail: byPlayer ? 'You' : killer?.name };
   if (victim?.id === playerId) return { title: 'You were banished', voice: 'You have been banished.', kind: 'ally-down', big: false, ours, detail };
   if (byPlayer) return { title: 'Enemy banished', voice: 'Enemy banished.', kind: 'enemy-down', big: false, ours, detail };
   return { title: ours ? `${victim?.name} banished` : `${victim?.name} has fallen`, voice: null, kind: ours ? 'enemy-down' : 'ally-down', big: false, ours, detail };
@@ -39,8 +41,8 @@ const MESSAGE_CALLS = {
   'Enemy claimed the Wild Hunt': { voice: 'The enemy has claimed the Wild Hunt.', kind: 'ward-fall', banner: true },
   'The woods swallow the town': { voice: 'The woods awaken.', sound: 'realm1' },
   'The town returns': { sound: 'realm0' },
-  'Legends never die': { voice: 'Victory.', sound: 'victory' },
-  'Lost to the veil': { voice: 'Defeat.', sound: 'defeat' },
+  'Legends never die': { voice: 'Victory.', clip: 'you-win', sound: 'victory' },
+  'Lost to the veil': { voice: 'Defeat.', clip: 'you-lose', sound: 'defeat' },
   'A legend returns': { sound: 'respawn' },
   'Through the looking glass': { sound: 'portal' },
   'Spirit feast': { sound: 'coin' },
@@ -75,7 +77,7 @@ export class Announcer {
   speak(call, s, priority = 1) {
     if (!call.voice) return;
     // Calls closer than 1.6 s replace one another, so the voice keeps up with the fight.
-    this.sound.announce(call.voice, call.kind, { level: call.level || 2, priority: s.time - this.voiceAt < 1.6 ? 2 : priority }); this.voiceAt = s.time;
+    this.sound.announce(call.voice, call.kind, { level: call.level || 2, clip: call.clip, priority: s.time - this.voiceAt < 1.6 ? 2 : priority }); this.voiceAt = s.time;
   }
   update(s, { playerId, visible }) {
     if (s !== this.state) this.reset(s);
@@ -108,7 +110,8 @@ export class Announcer {
       if (call.banner) this.banner(m.title, m.detail, /Enemy claimed|fallen/.test(m.title) ? 'enemy' : 'ally', 'objective');
       if (call.kind) sound.stinger(call.kind);
       if (call.sound === 'roar') sound.roar(); else if (call.sound === 'realm1') sound.realmShift(1); else if (call.sound === 'realm0') sound.realmShift(0); else if (call.sound) sound[call.sound]();
-      if (call.voice) setTimeout(() => sound.say(call.voice), call.sound === 'roar' ? 900 : 300);
+      if (call.clip) sound.line(call.clip, call.voice, .5);
+      else if (call.voice) setTimeout(() => sound.say(call.voice), call.sound === 'roar' ? 900 : 300);
     }
     // Spatial battle sound for units other than the player.
     let threat = 0, clash = null;

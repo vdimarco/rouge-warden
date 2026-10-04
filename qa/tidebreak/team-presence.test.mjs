@@ -4,7 +4,9 @@ import { HERO_IDENTITIES, assignIdentities } from '../../public/tidebreak/hero-i
 import { draftPlan, PICK_ORDER, SLOTS } from '../../public/tidebreak/draft.js';
 import { recordKill, noteStructureHit, assistPoint, MULTI_KILL_WINDOW, ALARM_COOLDOWN } from '../../public/tidebreak/team-events.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
-import { killCall, defendCall, multiName, streakName } from '../../public/tidebreak/announcer.js';
+import { killCall, defendCall, multiName, streakName, clipFor } from '../../public/tidebreak/announcer.js';
+import { CLIPS } from '../../public/tidebreak/audio.js';
+import { existsSync } from 'node:fs';
 import { chatFor, laneAt } from '../../public/tidebreak/team-chat.js';
 
 // Draft: the player's hero locks, five bots pick distinct heroes, and the plan is seeded.
@@ -48,7 +50,12 @@ assert.equal(JSON.stringify(createMatch(3, 99).units), JSON.stringify(createMatc
   assert.equal(shutdown.shutdown, 3); assert.equal(killCall(shutdown, s, me.id).title, 'Shut down');
   assert.equal(me.streak, 0);
   assert.equal(killCall(first, s, me.id).title, 'First blood');
-  assert.equal(multiName(5), 'Rampage'); assert.equal(multiName(9), 'Rampage'); assert.equal(streakName(12), 'Beyond godlike');
+  assert.equal(multiName(4), 'Mayhem'); assert.equal(multiName(9), 'Rampage'); assert.equal(streakName(12), 'Godlike');
+  // Every named call has a recorded clip.
+  const clips = new Set(CLIPS.announcer);
+  for (let n = 2; n < 7; n++) assert.ok(clips.has(clipFor(multiName(n))), multiName(n));
+  for (let n = 3; n < 12; n++) assert.ok(clips.has(clipFor(streakName(n))), streakName(n));
+  for (const folder of Object.keys(CLIPS)) for (const name of CLIPS[folder]) assert.ok(existsSync(new URL(`../../public/tidebreak/audio/${folder}/${name}.mp3`, import.meta.url)), name);
 }
 
 // A ward alarm fires once per cooldown and names its lane.
