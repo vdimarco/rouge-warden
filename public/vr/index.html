@@ -178,6 +178,12 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 @media (max-width: 420px) { .btn { padding: 9px 16px 6px; letter-spacing: 0.06em; } .kicker { letter-spacing: 0.06em; } dialog { padding: 18px 16px 16px; } }
 @media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i { transition: none; } }
 
+/* flat play with no pointer lock: how to get the mouse look back, a caption box over the hero's head, clear of the spoken
+   lines at the bottom (main.js shows it) */
+.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 13; margin: 0; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+.look-hint b { display: block; font: 400 clamp(22px, 2.6vw, 30px) / 1.05 var(--comic); letter-spacing: 0.06em; text-transform: uppercase; }
+.look-hint small { display: block; margin-top: 2px; font: 700 17px / 1.2 var(--ui); letter-spacing: 0.03em; }
+
 #phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
 #phoneControls[hidden] { display:none; }
 #phoneControls button { pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; color:#fff6df; background:#111d2dd9; border:1px solid #e1bc7444; border-radius:24px; min-height:44px; padding:10px 16px; font:600 14px sans-serif; }
@@ -213,6 +219,7 @@ body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-ins
 </head>
 <body data-mode="title">
 <div id="view" aria-hidden="true"></div>
+<p class="look-hint" id="lookHint" role="status" hidden><b>Click to look around</b><small>Or hold the pointer at an edge to turn.</small></p>
 
 <main id="title">
   <!-- The art replaces the live city behind the title: main.js stops drawing the city once data-art is set on <html> -->

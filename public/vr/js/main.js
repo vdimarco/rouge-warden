@@ -310,7 +310,7 @@ function onResume() {
   Promise.resolve(ui.fade(1, 0, look)).then(() => ui.fade(0, 0.4, look)).catch(() => {});
   resumeGrace = 0.3;
   audio.duck(false);
-  if (G.mode === "desktop") { if (wantFs) goFullscreen(); D.lock(); }
+  if (G.mode === "desktop") takeLook(false);
 }
 
 /* ---------------- entering and leaving play ---------------- */
@@ -375,10 +375,21 @@ function onSessionEnd() {
 // flat play asked for it, so the click or key that resumes asks again. Leaving to the title leaves it. A browser without the
 // API (an iPhone) plays in the page as before.
 let wantFs = false;
+// The pointer lock first, then full screen: full screen uses up the click's permission, and a lock asked for after it may be
+// refused (Firefox, Safari). When full screen has come on, D.relock makes sure the lock holds the cursor. click: in a click.
+function takeLook(click = true) { D.lock(click); if (wantFs) goFullscreen(); }
+function onFullscreen() {
+  fsAt = 0;
+  const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (on && G.mode === "desktop" && D.active && (G.state === "play" || G.state === "intro")) D.relock();
+}
+// one request at a time: the change animates, and the frame that resumes after a click asks again
+let fsAt = 0;
 function goFullscreen() {
   const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
-  if (!fs || document.fullscreenElement || document.webkitFullscreenElement) return;
-  try { const p = fs.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { /* refused: play in the page */ }); } catch (e) { /* same */ }
+  if (!fs || document.fullscreenElement || document.webkitFullscreenElement || performance.now() - fsAt < 1500) return;
+  fsAt = performance.now();
+  try { const p = fs.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { fsAt = 0; /* refused: play in the page */ }); } catch (e) { fsAt = 0; }
 }
 function leaveFullscreen() {
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
@@ -393,7 +404,6 @@ function startDesktop() {
   D.active = true;
   settings.easySwing = D.mobile.enabled;
   D.level();
-  D.lock();
   flatCamera(75);
   enterPlay("desktop");
   flatView(true);
@@ -599,6 +609,7 @@ function tick(dt, frame, time) {
   }
   syncPauseState();
   const paused = G.state === "paused";
+  lookHint(G.mode === "desktop" && !paused && D.active && !D.mobile.enabled && D.free && !shot);
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
   // 8. the opening (it may place the rig: then the world poses follow at once)
   if (G.state === "intro") { portal.update(dt, G.time, G.frame, inp); toWorld(inp); }
@@ -1091,8 +1102,12 @@ function setShot(name) {
 }
 
 /* ---------------- the 2D page ---------------- */
+// Flat play with no pointer lock (refused, or lost without a pause): how to get the mouse look back
+let hintOn = false;
+function lookHint(on) { if (on !== hintOn) $("#lookHint").hidden = !(hintOn = on); }
 function showTitle(reenter) {
   G.titleShows++;
+  lookHint(false);
   document.documentElement.removeAttribute("data-pwa");
   document.body.dataset.mode = "title";
   const t = $("#title");
@@ -1134,7 +1149,7 @@ function wireTitle() {
     // a click you can hear, or a word on how to turn the sound on (it may be off from the arcade's speaker button); a toast,
     // so the opening's own lines do not cover it
     if (audio.isOn) audio.sfx("ui"); else setTimeout(() => ui.toast(mode === "desktop" && !D.mobile.enabled ? "Sound is off. Press M to turn it on." : "Sound is off. Turn it on in the pause menu."), 900);
-    if (mode === "desktop") { wantFs = true; goFullscreen(); D.mobile.start(); startDesktop(); } else startXR(mode);
+    if (mode === "desktop") { wantFs = true; D.mobile.start(); takeLook(); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
@@ -1176,12 +1191,19 @@ function wireTitle() {
     document.body.dataset.xr = ar ? "ar" : vr ? "vr" : "none";
     G.supported = { vr, ar };
   });
-  // flat play: a click on the city while paused goes back to play
+  // flat play: a click on the city while paused goes back to play (the menu closes first, so the city takes the lock), and a
+  // click with no lock takes it back (desktop.js fires no rope with it)
   renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
-    if (G.state === "paused") { if (wantFs) goFullscreen(); ui.closePause(); D.lock(); }
-    else if (!D.locked) { if (wantFs) goFullscreen(); D.lock(); }
+    if (G.state === "paused") { ui.closePause(); takeLook(); }
+    else if (!D.locked) takeLook();
   });
+  // a pause-menu button that ends the pause (RESUME) takes the lock inside its own click: the frame that resumes is too
+  // late for a browser that allows it only in the click
+  document.addEventListener("click", (e) => {
+    if (G.mode === "desktop" && G.state === "paused" && !ui.paused && e.target.closest && e.target.closest("#fsMenu button")) takeLook();
+  });
+  document.addEventListener("onfullscreenchange" in document ? "fullscreenchange" : "webkitfullscreenchange", onFullscreen);
   D.onUnlock(() => { if (G.mode === "desktop" && (G.state === "play" || G.state === "intro")) { ui.openPause(); syncPauseState(); } });
   $("#version").textContent = "v" + VERSION;
   setBusy(false);
