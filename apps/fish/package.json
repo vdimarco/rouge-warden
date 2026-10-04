@@ -17,7 +17,7 @@
     "android:bundle": "npm run build:www && cap sync android && cd android && ./gradlew bundleRelease",
     "ios:open": "npm run build:www && cap sync ios && cap open ios",
     "art": "node scripts/render-art.mjs",
-    "assets": "capacitor-assets generate --assetPath resources --iconBackgroundColor '#0d2f38' --iconBackgroundColorDark '#0d2f38' --splashBackgroundColor '#0d2f38' --splashBackgroundColorDark '#0d2f38'",
+    "assets": "capacitor-assets generate --ios --android --assetPath resources --iconBackgroundColor '#0d2f38' --iconBackgroundColorDark '#0d2f38' --splashBackgroundColor '#0d2f38' --splashBackgroundColorDark '#0d2f38' && node scripts/adaptive-icons.mjs",
     "test:bundle": "node ../../qa/fish/app-bundle.e2e.mjs",
     "capacitor:sync:after": "node scripts/native-check.mjs",
     "capacitor:update:after": "node scripts/native-check.mjs"
