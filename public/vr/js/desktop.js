@@ -18,6 +18,12 @@ const GRIP_OFF = [new THREE.Vector3(-0.22, -0.2, -0.25), new THREE.Vector3(0.22,
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const padAxis = (gp, i) => { const v = gp.axes[i] || 0; return Math.abs(v) < DEAD ? 0 : v; };
 const padButton = (gp, i) => !!gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5);
+// a stick out of its dead zone or a pressed button: the player is using the pad now
+function padBusy(gp) {
+  for (let i = 0; i < 4; i++) if (padAxis(gp, i)) return true;
+  for (let i = 0; i < gp.buttons.length; i++) if (padButton(gp, i)) return true;
+  return false;
+}
 
 export function createDesktop(canvas, camera, settings) {
   const inp = createInput("desktop", "mouse");
@@ -27,7 +33,7 @@ export function createDesktop(canvas, camera, settings) {
   const Q = { jump: false, menu: false, map: false, yank: false };
   const pad = { a: false, x: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
-  let dx = 0, dy = 0, pitch = 0, wheel = 0, skipMove = false;
+  let dx = 0, dy = 0, pitch = 0, wheel = 0, skipMove = false, usingPad = false;
   const unlockFns = [];
 
   const D = {
@@ -43,6 +49,8 @@ export function createDesktop(canvas, camera, settings) {
     onUnlock: (fn) => unlockFns.push(fn),
     // For tests and resets: look straight ahead.
     level(angle = 0) { pitch = clamp(angle, -PITCH_MAX, PITCH_MAX); mobile.reset(); },
+    // The flat view owns the pitch (main passes it in every frame), so the head, the muzzles and the limits follow the view.
+    setPitch(p) { pitch = clamp(p, -PITCH_MAX, PITCH_MAX); },
     // The phone camera follow tilts the view a little toward where the next buildings are.
     nudgePitch(dp) { pitch = clamp(pitch + dp, -PITCH_MAX, PITCH_MAX); },
   };
@@ -65,6 +73,7 @@ export function createDesktop(canvas, camera, settings) {
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("mousedown", (e) => {
     if (!D.active || mobile.enabled) return;
+    usingPad = false;
     if (e.button === 0) mouse[0] = true;
     else if (e.button === 2) mouse[1] = true;
     e.preventDefault();
@@ -73,12 +82,14 @@ export function createDesktop(canvas, camera, settings) {
   addEventListener("mousemove", (e) => {
     if (!D.active || !D.locked) return;
     if (skipMove) { skipMove = false; return; }
+    usingPad = false;
     // one event never turns more than MOVE_MAX pixels' worth (a stray jump would spin the view)
     dx += clamp(e.movementX || 0, -MOVE_MAX, MOVE_MAX); dy += clamp(e.movementY || 0, -MOVE_MAX, MOVE_MAX);
   });
   canvas.addEventListener("wheel", (e) => { if (!D.active) return; wheel = WHEEL_REEL; e.preventDefault(); }, { passive: false });
   addEventListener("keydown", (e) => {
     if (!D.active) return;
+    usingPad = false;
     const k = e.code;
     if (k === "Tab") { e.preventDefault(); if (!e.repeat) Q.map = true; }
     if (k === "Space") { e.preventDefault(); if (!e.repeat) Q.jump = true; }
@@ -97,6 +108,7 @@ export function createDesktop(canvas, camera, settings) {
     const phone = mobile.sample(dt);
     inp.easySwing = mobile.enabled;
     inp.phoneFire = phone.fire;
+    inp.phoneAim = phone.aim; // a tap's screen position (NDC x and y) for the frame it fires, else null: main aims through it
     // look: the mouse (only while the pointer is locked) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
@@ -108,6 +120,7 @@ export function createDesktop(canvas, camera, settings) {
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
     let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map;
     if (gp) {
+      if (padBusy(gp)) usingPad = true;
       turn -= padAxis(gp, 2) * PAD_LOOK * dt; dp -= padAxis(gp, 3) * PAD_LOOK * dt;
       if (!mx && !my) { mx = padAxis(gp, 0); my = -padAxis(gp, 1); }
       trig[0] = trig[0] || padButton(gp, 6); trig[1] = trig[1] || padButton(gp, 7);
@@ -127,6 +140,8 @@ export function createDesktop(canvas, camera, settings) {
     inp.turn = turn; inp.pitch = pitch;
     inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map;
     inp.visible = true;
+    // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
+    const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";
 
     // the head: standing height, pitch only (the rig carries the yaw)
     const head = inp.head.local;
@@ -135,7 +150,7 @@ export function createDesktop(canvas, camera, settings) {
     head.quat.setFromEuler(E);
     for (let i = 0; i < 2; i++) {
       const h = inp.hands[i];
-      h.connected = true; h.kind = "mouse";
+      h.connected = true; h.kind = kind;
       h.gripLocal.pos.copy(GRIP_OFF[i]).applyQuaternion(head.quat).add(head.pos);
       h.gripLocal.quat.copy(head.quat);
       h.aimLocal.pos.copy(head.pos);

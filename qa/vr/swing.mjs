@@ -217,6 +217,13 @@ try {
   check(att.rope.state === "attached" && evA.some((e) => e.type === "fire" && e.side === 1) && evA.some((e) => e.type === "attach" && e.side === 1), "the trigger fires the rope and it attaches", { rope: att.rope.state, events: evA.map((e) => e.type) });
   check(Math.hypot(cupP[0] - anc.x, cupP[1] - anc.y, cupP[2] - anc.z) < 0.01 && near(att.info.cups[1].out[0], -1, 1e-6), "the stuck cup sits at rope.anchor and faces along rope.normal", { cup: att.info.cups[1], anchor: anc });
   check(att.count >= 1 && ro.segs >= 1 && Math.hypot(ro.to[0] - att.tip[0], ro.to[1] - att.tip[1], ro.to[2] - att.tip[2]) < 0.3 && Math.hypot(ro.from[0] - anc.x, ro.from[1] - anc.y, ro.from[2] - anc.z) < 3, "the rope instances run from the cup to the launcher tip", { segs: ro.segs, count: att.count, from: ro.from, to: ro.to, tip: att.tip });
+  // the comic look: every one of these is drawn twice, the second time as an ink outline (back faces pushed out), and the twins keep step
+  const twins = await page.evaluate(() => {
+    const names = (m) => m.children.map((c) => c.name);
+    const rt = G.ropes.meshes.ropes.children[0];
+    return { ropes: names(G.ropes.meshes.ropes), cups: names(G.ropes.meshes.cups), launchers: names(G.hands.meshes.launchers), gloves: names(G.hands.meshes.joints), ropeTwin: rt ? rt.count : -1, ropeCount: G.ropes.meshes.ropes.count };
+  });
+  check(twins.ropes.includes("ropes:outline") && twins.cups.includes("cups:outline") && twins.launchers.includes("launchers:outline") && twins.gloves.includes("gloves:outline") && twins.ropeTwin === twins.ropeCount, "the ropes, cups, launchers and gloves each have an ink outline twin, and the rope's twin draws as many segments as the rope", twins);
   // pixels: a point on the rope a metre from the tip, drawn and then hidden. While held, G.frame stands still and the
   // loop only renders, so the clock steps it.
   await page.evaluate(() => G.test.hold(true));
