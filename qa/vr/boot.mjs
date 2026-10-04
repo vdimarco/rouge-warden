@@ -83,6 +83,19 @@ try {
   // walking forward with W moves the body; the step is deterministic
   const walk = await page.evaluate(() => { const a = G.test.state().pos; window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyW" })); G.test.step(1 / 60, 30); window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyW" })); G.test.step(1 / 60, 30); return { a, b: G.test.state().pos }; });
   check(Math.hypot(walk.b.x - walk.a.x, walk.b.z - walk.a.z) > 0.8, "W walks the body along the roof in flat play", walk);
+  // the input kind follows the device in use: the mouse, the pad once a button or stick moves, the mouse again on a key press
+  const kinds = await page.evaluate(() => {
+    const pad = { connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+    Object.defineProperty(navigator, "getGamepads", { value: () => [pad], configurable: true });
+    const kind = () => G.test.input().kind, out = {};
+    G.test.step(1 / 60, 2); out.idle = kind();
+    pad.buttons[3].pressed = true; G.test.step(1 / 60, 2); out.pad = kind(); out.hand = G.test.input().hands[1].kind;
+    pad.buttons[3].pressed = false; G.test.step(1 / 60, 2); out.rest = kind();
+    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyJ" })); window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyJ" })); G.test.step(1 / 60, 2); out.key = kind();
+    delete navigator.getGamepads;
+    return out;
+  });
+  check(kinds.idle === "mouse" && kinds.pad === "pad" && kinds.hand === "pad" && kinds.rest === "pad" && kinds.key === "mouse", "the input kind is mouse, then pad once the pad is used, then mouse again on a key press", kinds);
 
   // the G.test hooks in flat play: aim and fire a rope with aimAt + press, then let go
   const hk = await page.evaluate(() => {

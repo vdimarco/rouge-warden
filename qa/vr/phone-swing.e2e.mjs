@@ -31,7 +31,12 @@ try {
   const run = await page.evaluate(() => {
     G.test.hold(true);
     const s = G.city.start, R = G.city.goldRing;
-    G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); G.desktop.level(0.35); G.test.step(1 / 60, 2);
+    G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z));
+    // in the chase view: hold the camera at this bearing and stop the hand-off settle (it eases the pitch for a while after
+    // PLAY), and run one frame so the input's pitch matches the camera's; the level below then gives the same view however
+    // many frames ran before this point
+    if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); }
+    G.desktop.level(0.35); G.test.step(1 / 60, 2);
     const btn = document.querySelector('[data-action=throw]'), p0 = { ...G.P.pos };
     let sum = 0, max = 0, flings = 0, wide = 0, rush = 0, pressedAfterFling = null;
     for (let f = 0; f < 720; f++) {

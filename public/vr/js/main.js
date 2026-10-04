@@ -16,6 +16,8 @@ import { createUI } from "./ui.js";
 import { createPortal } from "./portal.js";
 import { createAudio } from "./audio.js";
 import { createFX } from "./fx.js";
+import { createHero } from "./hero.js";
+import { createFlatCam } from "./flatcam.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -83,7 +85,7 @@ function saveNow() {
 const G = (window.G = {
   version: VERSION, mode: "title", state: "title", ready: false, flags: FLAGS,
   renderer: null, scene: null, camera: null, rig: null, rigYaw: 0, bodyLocal: { x: 0, z: 0 }, prevHeadLocal: new THREE.Vector3(), seatedOffset: 0,
-  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null,
+  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null, hero: null, flatcam: null,
   save, settings, frame: 0, time: 0, dt: 0, viewDone: false, titleShows: 0, held: false,
   placeRig, saveNow, setWorldVisible, haptic, test: null,
 });
@@ -104,7 +106,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal, fx;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -147,6 +149,8 @@ function createWorld() {
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
+  hero = G.hero = createHero(scene, renderer); // flat play: the hero and the chase camera (hidden and unused in XR)
+  flatcam = G.flatcam = createFlatCam(camera, city);
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
@@ -254,16 +258,17 @@ function handOff() {
   G.bodyLocal.x = inp.head.local.pos.x; G.bodyLocal.z = inp.head.local.pos.z;
   ropes.setMode("all");
   if (G.state === "paused") G.pausedFrom = "play"; else G.state = "play";
+  // phone: start facing the gold ring and with the motion aim centred. Only the yaw turns: the view keeps its chase pitch (the aim
+  // comes from the view, see flatInput), so the camera never tips up into the roof
+  if (G.mode === "desktop" && D.mobile.enabled) {
+    G.rigYaw = Math.atan2(-(city.goldRing.x - P.pos.x), -(city.goldRing.z - P.pos.z));
+    D.mobile.reset();
+  }
+  if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
   // stepped off the roof in the real room: fade and start on the roof proper
   const tb = city.topBelow(hx, S.y + 0.1, hz, 0.25);
   if (!tb || tb.y < S.y - 0.5) fadeMove(S.x, S.y, S.z);
-  if (G.mode === "desktop" && D.mobile.enabled) {
-    const R = city.goldRing, dx = R.x - P.pos.x, dz = R.z - P.pos.z;
-    G.rigYaw = Math.atan2(-dx, -dz);
-    D.level(Math.atan2(R.y - P.pos.y - COMFORT.standingHead, Math.hypot(dx, dz)));
-    syncRig();
-  }
   const first = !save.intro;
   save.intro = true;
   gameStarted = true;
@@ -324,6 +329,7 @@ function onSessionStart(session) {
   settings.easySwing = false;
   compiledXR = false;
   D.active = false;
+  flatView(false);
   hideTitle();
   if (FLAGS.pwa) {
     // no click on a PWA launch: wake the audio on the first trigger or grip press
@@ -361,6 +367,7 @@ function onSessionEnd() {
   if (ropes) ropes.setVisible(false); // the attract camera flies the city, not your last rope
   renderer.setClearColor(COLORS.fog, 1);
   audio.duck(false);
+  flatView(false);
   flatCamera(70);
   showTitle(true);
 }
@@ -375,6 +382,7 @@ function startDesktop() {
   D.lock();
   flatCamera(75);
   enterPlay("desktop");
+  flatView(true);
 }
 // Pause menu Exit: end the session (the title comes back with RE-ENTER), or leave flat play.
 function exitPlay() {
@@ -386,6 +394,7 @@ function exitPlay() {
   D.unlock();
   ropes.setVisible(false);
   G.mode = "title"; G.state = "title";
+  flatView(false);
   flatCamera(70);
   showTitle(true);
 }
@@ -400,6 +409,114 @@ function flatCamera(fov) {
   camera.aspect = innerWidth / innerHeight;
   camera.near = PERF.cameraNear; camera.far = PERF.cameraFar;
   camera.updateProjectionMatrix();
+}
+
+/* ---------------- the third-person view (flat play) ---------------- */
+// Flat play shows the hero and a chase camera (flatcam.js). The camera is a child of the scene there, placed in world
+// coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
+// The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
+let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "";
+const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
+const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
+function flatView(on) {
+  if (!hero || on === flatOn) return;
+  flatOn = on;
+  flatcam.active = on;
+  if (on) {
+    scene.add(camera);
+    const intro = G.state === "intro";
+    flatcam.reset(G.rigYaw, intro ? 0 : undefined, intro);
+    if (!intro) hero.setYaw(G.rigYaw);
+    hero.setVisible(true);
+    lastPitchIn = 0; flatDy = 0; // startDesktop has just levelled the input's pitch
+    if (!document.getElementById("flatview-css")) {
+      // the crosshair of the first-person view would sit on the hero's neck; the target reticle marks the aim instead
+      const st = document.createElement("style");
+      st.id = "flatview-css";
+      st.textContent = 'body[data-view="third"] .fs-cross { display: none; }';
+      document.head.appendChild(st);
+    }
+  } else {
+    rig.add(camera);
+    camera.position.set(0, 0, 0); camera.quaternion.identity();
+    hero.setVisible(false);
+    viewAttr = ""; delete document.body.dataset.view;
+  }
+}
+// The world direction the head aims along for a screen position (NDC x and y; 0, 0 is the middle): toward the point where that
+// pixel's ray from the camera lands, so the rope goes where the view shows. The head is not where the camera is (the chase camera
+// sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. In third person a view of
+// only ground near the hero (the roof, street or lake within AIM_NEAR of the feet) is no anchor, and the default view
+// looks down at the hero's feet: the aim then goes ahead along that bearing, AIM_UP above the horizon. A lower roof further away
+// (a clog on it) stays a target. Result in AIM_D.
+// AIM_UP: as high as the gold ring from the start roof, so the phone's first SWING catches the ring, the swing the tutorial asks for
+const AIM_FAR = 400, AIM_UP = (32 * Math.PI) / 180, AIM_NEAR = 12;
+const AIM_D = new THREE.Vector3(), AIM_HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
+function viewAim(nx, ny, hx, hy, hz, third) {
+  const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
+  AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
+  const h = city.raycast(c.x, c.y, c.z, AIM_D.x, AIM_D.y, AIM_D.z, AIM_FAR, AIM_HIT);
+  // no hit and pointing down: the ray reaches the street or the lake (no colliders); that is ground only within AIM_NEAR too,
+  // or a clog about as high as the hero, with nothing behind it, could not be aimed at
+  const sk = AIM_D.y < 0 ? Math.max(c.y, 0) / -AIM_D.y : 0;
+  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 && Math.hypot(h.x - hx, h.z - hz) < AIM_NEAR : AIM_D.y < 0 && Math.hypot(c.x + AIM_D.x * sk - hx, c.z + AIM_D.z * sk - hz) < AIM_NEAR)) {
+    const l = Math.hypot(AIM_D.x, AIM_D.z) || 1, k = Math.cos(AIM_UP);
+    return AIM_D.set((AIM_D.x / l) * k, Math.sin(AIM_UP), (AIM_D.z / l) * k);
+  }
+  const tx = h ? h.x : c.x + AIM_D.x * AIM_FAR, ty = h ? h.y : c.y + AIM_D.y * AIM_FAR, tz = h ? h.z : c.z + AIM_D.z * AIM_FAR;
+  AIM_D.set(tx - hx, ty - hy, tz - hz);
+  return AIM_D.lengthSq() > 1e-6 ? AIM_D.normalize() : AIM_D.set(0, 0, -1).applyQuaternion(camera.quaternion);
+}
+// After the input is read: the camera's pitch is the view, so the head, the muzzles and the aim rays follow it. The input's own
+// pitch only brings the change (flatDy). A phone tap aims through its own pixel for the frame it fires (inp.phoneAim).
+const FLAT_Q = new THREE.Quaternion(), XAXIS = new THREE.Vector3(1, 0, 0);
+function flatInput(inp) {
+  flatcam.restore(); // the input wrote the camera as the head; put the view back
+  flatDy += inp.pitch - lastPitchIn;
+  const p = flatcam.pitch, hp = inp.head.local.pos;
+  // the input built the muzzles at its own pitch: turn them about the head to the view's, so they stay low in the first-person view
+  FLAT_Q.setFromAxisAngle(XAXIS, p - inp.pitch);
+  for (const h of inp.hands) { h.gripLocal.pos.sub(hp).applyQuaternion(FLAT_Q).add(hp); h.gripLocal.quat.premultiply(FLAT_Q); }
+  // the input follows the view, so its own pitch limits never hold the camera back
+  D.setPitch(p);
+  lastPitchIn = inp.pitch = p;
+  inp.head.local.quat.setFromEuler(FLAT_E.set(p, 0, 0));
+  const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
+  const hx = R.x + hp.x * c + hp.z * s, hy = R.y + hp.y, hz = R.z - hp.x * s + hp.z * c; // the head in the world (toWorld, which runs next)
+  const third = flatcam.opacity > 0.5, tap = inp.phoneAim;
+  viewAim(0, 0, hx, hy, hz, third);
+  rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
+  inp.hands[0].aimLocal.dir.set(T.x, AIM_D.y, T.z);
+  if (!tap) { inp.hands[1].aimLocal.dir.copy(inp.hands[0].aimLocal.dir); return; }
+  viewAim(tap.x, tap.y, hx, hy, hz, third);
+  rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
+  inp.hands[1].aimLocal.dir.set(T.x, AIM_D.y, T.z);
+}
+// The hero's pose and the camera, once the body has moved. In play the camera owns the yaw (it may turn toward your travel).
+function flatFrame(dt, inp, yawDelta) {
+  if (!flatOn || isXR()) return;
+  const play = G.state === "play";
+  const key = flatcam.takeKey();
+  if (play && (inp.viewDown || key)) flatcam.toggle();
+  flatcam.setYaw(G.rigYaw - (play ? yawDelta : 0));
+  FLAT_LOOK.dx = (play ? yawDelta : 0) + ov.lookX;
+  FLAT_LOOK.dy = (G.state === "paused" ? 0 : flatDy) + ov.lookY;
+  ov.lookX = ov.lookY = 0; flatDy = 0;
+  FLAT_FLAGS.swinging = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+  FLAT_FLAGS.forceFirst = G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro");
+  hero.setVisible(!shot);
+  hero.update(dt, P, ropes, inp);
+  flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
+  // body[data-view] tells the page (the crosshair, the touch buttons) which view is on
+  const va = flatcam.opacity < 0.5 ? "first" : "third";
+  if (va !== viewAttr) document.body.dataset.view = viewAttr = va;
+  if (play && G.rigYaw !== flatcam.yaw) { G.rigYaw = flatcam.yaw; syncRig(); toWorld(inp); }
+}
+// The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
+function viewHead(inp) {
+  if (!flatOn) return inp.head;
+  FLAT_VIEW.pos = camera.position; FLAT_VIEW.quat = camera.quaternion;
+  return FLAT_VIEW;
 }
 
 /* ---------------- the frame (spec §6, 14 steps) ---------------- */
@@ -421,6 +538,7 @@ function tick(dt, frame, time) {
   if (G.mode === "title") { tickTitle(dt); return; }
   // 2. input
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
+  if (flatOn && !isXR()) flatInput(inp);
   // 3. test overrides
   applyOverrides(inp);
   // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
@@ -717,7 +835,8 @@ function drainEvents() {
     const ev = evs[k];
     pushRing(ev);
     try { if (intro) portal.onEvent(ev); else game.onEvent(ev, P); } catch (e) { console.error(e); }
-    feedback(ev);
+    // one bad event must not stop the drain: the queue would replay every frame and the picture would freeze
+    try { feedback(ev); } catch (e) { console.error(e); }
   }
   evs.length = 0;
 }
@@ -726,7 +845,8 @@ function feedback(ev) {
   switch (ev.type) {
     case "attach":
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
-      if (G.input.easySwing && i === 1 && G.state === "play" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
+      // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
+      if (G.input.easySwing && i === 1 && G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
       break;
     case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); break;
     case "yank":
@@ -755,7 +875,7 @@ const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.V
 let whooshAt = -99, whooshArmed = true;
 // on the line from the head through the hand's muzzle, 1.7 m from the head
 function wordAtHand(name, i) {
-  const hp = G.input.head.pos, t = hands.tip(i);
+  const hp = G.input.head.pos, t = TIPS[i] || hands.tip(i);
   FXD.set(t.x - hp.x, t.y - hp.y, t.z - hp.z);
   const l = FXD.length();
   if (l < 1e-3) return;
@@ -788,11 +908,15 @@ function wordAtBump(ev) {
 function after(dt, inp, yawDelta) {
   buildView();
   const inPlay = G.state === "play";
+  flatFrame(dt, inp, yawDelta); // flat play: the hero's pose, then the chase camera
+  const vh = viewHead(inp);
   hands.update(inp, P, dt);
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
+  // third person: the ropes leave the hero's own hands (the old muzzles stay for first person)
+  if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
-  view.update(dt, G.time, inp.head.pos);
+  view.update(dt, G.time, vh.pos);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
   const speed = Math.sqrt(P.vel.x * P.vel.x + P.vel.y * P.vel.y + P.vel.z * P.vel.z);
   // WHOOSH: once as you cross 20 m/s, 14 m ahead along your path, at most every 4 s
@@ -801,7 +925,7 @@ function after(dt, inp, yawDelta) {
     const hp = inp.head.pos, k = 14 / speed;
     fx.word("WHOOSH", FXP.set(hp.x + P.vel.x * k, hp.y + P.vel.y * k + 1.2, hp.z + P.vel.z * k), { vel: P.vel, scale: 1.3 });
   } else if (speed < 17) whooshArmed = true;
-  fx.update(dt, inp.head.pos, inp.head.quat);
+  fx.update(dt, vh.pos, vh.quat);
   if (dt > 0) {
     const k = 1 - Math.exp(-dt / 0.05);
     accelV.x += ((P.vel.x - prevVel.x) / dt - accelV.x) * k; accelV.y += ((P.vel.y - prevVel.y) / dt - accelV.y) * k; accelV.z += ((P.vel.z - prevVel.z) / dt - accelV.z) * k;
@@ -824,11 +948,18 @@ function after(dt, inp, yawDelta) {
   fovKick *= Math.exp(-dt * 3);
   if (G.mode === "desktop" && !shot) {
     const Fv = PHONE.fov;
-    const want = inp.easySwing ? Fv.base + Fv.wide * clamp((speed - Fv.from) / (Fv.to - Fv.from), 0, 1) + fovKick : 75 + 12 * clamp((speed - 15) / 20, 0, 1);
-    if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * (1 - Math.exp(-dt * 4)); camera.updateProjectionMatrix(); }
+    if (inp.easySwing) {
+      // the phone's faster view: wider with speed, and a kick on a fling; the chase camera takes it as its target
+      const want = Fv.base + Fv.wide * clamp((speed - Fv.from) / (Fv.to - Fv.from), 0, 1) + fovKick;
+      if (flatOn) flatcam.fovWant = want;
+      else if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * (1 - Math.exp(-dt * 4)); camera.updateProjectionMatrix(); }
+    } else if (!flatOn) { // (the flat camera sets its own field of view)
+      const want = 75 + 12 * clamp((speed - 15) / 20, 0, 1);
+      if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * (1 - Math.exp(-dt * 4)); camera.updateProjectionMatrix(); }
+    }
   }
   if (inp.easySwing) { D.mobile.rush(inPlay ? (speed - PHONE.lines.from) / (PHONE.lines.to - PHONE.lines.from) : 0, dt); D.mobile.climbing(inPlay && !!P.wall); }
-  audio.setListener(inp.head.pos, inp.head.quat);
+  audio.setListener(vh.pos, vh.quat);
   audio.setWind(inPlay ? speed : 0, P.pos.y);
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = r.state === "attached";
@@ -922,6 +1053,7 @@ function setShot(name) {
   if (diorama) { diorama.removeFromParent(); diorama = null; }
   if (viewShotBefore) { setWorldVisible(viewShotBefore.world); renderer.setClearColor(COLORS.fog, 1); viewShotBefore = null; }
   shot = name ? shotPose(name) : null;
+  if (hero && flatOn) hero.setVisible(!shot); // a named shot is the city, not the hero (flatFrame keeps it in step)
   if (!shot) return null;
   if (shot.diorama) {
     viewShotBefore = { world: worldVisible };
@@ -1020,7 +1152,7 @@ function wireTitle() {
 }
 
 /* ---------------- test overrides and G.test (spec §12) ---------------- */
-const ov = { press: [null, null], grip: [null, null], yank: [0, 0], aim: [null, null] };
+const ov = { press: [null, null], grip: [null, null], yank: [0, 0], aim: [null, null], lookX: 0, lookY: 0 };
 const ovOn = [false, false], ovGrip = [false, false];
 function applyOverrides(inp) {
   const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
@@ -1101,6 +1233,10 @@ G.test = {
   uiPress(id) { if (ui && ui.press) ui.press(id); },
   reality: () => (comfort && comfort.realityInfo ? comfort.realityInfo() : { planes: X.planes.size, meshes: X.meshes.size, maxFade: 0 }),
   camera: (name) => setShot(name),
+  // flat play: turn the view by dx (yaw, left is +) and dy (pitch, up is +) radians at the next frame, like a mouse move
+  look(dx = 0, dy = 0) { ov.lookX += +dx || 0; ov.lookY += +dy || 0; },
+  // flat play: where the camera is and what the hero does ({ on: false } everywhere else)
+  flat: () => (flatcam && flatOn ? { on: true, camera: v3(camera.position), quat: q4(camera.quaternion), fov: camera.fov, ...flatcam.info(), forward: v3(flatcam.forward), hero: hero.info() } : { on: false }),
   renderInfo: () => ({ ...lastInfo }),
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };

@@ -222,9 +222,27 @@ async function room(name, opts) {
   const pxB = await pixels(page, { c: [0.5, 0.4], l: [0.06, 0.08], r: [0.94, 0.08] });
   check(pxB.c[3] === 255 && pxB.l[3] === 255 && pxB.r[3] === 255, tag + "inside the sphere the city covers the whole view", pxB);
 
+  // The ink line round each shard stays 1.2 cm thick however small the shard gets, so it must go before the shards shrink to nothing
+  // (else the last frames of the reveal are black dots). While it shows, the typical shard is wider than the line. A frame hook reads
+  // it, so the stepping below keeps its timing.
+  await page.evaluate(() => {
+    const ch = G.rig.getObjectByName("portal:chunks"), twin = ch.children[0], run = (window.__ink = []);
+    G.ui.onFrame(() => {
+      const q = G.test.portal();
+      if (q.phase !== "reveal" || !ch.count) return;
+      const a = ch.instanceMatrix.array, sx = [];
+      for (let k = 0; k < ch.count; k++) sx.push(Math.hypot(a[k * 16], a[k * 16 + 1], a[k * 16 + 2]));
+      sx.sort((m, n) => m - n);
+      run.push({ r: q.sphere.r, ink: twin.visible, mid: +sx[sx.length >> 1].toFixed(4) });
+    });
+  });
+
   /* ---- hand-off ---- */
   p = await step(page, 3.5);
   check(p.phase === "done" && !p.active, tag + "the reveal ends at 40 m and the opening is done", p);
+  const inkRun = await page.evaluate(() => window.__ink), inkLast = inkRun[inkRun.length - 1], inkOn = inkRun.filter((f) => f.ink);
+  check(inkRun.length > 20 && inkRun[0].ink && inkLast.r > 39 && !inkLast.ink && inkRun.every((f, i) => i === 0 || f.ink <= inkRun[i - 1].ink), tag + "the shards' ink line shows while the reveal starts and is gone before the shards vanish (it does not come back)", { n: inkRun.length, first: inkRun[0], last: inkLast });
+  check(inkOn.length > 0 && inkOn.every((f) => f.mid >= 0.012), tag + "the ink line is only drawn while the typical shard is wider than the line is thick (no black dots)", { thinnest: inkOn.reduce((m, f) => (f.mid < m.mid ? f : m), inkOn[0]) });
   const s2 = await state(page);
   check(s2.state === "play", tag + "play starts", s2.state);
   const roof = await page.evaluate(() => { const S = G.city.start, h = G.test.state().head; const tb = G.city.topBelow(h.x, S.y + 0.1, h.z, 0.25); return { roof: tb ? tb.y : null }; });
