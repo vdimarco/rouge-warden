@@ -114,7 +114,7 @@ check("priorities: a tick or a nibble does not cut a strike; a quick hook set an
   // 140 ms buzz + 600 ms of enforced quiet
   T += 300; assert.equal(H.thump(), false, "strike during the snap silence");
   run(300, () => H.setTension(0.9, 0, true));
-  assert.equal(calls.length, 2, "anything during the snap silence");
+  assert.equal(calls.length, 3, "anything during the snap silence");   // the strike, the hook set and the snap
   T += 200; assert.equal(H.thump(), true, "strike after the silence");
   // a strong effect preempts a weak one that is still playing
   T += 1000; H.land(); T += 5; assert.equal(H.jolt(), true);
