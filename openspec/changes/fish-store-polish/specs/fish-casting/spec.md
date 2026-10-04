@@ -53,3 +53,25 @@ When motion samples stop for 3 s after the player said yes to motion, the game S
 #### Scenario: Sensor stall
 - **WHEN** no motion sample arrives for 3 s in the cast phase
 - **THEN** the game says "The motion sensors stopped. Play with touch?" and a tap switches to touch.
+
+### Requirement: Quick turnaround to the next cast
+The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. An empty retrieve SHALL bring the lure home in about 3 s. The owner asked for this during the work.
+
+#### Scenario: Lure home with nothing
+- **WHEN** the lure comes home with no fish and the player does nothing
+- **THEN** the next cast is ready in about 1.3 s or less.
+
+#### Scenario: Skip the beat
+- **WHEN** the player presses to cast 0.4 s after "Nothing this time." shows
+- **THEN** the beat ends at once and the same press takes the line for the next cast.
+
+### Requirement: Easy mouse cast
+On a computer, holding the mouse button SHALL cast the same way as holding Space: the rod tips back by itself, then swings forward, and letting go in the green casts, graded at the rod angle. Moving the mouse sideways while holding SHALL aim. A quick vertical drag SHALL still flick as before. A press on a button, a menu, or during the reel SHALL never start a cast.
+
+#### Scenario: Hold cast
+- **WHEN** a desktop player at 1280x800 holds the mouse button and lets go as the rod passes the green
+- **THEN** the cast grades sweet and flies 25 m or more.
+
+#### Scenario: Aim while holding
+- **WHEN** the player moves the mouse to the left while holding
+- **THEN** the aim turns left before the cast.
