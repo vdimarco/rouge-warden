@@ -1,9 +1,4 @@
-# pinball-upgrades
-
-## Purpose
-Full Tilt offers upgrades at each jump gate, in a spacecraft console that fits a phone and a keyboard.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Celestial spacecraft upgrade console
 Full Tilt SHALL offer three upgrades at each gate, picked by the seed from a pool of six, in a readable celestial spacecraft console with current and next sector context.

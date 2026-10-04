@@ -48,6 +48,12 @@ The review counted 1,153 of 1,253 eel hits from plain contact, with no sound bef
 
 The review suggested a flat eddy grip of 0.5 to stop eddy traps. On the new river that cut braced catches to 16%, below the existing 20% check. Instead, an eddy holds the canoe unless the paddler strokes with the bow downstream. Touch and keys now turn toward the side that is pressed: a bot that steered that way finished 12 of 12 rivers, and the old mapping finished none. The phone keeps the real paddle sides. The rapid starts about 35 m below the put-in, and the river is 60 m shorter.
 
-## The other games
+## Full Tilt
 
-Each game's own section is added here when its work lands.
+The review timed the old cue: FLIP NOW lit only 0.05 to 0.25 s before the ball arrived. Now `forecastFlip()` in `physics.js` runs the same substeps, gravity, rails and blades as play on a copy of the ball. The ring, the tone and the FLIP NOW text come from that forecast, so the cue starts up to 0.9 s before the ideal press and the press it shows is the press that the grade rewards. A clean flip bends its shot only toward a target that a forecast of the real flight reaches, and after the bend the ball flies by physics alone.
+
+The orbit is 2.5 s, and a hit on a beacon or an asteroid ends it, so a timed player flips about 16 times a minute instead of 8 or 9. The multiplier has no top, so a long clean row keeps paying, and only a lost heart resets it.
+
+The seed picks one of three tested beacon layouts for each world, and it does not move the beacons at random. A tool sampled the layouts under the spacing rules of the tests, and a bot that flips on the cue clears each one. Long flippers is one step only, because a second step would make the gap between the blade tips smaller than the ball.
+
+`qa/lab/tilt.cue.e2e.mjs` replaces the frame loop with its own and steps game time, so a slow machine gives the same result.

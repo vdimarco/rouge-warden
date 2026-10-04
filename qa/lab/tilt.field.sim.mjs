@@ -115,21 +115,25 @@ const deploy = (run, kind = 'pull') => {
   assert(deploy(run));
   // Remove collision/drain outcomes so this checks field lifetime independently of checkpoint cleanup.
   run.table.isActive = () => false; run.table.isDrain = () => false;
-  advance(run, .5);
+  // A half-orbit during these five seconds can earn a charge. Count those, so the last
+  // check sees only what expiry itself adds.
+  let earned = advance(run, .5).filter(e => e.type === 'field-charge').length;
   assert(distance(run.table.gravity(sample), baseline) > 100, 'the field participates in the solver gravity hook');
   const remaining = run.gravityWell.remaining;
   for (let i = 0; i < 600; i++) updateAdventure(run, 0);
   assert.equal(run.gravityWell.remaining, remaining, 'paused frames do not spend field time');
-  advance(run, FIELD_DURATION - .5 - H);
+  earned += advance(run, FIELD_DURATION - .5 - H).filter(e => e.type === 'field-charge').length;
   assert(run.gravityWell?.remaining > 0, 'the field lasts through the penultimate gameplay step');
   // Rally gravity now evolves during these five seconds. Compare expiry with
   // the same next-step gravity minus the well, rather than the launch-time field.
   const expectedAfterExpiry = run.table.gravityAt(sample, H, null);
   const events = updateAdventure(run);
+  earned += events.filter(e => e.type === 'field-charge').length;
   assert.equal(run.gravityWell, null);
   assert(events.some(e => e.type === 'field-expire' && e.reason === 'expired'));
   assert(distance(run.table.gravity(sample), expectedAfterExpiry) < 1e-8, 'expiry restores the current planet, rally and tilt force');
-  assert.equal(deploy(run), false, 'expiry does not refund the spent charge');
+  assert.equal(run.fieldCharges, earned, 'expiry does not refund the spent charge');
+  if (!earned) assert.equal(deploy(run), false, 'expiry does not refund the spent charge');
   console.log('ok: five gameplay seconds, pause-safe lifetime and exact baseline gravity after expiry');
 }
 
@@ -158,7 +162,8 @@ const deploy = (run, kind = 'pull') => {
 
   const orbit = createAdventure(8), p = currentSector(orbit).planet;
   launchAdventure(orbit); orbit.fieldCharges = 0;
-  place(orbit, p.x - 260, p.y, 0, 675);
+  // A lit relay now ends the orbit, so this circular orbit passes inside the relays.
+  place(orbit, p.x - 200, p.y, 0, 713);
   const orbitEvents = [];
   for (let i = 0; i < 600 && !orbit.orbitCount; i++) orbitEvents.push(...updateAdventure(orbit));
   assert(orbitEvents.some(e => e.type === 'orbit'), 'ordinary physical flight completes a half-orbit');

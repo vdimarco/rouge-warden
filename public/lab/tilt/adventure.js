@@ -1,7 +1,8 @@
 // Celestial expedition: open orbital fields use Full Tilt's steel-ball/flipper solver.
 // Positions are world coordinates with y up. This module has no browser dependencies.
-import { makeWorld, step, serve, setFlip, H } from './physics.js';
-import { prepareAsteroids, breakAsteroid, advanceAsteroids, resetAsteroids } from './asteroids.js';
+import { makeWorld, step, serve, setFlip, forecastFlip, forecastHit, H } from './physics.js';
+import { prepareAsteroids, breakAsteroid, advanceAsteroids, resetAsteroids, asteroidPose } from './asteroids.js';
+import { BALL_R } from './table.js';
 import { TRANSIT_DURATION, REDUCED_TRANSIT_DURATION } from './transit.js';
 import { createWarpSurf, setWarpSurfAim, clearWarpSurfAim, stepWarpSurf, settleWarpSurf } from './warp-surf.js';
 
@@ -9,24 +10,93 @@ const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const NAMES = ['Lunar Harbor', 'Amber Belt', 'Jade Observatory', 'Violet Reach', 'Solar Forge', 'The Star Engine'];
 const COLORS = ['#70dddf', '#edb66c', '#8ee0ae', '#b8a3f4', '#ff9672', '#f0df9e'];
 const FIELDS = ['pull', 'pull', 'tide', 'repel', 'pull', 'pull'];
-const DESCRIPTIONS = ['Slingshot around the moon to reach its relays.', 'Thread an orbit through the asteroid belt.', 'Ride the changing gravitational tide.', 'Use the dark planet’s push to reach the relays.', 'A close flyby gives your shot more speed.', 'Charge each core twice to restart the sun.'];
-const RELAYS = [
-  [[-335, 590], [330, 725], [-50, 970]], [[-375, 655], [260, 785], [-165, 990]],
-  [[-330, 750], [340, 575], [155, 990]], [[-350, 540], [360, 805], [-105, 1010]],
-  [[-360, 810], [340, 620], [165, 1000]], [[-340, 610], [340, 720], [-80, 995]],
+const DESCRIPTIONS = ['Slingshot around the moon to reach its beacons.', 'Thread an orbit through the asteroid belt.', 'Ride the changing gravitational tide.', 'Use the dark planet’s push to reach the beacons.', 'A close flyby gives your shot more speed.', 'Charge each core twice to restart the sun.'];
+// Each world has tested relay layouts, as [x, y] from the dock. A layout also sets the launch
+// side and the relay that a launch can reach: the skill shot. A tool sampled these under the
+// spacing rules of the tests, and a bot that follows the cue cleared each one.
+// qa/lab/tilt.skill.sim.mjs and qa/lab/tilt.adventure.sim.mjs check every layout.
+const LAYOUTS = [
+  [{ relays: [[-335, 590], [330, 725], [-50, 970]], side: 1, skill: 1 },
+    { relays: [[-268, 738], [334, 612], [-189, 997]], side: 1, skill: 1 },
+    { relays: [[-312, 632], [374, 816], [-225, 917]], side: -1, skill: 1 }],
+  [{ relays: [[-375, 655], [260, 785], [-165, 990]], side: -1, skill: 0 },
+    { relays: [[-239, 834], [333, 750], [161, 891]], side: -1, skill: 0 },
+    { relays: [[-384, 608], [308, 748], [-213, 964]], side: 1, skill: 2 }],
+  [{ relays: [[-330, 750], [340, 575], [155, 990]], side: 1, skill: 1 },
+    { relays: [[-367, 690], [382, 913], [-208, 889]], side: -1, skill: 1 },
+    { relays: [[-369, 737], [304, 752], [164, 987]], side: 1, skill: 1 }],
+  [{ relays: [[-350, 540], [360, 805], [-105, 1010]], side: -1, skill: 0 },
+    { relays: [[-226, 835], [250, 726], [176, 887]], side: -1, skill: 0 },
+    { relays: [[-378, 568], [266, 811], [111, 930]], side: 1, skill: 1 }],
+  [{ relays: [[-360, 810], [340, 620], [165, 1000]], side: -1, skill: 2 },
+    { relays: [[-347, 897], [236, 815], [-106, 896]], side: -1, skill: 1 },
+    { relays: [[-343, 864], [312, 631], [56, 887]], side: -1, skill: 2 }],
+  [{ relays: [[-316, 709], [341, 852], [209, 976]], side: -1, skill: 0 },
+    { relays: [[-348, 690], [326, 980], [-213, 878]], side: 1, skill: 2 },
+    { relays: [[-256, 781], [381, 926], [198, 950]], side: -1, skill: 0 }],
 ];
+export const WORLD_LAYOUTS = LAYOUTS;
+// Asteroid anchors in each world, as [id, x, y] from the dock. The seed adds small offsets.
+const ROCKS = NAMES.map((name, world) => {
+  const rocks = [[3, -365, 920], [4, 360, 445], [5, -195, 425]];
+  if (world === 1) rocks.push([6, 365, 1000], [7, 170, 470]);
+  if (world === 3) rocks[2] = [5, -335, 720];
+  if (world === 4) rocks[0] = [3, -210, 1010];
+  return rocks;
+});
 const ROUTE = [[0, 0], [1, 0], [2, 0], [2, 1], [1, 1], [0, 1]];
+// Each gate offers three of these, set by the seed. The last three change how you flip.
 const UPGRADES = [
   { id: 'pulse', name: 'Quick pulse', description: 'Your gravity pulse recharges 20% faster.' },
-  { id: 'shield', name: 'Hull repair', description: 'Restore one life and extend the launch shield.' },
-  { id: 'comet', name: 'Comet drive', description: 'Stronger pulses and 20% more points from relays.' },
+  { id: 'shield', name: 'Hull repair', description: 'Restore one heart and extend the launch shield.' },
+  { id: 'comet', name: 'Comet drive', description: 'Stronger pulses and 20% more points from beacons.' },
+  { id: 'long', name: 'Long flippers', description: 'Both flippers grow 12% longer, so the gap between them is smaller.' },
+  { id: 'double', name: 'Double strike', description: 'Each Good or Perfect flip counts twice in your rally row.' },
+  { id: 'magnet', name: 'Magnet save', description: 'Once in each world, a magnet catches a lost ball and throws it back up.' },
 ];
+// One step only: a second step would close the gap between the blade tips to less than the ball.
+const LONG_FLIPPER = 0.12, LONG_LEVELS = 1;
 const segment = (a, b, extra = {}) => ({ a, b, e: 0.48, ...extra });
 const emit = (run, type, extra = {}) => (run._updating ? run.events : run._pendingEvents).push({ type, x: run.world.ball.x, y: run.world.ball.y, ...extra });
 export const currentSector = (run) => run.sectors[run.sectorIndex];
-export const availableUpgrades = () => UPGRADES.map(u => ({ ...u }));
-export const RALLY_FLIGHT = 4.5;
+// Three choices for the gate of the current world. The seed and the world set them, so a shared
+// voyage offers the same choices. On the last heart, Hull repair is always one of them.
+export function availableUpgrades(run) {
+  if (!run) return UPGRADES.map(u => ({ ...u }));
+  let n = (Math.imul((Number(run.seed) || 1) >>> 0, 0x9e3779b1) ^ Math.imul(run.sectorIndex + 1, 0x85ebca6b)) >>> 0;
+  const random = () => { n = (Math.imul(1664525, n) + 1013904223) >>> 0; return n / 4294967296; };
+  const pool = UPGRADES.filter(u => u.id !== 'long' || run._longLevel < LONG_LEVELS);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const offer = pool.slice(0, 3);
+  if (run.lives <= 1 && !offer.some(u => u.id === 'shield')) offer[2] = UPGRADES.find(u => u.id === 'shield');
+  return offer.map(u => ({ ...u }));
+}
+// One seed for each calendar day, so everyone flies the same voyage on that day.
+export function dailySeed(date = new Date()) {
+  let n = 2166136261;
+  for (const ch of `full-tilt:${dayKey(date)}`) n = Math.imul(n ^ ch.charCodeAt(0), 16777619);
+  return (n >>> 0) || 1;
+}
+// The local calendar day as YYYY-MM-DD. A string in that form passes through.
+export function dayKey(date = new Date()) {
+  if (typeof date === 'string') return date;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+// The orbit lasts this long before the return current brings the ball back to a flipper.
+export const RALLY_FLIGHT = 2.5;
 export const RALLY_POWER = 4;
+// Good and Perfect flips in a row build the rally. Each CHAIN_STEP of them in one row adds one
+// to the multiplier, with no top. A Late flip ends the row and keeps the multiplier. A lost
+// heart resets the multiplier.
+export const CHAIN_STEP = 2;
+// The grade of a flip sets the top speed of its shot. A Late flip makes a weak shot.
+export const SHOT_SPEEDS = { perfect: 1850, good: 1680, late: 1220 };
+// The launch power runs from LAUNCH_MIN (a tap) to 1 (a full charge).
+export const LAUNCH_MIN = 0.35;
+export const SKILL_BONUS = 2;
 export const PULSE_IMPULSE = 420;
 export const FIELD_CAPACITY = 3;
 export const FIELD_DURATION = 5;
@@ -87,18 +157,35 @@ export function setAdventureTilt(run, x = 0, y = 0) {
   run.tilt.x = x / length; run.tilt.y = y / length;
 }
 
-export function createAdventure(seed = 1) {
+// Mix the bits of the seed first, so that near seeds and near days give unrelated voyages.
+function mixSeed(seed) {
   let n = (Number(seed) || 1) >>> 0;
+  n = Math.imul(n ^ (n >>> 16), 0x85ebca6b);
+  n = Math.imul(n ^ (n >>> 13), 0xc2b2ae35);
+  return (n ^ (n >>> 16)) >>> 0;
+}
+// The seed sets the voyage: the order of the four middle worlds, one tested layout per world and
+// small offsets of the asteroids. options.layouts replaces the layout lists, for tools and tests.
+export function createAdventure(seed = 1, { layouts = LAYOUTS } = {}) {
+  let n = mixSeed(seed);
   const random = () => { n = (Math.imul(1664525, n) + 1013904223) >>> 0; return n / 4294967296; };
   const table = { W: 3600, H: 2800, openSpace: true, maxSpeed: 1850, walls: [], posts: [], bumpers: [], drops: [], lanes: [], flippers: [],
     outline: [[20, 20], [3580, 20], [3580, 2780], [20, 2780]], launch: { x: 600, y: 350 }, drainY: 0 };
+  // Lunar Harbor opens every voyage and the Star Engine ends it. The seed orders the worlds between.
+  const order = [1, 2, 3, 4];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  order.unshift(0); order.push(5);
   const sectors = ROUTE.map(([col, row], id) => {
-    const x = 600 + col * 1200, y = 130 + row * 1320;
-    const sector = { id, name: NAMES[id], x, y, w: 1100, h: 1150, color: COLORS[id], descriptor: DESCRIPTIONS[id],
-      gravityRadius: 465, returnRadius: 510, dockRadius: 240, orbitDirection: id % 2 ? -1 : 1,
-      planet: { x: x + (id % 2 ? -55 : 55), y: y + 665, r: 90 + id * 4, mass: 155000000 + id * 7000000,
-        kind: FIELDS[id], strength: id === 4 ? 1.3 : id === 3 ? -0.72 : 1 },
-      relays: [], gate: { x, y: y + 1060, r: 82, open: false },
+    const x = 600 + col * 1200, y = 130 + row * 1320, world = order[id];
+    const choices = layouts[world], pick = Math.floor(random() * choices.length), layout = choices[pick];
+    const sector = { id, world, layout: pick, name: NAMES[world], x, y, w: 1100, h: 1150, color: COLORS[world], descriptor: DESCRIPTIONS[world],
+      gravityRadius: 465, returnRadius: 510, dockRadius: 240, orbitDirection: world % 2 ? -1 : 1,
+      planet: { x: x + (world % 2 ? -55 : 55), y: y + 665, r: 90 + world * 4, mass: 155000000 + world * 7000000,
+        kind: FIELDS[world], strength: world === 4 ? 1.3 : world === 3 ? -0.72 : 1 },
+      relays: [], gate: { x, y: y + 1060, r: 82, open: false }, launchSide: layout.side,
       station: { x, y: y + 225 }, visited: id === 0, cleared: false };
     // Only the small launch dock has rails. Space has no collision boundary.
     for (const side of [-1, 1]) {
@@ -109,16 +196,13 @@ export function createAdventure(seed = 1) {
         up: side < 0 ? 28 * Math.PI / 180 : Math.PI - 28 * Math.PI / 180 });
     }
     table.posts.push({ ...sector.planet, planet: true, sector: id, e: 0.96 });
-    RELAYS[id].forEach(([rx, ry], index) => {
+    layout.relays.forEach(([rx, ry], index) => {
       const relay = { id: id * 10 + index, sector: id, x: x + rx, y: y + ry, r: 42, kick: 900,
-        relay: true, hit: false, hits: 0, required: id === 5 ? 2 : 1 };
+        relay: true, hit: false, hits: 0, required: world === 5 ? 2 : 1, skill: index === layout.skill };
       sector.relays.push(relay); table.bumpers.push(relay);
     });
     // Broad gaps make each route accessible to an ordinary aimed flipper shot.
-    const rocks = [[3, -365, 920], [4, 360, 445], [5, -195, 425]];
-    if (id === 1) rocks.push([6, 365, 1000], [7, 170, 470]);
-    if (id === 3) rocks[2] = [5, -335, 720];
-    if (id === 4) rocks[0] = [3, -210, 1010];
+    const rocks = ROCKS[world];
     for (const [index, ax, ay] of rocks) {
       table.bumpers.push({ id: id * 10 + index, sector: id, x: x + ax + (random() - 0.5) * 34,
         y: y + ay + (random() - 0.5) * 28, r: 25 + random() * 9, kick: 660, asteroid: true });
@@ -128,10 +212,11 @@ export function createAdventure(seed = 1) {
   const run = { seed, table, sectors, sectorIndex: 0, phase: 'ready', lives: 3, score: 0, cycle: 1,
     clock: 0, saveUntil: 0, saved: false, pulseCooldown: 0, upgrades: [], events: [], flight: null,
     combo: 0, lastHit: -100, relaysHit: 0, recalls: 0, drainCount: 0, _still: 0, _lastX: 0, _lastY: 0,
-    _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _pendingEvents: [], _updating: false,
+    _acc: 0, _pulseLevel: 0, _cometLevel: 0, _shieldLevel: 0, _longLevel: 0, _doubleLevel: 0, _magnetLevel: 0, _magnets: 0,
+    _pendingEvents: [], _updating: false,
     orbitCount: 0, _orbitAngle: null, _orbitTravel: 0, _orbitAwardAt: -100, tilt: { x: 0, y: 0 },
-    fieldCharges: 1, gravityWell: null,
-    rally: { age: 0, returning: false, side: seed % 2 ? -1 : 1, powerRemaining: 0, multiplier: 1, shots: 0, lastStrike: -100 } };
+    fieldCharges: 1, gravityWell: null, perfects: 0, bestChain: 0, skillShots: 0, skill: { armed: false },
+    rally: { age: 0, returning: false, side: seed % 2 ? -1 : 1, powerRemaining: 0, multiplier: 1, shots: 0, lastStrike: -100, chain: 0 } };
   prepareAsteroids(table, sectors);
   table.advanceDynamic = (dt, events) => advanceAsteroids(table.bumpers, run.sectorIndex, run.world.ball, dt, events);
   table.breakDynamic = rock => run.rally.powerRemaining > 0 && breakAsteroid(rock);
@@ -139,10 +224,13 @@ export function createAdventure(seed = 1) {
   table.isActive = object => object.sector === run.sectorIndex;
   table.reverseScoop = { enabled: () => run.phase === 'play', centerX: f => run.sectors[f.sector].x,
     depth: 154, cooldown: 0.8, impulse: 1080 };
-  table.launchVelocity = (power = 0.75) => ({
-    x: (run.seed % 2 ? -1 : 1) * (320 + run.sectorIndex * 12),
-    y: 1020 + clamp(power, 0.35, 1) * 350,
-  });
+  // The charge sets the arc. A tap sends a slow, wide shot; a full charge sends a fast, steep one.
+  table.launchVelocity = (power = 0.75) => {
+    const p = clamp(Number(power) || 0, LAUNCH_MIN, 1), speed = 700 + 800 * p;
+    const angle = (14 + (1 - p) * 10) * Math.PI / 180;
+    return { x: currentSector(run).launchSide * Math.sin(angle) * speed, y: Math.cos(angle) * speed };
+  };
+  table.shotSpeed = grade => SHOT_SPEEDS[grade] ?? SHOT_SPEEDS.good;
   // The dock alone has a down direction. Beyond it, gravity curves the whole shot.
   // The outer return flow is a smooth force, never a bounce or a position clamp.
   table.gravityAt = (ball, elapsed = 0, overrideWell = undefined) => {
@@ -173,12 +261,28 @@ export function createAdventure(seed = 1) {
     // current stops below the blade so a missed timing still costs a ball.
     const rallyAge = run.rally.age + elapsed;
     if (rallyAge > RALLY_FLIGHT && ball.y > s.y + 180) {
-      const blend = smooth(clamp((rallyAge - RALLY_FLIGHT) / .8, 0, 1));
+      // A ball that is already close to the dock needs the current sooner.
+      const close = clamp(1 - (Math.hypot(ball.x - s.x, ball.y - s.y) - 400) / 400, 0, 1);
+      const blend = smooth(clamp((rallyAge - RALLY_FLIGHT) / (.8 - .55 * close), 0, 1));
       const side = run.rally.returning ? run.rally.side : (ball.x < s.x ? -1 : 1);
-      const clearance = smooth(clamp((ball.y - s.y - 400) / 220, 0, 1));
-      const targetX = s.x + side * (75 + 190 * clearance);
-      const targetVy = -clamp(360 + (ball.y - s.y - 350) * .5, 360, 720);
-      const returnX = clamp((targetX - ball.x) * 7 - (ball.vx || 0) * 4, -2200, 2200);
+      // The ball drops onto the middle of the blade. When the planet stands over that lane,
+      // the ball first passes wide of the planet, then lines up below it.
+      const lane = s.x + side * 75, wide = p.x + side * (p.r + 70);
+      const blocked = Math.abs(lane - p.x) < p.r + 40;
+      const beside = smooth(clamp((ball.y - (p.y - p.r - 60)) / 120, 0, 1));
+      const targetX = blocked ? lane + (wide - lane) * beside : lane;
+      // Above the lineup height, plan a sideways speed that reaches the lane in time.
+      // Below it, hold the lane so the ball falls straight onto the blade.
+      const lineup = s.y + 300, vx = ball.vx || 0;
+      // A low ball away from the lane rises first, so it can fall onto the blade from above.
+      const offLane = clamp((Math.abs(targetX - ball.x) - 40) / 100, 0, 1) * clamp((lineup + 80 - ball.y) / 120, 0, 1);
+      const targetVy = -clamp(340 + (ball.y - s.y - 330) * .6, 340, 760) * (1 - offLane) + 320 * offLane;
+      let returnX = (targetX - ball.x) * 40 - vx * 13;
+      if (ball.y > lineup) {
+        const timeToGo = Math.max(0.15, (ball.y - lineup) / Math.max(250, -(ball.vy || 0)));
+        returnX = (clamp((targetX - ball.x) / timeToGo, -700, 700) - vx) * 9;
+      }
+      returnX = clamp(returnX, -3000, 3000);
       const returnY = clamp((targetVy - (ball.vy || 0)) * 3.8, -2300, 2300);
       ax = ax * (1 - blend) + returnX * blend;
       ay = ay * (1 - blend) + returnY * blend;
@@ -206,6 +310,35 @@ export function createAdventure(seed = 1) {
   return run;
 }
 
+// The next flip, forecast with the same gravity as play: which flipper, and when to press it.
+// Moving asteroids end the forecast when the path comes near one, since a bounce changes it.
+export function forecastAdventureFlip(run, horizon = 1.2) {
+  if (run.phase !== 'play') return null;
+  return forecastFlip(run.world, horizon, { gravity: (ball, elapsed) => run.table.gravityAt(ball, elapsed), blocked: rockAhead(run) });
+}
+// The launch arc for a given charge, and the first thing it meets. The dock preview draws it,
+// so a player can aim the skill shot. It uses the same physics as the launch itself, and it
+// looks as far ahead as a skill shot can count: until the return starts.
+export function forecastLaunch(run, power, horizon = RALLY_FLIGHT) {
+  if (run.phase !== 'ready') return null;
+  const s = currentSector(run), velocity = run.table.launchVelocity(power), rock = rockAhead(run), path = [];
+  const hit = forecastHit(run.world, { ...run.world.ball, vx: velocity.x, vy: velocity.y }, horizon, {
+    gravity: (ball, elapsed) => run.table.gravityAt(ball, elapsed), path,
+    blocked: (ball, elapsed) => rock(ball, elapsed) ? 'rock' : null,
+  });
+  const relay = hit ? s.relays.find(r => r.id === hit.id) : null;
+  return { power: clamp(Number(power) || 0, LAUNCH_MIN, 1), path, hit, relay: relay || null, skill: !!(relay?.skill && !relay.hit) };
+}
+
+// True when a forecast ball meets a live asteroid at its future place on the path.
+function rockAhead(run) {
+  const rocks = run.table.bumpers.filter(rock => rock.dynamic && rock.active && rock.sector === run.sectorIndex);
+  return (ball, elapsed) => rocks.some(rock => {
+    const pose = asteroidPose(rock, elapsed);
+    return Math.hypot(ball.x - pose.x, ball.y - pose.y) < rock.r + BALL_R + 2;
+  });
+}
+
 function checkpoint(run) {
   resetRally(run);
   resetAsteroids(run.table.bumpers, run.sectorIndex);
@@ -218,12 +351,22 @@ function checkpoint(run) {
   run._orbitAngle = null; run._orbitTravel = 0;
 }
 
+// A new flight clears the power and the return. The rally row and its multiplier stay.
 function resetRally(run) {
-  Object.assign(run.rally, { age: 0, returning: false, powerRemaining: 0, multiplier: 1, shots: 0, lastStrike: -100 });
+  Object.assign(run.rally, { age: 0, returning: false, powerRemaining: 0, shots: 0, lastStrike: -100, aim: null });
+  run.skill.armed = false;
+}
+// Only a lost heart ends the multiplier.
+function breakRally(run) {
+  run.rally.chain = 0; run.rally.multiplier = 1;
 }
 function freshFlight(run, side) {
   run.rally.age = 0; run.rally.returning = false;
   if (side) run.rally.side = side;
+}
+// A hit on a relay or an asteroid ends the orbit, so the ball comes back for the next flip.
+function startReturn(run) {
+  run.rally.age = Math.max(run.rally.age, RALLY_FLIGHT);
 }
 
 export function launchAdventure(run, power = 0.75) {
@@ -235,7 +378,10 @@ export function launchAdventure(run, power = 0.75) {
   freshFlight(run);
   run.phase = 'play'; run.saveUntil = run.clock + 10 + run._shieldLevel * 3;
   run._still = 0;
-  emit(run, 'launch', { sector: s.id });
+  // Each launch can make one skill shot at the marked relay while it is still dark.
+  const skill = s.relays.find(r => r.skill && !r.hit);
+  run.skill = { armed: !!skill, relayId: skill?.id ?? null };
+  emit(run, 'launch', { sector: s.id, power: clamp(Number(power) || 0, LAUNCH_MIN, 1) });
   return true;
 }
 
@@ -265,6 +411,12 @@ export function chooseUpgrade(run, id, { reducedMotion = false } = {}) {
   if (id === 'pulse') run._pulseLevel++;
   if (id === 'comet') run._cometLevel++;
   if (id === 'shield') { run.lives = Math.min(5, run.lives + 1); run._shieldLevel++; }
+  if (id === 'long') {
+    run._longLevel = Math.min(LONG_LEVELS, run._longLevel + 1);
+    for (const f of run.world.flippers) { f.baseLen ??= f.len; f.len = f.baseLen * (1 + LONG_FLIPPER * run._longLevel); }
+  }
+  if (id === 'double') run._doubleLevel++;
+  if (id === 'magnet') run._magnetLevel++;
   const from = currentSector(run), to = run.sectors[run.sectorIndex + 1];
   if (!to) return false;
   const b = run.world.ball;
@@ -295,7 +447,7 @@ function arrive(run) {
   }
   run.sectorIndex = destination;
   currentSector(run).visited = true;
-  run.flight = null; run.saved = false; run.pulseCooldown = 0;
+  run.flight = null; run.saved = false; run.pulseCooldown = 0; run._magnets = run._magnetLevel;
   checkpoint(run);
   emit(run, 'arrive');
 }
@@ -307,15 +459,70 @@ export function skipAdventureFlight(run) {
 }
 
 function drain(run) {
+  // A magnet save catches the ball once in each world and throws it back up through the dock.
+  if (run._magnets > 0) {
+    const s = currentSector(run), b = run.world.ball;
+    run._magnets--;
+    Object.assign(b, { x: s.x, y: s.y + 30, vx: 0, vy: 1100, live: true, lane: false });
+    freshFlight(run);
+    emit(run, 'magnet', { x: b.x, y: b.y, left: run._magnets });
+    return;
+  }
   resetRally(run);
   clearGravityWell(run, 'drain');
   run.drainCount++;
   if (run.clock < run.saveUntil && !run.saved) {
     run.saved = true; checkpoint(run); emit(run, 'save'); return;
   }
+  const lost = run.rally.multiplier;
   run.lives--; run.saved = false; run.combo = 0;
-  if (run.lives <= 0) { run.phase = 'over'; emit(run, 'over'); return; }
-  checkpoint(run); emit(run, 'drain');
+  breakRally(run);
+  if (run.lives <= 0) { run.phase = 'over'; emit(run, 'over', { multiplier: lost }); return; }
+  checkpoint(run); emit(run, 'drain', { multiplier: lost });
+}
+
+// A clean flip can bend its shot a few degrees toward a dark relay, or toward the open gate.
+// Each bend comes from a forecast of the real flight, and after it the ball flies by physics alone.
+export const AIM_SPREAD = { perfect: 14, good: 6 };
+function aimShot(run, grade) {
+  const spread = AIM_SPREAD[grade];
+  if (!spread) return null;
+  const s = currentSector(run), b = run.world.ball, speed = Math.hypot(b.vx, b.vy), base = Math.atan2(b.vy, b.vx);
+  const dark = new Set(s.relays.filter(r => !r.hit).map(r => r.id)), gate = s.gate.open ? s.gate : null;
+  if (!dark.size && !gate) return null;
+  const goal = gate ? ball => Math.hypot(ball.x - gate.x, ball.y - gate.y) < gate.r ? 'gate' : null : null;
+  const gravity = (ball, elapsed) => run.table.gravityAt(ball, elapsed), rock = rockAhead(run);
+  // A smash ends the orbit, so a path through an asteroid does not count as a way to a relay.
+  const blocked = (ball, elapsed) => rock(ball, elapsed) ? 'rock' : null;
+  const step = grade === 'perfect' ? 2 : 1;
+  for (let k = 0; k * step <= spread; k++) for (const sign of k ? [1, -1] : [1]) {
+    const bend = sign * k * step, angle = base + bend * Math.PI / 180;
+    const start = { ...b, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
+    const hit = forecastHit(run.world, start, 1.3, { gravity, goal, blocked });
+    if (hit && (dark.has(hit.id) || hit.id === 'gate')) {
+      b.vx = start.vx; b.vy = start.vy;
+      return { target: hit.id, bend };
+    }
+  }
+  return null;
+}
+
+// One flip, graded. Good and Perfect build the row; a Late flip ends it.
+function strike(run, e) {
+  const rally = run.rally, clean = e.grade === 'perfect' || e.grade === 'good';
+  const before = rally.multiplier, row = rally.chain;
+  freshFlight(run, e.side);
+  rally.lastStrike = run.clock; rally.shots++;
+  // Double strike counts each clean flip more than once in the row.
+  rally.chain = clean ? row + 1 + run._doubleLevel : 0;
+  if (clean) rally.multiplier += Math.floor(rally.chain / CHAIN_STEP) - Math.floor(row / CHAIN_STEP);
+  rally.powerRemaining = RALLY_POWER;
+  if (e.grade === 'perfect') run.perfects++;
+  run.bestChain = Math.max(run.bestChain, rally.chain);
+  run.skill.armed = false;
+  rally.aim = AIM_SPREAD[e.grade] ? { grade: e.grade, side: e.side, at: run.clock } : null;
+  emit(run, 'strike', { side: e.side, grade: e.grade || 'good', timing: e.timing, chain: rally.chain,
+    multiplier: rally.multiplier, raised: rally.multiplier > before, broken: !clean && row > 1, duration: RALLY_POWER });
 }
 
 function tick(run) {
@@ -341,6 +548,8 @@ function tick(run) {
   run.rally.powerRemaining = Math.max(0, run.rally.powerRemaining - H);
   if (run.rally.age >= RALLY_FLIGHT && !run.rally.returning) {
     run.rally.returning = true;
+    // The skill shot is the launch's own flight. The return ends it.
+    run.skill.armed = false;
     const offset = run.world.ball.x - currentSector(run).x;
     run.rally.side = Math.abs(offset) > 35 ? Math.sign(offset) : -run.rally.side;
     emit(run, 'return', { side: run.rally.side });
@@ -357,6 +566,7 @@ function tick(run) {
     if (e.k === 'asteroid-break') {
       const points = 250 * run.rally.multiplier;
       run.score += points;
+      startReturn(run);
       emit(run, 'asteroid-break', { id: e.id, x: e.x, y: e.y, points, multiplier: run.rally.multiplier });
     } else if (e.k === 'asteroid-warning') emit(run, 'asteroid-warning', { id: e.id, x: e.x, y: e.y, duration: e.duration });
     else if (e.k === 'asteroid') emit(run, 'bumper', { id: e.id, x: e.x, y: e.y });
@@ -366,35 +576,49 @@ function tick(run) {
       run.lastHit = run.clock;
       run.score += 50 * run.combo;
       if (relay && !relay.hit) {
+        startReturn(run);
+        const skill = run.skill.armed && run.skill.relayId === relay.id;
         relay.hits++; relay.hit = relay.hits >= relay.required;
         if (relay.hit) run.relaysHit++;
-        run.score += Math.round((relay.hit ? 1000 : 450) * (1 + 0.2 * run._cometLevel));
-        emit(run, 'relay', { id: e.id, x: relay.x, y: relay.y, complete: relay.hit, hits: relay.hits, required: relay.required });
+        const points = Math.round((relay.hit ? 1000 : 450) * (1 + 0.2 * run._cometLevel)) * run.rally.multiplier * (skill ? SKILL_BONUS : 1);
+        run.score += points;
+        if (skill) run.skillShots++;
+        emit(run, 'relay', { id: e.id, x: relay.x, y: relay.y, complete: relay.hit, hits: relay.hits, required: relay.required,
+          points, multiplier: run.rally.multiplier, skill });
         chargeGravityWell(run, 'relay', relay);
         if (sector.relays.every(r => r.hit)) {
-          sector.gate.open = true; run.score += 1500; emit(run, 'gate', { x: sector.gate.x, y: sector.gate.y });
+          const bonus = 1500 * run.rally.multiplier;
+          sector.gate.open = true; run.score += bonus; emit(run, 'gate', { x: sector.gate.x, y: sector.gate.y, points: bonus });
         }
       } else emit(run, 'bumper', { id: e.id });
+      run.skill.armed = false;
     } else if (e.k === 'flipper') {
-      emit(run, 'flipper', { side: e.side, powered: e.powered });
-      if (e.powered && run.clock - run.rally.lastStrike > .15) {
-        freshFlight(run, e.side);
-        run.rally.lastStrike = run.clock; run.rally.shots++;
-        run.rally.multiplier = Math.min(3, run.rally.shots);
-        run.rally.powerRemaining = RALLY_POWER;
-        emit(run, 'strike', { side: e.side, multiplier: run.rally.multiplier, duration: RALLY_POWER });
-      }
+      emit(run, 'flipper', { side: e.side, powered: e.powered, grade: e.grade, timing: e.timing, u: e.u, swing: e.swing, speed: e.speed, rolling: e.rolling });
+      run.skill.armed = false;
+      if (e.powered && run.clock - run.rally.lastStrike > .15) strike(run, e);
     } else if (e.k === 'reverse') {
       freshFlight(run, e.side);
       emit(run, 'reverse', { side: e.side, x: e.x, y: e.y });
     }
   }
+  // The bend waits until the blade ends its swing and the ball is free of it, so the blade
+  // cannot change the shot again.
+  const aim = run.rally.aim;
+  if (aim) {
+    const blade = run.world.flippers.find(f => f.sector === run.sectorIndex && f.side === aim.side);
+    if ((!(blade?.touchLast >= run.world.t) && !(Math.abs(blade?.om) > .5)) || run.clock - aim.at > .12) {
+      run.rally.aim = null;
+      const result = aimShot(run, aim.grade);
+      if (result) emit(run, 'aim', { grade: aim.grade, target: result.target, bend: result.bend });
+    }
+  }
   if (sector.gate.open && Math.hypot(b.x - sector.gate.x, b.y - sector.gate.y) < sector.gate.r) {
-    sector.cleared = true; run.score += 3000; b.vx = 0; b.vy = 0;
+    const bonus = 3000 * run.rally.multiplier;
+    sector.cleared = true; run.score += bonus; b.vx = 0; b.vy = 0;
     run.phase = run.sectorIndex === run.sectors.length - 1 ? 'won' : 'upgrade';
     resetRally(run);
     clearGravityWell(run, run.phase === 'won' ? 'won' : 'sector');
-    emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id });
+    emit(run, run.phase === 'won' ? 'won' : 'clear', { sector: sector.id, points: bonus });
     return;
   }
   // Reward a real half-orbit. Relays and gates still decide voyage progression.
@@ -407,8 +631,9 @@ function tick(run) {
       if (delta < -Math.PI) delta += Math.PI * 2;
       run._orbitTravel += delta;
       if (Math.abs(run._orbitTravel) >= Math.PI && run.clock - run._orbitAwardAt > 7) {
-        run.score += 750; run.orbitCount++; run._orbitAwardAt = run.clock; run._orbitTravel = 0;
-        emit(run, 'orbit', { sector: sector.id, bonus: 750 });
+        const bonus = 750 * run.rally.multiplier;
+        run.score += bonus; run.orbitCount++; run._orbitAwardAt = run.clock; run._orbitTravel = 0;
+        emit(run, 'orbit', { sector: sector.id, bonus });
         chargeGravityWell(run, 'orbit');
       }
     }
@@ -443,8 +668,8 @@ export function objective(run) {
   if (run.phase === 'upgrade') return 'Choose a relic for the next sector.';
   if (run.phase === 'flight') return `Travelling to ${run.sectors[run.flight.toSector].name}`;
   const s = currentSector(run), count = s.relays.filter(r => r.hit).length;
-  if (run.phase === 'ready') return 'Hold LAUNCH, then release to leave the dock.';
-  return s.gate.open ? 'Enter the bright gate above the planet.' : s.id === 5
-    ? `Charge each core twice · ${s.relays.reduce((sum, r) => sum + r.hits, 0)}/6`
-    : `Light the three relays · ${count}/3`;
+  if (run.phase === 'ready') return 'Hold to aim. Let go to launch.';
+  return s.gate.open ? 'Enter the bright gate above the planet.' : s.world === 5
+    ? `Charge each beacon twice · ${s.relays.reduce((sum, r) => sum + r.hits, 0)}/6`
+    : `Light the three beacons · ${count}/3`;
 }
