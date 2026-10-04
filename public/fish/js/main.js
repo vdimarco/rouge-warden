@@ -2138,7 +2138,7 @@ function flyIn(id, then) {
 // the lure flies; a ring that rose then waits on the water for the cast). From the first fish landed on, so a new player's
 // first casts go to the first fish. Play goes on from the same cast state
 function revealDue() {
-  return G.phase === "cast" && (G.step === "ready" || G.step === "open") && !G.pin && !G.lift && save.caught > 0 && !cutSeen(revealId(G.place.id)) && !!rises && rises.list.some((g) => g.gold);
+  return G.phase === "cast" && (G.step === "ready" || G.step === "open") && !(cuts && cuts.playing) && !G.pin && !G.lift && save.caught > 0 && !cutSeen(revealId(G.place.id)) && !!rises && rises.list.some((g) => g.gold);
 }
 function playReveal() {
   const g = rises.list.find((q) => q.gold);
