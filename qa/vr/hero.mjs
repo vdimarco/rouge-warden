@@ -523,6 +523,10 @@ try {
     G.test.teleport(B.maxX + 3, B.maxY / 2, z); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2); G.P.vel.x = -8; __h.step(30);
     const face = () => { const w = G.P.wall; return w ? Math.abs(wrap(G.hero.info().yaw - Math.atan2(w.nx, w.nz))) : null; };
     const held = { wall: !!G.P.wall, pose: G.hero.info().pose, off: face(), air: G.hero.info().weights.air };
+    // where the palms, the ankles and the knees are: the wall face is x = B.maxX, along it is z
+    const hi = G.hero.info(), bone = (n) => G.hero.root.getObjectByName(n).getWorldPosition(G.camera.position.clone());
+    held.palms = hi.hands.map((p) => p[0] - B.maxX); held.ankles = hi.feet.map((p) => p[0] - B.maxX);
+    held.knees = Math.abs(bone("LeftLeg").z - bone("RightLeg").z); held.hipJoints = Math.abs(bone("LeftUpLeg").z - bone("RightUpLeg").z);
     key("KeyW", true); __h.step(30); const up = { pose: G.hero.info().pose, off: face() }; key("KeyW", false);
     key("KeyD", true); __h.step(30); const along = { pose: G.hero.info().pose, off: face(), wall: !!G.P.wall }; key("KeyD", false);
     __h.step(2);
@@ -531,6 +535,8 @@ try {
   });
   check(cl && cl.held.wall && cl.held.pose === "cling" && cl.held.off < 0.2 && cl.held.air < 0.1, "holding a wall the hero faces it in the cling pose, with no air pose", cl);
   check(cl && cl.up.pose === "cling" && cl.up.off < 0.2 && cl.along.wall && cl.along.pose === "cling" && cl.along.off < 0.2, "climbing up and along, the hero keeps facing the wall", cl);
+  check(cl && cl.held.palms.every((d) => d > 0 && d < 0.09) && cl.held.ankles.every((d) => d > 0.03 && d < 0.22), "on the wall both palms and both feet are on its face", cl && cl.held);
+  check(cl && cl.held.knees > cl.held.hipJoints + 0.25, "on the wall the knees are out wide (a frog crouch)", cl && cl.held);
 
   /* ---- the draw budget ---- */
   await reset(page);
@@ -587,6 +593,35 @@ try {
   check(f.hero.pose === "swing" && f.hero.weights.reach[1] > 0.9 && rp3 < 0.02, "the built-in figure swings and holds the rope in its hand", { pose: f.hero.pose, rp3 });
   await page.evaluate(() => { const i = G.hero.info(); window.__hi = i; });
   await page.evaluate(() => { G.test.press(1, false); G.test.aimAt(1, null); });
+  // and the same climb: hands and feet on holds that stay put, stepping in diagonal pairs
+  const fc = await page.evaluate(() => {
+    const C = G.city, B = C.colliders.find((c) => c.type === "box" && c.tag === "building" && c.minY === 0 && c.maxY > 25 && c.maxY < 90 &&
+      !C.colliders.some((d) => d !== c && d.bid === c.bid) && !C.collideSphere(c.maxX + 2, c.maxY / 2, (c.minZ + c.maxZ) / 2, 1.6));
+    if (!B) return null;
+    const key = (code, on) => window.dispatchEvent(new KeyboardEvent(on ? "keydown" : "keyup", { code }));
+    __h.step(5);
+    G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2); G.P.vel.x = -8; __h.step(40);
+    key("KeyW", true);
+    let maxMoving = 0, planted = 0, off = 0, steps = 0, prev = null;
+    for (let i = 0; i < 60; i++) {
+      __h.step(1);
+      const h = G.hero.info(), c = h.climb, pts = [h.hands[0], h.hands[1], h.feet[0], h.feet[1]], mv = c.limbs.map((l) => l.moving);
+      maxMoving = Math.max(maxMoving, mv.filter(Boolean).length);
+      if (prev) for (let j = 0; j < 4; j++) {
+        if (!prev.mv[j] && mv[j]) steps++;
+        if (prev.mv[j] || mv[j]) continue;
+        const a = prev.pts[j], b = pts[j], o = c.limbs[j].hold;
+        planted = Math.max(planted, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) * 60);
+        off = Math.max(off, Math.hypot(b[0] - o[0], b[1] - o[1], b[2] - o[2]) - (j < 2 ? 0.06 : 0.17));
+      }
+      prev = { mv, pts };
+    }
+    key("KeyW", false);
+    const out = { wall: !!G.P.wall, pose: G.hero.info().pose, maxMoving, planted, off, steps };
+    G.test.teleport(G.city.start.x, G.city.start.y, G.city.start.z); G.rigYaw = G.city.start.yaw; __h.step(10);
+    return out;
+  });
+  check(fc && fc.wall && fc.pose === "cling" && fc.maxMoving <= 2 && fc.planted < 0.05 && fc.off < 0.03 && fc.steps >= 8, "the built-in figure climbs the same way: hands and feet on planted holds, two limbs at most stepping", fc);
   const ri2 = await page.evaluate(() => __h.draw());
   check(ri2.calls <= 120, "the built-in figure is within the draw budget (" + ri2.calls + " calls)", ri2);
   const errs2 = page.errors.filter((e) => !/Failed to load resource|crew5/i.test(e));
