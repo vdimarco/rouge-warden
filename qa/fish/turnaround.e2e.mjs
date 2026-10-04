@@ -2,12 +2,15 @@
 // (serve public/ first; FISH_URL sets the address). It prints each gap, and checks it:
 // - an empty retrieve (nothing is coming): the lure skips home within a few seconds, and a fast crank brings it home faster
 // - "Nothing this time.": the next cast is ready about 1 s after the lure is home, and at once after a press past 350 ms
-// - a cast onto the shore: ready in under 1.2 s, and at once after a press past 350 ms
+// - a cast onto the shore: ready in under 1.2 s, and at once after a press past 350 ms. Its report (what to fix in the
+//   release) stays up over the new cast for its own time
 // - a loss: the loss line keeps its time, a press in its first 800 ms does nothing, and a press after that ends it
 // - the press that ends a beat goes on into the next cast: a held mouse button casts, Space casts, a finger's drag down
 //   takes the line, and a motion press on the reel holds it. A tap that only ends the beat gets no tip
 // - a press on a HUD button or on the drag bar does not end a beat; a derby keeps its rules (a skip uses up no cast, and the
 //   last cast's beat ends in the results)
+// - a player still working the reel when the beat starts (a fresh press on the crank, one more pump on the rod pad, a thumb
+//   on the crank in motion play): the press may end the beat, but it throws no cast, holds no line and uses up no derby cast
 // - the catch card: Space presses Cast again once the photo beat is done, and not during it
 // The automatic waits are timed by the game's frames: a check allows the one frame that ended the wait (a software renderer
 // on a busy machine can draw a frame a second). The retrieve times are game seconds. A fresh save, free fishing.
@@ -171,6 +174,20 @@ function helpers() {
     r = await shore({ at: 400, kind: "mouse" });
     note("ashore to ready, a mouse click at 400 ms (after the click)", r.after);
     check(r.next && r.after != null && r.after < 50, `a click 400 ms after the shore ends it at once (${fmt(r.after)} after the click)`);
+    // its report stays up over the new cast (a click 400 ms in starts it at once, whatever the frames do), and goes by itself
+    // 2.6 s after the landing
+    const rep = await page.evaluate(async () => {
+      const wait = window.__wait, el = document.querySelector("#report");
+      const t0 = await window.__land(0, 3, "land");
+      const said = el.hidden ? "" : el.querySelector(".zone").textContent;
+      while (performance.now() - t0 < 400) await wait(1);
+      window.__fire("pointerdown", 300, 450, "mouse", 1);
+      const ready = FISH.G.phase === "cast" && FISH.G.step === "ready", up = !el.hidden;
+      window.__fire("pointerup", 300, 450, "mouse", 1);
+      while (!el.hidden && performance.now() - t0 < 8000) await wait(10);
+      return { said, ready, up, gone: el.hidden ? Math.round(performance.now() - t0) : null };
+    });
+    check(rep.said === "You cast onto the shore." && rep.ready && rep.up && rep.gone >= 2500 && rep.gone < 4000, `the shore cast's report stays up over the new cast, and goes ${rep.gone} ms after the landing (${JSON.stringify(rep)})`);
 
     // ---- a loss: the line keeps its time; a press after 800 ms ends it ----
     const FISHY = { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -14, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true };
@@ -329,6 +346,46 @@ function helpers() {
       return { ready, step, after: G.step, verdict: G.cast && G.cast.verdict };
     });
     check(drag.ready && drag.step === "loaded" && drag.after === "flight", `the finger that ends a loss drags down and flicks, and the lure flies (${JSON.stringify(drag)})`);
+    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    // a derby, and a player still working the reel controls when the beat starts: a fresh press on the crank 420 ms into
+    // "Nothing this time.", then circles at 2 turns a second; one more pump on the rod pad 900 ms into a loss (down, then a
+    // quick lift). Either press ends the beat, and neither throws a cast or uses one up
+    const fight = await page.evaluate(async () => {
+      const G = FISH.G, wait = window.__wait, out = {}, at = () => G.phase + "/" + G.step;
+      FISH.startMode("derby");
+      await wait(300);
+      G.castsLeft = 5;
+      let t0 = await window.__stage({ phase: "home" });
+      let b = document.querySelector("#crankBox").getBoundingClientRect();
+      const cx = b.left + b.width / 2, cy = b.top + b.height / 2, R = Math.min(45, b.width / 3);
+      while (performance.now() - t0 < 420) await wait(1);
+      let casts = G.casts, on = window.__fire("pointerdown", cx + R, cy, "touch", 31);
+      out.crank = { on: !!on.closest("#crankBox"), after: at() };
+      const ts = performance.now();
+      while (performance.now() - ts < 2500) { const a = ((performance.now() - ts) / 1000) * 4 * Math.PI; window.__fire("pointermove", cx + R * Math.cos(a), cy + R * Math.sin(a), "touch", 31); await wait(12); }
+      window.__fire("pointerup", cx + R, cy, "touch", 31);
+      await wait(300);
+      Object.assign(out.crank, { end: at(), casts: G.casts - casts, left: G.castsLeft });
+      G.castsLeft = 5;
+      t0 = await window.__stage({ phase: "lost", reason: "snap", fish: { id: "perch", kg: 0.3, x: 0, y: -1, z: -12, len: 0.2 } });
+      b = document.querySelector("#padBox").getBoundingClientRect();
+      const x = b.left + b.width / 2, y = b.top + b.height * 0.4;
+      while (performance.now() - t0 < 900) await wait(1);
+      casts = G.casts; on = window.__fire("pointerdown", x, y, "touch", 41);
+      out.pump = { on: !!on.closest("#padBox"), after: at() };
+      for (let i = 1; i <= 12; i++) { window.__fire("pointermove", x, y + 7 * i, "touch", 41); await wait(14); }
+      const tf = performance.now();
+      let k = 0;
+      while (k < 1) { k = Math.min(1, (performance.now() - tf) / 90); window.__fire("pointermove", x, y + 84 - 140 * k, "touch", 41); await wait(8); }
+      window.__fire("pointerup", x, y - 56, "touch", 41);
+      await wait(300);
+      Object.assign(out.pump, { end: at(), casts: G.casts - casts, left: G.castsLeft });
+      FISH.startMode("free");
+      return out;
+    });
+    const still = (o) => !!o && o.on && o.after === "cast/ready" && o.end === "cast/ready" && o.casts === 0 && o.left === 5;
+    check(still(fight.crank), `a derby: a fresh press on the crank 420 ms into "Nothing this time.", cranked in circles, ends the beat and throws no cast (${JSON.stringify(fight.crank)})`);
+    check(still(fight.pump), `a derby: one more pump on the rod pad 900 ms into a loss ends the beat and throws no cast (${JSON.stringify(fight.pump)})`);
   } catch (e) {
     check(false, "touch: exception: " + (e && e.stack));
   }
@@ -366,6 +423,20 @@ function helpers() {
     });
     check(m.phase === "cast" && m.step === "pinned" && m.bail === "open", `motion: a thumb on the screen 900 ms into a loss starts the next cast and holds the line (${JSON.stringify(m)})`);
     check(m.after === "ready" && !m.toasts.some((t) => TIP.test(t)), `and lifting it with no swing starts again with no tip (${JSON.stringify(m.toasts)})`);
+    // a thumb on the crank 900 ms into a loss: it ends the beat, but holds no line
+    const mc = await page.evaluate(async () => {
+      const G = FISH.G, wait = window.__wait;
+      const t0 = await window.__stage({ phase: "lost", reason: "snap", fish: { id: "perch", kg: 0.3, x: 0, y: -1, z: -12, len: 0.2 } });
+      const b = document.querySelector("#crankBox").getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      while (performance.now() - t0 < 900) await wait(1);
+      const on = window.__fire("pointerdown", x, y, "touch", 8);
+      const out = { on: !!on.closest("#crankBox"), at: G.phase + "/" + G.step, bail: G.bail, pin: !!G.pin };
+      await wait(300);
+      out.later = { step: G.step, bail: G.bail, pin: !!G.pin };
+      window.__fire("pointerup", x, y, "touch", 8);
+      return out;
+    });
+    check(mc.on && mc.at === "cast/ready" && mc.bail === "closed" && !mc.pin && mc.later.step === "ready" && !mc.later.pin, `motion: a thumb on the crank 900 ms into a loss ends it, but holds no line (${JSON.stringify(mc)})`);
   } catch (e) {
     check(false, "motion: exception: " + (e && e.stack));
   }

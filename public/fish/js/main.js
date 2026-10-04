@@ -697,11 +697,13 @@ $("#uStay").addEventListener("click", () => { Sound.sfx("uiBack"); show(null); n
 /* ---------------- the cast ---------------- */
 function newCast(first) {
   if (G.mode === "derby" && G.castsLeft <= 0) { endDerby(); return; }
+  // the cast before landed on the shore: its report (what to fix in the release) stays up its own time, over the new cast
+  const ashore = !first && G.phase === "cast" && G.step === "ashore";
   G.sim = null; G.flight = null; G.cast = null; G.landing = null; G.ring = null;
   G.step = "ready"; G.bail = "closed"; G.pin = null; G.drop = 0; G.backMax = 90;
   G.aimYaw = 0; G.tension = 0;
   if (world) { world.hideCatch(); world.setFish(null); world.setFollower(null); }
-  hideReport();
+  if (!ashore) hideReport();
   enterCast();
 }
 function enterCast() {
@@ -972,7 +974,7 @@ function beatDone() {
 }
 // A cast input in the beat after a cast: a press on the lake or the reel, a mouse click, Space, a thumb in motion play.
 // Once the words have been up SKIP_MS it ends the beat now, and the same press goes on into the new cast (G.skip: its
-// pointer id, or "key"). True when it did
+// pointer id, or "key"; null for a press that goes no further). True when it did
 function skipBeat(id) {
   const kind = G.phase === "lost" ? G.beat : G.phase === "cast" && G.step === "ashore" ? "ashore" : "";
   if (!kind || G.paused || now() - G.outcomeAt < SKIP_MS[kind]) return false;
@@ -2078,11 +2080,15 @@ async function boot() {
     Sound.sfx("ui");
     toast("Touch play is on.", 2200);
   }, true);
-  // the beat after a cast: a press on the lake, the reel or the crank ends it (skipBeat), and the reel panel, which hears the
-  // press after this, takes it into the new cast. A press on a button, a screen or the drag bar does not
+  // the beat after a cast: a press on the lake ends it (skipBeat), and the reel panel, which hears the press after this,
+  // takes it into the new cast. A press on the crank, the rod pad or the gauge ends it too, but goes no further: a player
+  // still cranking or pumping the rod never meant to cast. A press on a button, a screen or the drag bar does nothing
   game.addEventListener("pointerdown", (e) => {
     if ((e.pointerType === "mouse" && e.button !== 0) || blocked(e.target, game) || (e.target.closest && e.target.closest("#dragBar"))) return;
-    if (skipBeat(e.pointerId) && G.phase === "cast") castGrab();
+    const fight = !!(e.target.closest && e.target.closest("#reelUI"));
+    if (!skipBeat(fight ? null : e.pointerId)) return;
+    if (fight) e.stopPropagation();
+    else if (G.phase === "cast") castGrab();
   }, true);
   const skipUp = (e) => { if (e.pointerId === G.skip) G.skip = null; };
   addEventListener("pointerup", skipUp, true);
