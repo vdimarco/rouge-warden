@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 import { readFile, readdir, stat } from "fs/promises";
 import { createHash } from "crypto";
 import http from "http";
+import vm from "vm";
 import path from "path";
 import { stampOf } from "../../play/fish/stamp-sw.mjs";
 
@@ -102,7 +103,11 @@ await test("scripts in the head, app-mode marks", async (ok) => {
   ok(scripts[0] === '<script src="/arcade/quiet.js">', "the first script in <head> is " + scripts[0] + " (qa/arcade/quiet.mjs wants /arcade/quiet.js first)");
   const second = head.slice(head.indexOf(scripts[0]) + scripts[0].length).replace(/^<\/script>/, "").trim();
   ok(/^<script>[\s\S]*dataset\.app/.test(second), "the app-mode script does not follow quiet.js");
-  for (const need of ["source", "play", "pwa", "display-mode: standalone", "display-mode: fullscreen", "display-mode: minimal-ui", "android-app://", '"app"', "sessionStorage"]) ok(second.slice(0, 1500).includes(need), "the app-mode script lacks " + need);
+  for (const need of ["source", "play", "pwa", "display-mode: standalone", "android-app://com.cottagearcade.reelitin", '"app"', "sessionStorage"]) ok(second.slice(0, 1800).includes(need), "the app-mode script lacks " + need);
+  // browser fullscreen (F11, the Fullscreen API) and minimal-ui are not app windows; a referrer of any other Android app is not this app
+  const appCode = (/^<script>([\s\S]*?)<\/script>/.exec(second) || [0, ""])[1].replace(/^\s*\/\/.*$/gm, "");
+  ok(!/display-mode:\s*(fullscreen|minimal-ui)/.test(appCode), "the app-mode script asks for a display mode other than standalone");
+  ok(!/indexOf\("android-app:\/\/"\)/.test(appCode), "the app-mode script accepts the referrer of any Android app");
   ok(!/localStorage/.test(second.slice(0, second.indexOf("</script>")).replace(/^\s*\/\/.*$/gm, "")), "the app-mode script uses localStorage (the website shares it with the app)");
   // every control that leaves the game carries arcade-only, so app mode can hide it
   // (the Switch game button and the arcade link on the title sit in one row, and the row has the class)
@@ -113,6 +118,71 @@ await test("scripts in the head, app-mode marks", async (ok) => {
   ok(/html\[data-app\] \.arcade-only \{ display: none !important; \}/.test(indexSrc), "no CSS rule hides .arcade-only in app mode");
   ok(/class="row2 arcade-only"><button[^>]*data-switch[^>]*>[^<]*<\/button><a[^>]*href="\/"/.test(indexSrc), "the Switch game and arcade row on the title lacks arcade-only");
   ok(!/<script src="\/arcade\/switch\.js">/.test(indexSrc) && /dataset\.app\) \(function \(\) \{[^}]*\/arcade\/switch\.js/.test(indexSrc), "switch.js is not loaded only outside app mode");
+});
+// The app-mode script, run on its own with stubs for the browser: the rules of when the page is an app, with no browser.
+await test("app-mode script: when it turns app mode on", async (ok) => {
+  const scripts = [...head.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+  const second = head.slice(head.indexOf(scripts[0]) + scripts[0].length).replace(/^<\/script>/, "").trim();
+  const code = (/^<script>([\s\S]*?)<\/script>/.exec(second) || [0, ""])[1];
+  const PKG = "android-app://com.cottagearcade.reelitin";
+  // modes: the display modes that the window matches. stored: what sessionStorage holds. blocked: sessionStorage throws, as with blocked cookies
+  const run = ({ search = "", referrer = "", modes = [], stored = null, blocked = false } = {}, src = code) => {
+    const store = new Map(stored === null ? [] : [["fish.app", stored]]);
+    const ctx = { location: { search }, document: { referrer, documentElement: { dataset: {} } }, URLSearchParams,
+      matchMedia: (q) => ({ matches: q.split(",").some((part) => modes.some((m) => part.trim() === "(display-mode: " + m + ")")) }) };
+    if (blocked) Object.defineProperty(ctx, "sessionStorage", { get() { throw new Error("SecurityError: storage is blocked"); } });
+    else ctx.sessionStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
+    vm.runInNewContext(src, ctx);
+    return { on: ctx.document.documentElement.dataset.app === "1", flag: store.get("fish.app") ?? null };
+  };
+  const rows = [
+    // [what the test says, input, app mode wanted]
+    ["a plain visit", {}, false],
+    ["source=play", { search: "?source=play" }, true],
+    ["source=pwa", { search: "?source=pwa" }, true],
+    ["source=twa", { search: "?source=twa" }, false],
+    ["app=1", { search: "?app=1" }, true],
+    ["source=play&app=0", { search: "?source=play&app=0" }, false],
+    ["app=0 in a standalone window", { search: "?app=0", modes: ["standalone"] }, false],
+    ["a standalone window", { modes: ["standalone"] }, true],
+    ["browser fullscreen alone (F11, the Fullscreen API)", { modes: ["fullscreen"] }, false],
+    ["minimal-ui alone", { modes: ["minimal-ui"] }, false],
+    ["a browser tab", { modes: ["browser"] }, false],
+    ["the referrer of this app", { referrer: PKG }, true],
+    ["the referrer of this app with a path", { referrer: PKG + "/https/warden-alpha-wheat.vercel.app" }, true],
+    ["the referrer of Gmail", { referrer: "android-app://com.google.android.gm" }, false],
+    ["the referrer of Slack", { referrer: "android-app://com.Slack" }, false],
+    ["the referrer of the Google app", { referrer: "android-app://com.google.android.googlequicksearchbox/https/www.google.com" }, false],
+    ["a package that starts with this one", { referrer: PKG + "x" }, false],
+    ["a package inside this one", { referrer: PKG + ".beta" }, false],
+    ["a web referrer", { referrer: "https://example.com/" }, false],
+    ["the flag of this tab", { stored: "1" }, true],
+    ["a flag that is not 1", { stored: "0" }, false],
+    // sessionStorage throws (blocked cookies): the answer that was decided stays
+    ["blocked storage, plain", { blocked: true }, false],
+    ["blocked storage, a standalone window, no query (the return from the privacy page)", { blocked: true, modes: ["standalone"] }, true],
+    ["blocked storage, the referrer of this app", { blocked: true, referrer: PKG }, true],
+    ["blocked storage, fullscreen alone", { blocked: true, modes: ["fullscreen"] }, false],
+    ["blocked storage, source=play", { blocked: true, search: "?source=play" }, true],
+    ["blocked storage, source=play&app=0", { blocked: true, search: "?source=play&app=0" }, false],
+    ["blocked storage, app=0 in a standalone window", { blocked: true, search: "?app=0", modes: ["standalone"] }, false],
+  ];
+  for (const [what, input, want] of rows) {
+    let got;
+    try { got = run(input).on; } catch (e) { ok(false, what + ": the script threw " + e.message); continue; }
+    ok(got === want, what + ": app mode is " + got + ", want " + want);
+  }
+  // the answer sticks in sessionStorage when it can, and app=0 clears it
+  ok(run({ search: "?source=play" }).flag === "1", "source=play did not write the flag to sessionStorage");
+  ok(run({ modes: ["standalone"] }).flag === "1", "a standalone window did not write the flag to sessionStorage");
+  ok(run({ referrer: "android-app://com.google.android.gm" }).flag === null, "the referrer of Gmail wrote the flag to sessionStorage");
+  ok(run({ search: "?app=0", stored: "1" }).flag === null, "app=0 did not clear the flag");
+  // a script that cannot fail proves nothing: the rule of the old script (any android-app:// referrer, any display mode) must be caught
+  const old = code.replace(/ref === pkg \|\| ref\.indexOf\(pkg \+ "\/"\) === 0/, 'ref.indexOf("android-app://") === 0').replace('matchMedia("(display-mode: standalone)")', 'matchMedia("(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)")').replace("on = on || (", "on = (");
+  ok(old !== code && (old.match(/display-mode: fullscreen/g) || []).length === 1 && !old.includes("on = on ||"), "the test cannot build the old rule from the script");
+  ok(run({ referrer: "android-app://com.google.android.gm" }, old).on === true, "the rows cannot tell the old referrer rule from the new one");
+  ok(run({ modes: ["fullscreen"] }, old).on === true, "the rows cannot tell the old display-mode rule from the new one");
+  ok(run({ blocked: true, modes: ["standalone"] }, old).on === false, "the rows cannot tell the old catch branch from the new one");
 });
 await test("fonts, import map and three.js are in the folder", async (ok) => {
   const style = indexSrc.match(/<style>([\s\S]*?)<\/style>/)?.[1] || "";
@@ -200,6 +270,9 @@ await test("the cached files equal the files on disk", async (ok) => {
   ok(!all.includes("/fish/sw.js"), "sw.js lists itself");
   ok(/serviceWorker\.register\("sw\.js", \{ scope: "\.\/" \}\)/.test(indexSrc) && /nosw/.test(indexSrc) && /attributeFilter: \["hidden"\]/.test(indexSrc), "index.html does not register sw.js after the title shows, or has no ?nosw switch");
   ok(indexSrc.indexOf("serviceWorker.register") > indexSrc.indexOf('src="/arcade/quiet.js"'), "the registration comes before quiet.js");
+  // the website must not run a deploy behind: the worker answers from the cache first, so only app mode (the Play app, the installed web app) registers it
+  const regAt = indexSrc.indexOf("serviceWorker.register"), regScript = indexSrc.slice(indexSrc.lastIndexOf("<script>", regAt), indexSrc.indexOf("</script>", regAt));
+  ok(/if \(!\("serviceWorker" in navigator\) \|\| !document\.documentElement\.dataset\.app \|\| \/\[\?&\]nosw/.test(regScript), "index.html registers sw.js outside app mode: the registration must return early when data-app is not set");
 });
 await test("VERSION follows the cached files", async (ok) => {
   ok(stamp.current === stamp.want, "sw.js VERSION is " + stamp.current + " but the cached files give " + stamp.want + ": run node play/fish/stamp-sw.mjs");
@@ -209,13 +282,18 @@ await test("VERSION follows the cached files", async (ok) => {
 let contactPlaceholder = false;
 await test("privacy.html", async (ok) => {
   const html = await read(path.join(FISH, "privacy.html"));
-  const text = html.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ");
+  const text = html.replace(/<(style|script)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ");
   ok(/<h1>[^<]*privacy[^<]*<\/h1>/i.test(html), "no privacy heading");
   ok(text.split(/\s+/).filter(Boolean).length > 250, "fewer than 250 words");
   for (const w of ["Vercel", "IP address", "user agent", "browser storage", "Reset progress", "motion sensors", "no accounts", "no ads", "analytics", "buzz", "screen on", "microphone", "camera", "location", "site data", "under 13", "never leaves", "sends them to nobody"]) ok(text.toLowerCase().includes(w.toLowerCase()), "does not mention \"" + w + "\"");
   ok(!/—/.test(html), "has an em dash (STE)");
   ok(!/href="\/(?:[#?"]|$)|arcade/i.test(html.replace(/<style[\s\S]*?<\/style>/g, "")), "links to the arcade");
   ok(!/https?:\/\//.test(html), "names another origin");
+  // the link back to the game: a plain link without JavaScript, and Back (history.back) for a player who came from the game
+  ok(/<footer><a href="\.\/">Back to Reel It In<\/a><\/footer>/.test(html), "the footer has no plain link back to the game (href=\"./\")");
+  const foot = (/<script>([\s\S]*?)<\/script>/.exec(html) || [0, ""])[1];
+  ok(/history\.back\(\)/.test(foot) && /document\.referrer/.test(foot) && /location\.origin \+ "\/fish\/"/.test(foot) && /e\.preventDefault\(\)/.test(foot), "the footer link does not go back when the player came from the game");
+  ok((html.match(/<script\b/g) || []).length === 1 && !/\bsrc=/.test(foot), "privacy.html must have one inline script and no script file");
   contactPlaceholder = html.includes("OWNER_CONTACT_EMAIL");
   ok(contactPlaceholder || /mailto:[^"@\s]+@[^"@\s]+\.[a-z]{2,}/i.test(html), "no contact line (an email address, or OWNER_CONTACT_EMAIL for the owner to replace)");
   for (const f of ["index.html", "privacy.html", "manifest.webmanifest", "style.css", "guide.css", "sw.js"]) ok(!/—/.test(await read(path.join(FISH, f))), f + " has an em dash");
@@ -226,7 +304,8 @@ await test("privacy.html", async (ok) => {
 await test("fish-app.yml", async (ok) => {
   const yml = await read(path.join(ROOT, ".github/workflows/fish-app.yml")).catch(() => "");
   ok(yml.includes("node qa/fish/pwa.mjs --static"), "the workflow does not run node qa/fish/pwa.mjs --static");
-  for (const p of ["public/fish/**", "play/fish/**", "qa/fish/pwa.mjs"]) ok(yml.includes(p), "the workflow does not watch " + p);
+  // both paths lists (pull_request and push). quiet.js is cached and hashed into VERSION, so a change to it alone needs the stamp check
+  for (const p of ["public/fish/**", "public/arcade/quiet.js", "play/fish/**", "qa/fish/pwa.mjs"]) ok(yml.split(p).length - 1 >= 2, "the workflow does not watch " + p + " in both paths lists");
   ok(/pull_request:/.test(yml) && /push:/.test(yml) && /branches: \[main\]/.test(yml), "the workflow must run on pull_request and on push to main");
   ok(/ubuntu-latest/.test(yml) && /node-version: '?22'?/.test(yml), "the workflow must use ubuntu-latest and Node 22");
   ok(!/playwright|npm ci/.test(yml), "the static check must need no browser and no install");
@@ -366,17 +445,33 @@ try {
     const tab2 = await openPage(ctx, "/fish/?nosw", { wait: "dom" });
     ok(!(await on(tab2)), "a new tab started in app mode");
     await tab2.close();
-    // display mode: the window is an app window
-    const dm = await openPage(ctx, "/fish/?nosw", { wait: "dom", init: () => { const mm = window.matchMedia.bind(window); window.matchMedia = (q) => (/display-mode: (standalone|fullscreen|minimal-ui)/.test(q) ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} } : mm(q)); } });
-    ok(await on(dm), "a standalone display mode did not turn app mode on");
-    await dm.close();
-    const dm0 = await openPage(ctx, "/fish/?nosw&app=0", { wait: "dom", init: () => { const mm = window.matchMedia.bind(window); window.matchMedia = (q) => (/display-mode: standalone/.test(q) ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : mm(q)); } });
+    // display mode: only a standalone window is an app window. Browser fullscreen (F11, the Fullscreen API) and minimal-ui are not.
+    // The mock answers a media query as a browser does: true when one of its comma-separated parts names the mode that the window has.
+    const modeInit = (mode) => "(" + (function (mode) {
+      const mm = window.matchMedia.bind(window);
+      window.matchMedia = (q) => (/display-mode/.test(q) ? { matches: q.split(",").some((p) => p.trim() === "(display-mode: " + mode + ")"), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} } : mm(q));
+    }).toString() + ")(" + JSON.stringify(mode) + ")";
+    for (const [mode, want] of [["standalone", true], ["fullscreen", false], ["minimal-ui", false], ["browser", false]]) {
+      const dm = await openPage(ctx, "/fish/?nosw", { wait: "dom", init: modeInit(mode) });
+      ok((await on(dm)) === want, "a window in display mode " + mode + ": app mode is " + !want + ", want " + want);
+      ok((await dm.evaluate(() => sessionStorage.getItem("fish.app") === "1")) === want, "display mode " + mode + ": the flag in sessionStorage is wrong");
+      await dm.close();
+    }
+    const dm0 = await openPage(ctx, "/fish/?nosw&app=0", { wait: "dom", init: modeInit("standalone") });
     ok(!(await on(dm0)), "?app=0 did not win over a standalone display mode");
     await dm0.close();
-    // opened from Android
-    const ref = await openPage(ctx, "/fish/?nosw", { wait: "dom", init: () => Object.defineProperty(document, "referrer", { get: () => "android-app://com.cottagearcade.reelitin" }) });
-    ok(await on(ref), "an android-app:// referrer did not turn app mode on");
-    await ref.close();
+    // sessionStorage that throws (blocked cookies): a standalone window stays in app mode on a page with no query, as after the privacy page
+    const blocked = await openPage(ctx, "/fish/?nosw", { wait: "dom", init: "Object.defineProperty(window, 'sessionStorage', { get() { throw new DOMException('blocked', 'SecurityError'); } });" + modeInit("standalone") });
+    ok(await on(blocked), "with sessionStorage blocked, a standalone window lost app mode");
+    await blocked.close();
+    // opened from Android: only this app counts. A mail or chat app that opens a shared link must leave the website as it is.
+    for (const [referrer, want] of [["android-app://com.cottagearcade.reelitin", true], ["android-app://com.google.android.gm", false], ["android-app://com.Slack", false], ["android-app://com.google.android.googlequicksearchbox/https/www.google.com", false]]) {
+      const ref = await openPage(ctx, "/fish/?nosw", { wait: "dom", init: "Object.defineProperty(document, 'referrer', { get: () => " + JSON.stringify(referrer) + " });" });
+      ok((await on(ref)) === want, "the referrer " + referrer + ": app mode is " + !want + ", want " + want);
+      ok((await ref.evaluate(() => sessionStorage.getItem("fish.app") === "1")) === want, "the referrer " + referrer + ": the flag in sessionStorage is wrong");
+      ok((await ref.evaluate(() => getComputedStyle(document.querySelector("#title .row2.arcade-only")).display !== "none")) === !want, "the referrer " + referrer + ": the arcade links " + (want ? "show" : "are gone"));
+      await ref.close();
+    }
     await ctx.close();
   });
   await test("app words: sensors denied, buzz, rotation, WebGL failure", async (ok) => {
@@ -583,6 +678,61 @@ try {
     await ctx.close();
   });
 
+  // A phone that cannot draw the lake, and a slow start, have no title yet. Back there acts as on the title: the first Back warns and leaves no entry, so the second closes the app.
+  await test("Back while the game loads and on the lake error screen (app mode)", async (ok) => {
+    const pop = (page) => page.evaluate(() => dispatchEvent(new PopStateEvent("popstate", { state: null })));
+    const hist = (page) => page.evaluate(() => ({ n: history.length, fish: !!(history.state && history.state.fish) }));
+    const WARN = "Press Back again to leave";
+    // shared steps. The first tap puts the entry in; a Back warns; the next Back finds no entry; the entry returns after 2.4 s
+    async function check(page, where) {
+      const h0 = await hist(page);
+      await pop(page);
+      ok((await toastText(page)) === "" && (await hist(page)).n === h0.n, where + ": a Back before any tap changed something");
+      await page.touchscreen.tap(195, 60);
+      const h1 = await hist(page);
+      ok(h1.n === h0.n + 1 && h1.fish, where + ": the first tap did not push one history entry (length " + h0.n + " -> " + h1.n + ")");
+      await pop(page);
+      ok((await toastText(page)) === WARN, where + ": the first Back says: " + (await toastText(page)));
+      ok((await hist(page)).n === h1.n, where + ": the first Back put an entry back, so a second Back would not close the app");
+      await pop(page);
+      ok((await hist(page)).n === h1.n, where + ": a Back with no entry left did something");
+      await page.waitForFunction((n) => history.length === n, h1.n + 1, { timeout: 9000, polling: 100 }).catch(() => {});
+      ok((await hist(page)).n === h1.n + 1, where + ": the entry did not come back after the warning");
+      await pop(page);
+      ok((await toastText(page)) === WARN, where + ": a late Back did not warn again");
+    }
+    // 1. a slow start: the model file waits, so the page is in phase boot and the title is hidden
+    const ctx = await newContext();
+    const held = [];
+    await ctx.route("**/fish/art/cartoon-models.glb", (route) => { held.push(route); });
+    const page = await openPage(ctx, "/fish/?app=1&nosw", { wait: null });
+    ok(await page.evaluate(() => document.querySelector("#title").hidden && typeof FISH === "undefined"), "the game is not in its loading phase");
+    ok(held.length > 0, "the model file was not asked for, so the test cannot hold the start");
+    await check(page, "loading");
+    for (const r of held) await r.continue();
+    await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
+    ok(await page.evaluate(() => FISH.G.phase === "title"), "the game did not start after the held file came");
+    ok(page.errors.length === 0, "page errors: " + page.errors.join(" | "));
+    await ctx.close();
+    // 2. the lake cannot be drawn: the page stays in phase boot with a Try again button
+    const ctx2 = await newContext();
+    const gl = await openPage(ctx2, "/fish/?app=1&nosw", { wait: null, init: () => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return /webgl/i.test(t) ? null : g.call(this, t, ...a); }; } });
+    await gl.waitForFunction(() => /cannot draw the lake/.test(document.body.innerText), null, { timeout: 60000 });
+    ok(await vis(gl, "#retryBtn"), "no Try again button");
+    await check(gl, "the error screen");
+    ok(await vis(gl, "#retryBtn"), "the Try again button is gone after Back");
+    await ctx2.close();
+    // 3. the website: no entry, no warning
+    const ctx3 = await newContext();
+    const plain = await openPage(ctx3, "/fish/?nosw", { wait: null, init: () => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return /webgl/i.test(t) ? null : g.call(this, t, ...a); }; } });
+    await plain.waitForFunction(() => /cannot draw the lake/.test(document.body.innerText), null, { timeout: 60000 });
+    const n0 = (await hist(plain)).n;
+    await plain.touchscreen.tap(195, 60);
+    await pop(plain);
+    ok((await hist(plain)).n === n0 && (await toastText(plain)) === "", "the website answered Back on its error screen");
+    await ctx3.close();
+  });
+
   /* ---------------- Reset progress and the privacy card ---------------- */
   await test("Reset progress asks first, then clears the progress and keeps the sound switch", async (ok) => {
     const ctx = await newContext();
@@ -660,12 +810,72 @@ try {
     await ctx.close();
   });
 
+  // The footer link of privacy.html is a plain link, so it adds a history entry. In the app that breaks the rule "the second Back on the title closes the app":
+  // the Back button would come back to the privacy page first. A player who came from the game goes back one step instead.
+  await test("privacy.html: the link back to the game goes back when the player came from the game", async (ok) => {
+    const ctx = await newContext();
+    const page = await openPage(ctx, "/fish/?source=play&nosw");
+    const hist = () => page.evaluate(() => history.length);
+    const n0 = await hist();
+    await page.touchscreen.tap(195, 60);   // the first tap puts the Back entry in
+    await tap(page, "#title .legal a");
+    await page.waitForURL("**/fish/privacy.html");
+    ok((await page.evaluate(() => document.referrer)).startsWith(BASE + "/fish/"), "privacy.html has no referrer from the game: " + (await page.evaluate(() => document.referrer)));
+    const n1 = await hist();
+    ok(n1 === n0 + 2, "history after the Privacy link is " + n1 + ", want " + (n0 + 2));
+    await page.click("footer a");
+    await page.waitForURL((u) => u.pathname === "/fish/");
+    await page.waitForSelector("#title:not([hidden])");
+    ok(page.url() === BASE + "/fish/?source=play&nosw", "the link did not return to the game entry: " + page.url());
+    ok((await hist()) === n1, "the link added a history entry (length " + n1 + " -> " + (await hist()) + ")");
+    ok(await page.evaluate(() => document.documentElement.dataset.app === "1"), "the game is not in app mode after the link");
+    // the Back rule: the first Back warns, and the second Back leaves the game; the privacy page is not behind it
+    await page.touchscreen.tap(195, 60);
+    await sleep(100);
+    await page.goBack();
+    await until(page, () => document.querySelector("#toast").classList.contains("on"), null, 10000);
+    ok((await toastText(page)) === "Press Back again to leave", "the first Back says: " + (await toastText(page)));
+    ok(!page.url().includes("privacy"), "the first Back went to the privacy page: " + page.url());
+    await page.goBack();
+    await sleep(500);
+    ok(!page.url().includes("privacy"), "the second Back went to the privacy page: " + page.url());
+    ok(page.url() === "about:blank", "the second Back did not leave the game: " + page.url());
+    await ctx.close();
+    // not from the game (the policy opened on its own, or in a new tab): the link is a plain link
+    const ctx2 = await newContext();
+    const direct = await ctx2.newPage();
+    await direct.goto(BASE + "/fish/privacy.html");
+    ok((await direct.evaluate(() => document.referrer)) === "", "a page opened by address has a referrer");
+    const d0 = await direct.evaluate(() => history.length);
+    await direct.click("footer a");
+    await direct.waitForURL((u) => u.pathname === "/fish/");
+    ok((await direct.evaluate(() => history.length)) === d0 + 1, "the plain link did not add one entry");
+    await ctx2.close();
+  });
+
   /* ---------------- the service worker: control, offline, Range, update ---------------- */
-  // ?nosw: the other tests block workers, so this is the one place that can see a registration that should not happen
-  await test("?nosw: the page registers no worker and does not ask for sw.js", async (ok) => {
+  // The other tests block workers, so these are the places that can see a registration that should not happen.
+  // The worker answers from the cache first, so the website must not register it: a visitor would play a deploy behind. Only app mode registers it.
+  await test("the website (no app mode) registers no worker and does not ask for sw.js", async (ok) => {
+    const ctx = await newContext({ serviceWorkers: "allow" });
+    for (const url of ["/fish/", "/fish/?source=play&app=0"]) {
+      log.length = 0;
+      const page = await openPage(ctx, url);
+      ok(await page.evaluate(() => !document.documentElement.dataset.app), url + ": the page is in app mode");
+      await sleep(2000);
+      const regs = await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length);
+      ok(regs === 0, url + ": " + regs + " service workers are registered on the website");
+      ok(!log.some((l) => l === "GET /fish/sw.js"), url + ": the website asked for sw.js");
+      ok(!(await page.evaluate(() => !!navigator.serviceWorker.controller)), url + ": a worker controls the website");
+      await page.close();
+    }
+    await ctx.close();
+  });
+  await test("?nosw: an app page registers no worker and does not ask for sw.js", async (ok) => {
     const ctx = await newContext({ serviceWorkers: "allow" });
     log.length = 0;
-    const page = await openPage(ctx, "/fish/?nosw");
+    const page = await openPage(ctx, "/fish/?app=1&nosw");
+    ok(await page.evaluate(() => document.documentElement.dataset.app === "1"), "the page is not in app mode, so ?nosw proves nothing");
     await sleep(2000);
     const regs = await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length);
     ok(regs === 0, regs + " service workers are registered on a ?nosw page");

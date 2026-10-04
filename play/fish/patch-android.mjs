@@ -1,6 +1,8 @@
 // Patches the Android project that Bubblewrap 1.25.0 generates, so that Reel It In meets the Google Play rules.
 // Bubblewrap 1.25.0 already sets compileSdk and targetSdk 36 and puts no permission in the manifest. It leaves out
-// android:appCategory (Android 16 then ignores the portrait lock on tablets) and keeps android:allowBackup on.
+// android:appCategory and keeps android:allowBackup on. Android 16 ignores the portrait lock of an app on screens of 600 dp or more,
+// unless the app is a game, so the patch sets appCategory="game". UNCONFIRMED (DEVICE): in a Trusted Web Activity, Chrome's activity
+// draws the game, not this app, so the attribute may not keep the lock. A test on a tablet settles it.
 // Safe to run again and again.
 // Run: node play/fish/patch-android.mjs [projectDir]   (default play/fish/android). Exits 1 when a file does not look as expected.
 //      node play/fish/patch-android.mjs --target-sdk   prints the SDK level that the build must target
@@ -45,7 +47,8 @@ function setAttr(xml, re, attr, value, what) {
 
 export function patchManifest(src) {
   let out = src;
-  // a game keeps its portrait lock on screens of 600 dp or more at target 36 (Android 16 behaviour changes)
+  // Android 16 (target 36) keeps the portrait lock of a game on screens of 600 dp or more. UNCONFIRMED (DEVICE): a TWA is drawn by
+  // Chrome's activity, so nobody knows yet that this attribute keeps the lock here. The patch is harmless if it does not.
   out = setAttr(out, /<application\b[^>]*>/, "android:appCategory", "game", "<application> element");
   // the app keeps no data of its own: the game saves in Chrome's storage
   out = setAttr(out, /<application\b[^>]*>/, "android:allowBackup", "false", "<application> element");

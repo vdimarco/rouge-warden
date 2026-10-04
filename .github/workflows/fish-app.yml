@@ -1,10 +1,10 @@
 name: Reel It In app files
 on:
   pull_request:
-    paths: ['public/fish/**', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
+    paths: ['public/fish/**', 'public/arcade/quiet.js', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
   push:
     branches: [main]
-    paths: ['public/fish/**', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
+    paths: ['public/fish/**', 'public/arcade/quiet.js', 'play/fish/**', 'qa/fish/pwa.mjs', '.github/workflows/fish-app.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,5 +17,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Manifest, icons, cached files, VERSION stamp, no other origin, privacy page. Node only: no browser.
+      # Manifest, icons, cached files, VERSION stamp (it hashes /arcade/quiet.js too), no other origin, privacy page. Node only: no browser.
       - run: node qa/fish/pwa.mjs --static

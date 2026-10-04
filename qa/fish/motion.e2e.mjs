@@ -113,7 +113,7 @@ async function serve() {
 /* ---------------- run ---------------- */
 const { proc, base } = await serve();
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
-// serviceWorkers "block": the page registers sw.js, and a worker would answer the requests that page.route() must see
+// serviceWorkers "block": a page in app mode registers sw.js, and a worker would answer the requests that page.route() must see
 const phone = { isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, ignoreHTTPSErrors: true, serviceWorkers: "block" };
 let exitCode = 0;
 try {

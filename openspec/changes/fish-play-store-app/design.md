@@ -12,7 +12,9 @@ The fonts are the `latin` subset of Nunito and Alfa Slab One, with their OFL tex
 
 ## App mode
 
-A small script follows `quiet.js` in the `<head>` (`quiet.js` stays the first script) and sets `<html data-app="1">` before the first paint. It turns on for `source=play`, `source=pwa`, `app=1`, a standalone, fullscreen or minimal-ui display mode, or an `android-app://` referrer. `app=0` wins. The answer is kept in `sessionStorage`, never in `localStorage`, because a TWA shares `localStorage` with Chrome and the website must keep its arcade links.
+A small script follows `quiet.js` in the `<head>` (`quiet.js` stays the first script) and sets `<html data-app="1">` before the first paint. It turns on for `source=play`, `source=pwa`, `app=1`, the standalone display mode, or the referrer `android-app://com.cottagearcade.reelitin`. `app=0` wins. The answer is kept in `sessionStorage`, never in `localStorage`, because a TWA shares `localStorage` with Chrome and the website must keep its arcade links.
+
+Two rules keep the website a website. Chrome on Android sets the referrer to `android-app://<package>` when any app opens a link, so a visitor who taps a shared link in Gmail or Slack has such a referrer: only the package of this app counts. And fullscreen and minimal-ui are not used: a desktop browser in F11 matches fullscreen, while the TWA and the web manifest are both standalone, and the Play start URL has `source=play` anyway. When `sessionStorage` throws (blocked cookies), the answer that the address, the display mode and the referrer gave stays.
 
 CSS hides `.arcade-only` in app mode. The class is on the title row (Switch game and Back to the arcade), the pause Switch game button, and both Fullscreen buttons. `/arcade/switch.js` is added by a script only outside app mode. `main.js` reads `data-app` once (`APP`) and takes its app words from one object, `APP_TEXT`. Outside app mode every existing text is byte for byte the same.
 
@@ -23,7 +25,7 @@ In app mode, the first tap (`pointerup`) pushes one history entry (`history.stat
 1. a card is open: close it (the privacy card returns to Settings);
 2. the game is paused: resume;
 3. a cast or a fight is running: pause;
-4. the title: warn and put no entry back;
+4. the title, the loading screen and the "cannot draw the lake" screen (phase `boot`): warn and put no entry back;
 5. the results: go to the title;
 6. the catch card, a trip, the arrival card, the unlock card: do nothing.
 
@@ -37,7 +39,7 @@ In app mode the first tap also calls `navigator.storage.persist()` once and igno
 
 Reset progress sits in Settings. A first tap shows a question ("You cannot undo this"). Delete removes `fish.v1`, `fish.haptics` and `reel-it-in-guide-v1`, keeps `arcade.sound` (the whole arcade shares it), and reloads the page. A reload is the safe way to leave no old state in memory. A flag stops any write to the save in the short time before the reload. The page opens on the title.
 
-The Privacy row opens a short card inside the game, so a fight is never lost by leaving the page. The card does not link away. Its Done button goes back to Settings and keeps the screen under Settings (`returnTo`), so the pause menu is still there. The full page, `privacy.html`, is linked from the title only. It follows `public/vr/privacy.html` and names the web host's logs, the sensors, the buzz and the wake lock, the delete routes, and the age line. The contact is the placeholder `OWNER_CONTACT_EMAIL`, and the test prints a warning while it is there.
+The Privacy row opens a short card inside the game, so a fight is never lost by leaving the page. The card does not link away. Its Done button goes back to Settings and keeps the screen under Settings (`returnTo`), so the pause menu is still there. The full page, `privacy.html`, is linked from the title only. Its footer link "Back to Reel It In" is a plain link, with a small script: when the player came from a page of `/fish/` (the referrer), the link calls `history.back()`, so the history gets no new entry and the Back rule of the title holds (a plain link would add an entry, and the second Back would show the policy again). A policy opened by its address has no such referrer and gets the plain link. It follows `public/vr/privacy.html` and names the web host's logs, the sensors, the buzz and the wake lock, the delete routes, and the age line. The contact is the placeholder `OWNER_CONTACT_EMAIL`, and the test prints a warning while it is there.
 
 ## The service worker
 
@@ -47,7 +49,7 @@ The Privacy row opens a short card inside the game, so a fight is never lost by 
 - Fetch: cache first, same origin only, GET only. Files outside `/fish/` that are not listed go to the network untouched. A page is matched with `ignoreSearch`, `/fish/` means `index.html`, and an unknown page offline falls back to `index.html`. A network answer is stored only when it is a 200, basic, not redirected, and inside `/fish/`. A 206 is never stored.
 - Range: for a cached file with a `Range` header the worker returns a 206 cut from the cached body, with `Content-Range`, `Content-Length` and `Accept-Ranges`. A start past the end gives a 416.
 - Update: no `skipWaiting`. A new version installs into its own cache, waits until the app closes, and takes over at the next launch. Activate deletes only caches that start with `reelitin-` and are not current, and calls `clients.claim()` only when no older cache of ours exists, which is the first install.
-- Registration: a script at the end of `index.html` waits until the title shows, then registers `sw.js`. `?nosw` skips it.
+- Registration: a script at the end of `index.html` waits until the title shows, then registers `sw.js`. It runs in app mode only (`data-app`), so the website keeps loading every file from the network and a visitor never plays a deploy behind (the worker answers from the cache first and waits for the next launch to update). `?nosw` skips it.
 
 ## Tests
 
@@ -55,6 +57,7 @@ The Privacy row opens a short card inside the game, so a fight is never lost by 
 
 ## Risks
 
+- A player of the Play app who opens `/fish/` in a Chrome tab on the same phone gets the worker there too: Chrome shares the registration of one origin between the app and its tabs.
 - UNCONFIRMED: the route in the sensor note (App info, Storage, Manage space). The Bubblewrap template adds `manageSpaceActivity` when `enableSiteSettingsShortcut` is on (the default), and that activity opens Chrome's site settings. The Android change must keep that setting on. The labels differ between Android versions and phones. The route is one line of `main.js` (`APP_TEXT.denied`).
 - Chrome may skip the entry that the Back handler puts back, if it counts that push as made without a tap. Then Back closes the app. A device test settles it.
 - The clips are cached once. A clip that failed on the first install stays missing until the next `VERSION`. The guide falls back to its drawing, and the pull-back demo shows its poster.

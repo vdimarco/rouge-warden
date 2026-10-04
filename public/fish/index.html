@@ -5,17 +5,19 @@
 <script src="/arcade/quiet.js"></script>
 <script>
 // App mode: the Play app (a Trusted Web Activity) and the installed web app. It sets <html data-app="1">, and the page then drops every link to the arcade.
-// On when the address has source=play or source=pwa or app=1, the window is an app window, or the app was opened from Android. app=0 turns it off.
+// On when the address has source=play or source=pwa or app=1, the window is an app window (display-mode standalone), or Android opened it from this app (the
+// referrer is android-app:// and the package of this app: a mail or chat app that opens a shared link must not count). Browser fullscreen is not an app window.
+// app=0 turns it off.
 // The answer lives in sessionStorage. localStorage would be shared with Chrome, and the website must keep its arcade links.
 (function () {
   var on = false, q;
   try { q = new URLSearchParams(location.search); } catch (e) { q = { get: function () { return null; } }; }
-  var src = q.get("source"), flag = q.get("app");
+  var src = q.get("source"), flag = q.get("app"), ref = document.referrer || "", pkg = "android-app://com.cottagearcade.reelitin";
   try {
     if (flag === "0") sessionStorage.removeItem("fish.app");
-    else if (flag === "1" || src === "play" || src === "pwa" || (document.referrer || "").indexOf("android-app://") === 0 || matchMedia("(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)").matches) { on = true; sessionStorage.setItem("fish.app", "1"); }
+    else if (flag === "1" || src === "play" || src === "pwa" || ref === pkg || ref.indexOf(pkg + "/") === 0 || matchMedia("(display-mode: standalone)").matches) { on = true; sessionStorage.setItem("fish.app", "1"); }
     else on = sessionStorage.getItem("fish.app") === "1";
-  } catch (e) { on = flag !== "0" && (flag === "1" || src === "play" || src === "pwa"); }
+  } catch (e) { on = on || (flag !== "0" && (flag === "1" || src === "play" || src === "pwa")); } // storage is blocked: keep the answer already decided
   if (on) document.documentElement.dataset.app = "1";
 })();
 </script>
@@ -538,9 +540,11 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 if (!document.documentElement.dataset.app) (function () { var s = document.createElement("script"); s.src = "/arcade/switch.js"; document.body.appendChild(s); })();
 </script>
 <script>
-// The service worker (sw.js) keeps the game in Cache Storage, so it starts with no network. It waits until the title shows, so it does not compete with the first load. ?nosw turns it off.
+// The service worker (sw.js) keeps the game in Cache Storage, so it starts with no network. It runs in app mode only (the Play app and the installed web app):
+// the website keeps loading from the network, so a visitor never plays a deploy behind. It waits until the title shows, so it does not compete with the first load.
+// ?nosw turns it off.
 (function () {
-  if (!("serviceWorker" in navigator) || /[?&]nosw(?:[=&]|$)/.test(location.search)) return;
+  if (!("serviceWorker" in navigator) || !document.documentElement.dataset.app || /[?&]nosw(?:[=&]|$)/.test(location.search)) return;
   var title = document.getElementById("title");
   function register() { navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function () { /* the game works without it */ }); }
   if (!title.hidden) return register();

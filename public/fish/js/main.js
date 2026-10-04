@@ -1103,6 +1103,7 @@ document.addEventListener("gesturestart", (e) => e.preventDefault());
 // In the app the Back button would close it and drop a fight. So the page keeps one extra history entry. A Back press uses it up;
 // the page puts it back, then does what Escape does: closes a card, pauses, or resumes. The catch card and the trips ignore Back.
 // The results go to the title. On the title the first Back says so and leaves no entry, so the second Back closes the app.
+// The loading screen and the "cannot draw the lake" screen (phase "boot") act as the title: nothing there can take a Back.
 // The entry goes in after a tap: Chrome skips the entries that a page adds before any tap (its history manipulation rule).
 const back = { armed: !!(history.state && history.state.fish), timer: 0 };
 function armBack() {
@@ -1122,7 +1123,7 @@ function backNow() {
   const open = ["setup", "help", "journal", "settings", "places"].find((s) => !$("#" + s).hidden);
   if (open) { Sound.sfx("uiBack"); if (open === "setup") setupThen = null; closeOverlay(); return "overlay"; }
   if (G.paused) { resume(); return "resume"; }
-  if (!$("#title").hidden) {
+  if (!$("#title").hidden || G.phase === "boot") {
     toast("Press Back again to leave", 2200);
     // the entry comes back when the words have gone, so a late Back warns again
     clearTimeout(back.timer);

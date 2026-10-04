@@ -77,6 +77,10 @@ fi
 # Bubblewrap puts the key path and the passwords inside double quotes in a shell command
 case "$KEYSTORE$KEY_ALIAS" in *[\"\$\`\\]*|*$'\n'*) die "The keystore path and the alias must not contain \" \$ \` \\ or a line break." ;; esac
 [[ "$KEY_ALIAS" =~ ^[A-Za-z0-9_.-]+$ ]] || die "The key alias may only have letters, digits, dot, underscore and dash."
+# Bubblewrap runs apksigner and jarsigner through a shell and does not put the tools path or the key path in quotes. A space breaks the
+# signing step, and that step comes after the whole Gradle build. Stop now, with a message that names the fix.
+case "$TOOLS" in *[[:space:]]*) die "The tools folder ($TOOLS) has a space in its path. Bubblewrap cannot sign from there. Set PLAY_TOOLS to a folder with no space in its path." ;; esac
+case "$KEYSTORE" in *[[:space:]]*) die "The key file ($KEYSTORE) has a space in its path. Bubblewrap cannot sign with it. Set BUBBLEWRAP_KEYSTORE to a file with no space in its path." ;; esac
 
 # ---------------- node and java ----------------
 command -v node >/dev/null || die "Node.js 18 or later is required. Install it from https://nodejs.org and run again."
@@ -312,12 +316,17 @@ say "Building and signing"
 rm -f "$PROJECT/app-release-signed.apk" "$PROJECT/app-release-bundle.aab" "$PROJECT/app-release-unsigned-aligned.apk"
 # build sees an unchanged manifest checksum, so it keeps the patched project; the key comes from the project's twa-manifest.json
 # and the passwords from the environment
+# A failed signing step makes Bubblewrap print the whole command, and the command holds both passwords. redact.mjs hides them as the text arrives.
+# The debug key has the public password "android". Hiding that word would break the Gradle lines, so the debug build prints as it is.
+# pipefail (set at the top) makes the pipe fail when Bubblewrap fails, so the loop below sees the exit status of Bubblewrap.
+SHOW=(node "$HERE/redact.mjs"); [ "$DEBUG_KEY" = 1 ] && SHOW=(cat)
+bw_build() { (cd "$PROJECT" && node "$BW" build --manifest="$MANIFEST" --directory="$PROJECT" --config="$CONFIG") 2>&1 | "${SHOW[@]}"; }
 # Maven Central sometimes answers HTTP 429 (too many requests) to a shared address, most often on a cold Gradle cache.
 # Gradle keeps what it has downloaded, so each try gets further. Wait a little between the tries.
 TRIES=4
 BUILT=0
 for TRY in $(seq "$TRIES"); do
-  if (cd "$PROJECT" && node "$BW" build --manifest="$MANIFEST" --directory="$PROJECT" --config="$CONFIG"); then BUILT=1; break; fi
+  if bw_build; then BUILT=1; break; fi
   [ "$TRY" = "$TRIES" ] || { say "The build failed. Trying again ($((TRY + 1)) of $TRIES) in 10 s. If it keeps failing for the same reason, read the first error above."; sleep 10; }
 done
 [ "$BUILT" = 1 ] || die "The build failed $TRIES times. Read the first error above."
