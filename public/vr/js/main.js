@@ -1399,7 +1399,7 @@ G.test = {
   target() {
     const on = !!(picker && pickerOn && flatOn && !isXR()), o = picker ? { ...picker.info() } : {};
     if (on && o.target) { project(TCTX, o.target.x, o.target.y, o.target.z, PROJ); o.ndc = { x: PROJ.x, y: PROJ.y }; o.inView = PROJ.inView; o.behind = PROJ.behind; }
-    o.on = on; o.cue = !!(on && !G.input.easySwing && (releaseWindow(P, P.ropes[0], DRAG[0]) || releaseWindow(P, P.ropes[1], DRAG[1])));
+    o.on = on; o.cue = !!(on && !G.input.easySwing && settings.cue !== false && (releaseWindow(P, P.ropes[0], DRAG[0]) || releaseWindow(P, P.ropes[1], DRAG[1])));
     return JSON.parse(JSON.stringify(o));
   },
   renderInfo: () => ({ ...lastInfo }),

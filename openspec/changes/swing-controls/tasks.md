@@ -2,7 +2,7 @@
 
 The OpenSpec CLI is not installed. These files are plain Markdown in the layout of the other changes. `openspec validate` has not run. A script read the seven spec files and checked that each requirement has SHALL, and that each requirement has at least one scenario with WHEN and THEN. It also checked the files for em dashes.
 
-A box is ticked only when the code and a test in the branch show the work done. No code exists yet, so no box is ticked.
+A box is ticked only when the code and a test in the branch show the work done. Agent A ticked A1 to A3, A6 and A7. A4, A5 and A8 stay open for the join checks that need B's markup and `mobile.js` (see the status line under each).
 
 Baseline: when I first drafted this change I ran `physics.test`, `city.test`, `mobile.test`, `mobile.e2e`, `phone-swing.e2e` and `climb.e2e` on main. All six passed. `phone-swing.e2e` read a mean of 18.9 m/s and 190 m in its 12 s run. Run them again before you start, because main may have moved.
 
@@ -14,12 +14,12 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
 
 ## Agent A: the picker, the desktop and the pad
 
-- [ ] A1. Words and numbers in `config.js`, and the lines in `ui.js`.
+- [x] A1. Words and numbers in `config.js`, and the lines in `ui.js`.
   - Add `TARGET`, `DESKTOP`, `PAD`, `HINT`, `FLATCAM` and `PHONE.buzz`.
   - Write `LINES_DESKTOP`, `LINES_PAD` and `LINES_PHONE` as in "Words" in `design.md`, with the `wall` group in every table.
   - Change the table order of `sayLine` in `ui.js` (hands, phone, mouse, pad, controller). Add the "Rope trigger" and "Release cue" rows to the `desk` branch of the Comfort page.
   - Check: `ui.mjs` (updated in A7) passes the line checks. `LINES_PAD` and `LINES_PHONE` have the keys and counts of `LINES_DESKTOP`. The phone lines name no mouse word. No line has an em dash. `climb.e2e.mjs` still finds `/W and S climb/`.
-- [ ] A2. The picker and its Node test.
+- [x] A2. The picker and its Node test.
   - Write `js/target.js` with `createTarget`, `update`, `pick`, `tap`, `hand`, `releaseWindow`, `kick`, `reset` and `info`.
   - Write `qa/vr/target.test.mjs`.
   - It checks the reach rules of each tier over 5,000 sampled states, each tier against its own bounds.
@@ -32,7 +32,7 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - It checks the superset of the old assist: a reference copy of `assistAim` and of the cone of `rope.js`, 5,000 states, views that differ from the velocity heading.
   - It checks `releaseWindow` and `kick`, the ray counts, the replaced `city.raycast`, and the import in Node with no three.
   - Check: `node qa/vr/target.test.mjs` passes.
-- [ ] A3. The two first-time bots in Node.
+- [x] A3. The two first-time bots in Node.
   - Add them to `target.test.mjs`. They use `physics.js`, `city.js`, `target.js`, `releaseWindow` and `kick`, with `FLATCAM` and the rules in "The first-time bots".
   - Tune in this order: the `TARGET` weights, the variety penalty, `DESKTOP.attachSpeed` (0 to 12), `DESKTOP.hop` (0 to 5). Never change `physics.js`.
   - Check: the same file passes. For each bot, at least 17 of 18 start-roof runs and at least 120 of 150 random runs pass, with a median of 15 s or less. Write the numbers under "Results" below.
@@ -44,6 +44,7 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - `viewDown` from the pad and from `mobile.sample().view`. A map press closes an open map.
   - `D.marker` with `#lockRing`, `D.pop`, `D.cue` with the caption, `D.hints` with `#keyHints`, `D.rumble` and the pad kind. `document.body.dataset.device`.
   - Check: the key, mouse and pad sections of `flat.mjs`. They use real `KeyboardEvent` and mouse events, and a fake `navigator.getGamepads` for every button and axis in the pad spec.
+  - Status (A): done. The opening, swing, pad and marker parts of `flat.mjs` pass. A pad Y press is real. The `view` edge of `mobile.sample()` is tested with a stand-in sample. Open for the join (J2): B's real `sample().view`.
 - [ ] A5. The wiring in `main.js`.
   - Fill the context. Delete `AIM_UP`, `AIM_NEAR` and the ground branch of `viewAim`. Rewrite `flatInput`: the picker decides in play, the exact ray stays in the opening and the pause, a test override wins. Keep the hit of `viewAim` in `AIM_HIT`.
   - Set `D.chooseHand` in play only. Pass the pick to `shoot` and `fire`. Handle the second rope, the 0.3 s wait, the dry fire along the view and the "No building" line in `aimAndFire`.
@@ -54,10 +55,11 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - Call `flatcam.turnTo` for a real swing from a wall. Call `D.hints`, the marker and the cue. Set the lift flag from `info().specialNear`.
   - Add `G.test.target()`, and `viewDown` and `swingDown` in `G.test.input()`. In `wireTitle`, read `data-label-touch`, show `#playMouse` on a touch device with a fine pointer, wire it to `D.mobile.use(false)`, show the right note, and set `document.body.dataset.device`.
   - Check: the rest of `flat.mjs`. `hero.mjs`, `mobile.e2e.mjs`, `phone-swing.e2e.mjs`, `climb.e2e.mjs`, `boot.mjs` and `play.mjs` pass with no threshold changed. `grep -n "AIM_UP\|AIM_NEAR" public/vr/js/main.js` returns nothing.
-- [ ] A6. The camera in `flatcam.js`.
+  - Status (A): done. `flat.mjs`, `hero`, `mobile.e2e`, `phone-swing.e2e`, `climb.e2e`, `boot` and `play` pass, and the grep returns nothing. The title checks run with stand-ins for `#playMouse`, `#deskNote`, `#hybridNote`, `data-label-touch` and `mobile.use`, because they are B's. `flat.mjs` prints an INFO line for each stand-in. Open for the join (J2): the same checks against B's real markup, and the hidden phone panel after `mobile.use(false)`. One scenario does not hold as written: see the start-roof note under Results.
+- [x] A6. The camera in `flatcam.js`.
   - Move the follow numbers to `FLATCAM`. Add `flags.lift` with the clog rule. Add `turnTo(yaw, secs)`.
   - Check: the lift scenarios in `flat.mjs`. The pitch rises to +0.12 rad in 1.5 s, never lowers, pauses for 0.7 s after a look input, stops for a clog, and the follow turn still runs. The turn from a wall ends within 20 degrees of the target bearing in 0.5 s. `hero.mjs` passes, including the 3,000-view sweep.
-- [ ] A7. The existing tests.
+- [x] A7. The existing tests.
   - `boot.mjs`: the pad kind check presses button 1.
   - `ui.mjs`: a pad reads `LINES_PAD`. The key check covers `LINES_PAD` and `wall`. The flat Comfort page shows "Rope trigger" and "Release cue".
   - `hero.mjs`: the comments say "auto target". Two VR assertions.
@@ -72,18 +74,27 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - The fake pad for every button, axis, trigger hysteresis and rumble, a non-standard pad, and a touch device with a fine pointer (`maxTouchPoints` 5) and both title buttons.
   - The browser bot from the start views -10, 0 and +10. Screenshots to `SHOTS`.
   - Check: `node qa/vr/flat.mjs` passes with no console error.
+  - Status (A): `node qa/vr/flat.mjs` passes (186 checks, no page error) with the stand-ins above. Open for the join (J2): the run against B's markup. Open for the lead: the start-roof scenario in `swing-desktop-controls` ("the rope pulls the body off the roof") holds only with W held at hop 0. `flat.mjs` checks the case with W and prints the case without W.
 - [ ] A9. Release, after B reports done.
   - Set `VERSION` to 1.7.0 in `config.js` and `sw.js` (main is at 1.6.0 after #182). List `target.js` in `sw.js`.
   - Set `appVersion` and `appVersionName` to 1.7.0 and `appVersionCode` to 6 in `quest/twa-manifest.json`.
   - In `.github/workflows/swing-browser.yml`, add `target.test.mjs` and `mobile-panel.test.mjs` to the Node step of the first job. Add a second job, `flat-play`, with a timeout of 30 minutes. It runs `pwa.mjs`, `flat.mjs`, `phone-controls.e2e.mjs`, `climb.e2e.mjs`, `boot.mjs`, `ui.mjs` and `hero.mjs` one after the other. If a suite needs more time on the runner, split the job. The first job stays at 12 minutes plus the new Node file.
   - Check: `pwa.mjs` passes. It fails when a file in `js/` is missing from `sw.js` or when the versions differ. The workflow runs green on the branch.
 
-### Results (fill in at A3)
+### Results (measured at A3)
 
-| Bot | Start roof, -10 to +10 (18 runs) | 150 random starts | Median time |
+Measured by `node qa/vr/target.test.mjs` on the current `physics.js` (main after #182, which changed the wall grab). Start values of the design were enough: kick 10 m/s (`DESKTOP.attachSpeed`), hop 0 (`DESKTOP.hop`), variety penalty 0.6, and the `TARGET` weights as written in `config.js`. No tuning was needed.
+
+| Bot | Start roof, -10 to +10 (18 runs) | 150 random starts | Median time (start roof, random starts) |
 |---|---|---|---|
-| Bot 1, follows the cue | not run | not run | not run |
-| Bot 2, ignores the cue | The throwaway prototype passed 18 | The prototype passed 133 | The prototype read 8.1 s |
+| Bot 1, follows the cue | 18 of 18 | 147 of 150 | 13.05 s, 8.95 s |
+| Bot 2, ignores the cue | 18 of 18 | 149 of 150 | 13.65 s, 9.05 s |
+
+- Gates: at least 17 of 18, at least 120 of 150, median 15 s or less. All three hold for both bots.
+- A run ends at the third building. A bot that goes on can fall into the water after it, and that is no failure of the picker.
+- The start-roof median is 1.4 s under its gate. The variety rule carries it: with the penalty at 0 the start-roof median is 17.9 s.
+- With clogs listed as specials in the bot's search (as the game does) bot 1 passes 141 of 150 random starts and bot 2 passes 149 of 150.
+- Both bots hold W, as the first-time player does. A start-roof swing with no W only slides the hero across the roof and he stops on it, for hop 0 and for hop 3 at kick 10, and for kick 12. With W the hero leaves the roof 3.5 s after the press (`flat.mjs` prints the time). The report of agent A lists this as a decision for the lead.
 
 ## Agent B: the phone panel and the page
 

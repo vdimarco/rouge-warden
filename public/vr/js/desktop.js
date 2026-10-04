@@ -62,7 +62,9 @@ export function createDesktop(canvas, camera, settings) {
     // Ask for the pointer lock. A click that asks (fromClick) starts no swing: it re-locks. A browser that refuses the lock every
     // time (no pointer lock here, or an iframe) loses two clicks at most, then clicks fire again.
     lock(fromClick) {
-      if (mobile.enabled || document.pointerLockElement === canvas) return;
+      if (mobile.enabled) return;
+      // the pause menu lets go of the lock, but a slow release can leave it held at the click that resumes: that click swings nothing too
+      if (document.pointerLockElement === canvas) { if (fromClick) skipClick = performance.now() + 200; return; }
       try {
         const p = canvas.requestPointerLock && canvas.requestPointerLock();
         if (p && p.catch) p.catch(() => { /* no pointer lock here (a test browser): the buttons still work */ });
@@ -112,7 +114,8 @@ export function createDesktop(canvas, camera, settings) {
     skipClick = 0;
     skip[b] = false; mouse[b] = true; edge[b] = true;
   });
-  addEventListener("mouseup", (e) => { const b = e.button === 0 ? 0 : e.button === 2 ? 1 : -1; if (b >= 0) { mouse[b] = false; skip[b] = false; } });
+  // the end of the click also ends its skip: a click whose mousedown never reached the canvas (the pause card) must not eat the next press
+  addEventListener("mouseup", (e) => { const b = e.button === 0 ? 0 : e.button === 2 ? 1 : -1; if (b >= 0) { mouse[b] = false; skip[b] = false; } skipClick = 0; });
   addEventListener("mousemove", (e) => {
     if (!D.active || !D.locked) return;
     if (skipMove) { skipMove = false; return; }
@@ -375,7 +378,8 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
     let px = (m.x * 0.5 + 0.5) * W, py = (0.5 - m.y * 0.5) * H;
     const inside = !m.behind && px >= w.l && px <= w.r && py >= w.t && py <= w.b;
     const kind = m.kind || "swing";
-    if (show.kind !== kind) { show.kind = kind; ringEl.className = arrowEl.className = "k-" + kind; }
+    // only the kind class changes: the catch pop, "go" and "still" stay on the element
+    if (show.kind !== kind) { for (const el of [ringEl, arrowEl]) { el.classList.remove("k-" + show.kind); el.classList.add("k-" + kind); } show.kind = kind; }
     if (inside) {
       if (!show.ring) { ringEl.hidden = false; show.ring = true; }
       if (show.arrow) { arrowEl.hidden = true; show.arrow = false; }
