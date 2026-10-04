@@ -448,6 +448,52 @@ try {
     return out;
   });
   check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away aims at that clog (" + lo.length + " views)", lo);
+  // A clog on the hero's own roof, 14 to 24 m away, aimed low with nothing behind it: the ray runs a little down past the roof edge
+  // and hits nothing within 400 m. That is no ground near the hero, so the aim must stay on the clog.
+  const same = await page.evaluate(() => {
+    const C = G.city, out = [];
+    for (const c of C.clogs) {
+      const b = C.buildings[c.bid];
+      for (let k = 0; k < 64 && out.filter((o) => o.clog === c.id).length < 1; k++) {
+        const a = (k / 64) * Math.PI * 2, d = 14 + (k % 6) * 2, x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
+        if (Math.abs(x - b.x) > b.w / 2 - 1.5 || Math.abs(z - b.z) > b.d / 2 - 1.5) continue;
+        const top = C.topBelow(x, c.y + 2, z, 0.3);
+        if (!top || Math.abs(top.y - c.y) > 0.3) continue;
+        G.test.teleport(x, c.y, z);
+        let yaw = Math.atan2(-(c.x - x), -(c.z - z)); G.rigYaw = yaw; G.flatcam.reset(yaw); __h.step(30);
+        for (let j = 0; j < 4; j++) {
+          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 0.8 - p.y, uz = c.z - p.z;
+          yaw = Math.atan2(-ux, -uz); G.rigYaw = yaw; G.flatcam.reset(yaw, Math.asin(uy / Math.hypot(ux, uy, uz))); __h.step(2);
+        }
+        const p = G.camera.position, f = new p.constructor(0, 0, -1).applyQuaternion(G.camera.quaternion);
+        if (f.y >= 0 || C.raycast(p.x, p.y, p.z, f.x, f.y, f.z, 400, {})) continue;
+        const a2 = G.test.aim(1);
+        out.push({ clog: c.id, d, tag: a2 && a2.tag, id: a2 && a2.id, valid: !!(a2 && a2.valid) });
+      }
+    }
+    G.rigYaw = G.city.start.yaw;
+    return out;
+  });
+  check(same.length >= 3 && same.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "a low aim at a clog on the hero's own roof, with nothing behind it, aims at that clog (" + same.length + " views)", same);
+
+  /* ---- holding a wall: the hero faces it with both hands on it ---- */
+  const cl = await page.evaluate(() => {
+    const C = G.city, wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+    const B = C.colliders.find((c) => c.type === "box" && c.tag === "building" && c.minY === 0 && c.maxY > 25 && c.maxY < 90 &&
+      !C.colliders.some((d) => d !== c && d.bid === c.bid) && !C.collideSphere(c.maxX + 2, c.maxY / 2, (c.minZ + c.maxZ) / 2, 1.6));
+    if (!B) return null;
+    const z = (B.minZ + B.maxZ) / 2, key = (code, on) => window.dispatchEvent(new KeyboardEvent(on ? "keydown" : "keyup", { code }));
+    G.test.teleport(B.maxX + 3, B.maxY / 2, z); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2); G.P.vel.x = -8; __h.step(30);
+    const face = () => { const w = G.P.wall; return w ? Math.abs(wrap(G.hero.info().yaw - Math.atan2(w.nx, w.nz))) : null; };
+    const held = { wall: !!G.P.wall, pose: G.hero.info().pose, off: face(), air: G.hero.info().weights.air };
+    key("KeyW", true); __h.step(30); const up = { pose: G.hero.info().pose, off: face() }; key("KeyW", false);
+    key("KeyD", true); __h.step(30); const along = { pose: G.hero.info().pose, off: face(), wall: !!G.P.wall }; key("KeyD", false);
+    __h.step(2);
+    G.test.teleport(G.city.start.x, G.city.start.y, G.city.start.z); G.rigYaw = G.city.start.yaw; __h.step(10);
+    return { held, up, along };
+  });
+  check(cl && cl.held.wall && cl.held.pose === "cling" && cl.held.off < 0.2 && cl.held.air < 0.1, "holding a wall the hero faces it in the cling pose, with no air pose", cl);
+  check(cl && cl.up.pose === "cling" && cl.up.off < 0.2 && cl.along.wall && cl.along.pose === "cling" && cl.along.off < 0.2, "climbing up and along, the hero keeps facing the wall", cl);
 
   /* ---- the draw budget ---- */
   await reset(page);

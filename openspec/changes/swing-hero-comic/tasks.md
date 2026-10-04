@@ -25,6 +25,13 @@ A box is ticked only when the code and a test in the branch show the work done. 
 - [ ] Turn the launchers about the head to the view's pitch, so the first-person rope starts low in the view. Being fixed in this change. Check: `hero.mjs` muzzle at about 30 degrees under the axis.
 - [ ] Report the input kind "touch" on a phone and give it the phone lines (`LINES_PHONE`). Being fixed in this change. Check: `ui.mjs` and `mobile.e2e.mjs` read the first tutorial line from a live phone input, and `play.mjs` runs the kinds.
 
+## Joining the climbing of `full-swing-phone-and-climbing`
+
+- [x] The hero holds a wall in the pose "cling": faces it, both hands on it, no air pose, no landing crouch from a wall (`hero.js`; `hero.mjs`).
+- [x] The attach feedback reads the rope only while it is attached, and each event's feedback runs in its own `try` (`main.js`; `mobile.e2e.mjs` stale attach).
+- [x] The no-hit part of the ground rule only within 12 m of the hero (`main.js`; `hero.mjs` low aim at a clog on the same roof).
+- [x] Accept the gap between the hero and a thin antenna mast (see `design.md`).
+
 ## The comic look
 
 - [x] Cel bands and ink twins on the toilets, the Loonies, the pipes, the ball and the King; the rings with their own ink line (`game.js`). `play.mjs` checks the toilet and Loonie twins and the cap of 6 twins. The pipes, the ball, the King, the ring ink and the cel bands are checked in the code and the screenshots only.

@@ -446,7 +446,7 @@ function flatView(on) {
 // The world direction the head aims along for a screen position (NDC x and y; 0, 0 is the middle): toward the point where that
 // pixel's ray from the camera lands, so the rope goes where the view shows. The head is not where the camera is (the chase camera
 // sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. In third person a view of
-// only ground near the hero (the roof or street under the feet, within AIM_NEAR, or water) is no anchor, and the default view
+// only ground near the hero (the roof, street or lake within AIM_NEAR of the feet) is no anchor, and the default view
 // looks down at the hero's feet: the aim then goes ahead along that bearing, AIM_UP above the horizon. A lower roof further away
 // (a clog on it) stays a target. Result in AIM_D.
 // AIM_UP: as high as the gold ring from the start roof, so the phone's first SWING catches the ring, the swing the tutorial asks for
@@ -456,7 +456,10 @@ function viewAim(nx, ny, hx, hy, hz, third) {
   const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
   AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
   const h = city.raycast(c.x, c.y, c.z, AIM_D.x, AIM_D.y, AIM_D.z, AIM_FAR, AIM_HIT);
-  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 && Math.hypot(h.x - hx, h.z - hz) < AIM_NEAR : AIM_D.y < 0)) {
+  // no hit and pointing down: the ray reaches the street or the lake (no colliders); that is ground only within AIM_NEAR too,
+  // or a clog about as high as the hero, with nothing behind it, could not be aimed at
+  const sk = AIM_D.y < 0 ? Math.max(c.y, 0) / -AIM_D.y : 0;
+  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 && Math.hypot(h.x - hx, h.z - hz) < AIM_NEAR : AIM_D.y < 0 && Math.hypot(c.x + AIM_D.x * sk - hx, c.z + AIM_D.z * sk - hz) < AIM_NEAR)) {
     const l = Math.hypot(AIM_D.x, AIM_D.z) || 1, k = Math.cos(AIM_UP);
     return AIM_D.set((AIM_D.x / l) * k, Math.sin(AIM_UP), (AIM_D.z / l) * k);
   }
@@ -832,7 +835,8 @@ function drainEvents() {
     const ev = evs[k];
     pushRing(ev);
     try { if (intro) portal.onEvent(ev); else game.onEvent(ev, P); } catch (e) { console.error(e); }
-    feedback(ev);
+    // one bad event must not stop the drain: the queue would replay every frame and the picture would freeze
+    try { feedback(ev); } catch (e) { console.error(e); }
   }
   evs.length = 0;
 }
@@ -841,7 +845,8 @@ function feedback(ev) {
   switch (ev.type) {
     case "attach":
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
-      if (G.input.easySwing && i === 1 && G.state === "play" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
+      // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
+      if (G.input.easySwing && i === 1 && G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
       break;
     case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); break;
     case "yank":

@@ -155,3 +155,14 @@ Exit from the pause menu SHALL give the camera back to the rig and hide the hero
 #### Scenario: Exit and play again
 - **WHEN** the player chooses Exit and then PLAY ON THIS SCREEN
 - **THEN** the title shows with no hero, and the new session starts in the chase view
+
+### Requirement: The hero holds a wall
+When the player holds a wall in flat play (the climbing of `full-swing-phone-and-climbing`), the hero SHALL face the wall and reach for it with both hands, in the pose "cling". It SHALL keep facing the wall while it climbs up, down or along it. It SHALL show no air or fall pose on the wall, and climbing down to a roof or the street SHALL not play the hard-landing crouch.
+
+#### Scenario: Fly into a wall
+- **WHEN** the player flies into a wall in the chase view
+- **THEN** the hero holds it in the pose "cling", facing the wall within 0.2 rad, with no air pose
+
+#### Scenario: Climb up and along
+- **WHEN** the player holds W for 0.5 s and then D for 0.5 s on the wall
+- **THEN** the hero stays in the pose "cling" and keeps facing the wall

@@ -46,7 +46,7 @@ A tap on a building SHALL fire the right rope through the tapped pixel. The tap 
 - **THEN** the next shot aims along the middle of the screen again
 
 ### Requirement: Ground in view aims up and ahead
-In third person, when the view ray shows only ground below the hero's head and within 12 m of the hero, the rope SHALL aim ahead along the same bearing, 32 degrees above the horizon (as high as the gold ring from the start roof). Ground means a roof, a street or water. A lower roof further away than 12 m SHALL stay a normal target, so a clog on it can be aimed at. This SHALL apply to a tap on the hero or on the floor, and to the SWING button, which aims through the middle of the screen. The rope SHALL never attach to the roof at the hero's feet.
+In third person, when the view ray shows only ground below the hero's head and within 12 m of the hero (a hit on an up-facing surface, or no hit with the ray reaching the street or the lake within 12 m), the rope SHALL aim ahead along the same bearing, 32 degrees above the horizon (as high as the gold ring from the start roof). Ground means a roof, a street or water. A lower roof further away than 12 m SHALL stay a normal target, so a clog on it can be aimed at. This SHALL apply to a tap on the hero or on the floor, and to the SWING button, which aims through the middle of the screen. The rope SHALL never attach to the roof at the hero's feet.
 
 #### Scenario: Tap the hero
 - **WHEN** the player taps the hero or the roof at the hero's feet
@@ -55,6 +55,10 @@ In third person, when the view ray shows only ground below the hero's head and w
 #### Scenario: Press SWING from the chase view
 - **WHEN** the camera looks down at the hero and the player presses SWING
 - **THEN** the rope attaches to a building up and ahead, and not to the roof
+
+#### Scenario: Aim low at a clog on the same roof
+- **WHEN** the hero stands on a roof 14 to 24 m from a clog on the same roof, and the view ray passes low over the clog with nothing behind it
+- **THEN** the aim takes that clog
 
 #### Scenario: Point at a clog on a lower roof
 - **WHEN** the hero stands on a roof and the view points at the roof beside a clog 14 to 60 m away and lower down

@@ -143,6 +143,13 @@ try {
  await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
  const fp=await tapFrom('first person');console.log('PASS tap a building off the screen centre in first person',JSON.stringify({nx:+fp.nx.toFixed(2),ny:+fp.ny.toFixed(2),id:fp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
+ // A rope can catch and be let go in the same step (the chest grabs a wall and drops the ropes). The attach feedback must not read the
+ // gone rope's target: the event queue then threw every frame and the picture froze.
+ const stale=await page.evaluate(()=>{const s=G.city.start;G.test.press(1,false);G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,2);const f0=G.frame;
+  G.P.events.push({type:'attach',side:1,target:{tag:'building',id:0}});let threw=null;try{G.test.step(1/60,3);}catch(e){threw=String(e);}
+  return {threw,left:G.P.events.length,rope:G.test.state().ropes[1].state,frames:G.frame-f0};});
+ assert(!stale.threw&&stale.left===0&&stale.rope==='idle','a stale attach event on a phone drains with no error '+JSON.stringify(stale));
+ console.log('PASS a stale attach event drains with no error');
  // In the air at speed with no rope and no drag, the chase view turns toward the flight (the phone's camera follow). With no rope the
  // chase camera's own follow is off, so only the phone follow can turn it.
  const fol=await page.evaluate(()=>{

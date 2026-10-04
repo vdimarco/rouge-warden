@@ -226,7 +226,7 @@ export function createHero(scene, renderer) {
   const S = {
     yaw: 0, inited: false, time: 0, phase: 0,
     run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0,
-    reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0,
+    reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
   };
   const mesh = { body: null, hull: null };
@@ -327,9 +327,10 @@ export function createHero(scene, renderer) {
     S.time += dt;
     const t = S.time;
     const hs = Math.hypot(vel.x, vel.z), speed = Math.hypot(hs, vel.y), ground = !!P.onGround;
+    const wall = P.wall, cling = !!wall; // holding a wall (flat-play climbing): face it, hands on it, no air pose
 
     /* -- events read from the state: a hard landing, a yank -- */
-    if (ground && !S.prevGround && S.prevVy < -3) S.land = clamp(-S.prevVy / 13, 0.3, 1);
+    if (ground && !S.prevGround && !S.prevWall && S.prevVy < -3) S.land = clamp(-S.prevVy / 13, 0.3, 1);
     S.land = Math.max(0, S.land - dt * 3.2);
     S.crouch += (S.land - S.crouch) * ease(dt, S.land > S.crouch ? 30 : 12);
     for (let i = 0; i < 2; i++) {
@@ -338,7 +339,8 @@ export function createHero(scene, renderer) {
       S.prevYank[i] = yc;
       S.yank[i] = Math.max(0, S.yank[i] - dt * 3.6);
     }
-    S.prevGround = ground; S.prevVy = vel.y;
+    S.prevGround = ground; S.prevVy = vel.y; S.prevWall = cling;
+    S.cling += ((cling ? 1 : 0) - S.cling) * ease(dt, 14);
 
     /* -- the ropes: which arm reaches, and where the anchors are -- */
     let nAtt = 0, nReach = 0;
@@ -375,19 +377,20 @@ export function createHero(scene, renderer) {
 
     /* -- body yaw: velocity in the air, the move direction on the ground, the anchor when hanging still -- */
     let want = null;
-    if (nReach && (ground ? hs < 2.5 : hs < 2)) want = Math.atan2(-(anchorMix.x - pos.x), -(anchorMix.z - pos.z));
+    if (cling) want = Math.atan2(wall.nx, wall.nz); // the wall's normal points out at the hero: face into it
+    else if (nReach && (ground ? hs < 2.5 : hs < 2)) want = Math.atan2(-(anchorMix.x - pos.x), -(anchorMix.z - pos.z));
     else if (hs > (ground ? 0.7 : 2)) want = Math.atan2(-vel.x, -vel.z);
     else if (ground && wish > 0.1) want = Math.atan2(-wx, -wz);
     if (!S.inited) { S.yaw = input && input.head ? camYaw : 0; S.inited = true; }
-    else if (want != null) S.yaw = wrap(S.yaw + wrap(want - S.yaw) * ease(dt, ground ? 11 : 7));
+    else if (want != null) S.yaw = wrap(S.yaw + wrap(want - S.yaw) * ease(dt, ground || cling ? 11 : 7));
 
     /* -- pose weights -- */
     const fall = smooth(1.5, -2.5, vel.y);          // 0 rising .. 1 falling
-    S.air += ((ground ? 0 : 1) - S.air) * ease(dt, 14);
+    S.air += ((ground || cling ? 0 : 1) - S.air) * ease(dt, 14);
     S.run += ((ground ? smooth(0.35, 1.6, hs) : 0) - S.run) * ease(dt, 10);
-    S.swing += (((!ground && nAtt) ? 1 : 0) - S.swing) * ease(dt, 6);
+    S.swing += (((!ground && !cling && nAtt) ? 1 : 0) - S.swing) * ease(dt, 6);
     S.rise += (fall - S.rise) * ease(dt, 12);
-    const freq = clamp(0.7 + 0.25 * hs, 0.7, 2.4);
+    const freq = clamp(0.7 + 0.25 * (cling ? speed : hs), 0.7, 2.4); // on a wall the climb speed sets the hands' pace
     S.phase = (S.phase + dt * freq * TAU) % (TAU * 100);
 
     /* -- body orientation: the up axis leans toward the rope and into the velocity -- */
@@ -506,6 +509,20 @@ export function createHero(scene, renderer) {
       }
       arm[sd].up.lerp(V.b, w).normalize(); arm[sd].fore.lerp(V.c, w).normalize();
     }
+    // on a wall both hands reach for it above the head, a shoulder width apart; they take turns as the hero climbs
+    if (S.cling > 0.001 && wall) {
+      const climbV = Math.hypot(vel.x, vel.y, vel.z), shuffle = smooth(0.5, 3, climbV);
+      for (let sd = 0; sd < 2; sd++) {
+        const side = sd === 0 ? -0.32 : 0.32, up = chestH + 0.5 + 0.16 * shuffle * Math.sin(S.phase * 2 + sd * Math.PI);
+        const shoulder = I[sd === 0 ? "LeftArm" : "RightArm"].b;
+        shoulder.getWorldPosition(V.k);
+        // the wall surface is 0.38 m in from the chest; right of the hero is (nz, -nx)
+        V.a.set(pos.x - wall.nx * 0.38 + wall.nz * side - V.k.x, pos.y + up - V.k.y, pos.z - wall.nz * 0.38 - wall.nx * side - V.k.z);
+        if (V.a.lengthSq() < 1e-4) V.a.set(0, 1, 0);
+        V.a.normalize().applyQuaternion(QB);
+        arm[sd].up.lerp(V.a, S.cling).normalize(); arm[sd].fore.lerp(V.a, S.cling).normalize();
+      }
+    }
 
     /* -- the head looks where the camera looks -- */
     S.headYaw += (clamp(wrap(camYaw - S.yaw), -0.9, 0.9) * 0.55 - S.headYaw) * ease(dt, 8);
@@ -555,7 +572,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : vel.y > 1 ? "jump" : "fall";
+    H.pose = yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
   };
 
@@ -565,7 +582,7 @@ export function createHero(scene, renderer) {
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
   H.info = () => ({
     model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris,
-    weights: { run: S.run, air: S.air, swing: S.swing, crouch: S.crouch, reach: S.reach.slice(), yank: S.yank.slice() },
+    weights: { run: S.run, air: S.air, swing: S.swing, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     hands: [handPos[0].toArray(), handPos[1].toArray()], head: headPos.toArray(),
   });
   H.meshes = mesh;
