@@ -348,11 +348,10 @@ function capStub() {
   const { browser, page, errors } = await open({ cuts: true, touch: false, phone: false, width: 1280, height: 800 });
   try {
     await watchCuts(page);
-    await page.evaluate(() => { document.documentElement.dataset.calm = "1"; });
+    // (the clock is moved by hand here, from the start, so the camera can be read at set times)
+    await page.evaluate(() => { document.documentElement.dataset.calm = "1"; const C = FISH.cuts; window.__u = C.update; C.update = () => {}; });
     await page.click("#freeBtn");
     await waitCut(page, "open");
-    // the clock is moved by hand here, so the camera can be read at set times
-    await page.evaluate(() => { const C = FISH.cuts; window.__u = C.update; C.update = () => {}; });
     const read = (t) => page.evaluate(async (t) => {
       const C = FISH.cuts;
       while (C.playing && C.state.t < t - 1e-6) window.__u(Math.min(0.05, t - C.state.t));
