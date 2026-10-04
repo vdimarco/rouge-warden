@@ -308,16 +308,18 @@ export class ReelPanel extends Widget {
     const lock = this.s.grab === "lock", all = this.s.grab === "all" || (this.s.grab === "feather" && e.pointerType === "mouse");
     if (this.direct && !inFace && !all && !lock) return;
     const grab = all || (this.s.grab === "panel" && inFace);
+    // a locked mouse button waits to show what it is (a hold or a drag) even with the bail open (the E key opens it)
+    const hold = lock && e.pointerType === "mouse";
     // a grab press is never a bail swipe: the press itself opens the bail
     const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && !lock && this._onBail(q.x, q.y), open: open || grab, lock, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
-    if (open || grab) {
+    if ((open && !hold) || grab) {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
     } else if (lock) {
       // the drag says what this press is (_move), so a sideways aim never clacks the bail. A mouse button that stays put
       // for holdMs is the hold cast
-      if (e.pointerType === "mouse") p.timer = setTimeout(() => {
+      if (hold) p.timer = setTimeout(() => {
         p.timer = 0;
         if (this.ptrs.get(p.id) === p && p.state === "wait" && this.pinId == null && this.s.grab === "lock") this._hold(p, now());
       }, T.holdMs);

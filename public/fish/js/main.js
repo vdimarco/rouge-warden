@@ -1621,7 +1621,7 @@ function castPrompt() {
     // touch: a drag down from the press takes the line, a drag sideways aims. A computer: the mouse button held (the hold
     // cast), or Space; a drag sideways or the arrows aim
     case "ready": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press the rod and drag down." : "Hold the mouse button. Let go in the green.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
-    case "open": prompt(m ? "Hold your thumb on the rod." : "Press and hold on the rod.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
+    case "open": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press and hold on the rod." : "Hold the mouse button. Let go in the green.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
     case "pinned": prompt(m ? "Tip the phone back over your shoulder." : space ? "Keep holding Space." : key ? "Keep holding." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
     case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : space ? "Let go of Space in the green." : key ? "Let go in the green." : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
     default: prompt("");

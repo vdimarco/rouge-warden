@@ -1,9 +1,10 @@
 // The cast with a mouse on a computer, in the real page: node qa/fish/mouse.e2e.mjs   (serve public/ first; FISH_URL sets
 // the address). The hold cast: hold the button still and the rod tips back by itself, then swings forward; letting go in the
 // green casts, graded at the rod angle then, like Space. Too soon casts high or nothing, held to the end slams, and the
-// mouse moved sideways while it holds aims. The rail shows beside the press, all of it on the screen. The drag and flick
-// still casts, a press on a HUD button never casts, a click during the flight feathers the line, and a click during the
-// reel starts no cast. Exits with code 1 when something fails.
+// mouse moved sideways while it holds aims. The rail shows beside the press, all of it on the screen. With the bail opened
+// first (the E key) the button held still is the same hold cast, and a press that moves down is the drag. The drag and
+// flick still casts, a press on a HUD button never casts, a click during the flight feathers the line, and a click during
+// the reel starts no cast. Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
 const fails = [];
@@ -121,6 +122,41 @@ try {
   const aim = await tryHold(page, { ms: 780, moves: 10 });
   check(aim.yawHeld > 15 && Math.abs(aim.yaw - aim.yawHeld) < 1 && !!aim.cast, `moving the mouse 100 px right while it holds turns the aim ${aim.yawHeld.toFixed(1)}°, and the cast goes that way (yaw ${aim.yaw != null ? aim.yaw.toFixed(1) : "none"}, ${aim.cast})`);
   await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+
+  // ---- the bail opened first with the E key: the prompt says the same, a button held still is the hold cast, and a press
+  // that moves down at once is the drag ----
+  const openBail = () => page.evaluate(async () => {
+    const G = FISH.G, wait = window.__wait, p2 = () => document.querySelector("#prompt .p2").textContent;
+    for (const type of ["keydown", "keyup"]) window.dispatchEvent(new KeyboardEvent(type, { code: "KeyE", key: "e", bubbles: true, cancelable: true }));
+    const t0 = performance.now();
+    while (!/line/.test(p2()) && performance.now() - t0 < 3000) await wait(10);
+    return { step: G.step, bail: G.bail, said: [document.querySelector("#prompt .p1 span").textContent, p2()] };
+  });
+  let opened, before;
+  for (let i = 0; i < 3; i++) {
+    await page.evaluate(() => window.__fresh());
+    before = await openBail();
+    opened = await page.evaluate(() => window.__hold({ ms: 780 }));
+    if (!opened.busy) break;
+    console.log("     (the page was busy: " + JSON.stringify({ ms: opened.ms, cast: opened.cast }) + ")");
+    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  }
+  check(before.step === "open" && before.bail === "open" && before.said[0] === "Hold the mouse button. Let go in the green.", `the E key opens the bail, and the prompt still says how to cast with the mouse (${JSON.stringify(before)})`);
+  check(opened.held && opened.afterMs >= 140 && opened.afterMs < 400 && opened.step === "pinned" && opened.cast === "sweet" && opened.prompts.every((p) => HOLD_WORDS.includes(p)), `with the bail open, a mouse button held still is the hold cast: let go in the green, sweet (${JSON.stringify({ afterMs: opened.afterMs, step: opened.step, ms: opened.ms, cast: opened.cast, prompts: opened.prompts, toast: opened.toast })})`);
+  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await page.evaluate(() => window.__fresh());
+  await openBail();
+  const odrag = await page.evaluate(async () => {
+    const G = FISH.G, x = 520, y = 420, spin = (ms) => { const t = performance.now(); while (performance.now() - t < ms); };
+    window.__fire("pointerdown", x, y);
+    const out = { pinnedAtOnce: G.step === "pinned" };
+    for (let i = 1; i <= 6; i++) { spin(8); window.__fire("pointermove", x, y + 4 * i); }
+    Object.assign(out, { step: G.step, hold: !!(G.pin && G.pin.key), y0: G.pin && G.pin.y0 });
+    window.__fire("pointerup", x, y + 24);
+    await window.__wait(100);
+    return out;
+  });
+  check(!odrag.pinnedAtOnce && odrag.step === "pinned" && !odrag.hold && odrag.y0 === 420, `with the bail open, a mouse press that moves down at once is the drag, and it takes the line where it pressed (${JSON.stringify(odrag)})`);
 
   // ---- the drag and flick still casts ----
   await page.evaluate(() => window.__fresh());
