@@ -14,6 +14,7 @@ Run on the final tree, with `public/` served at http://127.0.0.1:8765/ and Playw
   - At 375 by 667 the swipe step of the layout part stops: Chromium in this container stops answering mouse moves while the row is dragged. `main` stops at the same step when a copy of House Rules is added as a 22nd machine, and `main` with 21 machines passes. With the blurred glow under the marquees turned off, the swipes finish. The stop comes from 22 machines on the software GPU of this container, whichever machine is added.
 - `npm run build:arcade` gives the same file names again, so the committed copy matches the source.
 - `openspec validate follow-suit-arcade --type change --strict` reports the change as valid.
+- After the merge of the explainer, `node qa/arcade.e2e.mjs` with `BASE_URL=https://warden-alpha-wheat.vercel.app/follow-suit/` passes 9 checks on the production arcade.
 
 ## Not checked
 
