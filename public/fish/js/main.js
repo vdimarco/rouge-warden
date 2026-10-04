@@ -699,12 +699,17 @@ async function switchPlace(id) {
     try { await world.setPlace(PLACES.loon); } catch (err2) { console.error(err2); }
     Sound.setPlace("loon");
     G.stillDrawn = false;
+    markPlace();
     return null;
   }
   // the dimmed screens over the lake draw it once: draw the new place
   G.stillDrawn = false;
+  markPlace();
   return p;
 }
+// the painted title's picture is of Loon Lake, so the title shows it only there (style.css). At another place the live
+// lake shows behind the title, as in the Original style
+const markPlace = () => { document.body.dataset.place = G.place.id; };
 let traveling = false;
 // A trip from the places screen, the unlock card or the results. A card covers the load, and it stays up for 1.2 s at
 // least, so the wait reads as a trip and not as a glitch.
@@ -1446,6 +1451,7 @@ function setArtStyle(style) {
 }
 $("#optArtStyle").addEventListener("change", (event) => setArtStyle(event.target.value));
 syncArtStyle();
+markPlace();
 
 /* ---------------- settings ---------------- */
 function syncSettings() {
@@ -2223,14 +2229,15 @@ async function watch(id) {
 
 /* ---------------- the loop ---------------- */
 let last = now(), fpsAcc = 0, fpsN = 0, drew = false, drawAt = 0, menuDt = 0;
-// the title over the live lake (the Original style) is a menu: the lake draws there at 15 frames a second at most
+// the title over the live lake (the Original style, and the Painted one away from Loon Lake) is a menu: the lake draws
+// there at 15 frames a second at most
 const MENU_MS = 66;
 // An opaque screen covers the lake: a dimmed card, or the title with its painted picture. Read again only when the
-// screen or the art style changes
+// screen, the art style or the place changes
 let coverKey = "", coverTitle = false;
 function covered() {
   if (document.querySelector(".screen.dim:not([hidden])")) return true;
-  const key = (document.body.dataset.screen || "") + "|" + (document.body.dataset.artStyle || "");
+  const key = (document.body.dataset.screen || "") + "|" + (document.body.dataset.artStyle || "") + "|" + (document.body.dataset.place || "");
   if (key !== coverKey) { coverKey = key; const t = $("#title"); coverTitle = !t.hidden && /url\(/.test(getComputedStyle(t).backgroundImage); }
   return coverTitle;
 }

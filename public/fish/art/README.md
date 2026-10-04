@@ -22,7 +22,7 @@ The 2026-09-29 film pass uses three images made with the built-in image generati
 
 The source images were encoded as WebP without artistic edits. `painted-forest.js` uses the delivered atlas bounds and one quad per tree, drawn in up to three instanced layers. Trees retain the original terrain placement, face the camera around their vertical axis and sway gently. Each layer shares a cached texture; travel and style changes free the instance geometry and material. A failed image load falls back to the existing 3D trees.
 
-The water remains a live shader with broad paint shapes and broken horizontal strokes. The rod and fish remain live meshes because their bending, swimming, and line attachment must follow play. These are intentional 2.5D choices. The menu retains its controls and uses the same lake illustration; paper-colored HUD labels sit over the scene. Original mode preserves the previous rendering.
+The water remains a live shader with broad paint shapes and broken horizontal strokes. The rod and fish remain live meshes because their bending, swimming, and line attachment must follow play. These are intentional 2.5D choices. The menu retains its controls. At Loon Lake it uses the same lake illustration. At another place the live place shows behind the menu, because the illustration shows Loon Lake. Paper-colored HUD labels sit over the scene. Original mode preserves the previous rendering.
 
 ## Regenerated 3D models
 

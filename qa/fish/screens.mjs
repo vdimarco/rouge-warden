@@ -675,8 +675,22 @@ if (part("D")) {
     await stand(page);
     await spy(page);
     const toastNow = () => page.evaluate(() => document.querySelector("#toast").textContent);
+    // ---- the painted title: its picture is of Loon Lake. At another place the live place shows behind the title, as in
+    // the Original style, and the lake draws there. Counted over frames, not a fixed time: a busy machine draws slowly ----
+    const titleArt = (frames) => page.evaluate(async (frames) => {
+      const t = document.querySelector("#title"), w = FISH.world, r = w.render;
+      let n = 0;
+      w.render = function (...a) { n++; return r.apply(this, a); };
+      for (let i = 0; i < frames && n < 3; i++) await new Promise((res) => requestAnimationFrame(res));
+      w.render = r;
+      return { style: document.body.dataset.artStyle, shown: !t.hidden, pic: /film-lake\.webp/.test(getComputedStyle(t).backgroundImage), draws: n, kick: document.querySelector("#tkick").textContent };
+    }, frames);
+    const loonArt = await titleArt(12);
+    check(loonArt.style === "painted" && loonArt.shown && loonArt.pic && loonArt.draws <= 1 && /LOON LAKE$/.test(loonArt.kick), "the painted title at Loon Lake shows its picture, and the lake under it stands still (" + JSON.stringify(loonArt) + ")");
     // ---- Cedar River: the current, and the swing said once ----
     check(await page.evaluate(async () => await FISH.setPlace("river")), "at Cedar River");
+    const riverArt = await titleArt(60);
+    check(riverArt.style === "painted" && riverArt.shown && !riverArt.pic && riverArt.draws >= 3 && /CEDAR RIVER$/.test(riverArt.kick), "the painted title at Cedar River shows the live river behind it, not the picture of Loon Lake (" + JSON.stringify(riverArt) + ")");
     await page.evaluate(() => FISH.startMode("free"));
     await wait(page, () => FISH.G.phase === "cast");
     check(await page.evaluate(() => Math.abs(FISH.G.hour - 5.2) < 0.1), "free fishing at Cedar River starts at 5:12 (" + (await page.textContent("#clock")) + ")");

@@ -14,6 +14,17 @@ The art style that was called "Ghibli" SHALL be "Painted" on screen, in its stor
 - **WHEN** a save with the old style value loads
 - **THEN** Settings shows "Painted" as the chosen style and the painted look shows.
 
+### Requirement: Painted title picture
+In the Painted style, the title SHALL show its painted picture of Loon Lake only at Loon Lake. At another place the title SHALL show the live place behind it, as the Original style does.
+
+#### Scenario: Painted title at another place
+- **WHEN** a player at Cedar River opens the title in the Painted style
+- **THEN** the title says CEDAR RIVER over the live river, not over the picture of Loon Lake.
+
+#### Scenario: Painted title at Loon Lake
+- **WHEN** a player at Loon Lake opens the title in the Painted style
+- **THEN** the title shows the painted picture of Loon Lake, and the lake under it stands still.
+
 ### Requirement: Guide for new players
 The animated guide SHALL show on the first cast screen for a player who has not landed a fish, unless the player turned it off. After the first catch it SHALL hide unless the player turned it on. The guide button SHALL say what it does. On the cast screen the guide SHALL go round the three cast moves only (hold, back, and cast). It SHALL show the reel moves only when the lure is in the water.
 
