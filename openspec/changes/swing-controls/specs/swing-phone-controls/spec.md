@@ -105,7 +105,7 @@ Every touch area of a visible phone button SHALL be at least 48 by 48 CSS px. Th
 #### Scenario: The narrowest phone
 - **WHEN** the phone is 360 by 740 with all four top buttons
 - **THEN** the top row is one line, inside the viewport
-- **AND** with a spoken line showing, each line the hint over SWING can say fits on one line, and the tail of the spoken line clears the SWING panel
+- **AND** with a spoken line showing, each line the hint over SWING can say, except the wall line, fits on one line, and the tail of the spoken line clears the SWING panel
 
 #### Scenario: Landscape
 - **WHEN** the phone is 844 by 390 and shows a spoken line

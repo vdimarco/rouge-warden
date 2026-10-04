@@ -5,7 +5,6 @@
 // A check marked [join] needs the wiring of agent A in main.js and desktop.js (the marker each frame, G.test.target, the VIEW press,
 // the buzz, the title labels). It fails on a branch that has only agent B's files, and it must pass after the join.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/phone-controls.e2e.mjs   (SHOTS=dir keeps screenshots)
-import { readFile } from "node:fs/promises";
 import { newPage, open, close, watchdog, checker, shot } from "./lib.mjs";
 watchdog(1500000, "phone controls");
 const { check, done } = checker("phone-controls");
@@ -254,15 +253,15 @@ try {
   await main.locator("#playFlat").click();
   await main.waitForFunction(() => G.state === "play");
   await main.locator("#phoneControls").waitFor({ state: "visible" });
-  // the words: the first line the tutorial speaks is the one in design.md ("Words"), and no phone line names a mouse, Shift, a key, a
-  // trigger, a pinch or a grip (read before any frame runs, so the line on the screen is the one the tutorial said first)
-  const design = await readFile(new URL("../../openspec/changes/swing-controls/design.md", import.meta.url), "utf8");
-  const wantFirst = (/`LINES_PHONE` changes tutorial 0 to "([^"]+)"/.exec(design) || [])[1];
+  // the words: the first line the tutorial speaks is the one in the spec (swing-phone-controls, "Words" in its design), and no phone
+  // line names a mouse, Shift, a key, a trigger, a pinch or a grip (read before any frame runs, so the line on the screen is the one
+  // the tutorial said first). The text is a constant here: the change documents move when the change is archived.
+  const wantFirst = "Tap SWING to swing at the gold ring.";
   const words = await main.evaluate(async () => {
     const C = await import("./js/config.js"), sub = document.querySelector(".fs-sub");
     return { spoken: sub.textContent, on: sub.classList.contains("on"), said: G.ui.sayLine("tutorial", 0), table: C.LINES_PHONE.tutorial[0], all: Object.entries(C.LINES_PHONE).flatMap(([k, v]) => v.map((l) => k + ": " + l)) };
   });
-  join(!!wantFirst && words.on && words.spoken === wantFirst && words.said === wantFirst && words.table === wantFirst, `the first phone tutorial line is the one in design.md ("${wantFirst}"): on the screen, from sayLine and in LINES_PHONE`, { wantFirst, spoken: words.spoken, said: words.said, table: words.table });
+  join(words.on && words.spoken === wantFirst && words.said === wantFirst && words.table === wantFirst, `the first phone tutorial line is the one in the spec ("${wantFirst}"): on the screen, from sayLine and in LINES_PHONE`, { wantFirst, spoken: words.spoken, said: words.said, table: words.table });
   const badWords = words.all.filter((l) => /mouse|shift|\bkeys?\b|keyboard|trigger|bumper|pinch|grip|\bpress\b/i.test(l));
   join(words.all.length >= 20 && badWords.length === 0, `none of the ${words.all.length} phone lines names a mouse, Shift, a key, a trigger, a pinch or a grip`, badWords);
   await main.evaluate(() => { G.test.hold(true); const s = G.city.start; G.test.teleport(s.x, s.y, s.z); G.test.step(1 / 60, 90); });

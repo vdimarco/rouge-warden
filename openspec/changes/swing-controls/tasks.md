@@ -44,7 +44,7 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - `viewDown` from the pad and from `mobile.sample().view`. A map press closes an open map.
   - `D.marker` with `#lockRing`, `D.pop`, `D.cue` with the caption, `D.hints` with `#keyHints`, `D.rumble` and the pad kind. `document.body.dataset.device`.
   - Check: the key, mouse and pad sections of `flat.mjs`. They use real `KeyboardEvent` and mouse events, and a fake `navigator.getGamepads` for every button and axis in the pad spec.
-  - Status (A): done. The opening, swing, pad and marker parts of `flat.mjs` pass. A pad Y press is real. The `view` edge of `mobile.sample()` is tested with a stand-in sample on a computer (it has the stub) and with B's real VIEW button on a touch page (`flat.mjs` title part, and the [join] check of `phone-controls.e2e.mjs`). Join (J2): passes on the joined tree. `D.update` allocates nothing per frame now (the swing arrays and the key helper are made once).
+  - Status (A): done. The opening, swing, pad and marker parts of `flat.mjs` pass. A pad Y press is real. The `view` edge of `mobile.sample()` is tested with a stand-in sample on a computer (it has the stub) and with B's real VIEW button on a touch page (`flat.mjs` title part, and the [join] check of `phone-controls.e2e.mjs`). Join (J2): passes on the joined tree. `D.update` itself no longer makes arrays or closures each frame. On a touch device `mobile.sample()` still spreads a new object each frame; that predates this change (#81).
 - [x] A5. The wiring in `main.js`.
   - Fill the context. Delete `AIM_UP`, `AIM_NEAR` and the ground branch of `viewAim`. Rewrite `flatInput`: the picker decides in play, the exact ray stays in the opening and the pause, a test override wins. Keep the hit of `viewAim` in `AIM_HIT`.
   - Set `D.chooseHand` in play only. Pass the pick to `shoot` and `fire`. Handle the second rope, the 0.3 s wait, the dry fire along the view and the "No building" line in `aimAndFire`.
@@ -94,7 +94,7 @@ Measured by `node qa/vr/target.test.mjs` on the current `physics.js` (main after
 - A run ends at the third building. A bot that goes on can fall into the water after it, and that is no failure of the picker.
 - The start-roof median is 1.4 s under its gate. The variety rule carries it: with the penalty at 0 the start-roof median is 17.9 s.
 - With clogs listed as specials in the bot's search (as the game does) bot 1 passes 141 of 150 random starts and bot 2 passes 149 of 150.
-- Both bots hold W, as the first-time player does. A start-roof swing with no W only slides the hero across the roof and he stops on it, for hop 0 and for hop 3 at kick 10, and for kick 12. With W the hero leaves the roof 3.5 s after the press (`flat.mjs` prints the time). The report of agent A lists this as a decision for the lead.
+- Both bots hold W, as the first-time player does. A start-roof swing with no W only slides the hero across the roof and he stops on it, for hop 0 and for hop 3 at kick 10, and for kick 12. The lead decided (D1): the first tutorial line, the key strip, the title note and How to play say W. With W the hero leaves the roof in 3.1 to 3.3 s (`flat.mjs` checks 4 s or less), and with the button alone `flat.mjs` checks that the hero stays on the roof. See "The start roof" in design.md.
 
 ## Agent B: the phone panel and the page
 

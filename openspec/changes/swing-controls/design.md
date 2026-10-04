@@ -476,7 +476,7 @@ Agent B writes these sections in `index.html`. The sections are: Headset control
 Keyboard and mouse:
 
 - The game picks a building for you. Look toward the buildings you want. A ring marks the target.
-- Hold the left mouse button, or <kbd>E</kbd>, to swing. Let go when the ring says GO.
+- Hold the left mouse button, or <kbd>E</kbd>, to swing. On a roof, hold <kbd>W</kbd> too, so you run off the edge. Let go when the ring says GO.
 - Hold the right mouse button, or <kbd>Q</kbd>, to add a second rope.
 - Hold <kbd>Shift</kbd> or turn the wheel to reel in.
 - Press <kbd>F</kbd> to yank. Three yanks plunge a clog.
@@ -489,7 +489,7 @@ Keyboard and mouse:
 Game pad (a standard pad, such as Xbox or PlayStation):
 
 - Press PLAY with the mouse, a tap or Enter. The pad works after that.
-- Hold the right trigger (RT, R2) to swing. Hold the left trigger (LT, L2) to add a second rope. Let go when the ring says GO.
+- Hold the right trigger (RT, R2) to swing. On a roof, push the left stick up too. Hold the left trigger (LT, L2) to add a second rope. Let go when the ring says GO.
 - Hold the left bumper (LB, L1) to reel in. Press the right bumper (RB, R1) or X (Square) to yank.
 - The left stick walks, steers and climbs. The right stick looks around.
 - A (Cross) jumps. On a wall it jumps off.
@@ -512,7 +512,7 @@ The title shows `#deskNote` on a computer (the swing, W, and "a game pad works a
 - Width budget: the row never wraps and never overflows. Every touch area is at least 48 by 48 px. The top-row boxes are 46 px high with a hit area of 50 px (an `::after` box 2 px past each side, inside the 6 px gap), because `phone-swing.e2e.mjs`, which this change does not edit, reads a taller top button as a second row. Every other button box is 48 by 48 px or more. Labels are at most 6 letters (Bangers 18 px), padding 0 8 px, border 3 px, hard shadow 3 px, gap 6 px. At 360 px wide the four buttons fit between the safe areas. B tests the row with the sensors granted and denied, at 360 by 740, 390 by 844 and 844 by 390.
 - `.fs-top` starts below the row: top is the safe inset plus 74 px (12 px of padding, the 46 px row, its shadow and a gap).
 - In portrait the score pills go in one row (24 px numbers, no small suffix) when the width is under 480 px. The safe window of the marker is at least 55 percent of the height at 390 by 844 and 45 percent at 844 by 390. B tunes the pills until the check passes.
-- A spoken line never covers the SWING panel, as today. Its tail hangs 27 px under its box, and the spoken line leaves room for one line of hint over SWING, so each hint line fits on one line of a 360 px phone (about 42 letters at most). A hint that wraps lifts the panel into the tail. `phone-controls.e2e.mjs` measures the tail against the panel for every hint line at 360 by 740, 390 by 844 and 844 by 390. There is no footnote under the SWING button (the old line "Tap to swing, the rope lets go by itself, drag to look" was removed to give the safe window more height).
+- A spoken line never covers the SWING panel, as today. Its tail hangs 27 px under its box, and the spoken line leaves room for one line of hint over SWING, so each hint line except the wall line fits on one line of a 360 px phone (about 42 letters at most). The wall line can take two lines; the wall layout check measures it at 390 by 844 and 844 by 390. A hint that wraps lifts the panel into the tail. `phone-controls.e2e.mjs` measures the tail against the panel for every hint line at 360 by 740, 390 by 844 and 844 by 390. There is no footnote under the SWING button (the old line "Tap to swing, the rope lets go by itself, drag to look" was removed to give the safe window more height).
 
 ## Numbers in `config.js`
 

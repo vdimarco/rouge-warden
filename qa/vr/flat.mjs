@@ -319,6 +319,7 @@ async function swing() {
       return { secs: n / 60, ground: G.P.onGround, rope: G.test.state().ropes.some((r) => r.state === "attached"), dragCue, airCue };
     });
     log("from the start roof with" + (w ? "" : "out") + " W the swing input alone: " + (t.ground ? "still on the roof after 6 s" : "airborne after " + t.secs.toFixed(2) + " s") + " (rope " + (t.rope ? "attached" : "not attached") + ")");
+    if (!w) check(t.ground, "holding only the left button on the start roof leaves the hero on the roof after 6 s (so the first line and the key strip say W)", t);
     if (w) {
       check(!t.ground && t.rope && t.secs <= 4, "holding W and the left button on the start roof takes the hero off the roof within 4 s (measured 3.1 to 3.3 s; this run " + t.secs.toFixed(2) + " s)", t);
       check(t.dragCue === true && t.airCue === false, "while the rope drags the hero along the roof the LET GO cue shows, and the first frame in the air after the roof gives none (the drag case ends with the ground)", { dragCue: t.dragCue, airCue: t.airCue });
