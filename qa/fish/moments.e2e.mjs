@@ -8,10 +8,12 @@
 //   climb, the badges wait for the weight, a trophy sparkles), the new place card (the horn, the buzz, the card rises, the
 //   badge stamps 250 ms later), and the derby end (the total counts up from zero, then the rank and the close).
 // Part B: Calm effects (html data-calm="1"): no freeze, punch, zoom, flash, pulse, pop or count-up, and the same sounds,
-// buzzes and words.
+// buzzes and words; the cast report and the "Sweet!" cue show without their pop (with reduced motion too).
+// Part C: the jump zoom on the other layouts (844x390 and 360x640 phones, a 1280x800 desktop), 30 and 50 m out: the
+// leaping fish stays in the view, below the HUD and the prompt, and the rod stays drawn where the hand holds it.
 // The fights are staged: a stand-in for the sim goes into G.sim with the same state and events (like screens.mjs).
 // Run: serve public/ (FISH_URL, default http://localhost:8765/fish/), then
-//   NODE_PATH=qa/browser/node_modules node qa/fish/moments.e2e.mjs       (PARTS=A or PARTS=B for one part; SHOTS=dir)
+//   NODE_PATH=qa/browser/node_modules node qa/fish/moments.e2e.mjs       (PARTS=A, B or C for one part; SHOTS=dir)
 import { open, sleep, shot } from "./lib.mjs";
 import { CAST } from "../../public/fish/js/cast.js";
 
@@ -98,8 +100,12 @@ const fishBox = (page, id) => page.evaluate(async (id) => {
     const x = (p.x + 1) / 2 * w, y = (1 - p.y) / 2 * h;
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
   }
-  return { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, fov: W.camera.fov };
+  return { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, x0, x1, y0, y1, vw: w, vh: h, fov: W.camera.fov };
 }, id);
+// the top of the free part of the view: under the HUD and the prompt (CSS px)
+const freeTop = (page) => page.evaluate(() => Math.max(...["#hud", "#prompt"].map((s) => document.querySelector(s).getBoundingClientRect().bottom)));
+const inFree = (b, top) => !!b && b.x0 >= 0 && b.x1 <= b.vw && b.y0 >= top && b.y1 <= b.vh;
+const boxText = (b) => (b ? `x ${b.x0.toFixed(0)}..${b.x1.toFixed(0)}, y ${b.y0.toFixed(0)}..${b.y1.toFixed(0)} of ${b.vw}x${b.vh}` : "no fish");
 // the tallest a splash at pt gets on the screen over ms (CSS px): the droplets within 8 m of it, with their size
 const splashHeight = (page, pt, ms = 2500) => page.evaluate(async ([pt, ms]) => {
   const THREE = await import("/fish/lib/three.module.min.js");
@@ -296,11 +302,12 @@ if (part("A")) {
     await logClear(page);
     await stage(page, { fish: { y: 0.3, jump: 0.5, move: "jump" } }, [{ type: "jump", size: 0.34, x: jx, z: jz }], false);
     await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000).catch(() => {});
-    const box = await fishBox(page, "smallmouth"), zf = await page.evaluate(() => FISH.world.feel());
+    const box = await fishBox(page, "smallmouth"), zf = await page.evaluate(() => FISH.world.feel()), top = await freeTop(page);
     await shot(page, "moments-jump");
     l = await logNow(page);
     check(has(l, "sfx", "jump") && l.some((x) => x[0] === "w.jumpZoom" && x[2] === true), "a jump: its sound and the zoom (" + brief(l) + ")");
     check(!!box && box.w >= 20, `a smallmouth jumping 30 m out is ${box ? box.w.toFixed(1) : "?"} px wide on a 390 px phone (want 20 or more; ${before ? before.w.toFixed(1) : "?"} px before the jump; view ${zf.fov.toFixed(1)} of ${zf.base.toFixed(1)} degrees)`);
+    check(inFree(box, top) && zf.rod, `and it is in the view below the HUD and the prompt (${boxText(box)}, free from ${top.toFixed(0)}), with the rod still drawn (${zf.rod})`);
     await stage(page, { fish: { y: -0.4, jump: 0, move: "swim" } }, [], false);
     const zoomAfter = await page.evaluate(() => FISH.world.feel().zoom);
     await wait(page, () => FISH.world.feel().zoom < 0.05, null, 30000).catch(() => {});
@@ -457,6 +464,28 @@ if (part("B")) {
     const jf = await page.evaluate(() => FISH.world.feel());
     l = await logNow(page);
     check(jf.zoom === 0 && l.some((x) => x[0] === "w.jumpZoom" && x[2] === false) && has(l, "sfx", "jump"), `calm: a jump keeps its sound, and the view does not zoom (zoom ${jf.zoom})`);
+    // a sweet release: "Sweet!" and its sound, with no pop; then the same with reduced motion and no Calm effects
+    const sweetRelease = async () => {
+      await page.evaluate(() => { FISH.newCast(); FISH.G.backMax = 135; });
+      await wait(page, () => FISH.G.phase === "cast");
+      await logClear(page);
+      const r = await page.evaluate((th) => {
+        FISH.release(performance.now(), false, { theta: th, fwd: 600 });
+        const el = document.querySelector("#report");
+        return { cue: el.querySelector(".verdict").textContent, cls: el.className, anim: getComputedStyle(el).animationName, running: el.getAnimations().map((a) => a.animationName) };
+      }, CAST.IDEAL_RELEASE);
+      r.sounds = sounds(await logNow(page));
+      await wait(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 60000).catch(() => {});
+      return r;
+    };
+    let sw = await sweetRelease();
+    check(sw.cue === "Sweet!" && /show/.test(sw.cls) && sw.anim === "none" && !sw.running.length && sw.sounds.includes("zing"), "calm: the \"Sweet!\" cue keeps its words and sound, with no pop (" + JSON.stringify(sw) + ")");
+    await page.evaluate(() => { delete document.documentElement.dataset.calm; });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    sw = await sweetRelease();
+    check(sw.cue === "Sweet!" && sw.anim === "none" && !sw.running.length && sw.sounds.includes("zing"), "reduced motion: the \"Sweet!\" cue shows with no pop too (" + JSON.stringify(sw) + ")");
+    await page.emulateMedia({ reducedMotion: null });
+    await page.evaluate(() => { document.documentElement.dataset.calm = "1"; });
     // the catch card at once
     await logClear(page);
     await page.evaluate(() => FISH.newCast());
@@ -500,6 +529,40 @@ if (part("B")) {
   } catch (e) { check(false, "exception in part B: " + (e && e.stack)); }
   check(errors.length === 0, "part B: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
+}
+
+/* ================= part C: the jump zoom on the other layouts ================= */
+if (part("C")) {
+  for (const [width, height, desk] of [[844, 390, false], [360, 640, false], [1280, 800, true]]) {
+    const sz = `${width}x${height}`, { browser, page, errors } = await open({ width, height, touch: !desk, phone: !desk, save: SAVE });
+    try {
+      console.log("     the jump zoom at " + sz);
+      const eye = await page.evaluate(() => FISH.place.stand.eye);
+      await page.evaluate(async () => { const g = await import("/fish/js/goals.js"), d = g.dayOf(), dg = g.dailyGoal(d, FISH.save); FISH.save.today = { d, k: dg.k, n: dg.n, done: 1 }; });
+      await page.evaluate(() => FISH.startMode("free"));
+      await wait(page, () => FISH.G.phase === "cast", null, 60000);
+      await sleep(500);
+      // a smallmouth at the top of its leap (fish.js tops it out at 0.47 m), 30 and 50 m out; a big bass 30 m out on the wide phone
+      const cases = [["smallmouth", 0.34, 30], ["smallmouth", 0.34, 50]].concat(width === 844 ? [["golden", 0.66, 30]] : []);
+      for (const [id, len, dist] of cases) {
+        await stage(page, { fish: { id, kg: 1, len, x: eye.x, z: eye.z - dist, y: -0.3, heading: Math.PI / 2, move: "swim", jump: 0, known: true } });
+        await sleep(1500);
+        const a0 = await page.evaluate(() => FISH.world.rodAnchor());
+        await stage(page, { fish: { y: 0.35 + 0.35 * len, jump: 0.5, move: "jump" } }, [{ type: "jump", size: len, x: eye.x, z: eye.z - dist }], false);
+        await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000).catch(() => {});
+        await sleep(600);
+        const box = await fishBox(page, id), top = await freeTop(page), f = await page.evaluate(() => FISH.world.feel()), a1 = await page.evaluate(() => FISH.world.rodAnchor());
+        await shot(page, `moments-jump${dist}-${id}-${sz}`);
+        check(inFree(box, top) && box.w >= 20, `${sz}: a ${id} leaping ${dist} m out is in the view below the HUD and the prompt (${boxText(box)}, free from ${top.toFixed(0)}; ${box ? box.w.toFixed(0) : "?"} px wide; view ${f.fov.toFixed(1)} of ${f.base.toFixed(1)} degrees)`);
+        const drift = Math.hypot(a1.x - a0.x, a1.y - a0.y);
+        check(f.rod && drift < 12, `${sz}: the rod stays drawn through the zoom, held where it was (moved ${drift.toFixed(1)} px)`);
+        await stage(page, { fish: { y: -0.4, jump: 0, move: "swim" } }, [], false);
+        await wait(page, () => FISH.world.feel().zoom < 0.05, null, 30000).catch(() => {});
+      }
+    } catch (e) { check(false, `exception in part C at ${sz}: ` + (e && e.stack)); }
+    check(errors.length === 0, `part C at ${sz}: no page errors` + (errors.length ? ":\n" + errors.join("\n") : ""));
+    await browser.close();
+  }
 }
 
 console.log(fails.length ? `\n${fails.length} check(s) failed` : "\nall moments checks passed");

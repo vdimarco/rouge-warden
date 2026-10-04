@@ -404,10 +404,10 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 #results .rank.stamp { animation: stamp 0.24s cubic-bezier(.3, 1.6, .5, 1) both; }
 #rtotal { font-variant-numeric: tabular-nums; }
 /* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion
-   (no glow, pop, rise or stamp) */
-@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank { animation: none !important; } }
+   (no glow, pop, rise or stamp; the cast report and the "Sweet!" cue show without their pop) */
+@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank, #report.show { animation: none !important; } }
 html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
-html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank { animation: none !important; }
+html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank, html[data-calm="1"] #report.show { animation: none !important; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
 /* a short phone held upright: the list of fish gives up room, so the buttons stay on the screen */

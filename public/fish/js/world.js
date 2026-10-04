@@ -37,7 +37,9 @@ export const WORLD = {
   PHOTO: { push: 1.2, from: 1.35, freeze: 0.3 },   // the photo beat of a big catch: seconds of slow push-in, its start distance (x), seconds the fish holds still after
   // the big moments of the reel (main.js calls them; Calm effects and reduced motion skip the camera parts):
   PUNCH: { k: 0.08, hold: 120, back: 250 },   // the hook set: the view narrows by k at once, holds (ms), then eases back (ms)
-  JUMP_ZOOM: { width: 10, after: 0.4, in: 6, out: 2 },   // a leap: meters of lake across the view at the fish, s it stays after, ease rates in and out
+  // a leap: meters of lake across the view at the fish, s it stays after, ease rates in and out; at: how far down the view
+  // the leap sits (a part of its height), free: the top part the HUD and the prompt take on any layout, kept clear of it
+  JUMP_ZOOM: { width: 10, after: 0.4, in: 6, out: 2, at: 0.64, free: 0.5 },
   KICK_DECAY: 14,                  // the rod tip's twitch (a nibble, the strike, the hook set) dies away at this rate (1/s)
   SPLASH_FAR: [12, 4, 15, 3],      // a splash grows from 12 m out, up to 4x; its ring from 15 m, up to 3x
 };
@@ -291,17 +293,22 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       out.fov = clamp(Math.min(out.fov, lerp(out.fov, zoom, smooth(8, 30, dh))), 22, out.fov);
       out.rate = 6;
     } else if (m === "reel") {
-      const L = S.view.look || (S.fish ? S.fish : S.lure);
-      const dh = lookAt({ x: L.x, y: Math.max(L.y, -0.3), z: L.z }, 0.07);
-      out.pitch = clamp(out.pitch, -0.8, 0.35);
+      const L = S.view.look || (S.fish ? S.fish : S.lure), J = WORLD.JUMP_ZOOM, k = S.zoomK > 0.001 ? S.zoomK : 0;
+      // a leap looks up at half its height (the arc drawFish draws, the highest one), not a little down at the water
+      const len = S.fish ? S.fish.len || 0.4 : 0.4, top = 0.35 + 0.9 * len;
+      const dh = lookAt({ x: L.x, y: lerp(Math.max(L.y, -0.3), top / 2, k), z: L.z }, 0.07 * (1 - k));
       out.rate = 3;
-      // a leap: the view narrows to about 10 m of lake across at the fish (never wider than it is). S.zoomK eases it (see
-      // update), and the camera follows it closely meanwhile, so the fish stays in the middle of the narrow view
-      if (S.zoomK > 0.001) {
-        const zoom = 2 * Math.atan(WORLD.JUMP_ZOOM.width / 2 / Math.max(dh, 1) / (S.w / S.h)) / DEG;
-        out.fov = lerp(out.fov, Math.min(out.fov, zoom), S.zoomK);
+      // and the view narrows to about 10 m of lake across at the fish (never wider than it is), but never so far that the
+      // top of the leap and the fish (drawn up to 2x far out) rise from the leap's place, J.at of the way down the view,
+      // into the HUD and the prompt (the top J.free of it). S.zoomK eases it (see update), and the camera follows closely
+      if (k) {
+        const d = Math.max(dh, 1), up = top / 2 + len * (1 + smooth(8, 30, dh)) / 2 + 0.1;
+        const zoom = Math.max(2 * Math.atan(J.width / 2 / d / (S.w / S.h)), 2 * Math.atan(up / (2 * d * (J.at - J.free)))) / DEG;
+        out.fov = lerp(out.fov, Math.min(out.fov, zoom), k);
+        out.pitch += k * Math.atan((2 * J.at - 1) * Math.tan(out.fov * DEG / 2));
         out.rate = 10;
       }
+      out.pitch = clamp(out.pitch, -0.8, 0.35);
     } else if (m === "catch") {
       out.pos.copy(CATCH_CAM);
       const T = trophySpot();
@@ -345,30 +352,38 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (t < 0 || t >= P.hold + P.back || S.view.mode !== "reel") return 1;
     return 1 - P.k * (t < P.hold ? 1 : 1 - smooth(0, 1, (t - P.hold) / P.back));
   }
-  // radians per CSS pixel: thin things (line, rod tip) are kept about a pixel wide on any screen
-  const pxAngle = () => (2 * Math.tan(camera.fov * DEG / 2)) / Math.max(1, S.h);
+  // radians per CSS pixel: thin things (line, rod tip) are kept about a pixel wide on any screen. q: see rodQ
+  const pxAngle = (q = 1) => (2 * Math.tan(camera.fov * DEG / 2) * q) / Math.max(1, S.h);
 
   /* ---------------- rod and line ---------------- */
   const firstPerson = () => S.view.mode !== "title" && S.view.mode !== "catch";
-  function gripPoint() {
+  // The jump zoom of the reel keeps the rod in the hand, as it is in the reel's own view: it is posed for a view q times
+  // wider, then squeezed toward the middle of the narrow view by q (rodSqueeze), so it is not blown up across the fish
+  const rodQ = () => (S.view.mode === "reel" && S.zoomK > 0 ? Math.max(1, Math.tan(baseFov("reel") * DEG / 2) / Math.tan(S.cam.fov * DEG / 2)) : 1);
+  const squeeze = new THREE.Matrix4(), sqTmp = new THREE.Matrix4();
+  const rodSqueeze = (q) => squeeze.copy(camera.matrixWorld).multiply(sqTmp.makeScale(1 / q, 1 / q, 1)).multiply(camera.matrixWorldInverse);
+  rod.mesh.matrixAutoUpdate = false;
+  function gripPoint(q = 1) {
     const portrait = S.view.portrait || S.w / S.h < 0.9;
     const G = WORLD.GRIP, d = portrait ? G.pd : G.d;
-    const tv = Math.tan(camera.fov * DEG / 2), th = tv * camera.aspect;
+    const tv = Math.tan(camera.fov * DEG / 2) * q, th = tv * camera.aspect;
     // in the zoomed flight view the rod slides down out of the way
-    const zoomed = clamp(1 - camera.fov / baseFov(S.view.mode === "flight" ? "flight" : "cast"), 0, 1);
+    const zoomed = clamp(1 - 2 * Math.atan(tv) / DEG / baseFov(S.view.mode === "flight" ? "flight" : "cast"), 0, 1);
     const nx = portrait ? G.px : G.x, ny = (portrait ? G.py : G.y) - zoomed * 2.2;
     return new THREE.Vector3(nx * d * th, ny * d * tv, -d).applyMatrix4(camera.matrixWorld);
   }
   function poseRod() {
-    const R = S.rod;
+    const R = S.rod, q = rodQ();
     // Present the rod toward the lake; physics still uses the measured angle.
     const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = (R.theta - 35) * DEG;
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(th), Math.sin(th), -Math.cos(yaw) * Math.cos(th)).normalize();
     const pull = R.pull ? new THREE.Vector3(R.pull.x, R.pull.y, R.pull.z) : null;
     // S.kick: the tip twitches for a nibble, dips hard on a strike and whips on the hook set
-    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle(), 1.35, S.kick);
+    const tip = rod.pose(gripPoint(q), dir, R.bend || 0, pull, camera.position, pxAngle(q), 1.35, S.kick);
     S.tip.copy(tip);
-    return tip;
+    if (q > 1) { rod.mesh.matrix.copy(rodSqueeze(q)); S.tip.applyMatrix4(squeeze); } else rod.mesh.matrix.identity();
+    rod.mesh.matrixWorldNeedsUpdate = true;
+    return S.tip;
   }
   function drawLine(dt) {
     const Ln = S.line;
@@ -709,7 +724,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function render() {
     applyCamera();
-    rod.mesh.visible = S.rod.visible && firstPerson() && camera.fov > baseFov(S.view.mode) * 0.8;
+    // a narrow view hides the rod (it would fill it), but not the jump zoom of the reel: there it is squeezed (see rodQ)
+    rod.mesh.visible = S.rod.visible && firstPerson() && (rodQ() > 1 || camera.fov > baseFov(S.view.mode) * 0.8);
     if (rod.mesh.visible) poseRod();
     drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
@@ -809,7 +825,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     },
     tip() { return { x: S.tip.x, y: S.tip.y, z: S.tip.z }; },
     rodAnchor() {
-      const p = gripPoint().project(camera);
+      const q = rodQ(), p = gripPoint(q);
+      if (q > 1) p.applyMatrix4(rodSqueeze(q));
+      p.project(camera);
       return { x: (p.x + 1) * S.w / 2, y: (1 - p.y) * S.h / 2 };
     },
     setLine({ from = null, to = null, slack = 0, visible = true, flying = false } = {}) {
@@ -849,7 +867,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // twitch(k, ms): the rod tip dips by k (0..1) toward the line, holds for ms, then springs back (a nibble, the strike, the hook set)
     twitch(k, ms = 0) { S.kick = clamp(Math.max(S.kick, k), 0, 1); S.kickHold = Math.max(S.kickHold, S.clock + ms / 1000); },
     // for the tests: the state of the big moments right now
-    feel() { return { clock: S.clock, frozen: performance.now() < S.freezeUntil, punch: punchK(), zoom: S.zoomK, kick: S.kick, fov: camera.fov, base: baseFov(S.view.mode) }; },
+    feel() { return { clock: S.clock, frozen: performance.now() < S.freezeUntil, punch: punchK(), zoom: S.zoomK, kick: S.kick, fov: camera.fov, base: baseFov(S.view.mode), rod: rod.mesh.visible }; },
     setHour,
     showCatch, hideCatch,
     update, render,
