@@ -342,8 +342,8 @@ function capStub() {
     const go = await cardButton(page);
     await page.evaluate(() => { window.__downs = []; addEventListener("pointerdown", (e) => window.__downs.push(e.timeStamp), true); });
     // (the taps carry their own times, like a phone's: the second press goes down 120 ms after the first, however long the
-    // page takes to handle the first. page.touchscreen waits for the page between taps, so under load its second press can
-    // come 1 s after the finale starts, and skip it as a late tap should)
+    // page takes to handle the first. page.touchscreen sends a press only after the page has handled the one before it, so
+    // under load its two presses can be more than 1 s apart)
     const cdp = await page.context().newCDPSession(page), t0 = Date.now(), pt = [{ x: go.x, y: go.y, id: 1 }];
     for (const [type, ms] of [["touchStart", 0], ["touchEnd", 50], ["touchStart", 120], ["touchEnd", 170]]) await cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : pt, timestamp: (t0 + ms) / 1000 });
     // (the page has handled both presses: the second went down on the finale, or on the card if the first did nothing)
