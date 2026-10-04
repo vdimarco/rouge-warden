@@ -11,6 +11,8 @@
 //     slowcrank: reels slowly when a fish charges. nopump: does not pump. lightdrag: never tightens the drag.
 //     grinder: keeps cranking while the drag slips. late: hook set 1.5 s late. early: yanks at the first nibble.
 //   brute force: greedy (flat out from the first turn), horse (a good retrieve, then flat out), idle (does nothing)
+// runCast's rps: the player cranks the retrieve at this many turns a second and does not slow down for a follower (a new
+// player who holds the crank key or spins the crank fast); left out, the retrieve is 1.1 turns a second
 import { LakeSim, rodTip } from "../../public/fish/js/fish.js";
 import { rng } from "../../public/fish/js/lake.js";
 
@@ -26,8 +28,8 @@ const TELLS = ["charge", "sulk", "thrash", "cover", "walk", "turn", "rub", "spoo
 const TRICKS = ["jump", "walk", "charge", "shake", "thrash"];
 
 export class Player {
-  constructor(policy, r) {
-    this.pol = policy; this.r = r;
+  constructor(policy, r, rps = 0) {
+    this.pol = policy; this.r = r; this.rps = rps;
     this.flaw = FLAWS.has(policy) ? policy : "";
     this.casual = policy === "casual";
     this.novice = policy === "novice";
@@ -95,7 +97,7 @@ export class Player {
     if (!fighting) {
       // the retrieve: a steady crank with the rod at 40° (slow when a fish follows but the lure is too fast), then the hook set
       this.target = P === "greedy" ? 15 : 40; this.rate = 150;
-      crank = S.t < 0.6 ? 0 : P === "greedy" ? 3 : S.tooFast ? 0.4 : 1.1;
+      crank = S.t < 0.6 ? 0 : P === "greedy" ? 3 : this.rps || (S.tooFast ? 0.4 : 1.1);
       if (P === "early" && this.nibbleAt !== null && !this.yanked && this.t >= this.nibbleAt + 0.15 - this.react) { this.yanked = true; hookset = true; }
       // the strike was noticed `react` s after it came; the hook set lands `setDelay` s after the strike
       if (this.strikeAt !== null && !this.didSet && this.t >= this.strikeAt - this.react + setDelay) {
@@ -208,9 +210,9 @@ function spark(S, f, ev, t) {
 
 // One cast: the lure lands at `spot`, a player fishes it until the fish is landed, lost, or LIMIT s pass.
 // place: a place from places.js (Loon Lake if left out). Returns what happened.
-export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true, eager = false }) {
+export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true, eager = false, rps = 0 }) {
   const r = rng(seed * 7919 + 13);
-  const pl = new Player(policy, rng(seed * 104729 + 7));
+  const pl = new Player(policy, rng(seed * 104729 + 7), rps);
   const rod = place ? place.stand.rod : undefined;
   const tip = rodTip(40, headingDeg(spot.x, spot.z), 0, rod);
   const o = { place, lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite, eager };

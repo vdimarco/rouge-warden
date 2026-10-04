@@ -11,6 +11,7 @@ import { SPECIES, byId } from "../../public/fish/js/species.js";
 import { FISHING, ecology } from "../../public/fish/js/fishing.js";
 import { PLACES, PLACE_IDS } from "../../public/fish/js/places.js";
 import { rng } from "../../public/fish/js/lake.js";
+import { ORDER } from "../../public/fish/js/journey.js";
 import { runCast, spotsFor, headingDeg, DT } from "./fightlib.mjs";
 
 const N = Math.max(10, +process.env.N || 60);
@@ -161,15 +162,14 @@ async function main() {
   }
   // land rates
   const small = (sp) => sp.kg[1] < 1.3; // panfish and small fish
-  // The bands were moved in the store polish (openspec fish-store-polish, the fight package). Three fair changes took away the
-  // ways a legend was lost with no chance to answer: the drag now gives for 0.5 s before cranking can snap the line (it
-  // snapped 0.07 s after the slip), a beaten legend starts no tricks and seldom throws the hook on a slack line (it was lost
-  // after TIRED showed), and the head-shake prompt now says to keep reeling slowly (the players do), so a shake no longer
-  // hides slack line. Easy mode's longer jump rise is kept off for legends. With those, the casual player lands about 3 in 4
-  // legends instead of about half, and a skilled one Old Hookjaw and Big Blue more often: so the casual tops rose to 85% and
-  // the skilled tops of Old Hookjaw and Big Blue to 97% and 90%. The floors did not move. (Before: casual golden 45-70,
-  // whiskers 40-65, hookjaw 35-65, bigblue 30-60; skilled hookjaw 60-88, bigblue 55-82.)
-  const LEG = { skilled: { golden: [80, 97], whiskers: [65, 88], hookjaw: [60, 97], bigblue: [55, 90] }, casual: { golden: [45, 85], whiskers: [40, 85], hookjaw: [35, 85], bigblue: [30, 85] } };
+  // The legend bands of plan section 3.5. The store polish (openspec fish-store-polish, the fight package) took away ways a
+  // legend was lost with no chance to answer (a crank into the drag snapped the line 0.07 s after the slip; a beaten legend
+  // still jumped and threw the hook after TIRED showed). That made every legend easier, the casual player most. So the
+  // legends were retuned in species.js to keep these bands, with losses a careful player can answer: Old Whiskers runs for
+  // the stumps more often and its line rubs through sooner; Old Hookjaw's runs down the river are longer, it tail-walks in
+  // its last stage, and its hook comes out more easily; Big Blue's last run starts farther out (21 m) and often swims back
+  // at you, so the slack line must be reeled in fast, and its hook comes out more easily. The skilled tops still hold.
+  const LEG = { skilled: { golden: [80, 97], whiskers: [65, 88], hookjaw: [60, 88], bigblue: [55, 82] }, casual: { golden: [45, 70], whiskers: [40, 65], hookjaw: [35, 65], bigblue: [30, 60] } };
   const OVERALL = { loon: 92, stumps: 88, river: 86, sea: 85 };
   // the novice's floors, the legend left out. Measured in the store polish (94 / 91 / 89 / 91% at N=60) and set about 10
   // points lower: they are there to catch a change that a first-time player could not live with, not to tune by
@@ -190,6 +190,12 @@ async function main() {
       check(r >= a && r <= b, `${L.id}: the ${pol} player lands ${a}-${b}% (${pct(s.landed, s.hooked)} of ${s.hooked})`);
     }
   }
+  // the legends get harder along the journey: for the casual player each lands no more often than the one before (3 points
+  // of slack), and the last at least 10 points less often than the first
+  {
+    const legs = ORDER.map((pid) => fishOf(pid).find((x) => x.legend).sp.id), cr = ORDER.map((pid, i) => { const s = tally(get(pid, legs[i], "casual")); return Math.round(100 * rate(s.landed, s.hooked)); });
+    check(cr.every((r, i) => !i || r <= cr[i - 1] + 3) && cr[cr.length - 1] <= cr[0] - 10, `the casual player finds each legend as hard as the one before or harder (${legs.map((id, i) => id + " " + cr[i] + "%").join(", ")})`);
+  }
   // easy mode gives a jump 0.2 s more to rise: a casual player who lowers the rod on the cue keeps the steelhead
   {
     const c = tally(get("river", "steelhead", "casual"));
@@ -209,7 +215,9 @@ async function main() {
     check(n === 0 && legs.length > 0, `a beaten fish starts no trick move (${n} in ${all.length} fights, ${legs.length} of them legends)`);
   }
   // the novice: a first-time player (slow to react, misses two warnings in five, no side pressure). A measurement first:
-  // the floors only catch a game that a new player could not play at all
+  // the floors only catch a game that a new player could not play at all. (It is not below the casual player on every fish:
+  // with no side pressure Big Blue's fight runs longer and its last run less often ends at the wall, so it lands more of
+  // them. A casual player with no side pressure lands 65% instead of 52%)
   if (pols.includes("novice")) {
     for (const pid of PLACE_IDS) {
       const plain = fishOf(pid).filter((x) => !x.legend), nv = merge(plain.map(({ sp }) => get(pid, sp.id, "novice")));

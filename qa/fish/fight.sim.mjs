@@ -194,6 +194,9 @@ for (const id of ONLY.rodhigh) {
   // ...but the drag gives first: the line goes only after the drag has slipped a while, time enough to stop reeling
   const slips = ONLY.grinder.flatMap((id) => res.grinder[id]).filter((o) => o.slipFor != null).map((o) => o.slipFor);
   check(slips.length > 0 && median(slips) >= 0.5, `the drag gives before the line breaks: a steady crank into a run snaps it ${median(slips).toFixed(2)} s (median) after the drag starts to slip (0.5 s or more)`);
+  // ...and not only at the median: three in four of those snaps come 0.45 s or more after the slip
+  const p25 = slips.slice().sort((a, b) => a - b)[Math.floor(slips.length / 4)];
+  check(slips.length > 0 && p25 >= 0.45, `and a quarter of them at most come sooner than 0.45 s (p25 ${p25.toFixed(2)} s, p10 ${slips.slice().sort((a, b) => a - b)[Math.floor(slips.length / 10)].toFixed(2)} s)`);
 }
 {
   const all = POLICIES.flatMap((pol) => Object.values(res[pol]).flat()), n = all.reduce((a, o) => a + o.beatenTricks, 0);
@@ -255,7 +258,9 @@ console.log("\nRings");
 /* ---------------- the first fish of a new player ---------------- */
 
 // main.js: a fresh save's first cast in the water gets firstBite(): a small pumpkinseed or perch with a sure bite.
-// The casual and the novice player land it within 25 s of the splash, from a short cast (8 to 25 m) anywhere at Loon Lake
+// The casual and the novice player land it within 25 s of the splash, from a short cast (8 to 25 m) anywhere at Loon Lake,
+// and so does a novice who cranks the retrieve fast (2.4 turns a second, as when the crank key is held or the crank spun)
+// and never slows down for the fish: the first fish does not mind a fast lure
 console.log("\nThe first fish");
 {
   const r = rng(31), casts = [];
@@ -264,12 +269,12 @@ console.log("\nThe first fish");
     if (zn === "land" || depth(x, z) < 0.6) continue;
     casts.push({ x, z, fb: firstBite(zn, r) });
   }
-  for (const pol of ["casual", "novice"]) {
-    const list = casts.map((c, i) => runCast({ policy: pol, seed: 3000 + i, spot: c, species: c.fb.species, kg: c.fb.kg, bite: true, eager: c.fb.eager, hour: 6.5 }));
+  for (const [name, pol, rps] of [["casual", "casual", 0], ["novice", "novice", 0], ["fast", "novice", 2.4]]) {
+    const list = casts.map((c, i) => runCast({ policy: pol, seed: 3000 + i, spot: c, species: c.fb.species, kg: c.fb.kg, bite: true, eager: c.fb.eager, hour: 6.5, rps }));
     const quick = list.filter((o) => o.outcome === "caught" && o.endT <= 25).length, ts = list.filter((o) => o.outcome === "caught").map((o) => o.endT);
-    console.log(`  ${pol.padEnd(7)} struck ${pct(list.filter((o) => o.struck).length, list.length)}, landed ${pct(ts.length, list.length)}, in 25 s ${pct(quick, list.length)}; splash to landing: median ${median(ts).toFixed(1)} s, max ${Math.max(...ts).toFixed(1)} s`);
-    check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && c.fb.eager && ["pumpkinseed", "perch"].includes(c.fb.species)), `${pol}: the first fish is a small, eager pumpkinseed or perch, and it always strikes`);
-    check(quick >= list.length * (pol === "casual" ? 0.95 : 0.85), `${pol}: lands the first fish within 25 s of the splash (${pct(quick, list.length)})`);
+    console.log(`  ${name.padEnd(7)} struck ${pct(list.filter((o) => o.struck).length, list.length)}, landed ${pct(ts.length, list.length)}, in 25 s ${pct(quick, list.length)}; splash to landing: median ${median(ts).toFixed(1)} s, max ${Math.max(...ts).toFixed(1)} s`);
+    check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && c.fb.eager && ["pumpkinseed", "perch"].includes(c.fb.species)), `${name}: the first fish is a small, eager pumpkinseed or perch, and it always strikes`);
+    check(quick >= list.length * (pol === "casual" ? 0.95 : 0.85), `${name}: lands the first fish within 25 s of the splash (${pct(quick, list.length)})`);
   }
 }
 

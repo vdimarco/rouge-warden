@@ -223,7 +223,8 @@ function likeSpeed(sp, s) {
 }
 
 // A brand-new player's first cast in the water (main.js): a sure bite from a small, easy fish of Loon Lake, a pumpkinseed
-// in the pads and the weeds and by the dock, a perch anywhere else, eager to bite. Pass it to LakeSim as its test hooks
+// in the pads and the weeds and by the dock, a perch anywhere else, eager to bite (it comes close at once, does not mind a
+// fast retrieve, and takes the lure before it is home). Pass it to LakeSim as its test hooks
 export function firstBite(zn, r = Math.random) {
   const id = zn === "pads" || zn === "weeds" || zn === "dock" ? "pumpkinseed" : "perch", [a, b] = byId(id).kg;
   return { species: id, kg: Math.round((a + (Math.min(b, 0.45) - a) * (0.3 + 0.5 * r())) * 100) / 100, bite: true, eager: true };
@@ -305,7 +306,7 @@ export class Rises {
 export class LakeSim {
   // opts: { place = Loon Lake, lure, tip, lineOut, hour, ring, rng, easy = true }
   // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none),
-  // eager (the fish comes and takes the lure sooner: firstBite uses it)
+  // eager (the fish comes and takes the lure sooner, at any retrieve speed: firstBite uses it)
   constructor(opts = {}) {
     const o = opts || {};
     this.pl = placeOf(o.place);
@@ -408,6 +409,7 @@ export class LakeSim {
       nibbles: Math.min(o.eager ? 1 : 3, style === "nibbler" ? (r() < 0.1 ? 0 : 1 + ((r() * 3) | 0)) : style === "soft" ? (r() < 0.5 ? 1 : 0) : 0),
       pauseNeed: 0.5 + r(),
       quick,
+      eager: !!o.eager,
     };
   }
 
@@ -556,7 +558,8 @@ export class LakeSim {
       ap.t -= h * (S.phase === "sink" ? 0.8 : 1);
       if (ap.t > 0) return;
       ap.stage = "follow";
-      const away = headingOf(L.x - I.tip.x, L.z - I.tip.z) + (r() * 2 - 1) * 0.7, d = (2 + r() * 2.5) * (0.5 + 0.5 * P.quick);
+      // (an eager fish shows up right behind the lure)
+      const away = headingOf(L.x - I.tip.x, L.z - I.tip.z) + (r() * 2 - 1) * 0.7, d = (2 + r() * 2.5) * (0.5 + 0.5 * P.quick) * (P.eager ? 0.4 : 1);
       const fx = L.x + Math.sin(away) * d, fz = L.z - Math.cos(away) * d;
       const bot = this.depthAt(fx, fz);
       S.follower = { id: P.id, x: fx, y: -clamp(Math.max(-L.y, 0.3) + 0.3, 0.2, Math.max(0.2, bot - 0.1)), z: fz, heading: away + Math.PI, len: P.len };
@@ -568,7 +571,8 @@ export class LakeSim {
     const bx = L.x - I.tip.x, bz = L.z - I.tip.z, bl = Math.hypot(bx, bz) || 1;
     const tx = L.x + bx / bl * 0.6, tz = L.z + bz / bl * 0.6, ty = L.y - 0.1;
     const dx = tx - f.x, dy = ty - f.y, dz = tz - f.z, dl = Math.hypot(dx, dy, dz);
-    const like = likeSpeed(P.sp, L.speed);
+    // (an eager fish likes the lure at any speed: a new player who cranks fast still gets the bite)
+    const like = P.eager ? Math.max(0.6, likeSpeed(P.sp, L.speed)) : likeSpeed(P.sp, L.speed);
     // it swims up at a little more than the lure's speed, up to its burst speed, and always a little faster
     // than the lure so a small fish can still catch a brisk retrieve; the prompt tells the player to slow down
     const spd = Math.max(Math.min(P.sp.fight.speed * 1.1, Math.max(0.6, L.speed + 0.8)), L.speed + 0.3);
@@ -605,8 +609,8 @@ export class LakeSim {
       ap.pauseRolled = true;
       strike = r() < B.PAUSE_STRIKE;
     }
-    // last chance: the lure is about to leave the water
-    if (!strike && ap.interest >= 0.45 && Math.hypot(L.x, L.z) < B.HOME_R + 2) strike = r() < 1.5 * h;
+    // last chance: the lure is about to leave the water (an eager fish always takes it then)
+    if (!strike && (ap.interest >= 0.45 || P.eager) && Math.hypot(L.x, L.z) < B.HOME_R + 2) strike = P.eager || r() < 1.5 * h;
     if (strike) {
       S.phase = "strike"; S.tooFast = false;
       S.strikeLeft = win;
@@ -900,11 +904,12 @@ export class LakeSim {
     /* the reel: the spool slips when the line pulls harder than the drag; cranking into a slipping drag grinds */
     const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN) * (1 + 0.35 * I.pull);
     // A locked spool winches the fish in, grind and all. The moment it slips (a run starts), the grind lets go and builds
-    // back over GRIND_RAMP s of slipping; slipT runs down 4 times as fast while the spool holds, so each new run starts
-    // afresh. And the grind never locks the spool past GRIND_CAP of the break. So the drag gives before the line breaks.
+    // back over GRIND_RAMP s of slipping; slipT runs down 10 times as fast while the spool holds, so a run that starts after
+    // the spool has held for a moment (a tenth of a second wipes out a second of slipping) starts afresh. And the grind
+    // never locks the spool past GRIND_CAP of the break. So the drag gives before the line breaks.
     // For the first moments after the hook set the drag just slips ("Fish on! Let it run."): no grind yet.
     // A resting legend has no grind either: winding while it hangs there is safe
-    this.slipT = this.spool > 0.15 ? this.slipT + h : Math.max(0, this.slipT - 4 * h);
+    this.slipT = this.spool > 0.15 ? this.slipT + h : Math.max(0, this.slipT - 10 * h);
     const ramp = this.slipT > 0 ? smooth(0, R.GRIND_RAMP, this.slipT) : 1;
     const thr = Math.min(S.dragN + (f.move === "hold" ? 0 : R.GRIND_N * I.crank * smooth(R.GRACE_T, R.GRACE_T + 0.4, S.fightT) * ramp), Math.max(S.dragN, R.GRIND_CAP * S.breakN));
     if (this.spool > 0 || ten > thr) {
