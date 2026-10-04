@@ -205,20 +205,18 @@ function adaptiveBackgroundSvg(size) {
     <rect width="1024" height="1024" fill="#000" filter="url(#grain)"/>`, { w: size, h: size });
 }
 
-// Splash: the title logo on the deep lake colour, centred. Phones crop the square to their shape,
-// so the logo stays inside the middle 1000 px of 2732.
+// Splash: the title logo on the flat deep lake colour, centred. Phones crop the square to their shape,
+// so the logo stays inside the middle 1000 px of 2732. A flat colour keeps the many splash files small.
 function splashHtml(size, fontUrl) {
   return `<!doctype html><html><head><style>
     ${fontUrl ? `@font-face { font-family: "Alfa Slab One"; src: url("${fontUrl}") format("woff2"); }` : ""}
     html, body { margin: 0; width: ${size}px; height: ${size}px; background: ${C.deep}; overflow: hidden; }
     .wrap { position: absolute; inset: 0; display: grid; place-items: center; }
-    .glow { position: absolute; left: 50%; top: 50%; width: ${size * 0.5}px; height: ${size * 0.5}px; transform: translate(-50%, -50%);
-      background: radial-gradient(closest-side, rgba(29, 116, 105, 0.55), rgba(13, 47, 56, 0)); }
     h1 { position: relative; margin: 0; font-family: "Alfa Slab One", Georgia, serif; font-weight: 400; font-size: ${size * 0.118}px; line-height: 0.92;
       color: ${C.cream}; text-align: center; letter-spacing: 0.01em;
       text-shadow: 0 ${size * 0.0034}px 0 ${C.red}, 0 ${size * 0.0068}px 0 #7a1c14, 0 ${size * 0.012}px ${size * 0.022}px rgba(0, 0, 0, 0.45); }
     h1 span { display: block; }
-  </style></head><body><div class="wrap"><div class="glow"></div><h1><span>REEL</span><span>IT IN</span></h1></div></body></html>`;
+  </style></head><body><div class="wrap"><h1><span>REEL</span><span>IT IN</span></h1></div></body></html>`;
 }
 
 // Play feature graphic, 1024 x 500: the bobber on the left, the logo on the right.
@@ -273,8 +271,8 @@ await save(await shot(page, page_(iconSvg(1024)), 1024, 1024), path.join(RES, "i
 await save(await shot(page, page_(adaptiveForegroundSvg(1024)), 1024, 1024, { alpha: true }), path.join(RES, "icon-foreground.png"), { alpha: true });
 await save(await shot(page, page_(adaptiveBackgroundSvg(1024)), 1024, 1024), path.join(RES, "icon-background.png"));
 const splash = await shot(page, splashHtml(2732, fontUrl), 2732, 2732);
+// one splash only: it is dark already, and a splash-dark.png would add a copy of every splash image to the app
 await save(splash, path.join(RES, "splash.png"));
-await save(splash, path.join(RES, "splash-dark.png"));
 await save(await shot(page, page_(iconSvg(512)), 512, 512), path.join(GRAPHICS, "play-icon-512.png"));
 await save(await shot(page, featureHtml(fontUrl), 1024, 500), path.join(GRAPHICS, "feature-graphic-1024x500.png"));
 await browser.close();
