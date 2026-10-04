@@ -416,6 +416,39 @@ try {
   const tp = await page.evaluate(() => { const p = G.test.teleport(G.city.start.x + 3, G.city.start.y, G.city.start.z); __h.step(5); const s = G.test.state(); return { p, pos: s.pos }; });
   check(Math.abs(tp.pos.x - (tp.p.x)) < 0.5, "G.test.teleport still moves the hero", tp);
 
+  /* ---- a clog on a lower roof further away stays a target ---- */
+  // Only the ground near the hero (within 12 m) counts as "no anchor" for the up-and-ahead aim. Stand on a higher roof, point the chase
+  // view at the roof right by a clog 14 to 60 m away, and the aim must take that clog.
+  const lo = await page.evaluate(() => {
+    const C = G.city, out = [];
+    for (const c of C.clogs) {
+      for (const b of C.buildings) {
+        const d = Math.hypot(b.x - c.x, b.z - c.z);
+        if (b.roofY < c.y + 3 || d < 14 || d > 60) continue;
+        const ex = b.x, ey = b.roofY + 1.65, ez = b.z, dx = c.x - ex, dy = c.y + 2.5 - ey, dz = c.z - ez, L = Math.hypot(dx, dy, dz);
+        const h = C.raycast(ex, ey, ez, dx / L, dy / L, dz / L, L + 1, {});
+        if (h && Math.hypot(h.x - c.x, h.z - c.z) > 3) continue;
+        G.test.teleport(b.x, b.roofY, b.z);
+        let yaw = Math.atan2(-(c.x - b.x), -(c.z - b.z));
+        G.rigYaw = yaw; G.flatcam.reset(yaw, -0.3); __h.step(30);
+        for (let k = 0; k < 4; k++) {
+          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 0.6 - p.y, uz = c.z - p.z;
+          yaw = Math.atan2(-ux, -uz); G.rigYaw = yaw; G.flatcam.reset(yaw, Math.asin(uy / Math.hypot(ux, uy, uz))); __h.step(2);
+        }
+        const p = G.camera.position, f = new p.constructor(0, 0, -1).applyQuaternion(G.camera.quaternion);
+        const r = C.raycast(p.x, p.y, p.z, f.x, f.y, f.z, 400, {});
+        // only views whose centre ray lands on the roof by the clog test the rule
+        if (!r || r.ny < 0.7 || Math.hypot(r.x - c.x, r.z - c.z) > 5) continue;
+        const a = G.test.aim(1);
+        out.push({ clog: c.id, from: b.id, d: +d.toFixed(1), tag: a && a.tag, id: a && a.id, valid: !!(a && a.valid) });
+        if (out.filter((o) => o.clog === c.id).length >= 2) break;
+      }
+    }
+    G.rigYaw = G.city.start.yaw;
+    return out;
+  });
+  check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away aims at that clog (" + lo.length + " views)", lo);
+
   /* ---- the draw budget ---- */
   await reset(page);
   await page.evaluate(() => { G.test.camera(null); __h.step(20); });

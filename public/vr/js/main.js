@@ -443,15 +443,16 @@ function flatView(on) {
 // The world direction the head aims along for a screen position (NDC x and y; 0, 0 is the middle): toward the point where that
 // pixel's ray from the camera lands, so the rope goes where the view shows. The head is not where the camera is (the chase camera
 // sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. In third person a view of
-// only ground (a roof or street below the head, or water) is no anchor, and the default view looks down at the hero's feet: the
-// aim then goes ahead along that bearing, AIM_UP above the horizon. Result in AIM_D.
-const AIM_FAR = 400, AIM_UP = (20 * Math.PI) / 180;
+// only ground near the hero (the roof or street under the feet, within AIM_NEAR, or water) is no anchor, and the default view
+// looks down at the hero's feet: the aim then goes ahead along that bearing, AIM_UP above the horizon. A lower roof further away
+// (a clog on it) stays a target. Result in AIM_D.
+const AIM_FAR = 400, AIM_UP = (20 * Math.PI) / 180, AIM_NEAR = 12;
 const AIM_D = new THREE.Vector3(), AIM_HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
 function viewAim(nx, ny, hx, hy, hz, third) {
   const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
   AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
   const h = city.raycast(c.x, c.y, c.z, AIM_D.x, AIM_D.y, AIM_D.z, AIM_FAR, AIM_HIT);
-  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 : AIM_D.y < 0)) {
+  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 && Math.hypot(h.x - hx, h.z - hz) < AIM_NEAR : AIM_D.y < 0)) {
     const l = Math.hypot(AIM_D.x, AIM_D.z) || 1, k = Math.cos(AIM_UP);
     return AIM_D.set((AIM_D.x / l) * k, Math.sin(AIM_UP), (AIM_D.z / l) * k);
   }
