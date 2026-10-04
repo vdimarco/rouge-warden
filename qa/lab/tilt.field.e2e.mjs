@@ -79,6 +79,14 @@ async function fieldChange(page) {
   await until(page, () => window.__fieldTransition !== null, null, 3000);
   return page.evaluate(() => window.__fieldTransition.after - window.__fieldTransition.before);
 }
+// The state after aim closes. A failed check names it, so a CI log shows which part failed.
+async function closedAim(page) {
+  const hidden = await page.locator('#field-placement').isHidden();
+  const state = { hidden, change: await fieldChange(page).catch(() => 'none, aim did not close'), held: await held(page) };
+  state.ok = state.hidden && state.change === 0 && state.held === 0;
+  state.note = state.ok ? '' : ` (panel ${state.hidden ? 'closed' : 'open'}, charge change ${state.change}, held pads ${state.held}, counts ${JSON.stringify(await page.evaluate(() => window.__fieldTransition))})`;
+  return state;
+}
 
 for (const size of [
   { name: 'phone-portrait', ...PHONE, kind: 'pull', method: 'touch' },
@@ -211,12 +219,12 @@ R.section('Invalid targets and input lifecycle');
       await touch.send('touchStart', { x: PHONE.width * .3, y: PHONE.height * .4 });
       await touch.send('touchCancel');
     } finally { await touch.close(); }
-    R.check(await page.locator('#field-placement').isHidden() && await fieldChange(page) === 0 && await held(page) === 0, 'A cancelled touch leaves the charge available and all controls released');
+    { const aim = await closedAim(page); R.check(aim.ok, 'A cancelled touch leaves the charge available and all controls released' + aim.note); }
 
     await freshFlight(page); await arm(page);
     await page.setViewportSize({ width: 844, height: 390 });
     await page.locator('#field-placement').waitFor({ state: 'hidden' });
-    R.check(await page.locator('#field-placement').isHidden() && await fieldChange(page) === 0 && await held(page) === 0, 'Rotation cancels stale aim without spending a charge');
+    { const aim = await closedAim(page); R.check(aim.ok, 'Rotation cancels stale aim without spending a charge' + aim.note); }
     await watchFieldTransition(page); await arm(page);
     // Browser lifecycle event only; no application state or private game API is accessed.
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));

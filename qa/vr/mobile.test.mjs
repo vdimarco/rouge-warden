@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 class Element extends EventTarget {
  constructor(){super();this.nodes=new Map();this.classList={add(){},remove(){},toggle(){}};this.attrs={};}
- querySelector(s){if(!this.nodes.has(s))this.nodes.set(s,new Element());return this.nodes.get(s);}
+ querySelector(s){if(!this.nodes.has(s))this.nodes.set(s,new Element());return this.nodes.get(s);} querySelectorAll(){return [];}
  setPointerCapture(){} setAttribute(k,v){this.attrs[k]=v;} getBoundingClientRect(){return {left:0,top:0,width:400,height:800};}
 }
 const win=new EventTarget(),doc=new EventTarget();let panel,now=0,active=true;

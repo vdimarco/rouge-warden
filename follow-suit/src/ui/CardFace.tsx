@@ -1,4 +1,4 @@
-import { cardColor, isFaceCard, rankLabel, SUIT_SYMBOLS, suitColor, type ChainLink, type Card } from '../engine';
+import { cardColor, isFaceCard, rankLabel, SUIT_SYMBOLS, suitColor, type Card, type Suit } from '../engine';
 
 interface CardFaceProps {
   card: Card;
@@ -35,19 +35,18 @@ export function CardFace({ card, wild = false }: CardFaceProps) {
 }
 
 interface MiniCardProps {
-  link: ChainLink;
-  /** True when the card named a suit. The badge shows that suit. */
-  named: boolean;
+  card: Card;
+  /** The suit an 8 named. The badge shows it. */
+  named?: Suit | null;
 }
 
-/** A small card for the chain, with a badge for the suit that an 8 named. */
-export function MiniCard({ link, named }: MiniCardProps) {
-  const { card, suit } = link;
+/** A small card for the chain, the deck view and the stamp picker. */
+export function MiniCard({ card, named = null }: MiniCardProps) {
   return (
     <span className={`mini ${cardColor(card)}`}>
       <span className="r">{rankLabel(card.rank)}</span>
       <span className="s">{SUIT_SYMBOLS[card.suit]}</span>
-      {named && <span className={`badge ${suitColor(suit)}`}>{SUIT_SYMBOLS[suit]}</span>}
+      {named !== null && <span className={`badge ${suitColor(named)}`}>{SUIT_SYMBOLS[named]}</span>}
     </span>
   );
 }

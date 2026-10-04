@@ -6,7 +6,7 @@ import * as THREE from "three";
 import * as CONFIG from "./config.js";
 import { PAL } from "./comic.js";
 
-const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, SWING } = CONFIG;
+const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PHONE, SWING } = CONFIG;
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -347,8 +347,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   function sayLine(group, i, kind) {
     const k = kind || (inp && inp.kind) || "controller";
-    // a phone gets its own lines when config.js has them; a gamepad and the mouse read the desktop lines
-    const table = k === "hand" ? LINES_HANDS : k === "touch" ? (CONFIG.LINES_TOUCH || LINES_DESKTOP) : k === "mouse" || k === "desktop" || k === "pad" ? LINES_DESKTOP : LINES;
+    // the phone (kind "touch", or main's easySwing input) reads the phone lines; a gamepad and the mouse read the desktop lines
+    const table = k === "hand" ? LINES_HANDS : k === "touch" || (inp && inp.easySwing) ? LINES_PHONE : k === "mouse" || k === "desktop" || k === "pad" ? LINES_DESKTOP : LINES;
     const line = table[group] && table[group][i];
     if (line) say(line, 6);
     return line || null;
@@ -838,7 +838,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "resetYes": closePause(); emit(fns.restart); return;
       case "exit": closePause(); emit(fns.exit); return;
       case "preset": {
-        if (!COMFORT.presets[v] || v === "desktop") return;
+        if (!COMFORT.presets[v] || v === "desktop" || v === "phone") return;
         if (isDesktopNow()) settings.preset = v; else { comfort.applyPreset(v); if (Pl) { Pl.speedCap = COMFORT.presets[v].speedCap; Pl.fallCap = COMFORT.presets[v].fallCap; } }
         break;
       }

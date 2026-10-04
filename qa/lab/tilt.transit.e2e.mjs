@@ -69,19 +69,23 @@ for (const size of [
     await page.getByRole('button', { name: 'Map', exact: true }).click();
     await until(page, () => document.querySelector('#view').dataset.visibleSector === 'none');
     R.check(await page.locator('#route-list > li').count() === 6 && await visibleField(page) === 'none', 'The galaxy route preserves six destinations and hides every physical field');
+    // The seed orders the middle worlds. The route map names the next world, so read it there.
+    const route = await page.locator('#route-list > li strong').allTextContents();
+    const second = route[1].replace(/^\d+\s+/, '');
+    R.check(route[0].endsWith('Lunar Harbor') && route[5].endsWith('The Star Engine'), 'Every voyage starts at Lunar Harbor and ends at the Star Engine');
     await shot(page, 'tilt-transit-' + size.name + '-map');
     await page.getByRole('button', { name: 'Close map', exact: true }).click();
     await reachGate(page);
     R.check(await page.locator('#upgrade-panel').isVisible()
       && (await page.locator('#upgrade-from').textContent()) === 'Lunar Harbor'
-      && (await page.locator('#upgrade-to').textContent()) === 'Amber Belt'
+      && (await page.locator('#upgrade-to').textContent()) === second
       && (await page.locator('#upgrade-options button').count()) === 3,
     'Normal play reaches the first gate and offers three upgrades on the correct route');
     await watchStages(page);
     await page.keyboard.press('1');
     await page.locator('#transit-panel').waitFor({ state: 'visible' });
-    await until(page, () => document.querySelector('#transit-title').textContent.includes('Amber Belt'));
-    R.check((await page.locator('#transit-title').textContent()).includes('Amber Belt'), '1 selects the first upgrade and starts travel to the named destination');
+    await until(page, name => document.querySelector('#transit-title').textContent.includes(name), second);
+    R.check((await page.locator('#transit-title').textContent()).includes(second), '1 selects the first upgrade and starts travel to the named destination');
     R.check(await fits(page.locator('#skip-transit')), 'Skip jump stays visible with a usable touch target');
     R.check(await page.locator('#controls').isHidden(), 'The cinematic hides ordinary gameplay controls');
     R.check(await page.locator('#pulse-button').isDisabled() && await page.locator('#field-button').isDisabled() &&
@@ -126,7 +130,7 @@ for (const size of [
       R.check(await page.locator('#transit-panel').isHidden(), 'The voyage arrives automatically');
     }
     await until(page, () => document.querySelector('#view').dataset.visibleSector === '1');
-    R.check((await page.locator('#sector-name').textContent()).includes('02 / 6 · Amber Belt'), 'Arrival unlocks exactly the second world');
+    R.check((await page.locator('#sector-name').textContent()).includes(`02 / 6 · ${second}`), 'Arrival unlocks exactly the second world');
     R.check(await visibleField(page) === '1' && await page.locator('#left-flip').isEnabled() && await page.locator('#map-button').isEnabled(),
       'Arrival shows only its new field and restores controls');
     await shot(page, 'tilt-transit-' + size.name + '-arrival');
@@ -140,7 +144,7 @@ for (const size of [
     }
     R.check(stages.filter(s => ['horizon', 'tunnel'].includes(s.phase)).every(s => s.field === 'none'), 'Every recorded deep-transit stage hides the levels');
     await sleep(200);
-    R.check((await page.locator('#sector-name').textContent()).includes('Amber Belt') && await page.locator('#launch-button').isVisible(),
+    R.check((await page.locator('#sector-name').textContent()).includes(second) && await page.locator('#launch-button').isVisible(),
       'A finished jump stays at its destination without a second transition');
     R.check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Travel and arrival create no horizontal overflow');
   } catch (error) {

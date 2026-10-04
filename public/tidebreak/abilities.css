@@ -200,3 +200,163 @@
  #skill-points{width:100px;min-height:29px;top:-32px}
  .ability-upgrade:not([hidden]){width:27px;height:27px;font-size:19px}
 }
+
+/* Final accessibility pass: keep the painted art and make every combat action thumb-sized. */
+#joystick,#skill-points,.ability,.ability-upgrade{touch-action:none!important;-webkit-user-select:none;user-select:none}
+.abilities{
+  width:238px;
+  height:218px;
+  right:max(8px,env(safe-area-inset-right));
+  bottom:calc(50px + env(safe-area-inset-bottom));
+}
+.abilities .ability{
+  width:70px;
+  height:70px;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
+.abilities .dash{top:0;right:0}
+.abilities .surge{top:34px;left:80px}
+.abilities .signature{left:0;bottom:12px}
+.abilities .ult{
+  width:94px;
+  height:94px;
+  right:0;
+  bottom:0;
+}
+.ability .hud-spell-art{
+  inset:4px;
+  border-radius:15px;
+  border:2px solid #78d9e8b8;
+  box-shadow:
+    inset 0 0 0 2px #031019,
+    inset 0 0 18px #0005,
+    0 4px 12px #000b,
+    0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
+  filter:saturate(1.22) contrast(1.1);
+}
+.ability.ult .hud-spell-art{
+  inset:5px;
+  border-radius:20px;
+  border:3px solid var(--hero-color,#7eeaff);
+}
+.ability b:not(:empty){
+  inset:4px;
+  border-radius:15px;
+  font-size:17px;
+}
+.ability.ult b:not(:empty){
+  inset:5px;
+  border-radius:20px;
+}
+.ability kbd{
+  top:5px;
+  right:5px;
+  min-width:20px;
+  min-height:20px;
+  padding:2px 4px;
+  font-size:9px;
+  background:#021019e8;
+}
+.ranks{bottom:6px}
+#skill-points{
+  top:-52px;
+  width:178px;
+  min-height:44px;
+  padding:8px 11px;
+  font-size:11px;
+  letter-spacing:.7px;
+  border:2px solid #7ed9e8;
+  border-radius:10px;
+  background:#071b26f3;
+  box-shadow:0 5px 14px #0009;
+}
+#skill-points.ready{
+  border-color:#ffe58d;
+  color:#fff0ac;
+  background:#3d381ff3;
+  box-shadow:0 0 0 2px #ffe58d2b,0 5px 14px #0009,0 0 20px #ffe58d44;
+}
+.ability-upgrade:not([hidden]){
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  font-size:24px!important;
+  border-width:2px!important;
+  box-shadow:0 3px 10px #000b,0 0 14px #ffd86a58!important;
+}
+.upgrade-dash{right:-4px!important;top:-4px!important}
+.upgrade-surge{left:126px!important;top:28px!important}
+.upgrade-signature{left:42px!important;bottom:8px!important}
+.upgrade-ult{right:-5px!important;bottom:4px!important}
+
+@media(max-width:430px){
+  .abilities{width:224px;height:206px;right:5px}
+  .abilities .ability{width:66px;height:66px}
+  .abilities .surge{left:75px;top:32px}
+  .abilities .ult{width:90px;height:90px}
+  #skill-points{width:166px;min-height:42px;top:-49px}
+  .ability-upgrade:not([hidden]){width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important}
+  .upgrade-surge{left:118px!important;top:27px!important}
+  .upgrade-signature{left:39px!important}
+}
+@media(max-height:520px) and (min-width:600px){
+  .abilities{width:214px;height:184px;right:8px;bottom:30px}
+  .abilities .ability{width:62px;height:62px}
+  .abilities .surge{left:72px;top:24px}
+  .abilities .signature{bottom:5px}
+  .abilities .ult{width:84px;height:84px}
+  #skill-points{width:158px;min-height:40px;top:-45px}
+}
+
+
+/* Keep painted spell art visible under lock, cooldown, mana and cast-state labels. */
+.ability .hud-spell-art{
+  display:block!important;
+  opacity:1!important;
+  background-color:#071722;
+  background-size:200% 200%!important;
+  background-repeat:no-repeat!important;
+}
+.ability.unlearned .hud-spell-art{opacity:.58!important;filter:saturate(.75) brightness(.72) contrast(1.08)}
+.ability b:not(:empty){
+  background:linear-gradient(180deg,#03101988,#031019b8)!important;
+  color:#fff!important;
+  text-shadow:0 2px 5px #000,0 0 8px #000!important;
+}
+.ability.control-blocked .hud-spell-art,.ability.mana-empty .hud-spell-art{opacity:.72!important}
+
+
+/* Robust combat spell art: crop a real atlas image instead of relying on background CSS. */
+.ability .hud-atlas-crop{
+  position:absolute;
+  inset:4px;
+  display:block;
+  overflow:hidden;
+  border-radius:15px;
+  border:2px solid #78d9e8b8;
+  background:#06131d;
+  box-shadow:inset 0 0 0 2px #031019,inset 0 0 18px #0005,0 4px 12px #000b,0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
+  pointer-events:none;
+  z-index:1;
+}
+.ability.ult .hud-atlas-crop{
+  inset:5px;
+  border-radius:20px;
+  border:3px solid var(--hero-color,#7eeaff);
+}
+.ability .hud-atlas-crop img{
+  position:absolute;
+  width:200%;
+  height:200%;
+  max-width:none;
+  left:calc(var(--hud-col) * -100%);
+  top:calc(var(--hud-row) * -100%);
+  object-fit:fill;
+  filter:saturate(1.22) contrast(1.1);
+  pointer-events:none;
+}
+.ability .hud-spell-art:not(.hud-atlas-crop){display:none!important}

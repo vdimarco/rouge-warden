@@ -35,6 +35,7 @@ export function Hand({ cards, chainIds, legalIds, selectedIds, mode, shakeId, is
             type="button"
             className={classes.join(' ')}
             data-card={cardCode(card)}
+            data-id={card.id}
             data-legal={legal}
             aria-label={cardName(card)}
             aria-pressed={mode === 'redraw' ? selected : undefined}

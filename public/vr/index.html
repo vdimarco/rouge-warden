@@ -181,6 +181,16 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 #phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
 #phoneControls[hidden] { display:none; }
 #phoneControls button { pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; color:#fff6df; background:#111d2dd9; border:1px solid #e1bc7444; border-radius:24px; min-height:44px; padding:10px 16px; font:600 14px sans-serif; }
+/* comic speed lines for phone play: ink and cream streaks from the middle, clear in the centre so the target stays in view */
+.phone-rush { position:absolute; inset:-25%; opacity:0; pointer-events:none; will-change:transform,opacity; background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(20,10,24,0) 0deg 2.6deg, rgba(20,10,24,.85) 2.6deg 3.9deg, rgba(20,10,24,0) 3.9deg 6.2deg, rgba(255,249,234,.8) 6.2deg 7deg, rgba(20,10,24,0) 7deg 9.8deg, rgba(20,10,24,.75) 9.8deg 10.5deg, rgba(20,10,24,0) 10.5deg 13deg); -webkit-mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); }
+/* the climb pad: shown only on a wall, low on the left so the right thumb keeps the SWING button */
+.phone-climb { position:absolute; left:max(16px,env(safe-area-inset-left)); bottom:calc(env(safe-area-inset-bottom,0px) + 190px); display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; pointer-events:none; }
+.phone-climb button { pointer-events:auto; min-height:0 !important; padding:0 !important; border-radius:16px !important; font:bold 22px sans-serif !important; touch-action:none; }
+.phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
+.phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:bold 13px sans-serif !important; background:#e0482cdd !important; }
+/* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
+@media (min-height:481px) { body:has(.phone-climb:not([hidden])) .fs-sub, body:has(.phone-climb:not([hidden])) .fs-toast { visibility:hidden; } }
+@media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
 .phone-top { display:flex; justify-content:center; gap:8px; padding:max(12px,env(safe-area-inset-top)) 8px 0; }
 .phone-crosshair { position:absolute; left:50%; top:50%; width:18px; height:18px; border:2px solid #fff8; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 8px #0006; transition:border-color .12s,box-shadow .12s; }
 .target-ready .phone-crosshair { border-color:#95ffc8; box-shadow:0 0 16px #5fffbf66; }
@@ -191,6 +201,11 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 #phoneControls [data-action="throw"].held { background:linear-gradient(135deg,#b6f1dc,#60c3b5); }
 .phone-bottom small { color:#fff9; font:11px sans-serif; text-shadow:0 1px 4px #000; }
 #view canvas { touch-action:none; }
+/* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
+body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 66px); }
+body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 200px); }
+body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 260px); }
+@media (max-height:480px) { body:has(#phoneControls:not([hidden])) .fs-sub { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 118px); max-width:calc(100vw - 320px); } body:has(#phoneControls:not([hidden])) .fs-toast { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 170px); max-width:calc(100vw - 320px); } }
 @media (max-height:480px) { .phone-bottom { left:auto; width:260px; bottom:12px; } .phone-hint { font-size:12px; } #phoneControls [data-action="throw"] { width:220px; min-height:64px; } .phone-bottom small { display:none; } }
 </style>
 </head>
@@ -269,9 +284,18 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
         <li>Hold the left or right mouse button to shoot a rope from that hand. Let go of the button to let go of the rope.</li>
         <li>Hold <kbd>Shift</kbd> or turn the wheel to reel in.</li>
         <li>Press <kbd>F</kbd> to yank. Press <kbd>Space</kbd> to jump, or to yank in the air.</li>
-        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> walk. The mouse looks around.</li>
+        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. The mouse looks around.</li>
+        <li>Fly or walk into a wall to hold on to it. <kbd>W</kbd> and <kbd>S</kbd> climb up and down, <kbd>A</kbd> and <kbd>D</kbd> go along it. At the top you step on to the roof. <kbd>Space</kbd> jumps off, and a rope swings you off.</li>
         <li><kbd>Tab</kbd> opens the map. <kbd>Esc</kbd> pauses.</li>
         <li>A game pad works too.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Phone</h3>
+      <ul>
+        <li>Tap a building to swing. The rope lets go by itself and flings you on. Tap again while you fly.</li>
+        <li>A tap at the sky swings from the best building ahead. A tap on a clog plunges it.</li>
+        <li>Drag to look around. Hit a wall to hold on, then hold the arrows to climb, or tap JUMP.</li>
       </ul>
     </section>
   </div>

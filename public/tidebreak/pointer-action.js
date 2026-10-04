@@ -38,3 +38,30 @@ export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=(
   }
   return {reset};
 }
+
+
+export function screenMovementPointer(surface,{movement,enabled,onStart,onDragStart=()=>{},onTap=()=>{},threshold=12,radius=46}) {
+  let pointer=null,origin=null,dragging=false;
+  const reset=()=>{pointer=null;origin=null;dragging=false;movement.x=movement.y=0;};
+  const update=e=>{
+    if(e.pointerId!==pointer)return;
+    const x=e.clientX-origin.x,y=e.clientY-origin.y,dist=Math.hypot(x,y);
+    if(!dragging&&dist>=threshold){dragging=true;onDragStart();}
+    if(!dragging)return;
+    const denom=Math.max(radius,dist);
+    movement.x=x/denom;movement.y=y/denom;
+  };
+  surface.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||pointer!==null||e.button!==0||!enabled())return;
+    e.preventDefault();onStart();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};dragging=false;
+    surface.setPointerCapture?.(pointer);
+  });
+  surface.addEventListener('pointermove',update);
+  surface.addEventListener('pointerup',e=>{
+    if(e.pointerId!==pointer)return;
+    if(!dragging)onTap(e);
+    reset();
+  });
+  for(const event of ['pointercancel','lostpointercapture'])surface.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
+  return {reset,get active(){return pointer!==null;},get dragging(){return dragging;}};
+}

@@ -30,7 +30,7 @@ export function createFlatCam(camera, city) {
 
   const FC = {
     active: false,
-    yaw: 0, pitch: PITCH0, forward: new THREE.Vector3(0, 0, -1), firstPerson: false,
+    yaw: 0, pitch: PITCH0, forward: new THREE.Vector3(0, 0, -1), firstPerson: false, fovWant: null,
     pos: POS, dist: ARM, opacity: 1, following: false, blocked: false,
     // First person (the old view) or third. Turning the view between them eases over about half a second.
     setFirstPerson(b) { S.fp = !!b; FC.firstPerson = S.fp; },
@@ -105,7 +105,8 @@ export function createFlatCam(camera, city) {
       // the view widens with speed, eased; the two views have their own range, and the blend moves between them
       const tv = smooth(FOV_V[0], FOV_V[1], speed);
       const wantTP = FOV_TP[0] + (FOV_TP[1] - FOV_TP[0]) * tv, wantFP = FOV_FP[0] + (FOV_FP[1] - FOV_FP[0]) * tv;
-      const want = wantFP + (wantTP - wantFP) * S.blend;
+      // a phone sets its own faster curve (main writes fovWant each frame); else the two views' ranges, blended
+      const want = FC.fovWant != null ? FC.fovWant : wantFP + (wantTP - wantFP) * S.blend;
       if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * ease(dt, 4); camera.updateProjectionMatrix(); }
       if (hero) hero.setOpacity(FC.opacity);
       FC.firstPerson = S.fp;

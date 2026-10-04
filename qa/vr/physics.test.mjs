@@ -4,7 +4,7 @@
 // Exit code 1 on failure.
 import { generate } from "../../public/vr/js/city.js";
 import { createPlayer, fire, release, step, teleport } from "../../public/vr/js/physics.js";
-import { SWING, GAME, WORLD } from "../../public/vr/js/config.js";
+import { SWING, GAME, WORLD, CLIMB } from "../../public/vr/js/config.js";
 
 const fails = [];
 let passes = 0;
@@ -380,6 +380,94 @@ section("The first swing");
   check(det && det.speed >= 8 && minY > 3, `you let go at ${f2(relSpeed)} m/s after ${f2(relT)} s; the lowest feet were ${f2(minY)} m over the street`);
   const ok = after && !after.dead && (!after.ground || (after.collider && after.collider.tag === "building"));
   check(ok, `1.5 s after letting go you are ${after ? (after.ground ? "on a roof" : "still flying, " + f2(after.y) + " m up") : "?"} (you come down on ${where || "nothing yet"})`);
+}
+
+/* ---------------- wall climbing (flat play) ---------------- */
+section("Wall climbing");
+{
+  // a one-box building whose +x face stands on the street, with nothing else within 4 m of that face
+  const FLAT = { ...SWING, climb: CLIMB };
+  const one = city.colliders.filter((c) => c.type === "box" && c.tag === "building" && c.minY === 0 && c.maxY > 25 && c.maxY < 90 &&
+    city.colliders.filter((d) => d.bid === c.bid).length === 1);
+  const B = one.find((c) => {
+    const z = (c.minZ + c.maxZ) / 2;
+    for (let y = 0.5; y < c.maxY + 3; y += 1) if (city.collideSphere(c.maxX + 2, y, z, 1.6)) return false;
+    return !city.isWater(c.maxX + 1, z) && city.groundY(c.maxX + 1, z) < 0.5;
+  });
+  check(!!B, "a one-box building with a clear street face to climb" + (B ? ` (${B.maxY} m tall)` : ""));
+  if (B) {
+    const z = (B.minZ + B.maxZ) / 2, P = createPlayer(city, FLAT), gy = city.groundY(B.maxX + 1, z);
+    const climbIn = (up, x = 0, zz = 0, o = {}) => inp({ climb: { up, x, z: zz }, hands: [hand({ holding: false }), hand({ holding: false })], ...o });
+    // walk into the wall: it holds you
+    teleport(P, B.maxX + 1.5, gy, z);
+    let t = 0;
+    run(P, 120, () => { t++; return P.wall ? climbIn(0) : inp({ move: { x: -1, z: 0 }, hands: [hand({ holding: false }), hand({ holding: false })] }); }, { watch: false });
+    check(P.wall && Math.abs(P.wall.nx - 1) < 1e-6 && P.events.some((e) => e.type === "cling"), "walking into a wall grabs it (normal " + (P.wall ? f2(P.wall.nx) + ", " + f2(P.wall.nz) : "none") + ")");
+    // up: 6 m/s, the chest just off the wall
+    const y0 = P.pos.y;
+    run(P, 120, () => climbIn(1), { watch: false });
+    const gap = P.pos.x - B.maxX;
+    check(P.wall && Math.abs(P.pos.y - y0 - CLIMB.speed) < 0.1, `W climbs ${f2(P.pos.y - y0)} m in 1 s (speed ${CLIMB.speed} m/s)`);
+    check(Math.abs(gap - (FLAT.chestRadius + CLIMB.gap)) < 0.02 && P.vel.y > 5.9, `the chest stays ${f2(gap)} m off the wall while climbing`);
+    // sideways: along the wall, not off it
+    const z0 = P.pos.z, x0 = P.pos.x, yS = P.pos.y;
+    run(P, 30, () => climbIn(0, 0, 1), { watch: false });
+    check(P.wall && Math.abs(P.pos.z - z0 - CLIMB.speed * 0.25) < 0.05 && Math.abs(P.pos.x - x0) < 0.01 && Math.abs(P.pos.y - yS) < 1e-6, `A/D move along the wall (${f2(P.pos.z - z0)} m in 0.25 s) and nowhere else`);
+    // no input: you hang still
+    const still = { ...P.pos };
+    run(P, 120, () => climbIn(0), { watch: false });
+    check(P.wall && dist(still, P.pos) < 1e-6, "with no input you hold still on the wall (no gravity)");
+    // the top: step on to the roof
+    let topT = 0;
+    run(P, 1200, () => { if (P.wall) topT++; return climbIn(P.wall ? 1 : 0); }, { watch: false });
+    check(!P.wall && P.onGround && P.ground === B && Math.abs(P.pos.y - B.maxY) < 1e-6 && P.events.some((e) => e.type === "mantle"), `at the top you step on to the roof (${f2(P.pos.y)} m, ${f2(topT * h)} s more climbing)`);
+    // back on the wall at mid height, from the air: you fly into it and it holds you
+    teleport(P, B.maxX + 3, B.maxY / 2, z);
+    P.vel.x = -8;
+    run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
+    check(!!P.wall && !P.onGround, "flying into a wall grabs it in the air");
+    // down to the street: stand there
+    run(P, 1200, () => climbIn(P.wall ? -1 : 0), { watch: false });
+    check(!P.wall && P.onGround && Math.abs(P.pos.y - gy) < 1e-6, "S climbs down to the street and you stand there");
+    // jump off: out and up, and no grab again at once
+    teleport(P, B.maxX + 3, B.maxY / 2, z);
+    P.vel.x = -8;
+    run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
+    run(P, 1, () => climbIn(0, 0, 0, { jump: true }), { watch: false });
+    check(!P.wall && P.vel.x >= CLIMB.jump.out - 0.2 && P.vel.y > CLIMB.jump.up - 0.5, `Space jumps off the wall (vel ${f2(P.vel.x)} out, ${f2(P.vel.y)} up)`);
+    run(P, 12, () => inp({ hands: [hand({ holding: false }), hand({ holding: false })] }), { watch: false });
+    check(!P.wall, "you do not grab the same wall again right after the jump");
+    // a rope from the wall swings you off it
+    teleport(P, B.maxX + 3, B.maxY / 2, z);
+    P.vel.x = -8;
+    run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
+    const was = !!P.wall;
+    fire(P, 1, chestOf(P), { x: B.maxX + 30, y: B.maxY + 20, z, nx: -1, ny: 0, nz: 0, tag: "building", id: 1 });
+    check(was && !P.wall && P.ropes[1].state === "flying" && P.events.some((e) => e.type === "unclimb" && e.why === "rope"), "a rope fired from the wall lets go of it");
+    // the Needle, street to tip: the shaft, round the collars and the deck, up the pod, the mast and the antenna
+    {
+      const N = city.needle, NW = WORLD.needle, Q = createPlayer(city, FLAT), stops = [];
+      teleport(Q, NW.x, city.groundY(NW.x, NW.z + NW.shaftR + 1), NW.z + NW.shaftR + 1);
+      let lips = 0;
+      for (let leg = 0; leg < 5; leg++) {
+        // walk in toward the middle until a wall holds you, then climb until you stand on something
+        run(Q, 720, () => (Q.wall ? climbIn(0) : inp({ move: { x: 0, z: -1 }, hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
+        if (!Q.wall) break;
+        run(Q, 120 * 90, () => climbIn(Q.wall ? 1 : 0), { watch: false });
+        lips += Q.events.filter((e) => e.type === "lip").length; Q.events.length = 0;
+        if (!Q.onGround) break;
+        stops.push(Math.round(Q.pos.y));
+      }
+      check(stops.includes(NW.deckY) && stops.includes(NW.podY1) && stops[stops.length - 1] === NW.top && lips >= 5,
+        `you climb the Needle from the street to its tip: stands at ${stops.join(", ")} m, round ${lips} overhangs`);
+    }
+    // headset physics (no cfg.climb) never grabs
+    const Q = createPlayer(city);
+    teleport(Q, B.maxX + 3, B.maxY / 2, z);
+    Q.vel.x = -8;
+    run(Q, 120, () => inp({ hands: [hand({ holding: false }), hand({ holding: false })] }), { watch: false });
+    check(!Q.wall, "headset play does not climb");
+  }
 }
 
 /* ---------------- invariants ---------------- */

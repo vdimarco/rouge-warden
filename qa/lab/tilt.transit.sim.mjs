@@ -1,18 +1,26 @@
 // Deterministic contracts for cinematic travel, without a browser or render clock.
 import assert from 'node:assert/strict';
 import { createAdventure, launchAdventure, pulseAdventure, updateAdventure, chooseUpgrade,
-  skipAdventureFlight, currentSector, deployGravityWell } from '../../public/lab/tilt/adventure.js';
-import { H } from '../../public/lab/tilt/physics.js';
+  skipAdventureFlight, currentSector, deployGravityWell, forecastAdventureFlip } from '../../public/lab/tilt/adventure.js';
+import { H, setFlip } from '../../public/lab/tilt/physics.js';
 import { createCamera, updateCamera, worldToScreen, screenToWorld } from '../../public/lab/tilt/camera.js';
 import { TRANSIT_DURATION, REDUCED_TRANSIT_DURATION, sampleTransit, visibleSectorIds,
   galaxyNode } from '../../public/lab/tilt/transit.js';
 
 function reachUpgrade() {
   const run = createAdventure(8);
-  // Ordinary launch and pulse inputs complete a real sector. No scoring flags or positions change.
+  // Ordinary launch, pulse and flip inputs complete a real sector. No scoring flags or positions
+  // change. Pulse alone no longer clears a world, so the flipper presses when the cue closes.
+  let press = null, hold = 0;
   for (let i = 0; i < 60 / H && run.phase !== 'upgrade'; i++) {
     if (run.phase === 'ready') launchAdventure(run, .35);
     if (run.phase === 'play' && run.pulseCooldown <= 0) pulseAdventure(run);
+    if (run.phase === 'play' && !press && !hold) {
+      const cue = forecastAdventureFlip(run, .5);
+      if (cue && !cue.held && cue.ideal < .3) press = { side: cue.side, at: run.clock + cue.ideal };
+    }
+    if (press && run.clock >= press.at - 1e-9) { setFlip(run.world, press.side, true); hold = .2; press = null; }
+    if (hold && (hold -= H) <= 0) { hold = 0; setFlip(run.world, -1, false); setFlip(run.world, 1, false); }
     updateAdventure(run);
   }
   assert.equal(run.phase, 'upgrade');

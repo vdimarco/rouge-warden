@@ -446,16 +446,16 @@ try {
   const subd = await page.evaluate(() => ({ sub: document.querySelector("[data-k=sub]").textContent, on: document.querySelector("[data-k=sub]").classList.contains("on"), toast: document.querySelector("[data-k=toast]").textContent }));
   check(subd.sub === "Aim high." && subd.on && subd.toast === "+5", "subtitles and toasts show in the page", subd);
   await shot(page, "ui-desktop-hud");
-  // sayLine reads the words for the input kind: the mouse and a gamepad the desktop lines, a phone the touch lines, hands their own
+  // sayLine reads the words for the input kind: the mouse and a gamepad the desktop lines, a phone the phone lines, hands their own
   const kinds = await page.evaluate(async () => {
     const C = await import("./js/config.js");
     const say = (k) => G.ui.sayLine("tutorial", 3, k);
-    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantTouch: C.LINES_TOUCH && C.LINES_TOUCH.tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
+    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantTouch: C.LINES_PHONE && C.LINES_PHONE.tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
   });
   check(kinds.mouse === kinds.want && kinds.pad === kinds.want && kinds.touch === kinds.wantTouch && kinds.hand === kinds.wantHand && kinds.controller === kinds.wantController, "sayLine picks the lines by input kind: mouse and pad read the desktop lines, touch the touch lines", kinds);
-  // config.js has the touch lines: the same keys, order and counts as the desktop lines, other words, and no em dashes
+  // config.js has the phone lines: the same keys, order and counts as the desktop lines, other words, and no em dashes
   const touch = await page.evaluate(async () => {
-    const C = await import("./js/config.js"), T = C.LINES_TOUCH, D = C.LINES_DESKTOP;
+    const C = await import("./js/config.js"), T = C.LINES_PHONE, D = C.LINES_DESKTOP;
     if (!T) return null;
     const keys = Object.keys(D);
     return {
@@ -466,7 +466,7 @@ try {
       dash: [].concat(...Object.values(T)).filter((l) => /[–—]/.test(l)),
     };
   });
-  check(touch && touch.keys && touch.counts && touch.own && touch.mouseWords.length === 0 && touch.dash.length === 0, "config.js has LINES_TOUCH: the keys and order of LINES_DESKTOP, its own words for the phone, no mouse or em dash", touch);
+  check(touch && touch.keys && touch.counts && touch.own && touch.mouseWords.length === 0 && touch.dash.length === 0, "config.js has LINES_PHONE: the keys and order of LINES_DESKTOP, its own words for the phone, no mouse or em dash", touch);
   // Esc opens the menu (the game's own key), and the menu has the options
   await page.keyboard.press("Escape");
   await page.evaluate(() => G.test.step(1 / 60, 2));

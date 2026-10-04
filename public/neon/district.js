@@ -17,7 +17,7 @@ export class District {
     this.hemi=new THREE.HemisphereLight('#fff0d2','#496268',2.6);this.scene.add(this.hemi);
     const sun=new THREE.DirectionalLight('#ffdda1',3.2);sun.position.set(-15,25,8);this.scene.add(sun);this.sun=sun;
     this.materials={};this.solids=[];this.keys=new Set();this.move={x:0,y:0};this.yaw=0;this.pitch=0;this.roll=0;
-    this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
+    this.position=new THREE.Vector3(0,1.65,8);this.clock=0;this.lookedAt=-9;this.active=false;this.collected=0;this.orbs=[];this.lamps=[];
     this.build();this.batchScenery();this.citySolids=this.solids;this.cityScenery=this.scene.children.filter(c=>!c.isLight&&!this.orbs.some(o=>o.mesh===c));this.alienWorld=new AlienWorld(this.scene);this.makeEnemy();this.makePortal();this.fighterTemplate=this.actor;this.style="ghibli";this.drones=[];this.dash=0;this.dashCooldown=0;this.dashVector={x:0,z:-1};this.rollTime=0;this.evade=0;this.wire();this.resize();
   }
   // Merge static geometry by material once. Moving actors and pickups stay separate.
@@ -160,20 +160,42 @@ export class District {
   }
   selectFighter(f){const c=this.crowd?.find(c=>c.fighter===f);if(c){this.actor=c.mesh;this.selected=f}}
   fighterDistance(f){const c=this.crowd?.find(c=>c.fighter===f);return c?Math.hypot(c.mesh.position.x-this.position.x,c.mesh.position.z-this.position.z):Infinity}
+  // Angle from the view direction to a point, in radians. Positive is to the left.
+  bearing(p){const a=Math.atan2(this.position.x-p.x,this.position.z-p.z)-this.yaw;return Math.atan2(Math.sin(a),Math.cos(a))}
+  // Half the horizontal field of view. A portrait phone sees about 17 degrees to each side.
+  halfView(){return this.camera?Math.atan(Math.tan(this.camera.fov*Math.PI/360)*this.camera.aspect):.3}
+  // True when the fighter's chest is inside the frame, with a margin at the edges.
+  inView(f,margin=.1){const c=this.crowd?.find(c=>c.fighter===f);if(!c||!c.mesh.visible)return false;
+    const p=c.mesh.position;if(Math.abs(this.bearing(p))>Math.PI/2)return false;
+    this.camera.position.copy(this.position);this.camera.rotation.set(this.pitch,this.yaw,this.roll,'YXZ');this.camera.updateMatrixWorld();
+    const v=(this.probe??=new THREE.Vector3()).set(p.x,1.2,p.z).project(this.camera);return Math.abs(v.x)<1-margin&&Math.abs(v.y)<1-margin}
+  // A soft lock-on: turns the view smoothly toward a fighter. A dead zone keeps small steps still.
+  turnToward(f,dt,rate=3,dead=0){const c=this.crowd?.find(c=>c.fighter===f);if(!c||f.hp<=0)return;const b=this.bearing(c.mesh.position),excess=Math.sign(b)*Math.max(0,Math.abs(b)-dead),turn=excess*(1-Math.exp(-dt*rate));this.yaw+=Math.max(-dt*3.5,Math.min(dt*3.5,turn))}
+  // The duel's view rules. A fighter may start an attack only in reach and on screen.
+  canEngage(f){return this.fighterDistance(f)<3.6&&this.inView(f)}
+  // Touch lock-on: during a windup the view turns quickly to the attacker; at other times it turns
+  // gently to the chosen fighter. After a drag on the look pad, the player keeps the view for a moment.
+  assist(active,chosen,dt){if(this.clock-this.lookedAt>.8)this.turnToward(active||chosen,dt,active?7:2.5,active?0:.12)}
   chooseFighter(active){
     const living=this.crowd?.filter(c=>c.fighter.hp>0)||[];
-    const rank=c=>{const dx=c.mesh.position.x-this.position.x,dz=c.mesh.position.z-this.position.z,n=Math.hypot(dx,dz);return (-Math.sin(this.yaw)*dx-Math.cos(this.yaw)*dz)/(n||1)*8-n*.3+(active===c.fighter?2:0)};
+    // The current target keeps a small bonus, so two close fighters do not swap every frame.
+    const rank=c=>{const dx=c.mesh.position.x-this.position.x,dz=c.mesh.position.z-this.position.z,n=Math.hypot(dx,dz);return (-Math.sin(this.yaw)*dx-Math.cos(this.yaw)*dz)/(n||1)*8-n*.3+(active===c.fighter?2:0)+(this.selected===c.fighter?.6:0)};
     living.sort((a,b)=>rank(b)-rank(a));if(living.length)this.selectFighter(living[0].fighter);return this.selected;
   }
-  updateCrowd(dt){for(const c of this.crowd){const f=c.fighter;c.mesh.visible=f.hp>0;if(!c.mesh.visible)continue;const p=c.mesh.position,dx=this.position.x-p.x,dz=this.position.z-p.z,n=Math.hypot(dx,dz);const nx=dx/(n||1),nz=dz/(n||1);
+  updateCrowd(dt){const band=Math.min(.26,this.halfView()*.7);for(const c of this.crowd){const f=c.fighter;c.mesh.visible=f.hp>0;if(!c.mesh.visible)continue;const p=c.mesh.position,dx=this.position.x-p.x,dz=this.position.z-p.z,n=Math.hypot(dx,dz);const nx=dx/(n||1),nz=dz/(n||1);
     const reach=f.attack==='lunge'?2.5:2.9;
     let forward=f.phase==='open'?-.5:n>reach?4.8:n<1.9?-2.2:0;
+    // Fighters circle only inside the view: at most 15 degrees to each side, less on a narrow
+    // portrait screen. Outside that band they circle back toward the middle of the view.
+    const b=this.bearing(p);if(Math.abs(b)>band)c.orbit=b>0?-1:1;
     let sideways=f.phase==='guard'?c.orbit*(1.8+Math.sin(this.clock*1.7+f.id)*.6):f.phase==='recover'?c.orbit*1.2:0;
     if(f.phase==='windup'){forward=f.attack==='lunge'&&f.timer<.22?8:f.attack==='sweep'?.8:0;sideways=0}
     let mx=(nx*forward-nz*sideways)*dt,mz=(nz*forward+nx*sideways)*dt;
     for(const other of this.crowd){if(other===c||other.fighter.hp<=0)continue;const ox=p.x-other.mesh.position.x,oz=p.z-other.mesh.position.z,d=Math.hypot(ox,oz);if(d<1.4&&d>.01){mx+=ox/d*dt*2;mz+=oz/d*dt*2}}
-    if(!this.collides(p.x+mx,p.z,.5)&&Math.hypot(p.x+mx-this.position.x,p.z-this.position.z)>1.1)p.x+=mx;
-    if(!this.collides(p.x,p.z+mz,.5)&&Math.hypot(p.x-this.position.x,p.z+mz-this.position.z)>1.1)p.z+=mz;
+    // Fighters keep 1.1 m from the player. One that is already closer may still step away.
+    const room=(x,z)=>Math.hypot(x-this.position.x,z-this.position.z)>Math.min(1.1,Math.hypot(p.x-this.position.x,p.z-this.position.z));
+    if(!this.collides(p.x+mx,p.z,.5)&&room(p.x+mx,p.z))p.x+=mx;
+    if(!this.collides(p.x,p.z+mz,.5)&&room(p.x,p.z+mz))p.z+=mz;
     for(let i=0;i<c.legs.length;i++)if(c.legs[i])c.legs[i].rotation.x=Math.sin(this.clock*10+i*Math.PI)*Math.min(.5,Math.hypot(mx,mz)/(dt||1)*.1);
     c.mesh.lookAt(this.position.x,0,this.position.z);const progress=f.phase==='windup'?1-Math.max(0,f.timer/f.period):0;
     if(c.arm){
@@ -218,13 +240,16 @@ export class District {
     else{d.timer-=dt;if(d.timer<=0)d.phase='chase'}
   }}
   collides(x,z,r=.36){return Math.abs(x)>43||z< -43||z>42||this.solids.some(b=>Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r)}
-  target(){const v=this.actor.position.clone();v.y=1.2;v.project(this.camera);return {x:(v.x*.5+.5)*viewport.width,y:(-.5*v.y+.5)*viewport.height}}
-  canStrike(){
-    if(!this.actor.visible)return false;
-    const dx=this.actor.position.x-this.position.x,dz=this.actor.position.z-this.position.z;
+  target(mesh=this.actor){const v=mesh.position.clone();v.y=1.2;v.project(this.camera);return {x:(v.x*.5+.5)*viewport.width,y:(-.5*v.y+.5)*viewport.height}}
+  canStrike(mesh=this.actor){
+    if(!mesh.visible)return false;
+    const dx=mesh.position.x-this.position.x,dz=mesh.position.z-this.position.z;
     const distance=Math.hypot(dx,dz),facing=(-Math.sin(this.yaw)*dx-Math.cos(this.yaw)*dz)/(distance||1);
     return distance<3.5&&facing>.72;
   }
+  // The fighter a cut hits: the nearest open guard in reach, so a group cannot hide an opening.
+  // Otherwise the chosen fighter.
+  strikeTarget(chosen){const open=(this.crowd||[]).filter(c=>c.fighter.hp>0&&c.fighter.phase==='open'&&this.canStrike(c.mesh)).sort((a,b)=>this.fighterDistance(a.fighter)-this.fighterDistance(b.fighter));return open[0]?.fighter||chosen}
   resize(){this.camera.aspect=viewport.width/viewport.height;this.camera.updateProjectionMatrix();this.renderer.setSize(viewport.width,viewport.height)}
   reset(){this.retireCrowd();this.actor=this.fighterTemplate;this.clearDrones();this.dash=0;this.dashCooldown=0;this.rollTime=0;this.evade=0;this.position.set(0,1.65,8);this.yaw=0;this.pitch=0;this.roll=0;this.collected=0;for(const o of this.orbs){o.available=true;o.timer=0;o.mesh.visible=true}this.clearInput()}
   beginMotionView(){
@@ -249,12 +274,13 @@ export class District {
     stick.onpointerdown=e=>{if(!this.active)return;this.stickDashed=false;this.stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);move(e)};stick.onpointermove=move;
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,()=>{this.stickPointer=null;this.move={x:0,y:0};nub.style.transform='translate(0,0)'});
     look.onpointerdown=e=>{if(!this.active||this.motionView)return;look.setPointerCapture(e.pointerId);this.look={id:e.pointerId,...viewportPoint(e)}};
-    look.onpointermove=e=>{if(this.look?.id!==e.pointerId)return;const point=viewportPoint(e);this.yaw-=(point.x-this.look.x)*.005;this.pitch=Math.max(-.45,Math.min(.45,this.pitch-(point.y-this.look.y)*.003));this.look.x=point.x;this.look.y=point.y};
+    look.onpointermove=e=>{if(this.look?.id!==e.pointerId)return;const point=viewportPoint(e);this.lookedAt=this.clock;this.yaw-=(point.x-this.look.x)*.005;this.pitch=Math.max(-.45,Math.min(.45,this.pitch-(point.y-this.look.y)*.003));this.look.x=point.x;this.look.y=point.y};
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(ev,()=>this.look=null);
     addEventListener('keydown',e=>{if(this.active&&e.code==='Space'&&!e.repeat){e.preventDefault();this.requestRoll()}if(this.active&&e.code==='ShiftLeft')this.requestDash(this.move.x,this.move.y||-1);if(this.active&&['KeyW','KeyA','KeyS','KeyD'].includes(e.code)){this.keys.add(e.code);e.preventDefault()}});
     addEventListener('keyup',e=>this.keys.delete(e.code));addEventListener('blur',()=>this.clearInput());
   }
-  update(dt,active,enemy){
+  // render=false moves the world without drawing it, for tests that step game time.
+  update(dt,active,enemy,render=true){
     if(this.active&&!active)this.clearInput();this.active=active;this.clock+=dt;if(!active)this.moveAmount=0;
     if(active){
       this.evade=Math.max(0,this.evade-dt);this.rollTime=Math.max(0,this.rollTime-dt);this.dashCooldown=Math.max(0,this.dashCooldown-dt);if(this.dash>0){const step=Math.min(dt,this.dash);this.moveSafe(this.dashVector.x*24*step,this.dashVector.z*24*step);this.dash=Math.max(0,this.dash-dt)}
@@ -283,9 +309,10 @@ export class District {
     }
     for(const o of this.orbs){o.mesh.position.y=1.1+Math.sin(this.clock*2+o.x)*.12;o.mesh.rotation.y=this.clock}
     if(this.portal.visible)this.portalSwirl.rotation.z=this.clock*.7;this.alienWorld.update(this.clock);
-    const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5));if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
+    // focus: a short lean-in after a parry or an overdrive cut.
+    const fov=68+(this.dash>0?10:Math.min(5,(this.moveAmount||0)*5))-(this.focus>0?10:0);this.focus=Math.max(0,(this.focus||0)-dt);if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov+=(fov-this.camera.fov)*(1-Math.exp(-dt*12));this.camera.updateProjectionMatrix()}
     this.camera.position.copy(this.position);const rollDip=this.rollTime>0?Math.sin(Math.PI*(1-this.rollTime/.34)):0;this.camera.position.y-=rollDip*.48;this.camera.rotation.set(this.pitch+rollDip*.08,this.yaw,this.roll,'YXZ');
-    this.renderer.render(this.scene,this.camera);
+    if(render)this.renderer.render(this.scene,this.camera);else this.camera.updateMatrixWorld();
   }
 }
 
