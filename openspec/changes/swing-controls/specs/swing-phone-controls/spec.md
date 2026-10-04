@@ -89,13 +89,14 @@ Where `navigator.vibrate` exists, the phone SHALL vibrate for 15 ms on attach, 2
 - **THEN** no error shows in the console, because the stub has `marker`, `pop` and `buzz`
 
 ### Requirement: Buttons are big enough for a thumb and match the comic style
-Every visible phone button SHALL be at least 48 by 48 CSS px. The buttons SHALL use the comic caption style of the HUD: a thick ink border, a hard shadow and Bangers lettering. They SHALL keep clear of the safe areas. The page SHALL NOT scroll sideways. The top row SHALL hold up to four buttons (MOTION, CENTER, VIEW and PAUSE), SHALL NOT wrap and SHALL NOT overflow. Motion aim is on from PLAY on Android and after Allow on iOS, so the row SHALL fit four buttons. The top buttons SHALL NOT cover the score pills, and the spoken line SHALL NOT cover the SWING panel.
+Every touch area of a visible phone button SHALL be at least 48 by 48 CSS px. The top-row buttons SHALL have boxes 46 px high with a hit area of at least 48 px: a touch 1 px outside any side of such a box SHALL still hit the button. Every other button box SHALL be 48 by 48 px or larger. The buttons SHALL use the comic caption style of the HUD: a thick ink border, a hard shadow and Bangers lettering. They SHALL keep clear of the safe areas. The page SHALL NOT scroll sideways. The top row SHALL hold up to four buttons (MOTION, CENTER, VIEW and PAUSE), SHALL NOT wrap and SHALL NOT overflow. Motion aim is on from PLAY on Android and after Allow on iOS, so the row SHALL fit four buttons. The top buttons SHALL NOT cover the score pills, and the spoken line SHALL NOT cover the SWING panel. The tail of the spoken line hangs 27 px under its box, so the tail SHALL NOT cover the SWING panel either, and each line the hint over SWING can say SHALL fit on one line of a 360 px phone.
 
 #### Scenario: Portrait with motion aim on
 - **WHEN** the phone is 390 by 844, the sensors are granted so that all four top buttons show, and a spoken line shows
-- **THEN** every visible button is 48 by 48 px or larger
+- **THEN** every visible button has a touch area of 48 by 48 px or more
+- **AND** the top buttons are 46 px high, a touch 1 px outside any side of one still hits it, and every other button box is 48 by 48 px or more
 - **AND** the top row is one line, inside the viewport
-- **AND** the top buttons do not overlap the score pills, the line does not overlap the SWING panel, and the page does not scroll sideways
+- **AND** the top buttons do not overlap the score pills, the line and its tail do not overlap the SWING panel, and the page does not scroll sideways
 
 #### Scenario: Portrait with motion aim off
 - **WHEN** the phone is 390 by 844 and the sensors are denied, so that three buttons show
@@ -104,6 +105,7 @@ Every visible phone button SHALL be at least 48 by 48 CSS px. The buttons SHALL 
 #### Scenario: The narrowest phone
 - **WHEN** the phone is 360 by 740 with all four top buttons
 - **THEN** the top row is one line, inside the viewport
+- **AND** with a spoken line showing, each line the hint over SWING can say fits on one line, and the tail of the spoken line clears the SWING panel
 
 #### Scenario: Landscape
 - **WHEN** the phone is 844 by 390 and shows a spoken line

@@ -59,7 +59,7 @@ The numbers set these decisions: a variety rule, a view lift, a second search ti
 
 - A device with no touch point plays the mouse and pad scheme.
 - A device with touch points and no fine pointer (`any-pointer: fine` is false) plays the phone scheme. This is a phone or a tablet.
-- A device with touch points and a fine pointer (a touch laptop, a 2-in-1, a handheld PC) shows two buttons on the title: PLAY WITH TOUCH and PLAY WITH MOUSE AND KEYBOARD. The player chooses. PLAY WITH MOUSE AND KEYBOARD calls `mobile.use(false)`. From then on `mobile.enabled` is false for the session, the pointer lock works, the pad is read and the phone panel stays hidden.
+- A device with touch points and a fine pointer (a touch laptop, a 2-in-1, a handheld PC) shows two buttons on the title: PLAY WITH TOUCH and PLAY WITH MOUSE AND KEYBOARD. The player chooses. PLAY WITH MOUSE AND KEYBOARD calls `mobile.use(false)`. From then on `mobile.enabled` is false, the pointer lock works, the pad is read and the phone panel stays hidden. PLAY WITH TOUCH calls `mobile.use(true)`, so a player who chose the mouse and then leaves to the title and presses PLAY WITH TOUCH gets the phone scheme back, with `body[data-device]` set to touch. RE-ENTER keeps the scheme that was in use.
 - On every touch device `#playFlat` keeps its position and its touch behaviour, so the three phone tests, which fake only `maxTouchPoints`, run unchanged.
 
 Why a choice and not a guess: a stricter test needs the three phone e2e tests to fake `matchMedia` too. A choice leaves them alone and needs no guess about hardware.
@@ -129,7 +129,7 @@ The left mouse button, when a rope is out: the button that holds a rope is down,
 | Wheel | Any event reels 0.15 s | Events with Ctrl or Meta do nothing. A flick reels at most 0.3 s in any 0.5 s | A trackpad pinch is Ctrl plus wheel. Scroll momentum is a long stream of events |
 | Map key | Tab opens it | Tab. A second press closes it | M stays the mute key from `full-swing-rings-map-sound` (#182). A key player needs a close key |
 | Keys with Ctrl, Meta or Alt | Count as the plain key | Do nothing | Ctrl+F, Ctrl+R and Cmd+W must not yank, steer or close |
-| Rope trigger setting | Honoured in flat play, but only a headset menu shows it | Honoured in flat play on a computer and a pad. The flat Comfort menu shows "Rope trigger" | A player who cannot hold a button needs it. E, Q and the triggers follow it. The phone auto releases and ignores it |
+| Rope trigger setting | Honoured in flat play, but only a headset menu shows it | Honoured in flat play on a computer and a pad. The flat Comfort menu shows "Rope trigger" for a mouse and a pad, and not for a phone | A player who cannot hold a button needs it. E, Q and the triggers follow it. The phone auto releases and ignores it, so its Comfort page has neither this row nor "Release cue" |
 | Resume click | The click that resumes from a pause also fires a rope | That click starts no swing. A click that asks for the pointer lock starts no swing | A stray rope, and with a kick a stray jump, is a bug |
 | Closing the map | Nothing closes it from the keyboard, and the pointer stays unlocked | Tab and Esc close it. Tab asks for the lock again | Mouse look needs the lock |
 | Page keys in a pause | Tab, Space and the arrows are swallowed whenever flat play is on | They keep their page meaning while paused or while a dialog has focus | A key player must reach the menu buttons |
@@ -147,7 +147,7 @@ The left mouse button, when a rope is out: the button that holds a rope is down,
 | Phone VIEW | None | A VIEW button | The eye form of V |
 | Phone Center | Always shown | Shown only while motion aim is on | It does nothing else. Motion aim is on by default on Android, so Center shows there |
 | Phone centre ring | A ring at the screen centre | A ring on the target. The centre ring shows only in first person | The centre is the hero in third person |
-| Phone buttons | Small, plain | At least 48 by 48 CSS px, in the comic style of the HUD | A thumb needs the room. The look matches the key art |
+| Phone buttons | Small, plain | Every touch area at least 48 by 48 CSS px (the top row: boxes 46 px high with a 50 px hit area), in the comic style of the HUD | A thumb needs the room. The look matches the key art. The top row stays 46 px high because `phone-swing.e2e.mjs` reads a taller top button as a second row |
 | Catch feedback | Haptics on a headset only | Phone: vibration, and a pop of the ring on every device | iPhone has no `navigator.vibrate`. The pop works everywhere |
 | Title labels | PLAY ON PHONE | PLAY WITH TOUCH, and PLAY WITH MOUSE AND KEYBOARD on a touch device with a fine pointer | A tablet is not a phone. A touch laptop needs a choice |
 
@@ -345,7 +345,7 @@ When the projected centre of the target lies inside the window, the ring sits on
 **The release cue.** On a computer or a pad, `releaseWindow(body, rope)` in `target.js` is true in one of two cases. The rope must be attached to a building. A clog, a pipe or the crack never gives a cue.
 
 - The swing case: the body is in the air, rising, and moving away from the point under the anchor, and the angle from straight down is 25 to 60 degrees (`TARGET.cue`).
-- The drag case: the body has been dragged along a roof or a street for 0.5 s with the rope attached.
+- The drag case: the body is on a roof or a street and has been dragged along it for 0.5 s with the rope attached. The drag time starts again from 0 whenever the body is off the ground, and the drag case holds only on the ground. A body that walks off the roof edge with the rope on gets no cue on its first frame in the air.
 
 While the window is open, `m.go` is true. The ring pulses and a caption reads LET GO. With no ring, the caption sits at the top of the safe window. The flat Comfort menu has "Release cue: On / Off" (`settings.cue`, default on). The phone does not show the cue, because it lets go by itself.
 
@@ -391,6 +391,12 @@ Two assists run only for a rope that a real swing input fired. A rope fired by `
 
 There is no auto release on a computer. The release cue tells the player when. A headset player has no cue either, and the headset does not change.
 
+### The start roof (decision D1)
+
+Holding only the swing input does not take the hero off the start roof. The rope attaches to the tower at the gold ring, the kick slides the hero across the roof, and friction stops him on it. A hop did not help in the bot study (the first swing lands on the same roof again). Physics does not change. So the first mouse line and the key strip tell the player to hold W with the left mouse button (E also works), and the pad lines tell the player to hold the left stick up with the right trigger. With the stick or W the hero walks to the edge while the rope pulls, and the rope takes him off the roof.
+
+Measured by `flat.mjs` on this build, in game time from the press: with W and the left button the hero is in the air after 3.1 to 3.3 s. With the left stick up and RT it is 3.1 to 3.3 s. With the swing input alone the hero is still on the roof after 6 s. The check bound is 4 s. `flat.mjs` also checks the cue: while the rope drags the hero along the roof the LET GO caption shows, and the first frame in the air gives none.
+
 ## Desktop and pad input
 
 `desktop.js` merges the keyboard, the mouse, the pad and the phone panel. It outputs these logical inputs.
@@ -418,8 +424,10 @@ There is no auto release on a computer. The release cue tells the player when. A
 
 `desktop.js` makes `#keyHints`, a comic caption strip at the bottom of the screen. `main.js` calls `D.hints(on)` each frame. It is on while the state is "play", the saved tutorial is not finished (`!save.tutorial`), fewer than 60 s of play time have passed, and the kind is "mouse" or "pad". It never shows on touch. The phone has its own `.phone-hint`.
 
-- Mouse: HOLD LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. W: STEER.
-- Pad: HOLD RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK. LEFT STICK: STEER.
+- Mouse: HOLD W AND LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK.
+- Pad: HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
+
+The first item names W (or the left stick) because the swing input alone does not take the hero off the start roof (see "The start roof"). The strip has three items, so its text fits inside the strip at 640 by 360 and `flat.mjs` checks that the text is not cut off.
 
 The strip is at most 36 px high and sits 10 px above the bottom edge. While it shows, `desktop.js` adds a class to the body that raises `.fs-sub` by 52 px and `.fs-toast` with it. The tail of the speech bubble hangs 27 px below the box of `.fs-sub`, so the check measures the tail too. The strip never covers the score pills. It has no JUMP slot, because a swing needs no jump key. F and the yank come in the tutorial.
 
@@ -429,7 +437,7 @@ The strip is at most 36 px high and sits 10 px above the bottom edge. While it s
 
 `LINES_DESKTOP` changes these lines. The others stay. `intro` is unchanged, because the opening keeps the exact aim.
 
-- tutorial 0: "Look at the gold ring. Hold the left mouse button."
+- tutorial 0: "Look at the gold ring. Hold W and the left mouse button."
 - tutorial 1: "Swing out. Let go when the ring says GO."
 - tutorial 2: "Swing again before you land."
 - tutorial 5: "Move the mouse to look around."
@@ -441,7 +449,7 @@ The strip is at most 36 px high and sits 10 px above the bottom edge. While it s
 `LINES_PAD` is new.
 
 - intro 0 to 5: "Shoes off. Plunger up." "Hear that? Something is backing up." "Aim at the crack. Hold the right trigger." "Now press the right bumper to yank." "Clear the space around you." "Give yourself some room."
-- tutorial 0: "Look at the gold ring. Hold the right trigger."
+- tutorial 0: "Look at the gold ring. Hold the left stick up and the right trigger."
 - tutorial 1: "Swing out. Let go when the ring says GO."
 - tutorial 2: "Swing again before you land."
 - tutorial 3: "Hold the left bumper to reel in."
@@ -501,10 +509,10 @@ The title shows `#deskNote` on a computer (the swing, W, and "a game pad works a
 ## The phone panel
 
 - The top row has up to four buttons: MOTION, CENTER (only while motion aim is on), VIEW and PAUSE. Motion aim is on from PLAY on Android, and after Allow on iOS. So the usual row on Android has all four.
-- Width budget: the row never wraps and never overflows. Each button is at least 48 px high and 48 px wide. Labels are at most 6 letters (Bangers 18 px), padding 0 8 px, border 3 px, hard shadow 3 px, gap 6 px. At 360 px wide the four buttons fit between the safe areas. B tests the row with the sensors granted and denied, at 360 by 740, 390 by 844 and 844 by 390.
-- `.fs-top` starts below the row: top is the safe inset plus 12 px plus 48 px plus 8 px of shadow plus 6 px, so 74 px.
+- Width budget: the row never wraps and never overflows. Every touch area is at least 48 by 48 px. The top-row boxes are 46 px high with a hit area of 50 px (an `::after` box 2 px past each side, inside the 6 px gap), because `phone-swing.e2e.mjs`, which this change does not edit, reads a taller top button as a second row. Every other button box is 48 by 48 px or more. Labels are at most 6 letters (Bangers 18 px), padding 0 8 px, border 3 px, hard shadow 3 px, gap 6 px. At 360 px wide the four buttons fit between the safe areas. B tests the row with the sensors granted and denied, at 360 by 740, 390 by 844 and 844 by 390.
+- `.fs-top` starts below the row: top is the safe inset plus 74 px (12 px of padding, the 46 px row, its shadow and a gap).
 - In portrait the score pills go in one row (24 px numbers, no small suffix) when the width is under 480 px. The safe window of the marker is at least 55 percent of the height at 390 by 844 and 45 percent at 844 by 390. B tunes the pills until the check passes.
-- A spoken line never covers the SWING panel, as today.
+- A spoken line never covers the SWING panel, as today. Its tail hangs 27 px under its box, and the spoken line leaves room for one line of hint over SWING, so each hint line fits on one line of a 360 px phone (about 42 letters at most). A hint that wraps lifts the panel into the tail. `phone-controls.e2e.mjs` measures the tail against the panel for every hint line at 360 by 740, 390 by 844 and 844 by 390. There is no footnote under the SWING button (the old line "Tap to swing, the rope lets go by itself, drag to look" was removed to give the safe window more height).
 
 ## Numbers in `config.js`
 
@@ -522,7 +530,7 @@ export const TARGET = {
   recent: { penalty: 0.6, count: 2, secs: 8 },
   special: { enter: 22, leave: 28, range: 60, pipeFacing: 60, tap: 16 },
   ring: { bearing: 35, range: 80 },                             // the gold ring in tutorial step 0
-  hold: { margin: 0.2, dwell: 0.2 },                            // margin is SWING.targetSwitchMargin
+  hold: { margin: SWING.targetSwitchMargin, dwell: 0.2 },        // a challenger must score this much higher (0.2) to replace the held target
   bias: { steepHoriz: 0.34 },                                   // a tap ray with a smaller horizontal part gives no bias
   cue: { from: 25, to: 60, drag: 0.5 },                         // degrees past the bottom; s dragged on the ground
   side: 6,                                                      // degrees: below this, the hands alternate
@@ -543,7 +551,7 @@ Agent A owns the auto target and the desktop and pad input. Agent B owns the pho
 
 | Agent | Owns (edits) |
 |---|---|
-| A | `public/vr/js/target.js` (new), `desktop.js`, `main.js`, `config.js`, `flatcam.js`, `ui.js` (the `sayLine` table and its import line, and the `desk` branch of the Comfort page: the "Rope trigger" and "Release cue" rows), `sw.js`, `qa/vr/flat.mjs` (new), `qa/vr/target.test.mjs` (new), `qa/vr/hero.mjs`, `qa/vr/boot.mjs`, `qa/vr/ui.mjs`, `quest/twa-manifest.json`, `.github/workflows/swing-browser.yml` |
+| A | `public/vr/js/target.js` (new), `desktop.js`, `main.js`, `config.js`, `flatcam.js`, `ui.js` (the `sayLine` table and its import line, and the `desk` branch of the Comfort page: the "Rope trigger" and "Release cue" rows, for a mouse and a pad and not for a phone), `sw.js`, `qa/vr/flat.mjs` (new), `qa/vr/target.test.mjs` (new), `qa/vr/hero.mjs`, `qa/vr/boot.mjs`, `qa/vr/ui.mjs`, `quest/twa-manifest.json`, `.github/workflows/swing-browser.yml` |
 | B | `public/vr/js/mobile.js`, `public/vr/index.html`, `qa/vr/mobile-panel.test.mjs` (new), `qa/vr/phone-controls.e2e.mjs` (new) |
 | Nobody (read and run, never edit) | `physics.js`, `city.js`, `rope.js`, `hands.js`, `hero.js`, `game.js`, `qa/vr/lib.mjs`, `qa/vr/climb.e2e.mjs`, `qa/vr/play.mjs`, `qa/vr/pwa.mjs`, `qa/vr/mobile.test.mjs`, `qa/vr/mobile.e2e.mjs`, `qa/vr/phone-swing.e2e.mjs` |
 
@@ -554,7 +562,7 @@ Agent A owns the auto target and the desktop and pad input. Agent B owns the pho
 | Name | Defined by | Used by | Shape |
 |---|---|---|---|
 | `mobile.enabled` | B | A | A getter. True on a touch device unless `use(false)` ran. The disabled stub returns false |
-| `mobile.use(on)` | B | A, in `wireTitle` | `use(false)` turns the touch scheme off for the session. No-op on the stub |
+| `mobile.use(on)` | B | A, in `wireTitle` | `use(false)` turns the touch scheme off (PLAY WITH MOUSE AND KEYBOARD). `use(true)` turns it back on (PLAY WITH TOUCH). No-op on the stub |
 | `mobile.sample(dt)` | B (exists) | A, in `desktop.js` | Existing fields plus `view`: `true` for the one sample after the VIEW button is pressed |
 | `mobile.marker(m)` | B | A, in `main.js` | `m` is `null` or `{x, y, kind, dist, behind, go}` as in "The marker". B places the ring, the arrow and the dim, and clamps to the safe window |
 | `mobile.pop()` | B | A, in `main.js` | The catch pop of the ring |
@@ -638,7 +646,7 @@ Both bots use only the swing input and W. They never reel, yank, jump, look or u
 
 - Bot 1 follows the cue. It lets go `0.2` to `0.4` s after `releaseWindow` opens.
 - Bot 2 ignores the cue. It lets go 30 degrees (plus or minus 25 degrees at random) past the bottom of the arc, after the same delay.
-- Both let go after 4.5 s, and after 0.5 s of dragging on the ground.
+- Both let go after 4.5 s, and after 0.5 s of dragging on the ground (the drag time starts again from 0 whenever the body leaves the ground, as in the game).
 - Both press again after a delay of 0.2 to 0.4 s.
 - A cling on a wall ends with the next press.
 - Pass: three different buildings (by `bid`, else by collider id) in 30 s of game time, with no respawn and no death.
@@ -668,7 +676,7 @@ The phone contract tests that use `G.test.aimAt` (the sky tap, the clog tap, the
 - DOM and world markers: `getBoundingClientRect` of the ring and the projection of `G.test.target()` agree within 3 px. The world reticle comes from `G.ropes.info().reticles`.
 - Safe window: sample targets at NDC y from 0.3 to 1.5 and x from -1.5 to 1.5, with the HUD showing a spoken line, at 390 by 844 and 844 by 390 on a phone, and at 960 by 540 on a computer. Neither the ring nor the arrow overlaps a score pill, a top button, the spoken line, the SWING panel or the climb pad.
 - Layout: no overlap between the hint strip, the subtitle with its tail, the score pills, the top buttons and the SWING panel. Sizes: 640 by 360, 960 by 540, 1280 by 720, 844 by 390, 390 by 844 and 360 by 740. The page does not scroll sideways. The tail is measured with `elementFromPoint` at the tail tip.
-- Touch size: every visible phone button is at least 48 by 48 CSS px.
+- Touch size: the touch area of every visible phone button (found with `elementFromPoint`) is at least 48 by 48 CSS px. The top-row boxes are 46 px high, and a touch 1 px outside any side of such a box still hits the button. Every other button box is 48 by 48 or more.
 - Screenshots at the sizes go to `SHOTS` and are read by the person who does the change: the ring on the target, the edge arrow at the start roof, the arrow behind the camera on a wall, the strip, the green clog ring, the LET GO caption, the dimmed SWING button.
 
 ## Risks

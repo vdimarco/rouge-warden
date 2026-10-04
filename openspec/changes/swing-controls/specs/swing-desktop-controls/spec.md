@@ -116,7 +116,7 @@ A key pressed with Ctrl, Meta or Alt held SHALL NOT swing, yank, jump, move, ree
 - **THEN** no yank event fires and the hero does not move
 
 ### Requirement: The Rope trigger setting works in flat play
-The "Rope trigger" setting SHALL work in flat play on a computer and a pad. With "Hold", a rope lasts while its swing input is down. With "Toggle", a press fires the rope and the next press of that input lets go. E, Q and the triggers SHALL follow the setting. The flat Comfort menu SHALL show the row. The phone SHALL ignore the setting.
+The "Rope trigger" setting SHALL work in flat play on a computer and a pad. With "Hold", a rope lasts while its swing input is down. With "Toggle", a press fires the rope and the next press of that input lets go. E, Q and the triggers SHALL follow the setting. The flat Comfort menu SHALL show the row for a mouse and a pad. The phone SHALL ignore the setting, so its Comfort page SHALL show neither the Rope trigger row nor the Release cue row.
 
 #### Scenario: Toggle
 - **WHEN** the setting is Toggle and a flat player presses and lets go of the left mouse button
@@ -129,8 +129,12 @@ The "Rope trigger" setting SHALL work in flat play on a computer and a pad. With
 - **THEN** the rope lets go when the button goes up
 
 #### Scenario: The menu shows the row
-- **WHEN** the player opens Comfort in flat play
+- **WHEN** a mouse or pad player opens Comfort in flat play
 - **THEN** the page shows the Rope trigger row and the Release cue row
+
+#### Scenario: A phone has no such rows
+- **WHEN** a phone player opens Comfort
+- **THEN** the page shows Aim assist and no Rope trigger row and no Release cue row
 
 ### Requirement: A click that resumes or locks starts no swing
 A click that resumes play from a pause, and a click that asks for the pointer lock, SHALL start no swing and SHALL fire no rope. The next press SHALL work. A mouse button that is already down when the lock starts SHALL do nothing until it goes up.
@@ -149,9 +153,15 @@ A click that resumes play from a pause, and a click that asks for the pointer lo
 A rope that a real swing input fired (left or right mouse button, E, Q, RT, LT) SHALL get a kick on attach. The body SHALL gain speed across the rope toward the view until that speed is `DESKTOP.attachSpeed`, which starts at 10 m/s. The kick SHALL NOT apply when the anchor is straight ahead, when the other rope is attached, or on a clog, a pipe or the crack. From the ground the body SHALL hop toward the target at `DESKTOP.hop` m/s, which starts at 0. A clog, a pipe or the crack SHALL never get a hop. A rope that a test hook fired SHALL get neither.
 
 #### Scenario: Swing from the start roof
-- **WHEN** a player on the roof holds the left mouse button
-- **THEN** no `hop` event shows, and the rope pulls the body off the roof
+- **WHEN** a player on the start roof holds W and the left mouse button
+- **THEN** no `hop` event shows, a rope attaches, and the hero is in the air within 4 s (measured: 3.1 to 3.3 s)
 - **AND** a `kick` event shows when the rope attaches, unless the anchor is straight ahead
+- **AND** while the rope drags the hero along the roof the LET GO caption shows, and the first frame in the air gives none
+
+#### Scenario: Swing from the start roof with the button alone
+- **WHEN** a player on the start roof holds the left mouse button and does not hold W
+- **THEN** the rope attaches and the kick slides the hero across the roof, and friction stops the hero on it (measured: still on the roof after 6 s)
+- **AND** this is why the first tutorial line and the hint strip tell the player to hold W with the button
 
 #### Scenario: Swing in the air
 - **WHEN** a body falls at 5 m/s with a target ahead and the player holds the left mouse button
@@ -174,11 +184,11 @@ A rope that a real swing input fired (left or right mouse button, E, Q, RT, LT) 
 - **THEN** no `hop` event and no `kick` event show
 
 ### Requirement: A hint strip for the first minute
-For the first 60 s of play in a session that starts with an unfinished tutorial, a comic caption strip SHALL show at the bottom of the screen, for a mouse or a pad. For a mouse it SHALL read: HOLD LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. W: STEER. For a pad it SHALL read: HOLD RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK. LEFT STICK: STEER. The strip SHALL be at most 36 px high. While it shows, the spoken line SHALL move up so that its box and its tail clear the strip. The strip SHALL NOT cover the toast or the score pills. It SHALL NOT show in a session with a finished tutorial, in the opening, when paused, on a touch device, or in a headset.
+For the first 60 s of play in a session that starts with an unfinished tutorial, a comic caption strip SHALL show at the bottom of the screen, for a mouse or a pad. For a mouse it SHALL read: HOLD W AND LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. For a pad it SHALL read: HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK. The text SHALL fit inside the strip. The strip SHALL be at most 36 px high. While it shows, the spoken line SHALL move up so that its box and its tail clear the strip. The strip SHALL NOT cover the toast or the score pills. It SHALL NOT show in a session with a finished tutorial, in the opening, when paused, on a touch device, or in a headset.
 
 #### Scenario: First run
 - **WHEN** a player starts play with an unfinished tutorial and a mouse
-- **THEN** the strip shows with the four mouse items
+- **THEN** the strip shows with the three mouse items
 - **WHEN** 61 s of play time have passed
 - **THEN** the strip is gone
 
@@ -211,6 +221,10 @@ A device that reports touch points and has a fine pointer SHALL show two buttons
 - **WHEN** the same title loads and the player presses PLAY WITH TOUCH
 - **THEN** the phone panel shows and the kind is "touch"
 
+#### Scenario: Mouse chosen, then touch
+- **WHEN** a player pressed PLAY WITH MOUSE AND KEYBOARD, leaves to the title with Exit, and presses PLAY WITH TOUCH
+- **THEN** `G.test.input().kind` is "touch", the phone panel shows and `body[data-device]` is "touch"
+
 #### Scenario: A computer
 - **WHEN** the title loads on a device with no touch point
 - **THEN** the play button reads PLAY ON THIS SCREEN and the desktop note shows
@@ -229,11 +243,11 @@ A player who uses only the swing input and W SHALL attach to three different bui
 - **THEN** all three pass
 
 ### Requirement: The tutorial speaks of the mouse
-The tutorial and the clog lines for a mouse SHALL name the left mouse button, Shift and F. They SHALL tell the player to look at the target and to let go when the ring says GO. The lines SHALL NOT name a pad button.
+The tutorial and the clog lines for a mouse SHALL name W, the left mouse button, Shift and F. They SHALL tell the player to look at the target and to let go when the ring says GO. The lines SHALL NOT name a pad button.
 
 #### Scenario: First tutorial line
 - **WHEN** the tutorial starts with a mouse
-- **THEN** the first line reads "Look at the gold ring. Hold the left mouse button."
+- **THEN** the first line reads "Look at the gold ring. Hold W and the left mouse button."
 
 #### Scenario: Release line
 - **WHEN** the tutorial reaches step 1 with a mouse

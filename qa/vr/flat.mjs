@@ -304,15 +304,25 @@ async function swing() {
   e = await ev(page, f2);
   check(airRope && has(e, "yank"), "Space in the air with a rope out yanks the rope", { airRope, e });
   await page.mouse.up(); await step(page, 3);
-  // leaving the start roof at hop 0: with W held the hero walks to the edge and the rope takes him off. The swing input alone kicks him
-  // across the roof and he stops on it (the roof is big and the physics has friction): the report names this, the line below shows it
+  // Leaving the start roof at hop 0 (decision D1): with W held, the hero walks while the rope pulls, and the rope takes him off the roof
+  // after 3.1 to 3.3 s (measured on this build; the bound is 4 s). The swing input alone kicks him across the roof, and the roof is
+  // big and the physics has friction, so he stops on it: that is why the first tutorial line and the key strip say W and the button.
+  // (Walking off the edge with the rope on also ends the drag cue: the first frame in the air gives no LET GO.)
   for (const w of [true, false]) {
     await R();
     if (w) await page.keyboard.down("KeyW");
     await page.mouse.down();
-    const t = await page.evaluate(() => { let n = 0; for (; n < 360 && (G.P.onGround || n < 40); n++) G.test.step(1 / 60, 1); return { secs: n / 60, ground: G.P.onGround, rope: G.test.state().ropes.some((r) => r.state === "attached") }; });
+    const t = await page.evaluate(() => {
+      let n = 0, dragCue = false, airCue = null;
+      for (; n < 360 && (G.P.onGround || n < 40); n++) { G.test.step(1 / 60, 1); if (G.P.onGround && n > 40) dragCue = dragCue || G.test.target().cue; }
+      if (!G.P.onGround) airCue = G.test.target().cue;
+      return { secs: n / 60, ground: G.P.onGround, rope: G.test.state().ropes.some((r) => r.state === "attached"), dragCue, airCue };
+    });
     log("from the start roof with" + (w ? "" : "out") + " W the swing input alone: " + (t.ground ? "still on the roof after 6 s" : "airborne after " + t.secs.toFixed(2) + " s") + " (rope " + (t.rope ? "attached" : "not attached") + ")");
-    if (w) check(!t.ground && t.rope && t.secs <= 6, "holding W and the swing input on the start roof takes the hero off the roof within 6 s (" + t.secs.toFixed(2) + " s)", t);
+    if (w) {
+      check(!t.ground && t.rope && t.secs <= 4, "holding W and the left button on the start roof takes the hero off the roof within 4 s (measured 3.1 to 3.3 s; this run " + t.secs.toFixed(2) + " s)", t);
+      check(t.dragCue === true && t.airCue === false, "while the rope drags the hero along the roof the LET GO cue shows, and the first frame in the air after the roof gives none (the drag case ends with the ground)", { dragCue: t.dragCue, airCue: t.airCue });
+    }
     await page.mouse.up(); if (w) await page.keyboard.up("KeyW");
     await step(page, 3);
   }
@@ -553,6 +563,18 @@ async function padPart() {
   const order = evl.map((x) => x.type).filter((x) => /^(fire|attach|detach)$/.test(x));
   const att = evl.find((x) => x.type === "attach"), det = evl.find((x) => x.type === "detach");
   check(JSON.stringify(order) === JSON.stringify(["fire", "attach", "detach"]) && det.frame - att.frame <= 1, "an 80 ms tap of RT still lands the cup and the rope lets go on the first frame after the attach", { order });
+  // the first pad line: hold the left stick up and the right trigger. The stick walks the hero while the rope pulls, as W does
+  f0 = await R();
+  const leave = await page.evaluate(() => {
+    __f.axis(1, -1); __f.btn(7, 1);
+    let n = 0;
+    for (; n < 360 && (G.P.onGround || n < 40); n++) G.test.step(1 / 60, 1);
+    const out = { secs: n / 60, ground: G.P.onGround, rope: G.test.state().ropes.some((r) => r.state === "attached") };
+    __f.padOff(); __f.step(3);
+    return out;
+  });
+  log("from the start roof with the left stick up and RT: " + (leave.ground ? "still on the roof after 6 s" : "airborne after " + leave.secs.toFixed(2) + " s"));
+  check(!leave.ground && leave.rope && leave.secs <= 4, "holding the left stick up and RT on the start roof takes the hero off the roof within 4 s (measured 3.1 to 3.3 s; this run " + leave.secs.toFixed(2) + " s)", leave);
   // trigger hysteresis: down at 0.5, up below 0.3
   f0 = await R();
   await page.evaluate(() => { __f.btn(7, 0.9); __f.step(36); });
@@ -642,7 +664,8 @@ async function padPart() {
   await page.evaluate(() => { __f.btn(3, 1); __f.step(3); __f.btn(3, 0); __f.step(60); });
   fp = await page.evaluate(() => G.test.flat().firstPerson);
   check(fp === false, "Y again returns to third person");
-  // the phone's VIEW button reaches the game as mobile.sample().view (B's part of the interface): a stand-in sample says it for one frame
+  // the phone's VIEW button reaches the game as mobile.sample().view. A computer has the stub, which has no button: a stand-in sample
+  // says it for one frame here, and the title checks below press the real VIEW button of the phone panel
   await R();
   const vw = await page.evaluate(() => {
     const m = G.desktop.mobile, orig = m.sample; let on = true;
@@ -674,10 +697,14 @@ async function padPart() {
   // the pad words follow the kind: a key press brings the mouse words back
   await page.evaluate(() => { __f.btn(1, 1); __f.step(2); __f.btn(1, 0); __f.step(2); });
   const words = await page.evaluate(() => ({ pad: G.ui.sayLine("tutorial", 3), kind: G.test.input().kind, strip: document.querySelector("#keyHints") && document.querySelector("#keyHints").textContent }));
-  check(words.kind === "pad" && words.pad === LINES_PAD.tutorial[3] && /RIGHT TRIGGER/.test(words.strip || ""), "with the pad in use the tutorial lines come from LINES_PAD and the key strip names the right trigger", words);
+  check(words.kind === "pad" && words.pad === LINES_PAD.tutorial[3] && /RIGHT TRIGGER/.test(words.strip || "") && /RIGHT STICK/.test(words.strip || "") && /LEFT STICK/.test(words.strip || ""), "with the pad in use the tutorial lines come from LINES_PAD and the key strip names the right trigger, the right stick and the left stick", words);
+  const padFirst = await page.evaluate(() => G.ui.sayLine("tutorial", 0));
+  check(padFirst === "Look at the gold ring. Hold the left stick up and the right trigger.", "the first pad line tells the player to hold the left stick up and the right trigger", padFirst);
   await page.evaluate(() => { __f.padOff(); window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyJ" })); window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyJ" })); __f.step(3); });
   const back = await page.evaluate(() => ({ kind: G.test.input().kind, say: G.ui.sayLine("tutorial", 3), strip: document.querySelector("#keyHints").textContent }));
-  check(back.kind === "mouse" && back.say === LINES_DESKTOP.tutorial[3] && /LEFT MOUSE/.test(back.strip), "a key press brings the mouse words back", back);
+  const mouseFirst = await page.evaluate(() => G.ui.sayLine("tutorial", 0));
+  check(back.kind === "mouse" && back.say === LINES_DESKTOP.tutorial[3] && /LEFT MOUSE/.test(back.strip) && /W AND LEFT MOUSE/.test(back.strip), "a key press brings the mouse words back", back);
+  check(mouseFirst === "Look at the gold ring. Hold W and the left mouse button.", "the first mouse line tells the player to hold W and the left mouse button", mouseFirst);
   // a pad whose mapping is not standard is ignored
   await R();
   await page.evaluate(() => { __f.padOff(); window.__pad.mapping = ""; __f.btn(7, 1); __f.btn(1, 1); __f.step(40); });
@@ -697,20 +724,26 @@ async function markerAt(width, height) {
   const R = async () => { await page.evaluate(() => { __f.padOff(); __f.roof(); }); };
   await R();
   // the strip, the spoken line, its tail and the score pills: nothing overlaps
-  await page.evaluate(() => { G.ui.say("Look at the gold ring. Hold the left mouse button.", 60); G.ui.toast("+5"); __f.step(2); });
+  await page.evaluate((line) => { G.ui.say(line, 60); G.ui.toast("+5"); __f.step(2); }, LINES_DESKTOP.tutorial[0]);
   const lay = await page.evaluate(() => {
     const sub = __f.rect(".fs-sub"), strip = __f.rect("#keyHints"), toast = __f.rect(".fs-toast"), pills = [...document.querySelectorAll(".fs-top .fs-pill")].filter((p) => p.getBoundingClientRect().width > 0).map((p) => { const r = p.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; });
     const tip = sub ? { x: sub.l + sub.w * 0.2, y: sub.b + 27 } : null; // the tail of the speech bubble hangs 27 px under its box
-    return { sub, strip, toast, pills, tip, text: document.querySelector("#keyHints").textContent, shown: __f.vis("#keyHints"), body: document.body.classList.contains("keyhints") };
+    const hints = document.querySelector("#keyHints");
+    return { sub, strip, toast, pills, tip, text: hints.textContent, clipped: hints.scrollWidth > hints.clientWidth + 1, shown: __f.vis("#keyHints"), body: document.body.classList.contains("keyhints") };
   });
   const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   check(lay.shown && lay.body && lay.strip.h <= 36.5 && lay.strip.w <= width * 0.96 + 1, "[" + tag + "] the key strip shows at the bottom, at most 36 px high (" + (lay.strip && lay.strip.h.toFixed(0)) + " px)", lay.strip);
-  check(/HOLD LEFT MOUSE \(OR E\): SWING\./.test(lay.text) && /LET GO WHEN THE RING SAYS GO\./.test(lay.text) && /MOUSE: LOOK\./.test(lay.text) && /W: STEER\./.test(lay.text), "[" + tag + "] it reads HOLD LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. W: STEER.", lay.text);
+  check(/HOLD W AND LEFT MOUSE \(OR E\): SWING\./.test(lay.text) && /LET GO WHEN THE RING SAYS GO\./.test(lay.text) && /MOUSE: LOOK\./.test(lay.text), "[" + tag + "] it reads HOLD W AND LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK.", lay.text);
+  check(!lay.clipped, "[" + tag + "] the text of the strip is not cut off (it fits inside the strip)", { clipped: lay.clipped, w: lay.strip.w });
   const tailBox = { l: lay.tip.x - 14, r: lay.tip.x + 14, t: lay.sub.b, b: lay.tip.y };
   check(!hit(lay.strip, lay.sub) && !hit(lay.strip, tailBox) && (!lay.toast || lay.toast.w === 0 || !hit(lay.strip, lay.toast)) && lay.pills.every((p) => !hit(lay.strip, { l: p.l, r: p.r, t: p.t, b: p.b })), "[" + tag + "] the strip does not overlap the spoken line, its tail, the toast or the score pills", { strip: lay.strip, sub: lay.sub, tip: lay.tip });
   await render(page); await shot(page, "flat-strip-" + tag);
   // the arrow at the start roof: the target (the ring) is above the top edge
-  await page.evaluate(() => { G.ui.say("", 0); __f.step(30); });
+  // (the marker reads the HUD at most 10 times a second in real time, and 30 frames can run in less than that: let it see the line gone
+  // and the pills as they are now, as the checks below do)
+  await page.evaluate(() => { G.ui.say("", 0); __f.step(3); });
+  await sleep(160);
+  await page.evaluate(() => { __f.step(30); });
   let t = await tgt(page);
   let box = await page.evaluate(() => ({ ring: __f.vis("#lockRing"), arrow: __f.vis("#lockArrow"), a: __f.rect("#lockArrow"), top: __f.rect(".fs-top"), cls: document.querySelector("#lockArrow").className }));
   check(t.target && t.target.kind === "ring" && t.ndc.y > 1 && box.arrow && !box.ring, "[" + tag + "] at the start roof the ring is above the top edge (NDC y " + t.ndc.y.toFixed(2) + "): the marker is an arrow, not a ring", { ndc: t.ndc, box });
@@ -1077,48 +1110,58 @@ async function titles() {
     window.DeviceOrientationEvent.requestPermission = () => Promise.resolve("denied");
     window.DeviceMotionEvent.requestPermission = () => Promise.resolve("denied");
   };
-  // Agent B owns index.html: #playMouse, #deskNote, #hybridNote, #touchNote and the data-label-touch of #playFlat. Where they are not
-  // there yet (this branch before the join) stand-ins with the frozen interface take their place, so A's side of the wiring is
-  // checked now. When B's markup is in the page the stand-ins do nothing, and the same checks run against the real elements.
-  const standIns = () => document.addEventListener("readystatechange", () => {
-    if (document.readyState !== "interactive") return;
-    const play = document.querySelector("#playFlat"), made = [];
-    const mk = (tag, id, text) => { if (document.getElementById(id)) return; const e = document.createElement(tag); e.id = id; e.hidden = true; e.textContent = text; play.parentElement.appendChild(e); made.push(id); };
-    mk("button", "playMouse", "PLAY WITH MOUSE AND KEYBOARD");
-    mk("p", "deskNote", "desk"); mk("p", "touchNote", "touch"); mk("p", "hybridNote", "hybrid");
-    if (!play.dataset.labelTouch) { play.dataset.labelTouch = "PLAY WITH TOUCH"; made.push("data-label-touch"); }
-    window.__standIns = made;
-  });
-  const read = (page) => page.evaluate(() => ({ label: document.querySelector("#playFlat").textContent.trim(), mouse: __f.vis("#playMouse"), mouseLabel: (document.querySelector("#playMouse") || {}).textContent || null, hybrid: __f.vis("#hybridNote"), desk: __f.vis("#deskNote"), touchNote: __f.vis("#touchNote"), fine: matchMedia("(any-pointer: fine)").matches, device: document.body.dataset.device, standIns: window.__standIns || [] }));
+  // the title markup is the page's own (#playMouse, #deskNote, #hybridNote, #touchNote, data-label-touch of #playFlat) and mobile.use is
+  // the real one: a spy records each call and passes it on, so what the call does is checked on the real phone panel
+  const spy = (p) => p.evaluate(() => { const m = G.desktop.mobile, orig = m.use; window.__useCalls = []; m.use = (on) => { window.__useCalls.push(on); return orig.call(m, on); }; });
+  const read = (page) => page.evaluate(() => ({ label: document.querySelector("#playFlat").textContent.trim(), labelTouch: document.querySelector("#playFlat").dataset.labelTouch, mouse: __f.vis("#playMouse"), mouseLabel: (document.querySelector("#playMouse") || {}).textContent || null, hybrid: __f.vis("#hybridNote"), desk: __f.vis("#deskNote"), touchNote: __f.vis("#touchNote"), fine: matchMedia("(any-pointer: fine)").matches, device: document.body.dataset.device }));
+  const state = (page) => page.evaluate(() => ({ kind: G.test.input().kind, easy: G.input.easySwing, panel: __f.vis("#phoneControls"), enabled: G.desktop.mobile.enabled, device: document.body.dataset.device, useCalls: window.__useCalls || null }));
+  const play = async (page) => {
+    await page.waitForFunction(() => G.mode === "desktop" && G.state !== "title", null, { timeout: 60000 });
+    await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); __f.step(30); });
+  };
   // a computer: no touch point
-  let page = await playPage(960, 540, { init: standIns, enter: false });
+  let page = await playPage(960, 540, { enter: false });
   let t = await read(page);
-  if (t.standIns.length) log("B's title markup is not in this branch: stand-ins for " + t.standIns.join(", ") + " (join check pending)");
   check(t.label === "PLAY ON THIS SCREEN" && t.desk && !t.touchNote && !t.hybrid && !t.mouse && t.device === "mouse", "a computer: the title reads PLAY ON THIS SCREEN, shows the desktop note and no mouse button", t);
   await page.context().close();
   // a touch device with a fine pointer: both buttons
-  // B's mobile.js has use(on): where it is missing, a stand-in records the call and flips enabled (the frozen interface)
-  const useStandIn = (p) => p.evaluate(() => { const m = G.desktop.mobile; if (m.use) return; window.__standInUse = true; m.use = (on) => { (window.__useCalls = window.__useCalls || []).push(on); m.enabled = !!on; }; });
-  page = await playPage(960, 540, { init: [touch, standIns], afterLoad: useStandIn, enter: false });
+  page = await playPage(960, 540, { init: touch, afterLoad: spy, enter: false });
   t = await read(page);
-  check(t.fine && t.label === "PLAY WITH TOUCH" && t.mouse && /MOUSE/.test(t.mouseLabel || "") && t.hybrid && !t.desk && !t.touchNote && t.device === "touch", "a touch device with a fine pointer shows PLAY WITH TOUCH and the mouse button, and the note for both", t);
+  check(t.fine && t.label === "PLAY WITH TOUCH" && t.labelTouch === "PLAY WITH TOUCH" && t.mouse && t.mouseLabel === "PLAY WITH MOUSE AND KEYBOARD" && t.hybrid && !t.desk && !t.touchNote && t.device === "touch", "a touch device with a fine pointer shows PLAY WITH TOUCH and PLAY WITH MOUSE AND KEYBOARD, and the note for both", t);
   await page.click("#playMouse");
-  await page.waitForFunction(() => G.mode === "desktop" && G.state !== "title", null, { timeout: 60000 });
-  await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); __f.step(30); });
-  let m = await page.evaluate(() => ({ kind: G.test.input().kind, easy: G.input.easySwing, panel: __f.vis("#phoneControls"), enabled: G.desktop.mobile.enabled, device: document.body.dataset.device, useCalls: window.__useCalls || null, standIn: !!window.__standInUse }));
-  if (m.standIn) log("B's mobile.use is not in this branch: a stand-in took the call: the hidden phone panel is a join check, pending");
-  check(m.kind === "mouse" && !m.easy && (m.standIn || !m.panel) && m.enabled === false && (!m.standIn || (m.useCalls && m.useCalls.length === 1 && m.useCalls[0] === false)), "the mouse button calls mobile.use(false) once and starts the mouse scheme: the kind is mouse, the phone panel is hidden and the phone scheme is off", m);
+  await play(page);
+  let m = await state(page);
+  check(m.kind === "mouse" && !m.easy && !m.panel && m.enabled === false && JSON.stringify(m.useCalls) === "[false]", "the mouse button calls mobile.use(false) once and starts the mouse scheme: the kind is mouse, the phone panel is hidden and the phone scheme is off", m);
+  const mouseOnly = await page.evaluate(() => { const s = G.desktop.mobile.sample(0.016); return { hold: s.hold, panelHidden: document.querySelector("#phoneControls").hidden }; });
+  check(mouseOnly.panelHidden && !mouseOnly.hold, "the phone panel element is hidden after mobile.use(false), and a sample holds nothing", mouseOnly);
   await page.evaluate(() => { __f.btn(1, 1); __f.step(3); __f.btn(1, 0); __f.step(2); });
   m = await page.evaluate(() => ({ kind: G.test.input().kind, device: document.body.dataset.device }));
   check(m.kind === "pad" && m.device === "pad", "a fake pad press moves the kind to pad", m);
+  // then back to the title (Exit), and PLAY WITH TOUCH on the same device: it turns touch back on (D.mobile.use(true))
+  await page.evaluate(() => { __f.padOff(); G.ui.openPause(); __f.step(3); });
+  await page.click("#fsMenu button[data-id=exit]");
+  await page.waitForFunction(() => G.mode === "title", null, { timeout: 60000 });
+  await page.evaluate(() => __f.step(3));
+  await page.click("#playFlat");
+  await play(page);
+  m = await state(page);
+  check(m.kind === "touch" && m.easy && m.panel && m.enabled === true && m.device === "touch" && JSON.stringify(m.useCalls) === "[false,true]", "after PLAY WITH MOUSE AND KEYBOARD, PLAY WITH TOUCH turns touch back on: the kind is touch, the phone panel shows, use(true) was called", m);
+  check(page.errors.length === 0, "no page errors when the same device plays with the mouse and then with touch", page.errors);
   await page.context().close();
   // the same title, touch chosen
-  page = await playPage(960, 540, { init: [touch, standIns], enter: false });
+  page = await playPage(960, 540, { init: touch, enter: false });
   await page.click("#playFlat");
-  await page.waitForFunction(() => G.mode === "desktop" && G.state !== "title", null, { timeout: 60000 });
-  await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); __f.step(30); });
+  await play(page);
   m = await page.evaluate(() => ({ kind: G.test.input().kind, panel: __f.vis("#phoneControls"), strip: __f.vis("#keyHints"), ring: __f.vis("#lockRing"), enabled: G.desktop.mobile.enabled }));
-  check(m.kind === "touch" && m.enabled === true && !m.strip && !m.ring, "the touch button starts the phone scheme: the kind is touch, and there is no key strip or desktop ring", m);
+  check(m.kind === "touch" && m.enabled === true && m.panel && !m.strip && !m.ring, "the touch button starts the phone scheme: the kind is touch, the phone panel shows, and there is no key strip or desktop ring", m);
+  // the real VIEW button of the phone panel reaches the game through mobile.sample().view: one press, one switch
+  await page.evaluate(() => { G.flatcam.setFirstPerson(false); __f.step(30); });
+  await page.click("[data-action=view]");
+  await step(page, 3);
+  const v1 = await page.evaluate(() => G.test.flat().firstPerson);
+  await step(page, 30);
+  const v2 = await page.evaluate(() => G.test.flat().firstPerson);
+  check(v1 === true && v2 === true, "the real VIEW button switches the view once (it stays switched on the frames after the press)", { v1, v2 });
   check(page.errors.length === 0, "no page errors on the touch title", page.errors);
   await page.context().close();
 }
@@ -1183,7 +1226,8 @@ async function vrPart() {
     for (let i = 0; i < 90; i++) await new Promise((res) => setTimeout(res, 16));
     return { rumble: window.__rumble.length, rope: G.test.state().ropes[1].state };
   });
-  check(rum.rumble === 0, "a headset session never rumbles a pad (" + rum.rope + ")", rum);
+  // the check means something only when a rope really attached: an attach is what rumbles a pad on a computer
+  check(rum.rope === "attached" && rum.rumble === 0, "a rope attaches in the headset session and it never rumbles a pad (the rope is " + rum.rope + ", " + rum.rumble + " effects)", rum);
   check(page.errors.length === 0, "no page errors in VR", page.errors);
   await page.context().close();
 }

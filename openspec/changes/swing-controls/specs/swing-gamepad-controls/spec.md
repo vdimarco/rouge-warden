@@ -123,6 +123,12 @@ The input kind SHALL be "pad" once a button is pressed or a stick moves out of i
 - **THEN** no line names Shift, F, a mouse button, RT or A
 - **AND** the line to reel reads "Hold the left bumper to reel in."
 
+#### Scenario: Pad first line
+- **WHEN** a pad player starts the tutorial
+- **THEN** the first line reads "Look at the gold ring. Hold the left stick up and the right trigger."
+- **AND** the hint strip reads HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
+- **AND** from the start roof, holding the left stick up and RT puts the hero in the air within 4 s (measured: 3.1 to 3.3 s)
+
 #### Scenario: Pad wall line
 - **WHEN** a pad player first holds a wall
 - **THEN** the line reads "On the wall. Push the left stick to climb. Press the bottom button to jump off."

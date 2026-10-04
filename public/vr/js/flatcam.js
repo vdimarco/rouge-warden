@@ -20,6 +20,7 @@ const FOV_TP = [70, 88], FOV_FP = [75, 87], FOV_V = [15, 35]; // degrees at rest
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
+const stepK = (t, secs) => { const k = t / secs; return k * k * (3 - 2 * k); }; // the smooth step of turnTo (made once, so a frame allocates nothing)
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export function createFlatCam(camera, city) {
@@ -70,8 +71,8 @@ export function createFlatCam(camera, city) {
       // a swing from a wall turns the view toward the swing (turnTo): a smooth step over about 0.4 s, on top of any look input
       const tn = S.turn;
       if (tn) {
-        const t1 = Math.min(tn.secs, tn.t + dt), f = (t) => { const k = t / tn.secs; return k * k * (3 - 2 * k); };
-        S.yaw = wrap(S.yaw + tn.d * (f(t1) - f(tn.t)));
+        const t1 = Math.min(tn.secs, tn.t + dt);
+        S.yaw = wrap(S.yaw + tn.d * (stepK(t1, tn.secs) - stepK(tn.t, tn.secs)));
         tn.t = t1;
         if (t1 >= tn.secs || fp) S.turn = null;
       }

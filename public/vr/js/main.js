@@ -584,8 +584,9 @@ function flatHud(dt, inp) {
   if (!flatOn || isXR()) return;
   const play = G.state === "play", phone = inp.easySwing;
   if (play) hintT += dt;
-  // how long each rope has dragged the body along a roof or a street since it caught (the release cue)
-  for (let i = 0; i < 2; i++) { const r = P.ropes[i]; DRAG[i] = r.state !== "attached" ? 0 : P.onGround ? DRAG[i] + dt : DRAG[i]; }
+  // how long each rope has dragged the body along a roof or a street since it caught (the release cue). It starts again from 0
+  // whenever the body is off the ground: a swing that follows a drag must not keep the cue on
+  for (let i = 0; i < 2; i++) { const r = P.ropes[i]; DRAG[i] = r.state !== "attached" || !P.onGround ? 0 : DRAG[i] + dt; }
   const cue = pickerOn && !phone && settings.cue !== false && (releaseWindow(P, P.ropes[0], DRAG[0]) || releaseWindow(P, P.ropes[1], DRAG[1]));
   const res = pickerOn ? picker.result() : null, both = P.ropes[0].state !== "idle" && P.ropes[1].state !== "idle";
   let m = null;
@@ -596,11 +597,12 @@ function flatHud(dt, inp) {
     MK.x = PROJ.x; MK.y = PROJ.y; MK.kind = res.kind; MK.dist = res.dist; MK.behind = PROJ.behind; MK.go = cue;
     m = MK;
   }
-  if (phone) { D.marker(null); D.cue(false); D.hints(false); if (D.mobile.marker) D.mobile.marker(m); return; }
+  // the device in use (How to play puts its section first): also for touch, so a player who chose the mouse and then touch gets it back
+  if (inp.kind !== lastKind) { lastKind = inp.kind; document.body.dataset.device = inp.kind; }
+  if (phone) { D.marker(null); D.cue(false); D.hints(false); D.mobile.marker(m); return; }
   D.marker(m);
   D.cue(cue);
   D.hints(play && !save.tutorial && hintT < HINT.seconds);
-  if (inp.kind !== lastKind) { lastKind = inp.kind; document.body.dataset.device = inp.kind; }
 }
 // Which hand a swing input fires (desktop.js asks when the input goes down): the free hand on the side of the target, or the right
 // hand for the second-rope input. With one rope out, the idle hand fires. In the opening there is no answer: the old mapping holds.
@@ -1249,10 +1251,11 @@ function wireTitle() {
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
-  $("#playFlat").addEventListener("click", () => enter("desktop"));
+  // PLAY WITH TOUCH turns the touch scheme back on, also after PLAY WITH MOUSE AND KEYBOARD turned it off (no-op on a computer)
+  $("#playFlat").addEventListener("click", () => { D.mobile.use(true); enter("desktop"); });
   // a touch device with a fine pointer (a touch laptop, a 2-in-1) chooses its scheme: touch, or the mouse and keyboard
   const playMouse = $("#playMouse");
-  if (playMouse) playMouse.addEventListener("click", () => { if (D.mobile.use) D.mobile.use(false); enter("desktop", true); });
+  if (playMouse) playMouse.addEventListener("click", () => { D.mobile.use(false); enter("desktop", true); });
   $("#reenterBtn").addEventListener("click", () => enter(lastMode || "desktop"));
   // SOUND on the title: the arcade's speaker button (or another game) may have turned it off for every game here
   const soundBtn = $("#soundBtn");

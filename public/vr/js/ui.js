@@ -414,8 +414,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         rows.push(seg("turn", "Turning", [["30", "Snap 30"], ["45", "Snap 45"], ["90", "Snap 90"], ["smooth", "Smooth"]], TURN_VALUE(settings)));
       }
       rows.push(seg("aim", "Aim assist", [["low", "Low"], ["med", "Medium"], ["high", "High"]], settings.aim));
-      // a computer and a pad hold the swing input to keep a rope, and the cue says when to let go
-      if (desk) {
+      // a mouse and a pad hold the swing input to keep a rope, and the cue says when to let go. The phone lets go by itself: no rows
+      if (desk && !(inp && inp.easySwing)) {
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
         rows.push(seg("cue", "Release cue", [["on", "On"], ["off", "Off"]], settings.cue === false ? "off" : "on"));
       }

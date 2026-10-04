@@ -45,6 +45,9 @@ export function createDesktop(canvas, camera, settings) {
   inp.head.local.pos.set(0, COMFORT.standingHead, 0);
   inp.viewDown = false;
   const keys = new Set(), mouse = [false, false], edge = [false, false], skip = [false, false], gripOn = [false, false], held = [false, false], gamepad = { lt: false, rt: false };
+  // reused every frame, so D.update allocates nothing: the two swing inputs down, the hand each one fires, the hand each one keeps
+  const DOWN = [false, false], FIRE = [false, false], HOLD = [false, false];
+  const either = (a, b) => keys.has(a) || keys.has(b);
   // the two swing inputs: on this frame, on last frame, the hand each one holds (-1 none), the hand of its last press
   const SW = [{ on: false, hand: -1, last: -1 }, { on: false, hand: -1, last: -1 }], BUSY = [false, false];
   const Q = { jump: false, menu: false, map: false, yank: false, mute: false };
@@ -186,8 +189,7 @@ export function createDesktop(canvas, camera, settings) {
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
     // WASD or the arrow keys: walk, steer in the air, and climb on a wall
-    const k = (a, b) => keys.has(a) || keys.has(b);
-    let mx = (k("KeyD", "ArrowRight") ? 1 : 0) - (k("KeyA", "ArrowLeft") ? 1 : 0), my = (k("KeyW", "ArrowUp") ? 1 : 0) - (k("KeyS", "ArrowDown") ? 1 : 0);
+    let mx = (either("KeyD", "ArrowRight") ? 1 : 0) - (either("KeyA", "ArrowLeft") ? 1 : 0), my = (either("KeyW", "ArrowUp") ? 1 : 0) - (either("KeyS", "ArrowDown") ? 1 : 0);
     mx += phone.moveX; my += phone.moveY;
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
     let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view;
@@ -223,13 +225,14 @@ export function createDesktop(canvas, camera, settings) {
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";
 
     // the swing inputs pick a free hand and hold it until they go up. A press that is over before this frame still holds for one.
-    const down = [s0, s1];
+    DOWN[0] = s0; DOWN[1] = s1;
     BUSY[0] = SW[0].on && SW[0].hand === 0 || SW[1].on && SW[1].hand === 0;
     BUSY[1] = SW[0].on && SW[0].hand === 1 || SW[1].on && SW[1].hand === 1;
-    const fire = [false, false], hold = [false, false];
+    const fire = FIRE, hold = HOLD;
+    fire[0] = fire[1] = hold[0] = hold[1] = false;
     if (!mobile.enabled) {
       for (let w = 0; w < 2; w++) {
-        const sw = SW[w], on = down[w] || edge[w];
+        const sw = SW[w], on = DOWN[w] || edge[w];
         edge[w] = false;
         if (on && !sw.on) {
           let hand = D.chooseHand ? D.chooseHand(w, sw.last, BUSY) : undefined;
@@ -423,8 +426,9 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   };
   // the first-minute strip at the bottom of the screen, for a mouse or a pad. It lifts the spoken line and the toast with it.
   const HINTS = {
-    mouse: ["<b>HOLD LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK.", "<b>W</b>: STEER."],
-    pad: ["<b>HOLD RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK.", "<b>LEFT STICK</b>: STEER."],
+    // the first swing from the start roof needs the hero to walk (W, or the stick) while the rope pulls, so the first item says both
+    mouse: ["<b>HOLD W AND LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK."],
+    pad: ["<b>HOLD LEFT STICK UP AND RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK."],
   };
   D.hints = (on) => {
     const kind = on ? (inp.kind === "pad" ? "pad" : inp.kind === "mouse" ? "mouse" : "") : "";

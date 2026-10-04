@@ -83,9 +83,6 @@ export const PHONE = {
   // The rope lets go with a fling this many degrees past the bottom of the arc, this close under the anchor, or (a vault up and
   // over, with vault m/s up) this close to it. It lets go with no fling after ground s on roofs or stall s under stallSpeed.
   release: { minT: 0.35, angle: 32, overTop: 1.5, close: 5, vault: 10, ground: 0.01, stall: 2.5, stallSpeed: 4 },
-  // A tap whose target is no good to swing from (out of reach, closer than near m, or under 3 m above the chest) tries these
-  // directions (degrees) for one that is. With none, a close target in reach still catches.
-  assist: { pitch: [28, 42, 56, 16], yaw: [0, -22, 22, -45, 45, -75, 75], near: 9, above: 3 },
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
@@ -109,7 +106,7 @@ export const TARGET = {
   recent: { penalty: 0.6, count: 2, secs: 8 },
   special: { enter: 22, leave: 28, range: 60, pipeFacing: 60, tap: 16, tapRange: 88, near: 35 },
   ring: { bearing: 35, range: 80 }, // the gold ring in tutorial step 0
-  hold: { margin: 0.2, dwell: 0.2 }, // margin is SWING.targetSwitchMargin
+  hold: { margin: SWING.targetSwitchMargin, dwell: 0.2 }, // a challenger must score this much higher (0.2 = 20 percent) to replace the held target
   bias: { steepHoriz: 0.34 }, // a tap ray with a smaller horizontal part gives no bias
   cue: { from: 25, to: 60, drag: 0.5 }, // degrees past the bottom; s dragged on the ground
   side: 6, // degrees: below this, the hands alternate
@@ -198,7 +195,7 @@ export const LINES_HANDS = {
 // Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room."],
-  tutorial: ["Look at the gold ring. Hold the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold W and the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. W and S climb, A and D go along it. Space jumps off."],
@@ -206,7 +203,7 @@ export const LINES_DESKTOP = {
 // A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
 export const LINES_PAD = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room."],
-  tutorial: ["Look at the gold ring. Hold the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold the left stick up and the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. Push the left stick to climb. Press the bottom button to jump off."],

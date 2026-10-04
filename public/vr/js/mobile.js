@@ -8,17 +8,19 @@ const GAP = 8; // clear space between the marker and any HUD box
 const READ = 100; // ms between two reads of the HUD boxes (a resize reads at once)
 const POP = 120; // ms of the catch pop
 const BUZZ_GAP = 40; // ms between two vibrations
-// the hint line over the SWING button
+// the hint line over the SWING button. Each line fits on one line of the 328 px panel of a 360 px phone (the spoken line above it
+// leaves room for exactly one line, and its tail would poke into a second one): keep them to about 42 letters. The wall line shows
+// while the spoken lines are hidden (portrait) or far above (landscape), so it may run to two lines.
 const SAY = {
-  tap: 'Tap a building to swing. Keep tapping to fly.',
-  motion: 'Point the phone. Tap to swing. Keep tapping.',
-  center: 'Aim centered. Tap SWING when the ring is yellow.',
-  swing: 'Swinging. Tap the next building while you fly.',
+  tap: 'Tap a building to swing. Keep tapping.',
+  motion: 'Point the phone and tap to swing.',
+  center: 'Aim centered. Tap when the ring is yellow.',
+  swing: 'Swinging. Tap the next building.',
   letgo: 'Tap the next building to swing again.',
   fly: 'Flying. Tap the next building.',
   wall: 'On the wall. Hold the arrows to climb. Tap a building to swing off.',
   kept: 'Keeping this rope. Tap a closer building.',
-  none: 'Nothing in reach. Face the tall buildings and tap.',
+  none: 'Nothing in reach. Face the tall buildings.',
 };
 export function createMobile(canvas, active) {
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;

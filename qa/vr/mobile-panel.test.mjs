@@ -172,6 +172,16 @@ assert.equal(safe.reads, r1 + 1, "a resize reads the boxes at once");
 sub.classList.remove("on"); send(win, "resize"); m.marker({ x: 0, y: 0.2, kind: "swing" });
 assert.equal(m.safe().b, 640 - 8, "a line that is not showing does not cut the window: the SWING panel does (640 - 8)");
 sub.classList.add("on");
+// a toast that is showing is cut out too (its box plus 4 px of shadow), and one that is not showing is not
+const toast = hud.get(".fs-toast");
+assert.equal(toast.classList.contains("on"), false, "the toast starts hidden");
+send(win, "resize"); m.marker({ x: 0, y: 0.2, kind: "swing" });
+assert.equal(m.safe().b, 560 - 8, "a toast that is not showing does not cut the window: the spoken line does (560 - 8)");
+toast.classList.add("on"); send(win, "resize"); m.marker({ x: 0, y: 0.2, kind: "swing" });
+assert.equal(m.safe().b, 500 - 8, "a toast with the class on cuts the window above it (500 - 8)");
+for (const ny of [0.3, 0.5, 0.9]) { m.marker({ x: 0, y: ny, kind: "swing" }); const q = centre(ring); assert(q.y + 28 <= 500 - 8 + 0.01, `the ring for NDC y ${ny} stays above the showing toast: ` + q.y); }
+toast.classList.remove("on"); send(win, "resize"); m.marker({ x: 0, y: 0.2, kind: "swing" });
+assert.equal(m.safe().b, 560 - 8, "and the toast no longer cuts the window once it fades");
 
 // a landscape phone, 844 by 390: the spoken line is high, the SWING panel is in the right corner, the climb pad shows on the left
 canvas.rect = box(0, 0, 844, 390);
@@ -244,14 +254,23 @@ assert.equal(ring.hidden, true, "and the ring");
 send(canvas, "pointerdown", { pointerId: 1, clientX: 300, clientY: 200, preventDefault() {} }); send(canvas, "pointerup", { pointerId: 1, clientX: 300, clientY: 200 });
 const off = m.sample(0.016);
 assert(!off.fire && !off.hold && off.aim === null, "a click on the canvas starts no touch swing");
+// the buzz gap (40 ms) and the pop clock are long over, so only the touch scheme being off can stop them
+now = 8000; vibrated = []; ring.classList.remove("pop");
 m.marker({ x: 0, y: 0.2, kind: "swing" }); m.pop(); m.buzz(15);
-assert.equal(ring.hidden, true, "marker, pop and buzz do nothing while the touch scheme is off");
+assert.equal(ring.hidden, true, "marker does nothing while the touch scheme is off");
+assert.equal(ring.classList.contains("pop"), false, "pop adds no class while the touch scheme is off");
+assert.deepEqual(vibrated, [], "buzz does not vibrate while the touch scheme is off");
 await m.start();
 assert.equal(btn("center").hidden, true, "start() asks for no sensors while the touch scheme is off");
 m.use(true);
 assert.equal(m.enabled, true, "use(true) brings it back");
 m.sample(0.016);
 assert.equal(panel.hidden, false, "and shows the panel");
+// the same calls work again, so the checks above were about the scheme and not about the clocks
+now = 9000; m.marker({ x: 0, y: 0.2, kind: "swing" }); m.pop(); m.buzz(15);
+assert.equal(ring.hidden, false, "marker shows the ring again after use(true)");
+assert.equal(ring.classList.contains("pop"), true, "pop adds its class again after use(true)");
+assert.deepEqual(vibrated, [[9000, 15]], "buzz vibrates again after use(true)");
 
 /* ---------------- the stub of a device with no touch point ---------------- */
 setTouch(false);

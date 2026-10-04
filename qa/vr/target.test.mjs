@@ -539,6 +539,9 @@ section("The release cue and the kick");
   check(releaseWindow(body(24.5), rope()) === false && releaseWindow(body(25.5), rope()) === true && releaseWindow(body(59.5), rope()) === true && releaseWindow(body(61), rope()) === false, "the window is 25 to 60 degrees");
   check(releaseWindow(body(40, true, false), rope()) === false && releaseWindow(body(40, false, true), rope()) === false, "falling, or moving back toward the point under the anchor: no cue");
   check(releaseWindow(body(0, true, true, true), rope(), 0.6) === true && releaseWindow(body(0, true, true, true), rope(), 0.3) === false, "dragged along a roof or a street for 0.5 s with the rope attached: the cue shows");
+  // the drag case holds only on the ground: a body that left the ground ends it, whatever the drag time says (a swing that follows a
+  // drag on the start roof must not keep the cue on)
+  check(releaseWindow(body(10), rope(), 0.6) === false && releaseWindow(body(10, true, false), rope(), 5) === false && releaseWindow(body(24.5), rope(), 0.6) === false, "a body in the air that was dragged for 0.6 s: only the swing window decides, so before the window there is no cue");
   check(releaseWindow(body(40), rope({ target: { tag: "clog", id: "clog:1" } })) === false && releaseWindow(body(40), rope({ target: { tag: "pipe", id: "pipe:1" } })) === false && releaseWindow(body(40), rope({ target: { tag: "crack", id: "crack" }, sticky: true })) === false, "a clog, a pipe or the crack never gives a cue");
   check(releaseWindow(body(40), rope({ state: "flying" })) === false && releaseWindow(body(40), rope({ state: "idle" })) === false, "a rope in flight or idle gives no cue");
   // the kick
@@ -690,7 +693,7 @@ function playBot(o) {
       if (r.state === "idle") letGo(i, t); // the rope is gone (a wall grab, a snap): press again
       else if (r.state === "attached") {
         B.ropeT += DT;
-        if (P.onGround) B.dragT += DT;
+        B.dragT = P.onGround ? B.dragT + DT : 0; // as in main.js: a body that leaves the ground starts the drag again
         if (B.relAt < 0) {
           if (B.ropeT >= 4.5 || (B.dragT >= 0.5 && !SPECIAL[r.target.tag])) B.relAt = t;
           else if (bot === 1 ? releaseWindow(P, r, B.dragT) : pastBottom(P, r) >= B.jitter) B.relAt = t + 0.2 + 0.2 * rnd();

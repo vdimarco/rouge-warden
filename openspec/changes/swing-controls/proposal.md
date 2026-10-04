@@ -41,7 +41,7 @@ I read the code on main and ran a throwaway bot against the real flat physics. T
 
 ## Player-facing change
 
-On a computer, the player looks toward the buildings and holds the left mouse button. A yellow ring shows where the rope goes. When the ring says GO, the player lets go. A pad does the same with the right trigger. In first person, the crosshair aims the rope exactly. On a phone, the player taps a building or presses SWING, and a ring shows the target. A VIEW button switches the camera. The controls are listed in one table in `design.md`.
+On a computer, the player looks toward the buildings and holds W with the left mouse button (W walks the hero off the start roof while the rope pulls). A yellow ring shows where the rope goes. When the ring says GO, the player lets go. A pad does the same with the left stick up and the right trigger. In first person, the crosshair aims the rope exactly. On a phone, the player taps a building or presses SWING, and a ring shows the target. A VIEW button switches the camera. The controls are listed in one table in `design.md`.
 
 ## Capabilities
 

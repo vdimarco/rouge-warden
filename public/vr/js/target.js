@@ -39,13 +39,13 @@ export function project(cam, x, y, z, out) {
 
 /* ---------------- the release cue and the kick (pure, shared with the bots) ---------------- */
 // True while a rope on a building is in its release window: the body is in the air, rising and moving away from the point under
-// the anchor, 25 to 60 degrees past straight down (the swing), or it has been dragged along a roof or a street for dragT s.
+// the anchor, 25 to 60 degrees past straight down (the swing), or it is on a roof or a street and has been dragged along it for
+// dragT s. The drag case holds only on the ground: a body that left the ground ends it, whatever dragT says.
 // body is the physics player. A clog, a pipe and the crack never give a cue.
 export function releaseWindow(body, rope, dragT = 0) {
   if (!rope || rope.state !== "attached" || rope.sticky || !rope.target || SPECIAL_TAG[rope.target.tag]) return false;
   const C = TARGET.cue;
-  if (dragT >= C.drag) return true;
-  if (body.onGround) return false;
+  if (body.onGround) return dragT >= C.drag;
   const v = body.vel, A = rope.anchor, cx = body.pos.x - A.x, cy = body.pos.y + body.chest - A.y, cz = body.pos.z - A.z;
   const d = Math.sqrt(cx * cx + cy * cy + cz * cz);
   if (d < 1e-3 || v.y <= 0 || cx * v.x + cz * v.z <= 0) return false;

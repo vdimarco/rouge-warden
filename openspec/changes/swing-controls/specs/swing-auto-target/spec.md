@@ -219,7 +219,7 @@ In play, a marker SHALL show the point the next swing will use. The marker SHALL
 - **THEN** the ring does not change size and flips to its brighter colour for 120 ms
 
 ### Requirement: A cue tells the player when to let go
-On a computer or a pad, while a rope is attached to a building and the swing is in its release window, the ring SHALL pulse and a caption SHALL read LET GO. The window SHALL open when the body is in the air, rising and moving away from the point under the anchor, 25 to 60 degrees from straight down. It SHALL also open when the body has dragged along a roof or a street for 0.5 s with the rope attached. The cue SHALL NOT show on a clog, a pipe or the crack, on a phone, or in a headset. The player SHALL be able to turn it off in the Comfort menu.
+On a computer or a pad, while a rope is attached to a building and the swing is in its release window, the ring SHALL pulse and a caption SHALL read LET GO. The window SHALL open when the body is in the air, rising and moving away from the point under the anchor, 25 to 60 degrees from straight down. It SHALL also open when the body is on a roof or a street and has dragged along it for 0.5 s with the rope attached. The drag time SHALL start again from 0 whenever the body is off the ground, and the drag case SHALL hold only on the ground. The cue SHALL NOT show on a clog, a pipe or the crack, on a phone, or in a headset. The player SHALL be able to turn it off in the Comfort menu.
 
 #### Scenario: Past the bottom of the arc
 - **WHEN** a rope holds a building and the body rises 40 degrees past straight down, moving away from the anchor
@@ -232,6 +232,10 @@ On a computer or a pad, while a rope is attached to a building and the swing is 
 #### Scenario: Dragged along a roof
 - **WHEN** the rope holds a building and the body drags along a roof for 0.6 s
 - **THEN** the cue shows
+
+#### Scenario: Off the roof
+- **WHEN** the rope drags the body along a roof so that the cue shows, and the body then walks off the edge
+- **THEN** the cue is gone on the first frame in the air, unless the swing window is open
 
 #### Scenario: Cue off
 - **WHEN** the Release cue setting is Off

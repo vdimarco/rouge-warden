@@ -5,6 +5,7 @@
 // A check marked [join] needs the wiring of agent A in main.js and desktop.js (the marker each frame, G.test.target, the VIEW press,
 // the buzz, the title labels). It fails on a branch that has only agent B's files, and it must pass after the join.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/phone-controls.e2e.mjs   (SHOTS=dir keeps screenshots)
+import { readFile } from "node:fs/promises";
 import { newPage, open, close, watchdog, checker, shot } from "./lib.mjs";
 watchdog(1500000, "phone controls");
 const { check, done } = checker("phone-controls");
@@ -56,19 +57,29 @@ function layout() {
   };
   const buttons = [...document.querySelectorAll("#phoneControls button")].filter(seen);
   const top = [...document.querySelectorAll(".phone-top button")].filter(seen);
+  // does a touch 1 px outside each side of the visible box (in the middle of that side) still reach the button?
+  const outside = (el) => {
+    const r = el.getBoundingClientRect(), cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
+    const ok = (x, y) => { const h = document.elementFromPoint(x, y); return !!h && el.contains(h); };
+    return { left: ok(r.left - 1, cy), right: ok(r.right + 1, cy), top: ok(cx, r.top - 1), bottom: ok(cx, r.bottom + 1) };
+  };
   const pills = [...document.querySelectorAll(".fs-top .fs-pill")].filter((e) => !e.hidden && seen(e));
-  const subEl = document.querySelector(".fs-sub"), sub = subEl && subEl.classList.contains("on") && seen(subEl) ? box(subEl) : null;
+  // A spoken line that is hidden (visibility, as on a wall in portrait) covers nothing. One that shows has a tail: it hangs 27 px under
+  // the box, 20 percent in from the left and 28 px wide (ui.js), so the tail is measured with the box.
+  const subEl = document.querySelector(".fs-sub"), sub = subEl && subEl.classList.contains("on") && seen(subEl) && getComputedStyle(subEl).visibility !== "hidden" ? box(subEl) : null;
+  const tail = sub ? { l: sub.l + sub.w * 0.2 - 2, r: sub.l + sub.w * 0.2 + 30, t: sub.b, b: sub.b + 27 } : null;
   const bottom = box(document.querySelector(".phone-bottom")), padEl = document.querySelector(".phone-climb"), pad = seen(padEl) ? box(padEl) : null;
   const t = top.map(box), p = pills.map(box);
   const overlaps = [];
   for (const a of t) for (const b of p) if (hit(a, b)) overlaps.push("a top button covers a score pill");
   if (sub && hit(sub, bottom)) overlaps.push("the spoken line covers the SWING panel");
+  if (tail && hit(tail, bottom)) overlaps.push("the tail of the spoken line pokes into the SWING panel (its hint)");
   if (pad && hit(pad, bottom)) overlaps.push("the climb pad covers the SWING panel");
   for (const a of t) for (const b of t) if (a !== b && hit(a, b)) overlaps.push("two top buttons overlap");
   const hints = document.querySelector("#keyHints");
   return {
     w: innerWidth, h: innerHeight,
-    buttons: buttons.map((b) => ({ name: b.dataset.action || b.dataset.climb || "?", box: box(b), touch: reach(b) })),
+    buttons: buttons.map((b) => ({ name: b.dataset.action || b.dataset.climb || "?", top: !!b.closest(".phone-top"), box: box(b), touch: reach(b), outside: outside(b) })),
     topLabels: top.map((b) => b.textContent.trim()), topCount: top.length,
     topRow: t.length ? { one: Math.max(...t.map((b) => b.t)) - Math.min(...t.map((b) => b.t)) < 2, left: Math.min(...t.map((b) => b.l)), right: Math.max(...t.map((b) => b.r)), bottom: Math.max(...t.map((b) => b.b)) } : null,
     pillRow: p.length ? { count: p.length, spread: Math.max(...p.map((b) => b.t)) - Math.min(...p.map((b) => b.t)), left: Math.min(...p.map((b) => b.l)), right: Math.max(...p.map((b) => b.r)), bottom: Math.max(...p.map((b) => b.b)) } : null,
@@ -87,8 +98,9 @@ function sweep() {
   const hud = () => {
     const out = [];
     for (const sel of [".phone-top button", ".fs-top .fs-pill", ".phone-bottom", ".phone-climb"]) for (const e of document.querySelectorAll(sel)) if (!e.hidden && seen(e)) out.push([sel, box(e)]);
+    // the spoken line with its tail, which hangs 27 px under the box
     const sub = document.querySelector(".fs-sub");
-    if (sub && sub.classList.contains("on") && seen(sub)) out.push([".fs-sub", box(sub)]);
+    if (sub && sub.classList.contains("on") && seen(sub)) { const b = box(sub); out.push([".fs-sub and its tail", { ...b, b: b.b + 27 }]); }
     return out;
   };
   const bad = [], seenRing = { ring: 0, arrow: 0 }, W = innerWidth, H = innerHeight;
@@ -167,6 +179,28 @@ async function lineWindows() {
   return { bad, need, count: new Set(Object.values(C.LINES_PHONE).flat()).size };
 }
 
+// Every line the hint over SWING can say, with a spoken line showing. The tail of the spoken line hangs 27 px under its box and the
+// spoken line has room for one line of hint: a hint that wraps to a second line lifts the SWING panel into the tail. (The wall line
+// is not here: on a wall in portrait the spoken lines are hidden, and in landscape they sit at the top.) No game frame runs after a
+// button is pressed, so nothing fires.
+async function hintStates() {
+  const M = G.desktop.mobile, hint = document.querySelector(".phone-hint"), bottom = document.querySelector(".phone-bottom"), sub = document.querySelector(".fs-sub"), btn = document.querySelector("[data-action=throw]");
+  const out = [];
+  G.ui.say("Tap the next building while you fly.", 60); G.test.step(1 / 60, 3);
+  const read = (name) => {
+    const s = sub.getBoundingClientRect(), b = bottom.getBoundingClientRect(), h = hint.getBoundingClientRect();
+    out.push({ name, text: hint.textContent, lines: Math.round((h.height - 14) / 18.4), gap: +(b.top - (s.bottom + 27)).toFixed(1) });
+  };
+  window.__sensors = "granted"; await M.start(); read("motion aim on");
+  window.__sensors = "denied"; await M.start(); read("motion aim off");
+  M.miss(true); read("the rope is kept"); M.miss(false); read("nothing in reach");
+  const center = document.querySelector("[data-action=center]"); center.hidden = false; center.click(); read("centered"); center.hidden = true;
+  M.released(); read("flying");
+  btn.onclick(); read("swinging"); btn.onclick(); read("let go");
+  M.reset(); G.ui.say("", 0);
+  return out;
+}
+
 /* ---------------- the title: labels, notes and the words of the page ---------------- */
 let main;
 try {
@@ -220,8 +254,28 @@ try {
   await main.locator("#playFlat").click();
   await main.waitForFunction(() => G.state === "play");
   await main.locator("#phoneControls").waitFor({ state: "visible" });
+  // the words: the first line the tutorial speaks is the one in design.md ("Words"), and no phone line names a mouse, Shift, a key, a
+  // trigger, a pinch or a grip (read before any frame runs, so the line on the screen is the one the tutorial said first)
+  const design = await readFile(new URL("../../openspec/changes/swing-controls/design.md", import.meta.url), "utf8");
+  const wantFirst = (/`LINES_PHONE` changes tutorial 0 to "([^"]+)"/.exec(design) || [])[1];
+  const words = await main.evaluate(async () => {
+    const C = await import("./js/config.js"), sub = document.querySelector(".fs-sub");
+    return { spoken: sub.textContent, on: sub.classList.contains("on"), said: G.ui.sayLine("tutorial", 0), table: C.LINES_PHONE.tutorial[0], all: Object.entries(C.LINES_PHONE).flatMap(([k, v]) => v.map((l) => k + ": " + l)) };
+  });
+  join(!!wantFirst && words.on && words.spoken === wantFirst && words.said === wantFirst && words.table === wantFirst, `the first phone tutorial line is the one in design.md ("${wantFirst}"): on the screen, from sayLine and in LINES_PHONE`, { wantFirst, spoken: words.spoken, said: words.said, table: words.table });
+  const badWords = words.all.filter((l) => /mouse|shift|\bkeys?\b|keyboard|trigger|bumper|pinch|grip|\bpress\b/i.test(l));
+  join(words.all.length >= 20 && badWords.length === 0, `none of the ${words.all.length} phone lines names a mouse, Shift, a key, a trigger, a pinch or a grip`, badWords);
   await main.evaluate(() => { G.test.hold(true); const s = G.city.start; G.test.teleport(s.x, s.y, s.z); G.test.step(1 / 60, 90); });
   join((await main.evaluate(() => document.body.dataset.device)) === "touch", "play on a touch device sets body[data-device] to touch");
+  // the Comfort page: a phone lets go by itself, so it shows no Rope trigger and no Release cue (a mouse and a pad do: ui.mjs)
+  const comfort = await main.evaluate(() => {
+    G.ui.openPause(); G.test.step(1 / 60, 3);
+    document.querySelector("#fsMenu button[data-id=comfort]").click(); G.test.step(1 / 60, 2);
+    const ids = [...document.querySelectorAll("#fsMenu button[data-id]")].map((b) => b.dataset.id), text = document.querySelector("#fsMenu").textContent, panel = G.test.ui().panel;
+    G.ui.closePause(); G.test.step(1 / 60, 3);
+    return { ids, text, panel, state: G.state };
+  });
+  join(comfort.panel === "comfort" && comfort.ids.some((i) => i.startsWith("aim:")) && !/Rope trigger|Release cue/.test(comfort.text) && !comfort.ids.some((i) => /^(hold|cue):/.test(i)) && comfort.state === "play", "the Comfort page on a phone keeps Aim assist and shows no Rope trigger and no Release cue", comfort);
 
   /* ---------------- sizes, both layouts, motion aim on and off ---------------- */
   const SIZES = [[390, 844, "portrait"], [844, 390, "landscape"], [360, 740, "narrow portrait"]];
@@ -236,6 +290,15 @@ try {
       check(small.length === 0, `${tag}: every visible button has a touch area of 48 by 48 or more`, small.map((b) => b.name + " " + b.touch.w + "x" + b.touch.h));
       const narrow = L.buttons.filter((b) => b.box.w < 46 || b.box.h < 46);
       check(narrow.length === 0, `${tag}: no button box is under 46 px`, narrow.map((b) => b.name + " " + Math.round(b.box.w) + "x" + Math.round(b.box.h)));
+      // The requirement: every touch area is 48 by 48 or more. The top row keeps boxes 46 px high (phone-swing.e2e.mjs reads a taller
+      // one as a second row) and gets its 48 px from a hit area that reaches past the box. Every other button box is 48 or more itself.
+      const tops = L.buttons.filter((b) => b.top), rest = L.buttons.filter((b) => !b.top);
+      const tall = tops.filter((b) => Math.abs(b.box.h - 46) > 0.5);
+      check(tops.length === L.topCount && tall.length === 0, `${tag}: the top row buttons are 46 px tall`, tops.map((b) => b.name + " " + b.box.h));
+      const missed = tops.filter((b) => !(b.outside.left && b.outside.right && b.outside.top && b.outside.bottom));
+      check(tops.length > 0 && missed.length === 0, `${tag}: a touch 1 px outside the box of a top button, on any side, still hits that button (hit area of 48 px or more)`, missed.map((b) => b.name + " " + JSON.stringify(b.outside)));
+      const thin = rest.filter((b) => b.box.w < 48 || b.box.h < 48);
+      check(rest.length >= 1 && thin.length === 0, `${tag}: every other visible button box is 48 by 48 or more (${rest.map((b) => b.name).join(", ")})`, thin.map((b) => b.name + " " + Math.round(b.box.w) + "x" + Math.round(b.box.h)));
       check(L.topCount === (sensors === "granted" ? 4 : 3), `${tag}: the top row has ${sensors === "granted" ? "four buttons" : "three buttons (Center hides)"}`, L.topLabels);
       check(L.topRow && L.topRow.one && L.topRow.left >= 0 && L.topRow.right <= L.w, `${tag}: the top row is one line inside the screen`, L.topRow);
       check(L.topRow && /^(MOTION|Motion)$/i.test(L.topLabels[0]) && L.topLabels.every((s) => s.length <= 6), `${tag}: the labels are six letters or fewer`, L.topLabels);
@@ -250,6 +313,9 @@ try {
       check(S.fraction >= need, `${tag}: the safe window is ${(S.fraction * 100).toFixed(1)} percent of the height (at least ${need * 100})`, S.win);
       if (sensors === "granted") await shot(main, `phone-controls-${w}x${h}`);
     }
+    const hs = await main.evaluate(hintStates);
+    check(hs.length === 8 && hs.every((q) => q.gap >= 0), `${w}x${h} ${name}: with a spoken line showing, its tail (27 px) clears the SWING panel for each of the ${hs.length} hint lines`, hs.filter((q) => q.gap < 0));
+    if (w < h) check(hs.every((q) => q.lines === 1), `${w}x${h} ${name}: each hint line fits on one line`, hs.filter((q) => q.lines !== 1));
     const lw = await main.evaluate(lineWindows);
     check(lw.bad.length === 0, `${w}x${h} ${name}: the safe window keeps ${lw.need * 100} percent of the height or more for each of the ${lw.count} phone spoken lines, the longest too`, lw.bad);
     // a trial (with its compass) or the King's hearts make four pills: on a narrow portrait screen the row still fits
