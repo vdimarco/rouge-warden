@@ -1,6 +1,7 @@
 import { BASES, distance, canSee, visibleTo, lineOfSight } from './world.js';
 import { structureProtected } from './objectives.js';
 import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from './combat-rules.js';
+import { assistPoint } from './team-events.js';
 
 const escapeHeroes=[0,1,2,3,6,8,9];
 export function combatDecision(s,e){
@@ -50,6 +51,9 @@ export function combatDecision(s,e){
  const support=boss&&team.some(t=>t.id!==e.id&&t.hp/t.maxHp>.55&&distance(t,boss)<1600&&distance(t,e)<1700);
  const rally=boss&&hurt>.72&&support&&distance(e,boss)<1900&&visibleTo(s,e.team,boss)&&!heroes.some(t=>distance(e,t)<500)&&!endangered;
  if(rally)target=boss;
+ // Teammates answer calls and fights when nothing in sight needs a hero.
+ const call=!rally&&(!target||target.kind!=='hero')&&!endangered?assistPoint(s,e,hurt):null;
+ if(call&&(call.kind==='rally'||!target||target.kind==='minion'))return {mode:'assist',move:call,call:call.kind};
  if(!target){if(e.hero===10&&injured&&!injured.bloom&&ready(2))return {mode:'support',slot:2,aim:{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}};return {mode:'lane'};}
  const d=distance(e,target),aim={x:target.x-e.x,y:target.y-e.y,distance:d},combat=target.kind==='hero',near=heroes.filter(t=>distance(e,t)<420).length;
  let slot;
