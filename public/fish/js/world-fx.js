@@ -45,13 +45,16 @@ export class Spray {
     this.vel[i * 3] = vx; this.vel[i * 3 + 1] = vy; this.vel[i * 3 + 2] = vz;
     this.life[i] = life; this.age[i] = 0; this.size[i] = size; this.gold[i] = gold; this.grav[i] = grav; this.alpha[i] = 1;
   }
-  // a splash: droplets thrown up and out in a crown
-  burst(x, z, s, rnd = Math.random) {
-    const n = Math.round(8 + s * 36);
+  // a splash: droplets thrown up and out in a crown. far (1 or more) grows it with the distance, so a splash far out
+  // still shows: the droplets by far, the throw by its square root, and a short flash of white foam where it hit
+  burst(x, z, s, rnd = Math.random, far = 1) {
+    const n = Math.round(8 + s * 36), lift = Math.sqrt(far);
     for (let k = 0; k < n; k++) {
-      const a = rnd() * Math.PI * 2, out = (0.4 + rnd() * 1.4) * (0.6 + s), up = (1.2 + rnd() * 2.6) * (0.55 + s * 0.8);
-      this.emit(x + Math.cos(a) * 0.1 * s, 0.02, z + Math.sin(a) * 0.1 * s, Math.cos(a) * out, up, Math.sin(a) * out, 0.05 + rnd() * 0.09 * (0.5 + s), 0.5 + rnd() * 0.6);
+      const a = rnd() * Math.PI * 2, out = (0.4 + rnd() * 1.4) * (0.6 + s) * lift, up = (1.2 + rnd() * 2.6) * (0.55 + s * 0.8) * lift;
+      this.emit(x + Math.cos(a) * 0.1 * s * far, 0.02, z + Math.sin(a) * 0.1 * s * far, Math.cos(a) * out, up, Math.sin(a) * out, (0.05 + rnd() * 0.09 * (0.5 + s)) * far, 0.5 + rnd() * 0.6);
     }
+    // the foam: a few big soft points that sit on the water for about 120 ms (no gravity, so they do not sink at once)
+    if (far > 1) for (let k = 0; k < 3; k++) this.emit(x + (rnd() - 0.5) * 0.3 * far, 0.04, z + (rnd() - 0.5) * 0.3 * far, 0, 0.6, 0, (0.3 + 0.3 * s) * far, 0.12 + 0.04 * k, 0, 0);
   }
   update(dt) {
     for (let i = 0; i < this.max; i++) {

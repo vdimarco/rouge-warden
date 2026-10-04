@@ -8,6 +8,7 @@ import { placeSpecies } from "./fishing.js";
 import { byId, lengthFor } from "./species.js";
 import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
+import { isCalm } from "./calm.js";
 import { Rod, Line, Lure } from "./world-gear.js";
 import { loadCartoonModels } from "./cartoon-models.js";
 import { loadPaintedForest } from "./painted-forest.js";
@@ -34,6 +35,11 @@ export const WORLD = {
   GRIP: { d: 0.9, x: 0.5, y: -0.4, pd: 0.9, px: 0.5, py: -0.4 },  // room below the grip for a pull-back gesture
   LURE_MIN_SCREEN: 0.022,          // the lure is drawn at least this fraction of the view height
   PHOTO: { push: 1.2, from: 1.35, freeze: 0.3 },   // the photo beat of a big catch: seconds of slow push-in, its start distance (x), seconds the fish holds still after
+  // the big moments of the reel (main.js calls them; Calm effects and reduced motion skip the camera parts):
+  PUNCH: { k: 0.08, hold: 120, back: 250 },   // the hook set: the view narrows by k at once, holds (ms), then eases back (ms)
+  JUMP_ZOOM: { width: 10, after: 0.4, in: 6, out: 2 },   // a leap: meters of lake across the view at the fish, s it stays after, ease rates in and out
+  KICK_DECAY: 14,                  // the rod tip's twitch (a nibble, the strike, the hook set) dies away at this rate (1/s)
+  SPLASH_FAR: [12, 4, 15, 3],      // a splash grows from 12 m out, up to 4x; its ring from 15 m, up to 3x
 };
 
 /* ---------------- the hours ---------------- */
@@ -149,6 +155,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     loon: { t: 40 },
     trophy: null,
     fps: 60, lastRender: 0, info: { calls: 0, tris: 0 },
+    // the big moments: the punch's start (ms), no update until (ms), the jump zoom (0..1) and how long it holds (clock s),
+    // the rod tip's twitch (0..1) and how long it holds at full (clock s)
+    punchAt: -1e9, freezeUntil: 0, zoomK: 0, zoomHold: 0, kick: 0, kickHold: 0,
   };
 
   /* ---------------- hours ---------------- */
@@ -283,9 +292,16 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       out.rate = 6;
     } else if (m === "reel") {
       const L = S.view.look || (S.fish ? S.fish : S.lure);
-      lookAt({ x: L.x, y: Math.max(L.y, -0.3), z: L.z }, 0.07);
+      const dh = lookAt({ x: L.x, y: Math.max(L.y, -0.3), z: L.z }, 0.07);
       out.pitch = clamp(out.pitch, -0.8, 0.35);
       out.rate = 3;
+      // a leap: the view narrows to about 10 m of lake across at the fish (never wider than it is). S.zoomK eases it (see
+      // update), and the camera follows it closely meanwhile, so the fish stays in the middle of the narrow view
+      if (S.zoomK > 0.001) {
+        const zoom = 2 * Math.atan(WORLD.JUMP_ZOOM.width / 2 / Math.max(dh, 1) / (S.w / S.h)) / DEG;
+        out.fov = lerp(out.fov, Math.min(out.fov, zoom), S.zoomK);
+        out.rate = 10;
+      }
     } else if (m === "catch") {
       out.pos.copy(CATCH_CAM);
       const T = trophySpot();
@@ -311,7 +327,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     const C = S.cam;
     camera.position.copy(C.pos);
     camera.rotation.set(C.pitch, -C.yaw, 0, "YXZ");
-    camera.fov = C.fov;
+    // the hook-set punch narrows the view at once, on the frozen frame too (so it is applied here, not eased in update)
+    camera.fov = C.fov * punchK();
     camera.aspect = S.w / S.h;
     camera.near = S.view.mode === "catch" ? 0.05 : 0.08;
     // the catch card covers the right part of a wide view, or the bottom of a tall one: shift the picture so the fish sits in the free part
@@ -321,6 +338,12 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     sky.position.copy(camera.position);
+  }
+  // the punch of the hook set: 1 - k at once, held, then eased back (a smooth step). 1 when there is none
+  function punchK() {
+    const P = WORLD.PUNCH, t = performance.now() - S.punchAt;
+    if (t < 0 || t >= P.hold + P.back || S.view.mode !== "reel") return 1;
+    return 1 - P.k * (t < P.hold ? 1 : 1 - smooth(0, 1, (t - P.hold) / P.back));
   }
   // radians per CSS pixel: thin things (line, rod tip) are kept about a pixel wide on any screen
   const pxAngle = () => (2 * Math.tan(camera.fov * DEG / 2)) / Math.max(1, S.h);
@@ -342,7 +365,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     const yaw = (R.yaw + (R.steer || 0) * 35) * DEG, th = (R.theta - 35) * DEG;
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(th), Math.sin(th), -Math.cos(yaw) * Math.cos(th)).normalize();
     const pull = R.pull ? new THREE.Vector3(R.pull.x, R.pull.y, R.pull.z) : null;
-    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle(), 1.35);
+    // S.kick: the tip twitches for a nibble, dips hard on a strike and whips on the hook set
+    const tip = rod.pose(gripPoint(), dir, R.bend || 0, pull, camera.position, pxAngle(), 1.35, S.kick);
     S.tip.copy(tip);
     return tip;
   }
@@ -424,8 +448,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (!m) return;
     const u = m.userData.fx, len = f.len || 0.4;
     m.visible = true;
-    // a leap far out is drawn a little larger, so the moment reads on a phone
-    const far = (f.jump || 0) > 0 ? 1 + 0.5 * smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
+    // a leap far out is drawn larger (up to 2x from 30 m), so the moment reads on a phone
+    const far = (f.jump || 0) > 0 ? 1 + smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
     m.scale.setScalar((len / unitLen(m)) * far);
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
     let y = f.y, pitch = 0, roll = f.roll || 0;   // roll: the body turns about its length (radians): a thrashing or beaten fish lies over
@@ -484,10 +508,17 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     WU.uRip.value[S.rip].set(x, z, U.uTime.value, clamp(size, 0.05, 2));
     S.rip = (S.rip + 1) % E.RIPPLES;
   }
+  // a splash far out grows with the distance (WORLD.SPLASH_FAR), so the landing of a long cast and a strike at 40 m show
   function splashAt(x, z, size = 0.5) {
-    ripple(x, z, size * 1.2);
-    spray.burst(x, z, clamp(size, 0.1, 1.6));
+    const d = Math.hypot(x - EYEV.x, z - EYEV.z), [d0, k0, r0, rk] = WORLD.SPLASH_FAR;
+    ripple(x, z, size * 1.2 * clamp(d / r0, 1, rk));
+    spray.burst(x, z, clamp(size, 0.1, 1.6), Math.random, clamp(d / d0, 1, k0));
     S.lastSplash = { x, z, t: S.clock };
+  }
+  // gold sparks over the water (a cast right into a ring), grown with the distance like a splash
+  function sparkle(x, z, n = 8) {
+    const k = clamp(Math.hypot(x - EYEV.x, z - EYEV.z) / WORLD.SPLASH_FAR[0], 1, WORLD.SPLASH_FAR[1]);
+    for (let i = 0; i < n; i++) { const a = Math.random() * 6.28; spray.emit(x + Math.cos(a) * 0.3, 0.05, z + Math.sin(a) * 0.3, Math.cos(a) * 0.6, 1.2 + Math.random() * 1.2 * Math.sqrt(k), Math.sin(a) * 0.6, 0.08 * k, 0.9, 1, 0.4); }
   }
   // the leap splashes on its own, unless the game just splashed there itself
   function autoSplash(x, z, size) {
@@ -521,8 +552,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   /* ---------------- the trophy ---------------- */
   // A fish in the catch view lies on a measuring board: a strip with cm marks, the nose at 0, the shortest of
   // BOARD_LENGTHS that holds the fish. So a big fish looks big and a small one looks small. There is none for junk.
-  // photo: a slow push-in first (WORLD.PHOTO), for a trophy, a legend or a fish that opens a place.
-  function showCatch(id, kg, { photo = false } = {}) {
+  // photo: a slow push-in first (WORLD.PHOTO), for a trophy, a legend or a fish that opens a place (Calm effects: no
+  // push-in). sparkle: a burst of gold sparks when the push-in ends (a trophy or a legend). Every legend glitters.
+  function showCatch(id, kg, { photo = false, sparkle = false } = {}) {
     hideCatch();
     const m = makeFish(id);
     if (!m) return;
@@ -553,7 +585,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       stage.add(board);
       W = L * 1.06; H = (size.y / 2 - (yb - bh / 2)) * 1.1;
     }
-    S.trophy = { mesh: stage, pivot, inner: m, board, behind, len, W, H, dist: 1, fov: 40, t: 0, sw: 0, junk, id, photo, push: photo ? WORLD.PHOTO.from : 1, pitch: CATCH_PITCH };
+    const calm = isCalm();
+    S.trophy = { mesh: stage, pivot, inner: m, board, behind, len, W, H, dist: 1, fov: 40, t: 0, sw: 0, junk, id, photo: photo && !calm, push: photo && !calm ? WORLD.PHOTO.from : 1, pitch: CATCH_PITCH,
+      legend: !!(sp && sp.legend), sparkle: sparkle && !calm };
     fitTrophy();
     scene.add(stage);
   }
@@ -609,14 +643,34 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     u.uWag.value.set(T.t * 3, T.junk ? 0 : 0.12, 0, 0);
     u.uUnder.value = 0; u.uAlpha.value = 1;
     if (Math.random() < dt * 3 && !T.junk) spray.emit(p.x + (Math.random() - 0.5) * T.len * 0.6, p.y - 0.05, p.z, 0, -0.3, 0, 0.012, 0.8);
-    // the legend glitters
-    if (T.id === "golden" && Math.random() < dt * 12) spray.emit(p.x + (Math.random() - 0.5) * T.len, p.y + (Math.random() - 0.5) * T.len * 0.3, p.z + (Math.random() - 0.5) * 0.1, 0, 0.08, 0, 0.012, 1.2, 1, 0);
+    // a legend glitters
+    if (T.legend && Math.random() < dt * 12) spray.emit(p.x + (Math.random() - 0.5) * T.len, p.y + (Math.random() - 0.5) * T.len * 0.3, p.z + (Math.random() - 0.5) * 0.1, 0, 0.08, 0, 0.012, 1.2, 1, 0);
+    // a trophy or a legend: one burst of gold sparks around the fish as the push-in ends
+    if (T.sparkle && T.t >= (T.photo ? P.push : 0.3)) {
+      T.sparkle = false;
+      for (let i = 0; i < 60; i++) {
+        const a = Math.random() * 6.28, r = T.len * (0.3 + 0.4 * Math.random());
+        spray.emit(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r * 0.5, p.z + 0.05, Math.cos(a) * 0.35, 0.15 + Math.sin(a) * 0.3, 0, 0.012 + 0.01 * Math.random(), 0.7 + 0.5 * Math.random(), 1, 0.3);
+      }
+    }
   }
 
   /* ---------------- per frame ---------------- */
   function update(dt) {
+    // the hook-set freeze: the lake, the fish and the camera hold still for a moment (main.js keeps the sim and the
+    // input going; render() still draws, with the punch)
+    if (performance.now() < S.freezeUntil) return;
     dt = clamp(dt || 0, 0, 0.1);
     S.clock += dt;
+    // the jump zoom: in while the fish is in the air (and from jumpZoom()), out a little after; in fast, out slow.
+    // Calm effects and reduced motion keep the view as it is
+    const J = WORLD.JUMP_ZOOM;
+    if (S.fish && S.fish.jump > 0 && S.view.mode === "reel") S.zoomHold = Math.max(S.zoomHold, S.clock + J.after);
+    const zw = S.view.mode === "reel" && S.clock < S.zoomHold && !isCalm() ? 1 : 0;
+    S.zoomK += (zw - S.zoomK) * (1 - Math.exp(-dt * (zw > S.zoomK ? J.in : J.out)));
+    if (!zw && S.zoomK < 0.001) S.zoomK = 0;
+    // the rod tip's twitch holds, then dies away
+    if (S.clock > S.kickHold) S.kick *= Math.exp(-dt * WORLD.KICK_DECAY);
     U.uTime.value = S.clock % 3600;
     updateCamera(dt);
     drawLoon(dt);
@@ -781,7 +835,18 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     },
     // to: where a cast like the last one would land ({ x, z, warn: not in the water }), or null for the short line
     setAim({ yaw = 0, visible = true, to = null } = {}) { S.aim.yaw = yaw; S.aim.visible = visible; S.aim.to = to; },
-    ripple, splash: splashAt, rise,
+    ripple, splash: splashAt, rise, sparkle,
+    // The big moments (main.js). Each returns false when Calm effects or reduced motion skip it.
+    // punch(): the hook set narrows the reel view by 8% at once, holds 120 ms, and eases back over 250 ms
+    punch() { if (isCalm()) return false; S.punchAt = performance.now(); return true; },
+    // freeze(ms): no update for ms (the lake, the fish, the camera); the game's sim and input go on
+    freeze(ms = 70) { if (isCalm()) return false; S.freezeUntil = performance.now() + ms; return true; },
+    // jumpZoom(s): a fish is about to leap: zoom in on it now and for s seconds (while it is in the air the zoom holds by itself)
+    jumpZoom(s = 0.8) { if (isCalm()) return false; S.zoomHold = Math.max(S.zoomHold, S.clock + s); return true; },
+    // twitch(k, ms): the rod tip dips by k (0..1) toward the line, holds for ms, then springs back (a nibble, the strike, the hook set)
+    twitch(k, ms = 0) { S.kick = clamp(Math.max(S.kick, k), 0, 1); S.kickHold = Math.max(S.kickHold, S.clock + ms / 1000); },
+    // for the tests: the state of the big moments right now
+    feel() { return { clock: S.clock, frozen: performance.now() < S.freezeUntil, punch: punchK(), zoom: S.zoomK, kick: S.kick, fov: camera.fov, base: baseFov(S.view.mode) }; },
     setHour,
     showCatch, hideCatch,
     update, render,

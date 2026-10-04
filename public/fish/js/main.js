@@ -25,6 +25,7 @@ import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHo
 import { PLACE_GOALS, goalsMet, goalCount, nextGoal, dailyGoal, dayHit, dayDoneText, todayLine, isDay, dayOf, STREAK, ASSIST, SHORT_M, assistFish, progressNote } from "./goals.js";
 import { SAVE_KEY, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "./save.js";
 import { Native } from "./native.js";
+import { isCalm } from "./calm.js";
 
 // every module is in: the bar on the boot screen moves on (index.html shows that screen until the title is ready)
 if (window.fishBoot) fishBoot.step(0.4);
@@ -242,13 +243,27 @@ function prompt(text, sub = "", icon = "", tone = "") {
   p.hidden = false;
   if (key === promptKey) return;
   promptKey = key;
+  // a hot prompt glows once when it changes: start its animation again
+  if (tone === "hot" && p.classList.contains("hot")) { p.className = ""; void p.querySelector(".p1").offsetWidth; }
   p.className = tone;
   p.querySelector(".p1").innerHTML = (ICON[icon] || "") + "<span></span>";
   p.querySelector(".p1 span").textContent = text;
   p.querySelector(".p2").textContent = sub;
 }
-// kind "photo" is the white camera flash of a trophy; the strike and the loss flash red
-function flash(kind = "") { const f = $("#flash"); f.classList.remove("go"); f.classList.toggle("photo", kind === "photo"); void f.offsetWidth; f.classList.add("go"); }
+// The big words of the hook set in the prompt's place: "Fish on!", and sub under it ("Quick set!"), for ms. The prompt
+// shows again after it
+let bannerT = 0;
+function banner(text, sub = "", ms = 900) {
+  const b = $("#banner");
+  clearTimeout(bannerT);
+  b.hidden = true; void b.offsetWidth;
+  b.querySelector("b").textContent = text;
+  b.querySelector("span").textContent = sub;
+  b.hidden = !text;
+  if (text) bannerT = setTimeout(() => { b.hidden = true; }, ms);
+}
+// kind "photo" is the white camera flash of a trophy; the strike and the loss flash red. Calm effects: no flash
+function flash(kind = "") { if (isCalm()) return; const f = $("#flash"); f.classList.remove("go"); f.classList.toggle("photo", kind === "photo"); void f.offsetWidth; f.classList.add("go"); }
 let reportT = 0;
 // cue: the short word at the release itself ("Sweet!"), before the lure lands; ms: how long it stays
 function report(dist, verdict, zoneName, sweet, cue = false, ms = 2600) {
@@ -488,7 +503,7 @@ function stopPlay() {
   $("#hud").hidden = true;
   prompt("");
   hideReport();
-  clearTimeout(cardT); clearInterval(countT);
+  clearTimeout(cardT); clearInterval(countT); clearInterval(resT); banner("");
   if (world) { world.hideCatch(); world.setLure({ x: 0, y: -5, z: 0, visible: false }); world.setLine({ visible: false }); world.setFish(null); world.setFollower(null); world.setAim({ visible: false }); world.setRod({ theta: 70, yaw: 0, visible: false }); }
   Sound.stopLoops(); Haptics.stop();
 }
@@ -690,6 +705,8 @@ function unlockCard(id) {
   $("#uname").textContent = JOURNEY[id].name + " is open!";
   $("#ublurb").textContent = JOURNEY[id].blurb;
   show("unlock");
+  // a horn call and the new place's own sound, and a buzz; the card rises in and its badge stamps on (index.html)
+  Sound.sfx("newPlace", ORDER.indexOf(id)); Haptics.land(1);
 }
 $("#uGo").addEventListener("click", () => { Sound.sfx("ui"); travelTo(G.unlockId); });
 $("#uStay").addEventListener("click", () => { Sound.sfx("uiBack"); show(null); nextAfterOutcome(); });
@@ -841,7 +858,7 @@ function launch(t, tEnd, held, finger, sounded = false) {
   save.casts++;
   if (!sounded) Sound.sfx("release");
   // a sweet release says so at once, before the lure lands (the grade is fixed, so the buzz cannot spoil it)
-  if (params.verdict === "sweet" && !held) { report(null, "Sweet!", "", true, true, 900); Sound.sfx("ui"); Haptics.bump(0.6); }
+  if (params.verdict === "sweet" && !held) { report(null, "Sweet!", "", true, true, 900); Sound.sfx("zing"); Haptics.bump(0.6); }
   seen("cast");
   updateHud();
   relayout();
@@ -911,7 +928,8 @@ function landed(r) {
     report(dist, VV[v] || "", reportNote({ streak: lit ? hint : "", progress: lit ? "" : hint, dist, verdict: v, ring: G.ring, nearMiss: miss ? nearMissText(miss, r.x, r.z, G.cast ? G.cast.yaw : 0) : "", zone: G.place.zoneNames[zone] || "", best,
       farther: G.place.id === "loon" && dist < 15 && save.casts <= 12, stroke: G.cast ? G.cast.stroke : 1, motion: G.input === "motion", key: !!(G.cast && G.cast.key) }), v === "sweet");
     $("#report").classList.toggle("streak", lit);
-    if (G.ring) Sound.sfx("ui");
+    // right into a ring: its own chime (the gold ring rings brighter), a tap, and gold sparks on the water
+    if (G.ring) { Sound.sfx("ringHit", G.ring.gold ? 1 : 0); Haptics.bump(0.5); world.sparkle(r.x, r.z, 8); }
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
     return;
@@ -994,6 +1012,8 @@ function ringNews(e) {
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
 // in), the flash and the shutter come, then the card slides up. Seconds
 const PHOTO = { flash: 1.2, card: 1.5 };
+// the call of each place, after a legend's fanfare
+const PLACE_CALL = { loon: "loonWail", stumps: "frogs", river: "rapids", sea: "gulls" };
 function caught(c) {
   const sp = byId(c.id), at = G.place.id;
   // today's goal, taken before this fish can open a place (the goal of the day stays the same all day)
@@ -1031,13 +1051,17 @@ function caught(c) {
   G.closeCall = r.close ? goalText(at, "close") : "";
   // a derby catch that opens a place: after the card, where to go (the last cast's results card says it instead)
   if (r.opened && G.mode === "derby" && G.castsLeft > 0) G.closeCall = JOURNEY[r.opened].name + " is open. Go there after the derby.";
+  // the stinger says how big the news is: a fish has the landing alone; a new species a short rise, a new record a brass
+  // call, a trophy or a legend the whole fanfare, and a legend the call of its place after it
   Sound.sfx(junk ? "junk" : "landed");
-  if (r.record || (r.isNew && !junk) || trophy || legend) setTimeout(() => Sound.sfx("record"), 500);
-  if (legend && at === "loon") setTimeout(() => Sound.sfx("loonWail"), 1700);
+  const sting = junk ? "" : legend || trophy ? "record" : r.record ? "recordCall" : r.isNew ? "newSpecies" : "";
+  if (sting) setTimeout(() => Sound.sfx(sting), sting === "newSpecies" ? 900 : 500);
+  if (legend) setTimeout(() => Sound.sfx(PLACE_CALL[at] || "loonWail"), 1700);
   Haptics.land(legend ? 2 : trophy ? 1 : 0);
-  // at most two badges, in this order (a new place is the rarest news)
+  // at most two badges, in this order (a new place is the rarest news). They wait for the weight to count up (countUp)
   const badges = $("#cbadges");
   badges.innerHTML = "";
+  badges.className = "badges held";
   const marks = [];
   if (r.opened) marks.push(["NEW PLACE", "new"]);
   if (legend) marks.push(["LEGEND", ""]);
@@ -1060,12 +1084,12 @@ function caught(c) {
   $("#catch").classList.toggle("wait", photo);
   relayout(true);
   // after the new layout, so the fish is fitted to the view it will be seen in
-  world.showCatch(c.id, c.kg, { photo });
+  world.showCatch(c.id, c.kg, { photo, sparkle: trophy || legend });
   show("catch");
   updateHud();
   if (!photo) { countUp(c, junk, rank); return; }
   cardT = setTimeout(() => {
-    flash("photo"); Sound.sfx("shutter"); Haptics.thump();
+    flash("photo"); Sound.sfx("shutter"); Haptics.shutter();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
   }, PHOTO.flash * 1000);
 }
@@ -1077,23 +1101,31 @@ function catchKg(c, junk, kg) {
   // data-kg is set when the count-up is done, so a test can wait for it
   $("#ckg").dataset.kg = junk || kg < c.kg ? "" : String(c.kg);
 }
-// The weight counts up from 0, over 0.4 + 1.2 × rank² seconds, with up to 10 ticks. A trophy ends with a thump.
+// The weight counts up from 0, over 0.4 + 1.2 × rank² seconds, with up to 10 ticks that climb in pitch. Then the weight
+// pops, the badges stamp on with a thunk, and a trophy buzzes. Calm effects: the card at once (the thunk and the buzz stay)
 function countUp(c, junk, rank) {
   clearInterval(countT);
-  if (junk || matchMedia("(prefers-reduced-motion: reduce)").matches) { catchKg(c, junk, c.kg); return; }
+  if (junk || isCalm()) { catchKg(c, junk, c.kg); countDone(rank, false); return; }
   const dur = 0.4 + 1.2 * rank * rank, ticks = clamp(Math.round(dur * 8), 3, 10), t0 = now();
   let done = 0;
   catchKg(c, junk, 0);
   countT = setInterval(() => {
     const k = clamp((now() - t0) / 1000 / dur, 0, 1);
     catchKg(c, junk, c.kg * (1 - Math.pow(1 - k, 2)));
-    while (done < ticks && k >= (done + 1) / ticks) { done++; Sound.sfx("tick"); Haptics.tick(); }
+    while (done < ticks && k >= (done + 1) / ticks) { done++; Sound.sfx("tick", done / ticks); Haptics.tick(); }
     if (k >= 1) {
       clearInterval(countT);
       catchKg(c, junk, c.kg);
-      if (rank >= TROPHY_RANK) Haptics.thump();
+      countDone(rank, true);
     }
   }, 40);
+}
+function countDone(rank, pop) {
+  const b = $("#cbadges"), kg = $("#ckg");
+  b.classList.remove("held");
+  if (b.children.length) { b.classList.add("stamp"); Sound.sfx("stamp"); }
+  if (pop) { kg.classList.remove("pop"); void kg.offsetWidth; kg.classList.add("pop"); }
+  if (rank >= TROPHY_RANK) Haptics.land(1);
 }
 $("#catchGo").addEventListener("click", () => {
   if (G.cardWait) return;
@@ -1137,11 +1169,41 @@ function endDerby() {
   const up = G.unlocked[G.unlocked.length - 1];
   $("#runlock").hidden = $("#rGo").hidden = !up;
   if (up) { $("#runlock").textContent = openedText(up.id, up.kg, up.name, "results"); seen("opened." + up.id); G.unlockId = up.id; }
-  if (d.best && total > 0) Sound.sfx("record");
   relayout(true);
   show("results");
+  derbyCount(total, d.best && total > 0, up ? up.id : null);
 }
-$("#rAgain").addEventListener("click", () => { Sound.sfx("ui"); startMode("derby"); });
+// The derby total counts up from zero over about 1 s with ticks that climb. Then the rank stamps on and the lines under it
+// show, with the close of the derby: the fanfare for a new best, a soft close for any other. A place this derby opened
+// sounds its horn call after that. Calm effects: all at once (the sounds stay). Fish again, Title and Go there stop it
+let resT = 0;
+function derbyCount(total, best, opened) {
+  clearInterval(resT);
+  const held = ["#rrank", "#rnext", "#rbest", "#runlock"].map((s) => $(s)), calm = isCalm(), DUR = calm ? 0 : 1000, ticks = 8, t0 = now();
+  let done = 0, closed = false;
+  const close = () => {
+    closed = true;
+    $("#rtotal").textContent = fmtKg(total);
+    for (const el of held) el.classList.remove("held");
+    if (!calm) $("#rrank").classList.add("stamp");
+    Sound.sfx(best ? "record" : "derbyClose"); Haptics.land(best ? 1 : 0);
+  };
+  $("#rrank").classList.remove("stamp");
+  if (calm) close();
+  else { for (const el of held) el.classList.add("held"); $("#rtotal").textContent = fmtKg(0); }
+  if (closed && !opened) return;
+  resT = setInterval(() => {
+    const ms = now() - t0, k = DUR ? clamp(ms / DUR, 0, 1) : 1;
+    if (!closed) {
+      $("#rtotal").textContent = fmtKg(total * (1 - Math.pow(1 - k, 2)));
+      while (done < ticks && k >= (done + 1) / ticks) { done++; Sound.sfx("tick", done / ticks); }
+      if (k >= 1) close();
+    }
+    if (closed && !opened) clearInterval(resT);
+    else if (closed && ms >= DUR + (best ? 2600 : 900)) { clearInterval(resT); Sound.sfx("newPlace", ORDER.indexOf(opened)); Haptics.land(1); }
+  }, 40);
+}
+$("#rAgain").addEventListener("click", () => { Sound.sfx("ui"); clearInterval(resT); startMode("derby"); });
 $("#rMenu").addEventListener("click", () => { Sound.sfx("uiBack"); toTitle(); });
 $("#rGo").addEventListener("click", () => { Sound.sfx("ui"); travelTo(G.unlockId); });
 
@@ -1586,7 +1648,7 @@ function sayBig() {
   if (!G.big || G.big.said) return;
   G.big.said = true;
   toast("It is a big one!", 2200);
-  Haptics.thump();
+  Haptics.big();
 }
 function reelUpdate(dt) {
   const sim = G.sim;
@@ -1764,11 +1826,20 @@ function handleEvent(e) {
   const fx = e.x != null ? e.x : s && s.fish ? s.fish.x : s ? s.lure.x : 0;
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
-    case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
+    // a nibble taps the rod tip; the strike pulls it down hard, with its own buzz and sound as hard as it hit
+    case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); world.twitch(0.12 + 0.15 * (e.s == null ? 0.5 : e.s)); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
+    case "strike": Sound.sfx("strike", e.s); Haptics.thump(e.s); flash(); world.twitch(0.7, 60); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
     case "hooked": {
       if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
-      else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
+      else {
+        // the hook set, the biggest hit of the fight: the lake freezes for a moment, the view punches in, the rod whips,
+        // "Fish on!" fills the prompt's place, a deep thump and the longest buzz yet. A set within 250 ms of the strike
+        // says so. Calm effects keep the words, the sound and the buzz, and skip the freeze and the punch (world.js)
+        Sound.sfx("hookset"); Haptics.hookset();
+        world.freeze(70); world.punch(); world.twitch(0.9, 150);
+        if (s && s.fish) world.splash(s.fish.x, s.fish.z, 0.4);
+        banner(e.self ? "It hooked itself! Fish on!" : "Fish on!", !e.self && now() - (G.lastEvent.strike || -1e9) < 250 ? "Quick set!" : "");
+      }
       // the ring's fish is on the line: its ring goes quiet
       if (G.ring && rises && rises.take) { rises.take(G.ring); G.ring = null; }
       // a big one gets a warning at the first run of the drag, or 4 s from now
@@ -1783,12 +1854,13 @@ function handleEvent(e) {
     case "missed": case "spooked": Sound.sfx("miss"); break;
     case "refuse": Sound.sfx("miss"); toast("Too fast. It turned away. Reel slower.", 2600); break;
     case "slack": Sound.sfx("slip"); Haptics.bump(0.3); break;
-    case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); break;
+    // a leap: the view zooms in on the fish as it comes up, and eases back after it lands (world.js)
+    case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); world.jumpZoom(); break;
     case "splash": world.splash(fx, fz, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
     // a run starts with a click of the drag and a buzz, so a thumb on the crank has time to stop. The tip is said once,
     // and marked seen only when it has shown
     case "run": case "surge":
-      Sound.sfx("tick"); Haptics.bump(0.5);
+      Sound.sfx("ratchet"); Haptics.bump(0.5);
       if (!save.seen.run) toast("It is running! Let the drag work.", 2400, () => seen("run"));
       break;
     case "shake": Haptics.bump(0.7); break;
@@ -1801,7 +1873,7 @@ function handleEvent(e) {
     case "near": Sound.sfx("splash", 0.3); world.splash(fx, fz, 0.3); Haptics.bump(0.8); break;
     // the fight moves. Each has a warning: a sound and a buzz
     case "charge": Sound.sfx("slip"); Haptics.charge(); break;
-    case "turn": Haptics.thump(); break;
+    case "turn": Haptics.turn(); break;
     case "sulk": Sound.sfx("creak"); Haptics.throb(); break;
     case "pump": Haptics.bump(0.4); break;
     case "unstuck": Sound.sfx("splash", 0.3); world.splash(fx, fz, 0.3); break;
@@ -1811,7 +1883,9 @@ function handleEvent(e) {
     case "turned": toast("You turned it!", 1800); break;
     // its own warning: the snap buzz would say the line broke, and its silence would hide the drag
     case "lastrun": Haptics.surge(); break;
-    case "phase": toast(e.name, 2200); Sound.sfx("record"); Haptics.phase(); break;
+    // a legend's next stage: a drum roll and a horn that does not resolve (no victory yet). Its first stage comes with the
+    // hook set, whose banner, sound and buzz say it
+    case "phase": toast(e.name, 2200); if (e.n > 1) { Sound.sfx("stage"); Haptics.phase(); } break;
     case "spool": Sound.sfx("slip"); Haptics.bump(0.8); break;
     case "snap":
       // a line that rubbed through, or ran out: the loss line says which
