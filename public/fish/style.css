@@ -104,7 +104,7 @@ html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation:
 /* Larger text (Settings): #game[data-text="large"] sets --ui-scale, and the words in play and on the cards grow with it.
    main.js grows the gauge's words as well. Every screen still fits a 360 x 640 phone: the lists scroll in their cards */
 #game { --ui-scale: 1; }
-#game[data-text="large"] { --ui-scale: 1.25; }
+#game[data-text="large"] { --ui-scale: 1.25; --gauge-w: min(52vmin, 270px); --gauge-h: min(34vmin, 170px); }
 #game[data-text="large"] #prompt .p1 { font-size: calc(clamp(16px, 4.6vmin, 22px) * var(--ui-scale)); }
 #game[data-text="large"] #prompt .p2 { font-size: calc(14px * var(--ui-scale)); }
 #game[data-text="large"] #toast { font-size: calc(14px * var(--ui-scale)); }
@@ -115,7 +115,6 @@ html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation:
 #game[data-text="large"] #pullStrength { font-size: calc(12px * var(--ui-scale)); }
 #game[data-text="large"] #dragBar { font-size: calc(11px * var(--ui-scale)); width: 120px; }
 #game[data-text="large"] #fishGuide .guide-caption { font-size: calc(12px * var(--ui-scale)); }
-#game[data-text="large"] #gaugeBox { width: min(52vmin, 270px); height: min(34vmin, 170px); }
 #game[data-text="large"] .card p, #game[data-text="large"] .set label, #game[data-text="large"] .steps li { font-size: calc(16px * var(--ui-scale)); }
 #game[data-text="large"] .set label small, #game[data-text="large"] .jfish, #game[data-text="large"] .jfish.none small,
 #game[data-text="large"] .pcard p, #game[data-text="large"] .pcard .facts, #game[data-text="large"] .pcard .goals { font-size: calc(13px * var(--ui-scale)); }

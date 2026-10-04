@@ -1,5 +1,6 @@
 // Small motion lessons, driven by the existing game clock. Each scene can be
 // scrubbed with seek(t), including during frame-by-frame video export.
+import { isCalm } from "./calm.js";
 const KEY = "reel-it-in-guide-v1";
 export const INTRO = ["hold", "back", "cast", "reel", "hook", "pump", "land"];
 export const LENGTH = 2.6;
@@ -174,7 +175,6 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
   let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });
   let lastPhase = "", lastStep = "", now = 0;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   let buttonState = "";
   const title = () => {
     const next = `${dismissed}:${panel.hidden}`;
@@ -240,7 +240,7 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
   }
 
   function seek(t) {
-    const pose = poseAt(kindNow, reduced.matches ? 1.3 : t);
+    const pose = poseAt(kindNow, isCalm() ? 1.3 : t);
     for (const [el, cls] of parts) for (const [name, value] of Object.entries(pose[cls])) el.setAttribute(name, value);
   }
   function update(s, t) {
@@ -256,7 +256,9 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       videoMode = mode; videoFailed = false;
       video.src = new URL(`../clips/guide-${mode}.mp4`, import.meta.url).href;
     }
-    const useVideo = intro && !reduced.matches && !videoFailed;
+    // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps
+    const calm = isCalm();
+    const useVideo = intro && !calm && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
     if (useVideo && video.paused && !playPending) {
       playPending = true;
@@ -264,7 +266,7 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
     }
     if (!useVideo) video.pause();
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
-    const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
+    const index = intro ? calm ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
     const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {

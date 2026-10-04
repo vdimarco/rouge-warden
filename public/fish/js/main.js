@@ -179,7 +179,7 @@ const ICON = {
   ring: "<svg viewBox='0 0 40 40'><ellipse cx='20' cy='24' rx='5' ry='2.2' fill='none' stroke='#e8b64a' stroke-width='2.4'/><ellipse cx='20' cy='24' rx='11' ry='5' fill='none' stroke='#e8b64a' stroke-width='2' opacity='0.7'/><ellipse cx='20' cy='24' rx='17' ry='8' fill='none' stroke='currentColor' stroke-width='1.6' opacity='0.45'/><path d='M20 21 V10 m-3 3 l3 -3 l3 3' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   stop: "<svg viewBox='0 0 40 40'><circle cx='20' cy='20' r='14' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M13 13 L27 27' stroke='#ff5a4a' stroke-width='3' stroke-linecap='round'/></svg>",
   fish: "<svg viewBox='0 0 40 40'><path d='M5 20 Q16 8 28 20 Q16 32 5 20 Z M28 20 L36 13 L36 27 Z' fill='#e8b64a'/><circle cx='11' cy='18' r='1.8' fill='#0d2f38'/></svg>",
-  swipe: "<svg viewBox='0 0 40 40'><rect x='8' y='6' width='24' height='28' rx='3' fill='none' stroke='currentColor' stroke-width='2.2'/><path d='M20 12 V28 m-5 -5 l5 5 l5 -5' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  swipe: "<svg viewBox='0 0 40 40'><rect x='8' y='6' width='24' height='28' rx='3' fill='none' stroke='currentColor' stroke-width='2.2'/><path d='M20 28 V12 m-5 5 l5 -5 l5 5' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
 };
 
 /* ---------------- screens and messages ---------------- */

@@ -76,10 +76,10 @@ function scan(id) {
     const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left), oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
     if (ox > 2 && oy > 2) out.overlaps.push([label(A), label(B), Math.round(ox), Math.round(oy)]);
   }
-  // play: the reel controls, the prompt and the HUD must not cover each other
+  // play: the reel controls, the prompt, the rod cue's words and the HUD must not cover each other
   if (!id) {
     const R = (s) => { const e = document.querySelector(s); return e && vis(e) ? e.getBoundingClientRect() : null; };
-    const parts = ["#hud", "#prompt .p1", "#gaugeBox", "#dragBar", "#crankBox", "#pullStrength", "#toast.on", "#fishGuide"].map((s) => [s, R(s)]).filter((p) => p[1]);
+    const parts = ["#hud", "#prompt .p1", "#gaugeBox", "#dragBar", "#crankBox", "#pullStrength", "#toast.on", "#fishGuide", "#rodCue span"].map((s) => [s, R(s)]).filter((p) => p[1]);
     for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
       const [na, a] = parts[i], [nb, b] = parts[j];
       const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left), oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
@@ -198,8 +198,9 @@ async function runSize(W, H) {
       await page.evaluate(() => { FISH.save.reelSide = "left"; document.querySelector("#game").dataset.reelSide = "left"; FISH.relayout(true); });
       await stage({});
       await snap("fight-left", null, 1500);
+      // (a fish on the bottom: the longest rod cue, "Drag the rod up. Reel as it comes down.")
       await page.evaluate(() => { FISH.save.reelSide = "right"; document.querySelector("#game").dataset.reelSide = "right"; FISH.G.input = "touch"; FISH.relayout(true); });
-      await stage({});
+      await stage({ fish: { id: "walleye", kg: 2.1, cm: 52, x: 0, y: -1.2, z: -20, heading: 0, len: 0.5, stamina: 0.62, move: "sulk", jump: 0, near: 0.5, known: true } });
       await snap("fight-touch", null, 1500);
       await page.evaluate(() => { FISH.G.input = "motion"; FISH.relayout(true); });
     }

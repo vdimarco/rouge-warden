@@ -1618,9 +1618,9 @@ export class Gauge extends Widget {
         rubBox = { x: bx0, y: by0, w: bw0, h: 6, fill: fw };
       } else {
         // a label ("Big fish on!") takes the place of the name until the fish shows what it is. A long name gets a smaller
-        // font, down to the 10 px floor, before it is ever squeezed
+        // font, down to the 10 px floor, before it is ever squeezed. (It starts 2 px over the labels, so Larger text grows it)
         const name = String(s.label || s.name || "Fish on!");
-        let px = 12;
+        let px = Math.max(12, GAUGE.LABEL_PX + 2);
         for (; px > GAUGE.LABEL_PX; px--) { ctx.font = font(px); if (ctx.measureText(name).width <= bw) break; }
         ctx.font = font(px);
         ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);

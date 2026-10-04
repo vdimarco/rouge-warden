@@ -2,8 +2,9 @@
 //   the title (Go fishing first and red, Derby next, no art picker; 8 controls on the web and 6 in the store build), the
 //   red button starts free fishing, the guide on a fresh save in motion and touch play (and off after the first fish),
 //   How to play on the tab for the input with no scroll at 390x844, the settings rows, About and Privacy (open and close,
-//   no network), the Painted style name, Larger text that fits at 360x640, Calm effects (no strike flash, no pulse, the
-//   words and the sound stay), the reel side mirror with no overlap, the drag beside the crank, the live regions and the
+//   no network), the Painted style name, Larger text that fits at 360x640 (the rod cue's words, the gauge's fish name and
+//   a long toast beside the bigger gauge too), Calm effects (no strike flash, no pulse, a still guide, the words and the
+//   sound stay), the reel side mirror with no overlap, the drag beside the crank, the live regions and the
 //   dialogs, the HUD chip at 360 px, the Space words on the rod cue, ?shot, and the numbers on the measuring board.
 // Serve public/ first, then: NODE_PATH=qa/browser/node_modules node qa/fish/menus.e2e.mjs   (FISH_URL sets the address)
 // PARTS=3 runs part 3 only. Exits with code 1 when something fails.
@@ -103,6 +104,12 @@ if (part("1")) {
     await click(page, "#helpT summary");
     const mv = await page.evaluate(() => document.querySelector("#helpT .moves").open && document.querySelector("#helpT .moves").textContent);
     check(!!mv && /It jumps\. Drag the rod down\./.test(mv) && /It holds on the bottom\. Drag the rod up\. Reel as it comes down\./.test(mv), "the Fish moves row opens to the moves, in the words of the fight prompts");
+    // the picture beside "A fish strikes?" points up on both tabs, as the words say ("Snap it up!", "Swipe it up!")
+    const ups = await page.evaluate(() => [...document.querySelectorAll("#helpM .steps li, #helpT .steps li")].filter((li) => /strikes/.test(li.textContent)).map((li) => {
+      const m = [...li.querySelectorAll("path")].map((p) => /M\s*[\d.]+\s+([\d.]+)\s*V\s*([\d.]+)/.exec(p.getAttribute("d") || "")).find(Boolean);
+      return m ? +m[2] < +m[1] : null;
+    }));
+    check(ups.length >= 2 && ups.every((u) => u === true), "the hook row's arrow points up on the Motion and the Touch tab (" + JSON.stringify(ups) + ")");
     await click(page, "#help [data-close]");
 
     // Settings
@@ -160,13 +167,13 @@ if (part("1")) {
       await page.evaluate((side) => { FISH.save.reelSide = side; document.querySelector("#game").dataset.reelSide = side; FISH.relayout(true); }, side);
       await stage(page, {});
       await sleep(900);
-      const L = await page.evaluate(() => { const R = (s) => { const e = document.querySelector(s); const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; }; return { crank: R("#crankBox"), drag: R("#dragBar"), up: R("#dragUp"), down: R("#dragDown"), gauge: R("#gaugeBox"), prompt: R("#prompt .p1"), pull: document.querySelector("#pullStrength").hidden ? null : R("#pullStrength"), W: innerWidth }; });
+      const L = await page.evaluate(() => { const R = (s) => { const e = document.querySelector(s); const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; }; return { crank: R("#crankBox"), drag: R("#dragBar"), up: R("#dragUp"), down: R("#dragDown"), gauge: R("#gaugeBox"), prompt: R("#prompt .p1"), pull: document.querySelector("#pullStrength").hidden ? null : R("#pullStrength"), cue: document.querySelector("#rodCue").hidden ? null : R("#rodCue span"), W: innerWidth }; });
       const c = { x: L.crank.x + L.crank.w / 2, y: L.crank.y + L.crank.h / 2 }, d = (b) => Math.hypot(b.x + b.w / 2 - c.x, b.y + b.h / 2 - c.y);
-      const parts = ["crank", "drag", "gauge", "prompt", "pull"].filter((k) => L[k]), over = [];
+      const parts = ["crank", "drag", "gauge", "prompt", "pull", "cue"].filter((k) => L[k]), over = [];
       for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) if (hit(L[parts[i]], L[parts[j]])) over.push(parts[i] + "/" + parts[j]);
       const leftSide = side === "left";
       const placed = leftSide ? c.x < L.W / 2 && L.gauge.x + L.gauge.w / 2 > L.W / 2 : c.x > L.W / 2 && L.gauge.x + L.gauge.w / 2 < L.W / 2;
-      check(placed && !over.length, `motion play, reel side ${side}: the crank ${leftSide ? "left and the gauge right" : "right and the gauge left"}, nothing overlaps (${over.join(", ") || "none"})`);
+      check(placed && !!L.cue && !over.length, `motion play, reel side ${side}: the crank ${leftSide ? "left and the gauge right" : "right and the gauge left"}, nothing overlaps, the rod cue's words neither (${over.join(", ") || "none"})`);
       check(L.up.w >= 44 && L.down.w >= 44 && d(L.up) < 200 && d(L.down) < 200 && L.up.x > L.down.x && Math.abs(L.up.y - L.down.y) < 1, `the drag buttons are 44 px or more, − and + side by side, within 200 px of the crank's centre (${Math.round(d(L.up))} and ${Math.round(d(L.down))} px)`);
     }
     await page.evaluate(() => { FISH.save.reelSide = "right"; document.querySelector("#game").dataset.reelSide = "right"; FISH.relayout(true); });
@@ -309,14 +316,33 @@ if (part("4")) {
       await click(page, "#" + id + " [data-close]"); await shown(page, "pause");
     }
     await click(page, "#resumeBtn");
-    await stage(page, {});
+    // (a fish on the bottom: the longest rod cue in touch play, three lines with Larger text)
+    const PUMP = "Drag the rod up. Reel as it comes down.";
+    await stage(page, { fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "sulk", jump: 0, near: 0.5, known: true } });
+    await until(page, (t) => document.querySelector("#rodCue span").textContent === t && FISH.gauge.box && FISH.gauge.box.name, PUMP, 15000).catch(() => {});
     await sleep(700);
-    const pr = await page.evaluate(() => ({ px: parseFloat(getComputedStyle(document.querySelector("#prompt .p1")).fontSize), toast: parseFloat(getComputedStyle(document.querySelector("#toast")).fontSize) }));
+    const pr = await page.evaluate(() => ({ px: parseFloat(getComputedStyle(document.querySelector("#prompt .p1")).fontSize), toast: parseFloat(getComputedStyle(document.querySelector("#toast")).fontSize), name: FISH.gauge.box && FISH.gauge.box.name }));
     const gw = await page.evaluate(async () => { const { GAUGE } = await import("/fish/js/reel.js"); return [GAUGE.WORD_PX, GAUGE.LABEL_PX]; });
     check(pr.px >= 20 && pr.toast >= 17 && gw[0] >= 15 && gw[1] >= 12, `Larger text: the prompt is ${pr.px.toFixed(1)} px (20 or more), the toast ${pr.toast.toFixed(1)} px, the gauge words ${gw.join(" and ")} px`);
-    const L = { prompt: await rect(page, "#prompt .p1"), crank: await rect(page, "#crankBox"), gauge: await rect(page, "#gaugeBox"), drag: await rect(page, "#dragBar"), hud: await rect(page, "#hud") };
+    check(!!pr.name && pr.name.px >= 15 && pr.name.w <= pr.name.max + 0.5, "Larger text: the gauge draws the fish name at 15 px or more, and it fits (" + JSON.stringify(pr.name) + ")");
+    const L = { prompt: await rect(page, "#prompt .p1"), crank: await rect(page, "#crankBox"), gauge: await rect(page, "#gaugeBox"), drag: await rect(page, "#dragBar"), hud: await rect(page, "#hud"), cue: await rect(page, "#rodCue span") };
     const over = Object.keys(L).flatMap((a, i) => Object.keys(L).slice(i + 1).filter((b) => hit(L[a], L[b])).map((b) => a + "/" + b));
-    check(!over.length, "Larger text in a fight at 360x640: the prompt, the gauge, the drag, the crank and the HUD do not overlap (" + (over.join(", ") || "none") + ")");
+    const cueText = await page.evaluate(() => document.querySelector("#rodCue span").textContent);
+    check(cueText === PUMP && !!L.cue && !over.length, `Larger text in a fight at 360x640: the prompt, the gauge, the drag, the crank, the HUD and the rod cue's words ("${cueText}") do not overlap (` + (over.join(", ") || "none") + ")");
+    // a long toast (a legend's stage name) beside the bigger gauge, on the taller phones where it sits in the sky
+    const LONG = "It runs down the river! Steer it off the logs!";
+    for (const [W, H] of [[390, 844], [430, 932]]) {
+      await page.setViewportSize({ width: W, height: H });
+      await sleep(900);
+      await page.evaluate((msg) => FISH.G.sim.events.push({ type: "phase", n: 2, of: 3, name: msg }), LONG);
+      await until(page, (msg) => { const t = document.querySelector("#toast"); return t.textContent === msg && t.classList.contains("on") && +getComputedStyle(t).opacity > 0.95; }, LONG, 15000).catch(() => {});
+      const T = { toast: await rect(page, "#toast"), gauge: await rect(page, "#gaugeBox"), prompt: await rect(page, "#prompt .p1"), crank: await rect(page, "#crankBox"), drag: await rect(page, "#dragBar"), cue: await rect(page, "#rodCue span") };
+      const on = await page.evaluate((msg) => document.querySelector("#toast").textContent === msg, LONG);
+      const hits = ["gauge", "prompt", "crank", "drag", "cue"].filter((k) => hit(T.toast, T[k]));
+      check(on && !!T.toast && !hits.length && T.toast.x >= 0 && T.toast.r <= W, `Larger text at ${W}x${H}: a long toast is clear of the bigger gauge, the prompt, the crank, the drag and the rod cue (toast ${JSON.stringify(T.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(T[k])).join(", ") : ""})`);
+    }
+    await page.setViewportSize({ width: 360, height: 640 });
+    await sleep(600);
     await page.evaluate(() => FISH.toTitle());
     await shown(page, "title");
     const f3 = await fits(page);
@@ -335,6 +361,14 @@ if (part("4")) {
     await click(page, "#settings [data-close]"); await shown(page, "title");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
+    // the guide with Calm effects (and no reduced motion on the system): its first step holds still, with no clip
+    await page.evaluate(() => document.querySelector("#guideToggle").click());
+    await until(page, () => !document.querySelector("#fishGuide").hidden, null, 10000).catch(() => {});
+    const g0 = await page.evaluate(() => document.querySelector("#fishGuide .guide-count").textContent);
+    await sleep(3400);
+    const gc = await page.evaluate(() => { const v = document.querySelector("#fishGuide video"); return { reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, shown: !document.querySelector("#fishGuide").hidden, first: document.querySelector("#fishGuide .guide-count").textContent, clip: !!v && (!v.paused || !v.hidden) }; });
+    check(!gc.reduced && gc.shown && g0 === "1 / 7" && gc.first === "1 / 7" && !gc.clip, "Calm effects: the guide holds its first step still after 3 s and plays no clip (" + JSON.stringify({ g0, ...gc }) + ")");
+    await page.evaluate(() => document.querySelector("#guideToggle").click());
     await page.evaluate(() => { window.__sfx = []; const f = FISH.Sound.sfx; FISH.Sound.sfx = function (n, ...a) { window.__sfx.push(n); return f.call(this, n, ...a); }; });
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });
     await until(page, () => document.querySelector("#prompt").classList.contains("hot") && window.__sfx.includes("strike"), null, 10000).catch(() => {});

@@ -121,7 +121,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
    setting is for motion play) */
 #game[data-reel-side="left"] #crankBox, #game.touch #crankBox { left: calc(var(--sal) + 16px); right: auto; }
 
-#gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
+/* the gauge's size: the toasts, the prompt and the report in the reel make room for it (Larger text makes it bigger) */
+#game { --gauge-w: min(46vmin, 240px); --gauge-h: min(30vmin, 150px); }
+#gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: var(--gauge-w); height: var(--gauge-h); }
 #pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40cqw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
 #pullStrength b { display: block; height: 5px; margin-top: 6px; border-radius: 4px; background: #ffffff26; overflow: hidden; }
 #pullStrength i { display: block; height: 100%; background: #95eac5; transform: scaleX(0); transform-origin: left; }
@@ -142,15 +144,15 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
    they sit in the sky beside the gauge (about 190 px wide), below the pull meter in motion play, in the
    wide reel in the top right corner, right of the prompt and above the rod. (Centred with the usual translateX, so guide.js
    still finds them) */
-#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + max(min(46vmin, 240px) + 22px, 208px) + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - max(min(46vmin, 240px) + 22px, 208px) - 12px); }
+#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + max(var(--gauge-w) + 22px, 208px) + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - max(var(--gauge-w) + 22px, 208px) - 12px); }
 #game.l-tall-reel.motion #toast { top: calc(var(--sat) + 122px); }
-#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - min(46vmin, 240px) / 2); max-width: min(46vmin, 240px); }
+#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - var(--gauge-w) / 2); max-width: var(--gauge-w); }
 /* motion play with the reel on the left: the reel controls mirror. The gauge goes top right, the pull meter top left, and
    the toasts to the other side of the gauge (the crank and the drag follow data-reel-side above) */
 #game.motion[data-reel-side="left"] #gaugeBox { left: auto; right: calc(var(--sar) + 10px); }
 #game.motion[data-reel-side="left"] #pullStrength { right: auto; left: calc(var(--sal) + 18px); }
-#game.l-tall-reel.motion[data-reel-side="left"] #toast { left: calc((var(--sal) + 12px + 100% - var(--sar) - max(min(46vmin, 240px) + 22px, 208px)) / 2); }
-#game.l-reel.motion[data-reel-side="left"] #toast { left: calc(var(--sal) + 16px + min(46vmin, 240px) / 2); }
+#game.l-tall-reel.motion[data-reel-side="left"] #toast { left: calc((var(--sal) + 12px + 100% - var(--sar) - max(var(--gauge-w) + 22px, 208px)) / 2); }
+#game.l-reel.motion[data-reel-side="left"] #toast { left: calc(var(--sal) + 16px + var(--gauge-w) / 2); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -184,16 +186,16 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 
 /* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
-#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 560px); }
 /* the tall reel: the prompt goes under the gauge (the toast goes beside it) */
-#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + min(30vmin, 150px)); }
+#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + var(--gauge-h)); }
 
 
 /* the cast report after a landing */
 #report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
 /* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake */
 #report { width: min(92%, 420px); }
-#game.l-tall-reel #report { top: calc(var(--sat) + 110px + min(30vmin, 150px) + 144px); }
+#game.l-tall-reel #report { top: calc(var(--sat) + 110px + var(--gauge-h) + 144px); }
 #game.l-tall-reel #report .dist { font-size: clamp(34px, 10vmin, 64px); }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff;
   text-shadow: 0 0 2px #092229, 0 0 3px #092229, 0 0 6px rgba(9, 34, 41, 0.9), 0 3px 0 rgba(9, 34, 41, 0.7), 0 0 22px rgba(9, 34, 41, 0.5); }
@@ -302,6 +304,8 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
   #help .steps { grid-template-columns: 1fr 1fr; gap: 6px 14px; }
   #help .tabs { margin-bottom: 6px; }
   #settings .btns, #help .btns { margin-top: 8px; }
+  /* the first-play card: wider, so its safety words and its buttons fit with Larger text too */
+  #setup .card { width: min(100%, 680px); padding: 14px 20px; }
 }
 
 /* setup, help, journal, results, pause */
