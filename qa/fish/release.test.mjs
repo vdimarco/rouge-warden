@@ -22,6 +22,9 @@ section("1. The touch mapping: the rod follows the finger below the press point,
   check(touchSpan(844) === 240 && touchSpan(640) === 192 && touchSpan(390) === 160 && touchSpan(2000) === 240, `touchSpan: 844 → ${touchSpan(844)}, 640 → ${touchSpan(640)}, 390 → ${touchSpan(390)}, 2000 → ${touchSpan(2000)}`);
   check(touchTheta(0, 240) === TOUCH.REST && near(touchTheta(80, 240), 130, 1e-9) && near(touchTheta(-100, 240), 80 - 0.4 * 100 / 240 * 150, 1e-9), `θ at the press point ${touchTheta(0, 240)}, 80 px below ${touchTheta(80, 240)}, 100 px above ${touchTheta(-100, 240).toFixed(1)}`);
   check(touchTheta(-1e4, 240) === 5 && touchTheta(1e4, 240) === 170 && touchTheta(NaN, 240) === TOUCH.REST, "clamped to 5..170, NaN stays at rest");
+  // above the press point the screen does not matter: a flick carries on as far on a phone on its side
+  check([-20, -100, -180].every((dy) => touchTheta(dy, 160) === touchTheta(dy, 240) && touchTheta(dy, 192) === touchTheta(dy, 240)) && touchTheta(40, 160) > touchTheta(40, 240),
+    `above the press point every span turns the rod the same (100 px above: ${touchTheta(-100, 160).toFixed(1)} at 160, ${touchTheta(-100, 240).toFixed(1)} at 240); below it a short span turns it faster`);
   let worst = 0;
   for (const h of [160, 192, 240]) for (let dy = -300; dy <= 140; dy += 7) { const th = touchTheta(dy, h); if (th > 5 && th < 170) worst = Math.max(worst, Math.abs(touchDy(th, h) - dy)); }
   check(worst < 1e-9, `touchDy undoes touchTheta (the touch rail draws its marks with it): worst ${worst.toExponential(1)} px`);
@@ -96,12 +99,15 @@ section("4. The same flick, a different rest before the lift: the same cast");
 }
 
 section("5. A natural flick that carries on past the press point still casts well");
-for (const [h, size] of [[240, "390x844"], [192, "360x640"]]) {
+for (const [h, size] of [[240, "390x844"], [192, "360x640"], [160, "844x390"]]) {
   const rows = [];
   for (const pxs of [1000, 1500, 2000]) for (const lift of [-10, -50, -90, -130]) rows.push({ pxs, lift, ...touchCast({ t0: next(), h, pxs, lift }) });
   console.log(`  ${size} (px/s / lift px: verdict, m, swing °/s): ` + rows.map((o) => `${o.pxs}/${o.lift}: ${o.p.verdict[0]}${o.dist.toFixed(0)} ${o.fwd.toFixed(0)}`).join("  "));
   const worst = rows.reduce((a, o) => (o.dist < a.dist || o.r.land !== "water" ? o : a), rows[0]);
   check(rows.every((o) => o.r.land === "water" && o.dist >= 25), `${size}: flicks of 1000 to 2000 px/s that lift 10 to 130 px above the press point land 25 m or more out (shortest ${worst.dist.toFixed(1)} m at ${worst.pxs} px/s, ${worst.lift} px)`);
+  // past the range: a big flick carries on 110 ± 50 px, so the edge must lie well beyond 130 px on every screen
+  const big = [-150, -170, -190].map((lift) => ({ lift, ...touchCast({ t0: next(), h, pxs: 1800, lift }) }));
+  check(big.every((o) => o.r.land === "water" && o.dist >= 25), `${size}: a big 1800 px/s flick that lifts 150 to 190 px above still lands 25 m out (${big.map((o) => `${o.lift}: ${o.p.verdict} ${o.dist.toFixed(1)} m`).join(", ")})`);
   const soon = touchCast({ t0: next(), h, pxs: 1200, lift: 30 });
   check(soon.p.verdict === "high", `${size}: a lift 30 px below the press point grades ${soon.p.verdict} (θ ${soon.theta.toFixed(1)})`);
 }

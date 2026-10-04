@@ -13,7 +13,7 @@ import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { HangingLure } from "./line-motion.js";
-import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, gradeRelease, liftError, RELEASE } from "./cast.js";
+import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, gradeRelease, liftError, RELEASE, TOUCH } from "./cast.js";
 import { createCastRail } from "./cast-rail.js";
 import { Rises, LakeSim, rodTip, sizeRank, firstBite } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
@@ -252,15 +252,15 @@ function report(dist, verdict, zoneName, sweet, cue = false, ms = 2600) {
   reportT = setTimeout(() => { r.hidden = true; }, ms);
 }
 // The report's second line: the first that has something to say. ctx: { dist, verdict, ring, nearMiss (its line), zone
-// (its name), best (the longest cast yet), farther (a short cast by a new player), stroke (castParams), motion, key }
+// (its name), best (the longest cast yet), farther (a short cast by a new player), stroke (castParams), motion, key (Space) }
 function reportNote(c) {
   if (c.ring) return c.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!";
   if (c.nearMiss) return c.nearMiss;
   // (P4, the goals, puts its lines here, after the near miss)
+  // a good release with a short back cast: the distance was in the back cast
+  if (c.verdict === "sweet" && c.stroke < 0.85) return c.motion ? "Tip back farther for more distance." : "Drag down farther for more distance.";
   // at Loon the big fish live farther out; a new player with short casts is told so
   if (c.farther) return "Farther out, the fish are bigger.";
-  // a good release with a short back cast: the distance was in the back cast
-  if (c.verdict === "sweet" && c.stroke < 0.85) return c.motion ? "Tip back farther for more distance." : c.key ? "Hold Space longer for more distance." : "Drag down farther for more distance.";
   if (c.best) return "Your longest cast yet!";
   return c.zone || "";
 }
@@ -739,6 +739,8 @@ function unpinLine(e) {
   if (e.cancel) { Sound.sfx("slip"); resetCast(touchDevice && pin.turn !== screenAngle() ? "The screen turned. Turn on the rotation lock." : "The line slipped. Try again."); return; }
   // with sensors, the exact input time of the lift matters
   if (sensing()) { release(e.t || now()); return; }
+  // a press that only went up (a stray swipe) never tipped the rod back: nothing flies, and no derby cast is used up
+  if (!(pin.back >= TOUCH.REST + 4)) { resetCast("Drag down first."); return; }
   // with a finger, the cast is graded where the finger lifts: its rod angle, however long it rested before the lift
   const theta = e.y != null ? touchTheta(e.y - pin.y0, touchSpan(game.clientHeight)) : pin.theta, t = now();
   Motion.virtual({ t, theta, yaw: G.aimYaw, roll: 0 });
@@ -839,8 +841,7 @@ function landed(r) {
   G.step = r.land === "water" ? "landed" : "ashore";
   const zone = G.place.zone(r.x, r.z);
   const v = G.cast ? (G.cast.late ? "late" : G.cast.verdict) : "";
-  // the keys: Space tips the rod back while it is held
-  const VV = G.input === "motion" ? VERDICT_M : G.cast && G.cast.key ? { ...VERDICT, short: "Hold Space longer." } : VERDICT;
+  const VV = G.input === "motion" ? VERDICT_M : VERDICT;
   if (r.land === "water") {
     world.splash(r.x, r.z, 0.5);
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
@@ -1177,9 +1178,11 @@ function syncSettings() {
   $("#optHaptics").disabled = Haptics.kind === "none";
   $("#hapticNote").textContent = Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
   $("#optAssist").checked = !!save.assist;
-  $("#optInput").value = G.input === "motion" || save.input === "motion" ? "motion" : "touch";
+  // after stalled sensors switched this visit to touch (G.stallTouch), the saved choice is still motion: show touch, so
+  // picking Motion turns the sensors back on
+  $("#optInput").value = G.input === "motion" || (save.input === "motion" && !G.stallTouch) ? "motion" : "touch";
   $("#optInput").disabled = !touchDevice || !Motion.available;
-  $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : "Drag and flick on the screen.";
+  $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : G.stallTouch ? "The sensors stopped. Pick Motion to try again." : "Drag and flick on the screen.";
   $("#optQuality").value = save.quality;
   $("#optReelSide").value = save.reelSide;
   syncArtStyle();
@@ -1196,10 +1199,10 @@ $("#optReelSide").addEventListener("change", (e) => {
 $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
     const st = await Motion.request();
-    if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
+    if (st === "granted") { G.input = "motion"; save.input = "motion"; G.stallTouch = false; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
     else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? (Native.isStore ? "Motion is off. You can play with touch." : "Motion is blocked for this page.") : "No motion data from this phone."); }
-  } else { G.input = "touch"; save.input = "touch"; }
+  } else { G.input = "touch"; save.input = "touch"; G.stallTouch = false; }
   persist(); syncSettings(); relayout(true);
 });
 function quality() { return save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality; }
@@ -1301,10 +1304,12 @@ addEventListener("keydown", (e) => {
   if (G.paused) return;
   if (e.code === "KeyE" && G.phase === "cast") { if (G.bail === "closed" && G.step === "ready") openBail("key"); else if (G.bail === "open" && G.step === "open") closeBail(); }
   if (e.code === "Space" && (G.phase === "reel")) { G.hookReq = true; e.preventDefault(); }
-  // a cast from the keys: hold Space to tip the rod back, let go to cast. The arrow keys aim
+  // a cast from the keys: hold Space and the rod tips back, then swings forward; let go as it comes through. The arrow
+  // keys aim. The rail stands beside the reel box (where a finger would press)
   if (e.code === "Space" && G.phase === "cast" && !sensing() && !G.pin && (G.step === "ready" || G.step === "open")) {
     e.preventDefault();
-    pinLine({ id: "key", x: null, y: 0, t: now() });
+    const rb = $("#reelBox");
+    pinLine({ id: "key", x: rb.offsetLeft + rb.offsetWidth / 2, y: rb.offsetTop + rb.offsetHeight / 2, t: now() });
     if (G.pin) G.pin.key = now();
   }
   if (e.code === "BracketLeft") setDrag(G.drag - 1);
@@ -1318,18 +1323,25 @@ addEventListener("keyup", (e) => {
   if (e.code === "Space" && G.pin && G.pin.id === "key") keyCast();
 });
 addEventListener("blur", () => { for (const k in keys) keys[k] = false; syncPadKeys(); if (G.pin && G.pin.id === "key") resetCast(); });
-// Space came up: the rod swings through at a steady speed and lets go at 11 o'clock. How long Space was held sets how
-// far back the rod went, and so the power (a short hold is a "short" cast)
-const KEY_CAST = { BACK_MS: 600, BACK_TO: 135, FWD: 600 };
-// the rod angle Space has tipped the rod back to, at time t
-const keyTheta = (t) => 80 + clamp((t - G.pin.key) / KEY_CAST.BACK_MS, 0, 1) * (KEY_CAST.BACK_TO - 80);
+// Space held: the rod tips back for BACK_MS, then swings forward at SWING °/s, down to END. Space coming up lets go, and the
+// cast is graded at the rod angle then, like a finger's: the green band takes about 170 ms to cross. The swing is slower
+// than a real stroke so the timing can be seen; FWD is the stroke speed the launch gets
+const KEY_CAST = { BACK_MS: 500, BACK_TO: 135, SWING: 240, END: 5, FWD: 600 };
+// the rod angle at time t
+function keyTheta(t) {
+  const K = KEY_CAST, ms = t - G.pin.key;
+  return ms < K.BACK_MS ? 80 + (ms / K.BACK_MS) * (K.BACK_TO - 80) : Math.max(K.END, K.BACK_TO - ((ms - K.BACK_MS) * K.SWING) / 1000);
+}
 function keyCast() {
-  const back = keyTheta(now());
+  const t = now(), early = t - G.pin.key < KEY_CAST.BACK_MS, theta = keyTheta(t);
   G.pin = null;
   if (G.phase !== "cast" || (G.step !== "pinned" && G.step !== "loaded")) return;
-  // the hold counts in full, even when no frame drew the rod going back
-  G.backMax = Math.max(G.backMax, back);
-  release(now(), false, { theta: CAST.IDEAL_RELEASE, fwd: KEY_CAST.FWD });
+  // let go while the rod still goes back: nothing flies, and no derby cast is used up
+  if (early) { resetCast("Hold Space until the rod comes forward."); return; }
+  // the back swing counts in full, even when no frame drew it
+  G.backMax = Math.max(G.backMax, KEY_CAST.BACK_TO);
+  Motion.virtual({ t, theta, yaw: G.aimYaw, roll: 0 });
+  release(t, false, { theta, fwd: KEY_CAST.FWD });
 }
 function syncPadKeys() {
   if (crank) crank.keyHold(!!keys.KeyR);
@@ -1353,15 +1365,20 @@ let castFlex = 0, castFlexVelocity = 0;
 function castUpdate(dt) {
   const t = now();
   const p = Motion.pose;
-  // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch
-  G.quiet = G.input === "motion" && !Motion.live ? (G.quiet || 0) + dt : 0;
+  // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch.
+  // Counted by the clock from the last sample (pose.t; Motion.live turns false LIVE_MS after it), so slow frames count in
+  // full; a pause or another phase counts a second at most
+  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(1, (t - G.quietT) / 1000) : 0;
+  const since = (t - Motion.pose.t) / 1000, live = Motion.tune.LIVE_MS / 1000;
+  G.quietT = t;
+  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, 1) : live) : 0;
   // a motion lift that waits for the rod to reach 11 o'clock, and no sample came: the wait ends here
   if (G.lift) frameLift();
   // touch mode: the finger on the rod is the rod. Drag down = rod back; flick up = forward
   if (!sensing()) {
     let th = 75;
-    // the keys: Space held tips the rod back, all the way in KEY_CAST.BACK_MS
-    if (G.pin && G.pin.key) G.pin.theta = keyTheta(t);
+    // the keys: Space held tips the rod back and swings it forward. Held all the way down, it lets go there (late)
+    if (G.pin && G.pin.key && (G.pin.theta = keyTheta(t)) <= KEY_CAST.END) { keyCast(); return; }
     if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) th = G.pin.theta;
     else if (G.step === "flight" || G.step === "landed" || G.step === "ashore") th = lerp(p.theta || 60, 60, 1 - Math.exp(-dt * 4));
     Motion.virtual({ t, theta: th, yaw: G.aimYaw, roll: 0 });
@@ -1442,7 +1459,7 @@ function aimPreview(yaw) {
 const STALL_S = 3;
 const stalled = () => G.phase === "cast" && !G.paused && G.input === "motion" && G.quiet >= STALL_S;
 function castPrompt() {
-  const m = G.input === "motion";
+  const m = G.input === "motion", key = !!(G.pin && G.pin.key);
   if (stalled()) return prompt("The motion sensors stopped. Play with touch?", "Tap the screen to switch.", "stop");
   // held sideways: say so here, without a card in the way (the picture already stays upright on the phone)
   if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "turn");
@@ -1450,8 +1467,8 @@ function castPrompt() {
     // touch: a drag down from the press takes the line, a drag sideways aims (the keys: Space and the arrows)
     case "ready": prompt(m ? "Hold your thumb on the rod." : "Press the rod and drag down.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
     case "open": prompt(m ? "Hold your thumb on the rod." : "Press and hold on the rod.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
-    case "pinned": prompt(m ? "Tip the phone back over your shoulder." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
-    case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
+    case "pinned": prompt(m ? "Tip the phone back over your shoulder." : key ? "Keep holding Space." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
+    case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : key ? "Let go of Space in the green." : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
     default: prompt("");
   }
 }
@@ -1746,11 +1763,12 @@ function frame() {
   drew = still ? !G.stillDrawn : !menu || t - drawAt >= MENU_MS;
   if (drew) { world.update(menu ? menuDt : dt); world.render(); drawAt = t; menuDt = 0; }
   G.stillDrawn = still;
+  // (the rod cue hides while stalled sensors offer touch: the tap is the only move then)
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
-    paused: still, cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
+    paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag });
-  // the touch rail beside the finger while it holds the line (not for the keys: they have no finger)
-  const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && !G.pin.key && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
+  // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release)
+  const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
   castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: touchSpan(game.clientHeight) });
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!rodPad.hidden) rodPad.draw && rodPad.draw(dt); }
   if (DEBUG) debug();
@@ -1886,6 +1904,7 @@ async function boot() {
     if (!G.pin || G.pin.feather || e.id !== G.pin.id) return;
     // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast (touchTheta in cast.js)
     G.pin.theta = touchTheta(e.y - G.pin.y0, touchSpan(game.clientHeight));
+    G.pin.back = Math.max(G.pin.back || 0, G.pin.theta);
     // one clock for the finger: pointer times are input times and can run behind the frame's own samples
     if (!sensing()) Motion.virtual({ t: now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });
   });
@@ -1901,7 +1920,7 @@ async function boot() {
   game.addEventListener("pointerdown", (e) => {
     if (!stalled() || (e.target.closest && e.target.closest("button, a, input, select, label, .screen, #hud"))) return;
     e.stopPropagation();
-    G.input = "touch"; G.quiet = 0;
+    G.input = "touch"; G.quiet = 0; G.stallTouch = true;
     resetCast();
     relayout(true);
     Sound.sfx("ui");

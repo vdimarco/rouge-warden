@@ -100,18 +100,19 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
 /* ---------------- the release ---------------- */
 // Touch and mouse: the finger's height is the rod angle. h is the drag that turns the rod 150° (touchSpan). Below the
 // press point the rod follows the finger; above it the rod moves at ABOVE of the finger's travel, so a flick that carries
-// on past the press point (the natural end of a flick) still lets go near 11 o'clock
+// on past the press point (the natural end of a flick) still lets go near 11 o'clock. Above the press point the span is
+// always SPAN_MAX: a flick carries on about as far on any screen, so a short one (a phone on its side) forgives as much
 export const TOUCH = { REST: 80, ABOVE: 0.4, SPAN_K: 0.3, SPAN_MIN: 160, SPAN_MAX: 240 };
 export function touchSpan(gameH) { return clamp(fin(gameH, 0) * TOUCH.SPAN_K, TOUCH.SPAN_MIN, TOUCH.SPAN_MAX); }
 // dy: px the finger is below the press point (negative: above it)
 export function touchTheta(dy, h) {
   dy = fin(dy, 0); h = Math.max(1, fin(h, TOUCH.SPAN_MAX));
-  return clamp(TOUCH.REST + ((dy < 0 ? dy * TOUCH.ABOVE : dy) / h) * 150, 5, 170);
+  return clamp(TOUCH.REST + (dy < 0 ? (dy * TOUCH.ABOVE) / TOUCH.SPAN_MAX : dy / h) * 150, 5, 170);
 }
 // the other way: where the finger is for a rod angle (the touch rail draws its marks with this)
 export function touchDy(theta, h) {
-  const d = ((fin(theta, TOUCH.REST) - TOUCH.REST) / 150) * Math.max(1, fin(h, TOUCH.SPAN_MAX));
-  return d < 0 ? d / TOUCH.ABOVE : d;
+  const d = (fin(theta, TOUCH.REST) - TOUCH.REST) / 150;
+  return d < 0 ? (d * TOUCH.SPAN_MAX) / TOUCH.ABOVE : d * Math.max(1, fin(h, TOUCH.SPAN_MAX));
 }
 
 // Motion: a release is graded by time, not angle: a fast whip sweeps the sweet band in 30 ms. errMs is how long after the
