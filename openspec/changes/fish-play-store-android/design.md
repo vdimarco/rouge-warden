@@ -50,6 +50,8 @@ The key is an RSA 2048 PKCS12 keystore. The rules:
 
 - Refuse a keystore inside the repository (also by a relative path or a symlink), before any download. `.gitignore` also blocks the usual key and package files.
 - Never print a password. The tools read passwords from environment variables (`-storepass:env`). The test scans the script for any output command that expands a password.
+- Bubblewrap itself prints the whole command of a failed signing step, passwords included. `build-aab.sh` pipes the output of `bubblewrap build` through `redact.mjs`, which replaces both passwords by `********`. It works on text as it arrives, so a long build still shows progress, and it holds back only the end of the text that could be the start of a password. It replaces by splitting the text on the password, not by a regular expression. The pipe keeps the exit status of Bubblewrap because the script runs with `pipefail`. The debug key is the exception: its password `android` is public, and hiding that word would break the Gradle lines. `qa/fish/play.mjs` runs the build function of the real script with a fake Bubblewrap that prints both passwords.
+- Bubblewrap does not put the tools path or the key path in quotes when it runs `apksigner` and `jarsigner` through a shell. A space in either path fails the signing step after the whole Gradle build, four times with the retry. The script refuses a space or a tab in the tools folder and in the key path at the start.
 - Bubblewrap puts the passwords in double quotes in a shell command. So the script refuses `"`, `$`, a backtick, a backslash and a line break in a password and in the key path. It also refuses a short password.
 - Make a missing key only in a terminal, after an explanation and a confirmation, with the password typed twice. In CI a missing keystore must stop the build, because a silent new key would give a fingerprint that Play does not know.
 - Refuse a key with CN `Android Debug`, a copy of the script's own debug key (its name says `NEVER UPLOAD`), and a key under 2048 bits.
@@ -109,7 +111,7 @@ DEVICE (needs a phone; none was available):
 - Wake lock, vibration and the Back button.
 - Insets and cutouts, and the lake after 10 minutes in the background.
 - Offline start and offline video.
-- The portrait lock on a tablet, and the site settings shortcut.
+- The portrait lock on a tablet (UNCONFIRMED whether `appCategory="game"` helps in a TWA), and the Manage space route to the site settings (`enableSiteSettingsShortcut` makes `manageSpaceActivity`; there is no launcher shortcut).
 - Fullscreen against standalone, and the update flow.
 
 The full table is in `play/fish/README.md`.

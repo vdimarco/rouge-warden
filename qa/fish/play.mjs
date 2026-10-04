@@ -3,18 +3,20 @@
 //   play/fish/patch-android.mjs on a fixture of the project that Bubblewrap 1.25.0 generates
 //   play/fish/verify-output.mjs on fixtures of the APK badging, the APK resources and the bundle manifest (protobuf)
 //   play/fish/assetlinks.mjs (unit tests and the command line, on a scratch copy of the file) and public/.well-known/assetlinks.json
-//   play/fish/build-aab.sh (bash -n, --help, the key rules, the pins, no password in any output)
+//   play/fish/build-aab.sh (bash -n, --help, the key rules, a space in a path, the pins, no password in any output)
+//   play/fish/redact.mjs and the build function of build-aab.sh, run with a fake Bubblewrap that prints both passwords
 //   .github/workflows/play-aab.yml (read with a small YAML reader), play/.gitignore, the guide, the README and the OpenSpec change
 // Every check also runs on a broken input and must say so. This does not run Gradle: see play/fish/README.md for the build.
 // Run from the repo root: node qa/fish/play.mjs
 import { readFile, readdir, stat, mkdtemp, copyFile, writeFile, mkdir, symlink, rm } from "fs/promises";
-import { spawnSync } from "child_process";
+import { spawnSync, spawn } from "child_process";
 import { fileURLToPath } from "url";
 import os from "os";
 import path from "path";
 import * as AL from "../../play/fish/assetlinks.mjs";
 import * as PATCH from "../../play/fish/patch-android.mjs";
 import * as VER from "../../play/fish/verify-output.mjs";
+import * as RED from "../../play/fish/redact.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PLAY = path.join(ROOT, "play/fish");
@@ -540,6 +542,13 @@ function checkScript(text) {
   need(/JAVA17_HOME/, "JAVA17_HOME");
   need(/ACCEPT_ANDROID_SDK_LICENSES/, "ACCEPT_ANDROID_SDK_LICENSES");
   if (/--licenses/.test(text.replace(/^#.*$/gm, ""))) bad.push("the script accepts all SDK licenses (--licenses), not only those of the packages it installs");
+  need(/^set -euo pipefail$/m, "set -euo pipefail (the pipe through redact.mjs keeps the exit status of Bubblewrap only with pipefail)");
+  need(/^case "\$TOOLS" in \*\[\[:space:\]\]\*\) die /m, "the refusal of a space in the tools folder (Bubblewrap signs through a shell with no quotes)");
+  need(/^case "\$KEYSTORE" in \*\[\[:space:\]\]\*\) die /m, "the refusal of a space in the key path");
+  need(/^SHOW=\(node "\$HERE\/redact\.mjs"\);/m, "SHOW=(node \"$HERE/redact.mjs\") (the filter for the output of Bubblewrap)");
+  need(/^bw_build\(\) \{[^\n]*node "\$BW" build[^\n]*2>&1 \| "\$\{SHOW\[@\]\}"; \}$/m, "bw_build, which pipes the output of bubblewrap build through the filter (2>&1 | \"${SHOW[@]}\")");
+  need(/if bw_build; then BUILT=1/, "the retry loop that calls bw_build");
+  if (/node "\$BW" build/.test(text.replace(/^bw_build\(\) \{.*$/m, ""))) bad.push("Bubblewrap build runs outside bw_build, so its output is not filtered");
   need(/-storepass:env/, "-storepass:env (a password must not be on a command line)");
   need(/-keypass:env/, "-keypass:env");
   need(/aapt2.*dump badging/, "aapt2 dump badging");
@@ -589,6 +598,110 @@ await test("build-aab.sh", async (ok) => {
   ok(r.status === 1 && /must not contain/.test(r.stderr), "a keystore path with a quote was not refused: " + r.status + " " + r.stderr.slice(0, 200));
   ok(!r.stdout.includes("secret-for-test") && !r.stderr.includes("secret-for-test"), "the password was printed");
   ok(!(await exists(path.join(SCRATCH, "tools/jdk17.tar.gz"))), "the script started a download before it refused the key");
+  // a space in the tools folder or in the key path breaks the signing step of Bubblewrap (apksigner runs through a shell with no quotes).
+  // The script must say so at the start, and name the setting that fixes it.
+  const spaced = path.join(SCRATCH, "my projects");
+  r = run("bash", [SH], { env: { ...env, PLAY_TOOLS: path.join(spaced, "tools") }, timeout: 20000, input: "" });
+  ok(r.status === 1 && /tools folder .* has a space/.test(r.stderr) && /PLAY_TOOLS/.test(r.stderr), "a tools folder with a space was not refused: " + r.status + " " + r.stderr.slice(0, 200));
+  r = run("bash", [SH], { env: { ...env, BUBBLEWRAP_KEYSTORE: path.join(spaced, "up.keystore") }, timeout: 20000, input: "" });
+  ok(r.status === 1 && /key file .* has a space/.test(r.stderr) && /BUBBLEWRAP_KEYSTORE/.test(r.stderr), "a key path with a space was not refused: " + r.status + " " + r.stderr.slice(0, 200));
+  r = run("bash", [SH], { env: { ...env, BUBBLEWRAP_KEYSTORE: path.join(SCRATCH, "my\tkeys.keystore") }, timeout: 20000, input: "" });
+  ok(r.status === 1 && /key file .* has a space/.test(r.stderr), "a key path with a tab was not refused: " + r.status + " " + r.stderr.slice(0, 200));
+  // the default tools folder is play/.tools of the checkout: a checkout in a folder with a space is refused as well (a copy of the script is enough)
+  await mkdir(path.join(spaced, "co/play/fish"), { recursive: true });
+  await copyFile(SH, path.join(spaced, "co/play/fish/build-aab.sh"));
+  const { PLAY_TOOLS: _unused, ...envNoTools } = env;
+  r = run("bash", [path.join(spaced, "co/play/fish/build-aab.sh")], { env: envNoTools, timeout: 20000, input: "" });
+  ok(r.status === 1 && /tools folder .* has a space/.test(r.stderr), "a checkout in a folder with a space was not refused: " + r.status + " " + r.stderr.slice(0, 200));
+  ok(!r.stdout.includes("secret-for-test") && !r.stderr.includes("secret-for-test"), "the password was printed");
+  // the two checks themselves, run on the lines of the real script: a path with no space passes, and so does a path that looks odd but has none
+  const gate = sh.split("\n").filter((l) => /^case "\$(TOOLS|KEYSTORE)" in \*\[\[:space:\]\]\*\)/.test(l)).join("\n");
+  ok(gate.split("\n").length === 2, "found " + gate.split("\n").length + " lines of the space check in build-aab.sh, want 2");
+  const gateRun = (tools, ks) => run("bash", ["-c", 'die() { printf "%s\\n" "$*" >&2; exit 1; }\nTOOLS="$1"; KEYSTORE="$2"\n' + gate + "\necho passed", "x", tools, ks]);
+  r = gateRun("/home/me/play/.tools", "/home/me/.android/reelitin-upload.keystore");
+  ok(r.status === 0 && /passed/.test(r.stdout), "the space check refused a path with no space: " + r.stderr);
+  r = gateRun("/home/First Last/play/.tools", "/home/me/up.keystore");
+  ok(r.status === 1 && /tools folder/.test(r.stderr), "the space check let a tools folder with a space pass");
+  r = gateRun("/home/me/play/.tools", "/home/First Last/up.keystore");
+  ok(r.status === 1 && /key file/.test(r.stderr), "the space check let a key path with a space pass");
+});
+await test("redact.mjs and the build function of build-aab.sh", async (ok) => {
+  const KS = "p@ss.w*rd[1]&/x", KEY = "key-pw-9";
+  // 1. the function: both passwords, a password with regular-expression characters, a password cut by the chunks, one password inside another
+  const hideAll = (secrets, chunks) => { const r = RED.redactor(secrets); return chunks.map((c) => r.push(c)).join("") + r.end(); };
+  const line = 'Command failed: apksigner --ks-pass pass:"' + KS + '" --key-pass pass:"' + KEY + '" --out o';
+  let out = hideAll([KS, KEY], [line]);
+  ok(out === 'Command failed: apksigner --ks-pass pass:"********" --key-pass pass:"********" --out o', "redactor output: " + out);
+  out = hideAll([KS, KEY], [...line]);   // one character at a time: every password is cut at every place
+  ok(out === 'Command failed: apksigner --ks-pass pass:"********" --key-pass pass:"********" --out o', "redactor output, one character at a time: " + out);
+  out = hideAll(["abcdef", "abcdefgh"], ["x abcd", "efgh y abcdef"]);
+  ok(out === "x ******** y ********", "a password inside another one: " + out);
+  out = hideAll([KS], ["a p@ss.w*rd", " b"]);   // the start of the password, then something else: nothing is lost
+  ok(out === "a p@ss.w*rd b", "text that only starts like a password changed: " + out);
+  out = hideAll([KS], ["the end p@ss"]);   // the stream ends inside a possible password: end() gives the held text back
+  ok(out === "the end p@ss", "the held end of the text was lost: " + out);
+  ok(hideAll([undefined, ""], ["nothing to hide"]) === "nothing to hide", "an empty password changed the text");
+  const part = RED.redactor([KS]);
+  ok(part.push("line one\nline two\n") === "line one\nline two\n", "the redactor held back text that cannot start a password");
+  ok(RED.NAMES.join() === "BUBBLEWRAP_KEYSTORE_PASSWORD,BUBBLEWRAP_KEY_PASSWORD", "redact.mjs reads " + RED.NAMES.join());
+  // 2. the command line of redact.mjs
+  const cli = (input, env) => run("node", [path.join(PLAY, "redact.mjs")], { input, env: { PATH: process.env.PATH, ...env } });
+  let r = cli(line + "\n", { BUBBLEWRAP_KEYSTORE_PASSWORD: KS, BUBBLEWRAP_KEY_PASSWORD: KEY });
+  ok(r.status === 0 && r.stdout === 'Command failed: apksigner --ks-pass pass:"********" --key-pass pass:"********" --out o\n' && r.stderr === "", "redact.mjs gave: " + r.status + " " + r.stdout + r.stderr);
+  r = cli("plain text\n", {});
+  ok(r.status === 0 && r.stdout === "plain text\n", "redact.mjs with no password in the environment changed the text: " + r.stdout);
+  // 3. the build function of the real script, with a fake Bubblewrap that prints both passwords and fails (or not)
+  const show = (sh.match(/^SHOW=.*$/m) || [""])[0], fn = (sh.match(/^bw_build\(\) \{.*\}$/m) || [""])[0];
+  ok(show && fn, "build-aab.sh has no SHOW= line or no bw_build function");
+  const proj = path.join(SCRATCH, "bw-proj");
+  await mkdir(proj, { recursive: true });
+  const fake = path.join(SCRATCH, "fake-bubblewrap.js");
+  await writeFile(fake, String.raw`const ks = process.env.BUBBLEWRAP_KEYSTORE_PASSWORD, key = process.env.BUBBLEWRAP_KEY_PASSWORD;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+(async () => {
+  console.log("Building the app (" + process.argv.slice(2).join(" ") + ") com.android.tools.build");
+  if (process.env.FAKE_SLOW) await wait(1500);
+  // the password in two writes, 300 ms apart: the filter must join them
+  process.stdout.write('Command failed: apksigner --ks-pass pass:"' + ks.slice(0, 5)); await wait(300);
+  process.stdout.write(ks.slice(5) + '" --key-pass pass:"' + key + '"\n');
+  console.error('stderr: Command failed: jarsigner -storepass "' + ks + '" -keypass "' + key + '"');
+  process.exit(Number(process.env.FAKE_EXIT || 0));
+})();
+`);
+  const harness = async (name, { fnText = fn, debug = 0 } = {}) => {
+    const file = path.join(SCRATCH, name);
+    await writeFile(file, ["set -euo pipefail", "HERE=" + JSON.stringify(PLAY), "DEBUG_KEY=" + debug, "PROJECT=" + JSON.stringify(proj), "BW=" + JSON.stringify(fake), "MANIFEST=m.json", "CONFIG=c.json", show, fnText, "rc=0", "bw_build || rc=$?", 'echo "rc=$rc"'].join("\n") + "\n");
+    return file;
+  };
+  const go = (file, exit, extra = {}) => run("bash", [file], { env: { PATH: process.env.PATH, BUBBLEWRAP_KEYSTORE_PASSWORD: KS, BUBBLEWRAP_KEY_PASSWORD: KEY, FAKE_EXIT: String(exit), ...extra }, timeout: 30000 });
+  const leaks = (t) => [KS, KEY, KS.slice(0, 5), KS.slice(5)].filter((x) => t.includes(x));
+  const good = await harness("harness-good.sh");
+  r = go(good, 3);
+  ok(leaks(r.stdout + r.stderr).length === 0, "a failed build printed a password: " + leaks(r.stdout + r.stderr).join(" | "));
+  ok(/rc=3\n$/.test(r.stdout), "a failed build did not keep the exit status of Bubblewrap (want rc=3): " + r.stdout.slice(-60));
+  ok(r.stdout.includes('pass:"********" --key-pass pass:"********"') && r.stdout.includes('-storepass "********" -keypass "********"'), "the passwords were not replaced by ********: " + r.stdout);
+  ok(r.stdout.includes("Building the app (build --manifest=m.json --directory=" + proj + " --config=c.json) com.android.tools.build"), "the other text of Bubblewrap changed: " + r.stdout);
+  r = go(good, 0);
+  ok(r.status === 0 && /rc=0\n$/.test(r.stdout) && leaks(r.stdout + r.stderr).length === 0, "a good build: " + r.status + " " + r.stdout.slice(-60));
+  // a long build must show its lines while it runs, not at the end
+  await new Promise((done) => {
+    const t0 = Date.now(); let first = 0;
+    const c = spawn("bash", [good], { env: { PATH: process.env.PATH, BUBBLEWRAP_KEYSTORE_PASSWORD: KS, BUBBLEWRAP_KEY_PASSWORD: KEY, FAKE_EXIT: "0", FAKE_SLOW: "1" } });
+    c.stdout.on("data", () => { if (!first) first = Date.now() - t0; });
+    c.on("close", () => { const total = Date.now() - t0; ok(first > 0 && total - first > 800, "the first line came " + first + " ms after the start, and the build ended after " + total + " ms: the output is held back until the end"); done(); });
+  });
+  // the debug key has the public password "android": its build prints as it is
+  const dbg = await harness("harness-debug.sh", { debug: 1 });
+  r = run("bash", [dbg], { env: { PATH: process.env.PATH, BUBBLEWRAP_KEYSTORE_PASSWORD: "android", BUBBLEWRAP_KEY_PASSWORD: "android", FAKE_EXIT: "0" }, timeout: 30000 });
+  ok(r.status === 0 && r.stdout.includes("com.android.tools.build"), "the debug build output was changed: " + r.stdout.slice(0, 120));
+  // 4. the same test must fail on a function that has no filter, and on a pipe that loses the exit status
+  const bare = await harness("harness-bare.sh", { fnText: fn.replace(' | "${SHOW[@]}"', "") });
+  r = go(bare, 3);
+  ok(leaks(r.stdout + r.stderr).length > 0, "the leak check cannot fail: a function with no filter printed no password");
+  const nopf = await harness("harness-nopipefail.sh");
+  await writeFile(nopf, (await readFile(nopf, "utf8")).replace("set -euo pipefail", "set -eu"));
+  r = go(nopf, 3);
+  ok(!/rc=3\n$/.test(r.stdout), "the exit status check cannot fail: without pipefail the status of Bubblewrap was still kept");
 });
 await test("build-aab.sh checks can fail", async (ok) => {
   ok(checkScript(sh).length === 0, "the real script: " + checkScript(sh).join("; "));
@@ -606,6 +719,12 @@ await test("build-aab.sh checks can fail", async (ok) => {
     ["a printed password", sh + '\necho "the password is $BUBBLEWRAP_KEYSTORE_PASSWORD"\n', /may print a password/],
     ["a printed key password", sh + '\nsay "key: ${BUBBLEWRAP_KEY_PASSWORD}"\n', /may print a password/],
     ["set -x", sh.replace("set -euo pipefail", "set -euxo pipefail"), /set -x/],
+    ["no pipefail", sh.replace("set -euo pipefail", "set -eu"), /pipefail/],
+    ["no refusal of a space in the tools folder", sh.replace(/^case "\$TOOLS" in \*\[\[:space:\]\]\*\).*$/m, ""), /space in the tools folder/],
+    ["no refusal of a space in the key path", sh.replace(/^case "\$KEYSTORE" in \*\[\[:space:\]\]\*\).*$/m, ""), /space in the key path/],
+    ["a build with no filter", sh.replace(' | "${SHOW[@]}"', ""), /bw_build/],
+    ["a build outside bw_build", sh.replace("if bw_build; then", 'if (cd "$PROJECT" && node "$BW" build --manifest="$MANIFEST"); then'), /outside bw_build|retry loop/],
+    ["no redact.mjs", sh.replace(/^SHOW=\(node "\$HERE\/redact\.mjs"\)/m, 'SHOW=(node "$HERE/cat.mjs")'), /SHOW=/],
     ["no jarsigner check", sh.replace(/jarsigner/g, "jarsignerx").replace(/jarsignerx.*-verify/g, "true"), /jarsigner/],
   ];
   for (const [label, text, re] of cases) caught(ok, label, checkScript(text), re);
@@ -823,7 +942,7 @@ await test("the guide, the README and the OpenSpec change", async (ok) => {
   ok(/^- \[[ x]\] /m.test(tasks), "tasks.md has no checklist");
   ok(/OpenSpec CLI/i.test(tasks + (await read(dir + "design.md"))), "the change does not say that the OpenSpec CLI did not run");
   // style: no em dash in any file of this package
-  const mine = ["play/fish/README.md", "play/fish/build-aab.sh", "play/fish/assetlinks.mjs", "play/fish/patch-android.mjs", "play/fish/verify-output.mjs", "play/fish/twa-manifest.json", "play/.gitignore", ".github/workflows/play-aab.yml", "qa/fish/play.mjs", dir + "proposal.md", dir + "design.md", dir + "tasks.md", dir + "specs/fish-play-app/spec.md"];
+  const mine = ["play/fish/README.md", "play/fish/build-aab.sh", "play/fish/assetlinks.mjs", "play/fish/patch-android.mjs", "play/fish/redact.mjs", "play/fish/verify-output.mjs", "play/fish/twa-manifest.json", "play/.gitignore", ".github/workflows/play-aab.yml", "qa/fish/play.mjs", dir + "proposal.md", dir + "design.md", dir + "tasks.md", dir + "specs/fish-play-app/spec.md"];
   for (const f of mine) ok(!hasEmDash(await read(f)), f + " has an em dash");
   const section = readme.split("## Reel It In on Google Play")[1].split(/\n## /)[0];
   ok(!hasEmDash(section), "the README section has an em dash");

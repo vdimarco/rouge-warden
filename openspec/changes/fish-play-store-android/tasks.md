@@ -36,6 +36,13 @@
 - [ ] Validate the spec with the OpenSpec CLI when it is available. It is not installed in the sandbox, so `openspec validate` did not run. `qa/fish/play.mjs` checks the structure only.
 - [ ] Archive this change after the owner has published the app, and review `openspec/specs/`.
 
+## Review fixes (after the independent review)
+
+- [x] `build-aab.sh` stops at the start when the tools folder or the key path holds a space or a tab (tests in `qa/fish/play.mjs`).
+- [x] `build-aab.sh` pipes `bubblewrap build` through `play/fish/redact.mjs`, which hides both passwords and keeps the exit status (test with a fake Bubblewrap that prints both).
+- [x] The guide: the `keytool` path after the first run, no `export` of the password in a terminal run, the Manage space route (marked UNCONFIRMED), the portrait lock marked UNCONFIRMED/DEVICE, "with no URL bar" for the reviewer, and the privacy contact step (replace `OWNER_CONTACT_EMAIL`, stamp, commit, deploy, check the live page) before the URL goes to Play.
+- [ ] Owner: replace `OWNER_CONTACT_EMAIL` in `public/fish/privacy.html` (the author does not know the address) and run `node play/fish/stamp-sw.mjs`.
+
 ## DEVICE and owner steps (nothing here is done)
 
 - [ ] Play account, verification, and the 12-tester, 14-day closed test (personal account).

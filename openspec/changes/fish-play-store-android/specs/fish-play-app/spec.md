@@ -40,7 +40,7 @@ The Android settings of Reel It In SHALL live in `play/fish/twa-manifest.json`. 
 
 #### Scenario: A game on a large screen
 - **WHEN** the bundle is built
-- **THEN** its `<application>` has `android:appCategory="game"` and `android:allowBackup="false"`, so that Android 16 keeps the portrait lock on screens of 600 dp or more (DEVICE: not tried on a tablet)
+- **THEN** its `<application>` has `android:appCategory="game"` and `android:allowBackup="false"`. Android 16 keeps the portrait lock of a game on screens of 600 dp or more. UNCONFIRMED (DEVICE): in a Trusted Web Activity, Chrome's activity draws the game, so nobody has shown that the attribute keeps the lock. No tablet test has run
 
 #### Scenario: JDK 21 on the machine
 - **WHEN** the machine has only JDK 21
@@ -78,7 +78,7 @@ After the build, the script SHALL check the APK and the bundle against `twa-mani
 - **THEN** the check reports that exact problem
 
 ### Requirement: The upload key stays safe
-The script SHALL never print a password, SHALL never write a secret into the repository, and SHALL refuse a keystore inside the repository.
+The script SHALL never print a password, SHALL never write a secret into the repository, and SHALL refuse a keystore inside the repository. This includes what Bubblewrap prints: a failed signing step prints the whole command, and the script SHALL hide both passwords in that output and keep the exit status of Bubblewrap.
 
 #### Scenario: Keystore in the repository
 - **WHEN** `BUBBLEWRAP_KEYSTORE` points inside the repository, by a relative path, an absolute path or a symlink
@@ -88,9 +88,19 @@ The script SHALL never print a password, SHALL never write a secret into the rep
 - **WHEN** the script runs
 - **THEN** no line of its output holds a password, passwords reach the tools through the environment (`-storepass:env`), and the test finds no command in the script that prints a password
 
+#### Scenario: A failed signing step
+- **WHEN** `bubblewrap build` fails and prints a command that holds both passwords
+- **THEN** the output shows `********` in place of each password, and the text around it is as Bubblewrap printed it
+- **AND** the build function returns the exit status of Bubblewrap, so the retry loop still retries
+- **AND** a password with regular-expression characters, or cut in two by the output chunks, is hidden as well
+
 #### Scenario: Passwords that Bubblewrap cannot pass
 - **WHEN** a password or the key path holds `"`, `$`, a backtick, a backslash or a line break
 - **THEN** the script refuses it and says why
+
+#### Scenario: A space in a path
+- **WHEN** the tools folder (`PLAY_TOOLS`, or `play/.tools` in a checkout whose path has a space) or the key path holds a space or a tab
+- **THEN** the script stops at the start, before any download, and names the setting to change: Bubblewrap runs `apksigner` and `jarsigner` through a shell and does not put these paths in quotes
 
 #### Scenario: No key yet
 - **WHEN** the keystore does not exist and a terminal is open

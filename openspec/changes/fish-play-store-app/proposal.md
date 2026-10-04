@@ -7,7 +7,7 @@ The Cottage Arcade ships Reel It In at `/fish/`, inside the arcade. The owner wa
 - Put everything the page needs in `public/fish/`: three.js r170, the two fonts, the icons. After this change nothing in `public/fish/` loads from another origin. The one file from outside the folder is `/arcade/quiet.js` (same site), which stops the sound of a hidden page.
 - Add a web manifest, icons that read at 48 px, and a privacy page.
 - Add an app mode. The Play app and the installed web app hide every link to the arcade and use words for a phone and for Android.
-- Add a service worker. After the first visit the game starts with no network, and a video can seek, offline.
+- Add a service worker for app mode. After the first visit the game starts with no network, and a video can seek, offline. The website does not register it.
 - Add a Back button that does not close the app in the middle of a fight.
 - Add Settings rows for Privacy (a short card) and Reset progress. In app mode, ask the browser to keep the storage.
 - Add `qa/fish/pwa.mjs` and a CI workflow for its `--static` part.
@@ -20,7 +20,7 @@ The Cottage Arcade ships Reel It In at `/fish/`, inside the arcade. The owner wa
 
 ## Player-facing change
 
-On the website nothing a player knew changes. Settings gets two rows (Privacy and Reset progress) and the title gets a small Privacy link. In the app the title shows the name of the place alone, the menus have no Switch game, Back to the arcade, or Fullscreen button, and the Back button pauses and resumes before it closes the app.
+On the website nothing a player knew changes: it has no service worker, and only the Play app counts as the Android app that turns app mode on. Settings gets two rows (Privacy and Reset progress) and the title gets a small Privacy link. In the app the title shows the name of the place alone, the menus have no Switch game, Back to the arcade, or Fullscreen button, and the Back button pauses and resumes before it closes the app.
 
 ## Decisions the owner can change in one place
 

@@ -36,6 +36,14 @@
 - [x] This change.
 - [ ] Validate the spec with the OpenSpec CLI when it is available (the CLI is not installed; it did not run).
 
+## Review fixes (after the independent review)
+
+- [x] App mode: the referrer must be this app's package (`android-app://com.cottagearcade.reelitin`), only the standalone display mode counts, and blocked storage keeps the answer. `qa/fish/pwa.mjs` runs the script with stubs (28 cases) and in a browser (display modes, referrers of Gmail and Slack, blocked storage).
+- [x] Register the service worker in app mode only. `pwa.mjs` checks that `/fish/` and `source=play&app=0` register nothing and ask for no `sw.js`, and that `?nosw` still works in app mode.
+- [x] Back on the loading screen and on the "cannot draw the lake" screen acts as on the title. `pwa.mjs` holds the model file for a slow start, and turns WebGL off for the error screen.
+- [x] The footer link of `privacy.html` goes back when the player came from the game. `pwa.mjs` follows the link with a real Back and checks the history length.
+- [x] `fish-app.yml` also watches `public/arcade/quiet.js` (it is cached and hashed); `pwa.mjs` wants it in both paths lists.
+
 ## Not checked (no device, no store)
 
 - [ ] DEVICE: the real Back button in a TWA, `display-mode` in a TWA, a video that seeks while offline (the test browser has no H.264, so only the 206 answer is tested), `storage.persist()` in the TWA, what uninstall does to the save, the sensor rate, the safe area and the cutout at API 36, a WebGL draw after ten minutes in the background.

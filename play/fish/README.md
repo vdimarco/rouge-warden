@@ -57,7 +57,7 @@ You sign each bundle that you upload with the **upload key**. Google Play then s
 
 **Make the key.** The easy way: run `play/fish/build-aab.sh` in a terminal (Step 3). If there is no key, the script explains what it is, asks if you want one, asks twice for a password, and makes `~/.android/reelitin-upload.keystore` with the alias `reelitin`. It makes an RSA 2048 key that is valid for 20,000 days.
 
-The same thing by hand:
+The same thing by hand. `keytool` comes with a JDK, and many computers have none (on a Mac, the command may only show "Unable to locate a Java Runtime"). After the first run of `play/fish/build-aab.sh`, the tool is at `play/.tools/jdk17/bin/keytool` on Linux and at `play/.tools/jdk17/Contents/Home/bin/keytool` on macOS. Use that path in the commands below, or run `export PATH="$PWD/play/.tools/jdk17/bin:$PATH"` once in that terminal (on macOS: `export PATH="$PWD/play/.tools/jdk17/Contents/Home/bin:$PATH"`). The paths are for a shell in the root of the repository.
 
 ```sh
 mkdir -p ~/.android
@@ -72,7 +72,7 @@ chmod 600 ~/.android/reelitin-upload.keystore
 
 1. Copy `reelitin-upload.keystore` to a second place that is not your computer: a password manager that stores files, an encrypted USB stick, or an encrypted cloud folder.
 2. Store the password next to it, but not in the same file.
-3. Check the copy: `keytool -list -keystore COPY.keystore -alias reelitin`. It must show the same SHA-256 fingerprint as the original.
+3. Check the copy: `keytool -list -keystore COPY.keystore -alias reelitin` (see the `keytool` path above). It must show the same SHA-256 fingerprint as the original. A check that needs no JDK: `sha256sum` (Linux) or `shasum -a 256` (macOS) of the original and of the copy must give the same value.
 4. Never put the key in git, a chat or an e-mail. The build script refuses a keystore inside the repository. `.gitignore` also blocks `*.keystore`, `*.jks`, `*.p12`, `*.apk` and `*.aab`.
 
 If you lose the upload key, you cannot sign new bundles. Google documents a way to register a new upload key. I did not check the current steps, so look them up in the Play Console help before you rely on this. **UNCONFIRMED**
@@ -82,9 +82,10 @@ If you lose the upload key, you cannot sign new bundles. Google documents a way 
 ### Option A: on your computer
 
 ```sh
-export BUBBLEWRAP_KEYSTORE_PASSWORD='your keystore password'
 play/fish/build-aab.sh --local
 ```
+
+The script asks for the keystore password and does not show it. Do not type the password in the command line or in an `export` line: your shell saves such a line in its history file in plain text. Set `BUBBLEWRAP_KEYSTORE_PASSWORD` in the environment only for a run with no terminal, for example a scheduled job.
 
 Use `--local` until the web files are deployed. Bubblewrap then takes the icons and the web manifest from this checkout, not from the live site. The app still opens the live site. Without `--local`, the script reads them from the live host and stops with a clear message when a file is missing.
 
@@ -95,8 +96,8 @@ The script does these steps:
 1. It installs the pinned tools into `play/.tools`, or uses the JDK 17 that `JAVA17_HOME` or `JAVA_HOME` points to. Bubblewrap rejects JDK 21.
 2. It copies `twa-manifest.json` into `play/fish/android/` with your key path, and (with `--local`) the download URLs of the local server.
 3. It runs `bubblewrap update --skipVersionUpgrade`. There are no questions.
-4. It runs `patch-android.mjs`. The patch stops the build if Bubblewrap does not generate SDK 36 (compile and target). It adds `android:appCategory="game"` (Android 16 then keeps the portrait lock on tablets) and `android:allowBackup="false"`. It adds no permission.
-5. It runs `bubblewrap build` with your passwords from the environment. It tries up to four times, because Maven Central sometimes answers HTTP 429 (too many requests) to a shared address.
+4. It runs `patch-android.mjs`. The patch stops the build if Bubblewrap does not generate SDK 36 (compile and target). It adds `android:appCategory="game"` and `android:allowBackup="false"`. It adds no permission. Android 16 ignores the portrait lock of an app on screens of 600 dp or more, unless the app is a game. Whether `appCategory="game"` keeps the lock for this app is **UNCONFIRMED** and a **DEVICE** check: in a Trusted Web Activity, Chrome's activity draws the game, not this app.
+5. It runs `bubblewrap build` with your passwords from the environment. It tries up to four times, because Maven Central sometimes answers HTTP 429 (too many requests) to a shared address. When a signing step fails, Bubblewrap prints the whole command, with both passwords in it. `redact.mjs` hides them (as `********`) in what you see. The debug key is the exception: its password is public, so its output is not filtered.
 6. It copies the outputs to `play/fish/dist/` as `reelitin-<versionName>-<versionCode>.aab`, `.apk` and `.fingerprint.txt`.
 7. It checks the result (see below) and prints the SHA-256 fingerprint of your upload key.
 
@@ -115,6 +116,8 @@ The script does these steps:
 **Outputs.** The bundle (`.aab`) goes to Play Console. The APK goes to `adb install`. The fingerprint file holds the SHA-256 of your upload key.
 
 **Development builds.** `play/fish/build-aab.sh --local --debug-key` signs with a throwaway key in `play/.tools/debug/`. Its password is public (`android`). The script prints a loud line, and the files carry `DEBUGKEY` in their names. **A debug-key bundle can never be uploaded to Google Play.** Do not put the debug key's fingerprint in `assetlinks.json`. To test a debug build on a phone before the site is ready, use the Chrome flag in [Read the log with adb](#read-the-log-with-adb).
+
+**No spaces in two paths.** Bubblewrap runs `apksigner` and `jarsigner` through a shell and does not put the tools path or the key path in quotes. A space in the tools folder (`play/.tools` by default, so also in the folder of your checkout) or in the key path breaks the signing step, after the whole Gradle build. The script stops at the start with a message when it finds one. Set `PLAY_TOOLS` and `BUBBLEWRAP_KEYSTORE` to paths with no space, for example `PLAY_TOOLS=$HOME/reelitin-tools`.
 
 **Other settings.** `--out DIR` changes the output folder. `PLAY_TOOLS`, `PLAY_PROJECT` and `PLAY_PUBLIC` change the tools folder, the project folder and the site files for `--local`. `BUBBLEWRAP_KEYSTORE` and `BUBBLEWRAP_KEY_ALIAS` change the key. Run `play/fish/build-aab.sh --help` for the list.
 
@@ -160,7 +163,7 @@ Open **Policy and programs, App content** (the menu names change from time to ti
 
 | Form | Answer |
 |---|---|
-| Privacy policy | `https://warden-alpha-wheat.vercel.app/fish/privacy.html` (the web side makes the page) |
+| Privacy policy | `https://warden-alpha-wheat.vercel.app/fish/privacy.html`. **Do this first, before you give Play the URL.** In `public/fish/privacy.html`, replace `OWNER_CONTACT_EMAIL` with your e-mail address. It is in two places, both in the Contact line. Run `node play/fish/stamp-sw.mjs` (the page is a cached file). Commit and deploy. Then run the `curl` check in Step 8: it must print `0`. The file still has the placeholder, because the author does not know your address |
 | Ads | No, the app has no ads |
 | App access | All functions are available without login or special access. Give no test credentials |
 | Advertising ID | The app does not use it. The app has no `AD_ID` permission |
@@ -227,14 +230,21 @@ The tool drops the placeholder from the entry that you name, and writes the real
 ## Step 8: deploy and check
 
 1. Commit `public/.well-known/assetlinks.json` and deploy the site. The repository deploys `public/` with no build step.
-2. Check what Google reads:
+2. Check the privacy page that Play reads:
+
+   ```sh
+   curl -s https://warden-alpha-wheat.vercel.app/fish/privacy.html | grep -c OWNER_CONTACT_EMAIL
+   ```
+
+   It must print `0`. (`grep -c` exits with 1 when the count is 0. That is fine.) A number above 0 means the live page still has the placeholder: go back to Step 5, replace it, run `node play/fish/stamp-sw.mjs`, commit and deploy. Use your own host if you moved to a custom domain.
+3. Check what Google reads:
 
    ```sh
    node play/fish/assetlinks.mjs --check
    ```
 
    The command reads `https://<host>/.well-known/assetlinks.json` (it must answer HTTP 200, with `Content-Type: application/json` and no redirect, which `vercel.json` sets), asks Google's API for the host, and prints the statements and any error code. It exits with 1 when something is wrong. Google keeps an answer for about 10 minutes (the API said `maxAge` of about 600 seconds), so wait and run it again after a deploy.
-3. Pass another host as `--check HOST` if you move to a custom domain.
+4. Pass another host as `--check HOST` if you move to a custom domain.
 
 ## Step 9: install from Play
 
@@ -250,7 +260,7 @@ Test the version from Play, not only the APK that you installed by hand. The two
 2. **Apply for production access** in the Console after 14 days. Answer the questionnaire.
 3. **Production.** Make a production release and submit it. Changes are not sent for review by themselves: use the **Publishing overview** page. A first release has no staged rollout percentage. Updates have one.
 
-I make no promise about Google's review. The reviewer should see the game start at once, full screen, in portrait, with no arcade links, a privacy policy link, accurate screenshots, a content rating, no broken pages and no crash.
+I make no promise about Google's review. The reviewer should see the game start at once, with no URL bar, in portrait, with no arcade links, a privacy policy link, accurate screenshots, a content rating, no broken pages and no crash.
 
 ## Updates
 
@@ -262,7 +272,7 @@ Also build again when Google raises the required target SDK. The next increase i
 2. Build with the same upload key (Step 3).
 3. Upload the bundle to a track in Play Console.
 
-**You do not need a new bundle when** you change the website: anything under `public/fish/` (the code, the art, the privacy page, the manifest). The service worker fetches the new files, and the app shows them on the next launch after the worker updates. The web side keeps a version stamp for the worker (`stamp-sw.mjs`): run it after you change a precached file, as that script says, so that the worker sees a new version. The first start after an update can still show the old copy once.
+**You do not need a new bundle when** you change the website: anything under `public/fish/` (the code, the art, the privacy page, the manifest). The service worker fetches the new files, and the app shows them on the next launch after the worker updates. The worker runs in the app (the Play app and the installed web app) only. A visitor of the website always loads the newest files from the network. The web side keeps a version stamp for the worker (`stamp-sw.mjs`): run it after you change a precached file, as that script says, so that the worker sees a new version. `public/arcade/quiet.js` is also cached and hashed into the stamp, although it is outside `public/fish/`, so a change to it needs the stamp too. The workflow `fish-app.yml` checks the stamp for a change to that file. The first start after an update can still show the old copy once.
 
 ## Read the log with adb
 
@@ -299,7 +309,7 @@ Nobody has done these checks. Do them on a real phone with the app that you inst
 | [ ] | Start URL | Open the app | The game opens at `/fish/?source=play` and the title screen shows. The arcade links ("Switch game", "Back to the arcade") are hidden |
 | [ ] | display-mode | Inspect the page, run `matchMedia("(display-mode: standalone)").matches` | `true`, or the app mode is on through `?source=play` all the same |
 | [ ] | Motion rate | Inspect the page and count `devicemotion` events in 5 s | About 60 per second. The cast tuning assumes this |
-| [ ] | Motion denied | Long-press the app icon, open the site settings, set **Motion sensors** to block | The game offers touch play and shows the right words for an Android app |
+| [ ] | Motion denied | Touch and hold the app icon and tap **App info**. Open **Storage** and tap **Manage space**. Chrome's site settings for the game open. Set **Motion sensors** to block. Then open the game and choose motion play | The game offers touch play and says: "The motion sensors are off for this app. Touch and hold the app icon and tap App info. Open Storage and tap Manage space. Then allow Motion sensors. You can play with touch now." The route is **UNCONFIRMED** on a device, and the labels differ between Android versions and phones |
 | [ ] | No gyro | An old phone, a tablet or a Chromebook | The game falls back to touch |
 | [ ] | Wake lock | Fish for 5 minutes with no touch on other screens | The screen stays on |
 | [ ] | Vibration | Fish with the volume on | The phone buzzes on the strike and the catch |
@@ -308,8 +318,8 @@ Nobody has done these checks. Do them on a real phone with the app that you inst
 | [ ] | Background | Leave the app for 10 minutes, then return | The lake still draws. The pause menu shows |
 | [ ] | Offline start | Open the app once online. Turn on airplane mode. Close the app. Open it again | The game starts and the art loads |
 | [ ] | Offline video | In airplane mode, open the guide | The clips play, or the guide falls back to its pictures |
-| [ ] | Portrait lock | Turn the phone, on a phone and on a tablet or foldable | The game stays in portrait. On a screen of 600 dp or more this relies on `appCategory="game"` |
-| [ ] | Site settings shortcut | Long-press the app icon | The shortcut opens the site settings. You find **Motion sensors** and the storage |
+| [ ] | Portrait lock | Turn the phone, on a phone and on a tablet or foldable | The game stays in portrait. On a screen of 600 dp or more, whether `appCategory="game"` keeps the lock is **UNCONFIRMED**: Chrome's activity draws the game, not this app. Note what you see |
+| [ ] | Manage space route | Touch and hold the app icon, tap **App info**, then **Storage**, then **Manage space** | Chrome's site settings for the game open. You find **Motion sensors** and the storage. The launcher menu has no shortcut for this (the app has none). Some Android versions also show an app-settings row in App info that does the same. **UNCONFIRMED** on a device |
 | [ ] | Navigation bar | Play with the 3-button bar and with gestures | The crank does not sit under a bar. Decide `standalone` or `fullscreen` (see [Owner decisions](#owner-decisions)) |
 | [ ] | Uninstall | Catch a fish, uninstall the app, install it again | Note if the save (`fish.v1`) is still there. **UNCONFIRMED** |
 | [ ] | Chrome save | Play in the Chrome browser, then in the app | The save is the same (the app shares storage with Chrome) |
@@ -324,6 +334,7 @@ Nobody has done these checks. Do them on a real phone with the app that you inst
 | `twa-manifest.json` | The app settings for `@bubblewrap/cli` 1.25.0: package `com.cottagearcade.reelitin`, host, start URL, scope `/fish/`, display, orientation, colours, minSdk 24, no notifications, no features, versions and the signing key name. One value for each decision |
 | `build-aab.sh` | Installs the pinned tools, makes or uses your signing key, generates and patches the Android project, builds and signs the bundle and the APK, checks them, and prints the key fingerprint |
 | `patch-android.mjs` | Stops the build unless Bubblewrap generates SDK 36. Adds `appCategory="game"` and `allowBackup="false"`. `build-aab.sh` runs it |
+| `redact.mjs` | Hides the key passwords in the output of `bubblewrap build`, as the text arrives. `build-aab.sh` pipes the output through it |
 | `verify-output.mjs` | Checks the built APK and bundle against `twa-manifest.json`: ids, versions, SDK levels, permissions, launch URL, links. `build-aab.sh` runs it |
 | `assetlinks.mjs` | Adds, removes, prints and checks the Digital Asset Links entry of the app in `public/.well-known/assetlinks.json` |
 | `make-icons.mjs` | Draws the icons `public/fish/icons/icon-192.png`, `icon-512.png` and `maskable-512.png`. Part of the web side |
@@ -367,7 +378,8 @@ The owner chose these values before the build. Each one lives in one place. Chan
 | Version | 1.0.0, code 1 | `appVersion`, `appVersionName`, `appVersionCode` in `twa-manifest.json` |
 | Account type | Not decided | You |
 | Target audience | 13 and over | Play Console |
-| Store texts and graphics, support e-mail, privacy contact | Not decided | You |
+| Store texts and graphics, support e-mail | Not decided | You |
+| Privacy contact: `OWNER_CONTACT_EMAIL` in `public/fish/privacy.html` (two places) | Not decided. The file has the placeholder | You. Put in your e-mail address, run `node play/fish/stamp-sw.mjs`, commit and deploy **before** you give the URL to Play (Step 5). Check the live page (Step 8) |
 | Closed-test testers | Not decided | You, if the account is personal |
 | Data safety answer for host logs | Not decided | You |
 | Quest placeholder in `assetlinks.json` | Still there | The Quest owner |
@@ -380,7 +392,8 @@ The owner chose these values before the build. Each one lives in one place. Chan
 - **A failed asset-links check** shows a URL bar or crashes the app. Which of the two happens on a current Chrome is **UNCONFIRMED**.
 - **The practical floor for Chrome** is about version 89 (import maps, WebGL, wake lock). **UNCONFIRMED**
 - **Downloads are not checksummed.** The script downloads the JDK, the command-line tools and the npm package from their official hosts over HTTPS, and it pins versions, not hashes.
-- **The password goes through a shell.** Bubblewrap puts the password on the command line of `jarsigner` and `apksigner` for a moment. On your own computer that is fine. On a shared computer, another user could see it with `ps`.
+- **The password goes through a shell.** Bubblewrap puts the password on the command line of `jarsigner` and `apksigner` for a moment. On your own computer that is fine. On a shared computer, another user could see it with `ps`. If a signing step fails, Bubblewrap prints that command. The script replaces both passwords in the output with `********`, so you can read the log. Read it before you paste it anywhere: the filter only knows the two passwords.
+- **No spaces in the tools folder and the key path.** See Step 3. Bubblewrap does not quote them when it signs.
 - **The build depends on two outside services.** Maven Central sometimes answers HTTP 429, and the script then tries again. Bubblewrap's template also lists JCenter, a retired repository that still redirects to Maven Central today. If that redirect stops, the build fails with "Could not resolve" lines that name `jcenter.bintray.com`. Then replace `jcenter()` with `mavenCentral()` in `patch-android.mjs`. **UNCONFIRMED**: nobody knows when, or if, the redirect will stop.
 - **Bubblewrap regenerates the project.** `bubblewrap update` removes the patch. `build-aab.sh` always patches again. If you run Bubblewrap by hand, run `node play/fish/patch-android.mjs` after it.
 - **Nothing here is proven on a device.** See the [DEVICE checklist](#device-checklist).

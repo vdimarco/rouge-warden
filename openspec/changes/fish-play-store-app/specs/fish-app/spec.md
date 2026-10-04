@@ -23,7 +23,7 @@ The page SHALL have a web manifest with the id `/fish/`, the scope `/fish/`, the
 - **THEN** a fish and a red and white bobber on a dark teal lake are still plain to see
 
 ### Requirement: App mode
-The page SHALL run in app mode when its address has `source=play`, `source=pwa` or `app=1`, when the display mode is standalone, fullscreen or minimal-ui, or when the referrer starts with `android-app://`. `app=0` SHALL turn it off. In app mode the page SHALL show no control that leaves the game: the Switch game buttons, the Back to the arcade link, and both Fullscreen buttons. The page SHALL NOT load `/arcade/switch.js`. The title SHALL show the name of the place alone, without "GET PLUNGER'D". The answer SHALL be kept in `sessionStorage` and never in `localStorage`.
+The page SHALL run in app mode when its address has `source=play`, `source=pwa` or `app=1`, when the display mode is standalone, or when the referrer is `android-app://com.cottagearcade.reelitin` (the Play app). `app=0` SHALL turn it off. The referrer of any other Android app, and a browser in fullscreen or minimal-ui mode, SHALL NOT turn it on. When the browser blocks `sessionStorage`, the page SHALL keep the answer that it took from the address, the display mode and the referrer. In app mode the page SHALL show no control that leaves the game: the Switch game buttons, the Back to the arcade link, and both Fullscreen buttons. The page SHALL NOT load `/arcade/switch.js`. The title SHALL show the name of the place alone, without "GET PLUNGER'D". The answer SHALL be kept in `sessionStorage` and never in `localStorage`.
 
 #### Scenario: The Play app starts
 - **WHEN** the app opens `/fish/?source=play` on a 390 by 844 phone
@@ -41,6 +41,18 @@ The page SHALL run in app mode when its address has `source=play`, `source=pwa` 
 - **WHEN** the address has `source=play&app=0`, or `app=0` in an app window
 - **THEN** the page is in plain mode
 
+#### Scenario: Another Android app opens the link
+- **WHEN** a player taps a shared link to `/fish/` in Gmail or Slack, and Chrome opens it with the referrer `android-app://com.google.android.gm` or `android-app://com.Slack`
+- **THEN** the page is in plain mode, with Switch game and Back to the arcade, and it keeps no app flag for the tab
+
+#### Scenario: Browser fullscreen
+- **WHEN** a visitor opens `/fish/` in a desktop browser that is in fullscreen (F11 or the Fullscreen API)
+- **THEN** the page is in plain mode
+
+#### Scenario: Blocked storage
+- **WHEN** the browser blocks `sessionStorage`, and the address has `source=play` or the window is standalone
+- **THEN** the page is in app mode, and in plain mode when neither is true
+
 ### Requirement: Words for a phone
 In app mode the notes SHALL name the phone and Android, not the browser and Safari. Outside app mode every text SHALL stay as it was.
 
@@ -57,7 +69,7 @@ In app mode the notes SHALL name the phone and Android, not the browser and Safa
 - **THEN** the toast says "The touch was cut off. Try the cast again." and the cast starts over
 
 ### Requirement: Offline play
-After a first visit that finished, the game SHALL start with no network. A service worker with the scope `/fish/` SHALL keep the page, the styles, every script, three.js, the fonts, the icons, the manifest, the privacy page, `/arcade/quiet.js`, and the art in a versioned cache, and answer from it first. The worker SHALL register after the title shows and SHALL NOT register when the address has `nosw`. Other origins and other methods SHALL go to the network untouched. The worker SHALL answer a Range request for a cached file with a 206 cut from the cached body, and SHALL NOT store a 206.
+In app mode, after a first visit that finished, the game SHALL start with no network. A service worker with the scope `/fish/` SHALL keep the page, the styles, every script, three.js, the fonts, the icons, the manifest, the privacy page, `/arcade/quiet.js`, and the art in a versioned cache, and answer from it first. The worker SHALL register in app mode only, after the title shows, and SHALL NOT register when the address has `nosw`. The website (a page not in app mode) SHALL NOT register the worker and SHALL NOT ask for `sw.js`, so a visitor always loads the newest files. Other origins and other methods SHALL go to the network untouched. The worker SHALL answer a Range request for a cached file with a 206 cut from the cached body, and SHALL NOT store a 206.
 
 #### Scenario: Start with no network
 - **WHEN** a player who has played once turns on airplane mode and opens the app
@@ -71,6 +83,10 @@ After a first visit that finished, the game SHALL start with no network. A servi
 - **WHEN** the worker installs for the first time
 - **THEN** the open page is controlled at once, and the caches of other pages on the origin stay
 
+#### Scenario: The website has no worker
+- **WHEN** a visitor opens `/fish/` in a browser tab with no app query, or with `source=play&app=0`
+- **THEN** no service worker is registered, and the page does not request `sw.js`
+
 ### Requirement: Updates
 `VERSION` in `sw.js` SHALL be the app version, a plus sign, and ten hex digits of a hash of the cached files. A change to a cached file SHALL change the hash, and the check SHALL fail until `node play/fish/stamp-sw.mjs` has run. A new version SHALL install into its own cache, SHALL wait until the app closes, and SHALL take over at the next launch. It SHALL delete only caches that start with `reelitin-` and are not its own.
 
@@ -82,8 +98,12 @@ After a first visit that finished, the game SHALL start with no network. A servi
 - **WHEN** a script, an image or a font in the cached files changes and `VERSION` does not
 - **THEN** `node qa/fish/pwa.mjs --static` fails and says "run node play/fish/stamp-sw.mjs"
 
+#### Scenario: Only quiet.js changes
+- **WHEN** a pull request changes `public/arcade/quiet.js` and nothing under `public/fish/`
+- **THEN** the workflow `fish-app.yml` runs (on the pull request and on the push to main), because `quiet.js` is cached and hashed into `VERSION`, and the check fails until the stamp is rerun
+
 ### Requirement: Back button
-In app mode, after the first tap, Back SHALL NOT close the app in the middle of play. Back SHALL close an open card, pause a running cast or fight, and resume a paused game. Back SHALL do nothing on the catch card, on the unlock card, and while the game travels. Back SHALL take the results to the title. On the title the first Back SHALL show "Press Back again to leave", and the second Back SHALL close the app. Outside app mode the page SHALL NOT change the history.
+In app mode, after the first tap, Back SHALL NOT close the app in the middle of play. Back SHALL close an open card, pause a running cast or fight, and resume a paused game. Back SHALL do nothing on the catch card, on the unlock card, and while the game travels. Back SHALL take the results to the title. On the title, while the game loads, and on the "cannot draw the lake" screen, the first Back SHALL show "Press Back again to leave", and the second Back SHALL close the app. Outside app mode the page SHALL NOT change the history.
 
 #### Scenario: Back in a fight
 - **WHEN** the player presses Back during a fight
@@ -96,6 +116,10 @@ In app mode, after the first tap, Back SHALL NOT close the app in the middle of 
 #### Scenario: Back on the title
 - **WHEN** the player presses Back on the title, and then presses Back again within two seconds
 - **THEN** the first press shows "Press Back again to leave", and the second press closes the app
+
+#### Scenario: Back while the game loads, and with no WebGL
+- **WHEN** the start is slow, or the phone cannot draw the lake, and the player has tapped once and presses Back, and then presses Back again within two seconds
+- **THEN** the first press shows "Press Back again to leave" and puts no entry back, and the second press closes the app
 
 #### Scenario: Back after a catch
 - **WHEN** the catch card shows and the player presses Back
@@ -115,6 +139,10 @@ The page SHALL have a privacy page and a short privacy card in the game. The car
 #### Scenario: The full policy
 - **WHEN** the player taps Privacy on the title
 - **THEN** `privacy.html` opens, with a link back to the game and no link to the arcade
+
+#### Scenario: The link back to the game
+- **WHEN** the player came from the game, taps "Back to Reel It In" on the policy, and then presses Back on the title twice
+- **THEN** the link went back one step and added no history entry, the first Back shows "Press Back again to leave", and the second Back closes the app (it does not show the policy again). A policy that was opened by its address gets a plain link to the game
 
 #### Scenario: Contact placeholder
 - **WHEN** `privacy.html` still has `OWNER_CONTACT_EMAIL`

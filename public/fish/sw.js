@@ -3,7 +3,7 @@
 // VERSION is "<app version>+<hash of the cached files>". After you change any cached file, run: node play/fish/stamp-sw.mjs
 // It rewrites the hash. qa/fish/pwa.mjs fails when the hash is old. A new VERSION makes a new cache, and the old one goes on the next launch.
 
-const VERSION = "1.0.0+d378c06bcc";
+const VERSION = "1.0.0+00fbe23571";
 const PREFIX = "reelitin-";
 const CACHE = PREFIX + VERSION;
 

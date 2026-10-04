@@ -72,5 +72,17 @@ footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #d9ccaa; col
 
   <footer><a href="./">Back to Reel It In</a></footer>
 </main>
+<script>
+// A player who came from the game goes back one step, like the Back button. A plain link would add a new entry, and then the
+// Back button of the Android app would return to this page and not leave the app. A player who did not come from the game gets the plain link.
+(function () {
+  var link = document.querySelector("footer a");
+  if (!link) return;
+  link.addEventListener("click", function (e) {
+    var from = document.referrer || "";
+    if (history.length > 1 && from.indexOf(location.origin + "/fish/") === 0 && from.indexOf("privacy.html") < 0) { e.preventDefault(); history.back(); }
+  });
+})();
+</script>
 </body>
 </html>
