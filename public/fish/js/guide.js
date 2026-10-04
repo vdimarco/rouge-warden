@@ -80,22 +80,54 @@ export function sceneFrame(kind, motion, time) {
   });
 }
 
-export function lesson(kind, motion, touch = true) {
+// One set of words for each fight move and each input: the fight prompt (main.js), the guide caption (lesson below) and the
+// rod cue (rod-cues.js) all read this, so a move is never written two ways at once. Inputs: motion (the phone is the rod),
+// touch, and keys (a desktop with no touch screen); an input that is left out uses the touch words.
+// strength is the motion pump: tipping the phone back as you crank is what pulls the fish in.
+export const MOVE_WORDS = {
+  reel: { touch: "Turn the crank to reel." },
+  hook: { motion: "Snap it up!", touch: "Swipe it up!", keys: "Press Space!" },
+  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  stop: { touch: "Stop reeling." },
+  low: { motion: "Lower the phone.", touch: "Drag the rod down." },
+  raise: { touch: "Hold the rod up." },
+  turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways." },
+  land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold." },
+  drag: { touch: "Tap + to tighten the drag.", keys: "Click + to tighten the drag." },
+};
+// the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
+export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
+// the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
+// the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
+export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
+// the input of a player: "motion", "touch" or "keys"
+export const inputOf = (motion, touch = true) => (motion ? "motion" : touch ? "touch" : "keys");
+// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
+export function moveWords(kind, input = "touch", side = 0, pace = "") {
+  if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
+  if (kind === "reel" && REEL_PACE[pace]) return REEL_PACE[pace];
+  const w = MOVE_WORDS[kind];
+  return w ? w[input] || w.touch : "";
+}
+
+export function lesson(kind, motion, touch = true, pace = "") {
+  const w = (k) => moveWords(k, inputOf(motion, touch), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
     back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
     cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", "Touch the rod to stop it short."],
-    reel: ["Turn the crank", "Reel slowly. Pause now and then."],
-    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod up" : "Press Space", "Set the hook when the fish strikes."],
-    pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
-    strength: ["Tip back as you reel", "Bring the top of the phone toward you for extra reel power."],
-    stop: ["Stop turning the crank", "Let the fish run."],
-    low: [motion ? "Lower the phone" : "Drag the rod down", "Lower the rod."],
-    turn: [motion ? "Tilt to steer" : "Drag the rod sideways", "Keep the fish clear of cover."],
-    land: [motion ? "Lift the phone. Hold." : "Rod up. Hold.", "Lift the fish out of the water."],
-    raise: [motion ? "Hold the phone up" : "Hold the rod up", "Keep the rod raised."],
-    drag: ["Tap + to tighten drag", "Keep some line on the spool."],
+    reel: [w("reel"), "Reel slowly. Pause now and then."],
+    hook: [w("hook"), "Set the hook when the fish strikes."],
+    pump: [w("pump"), motion ? "Ease forward to rest." : "Pump the fish in."],
+    strength: [w("strength"), "Bring the top of the phone toward you for extra reel power."],
+    stop: [w("stop"), "Let the fish run."],
+    low: [w("low"), "Lower the rod."],
+    turn: [w("turn"), "Keep the fish clear of cover."],
+    land: [w("land"), "Lift the fish out of the water."],
+    raise: [w("raise"), "Keep the rod raised."],
+    drag: [w("drag"), "Keep some line on the spool."],
   })[kind] || ["Watch the line", "Follow the prompt."];
 }
 
@@ -219,12 +251,12 @@ export function createGuide(game, button) {
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
     const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
-    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text;
+    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {
       key = nextKey; lastDraw = -Infinity;
       kindNow = kind;
       art.innerHTML = sceneMarkup(kind, s.motion);
-      const [label, detail] = lesson(kind, s.motion, s.touch);
+      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace);
       caption.textContent = label;
       panel.setAttribute("aria-label", (intro ? "Preview: " : "Now: ") + label + ". " + detail);
       panel.dataset.lesson = kind;

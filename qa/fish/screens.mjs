@@ -1,10 +1,12 @@
 // The screens and the feel of the places and the big fish, in the real game on a phone, with staged fights:
 //   the fight prompts in their order, the loss lines, "Big fish on!" and the reveal, the sound and the buzz of each move,
 //   the catch card (size line, badges, count-up, photo beat), the unlock beat, the derby results, the journal, the goal
-//   reminders, and the old-save toast.
+//   reminders, and the old-save toast. And the fight polish: the prompt hold, the toast queue and its place away from the
+//   crank, SLACK and the readable gauge, one set of words for each move, the loss beat and its lines, and the first fish.
 // The fish and the fight model (fish.js, WP2) are not needed: the test puts a stand-in for the sim into G.sim with the
 // same state and the same events (plan section 3.4), so the screens can be checked one by one.
-// Run: cd public && python3 -m http.server 8765 &   then   node qa/fish/screens.mjs     (FISH_URL for another address)
+// Run: cd public && python3 -m http.server 8765 &   then   node qa/fish/screens.mjs     (FISH_URL for another address;
+// PARTS=H for some parts only)
 // Where the world has no setPlace yet (before the merge), a stand-in is used for it.
 import { createRequire } from "module";
 import { open, sleep } from "./lib.mjs";
@@ -17,6 +19,8 @@ const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   "
 const kgText = (kg) => (kg < 1 ? kg.toFixed(2) : kg.toFixed(1)) + " kg";
 const wait = (page, fn, arg, ms = 30000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 40 });
 const PAUSE = 350;   // the double-tap guard ignores a click in the first 300 ms of a screen
+// PARTS=A,H runs only those parts
+const PARTS = process.env.PARTS ? process.env.PARTS.split(",") : null, part = (p) => !PARTS || PARTS.includes(p);
 
 /* ---------- staging a fight ---------- */
 // G.sim becomes a stand-in with the shape of LakeSim's state. patch is merged in (patch.fish into the fish, fish: null for none).
@@ -25,7 +29,7 @@ async function stage(page, patch = {}, events = [], fresh = true) {
   await page.evaluate(([patch, events, fresh]) => {
     const G = FISH.G;
     if (fresh || !G.sim || !G.sim.fake) {
-      G.lastEvent = {}; G.walk = false; G.thrownBy = ""; G.slipAt = 0; G.rubDir = null;
+      G.lastEvent = {}; G.walk = false; G.thrownBy = ""; G.slipAt = 0; G.rubDir = null; G.hold = null;
       G.sim = { fake: true, events: [], step() {}, state: {
         phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3,
         fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true },
@@ -53,12 +57,17 @@ const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 async function spy(page) {
   await page.evaluate(() => {
     const log = (window.__log = []);
-    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "land", "hookset", "splash"], "H"]]) {
+    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash"], "H"]]) {
       for (const n of names) { const f = obj[n]; obj[n] = function (...a) { log.push([tag + "." + n, ...a]); return f.apply(this, a); }; }
     }
   });
 }
 const has = (log, name, arg) => log.some((l) => l[0] === name && (arg === undefined || l[1] === arg));
+// toasts wait in a short queue (each stays up 1.2 s): wait until the toast says this, then return what it says
+async function toastIs(page, text, ms = 6000) {
+  await wait(page, (t) => document.querySelector("#toast").textContent === t && document.querySelector("#toast").classList.contains("on"), text, ms).catch(() => {});
+  return page.evaluate(() => document.querySelector("#toast").textContent);
+}
 
 /* ---------- the catch card ---------- */
 // stage a catch and wait for the card. Returns what the card shows, and what the count-up did
@@ -105,7 +114,7 @@ const stand = async (page) => {
 };
 
 /* ================= part A: a fresh save at Loon Lake ================= */
-{
+if (part("A")) {
   const { browser, page, errors } = await open({ query: "?debug" });
   try {
     await stand(page);
@@ -127,32 +136,37 @@ const stand = async (page) => {
     // the state of Big Blue's first stage (species.js): its banner says "Let it go"
     const BLUE = { n: 1, of: 3, name: "It runs! Let it go. Hold the rod up.", at: [0.6, 0.3] };
     const T = [
-      ["land", { phase: "land" }, [], "Lift it out! Raise the rod and hold.", ""],
-      ["jump", { fish: { move: "jump" } }, [], "It jumped! Lower the rod!", ""],
-      ["a tail walk", { fish: { move: "jump" } }, [{ type: "walk", n: 3 }], "It jumps again and again!", "Keep the rod low."],
-      ["the line on a stump, steer right", { rub: 0.4, rubKind: "stump", rubSide: 1 }, [], "The line is on a stump! Steer right.", "Drag the rod pad right."],
-      ["the line on the logs, steer left", { rub: 0.4, rubKind: "logs", rubSide: -1 }, [], "The line is on the logs! Steer left.", "Drag the rod pad left."],
-      ["the line on the rocks", { rub: 0.4, rubKind: "rocks", rubSide: 0 }, [], "The line is on the rocks! Hold the rod up.", "Drag the rod pad sideways."],
-      ["the line in the weeds", { rub: 0.4, rubKind: "weeds", rubSide: -1 }, [], "It is in the weeds! Steer left.", "Drag the rod pad left."],
+      ["land", { phase: "land" }, [], "Lift it out!", "Drag the rod up and hold."],
+      ["jump", { fish: { move: "jump" } }, [], "It jumped! Lower the rod!", "Drag the rod down."],
+      ["a tail walk", { fish: { move: "jump" } }, [{ type: "walk", n: 3 }], "It jumps again and again!", "Drag the rod down."],
+      ["the line on a stump, steer right", { rub: 0.4, rubKind: "stump", rubSide: 1 }, [], "The line is on a stump! Steer right.", "Drag the rod right."],
+      ["the line on the logs, steer left", { rub: 0.4, rubKind: "logs", rubSide: -1 }, [], "The line is on the logs! Steer left.", "Drag the rod left."],
+      ["the line on the rocks", { rub: 0.4, rubKind: "rocks", rubSide: 0 }, [], "The line is on the rocks! Hold the rod up.", "Drag the rod sideways."],
+      ["the line in the weeds", { rub: 0.4, rubKind: "weeds", rubSide: -1 }, [], "It is in the weeds! Steer left.", "Drag the rod left."],
       ["a rub below 0.15 is not said", { rub: 0.1, rubKind: "stump", rubSide: 1 }, [], "Pump and reel.", null],
       ["the last run", { fish: { move: "run" } }, [{ type: "lastrun" }], "It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up."],
       ["the last run comes at you and the line is slack", { fish: { move: "surge" }, slack: true }, [{ type: "lastrun" }], "Slack line! Reel it in.", "Keep the line tight."],
-      ["a thrash", { fish: { move: "thrash" } }, [], "It shakes its head!", "Hold the rod up. Reel in any slack."],
-      ["an ordinary head shake", { fish: { move: "shake" } }, [], "It shakes its head!", "Hold the rod up. Reel in any slack."],
-      ["the shake just ended", { fish: { move: "swim" } }, [{ type: "shake" }], "It shakes its head!", "Hold the rod up. Reel in any slack."],
+      ["a thrash", { fish: { move: "thrash" } }, [], "It shakes its head!", "Hold the rod up. Keep reeling slowly."],
+      ["an ordinary head shake", { fish: { move: "shake" } }, [], "It shakes its head!", "Hold the rod up. Keep reeling slowly."],
+      ["the shake just ended", { fish: { move: "swim" } }, [{ type: "shake" }], "It shakes its head!", "Hold the rod up. Keep reeling slowly."],
+      ["a head shake with slack line", { fish: { move: "thrash" }, slack: true }, [], "Slack line! Reel it in.", "It shakes its head. Keep the rod up."],
+      ["a head shake with slack line for only 0.2 s", { fish: { move: "shake" }, slack: true, slackT: 0.2 }, [], "It shakes its head!", "Hold the rod up. Keep reeling slowly."],
       ["the tuna's first run", { fish: { move: "run" }, boss: BLUE, fightT: 1, slack: true }, [], "It runs! Let it go.", "Hold the rod up. Reel only if the line goes slack."],
       ["a turn", { fish: { move: "turn" } }, [], "It turned. Stop reeling!", ""],
       ["a charge", { fish: { move: "charge" } }, [], "It swims at you! Reel fast.", "Reel until the line is tight."],
-      ["too tight", { tfrac: 0.9 }, [], "Too tight! Stop reeling.", "Lower the rod a little."],
-      ["the spool, while the drag slips", { spoolFrac: 0.8, slip: 0.5 }, [], "The spool is almost empty!", "Tighten the drag."],
+      ["too tight", { tfrac: 0.9 }, [], "Too tight! Stop reeling.", "Hold the rod up. Let the drag work."],
+      ["the spool, while the drag slips", { spoolFrac: 0.8, slip: 0.5 }, [], "The spool is almost empty!", "Tap + to tighten the drag."],
       ["a rest", { fish: { move: "hold" } }, [], "It rests. Rest your arm.", "Keep the line tight."],
-      ["a sulk", { fish: { move: "sulk" } }, [], "It holds on the bottom.", "Lift the rod slowly. Then reel as you lower it."],
-      ["cover: lily pads, steer left", { cover: { side: 1, steer: -1, kind: "pads" } }, [], "It swims to the lily pads!", "Drag the rod pad left."],
-      ["cover: the stumps, steer right", { cover: { side: -1, steer: 1, kind: "stumps" } }, [], "It swims to the stumps!", "Drag the rod pad right."],
-      ["cover: the wall", { cover: { side: 1, steer: -1, kind: "wall" } }, [], "It swims to the wall!", "Drag the rod pad left."],
+      ["a sulk", { fish: { move: "sulk" } }, [], "It holds on the bottom.", "Drag the rod up. Reel as it comes down."],
+      ["cover: lily pads, steer left", { cover: { side: 1, steer: -1, kind: "pads" } }, [], "It swims to the lily pads!", "Drag the rod left."],
+      ["cover: the stumps, steer right", { cover: { side: -1, steer: 1, kind: "stumps" } }, [], "It swims to the stumps!", "Drag the rod right."],
+      ["cover: the wall", { cover: { side: 1, steer: -1, kind: "wall" } }, [], "It swims to the wall!", "Drag the rod left."],
       ["running", { slip: 0.6 }, [], "It is running. Let it go.", "Keep the rod up. Reel when it stops."],
       ["slack", { slack: true }, [], "Slack line! Reel it in.", ""],
-      ["beaten", { beaten: true }, [], "It is tired. Reel steadily.", "Slow down if the gauge turns red."],
+      ["slack for less than 0.35 s is not said yet", { slack: true, slackT: 0.2 }, [], "Pump and reel.", null],
+      ["beaten", { beaten: true }, [], "It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT."],
+      ["the pump and reel", { fish: { move: "swim" } }, [], "Pump and reel.", "Drag the rod up. Reel as it comes down."],
+      ["the strike", { phase: "strike", fish: null }, [], "SWIPE IT UP! Set the hook!", ""],
     ];
     for (const [name, patch, events, h, sub] of T) {
       const p = await prompts(page, patch, events, h);
@@ -177,7 +191,7 @@ const stand = async (page) => {
       ["a sulk beats cover", { fish: { move: "sulk" }, cover: { side: 1, steer: -1, kind: "pads" } }, [], "It holds on the bottom."],
       ["cover beats running", { slip: 0.6, cover: { side: 1, steer: -1, kind: "rocks" } }, [], "It swims to the rocks!"],
       ["running beats slack", { slip: 0.6, slack: true }, [], "It is running. Let it go."],
-      ["land beats everything", { phase: "land", fish: { move: "thrash" }, rub: 0.9, rubKind: "stump", rubSide: 1 }, [], "Lift it out! Raise the rod and hold."],
+      ["land beats everything", { phase: "land", fish: { move: "thrash" }, rub: 0.9, rubKind: "stump", rubSide: 1 }, [], "Lift it out!"],
     ];
     for (const [name, patch, events, h] of O) {
       const p = await prompts(page, patch, events, h);
@@ -200,6 +214,41 @@ const stand = async (page) => {
       const p = await prompts(page, patch, events, h);
       check(p && p.h === h && p.sub === sub, `motion prompt: ${name}` + (p && p.h === h && p.sub === sub ? "" : " (got " + JSON.stringify(p) + ")"));
     }
+    // one set of words for each move: a fish on the bottom in motion mode. The prompt sub, the guide caption and the rod
+    // cue all say "Tip back as you reel." (the guide is turned on for this)
+    const words = async (patch, h) => {
+      await prompts(page, patch, [], h);
+      await wait(page, () => { const g = document.querySelector("#fishGuide"); return g && !g.hidden && g.dataset.lesson !== "hold"; }, null, 5000).catch(() => {});
+      await sleep(300);
+      return page.evaluate(() => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }));
+    };
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show animated guide") document.querySelector("#guideToggle").click(); });
+    // the phone held at 60°: the rod is up
+    await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
+    let mw = await words({ fish: { move: "sulk" } }, "It holds on the bottom.");
+    check(mw.sub === "Tip back as you reel." && mw.guide === mw.sub && mw.cue === mw.sub, `one word for each move: a fish on the bottom in motion mode, the prompt, the guide and the rod cue say "Tip back as you reel." (${JSON.stringify(mw)})`);
+    mw = await words({ fish: { move: "swim" } }, "Pump and reel.");
+    check(mw.sub === "Tip back as you reel." && mw.guide === mw.sub && mw.cue === mw.sub, `and so does the pump and reel (${JSON.stringify(mw)})`);
+    mw = await words({ fish: { move: "jump" } }, "It jumped! Lower the rod!");
+    check(mw.sub === "Lower the phone." && mw.guide === mw.sub && mw.cue === mw.sub, `a jump in motion mode: "Lower the phone." on all three (${JSON.stringify(mw)})`);
+    mw = await words({ phase: "strike", fish: null }, "SNAP IT UP! Set the hook!");
+    check(mw.guide === "Snap it up!" && mw.cue === "Snap it up!", `the strike in motion mode: "SNAP IT UP!" and "Snap it up!" (${JSON.stringify(mw)})`);
+    await page.evaluate(() => { FISH.G.input = "touch"; });
+    mw = await words({ fish: { move: "sulk" } }, "It holds on the bottom.");
+    check(mw.sub === "Drag the rod up. Reel as it comes down." && mw.guide === mw.sub && mw.cue === mw.sub, `and in touch mode all three say "Drag the rod up. Reel as it comes down." (${JSON.stringify(mw)})`);
+    mw = await words({ cover: { side: -1, steer: 1, kind: "stumps" } }, "It swims to the stumps!");
+    check(mw.sub === "Drag the rod right." && mw.cue === mw.sub && mw.guide === "Drag the rod sideways.", `a steer: the prompt and the rod cue name the side, the guide says the move (${JSON.stringify(mw)})`);
+    // the reel move: the guide and the rod cue say the pace the prompt asks for, and never the opposite of it
+    const reelWords = async (patch, h) => { const x = await words(patch, h); return { ...x, h: (await promptNow(page) || {}).h }; };
+    mw = await reelWords({ phase: "retrieve", fish: null }, "Turn the crank to reel.");
+    check(mw.h === "Turn the crank to reel." && mw.guide === mw.h && mw.cue === mw.h, `the reel: the prompt, the guide and the rod cue say "Turn the crank to reel." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ phase: "retrieve", fish: null, follower: { id: "perch", x: 0, y: -1, z: -18, heading: 0, len: 0.25 }, tooFast: true }, "Too fast! Reel slower.");
+    check(mw.guide === "Reel slowly." && mw.cue === "Reel slowly.", `a lure too fast for the fish: "Too fast! Reel slower." and the guide and the rod cue say "Reel slowly." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ slack: true, slackT: 1 }, "Slack line! Reel it in.");
+    check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
+    check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show animated guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
     // ---- the gauge follows the state ----
@@ -222,7 +271,9 @@ const stand = async (page) => {
       ["thrash", [{ type: "thrash" }], (l) => has(l, "H.thrash") && has(l, "S.sfx", "splash")],
       ["spool", [{ type: "spool" }], (l) => has(l, "S.sfx", "slip") && l.some((x) => x[0] === "H.bump" && x[1] === 0.8)],
       ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "record") && has(l, "H.phase")],
-      ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.jolt")],
+      // its own warning, not the snap buzz (which would also silence the drag)
+      ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.surge") && !has(l, "H.jolt")],
+      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "tick") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
     ];
     for (const [name, ev, ok] of FEEL) {
       await stage(page, {});
@@ -233,9 +284,9 @@ const stand = async (page) => {
     }
     await stage(page, {});
     await stage(page, {}, [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], false);
-    check((await page.textContent("#toast")) === "It runs for the lily pads!", "a boss stage shows its name as a toast");
+    check((await toastIs(page, "It runs for the lily pads!")) === "It runs for the lily pads!", "a boss stage shows its name as a toast");
     await stage(page, {}, [{ type: "turned" }], false);
-    check((await page.textContent("#toast")) === "You turned it!", "turning a fish shows \"You turned it!\"");
+    check((await toastIs(page, "You turned it!")) === "You turned it!", "turning a fish shows \"You turned it!\"");
     // the rub: the grind loop and the buzz follow the meter, and stop when it is empty
     await stage(page, { rub: 0.5 });
     await sleep(500);
@@ -259,21 +310,38 @@ const stand = async (page) => {
       ["stump", [], "The line broke on a stump.", "Steer the fish away from the stumps."],
       ["logs", [], "The line broke on the logs.", "Keep the fish away from the logjam."],
       ["rocks", [], "The line broke on the rocks.", "Hold the rod up near the rocks, and steer away."],
-      ["weeds", [], "It wrapped the line in the weeds.", "Drag the rod pad sideways to steer it."],
+      ["weeds", [], "It wrapped the line in the weeds.", "Drag the rod sideways to steer it."],
       ["spooled", [], "It took all your line.", "Tighten the drag on a long run."],
       ["thrown", [{ type: "thrown", thrash: true }], "It shook the hook out.", "Hold the rod up when it shakes its head."],
       ["thrown", [{ type: "thrown", charge: true }], "It threw the hook.", "Reel fast when it swims at you."],
-      ["thrown", [{ type: "thrown", jump: true }], "It threw the hook.", "Lower the rod when it jumps."],
+      ["thrown", [{ type: "thrown", jump: true }], "It threw the hook.", "Lower the rod as soon as it jumps."],
       ["thrown", [{ type: "thrown" }], "It threw the hook.", "Keep the line tight."],
+      ["thrown", [{ type: "thrown", slack: true }], "It shook the hook out.", "Keep reeling slowly when it shakes its head.", { move: "thrash" }],
       ["snap", [], "SNAP! The line broke.", "Stop reeling when the drag slips."],
+      ["snap", [], "SNAP! The line broke.", "Keep the rod up. It bends and saves the line.", null, "rodlow"],
+      ["snap", [], "SNAP! The line broke.", "Set the drag lighter with the − button.", null, "drag"],
+      ["spat", [], "It spat the lure.", "Swipe it up as soon as it strikes."],
+      ["thrown", [{ type: "thrown", jump: true }], "The Golden Loon Bass got away.", "Lower the rod as soon as it jumps. Look for its gold ring again at dawn or dusk.", { id: "golden", kg: 4.2 }],
     ];
-    for (const [reason, ev, h, sub] of LOSS) {
+    for (const [reason, ev, h, sub, fish = null, cause = ""] of LOSS) {
       await page.evaluate(() => { if (FISH.G.phase === "lost") FISH.enterReel(); });
-      await stage(page, { phase: "lost", reason }, ev);
-      await wait(page, (h) => { const p = document.querySelector("#prompt"); return !p.hidden && p.querySelector(".p1 span").textContent === h; }, h, 8000).catch(() => {});
+      await stage(page, { phase: "lost", reason, cause, ...(fish ? { fish } : {}) }, ev);
+      // (two loss lines in a row can share the headline: wait for the sub too)
+      await wait(page, ([h, sub]) => { const p = document.querySelector("#prompt"); return !p.hidden && p.querySelector(".p1 span").textContent === h && p.querySelector(".p2").textContent === sub; }, [h, sub], 8000).catch(() => {});
       const p = await promptNow(page);
-      check(p && p.h === h && p.sub === sub, `loss: ${reason}${ev.length ? " (" + Object.keys(ev[0]).filter((k) => k !== "type").join() + ")" : ""} -> "${h}"` + (p && p.h === h && p.sub === sub ? "" : " (got " + JSON.stringify(p) + ")"));
+      check(p && p.h === h && p.sub === sub, `loss: ${reason}${ev.length ? " (" + Object.keys(ev[0]).filter((k) => k !== "type").join() + ")" : ""}${cause ? " (" + cause + ")" : ""} -> "${h}"` + (p && p.h === h && p.sub === sub ? "" : " (got " + JSON.stringify(p) + ")"));
     }
+    // the loss beat: the line stays up 3.2 s or more (a legend longer), then the next cast
+    const beat = async (fish) => {
+      await page.evaluate(() => { if (FISH.G.phase === "lost") FISH.enterReel(); });
+      await stage(page, { phase: "lost", reason: "thrown", fish }, [{ type: "thrown" }]);
+      await wait(page, () => FISH.G.phase === "lost", null, 8000);
+      const t0 = Date.now();
+      await wait(page, () => FISH.G.phase !== "lost", null, 15000).catch(() => {});
+      return Date.now() - t0;
+    };
+    const plainMs = await beat({ id: "walleye", kg: 2 }), legendMs = await beat({ id: "golden", kg: 4.2 });
+    check(plainMs >= 3200 && plainMs < 6000 && legendMs >= 4200 && legendMs < 7000, `the loss line stays 3.2 s or more, a legend's longer (${plainMs} ms, the legend ${legendMs} ms)`);
 
     // ---- "Big fish on!" ----
     console.log("     a big fish");
@@ -284,19 +352,19 @@ const stand = async (page) => {
     check(await page.evaluate(() => !!FISH.G.big && !FISH.G.big.said), "a heavy fish is marked big at the hook set");
     await logClear(page);
     await stage(page, {}, [{ type: "drag" }], false);
-    check((await toastNow()) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
+    check((await toastIs(page, "It is a big one!")) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
     await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 5000).catch(() => {});
     check(await page.evaluate(() => FISH.gauge.s.label === "Big fish on!"), "and the gauge says \"Big fish on!\"");
     check(has(await logNow(page), "H.thump"), "with a thump");
     await stage(page, { fish: { known: true } }, [{ type: "reveal", id: "walleye" }], false);
-    check((await toastNow()) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is a huge Walleye!")) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
     await wait(page, () => FISH.gauge.s.label === "", null, 5000).catch(() => {});
     check(await page.evaluate(() => FISH.gauge.s.label === "" && FISH.gauge.s.name === "Walleye"), "and the gauge shows the name again");
     // a small fish: no warning
     await stage(page, { fish: { id: "perch", kg: 0.35, known: false } }, [{ type: "hooked", id: "perch" }]);
     check(await page.evaluate(() => FISH.G.big === null), "a small perch is not a big one");
     await stage(page, { fish: { known: true } }, [{ type: "drag" }, { type: "reveal", id: "perch" }], false);
-    check((await toastNow()) === "It is a Yellow Perch!", "and its reveal is plain (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is a Yellow Perch!")) === "It is a Yellow Perch!", "and its reveal is plain (" + (await toastNow()) + ")");
     // big for its kind: a perch at the top of its range
     await stage(page, { fish: { id: "perch", kg: 0.59, known: false } }, [{ type: "hooked", id: "perch" }]);
     check(await page.evaluate(() => !!FISH.G.big), "a perch near the top of its range is big for its kind (size rank 0.9 or more)");
@@ -308,9 +376,9 @@ const stand = async (page) => {
     check(await page.evaluate(() => FISH.G.big && FISH.G.big.said), "4 s after the hook set the warning comes, run or no run");
     // the reveal of a fish with a vowel, and of a legend
     await stage(page, { fish: { id: "smallmouth", kg: 1.2, known: true } }, [{ type: "hooked", id: "smallmouth" }, { type: "reveal", id: "smallmouth" }]);
-    check((await toastNow()) === "It is a Smallmouth Bass!", "a plain reveal (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is a Smallmouth Bass!")) === "It is a Smallmouth Bass!", "a plain reveal (" + (await toastNow()) + ")");
     await stage(page, { fish: { id: "golden", kg: 4.2, known: true } }, [{ type: "hooked", id: "golden" }, { type: "reveal", id: "golden" }]);
-    check((await toastNow()) === "It is the Golden Loon Bass!", "the legend has its own article (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is the Golden Loon Bass!")) === "It is the Golden Loon Bass!", "the legend has its own article (" + (await toastNow()) + ")");
     check(await page.evaluate(() => FISH.save.places.loon.lg === 2), "hooking the legend moves its step to 2 in the save");
 
     // ---- the catch card ----
@@ -354,7 +422,7 @@ const stand = async (page) => {
     check(c.btn === "Cast again" && c.badges.includes("NEW SPECIES") && c.size === expectSize(smallmouth, 2.6), "2.6 kg does not open a place; the size line is right (" + JSON.stringify({ badges: c.badges, size: c.size, want: expectSize(smallmouth, 2.6) }) + ")");
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
-    check((await toastNow()) === "Close! Land a fish of 3.5 kg or more to open Stump Bay.", "70% of the goal or more: the close-call toast after the card (" + (await toastNow()) + ")");
+    check((await toastIs(page, "Close! Land a fish of 3.5 kg or more to open Stump Bay.")) === "Close! Land a fish of 3.5 kg or more to open Stump Bay.", "70% of the goal or more: the close-call toast after the card (" + (await toastNow()) + ")");
     check(await page.evaluate(() => !FISH.save.places.stumps), "Stump Bay is still closed");
 
     // a walleye of 3.6 kg opens Stump Bay
@@ -465,7 +533,7 @@ const stand = async (page) => {
 }
 
 /* ================= part B: a derby that opens a place ================= */
-{
+if (part("B")) {
   const { browser, page, errors } = await open({ query: "?debug" });
   try {
     await stand(page);
@@ -510,7 +578,7 @@ const stand = async (page) => {
 }
 
 /* ================= part C: an old save ================= */
-{
+if (part("C")) {
   const old = { v: 1, journal: { perch: { n: 3, kg: 0.5, cm: 30 }, walleye: { n: 1, kg: 3.6, cm: 63 }, golden: { n: 1, kg: 4.1, cm: 55 } }, casts: 40, longest: 46.2, derbyBest: 8.4, biggest: { id: "walleye", kg: 3.6 }, input: null, assist: true, quality: "auto", seen: { bail: 1 }, caught: 6 };
   const { browser, page, errors } = await open({ query: "?debug", save: old });
   try {
@@ -537,7 +605,7 @@ const stand = async (page) => {
 }
 
 /* ================= part D: the other places (?open) ================= */
-{
+if (part("D")) {
   const { browser, page, errors } = await open({ query: "?open&debug" });
   try {
     await stand(page);
@@ -575,13 +643,13 @@ const stand = async (page) => {
     // the day wraps at midnight to 19:00, with the night's own words
     await page.evaluate(() => { FISH.G.hour = 23.999; });
     await wait(page, () => FISH.G.hour < 20 && FISH.G.hour >= 19, null, 15000);
-    check((await toastNow()) === "A new night on Stump Bay.", "at midnight the clock goes back to 19:00: \"A new night on Stump Bay.\" (" + (await toastNow()) + ")");
+    check((await toastIs(page, "A new night on Stump Bay.")) === "A new night on Stump Bay.", "at midnight the clock goes back to 19:00: \"A new night on Stump Bay.\" (" + (await toastNow()) + ")");
     // ---- Gull Rock ----
     check(await page.evaluate(async () => await FISH.setPlace("sea")), "at Gull Rock");
     await page.evaluate(() => FISH.startMode("free"));
     await wait(page, () => FISH.G.phase === "cast");
-    p = await prompts(page, { phase: "land" }, [], "Bring it to the wall! Raise the rod and hold.");
-    check(p && p.h === "Bring it to the wall! Raise the rod and hold.", "at the wall: \"Bring it to the wall!\"");
+    p = await prompts(page, { phase: "land" }, [], "Bring it to the wall!");
+    check(p && p.h === "Bring it to the wall!" && p.sub === "Drag the rod up and hold.", "at the wall: \"Bring it to the wall!\"");
     check(await page.evaluate(() => Math.abs(FISH.G.hour - 5.5) < 0.1), "free fishing at Gull Rock starts at 5:30");
     // a big fish here is 10 kg
     await stage(page, { fish: { id: "striper", kg: 8, known: false } }, [{ type: "hooked", id: "striper" }]);
@@ -593,16 +661,16 @@ const stand = async (page) => {
     check(await page.evaluate(() => !FISH.save.places.sea || FISH.save.places.sea.lg === 0), "?open never writes a place record (Gull Rock was not earned)");
     // the trophy line of a legend at the sea: Big Blue has no article
     await stage(page, { fish: { id: "bigblue", kg: 80, known: true } }, [{ type: "reveal", id: "bigblue" }], false);
-    check((await toastNow()) === "It is Big Blue!", "\"It is Big Blue!\" (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is Big Blue!")) === "It is Big Blue!", "\"It is Big Blue!\" (" + (await toastNow()) + ")");
     await stage(page, { fish: { id: "whiskers", kg: 20, known: true } }, [{ type: "reveal", id: "whiskers" }]);
-    check((await toastNow()) === "It is Old Whiskers!", "\"It is Old Whiskers!\" (" + (await toastNow()) + ")");
+    check((await toastIs(page, "It is Old Whiskers!")) === "It is Old Whiskers!", "\"It is Old Whiskers!\" (" + (await toastNow()) + ")");
   } catch (e) { check(false, "exception in part D: " + (e && e.stack)); }
   check(errors.length === 0, "part D: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 
 /* ================= part F: prompts that hold, the gold ring, the flash, the chip, the report hint ================= */
-{
+if (part("F")) {
   const { browser, page, errors } = await open({ query: "?debug" });
   try {
     await stand(page);
@@ -633,14 +701,18 @@ const stand = async (page) => {
     await page.evaluate(() => { window.__pt = []; const p1 = document.querySelector("#prompt .p1"); new MutationObserver(() => window.__pt.push(p1.querySelector("span").textContent)).observe(p1, { childList: true, subtree: true, characterData: true }); });
     await set("rubSide", -1); await jump(150); await frames();
     let w = await promptNow(page);
-    check(w.h === "The line is on the logs! Steer right." && w.sub === "Drag the rod pad right." && !(await changes()).length, "a new side that has held 150 ms does not change the words yet (" + JSON.stringify(w) + ")");
+    check(w.h === "The line is on the logs! Steer right.", "a new side that has held 150 ms does not change the headline yet (" + JSON.stringify(w) + ")");
+    check(w.sub === "Drag the rod right.", "nor the sub (" + JSON.stringify(w) + ")");
+    check(!(await changes()).length, "and the prompt has not changed at all (" + JSON.stringify(await changes()) + ")");
     await set("rubSide", 1); await jump(400); await frames();
     check(!(await changes()).length && (await promptNow(page)).h === "The line is on the logs! Steer right.", "and if the side goes back, the words never changed");
     for (let i = 0; i < 6; i++) { await set("rubSide", i % 2 ? 1 : -1); await jump(120); await frames(2); }
     check(!(await changes()).length, "a side that flips every 120 ms never gets through (" + JSON.stringify(await changes()) + ")");
     await set("rubSide", -1); await jump(150); await frames(); await jump(200); await frames();
     w = await promptNow(page);
-    check(w.h === "The line is on the logs! Steer left." && w.sub === "Drag the rod pad left." && (await changes()).length === 1, "a side that holds 350 ms changes the words once (" + JSON.stringify(w) + ")");
+    check(w.h === "The line is on the logs! Steer left.", "a side that holds 350 ms changes the headline (" + JSON.stringify(w) + ")");
+    check(w.sub === "Drag the rod left.", "and the sub (" + JSON.stringify(w) + ")");
+    check((await changes()).length === 1, "once (" + JSON.stringify(await changes()) + ")");
     await set("rubSide", 0); await jump(900); await frames();
     check((await promptNow(page)).h === "The line is on the logs! Steer left.", "no side for a moment keeps the last words, not \"Steer away.\"");
     await page.evaluate(() => { const s = FISH.G.sim.state; s.rubKind = "stump"; s.rubSide = 1; });
@@ -686,6 +758,7 @@ const stand = async (page) => {
     check((await golds()) === 1, "a ring that pulses again and again toasts once (" + (await golds()) + ")");
     await page.evaluate(() => { window.__gold = [46, -34]; });
     await frames(6);
+    await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 2, null, 5000).catch(() => {});
     check((await golds()) === 2, "a second ring toasts once more");
     check(await page.evaluate(() => FISH.save.places.loon.lg >= 1), "and the save knows the ring was seen");
     // in a fight the ring stays quiet, and is said when the fight is over
@@ -696,6 +769,7 @@ const stand = async (page) => {
     await page.evaluate(() => FISH.newCast());
     await wait(page, () => FISH.G.phase === "cast");
     await frames(6);
+    await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 5000).catch(() => {});
     check((await golds()) === 3, "it is said after the fight");
     await page.evaluate(() => { window.__gold = null; FISH.startMode("free"); });
     check(await page.evaluate(() => FISH.G.goldAt === null), "a new mode forgets the last ring");
@@ -759,9 +833,229 @@ const stand = async (page) => {
   await browser.close();
 }
 
+/* ================= part H: the fight polish: the first fish, toasts, the prompt hold, the gauge ================= */
+if (part("H")) {
+  const { browser, page, errors } = await open({ query: "?debug" });
+  try {
+    await stand(page);
+    await spy(page);
+    await page.evaluate(() => FISH.startMode("free"));
+    await wait(page, () => FISH.G.phase === "cast");
+    const frames = (n = 3) => page.evaluate((n) => new Promise((res) => { const f = () => (--n > 0 ? requestAnimationFrame(f) : res()); requestAnimationFrame(f); }), n);
+    // a cast that lands (x, z) from the dock, with no ring; the plan of the sim that it starts
+    const lands = async (x, z) => {
+      await page.evaluate(([x, z]) => {
+        FISH.G.mode = "free"; FISH.newCast();
+        FISH.rises.near = () => null;
+        FISH.G.cast = null;
+        FISH.G.step = "flight"; FISH.G.flight = { step: () => ({ x, y: 0, z, done: true, land: "water", lineOut: Math.hypot(x, z), spool: 0 }) };
+      }, [x, z]);
+      await wait(page, () => FISH.G.phase === "reel");
+      return page.evaluate(() => { const p = FISH.G.sim.plan; return { id: p ? p.id : null, kg: p ? p.kg : 0, gift: !!FISH.G.gift, gifted: !!FISH.G.gifted, caught: FISH.save.caught }; });
+    };
+
+    // ---- the first fish of a fresh save: a sure bite from a small, easy fish, landed in 25 s ----
+    console.log("     the first fish");
+    let fb = await lands(-12, -18);
+    check(["pumpkinseed", "perch"].includes(fb.id) && fb.kg < 0.5 && fb.gift && !fb.gifted && fb.caught === 0, `a fresh save's first cast in the water: a sure bite from a small pumpkinseed or perch (${JSON.stringify(fb)})`);
+    // reeled in before it strikes: the next cast still has the sure bite (it is used up by the strike, not by the cast)
+    await page.evaluate(() => FISH.newCast());
+    await wait(page, () => FISH.G.phase === "cast");
+    fb = await lands(-12, -18);
+    check(["pumpkinseed", "perch"].includes(fb.id) && fb.gift && !fb.gifted, `a first cast reeled in before the strike leaves the sure bite for the next cast (${JSON.stringify(fb)})`);
+    // a player who holds the crank key: reel fast and never slow down (2.4 turns a second), set the hook at the strike. The
+    // first fish does not mind a fast lure: it still strikes, and the player lands it within 25 s of the splash
+    const firstFight = (rps) => page.evaluate(async (rps) => {
+      const G = FISH.G, t0 = performance.now(), wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const { REEL_UI } = await import("./js/reel.js"), keep = REEL_UI.keyRps;
+      REEL_UI.keyRps = rps;
+      FISH.crank.keyHold(true);
+      let struck = false, gifted = null;
+      const heads = new Set(), p = document.querySelector("#prompt");
+      while (performance.now() - t0 < 40000 && G.phase === "reel") {
+        const s = G.sim.state;
+        if (!p.hidden) heads.add(p.querySelector(".p1 span").textContent);
+        if (s.phase === "strike" && !struck) { struck = true; await wait(250); gifted = !!G.gifted; G.hookReq = true; }
+        await wait(50);
+      }
+      FISH.crank.keyHold(false);
+      REEL_UI.keyRps = keep;
+      return { phase: G.phase, s: G.sim && +G.sim.state.t.toFixed(1), struck, gifted, heads: [...heads].filter((h) => /Nothing|Too fast/.test(h)) };
+    }, rps);
+    const fast = await firstFight(2.4);
+    check(fast.struck && fast.gifted && fast.phase === "catch" && fast.s <= 25 && !fast.heads.length, `a player who reels fast (2.4 turns a second) still gets the strike, which uses up the sure bite, and lands it within 25 s (${JSON.stringify(fast)})`);
+    if (fast.phase === "catch") { await sleep(PAUSE); await page.evaluate(() => document.querySelector("#catchGo").click()); await wait(page, () => FISH.G.phase === "cast", null, 20000); }
+    // (a fresh save again, for the plain player)
+    await page.evaluate(() => { FISH.save.caught = 0; FISH.G.gifted = false; });
+    fb = await lands(-12, -18);
+    // a plain player: reel slowly and steadily (1.1 turns a second, as the casual player of fight.sim), set the hook at the
+    // strike, keep reeling (the rod stays where touch play leaves it)
+    const play = await page.evaluate(async () => {
+      const G = FISH.G, t0 = performance.now(), wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const { REEL_UI } = await import("./js/reel.js"), rps = REEL_UI.keyRps;
+      REEL_UI.keyRps = 1.1;
+      FISH.crank.keyHold(true);
+      let struck = false;
+      // the log of the fight: each change of the prompt (s, as the player sees it), and any toast on the crank
+      const log = (window.__fl = []), onCrank = (window.__fc = []), p = document.querySelector("#prompt"), toast = document.querySelector("#toast");
+      const keyNow = () => (p.hidden ? "" : p.querySelector(".p1 span").textContent + " | " + p.querySelector(".p2").textContent);
+      const obs = new MutationObserver(() => { const k = keyNow(); if (G.phase === "reel" && (!log.length || log[log.length - 1][1] !== k)) log.push([performance.now() / 1000, k]); });
+      obs.observe(p, { subtree: true, childList: true, characterData: true, attributes: true });
+      while (performance.now() - t0 < 40000 && G.phase === "reel") {
+        const s = G.sim.state;
+        if (s.phase === "strike" && !struck) { struck = true; await wait(250); G.hookReq = true; }
+        if (toast.classList.contains("on")) {
+          const a = toast.getBoundingClientRect(), b = document.querySelector("#crankBox").getBoundingClientRect();
+          if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) onCrank.push(toast.textContent);
+        }
+        await wait(50);
+      }
+      obs.disconnect();
+      FISH.crank.keyHold(false);
+      REEL_UI.keyRps = rps;
+      // (game time from the splash: a slow test browser can fall behind the wall clock)
+      return { phase: G.phase, sim: G.sim && G.sim.state.phase, s: G.sim && +G.sim.state.t.toFixed(1), ms: Math.round(performance.now() - t0), struck };
+    });
+    check(play.struck && play.phase === "catch" && play.s <= 25, `and a player who reels and sets the hook lands it within 25 s of the splash (${JSON.stringify(play)})`);
+    // the busy fight: from the splash to the landing no prompt changes within 0.35 s, unless to the strike, a snap risk or a
+    // jump; and no toast sits on the crank
+    const fl = await page.evaluate(() => window.__fl.slice()), fc = await page.evaluate(() => window.__fc.slice());
+    const URGENT = /Set the hook|jumped|jumps again|Too tight|drag is slipping|line is on|in the weeds|spool is almost empty/;
+    const quick = fl.slice(1).filter((x, i) => x[0] - fl[i][0] < 0.35 && !URGENT.test(x[1]));
+    check(fl.length >= 4 && !quick.length && !fc.length, `the first fight: ${fl.length} prompts, none changed within 0.35 s but for an urgent one, and no toast on the crank (${JSON.stringify(quick.slice(0, 3))}${fc.length ? "; on the crank: " + fc[0] : ""})`);
+    if (play.phase === "catch") { await sleep(PAUSE); await page.evaluate(() => document.querySelector("#catchGo").click()); await wait(page, () => FISH.G.phase === "cast", null, 20000); }
+    // the next cast has the normal odds: in deep water, where neither of them lives, no perch and no pumpkinseed
+    fb = await lands(0, -40);
+    check(!["pumpkinseed", "perch"].includes(fb.id), `the next cast has the normal odds (${JSON.stringify(fb)})`);
+    await page.evaluate(() => FISH.newCast());
+    await wait(page, () => FISH.G.phase === "cast");
+
+    // ---- the toast queue: three news in one frame each get 1.2 s ----
+    console.log("     the toast queue");
+    await page.evaluate(() => {
+      const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent"), t0 = performance.now();
+      window.__tq = [];
+      Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__tq.push([v, performance.now() - t0]); d.set.call(this, v); } });
+    });
+    await page.evaluate(() => { delete FISH.save.seen.run; });
+    await sleep(2500);   // the toasts before have gone
+    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "run" }, { type: "drag" }]);
+    const early = await page.evaluate(() => !!FISH.save.seen.run);
+    await sleep(4200);
+    const tq = await page.evaluate(() => window.__tq.slice());
+    const want = ["Fish on!", "It is running! Let the drag work.", "It is a big one!"], got = tq.map((x) => x[0]);
+    const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
+    check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
+    check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);
+    await page.evaluate(() => { const el = document.querySelector("#toast"); delete el.textContent; });
+
+    // ---- toasts in the reel stay off the crank: both reel sides, a tall phone, a small one and a wide screen, in touch and
+    // in motion play (where the pull meter shows top right). Off the drag bar too, with its widest label, and a long toast
+    // (a legend's stage name, four lines on a small phone) stays off them as well ----
+    console.log("     the toast place");
+    const LONG = "It runs down the river! Steer it off the logs!", SHORT = "Too fast. It turned away. Reel slower.";
+    const toastCases = [["touch", 390, 844], ["touch", 360, 640], ["touch", 844, 390], ["touch", 1280, 800], ["motion", 390, 844], ["motion", 360, 640]];
+    for (const [input, W, H] of toastCases) for (const side of ["right", "left"]) for (const msg of W === 360 ? [SHORT, LONG] : [SHORT]) {
+      if (input === "motion" && !(await page.evaluate(() => FISH.G.input === "motion"))) {
+        await page.evaluate(async () => { await FISH.Motion.request(); FISH.G.input = "motion"; });
+        await wait(page, () => FISH.Motion.live, null, 10000);
+        await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
+      }
+      await page.setViewportSize({ width: W, height: H });
+      await page.evaluate((side) => { document.querySelector("#game").dataset.reelSide = side; document.querySelector("#dragName").textContent = "DRAG: HEAVY"; }, side);
+      await stage(page, {});
+      await frames(4);
+      await sleep(1300);
+      await stage(page, {}, [msg === SHORT ? { type: "refuse" } : { type: "phase", n: 2, of: 3, name: LONG }], false);
+      await toastIs(page, msg);
+      await frames(3);
+      const r = await page.evaluate(() => {
+        const R = (sel) => { const e = document.querySelector(sel); if (!e || e.hidden || !e.getClientRects().length) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; };
+        const cue = document.querySelector("#rodCue");
+        return { toast: R("#toast"), crank: R("#crankBox"), gauge: R("#gaugeBox"), cue: cue && !cue.hidden ? R("#rodCue span") : null, prompt: R("#prompt .p1"), pull: R("#pullStrength"), drag: R("#dragBar"), layout: FISH.G.layout, on: document.querySelector("#toast").classList.contains("on") };
+      });
+      const hit = (a, b) => !!a && !!b && a.x < b.r && a.r > b.x && a.y < b.b && a.b > b.y;
+      const hits = ["crank", "gauge", "cue", "prompt", "pull", "drag"].filter((k) => hit(r.toast, r[k]));
+      check(r.on && !!r.toast && !hits.length && r.toast.x >= 0 && r.toast.r <= W && (input === "touch" || !!r.pull), `${input} ${W}x${H}, reel side ${side} (${r.layout})${msg === LONG ? ", a long toast" : ""}: the toast is clear of the crank, the gauge, the rod cue, the prompt, the drag bar${input === "motion" ? " and the pull meter" : ""} (toast ${JSON.stringify(r.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(r[k])).join(", ") : ""})`);
+    }
+    await page.evaluate(() => { document.querySelector("#game").dataset.reelSide = FISH.save.reelSide; FISH.G.input = "touch"; });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await frames(4);
+
+    // ---- the prompt hold: 0.35 s, unless the new prompt is urgent ----
+    console.log("     the prompt hold");
+    await page.evaluate(() => {
+      const real = performance.now.bind(performance), C = (window.__c = { t: real(), on: false, off: 0 });
+      performance.now = () => (C.on ? (C.t += 0.05) : real() + C.off);
+      window.__freeze = () => { C.t = performance.now(); C.on = true; };
+      window.__thaw = () => { C.off = C.t - real(); C.on = false; };
+    });
+    const jump = (ms) => page.evaluate((ms) => { window.__c.t += ms; }, ms);
+    const set = async (o) => { await page.evaluate((o) => { const s = FISH.G.sim.state, { fish, ...rest } = o; Object.assign(s, rest); if (fish) Object.assign(s.fish, fish); }, o); await frames(3); };
+    await page.evaluate(() => window.__freeze());
+    await prompts(page, {}, [], "Pump and reel.");
+    // (the prompt is new from now: the frozen clock still creeps a little with each look at it)
+    await frames(2);
+    await page.evaluate(() => { FISH.G.hold.at = performance.now(); });
+    await set({ slack: true, slackT: 1 });
+    check((await promptNow(page)).h === "Pump and reel.", "slack line just after a new prompt: the prompt holds (" + (await promptNow(page)).h + ")");
+    await jump(400); await frames();
+    check((await promptNow(page)).h === "Slack line! Reel it in.", "after 0.35 s it changes (" + (await promptNow(page)).h + ")");
+    await set({ slack: false, slackT: 0, tfrac: 0.92 });
+    check((await promptNow(page)).h === "Too tight! Stop reeling.", "a snap risk does not wait (" + (await promptNow(page)).h + ")");
+    await set({ tfrac: 0.3, fish: { move: "jump" } });
+    check((await promptNow(page)).h === "It jumped! Lower the rod!", "nor does a jump (" + (await promptNow(page)).h + ")");
+    await set({ fish: { move: "swim" } }); await jump(1000); await frames();
+    await set({ phase: "strike" });
+    check(/Set the hook!$/.test((await promptNow(page)).h), "nor the strike (" + (await promptNow(page)).h + ")");
+    await page.evaluate(() => window.__thaw());
+
+    // ---- the gauge: SLACK after 0.3 s, and words big enough to read on a 360 px phone ----
+    console.log("     the gauge");
+    await page.setViewportSize({ width: 360, height: 640 });
+    await frames(4);
+    await page.evaluate(() => {
+      const c = FISH.gauge.cv.getContext("2d"), f = c.fillText;
+      window.__gt = [];
+      c.fillText = function (t, ...a) { window.__gt.push([String(t), parseFloat((/(\d+(?:\.\d+)?)px/.exec(this.font) || [])[1])]); return f.call(this, t, ...a); };
+    });
+    const gword = async (o, w) => { await stage(page, o); await wait(page, (w) => FISH.gauge.box && FISH.gauge.box.word === w, w, 5000).catch(() => {}); return page.evaluate(() => FISH.gauge.box && FISH.gauge.box.word); };
+    check((await gword({ slack: true, slackT: 0.5, tfrac: 0.01 }, "SLACK")) === "SLACK", "the gauge says SLACK when the line has been slack 0.3 s");
+    check((await gword({ slack: true, slackT: 0.2, tfrac: 0.01 }, "GOOD")) === "GOOD", "and not before (" + (await page.evaluate(() => FISH.gauge.box.word)) + ")");
+    for (const [o, w] of [[{ tfrac: 0.92 }, "TOO TIGHT"], [{ slip: 0.8, tfrac: 0.45 }, "SLIPPING"], [{ tfrac: 0.3, rub: 0.5, rubKind: "stump", rubSide: 1 }, "GOOD"], [{ tfrac: 0.2, beaten: true, fish: { stamina: 0.05 } }, "GOOD"]]) await gword(o, w);
+    await sleep(600);
+    const gt = await page.evaluate(() => window.__gt.slice()), words = ["GOOD", "TIGHT", "SLIPPING", "SLACK", "TOO TIGHT", "TENSION"];
+    const small = gt.filter(([t, px]) => words.includes(t) ? px < 12 : px < 10), seenW = [...new Set(gt.map((x) => x[0]).filter((t) => words.includes(t) || ["RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].includes(t)))];
+    check(gt.length > 20 && !small.length && ["TOO TIGHT", "SLIPPING", "SLACK", "RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].every((t) => seenW.includes(t)), `at 360x640 the state word is 12 px or more and every gauge label 10 px or more (${seenW.join(", ")}; too small: ${JSON.stringify(small.slice(0, 5))})`);
+    // a long fish name gets a smaller font (10 px or more), and is never squeezed narrower than it is drawn
+    const names = [];
+    for (const id of ["golden", "smallmouth", "largemouth", "perch"]) {
+      await stage(page, { tfrac: 0.3, rub: 0, fish: { id, known: true, stamina: 0.6 } });
+      await wait(page, () => FISH.gauge.box && FISH.gauge.box.name, null, 5000).catch(() => {});
+      await sleep(300);
+      names.push(await page.evaluate((id) => ({ id, ...(FISH.gauge.box.name || {}) }), id));
+    }
+    check(names.every((n) => n.px >= 10 && n.w <= n.max + 0.5), `at 360x640 every fish name fits its room at 10 px or more (${names.map((n) => n.id + " " + n.px + "px " + Math.round(n.w) + "/" + Math.round(n.max)).join(", ")})`);
+    // the rub band has a row of its own (the fish name's) and is wide enough to read beside TOO TIGHT, and a light rub
+    // shows as a light rub
+    const rubAt = async (o) => {
+      await stage(page, { rubKind: "stump", rubSide: 1, ...o });
+      // (the band eases to the new rub: wait for it, a slow test browser draws few frames)
+      await wait(page, (r) => Math.abs(FISH.gauge.v.rub - r) < 0.005 && Math.abs(FISH.gauge.v.t - FISH.G.sim.state.tfrac) < 0.01, o.rub, 8000).catch(() => {});
+      await frames(2);
+      return page.evaluate(() => ({ word: FISH.gauge.box.word, rub: FISH.gauge.box.rub }));
+    };
+    const rubTight = await rubAt({ tfrac: 0.92, rub: 0.7 }), rubLight = await rubAt({ tfrac: 0.3, rub: 0.03 });
+    check(rubTight.word === "TOO TIGHT" && rubTight.rub && rubTight.rub.w >= 60 && rubLight.rub && rubLight.rub.fill / rubLight.rub.w <= 0.06, `at 360x640 the rub band is ${rubTight.rub ? Math.round(rubTight.rub.w) : "-"} px wide beside TOO TIGHT (60 or more), and a 3% rub fills ${rubLight.rub ? Math.round(100 * rubLight.rub.fill / rubLight.rub.w) : "-"}% of it`);
+    await page.setViewportSize({ width: 390, height: 844 });
+  } catch (e) { check(false, "exception in part H: " + (e && e.stack)); }
+  check(errors.length === 0, "part H: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
 /* ================= part G: the keyboard on a desktop ================= */
 // Enter presses the button that has the focus. On the catch card that is Next or Cast again; on the unlock card it is Go there
-{
+if (part("G")) {
   const { browser, page, errors } = await open({ query: "?debug", touch: false, phone: false });
   try {
     await stand(page);
@@ -785,7 +1079,7 @@ const stand = async (page) => {
 
 /* ================= part E: the arcade cabinet ================= */
 // public/index.html reads the save file without save.js: the line on the cabinet's screen, and the names of the new fish
-{
+if (part("E")) {
   console.log("     the arcade cabinet");
   const { chromium } = createRequire(import.meta.url)("playwright");
   const ROOT = (process.env.FISH_URL || "http://localhost:8765/fish/").replace(/fish\/$/, "");
