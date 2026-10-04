@@ -238,6 +238,16 @@ if (part("A")) {
     check(mw.sub === "Drag the rod up. Reel as it comes down." && mw.guide === mw.sub && mw.cue === mw.sub, `and in touch mode all three say "Drag the rod up. Reel as it comes down." (${JSON.stringify(mw)})`);
     mw = await words({ cover: { side: -1, steer: 1, kind: "stumps" } }, "It swims to the stumps!");
     check(mw.sub === "Drag the rod right." && mw.cue === mw.sub && mw.guide === "Drag the rod sideways.", `a steer: the prompt and the rod cue name the side, the guide says the move (${JSON.stringify(mw)})`);
+    // the reel move: the guide and the rod cue say the pace the prompt asks for, and never the opposite of it
+    const reelWords = async (patch, h) => { const x = await words(patch, h); return { ...x, h: (await promptNow(page) || {}).h }; };
+    mw = await reelWords({ phase: "retrieve", fish: null }, "Turn the crank to reel.");
+    check(mw.h === "Turn the crank to reel." && mw.guide === mw.h && mw.cue === mw.h, `the reel: the prompt, the guide and the rod cue say "Turn the crank to reel." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ phase: "retrieve", fish: null, follower: { id: "perch", x: 0, y: -1, z: -18, heading: 0, len: 0.25 }, tooFast: true }, "Too fast! Reel slower.");
+    check(mw.guide === "Reel slowly." && mw.cue === "Reel slowly.", `a lure too fast for the fish: "Too fast! Reel slower." and the guide and the rod cue say "Reel slowly." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ slack: true, slackT: 1 }, "Slack line! Reel it in.");
+    check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
+    check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
     await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show animated guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
@@ -840,13 +850,43 @@ if (part("H")) {
         FISH.G.step = "flight"; FISH.G.flight = { step: () => ({ x, y: 0, z, done: true, land: "water", lineOut: Math.hypot(x, z), spool: 0 }) };
       }, [x, z]);
       await wait(page, () => FISH.G.phase === "reel");
-      return page.evaluate(() => { const p = FISH.G.sim.plan; return { id: p ? p.id : null, kg: p ? p.kg : 0, gifted: !!FISH.G.gifted, caught: FISH.save.caught }; });
+      return page.evaluate(() => { const p = FISH.G.sim.plan; return { id: p ? p.id : null, kg: p ? p.kg : 0, gift: !!FISH.G.gift, gifted: !!FISH.G.gifted, caught: FISH.save.caught }; });
     };
 
     // ---- the first fish of a fresh save: a sure bite from a small, easy fish, landed in 25 s ----
     console.log("     the first fish");
     let fb = await lands(-12, -18);
-    check(["pumpkinseed", "perch"].includes(fb.id) && fb.kg < 0.5 && fb.gifted && fb.caught === 0, `a fresh save's first cast in the water: a sure bite from a small pumpkinseed or perch (${JSON.stringify(fb)})`);
+    check(["pumpkinseed", "perch"].includes(fb.id) && fb.kg < 0.5 && fb.gift && !fb.gifted && fb.caught === 0, `a fresh save's first cast in the water: a sure bite from a small pumpkinseed or perch (${JSON.stringify(fb)})`);
+    // reeled in before it strikes: the next cast still has the sure bite (it is used up by the strike, not by the cast)
+    await page.evaluate(() => FISH.newCast());
+    await wait(page, () => FISH.G.phase === "cast");
+    fb = await lands(-12, -18);
+    check(["pumpkinseed", "perch"].includes(fb.id) && fb.gift && !fb.gifted, `a first cast reeled in before the strike leaves the sure bite for the next cast (${JSON.stringify(fb)})`);
+    // a player who holds the crank key: reel fast and never slow down (2.4 turns a second), set the hook at the strike. The
+    // first fish does not mind a fast lure: it still strikes, and the player lands it within 25 s of the splash
+    const firstFight = (rps) => page.evaluate(async (rps) => {
+      const G = FISH.G, t0 = performance.now(), wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const { REEL_UI } = await import("./js/reel.js"), keep = REEL_UI.keyRps;
+      REEL_UI.keyRps = rps;
+      FISH.crank.keyHold(true);
+      let struck = false, gifted = null;
+      const heads = new Set(), p = document.querySelector("#prompt");
+      while (performance.now() - t0 < 40000 && G.phase === "reel") {
+        const s = G.sim.state;
+        if (!p.hidden) heads.add(p.querySelector(".p1 span").textContent);
+        if (s.phase === "strike" && !struck) { struck = true; await wait(250); gifted = !!G.gifted; G.hookReq = true; }
+        await wait(50);
+      }
+      FISH.crank.keyHold(false);
+      REEL_UI.keyRps = keep;
+      return { phase: G.phase, s: G.sim && +G.sim.state.t.toFixed(1), struck, gifted, heads: [...heads].filter((h) => /Nothing|Too fast/.test(h)) };
+    }, rps);
+    const fast = await firstFight(2.4);
+    check(fast.struck && fast.gifted && fast.phase === "catch" && fast.s <= 25 && !fast.heads.length, `a player who reels fast (2.4 turns a second) still gets the strike, which uses up the sure bite, and lands it within 25 s (${JSON.stringify(fast)})`);
+    if (fast.phase === "catch") { await sleep(PAUSE); await page.evaluate(() => document.querySelector("#catchGo").click()); await wait(page, () => FISH.G.phase === "cast", null, 20000); }
+    // (a fresh save again, for the plain player)
+    await page.evaluate(() => { FISH.save.caught = 0; FISH.G.gifted = false; });
+    fb = await lands(-12, -18);
     // a plain player: reel slowly and steadily (1.1 turns a second, as the casual player of fight.sim), set the hook at the
     // strike, keep reeling (the rod stays where touch play leaves it)
     const play = await page.evaluate(async () => {
@@ -908,26 +948,36 @@ if (part("H")) {
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);
     await page.evaluate(() => { const el = document.querySelector("#toast"); delete el.textContent; });
 
-    // ---- toasts in the reel stay off the crank: both reel sides, a tall phone, a small one and a wide screen ----
+    // ---- toasts in the reel stay off the crank: both reel sides, a tall phone, a small one and a wide screen, in touch and
+    // in motion play (where the pull meter shows top right). Off the drag bar too, with its widest label, and a long toast
+    // (a legend's stage name, four lines on a small phone) stays off them as well ----
     console.log("     the toast place");
-    for (const [W, H] of [[390, 844], [360, 640], [844, 390], [1280, 800]]) for (const side of ["right", "left"]) {
+    const LONG = "It runs down the river! Steer it off the logs!", SHORT = "Too fast. It turned away. Reel slower.";
+    const toastCases = [["touch", 390, 844], ["touch", 360, 640], ["touch", 844, 390], ["touch", 1280, 800], ["motion", 390, 844], ["motion", 360, 640]];
+    for (const [input, W, H] of toastCases) for (const side of ["right", "left"]) for (const msg of W === 360 ? [SHORT, LONG] : [SHORT]) {
+      if (input === "motion" && !(await page.evaluate(() => FISH.G.input === "motion"))) {
+        await page.evaluate(async () => { await FISH.Motion.request(); FISH.G.input = "motion"; });
+        await wait(page, () => FISH.Motion.live, null, 10000);
+        await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
+      }
       await page.setViewportSize({ width: W, height: H });
-      await page.evaluate((side) => { document.querySelector("#game").dataset.reelSide = side; }, side);
+      await page.evaluate((side) => { document.querySelector("#game").dataset.reelSide = side; document.querySelector("#dragName").textContent = "DRAG: HEAVY"; }, side);
       await stage(page, {});
       await frames(4);
       await sleep(1300);
-      await stage(page, {}, [{ type: "refuse" }], false);
-      await toastIs(page, "Too fast. It turned away. Reel slower.");
+      await stage(page, {}, [msg === SHORT ? { type: "refuse" } : { type: "phase", n: 2, of: 3, name: LONG }], false);
+      await toastIs(page, msg);
       await frames(3);
       const r = await page.evaluate(() => {
-        const R = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; };
+        const R = (sel) => { const e = document.querySelector(sel); if (!e || e.hidden || !e.getClientRects().length) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; };
         const cue = document.querySelector("#rodCue");
-        return { toast: R("#toast"), crank: R("#crankBox"), gauge: R("#gaugeBox"), cue: cue && !cue.hidden ? R("#rodCue span") : null, prompt: R("#prompt .p1"), layout: FISH.G.layout, on: document.querySelector("#toast").classList.contains("on") };
+        return { toast: R("#toast"), crank: R("#crankBox"), gauge: R("#gaugeBox"), cue: cue && !cue.hidden ? R("#rodCue span") : null, prompt: R("#prompt .p1"), pull: R("#pullStrength"), drag: R("#dragBar"), layout: FISH.G.layout, on: document.querySelector("#toast").classList.contains("on") };
       });
-      const hit = (a, b) => !!b && a.x < b.r && a.r > b.x && a.y < b.b && a.b > b.y;
-      check(r.on && !hit(r.toast, r.crank) && !hit(r.toast, r.gauge) && !hit(r.toast, r.cue) && !hit(r.toast, r.prompt) && r.toast.x >= 0 && r.toast.r <= W, `${W}x${H}, reel side ${side} (${r.layout}): the toast is clear of the crank, the gauge, the rod cue and the prompt (toast ${JSON.stringify(r.toast)}, crank ${JSON.stringify(r.crank)})`);
+      const hit = (a, b) => !!a && !!b && a.x < b.r && a.r > b.x && a.y < b.b && a.b > b.y;
+      const hits = ["crank", "gauge", "cue", "prompt", "pull", "drag"].filter((k) => hit(r.toast, r[k]));
+      check(r.on && !!r.toast && !hits.length && r.toast.x >= 0 && r.toast.r <= W && (input === "touch" || !!r.pull), `${input} ${W}x${H}, reel side ${side} (${r.layout})${msg === LONG ? ", a long toast" : ""}: the toast is clear of the crank, the gauge, the rod cue, the prompt, the drag bar${input === "motion" ? " and the pull meter" : ""} (toast ${JSON.stringify(r.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(r[k])).join(", ") : ""})`);
     }
-    await page.evaluate(() => { document.querySelector("#game").dataset.reelSide = FISH.save.reelSide; });
+    await page.evaluate(() => { document.querySelector("#game").dataset.reelSide = FISH.save.reelSide; FISH.G.input = "touch"; });
     await page.setViewportSize({ width: 390, height: 844 });
     await frames(4);
 
@@ -976,6 +1026,26 @@ if (part("H")) {
     const gt = await page.evaluate(() => window.__gt.slice()), words = ["GOOD", "TIGHT", "SLIPPING", "SLACK", "TOO TIGHT", "TENSION"];
     const small = gt.filter(([t, px]) => words.includes(t) ? px < 12 : px < 10), seenW = [...new Set(gt.map((x) => x[0]).filter((t) => words.includes(t) || ["RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].includes(t)))];
     check(gt.length > 20 && !small.length && ["TOO TIGHT", "SLIPPING", "SLACK", "RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].every((t) => seenW.includes(t)), `at 360x640 the state word is 12 px or more and every gauge label 10 px or more (${seenW.join(", ")}; too small: ${JSON.stringify(small.slice(0, 5))})`);
+    // a long fish name gets a smaller font (10 px or more), and is never squeezed narrower than it is drawn
+    const names = [];
+    for (const id of ["golden", "smallmouth", "largemouth", "perch"]) {
+      await stage(page, { tfrac: 0.3, rub: 0, fish: { id, known: true, stamina: 0.6 } });
+      await wait(page, () => FISH.gauge.box && FISH.gauge.box.name, null, 5000).catch(() => {});
+      await sleep(300);
+      names.push(await page.evaluate((id) => ({ id, ...(FISH.gauge.box.name || {}) }), id));
+    }
+    check(names.every((n) => n.px >= 10 && n.w <= n.max + 0.5), `at 360x640 every fish name fits its room at 10 px or more (${names.map((n) => n.id + " " + n.px + "px " + Math.round(n.w) + "/" + Math.round(n.max)).join(", ")})`);
+    // the rub band has a row of its own (the fish name's) and is wide enough to read beside TOO TIGHT, and a light rub
+    // shows as a light rub
+    const rubAt = async (o) => {
+      await stage(page, { rubKind: "stump", rubSide: 1, ...o });
+      // (the band eases to the new rub: wait for it, a slow test browser draws few frames)
+      await wait(page, (r) => Math.abs(FISH.gauge.v.rub - r) < 0.005 && Math.abs(FISH.gauge.v.t - FISH.G.sim.state.tfrac) < 0.01, o.rub, 8000).catch(() => {});
+      await frames(2);
+      return page.evaluate(() => ({ word: FISH.gauge.box.word, rub: FISH.gauge.box.rub }));
+    };
+    const rubTight = await rubAt({ tfrac: 0.92, rub: 0.7 }), rubLight = await rubAt({ tfrac: 0.3, rub: 0.03 });
+    check(rubTight.word === "TOO TIGHT" && rubTight.rub && rubTight.rub.w >= 60 && rubLight.rub && rubLight.rub.fill / rubLight.rub.w <= 0.06, `at 360x640 the rub band is ${rubTight.rub ? Math.round(rubTight.rub.w) : "-"} px wide beside TOO TIGHT (60 or more), and a 3% rub fills ${rubLight.rub ? Math.round(100 * rubLight.rub.fill / rubLight.rub.w) : "-"}% of it`);
     await page.setViewportSize({ width: 390, height: 844 });
   } catch (e) { check(false, "exception in part H: " + (e && e.stack)); }
   check(errors.length === 0, "part H: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));

@@ -1383,13 +1383,15 @@ export class RodPad extends Widget {
 
 /* ---------------- the gauge ---------------- */
 // set({...}): tfrac (tension, 0..1 of the break), dragFrac, slip, lineOut (m), depth (m), stamina (0..1 or null), name,
-// and for the big fish and the hard places: rub (0..1, the line rubs on something: a striped RUB band that fills), spool
+// and for the big fish and the hard places: rub (0..1, the line rubs on something: a striped RUB band that fills, in the place
+// of the fish's name while it rubs), spool
 // (line out as a share of the spool: the LINE OUT number turns red above 0.6), phases (a legend's stamina marks: the bar
 // shows where its next stages start), label (text in place of the name: "Big fish on!"), slack (s the line has been slack:
 // SLACK shows from GAUGE.SLACK_T), tired (the fish is beaten: TIRED and a green bar; left out, a stamina under 0.3 is tired).
 // Nothing is told by colour alone: the state is a word in a pill under the arc (GOOD, TIGHT, SLIPPING, SLACK, TOO TIGHT),
 // the arc is plain up to the drag mark and hatched past it, with hazard stripes near the break, the rub band is striped and
-// says RUB, and the fish's bar is plain and says FIGHT or TIRED. box: where the last frame put the parts (the tests read it)
+// says RUB, and the fish's bar is plain and says FIGHT or TIRED at its end. box: where the last frame put the parts (the
+// tests read it)
 export const GAUGE = { SLACK_T: 0.3, WORD_PX: 12, LABEL_PX: 10 };
 // diagonal lines over a rectangle (clip first): gap px apart
 function hatch(c, x, y, w, h, gap, col, lw) {
@@ -1454,7 +1456,7 @@ export class Gauge extends Widget {
       ctx.beginPath(); rrect(ctx, 0.5, 0.5, w - 1, h - 1, 14);
       ctx.strokeStyle = rgba(DANGER, (0.3 + 0.6 * danger) * clamp((v.t - 0.85) / 0.1, 0, 1)); ctx.lineWidth = 1.5; ctx.stroke();
     }
-    // the rows: the arc and the numbers, then the state pill (and the rub band), then the fish: its name and its bar
+    // the rows: the arc and the numbers, then the state pill, then the fish: its name (or the rub band) and its bar
     const strip = 32 * v.fish, top = h - strip;
     const word = Math.max(GAUGE.WORD_PX, Math.min(13, Math.round(w / 14))), pillH = word + 6, pillY = top - pillH - 3;
     const Hr = pillY - 2;
@@ -1524,25 +1526,6 @@ export class Gauge extends Widget {
     ctx.fillStyle = inkC;
     ctx.fillText(wd, px0 + pw / 2, pillY + pillH / 2 + 0.5, pw - 8);
     spaced(ctx, 0);
-    // the rub band: RUB, and a striped red band that fills from the left as the line rubs through. It cuts at full
-    let rubBox = null;
-    if (rubbing) {
-      const lx = px0 + pw + 7, my = pillY + pillH / 2;
-      ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.1); ctx.textAlign = "left"; ctx.fillStyle = "#ffb0a8";
-      const lwid = ctx.measureText("RUB").width;
-      ctx.fillText("RUB", lx, my + 0.5); spaced(ctx, 0);
-      const bx0 = lx + lwid + 5, bw0 = w - 10 - bx0, by0 = my - 3;
-      if (bw0 > 10) {
-        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
-        const fw = Math.max(6, bw0 * v.rub);
-        ctx.save(); ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.clip();
-        ctx.globalAlpha = 0.85 + 0.15 * rubBeat;
-        ctx.fillStyle = rgba(RED, 1); ctx.fillRect(bx0, by0, fw, 6);
-        hatch(ctx, bx0, by0, fw, 6, 5, "rgba(255,214,200,0.8)", 1.4);
-        ctx.restore();
-        rubBox = { x: bx0, y: by0, w: bw0, h: 6 };
-      }
-    }
     // the right column: the line out and the depth
     const x = cx + R + lw / 2 + 12, colW = w - x - 10;
     if (colW > 30) {
@@ -1572,32 +1555,53 @@ export class Gauge extends Widget {
       ctx.font = font(dep); ctx.fillStyle = "#cfe3e0";
       ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, yb + big / 2 + lab + 6 + dep / 2);
     }
-    // the fish: its name, and a plain bar of how much fight it has left. The label on the right says which: FIGHT, or
-    // TIRED (green) when it is beaten
-    let barBox = null;
+    // the fish: its name, and a plain bar of how much fight it has left. The label at the end of the bar says which: FIGHT,
+    // or TIRED (green) when it is beaten. While the line rubs, the rub band takes the name's place
+    let barBox = null, rubBox = null, nameBox = null;
     if (v.fish > 0.02) {
       ctx.save(); ctx.globalAlpha = v.fish;
       const bx = 12, bw = w - 24, ny = h - 23, by = h - 11;
       ctx.textBaseline = "middle";
       ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.12); ctx.textAlign = "right";
-      const tag = tired ? "TIRED" : "FIGHT", tagW = ctx.measureText(tag).width;
+      const tag = tired ? "TIRED" : "FIGHT", barW = bw - ctx.measureText(tag).width - 6;
       ctx.fillStyle = tired ? rgba(GREEN, 0.75 + 0.25 * Math.sin(this.time * 6)) : rgba(INK, 0.75);
-      ctx.fillText(tag, bx + bw, ny); spaced(ctx, 0);
-      // a label ("Big fish on!") takes the place of the name until the fish shows what it is
-      ctx.font = font(12); ctx.textAlign = "left";
-      ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);
-      ctx.fillText(String(s.label || s.name || "Fish on!"), bx, ny, bw - tagW - 8);
-      ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, bw, 6, 3); ctx.fill();
+      ctx.fillText(tag, bx + bw, by + 0.5); spaced(ctx, 0);
+      ctx.textAlign = "left";
+      if (rubbing) {
+        // the rub band: RUB, and a striped red band that fills from the left as the line rubs through. It cuts at full
+        ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.1); ctx.fillStyle = "#ffb0a8";
+        const lwid = ctx.measureText("RUB").width;
+        ctx.fillText("RUB", bx, ny + 0.5); spaced(ctx, 0);
+        const bx0 = bx + lwid + 6, bw0 = bw - lwid - 6, by0 = ny - 3, fw = Math.min(bw0, Math.max(3, bw0 * v.rub));
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
+        ctx.save(); ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.clip();
+        ctx.globalAlpha = v.fish * (0.85 + 0.15 * rubBeat);
+        ctx.fillStyle = rgba(RED, 1); ctx.fillRect(bx0, by0, fw, 6);
+        hatch(ctx, bx0, by0, fw, 6, 5, "rgba(255,214,200,0.8)", 1.4);
+        ctx.restore();
+        rubBox = { x: bx0, y: by0, w: bw0, h: 6, fill: fw };
+      } else {
+        // a label ("Big fish on!") takes the place of the name until the fish shows what it is. A long name gets a smaller
+        // font, down to the 10 px floor, before it is ever squeezed
+        const name = String(s.label || s.name || "Fish on!");
+        let px = 12;
+        for (; px > GAUGE.LABEL_PX; px--) { ctx.font = font(px); if (ctx.measureText(name).width <= bw) break; }
+        ctx.font = font(px);
+        ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);
+        ctx.fillText(name, bx, ny, bw);
+        nameBox = { px, w: ctx.measureText(name).width, max: bw };
+      }
+      ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, barW, 6, 3); ctx.fill();
       if (s.stamina != null) {
-        const fw = Math.max(0, bw * v.st);
+        const fw = Math.max(0, barW * v.st);
         if (fw > 1) { ctx.fillStyle = tired ? rgba(GREEN, 1) : rgba(BRASS, 0.95); ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill(); }
       }
       // a legend fights in stages: a mark where each next stage starts
       ctx.fillStyle = rgba(INK, 1);
-      for (const p of marks) ctx.fillRect(Math.round(bx + bw * p) - 1, by - 6, 2, 12);
+      for (const p of marks) ctx.fillRect(Math.round(bx + barW * p) - 1, by - 6, 2, 12);
       ctx.restore();
-      barBox = { x: bx, y: by - 3, w: bw, h: 6 };
+      barBox = { x: bx, y: by - 3, w: barW, h: 6 };
     }
-    this.box = { word: wd, pill: { x: px0, y: pillY, w: pw, h: pillH }, rub: rubBox, bar: barBox, arc: { cx, cy, R, lw }, top };
+    this.box = { word: wd, pill: { x: px0, y: pillY, w: pw, h: pillH }, rub: rubBox, bar: barBox, name: nameBox, arc: { cx, cy, R, lw }, top };
   }
 }

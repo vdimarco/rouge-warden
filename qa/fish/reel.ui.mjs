@@ -467,7 +467,7 @@ async function gaugeChecks(P, tag) {
   });
   check(bad === "ok", `${tag}: nonsense values in the new fields do not break the gauge (${bad})`);
 
-  // the rub band: red pixels in the band beside the state pill (gauge.box.rub says where it was drawn), none with a clean line
+  // the rub band: red pixels in the band in the fish name row (gauge.box.rub says where it was drawn), none with a clean line
   await set({ rub: 0.8 }); await settle();
   const rb = await page.evaluate(() => T.gauge.box.rub), band = rb ? [rb.x, rb.y - 2, rb.w, rb.h + 4] : [0, 0, 1, 1];
   const r8 = await count(band, RED);
@@ -495,9 +495,9 @@ async function gaugeChecks(P, tag) {
   await shot("gauge-spool", "#gaugeBox");
   check(s3 < 40 && s59 < 40 && s65 > 90 && s9 > 90, `${tag}: the line out turns red above 0.6 of the spool (red pixels: 0.3 ${s3}, 0.59 ${s59}, 0.65 ${s65}, 0.9 ${s9})`);
 
-  // the stage marks on the stamina bar: a cream tick where each next stage starts
-  const bx = 12, bw = w - 24, by = h - 11;
+  // the stage marks on the stamina bar: a cream tick where each next stage starts (the bar ends where FIGHT is written)
   await set({}); await settle();
+  const bb = await page.evaluate(() => T.gauge.box.bar), bx = bb.x, bw = bb.w, by = h - 11;
   const m0 = (await count([bx + bw * 0.6 - 1, by - 6, 2, 3], CREAM)) + (await count([bx + bw * 0.3 - 1, by - 6, 2, 3], CREAM));
   await set({ phases: [0.6, 0.3] }); await settle();
   const m6 = await count([bx + bw * 0.6 - 1, by - 6, 2, 3], CREAM), m3 = await count([bx + bw * 0.3 - 1, by - 6, 2, 3], CREAM);

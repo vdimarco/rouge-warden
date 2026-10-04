@@ -1,5 +1,5 @@
 // Small action cues attached to the scene's rod, without a second tackle view.
-import { activeLesson, moveWords, inputOf, REEL_PACE } from "./guide.js";
+import { activeLesson, moveWords, inputOf } from "./guide.js";
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const UP = 'M20 34V8m-8 8 8-8 8 8';
 const DOWN = 'M20 8v26m-8-8 8 8 8-8';
@@ -36,12 +36,12 @@ export function createRodCues(game) {
     let kind = activeLesson({ phase, step, motion, fishPhase: fish?.phase, cue });
     if (phase === 'reel' && nibble && ['sink', 'retrieve'].includes(fish?.phase)) kind = 'nibble';
     const tight = phase === 'reel' && (fish?.tfrac || 0) > .85;
-    // the crank goes as fast as the prompt says: fast for slack line or a charge, steadily for a tired fish. A steer the
-    // prompt gives a side to ("Drag the rod right.") says the same side here
+    // the crank goes at the pace the prompt gives with the cue (fast for slack line or a charge, slowly when the lure runs
+    // away from a fish, steadily for a tired fish), the same words as the guide; with no pace it is the reel move. A steer
+    // the prompt gives a side to ("Drag the rod right.") says the same side here
     const text = motion && kind === 'cast' ? 'Flick forward!' : LABELS[kind] ||
-      (kind === 'reel' && phase === 'reel' ? (/fast|Slack/i.test(cue.text) ? REEL_PACE.fast : fish?.beaten || /steadily/i.test(cue.text) ? REEL_PACE.steady : REEL_PACE.slow) :
-      kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
-      moveWords(kind, inputOf(motion, touchDevice)) || LABELS.hold);
+      (kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
+      moveWords(kind, inputOf(motion, touchDevice), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);
     const next = `${kind}:${text}:${cue.tone}:${tight}:${held}`;
     if (key !== next) {
       key = next; el.dataset.cue = kind; el.dataset.tone = tight || kind === 'hook' ? 'hot' : cue.tone;

@@ -15,6 +15,9 @@ const plain = (t) => !/—|\b(red|green|amber|yellow)\b/i.test(t);
 // the table: every move has touch words, and the words are plain sentences
 for (const [kind, w] of Object.entries(MOVE_WORDS)) check(typeof w.touch === "string" && Object.values(w).every((t) => /[.!]$/.test(t) && plain(t)), `${kind}: touch words, and plain sentences (${Object.values(w).join(" / ")})`);
 check(Object.values(REEL_PACE).every((t) => /^Reel \w+\.$/.test(t)), "the crank paces: Reel slowly. / Reel fast. / Reel steadily.");
+// the reel move with a pace (the prompt gives it with the cue): the guide caption and the rod cue both say it; with none,
+// the reel move's own words
+check(moveWords("reel", "touch", 0, "fast") === "Reel fast." && lesson("reel", false, true, "slow")[0] === "Reel slowly." && lesson("reel", true, true, "steady")[0] === "Reel steadily." && lesson("reel", false, true)[0] === MOVE_WORDS.reel.touch && moveWords("pump", "touch", 0, "fast") === MOVE_WORDS.pump.touch, "the reel with a pace says the pace (Reel fast.), with none \"Turn the crank to reel.\"");
 // the guide caption is the table's words, for each move and input
 for (const kind of Object.keys(MOVE_WORDS)) for (const [motion, touch, input] of INPUTS) {
   const cap = lesson(kind, motion, touch)[0];
@@ -36,6 +39,29 @@ const src = readFileSync(new URL("../../public/fish/js/main.js", import.meta.url
 const main = src.slice(src.indexOf("function fightCue("), src.indexOf("function handleEvent("));
 const used = [...main.matchAll(/words\("(\w+)"/g)].map((m) => m[1]);
 check(used.length >= 8 && used.every((k) => k in MOVE_WORDS), `the fight prompt asks the table for its move words (${[...new Set(used)].join(", ")})`);
+// every prompt that asks for a crank pace gives that pace with the cue, so the rod cue never reads it from the headline
+// (it once said "Reel fast." under "Too fast! Reel slower.")
+const says = [];
+for (let i = main.indexOf("say("); i >= 0; i = main.indexOf("say(", i + 4)) {
+  if (/\w/.test(main[i - 1])) continue;
+  const args = [], q = { d: 0, str: "", cur: "" };
+  for (let j = i + 4; j < main.length; j++) {
+    const c = main[j];
+    if (q.str) { q.cur += c; if (c === q.str && main[j - 1] !== "\\") q.str = ""; continue; }
+    if (c === '"' || c === "'" || c === "`") { q.str = c; q.cur += c; continue; }
+    if (c === "(" || c === "[" || c === "{") q.d++;
+    if (c === ")" || c === "]" || c === "}") { if (!q.d) { args.push(q.cur.trim()); break; } q.d--; }
+    if (c === "," && !q.d) { args.push(q.cur.trim()); q.cur = ""; continue; }
+    q.cur += c;
+  }
+  says.push(args);
+}
+const PACE = [[/Reel slower|Reel slowly/, "slow"], [/Reel it in|Reel fast/, "fast"], [/Reel steadily/, "steady"]];
+const paced = says.filter((a) => PACE.some(([re]) => re.test(a[0] + " " + (a[1] || ""))));
+const wrong = paced.filter((a) => { const want = PACE.find(([re]) => re.test(a[0] + " " + (a[1] || "")))[1]; return a[5] !== JSON.stringify(want); });
+check(paced.length >= 6 && !wrong.length, `the prompts that ask for a crank pace give it with the cue (${paced.length} of them${wrong.length ? "; wrong: " + wrong.map((a) => a[0]).join(" | ") : ""})`);
+const cues = readFileSync(new URL("../../public/fish/js/rod-cues.js", import.meta.url), "utf8");
+check(!/test\(cue\.text\)/.test(cues) && /cue\.pace/.test(cues), "the rod cue takes the pace from the cue, not from the headline's words");
 const OLD = ["Tip the phone back toward you as you reel", "Lift the rod slowly. Then reel as you lower it", "Drag the rod pad", "Reel in any slack", "Lower the rod a little", "if the gauge turns red", "Drag the rod up. Then reel as it comes down"];
 check(OLD.every((t) => !main.includes(t)), `the fight prompt has none of the old wordings (${OLD.filter((t) => main.includes(t)).join(" | ") || "none left"})`);
 

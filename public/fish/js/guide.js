@@ -98,19 +98,21 @@ export const MOVE_WORDS = {
 };
 // the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
 export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
-// the crank in the fight: as fast as the prompt says
+// the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
+// the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
 export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
 // the input of a player: "motion", "touch" or "keys"
 export const inputOf = (motion, touch = true) => (motion ? "motion" : touch ? "touch" : "keys");
-// the words for a move. side: -1 left, 1 right, for the steer
-export function moveWords(kind, input = "touch", side = 0) {
+// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
+export function moveWords(kind, input = "touch", side = 0, pace = "") {
   if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
+  if (kind === "reel" && REEL_PACE[pace]) return REEL_PACE[pace];
   const w = MOVE_WORDS[kind];
   return w ? w[input] || w.touch : "";
 }
 
-export function lesson(kind, motion, touch = true) {
-  const w = (k) => moveWords(k, inputOf(motion, touch));
+export function lesson(kind, motion, touch = true, pace = "") {
+  const w = (k) => moveWords(k, inputOf(motion, touch), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
     back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
@@ -249,12 +251,12 @@ export function createGuide(game, button) {
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
     const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
-    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text;
+    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {
       key = nextKey; lastDraw = -Infinity;
       kindNow = kind;
       art.innerHTML = sceneMarkup(kind, s.motion);
-      const [label, detail] = lesson(kind, s.motion, s.touch);
+      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace);
       caption.textContent = label;
       panel.setAttribute("aria-label", (intro ? "Preview: " : "Now: ") + label + ". " + detail);
       panel.dataset.lesson = kind;

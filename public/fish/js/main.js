@@ -718,9 +718,10 @@ function landed(r) {
     G.landing = { x: r.x, z: r.z, dist };
     G.ring = rises ? rises.near(r.x, r.z) : null;
     // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
-    // from a small, easy fish (firstBite in fish.js), once; the casts after it have the normal odds
+    // from a small, easy fish (firstBite in fish.js). It is used up when that fish strikes (handleEvent), so a cast that ends
+    // before the strike keeps it for the next one; the casts after the strike have the normal odds
     const gift = !G.force && !G.gifted && save.caught === 0 && G.place.id === "loon" ? firstBite(zone, LAKE.rng(G.seed + 911)) : null;
-    if (gift) G.gifted = true;
+    G.gift = !!gift;
     G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || gift || {}));
     G.big = null; G.walk = false;
     G.settle = 0;
@@ -1359,13 +1360,16 @@ function reelPrompt(s, crankRate, theta) {
   if (H && key !== H.key && !w.urgent && t - H.at < PROMPT_HOLD) return;
   if (!H || key !== H.key) G.hold = { key, at: t };
   prompt(w.text, w.sub, w.icon, w.tone);
+  // the guide and the rod cue say the crank's pace the prompt asks for ("Reel fast."), never their own
+  guideCue.pace = w.pace;
 }
-// what the reel prompt should say now: { text, sub, icon, tone, urgent }. The subs that teach a move use the one set of
-// words that the guide and the rod cue use (MOVE_WORDS in guide.js)
+// what the reel prompt should say now: { text, sub, icon, tone, urgent, pace }. The subs that teach a move use the one set
+// of words that the guide and the rod cue use (MOVE_WORDS in guide.js). pace: how fast to crank when the prompt says so
+// ("slow", "fast" or "steady", REEL_PACE in guide.js), "" for a plain turn of the crank
 function fightCue(s, crankRate, theta) {
   const m = sensing();
   const t = now();
-  const say = (text, sub = "", icon = "", tone = "", urgent = false) => ({ text, sub, icon, tone, urgent });
+  const say = (text, sub = "", icon = "", tone = "", urgent = false, pace = "") => ({ text, sub, icon, tone, urgent, pace });
   const words = (kind, side = 0) => moveWords(kind, inputOf(m, touchDevice), side);
   const recent = (k, ms) => t - (G.lastEvent[k] || -1e9) < ms;
   // the drag slips in short bursts: the slip prompts stay 0.7 s after the last slip, so they do not flicker
@@ -1382,10 +1386,10 @@ function fightCue(s, crankRate, theta) {
     case "sink": case "retrieve": {
       if (s.empty) return say("Nothing is biting here.", "Reel in and cast again.", "crank");
       if (recent("nibble", 900)) return nightAt(G.hour) >= 0.5 ? say("It is dark. Feel for the bite.", "Wait for the strike.", "fish") : say("A fish is nibbling.", "Wait for the strike.", "fish");
-      if (s.follower) return s.tooFast ? say("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : say("A fish is following.", "Stop for a moment. It may bite.", "crank");
+      if (s.follower) return s.tooFast ? say("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot", false, "slow") : say("A fish is following.", "Stop for a moment. It may bite.", "crank");
       // the river: the current swings the lure. Said once
       if (G.place.flow && !save.seen["river.swing"] && $("#report").hidden) { seen("river.swing"); G.swingUntil = t + 4500; }
-      if (t < (G.swingUntil || 0)) return say("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank");
+      if (t < (G.swingUntil || 0)) return say("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank", "", false, "slow");
       return say("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
     }
     case "strike":
@@ -1411,13 +1415,13 @@ function fightCue(s, crankRate, theta) {
         return say(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(R.shown), K === "rocks" ? "pull" : "turn", "hot", true);
       }
       // 4. its last run. A fish of the wall swims at you and the line goes slack: then reel
-      if (recent("lastrun", 2000)) return slack ? say("Slack line! Reel it in.", "Keep the line tight.", "crank", "hot") : say("It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up.", "stop", "hot");
+      if (recent("lastrun", 2000)) return slack ? say("Slack line! Reel it in.", "Keep the line tight.", "crank", "hot", false, "fast") : say("It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up.", "stop", "hot");
       // the tuna's first run: the banner says to let it go, and so does the prompt
       if (s.boss && s.boss.n === 1 && /let it go/i.test(s.boss.name || "") && f.move === "run" && (s.fightT || 0) < 2.5) return say("It runs! Let it go.", "Hold the rod up. Reel only if the line goes slack.", "pull", "hot");
       // a head shake: the fish swims in as it shakes, so a slack line is the danger, and the prompt says so
-      if (f.move === "thrash" || f.move === "shake" || recent("shake", 700)) return slack ? say("Slack line! Reel it in.", "It shakes its head. Keep the rod up.", "crank", "hot") : say("It shakes its head!", words("raise") + " Keep reeling slowly.", "pull", "hot");
+      if (f.move === "thrash" || f.move === "shake" || recent("shake", 700)) return slack ? say("Slack line! Reel it in.", "It shakes its head. Keep the rod up.", "crank", "hot", false, "fast") : say("It shakes its head!", words("raise") + " Keep reeling slowly.", "pull", "hot");
       if (f.move === "turn" || recent("turn", 1200)) return say("It turned. Stop reeling!", "", "stop", "hot");
-      if (f.move === "charge") return say("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot");
+      if (f.move === "charge") return say("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot", false, "fast");
       if (slipRecent && crankRate > 0.3) return say("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot", true);
       if ((s.tfrac || 0) > 0.85) return say("Too tight! Stop reeling.", "Hold the rod up. Let the drag work.", "stop", "hot", true);
       // only while the drag slips: a full spool warning that stays up would hide the rest and the sulk
@@ -1427,8 +1431,8 @@ function fightCue(s, crankRate, theta) {
       if (f.move === "sulk") return say("It holds on the bottom.", words("pump"), "pull");
       if (s.cover) return say("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
       if (slipRecent) return say("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
-      if (slack) return say("Slack line! Reel it in.", "", "crank", "hot");
-      if (s.beaten) return say("It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT.", "crank", "good");
+      if (slack) return say("Slack line! Reel it in.", "", "crank", "hot", false, "fast");
+      if (s.beaten) return say("It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT.", "crank", "good", false, "steady");
       if (theta < 28) return say("Your rod is too low.", words("raise"), "pull");
       return say("Pump and reel.", words("pump"), "pull");
     }
@@ -1444,7 +1448,7 @@ function handleEvent(e) {
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
     case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); break;
+    case "strike": Sound.sfx("strike"); Haptics.thump(); flash(); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
     case "hooked": {
       if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
       else { Sound.sfx("hookset"); Haptics.hookset(); toast(e.self ? "It hooked itself! Fish on!" : "Fish on!", 1400); }
