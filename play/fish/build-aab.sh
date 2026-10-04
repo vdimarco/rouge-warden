@@ -13,10 +13,10 @@
 # Environment:
 #   BUBBLEWRAP_KEYSTORE_PASSWORD, BUBBLEWRAP_KEY_PASSWORD   passwords (asked for when missing and a terminal is open).
 #                A password must not contain " $ ` \ or a line break: Bubblewrap passes it through a shell.
-#   BUBBLEWRAP_KEYSTORE   upload keystore path (default ~/.android/reelitin-upload.keystore; never inside the repo)
+#   BUBBLEWRAP_KEYSTORE   upload keystore path (default ~/.android/reelitin-upload.keystore; never inside the repo; no space in the path)
 #   BUBBLEWRAP_KEY_ALIAS  key alias (default reelitin)
 #   KEY_DNAME             the certificate name for a new key (default "CN=Reel It In, O=Cottage Arcade, C=CA")
-#   PLAY_TOOLS            where the tools go (default play/.tools)
+#   PLAY_TOOLS            where the tools go (default play/.tools; no space in the path, so none in the path of the checkout)
 #   PLAY_PROJECT          where the generated Android project goes (default play/fish/android)
 #   PLAY_PUBLIC           the site files that --local serves (default public)
 #   JAVA17_HOME           a JDK 17 to use instead of downloading one

@@ -98,6 +98,10 @@ In app mode, after a first visit that finished, the game SHALL start with no net
 - **WHEN** a script, an image or a font in the cached files changes and `VERSION` does not
 - **THEN** `node qa/fish/pwa.mjs --static` fails and says "run node play/fish/stamp-sw.mjs"
 
+#### Scenario: Only quiet.js changes
+- **WHEN** a pull request changes `public/arcade/quiet.js` and nothing under `public/fish/`
+- **THEN** the workflow `fish-app.yml` runs (on the pull request and on the push to main), because `quiet.js` is cached and hashed into `VERSION`, and the check fails until the stamp is rerun
+
 ### Requirement: Back button
 In app mode, after the first tap, Back SHALL NOT close the app in the middle of play. Back SHALL close an open card, pause a running cast or fight, and resume a paused game. Back SHALL do nothing on the catch card, on the unlock card, and while the game travels. Back SHALL take the results to the title. On the title, while the game loads, and on the "cannot draw the lake" screen, the first Back SHALL show "Press Back again to leave", and the second Back SHALL close the app. Outside app mode the page SHALL NOT change the history.
 
