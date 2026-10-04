@@ -492,6 +492,20 @@ The pause card has **Resume**, **How to play**, **Journal**, **Settings** and **
 | `?shot` | For the store pictures: Graphics High, the lake at up to 3 times the CSS pixels, and no automatic render scale. |
 | `?debug` | Shows the sensor readings, the cast numbers, the timing of the last lift, and the frame rate. |
 
+## Moonwell
+
+Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an endless row of moonlit islands, and the screen scrolls with it. A pair of gold flippers guards the water gap at the bottom of each bowl. The left flipper shoots the pearl up and over the next ridge. The right flipper passes it back across the bowl. Flip near the tip for power: one good shot clears a ridge, and a late, sweet one can clear two. When the pearl crosses a ridge, a moon gate closes behind it, so the run only goes forward.
+
+- **The islands** come from a seed and never end. Every eight islands make a region with its own look: Willow Meadow, Lantern Bridge, Lily Pond, Star Garden, Crystal Hollow and Cloud Isles. Ridges get taller, the gap gets wider and play gets a little faster as you go.
+- **In the air** are stars (an arc of stars shows the ideal shot), gold bumpers, lanterns to light with a pass, turning mills, gold rails that carry the pearl over two or three islands, moon portals, and a big pearl every ten islands for one more life.
+- **Scoring.** Ridges in a row raise the multiplier, up to x8, and a drain ends the streak. Stars, bumpers, lanterns and ridges fill the moon in the sky. A full moon starts Moonrise: 12 s of double points, stronger flippers and no drains. Long shots, swift clears and clutch saves pay extra.
+- **Shrines.** The last island of each region is a shrine with a sealed gate. Send the pearl into the moonwell and choose one of three charms, such as stronger flippers, one more pearl, a moon bridge for the next drain, or a star magnet.
+- **Pearls.** A run has three pearls. A lost pearl comes back in a moonbeam over the same bowl. The first three islands have a moon post between the flippers, so a new player cannot drain there.
+- **Controls.** Z, A or ← for the left flipper, X, D or → for the right one, C or ↑ to pulse the pearl up, Space to drop a pearl, Esc or P to pause and M to mute. On a phone, hold the left or right half of the screen. A gamepad uses its shoulder buttons. The first island shows you how.
+- **Your best** score and island stay in this browser. A flag stands on your furthest island, and the Moonwell machine shows the best run.
+
+The islands are drawn in code. The bumper, portal, star, pearl and flipper sprites, and the far islands, come from the original Moonwell paintings (`qa/moonwell/sprites.sh` cuts them). A bot plays behind the title.
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
@@ -535,6 +549,25 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 ## Watch call
 
 `voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
+
+## Mods for Claude Code
+
+`mods/` holds ten Claude Code mods: plugins whose hooks run inside Claude Code while the crew builds the arcade. Nothing loads by itself. Turn on one mod for one session with `claude --plugin-dir mods/<name>`, or add the folder as a marketplace once with `claude plugin marketplace add ./mods` and install the mods you want from `cottage-mods`.
+
+| Mod | What it does |
+| --- | --- |
+| `announcer` | The Shore of the Ancients announcer calls green test runs: "First blood", multi kills within a turn, streaks up to "Godlike", "Shut down" when a red run ends a streak, and "Flawless victory" for a merged pull request. A toast shows each call. The clip plays where Claude Code can play one (macOS). |
+| `cabinet-spinner` | The game whose folder Claude last edited is the cabinet in play. In the terminal the spinner says its verbs ("Reeling", "Paddling", "Parrying") and a turn ends with its phrase ("Landed it in 3s"). The status line shows the cabinet and the arcade tokens: a prompt spends one, a green test run pays one back, FREE PLAY at zero, and `/change` adds three. |
+| `creel` | While a command runs 3 seconds or more, a bobber sits on the water above the prompt. When it ends, a Reel It In fish comes up: heavier fish for longer green runs, the Old Boot for red ones, the Golden Loon Bass for a merge. `/creel` shows the catch and the daily goal. |
+| `loon-chicks` | Each subagent swims as a Loon Echo chick behind the loon above the prompt. It reaches the nest when it answers; the eel takes it when it fails or is stopped. `/chicks` lists them. |
+| `tilt-sensor` | The house rules as a pinball tilt: an Olympus edit needs `npm run build --prefix games/olympus`, a Follow Suit edit needs `npm run build:arcade --prefix follow-suit`, a page with sound loads `/arcade/quiet.js` first, and an arcade screen is a WebP 480 pixels wide and under 60 KB. An edit that breaks one shows DANGER. A commit that would ship it is blocked with TILT and the fix. `/tilt-sensor` lists and resets. |
+| `wanted-level` | Crimson Rogue stars for risky moves: force pushes, `rm -rf`, hard resets, `.env` files, the paid `/api/warden` and project deletes. One star fades every 10 minutes. At five stars the next risky move is blocked until the stars fade or you run `/lay-low`. |
+| `task-breakout` | `/breakout` shows the active OpenSpec change as a brick wall: a brick for each open task, a gap for each done one. When a box is checked, the ball breaks its brick. The last one is STAGE CLEAR, and the prompt suggests the archive. |
+| `attract-mode` | When the session is idle for 3 minutes, a pane grows a live Primordia Lenia dish, like a cabinet's attract screen. The next prompt closes it. `/attract` opens it at any time. |
+| `full-tilt` | `/full-tilt` plays the Full Tilt table in a pane with the game's own physics: `z` and `m` flip, `l` launches, `k` drops the ball soft into a top lane for a skill shot, `n` starts a new game, `p` pauses. The best score is kept. |
+| `photo-booth` | After a QA run, the screenshots it saved show in a pane, newest first: `p` and `n` step through them. |
+
+The terminal draws the pinball table, the brick wall and the Lenia dish with half-block cells, and pictures only in kitty or Ghostty. The desktop and mobile apps draw the same panes as SVG. Some game code and the announcer clips are copies: `node mods/sync.mjs` makes them again from `public/` after the game changes.
 
 ## Files
 
@@ -589,6 +622,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
+| `mods/` | The Claude Code mods, their marketplace, `sync.mjs` (copies game code and clips into them), `check.mjs` and `qa/frames.mjs` (see [Mods for Claude Code](#mods-for-claude-code)) |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
@@ -674,6 +708,18 @@ Serve `public/` (for example `python3 -m http.server 8765 --directory public`), 
 
 Set `FISH_URL` to test another address. Many scripts save screenshots to the folder in `SHOTS`.
 
+### Moonwell tests
+
+Run these from the repo root. The browser checks need `public/` served at http://127.0.0.1:8765/ (or set `BASE_URL`).
+
+| Script | What it checks |
+| --- | --- |
+| `node qa/moonwell/world.test.mjs` | The same seed gives the same islands, 1,000 islands join up and the old ones are dropped, every eighth island is a shrine, rails and portals never skip a shrine, nothing sits in the ground, and the islands get harder |
+| `node qa/moonwell/play.test.mjs` | Drains, the moon post, a cradle, late and early flips, the right flipper's pass and the gate, no tunnelling, bumpers, the multiplier, long shots, Moonrise, rails, portals, shrines and charms, big pearls, the moonbeam and the end of a run, and a 15-minute run |
+| `node qa/moonwell/bot.mjs [runs] [skill] [minutes]` | Bots of a given skill play whole runs and report how far they get, where they drain, and what they meet |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/cabinet-art.mjs` | Makes the machine art, `public/arcade/moonwell.webp`, from a frame of the real game |
+
 ### Arcade tests
 
 Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`walk`, `layout`, `switcher`, `saves`, `credits`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
@@ -718,6 +764,10 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 ### Watch call tests
 
 Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
+
+### Mod tests
+
+Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It checks that the copies in the mods match `public/`, that every game in `public/arcade/switch.js` has a cabinet, that the marketplace and each mod validate, and it runs each mod's tests with `claude plugin test`. The type check also needs `tsc` and the engine's declarations: set `CLAUDE_CODE_TYPES` to the path of `claude-code.d.ts`, or load a mod once so Claude Code lays them in its folder. `node mods/qa/frames.mjs` times the three animated panes (each under 4 ms a frame) and draws a frame of each to a PNG. Each script exits with code 1 when something fails.
 
 ## Jev and cost
 

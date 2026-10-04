@@ -1,0 +1,11 @@
+{
+  "name": "announcer",
+  "version": "0.1.0",
+  "description": "The Shore of the Ancients announcer calls green test streaks: first blood, multi kills, killing sprees up to godlike, shut downs and merged pull requests.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "sound": { "type": "boolean", "title": "Sound", "description": "Play the announcer clips. Claude Code plays clips on macOS.", "default": true },
+    "greeting": { "type": "boolean", "title": "Greeting", "description": "Say \"Prepare yourself\" when a session starts.", "default": false }
+  }
+}

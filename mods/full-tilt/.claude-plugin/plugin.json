@@ -1,0 +1,7 @@
+{
+  "name": "full-tilt",
+  "version": "0.1.0",
+  "description": "/full-tilt plays the Full Tilt pinball table in a pane, with the game's real physics: z and m flip, l launches, k soft-launches for a skill shot. Three balls a game; the best score is kept.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "tilt-sensor",
+  "version": "0.1.0",
+  "description": "The house rules as a pinball tilt: DANGER when an edit breaks one (Olympus bundle, Follow Suit arcade build, quiet.js first, arcade screen size), TILT when a commit would ship it. /tilt-sensor lists and resets.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

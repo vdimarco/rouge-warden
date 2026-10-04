@@ -1,0 +1,7 @@
+{
+  "name": "cabinet-spinner",
+  "version": "0.1.0",
+  "description": "The spinner speaks the game you work on: Reel It In verbs while Claude edits the fish game, its own phrase when a turn ends, and the arcade tokens in the status line.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

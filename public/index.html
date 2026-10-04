@@ -350,10 +350,10 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Shore of the Ancients"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Shore of the Ancients"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab extra moonwell" data-game="moonwell" data-url="/moonwell/" aria-label="Moonwell: endless pinball dungeons" style="--c1: #23475f; --c2: #edc779; --glow: #edc77970">
-      <div class="marquee"><div><b>MOONWELL</b><small>ENDLESS PINBALL DUNGEONS</small></div></div>
-      <div class="bezel"><div class="screen"><img src="/moonwell/assets/moon-islands.png" alt="Moonlit islands with golden pinball rails">
-      <div class="osd"><p class="hi">OPEN THE MOON PORTAL</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      <article class="cab extra moonwell" data-game="moonwell" data-url="/moonwell/" aria-label="Moonwell: endless side-scrolling pinball" style="--c1: #23475f; --c2: #edc779; --glow: #edc77970">
+      <div class="marquee"><div><b>MOONWELL</b><small>ENDLESS PINBALL ISLANDS</small></div></div>
+      <div class="bezel"><div class="screen"><img src="/arcade/moonwell.webp" alt="A pearl flies over moonlit islands with gold flippers">
+      <div class="osd"><p class="hi">FLIP FROM ISLAND TO ISLAND</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Moonwell"><i></i><span>25¢</span></button></div>
@@ -1167,6 +1167,11 @@ try {
 try {
   const best = store.get("primordia.best", 0);
   if (Number.isFinite(best) && best > 0) $(".hi", $('.cab[data-game="primordia"]')).textContent = "BEST " + best.toLocaleString();
+} catch (e) { /* a save that cannot be read leaves the plain line */ }
+// Moonwell saves its best score and its furthest island
+try {
+  const best = store.get("moonwell.best.v1", null);
+  if (best && Number.isFinite(best.score) && best.score > 0 && Number.isFinite(best.island) && best.island > 0) $(".hi", $('.cab[data-game="moonwell"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " · ISLAND " + Math.round(best.island);
 } catch (e) { /* a save that cannot be read leaves the plain line */ }
 // Follow Suit saves its best chain score of all runs
 try {

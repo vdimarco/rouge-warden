@@ -1,7 +1,15 @@
 /* Composition measured against the selected 9:16 Higgsfield reference. */
 #hud header{height:44px;background:none;border:0;box-shadow:none;justify-content:flex-start;padding-left:60px;pointer-events:none}
 #hud header .wordmark{display:none}.score{background:#101c2470;border:0;border-radius:6px;box-shadow:none;clip-path:none;height:34px;gap:8px;font-size:17px;padding:4px 10px;margin:5px 0 0}.score time{font-size:13px;margin-left:5px;position:static;display:inline}.score i{font-size:12px}
-#pause{position:absolute;left:9px;right:auto;top:5px;width:44px;height:44px;pointer-events:auto;background:#101c2455;border-radius:50%}
+/* The menu and sound buttons sit together in the top left, clear enough to find at a glance. */
+.hud-corner{position:absolute;left:10px;top:calc(6px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:auto;z-index:5}
+#pause,#hud-sound{height:38px;display:flex;align-items:center;justify-content:center;gap:7px;background:#0b1a22e6;border:1px solid #d6ea78a8;border-radius:19px;color:#f0eccd;box-shadow:0 2px 10px #0009;cursor:pointer}
+#pause{width:auto;padding:0 10px 0 11px;font:700 14px/1 Barlow,sans-serif;letter-spacing:1.5px;text-transform:uppercase}#pause svg{width:18px;height:18px;stroke-width:2.6}
+#pause kbd{font:600 11px/1 Barlow,sans-serif;padding:3px 5px;border:1px solid #d6ea7880;border-radius:4px;color:#d6ea78;letter-spacing:.5px;text-transform:none}
+#hud-sound{width:38px;padding:0}#hud-sound svg{width:19px;height:19px;stroke-width:2.2}#hud-sound .cross{display:none}
+#hud-sound[aria-pressed=false]{color:#ffad90;border-color:#ffad90b0}#hud-sound[aria-pressed=false] .wave{display:none}#hud-sound[aria-pressed=false] .cross{display:inline}
+#pause:hover,#pause:focus-visible,#hud-sound:hover,#hud-sound:focus-visible{background:#183029;border-color:#d6ea78}
+@media (hover:none){#pause kbd{display:none}}@media (max-width:520px){#pause span{display:none}#pause{padding:0 10px}}
 #map-button{width:96px;height:96px;top:14px;right:12px;left:auto;border:3px solid #95856a;outline:2px solid #111b20;box-shadow:inset 0 0 0 2px #101c20,2px 3px 0 #10192399;border-radius:50%;overflow:hidden}
 #map-button #minimap{border-radius:50%}#map-button small{display:none}
 #objective{top:57px;left:16px;right:125px;width:auto;max-width:215px}#objective b{font-size:12px;letter-spacing:1.1px;color:#d4d7ba}#realm-count{font-size:11px;color:#c3d2c5}.realm-track{height:2px;margin:5px 0;width:95px;background:#101c2460}.realm-track i{height:2px;background:#9dc4a9}#objective-sub{font-size:11px;max-width:165px;color:#dbdfcd}
