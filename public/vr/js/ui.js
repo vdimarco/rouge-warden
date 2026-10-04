@@ -1262,7 +1262,7 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
-.fs-pill.fs-mission{order:-1;flex-direction:column;align-items:flex-start;gap:3px;padding:6px 14px 4px;max-width:min(440px,92vw);background:var(--cream,#fff4d8);transform:rotate(-0.8deg)}
+.fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
 .fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:.75}.fs-m-short{display:none}
 .fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
 .fs-train h3{margin:0 0 3px;font:400 20px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.06em}
@@ -1283,20 +1283,22 @@ body.keyhints .fs-train{bottom:60px}
 .fs-train-now{display:none}
 @keyframes fsNow{50%{box-shadow:0 0 0 3px var(--ink,#140a18),0 0 0 7px rgba(255,216,74,.55)}}
 @media (max-height:460px){.fs-train{width:min(250px,32vw);padding:7px 9px 6px}.fs-train h3{font-size:20px}.fs-train li{font-size:15px;margin:3px 0}.fs-train kbd{font-size:12px;padding:2px 4px 0}.fs-mission b{font-size:19px}.fs-mission small{font-size:15px}}
-/* a phone (the small-screen sizes of index.html): the score row stays one row of one height. The card becomes a chip (a box and
-   the rows done; the spoken line gives the words), which takes the mission's place while it shows; the mission keeps its next
-   step on one line. */
-@media (max-width:479px),(max-height:480px){
+/* A small window (under 760 by 520) and every touch layout: the score row stays one row of one height, so the marker keeps its
+   share of the screen. The card becomes a chip (a box and the rows done; the spoken line gives the words), which takes the
+   mission's place while it shows. The mission shows a short label (the district, or the pipes). With four score pills (a
+   trial, or the King's hearts) neither shows. */
+@media (max-width:759px),(max-height:519px){
+.fs-train{display:none}.fs-train-now:not([hidden]){display:flex;background:#fffdf5}
+.fs-mission b,.fs-mission small{display:none}.fs-mission .fs-m-short{display:block}
+.fs-mission.no-short,.fs-top:has(.fs-train-now:not([hidden])) .fs-mission,
+.fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}}
 body:has(#phoneControls:not([hidden])) .fs-train{display:none}
 body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:#fffdf5}
-body:has(#phoneControls:not([hidden])) .fs-train-now b{display:none}
-body:has(#phoneControls:not([hidden])) .fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
-body:has(#phoneControls:not([hidden])) .fs-mission{flex-direction:row;align-items:center;max-width:none}
-body:has(#phoneControls:not([hidden])) .fs-mission b,body:has(#phoneControls:not([hidden])) .fs-mission small{display:none}
-body:has(#phoneControls:not([hidden])) .fs-mission .fs-m-short{display:block;font:400 22px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase}
-body:has(#phoneControls:not([hidden])) .fs-mission.no-short,
-body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission,
-body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}}
+body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission{display:none}
+.fs-train-now b{display:none}.fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
+.fs-m-short{font:400 22px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase}
+/* a wide window with four score pills: the mission keeps its title and drops its next step */
+.fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) .fs-mission small{display:none}
 @media (prefers-reduced-motion:reduce){.fs-train li.now{animation:none}}
 @media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}.fs-menu .btn,.fs-map .btn{transition:none}}`;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -1580,7 +1582,9 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-
     // the line and the toast sit under the score row, which wraps onto two rows on a narrow phone: place them from its real
     // bottom (the toast under the line while one shows), a few times a second, so they never cover the pills or the hero
     const subOn = sub.a > 0.02;
-    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.lay = 0; } // at once on a new line or a new screen size
+    // at once on a new line, a new screen size, the phone panel coming or going, or a change in the score row (the mission, the training)
+    const phone = !!document.querySelector("#phoneControls:not([hidden])"), row = os + "|" + ts;
+    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh || phone !== dh.phone || row !== dh.row) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.phone = phone; dh.row = row; dh.lay = 0; }
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
       const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);

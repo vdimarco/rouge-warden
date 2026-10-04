@@ -43,12 +43,12 @@ In a headset no scene SHALL play. The mission scenes SHALL show their mission as
 - **THEN** a toast says "Mission 2: rip off the King's three pipes, then flush him."
 
 ### Requirement: Mission card
-In flat play a mission card SHALL show the current mission and what to do next: in Mission 1 the clogs flushed out of twelve and the district and distance of the nearest clog; in Mission 2 the pipes ripped out of three; after the finale "ALL CLEAR". It SHALL hide during a trial.
+In flat play a mission card in the score row SHALL show the current mission and what to do next: in Mission 1 the clogs flushed out of twelve and the district and distance of the nearest clog; in Mission 2 the pipes ripped out of three; after the finale "ALL CLEAR". It SHALL hide during a trial.
 
 #### Scenario: Mission 1
 - **WHEN** the player has flushed one clog
-- **THEN** the card says "MISSION 1 · FLUSH THE CLOGS 1/12" and "Next: <district> clog, <distance> m"
+- **THEN** the card in the score row says "FLUSH THE CLOGS 1/12" and "Next: <district> clog, <distance> m" on one line
 
-#### Scenario: Mission card on a phone
-- **WHEN** the player plays on a phone after the training
-- **THEN** the score row shows the next step on one line ("Next: <district> clog, <distance> m") and stays one row
+#### Scenario: Mission card on a phone or a small window
+- **WHEN** the player plays on a phone, or in a window under 760 by 520 pixels, after the training
+- **THEN** the score row shows a short label (the district of the next clog, or the pipes left) and stays one row

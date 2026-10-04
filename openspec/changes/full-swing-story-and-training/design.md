@@ -29,8 +29,9 @@
 
 ## Layout
 
-- Desktop: the mission card leads the score row. The training card sits at the lower left, above the key strip, so the spoken line under the score row stays clear of it. The marker's safe window closes from the left while the card shows.
-- Phone (the small-screen sizes of index.html): main's score row stays one row of one height, so the marker keeps its share of the screen. The training card becomes a chip in that row (a box and the rows done), which takes the mission card's place while it shows. The mission card shows only its next step, on one line.
+- Desktop: the mission card leads the score row on one line, so the row stays one row and the marker keeps the top of the screen. The training card sits at the lower left, above the key strip, so the spoken line under the score row stays clear of it. The marker keeps out of the card's corner (the card plus the ring's half width and 8 px).
+- A phone, or a window under 760 by 520: main's score row stays one row of one height, so the marker keeps its share of the screen. The training card becomes a chip in that row (a box and the rows done), which takes the mission card's place while it shows. The mission card shows a short label (the district, or the pipes). With four score pills (a trial, or the King's hearts) neither shows; a wide window drops only the mission's next step.
+- The spoken line is placed again at once when the phone panel comes or goes or the score row changes, so it never waits under a row that has shrunk.
 - The King's panels look in along the line from the Needle through his perch, so the spire stands behind him. His balloon sits beside him; other balloons sit above their speaker when there is room.
 
 ## How to check

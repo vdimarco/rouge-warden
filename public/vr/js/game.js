@@ -1828,13 +1828,13 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (progress.trial) { progress.objective = null; return; }
     if (progress.king === "beaten" || K.state === "gone") { OBJ.title = "ALL CLEAR"; OBJ.detail = "Free roam: trials and Loonies"; OBJ.short = ""; OBJ.n = OBJ.of = 0; }
     else if (K.state === "awake") {
-      OBJ.title = "MISSION 2 · FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
+      OBJ.title = "FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
       OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length; OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
     } else {
       let best = null, bd = Infinity;
       for (const c of clogs) { if (c.done) continue; const d = Math.hypot(c.x - CHEST.x, c.z - CHEST.z); if (d < bd) { bd = d; best = c; } }
       const dn = best && districts[best.d] ? districts[best.d].name : "";
-      OBJ.title = "MISSION 1 · FLUSH THE CLOGS"; OBJ.n = done.size; OBJ.of = clogs.length;
+      OBJ.title = "FLUSH THE CLOGS"; OBJ.n = done.size; OBJ.of = clogs.length;
       OBJ.detail = best ? "Next: " + dn + " clog, " + Math.round(bd) + " m" : ""; OBJ.short = best ? dn : "";
       // the first time you come near a district's clogs (not in the training): its briefing scene
       if (best && bd < 150 && !train.on && districts[best.d]) {
