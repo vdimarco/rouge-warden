@@ -96,15 +96,17 @@ test('the right flipper passes the pearl back to the left', () => {
     // a pearl rolling down the right inlane onto the right flipper
     Object.assign(run.ball, { x: f.px - 40, y: f.py - 40, vx: -150, vy: 60, mode: 'free' });
     run.phase = 'play';
-    let hold = -1, vx = 0;
-    play(run, 2.5, (r, t) => {
+    let hold = -1, shot = false, vx = 0, vy = 0;
+    const ev = play(run, 2.5, (r, t) => {
       const p = onFlipper(r, 1);
       if (hold < 0 && p.t > 0.5 && p.up < 60) hold = t + 0.15;
       return { ...idle(), right: t < hold };
-    }, (r, t) => { if (hold > 0 && t > hold && !vx) vx = r.ball.vx; });
-    if (vx < 0) passes++;
+    }, (r, t) => { if (hold > 0 && t > hold && !vx) { vx = r.ball.vx; vy = r.ball.vy; } });
+    shot = ev.some((e) => e.type === 'shot' && e.side > 0);
+    // the flip itself sends the pearl up and to the left, not only its roll down the inlane
+    if (shot && vx < -100 && vy < -300) passes++;
   }
-  assert(passes >= 6, `only ${passes} of 8 right flips sent the pearl left`);
+  assert(passes >= 6, `only ${passes} of 8 right flips sent the pearl up and left`);
 });
 
 test('the pearl never goes through the ground', () => {
@@ -291,10 +293,25 @@ test('the world keeps 40 islands behind the pearl, then a wall', () => {
   tick(run, idle());
   const first = run.world.first, wall = station(run.world, first);
   assert(first === 30 && wall.gate, `the first island kept is ${first + 1}`);
+  // a pearl flying hard to the left, well above the ridge: only the wall can stop it
   run.at = first;
-  Object.assign(run.ball, { x: wall.x0 + 40, y: wall.y0 - 60, vx: -900, vy: 0 });
-  play(run, 1, idle);
-  assert(run.ball.x > wall.x0 - R && run.at === first, 'the pearl went past the wall');
+  Object.assign(run.ball, { x: wall.x0 + 60, y: wall.y0 - 220, vx: -1400, vy: -300 });
+  let minX = Infinity;
+  play(run, 1.5, idle, (r) => { minX = Math.min(minX, r.ball.x); });
+  assert(minX > wall.x0 - R && run.at === first, `the pearl went past the wall (x ${minX | 0}, wall ${wall.x0 | 0})`);
+});
+
+test('every flipper follows the keys, even far from the pearl', () => {
+  const run = at(10);
+  drop(run);
+  ensure(run.world, 20);
+  const far = station(run.world, 14);
+  assert(far.x0 - run.ball.x > 2400, 'island 15 is not far enough away for this check');
+  play(run, 0.3, () => ({ ...idle(), left: true, right: true }));
+  assert(far.flippers.every((f) => Math.abs(f.th - f.up) < 0.01), 'a far flipper did not go up');
+  // the pearl travels on while the keys stay down, then they lift: every flipper drops back
+  play(run, 0.4, idle);
+  for (const s of run.world.list) assert(s.flippers.every((f) => Math.abs(f.th - f.rest) < 0.01), `a flipper on island ${s.k + 1} stayed up`);
 });
 
 test('play is brisk from the start and faster further on', () => {

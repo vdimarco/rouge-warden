@@ -138,7 +138,7 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     s = await snap(page);
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('moonwell.best.v1')));
     check('the run ends with a summary', await page.isVisible('#dialog') && (await page.textContent('#dialog-title')).includes('moon rests'));
-    check('the best run is saved', saved && saved.score === s.score && saved.island === s.island, JSON.stringify(saved));
+    check('the best run is saved, with the furthest island', saved && saved.score === s.score && saved.island === s.far, JSON.stringify(saved));
     await page.keyboard.press('Space');
     await wait(150);
     s = await snap(page);
@@ -161,15 +161,21 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     await page.tap('#launch');
     await wait(200);
     const cdp = await ctx.newCDPSession(page);
-    // drop the pearl, and hold the left flipper up so it waits in the crook
-    await wait(400);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }] });
-    await page.waitForFunction(() => { const r = window.moonwell.run, s = r.world.list.find((x) => x.k === r.at); return r.ball.y > s.fy - 60 && Math.hypot(r.ball.vx, r.ball.vy) < 30; }, null, { timeout: 8000 });
-    await wait(1200);
-    const f = await framing(page);
-    check('with the pearl at the flippers, both flippers and the next ridge are on the screen', f.left > 0 && f.right < f.w && f.ridge < f.w && f.flipY < f.h - 150, JSON.stringify(f));
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await wait(100);
+    // on several seeds: drop the pearl, and hold the left flipper up so it waits in the crook, where a player aims
+    // the first three have the widest first bowl of 400 seeds, where the ridge sits furthest right
+    const seeds = [165, 383, 46, 11], misses = [];
+    for (const seed of seeds) {
+      await page.evaluate((sd) => window.moonwell.start(sd), seed);
+      await wait(400);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }] });
+      await page.waitForFunction(() => { const r = window.moonwell.run, s = r.world.list.find((x) => x.k === r.at); return r.ball.y > s.fy - 60 && Math.hypot(r.ball.vx, r.ball.vy) < 30; }, null, { timeout: 8000 });
+      await wait(1200);
+      const f = await framing(page);
+      if (!(f.left > 0 && f.right < f.w && f.ridge < f.w && f.flipY < f.h - 150)) misses.push(`seed ${seed}: ${JSON.stringify(f)}`);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await wait(100);
+    }
+    check(`with the pearl at the flippers, both flippers and the next ridge are on the screen (${seeds.length} seeds)`, misses.length === 0, misses.join('; '));
     check('the touch pads show', await page.isVisible('#pad-left') && await page.isVisible('#pad-right'));
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }, { x: 330, y: 600, id: 2 }] });
     await wait(150);

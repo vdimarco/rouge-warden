@@ -142,7 +142,7 @@ export function draw(ctx, view, run, fx, now) {
   ctx.setTransform(dpr * S, 0, 0, dpr * S, dpr * (w / 2 - cam.x * S), dpr * (h / 2 - cam.y * S));
   const shown = near(run.world, left - 200, right + 200);
   for (const s of shown) beams(ctx, s, run, now, top);
-  for (const s of shown) land(ctx, s, run, now);
+  for (const s of shown) land(ctx, s, run, now, bottom);
   for (const s of shown) features(ctx, s, run, now);
   for (const s of shown) if (s.rail) rail(ctx, s.rail, now);
   bestFlag(ctx, run, now);
@@ -268,18 +268,20 @@ function beams(ctx, s, run, now, top) {
   }
 }
 
-function land(ctx, s, run, now) {
+// screenBottom: the world y of the bottom edge of the screen. The rock and the water reach past it, whatever the
+// camera does, so no background shows under an island.
+function land(ctx, s, run, now, screenBottom) {
   const B = s.biome;
-  const deep = s.deep;
-  const rock = ctx.createLinearGradient(0, Math.min(s.y0, s.y1), 0, deep);
+  const deep = Math.max(s.deep, screenBottom + 20);
+  const rock = ctx.createLinearGradient(0, Math.min(s.y0, s.y1), 0, s.deep);
   rock.addColorStop(0, B.rock);
   rock.addColorStop(0.55, mix(B.rock, B.rockDark, 0.6));
   rock.addColorStop(1, B.rockDark);
-  gapWater(ctx, s, now);
+  gapWater(ctx, s, now, deep);
   // each bowl draws the near side of its two islands; the halves meet under the ridges
   const halves = [
-    [...s.left, [s.cx - s.P - 4, s.fy + 12], s.cliffL[1], [s.x0 - 1, deep], [s.x0 - 1, s.y0]],
-    [[s.cx + s.P + 4, s.fy + 12], ...s.right, [s.x1 + 1, s.y1], [s.x1 + 1, deep], s.cliffR[1]],
+    [...s.left, [s.cx - s.P - 4, s.fy + 12], s.cliffL[1], [s.cliffL[1][0], deep], [s.x0 - 1, deep], [s.x0 - 1, s.y0]],
+    [[s.cx + s.P + 4, s.fy + 12], ...s.right, [s.x1 + 1, s.y1], [s.x1 + 1, deep], [s.cliffR[1][0], deep], s.cliffR[1]],
   ];
   for (const pts of halves) {
     ctx.beginPath();
@@ -340,8 +342,8 @@ function land(ctx, s, run, now) {
 
 // The water in a gap: a dark drop under the flippers, then a pool with a moonlit surface and mist
 export const POOL = 190;
-function gapWater(ctx, s, now) {
-  const x0 = s.cx - s.P - 70, x1 = s.cx + s.P + 70, wy = s.fy + POOL, deep = s.deep;
+function gapWater(ctx, s, now, deep) {
+  const x0 = s.cx - s.P - 70, x1 = s.cx + s.P + 70, wy = s.fy + POOL;
   const drop = ctx.createLinearGradient(0, s.fy, 0, wy);
   drop.addColorStop(0, 'rgba(6,12,30,0.25)');
   drop.addColorStop(1, 'rgba(6,12,30,0.85)');

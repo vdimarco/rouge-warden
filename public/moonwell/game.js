@@ -471,7 +471,9 @@ function camera(dt) {
   const b = run.ball, half = view.w / 2 / c.scale;
   if (b.mode !== 'gone') {
     if (b.x > c.x + half - 60 / c.scale * 1.5) c.x = b.x - half + 90 / c.scale;
-    if (b.x < c.x - half + 90 / c.scale) c.x = b.x + half - 90 / c.scale;
+    // a wide margin only while the pearl heads left, so a phone in portrait still shows the ridge ahead of the bowl
+    const pad = b.vx < -200 ? 90 / c.scale : 40;
+    if (b.x < c.x - half + pad) c.x = b.x + half - pad;
   }
 }
 

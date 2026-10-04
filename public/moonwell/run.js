@@ -107,7 +107,7 @@ export function tick(run, input) {
 
   if (run.phase === 'ready') {
     run.readyT += TICK;
-    for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
+    for (const s of world.list) moveFlippers(s, input, TICK, power(run));
     holdOnBeam(run);
     if (input.drop || run.readyT > READY_WAIT || (run.readyT > 0.2 && (press.left || press.right))) drop(run);
     return;
@@ -118,7 +118,10 @@ export function tick(run, input) {
 
   const ev = [];
   const stations = near(world, ball.x - 300, ball.x + 300);
-  step(world, stations, ball, input, TICK * pace(run), mods(run), ev, active(run));
+  const near2400 = active(run);
+  step(world, stations, ball, input, TICK * pace(run), mods(run), ev, near2400);
+  // the flippers further away move once a tick, so a wide screen never shows one stuck up
+  for (const s of world.list) if (!near2400.includes(s)) moveFlippers(s, input, TICK * pace(run), power(run));
   contacts(run, ev, input);
   if (ball.touch) run.flight = 0;
   for (const s of stations) if (pickups(run, s)) return;
@@ -313,7 +316,7 @@ function startRide(run, rail) {
 
 function ride(run, input) {
   const b = run.ball, r = run.ride;
-  for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
+  for (const s of run.world.list) moveFlippers(s, input, TICK, power(run));
   const here = pathAt(r.rail.pts, r.u);
   r.v = Math.max(950, Math.min(1900, r.v + here.dy * 1800 * TICK));
   r.u += r.v * TICK;
@@ -341,7 +344,7 @@ function startWarp(run, s) {
 
 function warp(run, input) {
   const b = run.ball, w = run.warp;
-  for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
+  for (const s of run.world.list) moveFlippers(s, input, TICK, power(run));
   w.t += TICK;
   const f = Math.min(1, w.t / w.dur), e = f * f * (3 - 2 * f);
   b.x = w.from.x + (w.to.x - w.from.x) * e;

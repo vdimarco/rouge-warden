@@ -18,7 +18,7 @@ With these, a casual bot goes back 5 times in a 17-island run and a good one 9 t
 
 ## Memory
 
-`trim` keeps the 40 islands behind `run.at` and sets a wall (`gate`) on the left ridge of the oldest one. Islands ahead are made to `run.far + 7`. Flippers move only for islands within 2,400 units of the pearl, so the longer list costs nothing per tick.
+`trim` keeps the 40 islands behind `run.at` and sets a wall (`gate`) on the left ridge of the oldest one. Islands ahead are made to `run.far + 7`. Flippers within 2,400 units of the pearl move in every physics substep. The rest move once a tick, so a wide screen never shows a flipper stuck up and the longer list costs little.
 
 ## Faster
 
@@ -27,6 +27,8 @@ With these, a casual bot goes back 5 times in a 17-island run and a good one 9 t
 - Rails run at 950 to 1,900 units/s (it was 720 to 1,500). Portals take 0.5 s (it was 0.75 s).
 - The camera follows at rate 7 (it was 5), and zooms out at rate 12 (it was 9). Its look-ahead goes left or right with the pearl.
 - Drawing: the far painting is scaled and faded once per screen height into a canvas, and each frame copies it with no scaling. The canvas holds at most about 2.4 million pixels (it was 3.4 million), so a large high-density screen draws fewer pixels.
+- The rock and the water of each island reach 20 units past the bottom edge of the screen, whatever the camera does. With islands that step down, a fixed depth under each bowl left a band of background at the bottom of a phone in portrait.
+- The camera keeps the pearl 40 units from the left edge, and 90 pixels only while the pearl heads left, so a phone in portrait still shows the ridge ahead of the bowl.
 
 ## Balance
 
