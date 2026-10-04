@@ -18,7 +18,7 @@ For Reel It In, the common tasks are: start a game, cast, reel, fight and land a
 | Captions | No claim needed | The game has no speech. The guide clips have no voice. |
 | Audio Descriptions | No claim needed | The guide clips are short silent loops beside text that says the same thing. |
 
-The same answers apply to iPhone. The app does not run on iPad, Mac or Apple Vision Pro.
+The same answers apply to iPhone. The app is built for iPhone only, but it runs on iPad in iPhone compatibility mode. Mac and Apple Vision Pro are turned off. Do a quick check on an iPad in compatibility mode before review (see the device checklist in `apps/fish/README.md`).
 
 ## The checks that back each claim
 
