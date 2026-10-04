@@ -27,8 +27,8 @@
 - [x] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
 - [x] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
 - [x] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
-- [ ] 3.8 A quick turnaround to the next cast: shorter waits, a skip by any cast input, and a faster empty retrieve.
-- [ ] 3.9 A mouse hold cast on desktop, with sideways aim, and its tests.
+- [x] 3.8 A quick turnaround to the next cast: shorter waits, a skip by any cast input, and a faster empty retrieve.
+- [x] 3.9 A mouse hold cast on desktop, with sideways aim, and its tests.
 
 ## 4. Goals
 - [x] 4.1 Six goals at each place, on the Places card, with the toast and the sting.
@@ -40,19 +40,19 @@
 - [x] 4.7 Tests: save fuzz for the new fields, the goal predicates, the daily goal over 60 days, and the screens checks.
 
 ## 5. Feedback
-- [ ] 5.1 The hook-set hit.
-- [ ] 5.2 The jump zoom.
-- [ ] 5.3 Tiered stingers, the new-place stinger and card, the derby count-up and close.
-- [ ] 5.4 Splashes you can see at range, the rod-tip twitch, and the legend glitter.
-- [ ] 5.5 Tests: new sounds render, and a moments script checks each key moment's sound, buzz, and picture.
+- [x] 5.1 The hook-set hit.
+- [x] 5.2 The jump zoom.
+- [x] 5.3 Tiered stingers, the new-place stinger and card, the derby count-up and close.
+- [x] 5.4 Splashes you can see at range, the rod-tip twitch, and the legend glitter.
+- [x] 5.5 Tests: new sounds render, and a moments script checks each key moment's sound, buzz, and picture.
 
 ## 6. Menus and access
-- [ ] 6.1 "Go fishing" first, the art picker in Settings, and "Painted" for the old style name.
-- [ ] 6.2 The guide on for new players, with a clear button label.
-- [ ] 6.3 Short help on the right tab, and one word for each move.
-- [ ] 6.4 Fix the HUD chip, short screens, the journal wall, the icons, and the small layout bugs.
-- [ ] 6.5 Larger text, Calm effects, the full left-handed mode, the drag buttons near the thumb, live regions, dialogs, and the About row.
-- [ ] 6.6 Screenshots of every screen at the six sizes, checked by eye.
+- [x] 6.1 "Go fishing" first, the art picker in Settings, and "Painted" for the old style name.
+- [x] 6.2 The guide on for new players, with a clear button label.
+- [x] 6.3 Short help on the right tab, and one word for each move.
+- [x] 6.4 Fix the HUD chip, short screens, the journal wall, the icons, and the small layout bugs.
+- [x] 6.5 Larger text, Calm effects, the full left-handed mode, the drag buttons near the thumb, live regions, dialogs, and the About row.
+- [x] 6.6 Screenshots of every screen at the six sizes, checked by eye.
 
 ## 7. App project
 - [x] 7.1 `apps/fish/` Capacitor project, config, and the build script with its bundle check.
@@ -62,11 +62,11 @@
 - [x] 7.5 An Android debug build on this machine.
 
 ## 8. Cutscenes
-- [ ] 8.1 A cutscene player: a scripted camera over the live scene, letterbox bars, a caption, a sound, skip by tap, Space, Escape, or back, and a calm version with still shots and fades.
-- [ ] 8.2 The opening, the four arrivals, the four legend reveals, the legend landed shot, and the finale.
-- [ ] 8.3 Hold the fish, the clock, and the derby while a cutscene plays; never start one in a fight; remember the seen ones in the save.
-- [ ] 8.4 "Watch" on the Places card for seen arrivals and reveals.
-- [ ] 8.5 Tests: skip timing, the derby clock, seen once, old saves, calm, and screenshots at the four sizes.
+- [x] 8.1 A cutscene player: a scripted camera over the live scene, letterbox bars, a caption, a sound, skip by tap, Space, Escape, or back, and a calm version with still shots and fades.
+- [x] 8.2 The opening, the four arrivals, the four legend reveals, the legend landed shot, and the finale.
+- [x] 8.3 Hold the fish, the clock, and the derby while a cutscene plays; never start one in a fight; remember the seen ones in the save.
+- [x] 8.4 "Watch" on the Places card for seen arrivals and reveals.
+- [x] 8.5 Tests: skip timing, the derby clock, seen once, old saves, calm, and screenshots at the four sizes.
 
 ## 9. Finish
 - [ ] 9.1 Update the Reel It In part of `README.md`.

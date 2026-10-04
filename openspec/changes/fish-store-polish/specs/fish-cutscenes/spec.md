@@ -20,7 +20,7 @@ The game SHALL have four kinds of short cutscenes, drawn live in the game's own 
 - **THEN** a hero shot shows the legend with its name and weight before the catch card. After the fourth legend, a short finale says the player fished them all.
 
 ### Requirement: Cutscenes never cost the player
-A cutscene SHALL play once for each event, SHALL never start during a fight, and SHALL hold the fish, the clock, and the derby while it plays. A tap, Space, Escape, or the Android back button SHALL skip it at once. The game SHALL remember which cutscenes the player has seen, and an old save SHALL load with none marked seen except the ones its progress has passed.
+A cutscene SHALL play once for each event, SHALL never start during a fight, and SHALL hold the fish, the clock, and the derby while it plays. Escape and the Android back button SHALL skip it at once. A tap, Space, or Enter SHALL skip it after its first 0.5 s, so the second tap of a double tap does not skip a cutscene it started. The game SHALL remember which cutscenes the player has seen, and an old save SHALL load with none marked seen except the ones its progress has passed.
 
 #### Scenario: Skip
 - **WHEN** the player taps the screen 1 s into any cutscene
