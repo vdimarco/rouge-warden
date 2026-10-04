@@ -7,8 +7,8 @@
 //   3. goalKg sits between the p70 and the p97 of the place's catches (Gull Rock has no goal: bigKg is measured)
 //   4. every legend ring is 50 m or less from the angler
 //   5. a beginner who casts short (8 to 25 m) at Loon Lake, with the help for short casters (goals.js ASSIST: after 20
-//      casts in the water, a ring close in carries a big fish), opens Stump Bay in 25 casts or fewer (median), and 9 in 10
-//      in 70 or fewer
+//      casts in the water, a ring close in carries a big fish until one is landed), opens Stump Bay in 25 casts or fewer
+//      (median), and 9 in 10 in 70 or fewer
 //   6. the weight boost of three sweet casts (opts.boost 0.4) gives bigger fish, and a big ring is a sure bite of its fish
 //   7. a beginner can do each goal of the day (goals.js DAILY) in about 10 minutes: 20 casts or fewer, median
 // The players are two numbers, from the design: the share of the fish near the goal size that a player lands (good 0.85,
@@ -16,7 +16,7 @@
 // rates with its bots; the targets there (skilled 85% or more, casual 50% or more) are where these two numbers come from.
 // The goals and ranks are data in journey.js. If a target is missed, change the numbers there.
 // Exit code 1 if a target is missed. N=casts per place and mode (default 12000).
-import { LakeSim, rodTip } from "../../public/fish/js/fish.js";
+import { LakeSim, Rises, rodTip } from "../../public/fish/js/fish.js";
 import { fishingOf } from "../../public/fish/js/fishing.js";
 import { PLACES } from "../../public/fish/js/places.js";
 import * as LAKE from "../../public/fish/js/lake.js";
@@ -117,31 +117,52 @@ for (const [k, id] of ORDER.entries()) {
 }
 
 // 5. A beginner who casts short: 8 to 25 m at Loon Lake, in free fishing. Without help, a goal fish is rare that close in.
-// The help: after ASSIST.casts casts in the water, the next ring within ASSIST.reach m carries a big fish (main.js ringNews,
-// fish.js choose). The model of the player: a ring rises for 25 to 50 s, time for two casts at it, and a short caster lands
-// in it (within 5 m) on half of the tries; a cast that misses is an ordinary cast. The help comes again 20 casts later
+// The help (main.js ringNews, fish.js choose): after ASSIST.casts casts in the water, the next ring that rises within
+// ASSIST.reach m while the player is casting carries a big fish, and stays up at least ASSIST.ttl s. One big ring at a
+// time; the help goes on until a big ring's fish is landed. Modeled in time, with the real rings of the place (Rises):
+// a cast takes 3 to 6 s to aim and throw (the rings that rise then count), and 6 to 12 s to reel in, or 15 to 40 s with a
+// fish on. Told of a big ring, the player aims every cast at it until it is gone, and lands in it (within 5 m) on half
+// of the tries; a cast that misses is an ordinary cast. A fish hooked from the ring takes the ring with it (rises.take)
 {
-  const goal = JOURNEY.loon.goalKg, HIT = 0.5, TRIES = 2;
+  const goal = JOURNEY.loon.goalKg, HIT = 0.5;
   const short = casts("loon", "free", N, 300, { d0: 8, d1: 25 });
   const ring = casts("loon", "free", 4000, 301, { d0: 8, d1: ASSIST.reach, ring: { species: assistFish("loon"), big: true }, opts: { boost: ASSIST.boost } });
   const share = (a) => a.filter((k) => k >= goal).length / a.length;
   const open = (help, seed) => {
-    const r = rng(seed), counts = [];
-    for (let t = 0; t < 3000; t++) {
-      let c = 0, dry = 0, done = false;
-      const cast = (pool) => { c++; dry++; const kg = pool[(r() * pool.length) | 0]; return kg >= goal && r() < lands("novice", kg); };
+    const r = rng(seed), counts = [], told = [];
+    for (let t = 0; t < 2000; t++) {
+      const rises = new Rises(rng(seed * 31 + t), PLACES.loon);
+      let hour = JOURNEY.loon.clock.free, c = 0, dry = 0, done = false, said = 0;
+      // s seconds go by; while casting, a ring rising within reach turns big when the help is due
+      const pass = (s, casting) => {
+        for (let k = 0; k < s; k += 0.25) {
+          hour = Math.min(JOURNEY.loon.clock.end - 0.01, hour + 0.25 / 75);
+          for (const e of rises.step(0.25, hour)) {
+            if (!casting || !help || e.gold || dry < ASSIST.casts || Math.hypot(e.x, e.z) > ASSIST.reach || rises.list.some((g) => g.big)) continue;
+            const g = rises.near(e.x, e.z);
+            if (g && !g.gold) { g.big = true; g.ttl = Math.max(g.ttl, ASSIST.ttl); said++; }
+          }
+        }
+      };
       while (c < 400 && !done) {
-        done = cast(short);
-        if (!done && help && dry >= ASSIST.casts) { dry = 0; for (let k = 0; k < TRIES && !done; k++) done = cast(r() < HIT ? ring : short); }
+        const big = rises.list.find((g) => g.big);
+        pass(3 + r() * 3, true);
+        c++; dry++;
+        const hit = big && rises.list.includes(big) && r() < HIT;
+        if (hit) rises.take(big);
+        const kg = (hit ? ring : short)[(r() * (hit ? ring : short).length) | 0], landed = kg > 0 && r() < lands("novice", kg);
+        done = landed && kg >= goal;
+        if (hit && landed) dry = 0;
+        pass(kg > 0 ? 15 + r() * 25 : 6 + r() * 6, false);
       }
-      counts.push(c);
+      counts.push(c); told.push(said);
     }
-    counts.sort((a, b) => a - b);
-    return [q(counts, 0.5), q(counts, 0.9)];
+    counts.sort((a, b) => a - b); told.sort((a, b) => a - b);
+    return [q(counts, 0.5), q(counts, 0.9), q(told, 0.9)];
   };
-  const [m0, p0] = open(false, 5), [m1, p1] = open(true, 5);
+  const [m0, p0] = open(false, 5), [m1, p1, t1] = open(true, 5);
   console.log(`A beginner who casts 8-25 m at Loon Lake: ${(100 * share(short)).toFixed(1)}% of casts bring a ${goal}+ kg fish; a big ring (${assistFish("loon")}, boost ${ASSIST.boost}): ${(100 * share(ring)).toFixed(0)}%`);
-  console.log(`    casts to open Stump Bay: ${m0} / ${p0} with no help, ${m1} / ${p1} with the help (median / p90)`);
+  console.log(`    casts to open Stump Bay: ${m0} / ${p0} with no help, ${m1} / ${p1} with the help (median / p90); 9 in 10 hear of a big ring ${t1} times or fewer`);
   check(share(ring) >= 0.85 && ring.every((k) => k > 0), `a big ring is a sure bite, and ${(100 * share(ring)).toFixed(0)}% of its fish are ${goal} kg or more (85% or more)`);
   check(m1 <= 25, `a short caster opens Stump Bay in 25 casts or fewer, median (${m1})`);
   check(p1 <= 70, `9 in 10 short casters open it in 70 casts or fewer (${p1})`);

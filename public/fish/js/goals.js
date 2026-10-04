@@ -160,7 +160,7 @@ export function dayHit(g, c) {
 export const dayDoneText = (run) => "Today's goal is done." + (run >= 2 ? " " + run + " days in a row." : "");
 // the title line: "Today: land 3 Yellow Perch at Loon Lake. 1 of 3."
 export function todayLine(save, day) {
-  const g = dailyGoal(day, save), t = save.today, mine = !!t && t.d === day;
+  const g = dailyGoal(day, save), t = save.today, mine = !!t && t.d === day && t.k === g.k;
   if (mine && t.done) return dayDoneText(save.days.last === day ? save.days.run : 0);
   return "Today: " + dailyText(g) + (g.n > 1 ? " " + (mine ? t.n : 0) + " of " + g.n + "." : "");
 }
@@ -170,8 +170,9 @@ export function todayLine(save, day) {
 // more weight boost (LakeSim opts.boost, see rollWeight in fish.js)
 export const STREAK = { n: 3, boost: 0.4, text: "Three sweet casts! A big fish is near." };
 // The help for a short caster: after `casts` casts in the water here in free fishing while the goal that opens the next
-// place is not met, the next ring that rises within `reach` m carries a feeding big fish (a sure bite, with this boost)
-export const ASSIST = { casts: 20, reach: 25, boost: 1 };
+// place is not met, the next ring that rises within `reach` m carries a feeding big fish (a sure bite, with this boost).
+// That ring stays up at least `ttl` s. The help goes on, one big ring at a time, until a big ring's fish is landed
+export const ASSIST = { casts: 20, reach: 25, boost: 1, ttl: 90 };
 // a cast shorter than this, while that goal is open, is a short cast
 export const SHORT_M = 22;
 // the fish of the big ring: the most common kind here whose usual range goes past the goal (null at the last place)

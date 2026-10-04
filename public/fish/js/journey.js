@@ -122,11 +122,6 @@ export function foundHere(save, id) {
   const ids = placeSpecies(id);
   return { n: ids.filter((s) => save.journal[s] && save.journal[s].n > 0).length, m: ids.length };
 }
-// the kinds of fish here (its fish and its legend, no junk) in the journal: "4 of 10 kinds found here."
-export function kindsHere(save, id) {
-  const ids = [...ecology(id).map(([s]) => s.id), fishingOf(id).legend.id];
-  return { n: ids.filter((s) => save.journal[s] && save.journal[s].n > 0).length, m: ids.length };
-}
 // the same for every fish and junk in the game: "11 of 29 in all"
 export function foundAll(save) {
   const all = [...SPECIES, ...JUNK];

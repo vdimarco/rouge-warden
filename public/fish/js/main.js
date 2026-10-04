@@ -20,7 +20,7 @@ import * as LAKE from "./lake.js";
 import { PLACES, getPlace } from "./places.js";
 import { byId } from "./species.js";
 import { fishingOf, placeSpecies } from "./fishing.js";
-import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, nextRank, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, kindsHere, zoneHint, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText, lossText } from "./journey.js";
+import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, nextRank, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, zoneHint, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText, lossText } from "./journey.js";
 import { PLACE_GOALS, goalsMet, goalCount, nextGoal, dailyGoal, dayHit, dayDoneText, todayLine, isDay, dayOf, STREAK, ASSIST, SHORT_M, assistFish, progressNote } from "./goals.js";
 import { SAVE_KEY, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "./save.js";
 import { Native } from "./native.js";
@@ -39,8 +39,8 @@ const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
 // ?open opens every place for this page load. It is never saved.
 const OPEN_ALL = QS.has("open");
-// ?day=YYYY-MM-DD is the day of today's goal for this page load (the goal and its progress are kept as on any day).
-// The switch itself is never saved: without it the phone's own date is the day
+// ?day=YYYY-MM-DD is the day of today's goal for this page load. It is never saved: today's goal and the run of days
+// move on in this page load only, and the save keeps the ones it had (see persist). Without it the phone's date is the day
 const QA_DAY = isDay(QS.get("day")) ? QS.get("day") : null;
 const today = () => QA_DAY || dayOf();
 
@@ -84,7 +84,9 @@ if (Native.isNative && (webRaw == null || store.raw(UNREAD) != null)) {
   }
 }
 const save = loadSave(restored || webRaw);
-const persist = () => store.set(SAVE_KEY, save);
+// under ?day: today's goal and the run of days as they were loaded, which is what the save keeps
+const dayKept = QA_DAY && JSON.parse(JSON.stringify({ today: save.today, days: save.days }));
+const persist = () => store.set(SAVE_KEY, dayKept ? { ...save, ...dayKept } : save);
 if (restored) persist();
 // The native answer came late. A native save with more in it than the game has now wins: it goes into web storage and
 // the game starts again with it, on the boot screen or the title (never in play), once a session. Otherwise the game's
@@ -506,7 +508,7 @@ function goalLine(kind) {
 function startMode(mode) {
   keepAwake();
   G.mode = mode;
-  G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = []; G.unlocked = []; G.refunds = 0;
+  G.casts = 0; G.castsLeft = mode === "derby" ? 10 : Infinity; G.bag = []; G.unlocked = [];
   G.hour = startHour(G.place.id, mode);
   if (world) world.setHour(G.hour);
   G.seed = (Math.random() * 1e9) | 0;
@@ -800,15 +802,16 @@ function landed(r) {
   const zone = G.place.zone(r.x, r.z);
   const v = G.cast ? (G.cast.late ? "late" : G.cast.verdict) : "";
   const VV = G.input === "motion" ? VERDICT_M : VERDICT;
-  // the goals: was this cast stopped short, and the sweet casts in a row (free fishing only: the derby ranks stay put).
-  // The third sweet cast in a row makes the next cast in the water bring a bigger fish: this one, if an earlier run armed it
+  // the goals: was this cast stopped short, and the sweet casts in a row in the water (free fishing only: the derby ranks
+  // stay put; a cast onto land ends the run). The third sweet cast in a row makes the next cast in the water bring a
+  // bigger fish: this one, if an earlier run armed it
   const feather = !!G.feathered;
   G.feathered = false;
   const streakBoost = G.mode === "free" && r.land === "water" && !!G.boostNext;
   if (streakBoost || G.mode !== "free") G.boostNext = false;
   if (G.mode !== "free") G.streak = 0;
   else if (G.cast) {
-    G.streak = v === "sweet" ? (G.streak || 0) + 1 : 0;
+    G.streak = v === "sweet" && r.land === "water" ? (G.streak || 0) + 1 : 0;
     if (G.streak > save.bestRun) save.bestRun = G.streak;
     if (G.streak && G.streak % STREAK.n === 0) G.boostNext = true;
   }
@@ -818,14 +821,14 @@ function landed(r) {
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
     G.landing = { x: r.x, z: r.z, dist, feather };
     G.ring = rises ? rises.near(r.x, r.z) : null;
-    G.landing.ring = !!G.ring;
+    G.landing.ring = !!G.ring; G.landing.big = !!(G.ring && G.ring.big);
     G.fight = null;
     // a bigger fish: the cast after three sweet casts, or a big ring (the help for a short caster, see ringNews)
     const boost = (streakBoost ? STREAK.boost : 0) + (G.ring && G.ring.big ? ASSIST.boost : 0);
     // casts in the water here while the goal that opens the next place is not met: short ones, and all of them in free fishing
     if (goalOpen && dist < SHORT_M) G.shortN = (G.shortN || 0) + 1;
     if (goalOpen && G.mode === "free") { if (!G.dry || G.dry.at !== G.place.id) G.dry = { at: G.place.id, n: 0 }; G.dry.n++; }
-    noteGoals({ kind: "cast", dist });
+    for (const t of noteGoals({ kind: "cast", dist })) toast(t, 3000, () => Sound.sfx("record"));
     // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
     // from a small, easy fish (firstBite in fish.js). It is used up when that fish strikes (handleEvent), so a cast that ends
     // before the strike keeps it for the next one; the casts after the strike have the normal odds
@@ -839,10 +842,11 @@ function landed(r) {
     if (dist > save.longest) save.longest = dist;
     persist();
     // three sweet casts in a row; or, while the goal that opens the next place is open, a short cast now and then hears
-    // that the big fish live far out (goals.js progressNote)
-    const hint = progressNote({ streak: G.streak, dist, goalOpen, castN: G.shortN });
-    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : hint || (best ? "Your longest cast yet!" : G.place.zoneNames[zone] || ""), v === "sweet");
-    $("#report").classList.toggle("streak", !G.ring && hint === STREAK.text);
+    // that the big fish live far out (goals.js progressNote). The run of sweet casts goes first, even before a ring: the
+    // boost it arms is news the ring does not show
+    const hint = progressNote({ streak: G.streak, dist, goalOpen, castN: G.shortN }), lit = hint === STREAK.text;
+    report(dist, VV[v] || "", lit ? hint : G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : hint || (best ? "Your longest cast yet!" : G.place.zoneNames[zone] || ""), v === "sweet");
+    $("#report").classList.toggle("streak", lit);
     if (G.ring) Sound.sfx("ui");
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
@@ -850,12 +854,11 @@ function landed(r) {
   } else {
     Sound.sfx("plop");
     const msg = r.land === "tree" ? (G.place.id === "loon" ? "You caught a pine tree." : "You caught a tree.") : r.land === "dock" ? STAND_HIT[G.place.stand.kind] || "You hooked the dock." : "You cast onto the shore.";
-    // a derby gives back a cast that did not reach the water, 3 times at most: a fumble is not a cast at a fish
-    const back = G.mode === "derby" && (G.refunds || 0) < 3;
-    if (back) { G.refunds = (G.refunds || 0) + 1; G.castsLeft++; G.casts--; updateHud(); }
+    // a derby gives back a cast that did not reach the water: a fumble is not a cast at a fish
+    const back = G.mode === "derby";
+    if (back) { G.castsLeft++; G.casts--; updateHud(); }
     report(r.land === "dock" ? null : dist, VV[v] || "", msg + (back ? " You get that cast back." : ""), false);
     $("#report").classList.remove("streak");
-    persist();
     G.outcomeAt = now();
   }
   relayout();
@@ -901,26 +904,25 @@ function noteFight(type, e) {
   else if (type === "unstuck") F.unstuck = true;
   else if (type === "lastrun") F.lastrun = true;
 }
-// the goals of this place that ctx did (goals.js): each new one is saved, and said with the record sting
+// the goals of this place that ctx did (goals.js): each new one is saved. Returns what to say: "Goal done: Cast 40 m."
 function noteGoals(ctx) {
-  const id = G.place.id;
-  for (const i of goalsMet(id, ctx)) {
-    if (!recordGoal(save, id, i)) continue;
-    persist();
-    toast("Goal done: " + PLACE_GOALS[id][i].text, 3000, () => Sound.sfx("record"));
-  }
+  const id = G.place.id, done = goalsMet(id, ctx).filter((i) => recordGoal(save, id, i));
+  if (done.length) persist();
+  return done.map((i) => "Goal done: " + PLACE_GOALS[id][i].text);
 }
 // A plain ring rose. The first one within reach in the cast gets the tip, once, when no other news is up or waiting (a
 // ring rises again in a few seconds, so the tip never pushes other news out of the queue). And the help for a short
 // caster: after ASSIST.casts casts in the water here in free fishing with the goal that opens the next place still open,
-// the next ring within reach carries a feeding big fish (a sure bite: fish.js LakeSim.choose), said once for that ring
+// the next ring within reach carries a feeding big fish (a sure bite: fish.js LakeSim.choose), said once for that ring.
+// It stays up at least ASSIST.ttl s. One big ring at a time, and the help goes on until a big ring's fish is landed: after
+// a fish lost from it, or a big ring left to go quiet, the next ring within reach is a big one
 function ringNews(e) {
   if (G.phase !== "cast" || Math.hypot(e.x, e.z) > ASSIST.reach) return;
-  if (!save.seen["ring.tip"] && !$("#toast").classList.contains("on") && !toastQ.length) toast("A fish is rising. Cast into the ring for a sure bite.", 3200, () => seen("ring.tip"));
+  if (!save.seen["ring.tip"] && !$("#toast").classList.contains("on") && !toastQ.length) toast("A fish is rising. Cast into the ring. Feeding fish bite more often.", 3200, () => seen("ring.tip"));
   const big = G.mode === "free" && G.dry && G.dry.at === G.place.id && G.dry.n >= ASSIST.casts && goalLine("remind") ? assistFish(G.place.id) : null;
-  const g = big && rises && rises.near(e.x, e.z);
-  if (!g || g.gold || g.big) return;
-  g.big = true; g.species = big; G.dry.n = 0;
+  const g = big && rises && !rises.list.some((q) => q.big) && rises.near(e.x, e.z);
+  if (!g || g.gold) return;
+  g.big = true; g.species = big; g.ttl = Math.max(g.ttl, ASSIST.ttl);
   toast("A big fish is rising close in.", 3200);
 }
 
@@ -939,12 +941,14 @@ function caught(c) {
   const L = G.landing, F = G.fight || blankFight();
   const ctx = { kind: "catch", at, id: c.id, kg: c.kg, junk, hour: G.hour, dist: L ? L.dist : 0, ring: !!(L && L.ring), feather: !!(L && L.feather), turned: F.turned, jumps: F.jumps, walk: F.walk, unstuck: F.unstuck, lastrun: F.lastrun };
   G.fight = null;
+  // a big ring's fish is landed: the help for a short caster starts its count again
+  if (L && L.big && G.dry) G.dry.n = 0;
   const day1 = junk ? null : recordDay(save, day, dg, dayHit(dg, ctx));
   persist();
-  // the news comes over the card: the first fish of the day, the goals done, today's goal done
-  if (day1 && day1.first) toast("Your first fish today.", 2400);
-  noteGoals(ctx);
-  if (day1 && day1.done) toast(dayDoneText(day1.run), 3200, () => Sound.sfx("record"));
+  // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
+  // day, the goals done, today's goal done. A goal done brings the record sting
+  const goals = noteGoals(ctx), news = [day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
+  if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null);
   G.phase = "catch";
   prompt("");
   G.big = null; G.walk = false;
@@ -979,9 +983,9 @@ function caught(c) {
   for (const [t, cls] of marks.slice(0, 2)) { const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = t; badges.appendChild(b); }
   $("#cname").textContent = sp ? sp.name : c.name || "A fish";
   $("#csize").textContent = junk ? "" : sizeLine(rank);
-  // a new kind: how many kinds of this place are in the journal now
-  const kinds = r.isNew && !junk ? kindsHere(save, at) : null;
-  $("#cfound").textContent = !kinds ? "" : kinds.n >= kinds.m ? "You found every fish here." : kinds.n + " of " + kinds.m + " kinds found here.";
+  // a new find: how much of this place's journal is found now (the same count as the journal and Places)
+  const f = r.isNew ? foundHere(save, at) : null;
+  $("#cfound").textContent = !f ? "" : f.n >= f.m ? "You found everything here." : f.n + " of " + f.m + " found here.";
   $("#cold").textContent = [r.record ? "Your old record: " + fmtKg(r.oldKg) + "." : "", r.opened ? "It opens " + JOURNEY[r.opened].name + "." : ""].filter(Boolean).join(" ");
   $("#cblurb").textContent = sp ? sp.blurb : "";
   $("#ccap").textContent = photo ? journeyOf(at).name + " · " + fmtClock(G.hour) : "";
@@ -1096,7 +1100,7 @@ function renderJournal(pid) {
   list.innerHTML = "";
   // the counts; then the best sweet run and the days whose goal was done, once there are any
   const all = foundAll(save), D = save.days;
-  const more = [save.bestRun > 0 ? "Best sweet run: " + save.bestRun : "", D.n > 0 ? "Days done: " + D.n + " · Best run: " + D.best : ""].filter(Boolean).join(" · ");
+  const more = [save.bestRun > 0 ? "Best sweet run: " + save.bestRun : "", D.n > 0 ? "Goal days: " + D.n + (D.best >= 2 ? " (best " + D.best + " in a row)" : "") : ""].filter(Boolean).join(" · ");
   const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts" + (more ? "\n" + more : "");
   if (!openNow(pid)) {
     const d = document.createElement("div");

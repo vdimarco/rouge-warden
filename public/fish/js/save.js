@@ -24,7 +24,8 @@ export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest
 export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
-const whole = (v) => (Number.isInteger(v) && v >= 0 ? v : 0);
+// a count: a whole number from 0, at most a million (more is a broken save, not a player)
+const whole = (v) => (Number.isInteger(v) && v >= 0 ? Math.min(v, 1e6) : 0);
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 const isJunk = (id) => JUNK.some((j) => j.id === id);
 // a place record with only well-formed values: numbers finite and 0 or more, id a real fish, lg a whole step,
@@ -38,11 +39,21 @@ const cleanPlace = (e) => ({
   lg: Number.isInteger(e.lg) && e.lg >= 0 && e.lg <= 3 ? e.lg : 0,
   g: Number.isInteger(e.g) && e.g >= 0 && e.g <= 63 ? e.g : 0,
 });
-// today's goal: a real day and a goal of the list, or none
-const cleanToday = (t) => (isObj(t) && isDay(t.d) && Number.isInteger(t.k) && t.k >= 0 && t.k < DAILY.length
-  ? { d: t.d, k: t.k, n: whole(t.n), done: t.done === 1 || t.done === true ? 1 : 0 } : blankToday());
-// the run of days: whole counts, the best run at least the run, the last day a real day or ""
-const cleanDays = (d) => (isObj(d) ? { n: whole(d.n), run: whole(d.run), best: Math.max(whole(d.best), whole(d.run)), last: isDay(d.last) ? d.last : "" } : blankDays());
+// Today's goal: a real day and a goal of the list at a place open in the save, or none. Its progress is no more than the
+// goal: all of it when done, short of it when not
+function cleanToday(t, save) {
+  const g = isObj(t) && isDay(t.d) && Number.isInteger(t.k) ? DAILY[t.k] : null;
+  if (!g || !isOpen(save, g.at)) return blankToday();
+  const done = t.done === 1 || t.done === true ? 1 : 0;
+  return { d: t.d, k: t.k, n: done ? g.n : Math.min(whole(t.n), g.n - 1), done };
+}
+// the run of days: whole counts, the best run at least the run, the days done at least the best run, the last day a
+// real day or ""
+function cleanDays(d) {
+  if (!isObj(d)) return blankDays();
+  const run = whole(d.run), best = Math.max(whole(d.best), run);
+  return { n: Math.max(whole(d.n), best), run, best, last: isDay(d.last) ? d.last : "" };
+}
 
 // raw: what storage holds for SAVE_KEY (the JSON text, or null), or a value already parsed.
 // Anything broken gives a new save. The input is never changed.
@@ -69,7 +80,6 @@ export function loadSave(raw) {
   if (save.reelSide !== "left") save.reelSide = "right";
   // a copy, so the new save shares nothing with what it was read from (an array of flags is no flags)
   save.seen = Array.isArray(save.seen) ? {} : { ...save.seen };
-  save.today = cleanToday(save.today);
   save.days = cleanDays(save.days);
   save.bestRun = whole(save.bestRun);
 
@@ -93,6 +103,8 @@ export function loadSave(raw) {
   for (const id of ORDER) if (P[id]) save.places[id] = P[id];
   // 5. the player stands at an open place
   if (!ORDER.includes(save.place) || !(save.places[save.place] && save.places[save.place].open)) save.place = "loon";
+  // 6. today's goal, once the places are known
+  save.today = cleanToday(save.today, save);
   return save;
 }
 
@@ -147,12 +159,13 @@ export function recordGoal(save, at, i) {
 
 // A fish landed on `day` ("YYYY-MM-DD"): today's goal moves on. goal: dailyGoal(day, save) (goals.js), taken before the
 // catch, so a place this fish opens does not change the goal of the day. hit: the fish counts toward it (dayHit).
-// A new day starts its goal from 0. A goal done adds a day to the run when yesterday's goal was done too, and starts the
-// run again at 1 when it was not: a missed day ends the run and takes nothing else.
+// A new day starts its goal from 0 (so does a save that holds another goal for the day). A goal done adds a day to the
+// run when yesterday's goal was done too, and starts the run again at 1 when it was not: a missed day ends the run and
+// takes nothing else.
 // Returns { first: the first fish of the day, done: this fish did the goal, run: days in a row }
 export function recordDay(save, day, goal, hit) {
   const first = save.today.d !== day;
-  if (first) save.today = { d: day, k: goal.k, n: 0, done: 0 };
+  if (first || save.today.k !== goal.k) save.today = { d: day, k: goal.k, n: 0, done: 0 };
   const t = save.today, D = save.days;
   let done = false;
   if (hit && !t.done) {

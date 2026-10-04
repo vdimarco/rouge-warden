@@ -9,7 +9,7 @@
 // Exit code 1 on failure.
 import { isDeepStrictEqual } from "node:util";
 import { SAVE_KEY, blank, blankPlace, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "../../public/fish/js/save.js";
-import { ORDER, JOURNEY, nextPlace, prevPlace, isOpen, rankFor, nextRank, goalText, openedText, legendHint, legendsLanded, topFish, foundHere, foundAll, kindsHere, zoneHint,
+import { ORDER, JOURNEY, nextPlace, prevPlace, isOpen, rankFor, nextRank, goalText, openedText, legendHint, legendsLanded, topFish, foundHere, foundAll, zoneHint,
   newPlaces, untoldOpens, startHour, stepHour, isBigFish, sizeLine, revealText } from "../../public/fish/js/journey.js";
 import { PLACE_GOALS, goalMet, goalsMet, goalCount, nextGoal, DAILY, isDay, prevDay, dayOf, dailyGoal, dailyText, dayHit, dayDoneText, todayLine,
   STREAK, ASSIST, SHORT_M, assistFish, progressNote } from "../../public/fish/js/goals.js";
@@ -364,13 +364,24 @@ section("6a. the goal fields in the save");
   for (const [name, t] of [["a day that is not a date", { d: "2026-02-30", k: 0, n: 1, done: 0 }], ["a day as a number", { d: 20261003, k: 0, n: 1, done: 0 }], ["a goal past the list", { d: "2026-10-03", k: DAILY.length, n: 1, done: 0 }],
     ["a goal of -1", { d: "2026-10-03", k: -1, n: 1, done: 0 }], ["an array", ["2026-10-03", 1]], ["text", "2026-10-03"]]) check(same(loadSave({ today: t }).today, fresh.today), `today: ${name} gives no day`);
   check(same(loadSave({ today: { d: "2026-10-03", k: 1, n: -2, done: "yes" } }).today, { d: "2026-10-03", k: 1, n: 0, done: 0 }), "today: a broken count and done are 0");
-  check(same(loadSave({ days: { n: 2.5, run: 3, best: 1, last: "yesterday" } }).days, { n: 0, run: 3, best: 3, last: "" }), "days: a broken count is 0, the best run is at least the run, a bad last day is \"\"");
+  check(same(loadSave({ days: { n: 2.5, run: 3, best: 1, last: "yesterday" } }).days, { n: 3, run: 3, best: 3, last: "" }), "days: a broken count is 0, the best run is at least the run, the days done at least the best run, a bad last day is \"\"");
   for (const v of [-3, 2.5, "4", NaN, null]) check(loadSave({ bestRun: v }).bestRun === 0, `bestRun ${text(v) ?? String(v)} is 0`);
+  // the counts stop at a million, so a broken save never shows "1e+21"
+  const huge = loadSave({ bestRun: 1e21, days: { n: 1e21, run: 2 ** 53, best: 1e7, last: "2026-10-02" } });
+  check(huge.bestRun === 1e6 && same(huge.days, { n: 1e6, run: 1e6, best: 1e6, last: "2026-10-02" }), "huge counts stop at a million (" + text({ bestRun: huge.bestRun, days: huge.days }) + ")");
+  // today's goal against the places and the goal: a goal at a locked place is dropped (it would count toward another
+  // goal), and its progress is never more than the goal
+  const atStumps = DAILY.findIndex((g) => g.at === "stumps" && g.kind === "count"), five = DAILY.findIndex((g) => g.at === "loon" && g.kind === "count");
+  check(same(loadSave({ today: { d: "2026-10-03", k: atStumps, n: 2, done: 0 } }).today, fresh.today), "today: a goal at Stump Bay while Stump Bay is locked gives no day");
+  check(same(loadSave({ today: { d: "2026-10-03", k: atStumps, n: 2, done: 0 }, places: { stumps: { open: 1 } } }).today, { d: "2026-10-03", k: atStumps, n: 2, done: 0 }), "the same goal with Stump Bay open is kept");
+  check(same(loadSave({ today: { d: "2026-10-03", k: five, n: 99, done: 0 } }).today, { d: "2026-10-03", k: five, n: 4, done: 0 }), "today: 99 of 5, not done, is 4 of 5");
+  check(same(loadSave({ today: { d: "2026-10-03", k: five, n: 1, done: 1 } }).today, { d: "2026-10-03", k: five, n: 5, done: 1 }), "today: a done goal holds all of its count, 5 of 5");
+  check(todayLine(loadSave({ today: { d: "2026-10-03", k: five, n: 99, done: 0 } }), "2026-10-03") === "Today: land 5 fish at Loon Lake. 4 of 5.", "and the title line reads 4 of 5");
 
   // a fuzz of the new fields: every result well-formed and stable, and the input never changed
   const R = rng(777), pick = (a) => a[Math.floor(R() * a.length)];
   const DAYS = [undefined, null, "", "2026-10-03", "2026-13-01", "2026-02-29", "2024-02-29", "x", 7, [], {}];
-  const NUMS = [undefined, null, NaN, Infinity, -1, 0, 1, 2.5, 7, 63, 64, "3", true, [], {}];
+  const NUMS = [undefined, null, NaN, Infinity, -1, 0, 1, 2.5, 7, 9, 12, 63, 64, 1e21, "3", true, [], {}];
   const DAY = /^\d{4}-\d{2}-\d{2}$/;
   let formed = 0, stable = 0, untouched = 0, thrown = 0;
   const N = 2000;
@@ -386,10 +397,11 @@ section("6a. the goal fields in the save");
     let got;
     try { got = loadSave(pick([true, false]) ? s : JSON.stringify(s)); } catch (e) { thrown++; continue; }
     const t = got.today, d = got.days, whole = (v) => Number.isInteger(v) && v >= 0;
-    const tOk = same(Object.keys(t), ["d", "k", "n", "done"]) && (t.d === "" ? same(t, { d: "", k: 0, n: 0, done: 0 }) : DAY.test(t.d) && isDay(t.d)) && whole(t.k) && t.k < DAILY.length && whole(t.n) && (t.done === 0 || t.done === 1);
-    const dOk = same(Object.keys(d), ["n", "run", "best", "last"]) && whole(d.n) && whole(d.run) && whole(d.best) && d.best >= d.run && (d.last === "" || isDay(d.last));
+    const tg = DAILY[t.k], small = (v) => whole(v) && v <= 1e6;
+    const tOk = same(Object.keys(t), ["d", "k", "n", "done"]) && (t.d === "" ? same(t, { d: "", k: 0, n: 0, done: 0 }) : DAY.test(t.d) && isDay(t.d) && !!tg && isOpen(got, tg.at) && (t.done ? t.n === tg.n : t.n < tg.n)) && whole(t.k) && t.k < DAILY.length && whole(t.n) && (t.done === 0 || t.done === 1);
+    const dOk = same(Object.keys(d), ["n", "run", "best", "last"]) && small(d.n) && small(d.run) && small(d.best) && d.best >= d.run && d.n >= d.best && (d.last === "" || isDay(d.last));
     const gOk = Object.values(got.places).every((e) => Number.isInteger(e.g) && e.g >= 0 && e.g <= 63);
-    if (tOk && dOk && whole(got.bestRun) && gOk && !Array.isArray(got.seen)) formed++;
+    if (tOk && dOk && small(got.bestRun) && gOk && !Array.isArray(got.seen)) formed++;
     const txt = text(got);
     if (text(loadSave(txt)) === txt) stable++;
     if (same(s, before)) untouched++;
@@ -502,6 +514,12 @@ section("6c. today's goal");
   check(isOpen(s, "stumps") && dailyGoal(day, s).k === g.k && dailyGoal(day, loadSave(text(s))).k === g.k, "Stump Bay opens during the day: today's goal stays the same, also after a save and load");
   r = recordDay(s, day, dailyGoal(day, s), false);
   check(!r.first, "the second fish of the day is not the first");
+  // a save that holds a goal for the day at a place that is not open (loadSave drops it; here it is put in by hand): its
+  // progress never shows against the day's goal, and the next fish starts the day's goal from 0
+  const k2 = DAILY.findIndex((x) => x.at === "stumps" && x.kind === "count"), odd = { ...loadSave(null), today: { d: day, k: k2, n: 3, done: 0 } }, og = dailyGoal(day, odd);
+  check(og.k !== k2 && todayLine(odd, day) === todayLine(loadSave(null), day), "a day's goal at a locked place: the title shows the day's own goal with none of that progress (" + todayLine(odd, day) + ")");
+  r = recordDay(odd, day, og, false);
+  check(!r.first && same(odd.today, { d: day, k: og.k, n: 0, done: 0 }), "and the next fish starts the day's goal from 0, not as the first fish (" + text(odd.today) + ")");
 
   // what counts: a perch for "land a Yellow Perch", any fish for "land 5 fish", a heavy one, a ring fish; never junk
   const ctx = (o) => ({ kind: "catch", at: "loon", id: "perch", kg: 0.4, junk: false, ...o }), G = (i) => ({ ...DAILY[i], k: i });
@@ -570,10 +588,11 @@ section("6e. the hints and the catch card counts");
   check(zoneHint(byId("catfish"), "stumps") === "Try the creek bed at night." && zoneHint(byId("gar"), "stumps") === "Try the sand flat." && zoneHint(byId("browntrout"), "river") === "Try the logjam at dusk."
     && zoneHint(byId("pike"), "loon") === "Try the weed flat at midday." && zoneHint(byId("perch"), "loon") === "Try the weed flat in the morning.", "catfish at night, gar with no hour (its hours are not on Stump Bay's clock), brown trout at dusk, pike at midday, perch in the morning");
   check(zoneHint(byId("cod"), "loon") === "", "a fish that does not live at a place has no hint there");
+  // the catch card counts a new find the way the journal and Places do: fish, legend and junk
   const s = loadSave(null);
-  check(same(kindsHere(s, "loon"), { n: 0, m: 10 }) && ORDER.map((id) => kindsHere(s, id).m).join() === "10,7,7,6", "kinds of fish: 10 at Loon Lake (9 and the legend), 7, 7 and 6");
+  check(same(foundHere(s, "loon"), { n: 0, m: 13 }), "Loon Lake's journal holds 13 finds: 9 fish, the legend and 3 pieces of junk");
   for (const id of ["perch", "walleye", "pike", "boot"]) recordCatch(s, "loon", { id, kg: 1, cm: 30 });
-  check(same(kindsHere(s, "loon"), { n: 3, m: 10 }), "junk is not a kind: 3 of 10 after a perch, a walleye, a pike and a boot");
+  check(same(foundHere(s, "loon"), { n: 4, m: 13 }), "4 of 13 after a perch, a walleye, a pike and a boot");
 }
 
 section("6f. help on the way");

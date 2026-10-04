@@ -233,7 +233,8 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
   #pause h2 { font-size: 22px; margin-bottom: 4px; }
   #pause p { margin-bottom: 4px; font-size: 14px; line-height: 1.3; }
   #pause .btn { min-height: 40px; padding: 6px 12px; }
-  #results #rlist { max-height: 22cqh; }
+  #results #rlist { max-height: 16cqh; }
+  #results .rnext { margin-top: 0; }
   #results .card { padding: 14px 20px; }
   #results h2 { font-size: 22px; margin-bottom: 2px; }
   #results .big { font-size: 36px; }
@@ -338,7 +339,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 #catch .oldrec { font-size: 13px; color: var(--muted); }
 #catch .sizeline:empty, #catch .oldrec:empty, #catch .cap:empty { display: none; }
 /* the news of a catch (a goal done, today's goal) shows over the catch screen, under the HUD, clear of the card */
-body[data-screen="catch"] #game #toast { bottom: auto; top: calc(var(--sat) + 62px); left: 50%; max-width: min(92%, 420px); z-index: 12; }
+body[data-screen="catch"] #game #toast { bottom: auto; top: calc(var(--sat) + 62px); left: 50%; max-width: min(92%, 420px); z-index: 12; white-space: pre-line; }
 body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - min(46%, 380px) - 16px) / 2); max-width: calc(100% - min(46%, 380px) - 48px); }
 #catch .card { transition: opacity 0.35s, transform 0.4s cubic-bezier(.2, .8, .2, 1); }
 /* the photo beat: the fish shows alone first, then the card slides up */
@@ -355,7 +356,12 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 .rank { text-align: center; font-size: 16px; letter-spacing: 0.1em; color: #fff; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
+/* a short phone held upright: the list of fish gives up room, so the buttons stay on the screen */
+@container (orientation: portrait) and (max-height: 700px) { #results #rlist { max-height: 20cqh; } }
 #jsum { white-space: pre-line; }
+/* the journal fits the screen: its list scrolls in the room that is left */
+#journal .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
+#journal #jlist { min-height: 0; flex: 0 1 auto; }
 
 /* debug */
 #dbg { position: absolute; right: 6px; bottom: 6px; z-index: 50; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); font: 11px/1.35 ui-monospace, monospace; white-space: pre; pointer-events: none; }
