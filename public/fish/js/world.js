@@ -299,9 +299,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     return out;
   }
   // A cutscene (cutscenes.js) holds the camera: while cutFn is set it gives the pose each frame in place of camTarget(),
-  // and the rod, the line and the lure hide. fn(dt, { cast, aspect, loon }) returns { pos, look, fov } ({x, y, z} points,
-  // degrees). cast: the cast view as main.js lays it out (tall up to 1.15 wide): { pos, pitch, fov }; loon: where the loon
-  // swims (null while it dives, or at a place with none)
+  // and the rod, the line, the lure and the aim hide. fn(dt, { cast, aspect, loon }) returns { pos, look, fov } ({x, y, z}
+  // points, degrees). cast: the cast view as main.js lays it out (tall up to 1.15 wide): { pos, pitch, fov }; loon: where
+  // the loon swims (null while it dives, or at a place with none). When it gives the camera back, the next frame starts
+  // from camTarget(): play never comes back to a camera still flying home from the shot
   let cutFn = null;
   function cutCamera(dt) {
     const tall = S.w / S.h <= 1.15, C = S.cam;
@@ -642,7 +643,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     drawFollower(dt);
     drawTrophy(dt);
     // the aim line fades in and out; it only belongs to the cast view
-    S.aim.a += ((S.aim.visible && S.view.mode === "cast" ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
+    S.aim.a += ((S.aim.visible && S.view.mode === "cast" && !cutFn ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
     const ay = (S.aim.yaw || 0) * DEG, z0 = PL.stand.dock.z0, to = S.aim.to;
     WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, z0);
     // the preview: how far along the line a cast like the last one lands, and whether that is dry land (amber)
@@ -761,9 +762,13 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       S.view = { mode, yaw, look, portrait, inset, bottom };
       if (refit) fitTrophy();
     },
-    // a cutscene's camera, or null to give the camera back (see cutCamera). The rod hides with it, until main.js draws it
-    // again (setRod) when play goes on
-    cutCamera(fn) { cutFn = typeof fn === "function" ? fn : null; if (cutFn) S.rod.visible = false; },
+    // a cutscene's camera, or null to give the camera back (see cutCamera). The rod and the aim hide with it, until main.js
+    // draws them again (setRod, setAim) when play goes on. Given back, the camera is at once where play has it
+    cutCamera(fn) {
+      const had = !!cutFn;
+      cutFn = typeof fn === "function" ? fn : null;
+      if (cutFn) { S.rod.visible = false; S.aim.a = 0; } else if (had) S.cam.init = false;
+    },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
       S.rod = { theta, yaw, steer, bend, pull, visible };
       applyCamera();

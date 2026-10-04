@@ -1,13 +1,17 @@
 // The cutscenes of Reel It In in the real page (public/fish/js/cutscenes.js and its call sites in main.js):
 //   A. the opening on a fresh save's first "Go fishing", once; a skip by a tap, Space or Escape ends it within 0.3 s in its
-//      end state; the fly-in at Stump Bay before the arrival card, once; "Watch" on the Places card replays it and comes back
-//   B. no cutscene in a fight; a legend's reveal after it, with the derby clock and the casts left held; not twice; the hero
-//      shot of a legend landed before its card, once
-//   C. the finale after the fourth legend, and the Android back button (a stubbed Capacitor bridge) skips
+//      end state, the camera on the dock at once; the fly-in at Stump Bay before the arrival card, once; "Watch" on the
+//      Places card replays it and comes back
+//   B. no cutscene in a fight; a legend's reveal after it, with the derby clock and the casts left held, and the camera back
+//      on the dock as it ends; not twice; the hero shot of a legend landed before its card, once
+//   C. the finale after the fourth legend (a double tap on the card does not skip it), and the Android back button (a
+//      stubbed Capacitor bridge) skips
 //   D. an old save with places open and a legend seen: no arrival, no reveal, no opening
-//   E. calm effects and reduced motion: still shots joined by fades, the caption and the sound
+//   E. calm effects and reduced motion: still shots joined by fades, the caption and the sound; a calm reveal hides the aim
+//      and gives the camera back on the dock, by itself or skipped
 //   F. the bars, the caption and the Skip hint at 390x844, 360x640, 844x390 and 1280x800, clear of the safe areas
 //      (screenshots in SHOTS, or <tmp>/fish-cuts, to check by eye)
+//   G. a desktop mouse held on the crank and let go over the hero shot lets go of the crank; the card keeps the key focus
 // Run: serve public/ (cd public && python3 -m http.server 8765), then node qa/fish/cutscenes.e2e.mjs (FISH_URL for another
 // address). The script scripts themselves are checked in node by qa/fish/cutscenes.test.mjs.
 import os from "os";
@@ -57,6 +61,22 @@ async function skipBy(page, how) {
   return page.evaluate(() => ({ ms: window.__end && window.__in ? window.__end - window.__in : null, playing: FISH.cuts.playing }));
 }
 const at = (page) => page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.step, mode: FISH.G.mode, paused: FISH.G.paused, pin: !!FISH.G.pin, place: FISH.place.id, hud: !document.getElementById("hud").hidden, screen: document.body.dataset.screen || "" }));
+// the camera on the first frame drawn after the cutscene that plays now ends: how far it is from the eye on the stand.
+// camAfter arms it while the cutscene plays; camRead waits for that frame
+const camAfter = (page) => page.evaluate(() => {
+  const W = FISH.world, r = W.render;
+  window.__camAfter = null;
+  W.render = function () {
+    r.call(this);
+    if (FISH.cuts.playing) return;
+    const p = W.camera.position, e = FISH.place.stand.eye;
+    window.__camAfter = +Math.hypot(p.x - e.x, p.y - e.y, p.z - e.z).toFixed(3);
+    W.render = r;
+  };
+});
+const camRead = async (page) => { await until(page, () => window.__camAfter != null, null, 10000).catch(() => {}); return page.evaluate(() => window.__camAfter); };
+// how strong the aim line on the water is (0: not drawn)
+const aimOn = (page) => page.evaluate(() => { let a = null; FISH.world.scene.traverse((o) => { const u = o.material && o.material.uniforms; if (u && u.uAim) a = u.uAim.value.z; }); return a; });
 
 /* ---------- A. the opening, the skip, the fly-in and Watch ---------- */
 {
@@ -94,15 +114,16 @@ const at = (page) => page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.st
     check((await cutsSeen(page)).join() === "open", "the second Go fishing has no opening (" + (await cutsSeen(page)).join() + ")");
 
     // the skip: a tap, Space and Escape, 1 s into the opening, end it within 0.3 s, in the cast, with the press or the key used
-    // up (no thumb on the line, no pause)
+    // up (no thumb on the line, no pause), and the camera on the dock on the first frame after (no flight home over the lake)
     for (const how of ["tap", "Space", "Escape"]) {
       await page.evaluate(() => { FISH.toTitle(); FISH.save.cuts = {}; });
       await sleep(400);
       await page.click("#freeBtn");
       await waitCut(page, "open");
       await waitT(page, 1);
-      const r = await skipBy(page, how), a = await at(page);
-      check(!r.playing && r.ms != null && r.ms <= 300 && a.phase === "cast" && a.step === "ready" && !a.pin && !a.paused && a.hud, `${how === "tap" ? "A tap" : how} 1 s in skips the opening within 0.3 s and the cast starts (${JSON.stringify({ ...r, ...a })})`);
+      await camAfter(page);
+      const r = await skipBy(page, how), a = await at(page), cam = await camRead(page);
+      check(!r.playing && r.ms != null && r.ms <= 300 && a.phase === "cast" && a.step === "ready" && !a.pin && !a.paused && a.hud && cam != null && cam < 0.1, `${how === "tap" ? "A tap" : how} 1 s in skips the opening within 0.3 s and the cast starts, the camera on the dock at once (${JSON.stringify({ ...r, ...a, cam })})`);
     }
 
     // the fly-in: the first trip to Stump Bay plays it at the place's own hour, then the arrival card
@@ -113,6 +134,7 @@ const at = (page) => page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.st
     await sleep(400);
     await page.click('.pcard[data-place="stumps"] button');
     await waitCut(page, "arrive.stumps");
+    await waitT(page, 0.9);
     const f = await page.evaluate(() => ({ place: FISH.place.id, hour: FISH.G.hour, travel: document.getElementById("travel").hidden, arrive: document.getElementById("arrive").hidden, cap: document.querySelector("#cut .cap b").textContent }));
     check(f.place === "stumps" && f.hour === 19 && f.travel && f.arrive && f.cap === "Stump Bay", "the first trip to Stump Bay: the travel card, then the fly-in at dusk with its name (" + JSON.stringify(f) + ")");
     await ff(page);
@@ -208,17 +230,21 @@ const goldRing = (page, x, z) => page.evaluate(([x, z]) => { FISH.rises.list = F
       FISH.G.sim = null; FISH.newCast();
     });
     await waitCut(page, "reveal.loon", 30000);
-    const r0 = await page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.step, prompt: getComputedStyle(document.getElementById("prompt")).visibility, hud: getComputedStyle(document.getElementById("hud")).visibility, cap: document.querySelector("#cut .cap b").textContent }));
-    check(r0.phase === "cast" && r0.step === "ready" && r0.prompt === "hidden" && r0.hud === "hidden" && r0.cap === "Golden Loon Bass", "after the fight, in the cast: the reveal of the Golden Loon Bass, the HUD and the prompt hidden (" + JSON.stringify(r0) + ")");
-    // the legend breaches in its ring
+    await camAfter(page);
+    const r0 = await page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.step, prompt: getComputedStyle(document.getElementById("prompt")).visibility, hud: getComputedStyle(document.getElementById("hud")).visibility }));
+    check(r0.phase === "cast" && r0.step === "ready" && r0.prompt === "hidden" && r0.hud === "hidden", "after the fight, in the cast: the reveal, the HUD and the prompt hidden (" + JSON.stringify(r0) + ")");
+    // the legend breaches in its ring, and its name shows
     await waitT(page, 3.3);
     const fish = await page.evaluate(() => { let m = null; FISH.world.scene.traverse((o) => { if (o.visible && o.userData && o.userData.id === "golden" && o.parent === FISH.world.scene) m = { x: o.position.x, y: o.position.y, z: o.position.z }; }); return m; });
-    check(!!fish && Math.hypot(fish.x - 6, fish.z + 44) < 1.5 && fish.y > 0, "the legend leaps out of its ring (" + JSON.stringify(fish) + ")");
+    const cap3 = await page.evaluate(() => document.querySelector("#cut .cap b").textContent);
+    check(!!fish && Math.hypot(fish.x - 6, fish.z + 44) < 1.5 && fish.y > 0 && cap3 === "Golden Loon Bass", "the legend leaps out of its ring, and the Golden Loon Bass is named (" + JSON.stringify({ fish, cap3 }) + ")");
     await until(page, () => !FISH.cuts.playing, null, 90000);
+    const camEnd = await camRead(page);
     await sleep(200);
     const d = await page.evaluate(() => ({ before: window.__before, after: window.__after, hours: [...new Set(window.__hours)], phase: FISH.G.phase, step: FISH.G.step, fishLeft: (() => { let n = 0; FISH.world.scene.traverse((o) => { if (o.visible && o.userData && o.userData.id === "golden" && o.parent === FISH.world.scene) n++; }); return n; })() }));
     check(!!d.before && !!d.after && d.after.hour === d.before.hour && d.after.left === d.before.left && d.after.casts === d.before.casts && d.hours.length <= 1, "the derby clock and the casts left are the same after the reveal as before it (" + JSON.stringify(d) + ")");
     check(d.phase === "cast" && d.step === "ready" && d.fishLeft === 0, "play goes on from the same cast state, with no fish left in the air");
+    check(camEnd != null && camEnd < 0.1, "the reveal ends through black with the camera back on the dock on the first frame, not 30 m out on the lake (" + camEnd + " m)");
     const toasts = await page.evaluate(() => window.__toasts.slice());
     check(!toasts.some((t) => /gold ring/.test(t)), "the ring that played its reveal has no toast (" + toasts.join(" | ") + ")");
     // once: the next gold ring has its toast and no reveal
@@ -230,6 +256,7 @@ const goldRing = (page, x, z) => page.evaluate(([x, z]) => { FISH.rises.list = F
     await page.evaluate(() => { window.__toasts = []; });
     await landFish(page, { id: "golden", kg: 4.6, cm: 58 });
     await waitCut(page, "landed.loon", 30000);
+    await waitT(page, 0.6);
     const h = await page.evaluate(() => ({ phase: FISH.G.phase, wait: FISH.G.cardWait, card: document.getElementById("catch").classList.contains("wait"), cap: document.querySelector("#cut .cap").innerText.replace(/\s+/g, " ").trim(), toast: document.getElementById("toast").classList.contains("on") }));
     check(h.phase === "catch" && h.wait && h.card && h.cap === "Golden Loon Bass 4.6 kg" && !h.toast, "landing the legend: the hero shot names it and its weight, and the card and the news wait (" + JSON.stringify(h) + ")");
     await waitT(page, 1);
@@ -289,9 +316,17 @@ function capStub() {
     const c1 = await at(page);
     check(!b1.playing && b1.ms != null && b1.ms <= 300 && c1.phase === "catch" && !c1.paused, "the back button skips the hero shot within 0.3 s, to the card, with no pause (" + JSON.stringify({ ...b1, ...c1 }) + ")");
     await sleep(500);
-    await page.click("#catchGo");
+    // a quick double tap on the card's button: the first tap plays the finale, and the second, in its first moment, does not
+    // skip it (it plays once)
+    const go = await page.evaluate(() => { const r = document.getElementById("catchGo").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.touchscreen.tap(go.x, go.y);
+    await sleep(120);
+    await page.touchscreen.tap(go.x, go.y);
+    await sleep(400);
+    const dbl = await page.evaluate(() => ({ playing: FISH.cuts.playing, id: FISH.cuts.id }));
+    check(dbl.playing && dbl.id === "finale", "a double tap on the fourth legend's card plays the finale, and the second tap does not skip it (" + JSON.stringify(dbl) + ")");
     await waitCut(page, "finale", 20000);
-    await waitT(page, 1.2);
+    await waitT(page, 1.5);
     const fi = await page.evaluate(() => ({ cap: document.querySelector("#cut .cap").innerText.replace(/\s+/g, " ").trim(), catch: document.getElementById("catch").hidden, seen: FISH.save.cuts.finale, sfx: window.__sfx.includes("swell") }));
     check(fi.cap === "You fished them all. Every legend is in your journal." && fi.catch && fi.seen === 1 && fi.sfx, "after the fourth legend's card: the finale, \"You fished them all.\", and its sound (" + JSON.stringify(fi) + ")");
     const b2 = await skipBy(page, "back");
@@ -369,6 +404,28 @@ function capStub() {
     await until(page, () => FISH.G.phase === "cast", null, 20000);
     const lift = await page.evaluate(async () => { await new Promise((r) => setTimeout(r, 700)); return { hidden: document.getElementById("cutFade").hidden, phase: FISH.G.phase }; });
     check(lift.hidden && lift.phase === "cast", "the fade lifts over the cast as the opening ends (" + JSON.stringify(lift) + ")");
+    // a calm reveal: the aim on the water goes with the rod at once, and on the first frame after it the camera is on the
+    // dock, whether it ends by itself (through black) or by a skip: no flight home
+    // (the aim fades in over the cast view: read once it is up)
+    await until(page, () => { let a = 0; FISH.world.scene.traverse((o) => { const u = o.material && o.material.uniforms; if (u && u.uAim) a = u.uAim.value.z; }); return a > 0.5; }, null, 10000).catch(() => {});
+    const aim0 = await aimOn(page);
+    await page.evaluate(() => { FISH.save.caught = 1; });
+    await goldRing(page, 6, -44);
+    await waitCut(page, "reveal.loon", 30000);
+    await camAfter(page);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const aim1 = await aimOn(page), rc = await page.evaluate(() => FISH.cuts.calm);
+    check(aim0 > 0.5 && aim1 === 0 && rc, "the calm reveal hides the aim line on the water at once (" + JSON.stringify({ before: aim0, in: aim1, calm: rc }) + ")");
+    await ff(page);
+    const ce = await camRead(page);
+    check(ce != null && ce < 0.1, "a calm reveal that ends by itself: the camera is on the dock on the first frame after it (" + ce + " m)");
+    await page.evaluate(() => { delete FISH.save.cuts["reveal.loon"]; });
+    await goldRing(page, -10, -46);
+    await waitCut(page, "reveal.loon", 30000);
+    await waitT(page, 1);
+    await camAfter(page);
+    const rs = await skipBy(page, "Space"), cs = await camRead(page), ra = await at(page);
+    check(!rs.playing && rs.ms != null && rs.ms <= 300 && cs != null && cs < 0.1 && ra.phase === "cast" && ra.step === "ready", "a calm reveal skipped by Space 1 s in: the cast, with the camera on the dock on the first frame (" + JSON.stringify({ ...rs, cam: cs, ...ra }) + ")");
     // reduced motion, with Calm effects off: the replay on the Places card is the still version too
     await page.evaluate(() => { delete document.documentElement.dataset.calm; FISH.toTitle(); });
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -381,7 +438,8 @@ function capStub() {
     check(await page.evaluate(() => FISH.cuts.calm), "with reduced motion the opening is the still version");
     await page.keyboard.press("Escape");
     await until(page, () => !document.getElementById("places").hidden, null, 30000);
-    check((await cutsSeen(page)).length === 2 && (await page.evaluate(() => window.__cuts.every((c) => c.calm))), "and Escape ends it, back on the Places card");
+    const ce5 = await cutsSeen(page);
+    check(ce5.join() === "open,reveal.loon,reveal.loon,open" && (await page.evaluate(() => window.__cuts.every((c) => c.calm))), "and Escape ends it, back on the Places card (" + ce5.join() + ")");
   } catch (e) { check(false, "exception in part E: " + (e && e.stack)); }
   check(errors.length === 0, "part E: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
@@ -426,6 +484,55 @@ function capStub() {
     check(big.a > big.b * 1.25, "Larger text (--ui-scale) scales the caption (" + JSON.stringify(big) + ")");
   } catch (e) { check(false, "exception in part F: " + (e && e.stack)); }
   check(errors.length === 0, "part F: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
+/* ---------- G. a desktop player: the mouse on the crank, and the keys after the hero shot ---------- */
+{
+  const save = { v: 1, casts: 24, caught: 3, input: "touch", journal: { perch: { n: 3, kg: 0.4, cm: 26 } }, places: { loon: { open: 1 }, stumps: { open: 1 } }, cuts: except("landed.loon") };
+  const { browser, page, errors } = await open({ cuts: true, save, touch: false, phone: false, width: 1280, height: 800 });
+  try {
+    await watchCuts(page);
+    await page.evaluate(() => FISH.startMode("free"));
+    await until(page, () => FISH.G.phase === "cast", null, 20000);
+    // a fight with the legend, the crank turned with the mouse
+    await page.evaluate(() => {
+      const G = FISH.G;
+      G.sim = { fake: true, events: [], step() {}, state: { phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3,
+        fish: { id: "golden", kg: 4, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true } } };
+      G.bail = "closed";
+      FISH.enterReel();
+    });
+    await until(page, () => FISH.G.phase === "reel" && !document.getElementById("reelUI").hidden, null, 20000);
+    await sleep(800);
+    const b = await page.evaluate(() => { const r = document.getElementById("crankBox").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, R: Math.min(r.width, r.height) * 0.35 }; });
+    const turn = async () => { for (let i = 1; i <= 8; i++) { const a = (i * Math.PI) / 4; await page.mouse.move(b.x + b.R * Math.cos(a), b.y + b.R * Math.sin(a), { steps: 2 }); } };
+    await page.mouse.move(b.x + b.R, b.y);
+    await page.mouse.down();
+    await turn();
+    const held = await page.evaluate(() => !!FISH.crank.drag);
+    // the legend is landed with the button still down, and it comes up over the hero shot
+    await page.evaluate((c) => { FISH.G.sim = { fake: true, events: [], step() {}, state: { phase: "caught", catch: c, lure: { x: 0, y: -0.2, z: -6, speed: 0 }, fish: null } }; }, { id: "golden", kg: 4.6, cm: 58 });
+    await waitCut(page, "landed.loon", 30000);
+    await page.mouse.up();
+    await sleep(200);
+    const a0 = await page.evaluate(() => FISH.crank.angle);
+    await turn();
+    const g = await page.evaluate((a0) => ({ drag: !!FISH.crank.drag, turned: +Math.abs(FISH.crank.angle - a0).toFixed(3), focus: document.activeElement && document.activeElement.id, playing: FISH.cuts.playing }), a0);
+    check(held && !g.drag && g.turned === 0 && g.playing, "a mouse let go over the hero shot lets go of the crank, and a hover after turns nothing (" + JSON.stringify({ held, ...g }) + ")");
+    check(g.focus === "catchGo", "the catch card's button keeps the focus under the hero shot (" + g.focus + ")");
+    // Space skips it; the card comes with the focus on its button, and Space presses it
+    await waitT(page, 1);
+    const sk = await skipBy(page, "Space");
+    await until(page, () => !FISH.G.cardWait, null, 5000).catch(() => {});
+    await sleep(400);
+    const f = await page.evaluate(() => ({ focus: document.activeElement && document.activeElement.id, card: !document.getElementById("catch").hidden }));
+    await page.keyboard.press("Space");
+    await until(page, () => FISH.G.phase === "cast", null, 10000).catch(() => {});
+    const ph = await page.evaluate(() => ({ phase: FISH.G.phase, card: !document.getElementById("catch").hidden }));
+    check(!sk.playing && sk.ms != null && sk.ms <= 300 && f.focus === "catchGo" && f.card && ph.phase === "cast" && !ph.card, "Space skips the hero shot, the card comes with the focus on its button, and Space casts again (" + JSON.stringify({ ...sk, ...f, after: ph }) + ")");
+  } catch (e) { check(false, "exception in part G: " + (e && e.stack)); }
+  check(errors.length === 0, "part G: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 

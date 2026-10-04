@@ -20,6 +20,8 @@ export const revealId = (id) => "reveal." + id;
 export const landedId = (id) => "landed." + id;
 // seconds of the fade between two still shots (and in and out of a calm cutscene, or of one that ends through black)
 const FADE = 0.4;
+// seconds at the start when a press, Space or Enter does not skip yet (Escape and back always do): the Skip hint shows then
+const GRACE = 0.5;
 
 /* ---------------- the camera path ---------------- */
 // A smooth path through values at their times: a cubic between each pair of keys, with the speed at a key set by its
@@ -189,6 +191,8 @@ export function ringSpot(place) {
 //   playing: a cutscene is on; id: its id ("" when none); calm: the one playing is the still version
 // While one plays, #game has data-cut (cutscenes.css hides the HUD, the prompts and the toasts), the world hides the rod,
 // and the keys go to the skip: Space, Escape or Enter skips, the rest do nothing in the game. A press anywhere skips too.
+// In the first GRACE seconds only Escape and back skip: the second tap of a double tap, or a tap left over from the fight,
+// must not end a cutscene that plays once before it is seen
 export function createCutscenes({ world, root, sound = null, touch = false }) {
   const el = document.createElement("div"), fade = document.createElement("div");
   el.id = "cut"; el.hidden = true; el.setAttribute("data-nopin", "");
@@ -197,30 +201,40 @@ export function createCutscenes({ world, root, sound = null, touch = false }) {
   root.append(el, fade);
   const cap = el.querySelector(".cap"), skipHint = el.querySelector(".skip");
   skipHint.textContent = touch ? "Tap to skip" : "Press Space to skip";
-  let P = null, eatT = 0, liftT = 0;
+  let P = null, eatT = 0, liftT = 0, held = "";
+  // (timed from when the finger or the key went down: a busy first frame must not make a quick second tap late)
+  const early = (e) => (e.timeStamp > 0 && e.timeStamp <= performance.now() + 1 ? e.timeStamp : performance.now()) - P.at < GRACE * 1000;
 
   // the press that skips must not go on to the screen under it: the overlay stays (unseen) until the finger lifts
   const eat = (e) => { e.preventDefault(); e.stopPropagation(); };
-  const uneat = () => { clearTimeout(eatT); if (!P) { el.hidden = true; el.classList.remove("gone"); } };
+  // (only the presses that went down on the overlay are its own. One from before the cutscene, a mouse held on the crank,
+  // lifts where it began, so the crank lets go)
+  const mine = new Set();
+  const uneat = () => { clearTimeout(eatT); if (!P) { el.hidden = true; el.classList.remove("gone"); mine.clear(); } };
   el.addEventListener("pointerdown", (e) => {
     eat(e);
-    if (!P) return;
+    mine.add(e.pointerId);
+    if (!P || early(e)) return;
     finish(true);
     // (unless what came after it is another cutscene, which takes the press itself)
     if (!P) { el.classList.add("gone"); el.hidden = false; eatT = setTimeout(uneat, 800); }
   });
   // (a finger's click comes after it lifts, on what is under it then: the overlay waits for it, or a moment)
-  for (const t of ["pointerup", "pointercancel"]) el.addEventListener(t, (e) => { eat(e); clearTimeout(eatT); eatT = setTimeout(uneat, 350); });
+  for (const t of ["pointerup", "pointercancel"]) el.addEventListener(t, (e) => { if (!mine.delete(e.pointerId)) return; eat(e); clearTimeout(eatT); eatT = setTimeout(uneat, 350); });
   el.addEventListener("click", (e) => { eat(e); uneat(); });
   el.addEventListener("contextmenu", eat);
-  // (the game never sees a key meanwhile; the browser keeps its own, like a reload)
+  // (the game never sees a key meanwhile; the browser keeps its own, like a reload. The key that skipped, still held, does
+  // not repeat on what comes after)
   addEventListener("keydown", (e) => {
-    if (!P) return;
+    if (!P) { if (e.code === held) { if (e.repeat) { e.stopImmediatePropagation(); e.preventDefault(); } else held = ""; } return; }
     e.stopImmediatePropagation();
     if (e.code !== "Space" && e.code !== "Escape" && e.code !== "Enter") return;
     e.preventDefault();
-    if (!e.repeat) finish(true);
+    if (e.repeat || (e.code !== "Escape" && early(e))) return;
+    held = e.code;
+    finish(true);
   }, true);
+  addEventListener("keyup", (e) => { if (e.code === held) held = ""; }, true);
 
   // the camera: the pose at the player's time, or the still shot under it (world.js calls this every frame)
   function camera(dt, info) {
@@ -254,9 +268,12 @@ export function createCutscenes({ world, root, sound = null, touch = false }) {
     }
   }
   function show(p) {
-    const s = p.s, t = p.t, C = s.caption;
-    cap.classList.toggle("on", !!C && t >= C.at && t < s.len - 0.2);
-    skipHint.classList.toggle("on", t >= 0.5);
+    const s = p.s, t = p.t, C = s.caption, on = !!C && t >= C.at && t < s.len - 0.2;
+    // (the words go in as the caption shows, so a screen reader reads them out: a live region that comes in already filled
+    // is not read)
+    if (on && !p.said) { p.said = true; cap.querySelector("b").textContent = C.title; cap.querySelector("span").textContent = C.line; }
+    cap.classList.toggle("on", on);
+    skipHint.classList.toggle("on", t >= GRACE);
     const k = fadeAt(p, t);
     fade.hidden = k <= 0;
     fade.style.opacity = String(k);
@@ -268,10 +285,9 @@ export function createCutscenes({ world, root, sound = null, touch = false }) {
     const calm = isCalm(), cam = world.camera, yaw = -cam.rotation.y, pitch = cam.rotation.x;
     const pos = v3(cam.position.x, cam.position.y, cam.position.z);
     const start = { pos, look: v3(pos.x + Math.sin(yaw) * Math.cos(pitch) * 30, pos.y + Math.sin(pitch) * 30, pos.z - Math.cos(yaw) * Math.cos(pitch) * 30), fov: cam.fov };
-    P = { s: script, t: 0, calm, then, closed: new Set(), c: { world, start, cast: null, aspect: 1, loon: null } };
-    const C = script.caption;
-    cap.querySelector("b").textContent = C ? C.title : "";
-    cap.querySelector("span").textContent = C ? C.line : "";
+    P = { s: script, t: 0, at: performance.now(), calm, then, said: false, closed: new Set(), c: { world, start, cast: null, aspect: 1, loon: null } };
+    cap.querySelector("b").textContent = "";
+    cap.querySelector("span").textContent = "";
     cap.classList.remove("on"); skipHint.classList.remove("on");
     el.classList.remove("gone");
     el.hidden = false;
@@ -302,7 +318,7 @@ export function createCutscenes({ world, root, sound = null, touch = false }) {
     delete root.dataset.cut;
     cap.classList.remove("on"); skipHint.classList.remove("on");
     el.hidden = true;
-    // a dark fade lifts over the game as it comes back (the game's camera eases home under it)
+    // a dark fade lifts over the game as it comes back (the game's camera is back where play has it, see world.cutCamera)
     const k = Number(fade.style.opacity) || 0;
     if (k > 0) {
       fade.hidden = false;

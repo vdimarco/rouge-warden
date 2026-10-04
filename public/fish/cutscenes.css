@@ -35,7 +35,9 @@ body:not([data-art-style="original"]) #cut .cap b { font-family: Georgia, "Times
 #cutFade { position: absolute; inset: 0; z-index: 19; background: #04090b; opacity: 0; pointer-events: none; }
 
 /* the game's own controls and words wait while a cutscene plays */
-#game[data-cut] :is(#hud, #prompt, #report, #toast, #castUI, #reelUI, #fishGuide, #rodCue, #castRail, #pullStrength, #catch .card) { visibility: hidden !important; }
+#game[data-cut] :is(#hud, #prompt, #report, #toast, #castUI, #reelUI, #fishGuide, #rodCue, #castRail, #pullStrength) { visibility: hidden !important; }
+/* (the catch card waits unseen too, but keeps the focus it was given: Space and Enter press its button when it comes) */
+#game[data-cut] #catch .card { opacity: 0 !important; pointer-events: none; }
 
 /* calm effects and reduced motion: the bars are there at once */
 @media (prefers-reduced-motion: reduce) { #cut .bar.top, #cut .bar.bot { animation: none !important; } }
