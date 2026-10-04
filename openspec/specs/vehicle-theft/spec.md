@@ -1,5 +1,10 @@
 # Vehicle theft
 
+## Purpose
+In Crimson Rogue, the player can steal any intact car that is slow or stopped, police patrols included. The player gets in at the driver's door with the usual interact control. If someone is driving, the passenger door lets the player ride along.
+
+## Requirements
+
 ### Requirement: Every intact car can be taken
 The player SHALL be able to enter the driver's door of every intact slow or stopped car, regardless of kind, ownership, occupancy or source, using the existing keyboard, touch or gamepad interaction. Occupied passenger-door entry SHALL remain a ride, including Gabe's jeep. Wrecks and cars moving too fast SHALL not offer entry.
 
