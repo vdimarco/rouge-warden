@@ -670,7 +670,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function render() {
     applyCamera();
-    rod.mesh.visible = S.rod.visible && firstPerson() && !cutFn && camera.fov > baseFov(S.view.mode) * 0.8;
+    rod.mesh.visible = S.rod.visible && firstPerson() && camera.fov > baseFov(S.view.mode) * 0.8;
     if (rod.mesh.visible) poseRod();
     drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
@@ -761,8 +761,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       S.view = { mode, yaw, look, portrait, inset, bottom };
       if (refit) fitTrophy();
     },
-    // a cutscene's camera, or null to give the camera back (see cutCamera)
-    cutCamera(fn) { cutFn = typeof fn === "function" ? fn : null; },
+    // a cutscene's camera, or null to give the camera back (see cutCamera). The rod hides with it, until main.js draws it
+    // again (setRod) when play goes on
+    cutCamera(fn) { cutFn = typeof fn === "function" ? fn : null; if (cutFn) S.rod.visible = false; },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
       S.rod = { theta, yaw, steer, bend, pull, visible };
       applyCamera();
