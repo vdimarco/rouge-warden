@@ -5,8 +5,9 @@
 // first (the E key) the button held still is the same hold cast, and a press that moves down is the drag. The drag and
 // flick still casts, a press on a HUD button never casts, a click during the flight feathers the line, and a click during
 // the reel starts no cast. The moves guide holds its first step still (no touch clip), and during the hold it says the
-// hold's words with MOUSE. The flight's words say to click the lake. In a fight the words name the mouse after a mouse
-// press, and the keys (W, S, A, D, R, Space) after a key press, with KEYS on the guide. Exits with code 1 when something fails.
+// hold's words with MOUSE. The flight's tip (on the third to the eighth cast) says to click the lake. In a fight the words
+// name the mouse after a mouse press, and the keys (W, S, A, D, R, Space) after a key press, with KEYS on the guide. Exits
+// with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
 const fails = [];
@@ -98,7 +99,7 @@ try {
   const g0 = await guideNow();
   await sleep(3000);
   const g1 = await guideNow();
-  check(g0.shown && g0.count === "1 / 7" && g1.count === "1 / 7" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
+  check(g0.shown && g0.count === "1 / 3" && g1.count === "1 / 3" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
   await page.evaluate(() => window.__fresh());
   const hg = await page.evaluate(async () => {
     const G = FISH.G, wait = window.__wait, out = {};
@@ -238,6 +239,8 @@ try {
       await page.evaluate(() => window.__fresh());
       r = await page.evaluate(async (feather) => {
         const G = FISH.G, wait = window.__wait, x = 520, y = 520;
+        // the player's fourth cast: the flight's tip shows on the third to the eighth
+        FISH.save.casts = 3;
         window.__fire("pointerdown", x, y);
         const tp = performance.now();
         while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
@@ -269,7 +272,7 @@ try {
   };
   const plain = await fly(false), slowed = await fly(true);
   check(slowed.pin && slowed.feathered && plain.dist && slowed.dist && slowed.dist < plain.dist - 4, `a mouse click on the lake during the flight feathers the line: ${(slowed.dist || 0).toFixed(1)} m against ${(plain.dist || 0).toFixed(1)} m (${JSON.stringify(slowed)})`);
-  check(slowed.flightCue === "Click to slow" && (!slowed.flightSaid || slowed.flightSaid === "To stop the lure short, click the lake."), `in the flight the rod cue says "${slowed.flightCue}", and the prompt "${slowed.flightSaid}" (a click, not a touch)`);
+  check(slowed.flightCue === "Click to slow" && slowed.flightSaid === "To stop the lure short, click the lake.", `in the flight of the fourth cast the rod cue says "${slowed.flightCue}", and the tip "${slowed.flightSaid}" (a click, not a touch)`);
 
   // ---- a click during the reel starts no cast ----
   const reel = await page.evaluate(async () => {

@@ -2,7 +2,9 @@
 // scrubbed with seek(t), including during frame-by-frame video export.
 import { isCalm } from "./calm.js";
 const KEY = "reel-it-in-guide-v1";
-export const INTRO = ["hold", "back", "cast", "reel", "hook", "pump", "land"];
+// the preview on the cast screen (WATCH + TRY) and its clips: the cast moves only. The reel moves show live (YOUR MOVE)
+// once the lure lands
+export const INTRO = ["hold", "back", "cast"];
 export const LENGTH = 2.6;
 const PHONE = `<rect x="36" y="9" width="34" height="61" rx="7" fill="#174a55" stroke="#f6efd9" stroke-width="2.5"/><rect x="41" y="17" width="24" height="40" rx="3" fill="#0a2933"/><path d="M48 13h10M49 64h8" stroke="#b9c9c4" stroke-width="2" stroke-linecap="round"/>`;
 const HAND = `<path d="M38 65l-7-16q-3-8 2-9q3 0 6 7l3 6V43q0-6 5-6q5 0 5 6v5q13-4 18 5l-2 21H44Z" fill="#d6b796" stroke="#f6efd9" stroke-width="1.5"/>`;

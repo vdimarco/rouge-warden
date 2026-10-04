@@ -154,7 +154,20 @@ if (part("1")) {
     await page.evaluate(() => __phone.pose(88));
     await until(page, () => !document.querySelector("#fishGuide").hidden, null, 10000).catch(() => {});
     const g = await page.evaluate(() => ({ shown: !document.querySelector("#fishGuide").hidden, kick: document.querySelector("#fishGuide .guide-kicker").textContent, count: document.querySelector("#fishGuide .guide-count").textContent, label: document.querySelector("#guideToggle").getAttribute("aria-label") }));
-    check(g.shown && g.kick === "WATCH + TRY" && /^\d \/ 7$/.test(g.count) && g.label === "Hide the moves guide", "a new player in motion play sees the guide on the first cast screen, and the ? button says it hides the guide (" + JSON.stringify(g) + ")");
+    check(g.shown && g.kick === "WATCH + TRY" && /^\d \/ 3$/.test(g.count) && g.label === "Hide the moves guide", "a new player in motion play sees the guide on the first cast screen, and the ? button says it hides the guide (" + JSON.stringify(g) + ")");
+    // the preview goes round the three cast moves only, never a reel move: watch it, frame by frame, until it starts again
+    const loop = await page.evaluate(async () => {
+      const el = document.querySelector("#fishGuide"), lessons = new Set(), captions = new Set(), t0 = performance.now();
+      let top = false, wrapped = false;
+      while (!wrapped && performance.now() - t0 < 40000) {
+        const n = el.querySelector(".guide-count").textContent;
+        lessons.add(el.dataset.lesson); captions.add(el.querySelector(".guide-caption").textContent);
+        if (n === "3 / 3") top = true; else if (top && n === "1 / 3") wrapped = true;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return { wrapped, lessons: [...lessons].sort(), captions: [...captions], step: FISH.G.step };
+    });
+    check(loop.wrapped && loop.lessons.join() === "back,cast,hold", "the first cast screen's guide goes round hold, back and cast only, 1 / 3 to 3 / 3 (" + JSON.stringify(loop) + ")");
     // the HUD behind a screen: no focus, no taps; the prompt headline reaches the live region
     await until(page, () => document.querySelector("#say").textContent === "Hold your thumb on the rod.", null, 5000).catch(() => {});
     check((await page.evaluate(() => document.querySelector("#say").textContent)) === "Hold your thumb on the rod.", "the live region says the prompt's headline");
@@ -382,7 +395,7 @@ if (part("4")) {
     const g0 = await page.evaluate(() => document.querySelector("#fishGuide .guide-count").textContent);
     await sleep(3400);
     const gc = await page.evaluate(() => { const v = document.querySelector("#fishGuide video"); return { reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, shown: !document.querySelector("#fishGuide").hidden, first: document.querySelector("#fishGuide .guide-count").textContent, clip: !!v && (!v.paused || !v.hidden) }; });
-    check(!gc.reduced && gc.shown && g0 === "1 / 7" && gc.first === "1 / 7" && !gc.clip, "Calm effects: the guide holds its first step still after 3 s and plays no clip (" + JSON.stringify({ g0, ...gc }) + ")");
+    check(!gc.reduced && gc.shown && g0 === "1 / 3" && gc.first === "1 / 3" && !gc.clip, "Calm effects: the guide holds its first step still after 3 s and plays no clip (" + JSON.stringify({ g0, ...gc }) + ")");
     await page.evaluate(() => document.querySelector("#guideToggle").click());
     await page.evaluate(() => { window.__sfx = []; const f = FISH.Sound.sfx; FISH.Sound.sfx = function (n, ...a) { window.__sfx.push(n); return f.call(this, n, ...a); }; });
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });

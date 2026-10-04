@@ -15,7 +15,7 @@ The art style that was called "Ghibli" SHALL be "Painted" on screen, in its stor
 - **THEN** Settings shows "Painted" as the chosen style and the painted look shows.
 
 ### Requirement: Guide for new players
-The animated guide SHALL show on the first cast screen for a player who has not landed a fish, unless the player turned it off. After the first catch it SHALL hide unless the player turned it on. The guide button SHALL say what it does.
+The animated guide SHALL show on the first cast screen for a player who has not landed a fish, unless the player turned it off. After the first catch it SHALL hide unless the player turned it on. The guide button SHALL say what it does. On the cast screen the guide SHALL go round the three cast moves only (hold, back, and cast). It SHALL show the reel moves only when the lure is in the water.
 
 #### Scenario: Fresh save
 - **WHEN** a new player reaches the first cast screen in motion or touch mode
@@ -24,6 +24,10 @@ The animated guide SHALL show on the first cast screen for a player who has not 
 #### Scenario: Fresh save on a computer
 - **WHEN** a new player reaches the first cast screen on a computer
 - **THEN** the guide shows its first step as a still picture, and it plays no touch clip.
+
+#### Scenario: Cast moves before the cast
+- **WHEN** a new player waits on the first cast screen in motion or touch mode
+- **THEN** the guide counts 1 / 3 to 3 / 3 through hold, back, and cast, and then starts again, with no reel move.
 
 ### Requirement: Short help
 How to play SHALL open on the tab for the player's input. Each tab SHALL fit without a scroll at 390x844, and SHALL teach the rising rings. Fish moves SHALL sit behind a "Fish moves" row.
@@ -56,7 +60,7 @@ The prompt, the guide caption, and the rod cue SHALL use the same words for the 
 - **THEN** the prompt sub, the guide caption, and the rod cue say "Hold S.", and the guide labels the move KEYS. The other moves name W, A, D, R, and Space.
 
 #### Scenario: Flight on a computer
-- **WHEN** the lure flies in a game on a computer
+- **WHEN** the lure flies in a game on a computer, on the player's third to eighth cast
 - **THEN** the rod cue says "Click to slow", and the tip says "To stop the lure short, click the lake."
 
 ### Requirement: Layouts that fit

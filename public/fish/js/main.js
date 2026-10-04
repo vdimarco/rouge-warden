@@ -1113,8 +1113,9 @@ function caught(c) {
   if (sp && sp.legend) save.cuts[revealId(at)] = 1;
   persist();
   // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
-  // day, the goals done, today's goal done. A goal done brings the record sting
-  const goals = noteGoals(ctx), news = [day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
+  // day ("Your first fish!" in its place for a new player's first fish), the goals done, today's goal done. A goal done
+  // brings the record sting
+  const goals = noteGoals(ctx), news = [!junk && save.caught === 1 ? "Your first fish!" : day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
   if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null);
   G.phase = "catch";
   prompt("");
@@ -1310,7 +1311,7 @@ function renderJournal(pid) {
   // the counts; then the best sweet run and the days whose goal was done, once there are any
   const all = foundAll(save), D = save.days;
   const more = [save.bestRun > 0 ? "Best sweet run: " + save.bestRun : "", D.n > 0 ? "Goal days: " + D.n + (D.best >= 2 ? " (best " + D.best + " in a row)" : "") : ""].filter(Boolean).join(" · ");
-  const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts" + (more ? "\n" + more : "");
+  const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + (save.casts === 1 ? " cast" : " casts") + (more ? "\n" + more : "");
   if (!openNow(pid)) {
     const d = document.createElement("div");
     d.className = "jnote"; d.textContent = "Open " + JOURNEY[pid].name + " to see its fish.";
@@ -2432,10 +2433,13 @@ async function boot() {
   }, true);
   // the beat after a cast: a press on the lake ends it (skipBeat), and the reel panel, which hears the press after this,
   // takes it into the new cast. A press on the crank, the rod pad or the gauge ends it too, but goes no further: a player
-  // still cranking or pumping the rod never meant to cast. A press on a button, a screen or the drag bar does nothing
+  // still cranking or pumping the rod never meant to cast. "Nothing this time." had no fish on, so nobody pumps: there a
+  // press on the rod pad (over the drawn rod) casts like a press on the lake. A press on a button, a screen or the drag
+  // bar does nothing
   game.addEventListener("pointerdown", (e) => {
     if ((e.pointerType === "mouse" && e.button !== 0) || blocked(e.target, game) || (e.target.closest && e.target.closest("#dragBar"))) return;
-    const fight = !!(e.target.closest && e.target.closest("#reelUI"));
+    const rod = G.phase === "lost" && G.beat === "home" && !!(e.target.closest && e.target.closest("#padBox"));
+    const fight = !rod && !!(e.target.closest && e.target.closest("#reelUI"));
     if (!skipBeat(fight ? null : e.pointerId)) return;
     if (fight) e.stopPropagation();
     else if (G.phase === "cast" && !cuts.playing) castGrab();

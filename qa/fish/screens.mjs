@@ -514,6 +514,9 @@ if (part("A")) {
     check(jr.rows[2][1] === "Best 3.6 kg · 62 cm · caught 1" && jr.rows[0][1] === "Best 0.60 kg · 35 cm · caught 3", "a caught fish shows its best and the count (" + jr.rows[2][1] + " / " + jr.rows[0][1] + ")");
     check(jr.rows[3][1] === "Try the lily pads." && jr.rows[4][1] === "Try the rocky point at dusk." && jr.rows[5][1] === "Try the lily pads at dusk.", "a fish not caught yet says where to try (" + jr.rows.slice(3).map((r) => r[1]).join(" / ") + ")");
     check(jr.sum === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
+    // one cast is "1 cast", not "1 casts" (the Loon chip draws the journal again)
+    const sum1 = await page.evaluate(() => { const n = FISH.save.casts; FISH.save.casts = 1; document.querySelector("#jtabs button").click(); const t = document.querySelector("#jsum").textContent; FISH.save.casts = n; document.querySelector("#jtabs button").click(); return t; });
+    check(sum1.endsWith(" · 1 cast"), "one cast in the summary line: \"1 cast\" (" + sum1 + ")");
     // the legend row, by step: once every other fish here is caught, the legend is among the next 3
     const keep = await page.evaluate(() => JSON.stringify(FISH.save.journal));
     await page.evaluate(() => { for (const id of ["pumpkinseed", "rockbass", "largemouth", "pike", "laketrout", "muskie"]) FISH.save.journal[id] = { n: 1, kg: 1, cm: 30 }; });
@@ -1247,12 +1250,13 @@ if (part("J")) {
     await sleep(1500);
     check((await count("Goal done: Cast 40 m.")) === 1, "a second 40 m cast is not news");
 
-    // ---- the first fish of the day, from a ring and a cast stopped short: all the news in one toast, a line each ----
+    // ---- the first fish of the day, from a ring and a cast stopped short: all the news in one toast, a line each. It is
+    // the first fish of this new player too: that line says "Your first fish!" in place of the day's line ----
     await page.evaluate(() => { FISH.newCast(); window.__toasts.length = 0; window.__log.length = 0; FISH.G.landing = { x: 6, z: -14, dist: 15.2, ring: true, feather: true }; });
     let c = await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false });
     await sleep(1600);
-    const t1 = await toastsNow(page), NEWS1 = "Your first fish today.\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
-    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "the first fish of the day does two goals: one toast says \"Your first fish today.\" and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
+    const t1 = await toastsNow(page), NEWS1 = "Your first fish!\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
+    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "a new player's first fish does two goals: one toast says \"Your first fish!\" (not the day's line) and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
     const shown = await page.evaluate(() => { const t = document.querySelector("#toast"), r = t.getBoundingClientRect(), card = document.querySelector("#catch .card").getBoundingClientRect(); return { on: t.classList.contains("on"), lines: Math.round(r.height / parseFloat(getComputedStyle(t).lineHeight)), clear: r.bottom <= card.top, top: r.top >= 0 }; });
     check(shown.on && shown.lines >= 3 && shown.clear && shown.top, "the news shows over the catch screen, three lines, clear of the card (" + JSON.stringify(shown) + ")");
     check(c.badges.join() === "NEW SPECIES" && c.found === "1 of 13 found here.", "a new find says how much of the place is found, the journal's count: \"" + c.found + "\"");
@@ -1262,7 +1266,7 @@ if (part("J")) {
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => { FISH.G.landing = { x: 0, z: -20, dist: 20, ring: false, feather: false }; window.__toasts.length = 0; });
     c = await catchCard(page, { id: "walleye", name: "Walleye", kg: 2.1, cm: 50, junk: false });
-    check(c.found === "2 of 13 found here." && !(await toastsNow(page)).some((t) => t.includes("Your first fish today.")), "the next new kind: \"" + c.found + "\", and no first-fish toast");
+    check(c.found === "2 of 13 found here." && !(await toastsNow(page)).some((t) => t.includes("Your first fish")), "the next new kind: \"" + c.found + "\", and no first-fish toast");
     c = await (async () => { await click(page, "#catchGo"); await wait(page, () => FISH.G.phase === "cast"); return catchCard(page, { id: "walleye", name: "Walleye", kg: 1.5, cm: 45, junk: false }); })();
     check(c.found === "" && c.badges.indexOf("NEW SPECIES") < 0, "a kind already found has no count line");
     await click(page, "#catchGo");
