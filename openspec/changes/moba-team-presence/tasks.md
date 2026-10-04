@@ -13,6 +13,14 @@
 - [x] Add a scene score: menu, draft, calm and battle match layers, victory and defeat.
 - [x] Add edge scrolling, minimap look, recenter and full screen at Play.
 - [x] Tighten the skill cluster around the ultimate.
+- [x] Replace edge scrolling with a mouse push on the following camera.
+- [x] Stop pausing when the mouse leaves the window; keep the pause on focus loss and hidden tabs.
+- [x] Fix Esc: the same press no longer closes the menu it opened; keyboard lock and a menu on leaving full screen.
+- [x] Show a labelled Menu button and a speaker button in the top left.
+- [x] Wake stopped audio on any click or key, and say when a match starts with sound off.
+- [x] Cap the canvas at 2560x1440 backing pixels and step the resolution down when frames are slow.
+- [x] Add `qa/tidebreak/desktop.e2e.mjs` for the camera, menu, sound and pixel budget.
+- [ ] Play full screen on an ultra-wide monitor with a real GPU and confirm a smooth frame rate.
 - [ ] Listen to the mix and the announcer voice on a real device with speakers.
 - [ ] Check real multitouch and phone performance on a physical phone.
 - [ ] Review canonical specs and archive this change after the device checks.
