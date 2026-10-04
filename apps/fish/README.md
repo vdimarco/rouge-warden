@@ -12,7 +12,7 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `capacitor.config.json` | The app ID, the name, the splash and system bar settings, and the web view settings. |
 | `scripts/build-www.mjs` | Makes `www/` from `public/fish` and runs the bundle check. |
 | `scripts/check-www.mjs` | The bundle check. `scripts/check-www.test.mjs` tests it. |
-| `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4 and fails when a store setting is missing. |
+| `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4. It fails when a store setting is missing, or when the versions differ (see the release steps). `scripts/native-check.test.mjs` tests the version rule. |
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
@@ -98,7 +98,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
    ```
 
    Keep the file and both passwords in a password manager. If you lose the upload key, Play support can reset it, but it takes days.
-2. Set the version in `android/app/build.gradle`: `versionCode` goes up by 1 for every upload, and `versionName` is the version people see (for example `1.0.0`).
+2. Set the version in `android/app/build.gradle`: `versionCode` goes up by 1 for every upload, and `versionName` is the version people see (for example `1.0.0`). Set the same version in `public/fish/js/version.js` (`VERSION`, which Settings > About shows), in `package.json` and in the iOS project. `npm run check:native` fails when they differ.
 3. Build and sign. The passwords come from the environment, never from a file in git:
 
    ```sh
@@ -125,7 +125,7 @@ npm run ios:open   # build:www, cap sync ios (with the native check), then opens
 In Xcode, on the App target:
 
 1. Signing & Capabilities: pick your team. Keep "Automatically manage signing" on.
-2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload).
+2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload). Version must be the same as `VERSION` in `public/fish/js/version.js` (Settings > About shows it), `version` in `package.json` and `versionName` on Android. If you change it, change `version.js` too, then run `npm run ios:open` again so the bundle has the new version. `npm run check:native` fails when the versions differ.
 3. Choose "Any iOS Device (arm64)", then Product > Archive.
 4. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
 5. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
@@ -167,7 +167,7 @@ Then run `npx cap sync` and build both apps again.
 - **Splash.** The splash shows until the game calls `SplashScreen.hide()` when the title is ready. `launchAutoHide` is true with `launchShowDuration` 6000 ms, so the splash also goes away after 6 s if the game never calls it, and the player sees the loading screen or the error card. (With `launchAutoHide` false, Capacitor ignores `launchShowDuration` and would keep the splash up forever.)
 - **System bars.** Capacitor 8's built-in SystemBars plugin puts `--safe-area-inset-*` CSS variables on the page for Android web views older than version 140. Its `"hidden"` setting is `false`: on iOS, `"hidden": true` would also auto-hide the home indicator and cancel the bottom-edge deferral (see the iOS section). The native code hides the bars instead. On Android, `MainActivity` hides the status bar and the navigation bar at launch, after SystemBars starts, and again whenever the app gets focus, so a swipe from an edge shows them only for a moment. On iOS, `MainViewController` hides the status bar and leaves the home indicator on. The game must not call `SystemBars.hide()` on iOS. `@capacitor/status-bar` is not installed: SystemBars does the same job, and the two would fight over the bars.
 - **Back gesture.** `MainActivity` keeps the Android back gesture out of the bottom 200 dp of both side edges, where the crank sits. Android allows 200 dp of exclusion on each side edge. It cannot exclude the home gesture at the bottom edge.
-- **Text zoom.** The Android web view follows the system font size, up to 130% (`MAX_TEXT_SCALE` in `MainActivity`). Above that, the text stops at 130%, so the fixed game layout does not break. Look at this limit again when the game's own Text size setting ships.
+- **Text zoom.** The Android web view follows the system font size, up to 130% (`MAX_TEXT_SCALE` in `MainActivity`). Above that, the text stops at 130%, so the fixed game layout does not break. The game's own Larger text switch in Settings is a separate step of 1.25x.
 - **Old web views and load errors.** `minWebViewVersion` is 105 (the game uses import maps and container query units). On an older Android web view, and on both platforms when the game page does not load, the app shows `webview-update.html` (`server.errorPath`). It tells the player to close the app and open it again. Only on Android does it also show the steps to update Android System WebView.
 - **No mixed content, no remote code.** The app loads only its own files from `https://localhost` (Android) and `capacitor://localhost` (iOS). These origins are secure contexts, which the motion sensors need.
 - **Save.** `android:allowBackup` stays on, so the save copy in Preferences comes back on a new Android phone.

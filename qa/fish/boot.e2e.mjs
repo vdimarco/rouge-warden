@@ -495,24 +495,32 @@ async function changeSetting(page) {
     // (the opening plays first on this fresh save)
     await until(page, () => FISH.G.phase === "cast", null, 60000);
     await sleep(500);
-    const play = await rate(3000);
+    // count over 30 loop frames, not a fixed time: a loaded machine can stall the page for seconds
+    const p0 = await page.evaluate(() => [__draws, __raf]);
+    await until(page, (n) => window.__raf >= n + 30, p0[1], 20000).catch(() => {});
+    const p1 = await page.evaluate(() => [__draws, __raf]);
+    const play = { draws: p1[0] - p0[0], frames: p1[1] - p0[1] };
     check(play.frames > 0 && play.draws >= play.frames * 0.9, "play draws at the full rate (" + play.draws + " draws in " + play.frames + " frames)");
     // the render scale steps on the frame after the one draw under the pause screen: the new pixel ratio clears the
-    // canvas, and the loop draws the lake again
+    // canvas, and the loop draws the lake again. After that one step the scale holds, so a real step on a slow
+    // machine does not add a draw. A loaded machine can take a second for a frame: wait for the step and 4 more frames
     await page.evaluate(() => {
       const w = FISH.world, f = w.frameTime;
+      window.__frameTime = f;
       w.frameTime = function (ms) {
         if (!FISH.G.stillDrawn) return f.call(w, ms);
-        w.frameTime = f;
+        w.frameTime = () => false;
         window.__stepAt = window.__draws;
+        window.__stepRaf = window.__raf;
         w.renderer.setPixelRatio(w.renderer.getPixelRatio());
         return true;
       };
       window.__d0 = window.__draws;
       document.getElementById("pauseBtn").click();
     });
-    await sleep(1200);
+    await until(page, () => window.__stepRaf !== undefined && window.__raf >= window.__stepRaf + 4, null, 20000).catch(() => {});
     const ps = await page.evaluate(() => ({ draws: __draws - __d0, stepAt: window.__stepAt - __d0, paused: FISH.G.paused, stillDrawn: FISH.G.stillDrawn }));
+    await page.evaluate(() => { FISH.world.frameTime = window.__frameTime; });
     check(ps.paused && ps.stepAt === 1 && ps.draws === 2 && ps.stillDrawn, "a new pixel ratio under the pause screen draws the still lake again (" + JSON.stringify(ps) + ")");
     await click(page, "#resumeBtn");
 

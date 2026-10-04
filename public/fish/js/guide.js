@@ -97,6 +97,9 @@ export const MOVE_WORDS = {
   land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold." },
   drag: { touch: "Tap + to tighten the drag.", keys: "Click + to tighten the drag." },
 };
+// the hold cast (Space, or a mouse button held still): the rod moves by itself, so the guide caption and the rod cue say to
+// wait, then to let go
+export const HOLD_WORDS = { back: "Keep holding", cast: "Let go in the green" };
 // the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
 export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
 // the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
@@ -112,12 +115,13 @@ export function moveWords(kind, input = "touch", side = 0, pace = "") {
   return w ? w[input] || w.touch : "";
 }
 
-export function lesson(kind, motion, touch = true, pace = "") {
+// hold: the hold cast (Space, or a mouse button held still)
+export function lesson(kind, motion, touch = true, pace = "", hold = false) {
   const w = (k) => moveWords(k, inputOf(motion, touch), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
-    back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
-    cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
+    back: hold ? [HOLD_WORDS.back, "The rod tips back by itself."] : [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
+    cast: hold ? [HOLD_WORDS.cast, "The rod swings forward by itself."] : [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", "Touch the rod to stop it short."],
     reel: [w("reel"), "Reel slowly. Pause now and then."],
     hook: [w("hook"), "Set the hook when the fish strikes."],
@@ -256,9 +260,10 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       videoMode = mode; videoFailed = false;
       video.src = new URL(`../clips/guide-${mode}.mp4`, import.meta.url).href;
     }
-    // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps
-    const calm = isCalm();
-    const useVideo = intro && !calm && !videoFailed;
+    // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps. A computer
+    // (the keys input) gets the still pose too: the touch clip shows a finger that drags
+    const calm = isCalm(), still = calm || inputOf(s.motion, s.touch) === "keys";
+    const useVideo = intro && !still && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
     if (useVideo && video.paused && !playPending) {
       playPending = true;
@@ -266,14 +271,14 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
     }
     if (!useVideo) video.pause();
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
-    const index = intro ? calm ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
+    const index = intro ? still ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
-    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
+    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + !!s.hold + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {
       key = nextKey; lastDraw = -Infinity;
       kindNow = kind;
       art.innerHTML = sceneMarkup(kind, s.motion);
-      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace);
+      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace, !!s.hold);
       caption.textContent = label;
       panel.setAttribute("aria-label", (intro ? "Preview: " : "Now: ") + label + ". " + detail);
       panel.dataset.lesson = kind;
@@ -281,7 +286,7 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       panel.dataset.tone = intro ? "" : s.cue.tone;
       panel.dataset.still = String(kind === "stop");
       kicker.textContent = intro ? "WATCH + TRY" : "YOUR MOVE";
-      count.textContent = intro ? (index + 1) + " / " + INTRO.length : s.motion ? "MOTION" : "TOUCH";
+      count.textContent = intro ? (index + 1) + " / " + INTRO.length : { motion: "MOTION", touch: "TOUCH", keys: "MOUSE" }[inputOf(s.motion, s.touch)];
       [...panel.querySelectorAll(".guide-track i")].forEach((el, i) => el.classList.toggle("on", i === index));
       panel.hidden = false;
       parts = Object.keys(poseAt(kind, 0)).flatMap(cls => [...art.querySelectorAll("." + cls)].map(el => [el, cls]));
@@ -292,7 +297,7 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       layoutKey = nextLayoutKey; nextLayout = t + .5; place();
     }
     if (!panel.hidden && t - lastDraw >= 1 / 30) {
-      seek(intro ? elapsed % LENGTH : t - started); lastDraw = t;
+      seek(intro ? (still ? 1.3 : elapsed % LENGTH) : t - started); lastDraw = t;
     }
   }
   return { update, seek };

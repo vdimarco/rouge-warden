@@ -76,12 +76,12 @@
 
 ## 10. Final review fixes
 The final review found these. The checkpoint holds them as open work.
-- [ ] 10.1 Drop the presses in progress when a cutscene starts. A press held into a legend reveal must not cast under it, and the derby cast count must not change during it (`playCut`: `reelPanel._cancelAll()`, `reelPanel.set({ grab: "" })`, and ignore pin and aim while `cuts.playing`).
-- [ ] 10.2 Give the moves guide the mouse and Space hold words on a computer: "Keep holding", then "Let go in the green". Label the count MOUSE, and show the still pose in place of the touch clip.
-- [ ] 10.3 Keep Big Blue's reveal leap clear of the top bar at 1280x800 and 844x390. Skip the far-leap draw scale while a cutscene holds the camera.
-- [ ] 10.4 Make sure a Space chain cannot skip a legend's first reveal, and that a reveal never plays after its legend is landed.
-- [ ] 10.5 In `apps/fish/store/accessibility.md`, set Larger Text to No (a 1.25x switch cannot meet Apple's 200% bar). Point Sufficient Contrast at the checks that exist, and add the calm cutscenes to the Reduced Motion checks.
-- [ ] 10.6 Use version 1.0.0 in `js/version.js`, the Android `versionName`, the iOS `MARKETING_VERSION`, and the listing. Add `js/version.js` to the release steps, and make `native-check.mjs` fail when they differ.
-- [ ] 10.7 In `apps/fish/store/screenshots.md`, point to `?shot` and `qa/fish/shots.mjs`. In `review-notes.md`, say "Use touch", say the question comes after Go fishing, and mention the opening cutscene and how to skip it.
+- [x] 10.1 Drop the presses in progress when a cutscene starts. A press held into a legend reveal must not cast under it, and the derby cast count must not change during it (`playCut`: `reelPanel._cancelAll()`, `reelPanel.set({ grab: "" })`, and ignore pin and aim while `cuts.playing`).
+- [x] 10.2 Give the moves guide the mouse and Space hold words on a computer: "Keep holding", then "Let go in the green". Label the count MOUSE, and show the still pose in place of the touch clip.
+- [x] 10.3 Keep Big Blue's reveal leap clear of the top bar at 1280x800 and 844x390. Skip the far-leap draw scale while a cutscene holds the camera.
+- [x] 10.4 Make sure a Space chain cannot skip a legend's first reveal, and that a reveal never plays after its legend is landed.
+- [x] 10.5 In `apps/fish/store/accessibility.md`, set Larger Text to No (a 1.25x switch cannot meet Apple's 200% bar). Point Sufficient Contrast at the checks that exist, and add the calm cutscenes to the Reduced Motion checks.
+- [x] 10.6 Use version 1.0.0 in `js/version.js`, the Android `versionName`, the iOS `MARKETING_VERSION`, and the listing. Add `js/version.js` to the release steps, and make `native-check.mjs` fail when they differ.
+- [x] 10.7 In `apps/fish/store/screenshots.md`, point to `?shot` and `qa/fish/shots.mjs`. In `review-notes.md`, say "Use touch", say the question comes after Go fishing, and mention the opening cutscene and how to skip it.
 - [ ] 10.8 Run the player review that the usage limit stopped, and fix what it finds.
 - [ ] 10.9 Rerun cutscenes, mouse, turnaround, touch, menus, and screens.

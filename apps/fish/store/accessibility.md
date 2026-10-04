@@ -11,7 +11,7 @@ For Reel It In, the common tasks are: start a game, cast, reel, fight and land a
 | Sufficient Contrast | **Yes**, after the check | The menus use light text on dark cards. The fish-store-polish change makes the gauge text larger. |
 | Reduced Motion | **Yes**, after the check | The game follows the system Reduce Motion setting (`prefers-reduced-motion`), and Settings has "Calm effects" for the same result. |
 | Differentiate Without Color Alone | **Yes**, after the check | The fish-store-polish change gives the gauge words and patterns as well as colours (SLACK, the rub band, the drag), and every prompt is a word. |
-| Larger Text | Only if the in-game Text size setting ships | The game does not follow Dynamic Type. It needs its own Text size setting that makes the text at least 200% larger without clipped controls (Apple's criterion). If the setting stops below 200%, do not claim it. |
+| Larger Text | No | The game does not follow Dynamic Type. Its "Larger text" switch in Settings has one step: it makes the text 1.25 times larger. Apple's criterion needs text at least 200% larger without clipped controls. |
 | Dark Interface | No | The menus are dark, but the lake is a bright day scene in most places. Apple's criterion is about a dark appearance for the whole app. |
 | VoiceOver | No | The cast and the fight are motion and timing games on a 3D view. A VoiceOver user cannot do the common tasks. The buttons have labels, but that is not enough for the claim. |
 | Voice Control | No | The controls are gestures and phone motion. |
@@ -27,12 +27,12 @@ Run these on the build you submit. If one fails, take the label off until it pas
 ### Sufficient Contrast
 
 - Text: every text over 4.5:1 against its background (3:1 for text of 18 pt, or 14 pt bold, and larger). This covers the title menu, the cards, the HUD chip, the prompts, the gauge words and the toasts.
-- On Linux: the contrast check that the menus and access work adds to `qa/fish/` (make sure it runs over each screen at 390x844, in both art styles, and passes), and the screenshots of every screen at the six sizes, checked by eye.
+- On Linux: the contrast check in `qa/fish/menus.e2e.mjs` (part 1) must pass. It measures three elements at 390x844, in both art styles: the urgent prompt (`#prompt .p1`), the red button in Settings (`#settings .btn.go`) and "Go fishing" (`#freeBtn`). It does not measure the other screens. Check them by eye on the screenshots of every screen at the six sizes (`qa/fish/shots.mjs`).
 - On a phone: Settings > Accessibility > Display & Text Size > Increase Contrast on, then play one derby. Nothing must get harder to read.
 
 ### Reduced Motion
 
-- With `prefers-reduced-motion: reduce` (in Playwright: `reducedMotion: "reduce"`) and with Calm effects on: no camera punch on the hook set, no zoom on a jump, no shake, no flashing; the catch card shows at once; the guide clips do not autoplay.
+- With `prefers-reduced-motion: reduce` (in Playwright: `reducedMotion: "reduce"`) and with Calm effects on: no camera punch on the hook set, no zoom on a jump, no shake, no flashing; the catch card shows at once; the guide clips do not autoplay; the opening and a legend reveal play as still shots joined by fades, with no camera flight.
 - On a phone: Settings > Accessibility > Motion > Reduce Motion on. Cast, hook and land a fish, and open the catch card and the derby results.
 
 ### Differentiate Without Color Alone
@@ -41,10 +41,9 @@ Run these on the build you submit. If one fails, take the label off until it pas
 - Prompts name the move ("Lower the rod", "Reel", "Steer left").
 - Check: screenshots of a fight in grayscale (`page.emulateMedia` with a CSS `filter: grayscale(1)` on `html`, or the phone's Color Filters > Grayscale). Every state must still read.
 
-### Larger Text (only if claimed)
+### Larger Text (not claimed)
 
-- Set Text size to its largest value. Every screen at 360x640 and at 390x844 must show all its text with nothing clipped or covered, and every button must still work.
-- On a phone: the largest Text size in Settings, then the title, the pause card, Settings, the Journal, How to play and a fight.
+- Do not claim this label. The game has no setting that makes the text 200% larger, so there is no check for it.
 
 ## Where to set them
 

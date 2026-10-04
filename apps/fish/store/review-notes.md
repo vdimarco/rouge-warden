@@ -9,7 +9,7 @@ Reel It In is a fishing game. The phone is the rod and the reel.
 
 No account and no login. The game works offline and makes no network requests. It has no ads and no in-app purchases.
 
-Motion is optional. On the first start the game asks how you want to play. Pick "Touch" to play sitting down: hold the reel at the bottom of the screen, drag down to tip the rod back, then flick up and let go to cast. Turn the crank on the left with your thumb to reel. When the fish strikes, flick up on the lake to set the hook.
+Motion is optional. When you tap "Go fishing" for the first time, the game asks how you want to play. Tap "Use touch" to play sitting down. Then a short opening cutscene plays, one time only. A tap skips it. To cast with touch: hold the reel at the bottom of the screen, drag down to tip the rod back, then flick up and let go. Turn the crank on the left with your thumb to reel. When the fish strikes, flick up on the lake to set the hook.
 
 With motion: hold the phone upright, keep your thumb on the reel, tip the phone back, and whip it forward. Lift your thumb as the phone passes 11 o'clock. A safety card asks the player to grip the phone and keep 2 m clear before the first motion cast.
 
@@ -26,7 +26,7 @@ These lines depend on other work in `public/fish`. Read each one against the bui
 
 | Line | Depends on |
 | --- | --- |
-| The first-start choice of Touch or Motion, and the safety card | The current first-run flow (`main.js` setup screen). |
+| The choice of "Use touch" or "Use motion" on the first "Go fishing", the opening cutscene, and the safety card | The current first-run flow (`main.js` setup screen and `begin()`, and `cutscenes.js`). |
 | "Turn the crank on the left" | The touch layout with the crank on the left. |
 | "Flick up on the lake to set the hook" | The touch hook set. Name the gesture the game actually uses. |
 | "The first cast of a new game always gets a bite" | The sure first bite for a fresh save. |

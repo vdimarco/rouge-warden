@@ -3,7 +3,7 @@
 // guide.js. This checks the table and the guide in node, and that main.js takes its move subs from the table and no longer
 // spells a move its own way. screens.mjs checks the three surfaces side by side in the real game. Exit code 1 on a failure.
 import { readFileSync } from "fs";
-import { MOVE_WORDS, REEL_PACE, moveWords, inputOf, lesson, activeLesson } from "../../public/fish/js/guide.js";
+import { MOVE_WORDS, REEL_PACE, HOLD_WORDS, moveWords, inputOf, lesson, activeLesson } from "../../public/fish/js/guide.js";
 import { lossText, JOURNEY, ORDER } from "../../public/fish/js/journey.js";
 import "../../public/fish/js/rod-cues.js";
 
@@ -23,6 +23,8 @@ for (const kind of Object.keys(MOVE_WORDS)) for (const [motion, touch, input] of
   const cap = lesson(kind, motion, touch)[0];
   check(cap === moveWords(kind, inputOf(motion, touch)), `guide: ${kind} (${input}) says "${cap}"`);
 }
+// the hold cast (Space, or a mouse button held still): the guide caption says the rod cue's words, not the drag
+check(INPUTS.slice(1).every(([motion, touch]) => lesson("back", motion, touch, "", true)[0] === HOLD_WORDS.back && lesson("cast", motion, touch, "", true)[0] === HOLD_WORDS.cast) && HOLD_WORDS.back === "Keep holding" && HOLD_WORDS.cast === "Let go in the green" && lesson("back", false, false)[0] === "Drag down", `the hold cast: the guide says "${HOLD_WORDS.back}", then "${HOLD_WORDS.cast}"; a drag still says "Drag down"`);
 // the pump in motion mode: the scenario of the spec
 check(moveWords("pump", "motion") === "Tip back as you reel." && lesson("pump", true)[0] === "Tip back as you reel." && lesson("strength", true)[0] === "Tip back as you reel.", "the motion pump (and the reel power that is the same move) is \"Tip back as you reel.\"");
 check(moveWords("turn", "motion", 1) === "Tilt the phone right." && moveWords("turn", "touch", -1) === "Drag the rod left." && moveWords("turn", "keys", 1) === "Drag the rod right.", "a steer with a side names it");
@@ -62,6 +64,7 @@ const wrong = paced.filter((a) => { const want = PACE.find(([re]) => re.test(a[0
 check(paced.length >= 6 && !wrong.length, `the prompts that ask for a crank pace give it with the cue (${paced.length} of them${wrong.length ? "; wrong: " + wrong.map((a) => a[0]).join(" | ") : ""})`);
 const cues = readFileSync(new URL("../../public/fish/js/rod-cues.js", import.meta.url), "utf8");
 check(!/test\(cue\.text\)/.test(cues) && /cue\.pace/.test(cues), "the rod cue takes the pace from the cue, not from the headline's words");
+check(/HOLD_WORDS\[kind\]/.test(cues) && !/Keep holding/.test(cues), "the rod cue takes the hold cast's words from the guide's table");
 const OLD = ["Tip the phone back toward you as you reel", "Lift the rod slowly. Then reel as you lower it", "Drag the rod pad", "Reel in any slack", "Lower the rod a little", "if the gauge turns red", "Drag the rod up. Then reel as it comes down"];
 check(OLD.every((t) => !main.includes(t)), `the fight prompt has none of the old wordings (${OLD.filter((t) => main.includes(t)).join(" | ") || "none left"})`);
 

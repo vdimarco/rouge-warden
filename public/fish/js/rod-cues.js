@@ -1,5 +1,5 @@
 // Small action cues attached to the scene's rod, without a second tackle view.
-import { activeLesson, moveWords, inputOf } from "./guide.js";
+import { activeLesson, moveWords, inputOf, HOLD_WORDS } from "./guide.js";
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const UP = 'M20 34V8m-8 8 8-8 8 8';
 const DOWN = 'M20 8v26m-8-8 8 8 8-8';
@@ -12,10 +12,9 @@ const ICONS = {
   nibble: 'M7 20q13-16 26 0q-13 16-26 0m0 0-4-7v14l4-7',
   drag: 'M8 20h24M20 8v24',
 };
-// the cast cues; the fight cues use the same words as the prompt and the guide (MOVE_WORDS in guide.js)
+// the cast cues; the fight cues use the same words as the prompt and the guide (MOVE_WORDS in guide.js), and so does a hold
+// cast (HOLD_WORDS: Space, or the mouse button held, moves the rod by itself, so the cue says to wait, then to let go)
 const LABELS = { hold: 'Hold rod', back: 'Pull back', cast: 'Flick up!', flight: 'Touch to slow', nibble: 'A nibble…' };
-// a hold cast (Space, or the mouse button held): the rod moves by itself, so the cue says to wait, then to let go
-const HOLD_LABELS = { back: 'Keep holding', cast: 'Let go in the green' };
 export function createRodCues(game) {
   const touchDevice = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   const el = document.createElement('div');
@@ -52,7 +51,7 @@ export function createRodCues(game) {
     // the crank goes at the pace the prompt gives with the cue (fast for slack line or a charge, slowly when the lure runs
     // away from a fish, steadily for a tired fish), the same words as the guide; with no pace it is the reel move. A steer
     // the prompt gives a side to ("Drag the rod right.") says the same side here
-    const text = motion && kind === 'cast' ? 'Flick forward!' : (hold && HOLD_LABELS[kind]) || LABELS[kind] ||
+    const text = motion && kind === 'cast' ? 'Flick forward!' : (hold && HOLD_WORDS[kind]) || LABELS[kind] ||
       (kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
       moveWords(kind, inputOf(motion, touchDevice), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);
     const next = `${kind}:${text}:${cue.tone}:${tight}:${held}`;
