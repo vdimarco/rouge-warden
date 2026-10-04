@@ -115,8 +115,9 @@ try {
   await page.evaluate(()=>{const s=G.city.start;G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=s.yaw;G.test.step(1/60,90);});
   const t=await pick([]);assert(t,label+': a building well off the screen centre is in view');
   assert(Math.max(Math.abs(t.nx),Math.abs(t.ny))>=.4,label+': the tap is at least 0.4 NDC from the centre');
-  await page.mouse.click(t.px,t.py);await page.evaluate(()=>G.test.step(1/60,45));
-  const r=await page.evaluate(()=>{const s=G.test.state().ropes[1];return {state:s.state,tag:s.tag,id:s.id,anchor:s.anchor};});
+  await page.mouse.click(t.px,t.py);
+  // the rope as it catches: on a phone it lets go by itself past the bottom of the arc
+  const r=await page.evaluate(()=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[1];if(s.state==='attached')return {state:s.state,tag:s.tag,id:s.id,anchor:{...s.anchor}};}const s=G.test.state().ropes[1];return {state:s.state,tag:s.tag,id:s.id,anchor:s.anchor};});
   const miss=Math.hypot(r.anchor.x-t.x,r.anchor.y-t.y,r.anchor.z-t.z);
   assert.equal(r.state,'attached',label+': the tap fires and the rope attaches '+JSON.stringify(r));
   assert(r.id===t.id&&miss<8,label+': the rope anchors on the tapped building, not the centre target '+JSON.stringify({tapped:t.id,centre:t.centre,got:r.id,miss,nx:t.nx,ny:t.ny}));
@@ -126,21 +127,36 @@ try {
  await page.evaluate(()=>{const s=G.city.start;G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=s.yaw;G.test.step(1/60,90);});
  const mid=await page.evaluate(()=>({x:innerWidth/2,y:innerHeight/2,canvas:document.elementFromPoint(innerWidth/2,innerHeight/2)===G.renderer.domElement}));
  assert(mid.canvas,'the middle of the view is the canvas');
- await page.mouse.click(mid.x,mid.y);await page.evaluate(()=>G.test.step(1/60,45));
- const roofTap=await page.evaluate(()=>{const s=G.test.state().ropes[1];return {state:s.state,y:s.anchor.y,roof:G.city.start.y};});
- assert(roofTap.state==='attached'&&roofTap.y>roofTap.roof+5,'a tap on the hero and the roof anchors on a building above, not on the roof '+JSON.stringify(roofTap));
+ await page.mouse.click(mid.x,mid.y);
+ // read the anchor when the rope catches: on a phone the rope lets go by itself past the bottom of the arc
+ const roofTap=await page.evaluate(()=>{let y=null;for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[1];if(y===null&&s.state==='attached')y=s.anchor.y;}return {caught:y!==null,y,roof:G.city.start.y};});
+ assert(roofTap.caught&&roofTap.y>roofTap.roof+5,'a tap on the hero and the roof anchors on a building above, not on the roof '+JSON.stringify(roofTap));
  console.log('PASS tap the hero and the roof in third person: the rope goes up and ahead');
  const tp=await tapFrom('third person');console.log('PASS tap a building off the screen centre in third person',JSON.stringify({nx:+tp.nx.toFixed(2),ny:+tp.ny.toFixed(2),id:tp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const cur=await page.evaluate(()=>G.test.state().ropes[1].id);
  const t2=await pick([tp.id,cur]);assert(t2,'a second building is in view');
- await page.mouse.click(t2.px,t2.py);await page.evaluate(()=>G.test.step(1/60,45));
- const sw=await page.evaluate(()=>{const s=G.test.state().ropes[1];return {state:s.state,id:s.id};});
+ await page.mouse.click(t2.px,t2.py);
+ const sw=await page.evaluate((first)=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[1];if(s.state==='attached'&&s.id!==first)return {state:s.state,id:s.id};}const s=G.test.state().ropes[1];return {state:s.state,id:s.id};},tp.id);
  assert(sw.state==='attached'&&sw.id===t2.id,'a tap on another building switches the rope to it '+JSON.stringify({want:t2.id,got:sw}));
  console.log('PASS tap another building to switch ropes');
  await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
  const fp=await tapFrom('first person');console.log('PASS tap a building off the screen centre in first person',JSON.stringify({nx:+fp.nx.toFixed(2),ny:+fp.ny.toFixed(2),id:fp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
+ // In the air at speed with no rope and no drag, the chase view turns toward the flight (the phone's camera follow). With no rope the
+ // chase camera's own follow is off, so only the phone follow can turn it.
+ const fol=await page.evaluate(()=>{
+  const s=G.city.start,wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));G.test.aimAt(1,null);G.test.press(1,false);
+  G.test.teleport(s.x,s.y+60,s.z);G.P.onGround=false;G.P.vel.x=0;G.P.vel.y=1;G.P.vel.z=-20;
+  const head=Math.atan2(-G.P.vel.x,-G.P.vel.z);G.flatcam.setYaw(head+1);G.test.step(1/60,1);
+  const g0=Math.abs(wrap(G.flatcam.yaw-Math.atan2(-G.P.vel.x,-G.P.vel.z)));
+  G.test.step(1/60,40);
+  const g1=Math.abs(wrap(G.flatcam.yaw-Math.atan2(-G.P.vel.x,-G.P.vel.z)));
+  return {g0,g1,rope:G.test.state().ropes[1].state,third:document.body.dataset.view};
+ });
+ assert(fol.third==='third'&&fol.rope==='idle'&&fol.g1<fol.g0*0.6,'the chase view turns toward the flight on a phone '+JSON.stringify(fol));
+ console.log('PASS the chase view follows the flight on a phone',JSON.stringify({from:+fol.g0.toFixed(2),to:+fol.g1.toFixed(2)}));
+ await page.evaluate(()=>{const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,2);});
  await page.evaluate(()=>{G.test.aimAt(1,null);G.test.camera('needle');});
  await page.setViewportSize({width:844,height:390});await page.screenshot({path:out+'/tower-landscape.png'});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);

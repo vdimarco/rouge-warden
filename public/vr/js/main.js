@@ -449,7 +449,8 @@ function flatView(on) {
 // only ground near the hero (the roof or street under the feet, within AIM_NEAR, or water) is no anchor, and the default view
 // looks down at the hero's feet: the aim then goes ahead along that bearing, AIM_UP above the horizon. A lower roof further away
 // (a clog on it) stays a target. Result in AIM_D.
-const AIM_FAR = 400, AIM_UP = (20 * Math.PI) / 180, AIM_NEAR = 12;
+// AIM_UP: as high as the gold ring from the start roof, so the phone's first SWING catches the ring, the swing the tutorial asks for
+const AIM_FAR = 400, AIM_UP = (32 * Math.PI) / 180, AIM_NEAR = 12;
 const AIM_D = new THREE.Vector3(), AIM_HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
 function viewAim(nx, ny, hx, hy, hz, third) {
   const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;

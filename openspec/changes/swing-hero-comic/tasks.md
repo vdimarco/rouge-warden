@@ -14,16 +14,16 @@ A box is ticked only when the code and a test in the branch show the work done. 
 - [x] Keep the headset as it was: the camera stays under the rig and the hero stays hidden (`hero.mjs` VR run in the Quest emulator).
 - [x] Keep the `G.test` hooks working in third person (`hero.mjs`: shots, teleport; `play.mjs`).
 - [x] Hold the budget: the hero and its outline add at most 4 draws and 26,000 triangles, and the frame stays within 120 draws (`hero.mjs`, `perf.mjs`).
-- [x] List `hero.js` and `flatcam.js` in the service worker, precache `crew5.glb` and raise the version to 1.4.0 (`sw.js`; `pwa.mjs` fails when a file in `js/` is not listed).
+- [x] List `hero.js` and `flatcam.js` in the service worker, precache `crew5.glb` and raise the version (1.5.0 after the merge with `full-swing-phone-and-climbing`, Quest APK code 4) (`sw.js`; `pwa.mjs` fails when a file in `js/` is not listed).
 
 ## The phone
 
-- [x] Keep the one-thumb scheme from main: SWING and LET GO, tap, drag, motion aim, auto-jump, auto pull, pause (`mobile.test.mjs`, `mobile.e2e.mjs`; both run in CI).
+- [x] Keep the phone scheme from main working in the chase view: one tap swings, the rope lets go by itself, the speed kick, the sky tap, the clog plunge, motion aim, pause (`mobile.test.mjs`, `mobile.e2e.mjs`, `phone-swing.e2e.mjs`, `climb.e2e.mjs`; CI runs the first three).
 - [ ] Build the phone tap ray from the camera the player sees, and aim from the head to the point it hits, in third and first person. Being fixed in this change. Check: `mobile.e2e.mjs` taps a building at least 0.4 off the screen centre and expects the rope on that building, then taps a second building to switch.
 - [ ] Start the phone facing the gold ring with the chase pitch kept, and set the hero's yaw after the camera's. Being fixed in this change. Check: `mobile.e2e.mjs` phone start (pitch, distance, not blocked, same yaw).
 - [ ] Aim up and ahead when the view shows only ground within 12 m of the hero, for a tap on the hero and for the SWING button, and keep a clog on a lower roof further away a target. Being fixed in this change. Check: `mobile.e2e.mjs`, `hero.mjs` default aim and the lower-roof clog check.
 - [ ] Turn the launchers about the head to the view's pitch, so the first-person rope starts low in the view. Being fixed in this change. Check: `hero.mjs` muzzle at about 30 degrees under the axis.
-- [ ] Report the input kind "touch" on a phone and give it `LINES_TOUCH`. Being fixed in this change. Check: `ui.mjs` and `mobile.e2e.mjs` read the first tutorial line from a live phone input, and `play.mjs` runs the kinds.
+- [ ] Report the input kind "touch" on a phone and give it the phone lines (`LINES_PHONE`). Being fixed in this change. Check: `ui.mjs` and `mobile.e2e.mjs` read the first tutorial line from a live phone input, and `play.mjs` runs the kinds.
 
 ## The comic look
 
