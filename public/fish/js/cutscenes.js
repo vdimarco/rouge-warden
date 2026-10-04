@@ -119,18 +119,21 @@ function clearOf(place, from, to, d, y) {
 // name shows. Play goes on from the same cast state. ring: { x, z } on the water
 export function reveal(place, ring) {
   const sp = byId(fishingOf(place.id).legend.id), eye = place.stand.eye;
-  const near = clearOf(place, eye, ring, 10, 1.6), close = clearOf(place, eye, ring, 8.5, 1.5);
+  // the fish, and how high its leap goes (world.js draws the arc: 0.35 m and 0.9 of its length). A big one is seen from
+  // farther, and the view is tall enough for the whole leap
+  const len = lengthFor(sp, (sp.kg[0] + sp.kg[1]) / 2) / 100, arc = 0.35 + len * 0.9, d = Math.max(10, len * 6);
+  const near = clearOf(place, eye, ring, d, 1.6), close = clearOf(place, eye, ring, d - 1.5, 1.5);
+  const fov = (w, at) => (c) => Math.max(fovFor(w, at, c.aspect), Math.min(70, 2 * Math.atan((arc + len * 1.4) * 0.72 / at) / DEG));
   // seen side on: the fish swims across the view
   const heading = Math.atan2(ring.x - near.x, -(ring.z - near.z)) + Math.PI / 2;
-  const len = lengthFor(sp, (sp.kg[0] + sp.kg[1]) / 2) / 100;
   const look = (y) => v3(ring.x, y, ring.z);
   const BREACH = 2.8, AIR = 1.4;
   return {
     id: revealId(place.id), kind: "reveal", place: place.id, len: 6, fade: true, ring: { x: ring.x, z: ring.z },
     keys: [
       { t: 0, rest: true, pos: (c) => c.start.pos, look: (c) => c.start.look, fov: (c) => c.start.fov },
-      { t: 2.6, pos: near, look: look(0.4), fov: (c) => fovFor(8, 10, c.aspect) },
-      { t: 6, pos: close, look: look(0.6), fov: (c) => fovFor(7, 8.5, c.aspect) },
+      { t: 2.6, pos: near, look: look(arc * 0.6), fov: fov(8, d) },
+      { t: 6, pos: close, look: look(arc * 0.7), fov: fov(7, d - 1.5) },
     ],
     stills: [{ key: 1 }],
     caption: { title: sp.name, line: "The legend of " + journeyOf(place.id).name + ".", at: 3.1 },
