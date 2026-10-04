@@ -37,17 +37,21 @@ export function createCastRail(game) {
   let key = "", beadY = null, tone = "", clash = false, top = 0, len = 0;
   return {
     el,
-    // s: { x, y0 (the press point), theta (the rod now), span (touchSpan) } in #game px; null hides the rail
+    // s: { x, y0 (the press point), theta (the rod now), span (touchSpan), fit } in #game px; null hides the rail.
+    // fit: a hold cast (the mouse button, Space), where the clock moves the rod and not the finger: the rail may stand lower
+    // or higher than the press point, so all of it shows
     update(s) {
       if (!s) { if (!el.hidden) { el.hidden = true; key = ""; beadY = null; } return; }
       const h = s.span, W = game.clientWidth, dy = (th) => Math.round(touchDy(th, h));
       // beside the finger, on the side with room for the rail and its words
-      const x = Math.round(s.x + GAP + WORDS > W ? s.x - GAP : s.x + GAP), y0 = Math.round(s.y0), flip = x < s.x;
-      const k = x + ":" + y0 + ":" + h;
+      const x = Math.round(s.x + GAP + WORDS > W ? s.x - GAP : s.x + GAP), flip = x < s.x;
+      let y0 = Math.round(s.y0);
+      const k = x + ":" + y0 + ":" + h + ":" + !!s.fit;
       if (k !== key) {
         key = k;
         // under the HUD and the prompt, and on the screen: a rail that would run past either is cut short there
         const sky = ceiling(game, flip ? x - 12 - WORDS : x - 12, flip ? x + 12 : x + 12 + WORDS);
+        if (s.fit) y0 = Math.max(Math.min(y0, game.clientHeight - 6 - dy(BOTTOM)), sky + 6 - dy(TOP));
         top = Math.max(dy(TOP), sky + 6 - y0);
         len = Math.min(dy(BOTTOM), game.clientHeight - 6 - y0) - top;
         Object.assign(el.style, { left: x + "px", top: y0 + top + "px", height: Math.max(0, len) + "px" });

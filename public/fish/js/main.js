@@ -743,6 +743,8 @@ function pinLine(e) {
   // 80: the rod angle pinmove gives a finger that has not moved, so a small wobble is no flick.
   // x0: where the finger came down (the touch rail stands beside it); turn: which way the screen faced
   G.pin = { id: e.id, x0: e.x, y0: e.y, theta: 80, turn: screenAngle() };
+  // a mouse button held still: the hold cast, timed from now like Space (keyTheta)
+  if (e.hold) G.pin.key = e.t || now();
   // the press that ended the beat before this cast, gone on to take the line
   G.pinSkip = G.skip != null && e.id === G.skip;
   G.step = "pinned";
@@ -755,6 +757,8 @@ function pinLine(e) {
 }
 function unpinLine(e) {
   if (!G.pin || (e.id != null && G.pin.id != null && e.id !== G.pin.id)) return;
+  // a held mouse button comes up: graded like Space, at the rod angle now. A cancel (the page lost the focus) casts nothing
+  if (G.pin.key && !G.pin.feather) { if (e.cancel) resetCast(); else keyCast(); return; }
   const pin = G.pin;
   G.pin = null;
   if (pin.feather || G.phase !== "cast") return;
@@ -1460,9 +1464,9 @@ addEventListener("keyup", (e) => {
 addEventListener("blur", () => { for (const k in keys) keys[k] = false; syncPadKeys(); if (G.pin && G.pin.id === "key") resetCast(); });
 // the catch card takes Space this long after it shows
 const CARD_KEY_MS = 300;
-// Space held: the rod tips back for BACK_MS, then swings forward at SWING °/s, down to END. Space coming up lets go, and the
-// cast is graded at the rod angle then, like a finger's: the green band takes about 170 ms to cross. The swing is slower
-// than a real stroke so the timing can be seen; FWD is the stroke speed the launch gets
+// Space held, or a mouse button held still (the hold cast): the rod tips back for BACK_MS, then swings forward at SWING °/s,
+// down to END. Letting go casts, graded at the rod angle then, like a finger's: the green band takes about 170 ms to cross.
+// The swing is slower than a real stroke so the timing can be seen; FWD is the stroke speed the launch gets
 const KEY_CAST = { BACK_MS: 500, BACK_TO: 135, SWING: 240, END: 5, FWD: 600 };
 // the rod angle at time t
 function keyTheta(t) {
@@ -1470,11 +1474,11 @@ function keyTheta(t) {
   return ms < K.BACK_MS ? 80 + (ms / K.BACK_MS) * (K.BACK_TO - 80) : Math.max(K.END, K.BACK_TO - ((ms - K.BACK_MS) * K.SWING) / 1000);
 }
 function keyCast() {
-  const t = now(), early = t - G.pin.key < KEY_CAST.BACK_MS, theta = keyTheta(t);
+  const t = now(), space = G.pin.id === "key", early = t - G.pin.key < KEY_CAST.BACK_MS, theta = keyTheta(t);
   G.pin = null;
   if (G.phase !== "cast" || (G.step !== "pinned" && G.step !== "loaded")) return;
   // let go while the rod still goes back: nothing flies, and no derby cast is used up
-  if (early) { resetCast("Hold Space until the rod comes forward."); return; }
+  if (early) { resetCast(space ? "Hold Space until the rod comes forward." : "Keep holding until the rod comes forward."); return; }
   // the back swing counts in full, even when no frame drew it
   G.backMax = Math.max(G.backMax, KEY_CAST.BACK_TO);
   Motion.virtual({ t, theta, yaw: G.aimYaw, roll: 0 });
@@ -1496,12 +1500,13 @@ $("#dragUp").addEventListener("click", () => setDrag(G.drag + 1));
 addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
 // (aiming with touch or the mouse: a sideways drag before the cast, which the reel panel tells apart from a cast; see boot)
 // What a press takes in the cast (the reel panel's grab). Before the cast, with the sensors a press anywhere takes the line
-// at once. With touch the press waits for the drag: up and down takes the line where it pressed, sideways aims. The thumb
-// on the line opens the bail. Stalled sensors: a tap switches to touch, so a press takes nothing. True while the cast waits
-// for the line to be taken
+// at once. With touch and the mouse the press waits for the drag: up and down takes the line where it pressed, sideways
+// aims, and a mouse button held still is the hold cast. The thumb on the line opens the bail. In the flight a mouse click
+// anywhere feathers the line (a finger, on the rod). Stalled sensors: a tap switches to touch, so a press takes nothing.
+// True while the cast waits for the line to be taken
 function castGrab() {
   const waiting = G.step === "ready" || G.step === "open";
-  reelPanel.set({ bail: G.bail, pinned: !!G.pin, line: 0.85, hint: "", glow: waiting ? "pin" : "", touchCast: !sensing(), grab: waiting && !stalled() ? (sensing() ? "all" : "lock") : "" });
+  reelPanel.set({ bail: G.bail, pinned: !!G.pin, line: 0.85, hint: "", glow: waiting ? "pin" : "", touchCast: !sensing(), grab: waiting && !stalled() ? (sensing() ? "all" : "lock") : G.step === "flight" && !sensing() ? "feather" : "" });
   return waiting;
 }
 
@@ -1606,16 +1611,17 @@ function aimPreview(yaw) {
 const STALL_S = 3;
 const stalled = () => G.phase === "cast" && !G.paused && G.input === "motion" && G.quiet >= STALL_S;
 function castPrompt() {
-  const m = G.input === "motion", key = !!(G.pin && G.pin.key);
+  const m = G.input === "motion", key = !!(G.pin && G.pin.key), space = key && G.pin.id === "key";
   if (stalled()) return prompt("The motion sensors stopped. Play with touch?", "Tap the screen to switch.", "stop");
   // held sideways: say so here, without a card in the way (the picture already stays upright on the phone)
   if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "turn");
   switch (G.step) {
-    // touch: a drag down from the press takes the line, a drag sideways aims (the keys: Space and the arrows)
-    case "ready": prompt(m ? "Hold your thumb on the rod." : "Press the rod and drag down.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
+    // touch: a drag down from the press takes the line, a drag sideways aims. A computer: the mouse button held (the hold
+    // cast), or Space; a drag sideways or the arrows aim
+    case "ready": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press the rod and drag down." : "Hold the mouse button. Let go in the green.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
     case "open": prompt(m ? "Hold your thumb on the rod." : "Press and hold on the rod.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
-    case "pinned": prompt(m ? "Tip the phone back over your shoulder." : key ? "Keep holding Space." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
-    case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : key ? "Let go of Space in the green." : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
+    case "pinned": prompt(m ? "Tip the phone back over your shoulder." : space ? "Keep holding Space." : key ? "Keep holding." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
+    case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : space ? "Let go of Space in the green." : key ? "Let go in the green." : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
     default: prompt("");
   }
 }
@@ -1914,10 +1920,11 @@ function frame() {
   // (the rod cue hides while stalled sensors offer touch: the tap is the only move then)
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
-    held: !!G.pin || !!rodPad?.drag });
-  // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release)
+    held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
+  // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
+  // hold cast (Space, the mouse button) moves the rod by the clock: its rail stands where all of it shows
   const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
-  castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: touchSpan(game.clientHeight) });
+  castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: touchSpan(game.clientHeight), fit: !!railPin.key });
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!rodPad.hidden) rodPad.draw && rodPad.draw(dt); }
   if (DEBUG) debug();
 }
@@ -1951,7 +1958,7 @@ function step(dt) {
       if (G.phase !== "cast") break;
       const waiting = castGrab();
       // a thumb that stayed down from the last cast (it never lifted) holds the line now
-      if (waiting && !G.pin && reelPanel.pinId != null && reelPanel.thumb) pinLine({ id: reelPanel.pinId, x: reelPanel.thumb.x, y: reelPanel.thumb.y, t: now() });
+      if (waiting && !G.pin && reelPanel.pinId != null && reelPanel.thumb) pinLine({ id: reelPanel.pinId, x: reelPanel.thumb.x, y: reelPanel.thumb.y, t: now(), hold: reelPanel.holding });
       if (G.step !== "flight") reelPanel.set({ spool: G.drop > 0 && G.drop < 1.2 && G.bail === "open" && !G.pin ? 1.2 : 0 });
       break;
     }
@@ -2053,10 +2060,11 @@ async function boot() {
     if (!sensing()) Motion.virtual({ t: now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });
   });
   reelPanel.on("unpin", (e) => unpinLine(e));
-  // a sideways drag before the cast aims: a fifth of a degree for each pixel
+  // a sideways drag before the cast aims, and so does the mouse while it holds the line (the hold cast): a fifth of a degree
+  // for each pixel
   let aimFrom = 0;
   reelPanel.on("aim", (e) => {
-    if (G.paused || G.phase !== "cast" || sensing()) return;
+    if (G.paused || G.phase !== "cast" || sensing() || !["ready", "open", "pinned", "loaded"].includes(G.step)) return;
     if (e.start) aimFrom = G.aimYaw;
     G.aimYaw = clamp(aimFrom + e.dx * 0.2, -60, 60);
   });

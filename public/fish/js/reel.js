@@ -32,6 +32,7 @@ export const REEL_UI = {
   maxDpr: 2,           // canvas pixel ratio cap; main.js lowers it on low quality
   pinHoldMs: 90,       // bail closed: a press becomes a pin after this long without a big move
   pinSlopPx: 12,       // "a big move"
+  holdMs: 150,         // grab "lock": a mouse button held this long without a big move is the hold cast
   bailSwipePx: 40,     // the bail swipe: at least this far...
   bailVertical: 1.4,   // ...and this many times more vertical than sideways
   crankWinMs: 100,     // crank speed = the angle the thumb swept over this window
@@ -271,7 +272,9 @@ export class ReelPanel extends Widget {
     this.mx = hand === "left" ? -1 : 1;
     // grab: a press takes the line at once even with the bail shut (the game opens the bail on the pin).
     // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then);
-    // "lock": anywhere, once the drag shows which: up and down takes the line where it pressed, sideways aims ("aim")
+    // "lock": anywhere, once the drag shows which: up and down takes the line where it pressed, sideways aims ("aim"), and
+    // a mouse button held still takes it as a hold ("pin" with hold: the game times the rod; moves while it holds aim);
+    // "feather": the line flies, and a mouse click anywhere holds it (a finger, on the reel face)
     this.s = { bail: "closed", pinned: false, spool: 0, line: 0.85, hint: "", glow: "", touchCast: false, grab: "" };
     this.fx = { bail: 0, bailV: 0, spin: 0, glow: 0, clack: 0, thumbA: 0, guide: 0, wasOpen: false };
     this.ptrs = new Map();
@@ -302,9 +305,9 @@ export class ReelPanel extends Widget {
     const open = this.s.bail === "open";
     const hit = this.direct ? this.toLocal(e.clientX, e.clientY, this.el) : q;
     const inFace = hit.x >= 0 && hit.y >= 0 && hit.x <= this.w && hit.y <= this.h;
-    const lock = this.s.grab === "lock";
-    if (this.direct && !inFace && this.s.grab !== "all" && !lock) return;
-    const grab = this.s.grab === "all" || (this.s.grab === "panel" && inFace);
+    const lock = this.s.grab === "lock", all = this.s.grab === "all" || (this.s.grab === "feather" && e.pointerType === "mouse");
+    if (this.direct && !inFace && !all && !lock) return;
+    const grab = all || (this.s.grab === "panel" && inFace);
     // a grab press is never a bail swipe: the press itself opens the bail
     const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && !lock && this._onBail(q.x, q.y), open: open || grab, lock, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
@@ -312,7 +315,12 @@ export class ReelPanel extends Widget {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
     } else if (lock) {
-      // the drag says what this press is (_move), so a sideways aim never clacks the bail
+      // the drag says what this press is (_move), so a sideways aim never clacks the bail. A mouse button that stays put
+      // for holdMs is the hold cast
+      if (e.pointerType === "mouse") p.timer = setTimeout(() => {
+        p.timer = 0;
+        if (this.ptrs.get(p.id) === p && p.state === "wait" && this.pinId == null && this.s.grab === "lock") this._hold(p, now());
+      }, T.holdMs);
     } else if (this.s.grab !== "panel") {
       // (with grab "panel" the lake is for aiming: a rest there before the drag is never a pin)
       p.timer = setTimeout(() => {
@@ -329,6 +337,15 @@ export class ReelPanel extends Widget {
     this.thumb = { x: at.x, y: at.y, x0: at.x, y0: at.y };
     this.emit("pin", { id: p.id, x: at.x, y: at.y, t });
   }
+  // the hold cast: the line is taken where the button came down, the game moves the rod by the clock, and a move aims
+  _hold(p, t) {
+    p.state = "hold"; p.hx = p.x;
+    this.pinId = p.id;
+    this.thumb = { x: p.x0, y: p.y0, x0: p.x0, y0: p.y0 };
+    this.emit("pin", { id: p.id, x: p.x0, y: p.y0, t, hold: true });
+  }
+  // the finger on the line is a held mouse button (a hold cast)
+  get holding() { const p = this.ptrs.get(this.pinId); return !!p && p.state === "hold"; }
   // cancel: the browser took the touch away (pointercancel, the page lost focus), or a hold turned into a bail swipe.
   // That is not a thumb lifting off the line, so it must not count as a cast.
   _unpin(p, t, cancel = false) {
@@ -350,6 +367,7 @@ export class ReelPanel extends Widget {
       else if (Math.abs(dy) >= Math.abs(dx)) p.state = "extra";
       else { p.state = "aim"; this.emit("aim", { id: p.id, dx, dy, start: true }); }
     } else if (p.state === "aim") this.emit("aim", { id: p.id, dx, dy, start: false });
+    else if (p.state === "hold") { this.emit("aim", { id: p.id, dx: p.x - p.hx, dy, start: !p.aimed }); p.aimed = true; }
     // the bail swipe: long enough, mostly vertical, and it started on the bail arm
     if (p.onBail && !p.swiped && Math.abs(dy) > T.bailSwipePx && Math.abs(dy) > T.bailVertical * Math.abs(dx)) {
       p.swiped = true;
@@ -370,13 +388,13 @@ export class ReelPanel extends Widget {
     if (p.timer) { clearTimeout(p.timer); p.timer = 0; }
     // a cancel may carry no position: keep the last one we saw
     if (!cancel || e.clientX || e.clientY) { const q = this._local(e); p.x = q.x; p.y = q.y; }
-    if (p.state === "pin") this._unpin(p, e.timeStamp, cancel);
+    if (p.state === "pin" || p.state === "hold") this._unpin(p, e.timeStamp, cancel);
   }
   _cancelAll() {
     for (const p of [...this.ptrs.values()]) {
       this.ptrs.delete(p.id);
       if (p.timer) clearTimeout(p.timer);
-      if (p.state === "pin") this._unpin(p, now(), true);
+      if (p.state === "pin" || p.state === "hold") this._unpin(p, now(), true);
     }
   }
   _onBail(x, y) { const b = this.bailArea; return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h; }
