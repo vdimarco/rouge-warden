@@ -229,6 +229,7 @@ try {
   /* ---------- one-shots: [name, v, render seconds, min length, max length] ---------- */
   const ONE = [
     ["ui", null, 1, 0.01, 0.3], ["uiBack", null, 1, 0.01, 0.3], ["tick", null, 1, 0.004, 0.2],
+    ["swell", 0, 7, 2, 5.5], ["swell", 1, 7, 2, 5.5], ["swell", 2, 7, 2, 5.5],
     ["bailOpen", null, 1.2, 0.03, 0.4], ["bailClose", null, 1.2, 0.03, 0.4], ["pin", null, 1, 0.02, 0.3],
     ["slip", null, 1.5, 0.1, 0.8], ["load", null, 1.5, 0.15, 0.9], ["release", null, 1, 0.02, 0.4],
     ["splash", 0.15, 2.5, 0.1, 1.5], ["splash", 0.5, 2.5, 0.15, 1.8], ["splash", 1, 3, 0.3, 2.2], ["plop", null, 1.5, 0.03, 0.6],

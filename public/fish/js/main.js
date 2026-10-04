@@ -12,6 +12,7 @@ import { createRodCues } from "./rod-cues.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
+import { createCutscenes, opening as openingCut, arrival as arrivalCut, reveal as revealCut, landed as landedCut, finale as finaleCut, ringSpot, arriveId, revealId, landedId } from "./cutscenes.js";
 import { HangingLure } from "./line-motion.js";
 import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, gradeRelease, liftError, RELEASE, TOUCH } from "./cast.js";
 import { createCastRail } from "./cast-rail.js";
@@ -163,6 +164,8 @@ let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, g
 const rodCues = createRodCues(game);
 const castRail = createCastRail(game);
 let cardT = 0, countT = 0;   // the catch card: the timer of the photo beat, the timer of the count-up
+let cuts = null;             // the cutscene player (cutscenes.js, made in boot); heldToasts wait for the one playing
+const heldToasts = [];
 
 /* ---------------- icons for the prompts and the help ---------------- */
 const PHONE = "<rect x='14' y='5' width='12' height='22' rx='2.5' fill='none' stroke='currentColor' stroke-width='2.4'/>";
@@ -225,6 +228,7 @@ const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
 let toastT = 0, toastNextT = 0, toastAt = -1e9;
 const toastQ = [];
 function toast(msg, ms = 2200, onShow = null) {
+  if (cuts && cuts.playing) { heldToasts.push([msg, ms, onShow]); return; }
   const t = $("#toast"), up = now() - toastAt;
   if (t.classList.contains("on") && up < TOAST_MIN) {
     // the same news again (a second gold ring) keeps the shown toast up for its full time; it is not news to queue
@@ -574,7 +578,8 @@ function titleBest() {
 function begin(mode) {
   Sound.init(); Haptics.unlock(); keepAwake();
   Sound.sfx("ui");
-  chooseInput(() => startMode(mode));
+  // the first "Go fishing" on a fresh save: the opening at Loon Lake, then the cast
+  chooseInput(() => (mode === "free" && openingDue() ? (show(null), playCut(openingCut(G.place), () => startMode(mode))) : startMode(mode)));
 }
 $("#derbyBtn").addEventListener("click", () => begin("derby"));
 $("#freeBtn").addEventListener("click", () => begin("free"));
@@ -656,6 +661,14 @@ function renderPlaces() {
       b.textContent = here ? "You are here" : "Fish here";
       b.addEventListener("click", () => { Sound.sfx("ui"); travelTo(id); });
       body.appendChild(b);
+      // the place's arrival and its legend's reveal, again, once seen
+      if ([arriveId(id), revealId(id)].some(cutSeen)) {
+        const w = document.createElement("button");
+        w.type = "button"; w.className = "btn alt watch"; w.textContent = "Watch";
+        w.setAttribute("aria-label", "Watch " + J.name + " again");
+        w.addEventListener("click", () => { Sound.sfx("ui"); watch(id); });
+        body.appendChild(w);
+      }
     } else if (id === lock) {
       const from = prevPlace(id), best = (save.places[from] || {}).kg || 0;
       para(goalText(from, "card"));
@@ -714,7 +727,7 @@ async function travelTo(id) {
   }
   // ?open must never save a place the player has not earned
   if (isOpen(save, id)) { save.place = id; persist(); }
-  if (id !== "loon" && !save.seen["at." + id]) arrival(id);
+  if (id !== "loon" && !save.seen["at." + id]) flyIn(id, () => arrival(id));
   else toTitle();
 }
 // the first visit: where you are, what is new, and one tip
@@ -1528,6 +1541,8 @@ addEventListener("message", (e) => {
 
 /* ---------------- pause ---------------- */
 function pause() {
+  // a cutscene ends first: the pause comes in where it would have ended
+  if (cuts && cuts.playing) cuts.skip();
   if (G.paused || !(G.phase === "cast" || G.phase === "reel" || G.phase === "lost")) return;
   G.paused = true;
   pullStrength.reset();
@@ -1571,6 +1586,7 @@ Native.onResume(() => {
 // the arrival card it presses the main button; on the card of a new place it stays here. It never closes the app during
 // play: on the title the app goes to the background. While a place loads it does nothing
 function back() {
+  if (cuts && cuts.playing) { cuts.skip(); return; }
   const open = (s) => !$("#" + s).hidden;
   if (traveling) return;
   if (window.GameSwitch && GameSwitch.isOpen) { GameSwitch.close(); return; }
@@ -1851,7 +1867,7 @@ function reelUpdate(dt) {
   G.tension = lerp(G.tension, s.tfrac || 0, 1 - Math.exp(-dt * 12));
   for (const e of sim.events.splice(0)) handleEvent(e);
   // the outcome comes from the sim's phase; events only drive sound, buzz and pictures
-  if (s.phase === "caught" && s.catch) { caught(s.catch); return; }
+  if (s.phase === "caught" && s.catch) { caught(s.catch); heroShot(s.catch); return; }
   if (s.phase === "lost") { outcome("lost", reasonText(s.reason)); return; }
   if (s.phase === "home") { outcome("home", "Nothing this time.", "Cast again. Try a rising ring."); return; }
   if (G.big && t - G.big.at > 4000) sayBig();
@@ -2074,6 +2090,105 @@ function reasonText(r) {
   return lossText(r, { input, by: G.thrownBy, cause: s && s.cause, hook: moveWords("hook", input), legend: sp && sp.legend ? G.place.id : null });
 }
 
+/* ---------------- the cutscenes ---------------- */
+// cutscenes.js draws them over the live lake; here is when they play, and what comes after. Each plays once (save.cuts,
+// marked as it starts), never in a fight or while the lure flies. While one plays, step() holds the fish, the clock and
+// the derby, the toasts wait, and a press, Space, Escape or back skips it (cutscenes.js and back())
+const cutSeen = (id) => !!save.cuts[id];
+// then(skipped) runs when it ends. mark: false for a replay
+function playCut(script, then, mark = true) {
+  if (mark && script.id && !save.cuts[script.id]) { save.cuts[script.id] = 1; persist(); }
+  prompt(""); hideReport();
+  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
+  const T = $("#toast");
+  if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null]); T.classList.remove("on"); }
+  for (const q of toastQ.splice(0)) heldToasts.push([q.msg, q.ms, q.onShow]);
+  clearTimeout(toastNextT); toastNextT = 0;
+  cuts.play(script, (skipped) => {
+    then(skipped);
+    for (const a of heldToasts.splice(0)) toast(...a);
+  });
+}
+// the opening: the first "Go fishing" on a fresh save (one that has never cast)
+const openingDue = () => !cutSeen(arriveId("loon")) && G.place.id === "loon" && save.casts === 0 && save.caught === 0;
+// the first visit to a place: its fly-in at its own hour, then the arrival card (straight to the card once seen)
+function flyIn(id, then) {
+  if (cutSeen(arriveId(id))) { then(); return; }
+  G.hour = startHour(id, "free"); world.setHour(G.hour); Sound.setAmbience(true, G.hour);
+  show(null);
+  playCut(arrivalCut(G.place), () => then());
+}
+// The first gold ring of this place's legend: its reveal, in the cast before the line is held (never in a fight or while
+// the lure flies; a ring that rose then waits on the water for the cast). From the first fish landed on, so a new player's
+// first casts go to the first fish. Play goes on from the same cast state
+function revealDue() {
+  return G.phase === "cast" && (G.step === "ready" || G.step === "open") && !G.pin && !G.lift && save.caught > 0 && !cutSeen(revealId(G.place.id)) && !!rises && rises.list.some((g) => g.gold);
+}
+function playReveal() {
+  const g = rises.list.find((q) => q.gold);
+  // the ring is said: no toast for it after
+  G.goldAt = { x: g.x, z: g.z };
+  playCut(revealCut(G.place, g), () => {});
+}
+// A legend landed for the first time: the hero shot before its card (the photo beat waits for it, then the flash and the
+// card come as they would). The fourth legend: the finale comes after its card (see below)
+function heroShot(c) {
+  const sp = byId(c.id);
+  if (!sp || !sp.legend) return;
+  if (legendsLanded(save) >= ORDER.length && !cutSeen("finale")) G.finale = true;
+  if (cutSeen(landedId(G.place.id)) || !G.cardWait) return;
+  clearTimeout(cardT);
+  // the fish alone in the whole view: the card is not up yet
+  world.setView({ mode: "catch" });
+  playCut(landedCut(G.place, c), () => {
+    flash("photo"); Sound.sfx("shutter"); Haptics.thump();
+    cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, false, sizeRank(sp, c.kg)); }, (PHOTO.card - PHOTO.flash) * 1000);
+  });
+}
+// the finale: the card's button (or Enter, or back) plays it first, then does what it does
+$("#catch").addEventListener("click", (e) => {
+  if (!G.finale || G.cardWait || !e.target.closest || !e.target.closest("#catchGo")) return;
+  e.stopPropagation();
+  G.finale = false;
+  Sound.sfx("ui");
+  clearTimeout(cardT); clearInterval(countT);
+  show(null); world.hideCatch(); world.setView({ mode: "title" });
+  playCut(finaleCut(G.place), () => $("#catchGo").click());
+}, true);
+// "Watch" on a Places card: that place's arrival and its legend's reveal, the ones seen, one after the other (a skip ends
+// the replay). Another place loads behind the travel card, and the place you are at comes back after. Then the Places card
+async function watch(id) {
+  if (traveling || cuts.playing || !openNow(id)) return;
+  const home = G.place.id, list = [arriveId(id), revealId(id)].filter(cutSeen);
+  if (!list.length) return;
+  const trip = async (to) => {
+    $("#travelTxt").textContent = "On the way to " + JOURNEY[to].name + ".";
+    show("travel");
+    traveling = true;
+    const p = await switchPlace(to);
+    traveling = false;
+    return p;
+  };
+  const done = async () => {
+    world.setRings([]); world.setFish(null);
+    if (G.place.id !== home) await trip(home);
+    G.hour = startHour(G.place.id, "free"); world.setHour(G.hour); Sound.setAmbience(true, G.hour);
+    renderPlaces();
+    show("places");
+  };
+  if (id !== home && !(await trip(id))) { await done(); toast(JOURNEY[id].name + " did not load.", 3600); return; }
+  G.hour = startHour(id, "free"); world.setHour(G.hour); Sound.setAmbience(true, G.hour);
+  show(null);
+  const ring = ringSpot(G.place);
+  const next = (i) => {
+    const reveal = list[i] === revealId(id);
+    // the legend's ring on the water, seen from the cast view (its glow shows there)
+    if (reveal) { world.setRings([{ x: ring.x, z: ring.z, gold: true }]); world.setView({ mode: "cast" }); }
+    playCut(reveal ? revealCut(G.place, ring) : arrivalCut(G.place), (skipped) => { if (!skipped && i + 1 < list.length) next(i + 1); else done(); }, false);
+  };
+  next(0);
+}
+
 /* ---------------- the loop ---------------- */
 let last = now(), fpsAcc = 0, fpsN = 0, drew = false, drawAt = 0, menuDt = 0;
 // the title over the live lake (the Original style) is a menu: the lake draws there at 15 frames a second at most
@@ -2112,7 +2227,7 @@ function frame() {
   dt = Math.min(dt, 0.05);
   // under the pause menu, the dimmed screens and the painted title the lake stands still: draw it once, then let the
   // GPU rest. A lost GL context draws nothing until it is back. The title over the live lake draws it less often
-  const still = G.paused || G.ctxLost || covered(), menu = !still && G.phase === "title";
+  const still = G.paused || G.ctxLost || covered(), menu = !still && G.phase === "title" && !(cuts && cuts.playing);
   menuDt = menu ? menuDt + dt : 0;
   drew = still ? !G.stillDrawn : !menu || t - drawAt >= MENU_MS;
   if (drew) { world.update(menu ? menuDt : dt); world.render(); drawAt = t; menuDt = 0; }
@@ -2129,6 +2244,8 @@ function frame() {
   if (DEBUG) debug();
 }
 function step(dt) {
+  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on
+  if (cuts && cuts.playing) { cuts.update(dt); return; }
   const inPlay = G.phase === "cast" || G.phase === "reel" || G.phase === "lost";
   if (inPlay) {
     // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour (journey.js has the clock)
@@ -2142,12 +2259,14 @@ function step(dt) {
         world.rise(e.x, e.z);
         if (e.gold) {
           // said once for each ring (it pulses every few seconds), and not in the middle of a fight
-          if (G.phase !== "reel" && !(G.goldAt && Math.hypot(e.x - G.goldAt.x, e.z - G.goldAt.z) < 1)) { G.goldAt = { x: e.x, z: e.z }; toast("A gold ring! Something big is rising.", 2600); }
+          // (the first ring of the legend here plays its reveal instead, see revealDue)
+          if (G.phase !== "reel" && !(G.goldAt && Math.hypot(e.x - G.goldAt.x, e.z - G.goldAt.z) < 1)) { G.goldAt = { x: e.x, z: e.z }; if (!revealDue()) toast("A gold ring! Something big is rising.", 2600); }
           if (legendStep(save, G.place.id, 1)) persist();
         } else ringNews(e);
       }
       // the rings only change when one rises or goes quiet
       if (ev.length || rises.list.length !== G.ringN) { G.ringN = rises.list.length; world.setRings(rises.list); }
+      if (revealDue()) { playReveal(); return; }
     }
   } else if (G.phase === "title") {
     world.setView({ mode: "title" });
@@ -2270,7 +2389,7 @@ async function boot() {
   });
   // stalled sensors: a tap on the lake switches this session to touch (the saved choice stays motion)
   game.addEventListener("pointerdown", (e) => {
-    if (!stalled() || (e.target.closest && e.target.closest("button, a, input, select, label, .screen, #hud"))) return;
+    if (!stalled() || (e.target.closest && e.target.closest("button, a, input, select, label, .screen, #hud, #cut"))) return;
     e.stopPropagation();
     G.input = "touch"; G.quiet = 0; G.stallTouch = true;
     resetCast();
@@ -2322,6 +2441,7 @@ async function boot() {
   Haptics.attachPad($("#reelBox"));
   crankPad = Haptics.attachCrank($("#crankBox"), { toLocal });
   setDrag(1);
+  cuts = createCutscenes({ world, root: game, sound: Sound, touch: touchDevice });
   window.FISH = {
     G, Motion, get world() { return world; }, get crank() { return crank; }, get sim() { return G.sim; }, get save() { return save; },
     startMode, newCast, toTitle, release, openBail, closeBail, enterReel, relayout, toLocal, pinLine, unpinLine, get rises() { return rises; },
@@ -2338,6 +2458,8 @@ async function boot() {
     get place() { return G.place; }, PLACES, JOURNEY,
     // for the tests: the parts a test watches or listens to
     get gauge() { return gauge; }, Sound, Haptics,
+    // the cutscene player (playing, id, state, skip()), and the replay of a Places card
+    get cuts() { return cuts; }, watch,
   };
   toTitle();
   // the title is ready: the boot screen and the app's splash screen go

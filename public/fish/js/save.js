@@ -12,6 +12,8 @@
 // derbyBest stays the Loon Lake best (the arcade cabinet reads it). biggest is the biggest fish anywhere. The journal
 // stays keyed by species id, so a fish that lives at two places has one record.
 // One-time flags live in seen: "at.<id>" (the arrival card), "opened.<id>" (the unlock toast), "river.swing", "ring.tip".
+// The cutscenes seen live in cuts { id: 1 } (cutscenes.js plays them, CUTS lists the ids). A save from before them gets the
+//   ones its progress has passed, so a long-time player is not stopped for them.
 import { JUNK, byId } from "./species.js";
 import { fishingOf } from "./fishing.js";
 import { ORDER, JOURNEY, nextPlace, isOpen } from "./journey.js";
@@ -53,6 +55,32 @@ function cleanDays(d) {
   if (!isObj(d)) return blankDays();
   const run = whole(d.run), best = Math.max(whole(d.best), run);
   return { n: Math.max(whole(d.n), best), run, best, last: isDay(d.last) ? d.last : "" };
+}
+
+// The cutscenes, once each: "open" (the opening at Loon Lake, which is its arrival), "arrive.<id>" (the fly-in at a new
+// place), "reveal.<id>" (the first gold ring of its legend), "landed.<id>" (its legend landed), "finale" (all four landed)
+export const CUTS = ["open", ...ORDER.slice(1).map((id) => "arrive." + id), ...ORDER.map((id) => "reveal." + id), ...ORDER.map((id) => "landed." + id), "finale"];
+// The cutscenes seen: the known ids set to 1. A save with no cuts object (from before the cutscenes, or broken there) gets
+// the ones its progress has passed: the opening once it has cast, the arrival of each place open, the reveal of each legend
+// whose gold ring it saw, each legend landed, and the finale with all four
+function cleanCuts(c, save) {
+  let seen = c;
+  if (!isObj(c)) {
+    seen = {};
+    if (save.casts > 0 || save.caught > 0) seen.open = 1;
+    let all = true;
+    for (const id of ORDER) {
+      const e = save.places[id], j = save.journal[fishingOf(id).legend.id], landed = !!(j && j.n > 0);
+      if (id !== "loon" && e && e.open) seen["arrive." + id] = 1;
+      if (landed || (e && e.lg >= 1)) seen["reveal." + id] = 1;
+      if (landed) seen["landed." + id] = 1; else all = false;
+    }
+    if (all) seen.finale = 1;
+  }
+  // in the order of CUTS, so a load, save and load writes the same text
+  const out = {};
+  for (const k of CUTS) if (seen[k] === 1 || seen[k] === true) out[k] = 1;
+  return out;
 }
 
 // raw: what storage holds for SAVE_KEY (the JSON text, or null), or a value already parsed.
@@ -106,6 +134,8 @@ export function loadSave(raw) {
   if (!ORDER.includes(save.place) || !(save.places[save.place] && save.places[save.place].open)) save.place = "loon";
   // 6. today's goal, once the places are known
   save.today = cleanToday(save.today, save);
+  // 7. the cutscenes seen, once the progress is known
+  save.cuts = cleanCuts(s && typeof s === "object" ? s.cuts : null, save);
   return save;
 }
 
