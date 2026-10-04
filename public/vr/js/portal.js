@@ -1373,7 +1373,8 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
       // room and the mask wait three frames (the city stays hidden), so the first frame after the click is light
       s.defer = mode === "desktop" ? 3 : 0;
       if (s.defer) { s.hid = true; view.root.visible = false; } else view.stencil(1);
-      audio.ambience(0.2);
+      // the city hums low behind the wall; a flat screen's speakers lose a bed that quiet, so it is louder there
+      audio.ambience(mode === "desktop" ? 0.6 : 0.2);
       Pt.active = true; Pt.phase = phase = "prep";
       // the shaders of the opening are compiled with everything else in the first frame of a session (main.js), not as a
       // hitch when the crack starts: until the wall is chosen they wait in view of the compiler but far behind you

@@ -111,6 +111,11 @@ try {
   b = await boxes();
   assert(!b.top && !b.sub && !b.wide, 'landscape layout: ' + JSON.stringify(b));
   await page.screenshot({ path: out + '/phone-swing-landscape.png' });
-  console.log('PASS portrait and landscape: the phone buttons cover neither the score nor the spoken lines');
+  // a narrow phone (360 px): the top buttons stay on one row inside the screen
+  await page.setViewportSize({ width: 360, height: 780 }); await page.evaluate(() => G.test.step(1 / 60, 2));
+  const row = await page.evaluate(() => { const bs = [...document.querySelectorAll('.phone-top button')].map((b) => b.getBoundingClientRect()); return { tall: Math.max(...bs.map((r) => r.height)), left: Math.min(...bs.map((r) => r.left)), right: Math.max(...bs.map((r) => r.right)), w: innerWidth }; });
+  b = await boxes();
+  assert(row.tall <= 46 && row.left >= 0 && row.right <= row.w && !b.top && !b.wide, '360 px: one row of top buttons inside the screen: ' + JSON.stringify(row));
+  console.log('PASS portrait, landscape and a 360 px phone: the phone buttons cover neither the score nor the spoken lines');
   assert.equal(page.errors.length, 0, JSON.stringify(page.errors)); console.log('PASS no runtime errors');
 } finally { await close(); }

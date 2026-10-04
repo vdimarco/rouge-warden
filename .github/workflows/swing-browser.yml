@@ -11,7 +11,7 @@ permissions:
 jobs:
   city-and-one-thumb:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +30,15 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing
+      - name: Trial rings, full screen and the flat map
+        run: node qa/vr/rings-map.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
+      - name: Desktop sound at the output
+        run: node qa/vr/sound.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - uses: actions/upload-artifact@v4
         if: always()
         with:
