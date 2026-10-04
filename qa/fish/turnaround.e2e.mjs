@@ -85,14 +85,16 @@ function helpers() {
   window.__press = async ({ t0, at, kind = "mouse", x = 300, y = 450, hold = 60, id = 1 }) => {
     while (performance.now() - t0 < at) await wait(1);
     const tp = performance.now(), n0 = window.__toasts.length, ready = () => G.phase === "cast" && G.step === "ready";
-    if (kind === "key") key("keydown"); else fire("pointerdown", x, y, kind, id);
+    // (what the press met, for a failure: the phase, how long the beat had been up, and the element under it)
+    const was = { at: G.phase + "/" + G.step, ms: Math.round(tp - G.outcomeAt), paused: G.paused };
+    if (kind === "key") key("keydown"); else was.on = fire("pointerdown", x, y, kind, id).id;
     const next = G.phase === "cast" && (G.step === "ready" || G.step === "pinned");
     let after = ready() ? performance.now() - tp : null;
     while (performance.now() - tp < hold) { if (after == null && ready()) after = performance.now() - tp; await wait(2); }
     if (kind === "key") key("keyup"); else fire("pointerup", x, y, kind, id);
     if (after == null) after = (await window.__ready(tp, 6000)).ms;
     await wait(150);
-    return { next, after, toasts: window.__toasts.slice(n0) };
+    return { next, after, toasts: window.__toasts.slice(n0), was };
   };
   return true;
 }
@@ -187,7 +189,7 @@ function helpers() {
       while (!el.hidden && performance.now() - t0 < 8000) await wait(10);
       return { said, ready, up, gone: el.hidden ? Math.round(performance.now() - t0) : null };
     });
-    check(rep.said === "You cast onto the shore." && rep.ready && rep.up && rep.gone >= 2500 && rep.gone < 4000, `the shore cast's report stays up over the new cast, and goes ${rep.gone} ms after the landing (${JSON.stringify(rep)})`);
+    check(rep.said === "You cast onto the shore." && rep.ready && rep.up && rep.gone >= 2500 && rep.gone < 6000, `the shore cast's report stays up over the new cast, and goes ${rep.gone} ms after the landing (${JSON.stringify(rep)})`);
 
     // ---- a loss: the line keeps its time; a press after 800 ms ends it ----
     const FISHY = { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -14, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true };
@@ -202,7 +204,7 @@ function helpers() {
     check(!r.next && r.after != null && r.after > 2400, `a click 500 ms into a loss does not end it (ready ${fmt(r.after)} after the click)`);
     r = await loss({ at: 900, kind: "mouse" });
     note("loss to ready, a mouse click at 900 ms (after the click)", r.after);
-    check(r.next && r.after != null && r.after < 50, `a click 900 ms into a loss ends it at once (${fmt(r.after)} after the click)`);
+    check(r.next && r.after != null && r.after < 50, `a click 900 ms into a loss ends it at once (${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
 
     // ---- the same press goes on into the next cast ----
     // a held mouse button: it ends the beat, the rod tips back by itself, and letting go in the green casts

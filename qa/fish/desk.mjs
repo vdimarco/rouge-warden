@@ -37,7 +37,8 @@ try {
   await fire("down", y0);
   await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open" && !FISH.G.pin.key, null, 3000).then(() => check(true, "pressing on the reel and dragging down opens the bail and holds the line"), () => check(false, "pressing on the reel and dragging down opens the bail and holds the line"));
   for (let i = 2; i <= 12; i++) { await fire("move", y0 + i * 22); await sleep(25); }
-  await sleep(200);
+  // (a frame loads the rod: a slow software renderer can draw none for a second or more)
+  await until(page, () => FISH.G.step === "loaded", null, 6000).catch(() => {});
   const loaded = await page.evaluate(() => FISH.G.step);
   check(loaded === "loaded", "dragging down loads the rod (" + loaded + ")");
   // the flick: up fast, let go part way. Played inside the page, because a slow software renderer holds back
