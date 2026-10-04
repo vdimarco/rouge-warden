@@ -1852,9 +1852,11 @@ const cutSeen = (id) => !!save.cuts[id];
 function playCut(script, then, mark = true) {
   if (mark && script.id && !save.cuts[script.id]) { save.cuts[script.id] = 1; persist(); }
   prompt(""); hideReport();
-  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after
+  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
   const T = $("#toast");
   if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null]); T.classList.remove("on"); }
+  for (const q of toastQ.splice(0)) heldToasts.push([q.msg, q.ms, q.onShow]);
+  clearTimeout(toastNextT); toastNextT = 0;
   cuts.play(script, (skipped) => {
     then(skipped);
     for (const a of heldToasts.splice(0)) toast(...a);

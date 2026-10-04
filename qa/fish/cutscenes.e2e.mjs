@@ -233,7 +233,8 @@ const goldRing = (page, x, z) => page.evaluate(([x, z]) => { FISH.rises.list = F
     await until(page, () => !FISH.G.cardWait, null, 5000).catch(() => {});
     const card = await page.evaluate(() => ({ wait: FISH.G.cardWait, shown: !document.getElementById("catch").hidden && !document.getElementById("catch").classList.contains("wait"), name: document.getElementById("cname").textContent }));
     check(!hs.playing && hs.ms <= 300 && !card.wait && card.shown && card.name === "Golden Loon Bass", "a tap skips the hero shot within 0.3 s, and the card comes (" + JSON.stringify({ ...hs, ...card }) + ")");
-    await until(page, () => document.getElementById("toast").classList.contains("on"), null, 5000).catch(() => {});
+    // (a toast that waited in line, the gold ring's, may show first)
+    await until(page, () => { const t = document.getElementById("toast"); return t.classList.contains("on") && /Your first fish today\./.test(t.textContent); }, null, 8000).catch(() => {});
     const news = await page.evaluate(() => ({ text: document.getElementById("toast").textContent, on: document.getElementById("toast").classList.contains("on") }));
     check(news.on && /Your first fish today\./.test(news.text), "the catch's news, held while the hero shot played, shows over the card (" + JSON.stringify(news) + ")");
     await sleep(500);
@@ -402,6 +403,8 @@ function capStub() {
         for (const k of ["sat", "sab", "sal", "sar"]) g.style.setProperty("--" + k, (ins[k] || 0) + "px");
         if (ins.scale) g.style.setProperty("--ui-scale", String(ins.scale)); else g.style.removeProperty("--ui-scale");
         await new Promise((r) => setTimeout(r, 500));
+        // (the bars slide in as the cutscene starts: measured once they are in)
+        await Promise.all([...document.querySelectorAll("#cut .bar")].flatMap((b) => b.getAnimations().map((a) => a.finished)));
         const R = (s) => { const r = document.querySelector(s).getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, h: r.height }; };
         const cap = R("#cut .cap"), b = R("#cut .cap b"), sp = R("#cut .cap span"), top = R("#cut .bar.top"), bot = R("#cut .bar.bot"), skip = R("#cut .skip");
         const fits = (e) => e.scrollWidth <= e.clientWidth + 1;
