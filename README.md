@@ -780,3 +780,9 @@ Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It chec
 The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
 
 
+
+## River Rush
+
+River Rush is a whitewater treasure race at `/river-rush/`, with an Action cabinet and a shared game-switcher entry. Steer with A/D or the arrows, hold Space and release near the golden key to catch it, and hold E for two seconds to unlock the chest. Beat the rival into the marked left escape channel before the waterfall. Phones support dragging and separate touch buttons. Reaching reduces steering, rocks drain balance, and a rope recovers the player after a fall. Pause with Escape; best winning scores are saved on this browser and shown on the cabinet.
+
+Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; the static output is committed in `public/river-rush/`. Audio uses the arcade’s shared quieting script.

@@ -103,7 +103,7 @@ for (const src of new Set([...imgs, ...switchArt])) {
   const f = path.join(PUB, src.replace(/^\//, ""));
   check(fs.existsSync(f) && fs.statSync(f).size > 0, `picture ${src} exists`);
 }
-for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|worlds|neon|echo|tellme|plunge|creek|tilt|rules|olympus|moonwell|breakthrough|follow-suit)\.webp$/.test(n))) {
+for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|worlds|neon|echo|tellme|plunge|creek|tilt|rules|olympus|moonwell|breakthrough|follow-suit|river-rush)\.webp$/.test(n))) {
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
@@ -213,6 +213,8 @@ if (chromium) {
   /* ----- the last machine by keyboard and by swipe, and the layout at the sizes people use ----- */
   const SIZES = [[360, 740], [390, 844], [430, 932], [375, 667], [768, 1024], [1280, 720], [1920, 1080]];
   for (const [width, height] of PARTS.includes("layout") ? SIZES : []) {
+    // Each swipe-heavy size gets a fresh software GPU, as do the larger test parts.
+    await relaunch();
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     const n = await page.$$eval(".cab", (cs) => cs.length);
