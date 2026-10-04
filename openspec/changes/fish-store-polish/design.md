@@ -16,6 +16,15 @@ The audit reports and their evidence are the source for this change. Each packag
 - `#boot` is plain HTML and CSS in `index.html`: the logo, a moving bar, and "Loading the lake.". A classic script shows an error card with "Try again" on a module error, on missing WebGL, or when the title is not ready after 15 s. `main.js` removes `#boot` when the title shows.
 - The render scale drops only after slow frames for a time, and it climbs back after fast frames for a time, in steps. A context loss calls `pause()`, and a restore forces a full redraw, also under the pause screen.
 
+### What round 1 and the app project settled
+
+- The render scale (`js/render-scale.js`) works from the 75th-percentile frame time of the last 30 drawn frames. Frame times come in whole vsyncs, so a steady 33 ms counts as slow: the scale tests one step down, and when that does not help it marks the screen as capped at 30 Hz and goes back. A climb that turns slow returns at once, and the next try waits 8 s, doubling up to 2 minutes.
+- `resume()` waits while the GL context is lost. The pause card says "The lake is coming back." until the restore.
+- The save mirror never writes a blank save over a native one. When Preferences answers after the 400 ms race, native writes wait for that answer. A native save with more progress loads, with one reload on the boot screen or the title.
+- The splash uses `launchAutoHide: true` with a 6 s fallback, because Capacitor 8 skips the show-duration timer when auto-hide is off. The game hides it sooner when the title or the error card shows.
+- The status bar: Capacitor 8's built-in SystemBars and `MainActivity` hide the bars. The app does not install `@capacitor/status-bar`.
+- The app build strips every `<script src="/arcade/...">` (the switcher and the arcade's quiet script). The game pauses its own sound on hide and on app pause.
+
 ## Casting
 
 - Touch and mouse release: `unpinLine` pushes a virtual sample at the lift point, and `atRaw` does not extrapolate virtual samples.
