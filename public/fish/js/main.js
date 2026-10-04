@@ -365,14 +365,14 @@ $("#useMotion").addEventListener("click", async () => {
   note.hidden = false;
   // "idle": the browser wants the question asked from a tap. Let them tap again
   if (st === "idle") { note.textContent = "Tap Use motion again."; return; }
-  // the app: no browser steps to follow. Say where to turn it on, and play with touch now
+  // the app: the web view grants motion itself, so a refusal has no setting to point to. Play with touch now
   if (st === "denied" && Native.isStore) {
     note.hidden = true;
     G.input = "touch"; save.input = "touch"; persist();
     show(null);
     const f = setupThen; setupThen = null; if (f) f();
     // after the start, so the goal reminder does not cover it
-    toast("Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now.", 5200);
+    toast("Motion is off. You can play with touch.", 5200);
     return;
   }
   note.textContent = st === "denied"
@@ -1145,7 +1145,7 @@ $("#optInput").addEventListener("change", async (e) => {
     const st = await Motion.request();
     if (st === "granted") { G.input = "motion"; save.input = "motion"; lockPortrait(); }
     else if (st === "idle") { e.target.value = "touch"; toast("Tap Use motion on the start screen to allow the sensors."); }
-    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? (Native.isStore ? "Motion is off for Reel It In." : "Motion is blocked for this page.") : "No motion data from this phone."); }
+    else { e.target.value = "touch"; G.input = "touch"; save.input = "touch"; toast(st === "denied" ? (Native.isStore ? "Motion is off. You can play with touch." : "Motion is blocked for this page.") : "No motion data from this phone."); }
   } else { G.input = "touch"; save.input = "touch"; }
   persist(); syncSettings(); relayout(true);
 });

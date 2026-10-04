@@ -386,9 +386,10 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
     await page.evaluate(() => { const t = document.getElementById("toast"); window.__toasts = []; new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); });
     await click(page, "#useMotion");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
-    await sleep(100);
+    // the toast queue may show the goal first: the motion line follows within a few seconds
+    await until(page, () => window.__toasts.includes("Motion is off. You can play with touch."), null, 6000).catch(() => {});
     const r = await page.evaluate(() => ({ toasts: window.__toasts, input: FISH.G.input, setup: !document.getElementById("setup").hidden }));
-    check(r.toasts.includes("Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now.") && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")");
+    check(r.toasts.includes("Motion is off. You can play with touch.") && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")");
     const all = await page.evaluate(() => document.getElementById("game").innerText);
     check(!/Safari|site settings|browser/i.test(all), "store: no word of Safari, site settings or a browser on the screen");
   } catch (e) { check(false, "exception in part 4b: " + (e && e.message)); }

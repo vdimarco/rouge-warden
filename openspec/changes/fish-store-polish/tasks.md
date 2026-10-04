@@ -10,14 +10,14 @@
 - [x] 1.7 Tests: offline boot, store mode, the back button with a stubbed bridge, context loss, render scale, native haptics.
 
 ## 2. Fight
-- [ ] 2.1 Drag gives before the line breaks; a run starts with a click and a buzz.
-- [ ] 2.2 Easy mode jump rise; a beaten fish makes no trick moves.
-- [ ] 2.3 SLACK on the gauge and the slack prompt in a shake.
-- [ ] 2.4 Prompt hold and the toast place and queue in the reel.
-- [ ] 2.5 Larger gauge text, patterns as well as colours.
-- [ ] 2.6 Longer loss beat, a legend loss line, and copy fixes.
-- [ ] 2.7 A sure first bite for a fresh save.
-- [ ] 2.8 Update the stale `screens.mjs` and `reel.ui.mjs` checks; rerun the fight and place sims.
+- [x] 2.1 Drag gives before the line breaks; a run starts with a click and a buzz.
+- [x] 2.2 Easy mode jump rise; a beaten fish makes no trick moves.
+- [x] 2.3 SLACK on the gauge and the slack prompt in a shake.
+- [x] 2.4 Prompt hold and the toast place and queue in the reel.
+- [x] 2.5 Larger gauge text, patterns as well as colours.
+- [x] 2.6 Longer loss beat, a legend loss line, and copy fixes.
+- [x] 2.7 A sure first bite for a fresh save.
+- [x] 2.8 Update the stale `screens.mjs` and `reel.ui.mjs` checks; rerun the fight and place sims.
 
 ## 3. Casting
 - [ ] 3.1 Grade touch and mouse releases at the finger.
@@ -54,7 +54,7 @@
 
 ## 7. App project
 - [x] 7.1 `apps/fish/` Capacitor project, config, and the build script with its bundle check.
-- [x] 7.2 The iOS and Android projects with portrait lock, the status bar, the motion text, and the plugins.
+- [x] 7.2 The iOS and Android projects with portrait lock, the status bar, the privacy manifest, and the plugins.
 - [x] 7.3 Icons and the splash from the game's art.
 - [x] 7.4 The privacy policy page, the store listing, the data safety and age answers, and the release README.
 - [x] 7.5 An Android debug build on this machine.
