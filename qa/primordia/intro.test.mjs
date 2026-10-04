@@ -38,6 +38,7 @@ const checks = [
   ["bite: a Glory Bite, then a Remains prey is eaten", () => has("bite", "devour", (e) => e.kind === "hunter" && e.how === "glory") && has("bite", "devour", (e) => e.kind === "prey")],
   ["parry: the dash parries, Stasis starts, then a Glory Bite", () => has("parry", "parry") && has("parry", "stasis") && has("parry", "devour", (e) => e.how === "glory")],
   ["burst: the Burst catches at least two hunters", () => by.burst && by.burst.ev.some((e) => e.type === "burst" && e.caught >= 2)],
+  ["grow: the bar fills, the dish grows with a hunter turned into prey, and the player eats it", () => has("grow", "zoomBegin") && by.grow.ev.some((e) => e.type === "zoomFinish" && e.at.length >= 1) && has("grow", "devour", (e) => e.kind === "prey" && e.converted)],
   ["no scene runs out its time limit", () => runs.filter((r) => r.id !== "title" && r.id !== "end").every((r) => r.t < SCENES.find((S) => S.id === r.id).max - 0.05)],
 ];
 let fails = 0;

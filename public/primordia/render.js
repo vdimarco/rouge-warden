@@ -24,6 +24,9 @@ uniform vec4 uHit[8];  // uv.x, uv.y, radius, strength
 uniform vec4 uRing;    // uv.x, uv.y, radius, strength
 uniform float uStasis;
 uniform float uCalm; // 1 with reduced motion: steady tints, no pulses or flicker
+uniform float uZoom; // the dish growing: 0.5 shows the middle quarter at full size, 1 the whole dish
+uniform vec4 uConvert; // the molt wave: uv.x, uv.y, radius in cells, strength (hunter tissue inside turns prey-coloured)
+uniform float uTier; // the size: hunters' heartbeat quickens and their hot core grows
 
 const float TAU = 6.2831853;
 const vec3 GOLD = vec3(1.0, 0.78, 0.25);
@@ -51,12 +54,13 @@ vec3 preyRamp(float a) {
 }
 vec3 hunterRamp(float b) {
   vec3 c = mix(vec3(0.35, 0.02, 0.12), vec3(1.0, 0.16, 0.45), smoothstep(0.08, 0.5, b));
-  c = mix(c, vec3(1.0, 0.72, 0.55), smoothstep(0.6, 0.98, b));
+  float hot = 0.6 - 0.04 * clamp(uTier - 1.0, 0.0, 4.0);
+  c = mix(c, vec3(1.0, 0.72, 0.55), smoothstep(hot, 0.98, b));
   return c;
 }
 
 void main() {
-  vec2 uv = vUv;
+  vec2 uv = 0.5 + (vUv - 0.5) * uZoom;
   // gentle wobble, like looking through a drop of water
   uv += 0.0012 * vec2(sin(uv.y * 40.0 + uTime * 0.8), cos(uv.x * 34.0 + uTime * 0.7));
   vec4 f = F(uv, 0.0);
@@ -84,13 +88,16 @@ void main() {
   // soft glow from blurred mip levels
   vec4 g1 = F(uv, 1.6), g2 = F(uv, 3.2);
   col += vec3(0.05, 0.55, 0.6) * (g1.r * 0.55 + g2.r * 0.6);
-  col += vec3(0.75, 0.05, 0.3) * (g1.g * 0.6 + g2.g * 0.7);
+  // the molt wave: hunter tissue it has passed takes the prey colours
+  float cv = uConvert.w * (1.0 - smoothstep(uConvert.z - 8.0, uConvert.z, cellDist(uv, uConvert.xy)));
+  col += mix(vec3(0.75, 0.05, 0.3), vec3(0.05, 0.55, 0.6), cv) * (g1.g * 0.6 + g2.g * 0.7);
 
   float pa = smoothstep(0.04, 0.3, a), pb = smoothstep(0.04, 0.3, b);
   vec3 pc = preyRamp(a) * (0.55 + 0.6 * diff) + spec * 0.55 * vec3(0.8, 1.0, 1.0);
   vec3 hc = hunterRamp(b) * (0.55 + 0.6 * diff) + spec * 0.5 * vec3(1.0, 0.85, 0.8);
-  // hunters pulse with a slow heartbeat
-  hc *= 0.9 + 0.12 * sin(uTime * 5.0 + b * 8.0);
+  // hunters pulse with a heartbeat that quickens with each size
+  hc *= 0.9 + 0.12 * sin(uTime * (5.0 + 0.8 * clamp(uTier - 1.0, 0.0, 4.0)) + b * 8.0);
+  hc = mix(hc, preyRamp(b) * (0.55 + 0.6 * diff) + spec * 0.55 * vec3(0.8, 1.0, 1.0), cv);
   col = mix(col, pc, pa * 0.92);
   col = mix(col, hc, pb * 0.95);
 
@@ -122,7 +129,8 @@ void main() {
       pop = max(pop, w);
     } else if (code == 4.0) { // Exposed: dimmed and cooled
       float l = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(col, vec3(l) * vec3(0.55, 0.75, 1.25) + vec3(0.0, 0.02, 0.06), w * 0.7);
+      // dim rose-grey: cooled, but never the blue of food
+      col = mix(col, vec3(l) * vec3(1.0, 0.8, 0.85), w * 0.7);
       pop = max(pop, w);
     } else if (code == 5.0) { // collapse: whole body gold, 3 Hz pulse
       float pulse = mix(0.5 + 0.5 * sin(uTime * 3.0 * TAU), 0.5, uCalm);
@@ -154,7 +162,8 @@ void main() {
   }
 
   // a soft light around the player
-  vec2 pd = (vUv - uPlayer.xy) / uTexel / 40.0;
+  vec2 pd = uv - uPlayer.xy;
+  pd = (pd - floor(pd + 0.5)) / uTexel / 40.0;
   col += vec3(0.25, 0.35, 0.3) * uPlayer.z * exp(-dot(pd, pd) * 3.0) * 0.35;
 
   // vignette at the dish rim
@@ -203,7 +212,7 @@ export class FieldRenderer {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     this.u = {};
-    for (const name of ["uPrev", "uCur", "uMix", "uTime", "uFrenzy", "uHurt", "uFlash", "uTexel", "uPlayer", "uRect", "uMark", "uHit", "uRing", "uStasis", "uCalm"]) this.u[name] = gl.getUniformLocation(p, name);
+    for (const name of ["uPrev", "uCur", "uMix", "uTime", "uFrenzy", "uHurt", "uFlash", "uTexel", "uPlayer", "uRect", "uMark", "uHit", "uRing", "uStasis", "uCalm", "uZoom", "uConvert", "uTier"]) this.u[name] = gl.getUniformLocation(p, name);
     this.tex = [this.makeTex(), this.makeTex()];
     this.size = [0, 0];
     this.marks = new Float32Array(32);
@@ -285,6 +294,11 @@ export class FieldRenderer {
     else gl.uniform4f(this.u.uRing, 0, 0, 0, 0);
     gl.uniform1f(this.u.uStasis, Math.min(1, Math.max(0, fx.stasis || 0)));
     gl.uniform1f(this.u.uCalm, fx.calm ? 1 : 0);
+    gl.uniform1f(this.u.uZoom, fx.zoom || 1);
+    const cv = fx.convert;
+    if (cv && cv.s > 0 && w) gl.uniform4f(this.u.uConvert, cv.x / w, cv.y / h, cv.r, Math.min(1, cv.s));
+    else gl.uniform4f(this.u.uConvert, 0, 0, 0, 0);
+    gl.uniform1f(this.u.uTier, fx.tier || 1);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -332,6 +346,7 @@ export class FlatRenderer {
     c.fillStyle = "#030206";
     c.fillRect(0, 0, view.w, view.h);
     c.imageSmoothingEnabled = true;
-    c.drawImage(this.off, rect.x, rect.y, rect.w, rect.h);
+    const z = (fx && fx.zoom) || 1, w = this.off.width, h = this.off.height;
+    c.drawImage(this.off, (w * (1 - z)) / 2, (h * (1 - z)) / 2, w * z, h * z, rect.x, rect.y, rect.w, rect.h);
   }
 }

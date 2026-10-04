@@ -136,11 +136,14 @@ test("Burst tears and staggers nearby hunters, then the maw eats them", () => {
   assert.equal(g.stats.hunters, 1);
 });
 
-test("an epoch ends with three mutation cards and the pick applies", () => {
+test("a full GROW bar grows the dish, then three mutation cards and the pick applies", () => {
   const g = new Game(256, 128, 5);
   g.reset("play");
-  g.epochTime = 39.99;
-  g.update(1 / 30, {});
+  g.growth = g.bar() - 1;
+  g.addGrowth(1, g.player.x, g.player.y);
+  assert.ok(g.ripe, "a full bar is ripe");
+  g.afterBoss = true; // grow at once: no hunter needs to be on the dish for this test
+  for (let i = 0; i < 200 && g.state !== "mutate"; i++) g.update(1 / 30, {});
   assert.equal(g.state, "mutate");
   assert.equal(g.offer.length, 3);
   assert.ok(g.offer.filter((m) => m.kind === "build").length >= 2, "offer " + g.offer.map((m) => m.id));

@@ -38,6 +38,29 @@ export const TUNE = {
   caps: { desktop: { gliders: 4, swarm: 4, eggs: 4, bodies: 8 }, compact: { gliders: 3, swarm: 3, eggs: 3, bodies: 6 } },
   egg: { hatch: 8, crack: 0.6, spacing: 24, body: 7 }, waveGap: 8,
   spawn: { min: 34, max: 48, arc: 120, warn: { arc: 1.2, swarm: 0.9, egg: 0.6, boss: 3.0 } },
+  // Eat to grow: the GROW bar, the body, outgrowing small bodies, and the dish growing
+  grow: {
+    bar: [34, 40, 46, 52, 56], // growth points per size; the last value repeats
+    gp: { prey: 1, golden: 4, husk: 3, egg: 1, swarm: 2, lancer: 5, lancerBleed: 3, heavy: 7, heavyBleed: 4 },
+    overflowPoints: 50,
+    base: 2.4, basePerSize: 1.08, baseCapSize: 5, swell: 0.5, // P.r = base * basePerSize^(min(n,5)-1) * (1 + swell*g)
+    maw: { exp: 0.75, cap: 8 }, cutExp: 0.5,
+    maxLight: { perSize: 10, cap: 150 },
+    notch: 0.5, edibleMass: 200,
+    flee: { v: 0.22, orbit: 0.06, clamp: 0.30, range: 70 },
+    ripe: { delay: 0.25, bossDelay: 1.0, wait: 4, iframes: 0.8 },
+    seq: { begin: 0.40, finish: 1.60, cards: 1.95 }, // grow clock, seconds
+    zoom: { dmin: 28, rmin: 16, refill: 20, maxNew: 6, remainsAge: 6 },
+    heading: { horizon: 120, every: 8, speed: 0.65, trail: 60, passes: 3 },
+    motes: { light: 2, max: 5 },
+    sizeBonus: 2000, huskPoints: 200,
+    feast: 4, wave1: { min: 34, max: 70 },
+    loop: { from: 40, every: 14 },
+    goldenLate: { after: 60, every: 12 },
+    apexEvery: 3,
+    layer: { first: 4, every: 7, max: 2 },
+    heptaCap: 2,
+  },
 };
 
 // The roster. Indices 0-3 are the arcs (as before); 4 and 5 are the small species.
@@ -45,7 +68,8 @@ const ROSTER = [
   { role: "lancer", motion: "smooth", mass: 255, windup: 14, lunge: { v: 2.0, steps: 10 }, points: 600, remains: 1 },
   { role: "lancer", motion: "smooth", mass: 320, windup: 16, lunge: { v: 2.0, steps: 10 }, points: 800, remains: 1 },
   { role: "heavy", motion: "smooth", mass: 405, windup: 18, lunge: { v: 1.8, steps: 11 }, points: 1000, remains: 2 },
-  { role: "boss", motion: "smooth", mass: 485, windup: 20, lunge: { v: 1.6, steps: 12 }, points: 2500, remains: 3 },
+  // the common Heptapteryx of Size IV is a heavy; the Leviathan (e.boss) pays 2500 and drops 3
+  { role: "heavy", motion: "smooth", mass: 485, windup: 20, lunge: { v: 1.6, steps: 12 }, points: 1500, remains: 2 },
   { role: "swarm", motion: "roll", mass: 152, windup: 0, lunge: null, points: 150, remains: 0.5 },
   { role: "egg", motion: "static", mass: 75, windup: 0, lunge: null, points: 50, remains: 0 },
 ];
@@ -90,7 +114,23 @@ export const WAVES = {
   5: [{ at: 2, units: "HPEE" }, { at: 15, units: "DDDD" }, { at: 28, units: "QHDD" }],
   6: [{ at: 2, units: "QQEE" }, { at: 12, units: "L" }, { at: 28, units: "HDD", afterBoss: true }],
 };
-const UNIT = { P: SP.PARA, Q: SP.PENTA, H: SP.HEXA, L: SP.HEPTA, D: SP.DISC, E: SP.EGG };
+const UNIT = { P: SP.PARA, Q: SP.PENTA, H: SP.HEXA, T: SP.HEPTA, L: SP.HEPTA, D: SP.DISC, E: SP.EGG };
+
+// Sizes: each brings a bigger red arc with one new move, and an outgrown arc does not come back red
+// in Sizes II to IV. Size I keeps the opening wave table.
+export const TIERS = [
+  null,
+  { head: SP.PARA, pool: [SP.PARA, SP.DISC], waves: WAVES[1], line: "Eat to grow." },
+  { head: SP.PENTA, pool: [SP.PENTA, SP.DISC], moves: ["double"], line: "New hunter: Pentapteryx. It strikes twice.",
+    waves: [{ at: 4, units: "QD" }, { at: 14, units: "DDDEE" }, { at: 26, units: "QQD" }] },
+  { head: SP.HEXA, pool: [SP.HEXA, SP.DISC], moves: ["layer"], apex: true, line: "New hunter: Hexapteryx. It lays eggs.",
+    waves: [{ at: 4, units: "HDD" }, { at: 14, units: "DDEE" }, { at: 26, units: "HD" }] },
+  { head: SP.HEPTA, pool: [SP.HEPTA, SP.DISC], moves: ["relay"], line: "New hunter: Heptapteryx. Two of them take turns.",
+    waves: [{ at: 4, units: "TT", pair: true }, { at: 15, units: "DDEE" }, { at: 28, units: "TTD", pair: true }] },
+];
+// Size V and up: Heptapteryx with every move, waves from a budget
+const DEEP = { head: SP.HEPTA, pool: [SP.HEPTA, SP.DISC], moves: ["double", "layer", "relay"], line: "Every hunter uses every move now." };
+export const tierOf = (n) => TIERS[n] || DEEP;
 
 export function mulberry32(seed) {
   let a = seed >>> 0;
@@ -149,10 +189,14 @@ export class Game {
     this.director = { wave: 0, spawned: [false, false, false], cleared: [false, false, false], relaxT: 0, queue: [], encoreCd: 0, bossOut: false };
     this.duoNext = false;
     this.lastCut = null;
+    // growth: the GROW bar, the ripe wait, the grow clock and the old dish's box after a zoom
+    this.growth = 0; this.ripe = false; this.ripeT = 0; this.waitT = 0; this.ripeDelay = TUNE.grow.ripe.delay; this.afterBoss = false;
+    this.heraldSent = false; this.apexCalled = false; this.growT = 0; this.zoom = null; this.oldBox = null; this.loopAt = 0; this.goldenLateAt = 0;
+    this.growHold = false; // tests and the intro set it after reset()
     this.stats = {
       prey: 0, hunters: 0, golden: 0, bestCombo: 0, species: new Set([PREY_NAME]),
       glory: 0, bleed: 0, rupture: 0, burstKills: 0, eggs: 0, parries: 0, grazes: 0, lunges: 0, lungeHits: 0,
-      stasis: 0, bursts: 0, dashes: 0, selfDeaths: 0, waves: 0,
+      stasis: 0, bursts: 0, dashes: 0, selfDeaths: 0, waves: 0, zooms: 0, gulps: 0, husks: 0,
       loss: { hunger: 0, contact: 0, lunge: 0 },
     };
     this.symbionts = [];
@@ -175,11 +219,14 @@ export class Game {
   hunterTarget() { return Math.max(1, Math.round(2 * this.area)); } // demo trickle only
   hunger() { return 3.0 * (1 + 0.08 * (this.epoch - 1)); }
   preyLight() { return TUNE.preyLight[Math.min(2, this.epoch - 1)]; }
-  mawRadius() { return 3.7 * (1 + 0.22 * this.mut.maw) * (this.burstT > 0 ? 1.55 : 1); }
+  mawRadius() {
+    const G = TUNE.grow.maw;
+    return Math.min(G.cap, 3.7 * Math.pow(this.player.r / TUNE.grow.base, G.exp) * (1 + 0.22 * this.mut.maw)) * (this.burstT > 0 ? 1.55 : 1);
+  }
   speed() { return TUNE.speed * (1 + 0.12 * this.mut.flagella); }
   multiplier() { return Math.min(8, 1 + Math.floor(this.combo / 2)); }
   maxCharges() { return TUNE.charges + this.mut.flagellum; }
-  cutRadius() { return TUNE.cutR + 0.5 * this.mut.rend; }
+  cutRadius() { return (TUNE.cutR + 0.5 * this.mut.rend) * Math.pow(this.player.r / TUNE.grow.base, TUNE.grow.cutExp); }
   dashTime() { return TUNE.dashTime + 0.03 * this.mut.rend; }
   tokensMax() { return TUNE.tokens[Math.min(6, this.epoch)]; }
   chase() { return Math.min(TUNE.chase.max, TUNE.chase.base + TUNE.chase.perEpoch * (this.epoch - 1)); }
@@ -189,6 +236,54 @@ export class Game {
   reachOf(e) { const s = this.spec(e); return s ? s.reach : Math.min(45, (e.size || 8) * 1.8 + 6); }
   motionOf(e) { const s = this.spec(e); return s ? s.motion : (e.mass || 0) < 200 ? "roll" : "smooth"; }
   isNamed(e) { return e.species !== undefined || e.brood; }
+
+  // --- growth ---
+  get size() { return this.epoch; }
+  bar() { const B = TUNE.grow.bar; return B[Math.min(B.length - 1, this.epoch - 1)]; }
+  gFrac() { return Math.min(1, this.growth / this.bar()); }
+  baseR(n = this.epoch) { const G = TUNE.grow; return G.base * Math.pow(G.basePerSize, Math.min(n, G.baseCapSize) - 1); }
+  bodyR() { return this.baseR() * (1 + TUNE.grow.swell * this.gFrac()); }
+  outgrown() { return this.gFrac() >= TUNE.grow.notch; }
+  // small bodies the player has outgrown: swarms, small brood and eggs
+  edible(e) {
+    if (!e || e.boss || !this.outgrown()) return false;
+    return e.egg || e.species === SP.DISC || (e.brood && (e.mass || 0) < TUNE.grow.edibleMass);
+  }
+  isApex() { return this.epoch % TUNE.grow.apexEvery === 0; }
+  growing() { return this.mode === "play" && !this.growHold && this.state === "play"; }
+
+  // Growth points from a meal or a kill. A full bar makes the dish ready to grow (or calls the apex).
+  addGrowth(n, x, y) {
+    if (!(n > 0) || !this.growing()) return;
+    const bar = this.bar(), before = this.growth;
+    if (before >= bar) { this.score += TUNE.grow.overflowPoints * n * this.multiplier(); return; }
+    this.growth = Math.min(bar, before + n);
+    const g = this.growth / bar, notch = TUNE.grow.notch * bar;
+    this.emit("grow", { n, g, x, y });
+    if (before < notch && this.growth >= notch) this.emit("notch", { x: this.player.x, y: this.player.y });
+    if (this.growth >= bar) this.barFull();
+  }
+
+  barFull() {
+    const P = this.player, R = TUNE.grow.ripe;
+    P.iframes = Math.max(P.iframes, R.iframes);
+    if (this.isApex() && !this.apexCalled) {
+      // the apex: the bar calls the Leviathan, and the dish grows once it has left
+      this.apexCalled = true;
+      const D = this.director;
+      D.bossOut = true;
+      if (!this.queueUnit(SP.HEPTA, { boss: true, wave: "apex" })) D.queue.push({ species: SP.HEPTA, boss: true, wave: "apex" });
+      this.emit("apex", { x: P.x, y: P.y });
+      return;
+    }
+    this.makeRipe(R.delay, false);
+  }
+
+  makeRipe(delay, afterBoss) {
+    if (this.mode !== "play" || this.growHold) return;
+    this.ripe = true; this.ripeT = 0; this.waitT = 0; this.ripeDelay = delay; this.afterBoss = afterBoss; this.heraldSent = false;
+    this.emit("ripe", {});
+  }
 
   findSpot(minPlayer, minOther, tries = 40) {
     const { w, h, player: P } = this;
@@ -226,6 +321,8 @@ export class Game {
     if (this.state === "mutate" || this.state === "paused") return;
     dt = Math.min(dt, 0.05);
     this.clock += dt;
+    // the dish is growing: nothing steps, nothing hurts; only the grow clock runs
+    if (this.state === "grow") { this.updateGrow(dt); return; }
     if (this.hitstop > 0) {
       this.hitstop -= dt;
       if (input.dash) this.dashBuffer = 0.12;
@@ -242,8 +339,10 @@ export class Game {
     const P = this.player;
     if (this.state === "play") {
       this.epochTime += dt;
-      if (this.epochTime >= EPOCH_LENGTH && P.alive) { this.endEpoch(); return; }
+      // a size has no timer: it ends when the dish grows
+      if (P.alive) { this.checkRipe(dt); if (this.state !== "play") return; }
     }
+    if (this.mode === "play" && P.alive) P.r = this.bodyR();
     if (P.alive) { this.movePlayer(dt, input); this.interact(dt, input); }
     this.updateCharges(dt);
     this.updateSymbionts(dt);
@@ -406,6 +505,7 @@ export class Game {
     if (P.cutting) { P.cutting = false; this.cutAlong(P.px, P.py, P.x, P.y); }
     if (P.dashEnded) { P.dashEnded = false; this.endDash(); }
     this.tryGlory(mx, my, maw);
+    this.tryGulp(mx, my, maw);
     if (P.dashT > 0 && P.iframes > 0) this.checkParry();
     this.checkLungeHits();
     if (this.burstT > 0) {
@@ -423,7 +523,7 @@ export class Game {
         const touch = W.probe(W.B, P.x, P.y, P.r);
         if (touch > 0.35) {
           const owner = this.ownerAt(P.x, P.y, P.r);
-          if (!owner || owner.state !== "stagger") {
+          if (!owner || (owner.state !== "stagger" && !this.edible(owner))) {
             const dmg = TUNE.contactSting * Math.min(1, touch / 5) * dt;
             P.light -= dmg; this.stats.loss.contact += dmg;
             P.hurt = 1;
@@ -628,6 +728,19 @@ export class Game {
   tryGlory(mx, my, maw) {
     const e = this.ownerAt(mx, my, maw + 1);
     if (e && this.gloryOpen(e)) this.glory(e);
+  }
+
+  // bodies the player has outgrown go down whole: swarms and small brood are devoured, eggs pop
+  tryGulp(mx, my, maw) {
+    if (!this.outgrown()) return;
+    const e = this.ownerAt(mx, my, maw + 1);
+    if (!e || !this.edible(e)) return;
+    if (e.egg) { this.popEgg(e, "gulp"); return; }
+    if (this.labelB) this.wipe(this.world.B, this.labelB, e.blob);
+    this.hunters.splice(this.hunters.indexOf(e), 1);
+    this.releaseToken(e);
+    this.devour(e, "hunter", { how: "gulp" });
+    this.freeze(0.03, "gulp", e);
   }
 
   glory(e) {
@@ -842,6 +955,8 @@ export class Game {
       else {
         if (kind === "hunter" && this.isNamed(e) && !e.egg) { this.stats.selfDeaths++; this.emit("selfDeath", { id: e.id, x: e.x, y: e.y }); }
         if (e.golden || e.boss) this.emit("fade", { kind, x: e.x, y: e.y, golden: e.golden, boss: e.boss });
+        // a Leviathan that leaves without being eaten still lets the dish grow, with no bonus
+        if (e.boss && this.mode === "play") this.makeRipe(TUNE.grow.ripe.bossDelay, true);
       }
     }
     for (const b of blobs) {
@@ -1101,6 +1216,15 @@ export class Game {
           break;
         }
         const role = sp ? sp.role : "brood";
+        if (this.edible(e)) {
+          // outgrown: swim away from the player
+          const F = TUNE.grow.flee, side = e.id % 2 ? 1 : -1;
+          if (u.d < F.range) { v.x -= u.x * F.v; v.y -= u.y * F.v; }
+          v.x += -u.y * F.orbit * side; v.y += u.x * F.orbit * side;
+          const l = Math.hypot(v.x, v.y);
+          if (l > F.clamp) { v.x *= F.clamp / l; v.y *= F.clamp / l; }
+          break;
+        }
         const c = role === "swarm" ? TUNE.swarmChase : role === "brood" ? TUNE.broodChase : e.boss ? this.chase() * 0.7 : this.chase();
         const way = role === "swarm" ? this.laneToLeave(e) : null;
         if (way) {
@@ -1192,7 +1316,10 @@ export class Game {
     // no windup into a blocked path: circle round to a clear angle instead of faking an attack
     if (!this.pathClear(e)) { e.flankUntil = this.time + TUNE.flank.time; return false; }
     if (e.boss) return true;
-    const used = this.hunters.filter((o) => o.token && !o.boss).length;
+    const mate = e.pair ? this.hunters.find((o) => o !== e && o.pair === e.pair) : null;
+    if (mate && (mate.token || mate.state === "windup" || mate.state === "lunge" || mate.state === "reaim")) return false;
+    // a relay pair counts as one attacker
+    const used = new Set(this.hunters.filter((o) => o.token && !o.boss).map((o) => o.pair || o.id)).size;
     if (used >= this.tokensMax()) return false;
     e.token = true;
     return true;
@@ -1294,8 +1421,8 @@ export class Game {
       this.addCombo(1);
       this.emit("graze", { id: e.id, x: this.player.x, y: this.player.y, dx: e.lane.ux, dy: e.lane.uy });
     }
-    if (e.boss && e.phase === 2 && !e.second && why === "done") {
-      // phase 2: a second strike after a short re-aim
+    if (((e.boss && e.phase === 2) || e.double) && !e.second && why === "done") {
+      // a second strike after a short re-aim (Leviathan phase 2, and Pentapteryx from Size II)
       e.second = true; e.state = "reaim"; e.steps = 6; e.stateAt = this.time; e.glinted = false; e.lane = null;
       e.cycle++;
       this.lockLane(e);
@@ -1305,6 +1432,12 @@ export class Game {
     }
     e.second = false;
     e.state = "recover"; e.steps = e.boss ? (e.phase >= 3 ? 20 : 26) : TUNE.recoverSteps; e.stateAt = this.time; e.exposed = true;
+    if (e.pair) {
+      // relay: the partner may strike at once from its own side
+      this.releaseToken(e);
+      const mate = this.hunters.find((o) => o !== e && o.pair === e.pair);
+      if (mate && mate.state === "stalk") mate.cool = 0;
+    }
     this.emit("recover", { id: e.id, why });
   }
 
@@ -1366,6 +1499,19 @@ export class Game {
         if (this.capRoom(SP.EGG) && this.queueUnit(SP.EGG, { wave: e.wave, at })) { e.eggsLaid = (e.eggsLaid || 0) + 1; e.nextEgg = now + 5; }
         else e.nextEgg = now + 0.5;
       }
+      if (e.layer && !e.egg && e.state === "stalk" && this.mode === "play") {
+        const L = TUNE.grow.layer;
+        if (e.nextEgg === undefined) e.nextEgg = e.born + L.first;
+        if (now >= e.nextEgg) {
+          const mine = this.hunters.filter((o) => o.egg && o.mother === e.id).length + this.pending.filter((p) => p.tags && p.tags.mother === e.id).length;
+          let ux = -(e.glideX || 0), uy = -(e.glideY || 0), g = Math.hypot(ux, uy);
+          if (g < 0.02) { ux = wdelta(e.x - this.player.x, this.w); uy = wdelta(e.y - this.player.y, this.h); g = Math.hypot(ux, uy) || 1; }
+          const off = this.reachOf(e) + SPECIES[SP.EGG].reach + 6;
+          const at = { x: wrap(e.x + (ux / g) * off, this.w), y: wrap(e.y + (uy / g) * off, this.h) };
+          if (mine < L.max && this.capRoom(SP.EGG) && this.queueUnit(SP.EGG, { wave: e.wave, at, tags: { mother: e.id } })) e.nextEgg = now + L.every;
+          else e.nextEgg = now + 0.5;
+        }
+      }
       if (!e.egg) continue;
       if (e.hatchAt === undefined) e.hatchAt = e.born + TUNE.egg.hatch;
       if (!e.cracked && now >= e.hatchAt - TUNE.egg.crack) { e.cracked = true; this.emit("crack", { id: e.id, x: e.x, y: e.y }); }
@@ -1382,6 +1528,7 @@ export class Game {
 
   creditEgg(e, src) {
     this.stats.eggs++;
+    this.addGrowth(TUNE.grow.gp.egg, e.x, e.y);
     this.addMeter(TUNE.meter.pop);
     this.addCombo(1);
     const points = 50 * this.multiplier();
@@ -1414,11 +1561,14 @@ export class Game {
         this.stats.golden++;
       }
       if (e.remains) P.light = Math.min(P.maxLight, P.light + TUNE.remains.light);
+      if (e.converted) { points += TUNE.grow.huskPoints; this.stats.husksEaten = (this.stats.husksEaten || 0) + 1; }
       this.addCharge();
+      const GP = TUNE.grow.gp;
+      this.addGrowth(e.golden ? GP.golden : e.converted ? GP.husk : GP.prey, e.x, e.y);
       points *= this.multiplier();
       this.score += points;
       this.stats.prey++;
-      this.emit("devour", { kind, x: e.x, y: e.y, golden: !!e.golden, remains: !!e.remains, points, combo: this.combo, mult: this.multiplier(), how: "bite" });
+      this.emit("devour", { kind, x: e.x, y: e.y, golden: !!e.golden, remains: !!e.remains, converted: !!e.converted, from: e.from, points, combo: this.combo, mult: this.multiplier(), how: "bite" });
       return;
     }
     if (!(e.peak > 90 || e.species !== undefined || e.brood)) return;
@@ -1431,6 +1581,9 @@ export class Game {
       else if (e.species === SP.DISC || e.brood) { light = 6; meter = 0.05; }
       else { light = 18; meter = TUNE.meter.glory; }
       this.stats.glory++;
+    } else if (how === "gulp") {
+      combo = 1; light = 6; meter = 0.05;
+      this.stats.gulps++;
     } else if (how === "burst") {
       combo = 2; light = 15;
       this.stats.burstKills++;
@@ -1449,19 +1602,29 @@ export class Game {
     this.stats.hunters++;
     // remains: live prey that glide away from the corpse
     if (how === "glory") {
-      let n = sp ? sp.remains : 0;
+      let n = e.boss ? 3 : sp ? sp.remains : 0;
       if (n > 0 && n < 1) n = this.rand() < n ? 1 : 0;
       if (this.mut.spores && n >= 0) n += e.species === SP.DISC ? (n ? 0 : 1) : 1;
       if (n) this.spawnRemains(e, Math.round(n));
     }
     // a scar of eaten agar marks the spot
     this.scar(e.x, e.y);
-    if (e.boss) { this.duoNext = true; this.director.bossOut = false; }
+    if (e.boss) { this.duoNext = true; this.director.bossOut = false; this.makeRipe(TUNE.grow.ripe.bossDelay, true); }
+    else this.addGrowth(this.killGrowth(e, how), e.x, e.y);
     this.emit("devour", { kind, x: e.nx ?? e.x, y: e.ny ?? e.y, boss: !!e.boss, points, combo: this.combo, mult, name: e.name, how, species: e.species });
     // Spore Burst: a kill bursts at the corpse. Kills made by a proc only chain with Chain Bloom.
     const fromProc = how !== "glory" && e.lastSrc === "proc" && this.time - (e.procAt ?? -9) < 1;
     const depth = fromProc ? (e.procDepth || 0) + 1 : 0;
     if (this.mut.sporeburst && (!fromProc || this.mut.chainbloom)) this.procSpore(e.x, e.y, depth);
+  }
+
+  // growth points for a hunter kill
+  killGrowth(e, how) {
+    const GP = TUNE.grow.gp, clean = how === "glory" || how === "burst" || how === "gulp";
+    if (e.species === SP.DISC || e.brood) return GP.swarm;
+    if (e.species === SP.PARA || e.species === SP.PENTA) return clean ? GP.lancer : GP.lancerBleed;
+    if (e.species === SP.HEXA || e.species === SP.HEPTA) return clean ? GP.heavy : GP.heavyBleed;
+    return 0;
   }
 
   scar(x, y) {
@@ -1571,8 +1734,19 @@ export class Game {
 
   // place a unit 34-48 cells from the player, behind its heading, clear of other bodies.
   // No clear spot means no spawn: the Director keeps the unit queued and tries again.
-  spawnSpot(species, pincerAngle) {
+  spawnSpot(species, pincerAngle, outside) {
     const P = this.player, S = TUNE.spawn, me = SPECIES[species].reach;
+    // the first wave of a grown dish comes from the new territory, outside the old dish
+    if (outside && this.oldBox) {
+      const B = this.oldBox, W1 = TUNE.grow.wave1;
+      for (let t = 0; t < 40; t++) {
+        const a = pincerAngle !== undefined ? pincerAngle + (this.rand() - 0.5) * 0.6 : this.rand() * Math.PI * 2;
+        const r = W1.min + this.rand() * (W1.max - W1.min);
+        const x = wrap(P.x + Math.cos(a) * r, this.w), y = wrap(P.y + Math.sin(a) * r, this.h);
+        const inBox = x >= B.x && x < B.x + B.w && y >= B.y && y < B.y + B.h;
+        if (!inBox && this.clearAt(x, y, me)) return { x, y };
+      }
+    }
     const heading = Math.atan2(P.vy || P.dirY, P.vx || P.dirX);
     for (let t = 0; t < 30; t++) {
       const a = pincerAngle !== undefined ? pincerAngle + (this.rand() - 0.5) * 0.4 : heading + Math.PI + (this.rand() - 0.5) * ((S.arc * Math.PI) / 180);
@@ -1592,10 +1766,10 @@ export class Game {
 
   queueUnit(species, opts = {}) {
     const sp = SPECIES[species], S = TUNE.spawn;
-    const spot = opts.at ? (this.clearAt(opts.at.x, opts.at.y, sp.reach) ? opts.at : null) : this.spawnSpot(species, opts.pincer);
+    const spot = opts.at ? (this.clearAt(opts.at.x, opts.at.y, sp.reach) ? opts.at : null) : this.spawnSpot(species, opts.pincer, opts.outside);
     if (!spot) return false;
     const warn = opts.boss ? S.warn.boss : sp.role === "swarm" ? S.warn.swarm : sp.role === "egg" ? S.warn.egg : S.warn.arc;
-    this.pending.push({ kind: "hunter", species, x: spot.x, y: spot.y, angle: 0, t: warn, total: warn, name: sp.name, boss: !!opts.boss, wave: opts.wave, brood: !!opts.brood });
+    this.pending.push({ kind: "hunter", species, x: spot.x, y: spot.y, angle: 0, t: warn, total: warn, name: sp.name, boss: !!opts.boss, wave: opts.wave, brood: !!opts.brood, tags: opts.tags || {} });
     if (sp.role !== "egg") this.emit("warn", { x: spot.x, y: spot.y, name: sp.name, boss: !!opts.boss, role: sp.role });
     return true;
   }
@@ -1609,6 +1783,11 @@ export class Game {
     for (const p of this.pending) if (p.kind === "hunter") add(SPECIES[p.species].role === "egg" ? "egg" : SPECIES[p.species].role === "swarm" ? "swarm" : "glider");
     for (const k of this.claims) if (k.kind === "hunter") add(k.tags.egg ? "egg" : k.tags.swarm ? "swarm" : "glider");
     if (gliders + eggs >= c.bodies) return false;
+    if (species === SP.HEPTA) {
+      const T = (o) => o && o.species === SP.HEPTA && !o.boss;
+      const n = this.hunters.filter((e) => e !== exclude && T(e)).length + this.pending.filter((p) => p.kind === "hunter" && T(p)).length + this.claims.filter((k) => k.kind === "hunter" && T(k.tags)).length;
+      if (n >= TUNE.grow.heptaCap) return false;
+    }
     if (role === "egg") return eggs < c.eggs;
     if (role === "swarm" && swarm >= c.swarm) return false;
     return gliders < c.gliders;
@@ -1628,7 +1807,7 @@ export class Game {
       } else {
         const sp = SPECIES[s.species];
         const angle = this.mode === "play" ? this.angleToward(s.species, s.x, s.y) : s.angle;
-        this.stampHunter(s.species, s.x, s.y, angle, { boss: !!s.boss, wave: s.wave, brood: !!s.brood });
+        this.stampHunter(s.species, s.x, s.y, angle, { ...(s.tags || {}), boss: !!s.boss, wave: s.wave, brood: !!s.brood });
         const fresh = !this.stats.species.has(sp.name);
         this.stats.species.add(sp.name);
         this.emit("spawn", { kind: "hunter", x: s.x, y: s.y, name: sp.name, boss: !!s.boss, fresh, role: sp.role });
@@ -1638,7 +1817,9 @@ export class Game {
     this.preyCd -= dt; this.goldenCd -= dt;
     if (this.preyCd <= 0 && this.prey.length + pend("prey") < this.preyTarget() && !this.bloom) {
       const golden = this.mode === "play" && this.goldenCd <= 0;
-      if (golden) this.goldenCd = 22 + this.rand() * 10;
+      // a long size gets golden prey more often, so a struggling player can still grow
+      const late = TUNE.grow.goldenLate;
+      if (golden) this.goldenCd = this.epochTime > late.after ? late.every : 22 + this.rand() * 10;
       this.queuePrey({ golden });
       this.preyCd = 0.9;
     }
@@ -1665,6 +1846,8 @@ export class Game {
   updateDirector(dt) {
     const D = this.director, P = this.player;
     if (!P.alive) return;
+    // a full bar waits for hunters to turn blue: no relax beat while it waits
+    if (this.ripe) D.relaxT = 0;
     if (D.relaxT > 0) D.relaxT -= dt;
     const plan = this.wavePlan(this.epoch);
     const bossAlive = this.hunters.some((e) => e.boss) || this.pending.some((p) => p.boss) || this.claims.some((c) => c.tags.boss);
@@ -1717,29 +1900,40 @@ export class Game {
         const n = 1 + (this.rand() < 0.5 ? 1 : 0);
         for (let j = 0; j < n; j++) {
           const s = pool[Math.floor(this.rand() * pool.length)];
-          if (this.capRoom(s)) this.queueUnit(s, { wave: "encore" });
+          if (this.capRoom(s)) this.queueUnit(s, { wave: "encore", tags: this.unitTags(s) });
         }
         D.encoreCd = 3;
       }
+    }
+    // a size has no timer: after its three waves, more of its hunters keep coming
+    const L = TUNE.grow.loop;
+    if (D.spawned.every(Boolean) && this.epochTime >= L.from && this.epochTime - this.loopAt >= L.every && !bossAlive && D.relaxT <= 0) {
+      this.loopAt = this.epochTime;
+      const T = tierOf(this.epoch), h = Object.keys(UNIT).find((u) => UNIT[u] === T.head && u !== "L");
+      this.spawnWave({ units: h + "D", pair: false }, "loop", "+");
     }
   }
 
   waveKey(k) { return this.epoch * 10 + k; }
 
-  epochPool() {
-    if (this.epoch >= 4) return [SP.PARA, SP.PENTA, SP.HEXA, SP.DISC];
-    if (this.epoch >= 2) return [SP.PARA, SP.PENTA, SP.DISC];
-    return [SP.PARA, SP.DISC];
+  // this size's species (encores, loop waves, the herald): only its own arc, plus swarms
+  epochPool() { return tierOf(this.epoch).pool; }
+
+  // the moves a unit of this species brings in this size
+  unitTags(species) {
+    const T = tierOf(this.epoch), m = T.moves || [];
+    if (species !== T.head) return {};
+    return { double: m.includes("double"), layer: m.includes("layer") };
   }
 
   wavePlan(epoch) {
-    if (WAVES[epoch]) return WAVES[epoch];
+    const T = tierOf(epoch);
+    if (T.waves) return T.waves;
     if (!this.genPlan || this.genPlan.epoch !== epoch) {
-      // generated waves: buy units until the budget is spent
-      const price = { P: 255, Q: 320, H: 405, D: 304, E: 150 };
-      const budget = Math.min(1700, 650 + 130 * epoch), boss = epoch % 3 === 0;
+      // deep sizes: buy units until the budget is spent
+      const price = { T: 485, D: 304, E: 150 };
+      const budget = Math.min(1700, 650 + 130 * epoch);
       const waves = [0, 1, 2].map((k) => {
-        if (boss && k === 1) return { at: 12, units: "L" };
         let left = budget, units = "";
         const keys = Object.keys(price);
         for (let t = 0; t < 12 && left > 150; t++) {
@@ -1748,21 +1942,29 @@ export class Game {
           left -= price[u];
           units += u === "D" ? "DD" : u === "E" ? "EE" : u;
         }
-        return { at: [2, 15, 28][k], units: units || "P", afterBoss: boss && k === 2 };
+        units = units || "T";
+        return { at: [4, 14, 26][k], units, pair: (units.match(/T/g) || []).length >= 2 };
       });
       this.genPlan = { epoch, waves };
     }
     return this.genPlan.waves;
   }
 
-  spawnWave(wv, k) {
-    const wave = this.waveKey(k), P = this.player;
-    const units = [...wv.units];
-    this.emit("wave", { wave: k + 1, units: wv.units });
+  spawnWave(wv, k, label) {
+    const wave = typeof k === "number" ? this.waveKey(k) : k, P = this.player;
+    const units = [...wv.units], head = tierOf(this.epoch).head;
+    this.emit("wave", { wave: label || k + 1, units: wv.units });
     let pincer = wv.pincer ? Math.atan2(P.dirY, P.dirX) + Math.PI / 2 : undefined;
+    // a relay pair: the first two head units arrive on opposite sides and share one attack token
+    const pairId = wv.pair && (tierOf(this.epoch).moves || []).includes("relay") ? `${wave}:pair` : null;
+    let paired = 0, pairAngle = Math.atan2(P.dirY, P.dirX) + Math.PI / 2;
+    // the first wave after the dish grows comes from the new territory
+    const outside = k === 0 && this.epoch >= 2 && !!this.oldBox;
     for (const u of units) {
       const species = UNIT[u];
-      const opts = { wave, boss: u === "L", pincer };
+      const tags = this.unitTags(species);
+      const opts = { wave, boss: u === "L", pincer, outside, tags };
+      if (pairId && species === head && u !== "L" && paired < 2) { tags.pair = pairId; opts.pincer = pairAngle; pairAngle += Math.PI; paired++; }
       if (pincer !== undefined) pincer += Math.PI;
       if (u === "L") this.director.bossOut = true;
       if (this.capRoom(species) || u === "L") { if (!this.queueUnit(species, opts)) this.director.queue.push({ species, ...opts }); }
@@ -1785,13 +1987,197 @@ export class Game {
   }
 
   // --- epochs and mutations ---
-  endEpoch() {
-    this.state = "mutate";
+  // --- the dish grows ---
+  bossPresent() {
+    return this.hunters.some((e) => e.boss) || this.pending.some((p) => p.boss) || this.claims.some((c) => c.tags.boss) || this.director.queue.some((q) => q.boss);
+  }
+
+  // A full bar waits for a clean moment: no boss, no Burst, and a hunter on the dish to turn into prey.
+  checkRipe(dt) {
+    if (!this.ripe || this.mode !== "play" || this.growHold) return;
+    this.ripeT += dt;
+    if (this.burstT <= 0) this.waitT += dt;
+    if (this.bossPresent() || this.burstT > 0 || this.ripeT < this.ripeDelay) return;
+    const red = this.hunters.some((e) => this.isNamed(e) && !e.egg);
+    if (!red && !this.afterBoss && this.waitT < TUNE.grow.ripe.wait) {
+      // send one of this size's hunters at once, so the dish has something to turn blue
+      const coming = this.pending.some((p) => p.kind === "hunter" && SPECIES[p.species].role !== "egg") || this.claims.some((c) => c.kind === "hunter" && !c.tags.egg);
+      if (!this.heraldSent && !coming) {
+        const head = tierOf(this.epoch).head;
+        if (this.queueUnit(head, { wave: "herald", tags: this.unitTags(head) })) this.heraldSent = true;
+      }
+      return;
+    }
+    this.startGrow();
+  }
+
+  startGrow() {
+    const P = this.player;
+    this.state = "grow"; this.growT = 0; this.zoom = null;
+    P.dashT = 0; P.cutting = false; P.dashEnded = false;
+    this.emit("growStart", { x: P.x, y: P.y });
+  }
+
+  // the grow clock: shrink the dish, replace the old hunters with prey, then the cards
+  updateGrow(dt) {
+    const Q = TUNE.grow.seq, t0 = this.growT;
+    this.growT += dt;
+    if (t0 < Q.begin && this.growT >= Q.begin) this.zoomBegin();
+    if (t0 < Q.finish && this.growT >= Q.finish) this.zoomFinish();
+    if (t0 < Q.cards && this.growT >= Q.cards) this.offerCards();
+  }
+
+  // old point -> new point: the old dish shrinks about its centre into the middle quarter
+  mapPoint(x, y) { return { x: wrap(this.w / 4 + x / 2, this.w), y: wrap(this.h / 4 + y / 2, this.h) }; }
+
+  zoomBegin() {
+    const { w, h } = this, W = this.world, P = this.player, G = TUNE.grow, Z = G.zoom;
+    const map = (x, y) => this.mapPoint(x, y);
+    // who comes back as prey: golden prey, fresh Remains, and every named hunter (heavy arcs twice)
+    const src = [], remainsBorn = (p) => (p.fadeAt ?? Infinity) - TUNE.remains.fade;
+    for (const p of this.prey) {
+      if (p.golden && p.mass > 30) src.push({ ...map(p.x, p.y), from: "golden", golden: true, rank: 9 });
+      else if (p.remains && this.time - remainsBorn(p) < Z.remainsAge) src.push({ ...map(p.x, p.y), from: p.from || "Remains", rank: 6 });
+    }
+    const rank = (e) => (e.species === SP.HEXA || e.species === SP.HEPTA ? 8 : e.species === SP.PARA || e.species === SP.PENTA ? 7 : e.brood ? 5 : 4);
+    for (const e of this.hunters) {
+      if (e.egg || !this.isNamed(e)) continue;
+      const n = e.species === SP.HEXA || e.species === SP.HEPTA ? 2 : 1;
+      for (let k = 0; k < n; k++) src.push({ ...map(e.x, e.y), from: e.boss ? "Leviathan" : e.name || "Brood", species: e.species, rank: rank(e), id: e.id * 2 + k });
+    }
+    for (const c of this.claims) if (c.kind === "hunter" && !c.tags.egg) src.push({ ...map(c.x, c.y), from: c.tags.name, species: c.tags.species, rank: 4 });
+    src.sort((a, b) => b.rank - a.rank);
+    const eggs = this.hunters.filter((e) => e.egg).map((e) => map(e.x, e.y));
+    // the rest of the old prey cannot live at half scale: they turn into light for the player
+    const old = this.prey.filter((p) => !p.golden && !(p.remains && this.time - remainsBorn(p) < Z.remainsAge));
+    const motes = old.slice(0, G.motes.max).map((p) => map(p.x, p.y));
+    if (P.alive) P.light = Math.min(P.maxLight, P.light + motes.length * G.motes.light);
+    W.zoomOut();
+    // the tracker forgets every old body: no kill credit, no self-death, no wave clear
+    this.prey = []; this.hunters = []; this.claims = []; this.pending = [];
+    this.labelB = null; this.ownerOf = []; this.lastCut = null;
+    const D = this.director;
+    D.queue = []; D.bossOut = false;
+    for (let k = 0; k < 3; k++) if (D.spawned[k] && !D.cleared[k]) { D.cleared[k] = true; D.clearAt = this.epochTime; }
+    const np = map(P.x, P.y);
+    P.x = P.px = np.x; P.y = P.py = np.y; P.vx *= 0.5; P.vy *= 0.5;
+    P.dashT = 0; P.cutting = false; P.dashEnded = false; P.dashTorn = new Map(); P.kicked = new Set(); P.cutLog = new Map(); P.rally = null;
     if (this.burstT > 0) { this.burstT = 0; this.emit("burstEnd"); }
     if (this.stasisT > 0) { this.stasisT = 0; this.emit("stasisEnd"); }
+    this.hitstop = 0; this.freezeLog = []; this.dashBuffer = 0; this.burstBuffer = 0; this.simAcc = 0;
+    this.bloom = false; this.tide = false;
+    this.fieldDirty = true;
+    // the next size
+    this.epoch++; this.growth = 0; this.ripe = false; this.apexCalled = false; this.stats.zooms++;
+    this.oldBox = { x: w / 4, y: h / 4, w: w / 2, h: h / 2 };
+    this.zoom = { src };
+    this.emit("zoomBegin", { eggs, motes, converted: Math.min(src.length, Z.maxNew), box: this.oldBox, size: this.epoch });
+  }
+
+  zoomFinish() {
+    const W = this.world, Z = TUNE.grow.zoom;
+    W.A.fill(0); W.B.fill(0);
+    const placed = this.placeHusks(this.zoom ? this.zoom.src : []);
+    for (const s of placed) W.fillDisc(W.N, s.x, s.y, Z.refill, 1);
+    this.chooseHeadings(placed);
+    for (const s of placed) {
+      W.stamp(W.A, ORB, s.x, s.y, s.angle, 1);
+      this.claims.push({ kind: "prey", x: s.x, y: s.y, at: this.time, tags: { stamped: true, converted: !s.golden, golden: !!s.golden, from: s.from } });
+    }
+    let mA = 0;
+    for (let i = 0; i < W.A.length; i++) mA += W.A[i];
+    W.massA = mA; W.massB = 0;
+    this.track("prey"); this.track("hunter");
+    this.fieldDirty = true;
+    this.stats.husks += placed.filter((s) => !s.golden).length;
+    const bonus = TUNE.grow.sizeBonus * this.epoch;
+    this.score += bonus;
+    this.zoom = null;
+    this.emit("zoomFinish", { at: placed.map((s) => ({ x: s.x, y: s.y, from: s.from, golden: !!s.golden })), bonus });
+  }
+
+  // Spread the new prey around the player: at least dmin apart, rmin from the player (lab: closer pairs die).
+  placeHusks(list) {
+    const { w, h } = this, P = this.player, Z = TUNE.grow.zoom;
+    const pts = list.slice(0, Z.maxNew).map((s) => ({ ...s }));
+    for (let it = 0; it < 60; it++) {
+      let moved = 0;
+      for (const p of pts) {
+        let dx = wdelta(p.x - P.x, w), dy = wdelta(p.y - P.y, h), d = Math.hypot(dx, dy);
+        if (d < 1e-3) { const a = (p.id || 1) * 2.4; dx = Math.cos(a); dy = Math.sin(a); d = 1; }
+        if (d < Z.rmin) { p.x = wrap(P.x + (dx / d) * Z.rmin, w); p.y = wrap(P.y + (dy / d) * Z.rmin, h); moved++; }
+      }
+      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j];
+        let dx = wdelta(b.x - a.x, w), dy = wdelta(b.y - a.y, h), d = Math.hypot(dx, dy);
+        if (d >= Z.dmin) continue;
+        if (d < 1e-3) { dx = 1; dy = 0.3; d = Math.hypot(dx, dy); }
+        const push = (Z.dmin - d) / 2 + 0.01;
+        a.x = wrap(a.x - (dx / d) * push, w); a.y = wrap(a.y - (dy / d) * push, h);
+        b.x = wrap(b.x + (dx / d) * push, w); b.y = wrap(b.y + (dy / d) * push, h);
+        moved++;
+      }
+      if (!moved) break;
+    }
+    const out = [];
+    for (const p of pts) if (out.every((q) => this.dist(p.x, p.y, q.x, q.y) >= Z.dmin * 0.95)) out.push(p);
+    return out;
+  }
+
+  // Pick right-angle stamps whose glides keep clear of each other's paths and stay on rich agar.
+  chooseHeadings(pts) {
+    const { w, h } = this, N = this.world.N, H = TUNE.grow.heading, P = this.player;
+    const K = pts.length, S = Math.floor(H.horizon / H.every) + 1, TR = Math.floor(H.trail / H.every);
+    const px = new Float32Array(K * 4 * S), py = new Float32Array(K * 4 * S), agar = new Float32Array(K * 4), bias = new Float32Array(K * 4);
+    for (let i = 0; i < K; i++) {
+      const p = pts[i], away = Math.atan2(wdelta(p.y - P.y, h), wdelta(p.x - P.x, w));
+      for (let q = 0; q < 4; q++) {
+        const a = (q * Math.PI) / 2 + ORB_HEADING, c = Math.cos(a) * H.speed * H.every, sn = Math.sin(a) * H.speed * H.every;
+        let lo = 1;
+        for (let k = 0; k < S; k++) {
+          const x = p.x + c * k, y = p.y + sn * k, o = (i * 4 + q) * S + k;
+          px[o] = x; py[o] = y;
+          if (k * H.every >= 12) {
+            const X = Math.round(x), Y = Math.round(y);
+            let m = 0;
+            for (let dy = -4; dy <= 4; dy += 4) for (let dx = -4; dx <= 4; dx += 4) m += N[wrap(Y + dy, h) * w + wrap(X + dx, w)];
+            lo = Math.min(lo, m / 9);
+          }
+        }
+        agar[i * 4 + q] = lo; bias[i * 4 + q] = 3 * Math.cos(a - away);
+      }
+    }
+    const qs = pts.map(() => 0);
+    const cost = (i, q) => {
+      let near = 60;
+      const bi = (i * 4 + q) * S;
+      for (let j = 0; j < K; j++) {
+        if (j === i) continue;
+        const bj = (j * 4 + qs[j]) * S;
+        for (let k = 0; k < S; k++) {
+          const x = px[bi + k], y = py[bi + k];
+          for (let t = Math.max(0, k - TR); t <= k; t++) {
+            const d = Math.hypot(wdelta(x - px[bj + t], w), wdelta(y - py[bj + t], h)) + (t < k ? 4 : 0);
+            if (d < near) near = d;
+          }
+        }
+      }
+      return near - 400 * Math.max(0, 0.985 - agar[i * 4 + q]) + bias[i * 4 + q];
+    };
+    for (let pass = 0; pass < H.passes; pass++) for (let i = 0; i < K; i++) {
+      let best = qs[i], bc = -Infinity;
+      for (let q = 0; q < 4; q++) { const c = cost(i, q); if (c > bc) { bc = c; best = q; } }
+      qs[i] = best;
+    }
+    pts.forEach((p, i) => { p.angle = (qs[i] * Math.PI) / 2; });
+    return pts;
+  }
+
+  offerCards() {
+    this.state = "mutate";
     this.offer = this.makeOffer();
-    this.emit("epochEnd", { epoch: this.epoch });
-    // nothing left to offer: the next epoch starts at once
+    this.emit("epochEnd", { epoch: this.epoch - 1, size: this.epoch, grew: true });
+    // nothing left to offer: the next size starts at once
     if (!this.offer.length) this.nextEpoch(null);
   }
 
@@ -1819,18 +2205,17 @@ export class Game {
     return true;
   }
 
+  // the next size starts (the dish already grew and the size number went up at zoomBegin)
   nextEpoch(m) {
-    const P = this.player;
+    const P = this.player, G = TUNE.grow;
     this.offer = null;
-    this.epoch++;
-    this.epochTime = 0;
+    this.epochTime = 0; this.loopAt = 0;
+    if (P.maxLight < G.maxLight.cap) P.maxLight = Math.min(G.maxLight.cap, P.maxLight + G.maxLight.perSize);
     P.light = Math.min(P.maxLight, P.light + 30);
     P.charges = this.maxCharges(); P.chargeT = 0;
-    // a fresh epoch: new waves; the Leviathan carries over if it still lives or still waits for room
-    const D = this.director, queue = D.queue.filter((q) => q.boss);
-    const bossOut = D.bossOut && (queue.length > 0 || this.hunters.some((e) => e.boss) || this.pending.some((p) => p.boss) || this.claims.some((c) => c.tags.boss));
-    this.director = { wave: 0, spawned: [false, false, false], cleared: [false, false, false], relaxT: 0, queue, encoreCd: 0, bossOut };
+    // a short calm, then this size's waves; a size cannot end while a boss lives, so nothing carries over
+    this.director = { wave: 0, spawned: [false, false, false], cleared: [false, false, false], relaxT: this.epoch >= 2 ? G.feast : 0, queue: [], encoreCd: 0, bossOut: false };
     this.state = "play";
-    this.emit("epochStart", { epoch: this.epoch, mutation: m });
+    this.emit("epochStart", { epoch: this.epoch, size: this.epoch, mutation: m, line: tierOf(this.epoch).line, head: SPECIES[tierOf(this.epoch).head].name });
   }
 }

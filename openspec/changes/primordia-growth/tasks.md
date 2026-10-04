@@ -1,0 +1,14 @@
+- [x] Design with references, two Lenia labs and judges.
+- [ ] lenia.js: `World.zoomOut` and a disc fill.
+- [ ] core.js: growth bar, body size, mouth and cut scaling.
+- [ ] core.js: outgrow (edible swarms, brood and eggs; flee; gulp).
+- [ ] core.js: grow sequence (ripe, freeze, zoomBegin, zoomFinish, cards, startSize) without the 40-second timer.
+- [ ] core.js: sizes and tiers (TIERS table, loop waves, golden valve, never-return roster, common Heptapteryx).
+- [ ] core.js: double strike, egg layer, relay pair, apex Leviathan.
+- [ ] render.js: zoom uniform, molt wave, tier cue, Exposed retint, flat fallback.
+- [ ] game.js, index.html, style.css: camera, GROW HUD, cards kicker, banners, tips, edible rings, relay thread, converted labels, results.
+- [ ] audio.js: grow chime, notch, swell, whoosh, plucks.
+- [ ] intro.js: GROW scene and end card.
+- [ ] QA: growth.test.mjs; combat, Lenia and intro test updates; bot and metrics; browser smoke on three layouts.
+- [ ] Adversarial review and fixes.
+- [ ] Validate and archive the specification.
