@@ -51,7 +51,7 @@ function helpers() {
     fire(el, "pointerup", x, y - up, id, kind);
     const r = document.querySelector("#report");
     out.cue = !r.hidden && r.classList.contains("cue") ? r.querySelector(".verdict").textContent : "";
-    const rel = window.__sfx.slice(sfxFrom), tr = rel.find((s) => s[0] === "release"), tu = rel.find((s) => s[0] === "ui");
+    const rel = window.__sfx.slice(sfxFrom), tr = rel.find((s) => s[0] === "release"), tu = rel.find((s) => s[0] === "zing");
     out.chime = !!(tr && tu && tu[1] - tr[1] < 50);
     const c = FISH.G.cast, lr = FISH.G.lastRelease;
     out.verdict = c ? c.verdict : null; out.release = lr ? lr.theta : null; out.step = FISH.G.step; out.yaw = c ? c.yaw : null;

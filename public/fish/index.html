@@ -161,9 +161,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #prompt .p1 svg { flex: none; width: 34px; height: 34px; }
 #prompt .p2 { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; color: #eef4f1; }
 #prompt .p2:empty { display: none; }
-#prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.5s infinite alternate; }
+#prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.6s ease-out; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
-@keyframes hot { to { transform: scale(1.06); } }
+/* a new hot prompt glows once (main.js starts it again on each change); the text never grows */
+@keyframes hot { 40% { box-shadow: 0 0 0 7px rgba(255, 90, 74, 0.5), 0 0 26px rgba(255, 90, 74, 0.7); } }
 #game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
 
 
@@ -171,6 +172,17 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
 /* the tall reel: the prompt goes under the gauge (the toast goes beside it) */
 #game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + min(30vmin, 150px)); }
+
+/* the hook set: "Fish on!" in big letters in the prompt's place for about 0.9 s, then the prompt again */
+#banner { position: absolute; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 5; }
+#banner b { display: block; font-family: var(--slab); font-weight: 400; font-size: clamp(34px, 11vmin, 60px); line-height: 1.02; color: #fff6dc; letter-spacing: 0.01em;
+  text-shadow: 0 3px 0 var(--red), 0 6px 0 #7a1c14, 0 10px 22px rgba(0, 0, 0, 0.5); animation: banner-pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+#banner span { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: #2d7a45; border: 1px solid #9fe0a8; font-size: 15px; color: #fff; animation: banner-pop 0.45s 0.12s cubic-bezier(.3, 1.6, .5, 1) both; }
+#banner span:empty { display: none; }
+#banner:not([hidden]) + #prompt { visibility: hidden; }
+#game.l-tall-reel #banner { top: calc(var(--sat) + 104px + min(30vmin, 150px)); }
+#game.l-reel #banner { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+@keyframes banner-pop { from { transform: scale(0.6); opacity: 0; } }
 
 
 /* the cast report after a landing */
@@ -344,6 +356,11 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 @keyframes spin { to { transform: rotate(360deg); } }
 #arrive .gear { color: var(--brass); }
 #unlock h2 { margin-top: 6px; }
+/* a new place: the card rises in, and the NEW PLACE badge stamps on 250 ms later */
+#unlock:not([hidden]) .card { animation: card-rise 0.45s cubic-bezier(.2, .8, .2, 1); }
+#unlock:not([hidden]) .badge { display: inline-block; animation: stamp 0.22s 0.25s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes card-rise { from { opacity: 0; transform: translateY(24px) scale(0.9); } }
+@keyframes stamp { from { opacity: 0; transform: scale(1.6) rotate(-8deg); } }
 .unlockline { text-align: center; color: var(--brass); }
 #results .kicker { text-align: center; }
 
@@ -353,6 +370,12 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 #catch .badges { display: flex; justify-content: center; gap: 6px; min-height: 0; margin-bottom: 6px; }
 .badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; letter-spacing: 0.08em; background: var(--brass); color: #2a1a00; }
 .badge.new { background: var(--green); color: #0c2a10; }
+/* the catch card: the badges wait for the weight to count up, then stamp on; the weight pops once at the end */
+#cbadges.held { visibility: hidden; }
+#cbadges.stamp .badge { display: inline-block; animation: stamp 0.22s cubic-bezier(.3, 1.6, .5, 1) both; }
+#cbadges.stamp .badge + .badge { animation-delay: 0.1s; }
+#catch .kg.pop { animation: kg-pop 0.18s ease-out; }
+@keyframes kg-pop { 50% { transform: scale(1.12); } }
 #catch h2 { font-size: 28px; margin-bottom: 4px; }
 #catch .kg { font-family: var(--slab); font-size: 44px; line-height: 1.05; color: var(--brass); }
 #catch .kg small { font-size: 18px; color: var(--ink); }
@@ -376,6 +399,15 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 #rlist li { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--deep2); font-size: 14px; }
 .big { font-family: var(--slab); font-size: 48px; color: var(--brass); line-height: 1.1; text-align: center; }
 .rank { text-align: center; font-size: 16px; letter-spacing: 0.1em; color: #fff; }
+/* the derby total counts up from zero; the rank and the lines under it wait for it, then the rank stamps on */
+#results .held { visibility: hidden; }
+#results .rank.stamp { animation: stamp 0.24s cubic-bezier(.3, 1.6, .5, 1) both; }
+#rtotal { font-variant-numeric: tabular-nums; }
+/* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion
+   (no glow, pop, rise or stamp; the cast report and the "Sweet!" cue show without their pop) */
+@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank, #report.show { animation: none !important; } }
+html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
+html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank, html[data-calm="1"] #report.show { animation: none !important; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
 /* a short phone held upright: the list of fish gives up room, so the buttons stay on the screen */
@@ -472,6 +504,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
     <span class="chip" id="clock"></span>
   </div>
 
+  <div id="banner" hidden aria-live="polite"><b></b><span></span></div>
   <div id="prompt" hidden><div class="p1"></div><div class="p2"></div></div>
   <div id="report" hidden><div class="dist"></div><div class="verdict"></div><div class="zone"></div></div>
   <div id="flash"></div>

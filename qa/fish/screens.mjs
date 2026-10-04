@@ -59,7 +59,7 @@ const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 async function spy(page) {
   await page.evaluate(() => {
     const log = (window.__log = []);
-    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash"], "H"]]) {
+    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash", "turn", "big", "shutter"], "H"]]) {
       for (const n of names) { const f = obj[n]; obj[n] = function (...a) { log.push([tag + "." + n, ...a]); return f.apply(this, a); }; }
     }
   });
@@ -298,16 +298,16 @@ if (part("A")) {
     console.log("     the feel of each move");
     const FEEL = [
       ["charge", [{ type: "charge" }], (l) => has(l, "S.sfx", "slip") && has(l, "H.charge")],
-      ["turn", [{ type: "turn" }], (l) => has(l, "H.thump")],
+      ["turn", [{ type: "turn" }], (l) => has(l, "H.turn") && !has(l, "H.thump")],
       ["sulk", [{ type: "sulk" }], (l) => has(l, "S.sfx", "creak") && has(l, "H.throb")],
       ["pump", [{ type: "pump", n: 1, need: 2 }], (l) => l.some((x) => x[0] === "H.bump" && x[1] === 0.4)],
       ["unstuck", [{ type: "unstuck" }], (l) => l.some((x) => x[0] === "S.sfx" && x[1] === "splash")],
       ["thrash", [{ type: "thrash" }], (l) => has(l, "H.thrash") && has(l, "S.sfx", "splash")],
       ["spool", [{ type: "spool" }], (l) => has(l, "S.sfx", "slip") && l.some((x) => x[0] === "H.bump" && x[1] === 0.8)],
-      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "record") && has(l, "H.phase")],
+      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "stage") && !has(l, "S.sfx", "record") && has(l, "H.phase")],
       // its own warning, not the snap buzz (which would also silence the drag)
       ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.surge") && !has(l, "H.jolt")],
-      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "tick") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
+      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "ratchet") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
     ];
     for (const [name, ev, ok] of FEEL) {
       await stage(page, {});
@@ -389,7 +389,7 @@ if (part("A")) {
     check((await toastIs(page, "It is a big one!")) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
     await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 5000).catch(() => {});
     check(await page.evaluate(() => FISH.gauge.s.label === "Big fish on!"), "and the gauge says \"Big fish on!\"");
-    check(has(await logNow(page), "H.thump"), "with a thump");
+    check(has(await logNow(page), "H.big") && !has(await logNow(page), "H.thump"), "with its own buzz, not the strike's");
     await stage(page, { fish: { known: true } }, [{ type: "reveal", id: "walleye" }], false);
     check((await toastIs(page, "It is a huge Walleye!")) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
     await wait(page, () => FISH.gauge.s.label === "", null, 5000).catch(() => {});
@@ -585,6 +585,8 @@ if (part("B")) {
     check(c.btn === "See the results" && c.photo, "the last catch of a derby: See the results, and the photo for the place it opens (" + c.btn + ")");
     await click(page, "#catchGo");
     await page.waitForSelector("#results:not([hidden])");
+    // the total counts up first, then the rank shows
+    await wait(page, () => !document.querySelector("#rrank").classList.contains("held"), null, 8000);
     const r = await page.evaluate(() => ({ kick: document.querySelector("#rkick").textContent, total: document.querySelector("#rtotal").textContent, rank: document.querySelector("#rrank").textContent, best: document.querySelector("#rbest").textContent, line: document.querySelector("#runlock").textContent, lineHidden: document.querySelector("#runlock").hidden, go: document.querySelector("#rGo").hidden, list: [...document.querySelectorAll("#rlist li")].map((l) => l.textContent) }));
     check(r.kick === "LOON LAKE" && r.total === "3.6 kg" && r.rank === rankFor("loon", 3.6) && r.best === "A new best derby here!" && r.list.join() === "Walleye3.6 kg", "the results: the place, the total, the rank, the new best (" + JSON.stringify(r) + ")");
     check(!r.lineHidden && r.line === "Your 3.6 kg Walleye opened Stump Bay." && !r.go, "the results say which fish opened Stump Bay, with Go there (" + r.line + ")");
@@ -979,11 +981,12 @@ if (part("H")) {
     });
     await page.evaluate(() => { delete FISH.save.seen.run; });
     await sleep(2500);   // the toasts before have gone
-    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "run" }, { type: "drag" }]);
+    // ("Fish on!" is the hook set's banner now, not a toast: the big fish's warning comes first, so the run tip waits)
+    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "drag" }, { type: "run" }]);
     const early = await page.evaluate(() => !!FISH.save.seen.run);
     await sleep(4200);
     const tq = await page.evaluate(() => window.__tq.slice());
-    const want = ["Fish on!", "It is running! Let the drag work.", "It is a big one!"], got = tq.map((x) => x[0]);
+    const want = ["It is a big one!", "It is running! Let the drag work."], got = tq.map((x) => x[0]);
     const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
     check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);

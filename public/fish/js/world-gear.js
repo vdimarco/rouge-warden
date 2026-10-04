@@ -133,8 +133,9 @@ export class Rod {
   }
 
   // grip: world point of the reel seat. dir: unit rod direction. bend 0..1, pull: world point the line pulls toward (or null).
-  // cam + pxAng: to keep the thin end at least about a pixel wide.
-  pose(grip, dir, bend, pull, cam, pxAng, width = 1) {
+  // cam + pxAng: to keep the thin end at least about a pixel wide. tip 0..1: a twitch of the tip alone, toward the pull
+  // (a nibble taps it, a strike pulls it down hard, the hook set whips it), on top of the bend.
+  pose(grip, dir, bend, pull, cam, pxAng, width = 1, tip = 0) {
     const L = ROD.length;
     // bend toward the pull, most of it near the tip (a fast-action rod)
     const n = V3();
@@ -147,8 +148,9 @@ export class Rod {
     n.normalize();
     const phi = clamp(bend, 0, 1) * 1.25 * (pull ? clamp(Math.sqrt(1 - along * along) + 0.25, 0.3, 1) : 1) + 0.04;
     const P = V3().copy(grip), T = V3().copy(dir), tmp = V3();
-    // a light load bends only the tip; a heavy one works down into the butt
-    const act = 2.3 - 1.1 * clamp(bend, 0, 1);
+    // a light load bends only the tip; a heavy one works down into the butt. The twitch lives in the last third
+    const act = 2.3 - 1.1 * clamp(bend, 0, 1), kick = clamp(tip || 0, 0, 1) * 0.9;
+    const angle = (u) => phi * u ** act + kick * u ** 5;
     let s = 0;
     const setFrame = (f, pos, tan) => {
       f.P.copy(pos); f.T.copy(tan);
@@ -163,12 +165,12 @@ export class Rod {
       if (key <= 0) { setFrame(f, tmp.copy(grip).addScaledVector(dir, key), dir); continue; }
       // integrate the bent curve up to this station in small steps
       while (s < key - 1e-6) {
-        const ds = Math.min(0.04, key - s), a = phi * ((s + ds / 2) / L) ** act;
+        const ds = Math.min(0.04, key - s), a = angle((s + ds / 2) / L);
         T.copy(dir).multiplyScalar(Math.cos(a)).addScaledVector(n, Math.sin(a));
         P.addScaledVector(T, ds);
         s += ds;
       }
-      const a = phi * (s / L) ** act;
+      const a = angle(s / L);
       T.copy(dir).multiplyScalar(Math.cos(a)).addScaledVector(n, Math.sin(a)).normalize();
       setFrame(f, P, T);
     }
