@@ -4,11 +4,12 @@
 
 /** A QA run: a script under qa/, an end-to-end or browser run, or one that names a shot folder. */
 export const isQaCommand = (command: string): boolean =>
-  /(?:^|[\s/])qa\/|\bnpm\s+(?:--prefix\s+\S+\s+)?run\s+(?:qa|test:[\w-]+)|\bplaywright\b|\.e2e\.[cm]?[jt]s\b|\b[A-Z_]*SHOTS[A-Z_]*=/.test(command)
+  /(?:^|[\s/])qa\/|\bnpm\s+(?:--prefix\s+\S+\s+)?run\s+(?:qa|test:[\w-]+)|\bplaywright\b|\.e2e\.[cm]?[jt]s\b|\bbrowser-check\.[cm]?js\b|\b[A-Z_]*SHOTS[A-Z_]*=/.test(command)
 
 /** The folders the QA scripts write shots to when the command names none. */
 export const DEFAULT_DIRS = [
   '/tmp/pinball-shots', '/tmp/swing-qa', '/tmp/fish-shots', '/tmp/creature-browser', '/opt/cursor/artifacts/screenshots',
+  '/tmp/river-rush-qa', '/tmp/river-rush-arcade-qa', '/tmp/river-rush-animation-qa',
 ]
 
 /** The folders to look in after a command: the ones it names, the defaults, test-results, and extras. */

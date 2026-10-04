@@ -48,6 +48,8 @@ export const CABINETS: readonly Cabinet[] = [
     verbs: ['Cutting emissions', 'Researching', 'Planting forests'], end: 'Breakthrough in' },
   { id: 'follow-suit', name: 'Follow Suit', folders: ['public/follow-suit/', 'follow-suit/'],
     verbs: ['Shuffling', 'Following suit', 'Trumping', 'Leading a trick'], end: 'Trick taken in' },
+  { id: 'river-rush', name: 'River Rush', folders: ['public/river-rush/', 'games/river-rush/', 'qa/river-rush/'],
+    verbs: ['Running the rapids', 'Reaching for the key', 'Unlocking the chest', 'Racing the rival'], end: 'Escaped the falls in' },
   { id: 'lab', name: 'The Lab', folders: ['public/lab/', 'qa/lab/'],
     verbs: ['Prototyping', 'Building a toy', 'Testing the bar'], end: 'Prototype ran in' },
   { id: 'neon', name: 'Neon Ronin', folders: ['public/neon/', 'qa/neon/'],
