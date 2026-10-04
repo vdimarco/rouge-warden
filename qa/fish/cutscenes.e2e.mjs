@@ -78,8 +78,12 @@ const at = (page) => page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.st
     // it ends by itself, in the cast view, and the cast starts
     const t0 = Date.now();
     await until(page, () => !FISH.cuts.playing, null, 90000);
-    const end = await at(page), cam = await page.evaluate(() => { const p = FISH.world.camera.position, e = FISH.place.stand.eye; return Math.hypot(p.x - e.x, p.y - e.y, p.z - e.z); });
-    check(end.phase === "cast" && end.mode === "free" && end.hud && end.step === "ready" && cam < 0.3, "it ends by itself and the cast starts, the camera on the dock (" + JSON.stringify({ ...end, cam: +cam.toFixed(3), waited: (Date.now() - t0) / 1000 }) + ")");
+    const end = await at(page);
+    // (the last frame of the cutscene may have drawn a little short of its end: the cast view takes the camera the last
+    // few centimetres)
+    await until(page, () => { const p = FISH.world.camera.position, e = FISH.place.stand.eye; return Math.hypot(p.x - e.x, p.y - e.y, p.z - e.z) < 0.1; }, null, 5000).catch(() => {});
+    const cam = await page.evaluate(() => { const p = FISH.world.camera.position, e = FISH.place.stand.eye; return Math.hypot(p.x - e.x, p.y - e.y, p.z - e.z); });
+    check(end.phase === "cast" && end.mode === "free" && end.hud && end.step === "ready" && cam < 0.1, "it ends by itself and the cast starts, the camera on the dock (" + JSON.stringify({ ...end, cam: +cam.toFixed(3), waited: (Date.now() - t0) / 1000 }) + ")");
     const sfx = await page.evaluate(() => window.__sfx.slice());
     check(sfx.includes("swell") && sfx.includes("loonWail"), "its sound: the swell and the loon (" + sfx.join(" ") + ")");
     // once: the next Go fishing goes straight to the water
