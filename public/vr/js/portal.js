@@ -479,7 +479,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   const fx = {
     built: false, mats: {}, geos: [], tex: [],
     decal: null, holeG: null, mask: null, rim: null, tunnel: null, drips: null, puddle: null, spill: null,
-    chunks: null, dust: null, arrow: null, spinner: null, flash: null, sphere: null, room: null, poly: null,
+    chunks: null, chunkInk: null, dust: null, arrow: null, spinner: null, flash: null, sphere: null, room: null, poly: null,
   };
   // Materials and textures live as long as the page: each program compiles once and every opening reuses it.
   const MC = {}, TC = {};
@@ -488,6 +488,9 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
 
   /* ---------------- effects that do not depend on the wall ---------------- */
   const NCH = 46, NDU = 30;
+  // The ink line keeps its 1.2 cm while a shard shrinks away at the end of the reveal, so it goes first: below this scale it would
+  // be a black dot with a crumb of wall in it.
+  const INK_FADE = 0.3;
   const chunkS = Array.from({ length: NCH }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), s: new THREE.Vector3(), a: 1, rest: false }));
   const dustS = Array.from({ length: NDU }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), age: 9, life: 1, s0: 0.2, s1: 0.8, a0: 0.4 }));
   const dropS = Array.from({ length: 5 }, () => ({ on: false, x: 0, y: 0, z: 0, vy: 0 }));
@@ -501,7 +504,8 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     cg.setAttribute("aCol", col);
     fx.chunks = new THREE.InstancedMesh(cg, fx.mats.chunk, NCH);
     fx.chunks.name = "portal:chunks"; fx.chunks.frustumCulled = false; fx.chunks.count = 0; fx.chunks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    fx.chunks.add(outlineOf(fx.chunks, { width: 0.012, px: 2 })); // the ink line round each shard
+    fx.chunkInk = outlineOf(fx.chunks, { width: 0.012, px: 2 }); // the ink line round each shard
+    fx.chunks.add(fx.chunkInk);
     root.add(fx.chunks);
     // dust
     const dg = new THREE.PlaneGeometry(1, 1);
@@ -815,11 +819,12 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
       ca.setXYZ(i, k[0] * j, k[1] * j, k[2] * j);
     }
     ca.needsUpdate = true;
-    fx.chunks.count = NCH; fx.chunks.visible = true;
+    fx.chunks.count = NCH; fx.chunks.visible = true; fx.chunkInk.visible = true;
   }
   const CM = new THREE.Matrix4(), CS = new THREE.Vector3();
   function chunkStep(dt, fade) {
     if (!fx.chunks.visible) return;
+    fx.chunkInk.visible = fade > INK_FADE;
     for (let i = 0; i < NCH; i++) {
       const c = chunkS[i];
       if (!c.rest) {

@@ -244,7 +244,12 @@ try {
     await page.evaluate((t) => G.ui.toast(t), text);
     await step(page, 0.5);
     fits.push({ text, ...(await page.evaluate(() => {
-      const cv = G.scene.getObjectByName("ui:toast").material.map.image, col = cv.getContext("2d").getImageData(Math.floor(cv.width / 2), 0, 1, cv.height).data;
+      // read a copy: a readback on the panel's own canvas makes Chrome warn about willReadFrequently
+      const cv = G.scene.getObjectByName("ui:toast").material.map.image, cp = document.createElement("canvas");
+      cp.width = cv.width; cp.height = cv.height;
+      const cx = cp.getContext("2d", { willReadFrequently: true });
+      cx.drawImage(cv, 0, 0);
+      const col = cx.getImageData(Math.floor(cv.width / 2), 0, 1, cv.height).data;
       let first = -1, last = -1;
       for (let y = 0; y < cv.height; y++) if (col[y * 4 + 3] > 8) { if (first < 0) first = y; last = y; }
       return { h: cv.height, first, last };
@@ -430,9 +435,10 @@ try {
     const h0 = gpu(), n0 = R.info.memory.textures;
     h.setVisible(true);
     R.render(sc, G.camera);
+    // the skinned mesh adds its bone texture on the first draw, so the texture count is not a test: the map's own GL texture is
     return { model: h.model, map: !!map, size: map && map.image ? map.image.width : 0, uploaded: !!h0, same: !!h0 && gpu() === h0, newTextures: R.info.memory.textures - n0 };
   });
-  check(hm.model === "glb" && hm.map && hm.uploaded && hm.same && hm.newTextures === 0, "the hero's colour map is on the GPU as soon as the model loads, and the first draw does not upload it again", hm);
+  check(hm.model === "glb" && hm.map && hm.uploaded && hm.same, "the hero's colour map is on the GPU as soon as the model loads, and the first draw does not upload it again", hm);
   await page.evaluate(() => { G.test.clearClog(0); G.test.step(1 / 60, 3); });
   const clog = await page.evaluate(() => document.querySelector("[data-k=clog]").textContent);
   check(clog === "1", "the HUD counts a flushed clog", clog);
@@ -440,14 +446,27 @@ try {
   const subd = await page.evaluate(() => ({ sub: document.querySelector("[data-k=sub]").textContent, on: document.querySelector("[data-k=sub]").classList.contains("on"), toast: document.querySelector("[data-k=toast]").textContent }));
   check(subd.sub === "Aim high." && subd.on && subd.toast === "+5", "subtitles and toasts show in the page", subd);
   await shot(page, "ui-desktop-hud");
-  // sayLine reads the words for the input kind: the mouse and a gamepad the desktop lines, a phone the touch lines (or the desktop
-  // ones while config.js has none), hands their own
+  // sayLine reads the words for the input kind: the mouse and a gamepad the desktop lines, a phone the touch lines, hands their own
   const kinds = await page.evaluate(async () => {
     const C = await import("./js/config.js");
     const say = (k) => G.ui.sayLine("tutorial", 3, k);
-    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantTouch: (C.LINES_TOUCH || C.LINES_DESKTOP).tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
+    return { mouse: say("mouse"), pad: say("pad"), touch: say("touch"), hand: say("hand"), controller: say("controller"), want: C.LINES_DESKTOP.tutorial[3], wantTouch: C.LINES_TOUCH && C.LINES_TOUCH.tutorial[3], wantHand: C.LINES_HANDS.tutorial[3], wantController: C.LINES.tutorial[3] };
   });
-  check(kinds.mouse === kinds.want && kinds.pad === kinds.want && kinds.touch === kinds.wantTouch && kinds.hand === kinds.wantHand && kinds.controller === kinds.wantController, "sayLine picks the lines by input kind: mouse and pad read the desktop lines, touch the touch lines (the desktop ones until config.js has them)", kinds);
+  check(kinds.mouse === kinds.want && kinds.pad === kinds.want && kinds.touch === kinds.wantTouch && kinds.hand === kinds.wantHand && kinds.controller === kinds.wantController, "sayLine picks the lines by input kind: mouse and pad read the desktop lines, touch the touch lines", kinds);
+  // config.js has the touch lines: the same keys, order and counts as the desktop lines, other words, and no em dashes
+  const touch = await page.evaluate(async () => {
+    const C = await import("./js/config.js"), T = C.LINES_TOUCH, D = C.LINES_DESKTOP;
+    if (!T) return null;
+    const keys = Object.keys(D);
+    return {
+      keys: Object.keys(T).join() === keys.join(),
+      counts: keys.every((k) => Array.isArray(T[k]) && T[k].length === D[k].length),
+      own: ["intro", "tutorial"].every((k) => T[k].some((l, i) => l !== D[k][i])),
+      mouseWords: [].concat(...Object.values(T)).filter((l) => /mouse|shift|press f|\bkey\b|trigger|pinch|grip/i.test(l)),
+      dash: [].concat(...Object.values(T)).filter((l) => /[–—]/.test(l)),
+    };
+  });
+  check(touch && touch.keys && touch.counts && touch.own && touch.mouseWords.length === 0 && touch.dash.length === 0, "config.js has LINES_TOUCH: the keys and order of LINES_DESKTOP, its own words for the phone, no mouse or em dash", touch);
   // Esc opens the menu (the game's own key), and the menu has the options
   await page.keyboard.press("Escape");
   await page.evaluate(() => G.test.step(1 / 60, 2));

@@ -23,7 +23,7 @@ const TILT = { sub: -0.9, toast: 1.1, modal: -0.7, hud: 2.2, tip: 1.4 }; // degr
 
 /* ---------------- placement numbers ---------------- */
 const SUB = { dist: 1.4, drop: 12 * DEG, width: 1.5, wpx: 1500, hpx: 260, dead: 20 * DEG, settle: 7 * DEG, rate: 2.2 }; // subtitles: 1.4 m ahead, 12° below eye level
-const TOAST = { drop: 3 * DEG, width: 1.0, wpx: 1000, hpx: 130, secs: 2.4 };
+const TOAST = { drop: 3 * DEG, width: 1.0, wpx: 1000, hpx: 200, secs: 2.4 }; // 200 px: two lines of 54 px lettering, the 8 px ink border and the shadow
 const MENU = { dist: 1.1, drop: 0.05, dead: 38 * DEG, settle: 12 * DEG, rate: 2.5, slack: 0.45 };
 const HUDP = { w: 0.2, wpx: 512, hpx: 344, upPad: 0.11, upHand: 0.1, show: 0.55, hide: 0.3, poke: 0.014, arm: 0.03, hover: 0.05 };
 const PIN_SNAP = 0.03; // the laser snaps to a map pin within 3 cm
@@ -574,8 +574,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     hud.arrow.renderOrder = RO.hud + 2; hud.arrow.frustumCulled = false; hud.arrow.position.set(ARROW_XY[0], ARROW_XY[1], 0.001);
     // the ink outline: the same arrow, bigger, behind (it turns and hides with the red one)
     const ink = new THREE.Mesh(new THREE.ShapeGeometry(s), flat(PAL.ink));
-    ink.scale.setScalar(1.4); ink.position.z = -0.0004; ink.renderOrder = RO.hud + 1; ink.frustumCulled = false;
-    hud.arrow.scale.setScalar(0.7); // it fits inside the compass ring, ink line and all
+    ink.scale.setScalar(1.25); ink.position.z = -0.0004; ink.renderOrder = RO.hud + 1; ink.frustumCulled = false;
+    hud.arrow.scale.setScalar(0.5); // the ink tip reaches 0.0169 m, inside the ring's inner edge at 0.0176 m
     hud.arrow.add(ink); hud.arrow.userData.ink = ink;
     p.mesh.add(hud.arrow);
     return p;

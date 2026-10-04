@@ -270,8 +270,9 @@ export function createHero(scene, renderer) {
       map.anisotropy = 4;
       map.generateMipmaps = true; map.minFilter = THREE.LinearMipmapLinearFilter;
       try { renderer.initTexture(map); } catch (e) { /* uploads on first use */ }
-      // the other maps (normal, roughness) are never drawn: let them go
-      for (const k of Object.keys(old)) { const t = old[k]; if (k !== "map" && t && t.isTexture) { t.dispose(); if (t.image && t.image.close && t.image !== map.image) t.image.close(); } }
+      // the other maps (normal, roughness, emissive) are never drawn: let them go. The glb uses one texture for the colour and the
+      // emissive map, so skip by object: dispose() on the colour map would free the copy that initTexture just uploaded
+      for (const k of Object.keys(old)) { const t = old[k]; if (t && t.isTexture && t !== map) { t.dispose(); if (t.image && t.image.close && t.image !== map.image) t.image.close(); } }
       const fit = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3());
       if (!(fit.y > 1.5 && fit.y < 2.2)) throw new Error("crew5.glb has an odd height " + fit.y);
       useRig(model, skinned, bodyMaterial(map, OPA, LIGHT), "glb");

@@ -110,6 +110,9 @@ try {
   check(px >= 6, "the hero is drawn (red jersey pixels at the chest)", px);
   const head = await page.evaluate(() => { const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
   check(Math.abs(head.x) < 0.2 && head.y > -0.3 && head.y < 0.6 && head.z < 1, "the camera looks at the hero (the head is near the middle of the view)", head);
+  // the chase view looks down at the hero's feet: the default aim must not take the roof under them but a building up and ahead
+  const da = await page.evaluate(() => { __h.step(2); const a = G.test.aim(1), h = G.test.state().head; return a && { valid: a.valid, ny: a.ny, x: a.x, y: a.y, z: a.z, dist: a.dist, headY: h.y }; });
+  check(da && da.valid && !(da.ny > 0.7 && da.y < da.headY - 0.3) && da.y > da.headY, "the default aim from the chase view is a building up and ahead, not the roof under the hero", da);
   await shot(page, "hero-third-person");
 
   /* ---- the mouse turns the camera (input.turn and input.pitch) ---- */
@@ -226,6 +229,16 @@ try {
   check(Math.hypot(f.camera.x - s.head.x, f.camera.y - s.head.y, f.camera.z - s.head.z) < 0.05, "the first-person camera sits at the hero's eyes", { cam: f.camera, head: s.head });
   check(!(await page.evaluate(() => G.hero.root.visible)) && f.opacity < 0.05, "the hero is hidden in first person");
   check((await page.evaluate(() => document.body.dataset.view)) === "first", "body[data-view] says first (the page hides the third-person crosshair with it)");
+  // the muzzles sit low in the first-person view, about 30 degrees under the view axis, and the mouse looks up to 85 degrees
+  const mz = await page.evaluate(() => { const c = G.camera; c.updateMatrixWorld(true); const l = c.worldToLocal(G.hands.tip(1).clone()); return { x: l.x, y: l.y, z: l.z, below: (Math.atan2(-l.y, -l.z) * 180) / Math.PI }; });
+  check(Math.abs(mz.below - 29.7) < 2.5 && mz.x > 0.15, "in first person the right muzzle sits low and to the right in the view (about 30 degrees under the axis)", mz);
+  const pitch0 = f.pitch;
+  await page.evaluate(() => { G.desktop.locked = true; for (let i = 0; i < 6; i++) window.dispatchEvent(new MouseEvent("mousemove", { movementX: 0, movementY: -200 })); });
+  f = await step(page, 3);
+  await page.evaluate(() => { G.desktop.locked = false; });
+  check(Math.abs(f.pitch - (85 * Math.PI) / 180) < 0.01, "in first person the mouse looks up to 85 degrees", f.pitch);
+  await page.evaluate((d) => G.test.look(0, d), pitch0 - f.pitch); // back to the pitch it had
+  await step(page, 3);
   await page.keyboard.press("KeyV");
   f = await step(page, 90);
   check(!f.firstPerson && f.blend === 1 && Math.abs(f.dist - 4.5) < 0.15, "V again returns to third person", { fp: f.firstPerson, blend: f.blend, dist: f.dist });

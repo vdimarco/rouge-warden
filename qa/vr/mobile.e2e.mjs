@@ -43,6 +43,9 @@ try {
  // The chase camera settles behind the hero. The phone start must not tip it up into the roof.
  const chase=await page.evaluate(()=>{G.test.step(1/60,90);return G.test.flat();});
  assert(chase.pitch<-0.2&&chase.pitch>-0.35&&Math.abs(chase.dist-4.5)<.15&&!chase.blocked,'the phone camera settles to the chase view '+JSON.stringify({pitch:chase.pitch,dist:chase.dist,blocked:chase.blocked}));
+ // The hero starts facing where the camera looks (the ring), not the way the start roof faces.
+ const yawGap=Math.abs(Math.atan2(Math.sin(chase.hero.yaw-chase.yaw),Math.cos(chase.hero.yaw-chase.yaw)));
+ assert(yawGap<.05,'the hero and the camera face the same way at the start '+yawGap);
  // From the chase view the swing aim is up and ahead, never the roof under the feet.
  const first=await page.evaluate(()=>{const a=G.test.aim(1);return a&&{valid:a.valid,ny:a.ny,y:a.y,head:G.test.state().head.y};});
  assert(first&&first.valid&&!(first.ny>.7&&first.y<first.head-.3),'the first swing aim is not the roof under the hero '+JSON.stringify(first));
@@ -116,6 +119,14 @@ try {
   assert(r.id===t.id&&miss<8,label+': the rope anchors on the tapped building, not the centre target '+JSON.stringify({tapped:t.id,centre:t.centre,got:r.id,miss,nx:t.nx,ny:t.ny}));
   return t;
  };
+ // A tap on the middle of the chase view lands on the hero and the roof at its feet. That is no anchor: the aim goes up and ahead.
+ await page.evaluate(()=>{const s=G.city.start;G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=s.yaw;G.test.step(1/60,90);});
+ const mid=await page.evaluate(()=>({x:innerWidth/2,y:innerHeight/2,canvas:document.elementFromPoint(innerWidth/2,innerHeight/2)===G.renderer.domElement}));
+ assert(mid.canvas,'the middle of the view is the canvas');
+ await page.mouse.click(mid.x,mid.y);await page.evaluate(()=>G.test.step(1/60,45));
+ const roofTap=await page.evaluate(()=>{const s=G.test.state().ropes[1];return {state:s.state,y:s.anchor.y,roof:G.city.start.y};});
+ assert(roofTap.state==='attached'&&roofTap.y>roofTap.roof+5,'a tap on the hero and the roof anchors on a building above, not on the roof '+JSON.stringify(roofTap));
+ console.log('PASS tap the hero and the roof in third person: the rope goes up and ahead');
  const tp=await tapFrom('third person');console.log('PASS tap a building off the screen centre in third person',JSON.stringify({nx:+tp.nx.toFixed(2),ny:+tp.ny.toFixed(2),id:tp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const cur=await page.evaluate(()=>G.test.state().ropes[1].id);
