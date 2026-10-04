@@ -14,3 +14,12 @@ The files in `announcer/` and `sfx/` were trimmed, made mono, loudness-normalize
 - Interface Sounds. Files: `ui-*`. https://kenney.nl/assets/interface-sounds
 
 Kenney Vleugels (kenney.nl). Credit is optional under CC0.
+
+## Music: CC0 (public domain)
+Tracks were loudness-normalized to -18 LUFS and encoded as 96 kbps MP3. The defeat track is the first 48 seconds with a fade.
+- `menu-legend-will-rise`: "A Legend Will Rise" by codemanu. https://opengameart.org/content/a-legend-will-rise-orchestral
+- `draft-prepare-to-fight`: "Prepare to Fight" by Basil. https://opengameart.org/content/prepare-to-fight
+- `match-unexplored`: "Unexplored (expanded)" by TAD, extended by Bo Jingles. https://opengameart.org/content/unexplored-expansion
+- `battle-determined-pursuit`: "Determined Pursuit" by Emma_MA. https://opengameart.org/content/determined-pursuit-epic-orchestra-loop
+- `victory`: "Victory Theme for RPG" by cynicmusic. https://opengameart.org/content/victory-theme-for-rpg
+- `defeat-lament`: "Lament of the War" by Cethiel. https://opengameart.org/content/laments-of-the-war

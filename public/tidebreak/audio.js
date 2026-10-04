@@ -7,10 +7,21 @@ export const CLIPS = {
   sfx: ['punch-1', 'punch-2', 'punch-heavy-1', 'punch-heavy-2', 'metal', 'metal-heavy', 'bell', 'crumble', 'plate-heavy', 'body-fall', 'wood-heavy', 'glass', 'coins', 'draw-blade', 'ui-tick', 'ui-confirmation', 'ui-select', 'ui-glass', 'ui-pluck', 'ui-error'],
 };
 const CLIP_BASE = new URL('./audio/', import.meta.url);
+// Orchestral score (CC0, see audio/CREDITS.md). Each scene streams its own tracks.
+export const TRACKS = {
+  menu: { file: 'menu-legend-will-rise', loop: true },
+  draft: { file: 'draft-prepare-to-fight', loop: true },
+  calm: { file: 'match-unexplored', loop: true },
+  battle: { file: 'battle-determined-pursuit', loop: true },
+  victory: { file: 'victory', loop: false },
+  defeat: { file: 'defeat-lament', loop: false },
+};
+export const SCENES = { menu: ['menu'], draft: ['draft'], match: ['calm', 'battle'], victory: ['victory'], defeat: ['defeat'] };
+const MUSIC_LEVEL = .62, BATTLE_HOLD = 7;
 export class Sound {
   constructor() {
-    this.on = true; this.voiceOn = true;
-    try { this.on = localStorage.getItem('tidebreak.sound') !== 'off'; this.voiceOn = localStorage.getItem(VOICE_KEY) !== 'off'; } catch {}
+    this.on = true; this.voiceOn = true; this.musicOn = true; this.scene = 'menu'; this.tracks = new Map(); this.battleMix = 0; this.fightAt = -99; this.hidden = false;
+    try { this.on = localStorage.getItem('tidebreak.sound') !== 'off'; this.voiceOn = localStorage.getItem(VOICE_KEY) !== 'off'; this.musicOn = localStorage.getItem('tidebreak.music') !== 'off'; } catch {}
     this.context = null; this.note = 0; this.next = 0; this.beat = 0; this.intensity = 0;
     this.listener = { x: 0, y: 0, span: 1400 }; this.lastAt = {}; this.buffers = new Map(); this.loading = false;
   }
@@ -27,8 +38,10 @@ export class Sound {
         for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
         this.noiseBuffer = buffer;
       }
+      const first = !this.loading;
       this.context.resume().catch(() => {});
       this.loadClips();
+      if (first) this.setScene(this.scene);
     } catch {}
   }
   loadClips() {
@@ -80,9 +93,55 @@ export class Sound {
   }
   throttle(key, gap, now = this.context?.currentTime ?? 0) { if (now < (this.lastAt[key] ?? -9)) return false; this.lastAt[key] = now + gap; return true; }
 
-  // ---- Music: a minor arpeggio, with drums that rise when enemies are close.
+  // ---- Score: recorded tracks per scene. In a match the battle track rises with the fighting.
+  track(name) {
+    if (this.tracks.has(name)) return this.tracks.get(name);
+    const spec = TRACKS[name], el = new Audio(new URL(`music/${spec.file}.mp3`, CLIP_BASE).href);
+    el.loop = spec.loop; el.preload = 'auto';
+    const gain = this.context.createGain(); gain.gain.value = 0;
+    try { this.context.createMediaElementSource(el).connect(gain).connect(this.music); } catch { return null; }
+    const entry = { el, gain, level: 0 }; this.tracks.set(name, entry); return entry;
+  }
+  setScene(scene) {
+    const changed = scene !== this.scene; this.scene = scene;
+    if (!this.context || !this.on || !this.musicOn) { this.pauseMusic(); return; }
+    const active = SCENES[scene] || [];
+    for (const name of Object.keys(TRACKS)) {
+      const t = active.includes(name) ? this.track(name) : this.tracks.get(name); if (!t) continue;
+      if (active.includes(name)) { if (changed && !TRACKS[name].loop) t.el.currentTime = 0; if (!this.hidden) t.el.play().catch(() => {}); }
+      else this.fade(t, 0, () => { if (!(SCENES[this.scene] || []).includes(name)) t.el.pause(); });
+    }
+    if (changed && scene === 'match') { this.battleMix = 0; this.fightAt = -99; for (const name of active) { const t = this.tracks.get(name); if (t) t.el.currentTime = 0; } }
+    this.updateMusic(true);
+  }
+  fade(t, level, done) {
+    const now = this.context.currentTime; t.level = level; t.gain.gain.cancelScheduledValues(now); t.gain.gain.setTargetAtTime(level, now, level ? .5 : .35);
+    if (done) setTimeout(done, 1600);
+  }
+  // Called every frame. The battle layer holds for a few seconds after the last clash.
+  updateMusic(force = false) {
+    if (!this.context || !this.musicOn || !this.on) return;
+    const now = this.context.currentTime, active = SCENES[this.scene] || [];
+    if (this.scene === 'match') {
+      if (this.intensity > .32) this.fightAt = now;
+      const target = now - this.fightAt < BATTLE_HOLD ? 1 : 0;
+      this.battleMix += (target - this.battleMix) * (target ? .05 : .012);
+    }
+    for (const name of active) {
+      const t = this.tracks.get(name); if (!t) continue;
+      const level = MUSIC_LEVEL * (name === 'battle' ? this.battleMix : name === 'calm' ? 1 - this.battleMix * .9 : 1);
+      if (force || Math.abs(level - t.level) > .02) this.fade(t, level);
+    }
+  }
+  playingScore() { return (SCENES[this.scene] || []).some(name => { const t = this.tracks.get(name); return t && !t.el.paused && t.el.readyState >= 2; }); }
+  pauseMusic() { for (const t of this.tracks.values()) t.el.pause(); }
+  setHidden(hidden) { this.hidden = hidden; if (hidden) this.pauseMusic(); else this.setScene(this.scene); }
+  toggleMusic() { this.musicOn = !this.musicOn; try { localStorage.setItem('tidebreak.music', this.musicOn ? 'on' : 'off'); } catch {} this.setScene(this.scene); return this.musicOn; }
+  // Fallback score: a minor arpeggio with drums, used only while no recorded track plays.
   tick(time) {
+    this.updateMusic();
     if (time < this.next) return; this.next = time + .48;
+    if (!this.musicOn || this.playingScore()) return;
     const notes = [146.83, 220, 293.66, 349.23, 293.66, 220, 174.61, 130.81];
     this.tone(notes[this.note++ % notes.length], .9, .009 + this.intensity * .004, 'triangle', null, 0, { bus: this.music, reverb: .2 });
     const i = this.intensity, b = this.beat++ % 4;
@@ -209,6 +268,6 @@ export class Sound {
   }
   line(clip, text, delay = 0) { if (this.ready && !this.voiceClip(clip, delay)) setTimeout(() => this.say(text), delay * 1000); }
   silence() { try { window.speechSynthesis?.cancel(); } catch {} }
-  toggle() { this.on = !this.on; try { localStorage.setItem('tidebreak.sound', this.on ? 'on' : 'off'); } catch {} if (!this.on) this.silence(); return this.on; }
+  toggle() { this.on = !this.on; try { localStorage.setItem('tidebreak.sound', this.on ? 'on' : 'off'); } catch {} if (!this.on) this.silence(); this.setScene(this.scene); return this.on; }
   toggleVoice() { this.voiceOn = !this.voiceOn; try { localStorage.setItem(VOICE_KEY, this.voiceOn ? 'on' : 'off'); } catch {} if (!this.voiceOn) this.silence(); return this.voiceOn; }
 }

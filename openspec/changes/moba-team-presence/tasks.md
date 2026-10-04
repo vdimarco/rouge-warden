@@ -10,6 +10,7 @@
 - [x] Replace the sound engine with spatial effects, announcer stingers and voice.
 - [x] Add regression tests and run all tidebreak suites.
 - [x] Check desktop, portrait and landscape layouts in a browser.
+- [x] Add a scene score: menu, draft, calm and battle match layers, victory and defeat.
 - [ ] Listen to the mix and the announcer voice on a real device with speakers.
 - [ ] Check real multitouch and phone performance on a physical phone.
 - [ ] Review canonical specs and archive this change after the device checks.

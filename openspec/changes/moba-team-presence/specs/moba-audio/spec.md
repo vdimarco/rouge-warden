@@ -24,3 +24,14 @@ The draft SHALL play a soft tick while a bot considers and a lock-in hit when a 
 #### Scenario: Lock a pick
 - **WHEN** a bot locks a hero
 - **THEN** a lock-in sound plays and the card shows the locked hero.
+
+### Requirement: Scene music
+The menu, draft, match, victory and defeat SHALL each have an orchestral track. In a match, a battle track SHALL rise while heroes fight near the player and hold for several seconds after the last clash, then return to the calm track. Music SHALL pause while the tab is hidden and SHALL have its own on/off setting.
+
+#### Scenario: Enter a fight
+- **WHEN** an enemy hero comes close to the player during a match
+- **THEN** the battle track fades in over the calm track and fades out about seven seconds after the fighting stops.
+
+#### Scenario: Finish a match
+- **WHEN** the match ends
+- **THEN** the match tracks stop and the victory or defeat track plays once.

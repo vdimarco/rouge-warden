@@ -14,5 +14,8 @@ Local Playwright with the preinstalled Chromium (software GL) at 1440x900, 390x8
 ## Recorded clips
 All 40 clips load with no 404s. In a full in-page match, first blood, double kill, killing spree and the battle start played as recorded lines and no longer reached the speech engine. Lines without a clip (ward alarms, objectives) still use speech. `team-presence.test.mjs` checks that every multi-kill and streak name has a clip file.
 
+## Music
+In local Chromium the menu played A Legend Will Rise, the draft played Prepare to Fight, the match played the calm and battle tracks together, and a forced loss stopped them and played the defeat lament. No 404s or console errors. The six CC0 tracks total 5.7 MB and stream only for their scene.
+
 ## Not checked
 Speech was checked with a stubbed speech engine, so the real voice and the sound mix have not been heard. The headless browser cannot play audio to a listener. Physical phone touch and performance were not tested. OpenSpec CLI is not installed, so the change was checked by hand against the existing delta format.
