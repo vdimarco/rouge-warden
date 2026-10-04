@@ -19,8 +19,7 @@
     "contentInset": "never",
     "scrollEnabled": false,
     "allowsLinkPreview": false,
-    "preferredContentMode": "mobile",
-    "limitsNavigationsToAppBoundDomains": false
+    "preferredContentMode": "mobile"
   },
   "plugins": {
     "SplashScreen": {
