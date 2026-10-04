@@ -10,7 +10,7 @@ import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
-const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'];
+const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440;
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
@@ -35,8 +35,11 @@ export class Renderer {
     this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase)); this.bridges = riverCrossings(PATHS, seed);
     this.grounds = this.scenes.map(scene => paintGround(this.tiles, scene, this.art.surfaces));
   }
+  // The canvas has a pixel budget: a wide or sharp screen draws fewer backing pixels and the browser scales them up.
+  // quality drops when frames are slow (see adapt), so an ultra-wide full screen keeps a smooth frame rate.
   resize() {
-    this.width = innerWidth; this.height = innerHeight; this.dpr = Math.min(devicePixelRatio || 1, 2);
+    this.width = innerWidth; this.height = innerHeight; this.quality ??= 1;
+    const budget = PIXEL_BUDGET * this.quality; this.dpr = Math.max(.5, Math.min(devicePixelRatio || 1, 2, Math.sqrt(budget / (this.width * this.height))));
     this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr;
     this.scale = Math.min(this.width / 1200, this.height / 1680);
     this.anchor = this.height < 520 ? .70 : .78;
@@ -59,6 +62,20 @@ export class Renderer {
   // Screen-space pan in pixels; world motion follows the projection's squash.
   panBy(px, py) { const f = this.freeCam ||= { x: this.cam.x, y: this.cam.y }; f.x += px / this.scale; f.y += py / (this.scale * .88); }
   lookAt(x, y) { this.freeCam = { x, y }; }
+  // Mouse look: -1 at the left edge, 1 at the right edge. The view keeps following the hero, pushed toward the pointer.
+  setLook(n) { this.look = clamp(n, -1, 1); }
+  // Called with each frame's interval while a match runs. Frames well behind the screen's refresh step the pixel budget
+  // down; frames back at the refresh rate step it up again after a hold, which grows with each drop so it cannot flicker.
+  adapt(ms) {
+    if (!(ms > 0 && ms < 500)) return; // a longer gap is a hidden tab or a stall, not the frame rate
+    this.frameMs = (this.frameMs ?? ms) * .93 + ms * .07; this.clock = (this.clock ?? 0) + ms;
+    this.refreshMs = Math.max(4, Math.min(this.refreshMs ?? 16.7, this.frameMs));
+    if (this.clock < (this.nextAdapt ?? 1500)) return; this.nextAdapt = this.clock + 1500;
+    const q = this.quality ?? 1;
+    if (this.frameMs > Math.max(20, this.refreshMs * 1.5) && q > .35) {
+      this.hold = Math.min(60000, (this.hold ?? 5000) * 2); this.raiseAt = this.clock + this.hold; this.quality = Math.max(.35, q * .8); this.resize();
+    } else if (this.frameMs < this.refreshMs * 1.15 && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
+  }
   recenter() { this.freeCam = null; }
   ring(x, y, radius, color, alpha = 1, line = 2) {
     const c = this.ctx, p = this.project(x, y); c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = line; c.beginPath(); c.ellipse(p.x, p.y, radius * this.scale, radius * this.scale * .55, 0, 0, TAU); c.stroke(); c.restore();
@@ -69,7 +86,12 @@ export class Renderer {
     const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx,dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
     // A free camera (edge scroll or minimap) holds its own target until the player recenters.
     if (this.freeCam && !menu) { const k = 1 - Math.exp(-dt * 14); this.cam.x += (this.freeCam.x - this.cam.x) * k; this.cam.y += (this.freeCam.y - this.cam.y) * k; }
-    else { this.cam.x += (p.x + dx / length * lead - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping; }
+    else {
+      // Past a small dead zone, the pointer pushes the view up to a third of the screen width toward its side.
+      const look = this.look || 0, reach = Math.max(0, Math.abs(look) - .12) / .88, goal = menu ? 0 : Math.sign(look) * reach * reach * this.width * .34 / this.scale;
+      this.push = (this.push || 0) + (goal - (this.push || 0)) * (1 - Math.exp(-dt * 5));
+      this.cam.x += (p.x + dx / length * lead + this.push - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping;
+    }
     // Keep the complete camera footprint inside the landscape at each viewport.
     const halfW = Math.min(SIZE / 2, this.width / this.scale / 2), top = this.height * this.anchor / (this.scale * .88), bottom = this.height * (1 - this.anchor) / (this.scale * .88);
     this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
@@ -288,5 +310,5 @@ export class Renderer {
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(LANES[1][3].x,LANES[1][3].y).x - this.project(LANES[1][1].x,LANES[1][1].y).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0, creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(LANES[1][3].x,LANES[1][3].y).x - this.project(LANES[1][1].x,LANES[1][1].y).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }
