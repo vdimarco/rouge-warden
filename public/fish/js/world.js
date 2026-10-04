@@ -794,10 +794,12 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       return trip;
     },
     // main.js reports the time of each frame that drew the lake, in ms: slow frames for a while lower the render scale,
-    // fast ones raise it again
+    // fast ones raise it again. Returns true when the pixel ratio changed: that clears the canvas, so a lake that stands
+    // still under a screen must be drawn again
     frameTime(ms) {
-      if (document.hidden || renderer.getContext().isContextLost()) return;
-      if (res.frame(ms)) renderer.setPixelRatio(ratio());
+      if (document.hidden || renderer.getContext().isContextLost() || !res.frame(ms)) return false;
+      renderer.setPixelRatio(ratio());
+      return true;
     },
     // fn("lost") when the GL context is lost, fn("restored") when it is back and the shaders are warm again
     onContext(fn) { ctxFn = fn; },

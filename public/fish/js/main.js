@@ -41,27 +41,69 @@ const OPEN_ALL = QS.has("open");
 
 /* ---------------- saving ---------------- */
 // save.js reads and cleans the file; this is only the storage. In the app the save also goes to native storage
-// (Preferences), because the phone can clear the web view's storage
+// (Preferences), because the phone can clear the web view's storage. mirror is off while native storage may hold a
+// save the game has not read yet, so a new save never covers it
+let mirror = true;
 const store = {
   raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } Native.prefs.set(k, json); },
+  set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } if (mirror) Native.prefs.set(k, json); },
 };
-// the two switches that live outside the save (haptics.js and audio.js keep them): mirrored when the app goes away
-const SWITCHES = ["fish.haptics", "arcade.sound"];
-const mirrorSwitches = () => { for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
-// The app found no save in web storage: wait at most 400 ms for the native copy, and put it back with the switches
-async function restoreNative() {
-  const keys = [SAVE_KEY, ...SWITCHES];
-  const got = await Promise.race([Promise.all(keys.map((k) => Native.prefs.get(k))), new Promise((r) => setTimeout(() => r([]), 400))]);
-  const [raw, hx, sound] = got;
+// the switches that live outside the save (haptics.js, audio.js and guide.js keep them): mirrored when the app goes away
+const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1"];
+const mirrorSwitches = () => { if (mirror) for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
+// in web storage while a read of native storage has not come back: the next start reads it again
+const UNREAD = "fish.native-unread";
+// how far a save got: fish landed, then casts
+const progress = (s) => s.caught * 1e6 + s.casts;
+// the switches from native storage, where web storage has none
+function putSwitches([, hx, sound, guideOn]) {
   if (hx != null && store.raw("fish.haptics") == null) Haptics.setEnabled(hx !== "false");
   if (sound != null && store.raw("arcade.sound") == null && (sound !== "false") !== Sound.isOn()) Sound.toggle();
-  return raw || null;
+  if (guideOn != null && store.raw("reel-it-in-guide-v1") == null) { try { localStorage.setItem("reel-it-in-guide-v1", guideOn); } catch (e) { /* storage off */ } }
 }
-const restored = store.raw(SAVE_KEY) == null && Native.isNative ? await restoreNative() : null;
-const save = loadSave(restored || store.raw(SAVE_KEY));
+// The app with no save in web storage (or with a native read that never came back): ask native storage, and keep the
+// save with more in it. The answer has 400 ms, so a slow phone does not hold up the boot. A later answer is read when
+// it comes (below), and until then nothing goes to native storage
+const webRaw = store.raw(SAVE_KEY);
+let restored = null, late = null;
+if (Native.isNative && (webRaw == null || store.raw(UNREAD) != null)) {
+  const read = Promise.all([SAVE_KEY, ...SWITCHES].map((k) => Native.prefs.get(k)));
+  const got = await Promise.race([read, new Promise((r) => setTimeout(() => r(null), 400))]);
+  if (got) {
+    putSwitches(got);
+    if (got[0] && (webRaw == null || progress(loadSave(got[0])) > progress(loadSave(webRaw)))) restored = got[0];
+    try { localStorage.removeItem(UNREAD); } catch (e) { /* storage off */ }
+  } else {
+    late = read; mirror = false;
+    try { localStorage.setItem(UNREAD, "1"); } catch (e) { /* storage off */ }
+  }
+}
+const save = loadSave(restored || webRaw);
 const persist = () => store.set(SAVE_KEY, save);
 if (restored) persist();
+// The native answer came late. A native save with more in it than the game has now wins: it goes into web storage and
+// the game starts again with it, on the boot screen or the title (never in play), once a session. Otherwise the game's
+// save goes to native storage, and the mirror is on again
+const startJson = JSON.stringify(save);
+let comeback = null;
+function takeComeback() {
+  if (!comeback || traveling || (G.phase !== "boot" && G.phase !== "title")) return;
+  try {
+    if (sessionStorage.getItem("fish.comeback")) return;
+    sessionStorage.setItem("fish.comeback", "1");
+    localStorage.setItem(SAVE_KEY, comeback);
+    localStorage.removeItem(UNREAD);
+  } catch (e) { return; }
+  location.reload();
+}
+if (late) late.then((got) => {
+  putSwitches(got);
+  const theirs = got[0] && loadSave(got[0]), json = theirs && JSON.stringify(theirs);
+  const fresh = webRaw == null && JSON.stringify(save) === startJson;
+  if (theirs && (progress(theirs) > progress(save) || (fresh && json !== startJson))) { comeback = json; takeComeback(); return; }
+  mirror = true; persist(); mirrorSwitches();
+  try { localStorage.removeItem(UNREAD); } catch (e) { /* storage off */ }
+});
 const openNow = (id) => isOpen(save, id, OPEN_ALL);
 
 /* ---------------- state ---------------- */
@@ -396,6 +438,8 @@ function toTitle() {
   show("title");
   titleBest();
   relayout(true);
+  // a native save that came late, with more in it: the game starts again with it now
+  takeComeback();
 }
 // "Here: best derby 18.4 kg · biggest Channel Catfish 7.2 kg", then what to do next
 function titleBest() {
@@ -1087,10 +1131,15 @@ function pause() {
   if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) { G.pin = null; G.step = "ready"; G.bail = "closed"; G.drop = 0; }
   reelPanel?._cancelAll();
   if (rodPad) rodPad.drag = null;
-  $("#pauseSum").textContent = [hudText(), goalLine("remind")].filter(Boolean).join("\n");
+  pauseSum();
   show("pause");
 }
-function resume() { G.paused = false; show(null); Sound.sfx("ui"); keepAwake(); }
+// the pause card's lines. While the GL context is lost there is no lake to play on: Resume waits until it is back
+function pauseSum() {
+  $("#pauseSum").textContent = [G.ctxLost && "The lake is coming back.", hudText(), goalLine("remind")].filter(Boolean).join("\n");
+  $("#resumeBtn").disabled = !!G.ctxLost;
+}
+function resume() { if (G.ctxLost) return; G.paused = false; show(null); Sound.sfx("ui"); keepAwake(); }
 $("#pauseBtn").addEventListener("click", (e) => { e.stopPropagation(); Sound.sfx("ui"); pause(); });
 $("#resumeBtn").addEventListener("click", resume);
 $("#quitBtn").addEventListener("click", () => { G.paused = false; Sound.sfx("uiBack"); toTitle(); });
@@ -1113,8 +1162,8 @@ Native.onResume(() => {
 
 /* ---------------- Android back ---------------- */
 // Like Escape, and more: back closes the top screen, or pauses play and resumes it. On the catch card, the results and
-// the cards of a new place it presses the main button. It never closes the app during play: on the title the app goes
-// to the background. While a place loads it does nothing
+// the arrival card it presses the main button; on the card of a new place it stays here. It never closes the app during
+// play: on the title the app goes to the background. While a place loads it does nothing
 function back() {
   const open = (s) => !$("#" + s).hidden;
   if (traveling) return;
@@ -1123,6 +1172,7 @@ function back() {
   if (open("setup")) { Sound.sfx("uiBack"); setupThen = null; closeOverlay(); return; }
   if (G.paused) { resume(); return; }
   if (G.phase === "cast" || G.phase === "reel" || G.phase === "lost") { Sound.sfx("ui"); pause(); return; }
+  if (open("unlock")) { $("#uStay").click(); return; }
   const top = SCREENS.find((s) => s !== "title" && s !== "travel" && open(s));
   const go = top && $("#" + top + " .btn.go:not([hidden])");
   if (go) { go.click(); return; }
@@ -1514,7 +1564,9 @@ function reasonText(r) {
 }
 
 /* ---------------- the loop ---------------- */
-let last = now(), fpsAcc = 0, fpsN = 0, drew = false;
+let last = now(), fpsAcc = 0, fpsN = 0, drew = false, drawAt = 0, menuDt = 0;
+// the title over the live lake (the Original style) is a menu: the lake draws there at 15 frames a second at most
+const MENU_MS = 66;
 // An opaque screen covers the lake: a dimmed card, or the title with its painted picture. Read again only when the
 // screen or the art style changes
 let coverKey = "", coverTitle = false;
@@ -1528,8 +1580,9 @@ function frame() {
   requestAnimationFrame(frame);
   const t = now();
   let dt = (t - last) / 1000;
-  // the render scale reads only the frames that drew the lake: a frame under a still screen costs nothing
-  if (world && world.frameTime && drew) world.frameTime(t - last);
+  // the render scale reads only the frames that drew the lake: a frame under a still screen costs nothing. A new pixel
+  // ratio clears the canvas, so a still lake is drawn again
+  if (world && world.frameTime && drew && world.frameTime(t - last)) G.stillDrawn = false;
   last = t;
   if (!(dt > 0)) dt = 0.016;
   G.frame++;
@@ -1539,16 +1592,19 @@ function frame() {
   dt = Math.min(dt, 0.25);
   relayout();
   if (!world) return;
+  // no play while the GL context is lost (the lake would not show): play that starts or goes on then is paused
+  if (G.ctxLost && !G.paused) pause();
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
   guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice,
     pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
   // under the pause menu, the dimmed screens and the painted title the lake stands still: draw it once, then let the
-  // GPU rest. A lost GL context draws nothing until it is back
-  const still = G.paused || G.ctxLost || covered();
-  drew = !still || !G.stillDrawn;
-  if (drew) { world.update(dt); world.render(); }
+  // GPU rest. A lost GL context draws nothing until it is back. The title over the live lake draws it less often
+  const still = G.paused || G.ctxLost || covered(), menu = !still && G.phase === "title";
+  menuDt = menu ? menuDt + dt : 0;
+  drew = still ? !G.stillDrawn : !menu || t - drawAt >= MENU_MS;
+  if (drew) { world.update(menu ? menuDt : dt); world.render(); drawAt = t; menuDt = 0; }
   G.stillDrawn = still;
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
     paused: still, cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
@@ -1624,21 +1680,23 @@ function debug() {
 }
 
 /* ---------------- the GL context ---------------- */
-// The context went away (the app was in the background, the GPU reset): play pauses, and nothing draws until it is
-// back. Then the lake draws again, also under the pause screen. A context still lost 4 s after the page shows gets the
-// boot card, with Try again
+// The context went away (the app was in the background, the GPU reset): play pauses, Resume waits, and nothing draws
+// until it is back. Then the lake draws again, also under the pause screen, and Resume works. A context still lost 4 s
+// after the page shows gets the boot card, with Try again
 let ctxT = 0;
 function onContext(kind) {
   clearTimeout(ctxT);
   if (kind === "lost") {
     G.ctxLost = true;
     pause();
-    const check = () => { if (!G.ctxLost) return; if (document.hidden) ctxT = setTimeout(check, 4000); else if (window.fishBoot) fishBoot.fail("gpu"); };
+    if (G.paused) pauseSum();
+    const check = () => { if (!G.ctxLost) return; if (document.hidden) ctxT = setTimeout(check, 4000); else { pause(); if (window.fishBoot) fishBoot.fail("gpu"); } };
     ctxT = setTimeout(check, 4000);
     return;
   }
   G.ctxLost = false;
   G.stillDrawn = false;
+  if (G.paused) pauseSum();
   if (window.fishBoot && $("#boot").dataset.kind === "gpu" && !$("#boot").hidden) fishBoot.done();
 }
 const hasGL = () => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } };

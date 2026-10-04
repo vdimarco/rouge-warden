@@ -7,9 +7,12 @@
 //      when the title comes); "Try again" reloads
 //   4. the store build, with a stub window.Capacitor (Android): no arcade parts, the six title controls and the five
 //      pause buttons, the splash and the status bar, keep awake, back on every screen, app pause and resume, the save
-//      mirror, the app copy when motion is denied, and a save restored from native storage
-//   5. a GL context lost in a fight and restored 1 s later under the pause screen; a context that never comes back
-//   6. the render scale in the page, and the lake drawn less under opaque screens
+//      mirror, the app copy when motion is denied, a save restored from native storage, a native answer that comes
+//      late (it is never covered by a new save), and one that never comes
+//   5. a GL context lost in a fight and restored 1 s later under the pause screen (Resume waits for it); a context
+//      that never comes back
+//   6. the render scale in the page (a new pixel ratio redraws a still lake), and the lake drawn less under opaque
+//      screens and on the title over the live lake
 // Serve public/ first (python3 -m http.server 8765 --directory public), then: node qa/fish/boot.e2e.mjs
 // FISH_URL picks another address. Part 3 waits 15 s on purpose. Exits with code 1 when something fails.
 import { createRequire } from "module";
@@ -70,7 +73,8 @@ async function stage(page, patch = {}) {
   await page.evaluate((patch) => {
     const G = FISH.G;
     G.lastEvent = {}; G.walk = false;
-    G.sim = { fake: true, events: [], step() {}, state: Object.assign({
+    window.__simSteps = 0;
+    G.sim = { fake: true, events: [], step() { window.__simSteps++; }, state: Object.assign({
       phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3,
       fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true },
     }, patch) };
@@ -79,8 +83,8 @@ async function stage(page, patch = {}) {
   }, patch);
 }
 const CATCH = { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false };
-async function landFish(page) {
-  await stage(page, { phase: "caught", catch: CATCH, fish: null });
+async function landFish(page, c = CATCH) {
+  await stage(page, { phase: "caught", catch: c, fish: null });
   await page.waitForSelector("#catch:not([hidden])");
   await until(page, () => !FISH.G.cardWait, null, 20000);
 }
@@ -217,9 +221,12 @@ async function landFish(page) {
 }
 
 /* ---------- 4. the store build ---------- */
-// window.Capacitor as the app gives it: plugins by name, each call logged. prefs: what native storage holds
-function capStub(prefs) {
-  const log = (window.__cap = { calls: [], on: {}, prefs: Object.assign({}, prefs || {}) });
+// window.Capacitor as the app gives it: plugins by name, each call logged. prefs: what native storage holds at the
+// start. delay: ms before Preferences.get answers (-1: never). Native storage outlives a reload (sessionStorage keeps it
+// for the test), and every write to it is kept in qa-writes
+function capStub({ prefs = {}, delay = 0 } = {}) {
+  const kept = sessionStorage.getItem("qa-prefs");
+  const log = (window.__cap = { calls: [], on: {}, prefs: kept ? JSON.parse(kept) : Object.assign({}, prefs) });
   const rec = (name) => () => { log.calls.push(name); return Promise.resolve(); };
   log.fire = (ev) => (log.on[ev] || []).forEach((f) => f({}));
   log.count = (name) => log.calls.filter((c) => c === name).length;
@@ -229,14 +236,23 @@ function capStub(prefs) {
     StatusBar: { hide: rec("StatusBar.hide") },
     KeepAwake: { keepAwake: rec("KeepAwake.keepAwake"), allowSleep: rec("KeepAwake.allowSleep") },
     Preferences: {
-      get({ key }) { log.calls.push("Preferences.get:" + key); return Promise.resolve({ value: key in log.prefs ? log.prefs[key] : null }); },
-      set({ key, value }) { log.calls.push("Preferences.set:" + key); log.prefs[key] = value; return Promise.resolve(); },
+      get({ key }) {
+        log.calls.push("Preferences.get:" + key);
+        const v = { value: key in log.prefs ? log.prefs[key] : null };
+        return delay < 0 ? new Promise(() => {}) : delay ? new Promise((r) => setTimeout(() => r(v), delay)) : Promise.resolve(v);
+      },
+      set({ key, value }) {
+        log.calls.push("Preferences.set:" + key); log.prefs[key] = value;
+        sessionStorage.setItem("qa-prefs", JSON.stringify(log.prefs));
+        sessionStorage.setItem("qa-writes", JSON.stringify([...JSON.parse(sessionStorage.getItem("qa-writes") || "[]"), [key, value]]));
+        return Promise.resolve();
+      },
     },
   };
   window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", isPluginAvailable: (n) => n in Plugins, Plugins };
 }
 {
-  const { browser, page, errors, requests } = await launch({ init: [[capStub, null]], save: { v: 1, input: "touch" }, query: "?open" });
+  const { browser, page, errors, requests } = await launch({ init: [[capStub, {}]], save: { v: 1, input: "touch" }, query: "?open" });
   const cap = () => page.evaluate(() => ({ calls: window.__cap.calls.slice(), prefs: { ...window.__cap.prefs } }));
   const count = (name) => page.evaluate((n) => window.__cap.count(n), name);
   const back = async () => { await page.evaluate(() => window.__cap.fire("backButton")); await sleep(150); };
@@ -246,7 +262,9 @@ function capStub(prefs) {
     const tb = await visibleButtons(page, "#tmenu .btn");
     check(t.build === "store" && t.kick === "LOON LAKE" && !t.sw, "store: the page is the store build, the kicker is the place alone, no switcher (" + JSON.stringify(t) + ")");
     check(!requests.some((u) => /\/arcade\/switch\.js/.test(u) || /\/wild\//.test(u)), "store: the arcade script is not loaded and nothing probes /wild/");
-    check(tb.length === 6 && !tb.some((b) => /Switch game|arcade|Fullscreen/.test(b)), "store: the title has six controls (" + tb.join(" | ") + ")");
+    check(tb.length === 6 && !tb.some((b) => /Switch game|arcade|Fullscreen/.test(b)), "store: the title menu has six controls (" + tb.join(" | ") + ")");
+    const all = await visibleButtons(page, "#title button, #title a");
+    check(!all.some((b) => /Switch game|arcade|Fullscreen/.test(b)), "store: nothing of the arcade anywhere on the title (" + all.join(" | ") + ")");
     const c = await cap();
     check(c.calls.includes("SplashScreen.hide") && c.calls.includes("StatusBar.hide"), "store: the splash hides when the title is ready, and the status bar hides");
     check(["App.on:backButton", "App.on:pause", "App.on:resume"].every((n) => c.calls.includes(n)), "store: the game listens for back, pause and resume");
@@ -309,6 +327,14 @@ function capStub(prefs) {
     await back();
     await until(page, () => FISH.G.phase === "cast", null, 15000).catch(() => {});
     check(!(await shown("catch")) && (await page.evaluate(() => FISH.G.phase === "cast")), "back on the catch card casts again");
+    // a walleye of 3.6 kg opens Stump Bay: back on its catch card presses Next, back on the card of the new place stays here
+    await landFish(page, { id: "walleye", name: "Walleye", kg: 3.6, cm: 62, junk: false });
+    check((await page.textContent("#catchGo")) === "Next", "a catch that opens a place says Next");
+    await back();
+    await page.waitForSelector("#unlock:not([hidden])", { timeout: 15000 });
+    await back();
+    await until(page, () => FISH.G.phase === "cast", null, 15000).catch(() => {});
+    check(!(await shown("unlock")) && (await page.evaluate(() => FISH.G.phase === "cast" && FISH.G.place.id === "loon")), "back on the card of a new place stays here and fishes on");
     // the results: back on the last catch card shows the results, back on the results fishes again
     await page.evaluate(() => { FISH.startMode("derby"); FISH.G.castsLeft = 0; });
     await landFish(page);
@@ -352,14 +378,17 @@ function capStub(prefs) {
   const denied = () => {
     for (const C of [window.DeviceMotionEvent, window.DeviceOrientationEvent]) if (C) Object.defineProperty(C, "requestPermission", { value: () => Promise.resolve("denied"), configurable: true });
   };
-  const { browser, page, errors } = await launch({ init: [[capStub, null], [denied]], phone: false });
+  const { browser, page, errors } = await launch({ init: [[capStub, {}], [denied]], phone: false });
   try {
     await click(page, "#derbyBtn");
     await page.waitForSelector("#setup:not([hidden])");
+    // every toast, as it shows: a gold ring can rise in the first second of the derby and say so over it
+    await page.evaluate(() => { const t = document.getElementById("toast"); window.__toasts = []; new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); });
     await click(page, "#useMotion");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
-    const r = await page.evaluate(() => ({ toast: document.getElementById("toast").textContent, input: FISH.G.input, setup: !document.getElementById("setup").hidden }));
-    check(r.toast === "Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now." && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")");
+    await sleep(100);
+    const r = await page.evaluate(() => ({ toasts: window.__toasts, input: FISH.G.input, setup: !document.getElementById("setup").hidden }));
+    check(r.toasts.includes("Motion is off for Reel It In. You can turn it on in Settings. You can play with touch now.") && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")");
     const all = await page.evaluate(() => document.getElementById("game").innerText);
     check(!/Safari|site settings|browser/i.test(all), "store: no word of Safari, site settings or a browser on the screen");
   } catch (e) { check(false, "exception in part 4b: " + (e && e.message)); }
@@ -369,17 +398,55 @@ function capStub(prefs) {
 {
   // the phone cleared web storage: the save and the two switches come back from native storage
   const kept = { v: 1, input: "touch", casts: 30, caught: 4, journal: { perch: { n: 3, kg: 0.6, cm: 30 } }, place: "stumps", places: { loon: { open: 1, d: 0, kg: 3.8, id: "pike", n: 4, lg: 0 }, stumps: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0 } }, seen: { "at.stumps": 1, "opened.stumps": 1 }, quality: "low", reelSide: "left" };
-  const prefs = { "fish.v1": JSON.stringify(kept), "fish.haptics": "false", "arcade.sound": "false" };
-  const { browser, page, errors } = await launch({ init: [[capStub, prefs]] });
+  const prefs = { "fish.v1": JSON.stringify(kept), "fish.haptics": "false", "arcade.sound": "false", "reel-it-in-guide-v1": "shown" };
+  const { browser, page, errors } = await launch({ init: [[capStub, { prefs }]] });
   try {
     const r = await page.evaluate(() => ({ j: FISH.save.journal.perch, open: FISH.save.places.stumps && FISH.save.places.stumps.open, place: FISH.G.place.id, side: FISH.save.reelSide, q: FISH.save.quality,
       hx: FISH.Haptics.enabled, snd: FISH.Sound.isOn(), ls: !!localStorage.getItem("fish.v1"), kick: document.getElementById("tkick").textContent }));
     check(r.j && r.j.n === 3 && r.open === 1 && r.place === "stumps" && r.side === "left" && r.q === "low", "web storage cleared: the journal, the places and the settings are back (" + JSON.stringify(r) + ")");
-    check(r.hx === false && r.snd === false, "and the buzz and sound switches are back");
+    check(r.hx === false && r.snd === false && (await page.evaluate(() => localStorage.getItem("reel-it-in-guide-v1"))) === "shown", "and the buzz, sound and guide switches are back");
     check(r.ls, "and the save is written back to web storage");
     check(await page.evaluate(() => window.__cap.calls.includes("Preferences.get:fish.v1")), "an empty web storage asked native storage for the save");
   } catch (e) { check(false, "exception in part 4c: " + (e && e.message)); }
   check(errors.length === 0, "part 4c: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+const kept4 = { v: 1, input: "touch", casts: 30, caught: 4, journal: { perch: { n: 3, kg: 0.6, cm: 30 } }, place: "loon", places: { loon: { open: 1, d: 0, kg: 3.8, id: "pike", n: 4, lg: 0 } }, seen: {} };
+// one change in Settings (Easy mode), which saves
+async function changeSetting(page) {
+  await click(page, "#setBtn");
+  await page.waitForSelector("#settings:not([hidden])");
+  await click(page, "#optAssist");
+  await sleep(300);
+  await click(page, "#settings [data-close]");
+}
+{
+  // web storage cleared, and native storage answers after 600 ms (the 400 ms of the boot are over): the game waits for
+  // that answer before it writes to native storage, then starts again with the save it held
+  const { browser, page, errors } = await launch({ init: [[capStub, { prefs: { "fish.v1": JSON.stringify(kept4) }, delay: 600 }]], waitTitle: false });
+  try {
+    await page.waitForFunction(() => performance.getEntriesByType("navigation")[0].type === "reload" && !document.getElementById("title").hidden, null, { timeout: 180000 });
+    const r = await page.evaluate(() => ({ j: FISH.save.journal.perch, caught: FISH.save.caught, ls: /perch/.test(localStorage.getItem("fish.v1") || ""), unread: localStorage.getItem("fish.native-unread") }));
+    check(r.j && r.j.n === 3 && r.caught === 4 && r.ls && r.unread == null, "a late native answer: the game starts again once, with the journal back (" + JSON.stringify(r) + ")");
+    await changeSetting(page);
+    const w = await page.evaluate(() => ({ writes: JSON.parse(sessionStorage.getItem("qa-writes") || "[]").filter((x) => x[0] === "fish.v1").map((x) => JSON.parse(x[1])), now: JSON.parse(window.__cap.prefs["fish.v1"]) }));
+    check(w.writes.length >= 1 && w.writes.every((x) => x.journal.perch && x.caught === 4) && w.now.assist === false,
+      "native storage is never covered by a blank save, and the next save goes there in full (" + w.writes.length + " writes, " + JSON.stringify(w.writes.map((x) => x.caught)) + ")");
+  } catch (e) { check(false, "exception in part 4d: " + (e && e.stack)); }
+  check(errors.length === 0, "part 4d: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+{
+  // native storage never answers: the game boots, plays and saves to web storage, writes nothing to native storage,
+  // and marks the read for the next start
+  const { browser, page, errors } = await launch({ init: [[capStub, { prefs: { "fish.v1": JSON.stringify(kept4) }, delay: -1 }]] });
+  try {
+    await changeSetting(page);
+    await sleep(300);
+    const r = await page.evaluate(() => ({ sets: window.__cap.calls.filter((c) => c.startsWith("Preferences.set")), unread: localStorage.getItem("fish.native-unread"), ls: !!localStorage.getItem("fish.v1"), reload: performance.getEntriesByType("navigation")[0].type }));
+    check(r.sets.length === 0 && r.unread === "1" && r.ls && r.reload !== "reload", "native storage that never answers: the game plays, saves to web storage only, and asks again next time (" + JSON.stringify(r) + ")");
+  } catch (e) { check(false, "exception in part 4e: " + (e && e.stack)); }
+  check(errors.length === 0, "part 4e: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 
@@ -405,16 +472,44 @@ function capStub(prefs) {
     const jr = await rate(2000);
     check(jr.draws <= 1, "the journal over the lake: " + jr.draws + " draws in 2 s");
     await click(page, "#journal [data-close]");
+    // the title over the live lake (the Original style) draws it at 15 frames a second at most, and it still moves.
+    // The draw is stubbed for this, so the loop runs as fast as the screen and only the throttle holds the lake back
+    await click(page, "[data-art='original']");
+    await sleep(1500);
+    const art = await page.evaluate(() => document.body.dataset.artStyle);
+    await page.evaluate(() => { const w = FISH.world; window.__render = w.render; w.render = function () { window.__draws++; }; });
+    const og = await rate(3000);
+    await page.evaluate(() => { FISH.world.render = window.__render; });
+    check(art === "original" && og.draws >= 15 && og.draws <= 46 && og.frames > og.draws, "the Original title: the lake draws " + og.draws + " times in 3 s (" + og.frames + " loop frames, style " + art + "), 15 a second at most");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
     await sleep(500);
     const play = await rate(3000);
     check(play.frames > 0 && play.draws >= play.frames * 0.9, "play draws at the full rate (" + play.draws + " draws in " + play.frames + " frames)");
+    // the render scale steps on the frame after the one draw under the pause screen: the new pixel ratio clears the
+    // canvas, and the loop draws the lake again
+    await page.evaluate(() => {
+      const w = FISH.world, f = w.frameTime;
+      w.frameTime = function (ms) {
+        if (!FISH.G.stillDrawn) return f.call(w, ms);
+        w.frameTime = f;
+        window.__stepAt = window.__draws;
+        w.renderer.setPixelRatio(w.renderer.getPixelRatio());
+        return true;
+      };
+      window.__d0 = window.__draws;
+      document.getElementById("pauseBtn").click();
+    });
+    await sleep(1200);
+    const ps = await page.evaluate(() => ({ draws: __draws - __d0, stepAt: window.__stepAt - __d0, paused: FISH.G.paused, stillDrawn: FISH.G.stillDrawn }));
+    check(ps.paused && ps.stepAt === 1 && ps.draws === 2 && ps.stillDrawn, "a new pixel ratio under the pause screen draws the still lake again (" + JSON.stringify(ps) + ")");
+    await click(page, "#resumeBtn");
 
     // the render scale in the page: one hitch changes nothing, a slow stretch lowers the pixel ratio, fast frames bring it back
     const rs = await page.evaluate(() => {
       const w = FISH.world, px = () => +w.renderer.getPixelRatio().toFixed(3), out = {};
-      for (let i = 0; i < 1200; i++) w.frameTime(1000 / 60);
+      // 40 s of fast frames: whatever the slow software renderer did to the scale before is undone and forgotten
+      for (let i = 0; i < 2400; i++) w.frameTime(1000 / 60);
       out.start = { s: w.info().scale, px: px() };
       w.frameTime(140);
       for (let i = 0; i < 120; i++) w.frameTime(1000 / 60);
@@ -434,13 +529,26 @@ function capStub(prefs) {
     await sleep(500);
     await page.evaluate(() => { window.__lc = FISH.world.renderer.getContext().getExtension("WEBGL_lose_context"); window.__lc.loseContext(); });
     await until(page, () => FISH.G.paused && !document.getElementById("pause").hidden, null, 10000).then(() => check(true, "context lost in a fight: the pause screen shows"), () => check(false, "context lost in a fight: the pause screen shows"));
-    await sleep(1000);
+    // Resume, Escape and back wait while the lake is not there: the fight does not go on unseen
+    await sleep(PAUSE);
+    const held = () => page.evaluate(() => ({ paused: FISH.G.paused, pause: !document.getElementById("pause").hidden, steps: window.__simSteps - window.__s0, disabled: document.getElementById("resumeBtn").disabled, note: document.getElementById("pauseSum").textContent.split("\n")[0] }));
+    await page.evaluate(() => { window.__s0 = window.__simSteps; document.getElementById("resumeBtn").click(); });
+    await sleep(500);
+    const lost = await held();
+    check(lost.paused && lost.pause && lost.steps === 0 && lost.disabled && lost.note === "The lake is coming back.", "while the context is lost, Resume waits and the fight stands still (" + JSON.stringify(lost) + ")");
+    await page.evaluate(() => { window.__s0 = window.__simSteps; });
+    await page.keyboard.press("Escape");
+    await sleep(500);
+    const esc = await held();
+    check(esc.paused && esc.pause && esc.steps === 0, "and Escape waits too (" + JSON.stringify(esc) + ")");
     const d0 = await page.evaluate(() => __draws);
     await page.evaluate(() => window.__lc.restoreContext());
     await until(page, () => !FISH.world.lost && !FISH.G.ctxLost, null, 20000);
     await sleep(800);
     const under = await page.evaluate((d0) => ({ draws: __draws - d0, paused: FISH.G.paused, geo: FISH.world.renderer.info.memory.geometries, calls: FISH.world.info().calls }), d0);
     check(under.paused && under.draws >= 1 && under.geo > 0 && under.calls > 0, "restored under the pause screen: the lake draws again (" + JSON.stringify(under) + ")");
+    const back = await page.evaluate(() => ({ disabled: document.getElementById("resumeBtn").disabled, note: /coming back/.test(document.getElementById("pauseSum").textContent) }));
+    check(!back.disabled && !back.note, "and Resume works again (" + JSON.stringify(back) + ")");
     await click(page, "#resumeBtn");
     await sleep(800);
     const after = await page.evaluate(() => {

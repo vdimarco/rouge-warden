@@ -185,6 +185,8 @@ body[data-screen="pause"] #toast, body[data-screen="settings"] #toast { z-index:
 .btn.go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a2018; }
 .btn.alt { background: transparent; }
 #pause .card, #settings .card { max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); overflow-y: auto; touch-action: pan-y; }
+/* Resume waits while the lake is coming back (a lost GL context) */
+#resumeBtn:disabled { opacity: 0.5; box-shadow: none; }
 
 /* title */
 #title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
