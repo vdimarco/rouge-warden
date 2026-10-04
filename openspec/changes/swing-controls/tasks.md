@@ -87,21 +87,23 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
 
 ## Agent B: the phone panel and the page
 
-- [ ] B1. The phone panel in `mobile.js`.
+- [x] B1. The phone panel in `mobile.js`.
   - Make `enabled` a getter and add `use(on)`. Add `view` to `sample()` and the VIEW button.
   - Add `marker(m)`: the lock-on ring, the edge arrow, the safe window, the class `no-target` on SWING and the class `target-ready` on the panel. Add `pop()` and `buzz(ms)`.
   - Show Center only while motion aim is on. Show the centre ring only in first person (`body[data-view="first"]`).
   - Let `target()` keep only the dead-latch safety. Update the hint strings: the ring is yellow now, not green.
   - The disabled stub implements `marker`, `pop`, `buzz` and `use` as no-ops.
   - New code guards `style` and `classList.contains` as `rush()` does.
+  - Status: done. `mobile.js` keeps its single quotes, because `mobile.test.mjs` rewrites the import of three by its exact text. `mobile.safe()` returns the window of the marker, for tests.
   - Check: the old `mobile.test.mjs` passes unmodified. The new `mobile-panel.test.mjs` runs: the `view` edge lasts one sample. `marker` moves the ring and sets the classes. `marker(null)` hides the ring. `behind` puts the arrow on the bottom border. `buzz` calls `navigator.vibrate` at most once every 40 ms and does not throw when `vibrate` is missing. `pop` sets and clears its class. The stub methods do not throw. `use(false)` makes `enabled` false and hides the panel.
-- [ ] B2. The page in `index.html`.
+- [x] B2. The page in `index.html`.
   - Restyle the phone buttons in the comic style, at 48 by 48 px or larger. Fit four top buttons in one row at 360 px. Move `.fs-top` to 74 px. Put the score pills in one row on a narrow portrait screen.
   - Add the CSS for `.phone-target`, its arrow, `.phone-view`, `.no-target` and the pop.
   - Write How to play with five sections from "Words" in `design.md`. Rename "Controllers" to "Headset controllers". Remove "A game pad works too". Order the sections by `body[data-device]`.
   - Set `data-label-touch="PLAY WITH TOUCH"` on `#playFlat`. Add `#playMouse` (hidden). Rewrite `#touchNote`. Add `#deskNote` and `#hybridNote` (hidden).
+  - Status: done. The top row boxes are 46 px high with a 50 px hit area (an `::after` box, 2 px past each side), because `phone-swing.e2e.mjs` fails a top button taller than 46 px (`row.tall <= 46`, a frozen contract). Every other button box is 48 or more. The lead decides at the join whether to raise that 46.
   - Check: `phone-controls.e2e.mjs` (sizes, both layouts, text, labels, order). `boot.mjs` still finds "pinch" and "Shift" in the dialog.
-- [ ] B3. `qa/vr/phone-controls.e2e.mjs`, at 390 by 844, 844 by 390 and 360 by 740.
+- [x] B3. `qa/vr/phone-controls.e2e.mjs`, at 390 by 844, 844 by 390 and 360 by 740.
   - Marker API: the ring centre is within 2 px of the NDC. The arrow sits on the border of the safe window. The `behind` arrow sits on the bottom border. A clog ring is green. `null` hides the ring. `no-target` dims SWING.
   - Safe window: targets at NDC y from 0.3 to 1.5 and x from -1.5 to 1.5 with a spoken line showing. The ring and the arrow overlap no top button, score pill, spoken line, SWING panel or climb pad. The window is at least 55 percent of the height in portrait and 45 percent in landscape.
   - Every visible button is at least 48 by 48. The top row is one line with the sensors granted (a stub that grants them) and denied. The layout boxes do not overlap. No turn card shows. `#keyHints` is hidden on touch in play with an unfinished tutorial.
@@ -110,9 +112,11 @@ Agent A and agent B work at the same time. Their files do not overlap. The inter
   - A tap on the pixel of a clog on a lower roof reaches the clog. A tap with the only building held keeps the rope.
   - The bot that only taps, for 30 s, from the start roof facing the ring at -10, 0 and +10 degrees.
   - Join checks, which need A5: VIEW toggles the view once. The ring and `G.test.target().ndc` agree within 3 px. Vibration fires on a real attach and a real pump. The bot passes.
+  - Status: done. Nine checks are marked `[join]` and fail on B's branch until A5: the play button label, `body[data-device]`, the tap with the only building held (it needs the `same` rule of the picker), VIEW, the ring against `G.test.target().ndc`, the buzz on a real attach, the buzz on a real pump, the hybrid title and the computer title. The other 123 pass. The bot (SWING taps only) passes 3 of 3 on B's branch with the old assist.
   - Check: the file runs. Before A5 only the join checks fail. If the phone bot passes less than 3 of 3, report the rate and the cause before the gate changes.
-- [ ] B4. Main's phone tests stay green.
+- [x] B4. Main's phone tests stay green.
   - Run `mobile.test.mjs`, `mobile.e2e.mjs`, `phone-swing.e2e.mjs` and `climb.e2e.mjs`. Change no file and no threshold.
+  - Status: all four pass on B's branch, and so does `rings-map.e2e.mjs`. No file and no threshold changed. J2 runs them again at the join.
   - Check: all four pass on B's branch (they pass on main), and again at the join.
 
 ## Join
