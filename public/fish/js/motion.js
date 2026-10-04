@@ -80,18 +80,20 @@ const HT = new Float64Array(HN), HA = new Float64Array(HN), HW = new Float64Arra
 const HG = new Uint8Array(HN); // 1 = ω came from the gyro (an exact slope, so at() can bend the curve)
 // the whole swing square to the rod, signed like ω: a thumb grip rolls the screen, and the pitch rate alone then reads short
 const HS = new Float64Array(HN);
+// 1 = a virtual() sample: the finger is where it is, so at() never carries it on past its time
+const HV = new Uint8Array(HN);
 let h0 = 0, hn = 0, hYR = 0;
 const idx = (i) => (h0 + i) % HN;
-function push(t, th, w, y, g, yr, sw = w) {
+function push(t, th, w, y, g, yr, sw = w, v = 0) {
   hYR = yr;
   if (hn) {
     const L = idx(hn - 1);
     // same time or out of order (a touch timestamp older than the last frame): the newest news wins
-    if (t <= HT[L]) { HA[L] = th; HW[L] = w; HY[L] = y; HG[L] = g; HS[L] = sw; return; }
+    if (t <= HT[L]) { HA[L] = th; HW[L] = w; HY[L] = y; HG[L] = g; HS[L] = sw; HV[L] = v; return; }
   }
   let j;
   if (hn < HN) { j = idx(hn); hn++; } else { j = h0; h0 = (h0 + 1) % HN; }
-  HT[j] = t; HA[j] = th; HW[j] = w; HY[j] = y; HG[j] = g; HS[j] = sw;
+  HT[j] = t; HA[j] = th; HW[j] = w; HY[j] = y; HG[j] = g; HS[j] = sw; HV[j] = v;
   while (hn > 2 && t - HT[h0] > T.HIST_MS) { h0 = (h0 + 1) % HN; hn--; }
 }
 // the newest sample at or before t (logical index), or −1
@@ -416,8 +418,8 @@ function atRaw(q) {
   if (i === hn - 1) {
     // after the last sample (touch times run ahead of motion dispatch): carry on with the rate we have.
     // θ also bends with the gyro's change of rate (the stroke speeds up at 11 o'clock); ω just holds, so a
-    // release never reads faster than the rod really went
-    const tau = Math.min(q - HT[L], T.EXTRAP_MS) / 1000;
+    // release never reads faster than the rod really went. A virtual sample is a finger that stays where it is
+    const tau = HV[L] ? 0 : Math.min(q - HT[L], T.EXTRAP_MS) / 1000;
     let acc = 0;
     if (hn > 1) {
       const P = idx(hn - 2), h = HT[L] - HT[P];
@@ -493,7 +495,7 @@ export const Motion = {
     const w = slope(HA, t, theta), yr = slope(HY, t, vy);
     pose.t = t; pose.theta = theta; pose.omega = w; pose.yaw = vy; pose.yawRate = yr;
     pose.roll = clamp(fin(vr) ? vr : 0, -1, 1); pose.twist = 0; pose.spin = Math.abs(w);
-    push(t, theta, w, vy, 0, yr);
+    push(t, theta, w, vy, 0, yr, w, 1);
     emit();
   },
   // tests: a raw sample as the browser would send it, through the same handlers as real events

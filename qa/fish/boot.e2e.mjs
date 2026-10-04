@@ -368,7 +368,10 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
     const trip = await page.evaluate(() => window.__trip);
     check(!!trip && trip.travel && trip.screen === "travel" && trip.minimized === 0, "back while a place loads does nothing (" + JSON.stringify(trip) + ")");
     await back();
-    check((await shown("title")) && (await page.textContent("#tkick")) === "STUMP BAY", "back on the arrival card starts at the new place (" + (await page.textContent("#tkick")) + ")");
+    // back presses Start, and Start goes to the water at the new place (after the motion or touch card, the first time)
+    await until(page, () => FISH.G.phase === "cast" || !document.getElementById("setup").hidden, null, 30000).catch(() => {});
+    const at = await page.evaluate(() => ({ phase: FISH.G.phase, mode: FISH.G.mode, place: FISH.place.id, setup: !document.getElementById("setup").hidden }));
+    check(at.place === "stumps" && ((at.phase === "cast" && at.mode === "free") || at.setup), "back on the arrival card starts at the new place (" + JSON.stringify(at) + ")");
   } catch (e) { check(false, "exception in part 4: " + (e && e.stack)); }
   check(errors.length === 0, "part 4: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();

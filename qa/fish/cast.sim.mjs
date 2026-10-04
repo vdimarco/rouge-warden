@@ -1,6 +1,8 @@
 // Checks the cast physics in cast.js with no browser: node qa/fish/cast.sim.mjs
 // Prints a table of where casts land, then checks the reference numbers in the spec. Exit code 1 on failure.
-import { CAST, castParams, Flight, castLanding, strokeFactor, clockOf } from "../../public/fish/js/cast.js";
+// Section 8 steps a motion release from 200 ms early to 200 ms late through the game's own grading (liftError and
+// gradeRelease, as main.js calls them), and section 9 measures easy mode for a cautious player.
+import { CAST, RELEASE, castParams, Flight, castLanding, strokeFactor, clockOf, gradeRelease, liftError } from "../../public/fish/js/cast.js";
 import { ROD, setPlace } from "../../public/fish/js/lake.js";
 import { PLACE_IDS } from "../../public/fish/js/places.js";
 
@@ -21,7 +23,7 @@ function cast(theta, omega, { back = theta + 60, yaw = 0, assist = true, feather
 
 // 1. the table
 const speeds = [150, 300, 500, 750, 1000, 1500];
-console.log(`\nWhere the lure lands: distance from the angler (m) / flight time (s) / verdict. Full back cast, yaw 0, assist on, V_MAX ${CAST.V_MAX} m/s, V_K ${CAST.V_K} °/s.`);
+console.log(`\nWhere the lure lands: distance from the angler (m) / flight time (s) / verdict. Full back cast, yaw 0, easy mode (assist) on, V_MAX ${CAST.V_MAX} m/s, V_K ${CAST.V_K_EASY} °/s (${CAST.V_K} with easy mode off).`);
 console.log("θ rel  clock        " + speeds.map((s) => (s + " °/s").padEnd(22)).join(""));
 for (let th = 20; th <= 140; th += 10) {
   let row = String(th).padStart(4) + "   " + clockOf(th).padEnd(12) + " ";
@@ -54,9 +56,20 @@ console.log("\nLaunch rules");
   check(p.clock === "11 o'clock", `θ 60 is "${p.clock}"`);
   check(clockOf(120) === "1 o'clock", `θ 120 is "${clockOf(120)}"`);
   const a = castParams({ thetaRelease: 60, omegaPeak: 800, thetaBack: 150 });
-  check(Math.abs(a.pitch - (30 + 0.35 * 8)) < 1e-9, `assist pulls 30° toward 38° by 35% (${a.pitch.toFixed(2)})`);
-  const v = castParams({ thetaRelease: 68, omegaPeak: 550, thetaBack: 150 });
+  check(Math.abs(a.pitch - (30 + CAST.ASSIST_PULL * 8)) < 1e-9, `easy mode pulls 30° toward 38° by ${CAST.ASSIST_PULL * 100}% (${a.pitch.toFixed(2)})`);
+  const v = castParams({ thetaRelease: 68, omegaPeak: 550, thetaBack: 150, assist: false });
   check(near(v.v0, 33 * (1 - Math.exp(-1)), 0.001), `v0 at ω = V_K is 63% of V_MAX (${v.v0.toFixed(2)})`);
+  const ve = castParams({ thetaRelease: 68, omegaPeak: CAST.V_K_EASY, thetaBack: 150 });
+  check(near(ve.v0, 33 * (1 - Math.exp(-1)), 0.001), `in easy mode v0 at ω = V_K_EASY (${CAST.V_K_EASY}) is 63% of V_MAX (${ve.v0.toFixed(2)})`);
+  // the pull fades out at both ends of its range: no step anywhere in the pitch (a step stays the same size however fine
+  // the scan; a slope shrinks with it)
+  let jump = 0;
+  for (let th = -40; th < 160; th += 0.02) jump = Math.max(jump, Math.abs(castParams({ thetaRelease: th + 0.02, omegaPeak: 800, thetaBack: 200 }).pitch - castParams({ thetaRelease: th, omegaPeak: 800, thetaBack: 200 }).pitch));
+  check(jump < 0.25, `easy mode has no step in the launch pitch from θ −40° to 160° (largest change ${jump.toFixed(3)}° per 0.02°)`);
+  const sl = castParams({ thetaRelease: 25, omegaPeak: 600, thetaBack: 150 }), hs = castParams({ thetaRelease: 25, omegaPeak: 600, thetaBack: 150, assist: false });
+  check(hs.verdict === "slam" && sl.verdict !== "slam" && sl.pitch > 0, `easy mode softens a slightly late slam: θ 25° gives ${sl.verdict} at ${sl.pitch.toFixed(1)}° (easy off: ${hs.verdict})`);
+  const nb = castParams({ thetaRelease: 66, omegaPeak: 900, thetaBack: 88 }), fb = castParams({ thetaRelease: 66, omegaPeak: 900, thetaBack: 130 });
+  check(nb.verdict === "short" && nb.stroke < CAST.SHORT_STROKE && fb.verdict === "sweet" && fb.stroke === 1, `no back cast is "short" (stroke ${nb.stroke.toFixed(2)}), a full one is sweet (${fb.stroke})`);
   check(Math.abs(strokeFactor(130, 80) - 1) < 1e-9 && Math.abs(strokeFactor(100, 80) - 0.6) < 1e-9, "a 50° back cast gives full power, 20° gives 60%");
   const short = castParams({ thetaRelease: 68, omegaPeak: 900, thetaBack: 88 }), long = castParams({ thetaRelease: 68, omegaPeak: 900, thetaBack: 140 });
   check(short.v0 < long.v0 * 0.65, `a short back cast is weaker (${short.v0.toFixed(1)} vs ${long.v0.toFixed(1)} m/s)`);
@@ -87,9 +100,9 @@ console.log("\nLandings");
     const b = cast(th, w, { back: th + 30 });
     check(b.p.verdict === "high" && b.p.pitch <= CAST.MAX_PITCH && new Flight(tipAt(th), b.p).v.z < 0 && b.r.done, `release at ${th}°, ${w} °/s stays forward: lands at z ${b.r.z.toFixed(1)} on the ${b.r.land}`);
   }
-  // slams land close
+  // slams land close (with easy mode off: easy mode softens the mild ones, section 3)
   for (const [th, w] of [[25, 600], [20, 1000], [10, 1500]]) {
-    const b = cast(th, w);
+    const b = cast(th, w, { assist: false });
     check(b.p.verdict === "slam" && b.r.dist < 12 && b.r.z < 0, `release at ${th}°, ${w} °/s slams in close: ${b.r.dist.toFixed(1)} m (${b.r.land})`);
   }
   // the heading sets the direction
@@ -150,11 +163,81 @@ for (const id of PLACE_IDS) {
     check(b.r.z < 0 && b.r.land === "water", `${P.name}: an early release at ${th}°, ${w} °/s lands forward on the ${b.r.land === "dock" ? "stand" : b.r.land} (z ${b.r.z.toFixed(1)})`);
   }
   for (const [th, w] of [[25, 600], [20, 1000], [10, 1500]]) {
-    const b = cast(th, w);
+    const b = cast(th, w, { assist: false });
     check(b.r.land === "water" && b.r.dist < 12 && b.r.z < 0, `${P.name}: a very late release at ${th}°, ${w} °/s lands in the water close in (${b.r.dist.toFixed(1)} m)`);
   }
 }
 setPlace("loon");
+
+// 8. the motion release window: a cosine stroke from 130° to 20° with peak speed w, and a thumb that lifts err ms after
+// the rod crosses 11 o'clock (IDEAL_RELEASE). Graded the way main.js does: a lift before the crossing reads the swing up
+// to RELEASE.WAIT_MS after it; the speed is the fastest forward swing up to the launch
+function stroke(w) {
+  const T = ((110 * Math.PI) / (2 * w)) * 1000, k = (t) => Math.min(1, Math.max(0, t / T));
+  const at = (t) => 130 - 110 * (0.5 - 0.5 * Math.cos(Math.PI * k(t)));
+  return { T, at, speed: (t) => (t <= 0 || t >= T ? 0 : w * Math.sin(Math.PI * k(t))), tc: 0.5405 * T };
+}
+const fastest = (S, t0, t1) => { let f = 0; for (let q = t0; q <= t1; q += 2) f = Math.max(f, S.speed(q)); return f; };
+function motionLift(w, err, assist = true) {
+  const S = stroke(w), t = S.tc + err;
+  const tEnd = S.at(t) >= CAST.IDEAL_RELEASE ? Math.min(t + RELEASE.WAIT_MS, Math.max(t, S.tc + 1)) : t;
+  const fwd = fastest(S, t - RELEASE.LOOK_MS, tEnd);
+  if (fwd < 150 || 130 - S.at(tEnd) < 8) return null;   // no swing yet: main.js starts again
+  const g = gradeRelease({ errMs: liftError(S.at, t, fwd, tEnd) });
+  const p = castParams({ thetaRelease: g.thetaRelease, omegaPeak: fwd, thetaBack: 130, assist: assist && g.assist });
+  return { p, r: castLanding(tipAt(Math.min(85, S.at(tEnd))), p) };
+}
+// the thumb never lifted: main.js casts 120 ms after the swing slowed under 250 °/s
+function motionHeld(w, assist = true) {
+  const S = stroke(w);
+  let slow = 0;
+  for (let q = 0; q <= S.T; q++) if (S.speed(q) > 250) slow = q;
+  const t = slow + 120, g = gradeRelease({ held: true });
+  const p = castParams({ thetaRelease: g.thetaRelease, omegaPeak: fastest(S, t - RELEASE.LOOK_MS, t), thetaBack: 130, assist: assist && g.assist });
+  return { p, r: castLanding(tipAt(Math.min(85, S.at(t))), p), err: t - S.tc };
+}
+console.log("\nRelease window: m (S sweet, H high, L low, X slam, W weak, F short) for a lift err ms after 11 o'clock; --- no cast yet");
+const errs = [];
+for (let e = -200; e <= 200; e += 10) errs.push(e);
+console.log("          °/s " + errs.filter((e) => e % 40 === 0).map((e) => String(e).padStart(5)).join("") + "   (every 40 ms shown, every 10 ms checked)");
+for (const assist of [true, false]) for (const w of [450, 600, 1000]) {
+  let prev = null, worst = 0, row = "";
+  for (const e of errs) {
+    const c = motionLift(w, e, assist);
+    if (e % 40 === 0) row += c ? ({ sweet: "S", high: "H", low: "L", slam: "X", weak: "W", short: "F" }[c.p.verdict] + c.r.dist.toFixed(0)).padStart(5) : "  ---";
+    if (c && prev) worst = Math.max(worst, Math.abs(c.r.dist - prev.r.dist));
+    prev = c;
+  }
+  const late = motionLift(w, 170, assist), held = motionHeld(w, assist);
+  console.log(`  ${assist ? "easy" : "hard"} ${String(w).padStart(5)} ${row}`);
+  check(worst <= 10, `${assist ? "easy" : "hard"} mode, ${w} °/s: lifts 10 ms apart land at most 10 m apart (largest ${worst.toFixed(1)} m)`);
+  check(held.r.dist < late.r.dist, `${assist ? "easy" : "hard"} mode, ${w} °/s: a thumb held through the swing (${held.r.dist.toFixed(1)} m, cast ${held.err.toFixed(0)} ms after 11 o'clock) casts shorter than a lift 170 ms late (${late.r.dist.toFixed(1)} m)`);
+}
+{
+  const s = motionLift(600, 0), e90 = motionLift(600, -90), l90 = motionLift(600, 90), early = motionLift(600, -150);
+  check(s.p.verdict === "sweet" && e90.p.verdict === "sweet" && l90.p.verdict === "sweet" && early.p.verdict === "high", `at 600 °/s the sweet window spans −90..+90 ms (${e90.p.verdict}, ${s.p.verdict}, ${l90.p.verdict}); 150 ms early is ${early.p.verdict}`);
+}
+
+// 9. easy mode for a cautious player: swings of about 300 °/s (lognormal, σ 0.35), lifts 30 ± 110 ms late
+{
+  let seed = 5;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const run = (assist) => {
+    seed = 5;
+    let n = 0, far = 0;
+    for (let i = 0; i < 3000; i++) {
+      const w = 300 * Math.exp(0.35 * gauss()), e = 30 + 110 * gauss(), c = motionLift(w, e, assist);
+      if (!c) continue;
+      n++;
+      if (c.r.land === "water" && c.r.dist >= 15) far++;
+    }
+    return far / n;
+  };
+  const easy = run(true), hard = run(false);
+  console.log(`\nA cautious player (300 °/s): ${(easy * 100).toFixed(0)}% of casts land 15 m or more out in easy mode, ${(hard * 100).toFixed(0)}% with it off`);
+  check(easy >= 0.65 && easy > hard, `easy mode lands 65% or more of a cautious player's casts 15 m or more out (${(easy * 100).toFixed(0)}%)`);
+}
 
 console.log(fails.length ? `\n${fails.length} check(s) failed` : "\nAll cast checks passed");
 process.exit(fails.length ? 1 : 0);

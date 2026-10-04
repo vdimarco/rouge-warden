@@ -3,22 +3,33 @@
 //
 // A save: journal { id: { n, kg, cm } }, casts, longest, derbyBest, biggest { id, kg } or null, input, assist, quality, artStyle, reelSide,
 //   seen { flag: 1 }, caught, and for the places: place (where the player is) and places { id: record }.
+//   The goals (goals.js): today { d: the day "YYYY-MM-DD" or "", k: today's goal (its number in DAILY), n: how far it got,
+//   done: 0|1 }, days { n: days whose goal was done, run: days in a row, best: the longest run, last: the last day done
+//   or "" }, and bestRun: the most sweet casts in a row.
 // A place record: { open: 0|1, d: best derby kg here, kg: biggest fish here, id: its species or null,
-//   n: fish landed here, lg: the legend step 0..3 (0 not seen, 1 its gold ring seen, 2 hooked, 3 landed) }.
+//   n: fish landed here, lg: the legend step 0..3 (0 not seen, 1 its gold ring seen, 2 hooked, 3 landed),
+//   g: its goals done, bit i for goal i of PLACE_GOALS (0..63) }.
 // derbyBest stays the Loon Lake best (the arcade cabinet reads it). biggest is the biggest fish anywhere. The journal
 // stays keyed by species id, so a fish that lives at two places has one record.
-// One-time flags live in seen: "at.<id>" (the arrival card), "opened.<id>" (the unlock toast), "river.swing".
+// One-time flags live in seen: "at.<id>" (the arrival card), "opened.<id>" (the unlock toast), "river.swing", "ring.tip".
 import { JUNK, byId } from "./species.js";
 import { fishingOf } from "./fishing.js";
 import { ORDER, JOURNEY, nextPlace, isOpen } from "./journey.js";
+import { DAILY, isDay, prevDay } from "./goals.js";
 
 export const SAVE_KEY = "fish.v1";
-export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {} });
-export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0 });
+const blankToday = () => ({ d: "", k: 0, n: 0, done: 0 });
+const blankDays = () => ({ n: 0, run: 0, best: 0, last: "" });
+export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {}, today: blankToday(), days: blankDays(), bestRun: 0 });
+export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
+// a count: a whole number from 0, at most a million (more is a broken save, not a player)
+const whole = (v) => (Number.isInteger(v) && v >= 0 ? Math.min(v, 1e6) : 0);
+const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 const isJunk = (id) => JUNK.some((j) => j.id === id);
-// a place record with only well-formed values: numbers finite and 0 or more, id a real fish, lg a whole step
+// a place record with only well-formed values: numbers finite and 0 or more, id a real fish, lg a whole step,
+// g a whole number from 0 to 63 (six goals)
 const cleanPlace = (e) => ({
   open: e.open === 1 || e.open === true ? 1 : 0,
   d: fin(e.d) && e.d > 0 ? e.d : 0,
@@ -26,7 +37,23 @@ const cleanPlace = (e) => ({
   id: typeof e.id === "string" && byId(e.id) && !isJunk(e.id) ? e.id : null,
   n: fin(e.n) ? Math.max(0, Math.floor(e.n)) : 0,
   lg: Number.isInteger(e.lg) && e.lg >= 0 && e.lg <= 3 ? e.lg : 0,
+  g: Number.isInteger(e.g) && e.g >= 0 && e.g <= 63 ? e.g : 0,
 });
+// Today's goal: a real day and a goal of the list at a place open in the save, or none. Its progress is no more than the
+// goal: all of it when done, short of it when not
+function cleanToday(t, save) {
+  const g = isObj(t) && isDay(t.d) && Number.isInteger(t.k) ? DAILY[t.k] : null;
+  if (!g || !isOpen(save, g.at)) return blankToday();
+  const done = t.done === 1 || t.done === true ? 1 : 0;
+  return { d: t.d, k: t.k, n: done ? g.n : Math.min(whole(t.n), g.n - 1), done };
+}
+// the run of days: whole counts, the best run at least the run, the days done at least the best run, the last day a
+// real day or ""
+function cleanDays(d) {
+  if (!isObj(d)) return blankDays();
+  const run = whole(d.run), best = Math.max(whole(d.best), run);
+  return { n: Math.max(whole(d.n), best), run, best, last: isDay(d.last) ? d.last : "" };
+}
 
 // raw: what storage holds for SAVE_KEY (the JSON text, or null), or a value already parsed.
 // Anything broken gives a new save. The input is never changed.
@@ -51,8 +78,10 @@ export function loadSave(raw) {
   if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
   if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "ghibli";
   if (save.reelSide !== "left") save.reelSide = "right";
-  // a copy, so the new save shares nothing with what it was read from
-  if (!Array.isArray(save.seen)) save.seen = { ...save.seen };
+  // a copy, so the new save shares nothing with what it was read from (an array of flags is no flags)
+  save.seen = Array.isArray(save.seen) ? {} : { ...save.seen };
+  save.days = cleanDays(save.days);
+  save.bestRun = whole(save.bestRun);
 
   // 2. the place records: known places only, each value well-formed
   const P = {}, old = save.places;
@@ -74,6 +103,8 @@ export function loadSave(raw) {
   for (const id of ORDER) if (P[id]) save.places[id] = P[id];
   // 5. the player stands at an open place
   if (!ORDER.includes(save.place) || !(save.places[save.place] && save.places[save.place].open)) save.place = "loon";
+  // 6. today's goal, once the places are known
+  save.today = cleanToday(save.today, save);
   return save;
 }
 
@@ -115,6 +146,39 @@ export function recordCatch(save, at, c) {
     }
   }
   return { junk, isNew, record, oldKg, opened, close };
+}
+
+// Goal i of place `at` (PLACE_GOALS in goals.js) is done. Only at a place open in the save (not by ?open).
+// Returns true when it was not done before.
+export function recordGoal(save, at, i) {
+  const e = placeRec(save, at);
+  if (!e || !Number.isInteger(i) || i < 0 || i > 5 || ((e.g || 0) >> i) & 1) return false;
+  e.g = (e.g || 0) | (1 << i);
+  return true;
+}
+
+// A fish landed on `day` ("YYYY-MM-DD"): today's goal moves on. goal: dailyGoal(day, save) (goals.js), taken before the
+// catch, so a place this fish opens does not change the goal of the day. hit: the fish counts toward it (dayHit).
+// A new day starts its goal from 0 (so does a save that holds another goal for the day). A goal done adds a day to the
+// run when yesterday's goal was done too, and starts the run again at 1 when it was not: a missed day ends the run and
+// takes nothing else.
+// Returns { first: the first fish of the day, done: this fish did the goal, run: days in a row }
+export function recordDay(save, day, goal, hit) {
+  const first = save.today.d !== day;
+  if (first || save.today.k !== goal.k) save.today = { d: day, k: goal.k, n: 0, done: 0 };
+  const t = save.today, D = save.days;
+  let done = false;
+  if (hit && !t.done) {
+    t.n++;
+    if (t.n >= goal.n) {
+      t.done = 1; done = true;
+      D.n++;
+      D.run = D.last === prevDay(day) ? D.run + 1 : 1;
+      D.best = Math.max(D.best, D.run);
+      D.last = day;
+    }
+  }
+  return { first, done, run: D.run };
 }
 
 // The legend of place `at` moved on: 1 its gold ring showed, 2 it was hooked (3, landed, comes with recordCatch).
