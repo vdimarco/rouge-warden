@@ -6,23 +6,28 @@ export const CAST = {
   IDEAL_RELEASE: 68,     // deg: θ at release that gives the 38° launch the assist aims for
   LOAD_THETA: 100,       // deg: tip the rod back past this to load it (10° past upright)
   PITCH_OFFSET: 30,      // launch pitch = θ release − this (the lure leaves along the rod's arc, not along the rod)
-  ASSIST_PITCH: 38,      // the assist pulls the launch toward this
-  ASSIST_PULL: 0.35,     // how far it pulls (0..1), only when the pitch is inside ASSIST_RANGE
-  ASSIST_RANGE: [10, 80],
+  ASSIST_PITCH: 38,      // easy mode (the assist) pulls the launch toward this
+  ASSIST_PULL: 0.55,     // how far it pulls (0..1), while the raw pitch is inside ASSIST_RANGE...
+  ASSIST_RANGE: [-15, 95],
+  ASSIST_FADE: 10,       // ...fading in and out over this many degrees at both ends, so no release falls off a cliff
   MIN_STROKE_SPEED: 60,  // deg/s: slower than this is not a cast, the lure just drops off the tip
   WEAK_SPEED: 220,       // deg/s: slower than this reads as "weak"
   V_MAX: 33,             // m/s: the fastest launch a rod can give
   V_K: 550,              // deg/s: the stroke speed for 63% of V_MAX (diminishing returns: a violent throw gains little)
+  V_K_EASY: 420,         // ...in easy mode: a gentle stroke goes farther
   V_MIN: 1.5,            // m/s: a lob off the tip
   BACK_FULL: 50,         // deg of back cast past the release point for full power
   BACK_HALF: 20,         // ... and this much gives BACK_HALF_POWER
   BACK_HALF_POWER: 0.6,
   BACK_MIN_POWER: 0.3,   // no back cast at all still flicks the lure out a little
+  SHORT_STROKE: 0.65,    // a back cast worth less power than this is "short": the fix is to tip back, not to swing harder
   MAX_PITCH: 75,        // early releases stay in the forward hemisphere, even with assist off
   HIGH_PITCH: 58,        // raw launch pitch above this is a "high" lob (released too early)
   LOW_PITCH: 18,         // below this is a "low" line drive (released too late)
   SLAM_STEEP: 2.5,       // a release below the horizon drives the lure down this much more steeply...
-  SLAM_LOSS: 0.4,        // ...and loses up to this much speed as the line slaps the water
+  SLAM_LOSS: 0.4,        // ...and loses up to this much speed as the line slaps the water...
+  SLAM_SPAN: 5,          // ...all of it this many degrees below the horizon
+  SLAM_SPAN_EASY: 10,    // ...in easy mode a little later, so a late lift tails off rather than drops
   G: 9.81,
   KQ: 0.0085,            // quadratic air drag (1/m), fitted to 26 m/s at 35° → 42 m in 3 s, and 14 m/s → 18 m
   KL: 0.13,              // linear drag (1/s): line peeling off the spool and through the guides
@@ -37,6 +42,7 @@ export const CAST = {
 const D2R = Math.PI / 180;
 const fin = (v, d) => (Number.isFinite(v) ? v : d);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
 // "11 o'clock" for a rod angle, seen from the angler's right side
 export function clockOf(theta) {
@@ -56,30 +62,89 @@ export function strokeFactor(thetaBack, thetaRelease) {
   return Math.max(C.BACK_MIN_POWER, C.BACK_HALF_POWER * Math.max(0, d) / C.BACK_HALF);
 }
 
+// how hard easy mode pulls a raw launch pitch toward ASSIST_PITCH (0..ASSIST_PULL)
+export function assistPull(raw) {
+  const C = CAST, [lo, hi] = C.ASSIST_RANGE, F = C.ASSIST_FADE;
+  return C.ASSIST_PULL * smooth(lo, lo + F, raw) * (1 - smooth(hi - F, hi, raw));
+}
+
+// stroke: the share of the power the back cast gave (strokeFactor)
 export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist = true } = {}) {
   const C = CAST;
   const th = fin(thetaRelease, C.IDEAL_RELEASE);
   // the forward stroke speed; motion.js reports forward as negative, so take the size either way
   const w = Math.abs(fin(omegaPeak, 0));
   const raw = th - C.PITCH_OFFSET;
-  let pitch = raw;
-  if (assist && pitch >= C.ASSIST_RANGE[0] && pitch <= C.ASSIST_RANGE[1]) pitch += C.ASSIST_PULL * (C.ASSIST_PITCH - pitch);
   // a late release: the tip is already swinging down at the water, so the lure goes in hard and close
-  if (raw < 0) pitch = Math.max(-80, raw * C.SLAM_STEEP);
+  let pitch = raw < 0 ? Math.max(-80, raw * C.SLAM_STEEP) : raw;
+  // easy mode pulls the launch toward a good angle, a slam too. The pull fades out at the ends of its range
+  if (assist) pitch += assistPull(raw) * (C.ASSIST_PITCH - pitch);
   pitch = clamp(pitch, -80, C.MAX_PITCH);
   const k = strokeFactor(thetaBack, th);
-  let v0 = w < C.MIN_STROKE_SPEED ? C.V_MIN : C.V_MAX * (1 - Math.exp(-w / C.V_K)) * k;
-  if (raw < 0) v0 *= 1 - C.SLAM_LOSS * Math.min(1, -raw / 5);
+  let v0 = w < C.MIN_STROKE_SPEED ? C.V_MIN : C.V_MAX * (1 - Math.exp(-w / (assist ? C.V_K_EASY : C.V_K))) * k;
+  if (raw < 0) v0 *= 1 - C.SLAM_LOSS * Math.min(1, -raw / (assist ? C.SLAM_SPAN_EASY : C.SLAM_SPAN));
   v0 = Math.max(C.V_MIN, v0);
   const power = clamp(v0 / C.V_MAX, 0, 1);
   let verdict;
   if (pitch < 0) verdict = "slam";
   // an early lift is "high" even when the short stroke also cut the power: the fix is the timing, not more speed
   else if (raw > C.HIGH_PITCH) verdict = "high";
+  // no back cast: the fix is to tip the rod back first, not to swing faster
+  else if (k < C.SHORT_STROKE) verdict = "short";
   else if (w < C.WEAK_SPEED || power < 0.3) verdict = "weak";
   else if (raw < C.LOW_PITCH) verdict = "low";
   else verdict = "sweet";
-  return { v0, pitch, yaw: fin(yaw, 0), power, verdict, clock: clockOf(th) };
+  return { v0, pitch, yaw: fin(yaw, 0), power, verdict, clock: clockOf(th), stroke: k };
+}
+
+/* ---------------- the release ---------------- */
+// Touch and mouse: the finger's height is the rod angle. h is the drag that turns the rod 150° (touchSpan). Below the
+// press point the rod follows the finger; above it the rod moves at ABOVE of the finger's travel, so a flick that carries
+// on past the press point (the natural end of a flick) still lets go near 11 o'clock. Above the press point the span is
+// always SPAN_MAX: a flick carries on about as far on any screen, so a short one (a phone on its side) forgives as much
+export const TOUCH = { REST: 80, ABOVE: 0.4, SPAN_K: 0.3, SPAN_MIN: 160, SPAN_MAX: 240 };
+export function touchSpan(gameH) { return clamp(fin(gameH, 0) * TOUCH.SPAN_K, TOUCH.SPAN_MIN, TOUCH.SPAN_MAX); }
+// dy: px the finger is below the press point (negative: above it)
+export function touchTheta(dy, h) {
+  dy = fin(dy, 0); h = Math.max(1, fin(h, TOUCH.SPAN_MAX));
+  return clamp(TOUCH.REST + (dy < 0 ? (dy * TOUCH.ABOVE) / TOUCH.SPAN_MAX : dy / h) * 150, 5, 170);
+}
+// the other way: where the finger is for a rod angle (the touch rail draws its marks with this)
+export function touchDy(theta, h) {
+  const d = (fin(theta, TOUCH.REST) - TOUCH.REST) / 150;
+  return d < 0 ? (d * TOUCH.SPAN_MAX) / TOUCH.ABOVE : d * Math.max(1, fin(h, TOUCH.SPAN_MAX));
+}
+
+// Motion: a release is graded by time, not angle: a fast whip sweeps the sweet band in 30 ms. errMs is how long after the
+// rod crossed IDEAL_RELEASE the thumb lifted (negative: before it), and MS_DEG maps about ±90 ms onto the sweet band.
+// A lift before the crossing reads the samples up to WAIT_MS after it (the phone is over the shoulder: nobody sees the
+// launch wait). A thumb held down through the swing (held) casts a low line drive, worse than any lift made in time
+export const RELEASE = { MS_DEG: 0.22, MAX_MS: 400, LOOK_MS: 450, WAIT_MS: 100, HELD_THETA: 30 };
+export function gradeRelease({ errMs = 0, held = false } = {}) {
+  const R = RELEASE;
+  if (held) return { thetaRelease: R.HELD_THETA, assist: false };
+  return { thetaRelease: CAST.IDEAL_RELEASE - clamp(fin(errMs, 0), -R.MAX_MS, R.MAX_MS) * R.MS_DEG, assist: true };
+}
+// errMs for a lift at t (ms). at(q) is the rod angle at time q; fwd the forward swing speed (deg/s); tEnd the newest
+// time the history reaches (a lift before the crossing looks ahead to it)
+export function liftError(at, t, fwd, tEnd = t) {
+  const I = CAST.IDEAL_RELEASE, R = RELEASE, sp = Math.max(1, Math.abs(fin(fwd, 0)));
+  const th = at(t);
+  if (th < I) {
+    // past 11 o'clock: when did it cross?
+    for (let q = t; q > t - R.LOOK_MS; q -= 2) {
+      const a = at(q - 2), b = at(q);
+      if (a >= I && b < I) return t - (q - 2 + (2 * (a - I)) / (a - b));
+    }
+    return -((th - I) / sp) * 1000;
+  }
+  // not there yet: when it got there, from the samples after the lift
+  for (let q = t; q < tEnd; q += 2) {
+    const e = Math.min(q + 2, tEnd), a = at(q), b = at(e);
+    if (a >= I && b < I) return t - (q + ((e - q) * (a - I)) / (a - b));
+  }
+  // still not there at tEnd: the rest of the way at the swing's speed
+  return t - tEnd - ((at(tEnd) - I) / sp) * 1000;
 }
 
 // what is under a point: the water (0), the stand (dock, road, bar or wall), or the land.

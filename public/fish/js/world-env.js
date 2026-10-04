@@ -338,6 +338,7 @@ export function buildWater(low, place, look) {
     uRip: { value: Array.from({ length: RIPPLES }, () => new THREE.Vector4(0, 0, -99, 0)) },
     uRing: { value: Array.from({ length: RINGS }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uAim: { value: new THREE.Vector4(0, -1, 0, -0.6) },
+    uAimTo: { value: new THREE.Vector2(0, 0) },   // the aim preview: m along the line to the landing (0: none), 1 = dry land
     uLoon: { value: new THREE.Vector4(0, 0, 0, 0) },
     uLure: { value: new THREE.Vector4(0, 0, 0, 0) },
   };
@@ -353,7 +354,7 @@ export function buildWater(low, place, look) {
       uniform vec4 uShoreC, uShoreP, uIsle[2]; uniform float uSwell, uCur; uniform vec2 uFlow;
       uniform vec4 uRip[RIPPLES];
       uniform vec4 uRing[RINGS];
-      uniform vec4 uAim, uLoon, uLure;
+      uniform vec4 uAim, uLoon, uLure; uniform vec2 uAimTo;
       varying vec3 vW;
       ${SKY_GLSL}
       ${NOISE_GLSL}
@@ -541,16 +542,24 @@ export function buildWater(low, place, look) {
         col += uSunCol * spec;
         col += uFoam * clamp(foam, 0.0, 1.2) * 0.6;
         col += goldGlow;
-        // the aim: a dotted line on the water from the dock end
+        // the aim: a dotted line on the water from the dock end. With a preview it runs out to where a cast like the last
+        // one lands, with a ring there; amber when that cast would land on dry land (the dots stop at the shore)
         if (uAim.z > 0.01) {
           vec2 dir = uAim.xy, q = p - vec2(0.0, uAim.w);
           float ta = dot(q, dir), sa = dot(q, vec2(-dir.y, dir.x));
-          if (ta > 3.0 && ta < 14.0) {
-            float cell = (fract(ta / 0.8) - 0.5) * 0.8;
+          float end = uAimTo.x > 0.0 ? uAimTo.x : 14.0;
+          vec3 ac = mix(vec3(1.0, 0.97, 0.86), vec3(1.0, 0.68, 0.26), uAimTo.y);
+          if (ta > 3.0 && ta < end + 1.0) {
+            // the dots spread out with distance (0.6 m apart near the dock), so far ones do not run together
+            float sp = 0.6 + 0.016 * ta, cell = (fract(log(sp) / 0.016) - 0.5) * sp;
             float rad = 0.07 + ta * 0.012;
             float dotv = smoothstep(rad, rad * 0.55, length(vec2(cell, sa)));
-            float fadeIn = smoothstep(3.0, 4.0, ta) * smoothstep(14.0, 11.5, ta);
-            col = mix(col, vec3(1.0, 0.97, 0.86), dotv * fadeIn * uAim.z);
+            float fadeIn = smoothstep(3.0, 4.0, ta) * smoothstep(end + 0.5, end - 2.5, ta);
+            col = mix(col, ac, dotv * fadeIn * uAim.z);
+          }
+          if (uAimTo.x > 0.0) {
+            float rr = length(q - dir * uAimTo.x), rw = 0.1 + uAimTo.x * 0.008;
+            col = mix(col, ac, smoothstep(rw, 0.0, abs(rr - 0.9 - uAimTo.x * 0.02)) * uAim.z);
           }
         }
         // soft edge at the shore

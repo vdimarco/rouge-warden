@@ -285,8 +285,9 @@ export class Rises {
     return null;
   }
 
-  near(x, z) {
-    let best = null, bd = 5;
+  // the nearest ring within r m (a cast within 5 m is on the ring; the cast report names a near miss out to 12 m)
+  near(x, z, r = 5) {
+    let best = null, bd = r;
     for (const g of this.list) { const d = Math.hypot(g.x - x, g.z - z); if (d <= bd) { bd = d; best = g; } }
     return best;
   }
