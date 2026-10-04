@@ -1,6 +1,7 @@
 // The time from the end of a cast to the next cast, in the real page: node qa/fish/turnaround.e2e.mjs
 // (serve public/ first; FISH_URL sets the address). It prints each gap, and checks it:
-// - an empty retrieve (nothing is coming): the lure skips home within a few seconds, and a fast crank brings it home faster
+// - an empty retrieve (nothing is coming): the lure skips home within a few seconds, and a fast crank brings it home faster.
+//   Once "Nothing is biting here." shows, a slow crank from far out brings it home in about 3 s
 // - "Nothing this time.": the next cast is ready about 1 s after the lure is home, and at once after a press past 350 ms
 // - a cast onto the shore: ready in under 1.2 s, and at once after a press past 350 ms. Its report (what to fix in the
 //   release) stays up over the new cast for its own time
@@ -139,20 +140,28 @@ function helpers() {
       check(within(real.ready, 1000, 1300), `home to the next cast with no input: about 1 s (${fmtR(real.ready)})`);
     }
 
-    // ---- a steady crank and a fast crank, from 30 m with nothing coming (game time) ----
-    const crank = async (rps) => page.evaluate(async (rps) => {
+    // ---- a steady crank and a fast crank, from 30 m with nothing coming, and a slow crank from 53 m (game time; words: the
+    // game time when "Nothing is biting here." showed) ----
+    const crank = async (rps, dist = 30) => page.evaluate(async ([rps, dist]) => {
       const G = FISH.G, wait = window.__wait;
       G.force = { bite: false };
       Object.defineProperty(FISH.crank, "rate", { get: () => rps, configurable: true });
-      const t0 = await window.__land(0, -30);
-      while (G.phase === "reel" && performance.now() - t0 < 120000) await wait(2);
+      const t0 = await window.__land(0, -dist);
+      let words = null;
+      while (G.phase === "reel" && performance.now() - t0 < 120000) {
+        if (words == null && document.querySelector("#prompt .p1 span").textContent === "Nothing is biting here.") words = G.sim.state.t;
+        await wait(2);
+      }
       delete FISH.crank.rate;
-      return G.phase === "lost" && G.sim ? G.sim.state.t : null;
-    }, rps);
-    const steady = note("empty retrieve, 30 m, crank 1.6 turns/s, game time", await crank(1.6), "s"), fast = note("empty retrieve, 30 m, crank 4 turns/s, game time", await crank(4), "s");
+      return G.phase === "lost" && G.sim ? { t: G.sim.state.t, words } : { t: null, words };
+    }, [rps, dist]);
+    const steady = note("empty retrieve, 30 m, crank 1.6 turns/s, game time", (await crank(1.6)).t, "s"), fast = note("empty retrieve, 30 m, crank 4 turns/s, game time", (await crank(4)).t, "s");
     console.log(`     30 m with nothing coming: home after ${fmt(steady, "s")} at 1.6 turns a second, ${fmt(fast, "s")} at 4 (game time)`);
-    check(steady != null && steady < 8.5, `an empty retrieve at a steady crank comes home in under 8.5 s (${fmt(steady, "s")})`);
-    check(fast != null && fast < 3.6 && fast < steady * 0.45, `a fast crank brings it home in under 3.6 s, less than half the time (${fmt(fast, "s")})`);
+    check(steady != null && steady < 6.5, `an empty retrieve at a steady crank comes home in under 6.5 s (${fmt(steady, "s")})`);
+    check(fast != null && fast < 3.6 && fast < steady * 0.6, `a fast crank brings it home in under 3.6 s, sooner still (${fmt(fast, "s")})`);
+    const far = await crank(1, 53), after = far.t != null && far.words != null ? far.t - far.words : null;
+    note("empty retrieve, 53 m, 1 turn/s: the words to home, game time", after, "s");
+    check(after != null && after < 4, `from 53 m at the guide's slow pace (1 turn a second), the lure is home ${fmt(after, "s")} after "Nothing is biting here." (under 4 s; ${JSON.stringify(far)})`);
 
     // ---- "Nothing this time.": no input, a press too soon, a press after 350 ms ----
     const home = (press) => page.evaluate(async (press) => { const t0 = await window.__stage({ phase: "home" }); return press ? window.__press({ t0, ...press }) : window.__ready(t0); }, press);

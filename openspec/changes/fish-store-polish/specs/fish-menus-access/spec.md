@@ -32,8 +32,12 @@ How to play SHALL open on the tab for the player's input. Each tab SHALL fit wit
 - **WHEN** a desktop player opens How to play
 - **THEN** the "Touch and mouse" tab shows first.
 
+#### Scenario: Help in the app
+- **WHEN** a player opens How to play in the store build or on a phone
+- **THEN** the tabs are "Motion" and "Touch", with no word of a mouse.
+
 ### Requirement: One word for each move
-The prompt, the guide caption, and the rod cue SHALL use the same words for the same move and input.
+The prompt, the guide caption, and the rod cue SHALL use the same words for the same move and input. On a computer the input SHALL be the one the player used last, the mouse or the keys, and the guide SHALL label it MOUSE or KEYS.
 
 #### Scenario: Pump in motion mode
 - **WHEN** a fish holds on the bottom in motion mode
@@ -43,8 +47,24 @@ The prompt, the guide caption, and the rod cue SHALL use the same words for the 
 - **WHEN** a player on a computer holds the mouse button to cast
 - **THEN** the prompt, the guide caption, and the rod cue say "Keep holding" while the rod tips back, then "Let go in the green", and the guide labels the move MOUSE.
 
+#### Scenario: Mouse player at the strike
+- **WHEN** a fish strikes and the player used the mouse last
+- **THEN** the prompt says "DRAG THE ROD UP FAST! Set the hook!", and the guide caption and the rod cue say "Drag the rod up fast!".
+
+#### Scenario: Keys player in a fight
+- **WHEN** a fish jumps and the player used the keys last
+- **THEN** the prompt sub, the guide caption, and the rod cue say "Hold S.", and the guide labels the move KEYS. The other moves name W, A, D, R, and Space.
+
+#### Scenario: Flight on a computer
+- **WHEN** the lure flies in a game on a computer
+- **THEN** the rod cue says "Click to slow", and the tip says "To stop the lure short, click the lake."
+
 ### Requirement: Layouts that fit
 Every screen SHALL fit at 390x844, 360x640, 430x932, 844x390, 820x1180, and 1280x800 with no clipped text, no overlap, and its Close or Done button in view or in a scroll that shows it. The HUD chip SHALL show the full derby weight at 360 px.
+
+#### Scenario: Cast report with Larger text
+- **WHEN** a cast lands in the water at 360x640 with Larger text on, and the prompt sub takes two lines
+- **THEN** the cast report stands under the prompt and does not overlap it.
 
 #### Scenario: Small Android phone
 - **WHEN** the derby HUD shows 12.4 kg at 360x640

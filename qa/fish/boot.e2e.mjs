@@ -279,6 +279,7 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
       await click(page, btn);
       await page.waitForSelector("#" + id + ":not([hidden])");
       if (id === "settings") { const fb = await visibleButtons(page, "#settings .btn"); check(!fb.some((b) => /Fullscreen/.test(b)), "store: Settings has no Fullscreen button (" + fb.join(" | ") + ")"); }
+      if (id === "help") { const tabs = await visibleButtons(page, "#help [data-tab]"); check(tabs.join("|") === "Motion|Touch", "store: How to play has the tabs Motion and Touch, with no mouse (" + tabs.join(" | ") + ")"); }
       await back();
       check(!(await shown(id)) && (await shown("title")), "back closes " + id);
     }

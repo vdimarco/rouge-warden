@@ -1243,6 +1243,12 @@ export class RodPad extends Widget {
   }
   get theta() { this._update(); return this._theta; }
   get steer() { this._update(); return this._steer; }
+  // a new reel: the rod starts at rodStart, not where the last fight left it. A finger still on the pad moves it from there
+  reset() {
+    this._update();
+    this._theta = T.rodStart; this._steer = 0;
+    if (this.drag) { this.drag.th0 = T.rodStart; this.drag.y0 = this.drag.y; }
+  }
   keys(st) {
     st = st || {};
     this._update();

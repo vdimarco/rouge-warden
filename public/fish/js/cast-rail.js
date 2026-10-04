@@ -32,7 +32,6 @@ export function createCastRail(game) {
   game.append(el);
   const $ = (s) => el.querySelector(s);
   const P = { band: $(".band"), press: $(".press"), load: $(".load"), full: $(".full"), bead: $(".bead"), tLoad: $(".t-load"), tGo: $(".t-go") };
-  const guide = () => game.querySelector("#fishGuide");
   // top, len: the rail's ends in px from the press point (a press high up cuts the top short)
   let key = "", beadY = null, tone = "", clash = false, top = 0, len = 0;
   return {
@@ -64,10 +63,8 @@ export function createCastRail(game) {
         P.band.hidden = b1 - b0 < 6; P.tGo.hidden = b1 - b0 < 16;
         Object.assign(P.band.style, { top: b0 + "px", height: Math.max(0, b1 - b0) + "px" });
         P.tGo.style.top = (b0 + b1) / 2 + "px";
-        // the animated guide has the room there: the rail gives way (it moves with each new press). So does a rail with
-        // too little room left to read
-        const g = guide(), y = y0 + top;
-        clash = len < 40 || (!!g && !g.hidden && g.offsetLeft < x + 60 && g.offsetLeft + g.offsetWidth > x - 60 && g.offsetTop < y + len && g.offsetTop + g.offsetHeight > y);
+        // a rail with too little room left to read hides. The animated guide gives way to the rail (guide.js place)
+        clash = len < 40;
       }
       const by = Math.max(0, Math.min(len, dy(s.theta) - top));
       if (by !== beadY) { beadY = by; P.bead.style.top = by + "px"; }

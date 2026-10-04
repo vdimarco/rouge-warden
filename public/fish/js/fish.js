@@ -12,6 +12,9 @@ import { PLACES, getPlace } from "./places.js";
 export const REEL = {
   LINE_PER_TURN: 0.75,   // m of line per crank turn (a 5.2:1 spinning reel)
   FIGHT_LINE_PER_TURN: 1.15, // m per turn once a fish is on: game time, so fights last 3 to 70 s, not the minutes of real fishing
+  SMALL_KG: [0.4, 0.6],  // kg: a fish under 0.6 kg (a perch, a pumpkinseed) comes in faster, and under 0.4 kg...
+  SMALL_MUL: 2,          // ...at this many times the line per turn, so a small fish hooked far out needs no long crank.
+                         // A fish that runs for cover at its place keeps its pace: the steer still counts
   BREAK_N: 45,           // 10 lb line
   DRAG_N: [12, 18, 26],  // light, medium, heavy drag
   STEP: 1 / 240,         // s: internal step, so a big frame time never blows up the springs
@@ -137,7 +140,8 @@ export const BITE = {
   RISE: 0.5,             // m/s it rises when fast
   NEUTRAL: 0.55,         // m/s: the retrieve speed that holds the lure's depth
   EMPTY_T: 3,            // s: with no fish coming, the lure skips home after this...
-  EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute
+  EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute...
+  EMPTY_HOME: 3,         // ...and at least so fast that any turn of the crank brings it home in about this many s
   EMPTY_CRANK: 1.5,      // rev/s: a crank faster than this runs that clock faster, up to 3 times at 3.5 rev/s
   HOME_R: 3,             // m: the lure is home this close to the dock
   TROPHY: 1 / 25,        // share of fish above the usual range (at no boost)
@@ -493,9 +497,11 @@ export class LakeSim {
     // player who cranks it home fast. Nothing can bite now, so only the lure's speed changes
     const empty = !this.ap || this.ap.stage === "gone";
     this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h * (1 + clamp(I.crank - B.EMPTY_CRANK, 0, 2)) : 0;
-    const fast = 1 + (B.EMPTY_MUL - 1) * clamp(this.emptyT - B.EMPTY_T, 0, 1);
+    const ramp = clamp(this.emptyT - B.EMPTY_T, 0, 1), fast = 1 + (B.EMPTY_MUL - 1) * ramp;
     S.empty = fast > 1;
-    const c = I.crank * R.LINE_PER_TURN * fast;
+    // (the line out when nothing came sets the floor, so a slow crank from far out also brings it home in EMPTY_HOME s)
+    this.emptyLine = S.empty ? this.emptyLine || S.lineOut : 0;
+    const c = Math.max(I.crank * R.LINE_PER_TURN * fast, S.empty && I.crank > 0.05 ? (ramp * this.emptyLine) / B.EMPTY_HOME : 0);
     S.lineOut = Math.max(R.MIN_LINE, S.lineOut - c * h);
     const px = L.x, pz = L.z;
     const f = S.phase === "strike" ? S.follower : null;
@@ -527,8 +533,10 @@ export class LakeSim {
     L.speed += (inst - L.speed) * Math.min(1, h / 0.2);
     const tight = hd >= need - 0.05;
     S.slack = !tight;
-    // what the line feels: the pull of the lure through the water, or a fish holding it (a stronger outfit feels it × g)
-    S.tension = R.G * (f ? 3 + 3 * Math.sqrt(this.plan.kg) * (tight ? 1 : 0.3) : tight ? 0.4 + 2.2 * L.speed * L.speed : 0);
+    // what the line feels: the pull of the lure through the water, or a fish holding it (a stronger outfit feels it × g).
+    // A lure that skips home with nothing coming pulls no harder than a fast retrieve
+    const ls = S.empty ? Math.min(L.speed, 3) : L.speed;
+    S.tension = R.G * (f ? 3 + 3 * Math.sqrt(this.plan.kg) * (tight ? 1 : 0.3) : tight ? 0.4 + 2.2 * ls * ls : 0);
     S.slip = 0;
     if (this.ap) this.approach(h, I);
     if ((S.phase === "sink" || S.phase === "retrieve") && S.t > 0.5 && Math.hypot(L.x, L.z) < B.HOME_R) {
@@ -907,7 +915,8 @@ export class LakeSim {
     if (junk && stretch > -0.2) ten += P.kg * 3 * R.G;
 
     /* the reel: the spool slips when the line pulls harder than the drag; cranking into a slipping drag grinds */
-    const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN) * (1 + 0.35 * I.pull);
+    const small = junk || this.fx.cover[f.id] ? 1 : 1 + (R.SMALL_MUL - 1) * (1 - smooth(R.SMALL_KG[0], R.SMALL_KG[1], P.kg));
+    const c = I.crank * (junk ? R.LINE_PER_TURN : R.FIGHT_LINE_PER_TURN * small) * (1 + 0.35 * I.pull);
     // A locked spool winches the fish in, grind and all. The moment it slips (a run starts), the grind lets go and builds
     // back over GRIND_RAMP s of slipping; slipT runs down 10 times as fast while the spool holds, so a run that starts after
     // the spool has held for a moment (a tenth of a second wipes out a second of slipping) starts afresh. And the grind

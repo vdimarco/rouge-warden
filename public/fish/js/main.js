@@ -143,6 +143,7 @@ const G = {
   big: null,        // the fish on the line is a big one: { at, said }
   walk: false,      // the fish is in a tail walk (jump after jump)
   input: "touch",   // motion | touch
+  desk: "mouse",    // a computer: the input the player used last, mouse | keys (the fight words name it)
   paused: false,
   hour: 6.2,
   casts: 0, castsLeft: 10, bag: [],
@@ -1006,6 +1007,8 @@ function landed(r) {
 function enterReel() {
   G.phase = "reel";
   G.hold = null;
+  // touch, the mouse and the keys: each reel starts with the rod at the same angle (a rod lifted out stays high otherwise)
+  if (rodPad) rodPad.reset();
   // the phone stays upright: its top edge is still the rod. The cast report stays up a moment, below the prompt
   Motion.mode = G.input === "motion" ? "portrait" : "landscape";
   relayout(true);
@@ -1347,7 +1350,8 @@ function renderJournal(pid) {
 // How to play: a short tab for each input, in the words the game uses in play (moveWords in guide.js), with the rising
 // rings, and the fish moves behind a row that opens. input: "motion", "touch", or "keys" (a computer with no touch screen)
 function helpRows(input) {
-  const m = input === "motion", keys = input === "keys", w = (k, pace) => moveWords(k, input, 0, pace);
+  // (a computer: the moves in the mouse's words, which are the drag words, and the strike with Space)
+  const m = input === "motion", keys = input === "keys", w = (k, pace) => moveWords(k, keys ? "mouse" : input, 0, pace);
   const steps = m ? [
     ["upright", "Hold the phone <b>upright</b>. Grip it tight. Keep 2 m clear around you."],
     ["thumb", "<b>Hold your thumb</b> on the screen. Turn your body to aim."],
@@ -1362,7 +1366,7 @@ function helpRows(input) {
   if (keys) steps.push(["thumb", "No fish? <b>Click or press Space</b> to cast again at once."]);
   steps.push(
     ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
-    [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + w("hook")],
+    [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + moveWords("hook", input)],
   );
   if (!m) steps.push(["pull", keys ? "Drag the <b>rod</b> up, down and sideways, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
   steps.push(
@@ -1383,6 +1387,8 @@ function helpRows(input) {
 }
 $("#helpM").innerHTML = helpRows("motion");
 $("#helpT").innerHTML = helpRows(inputOf(false, touchDevice));
+// the app and a phone have no mouse: the tab says Touch
+if (Native.isStore || touchDevice) $("#tabT").textContent = "Touch";
 for (const d of $$("#help .moves")) d.addEventListener("toggle", fades);
 // the tab for the input the player uses: motion play, or a phone that can play with motion and has not chosen yet; else
 // touch (a computer opens on Touch and mouse)
@@ -1640,6 +1646,7 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
+  if (/^(Space|Key[WASDRE]|Arrow|Bracket)/.test(e.code)) G.desk = "keys";
   if (e.code === "Escape" && (!$("#about").hidden || !$("#privacy").hidden)) { closeSub(); return; }
   if (e.code === "Escape" && ["help", "journal", "settings", "places"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
@@ -1710,7 +1717,9 @@ function setDrag(d) {
 $("#dragDown").addEventListener("click", () => setDrag(G.drag - 1));
 $("#dragUp").addEventListener("click", () => setDrag(G.drag + 1));
 // the mouse wheel turns the crank
-addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
+addEventListener("wheel", (e) => { G.desk = "mouse"; if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
+// a mouse press: the fight words on a computer name the mouse moves (a key press names the keys, see keydown)
+addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") G.desk = "mouse"; }, true);
 // (aiming with touch or the mouse: a sideways drag before the cast, which the reel panel tells apart from a cast; see boot)
 // What a press takes in the cast (the reel panel's grab). Before the cast, with the sensors a press anywhere takes the line
 // at once. With touch and the mouse the press waits for the drag: up and down takes the line where it pressed, sideways
@@ -1787,7 +1796,7 @@ function castUpdate(dt) {
     world.setView({ mode: "flight", look: { x: r.x, y: Math.max(r.y, 0), z: r.z }, portrait: G.layout === "tall-cast" });
     // feathering: a finger on the rod slows the line, so the lure drops short onto a target
     if (G.pin && G.pin.feather) { G.feathered = true; prompt("Your thumb slows the line.", "", "thumb"); }
-    else prompt(save.casts >= 3 && save.casts < 9 ? "To stop the lure short, touch the rod." : "", "", "thumb");
+    else prompt(save.casts >= 3 && save.casts < 9 ? (touchDevice ? "To stop the lure short, touch the rod." : "To stop the lure short, click the lake.") : "", "", "thumb");
     if (r.done) { Sound.setSpool(0); prompt(""); landed(r); }
     return;
   }
@@ -1935,6 +1944,8 @@ function reelPrompt(s, crankRate, theta) {
   const key = w.text + "|" + w.sub + "|" + w.icon + "|" + w.tone;
   if (H && key !== H.key && !w.urgent && t - H.at < PROMPT_HOLD) return;
   if (!H || key !== H.key) G.hold = { key, at: t };
+  // a jump at the hook set: the "Fish on!" banner gives way, so the words to lower the rod show at once
+  if (w.icon === "low" && !$("#banner").hidden) banner("");
   prompt(w.text, w.sub, w.icon, w.tone);
   // the guide and the rod cue say the crank's pace the prompt asks for ("Reel fast."), never their own
   guideCue.pace = w.pace;
@@ -1946,7 +1957,7 @@ function fightCue(s, crankRate, theta) {
   const m = sensing();
   const t = now();
   const say = (text, sub = "", icon = "", tone = "", urgent = false, pace = "") => ({ text, sub, icon, tone, urgent, pace });
-  const words = (kind, side = 0) => moveWords(kind, inputOf(m, touchDevice), side);
+  const words = (kind, side = 0) => moveWords(kind, inputOf(m, touchDevice, G.desk), side);
   const recent = (k, ms) => t - (G.lastEvent[k] || -1e9) < ms;
   // the drag slips in short bursts: the slip prompts stay 0.7 s after the last slip, so they do not flicker
   if ((s.slip || 0) > 0.15) G.slipAt = t;
@@ -1957,7 +1968,7 @@ function fightCue(s, crankRate, theta) {
   const dirWord = (side) => (side > 0 ? "right" : side < 0 ? "left" : "");
   const steerSub = (side) => words("turn", side);
   // the bail is still open: say how to start, but let a follower, a nibble or a strike speak for themselves
-  if (G.bail === "open" && (s.phase === "sink" || s.phase === "retrieve") && !s.follower && !recent("nibble", 900)) return say("Turn the crank to reel.", "The first turn closes the bail.", "crank");
+  if (G.bail === "open" && (s.phase === "sink" || s.phase === "retrieve") && !s.follower && !recent("nibble", 900)) return say(words("reel"), "The first turn closes the bail.", "crank");
   switch (s.phase) {
     case "sink": case "retrieve": {
       if (s.empty) return say("Nothing is biting here.", "Reel in and cast again.", "crank");
@@ -1966,16 +1977,18 @@ function fightCue(s, crankRate, theta) {
       // the river: the current swings the lure. Said once
       if (G.place.flow && !save.seen["river.swing"] && $("#report").hidden) { seen("river.swing"); G.swingUntil = t + 4500; }
       if (t < (G.swingUntil || 0)) return say("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank", "", false, "slow");
-      return say("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
+      return say(words("reel"), save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
     }
     case "strike":
       // the hook-set words, louder: "SNAP IT UP! Set the hook!"
       return say(words("hook").toUpperCase() + " Set the hook!", "", "pull", "hot", true);
     case "fight": {
       const f = s.fish || {};
-      if (G.walk && f.move !== "jump" && !recent("jump", 1500)) G.walk = false;
+      // a tail walk goes from its first leap to walkEnd, with the dash on the surface between two leaps. Any other move
+      // ends it too (a new stage of a legend)
+      if (G.walk && f.move !== "jump" && f.move !== "swim") G.walk = false;
       // 2. a jump, or a tail walk: keep the rod low
-      if (f.move === "jump" || recent("jump", 900)) return G.walk ? say("It jumps again and again!", words("low"), "low", "hot", true) : say("It jumped! Lower the rod!", words("low"), "low", "hot", true);
+      if (G.walk || f.move === "jump" || recent("jump", 900)) return G.walk ? say("It jumps again and again!", words("low"), "low", "hot", true) : say("It jumped! Lower the rod!", words("low"), "low", "hot", true);
       // 3. the line rubs on something: steer it off
       if ((s.rub || 0) <= 0.15) G.rubDir = null;
       else {
@@ -2007,6 +2020,8 @@ function fightCue(s, crankRate, theta) {
       if (f.move === "sulk") return say("It holds on the bottom.", words("pump"), "pull");
       if (s.cover) return say("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
       if (slipRecent) return say("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
+      // a tired fish swims in faster than a steady crank: the line goes slack, and the words stay green
+      if (slack && s.beaten) return say("It is tired. Reel a little faster.", "Keep the line tight.", "crank", "good", false, "fast");
       if (slack) return say("Slack line! Reel it in.", "", "crank", "hot", false, "fast");
       if (s.beaten) return say("It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT.", "crank", "good", false, "steady");
       if (theta < 28) return say("Your rod is too low.", words("raise"), "pull");
@@ -2099,7 +2114,7 @@ function handleEvent(e) {
 }
 // what went wrong, and the one move that would have saved it (journey.js has the lines)
 function reasonText(r) {
-  const s = G.sim && G.sim.state, sp = s && s.fish && byId(s.fish.id), input = inputOf(sensing(), touchDevice);
+  const s = G.sim && G.sim.state, sp = s && s.fish && byId(s.fish.id), input = inputOf(sensing(), touchDevice, G.desk);
   return lossText(r, { input, by: G.thrownBy, cause: s && s.cause, hook: moveWords("hook", input), legend: sp && sp.legend ? G.place.id : null });
 }
 
@@ -2237,8 +2252,8 @@ function frame() {
   // no play while the GL context is lost (the lake would not show): play that starts or goes on then is paused
   if (G.ctxLost && !G.paused) pause();
   if (!G.paused) for (let left = dt; left > 1e-4; left -= 0.05) step(Math.min(left, 0.05));
-  // (touch: false is the keys input, a computer. hold: the hold cast, as the rod cue has it)
-  guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice, hold: !!(G.pin && G.pin.key),
+  // (touch: false is a computer, and desk its last input, the mouse or the keys. hold: the hold cast, as the rod cue has it)
+  guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice, desk: G.desk, hold: !!(G.pin && G.pin.key),
     pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
   dt = Math.min(dt, 0.05);
@@ -2250,7 +2265,7 @@ function frame() {
   if (drew) { world.update(menu ? menuDt : dt); world.render(); drawAt = t; menuDt = 0; }
   G.stillDrawn = still;
   // (the rod cue hides while stalled sensors offer touch: the tap is the only move then)
-  rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
+  rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(), desk: G.desk,
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A

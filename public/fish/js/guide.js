@@ -83,46 +83,49 @@ export function sceneFrame(kind, motion, time) {
 
 // One set of words for each fight move and each input: the fight prompt (main.js), the guide caption (lesson below) and the
 // rod cue (rod-cues.js) all read this, so a move is never written two ways at once. Inputs: motion (the phone is the rod),
-// touch, and keys (a desktop with no touch screen); an input that is left out uses the touch words.
+// touch, and on a computer with no touch screen the mouse or the keys (the one the player used last); an input that is
+// left out uses the touch words (the mouse drags the rod as a finger does).
 // strength is the motion pump: tipping the phone back as you crank is what pulls the fish in.
 export const MOVE_WORDS = {
-  reel: { touch: "Turn the crank to reel." },
-  hook: { motion: "Snap it up!", touch: "Swipe it up!", keys: "Press Space!" },
-  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  reel: { touch: "Turn the crank to reel.", keys: "Hold R to reel." },
+  hook: { motion: "Snap it up!", touch: "Swipe it up!", mouse: "Drag the rod up fast!", keys: "Press Space!" },
+  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down.", keys: "Hold W. Then hold S and R." },
   strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
   stop: { touch: "Stop reeling." },
-  low: { motion: "Lower the phone.", touch: "Drag the rod down." },
-  raise: { touch: "Hold the rod up." },
-  turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways." },
-  land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold." },
-  drag: { touch: "Tap + to tighten the drag.", keys: "Click + to tighten the drag." },
+  low: { motion: "Lower the phone.", touch: "Drag the rod down.", keys: "Hold S." },
+  raise: { touch: "Hold the rod up.", keys: "Hold W to keep the rod up." },
+  turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways.", keys: "Hold A or D." },
+  land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold.", keys: "Hold W." },
+  drag: { touch: "Tap + to tighten the drag.", mouse: "Click + to tighten the drag.", keys: "Click + to tighten the drag." },
 };
 // the hold cast (Space, or a mouse button held still): the rod moves by itself, so the guide caption and the rod cue say to
 // wait, then to let go
 export const HOLD_WORDS = { back: "Keep holding", cast: "Let go in the green" };
-// the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
+// the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left." / "Hold D."
 export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
+const STEER_KEYS = { left: "Hold A.", right: "Hold D." };
 // the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
 // the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
 export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
-// the input of a player: "motion", "touch" or "keys"
-export const inputOf = (motion, touch = true) => (motion ? "motion" : touch ? "touch" : "keys");
+// the input of a player: "motion", "touch", or on a computer desk: "mouse" or "keys" (main.js keeps the last one used)
+export const inputOf = (motion, touch = true, desk = "keys") => (motion ? "motion" : touch ? "touch" : desk === "mouse" ? "mouse" : "keys");
 // the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
 export function moveWords(kind, input = "touch", side = 0, pace = "") {
+  if (kind === "turn" && side && input === "keys") return STEER_KEYS[side > 0 ? "right" : "left"];
   if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
   if (kind === "reel" && REEL_PACE[pace]) return REEL_PACE[pace];
   const w = MOVE_WORDS[kind];
   return w ? w[input] || w.touch : "";
 }
 
-// hold: the hold cast (Space, or a mouse button held still)
-export function lesson(kind, motion, touch = true, pace = "", hold = false) {
-  const w = (k) => moveWords(k, inputOf(motion, touch), 0, pace);
+// hold: the hold cast (Space, or a mouse button held still). desk: the input on a computer, "mouse" or "keys"
+export function lesson(kind, motion, touch = true, pace = "", hold = false, desk = "keys") {
+  const w = (k) => moveWords(k, inputOf(motion, touch, desk), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
     back: hold ? [HOLD_WORDS.back, "The rod tips back by itself."] : [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
     cast: hold ? [HOLD_WORDS.cast, "The rod swings forward by itself."] : [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
-    flight: ["Your lure is flying", "Touch the rod to stop it short."],
+    flight: ["Your lure is flying", touch ? "Touch the rod to stop it short." : "Click the lake to stop it short."],
     reel: [w("reel"), "Reel slowly. Pause now and then."],
     hook: [w("hook"), "Set the hook when the fish strikes."],
     pump: [w("pump"), motion ? "Ease forward to rest." : "Pump the fish in."],
@@ -218,6 +221,9 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
     const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox", "pullStrength"]
       // (a toast counts while it fades out too, so the panel never slides under it)
       .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on") || +getComputedStyle(el).opacity > 0.05)).map(rect);
+    // the touch cast rail and its words beside the finger, while it holds the line: the rail comes first, and the panel
+    // goes small or away (its caption says what the prompt says then)
+    for (const el of game.querySelectorAll("#castRail, #castRail span")) if (el.getClientRects().length) blocks.push(rect(el));
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
     // the left edge: the HUD's own inset, which is 10 px past the safe area
@@ -261,8 +267,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       video.src = new URL(`../clips/guide-${mode}.mp4`, import.meta.url).href;
     }
     // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps. A computer
-    // (the keys input) gets the still pose too: the touch clip shows a finger that drags
-    const calm = isCalm(), still = calm || inputOf(s.motion, s.touch) === "keys";
+    // (the mouse or the keys) gets the still pose too: the touch clip shows a finger that drags
+    const calm = isCalm(), still = calm || (!s.motion && !s.touch), input = inputOf(s.motion, s.touch, s.desk);
     const useVideo = intro && !still && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
     if (useVideo && video.paused && !playPending) {
@@ -273,12 +279,12 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
     const index = intro ? still ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
-    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + !!s.hold + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
+    const nextKey = kind + ":" + input + ":" + !!s.hold + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {
       key = nextKey; lastDraw = -Infinity;
       kindNow = kind;
       art.innerHTML = sceneMarkup(kind, s.motion);
-      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace, !!s.hold);
+      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace, !!s.hold, s.desk);
       caption.textContent = label;
       panel.setAttribute("aria-label", (intro ? "Preview: " : "Now: ") + label + ". " + detail);
       panel.dataset.lesson = kind;
@@ -286,13 +292,14 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       panel.dataset.tone = intro ? "" : s.cue.tone;
       panel.dataset.still = String(kind === "stop");
       kicker.textContent = intro ? "WATCH + TRY" : "YOUR MOVE";
-      count.textContent = intro ? (index + 1) + " / " + INTRO.length : { motion: "MOTION", touch: "TOUCH", keys: "MOUSE" }[inputOf(s.motion, s.touch)];
+      count.textContent = intro ? (index + 1) + " / " + INTRO.length : { motion: "MOTION", touch: "TOUCH", mouse: "MOUSE", keys: "KEYS" }[input];
       [...panel.querySelectorAll(".guide-track i")].forEach((el, i) => el.classList.toggle("on", i === index));
       panel.hidden = false;
       parts = Object.keys(poseAt(kind, 0)).flatMap(cls => [...art.querySelectorAll("." + cls)].map(el => [el, cls]));
       layoutKey = "";
     }
-    const nextLayoutKey = [game.className, game.clientWidth, game.clientHeight, s.cue.text, game.querySelector("#report").hidden, game.querySelector("#toast").className].join(":");
+    const rail = game.querySelector("#castRail");
+    const nextLayoutKey = [game.className, game.clientWidth, game.clientHeight, s.cue.text, game.querySelector("#report").hidden, game.querySelector("#toast").className, rail ? rail.hidden + rail.style.left + rail.style.top : ""].join(":");
     if (nextLayoutKey !== layoutKey || t >= nextLayout) {
       layoutKey = nextLayoutKey; nextLayout = t + .5; place();
     }

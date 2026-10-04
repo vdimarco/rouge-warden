@@ -47,6 +47,13 @@ The game SHALL say how the release went the moment the lure leaves, and the aim 
 - **WHEN** a motion cast has no back swing
 - **THEN** the report says to tip the phone back further, not to swing faster.
 
+### Requirement: The rail before the guide
+While a finger holds the line in touch play, the rail beside the finger SHALL show with its LOAD and LET GO marks on every phone size. The animated guide SHALL move, go small, or hide so that it does not cover the rail or its words.
+
+#### Scenario: Small phone with the guide on
+- **WHEN** a new player at 360x640 or 375x667 presses the rod and drags down
+- **THEN** the rail, LOAD, and LET GO show beside the finger, clear of the guide.
+
 ### Requirement: Sensors that stop
 When motion samples stop for 3 s after the player said yes to motion, the game SHALL offer touch play.
 
@@ -55,11 +62,15 @@ When motion samples stop for 3 s after the player said yes to motion, the game S
 - **THEN** the game says "The motion sensors stopped. Play with touch?" and a tap switches to touch.
 
 ### Requirement: Quick turnaround to the next cast
-The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. After 3 s of an empty retrieve (no fish coming), each crank turn SHALL wind in up to 4 times as much line, and a crank faster than 1.5 turns a second SHALL shorten that wait to as little as 1 s. The owner asked for this during the work.
+The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. After 3 s of an empty retrieve (no fish coming), the lure SHALL skip home: each crank turn SHALL wind in at least 4 times as much line, and any turn of the crank SHALL bring the lure home in about 3 s, however far out it is. A crank faster than 1.5 turns a second SHALL shorten the 3 s wait to as little as 1 s. The owner asked for this during the work.
 
 #### Scenario: Lure home with nothing
 - **WHEN** the lure comes home with no fish and the player does nothing
 - **THEN** the next cast is ready in about 1.3 s or less.
+
+#### Scenario: Nothing is biting far out
+- **WHEN** "Nothing is biting here." shows on a 53 m cast and the player cranks at 1 turn a second
+- **THEN** the lure is home in under 4 s.
 
 #### Scenario: Skip the beat
 - **WHEN** the player presses to cast 0.4 s after "Nothing this time." shows

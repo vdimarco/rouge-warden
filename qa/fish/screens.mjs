@@ -199,6 +199,7 @@ if (part("A")) {
       ["slack", { slack: true }, [], "Slack line! Reel it in.", ""],
       ["slack for less than 0.35 s is not said yet", { slack: true, slackT: 0.2 }, [], "Pump and reel.", null],
       ["beaten", { beaten: true }, [], "It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT."],
+      ["beaten, and the line goes slack: still green", { beaten: true, slack: true }, [], "It is tired. Reel a little faster.", "Keep the line tight."],
       ["the pump and reel", { fish: { move: "swim" } }, [], "Pump and reel.", "Drag the rod up. Reel as it comes down."],
       ["the strike", { phase: "strike", fish: null }, [], "SWIPE IT UP! Set the hook!", ""],
     ];
@@ -234,6 +235,26 @@ if (part("A")) {
     // the tone: red for a warning, green when it is fine
     const tone = async (patch, ev, h) => { await prompts(page, patch, ev, h); return (await promptNow(page)).cls; };
     check((await tone({ fish: { move: "thrash" } }, [], "It shakes its head!")) === "hot" && (await tone({ fish: { move: "hold" } }, [], "It rests. Rest your arm.")) === "good", "a warning is red and a rest is green");
+    check((await tone({ beaten: true, slack: true }, [], "It is tired. Reel a little faster.")) === "good", "a tired fish with slack line stays green");
+    // a tail walk at the hook set (a legend's opening): the jump words show at once, over the "Fish on!" banner, and stay up
+    // in the dash between two leaps until the walk ends. A hook set with no jump keeps its banner
+    const shown = () => page.evaluate(() => ({ banner: !document.querySelector("#banner").hidden, prompt: getComputedStyle(document.querySelector("#prompt")).visibility }));
+    await stage(page, { fish: { move: "jump" } }, [{ type: "hooked" }, { type: "walk", n: 3 }, { type: "jump" }]);
+    await sleep(150);
+    const w0 = { ...(await promptNow(page)), ...(await shown()) };
+    await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [], false);
+    await sleep(1300);
+    const w1 = await promptNow(page);
+    await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [{ type: "walkEnd" }], false);
+    await sleep(1300);
+    const w2 = await promptNow(page);
+    check(w0.h === "It jumps again and again!" && w0.prompt === "visible" && !w0.banner, `a tail walk at the hook set: the jump words show at once, and the banner gives way (${JSON.stringify(w0)})`);
+    check(w1 && w1.h === "It jumps again and again!", `between two leaps of the walk, with slack line, the jump words stay (${JSON.stringify(w1)})`);
+    check(w2 && w2.h === "Slack line! Reel it in.", `after the walk ends, the slack words come back (${JSON.stringify(w2)})`);
+    await stage(page, {}, [{ type: "hooked" }]);
+    await sleep(200);
+    const hs = await shown();
+    check(hs.banner && hs.prompt === "hidden", `a hook set with no jump keeps "Fish on!" up (${JSON.stringify(hs)})`);
 
     // ---- the same with a phone in the hand (motion) ----
     console.log("     fight prompts (motion)");

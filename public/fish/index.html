@@ -205,9 +205,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* the cast report after a landing */
 #report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
-/* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake */
+/* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake. Larger text
+   makes the prompt taller, so the gap grows with it */
 #report { width: min(92%, 420px); }
-#game.l-tall-reel #report { top: calc(var(--sat) + 110px + var(--gauge-h) + 144px); }
+#game.l-tall-reel #report { top: calc(var(--sat) + 110px + var(--gauge-h) + 144px * var(--ui-scale, 1)); }
 #game.l-tall-reel #report .dist { font-size: clamp(34px, 10vmin, 64px); }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff;
   text-shadow: 0 0 2px #092229, 0 0 3px #092229, 0 0 6px rgba(9, 34, 41, 0.9), 0 3px 0 rgba(9, 34, 41, 0.7), 0 0 22px rgba(9, 34, 41, 0.5); }

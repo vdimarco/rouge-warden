@@ -9,7 +9,8 @@ import "../../public/fish/js/rod-cues.js";
 
 const fails = [];
 const check = (ok, msg) => { console.log((ok ? "ok   " : "FAIL ") + msg); if (!ok) fails.push(msg); };
-const INPUTS = [[true, true, "motion"], [false, true, "touch"], [false, false, "keys"]];
+// [motion, touch, input, desk]: a computer is the mouse or the keys, the one the player used last
+const INPUTS = [[true, true, "motion"], [false, true, "touch"], [false, false, "keys", "keys"], [false, false, "mouse", "mouse"]];
 const plain = (t) => !/—|\b(red|green|amber|yellow)\b/i.test(t);
 
 // the table: every move has touch words, and the words are plain sentences
@@ -19,15 +20,21 @@ check(Object.values(REEL_PACE).every((t) => /^Reel \w+\.$/.test(t)), "the crank 
 // the reel move's own words
 check(moveWords("reel", "touch", 0, "fast") === "Reel fast." && lesson("reel", false, true, "slow")[0] === "Reel slowly." && lesson("reel", true, true, "steady")[0] === "Reel steadily." && lesson("reel", false, true)[0] === MOVE_WORDS.reel.touch && moveWords("pump", "touch", 0, "fast") === MOVE_WORDS.pump.touch, "the reel with a pace says the pace (Reel fast.), with none \"Turn the crank to reel.\"");
 // the guide caption is the table's words, for each move and input
-for (const kind of Object.keys(MOVE_WORDS)) for (const [motion, touch, input] of INPUTS) {
-  const cap = lesson(kind, motion, touch)[0];
-  check(cap === moveWords(kind, inputOf(motion, touch)), `guide: ${kind} (${input}) says "${cap}"`);
+for (const kind of Object.keys(MOVE_WORDS)) for (const [motion, touch, input, desk] of INPUTS) {
+  const cap = lesson(kind, motion, touch, "", false, desk)[0];
+  check(inputOf(motion, touch, desk) === input && cap === moveWords(kind, input), `guide: ${kind} (${input}) says "${cap}"`);
 }
+// a computer: the mouse player hears the mouse's way to set the hook, and the keys player hears the keys for every move
+check(moveWords("hook", "mouse") === "Drag the rod up fast!" && moveWords("hook", "keys") === "Press Space!" && moveWords("low", "mouse") === MOVE_WORDS.low.touch, `the hook set on a computer: "${moveWords("hook", "mouse")}" with the mouse, "${moveWords("hook", "keys")}" with the keys`);
+const KEYW = ["reel", "pump", "low", "raise", "turn", "land"].map((k) => moveWords(k, "keys"));
+check(/\bR\b/.test(KEYW[0]) && /\bW\b/.test(KEYW[1]) && /\bS\b/.test(KEYW[2]) && /\bW\b/.test(KEYW[3]) && /\bA\b.*\bD\b/.test(KEYW[4]) && /\bW\b/.test(KEYW[5]), `the keys player hears the keys: ${KEYW.join(" / ")}`);
+// the guide shows the right move for the keys words too
+check(activeLesson({ phase: "reel", fishPhase: "fight", cue: { text: "Your rod is too low.", sub: moveWords("raise", "keys"), icon: "pull", tone: "" }, motion: false }) === "raise" && activeLesson({ phase: "reel", fishPhase: "fight", cue: { text: "Pump and reel.", sub: moveWords("pump", "keys"), icon: "pull", tone: "" }, motion: false }) === "pump", "the keys words: the guide shows the rod held up, and the pump");
 // the hold cast (Space, or a mouse button held still): the guide caption says the rod cue's words, not the drag
-check(INPUTS.slice(1).every(([motion, touch]) => lesson("back", motion, touch, "", true)[0] === HOLD_WORDS.back && lesson("cast", motion, touch, "", true)[0] === HOLD_WORDS.cast) && HOLD_WORDS.back === "Keep holding" && HOLD_WORDS.cast === "Let go in the green" && lesson("back", false, false)[0] === "Drag down", `the hold cast: the guide says "${HOLD_WORDS.back}", then "${HOLD_WORDS.cast}"; a drag still says "Drag down"`);
+check(INPUTS.slice(1).every(([motion, touch, , desk]) => lesson("back", motion, touch, "", true, desk)[0] === HOLD_WORDS.back && lesson("cast", motion, touch, "", true)[0] === HOLD_WORDS.cast) && HOLD_WORDS.back === "Keep holding" && HOLD_WORDS.cast === "Let go in the green" && lesson("back", false, false)[0] === "Drag down", `the hold cast: the guide says "${HOLD_WORDS.back}", then "${HOLD_WORDS.cast}"; a drag still says "Drag down"`);
 // the pump in motion mode: the scenario of the spec
 check(moveWords("pump", "motion") === "Tip back as you reel." && lesson("pump", true)[0] === "Tip back as you reel." && lesson("strength", true)[0] === "Tip back as you reel.", "the motion pump (and the reel power that is the same move) is \"Tip back as you reel.\"");
-check(moveWords("turn", "motion", 1) === "Tilt the phone right." && moveWords("turn", "touch", -1) === "Drag the rod left." && moveWords("turn", "keys", 1) === "Drag the rod right.", "a steer with a side names it");
+check(moveWords("turn", "motion", 1) === "Tilt the phone right." && moveWords("turn", "touch", -1) === "Drag the rod left." && moveWords("turn", "mouse", 1) === "Drag the rod right." && moveWords("turn", "keys", 1) === "Hold D." && moveWords("turn", "keys", -1) === "Hold A.", "a steer with a side names it");
 // a sulk prompt with the pump words picks the pump lesson, in both modes (so the guide and the rod cue say the same)
 for (const [motion, , input] of INPUTS.slice(0, 2)) {
   const cue = { text: "It holds on the bottom.", sub: moveWords("pump", input), icon: "pull", tone: "" };
