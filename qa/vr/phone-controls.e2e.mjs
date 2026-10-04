@@ -154,6 +154,19 @@ function wallSetup() {
   return !!B;
 }
 
+// Every spoken line of the phone tutorial and clog tables, one after the other: how much of the height does the safe window keep?
+async function lineWindows() {
+  const C = await import("./js/config.js");
+  const need = innerWidth > innerHeight ? 0.45 : 0.55, bad = [];
+  for (const line of new Set(Object.values(C.LINES_PHONE).flat())) {
+    G.ui.say(line, 60); G.test.step(1 / 60, 2);
+    const w = G.desktop.mobile.safe(), f = (w.b - w.t) / innerHeight;
+    if (f < need) bad.push(f.toFixed(3) + " " + line);
+    G.ui.say("", 0);
+  }
+  return { bad, need, count: new Set(Object.values(C.LINES_PHONE).flat()).size };
+}
+
 /* ---------------- the title: labels, notes and the words of the page ---------------- */
 let main;
 try {
@@ -237,6 +250,8 @@ try {
       check(S.fraction >= need, `${tag}: the safe window is ${(S.fraction * 100).toFixed(1)} percent of the height (at least ${need * 100})`, S.win);
       if (sensors === "granted") await shot(main, `phone-controls-${w}x${h}`);
     }
+    const lw = await main.evaluate(lineWindows);
+    check(lw.bad.length === 0, `${w}x${h} ${name}: the safe window keeps ${lw.need * 100} percent of the height or more for each of the ${lw.count} phone spoken lines, the longest too`, lw.bad);
     // a trial (with its compass) or the King's hearts make four pills: on a narrow portrait screen the row still fits
     if (w < 480) {
       for (const [what, trial, hearts] of [["a trial time", true, false], ["three hearts", false, true]]) {

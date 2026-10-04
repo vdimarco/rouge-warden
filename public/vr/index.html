@@ -234,7 +234,8 @@ body[data-view="first"] .phone-crosshair { display:block; }
 @media (max-width:380px) { #phoneControls .phone-top button { padding:3px 6px 0; font-size:17px; } .phone-top { gap:5px; padding-left:max(4px,env(safe-area-inset-left)); padding-right:max(4px,env(safe-area-inset-right)); } }
 /* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
 body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 74px); }
-body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:max-content; padding:5px 16px 2px; font-size:19px; }
+body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:max-content; max-width:calc(100vw - 16px); padding:5px 16px 2px; font-size:19px; }
+@media (max-width:380px) { body:has(#phoneControls:not([hidden])) .fs-sub { padding:4px 12px 0; font-size:18px; } }
 body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 230px); width:max-content; }
 /* a small screen: the score pills stay one row and shrink. A narrow portrait screen also drops the /80 and /12. */
 @media (max-width:479px), (max-height:480px) {
