@@ -6,7 +6,7 @@
 //   SCALE=3                 the device pixel ratio of the pictures (default 1). The page runs with ?shot: Graphics High,
 //                           the lake at up to 3x, and no automatic render scale
 //   TEXT=large              with Larger text on;  CALM=1 with Calm effects on;  WEB=1 the web build (default: the store
-//                           build, as the app shows it, after one picture of the web title)
+//                           build, as the app shows it, after one picture of the web title);  ART=original the other style
 // It writes <SHOTS>/<size>/<nn>-<screen>.png and <SHOTS>/report.json, prints the problems it found, and exits with code 1
 // when there are any.
 import { createRequire } from "module";
@@ -21,8 +21,9 @@ const OUT = process.env.SHOTS;
 if (!OUT) { console.error("Set SHOTS to the folder for the pictures."); process.exit(2); }
 const SIZES = (process.env.SIZES || "390x844,360x640,430x932,844x390,820x1180,1280x800").split(",").map((s) => s.trim().split("x").map(Number));
 const SCALE = +process.env.SCALE || 1, LARGE = process.env.TEXT === "large", CALM = process.env.CALM === "1", WEB = process.env.WEB === "1";
+const ART = process.env.ART === "original" ? "original" : "";
 fs.mkdirSync(OUT, { recursive: true });
-const report = { url: URL, scale: SCALE, large: LARGE, calm: CALM, web: WEB, sizes: {} };
+const report = { url: URL, scale: SCALE, large: LARGE, calm: CALM, web: WEB, art: ART || "painted", sizes: {} };
 const problems = [];
 
 // In the page: the layout scan of one screen (id) or of the play view (no id)
@@ -101,13 +102,14 @@ async function runSize(W, H) {
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
   await page.route("**/three.module.min.js", (r) => r.fulfill({ path: path.join(ROOT, "public/crimson/lib/three.module.min.js"), contentType: "application/javascript" }));
-  await page.addInitScript(({ large, calm }) => {
+  await page.addInitScript(({ large, calm, art }) => {
     if (sessionStorage.getItem("qa-kept")) return;
     localStorage.clear();
     if (large) localStorage.setItem("fish.text", "large");
     if (calm) localStorage.setItem("fish.calm", "1");
+    if (art) localStorage.setItem("fish.v1", JSON.stringify({ v: 1, artStyle: art }));
     sessionStorage.setItem("qa-kept", "1");
-  }, { large: LARGE, calm: CALM });
+  }, { large: LARGE, calm: CALM, art: ART });
   if (!desk) await page.addInitScript(installPhone);
   await page.goto(URL + "?shot");
   await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });

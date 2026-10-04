@@ -172,11 +172,22 @@ if (part("1")) {
     await page.evaluate(() => { FISH.save.reelSide = "right"; document.querySelector("#game").dataset.reelSide = "right"; FISH.relayout(true); });
     // a strike with calm effects off: the red flash runs and the hot prompt has its strike look
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });
-    await sleep(120);
+    await until(page, () => document.querySelector("#flash").classList.contains("go") && document.querySelector("#prompt").classList.contains("hot"), null, 10000).catch(() => {});
     const fl = await page.evaluate(() => ({ go: document.querySelector("#flash").classList.contains("go"), vis: getComputedStyle(document.querySelector("#flash")).visibility, anim: getComputedStyle(document.querySelector("#flash")).animationName }));
     check(fl.go && fl.vis === "visible" && fl.anim !== "none", "a strike with calm effects off: the red flash runs (" + JSON.stringify(fl) + ")");
     const hot = await page.evaluate(() => { const p = document.querySelector("#prompt .p1"); return getComputedStyle(p).backgroundColor; });
     check(hot === "rgb(165, 67, 50)", "the urgent prompt sits on the darker red of the painted style, 5.6:1 with its words (" + hot + ")");
+    // the words on the red, in both styles: the urgent prompt and the main button read at 4.5:1 or more
+    const ratios = await page.evaluate(() => {
+      const rgb = (s) => s.match(/[\d.]+/g).slice(0, 3).map(Number), lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b), cr = (a, b) => (Math.max(L(a), L(b)) + 0.05) / (Math.min(L(a), L(b)) + 0.05);
+      const of = (sel) => { const cs = getComputedStyle(document.querySelector(sel)); return +cr(rgb(cs.color), rgb(cs.backgroundColor)).toFixed(2); };
+      const out = {};
+      for (const style of ["painted", "original"]) { document.body.dataset.artStyle = style; out[style] = { prompt: of("#prompt .p1"), go: of("#settings .btn.go"), title: of("#freeBtn") }; }
+      document.body.dataset.artStyle = FISH.save.artStyle;
+      return out;
+    });
+    check(Object.values(ratios).every((r) => Object.values(r).every((v) => v >= 4.5)), "the urgent prompt and the red buttons read at 4.5:1 or more in both styles (" + JSON.stringify(ratios) + ")");
 
     // the first fish landed: the guide goes away (the player never chose)
     await stage(page, { phase: "caught", catch: { id: "perch", name: "Yellow Perch", kg: 0.3, cm: 26, junk: false }, fish: null });
@@ -236,13 +247,20 @@ if (part("3")) {
     await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);
     check(await page.evaluate(() => FISH.G.mode === "free"), "the red button starts free fishing on a computer");
     await sleep(500);
-    // every word the rod cue shows while Space is held (it tips back, swings through and lets go by itself at the end)
-    await page.evaluate(() => { const el = document.querySelector("#rodCue span"); window.__cues = [el.textContent]; new MutationObserver(() => { if (window.__cues[window.__cues.length - 1] !== el.textContent) window.__cues.push(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true }); });
+    // a Space cast on a slowed clock, so each step of it shows for as long as the check needs (the frames are slow here)
+    await page.evaluate(() => {
+      const real = performance.now.bind(performance), C = (window.__c = { t: real(), on: true, off: 0, real });
+      performance.now = () => (C.on ? (C.t += 0.01) : real() + C.off);
+    });
+    const cueIs = (t) => until(page, (t) => document.querySelector("#rodCue span").textContent === t, t, 15000).then(() => t, () => page.evaluate(() => document.querySelector("#rodCue span").textContent));
     await page.keyboard.down("Space");
-    await sleep(1600);
+    const a = await cueIs("Keep holding Space");
+    await page.evaluate(() => { window.__c.t += 300; });
+    const b = await cueIs("Let go of Space!");
+    // the clock runs again from where it was (it never goes back)
+    await page.evaluate(() => { const C = window.__c; C.off = C.t - C.real(); C.on = false; });
     await page.keyboard.up("Space");
-    const cues = await page.evaluate(() => window.__cues.slice());
-    check(cues.includes("Keep holding Space") && cues.includes("Let go of Space!") && !cues.includes("Flick up!") && !cues.includes("Pull back"), `a Space cast: the rod cue says the Space words, not "Flick up!" (${JSON.stringify(cues)})`);
+    check(a === "Keep holding Space" && b === "Let go of Space!", `a Space cast: the rod cue says the Space words, not "Pull back" and "Flick up!" ("${a}", then "${b}")`);
     // the numbers on the measuring board: none runs into another, and the end one is always there
     const bl = await page.evaluate(async () => {
       const { boardLabels, BOARD_LENGTHS } = await import("/fish/js/world-fx.js");
@@ -319,7 +337,7 @@ if (part("4")) {
     await until(page, () => FISH.G.phase === "cast", null, 30000);
     await page.evaluate(() => { window.__sfx = []; const f = FISH.Sound.sfx; FISH.Sound.sfx = function (n, ...a) { window.__sfx.push(n); return f.call(this, n, ...a); }; });
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });
-    await sleep(150);
+    await until(page, () => document.querySelector("#prompt").classList.contains("hot") && window.__sfx.includes("strike"), null, 10000).catch(() => {});
     const calm = await page.evaluate(() => {
       const f = document.querySelector("#flash"), p = document.querySelector("#prompt"), p1 = p.querySelector(".p1"), cs = getComputedStyle(f);
       return { flash: cs.visibility === "hidden" || cs.animationName === "none" || +cs.opacity === 0, pulse: getComputedStyle(p1).animationName, hot: p.classList.contains("hot"), words: p1.textContent, sound: window.__sfx.includes("strike") };
