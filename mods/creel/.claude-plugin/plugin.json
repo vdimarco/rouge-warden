@@ -1,0 +1,7 @@
+{
+  "name": "creel",
+  "version": "0.1.0",
+  "description": "A bobber sits on the water while a long command runs. When it ends, a Reel It In fish comes up: heavy fish for long green runs, the Old Boot for red ones, the Golden Loon Bass for a merge. /creel shows the catch and the daily goal.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

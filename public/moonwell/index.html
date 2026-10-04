@@ -1,9 +1,69 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><script src="/arcade/quiet.js"></script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Moonwell · Moonlit Islands</title><meta name="description" content="Play pinball across moonlit islands, golden rails, and stone bridges."><meta property="og:image" content="https://warden-alpha-wheat.vercel.app/moonwell/assets/moon-islands.png"><link rel="stylesheet" href="scene.css"></head><body>
-<canvas id="world" aria-label="Moonlit island pinball"></canvas>
-<header><a href="/">Cottage Arcade</a><span class="brand">MOONWELL</span><button id="pause">Pause</button></header>
-<div class="hud"><div><span class="label" id="depth">DUNGEON 01</span><span id="objective">Wake the moon stars</span></div><div class="numbers"><span id="score">0</span><span id="lives">● ● ●</span></div></div>
-<div id="message" role="status"></div>
-<div class="controls"><button id="left" aria-label="Left flipper">Left <kbd>Z</kbd></button><button id="launch">Play</button><button id="pulse">Pulse <kbd>C</kbd></button><button id="right" aria-label="Right flipper">Right <kbd>X</kbd></button></div>
-<section id="dialog" hidden><div><h2 id="dialog-title"></h2><p id="dialog-copy"></p><div id="choices"></div></div></section>
-<button id="sound" aria-label="Toggle sound">Sound on</button><script type="module" src="game.js"></script></body></html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<script src="/arcade/switch.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a172e">
+<title>Moonwell · Endless Moonlit Pinball</title>
+<meta name="description" content="Flip a pearl from island to island across an endless moonlit sea.">
+<meta property="og:image" content="https://warden-alpha-wheat.vercel.app/moonwell/assets/moon-islands.png">
+<link rel="preload" href="assets/sprites.webp" as="image">
+<link rel="stylesheet" href="scene.css">
+</head><body>
+<canvas id="world" aria-label="Moonwell: endless side-scrolling pinball"></canvas>
+
+<header class="hud" id="hud">
+  <div class="hud-left">
+    <a class="back" href="/" aria-label="Back to the arcade">‹ Arcade</a>
+    <div class="where"><span id="island">ISLAND 1</span><span id="region">Willow Meadow</span></div>
+    <span id="lives" aria-label="Pearls"></span>
+  </div>
+  <div class="hud-mid">
+    <span id="score">0</span>
+    <span class="chain"><b id="mult">×1</b><i id="streak" aria-hidden="true"></i></span>
+  </div>
+  <div class="hud-right">
+    <button id="pause" type="button" aria-label="Pause">Pause</button>
+    <button id="sound" type="button" aria-label="Sound off">Sound on</button>
+  </div>
+</header>
+
+<div id="banner" role="status" aria-live="polite"></div>
+<div id="hint" aria-live="polite"></div>
+<div class="pads" aria-hidden="true"><div class="pad" id="pad-left">Left</div><div class="pad" id="pad-right">Right</div></div>
+<button id="pulse" type="button" aria-label="Pulse: bump the pearl up">Pulse <kbd>C</kbd><span id="pulse-pips"></span></button>
+
+<section id="title" class="screen">
+  <div class="card title-card">
+    <p class="eyebrow">COTTAGE ARCADE</p>
+    <h1>Moonwell</h1>
+    <p class="lede">An endless pinball journey across the moonlit islands. Flip the pearl over each ridge, and see how far it can go.</p>
+    <ul class="tips">
+      <li><b>Left flipper</b> shoots the pearl forward. Flip near the tip for power.</li>
+      <li><b>Right flipper</b> passes it back across the bowl.</li>
+      <li><b>Ridges in a row</b> raise your multiplier. Fill the moon for <b>Moonrise</b>.</li>
+    </ul>
+    <p class="best" id="best-line">No best run yet</p>
+    <div class="actions">
+      <button id="launch" class="primary" type="button">Play</button>
+      <button type="button" data-switch>Switch game</button>
+    </div>
+    <p class="keys desktop">Z or ← left · X or → right · C or ↑ pulse · Space drop · Esc pause</p>
+    <p class="keys touch">Hold the left or right half of the screen to flip. Pulse bumps the pearl up.</p>
+  </div>
+</section>
+
+<section id="dialog" class="screen" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <p class="eyebrow" id="dialog-eyebrow"></p>
+    <h2 id="dialog-title"></h2>
+    <p id="dialog-copy"></p>
+    <div id="stats"></div>
+    <div id="choices"></div>
+    <div class="actions" id="dialog-actions"></div>
+  </div>
+</section>
+
+<script type="module" src="game.js"></script>
+</body></html>

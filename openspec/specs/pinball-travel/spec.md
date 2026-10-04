@@ -1,5 +1,8 @@
 # pinball-travel
 
+## Purpose
+Full Tilt shows the trip to the next zone from inside a spacecraft cockpit. On the way, the player can steer through rings to earn a gravity charge, or skip straight to the next launch dock. During play, glowing plasma lines trace the rails and the ball's path, and the ball stays easy to see.
+
 ## Requirements
 
 ### Requirement: Travel from a spacecraft viewpoint

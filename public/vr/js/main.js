@@ -2,7 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
-import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB } from "./config.js";
+import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport } from "./physics.js";
 import { createXR } from "./xr.js";
@@ -18,9 +18,11 @@ import { createAudio } from "./audio.js";
 import { createFX } from "./fx.js";
 import { createHero } from "./hero.js";
 import { createFlatCam } from "./flatcam.js";
+import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const DEG = Math.PI / 180;
 const QS = new URLSearchParams(location.search);
 const ROOMS = ["office_small", "living_room", "meeting_room", "music_room", "office_large"];
 const FLAGS = {
@@ -40,7 +42,7 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
 function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, settings: defaultSettings() }; }
 function loadSave() {
@@ -63,6 +65,7 @@ function loadSave() {
   if (Number.isFinite(r.height) && r.height >= 0 && r.height < 3) t.height = r.height;
   if (r.hand === "left" || r.hand === "right") t.hand = r.hand;
   if (r.hold === "hold" || r.hold === "toggle") t.hold = r.hold;
+  if (typeof r.cue === "boolean") t.cue = r.cue;
   if (r.hz === 72 || r.hz === 90) t.hz = r.hz;
   if (Number.isFinite(r.foveation)) t.foveation = clamp(r.foveation, 0, 1);
   for (const k of ["sound", "music", "stance", "speedLines"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
@@ -106,7 +109,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -137,6 +140,7 @@ function createStage() {
   camera.add(loadRing);
   X = G.xr = createXR(renderer, rig, camera, settings);
   D = G.desktop = createDesktop(renderer.domElement, camera, settings);
+  D.chooseHand = chooseHand;
   G.input = D.input;
   audio = G.audio = createAudio(settings);
 }
@@ -151,6 +155,8 @@ function createWorld() {
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
   hero = G.hero = createHero(scene, renderer); // flat play: the hero and the chase camera (hidden and unused in XR)
   flatcam = G.flatcam = createFlatCam(camera, city);
+  picker = G.picker = createTarget(city); // flat play: the auto target (js/target.js)
+  TCTX.specials = () => ropes.targets();
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
@@ -407,6 +413,7 @@ function startDesktop() {
   D.active = true;
   settings.easySwing = D.mobile.enabled;
   D.level();
+  picker.reset(); // (the PLAY click took the pointer lock before full screen: see takeLook)
   flatCamera(75);
   enterPlay("desktop");
   flatView(true);
@@ -444,7 +451,7 @@ function flatCamera(fov) {
 // coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
 // The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
 let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "", introYaw = 0; // introYaw: the head's turn in the desktop opening
-const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
+const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, lift: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
 const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
 function flatView(on) {
   if (!hero || on === flatOn) return;
@@ -469,34 +476,73 @@ function flatView(on) {
     camera.position.set(0, 0, 0); camera.quaternion.identity();
     hero.setVisible(false);
     viewAttr = ""; delete document.body.dataset.view;
+    pickerOn = false;
+    D.marker(null); D.cue(false); D.hints(false);
+    if (D.mobile.marker) D.mobile.marker(null);
   }
 }
 // The world direction the head aims along for a screen position (NDC x and y; 0, 0 is the middle): toward the point where that
-// pixel's ray from the camera lands, so the rope goes where the view shows. The head is not where the camera is (the chase camera
-// sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. In third person a view of
-// only ground near the hero (the roof, street or lake within AIM_NEAR of the feet) is no anchor, and the default view
-// looks down at the hero's feet: the aim then goes ahead along that bearing, AIM_UP above the horizon. A lower roof further away
-// (a clog on it) stays a target. Result in AIM_D.
-// AIM_UP: as high as the gold ring from the start roof, so the phone's first SWING catches the ring, the swing the tutorial asks for
-const AIM_FAR = 400, AIM_UP = (32 * Math.PI) / 180, AIM_NEAR = 12;
+// pixel's ray from the camera lands. It is the exact ray, with no help: the opening and the pause aim with it, first person
+// (V) aims with it, and the picker takes the point it hits as one of its tiers. The head is not where the camera is (the chase
+// camera sits up to 5 m behind it), so the aim runs from the head to that point and not parallel to the view. Result in AIM_D;
+// the hit, if the ray hit anything, in AIM_HIT (AIM_HAS says so).
+const AIM_FAR = 400;
 const AIM_D = new THREE.Vector3(), AIM_HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
-function viewAim(nx, ny, hx, hy, hz, third) {
+let AIM_HAS = false;
+function viewAim(nx, ny, hx, hy, hz) {
   const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
   AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
   const h = city.raycast(c.x, c.y, c.z, AIM_D.x, AIM_D.y, AIM_D.z, AIM_FAR, AIM_HIT);
-  // no hit and pointing down: the ray reaches the street or the lake (no colliders); that is ground only within AIM_NEAR too,
-  // or a clog about as high as the hero, with nothing behind it, could not be aimed at
-  const sk = AIM_D.y < 0 ? Math.max(c.y, 0) / -AIM_D.y : 0;
-  if (third && (h ? h.ny > 0.7 && h.y < hy - 0.3 && Math.hypot(h.x - hx, h.z - hz) < AIM_NEAR : AIM_D.y < 0 && Math.hypot(c.x + AIM_D.x * sk - hx, c.z + AIM_D.z * sk - hz) < AIM_NEAR)) {
-    const l = Math.hypot(AIM_D.x, AIM_D.z) || 1, k = Math.cos(AIM_UP);
-    return AIM_D.set((AIM_D.x / l) * k, Math.sin(AIM_UP), (AIM_D.z / l) * k);
-  }
+  AIM_HAS = !!h;
   const tx = h ? h.x : c.x + AIM_D.x * AIM_FAR, ty = h ? h.y : c.y + AIM_D.y * AIM_FAR, tz = h ? h.z : c.z + AIM_D.z * AIM_FAR;
   AIM_D.set(tx - hx, ty - hy, tz - hz);
   return AIM_D.lengthSq() > 1e-6 ? AIM_D.normalize() : AIM_D.set(0, 0, -1).applyQuaternion(camera.quaternion);
 }
+// The picker (target.js) decides every flat swing in play. Its context: one object, filled each frame and never kept by the picker.
+let pickerOn = false; // true in flat play with the state "play"; false in the opening, in a pause and in a headset
+const TCTX = {
+  head: { x: 0, y: 0, z: 0 }, cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1, vel: null, chestY: 0, onGround: false, wall: null, time: 0,
+  specials: null, ring: null, avoidBid: null, avoidBid2: null, exact: null, first: false, aimWidth: TARGET.fan.az.med,
+};
+const ropeBid = (r) => (r.state !== "idle" && r.target && !SPECIAL_TAGS[r.target.tag] && typeof r.target.id === "number" ? bidOf(city.colliders[r.target.id]) : null);
+function fillContext(hx, hy, hz) {
+  const c = TCTX, cp = camera.position;
+  c.head.x = hx; c.head.y = hy; c.head.z = hz;
+  c.cam.x = cp.x; c.cam.y = cp.y; c.cam.z = cp.z;
+  c.yaw = flatcam.yaw; c.pitch = flatcam.pitch; c.fov = camera.fov; c.aspect = camera.aspect;
+  c.vel = P.vel; c.chestY = P.pos.y + P.chest; c.onGround = P.onGround; c.wall = P.wall; c.time = G.time;
+  // the gold ring is the first target of the tutorial (step 0)
+  c.ring = game && game.progress && game.progress.tutorial === 0 ? city.goldRing : null;
+  const a = ropeBid(P.ropes[0]), b = ropeBid(P.ropes[1]);
+  c.avoidBid = a != null ? a : b; c.avoidBid2 = a != null ? b : null;
+  c.exact = AIM_HAS ? AIM_HIT : null;
+  c.first = flatcam.opacity <= 0.5;
+  c.aimWidth = TARGET.fan.az[settings.aim] || TARGET.fan.az.med;
+  return c;
+}
+// A phone tap: the ray from the camera through the tapped pixel (NDC), or toward a point a test aims at. TAPR is a unit direction.
+const TAPR = { x: 0, y: 0, z: 0, dx: 0, dy: 0, dz: 0 };
+function tapRay(nx, ny) {
+  const f = Math.tan((camera.fov * Math.PI) / 360), c = camera.position;
+  AIM_D.set(nx * f * camera.aspect, ny * f, -1).normalize().applyQuaternion(camera.quaternion);
+  TAPR.x = c.x; TAPR.y = c.y; TAPR.z = c.z; TAPR.dx = AIM_D.x; TAPR.dy = AIM_D.y; TAPR.dz = AIM_D.z;
+  return TAPR;
+}
+function pointRay(p, from) {
+  const dx = p.x - from.x, dy = p.y - from.y, dz = p.z - from.z, l = Math.hypot(dx, dy, dz) || 1;
+  TAPR.x = from.x; TAPR.y = from.y; TAPR.z = from.z; TAPR.dx = dx / l; TAPR.dy = dy / l; TAPR.dz = dz / l;
+  return TAPR;
+}
+// Aim a hand at a world point (or straight up, so its reticle hides) from the head.
+function aimHandAt(h, p, hx, hy, hz) {
+  if (!p) { h.aimLocal.dir.set(0, 1, 0); return; }
+  const dx = p.x - hx, dy = p.y - hy, dz = p.z - hz, l = Math.hypot(dx, dy, dz) || 1;
+  rotY(-G.rigYaw, dx / l, dz / l, T);
+  h.aimLocal.dir.set(T.x, dy / l, T.z);
+}
 // After the input is read: the camera's pitch is the view, so the head, the muzzles and the aim rays follow it. The input's own
-// pitch only brings the change (flatDy). A phone tap aims through its own pixel for the frame it fires (inp.phoneAim).
+// pitch only brings the change (flatDy). In play the picker marks one target, and both hands aim at it (straight up when there is
+// none, so no reticle shows); in the opening and in a pause the hands aim along the exact centre ray.
 const FLAT_Q = new THREE.Quaternion(), XAXIS = new THREE.Vector3(1, 0, 0);
 function flatInput(inp) {
   flatcam.restore(); // the input wrote the camera as the head; put the view back
@@ -516,14 +562,15 @@ function flatInput(inp) {
   }
   const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
   const hx = R.x + hp.x * c + hp.z * s, hy = R.y + hp.y, hz = R.z - hp.x * s + hp.z * c; // the head in the world (toWorld, which runs next)
-  const third = flatcam.opacity > 0.5, tap = inp.phoneAim;
-  viewAim(0, 0, hx, hy, hz, third);
+  viewAim(0, 0, hx, hy, hz);
   rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
   inp.hands[0].aimLocal.dir.set(T.x, AIM_D.y, T.z);
-  if (!tap) { inp.hands[1].aimLocal.dir.copy(inp.hands[0].aimLocal.dir); return; }
-  viewAim(tap.x, tap.y, hx, hy, hz, third);
-  rotY(-G.rigYaw, AIM_D.x, AIM_D.z, T);
-  inp.hands[1].aimLocal.dir.set(T.x, AIM_D.y, T.z);
+  inp.hands[1].aimLocal.dir.copy(inp.hands[0].aimLocal.dir);
+  pickerOn = G.state === "play";
+  if (!pickerOn) return;
+  const res = picker.update(fillContext(hx, hy, hz));
+  aimHandAt(inp.hands[0], res, hx, hy, hz);
+  aimHandAt(inp.hands[1], res, hx, hy, hz);
 }
 // The hero's pose and the camera, once the body has moved. In play the camera owns the yaw (it may turn toward your travel).
 function flatFrame(dt, inp, yawDelta) {
@@ -536,6 +583,7 @@ function flatFrame(dt, inp, yawDelta) {
   FLAT_LOOK.dy = (G.state === "paused" ? 0 : flatDy) + ov.lookY;
   ov.lookX = ov.lookY = 0; flatDy = 0;
   FLAT_FLAGS.swinging = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+  FLAT_FLAGS.lift = pickerOn && !inp.easySwing && !picker.specialNear; // the phone has its own follow; a clog in view stays in view
   FLAT_FLAGS.forceFirst = G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro");
   hero.setVisible(!shot);
   hero.update(dt, P, ropes, inp);
@@ -544,6 +592,45 @@ function flatFrame(dt, inp, yawDelta) {
   const va = flatcam.opacity < 0.5 ? "first" : "third";
   if (va !== viewAttr) document.body.dataset.view = viewAttr = va;
   if (play && G.rigYaw !== flatcam.yaw) { G.rigYaw = flatcam.yaw; syncRig(); toWorld(inp); }
+}
+// The marker (the world reticle is rope.js; this is the ring on the screen), the release cue and the key strip. The marker shows the
+// point the next swing will use, also while a rope holds (then it marks the next building); it hides when both ropes are out, in the
+// opening, in a pause and with no target. The screen position comes from the camera of this frame, after it moved.
+const MK = { x: 0, y: 0, kind: "swing", dist: 0, behind: false, go: false }, DRAG = [0, 0];
+let hintT = 0, lastKind = "";
+function flatHud(dt, inp) {
+  if (!flatOn || isXR()) return;
+  const play = G.state === "play", phone = inp.easySwing;
+  if (play) hintT += dt;
+  // how long each rope has dragged the body along a roof or a street since it caught (the release cue). It starts again from 0
+  // whenever the body is off the ground: a swing that follows a drag must not keep the cue on
+  for (let i = 0; i < 2; i++) { const r = P.ropes[i]; DRAG[i] = r.state !== "attached" || !P.onGround ? 0 : DRAG[i] + dt; }
+  const cue = pickerOn && !phone && settings.cue !== false && (releaseWindow(P, P.ropes[0], DRAG[0]) || releaseWindow(P, P.ropes[1], DRAG[1]));
+  const res = pickerOn ? picker.result() : null, both = P.ropes[0].state !== "idle" && P.ropes[1].state !== "idle";
+  let m = null;
+  if (res && res.valid && !both && !(phone && res.same)) {
+    const c = TCTX, cp = camera.position;
+    c.cam.x = cp.x; c.cam.y = cp.y; c.cam.z = cp.z; c.yaw = flatcam.yaw; c.pitch = flatcam.pitch; c.fov = camera.fov; c.aspect = camera.aspect;
+    project(c, res.x, res.y, res.z, PROJ);
+    MK.x = PROJ.x; MK.y = PROJ.y; MK.kind = res.kind; MK.dist = res.dist; MK.behind = PROJ.behind; MK.go = cue;
+    m = MK;
+  }
+  // the device in use (How to play puts its section first): also for touch, so a player who chose the mouse and then touch gets it back
+  if (inp.kind !== lastKind) { lastKind = inp.kind; document.body.dataset.device = inp.kind; }
+  if (phone) { D.marker(null); D.cue(false); D.hints(false); D.mobile.marker(m); return; }
+  D.marker(m);
+  D.cue(cue);
+  D.hints(play && !save.tutorial && hintT < HINT.seconds);
+}
+// Which hand a swing input fires (desktop.js asks when the input goes down): the free hand on the side of the target, or the right
+// hand for the second-rope input. With one rope out, the idle hand fires. In the opening there is no answer: the old mapping holds.
+// "Toggle": the next press of an input lets go of its own rope.
+function chooseHand(which, last, busy) {
+  if (G.state !== "play" || !flatOn || D.mobile.enabled) return undefined;
+  if (settings.hold === "toggle" && last >= 0 && P.ropes[last].state !== "idle") return last;
+  const f0 = !busy[0] && P.ropes[0].state === "idle", f1 = !busy[1] && P.ropes[1].state === "idle";
+  if (f0 && f1) return which === 1 ? 1 : picker.hand(picker.result(), TCTX);
+  return f0 ? 0 : f1 ? 1 : -1;
 }
 // The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
 function viewHead(inp) {
@@ -606,7 +693,10 @@ function tick(dt, frame, time) {
   ui.update(dt, inp, P, game.progress);
   // 7. menu and map
   if (inp.menuDown && (G.state === "play" || G.state === "intro" || G.state === "paused")) { if (ui.paused) ui.closePause(); else ui.openPause(); }
-  if (inp.mapDown && G.state === "play") ui.openMap();
+  if (inp.mapDown) {
+    if (G.state === "play") ui.openMap();
+    else if (G.state === "paused" && G.mode === "desktop" && ui.info().map.open) { ui.closePause(); D.lock(); } // Tab again closes the map
+  }
   // M: the sound on or off (flat play)
   if (inp.muteDown && G.mode === "desktop") {
     audio.toggle(); saveNow();
@@ -685,84 +775,111 @@ function couple(inp) {
   } else { G.bodyLocal.x = hl.x; G.bodyLocal.z = hl.z; }
 }
 
-// 9. Every connected hand with an idle rope aims (that drives its reticle). A trigger press fires at a valid target;
-// a held trigger still fires if a target shows up within SWING.fireHold; with none it is a dry fire.
+// 9. Every connected hand with an idle rope aims (that drives its reticle). In flat play the picker (target.js) has marked one
+// target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
+// still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
+// wins: for that hand ropes.aim decides, as before.
+const latch = [false, false], realWait = [false, false];
+let noneAt = -99;
+const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
+const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
-    // A tap on a new building switches anchors without a separate release step.
+    // phone: a tap with a rope out moves it to the tapped building, and a tap with a rope idle swings from what the tap rules find
     if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
       const next = phoneAim(i, h, inp);
-      if (next?.valid && !ui.blocking(i)) shoot(i, h, next);
+      if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
       else D.mobile.miss(true);
       continue;
     }
-    // A phone tap with an idle rope: swing from what it points at, or from the best building ahead (phoneAim).
     if (inp.easySwing && i === 1 && inp.phoneFire && h.connected && !ui.blocking(i)) {
       const a = (lastAim[i] = phoneAim(i, h, inp));
-      D.mobile.target(!!a?.valid, false);
-      if (a?.valid) shoot(i, h, a); else dryFire(i, h);
+      D.mobile.target(!!a?.valid && !a.same, false);
+      if (a?.valid && !a.same) shoot(i, h, a); else dryFire(i, h, PHONE_DIR);
       fireWait[i] = 0;
       continue;
     }
     if (!h.connected || r.state !== "idle") {
       // "toggle" hold (a pause option): the next press lets go instead of the trigger opening
       if (r.state !== "idle" && h.triggerDown && settings.hold === "toggle") toggled[i] = false;
-      lastAim[i] = null; fireWait[i] = 0;
+      lastAim[i] = null; fireWait[i] = 0; realWait[i] = false;
       continue;
     }
-    const a = (lastAim[i] = ropes.aim(i, h.aimPos, h.aimDir, P.vel));
-    const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked;
+    latch[i] = false; // an idle rope has nothing to keep
+    const pk = pickerOn && !ov.aim[i];
+    let a;
+    if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
+    else a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
+    lastAim[i] = a;
+    const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
     if (h.triggerDown && !blocked) {
-      if (ok) shoot(i, h, a); else fireWait[i] = SWING.fireHold;
+      if (ok) {
+        const bid = a.bid;
+        shoot(i, h, a);
+        // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
+        // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
+        if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
+      } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
       if (blocked) fireWait[i] = 0;
       else if (ok && h.holding) { shoot(i, h, a); fireWait[i] = 0; }
-      else if (!h.holding || (fireWait[i] -= dt) <= 0) { dryFire(i, h); fireWait[i] = 0; }
+      else if (!h.holding || (fireWait[i] -= dt) <= 0) {
+        dryFire(i, h, pk ? flatcam.forward : null);
+        if (pk && !inp.easySwing) noBuilding();
+        fireWait[i] = 0; realWait[i] = false;
+      }
     }
   }
 }
-// Phone swing assist: try a few directions up and ahead of where you fly (or look). The first one with a building in
-// reach that is ahead of you, not too close, and well above your chest wins.
-const ASSIST = new THREE.Vector3(), DEG = Math.PI / 180;
-const swingable = (a) => !!a && a.valid && (a.special || (a.dist >= PHONE.assist.near && a.y > P.pos.y + P.chest + PHONE.assist.above));
-function phoneAim(i, h, inp) {
-  const a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
-  if (swingable(a)) return a;
-  const exact = a && a.valid ? { ...a } : null;
-  return assistAim(i, h, inp) || exact;
+// "No building to swing from here", at most once every 10 s (a mouse or a pad; the phone dims its SWING button)
+function noBuilding() {
+  if (G.time - noneAt < TARGET.noneLine) return;
+  noneAt = G.time;
+  ui.say("No building to swing from here. Face the city, or step off the edge.", 4);
 }
-function assistAim(i, h, inp) {
-  const sp = Math.hypot(P.vel.x, P.vel.z);
-  const yaw0 = sp > 4 ? Math.atan2(-P.vel.x, -P.vel.z) : G.rigYaw + yawOfQuat(inp.head.local.quat);
-  for (const dy of PHONE.assist.yaw) for (const dp of PHONE.assist.pitch) {
-    const yaw = yaw0 + dy * DEG, pitch = dp * DEG;
-    ASSIST.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
-    const a = ropes.aim(i, h.aimPos, ASSIST, P.vel);
-    if (!swingable(a) || a.special) continue;
-    const ahead = (a.x - P.pos.x) * -Math.sin(yaw0) + (a.z - P.pos.z) * -Math.cos(yaw0);
-    if (ahead > 2) return { ...a };
-  }
-  return null;
+// A phone shot: the tap rules of the picker (a clog or pipe near the tapped ray, the exact point, the marked target, a search that
+// leans toward the tap). A test aim override on the hand acts as a tap at that point. The result says same when only the building
+// that holds the rope qualifies: the rope stays. PHONE_DIR is the way a dry fire flies.
+function phoneAim(i, h, inp) {
+  const o = ov.aim[i], ray = o ? pointRay(o, h.aimPos) : inp.phoneAim ? tapRay(inp.phoneAim.x, inp.phoneAim.y) : null;
+  if (ray) PHONE_DIR.set(ray.dx, ray.dy, ray.dz); else PHONE_DIR.copy(flatcam.forward);
+  return pickerOn ? picker.tap(TCTX, ray, null) : null;
+}
+// A swing from a wall in third person turns the view toward the swing when the target is off the screen or behind the camera
+function turnToSwing(a) {
+  project(TCTX, a.x, a.y, a.z, PROJ);
+  if (PROJ.behind || Math.abs(PROJ.x) > 1 || Math.abs(PROJ.y) > 1) flatcam.turnTo(Math.atan2(-(a.x - P.pos.x), -(a.z - P.pos.z)));
 }
 function shoot(i, h, a) {
+  const phone = G.input.easySwing, real = !phone && !!(h.swingDown || realWait[i]);
+  realWait[i] = false;
+  if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
-  if (G.input.easySwing && P.onGround) {
+  latch[i] = real; // a real press keeps the cup in flight, and earns the kick
+  if (real) picker.fired(i);
+  if (phone && P.onGround) {
     // Launch only after a valid attach target is found. A miss never jumps off a roof.
     G.input.jumpDown = true;
     const dx = a.x - P.pos.x, dz = a.z - P.pos.z, d = Math.hypot(dx, dz);
     if (d > .01) { P.vel.x += dx / d * 5; P.vel.z += dz / d * 5; }
+  } else if (real && DESKTOP.hop > 0 && P.onGround && !a.special && flatOn) {
+    // a hop off the roof toward the target (a tuning value: it starts at 0)
+    G.input.jumpDown = true;
+    const dx = a.x - P.pos.x, dz = a.z - P.pos.z, d = Math.hypot(dx, dz);
+    if (d > .01) { P.vel.x += dx / d * DESKTOP.hop; P.vel.z += dz / d * DESKTOP.hop; }
+    pushRing({ type: "hop", side: i, speed: DESKTOP.hop });
   }
   audio.sfx("fire", { pos: h.aimPos });
   haptic(i, 0.2, 20);
   pushRing({ type: "fire", side: i, target: { tag: a.tag, id: a.id } });
   wordAtHand("THWIP", i);
 }
-function dryFire(i, h) {
+function dryFire(i, h, dir) {
   if (G.input.easySwing && i === 1) D.mobile.miss();
-  ropes.dryFire(i, h.aimPos, h.aimDir);
+  ropes.dryFire(i, h.aimPos, dir || h.aimDir);
   audio.sfx("dry", { pos: h.aimPos });
   haptic(i, 0.15, 30);
   pushRing({ type: "dry", side: i });
@@ -797,7 +914,8 @@ function physics(dt, inp) {
     o.grip = Math.max(src.grip, autoPull ? .72 : 0);
     // a phone rope on a clog or a pipe pumps by itself (physics lets one yank through per cooldown)
     if (inp.easySwing && i === 1 && src.holding && r.state === "attached" && SPECIAL_TAGS[r.target.tag]) o.yank = Math.max(o.yank, PHONE.pumpYank);
-    o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0;
+    // the cup of a real press always lands: while it flies the rope stays held, and after it lands the rope follows the button
+    o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0 || (latch[i] && r.state === "flying");
     o.reeling = false;
   }
   const wasGround = P.onGround;
@@ -851,24 +969,11 @@ function phoneRelease(dt) {
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "fling", side: 1, speed: Math.hypot(v.x, v.y, v.z) });
 }
-// Phone: a rope that catches gives at least PHONE.attachSpeed across the rope, toward where you look.
-function phoneBoost() {
-  const r = P.ropes[1], A = r.anchor;
-  const nx0 = P.pos.x - A.x, ny0 = P.pos.y + P.chest - A.y, nz0 = P.pos.z - A.z, d = Math.hypot(nx0, ny0, nz0);
-  if (d < 1e-3) return;
-  const nx = nx0 / d, ny = ny0 / d, nz = nz0 / d;
+// A rope that catches gives at least `speed` across the rope, toward where you look: the phone's PHONE.attachSpeed, or the
+// DESKTOP.attachSpeed of a real mouse or pad swing (target.js holds the maths). A "kick" in the event ring lets a test see it.
+function boost(i, speed) {
   const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
-  let tx = -Math.sin(yaw), ty = 0, tz = -Math.cos(yaw);
-  const k = tx * nx + ty * ny + tz * nz;
-  tx -= k * nx; ty -= k * ny; tz -= k * nz;
-  const tl = Math.hypot(tx, ty, tz);
-  if (tl < 0.3) return; // the anchor is straight ahead: the reel pulls you in instead
-  tx /= tl; ty /= tl; tz /= tl;
-  const vt = P.vel.x * tx + P.vel.y * ty + P.vel.z * tz;
-  if (vt >= PHONE.attachSpeed) return;
-  const add = PHONE.attachSpeed - vt;
-  P.vel.x += tx * add; P.vel.y += ty * add; P.vel.z += tz * add;
-  if (P.onGround) { P.onGround = false; P.ground = null; }
+  if (kick(P, P.ropes[i], yaw, speed)) pushRing({ type: "kick", side: i, speed });
 }
 const SPECIAL_TAGS = { clog: true, pipe: true, crack: true };
 
@@ -892,12 +997,17 @@ function feedback(ev) {
     case "attach":
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
-      if (G.input.easySwing && i === 1 && G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
+      if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
+        if (G.input.easySwing && i === 1) { phoneRopeT = 0; boost(1, PHONE.attachSpeed); }
+        else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
+      }
+      catchFeedback(i, "attach");
       break;
-    case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); break;
+    case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); latch[i] = false; break;
     case "yank":
       audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
       if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
+      catchFeedback(i, ev.pump ? "pump" : "yank");
       break;
     case "land": audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); break;
     case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
@@ -907,11 +1017,20 @@ function feedback(ev) {
     case "cling":
       audio.sfx("land", { vol: 0.5 }); haptic(0, 0.3, 30); haptic(1, 0.3, 30);
       if (G.input.easySwing) D.mobile.released();
-      else if (!climbTold) { climbTold = true; ui.say("On the wall. W and S climb, A and D go along it. Space jumps off.", 6); }
+      else if (!climbTold) { climbTold = true; ui.sayLine("wall", 0); } // the first wall line, in the words of the device in use
       break;
     case "mantle": audio.sfx("land", { vol: 0.6 }); break;
     case "unclimb": if (ev.why === "jump") audio.sfx("release", { pos: G.input.head.pos }); break;
   }
+}
+
+// A catch, a yank or a pump in flat play: the ring pops on every device, a phone vibrates (where the browser can), and a pad rumbles.
+function catchFeedback(i, what) {
+  if (!flatOn || isXR()) return;
+  const inp = G.input;
+  if (inp.easySwing) { D.mobile.pop?.(); D.mobile.buzz?.(PHONE.buzz[what]); return; }
+  D.pop();
+  if (inp.mode === "desktop" && inp.kind === "pad") { const r = PAD.rumble[what]; D.rumble(r[0], r[1]); }
 }
 
 /* ---------------- comic words (fx.js) ---------------- */
@@ -955,6 +1074,7 @@ function after(dt, inp, yawDelta) {
   buildView();
   const inPlay = G.state === "play";
   flatFrame(dt, inp, yawDelta); // flat play: the hero's pose, then the chase camera
+  flatHud(dt, inp); // the lock-on ring, the LET GO caption and the first-minute strip
   const vh = viewHead(inp);
   hands.update(inp, P, dt);
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
@@ -1153,7 +1273,7 @@ function setBusy(on) { for (const b of document.querySelectorAll("[data-enter]")
 function note(text) { const n = $("#note"); n.textContent = text; n.hidden = !text; }
 
 function wireTitle() {
-  const enter = (mode) => {
+  const enter = (mode, mouse) => {
     // the click is the user activation: wake the audio now, before anything waits
     audio.init();
     audioStarted = true;
@@ -1161,11 +1281,15 @@ function wireTitle() {
     // a click you can hear, or a word on how to turn the sound on (it may be off from the arcade's speaker button); a toast,
     // so the opening's own lines do not cover it
     if (audio.isOn) audio.sfx("ui"); else setTimeout(() => ui.toast(mode === "desktop" && !D.mobile.enabled ? "Sound is off. Press M to turn it on." : "Sound is off. Turn it on in the pause menu."), 900);
-    if (mode === "desktop") { wantFs = true; D.mobile.start(); takeLook(); startDesktop(); } else startXR(mode);
+    if (mode === "desktop") { wantFs = true; if (!mouse) D.mobile.start(); takeLook(false); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
-  $("#playFlat").addEventListener("click", () => enter("desktop"));
+  // PLAY WITH TOUCH turns the touch scheme back on, also after PLAY WITH MOUSE AND KEYBOARD turned it off (no-op on a computer)
+  $("#playFlat").addEventListener("click", () => { D.mobile.use(true); enter("desktop"); });
+  // a touch device with a fine pointer (a touch laptop, a 2-in-1) chooses its scheme: touch, or the mouse and keyboard
+  const playMouse = $("#playMouse");
+  if (playMouse) playMouse.addEventListener("click", () => { D.mobile.use(false); enter("desktop", true); });
   $("#reenterBtn").addEventListener("click", () => enter(lastMode || "desktop"));
   // SOUND on the title: the arcade's speaker button (or another game) may have turned it off for every game here
   const soundBtn = $("#soundBtn");
@@ -1193,7 +1317,13 @@ function wireTitle() {
       saveNow();
     });
   }
-  if (TOUCH_ONLY) { $("#playFlat").textContent = "PLAY ON PHONE"; $("#touchNote").hidden = false; }
+  // the title for the device: a computer, a phone or a tablet (touch only), or a touch device with a fine pointer (both buttons)
+  const FINE = matchMedia("(any-pointer: fine)").matches, hide = (id, on) => { const e = $(id); if (e) e.hidden = !on; };
+  if (TOUCH_ONLY) { const b = $("#playFlat"); b.textContent = b.dataset.labelTouch || "PLAY WITH TOUCH"; }
+  hide("#touchNote", TOUCH_ONLY && !FINE); hide("#hybridNote", TOUCH_ONLY && FINE); hide("#deskNote", !TOUCH_ONLY); hide("#playMouse", TOUCH_ONLY && FINE);
+  document.body.dataset.device = TOUCH_ONLY ? "touch" : "mouse";
+  // the pad is the device in use once it connects (How to play puts its section first)
+  addEventListener("gamepadconnected", () => { if (!TOUCH_ONLY && G.mode === "title") document.body.dataset.device = "pad"; });
   const quest = /OculusBrowser|Quest/i.test(navigator.userAgent);
   if (quest && !matchMedia("(display-mode: standalone)").matches) $("#installHint").hidden = false;
   X.supported.then(({ vr, ar }) => {
@@ -1207,6 +1337,8 @@ function wireTitle() {
   // click with no lock takes it back (desktop.js fires no rope with it)
   renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
+    // the click that resumes, or that asks for the lock, starts no swing (D.lock(true) tells desktop.js); the lock comes before
+    // full screen (takeLook)
     if (G.state === "paused") { ui.closePause(); takeLook(); }
     else if (!D.locked) takeLook();
   });
@@ -1258,12 +1390,12 @@ function inputSnapshot() {
   return {
     mode: inp.mode, kind: inp.kind, visible: inp.visible,
     head: { local: { pos: v3(inp.head.local.pos), quat: q4(inp.head.local.quat) }, pos: v3(inp.head.pos), quat: q4(inp.head.quat) },
-    move: { ...inp.move }, turn: inp.turn, pitch: inp.pitch, jumpDown: inp.jumpDown, menuDown: inp.menuDown, mapDown: inp.mapDown,
+    move: { ...inp.move }, turn: inp.turn, pitch: inp.pitch, jumpDown: inp.jumpDown, menuDown: inp.menuDown, mapDown: inp.mapDown, viewDown: !!inp.viewDown,
     hands: inp.hands.map((h) => ({
       side: h.side, index: h.index, connected: h.connected, kind: h.kind,
       gripLocal: { pos: v3(h.gripLocal.pos), quat: q4(h.gripLocal.quat) }, aimLocal: { pos: v3(h.aimLocal.pos), dir: v3(h.aimLocal.dir) },
       gripPos: v3(h.gripPos), gripQuat: q4(h.gripQuat), aimPos: v3(h.aimPos), aimDir: v3(h.aimDir),
-      trigger: h.trigger, triggerDown: h.triggerDown, triggerUp: h.triggerUp, grip: h.grip, gripDown: h.gripDown, gripUp: h.gripUp,
+      trigger: h.trigger, triggerDown: h.triggerDown, triggerUp: h.triggerUp, swingDown: !!h.swingDown, grip: h.grip, gripDown: h.gripDown, gripUp: h.gripUp,
       holding: h.holding, velRel: v3(h.velRel), yank: h.yank, palmUp: h.palmUp, joints: h.joints ? Array.from(h.joints) : null,
     })),
   };
@@ -1307,6 +1439,14 @@ G.test = {
   look(dx = 0, dy = 0) { ov.lookX += +dx || 0; ov.lookY += +dy || 0; },
   // flat play: where the camera is and what the hero does ({ on: false } everywhere else)
   flat: () => (flatcam && flatOn ? { on: true, camera: v3(camera.position), quat: q4(camera.quaternion), fov: camera.fov, ...flatcam.info(), forward: v3(flatcam.forward), hero: hero.info() } : { on: false }),
+  // flat play: the auto target. { on, tier, target, hand, side, ndc, inView, behind, pref, avoid, cue, specialNear, picks, rays }; on is
+  // false outside flat play and in the opening. ndc is where the target lands on the screen of the camera now.
+  target() {
+    const on = !!(picker && pickerOn && flatOn && !isXR()), o = picker ? { ...picker.info() } : {};
+    if (on && o.target) { project(TCTX, o.target.x, o.target.y, o.target.z, PROJ); o.ndc = { x: PROJ.x, y: PROJ.y }; o.inView = PROJ.inView; o.behind = PROJ.behind; }
+    o.on = on; o.cue = !!(on && !G.input.easySwing && settings.cue !== false && (releaseWindow(P, P.ropes[0], DRAG[0]) || releaseWindow(P, P.ropes[1], DRAG[1])));
+    return JSON.parse(JSON.stringify(o));
+  },
   renderInfo: () => ({ ...lastInfo }),
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };

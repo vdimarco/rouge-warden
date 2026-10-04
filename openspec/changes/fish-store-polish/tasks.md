@@ -20,37 +20,39 @@
 - [x] 2.8 Update the stale `screens.mjs` and `reel.ui.mjs` checks; rerun the fight and place sims.
 
 ## 3. Casting
-- [ ] 3.1 Grade touch and mouse releases at the finger.
-- [ ] 3.2 Forgive a touch flick that ends above the press point.
-- [ ] 3.3 Grow the touch area; decide between a cast and an aim after 12 px.
-- [ ] 3.4 Smooth the motion window on the early side; grade a held thumb as late.
-- [ ] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
-- [ ] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
-- [ ] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
+- [x] 3.1 Grade touch and mouse releases at the finger.
+- [x] 3.2 Forgive a touch flick that ends above the press point.
+- [x] 3.3 Grow the touch area; decide between a cast and an aim after 12 px.
+- [x] 3.4 Smooth the motion window on the early side; grade a held thumb as late.
+- [x] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
+- [x] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
+- [x] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
+- [x] 3.8 A quick turnaround to the next cast: shorter waits, a skip by any cast input, and a faster empty retrieve.
+- [x] 3.9 A mouse hold cast on desktop, with sideways aim, and its tests.
 
 ## 4. Goals
-- [ ] 4.1 Six goals at each place, on the Places card, with the toast and the sting.
-- [ ] 4.2 Today's goal and the run of days, with `?day=` for QA.
-- [ ] 4.3 The next-goal line, the rank ladder, and the old best on the results.
-- [ ] 4.4 Help for short casters, and the short-caster case in `journey.sim.mjs`.
-- [ ] 4.5 The sweet-cast streak in free fishing.
-- [ ] 4.6 The derby unlock on the catch card; fix the small progression bugs.
-- [ ] 4.7 Tests: save fuzz for the new fields, the goal predicates, the daily goal over 60 days, and the screens checks.
+- [x] 4.1 Six goals at each place, on the Places card, with the toast and the sting.
+- [x] 4.2 Today's goal and the run of days, with `?day=` for QA.
+- [x] 4.3 The next-goal line, the rank ladder, and the old best on the results.
+- [x] 4.4 Help for short casters, and the short-caster case in `journey.sim.mjs`.
+- [x] 4.5 The sweet-cast streak in free fishing.
+- [x] 4.6 The derby unlock on the catch card; fix the small progression bugs.
+- [x] 4.7 Tests: save fuzz for the new fields, the goal predicates, the daily goal over 60 days, and the screens checks.
 
 ## 5. Feedback
-- [ ] 5.1 The hook-set hit.
-- [ ] 5.2 The jump zoom.
-- [ ] 5.3 Tiered stingers, the new-place stinger and card, the derby count-up and close.
-- [ ] 5.4 Splashes you can see at range, the rod-tip twitch, and the legend glitter.
-- [ ] 5.5 Tests: new sounds render, and a moments script checks each key moment's sound, buzz, and picture.
+- [x] 5.1 The hook-set hit.
+- [x] 5.2 The jump zoom.
+- [x] 5.3 Tiered stingers, the new-place stinger and card, the derby count-up and close.
+- [x] 5.4 Splashes you can see at range, the rod-tip twitch, and the legend glitter.
+- [x] 5.5 Tests: new sounds render, and a moments script checks each key moment's sound, buzz, and picture.
 
 ## 6. Menus and access
-- [ ] 6.1 "Go fishing" first, the art picker in Settings, and "Painted" for the old style name.
-- [ ] 6.2 The guide on for new players, with a clear button label.
-- [ ] 6.3 Short help on the right tab, and one word for each move.
-- [ ] 6.4 Fix the HUD chip, short screens, the journal wall, the icons, and the small layout bugs.
-- [ ] 6.5 Larger text, Calm effects, the full left-handed mode, the drag buttons near the thumb, live regions, dialogs, and the About row.
-- [ ] 6.6 Screenshots of every screen at the six sizes, checked by eye.
+- [x] 6.1 "Go fishing" first, the art picker in Settings, and "Painted" for the old style name.
+- [x] 6.2 The guide on for new players, with a clear button label.
+- [x] 6.3 Short help on the right tab, and one word for each move.
+- [x] 6.4 Fix the HUD chip, short screens, the journal wall, the icons, and the small layout bugs.
+- [x] 6.5 Larger text, Calm effects, the full left-handed mode, the drag buttons near the thumb, live regions, dialogs, and the About row.
+- [x] 6.6 Screenshots of every screen at the six sizes, checked by eye.
 
 ## 7. App project
 - [x] 7.1 `apps/fish/` Capacitor project, config, and the build script with its bundle check.
@@ -59,8 +61,27 @@
 - [x] 7.4 The privacy policy page, the store listing, the data safety and age answers, and the release README.
 - [x] 7.5 An Android debug build on this machine.
 
-## 8. Finish
-- [ ] 8.1 Update the Reel It In part of `README.md`.
-- [ ] 8.2 Run every Reel It In check and the review.
-- [ ] 8.3 Record the checks that need a real iPhone, an Android phone, or a Mac.
-- [ ] 8.4 Archive the change and review the canonical specs.
+## 8. Cutscenes
+- [x] 8.1 A cutscene player: a scripted camera over the live scene, letterbox bars, a caption, a sound, skip by tap, Space, Escape, or back, and a calm version with still shots and fades.
+- [x] 8.2 The opening, the four arrivals, the four legend reveals, the legend landed shot, and the finale.
+- [x] 8.3 Hold the fish, the clock, and the derby while a cutscene plays; never start one in a fight; remember the seen ones in the save.
+- [x] 8.4 "Watch" on the Places card for seen arrivals and reveals.
+- [x] 8.5 Tests: skip timing, the derby clock, seen once, old saves, calm, and screenshots at the four sizes.
+
+## 9. Finish
+- [ ] 9.1 Update the Reel It In part of `README.md`.
+- [ ] 9.2 Run every Reel It In check and the review.
+- [ ] 9.3 Record the checks that need a real iPhone, an Android phone, or a Mac.
+- [ ] 9.4 Archive the change and review the canonical specs.
+
+## 10. Final review fixes
+The final review found these. The checkpoint holds them as open work.
+- [ ] 10.1 Drop the presses in progress when a cutscene starts. A press held into a legend reveal must not cast under it, and the derby cast count must not change during it (`playCut`: `reelPanel._cancelAll()`, `reelPanel.set({ grab: "" })`, and ignore pin and aim while `cuts.playing`).
+- [ ] 10.2 Give the moves guide the mouse and Space hold words on a computer: "Keep holding", then "Let go in the green". Label the count MOUSE, and show the still pose in place of the touch clip.
+- [ ] 10.3 Keep Big Blue's reveal leap clear of the top bar at 1280x800 and 844x390. Skip the far-leap draw scale while a cutscene holds the camera.
+- [ ] 10.4 Make sure a Space chain cannot skip a legend's first reveal, and that a reveal never plays after its legend is landed.
+- [ ] 10.5 In `apps/fish/store/accessibility.md`, set Larger Text to No (a 1.25x switch cannot meet Apple's 200% bar). Point Sufficient Contrast at the checks that exist, and add the calm cutscenes to the Reduced Motion checks.
+- [ ] 10.6 Use version 1.0.0 in `js/version.js`, the Android `versionName`, the iOS `MARKETING_VERSION`, and the listing. Add `js/version.js` to the release steps, and make `native-check.mjs` fail when they differ.
+- [ ] 10.7 In `apps/fish/store/screenshots.md`, point to `?shot` and `qa/fish/shots.mjs`. In `review-notes.md`, say "Use touch", say the question comes after Go fishing, and mention the opening cutscene and how to skip it.
+- [ ] 10.8 Run the player review that the usage limit stopped, and fix what it finds.
+- [ ] 10.9 Rerun cutscenes, mouse, turnaround, touch, menus, and screens.

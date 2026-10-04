@@ -13,6 +13,8 @@ import { open, sleep } from "./lib.mjs";
 import { sizeRank } from "../../public/fish/js/fish.js";
 import { byId } from "../../public/fish/js/species.js";
 import { rankFor } from "../../public/fish/js/journey.js";
+import { DAILY, dailyGoal, todayLine, dayOf, prevDay } from "../../public/fish/js/goals.js";
+import { loadSave } from "../../public/fish/js/save.js";
 
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   " : "FAIL ") + msg); return ok; };
@@ -57,7 +59,7 @@ const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 async function spy(page) {
   await page.evaluate(() => {
     const log = (window.__log = []);
-    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash"], "H"]]) {
+    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash", "turn", "big", "shutter"], "H"]]) {
       for (const n of names) { const f = obj[n]; obj[n] = function (...a) { log.push([tag + "." + n, ...a]); return f.apply(this, a); }; }
     }
   });
@@ -95,7 +97,7 @@ async function catchCard(page, c, { wait: waitFor = true } = {}) {
   }
   const card = await page.evaluate(() => ({
     name: document.querySelector("#cname").textContent, badges: [...document.querySelectorAll("#cbadges .badge")].map((b) => b.textContent),
-    kg: document.querySelector("#ckg").textContent, size: document.querySelector("#csize").textContent, old: document.querySelector("#cold").textContent,
+    kg: document.querySelector("#ckg").textContent, size: document.querySelector("#csize").textContent, old: document.querySelector("#cold").textContent, found: document.querySelector("#cfound").textContent,
     cap: document.querySelector("#ccap").textContent, btn: document.querySelector("#catchGo").textContent,
     photo: document.querySelector("#catch .card").classList.contains("photo"), waiting: document.querySelector("#catch").classList.contains("wait"),
     ck: window.__ck.slice(), flashes: window.__flashes, photoFlashes: window.__photoFlashes, phase: FISH.G.phase,
@@ -105,6 +107,38 @@ async function catchCard(page, c, { wait: waitFor = true } = {}) {
 }
 const expectSize = (sp, kg) => { const r = sizeRank(sp, kg); return r >= 0.99 ? "Bigger than 99 in 100 of its kind." : r >= 0.95 ? "Bigger than 19 in 20 of its kind." : r >= 0.9 ? "Bigger than 9 in 10 of its kind." : r >= 0.75 ? "Bigger than 3 in 4 of its kind." : ""; };
 const click = async (page, sel) => { await sleep(PAUSE); await page.click(sel); };
+// Start on the arrival card goes to the water: free fishing at the new place (after Use touch, the first time, since the
+// tests start play with FISH.startMode and never pick motion or touch). Then back to the title, where the checks go on.
+// Returns what Start began
+async function arrivalStart(page) {
+  await click(page, "#aStart");
+  await wait(page, () => FISH.G.phase === "cast" || !document.querySelector("#setup").hidden);
+  if (await page.isVisible("#setup")) await click(page, "#useTouch");
+  await wait(page, () => FISH.G.phase === "cast");
+  const at = await page.evaluate(() => ({ phase: FISH.G.phase, mode: FISH.G.mode, place: FISH.place.id }));
+  await page.evaluate(() => FISH.toTitle());
+  await page.waitForSelector("#title:not([hidden])");
+  return at;
+}
+// a cast that lands at (x, z) (land: "water" or another ground), as release() would leave it: cast is G.cast (its verdict),
+// derby casts count down. Returns the report and the sim it started
+async function landAt(page, x, z, { cast = null, land = "water" } = {}) {
+  await page.evaluate(([x, z, cast, land]) => {
+    const G = FISH.G;
+    FISH.newCast();
+    G.cast = cast; G.casts++; if (G.mode === "derby") G.castsLeft--;
+    G.step = "flight"; G.flight = { step: () => ({ x, y: 0, z, done: true, land, lineOut: Math.hypot(x, z), spool: 0 }) };
+  }, [x, z, cast, land]);
+  await wait(page, (w) => (w ? FISH.G.phase === "reel" : FISH.G.step === "ashore"), land === "water");
+  return page.evaluate(() => ({ zone: document.querySelector("#report .zone").textContent, streak: document.querySelector("#report").classList.contains("streak"), ring: !!FISH.G.ring, plan: FISH.G.sim && FISH.G.sim.plan ? { id: FISH.G.sim.plan.id, kg: FISH.G.sim.plan.kg } : null }));
+}
+// every toast the page shows, in order
+const logToasts = (page) => page.evaluate(() => {
+  window.__toasts = [];
+  const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
+  Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); }, configurable: true });
+});
+const toastsNow = (page) => page.evaluate(() => window.__toasts.slice());
 
 const stand = async (page) => {
   if (!(await page.evaluate(() => typeof FISH.world.setPlace === "function"))) {
@@ -222,7 +256,7 @@ if (part("A")) {
       await sleep(300);
       return page.evaluate(() => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }));
     };
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show the moves guide") document.querySelector("#guideToggle").click(); });
     // the phone held at 60°: the rod is up
     await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
     let mw = await words({ fish: { move: "sulk" } }, "It holds on the bottom.");
@@ -248,7 +282,7 @@ if (part("A")) {
     check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
     mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
     check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show the moves guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
     // ---- the gauge follows the state ----
@@ -264,16 +298,16 @@ if (part("A")) {
     console.log("     the feel of each move");
     const FEEL = [
       ["charge", [{ type: "charge" }], (l) => has(l, "S.sfx", "slip") && has(l, "H.charge")],
-      ["turn", [{ type: "turn" }], (l) => has(l, "H.thump")],
+      ["turn", [{ type: "turn" }], (l) => has(l, "H.turn") && !has(l, "H.thump")],
       ["sulk", [{ type: "sulk" }], (l) => has(l, "S.sfx", "creak") && has(l, "H.throb")],
       ["pump", [{ type: "pump", n: 1, need: 2 }], (l) => l.some((x) => x[0] === "H.bump" && x[1] === 0.4)],
       ["unstuck", [{ type: "unstuck" }], (l) => l.some((x) => x[0] === "S.sfx" && x[1] === "splash")],
       ["thrash", [{ type: "thrash" }], (l) => has(l, "H.thrash") && has(l, "S.sfx", "splash")],
       ["spool", [{ type: "spool" }], (l) => has(l, "S.sfx", "slip") && l.some((x) => x[0] === "H.bump" && x[1] === 0.8)],
-      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "record") && has(l, "H.phase")],
+      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "stage") && !has(l, "S.sfx", "record") && has(l, "H.phase")],
       // its own warning, not the snap buzz (which would also silence the drag)
       ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.surge") && !has(l, "H.jolt")],
-      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "tick") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
+      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "ratchet") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
     ];
     for (const [name, ev, ok] of FEEL) {
       await stage(page, {});
@@ -355,7 +389,7 @@ if (part("A")) {
     check((await toastIs(page, "It is a big one!")) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
     await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 5000).catch(() => {});
     check(await page.evaluate(() => FISH.gauge.s.label === "Big fish on!"), "and the gauge says \"Big fish on!\"");
-    check(has(await logNow(page), "H.thump"), "with a thump");
+    check(has(await logNow(page), "H.big") && !has(await logNow(page), "H.thump"), "with its own buzz, not the strike's");
     await stage(page, { fish: { known: true } }, [{ type: "reveal", id: "walleye" }], false);
     check((await toastIs(page, "It is a huge Walleye!")) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
     await wait(page, () => FISH.gauge.s.label === "", null, 5000).catch(() => {});
@@ -451,26 +485,31 @@ if (part("A")) {
     await page.waitForSelector("#journal:not([hidden])");
     const jr = await page.evaluate(() => ({ rows: [...document.querySelectorAll("#jlist .jfish")].map((r) => [r.querySelector("b").textContent, r.querySelector("small").textContent, r.className]), sum: document.querySelector("#jsum").textContent, tabs: [...document.querySelectorAll("#jtabs button")].map((b) => b.textContent + (b.classList.contains("lock") ? "*" : "") + (b.getAttribute("aria-selected") === "true" ? "!" : "")) }));
     check(jr.tabs.join() === "Loon!,Stumps,River*,Sea*", "the chips: Loon (chosen), Stumps (open), River and Sea (locked) (" + jr.tabs.join() + ")");
-    check(jr.rows.length === 13, "Loon Lake lists 13 rows (" + jr.rows.length + ")");
+    // a short list: the fish caught (small to big), the next 3 to find with their hints, and how many more
+    const jnote = () => page.evaluate(() => (document.querySelector("#jlist .jnote") || {}).textContent);
+    check(jr.rows.length === 6 && (await jnote()) === "7 more to find here.", "Loon Lake lists the 3 fish caught, the next 3 to find, and \"7 more to find here.\" (" + jr.rows.length + " rows, " + (await jnote()) + ")");
     const names = jr.rows.map((r) => r[0]);
-    check(names[0] === "Not caught yet" && names[1] === "Yellow Perch" && names[3] === "Smallmouth Bass" && names[5] === "Walleye" && names[9] === "The legend" && names.slice(10).join() === "Something odd,Something odd,Something odd", "small to big, then the legend, then the junk (" + names.join(", ") + ")");
-    check(jr.rows[5][1] === "Best 3.6 kg · 62 cm · caught 1" && jr.rows[1][1] === "Best 0.60 kg · 35 cm · caught 3", "a caught fish shows its best and the count (" + jr.rows[5][1] + " / " + jr.rows[1][1] + ")");
-    check(jr.rows[0][1] === "Try the lily pads." && jr.rows[2][1] === "Try the rocky point at dusk.", "a fish not caught yet says where to try (" + jr.rows[0][1] + " / " + jr.rows[2][1] + ")");
+    check(names.join() === "Yellow Perch,Smallmouth Bass,Walleye,Not caught yet,Not caught yet,Not caught yet", "the fish caught small to big, then the ones to find (" + names.join(", ") + ")");
+    check(jr.rows[2][1] === "Best 3.6 kg · 62 cm · caught 1" && jr.rows[0][1] === "Best 0.60 kg · 35 cm · caught 3", "a caught fish shows its best and the count (" + jr.rows[2][1] + " / " + jr.rows[0][1] + ")");
+    check(jr.rows[3][1] === "Try the lily pads." && jr.rows[4][1] === "Try the rocky point at dusk." && jr.rows[5][1] === "Try the lily pads at dusk.", "a fish not caught yet says where to try (" + jr.rows.slice(3).map((r) => r[1]).join(" / ") + ")");
     check(jr.sum === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
-    // the legend row, by step
+    // the legend row, by step: once every other fish here is caught, the legend is among the next 3
+    const keep = await page.evaluate(() => JSON.stringify(FISH.save.journal));
+    await page.evaluate(() => { for (const id of ["pumpkinseed", "rockbass", "largemouth", "pike", "laketrout", "muskie"]) FISH.save.journal[id] = { n: 1, kg: 1, cm: 30 }; });
     const legendRow = async (lgStep) => {
       await page.evaluate((s) => { FISH.save.places.loon.lg = s; document.querySelector('#jtabs [data-place="loon"]').click(); }, lgStep);
-      return page.evaluate(() => { const r = document.querySelectorAll("#jlist .jfish")[9]; return [r.querySelector("b").textContent, r.querySelector("small").textContent]; });
+      return page.evaluate(() => { const r = document.querySelector("#jlist .jfish.legend"); return r ? [r.querySelector("b").textContent, r.querySelector("small").textContent] : ["", ""]; });
     };
     const steps = [await legendRow(0), await legendRow(1), await legendRow(2)];
-    check(steps[0][1] === "People say a gold bass lives in Loon Lake." && steps[1][1] === "Look for a gold ring at dawn or dusk, 40 to 50 m out. Cast right into it." && steps[2][1] === "It jumps a lot. Lower the rod when it jumps.", "the legend row gets clearer with each step (" + steps.map((s) => s[1]).join(" | ") + ")");
+    check(steps.every((s) => s[0] === "The legend") && steps[0][1] === "People say a gold bass lives in Loon Lake." && steps[1][1] === "Look for a gold ring at dawn or dusk, 40 to 50 m out. Cast right into it." && steps[2][1] === "It jumps a lot. Lower the rod when it jumps.", "the legend row gets clearer with each step (" + steps.map((s) => s[1]).join(" | ") + ")");
+    const odd = await page.evaluate(() => [...document.querySelectorAll("#jlist .jfish.none")].map((r) => [r.querySelector("b").textContent, r.querySelector("small").textContent]).slice(1));
+    check(odd.length === 2 && odd.every((r) => r[0] === "Something odd" && r[1] === "Something odd lies near the dock."), "the junk not found yet at Loon Lake: \"Something odd lies near the dock.\" (" + JSON.stringify(odd) + ")");
+    await page.evaluate((j) => { FISH.save.journal = JSON.parse(j); }, keep);
     // Stump Bay's chip
     await page.evaluate(() => document.querySelector('#jtabs [data-place="stumps"]').click());
     const st = await page.evaluate(() => ({ rows: [...document.querySelectorAll("#jlist .jfish")].map((r) => [r.querySelector("b").textContent, r.querySelector("small").textContent]), sum: document.querySelector("#jsum").textContent }));
-    check(st.rows.length === 8 && st.sum.startsWith("0 of 8 found here · 3 of 29 in all"), "Stump Bay: its own 8 rows (6 fish, the legend, the boot) and its own count (" + st.sum + ")");
-    check(st.rows.find((r) => /night/.test(r[1])) && /Try the creek bed at night\./.test(st.rows.map((r) => r[1]).join(" ")), "the catfish hint says where and that it bites at night (" + st.rows.map((r) => r[1]).filter((t) => /night/.test(t)).join() + ")");
-    check(st.rows[6][1] === "People say a giant catfish lives in the old creek bed.", "the Old Whiskers rumor (" + st.rows[6][1] + ")");
-    check(!st.rows.some((r) => /midday|morning/.test(r[1])) && st.rows.some((r) => r[1] === "Try the sand flat."), "Stump Bay's clock runs 19:00 to 24:00, so no hint promises midday or morning (" + st.rows.map((r) => r[1]).filter((t) => /^Try/.test(t)).join(" | ") + ")");
+    check(st.rows.length === 3 && (await jnote()) === "5 more to find here." && st.sum.startsWith("0 of 8 found here · 3 of 29 in all"), "Stump Bay: the first 3 of its own 8 to find, \"5 more to find here.\", and its own count (" + st.sum + ")");
+    check(st.rows.map((r) => r[1]).join(" | ") === "Try the lily cove. | Try the stumps at dusk. | Try the stumps at dusk." && !st.rows.some((r) => /midday|morning/.test(r[1])), "Stump Bay's clock runs 19:00 to 24:00, so no hint promises midday or morning (" + st.rows.map((r) => r[1]).join(" | ") + ")");
     // a locked chip
     await page.evaluate(() => document.querySelector('#jtabs [data-place="river"]').click());
     const lk = await page.evaluate(() => ({ note: document.querySelector("#jlist .jnote") && document.querySelector("#jlist .jnote").textContent, rows: document.querySelectorAll("#jlist .jfish").length }));
@@ -513,16 +552,16 @@ if (part("A")) {
     await click(page, '.pcard[data-place="stumps"] button');
     await page.waitForSelector("#arrive:not([hidden])", { timeout: 60000 });
     check((await page.textContent("#aname")) === "Stump Bay", "Fish here at Stump Bay leads to the arrival card");
-    await click(page, "#aStart");
-    await page.waitForSelector("#title:not([hidden])");
+    const st0 = await arrivalStart(page);
+    check(st0.phase === "cast" && st0.mode === "free" && st0.place === "stumps", "Start goes to the water: free fishing at Stump Bay (" + JSON.stringify(st0) + ")");
     check((await page.textContent("#tkick")) === "GET PLUNGER'D · STUMP BAY" && await page.evaluate(() => document.querySelector("#placesNew").hidden), "the title reads STUMP BAY and the NEW badge is gone");
     check(await page.evaluate(() => FISH.save.place === "stumps" && JSON.parse(localStorage.getItem("fish.v1")).place === "stumps"), "the place is saved");
     check((await page.textContent("#tbest")) === "Land a fish of 6 kg or more here to open Cedar River.", "the title shows the goal of Stump Bay (" + JSON.stringify(await page.textContent("#tbest")) + ")");
     // Stump Bay's clock and goal reminder
     await page.evaluate(() => FISH.startMode("derby"));
     await wait(page, () => FISH.G.phase === "cast");
-    check(await page.evaluate(() => FISH.G.hour >= 20 && FISH.G.hour < 20.1) && (await page.textContent("#toast")) === "Goal: land a fish of 6 kg or more. It opens Cedar River.", "a derby at Stump Bay starts at 20:00 with its own goal (" + (await page.textContent("#toast")) + ")");
-    check((await page.textContent("#modeChip")).startsWith("Derby 1/10"), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
+    check(await page.evaluate(() => FISH.G.hour >= 20 && FISH.G.hour < 20.1) && (await toastIs(page, "Goal: land a fish of 6 kg or more. It opens Cedar River.")) === "Goal: land a fish of 6 kg or more. It opens Cedar River.", "a derby at Stump Bay starts at 20:00 with its own goal (" + (await page.textContent("#toast")) + ")");
+    check((await page.textContent("#modeChip")).startsWith("1/10 · "), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
     // the reload keeps the place
     await page.reload();
     await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
@@ -546,14 +585,15 @@ if (part("B")) {
     check(c.btn === "See the results" && c.photo, "the last catch of a derby: See the results, and the photo for the place it opens (" + c.btn + ")");
     await click(page, "#catchGo");
     await page.waitForSelector("#results:not([hidden])");
+    // the total counts up first, then the rank shows
+    await wait(page, () => !document.querySelector("#rrank").classList.contains("held"), null, 8000);
     const r = await page.evaluate(() => ({ kick: document.querySelector("#rkick").textContent, total: document.querySelector("#rtotal").textContent, rank: document.querySelector("#rrank").textContent, best: document.querySelector("#rbest").textContent, line: document.querySelector("#runlock").textContent, lineHidden: document.querySelector("#runlock").hidden, go: document.querySelector("#rGo").hidden, list: [...document.querySelectorAll("#rlist li")].map((l) => l.textContent) }));
     check(r.kick === "LOON LAKE" && r.total === "3.6 kg" && r.rank === rankFor("loon", 3.6) && r.best === "A new best derby here!" && r.list.join() === "Walleye3.6 kg", "the results: the place, the total, the rank, the new best (" + JSON.stringify(r) + ")");
     check(!r.lineHidden && r.line === "Your 3.6 kg Walleye opened Stump Bay." && !r.go, "the results say which fish opened Stump Bay, with Go there (" + r.line + ")");
     check(await page.evaluate(() => FISH.save.derbyBest === 3.6 && FISH.save.places.loon.d === 3.6 && FISH.save.seen["opened.stumps"] === 1), "the best derby is saved for Loon Lake");
     await click(page, "#rGo");
     await page.waitForSelector("#arrive:not([hidden])", { timeout: 60000 });
-    await click(page, "#aStart");
-    await page.waitForSelector("#title:not([hidden])");
+    await arrivalStart(page);
     check((await page.textContent("#tkick")) === "GET PLUNGER'D · STUMP BAY", "Go there leads to Stump Bay");
     check((await page.textContent("#tbest")).startsWith("Land a fish of 6 kg"), "with the title of its own goal");
     // a second derby, at Stump Bay: its own best, its own ranks; Loon Lake's best is not touched
@@ -745,6 +785,8 @@ if (part("F")) {
     await page.evaluate(() => FISH.newCast());
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => {
+      // only the staged rings: a real gold ring at golden hour, or a real ring's one-time tip, would change the count
+      window.__spawn = FISH.rises.spawn; FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]);
       window.__toasts = [];
       const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
       Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); } });
@@ -771,7 +813,7 @@ if (part("F")) {
     await frames(6);
     await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 5000).catch(() => {});
     check((await golds()) === 3, "it is said after the fight");
-    await page.evaluate(() => { window.__gold = null; FISH.startMode("free"); });
+    await page.evaluate(() => { window.__gold = null; FISH.rises.spawn = window.__spawn; FISH.startMode("free"); });
     check(await page.evaluate(() => FISH.G.goldAt === null), "a new mode forgets the last ring");
 
     // ---- the flash ----
@@ -798,15 +840,16 @@ if (part("F")) {
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
 
-    // ---- the chip: whole kg from 100 kg ----
+    // ---- the chip: the count, then the weight (whole kg from 100 kg) ----
     console.log("     the HUD chip");
     const chip = async (kgs, mode) => {
       await page.evaluate(([kgs, mode]) => { FISH.G.mode = mode; FISH.G.bag = kgs.map((kg) => ({ id: "perch", kg })); FISH.G.casts = 0; FISH.newCast(); }, [kgs, mode]);
       return page.textContent("#modeChip");
     };
-    check((await chip([160], "free")) === "Free · 1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([99.5], "free")) === "Free · 1 fish · 99.5 kg" && (await chip([12.34], "free")) === "Free · 1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([112.4, 100.4], "derby")) === "Derby 1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([160], "free")) === "1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([99.5], "free")) === "1 fish · 99.5 kg" && (await chip([12.34], "free")) === "1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([112.4, 100.4], "derby")) === "1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check(await page.evaluate(() => document.querySelector("#modeChip b").textContent === "213 kg"), "the weight is a part of its own, which the chip never cuts");
     await page.evaluate(() => { FISH.G.bag = []; });
 
     // ---- the report on a short cast ----
@@ -822,12 +865,14 @@ if (part("F")) {
       await wait(page, () => FISH.G.phase === "reel");
       return page.evaluate(() => ({ zone: document.querySelector("#report .zone").textContent, dist: document.querySelector("#report .dist").textContent }));
     };
+    // (while the goal that opens Stump Bay is open, the first short cast and every fifth one after it hear the hint)
+    await page.evaluate(() => { FISH.G.shortN = 0; });
     let rp = await lands(5, -9, 0);
-    check(rp.zone === "Farther out, the fish are bigger.", "a short first cast at Loon Lake says the fish are bigger farther out (" + JSON.stringify(rp) + ")");
+    check(rp.zone === "Big fish live far out.", "a short first cast at Loon Lake says the big fish live far out (" + JSON.stringify(rp) + ")");
     rp = await lands(0, -30, 0);
     check(rp.zone === "Your longest cast yet!", "a long cast reads as before (" + JSON.stringify(rp) + ")");
     rp = await lands(5, -9, 13);
-    check(rp.zone !== "Farther out, the fish are bigger.", "after 12 casts the hint is gone (" + JSON.stringify(rp) + ")");
+    check(rp.zone !== "Big fish live far out.", "the next short cast does not say it again (" + JSON.stringify(rp) + ")");
   } catch (e) { check(false, "exception in part F: " + (e && e.stack)); }
   check(errors.length === 0, "part F: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
@@ -939,11 +984,12 @@ if (part("H")) {
     });
     await page.evaluate(() => { delete FISH.save.seen.run; });
     await sleep(2500);   // the toasts before have gone
-    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "run" }, { type: "drag" }]);
+    // ("Fish on!" is the hook set's banner now, not a toast: the big fish's warning comes first, so the run tip waits)
+    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "drag" }, { type: "run" }]);
     const early = await page.evaluate(() => !!FISH.save.seen.run);
     await sleep(4200);
     const tq = await page.evaluate(() => window.__tq.slice());
-    const want = ["Fish on!", "It is running! Let the drag work.", "It is a big one!"], got = tq.map((x) => x[0]);
+    const want = ["It is a big one!", "It is running! Let the drag work."], got = tq.map((x) => x[0]);
     const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
     check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);
@@ -1050,6 +1096,404 @@ if (part("H")) {
     await page.setViewportSize({ width: 390, height: 844 });
   } catch (e) { check(false, "exception in part H: " + (e && e.stack)); }
   check(errors.length === 0, "part H: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
+/* ================= part J: goals, today's goal, the next goal, and help on the way ================= */
+// ?day=2026-10-03 sets the day of today's goal. A fresh save at Loon Lake: the title line, the ring tip, the help for a
+// short caster (the hint and the big ring), three sweet casts, the goal of a 40 m cast, the first fish of the day, a goal
+// from a ring, the count of kinds on the card, the Places goals, the same goal after a reload, and the journal
+if (part("J")) {
+  const DAY = "2026-10-03";
+  const { browser, page, errors } = await open({ query: "?debug&day=" + DAY });
+  try {
+    await stand(page);
+    await spy(page);
+    await logToasts(page);
+    const frames = (n = 3) => page.evaluate((n) => new Promise((res) => { const f = () => (--n > 0 ? requestAnimationFrame(f) : res()); requestAnimationFrame(f); }), n);
+    const count = async (t) => (await toastsNow(page)).filter((x) => x === t).length;
+    // ---- the title: today's goal ----
+    const want = todayLine(loadSave(null), DAY);
+    check((await page.textContent("#tday")) === want && /^Today: land .* at Loon Lake\./.test(want), "the title shows today's goal (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    check((await page.textContent("#tbest")) === "Land a fish of 3.5 kg or more here to open Stump Bay.", "and above it the goal that opens Stump Bay");
+
+    // ---- the ring tip, once, for a ring within reach (the rings here rise only where the test says) ----
+    console.log("     the ring tip");
+    // (the sure first bite of a fresh save is used up: these casts get the normal fish)
+    await page.evaluate(() => { FISH.G.gifted = true; });
+    await page.evaluate(() => { FISH.startMode("free"); window.__rise = null; FISH.rises.step = function () { const e = window.__rise; return e ? [{ type: "rise", x: e[0], z: e[1], gold: false }] : []; }; });
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => { window.__rise = [0, -40]; });
+    await frames(8);
+    const TIP = "A fish is rising. Cast into the ring. Feeding fish bite more often.";
+    check((await count(TIP)) === 0 && (await page.evaluate(() => !FISH.save.seen["ring.tip"])), "a ring 40 m out gives no tip");
+    // other news on screen: the tip waits for a quiet moment (it never pushes news out of the queue). (The goal reminder
+    // goes first, so its own timer cannot take the news off while the test holds it up)
+    await wait(page, () => !document.querySelector("#toast").classList.contains("on"), null, 10000);
+    await page.evaluate(() => { document.querySelector("#toast").classList.add("on"); window.__rise = [6, -14]; });
+    await frames(6);
+    check((await count(TIP)) === 0 && (await page.evaluate(() => !FISH.save.seen["ring.tip"])), "a ring within 25 m while other news is up: the tip waits");
+    await page.evaluate(() => { document.querySelector("#toast").classList.remove("on"); });
+    check((await toastIs(page, TIP)) === TIP, "then a ring within 25 m: \"" + TIP + "\"");
+    await frames(10);
+    check((await count(TIP)) === 1 && (await page.evaluate(() => FISH.save.seen["ring.tip"] === 1)), "said once, and the save remembers (" + (await count(TIP)) + ")");
+
+    // ---- the hint for a short caster: the first short cast, then every fifth ----
+    console.log("     the short-cast hint");
+    await page.evaluate(() => { window.__rise = null; FISH.G.shortN = 0; });
+    const HINT = "Big fish live far out.";
+    const hints = [];
+    for (let i = 0; i < 6; i++) hints.push((await landAt(page, -5, -9 - i * 0.3)).zone);
+    check(hints[0] === HINT && hints.slice(1, 5).every((z) => z !== HINT) && hints[5] === HINT, "while the Loon goal is open, a short cast hears \"" + HINT + "\" on the 1st and the 6th short cast (" + JSON.stringify(hints) + ")");
+    check((await landAt(page, 0, -26)).zone !== HINT, "a cast of 26 m does not");
+
+    // ---- the big ring: after 20 casts in the water with the goal open, a ring close in carries a big fish ----
+    console.log("     the big ring");
+    await page.evaluate(() => { FISH.newCast(); FISH.G.dry = { at: "loon", n: 19 }; FISH.rises.list.push({ x: 6, z: -14, ttl: 30, species: "perch", gold: false, pulse: 99 }); window.__rise = [6, -14]; });
+    await frames(8);
+    const BIG = "A big fish is rising close in.";
+    check((await count(BIG)) === 0 && (await page.evaluate(() => !FISH.rises.list[0].big)), "after 19 casts in the water, no big ring yet");
+    await page.evaluate(() => { FISH.G.dry.n = 20; });
+    check((await toastIs(page, BIG)) === BIG, "after 20: \"" + BIG + "\"");
+    await frames(10);
+    const ring = await page.evaluate(() => ({ big: FISH.rises.list[0].big, species: FISH.rises.list[0].species, ttl: FISH.rises.list[0].ttl, n: FISH.G.dry.n }));
+    check((await count(BIG)) === 1 && ring.big && ring.species === "pike" && ring.ttl >= 85 && ring.n === 20, "said once; the ring now carries a pike and stays up 90 s, and the help goes on until its fish is landed (" + JSON.stringify(ring) + ")");
+    // one big ring at a time: a second ring close in stays plain while the big one is up
+    await page.evaluate(() => { FISH.rises.list.push({ x: -6, z: -16, ttl: 30, species: "perch", gold: false, pulse: 99 }); window.__rise = [-6, -16]; });
+    await frames(8);
+    check((await count(BIG)) === 1 && (await page.evaluate(() => !FISH.rises.list[1].big)), "one big ring at a time: a second ring close in stays plain");
+    await page.evaluate(() => { window.__rise = null; });
+    const into = await landAt(page, 6.5, -14.5);
+    check(into.ring && into.zone === "Right on the rising fish!" && into.plan && into.plan.id === "pike", "a cast into it: a sure bite from the pike (" + JSON.stringify(into) + ")");
+    // its fish is hooked (the ring goes with it, as handleEvent does) and lost: the next ring close in carries a big fish
+    await page.evaluate(() => { FISH.rises.take(FISH.G.ring); FISH.newCast(); window.__rise = [-6, -16]; });
+    await frames(10);
+    const again = await page.evaluate(() => ({ big: FISH.rises.list.map((g) => !!g.big), species: FISH.rises.list[0].species }));
+    check((await count(BIG)) === 2 && again.big.join() === "true" && again.species === "pike", "a big fish lost: the next ring close in carries one again, and says so (" + JSON.stringify(again) + ")");
+    await page.evaluate(() => { window.__rise = null; FISH.rises.list.length = 0; });
+    const ft = await page.evaluate(() => { const G = FISH.G; G.mode = "derby"; const big = G.dry; G.dry = { at: "loon", n: 30 }; FISH.rises.list.push({ x: 4, z: -12, ttl: 60, species: "perch", gold: false, pulse: 99 }); window.__rise = [4, -12]; return !!big; });
+    await frames(10);
+    check(ft && (await count(BIG)) === 2 && (await page.evaluate(() => !FISH.rises.list[0].big)), "in a derby there is no big ring (the derby ranks stay where they are)");
+    await page.evaluate(() => { window.__rise = null; FISH.rises.list.length = 0; FISH.G.mode = "free"; FISH.G.dry = null; });
+
+    // ---- three sweet casts in a row ----
+    console.log("     three sweet casts");
+    // (castParams' result, as much of it as the game reads: the ?debug line shows v0, pitch and clock)
+    const SWEET = { verdict: "sweet", late: false, yaw: 0, v0: 22, pitch: 30, clock: "11:00" }, HIGH = { ...SWEET, verdict: "high", pitch: 50 };
+    const s1 = await landAt(page, -8, -26, { cast: SWEET }), s2 = await landAt(page, 8, -26, { cast: SWEET }), s3 = await landAt(page, 0, -28, { cast: SWEET });
+    const after3 = await page.evaluate(() => ({ streak: FISH.G.streak, boost: !!FISH.G.boostNext, best: FISH.save.bestRun }));
+    check(s1.zone !== s3.zone && s2.zone !== "Three sweet casts! A big fish is near." && s3.zone === "Three sweet casts! A big fish is near." && s3.streak && !s1.streak, "the third sweet cast in a row lights up the report: \"" + s3.zone + "\"");
+    check(after3.streak === 3 && after3.boost && after3.best === 3, "and the next cast in the water will bring a bigger fish; the best run, 3, is saved (" + JSON.stringify(after3) + ")");
+    const s4 = await landAt(page, 0, -27, { cast: HIGH });
+    const after4 = await page.evaluate(() => ({ streak: FISH.G.streak, boost: !!FISH.G.boostNext, best: FISH.save.bestRun }));
+    check(!s4.streak && after4.streak === 0 && !after4.boost && after4.best === 3, "a cast that is not sweet ends the run, and uses up the boost (" + JSON.stringify(after4) + ")");
+    // the boost reaches the fish: the same cast (same seed, same spot, the same kind of fish), with and without it.
+    // (A seed that rolls a fish over the usual range can weigh the same both ways: three seeds, one at least heavier)
+    const replay = async (seed, armed) => {
+      await page.evaluate(([seed, armed]) => { FISH.G.seed = seed; FISH.G.casts = 6; FISH.G.boostNext = armed; FISH.G.force = { species: "smallmouth", bite: true }; }, [seed, armed]);
+      return (await landAt(page, 0, -27, { cast: HIGH })).plan.kg;
+    };
+    const weighs = [];
+    for (const seed of [4242, 777, 31337]) weighs.push([await replay(seed, false), await replay(seed, true)]);
+    await page.evaluate(() => { FISH.G.force = null; });
+    check(weighs.every(([a, b]) => b >= a) && weighs.some(([a, b]) => b > a), "the cast after three sweet casts brings a bigger fish: the same casts weigh " + weighs.map(([a, b]) => a + " -> " + b + " kg").join(", "));
+    await page.evaluate(() => { FISH.G.mode = "derby"; });
+    for (let i = 0; i < 3; i++) await landAt(page, -6 + i * 6, -27, { cast: SWEET });
+    check(await page.evaluate(() => FISH.G.streak === 0 && !FISH.G.boostNext), "in a derby sweet casts make no run");
+    await page.evaluate(() => { FISH.G.mode = "free"; FISH.G.castsLeft = Infinity; });
+    // only casts in the water count: three sweet casts onto the shore make no run, and one ends a run
+    const shore = [];
+    for (let i = 0; i < 3; i++) shore.push(await landAt(page, 0, 3, { cast: SWEET, land: "land" }));
+    const ashore = await page.evaluate(() => ({ streak: FISH.G.streak, boost: !!FISH.G.boostNext }));
+    check(ashore.streak === 0 && !ashore.boost && shore.every((x) => !x.streak), "three sweet casts onto the shore make no run and arm nothing (" + JSON.stringify(ashore) + ")");
+    await landAt(page, -8, -26, { cast: SWEET }); await landAt(page, 8, -26, { cast: SWEET });
+    await landAt(page, 0, 3, { cast: SWEET, land: "land" });
+    check(await page.evaluate(() => FISH.G.streak === 0), "two sweet casts, then one onto the shore: the run ends");
+    // the third sweet cast in a row lands in a ring: the report still says so
+    await landAt(page, -8, -26, { cast: SWEET }); await landAt(page, 8, -26, { cast: SWEET });
+    await page.evaluate(() => { FISH.rises.list.push({ x: 0, z: -28, ttl: 30, species: "perch", gold: false, pulse: 99 }); });
+    const inRing = await landAt(page, 0.5, -28, { cast: SWEET });
+    await page.evaluate(() => { FISH.rises.list.length = 0; FISH.G.boostNext = false; FISH.G.streak = 0; });
+    check(inRing.ring && inRing.zone === "Three sweet casts! A big fish is near." && inRing.streak, "the third sweet cast lands in a ring: the report still lights up (" + JSON.stringify(inRing) + ")");
+
+    // ---- a goal from a cast: 40 m ----
+    console.log("     the goals");
+    await landAt(page, 0, -41);
+    check((await toastIs(page, "Goal done: Cast 40 m.")) === "Goal done: Cast 40 m." && (await page.evaluate(() => FISH.save.places.loon.g === 1)), "a 41 m cast: \"Goal done: Cast 40 m.\", and the save keeps it");
+    await sleep(400);
+    check(has(await logNow(page), "S.sfx", "record"), "with the record sting");
+    await landAt(page, 0, -42);
+    await sleep(1500);
+    check((await count("Goal done: Cast 40 m.")) === 1, "a second 40 m cast is not news");
+
+    // ---- the first fish of the day, from a ring and a cast stopped short: all the news in one toast, a line each ----
+    await page.evaluate(() => { FISH.newCast(); window.__toasts.length = 0; window.__log.length = 0; FISH.G.landing = { x: 6, z: -14, dist: 15.2, ring: true, feather: true }; });
+    let c = await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false });
+    await sleep(1600);
+    const t1 = await toastsNow(page), NEWS1 = "Your first fish today.\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
+    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "the first fish of the day does two goals: one toast says \"Your first fish today.\" and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
+    const shown = await page.evaluate(() => { const t = document.querySelector("#toast"), r = t.getBoundingClientRect(), card = document.querySelector("#catch .card").getBoundingClientRect(); return { on: t.classList.contains("on"), lines: Math.round(r.height / parseFloat(getComputedStyle(t).lineHeight)), clear: r.bottom <= card.top, top: r.top >= 0 }; });
+    check(shown.on && shown.lines >= 3 && shown.clear && shown.top, "the news shows over the catch screen, three lines, clear of the card (" + JSON.stringify(shown) + ")");
+    check(c.badges.join() === "NEW SPECIES" && c.found === "1 of 13 found here.", "a new find says how much of the place is found, the journal's count: \"" + c.found + "\"");
+    const sv = await page.evaluate(() => JSON.parse(JSON.stringify(FISH.save)));
+    check(sv.places.loon.g === 7 && sv.today.d === DAY && sv.today.k === dailyGoalK(), "the save: goals 0, 1 and 2 done (g 7), and today's goal is the one of " + DAY + " (" + JSON.stringify(sv.today) + ")");
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => { FISH.G.landing = { x: 0, z: -20, dist: 20, ring: false, feather: false }; window.__toasts.length = 0; });
+    c = await catchCard(page, { id: "walleye", name: "Walleye", kg: 2.1, cm: 50, junk: false });
+    check(c.found === "2 of 13 found here." && !(await toastsNow(page)).some((t) => t.includes("Your first fish today.")), "the next new kind: \"" + c.found + "\", and no first-fish toast");
+    c = await (async () => { await click(page, "#catchGo"); await wait(page, () => FISH.G.phase === "cast"); return catchCard(page, { id: "walleye", name: "Walleye", kg: 1.5, cm: 45, junk: false }); })();
+    check(c.found === "" && c.badges.indexOf("NEW SPECIES") < 0, "a kind already found has no count line");
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
+
+    // ---- the Places card: Goals: 3 of 6, with the three checked ----
+    await page.evaluate(() => FISH.toTitle());
+    await page.waitForSelector("#title:not([hidden])");
+    const day1 = todayLine(await page.evaluate(() => JSON.parse(JSON.stringify(FISH.save))), DAY);
+    check((await page.textContent("#tday")) === day1, "the title shows today's goal with its progress (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    await click(page, "#placesBtn");
+    await page.waitForSelector("#places:not([hidden])");
+    const pg = await page.evaluate(() => { const c = document.querySelector('.pcard[data-place="loon"]'), d = c.querySelector("details.goals"); return { sum: d.querySelector("summary").textContent, open: d.open, items: [...d.querySelectorAll("li")].map((l) => l.textContent + (l.classList.contains("done") ? "+" : "")) }; });
+    check(pg.sum === "Goals: 3 of 6" && pg.open && pg.items.length === 6 && pg.items[0] === "Cast 40 m.+" && pg.items[1] === "Land a fish from a rising ring.+" && pg.items[2] === "Stop a cast short. Land a fish.+" && pg.items.filter((x) => x.endsWith("+")).length === 3, "the Loon Lake card: \"Goals: 3 of 6\", the list, three checked (" + JSON.stringify(pg) + ")");
+    await click(page, "#places [data-close]");
+
+    // ---- ?day is never saved: after a reload the goals done are kept, but today's goal and the run of days were never
+    // written (part M reloads on the phone's own day) ----
+    check(/ 3 of 5\.$/.test(day1), "three fish today: " + JSON.stringify(day1));
+    const kept = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("fish.v1")); return { today: s.today, days: s.days, g: s.places.loon.g }; });
+    check(JSON.stringify(kept.today) === JSON.stringify({ d: "", k: 0, n: 0, done: 0 }) && kept.days.n === 0 && kept.days.last === "" && kept.g === 7, "under ?day the save keeps the goals done, and not today's goal or the run of days (" + JSON.stringify(kept) + ")");
+    await page.reload();
+    await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
+    check((await page.textContent("#tday")) === todayLine(loadSave(null), DAY), "after a reload with ?day: today's goal starts over (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    await stand(page);
+    await spy(page);
+
+    // ---- the journal: the fish caught, the next 3 with their hints, and how many more; the best sweet run ----
+    await click(page, "#journalBtn");
+    await page.waitForSelector("#journal:not([hidden])");
+    const jr = await page.evaluate(() => ({ rows: [...document.querySelectorAll("#jlist .jfish")].map((r) => [r.querySelector("b").textContent, r.querySelector("small").textContent]), note: (document.querySelector("#jlist .jnote") || {}).textContent, sum: document.querySelector("#jsum").textContent }));
+    check(jr.rows.length === 5 && jr.rows[0][0] === "Yellow Perch" && jr.rows[1][0] === "Walleye" && jr.rows.slice(2).every((r) => r[0] === "Not caught yet" && /^Try /.test(r[1])) && jr.note === "8 more to find here.",
+      "the journal: the 2 fish caught, the next 3 to find with their hints, \"8 more to find here.\" (" + JSON.stringify(jr) + ")");
+    check((jr.sum.split("\n")[1] || "") === "Best sweet run: 3", "the summary shows the best sweet run (" + JSON.stringify(jr.sum) + ")");
+    await click(page, "#journal [data-close]");
+
+    // ---- the big ring's fish landed: the help for a short caster counts from 0 again ----
+    await page.evaluate(() => FISH.startMode("free"));
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => { FISH.G.dry = { at: "loon", n: 24 }; FISH.G.landing = { x: 6, z: -14, dist: 15.2, ring: true, big: true, feather: false }; });
+    await catchCard(page, { id: "pike", name: "Northern Pike", kg: 3.1, cm: 80, junk: false });
+    check(await page.evaluate(() => FISH.G.dry.n === 0), "a big ring's fish landed: the count of casts starts again");
+    await click(page, "#catchGo");
+  } catch (e) { check(false, "exception in part J: " + (e && e.stack)); }
+  check(errors.length === 0, "part J: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+function dailyGoalK() { return dailyGoal("2026-10-03", loadSave(null)).k; }
+
+/* ================= part K: the derby: casts back, the unlock on the card, the rank ladder; the goals of other places ================= */
+if (part("K")) {
+  const DAY = "2026-10-03";
+  const { browser, page, errors } = await open({ query: "?debug&day=" + DAY, save: { v: 1, journal: {}, caught: 3, casts: 30, seen: { "ring.tip": 1 } } });
+  try {
+    await stand(page);
+    await spy(page);
+    await logToasts(page);
+    // ---- a cast onto the shore in a derby gives the cast back, every time ----
+    console.log("     casts back in a derby");
+    await page.evaluate(() => { FISH.startMode("derby"); FISH.rises.near = () => null; });
+    await wait(page, () => FISH.G.phase === "cast");
+    const chip0 = await page.textContent("#modeChip");
+    const backs = [];
+    for (let i = 0; i < 4; i++) {
+      const r = await landAt(page, 0, 3, { land: "land" });
+      await wait(page, () => FISH.G.step === "ready", null, 10000);
+      backs.push({ zone: r.zone, left: await page.evaluate(() => FISH.G.castsLeft), chip: await page.textContent("#modeChip") });
+    }
+    check(chip0.startsWith("1/10 · ") && backs.every((b) => b.zone === "You cast onto the shore. You get that cast back." && b.left === 10 && b.chip.startsWith("1/10 · ")), "four casts onto the shore: each says \"You get that cast back.\", and the chip keeps cast 1 of 10 (" + JSON.stringify(backs) + ")");
+
+    // ---- a derby catch that opens a place: NEW PLACE first, "It opens Stump Bay.", and after the card where to go ----
+    console.log("     the unlock on the catch card");
+    let c = await catchCard(page, { id: "walleye", name: "Walleye", kg: 3.6, cm: 62, junk: false });
+    check(c.badges[0] === "NEW PLACE" && c.old === "It opens Stump Bay." && c.btn === "Cast again", "the catch card: NEW PLACE first, and \"It opens Stump Bay.\" (" + JSON.stringify({ badges: c.badges, old: c.old, btn: c.btn }) + ")");
+    await click(page, "#catchGo");
+    check((await toastIs(page, "Stump Bay is open. Go there after the derby.")) === "Stump Bay is open. Go there after the derby." && (await page.evaluate(() => FISH.G.phase === "cast" && document.querySelector("#unlock").hidden)), "after the card: \"Stump Bay is open. Go there after the derby.\", and the derby goes on");
+
+    // ---- the results: the next rank, and the old best on a new best ----
+    console.log("     the rank ladder");
+    await page.evaluate(() => { FISH.G.castsLeft = 0; });
+    await stage(page, { phase: "home" });
+    await page.waitForSelector("#results:not([hidden])", { timeout: 15000 });
+    const res = () => page.evaluate(() => ({ rank: document.querySelector("#rrank").textContent, next: document.querySelector("#rnext").textContent, nextShown: getComputedStyle(document.querySelector("#rnext")).display !== "none", best: document.querySelector("#rbest").textContent }));
+    let r = await res();
+    check(r.rank === "DOCK ROOKIE" && r.next === "Next rank: WEEKEND ANGLER at 4 kg." && r.nextShown && r.best === "A new best derby here!", "a 3.6 kg derby: DOCK ROOKIE, \"Next rank: WEEKEND ANGLER at 4 kg.\" (" + JSON.stringify(r) + ")");
+    const derby = async (kgs) => {
+      await click(page, "#rAgain");
+      await wait(page, () => FISH.G.phase === "cast");
+      for (const [i, kg] of kgs.entries()) {
+        await page.evaluate((last) => { FISH.G.castsLeft = last ? 0 : 5; }, i === kgs.length - 1);
+        await catchCard(page, { id: "muskie", name: "Muskellunge", kg, cm: 100, junk: false });
+        await click(page, "#catchGo");
+      }
+      await page.waitForSelector("#results:not([hidden])", { timeout: 15000 });
+      return res();
+    };
+    r = await derby([5.2, 6]);
+    check(r.rank === "COTTAGE REGULAR" && r.next === "Next rank: LAKE PRO at 17 kg." && r.best === "A new best derby here! Your old best: 3.6 kg.", "an 11.2 kg derby: the next rank, and the old best (" + JSON.stringify(r) + ")");
+    r = await derby([14, 13]);
+    check(r.rank === "LOON LAKE CHAMPION" && r.next === "" && !r.nextShown, "at the top rank there is no next rank (" + JSON.stringify(r) + ")");
+    await click(page, "#rMenu");
+    await page.waitForSelector("#title:not([hidden])");
+    await click(page, "#placesBtn");
+    await page.waitForSelector("#places:not([hidden])");
+    const facts = await page.evaluate(() => document.querySelector('.pcard[data-place="loon"] .facts').innerText);
+    check(/Best derby 27\.0 kg · LOON LAKE CHAMPION/.test(facts), "the Places card shows the best derby and its rank (" + JSON.stringify(facts) + ")");
+    await click(page, "#places [data-close]");
+
+    // ---- Stump Bay: a fish turned from the stumps ----
+    console.log("     a goal at Stump Bay");
+    check(await page.evaluate(async () => await FISH.setPlace("stumps")), "at Stump Bay");
+    await page.evaluate(() => FISH.startMode("free"));
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => { window.__toasts.length = 0; FISH.G.landing = { x: -10, z: -20, dist: 22, ring: false, feather: false }; });
+    await stage(page, { fish: { id: "largemouth", kg: 2, known: true } }, [{ type: "hooked", id: "largemouth" }, { type: "cover", kind: "stumps", side: 1, steer: -1 }, { type: "turned" }]);
+    c = await catchCard(page, { id: "largemouth", name: "Largemouth Bass", kg: 2, cm: 45, junk: false });
+    await sleep(1600);
+    check((await toastsNow(page)).flatMap((t) => t.split("\n")).includes("Goal done: Turn a fish from the stumps."), "the toast: \"Goal done: Turn a fish from the stumps.\" (" + JSON.stringify(await toastsNow(page)) + ")");
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => FISH.toTitle());
+    await click(page, "#placesBtn");
+    await page.waitForSelector("#places:not([hidden])");
+    const sb = await page.evaluate(() => { const d = document.querySelector('.pcard[data-place="stumps"] details.goals'); return { sum: d.querySelector("summary").textContent, done: [...d.querySelectorAll("li.done")].map((l) => l.textContent) }; });
+    check(sb.sum === "Goals: 1 of 6" && sb.done.join() === "Turn a fish from the stumps.", "the Stump Bay card shows the goal checked (" + JSON.stringify(sb) + ")");
+    await click(page, "#places [data-close]");
+  } catch (e) { check(false, "exception in part K: " + (e && e.stack)); }
+  check(errors.length === 0, "part K: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
+/* ================= part L: today's goal done two days running; the next legend; the journal's odd finds ================= */
+if (part("L")) {
+  const DAY = "2026-10-03", five = DAILY.findIndex((g) => g.at === "loon" && g.kind === "count");
+  const fish = { pumpkinseed: 1, perch: 1, rockbass: 1, smallmouth: 1, largemouth: 1, walleye: 1, pike: 1, laketrout: 1, muskie: 1, golden: 1, whiskers: 1 };
+  const journal = Object.fromEntries(Object.keys(fish).map((id) => [id, { n: 1, kg: 1, cm: 30 }]));
+  const save = { v: 1, journal, caught: 11, casts: 90, seen: { "ring.tip": 1, "at.stumps": 1, "at.river": 1, "at.sea": 1, "opened.stumps": 1, "opened.river": 1, "opened.sea": 1 },
+    places: { loon: { open: 1, kg: 4 }, stumps: { open: 1, kg: 7 }, river: { open: 1, kg: 9 }, sea: { open: 1 } },
+    today: { d: DAY, k: five, n: 4, done: 0 }, days: { n: 1, run: 1, best: 1, last: "2026-10-02" } };
+  const { browser, page, errors } = await open({ query: "?debug&day=" + DAY, save });
+  try {
+    await stand(page);
+    await spy(page);
+    await logToasts(page);
+    // ---- every place open, two legends left: the title names the next legend and when to look ----
+    check((await page.textContent("#tbest")) === "Next: the legend of Cedar River. Look for a gold ring at dawn.", "every place open, two legends left: the title names the next legend and when to look (" + JSON.stringify(await page.textContent("#tbest")) + ")");
+    check((await page.textContent("#tday")) === "Today: land 5 fish at Loon Lake. 4 of 5.", "today's goal with its progress (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    await page.evaluate(() => FISH.startMode("free"));
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => document.querySelector("#pauseBtn").click());
+    await wait(page, () => !document.querySelector("#pause").hidden);
+    check((await page.textContent("#pauseSum")).endsWith("\nNext: the legend of Cedar River. Look for a gold ring at dawn."), "the pause card names it too (" + JSON.stringify(await page.textContent("#pauseSum")) + ")");
+    await click(page, "#resumeBtn");
+    // ---- the fifth fish: today's goal is done, 2 days in a row. It came from a ring after a cast stopped short, and was
+    // turned from the weeds, so it does three goals too; "You turned it!" is still up when it lands ----
+    await page.evaluate(() => { window.__toasts.length = 0; FISH.G.landing = { x: 0, z: -20, dist: 20, ring: true, feather: true }; });
+    await stage(page, { fish: { id: "perch", kg: 0.3, known: true } }, [{ type: "hooked", id: "perch" }, { type: "cover", kind: "weeds", side: 1, steer: -1 }, { type: "turned" }]);
+    await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.3, cm: 25, junk: false });
+    await sleep(3200);
+    const t = await toastsNow(page), lg = await logNow(page);
+    const NEWS = "Goal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.\nGoal done: Turn a fish away from cover.\nToday's goal is done. 2 days in a row.";
+    check(t.includes("You turned it!") && t.includes(NEWS) && !t.some((x) => x.includes("Your first fish today.")) && has(lg, "S.sfx", "record"), "the fifth fish does three goals and today's goal while \"You turned it!\" is up: one toast says all four, a line each, with the record sting (" + JSON.stringify(t) + ")");
+    check(await page.evaluate(() => FISH.save.days.n === 2 && FISH.save.days.run === 2 && FISH.save.days.best === 2 && FISH.save.today.done === 1 && FISH.save.places.loon.g === 22), "the save: 2 days done, a run of 2, and the three goals (g 22)");
+    const kept = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("fish.v1")); return { today: s.today, days: s.days, g: s.places.loon.g }; });
+    check(JSON.stringify(kept.today) === JSON.stringify(save.today) && JSON.stringify(kept.days) === JSON.stringify(save.days) && kept.g === 22, "under ?day the stored save keeps its own day and run of days, and the goals done (" + JSON.stringify(kept) + ")");
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => FISH.toTitle());
+    check((await page.textContent("#tday")) === "Today's goal is done. 2 days in a row.", "the title says so (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    // ---- the journal: the odd finds near the dock, and the days ----
+    await click(page, "#journalBtn");
+    await page.waitForSelector("#journal:not([hidden])");
+    const jr = await page.evaluate(() => ({ rows: [...document.querySelectorAll("#jlist .jfish.none")].map((r) => [r.querySelector("b").textContent, r.querySelector("small").textContent]), note: document.querySelector("#jlist .jnote"), sum: document.querySelector("#jsum").textContent }));
+    check(jr.rows.length === 3 && jr.rows.every((r) => r[0] === "Something odd" && r[1] === "Something odd lies near the dock.") && !jr.note, "Loon Lake's junk not found yet: \"Something odd lies near the dock.\" (" + JSON.stringify(jr.rows) + ")");
+    check(/\nGoal days: 2 \(best 2 in a row\)$/.test(jr.sum), "the summary counts the days whose goal was done, and the best run of them (" + JSON.stringify(jr.sum) + ")");
+    await page.evaluate(() => document.querySelector('#jtabs [data-place="sea"]').click());
+    const sea = await page.evaluate(() => [...document.querySelectorAll("#jlist .jfish")].map((r) => r.querySelector("small").textContent));
+    check(sea.length === 3 && sea.includes("Try the tide channel in the morning."), "Gull Rock: the next 3 to find, and the Bluefish looks in the morning (" + JSON.stringify(sea) + ")");
+    await click(page, "#journal [data-close]");
+  } catch (e) { check(false, "exception in part L: " + (e && e.stack)); }
+  check(errors.length === 0, "part L: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
+/* ================= part M: the phone's own day; the results card and the journal on short screens ================= */
+// No ?day: the same goal and the same progress after a reload. Then a long journal, and a 10-fish derby that is a new best
+// and opens Stump Bay (every line of the results card), at 360x640 and at 844x390: the buttons stay on the screen
+if (part("M")) {
+  const day = dayOf(), five = DAILY.findIndex((g) => g.at === "loon" && g.kind === "count");
+  const ids = ["pumpkinseed", "perch", "rockbass", "smallmouth", "largemouth", "walleye", "pike", "laketrout"];
+  const journal = Object.fromEntries(ids.map((id) => [id, { n: 2, kg: 1.2, cm: 40 }]));
+  const save = { v: 1, journal, caught: 30, casts: 200, bestRun: 4, seen: { "ring.tip": 1 }, places: { loon: { open: 1, d: 2.2, kg: 1.2, id: "perch" } },
+    today: { d: day, k: five, n: 2, done: 0 }, days: { n: 3, run: 2, best: 2, last: prevDay(day) } };
+  const { browser, page, errors } = await open({ save });
+  try {
+    await stand(page);
+    await spy(page);
+    // ---- the same day, the same goal and progress after a reload ----
+    check((await page.textContent("#tday")) === "Today: land 5 fish at Loon Lake. 2 of 5.", "the phone's own day: today's goal from the save (" + JSON.stringify(await page.textContent("#tday")) + ")");
+    await page.evaluate(() => FISH.startMode("free"));
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => { FISH.G.landing = { x: 0, z: -20, dist: 20, ring: false, feather: false }; });
+    await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.3, cm: 25, junk: false });
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => FISH.toTitle());
+    await page.waitForSelector("#title:not([hidden])");
+    const line = await page.textContent("#tday");
+    await page.reload();
+    await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
+    check(line === "Today: land 5 fish at Loon Lake. 3 of 5." && (await page.textContent("#tday")) === line, "a fish later, and after a reload on the same day: the same goal and the same progress (" + JSON.stringify([line, await page.textContent("#tday")]) + ")");
+    await stand(page);
+    await spy(page);
+
+    // ---- the journal at 360x640 and 844x390: a long list scrolls inside the card, and Close stays on the screen ----
+    const fits = (sel, btn) => page.evaluate(([sel, btn]) => { const c = document.querySelector(sel).getBoundingClientRect(), b = document.querySelector(btn).getBoundingClientRect(); return { top: Math.round(c.top), bottom: Math.round(c.bottom), btn: Math.round(b.bottom), vh: innerHeight, ok: c.top >= 0 && c.bottom <= innerHeight && b.bottom <= innerHeight - 8 }; }, [sel, btn]);
+    for (const [w, h] of [[360, 640], [844, 390]]) {
+      await page.setViewportSize({ width: w, height: h });
+      await sleep(400);
+      await click(page, "#journalBtn");
+      await page.waitForSelector("#journal:not([hidden])");
+      await sleep(300);
+      const j = await fits("#journal .card", "#journal [data-close]"), sum = await page.textContent("#jsum");
+      check(j.ok && /\nBest sweet run: 4 · Goal days: 3 \(best 2 in a row\)$/.test(sum), `the journal at ${w}x${h}: the card and Close fit (${JSON.stringify(j)}), with the sweet run and the goal days (${JSON.stringify(sum)})`);
+      await click(page, "#journal [data-close]");
+    }
+
+    // ---- the results card with every line: 10 fish, a new best with the old best, the next rank, the unlock ----
+    await page.setViewportSize({ width: 360, height: 640 });
+    await sleep(400);
+    await page.evaluate(() => FISH.startMode("derby"));
+    await wait(page, () => FISH.G.phase === "cast");
+    const kgs = [0.4, 0.6, 1.1, 0.5, 0.9, 1.2, 0.3, 0.8, 0.7, 3.7];
+    for (const [i, kg] of kgs.entries()) {
+      await page.evaluate((last) => { FISH.G.castsLeft = last ? 0 : 5; FISH.G.landing = { x: 0, z: -20, dist: 20, ring: false, feather: false }; }, i === kgs.length - 1);
+      await catchCard(page, { id: "perch", name: "Yellow Perch", kg, cm: 25, junk: false });
+      await wait(page, () => !FISH.G.cardWait, null, 20000);
+      await click(page, "#catchGo");
+    }
+    await page.waitForSelector("#results:not([hidden])", { timeout: 15000 });
+    await sleep(500);
+    const lines = await page.evaluate(() => ["#rnext", "#rbest", "#runlock"].map((s) => document.querySelector(s).textContent));
+    check(lines[0] === "Next rank: LAKE PRO at 17 kg." && lines[1] === "A new best derby here! Your old best: 2.2 kg." && /opened Stump Bay/.test(lines[2]), "the results: the next rank, the old best and the unlock (" + JSON.stringify(lines) + ")");
+    for (const [w, h] of [[360, 640], [844, 390]]) {
+      await page.setViewportSize({ width: w, height: h });
+      await sleep(500);
+      const r = await fits("#results .card", "#rAgain");
+      check(r.ok, `the results card at ${w}x${h} fits, and "Fish again" is on the screen (${JSON.stringify(r)})`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+  } catch (e) { check(false, "exception in part M: " + (e && e.stack)); }
+  check(errors.length === 0, "part M: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 

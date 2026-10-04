@@ -3,14 +3,19 @@
 // Usage: node qa/primordia/bot.mjs [seconds=160] [seed=7] [policy=ref] [--portrait] [--json]
 //                                  [--snap 160,240] [--react 0.15] [--no-assist] [--log]
 //
-// Policies (design section 8.4):
+// Policies (design section 8.4, growth design section 10):
 //   ref    skilled: sidesteps or parries locked lanes (parry on a 50% roll), cuts Exposed hunters along
 //          their body, Glory Bites reeling ones, chases Remains, pops eggs, hunts down swarmers, baits
 //          lunges when its dash charges are full, Bursts when 2+ hunters (or the Leviathan) are inside the
-//          20-cell ring, and otherwise grazes prey 14+ cells away from hunter tissue
+//          20-cell ring, and otherwise grazes prey 14+ cells away from hunter tissue. Growth: for 5 s after
+//          play resumes it eats converted prey (old hunters, prey with .converted) within 50 cells first;
+//          after the notch it swims into outgrown swarms, brood and eggs (game.edible) with its mouth, and
+//          it neither dodges nor Bursts on them, since they no longer sting
 //   asap   ref, but Bursts the moment the meter is full
 //   blind  steers to the nearest prey only. No dash, no Burst
 //   idle   no input
+// Every policy sends no input outside the play state (the grow sequence and the cards); the runner picks
+// a card in the mutate state with pickCard().
 //
 // ref and asap notice a hunter's state changes (windup, lane lock, Exposed, stagger) only after a reaction
 // time (--react, default 0.15 s, a fast human). Telegraphed timing (the windup heat, the glint) is then
@@ -47,17 +52,27 @@ export function makePolicy(name, g, { seed = 1, assist = false, react = 0.15 } =
     rng: mulberry32(((seed * 2654435761) ^ 0x5bd1e995) >>> 0),
     vis: new Int32Array(g.w * g.h), gen: 0, react,
     parry: new Map(), mem: new Map(), last: { mx: 0, my: 0 }, why: "", preyRef: null, shape: null,
-    stats: { dash: {}, parryPlanned: 0, parryTried: 0, burstPressed: 0 },
+    size: g.epoch, resumeAt: null,
+    stats: { dash: {}, parryPlanned: 0, parryTried: 0, burstPressed: 0, huskChase: 0, edibleChase: 0 },
   };
   const fns = { ref: () => ref(g, S, false), asap: () => ref(g, S, true), blind: () => blind(g), idle: () => ({}) };
   const fn = fns[name];
   if (!fn) throw new Error(`unknown policy "${name}" (ref, asap, blind, idle)`);
   return {
     name, state: S,
-    input: () => { const inp = fn(); if (assist) inp.assist = true; return inp; },
+    // the grow sequence and the cards take no input: hands off the stick until play resumes
+    input: () => {
+      if (g.state !== "play") return {};
+      const inp = fn();
+      if (assist) inp.assist = true;
+      return inp;
+    },
     card: () => pickCard(g),
   };
 }
+
+// a body the player has outgrown (swarms, small brood and eggs after the notch): food, and it never stings
+const edible = (g, e) => !!(g.edible && g.edible(e));
 
 // ---------------------------------------------------------------- geometry
 const dx = (g, a, b) => wdelta(b - a, g.w);
@@ -182,6 +197,7 @@ function steerTo(g, C, tx, ty, opts = {}) {
   if (g.burstT <= 0) for (const e of g.hunters) {
     if (e === opts.ignore) continue;
     if (e.state === "stagger" && !e.boss) continue; // reeling tissue does not sting
+    if (edible(g, e)) continue; // nor does a body the player has outgrown
     const s = e === opts.soft ? Math.min(safe, opts.softSafe ?? 5) : safe;
     if (!(e.nd < s)) continue;
     // inside or touching tissue the nearest cell gives no direction; go down the tissue gradient instead
@@ -214,12 +230,12 @@ function escapeDir(g) {
   return ux || uy ? [ux, uy] : [-P.dirX, -P.dirY];
 }
 
-// stung right now: tissue under the player that is not reeling
+// stung right now: tissue under the player that is not reeling and not outgrown
 function stung(g) {
   const W = g.world, P = g.player;
   if (g.burstT > 0 || P.iframes > 0 || W.probe(W.B, P.x, P.y, P.r) <= 0.35) return false;
   const o = g.ownerAt(P.x, P.y, P.r);
-  return !o || o.state !== "stagger";
+  return !o || (o.state !== "stagger" && !edible(g, o));
 }
 
 // ---------------------------------------------------------------- policies
@@ -236,19 +252,23 @@ function ref(g, S, asap) {
   const P = g.player;
   if (!P.alive || g.state !== "play") return {};
   perceive(g, S);
+  // the size number went up: the dish grew and play has just resumed (the screen shows the new size)
+  if (g.epoch !== S.size) { S.size = g.epoch; S.resumeAt = g.time; }
   // the world is frozen during hit-stop; hold the stick and press nothing
   if (g.hitstop > 0) return { mx: S.last.mx, my: S.last.my };
   const C = situation(g, S);
   const out = decide(g, S, C) || { mx: 0, my: 0 };
   if (out.dash && (P.dashT > 0 || P.charges < 1)) out.dash = false;
   // Burst: 2+ hunters (or the Leviathan) inside the 20-cell ring; asap fires at once; a last-ditch blast
-  // when light is nearly gone and a hunter is in the ring
+  // when light is nearly gone and a hunter is in the ring. Outgrown bodies are food, not a reason to Burst.
   if (g.ready && g.burstT <= 0) {
-    const ring = C.live.filter((e) => e.nd <= TUNE.burst.catch);
+    const ring = C.live.filter((e) => e.nd <= TUNE.burst.catch && !edible(g, e));
     if (asap || ring.length >= 2 || ring.some((e) => e.boss) || (ring.length && P.light < 0.2 * P.maxLight)) out.burst = true;
   }
   if (out.dash) { const k = (out.why || "?").replace(/\+strafe$/, ""); S.stats.dash[k] = (S.stats.dash[k] || 0) + 1; if (k.startsWith("parry")) S.stats.parryTried++; }
   if (out.burst) S.stats.burstPressed++;
+  if (out.why?.startsWith("husk")) S.stats.huskChase++;
+  if (out.why?.startsWith("edible")) S.stats.edibleChase++;
   S.last = out; S.why = out.why || "";
   if (S.parry.size > 400) S.parry.clear();
   return out;
@@ -425,12 +445,22 @@ function plan(g, S, C) {
     return cutTarget(g, S, C, exposed, "exposed", left < 0.35 ? 0.08 : 0.14);
   }
 
+  // 2a. The dish just grew: the old hunters glide around as prey worth 3 growth points. Eat them first.
+  if (S.resumeAt !== null && g.time - S.resumeAt <= 5) {
+    const husk = nearest(g.prey.filter((p) => p.converted && dist(g, P.x, P.y, p.x, p.y) <= 50), (p) => dist(g, P.x, P.y, p.x, p.y));
+    if (husk) return chaseFood(g, S, C, husk, 8, "husk");
+  }
+
+  // 2b. After the notch, swarms, small brood and eggs are food: swim into them with the mouth
+  const ed = nearest(C.live.concat(g.hunters.filter((e) => e.egg)).filter((e) => edible(g, e) && e.nd <= (low ? 30 : 45)), (e) => e.nd);
+  if (ed) return chaseEdible(g, S, C, ed);
+
   // food first when light is low
   const food = foodTarget(g, S, C, low);
   if (low && food) return food;
 
   // 3. Swarm and brood chase you down: one dash kills them
-  const small = nearest(C.live.filter((e) => (e.swarm || e.brood) && e.nd <= 22 && e.state !== "stagger"), (e) => e.nd);
+  const small = nearest(C.live.filter((e) => (e.swarm || e.brood) && !edible(g, e) && e.nd <= 22 && e.state !== "stagger"), (e) => e.nd);
   if (small) return cutTarget(g, S, C, small, "swarm", 0.15);
 
   // 4. Remains glide away and fade
@@ -438,7 +468,7 @@ function plan(g, S, C) {
   if (rem) return chaseFood(g, S, C, rem, 8, "remains");
 
   // 5. Pop eggs: always when one is cracking, otherwise with both charges ready
-  const egg = nearest(g.hunters.filter((e) => e.egg && e.nd <= 30 && (e.cracked ? P.charges >= 1 : P.charges >= 2)), (e) => e.nd - (e.cracked ? 20 : 0));
+  const egg = nearest(g.hunters.filter((e) => e.egg && !edible(g, e) && e.nd <= 30 && (e.cracked ? P.charges >= 1 : P.charges >= 2)), (e) => e.nd - (e.cracked ? 20 : 0));
   if (egg) {
     if (P.dashT <= 0 && egg.nd <= 12) {
       const [mx, my] = toward(g, egg.x, egg.y);
@@ -453,8 +483,10 @@ function plan(g, S, C) {
   if (gold) return chaseFood(g, S, C, gold, 12, "golden");
 
   if (P.light >= 0.35 * P.maxLight && P.charges >= 2) {
-    // 7. Hunt down roaming swarmers and brood
-    const prey2 = nearest(C.live.filter((e) => (e.swarm || e.brood) && e.nd <= 80 && e.state !== "stagger"), (e) => e.nd);
+    // 7. Hunt down roaming swarmers and brood (after the notch, swim them down and eat them whole)
+    const ed2 = nearest(C.live.filter((e) => edible(g, e) && e.nd <= 80), (e) => e.nd);
+    if (ed2) return chaseEdible(g, S, C, ed2);
+    const prey2 = nearest(C.live.filter((e) => (e.swarm || e.brood) && !edible(g, e) && e.nd <= 80 && e.state !== "stagger"), (e) => e.nd);
     if (prey2) return cutTarget(g, S, C, prey2, "hunt-swarm", 0.15);
     // 8. Bait: with charges full, step into a lancer's reach so it winds up on our terms
     if (P.charges >= g.maxCharges()) {
@@ -471,10 +503,26 @@ function plan(g, S, C) {
 
   // 9. Graze prey away from tissue
   if (food) return food;
-  // nothing to eat: drift away from the nearest tissue
-  const near = nearest(C.live, (e) => e.nd);
+  // nothing to eat: drift away from the nearest tissue that can still sting
+  const near = nearest(C.live.filter((e) => !edible(g, e)), (e) => e.nd);
   if (near && near.nd < 40) { const [ax, ay] = unit(dx(g, near.nx, P.x), dy(g, near.ny, P.y)); return { ...steerTo(g, C, P.x + ax * 20, P.y + ay * 20), why: "drift" }; }
   return { mx: P.dirX * 0.3, my: P.dirY * 0.3, why: "idle" };
+}
+
+// An outgrown body flees at up to 0.30 cells a step, far slower than the player swims: aim the mouth at
+// its nearest tissue, led by its drift, and dash to close a long gap when the charges are full and the
+// dash would not end in tissue that still stings.
+function chaseEdible(g, S, C, e) {
+  const P = g.player;
+  const steps = Math.min(14, (e.nd / g.speed()) * C.sr);
+  const mv = steerTo(g, C, e.nx + (e.vx || 0) * steps, e.ny + (e.vy || 0) * steps, { ignore: e, safe: 10 });
+  if (e.nd > 20 && P.charges >= g.maxCharges() && P.dashT <= 0) {
+    const ev = evalDash(g, S, P.x, P.y, mv.mx, mv.my, e);
+    const endsBad = ev.endB > 0.35 && !(ev.endOwner && (ev.endOwner === e || edible(g, ev.endOwner)));
+    const laneHit = C.lanes.some((ln) => ln.tImp < 1 && inLaneRect(g, ln, ev.ex, ev.ey, 2));
+    if (!endsBad && !laneHit) return { ...mv, dash: true, why: "edible-dash" };
+  }
+  return { ...mv, why: "edible" };
 }
 
 // lead a gliding prey by its tracked per-step drift
@@ -491,7 +539,7 @@ function foodTarget(g, S, C, low) {
     if (g.world.probe(B, p.x, p.y, 8) > 2) continue; // under hunter tissue: it will be eaten
     let s = dist(g, P.x, P.y, p.x, p.y);
     for (const e of C.live) {
-      if (e.state === "stagger") continue;
+      if (e.state === "stagger" || edible(g, e)) continue;
       const near = dist(g, p.x, p.y, e.x, e.y) - g.reachOf(e) * 0.6;
       if (near < 14) s += (14 - near) * (low ? 1.5 : 3);
     }
@@ -528,27 +576,37 @@ if (isMain) {
 function printEvents(g, evs, verbose) {
   const T = g.time.toFixed(1).padStart(6);
   for (const e of evs) {
-    const show = ["wave", "waveClear", "bossPhase", "collapse", "burst", "death", "epochEnd", "tide", "selfDeath"].includes(e.type)
-      || (e.type === "devour" && e.kind === "hunter")
+    const show = ["wave", "waveClear", "bossPhase", "collapse", "burst", "death", "tide", "selfDeath", "notch", "ripe", "apex", "growStart", "zoomBegin", "zoomFinish", "epochStart"].includes(e.type)
+      || (e.type === "devour" && (e.kind === "hunter" || e.converted))
       || (e.type === "warn" && e.boss)
-      || (verbose && ["parry", "lungeHit", "stagger", "graze", "pop", "hatch", "rupture", "cancel"].includes(e.type));
+      || (verbose && ["parry", "lungeHit", "stagger", "graze", "pop", "hatch", "rupture", "cancel", "grow"].includes(e.type));
     if (!show) continue;
-    const extra = e.type === "devour" ? `${e.boss ? "Leviathan" : e.name || ""} ${e.how} +${e.points}` : e.type === "burst" ? `caught ${e.caught} +${e.points}`
-      : e.type === "wave" ? `${e.wave} ${e.units}` : e.type === "bossPhase" ? `phase ${e.phase}` : e.type === "warn" ? e.name : e.type === "lungeHit" ? `-${e.dmg}` : "";
+    const extra = e.type === "devour" ? (e.kind === "prey" ? `converted Orbium (was ${e.from}) +${e.points}` : `${e.boss ? "Leviathan" : e.name || ""} ${e.how} +${e.points}`)
+      : e.type === "burst" ? `caught ${e.caught} +${e.points}`
+      : e.type === "wave" ? `${e.wave} ${e.units}` : e.type === "bossPhase" ? `phase ${e.phase}` : e.type === "warn" ? e.name : e.type === "lungeHit" ? `-${e.dmg}`
+      : e.type === "grow" ? `+${e.n} (${Math.round(100 * e.g)}%)` : e.type === "ripe" ? `bar ${g.growth}/${g.bar()}${g.afterBoss ? " after the Leviathan" : ""}`
+      : e.type === "zoomBegin" ? `Size ${e.size}, ${e.converted} to convert, ${e.motes.length} motes, ${e.eggs.length} eggs gone`
+      : e.type === "zoomFinish" ? `${e.at.length} Orbium placed (${e.at.map((a) => (a.golden ? "golden" : a.from)).join(", ")}) +${e.bonus}`
+      : e.type === "epochStart" ? `Size ${e.size}: ${e.line} (${e.mutation ? e.mutation.name : "no card"})` : "";
     console.log(T, e.type, extra);
   }
   if (evs.some((e) => e.type === "step") && Math.floor(g.time / 10) !== Math.floor((g.time - 1 / 60) / 10)) {
     const P = g.player;
-    console.log(T, `light ${P.light.toFixed(0)}/${P.maxLight} charges ${P.charges} score ${g.score} epoch ${g.epoch} hunters ${g.hunters.length} prey ${g.prey.length} meter ${g.meter.toFixed(2)}`);
+    console.log(T, `light ${P.light.toFixed(0)}/${P.maxLight} charges ${P.charges} score ${g.score} size ${g.epoch} grow ${g.growth}/${g.bar()} r ${P.r.toFixed(2)} hunters ${g.hunters.length} prey ${g.prey.length} meter ${g.meter.toFixed(2)}`);
   }
 }
 
 function printSummary(r) {
   const pct = (x) => (x == null ? "-" : `${(100 * x).toFixed(1)}%`);
-  console.log(`\n${r.policy} seed ${r.seed} ${r.orient}: ${r.survived ? "alive" : `died at ${r.died.t}s`} t ${r.t}s epoch ${r.epoch} score ${r.score}`);
+  const G = r.growth;
+  console.log(`\n${r.policy} seed ${r.seed} ${r.orient}: ${r.survived ? "alive" : `died at ${r.died.t}s`} t ${r.t}s size ${r.size} score ${r.score}`);
   console.log(`min light ${pct(r.light.min)} at ${r.light.minAt}s; loss hunger ${r.loss.hunger} contact ${r.loss.contact} lunge ${r.loss.lunge} (stings+lunges ${pct(r.loss.stingLungeShare)})`);
   console.log(`named removals ${JSON.stringify(r.removals)}`);
   console.log(`burst uptime ${pct(r.burst.uptime)} x${r.burst.count} caught ${JSON.stringify(r.burst.caught)}; stasis/min ${r.stasis.perMin}; parries ${r.parries}; grazes ${r.grazes}; lunge hits ${r.lungeHits}/${r.lunges}`);
-  console.log(`decision gap ${r.decisions.meanGap}s over ${r.decisions.engagedSec}s engaged; uncontested ${pct(r.uncontested.overall)} (worst full epoch ${pct(r.uncontested.worst)})`);
+  console.log(`decision gap ${r.decisions.meanGap}s over ${r.decisions.engagedSec}s engaged; uncontested ${pct(r.uncontested.overall)} (worst full size ${pct(r.uncontested.worst)})`);
   console.log(`dash ${r.dash.uses} uses, all charges full ${pct(r.dash.fullShare)}; tides ${r.tides.count}; cap violations ${r.caps.episodes} episodes; same-dash glory ${r.sameDashGlory.n}; ${r.perf.msPerFrame} ms/frame`);
+  console.log(`sizes (play s): ${Object.entries(r.perSize).map(([k, E]) => `${k}:${E.play}${E.done ? "" : "+"}${E.fight ? ` (fight ${E.fight})` : ""}`).join(" ")}`);
+  console.log(`growth ${G.gp.total} GP (${G.gpPerMin}/min), hunters ${pct(G.hunterShare)}: ${JSON.stringify(G.gp)}`);
+  console.log(`zooms ${G.zooms}: converted ${G.zoomLog.map((z) => z.placed).join(" ")}; ripe wait ${G.zoomLog.map((z) => `${z.ripeWait}${z.afterBoss ? "L" : ""}`).join(" ")} s; first converted bite after ${G.zoomLog.map((z) => z.huskAt ?? "-").join(" ")} s`);
+  console.log(`damage by bar quarter ${G.dmgByQuarter.join("/")} over ${G.secByQuarter.join("/")} s; Leviathan ${JSON.stringify(G.fights)}; non-play inputs ${r.nonPlayInputs}`);
 }

@@ -6,7 +6,7 @@ import * as THREE from "three";
 import * as CONFIG from "./config.js";
 import { PAL } from "./comic.js";
 
-const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PHONE, SWING } = CONFIG;
+const { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PAD, LINES_PHONE, SWING } = CONFIG;
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -347,8 +347,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   function sayLine(group, i, kind) {
     const k = kind || (inp && inp.kind) || "controller";
-    // the phone (kind "touch", or main's easySwing input) reads the phone lines; a gamepad and the mouse read the desktop lines
-    const table = k === "hand" ? LINES_HANDS : k === "touch" || (inp && inp.easySwing) ? LINES_PHONE : k === "mouse" || k === "desktop" || k === "pad" ? LINES_DESKTOP : LINES;
+    // hands, then the phone (kind "touch", or main's easySwing input), then the mouse, then a game pad, then the controllers
+    const table = k === "hand" ? LINES_HANDS : k === "touch" || (inp && inp.easySwing) ? LINES_PHONE : k === "mouse" || k === "desktop" ? LINES_DESKTOP : k === "pad" ? LINES_PAD : LINES;
     const line = table[group] && table[group][i];
     if (line) say(line, 6);
     return line || null;
@@ -414,6 +414,11 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         rows.push(seg("turn", "Turning", [["30", "Snap 30"], ["45", "Snap 45"], ["90", "Snap 90"], ["smooth", "Smooth"]], TURN_VALUE(settings)));
       }
       rows.push(seg("aim", "Aim assist", [["low", "Low"], ["med", "Medium"], ["high", "High"]], settings.aim));
+      // a mouse and a pad hold the swing input to keep a rope, and the cue says when to let go. The phone lets go by itself: no rows
+      if (desk && !(inp && inp.easySwing)) {
+        rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
+        rows.push(seg("cue", "Release cue", [["on", "On"], ["off", "Off"]], settings.cue === false ? "off" : "on"));
+      }
       if (!desk) {
         rows.push(seg("hand", "Dominant hand", [["left", "Left"], ["right", "Right"]], settings.hand));
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
@@ -851,6 +856,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "aim": if (v in SWING.aimCone) settings.aim = v; break;
       case "hand": if (v === "left" || v === "right") { settings.hand = v; hud.init = false; } break;
       case "hold": if (v === "hold" || v === "toggle") settings.hold = v; break;
+      case "cue": if (v === "on" || v === "off") settings.cue = v === "on"; break;
       case "hz": settings.hz = +v === 90 ? 90 : 72; if (xr && xr.setFrameRate) Promise.resolve(xr.setFrameRate(settings.hz)).catch(() => {}); break;
       case "seated": {
         settings.seated = v === "on";

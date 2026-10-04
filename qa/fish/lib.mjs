@@ -4,14 +4,21 @@
 import { createRequire } from "module";
 import { fileURLToPath } from "url";
 import path from "path";
+import { CUTS } from "../../public/fish/js/save.js";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 export const URL = process.env.FISH_URL || "http://localhost:8765/fish/";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const SHOTS = process.env.SHOTS || "";
 
+// every cutscene, seen (save.js CUTS)
+export const SEEN = Object.fromEntries(CUTS.map((k) => [k, 1]));
+
 // save: a save file (an object) to start with, put in localStorage on the first load only (clear must be on)
-export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "", save = null } = {}) {
+// cuts: let the cutscenes play. Off by default: the page starts with every cutscene seen (a save of only that when there is
+// no save), so a check of something else is never held up by one. A save that has its own cuts keeps them
+export async function open({ width = 390, height = 844, touch = true, phone = true, clear = true, query = "", save = null, cuts = false } = {}) {
+  if (!cuts && !(save && save.cuts)) save = { ...(save || {}), cuts: SEEN };
   // WebGL runs on SwiftShader; the 2D canvases (the reel, the gauge) stay on the CPU, which is far faster than an emulated GPU
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"] });
   const ctx = await browser.newContext(touch ? { viewport: { width, height }, isMobile: true, hasTouch: true, ignoreHTTPSErrors: true } : { viewport: { width, height }, ignoreHTTPSErrors: true });

@@ -89,8 +89,9 @@ try {
     Object.defineProperty(navigator, "getGamepads", { value: () => [pad], configurable: true });
     const kind = () => G.test.input().kind, out = {};
     G.test.step(1 / 60, 2); out.idle = kind();
-    pad.buttons[3].pressed = true; G.test.step(1 / 60, 2); out.pad = kind(); out.hand = G.test.input().hands[1].kind;
-    pad.buttons[3].pressed = false; G.test.step(1 / 60, 2); out.rest = kind();
+    // B (button 1) has no action, so the check cannot move the view or the pause; it still tells the game that the pad is in use
+    pad.buttons[1].pressed = true; G.test.step(1 / 60, 2); out.pad = kind(); out.hand = G.test.input().hands[1].kind;
+    pad.buttons[1].pressed = false; G.test.step(1 / 60, 2); out.rest = kind();
     window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyJ" })); window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyJ" })); G.test.step(1 / 60, 2); out.key = kind();
     delete navigator.getGamepads;
     return out;

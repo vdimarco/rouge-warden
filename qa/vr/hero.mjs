@@ -118,9 +118,9 @@ try {
   const head = await page.evaluate(() => { const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
   // the hero stands in the lower middle of the view and the aim (the middle of the screen) is over its head
   check(Math.abs(head.x) < 0.2 && head.y > -0.35 && head.y < -0.03 && head.z < 1, "the hero's head is a little below the middle of the view, under the aim", head);
-  // the chase view looks down at the hero's feet: the default aim must not take the roof under them but a building up and ahead
+  // the chase view looks down at the hero's feet: the auto target must not take the roof under them but a building up and ahead
   const da = await page.evaluate(() => { __h.step(2); const a = G.test.aim(1), h = G.test.state().head; return a && { valid: a.valid, ny: a.ny, x: a.x, y: a.y, z: a.z, dist: a.dist, headY: h.y }; });
-  check(da && da.valid && !(da.ny > 0.7 && da.y < da.headY - 0.3) && da.y > da.headY, "the default aim from the chase view is a building up and ahead, not the roof under the hero", da);
+  check(da && da.valid && !(da.ny > 0.7 && da.y < da.headY - 0.3) && da.y > da.headY, "the auto target from the chase view is a building up and ahead, not the roof under the hero", da);
   await shot(page, "hero-third-person");
 
   /* ---- the mouse turns the camera (input.turn and input.pitch) ---- */
@@ -465,8 +465,8 @@ try {
   check(Math.abs(tp.pos.x - (tp.p.x)) < 0.5, "G.test.teleport still moves the hero", tp);
 
   /* ---- a clog on a lower roof further away stays a target ---- */
-  // Only the ground near the hero (within 12 m) counts as "no anchor" for the up-and-ahead aim. Stand on a higher roof, point the chase
-  // view at the roof right by a clog 14 to 60 m away, and the aim must take that clog.
+  // A clog within 60 m and 22 degrees of the camera forward is the auto target, though the view points at the roof beside it. Stand on a
+  // higher roof, point the chase view at the roof right by a clog 14 to 60 m away, and the target must be that clog.
   const lo = await page.evaluate(() => {
     const C = G.city, out = [];
     for (const c of C.clogs) {
@@ -495,10 +495,10 @@ try {
     G.rigYaw = G.city.start.yaw;
     return out;
   });
-  check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away aims at that clog (" + lo.length + " views)", lo);
-  // A clog on the hero's own roof, 14 to 24 m away, aimed low with nothing behind it: the ray runs a little down past the roof edge
-  // and hits nothing within 400 m. That is no ground near the hero, so the aim must stay on the clog. The ray aims 1.2 m up the
-  // clog (its middle is about 2.5 m up): the camera sits over the hero's head, and a ray to 0.8 m drops on to the roof behind.
+  check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away makes that clog the auto target (" + lo.length + " views)", lo);
+  // A clog on the hero's own roof, 14 to 24 m away, aimed low with nothing behind it: the centre ray runs a little down past the roof edge
+  // and hits nothing within 400 m. The auto target must stay on the clog. The ray aims 1.2 m up the clog (its middle is about 2.5 m
+  // up): the camera sits over the hero's head, and a ray to 0.8 m drops on to the roof behind.
   const same = await page.evaluate(() => {
     const C = G.city, out = [];
     for (const c of C.clogs) {
@@ -523,7 +523,7 @@ try {
     G.rigYaw = G.city.start.yaw;
     return out;
   });
-  check(same.length >= 3 && same.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "a low aim at a clog on the hero's own roof, with nothing behind it, aims at that clog (" + same.length + " views)", same);
+  check(same.length >= 3 && same.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "a low view of a clog on the hero's own roof, with nothing behind it, makes that clog the auto target (" + same.length + " views)", same);
 
   /* ---- holding a wall: the hero faces it with both hands on it ---- */
   const cl = await page.evaluate(() => {
@@ -669,6 +669,13 @@ try {
   await sleep(500);
   const x = await page.evaluate(() => ({ parent: G.camera.parent === G.rig, vis: G.hero.root.visible, flat: G.test.flat().on, mode: G.mode }));
   check(x.mode === "vr" && x.parent && !x.vis && !x.flat, "in VR the camera stays under the rig and the hero is hidden", x);
+  // no auto target, no lock-on ring and no key strip in a headset
+  const hud = await page.evaluate(() => {
+    const vis = (s) => { const e = document.querySelector(s); if (!e) return false; const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return !e.closest("[hidden]") && cs.display !== "none" && cs.visibility !== "hidden" && r.width > 0 && r.height > 0; };
+    return { on: G.test.target().on, ring: vis("#lockRing"), arrow: vis("#lockArrow"), strip: vis("#keyHints"), cue: vis("#lockCue") };
+  });
+  check(hud.on === false, "in VR no auto target runs (G.test.target().on is false)", hud);
+  check(!hud.ring && !hud.arrow && !hud.strip && !hud.cue, "and no lock-on ring, arrow, LET GO caption or key strip shows", hud);
   const errs4 = page.errors.filter((e) => !/Failed to load resource/i.test(e));
   check(errs4.length === 0, "no page errors in VR", errs4);
   await page.context().close();

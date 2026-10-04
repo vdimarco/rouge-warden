@@ -51,19 +51,49 @@ These come from the audit's sandbox runs. The sims set the final values.
 
 ## Goals and the save
 
-- `journey.js` holds the pure tables: `PLACE_GOALS`, `goalMet(goal, ctx)`, `dailyGoal(day, save)`, `nextGoal(save, id)`, and `nextRank(id, kg)`.
+- `goals.js` holds the pure tables and helpers: `PLACE_GOALS`, `goalMet(goal, ctx)`, `DAILY` and `dailyGoal(day, save)`, `nextGoal(save, id)`, and `progressNote()`. `journey.js` holds `nextRank(id, kg)`.
 - New save fields: `places[id].g` (a bitmask from 0 to 63), `today: { d, k, n, done }`, `days: { n, run, best, last }`, and `bestRun`. `loadSave` cleans each one and keeps old saves working.
 - `?day=YYYY-MM-DD` sets the day for QA. Like `?open`, it is never saved.
+
+### What round 2 settled
+
+- Touch and mouse: the cast is graded at the finger's angle when it lifts, and virtual samples are never projected forward. Above the press point the rod turns against a fixed 240 px span on every screen, so the slam edge is 200 px above the press point at any size. A press anywhere decides after 12 px: up and down takes the line, sideways aims. A swipe that never tipped the rod back casts nothing and spends no derby cast.
+- Motion: every lift is graded by time; an early lift waits up to 100 ms for the samples. A thumb held through the swing casts at a fixed 30 degrees. Easy mode pulls the release toward the ideal over -15 to 95 degrees.
+- The keyboard: holding Space tips the rod back, then swings it forward at 240 degrees a second; letting go grades the cast like a finger.
+- The sensor stall is timed from the last real sample, 3 s.
+- The report line comes from `reportNote()`: the sweet streak first, then a ring hit, a near miss, the goal hint, the back-swing tip, the Loon "farther out" hint, the longest cast, and the zone.
+- The short-caster help: after 20 water casts with the unlock goal open, one big ring at a time rises within reach, stays at least 90 s, and returns after a lost fish, until a big ring's fish is landed. Measured with real rings: median 23 casts and p90 34 to open Stump Bay.
+- Every derby cast onto land is given back, and the report says so.
+- A catch's news (first fish of the day, goals done, today's goal) shows in one toast with one line each.
+- `?day` progress stays in that page load; `persist()` writes the loaded `today` and `days`.
 
 ## Feedback
 
 - The hook-set hit: 70 ms freeze of `world.update`, a field-of-view punch of 8% for 120 ms, a rod-tip whip, a "Fish on!" banner, a 70 Hz thump, and a stronger buzz. The jump zoom blends the field of view toward about 10 m of lake across the view at the fish.
 - New sounds made in code: `newSpecies`, `stage`, `newPlace`, a derby close, and stronger far splashes.
 
+### What round 3 and the turnaround settled
+
+- Feedback: the hook set freezes `world.update` for 70 ms, punches the view in 8%, whips the rod tip, and shows the "Fish on!" banner. Its sound has a 76 to 62 Hz thump (rms 0.118 against the strike's 0.094), and its buzz is 170 ms on. The strike scales with how hard the fish hit, and the iPhone strike is always two heavy impacts. The jump zoom keeps the leap at 0.64 of the view height and out of the top half (`WORLD.JUMP_ZOOM.at` and `.free`), and the rod is drawn through its matrix, squeezed into the narrow view. A splash at a position that is not a number is ignored, so the water never loses a ripple slot.
+- Stingers: a plain fish gets the landed sound; a new kind `newSpecies` (0.62 s); a record `recordCall`; a trophy the fanfare and the shutter; a legend the fanfare and its place's call; a legend's later stage `stage` with no fanfare; a new place `newPlace`; a derby the count-up and the fanfare or `derbyClose`.
+- Menus: "Go fishing" is the only red button. The style is "painted" in the save; any value but "original" loads as painted, and the art files are `painted-sky.webp` and `painted-lake.webp`. The app build runs with `--strict`. Larger text is one 1.25 step through `--ui-scale`, `--gauge-w` and `--gauge-h`; it cannot back the App Store Larger Text label, which needs 200%. Calm effects sets `html[data-calm="1"]`; `js/calm.js` reads it with the reduced-motion query. The version lives in `js/version.js`.
+- Cutscenes: `js/cutscenes.js` and `cutscenes.css`, with `world.cutCamera(fn | null)`. Ending a cutscene snaps the camera to `camTarget()`, so play never starts during a fly-back. Escape and back skip at once; a tap, Space, or Enter skips after 0.5 s. `#cut` eats only the pointer events that started on it. The save keeps `cuts`; an old save marks as seen the places and legends it has passed. QA pages start with every cutscene seen (`qa/fish/lib.mjs` `SEEN`) unless a check asks for them.
+- Turnaround: "Nothing this time" 1 s, the shore 0.9 s, a loss 3.4 s (a legend 4.5 s). A cast input skips after 350 ms (800 ms for a loss) and flows into the next grab; a press on the reel controls ends the beat but never casts. An empty retrieve skips home after 3 s, up to 3 times sooner with a fast crank.
+- The mouse: a press that stays within 12 px for 150 ms is a hold cast, timed like the Space cast; sideways movement aims at 0.2 degrees a pixel. A click on the lake feathers the line in the flight.
+
 ## Menus and access
 
 - Style names: on screen the "ghibli" value shows as "Painted". `normalizeStyle` accepts `painted` and `ghibli`, so old saves keep their look.
 - Larger text sets a `--ui-scale` on `#game`. Calm effects sets `data-calm`, and the CSS treats it like `prefers-reduced-motion`.
+
+## Cutscenes
+
+- `js/cutscenes.js` holds the scripts and the player. A script is a list of shots: camera position, look point, field of view, time, an optional event (a legend breach, a loon call), and a caption. The player eases the camera between keys and draws the live scene, so each place keeps its own look, light, and hour.
+- `world.js` gets one small hook, `world.cutCamera(fn | null)`: while a function is set, it gives the camera pose each frame in place of `camTarget()`. The reel camera, the punch, and the jump zoom stay as they are.
+- `main.js` starts a cutscene at four points: the first "Go fishing" on a fresh save, the first arrival at a place (before the arrival card), the first gold ring of a legend outside a fight, and the landing of a legend (before the catch card). While one plays, `step()` holds the sim, the clock, and the derby.
+- The save keeps `cuts`, a small set of seen ids, cleaned in `loadSave`. An old save marks as seen the arrivals of the places it already opened and the reveals of the legends it already found.
+- Calm effects and reduced motion: still shots with fades.
+- CSS in `cutscenes.css`: the bars, the caption, the Skip hint, and the fade.
 
 ## The app project
 

@@ -184,34 +184,83 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 .look-hint b { display: block; font: 400 clamp(22px, 2.6vw, 30px) / 1.05 var(--comic); letter-spacing: 0.06em; text-transform: uppercase; }
 .look-hint small { display: block; margin-top: 2px; font: 700 17px / 1.2 var(--ui); letter-spacing: 0.03em; }
 
-#phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
+/* ---------------- the phone panel: comic buttons, the lock-on ring and its arrow ---------------- */
+#phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:var(--ui); }
 #phoneControls[hidden] { display:none; }
-#phoneControls button { pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; color:#fff6df; background:#111d2dd9; border:1px solid #e1bc7444; border-radius:24px; min-height:44px; padding:10px 16px; font:600 14px sans-serif; }
+/* every button is 48 px or more to touch: thick ink border, hard shadow, Bangers */
+#phoneControls button { position:relative; pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; min-width:48px; min-height:48px; padding:3px 8px 0; color:var(--ink); background:var(--cream); border:3px solid var(--ink); border-radius:3px; box-shadow:3px 3px 0 var(--ink); font:400 18px/1 var(--comic); letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+#phoneControls button:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+#phoneControls button.on, body[data-view="first"] #phoneControls .phone-view { background:var(--yellow); } /* the VIEW button shows the first-person view */
 /* comic speed lines for phone play: ink and cream streaks from the middle, clear in the centre so the target stays in view */
 .phone-rush { position:absolute; inset:-25%; opacity:0; pointer-events:none; will-change:transform,opacity; background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(20,10,24,0) 0deg 2.6deg, rgba(20,10,24,.85) 2.6deg 3.9deg, rgba(20,10,24,0) 3.9deg 6.2deg, rgba(255,249,234,.8) 6.2deg 7deg, rgba(20,10,24,0) 7deg 9.8deg, rgba(20,10,24,.75) 9.8deg 10.5deg, rgba(20,10,24,0) 10.5deg 13deg); -webkit-mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); }
+/* the frame the lock-on ring and its arrow stay in: the safe-area insets plus 8 px. mobile.js reads this box, then cuts the HUD out of it. */
+.phone-safe { position:absolute; inset:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-right,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 8px) calc(env(safe-area-inset-left,0px) + 8px); visibility:hidden; pointer-events:none; }
+/* the top row: up to four buttons, one line. The boxes are 46 px high with a 50 px hit area (2 px past each side, inside the 5 px gap),
+   because qa/vr/phone-swing.e2e.mjs reads a top button taller than 46 px as a second row. */
+.phone-top { display:flex; justify-content:center; gap:6px; padding:max(12px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left)); }
+#phoneControls .phone-top button { height:46px; min-height:46px; }
+.phone-top button::after { content:""; position:absolute; inset:-5px; }
 /* the climb pad: shown only on a wall, low on the left so the right thumb keeps the SWING button */
 .phone-climb { position:absolute; left:max(16px,env(safe-area-inset-left)); bottom:calc(env(safe-area-inset-bottom,0px) + 190px); display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; pointer-events:none; }
-.phone-climb button { pointer-events:auto; min-height:0 !important; padding:0 !important; border-radius:16px !important; font:bold 22px sans-serif !important; touch-action:none; }
+#phoneControls .phone-climb button { min-width:0; min-height:0; padding:0; font:700 24px/1 var(--ui); touch-action:none; }
 .phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
-.phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:bold 13px sans-serif !important; background:#e0482cdd !important; }
+#phoneControls .phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:400 18px/1 var(--comic); background:var(--red); color:var(--paper); }
 /* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
 @media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
-.phone-top { display:flex; justify-content:center; gap:8px; padding:max(12px,env(safe-area-inset-top)) 8px 0; }
-.phone-crosshair { position:absolute; left:50%; top:50%; width:18px; height:18px; border:2px solid #fff8; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 8px #0006; transition:border-color .12s,box-shadow .12s; }
-.target-ready .phone-crosshair { border-color:#95ffc8; box-shadow:0 0 16px #5fffbf66; }
-.phone-bottom { position:absolute; bottom:max(18px,env(safe-area-inset-bottom)); left:max(16px,env(safe-area-inset-left)); right:max(16px,env(safe-area-inset-right)); display:flex; flex-direction:column; align-items:center; gap:8px; }
-.phone-hint { margin:0; max-width:320px; padding:8px 14px; text-align:center; color:#fff6df; background:#101c2daa; border-radius:14px; font:14px/1.4 sans-serif; }
-#phoneControls [data-action="throw"] { width:min(280px,85vw); min-height:76px; background:linear-gradient(135deg,#f9d995,#d79d4c); color:#172536; font:bold 24px sans-serif; box-shadow:0 8px 30px #0004,inset 0 1px #fff8; }
-#phoneControls [data-action="throw"] span { display:block; font:12px sans-serif; margin-top:4px; opacity:.8; }
-#phoneControls [data-action="throw"].held { background:linear-gradient(135deg,#b6f1dc,#60c3b5); }
-.phone-bottom small { color:#fff9; font:11px sans-serif; text-shadow:0 1px 4px #000; }
+/* the centre ring is the exact aim of the first-person view. In the chase view it would sit on the hero, so the lock-on ring shows instead. */
+.phone-crosshair { display:none; position:absolute; left:50%; top:50%; width:24px; height:24px; border:3px solid var(--yellow); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
+body[data-view="first"] .phone-crosshair { display:block; }
+.target-ready .phone-crosshair { background:radial-gradient(circle, var(--yellow) 0 2px, rgba(255,216,74,0) 3px); }
+/* the lock-on ring: 56 px across, yellow on a building, sludge green with points on a clog or a pipe, gold on the gold ring and the crack.
+   The outer box moves (translate). The inner box pops (scale), so the two never fight over one transform. */
+.phone-target { position:absolute; left:0; top:0; width:56px; height:56px; color:var(--yellow); pointer-events:none; will-change:transform; }
+.phone-target[data-kind="clog"], .phone-target[data-kind="pipe"] { color:var(--green); }
+.phone-target[data-kind="ring"], .phone-target[data-kind="crack"] { color:var(--gold); }
+.phone-target svg { position:absolute; left:0; top:0; width:56px; height:56px; overflow:visible; }
+.phone-target .pt-star, .phone-target .pt-arrow { display:none; }
+.phone-target[data-kind="clog"] .pt-star, .phone-target[data-kind="pipe"] .pt-star { display:inline; }
+.phone-target[data-kind="clog"] .pt-ring, .phone-target[data-kind="pipe"] .pt-ring { display:none; }
+.phone-target.arrow .pt-body { display:none; }
+.phone-target.arrow .pt-arrow { display:block; }
+.phone-target.pop .pt-body { animation:pt-pop .12s ease-out; }
+@keyframes pt-pop { from { transform:scale(1.4); } to { transform:scale(1); } }
+/* reduced motion: no scale, a brighter colour for the same 120 ms */
+@media (prefers-reduced-motion:reduce) { .phone-target.pop .pt-body { animation:none; filter:brightness(1.35) saturate(1.3); } }
+.phone-bottom { position:absolute; bottom:max(12px,env(safe-area-inset-bottom)); left:max(16px,env(safe-area-inset-left)); right:max(16px,env(safe-area-inset-right)); display:flex; flex-direction:column; align-items:center; gap:6px; }
+.phone-hint { margin:0; max-width:min(340px,100%); padding:5px 12px 3px; text-align:center; color:var(--ink); background:var(--cream); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); font:700 16px/1.15 var(--ui); letter-spacing:.03em; }
+#phoneControls [data-action="throw"] { width:min(280px,85vw); min-height:64px; padding:4px 12px 2px; border-width:4px; box-shadow:5px 5px 0 var(--ink); background:radial-gradient(circle at 50% 50%,rgba(255,122,42,.85) 0 1.4px,rgba(255,122,42,0) 2px) 0 0 / 6px 6px, linear-gradient(180deg,#ffe867,var(--yellow)); font:400 32px/1 var(--comic); letter-spacing:.08em; }
+#phoneControls [data-action="throw"]:active { box-shadow:2px 2px 0 var(--ink); }
+#phoneControls [data-action="throw"] span { display:block; margin-top:4px; font:700 14px/1.1 var(--ui); letter-spacing:.04em; text-transform:none; opacity:.85; }
+#phoneControls [data-action="throw"].held { background:var(--red); color:var(--paper); }
+/* no target: SWING still works, but it looks asleep. LET GO never dims. */
+#phoneControls [data-action="throw"].no-target:not(.held) { opacity:.6; filter:saturate(.45); }
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
-@media (max-width:380px) { #phoneControls .phone-top button { padding:10px 9px; white-space:nowrap; } .phone-top { gap:5px; padding-left:4px; padding-right:4px; } }
+@media (max-width:380px) { #phoneControls .phone-top button { padding:3px 6px 0; font-size:17px; } .phone-top { gap:5px; padding-left:max(4px,env(safe-area-inset-left)); padding-right:max(4px,env(safe-area-inset-right)); } }
 /* phone play: the score pills sit under the top buttons; ui.js puts the spoken lines and toasts under the pills, clear of the hero */
-body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 66px); }
-@media (max-height:480px) { body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); } }
-@media (max-height:480px) { .phone-bottom { left:auto; width:260px; bottom:12px; } .phone-hint { font-size:12px; } #phoneControls [data-action="throw"] { width:220px; min-height:64px; } .phone-bottom small { display:none; } }
+body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 74px); }
+body:has(#phoneControls:not([hidden])) .fs-sub { max-width:calc(100vw - 16px); padding:5px 16px 2px; font-size:19px; }
+@media (max-width:380px) { body:has(#phoneControls:not([hidden])) .fs-sub { padding:4px 12px 0; font-size:18px; } }
+/* a small screen: the score pills stay one row and shrink. A narrow portrait screen also drops the /80 and /12. */
+@media (max-width:479px), (max-height:480px) {
+  body:has(#phoneControls:not([hidden])) .fs-top { flex-wrap:nowrap; gap:8px; max-width:calc(100vw - 16px); }
+  body:has(#phoneControls:not([hidden])) .fs-pill { padding:4px 9px 1px 7px; gap:6px; white-space:nowrap; }
+  body:has(#phoneControls:not([hidden])) .fs-pill b { font-size:24px; }
+  body:has(#phoneControls:not([hidden])) .fs-pill em { font-size:16px; }
+}
+@media (max-width:479px) {
+  body:has(#phoneControls:not([hidden])) .fs-pill small[data-k$="T"] { display:none; }
+  /* four pills at once (a trial, or the King's hearts): drop BANK so that the row still fits */
+  body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) .fs-pill em { display:none; }
+}
+@media (max-height:480px) {
+  body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); }
+  .phone-bottom { left:auto; width:260px; bottom:12px; }
+  .phone-hint { font-size:14px; }
+  #phoneControls [data-action="throw"] { width:220px; min-height:64px; font-size:30px; }
+}
+/* How to play: the section for the device in use comes first (main.js sets body[data-device]) */
+body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mouse"] .cols section[data-for="mouse"], body[data-device="pad"] .cols section[data-for="pad"] { order:-1; }
 </style>
 </head>
 <body data-mode="title">
@@ -240,7 +289,8 @@ body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-to
     <nav class="menu" aria-label="Game menu">
       <button type="button" class="btn primary" id="enterAR" data-enter hidden>ENTER MIXED REALITY</button>
       <button type="button" class="btn primary" id="enterVR" data-enter hidden>ENTER VR</button>
-      <button type="button" class="btn flat" id="playFlat" data-enter disabled>PLAY ON THIS SCREEN</button>
+      <button type="button" class="btn flat" id="playFlat" data-enter data-label-touch="PLAY WITH TOUCH" disabled>PLAY ON THIS SCREEN</button>
+      <button type="button" class="btn flat" id="playMouse" data-enter hidden disabled>PLAY WITH MOUSE AND KEYBOARD</button>
       <div class="row">
         <button type="button" class="btn" id="howBtn">HOW TO PLAY</button>
         <button type="button" class="btn" id="comfortBtn">COMFORT</button>
@@ -249,7 +299,9 @@ body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-to
       </div>
     </nav>
     <p class="note" id="note" role="status" hidden></p>
-    <p class="note" id="touchNote" hidden>Point and tap Swing. Auto-jump and pulling are on. Tap a building to switch ropes.</p>
+    <p class="note" id="touchNote" hidden>Tap a building to swing. Or press SWING. The rope lets go by itself.</p>
+    <p class="note" id="deskNote" hidden>Hold W and the left mouse button to swing. A game pad works after you press PLAY.</p>
+    <p class="note" id="hybridNote" hidden>This screen has touch and a mouse. Pick how you play. A game pad works with the mouse and keyboard.</p>
     <p class="note" id="noXR" hidden>This browser has no VR. You can play on this screen.</p>
     <p class="note hint" id="installHint" hidden>Install it from the browser menu to launch it straight into the headset.</p>
     <div class="load" id="load" role="progressbar" aria-label="Building the city" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -264,8 +316,8 @@ body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-to
   <h2 id="howTitle">How to play</h2>
   <p class="lead">The Porcelain King clogs the city from its rooftops. Plunge the twelve green clogs and collect Loonies. Then rip the pipes off the Needle and flush the King.</p>
   <div class="cols">
-    <section>
-      <h3>Controllers</h3>
+    <section data-for="headset">
+      <h3>Headset controllers</h3>
       <ul>
         <li>Point at a building and pull the trigger to shoot a plunger. Hold the trigger to stay on the rope.</li>
         <li>Let go of the trigger to let go of the rope.</li>
@@ -275,7 +327,7 @@ body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-to
         <li>Press A or X to jump. Press B or Y for the menu.</li>
       </ul>
     </section>
-    <section>
+    <section data-for="hands">
       <h3>Hands</h3>
       <ul>
         <li>Point your hand at a building and pinch to shoot. Keep pinching to hold on.</li>
@@ -285,25 +337,41 @@ body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-to
         <li>Tap the arrows on your left wrist to turn. Tap the round button on your wrist for the menu.</li>
       </ul>
     </section>
-    <section>
+    <section data-for="mouse">
       <h3>Keyboard and mouse</h3>
       <ul>
-        <li>Hold the left or right mouse button to shoot a rope from that hand. Let go of the button to let go of the rope.</li>
+        <li>The game picks a building for you. Look toward the buildings you want. A ring marks the target.</li>
+        <li>Hold the left mouse button, or <kbd>E</kbd>, to swing. On a roof, hold <kbd>W</kbd> too, so you run off the edge. Let go when the ring says GO.</li>
+        <li>Hold the right mouse button, or <kbd>Q</kbd>, to add a second rope.</li>
         <li>Hold <kbd>Shift</kbd> or turn the wheel to reel in.</li>
-        <li>Press <kbd>F</kbd> to yank. Press <kbd>Space</kbd> to jump, or to yank in the air.</li>
-        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. The mouse looks around.</li>
-        <li>Fly or walk into a wall to hold on to it. <kbd>W</kbd> and <kbd>S</kbd> climb up and down, <kbd>A</kbd> and <kbd>D</kbd> go along it. At the top you step on to the roof. <kbd>Space</kbd> jumps off, and a rope swings you off.</li>
-        <li><kbd>V</kbd> switches between the view over your shoulder and the view through your eyes. <kbd>M</kbd> turns the sound on or off.</li>
-        <li><kbd>Tab</kbd> opens the map. <kbd>Esc</kbd> pauses.</li>
-        <li>A game pad works too.</li>
+        <li>Press <kbd>F</kbd> to yank. Three yanks plunge a clog.</li>
+        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk and steer in the air. The mouse looks around.</li>
+        <li><kbd>Space</kbd> jumps. In the air it yanks. On a wall it jumps off.</li>
+        <li>Fly or walk into a wall to hold on. <kbd>W</kbd> and <kbd>S</kbd> climb. <kbd>A</kbd> and <kbd>D</kbd> go along it. At the top you step on to the roof. A rope swings you off.</li>
+        <li><kbd>V</kbd> switches between the view behind the hero and the first-person view. In first person the crosshair aims the rope exactly.</li>
+        <li><kbd>Tab</kbd> opens the map. Press it again to close it. <kbd>M</kbd> turns the sound off and on. <kbd>Esc</kbd> pauses.</li>
       </ul>
     </section>
-    <section>
-      <h3>Phone</h3>
+    <section data-for="pad">
+      <h3>Game pad</h3>
       <ul>
-        <li>Tap a building to swing. The rope lets go by itself and flings you on. Tap again while you fly.</li>
-        <li>A tap at the sky swings from the best building ahead. A tap on a clog plunges it.</li>
-        <li>Drag to look around. Hit a wall to hold on, then hold the arrows to climb, or tap JUMP.</li>
+        <li>This is for a standard pad, such as Xbox or PlayStation. Press PLAY with the mouse, a tap or Enter. The pad works after that.</li>
+        <li>Hold the right trigger (RT, R2) to swing. On a roof, push the left stick up too. Hold the left trigger (LT, L2) to add a second rope. Let go when the ring says GO.</li>
+        <li>Hold the left bumper (LB, L1) to reel in. Press the right bumper (RB, R1) or X (Square) to yank.</li>
+        <li>The left stick walks, steers and climbs. The right stick looks around.</li>
+        <li>A (Cross) jumps. On a wall it jumps off.</li>
+        <li>Y (Triangle) switches the view. Start (Options) pauses and resumes.</li>
+      </ul>
+    </section>
+    <section data-for="touch">
+      <h3>Phone and touch</h3>
+      <ul>
+        <li>Tap a building to swing from it. Or press SWING, and the game picks a building. A ring marks the target.</li>
+        <li>The rope lets go by itself and flings you on. Tap again while you fly.</li>
+        <li>A tap on a clog plunges it.</li>
+        <li>Drag to look around. VIEW switches the view.</li>
+        <li>Hit a wall to hold on. Hold the arrows to climb. Tap JUMP to jump off.</li>
+        <li>Motion aim is optional. Center sets it straight again.</li>
       </ul>
     </section>
   </div>

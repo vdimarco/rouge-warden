@@ -1,15 +1,20 @@
-// Browser smoke test for Primordia's Hunt combat (combat design section 8.5).
+// Browser smoke test for Primordia: the Hunt combat (combat design section 8.5) and Eat to grow
+// (growth design section 10, "Browser smoke checks").
 // Three runs: desktop 1280x720 (mouse + keyboard), phone portrait 390x844 and phone landscape 844x390
-// (touch). Each run: title and start, steering, a locked lunge lane (outline pixels sampled on the fx
-// canvas), Glory Bite with Remains, Burst, glint star, parry into Stasis (shader grade measured on the
-// field canvas), dash pips (touch), the mutation pick, game over and instant retry, console errors and
-// horizontal overflow.
+// (touch). Each run: title and start, the How to play intro with its GROW scene, steering, a locked
+// lunge lane (outline pixels sampled on the fx canvas), Glory Bite with Remains and its growth points,
+// Burst, glint star, parry into Stasis (shader grade measured on the field canvas), dash pips (touch),
+// the GROW bar (fill, 50% tick, gold when full), the dish growing (screenshots at fixed points of the
+// grow clock, the player's screen position across the swap, the zoom kept inside the dish frame, the
+// drawn body size), the cards and the converted prey after the pick, game over and instant retry,
+// reduced motion (a fade, no zoom), console errors and horizontal overflow.
 //
 // Needs the static server: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
 // Usage: node qa/primordia/smoke.e2e.mjs [outDir]
 //   PRIMORDIA_URL   page under test (default http://127.0.0.1:8765/primordia/)
 //   PRIMORDIA_RUNS  comma list of runs to do (default desktop,portrait,landscape)
 //   PW_CHROMIUM     chromium binary (default /opt/pw-browsers/chromium when it exists)
+//   PW_GL_ARGS      chromium GL flags (default: SwiftShader, see GL_ARGS)
 // Playwright resolves from NODE_PATH or from qa/browser/node_modules.
 //
 // Software GL (SwiftShader) draws this page at 1-10 frames per second and the game caps a frame at
@@ -17,6 +22,10 @@
 // go through window.__primordia.game plus a small in-page harness that wraps game.update on the
 // instance: it can park and feed the player, hold the epoch clock, hold a hunter at its glint, log
 // events and freeze the game (game.state = "paused", which core's update() skips) for screenshots.
+// For the grow sequence it holds the grow clock at a set time (q.growStop): the update that would pass
+// that time is cut short so growT lands on it, and later updates are skipped while the shell keeps
+// drawing that moment. An init script records the field shader's uZoom and uConvert uniforms and the
+// text drawn on the fx canvas, so the checks read what was really drawn.
 // Results: one line per check (ok / FAIL / WARN / SKIP), then a table, and smoke-results.json in outDir.
 // WARN marks a design deviation the spec does not require; SKIP an inconclusive timing probe. FAIL lines
 // that start with "GAME BUG" are game defects, not test mistakes. Exit code 1 when anything FAILs.
@@ -39,8 +48,11 @@ const RUNS = {
 };
 const runList = (process.env.PRIMORDIA_RUNS || "desktop,portrait,landscape").split(",").map((s) => s.trim()).filter(Boolean);
 const exe = process.env.PW_CHROMIUM || (fs.existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
-const GL_ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
+const GL_ARGS = (process.env.PW_GL_ARGS || "--use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist").split(/\s+/).filter(Boolean);
 const SP_PARA = 0; // SP.PARA in core.js
+// grow clock stops for screenshots (design: 0.15, 0.39, 0.41, 1.0, 1.59, 1.61, then the cards at 1.95)
+const GROW_STOPS = [0.15, 0.39, 0.41, 1.0, 1.59, 1.61];
+const RM_STOPS = [0.3, 0.41, 0.65]; // reduced motion: the fade peaks at the swap (0.40) and is gone by 0.60
 
 // ---------- results ----------
 const results = [];
@@ -126,9 +138,15 @@ function harness() {
   g.update = function (dt, input = {}) {
     q.frame++;
     const P = this.player;
+    // hold the grow clock at q.growStop: land exactly on it, then skip updates (the shell still draws)
+    if (this.state === "grow" && q.growStop != null) {
+      if (this.growT >= q.growStop - 1e-9) return;
+      dt = Math.min(dt, 0.05, q.growStop - this.growT);
+    }
     if (q.feed && P.alive) P.light = P.maxLight;
     if (q.hold && this.state === "play") this.epochTime = Math.min(Math.max(this.epochTime, 5), 30);
-    if (q.park) {
+    // parking applies in play only: in the grow state core moves the player into the shrunken dish
+    if (q.park && this.state === "play") {
       // a parked player ignores steering, but a real dash press still goes through
       input = { ...input, mx: 0, my: 0, target: null };
       if (input.dash && q.park.untilDash) q.park = null;
@@ -176,7 +194,178 @@ function cleanDish() {
   for (let i = g.claims.length - 1; i >= 0; i--) if (g.claims[i].kind === "hunter") g.claims.splice(i, 1);
   g.labelB = null; g.ownerOf = [];
   D.spawned = [true, true, true]; D.cleared = [true, true, true]; D.queue.length = 0; D.encoreCd = Infinity; D.relaxT = 0; D.bossOut = false;
+  // an empty GROW bar, so a scripted fight never fills it and grows the dish mid-check
+  g.growth = 0; g.ripe = false;
   return true;
+}
+
+// Installed before the page loads: what the field shader is told each frame (uZoom, uConvert), logged
+// while the dish grows, and the text drawn on the fx canvas (labels, popups).
+function pageHooks() {
+  const U = (window.__glu = { last: {}, log: [] });
+  const rec = (n, v) => {
+    U.last[n] = v;
+    const p = window.__primordia, g = p && p.game;
+    if (g && g.state === "grow") { U.log.push({ n, v, growT: g.growT }); if (U.log.length > 3000) U.log.splice(0, 1500); }
+  };
+  const G = window.WebGL2RenderingContext && WebGL2RenderingContext.prototype;
+  if (G) {
+    const gul = G.getUniformLocation, u1 = G.uniform1f, u4 = G.uniform4f;
+    G.getUniformLocation = function (p, name) { const l = gul.call(this, p, name); if (l) { try { l.__n = name; } catch (e) { /* not tagged */ } } return l; };
+    G.uniform1f = function (l, v) { if (l && l.__n === "uZoom") rec("uZoom", v); return u1.call(this, l, v); };
+    G.uniform4f = function (l, a, b, c, d) { if (l && l.__n === "uConvert") rec("uConvert", [a, b, c, d]); return u4.call(this, l, a, b, c, d); };
+  }
+  const T = (window.__texts = []);
+  const C = CanvasRenderingContext2D.prototype, ft = C.fillText;
+  C.fillText = function (s, x, y, ...r) {
+    if (this.canvas && this.canvas.id === "fx") { T.push({ s: String(s), x, y, t: performance.now() }); if (T.length > 800) T.splice(0, 400); }
+    return ft.call(this, s, x, y, ...r);
+  };
+}
+
+// The grow scene: the player parked off centre (the dish centre maps to itself, so a centred player
+// would pass the swap check for free) and a Paraptera 34 cells away to turn into prey.
+function growSetup() {
+  const g = window.__primordia.game, q = window.__qa, P = g.player;
+  const x = Math.round(g.w * 0.3), y = Math.round(g.h * 0.66), portrait = g.h > g.w;
+  const hx = portrait ? x : x + 34, hy = portrait ? y - 34 : y;
+  q.park = { x, y, dx: hx > x ? 1 : 0, dy: hy < y ? -1 : 0 }; q.feed = true; q.hold = true;
+  P.x = P.px = x; P.y = P.py = y; P.vx = P.vy = 0;
+  g.epochTime = Math.max(g.epochTime, 5);
+  g.stampHunter(0, hx, hy, g.angleToward(0, hx, hy), {});
+  return { x: hx, y: hy, cx: x, cy: y };
+}
+
+// One look at the dish while the grow clock is held, read right after the game draws (a rAF callback
+// queued now runs after the game's). Returns the camera (the uZoom the shader got), the player's world
+// and screen position, the player's body found on the fx canvas, any field or fx pixel drawn outside the
+// dish frame, the fade at a dish corner, the HUD box, red and cyan pixel counts around `spots` (world
+// points) and a small copy of the dish picture for frame-to-frame differences.
+const growProbe = (page, spots = []) => page.evaluate((spots) => new Promise((res) => requestAnimationFrame(() => {
+  const g = window.__primordia.game, P = g.player, r = window.__rect(), U = window.__glu;
+  const z = typeof U.last.uZoom === "number" ? U.last.uZoom : 1;
+  const SX = (x) => r.x + r.w / 2 + (x - g.w / 2) * r.s / z, SY = (y) => r.y + r.h / 2 + (y - g.h / 2) * r.s / z;
+  const at = { x: SX(P.x), y: SY(P.y) };
+  // the body: opaque pixels of its fill (#d8fff7, #ffb0c4 when hurt, #ffd86a in Burst) or its white rim
+  // around the computed spot (the nucleus and eye are holes in every state)
+  const near = (o, c) => Math.abs(fd[o] - c[0]) <= 22 && Math.abs(fd[o + 1] - c[1]) <= 22 && Math.abs(fd[o + 2] - c[2]) <= 22;
+  const FILLS = [[216, 255, 247], [255, 176, 196], [255, 216, 106], [255, 255, 255]];
+  const fx = document.querySelector("#fx"), k = fx.width / innerWidth, fd = fx.getContext("2d").getImageData(0, 0, fx.width, fx.height).data;
+  const Rmax = Math.max(P.r, g.baseR()) * 1.3 * (r.s / z) * 1.15, half = Math.max(16, 1.8 * Rmax);
+  let n = 0, bx = 0, by = 0;
+  for (let y = Math.max(0, Math.round((at.y - half) * k)); y < Math.min(fx.height, Math.round((at.y + half) * k)); y++)
+    for (let x = Math.max(0, Math.round((at.x - half) * k)); x < Math.min(fx.width, Math.round((at.x + half) * k)); x++) {
+      const o = (y * fx.width + x) * 4;
+      if (fd[o + 3] >= 200 && FILLS.some((c) => near(o, c))) { n++; bx += x; by += y; }
+    }
+  const body = n ? { n, x: (bx / n + 0.5) / k, y: (by / n + 0.5) / k, r: Math.sqrt(n / Math.PI) / k } : { n: 0 };
+  // the field canvas, copied in the same frame it was drawn
+  const f = document.querySelector("#field"), kf = f.width / innerWidth;
+  const cv = document.createElement("canvas"); cv.width = f.width; cv.height = f.height;
+  const cx = cv.getContext("2d"); cx.drawImage(f, 0, 0);
+  const ff = cx.getImageData(0, 0, f.width, f.height).data;
+  const field = (x, y) => { const o = (Math.min(f.height - 1, Math.max(0, Math.round(y * kf))) * f.width + Math.min(f.width - 1, Math.max(0, Math.round(x * kf)))) * 4; return [ff[o], ff[o + 1], ff[o + 2]]; };
+  const fxa = (x, y) => fd[(Math.min(fx.height - 1, Math.max(0, Math.round(y * k))) * fx.width + Math.min(fx.width - 1, Math.max(0, Math.round(x * k)))) * 4 + 3];
+  // outside the dish frame (3 px margin for the 1 px frame line): the field shows only its clear colour
+  // (0.012, 0.01, 0.025) and the fx canvas nothing
+  let pts = 0, fieldBad = 0, fxBad = 0, firstBad = null;
+  for (let y = 1; y < innerHeight; y += 4) for (let x = 1; x < innerWidth; x += 4) {
+    if (x > r.x - 3 && x < r.x + r.w + 3 && y > r.y - 3 && y < r.y + r.h + 3) continue;
+    pts++;
+    const c = field(x, y), a = fxa(x, y);
+    const fb = Math.abs(c[0] - 3) > 10 || Math.abs(c[1] - 3) > 10 || Math.abs(c[2] - 6) > 10, xb = a > 8;
+    if (fb) fieldBad++; if (xb) fxBad++;
+    if ((fb || xb) && !firstBad) firstBad = { x, y, field: c, fxAlpha: a };
+  }
+  // red and cyan field pixels around world points (the hunter, converted prey)
+  const around = spots.map((p) => {
+    const X = SX(p.x), Y = SY(p.y), R = p.rad * r.s / z;
+    let red = 0, cyan = 0, all = 0;
+    for (let y = Y - R; y <= Y + R; y += 1) for (let x = X - R; x <= X + R; x += 1) {
+      if ((x - X) ** 2 + (y - Y) ** 2 > R * R || x < r.x || y < r.y || x > r.x + r.w || y > r.y + r.h) continue;
+      const c = field(x, y); all++;
+      if (c[0] > 90 && c[0] > c[1] + 40 && c[0] > c[2]) red++;
+      if (c[1] > 90 && c[1] > c[0] + 40 && c[2] > c[0] + 20) cyan++;
+    }
+    return { red, cyan, all, x: Math.round(X), y: Math.round(Y) };
+  });
+  // a small copy of the dish picture
+  const SW = 96, SH = Math.max(8, Math.round((96 * r.h) / r.w)), snap = [];
+  for (let j = 0; j < SH; j++) for (let i = 0; i < SW; i++) snap.push(...field(r.x + ((i + 0.5) * r.w) / SW, r.y + ((j + 0.5) * r.h) / SH));
+  const hud = document.querySelector("#hud"), hb = hud.getBoundingClientRect();
+  res({
+    growT: g.growT, state: g.state, epoch: g.epoch, screen: window.__primordia.screen, z, conv: U.last.uConvert || null,
+    P: { x: P.x, y: P.y, r: P.r, base: g.baseR() }, at, body, rect: { x: r.x, y: r.y, w: r.w, h: r.h, s: r.s },
+    out: { pts, fieldBad, fxBad, firstBad }, corner: fxa(r.x + 6, r.y + r.h - 6),
+    hud: { hidden: hud.hidden, bottom: hb.bottom, top: hb.top, display: getComputedStyle(hud).display }, around, snap,
+    overflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+  });
+})), spots);
+// mean absolute difference of two dish pictures, 0..1
+const snapDiff = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length / 255; };
+const smootherstep = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
+// the shell's camera at a grow time (growView in game.js): 2x at the swap, back to 1x by 1.60
+const zoomAt = (t) => (t < 0.4 || t >= 1.6 ? 1 : 0.5 * Math.pow(2, smootherstep((t - 0.4) / 1.2)));
+
+// colour columns along the middle of the GROW bar, from a screenshot (the HUD is DOM, not canvas)
+async function barColumns(page) {
+  const b = await page.locator("#growBox > i.grow").boundingBox();
+  expect(b, "no GROW bar box");
+  const clip = { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.width), height: Math.round(b.height) };
+  const buf = await page.screenshot({ clip });
+  const cols = await page.evaluate(async (b64) => {
+    const bmp = await createImageBitmap(await (await fetch("data:image/png;base64," + b64)).blob());
+    const c = new OffscreenCanvas(bmp.width, bmp.height), x = c.getContext("2d");
+    x.drawImage(bmp, 0, 0);
+    const d = x.getImageData(0, 0, bmp.width, bmp.height).data, W = bmp.width, mid = Math.floor(bmp.height / 2), out = [];
+    for (let i = 0; i < W; i++) {
+      const s = [0, 0, 0];
+      for (const j of [mid - 1, mid, mid + 1]) for (let ch = 0; ch < 3; ch++) s[ch] += d[(j * W + i) * 4 + ch];
+      out.push(s.map((v) => Math.round(v / 3)));
+    }
+    return out;
+  }, buf.toString("base64"));
+  const notch = await page.evaluate(() => { const n = document.querySelector("#growBox .notch").getBoundingClientRect(), i = document.querySelector("#growBox > i.grow").getBoundingClientRect(); return { x: n.x - i.x, w: n.width, h: n.height, barW: i.width, barH: i.height, bg: getComputedStyle(document.querySelector("#growBox .notch")).backgroundColor }; });
+  return { cols, notch, clip };
+}
+const isCyan = (c) => c[1] >= 150 && c[2] >= 120 && c[0] <= 180;
+const isGold = (c) => c[0] >= 220 && c[0] - c[2] >= 80 && c[1] >= 110;
+const isDark = (c) => Math.max(...c) <= 80;
+
+// the grow scene on a clean dish: the parked player and a tracked Paraptera that will not attack
+async function growScene(page) {
+  await page.evaluate(cleanDish);
+  const spot = await page.evaluate(growSetup);
+  const t = await until(page, TRACKED, { max: 30, arg: { ...spot, sp: SP_PARA } });
+  expect(t.ok, `setup: the stamped Paraptera was not tracked in ${t.frames} frames`);
+  await page.evaluate(() => { for (const e of window.__primordia.game.hunters) e.cool = 1e9; });
+  return spot;
+}
+// Run the grow sequence, holding the grow clock at each stop for a probe and a screenshot. The bar
+// must already be full (the game may be paused on it). Returns the probes and the uniform log.
+async function growTo(page, stops, spots, shot, onStop) {
+  const w0 = Date.now();
+  await page.evaluate((s) => { window.__qa.growStop = s; window.__glu.log.length = 0; }, stops[0]);
+  await unfreeze(page);
+  const res = { stops: {}, log: [] };
+  for (const stop of stops) {
+    await page.evaluate((s) => { window.__qa.growStop = s; }, stop);
+    const r = await until(page, "g.state === 'grow' && g.growT >= a - 1e-9", { max: 80, arg: stop });
+    if (!r.ok) {
+      const st = await page.evaluate(() => { const g = window.__primordia.game; return { state: g.state, growT: +g.growT.toFixed(3), ripe: g.ripe, ripeT: g.ripeT, hunters: g.hunters.length, screen: window.__primordia.screen }; });
+      throw new Check(`the grow clock did not reach ${stop} in ${r.frames} frames: ${JSON.stringify(st)}`);
+    }
+    // the parked spot is an old-dish point: let go once the dish starts growing
+    await page.evaluate(() => { window.__qa.park = null; });
+    await frames(page, 2);
+    res.stops[stop] = await growProbe(page, stop < 0.4 ? spots : []);
+    await shot(`grow-${stop.toFixed(2)}`);
+    if (onStop) await onStop(stop);
+  }
+  res.log = await page.evaluate(() => window.__glu.log.slice());
+  await page.evaluate(() => { window.__qa.growStop = null; });
+  res.wall = ((Date.now() - w0) / 1000).toFixed(0);
+  return res;
 }
 
 // park and feed the player in the middle of the dish and stamp a hunter `off` cells away along the long
@@ -300,6 +489,7 @@ const overflow = (page) => page.evaluate(() => Math.max(document.documentElement
 async function run(browser, name) {
   const { viewport, touch } = RUNS[name];
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch });
+  await ctx.addInitScript(pageHooks);
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + String(e)));
@@ -332,17 +522,67 @@ async function run(browser, name) {
   });
   if (!booted) { await ctx.close(); return finishRun(name, errors, overflows, t0); }
 
-  await check(name, "1b start (" + (touch ? "tap PLAY" : "Enter") + "): How to play runs first, Skip starts the run", async () => {
+  const introOpen = await check(name, "1b start (" + (touch ? "tap PLAY" : "Enter") + "): How to play runs first", async () => {
     if (touch) await tapEl(page, "#playBtn"); else await page.keyboard.press("Enter");
     // a fresh browser sees the intro scenes before its first run
     const i = await until(page, "window.__primordia.screen === 'intro'", { max: 6 });
     expect(i.ok, "PLAY did not open the intro; screen=" + (await page.evaluate(() => window.__primordia.screen)));
     const scene = await until(page, "window.__primordia.intro && window.__primordia.intro.k >= 1 && window.__primordia.intro.s.t > 1.2", { max: 400 });
     expect(scene.ok, "the intro did not reach its first lesson");
-    const cap = await page.evaluate(() => ({ title: document.querySelector("#introTitle").getAttribute("aria-label"), keys: document.querySelector("#introKeys").textContent, id: window.__primordia.intro.scene.id }));
+    const cap = (await page.evaluate(() => ({ title: document.querySelector("#introTitle").getAttribute("aria-label"), keys: document.querySelector("#introKeys").textContent, id: window.__primordia.intro.scene.id, count: window.__primordia.intro.count })));
     await shot("intro");
     await noteOverflow("intro");
     expect(cap.title && cap.keys, "intro caption missing: " + JSON.stringify(cap));
+    return `scene "${cap.id}" of ${cap.count}: ${cap.title}`;
+  });
+
+  // the intro's GROW scene, jumped to directly: one meal fills the bar, the real grow sequence runs
+  // (no cards in the intro), a hunter comes back as an Orbium and the player eats it
+  if (introOpen) await check(name, "1b2 intro GROW scene: the dish grows and the player eats a hunter turned prey", async () => {
+    const k = await page.evaluate(() => {
+      const I = window.__primordia.intro, k0 = I.k;
+      let k = -1;
+      for (let i = 0; i < I.count; i++) { I.k = i; if (I.scene && I.scene.id === "grow") k = i; }
+      I.k = k0;
+      if (k >= 0) I.start(k);
+      return k;
+    });
+    expect(k >= 0, "the intro has no scene with id grow");
+    const w0 = Date.now();
+    const cap = await page.evaluate(() => ({ kicker: document.querySelector("#introKicker").textContent, title: document.querySelector("#introTitle").getAttribute("aria-label"), text: document.querySelector("#introText").textContent }));
+    const sceneS = "(() => { const I = window.__primordia.intro; if (!I) return null; return I.scene.id === 'grow' ? I.s : I.s.prev; })()";
+    // mid pull-back
+    const mid = await until(page, `(() => { const I = window.__primordia.intro; return !I || I.scene.id !== 'grow' || (g.state === 'grow' && g.growT >= 0.9); })()`, { max: 500 });
+    const midSt = await page.evaluate(() => ({ state: window.__primordia.game.state, growT: window.__primordia.game.growT }));
+    if (midSt.state === "grow") await shot("intro-grow");
+    const end = await until(page, `(() => { const I = window.__primordia.intro; if (!I) return true; const s = ${sceneS}; return I.scene.id !== 'grow' || (s && s.ev.some((e) => e.type === 'devour' && e.kind === 'prey' && e.converted)); })()`, { max: 600 });
+    const st = await page.evaluate((src) => {
+      const I = window.__primordia.intro, g = window.__primordia.game, P = g.player, s = new Function(`return ${src}`)(), r = window.__rect();
+      // Intro.observe() stamps each event with at = scene time, which hides zoomFinish's own list of
+      // placed prey, so the count comes from the game's stats and live prey
+      const ev = (s ? s.ev : []).filter((e) => ["grow", "growStart", "zoomBegin", "zoomFinish", "devour", "epochEnd"].includes(e.type)).map((e) => ({ type: e.type, at: typeof e.at === "number" ? +e.at.toFixed(2) : null, kind: e.kind, converted: e.converted, from: e.from }));
+      const from = [...new Set(g.prey.filter((p) => p.converted).map((p) => p.from).concat((s ? s.ev : []).filter((e) => e.type === "devour" && e.converted).map((e) => e.from)))];
+      const capBox = document.querySelector(".intro-cap").getBoundingClientRect();
+      const X = r.x + r.w / 2 + (P.x - g.w / 2) * r.s, Y = r.y + r.h / 2 + (P.y - g.h / 2) * r.s;
+      return { scene: I && I.scene.id, t: s && +s.t.toFixed(2), epoch: g.epoch, ev, placed: g.stats.husks || 0, from, player: { x: Math.round(X), y: Math.round(Y) }, cap: { l: capBox.left, t: capBox.top, r: capBox.right, b: capBox.bottom }, view: { w: innerWidth, h: innerHeight } };
+    }, sceneS);
+    await shot("intro-grown");
+    await noteOverflow("intro grow");
+    const has = (t, f = () => true) => st.ev.some((e) => e.type === t && f(e));
+    expect(cap.kicker === "7 · GROW" && cap.title === "Eat to grow.", "GROW scene caption: " + JSON.stringify(cap));
+    expect(has("grow"), "no growth point in the GROW scene; events " + st.ev.map((e) => e.type).join(","));
+    expect(has("growStart") && has("zoomBegin") && has("zoomFinish"), `the dish did not grow (scene ${st.scene} at ${st.t} s); events ${st.ev.map((e) => e.type).join(",")}`);
+    expect(st.placed >= 1, "the dish grew but no hunter came back as prey");
+    expect(has("devour", (e) => e.kind === "prey" && e.converted), `the player did not eat a converted Orbium (scene ${st.scene} at ${st.t} s); events ${st.ev.map((e) => e.type + (e.converted ? "*" : "")).join(",")}`);
+    // the action stays on screen and clear of the captions (side panel on the landscape phone)
+    const P = st.player, C = st.cap;
+    expect(P.x >= 0 && P.y >= 0 && P.x <= st.view.w && P.y <= st.view.h, "the player is off screen at the end of the GROW scene: " + JSON.stringify(P));
+    expect(!(P.x >= C.l && P.x <= C.r && P.y >= C.t && P.y <= C.b), `the player (${P.x},${P.y}) is under the captions ${JSON.stringify(C)}`);
+    return `"${cap.title}" ${cap.text}; grew at ${(st.ev.find((e) => e.type === "growStart") || {}).at} s, ${st.placed} prey from ${st.from.join("/")}, ate one at ${(st.ev.find((e) => e.type === "devour" && e.converted) || {}).at} s; player at (${P.x},${P.y}); ${((Date.now() - w0) / 1000).toFixed(0)} s wall${mid.ok && midSt.state === "grow" ? ", mid-grow shot at growT " + midSt.growT.toFixed(2) : ""}`;
+  });
+
+  await check(name, "1c Skip starts the run", async () => {
+    expect(introOpen, "setup: the intro did not open");
     if (touch) await tapEl(page, "#introSkip"); else await page.keyboard.press("Escape");
     const p = await until(page, "window.__primordia.screen === 'play'", { max: 6 });
     expect(p.ok, "Skip did not start the run");
@@ -351,7 +591,7 @@ async function run(browser, name) {
     await page.evaluate(harness);
     const st = await page.evaluate(() => {
       const g = window.__primordia.game;
-      return { screen: window.__primordia.screen, state: g.state, alive: g.player.alive, w: g.w, h: g.h, compact: g.compact, caps: g.caps(), touchUi: !document.querySelector("#touch").hidden };
+      return { screen: window.__primordia.screen, state: g.state, alive: g.player.alive, w: g.w, h: g.h, compact: g.compact, caps: g.caps(), touchUi: !document.querySelector("#touch").hidden, growHold: g.growHold, epoch: g.epoch, growth: g.growth, label: document.querySelector("#epochLabel").textContent };
     });
     await noteOverflow("play");
     expect(st.screen === "play" && st.state === "play" && st.alive, "did not start: " + JSON.stringify(st));
@@ -359,10 +599,13 @@ async function run(browser, name) {
     if (name === "portrait") expect(st.w === 128 && st.h === 256, `portrait dish is ${st.w}x${st.h}`);
     else expect(st.w === 256 && st.h === 128, `dish is ${st.w}x${st.h}`);
     if (touch) expect(st.compact && st.caps.gliders === 3 && st.caps.bodies === 6, "touch caps " + JSON.stringify(st.caps));
-    return `intro scene "${cap.id}": ${cap.title}; dish ${st.w}x${st.h}, caps ${st.caps.gliders}/${st.caps.bodies}`;
+    // the intro holds growth in its other scenes; a run after it must grow again, from Size I
+    expect(st.growHold === false, "GAME BUG: growHold is still on in the run that follows the intro, so the GROW bar can never fill");
+    expect(st.epoch === 1 && st.growth === 0 && st.label === "SIZE I", `the run did not start at an empty Size I: epoch ${st.epoch}, growth ${st.growth}, label "${st.label}"`);
+    return `dish ${st.w}x${st.h}, caps ${st.caps.gliders}/${st.caps.bodies}, growHold ${st.growHold}`;
   });
 
-  await check(name, "1c steer (" + (touch ? "touch stick" : "mouse + WASD") + ")", async () => {
+  await check(name, "1d steer (" + (touch ? "touch stick" : "mouse + WASD") + ")", async () => {
     const s0 = await page.evaluate(() => ({ steps: window.__primordia.game.steps, path: window.__qa.path, f: window.__qa.frame, t: performance.now() }));
     // direction to the nearest prey, in dish cells
     const aim = () => page.evaluate(() => {
@@ -518,7 +761,10 @@ async function run(browser, name) {
     }
     expect(rr.ok, `a Remains prey was stamped but never tracked (${rr.frames} frames)`);
     const cleared = await page.evaluate(() => !!window.__qa.preyCleared);
-    return `glory +${kill.points} (mult ${kill.mult}) after ${r.frames} frames; ${st.remains} Remains prey tracked after ${rr.frames} more frames${cleared ? " (prey channel was over 1000 mass and was cleared first)" : ""}`;
+    // spec (Growth): a Glory Bite on a Paraptera fills the GROW bar by 5 points
+    const gp = (await logSince(page, f0, ["grow"])).map((v) => v.n);
+    expect(gp.includes(5), `the Glory Bite on a Paraptera gave growth points [${gp.join(", ")}], expected 5`);
+    return `glory +${kill.points} (mult ${kill.mult}) after ${r.frames} frames, +${gp.join("+")} GROW; ${st.remains} Remains prey tracked after ${rr.frames} more frames${cleared ? " (prey channel was over 1000 mass and was cleared first)" : ""}`;
   });
 
   // 4. Burst: meter full, Shift or the BURST button
@@ -642,38 +888,235 @@ async function run(browser, name) {
     });
   }
 
-  // 7. epoch end: mutation cards with kind labels and a Duo; pick one
-  await check(name, "7 mutation pick (" + (touch ? "tap card 2" : "key 2") + ")", async () => {
-    await page.evaluate(() => {
-      const g = window.__primordia.game, q = window.__qa;
-      q.hold = false; q.park = null;
-      // own both parents of Chain Bloom and promise a Duo, so the DUO tag shows
-      g.mut.sporeburst = Math.max(1, g.mut.sporeburst); g.mut.nerve = Math.max(1, g.mut.nerve); g.duoNext = true;
-      g.epochTime = 39.99;
+  // 7. Eat to grow: the GROW bar, the dish growing, the cards and the converted prey
+  // A Paraptera is stamped beside the parked player (off centre), the bar is filled by hand, and the
+  // grow clock is held at each screenshot time.
+  const grown = { ready: false, ok: false, stops: {}, hunter: null, pre: null };
+  await check(name, "7a GROW bar fills and shows its 50% tick", async () => {
+    await page.evaluate(() => { const q = window.__qa; q.post = null; q.glint = null; });
+    await growScene(page, grown);
+    const f0 = await qaFrame(page);
+    const s0 = await page.evaluate(() => { const g = window.__primordia.game; g.growth = 0; g.addGrowth(3, g.player.x, g.player.y); return { bar: g.bar(), growth: g.growth, hold: g.growHold }; });
+    expect(s0.growth === 3, `addGrowth(3) left the bar at ${s0.growth} (growHold ${s0.hold})`);
+    await frames(page, 3);
+    const read = () => page.evaluate(() => {
+      const m = getComputedStyle(document.querySelector("#epochBar")).transform, box = document.querySelector("#growBox");
+      return { scale: m && m !== "none" ? +m.slice(7).split(",")[0] : 1, full: box.classList.contains("full"), label: document.querySelector("#epochLabel").textContent, g: window.__primordia.game.gFrac() };
     });
-    const r = await until(page, "window.__primordia.screen === 'mutate'", { max: 10 });
-    expect(r.ok, "epoch end did not open mutations; screen=" + (await page.evaluate(() => window.__primordia.screen)));
-    await frames(page, 2);
-    await shot("mutate");
-    await noteOverflow("mutate");
-    const cards = await page.evaluate(() => [...document.querySelectorAll("#cards .card")].map((c) => ({ name: c.querySelector("b").textContent, kind: c.querySelector(".kind") && c.querySelector(".kind").textContent, duo: c.querySelector(".duo-tag") && c.querySelector(".duo-tag").textContent, isDuo: c.classList.contains("duo") })));
-    const offer = await page.evaluate(() => window.__primordia.game.offer.map((m) => m.id));
-    const before = await page.evaluate(() => ({ ...window.__primordia.game.mut }));
-    expect(cards.length === 3, `${cards.length} cards`);
-    const unlabeled = cards.filter((c) => !(/^(BUILD|EXTRA)$/.test(c.kind || "") || c.duo === "DUO"));
-    expect(unlabeled.length === 0, "cards without a kind label or DUO tag: " + unlabeled.map((c) => c.name).join(", "));
-    expect(cards.some((c) => c.isDuo && c.duo === "DUO"), "no DUO card although both Chain Bloom parents are owned and duoNext is set: " + JSON.stringify(cards));
-    // the cards ignore taps for their first 0.4 s, so a dash press at the epoch end cannot pick one
-    if (touch) { await page.waitForTimeout(450); await tapEl(page, "#cards .card >> nth=1"); } else await page.keyboard.press("Digit2");
+    const r1 = await read();
+    // (the parked player may bite a passing prey meanwhile, so the bar is read against the game)
+    expect(Math.abs(r1.scale - r1.g) < 0.02 && r1.g > 0, `bar drawn at ${r1.scale.toFixed(3)} for g ${r1.g.toFixed(3)} (3/${s0.bar} added)`);
+    // past the half: the notch event, and the tick over the cyan fill
+    await page.evaluate(() => { const g = window.__primordia.game; g.addGrowth(Math.ceil(g.bar() * 0.7) - g.growth, g.player.x, g.player.y); });
+    await frames(page, 3);
+    const r2 = await read();
+    const ev = await logSince(page, f0, ["grow", "notch"]);
+    const bc = await barColumns(page);
+    await page.screenshot({ path: path.join(out, `${name}-grow-bar.png`), clip: { x: Math.max(0, bc.clip.x - 70), y: Math.max(0, bc.clip.y - 14), width: bc.clip.width + 140, height: bc.clip.height + 28 } });
+    const W = bc.cols.length, mid = W / 2, dark = [];
+    for (let i = Math.floor(mid - 4); i <= Math.ceil(mid + 4); i++) if (bc.cols[i] && isDark(bc.cols[i])) dark.push(i);
+    const L = bc.cols[Math.round(mid - 5)], R = bc.cols[Math.round(mid + 5)];
+    expect(ev.filter((v) => v.type === "grow").length >= 2, "grow events: " + ev.map((v) => v.type).join(","));
+    expect(ev.some((v) => v.type === "notch"), "no notch event when the bar passed half: " + ev.map((v) => v.type).join(","));
+    expect(Math.abs(r2.scale - r2.g) < 0.02 && !r2.full, `bar drawn at ${r2.scale.toFixed(3)} for g ${r2.g.toFixed(3)} (full class ${r2.full})`);
+    expect(bc.notch.w >= 3 && bc.notch.h >= bc.notch.barH - 0.5, `tick box ${bc.notch.w}x${bc.notch.h} px (spec: at least 3 px thick)`);
+    expect(Math.abs(bc.notch.x + bc.notch.w / 2 - bc.notch.barW / 2) <= 1.5, `tick centre at ${(bc.notch.x + bc.notch.w / 2).toFixed(1)} px, bar middle ${(bc.notch.barW / 2).toFixed(1)} px`);
+    expect(dark.length >= 2, `no dark tick at the middle of the bar; columns ${JSON.stringify(bc.cols.slice(Math.floor(mid - 5), Math.ceil(mid + 6)))}`);
+    expect(isCyan(L) && isCyan(R), `the fill beside the tick is not cyan: ${JSON.stringify(L)} | ${JSON.stringify(R)}`);
+    grown.ready = true;
+    return `3/${s0.bar} drawn at ${r1.scale.toFixed(3)} ("${r1.label}"); at g ${r2.g.toFixed(2)} drawn at ${r2.scale.toFixed(3)}; tick ${bc.notch.w}x${bc.notch.h} px at ${(bc.notch.x + bc.notch.w / 2).toFixed(1)} of ${bc.notch.barW} px, dark columns ${dark.join(",")}, fill ${JSON.stringify(L)}`;
+  });
+
+  await check(name, "7b full bar: gold, i-frames, ready to grow", async () => {
+    expect(grown.ready, "setup: 7a did not finish");
+    const f0 = await qaFrame(page);
+    const st = await page.evaluate(() => {
+      const g = window.__primordia.game;
+      // own both parents of Chain Bloom and promise a Duo, so the DUO tag shows on the cards
+      g.mut.sporeburst = Math.max(1, g.mut.sporeburst); g.mut.nerve = Math.max(1, g.mut.nerve); g.duoNext = true;
+      g.growth = g.bar() - 1;
+      g.addGrowth(1, g.player.x, g.player.y);
+      g.state = "paused"; // hold the full bar for the HUD reads; core's update() skips this state
+      return { growth: g.growth, bar: g.bar(), ripe: g.ripe, iframes: g.player.iframes };
+    });
+    await frames(page, 4);
+    const hud = await page.evaluate(() => ({ full: document.querySelector("#growBox").classList.contains("full"), label: getComputedStyle(document.querySelector("#epochLabel")).color, text: document.querySelector("#epochLabel").textContent }));
+    const bc = await barColumns(page);
+    await page.screenshot({ path: path.join(out, `${name}-grow-full.png`), clip: { x: Math.max(0, bc.clip.x - 70), y: Math.max(0, bc.clip.y - 14), width: bc.clip.width + 140, height: bc.clip.height + 28 } });
+    const hunter = await page.evaluate(() => { const g = window.__primordia.game, e = g.hunters.find((h) => h.species === 0 && !h.egg); return e ? { x: e.x, y: e.y, nx: e.nx, ny: e.ny } : null; });
+    grown.hunter = hunter;
+    grown.pre = await growProbe(page, hunter ? [{ x: hunter.x, y: hunter.y, rad: 10 }] : []);
+    await shot("grow-ripe");
+    const ev = await logSince(page, f0, ["grow", "ripe"]);
+    const W = bc.cols.length, mid = W / 2, body = bc.cols.filter((c, i) => i >= 3 && i < W - 3 && Math.abs(i - mid) > 3), gold = body.filter(isGold).length;
+    expect(st.growth === st.bar && st.ripe, `bar ${st.growth}/${st.bar}, ripe ${st.ripe}`);
+    expect(ev.some((v) => v.type === "grow" && v.n === 1) && ev.some((v) => v.type === "ripe"), "events: " + ev.map((v) => v.type).join(","));
+    expect(st.iframes >= 0.79, `i-frames ${st.iframes.toFixed(2)} s at the full bar (spec: 0.8 s)`);
+    expect(hud.full, "the GROW box did not take its full state");
+    expect(gold >= body.length * 0.8, `the full bar is not gold: ${gold}/${body.length} gold columns, e.g. ${JSON.stringify(body[Math.floor(body.length / 3)])}`);
+    expect(hunter, "setup: the Paraptera is gone before the dish grows");
+    return `${st.growth}/${st.bar}, i-frames ${st.iframes.toFixed(2)} s, ${gold}/${body.length} gold columns, label "${hud.text}" in ${hud.label}; hunter field pixels red ${grown.pre.around[0].red}, cyan ${grown.pre.around[0].cyan}`;
+  });
+
+  let pauseProbe = null;
+  await check(name, "7c the dish grows: the player holds still at the swap, the zoom stays in the dish frame", async () => {
+    expect(grown.ready && grown.pre, "setup: 7b did not finish");
+    const dims = await page.evaluate(() => ({ w: window.__primordia.game.w, h: window.__primordia.game.h }));
+    const res = await growTo(page, GROW_STOPS, grown.hunter ? [{ x: grown.hunter.x, y: grown.hunter.y, rad: 10 }] : [], shot, async (stop) => {
+      if (stop === 1.0 && !touch) {
+        // design: pause is off while the dish grows (a probe; the spec does not name it)
+        await page.keyboard.press("Escape");
+        await frames(page, 2);
+        const s = await page.evaluate(() => window.__primordia.screen);
+        if (s === "pause") { await page.keyboard.press("Escape"); await until(page, "window.__primordia.screen === 'play'", { max: 4 }); }
+        pauseProbe = s;
+      }
+    });
+    grown.stops = res.stops;
+    const S = res.stops, a = S[0.39], b = S[0.41];
+    for (const t of GROW_STOPS) if (S[t].overflow > 0) overflows.push(`grow ${t} +${S[t].overflow}px`);
+    // camera: the uZoom the shader got, against the design curve; steady from 2x back to 1x
+    const zBad = GROW_STOPS.filter((t) => Math.abs(S[t].z - zoomAt(t)) > 0.01).map((t) => `${t}: ${S[t].z.toFixed(3)} (want ${zoomAt(t).toFixed(3)})`);
+    const zl = res.log.filter((v) => v.n === "uZoom" && v.growT >= 0.4 && v.growT < 1.6).map((v) => v.v);
+    let back = 0; for (let i = 1; i < zl.length; i++) if (zl[i] < zl[i - 1] - 1e-6) back++;
+    expect(zBad.length === 0, "camera off the design curve: " + zBad.join(", "));
+    expect(zl.length >= 4 && back === 0 && Math.min(...zl) >= 0.5 - 1e-6, `pull-back not steady: ${zl.length} frames, ${back} steps back, min ${Math.min(...zl).toFixed(3)}`);
+    // the swap: core moved the player into the shrunken old dish, the screen spot stayed put
+    expect(a.epoch === 1 && b.epoch === 2, `size ${a.epoch} at 0.39, ${b.epoch} at 0.41`);
+    const mx = dims.w / 4 + a.P.x / 2, my = dims.h / 4 + a.P.y / 2;
+    expect(Math.hypot(b.P.x - mx, b.P.y - my) < 0.6, `the player went to (${b.P.x.toFixed(1)},${b.P.y.toFixed(1)}), the old dish maps (${a.P.x.toFixed(1)},${a.P.y.toFixed(1)}) to (${mx.toFixed(1)},${my.toFixed(1)})`);
+    const dCalc = Math.hypot(b.at.x - a.at.x, b.at.y - a.at.y);
+    expect(a.body.n >= 20 && b.body.n >= 20, `player body not found on the fx canvas (${a.body.n} and ${b.body.n} pixels)`);
+    const dSeen = Math.hypot(b.body.x - a.body.x, b.body.y - a.body.y);
+    expect(dCalc <= 2 && dSeen <= 2, `the player's screen spot moved ${dSeen.toFixed(2)} px on screen (${dCalc.toFixed(2)} px by the transform) across the swap; spec: 2 px or less`);
+    const c = S[1.59], d = S[1.61], dFin = c.body.n && d.body.n ? Math.hypot(d.body.x - c.body.x, d.body.y - c.body.y) : NaN;
+    // the zoom stays inside the dish frame: nothing on the field or fx canvas outside it, HUD untouched
+    const outBad = GROW_STOPS.filter((t) => S[t].out.fieldBad || S[t].out.fxBad).map((t) => `${t}: field ${S[t].out.fieldBad}, fx ${S[t].out.fxBad} of ${S[t].out.pts} at ${JSON.stringify(S[t].out.firstBad)}`);
+    expect(outBad.length === 0, "drawn outside the dish frame: " + outBad.join("; "));
+    const hudBad = GROW_STOPS.filter((t) => S[t].hud.hidden || S[t].hud.display === "none" || S[t].rect.y < S[t].hud.bottom - 1).map((t) => `${t}: hidden ${S[t].hud.hidden}, dish top ${S[t].rect.y.toFixed(0)}, HUD bottom ${S[t].hud.bottom.toFixed(0)}`);
+    expect(hudBad.length === 0, "HUD: " + hudBad.join("; "));
+    const fade = GROW_STOPS.filter((t) => S[t].corner > 10).map((t) => `${t}: ${S[t].corner}`);
+    expect(fade.length === 0, "a fade was drawn without reduced motion: " + fade.join(", "));
+    // the picture: the swap barely changes it, the pull-back does
+    const dSwap = snapDiff(a.snap, b.snap), dPull = snapDiff(a.snap, S[1.0].snap);
+    expect(dSwap < dPull, `the picture changed more across the swap (${dSwap.toFixed(3)}) than during the pull-back (${dPull.toFixed(3)})`);
+    // the molt wave: the hunter's red tissue takes the prey colours before the swap
+    const pre = grown.pre.around[0], mo = a.around[0];
+    if (pre && pre.red >= 10) expect(mo.red <= pre.red * 0.3, `hunter tissue still red at 0.39: ${mo.red} red px (was ${pre.red}), cyan ${mo.cyan}`);
+    const cv = (t) => (S[t].conv ? S[t].conv.map((v) => +v.toFixed(2)) : null);
+    expect(S[0.15].conv && S[0.15].conv[3] === 1 && S[0.15].conv[2] > 20 && S[0.15].conv[2] < 60, "molt wave at 0.15: uConvert " + JSON.stringify(cv(0.15)));
+    expect(S[1.61].conv && S[1.61].conv[3] === 0, "molt wave still on after the swap: uConvert " + JSON.stringify(cv(1.61)));
+    grown.ok = true;
+    return `player (${a.P.x.toFixed(1)},${a.P.y.toFixed(1)}) -> (${b.P.x.toFixed(1)},${b.P.y.toFixed(1)}) cells; screen move ${dSeen.toFixed(2)} px seen, ${dCalc.toFixed(2)} px by transform (at 1.60 swap ${isNaN(dFin) ? "?" : dFin.toFixed(2)} px); zoom ${GROW_STOPS.map((t) => S[t].z.toFixed(3)).join("/")} over ${zl.length} pull-back frames; outside the frame 0/${a.out.pts} px; picture diff swap ${dSwap.toFixed(3)} vs pull-back ${dPull.toFixed(3)}; hunter red px ${pre ? pre.red : "?"} -> ${mo ? mo.red : "?"} (cyan ${pre ? pre.cyan : "?"} -> ${mo ? mo.cyan : "?"}); molt radius ${cv(0.15)[2]} -> ${cv(0.39) ? cv(0.39)[2] : "?"} cells; ${res.wall} s wall`;
+  });
+  if (!touch && pauseProbe !== null) {
+    if (pauseProbe === "pause") record(name, "7d probe: Escape while the dish grows", "WARN", "the pause screen opened during the grow sequence; design section 10 says pause is off during grow (the spec does not require it). Resuming finished the sequence normally");
+    else record(name, "7d probe: Escape while the dish grows", "ok", `ignored (screen stayed "${pauseProbe}")`);
+  }
+
+  await check(name, "7e cards: YOU GREW · SIZE II, then a pick (" + (touch ? "tap card 2" : "key 2") + ")", async () => {
+    expect(grown.ok, "setup: the dish did not grow");
+    const r = await until(page, "window.__primordia.screen === 'mutate'", { max: 30 });
+    expect(r.ok, `the cards did not appear; screen ${await page.evaluate(() => window.__primordia.screen)}, state ${await page.evaluate(() => window.__primordia.game.state)}`);
+    const shownAt = Date.now();
+    // the bar-full i-frames (0.55 s left when the grow began) make the body blink; switch them off so
+    // the body can be measured
+    await page.evaluate(() => { window.__primordia.game.player.iframes = 0; });
+    await frames(page, 3);
+    await shot("grow-cards");
+    await noteOverflow("cards");
+    const ui = await page.evaluate(() => ({
+      kicker: document.querySelector("#mutateKicker").textContent, note: document.querySelector("#grewNote").hidden ? null : document.querySelector("#grewNote").textContent,
+      growT: window.__primordia.game.growT, epoch: window.__primordia.game.epoch,
+      cards: [...document.querySelectorAll("#cards .card")].map((c) => ({ name: c.querySelector("b").textContent, kind: c.querySelector(".kind") && c.querySelector(".kind").textContent, duo: c.querySelector(".duo-tag") && c.querySelector(".duo-tag").textContent, isDuo: c.classList.contains("duo") })),
+      offer: window.__primordia.game.offer.map((m) => m.id), mut: { ...window.__primordia.game.mut },
+      // boxes after transforms: the selected card is raised a few pixels
+      noteBottom: document.querySelector("#grewNote").getBoundingClientRect().bottom,
+      cardTops: [...document.querySelectorAll("#cards .card")].map((c) => ({ top: c.getBoundingClientRect().top, sel: c.classList.contains("sel") })),
+    }));
+    grown.noteLayout = { bottom: ui.noteBottom, cards: ui.cardTops, shown: ui.note !== null };
+    // a person reads the cards for a few seconds; measure the drawn body meanwhile
+    await page.waitForTimeout(Math.max(0, 3500 - (Date.now() - shownAt)));
+    grown.cards = await growProbe(page);
+    const pre = await page.evaluate(() => {
+      const q = window.__qa, g = window.__primordia.game, P = g.player;
+      q.feed = false; q.hold = false; q.park = null; P.light = 40;
+      return { light: P.light, max: P.maxLight, t: performance.now() };
+    });
+    grown.pickT = pre.t; grown.cardSec = (Date.now() - shownAt) / 1000;
+    if (touch) await tapEl(page, "#cards .card >> nth=1"); else await page.keyboard.press("Digit2");
     const p = await until(page, "window.__primordia.screen === 'play' && g.epoch === 2 && g.state === 'play'", { max: 6 });
-    const after = await page.evaluate(() => ({ ...window.__primordia.game.mut }));
-    expect(p.ok, "card pick did not resume play in epoch II");
-    expect(after[offer[1]] === before[offer[1]] + 1, `picked card 2 (${offer[1]}) but the mutation did not apply`);
-    return cards.map((c) => `${c.name} [${c.duo || c.kind}]`).join(", ") + ` -> took ${offer[1]}`;
+    const after = await page.evaluate(() => {
+      const g = window.__primordia.game, P = g.player, b = document.querySelector("#banner");
+      return { mut: { ...g.mut }, light: P.light, max: P.maxLight, charges: P.charges, maxCharges: g.maxCharges(), relaxT: g.director.relaxT, banner: b.textContent, bannerOn: b.classList.contains("show") };
+    });
+    expect(ui.kicker === "YOU GREW · SIZE II", `cards kicker reads "${ui.kicker}"`);
+    expect(ui.note === "The dish grew. Old hunters are food now.", `first-time line under the kicker: ${JSON.stringify(ui.note)}`);
+    expect(ui.growT >= 1.95 - 1e-6 && ui.epoch === 2, `cards at growT ${ui.growT.toFixed(2)}, size ${ui.epoch}`);
+    expect(ui.cards.length === 3, `${ui.cards.length} cards`);
+    const unlabeled = ui.cards.filter((c) => !(/^(BUILD|EXTRA)$/.test(c.kind || "") || c.duo === "DUO"));
+    expect(unlabeled.length === 0, "cards without a kind label or DUO tag: " + unlabeled.map((c) => c.name).join(", "));
+    expect(ui.cards.some((c) => c.isDuo && c.duo === "DUO"), "no DUO card although both Chain Bloom parents are owned and duoNext is set: " + JSON.stringify(ui.cards));
+    expect(p.ok, "the pick did not resume play in Size II");
+    const took = ui.offer[1];
+    expect(after.mut[took] === ui.mut[took] + 1, `picked card 2 (${took}) but the mutation did not apply`);
+    const wantMax = Math.min(150, pre.max + (took === "heart" ? 25 : 0) + 10);
+    expect(after.max === wantMax, `max light ${pre.max} -> ${after.max}, want ${wantMax}`);
+    if (took !== "heart") expect(Math.abs(after.light - 70) < 2, `light 40 -> ${after.light.toFixed(1)} after the pick, want 70 (+30)`);
+    expect(after.charges === after.maxCharges, `charges ${after.charges}/${after.maxCharges} after the pick`);
+    expect(/SIZE II/.test(after.banner) && /New hunter: Pentapteryx\. It strikes twice\./.test(after.banner), `size banner reads "${after.banner}"`);
+    expect(after.relaxT >= 3.5, `no calm at the size start: relaxT ${after.relaxT.toFixed(2)} (spec: no new hunter warns in for 4 s)`);
+    return ui.cards.map((c) => `${c.name} [${c.duo || c.kind}]`).join(", ") + ` -> took ${took} after ${grown.cardSec.toFixed(1)} s; light 40 -> ${after.light.toFixed(0)}, max ${pre.max} -> ${after.max}; banner "${after.banner}"; calm ${after.relaxT.toFixed(1)} s`;
+  });
+
+  await check(name, "7e2 the first-time line under the kicker is clear of the cards", async () => {
+    const L = grown.noteLayout;
+    expect(L && L.shown, "setup: the line was not shown");
+    const top = Math.min(...L.cards.map((c) => c.top)), over = L.bottom - top;
+    expect(over <= 0.5, `GAME BUG (layout): the cards cover the bottom ${over.toFixed(1)} px of "The dish grew. Old hunters are food now." (line box bottom ${L.bottom.toFixed(1)} px, top card edge ${top.toFixed(1)} px${L.cards.some((c) => c.sel && c.top === top) ? ", the selected card is raised" : ""}). #grewNote has no space below it, so the descenders hide under the card`);
+    return `line ends ${(-over).toFixed(1)} px above the cards`;
+  });
+
+  await check(name, "7f after the pick: converted prey on the dish, FOOD label", async () => {
+    expect(grown.pickT, "setup: no pick");
+    await frames(page, 3);
+    const st = await page.evaluate((t0) => {
+      const g = window.__primordia.game;
+      const conv = g.prey.filter((p) => p.converted).map((p) => ({ x: p.x, y: p.y, size: p.size, from: p.from }));
+      const texts = window.__texts.filter((t) => t.t >= t0).map((t) => t.s);
+      const zf = window.__qa.log.filter((v) => v.type === "zoomFinish").pop();
+      return { conv, food: [...new Set(texts.filter((s) => /^FOOD/.test(s)))], texts: [...new Set(texts)].slice(0, 10), zooms: g.stats.zooms, husks: g.stats.husks, sinceZoom: zf ? (t0 - zf.t) / 1000 : NaN };
+    }, grown.pickT);
+    const p = await growProbe(page, st.conv.map((c) => ({ x: c.x, y: c.y, rad: (c.size || 6) + 2 })));
+    await shot("grow-after");
+    const seen = p.around.filter((a) => a.cyan >= 6).length;
+    expect(st.conv.length >= 1, `no converted prey on the dish after the pick (stats: ${st.zooms} zooms, ${st.husks} husks)`);
+    expect(seen >= 1, `converted prey are tracked but the field shows no prey colour at them: ${JSON.stringify(p.around)}`);
+    // design 7: "a FOOD ring and label for 2 s after play resumes, the first time each species converts"
+    expect(st.food.length >= 1, `GAME BUG: no FOOD label after the pick (the cards were up ${grown.cardSec.toFixed(1)} s; the pick came ${st.sinceZoom.toFixed(1)} s after zoomFinish). game.js drops husk labels 3 s after zoomFinish by performance.now() and skips them while state is not "play", so a player who reads the cards for 3 s never sees "FOOD · was Paraptera". Text drawn since the pick: ${JSON.stringify(st.texts)}`);
+    return `${st.conv.length} converted prey (${st.conv.map((c) => c.from).join(", ")}), ${seen} show prey colour on the field; label ${JSON.stringify(st.food)}`;
+  });
+
+  await check(name, "7g drawn body: shrinks with the dish, then takes the new size's base", async () => {
+    const S = grown.stops;
+    expect(S[0.39] && S[0.41] && S[1.59] && grown.cards, "setup: the grow sequence was not measured");
+    await frames(page, 20); // the drawn body eases over 0.3 s (about 17% per frame here)
+    const aft = await growProbe(page);
+    const r39 = S[0.39].body.r, k = (x) => (x && x.body && x.body.n ? x.body.r / r39 : NaN);
+    const want = S[0.41].P.base / S[0.39].P.r; // the new base against the full Size I body
+    const got = { swap: k(S[0.41]), shrunk: k(S[1.59]), cards: k(grown.cards), after: k(aft) };
+    const f = (v) => (isNaN(v) ? "?" : v.toFixed(2));
+    const detail = `drawn radius against growT 0.39: 0.41 x${f(got.swap)}, 1.59 x${f(got.shrunk)}, cards x${f(got.cards)}, play after the pick x${f(got.after)}; the new base is x${want.toFixed(2)} (P.r ${S[0.39].P.r.toFixed(2)} at 0.39, ${grown.cards.P.r.toFixed(2)} at the cards, ${aft.P.r.toFixed(2)} after; base ${S[0.41].P.base.toFixed(2)} cells)`;
+    expect(Math.abs(got.swap - 1) <= 0.15, "the body jumps in size at the swap: " + detail);
+    expect(Math.abs(got.shrunk - 0.5) <= 0.12, "the body did not shrink with the dish: " + detail);
+    expect(Math.abs(got.after - want) <= 0.15, "after the pick the body is not at the new base: " + detail);
+    // the cards show the body the next size starts with
+    expect(Math.abs(got.cards / got.after - 1) <= 0.12, `GAME BUG: during the cards the body is drawn ${f(got.cards / got.after)}x the size it has when play resumes (spec: "1.60 s: your body pops up to the new size's base radius"). zoomBegin never sets player.r, and update() returns before "P.r = bodyR()" in the grow and mutate states, so from growT 1.60 the shell eases to the stale Size I full-bar radius, then shrinks after the pick. ` + detail);
+    return detail;
   });
 
   if (!touch) {
-    await check(name, "7b pause and resume (Escape)", async () => {
+    await check(name, "7h pause and resume (Escape)", async () => {
       await page.keyboard.press("Escape");
       const a = await until(page, "window.__primordia.screen === 'pause'", { max: 3 });
       await page.keyboard.press("Escape");
@@ -779,6 +1222,62 @@ async function run(browser, name) {
       expect(off.length === 0, "off screen or clipped: " + JSON.stringify(off));
     }
   });
+
+  let rmWave = null, rmWaveAtOnce = false, rmFood = "";
+  // 10. reduced motion: the page reloads with prefers-reduced-motion (game.js reads it at load). The
+  // dish grows behind a short fade with no pull-back, and the hunters still come back as prey.
+  await check(name, "10 reduced motion: a fade, no zoom, hunters still turn into prey", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload({ waitUntil: "load" });
+    await page.waitForFunction(() => window.__primordia && window.__primordia.game, null, { timeout: 60000 });
+    await frames(page, 2);
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), "setup: reduced motion was not emulated");
+    if (touch) await tapEl(page, "#playBtn"); else await page.keyboard.press("Enter");
+    const p = await until(page, "window.__primordia.screen === 'play'", { max: 8 });
+    expect(p.ok, "PLAY did not start a run (the intro was already seen); screen " + (await page.evaluate(() => window.__primordia.screen)));
+    await frames(page, 2);
+    await page.evaluate(harness);
+    await growScene(page);
+    const f0 = await qaFrame(page);
+    await page.evaluate(() => { const g = window.__primordia.game; g.growth = g.bar() - 1; g.addGrowth(1, g.player.x, g.player.y); });
+    const res = await growTo(page, RM_STOPS, [], (tag) => shot("rm-" + tag));
+    const S = res.stops;
+    const zl = res.log.filter((v) => v.n === "uZoom").map((v) => v.v);
+    expect(zl.length >= 3 && zl.every((z) => Math.abs(z - 1) < 1e-6), `the camera zoomed with reduced motion: uZoom ${Math.min(...zl).toFixed(3)}..${Math.max(...zl).toFixed(3)} over ${zl.length} frames`);
+    // the fade: rgba(4,3,10,a) over the dish, a = 0.75 at the swap (growT 0.40), 0 by 0.60
+    const want = (t) => Math.max(0, 1 - Math.abs(t - 0.4) / 0.2) * 0.75 * 255;
+    const fb = RM_STOPS.filter((t) => Math.abs(S[t].corner - want(t)) > 25).map((t) => `${t}: alpha ${S[t].corner}, want ${want(t).toFixed(0)}`);
+    expect(fb.length === 0, "fade: " + fb.join(", "));
+    const outBad = RM_STOPS.filter((t) => S[t].out.fieldBad || S[t].out.fxBad).map((t) => `${t}: field ${S[t].out.fieldBad}, fx ${S[t].out.fxBad} at ${JSON.stringify(S[t].out.firstBad)}`);
+    expect(outBad.length === 0, "drawn outside the dish frame: " + outBad.join("; "));
+    const c = await until(page, "window.__primordia.screen === 'mutate'", { max: 30 });
+    expect(c.ok, "the cards did not appear");
+    await frames(page, 2);
+    await shot("rm-cards");
+    const kicker = await page.evaluate(() => { const q = window.__qa; q.feed = false; q.hold = false; q.park = null; return document.querySelector("#mutateKicker").textContent; });
+    if (touch) { await page.waitForTimeout(450); await tapEl(page, "#cards .card >> nth=0"); } else await page.keyboard.press("Digit1");
+    const pk = await until(page, "window.__primordia.screen === 'play' && g.epoch === 2 && g.state === 'play'", { max: 6 });
+    expect(pk.ok, "the pick did not resume play in Size II");
+    await frames(page, 3);
+    const st = await page.evaluate(() => window.__primordia.game.prey.filter((q) => q.converted).length);
+    // a quick pick: does the FOOD label show when play resumes within 3 s of zoomFinish? (compare 7f)
+    const quick = await page.evaluate(() => {
+      const q = window.__qa, zf = q.log.filter((v) => v.type === "zoomFinish").pop(), ep = q.log.filter((v) => v.type === "epochStart").pop();
+      const food = window.__texts.some((t) => ep && t.t >= ep.t && /^FOOD/.test(t.s));
+      return { food, after: zf && ep ? (ep.t - zf.t) / 1000 : NaN };
+    });
+    rmFood = `FOOD label ${quick.food ? "shown" : "not shown"} when play resumed ${quick.after.toFixed(1)} s after zoomFinish`;
+    const zf = (await logSince(page, f0, ["zoomFinish"]))[0];
+    await shot("rm-after");
+    // design 7: with reduced motion "the molt wave recolours at once" (a probe; the spec does not say)
+    const wave = res.log.filter((v) => v.n === "uConvert" && v.growT < 0.4 && v.v[3] > 0).map((v) => v.v[2]);
+    rmWave = wave.length ? `molt radius ${Math.min(...wave).toFixed(0)} to ${Math.max(...wave).toFixed(0)} cells over ${wave.length} frames before the swap` : "no molt wave frames logged";
+    rmWaveAtOnce = wave.length > 0 && Math.min(...wave) >= 140;
+    expect(kicker === "YOU GREW · SIZE II", `cards kicker reads "${kicker}"`);
+    expect(st >= 1, `no converted prey after the pick (${zf ? "zoomFinish logged" : "no zoomFinish"})`);
+    return `uZoom 1 on all ${zl.length} grow frames; ${rmWave}; fade alpha ${RM_STOPS.map((t) => `${t}: ${S[t].corner}`).join(", ")} (want ${RM_STOPS.map((t) => want(t).toFixed(0)).join("/")}); ${st} converted prey after the pick; ${rmFood}; ${res.wall} s wall`;
+  });
+  if (rmWave !== null) record(name, "10b probe: molt wave with reduced motion", rmWaveAtOnce ? "ok" : "WARN", rmWaveAtOnce ? rmWave : `${rmWave}: the ring still spreads out from the player; design section 7 says that with reduced motion the molt wave recolours at once (growView() in game.js ignores reduceMotion for uConvert)`);
   await ctx.close();
   return finishRun(name, errors, overflows, t0, rate);
 }
@@ -797,7 +1296,9 @@ try {
   console.error(`FAIL cannot load ${base} (${e.message}). Start the server: python3 -m http.server 8765 --bind 0.0.0.0 --directory public`);
   process.exit(2);
 }
-const watchdog = setTimeout(() => { console.error("FAIL smoke run took over 30 minutes"); process.exit(3); }, 30 * 60 * 1000);
+// software GL runs the page at about 3 frames per second; one run with the grow checks takes 10-20 minutes
+const watchdogMin = 30 * Math.max(1, runList.length);
+const watchdog = setTimeout(() => { console.error(`FAIL smoke run took over ${watchdogMin} minutes`); process.exit(3); }, watchdogMin * 60 * 1000);
 const browser = await chromium.launch({ executablePath: exe, args: GL_ARGS });
 try {
   for (const name of runList) {

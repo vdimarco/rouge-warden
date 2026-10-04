@@ -103,7 +103,7 @@ for (const src of new Set([...imgs, ...switchArt])) {
   const f = path.join(PUB, src.replace(/^\//, ""));
   check(fs.existsSync(f) && fs.statSync(f).size > 0, `picture ${src} exists`);
 }
-for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|worlds|neon|echo|tellme|plunge|creek|tilt|rules|olympus|moonwell|breakthrough|follow-suit)\.webp$/.test(n))) {
+for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|worlds|neon|echo|tellme|plunge|creek|tilt|rules|olympus|moonwell|breakthrough|follow-suit|river-rush)\.webp$/.test(n))) {
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
@@ -213,6 +213,8 @@ if (chromium) {
   /* ----- the last machine by keyboard and by swipe, and the layout at the sizes people use ----- */
   const SIZES = [[360, 740], [390, 844], [430, 932], [375, 667], [768, 1024], [1280, 720], [1920, 1080]];
   for (const [width, height] of PARTS.includes("layout") ? SIZES : []) {
+    // Each swipe-heavy size gets a fresh software GPU, as do the larger test parts.
+    await relaunch();
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     const n = await page.$$eval(".cab", (cs) => cs.length);
@@ -298,7 +300,7 @@ if (chromium) {
   await relaunch();
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
-  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain"];
+  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1"];
   const lines = (page) => page.$$eval(".cab", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
@@ -317,10 +319,11 @@ if (chromium) {
       "lab.stats.plunge": JSON.stringify({ ms: 5000, runs: 2, best: 1234.4 }), "lab.stats.creek": JSON.stringify({ ms: 9000, runs: 3, best: 4000 }),
       "lab.stats.rules": JSON.stringify({ ms: 100, runs: 1 }), "lab.rules.clears": JSON.stringify({ a1: 40, b2: 95 }),
       "small-worlds-best-threadwake": "120", "small-worlds-best-heartship": "80", "follow-suit:best-chain": "5432",
+      "moonwell.best.v1": JSON.stringify({ score: 12345, island: 17 }),
     };
     const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: good });
     const got = await lines(page);
-    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432" };
+    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17" };
     for (const [g, t] of Object.entries(want)) check(got[g] === t, `a real save shows on the ${g} machine: "${got[g]}" (want "${t}")`);
     // a save must change only its own machine's line
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);

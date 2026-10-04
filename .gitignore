@@ -3,6 +3,8 @@ node_modules
 .DS_Store
 qa/crimson/golden/*.actual.png
 studio/dist/
+# the API declarations Claude Code lays beside a loaded mod
+mods/*/.claude-plugin/types/
 
 # Local secrets (Higgsfield API credentials and other env files), and editor copies of them
 .env*

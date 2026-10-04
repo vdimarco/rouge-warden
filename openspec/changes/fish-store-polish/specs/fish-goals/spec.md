@@ -12,14 +12,14 @@ Each place SHALL have six goals that reward the skills the game teaches. The Pla
 - **THEN** the game loads with no goals done at that place and no error.
 
 ### Requirement: Today's goal
-The title SHALL show one goal for each local day, picked from the date and the open places. The goal SHALL name only a fish that lives at an open place and bites during that place's hours. A done goal SHALL add to a run of days; a missed day ends the run and takes nothing else away. The first fish of a day SHALL toast "Your first fish today."
+The title SHALL show one goal for each local day, picked from the date and the open places. The goal SHALL name only a fish that lives at an open place and bites during that place's hours. A done goal SHALL add to a run of days; a missed day ends the run and takes nothing else away. The first fish of a day SHALL toast "Your first fish today." When one catch brings several pieces of news (the first fish of the day, goals, today's goal), they SHALL show together in one toast, so none is lost. A beginner SHALL be able to finish each daily goal in about 20 casts.
 
 #### Scenario: Same day, same goal
 - **WHEN** the game opens twice on the same day
 - **THEN** the title shows the same goal and the same progress both times.
 
 #### Scenario: Goal done
-- **WHEN** the player lands the third Yellow Perch for "Today: land 3 Yellow Perch at Loon Lake."
+- **WHEN** the player lands the fifth fish for "Today: land 5 fish at Loon Lake."
 - **THEN** the record sting plays and the toast says "Today's goal is done. 2 days in a row." when yesterday was also done.
 
 ### Requirement: Next goal and rank ladder
@@ -34,7 +34,7 @@ The title and the pause card SHALL name the next thing to aim for. The derby res
 - **THEN** the results show "Next rank: <name> at <kg> kg."
 
 ### Requirement: Help for short casters
-A player who casts short SHALL get help to the first new place. While a place goal to open the next place is not met, a short cast SHALL sometimes say "Big fish live far out." After 20 water casts at a place with that goal open, the next rising ring close in SHALL carry a big fish, and the game SHALL say so once.
+A player who casts short SHALL get help to the first new place. While a place goal to open the next place is not met, a short cast SHALL sometimes say "Big fish live far out." After 20 water casts in free fishing with that goal open, the next rising ring within 25 m SHALL carry a big fish, and the game SHALL say so once. The help SHALL come back after a lost fish or a ring that fades, until the player lands a big ring's fish.
 
 #### Scenario: Short-casting beginner
 - **WHEN** the journey simulation runs a beginner who casts 8 to 25 m at Loon Lake

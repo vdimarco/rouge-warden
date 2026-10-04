@@ -136,8 +136,9 @@ export const BITE = {
   SINK: 0.35,            // m/s the lure sinks when slow
   RISE: 0.5,             // m/s it rises when fast
   NEUTRAL: 0.55,         // m/s: the retrieve speed that holds the lure's depth
-  EMPTY_T: 5,            // s: with no fish coming, the lure skips home after this...
+  EMPTY_T: 3,            // s: with no fish coming, the lure skips home after this...
   EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute
+  EMPTY_CRANK: 1.5,      // rev/s: a crank faster than this runs that clock faster, up to 3 times at 3.5 rev/s
   HOME_R: 3,             // m: the lure is home this close to the dock
   TROPHY: 1 / 25,        // share of fish above the usual range (at no boost)
   FAR0: 15, FAR1: 45,    // m: casts past FAR0 find bigger fish, fully at FAR1...
@@ -285,8 +286,9 @@ export class Rises {
     return null;
   }
 
-  near(x, z) {
-    let best = null, bd = 5;
+  // the nearest ring within r m (a cast within 5 m is on the ring; the cast report names a near miss out to 12 m)
+  near(x, z, r = 5) {
+    let best = null, bd = r;
     for (const g of this.list) { const d = Math.hypot(g.x - x, g.z - z); if (d <= bd) { bd = d; best = g; } }
     return best;
   }
@@ -304,7 +306,7 @@ export class Rises {
 // for the picture from state.bend. If a ring's fish is hooked, call rises.take(ring).
 // sim.R is the reel of the place (gearScale): its break and drag settings are in state.breakN and state.dragN.
 export class LakeSim {
-  // opts: { place = Loon Lake, lure, tip, lineOut, hour, ring, rng, easy = true }
+  // opts: { place = Loon Lake, lure, tip, lineOut, hour, ring, rng, easy = true, boost = 0 (a bigger fish, see choose) }
   // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none),
   // eager (the fish comes and takes the lure sooner, at any retrieve speed: firstBite uses it)
   constructor(opts = {}) {
@@ -369,13 +371,14 @@ export class LakeSim {
     this.events.push(e);
   }
 
-  // pick what bites at this spot, if anything
+  // pick what bites at this spot, if anything. o.boost: more weight boost (main.js: after three sweet casts, and for a big
+  // ring). A ring marked big (the help for a short caster, goals.js ASSIST) carries a feeding big fish: its own kind, a sure bite
   choose(o) {
     const r = this.r, zn = this.zone, ring = this.ring, fx = this.fx;
     const forced = o.species ? byId(o.species) : null;
     if (zn === "land" && !forced) return null;
     let p = ring ? BITE.RING : fx.goodZones.includes(zn) ? BITE.GOOD : BITE.OPEN;
-    if (o.bite === true || forced) p = 1;
+    if (o.bite === true || forced || (ring && ring.big && byId(ring.species))) p = 1;
     if (o.bite === false) p = 0;
     if (r() >= p) return null;
     let sp = forced;
@@ -386,13 +389,14 @@ export class LakeSim {
         const J = fx.junk.map(byId);
         sp = dockNear ? J[(r() * J.length) | 0] : r() < 0.7 ? J[0] : J[(r() * J.length) | 0];
       } else if (ring && ring.gold) sp = byId(fx.legend.id);
+      else if (ring && ring.big && byId(ring.species)) sp = byId(ring.species);
       else sp = pickW(speciesWeights(zn, this.water, this.hour, ring, this.pl), r);
     }
     if (!sp) return null;
     const junk = JUNK.includes(sp);
     const inRing = !!(ring && (ring.species === sp.id || ring.gold));
     // a long cast, or a fish from a ring, is a bigger fish
-    const boost = BITE.FAR_BOOST * smooth(BITE.FAR0, BITE.FAR1, Math.hypot(this.state.lure.x, this.state.lure.z)) + (inRing ? BITE.RING_BOOST : 0);
+    const boost = BITE.FAR_BOOST * smooth(BITE.FAR0, BITE.FAR1, Math.hypot(this.state.lure.x, this.state.lure.z)) + (inRing ? BITE.RING_BOOST : 0) + Math.max(0, fin(o.boost, 0));
     const kg = Number.isFinite(o.kg) ? o.kg : junk ? Math.round((sp.kg[0] + (sp.kg[1] - sp.kg[0]) * r()) * 100) / 100 : rollWeight(sp, r, boost);
     const style = junk ? "junk" : sp.bite;
     // a short cast leaves little time before the lure is home, so fish near the dock make up their minds faster
@@ -485,9 +489,10 @@ export class LakeSim {
   retrieve(h, I) {
     const S = this.state, L = S.lure, B = BITE, R = this.R;
     if (S.phase === "sink" && I.crank > 0.05) S.phase = "retrieve";
-    // no fish on its way: after a few seconds the retrieve speeds up
+    // no fish on its way (none was chosen, or it turned away): after a few seconds the retrieve speeds up, and sooner for a
+    // player who cranks it home fast. Nothing can bite now, so only the lure's speed changes
     const empty = !this.ap || this.ap.stage === "gone";
-    this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h : 0;
+    this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h * (1 + clamp(I.crank - B.EMPTY_CRANK, 0, 2)) : 0;
     const fast = 1 + (B.EMPTY_MUL - 1) * clamp(this.emptyT - B.EMPTY_T, 0, 1);
     S.empty = fast > 1;
     const c = I.crank * R.LINE_PER_TURN * fast;

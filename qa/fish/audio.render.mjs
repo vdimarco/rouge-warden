@@ -229,6 +229,7 @@ try {
   /* ---------- one-shots: [name, v, render seconds, min length, max length] ---------- */
   const ONE = [
     ["ui", null, 1, 0.01, 0.3], ["uiBack", null, 1, 0.01, 0.3], ["tick", null, 1, 0.004, 0.2],
+    ["swell", 0, 7, 2, 5.5], ["swell", 1, 7, 2, 5.5], ["swell", 2, 7, 2, 5.5],
     ["bailOpen", null, 1.2, 0.03, 0.4], ["bailClose", null, 1.2, 0.03, 0.4], ["pin", null, 1, 0.02, 0.3],
     ["slip", null, 1.5, 0.1, 0.8], ["load", null, 1.5, 0.15, 0.9], ["release", null, 1, 0.02, 0.4],
     ["splash", 0.15, 2.5, 0.1, 1.5], ["splash", 0.5, 2.5, 0.15, 1.8], ["splash", 1, 3, 0.3, 2.2], ["plop", null, 1.5, 0.03, 0.6],
@@ -236,8 +237,17 @@ try {
     ["miss", null, 2, 0.15, 1.2], ["jump", 0.3, 4, 0.7, 3], ["jump", 1, 4, 0.8, 3.2], ["snap", null, 3, 0.3, 2], ["creak", null, 2, 0.3, 1.5], ["shutter", null, 1, 0.05, 0.5],
     ["thrown", null, 2.5, 0.3, 1.8], ["landed", null, 4, 0.8, 3.5], ["record", null, 5, 1.5, 4], ["junk", null, 2.5, 0.2, 1.8],
     ["loon", 0.1, 8, 2.5, 6.8], ["loon", 0.9, 8, 0.8, 6], ["loonWail", null, 8, 2.5, 6.8], ["loonTremolo", null, 5, 0.8, 4],
+    // the big moments: a soft strike, the climbing tick, the drag at a run start, the sweet release, a ring hit (plain and
+    // gold), the badge stamp, the tiered stingers, a legend's stage, the new place (one for each place it can open), the
+    // place calls, and the close of a derby
+    ["strike", 0.3, 2.5, 0.2, 1.8], ["tick", 1, 1, 0.004, 0.2], ["ratchet", null, 1, 0.1, 0.5], ["zing", null, 1, 0.1, 0.5],
+    ["ringHit", 0, 1.5, 0.2, 1], ["ringHit", 1, 1.5, 0.2, 1.2], ["stamp", null, 1, 0.03, 0.4],
+    ["newSpecies", null, 2, 0.3, 0.99], ["recordCall", null, 2, 0.5, 1.6], ["stage", null, 3, 0.9, 2.2],
+    ["newPlace", 1, 3, 1, 2], ["newPlace", 2, 3, 1, 2], ["newPlace", 3, 3, 1, 2],
+    ["frogs", null, 2, 0.4, 1.6], ["rapids", null, 2.5, 0.5, 1.6], ["gulls", null, 2.5, 0.5, 1.8], ["derbyClose", null, 3, 0.6, 2],
   ];
-  const SAVE = new Set(["bailOpen", "bailClose", "splash@1", "strike", "jump@1", "snap", "landed", "record", "junk", "loonWail", "loonTremolo", "nibble@0.9", "creak", "shutter"]);
+  const SAVE = new Set(["bailOpen", "bailClose", "splash@1", "strike", "jump@1", "snap", "landed", "record", "junk", "loonWail", "loonTremolo", "nibble@0.9", "creak", "shutter",
+    "hookset", "newSpecies", "recordCall", "stage", "newPlace@1", "newPlace@2", "newPlace@3", "derbyClose", "zing", "ringHit@1", "ratchet"]);
   fs.mkdirSync(OUT, { recursive: true });
   const names = await page.evaluate(() => Sound._names);
   const tested = new Set(ONE.map((o) => o[0]));
@@ -245,6 +255,7 @@ try {
 
   const row = (r) => `${(r.name + (r.v != null ? "@" + r.v : "")).padEnd(15)} len ${r.len.toFixed(2).padStart(5)} s  rms ${r.rms.toFixed(3)}  peak ${r.peak.toFixed(3)}  raw ${r.rawPeak.toFixed(3)}  centroid ${Math.round(r.centroid).toString().padStart(5)} Hz  (${r.ms} ms)`;
   console.log("\none-shots:");
+  const got = {};
   for (const [name, v, secs, lo, hi] of ONE) {
     const key = name + (v != null ? "@" + v : "");
     const want = { wav: SAVE.has(key), pitch: /loon/.test(name) };
@@ -270,6 +281,19 @@ try {
     }
     if (why.length) fail(key + ": " + why.join("; ")); else ok(key);
     if (r.wav) wav(path.join(OUT, key.replace("@", "-") + ".wav"), r.wav);
+    got[key] = r;
+  }
+  // the hook set is the biggest hit of the fight: at least as loud as the hardest strike, by its rms and by its peak
+  {
+    const h = got.hookset, s = got.strike;
+    if (!(h.rms >= s.rms && h.peak >= s.peak)) fail(`the hook set (rms ${h.rms.toFixed(3)}, peak ${h.peak.toFixed(3)}) is quieter than the strike (rms ${s.rms.toFixed(3)}, peak ${s.peak.toFixed(3)})`);
+    else ok(`the hook set is at least as loud as the strike (rms ${h.rms.toFixed(3)} vs ${s.rms.toFixed(3)}, peak ${h.peak.toFixed(3)} vs ${s.peak.toFixed(3)})`);
+    // a soft biter strikes softer than a slammer; a new species is a short sting, under 1 s
+    if (!(got["strike@0.3"].peak < s.peak)) fail("a soft strike is not softer than a hard one"); else ok("a soft strike is softer than a hard one");
+    if (!(got.newSpecies.len < 1)) fail("newSpecies lasts " + got.newSpecies.len.toFixed(2) + " s"); else ok("newSpecies lasts " + got.newSpecies.len.toFixed(2) + " s, under 1 s");
+    // the count-up ticks climb: the last tick is brighter than the first
+    if (!(got["tick@1"].centroid > got.tick.centroid * 1.3)) fail(`the tick does not climb (${Math.round(got.tick.centroid)} to ${Math.round(got["tick@1"].centroid)} Hz)`);
+    else ok(`the tick climbs (${Math.round(got.tick.centroid)} to ${Math.round(got["tick@1"].centroid)} Hz)`);
   }
 
   /* ---------- loops: render along the default curve of each, and check it follows its input ---------- */

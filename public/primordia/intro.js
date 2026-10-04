@@ -15,6 +15,7 @@ function hush(g) {
   const D = g.director;
   D.spawned = [true, true, true]; D.cleared = [true, true, true]; D.encoreCd = Infinity; D.queue = [];
   g.preyCd = Infinity; g.goldenCd = Infinity; g.epochTime = 5;
+  g.growHold = true; // only the GROW scene lets the bar fill
 }
 
 function cleanDish(g, px, py) {
@@ -306,10 +307,53 @@ export const SCENES = [
     },
   },
   {
+    id: "grow",
+    grow: true,
+    kicker: "7 · GROW",
+    title: "Eat to grow.",
+    text: "Fill the GROW bar and the dish grows. The hunters you fought turn into food.",
+    keys: { pc: "Eat to fill the bar", touch: "Eat to fill the bar" },
+    min: 6, max: 14, after: 1.0,
+    setup(s) {
+      const g = s.g;
+      cleanDish(g, 104, 62);
+      addPrey(g, 122, 86, 3.6);
+      // close enough to the centre to stay on a portrait phone, outside the 26-cell lunge range
+      g.stampHunter(SP.PARA, 150, 44, g.angleToward(SP.PARA, 150, 44));
+      settle(g);
+      s.v.h = named(g);
+      if (s.v.h) s.v.h.cool = Infinity;
+      g.growth = g.bar() - 1; // one meal short of a full bar
+    },
+    input(s) {
+      const g = s.g;
+      // the cards would stop the scene: start the next size at once
+      if (g.state === "mutate") g.nextEpoch(null);
+      if (g.state !== "play" || s.t < 0.5) return {};
+      const p = s.seen("zoomFinish") ? nearestPrey(g, (q) => q.converted) || nearestPrey(g) : nearestPrey(g);
+      return p ? { target: near(g, p.x, p.y) } : {};
+    },
+    done: (s) => s.seen("devour", (e) => e.kind === "prey" && e.converted),
+    callouts(s) {
+      const g = s.g, P = g.player, out = [];
+      if (g.state !== "play") return out;
+      if (!s.seen("growStart")) {
+        const p = nearestPrey(g);
+        if (p) out.push({ x: p.x, y: p.y, r: (p.size || 6) + 4, label: "ONE MORE MEAL", color: "63,240,224", at: 0.3 });
+        if (alive(g, s.v.h)) out.push({ x: s.v.h.nx ?? s.v.h.x, y: s.v.h.ny ?? s.v.h.y, r: 8, label: "HUNTER", color: "255,47,116", at: 0.6 });
+      } else {
+        const p = nearestPrey(g, (q) => q.converted);
+        if (p) out.push({ x: p.x, y: p.y, r: (p.size || 6) + 4, label: "WAS A HUNTER", color: "63,240,224", at: s.firstAt("zoomFinish") });
+        out.push({ x: P.x, y: P.y, r: 6, label: "SIZE II", color: "198,255,244", at: s.firstAt("zoomFinish") });
+      }
+      return out;
+    },
+  },
+  {
     id: "end",
     kicker: "SURVIVE",
-    title: "Live through each 40-second epoch.",
-    text: "Then choose a mutation and grow stronger. The dish gets faster every time.",
+    title: "Grow as big as you can.",
+    text: "Each time the dish grows, you pick a mutation and bigger hunters arrive.",
     hold: true,
     setup(s) {
       const g = s.g;
@@ -367,6 +411,7 @@ export class Intro {
       if (s.t >= S.max || (finished && s.t >= (S.min || 0))) { this.next(); return this.frame(0); }
     }
     hush(g);
+    g.growHold = !S.grow;
     if (g.player.alive) g.player.light = g.player.maxLight;
     return { input: S.input ? S.input(this.s, dt) || {} : {}, scale: S.scale ? S.scale(this.s) : 1 };
   }
