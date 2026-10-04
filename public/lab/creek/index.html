@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b1f26">
@@ -13,11 +14,23 @@
 .calib[hidden] { display: none; }
 .calib b { color: var(--gold); }
 .calib button { margin-top: 10px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font: 600 15px/1 var(--body); }
+/* Restart sits left of the sound switch in the top bar */
+.labbar .restart { margin-left: auto; margin-right: 8px; }
+.labbar .restart[hidden] { display: none; }
+/* the run: a bar under the counts, from the put-in to the finish */
+#hud { width: max-content; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+.prog { position: relative; flex: 0 0 100%; height: 6px; border-radius: 3px; background: rgba(8, 26, 32, 0.75); box-shadow: 0 0 0 1px var(--line); }
+.prog i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; background: rgba(111, 182, 224, 0.75); }
+.prog em { position: absolute; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: rgba(243, 236, 216, 0.7); }
+.prog em.got { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.prog em.gone { background: rgba(243, 236, 216, 0.22); }
+.prog u { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; border-radius: 1px; background: var(--blue); }
+.prog b { position: absolute; top: 50%; width: 4px; height: 14px; margin: -7px 0 0 -2px; border-radius: 2px; background: var(--ink); }
 </style>
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Up the Creek"></canvas>
-<div class="hud" id="hud" hidden><span id="hEddies">Eddies 0</span><span id="hSwims">Swims 0</span><span id="hTime">0:00</span></div>
+<div class="hud" id="hud" hidden><span id="hEddies">Eddies 0</span><span id="hSwims">Swims 0</span><span id="hTime">0:00</span><div class="prog" id="prog"><i></i><b></b></div></div>
 <div class="calib ui" id="calib" hidden><div><b>Take one stroke.</b> Tip the phone to one side and rock its top edge, the way you pull a paddle.</div><button type="button" id="calibSkip">Use touch instead</button></div>
 <script type="module" src="./main.js"></script>
 </body>

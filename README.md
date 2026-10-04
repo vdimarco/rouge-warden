@@ -6,16 +6,20 @@ Rename the crew in the `FRIENDS` list near the top of the game script in `public
 
 ## The arcade
 
-The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Crimson Rogue at `/crimson/`, Breath of the Lake at `/wild/`, and Reel It In at `/fish/`.
+The site opens on the Cottage Arcade, a room of old-school cabinets. Click anywhere on a machine to play it: a token drops in, and the game starts. If you are out of tokens, it plays on free play. You can also drag a token into a coin slot, or tap the slot, then press Start. The screen powers on and grows to fill the window, and the game loads. Every game has a machine. Get Plunger'd lives at `/plungerd/`, Down the Drain at `/fall/`, Cottage Brawl at `/brawl/`, Breath of the Lake at `/wild/`, Reel It In at `/fish/`, In Full Swing at `/vr/`, Olympus at `/olympus/`, Crimson Rogue at `/crimson/`, Shore of the Ancients at `/tidebreak/`, Moonwell at `/moonwell/`, BREAKTHROUGH at `/breakthrough2/`, and Follow Suit at `/follow-suit/`. The lab has machines too: The Lab (`/lab/`), Small Worlds (`/lab/worlds/`), Neon Ronin (`/neon/`), Loon Echo (`/echo/`), Tell Me (`/tellme/`), and the four lab toys, Take the Plunge, Up the Creek, Full Tilt and House Rules. The older BREAKTHROUGH page at `/breakthrough/` has no machine: the machine opens `/breakthrough2/`.
 
 - Down the Drain opens on a pixel-art title screen in the game's own look: a 16-bit cutaway of the cottage and the caves under it, a chunky gold logo, "Press any button", a menu in a pixel frame, and a hero select with pixel-art hero cards. Its own 8-bit theme plays from the first press.
 - The arcade's browser icon is a pixel-art plunger and a gold token on a purple tile.
 - The arcade plays its own 8-bit theme song. It starts with your first tap or key press, and the sound button turns it off.
 - On a keyboard, the arrow keys pick a machine, 5 drops a token, and 1 or Enter starts, like an emulator.
 - You start with 3 tokens. The change machine gives you more.
+- The machines stand in four groups: Cottage, Action, Strategy and Lab. The pills under the sign jump to a group, and the list under the machines names every machine. The pills show Cottage, Action and Strategy; **LAB ↗** goes straight to the lab page. New machines go at the end of the row, because the page counts them in order. Add the game to a group in the `GROUPS` list in `public/index.html`, or it shows under **More**.
+- A machine's screen is a picture from the real game, saved as a WebP file in `public/arcade/` (480 pixels wide, under 60 KB), or a small canvas. The line on the screen reads that game's own save in your browser. A missing or broken save keeps the plain line.
 - The ◀ ▶ arrows at the sides switch machines on every screen. You can also swipe, drag with the mouse, or use the scroll wheel or a trackpad. On a phone, and on any screen too narrow for the whole row, you see one machine at a time in the middle, and the row slides.
-- Every game's menu has a **Switch game** button. It lists all the cabinets, marks the one you are playing, and jumps straight to another game or back to the arcade. The list lives in `public/arcade/switch.js`. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
+- Every game's menu has a **Switch game** button. It lists every game that has a machine, marks the one you are playing, and jumps straight to another game or back to the arcade. The two buttons at the bottom stay in view while you scroll the list. The list lives in `public/arcade/switch.js`. When one game's address starts with another's (`/lab/worlds/` and `/lab/`), the longer one is the game you are playing. Only some game menus have the button so far. To add the button to a game, load that script and give a menu button the `data-switch` attribute. Breath of the Lake (`/wild/`) is already on the list: its tile shows as soon as that game is live.
 - Each screen shows your best run from that game, saved in your browser. Down the Drain shows its high score and the initials of the player who set it.
+
+Sound stops when a page is hidden. On a phone, a tab you leave, a browser you minimise, or a locked screen can keep playing music. `public/arcade/quiet.js` stops it for every game. It keeps track of every `AudioContext`, `<audio>`, and `<video>` that a page makes, and of the SoundCloud songs in Get Plunger'd and Crimson Rogue. When the page is hidden, it suspends them. When the page is visible again, it starts only what it stopped, and a game that suspends its own sound keeps control of it. Each game page that makes sound loads it first in `<head>`: `<script src="/arcade/quiet.js"></script>`. A new game must do the same. In Full Swing (`/vr/`) does not load it. Its own code stops the sound when a headset session is hidden, and when the page is hidden on a phone. To test it, serve `public/` and run `node qa/arcade/quiet.mjs`. It fails when a page with sound does not load the script first. It also opens each game, hides the page, and checks that the sound stops and comes back.
 
 ## Play
 
@@ -378,14 +382,19 @@ The lake, the dock, the rod, the lure, and the fish are all built in code with t
 
 ## The lab
 
-The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade does not show the lab, and the game switcher does not list it. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
+The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
 
 Each toy starts with a card that says what to try. The lab page shows how long you played each toy. Only your browser keeps these times. Tell the crew your times, and whether you wanted another go.
 
-- **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A steep entry keeps your speed, and a flat one belly-flops. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
-- **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle. Rock the top edge to take a stroke on the side you tip to. Twist at the end of the stroke for a J-stroke. Tilt hard and hold still to brace. Catch the eddies behind the rocks on the way down. Thumbs and keys work too.
-- **Full Tilt** (`/lab/tilt/`). A bare pinball table. Hold the halves of the screen to flip, slide down on the right half to pull the plunger, and jolt the phone to nudge. The ball bounces off a flipper at the flipper's own speed where they touch, so you can cradle, pass and catch as on a real machine. A soft launch drops the ball into a top lane. The green lane is the skill shot.
-- **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own sand and water rules. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew.
+- **Small Worlds** (`/lab/worlds/`). Six small canvas games on one page, each on today's seed. Swing and let go in Threadwake, throw a spark from body to body in Borrowed Bodies, lead a river home in Foldwild, bend the seasons in Season Thief, guide a flock past the storms in Storm Choir, and keep a living ship on the beat in Heartship. When a world ends, the scene keeps moving for a moment, and then the card says how close you came to your best.
+- **Neon Ronin** (`/neon/`). A sword duel in the Portal Badlands, with touch, gyro or a mouse. A ronin attacks only when you can see it, every windup warns with a tone, a red edge and a buzz, and a parry opens the guard at once. Every day brings a new duel.
+- **Loon Echo** (`/echo/`). Lead a line of chicks home past an eel and boats. Each full nest hatches a harder clutch, and a big bank gets slow motion. Every day brings a new lake.
+- **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A green cue says when a hold will rip, and the first burst of each run is a slow-motion peak. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
+- **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle: rock the top edge to stroke, twist for a J-stroke, and tilt and hold to brace. Thumbs and keys turn the way you press. Catch the eddies behind the rocks, heed the warning before a capsize, and boof the ledge at the bottom of today's river.
+- **Full Tilt** (`/lab/tilt/`). Pinball in open space across six worlds. Light the three beacons in each world, then shoot through the jump gate. A ring and a rising tone come up to 0.9 s before each flip, and each flip is Perfect, Good or Late. Clean flips in a row raise the multiplier, with no top. Hold to aim the launch, and light the gold beacon first for a skill shot that pays double. Start voyage flies the voyage of the day, so the crew flies the same worlds, and the end card says how close you came to your best.
+- **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own rules, tanks included, and a drag while it runs pokes the preview. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew. A friend races your time on a live clock and can send a time back or remix the layer.
+
+The latest review of every lab game against the bar, and what changed, is in `docs/lab-fun.md`.
 
 A House Rules link opens Down the Drain at `/fall/#L=<code>`. The code holds the brush strokes, so a busy layer fits in 2,000 characters. With a layer in the link, the game gives you one life, no unlocks, no banked caps and neutral tuning, so everyone plays the same layer. It saves nothing to your memory, your tuning or the high scores. Every change this needs in `public/fall/index.html` sits behind `Custom.on`, which is off for any other link.
 
@@ -411,12 +420,17 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | Idle | A branch has commits that are not in main, and nobody works on it now |
 | Done | The work is in main, or the session is finished |
 
+## Watch call
+
+`voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
+
 ## Files
 
 | Path | What it does |
 | --- | --- |
 | `public/index.html` | The Cottage Arcade: the launcher with a cabinet for each game |
-| `public/arcade/` | The art on the arcade screens, and `switch.js`, the game switcher every game's menu opens |
+| `public/arcade/` | The art on the arcade screens, `switch.js` (the game switcher every game's menu opens), and `quiet.js` (stops the sound of a hidden page) |
+| `qa/arcade/` | The tests that every game has a machine, and that sound stops when a page is hidden (see below) |
 | `public/plungerd/index.html` | The page for Get Plunger'd |
 | `public/plungerd/app.js` | The game script. The crew, the boss sheets, and the cover art are inside the file |
 | `public/plungerd/art/` | The painted ground, walls, critters, props, guns, shots, and effects. Each file also comes at half size (`.sd.webp`) for phones |
@@ -444,7 +458,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
 | `public/lab/creek/` | Up the Creek: `river.js` (the river and its current), `canoe.js` (the canoe), `paddle.js` (reads strokes from the phone), and `main.js` |
-| `public/lab/tilt/` | Full Tilt: `table.js` (the table), `physics.js` (the ball and the flippers), and `main.js` |
+| `public/lab/tilt/` | Full Tilt: `adventure.js` (the voyage, the worlds and the rally), `physics.js` (the ball, the flippers and the flip forecast), `table.js` (the classic table), `render.js` and `main.js`. Its own README has the details |
 | `public/lab/rules/` | House Rules: `layer.js` (a layer as data, as a link, and as ground), `sand.js` (a copy of Down the Drain's sand rules, for the preview), `editor.js`, and `play.js` (the layer inside Down the Drain) |
 | `docs/game-ideas.md` | The bar for new games, eight ideas, ideas for every cabinet, and the toys in the lab |
 | `qa/lab/` | Tests for the lab (see below) |
@@ -453,6 +467,8 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/wild/` | Playwright tests for Breath of the Lake (see below) |
 | `public/fall/clips/`, `public/plungerd/clips/` | Short looping gameplay clips for the title screen and the How to play card |
 | `api/warden.js` | A Vercel function that sends the director's questions to Jev |
+| `voice/` | The watch call: the call script, the call server, a Hermes skill and the setup guide (see [Watch call](#watch-call)) |
+| `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
 | `vercel.json` | Serves `public/` with no build step |
@@ -523,31 +539,50 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
 
+### Arcade tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`walk`, `layout`, `switcher`, `saves`, `credits`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/arcade/machines.mjs` | Every game folder in `public/` (and every toy folder in `public/lab/`) has a machine and a place in `switch.js`, and the pictures are there. Then, at 390×844 and 1280×720, the arrows walk to every machine, a token goes in (dragged, tapped, or with key 5), START or key 1 or Enter picks the right address, and the page has no errors. It also checks the last machine by key and by swipe at seven window sizes, that no machine is clipped or overlapped, that the game switcher shows every game, marks the right one for each address, and keeps its exit buttons in reach, and that a junk save never breaks a screen line. A game with no machine must be in the `ALLOW` list in the script, with the reason. Each machine and its switcher entry must have the same id and the same name. The end card of Crimson Rogue, which lists the games of the switcher, keeps its buttons in the window at 360×740, 390×844 and 1280×720. |
+| `qa/arcade/quiet.mjs` | Every page that makes sound loads `quiet.js` first (the scan). The script itself, on small test pages: contexts, media, SoundCloud songs, speech, `interrupted` contexts, a page with no `AudioContext`, and a script that loads twice. Then every game page, started the way a player starts it: the sound runs, goes silent when the page is hidden (even when the page pokes at its sound, and after 3 s), and runs again when the page is visible. It hides pages four ways: a page-level `visibilitychange`, `pagehide` then `pageshow`, a second tab on top, and a page freeze. A full run takes about 25 minutes. `--old` shows which pages are loud without the script. |
+
 ### Lab tests
 
 Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails.
 
 | Script | What it checks |
 | --- | --- |
-| `qa/lab/hidden.mjs` | The arcade and the game switcher never mention the lab, and every lab page asks search engines not to index it |
-| `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, winter follows its curve, and a good flyer goes at least twice as far as a random one |
+| `qa/lab/hidden.mjs` | The arcade has a Lab machine and a link to the lab, the game switcher lists the lab, and every lab page asks search engines not to index it |
+| `qa/lab/links.mjs` | Every game card on the Lab page and every game in the switcher opens a page that exists, and every picture in the switcher exists |
+| `qa/lab/worlds.e2e.mjs` | The Small Worlds shell with all six games on a phone: today's seed, a run with no page errors, the outro, and a result card that compares the score with your best |
+| `qa/lab/worlds.<game>.sim.mjs` | One sim for each Small Worlds game, run in Node with a stand-in shell: the seed sets the layout, a run can be lost, runs last 1 to 6 minutes, and a careful player beats a careless one |
+| `qa/lab/plunge.sim.mjs` | The same inputs give the same flight in every run, a ghost survives its link and replays exactly, each kind of entry keeps its speed, a skim on the lake bed costs speed once, the dive cue tells the truth, and a lake-diving bot lasts at least 60 s |
 | `qa/lab/plunge.e2e.mjs` | Take the Plunge on a phone and on a computer: hold and let go, a dive, winter at the end, Again, and a ghost link |
-| `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a brace keeps you up where a fast crossing tips you, eddies can be caught, and a simple paddler gets down most rivers |
+| `qa/lab/plunge.feel.e2e.mjs` | The dive cue and the amber line, the slow-motion burst, sunset and the northern lights, the winter pill, labels that stay on screen, and an old ghost link |
+| `qa/lab/creek.sim.mjs` | Strokes turn the canoe the right way, J-strokes hold a line, a warning comes at least 0.3 s before every capsize, a swim resets near the swim, no eddy traps the canoe, and the log jam and the ledge work |
 | `qa/lab/creek.paddle.test.mjs` | Made-up sensor data gives the right strokes, J-strokes, back strokes and braces, and a walk gives none |
-| `qa/lab/creek.e2e.mjs` | Up the Creek with a virtual phone that sends real sensor events, with thumbs, and with keys |
-| `qa/lab/tilt.sim.mjs` | Fast balls never pass through a wall or a flipper, the cradle, the tap pass and the live catch work, the ball never gains energy, a soft pull picks a top lane, and a bot plays two hours with no trapped ball |
-| `qa/lab/tilt.e2e.mjs` | Full Tilt with two thumbs, the plunger drag, jolts that nudge and tilt, and keys |
+| `qa/lab/creek.thumbs.mjs` | Bots that steer with thumbs: turning toward the side you press gets a simple player down every river |
+| `qa/lab/creek.e2e.mjs` | Up the Creek with a virtual phone that sends real sensor events, with thumbs and with keys: an eddy catch, the log jam with Restart and Share, and the ledge |
+| `qa/lab/tilt.*.mjs`, `npm run test:pinball --prefix qa/browser` | Full Tilt's sims and browser checks. CI runs them on every pull request that changes the lab (see `.github/workflows/pinball-browser.yml`) |
 | `qa/lab/rules.link.mjs` | 500 random layers survive their links, a busy layer fits, the clear stamp catches a changed link, junk links give nothing, and old links still build the same ground |
-| `qa/lab/rules.drift.mjs` | The copy of Down the Drain's sand rules in `sand.js`, and the sizes and ids in `layer.js`, still match the game |
-| `qa/lab/rules.e2e.mjs` | The House Rules editor on a phone and on a computer: dig, zoom, critters, Settle, the link meter, Test it, and Share after a clear |
-| `qa/lab/rules.drain.mjs` | A painted layer in Down the Drain: its ground, critters and drains, no tuning or unlocks, the clear, a death that saves nothing, and broken links |
-| `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with the House Rules hooks taken back out, play the same game with a seeded random and a fake clock |
+| `qa/lab/rules.drift.mjs` | The copies in `sand.js` of Down the Drain's sand rules, tank rule and blast, and the sizes and ids in `layer.js`, still match the game |
+| `qa/lab/rules.e2e.mjs` | The House Rules editor on a phone and on a computer: every tool on screen, dig, zoom, critters, Settle with a tank that blows, a drag during Settle, Test it, a name that keeps the clear, and remix |
+| `qa/lab/rules.drain.mjs` | A painted layer in Down the Drain: its ground, critters and drains, no tuning or unlocks, the race clock, the death card, Send your time, and broken links |
+| `qa/lab/rules.regress.mjs` | Down the Drain as it is now, and the same file with every House Rules hook commit taken back out, play the same game with a seeded random and a fake clock |
+| `qa/neon/*.test.*` (run with `node --test`), `qa/neon/neon.e2e.mjs` | Neon Ronin: the duel rules with a seeded random, attacks that start on screen, a warning at least 0.3 s before every blow, the parry, the phone menu and hints, and the daily duel |
+| `qa/echo/crossing.test.mjs`, `qa/echo/echo.sim.mjs`, `qa/echo/echo.e2e.mjs` | Loon Echo: rocks that block, the chick line, clutch after clutch, warned strikes, the big bank, today's lake, and how long the reviewer's bots last |
 
 Set `LAB_URL` to test another address, and `SHOTS` to a folder to save screenshots.
 
 ### Studio tests
 
 Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git repo with branches, pull request refs and a local worktree, runs `studio/refresh.mjs` on it with made-up sessions, and checks the agents, the work trees, the cabinets and the feed. Then it opens the page in Chromium at desktop and phone width. The browser part needs Playwright (`NODE_PATH=$(npm root -g)`). It exits with code 1 when something fails.
+
+### Watch call tests
+
+Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
 
 ## Jev and cost
 

@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script src="/arcade/quiet.js"></script>
+  <meta name="robots" content="noindex">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#09151a">
   <meta name="description" content="Six small worlds to play with one thumb. Pull a living landscape, fold a river, conduct a storm, and more.">
@@ -30,7 +32,7 @@
             <div class="intro-content"><p class="chapter" id="game-feeling">Find your flow</p><h2 id="intro-name">Threadwake</h2><p id="pitch" class="pitch"></p><div class="how"><p id="controls"></p><p id="goal"></p></div><button id="start-button" class="primary">Play Threadwake <span aria-hidden="true">↗</span></button><p id="best" class="small"></p></div>
           </div>
           <div id="paused" class="screen-overlay solid" hidden><div class="dialog-content"><h2>Take your time.</h2><p>Your world is waiting.</p><button id="resume-button" class="primary">Keep playing</button><button id="pause-restart" class="secondary">Start again</button></div></div>
-          <div id="result" class="screen-overlay solid" hidden><div class="dialog-content"><p class="chapter" id="result-label">A small discovery</p><h2 id="result-title"></h2><p id="result-detail"></p><p id="result-score" class="score"></p><button id="retry-button" class="primary">Play this world again</button><button id="next-button" class="secondary">Try the next game</button><button id="new-seed-button" class="text-button">A different world</button></div></div>
+          <div id="result" class="screen-overlay sheet" hidden><div class="dialog-content"><p class="chapter" id="result-label">A small discovery</p><h2 id="result-title"></h2><p id="result-detail"></p><p id="result-score" class="score"></p><p id="result-best"></p><button id="retry-button" class="primary">Play this world again</button><button id="next-button" class="secondary">Try the next game</button><button id="new-seed-button" class="text-button">A different world</button></div></div>
         </div>
         <footer class="game-footer"><p id="status" role="status">Choose Play to begin.</p><div class="footer-actions"><button id="restart-button" class="text-button" disabled>Restart</button><button id="share-button" class="text-button">Share</button><button id="help-button" class="text-button">How to play</button></div></footer>
       </section>

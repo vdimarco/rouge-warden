@@ -1,0 +1,16 @@
+- [x] Review the twelve lab games against the bar, with bots, sims and phone-sized play.
+- [x] Small Worlds shell: outro, best on the card, a sound for a loss, a daily world, and feedback helpers.
+- [x] Add `qa/lab/links.mjs`, and keep main's rewrite of `qa/lab/hidden.mjs`.
+- [x] House Rules: phone fit, races and replies, the death card, tanks in Settle, and remix.
+- [x] Threadwake and Borrowed Bodies.
+- [x] Foldwild and Season Thief.
+- [x] Storm Choir and Heartship.
+- [x] Full Tilt.
+- [x] Neon Ronin, and its broken tests.
+- [x] Loon Echo.
+- [x] Take the Plunge.
+- [x] Up the Creek.
+- [x] README, the Lab page cards and `docs/lab-fun.md`.
+- [x] Run every lab, neon, echo and pinball test on the merged branch, and check the preview.
+  - Every test passed on the branch with Full Tilt in it, and `tilt.transit.e2e` passed three runs in a row.
+  - The Vercel preview of the branch head built and is ready. Its pages need a Vercel login, so the browser tests ran on a local server with the same static files.

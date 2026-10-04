@@ -2,7 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
-import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS } from "./config.js";
+import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport } from "./physics.js";
 import { createXR } from "./xr.js";
@@ -15,6 +15,7 @@ import { createGame } from "./game.js";
 import { createUI } from "./ui.js";
 import { createPortal } from "./portal.js";
 import { createAudio } from "./audio.js";
+import { createFX } from "./fx.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -37,20 +38,20 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", hz: PERF.hz, foveation: PERF.foveation, music: true };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", best: {}, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
   const ints = (a) => (Array.isArray(a) ? [...new Set(a.filter((x) => Number.isInteger(x) && x >= 0))] : []);
   s.intro = raw.intro === true; s.tutorial = raw.tutorial === true;
-  s.clogs = ints(raw.clogs); s.loonies = ints(raw.loonies);
+  s.clogs = ints(raw.clogs); s.loonies = ints(raw.loonies); s.pipes = ints(raw.pipes);
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
   const r = raw.settings && typeof raw.settings === "object" ? raw.settings : {}, t = s.settings;
-  if (COMFORT.presets[r.preset] && r.preset !== "desktop") t.preset = r.preset;
+  if (COMFORT.presets[r.preset] && r.preset !== "desktop" && r.preset !== "phone") t.preset = r.preset;
   if (r.vignette in COMFORT.vignetteMinFov) t.vignette = r.vignette;
   if (r.turn === "snap" || r.turn === "smooth") t.turn = r.turn;
   if ([30, 45, 90].includes(r.snap)) t.snap = r.snap;
@@ -62,18 +63,27 @@ function loadSave() {
   if (r.hold === "hold" || r.hold === "toggle") t.hold = r.hold;
   if (r.hz === 72 || r.hz === 90) t.hz = r.hz;
   if (Number.isFinite(r.foveation)) t.foveation = clamp(r.foveation, 0, 1);
-  for (const k of ["sound", "music", "stance"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
+  for (const k of ["sound", "music", "stance", "speedLines"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
   return s;
 }
 const save = loadSave();
 const settings = save.settings;
-function saveNow() { save.settings = settings; store.set(SAVE_KEY, save); }
+// While flat play borrows the "desktop" comfort preset (applyComfort), the save keeps the headset's own fields.
+let headsetComfort = null;
+function saveNow() {
+  save.settings = settings;
+  if (!headsetComfort) { store.set(SAVE_KEY, save); return; }
+  const now = { vignette: settings.vignette, turn: settings.turn, snap: settings.snap, aim: settings.aim };
+  Object.assign(settings, headsetComfort);
+  store.set(SAVE_KEY, save);
+  Object.assign(settings, now);
+}
 
 /* ---------------- G ---------------- */
 const G = (window.G = {
   version: VERSION, mode: "title", state: "title", ready: false, flags: FLAGS,
   renderer: null, scene: null, camera: null, rig: null, rigYaw: 0, bodyLocal: { x: 0, z: 0 }, prevHeadLocal: new THREE.Vector3(), seatedOffset: 0,
-  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null,
+  input: null, xr: null, desktop: null, city: null, view: null, P: null, ropes: null, hands: null, comfort: null, game: null, ui: null, portal: null, audio: null, fx: null,
   save, settings, frame: 0, time: 0, dt: 0, viewDone: false, titleShows: 0, held: false,
   placeRig, saveNow, setWorldVisible, haptic, test: null,
 });
@@ -94,7 +104,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -136,6 +146,7 @@ function createWorld() {
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
+  fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
@@ -195,6 +206,7 @@ function setWorldVisible(v) {
   if (view) view.root.visible = worldVisible;
   if (game && game.root && gameStarted) game.root.visible = worldVisible;
   if (ropes) ropes.setVisible(worldVisible);
+  if (fx) fx.setVisible(worldVisible);
 }
 function haptic(side, intensity, ms) {
   if (!X || !X.session) return;
@@ -202,11 +214,18 @@ function haptic(side, intensity, ms) {
   if (h.connected) h.pulse(intensity, ms);
 }
 function showHands(v) { handsVisible = !!v; if (hands) hands.setVisible(handsVisible); }
-// A preset sets the vignette, turning, aim and the body's speed caps. Desktop play uses the "desktop" preset
-// without saving it as the player's choice.
+// A preset sets the body's speed caps. Its vignette, turning and aim fields are written when you pick the preset (the title
+// page or the pause menu) and are yours to change after that, so starting a session leaves them alone. Flat play borrows the
+// "desktop" preset (a phone: the "phone" preset, with faster physics) and puts your headset fields back when it ends.
+// Flat play (a mouse or a phone) also climbs walls; a headset does not.
+const FLAT_SWING = { ...SWING, climb: CLIMB }, PHONE_SWING = { ...SWING, ...PHONE.physics, climb: CLIMB };
 function applyComfort(name) {
   const p = COMFORT.presets[name] || COMFORT.presets[COMFORT.defaultPreset];
-  comfort.applyPreset(name);
+  P.cfg = name === "phone" ? PHONE_SWING : name === "desktop" ? FLAT_SWING : SWING;
+  if (name === "desktop" || name === "phone") {
+    if (!headsetComfort) headsetComfort = { vignette: settings.vignette, turn: settings.turn, snap: settings.snap, aim: settings.aim };
+    comfort.applyPreset(name);
+  } else if (headsetComfort) { Object.assign(settings, headsetComfort); headsetComfort = null; }
   P.speedCap = p.speedCap; P.fallCap = p.fallCap;
 }
 
@@ -317,7 +336,7 @@ function onSessionStart(session) {
 }
 function enterPlay(mode) {
   loadRing.visible = false; // from here the portal shows its own progress
-  applyComfort(mode === "desktop" ? "desktop" : settings.preset);
+  applyComfort(mode === "desktop" ? (D.mobile.enabled ? "phone" : "desktop") : settings.preset);
   showHands(isXR());
   setWorldVisible(true);
   G.seatedOffset = comfort.seatedOffset || 0;
@@ -384,7 +403,7 @@ function flatCamera(fov) {
 }
 
 /* ---------------- the frame (spec §6, 14 steps) ---------------- */
-const physIn = { move: { x: 0, z: 0 }, jump: false, hands: [0, 1].map(() => ({ pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false })) };
+const physIn = { move: { x: 0, z: 0 }, climb: { up: 0, x: 0, z: 0 }, jump: false, hands: [0, 1].map(() => ({ pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false })) };
 const lastAim = [null, null], fireWait = [0, 0], hapT = [0, 0], TIPS = [null, null], toggled = [false, false];
 const prevVel = new THREE.Vector3(), accelV = new THREE.Vector3(), comfortIn = { vel: null, speed: 0, accel: 0, yawRate: 0, snapped: false, play: false, ar: false, mode: "xr" };
 const ring = [];
@@ -404,6 +423,14 @@ function tick(dt, frame, time) {
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   // 3. test overrides
   applyOverrides(inp);
+  // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
+  // clock releases several frames at once
+  for (const h of inp.hands) {
+    if (h.triggerDown) pushRing({ type: "input", side: h.index, edge: "triggerDown", value: h.trigger });
+    if (h.triggerUp) pushRing({ type: "input", side: h.index, edge: "triggerUp", value: h.trigger });
+    if (h.gripDown) pushRing({ type: "input", side: h.index, edge: "gripDown", value: h.grip });
+    if (h.gripUp) pushRing({ type: "input", side: h.index, edge: "gripUp", value: h.grip });
+  }
   // 4. world poses from the current rig
   toWorld(inp);
   const hl = inp.head.local.pos;
@@ -448,6 +475,7 @@ function tick(dt, frame, time) {
   let yawDelta = 0;
   if (G.state === "play") {
     yawDelta = inp.mode === "desktop" ? inp.turn : comfort.turn(inp, dt);
+    if (inp.easySwing) yawDelta += phoneFollow(dt, inp);
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
@@ -455,6 +483,17 @@ function tick(dt, frame, time) {
   G.prevHeadLocal.copy(hl);
   // 13. the rest of the world
   after(dt, inp, yawDelta);
+}
+
+// Phone: in the air at speed, and with no drag or tilt for a moment, the view turns toward where you fly and looks a
+// little up, where the next buildings to swing from are. Returns the yaw to add this frame.
+function phoneFollow(dt, inp) {
+  const F = PHONE.follow, v = P.vel, hs = Math.hypot(v.x, v.z);
+  if (P.onGround || P.wall || hs < F.speed || D.mobile.idle() < F.idle) return 0;
+  const want = Math.atan2(-v.x, -v.z), now = G.rigYaw + yawOfQuat(inp.head.local.quat);
+  const diff = Math.atan2(Math.sin(want - now), Math.cos(want - now));
+  D.nudgePitch((F.pitch - inp.pitch) * (1 - Math.exp(-F.pitchRate * dt)));
+  return diff * (1 - Math.exp(-F.yawRate * dt));
 }
 
 // Title: build the city under the loading bar and fly the attract camera.
@@ -489,9 +528,17 @@ function aimAndFire(dt, inp) {
     const h = inp.hands[i], r = P.ropes[i];
     // A tap on a new building switches anchors without a separate release step.
     if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
-      const next = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
+      const next = phoneAim(i, h, inp);
       if (next?.valid && !ui.blocking(i)) shoot(i, h, next);
       else D.mobile.miss(true);
+      continue;
+    }
+    // A phone tap with an idle rope: swing from what it points at, or from the best building ahead (phoneAim).
+    if (inp.easySwing && i === 1 && inp.phoneFire && h.connected && !ui.blocking(i)) {
+      const a = (lastAim[i] = phoneAim(i, h, inp));
+      D.mobile.target(!!a?.valid, false);
+      if (a?.valid) shoot(i, h, a); else dryFire(i, h);
+      fireWait[i] = 0;
       continue;
     }
     if (!h.connected || r.state !== "idle") {
@@ -512,6 +559,29 @@ function aimAndFire(dt, inp) {
     }
   }
 }
+// Phone swing assist: try a few directions up and ahead of where you fly (or look). The first one with a building in
+// reach that is ahead of you, not too close, and well above your chest wins.
+const ASSIST = new THREE.Vector3(), DEG = Math.PI / 180;
+const swingable = (a) => !!a && a.valid && (a.special || (a.dist >= PHONE.assist.near && a.y > P.pos.y + P.chest + PHONE.assist.above));
+function phoneAim(i, h, inp) {
+  const a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
+  if (swingable(a)) return a;
+  const exact = a && a.valid ? { ...a } : null;
+  return assistAim(i, h, inp) || exact;
+}
+function assistAim(i, h, inp) {
+  const sp = Math.hypot(P.vel.x, P.vel.z);
+  const yaw0 = sp > 4 ? Math.atan2(-P.vel.x, -P.vel.z) : G.rigYaw + yawOfQuat(inp.head.local.quat);
+  for (const dy of PHONE.assist.yaw) for (const dp of PHONE.assist.pitch) {
+    const yaw = yaw0 + dy * DEG, pitch = dp * DEG;
+    ASSIST.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+    const a = ropes.aim(i, h.aimPos, ASSIST, P.vel);
+    if (!swingable(a) || a.special) continue;
+    const ahead = (a.x - P.pos.x) * -Math.sin(yaw0) + (a.z - P.pos.z) * -Math.cos(yaw0);
+    if (ahead > 2) return { ...a };
+  }
+  return null;
+}
 function shoot(i, h, a) {
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
@@ -524,6 +594,7 @@ function shoot(i, h, a) {
   audio.sfx("fire", { pos: h.aimPos });
   haptic(i, 0.2, 20);
   pushRing({ type: "fire", side: i, target: { tag: a.tag, id: a.id } });
+  wordAtHand("THWIP", i);
 }
 function dryFire(i, h) {
   if (G.input.easySwing && i === 1) D.mobile.miss();
@@ -544,8 +615,11 @@ function physics(dt, inp) {
   const ml = Math.sqrt(mx * mx + mz * mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
   physIn.move.x = mx; physIn.move.z = mz;
-  // desktop Space: a jump on the ground, a yank on every rope in the air
-  const airYank = inp.mode === "desktop" && inp.jumpDown && !P.onGround;
+  // on a wall: W/S (or the phone's arrows) climb, and A/D go along it, toward the view's right
+  physIn.climb.up = intro ? 0 : inp.move.y;
+  physIn.climb.x = intro ? 0 : -fz * inp.move.x; physIn.climb.z = intro ? 0 : fx * inp.move.x;
+  // desktop Space: a jump on the ground or off a wall, a yank on every rope in the air
+  const airYank = inp.mode === "desktop" && inp.jumpDown && !P.onGround && !P.wall;
   physIn.jump = !intro && inp.jumpDown && !airYank;
   for (let i = 0; i < 2; i++) {
     const src = inp.hands[i], o = physIn.hands[i];
@@ -557,11 +631,14 @@ function physics(dt, inp) {
     const r = P.ropes[i];
     const autoPull = inp.easySwing && i === 1 && src.holding && r.state === "attached" && r.len > 14 && !r.sticky && r.tension < .65;
     o.grip = Math.max(src.grip, autoPull ? .72 : 0);
+    // a phone rope on a clog or a pipe pumps by itself (physics lets one yank through per cooldown)
+    if (inp.easySwing && i === 1 && src.holding && r.state === "attached" && SPECIAL_TAGS[r.target.tag]) o.yank = Math.max(o.yank, PHONE.pumpYank);
     o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0;
     o.reeling = false;
   }
   const wasGround = P.onGround;
   for (let k = 0; k < n; k++) step(P, h, physIn);
+  if (!intro && inp.easySwing) phoneRelease(dt);
   if (!intro && !wasGround && P.onGround && !P.dead) {
     // landing: the body goes under the head, in the same frame, so the camera does not move
     const hl = inp.head.local.pos;
@@ -570,6 +647,66 @@ function physics(dt, inp) {
     G.bodyLocal.x = hl.x; G.bodyLocal.z = hl.z;
   }
 }
+
+// Phone: the rope lets go by itself once you swing past the bottom of the arc, and flings you on.
+let phoneRopeT = 0, phoneGroundT = 0, phoneSlowT = 0, fovKick = 0, climbTold = false;
+function phoneRelease(dt) {
+  const r = P.ropes[1], R = PHONE.release;
+  if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneRopeT = phoneGroundT = phoneSlowT = 0; return; }
+  phoneRopeT += dt;
+  if (P.onGround) phoneGroundT += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
+  phoneSlowT = Math.hypot(P.vel.x, P.vel.y, P.vel.z) < R.stallSpeed ? phoneSlowT + dt : 0;
+  // landed on a roof, or hanging still: let go with no fling, so the next tap jumps and swings at once
+  if (phoneRopeT >= R.minT && (phoneGroundT >= R.ground || phoneSlowT >= R.stall)) {
+    release(P, 1); phoneRopeT = phoneGroundT = phoneSlowT = 0; D.mobile.released(); return;
+  }
+  if (phoneRopeT < R.minT || P.onGround) return;
+  const A = r.anchor, cx = P.pos.x - A.x, cy = P.pos.y + P.chest - A.y, cz = P.pos.z - A.z;
+  const d = Math.sqrt(cx * cx + cy * cy + cz * cz), v = P.vel;
+  if (d < 1e-3) return;
+  // past the bottom: rising, and moving away from the point under the anchor
+  const away = cx * v.x + cz * v.z > 0 && v.y > 0;
+  const past = Math.acos(clamp(-cy / d, -1, 1)) / DEG; // degrees from straight down
+  const vault = d < R.close;
+  if (!vault && !(away && past >= R.angle) && !(cy > -R.overTop && v.y > 0)) return;
+  release(P, 1);
+  const f = PHONE.fling;
+  if (vault) {
+    // reeled right up to the anchor (a wall ahead): up and over, on the way you look
+    const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+    v.x = -Math.sin(yaw) * f.forward; v.z = -Math.cos(yaw) * f.forward; v.y = Math.max(v.y, 0) + R.vault;
+  } else {
+    const hs = Math.hypot(v.x, v.z);
+    if (hs > 0.5) { v.x += (v.x / hs) * f.forward; v.z += (v.z / hs) * f.forward; }
+    v.y = Math.max(v.y, 0) + f.up;
+  }
+  P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+  fovKick = f.kick;
+  phoneRopeT = phoneGroundT = phoneSlowT = 0;
+  D.mobile.released();
+  if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
+  pushRing({ type: "fling", side: 1, speed: Math.hypot(v.x, v.y, v.z) });
+}
+// Phone: a rope that catches gives at least PHONE.attachSpeed across the rope, toward where you look.
+function phoneBoost() {
+  const r = P.ropes[1], A = r.anchor;
+  const nx0 = P.pos.x - A.x, ny0 = P.pos.y + P.chest - A.y, nz0 = P.pos.z - A.z, d = Math.hypot(nx0, ny0, nz0);
+  if (d < 1e-3) return;
+  const nx = nx0 / d, ny = ny0 / d, nz = nz0 / d;
+  const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+  let tx = -Math.sin(yaw), ty = 0, tz = -Math.cos(yaw);
+  const k = tx * nx + ty * ny + tz * nz;
+  tx -= k * nx; ty -= k * ny; tz -= k * nz;
+  const tl = Math.hypot(tx, ty, tz);
+  if (tl < 0.3) return; // the anchor is straight ahead: the reel pulls you in instead
+  tx /= tl; ty /= tl; tz /= tl;
+  const vt = P.vel.x * tx + P.vel.y * ty + P.vel.z * tz;
+  if (vt >= PHONE.attachSpeed) return;
+  const add = PHONE.attachSpeed - vt;
+  P.vel.x += tx * add; P.vel.y += ty * add; P.vel.z += tz * add;
+  if (P.onGround) { P.onGround = false; P.ground = null; }
+}
+const SPECIAL_TAGS = { clog: true, pipe: true, crack: true };
 
 // 11. One drain per frame: the portal hears them in the intro, the game in play; main plays the feedback.
 function drainEvents() {
@@ -587,15 +724,64 @@ function drainEvents() {
 function feedback(ev) {
   const i = ev.side === 1 || ev.side === "right" ? 1 : 0, r = P.ropes[i];
   switch (ev.type) {
-    case "attach": audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); break;
+    case "attach":
+      audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
+      if (G.input.easySwing && i === 1 && G.state === "play" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) { phoneRopeT = 0; phoneBoost(); }
+      break;
     case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); break;
-    case "yank": audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40); break;
+    case "yank":
+      audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
+      if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
+      break;
     case "land": audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); break;
-    case "splash": audio.sfx("splash"); respawn(); break;
+    case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
     case "oob": respawn(); break;
-    case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); break;
+    case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); wordAtBump(ev); break;
     case "snap": if (G.input.easySwing && i === 1) D.mobile.miss(); audio.sfx("snap", { pos: r.anchor }); break;
+    case "cling":
+      audio.sfx("land", { vol: 0.5 }); haptic(0, 0.3, 30); haptic(1, 0.3, 30);
+      if (G.input.easySwing) D.mobile.released();
+      else if (!climbTold) { climbTold = true; ui.say("On the wall. W and S climb, A and D go along it. Space jumps off.", 6); }
+      break;
+    case "mantle": audio.sfx("land", { vol: 0.6 }); break;
+    case "unclimb": if (ev.why === "jump") audio.sfx("release", { pos: G.input.head.pos }); break;
   }
+}
+
+/* ---------------- comic words (fx.js) ---------------- */
+// fx.js skips a word closer than 1.2 m to the head, so the words for your own body go out along the line to the hand or
+// ahead of you, never on you. Sizes come from fx.js (8 to 12 degrees across); scale makes the big moments bigger.
+const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.Vector3(), FXQ = new THREE.Vector3();
+let whooshAt = -99, whooshArmed = true;
+// on the line from the head through the hand's muzzle, 1.7 m from the head
+function wordAtHand(name, i) {
+  const hp = G.input.head.pos, t = hands.tip(i);
+  FXD.set(t.x - hp.x, t.y - hp.y, t.z - hp.z);
+  const l = FXD.length();
+  if (l < 1e-3) return;
+  FXD.multiplyScalar(1.7 / l);
+  // 0.35 m outboard (away from the rope, which runs toward the middle of the view), and it keeps pace with you (vel),
+  // or a swing would leave it behind in 0.1 s
+  FXQ.set(i === 1 ? 0.35 : -0.35, 0, 0).applyQuaternion(G.input.head.quat);
+  fx.word(name, FXP.set(hp.x + FXD.x + FXQ.x, hp.y + FXD.y + 0.25, hp.z + FXD.z + FXQ.z), { vel: P.vel, scale: 1.5 });
+}
+// dist metres ahead of `from` along where the head looks (flat), and up metres higher
+function wordAhead(name, from, dist, up, scale) {
+  FXD.set(0, 0, -1).applyQuaternion(G.input.head.quat);
+  FXD.y = 0;
+  if (FXD.lengthSq() < 1e-4) FXD.set(0, 0, -1); else FXD.normalize();
+  fx.word(name, FXP.set(from.x + FXD.x * dist, from.y + up, from.z + FXD.z * dist), { scale });
+}
+// on the wall you hit, 1.3 m along it to the side you face, so it is not on top of your own head
+function wordAtBump(ev) {
+  const nx = ev.nx || 0, nz = ev.nz || 0, hp = G.input.head.pos, l = Math.sqrt(nx * nx + nz * nz);
+  const cx = P.pos.x - nx * 0.35, cy = P.pos.y + P.chest - (ev.ny || 0) * 0.35, cz = P.pos.z - nz * 0.35;
+  FXD.set(0, 0, -1).applyQuaternion(G.input.head.quat);
+  if (l < 0.3) { fx.word("BONK", FXP.set(hp.x + FXD.x * 1.6, hp.y + FXD.y * 1.6, hp.z + FXD.z * 1.6), { scale: 1.4 }); return; }
+  // a tangent along the wall (flat), turned to the side the head faces
+  let tx = nz / l, tz = -nx / l;
+  if (tx * FXD.x + tz * FXD.z < 0) { tx = -tx; tz = -tz; }
+  fx.word("BONK", FXP.set(cx + tx * 1.3, cy + 0.2, cz + tz * 1.3), { dir: { x: nx, y: 0, z: nz }, scale: 1.4 });
 }
 
 // 13. Everything that draws or sounds.
@@ -605,10 +791,17 @@ function after(dt, inp, yawDelta) {
   hands.update(inp, P, dt);
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
   ropes.update(dt, P, TIPS, G.time);
-  if (gameStarted) game.update(dt, G.time, P, inp);
+  game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   view.update(dt, G.time, inp.head.pos);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
   const speed = Math.sqrt(P.vel.x * P.vel.x + P.vel.y * P.vel.y + P.vel.z * P.vel.z);
+  // WHOOSH: once as you cross 20 m/s, 14 m ahead along your path, at most every 4 s
+  if (inPlay && speed >= 20 && whooshArmed && G.time - whooshAt >= 4) {
+    whooshAt = G.time; whooshArmed = false;
+    const hp = inp.head.pos, k = 14 / speed;
+    fx.word("WHOOSH", FXP.set(hp.x + P.vel.x * k, hp.y + P.vel.y * k + 1.2, hp.z + P.vel.z * k), { vel: P.vel, scale: 1.3 });
+  } else if (speed < 17) whooshArmed = true;
+  fx.update(dt, inp.head.pos, inp.head.quat);
   if (dt > 0) {
     const k = 1 - Math.exp(-dt / 0.05);
     accelV.x += ((P.vel.x - prevVel.x) / dt - accelV.x) * k; accelV.y += ((P.vel.y - prevVel.y) / dt - accelV.y) * k; accelV.z += ((P.vel.z - prevVel.z) / dt - accelV.z) * k;
@@ -628,10 +821,13 @@ function after(dt, inp, yawDelta) {
     if (inside !== headInside && !respawning) { headInside = inside; ui.fade(inside ? 1 : 0, 0.1, G.mode === "ar" ? "room" : "fog"); }
   }
   // desktop: a wider view at speed (75° plus up to 12° from 15 to 35 m/s)
+  fovKick *= Math.exp(-dt * 3);
   if (G.mode === "desktop" && !shot) {
-    const want = 75 + 12 * clamp((speed - 15) / 20, 0, 1);
+    const Fv = PHONE.fov;
+    const want = inp.easySwing ? Fv.base + Fv.wide * clamp((speed - Fv.from) / (Fv.to - Fv.from), 0, 1) + fovKick : 75 + 12 * clamp((speed - 15) / 20, 0, 1);
     if (Math.abs(want - camera.fov) > 0.01) { camera.fov += (want - camera.fov) * (1 - Math.exp(-dt * 4)); camera.updateProjectionMatrix(); }
   }
+  if (inp.easySwing) { D.mobile.rush(inPlay ? (speed - PHONE.lines.from) / (PHONE.lines.to - PHONE.lines.from) : 0, dt); D.mobile.climbing(inPlay && !!P.wall); }
   audio.setListener(inp.head.pos, inp.head.quat);
   audio.setWind(inPlay ? speed : 0, P.pos.y);
   for (let i = 0; i < 2; i++) {
@@ -644,7 +840,7 @@ function after(dt, inp, yawDelta) {
 }
 
 /* ---------------- the loop ---------------- */
-let lastTime = -1, fps = 60;
+let lastTime = -1, fps = 60, titleCompiled = false;
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
@@ -670,6 +866,13 @@ function render(frame) {
     // multiview programs differ from the flat ones: compile them now, with the XR target bound
     renderer.compile(scene, camera);
     compiledXR = true;
+  }
+  // The title covers the canvas with the key art (index.html sets data-art when it has loaded), so nothing behind it needs
+  // drawing: that saves a full city render on the headset's browser. Once the city is built, its programs compile once
+  // without a draw, so the first frame of play does not stall on them.
+  if (G.mode === "title" && !shot && !samples.length && !FLAGS.debug && document.documentElement.hasAttribute("data-art")) {
+    if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
+    return;
   }
   renderer.render(scene, camera);
   const info = renderer.info.render;
@@ -946,7 +1149,11 @@ async function boot() {
   renderer.setAnimationLoop(loop);
   addEventListener("resize", onResize);
   addEventListener("pagehide", saveNow);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) saveNow();
+    // on the phone (flat) the page itself hides; in a headset session the XR visibility callback above does this
+    if (!isXR()) { if (document.hidden) audio.suspend(); else if (audioStarted) audio.resume(); }
+  });
 
   // PWA launch (spec §6): the icon tap is the user activation, so ask for the session before building the city
   let launched = false;

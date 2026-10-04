@@ -2,16 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b1f26">
 <title>Take the Plunge · The Lab</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+  /* winter's distance: red when it is close */
+  #hWinter { transition: background-color 0.25s, border-color 0.25s; }
+  #hWinter.near { background: rgba(160, 30, 22, 0.94); border-color: rgba(255, 160, 140, 0.7); }
+  /* four pills on a narrow phone */
+  @media (max-width: 430px) { .hud { gap: 5px; } .hud span { padding: 5px 8px; font-size: 13px; } }
+</style>
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Take the Plunge"></canvas>
-<div class="hud" id="hud" hidden><span id="hDist">0 m</span><span id="hBest">Best 0 m</span><span id="hFlock">V 0</span></div>
+<div class="hud" id="hud" hidden><span id="hDist">0 m</span><span id="hBest">Best 0 m</span><span id="hFlock">V 0</span><span id="hWinter">Winter 60 m</span></div>
 <script type="module" src="./main.js"></script>
 </body>
 </html>

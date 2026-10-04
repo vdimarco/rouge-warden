@@ -96,8 +96,11 @@ h1, h2, .brand h1, #title h2, #ending h2, #flash-year {
 }
 #top h1 { font-size: 22px; line-height: 1; }
 .top-actions { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 420px) { #seedline { display: none; } } /* the seed is on the title and end cards too */
+#home { white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; font-size: 12px; font-weight: 700; color: var(--ink); text-decoration: none; }
 #seedline { margin: 0; font-size: 12px; font-weight: 600; color: var(--smog); }
 #help {
+  flex-shrink: 0;
   width: 44px;
   height: 44px;
   border-radius: 999px;
@@ -609,6 +612,7 @@ button.invest:disabled { opacity: 0.55; background: transparent; color: var(--in
   background: transparent;
   font-weight: 700;
 }
+a.ghost { display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-size: 15px; color: var(--ink); text-decoration: none; }
 #title-seed, #end-seed, #end-stats { margin: 0; font-size: 13px; font-weight: 600; }
 #howto { background: rgba(43, 42, 51, 0.28); justify-content: center; }
 #howto[hidden], #ending[hidden], #title[hidden], #news[hidden], #seed-warn[hidden] { display: none; }

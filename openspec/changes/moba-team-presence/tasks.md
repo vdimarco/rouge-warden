@@ -1,0 +1,18 @@
+# Tasks
+- [x] Restore HUD skill icons for all sixteen heroes and keep locked art readable.
+- [x] Pause when the mouse leaves the window or the tab hides; resume when the mouse returns or on tap.
+- [x] Record kill feed, streaks, multi-kills, pings and skirmishes in the simulation.
+- [x] Accept a drafted lineup and named identities in the match.
+- [x] Add assist and rally behaviour for bots on both teams.
+- [x] Add the draft board with role-aware bot picks and chat.
+- [x] Draw hero markers, last-seen ghosts, pings and alarms on both maps.
+- [x] Add team chat and kill feed to the HUD.
+- [x] Replace the sound engine with spatial effects, announcer stingers and voice.
+- [x] Add regression tests and run all tidebreak suites.
+- [x] Check desktop, portrait and landscape layouts in a browser.
+- [x] Add a scene score: menu, draft, calm and battle match layers, victory and defeat.
+- [x] Add edge scrolling, minimap look, recenter and full screen at Play.
+- [x] Tighten the skill cluster around the ultimate.
+- [ ] Listen to the mix and the announcer voice on a real device with speakers.
+- [ ] Check real multitouch and phone performance on a physical phone.
+- [ ] Review canonical specs and archive this change after the device checks.

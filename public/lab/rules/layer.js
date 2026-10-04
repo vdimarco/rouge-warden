@@ -128,17 +128,46 @@ export function checkStamp(code, stamp) {
   return m && stampFor(code, +m[1]) === stamp ? +m[1] : null;
 }
 // your own clears, in this browser: the editor unlocks Share for a code you cleared
-const CLEARS = "lab.rules.clears";
+const CLEARS = "lab.rules.clears", BESTS = "lab.rules.bests", TRIES = "lab.rules.tries";
 const keyOf = (code) => fnv1a(code).toString(36) + code.length.toString(36);
-function readClears() { try { return JSON.parse(localStorage.getItem(CLEARS) || "{}") || {}; } catch (e) { return {}; } }
+function read(key) { try { return JSON.parse(localStorage.getItem(key) || "{}") || {}; } catch (e) { return {}; } }
+function write(key, all) { try { localStorage.setItem(key, JSON.stringify(all)); } catch (e) { /* storage off */ } }
+const readClears = () => read(CLEARS);
 export function recordClear(code, secs) {
   const all = readClears(), k = keyOf(code);
   if (all[k] == null || secs < all[k]) all[k] = Math.round(secs);
-  try { localStorage.setItem(CLEARS, JSON.stringify(all)); } catch (e) { /* storage off */ }
+  write(CLEARS, all);
   return all[k];
 }
 export const clearOf = (code) => { const v = readClears()[keyOf(code)]; return v == null ? null : v; };
-export const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
+// a friend's best time on someone else's layer. It stays apart from your own clears, so it never unlocks Share.
+export function recordBest(code, secs) {
+  const all = read(BESTS), k = keyOf(code);
+  if (all[k] == null || secs < all[k]) all[k] = Math.round(secs);
+  write(BESTS, all);
+  return all[k];
+}
+export const bestOf = (code) => { const v = read(BESTS)[keyOf(code)]; return v == null ? null : v; };
+// your test runs of your own layer: how many ended, what got you, and the deepest you got (0 to 100)
+export const triesOf = (code) => read(TRIES)[keyOf(code)] || null;
+export function recordTry(code, cause, pct) {
+  const all = read(TRIES), k = keyOf(code), t = all[k] || { n: 0, by: {}, deep: 0 };
+  t.n++;
+  if (cause) t.by[cause] = (t.by[cause] || 0) + 1;
+  t.deep = Math.max(t.deep, Math.round(pct));
+  all[k] = t;
+  write(TRIES, all);
+  return t;
+}
+// A new name gives a new code but the same ground. Your clear and your tries go with the layer to its new code.
+export function carry(from, to) {
+  if (!from || !to || from === to) return;
+  const c = clearOf(from);
+  if (c != null) recordClear(to, c);
+  const all = read(TRIES), t = all[keyOf(from)];
+  if (t && !all[keyOf(to)]) { all[keyOf(to)] = t; write(TRIES, all); }
+}
+export const fmtSecs = (s) => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
 /* ---------------- the ground ---------------- */
 // value noise on the kit's integer hash: the same numbers everywhere
@@ -148,8 +177,8 @@ function vnoise(x, y, s) {
   const a = hash01(ix, iy, s), b = hash01(ix + 1, iy, s), c = hash01(ix, iy + 1, s), d = hash01(ix + 1, iy + 1, s);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
-// every pixel within r of the segment a-b
-function capsule(mat, ax, ay, bx, by, r, m) {
+// every pixel within r of the segment a-b gets m, or goes to put(i, m) when put is given
+function capsule(mat, ax, ay, bx, by, r, m, put) {
   const x0 = Math.max(2, Math.floor(Math.min(ax, bx) - r)), x1 = Math.min(W - 3, Math.ceil(Math.max(ax, bx) + r));
   const y0 = Math.max(TOP, Math.floor(Math.min(ay, by) - r)), y1 = Math.min(H - 3, Math.ceil(Math.max(ay, by) + r));
   const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, rr = r * r + r;
@@ -157,13 +186,14 @@ function capsule(mat, ax, ay, bx, by, r, m) {
     let t = L2 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0;
     t = t < 0 ? 0 : t > 1 ? 1 : t;
     const ex = x - ax - t * dx, ey = y - ay - t * dy;
-    if (ex * ex + ey * ey <= rr) mat[y * W + x] = m;
+    if (ex * ex + ey * ey <= rr) { if (put) put(y * W + x, m); else mat[y * W + x] = m; }
   }
 }
-export function paintStroke(mat, s) {
+// put: the editor's preview takes the brush through its own rules (see makeSand in sand.js)
+export function paintStroke(mat, s, put) {
   const r = SIZES[s.r], m = PAINTS[s.p].m, p = s.pts;
-  if (p.length === 1) capsule(mat, p[0][0], p[0][1], p[0][0], p[0][1], r, m);
-  for (let i = 1; i < p.length; i++) capsule(mat, p[i - 1][0], p[i - 1][1], p[i][0], p[i][1], r, m);
+  if (p.length === 1) capsule(mat, p[0][0], p[0][1], p[0][0], p[0][1], r, m, put);
+  for (let i = 1; i < p.length; i++) capsule(mat, p[i - 1][0], p[i - 1][1], p[i][0], p[i][1], r, m, put);
 }
 // the plain ground a layer starts from: earth with rock in it, and a touch of the look
 export function baseGround(L, mat = new Uint8Array(W * H)) {

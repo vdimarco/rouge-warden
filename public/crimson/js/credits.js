@@ -306,7 +306,7 @@ export function rollCredits(opts) {
   const grid = fin.querySelector('.games');
   const games = (window.GameSwitch && window.GameSwitch.GAMES) || [];
   for (const g of games) {
-    if (g.id === 'crimson') continue;
+    if (g.id === 'crimson' || g.credits === false) continue;
     const a = el('a', 'game', `<img alt=""><span><b></b><small></small></span>`);
     a.href = g.url; a.style.setProperty('--c', g.color || '#e9e6df');
     a.querySelector('img').src = g.art; a.querySelector('b').textContent = g.name; a.querySelector('small').textContent = g.sub;
@@ -334,6 +334,8 @@ export function rollCredits(opts) {
   let done = false, skipFrom = null, raf = 0, y = innerHeight;
   const endY = () => {
     const room = innerHeight - fin.offsetHeight;
+    // a last block taller than the window: show its bottom, so the buttons stay in view
+    if (room < 32) return -(fin.offsetTop + fin.offsetHeight - innerHeight + 16);
     return -(fin.offsetTop - Math.max(16, room / 2));
   };
   const frame = (rafNow) => {

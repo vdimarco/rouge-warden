@@ -1,6 +1,6 @@
-// In Full Swing: comfort (spec §8). The tunnel vignette, snap and smooth turning, the comfort presets, seated play and
-// the calibrated height. In mixed reality it also lets your real room show through: walls and furniture fade in as
-// passthrough when your head or hands come near them, and without room data a safety bubble keeps you near your spot.
+// In Full Swing: comfort (spec §8). The tunnel vignette, comic speed lines, snap and smooth turning, the comfort presets,
+// seated play and the calibrated height. In mixed reality it also lets your real room show through: walls and furniture
+// fade in as passthrough when your head or hands come near them, and without room data a safety bubble keeps you near your spot.
 import * as THREE from "three";
 import { COMFORT } from "./config.js";
 
@@ -12,6 +12,12 @@ const GLOBAL_MIN_Y = 0.15; // the global mesh includes the floor you stand on: d
 const SEATED_BELOW = 0.8; // seated: no horizontal surface below this (the chair, a table beside you)
 const NO_DATA_AFTER = 3; // seconds of AR with no planes or meshes before the safety bubble takes over
 const FAR = 1e4;
+// Comic speed lines: ink streaks that grow from 14 to 30 m/s. The middle 50 degrees of the view (25 degrees each side of
+// where you look) never gets a mark.
+const LINES = { range: [14, 30], clear: 25 * DEG, foeMax: 30 * DEG, count: 96 }; // range: m/s from none to all
+// The presets set speedLines when you pick one. config.js has no field for it, so the table lives here; a preset in
+// config.js that names speedLines wins.
+const PRESET_LINES = { comfortable: false, moderate: true, intense: true };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const ramp = (v, r) => clamp((v - r[0]) / (r[1] - r[0]), 0, 1);
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -47,6 +53,54 @@ function tunnelMaterial() {
   });
 }
 
+// The speed lines' sphere. Everything comes from the direction on the sphere (its own space, the same for both eyes) and
+// from uniforms, never from the screen position, so nothing swims in stereo. The lines radiate from uFoe, the way you
+// are heading (kept within 30 degrees of the view axis), and start outside the clear middle.
+function linesMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uAmt: { value: 0 }, uTime: { value: 0 }, uFoe: { value: new THREE.Vector3(0, 0, -1) }, uT1: { value: new THREE.Vector3(1, 0, 0) }, uT2: { value: new THREE.Vector3(0, 1, 0) },
+      uInk: { value: new THREE.Vector3(0.078, 0.039, 0.094) }, uCream: { value: new THREE.Vector3(1, 0.93, 0.78) },
+    },
+    vertexShader: `
+      varying vec3 vP;
+      void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform float uAmt, uTime; uniform vec3 uFoe, uT1, uT2, uInk, uCream;
+      varying vec3 vP;
+      const float N = ${LINES.count.toFixed(1)}, TAU = 6.2831853, CLEAR = ${LINES.clear.toFixed(5)};
+      float h1(float n) { return fract(sin(n * 12.9898 + 4.1414) * 43758.5453); }
+      void main() {
+        if (uAmt < 0.002) discard;
+        vec3 d = normalize(vP);
+        // the middle of the view: no work and no ink (cos 25 degrees)
+        if (-d.z > ${Math.cos(LINES.clear).toFixed(5)}) discard;
+        float thView = acos(clamp(-d.z, -1.0, 1.0));
+        float th = acos(clamp(dot(d, uFoe), -1.0, 1.0));
+        float u = (atan(dot(d, uT2), dot(d, uT1)) / TAU + 0.5) * N;
+        float id = min(floor(u), N - 1.0), f = fract(u) - 0.5;
+        float r0 = h1(id), r1 = h1(id + 31.7), r2 = h1(id + 77.3), r3 = h1(id + 5.3);
+        if (r0 > 0.12 + 0.5 * uAmt) discard;
+        // a pixel in radians: every width below is at least a pixel, so nothing is thinner than that
+        float px = length(vec2(dFdx(th), dFdy(th))) + 1e-5;
+        // where the streak starts (it moves in with speed, and breathes a little), how wide it ends up
+        float th0 = max(mix(1.05, 0.46, uAmt) + (r1 - 0.5) * 0.2 + 0.04 * sin(uTime * 1.3 + id * 1.7), CLEAR + 0.02);
+        float w = mix(0.006, 0.017, uAmt) * (0.55 + r2) * clamp((th - th0) / 0.5, 0.0, 1.0);
+        float cell = TAU / N * sin(th);
+        w = min(max(w, 0.8 * px), 0.36 * cell);
+        float dp = abs((f - (r3 - 0.5) * 0.4) * cell);
+        // a pale core inside an ink edge on some streaks, so they read on a dark tower as well as on the sky
+        float wI = w + 1.3 * px;
+        float ink = clamp((wI - dp) / px + 0.5, 0.0, 1.0);
+        float core = step(0.55, r1) * clamp((w * 0.5 - dp) / px + 0.5, 0.0, 1.0) * step(4.0 * px, w);
+        float a = ink * smoothstep(0.0, 0.03, th - th0) * smoothstep(CLEAR, CLEAR + 0.06, thView) * smoothstep(0.0, 0.15, uAmt) * 0.92;
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(mix(uInk, uCream, core), a);
+      }`,
+    side: THREE.BackSide, depthTest: false, depthWrite: false, transparent: true,
+  });
+}
+
 export function createComfort(camera, rig, settings) {
   /* ---------------- the vignette ---------------- */
   const vigMat = tunnelMaterial();
@@ -58,7 +112,18 @@ export function createComfort(camera, rig, settings) {
   vig.frustumCulled = false;
   vig.visible = false;
   camera.add(vig);
-  const V = { strength: 0, target: 0, hold: 0, blink: 0, innerFov: OPEN_FOV, look: "black", ar: false, mode: "xr" };
+  const V = { strength: 0, target: 0, hold: 0, blink: 0, innerFov: OPEN_FOV, look: "black", ar: false, mode: "xr", lines: 0, t: 0 };
+
+  // the speed lines: a second inward sphere under the vignette (renderOrder 998). Ink in every mode: in AR the city is
+  // opaque all round you in play, so plain alpha blending keeps the framebuffer alpha at 1.
+  const linesMat = linesMaterial();
+  const lines = new THREE.Mesh(new THREE.SphereGeometry(0.98, 32, 16), linesMat);
+  lines.name = "speedLines";
+  lines.renderOrder = 998;
+  lines.frustumCulled = false;
+  lines.visible = false;
+  camera.add(lines);
+  const foe = new THREE.Vector3(0, 0, -1), foeWant = new THREE.Vector3(), QW = new THREE.Quaternion();
   let armed = true, override = null, lastDt = 0, realSeenAtUpdate = 0;
 
   // Everything here only draws while main keeps calling us. Back on the title (no update, no reality), the gate hides
@@ -72,6 +137,7 @@ export function createComfort(camera, rig, settings) {
     realLive = realN !== realSeen; realSeen = realN;
   }
   vig.onBeforeRender = (renderer) => { gate(renderer); if (!updLive) { vig.visible = false; vigMat.uniforms.uAlpha.value = 0; vigMat.uniforms.uFull.value = 0; } };
+  lines.onBeforeRender = (renderer) => { gate(renderer); if (!updLive) { lines.visible = false; linesMat.uniforms.uAmt.value = 0; } };
 
   /* ---------------- the reality fade (AR) ---------------- */
   const RU = {
@@ -311,6 +377,31 @@ export function createComfort(camera, rig, settings) {
     if (s.fade > info.maxFade) info.maxFade = s.fade;
   };
 
+  // The lines radiate from where you are heading: the velocity in view space, kept within 30 degrees of the view axis and
+  // smoothed, then a basis around it for the shader's angle.
+  function aimFoe(vel, dt) {
+    foeWant.set(0, 0, -1);
+    const sp = vel ? Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z) : 0;
+    if (sp > 1) {
+      camera.getWorldQuaternion(QW).invert();
+      foeWant.set(vel.x / sp, vel.y / sp, vel.z / sp).applyQuaternion(QW);
+      const cosA = -foeWant.z;
+      if (cosA < Math.cos(LINES.foeMax)) {
+        // too far off the view axis: turn the axis toward it by 30 degrees only
+        const l = Math.sqrt(foeWant.x * foeWant.x + foeWant.y * foeWant.y);
+        if (l > 1e-4) foeWant.set((foeWant.x / l) * Math.sin(LINES.foeMax), (foeWant.y / l) * Math.sin(LINES.foeMax), -Math.cos(LINES.foeMax));
+        else foeWant.set(0, 0, -1);
+      }
+    }
+    foe.lerp(foeWant, 1 - Math.exp(-(dt > 0 ? dt : 0) / 0.15)).normalize();
+    const u = linesMat.uniforms;
+    u.uFoe.value.copy(foe);
+    // t1 flat and perpendicular to the focus, t2 = focus × t1
+    const l1 = Math.sqrt(foe.x * foe.x + foe.z * foe.z) || 1;
+    u.uT1.value.set(foe.z / l1, 0, -foe.x / l1);
+    u.uT2.value.crossVectors(foe, u.uT1.value);
+  }
+
   /* ---------------- the API ---------------- */
   const C = {
     settings,
@@ -353,6 +444,15 @@ export function createComfort(camera, rig, settings) {
         if (room) u.uColor.value.set(0, 0, 0); else u.uColor.value.fromArray(BLACK);
       }
       vig.visible = u.uAlpha.value > 0.002 || u.uFull.value > 0;
+      // the speed lines: they come in fast and go slowly, off in the intro and the pause, and off with settings.speedLines
+      const wantL = play && settings.speedLines !== false ? ramp(s.speed || 0, LINES.range) : 0;
+      V.lines += (wantL - V.lines) * (1 - Math.exp(-dt / (wantL > V.lines ? 0.12 : 0.35)));
+      if (V.lines < 0.004 && wantL === 0) V.lines = 0;
+      V.t = (V.t + dt) % 600;
+      const lu = linesMat.uniforms;
+      lu.uAmt.value = V.lines;
+      lines.visible = V.lines > 0;
+      if (lines.visible) aimFoe(s.vel, dt);
     },
 
     // Right stick x → a yaw change (radians; right is negative). Snap past 0.7, re-armed under 0.3, with a short blink;
@@ -375,8 +475,11 @@ export function createComfort(camera, rig, settings) {
       const p = COMFORT.presets[name];
       if (!p) return false;
       settings.vignette = p.vignette; settings.turn = p.turn; settings.snap = p.snap; settings.aim = p.aim;
-      if (name !== "desktop") settings.preset = name;
-      V.mode = name === "desktop" ? "desktop" : V.mode === "desktop" ? "xr" : V.mode;
+      // flat play borrows the "desktop" or "phone" preset: it leaves the headset's own speedLines choice alone (main restores only four fields)
+      const flat = name === "desktop" || name === "phone";
+      if (!flat) settings.speedLines = p.speedLines ?? PRESET_LINES[name] ?? true;
+      if (!flat) settings.preset = name;
+      V.mode = flat ? "desktop" : V.mode === "desktop" ? "xr" : V.mode;
       armed = true;
       return true;
     },
@@ -451,8 +554,8 @@ export function createComfort(camera, rig, settings) {
       return { ...info, sources: list };
     },
     // the vignette's state, for the tests
-    info: () => ({ strength: V.strength, target: V.target, innerFov: V.innerFov, minFov: COMFORT.vignetteMinFov[settings.vignette] ?? OPEN_FOV, blink: vigMat.uniforms.uFull.value > 0, look: V.look, visible: vig.visible, alpha: vigMat.uniforms.uAlpha.value, seatedOffset: C.seatedOffset }),
-    meshes: { vignette: vig, bubble: bub, ring },
+    info: () => ({ strength: V.strength, target: V.target, innerFov: V.innerFov, minFov: COMFORT.vignetteMinFov[settings.vignette] ?? OPEN_FOV, blink: vigMat.uniforms.uFull.value > 0, look: V.look, visible: vig.visible, alpha: vigMat.uniforms.uAlpha.value, seatedOffset: C.seatedOffset, lines: { amount: V.lines, visible: lines.visible, on: settings.speedLines !== false, foe: foe.toArray() } }),
+    meshes: { vignette: vig, speedLines: lines, bubble: bub, ring },
   };
   return C;
 }

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script src="/arcade/quiet.js"></script>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d1820">
   <meta name="description" content="Shore of the Ancients. Choose from sixteen heroes, master four-skill kits, and fight in a shifting 3v3 arena.">
@@ -22,6 +23,7 @@
   <link rel="preload" as="image" href="./art/reference/shore-scene.webp">
   <link rel="preload" as="image" href="./art/reference/tidewarden.webp">
   <link rel="stylesheet" href="./selection-reference.css">
+  <link rel="stylesheet" href="./team.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
@@ -31,6 +33,7 @@
     <div id="objective"><b id="realm">MIDNIGHT TOWN</b><span id="realm-count">Woods arrive in 40s</span><div class="realm-track"><i id="realm-fill"></i></div><span id="objective-sub">Break the outer ward, then the inner ward.</span></div>
     <button id="recall" class="utility">RETURN <small>Heal at home</small></button>
     <button id="portal" class="utility" disabled>RIFT JUMP<small>Find a gate</small></button>
+    <button id="rally" aria-label="Call your team to you (G)"><span aria-hidden="true">⚑</span>RALLY<small>Call team</small></button>
     <div id="notice" role="status" aria-live="polite"></div>
     <div id="respawn" hidden></div>
     <div id="coach"><svg viewBox="0 0 80 38" aria-hidden="true"><circle cx="28" cy="20" r="14"/><circle class="coach-thumb" cx="28" cy="20" r="5"/><path d="M51 20h17m-6-6 6 6-6 6"/></svg><span>Move with WASD or the left pad.<br>Click an enemy to approach and attack.<br>Click ground to move. Space to stop.</span><button id="coach-close" aria-label="Close control tip">×</button></div>
@@ -71,6 +74,7 @@
       </div>
     </div>
   </main>
+  <section id="draft" class="draft-overlay" hidden></section>
   <dialog id="sheet"><button id="close-sheet" class="close" aria-label="Close panel">×</button><div id="sheet-content"></div></dialog>
   <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
   <script src="/arcade/switch.js"></script><script type="module" src="./main.js"></script>

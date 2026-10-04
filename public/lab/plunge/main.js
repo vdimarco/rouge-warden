@@ -1,11 +1,12 @@
 // Take the Plunge: the page. It runs the exact sim in sim.js at 120 steps a second, draws a side view on a 2D canvas,
-// and adds the feel: the dotted line ahead, slow motion on a rip, splashes, the V of loons, winter at your back, sound
-// and buzz. A ghost from a link flies beside you in step with you.
-import { makeWorld, newState, step, predict, distance, speed, H, T, AIR, WATER, SURFACE, LAKE } from "./sim.js";
-import { encodeGhost, decodeGhost, Tape, Recorder } from "./ghost.js";
+// and adds the feel: the dotted line ahead, the dive-now cue, slow motion on a rip and on the peak burst, splashes,
+// the V of loons, winter at your back, the times of day as a ladder, sound and buzz. A ghost from a link flies beside
+// you in step with you.
+import { makeWorld, newState, step, predict, diveCue, goodDive, distance, speed, H, T, AIR, WATER, SURFACE, LAKE } from "./sim.js";
+import { encodeGhost, decodeGhost, oldGhost, raceLine, Tape, Recorder } from "./ghost.js";
 import { daySeed, cottageDay, hashParams } from "../kit/rng.js";
 import { startLoop, fitCanvas } from "../kit/loop.js";
-import { Sfx, hiss, tone, splash as splashSound, loonTremolo } from "../kit/sfx.js";
+import { Sfx, hiss, tone, splash as splashSound, loonTremolo, loonWail } from "../kit/sfx.js";
 import { labBar, startCard, endCard, toast, shareLink, onUi } from "../kit/start.js";
 import { stats } from "../kit/stats.js";
 import { Haptics } from "/fish/js/haptics.js";
@@ -20,16 +21,21 @@ const buzz = (fn, ...a) => { try { Haptics[fn](...a); } catch (e) { /* no buzz h
 /* ---------------- the run ---------------- */
 const P = hashParams(location.hash);
 const ghostIn = P.g ? decodeGhost(P.g) : null;
+// a ghost link from an older version cannot race, but its lakes and its distance are still good
+const ghostOld = P.g && !ghostIn ? oldGhost(P.g) : null;
 const seedFromLink = P.s && /^\d+$/.test(P.s) ? Number(P.s) >>> 0 : null;
-const seed = ghostIn ? ghostIn.seed : seedFromLink ?? daySeed("plunge");
+const seed = ghostIn ? ghostIn.seed : ghostOld ? ghostOld.seed : seedFromLink ?? daySeed("plunge");
 const world = makeWorld(seed);
 const S = stats("plunge");
 let phase = "title";                // title, play, end
 let run = null;
 let best = S.data.best || 0;
 
+// dive: the class of the entry that the loon is under the water from. rung: the next time of day to fly into.
+// best0: your best when the run began. thudAt, thudN, thudLabel: the chain of thuds that is going on.
 function newRun() {
-  const r = { s: newState(), rec: new Recorder(), ev: [], gs: null, tape: null, topV: 0, trail: [], t0: performance.now() };
+  const r = { s: newState(), rec: new Recorder(), ev: [], gs: null, tape: null, topV: 0, trail: [], t0: performance.now(),
+    dive: null, rung: 1, best0: best, passedBest: false, newbie: false, thudAt: -9, thudN: 0, thudLabel: null };
   if (ghostIn) { r.gs = newState(); r.tape = new Tape(ghostIn.flips); }
   return r;
 }
@@ -53,11 +59,12 @@ window.addEventListener("keyup", (e) => { if (e.key === " ") keyHeld = false; })
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 /* ---------------- the step: the sim, the ghost, and what happened ---------------- */
-let slowT = 0, shake = 0, lastTuck = false;
+let shake = 0, lastTuck = false;
 const labels = [], parts = [];
 function tick(tuck) {
   const s = run.s;
   if (!s.alive) return;
+  if (slow.left > 0) slow.left -= H;
   run.rec.feed(s.tick + 1, tuck);
   if (tuck !== lastTuck && s.mode === AIR) Sfx.play(tuck ? sndTuck : sndOpen);
   lastTuck = tuck;
@@ -67,13 +74,48 @@ function tick(tuck) {
   const v = speed(s);
   if (v > run.topV) run.topV = v;
   for (const e of run.ev) happen(e);
+  passRungs();
+  if (!run.passedBest && run.best0 > 0 && distance(s) > run.best0) {
+    run.passedBest = true;
+    label("NEW BEST", "#f0b848", true);
+    Sfx.play(sndBest);
+  }
   if (!s.alive) end();
 }
 
-// a word over the loon; words that come close together stack instead of piling up
+/* ---------------- slow motion ---------------- */
+// Slow motion counts game time, not real time, so it plays the same at any frame rate and a test can step through
+// it. The clock drops to min at once, stays there for 70% of the time, then eases back to full speed.
+const slow = { left: 0, len: 0, min: 1, big: false };
+// the real seconds that one game second of this slow motion takes
+const realPerGame = (m) => 0.7 / m + (0.3 * Math.atan(Math.sqrt((1 - m) / m))) / Math.sqrt(m * (1 - m));
+// real: how many real seconds it lasts. A big one (the peak of a run) also pushes the camera in.
+function slowmo(real, min, big = false) {
+  if (slow.big && slow.left > 0 && !big) return;   // a small moment never cuts a big one short
+  const len = real / realPerGame(min);
+  if (big || len > slow.left) Object.assign(slow, { left: len, len, min, big });
+}
+function timeScale() {
+  if (slow.left <= 0) return 1;
+  const u = 1 - slow.left / slow.len;
+  if (u < 0.7) return slow.min;
+  const w = (u - 0.7) / 0.3;
+  return slow.min + (1 - slow.min) * w * w;
+}
+// how far the camera pushes in: all the way in a big slow motion, and back out as the clock speeds up again
+function pushTarget() {
+  if (!slow.big || slow.left <= 0) return 0;
+  const u = 1 - slow.left / slow.len;
+  return u < 0.7 ? 1 : 1 - (u - 0.7) / 0.3;
+}
+
+// A word over the loon. It stays where it came up on the screen, so it does not slide off with the land, and a new
+// word moves clear of the words that are up already. Returns the word, so a chain of thuds can count on it.
 function label(text, color, big = false) {
-  const row = labels.filter((l) => l.t < 0.8).length;
-  labels.push({ x: run.s.x, y: run.s.y + 2, text, color, big, t: 0, row });
+  const l = { x: run.s.x, y: run.s.y + 2, sx: null, sy: 0, lift: 0, text, color, big, t: 0, box: null, dbox: null };
+  labels.push(l);
+  if (labels.length > 6) labels.shift();   // never a pile of words: the oldest one goes
+  return l;
 }
 function burst(x, y, n, kind, speedK = 1) {
   for (let i = 0; i < n; i++) {
@@ -86,9 +128,10 @@ function happen(e) {
   switch (e.k) {
     case "entry": {
       const big = e.cls === "perfect";
+      run.dive = e.cls;
       label({ perfect: "PERFECT RIP", rip: "RIP", splash: "SPLASH", flop: "BELLY-FLOP" }[e.cls], { perfect: "#ffd766", rip: "#8ef08a", splash: "#e9f2f6", flop: "#ff7a5c" }[e.cls], big);
       if (e.cls === "perfect" || e.cls === "rip") {
-        slowT = big ? 0.45 : 0.3;
+        slowmo(big ? 0.45 : 0.3, 0.35);
         burst(e.x, 0, big ? 6 : 10, "spray", 0.6);
         Sfx.play(sndRip, big);
         buzz("splash", 0.3);
@@ -108,18 +151,36 @@ function happen(e) {
     }
     case "exit":
       if (e.cls === "burst") {
-        label("BURST", "#7fe7ff");
-        slowT = Math.max(slowT, 0.25);
-        burst(e.x, 0, 30, "spray", 1.3);
-        Sfx.play(sndBurst);
+        // the peak of a run: the first burst, and each burst out of a perfect rip, in deep slow motion
+        const peak = s.stats.burst === 1 || run.dive === "perfect";
+        label("BURST", "#7fe7ff", peak);
+        slowmo(peak ? 1.05 : 0.25, peak ? 0.3 : 0.35, peak);   // the peak: 0.8 s at 0.3 speed, then back to full
+        burst(e.x, 0, peak ? 48 : 30, "spray", peak ? 1.6 : 1.3);
+        Sfx.play(peak ? sndPeak : sndBurst, run.dive === "perfect");
         buzz("bump", 0.7);
       } else burst(e.x, 0, 12, "spray", 0.8);
+      run.dive = null;
       break;
     case "skip": label("SKIP", "#e9f2f6"); burst(e.x, 0, 12, "spray", 0.8); Sfx.play(sndSkip); buzz("tick"); break;
     case "fish": label("+FISH", "#dfe8f0"); burst(e.x, e.y, 10, "glint", 0.6); Sfx.play(sndFish, e.n); buzz("tick"); S.act("fish"); break;
-    case "thud": label(e.tumble ? "TUMBLE" : "THUD", "#ffb35c"); burst(s.x, s.y, 8, "feather", 1); shake = Math.max(shake, 0.35); Sfx.play(sndThud); buzz("bump", 0.9); break;
-    case "scrape": if (Math.random() < 0.3) Sfx.play(sndScrape); break;
-    case "surface": label("RUN!", "#e9f2f6"); break;
+    case "thud": {
+      // Thuds close together are one chain: one word counts them, and each one after the first shakes and buzzes less.
+      const t = s.tick * H, chain = t - run.thudAt < 2.5;
+      run.thudAt = t;
+      run.thudN = chain ? run.thudN + 1 : 1;
+      const text = run.thudN > 1 ? `THUD ×${run.thudN}` : "THUD";
+      if (e.tumble) label("TUMBLE", "#ff9a6a");
+      else if (chain && labels.includes(run.thudLabel)) Object.assign(run.thudLabel, { text, x: s.x, y: s.y + 2, sx: null, t: 0.1 });
+      else run.thudLabel = label(text, "#ffb35c");
+      burst(s.x, s.y, 8, "feather", 1);
+      shake = Math.max(shake, chain ? 0.15 : 0.35);
+      Sfx.play(sndThud, chain ? 0.55 : 1);
+      buzz("bump", chain ? 0.4 : 0.9);
+      break;
+    }
+    // the bed: a puff of silt and a scrape, once for each touch (that is when it costs speed)
+    case "scrape": burst(e.x, e.y, 10, "silt", 0.45); Sfx.play(sndScrape); break;
+    case "surface": label("RUN!", "#e9f2f6"); run.dive = null; break;
     case "takeoff": Sfx.play(sndOpen); break;
     case "breath": burst(s.x, s.y, 14, "bubble", 0.5); break;
     case "caught": shake = 1; Sfx.play(sndCaught); buzz("jolt"); break;
@@ -147,16 +208,41 @@ function sndFish(e, t, n) {
   const f = 440 * [1, 1.26, 1.5, 2][(n - 1) % 4];
   tone(e, t, { f, f2: f * 1.5, glide: 0.08, dur: 0.12, peak: 0.12, wave: "triangle" });
 }
-function sndThud(e, t) {
-  tone(e, t, { f: 95, f2: 55, glide: 0.1, dur: 0.14, peak: 0.5 });
-  hiss(e, t, { type: "lowpass", f: 900, dur: 0.12, peak: 0.18 });
+// k: how hard, 0..1. A thud in a chain is softer than the first one.
+function sndThud(e, t, k = 1) {
+  tone(e, t, { f: 95, f2: 55, glide: 0.1, dur: 0.14, peak: 0.5 * k });
+  hiss(e, t, { type: "lowpass", f: 900, dur: 0.12, peak: 0.18 * k });
 }
 function sndScrape(e, t) { hiss(e, t, { type: "lowpass", f: 700, dur: 0.1, peak: 0.1 }); }
 function sndCaught(e, t) {
   tone(e, t, { f: 70, f2: 40, glide: 0.5, dur: 0.7, peak: 0.5 });
   for (let i = 0; i < 6; i++) tone(e, t + 0.05 + i * 0.06, { f: 3000 + Math.random() * 2500, dur: 0.05, peak: 0.04 });
 }
-// the loops: wind with speed, the patter of a water run, the howl of winter, the warning whistle
+// the peak: the burst, then a chord that rises and rings over the lake, and a loon's call (a perfect rip has one already)
+function sndPeak(e, t, perfect) {
+  sndBurst(e, t);
+  [262, 392, 523].forEach((f, i) => tone(e, t + 0.04 + i * 0.07, { f, f2: f * 1.5, glide: 0.5, dur: 0.95, peak: 0.07, att: 0.05, wave: "triangle", send: 0.9 }));
+  if (!perfect) loonTremolo(e, t + 0.25, { gain: 0.13, dur: 0.8, send: 0.9 });
+}
+// the dive-now cue: a soft high tick on each pulse
+function sndCue(e, t) { tone(e, t, { f: 1250, f2: 1500, glide: 0.03, dur: 0.05, peak: 0.07, wave: "triangle" }); }
+// land ahead: a low beep, quicker as the hit comes closer. k: how loud, 0..1 (softer in a chain of thuds).
+function sndLand(e, t, k = 1) { tone(e, t, { f: 330, dur: 0.06, peak: 0.1 * k, wave: "square", lp: 1100 }); }
+// a time of day: a soft chord across the lake. At the northern lights a loon wails, and dawn rises.
+function sndSky(e, t, ph) {
+  const notes = ph === 0.66 ? [523, 659, 784, 988] : ph === 0 ? [392, 494, 587, 784] : [349, 440, 523];
+  notes.forEach((f, i) => tone(e, t + i * 0.11, { f, dur: 1.9, peak: 0.05, att: 0.15, wave: "triangle", send: 1 }));
+  if (ph === 0.66) loonWail(e, t + 0.5, { gain: 0.2, send: 0.9 });
+}
+// past your best: two bright notes
+function sndBest(e, t) {
+  tone(e, t, { f: 784, dur: 0.18, peak: 0.1, wave: "triangle", send: 0.5 });
+  tone(e, t + 0.12, { f: 1175, dur: 0.4, peak: 0.1, wave: "triangle", send: 0.6 });
+}
+// The loops: wind with speed, the patter of a water run, the howl of winter, the whistle before a flat entry. And the
+// beeps before a thud: they start up to 0.8 s before the land, and come quicker as it comes closer. In a chain of
+// thuds (a slow loon that hops along the land) they are softer.
+let landBeep = 0;
 function sounds(dt) {
   const s = run.s, v = speed(s), gap = s.x - s.wx;
   const inAir = s.mode === AIR && phase === "play";
@@ -166,6 +252,10 @@ function sounds(dt) {
   Sfx.bed("howl", "pink", "bandpass", 420, 4).set(near * 0.65, 330 + near * 520, 0.3);
   Sfx.bed("warn", "white", "bandpass", 1800, 22).set(warnLevel * 0.22, 1400 + warnLevel * 1600, 0.04);
   Sfx.muffle(s.mode === WATER && phase === "play" ? 0.18 : 1);
+  if (landLevel > 0) {
+    landBeep -= dt;
+    if (landBeep <= 0) { Sfx.play(sndLand, s.tick * H - run.thudAt < 2.5 ? 0.5 : 1); landBeep = lerp(0.2, 0.07, landLevel); }
+  } else landBeep = 0;
 }
 
 /* ---------------- start, end, share ---------------- */
@@ -173,15 +263,17 @@ labBar();
 const hud = $("#hud");
 const pitch = ghostIn
   ? `Race ${ghostIn.name || "a friend"}'s ghost. It flew ${fmt(ghostIn.dist)} over these lakes.`
-  : `You are a loon, and winter is coming. Fly south over today's lakes (${cottageDay()}).`;
+  : ghostOld
+    ? `This ghost link comes from an older version of the game, so the ghost cannot fly with you. ${ghostOld.name ? ghostOld.name + "'s" : "The"} ghost flew ${fmt(ghostOld.dist)} over these lakes. You fly the same lakes.`
+    : `You are a loon, and winter is coming. Fly south over today's lakes (${cottageDay()}).`;
 const card = startCard({
   title: "Take the Plunge",
   pitch,
   how: [
     "<b>Hold</b> anywhere, or Space, to tuck your wings and dive. <b>Let go</b> to glide.",
-    "Hit a lake <b>steep</b> for a rip: the dotted line turns green. Flat is a belly-flop.",
+    "When the loon <b>pulses green</b>, hold: the dive rips into the lake. Flat is a belly-flop.",
     "Under the water, let go to swoop up and burst out. Hold to go deep for fish.",
-    "Stay ahead of winter. Every rip adds a loon to your V.",
+    "Stay ahead of winter, and fly on to sunset and the northern lights. Every rip adds a loon to your V.",
     ...(matchMedia("(orientation: portrait) and (pointer: coarse)").matches ? ["Turn the phone sideways to see more of the lakes ahead."] : []),
   ],
   button: "Fly",
@@ -191,8 +283,13 @@ const endC = endCard({ onAgain: () => begin(), onShare: () => share() });
 
 function begin() {
   run = newRun();
+  // the "HOLD" word next to the cue, until a player has three rips
+  run.newbie = (S.data.acts.rip || 0) + (S.data.acts.perfect || 0) < 3;
   pointers.clear(); keyHeld = false; lastTuck = false;
-  labels.length = 0; parts.length = 0; slowT = 0; shake = 0;
+  labels.length = 0; parts.length = 0; shake = 0; banner = null;
+  Object.assign(slow, { left: 0, len: 0, min: 1, big: false });
+  cam.push = 0; cueOn = false; cueAt = -99; cueT = 0;
+  updateCamera(10);   // the camera starts on the loon, not back where the last run ended
   phase = "play";
   hud.hidden = false;
   S.play(); S.run();
@@ -201,26 +298,28 @@ function begin() {
 function end() {
   phase = "end";
   S.stop();
+  Object.assign(slow, { left: 0, big: false });
+  if (banner) banner.t = Math.max(banner.t, banner.life - 0.4);   // a title on the screen fades before the card comes
   const s = run.s, d = distance(s);
   const isBest = S.best(d);
   const prev = best;
   if (isBest) best = d;
   let line = isBest ? (prev > 0 ? `A new best, ${fmt(d - prev)} past your old one.` : "Your first flight south.") : `${fmt(prev - d)} short of your best.`;
-  if (ghostIn) {
-    const gd = run.gs ? distance(run.gs) : ghostIn.dist;
-    line += d >= gd ? ` You beat ${ghostIn.name || "the"} ghost by ${fmt(d - gd)}.` : ` ${ghostIn.name || "The"} ghost flew ${fmt(gd - d)} farther.`;
-    if (run.gs && !run.gs.alive && Math.abs(distance(run.gs) - ghostIn.dist) > 1) line += " (That ghost came from another browser, so it drifted.)";
-  }
-  const st = s.stats;
+  if (ghostIn) line += " " + raceLine(d, ghostIn, run.gs);
+  else if (ghostOld) line += ` The ghost from the older version flew ${fmt(ghostOld.dist)}.`;
+  const st = s.stats, far = rungAt(run.rung - 1), next = rungAt(run.rung);
   setTimeout(() => endC.show({
     title: `Caught at ${fmt(d)}`,
     line,
     rows: [
+      ["Farthest", far.name],
+      ["Next", `${next.name} in ${fmt(next.x - d)}`],
       ["Time", (s.tick * H).toFixed(1) + " s"],
       ["Top speed", Math.round(run.topV * 3.6) + " km/h"],
       ["Perfect rips", String(st.perfect)],
       ["Rips", String(st.rip)],
       ["Belly-flops", String(st.flop)],
+      ["Thuds", String(st.thud)],
       ["Fish", String(st.fish)],
       ["Bursts", String(st.burst)],
       ["Biggest V", String(st.bestFlock + 1) + (st.bestFlock ? " loons" : " loon")],
@@ -248,8 +347,30 @@ async function share() {
 /* ---------------- drawing ---------------- */
 let W = 1, Hh = 1, DPR = 1;
 fitCanvas(canvas, (w, h, r) => { W = w; Hh = h; DPR = r; });
-const cam = { x: 0, y: 12, k: 8 };
-let warnLevel = 0, clock = 0;
+const cam = { x: 0, y: 12, k: 8, push: 0 };
+let warnLevel = 0, landLevel = 0, clock = 0;
+
+/* ---------------- the day as a ladder ---------------- */
+// The sky turns once in DAY metres of flight: dawn, morning, afternoon, sunset, night with the northern lights, and
+// dawn again. Its times of day are the rungs of a ladder. The big ones get a title as you fly into them, and the end
+// card names the last one you reached and how far the next one was.
+const DAY = 1600, PH0 = 0.08;
+const RUNGS = [[0, "Dawn"], [0.18, "Morning"], [0.4, "Afternoon"], [0.55, "Sunset"], [0.66, "Northern lights"]];
+// rung n: where it is, its name for the end card, and its title on the screen ("Day 2" at the second dawn)
+function rungAt(n) {
+  const day = Math.floor(n / RUNGS.length), [ph, name] = RUNGS[n % RUNGS.length];
+  return { x: (day + ph - PH0) * DAY, name: day ? `${name} (day ${day + 1})` : name, title: day && ph === 0 ? `Day ${day + 1}` : name,
+    big: ph === 0 || ph >= 0.55, ph };
+}
+let banner = null;
+function passRungs() {
+  const d = distance(run.s);
+  while (rungAt(run.rung).x <= d) {
+    const r = rungAt(run.rung++);
+    banner = { text: r.title, sub: r.big ? fmt(r.x) : "", big: r.big, t: 0, life: r.big ? 3.2 : 2 };
+    if (r.big) Sfx.play(sndSky, r.ph);
+  }
+}
 
 // the sky through a day, by distance flown: dawn, morning, afternoon, dusk, night, before dawn
 const SKY = [
@@ -265,7 +386,7 @@ const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), pa
 const SKYC = SKY.map((r) => [r[0], ...r.slice(1).map(hex)]);
 const mix = (a, b, t) => `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`;
 function palette(x) {
-  const ph = (((x / 2600) + 0.08) % 1 + 1) % 1;
+  const ph = (((x / DAY) + PH0) % 1 + 1) % 1;
   let i = 0;
   while (i < SKYC.length - 2 && SKYC[i + 1][0] <= ph) i++;
   const a = SKYC[i], b = SKYC[i + 1], t = (ph - a[0]) / (b[0] - a[0]);
@@ -276,8 +397,9 @@ function palette(x) {
 const X = (x) => (x - cam.x) * cam.k + W / 2;
 const Y = (y) => Hh / 2 - (y - cam.y) * cam.k;
 
-// The camera keeps enough of the land ahead in view for the speed, puts the water low on the screen (the sky is where
-// you fly), and never lets the loon leave the top. A tall phone shows less land ahead, so things stay big enough.
+// The camera keeps enough of the land ahead in view for the speed, and never lets the loon leave the top. A tall phone
+// shows less land ahead, so things stay big enough, and it has height to spare: the water line sits at 65% of the
+// screen, so the loon and the lake are near the middle. A wide screen puts the water low (the sky is where you fly).
 function updateCamera(dt) {
   const s = run.s, v = speed(s);
   const portrait = Hh > W;
@@ -286,20 +408,28 @@ function updateCamera(dt) {
   const k = Math.min(W / minW, Hh / clamp(high - low, 34, 160));
   const e = 1 - Math.exp(-dt * 3);
   cam.k += (k - cam.k) * e;
-  let ty = low + (Hh * 0.44) / cam.k;
-  const keep = s.y - (Hh * 0.33) / cam.k;
+  let ty = portrait ? (Hh * 0.15) / cam.k + Math.min(s.y, 0) * 0.5 : low + (Hh * 0.44) / cam.k;
+  const keep = s.y - (Hh * (portrait ? 0.2 : 0.33)) / cam.k;
   if (ty < keep) ty = keep;
   const tx = s.x + (W / cam.k) * 0.2;
   cam.x += (tx - cam.x) * Math.min(1, e * 3);
   cam.y += (ty - cam.y) * Math.min(1, e * 2);
+  cam.push += (pushTarget() - cam.push) * Math.min(1, dt * 8);
 }
 
 function draw(alpha, dt) {
-  clock += dt;
-  if (slowT > 0) slowT -= dt;
+  const sc = timeScale();
+  clock += dt * sc;
   const s = run.s;
   updateCamera(dt);
   shake = Math.max(0, shake - dt * 2.2);
+  // the push-in on a peak: for a moment the camera closes in on the loon, then it goes back
+  const base = { x: cam.x, y: cam.y, k: cam.k };
+  if (cam.push > 0.002) {
+    cam.k = base.k * (1 + 0.6 * cam.push);
+    cam.x = lerp(base.x, s.x + 3, cam.push * 0.75);
+    cam.y = lerp(base.y, s.y + 1, cam.push * 0.6);
+  }
   const pal = palette(cam.x);
   g.setTransform(1, 0, 0, 1, 0, 0);
   const sx = shake > 0 ? (Math.random() - 0.5) * shake * 14 * DPR : 0, sy = shake > 0 ? (Math.random() - 0.5) * shake * 14 * DPR : 0;
@@ -308,19 +438,23 @@ function draw(alpha, dt) {
   clouds(pal);
   farHills(pal);
   land(pal);
+  flags();
   fish();
   if (phase === "play" && s.mode === AIR) path();
-  else warnLevel = 0;
+  else { warnLevel = 0; landLevel = 0; }
   if (run.gs) loon(run.gs, true);
   flock();
+  cueRing(dt);
   loon(s, false);
-  particles(dt);
+  particles(dt * sc);
   winter(pal);
   texts(dt);
   if (s.mode === WATER) underwater();
   frost();
+  drawBanner(dt);
   hudText();
   sounds(dt);
+  cam.x = base.x; cam.y = base.y; cam.k = base.k;
 }
 
 function sky(pal) {
@@ -413,6 +547,20 @@ function land(pal) {
   lg.addColorStop(0, pal.land); lg.addColorStop(0.55, "#3a3a34"); lg.addColorStop(1, "#1d1f1e");
   g.fillStyle = lg;
   g.fill();
+  // layers of rock in the earth, so the deep part of a tall screen is not one flat block
+  if (Y(-8) < Hh) {
+    g.lineWidth = 2 * DPR;
+    for (const [d, a] of [[7, 0.06], [15, 0.05], [25, 0.045], [38, 0.04], [54, 0.035]]) {
+      if (Y(-d - 20) < 0) continue;
+      g.strokeStyle = `rgba(214,200,170,${a})`;
+      g.beginPath();
+      for (let x = x0; x <= x1; x += stepM * 2) {
+        const gy = world.ground(x), yy = (gy > 0 ? gy * 0.35 : gy) - d - 1.5 * Math.sin(x * 0.05 + d);
+        if (x === x0) g.moveTo(X(x), Y(yy)); else g.lineTo(X(x), Y(yy));
+      }
+      g.stroke();
+    }
+  }
   // pines on the ridges, behind the flight path
   let seg = world.find(x0);
   while (seg && seg.x0 < x1) {
@@ -504,25 +652,90 @@ function fish() {
   }
 }
 
-// the dotted line: where you go if you keep doing what you are doing, colored by how you will hit the water
+// The dotted line: where you go if you keep doing what you are doing, colored by how you will meet the water. A rip is
+// green (gold when it is perfect) only when it leaves enough lake to swoop up and out. With less lake it is amber.
+const LINE = { perfect: "#ffd766", rip: "#8ef08a", short: "#ffa31a", splash: "#ffe38a", flop: "#ff7a5c", skip: "#e9f2f6", thud: "#ffb35c" };
+function lineFor(s, tuck) {
+  const p = predict(s, world, tuck, 240, 5);
+  const kind = (p.end === "perfect" || p.end === "rip") && !goodDive(p.end, p.room) ? "short" : p.end;
+  return { pts: p.pts, end: p.end, room: p.room, kind, color: LINE[kind] || "rgba(255,255,255,0.5)" };
+}
 function path() {
   const s = run.s, tuck = held();
-  const p = predict(s, world, tuck, 240, 5);
-  const col = { perfect: "#ffd766", rip: "#8ef08a", splash: "#ffe38a", flop: "#ff7a5c", skip: "#e9f2f6", thud: "#ffb35c" }[p.end] || "rgba(255,255,255,0.5)";
-  g.fillStyle = col;
+  const p = lineFor(s, tuck);
+  g.fillStyle = p.color;
   for (let i = 0; i < p.pts.length; i += 2) {
     const r = (i / p.pts.length < 0.5 ? 2.2 : 1.6) * DPR;
     g.globalAlpha = 0.85 - (i / p.pts.length) * 0.5;
     g.beginPath(); g.arc(X(p.pts[i]), Y(p.pts[i + 1]), r, 0, Math.PI * 2); g.fill();
   }
   g.globalAlpha = 1;
-  // the whistle: tucked and heading for a flat entry soon
+  // The whistle: heading for a belly-flop soon (or for a splash, tucked). The beeps: heading into the land in the next
+  // 0.8 s. And a ring that beats on the spot where the hit will be.
   const n = p.pts.length / 2;
-  warnLevel = tuck && (p.end === "flop" || p.end === "splash") && n < 30 ? 1 - n / 30 : 0;
+  warnLevel = (p.end === "flop" || (tuck && p.end === "splash")) && n < 30 ? 1 - n / 30 : 0;
+  landLevel = p.end === "thud" && n < 22 ? 1 - n / 22 : 0;
+  if (n < 22 && (p.end === "thud" || p.end === "flop")) {
+    const ex = X(p.pts[p.pts.length - 2]), ey = Y(p.pts[p.pts.length - 1]), f = (clock * 4) % 1;
+    g.strokeStyle = p.color; g.lineWidth = 2.5 * DPR; g.globalAlpha = 0.9 * (1 - f);
+    g.beginPath(); g.arc(ex, ey, (5 + 9 * f) * DPR, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = 1;
+  }
 }
 
+// The dive-now cue: while the loon glides down with open wings and a hold would rip with room to swoop out (and still
+// would 0.25 s later), the loon pulses green with a soft tick. A new player also sees the word HOLD.
+let cueOn = false, cueAt = -99, cueT = 0;
+const cueFor = (s) => phase === "play" && s.mode === AIR && !held() && diveCue(s, world);
+const CUE_EVERY = 0.32;   // seconds between pulses
+function cueRing(dt) {
+  const s = run.s;
+  // the look ahead is a few hundred steps of the sim, so it runs on every third step, not on every frame
+  if (Math.abs(s.tick - cueAt) >= 3) { cueAt = s.tick; cueOn = cueFor(s); }
+  if (!cueOn || held() || s.mode !== AIR || phase !== "play") { cueT = 0; return; }
+  const was = cueT;
+  cueT += dt;
+  if (was === 0 || Math.floor(cueT / CUE_EVERY) > Math.floor(was / CUE_EVERY)) Sfx.play(sndCue);
+  if (was === 0) buzz("tick");
+  const x = X(s.x), y = Y(s.y), L = loonLen(), f = (cueT % CUE_EVERY) / CUE_EVERY;
+  g.save();
+  g.fillStyle = "rgba(142,240,138,0.22)";
+  g.beginPath(); g.arc(x, y, L * 0.62, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#8ef08a"; g.lineWidth = 3 * DPR; g.globalAlpha = 0.95 * (1 - f);
+  g.beginPath(); g.arc(x, y, L * (0.5 + 0.75 * f), 0, Math.PI * 2); g.stroke();
+  if (run.newbie) {
+    // under the loon, so it never meets the words that float up over it
+    const ty = y + L * 0.62 + 18 * DPR;
+    g.globalAlpha = 1;
+    g.font = `800 ${16 * DPR}px system-ui, sans-serif`; g.textAlign = "center";
+    g.lineWidth = 4 * DPR; g.strokeStyle = "rgba(0,0,0,0.5)";
+    g.strokeText("HOLD", x, ty); g.fillStyle = "#8ef08a"; g.fillText("HOLD", x, ty);
+  }
+  g.restore();
+}
+
+// Flags on the way: your best, and how far the ghost flew. You see them come, so you know how close you are.
+function flags() {
+  if (best > 1) flag(best, "BEST", "#f0b848");
+  if (ghostIn) flag(ghostIn.dist, ghostIn.name || "GHOST", "#9cc4e4");
+  else if (ghostOld) flag(ghostOld.dist, ghostOld.name || "GHOST", "#9cc4e4");
+}
+function flag(x, text, color) {
+  if (x < cam.x - W / 2 / cam.k - 12 || x > cam.x + W / 2 / cam.k + 12) return;
+  const px = X(x), py = Y(Math.max(0, world.ground(x))), h = Math.max(7 * cam.k, 42 * DPR);
+  g.strokeStyle = "rgba(245,242,230,0.9)"; g.lineWidth = 2 * DPR;
+  g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - h); g.stroke();
+  g.fillStyle = color;
+  g.beginPath(); g.moveTo(px, py - h); g.lineTo(px + h * 0.45, py - h * 0.86); g.lineTo(px, py - h * 0.72); g.closePath(); g.fill();
+  g.font = `800 ${11 * DPR}px system-ui, sans-serif`; g.textAlign = "left";
+  g.fillStyle = "rgba(255,250,235,0.95)";
+  g.fillText(text, px + 3 * DPR, py - h - 4 * DPR);
+}
+
+const loonLen = (ghost = false) => Math.max(1.6 * cam.k, (Hh > W ? 38 : 30) * DPR) * (ghost ? 0.95 : 1);
+
 function loon(s, ghost) {
-  const v = speed(s), L = Math.max(1.6 * cam.k, (Hh > W ? 38 : 30) * DPR) * (ghost ? 0.95 : 1);
+  const v = speed(s), L = loonLen(ghost);
   const a = Math.atan2(s.vy, s.vx);
   const x = X(s.x), y = Y(s.y);
   g.save();
@@ -607,11 +820,12 @@ function particles(dt) {
     if (p.kind === "bubble") { p.vy += 6 * dt; p.vx *= 0.96; }
     else if (p.kind === "feather") { p.vy -= 2 * dt; p.vx *= 0.97; }
     else if (p.kind === "snow") { p.vy -= 0.5 * dt; }
+    else if (p.kind === "silt") { p.vy -= 1.5 * dt; p.vx *= 0.94; p.vy *= 0.94; }
     else p.vy -= 9.8 * dt;
     p.x += p.vx * dt; p.y += p.vy * dt;
     const a = 1 - p.t / p.life;
     g.globalAlpha = a;
-    g.fillStyle = p.kind === "feather" ? "#e8e4dc" : p.kind === "glint" ? "#fff3c0" : p.kind === "snow" ? "#fff" : "#dff3ff";
+    g.fillStyle = p.kind === "feather" ? "#e8e4dc" : p.kind === "glint" ? "#fff3c0" : p.kind === "snow" ? "#fff" : p.kind === "silt" ? "#9c8a66" : "#dff3ff";
     g.beginPath();
     g.arc(X(p.x), Y(p.y), Math.max(p.r * cam.k, 1.5 * DPR), 0, Math.PI * 2);
     g.fill();
@@ -652,18 +866,36 @@ function frost() {
   g.fillRect(0, 0, W * 0.45, Hh);
 }
 
+// The words float up from where they came up on the screen. They keep clear of the edges, of the HUD at the top, and
+// of each other: all words rise at one speed, so a word that starts clear of the others stays clear.
 function texts(dt) {
   g.textAlign = "center";
+  const pad = 10 * DPR, top = 96 * DPR;
+  const at = (l, size, hw) => [clamp(l.sx, pad + hw, W - pad - hw), clamp(l.sy - (30 + l.t * 40) * DPR - l.lift, top + size, Hh - pad)];
+  const hits = (l, x, y, size, hw) => labels.some((o) => o !== l && o.dbox && x - hw < o.dbox[2] && x + hw > o.dbox[0] && y - size < o.dbox[3] && y > o.dbox[1]);
   for (let i = labels.length - 1; i >= 0; i--) {
     const l = labels[i];
     l.t += dt;
     if (l.t > 1.1) { labels.splice(i, 1); continue; }
     const a = l.t < 0.1 ? l.t / 0.1 : 1 - (l.t - 0.1);
+    const size = (l.big ? 26 : 19) * DPR;
     g.globalAlpha = clamp(a, 0, 1);
-    g.font = `800 ${(l.big ? 26 : 19) * DPR}px system-ui, sans-serif`;
+    g.font = `800 ${size}px system-ui, sans-serif`;
     g.lineWidth = 4 * DPR;
     g.strokeStyle = "rgba(0,0,0,0.45)";
-    const x = X(l.x), y = Y(l.y) - (30 + l.t * 40 + l.row * 26) * DPR;
+    const hw = g.measureText(l.text).width / 2;
+    if (l.sx == null) {
+      // a new word: up one line at a time until it is clear of the others; near the top of the screen, down instead
+      l.sx = X(l.x); l.sy = Y(l.y); l.lift = 0;
+      for (const k of [0, 1, 2, 3, -1, -2, -3]) {
+        l.lift = k * (size + 4 * DPR);
+        const [x, y] = at(l, size, hw);
+        if (!hits(l, x, y, size, hw)) break;
+      }
+    }
+    const [x, y] = at(l, size, hw);
+    l.dbox = [x - hw, y - size, x + hw, y + 4 * DPR];
+    l.box = [(x - hw) / DPR, (y - size) / DPR, (x + hw) / DPR, y / DPR];
     g.strokeText(l.text, x, y);
     g.fillStyle = l.color;
     g.fillText(l.text, x, y);
@@ -671,18 +903,53 @@ function texts(dt) {
   g.globalAlpha = 1;
 }
 
+// the title of a time of day, in the sky under the HUD; it fades in and out
+function drawBanner(dt) {
+  if (!banner) return;
+  banner.t += dt;
+  const life = banner.life;
+  if (banner.t > life) { banner = null; return; }
+  const y = Math.max(Hh * 0.2, 150 * DPR);
+  g.save();
+  g.globalAlpha = clamp(Math.min(banner.t / 0.5, (life - banner.t) / 0.9), 0, 1);
+  g.textAlign = "center";
+  let size = (banner.big ? 38 : 24) * DPR;
+  g.font = `italic 700 ${size}px Georgia, "Times New Roman", serif`;
+  const w = g.measureText(banner.text).width, room = W - 40 * DPR;
+  if (w > room) { size *= room / w; g.font = `italic 700 ${size}px Georgia, "Times New Roman", serif`; }
+  // a soft dark edge, so the title reads on a bright sky and on a white cloud too
+  g.shadowColor = "rgba(0,0,0,0.5)"; g.shadowBlur = 10 * DPR;
+  g.lineWidth = 5 * DPR; g.strokeStyle = "rgba(20,24,40,0.55)";
+  g.strokeText(banner.text, W / 2, y);
+  g.shadowBlur = 0;
+  g.fillStyle = "#fff1cf";
+  g.fillText(banner.text, W / 2, y);
+  if (banner.sub) {
+    g.font = `700 ${14 * DPR}px system-ui, sans-serif`;
+    g.lineWidth = 4 * DPR;
+    g.strokeText(banner.sub, W / 2, y + 24 * DPR);
+    g.fillStyle = "rgba(255,241,207,0.9)";
+    g.fillText(banner.sub, W / 2, y + 24 * DPR);
+  }
+  g.restore();
+}
+
+// The HUD: how far, your best, your V, and how far back winter is. That pill turns red when winter is under 40 m back.
 let hudLast = "";
 function hudText() {
-  const s = run.s;
-  const t = `${fmt(distance(s))}|Best ${fmt(best)}|V ${s.flock + 1}`;
+  const s = run.s, gap = Math.max(0, s.x - s.wx);
+  const t = `${fmt(distance(s))}|Best ${fmt(best)}|V ${s.flock + 1}|Winter ${fmt(gap)}|${gap < 40 ? "near" : ""}`;
   if (t === hudLast) return;
   hudLast = t;
-  const [a, b, c] = t.split("|");
+  const [a, b, c, w, near] = t.split("|");
   $("#hDist").textContent = a; $("#hBest").textContent = b; $("#hFlock").textContent = c;
+  const hw = $("#hWinter");
+  hw.textContent = w;
+  hw.classList.toggle("near", near === "near");
 }
 
 /* ---------------- go ---------------- */
-startLoop({ step: () => { if (phase === "play") tick(held()); }, draw, h: H, maxSteps: 8, scale: () => (slowT > 0 ? 0.35 : 1) });
+startLoop({ step: () => { if (phase === "play") tick(held()); }, draw, h: H, maxSteps: 8, scale: timeScale });
 
 // hooks for the tests in qa/lab/
 window.QA = {
@@ -695,4 +962,18 @@ window.QA = {
   step(n = 1, tuck = false) { for (let i = 0; i < n && run.s.alive; i++) tick(tuck); },
   begin,
   ghostLink,
+  // the dive-now cue for the loon as it is now, and the dotted line for an input
+  get cue() { return cueFor(run.s); },
+  line(tuck = false) { const p = lineFor(run.s, tuck); return { end: p.end, room: p.room, kind: p.kind, color: p.color }; },
+  // the clock (1 is full speed), and the push-in of the camera (0 to 1): the target now, and where the camera is
+  get scale() { return timeScale(); },
+  get pushing() { return pushTarget(); },
+  get push() { return cam.push; },
+  // the times of day: the title on the screen now, and rung n of the ladder ({ x, name })
+  get banner() { return banner ? banner.text : ""; },
+  rung: (n) => rungAt(n),
+  // the words on the screen, with their boxes in CSS pixels as last drawn
+  get labels() { return labels.map((l) => ({ text: l.text, box: l.box })); },
+  // the camera settled on the loon: where the water line and the loon sit, as fractions of the screen
+  frame() { updateCamera(10); return { water: Y(0) / Hh, loon: Y(run.s.y) / Hh, loonX: X(run.s.x) / W }; },
 };

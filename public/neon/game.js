@@ -1,6 +1,6 @@
 import { District } from './district.js';
 import { drawAlienBackdrop } from './alien-world.js';
-import { Duel } from './duel.js';
+import { Duel,PARRY_WINDOW,seededRandom,seedFrom,dayKey,pick } from './duel.js';
 import { MouseSword,MouseLook } from './mouse-sword.js';
 import { viewport,viewportPoint,lockViewport,unlockViewport } from './viewport.js';
 import { orientationQuaternion,motionFrame } from './motion-frame.js';
@@ -10,21 +10,47 @@ let district=null;try{district=new District()}catch(error){console.warn('3D dist
 const target=()=>district?district.target():{x:W*.5,y:H*.48};
 let W=viewport.width,H=viewport.height,state='menu',time=0,last=0,enemy,particles=[],trails=[],cooldown=0,guard=false,guardAt=0,combo=0,health=100,score=0,wave=1,kills=0,charge=0,damage=1,windowBonus=0,leech=0,slow=0,flash=0,notice=0,muted=false,audio,beat=0,best=0;
 try{best=Number(localStorage.getItem('neon-best'))||0}catch{}
+// The daily duel: everyone who plays on the same day meets the same attacks and is offered the same circuits.
+// ?seed=<text> in the address replays another day or a friend's seed.
+// Only letters, digits, - and _ are kept, because the seed is shown in the page.
+let seedName=dayKey();try{seedName=(new URLSearchParams(location.search).get('seed')||'').replace(/[^\w-]/g,'').slice(0,40)||seedName}catch{}
+let runSeed=seedFrom('neon',seedName);
+const circuits=round=>pick(upgrades,3,seededRandom(seedFrom(runSeed,round,'circuits')));
+// The best round for this seed, kept in this browser.
+function dailyBest(){try{const d=JSON.parse(localStorage.getItem('neon-daily')||'{}');return d.seed===seedName?d.round||0:0}catch{return 0}}
+function saveDaily(round){try{if(round>dailyBest())localStorage.setItem('neon-daily',JSON.stringify({seed:seedName,round}))}catch{}}
 // New biome defaults on once, then respects subsequent player choices.
 let visualStyle='rick-morty';try{if(localStorage.getItem('neon-biome-version')==='2')visualStyle=localStorage.getItem('neon-style')==='ghibli'?'ghibli':'rick-morty';localStorage.setItem('neon-biome-version','2')}catch{}
 function applyStyle(value){visualStyle=value==='rick-morty'?'rick-morty':'ghibli';district?.setStyle(visualStyle);document.documentElement?.setAttribute('data-style',visualStyle);try{localStorage.setItem('neon-style',visualStyle)}catch{}}
 applyStyle(visualStyle);
 let duel=null,duelGuardAt=-10,duelWasBlocked=false;
 let chainClock=0,chainBest=0,killFlash=0,runTime=0,cleaveRadius=3.8,droneArmor=0;
+// freeze: a short hit-stop after a parry. rings: expanding sparks. shine: a white flash.
+let freeze=0,rings=[],shine=0,warn=null,beatStep=0;
 const mouseSword=new MouseSword(),mouseLook=new MouseLook();
 const desktop=matchMedia('(hover:hover) and (pointer:fine)').matches;
 document.body.classList.toggle('mouse-mode',desktop);
 let motionRoll=0;
-let gyro=false,base=null,aim={x:0,y:0},raw=null,gyroReady=true,lastMotion=0,motionTimer;
+// motionSeen: a real sensor sample arrived after gyro was turned on. A short stall can clear raw, but not this.
+let gyro=false,base=null,aim={x:0,y:0},raw=null,gyroReady=true,lastMotion=0,motionTimer,motionSeen=false;
 const sword={pose:{x:0,y:0,angle:-Math.PI/2},last:0,speed:0,previous:null,direction:[0,1,0],lastDirection:[0,1,0],travel:0,lastVelocity:null};
 const upgrades=[['Edge amplifier','Cuts deal +1 damage.',()=>damage++],['Time crystal','Parry window grows by 40 ms.',()=>windowBonus=Math.min(.25,windowBonus+.04)],['Repair pulse','Restore 35 integrity.',()=>health=Math.min(100,health+35)],['Vampire circuit','Each takedown restores 2 integrity.',()=>leech+=2],['Capacitor','Gain 35% overdrive now.',()=>charge=Math.min(100,charge+35)]];
 function resize(){W=viewport.width;H=viewport.height;const d=Math.min(devicePixelRatio||1,1.25);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0);district?.resize()}addEventListener('resize',resize);resize();
 function tone(f=220,d=.12,type='sawtooth',vol=.035){if(muted||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);o.frequency.exponentialRampToValueAtTime(f*.5,audio.currentTime+d);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
+// A struck blade: a few inharmonic partials with a fast attack and a long, bright decay.
+function clang(pitch=1400,decay=.9,vol=.05){if(muted||!audio)return;const t=audio.currentTime;for(const [ratio,amp,len] of [[1,1,1],[2.76,.55,.6],[5.4,.3,.35],[8.93,.18,.2]]){const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(pitch*ratio,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol*amp,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+decay*len);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+decay*len+.02)}}
+// Each attack has its own warning tone. The pitch rises until the blade lands, so the ear can time the guard.
+// A sweep growls low: no guard stops it, so dodge.
+const WARN={cut:[330,990,'triangle',.05],overhead:[262,1047,'triangle',.05],lunge:[392,1175,'square',.02],sweep:[147,440,'sawtooth',.04],delayed:[330,990,'triangle',.05]};
+function warnPitch(f,p){const [lo,hi]=WARN[f.attack]||WARN.cut;const q=f.attack==='delayed'?Math.max(0,(p-.6)/.4):p;return lo+(hi-lo)*q}
+function warnStop(){if(!warn)return;try{const t=audio.currentTime;warn.g.gain.cancelScheduledValues(t);warn.g.gain.setTargetAtTime(.0001,t,.015);warn.o.stop(t+.12)}catch{}warn=null}
+// Starts the tone for this windup, or keeps it on time. Slow motion and pauses move the impact, so it is rescheduled each frame.
+function warnFollow(f){if(muted||!audio){warnStop();return}
+  if(warn?.f!==f){warnStop();const o=audio.createOscillator(),g=audio.createGain();o.type=(WARN[f.attack]||WARN.cut)[2];g.gain.value=.0001;o.connect(g).connect(audio.destination);o.start();warn={f,o,g}}
+  const t=audio.currentTime,speed=slow>0?.5:1,left=Math.max(.02,f.timer/speed),p=clamp(1-f.timer/f.period,0,1),vol=(WARN[f.attack]||WARN.cut)[3];
+  for(const [param,now,end] of [[warn.o.frequency,warnPitch(f,p),warnPitch(f,1)],[warn.g.gain,vol*(.35+.65*p),vol]]){param.cancelScheduledValues(t);param.setValueAtTime(now,t);param.linearRampToValueAtTime(end,t+left)}
+}
+function buzz(ms){try{navigator.vibrate?.(ms)}catch{}}
 function audioStart(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{})}catch{}}
 function say(text){$('callout').textContent=text;notice=1.1}
 function panel(html){document.exitPointerLock?.();$('runStatus').hidden=true;$('explore').hidden=true;$('panel').innerHTML=html;$('overlay').hidden=false;$('controls').hidden=true}
@@ -34,39 +60,72 @@ async function enterWidescreen(){
   const message=innerWidth>innerHeight?'Widescreen ready. Hold both ends and choose Play.':'Rotate your tablet sideways, then choose Play.';
   $('wideHelp').textContent=message;
 }
-function menu(){panel(`<div class="eyebrow">PORTAL BADLANDS / MOTION COMBAT</div><h1>NEON<br><span>RONIN.</span></h1><p>Meet their blade. Break their guard. Land a clean strike. Win longer duels against one opponent, then two, three and larger groups.</p><p>Desktop: move the mouse to aim your blade. Left-click or drag to swing, right-click to guard, move the mouse to turn your view. Escape releases the mouse. WASD moves. Space rolls in your movement direction; release movement to roll backward. Red sweeps must be dodged. On mobile, run with the left thumb stick. In gyro mode, move your phone to look, cut and block. In touch mode, drag the right side to look. Push the stick to its edge to dash. Hold the sword across an incoming cut to block. Set it just before impact to parry.</p><button class="secondary" id="wideStart">WIDESCREEN · TWO HANDS</button><p class="wide-help" id="wideHelp">Tablet: rotate to landscape and hold both ends. Left thumb moves; turn the tablet to aim.</p><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="rick-morty">Rick and Morty · Portal Badlands</option><option value="ghibli">Cyber Ghibli · Courtyard</option></select><button class="primary" id="gyroStart">PLAY WITH GYRO</button><button class="secondary" id="start">${desktop?'PLAY WITH MOUSE':'PLAY WITH TOUCH'}</button><p class="fine">${district?"Explore the open world. WASD also moves on desktop.":"3D could not start on this device. The fixed-view duel is available."} Hold both ends in landscape. Hold the phone at any comfortable angle, even low. Screen layout stays locked during play. Roll your wrist to turn the blade; the world counter-rotates to keep its horizon steady. Tap Reset view to set your comfortable grip as neutral. Best: ${best.toLocaleString()}.</p>`);$('wideStart').onclick=enterWidescreen;$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{void lockViewport();disableGyro('Swipe to cut; hold Guard to block.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
-function start(){chainClock=0;chainBest=0;killFlash=0;runTime=0;cleaveRadius=3.8;droneArmor=0;audioStart();district?.reset();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say(district?'MATCH BLADES · BREAK THEIR GUARD':'MATCH THE BRIGHT LINE')}
+// The phone's first screen holds the title, one line and both play buttons. The rest waits behind How to play.
+function menu(){const gyroButton=`<button class="${desktop?'secondary':'primary'}" id="gyroStart">PLAY WITH GYRO</button>`,handButton=`<button class="${desktop?'primary':'secondary'}" id="start">${desktop?'PLAY WITH MOUSE':'PLAY WITH TOUCH'}</button>`;
+  panel(`<div class="eyebrow">PORTAL BADLANDS · SWORD DUEL</div><h1>NEON<br><span>RONIN.</span></h1><div class="menu-play"><p class="pitch">Parry the blade. Break the guard. Cut them down.</p>${desktop?handButton+gyroButton:gyroButton+handButton}<p class="best" id="bestLine">${menuBest()}</p></div><div class="menu-more"><details class="howto"><summary>How to play</summary><p><b>Touch.</b> Drag the left stick to run. Swipe across the screen to cut. Hold GUARD as their blade falls. Push the stick to its edge to dodge a sweep.</p><p><b>Gyro.</b> Hold the phone like the hilt of a sword. Turn your wrist to swing. Hold the blade across their cut to block. Set it just before the blade lands to parry.</p><p><b>Mouse.</b> Move the mouse to aim and turn. Click or drag to cut. Hold the right button to guard. WASD moves. Space rolls. Escape frees the mouse.</p><p><b>Tablet.</b> Turn it sideways and hold both ends. Your left thumb moves. Turn the tablet to aim.</p><button class="secondary" id="wideStart">WIDESCREEN · TWO HANDS</button><p class="wide-help" id="wideHelp">This asks for full screen and a sideways layout.</p><p><b>The duel.</b> A parry opens their guard at once. A block or a dodge only weakens it. No guard stops a sweep. When CUT NOW shows, swing.</p></details><label class="style-label" for="visualStyle">WORLD STYLE</label><select id="visualStyle"><option value="rick-morty">Rick and Morty · Portal Badlands</option><option value="ghibli">Cyber Ghibli · Courtyard</option></select></div>${district?'':'<p class="fine">3D could not start on this device. You can play the fixed-view duel.</p>'}`);
+  $('wideStart').onclick=enterWidescreen;$('visualStyle').value=visualStyle;$('visualStyle').onchange=e=>applyStyle(e.target.value);$('start').onclick=()=>{void lockViewport();disableGyro(desktop?'Click to cut. Hold the right button to guard.':'Swipe to cut. Hold GUARD as the blade falls.');start()};$('gyroStart').onclick=async()=>{const enabled=await enableGyro();start();if(enabled)say('HOLD YOUR NATURAL GRIP')}}
+function menuBest(){const today=dailyBest();return [`Daily duel ${seedName}`,today?`your best: round ${today}`:'',best?`${best.toLocaleString()} points`:''].filter(Boolean).join(' · ')}
+function start(){warnStop();freeze=0;rings=[];shine=0;chainClock=0;chainBest=0;killFlash=0;runTime=0;cleaveRadius=3.8;droneArmor=0;audioStart();district?.reset();health=100;score=0;wave=1;kills=0;combo=0;charge=0;damage=1;windowBonus=0;leech=0;slow=0;cooldown=0;guard=false;particles=[];trails=[];base=null;spawn();resume();say(district?'PARRY THEIR BLADE · THEN CUT':'MATCH THE BRIGHT LINE')}
 function resume(){if(desktop&&!gyro)try{const lock=canvas.requestPointerLock?.();lock?.catch?.(()=>{})}catch{}state='play';$('runStatus').hidden=!district;resetSword();motionUI();guard=false;$('guard').textContent='HOLD TO GUARD';gyroReady=false;$('overlay').hidden=true;$('controls').hidden=false;$('explore').hidden=!district;$('hud').hidden=false;$('pause').textContent='Pause';last=performance.now()}
-function spawn(){if(district){duel=new Duel(wave);district.beginEncounter(duel.fighters);if(!district.assetsRequested){district.assetsRequested=true;import('./model-assets.js').then(m=>m.loadDuelAssets(district)).catch(()=>{district.modelStatus='unavailable'})}enemy=duel.fighters[0];return}const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0);district?.placeEnemy(enemy);district?.reinforce(wave)}
+function spawn(){if(district){duel=new Duel(wave,seededRandom(seedFrom(runSeed,wave)));district.beginEncounter(duel.fighters);if(!district.assetsRequested){district.assetsRequested=true;import('./model-assets.js').then(m=>m.loadDuelAssets(district)).catch(()=>{district.modelStatus='unavailable'})}enemy=duel.fighters[0];return}const boss=wave%5===0;const type=boss?'ENFORCER':['GHOST','RAZOR','SENTINEL'][Math.floor(Math.random()*Math.min(3,1+Math.floor(wave/2)))];enemy={type,boss,hp:boss?6+Math.floor(wave/3):2+Math.floor(wave/4),max:0,dir:Math.random()<.5?0:1,phase:'windup',timer:1.5,period:Math.max(.65,1.6-wave*.035),hit:0};enemy.max=enemy.hp;enemy.timer=enemy.period+(type==='GHOST'?.3:0);district?.placeEnemy(enemy);district?.reinforce(wave)}
 function burstParticles(x,y,color,n=22){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=40+Math.random()*260;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+Math.random()*.45,color})}if(particles.length>220)particles.splice(0,particles.length-220)}
 function finishDuel(){
-  wave++;state='upgrade';guard=false;kills=0;const options=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);
+  warnStop();wave++;state='upgrade';guard=false;kills=0;const options=circuits(wave);
   panel(`<div class="eyebrow">DUEL WON</div><h2>Prepare for round ${wave}</h2><p>${Math.min(5,1+Math.floor((wave-1)/2))} opponents next. Choose a circuit.</p>${options.map((u,i)=>`<button class="choice" data-choice="${i}"><strong>${u[0]}</strong><span>${u[1]}</span></button>`).join('')}`);
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{options[+b.dataset.choice][2]();spawn();resume()});
 }
 function duelSwing(dx,dy){
+  // A cut goes to an open guard in reach first, even while another fighter winds up.
+  const victim=district.strikeTarget(enemy);if(victim!==enemy){enemy=victim;district.selectFighter(victim)}
   district.lunge();cooldown=.32;const horizontal=Math.abs(dx)>=Math.abs(dy);trails.push({horizontal,life:.22,blade:gyro?swordSegment():mouseSword.active?mouseSword.blade(W,H):null});tone(160,.08);
   if(!district.canStrike())return;const powered=charge>=100;const result=duel.swing(enemy,horizontal?0:1,powered?3:Math.min(3,damage+1));
-  if(result.kind==='hit'||result.kind==='kill'){if(powered)charge=0;charge=Math.min(100,charge+10);burstParticles(target().x,target().y,'#d6ffb4');tone(280,.12);say(result.kind==='kill'?'OPPONENT DOWN':'CLEAN STRIKE');if(result.kind==='kill'){chainKill(200);kills++;if(duel.finished)finishDuel();else{enemy=district.chooseFighter(null);say(`${duel.fighters.filter(f=>f.hp>0).length} OPPONENTS LEFT`)}}}
+  if(result.kind==='hit'||result.kind==='kill'){if(powered){charge=0;slow=Math.max(slow,1.2);shine=.1;district.focus=.7;clang(990,.8,.05)}charge=Math.min(100,charge+10);burstParticles(target().x,target().y,'#d6ffb4');tone(280,.12);say(powered?'TIME FRACTURE':result.kind==='kill'?'OPPONENT DOWN':'CLEAN STRIKE');if(result.kind==='kill'){chainKill(200);kills++;if(duel.finished)finishDuel();else{enemy=district.chooseFighter(null);say(`${duel.fighters.filter(f=>f.hp>0).length} OPPONENTS LEFT`)}}}
   else{burstParticles(target().x,target().y,'#ffe8a1',12);tone(820,.06,'square',.025);say(result.kind==='break'?'GUARD BROKEN · STRIKE':'BLADES CLASH · PARRY TO OPEN')}
 }
+// The screen point of a fighter's chest, for sparks and rings.
+const spot=f=>{const c=district.crowd?.find(c=>c.fighter===f);return c?district.target(c.mesh):target()};
+// Hints name the control the player has. A touch screen never mentions keys, and the blade's
+// angle matters only with the gyro.
+function duelHint(threat){
+  if(threat.phase==='windup'){
+    if(threat.attack==='sweep')return desktop?'SWEEP · SPACE TO ROLL':'SWEEP · PUSH STICK TO DODGE';
+    if(gyro)return guard?'BLADE SET · HOLD IT THERE':threat.attack==='delayed'?'DELAYED CUT · WAIT FOR THE BLADE':threat.dir===0?'Hold your blade upright to meet the side cut.':'Lay your blade sideways to meet the overhead cut.';
+    const word=desktop?'RIGHT-CLICK':'HOLD GUARD';return threat.attack==='delayed'?`DELAYED CUT · WAIT, THEN ${word}`:`${word} AS THE BLADE FALLS`;
+  }
+  if(duel.fighters.some(f=>f.phase==='open'))return 'GUARD BROKEN · CUT NOW';
+  return 'Parry their next blade to open their guard.';
+}
+// A guard that goes down within this window before impact is a parry. Upgrades widen it.
+const parryWindow=()=>(gyro?PARRY_WINDOW.gyro:PARRY_WINDOW.touch)+windowBonus;
 function updateDuel(dt){
   if(gyro&&!raw)return;enemy=district.chooseFighter(duel.active)||enemy;
   const active=duel.active;let blocked=false;
   if(active){const selected=enemy;district.selectFighter(active);enemy=active;blocked=gyro?bladeBlocks():guard;enemy=selected;district.selectFighter(selected)}
-  if(blocked&&!duelWasBlocked)duelGuardAt=time;duelWasBlocked=blocked;
-  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.fighterDistance(f)<3.6,defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<.28+windowBonus}),event:(kind,f)=>{
-    if(kind==='damage'){health-=f.boss?18:12;flash=.22;combo=0;chainClock=0;tone(65,.15);say('HIT · MATCH THE NEXT BLADE');if(health<=0)gameOver()}
-    if(kind==='parry'||kind==='block'){charge=Math.min(100,charge+(kind==='parry'?18:8));score+=kind==='parry'?40:10;tone(kind==='parry'?920:560,.09);burstParticles(target().x,target().y,'#ffe9ae',16);say(f.phase==='open'?'GUARD BROKEN · STRIKE':kind==='parry'?'PARRY · GUARD WEAKENED':'BLADE BLOCK')}
-    if(kind==='evade'){charge=Math.min(100,charge+8);say('DODGED · COUNTER NOW')}
+  // A touch guard counts from the press. A gyro guard counts from the frame the blade first covers the cut.
+  if(blocked&&!duelWasBlocked)duelGuardAt=gyro?time:guardAt;duelWasBlocked=blocked;
+  // Soft lock-on on touch screens. The phone's gyro and the mouse steer the view themselves.
+  if(!gyro&&!desktop)district.assist(active,enemy,dt);
+  duel.update(dt*(slow>0?.5:1),{canAttack:f=>district.canEngage(f),defense:f=>({inRange:district.fighterDistance(f)<3.5,dashing:district.evade>0||(district.dash>0&&district.rollTime<=0),blocked,perfect:blocked&&time-duelGuardAt<parryWindow()}),event:(kind,f)=>{
+    // A windup buzzes once. Its rising tone and the red edge follow it every frame below.
+    if(kind==='windup'){buzz(20);return}
+    warnStop();const at=spot(f);
+    if(kind==='damage'){health-=f.boss?18:12;flash=.22;combo=0;chainClock=0;tone(65,.18);tone(110,.12,'square',.03);buzz(70);say('HIT · GUARD THE NEXT BLADE');if(health<=0)gameOver()}
+    // The parry is the peak: the blow stops dead, time slows, the view leans in and the blade rings.
+    if(kind==='parry'){charge=Math.min(100,charge+18);score+=40;clang(1480,1.1,.06);freeze=.08;slow=Math.max(slow,.5);shine=.12;district.focus=.55;rings.push({x:at.x,y:at.y,life:.6,max:.6,size:Math.min(W,H)*.42,color:'#fff3c4'});burstParticles(at.x,at.y,'#fff3c4',26);say('PARRY · CUT NOW')}
+    if(kind==='block'){charge=Math.min(100,charge+8);score+=10;clang(640,.3,.04);burstParticles(at.x,at.y,'#ffe9ae',12);say(f.phase==='open'?'GUARD BROKEN · STRIKE':'BLOCKED · GUARD WEAKENED')}
+    if(kind==='evade'){charge=Math.min(100,charge+8);tone(300,.16,'sine',.03);say(f.phase==='open'?'GUARD BROKEN · STRIKE':'DODGED · GUARD WEAKENED')}
+    if(kind==='whiff'){tone(220,.14,'sine',.025);say('OUT OF REACH · STEP IN')}
   }});
+  const attacker=duel.active;if(attacker?.phase==='windup')warnFollow(attacker);else warnStop();
+  // A low bass line plays between attacks. It stops during a windup, so the warning tone stands alone.
+  if(state==='play'&&!attacker&&time>beat){beat=time+.5;tone([110,110,164.8,130.8,110,110,196,164.8][beatStep++%8],.22,'triangle',.024)}
   if(gyro)guard=blocked;
   setText('objective',`ROUND ${wave} · ${duel.fighters.filter(f=>f.hp>0).length}/${duel.fighters.length} opponents`);
-  const threat=duel.active||enemy;setText('hint',enemy.phase==='open'?'GUARD BROKEN · SWING NOW':threat.phase==='windup'?(threat.attack==='sweep'?'SWEEP · SPACE TO ROLL':threat.attack==='lunge'?'THRUST · SIDESTEP OR ROLL':threat.attack==='delayed'?'DELAYED CUT · WAIT FOR THE BLADE':threat.dir===0?'Hold your blade upright to meet the side cut.':'Lay your blade sideways to meet the overhead cut.'):'Clash blades. Parry the next strike to break their guard.');
+  setText('hint',duelHint(duel.active||enemy));
   setText('health',Math.max(0,health));setText('score',score);setText('wave',String(wave).padStart(2,'0'));setText('burst',charge>=100?'OVERDRIVE READY':`OVERDRIVE ${Math.floor(charge)}%`);
 }
 function chainKill(points=70){combo++;chainClock=6;chainBest=Math.max(chainBest,combo);killFlash=.22;score+=Math.round(points*(1+Math.min(combo,12)*.2));charge=Math.min(100,charge+20);health=Math.min(100,health+3+leech);tone(440+Math.min(combo,10)*65,.09,'triangle',.055);if(combo%4===0){slow=Math.max(slow,1.5);say(`${combo} CHAIN · TIME RUSH`)}else say(`${combo} CHAIN`)}
-function hit(amount,parry=false){enemy.hp-=amount;enemy.hit=.2;burstParticles(target().x,target().y,parry?'#caff54':'#5cf5ff');tone(parry?640:330);charge=Math.min(100,charge+(parry?16:7));if(enemy.hp<=0){if(district)chainKill(enemy.boss?500:100);else combo++;if(!district)score+=Math.round((enemy.boss?500:100)*(1+Math.min(combo,20)*.1));if(!district)health=Math.min(100,health+leech);kills++;if(kills>=3+Math.min(wave,5)){wave++;kills=0;state='upgrade';guard=false;const options=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);panel(`<div class="eyebrow">DISTRICT CLEARED</div><h2>Rewrite your blade.</h2><p>Choose a circuit for district ${wave}.</p>${options.map((u,i)=>`<button class="choice" data-choice="${i}"><strong>${u[0]}</strong><span>${u[1]}</span></button>`).join('')}`);document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{options[+b.dataset.choice][2]();spawn();resume()})}else{spawn();say(combo>1?`${combo} CHAIN`:'TARGET DOWN')}}}
+function hit(amount,parry=false){enemy.hp-=amount;enemy.hit=.2;burstParticles(target().x,target().y,parry?'#caff54':'#5cf5ff');tone(parry?640:330);charge=Math.min(100,charge+(parry?16:7));if(enemy.hp<=0){if(district)chainKill(enemy.boss?500:100);else combo++;if(!district)score+=Math.round((enemy.boss?500:100)*(1+Math.min(combo,20)*.1));if(!district)health=Math.min(100,health+leech);kills++;if(kills>=3+Math.min(wave,5)){wave++;kills=0;state='upgrade';guard=false;const options=circuits(wave);panel(`<div class="eyebrow">ROUND CLEARED</div><h2>Rewrite your blade.</h2><p>Choose a circuit for round ${wave}.</p>${options.map((u,i)=>`<button class="choice" data-choice="${i}"><strong>${u[0]}</strong><span>${u[1]}</span></button>`).join('')}`);document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{options[+b.dataset.choice][2]();spawn();resume()})}else{spawn();say(combo>1?`${combo} CHAIN`:'TARGET DOWN')}}}
 function slash(dx,dy){
   if(state!=='play'||cooldown>0||(!gyro&&guard))return;
   if(mouseSword.active&&!gyro)mouseSword.attack(dx);
@@ -76,8 +135,17 @@ function slash(dx,dy){
 }
 function overdrive(){if(duel&&district){if(state==='play'&&charge>=100&&cooldown<=0)duelSwing(1,0);return}if(state!=='play'||charge<100||(district&&!district.canStrike()))return;charge=0;slow=4;say('TIME FRACTURE');tone(880,.4);hit(damage*3,true)}
 function setGuard(value){if(gyro)return;if(state!=='play'){guard=false;return}if(value&&!guard)guardAt=time;guard=value;$('guard').textContent=value?'GUARD ACTIVE':'HOLD TO GUARD'}
-function pause(){document.exitPointerLock?.();mouseLook.reset();mouseSword.down=false;mouseSword.look=false;if(state!=='play')return;state='pause';guard=false;panel('<div class="eyebrow">SIGNAL HELD</div><h2>Paused</h2><button class="primary" id="resume">RESUME</button><button class="secondary" id="quit">END RUN</button>');$('resume').onclick=()=>{void lockViewport();resume()};$('quit').onclick=gameOver}
-function gameOver(){document.exitPointerLock?.();unlockViewport();state='over';guard=false;best=Math.max(best,score);try{localStorage.setItem('neon-best',best)}catch{}panel(`<div class="eyebrow">CONNECTION LOST</div><h2>District ${wave}</h2><p>${score.toLocaleString()} points · Best ${best.toLocaleString()}</p>${district?`<p>Best chain: ${chainBest} · Survived ${Math.floor(runTime)} seconds</p>`:""}<button class="primary" id="retry">RUN IT BACK</button>`);$('retry').onclick=()=>{void lockViewport();start()}}
+function pause(reason){warnStop();document.exitPointerLock?.();mouseLook.reset();mouseSword.down=false;mouseSword.look=false;if(state!=='play')return;state='pause';guard=false;panel(`<div class="eyebrow">${typeof reason==='string'?reason:'SIGNAL HELD'}</div><h2>Paused</h2><button class="primary" id="resume">RESUME</button><button class="secondary" id="quit">END RUN</button>`);$('resume').onclick=()=>{void lockViewport();resume()};$('quit').onclick=gameOver}
+// How close the run came: the ronin nearest to falling, and how much of the round's health is gone.
+function closeness(){if(!duel)return {line:`${score.toLocaleString()} points`,done:0};const all=duel.fighters,left=all.filter(f=>f.hp>0),near=[...left].sort((a,b)=>a.hp/a.max-b.hp/b.max)[0],done=1-all.reduce((n,f)=>n+f.hp,0)/all.reduce((n,f)=>n+f.max,0);
+  if(!near)return {line:'Every ronin down',done:1};return {line:`${all.length>1?`${all.length-left.length} of ${all.length} down · `:''}${near.boss?'Captain':'Ronin'} at ${near.hp}/${near.max} HP`,done}}
+function gameOver(){warnStop();document.exitPointerLock?.();unlockViewport();state='over';guard=false;best=Math.max(best,score);try{localStorage.setItem('neon-best',best)}catch{}
+  const close=closeness(),before=dailyBest();saveDaily(wave);const today=Math.max(before,wave),link=`${globalThis.location?location.origin+location.pathname:''}?seed=${encodeURIComponent(seedName)}`;
+  const share=`Neon Ronin · duel ${seedName} · Round ${wave} · ${close.line} · ${link}`;
+  panel(`<div class="eyebrow">YOUR BLADE FELL</div><h2>Round ${wave}</h2><p class="close-line">${close.line} · Today's best: round ${today}</p><div class="close-bar" aria-hidden="true"><i style="width:${Math.round(close.done*100)}%"></i></div><p class="run-line">${score.toLocaleString()} points · Best ${best.toLocaleString()}${district?` · Best chain ${chainBest} · ${Math.floor(runTime)} s`:''}</p><button class="primary" id="retry">RUN IT BACK</button><div class="share"><input id="shareLine" readonly aria-label="A line to share" value="${share.replace(/"/g,'&quot;')}"><button class="secondary" id="copy">COPY</button></div>`);
+  $('retry').onclick=()=>{void lockViewport();start()};
+  // Without a clipboard, the line stays selected so the player can copy it by hand.
+  $('copy').onclick=()=>{$('shareLine').select?.();let copy;try{copy=navigator.clipboard.writeText(share)}catch{copy=Promise.reject()}return Promise.resolve(copy).then(()=>{$('copy').textContent='COPIED'},()=>{$('copy').textContent='SELECTED'})}}
 $('pause').onclick=pause;$('burst').onclick=overdrive;$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'Sound off':'Sound on';audioStart()};$('center').onclick=()=>{resetSword();say('VIEW RESET · THIS GRIP IS NEUTRAL')};
 $('guard').onpointerdown=e=>{e.preventDefault();$('guard').setPointerCapture(e.pointerId);setGuard(true)};for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('guard').addEventListener(ev,()=>setGuard(false));
 let pointer=null;canvas.onpointerdown=e=>{if(e.pointerType==='mouse'||state!=='play'||gyro)return;canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,...viewportPoint(e)}};canvas.onpointermove=e=>{if(e.pointerType==='mouse')return;if(!pointer||pointer.id!==e.pointerId)return;const point=viewportPoint(e);aim.x=clamp((point.x/W-.5)*2,-1,1);aim.y=clamp((point.y/H-.5)*2,-1,1);const dx=point.x-pointer.x,dy=point.y-pointer.y;if(Math.hypot(dx,dy)>32){slash(dx,dy);pointer.x=point.x;pointer.y=point.y}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>pointer=null);
@@ -156,14 +224,16 @@ async function enableGyro(){
     if(await permission!=='granted')throw Error('denied');
     await orientationLock;
     gyro=true;resetSword();motionUI();$('hint').textContent=W>H?'Hold both ends. Turn the tablet to aim and swing.':'Hold your natural grip. Turn the phone to aim and swing.';
-    clearTimeout(motionTimer);
-    motionTimer=setTimeout(()=>{if(gyro&&!raw)disableGyro('No motion signal. Swipe to cut; hold Guard to block.');},3000);
+    clearTimeout(motionTimer);motionSeen=false;
+    // No sample at all in 3 s: switch to touch and pause, so the change never surprises the player mid-fight.
+    motionTimer=setTimeout(()=>{if(gyro&&!motionSeen){disableGyro('No motion signal. Swipe to cut. Hold GUARD as the blade falls.');if(state==='play')pause('NO MOTION SIGNAL · TOUCH CONTROLS ON')}},3000);
     return true;
-  }catch{disableGyro('Motion unavailable. Swipe to cut; hold Guard to block.');return false}
+  }catch{disableGyro('Motion unavailable. Swipe to cut. Hold GUARD as the blade falls.');return false}
 }
-$('motion').onclick=()=>gyro?disableGyro('Swipe to cut; hold Guard to block.'):enableGyro();
+$('motion').onclick=()=>gyro?disableGyro('Swipe to cut. Hold GUARD as the blade falls.'):enableGyro();
 addEventListener('deviceorientation',e=>{
   if(!gyro||state!=='play'||![e.alpha,e.beta,e.gamma].every(Number.isFinite))return;
+  motionSeen=true;
   const q=orientationQuaternion(e.alpha,e.beta,e.gamma),now=performance.now();
   if(!base){base=q;sword.last=now;sword.previous=q;sword.pose={x:0,y:0,angle:-Math.PI/2};raw=q;return}
   const dt=(now-sword.last)/1000;
@@ -204,7 +274,7 @@ addEventListener('deviceorientation',e=>{
     if((contact||district)&&cooldown<=0){guard=false;slash(dx,dy);gyroReady=false;sword.travel=0}
   }
 });
-function update(dt){mouseSword.update(dt);time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);if(state!=='play')return;if(district){runTime+=dt;chainClock=Math.max(0,chainClock-dt);killFlash=Math.max(0,killFlash-dt);if(chainClock===0)combo=0;setText('chain',duel?'PARRY → BREAK GUARD → STRIKE':combo?`${combo}× CHAIN · ${chainClock.toFixed(1)}s`:'CUT QUICKLY TO BUILD A CHAIN');setText('objective',`PATROL ${wave} · ${kills}/${3+Math.min(wave,5)} swordsmen · ${district.drones.length} drones`);}if(gyro){if(!raw)return;if(performance.now()-sword.last>500){disableGyro('Motion signal lost. Swipe to play.');pause();return}const blocked=bladeBlocks();if(blocked&&!guard)guardAt=time;guard=blocked;$('hint').textContent=guard?'BLADE SET · catch the strike':enemy.dir===0?'Hold the blade upright across the incoming cut.':'Turn the blade sideways across the incoming cut.';}if(duel&&district){updateDuel(dt);return}enemy.hit=Math.max(0,enemy.hit-dt);if(district&&!district.canStrike()){enemy.timer=Math.max(enemy.timer,.65);$('hint').textContent='Swing toward a target to close the gap. Push the stick to dash.';return}enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=(district?.dash>0)?0:guard?(gyro?0:5):(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else {if(guard&&gyro){burstParticles(W*.5,H*.48,'#65efff',18);tone(480,.09)}say(guard?'BLADE BLOCK':'HIT')}}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
+function update(dt){mouseSword.update(dt);time+=dt;notice-=dt;if(notice<=0)$('callout').textContent='';cooldown=Math.max(0,cooldown-dt);slow=Math.max(0,slow-dt);flash=Math.max(0,flash-dt);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);trails.forEach(t=>t.life-=dt);trails=trails.filter(t=>t.life>0);for(const r of rings)r.life-=dt;rings=rings.filter(r=>r.life>0);shine=Math.max(0,shine-dt);if(state!=='play')return;if(district){runTime+=dt;chainClock=Math.max(0,chainClock-dt);killFlash=Math.max(0,killFlash-dt);if(chainClock===0)combo=0;setText('chain',duel?'PARRY OPENS THE GUARD · THEN CUT':combo?`${combo}× CHAIN · ${chainClock.toFixed(1)}s`:'CUT QUICKLY TO BUILD A CHAIN');if(!duel)setText('objective',`PATROL ${wave} · ${kills}/${3+Math.min(wave,5)} swordsmen · ${district.drones.length} drones`);}if(gyro){if(!raw)return;if(performance.now()-sword.last>500){disableGyro('Motion signal lost. Swipe to cut. Hold GUARD as the blade falls.');pause('MOTION SIGNAL LOST · TOUCH CONTROLS ON');return}const blocked=bladeBlocks();if(blocked&&!guard)guardAt=time;guard=blocked;if(!duel)$('hint').textContent=guard?'BLADE SET · catch the strike':enemy.dir===0?'Hold the blade upright across the incoming cut.':'Turn the blade sideways across the incoming cut.';}if(duel&&district){updateDuel(dt);return}enemy.hit=Math.max(0,enemy.hit-dt);if(district&&!district.canStrike()){enemy.timer=Math.max(enemy.timer,.65);$('hint').textContent='Swing toward a target to close the gap. Push the stick to dash.';return}enemy.timer-=dt*(slow>0?.4:1);if(enemy.timer<=0){if(enemy.phase==='windup'){const perfect=guard&&time-guardAt<.28+windowBonus;if(perfect){enemy.phase='open';enemy.timer=1.2;score+=25;hit(1,true);say('PERFECT PARRY')}else{health-=(district?.dash>0)?0:guard?(gyro?0:5):(enemy.boss?24:16);combo=0;flash=.25;burstParticles(W/2,H*.65,'#ff4a92',12);tone(55,.2);enemy.phase='open';enemy.timer=guard?.65:.4;if(health<=0)gameOver();else {if(guard&&gyro){burstParticles(W*.5,H*.48,'#65efff',18);tone(480,.09)}say(guard?'BLADE BLOCK':'HIT')}}}else{enemy.phase='windup';enemy.timer=enemy.period;enemy.dir=Math.random()<.5?0:1}}if(time>beat){beat=time+.26;tone([55,55,82,65][Math.floor(time*2)%4],.12,'triangle',.025)}$('health').textContent=Math.max(0,health);$('wave').textContent=String(wave).padStart(2,'0');$('score').textContent=score;$('burst').textContent=charge>=100?'RELEASE OVERDRIVE':`OVERDRIVE ${Math.floor(charge)}%`}
 function line(x1,y1,x2,y2,c,w=1){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
 // Generated raster plates are composited with live combat, weather and the
 // orientation-driven weapon. Keep procedural art as a loading/error fallback.
@@ -281,16 +351,26 @@ function drawSteel(blade){
   ctx.restore();
 }
 
+// The warning in sight: the screen edge pulses during a windup, faster as the blade falls.
+// Red means guard. Amber means a sweep, which only a dodge escapes.
+function warning(){const a=duel?.active;if(state!=='play'||!district||a?.phase!=='windup')return null;const p=clamp(1-a.timer/a.period,0,1);return {p,alpha:(.35+.45*p)*(.65+.35*Math.sin(time*(9+18*p))),rgb:a.attack==='sweep'?'255,176,46':'255,46,86'}}
+function drawWarning(){const w=warning();if(!w)return;const e=Math.min(W,H)*(.07+.06*w.p);for(const [x0,y0,x1,y1,x,y,ww,hh] of [[0,0,0,e,0,0,W,e],[0,H,0,H-e,0,H-e,W,e],[0,0,e,0,0,0,e,H],[W,0,W-e,0,W-e,0,e,H]]){const g=ctx.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,`rgba(${w.rgb},${w.alpha})`);g.addColorStop(1,`rgba(${w.rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x,y,ww,hh)}}
 function drawThreats(){
   const p=target(),distance=district.distanceToActor();
   const dx=district.actor.position.x-district.position.x,dz=district.actor.position.z-district.position.z;
   if((-Math.sin(district.yaw)*dx-Math.cos(district.yaw)*dz)>0&&distance<18&&p.x>0&&p.x<W&&p.y>0&&p.y<H&&district.actor.visible){
     const width=64,hp=clamp(enemy.hp/enemy.max,0,1);ctx.fillStyle='#172127';ctx.fillRect(p.x-width/2,p.y-62,width,6);ctx.fillStyle=enemy.phase==='open'?'#caff54':'#ff829d';ctx.fillRect(p.x-width/2,p.y-62,width*hp,6);if(duel){ctx.fillStyle='#172127';ctx.fillRect(p.x-width/2,p.y-51,width,5);ctx.fillStyle='#ffc975';ctx.fillRect(p.x-width/2,p.y-51,width*clamp(enemy.posture/4,0,1),5)}
-    ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(enemy.phase==='open'?'CUT NOW':distance<3.5?'MATCH THEIR BLADE':'CLOSE IN',p.x,p.y-74);
+    ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(enemy.phase==='open'?'CUT NOW':enemy.phase==='windup'?(enemy.attack==='sweep'?'DODGE':'GUARD'):distance<3.5?(gyro?'MATCH THEIR BLADE':'PARRY TO OPEN'):'CLOSE IN',p.x,p.y-74);
     if(enemy.phase==='windup'&&distance<4){ctx.strokeStyle='#ff647f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,42,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(1-enemy.timer/enemy.period,0,1));ctx.stroke()}
   }
   if(killFlash>0){ctx.strokeStyle='#caff54';ctx.lineWidth=3;const x=W/2,y=H*.45;for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])line(x+a*8,y+b*8,x+a*18,y+b*18,'#caff54',3)}
   if(district.dash>0){for(let i=0;i<8;i++){const a=i*Math.PI/4;line(W/2+Math.cos(a)*W*.42,H/2+Math.sin(a)*H*.42,W/2+Math.cos(a)*W*.49,H/2+Math.sin(a)*H*.49,'#d3ffffaa',2)}}
+  // Every open guard in view says CUT NOW, not only the chosen fighter's.
+  for(const c of district.crowd||[]){const f=c.fighter;if(f.hp<=0||f.phase!=='open'||f===enemy||!district.inView(f,0))continue;const q=district.target(c.mesh);ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#caff54';ctx.fillText('CUT NOW',q.x,q.y-74)}
+  // Arrows at the screen edge point to fighters outside the view. A red, pulsing arrow is an attack.
+  let left=0,right=0;
+  for(const c of district.crowd||[]){const f=c.fighter;if(f.hp<=0||district.inView(f,0))continue;const side=district.bearing(c.mesh.position)>0?-1:1,row=side<0?left++:right++,warn=f.phase==='windup';
+    ctx.save();ctx.translate(side<0?16:W-16,H*.42+row*36);ctx.scale(side*(warn?1.35:1),warn?1.35:1);ctx.globalAlpha=warn?.65+.35*Math.sin(time*20):.9;ctx.fillStyle=warn?'#ff3d63':f.phase==='open'?'#caff54':'#ffd288';ctx.strokeStyle='#172127';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(6,0);ctx.lineTo(-10,-12);ctx.lineTo(-5,0);ctx.lineTo(-10,12);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
 }
 
 function draw(){ctx.save();if(!district&&gyro){ctx.translate(W/2,H/2);ctx.rotate(-motionRoll);const c=Math.abs(Math.cos(motionRoll)),s=Math.abs(Math.sin(motionRoll)),cover=Math.max(c+s*H/W,c+s*W/H);ctx.scale(cover,cover);ctx.translate(-W/2,-H/2)}if(district){ctx.clearRect(0,0,W,H)}else if(visualStyle==='rick-morty'){if(ready(art['alien-sky'])){const im=art['alien-sky'];ctx.drawImage(im,im.naturalWidth*.17,im.naturalHeight*.06,im.naturalWidth*.66,im.naturalHeight*.88,0,0,W,H)}else drawAlienBackdrop(ctx,W,H,time)}else if(ready(art.street)){drawStreet()}else{ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);const horizon=H*.44;const glow=ctx.createRadialGradient(W*.5,horizon,5,W*.5,horizon,W*.7);glow.addColorStop(0,'#602060');glow.addColorStop(.5,'#161737');glow.addColorStop(1,'#070a18');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);for(let i=0;i<18;i++){const bw=W/12,x=i*W/15-bw*.5,bh=H*(.12+((i*37)%11)/50);ctx.fillStyle=i%2?'#101329':'#0a1024';ctx.fillRect(x,horizon-bh,bw,bh);line(x,horizon-bh,x+bw,horizon-bh,i%3?'#384468':'#e358b7',2);for(let j=0;j<7;j++)if((i+j)%3)line(x+9,horizon-bh+15+j*16,x+14,horizon-bh+15+j*16,'#476e8a',2)}for(let i=-8;i<=8;i++)line(W/2+i*22,horizon,W/2+i*180,H,'#253557');for(let i=0;i<14;i++){let z=((i/14+time*.06)%1)**2,y=horizon+z*(H-horizon);line(0,y,W,y,'#283252')}for(let i=0;i<35;i++){const x=(i*113+time*22)%W,y=(i*61+time*260)%H;line(x,y,x-3,y+13,'#46718b44')}
@@ -307,11 +387,17 @@ ctx.restore();for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);line
     else line(x-l,y,x+l,y,guard?'#caff54':'#ffffff66',3);
     ctx.setLineDash([]);
   }
-}if(flash>0){ctx.fillStyle=`rgba(255,30,90,${flash*.8})`;ctx.fillRect(0,0,W,H)}if(slow>0){ctx.strokeStyle='#caff54';ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4)}}
+}drawWarning();for(const r of rings){const k=1-r.life/r.max;ctx.globalAlpha=r.life/r.max;ctx.strokeStyle=r.color;ctx.lineWidth=1+7*(1-k);ctx.beginPath();ctx.arc(r.x,r.y,24+k*r.size,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(r.x,r.y,10+k*r.size*.55,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;if(shine>0){ctx.fillStyle=`rgba(255,250,225,${shine*2.6})`;ctx.fillRect(0,0,W,H)}if(flash>0){ctx.fillStyle=`rgba(255,30,90,${flash*.8})`;ctx.fillRect(0,0,W,H)}if(slow>0){ctx.strokeStyle='#caff54';ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4)}}
 if(district){district.onDroneKill=()=>{chainKill();burstParticles(W*.5,H*.45,'#f2b7ff',14)};district.onDroneAttack=()=>{if(state!=='play'||(gyro&&!raw))return;if(guard){charge=Math.min(100,charge+12);say('DRONE DEFLECTED');tone(660,.08);return}health-=Math.max(3,10-droneArmor);combo=0;chainClock=0;flash=.18;tone(65,.1);say('DRONE HIT · DASH OUT');if(health<=0)gameOver()};}
 if(district)district.onPickup=()=>{health=Math.min(100,health+8);charge=Math.min(100,charge+12);say('SPIRIT LIGHT · +8 HEALTH')};
 function setText(id,value){const el=$(id),text=String(value);if(el.textContent!==text)el.textContent=text}
-function frame(now){const dt=Math.min(.1,(now-last)/1000||.016);last=now;if(district&&state==='play'&&!gyro){const look=mouseLook.update(dt,district.pitch);district.yaw+=look.yaw;district.pitch=look.pitch;}if(district)district.enemyTimeScale=slow>0?.4:1;district?.update(dt,state==='play'&&(!gyro||!!raw),enemy);if(district&&state==='play'){setText('districtStatus',district.canStrike()?'SENTINEL IN REACH':`${district.collected} spirit lights · ${visualStyle==='rick-morty'?'Explore the Portal Badlands':'Run through the lanes'}`);setText('health',Math.max(0,health));setText('wave',String(wave).padStart(2,'0'));setText('score',score);}update(dt);draw();requestAnimationFrame(frame)}menu();requestAnimationFrame(frame);
+// One step of the game. After a parry, the hit-stop holds the world still while the screen keeps drawing.
+function tick(dt,render=true){if(freeze>0){freeze=Math.max(0,freeze-dt);dt=0}if(district&&state==='play'&&!gyro){const look=mouseLook.update(dt,district.pitch);district.yaw+=look.yaw;district.pitch=look.pitch;}if(district)district.enemyTimeScale=slow>0?.4:1;district?.update(dt,state==='play'&&(!gyro||!!raw),enemy,render);if(district&&state==='play'){setText('districtStatus',district.canStrike()?'IN REACH':`${district.collected} spirit lights · ${visualStyle==='rick-morty'?'Explore the Portal Badlands':'Run through the lanes'}`);setText('health',Math.max(0,health));setText('wave',String(wave).padStart(2,'0'));setText('score',score);}update(dt);if(render)draw()}
+let qaHold=false;
+function frame(now){const dt=Math.min(.1,(now-last)/1000||.016);last=now;if(!qaHold)tick(dt);requestAnimationFrame(frame)}menu();requestAnimationFrame(frame);
+// Hooks for the tests in qa/neon/. They read game state and step game time without waiting for frames.
+// hold=true stops the frame loop, so only step() moves the game.
+window.QA={get state(){return state},get duel(){return duel},get district(){return district},get enemy(){return enemy},get health(){return health},get wave(){return wave},get score(){return score},get gyro(){return gyro},get raw(){return raw},get guard(){return guard},get slow(){return slow},get warning(){return warning()},get hold(){return qaHold},set hold(v){qaHold=v},step(seconds,dt=1/30,render=true){for(let t=dt;t<=seconds+1e-9;t+=dt)tick(dt,false);if(render)tick(0)},setGuard,slash,inView:f=>!!district?.inView(f,0)};
 
 
 

@@ -28,8 +28,21 @@
     s.type = "importmap";
     s.textContent = JSON.stringify({ imports: imports });
     document.currentScript.after(s);
-    // a launch from the installed app goes straight into the headset: no title
-    if (q.get("source") === "pwa") document.documentElement.setAttribute("data-pwa", "");
+    if (q.get("source") === "pwa") {
+      // a launch from the installed app goes straight into the headset: no title, so nothing to preload for it
+      document.documentElement.setAttribute("data-pwa", "");
+    } else {
+      // the title's logo font and key art, asked for at once
+      var pre = function (href, as, type) {
+        var l = document.createElement("link");
+        l.rel = "preload"; l.href = href; l.as = as;
+        if (type) l.type = type;
+        if (as === "font") l.crossOrigin = "";
+        document.head.appendChild(l);
+      };
+      pre("fonts/bangers-400.woff2", "font", "font/woff2");
+      pre("art/keyart.webp", "image");
+    }
   })();
 </script>
 <link rel="modulepreload" href="lib/three.module.min.js">
@@ -42,100 +55,142 @@
 </script>
 <style>
 /* the fonts ship with the game (SIL Open Font License, see fonts/), so the page works offline and asks no other site for anything */
+@font-face { font-family: "Bangers"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/bangers-400.woff2) format("woff2"); }
 @font-face { font-family: "Bungee"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/bungee-400.woff2) format("woff2"); }
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-condensed-500.woff2) format("woff2"); }
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/barlow-condensed-700.woff2) format("woff2"); }
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url(fonts/barlow-condensed-800.woff2) format("woff2"); }
+/* the palette is sampled from the key art (art/keyart.webp): ink is never pure black */
 :root {
-  --plum: #1a1020; --plum2: #2a1830; --cream: #fff4d8; --gold: #ffc27a; --orange: #ff8a3a; --red: #e0482c; --ember: #7a2418; --sky: #2c3f78; --rope: #d8b872; --cup: #d2202a;
-  --logo: "Bungee", "Arial Black", Impact, system-ui, sans-serif;
+  --ink: #140a18; --plum: #1a1020; --yellow: #ffd84a; --gold: #ffb32a; --orange: #ff7a2a; --red: #e0482c; --magenta: #d8457a; --violet: #3b2380;
+  --teal: #1f3f6e; --cream: #fff4d8; --paper: #fff9ea; --green: #9cff3a; --rope: #d8b872; --cup: #d2202a; --sky: #2c3f78;
+  --logo: "Bangers", Impact, "Arial Black", system-ui, sans-serif;
+  --comic: "Bangers", Impact, "Arial Black", system-ui, sans-serif;
   --ui: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --dots: radial-gradient(circle at 50% 50%, rgba(20, 10, 24, 0.9) 0 1.1px, rgba(20, 10, 24, 0) 1.7px);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--plum); color: var(--cream); font: 500 18px/1.4 var(--ui); -webkit-tap-highlight-color: transparent; }
-#view { position: fixed; inset: 0; background: linear-gradient(180deg, var(--sky), #d97a4a 62%, var(--gold)); }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--cream); font: 600 18px/1.4 var(--ui); -webkit-tap-highlight-color: transparent; }
+#view { position: fixed; inset: 0; background: linear-gradient(180deg, var(--violet), var(--magenta) 45%, var(--orange) 78%, var(--yellow)); }
 #view canvas { display: block; width: 100%; height: 100%; outline: none; }
 html[data-pwa] #title { display: none; }
-a { color: var(--gold); }
-a:focus-visible, button:focus-visible, input:focus-visible + span { outline: 3px solid var(--cream); outline-offset: 3px; border-radius: 6px; }
+a { color: var(--yellow); }
+a:focus-visible, button:focus-visible, input:focus-visible + span { outline: 4px solid #fff; outline-offset: 3px; }
 
-/* ---------------- the title, over the live city ---------------- */
-#title { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 18px; padding: calc(var(--sat) + 5vh) 16px calc(var(--sab) + 2.5vh); overflow-x: hidden; overflow-y: auto; text-align: center; }
-#title::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 70% 45% at 50% 28%, rgba(255, 196, 120, 0.28), rgba(255, 138, 58, 0.08) 55%, rgba(255, 138, 58, 0) 75%), linear-gradient(180deg, rgba(26, 16, 32, 0.6) 0%, rgba(26, 16, 32, 0) 30%, rgba(26, 16, 32, 0) 48%, rgba(26, 16, 32, 0.82) 88%, rgba(26, 16, 32, 0.92)); }
-.logo { width: 100%; max-width: 980px; animation: rise 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@keyframes rise { from { opacity: 0; transform: translateY(16px); } }
-.kicker { margin: 0 0 0.7em; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 800; font-size: clamp(12px, 1.6vw, 16px); letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); text-shadow: 0 1px 3px rgba(26, 16, 32, 0.9); }
-.kicker i { display: block; flex: none; width: clamp(24px, 7vw, 80px); height: 2px; background: linear-gradient(90deg, rgba(255, 194, 122, 0), var(--gold)); }
-.kicker i:last-child { transform: scaleX(-1); }
-.logo h1 { margin: 0; display: flex; flex-direction: column; align-items: center; font-family: var(--logo); font-weight: 400; line-height: 0.88; }
-.logo h1 .l1 { font-size: clamp(20px, 4.2vw, 44px); letter-spacing: 0.34em; margin-right: -0.34em; color: var(--cream); text-shadow: 0 3px 0 var(--plum), 0 0 18px rgba(255, 138, 58, 0.5); }
-/* the sunset fill is a copy on top of a dark outline, so the letter edges stay clean */
-.logo h1 .l2 { position: relative; display: inline-block; padding: 0 0.05em; font-size: clamp(60px, 15vw, 172px); letter-spacing: 0.02em; transform: skewX(-7deg); color: var(--plum); -webkit-text-stroke: 0.07em var(--plum); text-shadow: 0 0.06em 0 #0c0610, 0 0.14em 0.3em rgba(0, 0, 0, 0.5); }
-.logo h1 .l2::after { content: attr(data-t); position: absolute; inset: 0; padding: 0 0.05em; -webkit-text-stroke: 0; text-shadow: none; color: transparent; background: linear-gradient(180deg, #fff6dc 0%, #ffd489 26%, #ff9a45 52%, #e0482c 78%, #a8283a 100%); -webkit-background-clip: text; background-clip: text; }
-.rope { display: block; width: min(560px, 86vw); height: auto; margin: -0.2em auto 0; overflow: visible; }
-.rope .line { fill: none; stroke: var(--rope); stroke-width: 5; stroke-linecap: round; }
-.rope .twist { fill: none; stroke: #8a6a34; stroke-width: 5; stroke-dasharray: 3 9; stroke-linecap: round; }
-.rope .swing { transform-origin: 12px 6px; animation: sway 5s ease-in-out infinite alternate; }
-@keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
-.tag { margin: 0.6em auto 0; max-width: 34em; font-weight: 700; font-size: clamp(16px, 2.1vw, 21px); letter-spacing: 0.04em; color: var(--cream); text-shadow: 0 1px 3px rgba(26, 16, 32, 0.95), 0 0 12px rgba(26, 16, 32, 0.6); }
+/* ---------------- the title: the key art, halftone dots, comic lettering ---------------- */
+#title { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 18px; padding: calc(var(--sat) + 3.2vh) 16px calc(var(--sab) + 2.4vh); overflow-x: hidden; overflow-y: auto; text-align: center; }
+/* the art fills the page, and drifts and zooms very slowly (a Ken Burns move). It sits over the live city, which stops drawing once the art shows. */
+.stage { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--ink); }
+.stage .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 52% 40%; transform: scale(1.04); transform-origin: 46% 48%; }
+/* the move starts (the "drift" class, set by the script at the end) two seconds after the city is built, so the build has every frame first */
+.stage .art.drift { animation: burns 60s ease-in-out infinite alternate; will-change: transform; }
+@keyframes burns { to { transform: scale(1.16) translate3d(-1.6%, -1.2%, 0); } }
+/* Ben-Day dots: fixed to the page, denser toward the top and bottom edges where the lettering sits, and a dark foot for the menu */
+.stage .tone { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 10, 24, 0.5) 0%, rgba(20, 10, 24, 0) 24%, rgba(20, 10, 24, 0) 52%, rgba(20, 10, 24, 0.55) 78%, rgba(20, 10, 24, 0.86) 100%); }
+.stage .tone::before, .stage .tone::after { content: ""; position: absolute; left: 0; right: 0; background: var(--dots); }
+.stage .tone::before { top: 0; height: 34%; background-size: 6px 6px; -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0) 100%); mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0) 100%); opacity: 0.55; }
+.stage .tone::after { bottom: 0; height: 52%; background-size: 7px 7px; -webkit-mask-image: linear-gradient(0deg, #000 10%, rgba(0, 0, 0, 0) 100%); mask-image: linear-gradient(0deg, #000 10%, rgba(0, 0, 0, 0) 100%); opacity: 0.7; }
+/* the comic page's border */
+.stage .frame { position: absolute; inset: 0; border: clamp(6px, 1.1vw, 14px) solid var(--ink); box-shadow: inset 0 0 0 3px rgba(255, 216, 74, 0.35); }
 
-.bottom { width: 100%; max-width: 760px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.menu { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
-.menu .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.btn { min-height: 48px; padding: 10px 24px; border: 2px solid rgba(255, 244, 216, 0.4); border-radius: 999px; background: rgba(26, 16, 32, 0.58); color: var(--cream); font: 800 clamp(16px, 2vw, 19px) / 1.1 var(--ui); letter-spacing: 0.14em; cursor: pointer; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transition: transform 0.12s, background 0.15s, border-color 0.15s, box-shadow 0.15s; }
-.btn:hover { border-color: var(--gold); background: rgba(42, 24, 48, 0.8); }
-.btn:active { transform: translateY(2px); }
-.btn:focus-visible { outline: 3px solid var(--cream); outline-offset: 3px; }
-.btn[disabled] { opacity: 0.5; cursor: progress; }
-.btn.primary { width: min(380px, 100%); min-height: 58px; border-color: #fff0c8; background: linear-gradient(180deg, #ffbd62, #ff8a3a 45%, var(--red)); color: #2a0f00; font-size: clamp(19px, 2.6vw, 24px); box-shadow: 0 5px 0 var(--ember), 0 10px 30px rgba(224, 72, 44, 0.45); text-shadow: 0 1px 0 rgba(255, 240, 200, 0.5); }
-.btn.primary:hover { background: linear-gradient(180deg, #ffd07e, #ff9a4c 45%, #ea5634); }
-.btn.primary:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ember), 0 6px 20px rgba(224, 72, 44, 0.4); }
-.btn.flat { width: min(380px, 100%); border-color: rgba(255, 194, 122, 0.8); }
-.reenter { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 18px 16px; border-radius: 18px; background: rgba(26, 16, 32, 0.72); border: 1px solid rgba(255, 194, 122, 0.45); width: min(440px, 100%); }
-.reenter p { margin: 0; font-weight: 700; letter-spacing: 0.04em; }
-.note { margin: 0; max-width: 34em; font-weight: 700; letter-spacing: 0.03em; color: var(--cream); text-shadow: 0 1px 3px var(--plum); }
-.note.hint { padding: 8px 14px; border-radius: 10px; background: rgba(42, 24, 48, 0.75); border: 1px dashed rgba(255, 194, 122, 0.6); }
-.load { width: min(380px, 100%); display: flex; flex-direction: column; gap: 6px; transition: opacity 0.8s 0.4s; }
-.load .track { height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255, 244, 216, 0.18); }
-.load .track i { display: block; height: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, var(--gold), var(--orange), var(--red)); transition: transform 0.25s; }
-.load span { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255, 244, 216, 0.85); }
+.logo { position: relative; width: 100%; max-width: 1040px; animation: pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes pop { from { opacity: 0; transform: scale(0.6) rotate(-5deg); } }
+/* the burst of speed lines behind the lettering */
+.logo::before { content: ""; position: absolute; left: 50%; top: 42%; width: min(150vw, 1500px); aspect-ratio: 1; transform: translate(-50%, -50%); z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 2deg at 50% 50%, rgba(20, 10, 24, 0) 0deg 4.6deg, rgba(20, 10, 24, 0.5) 4.6deg 5.6deg, rgba(20, 10, 24, 0) 5.6deg 9.4deg, rgba(20, 10, 24, 0.5) 9.4deg 9.9deg, rgba(20, 10, 24, 0) 9.9deg 14deg); -webkit-mask-image: radial-gradient(closest-side, rgba(0, 0, 0, 0) 22%, #000 46%, rgba(0, 0, 0, 0) 72%); mask-image: radial-gradient(closest-side, rgba(0, 0, 0, 0) 22%, #000 46%, rgba(0, 0, 0, 0) 72%); }
+.kicker { margin: 0 auto 0.5em; display: table; padding: 5px 16px 3px; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); transform: rotate(-1.6deg); font: 400 clamp(14px, 1.9vw, 21px) / 1.1 var(--comic); letter-spacing: 0.12em; text-transform: uppercase; }
+.logo h1 { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0 0.28em; font-family: var(--logo); font-weight: 400; line-height: 0.92; font-size: clamp(50px, 11.6vw, 160px); letter-spacing: 0.02em; transform: rotate(-2.4deg) skewX(-6deg); }
+/* each word is two layers: an ink copy with an outline and a hard extruded shadow, and a copy on top that carries the sunset fill and its halftone dots */
+.logo h1 span { position: relative; display: inline-block; padding: 0 0.04em; color: var(--ink); -webkit-text-stroke: 0.13em var(--ink); text-shadow: 0.03em 0.03em 0 var(--ink), 0.06em 0.06em 0 var(--ink), 0.09em 0.09em 0 var(--ink), 0.12em 0.12em 0 var(--ink), 0.15em 0.15em 0 var(--ink); }
+.logo h1 span::after { content: attr(data-t); position: absolute; left: 0; top: 0; padding: 0 0.04em; -webkit-text-stroke: 0; text-shadow: none; color: transparent; background: radial-gradient(circle at 50% 50%, rgba(216, 69, 122, 0.5) 0 0.02em, rgba(216, 69, 122, 0) 0.038em) 0 0 / 0.075em 0.075em, linear-gradient(180deg, #ff5a2a 0%, #ff8a2a 34%, #ffc02a 66%, #fff08a 100%); -webkit-background-clip: text; background-clip: text; }
+.logo h1 .l1 { transform: rotate(-1.5deg); }
+.logo h1 .l2 { transform: rotate(1.2deg); }
+/* the tag line and the notes are comic caption boxes */
+.tag { display: table; margin: 0.9em auto 0; max-width: min(34em, 92%); padding: 8px 18px 6px; background: var(--cream); color: var(--ink); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); transform: rotate(0.7deg); font: 700 clamp(16px, 2.1vw, 21px) / 1.25 var(--ui); letter-spacing: 0.04em; }
+
+.bottom { width: 100%; max-width: 760px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.menu { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.menu .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+/* buttons: yellow caption boxes with a thick ink border, a slight tilt and a hard drop shadow */
+.btn { --tilt: -1.4deg; min-height: 50px; padding: 9px 24px 6px; border: 4px solid var(--ink); border-radius: 3px; background: var(--yellow); color: var(--ink); font: 400 clamp(20px, 2.4vw, 25px) / 1 var(--comic); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; box-shadow: 5px 5px 0 var(--ink); transform: rotate(var(--tilt)); transition: transform 0.1s, box-shadow 0.1s, background 0.12s; }
+.menu .row .btn:nth-child(2) { --tilt: 1.1deg; }
+.menu .row .btn:nth-child(3) { --tilt: -0.6deg; }
+.btn:hover { background: #ffe883; transform: rotate(var(--tilt)) translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+.btn:active { transform: rotate(var(--tilt)) translate(4px, 4px); box-shadow: 1px 1px 0 var(--ink); }
+.btn[disabled] { opacity: 0.6; cursor: progress; filter: saturate(0.6); }
+.btn.primary { width: min(420px, 100%); min-height: 68px; padding-top: 12px; font-size: clamp(28px, 3.8vw, 40px); border-width: 5px; box-shadow: 7px 7px 0 var(--ink); background: linear-gradient(180deg, #ffe867 0%, rgba(255, 232, 103, 0) 62%), radial-gradient(circle at 50% 50%, rgba(255, 122, 42, 0.85) 0 1.4px, rgba(255, 122, 42, 0) 2px) 0 0 / 6px 6px, var(--yellow); }
+.btn.primary:hover { box-shadow: 10px 10px 0 var(--ink); }
+.btn.primary:active { box-shadow: 1px 1px 0 var(--ink); }
+.btn.flat { --tilt: 0.8deg; width: min(420px, 100%); background: var(--cream); }
+.btn.flat:hover { background: #fff; }
+.reenter { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 20px 18px; background: var(--cream); color: var(--ink); border: 4px solid var(--ink); box-shadow: 7px 7px 0 var(--ink); transform: rotate(-0.6deg); width: min(460px, 100%); }
+.reenter p { margin: 0; font: 400 24px / 1.1 var(--comic); letter-spacing: 0.06em; }
+.note { margin: 0; max-width: 34em; padding: 5px 14px 3px; background: var(--cream); color: var(--ink); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); font-weight: 700; letter-spacing: 0.03em; transform: rotate(0.4deg); }
+.note.hint { background: var(--yellow); transform: rotate(-0.5deg); }
+/* the loading bar: an ink box that fills with orange and yellow stripes */
+.load { width: min(420px, 100%); display: flex; flex-direction: column; gap: 8px; transition: opacity 0.8s 0.4s; }
+.load .track { height: 18px; border: 4px solid var(--ink); border-radius: 3px; overflow: hidden; background: var(--cream); box-shadow: 4px 4px 0 var(--ink); transform: rotate(-0.5deg); }
+.load .track i { display: block; height: 100%; transform: scaleX(0); transform-origin: 0 50%; background: repeating-linear-gradient(-45deg, var(--orange) 0 8px, var(--yellow) 8px 16px); transition: transform 0.25s; }
+.load span { font: 400 19px / 1.1 var(--comic); letter-spacing: 0.1em; color: var(--yellow); text-shadow: 2px 2px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink); }
 .load.done { opacity: 0; }
-footer { font-size: 15px; letter-spacing: 0.06em; color: rgba(255, 244, 216, 0.7); }
-footer a { color: rgba(255, 244, 216, 0.9); text-decoration: none; border-bottom: 1px solid rgba(255, 244, 216, 0.35); }
-footer a:hover { color: var(--gold); border-color: var(--gold); }
+footer { font: 700 16px / 1.3 var(--ui); letter-spacing: 0.06em; color: var(--cream); text-shadow: 0 0 4px var(--ink), 1px 1px 0 var(--ink), -1px -1px 0 var(--ink); }
+footer a { color: var(--yellow); text-decoration: none; border-bottom: 2px solid rgba(255, 216, 74, 0.5); }
+footer a:hover { color: #fff; border-color: #fff; }
 
-/* ---------------- how to play, comfort ---------------- */
-dialog { width: min(900px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 22px 24px 20px; border: 2px solid rgba(255, 194, 122, 0.6); border-radius: 18px; background: linear-gradient(180deg, var(--plum2), var(--plum)); color: var(--cream); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 5px rgba(255, 194, 122, 0.07); overflow: auto; }
-dialog::backdrop { background: rgba(10, 6, 14, 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
-dialog h2 { margin: 0 0 4px; font: 400 clamp(24px, 3.4vw, 34px) / 1.1 var(--logo); color: var(--gold); letter-spacing: 0.04em; }
-dialog .lead { margin: 0 0 14px; font-weight: 700; }
-dialog h3 { margin: 0 0 6px; font-weight: 800; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); }
-.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 22px; }
+/* ---------------- how to play, comfort: comic panels ---------------- */
+dialog { width: min(940px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 20px 24px 18px; border: 5px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); box-shadow: 10px 10px 0 var(--ink); overflow: auto; font: 600 18px / 1.3 var(--ui); color-scheme: light; }
+dialog::before { content: ""; position: absolute; right: 0; top: 0; width: 46%; height: 150px; background: radial-gradient(circle at 50% 50%, rgba(216, 69, 122, 0.55) 0 1.4px, rgba(216, 69, 122, 0) 2.1px) 0 0 / 7px 7px; -webkit-mask-image: radial-gradient(ellipse at 100% 0%, #000 0%, rgba(0, 0, 0, 0) 72%); mask-image: radial-gradient(ellipse at 100% 0%, #000 0%, rgba(0, 0, 0, 0) 72%); pointer-events: none; }
+dialog::backdrop { background: radial-gradient(circle at 50% 50%, rgba(255, 216, 74, 0.2) 0 1.3px, rgba(255, 216, 74, 0) 1.9px) 0 0 / 9px 9px, rgba(20, 10, 24, 0.78); }
+dialog > * { position: relative; }
+dialog h2 { display: inline-block; margin: 0 0 10px; padding: 6px 18px 3px; background: var(--yellow); border: 4px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); transform: rotate(-1.4deg); font: 400 clamp(28px, 3.8vw, 42px) / 1.05 var(--comic); letter-spacing: 0.06em; color: var(--ink); text-transform: uppercase; }
+dialog .lead { margin: 0 0 14px; font-weight: 700; font-size: 19px; }
+dialog h3 { display: inline-block; margin: 0 0 8px; padding: 3px 10px 1px; background: var(--ink); color: var(--yellow); font: 400 22px / 1.1 var(--comic); letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-0.8deg); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 20px; }
+.cols section { padding: 10px 14px 6px; background: #fff; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
 .cols ul { margin: 0; padding-left: 1.1em; }
-.cols li { margin: 0 0 5px; line-height: 1.35; }
-kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid rgba(255, 244, 216, 0.5); border-bottom-width: 2px; border-radius: 5px; font: 700 0.85em var(--ui); text-align: center; background: rgba(255, 244, 216, 0.08); }
-.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 0; padding: 0; border: 0; }
-.presets legend { margin-bottom: 8px; font-weight: 700; }
+.cols li { margin: 0 0 4px; line-height: 1.28; }
+.cols li::marker { color: var(--red); }
+kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid var(--ink); border-bottom-width: 4px; border-radius: 4px; font: 800 0.85em var(--ui); text-align: center; background: var(--yellow); color: var(--ink); }
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin: 0; padding: 0; border: 0; }
+.presets legend { margin-bottom: 10px; padding: 0; font: 400 22px / 1.1 var(--comic); letter-spacing: 0.08em; text-transform: uppercase; }
 .preset { position: relative; display: block; cursor: pointer; }
 .preset input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.preset span { display: block; height: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid rgba(255, 244, 216, 0.25); background: rgba(255, 244, 216, 0.05); transition: border-color 0.15s, background 0.15s; }
-.preset b { display: block; font-size: 20px; letter-spacing: 0.1em; text-transform: uppercase; }
-.preset small { display: block; margin-top: 4px; font-size: 16px; line-height: 1.35; color: rgba(255, 244, 216, 0.85); }
-.preset input:checked + span { border-color: var(--orange); background: rgba(255, 138, 58, 0.16); box-shadow: 0 0 0 1px var(--orange) inset; }
-.preset input:checked + span b::after { content: " ✓"; color: var(--orange); }
-.dlgbtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.preset span { display: block; height: 100%; padding: 12px 14px 10px; border: 3px solid var(--ink); background: #fff; box-shadow: 5px 5px 0 var(--ink); transition: transform 0.1s, box-shadow 0.1s, background 0.12s; }
+.preset:hover span { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.preset b { display: block; font: 400 26px / 1.1 var(--comic); letter-spacing: 0.08em; text-transform: uppercase; }
+.preset small { display: block; margin-top: 4px; font-size: 17px; line-height: 1.32; font-weight: 600; color: #3a2a44; }
+.preset input:checked + span { background: var(--yellow); transform: rotate(-0.7deg); }
+.preset input:checked + span b::after { content: " ✓"; color: var(--red); }
+.dlgbtns { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; }
+.dlgbtns .btn.primary { width: auto; min-width: 220px; min-height: 54px; padding-top: 9px; font-size: 30px; }
 #debug { position: fixed; left: 8px; top: 8px; z-index: 30; margin: 0; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); color: #cfe; font: 12px/1.3 ui-monospace, monospace; pointer-events: none; }
 
-@media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 2vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 48px; } }
-@media (max-width: 420px) { .btn { padding: 10px 16px; letter-spacing: 0.1em; } .kicker { letter-spacing: 0.2em; } }
-@media (prefers-reduced-motion: reduce) { .logo, .rope .swing { animation: none; } .btn, .load, .load .track i { transition: none; } }
+/* a wide screen: the lettering sits top left over the sky, so the Porcelain King on the right stays in view */
+@media (min-aspect-ratio: 3/2) and (min-width: 900px) and (min-height: 561px) {
+  .logo { align-self: flex-start; max-width: min(60vw, 900px); margin-left: 1.6vw; text-align: left; }
+  .logo h1 { justify-content: flex-start; font-size: clamp(60px, 8.3vw, 150px); }
+  .kicker { margin-left: 0.6em; }
+  .tag { margin: 1.1em 0 0 0.4em; max-width: 19em; text-align: left; }
+}
+@media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 1.6vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 52px; padding-top: 8px; } .logo h1 { font-size: clamp(40px, 9vw, 96px); } .kicker { margin-bottom: 0.2em; } .bottom, .menu { gap: 10px; } }
+@media (max-width: 420px) { .btn { padding: 9px 16px 6px; letter-spacing: 0.06em; } .kicker { letter-spacing: 0.06em; } dialog { padding: 18px 16px 16px; } }
+@media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i { transition: none; } }
 
 #phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:inherit; }
 #phoneControls[hidden] { display:none; }
 #phoneControls button { pointer-events:auto; touch-action:manipulation; user-select:none; -webkit-user-select:none; color:#fff6df; background:#111d2dd9; border:1px solid #e1bc7444; border-radius:24px; min-height:44px; padding:10px 16px; font:600 14px sans-serif; }
+/* comic speed lines for phone play: ink and cream streaks from the middle, clear in the centre so the target stays in view */
+.phone-rush { position:absolute; inset:-25%; opacity:0; pointer-events:none; will-change:transform,opacity; background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(20,10,24,0) 0deg 2.6deg, rgba(20,10,24,.85) 2.6deg 3.9deg, rgba(20,10,24,0) 3.9deg 6.2deg, rgba(255,249,234,.8) 6.2deg 7deg, rgba(20,10,24,0) 7deg 9.8deg, rgba(20,10,24,.75) 9.8deg 10.5deg, rgba(20,10,24,0) 10.5deg 13deg); -webkit-mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); mask-image:radial-gradient(closest-side, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 62%, #000 88%); }
+/* the climb pad: shown only on a wall, low on the left so the right thumb keeps the SWING button */
+.phone-climb { position:absolute; left:max(16px,env(safe-area-inset-left)); bottom:calc(env(safe-area-inset-bottom,0px) + 190px); display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; pointer-events:none; }
+.phone-climb button { pointer-events:auto; min-height:0 !important; padding:0 !important; border-radius:16px !important; font:bold 22px sans-serif !important; touch-action:none; }
+.phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
+.phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:bold 13px sans-serif !important; background:#e0482cdd !important; }
+/* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
+@media (min-height:481px) { body:has(.phone-climb:not([hidden])) .fs-sub, body:has(.phone-climb:not([hidden])) .fs-toast { visibility:hidden; } }
+@media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
 .phone-top { display:flex; justify-content:center; gap:8px; padding:max(12px,env(safe-area-inset-top)) 8px 0; }
 .phone-crosshair { position:absolute; left:50%; top:50%; width:18px; height:18px; border:2px solid #fff8; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 8px #0006; transition:border-color .12s,box-shadow .12s; }
 .target-ready .phone-crosshair { border-color:#95ffc8; box-shadow:0 0 16px #5fffbf66; }
@@ -146,6 +201,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
 #phoneControls [data-action="throw"].held { background:linear-gradient(135deg,#b6f1dc,#60c3b5); }
 .phone-bottom small { color:#fff9; font:11px sans-serif; text-shadow:0 1px 4px #000; }
 #view canvas { touch-action:none; }
+/* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
+body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 66px); }
+body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 200px); }
+body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 260px); }
+@media (max-height:480px) { body:has(#phoneControls:not([hidden])) .fs-sub { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 118px); max-width:calc(100vw - 320px); } body:has(#phoneControls:not([hidden])) .fs-toast { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 170px); max-width:calc(100vw - 320px); } }
 @media (max-height:480px) { .phone-bottom { left:auto; width:260px; bottom:12px; } .phone-hint { font-size:12px; } #phoneControls [data-action="throw"] { width:220px; min-height:64px; } .phone-bottom small { display:none; } }
 </style>
 </head>
@@ -153,18 +213,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
 <div id="view" aria-hidden="true"></div>
 
 <main id="title">
+  <!-- The art replaces the live city behind the title: main.js stops drawing the city once data-art is set on <html> -->
+  <div class="stage" aria-hidden="true">
+    <img class="art" src="art/keyart.webp" alt="" width="1920" height="1080" decoding="async" loading="lazy" onload="document.documentElement.setAttribute('data-art', '')">
+    <i class="tone"></i>
+    <i class="frame"></i>
+  </div>
+
   <header class="logo">
-    <p class="kicker"><i></i><span>A Cottage Arcade machine for phone &amp; Quest</span><i></i></p>
-    <h1 aria-label="In Full Swing"><span class="l1">IN FULL</span> <span class="l2" data-t="SWING">SWING</span></h1>
-    <svg class="rope" viewBox="0 0 560 70" aria-hidden="true">
-      <g class="swing">
-        <path class="line" d="M12 6 Q 250 74 506 30"/>
-        <path class="twist" d="M12 6 Q 250 74 506 30"/>
-        <path d="M504 30 L520 30" stroke="#b07a3a" stroke-width="7" stroke-linecap="round"/>
-        <path d="M518 30 C518 20 528 13 546 12 L546 48 C528 47 518 40 518 30 Z" fill="var(--cup)" stroke="#6a0c12" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M546 12 L546 48" stroke="#ff6a5a" stroke-width="3" stroke-linecap="round"/>
-      </g>
-    </svg>
+    <p class="kicker"><span>A Cottage Arcade machine for phone &amp; Quest</span></p>
+    <h1 aria-label="In Full Swing"><span class="l1" data-t="IN FULL">IN FULL</span> <span class="l2" data-t="SWING">SWING</span></h1>
     <p class="tag">Shoot plungers on ropes. Swing through the city at sunset. Flush the Porcelain King.</p>
   </header>
 
@@ -226,9 +284,18 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
         <li>Hold the left or right mouse button to shoot a rope from that hand. Let go of the button to let go of the rope.</li>
         <li>Hold <kbd>Shift</kbd> or turn the wheel to reel in.</li>
         <li>Press <kbd>F</kbd> to yank. Press <kbd>Space</kbd> to jump, or to yank in the air.</li>
-        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> walk. The mouse looks around.</li>
+        <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. The mouse looks around.</li>
+        <li>Fly or walk into a wall to hold on to it. <kbd>W</kbd> and <kbd>S</kbd> climb up and down, <kbd>A</kbd> and <kbd>D</kbd> go along it. At the top you step on to the roof. <kbd>Space</kbd> jumps off, and a rope swings you off.</li>
         <li><kbd>Tab</kbd> opens the map. <kbd>Esc</kbd> pauses.</li>
         <li>A game pad works too.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Phone</h3>
+      <ul>
+        <li>Tap a building to swing. The rope lets go by itself and flings you on. Tap again while you fly.</li>
+        <li>A tap at the sky swings from the best building ahead. A tap on a clog plunges it.</li>
+        <li>Drag to look around. Hit a wall to hold on, then hold the arrows to climb, or tap JUMP.</li>
       </ul>
     </section>
   </div>
@@ -240,9 +307,9 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
   <p class="lead">Swinging moves you fast. Pick how much help you want. You can change it at any time in the pause menu.</p>
   <fieldset class="presets">
     <legend>Comfort preset</legend>
-    <label class="preset"><input type="radio" name="preset" value="comfortable"><span><b>Comfortable</b><small>Strong tunnel vision when you move fast. Snap turns. A lower top speed. Strong aim help.</small></span></label>
-    <label class="preset"><input type="radio" name="preset" value="moderate"><span><b>Moderate</b><small>Some tunnel vision when you move fast. Snap turns. The normal top speed.</small></span></label>
-    <label class="preset"><input type="radio" name="preset" value="intense"><span><b>Intense</b><small>No tunnel vision. Smooth turns. The full top speed.</small></span></label>
+    <label class="preset"><input type="radio" name="preset" value="comfortable"><span><b>Comfortable</b><small>Strong tunnel vision when you move fast. Snap turns. A lower top speed. Strong aim help. No speed lines.</small></span></label>
+    <label class="preset"><input type="radio" name="preset" value="moderate"><span><b>Moderate</b><small>Some tunnel vision when you move fast. Snap turns. The normal top speed. Comic speed lines.</small></span></label>
+    <label class="preset"><input type="radio" name="preset" value="intense"><span><b>Intense</b><small>No tunnel vision. Smooth turns. The full top speed. Comic speed lines.</small></span></label>
   </fieldset>
   <div class="dlgbtns"><button type="button" class="btn primary" data-close>DONE</button></div>
 </dialog>
@@ -256,6 +323,18 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border: 1px solid
     s.onload = function () { if (window.GameSwitch) window.GameSwitch.open("vr"); };
     document.body.appendChild(s);
   });
+</script>
+<script>
+  // The art's slow Ken Burns move starts two seconds after the city is built. Until then the frames go to the build, and
+  // a page that moves a full-screen picture every frame is slow to compose on a software renderer. Reduced motion: never.
+  (function () {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var art = document.querySelector(".stage .art");
+    (function wait() {
+      if (window.G && window.G.viewDone) setTimeout(function () { art.classList.add("drift"); }, 2000);
+      else requestAnimationFrame(wait);
+    })();
+  })();
 </script>
 <script type="module" src="js/main.js"></script>
 </body>

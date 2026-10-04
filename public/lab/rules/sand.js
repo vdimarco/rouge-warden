@@ -1,6 +1,8 @@
 // House Rules: the sand, water and fire of Down the Drain, for the preview in the editor. The materials and the rules
-// are copied word for word from public/fall/index.html: the materials (defMat), the looks (THEMES), and the World's
-// wake, keep, set, swap, ignite, lifeFor, canFlow, powder, liquid, gas, fire, ember and step.
+// are copied word for word from public/fall/index.html: the materials (defMat), the looks (THEMES), the World's
+// wake, keep, set, swap, inb, at, place, ignite, lifeFor, canFlow, powder, liquid, gas, fire, ember, step, stepDebris,
+// explode and spill, and the propane tanks: the tank rule in updateProps, explodeTank, boomTank, and the part of blast
+// that breaks the ground and sets off other tanks.
 // qa/lab/rules.drift.mjs checks that the copy still matches the game. Moving the sim out of that file into a module both
 // can share waits for a full build. The preview uses Math.random like the game, so it shows how a layer settles, not
 // the exact grains you will meet.
@@ -57,15 +59,13 @@ const THEMES = {
 export { K, MATS, NMAT, KIND, DENS, FLAM, GLOW, blocks, THEMES };
 
 /* ---------------- the rules (the World in public/fall/index.html) ---------------- */
-export function makeSand(W, H) {
+// hear(what, big): the preview asks for a sound, "sizzle" when a tank's fuse starts and "boom" when it blows
+export function makeSand(W, H, hear = () => {}) {
   const CS = 16, CW = W / CS, CH = H / CS, N = W * H;
   const mat = new Uint8Array(N), life = new Uint8Array(N), shade = new Uint8Array(N), clk = new Uint8Array(N);
   let cur = new Uint8Array(CW * CH), next = new Uint8Array(CW * CH);
   let tick = 1;
   const NB = [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1];
-  // the game throws debris from blasts; the editor has no blasts
-  const debris = [];
-  function stepDebris() {}
 
   const wake = (i) => {
     const x = i % W, y = (i / W) | 0, cx = x >> 4, cy = y >> 4, c = cy * CW + cx;
@@ -82,6 +82,17 @@ export function makeSand(W, H) {
     const s = shade[i]; shade[i] = shade[j]; shade[j] = s;
     clk[i] = tick; clk[j] = tick;
     wake(i); wake(j);
+  }
+  const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+  const at = (x, y) => (inb(x, y) ? mat[(y | 0) * W + (x | 0)] : BEDROCK);
+  function place(x, y, m, l, onlyEmpty) {
+    x |= 0; y |= 0;
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) return false;
+    const i = y * W + x;
+    if (mat[i] === BEDROCK) return false;
+    if (onlyEmpty && mat[i] !== EMPTY && KIND[mat[i]] !== K.GAS) return false;
+    set(i, m, l);
+    return true;
   }
   function ignite(j) {
     const m = mat[j];
@@ -204,11 +215,124 @@ export function makeSand(W, H) {
     if (debris.length) stepDebris();
   }
   const wakeAll = () => next.fill(1);
-  // put a built layer in, with a fresh shade for each pixel
-  function load(src) {
-    mat.set(src); life.fill(0); clk.fill(0);
+  // debris: loose bits of ground in flight. They bounce off walls and ceilings, and settle where they land.
+  const debris = [];
+  function stepDebris() {
+    for (let k = debris.length - 1; k >= 0; k--) {
+      const d = debris[k];
+      d.vy = Math.min(4, d.vy + 0.12); d.t++;
+      const n = Math.max(1, Math.ceil(Math.max(Math.abs(d.vx), Math.abs(d.vy))));
+      let done = false;
+      for (let q = 0; q < n && !done; q++) {
+        const nx = d.x + d.vx / n, ny = d.y + d.vy / n, xi = nx | 0, yi = ny | 0;
+        if (!inb(xi, yi)) { done = true; break; }
+        const hm = mat[yi * W + xi];
+        if (hm === EMPTY || KIND[hm] === K.GAS || KIND[hm] === K.FIRE) { d.x = nx; d.y = ny; continue; }
+        // hit something: land on a floor, or glance off a wall or ceiling
+        if (d.vy > 0 && ((d.y | 0) !== yi)) { place(d.x, d.y, d.m, 0, true); done = true; }
+        else if ((d.x | 0) !== xi) d.vx *= -0.35;
+        else d.vy *= -0.3;
+      }
+      if (done || d.t > 180) { if (!done) place(d.x, d.y, d.m, 0, true); debris[k] = debris[debris.length - 1]; debris.pop(); }
+    }
+  }
+  function explode(cx, cy, r, power) {
+    const r2 = r * r, inner = (r - 2) * (r - 2);
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const d2 = dx * dx + dy * dy;
+      if (d2 > r2) continue;
+      const x = (cx + dx) | 0, y = (cy + dy) | 0;
+      if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) continue;
+      const i = y * W + x, m = mat[i];
+      if (m === BEDROCK || m === GOLD) continue;
+      const k = KIND[m];
+      if (k === K.SOLID || k === K.POWDER) {
+        if (HARD[m] > power && !(HARD[m] === power + 1 && rnd() < 0.3)) continue;
+        if (d2 > inner && rnd() < 0.3) set(i, FIRE, 10 + rnd() * 20);
+        else {
+          // some of the ground flies out as debris, and lands again as the same stuff
+          if (rnd() < 0.2 && debris.length < 600) { const d = Math.sqrt(d2) || 1, v = 1.2 + rnd() * 2.2 * (power > 3 ? 1.3 : 1); debris.push({ x: x + 0.5, y: y + 0.5, vx: (dx / d) * v, vy: (dy / d) * v - 1.1, m, t: 0 }); }
+          set(i, EMPTY);
+        }
+      } else if (k === K.LIQUID) { if (rnd() < 0.5) set(i, m === WATER ? STEAM : EMPTY, lifeFor(STEAM)); else if (FLAM[m]) ignite(i); }
+      else if (k === K.GAS) { if (FLAM[m]) ignite(i); else set(i, EMPTY); }
+      else if (d2 > inner && rnd() < 0.25) set(i, FIRE, 10 + rnd() * 20);
+    }
+  }
+  function spill(x, y, m, n, r) {
+    let placed = 0;
+    for (let t = 0; t < n * 4 && placed < n; t++) {
+      const a = rnd() * Math.PI * 2, d = rnd() * (r || Math.sqrt(n));
+      if (place(x + Math.cos(a) * d, y + Math.sin(a) * d, m, lifeFor(m), true)) placed++;
+    }
+    return placed;
+  }
+
+  /* ---------------- the propane tanks (updateProps, explodeTank, boomTank and blast in the game) ---------------- */
+  // The game's World, Game and SFX, as much of them as the tanks use. A painted layer has no nests, and the preview
+  // has no player and no critters to hurt, so blast keeps only its lines for the ground, the tanks, the flash and the
+  // sound. The sparks and flashes stay in layer pixels; the editor draws them.
+  const World = { at, set, spill, explode, abgr: (c) => c };
+  const Game = { props: [], fx: [], flashes: [], cam: { shake: 0 } };
+  const SFX = { sizzle: () => hear("sizzle"), boom: (big) => hear("boom", big) };
+  const hitNest = () => {};
+  function explodeTank(t) {
+    if (t.dead || t.fuse > 0) return;
+    t.fuse = 1.1; SFX.sizzle();
+  }
+  function boomTank(t) {
+    if (t.dead) return;
+    t.dead = true;
+    for (let yy = t.y - 8; yy < t.y; yy++) for (let q = -3; q <= 3; q++) if (World.at(t.x + q, yy) === METAL) World.set(yy * W + t.x + q, EMPTY);
+    blast(t.x, t.y - 4, 15, 4, 45, "blast", null);
+    World.spill(t.x, t.y - 6, FIRE, 30, 9);
+    Game.cam.shake = Math.min(8, Game.cam.shake + 6);
+  }
+  function blast(x, y, r, power, dmg, cause, owner) {
+    World.explode(x, y, r, power);
+    for (const t of Game.props || []) if (!t.dead && Math.hypot(t.x - x, t.y - 4 - y) < r + 4) { if (t.kind === "tank") explodeTank(t); else hitNest(t, 99); }
+    Game.flashes.push({ x, y, r: r * 3, t: 0.25 });
+    SFX.boom(r > 10);
+    Game.cam.shake = Math.min(10, Game.cam.shake + r * 0.5);
+  }
+  function updateProps(dt) {
+    for (const t of Game.props || []) {
+      if (t.dead) continue;
+      if (t.kind === "tank") {
+        if (t.fuse > 0) { t.fuse -= dt; if (((t.fuse * 10) | 0) % 3 === 0) Game.fx.push({ x: t.x + (rnd() - 0.5) * 4, y: t.y - 9, vx: (rnd() - 0.5) * 0.4, vy: -0.6, t: 0.4, c: World.abgr(0xfff0c0) }); if (t.fuse <= 0) boomTank(t); continue; }
+        if ((tick & 7) !== 0) continue;
+        let metal = 0, hot = 0;
+        for (let yy = t.y - 9; yy <= t.y; yy++) for (let q = -3; q <= 3; q++) { const m = World.at(t.x + q, yy); if (m === METAL) metal++; else if (m === FIRE || m === EMBER || m === LAVA) hot++; }
+        if (hot) t.heat = (t.heat || 0) + hot;
+        if (metal < 22 || t.heat > 14) explodeTank(t);
+      }
+    }
+  }
+  // one tick of the game's clock (1/60 s): the world, the tanks, and the sparks and flashes they make
+  function play(dt) {
+    step();
+    updateProps(dt);
+    for (const f of Game.fx) { f.x += f.vx; f.y += f.vy; f.vy += 0.1; f.t -= dt; }
+    Game.fx = Game.fx.filter((f) => f.t > 0);
+    for (const f of Game.flashes) f.t -= dt;
+    Game.flashes = Game.flashes.filter((f) => f.t > 0);
+  }
+
+  // put a built layer in, with a fresh shade for each pixel, and its tanks as the game sets them up
+  function load(src, tanks = []) {
+    mat.set(src); life.fill(0); clk.fill(0); debris.length = 0;
     for (let i = 0; i < N; i++) shade[i] = (rnd() * 4) | 0;
+    Game.props = tanks.map((t) => ({ kind: "tank", x: t.x, y: t.y, hp: 12 }));
+    Game.fx = []; Game.flashes = []; Game.cam.shake = 0;
     wakeAll();
   }
-  return { mat, life, shade, step, wakeAll, load, set, get tick() { return tick; } };
+  // the editor's brush, poked into the running preview: what it paints joins the rules at once
+  function put(i, m) { if (mat[i] !== m && mat[i] !== BEDROCK) set(i, m, lifeFor(m)); }
+  // a copy of the preview, to take back a touch that turns out to be a pinch
+  function snapshot() { return { mat: mat.slice(), life: life.slice(), shade: shade.slice(), props: JSON.stringify(Game.props) }; }
+  function restore(s) { mat.set(s.mat); life.set(s.life); shade.set(s.shade); Game.props = JSON.parse(s.props); wakeAll(); }
+  return {
+    mat, life, shade, debris, cam: Game.cam, step, play, wakeAll, load, set, put, snapshot, restore,
+    get props() { return Game.props; }, get fx() { return Game.fx; }, get flashes() { return Game.flashes; }, get tick() { return tick; },
+  };
 }

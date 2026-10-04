@@ -23,17 +23,19 @@ export const T = {
   SKIP_VY: 0.3, SKIP_VX: 0.7,
   S_CLIMB: 0.8391,     // tan 40°: past this climb, open wings stop bending the path up (no loops)
   FLAP_A: 5, V_FLAP: 16,   // open wings flap a slow loon forward: up to 5 m/s², fading out at 16 m/s
-  HOP_LAND: 5,             // a thud bounces you at least this fast back into the air
+  HOP_LAND: 7,             // a thud bounces you at least this fast back into the air
   // Under water the loon swoops: its wings bend the dive forward and up (a J), tighter with open wings, until it
   // climbs at 50°. The bend changes the direction only, so the dive's speed carries through. Buoyancy helps a little.
   K_SWOOP_OPEN: 0.12, K_SWOOP_TUCK: 0.055, SWOOP_MAX: 150, S_SWOOP: 1.1918,
   B_TUCK: 2, B_OPEN: 5, WD_TUCK: 0.0015, WD_OPEN: 0.004,
+  K_BED: 0.92,         // a touch on the lake bed keeps 92% of the speed, once for each touch
   FISH: 3, FISH_R: 2.2, BREATH_WARN: 4, BREATH: 6,
   // out of the water: steep and fast is a burst (tan 35°), flat is a skim (tan 15°)
   S_BURST: 0.7002, V_BURST: 12, K_BURST: 1.15, S_SKIM: 0.2679, K_SKIM: 0.8,
   // too slow to fly out: a loon runs along the water until it can take off, like the real bird
   V_FLY: 9, RUN_A: 5, V_TAKEOFF: 14, HOP: 3,
-  K_LAND: 0.6, E_LAND: 0.35, THUD_COOL: 0.3, TUMBLE_HITS: 3, TUMBLE_WIN: 5, TUMBLE: 1,
+  // a thud keeps 85% of the speed and bounces you up, so one bad landing does not start a chain of them
+  K_LAND: 0.85, E_LAND: 0.35, THUD_COOL: 0.3, TUMBLE_HITS: 3, TUMBLE_WIN: 5, TUMBLE: 1,
   // winter: a wall that starts behind you and keeps speeding up
   WALL_GAP: 60, WALL_V0: 6, WALL_A: 0.12,
   START_V: 18, START_Y: 24,
@@ -104,7 +106,7 @@ export function newState(opts = {}) {
   return {
     x: 0, y: T.START_Y, vx: T.START_V, vy: 0, mode: AIR, tuck: false,
     tick: 0, alive: true, wx: -T.WALL_GAP, wv: T.WALL_V0,
-    flock: 0, under: 0, tumble: 0, thudCool: 0, hits: [], taken: new Set(), warned: false,
+    flock: 0, under: 0, tumble: 0, thudCool: 0, hits: [], taken: new Set(), warned: false, onBed: false,
     maxX: 0,
     stats: { perfect: 0, rip: 0, splash: 0, flop: 0, skip: 0, fish: 0, burst: 0, thud: 0, takeoff: 0, bestFlock: 0 },
     ...opts,
@@ -183,7 +185,7 @@ function enter(s, W, tuck, ev, dry) {
   }
   const k = cls === "perfect" ? T.K_PERFECT : cls === "rip" ? T.K_RIP : cls === "splash" ? T.K_SPLASH : T.K_FLOP;
   s.vx *= k; s.vy *= k;
-  s.mode = WATER; s.under = 0; s.warned = false;
+  s.mode = WATER; s.under = 0; s.warned = false; s.onBed = false;
   // right at the shore the bed is only a hand deep: stay above it
   const bed = W.ground(s.x) + 0.4;
   if (s.y < bed) s.y = bed < 0 ? bed : 0;
@@ -237,12 +239,15 @@ function water(s, W, tuck, ev, dry) {
   }
   const bottom = W.ground(s.x);
   if (s.y < bottom + 0.4) {
-    // the bed: glance off it and lose a little
+    // the bed: glance off it and lose a little. The loss comes once for each touch, not on each step of it.
     s.y = bottom + 0.4;
     if (vy < 0) vy = -vy * 0.6;
-    vx *= 0.92; vy *= 0.92;
-    if (ev) ev.push({ k: "scrape", x: s.x });
-  }
+    if (!s.onBed) {
+      s.onBed = true;
+      vx *= T.K_BED; vy *= T.K_BED;
+      if (ev) ev.push({ k: "scrape", x: s.x, y: s.y });
+    }
+  } else s.onBed = false;
   s.vx = vx; s.vy = vy;
   if (s.y >= 0) exit(s, ev, dry);
 }
@@ -306,27 +311,61 @@ function hitGround(s, W, g, ev, dry) {
   if (ev) ev.push({ k: "thud", x: s.x, tumble: s.tumble > 0 });
 }
 
-// Where the loon goes if the input stays as it is: points for the dotted line, and how it ends.
-export function predict(s, W, tuck, maxSteps = 240, every = 5) {
-  const p = { x: s.x, y: s.y, vx: s.vx, vy: s.vy, mode: s.mode, tuck, tick: s.tick, alive: true, wx: s.wx, wv: s.wv,
-    flock: s.flock, under: s.under, tumble: s.tumble, thudCool: s.thudCool, hits: [], taken: s.taken, warned: true, maxX: s.maxX, stats: s.stats };
+// The length of lake left past x, to swoop up and out; 0 over land.
+export function lakeLeft(W, x) {
+  const seg = W.find(x);
+  return seg.kind === LAKE ? seg.x1 - x : 0;
+}
+
+// The look ahead: a copy of the loon glides until step `from`, then holds, until it meets the water or the land.
+// Returns the points (one in `every` steps), how it ends, and for an entry, the lake left past it (room).
+function ahead(s, W, from, maxSteps, every) {
+  const p = { x: s.x, y: s.y, vx: s.vx, vy: s.vy, mode: s.mode, tuck: from <= 0, tick: s.tick, alive: true, wx: s.wx, wv: s.wv,
+    flock: s.flock, under: s.under, tumble: s.tumble, thudCool: s.thudCool, hits: [], taken: s.taken, warned: true, onBed: s.onBed,
+    maxX: s.maxX, stats: s.stats };
   const pts = [], ev = [];
-  let end = null;
+  let end = null, room = 0;
   for (let i = 0; i < maxSteps; i++) {
-    step(p, W, tuck, ev, true);
+    step(p, W, i >= from, ev, true);
     if (i % every === 0) pts.push(p.x, p.y);
     if (ev.length) {
       const e = ev.find((q) => q.k === "entry" || q.k === "thud" || q.k === "skip" || q.k === "exit");
-      if (e) { end = e.k === "entry" ? e.cls : e.k; pts.push(p.x, p.y); break; }
+      if (e) {
+        end = e.k === "entry" ? e.cls : e.k;
+        if (e.k === "entry") room = lakeLeft(W, e.x);
+        pts.push(p.x, p.y);
+        break;
+      }
       ev.length = 0;
     }
   }
-  return { pts, end };
+  return { pts, end, room };
+}
+
+// Where the loon goes if the input stays as it is: points for the dotted line, and how it ends.
+export function predict(s, W, tuck, maxSteps = 240, every = 5) {
+  return ahead(s, W, tuck ? 0 : Infinity, maxSteps, every);
+}
+
+// A rip needs this much lake past its entry to swoop up and out. With less, the dotted line shows amber, not green.
+export const ROOM = 25;
+// A good dive: a rip or a perfect rip, with room to swoop out
+export const goodDive = (end, room) => (end === "perfect" || end === "rip") && room >= ROOM;
+// The dive-now cue, for a loon that glides down: a hold that starts now gives a good dive, and so does a hold that
+// starts a reaction later (REACT steps, 0.25 s). So a player who answers the cue late still rips. It stays off on the
+// climb out of a burst: that is the moment to watch, not to act.
+export const REACT = 30;
+export function diveCue(s, W, maxSteps = 360) {
+  if (s.mode !== AIR || s.vy >= 0) return false;
+  const now = ahead(s, W, 0, maxSteps, 1000);
+  if (!goodDive(now.end, now.room)) return false;
+  const late = ahead(s, W, REACT, maxSteps + REACT, 1000);
+  return goodDive(late.end, late.room);
 }
 
 // a hash of everything that matters, to prove two runs are the same
 export function stateHash(s) {
-  const f = new Float64Array([s.x, s.y, s.vx, s.vy, s.wx, s.flock, s.tick, s.mode, s.under, s.tumble,
+  const f = new Float64Array([s.x, s.y, s.vx, s.vy, s.wx, s.flock, s.tick, s.mode, s.under, s.tumble, s.onBed ? 1 : 0,
     s.stats.perfect, s.stats.rip, s.stats.splash, s.stats.flop, s.stats.skip, s.stats.fish, s.stats.burst, s.stats.thud]);
   const b = new Uint8Array(f.buffer);
   let h = 0x811c9dc5;

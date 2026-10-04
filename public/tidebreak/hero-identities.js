@@ -89,12 +89,16 @@ export function identitySkill(identityId, slot) {
 
 export const selectionSkill = identitySkill;
 
-export function assignIdentities(state, selectedIdentity) {
+// `picks` lists identity ids in hero creation order: player, west ally, east ally, then enemies by lane.
+export function assignIdentities(state, selectedIdentity, picks = null) {
   const selected = getProfile(selectedIdentity);
   const controlled = state.units.find(entity => entity.id === state.playerId);
   if (!controlled || controlled.hero !== selected.kit) throw new RangeError('Selected identity does not match the player combat kit.');
+  const heroes = state.units.filter(entity => entity.kind === 'hero');
   for (const entity of state.units) {
     if (entity.kind !== 'hero') continue;
+    const picked = picks && HERO_IDENTITIES[picks[heroes.indexOf(entity)]];
+    if (picked && picked.kit === entity.hero && entity.id !== state.playerId) { entity.identity = picked.id; entity.name = picked.name; continue; }
     const choices = HERO_IDENTITIES.filter(identity => identity.kit === entity.hero);
     const index = ((state.seed + entity.id + entity.team * 7) % choices.length + choices.length) % choices.length;
     const identity = entity.id === state.playerId ? selected : choices[index];

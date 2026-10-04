@@ -1,7 +1,7 @@
 // A second touch is not guaranteed to dispatch click. Activate its own captured release.
 export function pointerAction(button, action, enabled=()=>!button.disabled) {
   let pointer=null,origin;
-  button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture(pointer);});
+  button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture?.(pointer);});
   button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),slop=e.pointerType==='touch'?22:8,inside=e.clientX>=rect.left-slop&&e.clientX<=rect.right+slop&&e.clientY>=rect.top-slop&&e.clientY<=rect.bottom+slop,travel=Math.hypot(e.clientX-origin.x,e.clientY-origin.y);pointer=null;if(inside&&enabled()&&travel<(e.pointerType==='touch'?60:28))action();});
   for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)pointer=null;});
   button.addEventListener('click',e=>{if(e.detail===0&&enabled())action();});
@@ -37,4 +37,31 @@ export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=(
     for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
   }
   return {reset};
+}
+
+
+export function screenMovementPointer(surface,{movement,enabled,onStart,onDragStart=()=>{},onTap=()=>{},threshold=12,radius=46}) {
+  let pointer=null,origin=null,dragging=false;
+  const reset=()=>{pointer=null;origin=null;dragging=false;movement.x=movement.y=0;};
+  const update=e=>{
+    if(e.pointerId!==pointer)return;
+    const x=e.clientX-origin.x,y=e.clientY-origin.y,dist=Math.hypot(x,y);
+    if(!dragging&&dist>=threshold){dragging=true;onDragStart();}
+    if(!dragging)return;
+    const denom=Math.max(radius,dist);
+    movement.x=x/denom;movement.y=y/denom;
+  };
+  surface.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||pointer!==null||e.button!==0||!enabled())return;
+    e.preventDefault();onStart();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};dragging=false;
+    surface.setPointerCapture?.(pointer);
+  });
+  surface.addEventListener('pointermove',update);
+  surface.addEventListener('pointerup',e=>{
+    if(e.pointerId!==pointer)return;
+    if(!dragging)onTap(e);
+    reset();
+  });
+  for(const event of ['pointercancel','lostpointercapture'])surface.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
+  return {reset,get active(){return pointer!==null;},get dragging(){return dragging;}};
 }

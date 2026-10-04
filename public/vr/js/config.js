@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.2.1";
+export const VERSION = "1.4.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -55,6 +55,41 @@ export const SWING = {
   fireHold: 0.3, // a trigger held on an idle hand still fires if a target shows up within this time
 };
 
+/* ---------------- wall climbing (flat play) ---------------- */
+// Touch a wall in the air, or walk into one, and you hold on to it. W/S or the up/down arrows climb, A/D or left/right go
+// along it, Space jumps off, and a rope fired from the wall swings you off it. Headset play does not climb.
+export const CLIMB = {
+  speed: 6, // m/s up, down and along the wall
+  wallY: 0.35, // a surface whose normal is this close to flat (|ny| under it) is a wall you can hold
+  gap: 0.03, // the chest sphere stays this far off the wall
+  reach: 0.5, // the wall must stay this close to the chest sphere, or the move stops (a corner, the top)
+  mantle: 1.8, // at the top, a roof up to this far over the chest is climbed onto
+  inset: 0.7, // the feet land this far in from the roof edge
+  jump: { out: 6, up: 6 }, // Space (or JUMP) pushes off the wall this hard (m/s)
+  ropeOff: { out: 2, up: 2 }, // a rope fired from the wall pushes off this hard (m/s)
+  regrab: 0.4, // after you leave a wall, you do not grab one for this long (s)
+  head: 1.7, headR: 0.25, // the head sphere over the feet: a ceiling it meets on the way up is an overhang
+  lip: 1, lipReach: 40, // under an overhang you move out to its face (found up to lipReach m out) and up lip m
+};
+
+/* ---------------- one-tap phone swinging ---------------- */
+// Flat play on a touch screen: tap to swing, the rope lets go by itself, and the body moves much faster than in a headset.
+export const PHONE = {
+  physics: { gravity: 14, quadDragC: 0.0045 }, // punchier arcs, and a terminal speed near 48 m/s
+  attachSpeed: 17, // a rope that catches gives at least this much speed across the rope, toward where you look
+  fling: { forward: 7, up: 4, kick: 10 }, // the auto-release adds this speed (m/s) and widens the view by kick degrees
+  // The rope lets go with a fling this many degrees past the bottom of the arc, this close under the anchor, or (a vault up and
+  // over, with vault m/s up) this close to it. It lets go with no fling after ground s on roofs or stall s under stallSpeed.
+  release: { minT: 0.35, angle: 32, overTop: 1.5, close: 5, vault: 10, ground: 0.01, stall: 2.5, stallSpeed: 4 },
+  // A tap whose target is no good to swing from (out of reach, closer than near m, or under 3 m above the chest) tries these
+  // directions (degrees) for one that is. With none, a close target in reach still catches.
+  assist: { pitch: [28, 42, 56, 16], yaw: [0, -22, 22, -45, 45, -75, 75], near: 9, above: 3 },
+  pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
+  follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
+  fov: { base: 75, wide: 24, from: 12, to: 42 }, // the view widens by up to wide degrees over this speed range (m/s)
+  lines: { from: 13, to: 34 }, // the phone's comic speed lines at the screen edges grow over this speed range (m/s)
+};
+
 /* ---------------- comfort ---------------- */
 export const COMFORT = {
   presets: {
@@ -62,6 +97,7 @@ export const COMFORT = {
     moderate: { vignette: "med", turn: "snap", snap: 45, speedCap: 26, fallCap: 26, aim: "med" },
     intense: { vignette: "off", turn: "smooth", snap: 45, speedCap: 35, fallCap: 35, aim: "med" },
     desktop: { vignette: "off", turn: "smooth", snap: 45, speedCap: 35, fallCap: 35, aim: "high" },
+    phone: { vignette: "off", turn: "smooth", snap: 45, speedCap: 48, fallCap: 40, aim: "high" },
   },
   defaultPreset: "moderate",
   vignetteMinFov: { off: 110, low: 90, med: 75, high: 60 }, // degrees of clear view at full strength
@@ -129,4 +165,11 @@ export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room."],
   tutorial: ["Aim at the gold ring. Hold a mouse button.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to turn.", "Your score is at the top of the screen.", "That green light is a clog. Plunge it."],
   clog: LINES.clog, king: LINES.king, splash: LINES.splash,
+};
+// Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
+export const LINES_PHONE = {
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room."],
+  tutorial: ["Tap the gold ring to swing.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
+  king: LINES.king, splash: LINES.splash,
 };
