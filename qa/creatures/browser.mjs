@@ -200,6 +200,13 @@ try {
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
     else await page.locator('#play').click();
+    // Play opens the draft: six heroes lock one by one, then the match starts. Enter skips the remaining picks.
+    await page.locator('#draft .draft-card').first().waitFor();
+    assert.equal(await page.locator('#draft .draft-card').count(), 6);
+    assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 10000 });
+    await page.locator('#train-selected').waitFor();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
     // Starting a match opens the spellbook and pauses play until training is done.
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), true);

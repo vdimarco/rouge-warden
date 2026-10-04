@@ -13,6 +13,7 @@ import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
+import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, LANE_NAMES } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
@@ -34,7 +35,8 @@ function hero(s, team, kind, lane, human = false) {
   const h = HEROES[kind], front = TOWER_POSITIONS[team][lane][0], toward = team ? -1 : 1;
   return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 180, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
-export function createMatch(kind = 0, seed = 49) {
+// A drafted lineup replaces the default picks: { allies:[kit,kit], enemies:[kit,kit,kit] }.
+export function createMatch(kind = 0, seed = 49, lineup = null) {
   const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], missiles: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [6, 6], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
     add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
@@ -44,8 +46,9 @@ export function createMatch(kind = 0, seed = 49) {
     }
   }
   const p = hero(s, 0, kind, 1, true); s.playerId = p.id;
-  hero(s, 0, (kind + 1) % HEROES.length, 0); hero(s, 0, (kind + 2) % HEROES.length, 2);
-  for (let lane = 0; lane < 3; lane++) hero(s, 1, (Math.floor(s.random() * HEROES.length) + lane) % HEROES.length, lane);
+  hero(s, 0, lineup?.allies?.[0] ?? (kind + 1) % HEROES.length, 0); hero(s, 0, lineup?.allies?.[1] ?? (kind + 2) % HEROES.length, 2);
+  // The roll is always drawn so seeded matches keep the same random sequence.
+  for (let lane = 0; lane < 3; lane++) { const roll = (Math.floor(s.random() * HEROES.length) + lane) % HEROES.length; hero(s, 1, lineup?.enemies?.[lane] ?? roll, lane); }
   for (const e of s.units) if (e.kind === 'hero' && !e.player) trainBot(e);
   announce(s, 'Choose your first spell', 'You have one skill point. Basic attacks are always ready.');
   return s;
@@ -91,6 +94,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if(target.hp>0&&target.guardUntil>s.time&&kind==='attack'&&source.hp>0&&source.id!==target.id)damage(s,target,source,(actual+absorbed/shieldMultiplier)*.2,'reflect');
   if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
   if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
+  if (actual > 0 || absorbed > 0) { noteSkirmish(s, credit, target); noteStructureHit(s, credit || source, target); }
   if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (t.kind === 'tower' && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
   if (source.hp > 0 && kind === 'attack' && source.lifesteal) heal(s, source, actual * source.lifesteal);
   if (target.hp > 0 && target.kind === 'hero' && hasItem(target, 'root') && target.hp < target.maxHp * .35 && s.time >= (target.itemState.root || 0)) {
@@ -114,6 +118,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
     target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (credit?.kind === 'hero') credit.kills++; }
+    recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
     else if (credit?.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
   } else if (target.kind === 'tower') {
@@ -335,7 +340,10 @@ function followLane(s, e, dt) {
 }
 function bot(s, e, dt) {
   if(e.castIntent||e.recoveryUntil>s.time)return;
-  const intent=combatDecision(s,e);e.botMode=intent.mode;
+  const intent=combatDecision(s,e),previous=e.botMode;e.botMode=intent.mode;
+  // Mode changes become team pings, so teammates can be heard and seen on the map.
+  if(intent.mode==='assist'&&previous!=='assist'&&s.time-(e.assistPingAt??-99)>10){e.assistPingAt=s.time;pushPing(s,{team:e.team,type:'onmyway',x:intent.move.x,y:intent.move.y,source:e.id,call:intent.call});}
+  if(intent.mode==='retreat'&&previous!=='retreat'&&s.time-(e.retreatPingAt??-99)>12){e.retreatPingAt=s.time;pushPing(s,{team:e.team,type:'retreat',x:e.x,y:e.y,source:e.id});}
   e.retreat=intent.mode==='retreat';
   if(intent.mode==='retreat'){
     if(s.time-e.lastHit>3){e.botRecall=(e.botRecall||0)+dt;if(e.botRecall>2.5){Object.assign(e,BASES[e.team]);e.botRecall=0;e.waypoint=1;}}
@@ -444,6 +452,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         move(s, e, e.x + dx / mag * 250, e.y + dy / mag * 250, dt, speed); e.recall = 0;
       }
       if (input.portal) portal(s, e);
+      if (input.rally) callRally(s, e.team, input.rally === true ? e : input.rally, e);
       if (input.recall && !e.recall) e.recall = 2.5;
       if (e.recall > 0) {
         if (moving || s.time - e.lastHit < .2) e.recall = 0;
