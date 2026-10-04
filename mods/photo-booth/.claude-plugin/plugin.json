@@ -1,0 +1,10 @@
+{
+  "name": "photo-booth",
+  "version": "0.1.0",
+  "description": "After a QA run, the screenshots it saved show in a pane: the newest first, p and n to step through. The terminal draws the pictures in kitty and Ghostty.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "dirs": { "type": "string", "title": "More shot folders", "description": "More folders to look in after a QA run, comma-separated.", "default": "" }
+  }
+}
