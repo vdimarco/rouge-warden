@@ -1,12 +1,14 @@
 // The app bundle in a browser, with no network: builds apps/fish/www, serves it at the root of its own origin
 // (like https://localhost in the app), blocks every request to another origin, and opens it at 390x844 with a fake
 // window.Capacitor that says "native Android" and records every plugin call.
-// Checks: the title shows, <html data-build="store">, no Switch game button or arcade link is visible, no request leaves
-// the origin, and no file is missing. Some checks need the boot and shell work in public/fish (js/native.js, fonts/,
-// the store kicker). While those files are not in the bundle, those checks print PENDING and do not fail the run.
+// Checks: the title shows, <html data-build="store">, no Switch game button, arcade link or arcade text (Switch game,
+// Back to the arcade, GET PLUNGER'D) is visible, no request leaves the origin, and no file is missing.
+// Some checks need files from the boot package in public/fish (js/native.js, fonts/). While those files are not in the
+// bundle, those checks print PENDING and do not fail the run. Visible arcade text is never PENDING: it always fails.
 //
-// Usage: NODE_PATH=qa/browser/node_modules node qa/fish/app-bundle.e2e.mjs   (SHOTS=dir saves a screenshot)
-// No other server is needed. Exit code 1 on any failed check.
+// Usage: NODE_PATH=qa/browser/node_modules node qa/fish/app-bundle.e2e.mjs   (SHOTS=dir saves a screenshot,
+// PORT=n serves the bundle on that port; the default is a free port). No other server is needed.
+// Exit code 1 on any failed check.
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -55,7 +57,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { "content-type": TYPES[path.extname(file)] || "application/octet-stream", "cache-control": "no-store" });
   fs.createReadStream(file).pipe(res);
 });
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
+await new Promise((r) => server.listen(Number(process.env.PORT) || 0, "127.0.0.1", r));
 const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
 // 3. The fake Capacitor bridge. It runs before any page script, like the one the native app puts in.
@@ -125,7 +127,7 @@ const state = await page.evaluate(() => {
     switchVisible: [...document.querySelectorAll("[data-switch]")].filter(visible).length,
     arcadeLinkVisible: [...document.querySelectorAll('a[href="/"], [data-store-hidden]')].filter(visible).length,
     fullscreenVisible: [...document.querySelectorAll("[data-fullscreen]")].filter(visible).length,
-    arcadeText: /Switch game|Back to the arcade/i.test(text),
+    arcadeText: (text.match(/Switch game|Back to the arcade|PLUNGER['’]D/gi) || []).join(", "),
     kicker: document.querySelector("#tkick")?.textContent || "",
     calls: window.__capCalls || [],
     secure: window.isSecureContext,
@@ -135,7 +137,8 @@ const state = await page.evaluate(() => {
 check('<html> has data-build="store"', state.build === "store", `data-build is ${state.build}`);
 check("no Switch game button is visible", state.switchVisible === 0, `${state.switchVisible} visible`);
 check("no link to the arcade is visible", state.arcadeLinkVisible === 0, `${state.arcadeLinkVisible} visible`);
-check("no arcade words in the visible text", !state.arcadeText, "Switch game or Back to the arcade is in the page text");
+check("no arcade words in the visible text (Switch game, Back to the arcade, PLUNGER'D)", !state.arcadeText,
+  `the page shows "${state.arcadeText}"; the title kicker says "${state.kicker}". A store build must hide it (main.js writes the kicker: it must check the store flag).`);
 check("no Fullscreen button is visible", state.fullscreenVisible === 0, `${state.fullscreenVisible} visible`);
 check("no request left the origin", offOrigin.length === 0, offOrigin.slice(0, 5).join(", "));
 const missing = served.filter((s) => s.status === 404 && s.rel !== "/favicon.ico");
@@ -149,7 +152,6 @@ native("js/native.js loads", served.some((s) => s.rel === "/js/native.js" && s.s
 const hides = state.calls.filter((c) => c.plugin === "SplashScreen" && c.method === "hide").length;
 native("the splash screen hides once the title is ready", hides >= 1, `SplashScreen.hide was called ${hides} times`);
 native("the game listens for the Android back button", state.calls.some((c) => c.plugin === "App" && c.method === "addListener" && c.args[0] === "backButton"), "no App backButton listener");
-native("the title kicker has no GET PLUNGER'D", !/PLUNGER/i.test(state.kicker), `the kicker says "${state.kicker}"`);
 const fontServed = served.filter((s) => s.rel.startsWith("/fonts/") && s.status === 200).map((s) => s.rel);
 if (fontFiles.length) check("the game fonts load from fonts/", fontsAsked.includes("Alfa Slab One:loaded") && fontsAsked.includes("Nunito:loaded") && fontServed.length > 0, `fonts: ${fontsAsked.join(", ") || "none"}; served: ${fontServed.join(", ") || "none"}`);
 else pending("the game fonts load from fonts/", "public/fish/fonts/ is not in the bundle yet; expected to pass once the boot package merges");
@@ -163,6 +165,6 @@ function report() {
   for (const r of results) console.log(`${r.s.padEnd(8)} ${r.name}${r.why ? "  -- " + r.why : ""}`);
   const n = (s) => results.filter((r) => r.s === s).length;
   console.log(`\napp-bundle: ${n("ok")} ok, ${n("FAIL")} failed, ${n("PENDING")} pending`);
-  if (n("PENDING")) console.log("PENDING checks wait for files from the boot package (public/fish/js/native.js, fonts/, the store kicker). They are not failures.");
+  if (n("PENDING")) console.log("PENDING checks wait for files from the boot package (public/fish/js/native.js, fonts/). They are not failures.");
   process.exit(n("FAIL") ? 1 : 0);
 }
