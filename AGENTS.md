@@ -34,6 +34,7 @@ The Cottage Arcade is static files in `public/`. There is no root package. `inst
 
 - Pinball browser checks need the server: `npm run test:pinball --prefix qa/browser`. Physics only: `node qa/lab/tilt.sim.mjs`.
 - Primordia: `node qa/primordia/lenia.test.mjs`, `node qa/primordia/combat.test.mjs` and `node qa/primordia/intro.test.mjs`. Bot runs: `node qa/primordia/bot.mjs 160 7 ref`. Browser checks need the server: `NODE_PATH=qa/browser/node_modules node qa/primordia/smoke.e2e.mjs`.
+- Moonwell: `node qa/moonwell/world.test.mjs` and `node qa/moonwell/play.test.mjs`. Bot runs: `node qa/moonwell/bot.mjs 16 0.75 8`. Browser checks need the server: `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs`.
 - Watch call: `npm ci --prefix voice`, then `node qa/voice/call.test.mjs`.
 - Olympus: `npm test --prefix games/olympus`. After editing that game, rebuild the committed bundle with `npm run build --prefix games/olympus`.
 - Follow Suit: `npm run check --prefix follow-suit`. Browser checks: `npm run qa --prefix follow-suit` and `npm run qa:arcade --prefix follow-suit`. After editing that game, rebuild the arcade copy in `public/follow-suit/` with `npm run build:arcade --prefix follow-suit`.
