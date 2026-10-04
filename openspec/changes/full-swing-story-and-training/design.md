@@ -30,8 +30,9 @@
 ## Layout
 
 - Desktop: the mission card leads the score row on one line, so the row stays one row and the marker keeps the top of the screen. The training card sits at the lower left, above the key strip, so the spoken line under the score row stays clear of it. The marker keeps out of the card's corner (the card plus the ring's half width and 8 px).
-- A phone, or a window under 760 by 520: main's score row stays one row of one height, so the marker keeps its share of the screen. The training card becomes a chip in that row (a box and the rows done), which takes the mission card's place while it shows. The mission card shows a short label (the district, or the pipes). With four score pills (a trial, or the King's hearts) neither shows; a wide window drops only the mission's next step.
+- A phone, or a window under 820 by 520: main's score row stays one row of one height, so the marker keeps its share of the screen. The training card becomes a chip in that row (a box and the rows done), which takes the mission card's place while it shows. The mission card shows a short label (the district, or the pipes). With four score pills (a trial, or the King's hearts) neither shows; a wide window drops only the mission's next step.
 - The spoken line is placed again at once when the phone panel comes or goes or the score row changes, so it never waits under a row that has shrunk.
+- The score row takes its natural width up to 96 % of the window (`width: max-content`). Before, a box placed at `left: 50%` could use only half the window, so a fourth pill wrapped it onto two rows. A window 820 to 940 wide shows the mission's short label in place of its next step, so the row stays one row. The four-pill rules count score pills only (not the chip or the mission).
 - The King's panels look in along the line from the Needle through his perch, so the spire stands behind him. His balloon sits beside him; other balloons sit above their speaker when there is room.
 
 ## How to check

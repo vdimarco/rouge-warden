@@ -1203,7 +1203,7 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-cross i:nth-child(2){left:50%;bottom:-14px;width:4px;height:9px;margin-left:-2px}
 .fs-cross i:nth-child(3){top:50%;left:-14px;height:4px;width:9px;margin-top:-2px}
 .fs-cross i:nth-child(4){top:50%;right:-14px;height:4px;width:9px;margin-top:-2px}
-.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:96vw}
+.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw}
 .fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);transform:rotate(-1.4deg)}
 .fs-pill:nth-child(2){transform:rotate(1deg);background:var(--cream,#fff4d8)}
 .fs-pill:nth-child(3){transform:rotate(-0.6deg)}
@@ -1283,23 +1283,26 @@ body.keyhints .fs-train{bottom:60px}
 .fs-train-now{display:none}
 @keyframes fsNow{50%{box-shadow:0 0 0 3px var(--ink,#140a18),0 0 0 7px rgba(255,216,74,.55)}}
 @media (max-height:460px){.fs-train{width:min(250px,32vw);padding:7px 9px 6px}.fs-train h3{font-size:20px}.fs-train li{font-size:15px;margin:3px 0}.fs-train kbd{font-size:12px;padding:2px 4px 0}.fs-mission b{font-size:19px}.fs-mission small{font-size:15px}}
-/* A small window (under 760 by 520) and every touch layout: the score row stays one row of one height, so the marker keeps its
+/* A small window (under 820 by 520) and every touch layout: the score row stays one row of one height, so the marker keeps its
    share of the screen. The card becomes a chip (a box and the rows done; the spoken line gives the words), which takes the
    mission's place while it shows. The mission shows a short label (the district, or the pipes). With four score pills (a
-   trial, or the King's hearts) neither shows. */
-@media (max-width:759px),(max-height:519px){
+   trial, or the King's hearts; the chip and the mission are not counted) neither shows. */
+@media (max-width:819px),(max-height:519px){
 .fs-train{display:none}.fs-train-now:not([hidden]){display:flex;background:#fffdf5}
 .fs-mission b,.fs-mission small{display:none}.fs-mission .fs-m-short{display:block}
 .fs-mission.no-short,.fs-top:has(.fs-train-now:not([hidden])) .fs-mission,
-.fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}}
+.fs-top:has(.fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now)) :is(.fs-mission,.fs-train-now){display:none}}
 body:has(#phoneControls:not([hidden])) .fs-train{display:none}
 body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:#fffdf5}
 body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission{display:none}
-body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}
+body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now)) :is(.fs-mission,.fs-train-now){display:none}
 .fs-train-now b{display:none}.fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
 .fs-m-short{font:400 22px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase}
+/* a middle window (820 to 940 wide): the mission keeps its title and shows the short label for its next step, so the row stays
+   one row */
+@media (min-width:820px) and (max-width:939px){.fs-mission small{display:none}.fs-mission .fs-m-short{display:block}}
 /* a wide window with four score pills: the mission keeps its title and drops its next step */
-.fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) .fs-mission small{display:none}
+.fs-top:has(.fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now)) .fs-mission small{display:none}
 @media (prefers-reduced-motion:reduce){.fs-train li.now{animation:none}}
 @media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}.fs-menu .btn,.fs-map .btn{transition:none}}`;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };

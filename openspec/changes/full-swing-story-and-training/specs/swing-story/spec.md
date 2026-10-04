@@ -50,5 +50,5 @@ In flat play a mission card in the score row SHALL show the current mission and 
 - **THEN** the card in the score row says "FLUSH THE CLOGS 1/12" and "Next: <district> clog, <distance> m" on one line
 
 #### Scenario: Mission card on a phone or a small window
-- **WHEN** the player plays on a phone, or in a window under 760 by 520 pixels, after the training
+- **WHEN** the player plays on a phone, or in a window under 820 by 520 pixels, after the training
 - **THEN** the score row shows a short label (the district of the next clog, or the pipes left) and stays one row
