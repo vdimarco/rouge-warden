@@ -7,7 +7,8 @@ import { BALL_R as R, FLIP } from './world.js';
 
 export const PHY = {
   G: 1500,
-  MOTOR: 12000, UP: 16, DOWN: 12,        // flipper motor: rad/s² and top speeds going up and coming down
+  MOTOR: 12000, UP: 16, DOWN: 12,       // flipper motor: rad/s² and top speeds going up and coming down
+  PASS: 0.78,                           // the right flipper swings at this share of the left one's speed: it passes
   E_GROUND: 0.32, E_FLIP: 0.42, E_HELD: 0.12, E_LANTERN: 0.55, E_MILL: 0.6, E_BUMP: 0.75, BUMP: 430,
   ROLL: 0.003,                          // a little rolling loss each contact substep
   GRIP: 0.5, RUBBER: 2.5,               // a swinging flipper's rubber grips the pearl; a still one slows a roll (per s)
@@ -22,7 +23,7 @@ export function moveFlippers(s, input, h, power = 1) {
     const target = held ? f.up : f.rest;
     const dir = Math.sign(target - f.th);
     if (!dir) { f.om = 0; continue; }
-    const top = held ? PHY.UP * power : PHY.DOWN;
+    const top = held ? PHY.UP * power * (f.side > 0 ? PHY.PASS : 1) : PHY.DOWN;
     f.om = clamp(f.om + dir * PHY.MOTOR * h, -top, top);
     f.th += f.om * h;
     if ((dir > 0 && f.th >= target) || (dir < 0 && f.th <= target)) { f.th = target; f.om = 0; }
@@ -65,8 +66,8 @@ function bar(b, cx, cy, th, from, to, r0, r1, e, om, grip) {
   return hit;
 }
 
-// Advance the flippers of every station and the pearl by dt. Contacts go to ev; ball.touch says what it rests on.
-export function step(world, stations, ball, input, dt, mods, ev) {
+// Advance the flippers of the stations in view and the pearl by dt. Contacts go to ev; ball.touch says what it rests on.
+export function step(world, stations, ball, input, dt, mods, ev, shown = world.list) {
   const power = mods.power || 1, g = PHY.G * (mods.g || 1);
   const speed = Math.hypot(ball.vx, ball.vy);
   const tip = PHY.UP * power * FLIP.len;
@@ -74,7 +75,7 @@ export function step(world, stations, ball, input, dt, mods, ev) {
   const h = dt / n;
   ball.touch = null;
   for (let i = 0; i < n; i++) {
-    for (const s of world.list) moveFlippers(s, input, h, power);
+    for (const s of shown) moveFlippers(s, input, h, power);
     ball.vy += g * h;
     ball.x += ball.vx * h;
     ball.y += ball.vy * h;
@@ -97,7 +98,7 @@ function collide(s, b, h, g, ev) {
       if (hit.vn > 260) ev.push({ type: 'thud', x: b.x, y: b.y, v: hit.vn });
     }
   }
-  // the moon gate on the left ridge once the pearl is past it, and the shrine's sealed gate on its right ridge
+  // the wall at the edge of the kept world, and a shrine's sealed gate on its right ridge
   const wall = (x, y) => {
     if (Math.abs(b.x - x) > R + 6 || b.y > y + R) return;
     const hit = contact(b, x, clamp(b.y, -6000, y - 6), 6, 0.5);

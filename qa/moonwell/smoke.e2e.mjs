@@ -102,6 +102,19 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     check('the camera scrolls right with the pearl', s.island >= 4 && s.cam.x > firstX + 2500, `island ${s.island}, camera moved ${(s.cam.x - firstX) | 0}`);
     check('the pearl stays on the screen sideways', inView === samples, `${inView} of ${samples}`);
     check('the flippers of the bowl stay on the screen', framed >= 74, `${framed} of 80`);
+
+    // a strong pass back over the ridge behind: the camera follows the pearl left, and the furthest island stays
+    await page.evaluate(() => { window.moonwell.autoplay(false); const r = window.moonwell.run; r.saver = 9; const st = r.world.list.find((x) => x.k === r.at); r.phase = 'play'; Object.assign(r.ball, { x: st.x0 + 60, y: st.y0 - 150, vx: -800, vy: -250, mode: 'free' }); });
+    const before = await snap(page);
+    let back = null, visible = true;
+    for (let i = 0; i < 12; i++) {
+      await wait(100);
+      const n = await snap(page);
+      if (Math.abs(n.ball.x - n.cam.x) > n.view.w / 2 / n.cam.scale) visible = false;
+      if (n.island < before.island) back = n;
+    }
+    check('a strong pass goes back an island, and the camera follows it left', back && back.far === before.far && back.cam.x < before.cam.x - 200 && visible, back ? `island ${back.island}, furthest ${back.far}` : 'did not go back');
+    check('the head-up display shows the furthest island', /FURTHEST/.test(await page.textContent('#island')));
     check('no console errors on desktop', errors.length === 0, errors.join('; '));
     await ctx.close();
   }
@@ -125,7 +138,7 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     s = await snap(page);
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('moonwell.best.v1')));
     check('the run ends with a summary', await page.isVisible('#dialog') && (await page.textContent('#dialog-title')).includes('moon rests'));
-    check('the best run is saved', saved && saved.score === s.score && saved.island === s.island, JSON.stringify(saved));
+    check('the best run is saved, with the furthest island', saved && saved.score === s.score && saved.island === s.far, JSON.stringify(saved));
     await page.keyboard.press('Space');
     await wait(150);
     s = await snap(page);
@@ -148,15 +161,21 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     await page.tap('#launch');
     await wait(200);
     const cdp = await ctx.newCDPSession(page);
-    // drop the pearl, and hold the left flipper up so it waits in the crook
-    await wait(400);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }] });
-    await page.waitForFunction(() => { const r = window.moonwell.run, s = r.world.list.find((x) => x.k === r.at); return r.ball.y > s.fy - 60 && Math.hypot(r.ball.vx, r.ball.vy) < 30; }, null, { timeout: 8000 });
-    await wait(1200);
-    const f = await framing(page);
-    check('with the pearl at the flippers, both flippers and the next ridge are on the screen', f.left > 0 && f.right < f.w && f.ridge < f.w && f.flipY < f.h - 150, JSON.stringify(f));
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await wait(100);
+    // on several seeds: drop the pearl, and hold the left flipper up so it waits in the crook, where a player aims
+    // the first three have the widest first bowl of 400 seeds, where the ridge sits furthest right
+    const seeds = [165, 383, 46, 11], misses = [];
+    for (const seed of seeds) {
+      await page.evaluate((sd) => window.moonwell.start(sd), seed);
+      await wait(400);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }] });
+      await page.waitForFunction(() => { const r = window.moonwell.run, s = r.world.list.find((x) => x.k === r.at); return r.ball.y > s.fy - 60 && Math.hypot(r.ball.vx, r.ball.vy) < 30; }, null, { timeout: 8000 });
+      await wait(1200);
+      const f = await framing(page);
+      if (!(f.left > 0 && f.right < f.w && f.ridge < f.w && f.flipY < f.h - 150)) misses.push(`seed ${seed}: ${JSON.stringify(f)}`);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await wait(100);
+    }
+    check(`with the pearl at the flippers, both flippers and the next ridge are on the screen (${seeds.length} seeds)`, misses.length === 0, misses.join('; '));
     check('the touch pads show', await page.isVisible('#pad-left') && await page.isVisible('#pad-right'));
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 60, y: 600, id: 1 }, { x: 330, y: 600, id: 2 }] });
     await wait(150);
@@ -192,9 +211,12 @@ const angles = (page) => page.evaluate(() => { const r = window.moonwell.run, s 
     const { ctx, page } = await open(browser, { reduced: true });
     await page.click('#launch');
     await page.evaluate(() => { window.moonwell.autoplay(true, 0.9); });
-    await wait(12000);
+    await wait(8000);
+    // a drain always shakes the screen, unless motion is reduced
+    await page.evaluate(() => { window.moonwell.autoplay(false); const r = window.moonwell.run; r.saver = 0; r.moonrise = 0; r.bridges = 0; r.phase = 'play'; const st = r.world.list.find((x) => x.k === r.at); Object.assign(r.ball, { x: st.cx, y: st.drainY + 4, vx: 0, vy: 50, mode: 'free' }); });
+    await wait(500);
     const s = await snap(page);
-    check('the screen never shakes', s.maxShake === 0 && s.island > 2, `island ${s.island}, shake ${s.maxShake}`);
+    check('the screen never shakes, even on a drain', s.maxShake === 0 && s.lives < 3, `lives ${s.lives}, shake ${s.maxShake}`);
     await ctx.close();
   }
 
