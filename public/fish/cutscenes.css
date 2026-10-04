@@ -1,0 +1,42 @@
+/* Reel It In: the cutscenes (js/cutscenes.js). Letterbox bars, one caption, the Skip hint, and the fade between still
+   shots. The bars and the caption clear the notch and the home bar (--sat, --sab, and the sides), and the caption grows
+   with the text size (--ui-scale). A press anywhere on #cut skips, so it sits over every screen */
+#cut { --cut-bar: clamp(26px, 9cqh, 96px); position: absolute; inset: 0; z-index: 20; pointer-events: auto; touch-action: none; cursor: pointer; }
+#cut .bar { position: absolute; left: 0; right: 0; background: #050d10; }
+#cut .bar.top { top: 0; height: calc(var(--sat) + var(--cut-bar)); }
+#cut .bar.bot { bottom: 0; height: calc(var(--sab) + var(--cut-bar)); }
+#cut:not(.gone) .bar.top { animation: cut-top 0.45s ease-out; }
+#cut:not(.gone) .bar.bot { animation: cut-bot 0.45s ease-out; }
+@keyframes cut-top { from { transform: translateY(-100%); } }
+@keyframes cut-bot { from { transform: translateY(100%); } }
+
+/* the caption: the name on the bottom bar, one short line under it. A tall caption on a short screen rises over the
+   picture, with a shadow to read it there */
+#cut .cap { position: absolute; left: calc(var(--sal) + 16px); right: calc(var(--sar) + 16px); bottom: calc(var(--sab) + clamp(6px, var(--cut-bar) * 0.18, 18px));
+  display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; color: var(--ink); opacity: 0; transition: opacity 0.5s;
+  text-shadow: 0 1px 2px #000, 0 0 10px rgba(0, 0, 0, 0.7); pointer-events: none; }
+#cut .cap.on { opacity: 1; }
+#cut .cap b { font-family: var(--slab); font-weight: 400; font-size: calc(clamp(22px, 6.2vmin, 38px) * var(--ui-scale, 1)); line-height: 1.1; letter-spacing: 0.02em; color: #fff6dc; }
+#cut .cap span { font-size: calc(clamp(14px, 3.6vmin, 18px) * var(--ui-scale, 1)); line-height: 1.3; font-weight: 700; color: #e8f2ef; }
+#cut .cap span:empty { display: none; }
+/* the painted style names things in a serif, like its title */
+body:not([data-art-style="original"]) #cut .cap b { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -0.02em; }
+
+/* the Skip hint, on the top bar */
+#cut .skip { position: absolute; right: calc(var(--sar) + 14px); top: calc(var(--sat) + var(--cut-bar) / 2); transform: translateY(-50%);
+  font-size: calc(12px * var(--ui-scale, 1)); letter-spacing: 0.08em; color: var(--muted); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+#cut .skip.on { opacity: 0.85; }
+
+/* the press that skipped: the overlay stays until the finger lifts, unseen, so the press never reaches the screen under it */
+#cut.gone { opacity: 0; }
+#cut.gone .bar, #cut.gone .cap, #cut.gone .skip { animation: none; transition: none; }
+
+/* the fade between still shots (and in and out): under the bars and the caption, which stay */
+#cutFade { position: absolute; inset: 0; z-index: 19; background: #04090b; opacity: 0; pointer-events: none; }
+
+/* the game's own controls and words wait while a cutscene plays */
+#game[data-cut] :is(#hud, #prompt, #report, #toast, #castUI, #reelUI, #fishGuide, #rodCue, #castRail, #pullStrength, #catch .card) { visibility: hidden !important; }
+
+/* calm effects and reduced motion: the bars are there at once */
+@media (prefers-reduced-motion: reduce) { #cut .bar.top, #cut .bar.bot { animation: none !important; } }
+html[data-calm="1"] #cut .bar.top, html[data-calm="1"] #cut .bar.bot { animation: none !important; }

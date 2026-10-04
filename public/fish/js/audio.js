@@ -506,6 +506,15 @@ const SFX = {
   loon(e, t, v) { return loon(e, t, v); },
   loonWail(e, t) { return loonWail(e, t, { pan: 0 }); },
   loonTremolo(e, t) { return loonTremolo(e, t, { pan: 0 }); },
+  // a cutscene opens (cutscenes.js): a soft chord swells in and fades, with a shimmer on top. v 0: a place (major),
+  // 1: a legend rises (low and dark, over a drum), 2: the finale (bright)
+  swell(e, t, v) {
+    const k = Math.round(clamp(num(v, 0), 0, 2)), root = [196, 146.8, 261.6][k], chord = k === 1 ? [1, 1.189, 1.498, 0.5] : [1, 1.26, 1.498, 2];
+    let end = t;
+    chord.forEach((r, i) => { end = Math.max(end, tone(e, t + i * 0.12, { type: "triangle", f: root * r, dur: 3.2, att: 0.9, peak: 0.08, lp: 1600, send: 0.5 })); });
+    if (k === 1) tone(e, t, { f: 55, f2: 44, dur: 1.4, att: 0.02, peak: 0.28 });
+    return Math.max(end, hiss(e, t + 0.4, { type: "highpass", f: 6000, dur: 2.2, att: 0.8, peak: 0.008, send: 0.4 }));
+  },
   // UI: a soft wooden tick with a small bell in it, like the latch of a tackle box
   ui(e, t) {
     hiss(e, t, { type: "bandpass", f: 2600, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.4 });

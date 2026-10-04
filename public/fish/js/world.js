@@ -239,8 +239,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   applyStand();
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
-  function baseFov(mode) {
-    const aspect = S.w / S.h, portrait = S.view.portrait || aspect < 0.9;
+  // tall: the layout to fit (the cast view of a cutscene's last key); the view's own when not given
+  function baseFov(mode, tall) {
+    const aspect = S.w / S.h, portrait = tall ?? (S.view.portrait || aspect < 0.9);
     const hf = (WORLD.FOV_H[mode] || 70) * DEG;
     const v = 2 * Math.atan(Math.tan(hf / 2) / aspect) / DEG;
     const [lo, hi] = portrait ? WORLD.FOV_V_PORTRAIT : WORLD.FOV_V_WIDE;
@@ -297,7 +298,24 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     }
     return out;
   }
+  // A cutscene (cutscenes.js) holds the camera: while cutFn is set it gives the pose each frame in place of camTarget(),
+  // and the rod, the line and the lure hide. fn(dt, { cast, aspect, loon }) returns { pos, look, fov } ({x, y, z} points,
+  // degrees). cast: the cast view as main.js lays it out (tall up to 1.15 wide): { pos, pitch, fov }; loon: where the loon
+  // swims (null while it dives, or at a place with none)
+  let cutFn = null;
+  function cutCamera(dt) {
+    const tall = S.w / S.h <= 1.15, C = S.cam;
+    const T = cutFn(dt, { cast: { pos: EYEV, pitch: (tall ? WORLD.PITCH_CAST.portrait : WORLD.PITCH_CAST.wide) * DEG, fov: baseFov("cast", tall) }, aspect: S.w / S.h, loon: loon && loon.visible ? loon.position : null });
+    if (T) {
+      const dx = T.look.x - T.pos.x, dz = T.look.z - T.pos.z;
+      C.pos.set(T.pos.x, T.pos.y, T.pos.z);
+      C.yaw = Math.atan2(dx, -dz); C.pitch = Math.atan2(T.look.y - T.pos.y, Math.max(Math.hypot(dx, dz), 0.01)); C.fov = T.fov;
+      C.init = true;
+    }
+    applyCamera();
+  }
   function updateCamera(dt) {
+    if (cutFn) { cutCamera(dt); return; }
     const T = camTarget(), C = S.cam;
     if (!C.init) { C.pos.copy(T.pos); C.yaw = T.yaw; C.pitch = T.pitch; C.fov = T.fov; C.init = true; }
     const k = 1 - Math.exp(-dt * T.rate), kp = 1 - Math.exp(-dt * T.posRate);
@@ -348,7 +366,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function drawLine(dt) {
     const Ln = S.line;
-    const show = Ln.visible && Ln.from && Ln.to && firstPerson();
+    const show = Ln.visible && Ln.from && Ln.to && firstPerson() && !cutFn;
     line.mesh.visible = !!show;
     if (!show) { line.motion.reset(); return; }
     // if the caller drew the line from the tip we returned, follow the tip as the camera settles this frame
@@ -360,7 +378,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   const qTmp = new THREE.Quaternion(), mTmp = new THREE.Matrix4(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
   function drawLure(dt) {
     const Lr = S.lure, g = lure.group;
-    const show = Lr.visible && firstPerson();
+    const show = Lr.visible && firstPerson() && !cutFn;
     g.visible = show;
     lure.glint.visible = false;
     WU.uLure.value.set(0, 0, 0, 0);
@@ -652,7 +670,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   }
   function render() {
     applyCamera();
-    rod.mesh.visible = S.rod.visible && firstPerson() && camera.fov > baseFov(S.view.mode) * 0.8;
+    rod.mesh.visible = S.rod.visible && firstPerson() && !cutFn && camera.fov > baseFov(S.view.mode) * 0.8;
     if (rod.mesh.visible) poseRod();
     drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
@@ -743,6 +761,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       S.view = { mode, yaw, look, portrait, inset, bottom };
       if (refit) fitTrophy();
     },
+    // a cutscene's camera, or null to give the camera back (see cutCamera)
+    cutCamera(fn) { cutFn = typeof fn === "function" ? fn : null; },
     setRod({ theta = 60, yaw = 0, steer = 0, bend = 0, pull = null, visible = true } = {}) {
       S.rod = { theta, yaw, steer, bend, pull, visible };
       applyCamera();
