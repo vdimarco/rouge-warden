@@ -195,6 +195,7 @@ for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sf
 
 // A toast stays up at least TOAST_MIN ms before the next one takes its place. The next ones wait in a short queue: when it
 // is full the oldest waiting toast is dropped (the newest wins), and one that waited TOAST_STALE ms is no news any more.
+// The toast that shows, asked for again, shows again from the start.
 // onShow runs when the toast is on screen (a one-time tip is marked seen then, not when it was asked for)
 const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
 let toastT = 0, toastNextT = 0, toastAt = -1e9;
@@ -202,7 +203,9 @@ const toastQ = [];
 function toast(msg, ms = 2200, onShow = null) {
   const t = $("#toast"), up = now() - toastAt;
   if (t.classList.contains("on") && up < TOAST_MIN) {
-    if (t.textContent === msg || toastQ.some((q) => q.msg === msg)) return;
+    // the same news again (a second gold ring) keeps the shown toast up for its full time; it is not news to queue
+    if (t.textContent === msg) { showToast(msg, ms, onShow); return; }
+    if (toastQ.some((q) => q.msg === msg)) return;
     toastQ.push({ msg, ms, onShow, at: now() });
     if (toastQ.length > TOAST_QUEUE) toastQ.shift();
     if (!toastNextT) toastNextT = setTimeout(nextToast, TOAST_MIN - up);
@@ -221,6 +224,9 @@ function showToast(msg, ms, onShow) {
 }
 function nextToast() {
   toastNextT = 0;
+  // the shown toast was asked for again: it keeps its full TOAST_MIN
+  const up = now() - toastAt;
+  if (up < TOAST_MIN - 5) { toastNextT = setTimeout(nextToast, TOAST_MIN - up); return; }
   while (toastQ.length && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
   const q = toastQ.shift();
   if (!q) return;
