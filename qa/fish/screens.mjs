@@ -1121,8 +1121,14 @@ if (part("J")) {
     await frames(8);
     const TIP = "A fish is rising. Cast into the ring for a sure bite.";
     check((await count(TIP)) === 0 && (await page.evaluate(() => !FISH.save.seen["ring.tip"])), "a ring 40 m out gives no tip");
-    await page.evaluate(() => { window.__rise = [6, -14]; });
-    check((await toastIs(page, TIP)) === TIP, "a ring within 25 m: \"" + TIP + "\"");
+    // other news on screen: the tip waits for a quiet moment (it never pushes news out of the queue). (The goal reminder
+    // goes first, so its own timer cannot take the news off while the test holds it up)
+    await wait(page, () => !document.querySelector("#toast").classList.contains("on"), null, 10000);
+    await page.evaluate(() => { document.querySelector("#toast").classList.add("on"); window.__rise = [6, -14]; });
+    await frames(6);
+    check((await count(TIP)) === 0 && (await page.evaluate(() => !FISH.save.seen["ring.tip"])), "a ring within 25 m while other news is up: the tip waits");
+    await page.evaluate(() => { document.querySelector("#toast").classList.remove("on"); });
+    check((await toastIs(page, TIP)) === TIP, "then a ring within 25 m: \"" + TIP + "\"");
     await frames(10);
     check((await count(TIP)) === 1 && (await page.evaluate(() => FISH.save.seen["ring.tip"] === 1)), "said once, and the save remembers (" + (await count(TIP)) + ")");
 

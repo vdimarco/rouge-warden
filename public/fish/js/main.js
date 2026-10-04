@@ -910,12 +910,13 @@ function noteGoals(ctx) {
     toast("Goal done: " + PLACE_GOALS[id][i].text, 3000, () => Sound.sfx("record"));
   }
 }
-// A plain ring rose. The first one within reach in the cast gets the tip, once. And the help for a short caster: after
-// ASSIST.casts casts in the water here in free fishing with the goal that opens the next place still open, the next ring
-// within reach carries a feeding big fish (a sure bite: fish.js LakeSim.choose), said once for that ring
+// A plain ring rose. The first one within reach in the cast gets the tip, once, when no other news is up or waiting (a
+// ring rises again in a few seconds, so the tip never pushes other news out of the queue). And the help for a short
+// caster: after ASSIST.casts casts in the water here in free fishing with the goal that opens the next place still open,
+// the next ring within reach carries a feeding big fish (a sure bite: fish.js LakeSim.choose), said once for that ring
 function ringNews(e) {
   if (G.phase !== "cast" || Math.hypot(e.x, e.z) > ASSIST.reach) return;
-  if (!save.seen["ring.tip"]) toast("A fish is rising. Cast into the ring for a sure bite.", 3200, () => seen("ring.tip"));
+  if (!save.seen["ring.tip"] && !$("#toast").classList.contains("on") && !toastQ.length) toast("A fish is rising. Cast into the ring for a sure bite.", 3200, () => seen("ring.tip"));
   const big = G.mode === "free" && G.dry && G.dry.at === G.place.id && G.dry.n >= ASSIST.casts && goalLine("remind") ? assistFish(G.place.id) : null;
   const g = big && rises && rises.near(e.x, e.z);
   if (!g || g.gold || g.big) return;
