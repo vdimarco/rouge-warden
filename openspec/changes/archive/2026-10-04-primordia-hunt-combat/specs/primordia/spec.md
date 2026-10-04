@@ -1,9 +1,4 @@
-# primordia Specification
-
-## Purpose
-Primordia is a Cottage Arcade game built on a live Lenia simulation: the player eats Orbium prey, avoids stalking hunters, and turns on them during Frenzy.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: A living Lenia dish
 Primordia SHALL simulate its creatures with Lenia rules and published Lenia patterns, so prey and hunters move, collide and die as cellular automata, not as scripted sprites. Hunters SHALL stay alive until the player kills them; the game SHALL keep them from merging into each other.
@@ -106,6 +101,14 @@ The Cottage Arcade SHALL list Primordia in the Action row with a cabinet that bo
 #### Scenario: Live cabinet screen
 - **WHEN** the Primordia cabinet is selected and the page is visible
 - **THEN** its screen shows Orbium prey and a hunter moving in a small live dish; with reduced motion the still image stays
+
+## REMOVED Requirements
+
+### Requirement: Frenzy reversal
+**Reason**: Frenzy was active 23-31% of the time and firing it at once always won, so it was routine rather than a decision.
+**Migration**: Replaced by the Burst requirement below, on the same inputs.
+
+## ADDED Requirements
 
 ### Requirement: Rend Dash
 The dash SHALL cut hunter tissue along its path and SHALL have charges that the player refills by eating.
