@@ -43,6 +43,16 @@ jobs:
         run: node qa/vr/mouse-look.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: Training checklist, pump sticker and mission card
+        run: node qa/vr/training.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
+      - name: Comic cutscenes (the opening, a briefing, the King, the finale)
+        run: node qa/vr/cutscene.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
       - uses: actions/upload-artifact@v4
         if: always()
         with:

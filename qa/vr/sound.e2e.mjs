@@ -34,7 +34,7 @@ async function fresh(muted) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   if (muted) await page.addInitScript(() => localStorage.setItem('arcade.sound', 'false'));
-  await page.goto(url + '?nosw');
+  await page.goto(url + '?nosw&nocut');
   await page.waitForFunction(() => window.G && G.ready && !document.querySelector('#playFlat').disabled, null, { timeout: 180000 });
   return { page, errors };
 }

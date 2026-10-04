@@ -3,7 +3,7 @@
 // calls update once a frame. Everything it draws is built in code and animated in shaders, in the comic look of the key art:
 // three cel bands, ink outline twins, world-anchored dots, the city's four-step haze. About a dozen draws, plus their ink twins.
 import * as THREE from "three";
-import { GAME, COLORS, PERF, SUN_DIR } from "./config.js";
+import { GAME, COLORS, PERF, SUN_DIR, TRAINING } from "./config.js";
 import { PROP_GLSL, INK_GLSL, HULL_HEAD, hullMaterial, inkTwin, rgb, partsBuilder, place } from "./rope.js";
 import { GLSL, PAL, smoothNormals, syncInk, loadArt } from "./comic.js";
 import { release, teleport } from "./physics.js";
@@ -174,7 +174,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   save.pipes = [...ids(save.pipes, 3)];
   if (!["sleeping", "awake", "beaten"].includes(save.king)) save.king = "sleeping";
   const bankNow = () => Math.min(GAME.bankMax, got.size + save.bonus);
-  const progress = { clogs: done.size, clogsTotal: 12, loonies: got.size, looniesTotal: 80, bank: bankNow(), king: save.king, hearts: KING.hearts, trial: null, tutorial: -1 };
+  const progress = { clogs: done.size, clogsTotal: 12, loonies: got.size, looniesTotal: 80, bank: bankNow(), king: save.king, hearts: KING.hearts, trial: null, tutorial: -1,
+    training: null, pump: null, objective: null }; // training: the checklist; pump: a rope on a clog or a pipe; objective: the mission card
   let seed = 0x5eed1e5;
   const rand = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const V1 = new THREE.Vector3(), V2 = new THREE.Vector3(), V3 = new THREE.Vector3(), Q1 = new THREE.Quaternion(), Q2 = new THREE.Quaternion();
@@ -189,6 +190,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   // a comic sound word in the world (fx.js, reached as G.fx); it is skipped when the art is missing or it would sit on your head
   const word = (name, x, y, z, o) => { const f = typeof window !== "undefined" && window.G && window.G.fx; if (f) f.word(name, { x, y, z }, o); };
   const saySoon = (text, s) => { if (ui && ui.say) ui.say(text, s); };
+  // the story beats (main plays a comic scene for each, once per save): "district", "king", "finale"
+  let storyFn = null;
+  const story = (name, arg) => { if (storyFn) safe(() => storyFn(name, arg)); };
   const toast = (text) => { if (ui && ui.toast) ui.toast(text); };
 
   /* ---------------- meshes ---------------- */
@@ -1110,6 +1114,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     c.level = Math.max(0.35, 1 - 0.22 * c.pumps);
     setFountain(c, c.level, T);
     sludgeSplat(c.bx, c.by, c.bz, 10, 6);
+    if (train.on) trainCount("plunge", c.pumps);
     if (c.pumps >= GAME.pumpsToFlush) flush(c, side, false);
   }
   function flush(c, side, silent) {
@@ -1150,8 +1155,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       if (done.size === 1) later(3, () => say("clog", 3));
     }
     setBank();
-    // the first flush ends the tutorial
-    if (!save.tutorial || tut.step >= 0) tutFinish(false);
+    // the first flush ends the spoken tutorial; the checklist only ticks its row (the other rows stay open)
+    if (train.on) trainTick("plunge");
+    else if (!save.tutorial || tut.step >= 0) tutFinish(false);
     kingOnFlush();
     saveNow();
   }
@@ -1398,7 +1404,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     view.setKing(1);
     beamWant[KING_BEAM] = 1;
     for (const p of pipes) if (!p.ripped) addPipeTarget(p);
-    if (loud !== false) { say("king", 1); later(4, () => say("king", 2)); }
+    if (loud !== false) { say("king", 1); later(4, () => say("king", 2)); story("king"); }
     saveNow();
   }
   function addPipeTarget(p) { ropes.addTarget({ id: p.tid, tag: "pipe", pos: { x: p.tip.x, y: p.tip.y, z: p.tip.z }, radius: 2.2, normal: { x: p.n.x, y: p.n.y, z: p.n.z } }); }
@@ -1633,6 +1639,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   }
   const fin = { on: false, t: 0, fw: 0, credits: false, next: 0, ci: 0 };
   function beginFinale() {
+    later(1.5, () => story("finale"));
     fin.on = true; fin.t = 0; fin.fw = 0; fin.credits = false;
     progress.king = save.king = "beaten";
     for (const p of pipes) ropes.removeTarget(p.tid);
@@ -1709,6 +1716,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   }
   const musicOn = () => { if (settings.music !== false && audio && audio.music) audio.music(true); };
   function tutFinish(skipped) {
+    if (train.on) { trainFinish(skipped); return; }
     const was = tut.step >= 0 || !save.tutorial;
     tut.step = -1; progress.tutorial = -1;
     hands.glow(null);
@@ -1716,6 +1724,125 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     save.tutorial = true;
     if (was) { musicOn(); saveNow(); }
     if (skipped) sfx("uiBack");
+  }
+  /* ---------------- the training checklist (flat play) ---------------- */
+  // The moves as rows with boxes that tick in any order. The first open row is next: its line is said, and said again now and
+  // then. On a monitor or a phone it takes the place of the step-by-step spoken tutorial; a headset keeps that.
+  const train = { on: false, items: null, t: 0, look: 0, reel: 0, climb: 0, lt: [-1, -1], wallY: NaN, endT: 0 };
+  const flatKind = () => (phonePlay() || kind === "touch" ? "touch" : kind === "pad" ? "pad" : kind === "mouse" || kind === "desktop" ? "mouse" : null);
+  function trainBegin(k) {
+    train.on = true; train.t = 0; train.look = train.reel = train.climb = 0; train.lt[0] = train.lt[1] = -1; train.wallY = NaN; train.endT = 0;
+    train.items = TRAINING[k].map((r) => ({ id: r.id, text: r.text, keys: r.keys.slice(), line: r.line, say: r.say, of: r.of || 0, n: 0, done: false }));
+    progress.training = { items: train.items, now: 0, done: false, kind: k };
+    progress.tutorial = 0; // (main reads 0 as "the gold ring is a target")
+    const g = city.goldRing; // the gold ring marks a good first anchor
+    ringSet(GOLD_SLOT, g.x + g.nx * 0.4, g.y, g.z + g.nz * 0.4, g.nx, g.ny, g.nz, 4.2, 3);
+    trainNext();
+  }
+  // the row to do next, and its words: a tutorial line for this input, or the row's own words
+  function trainNext() {
+    const i = train.items.findIndex((r) => !r.done);
+    progress.training.now = i; train.t = 0;
+    progress.tutorial = i; // the next row's number: 0 (the gold ring) while the first row is open
+    if (i >= 0) trainSay(train.items[i]);
+  }
+  const trainSay = (r) => { if (r.line != null) say("tutorial", r.line); else saySoon(r.say, 6); };
+  function trainTick(id) {
+    const r = train.on && train.items.find((x) => x.id === id);
+    if (!r || r.done) return;
+    r.done = true; if (r.of) r.n = r.of;
+    sfx("ui");
+    if (id === "rope") ringSet(GOLD_SLOT, 0, 0, 0, 0, 1, 0, 1, 0);
+    if (train.items.every((x) => x.done)) trainFinish(false);
+    else if (progress.training.now >= 0 && train.items[progress.training.now] === r) trainNext();
+  }
+  const trainDone = (id) => { const r = train.items && train.items.find((x) => x.id === id); return !!(r && r.done); };
+  function trainCount(id, n) { const r = train.on && train.items.find((x) => x.id === id); if (r && !r.done) r.n = Math.min(r.of, n); }
+  function trainFinish(skipped) {
+    train.on = false;
+    progress.tutorial = -1;
+    ringSet(GOLD_SLOT, 0, 0, 0, 0, 1, 0, 1, 0);
+    if (progress.training) { progress.training.done = true; progress.training.now = -1; }
+    train.endT = skipped ? 0.01 : 4; // the card shows "complete" for a moment, then folds away
+    save.tutorial = true;
+    saveNow();
+    if (skipped) { sfx("uiBack"); return; }
+    toast("Training complete! Now flush the clogs.");
+    if (ui && ui.flash) ui.flash("gold");
+    sfx("unlock");
+  }
+  function trainEvent(ev) {
+    if (!train.on) return;
+    const touch = progress.training.kind === "touch";
+    if (ev.type === "attach") {
+      const r = P.ropes[ev.side];
+      if (r && r.anchor.y - (P.pos.y + P.chest) >= 10) trainTick("rope");
+      if (!P.onGround && trainDone("rope") && trainDone("swing")) trainTick("again");
+    } else if (ev.type === "detach") {
+      if (ev.speed >= 8) trainTick("swing");
+      if (touch && ev.speed >= 15) trainTick("fast");
+    } else if (ev.type === "yank" && ev.target && !SPECIAL[ev.target.tag]) trainTick("yank");
+  }
+  function trainUpdate(dt, input) {
+    if (!train.on) {
+      if (train.endT > 0 && (train.endT -= dt) <= 0) progress.training = null;
+      return;
+    }
+    train.t += dt;
+    // look: a turn of about 60 degrees in all
+    train.look += Math.abs(input.turn || 0);
+    if (train.look > 1) trainTick("look");
+    // reel: 8 m of rope taken in
+    for (let i = 0; i < 2; i++) {
+      const r = P.ropes[i];
+      if (r.state !== "attached") { train.lt[i] = -1; continue; }
+      if (train.lt[i] >= 0 && r.reeling && r.lenTarget < train.lt[i]) train.reel += train.lt[i] - r.lenTarget;
+      train.lt[i] = r.lenTarget;
+    }
+    if (train.reel >= 8) trainTick("reel");
+    // climb: 2 m up or down a wall
+    if (P.wall) { if (Number.isFinite(train.wallY)) train.climb += Math.abs(P.pos.y - train.wallY); train.wallY = P.pos.y; } else train.wallY = NaN;
+    if (train.climb >= 2) trainTick("climb");
+    // the next row's line again, now and then
+    const now = progress.training.now;
+    if (now >= 0 && train.t > 20) { train.t = 0; trainSay(train.items[now]); }
+  }
+  // the pump sticker: a rope on a clog (or, in the King fight, a pipe) and the pumps so far
+  const PUMP = { n: 0, of: GAME.pumpsToFlush, kind: "clog" };
+  function pumpState() {
+    let n = -1, k = "clog";
+    for (const r of P.ropes) {
+      if (r.state !== "attached" || !r.target) continue;
+      if (r.target.tag === "clog") { const c = clogById.get(r.target.id); if (c && !c.done) { n = Math.max(n, c.pumps); k = "clog"; } }
+      else if (r.target.tag === "pipe") { const q = pipes.find((x) => x.tid === r.target.id); if (q && !q.ripped) { n = Math.max(n, q.pumps); k = "pipe"; } }
+    }
+    if (n < 0) { progress.pump = null; return; }
+    PUMP.n = n; PUMP.kind = k; progress.pump = PUMP;
+  }
+  // the mission card: what to do now, and where
+  const OBJ = { title: "", detail: "", short: "", n: 0, of: 0 }; // short: the phone's label
+  let objT = 0;
+  function objectiveUpdate(dt) {
+    if ((objT -= dt) > 0) return;
+    objT = 0.5;
+    if (progress.trial) { progress.objective = null; return; }
+    if (progress.king === "beaten" || K.state === "gone") { OBJ.title = "ALL CLEAR"; OBJ.detail = "Free roam: trials and Loonies"; OBJ.short = ""; OBJ.n = OBJ.of = 0; }
+    else if (K.state === "awake") {
+      OBJ.title = "MISSION 2 · FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
+      OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length; OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
+    } else {
+      let best = null, bd = Infinity;
+      for (const c of clogs) { if (c.done) continue; const d = Math.hypot(c.x - CHEST.x, c.z - CHEST.z); if (d < bd) { bd = d; best = c; } }
+      const dn = best && districts[best.d] ? districts[best.d].name : "";
+      OBJ.title = "MISSION 1 · FLUSH THE CLOGS"; OBJ.n = done.size; OBJ.of = clogs.length;
+      OBJ.detail = best ? "Next: " + dn + " clog, " + Math.round(bd) + " m" : ""; OBJ.short = best ? dn : "";
+      // the first time you come near a district's clogs (not in the training): its briefing scene
+      if (best && bd < 150 && !train.on && districts[best.d]) {
+        const D = districts[best.d];
+        story("district", { id: D.id, name: D.name, left: D.all.filter((c) => !c.done).length, clog: { x: best.x, y: best.y, z: best.z } });
+      }
+    }
+    progress.objective = OBJ;
   }
   function tutEvent(ev) {
     switch (tut.step) {
@@ -1772,6 +1899,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   function onEvent(ev) {
     if (!started) return;
     safe(tutEvent, ev);
+    safe(trainEvent, ev);
     switch (ev.type) {
       case "yank": {
         const tg = ev.target;
@@ -1827,6 +1955,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     // words and sounds that were set for later
     for (let i = queue.length - 1; i >= 0; i--) { const q = queue[i]; if ((q.t -= dt) <= 0) { queue.splice(i, 1); safe(q.fn); } }
     safe(tutUpdate, dt, input);
+    safe(trainUpdate, dt, input);
+    safe(pumpState);
+    safe(objectiveUpdate, dt);
     safe(looniesUpdate, dt);
     safe(trialsUpdate, dt);
     safe(gurgles, dt);
@@ -1846,7 +1977,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   }
   // "That's a clog. Plunge it.", once, when the first one is close
   function clogsHint() {
-    if (clogsHint.said || done.size > 0 || tut.step >= 0) return; // (the tutorial says it itself at its last step)
+    if (clogsHint.said || done.size > 0 || tut.step >= 0 || train.on) return; // (the tutorial and the checklist say it themselves)
     for (const c of clogs) if (!c.done && Math.hypot(c.x - HEADP.x, c.y - HEADP.y, c.z - HEADP.z) < 60) { clogsHint.said = true; say("clog", 0); return; }
   }
 
@@ -1881,7 +2012,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       else if (done.size >= KING.unlock) later(3, () => wakeKing(true));
     }
     // the tutorial runs until the first flush (or Skip), on a first run or when an earlier session left it unfinished
-    if (!save.tutorial && (firstRun || done.size === 0)) tutBegin(0);
+    // a monitor or a phone gets the training checklist; a headset the spoken tutorial
+    if (!save.tutorial && (firstRun || done.size === 0)) { const fk = flatKind(); if (fk) trainBegin(fk); else tutBegin(0); }
     else progress.tutorial = -1;
     musicOn(); // the music plays from the first minute (it used to wait for the end of the tutorial)
     updateKingVisible();
@@ -1920,6 +2052,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     targets, travelSpots,
     cancelTrial,
     skipTutorial() { tutFinish(true); },
+    onStory(fn) { storyFn = fn; },
+    // the line of the row or step you are on, again (after a scene covered it)
+    resay() { if (train.on && progress.training && progress.training.now >= 0) trainSay(train.items[progress.training.now]); else if (tut.step >= 0) say("tutorial", tut.step); },
     // test and portal hooks
     wakeKing() { if (K.state === "sleeping") { wakeKing(false); } },
     clearClog(id) { const c = clogs.find((q) => q.id === id); if (c) { lastFlushed = c; flush(c, -1, true); } },

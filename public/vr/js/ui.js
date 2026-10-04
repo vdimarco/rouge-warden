@@ -1262,6 +1262,42 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
+.fs-pill.fs-mission{order:-1;flex-direction:column;align-items:flex-start;gap:3px;padding:6px 14px 4px;max-width:min(440px,92vw);background:var(--cream,#fff4d8);transform:rotate(-0.8deg)}
+.fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:.75}.fs-m-short{display:none}
+.fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
+.fs-train h3{margin:0 0 3px;font:400 20px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.06em}
+.fs-train.done h3::after{content:" · COMPLETE";color:#1f8a3a}
+.fs-train ol{margin:0;padding:0;list-style:none}
+.fs-train li{display:flex;align-items:center;gap:7px;margin:2px 0;padding:1px 4px;font:700 16px/1.12 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);opacity:.55;border-radius:3px}
+.fs-train li.now{opacity:1;background:var(--yellow,#ffd84a);box-shadow:0 0 0 3px var(--ink,#140a18);animation:fsNow 1.2s ease-in-out infinite}
+.fs-train li.done{opacity:.85}.fs-train li.done .tx{text-decoration:line-through;text-decoration-thickness:2px}
+.fs-train .bx,.fs-train-now .bx{flex:0 0 20px;height:20px;border:3px solid var(--ink,#140a18);border-radius:3px;background:#fff;display:grid;place-items:center;font:400 17px/1 var(--comic,"Bangers",Impact,sans-serif);color:var(--ink,#140a18)}
+.fs-train li.done .bx{background:var(--green,#9cff3a)}
+.fs-train .tx{flex:1 1 auto;min-width:0}.fs-train .keys{margin-left:auto;display:flex;gap:3px;flex-wrap:nowrap;justify-content:flex-end}
+.fs-train kbd,.fs-pump kbd{font:400 15px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;padding:3px 6px 1px;border:2px solid var(--ink,#140a18);border-radius:4px;background:var(--yellow,#ffd84a);box-shadow:2px 2px 0 var(--ink,#140a18);white-space:nowrap}
+.fs-pump{position:absolute;left:50%;top:calc(50% + 36px);transform:translateX(-50%) rotate(-2deg);display:flex;align-items:center;gap:8px;padding:5px 12px 3px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);box-shadow:4px 4px 0 var(--ink,#140a18);font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.05em}
+.fs-pump kbd{font-size:22px;padding:4px 9px 2px}
+.fs-pump i{width:15px;height:15px;border-radius:50%;border:3px solid var(--ink,#140a18);background:#fff}.fs-pump i.on{background:var(--green,#9cff3a)}
+body.keyhints .fs-train{bottom:60px}
+.fs-train kbd{font-size:13px;padding:2px 5px 0}
+.fs-train-now{display:none}
+@keyframes fsNow{50%{box-shadow:0 0 0 3px var(--ink,#140a18),0 0 0 7px rgba(255,216,74,.55)}}
+@media (max-height:460px){.fs-train{width:min(250px,32vw);padding:7px 9px 6px}.fs-train h3{font-size:20px}.fs-train li{font-size:15px;margin:3px 0}.fs-train kbd{font-size:12px;padding:2px 4px 0}.fs-mission b{font-size:19px}.fs-mission small{font-size:15px}}
+/* a phone (the small-screen sizes of index.html): the score row stays one row of one height. The card becomes a chip (a box and
+   the rows done; the spoken line gives the words), which takes the mission's place while it shows; the mission keeps its next
+   step on one line. */
+@media (max-width:479px),(max-height:480px){
+body:has(#phoneControls:not([hidden])) .fs-train{display:none}
+body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:#fffdf5}
+body:has(#phoneControls:not([hidden])) .fs-train-now b{display:none}
+body:has(#phoneControls:not([hidden])) .fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
+body:has(#phoneControls:not([hidden])) .fs-mission{flex-direction:row;align-items:center;max-width:none}
+body:has(#phoneControls:not([hidden])) .fs-mission b,body:has(#phoneControls:not([hidden])) .fs-mission small{display:none}
+body:has(#phoneControls:not([hidden])) .fs-mission .fs-m-short{display:block;font:400 22px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase}
+body:has(#phoneControls:not([hidden])) .fs-mission.no-short,
+body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission,
+body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) :is(.fs-mission,.fs-train-now){display:none}}
+@media (prefers-reduced-motion:reduce){.fs-train li.now{animation:none}}
 @media (prefers-reduced-motion:reduce){.fs-sub,.fs-toast{transition:none}.fs-compass svg{transition:none}.fs-menu .btn,.fs-map .btn{transition:none}}`;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const dh = { loon: -1, bank: -1, clog: -1, hearts: -2, trial: "", dist: -1, ang: 999, king: "" };
@@ -1271,12 +1307,15 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     const st = el("style"); st.textContent = CSS; document.head.appendChild(st);
     dom.hud = el("div", "fs-hud"); dom.hud.id = "fsHud";
     dom.hud.innerHTML =
-      '<div class="fs-cross"><i></i><i></i><i></i><i></i></div><div class="fs-top">' +
+      '<div class="fs-cross"><i></i><i></i><i></i><i></i></div><div class="fs-pump" data-k="pump" hidden></div>' +
+      '<div class="fs-train" data-k="train" hidden><h3>TRAINING</h3><ol data-k="trainList"></ol></div><div class="fs-top">' +
       '<div class="fs-pill" title="Loonies"><i class="fs-coin"></i><b data-k="loon">0</b><small data-k="loonT">/80</small><em data-k="bank">BANK 0</em></div>' +
       '<div class="fs-pill" title="Clogs"><i class="fs-drop"></i><b data-k="clog">0</b><small data-k="clogT">/12</small></div>' +
       '<div class="fs-pill fs-time" data-k="trialBox" hidden><b data-k="trial">0.0</b><small>s</small></div>' +
       '<div class="fs-pill" data-k="heartBox" hidden></div>' +
       '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small data-k="dist"></small></div>' +
+      '<div class="fs-pill fs-mission" data-k="mission" hidden><b data-k="mTitle"></b><small data-k="mDetail"></small><span class="fs-m-short" data-k="mShort"></span></div>' +
+      '<div class="fs-pill fs-train-now" data-k="trainNow" hidden></div>' +
       '</div><p class="fs-sub" data-k="sub" role="status"></p><p class="fs-toast" data-k="toast" role="status"></p>';
     document.body.appendChild(dom.hud);
     dom.k = {};
@@ -1469,6 +1508,36 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     if (dom.map) dom.map.hidden = true;
     if (dom.tip) dom.tip.hidden = true;
   }
+  // The training card: every row with its box, words and keys; the next row lit. A phone in portrait shows only the next row,
+  // in the top row (the card would cover the view).
+  function drawTraining(tr) {
+    const k = dom.k;
+    k.train.hidden = k.trainNow.hidden = !tr;
+    if (!tr) return;
+    k.train.classList.toggle("done", !!tr.done);
+    k.trainList.textContent = "";
+    tr.items.forEach((r, i) => {
+      const li = el("li", (r.done ? "done" : "") + (i === tr.now ? " now" : ""));
+      li.dataset.id = r.id;
+      li.appendChild(el("span", "bx", r.done ? "✓" : ""));
+      li.appendChild(el("span", "tx", r.text + (r.of && !r.done && r.n ? " " + r.n + "/" + r.of : "")));
+      const ks = el("span", "keys");
+      for (const key of r.keys) ks.appendChild(el("kbd", "", key));
+      li.appendChild(ks);
+      k.trainList.appendChild(li);
+    });
+    const r = tr.items[tr.now], n = tr.items.filter((x) => x.done).length;
+    k.trainNow.textContent = "";
+    if (tr.done || !r) { k.trainNow.appendChild(el("span", "bx", "✓")); k.trainNow.appendChild(el("b", "", "TRAINING COMPLETE")); k.trainNow.appendChild(el("small", "", n + "/" + tr.items.length)); }
+    else { k.trainNow.appendChild(el("span", "bx", "")); k.trainNow.appendChild(el("b", "", r.text + (r.of && r.n ? " " + r.n + "/" + r.of : ""))); k.trainNow.appendChild(el("small", "", n + "/" + tr.items.length)); }
+  }
+  // The pump sticker under the crosshair: press F (a phone holds on) and a dot per pump
+  function drawPump(pu, touch) {
+    const k = dom.k;
+    k.pump.textContent = "";
+    if (touch) k.pump.appendChild(el("b", "", "HOLD ON")); else { k.pump.appendChild(el("kbd", "", "F")); k.pump.appendChild(el("b", "", "PUMP")); }
+    for (let i = 0; i < pu.of; i++) k.pump.appendChild(el("i", i < pu.n ? "on" : ""));
+  }
   // The HUD numbers, only when they change.
   function domUpdate(dt) {
     domBuild();
@@ -1493,6 +1562,17 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
       const dd = Math.round(d / 5) * 5;
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }
+    // the mission card, the training checklist and the pump sticker (game.progress objective, training, pump)
+    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of : "";
+    if (dh.obj !== os) {
+      dh.obj = os; k.mission.hidden = !ob;
+      if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
+      k.mission.classList.toggle("no-short", !(ob && ob.short));
+    }
+    const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
+    if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }
+    const pu = pg.pump, touch = !!(inp && inp.easySwing), ps = pu ? pu.kind + pu.n + "/" + pu.of + (touch ? "t" : "m") : "";
+    if (dh.pump !== ps) { dh.pump = ps; k.pump.hidden = !pu; if (pu) drawPump(pu, touch); }
     k.sub.classList.toggle("on", sub.a > 0.02);
     if (sub.a > 0.02 && k.sub.textContent !== sub.text) k.sub.textContent = sub.text;
     k.toast.classList.toggle("on", toast.a > 0.02);
