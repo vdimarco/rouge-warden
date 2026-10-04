@@ -181,8 +181,10 @@ try {
   let d = deltas(r, 'yaw', v0), want = (-EDGE_YAW) / 60;
   assert(d.every((x) => near(x, want, Math.abs(want) * 0.15)), 'the cursor resting at the right edge turns the view right every frame at a steady rate: ' + JSON.stringify(d.map((x) => +x.toFixed(4))));
   console.log('PASS (c) unlocked: the cursor turns the view, and the right edge keeps turning it', JSON.stringify({ perFrame: +d[0].toFixed(4), want: +want.toFixed(4) }));
-  // the top edge tilts up
+  // the top edge tilts up (from a view looking well down: the move to the edge alone tilts the view up about 34 degrees, and
+  // the third-person view stops at +25)
   await page.mouse.move(W / 2, H / 2); await frames(1);
+  await page.evaluate(() => G.test.look(0, -1)); await frames(1);
   await page.mouse.move(W / 2, 0); await frames(1);
   v0 = await view();
   r = await frames(5);

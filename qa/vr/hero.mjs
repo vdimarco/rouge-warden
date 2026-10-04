@@ -128,10 +128,10 @@ try {
     const dy = wrapA(a.yaw - b.yaw), dp = a.pitch - b.pitch;
     check(Math.abs(dy - 0.44) < 0.03 && Math.abs(dp - 0.22) < 0.03, "a mouse move turns the view like a mouse (0.0022 rad per pixel)", { dy, dp });
     check(Math.abs(a.forward.y - Math.sin(a.pitch)) < 1e-6, "the camera looks along its yaw and pitch", a.forward);
-    // the pitch is limited to -60 to +22 degrees: the camera stays over the head, so looking further up would lose the hero
+    // the pitch is limited to -60 to +25 degrees: the camera stays over the head, so looking further up would lose the hero
     await page.evaluate(() => { G.test.look(0, 3); });
     let c = await step(page, 3);
-    check(Math.abs(c.pitch - (22 * Math.PI) / 180) < 0.01, "the pitch stops at +22 degrees", c.pitch);
+    check(Math.abs(c.pitch - (25 * Math.PI) / 180) < 0.01, "the pitch stops at +25 degrees", c.pitch);
     {
       const s2 = await S(page), hd = await page.evaluate(() => { G.camera.updateMatrixWorld(true); const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
       check(c.camera.y - (s2.pos.y + 1.65) > 0.45 && hd.y > -0.9 && Math.abs(hd.x) < 0.2 && hd.z < 1, "looking up as far as it goes, the camera is still over the head and the head is still in the view", { over: c.camera.y - (s2.pos.y + 1.65), head: hd, dist: c.dist });
@@ -235,7 +235,7 @@ try {
     const THREE = await import("three");
     const cam = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 4000), fc = createFlatCam(cam, { raycast: () => null, collideSphere: () => false });
     const P = { pos: { x: 0, y: 40, z: 0 }, vel: { x: 0, y: 0, z: 0 }, chest: 1.25 }, head = new THREE.Vector3(0, 41.65, 0), out = []; // G.hero.head stands about 1.65 m over the feet
-    for (let d = -60; d <= 22; d += 2) {
+    for (let d = -60; d <= 24; d += 2) {
       fc.reset(0, (d * Math.PI) / 180, false);
       fc.update(0.016, P, null, { dx: 0, dy: 0 }, {});
       cam.updateMatrixWorld(true);
@@ -248,7 +248,7 @@ try {
     const bad = arc.filter((a) => a.over < 0.45 || a.ny < -0.9 || a.ny > -0.02), at = (d) => arc.find((a) => a.d === d);
     const down = arc.filter((a) => a.d <= -20), up = arc.filter((a) => a.d >= -20);
     const fallsUp = up.every((a, i) => i === 0 || (a.over < up[i - 1].over && a.arm <= up[i - 1].arm));
-    check(!bad.length && fallsUp && at(22).over < 0.6 && at(0).arm === 4.5 && at(22).arm < 4.2 && at(-60).over > 3.5 && down.every((a) => a.arm === 4.5 && a.ny > -0.2),
+    check(!bad.length && fallsUp && at(24).over < 0.6 && at(0).arm === 4.5 && at(24).arm < 4.2 && at(-60).over > 3.5 && down.every((a) => a.arm === 4.5 && a.ny > -0.2),
       "at every pitch the camera is over the head and the head is on screen, under the middle; looking up brings it down toward the head and in", { bad, arc });
     // no jerk at the default: 2 degrees either side of it move the camera about as far
     const move = (a, b) => Math.hypot(a.y - b.y, a.z - b.z), below = move(at(-22), at(-20)), above = move(at(-20), at(-18));
@@ -273,6 +273,14 @@ try {
   f = await step(page, 3);
   await page.evaluate(() => { G.desktop.locked = false; });
   check(Math.abs(f.pitch - (85 * Math.PI) / 180) < 0.01, "in first person the mouse looks up to 85 degrees", f.pitch);
+  // V from that high first-person look: the view eases back down to the third-person limit, with no snap
+  await page.keyboard.press("KeyV");
+  {
+    const e1 = await step(page, 2), e2 = await step(page, 90);
+    check(e1.pitch > (60 * Math.PI) / 180 && Math.abs(e2.pitch - (25 * Math.PI) / 180) < 0.01, "V from a high first-person look eases back down to +25 degrees, with no snap", { after2: e1.pitch, after92: e2.pitch });
+  }
+  await page.keyboard.press("KeyV");
+  f = await step(page, 90);
   await page.evaluate((d) => G.test.look(0, d), pitch0 - f.pitch); // back to the pitch it had
   await step(page, 3);
   await page.keyboard.press("KeyV");

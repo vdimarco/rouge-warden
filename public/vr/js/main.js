@@ -240,6 +240,7 @@ const isXR = () => G.mode === "ar" || G.mode === "vr";
 
 function beginIntro(mode) {
   G.state = "intro";
+  introYaw = 0;
   release(P, 0); release(P, 1);
   P.frozen = true;
   P.events.length = 0;
@@ -264,6 +265,8 @@ function handOff() {
     G.rigYaw = Math.atan2(-(city.goldRing.x - P.pos.x), -(city.goldRing.z - P.pos.z));
     D.mobile.reset();
   }
+  // the turn you looked around with in the opening becomes the rig's, so the view keeps facing where you look
+  if (introYaw) { G.rigYaw += introYaw; introYaw = 0; }
   if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
   // stepped off the roof in the real room: fade and start on the roof proper
@@ -440,7 +443,7 @@ function flatCamera(fov) {
 // Flat play shows the hero and a chase camera (flatcam.js). The camera is a child of the scene there, placed in world
 // coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
 // The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
-let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "";
+let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "", introYaw = 0; // introYaw: the head's turn in the desktop opening
 const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
 const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
 function flatView(on) {
@@ -505,7 +508,12 @@ function flatInput(inp) {
   // the input follows the view, so its own pitch limits never hold the camera back
   D.setPitch(p);
   lastPitchIn = inp.pitch = p;
-  inp.head.local.quat.setFromEuler(FLAT_E.set(p, 0, 0));
+  inp.head.local.quat.setFromEuler(FLAT_E.set(p, introYaw, 0));
+  // in the opening the mouse turns the head inside the room (the room hangs from the rig), so the muzzles turn with it
+  if (introYaw) {
+    FLAT_Q.setFromAxisAngle(YAXIS, introYaw);
+    for (const h of inp.hands) { h.gripLocal.pos.sub(hp).applyQuaternion(FLAT_Q).add(hp); h.gripLocal.quat.premultiply(FLAT_Q); }
+  }
   const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
   const hx = R.x + hp.x * c + hp.z * s, hy = R.y + hp.y, hz = R.z - hp.x * s + hp.z * c; // the head in the world (toWorld, which runs next)
   const third = flatcam.opacity > 0.5, tap = inp.phoneAim;
@@ -523,7 +531,7 @@ function flatFrame(dt, inp, yawDelta) {
   const play = G.state === "play";
   const key = flatcam.takeKey();
   if (play && (inp.viewDown || key)) flatcam.toggle();
-  flatcam.setYaw(G.rigYaw - (play ? yawDelta : 0));
+  flatcam.setYaw(G.rigYaw + introYaw - (play ? yawDelta : 0));
   FLAT_LOOK.dx = (play ? yawDelta : 0) + ov.lookX;
   FLAT_LOOK.dy = (G.state === "paused" ? 0 : flatDy) + ov.lookY;
   ov.lookX = ov.lookY = 0; flatDy = 0;
@@ -631,6 +639,10 @@ function tick(dt, frame, time) {
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
+  } else if (G.state === "intro" && flatOn && !isXR() && inp.mode === "desktop" && inp.turn) {
+    // a flat screen looks around the room in the opening: the turn goes to the head, as a headset's would
+    const a = introYaw + inp.turn;
+    introYaw = Math.atan2(Math.sin(a), Math.cos(a));
   }
   G.prevHeadLocal.copy(hl);
   // 13. the rest of the world

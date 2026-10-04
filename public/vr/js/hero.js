@@ -35,6 +35,33 @@ const PARENT = { Hips: null, Spine02: "Hips", Spine01: "Spine02", Spine: "Spine0
 const C = { jersey: 0xc9302c, white: 0xf4f1ea, jeans: 0x274a66, skin: 0xd9a27a, hair: 0x2a1a14, glove: 0x1c1a24, sleeve: 0x22222e, shoe: 0xc9302c, sole: 0xf4f1ea };
 const hexRGB = (h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 
+/* ---------------- motion capture: the idle, walk, jog and run loops (anim/locomotion.json; see anim/CREDITS.md) ---------------- */
+// Baked by qa/vr/bake-mocap.mjs onto crew5's rig. Each track is a turn per bone in the same frame as the poses here (q relative
+// to the parent's turn), so a sample goes straight to setBone. The three moving loops start at the left foot's strike, so they
+// blend by one shared phase. Without the file the code-built gait below stays in charge.
+const CLIP_URL = new URL("../anim/locomotion.json", import.meta.url).href;
+const CLIP_NAMES = ["idle", "walk", "jog", "run"];
+const PARENT_I = BONES.map((n) => (PARENT[n] ? BONES.indexOf(PARENT[n]) : -1));
+let clipsP = null;
+function loadClips() {
+  if (!clipsP) {
+    clipsP = (typeof fetch === "function" ? fetch(CLIP_URL) : Promise.reject(new Error("no fetch")))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j || !Array.isArray(j.clips)) return null;
+        const by = {};
+        for (const c of j.clips) {
+          if (!c || !c.tracks || !(c.frames > 1)) continue;
+          const tracks = BONES.map((n) => (c.tracks[n] && c.tracks[n].length >= c.frames * 4 ? Float32Array.from(c.tracks[n]) : null));
+          by[c.name] = { frames: c.frames, duration: c.duration, speed: c.speed, cycle: c.speed * c.duration, tracks, hips: Float32Array.from(c.hips || []) };
+        }
+        return CLIP_NAMES.every((n) => by[n]) ? { list: CLIP_NAMES.map((n) => by[n]), restDirs: j.restDirs || {} } : null;
+      })
+      .catch(() => null);
+  }
+  return clipsP;
+}
+
 function buildFigure() {
   const names = BONES, idx = Object.fromEntries(names.map((n, i) => [n, i]));
   const bones = names.map((n) => { const b = new THREE.Bone(); b.name = n; return b; });
@@ -232,6 +259,20 @@ export function createHero(scene, renderer) {
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
   };
   const mesh = { body: null, hull: null };
+  // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
+  // weights (idle, walk, jog, run), the shared phase of the moving loops, and scratch for the sampled turns
+  const MC = { data: null, corr: BONES.map(() => new THREE.Quaternion()), w: [1, 0, 0, 0], want: [1, 0, 0, 0], phase: 0, idleT: 0, on: 0,
+    q: BONES.map(() => new THREE.Quaternion()), D: BONES.map(() => new THREE.Quaternion()), Dc: BONES.map(() => new THREE.Quaternion()),
+    acc: new Float32Array(BONES.length * 4), hips: new THREE.Vector3() };
+  function fitClips() {
+    if (!MC.data || !rig) return;
+    BONES.forEach((n, i) => {
+      const rd = MC.data.restDirs[n], d = rig.I[n].dir;
+      MC.corr[i].identity();
+      if (rd && d.lengthSq() > 0.5) MC.corr[i].setFromUnitVectors(d, T1.set(rd[0], rd[1], rd[2]).normalize()); // D' = D * corr
+    });
+  }
+  loadClips().then((d) => { MC.data = d; fitClips(); });
 
   /* ---- loading ---- */
   function useRig(model, skinned, bodyMat, label) {
@@ -253,6 +294,7 @@ export function createHero(scene, renderer) {
     const idx = skinned.geometry.index;
     H.tris = (idx ? idx.count : skinned.geometry.attributes.position.count) / 3;
     H.model = label;
+    fitClips();
     applyVisible();
   }
   function useFigure() {
@@ -511,6 +553,74 @@ export function createHero(scene, renderer) {
       for (const l of CL.limb) { l.hold.add(TV); l.pos.add(TV); }
     }
     CL.last.copy(pos);
+  }
+
+  /* ---- the motion capture on the ground ---- */
+  const WQ = new THREE.Quaternion(), WP = new THREE.Vector3();
+  // nlerp from track a's frame i0 to i1 at t, added into MC.acc at weight w (each track stays in one hemisphere)
+  function sampleInto(c, f, w) {
+    const n = c.frames, fl = Math.floor(f), t = f - fl, i0 = ((fl % n) + n) % n, i1 = (i0 + 1) % n;
+    for (let i = 0; i < BONES.length; i++) {
+      const tr = c.tracks[i], o = i * 4;
+      if (!tr) { MC.acc[o + 3] += w; continue; }
+      const a = i0 * 4, b = i1 * 4;
+      let x = tr[a] + (tr[b] - tr[a]) * t, y = tr[a + 1] + (tr[b + 1] - tr[a + 1]) * t, z = tr[a + 2] + (tr[b + 2] - tr[a + 2]) * t, ww = tr[a + 3] + (tr[b + 3] - tr[a + 3]) * t;
+      // keep every clip on the same side as what is already summed for this bone
+      if (MC.acc[o] * x + MC.acc[o + 1] * y + MC.acc[o + 2] * z + MC.acc[o + 3] * ww < 0) { x = -x; y = -y; z = -z; ww = -ww; }
+      MC.acc[o] += x * w; MC.acc[o + 1] += y * w; MC.acc[o + 2] += z * w; MC.acc[o + 3] += ww * w;
+    }
+    const h = c.hips;
+    if (h.length >= n * 3) {
+      const a = i0 * 3, b = i1 * 3;
+      MC.hips.x += (h[a] + (h[b] - h[a]) * t) * w; MC.hips.y += (h[a + 1] + (h[b + 1] - h[a + 1]) * t) * w; MC.hips.z += (h[a + 2] + (h[b + 2] - h[a + 2]) * t) * w;
+    }
+  }
+  function groundClips(dt, hs, on, cr, hx, hy, hz) {
+    MC.on += ((on && MC.data ? 1 : 0) - MC.on) * ease(dt, on ? 10 : 14);
+    if (!MC.data || MC.on < 0.002) { if (!MC.data) MC.on = 0; return; }
+    const L = MC.data.list;
+    // which loops play, by ground speed: idle, then walk, jog and run; eased so starts and stops blend
+    const a = smooth(0.15, 0.6, hs), b = smooth(1.4, 2.4, hs), c = smooth(2.9, 3.3, hs);
+    MC.want[0] = 1 - a; MC.want[1] = a * (1 - b); MC.want[2] = a * b * (1 - c); MC.want[3] = a * b * c;
+    let sum = 0;
+    for (let k = 0; k < 4; k++) { MC.w[k] += (MC.want[k] - MC.w[k]) * ease(dt, 8); sum += MC.w[k]; }
+    for (let k = 0; k < 4; k++) MC.w[k] /= sum || 1;
+    // the moving loops share one phase, advanced by the distance run over the blended stride, so a planted foot keeps still
+    let move = 0, cyc = 0;
+    for (let k = 1; k < 4; k++) { move += MC.w[k]; cyc += MC.w[k] * L[k].cycle; }
+    cyc = move > 0.01 ? cyc / move : L[1].cycle;
+    MC.phase = (MC.phase + (dt * hs) / cyc) % 1;
+    MC.idleT = (MC.idleT + dt) % L[0].duration;
+    MC.acc.fill(0); MC.hips.set(0, 0, 0);
+    for (let k = 0; k < 4; k++) if (MC.w[k] > 0.001) sampleInto(L[k], (k === 0 ? MC.idleT / L[0].duration : MC.phase) * L[k].frames, MC.w[k]);
+    // the sampled turns, through each limb's rest fix, back to turns relative to the fixed parent
+    const I = rig.I, g = MC.on, legW = g * (1 - cr), bodyW = g * (1 - 0.6 * cr);
+    for (let i = 0; i < BONES.length; i++) {
+      const o = i * 4, p = PARENT_I[i];
+      WQ.set(MC.acc[o], MC.acc[o + 1], MC.acc[o + 2], MC.acc[o + 3]);
+      if (WQ.lengthSq() < 1e-8) WQ.identity(); else WQ.normalize();
+      MC.Dc[i].copy(p < 0 ? TQ.identity() : MC.Dc[p]).multiply(WQ); // the clip's own chain
+      MC.D[i].copy(MC.Dc[i]).multiply(MC.corr[i]); // fixed for this rig's rest limbs
+      MC.q[i].copy(p < 0 ? TQ.identity() : MC.D[p]).invert().multiply(MC.D[i]);
+    }
+    // blend into the code-built pose bone by bone, parents first, and write the bones
+    for (let i = 0; i < BONES.length; i++) {
+      const n = BONES[i], d = I[n], p = PARENT_I[i], side = n.startsWith("Left") ? 0 : n.startsWith("Right") ? 1 : -1;
+      let w;
+      if (n === "Head") w = g * 0.4; // the head mostly keeps looking where the camera looks
+      else if (n === "neck") w = g;
+      else if (/UpLeg|Leg|Foot|ToeBase/.test(n)) w = legW;
+      else if (side >= 0) w = bodyW * (1 - S.reach[side]); // a rope arm keeps reaching for its anchor (its yank is part of the reach)
+      else w = bodyW;
+      // a bone the code-built pose leaves alone (the neck, the shoulders, the hands, the toes) has no turn of its own there
+      const own = d.q;
+      if (n === "neck" || /Shoulder|Hand$|ToeBase/.test(n)) own.identity();
+      own.slerp(MC.q[i], w);
+      d.D.copy(p < 0 ? TQ.identity() : I[BONES[p]].D).multiply(own);
+      setBone(d, own);
+    }
+    WP.set(hx, hy, hz).lerp(MC.hips, legW);
+    rig.hips.position.copy(rig.hipsRest).add(WP.applyMatrix3(rig.armInv));
   }
 
   /* ---- the frame ---- */
@@ -807,6 +917,9 @@ export function createHero(scene, renderer) {
       QA.setFromEuler(EF.set(foot[sd].pitch, foot[sd].yaw, 0));
       turnBone(f, I[n + "Leg"].D, QC.copy(I[n + "Leg"].D).invert().multiply(QA));
     }
+    // on the ground, the motion capture takes over from the code-built idle and run; the landing crouch, a rope arm, a yank
+    // and the head's look stay on top of it
+    groundClips(dt, hs, ground && !cling, cr, hipsDx, hipsDy, hipsDz);
     root.updateMatrixWorld(true);
     // the hands: a palm's width past the wrist bone, along the forearm
     for (let sd = 0; sd < 2; sd++) {
@@ -833,6 +946,8 @@ export function createHero(scene, renderer) {
   H.info = () => ({
     model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris,
     weights: { run: S.run, air: S.air, swing: S.swing, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
+    // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
+    clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },
     hands: [handPos[0].toArray(), handPos[1].toArray()], head: headPos.toArray(), feet: [footPos[0].toArray(), footPos[1].toArray()],
     // the wall climb: each limb's hold (world), whether it is stepping, and the gait clock
     climb: { on: CL.on, grab: CL.grabT, phase: CL.phase, still: CL.still, mantle: CL.mantle, wall: [CL.nx, CL.nz],

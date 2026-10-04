@@ -195,7 +195,6 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 .phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
 .phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:bold 13px sans-serif !important; background:#e0482cdd !important; }
 /* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
-@media (min-height:481px) { body:has(.phone-climb:not([hidden])) .fs-sub, body:has(.phone-climb:not([hidden])) .fs-toast { visibility:hidden; } }
 @media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
 .phone-top { display:flex; justify-content:center; gap:8px; padding:max(12px,env(safe-area-inset-top)) 8px 0; }
 .phone-crosshair { position:absolute; left:50%; top:50%; width:18px; height:18px; border:2px solid #fff8; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 8px #0006; transition:border-color .12s,box-shadow .12s; }
@@ -209,11 +208,9 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
 @media (max-width:380px) { #phoneControls .phone-top button { padding:10px 9px; white-space:nowrap; } .phone-top { gap:5px; padding-left:4px; padding-right:4px; } }
-/* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
+/* phone play: the score pills sit under the top buttons; ui.js puts the spoken lines and toasts under the pills, clear of the hero */
 body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 66px); }
-body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 200px); }
-body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 260px); }
-@media (max-height:480px) { body:has(#phoneControls:not([hidden])) .fs-sub { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 118px); max-width:calc(100vw - 320px); } body:has(#phoneControls:not([hidden])) .fs-toast { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 170px); max-width:calc(100vw - 320px); } }
+@media (max-height:480px) { body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); } }
 @media (max-height:480px) { .phone-bottom { left:auto; width:260px; bottom:12px; } .phone-hint { font-size:12px; } #phoneControls [data-action="throw"] { width:220px; min-height:64px; } .phone-bottom small { display:none; } }
 </style>
 </head>

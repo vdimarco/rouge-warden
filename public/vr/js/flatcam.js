@@ -14,12 +14,11 @@ const ARM_FAST = 5.6;           // it lets out a little at speed
 const ARM_UP = 0.9;             // looking up from level to the limit shortens it to this part of its length
 const PIVOT_UP = 0.35;          // the pivot sits this far above the eyes, so the middle of the view is above the head
 const OVER_HEAD = 0.45;         // looking up brings the camera down to this height above the eyes, and no lower
-const PITCH_MIN = -60 * DEG, PITCH_MAX = 22 * DEG, PITCH_FP = 85 * DEG; // at +22 degrees the head and shoulders still show
+const PITCH_MIN = -60 * DEG, PITCH_MAX = 25 * DEG, PITCH_FP = 85 * DEG; // at +25 degrees the head is still in view, near the bottom
 const PITCH0 = -20 * DEG;       // the default view looks down 20 degrees, over the hero's head
 const NEAR_HIT = 0.3;           // stays this far off a wall
 const MIN_DIST = 0.35;          // never closer than this to the pivot: closer than about 1.2 m the camera is nearly in the head
 const FADE_FROM = 1.5, FADE_TO = 0.8; // the hero fades out between these camera distances
-const FLOOR = 0.35;             // never lower than this above the street
 const FOLLOW_TAU = 1.2;         // s, the swing toward your velocity
 const HOLD_LOOK = 1.5;          // s of no follow after a look input
 const FOV_TP = [70, 88], FOV_FP = [75, 87], FOV_V = [15, 35]; // degrees at rest and at speed; the speeds (m/s) that span them
@@ -32,7 +31,7 @@ export function createFlatCam(camera, city) {
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   const HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null }, SPH = { x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
   const T = new THREE.Vector3(), EYE = new THREE.Vector3(), DIR = new THREE.Vector3(), BACK = new THREE.Vector3(), POS = new THREE.Vector3();
-  const S = { yaw: 0, pitch: PITCH0, dist: ARM, room: ARM, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false };
+  const S = { yaw: 0, pitch: PITCH0, dist: ARM, room: ARM, el: PITCH0, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false };
 
   const FC = {
     active: false,
@@ -60,7 +59,12 @@ export function createFlatCam(camera, city) {
       const dx = (look && look.dx) || 0, dy = (look && look.dy) || 0;
       const fp = S.fp || !!(flags && flags.forceFirst);
       S.yaw = wrap(S.yaw + dx);
-      S.pitch = clamp(S.pitch + dy, fp ? -PITCH_FP : PITCH_MIN, fp ? PITCH_FP : PITCH_MAX);
+      // third person has a narrower range than first person: a view left outside it (by V or the intro's hand-off) eases back
+      // in instead of snapping, and the look cannot push it further out meanwhile
+      let p = clamp(S.pitch + dy, -PITCH_FP, PITCH_FP);
+      if (!fp && p > PITCH_MAX) p = S.pitch > PITCH_MAX ? PITCH_MAX + (Math.min(p, S.pitch) - PITCH_MAX) * (1 - ease(dt, 6)) : PITCH_MAX;
+      else if (!fp && p < PITCH_MIN) p = S.pitch < PITCH_MIN ? PITCH_MIN + (Math.max(p, S.pitch) - PITCH_MIN) * (1 - ease(dt, 6)) : PITCH_MIN;
+      S.pitch = p;
       if (Math.abs(dx) + Math.abs(dy) > 1e-4) { S.hold = 0; S.settle = false; } else S.hold += dt;
       if (S.settle) {
         S.pitch += (PITCH0 - S.pitch) * ease(dt, 3.5);
@@ -90,6 +94,7 @@ export function createFlatCam(camera, city) {
       const top = -Math.asin(clamp((OVER_HEAD - PIVOT_UP) / arm, 0, 1)), bend = top - PITCH0;
       const el = S.pitch <= PITCH0 || bend <= 0 ? S.pitch : PITCH0 + bend * Math.tanh((S.pitch - PITCH0) / bend);
       const ce = Math.cos(el);
+      S.el = el;
       BACK.set(Math.sin(S.yaw) * ce, -Math.sin(el), Math.cos(S.yaw) * ce); // from the pivot out to the camera
 
       // the room behind: never through a building or under the street
@@ -98,7 +103,7 @@ export function createFlatCam(camera, city) {
       if (S.blend > 0.001) {
         const hit = city.raycast(T.x, T.y, T.z, BACK.x, BACK.y, BACK.z, arm + NEAR_HIT, HIT);
         if (hit) { room = Math.max(MIN_DIST, hit.t - NEAR_HIT); FC.blocked = true; }
-        if (BACK.y < -1e-3) room = Math.min(room, Math.max(MIN_DIST, (T.y - FLOOR) / -BACK.y));
+        // (the arm always points up from the pivot, so it never reaches under the street)
         // the camera is a small ball: back off if the ball still touches something (a corner the ray slipped past)
         for (let k = 0; k < 3; k++) {
           const a = Math.min(arm, room), cx = T.x + BACK.x * a, cy = T.y + BACK.y * a, cz = T.z + BACK.z * a;
@@ -135,7 +140,7 @@ export function createFlatCam(camera, city) {
       camera.quaternion.setFromEuler(E.set(S.pitch, S.yaw, 0));
     },
     // the state, for tests
-    info: () => ({ yaw: S.yaw, pitch: S.pitch, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
+    info: () => ({ yaw: S.yaw, pitch: S.pitch, el: S.el, room: S.room, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
   };
 
   // The V key. It is not read while a menu, a text field or a modifier key is in play.

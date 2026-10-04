@@ -1882,7 +1882,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     }
     // the tutorial runs until the first flush (or Skip), on a first run or when an earlier session left it unfinished
     if (!save.tutorial && (firstRun || done.size === 0)) tutBegin(0);
-    else { progress.tutorial = -1; musicOn(); }
+    else progress.tutorial = -1;
+    musicOn(); // the music plays from the first minute (it used to wait for the end of the tutorial)
     updateKingVisible();
   }
   function targets() {
