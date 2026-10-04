@@ -112,7 +112,7 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     const t = await go("stumps");
     check(t.secs >= 1.15 && t.arrival, `Places -> Stump Bay: the travel card (up ${t.secs.toFixed(2)} s; the code keeps it 1.2 s) gives way to the arrival card`);
     const ar = await page.evaluate(() => ({ kick: document.querySelector("#akick").textContent, name: document.querySelector("#aname").textContent, blurb: document.querySelector("#ablurb").textContent, gear: document.querySelector("#agear").textContent, tip: document.querySelector("#atip").textContent, tipHidden: document.querySelector("#atip").hidden, go: document.querySelector("#aStart").textContent }));
-    check(ar.name === "Stump Bay" && /^Dead trees stand in the water/.test(ar.blurb) && ar.gear === "New gear: a heavy rod and 20 lb braid." && ar.tip === "Fish run for the stumps. Steer them out." && ar.go === "Start", "the arrival card: name, blurb, new gear, tip, Start (" + JSON.stringify(ar) + ")");
+    check(ar.kick === "NEW PLACE · MEDIUM" && ar.name === "Stump Bay" && /^Dead trees stand in the water/.test(ar.blurb) && ar.gear === "New gear: a heavy rod and 20 lb braid." && ar.tip === "Fish run for the stumps. Steer them out." && ar.go === "Start", "the arrival card: what kind of place, name, blurb, new gear, tip, Start (" + JSON.stringify(ar) + ")");
     const st = await start();
     check(st.phase === "cast" && st.mode === "free" && st.place === "stumps" && st.hud, "Start goes to the water: free fishing at Stump Bay (" + JSON.stringify(st) + ")");
     check((await kicker()) === "GET PLUNGER'D · STUMP BAY", "back at the title, the kicker reads STUMP BAY (" + (await kicker()) + ")");

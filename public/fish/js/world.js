@@ -50,10 +50,10 @@ export function sunAt(h, look = null) {
 
 /* ---------------- the world ---------------- */
 
-export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "ghibli" } = {}) {
+export async function createWorld(container, { quality = "high", place = PLACES.loon, style = "painted" } = {}) {
   await Promise.all([loadCartoonModels(), loadPaintedForest(), E.loadPaintedWater()]);
   let currentStyle = normalizeStyle(style);
-  artStyle.value = currentStyle === "ghibli" ? 1 : 0;
+  artStyle.value = currentStyle === "painted" ? 1 : 0;
   let low = quality === "low";
   let PL = typeof place === "string" ? getPlace(place) : place, LK = lookOf(PL);   // the place we are at, and how it looks
   const renderer = new THREE.WebGLRenderer({ antialias: !low, powerPreference: "high-performance" });
@@ -713,7 +713,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     setArtStyle(style) {
       const previousStyle = currentStyle;
       currentStyle = normalizeStyle(style);
-      artStyle.value = currentStyle === "ghibli" ? 1 : 0;
+      artStyle.value = currentStyle === "painted" ? 1 : 0;
       if (currentStyle !== previousStyle) {
         envGroup.remove(treeGroup); dispose(treeGroup);
         treeGroup = E.buildTrees(low, PL, LK, currentStyle);

@@ -44,7 +44,7 @@ export function loadStorySky() {
   if (U.uSkyPaintReady.value) return Promise.resolve();
   if (storySkyLoad) return storySkyLoad;
   storySkyLoad = new Promise((resolve) => {
-    new THREE.TextureLoader().load(new URL("../art/ghibli-sky.webp", import.meta.url).href, (texture) => {
+    new THREE.TextureLoader().load(new URL("../art/painted-sky.webp", import.meta.url).href, (texture) => {
       texture.wrapS = THREE.RepeatWrapping;
       // atan wraps at the rear: implicit mip derivatives otherwise draw a seam there.
       texture.generateMipmaps = false;
@@ -714,8 +714,8 @@ function instanced(geo, mat, spots, max, tint) {
   return m;
 }
 
-export function buildTrees(low, place, look, style = "ghibli") {
-  const cartoon = style === "ghibli";
+export function buildTrees(low, place, look, style = "painted") {
+  const cartoon = style === "painted";
   const S = treeSpots(place, look), T = look.trees;
   if (cartoon) {
     const g = new THREE.Group(), caps = low ? T.caps.low : T.caps.high;

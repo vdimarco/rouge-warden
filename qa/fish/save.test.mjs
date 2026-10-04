@@ -16,6 +16,7 @@ import { PLACE_GOALS, goalMet, goalsMet, goalCount, nextGoal, DAILY, isDay, prev
 import { SPECIES, JUNK, byId } from "../../public/fish/js/species.js";
 import { fishingOf, ecology } from "../../public/fish/js/fishing.js";
 import { PLACES, PLACE_IDS, rng } from "../../public/fish/js/places.js";
+import { normalizeStyle } from "../../public/fish/js/art-style.js";
 
 /* ---------------- reporting ---------------- */
 const fails = [];
@@ -69,13 +70,18 @@ function placesOk(s) {
 
 /* ---------------- art style preferences ---------------- */
 section("Art style preferences");
-check(loadSave(null).artStyle === "ghibli", "new saves default to Ghibli");
-check(loadSave({ casts: 12 }).artStyle === "ghibli", "old saves without a style default to Ghibli");
+check(loadSave(null).artStyle === "painted", "new saves default to Painted");
+check(loadSave({ casts: 12 }).artStyle === "painted", "old saves without a style default to Painted");
 check(loadSave(text(loadSave({ artStyle: "original" }))).artStyle === "original", "an explicit Original choice survives reload");
-const styled = loadSave({ artStyle: "ghibli", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
-check(loadSave(text(styled)).artStyle === "ghibli", "Ghibli survives a save and reload");
+const styled = loadSave({ artStyle: "painted", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
+check(loadSave(text(styled)).artStyle === "painted", "Painted survives a save and reload");
 check(styled.casts === 12 && styled.journal.perch.n === 2, "the art preference keeps fishing progress");
-check(loadSave({ artStyle: "unknown" }).artStyle === "ghibli", "an unknown art style falls back to Ghibli");
+check(loadSave({ artStyle: "unknown" }).artStyle === "painted", "an unknown art style falls back to Painted");
+// the style's old name: an old save keeps the painted look, and the next save writes the new name
+const old = loadSave(JSON.stringify({ v: 1, artStyle: "ghibli", casts: 40, caught: 3, journal: { perch: { n: 3, kg: 0.5, cm: 28 } } }));
+check(old.artStyle === "painted" && old.casts === 40 && old.caught === 3 && old.journal.perch.n === 3, "a save with the old style name \"ghibli\" loads as Painted and keeps its progress");
+check(!/ghibli/i.test(text(old)) && loadSave(text(old)).artStyle === "painted", "and its next save has no \"ghibli\" in it");
+check(normalizeStyle("ghibli") === "painted" && normalizeStyle("painted") === "painted" && normalizeStyle("original") === "original" && normalizeStyle(undefined) === "painted", "normalizeStyle maps the old name to Painted and keeps Original");
 
 // today's loader kept seen: [] as an array (flags set on it were lost at the next save); loadSave reads it as no flags
 const seenFix = (s) => (Array.isArray(s.seen) ? { ...s, seen: {} } : s);

@@ -25,6 +25,10 @@ import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHo
 import { PLACE_GOALS, goalsMet, goalCount, nextGoal, dailyGoal, dayHit, dayDoneText, todayLine, isDay, dayOf, STREAK, ASSIST, SHORT_M, assistFish, progressNote } from "./goals.js";
 import { SAVE_KEY, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "./save.js";
 import { Native } from "./native.js";
+import { VERSION } from "./version.js";
+// the menus and the easier-play settings: the pixel ratio for ?shot, the gauge words for Larger text
+import { WORLD } from "./world.js";
+import { GAUGE } from "./reel.js";
 
 // every module is in: the bar on the boot screen moves on (index.html shows that screen until the title is ready)
 if (window.fishBoot) fishBoot.step(0.4);
@@ -44,6 +48,10 @@ const OPEN_ALL = QS.has("open");
 // move on in this page load only, and the save keeps the ones it had (see persist). Without it the phone's date is the day
 const QA_DAY = isDay(QS.get("day")) ? QS.get("day") : null;
 const today = () => QA_DAY || dayOf();
+// ?shot is for the store pictures (qa/fish/shots.mjs): Graphics High, the lake drawn at up to 3 times the CSS pixels, and
+// no automatic render scale. It is never saved
+const SHOT = QS.has("shot");
+if (SHOT) WORLD.DPR.high = 3;
 
 /* ---------------- saving ---------------- */
 // save.js reads and cleans the file; this is only the storage. In the app the save also goes to native storage
@@ -54,18 +62,20 @@ const store = {
   raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } if (mirror) Native.prefs.set(k, json); },
 };
-// the switches that live outside the save (haptics.js, audio.js and guide.js keep them): mirrored when the app goes away
-const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1"];
+// the switches that live outside the save (haptics.js, audio.js and guide.js keep them, and Settings keeps Larger text and
+// Calm effects): mirrored when the app goes away
+const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1", "fish.text", "fish.calm"];
 const mirrorSwitches = () => { if (mirror) for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
 // in web storage while a read of native storage has not come back: the next start reads it again
 const UNREAD = "fish.native-unread";
 // how far a save got: fish landed, then casts
 const progress = (s) => s.caught * 1e6 + s.casts;
 // the switches from native storage, where web storage has none
-function putSwitches([, hx, sound, guideOn]) {
+function putSwitches([, hx, sound, ...kept]) {
   if (hx != null && store.raw("fish.haptics") == null) Haptics.setEnabled(hx !== "false");
   if (sound != null && store.raw("arcade.sound") == null && (sound !== "false") !== Sound.isOn()) Sound.toggle();
-  if (guideOn != null && store.raw("reel-it-in-guide-v1") == null) { try { localStorage.setItem("reel-it-in-guide-v1", guideOn); } catch (e) { /* storage off */ } }
+  // the guide, Larger text and Calm effects are read from web storage
+  SWITCHES.slice(2).forEach((k, i) => { if (kept[i] != null && store.raw(k) == null) { try { localStorage.setItem(k, kept[i]); } catch (e) { /* storage off */ } } });
 }
 // The app with no save in web storage (or with a native read that never came back): ask native storage, and keep the
 // save with more in it. The answer has 400 ms, so a slow phone does not hold up the boot. A later answer is read when
@@ -106,6 +116,7 @@ function takeComeback() {
 }
 if (late) late.then((got) => {
   putSwitches(got);
+  applyAccess();
   const theirs = got[0] && loadSave(got[0]), json = theirs && JSON.stringify(theirs);
   const fresh = webRaw == null && JSON.stringify(save) === startJson;
   if (theirs && (progress(theirs) > progress(save) || (fresh && json !== startJson))) { comeback = json; takeComeback(); return; }
@@ -117,7 +128,7 @@ const openNow = (id) => isOpen(save, id, OPEN_ALL);
 /* ---------------- state ---------------- */
 const game = $("#game");
 game.dataset.reelSide = save.reelSide;
-const guide = createGuide(game, $("#guideToggle"));
+const guide = createGuide(game, $("#guideToggle"), { caught: () => save.caught });
 let guideCue = { text: "", sub: "", icon: "", tone: "" };
 const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 const G = {
@@ -159,17 +170,20 @@ const ICON = {
   thumb: "<svg viewBox='0 0 40 40'><g transform='translate(0 4)'>" + PHONE + "</g><circle cx='20' cy='20' r='5' fill='#e0453a'/></svg>",
   back: "<svg viewBox='0 0 40 40'><g transform='rotate(35 20 30)'>" + PHONE + "</g><path d='M10 12 Q14 4 22 4' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/><path d='M10 12 l-1 -5 m1 5 l5 -1' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/></svg>",
   flick: "<svg viewBox='0 0 40 40'><g transform='rotate(-30 20 30)'>" + PHONE + "</g><path d='M28 6 Q36 12 36 22' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/><path d='M36 22 l-4 -3 m4 3 l2 -4' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/><path d='M4 10 h6 M3 16 h5 M5 22 h4' stroke='currentColor' stroke-width='2' stroke-linecap='round'/></svg>",
-  turn: "<svg viewBox='0 0 40 40'><rect x='5' y='13' width='30' height='16' rx='3' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M12 8 Q20 2 28 8' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/><path d='M28 8 l-4 0 m4 0 l0 -4' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round'/></svg>",
+  // the phone stays upright in every picture, as in play: tilted for a steer, tipped back for a pull, forward to lower
+  turn: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M10 21 H3 m3 -3 l-3 3 l3 3 M30 21 H37 m-3 -3 l3 3 l-3 3' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  upright: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M33 6 V34 m-3 -25 l3 -3 l3 3 m-6 22 l3 3 l3 -3' fill='none' stroke='#e8b64a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   crank: "<svg viewBox='0 0 40 40'><circle cx='20' cy='20' r='12' fill='none' stroke='currentColor' stroke-width='2' stroke-dasharray='3 3'/><circle cx='20' cy='20' r='3' fill='currentColor'/><path d='M20 20 L29 12' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='29' cy='12' r='4' fill='#e0453a'/></svg>",
-  pull: "<svg viewBox='0 0 40 40'><g transform='rotate(-20 20 26)'><rect x='5' y='18' width='30' height='14' rx='3' fill='none' stroke='currentColor' stroke-width='2.4'/></g><path d='M20 14 V3 m-5 5 l5 -5 l5 5' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
-  low: "<svg viewBox='0 0 40 40'><g transform='rotate(20 20 14)'><rect x='5' y='8' width='30' height='14' rx='3' fill='none' stroke='currentColor' stroke-width='2.4'/></g><path d='M20 26 V37 m-5 -5 l5 5 l5 -5' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  pull: "<svg viewBox='0 0 40 40'><g transform='translate(3 4) rotate(18 20 30)'>" + PHONE + "</g><path d='M8 24 V6 m-4 4 l4 -4 l4 4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  low: "<svg viewBox='0 0 40 40'><g transform='translate(-3 4) rotate(-18 20 30)'>" + PHONE + "</g><path d='M32 10 V30 m-4 -4 l4 4 l4 -4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  ring: "<svg viewBox='0 0 40 40'><ellipse cx='20' cy='24' rx='5' ry='2.2' fill='none' stroke='#e8b64a' stroke-width='2.4'/><ellipse cx='20' cy='24' rx='11' ry='5' fill='none' stroke='#e8b64a' stroke-width='2' opacity='0.7'/><ellipse cx='20' cy='24' rx='17' ry='8' fill='none' stroke='currentColor' stroke-width='1.6' opacity='0.45'/><path d='M20 21 V10 m-3 3 l3 -3 l3 3' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   stop: "<svg viewBox='0 0 40 40'><circle cx='20' cy='20' r='14' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M13 13 L27 27' stroke='#ff5a4a' stroke-width='3' stroke-linecap='round'/></svg>",
   fish: "<svg viewBox='0 0 40 40'><path d='M5 20 Q16 8 28 20 Q16 32 5 20 Z M28 20 L36 13 L36 27 Z' fill='#e8b64a'/><circle cx='11' cy='18' r='1.8' fill='#0d2f38'/></svg>",
   swipe: "<svg viewBox='0 0 40 40'><rect x='8' y='6' width='24' height='28' rx='3' fill='none' stroke='currentColor' stroke-width='2.2'/><path d='M20 12 V28 m-5 -5 l5 5 l5 -5' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
 };
 
 /* ---------------- screens and messages ---------------- */
-const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results", "places", "travel", "arrive", "unlock"];
+const SCREENS = ["title", "setup", "help", "journal", "settings", "pause", "catch", "results", "places", "travel", "arrive", "unlock", "about", "privacy"];
 let returnTo = null;
 let shownAt = 0, tapAt = -1e9, tapShown = false;
 function show(id) {
@@ -178,10 +192,19 @@ function show(id) {
   tapShown = shownAt - tapAt < 250;
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
   document.body.dataset.screen = id || "";
+  // each screen is a dialog: the play controls behind it take no focus and no taps
+  for (const s of ["#hud", "#castUI", "#reelUI"]) $(s).inert = !!id;
   if (id === "title") { $("#title").scrollTop = 0; $("#title .title-menu").scrollTop = 0; }
-  const focus = id && ($("#" + id + " .btn.go") || $("#" + id + " button"));
-  if (focus && !touchDevice) focus.focus({ preventScroll: true });
+  // a computer: the main button has the focus, for Enter. A phone: the heading, where a screen reader starts to read
+  const focus = id && (touchDevice ? $("#" + id + " h1, #" + id + " h2") : $("#" + id + " .btn.go") || $("#" + id + " button"));
+  if (focus) { if (touchDevice) focus.tabIndex = -1; focus.focus({ preventScroll: true }); }
+  requestAnimationFrame(fades);
 }
+// A list that scrolls in its card fades at the bottom while more of it is below
+const FADES = ["#helpM", "#helpT", "#plist", "#jlist", "#rlist", "#settings .set"];
+function fades() { for (const s of FADES) { const el = $(s); el.classList.toggle("more", el.scrollHeight - el.scrollTop > el.clientHeight + 4); } }
+for (const s of FADES) $(s).addEventListener("scroll", fades, { passive: true });
+addEventListener("resize", () => requestAnimationFrame(fades));
 function overlay(id) { returnTo = SCREENS.find((s) => !$("#" + s).hidden) || null; show(id); }
 function closeOverlay() { show(returnTo); returnTo = null; }
 // the second tap of a double tap must not press the button that the first tap's new screen puts under the finger
@@ -246,6 +269,18 @@ function prompt(text, sub = "", icon = "", tone = "") {
   p.querySelector(".p1").innerHTML = (ICON[icon] || "") + "<span></span>";
   p.querySelector(".p1 span").textContent = text;
   p.querySelector(".p2").textContent = sub;
+  say(text);
+}
+// The prompt's headline for screen readers (#say, a polite live region): each new one, at most every 1.5 s. One that
+// comes sooner waits its turn, and a newer one takes its place
+let sayAt = -1e9, sayT = 0;
+function say(text) {
+  clearTimeout(sayT);
+  const el = $("#say"), wait = sayAt + 1500 - now();
+  if (!text || text === el.textContent) return;
+  if (wait > 0) { sayT = setTimeout(() => say(text), wait); return; }
+  sayAt = now();
+  el.textContent = text;
 }
 // kind "photo" is the white camera flash of a trophy; the strike and the loss flash red
 function flash(kind = "") { const f = $("#flash"); f.classList.remove("go"); f.classList.toggle("photo", kind === "photo"); void f.offsetWidth; f.classList.add("go"); }
@@ -499,7 +534,7 @@ function toTitle() {
   if (world) world.setHour(G.hour);
   Sound.setAmbience(true, G.hour);
   // the arcade's name is for the web arcade only: the app shows the place alone
-  $("#tkick").textContent = (Native.isStore ? "" : "GET PLUNGER'D · ") + journeyOf(G.place.id).kick;
+  $("#tkick").textContent = (Native.isStore ? "" : "GET PLUNGER'D · ") + journeyOf(G.place.id).kick;   // web only
   $("#placesNew").hidden = !newPlaces(save).length;
   show("title");
   titleBest();
@@ -529,7 +564,7 @@ function begin(mode) {
 $("#derbyBtn").addEventListener("click", () => begin("derby"));
 $("#freeBtn").addEventListener("click", () => begin("free"));
 $("#journalBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); renderJournal(); overlay("journal"); });
-$("#helpBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); overlay("help"); });
+$("#helpBtn").addEventListener("click", openHelp);
 $("#setBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); syncSettings(); overlay("settings"); });
 $("#placesBtn").addEventListener("click", () => { Sound.init(); Sound.sfx("ui"); renderPlaces(); overlay("places"); });
 
@@ -671,7 +706,7 @@ async function travelTo(id) {
 function arrival(id) {
   const J = JOURNEY[id];
   seen("at." + id);
-  $("#akick").textContent = J.kick;
+  $("#akick").textContent = "NEW PLACE · " + J.level.toUpperCase();
   $("#aname").textContent = J.name;
   $("#ablurb").textContent = J.blurb;
   $("#agear").textContent = "New gear: " + J.gear.charAt(0).toLowerCase() + J.gear.slice(1);
@@ -1157,7 +1192,7 @@ function renderJournal(pid) {
     b.setAttribute("aria-selected", String(id === pid));
     b.className = openNow(id) ? "" : "lock";
     b.textContent = JOURNEY[id].short;
-    b.addEventListener("click", () => { Sound.sfx("ui"); renderJournal(id); });
+    b.addEventListener("click", () => { Sound.sfx("ui"); renderJournal(id); requestAnimationFrame(fades); });
     tabs.appendChild(b);
   }
   const list = $("#jlist");
@@ -1202,46 +1237,69 @@ function renderJournal(pid) {
 }
 
 /* ---------------- help ---------------- */
-const HELP_M = [
-  ["turn", "Hold the phone <b>upright</b>, like the handle of a rod. Keep it upright the whole time. Its top edge is the rod."],
-  ["turn", "Turn your body to <b>aim</b>. The dotted line shows where the lure goes."],
-  ["thumb", "<b>Press and hold</b> your thumb on the rod. This opens the bail, and your thumb holds the line."],
-  ["back", "Tip the phone <b>back</b> over your shoulder."],
-  ["flick", "<b>Whip it forward.</b> Lift your thumb as the phone tips forward. Keep a tight grip."],
-  ["thumb", "To stop the lure short, touch the rod while it flies."],
-  ["crank", "Turn the <b>crank</b> with your thumb. The first turn closes the bail. Reel <b>slowly</b>. Stop now and then."],
-  ["pull", "When a fish <b>strikes</b>, snap the phone up. This sets the hook."],
-  ["pull", "<b>Pump and reel.</b> Tip the phone back toward you as you reel. Ease forward to relax."],
-  ["stop", "When the drag <b>slips</b>, stop reeling."],
-  ["turn", "Tilt the phone left or right to <b>steer</b> a running fish. Keep it away from weeds, rocks, stumps and logs."],
-  ["low", "When it <b>shakes its head</b>, hold the rod up. When it <b>jumps</b>, lower it."],
-  ["crank", "When it <b>swims at you</b>, reel fast."],
-  ["pull", "When it <b>holds on the bottom</b>, pump it up."],
-  ["fish", "When the fish is <b>tired</b> and close, tip the phone up and hold it there."],
-  ["fish", "Land a big fish to open a new place. Each place has its own derby and its own legend."],
-];
-const HELP_T = [
-  ["turn", "Drag the lake left or right to <b>aim</b>."],
-  ["thumb", "<b>Press</b> on the rod and <b>drag down</b>. This opens the bail and tips the rod back."],
-  ["flick", "<b>Flick up</b>. Let go during the flick."],
-  ["crank", "Turn the <b>crank</b> in circles, or use the mouse wheel, or hold <b>R</b>. The first turn closes the bail. Reel slowly."],
-  ["pull", "The <b>rod</b> on the right: drag up to raise the rod. A fast swipe up sets the hook. Keys: <b>W S A D</b> and <b>Space</b>."],
-  ["stop", "When the drag <b>slips</b>, stop reeling."],
-  ["turn", "Drag the rod left or right to <b>steer</b> a running fish. Keep it away from weeds, rocks, stumps and logs."],
-  ["low", "When it <b>shakes its head</b>, hold the rod up. When it <b>jumps</b>, lower it."],
-  ["crank", "When it <b>swims at you</b>, reel fast."],
-  ["pull", "When it <b>holds on the bottom</b>, pump it up."],
-  ["fish", "When the fish is <b>tired</b> and close, drag the rod up and hold it."],
-  ["fish", "Land a big fish to open a new place. Each place has its own derby and its own legend."],
-];
-for (const [id, list] of [["#helpM", HELP_M], ["#helpT", HELP_T]]) $(id).innerHTML = list.map(([ic, t]) => "<li>" + ICON[ic] + "<span>" + t + "</span></li>").join("");
+// How to play: a short tab for each input, in the words the game uses in play (moveWords in guide.js), with the rising
+// rings, and the fish moves behind a row that opens. input: "motion", "touch", or "keys" (a computer with no touch screen)
+function helpRows(input) {
+  const m = input === "motion", keys = input === "keys", w = (k, pace) => moveWords(k, input, 0, pace);
+  const steps = m ? [
+    ["upright", "Hold the phone <b>upright</b>. Grip it tight. Keep 2 m clear around you."],
+    ["thumb", "<b>Hold your thumb</b> on the screen. Turn your body to aim."],
+    ["back", "Tip the phone <b>back</b>."],
+    ["flick", "<b>Whip it forward.</b> Lift your thumb."],
+  ] : [
+    ["turn", keys ? "Drag the lake sideways to <b>aim</b>, or use the arrow keys." : "Drag the lake sideways to <b>aim</b>."],
+    ["thumb", "<b>Press the rod</b> and drag down."],
+    ["flick", keys ? "<b>Flick up</b> and let go in the green. Or hold <b>Space</b>, and let go of it in the green." : "<b>Flick up</b> and let go in the green."],
+  ];
+  steps.push(
+    ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
+    [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + w("hook")],
+  );
+  if (!m) steps.push(["pull", keys ? "Drag the <b>rod</b> up, down and sideways, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
+  steps.push(
+    ["fish", "In a fight, <b>follow the big words</b> at the top. They tell you each move."],
+    ["ring", "<b>Rings</b> on the water are rising fish. Cast into one for a near-sure bite."],
+  );
+  const moves = [
+    ["stop", "<b>The drag slips.</b> " + w("stop")],
+    ["turn", "<b>It runs to cover.</b> " + w("turn")],
+    ["pull", "<b>It shakes its head.</b> " + w("raise")],
+    ["low", "<b>It jumps.</b> " + w("low")],
+    ["crank", "<b>It swims at you.</b> " + w("reel", "fast")],
+    ["pull", "<b>It holds on the bottom.</b> " + w("pump")],
+    ["fish", "<b>It is tired and close.</b> " + w("land")],
+  ];
+  const list = (rows) => "<ol class='steps'>" + rows.map(([ic, t]) => "<li>" + ICON[ic] + "<span>" + t + "</span></li>").join("") + "</ol>";
+  return list(steps) + "<details class='moves'><summary>Fish moves</summary>" + list(moves) + "</details>";
+}
+$("#helpM").innerHTML = helpRows("motion");
+$("#helpT").innerHTML = helpRows(inputOf(false, touchDevice));
+for (const d of $$("#help .moves")) d.addEventListener("toggle", fades);
+// the tab for the input the player uses: motion play, or a phone that can play with motion and has not chosen yet; else
+// touch (a computer opens on Touch and mouse)
+function helpInput() {
+  if (G.input === "motion" || G.stallTouch) return G.input;
+  return save.input || (touchDevice && Motion.available ? "motion" : "touch");
+}
+function openHelp() {
+  Sound.init(); Sound.sfx("ui");
+  for (const d of $$("#help .moves")) d.open = false;
+  helpTab(helpInput() === "motion" ? "m" : "t");
+  overlay("help");
+}
+function helpTab(t) {
+  for (const b of $$("#help [data-tab]")) b.setAttribute("aria-selected", String(b.dataset.tab === t));
+  setPullDemo(false);
+  for (const p of $$("#help [role=tabpanel]")) p.scrollTop = 0;
+  requestAnimationFrame(fades);
+}
 function setPullDemo(open) {
   const motionTab = $("#help [data-tab='m']").getAttribute("aria-selected") === "true";
   $("#pullDemo").hidden = !open;
   $("#helpM").hidden = open || !motionTab;
   $("#helpT").hidden = open || motionTab;
   $("#watchPullDemo").hidden = !motionTab;
-  $("#watchPullDemo").textContent = open ? "Back to steps" : "Watch pull-back demo";
+  $("#watchPullDemo").textContent = open ? "Back to steps" : "Watch: tip back to reel";
   if (!open) $("#pullDemoVideo").pause();
 }
 $("#watchPullDemo").addEventListener("click", () => {
@@ -1253,18 +1311,15 @@ $("#watchPullDemo").addEventListener("click", () => {
     video.play().catch(() => { /* Native playback controls remain available. */ });
   }
 });
-for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => {
-  for (const t of $$("#help [data-tab]")) t.setAttribute("aria-selected", String(t === tab));
-  setPullDemo(false);
-});
+for (const tab of $$("#help [data-tab]")) tab.addEventListener("click", () => helpTab(tab.dataset.tab));
 function seen(k) { if (!save.seen[k]) { save.seen[k] = 1; persist(); } }
 
 /* ---------------- art style ---------------- */
+// Settings > Art style: Painted (the default) or Original
 function syncArtStyle() {
   document.body.dataset.artStyle = save.artStyle;
-  for (const button of $$("[data-art]")) button.setAttribute("aria-pressed", String(button.dataset.art === save.artStyle));
   $("#optArtStyle").value = save.artStyle;
-  $("#artNote").textContent = save.artStyle === "ghibli" ? "Cartoon models and painted skies" : "Classic lake scenery";
+  $("#artNote").textContent = save.artStyle === "painted" ? "Cartoon models and painted skies." : "Classic lake scenery.";
 }
 function setArtStyle(style) {
   save.artStyle = normalizeStyle(style);
@@ -1273,7 +1328,6 @@ function setArtStyle(style) {
   if (world) world.setArtStyle(save.artStyle);
   G.stillDrawn = false;
 }
-for (const button of $$("[data-art]")) button.addEventListener("click", () => setArtStyle(button.dataset.art));
 $("#optArtStyle").addEventListener("change", (event) => setArtStyle(event.target.value));
 syncArtStyle();
 
@@ -1286,21 +1340,33 @@ function syncSettings() {
   $("#optAssist").checked = !!save.assist;
   // after stalled sensors switched this visit to touch (G.stallTouch), the saved choice is still motion: show touch, so
   // picking Motion turns the sensors back on
-  $("#optInput").value = G.input === "motion" || (save.input === "motion" && !G.stallTouch) ? "motion" : "touch";
+  // a player who has not chosen yet is asked at the first cast: the row says so, and shows the suggested motion
+  const ask = touchDevice && Motion.available && !save.input && G.input !== "motion";
+  $("#optInput").value = ask || G.input === "motion" || (save.input === "motion" && !G.stallTouch) ? "motion" : "touch";
   $("#optInput").disabled = !touchDevice || !Motion.available;
-  $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : G.stallTouch ? "The sensors stopped. Pick Motion to try again." : "Drag and flick on the screen.";
+  $("#inputNote").textContent = !touchDevice || !Motion.available ? "Motion needs a phone." : G.input === "motion" ? "The phone is the rod." : G.stallTouch ? "The sensors stopped. Pick Motion to try again." : ask ? "You choose when you start." : "Drag and flick on the screen.";
   $("#optQuality").value = save.quality;
   $("#optReelSide").value = save.reelSide;
+  $("#aboutVer").textContent = VERSION;
   syncArtStyle();
+  syncAccess();
 }
 $("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
 $("#optHaptics").addEventListener("change", (e) => { Haptics.unlock(); Haptics.setEnabled(e.target.checked); if (e.target.checked) Haptics.bump(0.6); });
 $("#optAssist").addEventListener("change", (e) => { save.assist = e.target.checked; persist(); });
 $("#optQuality").addEventListener("change", (e) => { save.quality = e.target.value; persist(); applyQuality(); });
+// the reel side mirrors the reel controls in motion play: the crank, the drag and the gauge (index.html)
 $("#optReelSide").addEventListener("change", (e) => {
   save.reelSide = e.target.value === "left" ? "left" : "right";
   game.dataset.reelSide = save.reelSide;
   persist();
+  relayout(true);
+});
+// a tap anywhere on a row with a list opens the list (where the browser can)
+for (const row of $$(".set label")) row.addEventListener("click", (e) => {
+  const sel = row.querySelector("select");
+  if (!sel || sel.disabled || e.target === sel) return;
+  try { sel.showPicker(); } catch (err) { sel.focus(); }
 });
 $("#optInput").addEventListener("change", async (e) => {
   if (e.target.value === "motion") {
@@ -1311,14 +1377,64 @@ $("#optInput").addEventListener("change", async (e) => {
   } else { G.input = "touch"; save.input = "touch"; G.stallTouch = false; }
   persist(); syncSettings(); relayout(true);
 });
-function quality() { return save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality; }
+function quality() { return SHOT ? "high" : save.quality === "auto" ? (touchDevice ? "low" : "high") : save.quality; }
 function applyQuality() {
   // the reel canvases follow the quality too: fewer pixels to paint on a phone
-  REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
+  REEL_UI.maxDpr = quality() === "low" ? 1.5 : SHOT ? 3 : 2;
   if (world) world.setQuality(quality());
   G.stillDrawn = false;
   for (const w of [reelPanel, crank, rodPad, gauge]) if (w && w.resize) w.resize();
 }
+
+/* ---------------- easier play: Larger text and Calm effects ---------------- */
+// Both live outside the save, like the sound switch, and go to native storage in the app (SWITCHES).
+// Larger text ("fish.text" = "large"): #game data-text="large" sets --ui-scale (style.css), and the gauge's words grow.
+// Calm effects ("fish.calm" = "1"): html data-calm="1". With the phone's reduced motion it is on anyway (calm.js)
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const GAUGE_PX = { WORD_PX: GAUGE.WORD_PX, LABEL_PX: GAUGE.LABEL_PX };
+function setSwitch(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage off */ } if (mirror) Native.prefs.set(k, v); }
+function applyAccess() {
+  const large = store.raw("fish.text") === "large";
+  if (large) game.dataset.text = "large"; else delete game.dataset.text;
+  GAUGE.WORD_PX = Math.round(GAUGE_PX.WORD_PX * (large ? 1.25 : 1));
+  GAUGE.LABEL_PX = Math.round(GAUGE_PX.LABEL_PX * (large ? 1.25 : 1));
+  if (store.raw("fish.calm") === "1") document.documentElement.dataset.calm = "1"; else delete document.documentElement.dataset.calm;
+}
+function syncAccess() {
+  const sys = reducedMotion.matches;
+  $("#optText").checked = store.raw("fish.text") === "large";
+  $("#optCalm").checked = sys || store.raw("fish.calm") === "1";
+  $("#optCalm").disabled = sys;
+  $("#calmNote").textContent = sys ? "On: your phone asks for less motion." : "Fewer flashes and less motion.";
+}
+$("#optText").addEventListener("change", (e) => { setSwitch("fish.text", e.target.checked ? "large" : "normal"); applyAccess(); relayout(true); requestAnimationFrame(fades); });
+$("#optCalm").addEventListener("change", (e) => { setSwitch("fish.calm", e.target.checked ? "1" : "0"); applyAccess(); });
+reducedMotion.addEventListener("change", syncAccess);
+applyAccess();
+
+/* ---------------- about and the privacy policy ---------------- */
+// About and the policy open over Settings, and go back to it (or the policy back to About). The policy is privacy.html in
+// a frame: a page of the game, so it shows with no network. Its Back button posts a message to close it here
+let privacyFrom = "settings";
+$("#aboutVersion").textContent = "Version " + VERSION;
+function openPrivacy(from) {
+  privacyFrom = from;
+  const f = $("#privacyFrame");
+  if (!f.getAttribute("src")) f.src = "privacy.html";
+  show("privacy");
+}
+function closeSub() {
+  Sound.sfx("uiBack");
+  show(!$("#privacy").hidden ? privacyFrom : "settings");
+}
+$("#aboutBtn").addEventListener("click", () => { Sound.sfx("ui"); show("about"); });
+$("#privacyRow").addEventListener("click", () => { Sound.sfx("ui"); openPrivacy("settings"); });
+$("#privacyBtn").addEventListener("click", () => { Sound.sfx("ui"); openPrivacy("about"); });
+for (const b of $$("[data-back]")) b.addEventListener("click", closeSub);
+addEventListener("message", (e) => {
+  const d = e.data;
+  if (e.source === $("#privacyFrame").contentWindow && d && d.source === "reel-it-in-privacy" && d.action === "close" && !$("#privacy").hidden) closeSub();
+});
 
 /* ---------------- pause ---------------- */
 function pause() {
@@ -1343,7 +1459,7 @@ function resume() { if (G.ctxLost) return; G.paused = false; show(null); Sound.s
 $("#pauseBtn").addEventListener("click", (e) => { e.stopPropagation(); Sound.sfx("ui"); pause(); });
 $("#resumeBtn").addEventListener("click", resume);
 $("#quitBtn").addEventListener("click", () => { G.paused = false; Sound.sfx("uiBack"); toTitle(); });
-$("#pHelp").addEventListener("click", () => overlay("help"));
+$("#pHelp").addEventListener("click", openHelp);
 $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journal"); });
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
 // the page or the app goes away: play pauses, the loops and the buzz stop
@@ -1368,6 +1484,7 @@ function back() {
   const open = (s) => !$("#" + s).hidden;
   if (traveling) return;
   if (window.GameSwitch && GameSwitch.isOpen) { GameSwitch.close(); return; }
+  if (open("about") || open("privacy")) { closeSub(); return; }
   if (["help", "journal", "settings", "places"].some(open)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (open("setup")) { Sound.sfx("uiBack"); setupThen = null; closeOverlay(); return; }
   if (G.paused) { resume(); return; }
@@ -1383,7 +1500,8 @@ Native.onBack(back);
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
 /* ---------------- HUD ---------------- */
-// short: the HUD chip, which must fit beside the pause button and the clock on a narrow phone
+// short: the HUD chip, which must fit beside the pause button and the clock on a narrow phone: "3/10 · 4.20 kg" in a
+// derby, "2 fish · 1.35 kg" in free fishing
 function hudText(short) {
   const kg = G.bag.reduce((a, b) => a + b.kg, 0);
   // the next cast is still to come: before the release
@@ -1391,12 +1509,17 @@ function hudText(short) {
   const n = Math.min(10, G.casts + (next ? 1 : 0));
   // 100 kg or more (Big Blue) in whole kg, so the chip fits a 360 px phone
   const w = short && kg >= 100 ? Math.round(kg) + " kg" : fmtKg(kg);
-  if (G.mode === "derby") return short ? "Derby " + n + "/10 · " + w : "Derby · cast " + n + " of 10 · " + w;
-  return (short ? "Free · " : "Free fishing · ") + G.bag.length + " fish · " + w;
+  if (G.mode === "derby") return short ? n + "/10 · " + w : "Derby · cast " + n + " of 10 · " + w;
+  return (short ? "" : "Free fishing · ") + G.bag.length + " fish · " + w;
 }
+// the chip cuts the count on a narrow phone, never the weight (its own part); the clock drops AM and PM there (CSS)
 function updateHud() {
-  $("#modeChip").textContent = hudText(true);
-  $("#clock").textContent = fmtHour(G.hour);
+  const t = hudText(true), i = t.lastIndexOf(" · ") + 3, ct = document.createElement("span"), kg = document.createElement("b");
+  ct.className = "ct"; ct.textContent = t.slice(0, i); kg.textContent = t.slice(i);
+  $("#modeChip").replaceChildren(ct, kg);
+  const h = fmtHour(G.hour), sp = h.indexOf(" "), ampm = document.createElement("span");
+  ampm.className = "ampm"; ampm.textContent = h.slice(sp);
+  $("#clock").replaceChildren(h.slice(0, sp), ampm);
 }
 
 /* ---------------- controls ---------------- */
@@ -1405,6 +1528,7 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
+  if (e.code === "Escape" && (!$("#about").hidden || !$("#privacy").hidden)) { closeSub(); return; }
   if (e.code === "Escape" && ["help", "journal", "settings", "places"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
   if (G.paused) return;
@@ -1568,7 +1692,7 @@ function castPrompt() {
   const m = G.input === "motion", key = !!(G.pin && G.pin.key);
   if (stalled()) return prompt("The motion sensors stopped. Play with touch?", "Tap the screen to switch.", "stop");
   // held sideways: say so here, without a card in the way (the picture already stays upright on the phone)
-  if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "turn");
+  if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "upright");
   switch (G.step) {
     // touch: a drag down from the press takes the line, a drag sideways aims (the keys: Space and the arrows)
     case "ready": prompt(m ? "Hold your thumb on the rod." : "Press the rod and drag down.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
@@ -1846,7 +1970,7 @@ function frame() {
   let dt = (t - last) / 1000;
   // the render scale reads only the frames that drew the lake: a frame under a still screen costs nothing. A new pixel
   // ratio clears the canvas, so a still lake is drawn again
-  if (world && world.frameTime && drew && world.frameTime(t - last)) G.stillDrawn = false;
+  if (!SHOT && world && world.frameTime && drew && world.frameTime(t - last)) G.stillDrawn = false;
   last = t;
   if (!(dt > 0)) dt = 0.016;
   G.frame++;
@@ -1986,7 +2110,7 @@ async function boot() {
   // the app: the whole screen is the lake
   Native.hideStatusBar();
   try {
-    REEL_UI.maxDpr = quality() === "low" ? 1.5 : 2;
+    REEL_UI.maxDpr = quality() === "low" ? 1.5 : SHOT ? 3 : 2;
     // the map first: the world builds the place the map is set to
     LAKE.setPlace(G.place);
     world = await createWorld($("#view"), { quality: quality(), place: G.place, style: save.artStyle });

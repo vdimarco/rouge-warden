@@ -122,11 +122,11 @@ export class Rod {
       drawn.attributes.position.setUsage(THREE.DynamicDrawUsage); drawn.attributes.normal.setUsage(THREE.DynamicDrawUsage);
       this.cartoon = { geometry: drawn, local, localN, frames, grow: new Uint8Array(length).fill(1), fi: Uint16Array.from(stations, s => index.get(s)) };
     }
-    this.setArtStyle(artStyle.value ? "ghibli" : "original");
+    this.setArtStyle(artStyle.value ? "painted" : "original");
   }
 
   setArtStyle(style) {
-    const data = style === "ghibli" && this.cartoon ? this.cartoon : this.original;
+    const data = style === "painted" && this.cartoon ? this.cartoon : this.original;
     this.mesh.geometry = data.geometry;
     for (const key of ["local", "localN", "grow", "frames", "fi"]) this[key] = data[key];
     this.mesh.userData.cartoonAsset = data === this.cartoon ? "rod" : null;
@@ -300,10 +300,10 @@ export class Lure {
     this.q = new THREE.Quaternion();
     this.original = { body: this.body.geometry, blade: this.blade.geometry, material: this.blade.material };
     this.cartoon = { body: cartoonGeometry("lure_body"), blade: cartoonGeometry("lure_blade"), material: fx(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, side: THREE.DoubleSide, transparent: true }), this.fx, { wag: false }) };
-    this.setArtStyle(artStyle.value ? "ghibli" : "original");
+    this.setArtStyle(artStyle.value ? "painted" : "original");
   }
   setArtStyle(style) {
-    const data = style === "ghibli" && this.cartoon.body && this.cartoon.blade ? this.cartoon : this.original;
+    const data = style === "painted" && this.cartoon.body && this.cartoon.blade ? this.cartoon : this.original;
     this.body.geometry = data.body; this.blade.geometry = data.blade; this.blade.material = data.material;
     this.body.userData.cartoonAsset = data === this.cartoon ? "lure_body" : null;
   }

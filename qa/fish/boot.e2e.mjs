@@ -478,7 +478,11 @@ async function changeSetting(page) {
     await click(page, "#journal [data-close]");
     // the title over the live lake (the Original style) draws it at 15 frames a second at most, and it still moves.
     // The draw is stubbed for this, so the loop runs as fast as the screen and only the throttle holds the lake back
-    await click(page, "[data-art='original']");
+    // (the art style is in Settings)
+    await click(page, "#setBtn");
+    await page.waitForSelector("#settings:not([hidden])");
+    await page.selectOption("#optArtStyle", "original");
+    await click(page, "#settings [data-close]");
     await sleep(1500);
     const art = await page.evaluate(() => document.body.dataset.artStyle);
     await page.evaluate(() => { const w = FISH.world; window.__render = w.render; w.render = function () { window.__draws++; }; });

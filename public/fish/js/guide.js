@@ -147,7 +147,10 @@ export function activeLesson({ phase, step, fishPhase, cue, motion, pullAvailabl
   return fishPhase === "fight" ? "pump" : "reel";
 }
 
-export function createGuide(game, button) {
+// The guide shows on the cast and the reel. A new player sees it until the first fish is landed (caught() gives the fish
+// landed), unless they turned it off; after that it stays off unless they turned it on. A tap on the button is the
+// player's choice, kept in storage ("shown" or "hidden")
+export function createGuide(game, button, { caught = () => 0 } = {}) {
   const panel = document.createElement("aside");
   panel.id = "fishGuide";
   panel.hidden = true;
@@ -162,8 +165,11 @@ export function createGuide(game, button) {
   video.className = "guide-video";
   art.before(video);
   const count = panel.querySelector(".guide-count"), kicker = panel.querySelector(".guide-kicker");
-  let dismissed = true;
-  try { dismissed = localStorage.getItem(KEY) !== "shown"; } catch (_) { /* storage may be disabled */ }
+  let choice = null;
+  try { choice = localStorage.getItem(KEY); } catch (_) { /* storage may be disabled */ }
+  if (choice !== "shown" && choice !== "hidden") choice = null;
+  const off = () => (choice ? choice === "hidden" : caught() > 0);
+  let dismissed = off();
   let state = null, key = "", started = 0, lastDraw = -Infinity, layoutKey = "", nextLayout = 0, kindNow = "hold", parts = [];
   let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });
@@ -174,12 +180,16 @@ export function createGuide(game, button) {
     const next = `${dismissed}:${panel.hidden}`;
     if (next === buttonState) return;
     buttonState = next;
+    // the button says what a tap does (the panel may be away a moment, on a screen with no room for it)
+    const label = dismissed ? "Show the moves guide" : "Hide the moves guide";
     button.setAttribute("aria-expanded", String(!panel.hidden));
-    button.setAttribute("aria-label", dismissed ? "Show animated guide" : panel.hidden ? "Guide hidden while screen is busy" : "Hide animated guide");
+    button.setAttribute("aria-label", label);
+    button.title = label;
   };
   button.addEventListener("click", () => {
-    dismissed = !dismissed;
-    try { localStorage.setItem(KEY, dismissed ? "hidden" : "shown"); } catch (_) { /* storage may be disabled */ }
+    choice = dismissed ? "shown" : "hidden";
+    dismissed = off();
+    try { localStorage.setItem(KEY, choice); } catch (_) { /* storage may be disabled */ }
     started = now; key = ""; layoutKey = "";
     if (dismissed) { panel.hidden = true; video.pause(); }
     else if (video.readyState >= 1) video.currentTime = 0;
@@ -205,7 +215,9 @@ export function createGuide(game, button) {
       .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
-    const xs = [10 + (parseFloat(getComputedStyle(game).getPropertyValue("--sal")) || 0)];
+    // the left edge: the HUD's own inset, which is 10 px past the safe area
+    const hud = game.querySelector("#hud");
+    const xs = [hud && parseFloat(getComputedStyle(hud).paddingLeft) || 10];
     if (W > H * 1.15 && state.phase === "reel") xs.push(Math.min(W * .38, game.querySelector("#gaugeBox").offsetWidth + 24));
     let found = null;
     for (const compact of [false, true, "tiny"]) {
@@ -232,7 +244,9 @@ export function createGuide(game, button) {
   }
   function update(s, t) {
     state = s; now = t;
-    const visible = !s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
+    // the first fish landed turns off a guide the player never chose
+    dismissed = off();
+    const visible =!s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
     if (!visible || dismissed) { if (!panel.hidden) panel.hidden = true; video.pause(); title(); return; }
     if (s.phase !== lastPhase || s.step !== lastStep) { started = t; lastPhase = s.phase; lastStep = s.step; }
     const intro = s.phase === "cast" && (s.step === "ready" || s.step === "open");

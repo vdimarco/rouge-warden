@@ -2,7 +2,7 @@
 // Checks the imported models, painted forest, bend mapping, style switching, and asset failure.
 import assert from 'node:assert/strict';
 import {open, until} from './lib.mjs';
-const {browser,page,errors}=await open({phone:false,query:'?debug',save:{input:'touch',artStyle:'ghibli'}});
+const {browser,page,errors}=await open({phone:false,query:'?debug',save:{input:'touch',artStyle:'painted'}});
 try {
   await until(page,()=>!!window.FISH);
   const forest = await page.evaluate(() => {
@@ -30,7 +30,7 @@ try {
       poses.push({tip:tip.toArray(),finite:[...p.array].every(Number.isFinite),nearestGuide:closest});
     }
     rod.setArtStyle('original');lure.setArtStyle('original');const restored=rod.mesh.geometry===original&&lure.body.geometry===lure.original.body;
-    rod.setArtStyle('ghibli');lure.setArtStyle('ghibli');const selected=rod.mesh.geometry===cartoon&&lure.body.geometry===lure.cartoon.body&&lure.blade.material===lure.cartoon.material;
+    rod.setArtStyle('painted');lure.setArtStyle('painted');const selected=rod.mesh.geometry===cartoon&&lure.body.geometry===lure.cartoon.body&&lure.blade.material===lure.cartoon.material;
     return {ready:cartoonModelsReady(),bounds,poses,restored,selected};
   });
   assert.ok(result.ready,'Higgsfield GLB loaded');
@@ -44,9 +44,9 @@ try {
   // A late sky download can upload one texture during the switch loop. Count
   // only after all art has settled so this checks retained GPU resources.
   await page.evaluate(async()=>{await (await import('/fish/js/world-env.js')).loadStorySky();FISH.world.render();});
-  await page.evaluate(()=>{FISH.world.setArtStyle('original');FISH.world.update(0);FISH.world.render();FISH.world.setArtStyle('ghibli');FISH.world.update(0);FISH.world.render();});
+  await page.evaluate(()=>{FISH.world.setArtStyle('original');FISH.world.update(0);FISH.world.render();FISH.world.setArtStyle('painted');FISH.world.update(0);FISH.world.render();});
   const before=await page.evaluate(()=>FISH.world.info().mem);
-  await page.evaluate(()=>{for(let i=0;i<12;i++){for(const style of ['original','ghibli']){FISH.world.setArtStyle(style);FISH.world.update(0);FISH.world.render();}}});
+  await page.evaluate(()=>{for(let i=0;i<12;i++){for(const style of ['original','painted']){FISH.world.setArtStyle(style);FISH.world.update(0);FISH.world.render();}}});
   const after=await page.evaluate(()=>FISH.world.info().mem);
   assert.ok(after.geometries<=before.geometries&&after.textures<=before.textures,'no resource growth with rendered switches: '+JSON.stringify({before,after}));
   await page.route('**/cartoon-models.glb',r=>r.abort());

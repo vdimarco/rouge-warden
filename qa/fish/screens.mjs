@@ -256,7 +256,7 @@ if (part("A")) {
       await sleep(300);
       return page.evaluate(() => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }));
     };
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show the moves guide") document.querySelector("#guideToggle").click(); });
     // the phone held at 60°: the rod is up
     await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
     let mw = await words({ fish: { move: "sulk" } }, "It holds on the bottom.");
@@ -282,7 +282,7 @@ if (part("A")) {
     check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
     mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
     check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show the moves guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
     // ---- the gauge follows the state ----
@@ -561,7 +561,7 @@ if (part("A")) {
     await page.evaluate(() => FISH.startMode("derby"));
     await wait(page, () => FISH.G.phase === "cast");
     check(await page.evaluate(() => FISH.G.hour >= 20 && FISH.G.hour < 20.1) && (await toastIs(page, "Goal: land a fish of 6 kg or more. It opens Cedar River.")) === "Goal: land a fish of 6 kg or more. It opens Cedar River.", "a derby at Stump Bay starts at 20:00 with its own goal (" + (await page.textContent("#toast")) + ")");
-    check((await page.textContent("#modeChip")).startsWith("Derby 1/10"), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
+    check((await page.textContent("#modeChip")).startsWith("1/10 · "), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
     // the reload keeps the place
     await page.reload();
     await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
@@ -836,15 +836,16 @@ if (part("F")) {
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
 
-    // ---- the chip: whole kg from 100 kg ----
+    // ---- the chip: the count, then the weight (whole kg from 100 kg) ----
     console.log("     the HUD chip");
     const chip = async (kgs, mode) => {
       await page.evaluate(([kgs, mode]) => { FISH.G.mode = mode; FISH.G.bag = kgs.map((kg) => ({ id: "perch", kg })); FISH.G.casts = 0; FISH.newCast(); }, [kgs, mode]);
       return page.textContent("#modeChip");
     };
-    check((await chip([160], "free")) === "Free · 1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([99.5], "free")) === "Free · 1 fish · 99.5 kg" && (await chip([12.34], "free")) === "Free · 1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([112.4, 100.4], "derby")) === "Derby 1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([160], "free")) === "1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([99.5], "free")) === "1 fish · 99.5 kg" && (await chip([12.34], "free")) === "1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([112.4, 100.4], "derby")) === "1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check(await page.evaluate(() => document.querySelector("#modeChip b").textContent === "213 kg"), "the weight is a part of its own, which the chip never cuts");
     await page.evaluate(() => { FISH.G.bag = []; });
 
     // ---- the report on a short cast ----
@@ -1304,7 +1305,7 @@ if (part("K")) {
       await wait(page, () => FISH.G.step === "ready", null, 10000);
       backs.push({ zone: r.zone, left: await page.evaluate(() => FISH.G.castsLeft), chip: await page.textContent("#modeChip") });
     }
-    check(chip0.startsWith("Derby 1/10") && backs.every((b) => b.zone === "You cast onto the shore. You get that cast back." && b.left === 10 && b.chip.startsWith("Derby 1/10")), "four casts onto the shore: each says \"You get that cast back.\", and the chip keeps cast 1 of 10 (" + JSON.stringify(backs) + ")");
+    check(chip0.startsWith("1/10 · ") && backs.every((b) => b.zone === "You cast onto the shore. You get that cast back." && b.left === 10 && b.chip.startsWith("1/10 · ")), "four casts onto the shore: each says \"You get that cast back.\", and the chip keeps cast 1 of 10 (" + JSON.stringify(backs) + ")");
 
     // ---- a derby catch that opens a place: NEW PLACE first, "It opens Stump Bay.", and after the card where to go ----
     console.log("     the unlock on the catch card");
