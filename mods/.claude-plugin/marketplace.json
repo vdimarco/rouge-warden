@@ -1,0 +1,20 @@
+{
+  "name": "cottage-mods",
+  "owner": { "name": "Cottage Arcade" },
+  "metadata": {
+    "description": "Claude Code mods from the Cottage Arcade: games to play while Claude works, arcade skins, and guards for the house rules.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    { "name": "announcer", "source": "./announcer", "description": "The Shore of the Ancients announcer calls green test streaks." },
+    { "name": "cabinet-spinner", "source": "./cabinet-spinner", "description": "Spinner words and end-of-turn lines from the game you work on, and arcade tokens." },
+    { "name": "creel", "source": "./creel", "description": "A bobber while a long command runs, and a Reel It In fish when it ends." },
+    { "name": "loon-chicks", "source": "./loon-chicks", "description": "Subagents swim as Loon Echo chicks above the prompt." },
+    { "name": "tilt-sensor", "source": "./tilt-sensor", "description": "The house rules as a pinball tilt: DANGER after an edit, TILT on a commit." },
+    { "name": "wanted-level", "source": "./wanted-level", "description": "Crimson Rogue stars for risky moves; five stars blocks the next one." },
+    { "name": "task-breakout", "source": "./task-breakout", "description": "The open OpenSpec tasks as a brick wall; a checked box breaks a brick." },
+    { "name": "attract-mode", "source": "./attract-mode", "description": "A Primordia Lenia dish grows in a pane when the session is idle." },
+    { "name": "full-tilt", "source": "./full-tilt", "description": "The Full Tilt pinball table in a pane, with the real physics." },
+    { "name": "photo-booth", "source": "./photo-booth", "description": "The screenshots a QA run saves, in a pane." }
+  ]
+}

@@ -424,6 +424,25 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 `voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
 
+## Mods for Claude Code
+
+`mods/` holds ten Claude Code mods: plugins whose hooks run inside Claude Code while the crew builds the arcade. Nothing loads by itself. Turn on one mod for one session with `claude --plugin-dir mods/<name>`, or add the folder as a marketplace once with `claude plugin marketplace add ./mods` and install the mods you want from `cottage-mods`.
+
+| Mod | What it does |
+| --- | --- |
+| `announcer` | The Shore of the Ancients announcer calls green test runs: "First blood", multi kills within a turn, streaks up to "Godlike", "Shut down" when a red run ends a streak, and "Flawless victory" for a merged pull request. A toast shows each call. The clip plays where Claude Code can play one (macOS). |
+| `cabinet-spinner` | The game whose folder Claude last edited is the cabinet in play. In the terminal the spinner says its verbs ("Reeling", "Paddling", "Parrying") and a turn ends with its phrase ("Landed it in 3s"). The status line shows the cabinet and the arcade tokens: a prompt spends one, a green test run pays one back, FREE PLAY at zero, and `/change` adds three. |
+| `creel` | While a command runs 3 seconds or more, a bobber sits on the water above the prompt. When it ends, a Reel It In fish comes up: heavier fish for longer green runs, the Old Boot for red ones, the Golden Loon Bass for a merge. `/creel` shows the catch and the daily goal. |
+| `loon-chicks` | Each subagent swims as a Loon Echo chick behind the loon above the prompt. It reaches the nest when it answers; the eel takes it when it fails or is stopped. `/chicks` lists them. |
+| `tilt-sensor` | The house rules as a pinball tilt: an Olympus edit needs `npm run build --prefix games/olympus`, a Follow Suit edit needs `npm run build:arcade --prefix follow-suit`, a page with sound loads `/arcade/quiet.js` first, and an arcade screen is a WebP 480 pixels wide and under 60 KB. An edit that breaks one shows DANGER. A commit that would ship it is blocked with TILT and the fix. `/tilt-sensor` lists and resets. |
+| `wanted-level` | Crimson Rogue stars for risky moves: force pushes, `rm -rf`, hard resets, `.env` files, the paid `/api/warden` and project deletes. One star fades every 10 minutes. At five stars the next risky move is blocked until the stars fade or you run `/lay-low`. |
+| `task-breakout` | `/breakout` shows the active OpenSpec change as a brick wall: a brick for each open task, a gap for each done one. When a box is checked, the ball breaks its brick. The last one is STAGE CLEAR, and the prompt suggests the archive. |
+| `attract-mode` | When the session is idle for 3 minutes, a pane grows a live Primordia Lenia dish, like a cabinet's attract screen. The next prompt closes it. `/attract` opens it at any time. |
+| `full-tilt` | `/full-tilt` plays the Full Tilt table in a pane with the game's own physics: `z` and `m` flip, `l` launches, `k` drops the ball soft into a top lane for a skill shot, `n` starts a new game, `p` pauses. The best score is kept. |
+| `photo-booth` | After a QA run, the screenshots it saved show in a pane, newest first: `p` and `n` step through them. |
+
+The terminal draws the pinball table, the brick wall and the Lenia dish with half-block cells, and pictures only in kitty or Ghostty. The desktop and mobile apps draw the same panes as SVG. Some game code and the announcer clips are copies: `node mods/sync.mjs` makes them again from `public/` after the game changes.
+
 ## Files
 
 | Path | What it does |
@@ -471,6 +490,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
+| `mods/` | The Claude Code mods, their marketplace, `sync.mjs` (copies game code and clips into them), `check.mjs` and `qa/frames.mjs` (see [Mods for Claude Code](#mods-for-claude-code)) |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
@@ -583,6 +603,10 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 ### Watch call tests
 
 Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
+
+### Mod tests
+
+Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It checks that the copies in the mods match `public/`, that every game in `public/arcade/switch.js` has a cabinet, that the marketplace and each mod validate, and it runs each mod's tests with `claude plugin test`. The type check also needs `tsc` and the engine's declarations: set `CLAUDE_CODE_TYPES` to the path of `claude-code.d.ts`, or load a mod once so Claude Code lays them in its folder. `node mods/qa/frames.mjs` times the three animated panes (each under 4 ms a frame) and draws a frame of each to a PNG. Each script exits with code 1 when something fails.
 
 ## Jev and cost
 
