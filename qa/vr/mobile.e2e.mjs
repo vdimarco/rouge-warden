@@ -40,9 +40,9 @@ try {
  assert.equal(await page.locator('.phone-stick').count(),0);
  // Aim at the guaranteed clear first-swing building, then press the real action button.
  assert.equal(await page.evaluate(()=>G.test.aim(1)?.valid),true,'first view has a usable swing target');
- // The chase camera settles behind the hero. The phone start must not tip it up into the roof.
+ // The chase camera settles behind and above the hero, looking down 20 degrees. The phone start must not tip it up into the roof.
  const chase=await page.evaluate(()=>{G.test.step(1/60,90);return G.test.flat();});
- assert(chase.pitch<-0.2&&chase.pitch>-0.35&&Math.abs(chase.dist-4.5)<.15&&!chase.blocked,'the phone camera settles to the chase view '+JSON.stringify({pitch:chase.pitch,dist:chase.dist,blocked:chase.blocked}));
+ assert(chase.pitch<-0.3&&chase.pitch>-0.4&&Math.abs(chase.dist-4.5)<.15&&!chase.blocked,'the phone camera settles to the chase view '+JSON.stringify({pitch:chase.pitch,dist:chase.dist,blocked:chase.blocked}));
  // The hero starts facing where the camera looks (the ring), not the way the start roof faces.
  const yawGap=Math.abs(Math.atan2(Math.sin(chase.hero.yaw-chase.yaw),Math.cos(chase.hero.yaw-chase.yaw)));
  assert(yawGap<.05,'the hero and the camera face the same way at the start '+yawGap);

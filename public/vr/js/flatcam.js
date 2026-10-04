@@ -1,15 +1,21 @@
 // In Full Swing: the camera for flat screens. A chase camera behind and above the hero, turned by the look input, that swings
 // toward your travel while you swing and never goes inside a building; V (or the Y button, or the eye button) moves it to the
 // hero's eyes and back. It drives camera.position and camera.quaternion in world space, so the camera is a child of the scene.
+// The arm hangs from a pivot above the hero's head and always points up from it, so the camera never drops below the head and
+// never looks up at the hero from underneath. Looking down swings the arm up with the view. Looking up past the default
+// lowers the arm toward a floor just over the head (and past level shortens it a little), while the view tilts up on its
+// own: the hero slides down the screen and the aim (the middle of the screen) stays above the head.
 import * as THREE from "three";
 import { COMFORT } from "./config.js";
 
 const DEG = Math.PI / 180;
 const ARM = 4.5;                // the spring arm, metres from the pivot
 const ARM_FAST = 5.6;           // it lets out a little at speed
-const PIVOT_UP = 0.25;          // the pivot sits this far above the chest
-const PITCH_MIN = -60 * DEG, PITCH_MAX = 70 * DEG, PITCH_FP = 85 * DEG;
-const PITCH0 = -Math.asin(1.2 / ARM); // the default view looks down at the chest from 1.2 m above it
+const ARM_UP = 0.9;             // looking up from level to the limit shortens it to this part of its length
+const PIVOT_UP = 0.35;          // the pivot sits this far above the eyes, so the middle of the view is above the head
+const OVER_HEAD = 0.45;         // looking up brings the camera down to this height above the eyes, and no lower
+const PITCH_MIN = -60 * DEG, PITCH_MAX = 22 * DEG, PITCH_FP = 85 * DEG; // at +22 degrees the head and shoulders still show
+const PITCH0 = -20 * DEG;       // the default view looks down 20 degrees, over the hero's head
 const NEAR_HIT = 0.3;           // stays this far off a wall
 const MIN_DIST = 0.35;          // never closer than this to the pivot: closer than about 1.2 m the camera is nearly in the head
 const FADE_FROM = 1.5, FADE_TO = 0.8; // the hero fades out between these camera distances
@@ -25,8 +31,8 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 export function createFlatCam(camera, city) {
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   const HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null }, SPH = { x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
-  const T = new THREE.Vector3(), EYE = new THREE.Vector3(), DIR = new THREE.Vector3(), POS = new THREE.Vector3();
-  const S = { yaw: 0, pitch: PITCH0, dist: ARM, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false };
+  const T = new THREE.Vector3(), EYE = new THREE.Vector3(), DIR = new THREE.Vector3(), BACK = new THREE.Vector3(), POS = new THREE.Vector3();
+  const S = { yaw: 0, pitch: PITCH0, dist: ARM, room: ARM, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false };
 
   const FC = {
     active: false,
@@ -43,7 +49,7 @@ export function createFlatCam(camera, city) {
     // Start the view: yaw, pitch (the default looks down at the hero), and whether the camera starts at the eye (it then
     // pulls out to the chase position, unless a first-person flag holds it there).
     reset(yaw, pitch = PITCH0, atEye = false) {
-      S.yaw = FC.yaw = wrap(yaw); S.pitch = FC.pitch = pitch; S.hold = 9; S.dist = ARM; S.settle = false;
+      S.yaw = FC.yaw = wrap(yaw); S.pitch = FC.pitch = pitch; S.hold = 9; S.dist = S.room = ARM; S.settle = false;
       S.fp = FC.firstPerson = false; S.blend = atEye ? 0 : 1;
     },
     // Ease the pitch to the default over the next second (the hand-off from the intro), until you move the view yourself.
@@ -74,27 +80,37 @@ export function createFlatCam(camera, city) {
       if (Math.abs(S.blend - (fp ? 0 : 1)) < 0.003) S.blend = fp ? 0 : 1;
       const px = P.pos.x, py = P.pos.y, pz = P.pos.z;
       EYE.set(px, py + COMFORT.standingHead, pz);
-      T.set(px, py + (P.chest || 1.25) + PIVOT_UP, pz);
+      T.set(px, EYE.y + PIVOT_UP, pz);
 
-      // the arm: as long as the view allows, and never through a building or under the street
-      const arm = ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed);
-      let allow = arm;
+      // the arm: longer at speed, and a little shorter as you look up past level (the hero keeps its size in ordinary play)
+      const full = ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed);
+      const arm = full * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
+      // its angle: the view's while you look down; above the default it bends smoothly toward the floor over the head
+      // (with the same slope at the default, so the camera never jerks there)
+      const top = -Math.asin(clamp((OVER_HEAD - PIVOT_UP) / arm, 0, 1)), bend = top - PITCH0;
+      const el = S.pitch <= PITCH0 || bend <= 0 ? S.pitch : PITCH0 + bend * Math.tanh((S.pitch - PITCH0) / bend);
+      const ce = Math.cos(el);
+      BACK.set(Math.sin(S.yaw) * ce, -Math.sin(el), Math.cos(S.yaw) * ce); // from the pivot out to the camera
+
+      // the room behind: never through a building or under the street
+      let room = full;
       FC.blocked = false;
       if (S.blend > 0.001) {
-        const hit = city.raycast(T.x, T.y, T.z, -DIR.x, -DIR.y, -DIR.z, arm + NEAR_HIT, HIT);
-        if (hit) { allow = Math.min(allow, Math.max(MIN_DIST, hit.t - NEAR_HIT)); FC.blocked = true; }
-        if (DIR.y > 1e-3) allow = Math.min(allow, Math.max(MIN_DIST, (T.y - FLOOR) / DIR.y));
+        const hit = city.raycast(T.x, T.y, T.z, BACK.x, BACK.y, BACK.z, arm + NEAR_HIT, HIT);
+        if (hit) { room = Math.max(MIN_DIST, hit.t - NEAR_HIT); FC.blocked = true; }
+        if (BACK.y < -1e-3) room = Math.min(room, Math.max(MIN_DIST, (T.y - FLOOR) / -BACK.y));
         // the camera is a small ball: back off if the ball still touches something (a corner the ray slipped past)
         for (let k = 0; k < 3; k++) {
-          const cx = T.x - DIR.x * allow, cy = T.y - DIR.y * allow, cz = T.z - DIR.z * allow;
-          if (allow <= MIN_DIST || !city.collideSphere(cx, cy, cz, 0.28, SPH)) break;
-          allow = Math.max(MIN_DIST, allow * 0.8); FC.blocked = true;
+          const a = Math.min(arm, room), cx = T.x + BACK.x * a, cy = T.y + BACK.y * a, cz = T.z + BACK.z * a;
+          if (a <= MIN_DIST || !city.collideSphere(cx, cy, cz, 0.28, SPH)) break;
+          room = Math.max(MIN_DIST, a * 0.8); FC.blocked = true;
         }
       }
-      // it comes in at once and lets out slowly, so a wall never gets a frame inside the view
-      if (allow < S.dist) S.dist = allow; else S.dist += (allow - S.dist) * ease(dt, 4);
-      const chase = S.dist;
-      POS.set(T.x - DIR.x * chase, T.y - DIR.y * chase, T.z - DIR.z * chase);
+      // the room comes in at once and lets out slowly, so a wall never gets a frame inside the view; the look's own pull-in
+      // follows the look at once
+      if (room < S.room) S.room = room; else S.room += (room - S.room) * ease(dt, 4);
+      S.dist = Math.min(arm, S.room);
+      POS.copy(T).addScaledVector(BACK, S.dist);
       if (S.blend < 1) POS.lerpVectors(EYE, POS, S.blend);
       camera.position.copy(POS);
       E.set(S.pitch, S.yaw, 0);
