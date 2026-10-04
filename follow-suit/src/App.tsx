@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { beginTable, leaveShop, newRun, openShop, type RunState } from './engine';
+import { Explainer } from './ui/explainer/Explainer';
+import { introSeen, markIntroSeen } from './ui/explainer/seen';
 import { RunEnd } from './ui/RunEnd';
-import { seedFromUrl } from './ui/seed';
+import { randomSeed, seedFromUrl } from './ui/seed';
 import { ShopScreen } from './ui/ShopScreen';
 import { StartScreen } from './ui/StartScreen';
 import { StopIntro } from './ui/StopIntro';
@@ -13,12 +15,38 @@ export function App() {
     const seed = seedFromUrl();
     return seed === null ? null : newRun(seed);
   });
+  // The explainer opens by itself on a first visit. A seed link goes straight to its run.
+  const [howToPlay, setHowToPlay] = useState(() => seedFromUrl() === null && !introSeen());
 
-  if (run === null) return <StartScreen onStart={(seed) => setRun(newRun(seed))} />;
+  if (howToPlay) {
+    const close = () => {
+      markIntroSeen();
+      setHowToPlay(false);
+    };
+    return (
+      <Explainer
+        exit={run === null ? 'play' : 'back'}
+        onClose={close}
+        onPlay={() => {
+          close();
+          setRun(newRun(randomSeed()));
+        }}
+      />
+    );
+  }
+
+  if (run === null) return <StartScreen onStart={(seed) => setRun(newRun(seed))} onHowToPlay={() => setHowToPlay(true)} />;
 
   switch (run.phase) {
     case 'intro':
-      return <StopIntro key={`intro-${run.stop}`} run={run} onBegin={() => setRun(beginTable(run))} />;
+      return (
+        <StopIntro
+          key={`intro-${run.stop}`}
+          run={run}
+          onBegin={() => setRun(beginTable(run))}
+          onHowToPlay={() => setHowToPlay(true)}
+        />
+      );
     case 'table':
     case 'cleared':
       return (

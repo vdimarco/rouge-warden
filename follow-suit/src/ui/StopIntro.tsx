@@ -3,7 +3,7 @@ import { HOSTS, stopHost, stopTargets, type RunState } from '../engine';
 import { formatNumber } from './text';
 
 /** The start of a stop: its targets and the host of its third table. */
-export function StopIntro({ run, onBegin }: { run: RunState; onBegin: () => void }) {
+export function StopIntro({ run, onBegin, onHowToPlay }: { run: RunState; onBegin: () => void; onHowToPlay: () => void }) {
   const host = HOSTS[stopHost(run)];
   const targets = stopTargets(run.stop, host.id);
   return (
@@ -36,6 +36,9 @@ export function StopIntro({ run, onBegin }: { run: RunState; onBegin: () => void
             <b>{formatNumber(targets[2])}</b>
           </li>
         </ol>
+        <button type="button" className="btn how-btn" onClick={onHowToPlay}>
+          How to play
+        </button>
       </div>
       <div className="actions single">
         <button type="button" className="btn primary wide" onClick={onBegin}>

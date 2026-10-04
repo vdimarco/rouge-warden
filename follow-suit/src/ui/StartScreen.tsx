@@ -4,7 +4,7 @@ import { ArcadeLinks } from './ArcadeLinks';
 import { randomSeed } from './seed';
 
 /** New run, or a run from a seed. */
-export function StartScreen({ onStart }: { onStart: (seed: string) => void }) {
+export function StartScreen({ onStart, onHowToPlay }: { onStart: (seed: string) => void; onHowToPlay: () => void }) {
   const [text, setText] = useState('');
   const seed = normalizeSeed(text);
 
@@ -13,6 +13,9 @@ export function StartScreen({ onStart }: { onStart: (seed: string) => void }) {
       <div className="start-body">
         <h1 className="title">Follow Suit</h1>
         <p className="lead">Build chains of cards. Each card must follow the card before it.</p>
+        <button type="button" className="btn how-btn" onClick={onHowToPlay}>
+          {'\u25B6\uFE0E'} How to play
+        </button>
         <ul className="rules">
           <li>Match the last card&rsquo;s suit or its rank. An 8 is wild and names the next suit.</li>
           <li>Each change of suit adds 1 Mult.</li>

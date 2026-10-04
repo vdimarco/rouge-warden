@@ -26,10 +26,11 @@ npm run check       # all three
 
 ## Check it in a browser
 
-`npm run qa` builds the app, serves `dist/` and runs three checks in Chromium with touch input:
+`npm run qa` builds the app, serves `dist/` and runs four checks in Chromium with touch input:
 
 - `qa/table.e2e.mjs` plays one table at 390 by 844, 375 by 667, 360 by 740 and 430 by 932. It checks the follow rules on screen, the 8 picker, undo, redraw, clear and loss, 44 px tap targets and page overflow.
 - `qa/feel.e2e.mjs` checks the score reveal: the order and timing of the points, the Mult bumps, the scale notes and the ring chord, the count-up, the mute toggle and the reduced-motion fade. An `AudioContext` spy records each note's pitch, so the check needs no speakers.
+- `qa/explainer.e2e.mjs` checks the how-to-play explainer: it opens on a first visit and not from a seed link, Skip, Next, Back, the end card, the way back to a stop intro, a held finger that pauses it, the numbers and notes against the game, reduced motion, and the layout at the 4 sizes.
 - `qa/run.e2e.ts` plays a full run. It picks a seed whose run clears a table with a power-of-ten bonus and counts one coin sound for each bonus dollar. It plans each step with the engine, plays it on screen and compares the screen with the engine after each tap. It visits the start screen, stop intros, tables, a host table, shops, the deck view, a stamp picker and the run end screen, and checks each layout at the 4 sizes.
 
 Screenshots go to `qa/out/`.
