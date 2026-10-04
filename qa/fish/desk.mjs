@@ -107,9 +107,10 @@ try {
   check(await page.isVisible("#pause"), "Esc pauses");
   await page.click("#pJournal");
   check(await page.isVisible("#journal"), "the journal opens from the pause menu");
-  // Loon Lake lists its own 13 (9 fish, the legend, 3 junk), not all 29 kinds of the game
-  const rows = await page.evaluate(() => ({ n: document.querySelectorAll("#jlist .jfish").length, sum: document.querySelector("#jsum").textContent, tabs: document.querySelectorAll("#jtabs button").length }));
-  check(rows.n === 13 && /^\d+ of 13 found here · \d+ of 29 in all/.test(rows.sum) && rows.tabs === 4, "the journal shows Loon Lake's 13 rows and a chip for each of the 4 places (" + rows.n + " rows, " + rows.tabs + " chips: " + rows.sum + ")");
+  // Loon Lake counts its own 13 (9 fish, the legend, 3 junk), not all 29 kinds of the game. The list is short: the fish
+  // caught, the next 3 to find, and how many more
+  const rows = await page.evaluate(() => ({ n: document.querySelectorAll("#jlist .jfish").length, got: document.querySelectorAll("#jlist .jfish:not(.none)").length, note: (document.querySelector("#jlist .jnote") || {}).textContent, sum: document.querySelector("#jsum").textContent, tabs: document.querySelectorAll("#jtabs button").length }));
+  check(rows.n === rows.got + 3 && rows.note === 10 - rows.got + " more to find here." && /^\d+ of 13 found here · \d+ of 29 in all/.test(rows.sum) && rows.tabs === 4, "the journal shows Loon Lake's fish caught, the next 3, how many more, and a chip for each of the 4 places (" + JSON.stringify(rows) + ")");
   await page.click("#journal [data-close]");
   check(await page.isVisible("#pause"), "closing the journal returns to the pause menu");
   await page.click("#quitBtn");
