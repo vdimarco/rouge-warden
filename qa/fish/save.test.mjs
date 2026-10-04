@@ -8,7 +8,8 @@
 //    today's goal over 60 days and the run of days, the next goal and the next rank, the hints, the help on the way.
 // Exit code 1 on failure.
 import { isDeepStrictEqual } from "node:util";
-import { SAVE_KEY, blank, blankPlace, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "../../public/fish/js/save.js";
+import { SAVE_KEY, blank, blankPlace, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby, CUTS } from "../../public/fish/js/save.js";
+import { arriveId, revealId, landedId } from "../../public/fish/js/cutscenes.js";
 import { ORDER, JOURNEY, nextPlace, prevPlace, isOpen, rankFor, nextRank, goalText, openedText, legendHint, legendsLanded, topFish, foundHere, foundAll, zoneHint,
   newPlaces, untoldOpens, startHour, stepHour, isBigFish, sizeLine, revealText } from "../../public/fish/js/journey.js";
 import { PLACE_GOALS, goalMet, goalsMet, goalCount, nextGoal, DAILY, isDay, prevDay, dayOf, dailyGoal, dailyText, dayHit, dayDoneText, todayLine,
@@ -16,6 +17,7 @@ import { PLACE_GOALS, goalMet, goalsMet, goalCount, nextGoal, DAILY, isDay, prev
 import { SPECIES, JUNK, byId } from "../../public/fish/js/species.js";
 import { fishingOf, ecology } from "../../public/fish/js/fishing.js";
 import { PLACES, PLACE_IDS, rng } from "../../public/fish/js/places.js";
+import { normalizeStyle } from "../../public/fish/js/art-style.js";
 
 /* ---------------- reporting ---------------- */
 const fails = [];
@@ -29,8 +31,8 @@ function section(name) { console.log("\n" + name); }
 const same = isDeepStrictEqual;
 const without = (s, ...keys) => { const o = { ...s }; for (const k of keys) delete o[k]; return o; };
 const text = (s) => JSON.stringify(s);
-// the keys a save got after today's loader: the places, the art style, the reel side, and the goals
-const LATER = ["place", "places", "artStyle", "reelSide", "today", "days", "bestRun"];
+// the keys a save got after today's loader: the places, the art style, the reel side, the goals, and the cutscenes seen
+const LATER = ["place", "places", "artStyle", "reelSide", "today", "days", "bestRun", "cuts"];
 
 /* ---------------- today's loader, as main.js had it before the places (bdf042b, lines 25-48) ---------------- */
 // the reference: loadSave must give the same values for every key it had
@@ -69,13 +71,18 @@ function placesOk(s) {
 
 /* ---------------- art style preferences ---------------- */
 section("Art style preferences");
-check(loadSave(null).artStyle === "ghibli", "new saves default to Ghibli");
-check(loadSave({ casts: 12 }).artStyle === "ghibli", "old saves without a style default to Ghibli");
+check(loadSave(null).artStyle === "painted", "new saves default to Painted");
+check(loadSave({ casts: 12 }).artStyle === "painted", "old saves without a style default to Painted");
 check(loadSave(text(loadSave({ artStyle: "original" }))).artStyle === "original", "an explicit Original choice survives reload");
-const styled = loadSave({ artStyle: "ghibli", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
-check(loadSave(text(styled)).artStyle === "ghibli", "Ghibli survives a save and reload");
+const styled = loadSave({ artStyle: "painted", casts: 12, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
+check(loadSave(text(styled)).artStyle === "painted", "Painted survives a save and reload");
 check(styled.casts === 12 && styled.journal.perch.n === 2, "the art preference keeps fishing progress");
-check(loadSave({ artStyle: "unknown" }).artStyle === "ghibli", "an unknown art style falls back to Ghibli");
+check(loadSave({ artStyle: "unknown" }).artStyle === "painted", "an unknown art style falls back to Painted");
+// the style's old name: an old save keeps the painted look, and the next save writes the new name
+const old = loadSave(JSON.stringify({ v: 1, artStyle: "ghibli", casts: 40, caught: 3, journal: { perch: { n: 3, kg: 0.5, cm: 28 } } }));
+check(old.artStyle === "painted" && old.casts === 40 && old.caught === 3 && old.journal.perch.n === 3, "a save with the old style name \"ghibli\" loads as Painted and keeps its progress");
+check(!/ghibli/i.test(text(old)) && loadSave(text(old)).artStyle === "painted", "and its next save has no \"ghibli\" in it");
+check(normalizeStyle("ghibli") === "painted" && normalizeStyle("painted") === "painted" && normalizeStyle("original") === "original" && normalizeStyle(undefined) === "painted", "normalizeStyle maps the old name to Painted and keeps Original");
 
 // today's loader kept seen: [] as an array (flags set on it were lost at the next save); loadSave reads it as no flags
 const seenFix = (s) => (Array.isArray(s.seen) ? { ...s, seen: {} } : s);
@@ -88,8 +95,8 @@ section("1. today's saves load as before");
   check(same(without(b, ...LATER), todayLoad(null)) && b.place === "loon" && same(b.places, {}) && same(b.today, { d: "", k: 0, n: 0, done: 0 }) && same(b.days, { n: 0, run: 0, best: 0, last: "" }) && b.bestRun === 0,
     "blank() is today's new save plus art style, reel side, places, and the goals (no day yet, no run, no sweet run)");
   const fresh = loadSave(null);
-  check(same(without(fresh, "places"), without(blank(), "places")) && same(fresh.places, { loon: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 } }),
-    "no save: a new save at Loon Lake, with only Loon Lake open");
+  check(same(without(fresh, "places", "cuts"), without(blank(), "places")) && same(fresh.places, { loon: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 } }) && same(fresh.cuts, {}),
+    "no save: a new save at Loon Lake, with only Loon Lake open and no cutscene seen");
   // the corrupt saves today's loader was built for (text as storage holds it, or a value already parsed)
   const CASES = [
     ["null", null], ["undefined", undefined], ["{}", "{}"], ["corrupt JSON", "{\"casts\": 12, \"journal\": {"], ["empty text", ""],
@@ -605,6 +612,46 @@ section("6f. help on the way");
   check(STREAK.n === 3 && STREAK.boost === 0.4 && ASSIST.casts === 20 && ASSIST.reach === 25 && ASSIST.boost > 0, "three sweet casts give boost 0.4; the help comes after 20 casts, at a ring within 25 m");
   check(ORDER.map(assistFish).join() === "pike,catfish,chinook," && ["loon", "stumps", "river"].every((id) => byId(assistFish(id)).kg[1] > JOURNEY[id].goalKg && ecology(id).some(([sp]) => sp.id === assistFish(id))),
     "the big ring's fish lives at its place and its usual range goes past the goal: pike, catfish, chinook (none at Gull Rock)");
+}
+
+
+section("7. the cutscenes seen (cuts)");
+{
+  const ALL = Object.fromEntries(CUTS.map((k) => [k, 1]));
+  check(CUTS.length === 13 && new Set(CUTS).size === 13 && ORDER.every((id) => CUTS.includes(arriveId(id)) && CUTS.includes(revealId(id)) && CUTS.includes(landedId(id))) && CUTS.includes("finale") && arriveId("loon") === "open",
+    "13 cutscene ids: the opening (Loon Lake's arrival), three arrivals, four reveals, four legends landed and the finale (" + CUTS.join(" ") + ")");
+  check(same(loadSave(null).cuts, {}) && same(loadSave(text({ v: 1, cuts: {} })).cuts, {}), "a new save has seen none");
+  // good values are kept, and the text is the same after a load, save and load
+  const good = loadSave({ v: 1, casts: 3, cuts: { open: 1, "arrive.stumps": 1, "reveal.loon": true } });
+  check(same(good.cuts, { open: 1, "arrive.stumps": 1, "reveal.loon": 1 }) && text(loadSave(text(good))) === text(good), "seen ids are kept as 1 (true too), and a load, save and load gives the same text (" + text(good.cuts) + ")");
+  check(same(loadSave({ cuts: ALL }).cuts, ALL), "all thirteen can be seen");
+  // junk inside the object: unknown ids, other values, other types
+  const junk = loadSave({ v: 1, cuts: { open: 2, "arrive.loon": 1, "arrive.moon": 1, "reveal.sea": "1", "landed.river": 0, finale: null, "__proto__": 1, "reveal.stumps": 1 } });
+  check(same(junk.cuts, { "reveal.stumps": 1 }) && Object.getPrototypeOf(junk.cuts) === Object.prototype, "unknown ids and values other than 1 or true are dropped (" + text(junk.cuts) + ")");
+  // a junk value in place of the object, or none at all: a save from before the cutscenes (marked by its progress)
+  for (const v of [[], ["open"], "open", 7, true, null]) {
+    const got = loadSave({ v: 1, cuts: v });
+    check(same(got.cuts, {}), "cuts " + (text(v) ?? String(v)) + " on a save with no progress: none seen (" + text(got.cuts) + ")");
+  }
+  check(same(loadSave({ v: 1, casts: 4, cuts: ["open"] }).cuts, { open: 1 }), "an array of cuts on a save that has cast: read as an old save, so the opening is seen");
+  // an old save: the opening once it has cast, the arrivals of the places it opened, the reveals of the legends whose gold
+  // ring it saw, the legends landed, and the finale with all four
+  const old = loadSave(JSON.stringify({ v: 1, casts: 40, caught: 6, journal: { golden: { n: 1, kg: 4.1, cm: 55 } }, places: { loon: { open: 1, lg: 3 }, stumps: { open: 1, lg: 1 }, river: { open: 1, lg: 0 } } }));
+  check(same(old.cuts, { open: 1, "arrive.stumps": 1, "arrive.river": 1, "reveal.loon": 1, "reveal.stumps": 1, "landed.loon": 1 }),
+    "an old save with three places open, a legend landed and one seen: no arrival, reveal or landing it has passed plays again (" + text(old.cuts) + ")");
+  check(text(loadSave(text(old))) === text(old), "and the old save's marks are kept by the next save");
+  check(same(loadSave({ v: 1, caught: 1 }).cuts, { open: 1 }) && same(loadSave({ v: 1, casts: 0, caught: 0, places: { stumps: { open: 1 } } }).cuts, { "arrive.stumps": 1 }), "an old save that only caught a fish has seen the opening; one with a place open and no casts has seen that place's arrival");
+  // a legend in the journal with no place record is landed, and its gold ring was seen
+  const lone = loadSave({ v: 1, casts: 9, journal: { hookjaw: { n: 1, kg: 24, cm: 120 } } });
+  check(lone.cuts["landed.river"] === 1 && lone.cuts["reveal.river"] === 1 && !lone.cuts["arrive.river"], "a legend in the journal counts as landed and seen, even with its place closed (" + text(lone.cuts) + ")");
+  const four = loadSave({ v: 1, casts: 300, journal: { golden: { n: 1 }, whiskers: { n: 2 }, hookjaw: { n: 1 }, bigblue: { n: 1 } }, places: { stumps: { open: 1 }, river: { open: 1 }, sea: { open: 1 } } });
+  check(same(four.cuts, ALL), "an old save with every legend landed has seen every cutscene, the finale too");
+  // a save from this version keeps exactly its own marks: a place opened since is still to be visited
+  const now = loadSave({ v: 1, casts: 30, caught: 4, places: { stumps: { open: 1 } }, cuts: { open: 1 } });
+  check(same(now.cuts, { open: 1 }), "a save with cuts keeps them as they are: a place opened since its last load still has its fly-in to come");
+  // the field never stops the rest of the save from loading
+  const s = loadSave({ v: 1, casts: 12, caught: 2, cuts: { open: 1 }, journal: { perch: { n: 2, kg: 0.4, cm: 25 } } });
+  check(s.casts === 12 && s.caught === 2 && s.journal.perch.n === 2 && placesOk(s), "the cutscenes never change the rest of the save");
 }
 
 console.log(fails.length ? `\n${fails.length} of ${passes + fails.length} checks failed` : `\nAll ${passes} checks passed`);

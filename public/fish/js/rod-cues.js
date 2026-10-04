@@ -24,13 +24,24 @@ export function createRodCues(game) {
   game.append(el);
   const label = el.querySelector('span'), path = el.querySelector('path'), tension = el.querySelector('.rod-tension');
   const cast = game.querySelector('#reelBox'), pad = game.querySelector('#padBox'), crank = game.querySelector('#crankBox');
-  let key = '';
+  const drag = game.querySelector('#dragBar');
+  let key = '', lift = 0;
   return { update({ world, phase, step, motion, paused, cue, fish, nibble, held, hold }) {
     el.hidden = paused || !['cast', 'reel'].includes(phase);
     if (el.hidden) { crank.dataset.cue = ''; return; }
     const anchor = world.rodAnchor();
     // During lure flight the camera leaves the rod behind. Keep feathering reachable.
     const x = clamp(anchor.x, 72, game.clientWidth - 72), y = clamp(anchor.y, 128, game.clientHeight - 90);
+    // the words under the ring stay off the crank and the drag (a short phone, Larger text): they rise over the foot of
+    // the ring as far as they must. (Read here, before the writes below, while the layout is fresh)
+    let up = 0;
+    const g = game.getBoundingClientRect(), half = label.offsetWidth / 2, top = y + 48, bottom = top + label.offsetHeight + 6;
+    for (const box of [crank, drag]) {
+      if (!box || !box.getClientRects().length) continue;
+      const b = box.getBoundingClientRect(), bx = b.left - g.left, by = b.top - g.top;
+      if (x - half < bx + b.width && x + half > bx && top < by + b.height && bottom > by) up = Math.max(up, Math.min(96, Math.ceil(bottom - by)));
+    }
+    if (up !== lift) { lift = up; label.style.top = up ? (96 - up) + 'px' : ''; }
     for (const hit of [cast, pad]) {
       hit.style.left = (x - 64) + 'px'; hit.style.top = (y - 80) + 'px';
     }

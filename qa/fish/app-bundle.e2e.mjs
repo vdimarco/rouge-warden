@@ -3,8 +3,8 @@
 // window.Capacitor that says "native Android" and records every plugin call.
 // Checks: the title shows, <html data-build="store">, no Switch game button, arcade link or arcade text (Switch game,
 // Back to the arcade, GET PLUNGER'D) is visible, no request leaves the origin, and no file is missing.
-// Some checks need files from the boot package in public/fish (js/native.js, fonts/). While those files are not in the
-// bundle, those checks print PENDING and do not fail the run. Visible arcade text is never PENDING: it always fails.
+// It also checks the native bridge (js/native.js loads, the splash hides, the back button has a listener) and the game
+// fonts. Each check fails the run when it does not hold.
 //
 // Usage: NODE_PATH=qa/browser/node_modules node qa/fish/app-bundle.e2e.mjs   (SHOTS=dir saves a screenshot,
 // PORT=n serves the bundle on that port; the default is a free port). No other server is needed.
@@ -25,7 +25,6 @@ const SHOTS = process.env.SHOTS || "";
 const results = [];
 const ok = (name) => results.push({ s: "ok", name });
 const fail = (name, why) => results.push({ s: "FAIL", name, why });
-const pending = (name, why) => results.push({ s: "PENDING", name, why });
 const check = (name, pass, why) => (pass ? ok(name) : fail(name, why));
 
 // 1. Build the bundle (it runs the bundle check too).
@@ -146,15 +145,14 @@ check("no request got a missing file", missing.length === 0, missing.map((m) => 
 check("the page is a secure context (motion needs it)", state.secure, "isSecureContext is false");
 check("no script errors", errors.length === 0, errors.slice(0, 3).join(" | "));
 
-// 5. Checks that need the boot and shell work in public/fish.
-const native = (name, pass, why) => (pass ? ok(name) : hasNative ? fail(name, why) : pending(name, "public/fish/js/native.js is not in the bundle yet; expected to pass once the boot package merges"));
+// 5. The native bridge and the fonts.
+const native = (name, pass, why) => (pass ? ok(name) : fail(name, hasNative ? why : "public/fish/js/native.js is not in the bundle"));
 native("js/native.js loads", served.some((s) => s.rel === "/js/native.js" && s.status === 200), "js/native.js was not requested");
 const hides = state.calls.filter((c) => c.plugin === "SplashScreen" && c.method === "hide").length;
 native("the splash screen hides once the title is ready", hides >= 1, `SplashScreen.hide was called ${hides} times`);
 native("the game listens for the Android back button", state.calls.some((c) => c.plugin === "App" && c.method === "addListener" && c.args[0] === "backButton"), "no App backButton listener");
 const fontServed = served.filter((s) => s.rel.startsWith("/fonts/") && s.status === 200).map((s) => s.rel);
-if (fontFiles.length) check("the game fonts load from fonts/", fontsAsked.includes("Alfa Slab One:loaded") && fontsAsked.includes("Nunito:loaded") && fontServed.length > 0, `fonts: ${fontsAsked.join(", ") || "none"}; served: ${fontServed.join(", ") || "none"}`);
-else pending("the game fonts load from fonts/", "public/fish/fonts/ is not in the bundle yet; expected to pass once the boot package merges");
+check("the game fonts load from fonts/", fontFiles.length > 0 && fontsAsked.includes("Alfa Slab One:loaded") && fontsAsked.includes("Nunito:loaded") && fontServed.length > 0, `fonts: ${fontsAsked.join(", ") || "none"}; served: ${fontServed.join(", ") || "none"}`);
 
 await browser.close();
 server.close();
@@ -164,7 +162,6 @@ function report() {
   console.log("");
   for (const r of results) console.log(`${r.s.padEnd(8)} ${r.name}${r.why ? "  -- " + r.why : ""}`);
   const n = (s) => results.filter((r) => r.s === s).length;
-  console.log(`\napp-bundle: ${n("ok")} ok, ${n("FAIL")} failed, ${n("PENDING")} pending`);
-  if (n("PENDING")) console.log("PENDING checks wait for files from the boot package (public/fish/js/native.js, fonts/). They are not failures.");
+  console.log(`\napp-bundle: ${n("ok")} ok, ${n("FAIL")} failed`);
   process.exit(n("FAIL") ? 1 : 0);
 }

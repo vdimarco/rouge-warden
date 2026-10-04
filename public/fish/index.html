@@ -8,6 +8,8 @@
 <script>
 try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) document.documentElement.dataset.build = "store"; } catch (e) { /* the web */ }
 try { document.documentElement.dataset.bootArt = (JSON.parse(localStorage.getItem("fish.v1")) || {}).artStyle === "original" ? "original" : "painted"; } catch (e) { document.documentElement.dataset.bootArt = "painted"; }
+// Calm effects (Settings) from the first frame: main.js keeps html data-calm in step with the setting
+try { if (localStorage.getItem("fish.calm") === "1") document.documentElement.dataset.calm = "1"; } catch (e) { /* storage off */ }
 // the painted title's picture loads during the boot, so the title shows whole
 if (document.documentElement.dataset.bootArt === "painted") document.head.appendChild(Object.assign(document.createElement("link"), { rel: "preload", as: "image", href: "art/film-lake.webp" }));
 </script>
@@ -60,6 +62,7 @@ html[data-boot-art="painted"] #boot .btn.go { background: #b45038; border-color:
 #boot[data-state="error"] .boot-card { display: block; }
 #boot[data-state="error"] .boot-bar, #boot[data-state="error"] .boot-line { display: none; }
 @media (prefers-reduced-motion: reduce) { #boot .boot-bar i { animation: boot-pulse 1.6s ease-in-out infinite alternate; transform: translateX(75%); } }
+html[data-calm="1"] #boot .boot-bar i { animation: boot-pulse 1.6s ease-in-out infinite alternate; transform: translateX(75%); }
 @keyframes boot-pulse { to { opacity: 0.3; } }
 
 /* the store build (html data-build="store"): no game switcher, no link to the arcade, no Fullscreen button */
@@ -76,11 +79,13 @@ html[data-build="store"] #title .row2:not(:has(> :not([data-switch]):not(a[href=
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--deep); color: var(--ink); font-family: var(--body); font-weight: 800;
   touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
 body { position: fixed; inset: 0; }
 button, a { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.screen h1:focus, .screen h2:focus { outline: none; }
 
 /* #game holds everything. With the sensors on, the game stays upright on the phone: if the browser turns the page, main.js turns #game back 90° with a transform */
 #game { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; transform-origin: 50% 50%; container-type: size; }
@@ -116,29 +121,38 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
    setting is for motion play) */
 #game[data-reel-side="left"] #crankBox, #game.touch #crankBox { left: calc(var(--sal) + 16px); right: auto; }
 
-#gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
-#pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40vw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
+/* the gauge's size: the toasts, the prompt and the report in the reel make room for it (Larger text makes it bigger) */
+#game { --gauge-w: min(46vmin, 240px); --gauge-h: min(30vmin, 150px); }
+#gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: var(--gauge-w); height: var(--gauge-h); }
+#pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40cqw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
 #pullStrength b { display: block; height: 5px; margin-top: 6px; border-radius: 4px; background: #ffffff26; overflow: hidden; }
 #pullStrength i { display: block; height: 100%; background: #95eac5; transform: scaleX(0); transform-origin: left; }
 #game.motion #padBox { display: none; }
-#dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
-#game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
-/* the wide reel in touch play: the crank is on the left too, so the drag bar sits just above it (on a short screen the
-   place under the gauge would be on the crank) */
-#game.l-reel.touch #dragBar { top: auto; bottom: calc(var(--sab) + 22px + min(34vmin, 160px)); }
-#dragBar button { position: relative; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
-#dragBar button::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
-#dragBar b { min-width: 64px; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
+/* the drag: the setting, and − and + under it, low beside the crank on its inner side, so the thumb on the crank reaches
+   them in a run (and the rod cue over the reel stays clear). It follows the crank: the reel side in motion play, the left
+   in touch play */
+#dragBar { position: absolute; right: calc(var(--sar) + 16px + min(34vmin, 160px) + 12px); bottom: calc(var(--sab) + 12px); width: 102px;
+  display: grid; grid-template-columns: 48px 48px; justify-content: space-between; gap: 6px; font-size: 11px; letter-spacing: 0.06em; }
+#game[data-reel-side="left"] #dragBar, #game.touch #dragBar { right: auto; left: calc(var(--sal) + 16px + min(34vmin, 160px) + 12px); }
+#dragBar button { position: relative; grid-row: 2; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 22px; line-height: 1; padding: 0; }
+#dragDown { grid-column: 1; }
+#dragUp { grid-column: 2; }
+#dragBar b { grid-row: 1; grid-column: 1 / -1; text-align: center; padding: 4px 2px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); white-space: nowrap; }
 /* Compact reel controls float over the lake. The rod stays clear on the right. */
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
-#game.l-tall-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 60px); }
 /* the reel's toasts stay clear of the crank and the thumb on it, on either reel side, and of the rod cue: in the tall reel
-   they sit in the sky right of the gauge and the drag bar (about 190 px wide), below the pull meter in motion play, in the
+   they sit in the sky beside the gauge (about 190 px wide), below the pull meter in motion play, in the
    wide reel in the top right corner, right of the prompt and above the rod. (Centred with the usual translateX, so guide.js
    still finds them) */
-#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + max(min(46vmin, 240px) + 22px, 208px) + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - max(min(46vmin, 240px) + 22px, 208px) - 12px); }
+#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + max(var(--gauge-w) + 22px, 208px) + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - max(var(--gauge-w) + 22px, 208px) - 12px); }
 #game.l-tall-reel.motion #toast { top: calc(var(--sat) + 122px); }
-#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - min(46vmin, 240px) / 2); max-width: min(46vmin, 240px); }
+#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - var(--gauge-w) / 2); max-width: var(--gauge-w); }
+/* motion play with the reel on the left: the reel controls mirror. The gauge goes top right, the pull meter top left, and
+   the toasts to the other side of the gauge (the crank and the drag follow data-reel-side above) */
+#game.motion[data-reel-side="left"] #gaugeBox { left: auto; right: calc(var(--sar) + 10px); }
+#game.motion[data-reel-side="left"] #pullStrength { right: auto; left: calc(var(--sal) + 18px); }
+#game.l-tall-reel.motion[data-reel-side="left"] #toast { left: calc((var(--sal) + 12px + 100% - var(--sar) - max(var(--gauge-w) + 22px, 208px)) / 2); }
+#game.l-reel.motion[data-reel-side="left"] #toast { left: calc(var(--sal) + 16px + var(--gauge-w) / 2); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -148,12 +162,16 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #hud > * { pointer-events: auto; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
 .chip b { color: var(--brass); }
-.icon { position: relative; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); font-size: 16px; }
-.icon::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; }
+.icon { position: relative; width: 44px; height: 44px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); font-size: 16px; }
+.icon::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; }
 #hud .grow { flex: 1; }
 #hud .icon, #clock { flex: none; }
-#modeChip { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#modeChip { display: flex; gap: 0.3em; min-width: 0; }
+#modeChip .ct { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#modeChip b { flex: none; }
 #clock { font-variant-numeric: tabular-nums; }
+/* a narrow phone: the clock has no AM or PM */
+@container (max-width: 399px) { #clock .ampm { display: none; } }
 
 /* the big instruction line */
 #prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 4; }
@@ -161,29 +179,43 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #prompt .p1 svg { flex: none; width: 34px; height: 34px; }
 #prompt .p2 { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; color: #eef4f1; }
 #prompt .p2:empty { display: none; }
-#prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.5s infinite alternate; }
+#prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.6s ease-out; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
-@keyframes hot { to { transform: scale(1.06); } }
+/* a new hot prompt glows once (main.js starts it again on each change); the text never grows */
+@keyframes hot { 40% { box-shadow: 0 0 0 7px rgba(255, 90, 74, 0.5), 0 0 26px rgba(255, 90, 74, 0.7); } }
 #game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
 
 
 /* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
-#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 560px); }
 /* the tall reel: the prompt goes under the gauge (the toast goes beside it) */
-#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + min(30vmin, 150px)); }
+#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + var(--gauge-h)); }
+
+/* the hook set: "Fish on!" in big letters in the prompt's place for about 0.9 s, then the prompt again */
+#banner { position: absolute; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 5; }
+#banner b { display: block; font-family: var(--slab); font-weight: 400; font-size: clamp(34px, 11vmin, 60px); line-height: 1.02; color: #fff6dc; letter-spacing: 0.01em;
+  text-shadow: 0 3px 0 var(--red), 0 6px 0 #7a1c14, 0 10px 22px rgba(0, 0, 0, 0.5); animation: banner-pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+#banner span { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: #2d7a45; border: 1px solid #9fe0a8; font-size: 15px; color: #fff; animation: banner-pop 0.45s 0.12s cubic-bezier(.3, 1.6, .5, 1) both; }
+#banner span:empty { display: none; }
+#banner:not([hidden]) + #prompt { visibility: hidden; }
+#game.l-tall-reel #banner { top: calc(var(--sat) + 104px + min(30vmin, 150px)); }
+#game.l-reel #banner { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+@keyframes banner-pop { from { transform: scale(0.6); opacity: 0; } }
 
 
 /* the cast report after a landing */
 #report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
 /* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake */
 #report { width: min(92%, 420px); }
-#game.l-tall-reel #report { top: calc(var(--sat) + 110px + min(30vmin, 150px) + 144px); }
+#game.l-tall-reel #report { top: calc(var(--sat) + 110px + var(--gauge-h) + 144px); }
 #game.l-tall-reel #report .dist { font-size: clamp(34px, 10vmin, 64px); }
-#report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 22px rgba(0, 0, 0, 0.35); }
+#report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff;
+  text-shadow: 0 0 2px #092229, 0 0 3px #092229, 0 0 6px rgba(9, 34, 41, 0.9), 0 3px 0 rgba(9, 34, 41, 0.7), 0 0 22px rgba(9, 34, 41, 0.5); }
 #report .dist small { font-size: 0.45em; }
 #report .verdict { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: var(--glass); font-size: 15px; }
 #report .verdict.sweet { background: #2d7a45; }
-#report .zone { margin-top: 6px; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; }
+#report .zone { display: table; margin: 6px auto 0; padding: 3px 10px; border-radius: 999px; background: var(--glass); font-size: 13px; color: #e8f2ef; }
+#report .zone:empty { display: none; }
 /* three sweet casts in a row light up the line */
 #report.streak .zone { font-size: 15px; font-weight: 800; color: #ffe2a0; }
 #report.show { animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
@@ -212,21 +244,25 @@ body[data-screen="pause"] #toast, body[data-screen="settings"] #toast { z-index:
 .card p { margin: 0 0 12px; font-weight: 600; line-height: 1.45; color: #dfe9e5; }
 .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .btn { flex: 1 1 auto; min-height: 48px; padding: 12px 18px; border-radius: 12px; border: 2px solid var(--line); background: var(--deep2); font-weight: 900; font-size: 16px; letter-spacing: 0.02em; text-decoration: none; text-align: center; }
-.btn.go { background: var(--red); border-color: #ff9f94; color: #fff; box-shadow: 0 4px 0 #8a2018; }
+.btn.go { background: #c93a2f; border-color: #ff9f94; color: #fff; box-shadow: 0 4px 0 #8a2018; }
 .btn.go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a2018; }
 .btn.alt { background: transparent; }
-#pause .card, #settings .card { max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); overflow-y: auto; touch-action: pan-y; }
+#pause .card { max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); overflow-y: auto; touch-action: pan-y; }
+#settings .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
+#settings .set { min-height: 0; flex: 1 1 auto; overflow-y: auto; touch-action: pan-y; margin: 0 -4px; padding: 0 4px; }
+#settings .btns { flex: none; }
 /* Resume waits while the lake is coming back (a lost GL context) */
 #resumeBtn:disabled { opacity: 0.5; box-shadow: none; }
 
 /* title */
 #title { place-items: end center; padding-bottom: calc(var(--sab) + 22px); background: linear-gradient(rgba(8, 24, 30, 0.35), transparent 30%, transparent 45%, rgba(8, 24, 30, 0.82)); }
 #title .logo { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 7cqh); text-align: center; pointer-events: none; }
-#title .kick { font-size: clamp(11px, 2.6vmin, 14px); letter-spacing: 0.4em; color: #fff4d6; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+#title .kick { display: inline-block; padding: 4px 12px 4px calc(12px + 0.4em); border-radius: 999px; background: rgba(9, 34, 41, 0.72); font-size: clamp(11px, 2.6vmin, 14px); letter-spacing: 0.4em; color: #fff4d6; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+#title .kick:empty { display: none; }
 #title h1 { margin: 6px 0 0; font-family: var(--slab); font-weight: 400; font-size: clamp(48px, 15vmin, 118px); line-height: 0.92; color: #fff6dc; letter-spacing: 0.01em;
   text-shadow: 0 4px 0 var(--red), 0 8px 0 #7a1c14, 0 14px 26px rgba(0, 0, 0, 0.45); }
 #title h1 span { display: block; }
-#title .sub { margin-top: 18px; display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(9, 34, 41, 0.6); font-size: clamp(13px, 3vmin, 16px); letter-spacing: 0.22em; color: var(--brass); }
+#title .sub { margin-top: 18px; display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(9, 34, 41, 0.88); font-size: clamp(13px, 3vmin, 16px); letter-spacing: 0.22em; color: var(--brass); }
 #title > div:not(.logo) { width: min(100%, 360px); }
 #title nav { display: grid; gap: 9px; width: 100%; }
 #title nav .btn { width: 100%; }
@@ -254,7 +290,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
   #pause .card { padding: 12px 20px; }
   #pause h2 { font-size: 22px; margin-bottom: 4px; }
   #pause p { margin-bottom: 4px; font-size: 14px; line-height: 1.3; }
-  #pause .btn { min-height: 40px; padding: 6px 12px; }
+  #pause .btn { min-height: 44px; padding: 6px 12px; }
   #results #rlist { max-height: 16cqh; }
   #results .rnext { margin-top: 0; }
   #results .card { padding: 14px 20px; }
@@ -268,11 +304,20 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
   #journal #jlist { max-height: 36cqh; }
   #journal p { margin-bottom: 6px; font-size: 14px; }
   .tabs.chips { margin-bottom: 6px; }
-  .tabs.chips button { min-height: 34px; }
   #journal .btns, .card.places .btns { margin-top: 8px; }
   .card p.psub { display: none; }
-  .card.places .btn { min-height: 40px; padding: 8px 16px; }
+  .card.places .btn { min-height: 44px; padding: 8px 16px; }
   .card p.pfoot { margin: 6px 0 0; }
+  /* settings and how to play: wider cards with the rows in two columns */
+  #settings .card, #help .card { width: min(100%, 760px); padding: 12px 20px; }
+  #settings h2, #help h2 { font-size: 22px; margin-bottom: 4px; }
+  .set { grid-template-columns: 1fr 1fr; }
+  .set .sethead, .setlinks { grid-column: 1 / -1; }
+  #help .steps { grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+  #help .tabs { margin-bottom: 6px; }
+  #settings .btns, #help .btns { margin-top: 8px; }
+  /* the first-play card: wider, so its safety words and its buttons fit with Larger text too */
+  #setup .card { width: min(100%, 680px); padding: 14px 20px; }
 }
 
 /* setup, help, journal, results, pause */
@@ -283,14 +328,21 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 .warn { padding: 10px 12px; border-radius: 10px; background: rgba(240, 165, 42, 0.14); border: 1px solid rgba(240, 165, 42, 0.5); font-weight: 700; line-height: 1.4; }
 .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 #help .card { display: flex; flex-direction: column; max-height: calc(100cqh - 32px - var(--sat) - var(--sab)); }
-#help .steps { overflow-y: auto; min-height: 0; flex: 1 1 auto; -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
-/* the fade under the list says that more follows. A spacer after the last row keeps that row clear of the fade */
-#help .steps::after { content: ""; height: 14px; }
+#help .panel { overflow-y: auto; min-height: 0; flex: 1 1 auto; touch-action: pan-y; }
+/* the fade under a list says that more follows; it goes at the end of the list (main.js sets .more) */
+.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
 #help .btns { flex: none; }
+/* the fish moves: a row that opens */
+.moves { margin: 4px 0 2px; border-radius: 10px; background: var(--deep2); }
+.moves summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; cursor: pointer; color: var(--brass); }
+.moves summary::-webkit-details-marker { display: none; }
+.moves summary::after { content: "+"; margin-left: auto; font-size: 20px; }
+.moves[open] summary::after { content: "−"; }
+.moves .steps { padding: 0 10px 10px; }
 .tabs button { flex: 1; min-height: 44px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-weight: 800; }
 .tabs button[aria-selected="true"] { background: var(--deep2); border-color: var(--brass); color: var(--brass); }
 .tabs.chips { gap: 5px; }
-.tabs.chips button { min-height: 40px; padding: 6px 2px; font-size: 13px; }
+.tabs.chips button { min-height: 44px; padding: 6px 2px; font-size: 13px; }
 .tabs.chips button.lock { opacity: 0.55; border-style: dashed; }
 .jnote { grid-column: 1 / -1; padding: 14px 10px; text-align: center; color: var(--muted); font-weight: 700; }
 .jfish.legend { grid-column: 1 / -1; border-color: rgba(232, 182, 74, 0.55); }
@@ -298,14 +350,20 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 .jfish { padding: 9px 10px; border-radius: 10px; background: var(--deep2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; }
 .jfish b { display: block; font-size: 14px; }
 .jfish .sw { display: block; height: 8px; border-radius: 4px; margin: 6px 0; }
-.jfish.none { opacity: 0.45; }
+.jfish.none { border-style: dashed; border-color: rgba(246, 239, 217, 0.4); background: rgba(19, 68, 81, 0.6); }
 .jfish.none b { color: var(--muted); }
+.jfish.none .sw { opacity: 0.5; }
 .jfish small { color: var(--muted); font-weight: 700; }
-.set { display: grid; gap: 8px; }
-.set label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--deep2); font-weight: 800; }
-.set label small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; }
+.jfish.none small { display: block; color: var(--ink); font-size: 12px; }
+.set { display: grid; grid-auto-rows: max-content; gap: 6px; align-content: start; }
+.set label { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 12px; border-radius: 10px; background: var(--deep2); font-weight: 800; }
+.set label small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; line-height: 1.3; }
 .set input[type="checkbox"] { flex: none; width: 22px; height: 22px; accent-color: var(--red); }
-.set select { font: inherit; padding: 6px; border-radius: 8px; background: var(--deep); color: var(--ink); border: 1px solid var(--line); }
+.set select { flex: none; font: inherit; min-height: 44px; padding: 6px; border-radius: 8px; background: var(--deep); color: var(--ink); border: 1px solid var(--line); }
+.set .sethead { margin: 6px 2px 0; font-family: var(--body); font-size: 12px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+.setlinks { display: flex; gap: 8px; }
+.setlinks .btn { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+.setlinks small { font-weight: 700; color: var(--muted); }
 
 /* the places: a trail of four cards, joined by a dotted line */
 .kicker { font-size: 12px; letter-spacing: 0.3em; color: var(--brass); margin-bottom: 4px; }
@@ -326,11 +384,11 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 .pcard .lvl { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-family: var(--body); font-weight: 800; font-size: 11px; letter-spacing: 0.08em; vertical-align: 2px; }
 .pcard p { margin: 5px 0 0; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: #dfe9e5; }
 .pcard .facts { display: grid; gap: 1px; margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
-.pcard .btn { width: 100%; min-height: 42px; margin-top: 8px; padding: 8px 14px; font-size: 15px; }
+.pcard .btn { width: 100%; min-height: 44px; margin-top: 8px; padding: 8px 14px; font-size: 15px; }
 .pcard.locked p { color: var(--muted); }
 /* the six goals of a place: a box for each, checked when done */
 .pcard .goals { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
-.pcard .goals summary { cursor: pointer; padding: 4px 0; color: var(--brass); }
+.pcard .goals summary { cursor: pointer; display: flex; align-items: center; min-height: 44px; color: var(--brass); }
 .pcard .goals ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 3px; }
 .pcard .goals li { position: relative; padding-left: 20px; line-height: 1.3; }
 .pcard .goals li::before { content: ""; position: absolute; left: 0; top: 1px; width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 3px; }
@@ -344,8 +402,19 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 @keyframes spin { to { transform: rotate(360deg); } }
 #arrive .gear { color: var(--brass); }
 #unlock h2 { margin-top: 6px; }
+/* a new place: the card rises in, and the NEW PLACE badge stamps on 250 ms later */
+#unlock:not([hidden]) .card { animation: card-rise 0.45s cubic-bezier(.2, .8, .2, 1); }
+#unlock:not([hidden]) .badge { display: inline-block; animation: stamp 0.22s 0.25s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes card-rise { from { opacity: 0; transform: translateY(24px) scale(0.9); } }
+@keyframes stamp { from { opacity: 0; transform: scale(1.6) rotate(-8deg); } }
 .unlockline { text-align: center; color: var(--brass); }
-#results .kicker { text-align: center; }
+#results .kicker, #results h2 { text-align: center; }
+/* about, and the privacy policy in a frame */
+#about .about-name { margin: 0; font-family: var(--slab); font-size: 22px; color: var(--brass); }
+#about .about-credit { font-size: 14px; color: var(--muted); }
+.card.privacy { display: flex; flex-direction: column; width: min(100%, 620px); height: calc(100cqh - 32px - var(--sat) - var(--sab)); padding: 8px; }
+.card.privacy iframe { flex: 1 1 auto; min-height: 0; width: 100%; border: 0; border-radius: 12px; background: var(--deep); }
+.card.privacy .btns { flex: none; margin-top: 8px; }
 
 /* the catch card */
 #catch { place-items: end center; padding-bottom: calc(var(--sab) + 16px); }
@@ -353,6 +422,12 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
 #catch .badges { display: flex; justify-content: center; gap: 6px; min-height: 0; margin-bottom: 6px; }
 .badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; letter-spacing: 0.08em; background: var(--brass); color: #2a1a00; }
 .badge.new { background: var(--green); color: #0c2a10; }
+/* the catch card: the badges wait for the weight to count up, then stamp on; the weight pops once at the end */
+#cbadges.held { visibility: hidden; }
+#cbadges.stamp .badge { display: inline-block; animation: stamp 0.22s cubic-bezier(.3, 1.6, .5, 1) both; }
+#cbadges.stamp .badge + .badge { animation-delay: 0.1s; }
+#catch .kg.pop { animation: kg-pop 0.18s ease-out; }
+@keyframes kg-pop { 50% { transform: scale(1.12); } }
 #catch h2 { font-size: 28px; margin-bottom: 4px; }
 #catch .kg { font-family: var(--slab); font-size: 44px; line-height: 1.05; color: var(--brass); }
 #catch .kg small { font-size: 18px; color: var(--ink); }
@@ -376,6 +451,15 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 #rlist li { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--deep2); font-size: 14px; }
 .big { font-family: var(--slab); font-size: 48px; color: var(--brass); line-height: 1.1; text-align: center; }
 .rank { text-align: center; font-size: 16px; letter-spacing: 0.1em; color: #fff; }
+/* the derby total counts up from zero; the rank and the lines under it wait for it, then the rank stamps on */
+#results .held { visibility: hidden; }
+#results .rank.stamp { animation: stamp 0.24s cubic-bezier(.3, 1.6, .5, 1) both; }
+#rtotal { font-variant-numeric: tabular-nums; }
+/* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion
+   (no glow, pop, rise or stamp; the cast report and the "Sweet!" cue show without their pop) */
+@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank, #report.show { animation: none !important; } }
+html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
+html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank, html[data-calm="1"] #report.show { animation: none !important; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
 /* a short phone held upright: the list of fish gives up room, so the buttons stay on the screen */
@@ -390,6 +474,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 @media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #reelUI > * { animation: none; } }
 </style>
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./cutscenes.css">
 </head>
 <body>
 <!-- boot: plain HTML and CSS, so it shows before any module runs, and also when one fails -->
@@ -459,43 +544,39 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   <div id="reelUI" hidden>
     <div id="gaugeBox"></div>
     <div id="pullStrength" hidden><span>Tip back as you reel</span><b><i></i></b></div>
-    <div id="dragBar"><button type="button" id="dragDown" aria-label="Less drag">−</button><b id="dragName">DRAG: MED</b><button type="button" id="dragUp" aria-label="More drag">+</button></div>
+    <div id="dragBar" role="group" aria-label="Drag"><button type="button" id="dragDown" aria-label="Less drag">−</button><b id="dragName">DRAG: MED</b><button type="button" id="dragUp" aria-label="More drag">+</button></div>
     <div id="padBox" aria-label="Drag the rod to raise, lower, or steer it"></div>
     <div id="crankBox"></div>
   </div>
 
   <div id="hud" hidden>
     <button type="button" class="icon" id="pauseBtn" aria-label="Pause">II</button>
-    <button type="button" class="icon" id="guideToggle" aria-label="Hide animated guide" aria-expanded="true" data-nopin>?</button>
+    <button type="button" class="icon" id="guideToggle" aria-label="Show the moves guide" title="Show the moves guide" aria-expanded="false" data-nopin>?</button>
     <span class="chip" id="modeChip"></span>
     <span class="grow"></span>
     <span class="chip" id="clock"></span>
   </div>
 
+  <div id="banner" hidden aria-live="polite"><b></b><span></span></div>
   <div id="prompt" hidden><div class="p1"></div><div class="p2"></div></div>
   <div id="report" hidden><div class="dist"></div><div class="verdict"></div><div class="zone"></div></div>
   <div id="flash"></div>
-  <div id="toast"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <!-- the prompt's headline for screen readers: main.js says each new one here, at most every 1.5 s -->
+  <div id="say" class="sr-only" aria-live="polite"></div>
 
   <!-- title -->
-  <section class="screen" id="title" hidden>
+  <section class="screen" id="title" hidden role="dialog" aria-modal="true" aria-labelledby="titleH">
     <div class="logo">
       <div class="kick" id="tkick">LOON LAKE</div>
-      <h1><span>REEL</span><span>IT IN</span></h1>
+      <h1 id="titleH" aria-label="Reel It In"><span>REEL</span><span>IT IN</span></h1>
       <div class="sub">YOUR PHONE IS THE ROD</div>
     </div>
     <div class="title-menu">
-      <div class="art-picker" role="group" aria-labelledby="artLabel">
-        <span class="art-label" id="artLabel">Art style</span>
-        <div class="art-options">
-          <button type="button" data-art="original" aria-pressed="false">Original</button>
-          <button type="button" data-art="ghibli" aria-pressed="true">Ghibli</button>
-        </div>
-        <p class="art-note" id="artNote" aria-live="polite">Cartoon models and painted skies</p>
-      </div>
+      <!-- free fishing first: a new player learns with no clock and no score. The art style is in Settings -->
       <nav id="tmenu">
-        <button type="button" class="btn go" id="derbyBtn">Derby: 10 casts</button>
-        <button type="button" class="btn" id="freeBtn">Free fishing</button>
+        <button type="button" class="btn go" id="freeBtn">Go fishing</button>
+        <button type="button" class="btn" id="derbyBtn">Derby: 10 casts</button>
         <div class="row2"><button type="button" class="btn" id="placesBtn">Places<span class="newtag" id="placesNew" hidden>NEW</span></button><button type="button" class="btn" id="journalBtn">Journal</button></div>
         <div class="row2"><button type="button" class="btn" id="helpBtn">How to play</button><button type="button" class="btn alt" id="setBtn">Settings</button></div>
         <div class="row2"><button type="button" class="btn alt" data-switch>Switch game</button><a class="btn alt" href="/">Back to the arcade</a></div>
@@ -506,9 +587,9 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- motion setup -->
-  <section class="screen dim" id="setup" hidden>
+  <section class="screen dim" id="setup" hidden role="dialog" aria-modal="true" aria-labelledby="setupH">
     <div class="card">
-      <h2>Your phone is the rod</h2>
+      <h2 id="setupH">Your phone is the rod</h2>
       <p>You cast and reel with real moves. The game reads the motion sensors in your phone.</p>
       <div class="warn" id="safety">Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one. Keep 2 m clear around you. A short, sharp flick of the wrist is enough.</div>
       <p id="setupNote" style="margin-top:12px" hidden></p>
@@ -517,23 +598,25 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- how to play -->
-  <section class="screen dim" id="help" hidden>
+  <!-- how to play: a short tab for each input (main.js opens the one the player uses, and fills it), the fish moves behind
+       a row of their own -->
+  <section class="screen dim" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpH">
     <div class="card">
-      <h2>How to play</h2>
-      <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="m">Motion</button><button type="button" role="tab" aria-selected="false" data-tab="t">Touch and mouse</button></div>
-      <ol class="steps" id="helpM"></ol>
-      <ol class="steps" id="helpT" hidden></ol>
+      <h2 id="helpH">How to play</h2>
+      <div class="tabs" role="tablist" aria-label="Controls"><button type="button" role="tab" id="tabM" aria-selected="true" aria-controls="helpM" data-tab="m">Motion</button><button type="button" role="tab" id="tabT" aria-selected="false" aria-controls="helpT" data-tab="t">Touch and mouse</button></div>
+      <div class="panel" id="helpM" role="tabpanel" aria-labelledby="tabM"></div>
+      <div class="panel" id="helpT" role="tabpanel" aria-labelledby="tabT" hidden></div>
       <div id="pullDemo" hidden>
         <video id="pullDemoVideo" src="clips/pull-back-demo.mp4" poster="clips/pull-back-poster.webp" controls muted playsinline preload="none" controlslist="nofullscreen noremoteplayback" disablepictureinpicture aria-label="How to add reel strength by tipping the phone back"></video>
       </div>
-      <div class="btns"><button type="button" class="btn" id="watchPullDemo">Watch pull-back demo</button><button type="button" class="btn go" data-close>Got it</button></div>
+      <div class="btns"><button type="button" class="btn" id="watchPullDemo">Watch: tip back to reel</button><button type="button" class="btn go" data-close>Got it</button></div>
     </div>
   </section>
 
   <!-- journal -->
-  <section class="screen dim" id="journal" hidden>
+  <section class="screen dim" id="journal" hidden role="dialog" aria-modal="true" aria-labelledby="journalH">
     <div class="card" style="width:min(100%,620px)">
-      <h2>Journal</h2>
+      <h2 id="journalH">Journal</h2>
       <div class="tabs chips" id="jtabs" role="tablist"></div>
       <p id="jsum"></p>
       <div id="jlist"></div>
@@ -542,9 +625,9 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- the places: a trail of four cards -->
-  <section class="screen dim" id="places" hidden>
+  <section class="screen dim" id="places" hidden role="dialog" aria-modal="true" aria-labelledby="placesH">
     <div class="card places">
-      <h2>Places</h2>
+      <h2 id="placesH">Places</h2>
       <p class="psub">Land a big fish to open the next place.</p>
       <ol id="plist"></ol>
       <p class="pfoot" id="pfoot"></p>
@@ -553,7 +636,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- on the way to another place -->
-  <section class="screen dim" id="travel" hidden>
+  <section class="screen dim" id="travel" hidden role="dialog" aria-modal="true" aria-labelledby="travelTxt">
     <div class="card mid">
       <div class="wheel" aria-hidden="true"></div>
       <h2 id="travelTxt">On the way.</h2>
@@ -561,7 +644,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- the first visit to a place -->
-  <section class="screen dim" id="arrive" hidden>
+  <section class="screen dim" id="arrive" hidden role="dialog" aria-modal="true" aria-labelledby="aname">
     <div class="card">
       <div class="kicker" id="akick"></div>
       <h2 id="aname"></h2>
@@ -573,7 +656,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- a fish opened the next place -->
-  <section class="screen dim" id="unlock" hidden>
+  <section class="screen dim" id="unlock" hidden role="dialog" aria-modal="true" aria-labelledby="uname">
     <div class="card mid">
       <div class="badges"><span class="badge new">NEW PLACE</span></div>
       <h2 id="uname"></h2>
@@ -583,26 +666,51 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- settings -->
-  <section class="screen dim" id="settings" hidden>
+  <!-- settings: the rows scroll on a short screen, and Done stays in view under them -->
+  <section class="screen dim" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="settingsH">
     <div class="card">
-      <h2>Settings</h2>
+      <h2 id="settingsH">Settings</h2>
       <div class="set">
         <label>Sound<input type="checkbox" id="optSound"></label>
         <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
         <label><span>Easy mode<small>Softens bad casts. Gives you more time to set the hook.</small></span><input type="checkbox" id="optAssist"></label>
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
         <label><span>Reel side<small>For motion play. With touch, the crank is on the left.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
-        <label><span>Art style</span><select id="optArtStyle"><option value="original">Original</option><option value="ghibli">Ghibli</option></select></label>
+        <label><span>Art style<small id="artNote"></small></span><select id="optArtStyle"><option value="original">Original</option><option value="painted">Painted</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
+        <h3 class="sethead">Easier play</h3>
+        <label><span>Larger text<small>Bigger words in play and on the cards.</small></span><input type="checkbox" id="optText"></label>
+        <label><span>Calm effects<small id="calmNote">Fewer flashes and less motion.</small></span><input type="checkbox" id="optCalm"></label>
+        <div class="setlinks"><button type="button" class="btn alt" id="aboutBtn">About <small id="aboutVer"></small></button><button type="button" class="btn alt" id="privacyRow">Privacy</button></div>
       </div>
       <div class="btns"><button type="button" class="btn" data-fullscreen hidden>Fullscreen</button><button type="button" class="btn go" data-close>Done</button></div>
     </div>
   </section>
 
+  <!-- about: the version, the credit line and the privacy policy (a page of the game, so it needs no network) -->
+  <section class="screen dim" id="about" hidden role="dialog" aria-modal="true" aria-labelledby="aboutH">
+    <div class="card mid">
+      <h2 id="aboutH">About</h2>
+      <p class="about-name">Reel It In</p>
+      <p id="aboutVersion"></p>
+      <p class="about-credit">Made by Cottage Arcade with three.js and the fonts Alfa Slab One and Nunito.</p>
+      <div class="btns"><button type="button" class="btn" id="privacyBtn">Privacy</button><button type="button" class="btn go" data-back>Close</button></div>
+    </div>
+  </section>
+
+  <!-- the privacy policy (privacy.html) in a frame. Its Back button asks the game to close this -->
+  <section class="screen dim" id="privacy" hidden role="dialog" aria-modal="true" aria-labelledby="privacyH">
+    <div class="card privacy">
+      <h2 id="privacyH" class="sr-only">Privacy</h2>
+      <iframe id="privacyFrame" title="Privacy policy"></iframe>
+      <div class="btns"><button type="button" class="btn go" data-back>Done</button></div>
+    </div>
+  </section>
+
   <!-- pause -->
-  <section class="screen dim" id="pause" hidden>
+  <section class="screen dim" id="pause" hidden role="dialog" aria-modal="true" aria-labelledby="pauseH">
     <div class="card">
-      <h2>Paused</h2>
+      <h2 id="pauseH">Paused</h2>
       <p id="pauseSum" style="white-space:pre-line"></p>
       <div class="btns" style="flex-direction:column">
         <button type="button" class="btn go" id="resumeBtn">Resume</button>
@@ -617,7 +725,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- a fish in the hand -->
-  <section class="screen" id="catch" hidden>
+  <section class="screen" id="catch" hidden role="dialog" aria-modal="true" aria-labelledby="cname">
     <div class="card">
       <div class="badges" id="cbadges"></div>
       <h2 id="cname"></h2>
@@ -632,10 +740,10 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
   </section>
 
   <!-- derby results -->
-  <section class="screen dim" id="results" hidden>
+  <section class="screen dim" id="results" hidden role="dialog" aria-modal="true" aria-labelledby="resultsH">
     <div class="card">
       <div class="kicker" id="rkick"></div>
-      <h2>Derby over</h2>
+      <h2 id="resultsH">Derby over</h2>
       <div class="big" id="rtotal"></div>
       <div class="rank" id="rrank"></div>
       <p class="rnext" id="rnext"></p>

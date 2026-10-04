@@ -14,6 +14,10 @@ During a jump, the reel camera SHALL zoom in on the fish so that it is at least 
 - **WHEN** a smallmouth jumps 30 m out
 - **THEN** the fish's box on the screen is at least 20 px wide, and the camera eases back after the jump.
 
+#### Scenario: Jump on a wide screen
+- **WHEN** a fish jumps 30 to 50 m out at 844x390 or 1280x800
+- **THEN** the leap shows below the prompt and the HUD, inside the view, and the rod stays drawn.
+
 ### Requirement: Tiered stingers
 Each kind of catch SHALL have its own sound: a fish, a new species, a new record, a trophy, a legend, a new place, and a derby end. A legend's stage change SHALL NOT play the victory fanfare.
 

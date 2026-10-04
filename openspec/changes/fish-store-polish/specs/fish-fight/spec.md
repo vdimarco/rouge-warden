@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: The drag gives before the line breaks
-When the spool starts to slip, cranking SHALL NOT break the line for about 0.5 s. A run SHALL start with a ratchet click and a buzz, so the player has time to stop.
+When the spool starts to slip, the crank's extra pull SHALL drop to nothing and build back over 0.6 s, so a player who stops reeling in that time does not snap the line by cranking. A run SHALL start with a ratchet click and a buzz, so the player has time to stop.
 
 #### Scenario: Cranking into a run
 - **WHEN** a player cranks steadily and a fish starts a run

@@ -51,7 +51,7 @@ function helpers() {
     fire(el, "pointerup", x, y - up, id, kind);
     const r = document.querySelector("#report");
     out.cue = !r.hidden && r.classList.contains("cue") ? r.querySelector(".verdict").textContent : "";
-    const rel = window.__sfx.slice(sfxFrom), tr = rel.find((s) => s[0] === "release"), tu = rel.find((s) => s[0] === "ui");
+    const rel = window.__sfx.slice(sfxFrom), tr = rel.find((s) => s[0] === "release"), tu = rel.find((s) => s[0] === "zing");
     out.chime = !!(tr && tu && tu[1] - tr[1] < 50);
     const c = FISH.G.cast, lr = FISH.G.lastRelease;
     out.verdict = c ? c.verdict : null; out.release = lr ? lr.theta : null; out.step = FISH.G.step; out.yaw = c ? c.yaw : null;
@@ -222,9 +222,12 @@ async function fresh(page) {
     check(railClear(hi.railBox, vh), `a press 140 px from the top: the rail stays on the screen, under the HUD and the prompt (${JSON.stringify(hi.railBox)})`);
 
     // the browser takes the touch away (a system gesture, the screen still upright): the line slipped
+    // (no real rings for this check: a ring's one-time tip can take the toast first)
+    await page.evaluate(() => { window.__spawn = FISH.rises.spawn; FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); });
     await fresh(page);
     const cx = await page.evaluate((a) => window.__cast(a), { x: rb.x, y: rb.y, cancel: true });
     check(cx.toast === "The line slipped. Try again." && (await page.evaluate(() => FISH.G.step)) === "ready", `a cancelled touch says "${cx.toast}" and the cast starts again`);
+    await page.evaluate(() => { FISH.rises.spawn = window.__spawn; });
 
     // the report's line: a near miss says how far and which way; a cast on the ring says so
     const land = async (x, z) => {

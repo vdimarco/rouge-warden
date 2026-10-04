@@ -12,6 +12,8 @@
 // derbyBest stays the Loon Lake best (the arcade cabinet reads it). biggest is the biggest fish anywhere. The journal
 // stays keyed by species id, so a fish that lives at two places has one record.
 // One-time flags live in seen: "at.<id>" (the arrival card), "opened.<id>" (the unlock toast), "river.swing", "ring.tip".
+// The cutscenes seen live in cuts { id: 1 } (cutscenes.js plays them, CUTS lists the ids). A save from before them gets the
+//   ones its progress has passed, so a long-time player is not stopped for them.
 import { JUNK, byId } from "./species.js";
 import { fishingOf } from "./fishing.js";
 import { ORDER, JOURNEY, nextPlace, isOpen } from "./journey.js";
@@ -20,7 +22,7 @@ import { DAILY, isDay, prevDay } from "./goals.js";
 export const SAVE_KEY = "fish.v1";
 const blankToday = () => ({ d: "", k: 0, n: 0, done: 0 });
 const blankDays = () => ({ n: 0, run: 0, best: 0, last: "" });
-export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "ghibli", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {}, today: blankToday(), days: blankDays(), bestRun: 0 });
+export const blank = () => ({ v: 1, journal: {}, casts: 0, longest: 0, derbyBest: 0, biggest: null, input: null, assist: true, quality: "auto", artStyle: "painted", reelSide: "right", seen: {}, caught: 0, place: "loon", places: {}, today: blankToday(), days: blankDays(), bestRun: 0 });
 export const blankPlace = () => ({ open: 0, d: 0, kg: 0, id: null, n: 0, lg: 0, g: 0 });
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
@@ -55,6 +57,32 @@ function cleanDays(d) {
   return { n: Math.max(whole(d.n), best), run, best, last: isDay(d.last) ? d.last : "" };
 }
 
+// The cutscenes, once each: "open" (the opening at Loon Lake, which is its arrival), "arrive.<id>" (the fly-in at a new
+// place), "reveal.<id>" (the first gold ring of its legend), "landed.<id>" (its legend landed), "finale" (all four landed)
+export const CUTS = ["open", ...ORDER.slice(1).map((id) => "arrive." + id), ...ORDER.map((id) => "reveal." + id), ...ORDER.map((id) => "landed." + id), "finale"];
+// The cutscenes seen: the known ids set to 1. A save with no cuts object (from before the cutscenes, or broken there) gets
+// the ones its progress has passed: the opening once it has cast, the arrival of each place open, the reveal of each legend
+// whose gold ring it saw, each legend landed, and the finale with all four
+function cleanCuts(c, save) {
+  let seen = c;
+  if (!isObj(c)) {
+    seen = {};
+    if (save.casts > 0 || save.caught > 0) seen.open = 1;
+    let all = true;
+    for (const id of ORDER) {
+      const e = save.places[id], j = save.journal[fishingOf(id).legend.id], landed = !!(j && j.n > 0);
+      if (id !== "loon" && e && e.open) seen["arrive." + id] = 1;
+      if (landed || (e && e.lg >= 1)) seen["reveal." + id] = 1;
+      if (landed) seen["landed." + id] = 1; else all = false;
+    }
+    if (all) seen.finale = 1;
+  }
+  // in the order of CUTS, so a load, save and load writes the same text
+  const out = {};
+  for (const k of CUTS) if (seen[k] === 1 || seen[k] === true) out[k] = 1;
+  return out;
+}
+
 // raw: what storage holds for SAVE_KEY (the JSON text, or null), or a value already parsed.
 // Anything broken gives a new save. The input is never changed.
 export function loadSave(raw) {
@@ -76,7 +104,8 @@ export function loadSave(raw) {
   save.biggest = b && typeof b === "object" && byId(b.id) && fin(b.kg) && b.kg > 0 ? { id: b.id, kg: b.kg } : null;
   for (const k of ["casts", "longest", "derbyBest", "caught"]) if (!fin(save[k]) || save[k] < 0) save[k] = 0;
   if (!["auto", "high", "low"].includes(save.quality)) save.quality = "auto";
-  if (!["original", "ghibli"].includes(save.artStyle)) save.artStyle = "ghibli";
+  // the painted style (the default) is any value but "original": an old save keeps its look under the style's old name
+  if (save.artStyle !== "original") save.artStyle = "painted";
   if (save.reelSide !== "left") save.reelSide = "right";
   // a copy, so the new save shares nothing with what it was read from (an array of flags is no flags)
   save.seen = Array.isArray(save.seen) ? {} : { ...save.seen };
@@ -105,6 +134,8 @@ export function loadSave(raw) {
   if (!ORDER.includes(save.place) || !(save.places[save.place] && save.places[save.place].open)) save.place = "loon";
   // 6. today's goal, once the places are known
   save.today = cleanToday(save.today, save);
+  // 7. the cutscenes seen, once the progress is known
+  save.cuts = cleanCuts(s && typeof s === "object" ? s.cuts : null, save);
   return save;
 }
 

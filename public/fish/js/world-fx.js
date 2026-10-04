@@ -45,13 +45,16 @@ export class Spray {
     this.vel[i * 3] = vx; this.vel[i * 3 + 1] = vy; this.vel[i * 3 + 2] = vz;
     this.life[i] = life; this.age[i] = 0; this.size[i] = size; this.gold[i] = gold; this.grav[i] = grav; this.alpha[i] = 1;
   }
-  // a splash: droplets thrown up and out in a crown
-  burst(x, z, s, rnd = Math.random) {
-    const n = Math.round(8 + s * 36);
+  // a splash: droplets thrown up and out in a crown. far (1 or more) grows it with the distance, so a splash far out
+  // still shows: the droplets by far, the throw by its square root, and a short flash of white foam where it hit
+  burst(x, z, s, rnd = Math.random, far = 1) {
+    const n = Math.round(8 + s * 36), lift = Math.sqrt(far);
     for (let k = 0; k < n; k++) {
-      const a = rnd() * Math.PI * 2, out = (0.4 + rnd() * 1.4) * (0.6 + s), up = (1.2 + rnd() * 2.6) * (0.55 + s * 0.8);
-      this.emit(x + Math.cos(a) * 0.1 * s, 0.02, z + Math.sin(a) * 0.1 * s, Math.cos(a) * out, up, Math.sin(a) * out, 0.05 + rnd() * 0.09 * (0.5 + s), 0.5 + rnd() * 0.6);
+      const a = rnd() * Math.PI * 2, out = (0.4 + rnd() * 1.4) * (0.6 + s) * lift, up = (1.2 + rnd() * 2.6) * (0.55 + s * 0.8) * lift;
+      this.emit(x + Math.cos(a) * 0.1 * s * far, 0.02, z + Math.sin(a) * 0.1 * s * far, Math.cos(a) * out, up, Math.sin(a) * out, (0.05 + rnd() * 0.09 * (0.5 + s)) * far, 0.5 + rnd() * 0.6);
     }
+    // the foam: a few big soft points that sit on the water for about 120 ms (no gravity, so they do not sink at once)
+    if (far > 1) for (let k = 0; k < 3; k++) this.emit(x + (rnd() - 0.5) * 0.3 * far, 0.04, z + (rnd() - 0.5) * 0.3 * far, 0, 0.6, 0, (0.3 + 0.3 * s) * far, 0.12 + 0.04 * k, 0, 0);
   }
   update(dt) {
     for (let i = 0; i < this.max; i++) {
@@ -206,21 +209,33 @@ const DEFAULT_SPOTS = [{ x: -8, z: -60 }, { x: 30, z: -75 }, { x: -30, z: -40 }]
 // One quad and one 512 x 48 texture. The strip is as tall as the picture is (48 of 512 parts of its length).
 export const BOARD_LENGTHS = [30, 60, 100, 150, 250];
 const BOARD_TICKS = { 30: [1, 5, 10, 10], 60: [2, 10, 10, 10], 100: [5, 10, 10, 10], 150: [5, 25, 50, 25], 250: [10, 50, 50, 50] };  // minor, mid, major, label step (cm)
+// The numbers on the board: { text, x (its centre), w } for each label step, kept on the strip. The last one sits at the
+// end of the strip, and a number that would come within 8 px of it is left out (so 90 never runs into 100). width(text)
+// measures a number in pixels of the 512 px texture
+export function boardLabels(bl, width) {
+  const step = (BOARD_TICKS[bl] || BOARD_TICKS[100])[3], px = (cm) => 4 + (cm / bl) * 504, out = [];
+  for (let cm = 0; cm <= bl + 1e-6; cm += step) {
+    const text = String(cm), w = width(text);
+    out.push({ text, w, x: Math.min(508 - w / 2, Math.max(4 + w / 2, px(cm))) });
+  }
+  const end = out[out.length - 1];
+  return out.filter((L) => L === end || L.x + L.w / 2 + 8 <= end.x - end.w / 2);
+}
 export function boardTexture(bl) {
   const cv = document.createElement("canvas");
   cv.width = 512; cv.height = 48;
   const x = cv.getContext("2d");
   x.fillStyle = "#e4d8b8"; x.fillRect(0, 0, 512, 48);
   x.fillStyle = "#c9b98c"; x.fillRect(0, 0, 512, 5); x.fillRect(0, 43, 512, 5);
-  const [minor, mid, major, step] = BOARD_TICKS[bl] || BOARD_TICKS[100];
+  const [minor, mid, major] = BOARD_TICKS[bl] || BOARD_TICKS[100];
   const px = (cm) => 4 + (cm / bl) * 504;
   x.fillStyle = "#2a2418"; x.strokeStyle = "#2a2418"; x.textAlign = "center"; x.font = "bold 21px sans-serif";
   for (let cm = 0; cm <= bl + 1e-6; cm += minor) {
     const isMajor = cm % major === 0, isMid = cm % mid === 0;
     const h = isMajor ? 17 : isMid ? 12 : 8;
     x.fillRect(Math.round(px(cm)) - 1, 43 - h, 2, h);
-    if (cm % step === 0) { const t = String(cm); x.fillText(t, Math.min(498 - 10 * t.length, Math.max(4 + 6 * t.length, px(cm))), 22); }
   }
+  for (const L of boardLabels(bl, (s) => x.measureText(s).width)) x.fillText(L.text, L.x, 22);
   const t = new THREE.CanvasTexture(cv);
   t.anisotropy = 4;
   return t;

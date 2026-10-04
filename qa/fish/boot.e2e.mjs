@@ -117,7 +117,8 @@ async function landFish(page, c = CATCH) {
     await click(page, "#freeBtn");
     await page.waitForSelector("#setup:not([hidden])");
     await click(page, "#useMotion");
-    await until(page, () => FISH.G.phase === "cast" && FISH.G.input === "motion", null, 30000);
+    // (a fresh save: the opening at Loon Lake plays first, 8 s of game time, longer on a slow machine)
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.input === "motion", null, 60000);
     await page.evaluate(() => { FISH.G.force = { species: "perch", kg: 0.35, bite: true }; __phone.pose(88); });
     await sleep(1200);
     const rb = await page.evaluate(() => { const r = document.querySelector("#reelBox").getBoundingClientRect(); return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.4 }; });
@@ -285,7 +286,8 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
 
     // play: back pauses, a second back resumes; keep awake follows
     await click(page, "#freeBtn");
-    await until(page, () => FISH.G.phase === "cast", null, 30000);
+    // (the opening plays first on this fresh save)
+    await until(page, () => FISH.G.phase === "cast", null, 60000);
     await sleep(200);
     check((await count("KeepAwake.keepAwake")) >= 1, "store: the screen stays awake while the player fishes");
     await back();
@@ -478,7 +480,11 @@ async function changeSetting(page) {
     await click(page, "#journal [data-close]");
     // the title over the live lake (the Original style) draws it at 15 frames a second at most, and it still moves.
     // The draw is stubbed for this, so the loop runs as fast as the screen and only the throttle holds the lake back
-    await click(page, "[data-art='original']");
+    // (the art style is in Settings)
+    await click(page, "#setBtn");
+    await page.waitForSelector("#settings:not([hidden])");
+    await page.selectOption("#optArtStyle", "original");
+    await click(page, "#settings [data-close]");
     await sleep(1500);
     const art = await page.evaluate(() => document.body.dataset.artStyle);
     await page.evaluate(() => { const w = FISH.world; window.__render = w.render; w.render = function () { window.__draws++; }; });
@@ -486,7 +492,8 @@ async function changeSetting(page) {
     await page.evaluate(() => { FISH.world.render = window.__render; });
     check(art === "original" && og.draws >= 15 && og.draws <= 46 && og.frames > og.draws, "the Original title: the lake draws " + og.draws + " times in 3 s (" + og.frames + " loop frames, style " + art + "), 15 a second at most");
     await click(page, "#freeBtn");
-    await until(page, () => FISH.G.phase === "cast", null, 30000);
+    // (the opening plays first on this fresh save)
+    await until(page, () => FISH.G.phase === "cast", null, 60000);
     await sleep(500);
     const play = await rate(3000);
     check(play.frames > 0 && play.draws >= play.frames * 0.9, "play draws at the full rate (" + play.draws + " draws in " + play.frames + " frames)");

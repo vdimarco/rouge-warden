@@ -8,8 +8,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "build:www": "node scripts/build-www.mjs",
-    "check:www": "node scripts/check-www.mjs",
+    "build:www": "node scripts/build-www.mjs --strict",
+    "check:www": "node scripts/check-www.mjs --strict",
     "check:native": "node scripts/native-check.mjs",
     "test:check": "node scripts/check-www.test.mjs",
     "sync": "npm run build:www && cap sync",
