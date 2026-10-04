@@ -12,7 +12,7 @@ The game SHALL have four kinds of short cutscenes, drawn live in the game's own 
 - **THEN** a fly-in shows that place's look with its name before the arrival card.
 
 #### Scenario: Legend reveal
-- **WHEN** a legend's gold ring rises at a place for the first time, outside a fight
+- **WHEN** a legend's gold ring rises at a place for the first time, outside a fight, and the player has landed at least one fish
 - **THEN** the camera pushes toward the ring, the legend breaches, its name shows, and play goes on from the same cast state.
 
 #### Scenario: Legend landed

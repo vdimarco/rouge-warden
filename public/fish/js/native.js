@@ -1,8 +1,11 @@
 // The bridge to the phone app. The store build wraps this same page in a Capacitor app, and Capacitor puts
 // window.Capacitor on the page before any script runs (with window.Capacitor.Plugins, one object for each native
 // plugin). This module is the only one that talks to it. The site has no bundler, so it finds the plugins by name:
-//   Haptics (@capacitor/haptics), App (@capacitor/app), StatusBar (@capacitor/status-bar),
-//   SplashScreen (@capacitor/splash-screen), KeepAwake (@capacitor-community/keep-awake), Preferences (@capacitor/preferences).
+//   Haptics (@capacitor/haptics), App (@capacitor/app), SplashScreen (@capacitor/splash-screen),
+//   KeepAwake (@capacitor-community/keep-awake), Preferences (@capacitor/preferences), and StatusBar
+//   (@capacitor/status-bar) only if an app has it. The app hides the bars natively (MainActivity on Android,
+//   MainViewController on iPhone). This page never calls SystemBars: on an iPhone its hide also hides the home
+//   indicator, and then the system stops deferring the bottom-edge swipe that keeps a crank stroke in the game.
 // Every call is wrapped: a missing plugin, a call that throws and a promise that fails all do nothing. On the web every
 // method is a no-op, and prefs.get() gives null. Safe in node too (the haptics tests import it).
 

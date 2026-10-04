@@ -19,7 +19,7 @@ A touch flick that ends above the press point SHALL still cast well. A lift belo
 - **THEN** the cast grades high.
 
 ### Requirement: Touch area covers what the player sees
-In touch mode before a cast, a press on the rod, the reel, or the lower half of the lake SHALL start a cast when the drag is mostly up and down, and SHALL aim when the drag is mostly sideways. The bail SHALL open only when the drag is up and down.
+In touch mode before a cast, a press anywhere outside the HUD, the menus, and the drag bar SHALL start a cast when the drag is mostly up and down, and SHALL aim when the drag is mostly sideways. The bail SHALL open only when the drag is up and down.
 
 #### Scenario: Press the visible reel
 - **WHEN** a touch player at 390x844 or 360x640 presses the reel, drags down, and flicks up
@@ -55,7 +55,7 @@ When motion samples stop for 3 s after the player said yes to motion, the game S
 - **THEN** the game says "The motion sensors stopped. Play with touch?" and a tap switches to touch.
 
 ### Requirement: Quick turnaround to the next cast
-The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. An empty retrieve SHALL bring the lure home in about 3 s. The owner asked for this during the work.
+The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. After 3 s of an empty retrieve (no fish coming), each crank turn SHALL wind in up to 4 times as much line, and a crank faster than 1.5 turns a second SHALL shorten that wait to as little as 1 s. The owner asked for this during the work.
 
 #### Scenario: Lure home with nothing
 - **WHEN** the lure comes home with no fish and the player does nothing

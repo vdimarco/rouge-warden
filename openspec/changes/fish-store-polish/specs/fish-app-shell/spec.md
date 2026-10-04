@@ -38,7 +38,7 @@ The back button SHALL close the top screen or pause the game. It SHALL NOT close
 - **THEN** nothing happens.
 
 ### Requirement: Native bridge
-When the game runs in a Capacitor app, it SHALL use the native plugins that exist, and it SHALL run without error when a plugin is missing. The bridge SHALL hide the splash screen when the title is ready, hide the status bar, keep the screen awake while the player fishes, pause on app pause, and resume sound on app resume.
+When the game runs in a Capacitor app, it SHALL use the native plugins that exist, and it SHALL run without error when a plugin is missing. The bridge SHALL hide the splash screen when the title is ready, keep the screen awake while the player fishes, pause on app pause, and resume sound on app resume. The app SHALL keep the status bar hidden through its native code, without hiding the iPhone home indicator.
 
 #### Scenario: App goes to the background in a fight
 - **WHEN** the app goes to the background in a fight and comes back

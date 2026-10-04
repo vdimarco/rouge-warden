@@ -34,7 +34,7 @@ The title and the pause card SHALL name the next thing to aim for. The derby res
 - **THEN** the results show "Next rank: <name> at <kg> kg."
 
 ### Requirement: Help for short casters
-A player who casts short SHALL get help to the first new place. While a place goal to open the next place is not met, a short cast SHALL sometimes say "Big fish live far out." After 20 water casts at a place with that goal open, the next rising ring close in SHALL carry a big fish, and the game SHALL say so once.
+A player who casts short SHALL get help to the first new place. While a place goal to open the next place is not met, a short cast SHALL sometimes say "Big fish live far out." After 20 water casts in free fishing with that goal open, the next rising ring within 25 m SHALL carry a big fish, and the game SHALL say so once. The help SHALL come back after a lost fish or a ring that fades, until the player lands a big ring's fish.
 
 #### Scenario: Short-casting beginner
 - **WHEN** the journey simulation runs a beginner who casts 8 to 25 m at Loon Lake

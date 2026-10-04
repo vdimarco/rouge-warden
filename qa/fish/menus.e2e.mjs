@@ -250,7 +250,7 @@ if (part("3")) {
   try {
     await click(page, "#helpBtn"); await shown(page, "help");
     const t = await page.evaluate(() => ({ tab: document.querySelector("#help [aria-selected='true']").textContent, text: document.querySelector("#helpT").textContent }));
-    check(t.tab === "Touch and mouse" && /hold Space/.test(t.text) && /W\sA\sS\sD/.test(t.text), "a computer opens How to play on Touch and mouse, with the keys (" + t.tab + ")");
+    check(t.tab === "Touch and mouse" && /Hold the mouse button or Space/.test(t.text) && /W\sA\sS\sD/.test(t.text), "a computer opens How to play on Touch and mouse, with the mouse hold cast and the keys (" + t.tab + ")");
     await click(page, "#help [data-close]");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);

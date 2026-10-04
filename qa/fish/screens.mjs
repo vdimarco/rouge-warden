@@ -785,6 +785,8 @@ if (part("F")) {
     await page.evaluate(() => FISH.newCast());
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => {
+      // only the staged rings: a real gold ring at golden hour, or a real ring's one-time tip, would change the count
+      window.__spawn = FISH.rises.spawn; FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]);
       window.__toasts = [];
       const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
       Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); } });
@@ -811,7 +813,7 @@ if (part("F")) {
     await frames(6);
     await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 5000).catch(() => {});
     check((await golds()) === 3, "it is said after the fight");
-    await page.evaluate(() => { window.__gold = null; FISH.startMode("free"); });
+    await page.evaluate(() => { window.__gold = null; FISH.rises.spawn = window.__spawn; FISH.startMode("free"); });
     check(await page.evaluate(() => FISH.G.goldAt === null), "a new mode forgets the last ring");
 
     // ---- the flash ----
