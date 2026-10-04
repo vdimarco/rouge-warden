@@ -437,6 +437,20 @@ section("Wall climbing");
     check(!P.wall && P.vel.x >= CLIMB.jump.out - 0.2 && P.vel.y > CLIMB.jump.up - 0.5, `Space jumps off the wall (vel ${f2(P.vel.x)} out, ${f2(P.vel.y)} up)`);
     run(P, 12, () => inp({ hands: [hand({ holding: false }), hand({ holding: false })] }), { watch: false });
     check(!P.wall, "you do not grab the same wall again right after the jump");
+    // the air grab rule: a fall steered into a wall catches it; a fast swing that only brushes a wall goes on
+    {
+      const F = createPlayer(city, FLAT);
+      teleport(F, B.maxX + 1.2, B.maxY - 2, z);
+      F.vel.x = -3; F.vel.y = -14;
+      run(F, 240, () => (F.wall ? climbIn(0) : inp({ move: { x: -1, z: 0 }, hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
+      check(!!F.wall && F.pos.y > B.maxY - 20, `a fall at 14 m/s steered into a wall grabs it in the air (${F.wall ? "held at " + f2(F.pos.y) + " m" : "slid to " + f2(F.pos.y) + " m"})`);
+      const G2 = createPlayer(city, FLAT);
+      teleport(G2, B.maxX + 0.6, B.maxY / 2, B.minZ + 2);
+      G2.vel.x = -2; G2.vel.y = 0; G2.vel.z = 20;
+      let grabbedFast = false;
+      run(G2, 30, () => { if (G2.wall && Math.hypot(G2.vel.x, G2.vel.z) > 1) grabbedFast = true; return inp({ hands: [hand({ holding: false }), hand({ holding: false })] }); }, { watch: false });
+      check(!G2.events.some((e) => e.type === "cling") || !grabbedFast, "a swing at 20 m/s that brushes a wall at 2 m/s does not grab it");
+    }
     // a rope from the wall swings you off it
     teleport(P, B.maxX + 3, B.maxY / 2, z);
     P.vel.x = -8;

@@ -1,0 +1,42 @@
+# Made by npm install and npm run build:www. Never commit them.
+node_modules/
+www/
+
+# The web files and config that cap sync copies into the native projects
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+
+# Android build output and local machine files
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/release/
+*.apk
+*.aab
+
+# iOS build output and local files
+ios/App/build/
+ios/App/DerivedData/
+ios/App/Pods/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/CapApp-SPM/.build/
+ios/App/CapApp-SPM/.swiftpm/
+*.ipa
+*.xcarchive
+
+# Signing keys and their passwords. Keep them out of git, always.
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+keystore.properties

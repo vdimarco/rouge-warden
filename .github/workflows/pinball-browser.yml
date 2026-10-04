@@ -4,7 +4,9 @@ on:
     paths:
       - 'public/lab/tilt/**'
       - 'public/lab/kit/**'
-      - 'public/fish/js/**'
+      # the lab kit imports these two Reel It In modules; other fish changes do not touch pinball
+      - 'public/fish/js/haptics.js'
+      - 'public/fish/js/motion.js'
       - 'qa/lab/**'
       - 'qa/fish/lib.mjs'
       - 'qa/browser/**'
@@ -14,7 +16,9 @@ on:
     paths:
       - 'public/lab/tilt/**'
       - 'public/lab/kit/**'
-      - 'public/fish/js/**'
+      # the lab kit imports these two Reel It In modules; other fish changes do not touch pinball
+      - 'public/fish/js/haptics.js'
+      - 'public/fish/js/motion.js'
       - 'qa/lab/**'
       - 'qa/fish/lib.mjs'
       - 'qa/browser/**'
@@ -56,6 +60,7 @@ jobs:
           node qa/lab/tilt.reverse.sim.mjs
           node qa/lab/tilt.warp.sim.mjs
           node qa/lab/tilt.rallies.sim.mjs
+          node qa/lab/tilt.skill.sim.mjs
       - name: Browser interactions and responsive layout
         run: npm run test:pinball --prefix qa/browser
         env:

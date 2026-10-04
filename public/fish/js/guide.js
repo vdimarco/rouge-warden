@@ -1,5 +1,6 @@
 // Small motion lessons, driven by the existing game clock. Each scene can be
 // scrubbed with seek(t), including during frame-by-frame video export.
+import { isCalm } from "./calm.js";
 const KEY = "reel-it-in-guide-v1";
 export const INTRO = ["hold", "back", "cast", "reel", "hook", "pump", "land"];
 export const LENGTH = 2.6;
@@ -80,22 +81,54 @@ export function sceneFrame(kind, motion, time) {
   });
 }
 
-export function lesson(kind, motion, touch = true) {
+// One set of words for each fight move and each input: the fight prompt (main.js), the guide caption (lesson below) and the
+// rod cue (rod-cues.js) all read this, so a move is never written two ways at once. Inputs: motion (the phone is the rod),
+// touch, and keys (a desktop with no touch screen); an input that is left out uses the touch words.
+// strength is the motion pump: tipping the phone back as you crank is what pulls the fish in.
+export const MOVE_WORDS = {
+  reel: { touch: "Turn the crank to reel." },
+  hook: { motion: "Snap it up!", touch: "Swipe it up!", keys: "Press Space!" },
+  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  stop: { touch: "Stop reeling." },
+  low: { motion: "Lower the phone.", touch: "Drag the rod down." },
+  raise: { touch: "Hold the rod up." },
+  turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways." },
+  land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold." },
+  drag: { touch: "Tap + to tighten the drag.", keys: "Click + to tighten the drag." },
+};
+// the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
+export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
+// the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
+// the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
+export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
+// the input of a player: "motion", "touch" or "keys"
+export const inputOf = (motion, touch = true) => (motion ? "motion" : touch ? "touch" : "keys");
+// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
+export function moveWords(kind, input = "touch", side = 0, pace = "") {
+  if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
+  if (kind === "reel" && REEL_PACE[pace]) return REEL_PACE[pace];
+  const w = MOVE_WORDS[kind];
+  return w ? w[input] || w.touch : "";
+}
+
+export function lesson(kind, motion, touch = true, pace = "") {
+  const w = (k) => moveWords(k, inputOf(motion, touch), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
     back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
     cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", "Touch the rod to stop it short."],
-    reel: ["Turn the crank", "Reel slowly. Pause now and then."],
-    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod up" : "Press Space", "Set the hook when the fish strikes."],
-    pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
-    strength: ["Tip back as you reel", "Bring the top of the phone toward you for extra reel power."],
-    stop: ["Stop turning the crank", "Let the fish run."],
-    low: [motion ? "Lower the phone" : "Drag the rod down", "Lower the rod."],
-    turn: [motion ? "Tilt to steer" : "Drag the rod sideways", "Keep the fish clear of cover."],
-    land: [motion ? "Lift the phone. Hold." : "Rod up. Hold.", "Lift the fish out of the water."],
-    raise: [motion ? "Hold the phone up" : "Hold the rod up", "Keep the rod raised."],
-    drag: ["Tap + to tighten drag", "Keep some line on the spool."],
+    reel: [w("reel"), "Reel slowly. Pause now and then."],
+    hook: [w("hook"), "Set the hook when the fish strikes."],
+    pump: [w("pump"), motion ? "Ease forward to rest." : "Pump the fish in."],
+    strength: [w("strength"), "Bring the top of the phone toward you for extra reel power."],
+    stop: [w("stop"), "Let the fish run."],
+    low: [w("low"), "Lower the rod."],
+    turn: [w("turn"), "Keep the fish clear of cover."],
+    land: [w("land"), "Lift the fish out of the water."],
+    raise: [w("raise"), "Keep the rod raised."],
+    drag: [w("drag"), "Keep some line on the spool."],
   })[kind] || ["Watch the line", "Follow the prompt."];
 }
 
@@ -115,7 +148,10 @@ export function activeLesson({ phase, step, fishPhase, cue, motion, pullAvailabl
   return fishPhase === "fight" ? "pump" : "reel";
 }
 
-export function createGuide(game, button) {
+// The guide shows on the cast and the reel. A new player sees it until the first fish is landed (caught() gives the fish
+// landed), unless they turned it off; after that it stays off unless they turned it on. A tap on the button is the
+// player's choice, kept in storage ("shown" or "hidden")
+export function createGuide(game, button, { caught = () => 0 } = {}) {
   const panel = document.createElement("aside");
   panel.id = "fishGuide";
   panel.hidden = true;
@@ -130,24 +166,30 @@ export function createGuide(game, button) {
   video.className = "guide-video";
   art.before(video);
   const count = panel.querySelector(".guide-count"), kicker = panel.querySelector(".guide-kicker");
-  let dismissed = true;
-  try { dismissed = localStorage.getItem(KEY) !== "shown"; } catch (_) { /* storage may be disabled */ }
+  let choice = null;
+  try { choice = localStorage.getItem(KEY); } catch (_) { /* storage may be disabled */ }
+  if (choice !== "shown" && choice !== "hidden") choice = null;
+  const off = () => (choice ? choice === "hidden" : caught() > 0);
+  let dismissed = off();
   let state = null, key = "", started = 0, lastDraw = -Infinity, layoutKey = "", nextLayout = 0, kindNow = "hold", parts = [];
   let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });
   let lastPhase = "", lastStep = "", now = 0;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   let buttonState = "";
   const title = () => {
     const next = `${dismissed}:${panel.hidden}`;
     if (next === buttonState) return;
     buttonState = next;
+    // the button says what a tap does (the panel may be away a moment, on a screen with no room for it)
+    const label = dismissed ? "Show the moves guide" : "Hide the moves guide";
     button.setAttribute("aria-expanded", String(!panel.hidden));
-    button.setAttribute("aria-label", dismissed ? "Show animated guide" : panel.hidden ? "Guide hidden while screen is busy" : "Hide animated guide");
+    button.setAttribute("aria-label", label);
+    button.title = label;
   };
   button.addEventListener("click", () => {
-    dismissed = !dismissed;
-    try { localStorage.setItem(KEY, dismissed ? "hidden" : "shown"); } catch (_) { /* storage may be disabled */ }
+    choice = dismissed ? "shown" : "hidden";
+    dismissed = off();
+    try { localStorage.setItem(KEY, choice); } catch (_) { /* storage may be disabled */ }
     started = now; key = ""; layoutKey = "";
     if (dismissed) { panel.hidden = true; video.pause(); }
     else if (video.readyState >= 1) video.currentTime = 0;
@@ -170,10 +212,13 @@ export function createGuide(game, button) {
     panel.hidden = false;
     const view = game.querySelector("#view"), W = game.clientWidth, H = game.clientHeight;
     const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox", "pullStrength"]
-      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
+      // (a toast counts while it fades out too, so the panel never slides under it)
+      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on") || +getComputedStyle(el).opacity > 0.05)).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
-    const xs = [10 + (parseFloat(getComputedStyle(game).getPropertyValue("--sal")) || 0)];
+    // the left edge: the HUD's own inset, which is 10 px past the safe area
+    const hud = game.querySelector("#hud");
+    const xs = [hud && parseFloat(getComputedStyle(hud).paddingLeft) || 10];
     if (W > H * 1.15 && state.phase === "reel") xs.push(Math.min(W * .38, game.querySelector("#gaugeBox").offsetWidth + 24));
     let found = null;
     for (const compact of [false, true, "tiny"]) {
@@ -195,12 +240,14 @@ export function createGuide(game, button) {
   }
 
   function seek(t) {
-    const pose = poseAt(kindNow, reduced.matches ? 1.3 : t);
+    const pose = poseAt(kindNow, isCalm() ? 1.3 : t);
     for (const [el, cls] of parts) for (const [name, value] of Object.entries(pose[cls])) el.setAttribute(name, value);
   }
   function update(s, t) {
     state = s; now = t;
-    const visible = !s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
+    // the first fish landed turns off a guide the player never chose
+    dismissed = off();
+    const visible =!s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
     if (!visible || dismissed) { if (!panel.hidden) panel.hidden = true; video.pause(); title(); return; }
     if (s.phase !== lastPhase || s.step !== lastStep) { started = t; lastPhase = s.phase; lastStep = s.step; }
     const intro = s.phase === "cast" && (s.step === "ready" || s.step === "open");
@@ -209,7 +256,9 @@ export function createGuide(game, button) {
       videoMode = mode; videoFailed = false;
       video.src = new URL(`../clips/guide-${mode}.mp4`, import.meta.url).href;
     }
-    const useVideo = intro && !reduced.matches && !videoFailed;
+    // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps
+    const calm = isCalm();
+    const useVideo = intro && !calm && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
     if (useVideo && video.paused && !playPending) {
       playPending = true;
@@ -217,14 +266,14 @@ export function createGuide(game, button) {
     }
     if (!useVideo) video.pause();
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
-    const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
+    const index = intro ? calm ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
-    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text;
+    const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {
       key = nextKey; lastDraw = -Infinity;
       kindNow = kind;
       art.innerHTML = sceneMarkup(kind, s.motion);
-      const [label, detail] = lesson(kind, s.motion, s.touch);
+      const [label, detail] = lesson(kind, s.motion, s.touch, intro ? "" : s.cue.pace);
       caption.textContent = label;
       panel.setAttribute("aria-label", (intro ? "Preview: " : "Now: ") + label + ". " + detail);
       panel.dataset.lesson = kind;

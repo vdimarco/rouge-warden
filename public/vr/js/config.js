@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.4.0";
+export const VERSION = "1.6.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -68,6 +68,8 @@ export const CLIMB = {
   jump: { out: 6, up: 6 }, // Space (or JUMP) pushes off the wall this hard (m/s)
   ropeOff: { out: 2, up: 2 }, // a rope fired from the wall pushes off this hard (m/s)
   regrab: 0.4, // after you leave a wall, you do not grab one for this long (s)
+  brushSpeed: 8, headOn: 0.4, // in the air, a wall grabs you when slower than brushSpeed, or when this share of your speed (not
+  // counting a fall) goes into it: a swing that brushes a wall keeps going
   head: 1.7, headR: 0.25, // the head sphere over the feet: a ceiling it meets on the way up is an overhang
   lip: 1, lipReach: 40, // under an overhang you move out to its face (found up to lipReach m out) and up lip m
 };

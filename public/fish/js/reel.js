@@ -1,7 +1,7 @@
 // The reel you touch: four small canvas widgets.
 // ReelPanel: the spinning reel face in the cast. Swipe the bail arm to open or close it; a thumb anywhere pins the line.
 // Crank: the handle you turn with your thumb to reel in (landscape).
-// RodPad: the rod for touch play. Drag it up and down, swipe up fast to set the hook.
+// RodPad: the rod for touch play. Drag it up and down, swipe up fast to set the hook (a fling on the open lake counts too).
 // Gauge: the line tension with the drag and break marks, the line out, the depth, and the fish.
 //
 // main.js may turn #game 90° with CSS when the phone is sideways, so every pointer position goes through the
@@ -32,6 +32,7 @@ export const REEL_UI = {
   maxDpr: 2,           // canvas pixel ratio cap; main.js lowers it on low quality
   pinHoldMs: 90,       // bail closed: a press becomes a pin after this long without a big move
   pinSlopPx: 12,       // "a big move"
+  holdMs: 150,         // grab "lock": a mouse button held this long without a big move is the hold cast
   bailSwipePx: 40,     // the bail swipe: at least this far...
   bailVertical: 1.4,   // ...and this many times more vertical than sideways
   crankWinMs: 100,     // crank speed = the angle the thumb swept over this window
@@ -47,6 +48,7 @@ export const REEL_UI = {
   rodMin: 10, rodMax: 110, rodStart: 55,
   rodKeyDps: 120,      // W/S held
   yankPxs: 900,        // an upward swipe faster than this sets the hook
+  flingPx: 40,         // ...and a fling on the open lake must also travel this far up
   steerDead: 0.1,      // no steer this close to the pad centre
 };
 const T = REEL_UI;
@@ -74,7 +76,7 @@ function offsetLocal(cx, cy, el) {
 // A press on a control is not a pin. The invisible iOS haptic switches are the exception: they sit on top of the
 // reel and the crank on purpose, and their events bubble up to us.
 function isSwitch(e) { return e.tagName === "INPUT" && e.hasAttribute("switch"); }
-function blocked(target, stop) {
+export function blocked(target, stop) {
   for (let e = target; e && e !== stop && e.nodeType === 1; e = e.parentElement) {
     if (isSwitch(e) || (e.tagName === "LABEL" && e.querySelector("input[switch]"))) continue;
     if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL)$/.test(e.tagName)) return true;
@@ -269,7 +271,10 @@ export class ReelPanel extends Widget {
     this.toLocal = toLocal || offsetLocal;
     this.mx = hand === "left" ? -1 : 1;
     // grab: a press takes the line at once even with the bail shut (the game opens the bail on the pin).
-    // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then)
+    // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then);
+    // "lock": anywhere, once the drag shows which: up and down takes the line where it pressed, sideways aims ("aim"), and
+    // a mouse button held still takes it as a hold ("pin" with hold: the game times the rod; moves while it holds aim);
+    // "feather": the line flies, and a mouse click anywhere holds it (a finger, on the reel face)
     this.s = { bail: "closed", pinned: false, spool: 0, line: 0.85, hint: "", glow: "", touchCast: false, grab: "" };
     this.fx = { bail: 0, bailV: 0, spin: 0, glow: 0, clack: 0, thumbA: 0, guide: 0, wasOpen: false };
     this.ptrs = new Map();
@@ -300,14 +305,24 @@ export class ReelPanel extends Widget {
     const open = this.s.bail === "open";
     const hit = this.direct ? this.toLocal(e.clientX, e.clientY, this.el) : q;
     const inFace = hit.x >= 0 && hit.y >= 0 && hit.x <= this.w && hit.y <= this.h;
-    if (this.direct && !inFace && this.s.grab !== "all") return;
-    const grab = this.s.grab === "all" || (this.s.grab === "panel" && inFace);
+    const lock = this.s.grab === "lock", all = this.s.grab === "all" || (this.s.grab === "feather" && e.pointerType === "mouse");
+    if (this.direct && !inFace && !all && !lock) return;
+    const grab = all || (this.s.grab === "panel" && inFace);
+    // a locked mouse button waits to show what it is (a hold or a drag) even with the bail open (the E key opens it)
+    const hold = lock && e.pointerType === "mouse";
     // a grab press is never a bail swipe: the press itself opens the bail
-    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && this._onBail(q.x, q.y), open: open || grab, state: "wait", timer: 0, swiped: false };
+    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && !lock && this._onBail(q.x, q.y), open: open || grab, lock, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
-    if (open || grab) {
+    if ((open && !hold) || grab) {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
+    } else if (lock) {
+      // the drag says what this press is (_move), so a sideways aim never clacks the bail. A mouse button that stays put
+      // for holdMs is the hold cast
+      if (hold) p.timer = setTimeout(() => {
+        p.timer = 0;
+        if (this.ptrs.get(p.id) === p && p.state === "wait" && this.pinId == null && this.s.grab === "lock") this._hold(p, now());
+      }, T.holdMs);
     } else if (this.s.grab !== "panel") {
       // (with grab "panel" the lake is for aiming: a rest there before the drag is never a pin)
       p.timer = setTimeout(() => {
@@ -317,12 +332,22 @@ export class ReelPanel extends Widget {
       }, T.pinHoldMs);
     }
   }
-  _pin(p, t) {
+  // at: where the thumb took the line (a locked press takes it where it came down, not where the drag decided)
+  _pin(p, t, at = p) {
     p.state = "pin";
     this.pinId = p.id;
-    this.thumb = { x: p.x, y: p.y, x0: p.x, y0: p.y };
-    this.emit("pin", { id: p.id, x: p.x, y: p.y, t });
+    this.thumb = { x: at.x, y: at.y, x0: at.x, y0: at.y };
+    this.emit("pin", { id: p.id, x: at.x, y: at.y, t });
   }
+  // the hold cast: the line is taken where the button came down, the game moves the rod by the clock, and a move aims
+  _hold(p, t) {
+    p.state = "hold"; p.hx = p.x;
+    this.pinId = p.id;
+    this.thumb = { x: p.x0, y: p.y0, x0: p.x0, y0: p.y0 };
+    this.emit("pin", { id: p.id, x: p.x0, y: p.y0, t, hold: true });
+  }
+  // the finger on the line is a held mouse button (a hold cast)
+  get holding() { const p = this.ptrs.get(this.pinId); return !!p && p.state === "hold"; }
   // cancel: the browser took the touch away (pointercancel, the page lost focus), or a hold turned into a bail swipe.
   // That is not a thumb lifting off the line, so it must not count as a cast.
   _unpin(p, t, cancel = false) {
@@ -338,8 +363,13 @@ export class ReelPanel extends Widget {
     const dx = p.x - p.x0, dy = p.y - p.y0;
     if (p.state === "wait" && Math.hypot(dx, dy) > T.pinSlopPx) {
       clearTimeout(p.timer); p.timer = 0;
-      p.state = p.onBail ? "swipe" : "drag";
-    }
+      if (!p.lock) p.state = p.onBail ? "swipe" : "drag";
+      // locked: mostly up and down takes the line at the press point; mostly sideways aims
+      else if (Math.abs(dy) >= Math.abs(dx) && this.pinId == null) this._pin(p, e.timeStamp, { x: p.x0, y: p.y0 });
+      else if (Math.abs(dy) >= Math.abs(dx)) p.state = "extra";
+      else { p.state = "aim"; this.emit("aim", { id: p.id, dx, dy, start: true }); }
+    } else if (p.state === "aim") this.emit("aim", { id: p.id, dx, dy, start: false });
+    else if (p.state === "hold") { this.emit("aim", { id: p.id, dx: p.x - p.hx, dy, start: !p.aimed }); p.aimed = true; }
     // the bail swipe: long enough, mostly vertical, and it started on the bail arm
     if (p.onBail && !p.swiped && Math.abs(dy) > T.bailSwipePx && Math.abs(dy) > T.bailVertical * Math.abs(dx)) {
       p.swiped = true;
@@ -360,13 +390,13 @@ export class ReelPanel extends Widget {
     if (p.timer) { clearTimeout(p.timer); p.timer = 0; }
     // a cancel may carry no position: keep the last one we saw
     if (!cancel || e.clientX || e.clientY) { const q = this._local(e); p.x = q.x; p.y = q.y; }
-    if (p.state === "pin") this._unpin(p, e.timeStamp, cancel);
+    if (p.state === "pin" || p.state === "hold") this._unpin(p, e.timeStamp, cancel);
   }
   _cancelAll() {
     for (const p of [...this.ptrs.values()]) {
       this.ptrs.delete(p.id);
       if (p.timer) clearTimeout(p.timer);
-      if (p.state === "pin") this._unpin(p, now(), true);
+      if (p.state === "pin" || p.state === "hold") this._unpin(p, now(), true);
     }
   }
   _onBail(x, y) { const b = this.bailArea; return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h; }
@@ -1187,8 +1217,10 @@ export class Crank extends Widget {
 }
 
 /* ---------------- the rod pad ---------------- */
+// area: where a fast fling up also counts ("fling"; main.js takes it as a hook set in a strike). Presses on the pad itself,
+// on the skip elements (the crank) and on controls are not flings
 export class RodPad extends Widget {
-  constructor(container, { toLocal, direct = false } = {}) {
+  constructor(container, { toLocal, direct = false, area = null, skip = [] } = {}) {
     super(container, "rodpad");
     this.direct = direct;
     if (direct) this.cv.hidden = true;
@@ -1196,14 +1228,17 @@ export class RodPad extends Widget {
     this._theta = T.rodStart;
     this._steer = 0;
     this.drag = null;
+    this.fl = null;
+    this.skip = skip.filter(Boolean);
     this.k = { up: false, down: false, left: false, right: false };
     this.yankA = 0;
     this.last = now();
     this.listen(container, "pointerdown", (e) => this._down(e));
+    if (area) this.listen(area, "pointerdown", (e) => this._flingDown(e, area));
     this.listen(window, "pointermove", (e) => this._move(e));
     this.listen(window, "pointerup", (e) => this._up(e));
     this.listen(window, "pointercancel", (e) => this._up(e, true));
-    this.listen(window, "blur", () => { this.drag = null; this.keys({}); });
+    this.listen(window, "blur", () => { this.drag = null; this.fl = null; this.keys({}); });
     this.resize();
   }
   get theta() { this._update(); return this._theta; }
@@ -1214,8 +1249,9 @@ export class RodPad extends Widget {
     this.k = { up: !!st.up, down: !!st.down, left: !!st.left, right: !!st.right };
   }
   _degPerPx() { return (T.rodMax - T.rodMin) / Math.max(120, this.el.clientHeight * 0.8); }
+  // full steer a little inside the pad's edge: the pad is small, and a thumb near its side means all the way
   _steerAt(x) {
-    const half = Math.max(30, this.el.clientWidth * 0.42), o = clamp((x - this.el.clientWidth / 2) / half, -1, 1);
+    const half = Math.max(30, this.el.clientWidth * 0.36), o = clamp((x - this.el.clientWidth / 2) / half, -1, 1);
     return Math.sign(o) * Math.max(0, Math.abs(o) - T.steerDead) / (1 - T.steerDead);
   }
   _down(e) {
@@ -1230,7 +1266,23 @@ export class RodPad extends Widget {
     }
     this._steer = this._steerAt(q.x);
   }
+  // a press on the open lake: watched only for a fling up
+  _flingDown(e, area) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (this.fl || this.el.contains(e.target) || this.skip.some((s) => s.contains(e.target)) || blocked(e.target, area)) return;
+    const q = this.toLocal(e.clientX, e.clientY);
+    this.fl = { id: e.pointerId, y0: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true };
+  }
+  _flingMove(e, end = false) {
+    const f = this.fl;
+    f.hist.push({ t: e.timeStamp, y: this.toLocal(e.clientX, e.clientY).y });
+    while (f.hist.length > 2 && f.hist[0].t < e.timeStamp - 150) f.hist.shift();
+    const v = this._upSpeed(f.hist, e.timeStamp), B = f.hist[f.hist.length - 1];
+    if (v > T.yankPxs && f.armed && f.y0 - B.y > T.flingPx) { f.armed = false; this.emit("fling", { v }); }
+    if (end) this.fl = null;
+  }
   _move(e) {
+    if (this.fl && e.pointerId === this.fl.id) this._flingMove(e);
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     const q = this._dragLocal(e);
@@ -1243,18 +1295,22 @@ export class RodPad extends Widget {
     while (d.hist.length > 2 && d.hist[0].t < e.timeStamp - 150) d.hist.shift();
     this._yankCheck(e.timeStamp);
   }
-  // an upward swipe faster than yankPxs sets the hook, once per stroke
-  _yankCheck(t) {
-    const d = this.drag, h = d.hist;
+  // px/s up (+) over the last 70 ms of a history; null when it spans too little time to say
+  _upSpeed(h, t) {
     let i = h.length - 1;
     while (i > 0 && h[i].t > t - 70) i--;
     const A = h[i], B = h[h.length - 1], span = (B.t - A.t) / 1000;
-    if (span < 0.012) return;
-    const v = (A.y - B.y) / span;   // + = up
+    return span < 0.012 ? null : (A.y - B.y) / span;
+  }
+  // an upward swipe faster than yankPxs sets the hook, once per stroke
+  _yankCheck(t) {
+    const d = this.drag, v = this._upSpeed(d.hist, t);
+    if (v == null) return;
     if (v > T.yankPxs && d.armed) { d.armed = false; this.yankA = 1; this.emit("yank", { v }); }
     else if (v < T.yankPxs * 0.35) d.armed = true;
   }
   _up(e, cancel = false) {
+    if (this.fl && e.pointerId === this.fl.id) { if (cancel) this.fl = null; else this._flingMove(e, true); }
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     // a flick that lets go mid-stroke: the lift point still counts toward the speed
@@ -1383,19 +1439,45 @@ export class RodPad extends Widget {
 
 /* ---------------- the gauge ---------------- */
 // set({...}): tfrac (tension, 0..1 of the break), dragFrac, slip, lineOut (m), depth (m), stamina (0..1 or null), name,
-// and for the big fish and the hard places: rub (0..1, the line rubs on something: a red band that fills), spool (line out
-// as a share of the spool: the LINE OUT number turns red above 0.6), phases (a legend's stamina marks: the bar shows
-// where its next stages start), label (text in place of the name: "Big fish on!")
+// and for the big fish and the hard places: rub (0..1, the line rubs on something: a striped RUB band that fills, in the place
+// of the fish's name while it rubs), spool
+// (line out as a share of the spool: the LINE OUT number turns red above 0.6), phases (a legend's stamina marks: the bar
+// shows where its next stages start), label (text in place of the name: "Big fish on!"), slack (s the line has been slack:
+// SLACK shows from GAUGE.SLACK_T), tired (the fish is beaten: TIRED and a green bar; left out, a stamina under 0.3 is tired).
+// Nothing is told by colour alone: the state is a word in a pill under the arc (GOOD, TIGHT, SLIPPING, SLACK, TOO TIGHT),
+// the arc is plain up to the drag mark and hatched past it, with hazard stripes near the break, the rub band is striped and
+// says RUB, and the fish's bar is plain and says FIGHT or TIRED at its end. box: where the last frame put the parts (the
+// tests read it)
+export const GAUGE = { SLACK_T: 0.3, WORD_PX: 12, LABEL_PX: 10 };
+// diagonal lines over a rectangle (clip first): gap px apart
+function hatch(c, x, y, w, h, gap, col, lw) {
+  c.strokeStyle = col; c.lineWidth = lw; c.lineCap = "butt"; c.beginPath();
+  for (let k = -h; k < w; k += gap) { c.moveTo(x + k, y + h); c.lineTo(x + k + h, y); }
+  c.stroke();
+}
+// a piece of the ring between radius r0 and r1, from angle a0 to a1 (a path to fill or to clip by)
+function sector(c, cx, cy, r0, r1, a0, a1) { c.beginPath(); c.arc(cx, cy, r1, a0, a1); c.arc(cx, cy, r0, a1, a0, true); c.closePath(); }
 export class Gauge extends Widget {
   constructor(container) {
     super(container, "gauge");
-    this.s = { tfrac: 0, dragFrac: 0.4, slip: 0, lineOut: 0, depth: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "" };
+    this.s = { tfrac: 0, dragFrac: 0.4, slip: 0, lineOut: 0, depth: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "", slack: 0, tired: null };
     this.v = { t: 0, peak: 0, peakHold: 0, fish: 0, st: 0, slip: 0, rub: 0 };
+    this.box = null;
     this.resize();
   }
   set(o) {
     if (!o) return;
     for (const k in o) if (o[k] !== undefined && k in this.s) this.s[k] = o[k];
+  }
+  // the state word and its pill: [word, fill, ink, edge]. "" fill: a plain word (no fish on)
+  state(fishOn, slack, drag) {
+    const v = this.v;
+    if (v.t > 0.85) return ["TOO TIGHT", "#b8352b", "#f6efd9", "#ffb0a8"];
+    if (v.slip > 0.5) return ["SLIPPING", rgba(AMBER, 1), "#0d2f38", rgba(AMBER, 1)];
+    if (!fishOn) return ["TENSION", "", rgba(INK, 0.75), ""];
+    if (slack) return ["SLACK", "rgba(9,34,41,0.92)", rgba(AMBER, 1), rgba(AMBER, 1)];
+    if (v.t > drag + 0.02) return ["TIGHT", "rgba(9,34,41,0.92)", "#f6efd9", rgba(AMBER, 0.9)];
+    return ["GOOD", "#2d7a45", "#f6efd9", "#9fe0a8"];
   }
   draw(dt = 0.016) {
     if (!this.fit()) return;
@@ -1412,13 +1494,14 @@ export class Gauge extends Widget {
     v.slip = lerp(v.slip, (+s.slip || 0) > 0.05 ? 1 : 0, 1 - Math.exp(-dt * 10));
     v.rub = lerp(v.rub, clamp(+s.rub || 0, 0, 1), 1 - Math.exp(-dt * 14));
     const danger = v.t > 0.85 ? 0.5 + 0.5 * Math.sin(this.time * 34) : 0;
-    const tired = s.stamina != null && v.st < 0.3;
+    const tired = s.stamina != null && (typeof s.tired === "boolean" ? s.tired : v.st < 0.3);
+    const slack = fishOn && (+s.slack || 0) >= GAUGE.SLACK_T;
     // the spool: the line out is a share of it. Red above 0.6, and it beats above 0.75 (the prompt says the same)
     const spool = clamp(+s.spool || 0, 0, 1), spoolWarn = spool > 0.6, spoolBeat = spool > 0.75 ? 0.5 + 0.5 * Math.sin(this.time * 12) : 0;
     const rubbing = v.rub > 0.02, rubBeat = v.rub > 0.5 ? 0.5 + 0.5 * Math.sin(this.time * 26) : 0;
     const marks = Array.isArray(s.phases) ? s.phases.filter((p) => p > 0 && p < 1) : [];
     const key = [w, h, this.dpr, v.t.toFixed(3), v.peak.toFixed(3), v.fish.toFixed(2), v.st.toFixed(3), drag.toFixed(3), s.name, s.label, (+s.lineOut || 0).toFixed(1), (+s.depth || 0).toFixed(1),
-      v.rub.toFixed(3), spoolWarn ? 1 : 0, marks.join("/"),
+      v.rub.toFixed(3), spoolWarn ? 1 : 0, marks.join("/"), slack ? 1 : 0, tired ? 1 : 0, v.slip > 0.5 ? 1 : 0,
       v.slip > 0.02 || danger || tired || spoolBeat || rubBeat ? this.time.toFixed(3) : 0].join();
     if (this.same(key)) return;
     const back = this.layer("back");
@@ -1429,18 +1512,29 @@ export class Gauge extends Widget {
       ctx.beginPath(); rrect(ctx, 0.5, 0.5, w - 1, h - 1, 14);
       ctx.strokeStyle = rgba(DANGER, (0.3 + 0.6 * danger) * clamp((v.t - 0.85) / 0.1, 0, 1)); ctx.lineWidth = 1.5; ctx.stroke();
     }
+    // the rows: the arc and the numbers, then the state pill, then the fish: its name (or the rub band) and its bar
     const strip = 32 * v.fish, top = h - strip;
+    const word = Math.max(GAUGE.WORD_PX, Math.min(13, Math.round(w / 14))), pillH = word + 6, pillY = top - pillH - 3;
+    const Hr = pillY - 2;
     // the tension arc: 240° from the lower left, over the top, to the lower right
-    const R = Math.max(18, Math.min(top * 0.4, w * 0.2)), lw = Math.max(5, R * 0.22);
-    const cx = 12 + R + lw / 2, cy = Math.max(R + lw / 2 + 6, top / 2 + R * 0.25);
+    const R = Math.max(16, Math.min((Hr - 6) / 1.72, w * 0.2)), lw = Math.max(5, R * 0.22);
+    const cx = 12 + R + lw / 2, cy = Math.max(R + lw / 2 + 3, (Hr - 1.5 * R - lw) / 2 + R + lw / 2);
     const A0 = 150 * DEG, SW = 240 * DEG, at = (f) => A0 + SW * clamp(f, 0, 1);
     ctx.lineCap = "butt";
     ctx.strokeStyle = "rgba(0,0,0,0.38)"; ctx.lineWidth = lw + 4;
     ctx.beginPath(); ctx.arc(cx, cy, R, A0, A0 + SW); ctx.stroke();
-    // faint zones: fine up to the drag, amber past it, red near the break
+    // the zones: plain up to the drag, hatched past it, hazard stripes near the break
     const zone = (f0, f1, col) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, R, at(f0), at(f1)); ctx.stroke(); };
-    zone(0, drag, rgba(GREEN, 0.16)); zone(drag, 0.85, rgba(AMBER, 0.16)); zone(0.85, 1, rgba(DANGER, 0.3));
-    // the fill, coloured by how close it is to the break
+    const striped = (f0, f1, col, gap, lw2) => {
+      if (f1 <= f0) return;
+      ctx.save(); sector(ctx, cx, cy, R - lw / 2, R + lw / 2, at(f0), at(f1)); ctx.clip();
+      hatch(ctx, cx - R - lw, cy - R - lw, 2 * (R + lw), 2 * (R + lw), gap, col, lw2);
+      ctx.restore();
+    };
+    zone(0, drag, rgba(GREEN, 0.22)); zone(drag, 0.85, rgba(AMBER, 0.2)); zone(0.85, 1, rgba(DANGER, 0.4));
+    striped(drag, 0.85, rgba(AMBER, 0.6), 5, 1);
+    striped(0.85, 1, "rgba(255,236,220,0.8)", 4, 1.6);
+    // the fill, coloured by how close it is to the break, and hatched past the drag mark
     if (v.t > 0.004) {
       let st;
       if (ctx.createConicGradient) {
@@ -1455,10 +1549,11 @@ export class Gauge extends Widget {
       }
       ctx.strokeStyle = st; ctx.lineWidth = lw; ctx.lineCap = "round";
       ctx.beginPath(); ctx.arc(cx, cy, R, A0, at(v.t)); ctx.stroke();
+      striped(drag, Math.min(1, v.t), "rgba(6,22,27,0.55)", 4, 1.5);
     }
     // the drag slips: a ratchet of dashes runs round the outside
     if (v.slip > 0.02) {
-      ctx.strokeStyle = rgba(AMBER, 0.95 * v.slip); ctx.lineWidth = 3; ctx.setLineDash([3, 4]); ctx.lineDashOffset = -this.time * 60;
+      ctx.strokeStyle = rgba(AMBER, 0.95 * v.slip); ctx.lineWidth = 3; ctx.lineCap = "butt"; ctx.setLineDash([3, 4]); ctx.lineDashOffset = -this.time * 60;
       ctx.beginPath(); ctx.arc(cx, cy, R + lw / 2 + 4, at(Math.max(0, drag - 0.14)), at(Math.min(1, drag + 0.14))); ctx.stroke(); ctx.setLineDash([]);
     }
     // marks: the drag setting (cream) and the break point (red)
@@ -1470,80 +1565,99 @@ export class Gauge extends Widget {
     if (v.peak > v.t + 0.03) tick(v.peak, rgba("255,244,214", 0.6), 0, 1.5);
     tick(drag, rgba(INK, 0.95), 4, 2.5);
     tick(1, rgba(DANGER, 1), 4, 3);
-    // the rub band: a red band under the arc that fills from the left as the line rubs through. It cuts at full
-    if (rubbing) {
-      const bx0 = 12, bw0 = w - 24, by0 = top - 8;
-      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
-      const fw = Math.max(6, bw0 * v.rub);
-      const g = ctx.createLinearGradient(bx0, 0, bx0 + bw0, 0);
-      g.addColorStop(0, rgba(RED, 1)); g.addColorStop(1, rgba(DANGER, 1));
-      ctx.save(); ctx.globalAlpha = 0.8 + 0.2 * rubBeat;
-      ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.fill();
-      ctx.restore();
-    }
     // the centre: the tension as a share of what the line can take
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const pct = Math.round(clamp(v.t, 0, 1) * 100);
     ctx.font = font(Math.max(12, Math.round(R * 0.5)));
     ctx.fillStyle = v.t > 0.85 ? rgba(DANGER, 1) : "#f6efd9";
-    ctx.fillText(pct + "%", cx, cy - R * 0.1, (R - lw) * 1.8);
-    ctx.font = font(Math.max(7, Math.round(R * 0.21))); spaced(ctx, 0.08);
-    const label = v.t > 0.85 ? "TOO TIGHT" : v.rub > 0.15 ? "RUBBING" : v.slip > 0.5 ? "SLIPPING" : "TENSION";
-    ctx.fillStyle = v.t > 0.85 || v.rub > 0.15 ? rgba(DANGER, 1) : v.slip > 0.5 ? rgba(AMBER, 1) : rgba(INK, 0.55);
-    ctx.fillText(label, cx, cy + R * 0.3, (R - lw) * 1.9);
+    ctx.fillText(pct + "%", cx, cy, (R - lw) * 1.8);
+    // the state pill under the arc
+    const [wd, fill, inkC, edge] = this.state(fishOn, slack, drag);
+    ctx.font = font(word); spaced(ctx, 0.06);
+    const px0 = 10, pw = Math.min(w - 20, ctx.measureText(wd).width + 14);
+    if (fill) {
+      ctx.beginPath(); rrect(ctx, px0, pillY, pw, pillH, pillH / 2); ctx.fillStyle = fill; ctx.fill();
+      if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+    ctx.fillStyle = inkC;
+    ctx.fillText(wd, px0 + pw / 2, pillY + pillH / 2 + 0.5, pw - 8);
     spaced(ctx, 0);
     // the right column: the line out and the depth
     const x = cx + R + lw / 2 + 12, colW = w - x - 10;
     if (colW > 30) {
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      const lo = (+s.lineOut || 0).toFixed(1);
+      const lo = (+s.lineOut || 0).toFixed(1), lab = GAUGE.LABEL_PX;
       // as big as the column allows: "123.4 m" must fit as well as "8.2 m"
-      let big = Math.max(13, Math.min(24, Math.round(top * 0.22)));
+      let big = Math.max(13, Math.min(24, Math.round(Hr * 0.24)));
       for (; big > 13; big--) {
         ctx.font = font(big); const a = ctx.measureText(lo).width;
-        ctx.font = font(Math.round(big * 0.55), 800);
+        ctx.font = font(Math.max(lab, Math.round(big * 0.55)), 800);
         if (a + ctx.measureText(" m").width <= colW) break;
       }
-      const y0 = top / 2 - big * 1.45 + 2;
-      ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.9) : rgba(INK, 0.55);
-      ctx.fillText("LINE OUT", x, y0, colW);
+      const unit = Math.max(lab, Math.round(big * 0.55)), dep = Math.max(11, Math.round(big * 0.7));
+      const y0 = Math.max(2, (Hr - (2 * lab + big + dep + 9)) / 2);
+      ctx.font = font(lab); spaced(ctx, 0.14); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.9) : rgba(INK, 0.8);
+      ctx.fillText("LINE OUT", x, y0 + lab / 2, colW);
       spaced(ctx, 0);
+      const yb = y0 + lab + 3 + big / 2;
       ctx.font = font(big); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.75 + 0.25 * spoolBeat) : "#f6efd9";
-      ctx.fillText(lo, x, y0 + big * 0.95);
+      ctx.fillText(lo, x, yb);
       const lw3 = ctx.measureText(lo).width;
-      ctx.font = font(Math.round(big * 0.55), 800); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.8) : rgba(INK, 0.7);
-      ctx.fillText(" m", x + lw3, y0 + big * 1.05);
-      ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.55);
-      ctx.fillText("DEPTH", x, y0 + big * 2.05, colW);
+      ctx.font = font(unit, 800); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.8) : rgba(INK, 0.75);
+      ctx.fillText(" m", x + lw3, yb + big * 0.1);
+      ctx.font = font(lab); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.8);
+      ctx.fillText("DEPTH", x, yb + big / 2 + 3 + lab / 2, colW);
       spaced(ctx, 0);
-      ctx.font = font(Math.round(big * 0.7)); ctx.fillStyle = "#cfe3e0";
-      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, y0 + big * 2.8);
+      ctx.font = font(dep); ctx.fillStyle = "#cfe3e0";
+      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, yb + big / 2 + lab + 6 + dep / 2);
     }
-    // the fish: its name, and a bar of how much fight it has left
+    // the fish: its name, and a plain bar of how much fight it has left. The label at the end of the bar says which: FIGHT,
+    // or TIRED (green) when it is beaten. While the line rubs, the rub band takes the name's place
+    let barBox = null, rubBox = null, nameBox = null;
     if (v.fish > 0.02) {
       ctx.save(); ctx.globalAlpha = v.fish;
       const bx = 12, bw = w - 24, ny = h - 23, by = h - 11;
-      ctx.font = font(12); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(BRASS, 1);
-      // a label ("Big fish on!") takes the place of the name until the fish shows what it is
-      ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);
-      ctx.fillText(String(s.label || s.name || "Fish on!"), bx, ny, tired ? bw - 50 : bw);
-      if (tired) {
-        ctx.font = font(9); spaced(ctx, 0.12); ctx.textAlign = "right"; ctx.fillStyle = rgba(GREEN, 0.6 + 0.4 * Math.sin(this.time * 6));
-        ctx.fillText("TIRED", bx + bw, ny); spaced(ctx, 0);
+      ctx.textBaseline = "middle";
+      ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.12); ctx.textAlign = "right";
+      const tag = tired ? "TIRED" : "FIGHT", barW = bw - ctx.measureText(tag).width - 6;
+      ctx.fillStyle = tired ? rgba(GREEN, 0.75 + 0.25 * Math.sin(this.time * 6)) : rgba(INK, 0.75);
+      ctx.fillText(tag, bx + bw, by + 0.5); spaced(ctx, 0);
+      ctx.textAlign = "left";
+      if (rubbing) {
+        // the rub band: RUB, and a striped red band that fills from the left as the line rubs through. It cuts at full
+        ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.1); ctx.fillStyle = "#ffb0a8";
+        const lwid = ctx.measureText("RUB").width;
+        ctx.fillText("RUB", bx, ny + 0.5); spaced(ctx, 0);
+        const bx0 = bx + lwid + 6, bw0 = bw - lwid - 6, by0 = ny - 3, fw = Math.min(bw0, Math.max(3, bw0 * v.rub));
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
+        ctx.save(); ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.clip();
+        ctx.globalAlpha = v.fish * (0.85 + 0.15 * rubBeat);
+        ctx.fillStyle = rgba(RED, 1); ctx.fillRect(bx0, by0, fw, 6);
+        hatch(ctx, bx0, by0, fw, 6, 5, "rgba(255,214,200,0.8)", 1.4);
+        ctx.restore();
+        rubBox = { x: bx0, y: by0, w: bw0, h: 6, fill: fw };
+      } else {
+        // a label ("Big fish on!") takes the place of the name until the fish shows what it is. A long name gets a smaller
+        // font, down to the 10 px floor, before it is ever squeezed. (It starts 2 px over the labels, so Larger text grows it)
+        const name = String(s.label || s.name || "Fish on!");
+        let px = Math.max(12, GAUGE.LABEL_PX + 2);
+        for (; px > GAUGE.LABEL_PX; px--) { ctx.font = font(px); if (ctx.measureText(name).width <= bw) break; }
+        ctx.font = font(px);
+        ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);
+        ctx.fillText(name, bx, ny, bw);
+        nameBox = { px, w: ctx.measureText(name).width, max: bw };
       }
-      ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, bw, 6, 3); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, barW, 6, 3); ctx.fill();
       if (s.stamina != null) {
-        const fw = Math.max(0, bw * v.st);
-        if (fw > 1) {
-          const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-          if (tired) { g.addColorStop(0, rgba(GREEN, 1)); g.addColorStop(1, rgba(GREEN, 0.8)); } else { g.addColorStop(0, rgba(AMBER, 1)); g.addColorStop(1, rgba(RED, 1)); }
-          ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill();
-        }
+        const fw = Math.max(0, barW * v.st);
+        if (fw > 1) { ctx.fillStyle = tired ? rgba(GREEN, 1) : rgba(BRASS, 0.95); ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill(); }
       }
       // a legend fights in stages: a mark where each next stage starts
       ctx.fillStyle = rgba(INK, 1);
-      for (const p of marks) ctx.fillRect(Math.round(bx + bw * p) - 1, by - 6, 2, 12);
+      for (const p of marks) ctx.fillRect(Math.round(bx + barW * p) - 1, by - 6, 2, 12);
       ctx.restore();
+      barBox = { x: bx, y: by - 3, w: barW, h: 6 };
     }
+    this.box = { word: wd, pill: { x: px0, y: pillY, w: pw, h: pillH }, rub: rubBox, bar: barBox, name: nameBox, arc: { cx, cy, R, lw }, top };
   }
 }

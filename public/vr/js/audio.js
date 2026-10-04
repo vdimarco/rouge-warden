@@ -163,7 +163,8 @@ function panTo(e, p, to) {
 function osc(e, type, f) {
   const o = e.ctx.createOscillator();
   if (typeof type === "string") o.type = type; else o.setPeriodicWave(type);
-  o.frequency.value = f;
+  // a raised pitch (the trial ring climbs with each ring) can push an overtone past half the sample rate: keep it under
+  o.frequency.value = Math.min(f, e.ctx.sampleRate * 0.49);
   if (e.cur) e.cur.push(o);
   return o;
 }
@@ -1011,6 +1012,7 @@ export function createAudio(settings) {
     // create or wake the AudioContext. Call it inside a user gesture (the Enter click)
     init() {
       held = false;
+      if (on) playbackSession();
       if (alive()) { wake(); return true; }
       if (typeof window === "undefined") return false;
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -1021,7 +1023,12 @@ export function createAudio(settings) {
         E = makeEngine(ctx, { st });
         E.out.gain.value = on ? VOL : 0;
         E.ran = ctx.state === "running";
-        if (ctx.addEventListener) ctx.addEventListener("statechange", () => { if (E && E.ctx === ctx && ctx.state === "running") E.ran = true; });
+        // running: remember it. Stopped by the browser (Safari's "interrupted", another app taking the output) while the
+        // sound is on and nobody asked for quiet: ask for it back (the next tap or key retries too, see main.js)
+        if (ctx.addEventListener) ctx.addEventListener("statechange", () => {
+          if (!E || E.ctx !== ctx) return;
+          if (ctx.state === "running") E.ran = true; else if (ctx.state !== "closed" && on && !held) wake();
+        });
         // iOS and some headsets: a silent sound started inside the gesture unlocks the output (from fish)
         const b = ctx.createBuffer(1, 1, ctx.sampleRate), s = ctx.createBufferSource();
         s.buffer = b; s.connect(ctx.destination); s.start();
@@ -1038,14 +1045,19 @@ export function createAudio(settings) {
       return true;
     },
     // the PWA starts with no click: main calls this on the first selectstart / squeezestart
-    resume() { held = false; if (!alive()) A.init(); else wake(); },
+    resume() { held = false; if (!alive()) A.init(); else { if (on) playbackSession(); wake(); } },
+    // the context exists but is not running (a browser stopped it): for main.js to retry inside a tap or a key
+    get stalled() { return !!E && on && !held && E.ctx.state !== "running" && E.ctx.state !== "closed"; },
     // a hidden session: stop the clock (nothing plays, nothing is booked) until resume()
     suspend() {
       held = true;
+      if (unmuteEl) try { unmuteEl.pause(); } catch (e) { /* ignore */ }
       if (alive() && E.ctx.state === "running") try { quiet(E.ctx.suspend()); } catch (err) { /* ignore */ }
     },
     toggle() {
       on = !on;
+      // iOS: the playback session and its silent loop only while the sound is on (a toggle is always a tap or a key)
+      if (on) playbackSession(); else if (unmuteEl) try { unmuteEl.pause(); } catch (e) { /* ignore */ }
       st.on = on;
       offFor = 0;
       try { S.sound = on; } catch (err) { /* frozen settings */ }
@@ -1054,7 +1066,8 @@ export function createAudio(settings) {
           const g = E.out.gain, t = now();
           g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.setTargetAtTime(on ? VOL : 0, t, 0.03);
         } catch (err) { /* ignore */ }
-        if (on) wake(); // off: update() suspends the context once the fade is done, to save the battery
+        // on: let the next sound through while resume() is on its way (the toggle's own click confirms it), then wake
+        if (on) { E.ran = E.ctx.state === "running"; wake(); } // off: update() suspends the context once the fade is done
       }
       return on;
     },
@@ -1128,6 +1141,29 @@ export function createAudio(settings) {
     _names: { sfx: Object.keys(SFX), loops: Object.keys(LOOP_SRC) },
   };
   return A;
+}
+// iPhone and iPad: Web Audio follows the ring/silent switch, so a phone on silent plays nothing. Asking for the "playback"
+// audio session (Safari 16.4 and later) lifts that. Older iOS needs a media element playing inside the tap: a looping,
+// silent WAV moves the page's session to playback. Called from init() and resume(), both inside a user gesture.
+const IOS = typeof navigator !== "undefined" && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+let unmuteEl = null;
+function playbackSession() {
+  try { if (typeof navigator !== "undefined" && navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) { /* not this browser */ }
+  if (!IOS || typeof document === "undefined") return;
+  try {
+    if (!unmuteEl) {
+      // 0.1 s of 8 kHz, 8-bit silence (value 128), as a WAV in memory
+      const n = 800, b = new Uint8Array(44 + n), dv = new DataView(b.buffer), w = (o, t) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+      w(0, "RIFF"); dv.setUint32(4, 36 + n, true); w(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, "data"); dv.setUint32(40, n, true);
+      b.fill(128, 44);
+      unmuteEl = document.createElement("audio");
+      unmuteEl.setAttribute("x-webkit-airplay", "deny");
+      unmuteEl.preload = "auto"; unmuteEl.loop = true; unmuteEl.playsInline = true;
+      unmuteEl.src = URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+    }
+    quiet(unmuteEl.play());
+  } catch (e) { /* no media element: Web Audio still plays when the switch is on ring */ }
 }
 function arcadeSound() {
   try { return JSON.parse(localStorage.getItem("arcade.sound") ?? "true") !== false; } catch (e) { return true; } // storage off, or node

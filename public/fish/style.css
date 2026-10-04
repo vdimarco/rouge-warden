@@ -10,43 +10,37 @@
 }
 #title h1 { font-size: clamp(42px, min(13cqw, 14cqh), 100px); }
 #title .sub { align-self: center; margin-top: 14px; }
+#title .kick { align-self: center; }
 #title .title-menu { position: relative; z-index: 1; flex: 0 0 auto; width: min(100%, 360px); min-width: 0; }
 #title nav { gap: 7px; }
 #title nav .btn { min-height: 44px; padding-top: 10px; padding-bottom: 10px; }
 #title .best { font-size: 12px; margin-top: 9px; }
-.art-picker { margin: 0 0 10px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); }
-.art-label { display: block; margin: 0 0 8px; color: var(--ink); font-size: 12px; line-height: 1.3; letter-spacing: .12em; text-transform: uppercase; }
-.art-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-.art-options button { min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 9px; background: transparent; font-size: 14px; }
-.art-options button[aria-pressed="true"] { background: var(--ink); color: var(--deep); border-color: var(--ink); }
-.art-note { margin: 7px 0 0; font-size: 11px; line-height: 1.4; font-weight: 600; color: var(--muted); text-align: center; }
-body[data-art-style="ghibli"] {
+body[data-art-style="painted"] {
   --ink: #fff4d8; --muted: #cedcc2; --deep: #163e38; --deep2: #29584a;
   --glass: rgba(20, 52, 44, .94); --line: rgba(241, 230, 193, .3);
   --red: #b45038; --brass: #f4d280;
 }
-body[data-art-style="ghibli"] #title {
+body[data-art-style="painted"] #title {
   background: linear-gradient(rgba(15, 43, 39, .10), transparent 38%, rgba(13, 38, 31, .60)), url("./art/film-lake.webp") center 50% / cover;
 }
-body[data-art-style="ghibli"] #title h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, .45); }
-body[data-art-style="ghibli"] #title .sub { background: rgba(22, 55, 45, .88); color: #fff0c6; }
-body[data-art-style="ghibli"] #title .btn { background: rgba(27, 67, 53, .96); border-color: #b0bb8c; }
-body[data-art-style="ghibli"] #title .btn.go { background: #b45038; border-color: #f1bb89; box-shadow: 0 4px 0 #643527; }
-body[data-art-style="ghibli"] .card { background: rgba(20, 49, 40, .96); }
-body[data-art-style="ghibli"] #title .best { color: #fff5db; }
+body[data-art-style="painted"] #title h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, .45); }
+body[data-art-style="painted"] #title .sub, body[data-art-style="painted"] #title .kick { background: rgba(22, 55, 45, .88); color: #fff0c6; }
+body[data-art-style="painted"] #title .btn { background: rgba(27, 67, 53, .96); border-color: #b0bb8c; }
+body[data-art-style="painted"] #title .btn.go { background: #b45038; border-color: #f1bb89; box-shadow: 0 4px 0 #643527; }
+body[data-art-style="painted"] .card { background: rgba(20, 49, 40, .96); }
+body[data-art-style="painted"] #title .best { color: #fff5db; }
 /* Small paper labels sit quietly over the moving illustration. */
-body[data-art-style="ghibli"] #hud .chip,
-body[data-art-style="ghibli"] #hud .icon { background: #f4ecd6; color: #33574d; border-color: #d1c8a8; box-shadow: 0 2px 0 #334e382b; }
-body[data-art-style="ghibli"] #hud .chip b { color: #8c5935; }
-body[data-art-style="ghibli"] #pullStrength { background: #f4ecd6; color: #33574d; border: 1px solid #d1c8a8; }
-body[data-art-style="ghibli"] #pullStrength b { background: #33574d25; }
-body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
+body[data-art-style="painted"] #hud .chip,
+body[data-art-style="painted"] #hud .icon { background: #f4ecd6; color: #33574d; border-color: #d1c8a8; box-shadow: 0 2px 0 #334e382b; }
+body[data-art-style="painted"] #hud .chip b { color: #8c5935; }
+body[data-art-style="painted"] #pullStrength { background: #f4ecd6; color: #33574d; border: 1px solid #d1c8a8; }
+body[data-art-style="painted"] #pullStrength b { background: #33574d25; }
+body[data-art-style="painted"] #pullStrength i { background: #65966c; }
 @container (max-height: 740px) {
   #title { gap: 12px; }
   #title .logo { padding: 0; }
   #title .sub { font-size: 11px; margin-top: 9px; }
   #title nav .btn { padding-top: 8px; padding-bottom: 8px; }
-  .art-picker { padding: 10px; margin-bottom: 8px; }
   #title .best { font-size: 11px; }
 }
 @container (orientation: landscape) and (max-height: 600px) {
@@ -54,15 +48,13 @@ body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
   #title .logo { position: relative; inset: auto; width: 100%; transform: none; }
   #title .title-menu { width: 100%; max-height: 100%; overflow-y: auto; touch-action: pan-y; padding: 4px; }
   #title h1 { font-size: clamp(40px, 15cqh, 80px); }
-  #title .art-note { display: none; }
   #title nav { gap: 5px; }
 }
 @container (orientation: portrait) and (max-height: 650px) {
   #title { padding-top: calc(var(--sat) + 12px); gap: 12px; }
   #title h1 span { display: inline; }
   #title h1 span + span::before { content: " "; }
-  #title .kick { letter-spacing: .2em; font-size: 10px; }
-  #title .art-note { display: none; }
+  #title .kick { letter-spacing: .2em; font-size: 10px; padding-left: calc(12px + .2em); }
 }
 
 /* On-rod cues share the painted palette and leave the water visible. */
@@ -86,3 +78,53 @@ body[data-art-style="ghibli"] #pullStrength i { background: #65966c; }
 @keyframes rod-down { 50% { transform: translateY(10px); } }
 @keyframes rod-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { #rodCue *, #crankBox::after { animation: none !important; } }
+
+/* The urgent prompt: the words sit on a darker red, so they read at 4.5:1 or more (the bright red stays for strokes) */
+#prompt.hot .p1 { background: #b8352b; }
+body[data-art-style="painted"] #prompt.hot .p1 { background: #a54332; }
+/* the painted main button keeps its own red (white on it reads at 5:1) */
+body[data-art-style="painted"] .btn.go { background: #b45038; }
+
+/* Calm effects (Settings, html data-calm="1") and the system's reduced motion: no flashes, pops, pulses, slides or spins.
+   The sounds, the buzz and the words stay. (main.js and the feedback code skip their own effects with calm.js) */
+html[data-calm="1"] #flash { visibility: hidden; animation: none; }
+html[data-calm="1"] #report.show, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #travel .wheel { animation: none; }
+html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #prompt.hot .p1::before, html[data-calm="1"] #prompt.hot .p1::after { animation: none; }
+html[data-calm="1"] #catch .card { transition: opacity .35s; }
+html[data-calm="1"] #catch.wait .card { transform: none; }
+html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  #flash { visibility: hidden; animation: none; }
+  #report.show, #reelUI > *, #travel .wheel { animation: none; }
+  #prompt.hot .p1, #prompt.hot .p1::before, #prompt.hot .p1::after { animation: none; }
+  #catch .card { transition: opacity .35s; }
+  #catch.wait .card { transform: none; }
+}
+
+/* Larger text (Settings): #game[data-text="large"] sets --ui-scale, and the words in play and on the cards grow with it.
+   main.js grows the gauge's words as well. Every screen still fits a 360 x 640 phone: the lists scroll in their cards */
+#game { --ui-scale: 1; }
+#game[data-text="large"] { --ui-scale: 1.25; --gauge-w: min(52vmin, 270px); --gauge-h: min(34vmin, 170px); }
+#game[data-text="large"] #prompt .p1 { font-size: calc(clamp(16px, 4.6vmin, 22px) * var(--ui-scale)); }
+#game[data-text="large"] #prompt .p2 { font-size: calc(14px * var(--ui-scale)); }
+#game[data-text="large"] #toast { font-size: calc(14px * var(--ui-scale)); }
+#game[data-text="large"] .chip { font-size: calc(13px * var(--ui-scale)); padding-left: 9px; padding-right: 9px; }
+#game[data-text="large"] #report .verdict { font-size: calc(15px * var(--ui-scale)); }
+#game[data-text="large"] #report .zone { font-size: calc(13px * var(--ui-scale)); }
+#game[data-text="large"] #rodCue span { font-size: calc(12px * var(--ui-scale)); max-width: 170px; }
+#game[data-text="large"] #pullStrength { font-size: calc(12px * var(--ui-scale)); }
+#game[data-text="large"] #dragBar { font-size: calc(11px * var(--ui-scale)); width: 120px; }
+#game[data-text="large"] #fishGuide .guide-caption { font-size: calc(12px * var(--ui-scale)); }
+#game[data-text="large"] .card p, #game[data-text="large"] .set label, #game[data-text="large"] .steps li { font-size: calc(16px * var(--ui-scale)); }
+#game[data-text="large"] .set label small, #game[data-text="large"] .jfish, #game[data-text="large"] .jfish.none small,
+#game[data-text="large"] .pcard p, #game[data-text="large"] .pcard .facts, #game[data-text="large"] .pcard .goals { font-size: calc(13px * var(--ui-scale)); }
+#game[data-text="large"] .jfish b { font-size: calc(14px * var(--ui-scale)); }
+#game[data-text="large"] .card h2 { font-size: calc(26px * var(--ui-scale)); }
+#game[data-text="large"] #catch h2 { font-size: calc(28px * var(--ui-scale)); }
+#game[data-text="large"] #catch p, #game[data-text="large"] #catch .sizeline, #game[data-text="large"] #rlist li,
+#game[data-text="large"] #results .rnext { font-size: calc(14px * var(--ui-scale)); }
+#game[data-text="large"] .btn { font-size: calc(16px * var(--ui-scale)); }
+#game[data-text="large"] .kicker, #game[data-text="large"] .badge { font-size: calc(12px * var(--ui-scale)); }
+#game[data-text="large"] #title .best { font-size: calc(12px * var(--ui-scale)); }
+#game[data-text="large"] .tabs.chips button { font-size: calc(13px * var(--ui-scale)); }
+#game[data-text="large"] .warn { font-size: calc(16px * var(--ui-scale)); }

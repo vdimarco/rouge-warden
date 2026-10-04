@@ -1,0 +1,10 @@
+{
+  "name": "attract-mode",
+  "version": "0.1.0",
+  "description": "When the session is idle, a pane grows a live Primordia Lenia dish, like an arcade cabinet's attract screen. Your next prompt closes it. /attract opens it at any time.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "idleMinutes": { "type": "number", "title": "Idle minutes", "description": "Minutes after a turn ends before the dish opens.", "default": 3, "min": 1, "max": 120 }
+  }
+}

@@ -1,5 +1,6 @@
 // Checks public/fish/js/haptics.js. Parts 1-2 run in plain node: a recorder stands in for navigator.vibrate, and a
-// fake clock drives it. Part 3 checks the iPhone switch pads in headless Chromium, with the platform forced to "ios"
+// fake clock drives it. Part 4 (also node) is the iPhone app: a stub window.Capacitor whose Haptics plugin records
+// every call. Part 3 checks the iPhone switch pads in headless Chromium, with the platform forced to "ios"
 // (it serves public/ with python3 on a free port, and needs the playwright package: project, NODE_PATH or npm -g).
 // Run: node qa/fish/haptics.test.mjs   (exit code 1 on failure)
 import assert from "node:assert/strict";
@@ -24,6 +25,7 @@ function check(name, fn) {
     Haptics.unlock(); Haptics.tick(); Haptics.bail(); Haptics.bail(true); Haptics.bump(0.4); Haptics.thump(); Haptics.hookset();
     Haptics.jolt(); Haptics.land(); Haptics.land(2); Haptics.splash(0.5); Haptics.load(); Haptics.setTension(0.9, 1, true); Haptics.setCrank(2);
     Haptics.throb(); Haptics.rub(0.8); Haptics.thrash(); Haptics.charge(); Haptics.phase();
+    Haptics.thump(0.3); Haptics.turn(); Haptics.big(); Haptics.shutter(); Haptics.surge();
     Haptics.mute(100); Haptics.mute(0); Haptics.stop();
     assert.equal(Haptics.attachPad({}), null);
     assert.equal(Haptics.attachCrank({}, { toLocal: (x, y) => ({ x, y }) }), null);
@@ -101,18 +103,18 @@ check("navigator.userActivation wins: hasBeenActive false blocks even after unlo
   delete phone.userActivation;
 });
 
-check("priorities: a tick or a nibble does not cut a strike; a snap cuts a strike; the snap leaves a silence", () => {
+check("priorities: a tick or a nibble does not cut a strike; a quick hook set and a snap do; the snap leaves a silence", () => {
   fresh();
   assert.equal(H.thump(), true);                        // [45, 25, 90] = 160 ms
   T += 20; assert.equal(H.tick(), false, "tick cut the strike");
   T += 20; assert.equal(H.bump(0.8), false, "nibble cut the strike");
   T += 20; assert.equal(H.bail(), false, "bail cut the strike");
-  T += 20; assert.equal(H.hookset(), false, "hook set cut the strike");
-  T += 10; assert.equal(H.jolt(), true, "snap did not cut the strike");
+  T += 20; assert.equal(H.hookset(), true, "a quick hook set could not cut the strike");
+  T += 10; assert.equal(H.jolt(), true, "snap did not cut the hook set");
   // 140 ms buzz + 600 ms of enforced quiet
   T += 300; assert.equal(H.thump(), false, "strike during the snap silence");
   run(300, () => H.setTension(0.9, 0, true));
-  assert.equal(calls.length, 2, "anything during the snap silence");
+  assert.equal(calls.length, 3, "anything during the snap silence");   // the strike, the hook set and the snap
   T += 200; assert.equal(H.thump(), true, "strike after the silence");
   // a strong effect preempts a weak one that is still playing
   T += 1000; H.land(); T += 5; assert.equal(H.jolt(), true);
@@ -381,6 +383,196 @@ check("the new patterns are short, odd-length, with pulses of 6 ms or more", () 
   const bad = calls.filter((c) => Array.isArray(c.p) && (c.p.length > 9 || c.p.length % 2 === 0 || c.p.some((v, i) => i % 2 === 0 && v < 6)));
   assert.equal(bad.length, 0, JSON.stringify(bad));
 });
+
+check("the last run: its buzz is not the snap, and the drag buzz keeps going under it", () => {
+  // the drag starts to slip as the run starts; after a surge the ratchet comes back as soon as the surge ends
+  const first = (warn) => {
+    fresh();
+    assert.equal(warn(), true);
+    const t0 = T, warnCall = calls.at(-1).p;
+    run(1000, () => H.setTension(0.6, 2, true));
+    const drag = pulses().filter((c) => c.t > t0);
+    return { warnCall, at: drag.length ? drag[0].t - t0 : Infinity, n: drag.length };
+  };
+  const surge = first(() => H.surge()), snap = first(() => H.jolt());
+  console.log(`      surge ${JSON.stringify(surge.warnCall)}: first drag pulse at ${surge.at.toFixed(0)} ms, ${surge.n} in 1 s; ` +
+    `snap ${JSON.stringify(snap.warnCall)}: first at ${snap.at.toFixed(0)} ms, ${snap.n} in 1 s`);
+  assert.notDeepEqual(surge.warnCall, snap.warnCall, "the last run plays the snap buzz");
+  assert.ok(surge.at <= 350, "the drag waits " + surge.at + " ms after the surge");
+  assert.ok(surge.n >= 8, "drag pulses in the first second: " + surge.n);
+  assert.ok(snap.at >= 700, "the snap no longer leaves its silence");
+  // a nibble does not cut the warning
+  fresh(); H.surge(); T += 30; assert.equal(H.bump(0.5), false);
+});
+
+/* ---------- the big moments: the strike alone thumps, the hook set buzzes longest, each event has its own pattern ---------- */
+check("the strike scales with how hard it hit; the hook set buzzes longer than the hardest strike", () => {
+  const one = (fn) => { fresh(); assert.equal(fn(), true); return calls[0].p; };
+  const soft = one(() => H.thump(0.3)), plain = one(() => H.thump()), hard = one(() => H.thump(1)), set = one(() => H.hookset());
+  console.log(`      strike soft ${JSON.stringify(soft)} / default ${JSON.stringify(plain)} / hard ${JSON.stringify(hard)}; hook set ${JSON.stringify(set)}`);
+  assert.deepEqual(plain, [45, 25, 90], "the default strike changed (the pinball lab uses it)");
+  assert.ok(onMs(soft) < onMs(plain) && onMs(plain) < onMs(hard), "the strike does not grow with its strength");
+  assert.ok(onMs(set) > onMs(hard) && lenMs(set) > lenMs(hard), `the hook set (${onMs(set)} ms on) is not longer than the hardest strike (${onMs(hard)} ms on)`);
+  assert.ok(onMs(hard) <= 150, "the hardest strike is more than 150 ms on");
+});
+
+check("it turned, a big one and the shutter each have their own light pattern, not the strike's", () => {
+  fresh(); assert.equal(H.turn(), true); assert.deepEqual(calls[0].p, [20, 60, 20, 60, 20]);
+  fresh(); assert.equal(H.big(), true); assert.deepEqual(calls[0].p, [60]);
+  fresh(); assert.equal(H.shutter(), true); assert.deepEqual(calls[0].p, [10, 50, 10]);
+  // the warnings may cut the drag train, never the strike or a snap
+  fresh(); H.thump(); T += 20; assert.equal(H.turn(), false, "it turned cut the strike"); assert.equal(H.big(), false, "a big one cut the strike");
+  fresh(); run(300, () => H.setTension(0.6, 2, true)); assert.equal(H.turn(), true, "it turned could not cut the drag");
+});
+
+check("no two named events share a pattern (but the strengths of bump and splash)", () => {
+  const table = {
+    tick: () => H.tick(), bail: () => H.bail(), bailOpen: () => H.bail(true), bailShut: () => H.bail(false), nibble: () => H.bump(0.5),
+    strike: () => H.thump(), softStrike: () => H.thump(0.3), hookset: () => H.hookset(), snap: () => H.jolt(), lastrun: () => H.surge(),
+    land: () => H.land(0), trophy: () => H.land(1), legend: () => H.land(2), thrash: () => H.thrash(), charge: () => H.charge(), phase: () => H.phase(),
+    splash: () => H.splash(0.5), load: () => H.load(), turn: () => H.turn(), big: () => H.big(), shutter: () => H.shutter(),
+  };
+  const seen = new Map();
+  for (const [name, fn] of Object.entries(table)) {
+    fresh(); assert.equal(fn(), true, name + " did not buzz");
+    const key = JSON.stringify(calls[0].p);
+    assert.ok(!seen.has(key), `${name} has the same pattern as ${seen.get(key)}: ${key}`);
+    seen.set(key, name);
+  }
+});
+
+/* ---------- 4. the iPhone app: a stub Capacitor, its Haptics plugin records every call ---------- */
+{
+  const hx = [];                             // { t, m, a }: every plugin call
+  const rec = (m) => (o) => { hx.push({ t: T, m, a: o ? o.style || o.type : undefined }); return Promise.resolve(); };
+  const plugin = { impact: rec("impact"), notification: rec("notification"), selectionStart: rec("selectionStart"), selectionChanged: rec("selectionChanged"), selectionEnd: rec("selectionEnd"), vibrate: rec("vibrate") };
+  globalThis.Capacitor = { isNativePlatform: () => true, getPlatform: () => "ios", isPluginAvailable: (n) => n === "Haptics", Plugins: { Haptics: plugin } };
+  // the later steps of a pattern run on the fake clock
+  const queue = [];
+  H._timers({ later: (fn, ms) => { const job = { at: T + ms, fn }; queue.push(job); return job; }, clear: (job) => { const i = queue.indexOf(job); if (i >= 0) queue.splice(i, 1); } });
+  const wait = (ms) => {
+    const end = T + ms;
+    for (;;) { queue.sort((a, b) => a.at - b.at); const job = queue[0]; if (!job || job.at > end) break; queue.shift(); T = job.at; job.fn(); }
+    T = end;
+  };
+  const words = (from = 0) => hx.slice(from).map((c) => c.a ? c.m + ":" + c.a : c.m);
+  // the steps of one call: the word and when it came, from the first
+  const steps = () => hx.map((c) => [c.t - hx[0].t, c.a || c.m]);
+  const nfresh = () => { H._reset(); H.setEnabled(true); hx.length = 0; calls.length = 0; queue.length = 0; T += 5000; };
+
+  H._forcePlatform("auto");
+  check("the iPhone app: the Haptics plugin makes the kind native (before navigator.vibrate)", () => assert.equal(H.kind, "native"));
+
+  check("the iPhone app: a strike is two heavy impacts, 70 ms apart, with no first gesture and no vibrate call", () => {
+    nfresh();
+    assert.equal(H.thump(), true);
+    wait(300);
+    assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
+    assert.equal(calls.length, 0, "navigator.vibrate was called");
+  });
+
+  check("the iPhone app: the hook set is heavy, medium, heavy (longer than the strike); land(2) is SUCCESS and 4 heavy taps; the snap is ERROR", () => {
+    nfresh(); H.hookset(); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [40, "MEDIUM"], [110, "HEAVY"]]);
+    nfresh(); H.land(2); wait(1000); assert.deepEqual(words(), ["notification:SUCCESS", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY"]);
+    nfresh(); H.land(0); wait(1000); assert.deepEqual(words(), ["notification:SUCCESS", "impact:HEAVY"]);
+    nfresh(); H.jolt(); wait(300); assert.deepEqual(words(), ["notification:ERROR"]);
+    nfresh(); H.phase(); wait(300); assert.deepEqual(words(), ["notification:WARNING"]);
+    nfresh(); H.surge(); wait(300); assert.deepEqual(words(), ["impact:MEDIUM", "impact:MEDIUM", "impact:HEAVY"]);
+    nfresh(); H.thrash(); wait(400); assert.deepEqual(steps(), [[0, "MEDIUM"], [125, "MEDIUM"], [250, "MEDIUM"]]);
+    nfresh(); H.bail(true); T += 500; H.bail(false); T += 500; H.bump(0.2); T += 500; H.bump(0.9); T += 500; H.splash(0.3); T += 500; H.splash(1); T += 500; H.load();
+    assert.deepEqual(words(), ["impact:LIGHT", "impact:MEDIUM", "impact:LIGHT", "impact:MEDIUM", "impact:MEDIUM", "impact:HEAVY", "impact:LIGHT"]);
+  });
+
+  check("the iPhone app: the new patterns: a soft strike (still two heavy impacts), it turned, a big one, the shutter", () => {
+    nfresh(); H.thump(0.3); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
+    nfresh(); H.thump(0); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
+    nfresh(); H.thump(1); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
+    nfresh(); H.turn(); wait(300); assert.deepEqual(steps(), [[0, "LIGHT"], [80, "MEDIUM"], [160, "MEDIUM"]]);
+    nfresh(); H.big(); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [90, "LIGHT"]]);
+    nfresh(); H.shutter(); wait(300); assert.deepEqual(steps(), [[0, "LIGHT"], [60, "LIGHT"]]);
+    // the hook set spans longer than the strike, with more impacts
+    nfresh(); H.thump(1); wait(300); const strike = steps(); nfresh(); H.hookset(); wait(300); const set = steps();
+    assert.ok(set.length > strike.length && set.at(-1)[0] > strike.at(-1)[0], "the hook set is not longer than the strike on the iPhone");
+  });
+
+  check("the iPhone app: a quick hook set cuts the strike, and the strike's second impact does not come in the middle of it", () => {
+    nfresh(); H.thump(1); T += 20; assert.equal(H.hookset(), true); wait(300);
+    assert.deepEqual(steps(), [[0, "HEAVY"], [20, "HEAVY"], [60, "MEDIUM"], [130, "HEAVY"]]);
+    // the snap cuts the strike the same way: nothing heavy comes in its silence
+    nfresh(); H.thump(1); T += 20; assert.equal(H.jolt(), true); wait(300);
+    assert.deepEqual(words(), ["impact:HEAVY", "notification:ERROR"]);
+    // a pattern that has played out leaves nothing to drop: the next one plays in full, and so did it
+    nfresh(); H.land(2); wait(1000); H.thump(1); wait(300);
+    assert.deepEqual(words(), ["notification:SUCCESS", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY"]);
+  });
+
+  check("the iPhone app: the same gates as the web buzz (priority, the snap silence)", () => {
+    nfresh();
+    H.thump(); T += 20;
+    assert.equal(H.tick(), false); assert.equal(H.bump(0.8), false); assert.equal(H.turn(), false);
+    assert.equal(H.jolt(), true);
+    T += 300; assert.equal(H.thump(), false, "a strike in the snap silence");
+    wait(1000);
+    assert.equal(H.thump(), true);
+  });
+
+  check("the iPhone app: mute, Buzz and taps off, and a hidden page stop every call (and the steps still to come)", () => {
+    nfresh(); H.mute(1000); H.thump(); H.land(2); run(500, () => { H.setTension(0.9, 0, true); H.setCrank(2); }); wait(100); assert.equal(hx.length, 0, "muted: " + words());
+    nfresh(); H.thump(); H.setEnabled(false); wait(300);
+    assert.deepEqual(words(), ["impact:HEAVY"], "the second strike impact came after Buzz and taps went off");
+    hx.length = 0;
+    run(2000, () => { H.tick(); H.bail(); H.bump(1); H.thump(); H.jolt(); H.land(2); H.surge(); H.setTension(0.95, 2, true); H.setCrank(3); H.throb(); H.rub(0.8); });
+    wait(1000);
+    assert.equal(hx.length, 0, "with Buzz and taps off: " + words());
+    nfresh(); globalThis.document = { visibilityState: "hidden" };
+    run(1000, () => { H.thump(); H.setTension(0.9, 1, true); H.setCrank(2); });
+    delete globalThis.document;
+    assert.equal(hx.length, 0, "hidden: " + words());
+  });
+
+  check("the iPhone app: the fight trains are single impacts, harder with the load; the drag ratchet is light, 20 a second at most", () => {
+    const styles = (frac, slip) => { nfresh(); run(2000, () => H.setTension(frac, slip, true)); return [...new Set(words())]; };
+    assert.deepEqual(styles(0.3, 0), ["impact:LIGHT"]);
+    assert.deepEqual(styles(0.7, 0), ["impact:MEDIUM"]);
+    assert.deepEqual(styles(0.92, 0), ["impact:HEAVY"]);
+    nfresh(); run(1000, () => H.setTension(0.7, 2.5, true));
+    const n = hx.length;
+    console.log(`      drag ratchet at 2.5 m/s: ${n} light impacts in 1 s`);
+    assert.ok(n >= 10 && n <= 20, "drag impacts " + n);
+    assert.ok(hx.every((c) => c.a === "LIGHT"));
+  });
+
+  check("the iPhone app: crank ticks are selection ticks (selectionStart once)", () => {
+    nfresh(); run(2000, () => H.setCrank(1));
+    const w = words();
+    assert.equal(w[0], "selectionStart"); assert.equal(w.filter((x) => x === "selectionStart").length, 1);
+    assert.ok(w.filter((x) => x === "selectionChanged").length >= 6, w.join(","));
+  });
+
+  check("the iPhone app: the call rate stays capped, whatever the game spams", () => {
+    nfresh();
+    let f = 0;
+    run(6000, () => { f++; H.tick(); H.setCrank(3.5); H.setTension(f % 200 < 100 ? 0.95 : 0.6, f % 300 < 120 ? 2 : 0, true); if (f % 3 === 0) H.bump(0.3); if (f % 45 === 0) H.thump(); wait(0); });
+    const peak = maxInWindow(hx);
+    console.log(`      ${hx.length} plugin calls in 6 s; busiest second ${peak}`);
+    assert.ok(peak <= 40, "plugin calls/s " + peak);
+  });
+
+  check("the iPhone app: a plugin that is missing, throws or fails does nothing", () => {
+    nfresh();
+    plugin.impact = () => { throw new Error("gone"); };
+    plugin.notification = () => Promise.reject(new Error("no"));
+    H.thump(); H.jolt(); wait(300);
+    // an app built without the plugin
+    globalThis.Capacitor = { isNativePlatform: () => true, getPlatform: () => "ios", isPluginAvailable: () => false, Plugins: {} };
+    H._forcePlatform("auto");
+    assert.notEqual(H.kind, "native");
+    delete globalThis.Capacitor;
+    H._forcePlatform("auto");
+    assert.equal(H.kind, "vibrate", "the Android stub after the app is gone");
+  });
+  H._timers();
+}
 
 /* ---------- 3. the iPhone pads, in a real page (Chromium with the platform forced to "ios") ---------- */
 await iosPads();

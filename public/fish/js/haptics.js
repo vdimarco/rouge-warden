@@ -4,7 +4,10 @@
 // limit, and it turns the fight into pulse trains: the pulse rate tells you how hard the fish pulls.
 // iPhone: there is no vibrate. Since iOS 26.5 only a real finger on an <input type="checkbox" switch> ticks, so the calls
 // below are silent there; attachPad and attachCrank put hidden switches under the thumb instead.
+// The iPhone app (kind "native"): the Capacitor Haptics plugin. Each moment keeps the same priority, rate, mute and busy
+// gates, and plays as native impacts and notifications instead of a vibrate pattern. The Android app keeps vibrate.
 // Everything is a safe no-op in node, when the browser cannot buzz, and when the player turns it off.
+import { Native } from "./native.js";
 
 const TUNE = {
   TICK_MS: 8,           // one gear tooth: the shortest pulse a linear motor feels well
@@ -34,10 +37,17 @@ const TUNE = {
   PHASE_MS: 300,        // a boss starts its next stage: one long buzz
   LAND: [[25, 70, 25, 70, 60], [40, 60, 40, 60, 40, 60, 140], [60, 50, 60, 50, 60, 50, 250, 100, 400]],   // a fish, a trophy, a legend
   LAND_TAPS: [2, 3, 5],             // the same on an iPhone: taps 120 ms apart
+  SURGE: [30, 40, 30, 40, 60],      // the fish's last run: a rising triple, not the snap
+  NATIVE_DRAG_GAP: 50,              // ms: the iPhone app's drag ratchet, at most 20 impacts a second
+  HOOKSET: [70, 30, 100],           // the hook goes in: longer than the hardest strike (at most 150 ms on)
+  TURN: [20, 60, 20, 60, 20],       // it turned: three quick taps (stop reeling)
+  BIG: [60],                        // it is a big one: one firm buzz
+  SHUTTER: [10, 50, 10],            // the photo of a big catch: two light ticks
 };
 
 // A pattern may cut one of the same or a lower priority, never a higher one.
-const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, hookset: 4, thump: 5, land: 5, jolt: 6 };
+// The hook set may cut the strike's buzz: a quick set must be felt in full.
+const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, shutter: 3, turn: 4, big: 4, hookset: 5, thump: 5, land: 5, jolt: 6 };
 
 const HAS_DOM = typeof window !== "undefined" && typeof document !== "undefined";
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -49,6 +59,8 @@ function readStore(k) { try { return typeof localStorage !== "undefined" ? local
 function writeStore(k, v) { try { if (typeof localStorage !== "undefined") localStorage.setItem(k, v); } catch (e) { /* storage off */ } }
 
 function detect() {
+  // the iPhone app: real haptics through the plugin
+  if (Native.platform === "ios" && Native.plugin("Haptics")) return "native";
   const n = nav();
   if (!n) return "none";
   const ua = n.userAgent || "";
@@ -78,6 +90,8 @@ const S = {
   seed: 0x2f6b1d3,
   legacy: null, legacyLast: -1e9,
   pads: [],
+  // the iPhone app: the later steps of a native pattern wait on these timers, and cancel() clears them
+  timers: [], later: (fn, ms) => setTimeout(fn, ms), clear: (id) => clearTimeout(id), sel: false,
 };
 
 // Sticky activation comes from the first finger lift (not touchstart), a mouse press, or a key
@@ -96,14 +110,50 @@ function activated() {
   return S.gesture;
 }
 function hidden() { return typeof document !== "undefined" && document.visibilityState === "hidden"; }
-function canBuzz() { return S.kind === "vibrate" && S.enabled && activated() && !hidden(); }
+// the app needs no first gesture: the plugin can buzz at any time
+function canBuzz() { return (S.kind === "vibrate" ? activated() : S.kind === "native") && S.enabled && !hidden(); }
 function vib(p) {
   try { return nav().vibrate(p) !== false; } catch (e) { return false; }
 }
+
+/* ---------- the iPhone app: native impacts ---------- */
+// A native step: [ms from now, "impact" | "notification" | "selection", the style or type]
+const hit = (at, style) => [at, "impact", style];
+// a pattern with no words of its own: each "on" segment is one impact, harder for a longer one
+function toNative(p) {
+  const out = [];
+  let t = 0;
+  p.forEach((v, i) => { if (i % 2 === 0) out.push(hit(t, v > 30 ? "HEAVY" : v > 10 ? "MEDIUM" : "LIGHT")); t += v; });
+  return out;
+}
+function nativeStep([, how, v]) {
+  const hx = Native.plugin("Haptics");
+  if (!hx) return;
+  const q = (r) => { if (r && typeof r.then === "function") r.then(null, () => {}); };
+  try {
+    if (how === "selection") {
+      // iOS ticks a selection only after selectionStart()
+      if (!S.sel) { S.sel = true; q(hx.selectionStart()); }
+      q(hx.selectionChanged());
+    } else if (how === "notification") q(hx.notification({ type: v }));
+    else q(hx.impact({ style: v }));
+  } catch (e) { /* the plugin is missing a method: nothing */ }
+}
+// plays a pattern: vibrate on Android, the native steps (or the pattern turned into impacts) in the iPhone app
+function play(p, nat) {
+  if (S.kind !== "native") return vib(p);
+  if (!Native.plugin("Haptics")) return false;
+  for (const step of nat || toNative(p)) {
+    if (step[0] <= 0) { nativeStep(step); continue; }
+    const id = S.later(() => { S.timers = S.timers.filter((x) => x !== id); nativeStep(step); }, step[0]);
+    S.timers.push(id);
+  }
+  return true;
+}
 function prune(t) { while (S.calls.length && t - S.calls[0] >= 1000) S.calls.shift(); }
 
-// the one place that makes the motor run
-function emit(pattern, prio, cont = false) {
+// the one place that makes the motor run. nat: the native steps for the iPhone app (left out: the pattern as impacts)
+function emit(pattern, prio, cont = false, nat = null) {
   if (S.kind === "ios") { if (!cont) legacyTick(prio); return false; }
   if (!canBuzz()) return false;
   const t = S.clock();
@@ -114,7 +164,9 @@ function emit(pattern, prio, cont = false) {
   if (cont && t - S.lastCont < TUNE.CONT_GAP) return false;
   // [on, off, on ...]: keep it short (the spec allows 10 entries) and odd, since Chrome drops a trailing pause
   const p = pattern.slice(0, 9).map((v, i) => (i % 2 ? Math.max(1, Math.round(v)) : Math.max(TUNE.MIN_PULSE, Math.round(v))));
-  if (!vib(p)) return false;
+  // a new vibrate() replaces the pattern still playing; in the iPhone app its steps still to come are dropped the same way
+  if (S.kind === "native" && t < S.playingUntil) { for (const id of S.timers) S.clear(id); S.timers = []; }
+  if (!play(p, nat)) return false;
   S.calls.push(t);
   if (cont) S.lastCont = t;
   const len = sum(p);
@@ -138,6 +190,9 @@ function buzzRoom(t, len) {
 function cancel() {
   const t = S.clock();
   if (S.kind === "vibrate" && S.playingUntil > t && activated() && !hidden()) { vib(0); S.calls.push(t); }
+  // a native impact cannot be stopped once it plays, but the steps still to come can
+  for (const id of S.timers) S.clear(id);
+  S.timers = [];
   S.playingUntil = 0; S.busyUntil = 0; S.busyPrio = -1;
 }
 function resetTrains() {
@@ -147,7 +202,7 @@ function tickPulse(cont) {
   const t = S.clock();
   if (t - S.lastTick < TUNE.TICK_GAP) return false;
   if (cont && !buzzRoom(t, TUNE.TICK_MS)) return false;
-  if (!emit([TUNE.TICK_MS], PRIO.tick, cont)) return false;
+  if (!emit([TUNE.TICK_MS], PRIO.tick, cont, [[0, "selection"]])) return false;
   S.lastTick = t;
   return true;
 }
@@ -221,21 +276,35 @@ export const Haptics = {
 
   tick() { return tickPulse(false); },
   // open: true = the bail flips open, false = it snaps shut; left out = a click-clack that fits both
-  bail(open) { return emit(open === true ? [18] : open === false ? [12, 40, 22] : [12, 36, 20], PRIO.bail); },
+  bail(open) { return emit(open === true ? [18] : open === false ? [12, 40, 22] : [12, 36, 20], PRIO.bail, false, [hit(0, open === false ? "MEDIUM" : "LIGHT")]); },
   bump(s) {
     s = clamp(num(s, 0.5), 0, 1);
     const w = 6 + 12 * s;
-    return emit(s > 0.55 ? [w, 90, w * 0.6] : [w], PRIO.bump);
+    return emit(s > 0.55 ? [w, 90, w * 0.6] : [w], PRIO.bump, false, [hit(0, s > 0.5 ? "MEDIUM" : "LIGHT")]);
   },
-  thump() { return emit([45, 25, 90], PRIO.thump); },
-  hookset() { return emit([34], PRIO.hookset); },
+  // the strike, and only the strike: s is how hard it hit (a soft biter 0.3, a slammer 1). Left out: [45, 25, 90].
+  // The web buzz grows with s; the iPhone app always gets its two heavy impacts
+  thump(s = 0.75) {
+    s = clamp(num(s, 0.75), 0, 1);
+    return emit([30 + 20 * s, 25, 60 + 40 * s], PRIO.thump, false, [hit(0, "HEAVY"), hit(70, "HEAVY")]);
+  },
+  // the hook set: the longest buzz of the fight before the catch
+  hookset() { return emit(TUNE.HOOKSET, PRIO.hookset, false, [hit(0, "HEAVY"), hit(40, "MEDIUM"), hit(110, "HEAVY")]); },
+  // it turned: three quick taps
+  turn() { return emit(TUNE.TURN, PRIO.turn, false, [hit(0, "LIGHT"), hit(80, "MEDIUM"), hit(160, "MEDIUM")]); },
+  // it is a big one: one firm buzz
+  big() { return emit(TUNE.BIG, PRIO.big, false, [hit(0, "HEAVY"), hit(90, "LIGHT")]); },
+  // the camera shutter of a big catch: two light ticks
+  shutter() { return emit(TUNE.SHUTTER, PRIO.shutter, false, [hit(0, "LIGHT"), hit(60, "LIGHT")]); },
   jolt() {
     // the snap cuts everything, then a hard silence
     resetTrains();
-    const ok = emit([140], PRIO.jolt);
+    const ok = emit([140], PRIO.jolt, false, [[0, "notification", "ERROR"]]);
     if (ok) S.restUntil = S.clock() + 140 + TUNE.SNAP_QUIET;
     return ok;
   },
+  // the fish's last run: a warning that rises, while the drag train keeps going (no snap silence)
+  surge() { return emit(TUNE.SURGE, PRIO.thump, false, [hit(0, "MEDIUM"), hit(70, "MEDIUM"), hit(140, "HEAVY")]); },
   // level 0 a fish, 1 a trophy, 2 a legend: the bigger the fish, the longer the shake of the hand
   land(level = 0) {
     const k = clamp(Math.round(num(level)), 0, 2);
@@ -243,25 +312,27 @@ export const Haptics = {
       // one tap cannot say how big it is: taps in a row can
       for (let i = 1; i < TUNE.LAND_TAPS[k]; i++) setTimeout(() => legacyTick(PRIO.land), i * 120);
     }
-    return emit(TUNE.LAND[k], PRIO.land);
+    const nat = [[0, "notification", "SUCCESS"]];
+    for (let i = 1; i < TUNE.LAND_TAPS[k]; i++) nat.push(hit(i * 120, "HEAVY"));
+    return emit(TUNE.LAND[k], PRIO.land, false, nat);
   },
   // a fish shakes its head: three bumps at 8 Hz
-  thrash() { return emit(TUNE.THRASH, PRIO.bump); },
+  thrash() { return emit(TUNE.THRASH, PRIO.bump, false, [hit(0, "MEDIUM"), hit(125, "MEDIUM"), hit(250, "MEDIUM")]); },
   // a fish swims at you: two light bumps
-  charge() { return emit(TUNE.CHARGE, PRIO.bump); },
+  charge() { return emit(TUNE.CHARGE, PRIO.bump, false, [hit(0, "LIGHT"), hit(110, "LIGHT")]); },
   // a boss starts its next stage: one buzz of 300 ms
-  phase() { return emit([TUNE.PHASE_MS], PRIO.thump); },
+  phase() { return emit([TUNE.PHASE_MS], PRIO.thump, false, [[0, "notification", "WARNING"]]); },
   splash(s) {
     s = clamp(num(s, 0.5), 0, 1);
     const w = 10 + 22 * s;
-    return emit(s > 0.7 ? [w, 40, w * 0.5] : [w], PRIO.splash);
+    return emit(s > 0.7 ? [w, 40, w * 0.5] : [w], PRIO.splash, false, [hit(0, s > 0.7 ? "HEAVY" : "MEDIUM")]);
   },
-  load() { return emit([14], PRIO.load); },
+  load() { return emit([14], PRIO.load, false, [hit(0, "LIGHT")]); },
 
   // Every frame during the fight. Tension is rate-coded: the pulse rate rises with the load (a cheap motor cannot
   // show strength, but everyone feels a rate). When the drag slips, a fast ratchet train takes over.
   setTension(frac, slip, on) {
-    if (S.kind !== "vibrate") return;
+    if (S.kind !== "vibrate" && S.kind !== "native") return;
     const t = S.clock();
     frac = clamp(num(frac), 0, 1);
     slip = Math.max(0, num(slip));
@@ -282,16 +353,22 @@ export const Haptics = {
       pat = warn ? [w, 30, w] : [w];
       prio = PRIO.tension;
     }
+    // the iPhone app: one impact per pulse, harder with the load; the drag ratchet is light and at most 20 a second
+    let nat = null;
+    if (S.kind === "native") {
+      if (mode === "drag") { every = Math.max(every, TUNE.NATIVE_DRAG_GAP); nat = [hit(0, "LIGHT")]; }
+      else nat = [hit(0, frac > 0.85 ? "HEAVY" : frac >= 0.5 ? "MEDIUM" : "LIGHT")];
+    }
     if (t - S.trainLast < every) return;
     if (!buzzRoom(t, sum(pat))) return;
-    if (emit(pat, prio, true)) {
+    if (emit(pat, prio, true, nat)) {
       S.trainLast = t;
       S.jit = mode === "drag" ? 0.9 + 0.2 * rnd() : 0.8 + 0.4 * rnd();
     }
   },
   // A fish sulks on the bottom: a slow throb, once a second. Call it every frame while it lasts; it keeps its own time.
   throb() {
-    if (S.kind !== "vibrate") return false;
+    if (S.kind !== "vibrate" && S.kind !== "native") return false;
     const t = S.clock();
     if (!S.enabled || t < S.muteUntil || t - S.throbLast < TUNE.THROB_EVERY) return false;
     if (!emit(TUNE.THROB, PRIO.throb, true)) return false;
@@ -301,7 +378,7 @@ export const Haptics = {
   // The line rubs on a stump, a log or the rocks. level is the rub meter, 0..1: a scratchy double click that comes
   // quicker and harder as the meter fills, and stops when it empties. Call it every frame.
   rub(level) {
-    if (S.kind !== "vibrate") return false;
+    if (S.kind !== "vibrate" && S.kind !== "native") return false;
     level = clamp(num(level), 0, 1);
     const t = S.clock();
     if (level < TUNE.RUB_MIN || !S.enabled || t < S.muteUntil) { S.rubLast = -1e9; return false; }
@@ -310,13 +387,13 @@ export const Haptics = {
     if (t - S.rubLast < gap * (0.85 + 0.3 * rnd())) return false;
     const w = TUNE.RUB_PULSE + 5 * level, pat = [w, 16, w];
     if (!buzzRoom(t, sum(pat))) return false;
-    if (!emit(pat, PRIO.rub, true)) return false;
+    if (!emit(pat, PRIO.rub, true, [hit(0, level > 0.6 ? "MEDIUM" : "LIGHT")])) return false;
     S.rubLast = t;
     return true;
   },
   // Every frame while reeling: about 4 gear ticks per crank turn, at most ~15 a second. Faster than that, a light whirr.
   setCrank(revPerSec) {
-    if (S.kind !== "vibrate") return;
+    if (S.kind !== "vibrate" && S.kind !== "native") return;
     const t = S.clock();
     const dt = S.crankT < 0 ? 0 : clamp((t - S.crankT) / 1000, 0, 0.1);
     S.crankT = t;
@@ -326,7 +403,7 @@ export const Haptics = {
     if (rate <= 1000 / TUNE.TICK_GAP) {
       S.crankPhase += rate * dt;
       if (S.crankPhase >= 1 && tickPulse(true)) S.crankPhase = Math.min(S.crankPhase - 1, 0.5);
-    } else if (t - S.whirrLast >= TUNE.WHIRR_EVERY && buzzRoom(t, sum(TUNE.WHIRR)) && emit(TUNE.WHIRR, PRIO.tick, true)) {
+    } else if (t - S.whirrLast >= TUNE.WHIRR_EVERY && buzzRoom(t, sum(TUNE.WHIRR)) && emit(TUNE.WHIRR, PRIO.tick, true, [hit(0, "LIGHT")])) {
       S.whirrLast = t;
     }
   },
@@ -453,11 +530,14 @@ export const Haptics = {
   },
 
   /* ---------- test hooks (not for the game) ---------- */
-  _forcePlatform(kind) { S.kind = kind === "vibrate" || kind === "ios" ? kind : kind === "auto" ? detect() : "none"; resetTrains(); },
+  _forcePlatform(kind) { S.kind = kind === "vibrate" || kind === "ios" || kind === "native" ? kind : kind === "auto" ? detect() : "none"; resetTrains(); },
   _clock(fn) { S.clock = typeof fn === "function" ? fn : () => performance.now(); },
+  // the timers of the native steps: { later(fn, ms) -> id, clear(id) }; nothing = setTimeout again
+  _timers({ later, clear } = {}) { S.later = later || ((fn, ms) => setTimeout(fn, ms)); S.clear = clear || ((id) => clearTimeout(id)); },
   _reset() {
+    for (const id of S.timers) S.clear(id);
     Object.assign(S, { gesture: false, muteUntil: 0, busyUntil: 0, busyPrio: -1, playingUntil: 0, calls: [], lastCont: -1e9, lastTick: -1e9,
-      buzzStart: -1e9, buzzEnd: -1e9, restUntil: 0, seed: 0x2f6b1d3, legacyLast: -1e9, throbLast: -1e9, rubLast: -1e9 });
+      buzzStart: -1e9, buzzEnd: -1e9, restUntil: 0, seed: 0x2f6b1d3, legacyLast: -1e9, throbLast: -1e9, rubLast: -1e9, timers: [], sel: false });
     resetTrains();
   },
   _tune: TUNE,

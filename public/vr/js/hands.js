@@ -1,10 +1,12 @@
 // In Full Swing: what you hold (spec §8). A plunger launcher on each controller (a wooden grip, a brass reel with the
 // three heart lamps, a red cup loaded at the muzzle), or yellow rubber gloves on tracked hands with a small launcher
 // strapped to the back of each hand. Launchers and hand launchers share one instanced draw; the 50 glove joints
-// are a second. Everything is a child of the rig, placed from tracking-space poses.
+// are a second. Each has an ink outline twin, and the light is the comic cel light of rope.js. Everything is a child of the
+// rig, placed from tracking-space poses.
 import * as THREE from "three";
 import { COLORS, GAME } from "./config.js";
-import { PROP_GLSL, partsBuilder, place, addCup, cupOut, rgb } from "./rope.js";
+import { smoothNormals } from "./comic.js";
+import { PROP_GLSL, HULL_HEAD, hullPush, hullMaterial, inkTwin, partsBuilder, place, addCup, cupOut, rgb } from "./rope.js";
 
 const BY = 0.02; // the barrel's height above the aim ray
 const MUZZLE = [0, BY, -0.1]; // launcher frame: where the rope leaves
@@ -81,21 +83,23 @@ export function createHands(rig, scene, settings) {
   let visible = true, glowName = null, glowSide = null, hearts = 3, gold = 0, time = 0;
 
   const lgeo = buildLaunchers();
+  smoothNormals(lgeo);
   const instAttr = new THREE.InstancedBufferAttribute(new Float32Array(2 * 4), 4).setUsage(THREE.DynamicDrawUsage);
   lgeo.setAttribute("aInst", instAttr);
-  const lmat = new THREE.ShaderMaterial({
-    uniforms: { uGlow: { value: 0 }, uTime: { value: 0 }, uHearts: { value: 3 }, uGold: { value: 0 } },
-    side: THREE.DoubleSide,
-    vertexShader: `
+  const lVS = `
       attribute vec3 aCol; attribute vec4 aInfo;
       attribute vec4 aInst; // x: 0 launcher, 1 hand launcher; y: the plunger is loaded; z: this one glows
+      #ifdef HULL
+      attribute vec3 aOutline;
+      #endif
+      ${HULL_HEAD}
       uniform float uGlow, uTime, uHearts;
-      varying vec3 vW; varying vec3 vN; varying vec3 vC; varying float vM; varying float vG; varying float vH;
+      varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec3 vL; varying float vM; varying float vG; varying float vH;
       void main() {
         float part = aInfo.x;
         float show = aInst.x > 0.5 ? step(1.5, part) : step(part, 1.5);
         if (abs(part - 1.0) < 0.5 || part > 2.5) show *= step(0.5, aInst.y);
-        vW = vec3(0.0); vN = vec3(0.0, 1.0, 0.0); vC = aCol; vM = aInfo.w; vG = 0.0; vH = -1.0;
+        vW = vec3(0.0); vN = vec3(0.0, 1.0, 0.0); vC = aCol; vL = position; vM = aInfo.w; vG = 0.0; vH = -1.0;
         // the parts this one does not use fold away outside the view
         if (show < 0.5) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
         mat4 m = modelMatrix * instanceMatrix;
@@ -103,11 +107,19 @@ export function createHands(rig, scene, settings) {
         vW = w.xyz; vN = normalize(mat3(m) * normal);
         if (aInfo.y > 0.5 && abs(aInfo.y - uGlow) < 0.5 && aInst.z > 0.5) vG = 0.55 + 0.45 * sin(uTime * 5.0);
         if (aInfo.z > 0.5) vH = aInfo.z < uHearts + 0.5 ? 1.0 : 0.0;
+        #ifdef HULL
+        ${hullPush("w.xyz", "mat3(m) * aOutline")}
+        #endif
         gl_Position = projectionMatrix * viewMatrix * w;
-      }`,
+      }`;
+  const lUniforms = { uGlow: { value: 0 }, uTime: { value: 0 }, uHearts: { value: 3 }, uGold: { value: 0 } };
+  const lmat = new THREE.ShaderMaterial({
+    uniforms: lUniforms,
+    side: THREE.DoubleSide,
+    vertexShader: lVS.replace(HULL_HEAD, ""),
     fragmentShader: `
       uniform float uGold;
-      varying vec3 vW; varying vec3 vN; varying vec3 vC; varying float vM; varying float vG; varying float vH;
+      varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec3 vL; varying float vM; varying float vG; varying float vH;
       ${PROP_GLSL}
       void main() {
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
@@ -115,15 +127,16 @@ export function createHands(rig, scene, settings) {
         vec3 base = vC; float metal = 0.0, gloss = 0.3;
         if (vM > 0.5 && vM < 1.5) { metal = 1.0; gloss = 0.75; }
         else if (vM > 1.5 && vM < 2.5) gloss = 0.55;
-        else if (vM > 3.5 && vM < 4.5) gloss = 0.08;
-        else if (vM > 4.5) gloss = 0.4;
+        else if (vM > 3.5 && vM < 4.5) gloss = 0.0;
+        else if (vM > 4.5) gloss = 0.3;
         // the Golden Plunger: wood and brass turn to polished gold
         if (uGold > 0.5 && (vM < 0.5 || (vM > 0.5 && vM < 1.5))) { base = ${glv(COLORS.gold)} * (vM < 0.5 ? 0.92 : 1.05); metal = 1.0; gloss = 0.9; }
-        vec3 col;
+        // dots in the shade, fixed to the launcher (model space: they never slide over it as your hand moves)
+        vec3 col = shadePropX(base, N, V, metal, gloss, propDots(vL, N, 0.004));
         if (vM > 2.5 && vM < 3.5) {
           // a heart lamp: lit red, or dark glass once that heart is gone
-          col = vH > 0.5 ? vec3(1.0, 0.2, 0.24) * 1.25 + shadeProp(vec3(0.3), N, V, 0.0, 0.9) * 0.25 : shadeProp(vec3(0.1, 0.05, 0.06), N, V, 0.0, 0.9);
-        } else col = shadeProp(base, N, V, metal, gloss);
+          col = vH > 0.5 ? mix(vec3(1.0, 0.24, 0.28), vec3(1.0, 0.85, 0.7), comicStep(0.86, dot(N, V))) : shadeProp(vec3(0.16, 0.08, 0.1), N, V, 0.0, 0.9);
+        }
         col = mix(col, ${GLOW_C}, vG * 0.55) + ${GLOW_C} * vG * 0.35;
         gl_FragColor = vec4(col, 1.0);
       }`,
@@ -134,16 +147,16 @@ export function createHands(rig, scene, settings) {
   launchers.frustumCulled = false;
   launchers.count = 0;
   launchers.visible = false;
+  launchers.add(inkTwin(launchers, hullMaterial({ vertexShader: lVS, uniforms: lUniforms, width: 0.0007, px: 1.8 })));
   rig.add(launchers);
 
   // the gloves: 25 joints a hand, each a sphere stretched along its bone to the next joint
   const jgeo = new THREE.SphereGeometry(1, 12, 8);
   const jAttr = new THREE.InstancedBufferAttribute(new Float32Array(JOINTS * 2), 1).setUsage(THREE.DynamicDrawUsage);
   jgeo.setAttribute("aGlow", jAttr);
-  const jmat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 } },
-    vertexShader: `
+  const jVS = `
       attribute float aGlow;
+      ${HULL_HEAD}
       uniform float uTime;
       varying vec3 vW; varying vec3 vN; varying float vG;
       void main() {
@@ -152,10 +165,17 @@ export function createHands(rig, scene, settings) {
         vec3 s2 = vec3(dot(instanceMatrix[0].xyz, instanceMatrix[0].xyz), dot(instanceMatrix[1].xyz, instanceMatrix[1].xyz), dot(instanceMatrix[2].xyz, instanceMatrix[2].xyz));
         vN = normalize(mat3(m) * (normal / max(s2, vec3(1e-10))));
         vec4 w = m * vec4(position, 1.0);
+        #ifdef HULL
+        ${hullPush("w.xyz", "vN")}
+        #endif
         vW = w.xyz;
         vG = aGlow * (0.55 + 0.45 * sin(uTime * 5.0));
         gl_Position = projectionMatrix * viewMatrix * w;
-      }`,
+      }`;
+  const jUniforms = { uTime: { value: 0 } };
+  const jmat = new THREE.ShaderMaterial({
+    uniforms: jUniforms,
+    vertexShader: jVS.replace(HULL_HEAD, ""),
     fragmentShader: `
       varying vec3 vW; varying vec3 vN; varying float vG;
       ${PROP_GLSL}
@@ -172,6 +192,7 @@ export function createHands(rig, scene, settings) {
   joints.frustumCulled = false;
   joints.count = 0;
   joints.visible = false;
+  joints.add(inkTwin(joints, hullMaterial({ vertexShader: jVS, uniforms: jUniforms, width: 0.0006, px: 1.8 })));
   rig.add(joints);
 
   /* ---- scratch ---- */

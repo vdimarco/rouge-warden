@@ -372,6 +372,7 @@ const PAGES = [
   { id: "lab/rules", path: "/lab/rules/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
+  { id: "river-rush", path: "/river-rush/", boot: () => !!document.querySelector('button[aria-label="Enable sound"]'), start: click('button[aria-label="Enable sound"]'), sound: "ctx" },
   { id: "neon", path: "/neon/", boot: () => !!document.querySelector("#start"), start: click("#start"), sound: "ctx" },
   { id: "primordia", path: "/primordia/", start: click("#playBtn"), sound: "ctx" },
   { id: "olympus", path: "/olympus/", start: click('button[aria-label="Enable audio"]'), sound: "ctx" },

@@ -321,7 +321,7 @@
   background-size:200% 200%!important;
   background-repeat:no-repeat!important;
 }
-.ability.unlearned .hud-spell-art{opacity:.58!important;filter:saturate(.75) brightness(.72) contrast(1.08)}
+.ability.unlearned .hud-spell-art{opacity:.92!important;filter:saturate(.55) brightness(.82) contrast(1.05)}
 .ability b:not(:empty){
   background:linear-gradient(180deg,#03101988,#031019b8)!important;
   color:#fff!important;
@@ -335,6 +335,12 @@
   position:absolute;
   inset:4px;
   display:block;
+  /* The crop is a span; reset the label rules that also match `.ability span`. */
+  width:auto;
+  height:auto;
+  max-width:none;
+  transform:none;
+  opacity:1;
   overflow:hidden;
   border-radius:15px;
   border:2px solid #78d9e8b8;
@@ -360,3 +366,19 @@
   pointer-events:none;
 }
 .ability .hud-spell-art:not(.hud-atlas-crop){display:none!important}
+
+/* Unlearned and level-gated skills keep their art readable. The lock is a small tag, not a cover. */
+.ability.unlearned[aria-disabled=true]{opacity:1}
+.ability b.locked:not(:empty){
+  inset:auto 50% 12px auto!important;
+  transform:translateX(50%);
+  width:max-content;
+  height:auto;
+  padding:2px 6px;
+  border-radius:6px!important;
+  font-size:9px!important;
+  letter-spacing:.8px;
+  line-height:12px;
+  background:#031019d9!important;
+  border:1px solid #78d9e866;
+}

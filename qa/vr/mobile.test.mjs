@@ -18,8 +18,8 @@ const canvas=new Element(),m=createMobile(canvas,()=>active),button=panel.queryS
 const send=(target,type,data={})=>{const ev=new Event(type);Object.assign(ev,data);target.dispatchEvent(ev);};
 await m.start();m.sample(.016);button.onclick();let p=m.sample(.016);assert(p.hold&&p.fire,'tap fires without gesture');assert(m.sample(.016).hold,'rope stays held');assert(!m.sample(.016).fire,'fire is an edge');
 button.onclick();assert(!m.sample(.016).hold,'second tap releases');
-send(canvas,'pointerdown',{pointerId:1,clientX:300,clientY:200});send(canvas,'pointerup',{pointerId:1,clientX:300,clientY:200});p=m.sample(.016);assert(p.fire);assert.deepEqual(p.aim,{x:.5,y:.5});
-send(canvas,'pointerdown',{pointerId:2,clientX:100,clientY:100});send(canvas,'pointermove',{pointerId:2,clientX:170,clientY:120});send(canvas,'pointerup',{pointerId:2,clientX:170,clientY:120});p=m.sample(.016);assert(!p.fire&&p.turn!==0,'drag aims without throwing');
+send(canvas,'pointerdown',{pointerId:1,clientX:300,clientY:200});send(canvas,'pointerup',{pointerId:1,clientX:300,clientY:200});p=m.sample(.016);assert(p.fire);assert.deepEqual(p.aim,{x:.5,y:.5});assert.equal(m.sample(.016).aim,null,'the tap ray lasts one frame (main aims through it only for the frame that fires)');
+send(canvas,'pointerdown',{pointerId:2,clientX:100,clientY:100});send(canvas,'pointermove',{pointerId:2,clientX:170,clientY:120});send(canvas,'pointerup',{pointerId:2,clientX:170,clientY:120});p=m.sample(.016);assert(!p.fire&&p.turn!==0&&p.aim===null,'drag aims without throwing');
 send(win,'deviceorientation',{alpha:0,beta:60,gamma:0});send(win,'deviceorientation',{alpha:8,beta:65,gamma:0});p=m.sample(.016);assert(Math.abs(p.turn)+Math.abs(p.pitch)>0);
 now=600;send(win,'devicemotion',{acceleration:{z:7}});p=m.sample(.016);assert(p.reel>0&&p.yank>0,'optional motion pull');
 now=650;send(win,'devicemotion',{acceleration:{z:8}});assert.equal(m.sample(.016).yank,0,'yank cooldown');
@@ -28,4 +28,4 @@ active=false;m.sample(.016);assert(panel.hidden);active=true;m.sample(.016);
 win.DeviceOrientationEvent.requestPermission=async()=>'denied';win.DeviceMotionEvent.requestPermission=async()=>'denied';await m.start();button.onclick();assert(m.sample(.016).hold,'denied sensors still playable');
 m.miss();assert(!m.sample(.016).hold,'miss clears latch');
 send(win,'devicemotion',{acceleration:null,accelerationIncludingGravity:{z:9.8}});assert.equal(m.sample(.016).yank,0);
-console.log('PASS: one-tap cast, latch, release, screen aim, drag, gyro, optional pull, cooldown, blur, denied sensors, miss, gravity rejection');
+console.log('PASS: one-tap cast, latch, release, screen aim (one frame), drag, gyro, optional pull, cooldown, blur, denied sensors, miss, gravity rejection');

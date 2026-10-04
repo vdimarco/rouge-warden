@@ -1,0 +1,42 @@
+{
+  "appId": "com.cottagearcade.reelitin",
+  "appName": "Reel It In",
+  "webDir": "www",
+  "backgroundColor": "#0d2f38",
+  "loggingBehavior": "debug",
+  "zoomEnabled": false,
+  "server": {
+    "errorPath": "webview-update.html"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "useLegacyBridge": false,
+    "minWebViewVersion": 105
+  },
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 6000,
+      "launchFadeOutDuration": 250,
+      "backgroundColor": "#0d2f38",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK",
+      "hidden": false,
+      "animation": "NONE"
+    }
+  }
+}

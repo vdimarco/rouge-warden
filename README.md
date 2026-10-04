@@ -317,68 +317,194 @@ It saves on its own every 10 seconds, and the arcade cabinet shows your progress
 
 ## Reel It In
 
-Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake, and later at three more places. Your phone is the rod and the reel: you cast it and reel it with real moves.
+Reel It In is a first-person fishing game at `/fish/`. You stand at the end of the cottage dock on Loon Lake, and later at three more places. Your phone is the rod and the reel: you cast it and reel it with real moves. You can also play with touch, or with a mouse and keys on a computer.
 
-**Hold the phone upright the whole time.** Its top edge is the rod, for the cast and for the reel. You never turn it sideways.
+**Hold the phone upright.** In motion play its top edge is the rod, for the cast and for the reel. You never turn it sideways. Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you. The game shows this safety note when it asks to use the motion sensors.
 
-**Cast.** The top of the screen shows the lake. The bottom shows the reel.
+**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or the phone sends no motion data, you play with touch. After a no on the web, the card tells you how to turn motion on again. On an iPhone, close Safari fully, open the page again, and tap Allow. On Android, allow Motion sensors in the site settings. In the app, a no switches to touch and says "Motion is off. You can play with touch." A computer plays with the mouse and the keys. Settings > Controls changes it later.
+
+### The cast
+
+**With motion:**
 
 1. Turn your body to aim. A dotted line on the water shows where the lure goes.
-2. Press and hold your thumb on the reel. The bail clacks open and your thumb holds the line, in one move.
-3. Tip the phone back over your shoulder. The rod creaks when it loads.
-4. Whip the phone forward and lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
-   - The gyro measures how fast you swing. A faster flick casts farther, up to about 55 m. A short, sharp flick of the wrist is enough; a wild throw gains almost nothing.
-   - When you let go sets the launch angle. The game times your thumb against the moment the rod passes 11 o'clock, so you get the same window of about a tenth of a second at any swing speed. Let go too early and the lure goes high and short, or behind you onto the dock. Let go too late and it slaps the water in front of you.
+2. Press and hold your thumb on the screen. The bail clacks open and your thumb holds the line, in one move.
+3. Tip the phone back over your shoulder. The rod creaks and taps when it loads, and again at full power.
+4. Whip the phone forward. Lift your thumb as the phone tips forward, at 11 o'clock. The line zips off the spool and the lure flies.
+   - The gyro measures how fast you swing. A faster flick casts farther. A sweet cast with a brisk flick lands 35 to 55 m out at Loon Lake. A short, sharp flick of the wrist is enough. A harder throw adds little distance.
+   - The game times your lift against the moment the rod passes 11 o'clock. A lift up to about 90 ms before or after that moment launches the lure at a good angle, at any swing speed. Lift too early and the lure goes high and short. Lift too late and it slaps the water in front of you.
    - The gyro measures the swing across the rod, so the cast reads true whether the screen faces you or leans toward your thumb.
    - Where you face sets the direction.
-   - Touch the reel while the lure flies to feather the line. The lure slows and drops short, onto a target.
-   - The cast forgives you. Lift your thumb with no swing and the bail snaps shut, ready for the next try. Swing and forget to lift, and the lure still flies, low, and the game says to lift sooner.
+   - Lift your thumb with no swing and the bail snaps shut, ready for the next try. Swing and keep your thumb down, and the lure still flies, low. The game then says to lift sooner.
 
-After each cast you see the distance and how the release went. Rings on the water show rising fish. Cast into a ring for a near-sure bite.
+**With touch.** Press anywhere: on the rod, the reel or the lake. The game waits for the drag. Up and down takes the line where you pressed, and sideways aims. Drag down to tip the rod back. Then flick up and let go. A rail beside your finger shows the rod as a bead. Drag the bead down past LOAD. The mark below LOAD is full power. Let go while the bead crosses the green band. The game grades the cast where your finger lifts, so a pause before the lift changes nothing. A flick that carries on past the press point still casts far. A swipe up that never tipped the rod back casts nothing and uses no derby cast.
 
-**Reel.** The reel starts the moment the lure lands. The lake fills the top of the screen and the crank sits under your thumb.
+**On a computer.** Hold the mouse button still. The rod tips back by itself, then swings forward. Let go while it passes the green on the rail. Move the mouse sideways while you hold to aim. If you let go before the rod comes forward, nothing flies. You can also drag down and flick up, as with touch. Space works like the mouse button, and the arrow keys (or A and D) aim. A press on a button or a menu never casts. E opens and closes the bail, but you never need it.
 
-- Turn the crank with your thumb to reel. The first turn snaps the bail shut, like a real reel. The lure swims back. It sinks when you stop, and a short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast. If nothing is coming, the lure skips home after a few seconds.
-- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike: snap the phone up to set the hook. Pull too soon and you spook the fish. Pull too late and it spits the lure.
-- Fight the fish: tip the phone up to raise the rod, then reel as you lower it. When the drag buzzes and gives line, stop reeling and keep the rod up. Each move has one right answer, and the game names it:
-  - A fish that **shakes its head**: hold the rod up, and reel in any slack.
-  - A fish that **jumps**, or jumps again and again (a tail walk): lower the rod.
-  - A fish that **swims at you**: reel fast, or the line goes slack and it throws the hook.
-  - A fish that **holds on the bottom**: pump it up. Tip the phone up slowly, then reel as you lower it.
-  - A fish that **runs for cover**: tilt the phone left or right like a steering wheel, and turn it away from the weeds, the stumps, the logs, or the rocks.
-- The red band on the gauge is the **rub meter**. It fills when the line touches a stump, a log, a rock, or the weeds, and the line is cut when it is full. Steer the fish away, or lift the rod over low rocks.
-- Too much tension snaps the line. Slack line lets the fish throw the hook. The gauge shows the tension, the drag, the line out, and how tired the fish is. The − and + buttons set the drag. At Gull Rock the spool can empty on a long run: tighten the drag.
-- A legend fights in three stages and rests between them, so your arm rests too. In a rest the fish cannot be landed, and the line is safe whatever you do.
-- When the fish is tired and close to the dock, tip the phone up and hold it to lift the fish out.
+**Feather the line.** Touch the rod while the lure flies to slow the line, so the lure drops short onto a target. On a computer, click anywhere.
 
-**Feel it.** Every move has a sound, made in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake. On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag, and the catch. On an iPhone, a web page cannot start a buzz from code, so only a finger on the reel or the crank gives a tap: the press on the reel, the release of your thumb, and the crank. The other cues come through sound and pictures there.
+**Easy mode** is on at first (in Settings). It softens a cast that goes too high or too low, and a gentle stroke goes farther. In the fight it gives you more time to set the hook, and some fish hook themselves when you keep reeling through the strike. A jump also rises 0.2 s slower, except a legend's.
 
-**Places.** Land a big fish to open the next place. Each place has its own look, its own gear, its own derby and best score, its own tab in the Journal, and its own legend.
+**What the cast tells you.** A sweet release says "Sweet!" with a sound and a tap the moment the lure leaves. The aim line runs out to where a cast like your last one would land, and turns amber when that spot is not water. After each cast you see the distance and how the release went. One more line can follow. It names a run of sweet casts, a hit on a rising ring, or a near miss ("4 m short of the ring."). It can also say that big fish live far out, give a tip, mark your longest cast, or name the water where the lure landed. A good release with a short back swing says "Tip back farther for more distance." A cast with no back swing says "Tip the phone back first." (with touch, "Drag down first."). Rings on the water show rising fish. Cast into a ring for a near-sure bite. If the motion sensors send nothing for 3 s, the game asks "The motion sensors stopped. Play with touch?", and a tap switches to touch for this visit.
+
+**The next cast comes fast.** "Nothing this time." stays 1 s and a cast onto the shore 0.9 s. A lost fish stays 3.4 s (a legend 4.5 s), so you can read the loss line. A cast input ends the wait early: a press, a click, Space, or your thumb in motion play. It works 0.35 s after the words show (0.8 s after a loss), and the same press goes on into the next cast. A press on the crank or the rod ends the wait. It does not cast. After 3 s with no fish on the way, the prompt says "Nothing is biting here." Each turn of the crank then winds in up to 4 times as much line. A crank faster than 1.5 turns a second shortens that wait, down to 1 s.
+
+### The fight
+
+**Reel.** The reel starts the moment the lure lands. The lake fills the screen and the crank sits under your thumb: on the left in touch play, and on the side you pick in motion play.
+
+- Turn the crank to reel. On a computer, turn the mouse wheel or hold R. The first turn snaps the bail shut, like a real reel. The lure swims back, and it sinks when you stop. A short pause often makes a fish bite. Reel slowly: a small fish cannot catch a fast lure, and the game tells you when you reel too fast.
+- On a new save, the first cast that lands in the water always brings a bite from a small, easy fish: a pumpkinseed or a perch.
+- A shadow follows the lure. Small taps are nibbles: wait. A hard thump is the strike. Set the hook then: snap the phone up in motion play, swipe up on the rod or anywhere on the open lake in touch play, or press Space. Pull too soon and you spook the fish. Pull too late and it spits the lure.
+
+**Work the rod.** In motion play, tip the phone back as you crank. This adds reel power, and a meter shows how much. Ease the phone forward to rest. In touch play your right thumb drags the rod up, down and sideways. On a computer, drag the rod with the mouse, or use W, A, S and D or the arrow keys. Each move has one right answer. The big words at the top name it, and the guide and the rod cue use the same words:
+
+| The fish | Motion | Touch and mouse |
+| --- | --- | --- |
+| Runs, and the drag slips | Stop reeling. Hold the rod up. | The same |
+| Pulls the line too tight | Stop reeling. Hold the rod up. | The same |
+| Turns away | Stop reeling. | The same |
+| Runs for cover (weeds, stumps, logs or rocks) | Tilt the phone left or right. | Drag the rod sideways. |
+| Shakes its head | Hold the rod up. Keep reeling slowly. | The same |
+| Jumps, or jumps again and again (a tail walk) | Lower the phone. | Drag the rod down. |
+| Swims at you | Reel fast. | The same |
+| Sees you and makes one last run | Let it run. Hold the rod up. Reel only if the line goes slack. | The same |
+| Holds on the bottom | Tip back as you reel. | Drag the rod up. Reel as it comes down. |
+| Rests between stages (a legend) | Rest your arm. Keep the line tight. | The same |
+| Is tired and close | Lift the phone and hold. | Drag the rod up and hold. |
+
+A fish that is heavy for its place, or big for its kind, gets a warning at its first run, or 4 s after the hook set. A toast says "It is a big one!" with a buzz, and the gauge shows "Big fish on!" until you see the fish.
+
+- **The drag.** A run starts with a click of the drag and a buzz. When the spool starts to slip, the crank stops adding pull. The pull builds back over 0.6 s. Stop reeling in that time and the crank does not snap the line. Keep cranking through the run and the line snaps. The − and + buttons beside the crank set the drag ([ and ] on a computer). At Gull Rock a long run can empty the spool: tighten the drag.
+- **Slack.** Slack line lets the fish throw the hook. When the line stays slack for 0.3 s, the gauge says SLACK. In a head shake the prompt says "Slack line! Reel it in."
+- **The gauge** shows the tension, the drag, the line out, the depth, and how much fight the fish has left. A word under the arc names the state: GOOD, TIGHT, SLIPPING, SLACK or TOO TIGHT. The arc is plain up to the drag mark, hatched past it and striped near the break, so it reads without color. The fish's bar ends in FIGHT, or in TIRED when the fish is beaten. A TIRED fish starts no new jumps, tail walks, charges, head shakes or thrashes.
+- **The rub meter.** When the line rubs on a stump, a log, a rock or the weeds, a striped RUB band takes the place of the fish's name and fills. When it is full, the line breaks. Steer the fish away, or hold the rod up over low rocks.
+- **Legends** fight in three stages and rest between them, so your arm rests too. Marks on the fish's bar show where the next stages start. In a rest you cannot land the fish, and the line is safe whatever you do. A legend shows TIRED only in its last stage. A fight lasts from a few seconds for a perch to about a minute for a legend.
+- **The loss line** names the one move that would have saved the fish, for example "It wrapped the line in the weeds. Drag the rod sideways to steer it." A lost legend gets its own line, with when to look for its gold ring again.
+- **Land it.** When the fish is tired and close, tip the phone up and hold it to lift the fish out. At Gull Rock you bring it to the wall.
+
+### Places and goals
+
+**Places.** Land a big fish to open the next place. Each place has its own look, gear, derby, best score, Journal tab, six goals and legend. The Places card shows the facts and the goals of each place, and **Fish here** takes you there.
 
 | Place | You open it with | What is different | Legend |
 | --- | --- | --- | --- |
 | Loon Lake | (open from the start) | A calm lake. It teaches the moves. Line: 10 lb. | Golden Loon Bass |
-| Stump Bay | A 3.5 kg fish at Loon Lake | A flooded forest at dusk, then night. The line rubs on stumps, so you steer fish out. Catfish bite in the dark. Line: 20 lb braid. | Old Whiskers, a giant catfish |
-| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current runs left and swings your lure, and salmon run down the river toward a logjam, so cast to the right. Line: 20 lb. | Old Hookjaw, an old salmon |
+| Stump Bay | A 3.5 kg fish at Loon Lake | A flooded forest at dusk, then night. The line rubs on stumps, so you steer fish out. Catfish bite in the dark, where a nibble says "It is dark. Feel for the bite." Line: 20 lb braid. | Old Whiskers, a giant catfish |
+| Cedar River | A 6 kg fish at Stump Bay | Fast water at an autumn dawn. The current runs left and swings your lure. The first time, the prompt says "The current takes your lure." Salmon run down the river toward a logjam, so cast to the right. Line: 20 lb. | Old Hookjaw, an old salmon |
 | Gull Rock | An 8 kg fish at Cedar River | The open sea, from the end of a stone wall. A giant tuna can empty your spool, and some fish dive for the rocks at your feet. Line: 30 lb. | Big Blue, a tuna as big as a man |
 
-An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is open. Add `?open` to the URL to open every place for that visit only.
+When a catch in free fishing opens a place, a card follows the catch card: "Stump Bay is open!" **Go there** takes you there, and **Stay here** keeps you fishing. A fish of 70% to 100% of the goal weight says "Close! Land a fish of 3.5 kg or more to open Stump Bay."
 
-**The fish at Loon Lake.** Ten species live in Loon Lake, each in its own water: Pumpkinseed, Yellow Perch, and Largemouth Bass in the lily pads and the weed flat on the left; Rock Bass and Smallmouth Bass on the rocky point on the right; Walleye on the drop-off; Lake Trout in the deep water far out; the Northern Pike on the weed edges; the rare Muskellunge; and the Golden Loon Bass, the legend, which rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
+The first trip to a new place ends on its arrival card. It shows NEW PLACE with the level, the new gear and one tip. **Start** goes straight to free fishing.
 
-**The other places have 16 more fish.** Stump Bay has Black Crappie, Bowfin, Longnose Gar, Channel Catfish, and Old Whiskers. Cedar River has Steelhead, Chinook Salmon, Brown Trout, Brook Trout, and Old Hookjaw. Gull Rock has Atlantic Mackerel, Pollock, Striped Bass, Bluefish, Atlantic Cod, and Big Blue. Each fights its own way. Fish are bigger than before: a usual catch is about 2 kg at Loon Lake, and long casts find the biggest ones. The catch card says how big your fish is for its kind, and a very big one gets a TROPHY badge and a photo.
+An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is open.
 
-**Modes.** In the Derby you get ten casts, and your score is the weight of everything you land. Free fishing has no limit. The Journal has a tab for each place. It keeps your best fish of each kind, and tells you where and when to look for the ones you have not caught. The arcade cabinet shows your best derby, or your biggest fish before your first derby. A fight lasts from a few seconds for a perch to about a minute for a legend, and a legend rests between its stages, so your arm does not tire.
+**The fish at Loon Lake.** Ten species live in Loon Lake, each in its own water. Pumpkinseed, Yellow Perch and Largemouth Bass live in the lily pads and the weed flat on the left. Rock Bass and Smallmouth Bass live on the rocky point on the right. Walleye hold on the drop-off, and Lake Trout in the deep water far out. The Northern Pike hunts the weed edges, and the Muskellunge is rare. The legend, the Golden Loon Bass, rises in a gold ring far out at dawn and dusk. Each fights its own way: a smallmouth jumps, a pike shakes its head, a walleye bores deep, a lake trout makes long runs, and a muskie makes one last run at the dock. You can also snag an old boot, the King's Plunger, and Pip's Frisbee. The day goes from dawn to dusk, and the fish bite best at their own hours.
 
-**Easy mode** (on at first, in Settings) softens a cast that goes too high or too low, gives you more time to set the hook, and lets some fish hook themselves when you keep reeling through the strike.
+**The other places have 16 more fish.** Stump Bay has Black Crappie, Bowfin, Longnose Gar, Channel Catfish, and Old Whiskers. Cedar River has Steelhead, Chinook Salmon, Brown Trout, Brook Trout, and Old Hookjaw. Gull Rock has Atlantic Mackerel, Pollock, Striped Bass, Bluefish, Atlantic Cod, and Big Blue. Each fights its own way. A usual catch is about 2 kg at Loon Lake, and long casts find the biggest ones. The catch card says how big your fish is for its kind, and a very big one gets a TROPHY badge and a photo.
 
-**Motion or touch.** The first time you play on a phone, the game asks to use the motion sensors (an iPhone asks for permission). If you say no, or your browser has no sensors, you play with touch: hold the reel, drag down to tip the rod back, then flick up and let go. On a computer, drag with the mouse to cast, turn the mouse wheel to reel, and use the keys: W and S raise and lower the rod, A and D steer, Space sets the hook, R reels, and [ and ] set the drag. E also opens and closes the bail, but you never need it.
+**Goals.** Each place has six goals that ask for the skills the game teaches, such as "Cast 40 m." at Loon Lake or "Turn a fish from the stumps." at Stump Bay. The Places card shows "Goals: 2 of 6" and checks off the ones you did. Each goal you finish plays the record sting and says "Goal done: Cast 40 m."
 
-**Phones and rotation.** The game stays upright on the phone. If the browser turns the page anyway (rotation lock off, or a big steering tilt), the game turns the picture back. On Android the game goes full screen and locks the page upright. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. The screen stays awake while you fish.
+**Today's goal.** The title shows one goal for each day, picked from the date and the open places: "Today: land 5 fish at Loon Lake. 1 of 5." In the journey sim, the median beginner finishes each one in 20 casts or fewer. Each day you finish adds to a run ("Today's goal is done. 2 days in a row."). A missed day ends the run and takes nothing else away. The first fish of a day says "Your first fish today." When one catch brings several pieces of news, they show together in one toast.
 
-**Safety.** Grip the phone tight. Only your thumb lets go, never your hand. Use a wrist strap if you have one, and keep 2 m clear around you.
+**What next.** The title and the pause card name one thing to aim for. First comes the goal that opens the next place. Then comes a legend you have not landed, with when to look for its gold ring. After that come the next goal at this place, the next derby rank, and the fish still missing from your Journal.
 
-The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
+**The derby.** Free fishing has no limit, and its clock moves an hour every 75 s. In the Derby you get ten casts, and your score is the weight of everything you land. A cast that misses the water does not use up a derby cast, and the game says "You get that cast back." Each place has six ranks, from SKUNKED up to its own CHAMPION. The results count the total up from zero, then show the rank, the next rank ("Next rank: WEEKEND ANGLER at 4 kg."), and your old best when you beat it. A derby catch that opens a place says so on its card, and the results offer **Go there**.
+
+**Help for short casters.** While the goal that opens the next place is open, the first cast shorter than 22 m says "Big fish live far out." Every fifth short cast after it says so again. The game also counts your casts in the water at that place in free fishing. After 20 of them, the next ring that rises within 25 m carries a big fish, and the game says "A big fish is rising close in." That ring stays at least 90 s. When you land the big ring's fish, the count starts again from 0. The game keeps the count only while the page is open, and a cast at another place starts it again.
+
+**Sweet casts.** Three sweet casts in a row in free fishing light up the report ("Three sweet casts! A big fish is near.") and make the next cast in the water bring a bigger fish. A cast that is not sweet ends the run.
+
+**The Journal** has a tab for each place. It shows your best of each fish you caught, then the next three to find with where and when to look, then how many more are left. Above the list, under the place tabs, it counts the fish found, the fish landed and the casts, your best sweet run, and the days you finished today's goal.
+
+The arcade cabinet shows one line from your save: all four legends, or the places open with your biggest fish, or your best derby at Loon Lake, or your biggest fish.
+
+### Sound and feel
+
+- **The hook set.** The lake freezes for 70 ms, the view punches in, the rod tip whips, and "Fish on!" fills the prompt's place for about 0.9 s. A deep thump and a buzz longer than the strike's come with it. A set within 250 ms of the strike adds "Quick set!".
+- **Jumps.** The view zooms in on a leaping fish, so a smallmouth 30 m out shows at least 20 px wide on a phone. Then it eases back.
+- **Catches.** Each kind of catch has its own sound. A plain fish gets the landed sound. A new species gets a short rise and a new record a brass call. A trophy or a legend gets the whole fanfare, and a legend then plays the call of its place. A legend's next stage gets a drum roll and no fanfare. On the catch card the weight counts up with rising ticks, then the badges stamp on. A trophy, a legend, or a fish that opens a place gets a photo first, with a flash and a shutter.
+- **A new place.** Its card rises in with a horn call and the new place's own sound, and the NEW PLACE badge stamps on.
+- **The derby end.** The total counts up over about 1 s. Then the rank stamps on, with the fanfare for a new best or a soft close.
+- **Splashes** grow with distance, so a lure 45 m out still makes a splash you can see.
+- **Sound.** The game makes its sounds in code: the bail clack, the rod swish, the spool whirr, the splash, the crank gears, the drag ratchet, the line snap, and a loon on the lake.
+- **Buzz.** On Android the phone buzzes for the gear ticks, nibbles, the strike, the line tension, the drag and the catch. A web page on an iPhone cannot start a buzz from code, so there only a finger on the reel or the crank gives a tap. In the iPhone app every buzz goes through the native haptics plugin, with the same priorities, rate limits and mute. **Buzz and taps** in Settings turns it all off.
+
+### Cutscenes
+
+Short cutscenes play in the game's own scene, with letterbox bars, one caption and their own sound. They need no network and no video files.
+
+- **The opening:** the first **Go fishing** on a new save. The camera glides low over Loon Lake at dawn, past the loon, and settles on the dock in the cast view. The cast starts when it ends.
+- **Arrivals:** the first trip to a new place flies in over it, with its name, before the arrival card.
+- **Legend reveals:** the first gold ring of a place's legend, outside a fight, once you have landed a fish. The camera pushes toward the ring, the legend breaches, and its name shows. Then play goes on from the same cast.
+- **Legend landed:** a hero shot of the legend with its name and weight, before its catch card.
+- **The finale:** when you leave the card of the fourth legend, "You fished them all."
+
+Each cutscene plays once, and never in a fight. While one plays, the fish, the clock and the derby wait. Escape and the Android back button skip it at once. A tap, Space or Enter skips it after its first 0.5 s, so the second tap of a double tap does not. With Calm effects or reduced motion, a cutscene shows still shots joined by fades. **Watch** on a Places card plays that place's arrival and its legend's reveal again, once you have seen them.
+
+### Menus and settings
+
+**The title** has **Go fishing** (free fishing, the red button), **Derby: 10 casts**, **Places**, **Journal**, **How to play** and **Settings**. On the web it also has **Switch game** and **Back to the arcade**. Under the menu are your best derby and biggest fish at this place, the next thing to aim for, and today's goal. **Places** has a NEW tag while an open place waits for your first visit.
+
+**The guide.** The **?** button in play shows an animated guide to the moves. A new player sees it until they land their first fish, unless they turn it off.
+
+**How to play** opens on the tab for your input: **Motion**, or **Touch and mouse**. Each tab is a short list that ends with the rising rings. The fish moves sit behind a **Fish moves** row. The Motion tab has a short clip of the tip back as you reel.
+
+**Settings:**
+
+| Row | What it does |
+| --- | --- |
+| Sound | Turns the sound on and off. |
+| Buzz and taps | Turns the buzz and the taps on and off. |
+| Easy mode | On at first. See [The cast](#the-cast). |
+| Controls | Motion or Touch. Motion needs a phone. |
+| Reel side | Right or Left. In motion play it moves the crank, the drag buttons and the gauge to the other side. In touch play the crank is always on the left. |
+| Art style | Painted (the default: cartoon models, painted skies, painted trees and soft cel shading) or Original (the lake that the code builds). A save from before the name Painted keeps its look. |
+| Graphics | Auto (Low on a phone, High on a computer), High or Low. |
+| Larger text | Makes the words in play, on the cards and on the gauge 1.25 times as big. |
+| Calm effects | Stops the flashes, pulses, pops, count-ups, freezes, camera punches and zooms. The words, the sounds and the buzz stay. It is on when the phone asks for reduced motion. |
+| About | The version, a credit line, and the privacy policy. |
+| Privacy | The privacy policy (`privacy.html`). It opens with no network. |
+
+The pause card has **Resume**, **How to play**, **Journal**, **Settings** and **Quit to the title**. On the web it also has **Switch game**, and **Fullscreen** where the browser allows it. It shows your catch so far and the next goal. Prompts and toasts reach screen readers through live regions, and each screen is a labeled dialog.
+
+**Keys.** Escape or P pauses and resumes play. Escape also closes How to play, the Journal, Settings, Places, About and Privacy. On the catch card, Enter or Space presses the main button. Space waits until the photo is done.
+
+### Start-up, the store build and the app
+
+**Offline start.** The game starts and plays with no network. three.js r170 is in `lib/`, and the fonts Alfa Slab One and Nunito are in `fonts/` with their licenses. From the first frame a loading screen shows "REEL IT IN", a moving bar and "Loading the lake." A card with **Try again** takes its place when a module does not load or the device cannot draw 3D. The card also comes when the title is not ready after 15 s. If the GL context is lost, the game pauses, the pause card says "The lake is coming back.", and **Resume** waits until it is back. If it is still lost 4 s after the page shows, the card with **Try again** comes up.
+
+**Render scale.** When frames stay slow for about a second, the lake draws with fewer pixels, in steps down to 60%. When frames are fast again, it climbs back in steps. One slow frame changes nothing. A screen held at 30 Hz, such as an iPhone in Low Power Mode, also looks slow at first. The game tests one step down and then 60%. When neither helps, it goes back to the scale it started at. Under a menu card the game draws the lake once, and the lake stands still.
+
+**Phones and rotation.** In motion play the game stays upright on the phone. If the browser turns the page anyway (rotation lock off, or a big steering tilt), the game turns the picture back. On an iPhone, turn on Portrait Orientation Lock for the smoothest cast. On the web, Settings and the pause card have a **Fullscreen** button where the browser allows it. In full screen, motion play also locks the page upright. The screen stays awake while you fish.
+
+**The store build.** `<html data-build="store">` makes the page the app. A script at the top of `index.html` sets it inside a Capacitor app, and the app build writes it into its own copy. The store build hides **Switch game**, **Back to the arcade** and **Fullscreen**. It drops the "GET PLUNGER'D" kicker and skips the game switcher script. It uses app words, such as "Motion is off. You can play with touch." The app build also strips the arcade scripts from its copy. `js/native.js` is the only module that talks to Capacitor, and a missing plugin does nothing. In the app it handles the Android back button, app pause and resume, the splash screen, keep awake, and native haptics. The save and the settings also go to native storage, so they come back when the phone clears the web view's storage. The Android back button closes the top screen. In play it pauses, and on the pause card it resumes. On the catch card, the results and the arrival card it presses the main button. On the card of a new place it picks **Stay here**. On the title it sends the app to the background.
+
+**The apps.** `apps/fish/` wraps this page as an iPhone and Android app with Capacitor 8. [apps/fish/README.md](apps/fish/README.md) has the steps to build, sign and upload both apps. The store kit is in `apps/fish/store/`: the listing, the data safety and age answers, the accessibility labels, the screenshot list, the review notes, and the Play icon and feature graphic in `graphics/`.
+
+**QA switches.** Add these to the address:
+
+| Switch | What it does |
+| --- | --- |
+| `?open` | Opens every place for this page load. The game does not save it. |
+| `?day=YYYY-MM-DD` | Sets the day of today's goal for this page load. The game does not save its progress. |
+| `?shot` | For the store pictures: Graphics High, the lake at up to 3 times the CSS pixels, and no automatic render scale. |
+| `?debug` | Shows the sensor readings, the cast numbers, the timing of the last lift, and the frame rate. |
+
+## Moonwell
+
+Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an endless row of moonlit islands, and the screen scrolls with it. A pair of gold flippers guards the water gap at the bottom of each bowl. The left flipper shoots the pearl up and over the next ridge. The right flipper passes it back across the bowl. Flip near the tip for power: one good shot clears a ridge, and a late, sweet one can clear two. When the pearl crosses a ridge, a moon gate closes behind it, so the run only goes forward.
+
+- **The islands** come from a seed and never end. Every eight islands make a region with its own look: Willow Meadow, Lantern Bridge, Lily Pond, Star Garden, Crystal Hollow and Cloud Isles. Ridges get taller, the gap gets wider and play gets a little faster as you go.
+- **In the air** are stars (an arc of stars shows the ideal shot), gold bumpers, lanterns to light with a pass, turning mills, gold rails that carry the pearl over two or three islands, moon portals, and a big pearl every ten islands for one more life.
+- **Scoring.** Ridges in a row raise the multiplier, up to x8, and a drain ends the streak. Stars, bumpers, lanterns and ridges fill the moon in the sky. A full moon starts Moonrise: 12 s of double points, stronger flippers and no drains. Long shots, swift clears and clutch saves pay extra.
+- **Shrines.** The last island of each region is a shrine with a sealed gate. Send the pearl into the moonwell and choose one of three charms, such as stronger flippers, one more pearl, a moon bridge for the next drain, or a star magnet.
+- **Pearls.** A run has three pearls. A lost pearl comes back in a moonbeam over the same bowl. The first three islands have a moon post between the flippers, so a new player cannot drain there.
+- **Controls.** Z, A or ← for the left flipper, X, D or → for the right one, C or ↑ to pulse the pearl up, Space to drop a pearl, Esc or P to pause and M to mute. On a phone, hold the left or right half of the screen. A gamepad uses its shoulder buttons. The first island shows you how.
+- **Your best** score and island stay in this browser. A flag stands on your furthest island, and the Moonwell machine shows the best run.
+
+The islands are drawn in code. The bumper, portal, star, pearl and flipper sprites, and the far islands, come from the original Moonwell paintings (`qa/moonwell/sprites.sh` cuts them). A bot plays behind the title.
 
 ## The lab
 
@@ -391,7 +517,7 @@ Each toy starts with a card that says what to try. The lab page shows how long y
 - **Loon Echo** (`/echo/`). Lead a line of chicks home past an eel and boats. Each full nest hatches a harder clutch, and a big bank gets slow motion. Every day brings a new lake.
 - **Take the Plunge** (`/lab/plunge/`). A loon dives into lakes for speed, ahead of winter. Hold to tuck and dive. Let go to glide. A green cue says when a hold will rip, and the first burst of each run is a slow-motion peak. The lakes change each day at midnight at the cottage, so the whole crew flies the same lakes. A ghost link lets a friend race your run.
 - **Up the Creek** (`/lab/creek/`). The phone is a canoe paddle: rock the top edge to stroke, twist for a J-stroke, and tilt and hold to brace. Thumbs and keys turn the way you press. Catch the eddies behind the rocks, heed the warning before a capsize, and boof the ledge at the bottom of today's river.
-- **Full Tilt** (`/lab/tilt/`). Open-space pinball across six star systems. Light the three relays in each world with the flippers, then shoot through the jump gate. A planet's pull bends your shot.
+- **Full Tilt** (`/lab/tilt/`). Pinball in open space across six worlds. Light the three beacons in each world, then shoot through the jump gate. A ring and a rising tone come up to 0.9 s before each flip, and each flip is Perfect, Good or Late. Clean flips in a row raise the multiplier, with no top. Hold to aim the launch, and light the gold beacon first for a skill shot that pays double. Start voyage flies the voyage of the day, so the crew flies the same worlds, and the end card says how close you came to your best.
 - **House Rules** (`/lab/rules/`). You are the Cottage. Dig tunnels and pour sand, water, lava, oil, acid, swamp gas and gold. Then place critters, propane tanks and the two drains. Settle runs Down the Drain's own rules, tanks included, and a drag while it runs pokes the preview. Test it opens your layer in Down the Drain. When you reach a drain in your own layer, Share gives you a link for the crew. A friend races your time on a live clock and can send a time back or remix the layer.
 
 The latest review of every lab game against the bar, and what changed, is in `docs/lab-fun.md`.
@@ -424,6 +550,25 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 
 `voice/` lets the owner talk to their Hermes agent on a Fitbit Sense 2. The watch cannot run apps, but it can answer calls. Hermes rings the owner's phone through Twilio, the owner answers on the watch, and a small call server connects the call to the Hermes API server. It runs on the computer that runs Hermes, not on Vercel, and the arcade does not use it. Setup and use are in `voice/README.md`.
 
+## Mods for Claude Code
+
+`mods/` holds ten Claude Code mods: plugins whose hooks run inside Claude Code while the crew builds the arcade. Nothing loads by itself. Turn on one mod for one session with `claude --plugin-dir mods/<name>`, or add the folder as a marketplace once with `claude plugin marketplace add ./mods` and install the mods you want from `cottage-mods`.
+
+| Mod | What it does |
+| --- | --- |
+| `announcer` | The Shore of the Ancients announcer calls green test runs: "First blood", multi kills within a turn, streaks up to "Godlike", "Shut down" when a red run ends a streak, and "Flawless victory" for a merged pull request. A toast shows each call. The clip plays where Claude Code can play one (macOS). |
+| `cabinet-spinner` | The game whose folder Claude last edited is the cabinet in play. In the terminal the spinner says its verbs ("Reeling", "Paddling", "Parrying") and a turn ends with its phrase ("Landed it in 3s"). The status line shows the cabinet and the arcade tokens: a prompt spends one, a green test run pays one back, FREE PLAY at zero, and `/change` adds three. |
+| `creel` | While a command runs 3 seconds or more, a bobber sits on the water above the prompt. When it ends, a Reel It In fish comes up: heavier fish for longer green runs, the Old Boot for red ones, the Golden Loon Bass for a merge. `/creel` shows the catch and the daily goal. |
+| `loon-chicks` | Each subagent swims as a Loon Echo chick behind the loon above the prompt. It reaches the nest when it answers; the eel takes it when it fails or is stopped. `/chicks` lists them. |
+| `tilt-sensor` | The house rules as a pinball tilt: an Olympus edit needs `npm run build --prefix games/olympus`, a Follow Suit edit needs `npm run build:arcade --prefix follow-suit`, a page with sound loads `/arcade/quiet.js` first, and an arcade screen is a WebP 480 pixels wide and under 60 KB. An edit that breaks one shows DANGER. A commit that would ship it is blocked with TILT and the fix. `/tilt-sensor` lists and resets. |
+| `wanted-level` | Crimson Rogue stars for risky moves: force pushes, `rm -rf`, hard resets, `.env` files, the paid `/api/warden` and project deletes. One star fades every 10 minutes. At five stars the next risky move is blocked until the stars fade or you run `/lay-low`. |
+| `task-breakout` | `/breakout` shows the active OpenSpec change as a brick wall: a brick for each open task, a gap for each done one. When a box is checked, the ball breaks its brick. The last one is STAGE CLEAR, and the prompt suggests the archive. |
+| `attract-mode` | When the session is idle for 3 minutes, a pane grows a live Primordia Lenia dish, like a cabinet's attract screen. The next prompt closes it. `/attract` opens it at any time. |
+| `full-tilt` | `/full-tilt` plays the Full Tilt table in a pane with the game's own physics: `z` and `m` flip, `l` launches, `k` drops the ball soft into a top lane for a skill shot, `n` starts a new game, `p` pauses. The best score is kept. |
+| `photo-booth` | After a QA run, the screenshots it saved show in a pane, newest first: `p` and `n` step through them. |
+
+The terminal draws the pinball table, the brick wall and the Lenia dish with half-block cells, and pictures only in kitty or Ghostty. The desktop and mobile apps draw the same panes as SVG. Some game code and the announcer clips are copies: `node mods/sync.mjs` makes them again from `public/` after the game changes.
+
 ## Files
 
 | Path | What it does |
@@ -452,13 +597,19 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `public/wild/models/` | The Higgsfield 3D models (GLB, packed with gltf-transform) |
 | `public/wild/tex/` | Painted ground textures, the mountain backdrop, the key art, and the title vista |
 | `public/wild/art/` | The hero cards for the hero select |
-| `public/fish/index.html` | Reel It In: the page, the HUD, and the menus |
-| `public/fish/js/` | Reel It In modules: `main.js` (the game flow), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `reel.js` (the reel face, the crank, the rod pad, and the tension gauge), `cast.js` (the cast and the lure's flight), `fish.js` (rising fish, bites, and the fight), `places.js` and `places/` (the four maps: height, depth, zones, current, snags), `lake.js` (the map of the place you are at), `species.js` (the 26 fish and the junk), `fishing.js` (who lives where, the gear, the cover, and the legend at each place), `journey.js` (the trail of places, goals, ranks, and text), `save.js` (the save file), `world.js`, `world-look.js` and `world-*.js` (the 3D places and the fish bodies), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android and the taps on iPhone) |
+| `public/fish/index.html` | Reel It In: the page, the boot screen and its error card, the HUD, the menus, and the store build flag with the CSS that hides the arcade parts |
+| `public/fish/style.css`, `public/fish/guide.css`, `public/fish/cutscenes.css` | The painted title, the rod cues, Calm effects and Larger text; the moves guide; the cutscene bars, caption and Skip hint |
+| `public/fish/js/` | Reel It In modules: `main.js` (the game flow, the menus and the settings), `motion.js` (the phone as the rod: sensors, rod angle, cast timing), `cast.js` (the cast, how a release is graded, and the lure's flight), `cast-rail.js` (the touch cast rail), `reel.js` (the reel face, the crank, the rod pad, and the gauge), `fish.js` (rising fish, bites, and the fight), `pull.js` (the reel power of a tip back), `line-motion.js` (the line and the hanging lure), `places.js` and `places/` (the four maps: height, depth, zones, current, snags), `lake.js` (the map of the place you are at), `species.js` (the 26 fish and the junk), `fishing.js` (who lives where, the gear, the cover, and the legend at each place), `journey.js` (the trail of places, the ranks, the loss lines and the other words), `goals.js` (the six goals of each place, today's goal, the next goal, and the help on the way), `save.js` (the save file), `cutscenes.js` (the cutscene scripts and their player), `guide.js` (the moves guide, and the one set of words for each move), `rod-cues.js` (the cues on the rod), `world.js`, `world-look.js` and `world-*.js` (the 3D places and the fish bodies), `art-style.js`, `cartoon-models.js` and `painted-forest.js` (the Painted style), `render-scale.js` (the automatic render scale), `calm.js` (Calm effects or reduced motion), `native.js` (the bridge to the phone app), `version.js` (the version that About shows), `audio.js` (every sound, made in code), and `haptics.js` (the buzz on Android, the taps on iPhone, and native haptics in the iPhone app) |
+| `public/fish/lib/`, `public/fish/fonts/` | three.js r170, and the Alfa Slab One and Nunito fonts with their licenses, so the game starts with no network |
+| `public/fish/art/`, `public/fish/clips/` | The painted pictures and the cartoon models of the Painted style (`art/README.md` says how they were made), and the clips for the moves guide and How to play |
+| `public/fish/privacy.html` | The privacy policy. The web serves it, and the game shows it in Settings with no network |
+| `qa/fish/` | Tests for Reel It In (see below) |
+| `apps/fish/` | The iPhone and Android app: a Capacitor 8 project, the script that builds a self-contained `www/` from `public/fish/` and checks it, the native projects, the icons and the splash, and the store kit in `store/`. Its README has the release steps |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
 | `public/lab/creek/` | Up the Creek: `river.js` (the river and its current), `canoe.js` (the canoe), `paddle.js` (reads strokes from the phone), and `main.js` |
-| `public/lab/tilt/` | Full Tilt: `table.js` (the table), `physics.js` (the ball and the flippers), and `main.js` |
+| `public/lab/tilt/` | Full Tilt: `adventure.js` (the voyage, the worlds and the rally), `physics.js` (the ball, the flippers and the flip forecast), `table.js` (the classic table), `render.js` and `main.js`. Its own README has the details |
 | `public/lab/rules/` | House Rules: `layer.js` (a layer as data, as a link, and as ground), `sand.js` (a copy of Down the Drain's sand rules, for the preview), `editor.js`, and `play.js` (the layer inside Down the Drain) |
 | `docs/game-ideas.md` | The bar for new games, eight ideas, ideas for every cabinet, and the toys in the lab |
 | `qa/lab/` | Tests for the lab (see below) |
@@ -471,6 +622,7 @@ A keeper session refreshes the board every hour. To refresh it by hand, do the s
 | `qa/voice/` | Tests for the watch call |
 | `studio/refresh.mjs`, `studio/page.html` | The studio board: the script that finds the agents, work trees and cabinets, and the page it fills (see [The studio board](#the-studio-board)) |
 | `qa/studio/` | Tests for the studio board |
+| `mods/` | The Claude Code mods, their marketplace, `sync.mjs` (copies game code and clips into them), `check.mjs` and `qa/frames.mjs` (see [Mods for Claude Code](#mods-for-claude-code)) |
 | `vercel.json` | Serves `public/` with no build step |
 | `qa/` | Playwright scripts that test the game in a headless browser |
 | `legacy/warden-iso.html` | An older build, kept for reference |
@@ -515,29 +667,58 @@ Set `WILD_URL` to test another address. If the CDN is blocked, set `THREE_LOCAL`
 
 ### Reel It In tests
 
-Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run each script with Node from the repo root. The scripts that open a browser need Playwright: set `NODE_PATH` to the folder that holds it (for example `NODE_PATH=$(npm root -g)`). Each one exits with code 1 when something fails. They serve three.js from the repo's own copy, so they need no CDN.
+Serve `public/` (for example `python3 -m http.server 8765 --directory public`), then run each script with Node from the repo root. The scripts that open a browser need Playwright. Run `npm ci --prefix qa/browser`. Then run `npx playwright install --with-deps chromium` in `qa/browser`. Then set `NODE_PATH=qa/browser/node_modules`. Some scripts serve `public/` themselves. Each one exits with code 1 when something fails. The game ships three.js and its fonts, so the scripts need no network.
 
 | Script | What it checks |
 | --- | --- |
-| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events, all upright: one press opens the bail and holds the line, a lift with no swing starts again, the rod loads, the whip and the release cast the lure, the reel starts on the landing, the first crank turn closes the bail, the crank brings a strike, a pull sets the hook, the fight lands the fish, the next cast is ready at once, and a swing with the thumb still down casts low |
+| `qa/fish/boot.e2e.mjs` | Boot and the app shell on a 390x844 phone: an offline start with every other host blocked, slow fonts, the boot card for a missing module, no WebGL and a slow title, and **Try again**. The store build with a stub Capacitor: no arcade parts, the six title controls and the five pause buttons, the back button on every screen, app pause and resume, the save mirror, and a save restored from native storage. A GL context lost in a fight, the render scale in the page, and the lake drawn less under menus. One part waits 15 s on purpose |
+| `qa/fish/render-scale.test.mjs` | The render scale in node, fed frame times at known rates: one hitch changes nothing, a slow stretch steps down to the floor and climbs back, a screen held at 30 Hz, a phone on the edge that must not pump, and a 120 Hz screen |
+| `qa/fish/app-bundle.e2e.mjs` | Builds `apps/fish/www`, serves it on its own origin with every other origin blocked, and opens it with a fake Capacitor: the title shows, the store flag is set, no arcade text shows, no request leaves the origin, and no file is missing. It needs no other server |
+| `apps/fish/scripts/check-www.test.mjs` | The bundle check on about 50 small made-up bundles: what must fail (another host, a web address in the code, a root path of the site, a missing file, arcade text on the page), what only warns ("ghibli", arcade text in a script, a file that nothing loads), and what is allowed |
+| `qa/fish/flow.mjs` | The whole game with motion, on a virtual phone that sends real sensor events, all upright: one press opens the bail and holds the line, the rod loads, the whip and the lift cast the lure, the reel starts on the landing, the first crank turn closes the bail, a pull sets the hook, and the fight lands the fish. Then a lift with no swing starts again, and a swing with the thumb still down casts low |
 | `qa/fish/motion.test.mjs` | The rod angle, its speed, the yaw, the steering tilt, and the orientation from made-up sensor data, in every hold, through the angles where the browser's numbers flip. A simulated overhead cast checks the release angle to within 3° |
 | `qa/fish/motion.e2e.mjs` | Real, trusted sensor events from Chromium's sensor emulation reach the game |
-| `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, casts that land behind you, and casts that slap the water |
-| `qa/fish/fight.sim.mjs` | Thousands of fights at Loon Lake with scripted players: a good player lands almost every fish, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also the fight times, bite rates by zone, and the weights |
-| `qa/fish/places.sim.mjs` | Fights at all four places with skilled, casual and flawed players: median fight times, land rates, the legends' three stages and rests, the rub meter, the spool, and the dead-tow time. Uses `fightlib.mjs` |
+| `qa/fish/release.test.mjs` | How a release is graded, in node: the touch mapping in `cast.js`, a motion lift up to 90 ms either side of 11 o'clock is sweet, a held thumb casts low, the same flick gets the same verdict however long the finger rests before the lift, a flick that lifts 10 to 130 px past the press point lands 25 m or more out, and a lift 30 px below the press point grades high |
+| `qa/fish/cast.sim.mjs` | Cast distances and flight times for every release angle and swing speed, feathering, early and overhead releases that still land in front of you at every place, casts that slap the water, a motion release stepped from 200 ms early to 200 ms late with no sudden drop, and easy mode for a careful player |
+| `qa/fish/touch.e2e.mjs` | Touch play in the page: a press anywhere waits for the drag (up and down takes the line, sideways aims with the bail shut), a stray swipe up casts nothing, the release at the finger, a flick past the press point, "Sweet!" at the release, the rail, a cancelled touch, the aim preview and the near miss, the crank on the left with the rod pad on the right, and a fling on the lake that sets the hook. Also motion with no back swing, sensors that stop (touch is offered within 2.5 to 4.5 s), and a Space cast |
+| `qa/fish/mouse.e2e.mjs` | The mouse on a computer: the hold cast and its timing, sideways aim while holding, the rail on the screen, the bail opened with E, the drag and flick, a press on a HUD button that never casts, a click in the flight that feathers the line, and a click in the reel that starts no cast |
+| `qa/fish/desk.mjs` | A computer with no sensors: a press and a drag down hold the line, a flick up casts, the reel starts on the landing, the mouse wheel reels and closes the bail, Space sets the hook, and W and S work the rod |
+| `qa/fish/turnaround.e2e.mjs` | The time from the end of a cast to the next one, printed and checked: the empty retrieve, "Nothing this time.", a cast onto the shore, a loss, the press that ends a beat and goes on into the cast (a mouse button, Space, a finger, a thumb in motion play), presses on the HUD, the drag bar and the reel controls that cast nothing, the derby rules, and Space on the catch card |
+| `qa/fish/fight.sim.mjs` | Thousands of fights at Loon Lake with scripted players: a good player lands 85% or more of the fish hooked, and 70% or more of each species, a greedy one snaps the big ones, an idle one loses them, a late one misses, an early one spooks them. Also the fight times, bite rates by zone, and the weights |
+| `qa/fish/places.sim.mjs` | Fights at all four places with skilled, casual, novice and flawed players: median fight times, land rates, the legends' three stages and rests, the rub meter, the spool, and the dead tow. Uses `fightlib.mjs` |
 | `qa/fish/size.test.mjs` | The weight mix at each place (median, small and big shares, long casts against short casts), and the size rank of every species |
+| `qa/fish/reel.ui.mjs` | The reel controls with real touch sequences: the bail swipe, the pin and release timing, a second finger, the ways a press takes the line in the cast, the crank rate, the mouse wheel, the rod pad and its swipe up, and all of it with the page turned 90° either way. The gauge: a word for each state, the hatching under a deuteranopia filter, the rub band, the line out in red near the end of the spool, a legend's stage marks, and FIGHT and TIRED. It serves `public/` itself |
+| `qa/fish/words.test.mjs` | One set of words for each move: the table in `guide.js`, the guide captions, and that `main.js` takes every move's words from the table. Also the loss lines |
+| `qa/fish/screens.mjs` | The prompts in their order, the loss lines, "Big fish on!" and the reveal, the sound and the buzz of each move, the catch card, the unlock cards, the results, the journal, the goal reminders, and the old-save toast, with staged fights. Also the prompt hold, the toast queue away from the crank, SLACK, the readable gauge, the loss beat, and the first fish |
+| `qa/fish/line.test.mjs`, `qa/fish/pull.test.mjs` | In node: the line and the hanging lure settle and stay finite at 30, 60 and 120 frames a second. The pull strength eases in, needs the crank, and gives nothing near the break or in a jump |
 | `qa/fish/places.map.mjs` | The four maps: zone shares, the stand, the current, the snags, the speed of `height()`, and that Loon Lake is unchanged |
-| `qa/fish/save.test.mjs` | The save file: old saves, junk values, the move of an old save to the places, and a stable round trip |
-| `qa/fish/journey.sim.mjs` | How many casts a novice and a good player need to open each place, the derby ranks, and that each goal is a fair size |
-| `qa/fish/screens.mjs` | The prompts in their order, the loss lines, the catch card, the unlock cards, the results, the journal, and the cabinet line, with staged fights |
+| `qa/fish/save.test.mjs` | The save file: old saves, junk values, the move of an old save to the places, and a stable round trip. Also the goal fields and their fuzz, the six goals of each place, today's goal over 60 days with the run of days, the next goal and the next rank |
+| `qa/fish/journey.sim.mjs` | How many casts a novice and a good player need to open each place, the derby ranks, and that each goal is a fair size. A beginner who casts short opens Stump Bay in 25 casts or fewer (median) with the help, the sweet-cast boost gives bigger fish, and a beginner finishes each daily goal in 20 casts or fewer (median) |
 | `qa/fish/travel.mjs` | Travel between the places: the cards, the draw call and triangle limits at each place, and that memory does not grow over a loop of trips |
-| `qa/fish/fish.render.mjs` | Every fish and junk builds with 3 draw calls, stays within the triangle limit, shows in the catch view, and frees its textures |
-| `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, and the iPhone switch pads |
+| `qa/fish/moments.e2e.mjs` | Each big moment with its sound, its buzz and its picture on a phone: the strike, the hook set, a run, a legend's stage, the jump zoom, a ring hit, a sweet release, a far splash, the catch stingers and the card, the new place card, and the derby end. Then Calm effects, and the jump zoom at 844x390, 360x640 and 1280x800. `PARTS` picks parts |
+| `qa/fish/haptics.test.mjs` | Buzz priorities, rate limits, the tension and drag pulse trains, muting, the iPhone switch pads, and native haptics in the iPhone app through a stub Capacitor |
 | `qa/fish/audio.render.mjs` | Every sound renders, is not silent, does not clip, and follows its input |
-| `qa/fish/reel.ui.mjs` | The bail swipe, the pin and release timing, a second finger, the crank rate, the rod pad, and all of it with the page turned 90° either way |
-| `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
+| `qa/fish/cutscenes.test.mjs` | The cutscene scripts in node: how long each lasts, where the camera goes, the captions, and the ids the save keeps |
+| `qa/fish/cutscenes.e2e.mjs` | The cutscenes in the page: the opening and the fly-ins play once, a skip by a tap, Space or Escape, **Watch** on the Places card, no cutscene in a fight, a reveal that holds the derby clock, the hero shot, the finale and the back button, an old save, Calm effects, and the bars and the caption at four sizes |
+| `qa/fish/menus.e2e.mjs` | The first run, the menus and access: the title (eight controls on the web, six in the store build), **Go fishing** starts free fishing, the guide for a new player, How to play on the right tab with no scroll at 390x844, the settings rows, About and Privacy with no network, the Painted name, Larger text at 360x640, Calm effects, the reel side mirror, the live regions and the dialogs, the HUD chip at 360 px, and `?shot` |
+| `qa/fish/shots.mjs` | Screenshots of every screen at the six store sizes, with a layout scan: a control off the screen, text cut off, a control over another, and a tap target under 44 px. Set `SHOTS` to a folder. `TEXT=large`, `CALM=1`, `WEB=1` and `ART=original` take other settings. Look at the pictures too |
+| `qa/fish/world.render.mjs` | Each place on the title at four or five hours, and in the cast, flight, reel and catch views at its derby hour. Two or three catches at each place. Its legend fits the catch view, also at its trophy weight on a narrow phone. The night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
+| `qa/fish/fish.render.mjs` | Every fish and junk builds with 3 draw calls, stays within the triangle limit, shows in the catch view, and frees its textures |
+| `qa/fish/cartoon.render.mjs` | The Painted style: the cartoon models, the painted forest, the rod bend, the switch between the styles, and art that does not load |
 
-Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
+Set `FISH_URL` to test another address. Many scripts save screenshots to the folder in `SHOTS`.
+
+### Moonwell tests
+
+Run these from the repo root. The browser checks need `public/` served at http://127.0.0.1:8765/ (or set `BASE_URL`).
+
+| Script | What it checks |
+| --- | --- |
+| `node qa/moonwell/world.test.mjs` | The same seed gives the same islands, 1,000 islands join up and the old ones are dropped, every eighth island is a shrine, rails and portals never skip a shrine, nothing sits in the ground, and the islands get harder |
+| `node qa/moonwell/play.test.mjs` | Drains, the moon post, a cradle, late and early flips, the right flipper's pass and the gate, no tunnelling, bumpers, the multiplier, long shots, Moonrise, rails, portals, shrines and charms, big pearls, the moonbeam and the end of a run, and a 15-minute run |
+| `node qa/moonwell/bot.mjs [runs] [skill] [minutes]` | Bots of a given skill play whole runs and report how far they get, where they drain, and what they meet |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/cabinet-art.mjs` | Makes the machine art, `public/arcade/moonwell.webp`, from a frame of the real game |
 
 ### Arcade tests
 
@@ -584,6 +765,10 @@ Run `node qa/studio/refresh.test.mjs` from the repo root. It builds a small git 
 
 Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo root. The tests place a call against a stand-in Twilio API and open call sessions the way Twilio does, against a stand-in Hermes API server. Forged signatures, forged or reused call tokens and messages before setup must never reach Hermes. The script exits with code 1 when something fails.
 
+### Mod tests
+
+Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It checks that the copies in the mods match `public/`, that every game in `public/arcade/switch.js` has a cabinet, that the marketplace and each mod validate, and it runs each mod's tests with `claude plugin test`. The type check also needs `tsc` and the engine's declarations: set `CLAUDE_CODE_TYPES` to the path of `claude-code.d.ts`, or load a mod once so Claude Code lays them in its folder. `node mods/qa/frames.mjs` times the three animated panes (each under 4 ms a frame) and draws a frame of each to a PNG. Each script exits with code 1 when something fails.
+
 ## Jev and cost
 
 `api/warden.js` signs in to AI Gateway with the project's Vercel OIDC token, so the repo holds no API key. To use a gateway key instead, set `AI_GATEWAY_API_KEY`. To pin a model, set `JEV_MODEL` (the default is `typesafe-ai/jev`).
@@ -595,3 +780,9 @@ Run `npm ci --prefix voice`, then `node qa/voice/call.test.mjs` from the repo ro
 The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage Arcade cabinet and shared game-switcher entry. It includes eight fighters, landscape and portrait controls, collectible power-ups, default-on chiptune audio after the first gesture, and the corrected Christian portrait and title poster. Jev tactics use the existing `/api/warden` gateway, with local AI fallback; no extra client API key is needed.
 
 
+
+## River Rush
+
+River Rush is a whitewater treasure race at `/river-rush/`, with an Action cabinet and a shared game-switcher entry. Steer with A/D or the arrows, hold Space and release near the golden key to catch it, and hold E for two seconds to unlock the chest. Beat the rival into the marked left escape channel before the waterfall. Phones support dragging and separate touch buttons. Reaching reduces steering, rocks drain balance, and a rope recovers the player after a fall. Pause with Escape; best winning scores are saved on this browser and shown on the cabinet.
+
+Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; the static output is committed in `public/river-rush/`. Audio uses the arcade’s shared quieting script.

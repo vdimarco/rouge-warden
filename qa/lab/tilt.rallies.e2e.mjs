@@ -23,7 +23,9 @@ async function fixture(page, kind, side = -1) {
       .replace('export function updateAdventure(', 'function fixtureUpdateAdventure(') + `
 let fixtureCreations = 0;
 export function createAdventure() {
-  const run = fixtureCreateAdventure(43), sector = currentSector(run), side = ${side};
+  // Seed 124 gives the first layout of the first world, and the strike shot from either
+  // blade flies clear of the asteroids for longer than the HUD needs to show it.
+  const run = fixtureCreateAdventure(124), sector = currentSector(run), side = ${side};
   const kind = ${JSON.stringify(kind)}, prepared = ++fixtureCreations <= 2;
   const blade = run.world.flippers.find(f => f.sector === 0 && f.side === side);
   const rock = run.table.bumpers.find(b => b.sector === 0 && b.dynamic);
@@ -126,13 +128,22 @@ for (const size of [...layouts, { name: 'desktop-right', ...DESK, side: 1 }]) {
       await page.locator('#view').focus();
       down = () => page.keyboard.down(key); up = () => page.keyboard.up(key);
     }
+    // Record each change of the HUD. A beacon can start the return soon after the strike, and
+    // then the powered text shows only for a short time.
+    await page.evaluate(() => {
+      const status = document.getElementById('rally-status');
+      window.__hud = [];
+      new MutationObserver(() => window.__hud.push({ state: status.dataset.state, text: status.textContent }))
+        .observe(status, { attributes: true, attributeFilter: ['data-state'], childList: true, characterData: true, subtree: true });
+    });
     await down();
     await until(page, () => window.__rallyFixture.read().events.some(e => e.type === 'strike'), null, 2000);
-    await until(page, () => document.getElementById('rally-status').dataset.state === 'powered', null, 1500);
+    await until(page, () => window.__hud.some(h => h.state === 'powered'), null, 1500);
     const powered = await read(page);
     R.check(powered.rally.shots === 1 && powered.rally.multiplier === 1 && powered.rally.powerRemaining > 0 && powered.ball.vy > 300,
       'The real moving-flipper strike launches an upward powered shot');
-    R.check(/POWER SHOT ×1/.test(await page.locator('#rally-status').textContent()), 'The HUD names power, multiplier and remaining time');
+    const hud = await page.evaluate(() => window.__hud.filter(h => h.state === 'powered').map(h => h.text));
+    R.check(hud.length > 0 && hud.every(text => /^Power shot \d+\.\ds · rally ×1\b/.test(text)), 'The HUD names power, multiplier and remaining time');
     R.check(powered.events.filter(e => e.type === 'reverse').length === 0, 'An above-blade strike is not an underside rescue');
     if (!size.touch) await down(); // auto-repeat while the same key stays held
     await sleep(400);
@@ -169,8 +180,9 @@ for (const size of [...layouts, { name: 'desktop-right', ...DESK, side: 1 }]) {
     R.check(fresh.phase === 'ready' && fresh.rally.powerRemaining === 0 && fresh.rally.age === 0 && fresh.rally.shots === 0
       && fresh.rally.multiplier === 1 && fresh.rocks.every(r => r.active && r.warningRemaining === 0 && r.respawnRemaining === 0),
     'A new voyage clears power, multiplier, return state and hazard lifecycle');
-    R.check(await state(page) === 'ready' && /Time your flips/.test(await page.locator('#rally-status').textContent()),
-      'The dock shows the new gameplay guidance');
+    R.check(await state(page) === 'ready' && (await page.locator('#rally-status').textContent()) === 'Hold to aim. Let go to launch.'
+      && await page.locator('#field-status').isHidden() && (await page.locator('#objective').textContent()) === '',
+      'The dock shows one short line of guidance');
   } catch (error) {
     await shot(page, `tilt-rallies-${size.name}-failure`); R.check(false, error.stack || error.message);
   } finally {

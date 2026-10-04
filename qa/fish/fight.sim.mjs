@@ -2,7 +2,7 @@
 // Scripted players (qa/fish/fightlib.mjs) fish every Loon Lake fish, and the golden bass, over many seeds. It prints land / snap /
 // thrown rates, fight times, bite rates by zone and the weight spread, then checks the targets. Exit code 1 if a target is missed.
 // The other three places are in qa/fish/places.sim.mjs. N=40 node qa/fish/fight.sim.mjs runs a quicker, noisier pass.
-import { LakeSim, Rises, REEL, BITE, rodTip, rollWeight, speciesWeights } from "../../public/fish/js/fish.js";
+import { LakeSim, Rises, REEL, BITE, rodTip, rollWeight, speciesWeights, firstBite } from "../../public/fish/js/fish.js";
 import { SPECIES } from "../../public/fish/js/species.js";
 import { FISHING } from "../../public/fish/js/fishing.js";
 import { rng, zone, depth } from "../../public/fish/js/lake.js";
@@ -191,6 +191,16 @@ for (const id of ONLY.rodhigh) {
 {
   const g = summary(ONLY.grinder.flatMap((id) => res.good[id])), h = summary(ONLY.grinder.flatMap((id) => res.grinder[id]));
   check(h.snap / h.hooked >= 0.25 && h.snap / h.hooked > 3 * g.snap / g.hooked, `cranking through the drag snaps big fish: ${pct(h.snap, h.hooked)} vs ${pct(g.snap, g.hooked)} when you stop`);
+  // ...but the drag gives first: the line goes only after the drag has slipped a while, time enough to stop reeling
+  const slips = ONLY.grinder.flatMap((id) => res.grinder[id]).filter((o) => o.slipFor != null).map((o) => o.slipFor);
+  check(slips.length > 0 && median(slips) >= 0.5, `the drag gives before the line breaks: a steady crank into a run snaps it ${median(slips).toFixed(2)} s (median) after the drag starts to slip (0.5 s or more)`);
+  // ...and not only at the median: three in four of those snaps come 0.45 s or more after the slip
+  const p25 = slips.slice().sort((a, b) => a - b)[Math.floor(slips.length / 4)];
+  check(slips.length > 0 && p25 >= 0.45, `and a quarter of them at most come sooner than 0.45 s (p25 ${p25.toFixed(2)} s, p10 ${slips.slice().sort((a, b) => a - b)[Math.floor(slips.length / 10)].toFixed(2)} s)`);
+}
+{
+  const all = POLICIES.flatMap((pol) => Object.values(res[pol]).flat()), n = all.reduce((a, o) => a + o.beatenTricks, 0);
+  check(n === 0, `a beaten fish starts no trick move: no jump, tail walk, charge, shake or thrash (${n} in ${all.length} casts)`);
 }
 const idle = summary(Object.values(res.idle).flat());
 check((idle.hooked - idle.landed) / idle.hooked >= 0.8, `idle loses >= 80% of hooked fish (${pct(idle.hooked - idle.landed, idle.hooked)}; ${pct(idle.timeout, idle.hooked)} by timeout)`);
@@ -243,6 +253,29 @@ console.log("\nRings");
   const R = new Rises(rng(3)); R.step(0.1, 12);
   const g = R.list[0];
   check(R.near(g.x + 3, g.z + 3) === g && R.near(g.x + 6, g.z) !== g, "near() finds a ring within 5 m");
+}
+
+/* ---------------- the first fish of a new player ---------------- */
+
+// main.js: a fresh save's first cast in the water gets firstBite(): a small pumpkinseed or perch with a sure bite.
+// The casual and the novice player land it within 25 s of the splash, from a short cast (8 to 25 m) anywhere at Loon Lake,
+// and so does a novice who cranks the retrieve fast (2.4 turns a second, as when the crank key is held or the crank spun)
+// and never slows down for the fish: the first fish does not mind a fast lure
+console.log("\nThe first fish");
+{
+  const r = rng(31), casts = [];
+  for (let i = 0; casts.length < 80 && i < 5000; i++) {
+    const d = 8 + r() * 17, a = (r() * 2 - 1) * 70 * D2R, x = Math.sin(a) * d, z = -Math.cos(a) * d, zn = zone(x, z);
+    if (zn === "land" || depth(x, z) < 0.6) continue;
+    casts.push({ x, z, fb: firstBite(zn, r) });
+  }
+  for (const [name, pol, rps] of [["casual", "casual", 0], ["novice", "novice", 0], ["fast", "novice", 2.4]]) {
+    const list = casts.map((c, i) => runCast({ policy: pol, seed: 3000 + i, spot: c, species: c.fb.species, kg: c.fb.kg, bite: true, eager: c.fb.eager, hour: 6.5, rps }));
+    const quick = list.filter((o) => o.outcome === "caught" && o.endT <= 25).length, ts = list.filter((o) => o.outcome === "caught").map((o) => o.endT);
+    console.log(`  ${name.padEnd(7)} struck ${pct(list.filter((o) => o.struck).length, list.length)}, landed ${pct(ts.length, list.length)}, in 25 s ${pct(quick, list.length)}; splash to landing: median ${median(ts).toFixed(1)} s, max ${Math.max(...ts).toFixed(1)} s`);
+    check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && c.fb.eager && ["pumpkinseed", "perch"].includes(c.fb.species)), `${name}: the first fish is a small, eager pumpkinseed or perch, and it always strikes`);
+    check(quick >= list.length * (pol === "casual" ? 0.95 : 0.85), `${name}: lands the first fish within 25 s of the splash (${pct(quick, list.length)})`);
+  }
 }
 
 /* ---------------- robustness and determinism ---------------- */

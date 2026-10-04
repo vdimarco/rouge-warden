@@ -16,7 +16,8 @@ const HELPERS = () => {
     words: () => G.fx.info().words,
     names: () => G.fx.info().words.map((w) => w.name),
     made: (n) => G.fx.info().made[n] || 0,
-    head: () => G.test.state().head,
+    // where the words are seen from: the camera in flat play (third person puts it behind the hero), else the head
+    head: () => { const f = G.test.flat(); return f.on ? f.camera : G.test.state().head; },
     // two rAF turns: the loop has rendered at least once with the current state
     frames: () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))),
     // a spot on the clog's roof with a clear line from the head to the bowl (as play.mjs does)
@@ -35,7 +36,7 @@ const HELPERS = () => {
     },
     // a facing report for every live word: from the instance matrix
     facing() {
-      const m = G.fx.meshes.words.instanceMatrix.array, h = G.test.state().head, out = [];
+      const m = G.fx.meshes.words.instanceMatrix.array, h = __f.head(), out = [];
       const info = G.fx.info();
       for (let i = 0; i < info.live; i++) {
         const o = i * 16, w = info.words[i];

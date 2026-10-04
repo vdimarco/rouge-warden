@@ -49,7 +49,7 @@ export function createPlayer(city, cfg = SWING) {
     pullVel: v3(), quietT: 0, airT: 0, bumpCool: 0, stepSpeed: 0,
     // wall climbing (only with cfg.climb): the wall you hold { nx, nz } or null, the time before you can grab again,
     // and this step's chest contact with a wall
-    wall: null, wallCool: 0, touch: { on: false, nx: 0, nz: 0 },
+    wall: null, wallCool: 0, touch: { on: false, nx: 0, nz: 0, into: 0, speed: 0 },
   };
   settle(P);
   return P;
@@ -407,8 +407,10 @@ export function step(P, h, inp) {
 
   /* ---- climbing: a wall the chest touched in the air, or walked into, holds you ---- */
   if (c.climb && P.touch.on && P.wallCool <= 0 && !P.dead) {
-    const into = -(mx * P.touch.nx + mz * P.touch.nz);
-    if (!P.onGround || into > 0.5) { grab(P); return; }
+    const t = P.touch, into = -(mx * t.nx + mz * t.nz), cc = c.climb;
+    // in the air: a wall you fly at holds you, a wall you only brush at speed does not stop the swing
+    const air = t.speed < cc.brushSpeed || t.into >= cc.headOn * t.speed;
+    if (P.onGround ? into > 0.5 : air) { grab(P); return; }
   }
 
   /* ---- a rope that runs through a wall for too long snaps ---- */
@@ -454,8 +456,12 @@ function wall(P, off, rad, vyMove) {
   if (!P.city.collideSphere(pos.x, pos.y + off, pos.z, rad, SPH)) return;
   pos.x = SPH.x; pos.y = SPH.y - off; pos.z = SPH.z;
   const nx = SPH.nx, ny = SPH.ny, nz = SPH.nz;
-  // the chest against a wall: climbing may grab it
-  if (off === P.chest && P.cfg.climb && Math.abs(ny) < P.cfg.climb.wallY) { P.touch.on = true; P.touch.nx = nx; P.touch.nz = nz; }
+  // the chest against a wall: climbing may grab it (how hard you came at it, and how fast you were going, decide)
+  if (off === P.chest && P.cfg.climb && Math.abs(ny) < P.cfg.climb.wallY) {
+    const t = P.touch, vx = V.x + W.x, vy = V.y + W.y, vz = V.z + W.z;
+    // the speed that counts against a grab leaves out falling: a fall steered into a wall still catches it
+    t.on = true; t.nx = nx; t.nz = nz; t.into = -(vx * nx + vz * nz); t.speed = len3(vx, Math.max(vy, 0), vz);
+  }
   const into = -((V.x + W.x) * nx + (V.y + W.y) * ny + (V.z + W.z) * nz);
   if (into > 0) {
     const vm = V.x * nx + V.y * ny + V.z * nz;

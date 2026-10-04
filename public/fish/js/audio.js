@@ -422,19 +422,23 @@ const SFX = {
     if (s > 0.35) end = tap(t + 0.09 + 0.03 * rnd(), 0.6);
     return end;
   },
-  // the strike: a heavy thump, the line snaps tight, the water boils
-  strike(e, t) {
-    tone(e, t, { f: 150, f2: 48, dur: 0.2, att: 0.002, peak: 0.55 });
-    hiss(e, t, { type: "lowpass", f: 1100, dur: 0.09, att: 0.001, peak: 0.34 });
+  // the strike: a heavy thump, the line snaps tight, the water boils. v: how hard it hit (a soft biter 0.3, a slammer 1)
+  strike(e, t, v) {
+    const s = clamp(num(v, 1), 0, 1);
+    tone(e, t, { f: 150, f2: 48, dur: 0.2, att: 0.002, peak: 0.4 + 0.15 * s });
+    hiss(e, t, { type: "lowpass", f: 1100, dur: 0.09, att: 0.001, peak: 0.22 + 0.12 * s });
     pluck(e, t + 0.004, { f: 196, dur: 0.4, peak: 0.12, bright: 2600, dark: 500, q: 2 });
     train(e, t + 0.01, { rate: 22, rate2: 30, dur: 0.18, jitter: 200, bands: [[520, 8, 60]], peak: 0.25 });
-    return splashAt(e, t + 0.03, 0.42, { pan: 0 });
+    return splashAt(e, t + 0.03, 0.3 + 0.12 * s, { pan: 0 });
   },
-  // the hook goes in: the rod whips up, the line thunks tight
+  // the hook goes in, the biggest hit of the fight: the rod whips up, a deep thump, the line thunks tight, the far
+  // shore sends it back
   hookset(e, t) {
     hiss(e, t, { type: "bandpass", f: 700, f2: 3200, q: 1.8, dur: 0.13, att: 0.02, peak: 0.3 });
-    tone(e, t + 0.05, { f: 110, f2: 68, dur: 0.12, peak: 0.28 });
-    pluck(e, t + 0.05, { f: 247, dur: 0.3, peak: 0.12, bright: 3500, dark: 600, q: 2 });
+    tone(e, t + 0.05, { f: 76, f2: 62, glide: 0.12, dur: 0.36, att: 0.003, peak: 0.62, send: 0.08 });
+    tone(e, t + 0.05, { f: 140, f2: 70, dur: 0.14, peak: 0.32 });
+    hiss(e, t + 0.05, { type: "lowpass", f: 900, dur: 0.08, att: 0.001, peak: 0.32, send: 0.1 });
+    pluck(e, t + 0.05, { f: 247, dur: 0.3, peak: 0.16, bright: 3500, dark: 600, q: 2, send: 0.06 });
     return hiss(e, t + 0.05, { type: "bandpass", f: 3600, q: 4, dur: 0.01, att: 0.0005, peak: 0.2 });
   },
   // it spat the lure: a swirl, then nothing
@@ -506,6 +510,15 @@ const SFX = {
   loon(e, t, v) { return loon(e, t, v); },
   loonWail(e, t) { return loonWail(e, t, { pan: 0 }); },
   loonTremolo(e, t) { return loonTremolo(e, t, { pan: 0 }); },
+  // a cutscene opens (cutscenes.js): a soft chord swells in and fades, with a shimmer on top. v 0: a place (major),
+  // 1: a legend rises (low and dark, over a drum), 2: the finale (bright)
+  swell(e, t, v) {
+    const k = Math.round(clamp(num(v, 0), 0, 2)), root = [196, 146.8, 261.6][k], chord = k === 1 ? [1, 1.189, 1.498, 0.5] : [1, 1.26, 1.498, 2];
+    let end = t;
+    chord.forEach((r, i) => { end = Math.max(end, tone(e, t + i * 0.12, { type: "triangle", f: root * r, dur: 3.2, att: 0.9, peak: 0.08, lp: 1600, send: 0.5 })); });
+    if (k === 1) tone(e, t, { f: 55, f2: 44, dur: 1.4, att: 0.02, peak: 0.28 });
+    return Math.max(end, hiss(e, t + 0.4, { type: "highpass", f: 6000, dur: 2.2, att: 0.8, peak: 0.008, send: 0.4 }));
+  },
   // UI: a soft wooden tick with a small bell in it, like the latch of a tackle box
   ui(e, t) {
     hiss(e, t, { type: "bandpass", f: 2600, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.4 });
@@ -516,12 +529,118 @@ const SFX = {
     hiss(e, t, { type: "bandpass", f: 1900, q: 2.5, dur: 0.012, att: 0.0005, peak: 0.36 });
     return tone(e, t, { f: 990, f2: 760, glide: 0.05, dur: 0.07, peak: 0.14, att: 0.002 });
   },
-  // a detent: the drag knob, a gear tooth
-  tick(e, t) {
-    hiss(e, t, { type: "bandpass", f: 3600, q: 4, dur: 0.008, att: 0.0003, peak: 0.5 });
-    return ring(e, t, [[4400, 0.05, 0.025]]);
+  // a detent: the drag knob, a gear tooth. v 0..1 raises the pitch (the count-up on the catch card climbs)
+  tick(e, t, v) {
+    const k = Math.pow(2, clamp(num(v, 0), 0, 1) * 0.8);
+    hiss(e, t, { type: "bandpass", f: 3600 * k, q: 4, dur: 0.008, att: 0.0003, peak: 0.5 });
+    return ring(e, t, [[4400 * k, 0.05, 0.025]]);
+  },
+  // a run starts: the drag gives with a short burst of ratchet clicks that slows as the spool catches up
+  ratchet(e, t) {
+    train(e, t, { rate: 70, rate2: 34, dur: 0.24, jitter: 120, bands: [[3000, 6, 16], [4300, 9, 9]], peak: 0.42, att: 0.003 });
+    return hiss(e, t, { type: "bandpass", f: 3600, f2: 2600, q: 1.2, dur: 0.18, att: 0.004, peak: 0.07 });
+  },
+  // a sweet release: a bright plucked note that rises, with a shimmer on top
+  zing(e, t) {
+    pluck(e, t, { f: 1046.5, f2: 1568, fall: 0.06, dur: 0.26, peak: 0.2, bright: 9000, dark: 2400, q: 1.4 });
+    tone(e, t + 0.03, { f: 3136, dur: 0.18, peak: 0.035, att: 0.002 });
+    return hiss(e, t + 0.02, { type: "highpass", f: 6500, dur: 0.16, att: 0.01, peak: 0.05 });
+  },
+  // a cast right into a rising ring: two bright mallet notes a fifth apart. v 1: the gold ring, a third note and a shimmer
+  ringHit(e, t, v) {
+    mallet(e, t, 1318.5, 0.16, 0.4);
+    let end = mallet(e, t + 0.08, 1975.5, 0.14, 0.5);
+    if (num(v, 0) >= 0.5) {
+      end = Math.max(end, tone(e, t + 0.16, { f: 2637, dur: 0.55, peak: 0.09, att: 0.002, send: 0.12 }));
+      end = Math.max(end, hiss(e, t + 0.16, { type: "highpass", f: 7000, dur: 0.4, att: 0.04, peak: 0.04 }));
+    }
+    return end;
+  },
+  // the badges stamp onto the catch card: a low wooden thunk
+  stamp(e, t) {
+    ring(e, t, [[170, 0.22, 0.12], [410, 0.12, 0.06], [930, 0.05, 0.03]]);
+    return hiss(e, t, { type: "lowpass", f: 600, dur: 0.04, att: 0.001, peak: 0.22 });
+  },
+  // a new species for the journal: a short three-note rise on a mallet, a fifth above the landing tune
+  newSpecies(e, t) {
+    mallet(e, t, 784, 0.15, 0.3);
+    mallet(e, t + 0.1, 987.8, 0.15, 0.3);
+    const end = mallet(e, t + 0.2, 1174.7, 0.16, 0.5);
+    tone(e, t + 0.2, { f: 2349.3, dur: 0.4, peak: 0.025 });
+    return end;
+  },
+  // a new record: a two-note brass call
+  recordCall(e, t) {
+    brass(e, t, 392, 0.12, 0.15);
+    return brass(e, t + 0.16, 523.3, 0.5, 0.15, true);
+  },
+  // a legend starts its next stage: a low drum roll and a horn that swells and does not resolve (it is not won yet)
+  stage(e, t) {
+    train(e, t, { rate: 16, rate2: 24, dur: 1.0, jitter: 300, bands: [[95, 3, 34], [190, 4, 12], [1200, 2, 2]], peak: 0.5, att: 0.75 });
+    hiss(e, t, { buf: e.pink, type: "lowpass", f: 400, dur: 1.0, att: 0.8, peak: 0.08 });
+    swell(e, t + 0.15, 293.7, 0.9, 0.13);
+    swell(e, t + 0.15, 440, 0.9, 0.07);
+    tone(e, t + 1.05, { f: 98, f2: 70, dur: 0.5, peak: 0.3 });
+    return hiss(e, t + 1.05, { type: "lowpass", f: 250, dur: 0.2, att: 0.003, peak: 0.22 });
+  },
+  // a new place opens: a horn call up a fourth, then the new place's own sound (v: 1 Stump Bay, 2 Cedar River, 3 Gull Rock)
+  newPlace(e, t, v) {
+    brass(e, t, 392, 0.16, 0.15);
+    brass(e, t + 0.2, 523.3, 0.42, 0.15, true);
+    brass(e, t + 0.2, 392, 0.42, 0.07, true);
+    const sig = SIG[PLACE_IDS[clamp(Math.round(num(v, 0)), 0, 3)]];
+    return Math.max(t + 1.0, sig(e, t + 0.65, 0.8));
+  },
+  // the place calls for a legend landed away from Loon Lake: frogs, the rapids, the gulls over the surf
+  frogs(e, t) { return SIG.stumps(e, t, 1); },
+  rapids(e, t) { return SIG.river(e, t, 1); },
+  gulls(e, t) { return SIG.sea(e, t, 1); },
+  // the end of a derby that is not a best: a soft two-chord close on the mallets
+  derbyClose(e, t) {
+    for (const f of [698.5, 880, 1046.5]) mallet(e, t, f, 0.1, 0.5);
+    let end = t;
+    for (const f of [523.3, 659.3, 784, 1046.5]) end = Math.max(end, mallet(e, t + 0.34, f, 0.1, 0.9));
+    return end;
   },
 };
+// The signatures of the places, short enough for a stinger. k: the level
+const PLACE_IDS = ["loon", "stumps", "river", "sea"];
+const SIG = {
+  loon: (e, t, k) => loonTremolo(e, t, { pan: 0, dur: 0.9, gain: 0.3 * k }),
+  // a few green frogs answer each other
+  stumps(e, t, k) {
+    let end = t;
+    [[0, -0.4, 150], [0.2, 0.35, 172], [0.42, -0.1, 140], [0.6, 0.45, 165]].forEach(([at, pan, f]) => {
+      end = Math.max(end, pluck(e, t + at, { f, dur: 0.18, peak: 0.16 * k, bright: 1600, dark: 300, q: 4, pan, send: 0.35 }));
+    });
+    return end;
+  },
+  // the river swells past, with a kingfisher's rattle over it
+  river(e, t, k) {
+    const end = hiss(e, t, { buf: e.pink, type: "lowpass", f: 900, dur: 1.0, att: 0.35, peak: 0.16 * k });
+    hiss(e, t, { buf: e.brown, type: "lowpass", f: 450, dur: 1.0, att: 0.35, peak: 0.14 * k });
+    train(e, t + 0.3, { rate: 26, dur: 0.45, jitter: 300, bands: [[3400, 5, 10], [5200, 6, 4]], peak: 0.16 * k, att: 0.02, pan: 0.4 });
+    return end;
+  },
+  // a wave breaks on the rock and two gulls cry
+  sea(e, t, k) {
+    const end = hiss(e, t, { buf: e.brown, type: "lowpass", f: 500, dur: 0.85, att: 0.25, peak: 0.2 * k });
+    hiss(e, t + 0.15, { buf: e.pink, type: "bandpass", f: 1500, q: 0.6, dur: 0.6, att: 0.12, peak: 0.08 * k });
+    whistle(e, t + 0.15, [[0, 0.16, 1500, 2300], [0.18, 0.3, 2200, 1350]], { peak: 0.06 * k, pan: -0.3, send: 0.3 });
+    whistle(e, t + 0.5, [[0, 0.14, 1700, 2500], [0.16, 0.26, 2400, 1500]], { peak: 0.045 * k, pan: 0.35, send: 0.3 });
+    return end;
+  },
+};
+// a horn that swells in slowly and stops without a resolution (the stage of a legend)
+function swell(e, t, f, dur, peak) {
+  const g = gain(e, 0), lp = filt(e, "lowpass", 300, 1.2);
+  lp.connect(g); route(e, g, { send: 0.25 });
+  lp.frequency.setValueAtTime(300, t); lp.frequency.exponentialRampToValueAtTime(2600, t + dur);
+  const end = t + dur + 0.3;
+  for (const d of [-6, 7]) { const s = osc(e, e.brass, f); s.detune.value = d; s.connect(lp); s.start(t); s.stop(end); }
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + dur); g.gain.setTargetAtTime(0, t + dur, 0.07);
+  return end;
+}
 function mallet(e, t, f, peak, dur) {
   tone(e, t, { f, dur, peak, att: 0.002, send: 0.12 });
   tone(e, t, { f: f * 4, dur: 0.08, peak: peak * 0.3, att: 0.001 });   // the bar's bright overtone, two octaves up

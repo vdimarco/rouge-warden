@@ -24,7 +24,7 @@ The central Wild Hunt spawns after 26 seconds. The team that slays it recruits a
 - Touch: left movement pad; tap a skill for aim assist, or drag and release to aim. Basic attacks are automatic. Tap an enemy or Attack to change target.
 - Tap the minimap for a large tactical map. Tap a position or a named destination to place a navigation marker.
 - Near a gate, Rift Jump activates the paired gate. Return channels a trip home and cancels on movement or damage.
-- Keyboard: WASD/arrows move; Q/E/R skills; F gate; M map; B return; Esc pause. Skill buttons also support keyboard and assistive activation.
+- Keyboard: WASD/arrows move; Q/E/R skills; F gate; M map; B return; Esc or the top-left Menu button opens the menu. The view follows the hero, and moving the mouse left or right pushes the view that way. Skill buttons also support keyboard and assistive activation.
 - Pause, help, shop, map, focus loss and the arcade game switcher pause the simulation. Pointer cancellation, resize and dialogs clear held input.
 
 ## Items and builds
