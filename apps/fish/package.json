@@ -1,0 +1,35 @@
+{
+  "name": "reel-it-in-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The iOS and Android app for Reel It In. It wraps the web game in public/fish with Capacitor 8.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:www": "node scripts/build-www.mjs",
+    "check:www": "node scripts/check-www.mjs",
+    "sync": "npm run build:www && cap sync",
+    "android:debug": "npm run build:www && cap sync android && cd android && ./gradlew assembleDebug",
+    "android:bundle": "npm run build:www && cap sync android && cd android && ./gradlew bundleRelease",
+    "ios:open": "npm run build:www && cap sync ios && cap open ios",
+    "art": "node scripts/render-art.mjs",
+    "assets": "capacitor-assets generate --assetPath resources --iconBackgroundColor '#0d2f38' --iconBackgroundColorDark '#0d2f38' --splashBackgroundColor '#0d2f38' --splashBackgroundColorDark '#0d2f38'",
+    "test:bundle": "node ../../qa/fish/app-bundle.e2e.mjs"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "~8.0.1",
+    "@capacitor/android": "~8.5.2",
+    "@capacitor/app": "~8.1.2",
+    "@capacitor/core": "~8.5.2",
+    "@capacitor/haptics": "~8.0.2",
+    "@capacitor/ios": "~8.5.2",
+    "@capacitor/preferences": "~8.0.1",
+    "@capacitor/splash-screen": "~8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "~3.0.5",
+    "@capacitor/cli": "~8.5.2"
+  }
+}
