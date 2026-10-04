@@ -1,17 +1,17 @@
 // Moonwell: checks of the physics and the rules of a run. node qa/moonwell/play.test.mjs
-import { createRun, tick, choose, award, TICK, MOONRISE, MAX_PEARLS, POINTS } from '../../public/moonwell/run.js';
-import { station, ensure, groundY, BALL_R as R } from '../../public/moonwell/world.js';
+import { createRun, tick, choose, award, pace, TICK, MOONRISE, MAX_PEARLS, POINTS, READY_WAIT } from '../../public/moonwell/run.js';
+import { station, ensure, groundY, KEEP, BALL_R as R } from '../../public/moonwell/world.js';
 import { createBot, botInput } from '../../public/moonwell/bot.js';
 import { test, assert, report } from './check.mjs';
 
 const idle = () => ({ left: false, right: false, drop: false, pulse: false });
 
-// a run with the pearl waiting over island k + 1, its gate closed behind it
+// a run with the pearl waiting over island k + 1, as if it had just got there
 function at(k, seed = 11) {
   const run = createRun({ seed });
   ensure(run.world, k + 4);
   run.at = k;
-  station(run.world, k).gate = 1;
+  run.far = k;
   tick(run, idle());
   return run;
 }
@@ -88,7 +88,7 @@ test('a late flip clears the ridge, and an early one falls back', () => {
   assert(early / tries <= 0.2, `early flips cleared ${early} of ${tries}`);
 });
 
-test('the right flipper passes the pearl back, and the gate holds', () => {
+test('the right flipper passes the pearl back to the left', () => {
   let passes = 0;
   for (let seed = 1; seed <= 8; seed++) {
     const run = at(12, seed);
@@ -96,16 +96,17 @@ test('the right flipper passes the pearl back, and the gate holds', () => {
     // a pearl rolling down the right inlane onto the right flipper
     Object.assign(run.ball, { x: f.px - 40, y: f.py - 40, vx: -150, vy: 60, mode: 'free' });
     run.phase = 'play';
-    let hold = -1, minX = Infinity, vx = 0;
-    play(run, 2.5, (r, t) => {
+    let hold = -1, shot = false, vx = 0, vy = 0;
+    const ev = play(run, 2.5, (r, t) => {
       const p = onFlipper(r, 1);
       if (hold < 0 && p.t > 0.5 && p.up < 60) hold = t + 0.15;
       return { ...idle(), right: t < hold };
-    }, (r, t) => { minX = Math.min(minX, r.ball.x); if (hold > 0 && t > hold && !vx) vx = r.ball.vx; });
-    if (vx < 0) passes++;
-    assert(minX > s.x0 - R, `seed ${seed}: the pearl got past the closed gate`);
+    }, (r, t) => { if (hold > 0 && t > hold && !vx) { vx = r.ball.vx; vy = r.ball.vy; } });
+    shot = ev.some((e) => e.type === 'shot' && e.side > 0);
+    // the flip itself sends the pearl up and to the left, not only its roll down the inlane
+    if (shot && vx < -100 && vy < -300) passes++;
   }
-  assert(passes >= 6, `only ${passes} of 8 right flips sent the pearl left`);
+  assert(passes >= 6, `only ${passes} of 8 right flips sent the pearl up and left`);
 });
 
 test('the pearl never goes through the ground', () => {
@@ -209,8 +210,13 @@ test('a gold rail carries the pearl over islands and counts them', () => {
     assert(ev.some((e) => e.type === 'rail'), 'the rail did not start');
     assert(run.at === rail.to, `the rail ended in island ${run.at + 1}, not ${rail.to + 1}`);
     assert(ev.filter((e) => e.type === 'ridge').length === rail.to - k, 'the rail did not count each island');
-    for (let i = k + 1; i <= rail.to; i++) assert(station(run.world, i).gate, `the gate of island ${i + 1} is open`);
+    assert(run.far === rail.to, 'the rail did not move the furthest island');
     assert(ev.some((e) => e.type === 'score' && e.kind === 'rail'), 'no rail bonus');
+    // back to the mouth and round again: the ride works, but the bonus paid once
+    run.at = k;
+    Object.assign(run.ball, { x: rail.mouth.x, y: rail.mouth.y, vx: 300, vy: -300, mode: 'free' });
+    const again = play(run, 6, idle, (r) => r.ball.mode !== 'free' || r.at === k);
+    assert(again.some((e) => e.type === 'rail') && !again.some((e) => e.type === 'score' && (e.kind === 'rail' || e.kind === 'ridge')), 'a second ride paid again');
     return;
   }
   throw new Error('no rail found');
@@ -250,6 +256,70 @@ test('a shrine offers three charms, and a charm works at once', () => {
   assert(run.phase === 'play' && run.at === 8 && run.ball.mode === 'free', 'the pearl did not go on into the next region');
   if (id === 'heart') assert(run.lives === lives + 1, 'Second Breath did not add a pearl');
   assert(run.charms[id] === 1, 'the charm was not kept');
+  assert(!s.sealed && s.well.spent, 'the seal did not open, or the well can open twice');
+  // back into the shrine's bowl: the well stays shut
+  Object.assign(run.ball, { x: s.well.x - 20, y: s.well.y, vx: 0, vy: 0 });
+  run.at = 7;
+  play(run, 0.5);
+  assert(run.phase === 'play' && !run.offer, 'the spent well opened again');
+});
+
+test('the pearl can go back over a ridge, and a ridge pays only the first time', () => {
+  const run = at(6);
+  drop(run);
+  const s6 = station(run.world, 6), s5 = station(run.world, 5);
+  // a strong pass back over the left ridge
+  Object.assign(run.ball, { x: s6.x0 + 40, y: s6.y0 - 120, vx: -700, vy: -200 });
+  const before = run.score, streak = run.streak;
+  const ev = play(run, 1.2, idle, (r) => r.at === 6);
+  assert(run.at === 5 && run.far === 6, `the pearl is in island ${run.at + 1}, furthest ${run.far + 1}`);
+  assert(ev.some((e) => e.type === 'back'), 'no back event');
+  assert(run.score === before && run.streak === streak, 'going back changed the score or the streak');
+  // forward again over the same ridge: no ridge points
+  Object.assign(run.ball, { x: s5.x1 - 40, y: s5.y1 - 160, vx: 700, vy: -200 });
+  const ev2 = play(run, 1.2, idle, (r) => r.at === 5);
+  assert(run.at === 6 && run.far === 6, 'the pearl did not come back to island 7');
+  assert(ev2.some((e) => e.type === 'return') && !ev2.some((e) => e.type === 'score' && e.kind === 'ridge'), 'a ridge paid twice');
+  // a drain in an island behind the furthest one brings the next pearl back in that island
+  run.at = 5; run.saver = 0; run.moonrise = 0; run.bridges = 0;
+  Object.assign(run.ball, { x: s5.cx, y: s5.drainY + 5, vx: 0, vy: 100 });
+  tick(run, idle());
+  assert(run.phase === 'ready' && run.at === 5 && Math.abs(run.ball.x - s5.cx) < s5.Wl, 'the next pearl did not wait in the same island');
+});
+
+test('the world keeps 40 islands behind the pearl, then a wall', () => {
+  const run = at(70);
+  drop(run);
+  tick(run, idle());
+  const first = run.world.first, wall = station(run.world, first);
+  assert(first === 30 && wall.gate, `the first island kept is ${first + 1}`);
+  // a pearl flying hard to the left, well above the ridge: only the wall can stop it
+  run.at = first;
+  Object.assign(run.ball, { x: wall.x0 + 60, y: wall.y0 - 220, vx: -1400, vy: -300 });
+  let minX = Infinity;
+  play(run, 1.5, idle, (r) => { minX = Math.min(minX, r.ball.x); });
+  assert(minX > wall.x0 - R && run.at === first, `the pearl went past the wall (x ${minX | 0}, wall ${wall.x0 | 0})`);
+});
+
+test('every flipper follows the keys, even far from the pearl', () => {
+  const run = at(10);
+  drop(run);
+  ensure(run.world, 20);
+  const far = station(run.world, 14);
+  assert(far.x0 - run.ball.x > 2400, 'island 15 is not far enough away for this check');
+  play(run, 0.3, () => ({ ...idle(), left: true, right: true }));
+  assert(far.flippers.every((f) => Math.abs(f.th - f.up) < 0.01), 'a far flipper did not go up');
+  // the pearl travels on while the keys stay down, then they lift: every flipper drops back
+  play(run, 0.4, idle);
+  for (const s of run.world.list) assert(s.flippers.every((f) => Math.abs(f.th - f.rest) < 0.01), `a flipper on island ${s.k + 1} stayed up`);
+});
+
+test('play is brisk from the start and faster further on', () => {
+  const run = at(0);
+  assert(pace(run) >= 1.2, `pace ${pace(run)} at the start`);
+  run.far = 60;
+  assert(pace(run) >= 1.5, `pace ${pace(run)} at island 61`);
+  assert(READY_WAIT <= 1.6, 'the next pearl waits too long');
 });
 
 test('a big pearl gives a pearl, up to five', () => {
@@ -279,7 +349,7 @@ test('the next pearl waits in the moonbeam, and three drains end the run', () =>
       assert(run.phase === 'play', 'the pearl did not drop by itself');
     }
   }
-  assert(readyAfter > 2.5 && readyAfter < 3.3, `the pearl dropped after ${readyAfter.toFixed(2)} s`);
+  assert(readyAfter > READY_WAIT - 0.2 && readyAfter < READY_WAIT + 0.3, `the pearl dropped after ${readyAfter.toFixed(2)} s`);
   assert(run.phase === 'over' && run.lives === 0, 'three drains did not end the run');
 });
 
@@ -300,9 +370,9 @@ test('a long run stays sound: hundreds of islands, no bad numbers', () => {
     if (r.phase === 'charm') choose(r, 0);
     r.lives = 3;
     if (!Number.isFinite(r.ball.x + r.ball.y + r.score)) throw new Error('a bad number at island ' + (r.at + 1));
-    if (r.world.list.length > 12) throw new Error('the world keeps too many islands');
+    if (r.world.list.length > KEEP + (r.far - r.at) + 10) throw new Error('the world keeps too many islands');
   });
-  assert(run.at > 150, `the run reached only island ${run.at + 1} in 15 minutes`);
+  assert(run.far > 150, `the run reached only island ${run.far + 1} in 15 minutes`);
 });
 
 report();

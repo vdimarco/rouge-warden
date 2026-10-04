@@ -432,7 +432,11 @@ export function buildWater(low, place, look) {
           float w = max(0.12 + age * 0.14, dot(fw, abs(dv) / rr) * 1.4);
           float x = rr - R0;
           float env = exp(-x * x / (w * w * 1.5)) * pow(1.0 - age / life, 2.0) * min(r.w * 1.5, 1.0);
-          g += dv / rr * sin(x * 9.0) * env * 0.6 * s2;
+          // A weaker wave follows the crest; both perturb the reflection.
+          // Pixel-sized widths prevent a flickering ring in the distant lake.
+          float tailX = x + w * 2.4;
+          float tailEnv = exp(-tailX * tailX / (w * w * 2.0)) * pow(1.0 - age / life, 2.0) * min(r.w * 1.5, 1.0);
+          g += dv / rr * (sin(x * 9.0) * env - sin(tailX * 7.0) * tailEnv * 0.38) * 0.6 * s2;
           foam += env * mix(1.0, smoothstep(0.0, 0.35, cos(x * 9.0)), s2) * 0.5;
         }
         // the rising-fish rings: pulses that keep coming. Lines never get thinner than a pixel, so they read from the dock

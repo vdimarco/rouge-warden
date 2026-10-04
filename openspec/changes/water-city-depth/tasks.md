@@ -1,0 +1,6 @@
+- [x] Inspect current shaders and specs.
+- [x] Add damped trailing ripple.
+- [x] Add facade fold light.
+- [ ] Check rendered desktop and mobile views.
+- [ ] Check physical phone.
+- [ ] Validate OpenSpec with CLI (unavailable).

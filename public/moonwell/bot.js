@@ -28,8 +28,9 @@ export function botInput(run, bot) {
       const miss = bot.rand() > 0.5 + 0.5 * bot.skill;
       const late = (bot.rand() * 0.14 - 0.05) * (1.1 - bot.skill);
       if (!miss) { bot.at[key] = run.clock + Math.max(0, late); bot.hold[key] = bot.at[key] + 0.14 + bot.rand() * 0.08; }
-      // the next approach aims at another point: the left flipper shoots, the right one passes
-      bot.aim[key] = key === 'left' ? 0.3 + bot.rand() * 0.55 : 0.35 + bot.rand() * 0.5;
+      // the next approach aims at another point: the left flipper shoots near its tip, and the right one makes a soft
+      // pass from near its pivot, so the pearl stays in the bowl instead of flying back over the ridge behind
+      bot.aim[key] = key === 'left' ? 0.3 + bot.rand() * 0.55 : 0.05 + bot.rand() * 0.45;
     }
   }
   // a pulse when the pearl drops into the gap: a human catches it in time only now and then
