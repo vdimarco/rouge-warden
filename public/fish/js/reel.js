@@ -1,7 +1,7 @@
 // The reel you touch: four small canvas widgets.
 // ReelPanel: the spinning reel face in the cast. Swipe the bail arm to open or close it; a thumb anywhere pins the line.
 // Crank: the handle you turn with your thumb to reel in (landscape).
-// RodPad: the rod for touch play. Drag it up and down, swipe up fast to set the hook.
+// RodPad: the rod for touch play. Drag it up and down, swipe up fast to set the hook (a fling on the open lake counts too).
 // Gauge: the line tension with the drag and break marks, the line out, the depth, and the fish.
 //
 // main.js may turn #game 90° with CSS when the phone is sideways, so every pointer position goes through the

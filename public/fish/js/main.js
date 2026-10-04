@@ -1115,7 +1115,7 @@ const HELP_M = [
 ];
 const HELP_T = [
   ["turn", "Drag the lake left or right to <b>aim</b>."],
-  ["thumb", "<b>Press and hold</b> on the rod. This opens the bail. <b>Drag down</b> to tip the rod back."],
+  ["thumb", "<b>Press</b> on the rod and <b>drag down</b>. This opens the bail and tips the rod back."],
   ["flick", "<b>Flick up</b>. Let go during the flick."],
   ["crank", "Turn the <b>crank</b> in circles, or use the mouse wheel, or hold <b>R</b>. The first turn closes the bail. Reel slowly."],
   ["pull", "The <b>rod</b> on the right: drag up to raise the rod. A fast swipe up sets the hook. Keys: <b>W S A D</b> and <b>Space</b>."],

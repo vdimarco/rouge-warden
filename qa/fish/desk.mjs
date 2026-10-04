@@ -34,7 +34,8 @@ try {
   // the flick: up fast, let go part way. Played inside the page, because a slow software renderer holds back
   // each CDP mouse move by hundreds of ms, and a flick is all about speed
   await page.evaluate(async ({ x, y }) => {
-    const el = document.elementFromPoint(x, y);
+    // (the drag can end below the window: the reel listens on the window, so any element will do)
+    const el = document.elementFromPoint(x, y) || document.body;
     const fire = (type, yy) => el.dispatchEvent(new PointerEvent(type, { pointerId: 1, pointerType: "mouse", isPrimary: true, clientX: x, clientY: yy, bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
     for (let i = 1; i <= 6; i++) { fire("pointermove", y - i * 36); await new Promise((r) => setTimeout(r, 8)); }
     fire("pointerup", y - 216);
