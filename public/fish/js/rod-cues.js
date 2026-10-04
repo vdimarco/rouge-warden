@@ -1,5 +1,5 @@
 // Small action cues attached to the scene's rod, without a second tackle view.
-import { activeLesson } from "./guide.js";
+import { activeLesson, moveWords, inputOf, REEL_PACE } from "./guide.js";
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const UP = 'M20 34V8m-8 8 8-8 8 8';
 const DOWN = 'M20 8v26m-8-8 8 8 8-8';
@@ -12,10 +12,10 @@ const ICONS = {
   nibble: 'M7 20q13-16 26 0q-13 16-26 0m0 0-4-7v14l4-7',
   drag: 'M8 20h24M20 8v24',
 };
-const LABELS = { hold: 'Hold rod', back: 'Pull back', cast: 'Flick up!', flight: 'Touch to slow',
-  hook: 'Strike! Lift', pump: 'Lift + reel', strength: 'Tip back', land: 'Lift + hold', raise: 'Keep rod up',
-  low: 'Lower rod', turn: 'Steer', reel: 'Reel slowly', stop: 'Pause reeling', nibble: 'A nibble…', drag: 'Tighten drag' };
+// the cast cues; the fight cues use the same words as the prompt and the guide (MOVE_WORDS in guide.js)
+const LABELS = { hold: 'Hold rod', back: 'Pull back', cast: 'Flick up!', flight: 'Touch to slow', nibble: 'A nibble…' };
 export function createRodCues(game) {
+  const touchDevice = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   const el = document.createElement('div');
   el.id = 'rodCue'; el.hidden = true;
   el.innerHTML = `<svg class="rod-ring" viewBox="0 0 96 96" aria-hidden="true"><circle class="rod-halo" cx="48" cy="48" r="35"/><circle class="rod-tension" cx="48" cy="48" r="35" pathLength="100"/></svg><svg class="rod-action" viewBox="0 0 40 40" aria-hidden="true"><path/></svg><span role="status" aria-live="polite"></span>`;
@@ -36,9 +36,12 @@ export function createRodCues(game) {
     let kind = activeLesson({ phase, step, motion, fishPhase: fish?.phase, cue });
     if (phase === 'reel' && nibble && ['sink', 'retrieve'].includes(fish?.phase)) kind = 'nibble';
     const tight = phase === 'reel' && (fish?.tfrac || 0) > .85;
-    const text = tight && kind !== 'hook' && kind !== 'low' ? 'Ease the line' :
-      motion && kind === 'cast' ? 'Flick forward!' :
-      kind === 'reel' && /fast|Slack/i.test(cue.text) ? 'Reel faster' : LABELS[kind];
+    // the crank goes as fast as the prompt says: fast for slack line or a charge, steadily for a tired fish. A steer the
+    // prompt gives a side to ("Drag the rod right.") says the same side here
+    const text = motion && kind === 'cast' ? 'Flick forward!' : LABELS[kind] ||
+      (kind === 'reel' && phase === 'reel' ? (/fast|Slack/i.test(cue.text) ? REEL_PACE.fast : fish?.beaten || /steadily/i.test(cue.text) ? REEL_PACE.steady : REEL_PACE.slow) :
+      kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
+      moveWords(kind, inputOf(motion, touchDevice)) || LABELS.hold);
     const next = `${kind}:${text}:${cue.tone}:${tight}:${held}`;
     if (key !== next) {
       key = next; el.dataset.cue = kind; el.dataset.tone = tight || kind === 'hook' ? 'hot' : cue.tone;

@@ -265,10 +265,10 @@ console.log("\nThe first fish");
     casts.push({ x, z, fb: firstBite(zn, r) });
   }
   for (const pol of ["casual", "novice"]) {
-    const list = casts.map((c, i) => runCast({ policy: pol, seed: 3000 + i, spot: c, species: c.fb.species, kg: c.fb.kg, bite: true, hour: 6.5 }));
+    const list = casts.map((c, i) => runCast({ policy: pol, seed: 3000 + i, spot: c, species: c.fb.species, kg: c.fb.kg, bite: true, eager: c.fb.eager, hour: 6.5 }));
     const quick = list.filter((o) => o.outcome === "caught" && o.endT <= 25).length, ts = list.filter((o) => o.outcome === "caught").map((o) => o.endT);
     console.log(`  ${pol.padEnd(7)} struck ${pct(list.filter((o) => o.struck).length, list.length)}, landed ${pct(ts.length, list.length)}, in 25 s ${pct(quick, list.length)}; splash to landing: median ${median(ts).toFixed(1)} s, max ${Math.max(...ts).toFixed(1)} s`);
-    check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && ["pumpkinseed", "perch"].includes(c.fb.species)), `${pol}: the first fish is a small pumpkinseed or perch, and it always strikes`);
+    check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && c.fb.eager && ["pumpkinseed", "perch"].includes(c.fb.species)), `${pol}: the first fish is a small, eager pumpkinseed or perch, and it always strikes`);
     check(quick >= list.length * (pol === "casual" ? 0.95 : 0.85), `${pol}: lands the first fish within 25 s of the splash (${pct(quick, list.length)})`);
   }
 }

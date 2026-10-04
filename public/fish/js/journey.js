@@ -140,3 +140,32 @@ export function revealText(sp, big = false) {
   return "It is " + (/^[aeiou]/i.test(sp.name) ? "an " : "a ") + sp.name + "!";
 }
 
+/* ---------------- the loss lines ---------------- */
+// what went wrong, and the one move that would have saved the fish: [headline, tip]. reason: the sim's state.reason.
+// o: input ("motion" | "touch" | "keys"), by (how it threw the hook: "jump" | "thrash" | "shake" | "charge" | "slack"),
+//   cause (why the line snapped: fish.js state.cause), hook (the hook-set words, guide.js MOVE_WORDS: "Snap it up!"),
+//   legend (the place id when the fish was the place's legend: it gets its own line, and when to look for it again)
+const SNAP_TIP = { grind: "Stop reeling when the drag slips.", rodlow: "Keep the rod up. It bends and saves the line.",
+  drag: "Set the drag lighter with the − button.", shake: "Hold the rod up when it shakes its head." };
+const THROWN = { jump: ["It threw the hook.", "Lower the rod as soon as it jumps."], thrash: ["It shook the hook out.", "Hold the rod up when it shakes its head."],
+  shake: ["It shook the hook out.", "Keep reeling slowly when it shakes its head."], charge: ["It threw the hook.", "Reel fast when it swims at you."] };
+export function lossText(reason, o = {}) {
+  const steer = o.input === "motion" ? "Tilt the phone left or right to steer it away." : "Drag the rod sideways to steer it.";
+  const hook = String(o.hook || "Swipe it up!").replace(/!$/, "");
+  const line = ({
+    snap: ["SNAP! The line broke.", SNAP_TIP[o.cause] || SNAP_TIP.grind],
+    thrown: THROWN[o.by] || ["It threw the hook.", "Keep the line tight."],
+    spat: ["It spat the lure.", hook + " as soon as it strikes."],
+    spooked: ["You spooked it.", "Wait for the strike."],
+    weeds: ["It wrapped the line in the weeds.", steer],
+    stump: ["The line broke on a stump.", "Steer the fish away from the stumps."],
+    logs: ["The line broke on the logs.", "Keep the fish away from the logjam."],
+    rocks: ["The line broke on the rocks.", "Hold the rod up near the rocks, and steer away."],
+    spooled: ["It took all your line.", "Tighten the drag on a long run."],
+  })[reason] || ["It got away.", ""];
+  if (!o.legend || !JOURNEY[o.legend]) return line;
+  // a lost legend: its name, the move, and when its gold ring comes back
+  const sp = SPECIES.find((s) => s.id === fishingOf(o.legend).legend.id), art = sp.article ? sp.article[0].toUpperCase() + sp.article.slice(1) + " " : "";
+  return [art + sp.name + " got away.", (line[1] ? line[1] + " " : "") + "Look for its gold ring again " + JOURNEY[o.legend].when + "."];
+}
+

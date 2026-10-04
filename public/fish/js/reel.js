@@ -1383,19 +1383,43 @@ export class RodPad extends Widget {
 
 /* ---------------- the gauge ---------------- */
 // set({...}): tfrac (tension, 0..1 of the break), dragFrac, slip, lineOut (m), depth (m), stamina (0..1 or null), name,
-// and for the big fish and the hard places: rub (0..1, the line rubs on something: a red band that fills), spool (line out
-// as a share of the spool: the LINE OUT number turns red above 0.6), phases (a legend's stamina marks: the bar shows
-// where its next stages start), label (text in place of the name: "Big fish on!")
+// and for the big fish and the hard places: rub (0..1, the line rubs on something: a striped RUB band that fills), spool
+// (line out as a share of the spool: the LINE OUT number turns red above 0.6), phases (a legend's stamina marks: the bar
+// shows where its next stages start), label (text in place of the name: "Big fish on!"), slack (s the line has been slack:
+// SLACK shows from GAUGE.SLACK_T), tired (the fish is beaten: TIRED and a green bar; left out, a stamina under 0.3 is tired).
+// Nothing is told by colour alone: the state is a word in a pill under the arc (GOOD, TIGHT, SLIPPING, SLACK, TOO TIGHT),
+// the arc is plain up to the drag mark and hatched past it, with hazard stripes near the break, the rub band is striped and
+// says RUB, and the fish's bar is plain and says FIGHT or TIRED. box: where the last frame put the parts (the tests read it)
+export const GAUGE = { SLACK_T: 0.3, WORD_PX: 12, LABEL_PX: 10 };
+// diagonal lines over a rectangle (clip first): gap px apart
+function hatch(c, x, y, w, h, gap, col, lw) {
+  c.strokeStyle = col; c.lineWidth = lw; c.lineCap = "butt"; c.beginPath();
+  for (let k = -h; k < w; k += gap) { c.moveTo(x + k, y + h); c.lineTo(x + k + h, y); }
+  c.stroke();
+}
+// a piece of the ring between radius r0 and r1, from angle a0 to a1 (a path to fill or to clip by)
+function sector(c, cx, cy, r0, r1, a0, a1) { c.beginPath(); c.arc(cx, cy, r1, a0, a1); c.arc(cx, cy, r0, a1, a0, true); c.closePath(); }
 export class Gauge extends Widget {
   constructor(container) {
     super(container, "gauge");
-    this.s = { tfrac: 0, dragFrac: 0.4, slip: 0, lineOut: 0, depth: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "" };
+    this.s = { tfrac: 0, dragFrac: 0.4, slip: 0, lineOut: 0, depth: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "", slack: 0, tired: null };
     this.v = { t: 0, peak: 0, peakHold: 0, fish: 0, st: 0, slip: 0, rub: 0 };
+    this.box = null;
     this.resize();
   }
   set(o) {
     if (!o) return;
     for (const k in o) if (o[k] !== undefined && k in this.s) this.s[k] = o[k];
+  }
+  // the state word and its pill: [word, fill, ink, edge]. "" fill: a plain word (no fish on)
+  state(fishOn, slack, drag) {
+    const v = this.v;
+    if (v.t > 0.85) return ["TOO TIGHT", "#b8352b", "#f6efd9", "#ffb0a8"];
+    if (v.slip > 0.5) return ["SLIPPING", rgba(AMBER, 1), "#0d2f38", rgba(AMBER, 1)];
+    if (!fishOn) return ["TENSION", "", rgba(INK, 0.75), ""];
+    if (slack) return ["SLACK", "rgba(9,34,41,0.92)", rgba(AMBER, 1), rgba(AMBER, 1)];
+    if (v.t > drag + 0.02) return ["TIGHT", "rgba(9,34,41,0.92)", "#f6efd9", rgba(AMBER, 0.9)];
+    return ["GOOD", "#2d7a45", "#f6efd9", "#9fe0a8"];
   }
   draw(dt = 0.016) {
     if (!this.fit()) return;
@@ -1412,13 +1436,14 @@ export class Gauge extends Widget {
     v.slip = lerp(v.slip, (+s.slip || 0) > 0.05 ? 1 : 0, 1 - Math.exp(-dt * 10));
     v.rub = lerp(v.rub, clamp(+s.rub || 0, 0, 1), 1 - Math.exp(-dt * 14));
     const danger = v.t > 0.85 ? 0.5 + 0.5 * Math.sin(this.time * 34) : 0;
-    const tired = s.stamina != null && v.st < 0.3;
+    const tired = s.stamina != null && (typeof s.tired === "boolean" ? s.tired : v.st < 0.3);
+    const slack = fishOn && (+s.slack || 0) >= GAUGE.SLACK_T;
     // the spool: the line out is a share of it. Red above 0.6, and it beats above 0.75 (the prompt says the same)
     const spool = clamp(+s.spool || 0, 0, 1), spoolWarn = spool > 0.6, spoolBeat = spool > 0.75 ? 0.5 + 0.5 * Math.sin(this.time * 12) : 0;
     const rubbing = v.rub > 0.02, rubBeat = v.rub > 0.5 ? 0.5 + 0.5 * Math.sin(this.time * 26) : 0;
     const marks = Array.isArray(s.phases) ? s.phases.filter((p) => p > 0 && p < 1) : [];
     const key = [w, h, this.dpr, v.t.toFixed(3), v.peak.toFixed(3), v.fish.toFixed(2), v.st.toFixed(3), drag.toFixed(3), s.name, s.label, (+s.lineOut || 0).toFixed(1), (+s.depth || 0).toFixed(1),
-      v.rub.toFixed(3), spoolWarn ? 1 : 0, marks.join("/"),
+      v.rub.toFixed(3), spoolWarn ? 1 : 0, marks.join("/"), slack ? 1 : 0, tired ? 1 : 0, v.slip > 0.5 ? 1 : 0,
       v.slip > 0.02 || danger || tired || spoolBeat || rubBeat ? this.time.toFixed(3) : 0].join();
     if (this.same(key)) return;
     const back = this.layer("back");
@@ -1429,18 +1454,29 @@ export class Gauge extends Widget {
       ctx.beginPath(); rrect(ctx, 0.5, 0.5, w - 1, h - 1, 14);
       ctx.strokeStyle = rgba(DANGER, (0.3 + 0.6 * danger) * clamp((v.t - 0.85) / 0.1, 0, 1)); ctx.lineWidth = 1.5; ctx.stroke();
     }
+    // the rows: the arc and the numbers, then the state pill (and the rub band), then the fish: its name and its bar
     const strip = 32 * v.fish, top = h - strip;
+    const word = Math.max(GAUGE.WORD_PX, Math.min(13, Math.round(w / 14))), pillH = word + 6, pillY = top - pillH - 3;
+    const Hr = pillY - 2;
     // the tension arc: 240° from the lower left, over the top, to the lower right
-    const R = Math.max(18, Math.min(top * 0.4, w * 0.2)), lw = Math.max(5, R * 0.22);
-    const cx = 12 + R + lw / 2, cy = Math.max(R + lw / 2 + 6, top / 2 + R * 0.25);
+    const R = Math.max(16, Math.min((Hr - 6) / 1.72, w * 0.2)), lw = Math.max(5, R * 0.22);
+    const cx = 12 + R + lw / 2, cy = Math.max(R + lw / 2 + 3, (Hr - 1.5 * R - lw) / 2 + R + lw / 2);
     const A0 = 150 * DEG, SW = 240 * DEG, at = (f) => A0 + SW * clamp(f, 0, 1);
     ctx.lineCap = "butt";
     ctx.strokeStyle = "rgba(0,0,0,0.38)"; ctx.lineWidth = lw + 4;
     ctx.beginPath(); ctx.arc(cx, cy, R, A0, A0 + SW); ctx.stroke();
-    // faint zones: fine up to the drag, amber past it, red near the break
+    // the zones: plain up to the drag, hatched past it, hazard stripes near the break
     const zone = (f0, f1, col) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, R, at(f0), at(f1)); ctx.stroke(); };
-    zone(0, drag, rgba(GREEN, 0.16)); zone(drag, 0.85, rgba(AMBER, 0.16)); zone(0.85, 1, rgba(DANGER, 0.3));
-    // the fill, coloured by how close it is to the break
+    const striped = (f0, f1, col, gap, lw2) => {
+      if (f1 <= f0) return;
+      ctx.save(); sector(ctx, cx, cy, R - lw / 2, R + lw / 2, at(f0), at(f1)); ctx.clip();
+      hatch(ctx, cx - R - lw, cy - R - lw, 2 * (R + lw), 2 * (R + lw), gap, col, lw2);
+      ctx.restore();
+    };
+    zone(0, drag, rgba(GREEN, 0.22)); zone(drag, 0.85, rgba(AMBER, 0.2)); zone(0.85, 1, rgba(DANGER, 0.4));
+    striped(drag, 0.85, rgba(AMBER, 0.6), 5, 1);
+    striped(0.85, 1, "rgba(255,236,220,0.8)", 4, 1.6);
+    // the fill, coloured by how close it is to the break, and hatched past the drag mark
     if (v.t > 0.004) {
       let st;
       if (ctx.createConicGradient) {
@@ -1455,10 +1491,11 @@ export class Gauge extends Widget {
       }
       ctx.strokeStyle = st; ctx.lineWidth = lw; ctx.lineCap = "round";
       ctx.beginPath(); ctx.arc(cx, cy, R, A0, at(v.t)); ctx.stroke();
+      striped(drag, Math.min(1, v.t), "rgba(6,22,27,0.55)", 4, 1.5);
     }
     // the drag slips: a ratchet of dashes runs round the outside
     if (v.slip > 0.02) {
-      ctx.strokeStyle = rgba(AMBER, 0.95 * v.slip); ctx.lineWidth = 3; ctx.setLineDash([3, 4]); ctx.lineDashOffset = -this.time * 60;
+      ctx.strokeStyle = rgba(AMBER, 0.95 * v.slip); ctx.lineWidth = 3; ctx.lineCap = "butt"; ctx.setLineDash([3, 4]); ctx.lineDashOffset = -this.time * 60;
       ctx.beginPath(); ctx.arc(cx, cy, R + lw / 2 + 4, at(Math.max(0, drag - 0.14)), at(Math.min(1, drag + 0.14))); ctx.stroke(); ctx.setLineDash([]);
     }
     // marks: the drag setting (cream) and the break point (red)
@@ -1470,80 +1507,97 @@ export class Gauge extends Widget {
     if (v.peak > v.t + 0.03) tick(v.peak, rgba("255,244,214", 0.6), 0, 1.5);
     tick(drag, rgba(INK, 0.95), 4, 2.5);
     tick(1, rgba(DANGER, 1), 4, 3);
-    // the rub band: a red band under the arc that fills from the left as the line rubs through. It cuts at full
-    if (rubbing) {
-      const bx0 = 12, bw0 = w - 24, by0 = top - 8;
-      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
-      const fw = Math.max(6, bw0 * v.rub);
-      const g = ctx.createLinearGradient(bx0, 0, bx0 + bw0, 0);
-      g.addColorStop(0, rgba(RED, 1)); g.addColorStop(1, rgba(DANGER, 1));
-      ctx.save(); ctx.globalAlpha = 0.8 + 0.2 * rubBeat;
-      ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.fill();
-      ctx.restore();
-    }
     // the centre: the tension as a share of what the line can take
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const pct = Math.round(clamp(v.t, 0, 1) * 100);
     ctx.font = font(Math.max(12, Math.round(R * 0.5)));
     ctx.fillStyle = v.t > 0.85 ? rgba(DANGER, 1) : "#f6efd9";
-    ctx.fillText(pct + "%", cx, cy - R * 0.1, (R - lw) * 1.8);
-    ctx.font = font(Math.max(7, Math.round(R * 0.21))); spaced(ctx, 0.08);
-    const label = v.t > 0.85 ? "TOO TIGHT" : v.rub > 0.15 ? "RUBBING" : v.slip > 0.5 ? "SLIPPING" : "TENSION";
-    ctx.fillStyle = v.t > 0.85 || v.rub > 0.15 ? rgba(DANGER, 1) : v.slip > 0.5 ? rgba(AMBER, 1) : rgba(INK, 0.55);
-    ctx.fillText(label, cx, cy + R * 0.3, (R - lw) * 1.9);
+    ctx.fillText(pct + "%", cx, cy, (R - lw) * 1.8);
+    // the state pill under the arc
+    const [wd, fill, inkC, edge] = this.state(fishOn, slack, drag);
+    ctx.font = font(word); spaced(ctx, 0.06);
+    const px0 = 10, pw = Math.min(w - 20, ctx.measureText(wd).width + 14);
+    if (fill) {
+      ctx.beginPath(); rrect(ctx, px0, pillY, pw, pillH, pillH / 2); ctx.fillStyle = fill; ctx.fill();
+      if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+    ctx.fillStyle = inkC;
+    ctx.fillText(wd, px0 + pw / 2, pillY + pillH / 2 + 0.5, pw - 8);
     spaced(ctx, 0);
+    // the rub band: RUB, and a striped red band that fills from the left as the line rubs through. It cuts at full
+    let rubBox = null;
+    if (rubbing) {
+      const lx = px0 + pw + 7, my = pillY + pillH / 2;
+      ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.1); ctx.textAlign = "left"; ctx.fillStyle = "#ffb0a8";
+      const lwid = ctx.measureText("RUB").width;
+      ctx.fillText("RUB", lx, my + 0.5); spaced(ctx, 0);
+      const bx0 = lx + lwid + 5, bw0 = w - 10 - bx0, by0 = my - 3;
+      if (bw0 > 10) {
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.beginPath(); rrect(ctx, bx0, by0, bw0, 6, 3); ctx.fill();
+        const fw = Math.max(6, bw0 * v.rub);
+        ctx.save(); ctx.beginPath(); rrect(ctx, bx0, by0, fw, 6, 3); ctx.clip();
+        ctx.globalAlpha = 0.85 + 0.15 * rubBeat;
+        ctx.fillStyle = rgba(RED, 1); ctx.fillRect(bx0, by0, fw, 6);
+        hatch(ctx, bx0, by0, fw, 6, 5, "rgba(255,214,200,0.8)", 1.4);
+        ctx.restore();
+        rubBox = { x: bx0, y: by0, w: bw0, h: 6 };
+      }
+    }
     // the right column: the line out and the depth
     const x = cx + R + lw / 2 + 12, colW = w - x - 10;
     if (colW > 30) {
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      const lo = (+s.lineOut || 0).toFixed(1);
+      const lo = (+s.lineOut || 0).toFixed(1), lab = GAUGE.LABEL_PX;
       // as big as the column allows: "123.4 m" must fit as well as "8.2 m"
-      let big = Math.max(13, Math.min(24, Math.round(top * 0.22)));
+      let big = Math.max(13, Math.min(24, Math.round(Hr * 0.24)));
       for (; big > 13; big--) {
         ctx.font = font(big); const a = ctx.measureText(lo).width;
-        ctx.font = font(Math.round(big * 0.55), 800);
+        ctx.font = font(Math.max(lab, Math.round(big * 0.55)), 800);
         if (a + ctx.measureText(" m").width <= colW) break;
       }
-      const y0 = top / 2 - big * 1.45 + 2;
-      ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.9) : rgba(INK, 0.55);
-      ctx.fillText("LINE OUT", x, y0, colW);
+      const unit = Math.max(lab, Math.round(big * 0.55)), dep = Math.max(11, Math.round(big * 0.7));
+      const y0 = Math.max(2, (Hr - (2 * lab + big + dep + 9)) / 2);
+      ctx.font = font(lab); spaced(ctx, 0.14); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.9) : rgba(INK, 0.8);
+      ctx.fillText("LINE OUT", x, y0 + lab / 2, colW);
       spaced(ctx, 0);
+      const yb = y0 + lab + 3 + big / 2;
       ctx.font = font(big); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.75 + 0.25 * spoolBeat) : "#f6efd9";
-      ctx.fillText(lo, x, y0 + big * 0.95);
+      ctx.fillText(lo, x, yb);
       const lw3 = ctx.measureText(lo).width;
-      ctx.font = font(Math.round(big * 0.55), 800); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.8) : rgba(INK, 0.7);
-      ctx.fillText(" m", x + lw3, y0 + big * 1.05);
-      ctx.font = font(9); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.55);
-      ctx.fillText("DEPTH", x, y0 + big * 2.05, colW);
+      ctx.font = font(unit, 800); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.8) : rgba(INK, 0.75);
+      ctx.fillText(" m", x + lw3, yb + big * 0.1);
+      ctx.font = font(lab); spaced(ctx, 0.14); ctx.fillStyle = rgba(INK, 0.8);
+      ctx.fillText("DEPTH", x, yb + big / 2 + 3 + lab / 2, colW);
       spaced(ctx, 0);
-      ctx.font = font(Math.round(big * 0.7)); ctx.fillStyle = "#cfe3e0";
-      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, y0 + big * 2.8);
+      ctx.font = font(dep); ctx.fillStyle = "#cfe3e0";
+      ctx.fillText((+s.depth || 0).toFixed(1) + " m", x, yb + big / 2 + lab + 6 + dep / 2);
     }
-    // the fish: its name, and a bar of how much fight it has left
+    // the fish: its name, and a plain bar of how much fight it has left. The label on the right says which: FIGHT, or
+    // TIRED (green) when it is beaten
+    let barBox = null;
     if (v.fish > 0.02) {
       ctx.save(); ctx.globalAlpha = v.fish;
       const bx = 12, bw = w - 24, ny = h - 23, by = h - 11;
-      ctx.font = font(12); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(BRASS, 1);
+      ctx.textBaseline = "middle";
+      ctx.font = font(GAUGE.LABEL_PX); spaced(ctx, 0.12); ctx.textAlign = "right";
+      const tag = tired ? "TIRED" : "FIGHT", tagW = ctx.measureText(tag).width;
+      ctx.fillStyle = tired ? rgba(GREEN, 0.75 + 0.25 * Math.sin(this.time * 6)) : rgba(INK, 0.75);
+      ctx.fillText(tag, bx + bw, ny); spaced(ctx, 0);
       // a label ("Big fish on!") takes the place of the name until the fish shows what it is
+      ctx.font = font(12); ctx.textAlign = "left";
       ctx.fillStyle = s.label ? rgba(DANGER, 1) : rgba(BRASS, 1);
-      ctx.fillText(String(s.label || s.name || "Fish on!"), bx, ny, tired ? bw - 50 : bw);
-      if (tired) {
-        ctx.font = font(9); spaced(ctx, 0.12); ctx.textAlign = "right"; ctx.fillStyle = rgba(GREEN, 0.6 + 0.4 * Math.sin(this.time * 6));
-        ctx.fillText("TIRED", bx + bw, ny); spaced(ctx, 0);
-      }
+      ctx.fillText(String(s.label || s.name || "Fish on!"), bx, ny, bw - tagW - 8);
       ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.beginPath(); rrect(ctx, bx, by - 3, bw, 6, 3); ctx.fill();
       if (s.stamina != null) {
         const fw = Math.max(0, bw * v.st);
-        if (fw > 1) {
-          const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-          if (tired) { g.addColorStop(0, rgba(GREEN, 1)); g.addColorStop(1, rgba(GREEN, 0.8)); } else { g.addColorStop(0, rgba(AMBER, 1)); g.addColorStop(1, rgba(RED, 1)); }
-          ctx.fillStyle = g; ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill();
-        }
+        if (fw > 1) { ctx.fillStyle = tired ? rgba(GREEN, 1) : rgba(BRASS, 0.95); ctx.beginPath(); rrect(ctx, bx, by - 3, fw, 6, 3); ctx.fill(); }
       }
       // a legend fights in stages: a mark where each next stage starts
       ctx.fillStyle = rgba(INK, 1);
       for (const p of marks) ctx.fillRect(Math.round(bx + bw * p) - 1, by - 6, 2, 12);
       ctx.restore();
+      barBox = { x: bx, y: by - 3, w: bw, h: 6 };
     }
+    this.box = { word: wd, pill: { x: px0, y: pillY, w: pw, h: pillH }, rub: rubBox, bar: barBox, arc: { cx, cy, R, lw }, top };
   }
 }

@@ -80,22 +80,52 @@ export function sceneFrame(kind, motion, time) {
   });
 }
 
+// One set of words for each fight move and each input: the fight prompt (main.js), the guide caption (lesson below) and the
+// rod cue (rod-cues.js) all read this, so a move is never written two ways at once. Inputs: motion (the phone is the rod),
+// touch, and keys (a desktop with no touch screen); an input that is left out uses the touch words.
+// strength is the motion pump: tipping the phone back as you crank is what pulls the fish in.
+export const MOVE_WORDS = {
+  reel: { touch: "Turn the crank to reel." },
+  hook: { motion: "Snap it up!", touch: "Swipe it up!", keys: "Press Space!" },
+  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
+  stop: { touch: "Stop reeling." },
+  low: { motion: "Lower the phone.", touch: "Drag the rod down." },
+  raise: { touch: "Hold the rod up." },
+  turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways." },
+  land: { motion: "Lift the phone and hold.", touch: "Drag the rod up and hold." },
+  drag: { touch: "Tap + to tighten the drag.", keys: "Click + to tighten the drag." },
+};
+// the way to steer when the side is known: "Tilt the phone right." / "Drag the rod left."
+export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " };
+// the crank in the fight: as fast as the prompt says
+export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
+// the input of a player: "motion", "touch" or "keys"
+export const inputOf = (motion, touch = true) => (motion ? "motion" : touch ? "touch" : "keys");
+// the words for a move. side: -1 left, 1 right, for the steer
+export function moveWords(kind, input = "touch", side = 0) {
+  if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
+  const w = MOVE_WORDS[kind];
+  return w ? w[input] || w.touch : "";
+}
+
 export function lesson(kind, motion, touch = true) {
+  const w = (k) => moveWords(k, inputOf(motion, touch));
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
     back: [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
     cast: [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", "Touch the rod to stop it short."],
-    reel: ["Turn the crank", "Reel slowly. Pause now and then."],
-    hook: [motion ? "Snap the phone up" : touch ? "Swipe rod up" : "Press Space", "Set the hook when the fish strikes."],
-    pump: ["Lift. Lower + reel.", "Reel as you lower the rod."],
-    strength: ["Tip back as you reel", "Bring the top of the phone toward you for extra reel power."],
-    stop: ["Stop turning the crank", "Let the fish run."],
-    low: [motion ? "Lower the phone" : "Drag the rod down", "Lower the rod."],
-    turn: [motion ? "Tilt to steer" : "Drag the rod sideways", "Keep the fish clear of cover."],
-    land: [motion ? "Lift the phone. Hold." : "Rod up. Hold.", "Lift the fish out of the water."],
-    raise: [motion ? "Hold the phone up" : "Hold the rod up", "Keep the rod raised."],
-    drag: ["Tap + to tighten drag", "Keep some line on the spool."],
+    reel: [w("reel"), "Reel slowly. Pause now and then."],
+    hook: [w("hook"), "Set the hook when the fish strikes."],
+    pump: [w("pump"), motion ? "Ease forward to rest." : "Pump the fish in."],
+    strength: [w("strength"), "Bring the top of the phone toward you for extra reel power."],
+    stop: [w("stop"), "Let the fish run."],
+    low: [w("low"), "Lower the rod."],
+    turn: [w("turn"), "Keep the fish clear of cover."],
+    land: [w("land"), "Lift the fish out of the water."],
+    raise: [w("raise"), "Keep the rod raised."],
+    drag: [w("drag"), "Keep some line on the spool."],
   })[kind] || ["Watch the line", "Follow the prompt."];
 }
 

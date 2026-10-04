@@ -67,7 +67,11 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 /* Compact reel controls float over the lake. The rod stays clear on the right. */
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
 #game.l-tall-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 60px); }
-#game.l-tall-reel #toast { bottom: calc(var(--sab) + 16px); }
+/* the reel's toasts stay clear of the crank and the thumb on it, on either reel side, and of the rod cue: in the tall reel
+   they sit in the sky right of the gauge, in the wide reel in the top right corner, right of the prompt and above the rod.
+   (Centred with the usual translateX, so guide.js still finds them) */
+#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + min(46vmin, 240px) + 22px + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - min(46vmin, 240px) - 34px); }
+#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - min(46vmin, 240px) / 2); max-width: min(46vmin, 240px); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -98,7 +102,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
 #game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
-/* the tall reel: the prompt goes under the gauge, the toast above the controls */
+/* the tall reel: the prompt goes under the gauge (the toast goes beside it) */
 #game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + min(30vmin, 150px)); }
 
 

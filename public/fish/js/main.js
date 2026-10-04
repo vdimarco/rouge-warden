@@ -7,20 +7,20 @@
 import { normalizeStyle } from "./art-style.js";
 import { PullStrength } from "./pull.js";
 import { Motion } from "./motion.js";
-import { createGuide } from "./guide.js";
+import { createGuide, moveWords, inputOf } from "./guide.js";
 import { createRodCues } from "./rod-cues.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { HangingLure } from "./line-motion.js";
 import { CAST, castParams, Flight } from "./cast.js";
-import { Rises, LakeSim, rodTip, sizeRank } from "./fish.js";
+import { Rises, LakeSim, rodTip, sizeRank, firstBite } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
 import * as LAKE from "./lake.js";
 import { PLACES, getPlace } from "./places.js";
 import { byId } from "./species.js";
 import { fishingOf, ecology, placeSpecies } from "./fishing.js";
-import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText } from "./journey.js";
+import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText, lossText } from "./journey.js";
 import { SAVE_KEY, loadSave, placeRec, recordCatch, legendStep, recordDerby } from "./save.js";
 
 const $ = (s) => document.querySelector(s);
@@ -123,13 +123,39 @@ game.addEventListener("click", (e) => {
 }, true);
 for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sfx("uiBack"); closeOverlay(); });
 
-let toastT = 0;
-function toast(msg, ms = 2200) {
+// A toast stays up at least TOAST_MIN ms before the next one takes its place. The next ones wait in a short queue: when it
+// is full the oldest waiting toast is dropped (the newest wins), and one that waited TOAST_STALE ms is no news any more.
+// onShow runs when the toast is on screen (a one-time tip is marked seen then, not when it was asked for)
+const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
+let toastT = 0, toastNextT = 0, toastAt = -1e9;
+const toastQ = [];
+function toast(msg, ms = 2200, onShow = null) {
+  const t = $("#toast"), up = now() - toastAt;
+  if (t.classList.contains("on") && up < TOAST_MIN) {
+    if (t.textContent === msg || toastQ.some((q) => q.msg === msg)) return;
+    toastQ.push({ msg, ms, onShow, at: now() });
+    if (toastQ.length > TOAST_QUEUE) toastQ.shift();
+    if (!toastNextT) toastNextT = setTimeout(nextToast, TOAST_MIN - up);
+    return;
+  }
+  showToast(msg, ms, onShow);
+}
+function showToast(msg, ms, onShow) {
   const t = $("#toast");
   t.textContent = msg;
   t.classList.add("on");
+  toastAt = now();
   clearTimeout(toastT);
   toastT = setTimeout(() => t.classList.remove("on"), ms);
+  if (onShow) onShow();
+}
+function nextToast() {
+  toastNextT = 0;
+  while (toastQ.length && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
+  const q = toastQ.shift();
+  if (!q) return;
+  showToast(q.msg, q.ms, q.onShow);
+  if (toastQ.length) toastNextT = setTimeout(nextToast, TOAST_MIN);
 }
 let promptKey = "";
 function prompt(text, sub = "", icon = "", tone = "") {
@@ -691,8 +717,11 @@ function landed(r) {
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
     G.landing = { x: r.x, z: r.z, dist };
     G.ring = rises ? rises.near(r.x, r.z) : null;
-    // G.force lets a test pick the fish: { species, kg, bite }
-    G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || {}));
+    // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
+    // from a small, easy fish (firstBite in fish.js), once; the casts after it have the normal odds
+    const gift = !G.force && !G.gifted && save.caught === 0 && G.place.id === "loon" ? firstBite(zone, LAKE.rng(G.seed + 911)) : null;
+    if (gift) G.gifted = true;
+    G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || gift || {}));
     G.big = null; G.walk = false;
     G.settle = 0;
     if (G.sim.plan && world.prepareFish) world.prepareFish(G.sim.plan.id);
@@ -717,13 +746,21 @@ function landed(r) {
 /* ---------------- the reel ---------------- */
 function enterReel() {
   G.phase = "reel";
+  G.hold = null;
   // the phone stays upright: its top edge is still the rod. The cast report stays up a moment, below the prompt
   Motion.mode = G.input === "motion" ? "portrait" : "landscape";
   relayout(true);
   updateHud();
 }
+// The loss beat: the loss line stays LOSS_MS (a legend LOSS_LEGEND_MS) so it can be read, while the fish swims off
+// (GONE_MS) and a thrown hook leaves the line limp on the water. "Nothing this time" is shorter
+const LOSS_MS = 3400, LOSS_LEGEND_MS = 4500, HOME_MS = 2400, GONE_MS = 1400;
 function outcome(kind, msg, sub = "") {
   if (Array.isArray(msg)) { sub = msg[1]; msg = msg[0]; }
+  const s = G.sim && G.sim.state, f = kind === "lost" && s && s.fish, sp = f && byId(f.id);
+  G.lossMs = kind !== "lost" ? HOME_MS : sp && sp.legend ? LOSS_LEGEND_MS : LOSS_MS;
+  const d = f ? Math.hypot(f.x, f.z) || 1 : 1;
+  G.gone = f && !s.junk ? { fish: { id: f.id, x: f.x, y: Math.min(f.y, -0.1), z: f.z, len: f.len || 0.4 }, dx: f.x / d, dz: f.z / d, limp: s.reason === "thrown" } : null;
   G.phase = "lost";
   G.outcomeAt = now();
   prompt(msg, sub, kind === "home" ? "crank" : "stop", "");
@@ -1293,6 +1330,8 @@ function reelUpdate(dt) {
     tfrac: s.tfrac || 0, dragFrac: (s.dragN || 18) / (s.breakN || 45), slip: s.slip || 0, lineOut: s.lineOut || 0, depth: Math.max(0, -(s.fish ? s.fish.y : L.y)),
     stamina: s.fish ? s.fish.stamina : null, name: s.fish ? (known ? sp.name : "Fish on!") : "",
     rub: s.rub || 0, spool: s.spoolFrac || 0, phases: s.boss ? s.boss.at : null, label: G.big && G.big.said && !known ? "Big fish on!" : "",
+    // SLACK after 0.3 s of slack line; TIRED when the fish is beaten (the prompt says "It is tired." then too)
+    slack: s.slackT != null ? s.slackT : s.slack ? 1 : 0, tired: s.fish ? !!s.beaten : null,
   });
 
   // feel
@@ -1311,35 +1350,52 @@ const nightAt = (h) => (h >= 12 ? smooth(20.5, 22, h) : 1 - smooth(4.6, 5.8, h))
 function smooth(a, b, v) { const x = clamp((v - a) / (b - a), 0, 1); return x * x * (3 - 2 * x); }
 // what the cover is called in the prompt
 const COVER_NAME = { weeds: "weeds", pads: "lily pads", stumps: "stumps", logs: "logs", rocks: "rocks", wall: "wall", ledge: "ledge" };
+// A fight prompt stays up PROMPT_HOLD ms before another takes its place, so it can be read, unless the new one is urgent:
+// the strike, a jump, or a risk to the line (too tight, a crank into a slipping drag, a rub, the spool running out)
+const PROMPT_HOLD = 350;
 function reelPrompt(s, crankRate, theta) {
+  const w = fightCue(s, crankRate, theta), t = now(), H = G.hold;
+  const key = w.text + "|" + w.sub + "|" + w.icon + "|" + w.tone;
+  if (H && key !== H.key && !w.urgent && t - H.at < PROMPT_HOLD) return;
+  if (!H || key !== H.key) G.hold = { key, at: t };
+  prompt(w.text, w.sub, w.icon, w.tone);
+}
+// what the reel prompt should say now: { text, sub, icon, tone, urgent }. The subs that teach a move use the one set of
+// words that the guide and the rod cue use (MOVE_WORDS in guide.js)
+function fightCue(s, crankRate, theta) {
   const m = sensing();
   const t = now();
+  const say = (text, sub = "", icon = "", tone = "", urgent = false) => ({ text, sub, icon, tone, urgent });
+  const words = (kind, side = 0) => moveWords(kind, inputOf(m, touchDevice), side);
   const recent = (k, ms) => t - (G.lastEvent[k] || -1e9) < ms;
   // the drag slips in short bursts: the slip prompts stay 0.7 s after the last slip, so they do not flicker
   if ((s.slip || 0) > 0.15) G.slipAt = t;
   const slipRecent = t - (G.slipAt || -1e9) < 700;
+  // slack line, said once it has been slack 0.35 s (a flicker of slack is no news)
+  const slack = s.slackT != null ? s.slackT >= 0.35 : !!s.slack;
   // the way to steer: side +1 is right
   const dirWord = (side) => (side > 0 ? "right" : side < 0 ? "left" : "");
-  const steerSub = (side) => { const d = dirWord(side); return m ? (d ? "Tilt the phone " + d + "." : "Tilt the phone left or right.") : (d ? "Drag the rod " + d + "." : "Drag the rod sideways."); };
+  const steerSub = (side) => words("turn", side);
   // the bail is still open: say how to start, but let a follower, a nibble or a strike speak for themselves
-  if (G.bail === "open" && (s.phase === "sink" || s.phase === "retrieve") && !s.follower && !recent("nibble", 900)) return prompt("Turn the crank to reel.", "The first turn closes the bail.", "crank");
+  if (G.bail === "open" && (s.phase === "sink" || s.phase === "retrieve") && !s.follower && !recent("nibble", 900)) return say("Turn the crank to reel.", "The first turn closes the bail.", "crank");
   switch (s.phase) {
     case "sink": case "retrieve": {
-      if (s.empty) return prompt("Nothing is biting here.", "Reel in and cast again.", "crank");
-      if (recent("nibble", 900)) return nightAt(G.hour) >= 0.5 ? prompt("It is dark. Feel for the bite.", "Wait for the strike.", "fish") : prompt("A fish is nibbling.", "Wait for the strike.", "fish");
-      if (s.follower) return s.tooFast ? prompt("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : prompt("A fish is following.", "Stop for a moment. It may bite.", "crank");
+      if (s.empty) return say("Nothing is biting here.", "Reel in and cast again.", "crank");
+      if (recent("nibble", 900)) return nightAt(G.hour) >= 0.5 ? say("It is dark. Feel for the bite.", "Wait for the strike.", "fish") : say("A fish is nibbling.", "Wait for the strike.", "fish");
+      if (s.follower) return s.tooFast ? say("Too fast! Reel slower.", "The fish cannot keep up.", "crank", "hot") : say("A fish is following.", "Stop for a moment. It may bite.", "crank");
       // the river: the current swings the lure. Said once
       if (G.place.flow && !save.seen["river.swing"] && $("#report").hidden) { seen("river.swing"); G.swingUntil = t + 4500; }
-      if (t < (G.swingUntil || 0)) return prompt("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank");
-      return prompt("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
+      if (t < (G.swingUntil || 0)) return say("The current takes your lure.", "Reel slowly. Fish take it at the end of the swing.", "crank");
+      return say("Turn the crank to reel.", save.seen.bite ? "" : "Stop now and then. Fish like a pause.", "crank");
     }
     case "strike":
-      return prompt(m ? "PULL UP! Set the hook!" : touchDevice ? "SWIPE UP! Set the hook!" : "PRESS SPACE! Set the hook!", "", "pull", "hot");
+      // the hook-set words, louder: "SNAP IT UP! Set the hook!"
+      return say(words("hook").toUpperCase() + " Set the hook!", "", "pull", "hot", true);
     case "fight": {
       const f = s.fish || {};
       if (G.walk && f.move !== "jump" && !recent("jump", 1500)) G.walk = false;
       // 2. a jump, or a tail walk: keep the rod low
-      if (f.move === "jump" || recent("jump", 900)) return G.walk ? prompt("It jumps again and again!", "Keep the rod low.", "low", "hot") : prompt("It jumped! Lower the rod!", "", "low", "hot");
+      if (f.move === "jump" || recent("jump", 900)) return G.walk ? say("It jumps again and again!", words("low"), "low", "hot", true) : say("It jumped! Lower the rod!", words("low"), "low", "hot", true);
       // 3. the line rubs on something: steer it off
       if ((s.rub || 0) <= 0.15) G.rubDir = null;
       else {
@@ -1352,30 +1408,32 @@ function reelPrompt(s, crankRate, theta) {
           if (t - R.since >= 300) R.shown = side;
         } else if (side) R.want = side;
         const d = dirWord(R.shown), steer = " Steer " + (d || "away") + ".", K = s.rubKind;
-        return prompt(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(R.shown), K === "rocks" ? "pull" : "turn", "hot");
+        return say(K === "stump" ? "The line is on a stump!" + steer : K === "logs" ? "The line is on the logs!" + steer : K === "rocks" ? "The line is on the rocks! Hold the rod up." : "It is in the weeds!" + steer, steerSub(R.shown), K === "rocks" ? "pull" : "turn", "hot", true);
       }
       // 4. its last run. A fish of the wall swims at you and the line goes slack: then reel
-      if (recent("lastrun", 2000)) return s.slack ? prompt("Slack line! Reel it in.", "Keep the line tight.", "crank", "hot") : prompt("It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up.", "stop", "hot");
+      if (recent("lastrun", 2000)) return slack ? say("Slack line! Reel it in.", "Keep the line tight.", "crank", "hot") : say("It sees you! Let it run.", "Reel only if the line goes slack. Hold the rod up.", "stop", "hot");
       // the tuna's first run: the banner says to let it go, and so does the prompt
-      if (s.boss && s.boss.n === 1 && /let it go/i.test(s.boss.name || "") && f.move === "run" && (s.fightT || 0) < 2.5) return prompt("It runs! Let it go.", "Hold the rod up. Reel only if the line goes slack.", "pull", "hot");
-      if (f.move === "thrash" || f.move === "shake" || recent("shake", 700)) return prompt("It shakes its head!", "Hold the rod up. Reel in any slack.", "pull", "hot");
-      if (f.move === "turn" || recent("turn", 1200)) return prompt("It turned. Stop reeling!", "", "stop", "hot");
-      if (f.move === "charge") return prompt("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot");
-      if (slipRecent && crankRate > 0.3) return prompt("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot");
-      if ((s.tfrac || 0) > 0.85) return prompt("Too tight! Stop reeling.", "Lower the rod a little.", "low", "hot");
+      if (s.boss && s.boss.n === 1 && /let it go/i.test(s.boss.name || "") && f.move === "run" && (s.fightT || 0) < 2.5) return say("It runs! Let it go.", "Hold the rod up. Reel only if the line goes slack.", "pull", "hot");
+      // a head shake: the fish swims in as it shakes, so a slack line is the danger, and the prompt says so
+      if (f.move === "thrash" || f.move === "shake" || recent("shake", 700)) return slack ? say("Slack line! Reel it in.", "It shakes its head. Keep the rod up.", "crank", "hot") : say("It shakes its head!", words("raise") + " Keep reeling slowly.", "pull", "hot");
+      if (f.move === "turn" || recent("turn", 1200)) return say("It turned. Stop reeling!", "", "stop", "hot");
+      if (f.move === "charge") return say("It swims at you! Reel fast.", "Reel until the line is tight.", "crank", "hot");
+      if (slipRecent && crankRate > 0.3) return say("The drag is slipping. Stop reeling.", "Hold the rod up. Let it run.", "stop", "hot", true);
+      if ((s.tfrac || 0) > 0.85) return say("Too tight! Stop reeling.", "Hold the rod up. Let the drag work.", "stop", "hot", true);
       // only while the drag slips: a full spool warning that stays up would hide the rest and the sulk
-      if ((s.spoolFrac || 0) > 0.75 && slipRecent) return G.drag < 2 ? prompt("The spool is almost empty!", "Tighten the drag.", "stop", "hot") : prompt("The spool is almost empty!", "Hold on. Keep the rod up.", "pull", "hot");
-      if (f.move === "hold") return prompt("It rests. Rest your arm.", "Keep the line tight.", "fish", "good");
-      if (f.move === "sulk") return prompt("It holds on the bottom.", "Lift the rod slowly. Then reel as you lower it.", "pull");
-      if (s.cover) return prompt("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
-      if (slipRecent) return prompt("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
-      if (s.slack) return prompt("Slack line! Reel it in.", "", "crank", "hot");
-      if (s.beaten) return prompt("It is tired. Reel steadily.", "Slow down if the gauge turns red.", "crank", "good");
-      if (theta < 28) return prompt("Keep your rod up.", m ? "Tip the phone up toward you." : "Drag the rod up.", "pull");
-      return prompt("Pump and reel.", m ? "Tip the phone back toward you as you reel. Ease forward to relax." : "Drag the rod up. Then reel as it comes down.", "pull");
+      if ((s.spoolFrac || 0) > 0.75 && slipRecent) return G.drag < 2 ? say("The spool is almost empty!", words("drag"), "stop", "hot", true) : say("The spool is almost empty!", "Hold on. Keep the rod up.", "pull", "hot", true);
+      if (f.move === "hold") return say("It rests. Rest your arm.", "Keep the line tight.", "fish", "good");
+      // a fish on the bottom comes up with the pump, the same move as the pump and reel
+      if (f.move === "sulk") return say("It holds on the bottom.", words("pump"), "pull");
+      if (s.cover) return say("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
+      if (slipRecent) return say("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
+      if (slack) return say("Slack line! Reel it in.", "", "crank", "hot");
+      if (s.beaten) return say("It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT.", "crank", "good");
+      if (theta < 28) return say("Your rod is too low.", words("raise"), "pull");
+      return say("Pump and reel.", words("pump"), "pull");
     }
-    case "land": return prompt(G.place.id === "sea" ? "Bring it to the wall! Raise the rod and hold." : "Lift it out! Raise the rod and hold.", "", "pull", "good");
-    default: return prompt("");
+    case "land": return say(G.place.id === "sea" ? "Bring it to the wall!" : "Lift it out!", words("land"), "pull", "good");
+    default: return say("");
   }
 }
 function handleEvent(e) {
@@ -1406,7 +1464,12 @@ function handleEvent(e) {
     case "slack": Sound.sfx("slip"); Haptics.bump(0.3); break;
     case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); break;
     case "splash": world.splash(fx, fz, e.size || 0.5); Sound.sfx("splash", e.size || 0.5); break;
-    case "run": case "surge": if (!save.seen.run) { toast("It is running! Let the drag work.", 2400); seen("run"); } break;
+    // a run starts with a click of the drag and a buzz, so a thumb on the crank has time to stop. The tip is said once,
+    // and marked seen only when it has shown
+    case "run": case "surge":
+      Sound.sfx("tick"); Haptics.bump(0.5);
+      if (!save.seen.run) toast("It is running! Let the drag work.", 2400, () => seen("run"));
+      break;
     case "shake": Haptics.bump(0.7); break;
     case "reveal": {
       const sp = byId(e.id || (s && s.fish && s.fish.id));
@@ -1431,25 +1494,15 @@ function handleEvent(e) {
     case "snap":
       // a line that rubbed through, or ran out: the loss line says which
       Sound.sfx(e.reason === "weeds" || e.reason === "rocks" || e.reason === "stump" || e.reason === "logs" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
-    case "thrown": G.thrownBy = e.jump ? "jump" : e.thrash ? "thrash" : e.charge ? "charge" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
+    // (a slack line in a head shake has its own tip: keep reeling slowly)
+    case "thrown": G.thrownBy = e.jump ? "jump" : e.thrash ? "thrash" : e.charge ? "charge" : s && s.fish && /shake|thrash/.test(s.fish.move) ? "shake" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
     case "home": Sound.sfx("plop"); break;
   }
 }
-// what went wrong, and what to do next time
+// what went wrong, and the one move that would have saved it (journey.js has the lines)
 function reasonText(r) {
-  const steer = sensing() ? "Tilt the phone left or right to steer it away." : "Drag the rod sideways to steer it.";
-  const thrown = { jump: ["It threw the hook.", "Lower the rod when it jumps."], thrash: ["It shook the hook out.", "Hold the rod up when it shakes its head."], charge: ["It threw the hook.", "Reel fast when it swims at you."] };
-  return ({
-    snap: ["SNAP! The line broke.", "Stop reeling when the drag slips."],
-    thrown: thrown[G.thrownBy] || ["It threw the hook.", "Keep the line tight."],
-    spat: ["It spat the lure.", sensing() ? "Pull up as soon as it strikes." : "Swipe up as soon as it strikes."],
-    spooked: ["You spooked it.", "Wait for the strike."],
-    weeds: ["It wrapped the line in the weeds.", steer],
-    stump: ["The line broke on a stump.", "Steer the fish away from the stumps."],
-    logs: ["The line broke on the logs.", "Keep the fish away from the logjam."],
-    rocks: ["The line broke on the rocks.", "Hold the rod up near the rocks, and steer away."],
-    spooled: ["It took all your line.", "Tighten the drag on a long run."],
-  })[r] || ["It got away.", ""];
+  const s = G.sim && G.sim.state, sp = s && s.fish && byId(s.fish.id), input = inputOf(sensing(), touchDevice);
+  return lossText(r, { input, by: G.thrownBy, cause: s && s.cause, hook: moveWords("hook", input), legend: sp && sp.legend ? G.place.id : null });
 }
 
 /* ---------------- the loop ---------------- */
@@ -1521,11 +1574,20 @@ function step(dt) {
       break;
     }
     case "reel": reelUpdate(dt); break;
-    case "lost":
+    case "lost": {
       Sound.setReel(0); Sound.setDrag(0); Sound.setTension(0); Haptics.setCrank(0); Haptics.setTension(0, 0, false);
-      world.setFish(null); world.setFollower(null); world.setLine({ visible: false }); world.setLure({ x: 0, y: -5, z: 0, visible: false });
-      if (now() - G.outcomeAt > 2400) { prompt(""); nextAfterOutcome(); }
+      // the fish swims off and sinks out of sight; a thrown hook leaves the line limp, a broken one leaves nothing
+      const g = G.gone, k = g ? (now() - G.outcomeAt) / GONE_MS : 1;
+      world.setFollower(null);
+      if (g && k < 1) {
+        const F = g.fish, m = 3 * k;
+        world.setFish({ ...F, x: F.x + g.dx * m, z: F.z + g.dz * m, y: F.y - 0.9 * k, heading: Math.atan2(g.dx, -g.dz), jump: 0, thrash: 0.4 * (1 - k), roll: 0, near: 0.6 * (1 - k) });
+        world.setLine({ from: world.tip(), to: { x: F.x, y: -0.05, z: F.z }, slack: 1, visible: g.limp });
+        world.setLure({ x: F.x, y: -0.05, z: F.z, visible: g.limp, spin: 0 });
+      } else { world.setFish(null); world.setLine({ visible: false }); world.setLure({ x: 0, y: -5, z: 0, visible: false }); }
+      if (now() - G.outcomeAt > (G.lossMs || LOSS_MS)) { prompt(""); nextAfterOutcome(); }
       break;
+    }
     // wide: the card sits on the right, so frame the fish in the part of the lake left free.
     // tall: the card covers the bottom of the view (bottom: its share of the height), so frame the fish above it
     case "catch": {

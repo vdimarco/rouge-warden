@@ -208,12 +208,12 @@ function spark(S, f, ev, t) {
 
 // One cast: the lure lands at `spot`, a player fishes it until the fish is landed, lost, or LIMIT s pass.
 // place: a place from places.js (Loon Lake if left out). Returns what happened.
-export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true }) {
+export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true, eager = false }) {
   const r = rng(seed * 7919 + 13);
   const pl = new Player(policy, rng(seed * 104729 + 7));
   const rod = place ? place.stand.rod : undefined;
   const tip = rodTip(40, headingDeg(spot.x, spot.z), 0, rod);
-  const o = { place, lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite };
+  const o = { place, lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite, eager };
   if (kg != null) o.kg = kg;
   const sim = new LakeSim(o);
   const out = {

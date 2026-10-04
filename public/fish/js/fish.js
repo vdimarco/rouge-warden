@@ -223,10 +223,10 @@ function likeSpeed(sp, s) {
 }
 
 // A brand-new player's first cast in the water (main.js): a sure bite from a small, easy fish of Loon Lake, a pumpkinseed
-// in the pads and the weeds and by the dock, a perch anywhere else. Pass it to LakeSim as its test hooks (species, kg, bite)
+// in the pads and the weeds and by the dock, a perch anywhere else, eager to bite. Pass it to LakeSim as its test hooks
 export function firstBite(zn, r = Math.random) {
   const id = zn === "pads" || zn === "weeds" || zn === "dock" ? "pumpkinseed" : "perch", [a, b] = byId(id).kg;
-  return { species: id, kg: Math.round((a + (Math.min(b, 0.45) - a) * (0.3 + 0.5 * r())) * 100) / 100, bite: true };
+  return { species: id, kg: Math.round((a + (Math.min(b, 0.45) - a) * (0.3 + 0.5 * r())) * 100) / 100, bite: true, eager: true };
 }
 
 /* ---------------- rising fish: the rings you cast at ---------------- */
@@ -304,7 +304,8 @@ export class Rises {
 // sim.R is the reel of the place (gearScale): its break and drag settings are in state.breakN and state.dragN.
 export class LakeSim {
   // opts: { place = Loon Lake, lure, tip, lineOut, hour, ring, rng, easy = true }
-  // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none)
+  // test hooks: species (force a fish or junk by id), kg (force its weight), bite (true/false forces a bite or none),
+  // eager (the fish comes and takes the lure sooner: firstBite uses it)
   constructor(opts = {}) {
     const o = opts || {};
     this.pl = placeOf(o.place);
@@ -401,9 +402,10 @@ export class LakeSim {
       cm: junk ? 0 : lengthFor(sp, kg),
       len: junk ? 0.3 : Math.max(0.1, lengthFor(sp, kg) / 100),
       style,
-      notice: ((inRing ? 0.5 + r() * 1.5 : 1 + r() * 4) + (junk ? 1 + r() * 4 : 0)) * quick,
-      commit: Math.max(0.8, (style === "slammer" ? 1.4 + r() * 2 : style === "soft" ? 2 + r() * 2.5 : 2.5 + r() * 2.5) * (inRing ? 0.7 : 1) * quick),
-      nibbles: style === "nibbler" ? (r() < 0.1 ? 0 : 1 + ((r() * 3) | 0)) : style === "soft" ? (r() < 0.5 ? 1 : 0) : 0,
+      // (an eager fish, the first fish of a new player, comes sooner and takes the lure after one nibble at most)
+      notice: ((inRing ? 0.5 + r() * 1.5 : 1 + r() * 4) + (junk ? 1 + r() * 4 : 0)) * quick * (o.eager ? 0.4 : 1),
+      commit: Math.max(0.8, (style === "slammer" ? 1.4 + r() * 2 : style === "soft" ? 2 + r() * 2.5 : 2.5 + r() * 2.5) * (inRing ? 0.7 : 1) * quick * (o.eager ? 0.5 : 1)),
+      nibbles: Math.min(o.eager ? 1 : 3, style === "nibbler" ? (r() < 0.1 ? 0 : 1 + ((r() * 3) | 0)) : style === "soft" ? (r() < 0.5 ? 1 : 0) : 0),
       pauseNeed: 0.5 + r(),
       quick,
     };

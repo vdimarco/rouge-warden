@@ -434,7 +434,7 @@ async function padChecks(P, tag) {
 }
 
 /* ---------- screenshots ---------- */
-/* ---------- the gauge: the rub band, the red line-out text, the stage marks and the label ---------- */
+/* ---------- the gauge: the rub band, the red line-out text, the stage marks, the label, and its patterns ---------- */
 async function gaugeChecks(P, tag) {
   const { page } = P;
   // count the pixels in a rectangle (css px of the gauge) that match a colour test, read back from the canvas
@@ -456,7 +456,7 @@ async function gaugeChecks(P, tag) {
   const settle = async () => { await page.evaluate(() => { T.freeze(false); }); await sleep(700); };
   const size = await page.evaluate(() => { T.mode("reel"); T.gauge.resize(); return { w: T.gauge.w, h: T.gauge.h }; });
   const { w, h } = size, top = h - 32;
-  const FISH = { tfrac: 0.3, dragFrac: 0.4, slip: 0, lineOut: 40, depth: 2, stamina: 0.7, name: "Walleye", rub: 0, spool: 0, phases: null, label: "" };
+  const FISH = { tfrac: 0.3, dragFrac: 0.4, slip: 0, lineOut: 40, depth: 2, stamina: 0.7, name: "Walleye", rub: 0, spool: 0, phases: null, label: "", slack: 0, tired: null };
   const set = (o) => page.evaluate((o) => T.gauge.set(o), Object.assign({}, FISH, o));
 
   // set() takes the new keys, keeps the old ones, and ignores what it does not know
@@ -467,19 +467,19 @@ async function gaugeChecks(P, tag) {
   });
   check(bad === "ok", `${tag}: nonsense values in the new fields do not break the gauge (${bad})`);
 
-  // the rub band: red pixels under the arc, none with a clean line
-  await set({}); await settle();
-  const band = [12, top - 10, w - 24, 10];
-  const r0 = await count(band, RED);
+  // the rub band: red pixels in the band beside the state pill (gauge.box.rub says where it was drawn), none with a clean line
   await set({ rub: 0.8 }); await settle();
+  const rb = await page.evaluate(() => T.gauge.box.rub), band = rb ? [rb.x, rb.y - 2, rb.w, rb.h + 4] : [0, 0, 1, 1];
   const r8 = await count(band, RED);
+  await set({}); await settle();
+  const r0 = await count(band, RED);
   await set({ rub: 0.2 }); await settle();
   const r2 = await count(band, RED);
-  check(r0 < 30 && r8 > 120 && r8 > 2.5 * r2 && r2 > r0, `${tag}: the rub band fills as the line rubs (red pixels: none ${r0}, 20% ${r2}, 80% ${r8})`);
+  check(!!rb && r0 < 30 && r8 > 120 && r8 > 2.5 * r2 && r2 > r0, `${tag}: the rub band fills as the line rubs (red pixels: none ${r0}, 20% ${r2}, 80% ${r8})`);
   await set({ rub: 0.8 }); await settle();
   await shot("gauge-rub", "#gaugeBox");
-  // it is a band, not a spot: it runs from the left edge in
-  const left = await count([12, top - 10, (w - 24) * 0.5, 10], RED), right = await count([12 + (w - 24) * 0.6, top - 10, (w - 24) * 0.4, 10], RED);
+  // it is a band, not a spot: it runs from its left end in
+  const left = await count([band[0], band[1], band[2] * 0.5, band[3]], RED), right = await count([band[0] + band[2] * 0.6, band[1], band[2] * 0.4, band[3]], RED);
   check(left > 40 && right < left * 0.6, `${tag}: an 80% band ends before the right edge (left half ${left}, right 40% ${right})`);
 
   // the spool: the line-out number turns red above 0.6
@@ -515,6 +515,45 @@ async function gaugeChecks(P, tag) {
   check(l0 < 20 && l1 > 40, `${tag}: "Big fish on!" takes the place of the name, in red (red pixels: name ${l0}, label ${l1})`);
   await set({ name: "Golden Loon Bass", rub: 0.5, spool: 0.8, phases: [0.55, 0.3], label: "" }); await settle();
   await shot("gauge-all", "#gaugeBox");
+
+  // colour-blind safe: under a deuteranopia filter (Machado 2009) the parts still differ by pattern, not only by colour.
+  // The danger zone of the arc is hatched and the safe zone is plain; the rub band is striped and the fish's bar is plain.
+  // A pattern shows as a spread of brightness inside a small patch
+  const spread = (rect) => page.evaluate((r) => {
+    const g = T.gauge, d = g.dpr, c = g.cv.getContext("2d");
+    const px = c.getImageData(Math.floor(r[0] * d), Math.floor(r[1] * d), Math.max(1, Math.floor(r[2] * d)), Math.max(1, Math.floor(r[3] * d))).data, L = [];
+    for (let i = 0; i < px.length; i += 4) {
+      const R = px[i], G = px[i + 1], B = px[i + 2];
+      const r2 = 0.367322 * R + 0.860646 * G - 0.227968 * B, g2 = 0.280085 * R + 0.672501 * G + 0.047413 * B, b2 = -0.01182 * R + 0.04294 * G + 0.968881 * B;
+      L.push(0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2);
+    }
+    const m = L.reduce((a, b) => a + b, 0) / L.length;
+    return Math.sqrt(L.reduce((a, b) => a + (b - m) * (b - m), 0) / L.length);
+  }, rect);
+  await set({ tfrac: 0, rub: 0, stamina: 0.9, spool: 0, phases: null }); await settle();
+  const arc = await page.evaluate(() => T.gauge.box.arc), A0 = 150 * Math.PI / 180, SW = 240 * Math.PI / 180;
+  const patch = (f) => { const a = A0 + SW * f, k = arc.lw * 0.45; return [arc.cx + arc.R * Math.cos(a) - k, arc.cy + arc.R * Math.sin(a) - k, 2 * k, 2 * k]; };
+  const safe = await spread(patch(0.2)), hot = await spread(patch(0.93));
+  await set({ rub: 0.9, stamina: 0.9 }); await settle();
+  const parts = await page.evaluate(() => ({ rub: T.gauge.box.rub, bar: T.gauge.box.bar }));
+  const rubS = await spread([parts.rub.x + 2, parts.rub.y + 1, parts.rub.w * 0.6, parts.rub.h - 2]), barS = await spread([parts.bar.x + 4, parts.bar.y + 1, parts.bar.w * 0.6, parts.bar.h - 2]);
+  check(hot > 2 * safe + 4 && rubS > 2 * barS + 4, `${tag}: under deuteranopia the danger zone is hatched and the safe zone plain (spread ${hot.toFixed(1)} vs ${safe.toFixed(1)}), the rub band striped and the fish's bar plain (${rubS.toFixed(1)} vs ${barS.toFixed(1)})`);
+  // and every state has its own word: GOOD, TIGHT, SLIPPING, SLACK, TOO TIGHT
+  const wordOf = async (o) => { await set(o); await settle(); return page.evaluate(() => T.gauge.box.word); };
+  const states = [await wordOf({ tfrac: 0.3, rub: 0, slip: 0, slack: 0 }), await wordOf({ tfrac: 0.6, slip: 0 }), await wordOf({ tfrac: 0.5, slip: 0.8 }), await wordOf({ tfrac: 0.01, slip: 0, slack: 1 }), await wordOf({ tfrac: 0.95, slack: 0 })];
+  check(states.join() === "GOOD,TIGHT,SLIPPING,SLACK,TOO TIGHT", `${tag}: each state has its own word (${states.join(", ")})`);
+  await set({ slack: 0.2, tfrac: 0.01 }); await settle();
+  check((await page.evaluate(() => T.gauge.box.word)) === "GOOD", `${tag}: SLACK waits until the line has been slack 0.3 s`);
+  // the fish's bar says what it shows: FIGHT, and TIRED when the fish is beaten
+  await page.evaluate(() => { const c = T.gauge.cv.getContext("2d"), f = c.fillText; window.__gt = []; c.fillText = function (t, ...a) { window.__gt.push(String(t)); return f.call(this, t, ...a); }; });
+  await set({ tfrac: 0.31, stamina: 0.05, tired: true }); await settle();
+  const tiredT = await page.evaluate(() => window.__gt.includes("TIRED"));
+  await set({ tfrac: 0.32, stamina: 0.7, tired: false }); await settle();
+  await page.evaluate(() => { window.__gt = []; });
+  await set({ tfrac: 0.36, stamina: 0.7, tired: false }); await settle();
+  const fightT = await page.evaluate(() => window.__gt.includes("FIGHT") && !window.__gt.includes("TIRED"));
+  check(tiredT && fightT, `${tag}: the fish's bar says FIGHT, and TIRED when the fish is beaten (${tiredT}, ${fightT})`);
+  await set({});
   await page.evaluate(() => T.gauge.set({ tfrac: 0, slip: 0, stamina: null, name: "", rub: 0, spool: 0, phases: null, label: "" }));
 }
 
