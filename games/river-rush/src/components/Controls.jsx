@@ -1,6 +1,17 @@
 import React from 'react';
 import { Icon } from './Icons.jsx';
 
+export function SurgeControl({ input, game }) {
+  const ready = game.charge >= 35 && !game.falling && game.balance > 15 && !game.surging;
+  return <div className={`surge-panel ${game.surging ? 'surging' : ready ? 'surge-ready' : ''}`}>
+    <button aria-label="Surge for a speed burst" disabled={!ready} onClick={() => { input.current.boostTap = true; }}>
+      <Icon name="arrow"/><b>{game.surging ? 'SURGING' : 'SURGE'}</b><kbd>SHIFT</kbd>
+    </button>
+    <div className="surge-track"><span style={{ width: `${game.charge}%` }}/></div>
+    <small>{game.surging ? 'Hold your line!' : game.combo > 0 ? `Close calls ×${game.combo}` : ready ? 'Risk earns speed' : 'Skim rocks to recharge'}</small>
+  </div>;
+}
+
 export function KeyLegend() {
   return <div className="key-legend"><span><kbd>A</kbd><i>/</i><kbd>D</kbd><b>Steer</b></span><span><kbd>SPACE</kbd><b>Reach</b></span><span><kbd>E</kbd><b>Unlock</b></span></div>;
 }

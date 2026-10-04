@@ -52,7 +52,10 @@ export default function App() {
   useEffect(() => {
     if (!art) return;
     let raf, previous = 0, uiAt = 0;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reduceMotion = preference.matches;
+    const changed = e => { reduceMotion = e.matches; };
+    preference.addEventListener('change', changed);
     function tick(now) {
       const dt = previous ? Math.min(0.05, (now - previous) / 1000) : 0; previous = now;
       if (model.current && modeRef.current !== 'menu' && modeRef.current !== 'help') {
@@ -82,15 +85,15 @@ export default function App() {
       }
       raf = requestAnimationFrame(tick);
     }
-    raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(tick); return () => { cancelAnimationFrame(raf); preference.removeEventListener('change', changed); };
   }, [art]);
 
   useEffect(() => {
-    const mapping = { KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', Space: 'reach', KeyE: 'unlock' };
+    const mapping = { KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', Space: 'reach', KeyE: 'unlock', ShiftLeft: 'boost', ShiftRight: 'boost' };
     function down(e) {
       if (modeRef.current === 'playing') {
         if (e.code === 'Escape' || e.code === 'KeyP') { e.preventDefault(); pause(); return; }
-        if (mapping[e.code]) { e.preventDefault(); input.current[mapping[e.code]] = true; }
+        if (mapping[e.code]) { e.preventDefault(); input.current[mapping[e.code]] = true; if (mapping[e.code] === 'boost' && !e.repeat) input.current.boostTap = true; }
       }
     }
     function up(e) { if (mapping[e.code]) { input.current[mapping[e.code]] = false; if (modeRef.current === 'playing') e.preventDefault(); } }
@@ -108,12 +111,12 @@ export default function App() {
   }
 
   const inGame = !['menu', 'help'].includes(mode);
-  return <div className={`app ${inGame ? 'in-game' : ''}`}>
+  return <div className={`app ${inGame ? 'in-game' : ''}`} data-paused={inGame && mode !== 'playing'}>
     {inGame && <canvas ref={canvasRef} className="game-canvas" aria-label="River race play area. Use A and D to steer, Space to reach, E to unlock." onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); drag(e); }} onPointerMove={drag}/>}
     <header className="app-header"><button className="brand" aria-label="River Rush home" onClick={() => { if (inGame) pause(); else home(); }}><Logo/><span>RIVER RUSH</span></button>{inGame && <span className="header-course">THE GOLDEN KEY RUN</span>}<div className="header-actions">{inGame && <button className="circle-button" aria-label="Pause game" onClick={pause}><Icon name="pause"/></button>}<button className="circle-button" aria-label={sound ? 'Mute sound' : 'Enable sound'} aria-pressed={sound} onClick={toggleSound}><Icon name={sound ? 'sound' : 'muted'}/></button></div></header>
-    {!inGame && <Menu onStart={start} onHelp={() => setMode('help')} ready={!!art} error={error} best={best}/>}
+    {!inGame && <Menu onStart={start} onHelp={() => setMode('help')} ready={!!art} error={error} best={best} active={mode === 'menu'}/>}
     {inGame && game && <Hud game={game} input={input}/>}
-    {mode === 'help' && <Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="key" className="modal-symbol"/><h2>One key.<br/>One way out.</h2><p>Claim the treasure and escape before your rival.</p><ol className="instructions"><li><b>Steer through the rapids.</b><span>A / D or arrow keys. On touch, drag the raft or use the arrows. The right current is faster.</span></li><li><b>Catch the golden key.</b><span>Move close, hold Space or Reach, then release when the key reaches your raft. Reaching reduces steering.</span></li><li><b>Unlock the treasure.</b><span>With a key aboard, hold E or Unlock for two seconds. Rocks and waves can knock you off balance.</span></li><li><b>Escape left.</b><span>Beat your rival into the marked left channel. If you fall, the rope brings you back—but costs time.</span></li></ol><button className="primary" disabled={!art} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
+    {mode === 'help' && <Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="key" className="modal-symbol"/><h2>One key.<br/>One way out.</h2><p>Claim the treasure and escape before your rival.</p><ol className="instructions"><li><b>Steer through the rapids.</b><span>A / D or arrow keys. On touch, drag the raft or use the arrows. The right current is faster. Skim rocks for charge, then press Shift or Surge for a risky speed burst.</span></li><li><b>Catch the golden key.</b><span>Move close, hold Space or Reach, then release when the key reaches your raft. Reaching reduces steering.</span></li><li><b>Unlock the treasure.</b><span>With a key aboard, hold E or Unlock for two seconds. Rocks and waves can knock you off balance.</span></li><li><b>Escape left.</b><span>Beat your rival into the marked left channel. If you fall, the rope brings you back—but costs time.</span></li></ol><button className="primary" disabled={!art} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
     {mode === 'paused' && <Modal label="Game paused" onDismiss={resume}><Icon name="pause" className="modal-symbol"/><h2>Catch your breath.</h2><p>The river can wait a moment.</p><button className="primary" onClick={resume}>Resume adventure<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={start}>Restart run</button><button onClick={home}>Back to river</button></div><small>A / D to steer · Space to reach · E to unlock</small></Modal>}
     {mode === 'result' && game && <Modal label={game.phase === 'won' ? 'Adventure complete' : 'Run complete'} onDismiss={home}><Icon name={game.phase === 'won' ? 'chest' : 'flag'} className="modal-symbol"/><h2>{game.phase === 'won' ? <>A legendary<br/>escape.</> : <>The river<br/>wins this time.</>}</h2><p>{game.reason}</p><div className="result-stats"><div><b>{game.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{formatTime(game.time)}</b><span>RUN TIME</span></div><div><b>{game.falls}</b><span>WIPEOUTS</span></div></div><button className="primary" onClick={start}>Ride again<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={home}>Back to river</button><button onClick={switchGames}>Switch game</button><a href="/">Arcade</a></div></Modal>}
   </div>;

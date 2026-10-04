@@ -1,8 +1,10 @@
 import React from 'react';
 import { KeyLegend } from './Controls.jsx';
 import { Icon } from './Icons.jsx';
-export default function Menu({ onStart, onHelp, ready, error, best }) {
+import LivingScene from './LivingScene.jsx';
+export default function Menu({ onStart, onHelp, ready, error, best, active }) {
   return <main className="menu">
+    <LivingScene active={active}/>
     <div className="menu-content"><div className="gold-rule"/><h1><span>River</span><br/><span>Rush.</span></h1><p className="tagline">The river doesn’t wait.</p>
       <p className="menu-description">Grab the key. Claim the treasure.<br/>Escape the falls.</p>
       <button className="primary start" onClick={onStart} disabled={!ready}>{error ? 'Try loading again' : ready ? 'Start adventure' : 'Preparing the river…'}<Icon name="arrow"/></button>

@@ -1,0 +1,105 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+const { chromium } = createRequire(import.meta.url)('playwright');
+const base = process.env.ARCADE_URL || 'http://localhost:8765/';
+const out = process.env.SHOTS || '/tmp/river-rush-animation-qa';
+await fs.mkdir(out, { recursive: true });
+const browser = await chromium.launch({ args: ['--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 1536, height: 1024 } });
+const errors = [];
+const sampleFrames = () => page.evaluate(() => new Promise(resolve => {
+  const times = []; let previous;
+  function tick(now) { if (previous) times.push(now - previous); previous = now; if (times.length < 60) requestAnimationFrame(tick); else { const sorted = [...times].sort((a, b) => a - b); resolve({ averageMs: times.reduce((a, b) => a + b) / times.length, p95Ms: sorted[Math.floor(sorted.length * .95)] }); } }
+  requestAnimationFrame(tick);
+}));
+page.on('pageerror', error => errors.push(error.message));
+await page.goto(new URL('river-rush/', base).href, { waitUntil: 'networkidle' });
+await page.waitForFunction(() => document.querySelector('video')?.currentTime > 0.2);
+const start = await page.locator('video').evaluate(v => v.currentTime);
+await page.waitForTimeout(350);
+assert.ok(await page.locator('video').evaluate(v => v.currentTime) > start);
+assert.equal(await page.locator('video').evaluate(v => v.muted), true);
+await page.screenshot({ path: `${out}/living-menu-desktop.png` });
+await page.getByRole('button', { name: 'How to play' }).click();
+assert.equal(await page.locator('video').evaluate(v => v.paused), true);
+await page.getByRole('button', { name: 'Close instructions' }).click();
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForFunction(() => !document.querySelector('video'));
+assert.equal(await page.locator('.gold-rule').evaluate(e => getComputedStyle(e).animationName), 'none');
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.getByRole('button', { name: 'Start adventure' }).click();
+await page.keyboard.press('Shift');
+await page.locator('.surge-panel.surging').waitFor();
+await page.screenshot({ path: `${out}/surge-desktop.png` });
+const desktopFrames = await sampleFrames();
+await page.keyboard.press('Escape');
+await page.getByRole('dialog', { name: 'Game paused' }).waitFor();
+await page.waitForTimeout(120);
+const paused = await page.locator('canvas').evaluate(c => c.toDataURL());
+await page.waitForTimeout(300);
+assert.equal(await page.locator('canvas').evaluate(c => c.toDataURL()), paused);
+await page.getByRole('button', { name: 'Back to river' }).click();
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(700);
+await page.screenshot({ path: `${out}/living-menu-mobile.png` });
+await page.getByRole('button', { name: 'Start adventure' }).click();
+const boost = page.getByRole('button', { name: 'Surge for a speed burst' });
+const bounds = await boost.boundingBox();
+assert.ok(bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= 390);
+await boost.click(); await page.locator('.surge-panel.surging').waitFor();
+await page.screenshot({ path: `${out}/surge-mobile.png` });
+assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.keyboard.press('Escape');
+await page.getByRole('button', { name: 'Restart run' }).click();
+await page.keyboard.press('Shift'); await page.locator('.surge-panel.surging').waitFor();
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+const mobileFrames = await sampleFrames();
+assert.deepEqual(errors, []);
+await page.close();
+
+const fallback = await browser.newPage();
+await fallback.route('**/menu-loop.mp4', route => route.abort());
+await fallback.goto(new URL('river-rush/', base).href, { waitUntil: 'networkidle' });
+await fallback.getByRole('button', { name: 'Start adventure' }).waitFor();
+await fallback.waitForFunction(() => !document.querySelector('video'));
+assert.match(await fallback.locator('.menu').evaluate(e => getComputedStyle(e).backgroundImage), /menu\.png/);
+await fallback.getByRole('button', { name: 'Start adventure' }).click();
+await fallback.locator('canvas').waitFor(); await fallback.close();
+
+// Exercise the actual renderer modules in a separate canvas with controlled run state.
+const code = Object.fromEntries(await Promise.all(['engine', 'motion', 'render'].map(async name => [name, await fs.readFile(new URL(`../../games/river-rush/src/game/${name}.js`, import.meta.url), 'utf8')])));
+const probe = await browser.newPage();
+await probe.goto(new URL('river-rush/', base).href);
+const result = await probe.evaluate(async ({ code, base }) => {
+  const url = source => URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+  const engineUrl = url(code.engine);
+  const motionUrl = url(code.motion.replace('./engine.js', engineUrl));
+  const renderUrl = url(code.render.replace('./engine.js', engineUrl).replace('./motion.js', motionUrl));
+  const { createGame } = await import(engineUrl);
+  const { renderGame } = await import(renderUrl);
+  const art = Object.fromEntries(await Promise.all(['river', 'sprites'].map(name => new Promise(resolve => { const im = new Image(); im.onload = () => resolve([name, im]); im.src = new URL(`river-rush/art/${name}.png`, base).href; }))));
+  const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 800;
+  const ctx = canvas.getContext('2d'), g = createGame(2);
+  renderGame(ctx, g, art, 1000, 800); const frame = canvas.toDataURL();
+  g.time = 0.5; renderGame(ctx, g, art, 1000, 800); const moved = canvas.toDataURL() !== frame;
+  renderGame(ctx, g, art, 1000, 800, true); const still = canvas.toDataURL();
+  g.time = 0.8; renderGame(ctx, g, art, 1000, 800, true); const reducedStable = canvas.toDataURL() === still;
+  const eventFrames = {};
+  for (const event of ['key', 'chest', 'hit', 'fall', 'near']) {
+    g.event = event; g.eventId++; g.time += 1.4;
+    renderGame(ctx, g, art, 1000, 800); g.time += 0.18;
+    renderGame(ctx, g, art, 1000, 800); eventFrames[event] = canvas.toDataURL();
+  }
+  const begin = performance.now();
+  for (let i = 0; i < 120; i++) { g.time += 1 / 60; renderGame(ctx, g, art, 1000, 800); }
+  const averageRenderMs = (performance.now() - begin) / 120;
+  [engineUrl, motionUrl, renderUrl].forEach(u => URL.revokeObjectURL(u));
+  return { moved, reducedStable, averageRenderMs, eventFrames };
+}, { code, base });
+assert.equal(result.moved, true); assert.equal(result.reducedStable, true);
+assert.ok(result.averageRenderMs < 50, `Renderer took ${result.averageRenderMs}ms per frame`);
+for (const [name, frame] of Object.entries(result.eventFrames)) await fs.writeFile(`${out}/${name}.png`, Buffer.from(frame.split(',')[1], 'base64'));
+console.log(JSON.stringify({ passed: true, checks: ['Higgsfield video playback and pause', 'live reduced motion', 'Shift and touch Surge', 'paused canvas equality', 'video failure poster fallback', 'moving water without scrolling', 'static reduced-motion frame', 'action effects'], desktopFrames, mobileFrames, averageRenderSubmissionMs: result.averageRenderMs, errors, screenshots: out }));
+await browser.close();

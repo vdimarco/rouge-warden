@@ -1,7 +1,7 @@
 export const COURSE_LENGTH = 14800;
 export const RUN_SECONDS = 120;
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-export const emptyInput = () => ({ left: false, right: false, reach: false, unlock: false });
+export const emptyInput = () => ({ left: false, right: false, reach: false, unlock: false, boost: false, boostTap: false });
 
 export function createGame(seed = Date.now()) {
   let n = seed >>> 0;
@@ -15,6 +15,7 @@ export function createGame(seed = Date.now()) {
     phase: 'playing', time: 0, distance: 0, x: 500, vx: 0, balance: 100,
     reach: 0, wasReaching: false, hasKey: false, unlocked: false, unlockProgress: 0,
     falls: 0, falling: 0, cooldown: 0, collisions: 0, missed: 0,
+    charge: 35, surge: 0, wasBoosting: false, combo: 0, comboUntil: 0, closeCalls: 0,
     rivalDistance: 210, rivalX: 650, rivalBump: 0, rocks,
     keys: Array.from({ length: 7 }, (_, i) => ({ x: [390, 630, 470, 680, 340, 570, 400][i], d: 980 + i * 1750, consumed: false })),
     hint: 'Find the golden key. A / D to steer.', hintUntil: 5,
@@ -36,6 +37,7 @@ export function releaseReach(g) {
   const key = nearestKey(g);
   if (key && Math.abs(key.d - g.distance) < 125 && Math.abs(key.x - g.x) < 120 && g.reach >= 0.18 && g.reach <= 2.3) {
     key.consumed = true; g.hasKey = true; g.score += 300;
+    g.charge = Math.min(100, g.charge + 30);
     announce(g, 'Key caught! Hold E for 2 seconds to unlock.', 'key', 5);
   } else {
     g.balance = clamp(g.balance - 8, 0, 100);
@@ -48,6 +50,16 @@ export function updateGame(g, input, dt) {
   if (g.phase !== 'playing') return g;
   dt = clamp(dt, 0, 0.05);
   g.time += dt;
+  g.surge = Math.max(0, g.surge - dt);
+  g.charge = Math.min(100, g.charge + dt * 1.5);
+  if (g.time > g.comboUntil) g.combo = 0;
+  const surgeRequested = input.boostTap || (input.boost && !g.wasBoosting);
+  input.boostTap = false;
+  if (surgeRequested && g.charge >= 35 && !g.falling && !g.surge && g.balance > 15) {
+    g.charge -= 35; g.surge = 1.8; g.balance -= 10;
+    announce(g, 'SURGE! Ride the fast water.', 'surge', 1.8);
+  }
+  g.wasBoosting = !!input.boost;
   g.cooldown = Math.max(0, g.cooldown - dt);
   g.rivalBump = Math.max(0, g.rivalBump - dt);
   if (!input.reach && g.wasReaching) releaseReach(g);
@@ -67,16 +79,18 @@ export function updateGame(g, input, dt) {
   let speed = g.x < 365 ? 131 : g.x > 630 ? 169 : 147;
   if (reaching) speed *= 0.82;
   if (opening) speed *= 0.65;
+  if (g.surge && !g.falling) speed *= 1.42;
   if (g.falling) speed *= 0.2;
   g.distance += speed * dt;
   g.rivalDistance += (140 + Math.sin(g.time / 7) * 7) * dt;
   g.rivalX = 525 + Math.sin(g.time / 3.7) * 145;
   if (!g.falling) {
-    const drain = reaching ? 11 + g.reach * 5 : opening ? 4 : g.x > 630 ? 1 : -5;
+    const drain = (reaching ? 11 + g.reach * 5 : opening ? 4 : g.x > 630 ? 1 : -5) + (g.surge ? 4 : 0);
     g.balance = clamp(g.balance - drain * dt, 0, 100);
     for (const rock of g.rocks) {
       if (!rock.hit && Math.abs(rock.d - g.distance) < 45 && Math.abs(rock.x - g.x) < rock.radius + 24 && !g.cooldown) {
         rock.hit = true; g.balance = clamp(g.balance - 34, 0, 100); g.cooldown = 1.15; g.collisions++;
+        g.combo = 0;
         g.vx = g.x < rock.x ? -190 : 190;
         g.distance = Math.max(0, g.distance - 60);
         announce(g, 'Rock hit! Steady the raft.', 'hit');
@@ -84,16 +98,29 @@ export function updateGame(g, input, dt) {
     }
     if (Math.abs(g.rivalDistance - g.distance) < 60 && Math.abs(g.rivalX - g.x) < 65 && !g.rivalBump) {
       g.balance = clamp(g.balance - 18, 0, 100); g.rivalBump = 4;
+      g.combo = 0;
       announce(g, 'Your rival bumped the raft!', 'hit');
     }
     if (g.balance <= 0) {
       g.falling = 2.6; g.falls++; g.reach = 0; g.wasReaching = false;
+      g.surge = 0; g.combo = 0;
       announce(g, 'Overboard! Climbing back on the rope…', 'fall');
+    }
+  }
+  for (const rock of g.rocks) {
+    if (!rock.passed && rock.d < g.distance - 55) {
+      rock.passed = true;
+      const clearance = Math.abs(rock.x - g.x) - rock.radius;
+      if (!rock.hit && !g.falling && clearance > 24 && clearance < 110) {
+        g.combo = Math.min(4, g.combo + 1); g.comboUntil = g.time + 5;
+        g.closeCalls++; g.charge = Math.min(100, g.charge + 20); g.score += 60 * g.combo;
+        announce(g, `CLOSE CALL ×${g.combo} · +${60 * g.combo} · +20 charge`, 'near', 2);
+      }
     }
   }
   if (opening) {
     g.unlockProgress = Math.min(1, g.unlockProgress + dt / 2);
-    if (g.unlockProgress >= 1) { g.unlocked = true; g.score += 700; announce(g, 'Treasure claimed! Pass your rival and escape left.', 'chest', 5); }
+    if (g.unlockProgress >= 1) { g.unlocked = true; g.score += 700; g.charge = Math.min(100, g.charge + 20); announce(g, 'Treasure claimed! Pass your rival and escape left.', 'chest', 5); }
   } else if (!g.unlocked) g.unlockProgress = Math.max(0, g.unlockProgress - dt * 0.18);
   for (const key of g.keys) {
     if (!key.consumed && key.d < g.distance - 150) {
@@ -127,5 +154,6 @@ export function snapshot(g) {
     reaching: g.wasReaching, reach: g.reach, nearKey: !!near, falling: g.falling > 0, falls: g.falls,
     hint: g.hintUntil > g.time ? g.hint : '', score: g.score, reason: g.reason,
     lead: Math.round(g.distance - g.rivalDistance), fast: g.x > 630, time: g.time,
+    charge: Math.floor(g.charge), surging: g.surge > 0, combo: g.combo, closeCalls: g.closeCalls,
   };
 }
