@@ -471,7 +471,8 @@ try {
     ok((await hist()).n === h0.n + 1, "title: the first Back put an entry back, so a second Back would not close the app");
     await pop();
     ok((await hist()).n === h0.n + 1, "title: a Back with no entry left did something");
-    await sleep(2700);
+    // the entry returns 2.4 s after the warning; a busy page (SwiftShader) can run its timer late, so poll instead of a fixed sleep
+    await page.waitForFunction((n) => history.length === n, h0.n + 2, { timeout: 9000, polling: 100 }).catch(() => {});
     ok((await hist()).n === h0.n + 2, "title: the entry did not come back after the warning");
     await pop();
     ok((await toastText(page)) === "Press Back again to leave" && (await hist()).n === h0.n + 2, "title: a late Back did not warn again");
@@ -660,6 +661,17 @@ try {
   });
 
   /* ---------------- the service worker: control, offline, Range, update ---------------- */
+  // ?nosw: the other tests block workers, so this is the one place that can see a registration that should not happen
+  await test("?nosw: the page registers no worker and does not ask for sw.js", async (ok) => {
+    const ctx = await newContext({ serviceWorkers: "allow" });
+    log.length = 0;
+    const page = await openPage(ctx, "/fish/?nosw");
+    await sleep(2000);
+    const regs = await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length);
+    ok(regs === 0, regs + " service workers are registered on a ?nosw page");
+    ok(!log.some((l) => l === "GET /fish/sw.js"), "a ?nosw page asked for sw.js");
+    await ctx.close();
+  });
   // 1. one context for control and offline. Another game's cache stays; ours is the only one with the prefix.
   const swctx = await newContext({ serviceWorkers: "allow" });
   const swpage = await openPage(swctx, "/fish/privacy.html", { wait: null });
@@ -710,7 +722,7 @@ try {
     swpage.on("requestfailed", (q) => { if (q.url().startsWith(BASE) && !/ERR_ABORTED/.test((q.failure() || {}).errorText || "")) failed.push(new URL(q.url()).pathname + " " + (q.failure() || {}).errorText); });
     swpage.on("response", (r) => { if (r.url().startsWith(BASE)) { if (r.status() >= 400) bad.push(r.status() + " " + new URL(r.url()).pathname); if (r.fromServiceWorker()) fromSw.add(new URL(r.url()).pathname); } });
     const e0 = swpage.errors.length;
-    for (const [url, what] of [["/fish/", "a reload of /fish/"], ["/fish/?source=pwa", "the PWA start URL"], ["/fish/?source=play", "the Play start URL"], ["/fish/privacy.html", "privacy.html"], ["/fish/no-such-page.html", "an unknown page (falls back to the game)"]]) {
+    for (const [url, what] of [["/fish/", "a reload of /fish/"], ["/fish/?source=pwa", "the PWA start URL"], ["/fish/?source=play", "the Play start URL"], ["/fish/privacy.html", "privacy.html"], ["/fish/privacy.html?from=settings", "privacy.html with a query"], ["/fish/index.html?source=pwa", "index.html with a query"], ["/fish/no-such-page.html", "an unknown page (falls back to the game)"]]) {
       const res = url === "/fish/" ? await swpage.reload({ waitUntil: "domcontentloaded" }) : await swpage.goto(BASE + url, { waitUntil: "domcontentloaded" });
       ok(res && res.status() === 200, what + ": status " + (res && res.status()));
       ok(res && res.fromServiceWorker(), what + ": not served by the service worker");

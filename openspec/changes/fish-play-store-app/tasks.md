@@ -26,9 +26,9 @@
 
 - [x] Write `qa/fish/pwa.mjs` with a `--static` part, and `.github/workflows/fish-app.yml`.
 - [x] Add `serviceWorkers: "block"` to `qa/fish/lib.mjs` and `qa/fish/motion.e2e.mjs`.
-- [ ] Run `pwa.mjs` in full, and the existing fish tests and `qa/arcade/quiet.mjs --only=fish`, and compare them with the same tests on the base commit.
-- [ ] Prove that each new check can fail (a changed copy of the folder for each check).
-- [ ] Look at the title, Settings, and the privacy card at 390 by 844 and 375 by 667, in plain mode and in app mode.
+- [x] Run `pwa.mjs` in full, and the existing fish tests and `qa/arcade/quiet.mjs --only=fish` and its scan, and compare them with the same tests on the base commit (a copy made with `git archive`). `desk`, `screens` and `reel.ui` fail on the base commit too, with the same failures. `cartoon.render` failed on the base commit (a stale route) and on this tree (a count that depends on timing); both are fixed in the test.
+- [x] Prove that each new check can fail (a changed copy of the folder for each check: 74 changed copies, 40 for the static part and 34 for the browser part; each was caught by the check that was meant to catch it, except one that does not change the game, because `pause()` already ignores the catch card).
+- [x] Look at the title, Settings, the Reset question and the privacy card at 390 by 844 and 375 by 667, in plain mode and in app mode, and read `privacy.html` at 390 wide.
 
 ## Docs
 
@@ -38,5 +38,6 @@
 
 ## Not checked (no device, no store)
 
-- [ ] DEVICE: the real Back button in a TWA, `display-mode` in a TWA, the Android route to the site settings, `storage.persist()` in the TWA, what uninstall does to the save, the sensor rate, the safe area and the cutout at API 36, a WebGL draw after ten minutes in the background.
+- [ ] DEVICE: the real Back button in a TWA, `display-mode` in a TWA, a video that seeks while offline (the test browser has no H.264, so only the 206 answer is tested), `storage.persist()` in the TWA, what uninstall does to the save, the sensor rate, the safe area and the cutout at API 36, a WebGL draw after ten minutes in the background.
+- [ ] UNCONFIRMED: the route in the sensor note (App info, Storage, Manage space). The Bubblewrap template adds the activity behind it, but no device showed it.
 - [ ] Owner: put a real email address in `privacy.html` in place of `OWNER_CONTACT_EMAIL`.

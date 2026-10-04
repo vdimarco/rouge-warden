@@ -48,10 +48,12 @@ try {
   const before=await page.evaluate(()=>FISH.world.info().mem);
   await page.evaluate(()=>{for(let i=0;i<12;i++){for(const style of ['original','ghibli']){FISH.world.setArtStyle(style);FISH.world.update(0);FISH.world.render();}}});
   const after=await page.evaluate(()=>FISH.world.info().mem);
-  assert.ok(after.geometries<=before.geometries&&after.textures<=before.textures,'no resource growth with rendered switches: '+JSON.stringify({before,after}));
+  // The first switch after the count can still upload a few lazy items (up to 3 geometries and 1 texture were seen; it depends on which game frame
+  // came first, and the page layout moves that). A leak grows with every switch (24 here), so a small allowance keeps the check for leaks.
+  assert.ok(after.geometries<=before.geometries+4&&after.textures<=before.textures+1,'no resource growth with rendered switches: '+JSON.stringify({before,after}));
   await page.route('**/cartoon-models.glb',r=>r.abort());
   await page.route('**/painted-forest.webp',r=>r.abort());
-  await page.route('**/painted-water.webp',r=>r.abort());
+  await page.route('**/fal-lake-water.webp',r=>r.abort());   // the water image the game loads (it was painted-water.webp once)
   await page.reload();await until(page,()=>!!window.FISH);
   assert.equal(await page.evaluate(async()=>(await import('/fish/js/cartoon-models.js')).cartoonModelsReady()),false);
   assert.equal(await page.evaluate(()=>{let n=0;FISH.world.scene.traverse(o=>{if(o.userData.paintedForest)n++;});return n;}),0,'failed forest image uses procedural fallback');
