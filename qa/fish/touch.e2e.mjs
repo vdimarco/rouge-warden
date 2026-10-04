@@ -1,6 +1,6 @@
 // The cast and the touch controls in the real page: node qa/fish/touch.e2e.mjs   (serve public/ first; FISH_URL sets the address)
 // Touch play: a press anywhere waits for the drag (up and down takes the line where it pressed, sideways aims and the bail
-// stays shut), a stray swipe up casts nothing, the rod and the reel and the lake all start a cast, the release is graded at
+// stays shut), a stray swipe up casts nothing, the rod and the reel and the lake (down to its bottom edge) all start a cast, the release is graded at
 // the finger however long it rested, a flick that carries on past the press point still casts far (on a phone on its side
 // too), "Sweet!" and a sound come at the release, the rail beside the finger (under the prompt, however high the press), a
 // cancelled touch, the aim line's preview and the near miss on the report, the crank on the left in a touch fight with the
@@ -37,7 +37,7 @@ function helpers() {
     for (let i = 1; i <= 20; i++) { fire(el, "pointermove", x, y + (down * i) / 20, id, kind); await wait(12); }
     // rest at the bottom: long enough for a frame to see the rod past LOAD (a software renderer draws slowly)
     const rest = performance.now();
-    do await wait(50); while (down > 40 && FISH.G.step !== "loaded" && performance.now() - rest < 3000);
+    do await wait(50); while (down > 10 && FISH.G.step !== "loaded" && performance.now() - rest < 3000);
     out.afterDrag = FISH.G.step + "/" + FISH.G.bail;
     out.railBox = window.__railBox();
     if (cancel) { fire(el, "pointercancel", x, y + down, id, kind); await wait(50); out.toast = document.querySelector("#toast").textContent; return out; }
@@ -176,9 +176,10 @@ async function fresh(page) {
     await page.evaluate(() => { FISH.G.aimYaw = 0; });
 
     // the rod blank above the old box, the reel left of it, and the lower lake all start a cast
-    for (const [name, x, y] of [["the rod blank, 120 px above the old box", rb.x, rb.y - 120], ["the reel, 30 px left of the old box", rb.x - 94, rb.y], ["the lower lake", 200, 600]]) {
+    // and so does a press 20 px above the bottom edge: its drag down shrinks to the 14 px of room it has (touchSpanAt)
+    for (const [name, x, y, down] of [["the rod blank, 120 px above the old box", rb.x, rb.y - 120, 80], ["the reel, 30 px left of the old box", rb.x - 94, rb.y, 80], ["the lower lake", 200, 600, 80], ["the bottom edge of the lake", 120, vh - 20, 14]]) {
       await fresh(page);
-      const r = await page.evaluate((a) => window.__cast(a), { x, y, down: 80, up: 50, pxs: 1300 });
+      const r = await page.evaluate((a) => window.__cast(a), { x, y, down, up: 50, pxs: 1300 });
       check(r.afterDrag.startsWith("loaded/open") && r.dist > 0, `a press on ${name}, a drag down and a flick: the lure flies (${r.target}; ${r.afterDrag}, ${r.verdict}, ${(r.dist || 0).toFixed(1)} m)`);
     }
 

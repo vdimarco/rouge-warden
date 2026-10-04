@@ -29,6 +29,7 @@
 - [x] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
 - [x] 3.8 A quick turnaround to the next cast: shorter waits, a skip by any cast input, and a faster empty retrieve.
 - [x] 3.9 A mouse hold cast on desktop, with sideways aim, and its tests.
+- [x] 3.10 Drag and toss from anywhere: a shorter drag for a press low on the screen (`touchSpanAt` in `cast.js`), and "Press anywhere" in the prompt, How to play, and the guide. Tests: `release.test.mjs` and the bottom-edge press in `touch.e2e.mjs`.
 
 ## 4. Goals
 - [x] 4.1 Six goals at each place, on the Places card, with the toast and the sting.

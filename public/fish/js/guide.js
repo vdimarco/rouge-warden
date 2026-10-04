@@ -123,7 +123,7 @@ export function lesson(kind, motion, touch = true, pace = "", hold = false, desk
   const w = (k) => moveWords(k, inputOf(motion, touch, desk), 0, pace);
   return ({
     hold: ["Hold the rod", "Press and keep your thumb down."],
-    back: hold ? [HOLD_WORDS.back, "The rod tips back by itself."] : [motion ? "Tip the phone back" : "Drag down", "Keep your thumb on the rod."],
+    back: hold ? [HOLD_WORDS.back, "The rod tips back by itself."] : [motion ? "Tip the phone back" : "Drag down", motion ? "Keep your thumb on the rod." : "Keep your finger down."],
     cast: hold ? [HOLD_WORDS.cast, "The rod swings forward by itself."] : [motion ? "Flick forward. Lift thumb." : "Flick up. Let go.", motion ? "Keep a firm grip on the phone." : "Release during the flick."],
     flight: ["Your lure is flying", touch ? "Touch the rod to stop it short." : "Click the lake to stop it short."],
     reel: [w("reel"), "Reel slowly. Pause now and then."],

@@ -30,6 +30,7 @@ The audit reports and their evidence are the source for this change. Each packag
 - Touch and mouse release: `unpinLine` pushes a virtual sample at the lift point, and `atRaw` does not extrapolate virtual samples.
 - Above the press point, the rod angle moves at 0.4 of the finger travel: `theta = 80 + (dy < 0 ? dy * 0.4 : dy) / h * 150`.
 - The touch hit area grows to cover the rod, the reel, and the lower lake. The press decides after 12 px: up and down pins the line, sideways aims.
+- A press low on the screen gets its own span, fixed at the press (`touchSpanAt`): the room below the press, less 4 px, reaches 125°, past full power. The span is never shorter than 48 px or longer than `touchSpan`. The rail draws its marks with the same span. A hold cast (the mouse, Space) keeps the full span, because the clock moves its rod.
 - The motion window is graded by time on both sides. An early lift reads the swing for up to 100 ms after the lift. A thumb held through the swing is graded as a late lift.
 
 ## Fight numbers

@@ -102,8 +102,15 @@ export function castParams({ thetaRelease, omegaPeak, thetaBack, yaw = 0, assist
 // press point the rod follows the finger; above it the rod moves at ABOVE of the finger's travel, so a flick that carries
 // on past the press point (the natural end of a flick) still lets go near 11 o'clock. Above the press point the span is
 // always SPAN_MAX: a flick carries on about as far on any screen, so a short one (a phone on its side) forgives as much
-export const TOUCH = { REST: 80, ABOVE: 0.4, SPAN_K: 0.3, SPAN_MIN: 160, SPAN_MAX: 240 };
+export const TOUCH = { REST: 80, ABOVE: 0.4, SPAN_K: 0.3, SPAN_MIN: 160, SPAN_MAX: 240, ROOM_THETA: 125, EDGE: 4, SPAN_EDGE: 48 };
 export function touchSpan(gameH) { return clamp(fin(gameH, 0) * TOUCH.SPAN_K, TOUCH.SPAN_MIN, TOUCH.SPAN_MAX); }
+// The span for a press at y0 (px from the top) on a screen gameH tall. A press low on the screen has little room below it,
+// so the drag down shrinks to fit: the finger reaches ROOM_THETA (past full power) EDGE px above the bottom. A press with
+// the room keeps touchSpan, and no span is shorter than SPAN_EDGE
+export function touchSpanAt(gameH, y0) {
+  const h = touchSpan(gameH), room = fin(gameH, 0) - fin(y0, 0) - TOUCH.EDGE;
+  return clamp(room / ((TOUCH.ROOM_THETA - TOUCH.REST) / 150), TOUCH.SPAN_EDGE, h);
+}
 // dy: px the finger is below the press point (negative: above it)
 export function touchTheta(dy, h) {
   dy = fin(dy, 0); h = Math.max(1, fin(h, TOUCH.SPAN_MAX));
