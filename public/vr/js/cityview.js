@@ -349,6 +349,12 @@ void main() {
   float dp = min(min(pe.x, pe.y), min(pe.z, pe.w));
   float wpx = comicInkW(dist, uInkS);
   float ink = 1.0 - smoothstep(wpx - 0.75, wpx + 0.75, dp);
+  // A narrow fold beside the ink catches sunset light on the lit face.
+  // Screen-space width keeps it legible without adding geometry or draws.
+  float fold = smoothstep(wpx, wpx + 1.0, dp) * (1.0 - smoothstep(wpx + 1.0, wpx + 4.0, dp));
+  float foldSun = max(dot(N, uSunDir), 0.0) * sunT(shadowDepthAt(vW + N * 2.5));
+  col *= 1.0 - fold * (1.0 - foldSun) * 0.16;
+  col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
   gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
