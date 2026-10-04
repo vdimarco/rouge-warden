@@ -26,7 +26,8 @@ const CUP_Y = 1.9; // a pump target sits in the bowl, this high over the roof (b
 const FOUNT = 24; // sludge blobs in each fountain
 const BEAM = { clog: [1.4, 140], king: [3, 260], pad: [2.2, 30] }; // beacon radius and height
 const KING_BEAM = 12, PAD_BEAM = 13; // beacon slots (the clogs take 0-11)
-const RING_SLOT = 0, GOLD_SLOT = 3, FLASH_SLOT = 4, PAD_SLOT = 6; // ring slots: rings 0-2, the tutorial marker, 2 flashes, 3 pads
+const RING_SLOT = 0, GOLD_SLOT = 3, FLASH_SLOT = 4, PAD_SLOT = 6, START_SLOT = 9; // ring slots: rings 0-2, the tutorial marker,
+// 2 flashes, 3 pads, and each trial's green START ring (its first ring, shown while no trial runs)
 const PAD_R = 1.5; // a trial pad: stand inside this radius
 const COINS = 80, BURST = 40; // world coins, and slots for the bonus coins of a flush
 const COIN_R = 0.55;
@@ -485,6 +486,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         vec3 ay = cross(n, ax);
         float sc = aC.w, age = uTime - aF.x;
         if (st > 5.5 && st < 6.5) { if (age > 0.5) { ${OFF} } sc *= 1.0 + 1.1 * age / 0.5; }
+        if (st > 6.5) sc *= 1.0 + 0.07 * sin(uTime * 3.0); // a START ring breathes
         vec3 p = position;
         float dist = distance(aC.xyz, cameraPosition);
         if (aInfo.x < 0.5) {
@@ -515,8 +517,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         else if (st < 3.5) c = vec3(1.0, 0.76, 0.26);      // the tutorial's gold ring
         else if (st < 4.5) c = vec3(0.55, 0.92, 1.0);      // a start pad
         else if (st < 5.5) c = vec3(1.0, 0.5, 0.2);        // the intense pad
-        else c = vec3(1.0, 0.97, 0.85);                    // a ring that was just passed
-        if (st < 1.5 || (st > 2.5 && st < 3.5)) c *= pulse;
+        else if (st < 6.5) c = vec3(1.0, 0.97, 0.85);      // a ring that was just passed
+        else c = vec3(0.42, 1.0, 0.45);                    // a START ring: go
+        if (st < 1.5 || (st > 2.5 && st < 3.5) || st > 6.5) c *= pulse;
         // a flat tube in the cel light, half its own colour kept so it glows, and an ink line round it
         vec3 col = mix(shadePropX(c, dot(N, V) < 0.0 ? -N : N, V, 0.0, 0.6, 0.0), c, 0.55);
         col = mix(col, INKV, rim * (vPart < 0.5 ? 0.92 : 0.0));
@@ -525,15 +528,15 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
           // the disc: a light of dots that fills the ring, and fills up while you stand on a pad
           add = 1.0;
           col = c;
-          a = (st > 3.5 && st < 5.5) ? 0.3 + 0.5 * vS.z : (st < 2.5 ? 0.16 : 0.1);
-          if (st > 5.5) a = 0.3 * (1.0 - vS.y / 0.5);
+          a = (st > 3.5 && st < 5.5) ? 0.3 + 0.5 * vS.z : (st < 2.5 ? 0.16 : st > 6.5 ? 0.22 : 0.1);
+          if (st > 5.5 && st < 6.5) a = 0.3 * (1.0 - vS.y / 0.5);
           a *= 0.15 + 2.2 * dots;
-        } else if (st > 5.5) a = 1.0 - vS.y / 0.5;
+        } else if (st > 5.5 && st < 6.5) a = 1.0 - vS.y / 0.5;
         a *= 1.0 - 0.4 * fogAmt(vW);
         gl_FragColor = vec4(col * a, a * (1.0 - add));
       }`,
   });
-  const rings = instanced(ringGeoB.build(), 9, [["aC", 4, true], ["aN", 4, true], ["aF", 4, true]], ringMat, "rings");
+  const rings = instanced(ringGeoB.build(), 12, [["aC", 4, true], ["aN", 4, true], ["aF", 4, true]], ringMat, "rings");
   rings.mesh.renderOrder = 21;
   root.add(rings.mesh);
   let ringDirty = false, flashHead = 0;
@@ -1194,9 +1197,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   const padPlace = (t) => {
     setBeam(PAD_BEAM + t.i, t.start.x, t.start.y, t.start.z, BEAM.pad[0], BEAM.pad[1], t.intense ? 0xff7a3a : 0xa8f0ff);
     beamWant[PAD_BEAM + t.i] = 0.8;
-    // the label floats over the pad, and clear of the pod when the pad is on the deck (it would cut the label off)
-    const ox = t.start.x - nd.x, oz = t.start.z - nd.z, ol = Math.hypot(ox, oz), out = ol < 30 ? 8 : 0;
-    labels.a.aL.array.set([t.start.x + (ox / (ol || 1)) * out, t.start.y + 8.5, t.start.z + (oz / (ol || 1)) * out, t.i], t.i * 4);
+    // the label floats over the START ring (the first ring), and clear of the pod when that is by the Needle
+    const r0 = t.rings[0], ox = r0.x - nd.x, oz = r0.z - nd.z, ol = Math.hypot(ox, oz), out = ol < 30 ? 8 : 0;
+    labels.a.aL.array.set([r0.x + (ox / (ol || 1)) * out, r0.y + (r0.r || GAME.ringRadius) + 4.5, r0.z + (oz / (ol || 1)) * out, t.i], t.i * 4);
     ringSet(PAD_SLOT + t.i, t.start.x, t.start.y + 0.12, t.start.z, 0, 1, 0, PAD_R, t.intense ? 5 : 4, -9, 0);
   };
   // The labels are comic caption boxes: paper, a thick ink border, a hard drop shadow, a little tilt, Bangers lettering.
@@ -1222,7 +1225,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       c.fillText((t.intense ? "Intense. " : "") + t.rings.length + " rings", 320, y0 + 100);
       const best = save.best[String(t.id)];
       c.fillStyle = t.intense ? "#7a1a0a" : "#8a1a34";
-      c.fillText(best ? "Best " + fmtTime(best) : "Stand here to start", 320, y0 + 130);
+      c.fillText((best ? "Best " + fmtTime(best) + ". " : "") + "Fly through the green ring", 320, y0 + 130, w - 40);
       c.restore();
     });
     labelTex.needsUpdate = true;
@@ -1235,14 +1238,37 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       if (r) ringSet(RING_SLOT + k, r.x, r.y, r.z, r.nx, r.ny, r.nz, r.r || GAME.ringRadius, k === 0 ? 1 : 2);
       else ringSet(RING_SLOT + k, 0, 0, 0, 0, 1, 0, 1, 0);
     }
+    // no trial running: every trial's first ring is a green START ring; flying through it starts that trial
+    for (const t of trials) {
+      const r = t.rings[0];
+      if (!trial) ringSet(START_SLOT + t.i, r.x, r.y, r.z, r.nx, r.ny, r.nz, (r.r || GAME.ringRadius) * 1.15, 7);
+      else ringSet(START_SLOT + t.i, 0, 0, 0, 0, 1, 0, 1, 0);
+    }
+    if (progress.trial) {
+      const n = trial.t.rings[trial.ring];
+      progress.trial.total = trial.t.rings.length;
+      progress.trial.next = n ? { x: n.x, y: n.y, z: n.z } : null;
+    }
   }
-  function startTrial(t) {
+  // the chest's move from p to CHEST crosses the ring's plane inside its radius (rs scales the radius); a move longer
+  // than 8 m in a frame is a teleport (a respawn, a map trip), not a flight
+  function crossed(r, p, rs = 1) {
+    if ((CHEST.x - p.x) ** 2 + (CHEST.y - p.y) ** 2 + (CHEST.z - p.z) ** 2 > 64) return false;
+    const d0 = (p.x - r.x) * r.nx + (p.y - r.y) * r.ny + (p.z - r.z) * r.nz, d1 = (CHEST.x - r.x) * r.nx + (CHEST.y - r.y) * r.ny + (CHEST.z - r.z) * r.nz;
+    if (!((d0 <= 0 && d1 > 0) || (d0 >= 0 && d1 < 0))) return false;
+    const k = d0 / (d0 - d1), px = p.x + (CHEST.x - p.x) * k, py = p.y + (CHEST.y - p.y) * k, pz = p.z + (CHEST.z - p.z) * k;
+    const rad = (r.r || GAME.ringRadius) * rs;
+    return (px - r.x) ** 2 + (py - r.y) ** 2 + (pz - r.z) ** 2 <= rad * rad;
+  }
+  const idlePrev = new THREE.Vector3(), idleSeen = { on: false };
+  // viaRing: started by flying through its START ring (the cue plays where you are, and ringPassed says the first line)
+  function startTrial(t, viaRing = false) {
     trial = { t, ring: 0, time: 0, prev: new THREE.Vector3().copy(CHEST) };
-    progress.trial = { id: t.id, ring: 0, time: 0 };
+    progress.trial = { id: t.id, ring: 0, time: 0, total: t.rings.length, next: null };
     for (const o of trials) o.hold = 0;
     showRings();
-    sfx("trialStart", { x: t.start.x, y: t.start.y, z: t.start.z });
-    saySoon("Fly through the rings.", 3);
+    sfx("trialStart", viaRing ? { x: CHEST.x, y: CHEST.y, z: CHEST.z } : { x: t.start.x, y: t.start.y, z: t.start.z });
+    if (!viaRing) saySoon(t.name + ". Fly through the bright ring. The compass points to it.", 4);
     haptic(0, 0.6, 80); haptic(1, 0.6, 80);
   }
   function endTrial(msg) {
@@ -1253,6 +1279,12 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   function cancelTrial() { if (trial) endTrial("Trial ended."); }
   function trialsUpdate(dt) {
     if (!trial) {
+      // fly through a green START ring: that trial starts, and the ring counts as its first
+      if (idleSeen.on && !P.dead) {
+        for (const t of trials) if (crossed(t.rings[0], idlePrev, 1.15)) { startTrial(t, true); ringPassed(t.rings[0]); break; }
+      }
+      idlePrev.copy(CHEST); idleSeen.on = true;
+      if (trial) { trial.prev.copy(CHEST); return; }
       for (const t of trials) {
         const dx = P.pos.x - t.start.x, dz = P.pos.z - t.start.z;
         const on = P.onGround && dx * dx + dz * dz < PAD_R * PAD_R && Math.abs(P.pos.y - t.start.y) < 1.5;
@@ -1267,16 +1299,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     progress.trial.time = trial.time;
     if (trial.time > TRIAL_MAX) { endTrial("Time is up. Trial ended."); return; }
     const r = trial.t.rings[trial.ring];
-    if (r) {
-      // the chest's move since last frame crosses the ring's plane inside its radius
-      const p = trial.prev, d0 = (p.x - r.x) * r.nx + (p.y - r.y) * r.ny + (p.z - r.z) * r.nz, d1 = (CHEST.x - r.x) * r.nx + (CHEST.y - r.y) * r.ny + (CHEST.z - r.z) * r.nz;
-      if ((d0 <= 0 && d1 > 0) || (d0 >= 0 && d1 < 0)) {
-        const k = d0 / (d0 - d1), px = p.x + (CHEST.x - p.x) * k, py = p.y + (CHEST.y - p.y) * k, pz = p.z + (CHEST.z - p.z) * k;
-        const rad = r.r || GAME.ringRadius;
-        if ((px - r.x) ** 2 + (py - r.y) ** 2 + (pz - r.z) ** 2 <= rad * rad) ringPassed(r);
-      }
-    }
+    if (r && crossed(r, trial.prev)) ringPassed(r);
     if (trial) trial.prev.copy(CHEST);
+    else idlePrev.copy(CHEST);
   }
   function ringPassed(r) {
     ringSet(FLASH_SLOT + flashHead, r.x, r.y, r.z, r.nx, r.ny, r.nz, r.r || GAME.ringRadius, 6, T);
@@ -1284,9 +1309,17 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     // (the ring ding has a 19 kHz overtone at pitch 1: past 1.14 it would cross the 22 kHz limit of a 44.1 kHz context)
     sfx("ring", { x: r.x, y: r.y, z: r.z }, 1, 1 + 0.01 * Math.min(trial.ring, 14));
     haptic(0, 0.5, 40); haptic(1, 0.5, 40);
+    // every run is timed from its first ring, whether it began at the pad or at the START ring
+    if (trial.ring === 0) { trial.time = 0; progress.trial.time = 0; }
     trial.ring++;
     progress.trial.ring = trial.ring;
-    if (trial.ring >= trial.t.rings.length) { finishTrial(); return; }
+    // a pass you can see and hear: a comic word past the ring, a glow at the screen edges, and the count
+    const n = trial.t.rings.length, ahead = 6 * Math.sign((CHEST.x - r.x) * r.nx + (CHEST.y - r.y) * r.ny + (CHEST.z - r.z) * r.nz || 1);
+    word("WHOOSH", r.x + r.nx * ahead, r.y + r.ny * ahead + 1.5, r.z + r.nz * ahead, { scale: trial.ring >= n ? 2 : 1.3 });
+    if (ui && ui.flash) ui.flash(trial.ring >= n ? "gold" : "green");
+    if (trial.ring >= n) { finishTrial(); return; }
+    if (trial.ring === 1) saySoon(trial.t.name + ". Ring 1 of " + n + ". The compass points to the next.", 4);
+    else saySoon("Ring " + trial.ring + " of " + n + (n - trial.ring <= 2 ? ". Nearly there." : "."), 1.6);
     showRings();
   }
   function finishTrial() {
@@ -1294,6 +1327,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     const best = !old || time < old;
     if (best) save.best[key] = +time.toFixed(2);
     sfx("trialEnd");
+    saySoon(t.name + " done! " + fmtTime(time) + (best ? ". New best!" : "."), 5);
     endTrial(t.name + ": " + fmtTime(time) + (best ? ". New best." : ". Best " + fmtTime(old) + "."));
     drawLabels();
     saveNow();
@@ -1829,6 +1863,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     for (const c of clogs) { if (!c.done) ropes.addTarget({ id: c.tid, tag: "clog", pos: { x: c.tx, y: c.ty, z: c.tz }, radius: GAME.clogRadius }); beamWant[c.i] = c.done ? 0 : 1; beamLvl[c.i] = beamWant[c.i]; beams.a.aLvl.array[c.i] = beamLvl[c.i]; }
     for (const d of districts) tintDistrict(d.id);
     for (const t of trials) padPlace(t);
+    showRings();
     beams.a.aLvl.needsUpdate = true;
     for (let i = PAD_BEAM; i < PAD_BEAM + trials.length; i++) { beamLvl[i] = beamWant[i]; beams.a.aLvl.array[i] = beamLvl[i]; }
     kingBeamPlace();
