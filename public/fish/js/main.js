@@ -20,9 +20,10 @@ import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
 import * as LAKE from "./lake.js";
 import { PLACES, getPlace } from "./places.js";
 import { byId } from "./species.js";
-import { fishingOf, ecology, placeSpecies } from "./fishing.js";
-import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText, lossText } from "./journey.js";
-import { SAVE_KEY, loadSave, placeRec, recordCatch, legendStep, recordDerby } from "./save.js";
+import { fishingOf, placeSpecies } from "./fishing.js";
+import { ORDER, JOURNEY, journeyOf, nextPlace, prevPlace, isOpen, fmtKg, startHour, stepHour, rankFor, nextRank, goalText, openedText, isBigFish, LEGEND_STEPS, legendHint, legendsLanded, topFish, foundHere, foundAll, zoneHint, newPlaces, untoldOpens, TROPHY_RANK, sizeLine, revealText, lossText } from "./journey.js";
+import { PLACE_GOALS, goalsMet, goalCount, nextGoal, dailyGoal, dayHit, dayDoneText, todayLine, isDay, dayOf, STREAK, ASSIST, SHORT_M, assistFish, progressNote } from "./goals.js";
+import { SAVE_KEY, loadSave, placeRec, recordCatch, recordGoal, recordDay, legendStep, recordDerby } from "./save.js";
 import { Native } from "./native.js";
 
 // every module is in: the bar on the boot screen moves on (index.html shows that screen until the title is ready)
@@ -39,6 +40,10 @@ const QS = new URLSearchParams(location.search);
 const DEBUG = QS.has("debug");
 // ?open opens every place for this page load. It is never saved.
 const OPEN_ALL = QS.has("open");
+// ?day=YYYY-MM-DD is the day of today's goal for this page load. It is never saved: today's goal and the run of days
+// move on in this page load only, and the save keeps the ones it had (see persist). Without it the phone's date is the day
+const QA_DAY = isDay(QS.get("day")) ? QS.get("day") : null;
+const today = () => QA_DAY || dayOf();
 
 /* ---------------- saving ---------------- */
 // save.js reads and cleans the file; this is only the storage. In the app the save also goes to native storage
@@ -80,7 +85,9 @@ if (Native.isNative && (webRaw == null || store.raw(UNREAD) != null)) {
   }
 }
 const save = loadSave(restored || webRaw);
-const persist = () => store.set(SAVE_KEY, save);
+// under ?day: today's goal and the run of days as they were loaded, which is what the save keeps
+const dayKept = QA_DAY && JSON.parse(JSON.stringify({ today: save.today, days: save.days }));
+const persist = () => store.set(SAVE_KEY, dayKept ? { ...save, ...dayKept } : save);
 if (restored) persist();
 // The native answer came late. A native save with more in it than the game has now wins: it goes into web storage and
 // the game starts again with it, on the boot screen or the title (never in play), once a session. Otherwise the game's
@@ -254,9 +261,11 @@ function report(dist, verdict, zoneName, sweet, cue = false, ms = 2600) {
 // The report's second line: the first that has something to say. ctx: { dist, verdict, ring, nearMiss (its line), zone
 // (its name), best (the longest cast yet), farther (a short cast by a new player), stroke (castParams), motion, key (Space) }
 function reportNote(c) {
+  if (c.streak) return c.streak;
   if (c.ring) return c.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!";
   if (c.nearMiss) return c.nearMiss;
-  // (P4, the goals, puts its lines here, after the near miss)
+  // the goal hint (goals.js progressNote): big fish live far out
+  if (c.progress) return c.progress;
   // a good release with a short back cast: the distance was in the back cast
   if (c.verdict === "sweet" && c.stroke < 0.85) return c.motion ? "Tip back farther for more distance." : "Drag down farther for more distance.";
   // at Loon the big fish live farther out; a new player with short casts is told so
@@ -492,7 +501,7 @@ function toTitle() {
   // a native save that came late, with more in it: the game starts again with it now
   takeComeback();
 }
-// "Here: best derby 18.4 kg · biggest Channel Catfish 7.2 kg", then what to do next
+// "Here: best derby 18.4 kg · biggest Channel Catfish 7.2 kg", then what to do next, then today's goal
 function titleBest() {
   const id = G.place.id, e = placeRec(save, id);
   const bits = [];
@@ -501,11 +510,10 @@ function titleBest() {
   if (sp && e.kg > 0) bits.push("biggest " + sp.name + " " + fmtKg(e.kg));
   const lines = [];
   if (bits.length) lines.push("Here: " + bits.join(" · "));
-  // the goal of this place; when the next place is open already, the goal of the first place still locked
-  const lock = ORDER.find((p) => !openNow(p)), from = lock && prevPlace(lock);
-  if (lock) lines.push(from === id ? goalText(id, "title") : goalText(from, "next"));
-  else lines.push(legendsLanded(save) >= ORDER.length ? "You landed every legend." : save.longest > 0 ? "Longest cast " + save.longest.toFixed(1) + " m" : "");
+  // the goal that opens the next place, a legend, a goal here, the next rank, the journal (goals.js nextGoal)
+  lines.push(nextGoal(save, id, OPEN_ALL) || (legendsLanded(save) >= ORDER.length ? "You landed every legend." : save.longest > 0 ? "Longest cast " + save.longest.toFixed(1) + " m" : ""));
   $("#tbest").textContent = lines.filter(Boolean).join("\n");
+  $("#tday").textContent = todayLine(save, today());
 }
 function begin(mode) {
   Sound.init(); Haptics.unlock(); keepAwake();
@@ -576,10 +584,17 @@ function renderPlaces() {
       para(J.blurb);
       const facts = document.createElement("div"), f = foundHere(save, id);
       facts.className = "facts";
-      for (const t of ["Line: " + fishingOf(id).gear.line, "Top fish: " + topFish(id).name, f.n + " of " + f.m + " found · Best derby " + (rec.d > 0 ? fmtKg(rec.d) : "none yet"), "Legend: " + LEGEND_STEPS[legendStepOf(id)]]) {
+      for (const t of ["Line: " + fishingOf(id).gear.line, "Top fish: " + topFish(id).name, f.n + " of " + f.m + " found", "Best derby " + (rec.d > 0 ? fmtKg(rec.d) + " · " + rankFor(id, rec.d) : "none yet"), "Legend: " + LEGEND_STEPS[legendStepOf(id)]]) {
         const d = document.createElement("div"); d.textContent = t; facts.appendChild(d);
       }
       body.appendChild(facts);
+      // the six goals of the place, with the ones done checked (open at the place you are at)
+      const gl = PLACE_GOALS[id], gb = rec.g || 0, det = document.createElement("details"), sum = document.createElement("summary"), ul = document.createElement("ul");
+      det.className = "goals"; det.open = here;
+      sum.textContent = "Goals: " + goalCount(gb) + " of " + gl.length;
+      gl.forEach((g, i) => { const li = document.createElement("li"); li.textContent = g.text; if ((gb >> i) & 1) li.className = "done"; ul.appendChild(li); });
+      det.append(sum, ul);
+      body.appendChild(det);
       const b = document.createElement("button");
       b.type = "button"; b.className = here ? "btn alt" : "btn go"; b.disabled = here;
       b.textContent = here ? "You are here" : "Fish here";
@@ -659,7 +674,8 @@ function arrival(id) {
   G.phase = "title";
   show("arrive");
 }
-$("#aStart").addEventListener("click", () => { Sound.sfx("ui"); toTitle(); });
+// Start goes to the water: free fishing at the new place (it asks for motion or touch first when it needs to)
+$("#aStart").addEventListener("click", () => begin("free"));
 
 /* ---------------- a fish opens the next place ---------------- */
 function unlockCard(id) {
@@ -842,17 +858,39 @@ function landed(r) {
   const zone = G.place.zone(r.x, r.z);
   const v = G.cast ? (G.cast.late ? "late" : G.cast.verdict) : "";
   const VV = G.input === "motion" ? VERDICT_M : VERDICT;
+  // the goals: was this cast stopped short, and the sweet casts in a row in the water (free fishing only: the derby ranks
+  // stay put; a cast onto land ends the run). The third sweet cast in a row makes the next cast in the water bring a
+  // bigger fish: this one, if an earlier run armed it
+  const feather = !!G.feathered;
+  G.feathered = false;
+  const streakBoost = G.mode === "free" && r.land === "water" && !!G.boostNext;
+  if (streakBoost || G.mode !== "free") G.boostNext = false;
+  if (G.mode !== "free") G.streak = 0;
+  else if (G.cast) {
+    G.streak = v === "sweet" && r.land === "water" ? (G.streak || 0) + 1 : 0;
+    if (G.streak > save.bestRun) save.bestRun = G.streak;
+    if (G.streak && G.streak % STREAK.n === 0) G.boostNext = true;
+  }
+  const goalOpen = !!goalLine("remind");
   if (r.land === "water") {
     world.splash(r.x, r.z, 0.5);
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
-    G.landing = { x: r.x, z: r.z, dist };
+    G.landing = { x: r.x, z: r.z, dist, feather };
     G.ring = rises ? rises.near(r.x, r.z) : null;
+    G.landing.ring = !!G.ring; G.landing.big = !!(G.ring && G.ring.big);
+    G.fight = null;
+    // a bigger fish: the cast after three sweet casts, or a big ring (the help for a short caster, see ringNews)
+    const boost = (streakBoost ? STREAK.boost : 0) + (G.ring && G.ring.big ? ASSIST.boost : 0);
+    // casts in the water here while the goal that opens the next place is not met: short ones, and all of them in free fishing
+    if (goalOpen && dist < SHORT_M) G.shortN = (G.shortN || 0) + 1;
+    if (goalOpen && G.mode === "free") { if (!G.dry || G.dry.at !== G.place.id) G.dry = { at: G.place.id, n: 0 }; G.dry.n++; }
+    for (const t of noteGoals({ kind: "cast", dist })) toast(t, 3000, () => Sound.sfx("record"));
     // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
     // from a small, easy fish (firstBite in fish.js). It is used up when that fish strikes (handleEvent), so a cast that ends
     // before the strike keeps it for the next one; the casts after the strike have the normal odds
     const gift = !G.force && !G.gifted && save.caught === 0 && G.place.id === "loon" ? firstBite(zone, LAKE.rng(G.seed + 911)) : null;
     G.gift = !!gift;
-    G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist }, G.force || gift || {}));
+    G.sim = new LakeSim(Object.assign({ place: G.place, lure: { x: r.x, z: r.z }, tip: rodTip(45, G.cast ? G.cast.yaw : 0, 0, G.place.stand.rod), lineOut: r.lineOut, hour: G.hour, ring: G.ring, rng: LAKE.rng(G.seed + G.casts * 7919), easy: save.assist, boost }, G.force || gift || {}));
     G.big = null; G.walk = false;
     G.settle = 0;
     if (G.sim.plan && world.prepareFish) world.prepareFish(G.sim.plan.id);
@@ -860,8 +898,13 @@ function landed(r) {
     if (dist > save.longest) save.longest = dist;
     persist();
     const miss = !G.ring && rises ? rises.near(r.x, r.z, 12) : null;
-    report(dist, VV[v] || "", reportNote({ dist, verdict: v, ring: G.ring, nearMiss: miss ? nearMissText(miss, r.x, r.z, G.cast ? G.cast.yaw : 0) : "", zone: G.place.zoneNames[zone] || "", best,
+    // three sweet casts in a row; or, while the goal that opens the next place is open, a short cast now and then hears
+    // that the big fish live far out (goals.js progressNote). The run of sweet casts goes first, even before a ring: the
+    // boost it arms is news the ring does not show
+    const hint = progressNote({ streak: G.streak, dist, goalOpen, castN: G.shortN }), lit = hint === STREAK.text;
+    report(dist, VV[v] || "", reportNote({ streak: lit ? hint : "", progress: lit ? "" : hint, dist, verdict: v, ring: G.ring, nearMiss: miss ? nearMissText(miss, r.x, r.z, G.cast ? G.cast.yaw : 0) : "", zone: G.place.zoneNames[zone] || "", best,
       farther: G.place.id === "loon" && dist < 15 && save.casts <= 12, stroke: G.cast ? G.cast.stroke : 1, motion: G.input === "motion", key: !!(G.cast && G.cast.key) }), v === "sweet");
+    $("#report").classList.toggle("streak", lit);
     if (G.ring) Sound.sfx("ui");
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
@@ -869,7 +912,11 @@ function landed(r) {
   } else {
     Sound.sfx("plop");
     const msg = r.land === "tree" ? (G.place.id === "loon" ? "You caught a pine tree." : "You caught a tree.") : r.land === "dock" ? STAND_HIT[G.place.stand.kind] || "You hooked the dock." : "You cast onto the shore.";
-    report(r.land === "dock" ? null : dist, VV[v] || "", msg, false);
+    // a derby gives back a cast that did not reach the water: a fumble is not a cast at a fish
+    const back = G.mode === "derby";
+    if (back) { G.castsLeft++; G.casts--; updateHud(); }
+    report(r.land === "dock" ? null : dist, VV[v] || "", msg + (back ? " You get that cast back." : ""), false);
+    $("#report").classList.remove("streak");
     G.outcomeAt = now();
   }
   relayout();
@@ -902,16 +949,64 @@ function nextAfterOutcome() {
   newCast();
 }
 
+/* ---------------- the goals ---------------- */
+// what the fish did in this fight, for the goals (handleEvent tells; a new one starts at the hook set)
+const blankFight = () => ({ turned: [], cover: "", jumps: 0, walk: false, unstuck: false, lastrun: false });
+function noteFight(type, e) {
+  if (type === "hooked") { G.fight = blankFight(); return; }
+  const F = G.fight || (G.fight = blankFight());
+  if (type === "cover") F.cover = (e && e.kind) || "";
+  else if (type === "turned") F.turned.push(F.cover);
+  else if (type === "jump") F.jumps++;
+  else if (type === "walk") F.walk = true;
+  else if (type === "unstuck") F.unstuck = true;
+  else if (type === "lastrun") F.lastrun = true;
+}
+// the goals of this place that ctx did (goals.js): each new one is saved. Returns what to say: "Goal done: Cast 40 m."
+function noteGoals(ctx) {
+  const id = G.place.id, done = goalsMet(id, ctx).filter((i) => recordGoal(save, id, i));
+  if (done.length) persist();
+  return done.map((i) => "Goal done: " + PLACE_GOALS[id][i].text);
+}
+// A plain ring rose. The first one within reach in the cast gets the tip, once, when no other news is up or waiting (a
+// ring rises again in a few seconds, so the tip never pushes other news out of the queue). And the help for a short
+// caster: after ASSIST.casts casts in the water here in free fishing with the goal that opens the next place still open,
+// the next ring within reach carries a feeding big fish (a sure bite: fish.js LakeSim.choose), said once for that ring.
+// It stays up at least ASSIST.ttl s. One big ring at a time, and the help goes on until a big ring's fish is landed: after
+// a fish lost from it, or a big ring left to go quiet, the next ring within reach is a big one
+function ringNews(e) {
+  if (G.phase !== "cast" || Math.hypot(e.x, e.z) > ASSIST.reach) return;
+  if (!save.seen["ring.tip"] && !$("#toast").classList.contains("on") && !toastQ.length) toast("A fish is rising. Cast into the ring. Feeding fish bite more often.", 3200, () => seen("ring.tip"));
+  const big = G.mode === "free" && G.dry && G.dry.at === G.place.id && G.dry.n >= ASSIST.casts && goalLine("remind") ? assistFish(G.place.id) : null;
+  const g = big && rises && !rises.list.some((q) => q.big) && rises.near(e.x, e.z);
+  if (!g || g.gold) return;
+  g.big = true; g.species = big; g.ttl = Math.max(g.ttl, ASSIST.ttl);
+  toast("A big fish is rising close in.", 3200);
+}
+
 /* ---------------- the catch ---------------- */
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
 // in), the flash and the shutter come, then the card slides up. Seconds
 const PHOTO = { flash: 1.2, card: 1.5 };
 function caught(c) {
   const sp = byId(c.id), at = G.place.id;
+  // today's goal, taken before this fish can open a place (the goal of the day stays the same all day)
+  const day = today(), dg = dailyGoal(day, save);
   const r = recordCatch(save, at, c);
   const junk = r.junk;
   if (!junk) G.bag.push({ id: c.id, kg: c.kg });
+  // the goals: what this catch, its cast and its fight did
+  const L = G.landing, F = G.fight || blankFight();
+  const ctx = { kind: "catch", at, id: c.id, kg: c.kg, junk, hour: G.hour, dist: L ? L.dist : 0, ring: !!(L && L.ring), feather: !!(L && L.feather), turned: F.turned, jumps: F.jumps, walk: F.walk, unstuck: F.unstuck, lastrun: F.lastrun };
+  G.fight = null;
+  // a big ring's fish is landed: the help for a short caster starts its count again
+  if (L && L.big && G.dry) G.dry.n = 0;
+  const day1 = junk ? null : recordDay(save, day, dg, dayHit(dg, ctx));
   persist();
+  // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
+  // day, the goals done, today's goal done. A goal done brings the record sting
+  const goals = noteGoals(ctx), news = [day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
+  if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null);
   G.phase = "catch";
   prompt("");
   G.big = null; G.walk = false;
@@ -928,14 +1023,17 @@ function caught(c) {
     else G.pendingUnlock = r.opened;
   }
   G.closeCall = r.close ? goalText(at, "close") : "";
+  // a derby catch that opens a place: after the card, where to go (the last cast's results card says it instead)
+  if (r.opened && G.mode === "derby" && G.castsLeft > 0) G.closeCall = JOURNEY[r.opened].name + " is open. Go there after the derby.";
   Sound.sfx(junk ? "junk" : "landed");
   if (r.record || (r.isNew && !junk) || trophy || legend) setTimeout(() => Sound.sfx("record"), 500);
   if (legend && at === "loon") setTimeout(() => Sound.sfx("loonWail"), 1700);
   Haptics.land(legend ? 2 : trophy ? 1 : 0);
-  // at most two badges, in this order
+  // at most two badges, in this order (a new place is the rarest news)
   const badges = $("#cbadges");
   badges.innerHTML = "";
   const marks = [];
+  if (r.opened) marks.push(["NEW PLACE", "new"]);
   if (legend) marks.push(["LEGEND", ""]);
   if (r.isNew) marks.push([junk ? "NEW FIND" : "NEW SPECIES", "new"]);
   if (r.record) marks.push(["NEW RECORD", ""]);
@@ -943,7 +1041,10 @@ function caught(c) {
   for (const [t, cls] of marks.slice(0, 2)) { const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = t; badges.appendChild(b); }
   $("#cname").textContent = sp ? sp.name : c.name || "A fish";
   $("#csize").textContent = junk ? "" : sizeLine(rank);
-  $("#cold").textContent = r.record ? "Your old record: " + fmtKg(r.oldKg) + "." : "";
+  // a new find: how much of this place's journal is found now (the same count as the journal and Places)
+  const f = r.isNew ? foundHere(save, at) : null;
+  $("#cfound").textContent = !f ? "" : f.n >= f.m ? "You found everything here." : f.n + " of " + f.m + " found here.";
+  $("#cold").textContent = [r.record ? "Your old record: " + fmtKg(r.oldKg) + "." : "", r.opened ? "It opens " + JOURNEY[r.opened].name + "." : ""].filter(Boolean).join(" ");
   $("#cblurb").textContent = sp ? sp.blurb : "";
   $("#ccap").textContent = photo ? journeyOf(at).name + " · " + fmtClock(G.hour) : "";
   $("#catch .card").classList.toggle("photo", photo);
@@ -1012,6 +1113,9 @@ function endDerby() {
   $("#rkick").textContent = J.kick;
   $("#rtotal").textContent = fmtKg(total);
   $("#rrank").textContent = rankFor(id, total);
+  // the next rank up the ladder (none at the top)
+  const nr = nextRank(id, total);
+  $("#rnext").textContent = nr ? "Next rank: " + nr.name + " at " + nr.kg + " kg." : "";
   const ul = $("#rlist");
   ul.innerHTML = "";
   if (!G.bag.length) { const li = document.createElement("li"); li.textContent = "No fish this time."; ul.appendChild(li); }
@@ -1022,7 +1126,7 @@ function endDerby() {
     li.append(a, b); ul.appendChild(li);
   }
   const rec = placeRec(save, id);
-  $("#rbest").textContent = d.best && total > 0 ? "A new best derby here!" : rec && rec.d > 0 ? "Your best derby here: " + fmtKg(rec.d) : "";
+  $("#rbest").textContent = d.best && total > 0 ? "A new best derby here!" + (d.old > 0 ? " Your old best: " + fmtKg(d.old) + "." : "") : rec && rec.d > 0 ? "Your best derby here: " + fmtKg(rec.d) : "";
   // a fish of this derby opened the next place
   const up = G.unlocked[G.unlocked.length - 1];
   $("#runlock").hidden = $("#rGo").hidden = !up;
@@ -1052,7 +1156,10 @@ function renderJournal(pid) {
   }
   const list = $("#jlist");
   list.innerHTML = "";
-  const all = foundAll(save), tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts";
+  // the counts; then the best sweet run and the days whose goal was done, once there are any
+  const all = foundAll(save), D = save.days;
+  const more = [save.bestRun > 0 ? "Best sweet run: " + save.bestRun : "", D.n > 0 ? "Goal days: " + D.n + (D.best >= 2 ? " (best " + D.best + " in a row)" : "") : ""].filter(Boolean).join(" · ");
+  const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts" + (more ? "\n" + more : "");
   if (!openNow(pid)) {
     const d = document.createElement("div");
     d.className = "jnote"; d.textContent = "Open " + JOURNEY[pid].name + " to see its fish.";
@@ -1062,7 +1169,9 @@ function renderJournal(pid) {
   }
   const F = fishingOf(pid), here = placeSpecies(pid).map(byId);
   const rows = [...here.filter((sp) => !sp.legend && !F.junk.includes(sp.id)).sort((a, b) => a.kg[1] - b.kg[1]), ...here.filter((sp) => sp.legend), ...here.filter((sp) => F.junk.includes(sp.id))];
-  for (const sp of rows) {
+  // a short list: the fish caught, then the next 3 to find with their hints, then how many more there are
+  const got = (sp) => !!(save.journal[sp.id] && save.journal[sp.id].n), left = rows.filter((sp) => !got(sp));
+  for (const sp of [...rows.filter(got), ...left.slice(0, 3)]) {
     const j = save.journal[sp.id], junk = F.junk.includes(sp.id);
     const d = document.createElement("div");
     d.className = "jfish" + (j && j.n ? "" : " none") + (sp.legend ? " legend" : "");
@@ -1075,24 +1184,15 @@ function renderJournal(pid) {
     } else {
       b.textContent = sp.legend ? "The legend" : junk ? "Something odd" : "Not caught yet";
       sw.style.background = "rgba(255,255,255,0.12)";
-      sm.textContent = sp.legend ? legendHint(pid, legendStepOf(pid)) : junk ? "It is on the bottom somewhere." : (zoneHint(sp, pid) || "");
+      // the plunger and the frisbee sit by the cottage dock (fish.js junkR)
+      sm.textContent = sp.legend ? legendHint(pid, legendStepOf(pid)) : junk ? (pid === "loon" ? "Something odd lies near the dock." : "It is on the bottom somewhere.") : (zoneHint(sp, pid) || "");
     }
     d.append(b, sw, sm);
     list.appendChild(d);
   }
+  if (left.length > 3) { const d = document.createElement("div"); d.className = "jnote"; d.textContent = left.length - 3 + " more to find here."; list.appendChild(d); }
   const f = foundHere(save, pid);
   $("#jsum").textContent = f.n + " of " + f.m + " found here · " + tail;
-}
-// where and when a fish bites, from this place's own table
-function zoneHint(sp, pid) {
-  const eco = ecology(pid).find(([s]) => s.id === sp.id), E = eco && eco[1];
-  if (!E) return "";
-  const z = Object.entries(E.zones || {}).sort((a, b) => b[1] - a[1])[0];
-  // the hour it bites best, if it has one and the place's clock runs through it (Stump Bay only runs 19:00 to 24:00)
-  const c = journeyOf(pid).clock, lo = Math.min(c.free, c.derby, c.wrap);
-  const best = (E.hours || []).filter((h) => h[1] > lo && h[0] < c.end).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
-  const when = !best ? "" : best[0] >= 20.5 ? " at night" : best[1] <= 10 ? " in the morning" : best[0] >= 17 ? " at dusk" : " at midday";
-  return z ? "Try " + (getPlace(pid).zoneNames[z[0]] || z[0]).toLowerCase() + when + "." : "";
 }
 
 /* ---------------- help ---------------- */
@@ -1230,7 +1330,7 @@ function pause() {
 }
 // the pause card's lines. While the GL context is lost there is no lake to play on: Resume waits until it is back
 function pauseSum() {
-  $("#pauseSum").textContent = [G.ctxLost && "The lake is coming back.", hudText(), goalLine("remind")].filter(Boolean).join("\n");
+  $("#pauseSum").textContent = [G.ctxLost && "The lake is coming back.", hudText(), goalLine("remind") || nextGoal(save, G.place.id, OPEN_ALL)].filter(Boolean).join("\n");
   $("#resumeBtn").disabled = !!G.ctxLost;
 }
 function resume() { if (G.ctxLost) return; G.paused = false; show(null); Sound.sfx("ui"); keepAwake(); }
@@ -1422,7 +1522,7 @@ function castUpdate(dt) {
     world.setLine({ from: tip, to: { x: r.x, y: r.y, z: r.z }, slack: 0.15, visible: true, flying: true });
     world.setView({ mode: "flight", look: { x: r.x, y: Math.max(r.y, 0), z: r.z }, portrait: G.layout === "tall-cast" });
     // feathering: a finger on the rod slows the line, so the lure drops short onto a target
-    if (G.pin && G.pin.feather) prompt("Your thumb slows the line.", "", "thumb");
+    if (G.pin && G.pin.feather) { G.feathered = true; prompt("Your thumb slows the line.", "", "thumb"); }
     else prompt(save.casts >= 3 && save.casts < 9 ? "To stop the lure short, touch the rod." : "", "", "thumb");
     if (r.done) { Sound.setSpool(0); prompt(""); landed(r); }
     return;
@@ -1653,6 +1753,7 @@ function fightCue(s, crankRate, theta) {
 function handleEvent(e) {
   const type = typeof e === "string" ? e : e.type;
   G.lastEvent[type] = now();
+  noteFight(type, e);
   const s = G.sim && G.sim.state;
   const fx = e.x != null ? e.x : s && s.fish ? s.fish.x : s ? s.lure.x : 0;
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
@@ -1789,7 +1890,7 @@ function step(dt) {
           // said once for each ring (it pulses every few seconds), and not in the middle of a fight
           if (G.phase !== "reel" && !(G.goldAt && Math.hypot(e.x - G.goldAt.x, e.z - G.goldAt.z) < 1)) { G.goldAt = { x: e.x, z: e.z }; toast("A gold ring! Something big is rising.", 2600); }
           if (legendStep(save, G.place.id, 1)) persist();
-        }
+        } else ringNews(e);
       }
       // the rings only change when one rises or goes quiet
       if (ev.length || rises.list.length !== G.ringN) { G.ringN = rises.list.length; world.setRings(rises.list); }
