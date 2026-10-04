@@ -43,6 +43,8 @@ export function createDesktop(canvas, camera, settings) {
     onUnlock: (fn) => unlockFns.push(fn),
     // For tests and resets: look straight ahead.
     level(angle = 0) { pitch = clamp(angle, -PITCH_MAX, PITCH_MAX); mobile.reset(); },
+    // The phone camera follow tilts the view a little toward where the next buildings are.
+    nudgePitch(dp) { pitch = clamp(pitch + dp, -PITCH_MAX, PITCH_MAX); },
   };
 
   const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused");
@@ -82,6 +84,7 @@ export function createDesktop(canvas, camera, settings) {
     if (k === "Space") { e.preventDefault(); if (!e.repeat) Q.jump = true; }
     if (k === "KeyF" && !e.repeat) Q.yank = true;
     if (k === "Escape" && !e.repeat) Q.menu = true;
+    if (k.startsWith("Arrow")) e.preventDefault(); // the arrows move you, never the page
     keys.add(k);
   });
   addEventListener("keyup", (e) => keys.delete(e.code));
@@ -97,7 +100,9 @@ export function createDesktop(canvas, camera, settings) {
     // look: the mouse (only while the pointer is locked) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
-    let mx = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0), my = (keys.has("KeyW") ? 1 : 0) - (keys.has("KeyS") ? 1 : 0);
+    // WASD or the arrow keys: walk, steer in the air, and climb on a wall
+    const k = (a, b) => keys.has(a) || keys.has(b);
+    let mx = (k("KeyD", "ArrowRight") ? 1 : 0) - (k("KeyA", "ArrowLeft") ? 1 : 0), my = (k("KeyW", "ArrowUp") ? 1 : 0) - (k("KeyS", "ArrowDown") ? 1 : 0);
     mx += phone.moveX; my += phone.moveY;
     trig[0] = mouse[0]; trig[1] = mouse[1] || phone.hold;
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;

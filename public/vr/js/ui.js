@@ -2,7 +2,7 @@
 // menu, the map, the stance question, the credits), the laser pointer, the fade, the city map on your table, and on a
 // flat screen a DOM HUD and Esc menu in the 2D page style. Panels follow you lazily and are never head-locked.
 import * as THREE from "three";
-import { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, SWING } from "./config.js";
+import { COMFORT, COLORS, GAME, LINES, LINES_HANDS, LINES_DESKTOP, LINES_PHONE, SWING } from "./config.js";
 
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -290,7 +290,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   }
   function sayLine(group, i, kind) {
     const k = kind || (inp && inp.kind) || "controller";
-    const table = k === "hand" ? LINES_HANDS : k === "mouse" || k === "desktop" ? LINES_DESKTOP : LINES;
+    const table = k === "hand" ? LINES_HANDS : k === "mouse" || k === "desktop" ? (inp && inp.easySwing ? LINES_PHONE : LINES_DESKTOP) : LINES;
     const line = table[group] && table[group][i];
     if (line) say(line, 6);
     return line || null;
@@ -776,7 +776,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "resetYes": closePause(); emit(fns.restart); return;
       case "exit": closePause(); emit(fns.exit); return;
       case "preset": {
-        if (!COMFORT.presets[v] || v === "desktop") return;
+        if (!COMFORT.presets[v] || v === "desktop" || v === "phone") return;
         if (isDesktopNow()) settings.preset = v; else { comfort.applyPreset(v); if (Pl) { Pl.speedCap = COMFORT.presets[v].speedCap; Pl.fallCap = COMFORT.presets[v].fallCap; } }
         break;
       }
