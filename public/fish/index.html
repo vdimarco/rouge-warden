@@ -403,6 +403,11 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 #results .held { visibility: hidden; }
 #results .rank.stamp { animation: stamp 0.24s cubic-bezier(.3, 1.6, .5, 1) both; }
 #rtotal { font-variant-numeric: tabular-nums; }
+/* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion
+   (no glow, pop, rise or stamp) */
+@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank { animation: none !important; } }
+html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
+html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank { animation: none !important; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
 /* a short phone held upright: the list of fish gives up room, so the buttons stay on the screen */
@@ -415,10 +420,6 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 /* debug */
 #dbg { position: absolute; right: 6px; bottom: 6px; z-index: 50; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); font: 11px/1.35 ui-monospace, monospace; white-space: pre; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #reelUI > * { animation: none; } }
-/* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion */
-@media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank { animation: none !important; } }
-html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
-html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank { animation: none !important; }
 </style>
 <link rel="stylesheet" href="./style.css">
 </head>

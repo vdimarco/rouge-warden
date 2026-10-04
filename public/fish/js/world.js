@@ -505,11 +505,14 @@ export async function createWorld(container, { quality = "high", place = PLACES.
 
   /* ---------------- water effects ---------------- */
   function ripple(x, z, size = 0.5) {
-    WU.uRip.value[S.rip].set(x, z, U.uTime.value, clamp(size, 0.05, 2));
+    // a ripple with no place would break the water until its slot came round again
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+    WU.uRip.value[S.rip].set(x, z, U.uTime.value, clamp(Number.isFinite(size) ? size : 0.5, 0.05, 2));
     S.rip = (S.rip + 1) % E.RIPPLES;
   }
   // a splash far out grows with the distance (WORLD.SPLASH_FAR), so the landing of a long cast and a strike at 40 m show
   function splashAt(x, z, size = 0.5) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
     const d = Math.hypot(x - EYEV.x, z - EYEV.z), [d0, k0, r0, rk] = WORLD.SPLASH_FAR;
     ripple(x, z, size * 1.2 * clamp(d / r0, 1, rk));
     spray.burst(x, z, clamp(size, 0.1, 1.6), Math.random, clamp(d / d0, 1, k0));

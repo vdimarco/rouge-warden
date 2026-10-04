@@ -981,12 +981,12 @@ if (part("H")) {
     });
     await page.evaluate(() => { delete FISH.save.seen.run; });
     await sleep(2500);   // the toasts before have gone
-    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "run" }, { type: "drag" }]);
+    // ("Fish on!" is the hook set's banner now, not a toast: the big fish's warning comes first, so the run tip waits)
+    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "drag" }, { type: "run" }]);
     const early = await page.evaluate(() => !!FISH.save.seen.run);
     await sleep(4200);
     const tq = await page.evaluate(() => window.__tq.slice());
-    // ("Fish on!" is the hook set's banner now, not a toast)
-    const want = ["It is running! Let the drag work.", "It is a big one!"], got = tq.map((x) => x[0]);
+    const want = ["It is a big one!", "It is running! Let the drag work."], got = tq.map((x) => x[0]);
     const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
     check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);

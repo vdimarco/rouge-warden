@@ -127,6 +127,18 @@ const splashHeight = (page, pt, ms = 2500) => page.evaluate(async ([pt, ms]) => 
   }
   return { height: best, n };
 }, [pt, ms]);
+// every shader number in the scene that is not finite (a NaN in a water ripple hides the water): [renderOrder, name]
+const badUniforms = (page) => page.evaluate(() => {
+  const out = [];
+  FISH.world.scene.traverse((o) => {
+    const u = o.material && o.material.uniforms;
+    if (u) for (const [k, v] of Object.entries(u)) for (const x of Array.isArray(v.value) ? v.value : [v.value]) {
+      const nums = typeof x === "number" ? [x] : x && x.isColor ? [x.r, x.g, x.b] : x && typeof x === "object" && "x" in x ? [x.x, x.y, x.z, x.w].filter((q) => q !== undefined) : [];
+      if (nums.some((q) => !Number.isFinite(q))) out.push([o.renderOrder, k]);
+    }
+  });
+  return out;
+});
 // stage a catch and wait for the card (and, when asked, its count-up). Returns the card and what the badges did
 async function catchCard(page, c, { calm = false } = {}) {
   await page.evaluate(() => FISH.newCast());
@@ -167,14 +179,18 @@ if (part("A")) {
       return { ...a, scale: !!rule && /transform|scale/.test(rule.cssText) };
     });
     check(hot.name === "hot" && hot.n === "1" && !hot.scale, "a hot prompt glows once, and its text never grows (" + JSON.stringify(hot) + ")");
-    await sleep(1200);
-    check(await page.evaluate(() => document.querySelector("#prompt .p1").getAnimations().length === 0), "and then holds still");
+    // (the animation events come with the frames, which are slow on a software GPU: wait for them)
+    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0, null, 8000).catch(() => {});
+    await sleep(800);
+    check(await page.evaluate(() => document.querySelector("#prompt .p1").getAnimations().length === 0 && window.__hot === 1), "and then holds still");
     const hot0 = await page.evaluate(() => window.__hot);
     await stage(page, { tfrac: 0.3, fish: { move: "turn" } }, [], false);
     await wait(page, () => /It turned/.test(document.querySelector("#prompt").textContent), null, 8000);
-    await sleep(200);
+    await wait(page, (n) => window.__hot > n, hot0, 8000).catch(() => {});
+    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0, null, 8000).catch(() => {});
+    await sleep(800);
     const hot1 = await page.evaluate(() => window.__hot);
-    check(hot1 === hot0 + 1, `a new hot prompt glows once again (${hot0} glows, then ${hot1})`);
+    check(hot1 === hot0 + 1, `a new hot prompt glows once again, and once only (${hot0} glows, then ${hot1})`);
 
     // ---- the strike ----
     console.log("     the strike");
@@ -243,7 +259,7 @@ if (part("A")) {
     // a slower set, and a fish that hooked itself
     await stage(page, { phase: "strike", fish: null }, [{ type: "strike", s: 0.6 }]);
     await sleep(600);
-    await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, known: false } }, [{ type: "hooked", id: "smallmouth" }], false);
+    await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, x: 0, z: -20, known: false } }, [{ type: "hooked", id: "smallmouth" }], false);
     let b = await page.evaluate(() => ({ text: document.querySelector("#banner b").textContent, sub: document.querySelector("#banner span").textContent, hidden: document.querySelector("#banner").hidden }));
     check(!b.hidden && b.text === "Fish on!" && b.sub === "", "a set 0.6 s after the strike: \"Fish on!\" with no \"Quick set!\" (" + JSON.stringify(b) + ")");
     await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, known: false } }, [{ type: "hooked", id: "smallmouth", self: true }]);
@@ -401,6 +417,12 @@ if (part("A")) {
     d = await derby([{ id: "perch", kg: 0.3 }], []);
     s = sounds(d.log);
     check(s.includes("derbyClose") && !s.includes("record") && has(d.log, "hx.land", 0), "any other derby end: a soft close (" + s.filter((x) => x !== "tick").join(" ") + ")");
+    // all those splashes, ripples and sparks left every shader number finite (a NaN ripple would hide the water)
+    const bad = await badUniforms(page);
+    check(!bad.length, "every shader value is still a number after the moments (" + JSON.stringify(bad) + ")");
+    // and a splash with no place does nothing (it would put a NaN into a ripple)
+    await page.evaluate(() => { FISH.world.splash(undefined, NaN, 0.4); FISH.world.ripple(NaN, 1, 0.3); });
+    check(!(await badUniforms(page)).length, "a splash or ripple with no place is ignored");
   } catch (e) { check(false, "exception in part A: " + (e && e.stack)); }
   check(errors.length === 0, "part A: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
@@ -422,7 +444,7 @@ if (part("B")) {
     // the strike and the hook set
     await stage(page, { phase: "strike", fish: null });
     await logClear(page);
-    await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, known: false } }, [{ type: "strike", s: 1 }, { type: "hooked", id: "smallmouth" }], false);
+    await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, x: 0, z: -20, known: false } }, [{ type: "strike", s: 1 }, { type: "hooked", id: "smallmouth" }], false);
     const bn = await page.evaluate(() => ({ hidden: document.querySelector("#banner").hidden, text: document.querySelector("#banner b").textContent, sub: document.querySelector("#banner span").textContent, pop: getComputedStyle(document.querySelector("#banner b")).animationName, feel: FISH.world.feel() }));
     let l = await logNow(page);
     check(!bn.hidden && bn.text === "Fish on!" && bn.sub === "Quick set!" && bn.pop === "none", "calm: the hook set keeps its words, with no pop (" + JSON.stringify({ text: bn.text, sub: bn.sub, pop: bn.pop }) + ")");
