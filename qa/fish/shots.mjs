@@ -13,7 +13,7 @@ import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { URL, installPhone, sleep } from "./lib.mjs";
+import { URL, installPhone, sleep, SEEN } from "./lib.mjs";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -102,14 +102,15 @@ async function runSize(W, H) {
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
   await page.route("**/three.module.min.js", (r) => r.fulfill({ path: path.join(ROOT, "public/crimson/lib/three.module.min.js"), contentType: "application/javascript" }));
-  await page.addInitScript(({ large, calm, art }) => {
+  // every cutscene seen, so the opening never covers a screen this script saves
+  await page.addInitScript(({ large, calm, art, seen }) => {
     if (sessionStorage.getItem("qa-kept")) return;
     localStorage.clear();
     if (large) localStorage.setItem("fish.text", "large");
     if (calm) localStorage.setItem("fish.calm", "1");
-    if (art) localStorage.setItem("fish.v1", JSON.stringify({ v: 1, artStyle: art }));
+    localStorage.setItem("fish.v1", JSON.stringify(art ? { v: 1, artStyle: art, cuts: seen } : { v: 1, cuts: seen }));
     sessionStorage.setItem("qa-kept", "1");
-  }, { large: LARGE, calm: CALM, art: ART });
+  }, { large: LARGE, calm: CALM, art: ART, seen: SEEN });
   if (!desk) await page.addInitScript(installPhone);
   await page.goto(URL + "?shot");
   await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });

@@ -12,7 +12,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 export const SHOTS = process.env.SHOTS || "";
 
 // every cutscene, seen (save.js CUTS)
-const SEEN = Object.fromEntries(CUTS.map((k) => [k, 1]));
+export const SEEN = Object.fromEntries(CUTS.map((k) => [k, 1]));
 
 // save: a save file (an object) to start with, put in localStorage on the first load only (clear must be on)
 // cuts: let the cutscenes play. Off by default: the page starts with every cutscene seen (a save of only that when there is

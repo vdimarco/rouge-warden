@@ -1350,10 +1350,12 @@ function helpRows(input) {
     ["back", "Tip the phone <b>back</b>."],
     ["flick", "<b>Whip it forward.</b> Lift your thumb."],
   ] : [
-    ["turn", keys ? "Drag the lake sideways to <b>aim</b>, or use the arrow keys." : "Drag the lake sideways to <b>aim</b>."],
-    ["thumb", "<b>Press the rod</b> and drag down."],
-    ["flick", keys ? "<b>Flick up</b> and let go in the green. Or hold <b>Space</b>, and let go of it in the green." : "<b>Flick up</b> and let go in the green."],
+    ["turn", keys ? "Move the mouse sideways as you hold to <b>aim</b>, or use the arrow keys." : "Drag the lake sideways to <b>aim</b>."],
+    ["thumb", keys ? "<b>Hold the mouse button</b> or <b>Space</b>. The rod tips back, then swings forward." : "<b>Press the rod</b> and drag down."],
+    ["flick", keys ? "<b>Let go in the green.</b> You can also drag down and flick up." : "<b>Flick up</b> and let go in the green."],
   ];
+  // a computer: the next cast comes at once with a click or Space (the phone tabs keep their room)
+  if (keys) steps.push(["thumb", "No fish? <b>Click or press Space</b> to cast again at once."]);
   steps.push(
     ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
     [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + w("hook")],
@@ -2141,7 +2143,7 @@ function heroShot(c) {
   // the fish alone in the whole view: the card is not up yet
   world.setView({ mode: "catch" });
   playCut(landedCut(G.place, c), () => {
-    flash("photo"); Sound.sfx("shutter"); Haptics.thump();
+    flash("photo"); Sound.sfx("shutter"); Haptics.shutter();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, false, sizeRank(sp, c.kg)); }, (PHOTO.card - PHOTO.flash) * 1000);
   });
 }

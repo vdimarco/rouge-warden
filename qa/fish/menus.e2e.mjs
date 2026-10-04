@@ -11,7 +11,7 @@
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { URL as FISH_URL, installPhone, until, sleep } from "./lib.mjs";
+import { URL as FISH_URL, installPhone, until, sleep, SEEN } from "./lib.mjs";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -37,6 +37,8 @@ async function launch({ width = 390, height = 844, phone = true, query = "", sav
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
   await page.route("**/three.module.min.js", (r) => r.fulfill({ path: path.join(ROOT, "public/crimson/lib/three.module.min.js"), contentType: "application/javascript" }));
+  // every cutscene seen, as lib.mjs open() does, so the opening never holds up a check of the menus
+  if (!(save && save.cuts)) save = { ...(save || {}), cuts: SEEN };
   await page.addInitScript(({ save, local }) => {
     if (sessionStorage.getItem("qa-kept")) return;
     localStorage.clear();
