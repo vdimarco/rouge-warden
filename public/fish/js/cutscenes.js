@@ -13,7 +13,6 @@ import { isCalm } from "./calm.js";
 
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 const v3 = (x, y, z) => ({ x, y, z });
 // the cutscene ids the save keeps (save.js CUTS). The arrival at Loon Lake is the opening
 export const arriveId = (id) => (id === "loon" ? "open" : "arrive." + id);
@@ -101,8 +100,8 @@ export function arrival(place) {
   };
 }
 
-// a stump the camera would pass through: a point d m short of (x, z) on the line from the eye, moved aside until it is
-// clear of every stump taller than y (Stump Bay); other places have none
+// The point d m short of `to` on the line from `from`, at height y, moved aside until the line to it clears every stump
+// taller than y (Stump Bay; the other places have none)
 function clearOf(place, from, to, d, y) {
   const posts = (place.props && place.props.stumps || []).filter((s) => s.top > y - 0.5);
   const dx = to.x - from.x, dz = to.z - from.z, len = Math.hypot(dx, dz) || 1, ux = dx / len, uz = dz / len;
@@ -148,9 +147,9 @@ export function reveal(place, ring) {
 
 // A legend landed: the hero shot. The catch view and its photo push (world.js), the name and the weight, before the
 // catch card. The game's own camera: no keys
-export function landed(place, c) {
-  const sp = byId(c.id);
-  return { id: landedId(place.id), kind: "landed", place: place.id, len: 4.6, keys: null, caption: { title: sp ? sp.name : c.name || "", line: fmtKg(c.kg), at: 0.5 } };
+export function landed(place, fish) {
+  const sp = byId(fish.id);
+  return { id: landedId(place.id), kind: "landed", place: place.id, len: 4.6, keys: null, caption: { title: sp ? sp.name : fish.name || "", line: fmtKg(fish.kg), at: 0.5 } };
 }
 
 // After the fourth legend: a slow pull back over the place, at its hour
@@ -186,7 +185,7 @@ export function ringSpot(place) {
 //   skip(): ends the one playing now; update(dt): moves it on (main.js step() calls it, and holds the rest of the game)
 //   playing: a cutscene is on; id: its id ("" when none); calm: the one playing is the still version
 // While one plays, #game has data-cut (cutscenes.css hides the HUD, the prompts and the toasts), the world hides the rod,
-// and every key goes to the skip: Space, Escape or Enter skips, the rest do nothing. A press anywhere skips too.
+// and the keys go to the skip: Space, Escape or Enter skips, the rest do nothing in the game. A press anywhere skips too.
 export function createCutscenes({ world, root, sound = null, touch = false }) {
   const el = document.createElement("div"), fade = document.createElement("div");
   el.id = "cut"; el.hidden = true; el.setAttribute("data-nopin", "");
@@ -211,10 +210,13 @@ export function createCutscenes({ world, root, sound = null, touch = false }) {
   for (const t of ["pointerup", "pointercancel"]) el.addEventListener(t, (e) => { eat(e); clearTimeout(eatT); eatT = setTimeout(uneat, 350); });
   el.addEventListener("click", (e) => { eat(e); uneat(); });
   el.addEventListener("contextmenu", eat);
+  // (the game never sees a key meanwhile; the browser keeps its own, like a reload)
   addEventListener("keydown", (e) => {
     if (!P) return;
-    e.preventDefault(); e.stopImmediatePropagation();
-    if (!e.repeat && (e.code === "Space" || e.code === "Escape" || e.code === "Enter")) finish(true);
+    e.stopImmediatePropagation();
+    if (e.code !== "Space" && e.code !== "Escape" && e.code !== "Enter") return;
+    e.preventDefault();
+    if (!e.repeat) finish(true);
   }, true);
 
   // the camera: the pose at the player's time, or the still shot under it (world.js calls this every frame)

@@ -31,7 +31,8 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     check(/To open: land a fish of 3\.5 kg or more at Loon Lake\./.test(cards[1].text) && /Your best there: none yet\./.test(cards[1].text), "the next locked card shows the goal and your best (" + cards[1].text + ")");
     check(/Open Stump Bay first\./.test(cards[2].text) && /Open Cedar River first\./.test(cards[3].text), "the later locked cards say which place to open first");
     check(cards[1].buttons.length === 0 && cards[2].buttons.length === 0 && cards[3].buttons.length === 0, "locked cards have no button");
-    check(/Line: 10 lb line/.test(cards[0].text) && /Top fish: Muskellunge/.test(cards[0].text) && /0 of 13 found/.test(cards[0].text) && /Legend: not seen/.test(cards[0].text) && cards[0].buttons.join() === "You are here (off)", "the open card shows the line, the top fish, the count, the legend and 'You are here' (" + cards[0].text + ")");
+    // (Watch: lib.mjs starts the page with every cutscene seen, the opening at Loon Lake too)
+    check(/Line: 10 lb line/.test(cards[0].text) && /Top fish: Muskellunge/.test(cards[0].text) && /0 of 13 found/.test(cards[0].text) && /Legend: not seen/.test(cards[0].text) && cards[0].buttons.join() === "You are here (off),Watch", "the open card shows the line, the top fish, the count, the legend, 'You are here' and Watch (" + cards[0].text + ")");
     check(/Easy/.test(cards[0].text) && /Medium/.test(cards[1].text) && /Hard/.test(cards[2].text) && /Very hard/.test(cards[3].text), "the four levels: Easy, Medium, Hard, Very hard");
     check((await page.textContent("#pfoot")) === "Legends landed: 0 of 4", "the footer counts the legends");
     const fit = await page.evaluate(() => { const c = document.querySelector("#places .card").getBoundingClientRect(); return { top: c.top, bottom: c.bottom, h: innerHeight }; });

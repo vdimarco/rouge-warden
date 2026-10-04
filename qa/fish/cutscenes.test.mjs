@@ -78,6 +78,20 @@ console.log("\nthe camera");
     }
     check(bad.length === 0, `aspect ${aspect}: every camera path is finite, clear of the water and the ground, and looks out` + (bad.length ? ": " + bad.slice(0, 4).join("; ") : ""));
   }
+  // the opening, wherever the loon is on its loop (or under water, when the path takes the middle of the loop)
+  {
+    const P = PLACES.loon, s = opening(P), bad = [];
+    for (let i = 0; i <= 12; i++) {
+      const a = i * Math.PI / 6, c = { ...ctxFor(P), loon: i === 12 ? null : { x: 12 + Math.sin(a) * 11, y: 0, z: -44 + Math.cos(a) * 11 } };
+      for (let t = 0; t <= s.len; t += 0.05) {
+        const p = poseAt(s, t, c), ground = Math.max(0, P.height(p.pos.x, p.pos.z));
+        if (!fin(p.pos) || p.pos.y < ground + 0.4) { bad.push("loon " + i + " at " + t.toFixed(2)); break; }
+        const L = c.loon || { x: 12, z: -44 };
+        if (t < 3.3 && Math.hypot(p.pos.x - L.x, p.pos.z - L.z) < 3) { bad.push("loon " + i + ": the camera runs into the loon at " + t.toFixed(2)); break; }
+      }
+    }
+    check(bad.length === 0, "the opening glides over open water past the loon, wherever it swims on its loop" + (bad.length ? ": " + bad.join("; ") : ""));
+  }
   // the fly-ins and the opening settle on the stand in the cast view: the eye, straight out, the cast pitch and field of view
   const bad = [];
   for (const id of ORDER) {
