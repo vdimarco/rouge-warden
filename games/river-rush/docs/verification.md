@@ -29,6 +29,12 @@ The result screen was reached with Playwright's accelerated clock, then its Swit
 
 Shared audio lifecycle checks passed 15/15 with both emulated visibility changes and pagehide/pageshow. Phone layouts were checked in Chromium at 390×844, not on a physical phone.
 
+The arcade's existing layout, switcher and saves suite passed, including cabinet selection, swipes and no overflow at seven screen sizes from 360×740 to 1920×1080. Each layout size uses a fresh browser to avoid software GPU degradation during the long swipe sequence.
+
+Release commit `1ac04b483bd11069f25baba6f3b9fb9e88ea2673` was published to `vdimarco/rouge-warden` main. The Git transport rejected the upload; GitHub's Git Data API uploaded identical blobs and tree and preserved the exact local commit SHA. Vercel production deployment `dpl_6psk4jmKKykxyDkGJfEqCeBdJjHA` reported READY for that SHA. The game route is `https://warden-alpha-wheat.vercel.app/river-rush/`.
+
+The focused arcade browser check also passed against that public production origin: game assets, cabinet launch, switcher identity, keyboard controls, paused timer, desktop/mobile layouts and score validation. No page errors or failing same-origin requests occurred.
+
 Run the static server from the repository root, then:
 
 ```sh

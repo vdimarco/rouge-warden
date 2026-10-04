@@ -6,5 +6,5 @@
 - [x] Add shared audio quieting, switch buttons and arcade return links.
 - [x] Verify engine, desktop/mobile gameplay and arcade integration.
 - [x] Validate OpenSpec structure.
-- [ ] Push the checked change and confirm its production deployment.
-- [ ] Archive the completed change and review canonical requirements.
+- [x] Push the checked change and confirm its production deployment.
+- [x] Archive the completed change and review canonical requirements.
