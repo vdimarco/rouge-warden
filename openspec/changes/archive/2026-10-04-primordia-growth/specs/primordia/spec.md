@@ -1,9 +1,4 @@
-# primordia Specification
-
-## Purpose
-Primordia is a Cottage Arcade game built on a live Lenia simulation: the player eats Orbium prey, avoids stalking hunters, and turns on them during Frenzy.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: A living Lenia dish
 Primordia SHALL simulate its creatures with Lenia rules and published Lenia patterns, so prey and hunters move, collide and die as cellular automata, not as scripted sprites. Hunters SHALL stay alive until the player kills them; the game SHALL keep them from merging into each other.
@@ -89,21 +84,6 @@ The run SHALL advance in epochs, shown to the player as sizes. A size SHALL end 
 - **WHEN** the player owns both parents of a Duo (for example Spore Burst and Nerve Net)
 - **THEN** the Duo can take the third card slot, shown with a DUO tag and a two-color border, and it always does after a Leviathan kill
 
-### Requirement: Controls on every device
-Primordia SHALL be playable with mouse, keyboard, touch and gamepad on desktop and phone layouts, without adding a button: DASH cuts, dodges and parries; BURST spends the meter.
-
-#### Scenario: Desktop
-- **WHEN** a player uses a mouse or keyboard at 1280×720
-- **THEN** the player follows the pointer or WASD/arrows, Space, Z, J or left click dashes, Shift, X, K, F or right click fires Burst, Escape or P pauses, M mutes, and Enter or R restarts after death
-
-#### Scenario: Phone portrait
-- **WHEN** a player uses touch at 390×844
-- **THEN** the dish turns to portrait, dragging anywhere steers with a floating stick, the DASH button shows its charges as pips, the BURST button glows gold when ready, a dash bends up to 12 degrees toward nearby hunter tissue, at most 3 gliders and 6 bodies share the dish, and the page has no horizontal scroll
-
-#### Scenario: Phone landscape
-- **WHEN** a player uses touch at 844×390
-- **THEN** the same touch controls work and the HUD and buttons stay on screen
-
 ### Requirement: Arcade cabinet
 The Cottage Arcade SHALL list Primordia in the Action row with a cabinet that boots the game, shows the saved best score and runs a live Lenia dish on its screen while selected.
 
@@ -118,58 +98,6 @@ The Cottage Arcade SHALL list Primordia in the Action row with a cabinet that bo
 #### Scenario: Demo dishes never grow
 - **WHEN** the cabinet screen or the title screen runs its demo dish
 - **THEN** no GROW bar fills and the dish never zooms
-
-### Requirement: Rend Dash
-The dash SHALL cut hunter tissue along its path and SHALL have charges that the player refills by eating.
-
-#### Scenario: Cut a hunter
-- **WHEN** the player dashes through a hunter
-- **THEN** a line of tissue is torn away with a white flash, red chunks, a short freeze and a percent popup, the hunter is knocked back, and one dash tears at most 22% of that hunter's mass
-
-#### Scenario: Dash charges
-- **WHEN** the player dashes twice in a row
-- **THEN** both charge pips empty, the third press does nothing, and the charges come back one at a time every 1.4 seconds or at once on a prey devour, a parry or a Glory Bite
-
-### Requirement: Stagger and Glory Bite
-A hunter torn by 20% of its mass, parried, or caught by a Burst SHALL reel gold, and the player SHALL be able to finish it by swimming the mouth into it.
-
-#### Scenario: Stagger
-- **WHEN** a hunter's recent tear reaches 20% of its mass
-- **THEN** it stops moving, stops stinging, glows gold with a ring and motes for about 1.6 seconds, and takes 1.5x damage
-
-#### Scenario: Glory Bite
-- **WHEN** the player's mouth touches a staggered hunter after the dash that staggered it has ended and the hunter has reeled for 0.25 seconds, or a new dash passes through it
-- **THEN** the hunter is devoured at once with a heavy hit, the player gains light, a dash charge and Burst meter, and its body breaks into live Orbium that glide away and fade after 6 seconds
-
-#### Scenario: Bleed out
-- **WHEN** a cut hunter dies by itself within 6 seconds of the player's last cut
-- **THEN** the kill is credited to the player for half the points
-
-### Requirement: Parry and Stasis
-Dashing into a hunter during its glint or its lunge SHALL parry it and slow the dish.
-
-#### Scenario: Parry
-- **WHEN** the player's dash meets a hunter that is glinting or lunging
-- **THEN** the lunge stops, the hunter staggers, a dash charge refills, PARRY shows, and the dish runs at 30% speed for 1.5 seconds with a violet grade and muffled sound while the player keeps full speed
-
-#### Scenario: Missed parry
-- **WHEN** the player dashes into a hunter that is still early in its windup
-- **THEN** the dash only cuts it and no Stasis starts
-
-### Requirement: Burst
-A Burst meter filled only by fighting SHALL let the player blast every hunter near them and then hunt for a few seconds.
-
-#### Scenario: Fire a Burst
-- **WHEN** the meter is full and the player presses Shift, X, right-click, gamepad B or the touch BURST button
-- **THEN** a gold ring expands 20 cells, hunters inside it are torn and staggered, eggs inside it pop, hunters within 40 cells are knocked back, and for 4 seconds hunters flee and the player's mouth eats their tissue
-
-#### Scenario: Meter sources
-- **WHEN** the player eats prey only
-- **THEN** the Burst meter does not rise; cuts, grazes, parries, Glory Bites, egg pops and golden prey fill it
-
-#### Scenario: Burst not ready
-- **WHEN** the meter is not full
-- **THEN** the Burst input does nothing
 
 ### Requirement: Waves and roster
 A director SHALL send scripted waves of distinct hunter roles each size, with relax beats between them and hard caps on bodies.
@@ -242,6 +170,8 @@ Every combat action SHALL read on screen and in sound at a phone's scale.
 #### Scenario: Readability
 - **WHEN** the dish is drawn at about 3 pixels per cell on a 390-pixel-wide phone
 - **THEN** lane outlines, stagger rings, edible rings, the GROW bar and its notch, and dash pips are at least 3 pixels thick and the glint star is at least 14 pixels across
+
+## ADDED Requirements
 
 ### Requirement: Growth
 The player SHALL grow by eating. A GROW bar SHALL fill with every meal and kill, hunters filling it most, and the player's cell SHALL get bigger as it fills, with a wider mouth and a wider cut.

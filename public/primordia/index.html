@@ -23,7 +23,7 @@
     <div class="meter light" title="Light: your life. Eat to refill it."><span class="lab">LIGHT</span><i><b id="lightBar"></b></i></div>
     <div class="meter burst" id="burstMeter" title="Burst: fill it by fighting, then blast nearby hunters."><span class="lab">BURST</span><i><b id="burstBar"></b></i></div>
   </div>
-  <div class="epoch"><span id="epochLabel">EPOCH I</span><i><b id="epochBar"></b></i><span class="wave-dots" id="waveDots" aria-hidden="true"><i></i><i></i><i></i></span><div class="wave-label" id="waveLabel" aria-hidden="true"></div></div>
+  <div class="epoch" id="growBox" title="GROW: eat to fill it. When it is full, the dish grows."><span id="epochLabel">SIZE I</span><i class="grow"><b id="epochBar"></b><u class="notch" aria-hidden="true"></u></i><span class="wave-dots" id="waveDots" aria-hidden="true"><i></i><i></i><i></i></span><div class="wave-label" id="waveLabel" aria-hidden="true"></div></div>
   <div class="scorebox"><span class="combo" id="combo"></span><span class="score" id="score">0</span></div>
   <div class="tools">
     <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
@@ -85,6 +85,7 @@
   <div class="panel wide">
     <p class="kicker" id="mutateKicker">EPOCH I SURVIVED</p>
     <h2>Choose a mutation</h2>
+    <p class="hint grew-note" id="grewNote" hidden>The dish grew. Old hunters are food now.</p>
     <div class="cards" id="cards"></div>
     <p class="hint">Press 1, 2 or 3 · or tap a card</p>
   </div>

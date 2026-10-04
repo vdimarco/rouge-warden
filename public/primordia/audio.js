@@ -337,6 +337,40 @@ export class Sound {
     this.swell(t, 0.22, 0.18, 400, 5000);
   }
   burstReady() { this.ready2(); }
+
+  // --- growing ---
+  // A meal fills the GROW bar: a chime that climbs a pentatonic scale across the bar (step 0..8).
+  growChime(step) {
+    if (!this.ready()) return;
+    const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19];
+    this.pluck(76 + scale[Math.max(0, Math.min(8, step | 0))], this.now(), 0.05, 0.22, "sine");
+  }
+  // half the bar: the swarms are food now
+  notch() {
+    if (!this.ready()) return;
+    const t = this.now();
+    this.pluck(84, t, 0.07, 0.2, "triangle"); this.pluck(91, t + 0.09, 0.07, 0.3, "triangle");
+  }
+  // the dish starts to grow: a rising swell
+  growSwell() {
+    if (!this.ready()) return;
+    const t = this.now();
+    this.swell(t, 0.18, 0.4, 300, 2400);
+    this.tone(220, t, 0.12, 0.45, "triangle", 440);
+  }
+  // the dish shrinks into its middle and opens wide: a falling whoosh while the low-pass opens fully
+  growWhoosh() {
+    if (!this.ready()) return;
+    const t = this.now();
+    this.noise(t, 0.16, 1.2, 2400, "bandpass", 250);
+    this.bass(36, t, 0.25, 1.2, "sine");
+    if (this.lp) { const f = this.lp.frequency; f.cancelScheduledValues(t); f.setValueAtTime(Math.max(20, f.value), t); f.exponentialRampToValueAtTime(this.lpTop, t + 1.0); }
+  }
+  // each old hunter comes back as prey: a rising pluck
+  husk(i) {
+    if (!this.ready()) return;
+    this.pluck(79 + [0, 2, 4, 7, 9, 12][i % 6], this.now() + i * 0.06, 0.06, 0.25, "triangle");
+  }
   graze() {
     if (!this.ready()) return;
     const t = this.now();
