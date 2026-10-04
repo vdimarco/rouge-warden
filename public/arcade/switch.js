@@ -14,7 +14,7 @@
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
     { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/olympus.webp", color: "#edc06b" },
-    { id: "moonwell", name: "Moonwell", sub: "Endless pinball dungeons", url: "/moonwell/", art: "/arcade/moonwell.webp", color: "#edc779" },
+    { id: "moonwell", name: "Moonwell", sub: "Endless pinball islands", url: "/moonwell/", art: "/arcade/moonwell.webp", color: "#edc779" },
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/primordia.webp", color: "#3ff0e0" },
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/breakthrough.webp", color: "#f0c56a" },
     { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/follow-suit.webp", color: "#e9c46a" },

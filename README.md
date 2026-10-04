@@ -380,6 +380,20 @@ An older save keeps every fish. If it already holds a 3.5 kg fish, Stump Bay is 
 
 The lake, the dock, the rod, the lure, and the fish are all built in code with three.js r170. Add `?debug` to the URL to see the sensor readings, the cast numbers, and the frame rate.
 
+## Moonwell
+
+Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an endless row of moonlit islands, and the screen scrolls with it. A pair of gold flippers guards the water gap at the bottom of each bowl. The left flipper shoots the pearl up and over the next ridge. The right flipper passes it back across the bowl. Flip near the tip for power: one good shot clears a ridge, and a late, sweet one can clear two. When the pearl crosses a ridge, a moon gate closes behind it, so the run only goes forward.
+
+- **The islands** come from a seed and never end. Every eight islands make a region with its own look: Willow Meadow, Lantern Bridge, Lily Pond, Star Garden, Crystal Hollow and Cloud Isles. Ridges get taller, the gap gets wider and play gets a little faster as you go.
+- **In the air** are stars (an arc of stars shows the ideal shot), gold bumpers, lanterns to light with a pass, turning mills, gold rails that carry the pearl over two or three islands, moon portals, and a big pearl every ten islands for one more life.
+- **Scoring.** Ridges in a row raise the multiplier, up to x8, and a drain ends the streak. Stars, bumpers, lanterns and ridges fill the moon in the sky. A full moon starts Moonrise: 12 s of double points, stronger flippers and no drains. Long shots, swift clears and clutch saves pay extra.
+- **Shrines.** The last island of each region is a shrine with a sealed gate. Send the pearl into the moonwell and choose one of three charms, such as stronger flippers, one more pearl, a moon bridge for the next drain, or a star magnet.
+- **Pearls.** A run has three pearls. A lost pearl comes back in a moonbeam over the same bowl. The first three islands have a moon post between the flippers, so a new player cannot drain there.
+- **Controls.** Z, A or ← for the left flipper, X, D or → for the right one, C or ↑ to pulse the pearl up, Space to drop a pearl, Esc or P to pause and M to mute. On a phone, hold the left or right half of the screen. A gamepad uses its shoulder buttons. The first island shows you how.
+- **Your best** score and island stay in this browser. A flag stands on your furthest island, and the Moonwell machine shows the best run.
+
+The islands are drawn in code. The bumper, portal, star, pearl and flipper sprites, and the far islands, come from the original Moonwell paintings (`qa/moonwell/sprites.sh` cuts them). A bot plays behind the title.
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
@@ -538,6 +552,18 @@ Serve `public/` (for example `cd public && python3 -m http.server 8765`), then r
 | `qa/fish/world.render.mjs` | Each place at every hour and in every view, each fish, the trophy view, the night at Stump Bay, the draw call and triangle limits, and the memory over a loop of trips |
 
 Set `FISH_URL` to test another address, and `SHOTS` to a folder to save screenshots from `flow.mjs`.
+
+### Moonwell tests
+
+Run these from the repo root. The browser checks need `public/` served at http://127.0.0.1:8765/ (or set `BASE_URL`).
+
+| Script | What it checks |
+| --- | --- |
+| `node qa/moonwell/world.test.mjs` | The same seed gives the same islands, 1,000 islands join up and the old ones are dropped, every eighth island is a shrine, rails and portals never skip a shrine, nothing sits in the ground, and the islands get harder |
+| `node qa/moonwell/play.test.mjs` | Drains, the moon post, a cradle, late and early flips, the right flipper's pass and the gate, no tunnelling, bumpers, the multiplier, long shots, Moonrise, rails, portals, shrines and charms, big pearls, the moonbeam and the end of a run, and a 15-minute run |
+| `node qa/moonwell/bot.mjs [runs] [skill] [minutes]` | Bots of a given skill play whole runs and report how far they get, where they drain, and what they meet |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
+| `NODE_PATH=qa/browser/node_modules node qa/moonwell/cabinet-art.mjs` | Makes the machine art, `public/arcade/moonwell.webp`, from a frame of the real game |
 
 ### Arcade tests
 
