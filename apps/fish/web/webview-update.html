@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Reel It In could not start</title>
-<!-- The app shows this page (server.errorPath in capacitor.config.json) when the phone's web view is too old
-     for the game (Android System WebView before version 105), or when the game page does not load. -->
+<!-- The app shows this page (server.errorPath in capacitor.config.json) on iPhone and on Android when the game page
+     does not load, and on Android when the phone's web view is too old for the game (Android System WebView before
+     version 105). The text is the same on both platforms. Only an Android phone shows the web view steps. -->
 <style>
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
@@ -24,14 +25,20 @@ p { margin: 0 0 10px; }
 <body>
 <main>
   <h1>Reel It In could not start</h1>
-  <p>The game needs a newer version of Android System WebView.</p>
-  <ol>
-    <li>Open Google Play.</li>
-    <li>Find "Android System WebView" and tap Update.</li>
-    <li>Do the same for "Google Chrome".</li>
-    <li>Close Reel It In, then open it again.</li>
-  </ol>
-  <p class="small">If you see this message on a phone that is up to date, close the app and open it again.</p>
+  <p>Close the app and open it again.</p>
+  <div id="android-steps" hidden>
+    <p>If you see this message each time, the phone may need a newer web view:</p>
+    <ol>
+      <li>Open Google Play.</li>
+      <li>Find "Android System WebView" and tap Update.</li>
+      <li>Do the same for "Google Chrome".</li>
+      <li>Close Reel It In, then open it again.</li>
+    </ol>
+  </div>
+  <p class="small">The game does not need a network connection.</p>
 </main>
+<script>
+  if (/Android/i.test(navigator.userAgent)) document.getElementById("android-steps").hidden = false;
+</script>
 </body>
 </html>

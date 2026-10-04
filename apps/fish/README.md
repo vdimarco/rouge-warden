@@ -16,7 +16,7 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
-| `web/webview-update.html` | The page the app shows when the Android web view is too old (before version 105). |
+| `web/webview-update.html` | The page the app shows when the game page does not load, or when the Android web view is too old (before version 105). |
 | `android/`, `ios/` | The native projects, made by `npx cap add` and then set up for the stores. |
 | `store/` | The store listing, the privacy and age answers, the screenshot list, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
@@ -168,7 +168,7 @@ Then run `npx cap sync` and build both apps again.
 - **System bars.** Capacitor 8's built-in SystemBars plugin puts `--safe-area-inset-*` CSS variables on the page for Android web views older than version 140. Its `"hidden"` setting is `false`: on iOS, `"hidden": true` would also auto-hide the home indicator and cancel the bottom-edge deferral (see the iOS section). The native code hides the bars instead. On Android, `MainActivity` hides the status bar and the navigation bar at launch, after SystemBars starts, and again whenever the app gets focus, so a swipe from an edge shows them only for a moment. On iOS, `MainViewController` hides the status bar and leaves the home indicator on. The game must not call `SystemBars.hide()` on iOS. `@capacitor/status-bar` is not installed: SystemBars does the same job, and the two would fight over the bars.
 - **Back gesture.** `MainActivity` keeps the Android back gesture out of the bottom 200 dp of both side edges, where the crank sits. Android allows 200 dp of exclusion on each side edge. It cannot exclude the home gesture at the bottom edge.
 - **Text zoom.** The Android web view follows the system font size, up to 130% (`MAX_TEXT_SCALE` in `MainActivity`). Above that, the text stops at 130%, so the fixed game layout does not break. Look at this limit again when the game's own Text size setting ships.
-- **Old web views.** `minWebViewVersion` is 105 (the game uses import maps and container query units). On an older Android web view, the app shows `webview-update.html`, which tells the player to update Android System WebView.
+- **Old web views and load errors.** `minWebViewVersion` is 105 (the game uses import maps and container query units). On an older Android web view, and on both platforms when the game page does not load, the app shows `webview-update.html` (`server.errorPath`). It tells the player to close the app and open it again. Only on Android does it also show the steps to update Android System WebView.
 - **No mixed content, no remote code.** The app loads only its own files from `https://localhost` (Android) and `capacitor://localhost` (iOS). These origins are secure contexts, which the motion sensors need.
 - **Save.** `android:allowBackup` stays on, so the save copy in Preferences comes back on a new Android phone.
 
