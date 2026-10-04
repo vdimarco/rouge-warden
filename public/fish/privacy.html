@@ -32,11 +32,13 @@ main { max-width: 36rem; margin: 0 auto; }
 .back:active { transform: translateY(2px); }
 :focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
 .kick { margin: 0; font-size: 13px; letter-spacing: 0.32em; color: #fff4d6; font-weight: 800; }
-h1 { margin: 4px 0 6px; font-family: var(--slab); font-weight: 400; font-size: clamp(38px, 11vw, 56px); line-height: 1; color: #fff6dc; letter-spacing: 0.01em;
+/* weight 700 with no synthesis: the slab font has one weight and stays as it is, and a fallback serif turns bold */
+h1, h2 { font-synthesis: none; }
+h1 { margin: 4px 0 6px; font-family: var(--slab); font-weight: 700; font-size: clamp(38px, 11vw, 56px); line-height: 1; color: #fff6dc; letter-spacing: 0.01em;
   text-shadow: 0 3px 0 var(--red), 0 6px 0 #7a1c14, 0 12px 22px rgba(0, 0, 0, 0.45); }
 .date { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
 .card { margin: 0 0 14px; padding: 18px 20px; border-radius: 18px; background: rgba(9, 34, 41, 0.82); border: 1px solid var(--line); }
-h2 { margin: 0 0 6px; font-family: var(--slab); font-weight: 400; font-size: 21px; letter-spacing: 0.02em; color: var(--brass); }
+h2 { margin: 0 0 6px; font-family: var(--slab); font-weight: 700; font-size: 21px; letter-spacing: 0.02em; color: var(--brass); }
 p { margin: 0 0 8px; }
 p:last-child { margin-bottom: 0; }
 .lead { font-size: 19px; font-weight: 800; }
