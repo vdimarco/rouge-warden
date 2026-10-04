@@ -27,6 +27,8 @@
 - [x] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
 - [x] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
 - [x] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
+- [ ] 3.8 A quick turnaround to the next cast: shorter waits, a skip by any cast input, and a faster empty retrieve.
+- [ ] 3.9 A mouse hold cast on desktop, with sideways aim, and its tests.
 
 ## 4. Goals
 - [x] 4.1 Six goals at each place, on the Places card, with the toast and the sting.

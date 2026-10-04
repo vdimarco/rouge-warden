@@ -14,6 +14,8 @@ const ICONS = {
 };
 // the cast cues; the fight cues use the same words as the prompt and the guide (MOVE_WORDS in guide.js)
 const LABELS = { hold: 'Hold rod', back: 'Pull back', cast: 'Flick up!', flight: 'Touch to slow', nibble: 'A nibble…' };
+// a hold cast (Space, or the mouse button held): the rod moves by itself, so the cue says to wait, then to let go
+const HOLD_LABELS = { back: 'Keep holding', cast: 'Let go in the green' };
 export function createRodCues(game) {
   const touchDevice = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   const el = document.createElement('div');
@@ -23,7 +25,7 @@ export function createRodCues(game) {
   const label = el.querySelector('span'), path = el.querySelector('path'), tension = el.querySelector('.rod-tension');
   const cast = game.querySelector('#reelBox'), pad = game.querySelector('#padBox'), crank = game.querySelector('#crankBox');
   let key = '';
-  return { update({ world, phase, step, motion, paused, cue, fish, nibble, held }) {
+  return { update({ world, phase, step, motion, paused, cue, fish, nibble, held, hold }) {
     el.hidden = paused || !['cast', 'reel'].includes(phase);
     if (el.hidden) { crank.dataset.cue = ''; return; }
     const anchor = world.rodAnchor();
@@ -39,7 +41,7 @@ export function createRodCues(game) {
     // the crank goes at the pace the prompt gives with the cue (fast for slack line or a charge, slowly when the lure runs
     // away from a fish, steadily for a tired fish), the same words as the guide; with no pace it is the reel move. A steer
     // the prompt gives a side to ("Drag the rod right.") says the same side here
-    const text = motion && kind === 'cast' ? 'Flick forward!' : LABELS[kind] ||
+    const text = motion && kind === 'cast' ? 'Flick forward!' : (hold && HOLD_LABELS[kind]) || LABELS[kind] ||
       (kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
       moveWords(kind, inputOf(motion, touchDevice), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);
     const next = `${kind}:${text}:${cue.tone}:${tight}:${held}`;

@@ -1,6 +1,7 @@
 // The game on a computer, with no sensors: a press on the reel and a drag down opens the bail and holds the line (the
 // drag decides: down holds the line, sideways aims), a flick up casts, the reel starts when the lure lands, the mouse
-// wheel reels (its first turn closes the bail), Space sets the hook, and W and S work the rod.
+// wheel reels (its first turn closes the bail), Space sets the hook, and W and S work the rod. The hold cast with the
+// mouse is in mouse.e2e.mjs.
 // Serve public/ first (cd public && python3 -m http.server 8765), then: node qa/fish/desk.mjs
 // Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, center, shot, sleep } from "./lib.mjs";
@@ -20,15 +21,24 @@ try {
   await page.evaluate(() => { FISH.G.force = { species: "pumpkinseed", kg: 0.25, bite: true }; });
   await shot(page, "desk-1-ready");
 
-  // hold on the reel, drag down to tip the rod back, then flick up and let go during the flick
+  // hold on the reel, drag down to tip the rod back, then flick up and let go during the flick. The press and the drag are
+  // played inside the page: a mouse button that stays put for 150 ms is the hold cast (mouse.e2e.mjs), and a slow software
+  // renderer can hold back a CDP mouse move longer than that
+  // (once a frame has handed the press over to the reel panel: a slow renderer can take a while)
+  await until(page, () => FISH.reelPanel.s.grab === "lock", null, 15000);
   const rb = await center(page, "#reelBox");
   const x = rb.x, y0 = rb.y - rb.h * 0.15;
-  await page.mouse.move(x, y0);
-  await page.mouse.down();
-  await page.mouse.move(x, y0 + 22);
-  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel and dragging down opens the bail and holds the line"), () => check(false, "pressing on the reel and dragging down opens the bail and holds the line"));
-  for (let i = 2; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
-  await sleep(200);
+  const fire =(type, y) => page.evaluate(({ type, x, y }) => {
+    const el = document.elementFromPoint(x, y) || document.body, spin = (ms) => { const t = performance.now(); while (performance.now() - t < ms); };
+    const ev = (t, yy) => el.dispatchEvent(new PointerEvent(t, { pointerId: 1, pointerType: "mouse", isPrimary: true, clientX: x, clientY: yy, bubbles: true, button: 0, buttons: 1 }));
+    // the press and its first 22 px down in one go
+    if (type === "down") { ev("pointerdown", y); for (let i = 1; i <= 4; i++) { spin(6); ev("pointermove", y + 5.5 * i); } } else ev("pointermove", y);
+  }, { type, x, y });
+  await fire("down", y0);
+  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open" && !FISH.G.pin.key, null, 3000).then(() => check(true, "pressing on the reel and dragging down opens the bail and holds the line"), () => check(false, "pressing on the reel and dragging down opens the bail and holds the line"));
+  for (let i = 2; i <= 12; i++) { await fire("move", y0 + i * 22); await sleep(25); }
+  // (a frame loads the rod: a slow software renderer can draw none for a second or more)
+  await until(page, () => FISH.G.step === "loaded", null, 6000).catch(() => {});
   const loaded = await page.evaluate(() => FISH.G.step);
   check(loaded === "loaded", "dragging down loads the rod (" + loaded + ")");
   // the flick: up fast, let go part way. Played inside the page, because a slow software renderer holds back
@@ -40,7 +50,6 @@ try {
     for (let i = 1; i <= 6; i++) { fire("pointermove", y - i * 36); await new Promise((r) => setTimeout(r, 8)); }
     fire("pointerup", y - 216);
   }, { x, y: y0 + 264 });
-  await page.mouse.up();
   await until(page, () => FISH.G.step === "flight" || FISH.G.step === "landed" || FISH.G.step === "ashore", null, 5000).catch(() => {});
   const cast = await page.evaluate(() => FISH.G.cast);
   check(!!cast, "a mouse flick casts" + (cast ? " (" + cast.verdict + ", " + cast.v0.toFixed(1) + " m/s, pitch " + cast.pitch.toFixed(0) + "°)" : ""));
