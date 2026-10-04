@@ -257,6 +257,20 @@ async function fresh(page) {
     check(box.crank && box.pad && box.crank.x + box.crank.w / 2 < vw / 2 && box.pad.x + box.pad.w / 2 > vw / 2 && !overlap(box.pad, box.crank), `390x844 touch fight: the crank is on the left, the rod pad on the right, and they do not overlap (${JSON.stringify(box)})`);
     check(!overlap(box.crank, box.drag) && !overlap(box.crank, box.gauge), "and the crank clears the drag bar and the gauge");
     await shot(page, "touch-3-fight");
+    // the rod dragged up and held (a fish lifted out): the next reel starts with the rod at 55 degrees again
+    const rod = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms)), pad = document.querySelector("#padBox"), b = pad.getBoundingClientRect();
+      const x = b.left + b.width / 2, y = b.top + b.height * 0.9, ev = (type, yy) => pad.dispatchEvent(new PointerEvent(type, { pointerId: 17, pointerType: "touch", isPrimary: true, clientX: x, clientY: yy, bubbles: true, cancelable: true, buttons: type === "pointerup" ? 0 : 1 }));
+      const start = FISH.rodPad.theta;
+      ev("pointerdown", y);
+      for (let i = 1; i <= 12; i++) { ev("pointermove", y - (220 * i) / 12); await wait(30); }
+      ev("pointerup", y - 220);
+      const lifted = FISH.rodPad.theta;
+      FISH.newCast(); window.__fight("retrieve");
+      await wait(100);
+      return { start, lifted: Math.round(lifted), next: Math.round(FISH.rodPad.theta) };
+    });
+    check(rod.start === 55 && rod.lifted >= 100 && rod.next === 55, `a rod dragged up in one fight starts the next reel at 55 degrees (${JSON.stringify(rod)})`);
 
     // a fling up on the open lake sets the hook in a strike; not from the crank, and not during a nibble
     const spots = await page.evaluate(() => {
@@ -309,6 +323,25 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
     const rb = await center(page, "#reelBox");
     const r = await page.evaluate((a) => window.__cast(a), { x: rb.x, y: rb.y, down: 70, up: 40, pxs: 1300 });
     check(r.dist > 0, `${vw}x${vh}: a press on the reel, a drag down and a flick: the lure flies (${r.verdict}, ${(r.dist || 0).toFixed(1)} m)`);
+    // a new player (the guide is on) holds the line on the rod: the rail and its LOAD and LET GO words show, and the guide
+    // gives way to them
+    await fresh(page);
+    const held = await page.evaluate(async ([x, y]) => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms)), el = document.elementFromPoint(x, y) || document.body;
+      const ev = (type, yy) => el.dispatchEvent(new PointerEvent(type, { pointerId: 19, pointerType: "touch", isPrimary: true, clientX: x, clientY: yy, bubbles: true, cancelable: true, buttons: type === "pointercancel" ? 0 : 1 }));
+      ev("pointerdown", y);
+      for (let i = 1; i <= 12; i++) { ev("pointermove", y + 5 * i); await wait(16); }
+      const t0 = performance.now();
+      while (FISH.G.step !== "loaded" && performance.now() - t0 < 3000) await wait(20);
+      const f = FISH.G.frame;
+      while (FISH.G.frame < f + 3 && performance.now() - t0 < 6000) await wait(10);
+      const g = document.querySelector("#fishGuide"), words = [...document.querySelectorAll("#castRail span")].filter((s) => !s.hidden).map((s) => { const b = s.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+      const out = { step: FISH.G.step, rail: window.__rect("#castRail"), words, guide: g.hidden ? null : window.__rect("#fishGuide"), guideOn: document.querySelector("#guideToggle").getAttribute("aria-label") === "Hide the moves guide" };
+      ev("pointercancel", y + 60);
+      await wait(100);
+      return out;
+    }, [Math.round(vw * 0.72), Math.round(vh * 0.68)]);
+    check(held.guideOn && !!held.rail && held.words.length === 2 && !overlap(held.guide, held.rail) && !held.words.some((w) => overlap(held.guide, w)), `${vw}x${vh}: a new player holds the line on the rod: the rail and its LOAD and LET GO words show, clear of the guide (${JSON.stringify(held)})`);
     // a flick that carries on 130 px past the press point, and a bigger one at 160 px: still far out on a short screen
     for (const [pxs, up] of [[1500, 130], [1800, 160]]) {
       await fresh(page);

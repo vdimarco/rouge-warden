@@ -276,6 +276,27 @@ console.log("\nThe first fish");
     check(list.every((o) => o.struck) && casts.every((c) => c.fb.kg < 0.5 && c.fb.eager && ["pumpkinseed", "perch"].includes(c.fb.species)), `${name}: the first fish is a small, eager pumpkinseed or perch, and it always strikes`);
     check(quick >= list.length * (pol === "casual" ? 0.95 : 0.85), `${name}: lands the first fish within 25 s of the splash (${pct(quick, list.length)})`);
   }
+  // a good first cast, 40 to 55 m out, and a new player who does what the words say at the guide's pace: the hook set at
+  // the strike, the rod at 60°, the crank at 1 turn a second ("Reel steadily."). A small fish comes in faster
+  // (REEL.SMALL_MUL), so this one is landed within 25 s of the splash too
+  const far = [];
+  for (let i = 0; far.length < 40 && i < 9000; i++) {
+    const d = 40 + r() * 15, a = (r() * 2 - 1) * 70 * D2R, x = Math.sin(a) * d, z = -Math.cos(a) * d, zn = zone(x, z);
+    if (zn === "land" || depth(x, z) < 0.6) continue;
+    const fb = firstBite(zn, r), tip = rodTip(40, Math.atan2(x, -z) / D2R, 0);
+    const sim = new LakeSim({ lure: { x, z }, tip, lineOut: Math.hypot(x - tip.x, tip.y, z - tip.z) * 1.03 + 0.3, hour: 6.5, rng: rng(5000 + i), easy: true, ...fb });
+    let t = 0, prev = 60;
+    while (t < 90 && !["caught", "lost", "home"].includes(sim.state.phase)) {
+      const S = sim.state, theta = S.phase === "land" ? 100 : 60;
+      sim.step(DT, { crank: S.phase === "land" ? 0 : 1, tip: rodTip(theta, 0, 0), theta, omega: (theta - prev) / DT, steer: 0, drag: 1, hookset: S.phase === "strike", pull: 0, lift: theta > 70 });
+      sim.events.splice(0);
+      prev = theta; t += DT;
+    }
+    far.push({ caught: sim.state.phase === "caught", t });
+  }
+  const farQuick = far.filter((o) => o.caught && o.t <= 25).length, farT = far.filter((o) => o.caught).map((o) => o.t);
+  console.log(`  steady  from 40 to 55 m at 1 turn a second: landed ${pct(farT.length, far.length)}, in 25 s ${pct(farQuick, far.length)}; splash to landing: median ${median(farT).toFixed(1)} s, max ${Math.max(...farT).toFixed(1)} s`);
+  check(farQuick >= far.length * 0.95, `a first cast 40 to 55 m out, cranked at 1 turn a second: the first fish is landed within 25 s of the splash (${pct(farQuick, far.length)})`);
 }
 
 /* ---------------- robustness and determinism ---------------- */

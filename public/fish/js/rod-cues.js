@@ -14,7 +14,10 @@ const ICONS = {
 };
 // the cast cues; the fight cues use the same words as the prompt and the guide (MOVE_WORDS in guide.js), and so does a hold
 // cast (HOLD_WORDS: Space, or the mouse button held, moves the rod by itself, so the cue says to wait, then to let go)
-const LABELS = { hold: 'Hold rod', back: 'Pull back', cast: 'Flick up!', flight: 'Touch to slow', nibble: 'A nibble…' };
+const LABELS = { hold: 'Hold rod', back: 'Drag down', cast: 'Flick up!', flight: 'Touch to slow', nibble: 'A nibble…' };
+// motion play tips the phone back and flicks it forward; on a computer a click on the lake slows the line
+const MOTION_LABELS = { back: 'Pull back', cast: 'Flick forward!' };
+const DESK_LABELS = { flight: 'Click to slow' };
 export function createRodCues(game) {
   const touchDevice = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   const el = document.createElement('div');
@@ -25,7 +28,7 @@ export function createRodCues(game) {
   const cast = game.querySelector('#reelBox'), pad = game.querySelector('#padBox'), crank = game.querySelector('#crankBox');
   const drag = game.querySelector('#dragBar');
   let key = '', lift = 0;
-  return { update({ world, phase, step, motion, paused, cue, fish, nibble, held, hold }) {
+  return { update({ world, phase, step, motion, desk, paused, cue, fish, nibble, held, hold }) {
     el.hidden = paused || !['cast', 'reel'].includes(phase);
     if (el.hidden) { crank.dataset.cue = ''; return; }
     const anchor = world.rodAnchor();
@@ -51,9 +54,9 @@ export function createRodCues(game) {
     // the crank goes at the pace the prompt gives with the cue (fast for slack line or a charge, slowly when the lure runs
     // away from a fish, steadily for a tired fish), the same words as the guide; with no pace it is the reel move. A steer
     // the prompt gives a side to ("Drag the rod right.") says the same side here
-    const text = motion && kind === 'cast' ? 'Flick forward!' : (hold && HOLD_WORDS[kind]) || LABELS[kind] ||
-      (kind === 'turn' && /^(Tilt the phone|Drag the rod) (left|right)\.$/.test(cue.sub) ? cue.sub :
-      moveWords(kind, inputOf(motion, touchDevice), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);
+    const text = (motion && MOTION_LABELS[kind]) || (hold && HOLD_WORDS[kind]) || (!motion && !touchDevice && DESK_LABELS[kind]) || LABELS[kind] ||
+      (kind === 'turn' && /^((Tilt the phone|Drag the rod) (left|right)|Hold [AD])\.$/.test(cue.sub) ? cue.sub :
+      moveWords(kind, inputOf(motion, touchDevice, desk), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);
     const next = `${kind}:${text}:${cue.tone}:${tight}:${held}`;
     if (key !== next) {
       key = next; el.dataset.cue = kind; el.dataset.tone = tight || kind === 'hook' ? 'hot' : cue.tone;
