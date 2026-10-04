@@ -4,8 +4,11 @@ Reel It In collects no data. The answers below are true for the app built from t
 
 ## Why the answer is "no data"
 
-- The game keeps its save (fish, places, best scores, settings) on the phone: in the web view's storage and, through `@capacitor/preferences`, in the app's native storage (UserDefaults on iOS, SharedPreferences on Android).
-- The bundle loads nothing from another host. `npm run check:www` fails the build if a file in `www/` loads a web address, and `qa/fish/app-bundle.e2e.mjs` fails if any request leaves the app's origin.
+- The game keeps its save (fish, places, best scores, settings) on the phone, in the web view's storage. When the game's native bridge (`public/fish/js/native.js`) is in the build, it also keeps a copy in the app's native storage through `@capacitor/preferences` (UserDefaults on iOS, SharedPreferences on Android). Both stay on the phone.
+- The bundle loads nothing from another host. Two checks back this:
+  - `npm run check:www` fails the build when a file in `www/` loads another host, or holds a web address anywhere in its code (strings, attributes, style sheets, JSON and SVG files). It cannot see an address that the code builds at run time from parts.
+  - `qa/fish/app-bundle.e2e.mjs` opens the bundle with every request to another origin blocked and counted, and fails if one is made. It loads the title screen only.
+  - Before you submit, also play one derby in a debug build with the web inspector's network panel open (see the README). No request may go to another host.
 - The app has no analytics, no crash reporting, no ads, no accounts and no login.
 - The motion sensors are read in the web view only to play the cast and the reel. The game keeps no record of the readings.
 - The Capacitor plugins in `package.json` (App, Haptics, Preferences, Splash Screen, Keep Awake) run on the phone and send nothing.
@@ -74,6 +77,6 @@ Check them with: `$ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging android/ap
 Any of these changes makes the answers above false. Update this file, the privacy page and the store forms first:
 
 - an analytics, crash, ad or attribution SDK;
-- a web font, script or image from another host (the bundle check catches this);
+- a web font, script or image from another host (the bundle check catches an address in the code; the browser check and the network panel catch a request);
 - an online feature, a leaderboard, an account or cloud saves;
 - a new Capacitor plugin that sends data.

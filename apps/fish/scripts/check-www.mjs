@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 // Checks the app's web bundle (apps/fish/www) before it goes into the native projects.
-// It fails when a file loads another host, uses a root path of the web site, names a missing file,
-// or shows arcade text in the store build. It warns about "ghibli" (an error with --strict) and about files that nothing loads.
+// It fails when a file loads another host, holds a web address in its code (a string, an attribute, a style sheet,
+// a JSON or SVG file), uses a root path of the web site in a load, a link or a page navigation, names a missing file,
+// or shows arcade text in the HTML of the store build. It warns about "ghibli" and about arcade text in a script
+// (both errors with --strict or WWW_STRICT=1), and about files that nothing loads.
+// The check reads the files. It cannot see a web address that the code builds at run time from parts:
+// qa/fish/app-bundle.e2e.mjs blocks and counts every request that leaves the origin.
 // Usage: node scripts/check-www.mjs [--strict] [path/to/www]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseHtml, attr, decodeEntities, isHiddenInStore } from "./lib/scan.mjs";
+import { parseHtml, attr, decodeEntities, isHiddenInStore, scanJs, webAddress, JS_TYPES } from "./lib/scan.mjs";
 import { collect, walkFiles } from "./lib/graph.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +23,10 @@ const ARCADE_TEXT = [/GET\s+PLUNGER['’]?D/i, /PLUNGER['’]D/i, /Switch\s+game
 // Web copy that reads wrong in an app. A warning only: the game's copy table decides this.
 const WEB_TEXT = /\b(?:in your browser|this browser|Safari|site settings|this page)\b/i;
 const TEXT_FILE = /\.(?:html?|css|m?js|json|txt|md|svg|xml|webmanifest)$/i;
+// The files the graph reads (see lib/graph.mjs).
+const SCANNED = /\.(?:html?|css|m?js|svg|json)$/i;
+// A line with this mark holds arcade text that the code shows on the web only (it checks the store flag first).
+const WEB_ONLY = /\bweb[- ]only\b/i;
 
 function fmtBytes(n) {
   return n >= 1048576 ? (n / 1048576).toFixed(2) + " MB" : n >= 1024 ? (n / 1024).toFixed(1) + " KB" : n + " B";
@@ -43,6 +51,20 @@ function visibleMatches(html, patterns) {
   return hits;
 }
 
+// Arcade text in the string literals of a script, outside comments. The check cannot tell if the code shows the string,
+// so the browser test (qa/fish/app-bundle.e2e.mjs) checks the page itself.
+function scriptArcadeText(src, lineOffset = 0) {
+  const hits = [];
+  const lines = src.split("\n");
+  for (const s of scanJs(src).strings) {
+    if (!ARCADE_TEXT.some((p) => p.test(s.value))) continue;
+    const line = src.slice(0, s.start).split("\n").length;
+    if (WEB_ONLY.test(lines[line - 1] || "")) continue;
+    hits.push({ line: line + lineOffset, text: s.value.replace(/\0/g, "${...}").slice(0, 60) });
+  }
+  return hits;
+}
+
 export function checkWww(www, { strict = false, quiet = false } = {}) {
   const issues = [];
   const add = (level, file, msg) => issues.push({ level, file, msg });
@@ -54,6 +76,12 @@ export function checkWww(www, { strict = false, quiet = false } = {}) {
   const seeds = ["index.html", ...all.filter((f) => f !== "index.html" && ALWAYS.some((re) => re.test(f)))];
   const graph = collect(www, seeds);
   issues.push(...graph.issues);
+  // Files that nothing loads still ship in the app, so read them for web addresses and root paths as well.
+  const unread = all.filter((f) => SCANNED.test(f) && !graph.files.has(f));
+  if (unread.length) {
+    const seen = new Set(issues.map((i) => `${i.level} ${i.file} ${i.msg}`));
+    for (const i of collect(www, unread).issues) if (!seen.has(`${i.level} ${i.file} ${i.msg}`)) issues.push(i);
+  }
 
   // the store flag must be on <html> from the first frame
   const indexHtml = fs.readFileSync(path.join(www, "index.html"), "utf8");
@@ -70,11 +98,22 @@ export function checkWww(www, { strict = false, quiet = false } = {}) {
       const n = (text.match(/ghibli/gi) || []).length;
       add(strict ? "error" : "warn", f, `the text has "ghibli" in it ${n} time${n === 1 ? "" : "s"}.`);
     }
+    const scriptText = (hits) => {
+      for (const h of hits) add(strict ? "error" : "warn", f, `line ${h.line}: a script holds arcade text "${h.text}". If a player can see it in the app, hide it in a store build. When the code shows it on the web only, put "// web only" on that line.`);
+    };
     if (/\.html?$/i.test(f)) {
       for (const h of visibleMatches(text, ARCADE_TEXT)) add("error", f, `a player can see arcade text in ${h.where}: "${h.text}"`);
-      // the privacy page serves the web and the app, so it talks about both
-      if (f !== "privacy.html") for (const h of visibleMatches(text, [WEB_TEXT])) add("warn", f, `web copy in ${h.where}: "${h.text}"`);
-    }
+      // the privacy page serves the web and the app, so it talks about both, and it may show a web address as text
+      if (f !== "privacy.html") {
+        for (const h of visibleMatches(text, [WEB_TEXT])) add("warn", f, `web copy in ${h.where}: "${h.text}"`);
+        for (const h of visibleMatches(text, [{ test: (s) => webAddress(s, { relative: false }) !== null }])) add("warn", f, `a page shows a web address in ${h.where}: "${h.text}"`);
+      }
+      for (const el of parseHtml(text).elements) {
+        if (el.tag !== "script" || !el.rawText || attr(el, "src") !== null) continue;
+        const type = (attr(el, "type") || "").toLowerCase();
+        if (JS_TYPES.has(type)) scriptText(scriptArcadeText(el.rawText, text.slice(0, el.rawStart).split("\n").length - 1));
+      }
+    } else if (/\.m?js$/i.test(f)) scriptText(scriptArcadeText(text));
   }
   for (const f of all) {
     if (!graph.files.has(f) && !ALWAYS.some((re) => re.test(f))) add("warn", f, "nothing loads this file.");
@@ -108,7 +147,7 @@ function report(www, issues, all, { quiet }) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
-  const strict = args.includes("--strict");
+  const strict = args.includes("--strict") || process.env.WWW_STRICT === "1";
   const dir = args.find((a) => !a.startsWith("--"));
   const res = checkWww(dir ? path.resolve(dir) : path.join(APP_DIR, "www"), { strict });
   process.exit(res.ok ? 0 : 1);

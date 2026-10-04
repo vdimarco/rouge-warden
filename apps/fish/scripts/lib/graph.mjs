@@ -2,9 +2,12 @@
 // The build uses it on public/fish to pick the files to copy. The check uses it on www/ to find bad references.
 import fs from "node:fs";
 import path from "node:path";
-import { parseHtml, attr, cssRefs, jsRefs, isHttp, isRootPath, isSpecial, isBare, ASSET_EXT } from "./scan.mjs";
+import { parseHtml, attr, cssRefs, stripCssComments, jsRefs, isHttp, isRootPath, isSpecial, isBare, webAddress, markupRootPath, NAMESPACE, ASSET_EXT, JS_TYPES } from "./scan.mjs";
 
-const TEXT = /\.(?:html?|css|m?js)$/i;
+// Files the walk reads. HTML, CSS and JavaScript can load more files. SVG and JSON are read for web addresses and root paths.
+const TEXT = /\.(?:html?|css|m?js|svg|json)$/i;
+const MARKUP = /\.(?:html?|svg)$/i;
+const NO_HOST = "The app loads nothing from another host, and the check cannot see how the code uses the string.";
 // Root paths of other parts of the web site. A string that starts with one of these is wrong in the app, wherever it is.
 export const SITE_ROOTS = /^\/(?:icons|arcade|wild|fish)(?:\/|$)/;
 
@@ -20,6 +23,7 @@ export function walkFiles(dir, base = dir, out = []) {
 }
 
 const posix = path.posix;
+const show = (s) => s.replace(/\0/g, "${...}").slice(0, 100);
 
 function cleanSpec(spec) {
   let s = spec.trim().replace(/[?#].*$/, "");
@@ -69,8 +73,9 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
     if (isSpecial(spec)) return;
     const raw = spec.trim();
     if (isHttp(raw)) {
-      if (strong) issue("error", from, `${kind} loads another host: ${raw}`);
-      else issue("info", from, `a string holds a web address that the code does not load: ${raw.slice(0, 80)}`);
+      if (strong) issue("error", from, `${kind} loads another host: ${show(raw)}`);
+      // a web address in any string is an error: the code can load it later through a variable
+      else if (!NAMESPACE.test(raw)) issue("error", from, `a string holds a web address: ${show(raw)}. ${NO_HOST}`);
       return;
     }
     if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return;
@@ -81,7 +86,7 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
     }
     if (!strong && !ASSET_EXT.test(cleanSpec(raw))) return;
     const tries = [dir, docDir].filter((d, i, a) => d !== undefined && a.indexOf(d) === i);
-    if (template || raw.includes("\0")) {
+    if ((template || raw.includes("\0")) && cleanSpec(raw).includes("\0")) {
       // a template string: copy every file it can name; a weak string also tries the page folder
       let g = { outside: false, matches: [] };
       // a weak template needs a fixed folder in front, or it could name every file of one type
@@ -113,6 +118,11 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
   function scanJsText(from, text, dir) {
     const { refs: found } = jsRefs(text);
     for (const r of found) {
+      // ref() reports a string that starts with a web address. This finds one later in the string, for example in markup.
+      const web = !isHttp(r.spec) && webAddress(r.spec);
+      if (web) issue("error", from, `a string holds a web address: ${show(web)}. ${NO_HOST}`);
+      const rootInMarkup = markupRootPath(r.spec);
+      if (rootInMarkup) issue("error", from, `markup in a string uses a root path that does not exist in the app: ${rootInMarkup}`);
       if (r.kind === "import" || r.kind === "dynamic-import") {
         if (r.kind === "dynamic-import" && r.template) { ref(from, r.spec, "import()", { strong: true, dir, template: true }); continue; }
         if (isBare(r.spec) && !isHttp(r.spec)) {
@@ -123,19 +133,38 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
         ref(from, r.spec, "import", { strong: true, dir, docDir: dir });
       } else if (r.kind === "meta-url") ref(from, r.spec, "new URL(..., import.meta.url)", { strong: true, dir, docDir: dir, template: r.template });
       else if (r.kind === "fetch" || r.kind === "load") ref(from, r.spec, r.kind, { strong: true, dir: documentDir, template: r.template });
+      else if (r.kind === "navigate") ref(from, r.spec, "page navigation", { strong: true, dir: documentDir, template: r.template });
       else ref(from, r.spec, "string", { strong: false, dir, template: r.template });
     }
   }
 
   function scanCss(from, text, dir) {
     for (const r of cssRefs(text)) ref(from, r.spec, r.kind === "css-import" ? "@import" : r.kind === "font-url" ? "@font-face url()" : "url()", { strong: true, soft: r.kind === "font-url", dir });
+    // a web address outside url() and @import, for example in a custom property that a script reads
+    const rest = stripCssComments(text).replace(/url\(\s*(?:"[^"]*"|'[^']*'|[^)\s]*)\s*\)|@import\s+(?:"[^"]*"|'[^']*')/gi, "");
+    const web = webAddress(rest, { relative: false });
+    if (web) issue("error", from, `the style sheet holds a web address: ${show(web)}`);
+  }
+
+  // Every string in a JSON file: a web address or a path of the web site is an error.
+  function scanJson(from, text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { issue("warn", from, `the file is not valid JSON: ${e.message}`); return; }
+    const walk = (v) => {
+      if (typeof v === "string") {
+        const web = webAddress(v);
+        if (web) issue("error", from, `a JSON string holds a web address: ${show(web)}`);
+        else if (SITE_ROOTS.test(v.trim())) issue("error", from, `a JSON string names a path of the web site: ${v.trim()}`);
+      } else if (v && typeof v === "object") for (const x of Object.values(v)) walk(x);
+    };
+    walk(data);
   }
 
   while (queue.length) {
     const rel = queue.shift();
     const dir = posix.dirname(rel) === "." ? "" : posix.dirname(rel);
     const text = fs.readFileSync(path.join(root, rel), "utf8");
-    if (/\.html?$/i.test(rel)) {
+    if (MARKUP.test(rel)) {
       const { elements } = parseHtml(text);
       for (const el of elements) {
         for (const a of el.attrs) {
@@ -144,6 +173,11 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
           else if (a.name === "href") ref(rel, a.value, `<${el.tag} href>`, { strong: true, dir });
           else if (a.name === "srcset" || a.name === "imagesrcset") for (const part of a.value.split(",")) ref(rel, part.trim().split(/\s+/)[0] || "", `<${el.tag} ${a.name}>`, { strong: true, dir });
           else if (a.name === "style") scanCss(rel, a.value, dir);
+          // any other attribute, for example data-src or a meta content: a script can read it and load it
+          else if (!/^xmlns(?::|$)/.test(a.name)) {
+            const web = webAddress(a.value);
+            if (web) issue("error", rel, `<${el.tag} ${a.name}> holds a web address: ${show(web)}`);
+          }
         }
         if (el.tag === "style" && el.rawText) scanCss(rel, el.rawText, dir);
         if (el.tag === "script" && el.rawText && attr(el, "src") === null) {
@@ -158,10 +192,16 @@ export function collect(root, seeds, { documentDir = "" } = {}) {
               else if (k.endsWith("/")) { const d = resolveIn(dir, v); if (d === null || !fs.existsSync(path.join(root, d))) issue("error", rel, `import map entry "${k}" names a missing folder: ${v}`); }
               else ref(rel, v, `import map entry "${k}"`, { strong: true, dir });
             }
-          } else if (!type || type === "module" || type === "text/javascript" || type === "application/javascript") scanJsText(rel, el.rawText, dir);
+          } else if (JS_TYPES.has(type)) scanJsText(rel, el.rawText, dir);
+          else {
+            // a data block (JSON, a shader, plain text) that a script can read
+            const web = webAddress(el.rawText, { relative: false });
+            if (web) issue("error", rel, `<script type="${type}"> holds a web address: ${show(web)}`);
+          }
         }
       }
     } else if (/\.css$/i.test(rel)) scanCss(rel, text, dir);
+    else if (/\.json$/i.test(rel)) scanJson(rel, text);
     else scanJsText(rel, text, dir);
   }
   return { files, issues, refs, importMaps };

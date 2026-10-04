@@ -212,12 +212,13 @@ export function scanJs(src) {
 }
 
 // URL-like references in a script. kind tells how the page uses the string:
-// import, dynamic-import, meta-url (new URL(x, import.meta.url)), fetch, load (src/href assignment, Worker, Audio, loader.load), or string.
+// import, dynamic-import, meta-url (new URL(x, import.meta.url)), fetch, load (src/href assignment, Worker, Audio, loader.load),
+// navigate (location, history.pushState, window.open), or string.
 export function jsRefs(src) {
   const { code, strings } = scanJs(src);
   const out = [];
   for (const s of strings) {
-    const before = code.slice(Math.max(0, s.start - 60), s.start);
+    const before = code.slice(Math.max(0, s.start - 120), s.start);
     const after = code.slice(s.end, s.end + 40);
     let kind = "string";
     if (/(?:\bfrom|\bimport)\s*$/.test(before)) kind = "import";
@@ -225,6 +226,8 @@ export function jsRefs(src) {
     else if (/\bnew\s+URL\s*\(\s*$/.test(before) && /^\s*,\s*import\.meta\.url/.test(after)) kind = "meta-url";
     else if (/\bfetch\s*\(\s*$/.test(before)) kind = "fetch";
     else if (/(?:\bnew\s+(?:Worker|SharedWorker|Audio|EventSource|WebSocket)\s*\(|\bimportScripts\s*\(|\.(?:src|href|poster|srcset)\s*=|\.load(?:Async)?\s*\(|\.open\s*\(\s*["'][A-Z]+["']\s*,|\bsetAttribute\s*\(\s*["'](?:src|href|poster)["']\s*,)\s*$/.test(before)) kind = "load";
+    // a page navigation: location = x, location.assign(x), location.replace(x), history.pushState(s, t, x), window.open(x)
+    else if (/(?:\blocation\s*=|\blocation\.(?:pathname\s*=|assign\s*\(|replace\s*\()|\b(?:pushState|replaceState)\s*\((?:[^()]|\([^()]*\))*,|\b(?:window|self|top|parent|globalThis)\.open\s*\()\s*$/.test(before)) kind = "navigate";
     out.push({ spec: s.value, kind, template: s.quote === "`" && s.value.includes("\0"), at: s.start });
   }
   return { refs: out, code };
@@ -232,11 +235,30 @@ export function jsRefs(src) {
 
 // ---------- shared helpers ----------
 
-// A web address: http://, https://, or a protocol-relative //host.name/ (not a "// comment" inside a shader string).
-export const isHttp = (spec) => /^(?:https?:\/\/|\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[\/:?#]|$))/i.test(spec.trim());
+// A web address: http://, https://, ws://, wss://, or a protocol-relative //host.name/ (not a "// comment" inside a shader string).
+export const isHttp = (spec) => /^(?:(?:https?|wss?):\/\/|\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[\/:?#]|$))/i.test(spec.trim());
+// XML namespace names look like web addresses, but nothing loads them (three.js has "http://www.w3.org/1999/xhtml").
+export const NAMESPACE = /^https?:\/\/(?:www\.w3\.org|purl\.org|creativecommons\.org|ns\.adobe\.com|www\.inkscape\.org|sodipodi\.sourceforge\.net)\//i;
+// The first web address in a text that is not a namespace name, or null. It finds http(s):// and ws(s):// anywhere
+// in the text. With relative (for one string value), it also finds a protocol-relative //host.name at the start;
+// it never looks for one later in the text, because "//" in a string is often a shader comment.
+export function webAddress(text, { relative = true } = {}) {
+  const t = text.trim();
+  if (relative && /^\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[\/:?#]|$)/i.test(t)) return t.slice(0, 100);
+  for (const m of text.matchAll(/(?:https?|wss?):\/\/[^\s"'`<>()\\]*/gi)) if (!NAMESPACE.test(m[0])) return m[0].slice(0, 100);
+  return null;
+}
+// A root path inside markup that a script holds as a string, for example '<a href="/">'.
+export function markupRootPath(text) {
+  const m = /\b(?:href|src|action|formaction|poster)\s*=\s*["']?(\/(?!\/)[^"'\s>]*)/i.exec(text);
+  return m ? m[1] : null;
+}
 export const isRootPath = (spec) => /^\/(?!\/)/.test(spec.trim());
 export const isSpecial = (spec) => /^(?:data|blob|about|mailto|tel|javascript|capacitor|#)/i.test(spec.trim()) || spec.trim().startsWith("#") || spec.trim() === "";
 export const isBare = (spec) => !/^(?:\.{0,2}\/|[a-z][a-z0-9+.-]*:)/i.test(spec);
+
+// The <script> types that hold JavaScript.
+export const JS_TYPES = new Set(["", "module", "text/javascript", "application/javascript"]);
 
 // Asset-looking strings: a relative path that ends in a file type the game can load.
 export const ASSET_EXT = /\.(?:js|mjs|css|html|json|webp|png|jpe?g|gif|svg|avif|glb|gltf|bin|ktx2|mp4|webm|m4a|mp3|ogg|wav|woff2?|ttf|otf|txt|wasm)$/i;

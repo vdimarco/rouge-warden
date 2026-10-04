@@ -39,13 +39,23 @@ The privacy policy is `public/fish/privacy.html`. The web serves it at `/fish/pr
 npm ci
 npm run build:www          # makes www/ and runs the bundle check
 npm run check:www          # the check alone
-npm run check:www -- --strict   # also fails on the word "ghibli"
+npm run check:www -- --strict   # also fails on "ghibli" and on arcade text in a script (or set WWW_STRICT=1)
 npm run test:check         # tests for the check itself
 ```
 
 The build copies `index.html`, `privacy.html`, `js/`, `lib/` and `fonts/`, and every other file that a page, a style sheet or a script loads. It leaves out files that nothing loads, such as `art/README.md`. In `www/index.html` it sets `<html data-build="store">`, removes the arcade switcher script, the `og:` and `twitter:` tags, the `/icons` links and any web font link, hides the "Switch game" and "Back to the arcade" parts, and points the import map at `./lib/three.module.min.js`.
 
-The check fails when a file in `www/` loads another host, uses a root path of the web site (such as `/icons` or `/arcade`), names a missing file, or shows arcade text a player can see. It prints the size of the bundle.
+The check reads every HTML, CSS, JavaScript, SVG and JSON file in `www/`, also the files that nothing loads. It fails when:
+
+- a file loads another host (an import, a link, a `src`, a `fetch`, a page navigation);
+- the code holds a web address (`http://`, `https://`, `ws://`, `wss://` or `//host`) anywhere outside a comment: in a string, in an attribute, in a style sheet, or in a JSON or SVG file. XML namespace names such as `http://www.w3.org/1999/xhtml` are allowed, and so is plain text in `privacy.html`;
+- a load, a link, markup in a string, or a page navigation (`location = ...`, `location.assign()`, `location.replace()`, `history.pushState()`, `window.open()`) uses a root path such as `/`, `/icons` or `/arcade`;
+- a file names a missing file;
+- the HTML shows arcade text ("Switch game", "Back to the arcade", "GET PLUNGER'D") outside the parts that the store build hides.
+
+It warns about "ghibli", and about arcade text in a script: the check cannot tell if the code shows that string. With `--strict` (or `WWW_STRICT=1`) both are errors. When the code shows the string on the web only (it checks the store flag first), put `// web only` on the same line. It prints the size of the bundle.
+
+The check reads the files. It cannot see a web address that the code builds at run time from parts, or a root path that the code keeps in a variable. The browser check below blocks and counts every request that leaves the app's origin, and it fails on arcade text that the page shows.
 
 While the boot work is not in `public/fish`, the build prints warnings: it borrows three.js from `public/crimson/lib`, and the app has no game fonts and no native bridge. The warnings go away when those files land.
 
