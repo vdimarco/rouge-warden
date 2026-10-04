@@ -201,6 +201,8 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 #phoneControls [data-action="throw"].held { background:linear-gradient(135deg,#b6f1dc,#60c3b5); }
 .phone-bottom small { color:#fff9; font:11px sans-serif; text-shadow:0 1px 4px #000; }
 #view canvas { touch-action:none; }
+/* a narrow phone (360 px): the four top buttons stay on one line */
+@media (max-width:380px) { #phoneControls .phone-top button { padding:10px 9px; white-space:nowrap; } .phone-top { gap:5px; padding-left:4px; padding-right:4px; } }
 /* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
 body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 66px); }
 body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 200px); }
@@ -238,6 +240,7 @@ body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-ins
       <div class="row">
         <button type="button" class="btn" id="howBtn">HOW TO PLAY</button>
         <button type="button" class="btn" id="comfortBtn">COMFORT</button>
+        <button type="button" class="btn" id="soundBtn" aria-pressed="true">SOUND: ON</button>
         <button type="button" class="btn" id="switchBtn" data-switch>SWITCH GAME</button>
       </div>
     </nav>
@@ -286,6 +289,7 @@ body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-ins
         <li>Press <kbd>F</kbd> to yank. Press <kbd>Space</kbd> to jump, or to yank in the air.</li>
         <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. The mouse looks around.</li>
         <li>Fly or walk into a wall to hold on to it. <kbd>W</kbd> and <kbd>S</kbd> climb up and down, <kbd>A</kbd> and <kbd>D</kbd> go along it. At the top you step on to the roof. <kbd>Space</kbd> jumps off, and a rope swings you off.</li>
+        <li><kbd>V</kbd> switches between the view over your shoulder and the view through your eyes. <kbd>M</kbd> turns the sound on or off.</li>
         <li><kbd>Tab</kbd> opens the map. <kbd>Esc</kbd> pauses.</li>
         <li>A game pad works too.</li>
       </ul>
